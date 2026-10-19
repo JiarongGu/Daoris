@@ -234,6 +234,27 @@ describe('noteLines', () => {
       expect(noteLines(t, { parts: [short] }, 'en')[0]).toEqual({ kind: 'recorded', text: 'opened on `account-3`: it has the most room' });
     });
 
+    /**
+     * USAGERESET1 (D165's note): step 4 says what would lapse, the window that won, its unused share, its reset and the moment
+     * its reading was seen. A line written before by its reset alone (`lapsing`) keeps being worded as it was.
+     */
+    it('words what would lapse at a week’s reset, in English and 中文, and the reset alone as before', () => {
+      const lapses = coded('opening.opened', 'opened on `account-3`: …', {
+        account: 'account-3', why: 'lapses', window: 'weekly', unused: 40, at: '2026-10-03T08:00:00Z', seen: '2026-10-02T11:50:00Z',
+      });
+      expect(noteLines(t, { parts: [lapses] }, 'en')[0].text).toBe(
+        `Opened on \`account-3\`: its weekly window resets at ${moment('2026-10-03T08:00:00Z', 'en')} with 40% of it unused, `
+        + `as read at ${moment('2026-10-02T11:50:00Z', 'en')}.`,
+      );
+      expect(noteLines(zh, { parts: [lapses] }, 'zh')[0].text).toBe(
+        `在账户 \`account-3\` 上开始：它的每周窗口在 ${moment('2026-10-03T08:00:00Z', 'zh')} 重置，`
+        + `按 ${moment('2026-10-02T11:50:00Z', 'zh')} 的读数还有 40% 未用。`,
+      );
+      const before = coded('opening.opened', 'opened on `account-3`: …', { account: 'account-3', why: 'lapsing', at: '2026-10-03T08:00:00Z' });
+      expect(noteLines(t, { parts: [before] }, 'en')[0].text)
+        .toBe(`Opened on \`account-3\`: its week resets first, at ${moment('2026-10-03T08:00:00Z', 'en')}.`);
+    });
+
     it('words a passed account’s cool-off with its reset and its own reason, and a workspace’s list by name', () => {
       const cooling = coded('opening.opened', 'opened on `account-2`: …', {
         account: 'account-2', why: 'cooling', agent: 'claude-code', over: 'account-1', until: '2026-10-03T18:00:00Z', cooling: 'stated',

@@ -2066,17 +2066,25 @@ public sealed class Driver(
     /// What a session's door says about the windows of the account it runs as (TOOL6c, D130 §5.2), kept by the roster as the
     /// door carries it, for the next start's walk. A reading not kept costs a start's ranking, never the session.
     /// </summary>
-    internal Action<JsonElement> Said(ISessionAdapter adapter, HarnessSelection selection, string sessionId) => info =>
+    /// <remarks>
+    /// Asked once by every start that holds a session (a driven one, an intake, a carry-on, an opinion's or a helper's pass), where
+    /// its account is chosen: so the session's turns are bound to that account in the usage history here (USAGECAP1a2).
+    /// </remarks>
+    internal Action<JsonElement> Said(ISessionAdapter adapter, HarnessSelection selection, string sessionId)
     {
-        try
+        UsageTurns.Bound(home, Context.Events, sessionId, TurnBinding.Of(adapter, selection.Profile));
+        return info =>
         {
-            Context.Harnesses.Said(adapter.Name, selection.Profile, info, sessionId);
-        }
-        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
-        {
-            // Nothing kept is nothing said: the walk reads the account as unknown, as it did before the door spoke.
-        }
-    };
+            try
+            {
+                Context.Harnesses.Said(adapter.Name, selection.Profile, info, sessionId);
+            }
+            catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+            {
+                // Nothing kept is nothing said: the walk reads the account as unknown, as it did before the door spoke.
+            }
+        };
+    }
 
     /// <summary>
     /// 🔴 A credential its provider refused is read from what the harness itself said of its ending (AGT3b, AGT3c), and the

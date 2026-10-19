@@ -44,8 +44,10 @@ each failing test first and RUN it to watch it fail before writing the code (a c
 and say which you saw fail; commit each piece once its tests pass. A component's sources changed on a later day than
 its README asks the README to describe the change (the docs gate). New words on the page run `src/locales`' tests too:
 `names:check --strict` does not hold a sentence's glossary words, `names.test.ts` does (WORKFLOW1h-d's 这台机器).
-A control moved or renamed runs the whole web suite, not only the touched files: other views' tests press it by name
-(HEAD2d's *Pause…*, pressed in QuestsView.work.test.tsx). An archive entry is appended at the file's end, after one
+Run only your own tests, filtered (the ones you add or change and those covering the code you change), and the quick
+checks before hand-back; never a whole project, a fast half, the web's whole suite or `npm run verify`: the CI beside
+runs those after the merge (the owner, 2026-10-19). A control moved or renamed: search the other views' tests for its
+name and run those files (HEAD2d's *Pause…*, pressed in QuestsView.work.test.tsx). An archive entry is appended at the file's end, after one
 blank line, in its neighbours' shape (`## ROW — title (date, Dn)`, the quoted row, `**Outcome** date: …`).
 Orientation pack:
 <the scout's pack, as it came back, with any pointer you corrected marked>
@@ -108,6 +110,11 @@ once three batches hold the targets (MODELROLE1).
    first: a clean checkout of an old commit, no commits of its own), and dispatch again; a retry usually goes through. Two dispatched in one message
    while a merge's gates ran were both refused the same way (2026-10-08), each a half-made tree holding only
    `.git` and `.claude`: remove each (`git worktree remove --force`, then its branch), and dispatch one at a time.
+   **Nothing the parent or a worker starts outlives its work.** A background loop ends when the work that wanted it ends
+   (a stop file, a parent's pid it watches, a time it gives up at): the parent's own `renice.ps1` loop ran a hundred hours
+   past its session, asking the machine's management service for every process every ten seconds (2026-10-19 audit). A
+   worker's builds run without the build servers staying behind (`-nodeReuse:false`, or `MSBUILDDISABLENODEREUSE=1`, and
+   `dotnet build-server shutdown` at the end); the audit found thirteen MSBuild nodes holding 1.4 GB, three orphaned.
    **Never brief a worker to run or time a long run** (a `Process` half, a rehearsal, or a measurement of either):
    PROCSPEED1 (2026-10-19) waited 120 of its 140 minutes on three runs of the driver's git half it was asked to time on
    a shared machine, and no number made under that load meant anything. Such a measurement is the parent's, on a quiet

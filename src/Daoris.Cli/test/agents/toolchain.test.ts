@@ -73,6 +73,14 @@ test('the profiles that exist are the directories that exist', () => {
 
   assert.deepEqual(profiles(fx.root, 'claude-code'), ['personal', 'work']);
   assert.deepEqual(profiles(fx.root, 'codex'), ['work']);
+
+  // HELPSTUCK1: a lock's folder beside the accounts (a lockfile library locks a folder by making `<folder>.lock` beside it) and
+  // a hidden one are no account, whatever they hold. The driver's `HarnessSettingsTests` holds the same rows.
+  mkdirSync(`${profileHome(fx.root, 'claude-code', 'work')}.lock`, { recursive: true });
+  mkdirSync(`${profileHome(fx.root, 'claude-code', 'personal')}.LOCK`, { recursive: true });
+  mkdirSync(join(profileHome(fx.root, 'claude-code', 'work'), '..', '.hidden'), { recursive: true });
+  mkdirSync(profileHome(fx.root, 'claude-code', 'locked-out'), { recursive: true });
+  assert.deepEqual(profiles(fx.root, 'claude-code'), ['locked-out', 'personal', 'work']);
   fx.cleanup();
 });
 

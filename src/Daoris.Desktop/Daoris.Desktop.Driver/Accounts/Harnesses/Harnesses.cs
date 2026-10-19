@@ -245,7 +245,11 @@ public sealed record HarnessToolchain(
     // for a test double whose own home is nobody's, the stub, its protocol twin and a test's fake. Every real agent leaves it
     // false, since its own home is the person's and never Daoris's working space (D175 point 1). Not a twin: the CLI starts
     // no session.
-    bool RunsInOwnHome = false)
+    bool RunsInOwnHome = false,
+    // What this door's turn counts mean (USAGECAP1a2, D179 point 2), the usage history's `meaning`: `per-turn` where a probe
+    // measured each turn's own counts. A report's meaning is its wire's, so a door onto another agent declares its own and never
+    // reads its owner's; null says it was never measured, which the history keeps as `unknown`. Not a twin: the CLI keeps no turn.
+    string? TurnReport = null)
 {
     /// <summary>The command this harness actually runs as: the machine's configured one, or the declared one.</summary>
     public IReadOnlyList<string> Command(IReadOnlyList<string>? configured) =>
@@ -318,4 +322,23 @@ public sealed record HarnessReport(
     string? OwnAccount = null,
     DateTimeOffset? OwnRead = null,
     string? OwnOrg = null,
-    string? OwnPlan = null);
+    string? OwnPlan = null)
+{
+    /// <summary>
+    /// The folders beside its accounts that are no account (HELPSTUCK1, <see cref="HarnessSettings.Strays"/>), each with whether
+    /// it holds a sign-in, so one is said rather than lost. Carried for Ask Daoris's room; no wire answer carries it yet.
+    /// </summary>
+    public IReadOnlyList<StrayFolder> Strays { get; init; } = [];
+}
+
+/// <summary>
+/// A folder beside an agent's accounts that is no account (HELPSTUCK1): a lock's or a hidden one, never listed, walked or
+/// touched as one.
+/// </summary>
+/// <param name="Name">Its folder's name.</param>
+/// <param name="SignedIn">
+/// Whether it holds a sign-in by what Daoris kept of it while it was listed as an account: a reading that said signed in, a
+/// sign-in's or a key's mark, or a key. Such a folder is a sign-in the person would lose by its removal, so it is said with the
+/// way to keep it: renamed to an account's name while nothing runs on it.
+/// </param>
+public sealed record StrayFolder(string Name, bool SignedIn);

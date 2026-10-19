@@ -84,7 +84,8 @@ public interface IStreamsReader
 /// else's grows, and a field of an unexpected shape is an absence here, never a throw.</para>
 ///
 /// <para><b>Leaves the model's name and the cost</b> on the wire (D24, TOOL3): both are there, and
-/// neither is Daoris's to record.</para>
+/// neither is Daoris's to record. The models a turn was spent on ride its event in memory to the usage history alone
+/// (USAGECAP1a2, D179 point 2: <see cref="SessionEvent.Models"/>), and never reach the record.</para>
 ///
 /// <para><b>A denial is the call's refusal</b> (UNBLOCK5, D122 §3.10). Nobody answers a prompt on this
 /// door, so what the harness would have asked it denies, and reports as a <c>system</c>
@@ -108,6 +109,11 @@ public sealed class ClaudeStreamJson : IStreamMapper
     private readonly HashSet<string> _refused = new(StringComparer.Ordinal);
     private long? _context;
     private AcpUsage? _usage;
+
+    // The models the turn's own answers named, and the result's split as this process last said it (USAGECAP1a2): whether
+    // `modelUsage` is the turn's or the process's running total is not recorded, and the turn's models read either.
+    private readonly List<string?> _named = [];
+    private IReadOnlyDictionary<string, TurnTokens>? _split;
 
     public AcpUsage? Usage => _usage;
 
@@ -200,6 +206,11 @@ public sealed class ClaudeStreamJson : IStreamMapper
 
         var streamed = Text(message, "id") is { } id && _streamed.Contains(id);
         Measure(message);
+        // The model that answered the turn (USAGECAP1a2): a subagent's answer, on a line of its own beside the session, names none.
+        if (!frame.TryGetProperty("parent_tool_use_id", out var parent) || parent.ValueKind != JsonValueKind.String)
+        {
+            _named.Add(Text(message, "model"));
+        }
 
         var lines = new List<string>();
         var events = new List<SessionEvent>();
@@ -311,17 +322,25 @@ public sealed class ClaudeStreamJson : IStreamMapper
             : failure is not null
                 ? $"— the turn failed ({subtype}): {failure}"
                 : $"— the turn ended: {subtype}");
+        // The whole turn's counts, as the result sums them over its calls (CONV5) — never a sum of the
+        // streamed messages here, whose output the probe found under-counted.
+        var tokens = frame.TryGetProperty("usage", out var usage)
+            ? TurnTokens.Read(usage, "input_tokens", "output_tokens", "cache_read_input_tokens", "cache_creation_input_tokens")
+            : null;
+        // Which models they were spent on, for the usage history alone (USAGECAP1a2): `modelUsage` by model where it agrees with
+        // the total, read as the turn's own or as the process's running total less the result before.
+        var split = frame.TryGetProperty("modelUsage", out var byModel) ? TurnModels.Read(byModel) : null;
+        var models = TurnModels.Of(tokens, _named, TurnModels.FromMessages, split, _split, TurnModels.FromModelUsage);
+        _named.Clear();
+        if (split is { Count: > 0 }) _split = split;
         events.Add(new SessionEvent
         {
             Kind = SessionEventKind.Turn,
             // The protocol door's words for an ordinary ending and a stopped one, so each reads as one
             // thing whichever door it happened on.
             StopReason = stopped ? "cancelled" : !failed && subtype == "success" ? "end_turn" : subtype,
-            // The whole turn's counts, as the result sums them over its calls (CONV5) — never a sum of the
-            // streamed messages here, whose output the probe found under-counted.
-            Tokens = frame.TryGetProperty("usage", out var usage)
-                ? TurnTokens.Read(usage, "input_tokens", "output_tokens", "cache_read_input_tokens", "cache_creation_input_tokens")
-                : null,
+            Tokens = tokens,
+            Models = models,
         });
 
         return new(lines, events) { Failed = failure };

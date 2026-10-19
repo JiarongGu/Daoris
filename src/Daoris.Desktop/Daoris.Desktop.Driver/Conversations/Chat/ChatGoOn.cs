@@ -432,7 +432,7 @@ internal sealed class ChatGoOn
             Continuations.OpeningNoted(adapter.Name, selection.Version, record.HarnessVersion, answer: false),
             files: word => ChatFiles.Kept(_context.Home, sessionId, word.Files));
 
-        var (room, reads) = await _help.HelpRoomNowAsync(ct).ConfigureAwait(false);
+        var (room, reads) = await _help.HelpRoomNowAsync(sessionId, ct).ConfigureAwait(false);
         return await _runner.RunAsync(
             sessionId, $"Ask Daoris `{sessionId}` goes on with your words in its own conversation.", adapter, selection, config,
             _runner.HelpPlace(room, reads), onEnded, ct, new GoingOn(record, ask)).ConfigureAwait(false);

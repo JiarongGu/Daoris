@@ -124,7 +124,8 @@ public sealed class ChatRunner : IDisposable
         _usage = usage ?? new SessionUsage(home);
         _plugins = plugins ?? PluginLog.None;
         _harnesses = harnesses ?? new HarnessRoster(adapters);
-        _events = events ?? new SessionEvents(DaorisHome.Entry(home, HomeEntry.Sessions));
+        // Its turns kept in the usage history (USAGECAP1a2), watched once however many runners share the record.
+        _events = UsageTurns.Watched(home, events ?? new SessionEvents(DaorisHome.Entry(home, HomeEntry.Sessions)));
         _context = new ChatContext(service, home, processes, output, _harnesses, _events);
         _handOver = new ChatHandOver(_context, this);
         _curve = new CurveMove(_context, _handOver);
@@ -174,6 +175,16 @@ public sealed class ChatRunner : IDisposable
     {
         get => _help.DescribeHelp;
         set => _help.DescribeHelp = value;
+    }
+
+    /// <summary>
+    /// How long an Ask Daoris start waits for the machine's reading before the room as last written serves (HELPSTUCK1,
+    /// <see cref="ChatHelp.ReadBound"/>).
+    /// </summary>
+    internal TimeSpan HelpReadBound
+    {
+        get => _help.ReadBound;
+        set => _help.ReadBound = value;
     }
 
     /// <summary>Place a new Ask Daoris conversation from an earlier one's words, its room read and agent spawned after (HELPSTART1b, <see cref="ChatHelp.PlaceHelpFromAsync"/>).</summary>
@@ -539,7 +550,9 @@ public sealed class ChatRunner : IDisposable
     /// <summary>
     /// Run Ask Daoris's conversation placed by <see cref="PlaceHelpAsync"/> (HELPSTART1): the machine read, the room written from
     /// it, then the agent spawned as any conversation's. A reading or a room that fails ends the record <c>failed</c> saying why,
-    /// so a conversation the person was handed says what became of it rather than waiting at <c>queued</c>.
+    /// so a conversation the person was handed says what became of it rather than waiting at <c>queued</c>. A reading that does
+    /// not answer within <see cref="HelpReadBound"/> (HELPSTUCK1) leaves it to the room as last written, said first in its
+    /// conversation, or with none written before ends it <c>failed</c> saying so (<see cref="ChatHelp.ReadAsync"/>).
     /// </summary>
     /// <param name="machine">The machine as the room says it; null where it could not be read.</param>
     public async Task<ChatStart> RunHelpAsync(
@@ -553,13 +566,32 @@ public sealed class ChatRunner : IDisposable
         _context.GoingOn.TryAdd(sessionId, going.Task);
         try
         {
-            HelpMachine read;
             string room;
+            IReadOnlyList<HelpRead> reads;
             try
             {
-                read = await machine(ct).ConfigureAwait(false)
-                       ?? throw new DriverException("this machine could not be read for it: the service is not answering yet");
-                room = HelpRoom.Prepare(_home, read);
+                // 🔴 HELPSTUCK1: the reading is waited for within its bound. It walks git across every tree and repository, and on
+                // the owner's loaded machine it did not answer for minutes while this conversation sat at `queued`: nothing said, no
+                // agent started, the person's words held for it. Past the bound, the room as last written serves, said first in
+                // its conversation; with none written before, it ends below saying why.
+                var (read, late) = await _help.ReadAsync(machine, ct).ConfigureAwait(false);
+                if (late && !HelpRoom.Written(_home))
+                {
+                    var unread = ChatHelp.NotRead(_help.ReadBound);
+                    await Conclude(sessionId, "failed", unread, onEnded).ConfigureAwait(false);
+                    return new(null, unread.Note);
+                }
+
+                if (late)
+                {
+                    (room, reads) = (HelpRoom.PathOf(_home), []);
+                    _context.Note(sessionId, ChatHelp.AsWritten(_help.ReadBound));
+                }
+                else
+                {
+                    var machineRead = read ?? throw new DriverException("this machine could not be read for it: the service is not answering yet");
+                    (room, reads) = (HelpRoom.Prepare(_home, machineRead), machineRead.Reads);
+                }
             }
             catch (Exception error)
             {
@@ -579,7 +611,7 @@ public sealed class ChatRunner : IDisposable
                 return new(null, "the application is closing, so no conversation starts now.");
             }
 
-            return await RunAsync(sessionId, placed.Message, resolved, selection, config, HelpPlace(room, read.Reads), onEnded, ct)
+            return await RunAsync(sessionId, placed.Message, resolved, selection, config, HelpPlace(room, reads), onEnded, ct)
                 .ConfigureAwait(false);
         }
         finally
@@ -801,6 +833,10 @@ public sealed class ChatRunner : IDisposable
             if (cancelled) throw;
             return new(null, error.Message);
         }
+
+        // Its turns are kept in the usage history under the account it runs as (USAGECAP1a2), as a driven session's are: bound
+        // before any word is queued to it.
+        UsageTurns.Bound(_home, _events, sessionId, TurnBinding.Of(resolved, selection.Profile));
 
         // The conversation outlives this call: the person types, the harness answers, and the record
         // moves when the process does. Watched on an unbound token deliberately — a chat is not ended

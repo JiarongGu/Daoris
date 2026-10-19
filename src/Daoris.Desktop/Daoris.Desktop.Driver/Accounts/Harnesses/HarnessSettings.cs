@@ -495,16 +495,39 @@ public sealed record HarnessSettings(
     /// The profiles that exist for a harness — <b>the directories that exist</b>, sorted. There is no
     /// register of profiles to disagree with the disk, which is the same reason the registry became
     /// the authority rather than a view over a scan (D48 §3): one truth, not two. Both places of the
-    /// account homes are read, as a list of an entry's items is (D172 point 5, HOMELAYOUT2).
+    /// account homes are read, as a list of an entry's items is (D172 point 5, HOMELAYOUT2). A lock's
+    /// folder or a hidden one is no account (<see cref="NotAnAccount"/>, HELPSTUCK1): <see cref="Strays"/> names them.
     /// </summary>
     public static IReadOnlyList<string> Profiles(string home, string harness) =>
-        [.. DaorisHome.Places(home, HomeEntry.AgentHomes, Name(harness, "agent name"))
+        [.. Folders(home, harness).Where(name => !NotAnAccount(name))];
+
+    /// <summary>
+    /// The folders beside a harness's accounts that are no account (HELPSTUCK1), sorted: never listed, chosen, walked or removed
+    /// as one, and never touched here either, since one may hold a sign-in a person made in it while it was listed. The
+    /// roster's report names them (<see cref="HarnessReport.Strays"/>), and Ask Daoris's room says them.
+    /// </summary>
+    public static IReadOnlyList<string> Strays(string home, string harness) =>
+        [.. Folders(home, harness).Where(NotAnAccount)];
+
+    /// <summary>
+    /// Whether a folder beside the accounts is no account (HELPSTUCK1, twin rule 1): a lock's, its name ending <c>.lock</c> in
+    /// any case, since a lockfile library locks a folder by making <c>&lt;folder&gt;.lock</c> beside it, and Claude Code locks
+    /// its configuration home so; or a hidden one, its name starting <c>.</c>. Listed as accounts, two such lock folders on the
+    /// owner's machine were walked to, signed in to and run in, and a lock of the account each is named after then met a home.
+    /// The CLI's <c>notAnAccount</c> is the twin, and the two <c>profiles</c> tables hold the same rows.
+    /// </summary>
+    public static bool NotAnAccount(string name) =>
+        name.StartsWith('.') || name.EndsWith(".lock", StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>Every folder under a harness's account homes, in both places, by name, sorted.</summary>
+    private static IEnumerable<string> Folders(string home, string harness) =>
+        DaorisHome.Places(home, HomeEntry.AgentHomes, Name(harness, "agent name"))
             .Where(Directory.Exists)
             .SelectMany(Directory.EnumerateDirectories)
             .Select(Path.GetFileName)
             .OfType<string>()
             .Distinct(StringComparer.Ordinal)
-            .OrderBy(name => name, StringComparer.Ordinal)];
+            .OrderBy(name => name, StringComparer.Ordinal);
 
     /// <summary>
     /// The id an account made by signing in, or by a key, gets (D66 §3, ACCT2): a fresh one, never reused

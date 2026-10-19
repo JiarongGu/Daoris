@@ -94,6 +94,17 @@ public sealed class HarnessSettingsTests : IDisposable
 
         Assert.Equal(["personal", "work"], HarnessSettings.Profiles(_home, "claude-code"));
         Assert.Equal(["work"], HarnessSettings.Profiles(_home, "codex"));
+
+        // HELPSTUCK1: a lock's folder beside the accounts (a lockfile library locks a folder by making `<folder>.lock` beside it)
+        // and a hidden one are no account, whatever they hold; they are named as strays instead. The CLI's `profiles` test
+        // holds the same rows.
+        Directory.CreateDirectory(HarnessSettings.ProfileHome(_home, "claude-code", "work") + ".lock");
+        Directory.CreateDirectory(HarnessSettings.ProfileHome(_home, "claude-code", "personal") + ".LOCK");
+        Directory.CreateDirectory(Path.Combine(HarnessSettings.ProfileHome(_home, "claude-code", "work"), "..", ".hidden"));
+        Directory.CreateDirectory(HarnessSettings.ProfileHome(_home, "claude-code", "locked-out"));
+        Assert.Equal(["locked-out", "personal", "work"], HarnessSettings.Profiles(_home, "claude-code"));
+        Assert.Equal([".hidden", "personal.LOCK", "work.lock"], HarnessSettings.Strays(_home, "claude-code"));
+        Assert.Empty(HarnessSettings.Strays(_home, "codex"));
     }
 
     /// <summary>

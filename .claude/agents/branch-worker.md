@@ -89,19 +89,28 @@ the work, was most of what branches cost before D160 (`docs/2026-10-10-subagent-
 
 ## Gates
 
-- **You may run** `npm run verify` at the root (`npm ci` first in a fresh worktree), `node --test` in
-  `src/Daoris.Cli`, the web's vitest loop (`npm --prefix src/Daoris.Web run test`, after
-  `npm --prefix src/Daoris.Web ci`) when your lane is the web, and **whenever you change a catalogue or a
-  word the page shows, from any lane**, the web's `i18n:check` and `names:check -- --strict`: the build and
-  the web gate run both, and a catalogue gap otherwise surfaces only at the merge, failing the publish
-  with it. Also `dotnet test` on the .NET project
-  your lane changes, one suite at a time. A desktop suite runs its fast half only:
-  `dotnet test src/Daoris.Desktop/<project> --filter Category!=Process` (MOD8).
-- **`npm run verify` once, at the end** (Finishing, step 1), never while working: it runs the CLI's whole suite, six
-  minutes and more on a shared machine, and the merge runs it again. While working, run what your change reaches:
-  `dotnet test` filtered to the classes you touch (`--filter FullyQualifiedName~<Class>`), each touched project whole
-  once, and `node --test test/<file>` for a CLI or tools file you touch. On 2026-10-19, verify run twice cost
-  KNOWHOLD1 and BRAINSTORM1b 12 to 14 minutes each, a quarter of their branches.
+- **You may run** (`npm ci` first in a fresh worktree; `npm --prefix src/Daoris.Web ci` for the web) your own tests,
+  filtered (below), and **whenever you change a catalogue or a word the page shows, from any lane**, the web's
+  `i18n:check` and `names:check -- --strict`. A desktop test is never one of the `Process` category (MOD8).
+- **Leave nothing running.** Build with `-nodeReuse:false` (or `MSBUILDDISABLENODEREUSE=1` in your shell) so no MSBuild
+  node outlives your build, run `dotnet build-server shutdown` before you hand back, and end every background task and
+  monitor you started. A 2026-10-19 audit found thirteen MSBuild nodes (1.4 GB, three orphaned) and a loop that had run a
+  hundred hours.
+- **Never run a suite to count it.** Report counts after your change only, and what you added; a whole suite run before
+  any edit, only for its count, cost USAGERESET1 ten minutes (2026-10-19).
+- **Build once, then run without building.** `dotnet test` rebuilds the whole test project every time, and the driver's is
+  one assembly of ten thousand tests: a run filtered to five tests still took three to ten minutes. Build the test project
+  once after an edit to code (`dotnet build <project> -nodeReuse:false`), then `dotnet test <project> --no-build --filter …`
+  for each run while only the filter changes; a code edit needs the build again.
+- **You run your own tests; the full gates are the CI's** (the owner, 2026-10-19: "the development should still run their
+  own tests but not those full test gates"; D180). Your tests are the classes and files you add or change and the ones
+  that cover the code you change, filtered (`dotnet test <project> --no-build --filter FullyQualifiedName~<Class>`,
+  `node --test test/<file>`, `npx vitest run <files>`), red first, green at the end. **Never** run a whole project, a fast
+  half, the web's whole suite or `npm run verify`: the merge runs its blocking checks, and the CI beside runs every gate
+  after it and sends what fails back as a fix. Before you hand back, run only the quick checks a merge refuses on (about a
+  minute): `node tools/orient-index.mjs` then `--check`, `node src/Daoris.Cli/bin/daoris.mjs check`, `node
+  tools/doc-shapes.mjs`, `node tools/doc-duplicates.mjs`, and, where you changed a catalogue, `i18n:check` and
+  `names:check -- --strict`.
 - **Never run** any of these:
   - a desktop suite's `Process` half (`--settings src/Daoris.Desktop/process.runsettings`, and the driver's
     git-only classes' `git.process.runsettings`, four at once): the test classes that start real processes or run real ticks
@@ -137,8 +146,8 @@ the work, was most of what branches cost before D160 (`docs/2026-10-10-subagent-
 
 ## Finishing
 
-1. Merge main again, resolve any conflict inside your lane, and run your gates: the touched projects whole, then
-   `npm run verify`, once. Run `post-feature`
+1. Merge main again, resolve any conflict inside your lane, and run your own tests and the quick checks again (Gates:
+   never a whole project, a fast half or `npm run verify`). Run `post-feature`
    (the Skill tool) over your diff; a non-trivial defect fixed also gets its `fix-log` entry.
 2. Commit once per part: `type(scope): <ROW>, <what>`, ending with the session's `Co-Authored-By:`
    line. The merge tool's commit check refuses a commit without that line. Leave nothing uncommitted in
