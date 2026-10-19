@@ -38,9 +38,9 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Web/src/agents/agents.test.ts` | 47 | 803 |
 | `src/Daoris.Web/src/app/App.test.tsx` | 50 | 978 |
 | `src/Daoris.Web/src/app/App.tsx` | 74 | 1320 |
-| `src/Daoris.Web/src/data/api.ts` | 43 | 717 |
+| `src/Daoris.Web/src/data/api.ts` | 44 | 725 |
 | `src/Daoris.Web/src/design/ui.test.tsx` | 48 | 975 |
-| `src/Daoris.Web/src/design/ui.tsx` | 79 | 1683 |
+| `src/Daoris.Web/src/design/ui.tsx` | 78 | 1678 |
 | `src/Daoris.Web/src/help/AskConversation.tsx` | 52 | 969 |
 | `src/Daoris.Web/src/help/AskDaoris.test.tsx` | 82 | 1646 |
 | `src/Daoris.Web/src/menus/commands.ts` | 40 | 793 |
@@ -148,7 +148,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Modules/Bridge/Routes/HelpRoutes.cs` | 75 | 1276 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules/Bridge/Routes/LinesRoutes.cs` | 53 | 902 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules/Bridge/Routes/TreesRoutes.cs` | 60 | 1031 |
-| `src/Daoris.Desktop/Daoris.Desktop.Modules/Loop/DriverLoop.cs` | 67 | 1202 |
+| `src/Daoris.Desktop/Daoris.Desktop.Modules/Loop/DriverLoop.cs` | 67 | 1218 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules/Loop/SessionWords.cs` | 50 | 1031 |
 
 ### Service (`service`)
@@ -243,4 +243,4 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `docs/2026-10-09-workflow-design.md` | 79 | 1038 |
 | `docs/2026-10-16-fabric-events-design.md` | 175 | 2131 |
 | `docs/DAORIS_UNIFIED_COLLABORATION_ARCHITECTURE_AND_PLAN_2026-10-16.md` | 164 | 5380 |
-| `src/Daoris.Desktop/README.md` | 102 | 563 |
+| `src/Daoris.Desktop/README.md` | 103 | 566 |
