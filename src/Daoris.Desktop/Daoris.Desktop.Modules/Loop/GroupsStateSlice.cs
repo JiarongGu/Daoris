@@ -116,17 +116,24 @@ public static class GroupsStateSlice
     /// <summary>
     /// The look <c>SESSION_GROUPS</c> takes of every session (PUSH1c1): read now without trees, the loop's waits and calls laid on it,
     /// kept for Ask Daoris's room as the route's whole look is, then each tree as the facts' parts judged it.
-    /// </summary>
-    public static async Task<SessionLook> LookAsync(DriverLoop loop, ServiceClient service, CancellationToken ct)
+    /// <param name="only">The sessions asked (null for every one); only a look at every session is kept for Ask Daoris's room.</param>
+    /// <param name="walked">
+    /// Whether the asked sessions' trees are walked with git now, as an archive's judgement walks them (it never hides work a tree
+    /// gained since), instead of read as the facts judged them. The route and this slice take the one look here (PUSH1c3c).
+    /// </param>
+    public static async Task<SessionLook> LookAsync(
+        DriverLoop loop, ServiceClient service, CancellationToken ct, IReadOnlyCollection<string>? only = null, bool walked = false)
     {
         var config = DriverConfig.Load(loop.ConfigPath);
         var at = DateTimeOffset.UtcNow;
-        var look = await SessionGroups.LookAsync(service, config, DriverContext.DoorOf(loop, config), loop.Look.Latest, loop.Home, [], ct)
+        var look = await SessionGroups.LookAsync(
+                service, config, DriverContext.DoorOf(loop, config), loop.Look.Latest, loop.Home, walked ? only : [], ct)
             .ConfigureAwait(false);
         look = look with { Waits = loop.Look.Waits, Calls = RunningCalls.Of(loop.Events).Now() };
-        loop.SessionsLooked.Keep(look, at);
+        if (only is null) loop.SessionsLooked.Keep(look, at);
+        if (walked) return look;
         var trees = new SessionTrees(loop.Home);
-        return await HelpFacts.WithTreesAsync(loop.Facts, look, trees.Holds, trees.WorkAsync, ct: ct).ConfigureAwait(false);
+        return await HelpFacts.WithTreesAsync(loop.Facts, look, trees.Holds, trees.WorkAsync, only, ct: ct).ConfigureAwait(false);
     }
 
     /// <summary>

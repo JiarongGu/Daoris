@@ -17459,3 +17459,9 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **WAITKIND1 — a knowledge document: every place a new wait the person answers goes** (records; AUTONOMY1b3c's hand-back). waits.ts, WaitStrip, SessionHead, AttendedSession, WorkFrame, attention.ts, AttentionRow, AttentionBand, App's badge and door, the glossary's kinds and accepted budgets, HelpCoverageTests' `Starts`, the band's route-set test, the stories; the helper ask (MIXAGENT2c) as the exemplar. Proof: the document and its index row.
 
 **Outcome** 2026-10-20: `.claude/knowledge/person-waits.md` (local) lists every place a wait the person answers goes, in order, with the rules each keeps (one set of handlers, never an answer not offered, counted where it holds work, "waiting on you" taken), the helper's ask as the exemplar; its index row regenerated. Written by the parent from AUTONOMY1b3c's hand-back.
+
+## PUSH1c3c — `SESSION_GROUPS` takes its look through the groups slice's (2026-10-20, D182)
+
+> - [ ] **PUSH1c3c — `SESSION_GROUPS` takes its look through the groups slice's** (modules; D182's PUSH1c3a note). The route and the slice take the same look in two places (`SessionsRoutes.GroupsAsync`, `GroupsStateSlice.LookAsync`), which can drift; the route takes it through the slice's builder. Proof: `DriverModuleSessionsTests` and `GroupsStateSliceTests` unchanged and green, one look builder.
+
+**Outcome** 2026-10-20: `SessionsRoutes.GroupsAsync` takes its look through `GroupsStateSlice.LookAsync` (new `only` and `walked` parameters), its answer unchanged; an archive still walks its asked trees with git at the press. On Sonnet. Detail: D182's PUSH1c3c note.
