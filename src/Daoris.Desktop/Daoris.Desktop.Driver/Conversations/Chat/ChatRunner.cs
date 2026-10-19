@@ -315,6 +315,12 @@ public sealed class ChatRunner : IDisposable
     /// </summary>
     public event Action<string, IReadOnlyList<AcpConfigOption>>? OptionsChanged;
 
+    /// <summary>
+    /// An Ask Daoris start's receipt is on disk (HELPWIRED1, HELPWIREDLIVE1b): raised with the session's id once it is kept, so the
+    /// modules publish the help scope after it, never before, and an open <i>What it has</i> reads the new receipt, not the old.
+    /// </summary>
+    public event Action<string>? WiredKept;
+
     /// <summary>The earlier conversation's words, kept as this conversation's file, and the line its agent is told beside them.</summary>
     internal sealed record Handing(IReadOnlyList<KeptFile> Files, string Preface);
 
@@ -788,6 +794,7 @@ public sealed class ChatRunner : IDisposable
         {
             var catalog = PluginCatalog.Load(_home, AdapterSet.Built().Names);
             new HelpWired(_home).Keep(sessionId, HelpWired.Compose(handed, catalog, HelpGrants.Read(_home, catalog), DateTimeOffset.UtcNow));
+            WiredKept?.Invoke(sessionId);
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {

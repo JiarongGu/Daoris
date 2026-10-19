@@ -190,6 +190,47 @@ public sealed class StartInSyncTickTests : IDisposable
         Assert.Equal(1, service.SessionCount);
     }
 
+    /// <summary>
+    /// HEAVYRUN1b2a2: a driven start looks this machine's heavy gates up under the repository's name the quest carries (the name
+    /// <c>DAORIS_REPOSITORY</c> hands <c>run-heavy</c>), not the checkout's folder, which a repository registered under another name
+    /// does not share.
+    /// </summary>
+    [Fact]
+    public async Task A_start_is_told_the_heavy_gates_mapped_under_the_quests_repository_not_its_checkouts_folder()
+    {
+        var install = Path.Combine(_home, "install");
+        var bin = Path.Combine([install, .. Tools.InstallBinLayout]);
+        Directory.CreateDirectory(bin);
+        File.WriteAllText(Path.Combine(bin, "daoris-driver.cmd"), "");
+        var home = Path.Combine(install, DaorisHome.InstallData);
+        Directory.CreateDirectory(home);
+        File.WriteAllText(Path.Combine(home, "driver.json"), """{"heavyGates":{"engine":[{"name":"build","run":"dotnet build"},{"name":"e2e","run":"npm run e2e"}]}}""");
+        // The repository the quest names `engine` sits in a folder of another name.
+        var checkout = Path.Combine(_home, "shop-checkout");
+        Directory.CreateDirectory(checkout);
+        GitIn(checkout, "init", "-q", "-b", "main");
+        GitIn(checkout, "config", "user.email", "sync@example.com");
+        GitIn(checkout, "config", "user.name", "HEAVYRUN1b2a2");
+        File.WriteAllText(Path.Combine(checkout, "README.md"), "# engine\n");
+        GitIn(checkout, "add", "-A");
+        GitIn(checkout, "commit", "-qm", "the starting point");
+
+        await using var service = AskAndWaitTickTests.StandIn.Start(checkout);
+        var config = DriverConfig.Empty with
+        {
+            Drivable = ["engine"], Trees = ["engine"], Adapter = "stub", TimeoutMinutes = 1, PollSeconds = 1,
+            Commands = new Dictionary<string, IReadOnlyList<string>> { ["stub"] = ["node", Agent(), Log, "ask"] },
+        };
+        var adapters = AdapterSet.Built();
+        var driver = new Daoris.Driver.Driver(
+            new ServiceClient(service.Url, null), config, adapters, home, processes: new SessionProcesses(),
+            harnesses: new HarnessRoster(adapters, DaorisHome.Entry(home, HomeEntry.Harnesses)));
+
+        await driver.RunOnceAsync().WaitAsync(Poll.Patience);
+
+        Assert.Contains(HeavyTold.Words(["build", "e2e"]), Runs().First()["target"]!.GetValue<string>());
+    }
+
     private Daoris.Driver.Driver Driver(AskAndWaitTickTests.StandIn service, string mode)
     {
         var config = DriverConfig.Empty with

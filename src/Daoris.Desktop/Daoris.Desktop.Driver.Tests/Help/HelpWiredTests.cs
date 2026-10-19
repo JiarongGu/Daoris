@@ -266,12 +266,16 @@ public sealed class HelpWiredTests : IDisposable
         var goOn = new GoingOn(
             new PriorSession("help0004", HelpRoom.PathOf(_home), "working", Repository: HelpRoom.Repository) { HelpMode = HelpModes.Restricted },
             new ResumeAsk("conv-help0004", [], "and now?"));
+        // HELPWIREDLIVE1b: the event is raised once the receipt is on disk, so a subscriber publishing on it reads the new one.
+        var seen = new List<(string Id, int Receipts)>();
+        runner.WiredKept += id => seen.Add((id, new HelpWired(_home).Read(id).Count));
         using (ProcessStarts.Within(_ => null))
         {
             await runner.RunAsync(
                 "help0004", "and now?", adapters.Resolve("claude-code"), new HarnessSelection(Refusal: null, Profile: "work", Version: "2.1.300"),
                 config, runner.HelpPlace(HelpRoom.PathOf(_home), []), null, CancellationToken.None, goOn).WaitAsync(Within);
         }
+        Assert.Equal([("help0004", 2)], seen);
 
         var receipts = new HelpWired(_home).Read("help0004");
         Assert.Equal([HelpWired.GoingOn, HelpWired.New], receipts.Select(receipt => receipt.Start));
