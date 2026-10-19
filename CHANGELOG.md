@@ -5,6 +5,11 @@ with the version and date at release.
 
 ## Unreleased
 
+- `daoris-driver sessions archive` and `unarchive` run in a terminal while Daoris is open now ask Daoris's window instead of
+  acting beside it: a card under the window's title bar names the press, every value it carries and the program that sent
+  it, says Daoris cannot tell whether you ran it or an agent did, and offers *Refuse* and *Confirm*. The terminal says it
+  waits, then prints what it printed before; refused, or left two minutes, nothing is done and the command exits 1. At most
+  five wait at once. With Daoris closed, the commands act on their own as before.
 - A session's state reads the same in the list, its page and `daoris-driver sessions`:
   - An open conversation in a tree of its own offers its work to land in the Sessions list and the terminal once its turn
     ends, as its page already did.
