@@ -51,7 +51,7 @@ internal sealed class ChatHelp(ChatContext context, ChatRunner runner)
         string earlier, string adapter, DriverConfig config, HelpMachine machine,
         Func<string, string, Task>? onEnded = null, CancellationToken ct = default)
     {
-        var placed = await PlaceHelpFromAsync(earlier, adapter, config, ct).ConfigureAwait(false);
+        var placed = await PlaceHelpFromAsync(earlier, adapter, config, ct: ct).ConfigureAwait(false);
         return placed.SessionId is null
             ? new(null, placed.Message)
             : await runner.RunHelpAsync(placed, config, _ => Task.FromResult<HelpMachine?>(machine), onEnded, ct).ConfigureAwait(false);
@@ -63,7 +63,9 @@ internal sealed class ChatHelp(ChatContext context, ChatRunner runner)
     /// The room is read and the agent spawned after, by <see cref="ChatRunner.RunHelpAsync"/>, off the request. A conversation
     /// not placed comes back with a null id and the sentence why; its message is what the finished start says.
     /// </summary>
-    public async Task<HelpPlaced> PlaceHelpFromAsync(string earlier, string adapter, DriverConfig config, CancellationToken ct = default)
+    /// <param name="workspace">The workspace the person's window was on at the press (ASKSCOPE1a): the new one's, whose running one is set aside.</param>
+    public async Task<HelpPlaced> PlaceHelpFromAsync(
+        string earlier, string adapter, DriverConfig config, string? workspace = null, CancellationToken ct = default)
     {
         if (context.Closing) return new(null, "the application is closing, so no conversation starts now.");
 
@@ -75,9 +77,9 @@ internal sealed class ChatHelp(ChatContext context, ChatRunner runner)
             return new(null, $"nothing was said in conversation `{earlier}`, so there is nothing to start from.");
         }
 
-        if (await SetAsideHelpAsync(null, ct).ConfigureAwait(false) is { } answering) return new(null, $"{HeldWords.AnsweringWhy(answering)}.");
+        if (await SetAsideHelpAsync(null, workspace, ct).ConfigureAwait(false) is { } answering) return new(null, $"{HeldWords.AnsweringWhy(answering)}.");
 
-        var placed = await runner.PlaceHelpAsync(adapter, config, ct).ConfigureAwait(false);
+        var placed = await runner.PlaceHelpAsync(adapter, config, workspace, ct).ConfigureAwait(false);
         if (placed.SessionId is not { } id) return placed;
 
         try
@@ -95,14 +97,16 @@ internal sealed class ChatHelp(ChatContext context, ChatRunner runner)
     }
 
     /// <summary>
-    /// Set aside the room's running conversation (HELP1a holds one at a time): each other Ask Daoris conversation running here
-    /// is stopped, keeping its own id to go on later, and waited for until its record ends. One answering a turn is never
-    /// stopped: its id comes back instead (<see cref="HeldWords.Answering"/> says why).
+    /// Set aside its workspace's running conversation (HELP1a holds one at a time, ASKSCOPE1a one in each workspace): each other
+    /// Ask Daoris conversation of that workspace running here is stopped, keeping its own id to go on later, and waited for until
+    /// its record ends; another workspace's runs on. One answering a turn is never stopped: its id comes back instead
+    /// (<see cref="HeldWords.Answering"/> says why).
     /// </summary>
     /// <param name="goingOn">The conversation going on, which is never its own obstacle; null for a new one.</param>
-    public async Task<string?> SetAsideHelpAsync(string? goingOn, CancellationToken ct)
+    /// <param name="workspace">The workspace of the one going on or starting, as its record keeps it; null is <c>default</c>.</param>
+    public async Task<string?> SetAsideHelpAsync(string? goingOn, string? workspace, CancellationToken ct)
     {
-        foreach (var other in context.Rooms.Keys.Where(id => !string.Equals(id, goingOn, StringComparison.OrdinalIgnoreCase)).ToList())
+        foreach (var other in Aside(context.Rooms, goingOn, workspace))
         {
             if (runner.Taking(other))
             {
@@ -114,6 +118,19 @@ internal sealed class ChatHelp(ChatContext context, ChatRunner runner)
         }
 
         return null;
+    }
+
+    /// <summary>
+    /// Which of the conversations running here (<paramref name="rooms"/>, each by its workspace) <see cref="SetAsideHelpAsync"/>
+    /// sets aside: those of <paramref name="workspace"/>, never <paramref name="goingOn"/> itself.
+    /// </summary>
+    internal static IReadOnlyList<string> Aside(IReadOnlyDictionary<string, string> rooms, string? goingOn, string? workspace)
+    {
+        var circle = RemoteTarget.Workspace(workspace);
+        return [.. rooms
+            .Where(room => !string.Equals(room.Key, goingOn, StringComparison.OrdinalIgnoreCase)
+                           && string.Equals(RemoteTarget.Workspace(room.Value), circle, StringComparison.OrdinalIgnoreCase))
+            .Select(room => room.Key)];
     }
 
     /// <summary>

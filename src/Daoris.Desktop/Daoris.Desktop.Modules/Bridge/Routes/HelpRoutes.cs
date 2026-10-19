@@ -69,7 +69,7 @@ public sealed class HelpRoutes(DriverContext context)
                 return new { SessionId = running.Id, Message = $"Ask Daoris `{running.Id}` is carried on.", Running = true };
             }
 
-            var place = await chat.PlaceHelpAsync(helper, config, cancellationToken).ConfigureAwait(false);
+            var place = await chat.PlaceHelpAsync(helper, config, ct: cancellationToken).ConfigureAwait(false);
             if (place.SessionId is not { } id) return new { SessionId = (string?)null, place.Message, Running = false };
 
             starting.Placed(id);
@@ -1175,7 +1175,7 @@ public sealed class HelpRoutes(DriverContext context)
         await starting.Placing.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
-            var place = await chat.PlaceHelpFromAsync(id, helper, config, cancellationToken).ConfigureAwait(false);
+            var place = await chat.PlaceHelpFromAsync(id, helper, config, ct: cancellationToken).ConfigureAwait(false);
             if (place.SessionId is not { } placedId) return new { SessionId = (string?)null, place.Message, From = id };
 
             starting.Placed(placedId);

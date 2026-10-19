@@ -15,6 +15,12 @@ public sealed record ChatStart(string? SessionId, string Message);
 /// <param name="Message">The ledger's sentence, or why nothing was placed.</param>
 public sealed record HelpPlaced(string? SessionId, string Message)
 {
+    /// <summary>
+    /// The workspace it was placed in (ASKSCOPE1a, D158's ASKSCOPE1 note point 1): the one its window was on at the press, kept
+    /// by its record; <c>default</c> where the press named none.
+    /// </summary>
+    public string Workspace { get; init; } = RemoteTarget.DefaultWorkspace;
+
     internal ISessionAdapter? Adapter { get; init; }
 
     internal HarnessSelection? Selection { get; init; }
@@ -188,8 +194,10 @@ public sealed class ChatRunner : IDisposable
     }
 
     /// <summary>Place a new Ask Daoris conversation from an earlier one's words, its room read and agent spawned after (HELPSTART1b, <see cref="ChatHelp.PlaceHelpFromAsync"/>).</summary>
-    public Task<HelpPlaced> PlaceHelpFromAsync(string earlier, string adapter, DriverConfig config, CancellationToken ct = default) =>
-        _help.PlaceHelpFromAsync(earlier, adapter, config, ct);
+    /// <param name="workspace">The workspace the person's window was on at the press (ASKSCOPE1a), as <see cref="PlaceHelpAsync"/> takes it.</param>
+    public Task<HelpPlaced> PlaceHelpFromAsync(
+        string earlier, string adapter, DriverConfig config, string? workspace = null, CancellationToken ct = default) =>
+        _help.PlaceHelpFromAsync(earlier, adapter, config, workspace, ct);
 
     /// <summary>Start a new Ask Daoris conversation from an earlier one's words (ASKHIST1, <see cref="ChatHelp.StartHelpFromAsync"/>).</summary>
     public Task<ChatStart> StartHelpFromAsync(
@@ -509,7 +517,7 @@ public sealed class ChatRunner : IDisposable
         string adapter, DriverConfig config, HelpMachine machine,
         Func<string, string, Task>? onEnded = null, CancellationToken ct = default)
     {
-        var placed = await PlaceHelpAsync(adapter, config, ct).ConfigureAwait(false);
+        var placed = await PlaceHelpAsync(adapter, config, ct: ct).ConfigureAwait(false);
         return placed.SessionId is null
             ? new(null, placed.Message)
             : await RunHelpAsync(placed, config, _ => Task.FromResult<HelpMachine?>(machine), onEnded, ct).ConfigureAwait(false);
@@ -520,8 +528,13 @@ public sealed class ChatRunner : IDisposable
     /// the room's folder, which is the same folder for every conversation, so nothing is read or written yet. What the person's
     /// press waits for; <see cref="RunHelpAsync"/> reads the machine, writes the room and spawns the agent after.
     /// </summary>
+    /// <param name="workspace">
+    /// The workspace the person's window was on at the press (ASKSCOPE1a, D158's ASKSCOPE1 note point 1), captured there, so a
+    /// window that moves meanwhile moves nothing here: its record keeps it and its account is that workspace's. Null is a press
+    /// that named none, which opens as before, in <c>default</c>.
+    /// </param>
     /// <exception cref="DriverException">The agent names no harness this machine knows.</exception>
-    public async Task<HelpPlaced> PlaceHelpAsync(string adapter, DriverConfig config, CancellationToken ct = default)
+    public async Task<HelpPlaced> PlaceHelpAsync(string adapter, DriverConfig config, string? workspace = null, CancellationToken ct = default)
     {
         var resolved = _harnesses.Adapters.Resolve(adapter);
         if (!resolved.Interactive)
@@ -533,18 +546,19 @@ public sealed class ChatRunner : IDisposable
                 + "or `daoris driver helper <agent>`.");
         }
 
-        // The account the default circle names, then the machine's (D89): Ask Daoris belongs to no workspace.
-        var selection = await _harnesses.SelectAsync(resolved.Name, config, null, null, StartKind.Conversation, ct).ConfigureAwait(false);
+        // The account its workspace names, then the machine's (ASKSCOPE1a), as a start in that workspace takes one; a press that
+        // named none asks the machine's, as before (D89).
+        var selection = await _harnesses.SelectAsync(resolved.Name, config, workspace, null, StartKind.Conversation, ct).ConfigureAwait(false);
         if (!selection.Allowed) return new(null, selection.Refusal!);
 
         var (sessionId, message) = await _service
-            .OpenHelpAsync(resolved.Name, HelpRoom.PathOf(_home), selection.Version, selection.Profile, ct)
+            .OpenHelpAsync(resolved.Name, HelpRoom.PathOf(_home), selection.Version, selection.Profile, workspace, ct)
             .ConfigureAwait(false);
         if (sessionId is null) return new(null, message);
 
-        // Ask Daoris's opening rotates like a start, on the machine's order (TOOL4f, D125 §3.2), and says so first.
+        // Ask Daoris's opening rotates like a start, on its scope's order (TOOL4f, D125 §3.2), and says so first.
         RotatedOpening.Say(_service, _events, sessionId, resolved.Name, selection, carried: null);
-        return new(sessionId, message) { Adapter = resolved, Selection = selection };
+        return new(sessionId, message) { Workspace = RemoteTarget.Workspace(workspace), Adapter = resolved, Selection = selection };
     }
 
     /// <summary>
@@ -615,7 +629,7 @@ public sealed class ChatRunner : IDisposable
                 return new(null, "the application is closing, so no conversation starts now.");
             }
 
-            return await RunAsync(sessionId, placed.Message, resolved, selection, config, HelpPlace(room, reads), onEnded, ct)
+            return await RunAsync(sessionId, placed.Message, resolved, selection, config, HelpPlace(room, reads, placed.Workspace), onEnded, ct)
                 .ConfigureAwait(false);
         }
         finally
@@ -638,10 +652,11 @@ public sealed class ChatRunner : IDisposable
     /// accepted are allowed, any other write asked, which its mode refuses. HELP1a handed it none, since a browser brought up for
     /// a tool it may not use is a window for nothing; a server approved for it names the tools it may use.</para>
     /// </remarks>
-    internal ChatPlace HelpPlace(string room, IReadOnlyList<HelpRead> reads) => HelpPlaceIn(_home, room, reads);
+    /// <param name="workspace">The workspace its record keeps (ASKSCOPE1a): what setting it aside is judged by; null is <c>default</c>.</param>
+    internal ChatPlace HelpPlace(string room, IReadOnlyList<HelpRead> reads, string? workspace = null) => HelpPlaceIn(_home, room, reads, workspace);
 
     /// <inheritdoc cref="HelpPlace"/>
-    internal static ChatPlace HelpPlaceIn(string home, string room, IReadOnlyList<HelpRead> reads) =>
+    internal static ChatPlace HelpPlaceIn(string home, string room, IReadOnlyList<HelpRead> reads, string? workspace = null) =>
         new(
             HelpRoom.Repository, room,
             (file, id) =>
@@ -653,6 +668,7 @@ public sealed class ChatRunner : IDisposable
         {
             Keeps = true,
             ServersTo = PluginServerTo.Help,
+            Workspace = RemoteTarget.Workspace(workspace),
         };
 
     /// <summary>What differs between a conversation in a repository and Ask Daoris's in its room (HELP1a).</summary>
@@ -687,6 +703,12 @@ public sealed class ChatRunner : IDisposable
         /// person writes to it after it ended: a repository's conversation, and since ASKHIST1 Ask Daoris's too.
         /// </summary>
         public bool Keeps { get; init; }
+
+        /// <summary>
+        /// Ask Daoris's workspace, as its record keeps it (ASKSCOPE1a): one runs at a time in each, so a new one or one going on
+        /// sets aside only its own workspace's. Null for a repository's conversation.
+        /// </summary>
+        public string? Workspace { get; init; }
     }
 
     /// <summary>
@@ -846,8 +868,9 @@ public sealed class ChatRunner : IDisposable
         // moves when the process does. Watched on an unbound token deliberately — a chat is not ended
         // by the request that started it.
         _context.Talking[sessionId] = resolved;
-        // The room holds one at a time (ASKHIST1): going back to an earlier conversation sets this one aside first.
-        if (string.Equals(place.Name, HelpRoom.Repository, StringComparison.Ordinal)) _context.Rooms[sessionId] = 0;
+        // One at a time in each workspace (ASKHIST1, ASKSCOPE1a): going back to an earlier conversation of its workspace sets this one
+        // aside first, and one of another workspace's leaves it be.
+        if (string.Equals(place.Name, HelpRoom.Repository, StringComparison.Ordinal)) _context.Rooms[sessionId] = RemoteTarget.Workspace(place.Workspace);
 
         // 🔴 On the protocol door a conversation is ONE session held over the wire (CONV3b): opened
         // once, each message a turn on it. It used to be spawned as a pipe, and a person's words went

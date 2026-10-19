@@ -411,7 +411,8 @@ internal sealed class ChatGoOn
             return CannotGoOn(record, account, adapter.Name);
         }
 
-        if (await _help.SetAsideHelpAsync(sessionId, ct).ConfigureAwait(false) is { } answering) return Held(sessionId, HeldWords.Answering(answering));
+        // Its own workspace's running one alone (ASKSCOPE1a): another workspace's runs on beside it.
+        if (await _help.SetAsideHelpAsync(sessionId, record.Workspace, ct).ConfigureAwait(false) is { } answering) return Held(sessionId, HeldWords.Answering(answering));
 
         // 🔴 The ledger's one move out of an ended state (MSG1a, D137 §2.3), before anything is spawned: it holds the room again,
         // and refuses where another conversation holds it, one another process here runs among them.
@@ -435,7 +436,7 @@ internal sealed class ChatGoOn
         var (room, reads) = await _help.HelpRoomNowAsync(sessionId, ct).ConfigureAwait(false);
         return await _runner.RunAsync(
             sessionId, $"Ask Daoris `{sessionId}` goes on with your words in its own conversation.", adapter, selection, config,
-            _runner.HelpPlace(room, reads), onEnded, ct, new GoingOn(record, ask)).ConfigureAwait(false);
+            _runner.HelpPlace(room, reads, record.Workspace), onEnded, ct, new GoingOn(record, ask)).ConfigureAwait(false);
     }
 
     /// <summary>
