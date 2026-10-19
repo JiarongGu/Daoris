@@ -145,8 +145,38 @@ public sealed class SecondaryForm : OptimizedForm
             return;
         }
 
-        Text = WaitingBadge.Title(count);
+        _waitingCount = count;
+        Text = WaitingBadge.Title(count, _workspace);
         _badge.Show(count, description);
+    }
+
+    private int _waitingCount;
+    private string? _workspace;
+
+    /// <summary>
+    /// The workspace this main window's page holds, worn in its title after the application's name (MAINWINDOWS3b). From any
+    /// thread; a window that is not a main window keeps its own name.
+    /// </summary>
+    public void ShowWorkspace(string? workspace)
+    {
+        if (!_main || IsDisposed) return;
+        if (InvokeRequired)
+        {
+            if (!IsHandleCreated) return;
+            try
+            {
+                BeginInvoke(() => ShowWorkspace(workspace));
+            }
+            catch (InvalidOperationException)
+            {
+                // The handle went between the look and the post.
+            }
+
+            return;
+        }
+
+        _workspace = workspace;
+        Text = WaitingBadge.Title(_waitingCount, workspace);
     }
 
     /// <summary>
