@@ -17395,3 +17395,9 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **PUSH1c2a — work milestones pushed, the host half** (modules, web; D182; after WAITSAY1c2). A slice partitioned per repository from `HelpFacts.Work` (woken per repository by refs, all by the ledger's `sessions`), the unit variants derived with `select`; `Held` (a file read) pushed or kept pulled, decided. Proof: a tick reads no `WORK_STATE`; a refs move judges its repository alone.
 
 **Outcome** 2026-10-20: the `work` slice pushes `WORK_STATE`'s units, recoveries and unread lines per part from the machine's facts' work parts (`HelpFacts.WorkParts`), beside a `<held>` partition read from the node records, with no git or service call; nothing is pushed for a part never judged, and the slice is not judged until every part the service names has been; every field is named by an allow-list held by a twin test of the route; a `landing` or `sweep` press wakes every part afresh, `sessions` under the rest. The page half is PUSH1c2b. On Opus: about 207 tool calls, 65 minutes. Detail: D182's PUSH1c2a note.
+
+## LOOKSLOW2 — `look.slow` says its queue so far (2026-10-20, D181)
+
+> - [ ] **LOOKSLOW2 — `look.slow` says its queue so far** (driver; the machine-log design §4; D181's QUEUEDTREE1 and LOOKWAIT1b note). A stage named slow while it runs cannot yet say whether it waits for places or works; an additive `queued` field tells the two apart. Proof: a `LookStagesTests` row.
+
+**Outcome** 2026-10-20: `look.slow` carries an additive `queued`, the stage's queue so far with a wait still open counted (`StageSpan.QueuedSoFar`), written always, 0 included, so a reader tells "not waiting" from a missing field. On Sonnet: about 19 tool calls, 8 minutes. Detail: D181's LOOKSLOW2 line; the machine-log design's `look.slow` row.
