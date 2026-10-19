@@ -5,6 +5,11 @@ with the version and date at release.
 
 ## Unreleased
 
+- Ask Daoris can act on this machine itself, if you choose. `daoris-driver help mode full` runs it with full access from its
+  next start, in its agent's own mode that asks nothing (Claude Code's `bypassPermissions`, Codex's full access). It then has a
+  shell, file edits, Daoris's commands and every plugin server here, and your own denies still hold where its agent takes them.
+  Restricted, the default, is Ask Daoris as it was: it reads and proposes, and you apply. `daoris-driver help mode restricted`
+  takes it back. On an agent with no such mode, the DeepSeek Harness or a plugin's, it does not start in full access, and says so.
 - Several tasks no longer wait for each other to start. A task whose start is slow (its tree being made, its account being
   chosen, a plugin taking its time to answer) holds only itself: a task published meanwhile starts beside it, and the slow one
   is still started once, in its place under your limit of sessions at once. The sync with a remote runs on its own, so a remote
