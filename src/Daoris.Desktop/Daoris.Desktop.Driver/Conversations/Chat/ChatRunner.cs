@@ -727,13 +727,46 @@ public sealed class ChatRunner : IDisposable
     /// under another is told on its console that the switch takes its next start. Nothing it runs with changes: a live switch of
     /// its harness's mode alone would leave the rules, servers and room its start handed for the old one (D183's HELPMODE1a2 note).
     /// </summary>
+    /// <remarks>
+    /// HELPMODE1a5: a narrowing (full to restricted) is the exception, since full access is never kept past the person's choice
+    /// (D183 point 2): the conversation ends at its turn's end, never mid-turn, and at once where it is idle; its next words resume
+    /// it restricted, as any go-on reads the mode chosen then and says the change. A widening still takes the next start.
+    /// </remarks>
     public void HelpModeChosen(string mode)
     {
         foreach (var (sessionId, running) in _context.HelpModes)
         {
-            if (HelpModes.TakesNextStart(running, mode) is { } line) _output?.Append(sessionId, line);
+            if (HelpModes.Recorded(running) == HelpModes.Recorded(mode))
+            {
+                // Chosen back to what it runs under: an end scheduled for the turn's end is withdrawn.
+                _context.HelpEnding.TryRemove(sessionId, out _);
+                continue;
+            }
+
+            if (HelpModes.Narrows(running, mode))
+            {
+                var idle = !Taking(sessionId);
+                _output?.Append(sessionId, HelpModes.EndsForNarrowing(idle));
+                if (idle) Finish(sessionId);
+                else _context.HelpEnding[sessionId] = true;
+            }
+            else if (HelpModes.TakesNextStart(running, mode) is { } line) _output?.Append(sessionId, line);
         }
     }
+
+    /// <summary>
+    /// Where a conversation's turns stand (HELPMODE1a5): one a narrowing switch scheduled to end is ended once nothing runs or
+    /// waits, as its turn has ended. Called by each start's turns, under their lock, so it ends off it.
+    /// </summary>
+    internal void HelpTurnChanged(string sessionId, ChatQueue queue)
+    {
+        if (queue.Taking || queue.Opening || queue.Queued.Count > 0) return;
+        if (!_context.HelpEnding.TryRemove(sessionId, out _)) return;
+        _ = Task.Run(() => Finish(sessionId));
+    }
+
+    /// <summary>The runner's shared state, for tests that stand a conversation up without a spawn.</summary>
+    internal ChatContext Context => _context;
 
     /// <summary>
     /// Keep what an Ask Daoris start handed as its receipt (HELPWIRED1, D183 point 4), each server's approval and what restricted mode
@@ -1052,6 +1085,8 @@ public sealed class ChatRunner : IDisposable
         void Changed(ChatQueue queue)
         {
             QueueChanged?.Invoke(sessionId, queue);
+            // A full-access conversation the person narrowed mid-turn ends as its turn ends (HELPMODE1a5).
+            HelpTurnChanged(sessionId, queue);
             // A conversation asked to go on with another agent while it talked is handed over as its turn ends (MIXAGENT1a-i).
             _handOver.Due(sessionId, queue, config, onEnded);
             // One over its account's usage curve goes on with another account of its agent as its turn ends (SWITCH1c-ii), judged once.
@@ -1640,6 +1675,7 @@ public sealed class ChatRunner : IDisposable
             _context.Turned.TryRemove(sessionId, out _);
             _context.Rooms.TryRemove(sessionId, out _);
             _context.HelpModes.TryRemove(sessionId, out _);
+            _context.HelpEnding.TryRemove(sessionId, out _);
             _context.Handing.TryRemove(sessionId, out _);
             _context.Browsers.TryRemove(sessionId, out _);
             _toldProcess.TryRemove(sessionId, out _);
