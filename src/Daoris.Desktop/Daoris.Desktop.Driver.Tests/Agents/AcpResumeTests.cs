@@ -352,6 +352,37 @@ public sealed class AcpResumeTests
     }
 
     /// <summary>
+    /// 🔴 HELPMODE1a4 (D183 point 3): a resume the agent answers with no object names no modes, so a posture marked required (Ask
+    /// Daoris's full access) fails the open plainly, as it does on a new session; it was skipped, and the conversation went on in
+    /// the agent's own narrower mode under the full label. Nothing is prompted.
+    /// </summary>
+    [Fact]
+    public async Task A_resume_answered_with_no_object_fails_a_required_posture()
+    {
+        var agent = Answering(LoadOnly, (frame, _) => Ok(frame, "null"));
+
+        var refused = await Assert.ThrowsAsync<DriverException>(() => new AcpSession(agent.Incoming, agent.Outgoing, _ => { }, posture: "!bypassPermissions")
+            .RunAsync("D:/trees/s-1", "Port 8080.", CancellationToken.None, resume: "0b5e7c1a"));
+
+        Assert.Contains("`bypassPermissions`", refused.Message);
+        Assert.Contains("it offers no modes", refused.Message);
+        Assert.DoesNotContain("session/prompt", agent.Methods);
+        Assert.DoesNotContain("session/set_mode", agent.Methods);
+    }
+
+    /// <summary>A posture not marked required keeps its leniency on such a resume (D81): left alone, and the conversation goes on.</summary>
+    [Fact]
+    public async Task A_resume_answered_with_no_object_leaves_a_posture_not_required_alone()
+    {
+        var agent = Answering(LoadOnly, (frame, _) => Ok(frame, "null"));
+
+        await new AcpSession(agent.Incoming, agent.Outgoing, _ => { }, posture: "default")
+            .RunAsync("D:/trees/s-1", "Port 8080.", CancellationToken.None, resume: "0b5e7c1a");
+
+        Assert.Equal(["initialize", "session/load", "session/prompt", "session/close"], agent.Methods);
+    }
+
+    /// <summary>
     /// The id a new session's answer names is told the moment it arrives (D131 §1), so it is kept before the first turn can
     /// fail or park.
     /// </summary>
