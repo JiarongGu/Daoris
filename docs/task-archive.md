@@ -17465,3 +17465,9 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **PUSH1c3c — `SESSION_GROUPS` takes its look through the groups slice's** (modules; D182's PUSH1c3a note). The route and the slice take the same look in two places (`SessionsRoutes.GroupsAsync`, `GroupsStateSlice.LookAsync`), which can drift; the route takes it through the slice's builder. Proof: `DriverModuleSessionsTests` and `GroupsStateSliceTests` unchanged and green, one look builder.
 
 **Outcome** 2026-10-20: `SessionsRoutes.GroupsAsync` takes its look through `GroupsStateSlice.LookAsync` (new `only` and `walked` parameters), its answer unchanged; an archive still walks its asked trees with git at the press. On Sonnet. Detail: D182's PUSH1c3c note.
+
+## REHLANE2 — the rehearsals run beside the suites, not after them (2026-10-20, D180)
+
+> - [ ] **REHLANE2 — the rehearsals run beside the suites, not after them** (tools; D180's budget note). The full set ran the release, family and deployment rehearsals after the `Process` halves; each has its own scratch and builds, so they can run beside the suites (ports and scratch apart, REHEARSEPORT1). Proof: the merge test's lane tables; a full set's wall with the rehearsals beside.
+
+**Outcome** 2026-10-20: the release rehearsal is of `BESIDE_GIT_HALF`: it runs beside the driver's git half before the family rehearsal and never beside it (the family runs the CLI's bin, which the release's pack shadows with a staged `dist/`; no desktop test reads what a pack stages, which a merge test now holds), so at most two Process-lane gates run at once; the deployment rehearsal stays alone and last (REHLANE2b). A full set's wall with it beside is not yet measured. On Opus: about 129 tool calls, 32 minutes. Detail: D180's REHLANE2 note; D115's REHLANE1 line.
