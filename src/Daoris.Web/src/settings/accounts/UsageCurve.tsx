@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button, Icon, Inline } from '../../design/ui';
 import { windowName } from './accounts';
-import { type CurvePoint, curveProblem, curveSentence, MOST_POINTS, smartCurve } from './usageCurves';
+import { type CurvePoint, MOST_POINTS } from './usageCurves';
 
 // The usage curve as the switch's setting shows it (SWITCH1d; D165 point 2; the switch design §5): a small chart a window, the
 // curve in effect with each account of the list where it stands now, and the editor *My own curve* opens on a window's points.
@@ -17,10 +17,14 @@ const PLOT = { width: BOX.width - BOX.left - BOX.right, height: BOX.height - BOX
 const xOf = (gone: number) => BOX.left + (Math.min(Math.max(gone, 0), 100) / 100) * PLOT.width;
 const yOf = (used: number) => BOX.top + (1 - Math.min(Math.max(used, 0), 100) / 100) * PLOT.height;
 
-/** A curve across the whole window: its points, flat from the window's start to the first and from the last to its end. */
+/**
+ * A curve across the whole window: its points, flat from the window's start to the first and from the last to its end. None where
+ * no curve was answered (a shell older than PUSH1e), which draws no line.
+ */
 function across(points: readonly CurvePoint[]): CurvePoint[] {
-  const first = points[0]!;
-  const last = points[points.length - 1]!;
+  const first = points[0];
+  const last = points[points.length - 1];
+  if (!first || !last) return [];
   return [
     ...(first[0] > 0 ? [[0, first[1]] as CurvePoint] : []),
     ...points,
@@ -67,15 +71,19 @@ export function CurveChart({ window, points, own, accounts }: {
             {`${gone}%`}
           </text>
         ))}
-        <path d={room} className="fill-accent opacity-10" />
-        <path
-          d={path}
-          data-curve={line.map(([gone, used]) => `${gone}:${used}`).join(' ')}
-          className="fill-none stroke-accent"
-          strokeWidth={2}
-          strokeLinejoin="round"
-          strokeLinecap="round"
-        />
+        {line.length > 0 && (
+          <>
+            <path d={room} className="fill-accent opacity-10" />
+            <path
+              d={path}
+              data-curve={line.map(([gone, used]) => `${gone}:${used}`).join(' ')}
+              className="fill-none stroke-accent"
+              strokeWidth={2}
+              strokeLinejoin="round"
+              strokeLinecap="round"
+            />
+          </>
+        )}
         {own && points.map(([gone, used], at) => (
           <circle key={`p${at}`} data-point cx={xOf(gone)} cy={yOf(used)} r={4} className="fill-accent stroke-page" strokeWidth={2} />
         ))}
@@ -110,18 +118,21 @@ const numberOf = (text: string) => (text.trim() === '' ? Number.NaN : Number(tex
 /**
  * **A window's own points, edited** (the switch design §2, §5): *My own curve*'s points for one window, `[time gone, used]`, a
  * row each, added after the last and taken out, and saved whole as `--curve <window>=…` saves them. A window the person set no
- * points for takes Daoris's curve, and its own begin from Daoris's points. Points that break a rule are said in the door's own
- * sentence (`ACCOUNT_USE_CURVE`, the page's twin of its rules) and not saved. It holds only the points being typed; keyed by the
- * saved points, so a save that lands starts it afresh.
+ * points for takes Daoris's curve, and its own begin from Daoris's points, as the accounts' answer carries them. Points that break a
+ * rule are refused by the door (`ACCOUNT_USE_CURVE`; the rules are .NET's alone, PUSH1e), and its sentence is said under the rows,
+ * which stay as typed. It holds only the points being typed; keyed by the saved points, so a save that lands starts it afresh.
  */
-export function CurvePoints({ window, points, hint, busy, onSave }: {
+export function CurvePoints({ window, points, start, hint, busy, onSave }: {
   window: string;
   /** The person's points for this window, or null where it takes Daoris's curve. */
   points: CurvePoint[] | null;
+  /** The curve in effect on this window, as .NET resolves it: where the person set none, Daoris's, which their own begin from. */
+  start: CurvePoint[];
   /** The terminal's twin for this window. */
   hint: string;
   busy?: boolean;
-  onSave: (points: CurvePoint[]) => void;
+  /** Save the points; `refused` is told the door's refusal, in the reader's language, to say under the rows. */
+  onSave: (points: CurvePoint[], refused: (problem: string) => void) => void;
 }) {
   const { t } = useTranslation();
   const [draft, setDraft] = useState<Draft | null>(points ? draftOf(points) : null);
@@ -133,7 +144,7 @@ export function CurvePoints({ window, points, hint, busy, onSave }: {
       <div className="min-w-0">
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
           <p className="m-0 text-small text-ink-soft">{t('harness.curve.daoris', { window: name })}</p>
-          <Button variant="ghost" disabled={busy} onClick={() => setDraft(draftOf(smartCurve(window) ?? [[0, 90]]))}>
+          <Button variant="ghost" disabled={busy || start.length === 0} onClick={() => setDraft(draftOf(start))}>
             {t('harness.curve.setOwn')}
           </Button>
         </div>
@@ -153,13 +164,10 @@ export function CurvePoints({ window, points, hint, busy, onSave }: {
     setDraft([...draft, [String(after), last[1]]]);
   };
   const save = () => {
-    const parsed = draft.map(([elapsed, used]) => [numberOf(elapsed), numberOf(used)] as CurvePoint);
-    const wrong = curveProblem({ [window]: parsed });
-    if (wrong) {
-      setProblem(curveSentence(wrong));
-      return;
-    }
-    onSave(parsed);
+    // An empty field is no number, which goes as null and is the door's to refuse as no point.
+    const parsed = draft.map(([elapsed, used]) => [numberOf(elapsed), numberOf(used)].map((value) => (Number.isFinite(value) ? value : null)) as CurvePoint);
+    setProblem(null);
+    onSave(parsed, setProblem);
   };
   const field = 'w-[4.5rem] rounded-control border border-line-strong bg-raised px-2 py-1 text-right text-body text-ink';
 

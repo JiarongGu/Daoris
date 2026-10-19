@@ -555,12 +555,14 @@ describe('what an account’s agent last said, a cell a window', () => {
       { window: 'session', used: 0.88, reset: RESET, standing: 'warned', credits: false, seen: SEEN },
     ],
   };
-  // SWITCH1d: the five-hour window read from its agent, the week said by a session, 62% of it used.
+  // SWITCH1d: the five-hour window read from its agent, the week said by a session, 62% of it used; each against its scope's curve
+  // as .NET judges it and the accounts' answer carries it (PUSH1e): the smart curve's 90% on the session, and 43 hours of the week's
+  // 168 gone, so the smart week stands at 46% of it and 62% is over it.
   const measured = {
     seen: SEEN,
     windows: [
-      { window: 'session', used: 0.88, reset: RESET, credits: false, seen: SEEN, source: 'read' as const },
-      { window: 'weekly', used: 0.62, reset: WEEK, credits: false, seen: EARLIER, source: 'said' as const },
+      { window: 'session', used: 0.88, reset: RESET, credits: false, seen: SEEN, source: 'read' as const, curve: 90, over: false },
+      { window: 'weekly', used: 0.62, reset: WEEK, credits: false, seen: EARLIER, source: 'said' as const, curve: 46, over: true },
     ],
   };
   const signedIn = accountState({ login: 'in', read: TEN }, null, true);
@@ -646,25 +648,24 @@ describe('what an account’s agent last said, a cell a window', () => {
    * SWITCH1d (the switch design §5): each window against its scope's curve now, the curve's value said, a window over it said so
    * and drawn in the warning hue; and where its reading came from, read from its agent or said by a session, with its age.
    */
-  it('measures each window against its scope’s curve now, and says where its reading came from', () => {
-    const [session, weekly] = usageCells({ said: measured }, signedIn, { now: NOW, use: { switch: 'smart' }, product: 'Claude Code' })!.cells;
+  it('says each window against its scope’s curve now as .NET judged it, and where its reading came from', () => {
+    const [session, weekly] = usageCells({ said: measured }, signedIn, { now: NOW, product: 'Claude Code' })!.cells;
     expect(session).toMatchObject({
       curve: 'its curve allows 90% now', over: false, warned: false,
       times: [`resets ${clockOf(RESET, NOW)}`, `read from Claude Code ${ago(SEEN)}`],
     });
-    // 43 hours of the week's 168 gone: the smart week stands at 46% of it, so 62% is over it.
     expect(weekly).toMatchObject({
       curve: 'over its curve\'s 46% now', over: true, warned: false,
       times: [`resets ${clockOf(WEEK, NOW)}`, `said by a session ${ago(EARLIER)}`],
     });
-    // The person's own curve under `curve`: the session flat at 80, so 88% is over it.
-    expect(usageCells({ said: measured }, signedIn, { now: NOW, use: { switch: 'curve', curve: { session: [[0, 80]] } } })!.cells[0])
-      .toMatchObject({ curve: 'over its curve\'s 80% now', over: true });
-    // No scope handed, as your own sign-in's row, which no list holds: no curve, and nothing over it.
-    expect(usageCells({ said: measured }, signedIn, { now: NOW })!.cells[0]).not.toHaveProperty('curve');
-    // A window this build has no curve for is not measured.
-    const odd = { seen: SEEN, windows: [{ window: '90-minute', used: 0.4, reset: RESET, credits: false, seen: SEEN }] };
-    expect(usageCells({ said: odd }, signedIn, { now: NOW, use: { switch: 'smart' } })!.cells[2]).not.toHaveProperty('curve');
+    // The person's own curve under `curve`, as judged: the session flat at 80, so 88% is over it.
+    const own = { ...measured, windows: [{ ...measured.windows[0]!, curve: 80, over: true }] };
+    expect(usageCells({ said: own }, signedIn, { now: NOW })!.cells[0]).toMatchObject({ curve: 'over its curve\'s 80% now', over: true });
+    // Nothing judged against a curve, as your own sign-in's row, which no list holds, or a shell older than PUSH1e: no curve.
+    expect(usageCells({ said }, signedIn, { now: NOW })!.cells[0]).not.toHaveProperty('curve');
+    // A window this build has no curve for is not measured: its verdicts are null.
+    const odd = { seen: SEEN, windows: [{ window: '90-minute', used: 0.4, reset: RESET, credits: false, seen: SEEN, curve: null, over: null }] };
+    expect(usageCells({ said: odd }, signedIn, { now: NOW })!.cells[2]).not.toHaveProperty('curve');
   });
 
   it('says a cool-off’s reset unknown where Daoris chose the wait and no window reported one, and since when it is offered again', () => {
@@ -684,7 +685,7 @@ describe('what an account’s agent last said, a cell a window', () => {
       ['每周', '已用 15%', `${clockOf(WEEK, NOW)} 重置`, `${ago(EARLIER)}由会话报告`],
     ]);
     // SWITCH1d: against the curve, and read from its agent.
-    const [session, weekly] = usageCells({ said: measured }, signedIn, { now: NOW, use: { switch: 'smart' }, product: 'Claude Code' })!.cells;
+    const [session, weekly] = usageCells({ said: measured }, signedIn, { now: NOW, product: 'Claude Code' })!.cells;
     expect([session!.curve, session!.times[1], weekly!.curve]).toEqual(['曲线此刻允许 90%', `${ago(SEEN)}从 Claude Code 读取`, '超出其曲线此刻的 46%']);
     expect(usageCells({}, signedIn, { fixed: true, now: NOW })!.cells[0]!.reading).toBe('未知');
     expect(usageCells({}, cooling(false), { now: NOW })!.notes).toEqual(['重置时间未知']);

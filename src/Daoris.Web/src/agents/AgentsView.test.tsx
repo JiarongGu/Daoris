@@ -2050,8 +2050,9 @@ describe('how accounts are used', () => {
         ...ACCOUNTS.agents[0]!, reads: true,
         accounts: [
           {
+            // As .NET judges it beside the reading (PUSH1e): the smart curve's five-hour window is flat at 90%, so 95% is over it.
             name: 'personal', running: 0,
-            said: { seen, windows: [{ window: 'session', used: 0.95, reset, standing: null, credits: false, seen, source: 'read' }] },
+            said: { seen, windows: [{ window: 'session', used: 0.95, reset, standing: null, credits: false, seen, source: 'read', curve: 90, over: true }] },
           },
           { name: 'work', running: 0 },
         ],
@@ -2062,7 +2063,6 @@ describe('how accounts are used', () => {
     place();
 
     const personal = await screen.findByRole('listitem', { name: 'personal' });
-    // The smart curve's five-hour window is flat at 90%, so 95% is over it.
     expect(await within(personal).findByText(/over its curve's 90% now/)).toBeTruthy();
     expect(within(personal).getByText('read from Claude Code 20m ago')).toBeTruthy();
     const readsOf = () => invoke.mock.calls.filter(([, type]) => type === 'ACCOUNTS_READ');
@@ -2079,7 +2079,8 @@ describe('how accounts are used', () => {
     const reset = new Date(Date.now() + 2 * 3_600_000).toISOString();
     const seen = new Date(Date.now() - 10_000).toISOString();
     const fresh = (name: string) => ({
-      name, running: 0, said: { seen, windows: [{ window: 'session', used: 0.2, reset, standing: null, credits: false, seen, source: 'read' }] },
+      name, running: 0,
+      said: { seen, windows: [{ window: 'session', used: 0.2, reset, standing: null, credits: false, seen, source: 'read', curve: 90, over: false }] },
     });
     invoke.mockImplementation(answer(ROSTER, { agents: [{ ...ACCOUNTS.agents[0]!, reads: true, accounts: [fresh('personal'), fresh('work')] }] }));
     const { unmount } = place();

@@ -9,7 +9,7 @@ import {
   coolingLine, heldLine, moved, nextLine, nothingSaid, offeredLine, ownLine, saidLine, switchOf, used,
 } from './accounts';
 import { type CurveAccount, CurveChart, CurvePoints } from './UsageCurve';
-import { CURVE_WINDOWS, curveFor, curveNow, elapsed, ownPoints, type Switch } from './usageCurves';
+import { CURVE_WINDOWS, goneOf, ownPoints, type Switch } from './usageCurves';
 
 // How each agent's accounts are used, as Settings → Agents shows it (TOOL4g; D125 §2.4, §3.7, §6; D130 §3.2, §9, §16.6).
 // Molecules: every state arrives as props, so a cooling account, a scope with six accounts, a workspace on this machine's
@@ -162,8 +162,11 @@ export function NextStartRow({ agent, product, scope, labelOf, isKey, workspace 
 export type ScopeActs = {
   /** A list written whole, in order; none clears it, and its settings with it. */
   onOrder: (workspace: string | null, list: string[]) => void;
-  /** How the list is used: one setting at a time, a field left out unchanged. */
-  onUse: (workspace: string | null, change: AccountUseChange) => void;
+  /**
+   * How the list is used: one setting at a time, a field left out unchanged. `refused`, where handed, is told the door's refusal in
+   * the reader's language in place of the toast: the curve's editor says it under the rows it keeps (PUSH1e: the rules are .NET's).
+   */
+  onUse: (workspace: string | null, change: AccountUseChange, refused?: (problem: string) => void) => void;
   /** A workspace returned to this machine's accounts: its default, list and settings cleared at once. */
   /** Told how it ended, so the ask stays open while it runs and says a refusal inside it (UXFIX2b3c). */
   onInherit: (workspace: string, answered: Answered) => void;
@@ -241,7 +244,11 @@ export function ScopeEditor({ agent, product, scope, accounts, workspace, busy, 
                 {row.used && scope.use.keep === row.name && <Pill tone="neutral">{t('harness.use.kept')}</Pill>}
                 {/* What passes it at a start, in the curve's words (SWITCH1d): over its curve, its limit reached, or credits. */}
                 {row.used && near && (
-                  <Tip content={saidLine(agent.accounts.find((each) => each.name === row.name)?.said, { use: scope.use })}>
+                  <Tip
+                    content={saidLine(agent.accounts.find((each) => each.name === row.name)?.said, {
+                      over: scope.overCurve?.find((each) => each.account === row.name) ?? null,
+                    })}
+                  >
                     <span><Pill tone="neutral">{t(`harness.use.passed.${near.by}`)}</Pill></span>
                   </Tip>
                 )}
@@ -371,13 +378,14 @@ function SwitchRow({ agent, product, scope, labelOf, workspace, busy, acts, now 
   const hinted = { agent: agent.agent, scoped: scopedFlag(workspace) };
   const switched = switchOf(scope.use);
   const own = (window: string) => ownPoints(scope.use, window);
-  // Each account of the list on a window now, where its agent said a share of it.
-  const placed = (window: string): CurveAccount[] => scope.list.flatMap((name) => {
-    const said = agent.accounts.find((account) => account.name === name)?.said?.windows.find((each) => each.window === window);
-    const gone = said ? elapsed(window, said.reset, now) : null;
-    const curve = said ? curveNow(scope.use, window, said.reset, now) : null;
-    if (!said || typeof said.used !== 'number' || gone === null || curve === null) return [];
-    return [{ name, label: labelOf(name), gone, used: said.used * 100, over: curve - said.used * 100 < 0 }];
+  // Each account of the list on a window now, where .NET measured its agent's share against the scope's curve (PUSH1e): placed by
+  // when the window began and when it resets, as answered, over it as judged.
+  const placed = (window: string): CurveAccount[] => (scope.measured ?? []).flatMap((measured) => {
+    if (measured.window !== window || !scope.list.includes(measured.account)) return [];
+    const said = agent.accounts.find((account) => account.name === measured.account)?.said?.windows.find((each) => each.window === window);
+    const gone = said ? goneOf(said.from, said.reset, now) : null;
+    if (!said || typeof said.used !== 'number' || gone === null) return [];
+    return [{ name: measured.account, label: labelOf(measured.account), gone, used: said.used * 100, over: measured.over }];
   });
   return (
     <SettingRow
@@ -404,7 +412,8 @@ function SwitchRow({ agent, product, scope, labelOf, workspace, busy, acts, now 
           <div key={window} className="flex min-w-0 flex-col gap-2">
             <CurveChart
               window={window}
-              points={curveFor(scope.use, window) ?? []}
+              // The curve in effect, as .NET resolves it (PUSH1e); none drawn from a shell older than that.
+              points={scope.curves?.[window] ?? []}
               own={switched === 'curve' && own(window) !== null}
               accounts={placed(window)}
             />
@@ -414,12 +423,14 @@ function SwitchRow({ agent, product, scope, labelOf, workspace, busy, acts, now 
                 key={JSON.stringify(own(window))}
                 window={window}
                 points={own(window)}
+                // Where the person sets none, the curve in effect is Daoris's, which their own begins from.
+                start={scope.curves?.[window] ?? []}
                 busy={busy}
                 hint={t('harness.curve.hint', {
                   ...hinted, window,
                   points: own(window)?.map(([gone, used]) => `${gone}:${used}`).join(',') ?? '<elapsed>:<used>,…',
                 })}
-                onSave={(points) => acts.onUse(where, { curve: { [window]: points } })}
+                onSave={(points, refused) => acts.onUse(where, { curve: { [window]: points } }, refused)}
               />
             )}
           </div>

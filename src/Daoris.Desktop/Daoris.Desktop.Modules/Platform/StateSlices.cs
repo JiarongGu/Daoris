@@ -241,6 +241,7 @@ public sealed class StateSlice
             // Told outside the lock and inside the judgement's turn: no other judgement's pushes come between. A delta carries no
             // coalesce key: coalesced into a later push, what it carried would be lost.
             foreach (var (_, push) in moves) Tell(PushType, push, push.BaseSeq is null ? $"{Name}/{push.Partition}" : null);
+            if (moves.Count > 0) Told();
         }
         finally
         {
@@ -346,6 +347,27 @@ public sealed class StateSlice
 
     private void Tell(string type, object payload, string? coalesce) =>
         _bus.Emit(new EventMessage { Module = Module, Type = type, Payload = payload, CoalesceKey = coalesce });
+
+    /// <summary>
+    /// Told after a judgement that pushed something, once its snapshot holds it (PUSH1e): another slice judged from this one's memory
+    /// (the accounts' running counts from the records) hears it, never a judgement that moved nothing. Each hearer's failure is its own.
+    /// </summary>
+    public event Action? Pushed;
+
+    private void Told()
+    {
+        foreach (var hearer in Pushed?.GetInvocationList() ?? [])
+        {
+            try
+            {
+                ((Action)hearer)();
+            }
+            catch (Exception error) when (error is not OperationCanceledException)
+            {
+                Failed?.Invoke(error);
+            }
+        }
+    }
 }
 
 /// <summary>
