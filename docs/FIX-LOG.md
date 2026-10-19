@@ -5,6 +5,36 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-19 — A rehearsal's timed-out drive ran on, and one starved phase failed 22 checks (FAMILYFAIL1)
+
+- **Symptom:** the full set on 0a5c608 failed `rehearse-family` after 46 minutes (it passed on b7043d982 in 26 and on f617bc1
+  in 31). From "a met done whose note was left uncommitted is held for the person" on, 22 checks failed: that one read the
+  quest held `evidence-unread` with no evidence, the `quest check` calls named no commit, two loops were refused as "already
+  driven by a headless `daoris-driver`", and later quests sat on an uncommitted `notes/late.md`.
+- **Root cause:** no merge on the path. The drive of that phase ran 155 s against the rehearsal's 90-second bound (9 s on an
+  earlier passing run). Every process on the machine was starved from about 06:52 UTC: the stub sessions ran 5 to 17 times
+  their earlier length, the host's requests took 5 to 11 s and its Kestrel heartbeat ran 9 s late, and two paths no merge in
+  the range touched outran their bounds too (a host refusing a workspace identity at its start, 30 s; the set-up stub's six
+  CLI calls, 71 s). The full set runs below normal beside the work (CIPRIO1), and that afternoon it ran beside five workers
+  and the owner's own sessions running whole builds and suites (HEAVYRUN1). The product did what the check asks, late: the
+  driver's log has the session-end read at 06:57:13, `uncommitted: 1`, and the quest's record then reads Done, held
+  `evidence-missing`, the item `uncommitted`, as the check expects. What turned one late phase into 22 failures was the
+  rehearsal's runner: `capture` ran each command through `execSync`, whose timeout on Windows kills the shell alone, so the
+  timed-out driver (a `dotnet` under `cmd.exe`) ran on holding the home's lease. The rehearsal then read the quest before the
+  read, ran its `git add` before the stub had written the note (so its commit was none, and the note stayed in the tree), was
+  refused by the lease, and the orphan started the next phase's ask's intake, which stood down when that phase closed the
+  ask. A second timeout (the set-up pilot's phase, 07:28 UTC) left a second orphan the same way.
+- **Fix:** `capture` runs its command through `spawnSync` with the same shell, which answers the shell's id, and on a timeout
+  ends whatever that shell left running, each with its own tree (`tools/processes.mjs` `endOrphans`: the processes whose parent
+  was the shell and that started after it, `taskkill /T /F`). The answer is otherwise as before: standard output alone on
+  success, both streams on a failure, -1 and the kill's line on a timeout. The bounds and the starvation are left as they
+  are: a starved full set still fails the phase that outran its bound, now alone.
+- **Verify:** `tools/rehearsal-kit.test.mjs`: a command whose `node` child waits a minute, run with a five-second timeout,
+  is red against the kit before the fix (the child still ran ten seconds after `capture` answered) and green after it; the
+  runner's answers (exit code, streams, input, variables) held by a second case, green before and after. The file's 34 tests
+  pass. The family rehearsal itself is not run on a branch: the next full set runs it, and it passes only on a machine that
+  is not starved.
+
 ## 2026-10-19 — A woken turn that ended as the stream did could fail its session (BGWAIT2c)
 
 - **Symptom:** `AcpBackgroundTests.A_woken_turn_that_ends_as_the_stream_does_ends_the_run_as_that_turn` failed alone now and then

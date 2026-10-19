@@ -5,11 +5,12 @@
  * `exitCode`) — and a harness that diverges between gates makes the same failure read differently
  * depending on which gate caught it.
  */
-import { execSync, spawnSync } from 'node:child_process';
+import { spawnSync } from 'node:child_process';
 import { copyFileSync, existsSync, mkdirSync, realpathSync, statSync, writeFileSync } from 'node:fs';
 import { basename, dirname, join, resolve, sep } from 'node:path';
 import { setTimeout as sleep } from 'node:timers/promises';
 import { portIsFree } from './cdp.mjs';
+import { endOrphans } from './processes.mjs';
 
 /**
  * Every run leaves a transcript under `_fixtures/rehearsal-logs/`, outside anything a passing run
@@ -152,26 +153,33 @@ export function makeChecker({ keep } = {}) {
  * Run a command, capturing output and exit code — never throwing, so a failure is a FAIL line. A
  * timeout kills the child and returns its partial output, so a hung child is a captured FAIL rather
  * than a frozen gate.
+ *
+ * 🔴 The kill ends what the command started too (FAMILYFAIL1). The command runs in a shell, as `execSync` ran it, and on
+ * Windows the timeout's kill reached the shell alone: on a starved machine a drive outlived its bound, its `dotnet` ran on
+ * holding the home's lease, and the 22 checks after it failed on what it went on to do. So the shell's id is kept
+ * (`spawnSync` answers it, `execSync` did not) and whatever the shell left running is ended (`endOrphans`). On success the
+ * answer is standard output alone, on a failure both streams, as before.
  */
 export function capture(command, cwd, { env = {}, timeout = 0, input } = {}) {
-  try {
-    const out = execSync(command, {
-      cwd,
-      encoding: 'utf8',
-      // stdin stays closed unless a check hands the command something to read (`agent key`, AGT3).
-      stdio: [input === undefined ? 'ignore' : 'pipe', 'pipe', 'pipe'],
-      ...(input === undefined ? {} : { input }),
-      env: { ...process.env, ...env },
-      ...(timeout ? { timeout, killSignal: 'SIGKILL' } : {}),
-    });
-    return { code: 0, out };
-  } catch (error) {
-    const timedOut = error.killed || error.signal === 'SIGKILL';
-    return {
-      code: error.status ?? -1,
-      out: `${error.stdout ?? ''}${error.stderr ?? ''}${timedOut ? '\n[killed: exceeded the timeout]' : ''}`,
-    };
-  }
+  const started = Date.now();
+  const ran = spawnSync(command, {
+    cwd,
+    encoding: 'utf8',
+    shell: true,
+    // stdin stays closed unless a check hands the command something to read (`agent key`, AGT3).
+    stdio: [input === undefined ? 'ignore' : 'pipe', 'pipe', 'pipe'],
+    ...(input === undefined ? {} : { input }),
+    env: { ...process.env, ...env },
+    ...(timeout ? { timeout, killSignal: 'SIGKILL' } : {}),
+  });
+  if (!ran.error && ran.status === 0) return { code: 0, out: ran.stdout };
+
+  const timedOut = ran.signal === 'SIGKILL';
+  if (timedOut) endOrphans(ran.pid, started);
+  return {
+    code: ran.status ?? -1,
+    out: `${ran.stdout ?? ''}${ran.stderr ?? ''}${timedOut ? '\n[killed: exceeded the timeout]' : ''}`,
+  };
 }
 
 /**
