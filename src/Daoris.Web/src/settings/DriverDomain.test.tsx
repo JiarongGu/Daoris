@@ -73,7 +73,7 @@ describe('the driver domain', () => {
     const row = (label: string) => access.getAllByText(label, { selector: 'span' })[0]!.closest('.\\@container') as HTMLElement;
 
     expect(access.getByText(/This machine's default, for every workspace and repository that sets none of its own/)).toBeTruthy();
-    expect(row('Go-aheads')).toHaveTextContent('No go-ahead is asked, save one the ask itself demands. Set for this machine.');
+    expect(row('Go-aheads')).toHaveTextContent('No go-ahead is asked, save one the quest or your words demand. Set for this machine.');
     expect(row('Permission prompts')).toHaveTextContent("Daoris's default: nothing is set.");
     expect(within(row('Permission prompts')).getByRole('button', { name: 'Set for this machine' })).toBeTruthy();
     expect(within(row('Go-aheads')).getByText(code('daoris-driver access goAheads=named|never'))).toBeTruthy();

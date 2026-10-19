@@ -91,7 +91,7 @@ describe('how an access setup resolves on the page', () => {
     expect(accessSummary(t, DEFAULTS, 'repository')).toBe(
       "permissions in auto mode, you accept each route, lands on your Accept…, go-aheads before named acts (Daoris's default)");
     expect(accessSummary(t, MIXED, 'repository')).toBe(
-      "every permission asked (the workspace's default), the intake routes (this machine's default), lands on your Accept… "
+      "permissions in asking mode (the workspace's default), the intake routes (this machine's default), lands on your Accept… "
       + "(Daoris's default), no go-aheads");
     // At the workspace, its own values are unmarked.
     expect(accessSummary(t, OPEN('workspace'), 'workspace')).toBe('full access');
@@ -111,11 +111,14 @@ describe("a level's access rows", () => {
   it('shows each pause with what it means, its value and where it came from', () => {
     draw(MIXED);
 
+    // Asking refuses what the rules do not allow, since no prompt reaches the person yet (AUTONOMY1b; AUTONOMY1b3 is the row).
     expect(row('Permission prompts')).toHaveTextContent(
-      'The agent asks you before each tool call its rules do not allow. From the workspace aurora.');
-    expect(row('Intake routing')).toHaveTextContent('An ask goes where its intake routed it; you may route it again. From this machine.');
+      'The agent runs in its asking mode: it uses what its rules allow, and any other tool call is refused, since no prompt reaches '
+      + 'you yet. From the workspace aurora.');
+    expect(row('Intake routing')).toHaveTextContent(
+      'An ask its declarations do not settle goes where its intake routed it; you may route it again. From this machine.');
     expect(row('Landing')).toHaveTextContent("Finished work waits for your Accept… before it lands, as today. Daoris's default: nothing is set.");
-    expect(row('Go-aheads')).toHaveTextContent('No go-ahead is asked, save one the ask itself demands. Set for this repository.');
+    expect(row('Go-aheads')).toHaveTextContent('No go-ahead is asked, save one the quest or your words demand. Set for this repository.');
     // Each row's hint is its terminal twin, and each pause's own meaning is on its glyph.
     expect(within(row('Permission prompts')).getByText(code('daoris-driver access engine permissions=asking|auto|unrestricted')))
       .toBeInTheDocument();
@@ -140,7 +143,7 @@ describe("a level's access rows", () => {
     expect(within(permissions).queryByRole('button', { name: 'Clear' })).toBeNull();
     await userEvent.click(within(permissions).getByRole('button', { name: 'Set for this repository' }));
     expect(within(permissions).getByRole('radiogroup', { name: 'Permission prompts for engine' })).toBeInTheDocument();
-    expect(within(permissions).getByRole('radio', { name: 'Always ask' })).toHaveAttribute('aria-checked', 'true');
+    expect(within(permissions).getByRole('radio', { name: 'Asking mode' })).toHaveAttribute('aria-checked', 'true');
     await userEvent.click(within(permissions).getByRole('radio', { name: 'None' }));
     expect(onChange).toHaveBeenLastCalledWith({ access: { permissions: 'unrestricted' } });
 
@@ -222,6 +225,6 @@ describe("a level's access rows", () => {
     expect(screen.getByText('放行', { selector: 'span' })).toBeInTheDocument();
     expect(row('落地')).toHaveTextContent('完成的工作等你采纳…之后才落地，和现在一样。Daoris 的默认：哪里都没有设定。');
     expect(accessSummary(t, MIXED, 'repository')).toBe(
-      '每个权限都问（工作区的默认），受理直接分派（本机的默认），等你采纳…才落地（Daoris 的默认），不请你放行');
+      '权限用询问模式（工作区的默认），受理直接分派（本机的默认），等你采纳…才落地（Daoris 的默认），不请你放行');
   });
 });

@@ -404,7 +404,7 @@ describe("a workspace's sessions' access", () => {
 
     expect(section("Sessions' access")).toHaveAttribute('aria-expanded', 'false');
     expect(section("Sessions' access")).toHaveAccessibleDescription(
-      "every permission asked (this machine's default), you accept each route (Daoris's default), lands on your Accept… (Daoris's default), "
+      "permissions in asking mode (this machine's default), you accept each route (Daoris's default), lands on your Accept… (Daoris's default), "
       + "go-aheads before named acts (Daoris's default)");
     expect(section('Defaults').compareDocumentPosition(section("Sessions' access")) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     await userEvent.click(section("Sessions' access"));
@@ -419,7 +419,8 @@ describe("a workspace's sessions' access", () => {
     at({ access: { pauses: pauses({ value: 'intake', source: 'workspace' }), aboveFull: false, onChange } });
 
     expect(section("Sessions' access")).toHaveAttribute('aria-expanded', 'true');
-    expect(row('Intake routing')).toHaveTextContent('An ask goes where its intake routed it; you may route it again. Set for this workspace.');
+    expect(row('Intake routing')).toHaveTextContent(
+      'An ask its declarations do not settle goes where its intake routed it; you may route it again. Set for this workspace.');
     expect(within(row('Intake routing')).getByText(code('daoris-driver access --workspace aurora routing=person|intake'))).toBeInTheDocument();
     await userEvent.click(within(row('Intake routing')).getByRole('button', { name: 'Clear' }));
     expect(onChange).toHaveBeenLastCalledWith({ access: { routing: null } });
