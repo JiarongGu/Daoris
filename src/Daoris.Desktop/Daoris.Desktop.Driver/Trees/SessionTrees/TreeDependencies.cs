@@ -177,13 +177,21 @@ internal static class TreeDependencies
                     continue;
                 }
 
-                // Whole: each renamed into place, and the folder it was made under goes.
+                // Whole: each renamed into place, tried again while the virus scanner holds a file just written in it (FIX-LOG
+                // 2026-10-07, as an installed binary is), and the empty folder it was made under goes where it can.
                 foreach (var (under, final) in whole)
                 {
-                    Directory.Move(Path.Combine(under, Modules), final);
+                    AtomicFile.MoveFolder(Path.Combine(under, Modules), final);
                     made.Add(final);
-                    Directory.Delete(under);
-                    made.Remove(under);
+                    try
+                    {
+                        Directory.Delete(under);
+                        made.Remove(under);
+                    }
+                    catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+                    {
+                        // Empty, so git shows nothing of it, and the tree's removal takes it.
+                    }
                 }
 
                 copied.AddRange(plan.Folders);
