@@ -27,6 +27,10 @@ public sealed record RunningCall(string Title, DateTimeOffset Since);
 /// block: calls run side by side, and when the newest ends the one still open beside it is running. A call this process heard
 /// only updates of is named once an update names it, and runs from the first it heard.</para>
 ///
+/// <para><b>Told as it moves</b> (WAITSAY1c1): <see cref="Changed"/> names a session whenever what <see cref="Calling"/> answers of
+/// it moved, judged under the watch's lock and told after it, so the pushed <c>calls</c> slice is woken by a call's start and end
+/// and by nothing that leaves the call as it was.</para>
+///
 /// <para>Bounded: each record's watch holds the calls of at most <see cref="Remembered"/> sessions, the oldest call's session
 /// dropped past it.</para>
 /// </remarks>
@@ -42,7 +46,20 @@ public sealed class RunningCalls
     // Each session's open calls, in the order they began.
     private readonly Dictionary<string, List<Open>> _open = new(StringComparer.OrdinalIgnoreCase);
 
-    private RunningCalls(SessionEvents events) => events.Evented += Heard;
+    private readonly int _remembered;
+
+    private RunningCalls(SessionEvents events, int remembered)
+    {
+        _remembered = remembered;
+        events.Evented += Heard;
+    }
+
+    /// <summary>
+    /// A session whose running call moved (WAITSAY1c1): what <see cref="Calling"/> answers of it is not what it answered before the
+    /// event, whatever moved it (a call's start or end, a title arriving, a turn's end or an ask clearing it, the bound forgetting
+    /// it). Told on the appending thread after the watch's lock is let go; a hearer's failure is its own.
+    /// </summary>
+    public event Action<string>? Changed;
 
     /// <summary>Watch a record for its calls, once whoever asks: the record handed back, as <see cref="UsageTurns.Watched"/> does.</summary>
     public static SessionEvents Watched(SessionEvents events)
@@ -52,14 +69,18 @@ public sealed class RunningCalls
     }
 
     /// <summary>The record's watch, begun now where nothing began it: it hears only what is appended from now on.</summary>
-    public static RunningCalls Of(SessionEvents events) => Watches.GetValue(events, each => new RunningCalls(each));
+    public static RunningCalls Of(SessionEvents events) => Of(events, Remembered);
+
+    /// <summary>The record's watch, bounded at <paramref name="remembered"/> sessions where nothing began it: the bound's own test.</summary>
+    internal static RunningCalls Of(SessionEvents events, int remembered) =>
+        Watches.GetValue(events, each => new RunningCalls(each, remembered));
 
     /// <summary>The call the session's agent is inside, or null where none is open or none open was named.</summary>
     public RunningCall? Calling(string session)
     {
         lock (_gate)
         {
-            return _open.TryGetValue(session, out var calls) ? Current(calls) : null;
+            return CurrentOf(session);
         }
     }
 
@@ -78,6 +99,8 @@ public sealed class RunningCalls
         }
     }
 
+    private RunningCall? CurrentOf(string session) => _open.TryGetValue(session, out var calls) ? Current(calls) : null;
+
     private static RunningCall? Current(List<Open> calls)
     {
         for (var at = calls.Count - 1; at >= 0; at--)
@@ -90,28 +113,37 @@ public sealed class RunningCalls
 
     private void Heard(string session, SessionEvent e)
     {
-        switch (e.Kind)
+        // A call's event, a turn's end, and the ask that begins the next: the words shown while they wait (STEER1) are no ask.
+        var call = e.Kind == SessionEventKind.Tool ? e.Id : null;
+        var clears = e.Kind == SessionEventKind.Turn || (e.Kind == SessionEventKind.User && e.Reaches is null);
+        if (call is null && !clears) return;
+
+        bool moved;
+        List<string>? forgotten = null;
+        lock (_gate)
         {
-            case SessionEventKind.Tool when e.Id is { } id:
-                lock (_gate) Called(session, id, e);
-                return;
-            // A turn's end, and the ask that begins the next: the words shown while they wait (STEER1) are no ask.
-            case SessionEventKind.Turn:
-            case SessionEventKind.User when e.Reaches is null:
-                lock (_gate) _open.Remove(session);
-                return;
+            var before = CurrentOf(session);
+            if (call is null) _open.Remove(session);
+            else Called(session, call, e, ref forgotten);
+            moved = CurrentOf(session) != before;
         }
+
+        // Told outside the lock (WAITSAY1c1): a hearer that reads the calls again on another thread is never held behind it.
+        if (moved) Tell(session);
+        foreach (var each in forgotten ?? []) Tell(each);
     }
 
-    private void Called(string session, string id, SessionEvent e)
+    private void Called(string session, string id, SessionEvent e, ref List<string>? forgotten)
     {
         var open = e.Status is null or "pending" or "in_progress";
         if (!_open.TryGetValue(session, out var calls))
         {
             if (!open) return;
-            calls = [];
-            _open[session] = calls;
-            Bound();
+            _open[session] = [new Open(id, e.Title, e.At)];
+            // Bounded once its call is held (WAITSAY1c1): bounded before, its empty list read as the oldest, and the session just
+            // begun was the one forgotten.
+            Bound(session, ref forgotten);
+            return;
         }
 
         var at = calls.FindIndex(call => call.Id == id);
@@ -126,12 +158,33 @@ public sealed class RunningCalls
         else if (e.Title is { Length: > 0 } title) calls[at] = calls[at] with { Title = title };
     }
 
-    /// <summary>Past the bound, the session whose oldest open call began first is forgotten.</summary>
-    private void Bound()
+    /// <summary>
+    /// Past the bound, the session whose oldest open call began first is forgotten; one that had a call running is named in
+    /// <paramref name="forgotten"/>, the session heard now left to its own comparison.
+    /// </summary>
+    private void Bound(string heard, ref List<string>? forgotten)
     {
-        while (_open.Count > Remembered)
+        while (_open.Count > _remembered)
         {
-            _open.Remove(_open.MinBy(pair => pair.Value.Count == 0 ? DateTimeOffset.MinValue : pair.Value[0].Since).Key);
+            var (session, calls) = _open.MinBy(pair => pair.Value.Count == 0 ? DateTimeOffset.MinValue : pair.Value[0].Since);
+            _open.Remove(session);
+            if (!string.Equals(session, heard, StringComparison.OrdinalIgnoreCase) && Current(calls) is not null) (forgotten ??= []).Add(session);
+        }
+    }
+
+    private void Tell(string session)
+    {
+        if (Changed is not { } changed) return;
+        foreach (var hearer in changed.GetInvocationList().Cast<Action<string>>())
+        {
+            try
+            {
+                hearer(session);
+            }
+            catch (Exception)
+            {
+                // A hearer's failure is its own: the call is kept, and the other hearers and the record's other watchers still hear.
+            }
         }
     }
 
