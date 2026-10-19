@@ -391,7 +391,18 @@ public sealed class SessionsRoutes(DriverContext context)
         var ids = Ids(request);
         var (look, grouped) = await GroupsAsync(ids, cancellationToken).ConfigureAwait(false);
         // SESSONE1b (D167): the entries beside the rows, which the page reads until SESSONE1c draws entries.
-        return new { Sessions = grouped.Select(Grouped).ToArray(), Entries = SessionGroups.ReadEntries(look, ids).Select(Entry).ToArray() };
+        var sessions = grouped.Select(Grouped).ToArray();
+        var entries = SessionGroups.ReadEntries(look, ids).Select(Entry).ToArray();
+        if (!Flag(request, "said")) return new { Sessions = sessions, Entries = entries };
+
+        // RPCOPEN1: `daoris-driver sessions` asks for its own lines from this look (the group, the repository and `--json` it was given),
+        // which the alone path prints from a look of its own through the same function (§7.3); the page asks for none.
+        var ask = new SessionsAsk("list") { Group = Optional(request, "group"), Repository = Optional(request, "repository"), Json = Flag(request, "json") };
+        return new
+        {
+            Sessions = sessions, Entries = entries,
+            Said = new TreesSaid(SessionsCommand.ListLines(look, ask, _loop.Home, DateTimeOffset.UtcNow), [], 0).ToWire(),
+        };
     }
 
     /// <summary>

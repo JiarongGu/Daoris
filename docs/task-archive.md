@@ -17711,3 +17711,27 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **PUSH1d3 — quests and asks pushed** (modules, web; D182 points 2-4, 7; after PUSH1d2). As PUSH1d2 for `/api/quests` and `/api/asks`, each allow-listed (an attachment's `path` stripped), `notPushed` on their invalidations and on the mutations' settling (`useAskChange`, `useDelete`, the quest families). Proof: a tick reads neither; a connector's ask reaches the windows by a push.
 
 **Outcome** 2026-10-20: the `quests` and `asks` slices (`Loop/QuestsStateSlice.cs`, `AsksStateSlice.cs`), a keyed partition per workspace carrying only the fields the page's types declare (a quest's evidence and an ask's words never pushed; a file's `path` replaced by `kept`), woken by the `quests`, `asks` and `sessions` families; on the page `questsSlice` and `asksSlice` read through `pushedList` with `questsIn`/`asksIn`, every family invalidation passing `notPushed`. A tick, a focus and a declared change read neither route; an ask a connector writes reaches two windows by one push; an older host still pulls. The install's measurement (D182 point 8) is open. On Opus: about 196 tool calls, 35 minutes. Detail: D182's PUSH1d3 note.
+
+## RPC1b2 — the trees reads are the running Daoris's clients (2026-10-20, D171)
+
+> - [ ] **RPC1b2 — the trees reads are the running Daoris's clients** (driver host; after RPC1b). The `clean` and `sync` lists, `land --plan` and `hand --plan` send `SWEEP_PLAN`, `TREES_SYNC_PLAN`, `LANDING` and `HANDOFF_PLAN` (open in the census) where the instance answers, and stay alone otherwise (§7.2's read column); each answer gains the fields the terminal's words need. Proof: per read, the text from the route's answer equals the alone path's against `InstanceStandIn`. Also `land --plan`, `--entry --plan` and `--ask --plan` as `said` from `LANDING`, `ENTRY_LANDING` and `ASK_LANDING` (`TreesConsole.Planned`, `EntryPlanned`).
+
+**Outcome** 2026-10-20: built as RPCOPEN1, one feature end to end (D187): the `trees clean`, `trees sync`, `land` / `land --entry` / `land --ask --plan` and `hand --plan` lists go through `SWEEP_PLAN`, `TREES_SYNC_PLAN`, `LANDING`, `ENTRY_LANDING`, `ASK_LANDING` and `HANDOFF_PLAN` where the instance answers, each route answering `said` when asked, built by `TreesPlanWords` for the alone path and the route alike; a terminal's `trees clean` asking through the instance is still the person's occasion (D148). Detail: D171's RPCOPEN1 note. On Sonnet, the whole feature: about 264 tool calls, 46 minutes.
+
+## RPC1j — `daoris-driver result <id>` asks again (2026-10-20, D171)
+
+> - [ ] **RPC1j — `daoris-driver result <id>` asks again** (driver host; after RPC1b). §6.1 tells a lost press to ask later, but `InstanceDoor` keeps its key nowhere. Keep `{ id, key, route, at }` under the home for a day and answer `result <id>` with `RESULT`. Proof: host tests against the stand-in: a lost press answered later, an unknown id said as unknown, another key's id refused.
+
+**Outcome** 2026-10-20: built as RPCOPEN1, one feature end to end (D187): every press is kept under the home's `pipe/sent/` for a day, and `daoris-driver result <id>` asks `RESULT` with the stored key (lost then running, answered, unknown, another key's refused). Detail: D171's RPCOPEN1 note.
+
+## RPC1h — the pipe takes a cancel for its own requests (2026-10-20, D171)
+
+> - [ ] **RPC1h — the pipe takes a cancel for its own requests** (modules; after RPC1a). §6.2's Ctrl+C sends the kit's `CANCEL` by request id, but the census does not name `SHENORA.REQUESTS`: accept a cancel only for ids the pipe began (with the sender's key) and pass it to the tracker. Proof: an `InstancePipeTests` case where a held press is cancelled and `RESULT` says how it ended; a window's request id refused.
+
+**Outcome** 2026-10-20: built as RPCOPEN1, one feature end to end (D187): the pipe takes the kit's `CANCEL` for its own presses with the sender's key and passes it to the tracker; a window's id, an unknown id and another key's are refused. The verb's own Ctrl+C that sends it is not built. Detail: D171's RPCOPEN1 note.
+
+## RPC1i — a desktop stop that cannot drain says so (2026-10-20, D171)
+
+> - [ ] **RPC1i — a desktop stop that cannot drain says so** (modules; after RPC1a). `Drain` returns false after 15 s and the stop goes on silently: the machine log names how many presses were left (`pipe.drained`, `left`). §6.3. Proof: a `DriverLoopAddressTests` case with a press held past a short drain.
+
+**Outcome** 2026-10-20: built as RPCOPEN1, one feature end to end (D187): `pipe.drained` with `left` is logged when a desktop stop cannot drain. Detail: D171's RPCOPEN1 note.

@@ -81,7 +81,10 @@ internal static class SyncConsole
                 return 0;
             }
 
-            var report = await sync.RunOnceAsync(workspace).ConfigureAwait(false);
+            // RPCOPEN1: the running Daoris's own set runs each circle's pass (SYNC_NOW) where one answers; this process's, alone.
+            var report = await SyncPass.RunAsync(workspace, sync.Workspaces, name => sync.RunOnceAsync(name), InstanceHost.World("sync"))
+                .ConfigureAwait(false);
+            if (report is null) return 2;
             foreach (var note in report.Notes) Console.WriteLine($"  note  {note}");
             if (report.Problem is not null) Console.WriteLine($"sync  {report.Problem}");
 

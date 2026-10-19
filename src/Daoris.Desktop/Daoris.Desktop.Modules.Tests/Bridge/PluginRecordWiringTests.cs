@@ -38,8 +38,9 @@ public sealed class PluginRecordWiringTests : DriverModuleBridge
             })
             .ToList();
 
-        // The trees domain's two, Ask Daoris's, and an entry's or an ask's Accept (ACCEPTALL1).
-        Assert.Equal(4, built.Count(call => call.Kind == "LandingPlugins"));
+        // The trees domain's two, Ask Daoris's, an entry's or an ask's Accept (ACCEPTALL1), and the clean-up's and bringing up to
+        // date's lists a terminal asks for, which say a plugin's own lines into their answer (RPCOPEN1).
+        Assert.Equal(5, built.Count(call => call.Kind == "LandingPlugins"));
         Assert.Contains(built, call => call is { Kind: "HookSet", File: "DriverLoop.cs" });
         Assert.All(built, call => Assert.True(
             Regex.IsMatch(call.Call, @"\blog:\s") && Regex.IsMatch(call.Call, @"\bhealth:\s"),

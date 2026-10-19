@@ -85,7 +85,44 @@ public sealed record LineFiles(string? Line, string? Commit, string? Problem)
 /// <param name="Said">The sentence the row says, and a terminal: names, a line and a short commit, never a path.</param>
 /// <param name="Sent">Whether a registration was sent and taken.</param>
 public sealed record RegistrationFollowed(
-    string Repository, string Outcome, string Said, string? Line = null, string? Commit = null, bool Sent = false);
+    string Repository, string Outcome, string Said, string? Line = null, string? Commit = null, bool Sent = false)
+{
+    /// <summary>
+    /// The answer <c>REGISTRY_REFRESH</c> gives for this repository (RPCOPEN1), which <c>daoris-driver register</c> reads back into the
+    /// record it prints from (<see cref="Read"/>): beside the page's fields, <paramref name="refresh"/> where the index was not read again.
+    /// </summary>
+    public object ToWire(string? refresh) => new
+    {
+        Repository, Outcome, Said, Line, Commit, Registered = Sent, Refused = RegistryOutcome.IsRefusal(Outcome), Refresh = refresh,
+    };
+
+    /// <summary>The record an answer carries, with the refresh it names; null where it is not one this terminal reads.</summary>
+    public static (RegistrationFollowed Followed, string? Refresh)? Read(System.Text.Json.JsonElement answer)
+    {
+        string? Text(string name)
+        {
+            if (answer.ValueKind != System.Text.Json.JsonValueKind.Object) return null;
+            foreach (var each in answer.EnumerateObject())
+            {
+                if (string.Equals(each.Name, name, StringComparison.OrdinalIgnoreCase) && each.Value.ValueKind == System.Text.Json.JsonValueKind.String)
+                {
+                    return each.Value.GetString();
+                }
+            }
+
+            return null;
+        }
+
+        bool Flag(string name) =>
+            answer.ValueKind == System.Text.Json.JsonValueKind.Object
+            && answer.EnumerateObject().Any(each => string.Equals(each.Name, name, StringComparison.OrdinalIgnoreCase)
+                                                    && each.Value.ValueKind == System.Text.Json.JsonValueKind.True);
+
+        return Text("repository") is { } repository && Text("outcome") is { } outcome && Text("said") is { } said
+            ? (new RegistrationFollowed(repository, outcome, said, Text("line"), Text("commit"), Flag("registered")), Text("refresh"))
+            : null;
+    }
+}
 
 /// <summary>What one pass of following came to: each repository's, and what the refresh after them said where it failed.</summary>
 public sealed record FollowReport(IReadOnlyList<RegistrationFollowed> Followed, string? Refresh);

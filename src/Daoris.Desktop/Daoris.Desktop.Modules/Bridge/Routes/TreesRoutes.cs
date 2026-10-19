@@ -533,6 +533,21 @@ public sealed class TreesRoutes(DriverLoop loop)
 
         var (tree, _) = await service.SessionGroundAsync(id, cancellationToken);
         var press = request.Type == "LAND_SESSION_TREE";
+        // RPCOPEN1: `trees land --plan` asks for the verb's words (`said`) in place of the page's fields, and gets them for the two
+        // cases the verb answers before it plans, as its alone path does: a landing its review reads as landed, and no tree to land.
+        var terminal = !press && Flag(request, "said");
+        LandedReview? earlier = null;
+        if (terminal)
+        {
+            earlier = await TreesWords.LandedBeforeAsync(new SessionTrees(_loop.Home), service, id, cancellationToken);
+            if (earlier is not null && earlier.ReadsAsLanded(TreeFolders.TreeGone(tree)))
+            {
+                return new { Session = id, Said = TreesWords.LandedPlan(id, earlier, new AutoLandings(_loop.Home).Of(id)).ToWire() };
+            }
+
+            if (string.IsNullOrWhiteSpace(tree)) return new { Session = id, Said = TreesWords.NoTreeToLand(id).ToWire() };
+        }
+
         // RPC1b4: the verb's two refusals are words on the press, exit 1, where the plan keeps the page's refusal. A landing the review
         // already reads as landed lands nothing again (REVIEW2, D113), and a session with no tree names nothing to land.
         if (press && await TreesWords.LandedBeforeAsync(new SessionTrees(_loop.Home), service, id, cancellationToken) is { } before
@@ -577,6 +592,15 @@ public sealed class TreesRoutes(DriverLoop loop)
         {
             // How it lands, by the process the gate read (WORKFLOW1f): a named workflow's landing step, or the rule.
             var plan = await trees.PlanAsync(tree, subject, cancellationToken, gate.Process);
+            if (terminal)
+            {
+                return new
+                {
+                    Session = id,
+                    Said = (await TreesWords.LandPlanAsync(trees, _loop.Home, id, tree, plan, gate, earlier, pluginLines, cancellationToken)).ToWire(),
+                };
+            }
+
             // Accept refuses until the tree's uncommitted paths are committed (D164 point 4): the page says so before the press.
             var uncommitted = UncommittedCount(await trees.UncommittedAsync(tree, cancellationToken));
             // ACCEPTALL1c (D167's amendment point 3): only a part of an entry with others can have been left out.
@@ -929,6 +953,8 @@ public sealed class TreesRoutes(DriverLoop loop)
         var id = branch is null ? PayloadHelper.GetRequiredValue<string>(request.Payload, "id") : Optional(request, "id");
         var named = Optional(request, "plugin");
         var service = _loop.Service ?? throw NotReady();
+        // RPCOPEN1: `trees hand --plan` asks for the verb's words (`said`) where the page asks for the plan's fields.
+        var terminal = request.Type == "HANDOFF_PLAN" && Flag(request, "said");
         // The plugin's lines go into the answer too (`said`), so a terminal that sent the press prints them as the alone path does.
         var pluginLines = new List<string>();
         var trees = new SessionTrees(_loop.Home, new LandingPlugins(
@@ -948,6 +974,7 @@ public sealed class TreesRoutes(DriverLoop loop)
             {
                 // A branch name in two repositories means the person says which, as the verb says (`--repository`).
                 var several = TreesWords.NamesSeveral(branch ?? id!, repositories);
+                if (terminal) return new { Session = id, Said = TreesWords.HandRefused(several).ToWire() };
                 return request.Type == "HANDOFF_PLAN"
                     ? new { Session = id, Branch = (string?)null }
                     : (object)new { Session = id, Done = false, Message = several, Branch = (string?)null, Said = TreesWords.HandRefused(several).ToWire() };
@@ -959,6 +986,7 @@ public sealed class TreesRoutes(DriverLoop loop)
         if (entry is null)
         {
             var asked = branch ?? id!;
+            if (terminal) return new { Session = id, Said = TreesWords.HandRefused(TreeHand.NotLanded(asked)).ToWire() };
             return request.Type == "HANDOFF_PLAN"
                 ? new { Session = id, Branch = (string?)null }
                 : (object)new { Session = id, Done = false, Message = TreeHand.NotLanded(asked), Branch = (string?)null, Said = TreesWords.HandRefused(TreeHand.NotLanded(asked)).ToWire() };
@@ -969,6 +997,7 @@ public sealed class TreesRoutes(DriverLoop loop)
         if (root is null)
         {
             var none = TreesWords.HandNoCheckout(entry.Repository, entry.Branch);
+            if (terminal) return new { Session = id, Said = TreesWords.HandRefused(none).ToWire() };
             return request.Type == "HANDOFF_PLAN"
                 ? new { Session = id, Branch = (string?)entry.Branch, entry.Repository, Plugin = (string?)null, Problem = (string?)none, entry.PullRequest, Commits = 0 }
                 : (object)new { Session = id, Done = false, Message = none, Branch = (string?)entry.Branch, Said = TreesWords.HandRefused(none).ToWire() };
@@ -977,6 +1006,7 @@ public sealed class TreesRoutes(DriverLoop loop)
         if (request.Type == "HANDOFF_PLAN")
         {
             var plan = await trees.HandPlanAsync(root, entry, named, cancellationToken);
+            if (terminal) return new { Session = id, Said = TreesWords.HandPlan(plan, pluginLines).ToWire() };
             return new { Session = id, Branch = (string?)plan.Branch, plan.Repository, plan.Plugin, plan.Problem, plan.PullRequest, plan.Commits };
         }
 

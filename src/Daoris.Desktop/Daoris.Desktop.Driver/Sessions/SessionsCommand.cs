@@ -67,6 +67,12 @@ public sealed record SessionsWorld(ServiceClient Service, string Home, DriverCon
     /// <summary>How a delete removes a file from the home: the disk, or a test's that refuses a path as a held file does (SESSDEL1).</summary>
     public Action<string, bool> Remover { get; init; } = SessionHomeFiles.FromDisk;
 
+    /// <summary>
+    /// Where the running Daoris is looked for (RPCOPEN1, RPC1e, the terminal RPC design §7.2): the listing is its <c>SESSION_GROUPS</c>
+    /// where it answers, in the same words. Null looks for none, as a test of the alone path does.
+    /// </summary>
+    public InstanceWorld? Instance { get; init; }
+
     /// <summary>How long a request is waited for: ten seconds (§7.1).</summary>
     public TimeSpan Wait { get; init; } = TimeSpan.FromSeconds(10);
 
@@ -493,9 +499,29 @@ public static class SessionsCommand
 
     private static async Task<int> ListAsync(SessionsWorld world, SessionsAsk ask, TextWriter output, CancellationToken ct)
     {
+        // RPCOPEN1: the running Daoris's own look where it answers, its lines made by the function below; this process's look otherwise.
+        if (world.Instance is { } instance && await InstanceDoor.TryReadAsync(
+                OpenRoutes.SessionGroups, new { group = ask.Group, repository = ask.Repository, json = ask.Json, said = true },
+                TreesSaid.ReadWords(output, instance.Error), instance, ct).ConfigureAwait(false) is { } viaInstance)
+        {
+            return viaInstance;
+        }
+
         // A fresh plan, which sees no cool-off: the look reads the home's for words resumed on an account (MSG1f3).
         var look = await SessionGroups.LookAsync(world.Service, world.Config, world.Door, lastLook: null, world.Home, ct: ct, coolingOf: world.CoolingOf)
             .ConfigureAwait(false);
+        foreach (var line in ListLines(look, ask, world.Home, DateTimeOffset.UtcNow)) output.WriteLine(line);
+        return 0;
+    }
+
+    /// <summary>
+    /// The listing's lines from one look (RPCOPEN1, the terminal RPC design §7.3): what <c>sessions</c> prints, which the instance's
+    /// <c>SESSION_GROUPS</c> answers as <c>said</c> from its own look, so the verb that asks it prints the same words. The <c>--json</c>
+    /// form is one element, whole.
+    /// </summary>
+    public static IReadOnlyList<string> ListLines(SessionLook look, SessionsAsk ask, string home, DateTimeOffset now)
+    {
+        var output = new List<string>();
         var records = look.Records.GroupBy(record => record.Id, StringComparer.Ordinal).ToDictionary(group => group.Key, group => group.First(), StringComparer.Ordinal);
         var rows = SessionGroups.Read(look)
             .Where(row => ask.Group is null || row.Group == ask.Group)
@@ -511,41 +537,40 @@ public static class SessionsCommand
 
         if (ask.Json)
         {
-            output.WriteLine(Json(rows, entries));
-            return 0;
+            output.Add(Json(rows, entries));
+            return output;
         }
 
         if (entries.Count == 0)
         {
-            output.WriteLine($"sessions: {Nothing(ask)}.");
-            return 0;
+            output.Add($"sessions: {Nothing(ask)}.");
+            return output;
         }
 
         var quests = look.Quests.GroupBy(quest => quest.Id, StringComparer.OrdinalIgnoreCase).ToDictionary(group => group.Key, group => group.First(), StringComparer.OrdinalIgnoreCase);
-        var openings = new SessionEvents(DaorisHome.Entry(world.Home, HomeEntry.Sessions))
+        var openings = new SessionEvents(DaorisHome.Entry(home, HomeEntry.Sessions))
             .Openings(entries.Select(entry => entry.Leading).Where(SessionEventText.IsId));
         var placed = SessionGroups.Read(look).GroupBy(row => row.Session, StringComparer.Ordinal).ToDictionary(group => group.Key, group => group.First(), StringComparer.Ordinal);
-        var now = DateTimeOffset.UtcNow;
         foreach (var group in entries.GroupBy(entry => entry.Group))
         {
             var each = group.ToList();
-            output.WriteLine($"{GroupName(group.Key)} ({each.Count})");
+            output.Add($"{GroupName(group.Key)} ({each.Count})");
             foreach (var entry in each)
             {
                 var record = records[entry.Leading];
                 var row = placed[entry.Leading];
                 var line = string.Join(" · ", new[] { Title(record, quests, openings), Span(record, now) }.Concat(Facts(row, record))
                     .Concat(entry.Parts.Count > 1 ? [$"{entry.Parts.Count} parts"] : []));
-                output.WriteLine($"  {entry.Leading}  {Word(row.Shown)}  {record.Repository} — {line}");
+                output.Add($"  {entry.Leading}  {Word(row.Shown)}  {record.Repository} — {line}");
                 if (entry.Parts.Count < 2) continue;
                 foreach (var part in entry.Parts)
                 {
-                    output.WriteLine($"      {part.Session}  {Word(part.Shown)}  {(part.Quest is { } quest ? $"#{quest}" : "conversation")} · {Began(part)}");
+                    output.Add($"      {part.Session}  {Word(part.Shown)}  {(part.Quest is { } quest ? $"#{quest}" : "conversation")} · {Began(part)}");
                 }
             }
         }
 
-        return 0;
+        return output;
     }
 
     /// <summary>How a part began, in the terminal's words (D167): what it followed or who asked.</summary>
