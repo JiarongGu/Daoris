@@ -364,7 +364,7 @@ public sealed class Driver(
     /// submission, read off the wire now, then with the line: what the session is told, or null. A source the service cannot answer is
     /// read as one naming no commit, so only the line is synced and that said; git or a disk that fails is no reason to hold the start.
     /// </summary>
-    private async Task<TreeStartSync?> GoOnInSyncAsync(string tree, QuestView step, CancellationToken ct)
+    private async Task<TreeStartSync?> GoOnInSyncAsync(string tree, QuestView step, CancellationToken ct, bool broughtForward = false)
     {
         QuestView? source = null;
         try
@@ -378,7 +378,7 @@ public sealed class Driver(
 
         try
         {
-            return await Context.Trees.GoOnInSyncAsync(tree, $"#{step.Parent}", Planner.SourceCommit(step, source), ct).ConfigureAwait(false);
+            return await Context.Trees.GoOnInSyncAsync(tree, $"#{step.Parent}", Planner.SourceCommit(step, source), ct, broughtForward).ConfigureAwait(false);
         }
         catch (Exception error) when (error is DriverException or IOException or UnauthorizedAccessException)
         {
@@ -1501,7 +1501,7 @@ public sealed class Driver(
         // a stand-down whose lost take the person brought forward, onto the step's current source, which its fresh take was made on.
         var inSync = resumedIn is { } reopenedIn && start.Resumes is { } goesFrom
                      && (ReopenTelling.BringsToSource(quest, goesFrom) || Planner.BringsForwardToSource(quest, start))
-            ? await GoOnInSyncAsync(reopenedIn, quest, ct).ConfigureAwait(false)
+            ? await GoOnInSyncAsync(reopenedIn, quest, ct, broughtForward: start.BroughtForward is not null).ConfigureAwait(false)
             : (resumedIn ?? joinedIn) is { } goingOn ? await StartInSyncAsync(goingOn, ct).ConfigureAwait(false) : null;
 
         // 🔴 WSR6's open window (LEFT2): bringing the repository up to date must not rebase a tree a session is
@@ -1837,6 +1837,7 @@ public sealed class Driver(
                 // The person's stop, which they released with Try again (SESSUX1b): told so, never that it was cut off.
                 Released = carryingOn && start.Resumes!.PersonStopped && !handedFrom,
                 // The quest was handed over from that session (MIXAGENT1a-ii): told so, with the agent it ran on.
+                BroughtForward = carryingOn && quest.Status != "Open" && start.BroughtForward is not null,
                 HandedOver = carryingOn && handedFrom ? start.Resumes!.Adapter ?? "another agent" : null,
                 LastPlan = lastPlan,
                 LastWords = lastWords,
