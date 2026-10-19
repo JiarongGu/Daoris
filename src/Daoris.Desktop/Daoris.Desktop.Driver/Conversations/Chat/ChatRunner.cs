@@ -546,6 +546,9 @@ public sealed class ChatRunner : IDisposable
                 + "or `daoris driver helper <agent>`.");
         }
 
+        // HELPMODE1a1 (D183 point 3): full access on an agent with no mode that asks nothing is refused before anything is opened.
+        if (HelpAccess.For(config.HelpMode, resolved).Refusal is { } refused) return new(null, refused);
+
         // The account its workspace names, then the machine's (ASKSCOPE1a), as a start in that workspace takes one; a press that
         // named none asks the machine's, as before (D89).
         var selection = await _harnesses.SelectAsync(resolved.Name, config, workspace, null, StartKind.Conversation, ct).ConfigureAwait(false);
@@ -671,6 +674,37 @@ public sealed class ChatRunner : IDisposable
             Workspace = RemoteTarget.Workspace(workspace),
         };
 
+    /// <summary>
+    /// Ask Daoris's place under the access its start got (HELPMODE1a1, D183 point 1). Restricted is the place as HELP1a made it. Full
+    /// asks nothing and allows nothing by list, its harness's mode doing neither; keeps every deny the person's rules compose; is
+    /// handed every plugin server here, approved or not (D170 as D183 amends it); and is handed no tree guard, which would keep its
+    /// file writes inside the room when Daoris's own housekeeping, its trees and its home, is outside it (D183 point 5).
+    /// </summary>
+    internal static ChatPlace HelpUnder(ChatPlace place, HelpAccess access) => access is not { Full: true, Refusal: null }
+        ? place
+        : place with
+        {
+            Rules = (file, _) => HelpRoom.FullRules(file),
+            Posture = access.Posture,
+            PermissionMode = access.PermissionMode,
+            EveryServer = true,
+            Guarded = false,
+        };
+
+    /// <summary>
+    /// A conversation's place under Ask Daoris's mode as the person chose it, read at this start (HELPMODE1a1), a conversation going on
+    /// among them; a repository's conversation's is its own, and says nothing. With it, what the start got, for the first line of
+    /// its transcript (D183 point 3): the mode its harness runs in, kept apart from the mode chosen until HELPMODE1a2 records it.
+    /// </summary>
+    /// <exception cref="DriverException">Full access on an agent with no mode that asks nothing: it ends saying so.</exception>
+    internal static (ChatPlace Place, string? Said) UnderHelpMode(ChatPlace place, ISessionAdapter resolved, DriverConfig config)
+    {
+        if (!string.Equals(place.Name, HelpRoom.Repository, StringComparison.Ordinal)) return (place, null);
+        var access = HelpAccess.For(config.HelpMode, resolved);
+        if (access.Refusal is { } refused) throw new DriverException(refused);
+        return (HelpUnder(place, access), $"— {access.Said}");
+    }
+
     /// <summary>What differs between a conversation in a repository and Ask Daoris's in its room (HELP1a).</summary>
     /// <param name="Name">What the conversation is for: the repository, or <see cref="HelpRoom.Repository"/>.</param>
     /// <param name="Tree">Where its process runs.</param>
@@ -709,6 +743,21 @@ public sealed class ChatRunner : IDisposable
         /// sets aside only its own workspace's. Null for a repository's conversation.
         /// </summary>
         public string? Workspace { get; init; }
+
+        /// <summary>The native door's permission mode for it, where one is named (HELPMODE1a1, Ask Daoris in full access); null keeps the adapter's own.</summary>
+        public string? PermissionMode { get; init; }
+
+        /// <summary>
+        /// Whether the plugins' servers it is handed are every one the plugins here declare, for whomever and approved or not (HELPMODE1a1,
+        /// Ask Daoris in full access), rather than those <see cref="ServersTo"/> takes.
+        /// </summary>
+        public bool EveryServer { get; init; }
+
+        /// <summary>
+        /// Whether it is handed the tree guard where the person's rules keep it on (PERM3): every conversation, but Ask Daoris in full
+        /// access (HELPMODE1a1), whose housekeeping is outside its room.
+        /// </summary>
+        public bool Guarded { get; init; } = true;
     }
 
     /// <summary>
@@ -722,15 +771,35 @@ public sealed class ChatRunner : IDisposable
     /// carries, and its servers were withheld from every conversation.
     /// </remarks>
     /// <param name="to">Whose servers: those declared for sessions, or for Ask Daoris (HELPPLUG1a).</param>
+    /// <param name="every">
+    /// Every server the plugins here declare, for whomever and approved or not, each said once in the log (HELPMODE1a1, Ask Daoris in
+    /// full access, D170 as D183 amends it); false takes those <paramref name="to"/> takes.
+    /// </param>
     internal static async Task<(IReadOnlyList<AcpMcpServer> Handed, Noted? Notice, bool Drives, IReadOnlyList<string> Drivers)> HandServersAsync(
-        string home, IInAppBrowser? browser, PluginLog plugins, string sessionId, CancellationToken ct, string to = PluginServerTo.Sessions)
+        string home, IInAppBrowser? browser, PluginLog plugins, string sessionId, CancellationToken ct, string to = PluginServerTo.Sessions,
+        bool every = false)
     {
         var catalog = PluginCatalog.Load(home, AdapterSet.Built().Names);
         // Ask Daoris takes only the servers the person approved for it (HelpGrants, D170's note); a session, its own.
-        var servers = to == PluginServerTo.Help ? HelpGrants.Read(home, catalog).Servers : catalog.ServersTo(to);
+        var servers = every ? [.. PluginServerTo.All.SelectMany(catalog.ServersTo).DistinctBy(server => server.Name)]
+            : to == PluginServerTo.Help ? HelpGrants.Read(home, catalog).Servers : catalog.ServersTo(to);
         var handed = await InAppBrowserServers.HandNotedAsync(servers, browser, ct).ConfigureAwait(false);
-        plugins.Served(catalog, sessionId, handed.Handed, to);
+        if (every) ServedEvery(plugins, catalog, sessionId, handed.Handed);
+        else plugins.Served(catalog, sessionId, handed.Handed, to);
         return handed;
+    }
+
+    /// <summary>A <c>plugin.served</c> line for every server the plugins here declare, once each, handed or withheld (HELPMODE1a1).</summary>
+    private static void ServedEvery(PluginLog plugins, PluginCatalog catalog, string sessionId, IReadOnlyList<AcpMcpServer> handed)
+    {
+        var said = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var plugin in catalog.Contributing)
+        {
+            foreach (var server in plugin.Manifest.Servers.Where(server => said.Add(server.Name)))
+            {
+                plugins.Served(plugin.Manifest.Id, server.Name, sessionId, handed.Any(each => string.Equals(each.Name, server.Name, StringComparison.Ordinal)));
+            }
+        }
     }
 
     /// <summary>
@@ -758,16 +827,22 @@ public sealed class ChatRunner : IDisposable
         IReadOnlyList<AcpMcpServer> pluginServers = [];
         Noted? browserNotice = null;
         var drivesBrowser = false;
+        string? modeSaid = null;
         try
         {
             // A conversation going on is working already: the ledger moved it there before anything was spawned.
             if (goOn is null) await _service.AdvanceAsync(sessionId, "starting", ct: ct).ConfigureAwait(false);
+
+            // HELPMODE1a1 (D183 point 1): Ask Daoris's place under the mode the person chose, refused where its agent has none such.
+            (place, modeSaid) = UnderHelpMode(place, resolved, config);
 
             var info = resolved.PrepareChat(
                 // The native door resumes its own conversation by the id kept for it; the protocol door on its wire.
                 new ChatTarget(place.Name, workTree, _service.BaseUrl)
                 {
                     Resume = resolved.Wire == SessionWire.Pipe ? goOn?.Ask.Conversation : null,
+                    // Its harness's mode that asks nothing, where Ask Daoris runs with full access on the native door (HELPMODE1a1).
+                    PermissionMode = place.PermissionMode,
                     // Its own record, so a take through the connector its harness starts marks it (CHATTAKE1b).
                     Session = sessionId,
                 },
@@ -803,7 +878,7 @@ public sealed class ChatRunner : IDisposable
                 var file = PermissionRules.Load(_home);
                 rules = SpawnSettings.Write(
                     _home, sessionId, place.Rules(file, sessionId), PermissionRules.HardDeny(file),
-                    PermissionRules.GuardsTree(file) ? TreeGuard.For(_home, workTree, place.Also) : null,
+                    PermissionRules.GuardsTree(file) && place.Guarded ? TreeGuard.For(_home, workTree, place.Also) : null,
                     // Which agent made each call, and each subagent's start and stop (FABRIC-C1a).
                     ChildLineage.HookFor(_home, sessionId));
                 if (rules is not null && resolved.Wire == SessionWire.Pipe) resolved.HandSettings(info, rules);
@@ -816,7 +891,7 @@ public sealed class ChatRunner : IDisposable
             {
                 IReadOnlyList<string> drivers;
                 (pluginServers, browserNotice, drivesBrowser, drivers) = await HandServersAsync(
-                    _home, _browser, _plugins, sessionId, ct, place.ServersTo).ConfigureAwait(false);
+                    _home, _browser, _plugins, sessionId, ct, place.ServersTo, place.EveryServer).ConfigureAwait(false);
                 // A new conversation's agent is told of the browser with its first message (BRWHINT1a); one going on resumes a
                 // conversation already told when it opened, so it is told nothing again.
                 if (goOn is null && InAppBrowserServers.Told(drivers) is { } line) _context.Browsers[sessionId] = line;
@@ -958,7 +1033,7 @@ public sealed class ChatRunner : IDisposable
 
         var watch = WatchAsync(
             sessionId, process, transcript, onEnded, Measured, rules, mapper, chat, native, servers, drivesBrowser, Said,
-            new Watched(resolved.Name, place.Keeps, goOn) { Skills = skills });
+            new Watched(resolved.Name, place.Keeps, goOn) { Skills = skills, Preamble = modeSaid });
         _context.Watching[sessionId] = watch;
         _ = watch.ContinueWith(
             _ => _context.Watching.TryRemove(new KeyValuePair<string, Task>(sessionId, watch)), TaskScheduler.Default);
@@ -1417,6 +1492,12 @@ public sealed class ChatRunner : IDisposable
     {
         /// <summary>The plugins' skills composed for it (HELPPLUG1b, <see cref="SpawnSkills"/>), which go when the conversation does.</summary>
         public string? Skills { get; init; }
+
+        /// <summary>
+        /// A fact about how this run was set up, its transcript's first line on either door: the mode Ask Daoris's start got
+        /// (HELPMODE1a1, D183 point 3). Null says nothing.
+        /// </summary>
+        public string? Preamble { get; init; }
     }
 
     /// <summary>
@@ -1478,12 +1559,14 @@ public sealed class ChatRunner : IDisposable
         {
             // The conversation's messages are recorded as the person sends them (`Say`), so the
             // capture opens with no composed prompt of its own.
-            var protocol = chat is not null ? CaptureProtocolAsync(sessionId, process, transcript, chat, said, keep, watched.Adapter) : null;
+            var protocol = chat is not null
+                ? CaptureProtocolAsync(sessionId, process, transcript, chat, said, keep, watched.Adapter, watched.Preamble)
+                : null;
             Task capture = protocol
                 ?? (mapper is not null
                     ? HarnessCapture.CaptureStructuredAsync(
                         process.StandardOutput, process.StandardError, transcript, sessionId, _output, _events, mapper,
-                        prompt: null, CancellationToken.None,
+                        prompt: null, CancellationToken.None, preamble: watched.Preamble,
                         // The turn's end, once the record holds it, lets the next message go (CONV4a).
                         observed: e =>
                         {
@@ -1499,7 +1582,7 @@ public sealed class ChatRunner : IDisposable
                             if (goOn is not null && goOn.Named()) _ = _goOn.WentOnAsync(sessionId, goOn, watched.Adapter);
                         },
                         lineageHome: _home)
-                    : HarnessCapture.CaptureAsync(process, transcript, sessionId, _output, CancellationToken.None));
+                    : HarnessCapture.CaptureAsync(process, transcript, sessionId, _output, CancellationToken.None, watched.Preamble));
 
             // A conversation going on is working already: the ledger moved it out of its ended state before the spawn.
             if (goOn is null) await _service.AdvanceAsync(sessionId, "working", transcript: transcript).ConfigureAwait(false);
@@ -1611,10 +1694,11 @@ public sealed class ChatRunner : IDisposable
     /// </remarks>
     /// <param name="keep">Told the id <c>session/new</c>'s answer names, kept for the record (MSG1c); null keeps none.</param>
     /// <param name="ranOn">The adapter it runs on, which a refused resume's <c>elsewhere</c> names (CONVNOTE2e).</param>
+    /// <param name="preamble">A fact about how the run was set up, written ahead of anything the agent says (HELPMODE1a1); null writes none.</param>
     /// <returns>The session's high-water context, or null when it reported none.</returns>
     private async Task<AcpUsage?> CaptureProtocolAsync(
         string sessionId, Process process, string transcript, ProtocolChat chat, Action<JsonElement>? said,
-        Action<string>? keep, string ranOn)
+        Action<string>? keep, string ranOn, string? preamble = null)
     {
         // A conversation going on appends to the transcript of the run before it (MSG1c).
         await using var file = TranscriptFile.Open(transcript, append: chat.GoOn is not null);
@@ -1632,6 +1716,8 @@ public sealed class ChatRunner : IDisposable
 
             _output?.Append(sessionId, text);
         }
+
+        if (preamble is { Length: > 0 }) Line(preamble);
 
         void Record(SessionEvent e) => _events.Keep(sessionId, e, Line);
 

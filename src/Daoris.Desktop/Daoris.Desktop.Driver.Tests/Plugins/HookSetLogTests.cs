@@ -373,6 +373,34 @@ public sealed class HookSetLogTests : IDisposable
             Lines().Select(l => (Text(l, "server"), Text(l, "session"), l.Data.GetProperty("handed").GetBoolean())));
     }
 
+    /// <summary>
+    /// HELPMODE1a1 (D183 point 1, D170 as it amends): in full access Ask Daoris is handed every server the plugins here declare,
+    /// for it or for sessions, approved or not, each said once in the log; restricted, the approved ones alone, as before.
+    /// </summary>
+    [Fact]
+    public async Task In_full_access_ask_daoris_is_handed_every_server_and_restricted_the_approved_ones()
+    {
+        Directory.CreateDirectory(DaorisHome.Entry(_home, HomeEntry.Plugins, "acme.tools"));
+        File.WriteAllText(DaorisHome.Entry(_home, HomeEntry.Plugins, "acme.tools", "plugin.json"), """
+            { "id": "acme.tools", "servers": [
+                { "name": "tickets", "command": ["node", "tickets.mjs"], "to": ["help"], "allow": ["search"] },
+                { "name": "docs", "command": ["node", "docs.mjs"] },
+                { "name": "wiki", "command": ["node", "wiki.mjs"], "to": ["sessions", "help"], "allow": ["lookup"] } ] }
+            """);
+
+        var (restricted, _, _, _) = await ChatRunner.HandServersAsync(
+            _home, null, new PluginLog(_log), "s0a0b0c0", CancellationToken.None, PluginServerTo.Help);
+        var (full, _, _, _) = await ChatRunner.HandServersAsync(
+            _home, null, new PluginLog(_log), "s1a2b3c4", CancellationToken.None, PluginServerTo.Help, every: true);
+
+        Assert.Empty(restricted);
+        Assert.Equal(["docs", "tickets", "wiki"], full.Select(server => server.Name).Order(StringComparer.Ordinal));
+        Assert.Equal(
+            [("docs", true), ("tickets", true), ("wiki", true)],
+            Lines().Where(l => Text(l, "session") == "s1a2b3c4").Select(l => (Text(l, "server"), l.Data.GetProperty("handed").GetBoolean()))
+                .Order());
+    }
+
     private sealed class AnsweringBrowser(string endpoint) : IInAppBrowser
     {
         public Task<string?> EnsureAsync(CancellationToken ct = default) => Task.FromResult<string?>(endpoint);

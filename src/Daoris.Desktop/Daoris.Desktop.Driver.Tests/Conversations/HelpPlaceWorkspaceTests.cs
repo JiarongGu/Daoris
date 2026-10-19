@@ -85,6 +85,50 @@ public sealed class HelpPlaceWorkspaceTests : IDisposable
     }
 
     /// <summary>
+    /// HELPMODE1a1 (D183 point 3): in full access, a start on an agent with no mode that asks nothing is refused before anything is
+    /// opened, naming the agent; restricted places it as before.
+    /// </summary>
+    [Fact]
+    public async Task Full_access_on_an_agent_with_no_such_mode_is_refused_before_anything_is_opened()
+    {
+        var ledger = new ChatLedger();
+        var runner = Runner(ledger);
+
+        var refused = await runner.PlaceHelpAsync("door", Config.WithHelpMode(HelpModes.Full), "alpha");
+        var placed = await runner.PlaceHelpAsync("door", Config, "alpha");
+
+        Assert.Null(refused.SessionId);
+        Assert.Contains("`door`", refused.Message);
+        Assert.Contains("help mode restricted", refused.Message);
+        Assert.Equal(["alpha"], ledger.HelpAsked);
+        Assert.NotNull(placed.SessionId);
+    }
+
+    /// <summary>
+    /// HELPMODE1a1 (D183 point 3): a start is placed under the mode read when it runs, so one whose mode changed to full since it was
+    /// placed, as one going on would, on an agent with no such mode ends saying why before anything is spawned; restricted reaches
+    /// the spawn as before.
+    /// </summary>
+    [Fact]
+    public async Task A_start_its_agent_cannot_run_in_full_access_ends_saying_why_before_any_spawn()
+    {
+        var ledger = new ChatLedger();
+        var runner = Runner(ledger);
+        static Task<HelpMachine?> Machine(CancellationToken _) => Task.FromResult<HelpMachine?>(new HelpMachine());
+
+        var restricted = await runner.PlaceHelpAsync("door", Config, "alpha");
+        var ran = await runner.RunHelpAsync(restricted, Config, Machine);
+        var full = await runner.PlaceHelpAsync("door", Config, "beta");
+        var refused = await runner.RunHelpAsync(full, Config.WithHelpMode(HelpModes.Full), Machine);
+
+        // The door spawns nothing, so the restricted start ends at its spawn.
+        Assert.Equal("a placing test spawns nothing", ran.Message);
+        Assert.Null(refused.SessionId);
+        Assert.Contains("`door`", refused.Message);
+        Assert.Equal("failed", ledger.Record(full.SessionId!)["state"]!.GetValue<string>());
+    }
+
+    /// <summary>
     /// The active sessions the loop and the page read carry their workspace (ASKSCOPE1a): what the start hands the running one
     /// of its own workspace by. A record from before, which names none, is <c>default</c>, never guessed.
     /// </summary>

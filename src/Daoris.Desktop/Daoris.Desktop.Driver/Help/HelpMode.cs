@@ -30,3 +30,72 @@ public static class HelpModes
     /// </summary>
     public const char Required = '!';
 }
+
+/// <summary>
+/// What a start of Ask Daoris gets on its harness under the person's mode (HELPMODE1a1, D183 points 1, 3): the posture its protocol
+/// door asks, or the permission mode its native door names; or why it cannot start in that mode. Read at each start, a
+/// conversation going on among them, from the mode chosen then.
+/// </summary>
+/// <param name="Mode">The mode it runs in, one of <see cref="HelpModes"/>.</param>
+/// <param name="Said">
+/// What its conversation is told first (D183 point 3): the mode, and the harness's own word for it. The mode chosen is the file's;
+/// this is the one the start got, kept apart from it (HELPMODE1a2 puts it on the record).
+/// </param>
+public sealed record HelpAccess(string Mode, string Said)
+{
+    /// <summary>The protocol door's posture: the agent's asking mode restricted, its mode that asks nothing marked required in full.</summary>
+    public string? Posture { get; init; }
+
+    /// <summary>The native door's <c>--permission-mode</c> in full access; null keeps the adapter's own.</summary>
+    public string? PermissionMode { get; init; }
+
+    /// <summary>Why it does not start in this mode on this harness, said plainly; null where it does.</summary>
+    public string? Refusal { get; init; }
+
+    /// <summary>Whether it runs with full access.</summary>
+    public bool Full => Mode == HelpModes.Full;
+
+    /// <summary>
+    /// The access a start of Ask Daoris gets on <paramref name="adapter"/> in <paramref name="mode"/>: restricted as it always ran;
+    /// full in the harness's own mode that asks nothing (<see cref="ISessionAdapter.FullPosture"/>), or refused where it names none.
+    /// </summary>
+    public static HelpAccess For(string mode, ISessionAdapter adapter)
+    {
+        if (mode != HelpModes.Full)
+        {
+            return new(
+                HelpModes.Restricted,
+                adapter.Wire == SessionWire.Pipe
+                    ? $"Ask Daoris runs restricted on `{adapter.Name}`: the `acceptEdits` permission mode with its allow-list, so it "
+                      + "reads and proposes, and the person applies."
+                    : $"Ask Daoris runs restricted on `{adapter.Name}`: it asks for the agent's `{HelpRoom.Posture}` mode where the agent "
+                      + "offers it, so it reads and proposes, and the person applies.")
+            {
+                Posture = HelpRoom.Posture,
+            };
+        }
+
+        if (adapter.FullPosture is not { Length: > 0 } full)
+        {
+            var refusal = $"Ask Daoris's full access has no mode on `{adapter.Name}`: Daoris knows none of this agent's that asks nothing, so "
+                + "it does not start there in full access. Choose restricted access for it (`daoris-driver help mode restricted`), or "
+                + "another agent for Ask Daoris.";
+            return new(HelpModes.Full, refusal) { Refusal = refusal };
+        }
+
+        var denies = adapter.TakesSettings
+            ? "and the person's own denies still hold"
+            : "and this agent takes no rules, so the person's own denies do not reach it";
+        return adapter.Wire == SessionWire.Pipe
+            ? new(HelpModes.Full, $"Ask Daoris runs with full access on `{adapter.Name}`, as the person chose: the `{full}` permission "
+                + $"mode, which asks nothing, with every plugin server here; {denies}.")
+            {
+                PermissionMode = full,
+            }
+            : new(HelpModes.Full, $"Ask Daoris runs with full access on `{adapter.Name}`, as the person chose: the agent's `{full}` mode, "
+                + $"which asks nothing, with every plugin server here; {denies}.")
+            {
+                Posture = $"{HelpModes.Required}{full}",
+            };
+    }
+}

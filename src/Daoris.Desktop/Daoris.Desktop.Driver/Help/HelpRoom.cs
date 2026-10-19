@@ -35,8 +35,9 @@ public static class HelpRoom
     public const string Repository = "daoris:help";
 
     /// <summary>
-    /// The mode its session asks for on the protocol door: the agent's own asking mode, whatever it
-    /// started in, where the agent offers it.
+    /// The mode its session asks for on the protocol door in restricted access (HELPMODE1a1, D183): the agent's own asking mode,
+    /// whatever it started in, where the agent offers it. Full access asks the harness's mode that asks nothing instead
+    /// (<see cref="HelpAccess"/>), only by the person's choice.
     /// </summary>
     /// <remarks>
     /// 🔴 Since D81 a session runs in its harness's own <c>auto</c> mode, which judges each action
@@ -123,6 +124,13 @@ public static class HelpRoom
             [.. asked ?? []],
             composed.Deny);
     }
+
+    /// <summary>
+    /// What its session is handed in full access (HELPMODE1a1, D183 point 1): no allow-list and nothing asked, since its harness's
+    /// mode asks nothing; every deny the person's rules compose, the shipped no-push among them while it is on, which still wins.
+    /// </summary>
+    public static RuleLists FullRules(PermissionFile file) =>
+        new([], [], PermissionRules.Compose(file, workspace: null, repository: null).Deny);
 
     /// <summary>
     /// The machine as the driver already holds it — its file, the registry, each repository's line, the
