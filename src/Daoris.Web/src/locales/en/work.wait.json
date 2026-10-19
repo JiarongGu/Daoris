@@ -29,5 +29,17 @@
   "work.wait.raised": "Waiting on you from here: {{names}}",
   "work.wait.toWait": "To the wait: {{names}}",
   "work.wait.name.helper": "a helper it asked for",
-  "work.wait.helper.lead": "It asked for another agent’s help. Nothing is asked until you let it."
+  "work.wait.helper.lead": "It asked for another agent’s help. Nothing is asked until you let it.",
+  "work.wait.name.permission": "a tool call to answer",
+  "work.wait.permission.title": "Tool calls held for your answer",
+  "work.wait.permission.lead": "Its rules do not allow these by themselves, so each waits for your answer. Allowing one lets that call alone run.",
+  "work.wait.permission.kind": "A tool call of kind `{{kind}}`",
+  "work.wait.permission.untitled": "An untitled tool call",
+  "work.wait.permission.untitledKind": "An untitled `{{kind}}` tool call",
+  "work.wait.permission.waited": "waiting {{span}} · refused if nobody answers within {{minutes}} minutes",
+  "work.wait.permission.answered.allow": "Allowed once: the call goes on.",
+  "work.wait.permission.answered.refuse": "Refused: the agent is told, and goes on without it.",
+  "work.wait.permission.refused.unheld": "It no longer waits: it was answered or released first. Nothing was answered.",
+  "work.wait.permission.refused.unoffered": "The agent did not offer that answer. Nothing was answered.",
+  "work.wait.permission.refused.standing": "That answer would allow it for the rest of the session, which is a rule: propose the rule instead. Nothing was answered."
 }

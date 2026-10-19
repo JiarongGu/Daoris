@@ -8,8 +8,9 @@ import {
 import {
   retryNotice, useAccounts, useApproveHelper, useConsidered, useDeclineHelper, useHarnessAction, useHarnesses, useHelperWaits, useNudge,
   useOpinionWaits, useRefreshHarnesses, useResolveHeld, useWorkState, useRetryQuest, useRules, useSessionGroups, useTrustFolder, useUntrusted,
-  useWaits,
+  useWaits, useAnswerPermission, usePermissionWaits,
 } from '../bridge/shell';
+import { permissionSaid } from './PermissionAsks';
 import { useSay } from '../bridge/conversation';
 import { SignIn } from '../agents/SignIn';
 import { byTool } from '../agents/tools';
@@ -126,6 +127,10 @@ function Band({ doors, notify, onSessions, onRun }: {
   const helperWaits = useHelperWaits();
   const approveHelper = useApproveHelper();
   const declineHelper = useDeclineHelper();
+  // The tool calls the sessions hold for the person's answer under asking (AUTONOMY1b3c): the driver's memory, asked every few
+  // seconds while a session works, since a hold publishes nothing; a browser has none.
+  const permissionWaits = usePermissionWaits((sessions.data ?? []).some((session) => WORKING.has(session.state)));
+  const answerPermission = useAnswerPermission();
   const resolveHeld = useResolveHeld();
   // The accounts as last known and the tick's waits (UX6d): a browser has none.
   const accounts = useAccountsKnown();
@@ -154,7 +159,7 @@ function Band({ doors, notify, onSessions, onRun }: {
   const waiting = needsAPerson(
     (reviewing ? ended.data : undefined) ?? sessions.data ?? [], quests.data ?? [], registry.data ?? [], asks.data ?? [],
     untrusted.data ?? [], Array.isArray(proposals) ? proposals : [], considered.data ?? [], groups.data ?? [], accounts,
-    opinionWaits.data ?? [], helperWaits.data ?? [], workState.data?.units ?? [], workState.data?.held ?? []);
+    opinionWaits.data ?? [], helperWaits.data ?? [], workState.data?.units ?? [], workState.data?.held ?? [], permissionWaits.data ?? []);
 
   if (waiting.length === 0) {
     return (
@@ -276,6 +281,17 @@ function Band({ doors, notify, onSessions, onRun }: {
       }, ({ done: settled, why, message }) => {
         if (settled) notify(t(yes ? 'work.helper.approved' : 'work.helper.declined'));
         else notify(helperSaid(t, why, message), 'error');
+      });
+    },
+    // A tool call held for the person answered with the choice pressed, as its session's page answers it (AUTONOMY1b3c): its answer
+    // said in the page's words, a refusal by its code in the error's tone. The answer asks the waits again itself.
+    permission: (item, option) => {
+      const held = item.permission;
+      if (!held) return;
+      const allows = held.choices.some((choice) => choice.id === option && choice.kind === 'allow_once');
+      run(item, () => answerPermission.mutateAsync({ session: held.session, request: held.request, option }), (answer) => {
+        if (answer.answered) notify(t(allows ? 'work.wait.permission.answered.allow' : 'work.wait.permission.answered.refuse'));
+        else notify(permissionSaid(t, answer.why, answer.message), 'error');
       });
     },
     // The agent's own sign-in through its account-owning door, as its page starts it (SIGNIN1): its end is said wherever the

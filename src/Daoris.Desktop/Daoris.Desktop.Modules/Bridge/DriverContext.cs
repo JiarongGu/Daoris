@@ -117,11 +117,17 @@ public sealed class DriverContext(IEventBus events, DriverLoop loop, OpenFolder?
     }
 
     /// <summary>The configured adapter's wire, as the loop plans by it (D70); the pipe, the stricter door, when it names none this build has.</summary>
-    public SessionWire Door(DriverConfig config)
+    public SessionWire Door(DriverConfig config) => DoorOf(Loop, config);
+
+    /// <summary>
+    /// <see cref="Door"/> for an owner with a loop and no context: the groups' pushed slice takes the look <c>SESSION_GROUPS</c> takes
+    /// (PUSH1c3a), so both read one door.
+    /// </summary>
+    public static SessionWire DoorOf(DriverLoop loop, DriverConfig config)
     {
         try
         {
-            return Loop.Harnesses.Adapters.Resolve(config.Adapter).Wire;
+            return loop.Harnesses.Adapters.Resolve(config.Adapter).Wire;
         }
         catch (DriverException)
         {

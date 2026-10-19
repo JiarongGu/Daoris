@@ -19,7 +19,7 @@ public sealed class PassLeftoversTests : IDisposable
 
     public PassLeftoversTests() => Directory.CreateDirectory(Engine);
 
-    public void Dispose() => Directory.Delete(_scratch, recursive: true);
+    public void Dispose() => GitSeed.Discard(_scratch);
 
     [Fact]
     public void The_holder_is_read_back_from_the_words_a_pass_wrote_and_from_no_other()

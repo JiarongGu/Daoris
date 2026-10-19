@@ -29,20 +29,9 @@ public abstract class LandedFixture : IDisposable
 
     public void Dispose()
     {
-        // A plugin's process, where a test ran one, stands in its folder a moment after it is told to go (FLAKE1). Git's read-only
-        // objects are made writable first (PROCSPEED1): refused, every retry fails and the folder stays.
-        for (var attempt = 0; Directory.Exists(Scratch); attempt++)
-        {
-            try
-            {
-                GitSeed.Remove(Scratch);
-            }
-            catch (Exception error) when (error is IOException or UnauthorizedAccessException)
-            {
-                if (attempt >= 20) return;
-                Thread.Sleep(250);
-            }
-        }
+        // A plugin's process, where a test ran one, stands in its folder a moment after it is told to go (FLAKE1); Remove waits for
+        // it, and makes git's read-only objects writable first (PROCSPEED1, SCRATCHLEAK1).
+        GitSeed.Discard(Scratch);
 
         GC.SuppressFinalize(this);
     }
@@ -261,14 +250,5 @@ public abstract class LandedFixture : IDisposable
         process.WaitForExit();
     }
 
-    private static string RepoRoot()
-    {
-        var directory = new DirectoryInfo(AppContext.BaseDirectory);
-        while (directory is not null && !Directory.Exists(Path.Combine(directory.FullName, ".git")))
-        {
-            directory = directory.Parent;
-        }
-
-        return directory?.FullName ?? AppContext.BaseDirectory;
-    }
+    private static string RepoRoot() => GitSeed.RepoRoot();
 }

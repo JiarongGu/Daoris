@@ -25,12 +25,7 @@ public sealed class SessionTreeOnlyHereTests : IDisposable
 
     public void Dispose()
     {
-        try
-        {
-            Directory.Delete(_scratch, recursive: true);
-        }
-        catch (IOException) { /* a straggling git handle */ }
-        catch (UnauthorizedAccessException) { /* read-only pack files under .git */ }
+        GitSeed.Discard(_scratch);
     }
 
     /// <summary>Commits only on its own branch, and uncommitted changes in its tree: only here, each counted, the files named.</summary>
@@ -243,8 +238,7 @@ public sealed class SessionTreeOnlyHereTests : IDisposable
 
     private static void ForceDelete(string folder)
     {
-        foreach (var file in Directory.EnumerateFiles(folder, "*", SearchOption.AllDirectories)) File.SetAttributes(file, FileAttributes.Normal);
-        Directory.Delete(folder, recursive: true);
+        GitSeed.Remove(folder);
     }
 
     private static async Task IdentityAsync(string root)
@@ -260,14 +254,5 @@ public sealed class SessionTreeOnlyHereTests : IDisposable
         await GitAsync(tree, "commit", "--quiet", "-m", message);
     }
 
-    private static string RepoRoot()
-    {
-        var directory = new DirectoryInfo(AppContext.BaseDirectory);
-        while (directory is not null && !Directory.Exists(Path.Combine(directory.FullName, ".git")))
-        {
-            directory = directory.Parent;
-        }
-
-        return directory?.FullName ?? AppContext.BaseDirectory;
-    }
+    private static string RepoRoot() => GitSeed.RepoRoot();
 }

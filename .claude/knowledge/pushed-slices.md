@@ -42,6 +42,8 @@ note has the measure that chose it.
 | A write that bypasses the host | A `Hears` on `DriverLoop.MoveHeard`, which the watch tells each move it heard (`HeardMove`): the ledger's family wakes the slice, so a connector's write is pushed with no desktop dispatch | `SessionsStateSlice.HearLedger` |
 | A driver fact beside the records | What the driver alone knows of a session (its running call, WAITSAY1c1) is a slice of its own, keyed by session and judged from memory, never a field of the records' slice, whose judge reads the service; one partition judged empty is pushed empty, never gone | `CallsStateSlice` |
 | Its twins' test | The allow-list held against the page's type (`data/api.ts`) and the service's answer record (`ApiContracts.cs`), read from the sources | `SessionsStateSliceTests` |
+| An ordered list | A place in the list is never a field (one move would push every row after it): each row carries, pushed-only, the sort inputs the reader orders its group by, and no more, so a write the order does not read pushes nothing; the page's compose twins the reader's order, written in the decision's note | `GroupsStateSlice.OrderedBy` (PUSH1c3a) |
+| A route's own look | Where a pull's freshness is the settled bar, the judge takes the route's look once per wake (and keeps what the route kept of it), rather than a fact that may lag it; the route's builders write each record | `GroupsStateSlice.LookAsync`, `SessionsRoutes.Grouped` |
 
 ## A fact judged per repository, before its slice
 

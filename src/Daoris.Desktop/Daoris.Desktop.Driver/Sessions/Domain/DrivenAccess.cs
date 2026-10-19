@@ -20,7 +20,10 @@ namespace Daoris.Driver;
 /// <param name="Said">What its start note says of the mode it got, the harness's own word for it, in one line.</param>
 public sealed record DrivenAccess(string Permissions, string Said)
 {
-    /// <summary>The protocol door's posture: null keeps the adapter's own (auto), the asking or unrestricted mode marked required.</summary>
+    /// <summary>
+    /// The protocol door's posture: null keeps the adapter's own (auto), the asking or unrestricted mode marked required, and the asking
+    /// mode marked too so its requests are held for the person (<see cref="AcpSession.PersonAnswers"/>, AUTONOMY1b3a).
+    /// </summary>
     public string? Posture { get; init; }
 
     /// <summary>The native door's <c>--permission-mode</c>: null keeps the adapter's own (auto).</summary>
@@ -60,21 +63,29 @@ public sealed record DrivenAccess(string Permissions, string Said)
             return new(permissions, refusal) { Refusal = refusal, Repository = repository };
         }
 
+        // AUTONOMY1b3a: on the protocol door each request waits for the person (HeldPermissions), refused at its bound; the native door
+        // has no wire to hold one on, since the harness answers its own asks under `-p`.
+        var waits = $"each request waits for the person to allow it once or refuse it, and one nobody answers in "
+            + $"{(int)HeldPermissions.Bound.TotalMinutes} minutes is refused";
         var does = unrestricted
             ? "which asks nothing"
-            : !adapter.TakesSettings
-                ? "which asks before acting; Daoris refuses every ask (D52), and this agent takes no rules, so it does only what that mode "
-                  + "allows unasked"
-                : adapter.Wire == SessionWire.Pipe
-                    ? "where a tool its rules do not allow is refused, since nothing answers an ask while it runs, so it uses only what its "
-                      + "rules allow"
-                    : "which asks before any tool its rules do not allow; Daoris refuses every ask (D52), so it uses only what its rules allow";
+            : adapter.Wire == SessionWire.Pipe
+                ? "where a tool its rules do not allow is refused: the native door has no wire to hold a request on, so it cannot hold one "
+                  + "for the person, and the session uses only what its rules allow"
+                : !adapter.TakesSettings
+                    ? $"which asks before acting; {waits}, and this agent takes no rules, so it does unasked only what that mode allows"
+                    : $"which asks before any tool its rules do not allow; {waits}";
         var said = adapter.Wire == SessionWire.Pipe
             ? $"Permission prompts: {permissions} on `{adapter.Name}`, the `{mode}` permission mode, {does}; {keeps}."
             : $"Permission prompts: {permissions} on `{adapter.Name}`, the agent's `{mode}` mode, {does}; {keeps}.";
+        // The protocol door's asking mode carries the mark that holds its requests for the person (AcpSession.PersonAnswers).
         return adapter.Wire == SessionWire.Pipe
             ? new(permissions, said) { PermissionMode = mode, Repository = repository }
-            : new(permissions, said) { Posture = $"{HelpModes.Required}{mode}", Repository = repository };
+            : new(permissions, said)
+            {
+                Posture = unrestricted ? $"{HelpModes.Required}{mode}" : $"{HelpModes.Required}{AcpSession.PersonAnswers}{mode}",
+                Repository = repository,
+            };
     }
 
     /// <summary>

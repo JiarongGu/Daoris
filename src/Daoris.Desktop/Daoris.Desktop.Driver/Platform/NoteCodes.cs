@@ -639,6 +639,16 @@ public static class NoteCodes
     public static readonly NoteCode RefusedLead = new("refused.lead", []);
     public static readonly NoteCode RefusedGoverns = new("refused.governs", []);
 
+    // ——— A permission held for the person under a repository's asking permission prompts (AUTONOMY1b3a, Acp.HoldPermission): the
+    // lead is Daoris's and the call's title after it the agent's words; a refusal leads with `refused.lead`, and its close says who
+    // or what refused it: the person, the turn's cancel, the session's end, or the bound, whose minutes are a fact.
+    public static readonly NoteCode AskingHeld = new("asking.held", []);
+    public static readonly NoteCode AskingAllowed = new("asking.allowed", []);
+    public static readonly NoteCode AskingDenied = new("asking.denied", []);
+    public static readonly NoteCode AskingCancelled = new("asking.cancelled", []);
+    public static readonly NoteCode AskingEnded = new("asking.ended", []);
+    public static readonly NoteCode AskingBound = new("asking.bound", ["minutes"]);
+
     // ——— A press's note and a chat's settings (CONVNOTE2c): the lead is Daoris's, what follows a landing's or a preface's lead
     // is a program's words (git's, a plugin's, Daoris's one-copy English to the agent, D142 point 6). The option and its value are
     // the agent's own names for them, never a path.

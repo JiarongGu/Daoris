@@ -24,6 +24,7 @@ import type { SessionProcess } from './process';
 import type { Relations } from './relations';
 import type { LineBehind } from './diff';
 import type { HelperWaits } from './HelperAsks';
+import type { PermissionWaits } from './PermissionAsks';
 import type { RuleAsk, RuleWaits } from './ProposedRules';
 import type { Seek } from './WaitAnchor';
 import { type HeadLink, type HeadOpinion, type HeadReview, type LandingPlan, SessionHead, type WorkAsk } from './SessionHead';
@@ -63,12 +64,15 @@ export function AttendedSession({
   session, quest, opening, taking, lastTurn, resolving, onResolve, onAnswerAsk, onAnswerSession,
   chain = [], onSession, onQuest, onReview, relations, timeline = 'dock', branch, ownBranch, onDiscardBranch, discardingBranch,
   headed = false, goAheads, onGoAhead, trace, ownSignIn = false, nameOf, lands, landing, planning, onLand, onSayRebase, onName, discards, onDiscardTree, review, behind,
-  opinion, continues, helps, process, parts, entryAccept, channel, workAsk, workBusy, toEvent, rules, ruleAsk, seek, helpers, milestone,
+  opinion, continues, helps, process, parts, entryAccept, channel, workAsk, workBusy, toEvent, rules, ruleAsk, seek, helpers, permissions,
+  milestone,
 }: {
   /** Passed straight through to the head: the process its own tree runs under, *Details*' rows (PROCESS1e). */
   process?: SessionProcess | null;
   /** Passed straight through to the head: the helpers it asked for, with the person's yes (MIXAGENT2b). */
   helpers?: HelperWaits | null;
+  /** Passed straight through to the head: the tool calls it holds for the person's answer, with a press per choice (AUTONOMY1b3c). */
+  permissions?: PermissionWaits | null;
   /** Passed straight through to the head: the wait a raising block's *To the wait* leads to there (WAITFOOT2b). */
   seek?: Seek | null;
   /** Passed straight through to the head: the rules it proposed that the person still answers (PROPOSEHERE1b). */
@@ -262,6 +266,7 @@ export function AttendedSession({
         ruleAsk={ruleAsk}
         seek={seek}
         helpers={helpers}
+        permissions={permissions}
       />
       {parts && <PartsStrip {...parts} />}
       {/* One Accept for every part with work to land (ACCEPTALL1, D167's 2026-10-15 amendment), under the strip that lists them. */}

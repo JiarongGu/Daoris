@@ -33,12 +33,7 @@ public sealed class LandingSquashTests : IDisposable
 
     public void Dispose()
     {
-        try
-        {
-            Directory.Delete(_scratch, recursive: true);
-        }
-        catch (IOException) { /* a straggling git handle */ }
-        catch (UnauthorizedAccessException) { /* read-only pack files under .git */ }
+        GitSeed.Discard(_scratch);
     }
 
     /// <summary>
@@ -320,15 +315,5 @@ public sealed class LandingSquashTests : IDisposable
     }
 
     /// <summary>The checkout this build runs from: a linked worktree's <c>.git</c> is a file, so it stops there too.</summary>
-    private static string RepoRoot()
-    {
-        var directory = new DirectoryInfo(AppContext.BaseDirectory);
-        while (directory is not null && !Directory.Exists(Path.Combine(directory.FullName, ".git"))
-               && !File.Exists(Path.Combine(directory.FullName, ".git")))
-        {
-            directory = directory.Parent;
-        }
-
-        return directory?.FullName ?? AppContext.BaseDirectory;
-    }
+    private static string RepoRoot() => GitSeed.RepoRoot();
 }

@@ -12,6 +12,7 @@ import type { Attention, AttentionKind } from './AttentionRow';
 import type { HelperWait } from './HelperAsks';
 import { CLOSE_SENDER, entryName, type HeldAttempt, heldWhy, heldWords, type MilestoneUnit, waitsOnPerson } from './milestone';
 import { type OpinionWait, opinionState } from './opinion';
+import { PERMISSION_BOUND_MINUTES, type PermissionWait } from './PermissionAsks';
 import { opinionSays } from './OpinionGate';
 import { newestSetUp, setUpRef, waitsForLook } from './review';
 import { placedFact } from './SessionRow';
@@ -35,6 +36,9 @@ export const ATTENTION_GROUP: Readonly<Record<AttentionKind, AttentionGroup>> = 
   parked: 'holding',
   'parked-quest': 'holding',
   'go-ahead': 'holding',
+  // A tool call a session holds for the person's answer under asking (AUTONOMY1b3c, D184 point 3): its turn stands still until they
+  // answer, or the bound refuses it, as a go-ahead holds its session's act.
+  permission: 'holding',
   trust: 'holding',
   // A start waiting on its accounts holds that start; a signed-out account a list holds, the next start the list takes (UX6d).
   'account-wait': 'holding',
@@ -95,6 +99,8 @@ export type AttentionActId =
   | 'publish' | 'choose' | 'retry' | 'approve' | 'refuse' | 'trust' | 'accept-departure' | 'accept-rule' | 'decline-rule'
   | 'sign-in' | 'sign-in-new' | 'read' | 'let-run' | 'reviewed' | 'not-yet' | 'show-again' | 'opinion-again' | 'opinion-anyway'
   | 'let-ask' | 'not-now'
+  // AUTONOMY1b3c: the person's answer to a tool call held for them, one per choice its agent offered.
+  | 'allow-once' | 'refuse-once' | 'refuse-always'
   // FABRIC-PERFORM1g: the person's word on a plugin step's attempt held for them.
   | 'happened' | 'did-not' | 'stop-step'
   // FABRIC-CLOSE1q: the person's word on Daoris's own close held for them: its recoveries, and the rest of the work stopped apart.
@@ -113,8 +119,29 @@ export function heldActs(held: HeldAttempt): AttentionActId[] {
   });
 }
 
-/** An act a row offers, and for an account's act which account it is for (UX6d): a row may sign two in. */
-export type AttentionOffer = { act: AttentionActId; account?: string };
+/**
+ * An act a row offers, and for an account's act which account it is for (UX6d): a row may sign two in; for a held tool call's,
+ * the agent's option it answers with (AUTONOMY1b3c).
+ */
+export type AttentionOffer = { act: AttentionActId; account?: string; option?: string };
+
+/** The act each kind of choice the person may make on a held tool call is pressed by (AUTONOMY1b3c); any other kind is no act here. */
+const CHOICE_ACTS: Readonly<Record<string, AttentionActId>> = {
+  allow_once: 'allow-once',
+  reject_once: 'refuse-once',
+  reject_always: 'refuse-always',
+};
+
+/**
+ * What a held tool call's row offers (AUTONOMY1b3c, D184 point 3): a press per choice its agent offered, in the agent's order, each
+ * answering with that choice's id. A kind the page cannot name is left to the session's page, which says it by the agent's name; and
+ * where no allow was offered, none is.
+ */
+function permissionOffers(item: Attention): AttentionOffer[] {
+  return (item.permission?.choices ?? [])
+    .filter((choice) => CHOICE_ACTS[choice.kind] !== undefined)
+    .map((choice) => ({ act: CHOICE_ACTS[choice.kind]!, option: choice.id }));
+}
 
 /**
  * The acts that ask once under the row before they do anything (design §6.3, D41 §4): a go-ahead's yes or no, which every
@@ -183,6 +210,8 @@ export function attentionOffers(item: Attention): AttentionOffer[] {
     case 'rule': return plain('accept-rule', 'decline-rule');
     // An agent's ask for a helper (MIXAGENT2c): its session's page's own yes and no, each one press, as they are there.
     case 'helper': return plain('let-ask', 'not-now');
+    // A tool call held for the person (AUTONOMY1b3c): its session's card's own presses, one each, as `PermissionAsks` says why.
+    case 'permission': return permissionOffers(item);
     // A second opinion that waits on the person (XAGENT1g, §8.5): *Go on anyway…* only where no press of theirs is coming (the
     // work lands by itself, or none could be had and the rule requires one), and a pass asked again; the rest are its session's.
     case 'opinion': return opinionOffers(item);
@@ -301,6 +330,12 @@ export function waitingInSessions(
  * **A go-ahead a session asked holds work** (KNOWUSE1a): the session's act waits for the person's yes or no, which every
  * session on the ask is handed. One row per go-ahead still asked, read from its ask's `goAheads`.
  *
+ * **A tool call a session holds for the person holds work** (AUTONOMY1b3c, D184 point 3): under its repository's asking permission
+ * prompts, a call its rules do not allow waits for their answer, its turn standing still until they give one or the driver's
+ * bound refuses it, from the driver's own list (`PERMISSION_WAITS`), which a browser has none of. A press per choice its agent
+ * offered; its session's page the door. So it is counted in the badge, which is how a person with the window behind others learns
+ * a turn waits on them.
+ *
  * **An agent's proposal to widen the rules (PERM2, D74) waits for the person's word.** 🔴 A widening never applies
  * without the person, so the driver holds it as `waiting` and only they can settle it. The session that proposed it
  * carries on meanwhile, so it holds nothing up. A narrowing applied itself, and one the driver has not judged yet may be
@@ -345,6 +380,7 @@ export function needsAPerson(
   helpers: readonly HelperWait[] = [],
   works: readonly MilestoneUnit[] = [],
   held: readonly HeldAttempt[] = [],
+  permissions: readonly PermissionWait[] = [],
 ): Attention[] {
   const live = asks.filter((ask) => ask.state === 'Open' || ask.state === 'Proposed');
   const intakeOf = (ask: Ask) =>
@@ -564,6 +600,24 @@ export function needsAPerson(
     };
   });
 
+  // A tool call a session holds for the person's answer under asking (AUTONOMY1b3c): the call as the agent named it (content, as
+  // written), the session that holds it named as Sessions names it, or by its id where the page holds no such record, and its
+  // repository. Keyed by both, since a request's id is only its agent's wire's.
+  const heldCalls = permissions.map((wait): Attention => {
+    const record = sessions.find((one) => one.id === wait.session);
+    const holder = record ? sessionTitle(record, quests.find((quest) => quest.id === record.quest)) : `#${wait.session}`;
+    return {
+      id: `${wait.session}#${wait.request}`,
+      kind: 'permission',
+      title: wait.title ?? i18n.t('work.wait.permission.untitled'),
+      where: record?.repository ?? '',
+      since: wait.since || null,
+      detail: i18n.t('work.attention.permissionWhy', { session: holder, minutes: PERMISSION_BOUND_MINUTES }),
+      session: wait.session,
+      permission: wait,
+    };
+  });
+
   // A unit whose clean-up is blocked, or whose owner nothing records (FABRIC-MILESTONE1b): its blocked entries as the driver says
   // them, its session's page the door, where its foot says the whole milestone. A wait the cycle ends by itself is no row.
   const blocked = works.flatMap((unit): Attention[] => {
@@ -612,7 +666,7 @@ export function needsAPerson(
   const oldestFirst = (a: Attention, b: Attention) =>
     (a.since === null || b.since === null ? Number(a.since === null) - Number(b.since === null) : a.since.localeCompare(b.since));
   return [
-    [...accountRows, ...parked, ...parkedQuests, ...goAheads, ...folders.values()],
+    [...accountRows, ...parked, ...parkedQuests, ...goAheads, ...heldCalls, ...folders.values()],
     [...waitingAsks, ...departures, ...setUps, ...secondOpinions, ...widenings, ...helperAsks, ...blocked, ...heldSteps, ...unanswerable],
     reviews,
   ].flatMap((group) => group.sort(oldestFirst));

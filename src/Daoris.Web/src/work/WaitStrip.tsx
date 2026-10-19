@@ -12,6 +12,7 @@ import { HelperAsks, type HelperWaits } from './HelperAsks';
 import type { Answered } from './InlineConfirm';
 import type { SayRebase } from './LandingSync';
 import { Discards, type HeadOpinion, type HeadReview, type LandingPlan, Lands, type WorkAsk } from './Lands';
+import { heldFor, PermissionAsks, type PermissionWaits } from './PermissionAsks';
 import { ProposedRules, type RuleAsk, type RuleWaits } from './ProposedRules';
 import { InConversation, leftFor, type Seek, SOUGHT, useSought, waitName } from './WaitAnchor';
 import { rulesAsked, type Wait, WORK_WAITS, waitsOf } from './waits';
@@ -30,6 +31,11 @@ export type WaitProps = {
   onAnswerAsk?: (ask: string) => void;
   goAheads?: GoAhead[];
   onGoAhead?: GoAheadAnswer;
+  /**
+   * The tool calls it holds for the person's answer under asking (AUTONOMY1b3c, D184 point 3): every request this machine's sessions
+   * hold as the shell read them, its own drawn, the answer's one door and its pending. Absent where nothing reads them (a browser).
+   */
+  permissions?: PermissionWaits | null;
   /**
    * The rules it proposed that the person still answers (PROPOSEHERE1b, D74): the machine's proposals as the shell read them,
    * the answer's door, its pending, and whether the session takes words now. Absent where nothing reads the rules (a browser).
@@ -70,7 +76,8 @@ export type WaitProps = {
  * @remarks
  * **The head's molecules, not copies** (D168 point 2): a go-ahead still open is `GoAheadList`'s, a rule the session proposed
  * `ProposedRules`' (PROPOSEHERE1b), the work's line `Lands` with its *Accept…*, the rebase words and the gates, a discard the line
- * holds `Discards`, an agent's ask for a helper waiting on the person's word `HelperAsks` with its yes and no (MIXAGENT2c), each
+ * holds `Discards`, an agent's ask for a helper waiting on the person's word `HelperAsks` with its yes and no (MIXAGENT2c), a tool
+ * call held for their answer under asking `PermissionAsks` with a press per choice its agent offered (AUTONOMY1b3c), each
  * handed what the head is handed. A park's
  * question is named and not answered here: the box below is its answer's one door (FIX-LOG 2026-09-29), and its *Finish…* and
  * *Decline…* stay its card's (D56). A hand-over offer is the pinned page head's, already on screen.
@@ -124,6 +131,7 @@ export function WaitStrip({ answerBelow = false, workAsk, ruleAsk, onTop, seek, 
   const question = waits.find((wait) => wait.kind === 'question');
   const intake = waits.find((wait): wait is Extract<Wait, { kind: 'intake' }> => wait.kind === 'intake');
   const open = new Set(waits.filter((wait) => wait.kind === 'goAhead').map((wait) => (wait as { number: number }).number));
+  const asking = new Set(waits.filter((wait) => wait.kind === 'permission').map((wait) => (wait as { request: string }).request));
   const ruled = new Set(waits.filter((wait) => wait.kind === 'rule').map((wait) => (wait as { id: string }).id));
   const helping = new Set(waits.filter((wait) => wait.kind === 'helper').map((wait) => (wait as { id: string }).id));
   const work = waits.some((wait) => WORK_WAITS.has(wait.kind));
@@ -193,6 +201,16 @@ export function WaitStrip({ answerBelow = false, workAsk, ruleAsk, onTop, seek, 
                   lead={t('work.awaiting.goAheads')}
                   inConversation={toEvent?.goAheads}
                   marked={sought?.startsWith('goAhead:') ? Number(sought.slice('goAhead:'.length)) : undefined}
+                />
+              </div>
+            )}
+            {asking.size > 0 && props.permissions && (
+              <div className="grid gap-1">
+                <PermissionAsks
+                  waits={heldFor(props.permissions.waits, session.id).filter((held) => asking.has(held.request))}
+                  onAnswer={props.permissions.onAnswer}
+                  busy={props.permissions.busy}
+                  lead={t('work.wait.permission.lead')}
                 />
               </div>
             )}

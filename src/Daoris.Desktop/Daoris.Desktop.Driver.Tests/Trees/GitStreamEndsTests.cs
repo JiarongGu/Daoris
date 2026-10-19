@@ -72,17 +72,5 @@ public sealed class GitStreamEndsTests : IDisposable
         Assert.False(File.Exists(Path.Combine(_root, "marker")), "what git started outlived its caller's cancellation");
     }
 
-    // A worktree's own `.git` is a file: the scratch stays in the checkout the run is in (SCRATCHLEAK1).
-    private static string RepoRoot()
-    {
-        var directory = new DirectoryInfo(AppContext.BaseDirectory);
-        while (directory is not null
-               && !Directory.Exists(Path.Combine(directory.FullName, ".git"))
-               && !File.Exists(Path.Combine(directory.FullName, ".git")))
-        {
-            directory = directory.Parent;
-        }
-
-        return directory?.FullName ?? AppContext.BaseDirectory;
-    }
+    private static string RepoRoot() => GitSeed.RepoRoot();
 }

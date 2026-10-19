@@ -65,19 +65,30 @@ internal static class GitSeed
     /// <summary>
     /// A scratch folder of repositories removed whole (PROCSPEED1): git writes its objects read-only, a copy keeps that, and
     /// <c>Directory.Delete</c> refuses a read-only file on Windows, so each file is made writable first, as <c>GitTree</c>'s cleanup
-    /// does. A link is never walked into, so nothing it points at outside the folder changes. Throws as <c>Directory.Delete</c> does
-    /// for a file something still holds; a caller that waits for a straggler retries.
+    /// does. A link is never walked into, so nothing it points at outside the folder changes. A file something still holds (a
+    /// process a test started, a scanner) is waited for, 12 tries a quarter second apart (SCRATCHLEAK1, as the landing fixtures
+    /// already waited); the last refusal is thrown, as <c>Directory.Delete</c> throws it.
     /// </summary>
     public static void Remove(string folder)
     {
-        if (!Directory.Exists(folder)) return;
-        var walk = new EnumerationOptions { RecurseSubdirectories = true, AttributesToSkip = FileAttributes.ReparsePoint };
-        foreach (var file in Directory.EnumerateFiles(folder, "*", walk))
+        for (var attempt = 1; Directory.Exists(folder); attempt++)
         {
-            File.SetAttributes(file, FileAttributes.Normal);
-        }
+            try
+            {
+                var walk = new EnumerationOptions { RecurseSubdirectories = true, AttributesToSkip = FileAttributes.ReparsePoint };
+                foreach (var file in Directory.EnumerateFiles(folder, "*", walk))
+                {
+                    File.SetAttributes(file, FileAttributes.Normal);
+                }
 
-        Directory.Delete(folder, recursive: true);
+                Directory.Delete(folder, recursive: true);
+            }
+            catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+            {
+                if (attempt >= 12) throw;
+                Thread.Sleep(250);
+            }
+        }
     }
 
     /// <summary>
@@ -93,14 +104,39 @@ internal static class GitSeed
         File.WriteAllText(config, repaired, new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
     }
 
-    private static string Folder()
+    /// <summary>
+    /// A <see cref="Remove"/> whose last refusal is let go (SCRATCHLEAK1): what a test's <c>Dispose</c> calls, so a straggler's hold
+    /// on a file leaves the folder for a later clear and never fails the test that has already passed.
+    /// </summary>
+    public static void Discard(string folder)
     {
-        var directory = new DirectoryInfo(AppContext.BaseDirectory);
-        while (directory is not null && !Directory.Exists(Path.Combine(directory.FullName, ".git")))
+        try
+        {
+            Remove(folder);
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+        {
+            // Scratch left here is under the ignored fixtures folder; the retries in Remove have already waited.
+        }
+    }
+
+    /// <summary>The checkout a test run is in: the scratch's root, <c>_fixtures</c> beside it.</summary>
+    public static string RepoRoot() => RootFrom(AppContext.BaseDirectory);
+
+    /// <summary>
+    /// The nearest folder at or above <paramref name="start"/> with a <c>.git</c>, a directory or a file (SCRATCHLEAK1): a linked
+    /// worktree's <c>.git</c> is a file, and a walk that wanted a directory passed it into the main checkout's folder.
+    /// </summary>
+    public static string RootFrom(string start)
+    {
+        var directory = new DirectoryInfo(start);
+        while (directory is not null && !Path.Exists(Path.Combine(directory.FullName, ".git")))
         {
             directory = directory.Parent;
         }
 
-        return Path.Combine(directory?.FullName ?? AppContext.BaseDirectory, "_fixtures", "seeds", Run);
+        return directory?.FullName ?? start;
     }
+
+    private static string Folder() => Path.Combine(RepoRoot(), "_fixtures", "seeds", Run);
 }

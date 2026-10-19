@@ -231,7 +231,7 @@ public sealed class SessionTreesTests : IDisposable
         }
         finally
         {
-            Directory.Delete(bare, recursive: true);
+            GitSeed.Remove(bare);
         }
     }
 
