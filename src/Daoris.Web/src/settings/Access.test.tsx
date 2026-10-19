@@ -222,6 +222,6 @@ describe("a level's access rows", () => {
     expect(screen.getByText('放行', { selector: 'span' })).toBeInTheDocument();
     expect(row('落地')).toHaveTextContent('完成的工作等你采纳…之后才落地，和现在一样。Daoris 的默认：哪里都没有设定。');
     expect(accessSummary(t, MIXED, 'repository')).toBe(
-      '每个权限都问（工作区的默认），受理直接分派（本机的默认），等你采纳…才落地（Daoris 的默认），不请求放行');
+      '每个权限都问（工作区的默认），受理直接分派（本机的默认），等你采纳…才落地（Daoris 的默认），不请你放行');
   });
 });
