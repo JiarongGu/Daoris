@@ -71,7 +71,7 @@ public sealed record NodeRuntimeLook(DriverConfig Config, bool Whole)
         (_, _) => Task.FromResult<(OpinionGateState?, ReviewGateState?)>((null, null));
 
     /// <summary>
-    /// The named workflow's version a quest unit's run is bound to (FABRIC-RUN1c; §E7, D157 §5.1: <see cref="WorkflowGraphs.ForRun"/> through
+    /// The named workflow's version a quest unit's run is bound to (FABRIC-RUN1c; §E7, D157 §5.1: the decoder's read for a run, through
     /// <see cref="WorkflowRunNodes.VersionOf"/>), given the quests the pass read for its chain; null where its run follows Current or has no
     /// binding. A unit bound to one is governed by that version, never by Current's graph (<see cref="NodeRuntime.BoundIn"/> reads the home's).
     /// </summary>

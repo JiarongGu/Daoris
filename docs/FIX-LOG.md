@@ -23,6 +23,20 @@ repository.
   (`Planner.ReopenedFrom`) and ends as the reopen stopped it, so CLOSE1c2's carry-on brings the branch up to date once.
 - **Verification:** `QuestSyncTests` (the theory, and the raced lost-step guard probed red with CLOSE1c21's rule off), `PlannerTests`
   (`ReopenedFrom` red by compile, the carry-on once), filtered, green.
+## 2026-10-20 — The CLI's graph reader read `1.0` as a whole number and said a graph's first fault in another order (GRAPHTWINS1)
+
+- **Symptom:** found by reading the CLI's reader against the driver's while writing the shared table `graph-problems.json`, each fault
+  now a row of its `unreadable`: a node's `"version": 1.0` read as version 1 in the CLI and as no whole number in the driver, a retry delay past 32 bits read in the CLI alone, and of a graph
+  with two faults the CLI named its cleanup before its nodes, and a node's evidence before its ports, where the driver names the other.
+  A version holding such a graph read in one twin and was unreadable in the other.
+- **Root cause:** FABRIC-GRAPH1b's reader (`graphversions.ts`, b27b51251) judged a whole number on the value `JSON.parse` gives, which has
+  lost its text, while the driver's `NodeGraphs.Parts` asks `TryGetInt32` of the text (`1.0` and `1e2` are none); its delays took any
+  integer; and it read the fields in an order of its own, though the first place that does not read is the one said.
+- **Fix:** D173's GRAPHTWINS1 note. Files are read by `parseWithSource` (`jsonsource.ts`), which keeps each number's text, and a whole
+  number is one written as one within 32 bits, delays too; `readGraphParts` reads in the driver's order (schema, nodes, wires, entries,
+  end, cleanup; a node's retry, id, kind, version, reach, ports, options, then the rest).
+- **Verification:** `graphproblems.test.ts` and the driver's `NodeGraphsTests` on the same rows (a version written `1.0`, a delay past
+  the bound, two faults in each order), every word alike.
 
 ## 2026-10-20 — Four failing questions starved a fifth attempt, and a rule asking no opinion held its node for ever (FABRICRUN1)
 
@@ -73,6 +87,18 @@ repository.
 - **Verification:** `DriverConfigKeepsTests`, `KeepLockTests`, `KeepLockProcessTests` (Process), and the CLI's `configkeeps.test.ts`
   and `keeplock.test.ts`, over `driver-config-keeps.json`'s rows, `sets`, `names` and `lock`; the driver classes over every config
   and home-file writer (1,011 and 323 tests) and the CLI's config, home-file, plugin, permission and toolchain tests pass.
+
+## 2026-10-20 — The decoder's guard flagged the runtime's read of a run's bound version (FABRICRUN1)
+
+- **Symptom:** `WorkflowGraphsTests.Nothing_outside_the_read_only_projection_reads_the_decoder` failed on main after FABRICRUN1:
+  `Trees/Nodes/NodeRuntime.cs` named `WorkflowRunNodes.VersionOf`.
+- **Root cause:** FABRIC-RUN1c's `NodeRuntime.BoundIn` asks which version a quest's run is bound to, to leave that unit ungoverned by
+  Current's graph; the guard is a text scan for any read of the decoder or its projection, and the branch's filtered run did not
+  reach it. The guard's purpose (no record binds a decoded graph's digest, so a decoder change moves nothing stored) still holds:
+  the runtime evaluates nothing on the version and stores no digest of it.
+- **Fix:** the guard allows that one named read in `NodeRuntime.cs`, with its reason; every other reader still fails it. The
+  runtime's doc comment names the decoder in words.
+- **Verify:** `WorkflowGraphsTests` 25 of 25.
 
 ## 2026-10-20 — A named workspace's help start sometimes wrote "Not read yet" into its room (HelpStartReadTests)
 

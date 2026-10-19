@@ -17759,3 +17759,27 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **FABRIC-CLOSE1o-ii — the loop's line names why a take went unbound** (service, driver; after CLOSE1o; §E5). The end line only says the take did not bind, because the driver never sees the take's outcome: carry `QuestMove.TakeBind` to the driver (beside `took_quest` on the session record) so the line says expired, replaced or remote. Proof: the end line names "expired" for a lapsed bind, and nothing for a bound take.
 
 **Outcome** 2026-10-20: built as CLOSETAKE1: a take's bind outcome (`expired`, `replaced` or `remote`) is carried on the take's answer, kept on the session's record (`took_bind`, machine-local, moving no revision) and answered as `tookBind` on `/api/sessions` to loopback only; the loop's end line for a take that did not bind names why. Detail: D173's CLOSETAKE1 note.
+
+## FABRIC-GRAPH1c — the CLI judges a cycle at its door (2026-10-20, D173)
+
+> - [ ] **FABRIC-GRAPH1c — the CLI judges a cycle at its door** (cli; after GRAPH1; §E3, §E7). `daoris driver landing … --cycle <file>` and a `workCycles` verb validate as `NodeGraphs.Problems` does, over a shared table of graphs and their codes. Proof: WIRE1a's 21 and GRAPH1's 19 codes from one table read by both twins.
+
+**Outcome** 2026-10-20: built as GRAPHTWINS1, one feature end to end (D187): the CLI's `nodegraphs.ts` judges a graph as `NodeGraphs.Problems` does, both twins held to one table (`graph-problems.json`: every `WireRefusal` (22) and `GraphRefusal` (21) code with its words), the driver's `NodeWiresTests` and `NodeGraphsTests` reading their cases from it; `daoris driver landing … --cycle <file>|--no-cycle` and `daoris driver work-cycle` refuse a cycle with its first problem in the driver's words and write nothing. Detail: D173's GRAPHTWINS1 note. On Opus, the whole feature: about 335 tool calls, 83 minutes.
+
+## FABRIC-GRAPH1f — the CLI saves a graph version (2026-10-20, D173)
+
+> - [ ] **FABRIC-GRAPH1f — the CLI saves a graph version** (cli; after GRAPH1c, GRAPH1b). With GRAPH1c's `NodeGraphs.Problems` in the CLI and a parse that keeps option values' raw text, `planAddVersion` saves a graph version, and the shared table's `judged: "driver"` and `cli-refuses` rows go to `both`. Proof: every row of `workflow-graph-versions.json` from both twins, its adds included.
+
+**Outcome** 2026-10-20: built as GRAPHTWINS1, one feature end to end (D187): `planAddVersion` saves a graph version, and `daoris driver workflow apply` and `import` take one; workflow files are read and written keeping every value's text (`jsonsource.ts`), so the driver's digest holds; one row the CLI still refuses: a letter outside ASCII and Chinese, whose escape depends on the driver's runtime. Detail: D173's GRAPHTWINS1 note.
+
+## FABRIC-GRAPH1k — the CLI twin judges the two new codes (2026-10-20, D173)
+
+> - [ ] **FABRIC-GRAPH1k — the CLI twin judges the two new codes** (cli; with GRAPH1c). When the CLI gets `Problems`, the two `judged: "driver"` rows for `observed-twice` and `protected-wire` become `both`.
+
+**Outcome** 2026-10-20: built as GRAPHTWINS1, one feature end to end (D187): `observed-twice` and `protected-wire` are judged by both twins, their rows in `workflow-graph-versions.json` and `graph-problems.json` read by both. Detail: D173's GRAPHTWINS1 note.
+
+## PUSH1e — accounts and usage pushed, and their twins moved into .NET (2026-10-20, D182)
+
+> - [ ] **PUSH1e — accounts and usage pushed, and their twins moved into .NET** (driver, modules, web, cli; D182 point 6; after PUSH1a). Sanitized account rows and curve points pushed on probe results and session changes, never a probe per window; the CLI's usage-curve, account-listing and home-table twins replaced by .NET through PUSH1f. Proof: the page and the CLI agree from one implementation.
+
+**Outcome** 2026-10-20: accounts and usage are judged in .NET and pushed: a `usage` slice (sessions and accounts' shares, through `USAGE`'s own builders) and an `accounts` slice (a partition per agent, through `ACCOUNTS`' own builder, its running counts from the records the sessions slice already holds, woken by `StateSlice.Pushed` when a count moved); the usage-curve verdicts (each window's start, its curve now and whether it is over; each scope's curves, measures and overs) are added to `ACCOUNTS`' answer, so the page's usage-curve twin is gone and the page only words them; a tick and a focus read neither route; an older host still pulls. Left: the account's state read from the roster's sign-ins (`HARNESSES`, never pushed), the CLI's twins (PUSH1f), the install's measurement. The merge mended `SessionsStateSliceTests` for CLOSETAKE1's `tookBind` (pull-only). On Opus: about 354 tool calls, 75 minutes. Detail: D182's PUSH1e note.

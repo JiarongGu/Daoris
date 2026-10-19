@@ -1,24 +1,50 @@
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useShenora } from '@shenora/react';
-import { keys } from '../../data/queries';
-import type { AccountsAnswer, AccountUseChange } from '../../settings/accounts/accounts';
+import { ACCOUNTS_SLICE, keys } from '../../data/queries';
+import type { AccountsAnswer, AccountUseChange, AgentAccounts } from '../../settings/accounts/accounts';
 import { call } from '../call';
+import { readSlice } from '../driver';
+import { readPushed, type SliceSpec, usePushedLive } from '../state/slices';
 
 // How each agent's accounts are used (TOOL4g; D125 §2.4, §3.7, §6; D130 §3.2, §9, §16.6): each scope's list and how it is
 // used, each account's cool-off, what its agent last said, its learned week and Daoris's sessions on it; each account's use
 // read again (SWITCH1d); and the edits Settings → Agents makes, the terminal's `daoris agent profile order|use|ready` over the
 // same files (D50).
 
+const isAgent = (value: unknown): value is AgentAccounts =>
+  typeof value === 'object' && value !== null && typeof (value as { agent?: unknown }).agent === 'string';
+
 /**
- * How each agent's accounts are used, read from the files and never probed (TOOL4g), so it is asked with the roster and
- * again at each tick. Shell-only, like the roster: a profile name rides this bridge and no HTTP route (D47 §4).
+ * How each agent's accounts are used, as the shell pushes it (PUSH1e, D182): a partition per agent, named by its accounts' owner,
+ * each its answer of `ACCOUNTS` whole with the verdicts .NET judges beside each reading (`AccountsStateSlice`), composed into the
+ * route's answer, agents by name as C#'s ordinal compares them, as the route orders them. Nothing judged yet composes nothing, which
+ * keeps the pull; judged with no agent, none.
+ */
+export const accountsSlice: SliceSpec = {
+  name: ACCOUNTS_SLICE,
+  key: keys.accounts,
+  read: () => readSlice(ACCOUNTS_SLICE),
+  compose: (partitions, judged) => {
+    if (!judged) return undefined;
+    const agents = [...partitions.values()].filter(isAgent).sort((a, b) => (a.agent < b.agent ? -1 : a.agent > b.agent ? 1 : 0));
+    return { agents } satisfies AccountsAnswer;
+  },
+};
+
+/**
+ * How each agent's accounts are used, read from the files and never probed (TOOL4g). Where the shell pushes it (PUSH1e), read from
+ * memory, never stale and asked on no focus, a probe's result arriving by one push; elsewhere asked with the roster and again at each
+ * tick. Shell-only, like the roster: a profile name rides this bridge and no HTTP route (D47 §4).
  */
 export const useAccounts = () => {
   const { isAvailable } = useShenora();
+  const client = useQueryClient();
+  const pushed = usePushedLive(ACCOUNTS_SLICE);
   return useQuery({
     queryKey: keys.accounts,
-    queryFn: () => call<AccountsAnswer>('ACCOUNTS'),
+    queryFn: () => readPushed(client, ACCOUNTS_SLICE, () => call<AccountsAnswer>('ACCOUNTS')),
     enabled: isAvailable,
+    ...(pushed ? { staleTime: Infinity, refetchOnWindowFocus: false } : {}),
   });
 };
 
@@ -26,7 +52,8 @@ export const useAccounts = () => {
  * Each account's use read again (SWITCH1d; the switch design §1.2): *Read now*, and the read as an agent's page opens. Each of
  * the agent's accounts whose reading is older than its question's floor is asked by its agent under its own home, with no
  * prompt and no model request (D165 point 1); the driver skips one cooling, refused, signed out, a key or busy. What it reads
- * lands in the accounts' files, which the state hub asks again under the roster's key, so this asks nothing again itself.
+ * lands in the accounts' files, which the shell's accounts slice judges at the roster's declared scope and pushes to every window
+ * (PUSH1e), or which the state hub asks again under the roster's key where it is pulled, so this asks nothing again itself.
  */
 export const useReadAccounts = () =>
   useMutation({
