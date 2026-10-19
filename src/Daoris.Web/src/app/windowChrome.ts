@@ -3,8 +3,8 @@ import type { CaptionButtonRect } from '@shenora/react';
 import { WindowCommands, useShenora, useWindowMaximized } from '@shenora/react';
 import { CAPTION_ATTRIBUTE, CAPTION_SLOTS } from '../work/caption';
 import { effectiveDark, subscribeTheme } from '../design/theme';
-import { tellFrameTheme, useEngineTheme } from '../bridge/shell';
-import { anotherMainWindow } from '../work/window';
+import { tellFrameTheme, tellFrameTitle, useEngineTheme } from '../bridge/shell';
+import { anotherMainWindow, secondaryWindow } from '../work/window';
 
 export { CAPTION_ATTRIBUTE, CAPTION_SLOTS, type CaptionSlot } from '../work/caption';
 
@@ -64,9 +64,15 @@ export function windowTitle(workspace: string | null): string {
  * desktop frame's title is its own (`WaitingBadge.Title`, the count before the name).
  */
 export function useWindowTitle(workspace: string | null) {
+  const { isAvailable } = useShenora();
   useEffect(() => {
-    document.title = windowTitle(workspace);
-  }, [workspace]);
+    const title = windowTitle(workspace);
+    document.title = title;
+    // The frame wears the workspace after its own count and name (MAINWINDOWS3b): the kit raises no title event to the host.
+    if (isAvailable && secondaryWindow(globalThis.location?.search ?? '') === null) {
+      tellFrameTitle(title, anotherMainWindow(globalThis.location?.search ?? ''));
+    }
+  }, [workspace, isAvailable]);
 }
 
 /**

@@ -75,6 +75,19 @@ export function tellFrameTheme(name: string) {
 }
 
 /**
+ * A main window's page telling its frame its own title (MAINWINDOWS3b), which names the workspace the window holds: the frame
+ * wears the application's name itself and takes only what follows it, so the taskbar and Alt-Tab read two windows on two
+ * workspaces apart. `name` is another main window's (`main:<n>`); none is the first. Fire and forget, as the theme is.
+ */
+export function tellFrameTitle(title: string, name: string | null) {
+  try {
+    void getBridge().invoke('DAORIS.WINDOWS', 'SET_TITLE', { payload: name ? { name, title } : { title } }).catch(() => {});
+  } catch {
+    // No bridge at all: a browser has no frame to tell.
+  }
+}
+
+/**
  * The main window's page telling its frame how much waits on the person (NOTIFY1b): Overview's *What needs you* count, which
  * the frame wears as its taskbar button's overlay and in its title, with `description` the words a screen reader says of
  * the overlay, in the page's language. On arrival and on each change of either.
