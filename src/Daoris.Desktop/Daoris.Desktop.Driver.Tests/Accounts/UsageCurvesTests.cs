@@ -279,6 +279,28 @@ public sealed class UsageCurvesTests
     }
 
     [Fact]
+    public void Codex_s_week_is_read_by_its_length_whichever_slot_holds_it_and_a_missing_week_earns_nothing()
+    {
+        var (week, five) = (Now.AddHours(8).ToUnixTimeSeconds(), Now.AddHours(2).ToUnixTimeSeconds());
+        static AccountSaid? Read(string answer) =>
+            CodexUsage.Read(System.Text.Json.JsonDocument.Parse(answer).RootElement.Clone()) is { Count: > 0 } readings
+                ? new AccountSaid([.. readings.Select(each => new WindowSaid(
+                    each.Window, each.Used, each.Reset, each.Standing, each.Credits, Now.AddMinutes(-1), null, AccountWindows.SourceRead))])
+                : null;
+        var swapped = $$$"""
+            {"rateLimits":{"limitId":"codex","primary":{"usedPercent":60,"windowDurationMins":10080,"resetsAt":{{{week}}}},
+            "secondary":{"usedPercent":10,"windowDurationMins":300,"resetsAt":{{{five}}}},"rateLimitReachedType":null}}
+            """;
+        var weekless = $$$"""
+            {"rateLimits":{"limitId":"codex","primary":{"usedPercent":10,"windowDurationMins":300,"resetsAt":{{{five}}}},
+            "secondary":null,"rateLimitReachedType":null}}
+            """;
+
+        Assert.Equal("weekly", UsageCurves.Lapsing(Use("smart"), Read(swapped), Now)!.Value.Window.Window);
+        Assert.Null(UsageCurves.Lapsing(Use("smart"), Read(weekless), Now));
+    }
+
+    [Fact]
     public void A_person_s_curve_measures_the_room()
     {
         var own = Lapsing(Use("curve", UseCurve.Flat("weekly", 50)), Seen("weekly", 0.30, TimeSpan.FromHours(10), TimeSpan.FromMinutes(5)))!.Value;

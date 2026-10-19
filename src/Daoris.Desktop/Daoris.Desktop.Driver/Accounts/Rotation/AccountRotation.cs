@@ -66,8 +66,8 @@ public enum WalkStep { Cooling, Refused, SignedOut, Kept, Near, Room, Fewest, La
 /// anything (TOOL6c, §5.2): null is unknown, never spent and never fresh.
 /// </summary>
 /// <remarks>
-/// A weekly reset a limit told, or carried a week on, is no longer here (USAGERESET1): it says when a week turns over and not
-/// how much of it would lapse, which only a reading of its use says (<see cref="UsageCurves.Lapsing"/>).
+/// It holds no weekly reset a limit told (USAGERESET1): that says when a week turns over and not how much of it would lapse,
+/// which only a reading of its use says (<see cref="UsageCurves.Lapsing"/>).
 /// </remarks>
 public sealed record AccountFacts(
     int Running = 0, DateTimeOffset? LastStarted = null, long? Chosen = null, AccountSaid? Said = null);
@@ -156,7 +156,7 @@ public enum NextReason
 
     /// <summary>
     /// Within its week's last day, more of its week would lapse at its reset, per hour left, than of the other's (step 4,
-    /// USAGERESET1); it said only that its known reset fell within the day before.
+    /// USAGERESET1).
     /// </summary>
     Lapsing,
 

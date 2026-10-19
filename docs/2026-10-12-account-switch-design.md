@@ -82,7 +82,8 @@ workspace, in the scope's account settings (`rotationUse`, D130 §16.6):
 - **Weekly window: its pace plus 20 points, never above 95%.** At the week's start 20% may be used before the account
   counts as over; at half the week 70%; from three-quarters on 95%. The week weighs more than five hours (D130 §16.2): an
   account far ahead of its week is spared while another has room, and none is run into its weekly limit while another
-  could carry the work. At most 5% of a week lapses at its reset by this curve; the person's curve can spend it.
+  could carry the work. At most 5% of a week lapses at its reset by this curve; the person's curve can spend it. (Amended by
+  USAGERESET1, §3: from three-quarters gone the week rises evenly from 95% to 100% at its reset.)
 - **Per-model weeks** (`seven_day_opus`, `seven_day_sonnet`) take the weekly curve where the agent reports them.
 
 **The person's curve** is a list of points per window, `[elapsed %, used %]`, joined by straight lines: elapsed from 0 to
