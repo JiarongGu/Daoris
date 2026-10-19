@@ -125,9 +125,11 @@ describe('how this came to be', () => {
 
   /** ACCESSWORDS1b (D184's AUTONOMY1c2 note): a landing the access setup accepted says whose setup it was, in place of the rule's switch. */
   it('says a landing the access setup accepted, with whose setup it was, in either language, and a level it does not know as recorded', async () => {
-    const under = (access: string) => {
+    const under = (access: string, acceptedBy = 'auto') => {
       const chain = structuredClone(SESSION_CHAIN);
-      chain.links[2]!.session!.landing!.branches[0]!.rule!.access = access;
+      const branch = chain.links[2]!.session!.landing!.branches[0]!;
+      branch.rule!.access = access;
+      branch.acceptedBy = acceptedBy;
       return answer(chain);
     };
     const { rerender } = render(<HowItCameToBe kind="session" id="s2" open onToggle={() => {}} answer={under('machine')} />);
@@ -139,6 +141,12 @@ describe('how this came to be', () => {
 
     rerender(<HowItCameToBe kind="session" id="s2" open onToggle={() => {}} answer={under('elsewhere')} />);
     expect(session()).toHaveTextContent('naming the plugin github · accepted by the access setup (elsewhere)');
+
+    // The record keeps the setup's level on a landing the person's press made under it too (TreeLands writes the effective
+    // rule's): the setup accepted nothing there, so the rule's switch keeps its words.
+    rerender(<HowItCameToBe kind="session" id="s2" open onToggle={() => {}} answer={under('machine', 'person')} />);
+    expect(session()).toHaveTextContent('accepted by your press · under the workspace\'s rule · naming the plugin github · accepting automatically');
+    expect(session()).not.toHaveTextContent('access setup');
 
     await i18n.changeLanguage('zh');
     rerender(<HowItCameToBe kind="session" id="s2" open onToggle={() => {}} answer={under('workspace')} />);
