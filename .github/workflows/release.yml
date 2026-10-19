@@ -255,6 +255,10 @@ jobs:
       - name: Verify gate
         run: npm run verify
 
+      # The tests of the tools only the parent runs, which verify no longer runs (GATESLIM1).
+      - name: Tool tests gate
+        run: npm run tooltests
+
       # The two .NET suites this job used to skip entirely. The rehearsals below drive the service and
       # the driver end to end, which is why the gap survived a release rehearsal and eight landings —
       # an end-to-end pass is not a substitute for the unit judgement underneath it, and a store rule

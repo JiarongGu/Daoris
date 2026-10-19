@@ -30,8 +30,7 @@ internal static class GitSeed
         {
             try
             {
-                var folder = Folder();
-                if (Directory.Exists(folder)) Directory.Delete(folder, recursive: true);
+                Remove(Folder());
             }
             catch (Exception error) when (error is IOException or UnauthorizedAccessException)
             {
@@ -61,6 +60,24 @@ internal static class GitSeed
             if (Path.GetFileName(directory) == "worktrees" && Path.GetFileName(from) == ".git") continue;
             Copy(directory, Path.Combine(to, Path.GetFileName(directory)));
         }
+    }
+
+    /// <summary>
+    /// A scratch folder of repositories removed whole (PROCSPEED1): git writes its objects read-only, a copy keeps that, and
+    /// <c>Directory.Delete</c> refuses a read-only file on Windows, so each file is made writable first, as <c>GitTree</c>'s cleanup
+    /// does. A link is never walked into, so nothing it points at outside the folder changes. Throws as <c>Directory.Delete</c> does
+    /// for a file something still holds; a caller that waits for a straggler retries.
+    /// </summary>
+    public static void Remove(string folder)
+    {
+        if (!Directory.Exists(folder)) return;
+        var walk = new EnumerationOptions { RecurseSubdirectories = true, AttributesToSkip = FileAttributes.ReparsePoint };
+        foreach (var file in Directory.EnumerateFiles(folder, "*", walk))
+        {
+            File.SetAttributes(file, FileAttributes.Normal);
+        }
+
+        Directory.Delete(folder, recursive: true);
     }
 
     /// <summary>

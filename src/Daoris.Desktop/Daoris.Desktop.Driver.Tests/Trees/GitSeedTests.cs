@@ -52,6 +52,30 @@ public sealed class GitSeedTests : IDisposable
             File.ReadAllText(config));
     }
 
+    /// <summary>
+    /// PROCSPEED1: git writes its objects read-only, a copy keeps that, and <c>Directory.Delete</c> refuses a read-only file on
+    /// Windows; the fixtures' cleanup retried that refusal for five seconds after every test and left the folder behind.
+    /// </summary>
+    [Fact]
+    public void A_copy_whose_objects_git_wrote_read_only_is_removed_whole()
+    {
+        var seed = Path.Combine(_scratch, "seed");
+        var objects = Path.Combine(seed, ".git", "objects", "5b");
+        Directory.CreateDirectory(objects);
+        File.WriteAllText(Path.Combine(objects, "0ea958a50c4c247410bc2aaf79a29ae46d0fbf"), "blob");
+        File.SetAttributes(Path.Combine(objects, "0ea958a50c4c247410bc2aaf79a29ae46d0fbf"), FileAttributes.ReadOnly);
+        File.WriteAllText(Path.Combine(seed, "README.md"), "seed\n");
+        var copy = Path.Combine(_scratch, "copy");
+        GitSeed.Copy(seed, copy);
+        Assert.True(File.GetAttributes(Path.Combine(copy, ".git", "objects", "5b", "0ea958a50c4c247410bc2aaf79a29ae46d0fbf")).HasFlag(FileAttributes.ReadOnly));
+
+        GitSeed.Remove(copy);
+        GitSeed.Remove(seed);
+
+        Assert.False(Directory.Exists(copy));
+        Assert.False(Directory.Exists(seed));
+    }
+
     [Fact]
     public async Task A_shape_is_built_once_however_many_ask_at_once()
     {

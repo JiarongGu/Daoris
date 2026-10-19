@@ -7,7 +7,7 @@ import type { AddressInfo } from 'node:net';
 import { dirname, join } from 'node:path';
 import { createInterface } from 'node:readline';
 import { fileURLToPath } from 'node:url';
-import { makeFixture } from './_fixture.ts';
+import { makeFixture } from '../test/_fixture.ts';
 
 /**
  * The family rehearsal's set-up phase, held where it can be without a host or a driver (LAYOUT7a): the reading
@@ -16,7 +16,8 @@ import { makeFixture } from './_fixture.ts';
  * the stub also holds how it ends, with exit 0 once its input closes (STUB1).
  *
  * Workspace tooling (`tools/setup-kit.mjs`, `tools/rehearsal-kit.mjs`), tested from here for the reason
- * `desktop-tool.test.ts` states: this suite is what `npm run verify` and the release workflow already run (TEST3).
+ * `desktop-tool.test.ts` states, and run by the `tool-tests` gate with the merge tool's and the publisher's tests,
+ * not by `npm run verify`: only the parent runs the kit (GATESLIM1, reversing TEST3).
  */
 
 /** What `readSetup` reads back. Declared here because the tool itself is untyped. */

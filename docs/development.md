@@ -76,7 +76,9 @@ Real-process suites use `src/Daoris.Desktop/process.runsettings`; they run seria
 substantial time. The driver's git-only Process classes, marked `Parallel=Git` beside `Category=Process`,
 run four at once in one host with `src/Daoris.Desktop/git.process.runsettings` (gate `driver-process-git`,
 PROC1c): four at once is load, so that half runs after the serial one, never beside it, and a class
-marked so is run alone with that file, not the other, whose filter leaves it out. Rehearsals also run
+marked so is run alone with that file, not the other, whose filter leaves it out. A git test copies its
+repositories from a seed (`GitSeed`, PROC1h) unless it reads the first commit's id or time, and removes its scratch with
+`GitSeed.Remove`: git writes its objects read-only, which `Directory.Delete` refuses on Windows (PROCSPEED1). Rehearsals also run
 serially, use repository scratch and record transcripts there; the merge tool runs only the family rehearsal beside the
 git half, which builds the driver host into its own output (REHLANE1). Do not overlap them with another full gate run.
 `npm run test:web` runs `test:web:unit` (the vitests) then `test:web:e2e`, which rebuilds the HTTP host: a running
@@ -113,6 +115,16 @@ Process-lane gate alone (REHLANE1); the web gate's vitests are a light gate of t
 service suite (WEBSPLIT1). Add `--one-at-a-time` on a
 loaded machine to run every gate in turn. A stage requires that full verdict. The merge tool normally runs selected gates; a merge receipt alone does not
 prove the long gates ran. Read D115 and the tool's usage before changing queue/merge behavior.
+
+A merge runs the blocking checks alone by default: the universal gates (with the sensitive scan), the code map and the
+index check. Every other gate its paths reach is listed and skipped, "in the CI beside": run `--full --beside` on main's
+tip after a merge or batch and fix what it reports. `--gated` runs what the paths reach, for a risky merge; the full set
+is still required before any stage (GATESLIM1, D115).
+
+The tests of the tools only the parent runs (the merge tool, the install's publisher and the family rehearsal's set-up
+kit: `src/Daoris.Cli/tool-test/`) are the `tool-tests` gate, `npm run tooltests`, about four minutes of real git. `npm
+test` and `npm run verify` do not run them. A merge runs the gate only when its paths reach it (`tools/merge-branch.mjs`
+and what it imports, the publisher, the kit, the folder); `--full` and the release workflow run it (GATESLIM1).
 
 `--full --beside` runs the same full set on a commit (main's tip unless named) in `local/gate-tree`, a
 detached worktree of its own with its dependencies installed from the lockfiles, so merges continue in
