@@ -130,6 +130,21 @@ public sealed partial class CategoryTests
         }
     }
 
+    /// <summary>
+    /// The settings both suites' Process halves run with leave parallelization to each suite's assembly (PROCPAR1): a value there
+    /// overrides an assembly's own, and the modules' suite runs one class at a time by its <c>Parallelism.cs</c>, its modules reading
+    /// the process's environment. The driver's suite runs its collections at once by xUnit's default, as many as the file says.
+    /// </summary>
+    [Fact]
+    public void The_Process_half_s_settings_leave_parallelization_to_each_suite_and_bound_it()
+    {
+        var settings = System.Xml.Linq.XDocument.Load(Path.Combine(WorkspaceRoot.Folder, "src", "Daoris.Desktop", "process.runsettings"));
+        var xunit = settings.Root!.Element("xUnit")!;
+
+        Assert.Null(xunit.Element("ParallelizeTestCollections"));
+        Assert.InRange(int.Parse(xunit.Element("MaxParallelThreads")!.Value, System.Globalization.CultureInfo.InvariantCulture), 2, 16);
+    }
+
     [Fact]
     public void The_driver_s_own_tests_keep_the_rules()
     {
