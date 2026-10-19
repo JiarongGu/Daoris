@@ -1,6 +1,7 @@
 import { describe, test } from 'node:test';
 import assert from 'node:assert/strict';
 import { type ChildProcess, spawn, spawnSync } from 'node:child_process';
+import { EventEmitter } from 'node:events';
 import os from 'node:os';
 import { chmodSync, closeSync, existsSync, lstatSync, mkdirSync, openSync, readdirSync, readFileSync, realpathSync, rmSync, symlinkSync, utimesSync, writeFileSync, writeSync } from 'node:fs';
 import { delimiter, dirname, join, posix } from 'node:path';
@@ -70,7 +71,9 @@ interface Proc { pid: number; exe: string; command: string }
 interface Folder { path: string; link: boolean; git: boolean; processes?: Proc[]; processError?: string }
 interface Slow { name: string; ms: number; tests: number }
 interface GateResult { gate: Gate; code: number; log: string; verdict: string; note: string; ms: number; slowest?: Slow[]; trx?: string }
-type Step = (command: string, cwd: string, fd: number, options?: { raise?: ((pid: number) => void) | null }) => Promise<number>;
+/** CIPRIO1c: the step trees a run has running, by each step's own pid; `ended` says why once the run ended them. */
+interface Trees { ended: string | null; hold: (pid: number) => void; release: (pid: number) => boolean; end: (why: string) => void }
+type Step = (command: string, cwd: string, fd: number, options?: { raise?: ((pid: number) => void) | null; trees?: Trees | null }) => Promise<number>;
 interface Rule { paths?: string[]; lane?: string; gates: string[] | '*'; why: string }
 interface Selected { gate: Gate; run: boolean; reached: boolean; why: string }
 interface Verdict { gate: string; verdict: string; tree: string | null; at: string; commit?: string | null; branch?: string | null }
@@ -85,7 +88,7 @@ const tool = await import(
   // @ts-expect-error — untyped workspace tooling; the same seam dogfood.test.ts documents
   '../../../tools/merge-branch.mjs') as {
   parseArgs: (argv: string[]) => Options;
-  runGate: (root: string, gate: Gate, dir: string, options?: { step?: Step; noBuild?: boolean } & Beside) => Promise<GateResult>;
+  runGate: (root: string, gate: Gate, dir: string, options?: { step?: Step; noBuild?: boolean; trees?: Trees | null } & Beside) => Promise<GateResult>;
   runGates: (root: string, gates: Gate[], dir: string, options?: {
     keepGoing?: boolean;
     oneAtATime?: boolean;
@@ -186,10 +189,22 @@ const tool = await import(
   startBesideRun: (options?: { setPriority?: (pid: number, priority: number) => void; env?: Record<string, string | undefined>; say?: (line: string) => void }) => void;
   /** FAMILYFAIL1b: the raise a run beside hands a rehearsal's step, null in a run that did not lower itself. */
   rehearsalRaise: () => ((pid: number) => void) | null;
-  watchTip: (commit: string | null, resolveTip?: () => string | null) => { check: () => boolean; superseded: { from: string; to: string } | null };
-  supersededLines: (superseded: { from: string; to: string }, ran: string[], left: string[]) => string[];
+  watchTip: (commit: string | null, resolveTip?: () => string | null, options?: { onMove?: (moved: { from: string; to: string }) => void }) => {
+    check: () => boolean; poll: (ms: number) => () => void; superseded: { from: string; to: string } | null;
+  };
+  supersededLines: (superseded: { from: string; to: string }, ran: string[], left: string[], ended?: string[]) => string[];
   besideOutcome: (code: number, superseded: { from: string; to: string } | null) => { passed: boolean; superseded: string | null };
   runStep: Step;
+  /** CIPRIO1c: a superseded or stopped run ends the gates it is running, each with its whole tree. */
+  STEP_ENDED: number;
+  TIP_POLL_MS: number;
+  stepTrees: (options?: { end?: (pid: number) => void }) => Trees;
+  endTree: (pid: number, options?: {
+    platform?: string; run?: (command: string, args: string[], options: object) => { stdout?: string | null }; kill?: (pid: number, signal: string) => void;
+  }) => void;
+  descendants: (listing: string, pid: number) => number[];
+  stoppedLines: (ran: string[], left: string[], ended?: string[]) => string[];
+  stopOnInterrupt: (trees: Trees, options?: { on?: { once: (event: string, listener: () => void) => unknown; off: (event: string, listener: () => void) => unknown }; say?: (line: string) => void }) => () => void;
 };
 
 // The stage's own question (GATE6b's proof): the publish asks the merge tool's `--passed` before it builds.
@@ -3361,16 +3376,281 @@ test('a run of main\'s tip stops before its next gate once a newer tip supersede
   assert.equal(tool.besideOutcome(0, watch.superseded).passed, false);
 });
 
-test('a run given a named commit is never superseded: no commit to watch, no tip read', () => {
+test('a run given a named commit is never superseded: no commit to watch, no tip read, none polled', async () => {
   let reads = 0;
-  const watch = tool.watchTip(null, () => { reads += 1; return 'bbbbbbb2'; });
+  let moved = 0;
+  const watch = tool.watchTip(null, () => { reads += 1; return 'bbbbbbb2'; }, { onMove: () => { moved += 1; } });
   assert.equal(watch.check(), false);
+  // CIPRIO1c: nor polled while its gates run.
+  const unwatch = watch.poll(5);
+  await sleep(50);
+  unwatch();
   assert.equal(reads, 0);
+  assert.equal(moved, 0);
   assert.equal(watch.superseded, null);
   // A tip that cannot be read is not a newer one.
   assert.equal(tool.watchTip('aaaaaaa1', () => null).check(), false);
   // The same tip is not newer.
   assert.equal(tool.watchTip('aaaaaaa1', () => 'aaaaaaa1').check(), false);
+});
+
+// CIPRIO1c: a superseded run ended only before its next gate, so a gate on an old tip (a Process half, a rehearsal) ran
+// to its end, up to an hour of the machine's time beside five workers, for a verdict nobody would use
+
+const sleep = (ms: number) => new Promise((done) => setTimeout(done, ms));
+
+/** Whether a process still runs: signal 0 asks and sends nothing. */
+const alive = (pid: number): boolean => {
+  try {
+    process.kill(pid, 0);
+    return true;
+  } catch (error) {
+    return (error as NodeJS.ErrnoException).code === 'EPERM';
+  }
+};
+
+// A gate with a tree under it: it starts a grandchild, each writes its pid into the folder named (argument or TREE_PIDS),
+// and both wait ten minutes, far past any wait here, so only an end from outside stops them.
+const TREE = [
+  "import { spawn } from 'node:child_process';",
+  "import { writeFileSync } from 'node:fs';",
+  'const at = process.argv[2] ?? process.env.TREE_PIDS;',
+  "const wait = \"require('fs').writeFileSync(process.argv[1], String(process.pid)); setTimeout(() => {}, 600000)\";",
+  "spawn(process.execPath, ['-e', wait, at + '/grandchild.pid'], { stdio: 'ignore', windowsHide: true });",
+  "writeFileSync(at + '/child.pid', String(process.pid));",
+  'setTimeout(() => {}, 600000);',
+  '',
+].join('\n');
+
+/** The two pids a TREE gate wrote under `at`, once both have (bounded: a start under load). */
+async function treePids(at: string, ms = 20_000): Promise<number[]> {
+  const files = ['child.pid', 'grandchild.pid'].map((name) => join(at, name));
+  const read = (file: string) => (existsSync(file) ? Number(readFileSync(file, 'utf8')) : 0);
+  for (let waited = 0; waited < ms && !files.every((file) => read(file) > 0); waited += 100) await sleep(100);
+  const pids = files.map(read);
+  assert.ok(pids.every((pid) => pid > 0 && alive(pid)), `the gate's child and grandchild never both ran: ${pids.join(', ')}`);
+  return pids;
+}
+
+/** Waits for every pid to have ended, a little patience for an exit the system is still recording: those still running. */
+async function stillRunning(pids: number[], ms = 10_000): Promise<number[]> {
+  for (let waited = 0; waited < ms && pids.some(alive); waited += 100) await sleep(100);
+  return pids.filter(alive);
+}
+
+/**
+ * A scratch folder removed just after its processes were killed: Windows may still hold it a moment, and `rmSync` does not
+ * wait on a denied access as it does on a busy one (seen on this branch, the test's assertions all held).
+ */
+async function cleanupAfterKill(fx: { cleanup(): void }): Promise<void> {
+  for (let tries = 1; ; tries += 1) {
+    try {
+      fx.cleanup();
+      return;
+    } catch (error) {
+      if (tries >= 40 || !['EPERM', 'EBUSY', 'EACCES'].includes((error as NodeJS.ErrnoException).code ?? '')) throw error;
+      await sleep(250);
+    }
+  }
+}
+
+test('a run that ends its trees ends a running step\'s whole tree, its shell, child and grandchild, and the step answers ended', async () => {
+  const fx = makeFixture('merge-branch-end-tree');
+  const script = join(fx.root, 'tree.mjs');
+  writeFileSync(script, TREE);
+  const log = join(fx.root, 'step.log');
+  writeFileSync(log, '');
+  const fd = openSync(log, 'a');
+  let trees: Trees | null = null;
+  const pids: number[] = [];
+  try {
+    trees = tool.stepTrees();
+    const ran = tool.runStep(`node "${script}" "${fx.root}"`, fx.root, fd, { trees });
+    pids.push(...await treePids(fx.root));
+    trees.end('main moved from aaaaaaa to bbbbbbb');
+    let code = 0;
+    await within(ran.then((answer) => { code = answer; }), 'the ended step answering', 15_000);
+    assert.equal(code, tool.STEP_ENDED, 'a code of its own, never a failure\'s');
+    assert.notEqual(tool.STEP_ENDED, 0);
+    assert.deepEqual(await stillRunning(pids), [], 'every process the step started has ended');
+    assert.equal(trees.ended, 'main moved from aaaaaaa to bbbbbbb');
+  } finally {
+    trees?.end('the test ended');
+    for (const pid of pids) if (alive(pid)) process.kill(pid);
+    await stillRunning(pids);
+    closeSync(fd);
+    await cleanupAfterKill(fx);
+  }
+});
+
+test('a step\'s tree is ended by its own pid: taskkill /T on Windows, every descendant ps lists elsewhere, never by image name', () => {
+  const calls: [string, string[]][] = [];
+  const killed: number[] = [];
+  tool.endTree(4242, { platform: 'win32', run: (command, args) => { calls.push([command, args]); return {}; } });
+  assert.deepEqual(calls, [['taskkill', ['/T', '/F', '/PID', '4242']]]);
+  // Elsewhere a kill reaches the one process it names, and a shell's command outlives it: `ps` says what is under it.
+  const listing = ['    1     0', '   10     1', '   11    10', '   12    11', '   13    10', '   20     1', ''].join('\n');
+  assert.deepEqual([...tool.descendants(listing, 10)].sort((a, b) => a - b), [11, 12, 13]);
+  assert.deepEqual(tool.descendants(listing, 20), []);
+  calls.length = 0;
+  tool.endTree(10, {
+    platform: 'linux',
+    run: (command, args) => { calls.push([command, args]); return { stdout: listing }; },
+    kill: (pid) => { killed.push(pid); },
+  });
+  assert.deepEqual(calls.map(([command]) => command), ['ps']);
+  assert.deepEqual([...killed].sort((a, b) => a - b), [10, 11, 12, 13]);
+});
+
+test('a gate whose step the run ended reads ENDED, never FAIL, and nothing of it starts after: no step before it, no rehearsal run again, no test run alone', async () => {
+  const fx = makeFixture('merge-branch-ended-gate');
+  const why = 'main moved from aaaaaaa to bbbbbbb';
+  try {
+    const gateOf = async (gate: Gate, step: (trees: Trees) => Step) => {
+      const trees = tool.stepTrees({ end: () => {} });
+      const ran: string[] = [];
+      const handed: unknown[] = [];
+      const inner = step(trees);
+      const result = await tool.runGate(fx.root, gate, fx.root, {
+        trees,
+        step: (command, cwd, fd, options) => { ran.push(command); handed.push(options?.trees); return inner(command, cwd, fd, options); },
+      });
+      assert.ok(handed.every((given) => given === trees), 'every step is handed the run\'s trees, so its child is held');
+      return { result, ran, log: readFileSync(result.log, 'utf8') };
+    };
+    const endedAt = (at: string, code = tool.STEP_ENDED) => (trees: Trees): Step => async (command) => {
+      if (command !== at) return 0;
+      trees.end(why);
+      return code;
+    };
+    const isEnded = ({ result, log }: { result: GateResult; log: string }) => {
+      assert.equal(result.verdict, 'ENDED');
+      assert.match(result.note, /ended, not failed: main moved from aaaaaaa to bbbbbbb/);
+      assert.match(log, /\(ended, not failed: main moved from aaaaaaa to bbbbbbb\)/);
+      assert.doesNotMatch(log, /\(exited -?\d+\)\s*$/);
+    };
+
+    // Ended in a step before it: the next step before it and the gate never start.
+    const before = await gateOf(planned('rf', 'npm run rehearse:family', ['b1', 'b2']), endedAt('b1'));
+    isEnded(before);
+    assert.deepEqual(before.ran, ['b1']);
+
+    // Ended while it ran: a rehearsal is not run again.
+    const running = await gateOf(planned('rf', 'npm run rehearse:family', ['b1']), endedAt('npm run rehearse:family'));
+    isEnded(running);
+    assert.deepEqual(running.ran, ['b1', 'npm run rehearse:family']);
+    assert.equal(existsSync(join(fx.root, 'rf.rerun.log')), false);
+
+    // A step that answered a failure of its own once the run had ended it (a person's Ctrl+C reaches the console's
+    // processes too) is ended, not failed, and not run again: it printed nothing, which alone would run it again.
+    const own = await gateOf(planned('rf', 'npm run rehearse:family'), endedAt('npm run rehearse:family', 1));
+    isEnded(own);
+    assert.deepEqual(own.ran, ['npm run rehearse:family']);
+    assert.equal(existsSync(join(fx.root, 'rf.rerun.log')), false);
+
+    // A Process half that failed on its own, then waited to run its failure alone while main moved: nothing runs alone.
+    const half = planned('driver-process', 'dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests --settings src/Daoris.Desktop/process.runsettings');
+    const trees = tool.stepTrees({ end: () => {} });
+    const alone: string[] = [];
+    const waited = await tool.runGate(fx.root, half, fx.root, {
+      trees,
+      settled: async () => { trees.end(why); },
+      step: async (command, _cwd, fd) => {
+        if (command.includes('--filter')) alone.push(command);
+        writeSync(fd, PROCESS_FAILURE);
+        return 1;
+      },
+    });
+    assert.equal(waited.verdict, 'ENDED');
+    assert.match(waited.note, /exit 1.*ended, not failed: main moved/);
+    assert.deepEqual(alone, []);
+    assert.equal(existsSync(join(fx.root, 'driver-process.rerun.log')), false);
+
+    // Once the run has ended its trees, a gate asked to run starts no step at all.
+    const late = await gateOf(planned('s', 'dotnet build src/S', ['b1']), (ended) => { ended.end(why); return async () => 0; });
+    assert.equal(late.result.verdict, 'ENDED');
+    assert.deepEqual(late.ran, []);
+    assert.match(late.log, /not started: b1/);
+  } finally {
+    fx.cleanup();
+  }
+});
+
+test('a run of main\'s tip polls the tip while a gate runs and, on the first move, ends what it is running and starts nothing more', async () => {
+  const fx = makeFixture('merge-branch-poll');
+  let tip = 'aaaaaaa1';
+  const endedPids: number[] = [];
+  let release = () => {};
+  const trees = tool.stepTrees({ end: (pid) => { endedPids.push(pid); release(); } });
+  const moves: string[] = [];
+  const watch = tool.watchTip('aaaaaaa1', () => tip, {
+    onMove: (moved) => {
+      moves.push(moved.to);
+      trees.end(`main moved from ${moved.from.slice(0, 7)} to ${moved.to.slice(0, 7)}`);
+    },
+  });
+  const unwatch = watch.poll(20);
+  try {
+    // b holds a pid as a real step holds its child, and main moves while it runs, so only the poll can see it.
+    const step: Step = (command, _cwd, _fd, options) => new Promise((done) => {
+      if (!command.endsWith(' b')) return done(0);
+      const held = options!.trees!;
+      held.hold(4242);
+      release = () => done(held.release(4242) ? tool.STEP_ENDED : 0);
+      tip = 'bbbbbbb2';
+    });
+    const gates = ['a', 'b', 'c'].map((name) => planned(name, `node gate.mjs ${name}`));
+    const printed: string[] = [];
+    let results: GateResult[] = [];
+    await within(tool.runGates(fx.root, gates, fx.root, {
+      oneAtATime: true,
+      run: (root, gate, dir, beside) => tool.runGate(root, gate, dir, { ...beside, step, trees }),
+      halt: () => Boolean(trees.ended) || watch.check(),
+      print: (line) => printed.push(line),
+    }).then((answer) => { results = answer; }), 'the gate running ended by the poll');
+    assert.deepEqual(results.map((result) => `${result.gate.name} ${result.verdict}`), ['a PASS', 'b ENDED']);
+    assert.deepEqual(endedPids, [4242]);
+    assert.deepEqual(moves, ['bbbbbbb2'], 'said once, however often it is asked after');
+    assert.deepEqual(watch.superseded, { from: 'aaaaaaa1', to: 'bbbbbbb2' });
+    assert.match(printed.join('\n'), /ENDED\s+b\s.*ended, not failed: main moved from aaaaaaa to bbbbbbb/);
+    assert.match(printed.at(-1)!, /NOT RUN\s+c/);
+    assert.doesNotMatch(printed.join('\n'), /FAIL/);
+
+    const lines = tool.supersededLines(watch.superseded!, ['a'], ['c'], ['b']).join('\n');
+    assert.match(lines, /superseded: main moved from aaaaaaa to bbbbbbb, so this run ended the gates it was running and started no more; it is not a pass/);
+    assert.match(lines, /ran: a\n\s+ended: b\n\s+left: c/);
+    // The cadence is a few seconds: a gate on an old tip runs that long at most, for a git read every few seconds.
+    assert.ok(tool.TIP_POLL_MS >= 1000 && tool.TIP_POLL_MS <= 10_000, `${tool.TIP_POLL_MS} ms`);
+  } finally {
+    unwatch();
+    fx.cleanup();
+  }
+});
+
+test('a person\'s stop (Ctrl+C) ends the trees the run has running and is heard once; a second exits as it always did', () => {
+  const ended: number[] = [];
+  const trees = tool.stepTrees({ end: (pid) => ended.push(pid) });
+  trees.hold(7);
+  const said: string[] = [];
+  const terminal = new EventEmitter();
+  const unhook = tool.stopOnInterrupt(trees, { on: terminal, say: (line) => said.push(line) });
+  assert.equal(terminal.listenerCount('SIGINT'), 1);
+  terminal.emit('SIGINT');
+  assert.deepEqual(ended, [7]);
+  assert.match(trees.ended ?? '', /a person stopped the run/);
+  assert.match(said.join('\n'), /stopped: ending the gates running/);
+  assert.equal(terminal.listenerCount('SIGINT'), 0, 'once: a second Ctrl+C is the default exit');
+  unhook();
+
+  // A run that ends with no stop leaves no listener behind.
+  const quiet = new EventEmitter();
+  const off = tool.stopOnInterrupt(tool.stepTrees({ end: () => {} }), { on: quiet, say: () => {} });
+  off();
+  assert.equal(quiet.listenerCount('SIGINT'), 0);
+
+  const lines = tool.stoppedLines(['a'], ['c'], ['b']).join('\n');
+  assert.match(lines, /stopped: a person stopped this run, so it ended the gates it was running and started no more; it is not a pass/);
+  assert.match(lines, /ran: a\n\s+ended: b\n\s+left: c/);
 });
 
 // ---------------------------------------------------------------------------------------------------
@@ -4409,7 +4689,8 @@ describe('the tool, end to end in a scratch repository', { concurrency: true }, 
     const npmRan = () => (existsSync(npmLog) ? readFileSync(npmLog, 'utf8').split('\n').filter(Boolean) : []);
     const ranThere = join(gateTree, 'local', 'ran.txt');
 
-    const beside = repo.run(['--full', '--beside'], { GATE_HOLD: hold, PATH });
+    // Named, though it is main's tip: the merge that lands meanwhile would supersede a run of main's tip (CIPRIO1c).
+    const beside = repo.run(['--full', '--beside', gated], { GATE_HOLD: hold, PATH });
     try {
       // Bounded: the gate tree's gate has started, and holds until the test lets it go.
       for (let i = 0; i < 3000 && !(existsSync(ranThere) && readFileSync(ranThere, 'utf8').includes('first')); i += 1) {
@@ -4471,6 +4752,49 @@ describe('the tool, end to end in a scratch repository', { concurrency: true }, 
     assert.equal(existsSync(gateTree), false);
     assert.equal(tool.parseWorktrees(git(repo.root, 'worktree', 'list', '--porcelain')).length, 1);
     repo.cleanup();
+  });
+
+  // CIPRIO1c's proof: a gate on an old tip ran to its end, up to an hour of the machine's time, for a verdict nobody used.
+  test('--full --beside on main\'s tip ends the gate it is running, with its whole tree, once main moves on, and is recorded superseded', async () => {
+    const repo = scratch('beside-superseded', [{ name: 'held', run: 'node tree.mjs' }, { name: 'after', run: 'node gate.mjs after' }], { 'tree.mjs': TREE });
+    const at = join(dirname(repo.root), 'pids');
+    mkdirSync(at, { recursive: true });
+    const from = git(repo.root, 'rev-parse', 'HEAD');
+    const sha = from.slice(0, 7);
+    const pids: number[] = [];
+    const beside = repo.run(['--full', '--beside', '--one-at-a-time'], { TREE_PIDS: at });
+    try {
+      // Bounded: the tool, its gate tree and the gate start first, under the rest of the suite's load.
+      pids.push(...await treePids(at, 120_000));
+      writeFileSync(join(repo.root, 'next.txt'), 'next\n');
+      git(repo.root, 'add', '-A');
+      git(repo.root, 'commit', '--quiet', '-m', `next${TRAILER}`);
+      const to = git(repo.root, 'rev-parse', 'HEAD');
+      // The gate waits ten minutes otherwise; the poll sees the move within seconds, and two minutes is load's margin.
+      let done = { status: null as number | null, out: '' };
+      await within(beside.then((answer) => { done = answer; }), 'the run ending once main moved on', 120_000);
+      assert.equal(done.status, 1, done.out);
+      assert.deepEqual(await stillRunning(pids), [], `the gate's child and grandchild still run:\n${done.out}`);
+      assert.match(done.out, new RegExp(`superseded: main moved from ${sha} to ${to.slice(0, 7)}, so this run ended the gates it was running and started no more; it is not a pass`));
+      assert.match(done.out, /ENDED\s+held\s.*\(ended, not failed: main moved from/);
+      assert.match(done.out, /ran: none\n\s+ended: held\n\s+left: after/);
+      assert.doesNotMatch(done.out, /FAIL\s+held/);
+      assert.match(done.out, /Run it again on the new tip/);
+
+      const record = JSON.parse(readFileSync(join(repo.root, 'local', 'gate-tree.json'), 'utf8')) as { commit: string; passed: boolean | null; superseded?: string };
+      assert.deepEqual([record.commit, record.passed, record.superseded], [from, false, to]);
+      assert.equal(existsSync(join(repo.root, 'local', 'gate-tree.lock')), false, 'the lock is let go');
+      // Its log says it was ended, and an ended gate gives no verdict on the tree.
+      assert.match(readFileSync(join(repo.root, 'local', 'scratch', `beside-${sha}`, 'held.log'), 'utf8'), /\(ended, not failed: main moved from/);
+      const store = join(repo.root, 'local', 'gate-verdicts.json');
+      const verdicts = existsSync(store) ? (JSON.parse(readFileSync(store, 'utf8')) as { verdicts: Verdict[] }).verdicts : [];
+      assert.deepEqual(verdicts.filter((verdict) => verdict.gate === 'held'), []);
+    } finally {
+      for (const pid of pids) if (alive(pid)) process.kill(pid);
+      await stillRunning(pids);
+      await beside;
+      await cleanupAfterKill(repo);
+    }
   });
 
   // GATEWT1b and GATEWT1c: the gate tree's universal gate failed for want of the private patterns file, and a prune
