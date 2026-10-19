@@ -11,7 +11,11 @@ namespace Daoris.Desktop.Driver.Tests;
 /// and heard again. A handful of real file operations on a scratch folder, never a load: overflow and loss are the fast tests'
 /// (<see cref="ChangeWatchTests"/>), on the fake source.
 /// </summary>
-/// <remarks>Real watchers, whose events arrive on the machine's own time, so a class of its own, run one at a time.</remarks>
+/// <remarks>
+/// Real watchers, whose events arrive on the machine's own time, a request answered within the debounce, and the handles of the
+/// whole process measured, which every class beside it moves: so it runs alone, after the rest (<see cref="Alone"/>, PROCPAR1).
+/// </remarks>
+[Collection(Alone.Name)]
 [Trait(Category.Name, Category.Process)]
 public sealed class ChangeWatchProcessTests(ITestOutputHelper output) : IDisposable
 {

@@ -16,8 +16,10 @@ namespace Daoris.Desktop.Driver.Tests;
 /// Real git and real processes, so the class is in the real-process half (MOD8): a branch's worktree does not run it, the parent
 /// runs it on the merge. The service is a port nobody holds: a brainstorm asks it only for a search, and does without. It needs
 /// `Daoris.Service.Mcp` built, as <see cref="KnowledgeConnectorStartTests"/> does, and sets this process's home, connector and store to
-/// its own scratch for its run (a class run one at a time, so its own to set), so the connector it starts never opens another home.
+/// its own scratch for its run, so the connector it starts never opens another home. Those are every class's, so it runs alone, after
+/// the rest (<see cref="Alone"/>, PROCPAR1), as its pass of five seconds, a bound on a real stub's answer, would anyway.
 /// </remarks>
+[Collection(Alone.Name)]
 [Trait(Category.Name, Category.Process)]
 public sealed class BrainstormProcessTests : IDisposable
 {
