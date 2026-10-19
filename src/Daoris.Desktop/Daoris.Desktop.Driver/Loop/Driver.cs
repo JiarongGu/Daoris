@@ -522,14 +522,14 @@ public sealed class Driver(
 
         if (sync is not null && (Part == LookPart.Look | Context.Runs.TakeClaimsDue()))
         {
-            using (Stages.Begin("claims")) await StopLostClaimsAsync(events, ct).ConfigureAwait(false);
+            await Stages.TimeAsync("claims", () => StopLostClaimsAsync(events, ct)).ConfigureAwait(false);
         }
 
         // The plugins, read fresh each tick like the config (D64): a harness declared since the
         // last look is spawnable now, a server declared since is handed now, a hook process
         // disabled since is stopped now. The catalogue refuses a name this build carries before
         // anything of that plugin is taken.
-        using (Stages.Begin("plugins"))
+        await Stages.TimeAsync("plugins", async () =>
         {
             var catalog = PluginCatalog.Load(home, _built.Names);
             Context.Adapters = _built.WithPlugins(catalog);
@@ -540,7 +540,7 @@ public sealed class Driver(
             {
                 events.AddRange(await hooks.ReconcileAsync(catalog, ct).ConfigureAwait(false));
             }
-        }
+        }).ConfigureAwait(false);
 
         // What sessions proposed about the rules (PERM2, D74), settled BEFORE this tick spawns anything:
         // a narrowing is applied at once, so this tick's sessions are already handed it, and a widening
@@ -793,17 +793,18 @@ public sealed class Driver(
         }
 
         // Each start's preparation, from its holds to its record open or to what it came to (LOOKWAIT1), timed with its quest or ask. Its
-        // reservation is let go the moment its record opens, when the ledger holds it, or once it came to nothing (PARALLEL1b).
+        // reservation is let go the moment its record opens, when the ledger holds it, or once it came to nothing (PARALLEL1b). Run as
+        // its span's own work, so its git waiting for a place is said as its queue (LOOKWAIT1b); the look that holds the span is not.
         async Task<StartCame> BeginAsync(StartBegun started, LookStages.StageSpan span, StartReservation reserved, Func<List<TrustHold>, Action, Task<StartRun>> start)
         {
             var own = new List<TrustHold>();
             try
             {
-                var came = await Context.Runs.StartAsync(opened => start(own, () =>
+                var came = await span.RunAsync(() => Context.Runs.StartAsync(opened => start(own, () =>
                 {
                     Context.Runs.Release(reserved);
                     opened();
-                })).ConfigureAwait(false);
+                }))).ConfigureAwait(false);
                 return new StartCame(started, came, own);
             }
             finally
@@ -1133,7 +1134,8 @@ public sealed class Driver(
         SyncReport synced;
         using (var syncing = Stages.Begin("sync", beside: beside))
         {
-            synced = await sync.RunOnceAsync(ct).ConfigureAwait(false);
+            // Its gate's queue, and its git's waits for a place (LOOKWAIT1b), said as one.
+            synced = await syncing.RunAsync(() => sync.RunOnceAsync(ct)).ConfigureAwait(false);
             syncing.Queued(synced.Queued);
         }
 
