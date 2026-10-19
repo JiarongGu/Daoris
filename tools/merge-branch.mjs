@@ -134,9 +134,11 @@
  * - **A guest (CIPRIO1).** After the lock is taken and before anything is built, the run lowers its own process to below
  *   normal (`startBesideRun`), so every gate's descendants start there. Its gates get build servers of their own
  *   (`BESIDE_ENVIRONMENT`), and it never shuts the owner's down. A run of main's tip, not one given a commit, asks
- *   before each gate whether main has moved (`watchTip`) and, once it has, stops before the next gate, saying which gates
- *   ran and which were left; the record says `superseded`, never passed. A gate running is not stopped (CIPRIO1c), and
- *   I/O priority is left out (CIPRIO1b).
+ *   before each gate whether main has moved (`watchTip`), and every few seconds while its gates run (CIPRIO1c); once it
+ *   has, the run ends each gate running with its whole tree (`stepTrees`, `endTree`) and starts nothing more, saying
+ *   which gates ran, which it ended and which were left; an ended gate gives no verdict, and the record says
+ *   `superseded`, never passed. A person's Ctrl+C ends them the same way and the run winds down, its lock let go. I/O
+ *   priority is left out (CIPRIO1b).
  * - **Its private files, its logs (GATEWT1b, GATEWT1c).** Before its gates start, the private files a gate reads under
  *   `local/` (`privateGateFiles`: the declared `sensitive.patternsFile`, nothing outside `local/`) are copied from the main
  *   checkout into the tree on every run; a missing one is said, and the gate that reads it answers. When the run ends, pass,
@@ -2499,23 +2501,102 @@ function duration(ms) {
 }
 
 /**
- * One command through the platform shell, as the devkit runs a declared gate, its output into `fd`.
- * The gate runners take it as a parameter, so their logic is tested without starting a process.
+ * CIPRIO1c: what a step the run ended answers, never a gate's exit: a process's code is never negative (POSIX's are
+ * 0 to 255, and Windows reports its unsigned), so it is never read as a failure.
  */
-export function runStep(command, cwd, fd, { raise = null } = {}) {
+export const STEP_ENDED = -1;
+
+/**
+ * CIPRIO1c: the step trees a run has running, each by its step's own pid, so a superseded or stopped run ends every one at
+ * once. `end(why)` ends each held tree (`endTree`, the seam) and leaves `ended` saying why; a step started after it starts
+ * nothing (`guarded`). `release` answers whether the run ended that step, so its own exit is not read as the gate's.
+ */
+export function stepTrees({ end = endTree } = {}) {
+  const live = new Set();
+  const ended = new Set();
+  const trees = {
+    ended: null,
+    hold(pid) {
+      live.add(pid);
+    },
+    release(pid) {
+      live.delete(pid);
+      return ended.delete(pid);
+    },
+    end(why) {
+      trees.ended ??= why;
+      for (const pid of [...live]) {
+        ended.add(pid);
+        end(pid);
+      }
+    },
+  };
+  return trees;
+}
+
+/**
+ * CIPRIO1c: end a step's whole tree by the step's own pid, never by image name (the owner's processes share the names).
+ * On Windows a kill reaches the one process it names, and a shell's command outlives it (FAMILYFAIL1), so `taskkill /T`
+ * ends what the step started too. Elsewhere `ps` says what is under it, each then killed. What a process of the tree left
+ * running after its own parent ended is in no tree, and no build server is shut down: the run's are its own
+ * (`BESIDE_ENVIRONMENT`), and the owner's are not to be touched.
+ */
+export function endTree(pid, { platform = process.platform, run = spawnSync, kill = (each, signal) => process.kill(each, signal) } = {}) {
+  if (platform === 'win32') {
+    run('taskkill', ['/T', '/F', '/PID', String(pid)], { stdio: 'ignore', windowsHide: true });
+    return;
+  }
+  const listed = run('ps', ['-A', '-o', 'pid=', '-o', 'ppid='], { encoding: 'utf8' });
+  for (const each of [pid, ...descendants(listed.stdout ?? '', pid)]) {
+    try {
+      kill(each, 'SIGKILL');
+    } catch {
+      // Already ended.
+    }
+  }
+}
+
+/** The pids under `pid` in a `ps -o pid= -o ppid=` listing, at any depth. */
+export function descendants(listing, pid) {
+  const children = new Map();
+  for (const line of listing.split('\n')) {
+    const [child, parent] = line.trim().split(/\s+/).map(Number);
+    if (Number.isInteger(child) && Number.isInteger(parent)) children.set(parent, [...(children.get(parent) ?? []), child]);
+  }
+  const found = [];
+  const walk = (at) => {
+    for (const child of children.get(at) ?? []) {
+      if (child === pid || found.includes(child)) continue;
+      found.push(child);
+      walk(child);
+    }
+  };
+  walk(pid);
+  return found;
+}
+
+/**
+ * One command through the platform shell, as the devkit runs a declared gate, its output into `fd`.
+ * The gate runners take it as a parameter, so their logic is tested without starting a process. Given the run's
+ * `trees`, its child is held there while it runs, and a step the run ended answers `STEP_ENDED` (CIPRIO1c).
+ */
+export function runStep(command, cwd, fd, { raise = null, trees = null } = {}) {
   writeSync(fd, `$ ${command}\n`);
   return new Promise((done) => {
     let settled = false;
+    let child = null;
     const finish = (code) => {
       if (!settled) {
         settled = true;
-        done(code);
+        done(child?.pid && trees?.release(child.pid) ? STEP_ENDED : code);
       }
     };
-    const child = spawn(command, { cwd, shell: true, stdio: ['ignore', fd, fd], windowsHide: true });
+    child = spawn(command, { cwd, shell: true, stdio: ['ignore', fd, fd], windowsHide: true });
     // FAMILYFAIL1b: a rehearsal's step is raised to normal at once, so what it starts inherits normal. The shell has not yet
     // created its own child when `spawn` returns, so the race is small. `raise` says its own failure once.
     if (raise && child.pid) raise(child.pid);
+    // CIPRIO1c: held before anything else can run, so the run's end cannot miss it.
+    if (child.pid) trees?.hold(child.pid);
     child.on('error', (error) => {
       writeSync(fd, `could not start: ${error.message}\n`);
       finish(127);
@@ -2523,6 +2604,24 @@ export function runStep(command, cwd, fd, { raise = null } = {}) {
     child.on('close', (code, signal) => finish(code ?? (signal ? 128 : 1)));
   });
 }
+
+/** CIPRIO1c: a step that starts nothing once the run has ended its trees, and is handed them otherwise. */
+const guarded = (step, trees) => (command, cwd, fd, options = {}) => {
+  if (!trees) return step(command, cwd, fd, options);
+  if (trees.ended) {
+    writeSync(fd, `(not started: ${command})\n`);
+    return Promise.resolve(STEP_ENDED);
+  }
+  return step(command, cwd, fd, { ...options, trees });
+};
+
+/**
+ * CIPRIO1c: whether a step's answer is the run's end rather than the gate's: one it ended, or one that failed once the run
+ * had ended (a person's Ctrl+C reaches the console's processes too, and one may exit on its own before it is ended).
+ */
+const endedBy = (code, trees) => code === STEP_ENDED || (code !== 0 && Boolean(trees?.ended));
+
+const endedNote = (trees) => `ended, not failed: ${trees?.ended ?? 'the run ended it'}`;
 
 /**
  * A log is written beside and renamed when its gate ends, so a half-written one never reads as whole. Not `writeAtomic`
@@ -2541,62 +2640,93 @@ async function withLog(file, work) {
   }
 }
 
-async function rerunAlone(root, gate, dir, tests, step) {
+async function rerunAlone(root, gate, dir, tests, step, trees = null) {
   const log = join(dir, `${gate.name}.rerun.log`);
   const cwd = gate.cwd ? join(root, gate.cwd) : root;
   const failed = [];
+  let ended = false;
   await withLog(log, async (fd, partial) => {
     for (const test of tests) {
       const from = statSync(partial).size;
       const code = await step(rerunCommand(gate.run, test), cwd, fd, { raise: rehearsalRaise() });
+      if (endedBy(code, trees)) {
+        writeSync(fd, `\n(${endedNote(trees)})\n`);
+        ended = true;
+        break;
+      }
       const output = readFileSync(partial).subarray(from).toString('utf8');
       writeSync(fd, `\n(exited ${code})\n\n`);
       if (code !== 0 || !rerunPassed(output)) failed.push(test);
     }
   });
   // Which failed again, not only whether any did: a note naming every re-run test as failed sends a reader after ones that passed.
-  return { passed: failed.length === 0, failed, log };
+  return { passed: !ended && failed.length === 0, failed, log, ended };
 }
 
-/** A gate's steps before it, then the gate (as `command`, its own run unless given), into one log: the gate's exit. */
-function runSteps(root, gate, log, step, command = gate.run) {
+/**
+ * A gate's steps before it, then the gate (as `command`, its own run unless given), into one log: the gate's exit, or
+ * `STEP_ENDED` once the run ended its trees, the steps after the one ended left unstarted (CIPRIO1c).
+ */
+function runSteps(root, gate, log, step, command = gate.run, trees = null) {
   const cwd = gate.cwd ? join(root, gate.cwd) : root;
   return withLog(log, async (fd) => {
     for (const before of gate.before) {
       const beforeCode = await step(before, root, fd);
+      if (endedBy(beforeCode, trees)) {
+        writeSync(fd, `\n(${endedNote(trees)})\n`);
+        return STEP_ENDED;
+      }
       writeSync(fd, `\n(exited ${beforeCode}${beforeCode ? '; carried on: it only clears a server' : ''})\n\n`);
     }
     const exit = await step(command, cwd, fd, { raise: isProcessLane(gate) ? rehearsalRaise() : null });
+    if (endedBy(exit, trees)) {
+      writeSync(fd, `\n(${endedNote(trees)})\n`);
+      return STEP_ENDED;
+    }
     writeSync(fd, `\n(exited ${exit})\n`);
     return exit;
   });
+}
+
+/** CIPRIO1c: a gate the run ended: no verdict on its tree, and its note says so, after what it had done before. */
+function endedResult(result, started, trees, before = '') {
+  return Object.assign(result, { verdict: 'ENDED', note: [before, endedNote(trees)].filter(Boolean).join('; '), ms: Date.now() - started });
 }
 
 /**
  * One gate, its steps before it, and its flake re-run: a result with its verdict, note and log. `settled`, handed to a
  * Process-lane gate, resolves once the light lane beside it has ended (GATELANES1). `noBuild` runs a `dotnet test`
  * gate with `--no-build`, on the build `built` (its fast half's pass in this run) made, and its note says so (GATEBUILD1).
+ *
+ * CIPRIO1c: given the run's `trees`, each step's child is held there; a gate whose step the run ended is `ENDED`, never
+ * FAIL, and nothing of it starts after: no step before it, no rehearsal run again, no test run alone.
  */
-export async function runGate(root, gate, dir, { step = runStep, settled = null, noBuild = false, built = null } = {}) {
+export async function runGate(root, gate, dir, { step = runStep, settled = null, noBuild = false, built = null, trees = null } = {}) {
   const log = join(dir, `${gate.name}.log`);
   const started = Date.now();
+  const go = guarded(step, trees);
   // PROC1: a Process half also leaves each test's duration beside its log, read once it ends.
   const trx = isProcessGate(gate) ? join(dir, `${gate.name}.trx`) : null;
   if (trx) rmSync(trx, { force: true });
   const reused = noBuild && testBuild(gate.run) !== null;
   const command = reused ? noBuildCommand(gate.run) : gate.run;
-  const code = await runSteps(root, gate, log, step, trx ? trxCommand(command, trx) : command);
+  const code = await runSteps(root, gate, log, go, trx ? trxCommand(command, trx) : command, trees);
   const result = { gate, code, log, verdict: code === 0 ? 'PASS' : 'FAIL', note: code === 0 ? '' : `exit ${code}` };
+  if (code === STEP_ENDED) return endedResult(result, started, trees);
   if (trx && existsSync(trx)) Object.assign(result, { trx, slowest: slowestClasses(readFileSync(trx, 'utf8')) });
   if (code !== 0 && gateKind(gate.run) === 'rehearsal') {
     // A rehearsal that died is run again once, whole, into a log of its own beside the first (LEFT1).
     const decision = rehearsalDecision(readFileSync(log, 'utf8'), code, gate.run);
     if (!decision.rerun) {
       result.note = `exit ${code}; ${decision.reason}`;
+    } else if (trees?.ended) {
+      return endedResult(result, started, trees, `exit ${code}; ${decision.reason}; not run again`);
     } else {
       const again = join(dir, `${gate.name}.rerun.log`);
-      const second = await runSteps(root, gate, again, step);
-      if (second === 0) {
+      const second = await runSteps(root, gate, again, go, gate.run, trees);
+      if (second === STEP_ENDED) {
+        return endedResult(result, started, trees, `exit ${code}; ${decision.reason}; run again, ${shown(root, again)}`);
+      } else if (second === 0) {
         Object.assign(result, { verdict: 'FLAKE', flakes: [gate.name], note: `${decision.reason}, and it passed when run again; ${shown(root, again)}` });
       } else {
         result.note = `${decision.reason}; run again, it failed again (exit ${second}); ${shown(root, again)}`;
@@ -2611,9 +2741,13 @@ export async function runGate(root, gate, dir, { step = runStep, settled = null,
     } else {
       // GATELANES1: alone means with nothing beside it, as FLAKE1 measured it, so the light lane ends first.
       if (settled) await settled();
-      const rerun = await rerunAlone(root, gate, dir, decision.rerun, step);
+      // CIPRIO1c: main may move on, or a person stop the run, while the half waits to be alone.
+      if (trees?.ended) return endedResult(result, started, trees, `exit ${code}; not run alone`);
+      const rerun = await rerunAlone(root, gate, dir, decision.rerun, go, trees);
       const names = decision.rerun.map(short).join(', ');
-      if (rerun.passed) {
+      if (rerun.ended) {
+        return endedResult(result, started, trees, `exit ${code}; run alone, ${shown(root, rerun.log)}`);
+      } else if (rerun.passed) {
         Object.assign(result, { verdict: 'FLAKE', flakes: decision.rerun, note: `failed in the full run and passed alone: ${names}; ${shown(root, rerun.log)}` });
       } else {
         const alone = decision.rerun.filter((test) => !rerun.failed.includes(test));
@@ -2734,7 +2868,8 @@ async function runInTurn(root, gates, dir, { keepGoing, run, print, beside = () 
  *
  * GATELANES1: the light lane runs beside the Process lane (`laneSchedule`), and once both have ended every gate's line
  * is printed again in the plan's order. A failure in either lane starts nothing more in either; the gates running run to
- * their end and keep their verdicts, since a gate is never stopped midway. `oneAtATime`, or a run with no light gate
+ * their end and keep their verdicts, since a failure stops no gate midway (a superseded or stopped run beside ends them
+ * through its trees, and `halt` then starts nothing more: CIPRIO1c). `oneAtATime`, or a run with no light gate
  * or one light gate alone, runs every gate in turn as before. The results are in the plan's order.
  *
  * GATELANES2: the light lane runs up to `width` gates at once, each starting, in the lane's order, once a place is free
@@ -2761,7 +2896,8 @@ export async function runGates(root, gates, dir, { keepGoing = false, oneAtATime
   const ended = new Map(schedule.light.map((gate) => [gate.name, signal()]));
   const lightEnded = signal();
   let stopped = false;
-  // CIPRIO1: asked before each gate starts; true stops everything not started, as a failure does.
+  // CIPRIO1: asked before each gate starts; true stops everything not started, as a failure does. The gates running
+  // when it turned were ended by the run's trees (CIPRIO1c), not here.
   const halted = () => {
     if (!stopped && halt()) stopped = true;
     return stopped;
@@ -2951,9 +3087,9 @@ const headCommit = (root) => git(root, ['rev-parse', 'HEAD'], { allowFail: true 
 
 /**
  * The gates run in order, each verdict recorded with the tree it ran on (GATE3), as its gate ends, so a run
- * cut short keeps what it learned. `onResult` hears each result.
+ * cut short keeps what it learned. `onResult` hears each result. A gate the run's `trees` ended gives no verdict (CIPRIO1c).
  */
-function runRecorded(root, gates, dir, { keepGoing = false, oneAtATime = false, branch = null, onResult = () => {}, halt = undefined } = {}) {
+function runRecorded(root, gates, dir, { keepGoing = false, oneAtATime = false, branch = null, onResult = () => {}, halt = undefined, trees = null } = {}) {
   const commit = headCommit(root);
   return runGates(root, gates, dir, {
     keepGoing,
@@ -2963,9 +3099,9 @@ function runRecorded(root, gates, dir, { keepGoing = false, oneAtATime = false, 
       const tree = contentTree(where);
       const started = nowIso();
       // GATEBUILD1: a Process half runs its fast half's build when that passed in this run on this same tree.
-      const result = await runGate(where, gate, logs, { ...beside, noBuild: reuseBuild(beside?.built, tree) });
+      const result = await runGate(where, gate, logs, { ...beside, noBuild: reuseBuild(beside?.built, tree), trees });
       Object.assign(result, { tree, at: started });
-      addVerdicts(verdictsHome(where), [{ gate: gate.name, verdict: result.verdict, tree, at: started, commit, branch }]);
+      if (result.verdict !== 'ENDED') addVerdicts(verdictsHome(where), [{ gate: gate.name, verdict: result.verdict, tree, at: started, commit, branch }]);
       onResult(result);
       return result;
     },
@@ -3116,8 +3252,12 @@ async function rerunGates(root, options) {
   return 0;
 }
 
-/** `--full` on its own (GATE3): the whole plan on the checkout as it stands, merging nothing, every verdict recorded. */
-async function gateCheckout(root, options, watch = null) {
+/**
+ * `--full` on its own (GATE3): the whole plan on the checkout as it stands, merging nothing, every verdict recorded.
+ * A run beside hands its `watch` on main's tip and its step `trees` (CIPRIO1c): the tip is polled while the gates run,
+ * never after the last has ended, so a pass already earned is not taken back by a later move.
+ */
+async function gateCheckout(root, options, watch = null, trees = null) {
   if (mergeInProgress(root)) {
     throw new Refusal('a merge is open here: node tools/merge-branch.mjs --continue --full gates it with every gate, or git merge --abort');
   }
@@ -3132,14 +3272,26 @@ async function gateCheckout(root, options, watch = null) {
   clearLogs(dir);
   const dirty = treeState(root).changed.length > 0;
   console.log(`the full set on ${head.slice(0, 7)}${dirty ? ' and its uncommitted changes' : ''}: ${plan.length} gates, fast first; nothing is merged`);
-  const results = await runRecorded(root, plan, dir, { keepGoing: options.keepGoing, oneAtATime: options.oneAtATime, halt: watch ? watch.check : undefined });
+  const halt = watch || trees ? () => Boolean(trees?.ended) || Boolean(watch?.check()) : undefined;
+  const unwatch = watch ? watch.poll(TIP_POLL_MS) : () => {};
+  let results;
+  try {
+    results = await runRecorded(root, plan, dir, { keepGoing: options.keepGoing, oneAtATime: options.oneAtATime, halt, trees });
+  } finally {
+    unwatch();
+  }
   const failed = results.filter((result) => result.verdict === 'FAIL');
   const flakes = results.filter((result) => result.verdict === 'FLAKE');
   console.log('');
-  if (watch?.superseded) {
-    // CIPRIO1: stopped between gates, never judged as a fail or a pass; the verdicts of the gates that ran stay recorded.
-    const ran = results.map((result) => result.gate.name);
-    for (const line of supersededLines(watch.superseded, ran, plan.filter((gate) => !ran.includes(gate.name)).map((gate) => gate.name))) console.log(line);
+  if (watch?.superseded || trees?.ended) {
+    // CIPRIO1, CIPRIO1c: never judged as a fail or a pass; the verdicts of the gates that ran stay recorded, and the gates
+    // it ended gave none.
+    const names = (list) => list.map((each) => each.gate?.name ?? each.name);
+    const ran = names(results.filter((result) => result.verdict !== 'ENDED'));
+    const ended = names(results.filter((result) => result.verdict === 'ENDED'));
+    const left = names(plan.filter((gate) => !results.some((result) => result.gate.name === gate.name)));
+    const lines = watch?.superseded ? supersededLines(watch.superseded, ran, left, ended) : stoppedLines(ran, left, ended);
+    for (const line of lines) console.log(line);
     return 1;
   }
   if (failed.length || results.length < plan.length) {
@@ -3743,31 +3895,79 @@ let raiser = null;
 export const rehearsalRaise = () => raiser;
 
 /**
- * A run of main's tip (`commit`; null for a run given a named commit, which is never superseded) asks, before each gate,
- * whether main has moved on. `resolveTip` is the seam: main's tip now, null when it cannot be read (not a newer one).
- * Once moved, the run is `superseded` and stays so. A gate already running is not stopped (CIPRIO1c).
+ * CIPRIO1c: how often a run of main's tip reads the tip while its gates run. A gate on an old tip runs this long at most
+ * after main moves, against a Process half's or a rehearsal's hour; each read is one `git rev-parse` at the run's lowered
+ * priority, tens of milliseconds every five seconds.
  */
-export function watchTip(commit, resolveTip = () => null) {
+export const TIP_POLL_MS = 5_000;
+
+/**
+ * A run of main's tip (`commit`; null for a run given a named commit, which is never superseded) asks, before each gate,
+ * whether main has moved on, and `poll(ms)` asks every `ms` while the gates run (CIPRIO1c), answering its stop; the timer
+ * keeps no process alive. `resolveTip` is the seam: main's tip now, null when it cannot be read (not a newer one).
+ * Once moved, the run is `superseded` and stays so, and `onMove` hears it once: a run beside ends its trees there.
+ */
+export function watchTip(commit, resolveTip = () => null, { onMove = () => {} } = {}) {
   const watch = {
     superseded: null,
     check() {
       if (watch.superseded) return true;
       if (!commit) return false;
       const tip = resolveTip();
-      if (tip && tip !== commit) watch.superseded = { from: commit, to: tip };
+      if (tip && tip !== commit) {
+        watch.superseded = { from: commit, to: tip };
+        onMove(watch.superseded);
+      }
       return watch.superseded !== null;
+    },
+    poll(ms) {
+      if (!commit) return () => {};
+      const timer = setInterval(() => {
+        // A throw here would end the run uncaught and leave its gates running; a tip not read is not a newer one.
+        try {
+          watch.check();
+        } catch {
+          // Asked again at the next tick.
+        }
+      }, ms);
+      timer.unref();
+      return () => clearInterval(timer);
     },
   };
   return watch;
 }
 
-/** What a superseded run says: that it stopped, which gates ran and which were left. */
-export function supersededLines(superseded, ran, left) {
-  return [
-    `superseded: main moved from ${superseded.from.slice(0, 7)} to ${superseded.to.slice(0, 7)}, so this run stopped before its next gate; it is not a pass`,
-    `  ran: ${ran.join(', ') || 'none'}`,
-    `  left: ${left.join(', ') || 'none'}`,
-  ];
+/** CIPRIO1c: which gates ran to their verdict, which the run ended running, which it never started. */
+const endLines = (head, ran, left, ended) => [
+  head,
+  `  ran: ${ran.join(', ') || 'none'}`,
+  `  ended: ${ended.join(', ') || 'none'}`,
+  `  left: ${left.join(', ') || 'none'}`,
+];
+
+/** What a superseded run says: that it ended what it ran and started nothing more, which gates ran, were ended and were left. */
+export function supersededLines(superseded, ran, left, ended = []) {
+  const moved = `main moved from ${superseded.from.slice(0, 7)} to ${superseded.to.slice(0, 7)}`;
+  return endLines(`superseded: ${moved}, so this run ended the gates it was running and started no more; it is not a pass`, ran, left, ended);
+}
+
+/** CIPRIO1c: what a run a person stopped says, as a superseded one does. */
+export function stoppedLines(ran, left, ended = []) {
+  return endLines('stopped: a person stopped this run, so it ended the gates it was running and started no more; it is not a pass', ran, left, ended);
+}
+
+/**
+ * CIPRIO1c: a person's stop (Ctrl+C) ends the run's trees and lets the run wind down as a superseded one does: its logs
+ * kept, its record written, its lock let go. Heard once, so a second Ctrl+C is the default exit, for a run that hangs.
+ * Answers the unhooking, for a run that ends without one. A run killed outright hears nothing (CIPRIO1d).
+ */
+export function stopOnInterrupt(trees, { on = process, say = console.log } = {}) {
+  const stop = () => {
+    say('stopped: ending the gates running, with everything they started; Ctrl+C again exits at once');
+    trees.end('a person stopped the run');
+  };
+  on.once('SIGINT', stop);
+  return () => on.off('SIGINT', stop);
 }
 
 /** The gate tree record's verdict on a run: a superseded run is never passed, whatever its gates said. */
@@ -3794,6 +3994,9 @@ async function gateBeside(root, options) {
   const commit = resolved.out.trim();
   const sha = commit.slice(0, 7);
   const { stale } = takeGateLock(home, { commit });
+  // CIPRIO1c: every step the run starts is held here, so a newer tip or a person's stop ends the gates running.
+  const trees = stepTrees();
+  const unhook = stopOnInterrupt(trees);
   try {
     if (stale) console.log(`the gate tree's lock was left by pid ${stale.pid} (on ${stale.commit.slice(0, 7)} since ${when(stale.at)}), which no longer runs: taken over`);
     // CIPRIO1: before the tree is made or anything installed or built, so every descendant inherits the lowered class.
@@ -3807,9 +4010,13 @@ async function gateBeside(root, options) {
     console.log(UNDER_LOAD);
     let code;
     // Only a run of main's tip is superseded by a newer tip; one given a commit gates that commit whatever main does.
-    const watch = watchTip(options.besideCommit ? null : commit, () => git(home, ['rev-parse', '--verify', '--quiet', `refs/heads/${MAIN}^{commit}`], { allowFail: true }).out.trim() || null);
+    // CIPRIO1c: the move ends the gates running at once, each with its tree, rather than before the next.
+    const tip = () => git(home, ['rev-parse', '--verify', '--quiet', `refs/heads/${MAIN}^{commit}`], { allowFail: true }).out.trim() || null;
+    const watch = watchTip(options.besideCommit ? null : commit, tip, {
+      onMove: (moved) => trees.end(`main moved from ${moved.from.slice(0, 7)} to ${moved.to.slice(0, 7)}`),
+    });
     try {
-      code = await gateCheckout(tree, options, watch);
+      code = await gateCheckout(tree, options, watch, trees);
     } finally {
       // Pass, fail or a thrown error: the tree may be pruned next, and its logs go with it.
       try {
@@ -3829,6 +4036,7 @@ async function gateBeside(root, options) {
     }
     return code;
   } finally {
+    unhook();
     releaseGateLock(home);
   }
 }

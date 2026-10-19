@@ -118,8 +118,9 @@ Process-lane gate alone (REHLANE1); the web gate's vitests are a light gate of t
 service suite (WEBSPLIT1). The driver's Process half runs eight classes at once (PROCPAR1), and its
 slowest classes print by their own times beside the half's wall. Add `--one-at-a-time` on a
 loaded machine to run every gate in turn. `--full --beside` is a guest on the machine (CIPRIO1): it runs
-at below normal priority with build servers of its own, a second is refused while one runs, and a run of main's tip
-stops before its next gate once a newer tip exists, recorded as superseded and never as passed. A stage requires that full verdict. The merge tool normally runs selected gates; a merge receipt alone does not
+at below normal priority with build servers of its own (its Process lane at normal: FAMILYFAIL1c), a second is refused
+while one runs, and a run of main's tip ends the gates it is running, each with its whole tree, and starts no more once a
+newer tip exists (CIPRIO1c), recorded as superseded and never as passed; a Ctrl+C ends its trees the same way. A stage requires that full verdict. The merge tool normally runs selected gates; a merge receipt alone does not
 prove the long gates ran. Read D115 and the tool's usage before changing queue/merge behavior.
 
 A merge runs the blocking checks alone by default: the universal gates (with the sensitive scan), the code map and the
