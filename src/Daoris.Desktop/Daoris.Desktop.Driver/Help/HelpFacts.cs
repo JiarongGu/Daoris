@@ -554,15 +554,26 @@ public static class HelpFacts
     private static HelpWork? WorkOf(MachineFactsSnapshot facts, HelpMachineWhole whole)
     {
         var parts = new List<HelpWork>();
-        foreach (var subject in Parts(whole))
+        foreach (var (_, part) in WorkParts(facts, whole))
         {
-            if (facts.Value<HelpWork>(Work, subject) is not { } part) return null;
+            if (part is null) return null;
             parts.Add(part);
         }
 
         return new HelpWork(
             [.. parts.SelectMany(part => part.Units)], [.. parts.SelectMany(part => part.Unread)], [.. parts.SelectMany(part => part.Recovery)]);
     }
+
+    /// <summary>
+    /// The work's parts the service's answers name, as a slice pushes them (PUSH1c2a, D182): each by its subject in the merge's order
+    /// (each repository with a checkout here by name, <see cref="NoCheckout"/> last), with its part as last judged, or null where it
+    /// never was, so a part never judged differs from one judged empty. Null where the service's answers were never judged.
+    /// </summary>
+    public static IReadOnlyList<(string Part, HelpWork? Work)>? WorkParts(MachineFactsSnapshot facts) =>
+        facts.Value<HelpMachineWhole>(Machine, Whole) is { } whole ? WorkParts(facts, whole) : null;
+
+    private static IReadOnlyList<(string Part, HelpWork? Work)> WorkParts(MachineFactsSnapshot facts, HelpMachineWhole whole) =>
+        [.. Parts(whole).Select(subject => (subject, facts.Value<HelpWork>(Work, subject)))];
 
     /// <summary>
     /// The sessions as the room reads them (FACTSPLIT1b), the look as the Sessions list takes it: the look without trees, with each
