@@ -29,6 +29,13 @@ public sealed class DriverLoop(
     IReviewTabs? reviews = null) : IDisposable
 {
     /// <summary>
+    /// What the loop does when a conversation's start receipt is written (HELPWIREDLIVE1b, D183 point 4): the help scope is told with
+    /// that session. Public for the modules tests to reach the subscription.
+    /// </summary>
+    public static Action<string> WiredKeptTold(IEventBus bus) =>
+        session => StatePublisher.Publish(bus, StateScopes.Help, session);
+
+    /// <summary>
     /// The review's showing in Daoris's browser (REVIEWENV1d, D154 point 5): one for the shell's life, handed to every look's
     /// driver, read by the strip's chip and pressed by its *Show it again*. Null where this loop carries no browser.
     /// </summary>
@@ -630,6 +637,8 @@ public sealed class DriverLoop(
         // answers with, so a page that asked once follows them. Machine-local, like the queue.
         chat.OptionsChanged += (session, options) =>
             _ = eventBus.EmitAsync("DAORIS", "SESSION_OPTIONS_CHANGED", ConversationRoutes.OptionsAnswer(session, options));
+        // HELPWIREDLIVE1b (D183 point 4): told once the start receipt is written, so an open What it has reads a resume's new one.
+        chat.WiredKept += WiredKeptTold(eventBus);
         await ComeUpAsync(service, chat).ConfigureAwait(false);
 
         // PARALLEL1a (D181 point 2): the machine's facts judged from here, on their own tasks, the service answering; every loop on the
