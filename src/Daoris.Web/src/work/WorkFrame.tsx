@@ -2034,6 +2034,8 @@ export function WorkFrame({
                   // A conversation the driver answers for is working while a turn is in flight, and not
                   // under words its agent said after the turn ended (found looking at CONSOLE2).
                   turnRunning={talking && chatTurns[attended.id] ? turns.taking : undefined}
+                  // The driver's word that its call waits for the person's answer (AUTONOMY1b3e).
+                  callMark={grouping?.calling ?? undefined}
                   scroller={centre}
                   onUsage={onUsage}
                   onWaiting={onWaiting}

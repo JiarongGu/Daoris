@@ -128,6 +128,40 @@ describe('ConversationView', () => {
     expect(screen.queryByText(/running npm test for/)).toBeNull();
   });
 
+  /** AUTONOMY1b3e (D184): a call held for the person's answer says it waits, as the rail and the head do; else it runs. */
+  it.each([
+    ['en', 'waiting for your answer to npm test for 3m', 'waiting for your answer to a tool call for 3m', 'running npm test for 7m', /waiting for your answer/],
+    ['zh', 'npm test 等你答复，已 3 分钟', '一个工具调用等你答复，已 3 分钟', '正在运行 npm test（已 7 分钟）', /等你答复/],
+  ])('says a held call waits for the answer (%s)', async (lng, named, unnamed, running, waits) => {
+    await i18n.changeLanguage(lng);
+    try {
+      const begun = new Date(Date.now() - 7 * 60_000).toISOString();
+      const held = new Date(Date.now() - 3 * 60_000).toISOString();
+      const events = [
+        ev({ kind: 'user', origin: 'person', text: 'test it' }),
+        ev({ kind: 'tool', id: 'k1', title: 'npm test', toolKind: 'execute', status: 'in_progress', at: begun }),
+      ];
+      const first = view(events, { live: true, callMark: { title: 'npm test', since: held, waiting: true } });
+      expect(screen.getByText(named)).toBeTruthy();
+      first.unmount();
+
+      // The agent named nothing: the driver's mark still says it waits, as a tool call.
+      const second = view([events[0]!], { live: true, callMark: { title: '', since: held, waiting: true } });
+      expect(screen.getByText(unnamed)).toBeTruthy();
+      second.unmount();
+
+      // The mark gone, or an older host's none: running, as before.
+      for (const callMark of [undefined, { title: 'npm test', since: held }, { title: 'npm test', since: held, waiting: false }]) {
+        const again = view(events, { live: true, callMark });
+        expect(screen.getByText(running)).toBeTruthy();
+        expect(screen.queryByText(waits)).toBeNull();
+        again.unmount();
+      }
+    } finally {
+      await i18n.changeLanguage('en');
+    }
+  });
+
   /**
    * The agent speaks after its turn has ended when its background work finishes (CONSOLE2a). Those
    * words are no turn running: with the driver saying none is in flight, they carry no *working…*,

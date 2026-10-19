@@ -89,8 +89,10 @@ const SaidDoors = createContext<Said>({ chat: false, reasons: {} });
  */
 export function ConversationView({
   turns, tree, structured, chat = false, live = false, turnRunning, loaded = true, earlier = false, onLoadEarlier,
-  reveal, toolbar, onSession, onStartFrom, reasons = {}, cooling, names, marks, onToWait,
+  reveal, toolbar, onSession, onStartFrom, reasons = {}, cooling, names, marks, onToWait, callMark,
 }: {
+  /** The call the driver's grouping pushes for this session (AUTONOMY1b3e): when held for the person's answer, the foot says it waits. */
+  callMark?: CallMark;
   /**
    * What waits on the person, by the key of the block that raised it (WAITFOOT1c, D168 point 4): a line under that block says
    * so, with *To the wait*. A turn's end is keyed `turnEnd(turn)`, for the work it did; a call folded in a run is marked on the
@@ -190,6 +192,7 @@ export function ConversationView({
               running={(turnRunning ?? live) && index === turns.length - 1 && !turn.ended && !turn.waiting}
               onLoadEarlier={earlier && turn.gap ? onLoadEarlier : undefined}
               reveal={reveal}
+              callMark={index === turns.length - 1 ? callMark : undefined}
             />
           ))}
         </section>
@@ -225,8 +228,9 @@ function Held({ id, reveal, children }: { id: string; reveal?: string; children?
   );
 }
 
-function TurnView({ turn, tree, running, onLoadEarlier, reveal }: {
+function TurnView({ turn, tree, running, onLoadEarlier, reveal, callMark }: {
   turn: Turn;
+  callMark?: CallMark;
   tree?: string | null;
   running: boolean;
   reveal?: string;
@@ -250,7 +254,7 @@ function TurnView({ turn, tree, running, onLoadEarlier, reveal }: {
       {running && <Dot tone="live" label={t('work.conversation.working')} className="mt-1" />}
       {/* A resumed conversation can wait many minutes on its model before anything shows (WAITSHOWN1): said, with the count. */}
       {running && turn.waitingSince && <FirstAnswer since={turn.waitingSince} />}
-      {calling && <CallingLine call={calling} />}
+      {running && (calling || callMark?.waiting) && <CallingLine call={calling} mark={callMark} />}
       {/* The session ended inside this turn (SESS1 S4): said once, in the passive, never as a failure —
           the driver's note above says why, when it knows. */}
       {turn.cut && <p className="m-0 text-meta text-ink-faint">{t('work.conversation.cut')}</p>}
@@ -268,15 +272,32 @@ function TurnView({ turn, tree, running, onLoadEarlier, reveal }: {
 }
 
 /** The call a turn is inside (WAITSAY1): its title and how long it has run, ticking, so a long tool call is no bare *working…*. */
-function CallingLine({ call }: { call: RunningCall }) {
+function CallingLine({ call, mark }: { call: RunningCall | null; mark?: CallMark }) {
   const { t } = useTranslation();
   const now = useNow(10_000);
+  const at = new Date(now).toISOString();
+  // AUTONOMY1b3e (D184): a call held for the person's answer is the driver's mark, which the record cannot show; it is timed from
+  // the hold and, as on the rail, an untitled one is a tool call. No mark (an older host) reads as running.
+  if (mark?.waiting) {
+    const title = mark.title || call?.title;
+    return (
+      <p role="status" className="m-0 text-meta text-ink-faint">
+        {title
+          ? t('work.conversation.callWaits', { title, elapsed: elapsed(mark.since, at) })
+          : t('work.conversation.callWaitsUnnamed', { elapsed: elapsed(mark.since, at) })}
+      </p>
+    );
+  }
+  if (!call) return null;
   return (
     <p role="status" className="m-0 text-meta text-ink-faint">
-      {t('work.conversation.calling', { title: call.title, elapsed: elapsed(call.since, new Date(now).toISOString()) })}
+      {t('work.conversation.calling', { title: call.title, elapsed: elapsed(call.since, at) })}
     </p>
   );
 }
+
+/** The call the driver says the session is inside, as the grouping pushes it: `waiting` when it is held for the person's answer. */
+export type CallMark = { title: string; since: string; waiting?: boolean };
 
 /** The wait for a turn's first answer (WAITSHOWN1): when it was asked, and for how long it has waited, ticking. */
 function FirstAnswer({ since }: { since: string }) {
