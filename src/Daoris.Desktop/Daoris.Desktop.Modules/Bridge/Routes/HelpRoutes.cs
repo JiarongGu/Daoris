@@ -301,6 +301,14 @@ public sealed class HelpRoutes(DriverContext context)
         await HelpFacts.ReadWorkAsync(_loop.Home, part, cancellationToken).ConfigureAwait(false);
 
     /// <summary>
+    /// The clean-up's list's topic's judge (PUSH1c4a, D182), one repository at a time: its session branches and its landings' branches
+    /// judged with git by the pull-request answers the landing record keeps, asking no plugin (D148 point 2), as the pushed <c>sweep</c>
+    /// slice reads them. Its checkout, workspace and trees in use are the service's answers the facts hold (<see cref="HelpFacts.SweepPartOf"/>).
+    /// </summary>
+    private async Task<SweepPlan?> SweepPartAsync(HelpSweepPart part, CancellationToken cancellationToken) =>
+        await HelpFacts.ReadSweepAsync(_loop.Home, part, cancellationToken).ConfigureAwait(false);
+
+    /// <summary>
     /// Keep Ask Daoris's facts on the loop's (PARALLEL1a, D181 point 2): this module's judges registered for each of the room's topics,
     /// and the room written again, off the judge's thread, as the facts it said were not read yet land.
     /// </summary>
@@ -312,6 +320,7 @@ public sealed class HelpRoutes(DriverContext context)
         HelpFacts.Keep(facts, new HelpFactJudges(help.MachineWholeAsync, help.SessionsAsync, help.HistoryAsync, help.WorkAsync)
         {
             Trees = help.TreesAsync,
+            Sweep = help.SweepPartAsync,
         });
         var catchUp = new HelpRoomCatchUp(help._loop.Home, () =>
         {

@@ -85,6 +85,13 @@ permission rules, so on Codex the whole browser row is unavailable, its reads in
 The molecule is `help/ConfiguredAccess.tsx`, not `HelpGrants`, the driver's plugin approvals. *Left for the owner:* the browser's
 boxes here and its plugin page's approval are one record drawn in two places.
 
+*Decided 2026-10-20, on the owner's review of the mock:* the screen stands as drawn. A grant that configures a plugin is set
+on that plugin's own tab, the one place its record is changed: the browser's reads and writes are approved on its plugin page,
+where `HelpGrants` already keeps them (HELPPLUG1c). *Configured access* shows the browser row's state from that record, read
+only, and leads to the plugin's tab to change it; it never draws a second set of boxes (HELPMODE1c3). Settings also gains a
+*Plugins* section listing each installed plugin's settings and leading to its tab, at a lower priority (PLUGSET1).
+Housekeeping, the checkouts and the chosen settings are Daoris's own and stay set here.
+
 ## 5. The screen (HELPMODE1b)
 
 The picker sits beside the composer, the docked panel included. History keeps its own head. The text is translated, the

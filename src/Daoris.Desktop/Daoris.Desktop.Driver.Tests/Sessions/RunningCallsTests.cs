@@ -227,4 +227,99 @@ public sealed class RunningCallsTests : IDisposable
         Assert.Equal("dotnet build", calls.Calling("newest")?.Title);
         Assert.Equal(["newest", "s1", "s2"], calls.Now().Keys.Order(StringComparer.Ordinal));
     }
+
+    private static readonly IReadOnlyList<PermissionChoice> Offered =
+        [new("yes", "Allow", PermissionChoice.AllowOnce), new("no", "Reject", PermissionChoice.RejectOnce)];
+
+    /// <summary>
+    /// AUTONOMY1b3b: a tool request held for the person (AUTONOMY1b3a) marks its open call waiting, named as the record named it and
+    /// timed from the hold, so the rail says the session waits on the person rather than that it runs; the answer clears the mark,
+    /// and the call runs on from its start. <see cref="RunningCalls.Changed"/> names the session once each way.
+    /// </summary>
+    [Fact]
+    public void A_held_request_marks_its_open_call_waiting_until_it_is_answered()
+    {
+        var events = RunningCalls.Watched(Record());
+        var calls = RunningCalls.Of(events);
+        events.Append("s1", Call("c1", "pending", "npm start", at: 1));
+        var told = new List<string>();
+        calls.Changed += told.Add;
+
+        var holding = HeldPermissions.Of(events).For("s1").Hold("900", "c1", "Run npm start", Offered)!;
+
+        var held = Assert.Single(HeldPermissions.Of(events).Held("s1"));
+        Assert.Equal(new RunningCall("npm start", held.Since) { Waiting = true }, calls.Calling("s1"));
+        Assert.Equal(new RunningCall("npm start", held.Since) { Waiting = true }, calls.Now()["s1"]);
+        Assert.Equal(["s1"], told);
+
+        Assert.True(HeldPermissions.Of(events).Answer("s1", "900", "yes").Answered);
+
+        Assert.True(holding.IsCompleted);
+        Assert.Equal(new RunningCall("npm start", T0.AddMinutes(1)), calls.Calling("s1"));
+        Assert.Equal(["s1", "s1"], told);
+    }
+
+    /// <summary>
+    /// The protocol does not order a call's announcement before its permission request: a hold whose call is not open here is a
+    /// waiting call of its own, by the request's title, or by none where the agent gave none; its release ends it.
+    /// </summary>
+    [Fact]
+    public void A_hold_with_no_open_call_is_a_waiting_call_of_its_own_until_it_is_released()
+    {
+        var events = RunningCalls.Watched(Record());
+        var calls = RunningCalls.Of(events);
+        var told = new List<string>();
+        calls.Changed += told.Add;
+        var door = HeldPermissions.Of(events).For("s1");
+
+        door.Hold("900", "c9", "git push", Offered);
+        var held = Assert.Single(HeldPermissions.Of(events).Held("s1"));
+        Assert.Equal(new RunningCall("git push", held.Since) { Waiting = true }, calls.Calling("s1"));
+        Assert.Equal(["s1"], calls.Now().Keys);
+
+        door.ReleaseAll(PermissionWhy.Ended);
+        Assert.Null(calls.Calling("s1"));
+        Assert.Empty(calls.Now());
+        Assert.Equal(["s1", "s1"], told);
+
+        // A request naming neither a title nor a call the record named still waits on the person: titled by nothing.
+        HeldPermissions.Of(events).For("s2").Hold("901", null, null, Offered);
+        Assert.Equal(new RunningCall("", HeldPermissions.Of(events).Held("s2")[0].Since) { Waiting = true }, calls.Calling("s2"));
+    }
+
+    /// <summary>
+    /// The newest hold is the one waiting, as the newest open call is the one running, so each hold and each answer moves the mark and
+    /// wakes the page to read what is held; another session's hold is its own.
+    /// </summary>
+    [Fact]
+    public void The_newest_hold_is_the_one_waiting_and_each_hold_and_answer_moves_it()
+    {
+        var events = RunningCalls.Watched(Record());
+        var calls = RunningCalls.Of(events);
+        events.Append("s1", Call("c1", "pending", "npm test", at: 1));
+        events.Append("s1", Call("c2", "pending", "git push", at: 2));
+        events.Append("s2", Call("c1", "in_progress", "dotnet build", at: 3));
+        var told = new List<string>();
+        calls.Changed += told.Add;
+        var door = HeldPermissions.Of(events).For("s1");
+
+        door.Hold("900", "c2", "git push", Offered);
+        door.Hold("901", "c1", "npm test", Offered);
+        Assert.Equal(("npm test", true), (calls.Calling("s1")?.Title, calls.Calling("s1")?.Waiting));
+
+        HeldPermissions.Of(events).Answer("s1", "901", null);
+        Assert.Equal(("git push", true), (calls.Calling("s1")?.Title, calls.Calling("s1")?.Waiting));
+        Assert.Equal(["s1", "s1", "s1"], told);
+        Assert.Equal(new RunningCall("dotnet build", T0.AddMinutes(3)), calls.Calling("s2"));
+    }
+
+    /// <summary>A watch begun after a request was held reads it at once: the registry is the truth, and it is asked as the watch begins.</summary>
+    [Fact]
+    public void A_watch_begun_after_a_hold_marks_it()
+    {
+        var events = Record();
+        HeldPermissions.Of(events).For("s1").Hold("900", "c9", "npm start", Offered);
+
+        Assert.Equal(("npm start", true), (RunningCalls.Of(events).Calling("s1")?.Title, RunningCalls.Of(events).Calling("s1")?.Waiting));
+    }
 }

@@ -66,6 +66,25 @@ describe('a session’s facts line', () => {
     expect(sessionFacts(t, { session: session({ state: 'completed' }), shown: 'completed', grouping: heard }).join()).not.toMatch(/running/);
   });
 
+  /**
+   * AUTONOMY1b3b: a call the driver marks waiting on the person's answer is said as one, timed from the hold, whatever the record read
+   * here says runs; only while the session works, in both languages, and never in the words a parked intake's region reads.
+   */
+  it('says the call the driver marks waiting for the person’s answer', async () => {
+    const held = grouping({ calling: { title: 'git push', since: '2026-10-05T09:55:00Z', waiting: true } });
+    const read = { title: 'git push', since: '2026-10-05T09:50:00Z' };
+    expect(sessionFacts(t, { session: session(), shown: 'working', grouping: held, calling: read }).at(-1))
+      .toBe('waiting for your answer to git push for 5m');
+    expect(sessionFacts(t, { session: session(), shown: 'working', grouping: held }).join()).not.toMatch(/running|waiting on you/i);
+    const unnamed = grouping({ calling: { title: '', since: '2026-10-05T09:55:00Z', waiting: true } });
+    expect(sessionFacts(t, { session: session(), shown: 'working', grouping: unnamed }).at(-1)).toBe('waiting for your answer to a tool call for 5m');
+    expect(sessionFacts(t, { session: session({ state: 'completed' }), shown: 'completed', grouping: held }).join()).not.toMatch(/your answer/);
+
+    await i18n.changeLanguage('zh');
+    expect(sessionFacts(t, { session: session(), shown: 'working', grouping: held }).at(-1)).toBe('git push 等你答复，已 5 分钟');
+    expect(sessionFacts(t, { session: session(), shown: 'working', grouping: unnamed }).at(-1)).toBe('一个工具调用等你答复，已 5 分钟');
+  });
+
   /** The install's fourth try, three failed before it, was the fourth line of a strip in mono; the head says it. */
   it('says a working session is another try, and how many failed before it', () => {
     expect(sessionFacts(t, { session: session({ profile: 'account-1' }), shown: 'working', grouping: grouping({ strikes: 3 }) }))

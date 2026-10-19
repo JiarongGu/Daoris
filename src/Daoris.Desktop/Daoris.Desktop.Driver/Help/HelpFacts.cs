@@ -21,6 +21,10 @@ namespace Daoris.Driver;
 /// look without them is one subject, which no ref moves. The room reads the look with every part's trees merged in, and since
 /// PUSH1c1 the Sessions list's door reads them beside a look of its own (<see cref="WithTreesAsync"/>), so no window's tick walks git.</para>
 ///
+/// <para><b>Per repository, the clean-up's list</b> (PUSH1c4a, D182). Each repository with a checkout here has its part of the list's
+/// git half, judged on its <c>refs</c> wake by the pull-request answers the landing record keeps, never by asking a plugin: the
+/// person's look still asks, and its kept answer is read at the part's next judgement. The room reads none of it; a slice pushes it.</para>
+///
 /// <para><b>Whole, the rest.</b> The service's answers and the roster, the sessions' look without its trees and each workspace's
 /// history are each gathered across the home by their own readers, so each is one subject, judged on its wakes, at its deadline,
 /// and at most once each <see cref="FactRules.Rest"/>.</para>
@@ -53,6 +57,13 @@ public static class HelpFacts
     /// none (<see cref="NoCheckout"/>).
     /// </summary>
     public const string Work = "help.work";
+
+    /// <summary>
+    /// The clean-up's list, its git half (<see cref="SweepPlan"/>, PUSH1c4a, D182): a part by repository with a checkout here, each judged
+    /// by the pull-request answers the landing record keeps and asking no plugin (D148 point 2). None for the repositories with none,
+    /// which the list never judges. A second topic beside the work's, so the work's judge stays as it is.
+    /// </summary>
+    public const string Sweep = "help.sweep";
 
     /// <summary>
     /// The work's part of the repositories the trees or the records name with no checkout in the registry (FACTSPLIT1a). No
@@ -99,13 +110,24 @@ public static class HelpFacts
         Rest = TimeSpan.FromSeconds(30),
     };
 
+    /// <summary>
+    /// A repository's part of the clean-up's list (PUSH1c4a): its refs read once, its trees listed once, and a few git starts for each
+    /// session branch and each landing's branch, so the work's rules, which it is modelled on until the install measures it (D182 point
+    /// 8): two repositories at once, bounded at minutes, a committing session's burst of refs one judgement each half minute.
+    /// </summary>
+    public static readonly FactRules SweepRules = new(Deadline: TimeSpan.FromMinutes(5), Bound: TimeSpan.FromMinutes(2), AtOnce: 2)
+    {
+        Rest = TimeSpan.FromSeconds(30),
+    };
+
     private static readonly IReadOnlyList<(string Topic, string Subject)> None = [];
 
     /// <summary>
-    /// The facts a loop's wake moves (D181 point 2): a ref of one repository its line, its part of the work and its part of the trees,
-    /// never the sessions' look, which holds no git; a ledger family the service's answers, and the sessions' look, the history and
-    /// every part of the work it records, as <paramref name="facts"/>' answers name them; the configuration the service's answers,
-    /// the sessions' verdicts and every part of the trees. A press, a word or the window's focus moves none.
+    /// The facts a loop's wake moves (D181 point 2): a ref of one repository its line, its part of the work, its part of the trees and
+    /// its part of the clean-up's list, never the sessions' look, which holds no git; a ledger family the service's answers, and the
+    /// sessions' look, the history and every part of the work and of the list it records, as <paramref name="facts"/>' answers name
+    /// them; the configuration the service's answers, the sessions' verdicts and every part of the trees and of the list, whose line it
+    /// may set. A press, a word or the window's focus moves none.
     /// </summary>
     /// <remarks>
     /// The trees' parts are not woken with the ledger (FACTSPLIT1b): which trees a part judges is read from the look, so a part woken
@@ -117,11 +139,12 @@ public static class HelpFacts
         switch (topic)
         {
             case ChangeTopics.Refs:
-                return [(Lines, subject), (Trees, subject), (Work, subject)];
+                return [(Lines, subject), (Trees, subject), (Work, subject), (Sweep, subject)];
             case ChangeTopics.Config:
-                // A line set moves what holds a tree's commits by their content, so every part of the trees, as the whole look was.
+                // A line set moves what holds a tree's commits by their content, so every part of the trees, as the whole look was,
+                // and every part of the clean-up's list, which judges each branch against the line.
                 return facts.Value<HelpMachineWhole>(Machine, Whole) is { } named
-                    ? [(Machine, Whole), (Sessions, Whole), .. Parts(named).Select(part => (Trees, part))]
+                    ? [(Machine, Whole), (Sessions, Whole), .. Parts(named).Select(part => (Trees, part)), .. SweepSubjects(named).Select(part => (Sweep, part))]
                     : [(Machine, Whole), (Sessions, Whole)];
             case ChangeTopics.Ledger:
                 var moved = subject.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
@@ -134,6 +157,7 @@ public static class HelpFacts
                 if (Moved("sessions") && facts.Value<HelpMachineWhole>(Machine, Whole) is { } whole)
                 {
                     woken.AddRange(Parts(whole).Select(part => (Work, part)));
+                    woken.AddRange(SweepSubjects(whole).Select(part => (Sweep, part)));
                 }
 
                 return woken;
@@ -144,16 +168,16 @@ public static class HelpFacts
 
     /// <summary>Wake the facts <paramref name="topic"/>'s <paramref name="subject"/> moves (<see cref="Woken"/>).</summary>
     /// <param name="mine">
-    /// A ref this process moved itself, a landing or an <i>Accept</i> (OWNMOVES1): that repository's parts of the trees and of the work
-    /// are judged at once, past the rest a burst of a committing session's refs is held to, so a landed tree's offer leaves within one
-    /// judgement. Its line has no rest, and any other topic's wake is as it was.
+    /// A ref this process moved itself, a landing or an <i>Accept</i> (OWNMOVES1): that repository's parts of the trees, of the work and
+    /// of the clean-up's list (PUSH1c4a) are judged at once, past the rest a burst of a committing session's refs is held to, so a landed
+    /// tree's offer leaves within one judgement. Its line has no rest, and any other topic's wake is as it was.
     /// </param>
     public static void Wake(MachineFacts facts, string topic, string subject, bool mine = false)
     {
         var afresh = mine && topic == ChangeTopics.Refs;
         foreach (var (factTopic, factSubject) in Woken(topic, subject, facts.Current))
         {
-            facts.Wake(factTopic, factSubject, afresh && factTopic is Trees or Work);
+            facts.Wake(factTopic, factSubject, afresh && factTopic is Trees or Work or Sweep);
         }
     }
 
@@ -171,6 +195,7 @@ public static class HelpFacts
         facts.Topic(Trees, TreesRules, (part, ct) => JudgeTreesAsync(facts, part, judges.Trees, ct));
         facts.Topic(History, WholeRules, async (_, ct) => await judges.History(ct).ConfigureAwait(false));
         facts.Topic(Work, WorkRules, (part, ct) => JudgeWorkAsync(facts, part, judges.Work, ct));
+        facts.Topic(Sweep, SweepRules, (part, ct) => JudgeSweepAsync(facts, part, judges.Sweep, ct));
 
         // Once the service's answers have landed, never before: a line's and a part's judges read the checkout from them, so one
         // started first would find none and keep nothing until its deadline. The trees' parts once the look has too, which names
@@ -219,9 +244,10 @@ public static class HelpFacts
     }
 
     /// <summary>
-    /// The repositories the service's answers name with a checkout here, made subjects of the lines and the work, and the rest a part
-    /// of the work: one with nothing judged yet is judged now (a wake before the answers found no checkout to ask), a part whose
-    /// reading of the answers moved is judged again (<see cref="Basis"/>), and one no longer named is dropped.
+    /// The repositories the service's answers name with a checkout here, made subjects of the lines, the work and the clean-up's list,
+    /// and the rest a part of the work: one with nothing judged yet is judged now (a wake before the answers found no checkout to ask), a
+    /// part whose reading of the answers moved is judged again (<see cref="Basis"/>, <see cref="SweepBasis"/>), and one no longer named is
+    /// dropped.
     /// </summary>
     private static void Known(MachineFacts facts, HelpMachineWhole? before, HelpMachineWhole whole)
     {
@@ -238,8 +264,21 @@ public static class HelpFacts
             else facts.Subject(Work, part);
         }
 
+        foreach (var repository in SweepSubjects(whole))
+        {
+            if (facts.Current.Of(Sweep, repository) is null || (before is not null && SweepBasis(before, repository) != SweepBasis(whole, repository)))
+            {
+                facts.Wake(Sweep, repository);
+            }
+            else
+            {
+                facts.Subject(Sweep, repository);
+            }
+        }
+
         foreach (var gone in facts.Current.Subjects(Lines).Where(repository => !checkouts.Contains(repository))) facts.Forget(Lines, gone);
         foreach (var gone in facts.Current.Subjects(Work).Where(part => part != NoCheckout && !checkouts.Contains(part))) facts.Forget(Work, gone);
+        foreach (var gone in facts.Current.Subjects(Sweep).Where(repository => !checkouts.Contains(repository))) facts.Forget(Sweep, gone);
     }
 
     /// <summary>The repositories the service's answers name with a checkout here, without case.</summary>
@@ -253,6 +292,12 @@ public static class HelpFacts
     /// here by name, then the rest's.
     /// </summary>
     private static IReadOnlyList<string> Parts(HelpMachineWhole whole) => [.. Checkouts(whole).Order(StringComparer.Ordinal), NoCheckout];
+
+    /// <summary>
+    /// The parts of the clean-up's list the service's answers name (PUSH1c4a): each repository with a checkout here by name, and no
+    /// rest's, since the list judges no repository without one.
+    /// </summary>
+    private static IReadOnlyList<string> SweepSubjects(HelpMachineWhole whole) => [.. Checkouts(whole).Order(StringComparer.Ordinal)];
 
     /// <summary>
     /// What <paramref name="subject"/>'s part of the trees reads (FACTSPLIT1b): the look, and whose sessions' trees are its, a
@@ -499,6 +544,45 @@ public static class HelpFacts
     }
 
     /// <summary>
+    /// What <paramref name="subject"/>'s part of the clean-up's list reads from the service's answers (PUSH1c4a): the work's reading of
+    /// its checkout and the trees in use (<see cref="PartOf"/>), and the workspace its line is read under. Null for the rest's part and
+    /// for a repository not named with a checkout here.
+    /// </summary>
+    public static HelpSweepPart? SweepPartOf(HelpMachineWhole whole, string subject)
+    {
+        if (subject == NoCheckout || PartOf(whole, subject) is not { Repository: { } repository } part) return null;
+        var row = whole.Snapshot.Repositories.First(known => string.Equals(known.Repository, repository, StringComparison.OrdinalIgnoreCase)
+            && !string.IsNullOrWhiteSpace(known.Root));
+        return new HelpSweepPart(repository, row.Workspace, part.Roots[repository], part.InUse);
+    }
+
+    /// <summary>
+    /// What of the service's answers moves <paramref name="part"/>'s part of the clean-up's list: the work's reading (<see cref="Basis"/>:
+    /// its checkout, the trees its sessions hold) and its workspace. Their landing moved judges it again, and no other.
+    /// </summary>
+    private static string SweepBasis(HelpMachineWhole whole, string part) =>
+        Basis(whole, part) + "\n\n" + (SweepPartOf(whole, part)?.Workspace ?? "");
+
+    /// <summary>
+    /// One part of the clean-up's list through <paramref name="sweep"/>, from what the service's answers say of it
+    /// (<see cref="SweepPartOf"/>): null before the answers, or where they no longer name the repository with a checkout here.
+    /// </summary>
+    private static async Task<object?> JudgeSweepAsync(
+        MachineFacts facts, string subject, Func<HelpSweepPart, CancellationToken, Task<SweepPlan?>> sweep, CancellationToken ct)
+    {
+        if (facts.Current.Value<HelpMachineWhole>(Machine, Whole) is not { } whole || SweepPartOf(whole, subject) is not { } part) return null;
+        return await sweep(part, ct).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// One part of the clean-up's list read from <paramref name="home"/> (PUSH1c4a), as the module's judge reads it: its repository's
+    /// session branches and landings' branches judged by the answers the landing record keeps (<see cref="SessionTrees.SweepPartAsync"/>),
+    /// asking no plugin and changing nothing.
+    /// </summary>
+    public static Task<SweepPlan> ReadSweepAsync(string home, HelpSweepPart part, CancellationToken ct) =>
+        new SessionTrees(home).SweepPartAsync(part.Repository, part.Workspace, part.Root, part.InUse, ct);
+
+    /// <summary>
     /// One repository's line as its checkout guesses it, through <paramref name="guess"/>: null where the service's answers do not
     /// name it with a checkout here, so it keeps no fact.
     /// </summary>
@@ -576,6 +660,16 @@ public static class HelpFacts
         [.. Parts(whole).Select(subject => (subject, facts.Value<HelpWork>(Work, subject)))];
 
     /// <summary>
+    /// The clean-up's list's parts the service's answers name, as a slice pushes them (PUSH1c4a, D182): each repository with a checkout
+    /// here by name, with its plan as last judged, or null where it never was, so a part never judged differs from one judged empty.
+    /// Null where the service's answers were never judged.
+    /// </summary>
+    public static IReadOnlyList<(string Part, SweepPlan? Plan)>? SweepParts(MachineFactsSnapshot facts) =>
+        facts.Value<HelpMachineWhole>(Machine, Whole) is { } whole
+            ? [.. SweepSubjects(whole).Select(subject => (subject, facts.Value<SweepPlan>(Sweep, subject)))]
+            : null;
+
+    /// <summary>
     /// The sessions as the room reads them (FACTSPLIT1b), the look as the Sessions list takes it: the look without trees, with each
     /// part's trees merged in by their path (<see cref="SessionGroups.Normal"/>). Null while the look or any part the service's
     /// answers name was never judged, which the room says not read yet, as it said the whole: a tree not judged would read as
@@ -631,6 +725,13 @@ public sealed record HelpWorkPart(
         ? string.Equals(own, repository, StringComparison.OrdinalIgnoreCase)
         : !Checkouts.Contains(repository);
 }
+
+/// <summary>What one part of the clean-up's list reads (PUSH1c4a, <see cref="HelpFacts.SweepPartOf"/>), from the service's answers.</summary>
+/// <param name="Repository">The repository whose part it is, as the registry names it.</param>
+/// <param name="Workspace">The workspace the registry names it in, which its line is read under.</param>
+/// <param name="Root">Its checkout here.</param>
+/// <param name="InUse">The trees sessions still running or waiting hold, kept whatever they hold.</param>
+public sealed record HelpSweepPart(string Repository, string Workspace, string Root, IReadOnlySet<string> InUse);
 
 /// <summary>
 /// What one part's sessions' trees hold (FACTSPLIT1b): each tree judged, by <see cref="SessionGroups.Normal"/>, as
@@ -711,6 +812,13 @@ public sealed record HelpFactJudges(
     /// (<see cref="HelpFacts.ReadTreesAsync"/>); none judged where a test standing in for the look hands none.
     /// </summary>
     public Func<HelpTreesPart, CancellationToken, Task<HelpTrees?>> Trees { get; init; } = (_, _) => Task.FromResult<HelpTrees?>(HelpTrees.None);
+
+    /// <summary>
+    /// One part of the clean-up's list (PUSH1c4a): the module hands git's judgement of its home's branches by the kept answers
+    /// (<see cref="HelpFacts.ReadSweepAsync"/>). None kept where a test hands none, so a slice over it stays not judged rather than
+    /// say there is nothing to clean up.
+    /// </summary>
+    public Func<HelpSweepPart, CancellationToken, Task<SweepPlan?>> Sweep { get; init; } = (_, _) => Task.FromResult<SweepPlan?>(null);
 }
 
 /// <summary>

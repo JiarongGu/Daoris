@@ -26,12 +26,7 @@ public sealed class GitReadsAskTests : IDisposable
 
     public void Dispose()
     {
-        try
-        {
-            Directory.Delete(_scratch, recursive: true);
-        }
-        catch (IOException) { /* the next run's folder is its own */ }
-        catch (UnauthorizedAccessException) { /* the same */ }
+        GitSeed.Discard(_scratch);
     }
 
     private static string Listed(string commit, string parents, string subject = "work", string? mark = null) =>
@@ -462,16 +457,7 @@ public sealed class GitReadsAskTests : IDisposable
         return root;
     }
 
-    private static string RepoRoot()
-    {
-        var directory = new DirectoryInfo(AppContext.BaseDirectory);
-        while (directory is not null && !Directory.Exists(Path.Combine(directory.FullName, ".git")))
-        {
-            directory = directory.Parent;
-        }
-
-        return directory?.FullName ?? AppContext.BaseDirectory;
-    }
+    private static string RepoRoot() => GitSeed.RepoRoot();
 
     /// <summary>git as the reads ask it: an answer per kind of call, handed over in pieces, each start counted. Unscripted calls fail as git would.</summary>
     private sealed class StandInGit(int piece = 1 << 20)

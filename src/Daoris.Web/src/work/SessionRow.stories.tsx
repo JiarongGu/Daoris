@@ -202,6 +202,21 @@ export const RunningACall: Story = {
 /** The same, in 中文. */
 export const RunningACallChinese: Story = { ...RunningACall, decorators: [chinese] };
 
+/**
+ * AUTONOMY1b3b: a working session whose tool call is held for the person's answer under asking: its line says the call waits for
+ * your answer and for how long, timed from the hold, and its tip where to answer it.
+ */
+export const WaitingForYourAnswer: Story = {
+  args: {
+    session: { ...SESSION, created: at(62), updated: at(4) },
+    grouping: placed({ group: 'working', shown: 'working', calling: { title: 'git push origin main', since: at(4), waiting: true } }),
+    place: 'engine',
+  },
+};
+
+/** The same, in 中文. */
+export const WaitingForYourAnswerChinese: Story = { ...WaitingForYourAnswer, decorators: [chinese] };
+
 /** Awaiting a reply: its quest asked another repository and resumes by itself. Quiet: nothing runs, nothing waits on you. */
 export const AwaitingReply: Story = {
   args: {

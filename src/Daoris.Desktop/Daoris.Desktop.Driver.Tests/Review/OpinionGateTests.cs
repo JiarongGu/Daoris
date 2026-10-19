@@ -460,7 +460,7 @@ public sealed class OpinionGateTests
         }
         finally
         {
-            if (Directory.Exists(home)) Directory.Delete(home, recursive: true);
+            GitSeed.Discard(home);
         }
     }
 
@@ -481,7 +481,7 @@ public sealed class OpinionGateTests
         }
         finally
         {
-            if (Directory.Exists(home)) Directory.Delete(home, recursive: true);
+            GitSeed.Discard(home);
         }
     }
 
@@ -531,7 +531,7 @@ public sealed class OpinionGateTests
         }
         finally
         {
-            if (Directory.Exists(scratch)) Directory.Delete(scratch, recursive: true);
+            GitSeed.Discard(scratch);
         }
     }
 
@@ -582,7 +582,7 @@ public sealed class OpinionGateTests
         }
         finally
         {
-            if (Directory.Exists(scratch)) Directory.Delete(scratch, recursive: true);
+            GitSeed.Discard(scratch);
         }
     }
 
@@ -614,22 +614,12 @@ public sealed class OpinionGateTests
         }
         finally
         {
-            if (Directory.Exists(scratch)) Directory.Delete(scratch, recursive: true);
+            GitSeed.Discard(scratch);
         }
     }
 
     /// <summary>The checkout this build runs from: a linked worktree's <c>.git</c> is a file, so it stops there too.</summary>
-    private static string RepoRoot()
-    {
-        var directory = new DirectoryInfo(AppContext.BaseDirectory);
-        while (directory is not null && !Directory.Exists(Path.Combine(directory.FullName, ".git"))
-               && !File.Exists(Path.Combine(directory.FullName, ".git")))
-        {
-            directory = directory.Parent;
-        }
-
-        return directory?.FullName ?? AppContext.BaseDirectory;
-    }
+    private static string RepoRoot() => GitSeed.RepoRoot();
 
     private static OpinionReading Answers(string tip, params (string Weight, string Counts)[] rows) =>
         new("s1", tip, Answered, [.. rows.Select((row, at) => new OpinionAnswerRead(at + 1, row.Weight, row.Counts)

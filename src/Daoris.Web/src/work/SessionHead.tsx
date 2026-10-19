@@ -25,6 +25,7 @@ import { Note } from './Note';
 import { HelperAsks, type HelperWaits, openAsks, waitsOnWord } from './HelperAsks';
 import { hasNote, noteBlocks, noteLines } from './noteLines';
 import { processCommitsSays, processLandingSays, type SessionProcess } from './process';
+import { heldFor, PermissionAsks, type PermissionWaits } from './PermissionAsks';
 import { ProposedRules, type RuleAsk, type RuleWaits } from './ProposedRules';
 import { movedAt } from './rail';
 import { RunningIntake } from './RunningIntake';
@@ -99,13 +100,18 @@ export function SessionHead({
   session, quest, opening, taking, lastTurn, resolving = false, onResolve, onAnswerAsk,
   onAnswerSession, branch, ownBranch, onReview, onDiscardBranch, discardingBranch = false, headed = false, goAheads = [], onGoAhead,
   ownSignIn = false, nameOf, lands, landing, planning, onLand, onSayRebase, onName, discards, onDiscardTree, review, behind, opinion, onOpenQuest,
-  continues, helps, onOpenSession, process, workAsk, workBusy = false, toEvent, rules, ruleAsk, seek, helpers,
+  continues, helps, onOpenSession, process, workAsk, workBusy = false, toEvent, rules, ruleAsk, seek, helpers, permissions,
 }: {
   /**
    * The helpers it asked for (MIXAGENT2b, D163), the frame's: its asks as the driver's look left them, the agents' names, the
    * person's yes and a door to each helper. Absent, a browser or a teammate's record, none is drawn.
    */
   helpers?: HelperWaits | null;
+  /**
+   * The tool calls it holds for the person's answer under asking (AUTONOMY1b3c, D184 point 3), the frame's, handed to the foot's
+   * strip alike: every request the shell read, its own drawn, the answer's one door and its pending. Absent, none is drawn.
+   */
+  permissions?: PermissionWaits | null;
   /**
    * The wait a raising block's *To the wait* leads to while the head's waits are on screen (WAITFOOT2b, D168's WAITFOOT2 note),
    * counted so the same one pressed again is shown again: its line takes the focus, outlined, as the strip's does.
@@ -269,6 +275,7 @@ export function SessionHead({
   const shown = shownState(session, taking);
   const noted = hasNote({ note: session.note, parts: session.noteParts });
   const proposed = rulesAsked(rules?.proposals, session.id);
+  const held = heldFor(permissions?.waits ?? [], session.id);
   const own = useRef<HTMLElement>(null);
   const { sought, letGo } = useSought(own, seek);
 
@@ -322,6 +329,18 @@ export function SessionHead({
             inConversation={toEvent?.goAheads}
             marked={sought?.startsWith('goAhead:') ? Number(sought.slice('goAhead:'.length)) : undefined}
           />
+        </section>
+      )}
+      {/* The tool calls it holds for the person's answer (AUTONOMY1b3c, D184 point 3): its turn stands still until they answer, or
+          the bound refuses it. A wait's section where an answer can be given here, so the strip stands aside for it too. */}
+      {held.length > 0 && (
+        <section
+          aria-labelledby={`permissions-${session.id}`}
+          data-wait-section={permissions?.onAnswer ? '' : undefined}
+          className="grid gap-1"
+        >
+          <h3 id={`permissions-${session.id}`} className="m-0 text-small font-semibold">{t('work.wait.permission.title')}</h3>
+          <PermissionAsks waits={held} onAnswer={permissions?.onAnswer} busy={permissions?.busy} lead={t('work.wait.permission.lead')} />
         </section>
       )}
       {proposed.length > 0 && (

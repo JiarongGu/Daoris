@@ -135,12 +135,14 @@ public sealed class HelpFactsTests : IDisposable
         var facts = MachineFactsSnapshot.Empty.With(HelpFacts.Machine, HelpFacts.Whole, new JudgedFact(Whole(Site, Engine, Docs), At));
 
         Assert.Equal(
-            [(HelpFacts.Lines, "site"), (HelpFacts.Trees, "site"), (HelpFacts.Work, "site")],
+            [(HelpFacts.Lines, "site"), (HelpFacts.Trees, "site"), (HelpFacts.Work, "site"), (HelpFacts.Sweep, "site")],
             HelpFacts.Woken(ChangeTopics.Refs, "site", facts));
+        // PUSH1c4a: the sweep's parts are the repositories with a checkout here alone, which the clean-up's list judges.
         Assert.Equal(
             [
                 (HelpFacts.Machine, HelpFacts.Whole), (HelpFacts.Sessions, HelpFacts.Whole), (HelpFacts.History, HelpFacts.Whole),
                 (HelpFacts.Work, "engine"), (HelpFacts.Work, "site"), (HelpFacts.Work, HelpFacts.NoCheckout),
+                (HelpFacts.Sweep, "engine"), (HelpFacts.Sweep, "site"),
             ],
             HelpFacts.Woken(ChangeTopics.Ledger, "sessions,quests", facts));
         // Before the service's answers there is no part to wake: each is judged as they land.
@@ -154,6 +156,7 @@ public sealed class HelpFactsTests : IDisposable
             [
                 (HelpFacts.Machine, HelpFacts.Whole), (HelpFacts.Sessions, HelpFacts.Whole),
                 (HelpFacts.Trees, "engine"), (HelpFacts.Trees, "site"), (HelpFacts.Trees, HelpFacts.NoCheckout),
+                (HelpFacts.Sweep, "engine"), (HelpFacts.Sweep, "site"),
             ],
             HelpFacts.Woken(ChangeTopics.Config, "driver.json", facts));
         Assert.Equal(
@@ -181,6 +184,7 @@ public sealed class HelpFactsTests : IDisposable
             [
                 (HelpFacts.Machine, HelpFacts.Whole), (HelpFacts.Sessions, HelpFacts.Whole), (HelpFacts.History, HelpFacts.Whole),
                 (HelpFacts.Work, "engine"), (HelpFacts.Work, "site"), (HelpFacts.Work, HelpFacts.NoCheckout),
+                (HelpFacts.Sweep, "engine"), (HelpFacts.Sweep, "site"),
             ],
             HelpFacts.Woken(ChangeTopics.Ledger, "sessions,quests,asks,channel", facts));
     }
@@ -390,6 +394,113 @@ public sealed class HelpFactsTests : IDisposable
         Assert.Same(landed, facts.Current.Value<HelpTrees>(HelpFacts.Trees, "site"));
         Assert.Equal((1, 2, 1), (Judged(trees, "engine"), Judged(trees, "site"), Judged(trees, HelpFacts.NoCheckout)));
         Assert.Equal((1, 2, 1), (Judged(work, "engine"), Judged(work, "site"), Judged(work, HelpFacts.NoCheckout)));
+    }
+
+    /// <summary>
+    /// 🔴 PUSH1c4a (D182): the clean-up's list is judged per repository with a checkout here, from the service's answers the facts hold
+    /// (its workspace, its checkout, the trees sessions hold), and none for the repositories with none, which the list never judges.
+    /// A plain hint within the rest is held, as the work's; Daoris's own move judges its repository's part at once.
+    /// </summary>
+    [Fact]
+    public async Task A_refs_wake_judges_that_repository_s_sweep_alone_and_Daoris_s_own_move_at_once()
+    {
+        var judged = new Dictionary<string, int>(StringComparer.Ordinal);
+        var parts = new List<HelpSweepPart>();
+        var holding = new SessionView("s1", "engine", "working") { Tree = "trees/aurora/engine/s-1" };
+        var clock = new Clock();
+        using var facts = new MachineFacts(clock.Now);
+        HelpFacts.Keep(facts, Judges(new HelpMachineWhole(new Snapshot([], [Engine with { Workspace = "aurora" }, Site, Docs], [holding]), [], [])) with
+        {
+            Sweep = (part, _) =>
+            {
+                lock (judged)
+                {
+                    judged[part.Repository] = judged.GetValueOrDefault(part.Repository) + 1;
+                    parts.Add(part);
+                }
+
+                return Task.FromResult<SweepPlan?>(new SweepPlan([], []));
+            },
+        });
+        facts.Start();
+        foreach (var part in (string[])["engine", "site"])
+        {
+            await facts.FirstAsync(HelpFacts.Sweep, part, CancellationToken.None).WaitAsync(Within);
+        }
+
+        await facts.Settled().WaitAsync(Within);
+        Assert.Equal(["engine", "site"], facts.Current.Subjects(HelpFacts.Sweep).Order(StringComparer.Ordinal));
+        lock (judged)
+        {
+            var engine = parts.Single(part => part.Repository == "engine");
+            Assert.Equal(("aurora", Engine.Root), (engine.Workspace, engine.Root));
+            Assert.Equal(["trees/aurora/engine/s-1"], engine.InUse);
+        }
+
+        HelpFacts.Wake(facts, ChangeTopics.Refs, "engine");
+        HelpFacts.Wake(facts, ChangeTopics.Refs, "site", mine: true);
+        await Poll.Until(() => Judged(judged, "site") == 2, within: Within);
+        await facts.Settled().WaitAsync(Within);
+        await Task.Delay(200);
+
+        Assert.Equal((1, 2), (Judged(judged, "engine"), Judged(judged, "site")));
+    }
+
+    /// <summary>
+    /// 🔴 PUSH1c4a: a repository the registry no longer names drops its part of the sweep, and one whose workspace moved in the service's
+    /// answers, which its line is read under, is judged again as they land; no other.
+    /// </summary>
+    [Fact]
+    public async Task A_repository_gone_drops_its_part_of_the_sweep_and_one_moved_to_another_workspace_is_judged_again()
+    {
+        var whole = Whole(Engine, Site, Docs);
+        var judged = new Dictionary<string, int>(StringComparer.Ordinal);
+        var clock = new Clock();
+        using var facts = new MachineFacts(clock.Now);
+        HelpFacts.Keep(facts, Judges(null) with
+        {
+            Machine = _ => Task.FromResult<HelpMachineWhole?>(Volatile.Read(ref whole)),
+            Sweep = (part, _) =>
+            {
+                lock (judged) judged[part.Repository] = judged.GetValueOrDefault(part.Repository) + 1;
+                return Task.FromResult<SweepPlan?>(new SweepPlan([], []));
+            },
+        });
+        facts.Start();
+        foreach (var part in (string[])["engine", "site"])
+        {
+            await facts.FirstAsync(HelpFacts.Sweep, part, CancellationToken.None).WaitAsync(Within);
+        }
+
+        clock.Pass(HelpFacts.SweepRules.Rest + TimeSpan.FromSeconds(1));
+        Volatile.Write(ref whole, Whole(Engine with { Workspace = "aurora" }, Docs));
+        await facts.JudgedAsync(HelpFacts.Machine, HelpFacts.Whole, CancellationToken.None).WaitAsync(Within);
+        await Poll.Until(() => Judged(judged, "engine") == 2, within: Within);
+        await facts.Settled().WaitAsync(Within);
+
+        Assert.Null(facts.Current.Of(HelpFacts.Sweep, "site"));
+        Assert.Equal((2, 1), (Judged(judged, "engine"), Judged(judged, "site")));
+        Assert.Equal(["engine"], HelpFacts.SweepParts(facts.Current)!.Select(part => part.Part));
+    }
+
+    /// <summary>
+    /// PUSH1c4a: the sweep's parts as a slice pushes them, each repository with a checkout here in name order with its plan as last
+    /// judged, or none where it never was; none at all before the service's answers.
+    /// </summary>
+    [Fact]
+    public void The_sweep_s_parts_are_named_in_order_each_as_last_judged_or_none_where_never()
+    {
+        var site = new SweepPlan([], []);
+        Assert.Null(HelpFacts.SweepParts(MachineFactsSnapshot.Empty.With(HelpFacts.Sweep, "site", new JudgedFact(site, At))));
+
+        var facts = MachineFactsSnapshot.Empty
+            .With(HelpFacts.Machine, HelpFacts.Whole, new JudgedFact(Whole(Site, Engine, Docs), At))
+            .With(HelpFacts.Sweep, "site", new JudgedFact(site, At));
+
+        var parts = HelpFacts.SweepParts(facts)!;
+        Assert.Equal(["engine", "site"], parts.Select(part => part.Part));
+        Assert.Null(parts[0].Plan);
+        Assert.Same(site, parts[1].Plan);
     }
 
     /// <summary>

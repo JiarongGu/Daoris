@@ -46,22 +46,16 @@ public abstract class BranchTidyingFixture : IDisposable
         try
         {
             // The links a test made go first, alone, so the delete below never meets one.
-            var walk = new EnumerationOptions { RecurseSubdirectories = true, AttributesToSkip = FileAttributes.ReparsePoint };
             foreach (var link in Directory.EnumerateDirectories(_scratch, "*", new EnumerationOptions { RecurseSubdirectories = true, AttributesToSkip = 0 })
                          .Where(folder => File.GetAttributes(folder).HasFlag(FileAttributes.ReparsePoint)).ToList())
             {
                 Directory.Delete(link);
             }
-
-            foreach (var file in Directory.EnumerateFiles(_scratch, "*", walk))
-            {
-                File.SetAttributes(file, FileAttributes.Normal);
-            }
-
-            Directory.Delete(_scratch, recursive: true);
         }
         catch (IOException) { /* a straggling git handle */ }
         catch (UnauthorizedAccessException) { /* a file something still holds */ }
+
+        GitSeed.Discard(_scratch);
 
         GC.SuppressFinalize(this);
     }
@@ -188,14 +182,5 @@ public abstract class BranchTidyingFixture : IDisposable
         await GitAsync(tree, "-c", "user.email=fixture@example.test", "-c", "user.name=Fixture", "commit", "--quiet", "-m", message);
     }
 
-    private static string RepoRoot()
-    {
-        var directory = new DirectoryInfo(AppContext.BaseDirectory);
-        while (directory is not null && !Directory.Exists(Path.Combine(directory.FullName, ".git")))
-        {
-            directory = directory.Parent;
-        }
-
-        return directory?.FullName ?? AppContext.BaseDirectory;
-    }
+    private static string RepoRoot() => GitSeed.RepoRoot();
 }

@@ -61,12 +61,40 @@ internal sealed class HeavyFixture : IDisposable
                 }).ToList(),
             }));
 
+    /// <summary>
+    /// A test runner installed under <paramref name="folder"/> as npm lays it out (HEAVYRUN1a2): its
+    /// <c>node_modules/&lt;package&gt;/package.json</c>, naming <paramref name="version"/> where one is given.
+    /// </summary>
+    public void Installed(string folder, string package, string? version)
+    {
+        var at = Path.Combine(folder, "node_modules", package);
+        Directory.CreateDirectory(at);
+        var manifest = new Dictionary<string, object> { ["name"] = package };
+        if (version is not null) manifest["version"] = version;
+        File.WriteAllText(Path.Combine(at, "package.json"), JsonSerializer.Serialize(manifest));
+    }
+
+    /// <summary>Write <paramref name="folder"/>'s <c>package.json</c>, declaring each script by name (HEAVYRUN1a2).</summary>
+    public void Scripts(string folder, params (string Name, string Run)[] scripts)
+    {
+        Directory.CreateDirectory(folder);
+        File.WriteAllText(
+            Path.Combine(folder, "package.json"),
+            JsonSerializer.Serialize(new Dictionary<string, object>
+            {
+                ["name"] = "engine",
+                ["version"] = "0.0.0",
+                ["private"] = true,
+                ["scripts"] = scripts.ToDictionary(script => script.Name, script => script.Run),
+            }));
+    }
+
     /// <summary>A file in the scratch folder, by name.</summary>
     public string At(string name) => Path.Combine(Folder, name);
 
     public void Dispose()
     {
-        try { Directory.Delete(Folder, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
+        GitSeed.Discard(Folder);
     }
 }
 

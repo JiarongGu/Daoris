@@ -27,7 +27,7 @@
   "settings.access.value.landing.rule": "落地规则",
   "settings.access.value.goAheads.named": "点名的行动前",
   "settings.access.value.goAheads.never": "从不",
-  "settings.access.says.permissions.asking": "智能体以它的询问模式运行：规则允许的照用，其他工具调用都被拒绝，因为提示还到不了你这里。",
+  "settings.access.says.permissions.asking": "智能体以它的询问模式运行：规则允许的照用，其他工具调用都在它的会话页面和“等你处理”里等你答复，15 分钟内无人答复则被拒绝。不通过其协议运行的智能体无法询问，会直接拒绝。",
   "settings.access.says.permissions.auto": "规则没有定下的每一次工具调用，由智能体的自动模式决定，和现在一样。",
   "settings.access.says.permissions.unrestricted": "不弹出权限提示：智能体以它自己什么都不问的模式运行。",
   "settings.access.says.routing.person": "声明定不下来的需求，等你采纳受理提议的去向，和现在一样。",

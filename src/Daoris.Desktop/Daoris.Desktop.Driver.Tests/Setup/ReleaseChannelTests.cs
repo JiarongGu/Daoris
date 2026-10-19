@@ -38,7 +38,7 @@ public sealed class ReleaseChannelTests : IDisposable
 
     public void Dispose()
     {
-        if (Directory.Exists(_home)) Directory.Delete(_home, recursive: true);
+        GitSeed.Remove(_home);
     }
 
     // ——— The signature.

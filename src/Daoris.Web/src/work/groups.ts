@@ -81,9 +81,10 @@ export type SessionGrouping = {
    * The call a working session's agent is inside, as the driver heard it from the session's events (WAITSAY1b, D152's UX7c
    * amendment): its title, and when it began by the driver's clock, a call begun before this window opened among them. Its
    * row and its head say *running … for …*. Held in the driver's memory, never the record; null where none is open, and
-   * absent on a host older than the fact.
+   * absent on a host older than the fact. `waiting` (AUTONOMY1b3b): its permission request is held for the person's answer,
+   * timed from the hold, its title empty where the agent named none; absent on a host older than the mark.
    */
-  calling?: { title: string; since: string } | null;
+  calling?: { title: string; since: string; waiting?: boolean } | null;
 };
 
 /** What an ended session's tree offers to land (LAND4): the driver's `LandOffer`, as `SESSION_GROUPS` answers it. */

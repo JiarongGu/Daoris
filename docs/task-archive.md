@@ -17424,3 +17424,122 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **HEAVYRUN1b2b — the mapping on a repository's setup page** (modules, web; after HEAVYRUN1b2a; D184's AUTONOMY1d section as the exemplar). A `SET_` door and a section of the repository's Setup that shows and edits its heavy gates, en and 中文. Proof: the route's tests; the section's vitest in both languages.
 
 **Outcome** 2026-10-20: `SET_HEAVY_GATES` (in `DriverRoutes.cs`) sets a repository's whole list through `HeavyMapping.Apply`, and `STATE`'s `heavyGates` rows sit in the `choices` partition; *Heavy gates* on a repository's Setup (`settings/HeavyGates.tsx`) shows and edits the list whole (name, command, folder, order), en and 中文 (重型检查), the driver's refusal said under Save; `useSetHeavyGates` is exempt from Ask Daoris with its reason. On Opus: about 239 tool calls, 66 minutes. Detail: D180's HEAVYRUN1b2b note.
+
+## QUEUEDTREE1b — a fast stand-in for a start's tree open (2026-10-20, D181)
+
+> - [ ] **QUEUEDTREE1b — a fast stand-in for a start's tree open** (driver; D51, D181's QUEUEDTREE1 and LOOKWAIT1b note). Only the Process half reaches `Driver.RunAsync` past its tree's open, so a close between the open and the record has no fast proof. A stand-in answering the open's git through `WorkingTree.Runs` and the harness probes through `ProcessStarts.Within` would give one. Proof: a fast row closing the loop after the open leaves no tree.
+
+**Outcome** 2026-10-20: `StartTreeCloseTests` drives a look with no `Runner` to the start's tree open over a stand-in git (`WorkingTree.Runs`), closes the loop at the new tree's head read, and sees the tree's removal and its branch's delete asked on no token and no record opened; seen failing first with the close's let-go set aside. No product seam. The parallel theme (D181) has no open row left. On Opus: about 60 minutes. Detail: D181's QUEUEDTREE1b note.
+
+## AUTONOMY1b3a — under asking, the protocol door holds a tool ask for the person (2026-10-20, D184)
+
+> - [ ] **AUTONOMY1b3a — under asking, the protocol door holds a tool ask for the person** (driver, modules; D184 point 3, D52, D37, D74; a scout's plan, 2026-10-20). `AcpSession.AnswerPermissionAsync` refuses every ask as it comes; under `asking` it holds the ask off the read loop (dispatch is inline at Acp.cs ~1350, so a hold there stalls every frame), in an in-memory registry by session, answered by a bridge route with an offered option only (never an invented allow), released `cancelled` by a cancel, a stop, the stream's end or its own bound. The native door (`-p`) cannot hold one: its words say so. A person's allow is a per-call widening by the person: a D184 note says so. Proof: a held ask answered with the chosen option; released on cancel and at the bound; no allow where none was offered.
+
+**Outcome** 2026-10-20: the asking posture carries a second mark, so a driven protocol session holds each permission request in `HeldPermissions` (in memory, by session and request), answered off its read loop with the option the person chose through `SESSION_PERMISSION_ANSWER` (never a standing allow), listed by `PERMISSION_WAITS`, and released `cancelled` by a cancel, the close, the stream's end or a 15-minute bound, each said by an `asking.*` note; every other mode refuses as before. Held off main until its card landed with it (AUTONOMY1b3c). On Opus: about 216 tool calls, 67 minutes. Detail: D184's AUTONOMY1b3a note.
+
+## AUTONOMY1b3c — the page shows a held ask and answers it (2026-10-20, D184)
+
+> - [ ] **AUTONOMY1b3c — the page shows a held ask and answers it** (web; after AUTONOMY1b3b and WAITSAY1c2). A wait kind beside the rule proposal's (`work/waits.ts`, `WaitStrip`, *What needs you*, whether it counts in the badge decided), the rail's and the head's *waiting on you*, en and 中文. Proof: the card answers with an offered option; both languages.
+
+**Outcome** 2026-10-20: a held request is a `permission` wait drawn by `PermissionAsks` in the session's head and foot, with a press per choice its agent offered (*Allow once*, *Refuse*, *Always refuse*; never an allow not offered), and a *Holding work* row in *What needs you* that the badge counts; `usePermissionWaits` polls every 4 s while a session works, since neither route publishes; the six `asking.*` codes and the asking-mode sentence worded in en and 中文. The rail's and the head's mark stay AUTONOMY1b3b's. On Opus. Detail: D184's AUTONOMY1b3c note.
+
+## SCRATCHLEAK1 — git test cleanups that leave their folders (2026-10-20, D180)
+
+> - [ ] **SCRATCHLEAK1 — git test cleanups that leave their folders** (driver tests). Every git class but the landed fixtures deletes once and ignores the refusal (git's read-only objects), so each test leaves a folder under the main checkout's `_fixtures/*` (14,619 under `_fixtures/landed` alone, 2026-10-19), and a worktree's runs write there too. Route them through `GitSeed.Remove` and have scratch stop at a worktree's `.git` file, as `LandingTests.RepoRoot` does. Clearing the existing leftovers follows the repository cleanup procedure. Proof: a class run leaves its `_fixtures/<name>/` count unchanged.
+
+**Outcome** 2026-10-20: `GitSeed.Remove` makes git's read-only objects writable and retries a held file (12 × 250 ms); `GitSeed.Discard` is every test's `Dispose` cleanup; `GitSeed.RepoRoot` is the one root walk, stopping at a worktree's `.git` file; every `_fixtures` cleanup and root in the driver's tests (51 files) goes through them, and a guard in `GitSeedTests` keeps it so. The git and Process classes swept run in the CI beside. Leftovers already there are the parent's to clear under the cleanup procedure. On Sonnet: about 178 tool calls, 20 minutes. Detail: FIX-LOG's SCRATCHLEAK1 entry.
+## PUSH1c3a — session groups pushed, the host half (2026-10-20, D182)
+
+> - [ ] **PUSH1c3a — session groups pushed, the host half** (modules; D182; after PUSH1c1; a scout's plan, 2026-10-20). A keyed `groups` slice, `rows` by session and `entries` by entry key, its judge taking its own look per wake as `GroupsAsync` does (fresh as the pull, a tree no part asked walked once), the rows carrying their sort inputs, `calling` pull-only; woken by the ledger's `sessions` and `quests`, an archive, an ending, the loop's report and a trees part landing. Proof: one session's move pushes its row alone; a hostile field never pushed; the twin of `SessionsRoutes.Grouped`.
+
+**Outcome** 2026-10-20: `Loop/GroupsStateSlice.cs` is registered in `DriverLoop.Slices`. Each row carries only the sort inputs its group is ordered by, so a working record's write pushes nothing. The loop's report wakes it through `DRIVER_TICK`, not beside `DriverSlice.Wake()`. The freshness, order, page twin, allow-list and wakes are in D182's PUSH1c3a note. The page half is PUSH1c3b.
+
+## WAITKIND1 — a knowledge document: every place a new wait the person answers goes (2026-10-20, D184)
+
+> - [ ] **WAITKIND1 — a knowledge document: every place a new wait the person answers goes** (records; AUTONOMY1b3c's hand-back). waits.ts, WaitStrip, SessionHead, AttendedSession, WorkFrame, attention.ts, AttentionRow, AttentionBand, App's badge and door, the glossary's kinds and accepted budgets, HelpCoverageTests' `Starts`, the band's route-set test, the stories; the helper ask (MIXAGENT2c) as the exemplar. Proof: the document and its index row.
+
+**Outcome** 2026-10-20: `.claude/knowledge/person-waits.md` (local) lists every place a wait the person answers goes, in order, with the rules each keeps (one set of handlers, never an answer not offered, counted where it holds work, "waiting on you" taken), the helper's ask as the exemplar; its index row regenerated. Written by the parent from AUTONOMY1b3c's hand-back.
+
+## PUSH1c3c — `SESSION_GROUPS` takes its look through the groups slice's (2026-10-20, D182)
+
+> - [ ] **PUSH1c3c — `SESSION_GROUPS` takes its look through the groups slice's** (modules; D182's PUSH1c3a note). The route and the slice take the same look in two places (`SessionsRoutes.GroupsAsync`, `GroupsStateSlice.LookAsync`), which can drift; the route takes it through the slice's builder. Proof: `DriverModuleSessionsTests` and `GroupsStateSliceTests` unchanged and green, one look builder.
+
+**Outcome** 2026-10-20: `SessionsRoutes.GroupsAsync` takes its look through `GroupsStateSlice.LookAsync` (new `only` and `walked` parameters), its answer unchanged; an archive still walks its asked trees with git at the press. On Sonnet. Detail: D182's PUSH1c3c note.
+
+## REHLANE2 — the rehearsals run beside the suites, not after them (2026-10-20, D180)
+
+> - [ ] **REHLANE2 — the rehearsals run beside the suites, not after them** (tools; D180's budget note). The full set ran the release, family and deployment rehearsals after the `Process` halves; each has its own scratch and builds, so they can run beside the suites (ports and scratch apart, REHEARSEPORT1). Proof: the merge test's lane tables; a full set's wall with the rehearsals beside.
+
+**Outcome** 2026-10-20: the release rehearsal is of `BESIDE_GIT_HALF`: it runs beside the driver's git half before the family rehearsal and never beside it (the family runs the CLI's bin, which the release's pack shadows with a staged `dist/`; no desktop test reads what a pack stages, which a merge test now holds), so at most two Process-lane gates run at once; the deployment rehearsal stays alone and last (REHLANE2b). A full set's wall with it beside is not yet measured. On Opus: about 129 tool calls, 32 minutes. Detail: D180's REHLANE2 note; D115's REHLANE1 line.
+
+## HEAVYRUN1b2c — the setup says whether the repository's own file wins (2026-10-20, D180)
+
+> - [ ] **HEAVYRUN1b2c — the setup says whether the repository's own file wins** (driver, modules, web; D180's HEAVYRUN1b2a and HEAVYRUN1b2b notes). The *Heavy gates* section says its list is used only where the repository's `daoris.gates.json` marks no heavy gate, but cannot say whether this repository's does, so a person may edit a list never run. `LINES` or `STATE` carries per repository whether its file marks heavy gates (`HeavyGates.Resolve`'s source), and the section says so. Proof: a route test on a checkout whose file marks one; the section's vitest.
+
+**Outcome** 2026-10-20: a read route `HEAVY_MARKS` (from `HeavyGates.Marks`, one file, never `Resolve`) answers whether a repository's file marks heavy gates, marks none or has no file, or cannot be told (the driver's words, never "marks none"). *Heavy gates* says it in its `where` sentence and cues "not used" on the folded line where the file wins (`useHeavyMarks`; not on `LINES` or `STATE`, which have no checkout file to read). On Sonnet: about 94 tool calls, 29 minutes. Detail: D180's HEAVYRUN1b2c line.
+
+## PUSH1c3b — the page reads the session groups pushed (2026-10-20, D182)
+
+> - [ ] **PUSH1c3b — the page reads the session groups pushed** (web; after PUSH1c3a). A `groupsSlice` spec feeding `groupsKey(undefined)`, composed in `SessionGroups.Ordered`'s order from the pushed sort inputs; `useSessionGroups` and `useSessionEntries` read it live with `select`; in `PUSHED`. Proof: a tick and a focus read no `SESSION_GROUPS`; a delta changes the rail with no read; an older host pulls.
+
+**Outcome** 2026-10-20: `groupsSlice` (`bridge/sessions.ts`) composes the pushed `rows` and `entries` into `SESSION_GROUPS`' widest answer in the reader's order, with instants compared to the tick, and composes nothing until the `rows` partition is judged; `useSessionGroups` and `useSessionEntries` read it live and select the `ids` variants from it (`groupsIn`); it is in `PUSHED`, so a tick and a focus read no `SESSION_GROUPS`. A second window's count left out the permission poll AUTONOMY1b3b removes. On Opus: about 104 tool calls, 34 minutes. Detail: D182's PUSH1c3b note.
+
+## AUTONOMY1b3b — a held ask marks its call waiting on the person (2026-10-20, D184)
+
+> - [ ] **AUTONOMY1b3b — a held ask marks its call waiting on the person** (driver, modules; after AUTONOMY1b3a; WAITSAY1b's half). `RunningCalls` carries the mark (moving `Changed`), the `calls` slice and `SESSION_GROUPS`' `calling` twin carry `waiting`, `sessions --json` too. Proof: the mark comes and clears with the hold; the twins equal. Then the page's 4 s poll of `PERMISSION_WAITS` (`permissionsAgainIn`, AUTONOMY1b3c) gives way to the mark's wake.
+
+**Outcome** 2026-10-20: a session's newest held request is its call, `RunningCall.Waiting`, timed from the hold and named as the record named its open call, else by the request's title, since a hold writes no call's event and may come before the call's announcement. `calling` is {title, since, waiting} in the `calls` slice, `SESSION_GROUPS` and `sessions --json`. The rail and the head say *waiting for your answer to … for …*. Where the calls are pushed, `PERMISSION_WAITS` is asked as the marks move, never on the 4 s clock, which mends `pushedState`'s second-window test (FIX-LOG). The conversation's own line is AUTONOMY1b3e. On Opus: about 175 tool calls, 58 minutes. Detail: D184's AUTONOMY1b3b note.
+
+## USAGECAP1a4 — a brainstorm's and a meeting's passes keep their account in the usage history (2026-10-20, D179)
+
+> - [ ] **USAGECAP1a4 — a brainstorm's and a meeting's passes keep their account in the usage history** (driver; D179 point 2, D176). `DriverBrainstorms` and `DriverMeetings` never call `Driver.Said`, so their turns, where recorded, carry no account. Proof: a pass's turn read back with its account.
+
+**Outcome** 2026-10-20: a brainstorm pass's `HoldAsync` passes `said: _driver.Said(adapter, selection, sessionId)`, so its `brainstorm-<id>-<turn>` turns keep the walk's account in the usage history (both doors' events reach `Context.Events`), and the pass also writes account-window readings through the roster callback, as every start holding a session does. A meeting's turn is refused without a stand-in until AGENTROOM1b, so its account follows then. The call-site proof is a Process assertion in `BrainstormProcessTests`, first run by the next full set. On Sonnet: about 24 tool calls, 5 minutes. Detail: D179's USAGECAP1a4 line.
+
+## REHLANE2b — the deployment rehearsal beside the Process lane (2026-10-20, D180)
+
+> - [ ] **REHLANE2b — the deployment rehearsal beside the Process lane** (tools; D180's REHLANE2 note; after REHLANE2). It still runs alone and last (12 to 14 minutes) because `desktop-publish` publishes every desktop project into the `bin/` and `obj/` the Process halves run from, and packs the CLI's folder in place as the release rehearsal does; give its publish an output of its own and chain it after the release and family rehearsals, beside the git half. Contract: D115's REHLANE1 note (why it stayed alone), D180's budget, SHUTDOWNBESIDE1 and REHLANE2 notes. Proof: the merge test's lane tables and own-output rule over its tools; a full set's wall with it beside.
+
+**Outcome** 2026-10-20: `desktop-publish --artifacts-path` builds every `dotnet publish` it runs and its stages into the folder it is told (untold, the install's recipe as before); the deployment rehearsal publishes and builds its driver host into `_fixtures/rehearsal-builds/deployment` on build servers of its own (`OWN_BUILD_SERVERS`), so no build-server shutdown runs before it, and it is of `BESIDE_GIT_HALF`, last: `driver-process`, `driver-process-git`, `rehearse`, `rehearse-family`, `deployment`, `modules-process`. No full set, rehearsal or publish ran on the branch; the next full set is its proof. The `before` machinery no gate plans now is BEFORESTEP1. On Opus: about 214 tool calls, 43 minutes. Detail: D180's REHLANE2b note.
+
+## REHLANE1b — the deployment rehearsal beside the git half (2026-10-20, D115)
+
+> - [ ] **REHLANE1b — the deployment rehearsal beside the git half** (tools; after REHLANE1's three full sets show no new flake). It still waits for the whole Process lane (13–15 m): give its builds and publish their own `--artifacts-path` through `tools/desktop-publish.mjs`'s recipes and their own build servers in place of the shutdown, then run it after the family rehearsal beside the git half. Proof: three full sets' walls, no new flake.
+
+**Outcome** 2026-10-20: done by REHLANE2b; its full sets' walls are the next runs'. Detail: D180's REHLANE2b note.
+
+## PUSH1c4a — the sweep's plan judged per repository and pushed, the host half (2026-10-20, D182)
+
+> - [ ] **PUSH1c4a — the sweep's plan judged per repository and pushed, the host half** (driver, modules; D182; D148 point 2; a scout's plan, 2026-10-20). A facts topic beside the work's, judging the plan's git half per repository with the KEPT pull-request answers (never `CleanPlanAsync` or `AskStatesAsync`, which stay the person's occasion: `PullRequestOccasionTests`), and a `sweep` slice over its parts, woken by refs, own moves, the ledger and the press scopes. Proof: a refs move judges its repository alone; no plugin is asked by the slice; the twin of `SWEEP_PLAN`'s rows.
+
+**Outcome** 2026-10-20: the clean-up list's git half is a machine fact per repository (`HelpFacts.Sweep`, judged by `LandedCleanups.SweepPartAsync` from the kept pull-request answers, asking nothing; `CleanPlanAsync` still asks first, the person's occasion), pushed by the `sweep` slice through `SWEEP_PLAN`'s own builder (`LinesRoutes.SweepAnswer`); the person's *Look* wakes only the parts whose kept answers it moved (`SweepStateSlice.Asked`). A row names its `session` only where it offers that session's landing, so a partition's rows never depend on another repository's. The git-backed `LandedKeepTests` and `LandedProofTests` are the next full set's. On Opus: about 166 tool calls, 54 minutes. Detail: D182's PUSH1c4a note.
+
+## AUTONOMY1b3e — the conversation's running-call line says a held call waits (2026-10-20, D184)
+
+> - [ ] **AUTONOMY1b3e — the conversation's running-call line says a held call waits** (web; D184's AUTONOMY1b3b note). While a call is held, the conversation's foot (`work.conversation.calling`, `ConversationView.tsx`'s `CallingLine`, read from the record) still says *running X for N*, beside a head and a card that say it waits for the person's answer. Have it read the grouping's pushed `calling.waiting` and say *waiting for your answer to …*. Proof: a `ConversationView` test, en and zh.
+
+**Outcome** 2026-10-20: the conversation's foot (`CallingLine`) reads the grouping's pushed `calling` mark, passed from `WorkFrame` through `SessionConversation` as `callMark`, and says *waiting for your answer to X for N* while it is held (en and zh, an untitled call as *a tool call*, timed from the hold); no mark, or `waiting` false, still reads *running*. On Sonnet: about 43 tool calls, 17 minutes. Detail: D184's AUTONOMY1b3e line.
+
+## HELPMODE1c1 — restricted mode's configured access, the mock the owner sees (2026-10-20, D183)
+
+> - [ ] **HELPMODE1c1 — restricted mode's configured access, the mock the owner sees** (web; D183 point 1; `docs/2026-10-19-ask-daoris-modes-design.md` §4.1 and §5). Presentational molecules with stories, no wiring: Settings → *Daoris's own AI* → Ask Daoris's *Configured access*, each grant with its reach, its operations, its default and its state (off, on, needs approval, changed since approved, unavailable on this agent), and the picker's *Configure restricted access…*; Claude and Codex side by side where a grant differs; en and 中文. Proof: the stories, their vitest, and screenshots the owner reviews before HELPMODE1c2 starts.
+
+**Outcome** 2026-10-20: merged 2026-10-20 as a mock wired to nothing (`help/access/ConfiguredAccess.tsx`, `grants.ts`, mounted only where a caller passes grants); the owner reviewed its screenshots and the screen stands as drawn; a plugin's grant is set on the plugin's own tab, with a Plugins section in Settings at a lower priority (HELPMODE1c3, PLUGSET1). Detail: the modes design's §4.1, its review paragraph.
+
+## HEAVYRUN1a2 — the heavy run's workers bounded (2026-10-20, D180)
+
+> - [ ] **HEAVYRUN1a2 — the heavy run's workers bounded** (driver; D180's HEAVYRUN1 note; after HEAVYRUN1a). Jest's `--maxWorkers=2`; Vitest's bound as the installed version takes it (read from the repository's own install), its pool left as the repository has it; the flags passed through the runner the gate names (npm, Angular). Proof: a fixture repository's runs at each supported version count their workers.
+
+**Outcome** 2026-10-20: `run-heavy` runs a heavy gate's Jest or Vitest with `--maxWorkers=2`, run directly, through `npx`, `npm test` or `npm run`, where the repository declares the runner and the installed version's command line was read declaring the flag (Jest 27, 29 and 30; Vitest 2 to 5, read from packages unpacked offline). A chain, another runner, npm pointed at another package, an owner's own bound or an unknown version runs as written, and the run says which (`Sessions/Heavy/HeavyWorkers.cs`). The Process case `A_gate_s_runner_is_handed_two_workers_through_npm` is the next full set's. yarn and pnpm are HEAVYRUN1a3. On Opus: about 82 tool calls, 42 minutes. Detail: D180's HEAVYRUN1a2 note.
+
+## BEFORESTEP1 — drop the gate's `before` steps, which no gate plans (2026-10-20, D180)
+
+> - [ ] **BEFORESTEP1 — drop the gate's `before` steps, which no gate plans** (tools; D180's REHLANE2b note). Since REHLANE2b no gate is planned a step before it, so `runSteps`' loop, the SHUTDOWN guard (SHUTDOWNBESIDE1) and `planLines`' "(after …)" serve only stand-in gates; removing them and their stand-in tests leaves one way a gate runs. Proof: the merge test's plan and runGate tests without `before`, green.
+
+**Outcome** 2026-10-20: the gate's `before` steps, the `SHUTDOWN` constant, `besideBuilds`, SHUTDOWNBESIDE1's guard and `planLines`' "(after …)" are gone from `tools/merge-branch.mjs` with their stand-in tests, so a gate runs one way; safe because the deployment rehearsal's `OWN_BUILD_SERVERS` is held equal to `BESIDE_ENVIRONMENT` by a kept merge test. On Sonnet: about 48 tool calls, 26 minutes. Detail: D180's BEFORESTEP1 line.
+
+## PUSH1a2 — sync standing pushed (2026-10-20, D182)
+
+> - [ ] **PUSH1a2 — sync standing pushed** (driver, modules, web; D182 points 2 and 5; D182's PUSH1a note). Each window reads `/api/sync` again on ticks though a circle's standing moves only with a pass. Judge it from the pass's own result per wired circle (or PUSH1d's change stream) into a `sync` slice partitioned by workspace. Proof: a tick reads no `/api/sync`; a pass that moved the standing updates two windows. A scout's reading (2026-10-20): the standing moves with any local quest write and a conflict's press too, and `quest_passes` stays outside the change stream (a pass rewrites `tried` every tick), so the slice re-reads `ServiceClient.SyncStandingAsync` per wired circle, woken after each pass, by the ledger's `quests` family and by the `sync` scope; a plain browser keeps the HTTP pull. After PUSH1c3b (`ShellSignals.tsx`, `data/queries.ts`).
+
+**Outcome** 2026-10-20: where each wired circle stands is pushed as the `sync` slice, a partition per circle of the remotes map (`Loop/SyncStateSlice.cs` reads `/api/sync` for each), woken at every pass's end through the loop's one sync set (`RemoteSyncSet.Passed`), by the change stream's `quests` family, the `sync` scope and `DRIVER_READY`; the allow-list is held against the service's contract, the page's type and the driver's record. The page's `syncSlice` composes the circles under `keys.syncEvery`, and `useSyncStanding` reads it live through `standingOf`, a circle with no remote reading `wired: false`; an older host and a plain browser keep the pull. A tick reads no `/api/sync`, and one push from a pass moves two windows. The install's measurement (D182 point 8) is open. On Opus: about 181 tool calls, 50 minutes. Detail: D182's PUSH1a2 note.

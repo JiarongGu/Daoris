@@ -49,14 +49,7 @@ public sealed class CloseFenceGitTests : IDisposable
 
     public void Dispose()
     {
-        try
-        {
-            // git keeps its objects read-only: cleared first, so the folder goes with the test.
-            foreach (var file in Directory.EnumerateFiles(_scratch, "*", SearchOption.AllDirectories)) File.SetAttributes(file, FileAttributes.Normal);
-            Directory.Delete(_scratch, recursive: true);
-        }
-        catch (IOException) { /* a straggling git handle */ }
-        catch (UnauthorizedAccessException) { /* read-only pack files under .git */ }
+        GitSeed.Discard(_scratch);
     }
 
     [Fact]
@@ -304,15 +297,5 @@ public sealed class CloseFenceGitTests : IDisposable
         return await stdout;
     }
 
-    private static string RepoRoot()
-    {
-        var directory = new DirectoryInfo(AppContext.BaseDirectory);
-        while (directory is not null && !Directory.Exists(Path.Combine(directory.FullName, ".git"))
-               && !File.Exists(Path.Combine(directory.FullName, ".git")))
-        {
-            directory = directory.Parent;
-        }
-
-        return directory?.FullName ?? AppContext.BaseDirectory;
-    }
+    private static string RepoRoot() => GitSeed.RepoRoot();
 }

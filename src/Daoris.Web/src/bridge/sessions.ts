@@ -1,17 +1,20 @@
-import { type InfiniteData, useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useCallback } from 'react';
+import { type InfiniteData, useInfiniteQuery, useMutation, useQuery, useQueryClient, type UseQueryOptions } from '@tanstack/react-query';
 import { useShenora, useShenoraEvent } from '@shenora/react';
+import { useEffect, useRef } from 'react';
 import { type Session, SESSION_ACTIVE } from '../data/api';
-import { CALLS_SLICE, keys, SESSIONS_SLICE } from '../data/queries';
+import { CALLS_SLICE, GROUPS_SLICE, keys, SESSIONS_SLICE } from '../data/queries';
 import { searchable } from '../lib/searchable';
 import type { SessionEvent } from '../work/conversation';
 import type { SessionEntry } from '../work/entries';
-import type { SessionGroupName, SessionGrouping } from '../work/groups';
+import { GROUP_ORDER, type SessionGroupName, type SessionGrouping } from '../work/groups';
 import type { HelperAskRow, HelperWait } from '../work/HelperAsks';
+import type { PermissionAnswered, PermissionChoice, PermissionWait } from '../work/PermissionAsks';
 import type { NewSessionAnswer } from '../work/say';
 import type { SessionWhere } from '../work/SessionRow';
 import { call } from './call';
 import { readSlice } from './driver';
-import { mergeKeyed, type SliceSpec, usePushedLive } from './slices';
+import { mergeKeyed, readPushed, type SliceSpec, usePushedLive } from './slices';
 
 // A session's life on this machine (MOD3): the person's answer to a parked one, a stop and how it is
 // said, and finding sessions by their first words and by what they said.
@@ -46,8 +49,11 @@ export const sessionsSlice: SliceSpec = {
   merge: mergeKeyed,
 };
 
-/** The call a running session is making: its title and when it began, as `SESSION_GROUPS` writes `calling`. */
-export type PushedCall = { title: string; since: string };
+/**
+ * The call a running session is making: its title and when it began, as `SESSION_GROUPS` writes `calling`, and whether it waits on
+ * the person's answer to its permission request (AUTONOMY1b3b), absent from a host older than the mark.
+ */
+export type PushedCall = { title: string; since: string; waiting?: boolean };
 
 const isCall = (value: unknown): value is PushedCall =>
   typeof value === 'object' && value !== null
@@ -210,28 +216,162 @@ export type { SessionGroupName, SessionGrouping } from '../work/groups';
 
 /**
  * The session list's groups, under the sessions' key, so whatever asks the listing again (a stop, a landing, a tick)
- * asks this too, as `useSessionWhere` is kept.
+ * asks this too, as `useSessionWhere` is kept; but the widest where the shell pushes it (PUSH1c3b), which its pushes write.
  */
 const groupsKey = (ids?: readonly string[]) => ['sessions', 'groups', ...(ids ? [...new Set(ids)].sort() : ['*'])] as const;
+
+/** One `SESSION_GROUPS` answer: the rows, and the entries beside them where the host is new enough to answer them (D167). */
+export type GroupsAnswer = { sessions: SessionGrouping[]; entries: SessionEntry[] | undefined };
+
+/** A row as the slice pushes it: the answer's, with the sort inputs its group is ordered by (`GroupsStateSlice.OrderFields`). */
+type PushedRow = SessionGrouping & { repository?: unknown; created?: unknown; updated?: unknown };
+
+/** The sort inputs a pushed row carries, which the answer's rows never do. */
+const ORDER_INPUTS = ['repository', 'created', 'updated'] as const;
+
+const isRow = (value: unknown): value is PushedRow => typeof value === 'object' && value !== null
+  && typeof (value as { session?: unknown }).session === 'string' && typeof (value as { group?: unknown }).group === 'string';
+
+/** C#'s `Ordinal`: by UTF-16 unit. */
+const byUnit = (a: string, b: string) => (a < b ? -1 : a > b ? 1 : 0);
+
+/** C#'s `OrdinalIgnoreCase` folds: each character upper-cased where it maps to one character, as its simple mapping does. */
+const folded = (value: unknown) => [...(typeof value === 'string' ? value : '')]
+  .map((character) => {
+    const upper = character.toUpperCase();
+    return [...upper].length === 1 ? upper : character;
+  })
+  .join('');
+
+/**
+ * Two instants as `DateTimeOffset` compares them: the moment whatever its offset, to the tick (`Date.parse` keeps the millisecond,
+ * the fraction's further digits the rest), never the strings.
+ */
+const byInstant = (a: unknown, b: unknown) => {
+  const millisecond = (value: unknown) => (typeof value === 'string' ? Date.parse(value) || 0 : 0);
+  const tick = (value: unknown) =>
+    Number(((typeof value === 'string' ? /T\d\d:\d\d:\d\d\.(\d+)/.exec(value)?.[1] : undefined) ?? '').slice(3, 7).padEnd(4, '0'));
+  return millisecond(a) - millisecond(b) || tick(a) - tick(b);
+};
+
+const groupPlace = (row: PushedRow) => {
+  const at = GROUP_ORDER.indexOf(row.group);
+  return at < 0 ? GROUP_ORDER.length : at;
+};
+
+/**
+ * The reader's order (`SessionGroups.Ordered`, D126 §2.1; D182's PUSH1c3a note): the groups in `GROUP_ORDER`; waiting on you and
+ * resuming later oldest move first; to review and working by repository without case, then when each began; ended and archived
+ * newest move first; every tie by the session's id by unit.
+ */
+const inReaderOrder = (a: PushedRow, b: PushedRow) => {
+  const group = groupPlace(a) - groupPlace(b);
+  if (group !== 0) return group;
+  const id = byUnit(a.session, b.session);
+  switch (a.group) {
+    case 'you':
+    case 'later':
+      return byInstant(a.updated, b.updated) || id;
+    case 'review':
+    case 'working':
+      return byUnit(folded(a.repository), folded(b.repository)) || byInstant(a.created, b.created) || id;
+    default:
+      return byInstant(b.updated, a.updated) || id;
+  }
+};
+
+const valuesOf = (partition: unknown): unknown[] =>
+  (typeof partition === 'object' && partition !== null && !Array.isArray(partition) ? Object.values(partition) : []);
+
+/**
+ * The pushed partitions as `SESSION_GROUPS` answers them: the rows in the reader's order without their sort inputs, and each entry
+ * at its leading row's place (`SessionEntries.Read`).
+ */
+function composeGroups(rows: unknown, entries: unknown): GroupsAnswer {
+  const sessions = valuesOf(rows).filter(isRow).sort(inReaderOrder).map((pushed) => {
+    const row: Record<string, unknown> = { ...pushed };
+    for (const input of ORDER_INPUTS) delete row[input];
+    return row as SessionGrouping;
+  });
+  const place = new Map(sessions.map((row, at) => [row.session, at]));
+  const at = (entry: SessionEntry) => place.get(entry.leading) ?? sessions.length;
+  return {
+    sessions,
+    entries: (readEntries(valuesOf(entries)) ?? []).sort((a, b) => at(a) - at(b) || byUnit(a.entry, b.entry)),
+  };
+}
+
+/**
+ * The session list's groups as the shell pushes them (PUSH1c3b, D182's PUSH1c3a note): two keyed partitions, `rows` by session and
+ * `entries` by key, a session's move a delta of its row and its entry (`mergeKeyed`; a whole push or `{}` taken as well), composed
+ * into `SESSION_GROUPS`' widest answer in the reader's order. Nothing judged, or no rows held yet, composes nothing, which keeps
+ * the pull. `calling` is never pushed here: the `calls` slice's is laid over the rows as before (`withCall`).
+ */
+export const groupsSlice: SliceSpec = {
+  name: GROUPS_SLICE,
+  key: groupsKey(),
+  read: () => readSlice(GROUPS_SLICE),
+  compose: (partitions, judged) =>
+    (judged && partitions.has('rows') ? composeGroups(partitions.get('rows'), partitions.get('entries')) : undefined),
+  merge: mergeKeyed,
+};
+
+/**
+ * Some sessions' answer read from the widest, as the reader's `only` answers it: their rows, and every entry holding one of them,
+ * whole, since its other parts decide its group. None named is the widest itself.
+ */
+export function groupsIn(answer: GroupsAnswer, ids: readonly string[] | undefined): GroupsAnswer {
+  if (!ids) return answer;
+  const asked = new Set(ids);
+  return {
+    sessions: answer.sessions.filter((row) => asked.has(row.session)),
+    entries: answer.entries?.filter((entry) => entry.parts.some((part) => asked.has(part.session))),
+  };
+}
+
+/**
+ * Where the shell pushes the groups (PUSH1c3b), every reader reads the one entry its pushes write, from memory, and some sessions'
+ * variant is selected from it (`groupsIn`): never stale, never asked on a focus, and no tick reaches it (`notPushed`). Elsewhere (a
+ * plain browser, an older shell) each variant is the pull it always was, under its own key; and while a window's first snapshot is on
+ * its way, a variant asked then waits for it and is read from it, never pulled beside it.
+ */
+function useGroupsRead<T>(ids: readonly string[] | undefined, pick: (answer: GroupsAnswer) => T)
+  : UseQueryOptions<GroupsAnswer, Error, T, readonly string[]> {
+  const client = useQueryClient();
+  const pushed = usePushedLive(GROUPS_SLICE);
+  const asked = ids ? [...new Set(ids)].sort() : undefined;
+  // By the sessions' names, so a caller's new array of the same ids keeps what the cache selected.
+  const named = asked?.join('\n');
+  const select = useCallback((answer: GroupsAnswer) => pick(pushed ? groupsIn(answer, asked) : answer), [pick, pushed, named]);
+  return pushed
+    ? {
+      queryKey: groupsKey(),
+      queryFn: () => readPushed(client, GROUPS_SLICE, () => askGroups()),
+      select, staleTime: Infinity, refetchOnWindowFocus: false,
+    }
+    : {
+      queryKey: groupsKey(ids),
+      queryFn: async () => {
+        const all = await readPushed<GroupsAnswer | null>(client, GROUPS_SLICE, async () => null);
+        return all === null ? askGroups(ids) : groupsIn(all, ids);
+      },
+      select, refetchOnWindowFocus: false,
+    };
+}
+
+const rowsOf = (answer: GroupsAnswer) => answer.sessions;
+const entriesOf = (answer: GroupsAnswer) => answer.entries;
 
 /**
  * Each session's group by state, its word and its line's facts (SESSUX1a), in the order a list shows them; asked for
  * some, those sessions' alone. Shell-only: Sessions is (D47 §4), and no browser has a driver to ask. A list that does
  * not read the groups (the monitor's, SESSUX1c) asks nothing, since each answer may walk git in every tree to review.
+ * Pushed where the shell pushes them (PUSH1c3b, `useGroupsRead`).
  */
 export const useSessionGroups = (ids?: readonly string[], { enabled = true }: { enabled?: boolean } = {}) => {
   const { isAvailable } = useShenora();
-  return useQuery({
-    queryKey: groupsKey(ids),
-    queryFn: () => askGroups(ids),
-    select: (answer) => answer.sessions,
-    enabled: isAvailable && enabled,
-    refetchOnWindowFocus: false,
-  });
+  return useQuery({ ...useGroupsRead(ids, rowsOf), enabled: isAvailable && enabled });
 };
-
-/** One `SESSION_GROUPS` answer: the rows, and the entries beside them where the host is new enough to answer them (D167). */
-type GroupsAnswer = { sessions: SessionGrouping[]; entries: SessionEntry[] | undefined };
 
 /**
  * The entries as the answer holds them, read defensively: absent where the host is older than the entries, and then the list
@@ -251,18 +391,13 @@ const askGroups = async (ids?: readonly string[]): Promise<GroupsAnswer> => {
 
 /**
  * The session list's entries (SESSONE1c, D167 point 5): one line of work in one repository, its records its parts, in the
- * reader's group order. The same answer as `useSessionGroups`, under the same key, so asking both asks once. Undefined while
- * no answer has come and from a host older than entries, and then the list is the records it always was; shell-only.
+ * reader's group order. The same answer as `useSessionGroups`, under the same key, so asking both asks once, pushed where it
+ * is. Undefined while no answer has come and from a host older than entries, and then the list is the records it always was;
+ * shell-only.
  */
 export const useSessionEntries = (ids?: readonly string[], { enabled = true }: { enabled?: boolean } = {}) => {
   const { isAvailable } = useShenora();
-  return useQuery({
-    queryKey: groupsKey(ids),
-    queryFn: () => askGroups(ids),
-    select: (answer) => answer.entries,
-    enabled: isAvailable && enabled,
-    refetchOnWindowFocus: false,
-  });
+  return useQuery({ ...useGroupsRead(ids, entriesOf), enabled: isAvailable && enabled });
 };
 
 /**
@@ -447,6 +582,99 @@ export const useHelperWaits = () => {
         }));
     },
     enabled: isAvailable,
+  });
+};
+
+/**
+ * The held permissions' key (AUTONOMY1b3c): under the sessions', so a session's publication (a turn's cancel, a stop, a session's
+ * end, each a release) asks them again with the sessions.
+ */
+export const PERMISSION_WAITS_KEY = ['sessions', 'permissionWaits'] as const;
+
+/** How often the held permissions are asked while one may come or go: a person at the window answers within seconds. */
+const PERMISSIONS_EVERY = 4_000;
+
+/**
+ * When the held permissions are asked again on a clock (AUTONOMY1b3c): every few seconds while a session of this machine works, or
+ * while one is held, and never otherwise, since neither route publishes (`HeldPermissions` is in the driver's memory). Where the calls
+ * are pushed (`pushed`), never (AUTONOMY1b3b): a hold marks its call waiting in the calls slice and its answer or release clears the
+ * mark, so the mark's move asks them again (`usePermissionWaits`). The clock stays for a host that pushes no calls.
+ */
+export const permissionsAgainIn = (live: boolean, held: number, pushed = false): number | false =>
+  (!pushed && (live || held > 0) ? PERMISSIONS_EVERY : false);
+
+/**
+ * The pushed calls' waiting marks as one word (AUTONOMY1b3b): each waiting session with when its newest hold began, so a hold, an
+ * answer and a release each change it; null where the calls are not pushed.
+ */
+const waitingMarks = (calls: Record<string, PushedCall> | undefined): string | null =>
+  calls ? Object.entries(calls).filter(([, each]) => each.waiting === true).map(([session, each]) => `${session} ${each.since}`).sort().join('\n') : null;
+
+const readChoice = (value: unknown): PermissionChoice | null => {
+  if (!value || typeof value !== 'object') return null;
+  const choice = value as Record<string, unknown>;
+  const id = word(choice.id);
+  return id ? { id, name: typeof choice.name === 'string' ? choice.name : id, kind: typeof choice.kind === 'string' ? choice.kind : '' } : null;
+};
+
+/** The rows of `PERMISSION_WAITS`, read field by field: one naming no session or no request has nothing to answer, and is left out. */
+const readPermissionWaits = (rows: unknown): PermissionWait[] => {
+  if (!Array.isArray(rows)) return [];
+  return rows.filter((row): row is Record<string, unknown> => Boolean(row) && typeof row === 'object')
+    .filter((row) => word(row.session) !== null && word(row.request) !== null)
+    .map((row) => ({
+      session: row.session as string,
+      request: row.request as string,
+      call: word(row.call),
+      title: word(row.title),
+      kind: word(row.kind),
+      choices: Array.isArray(row.choices) ? row.choices.map(readChoice).filter((choice): choice is PermissionChoice => choice !== null) : [],
+      since: typeof row.since === 'string' ? row.since : '',
+    }));
+};
+
+/**
+ * What this machine's driven sessions hold for the person under their repository's asking permission prompts (AUTONOMY1b3a, D184
+ * point 3): each tool's request with its session, its title and kind as the agent wrote them, and what the person may choose, oldest
+ * first, off the driver's memory, so shell-only. `live`: a session of this machine works now, so one may be asked for at any moment.
+ *
+ * Where the calls are pushed, asked again as their waiting marks move (AUTONOMY1b3b), once whichever reader saw it first: each
+ * reader of the waits hears the same push, and one asking already on its way is the others' too. Elsewhere, on the clock.
+ */
+export const usePermissionWaits = (live: boolean) => {
+  const { isAvailable } = useShenora();
+  const client = useQueryClient();
+  const calls = usePushedCalls();
+  const marks = waitingMarks(calls);
+  const seen = useRef(marks);
+  useEffect(() => {
+    if (seen.current === marks) return;
+    seen.current = marks;
+    if (marks !== null) void client.invalidateQueries({ queryKey: PERMISSION_WAITS_KEY, exact: true }, { cancelRefetch: false });
+  }, [client, marks]);
+  return useQuery({
+    queryKey: PERMISSION_WAITS_KEY,
+    queryFn: async () => readPermissionWaits((await call<{ waits?: unknown } | null>('PERMISSION_WAITS'))?.waits),
+    enabled: isAvailable,
+    refetchInterval: (query) => permissionsAgainIn(live, query.state.data?.length ?? 0, calls !== undefined),
+  });
+};
+
+/**
+ * The person's answer to a permission a session holds for them (AUTONOMY1b3a, D184 point 3): an option the agent offered, by its id,
+ * for this call alone; Daoris answers no allow by itself (D37, D52). A refusal is the answer, by its code (`unheld`, `unoffered`,
+ * `standing`). The route publishes nothing, so the waits are asked again here, and the card goes with the hold.
+ */
+export const useAnswerPermission = () => {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: async (answer: { session: string; request: string; option?: string | null }): Promise<PermissionAnswered> => {
+      const said = await call<{ answered?: unknown; why?: unknown; message?: unknown } | null>('SESSION_PERMISSION_ANSWER', {
+        session: answer.session, request: answer.request, ...(answer.option ? { option: answer.option } : {}),
+      });
+      return { answered: said?.answered === true, why: word(said?.why), message: typeof said?.message === 'string' ? said.message : '' };
+    },
+    onSettled: () => client.invalidateQueries({ queryKey: PERMISSION_WAITS_KEY }),
   });
 };
 

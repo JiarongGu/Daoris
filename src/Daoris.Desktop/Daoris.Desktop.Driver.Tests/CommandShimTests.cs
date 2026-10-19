@@ -28,7 +28,7 @@ public sealed class CommandShimTests : IDisposable
 
     public void Dispose()
     {
-        if (Directory.Exists(_folder)) Directory.Delete(_folder, recursive: true);
+        GitSeed.Remove(_folder);
     }
 
     [Fact]

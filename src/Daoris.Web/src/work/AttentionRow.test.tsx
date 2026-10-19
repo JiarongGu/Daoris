@@ -110,7 +110,7 @@ const everyAct = (): Required<AttentionActs> => ({
   publish: vi.fn(), retry: vi.fn(), answer: vi.fn(), trust: vi.fn(),
   acceptDeparture: vi.fn(), acceptRule: vi.fn(), declineRule: vi.fn(),
   signIn: vi.fn(), signInNew: vi.fn(), read: vi.fn(), letRun: vi.fn(), reviewed: vi.fn(), notYet: vi.fn(), showAgain: vi.fn(),
-  opinionAgain: vi.fn(), opinionAnyway: vi.fn(), helper: vi.fn(), held: vi.fn(),
+  opinionAgain: vi.fn(), opinionAnyway: vi.fn(), helper: vi.fn(), held: vi.fn(), permission: vi.fn(),
 });
 
 describe('a row in what needs you', () => {
@@ -420,6 +420,30 @@ describe('settling one where it stands', () => {
     expect(acts.helper).toHaveBeenLastCalledWith(HELPER, true);
     await userEvent.click(screen.getByRole('button', { name: 'Not now' }));
     expect(acts.helper).toHaveBeenLastCalledWith(HELPER, false);
+    expect(screen.getByRole('button', { name: /Open/ })).toBeInTheDocument();
+  });
+
+  /**
+   * AUTONOMY1b3c: a tool call a session holds for the person is answered in one press per choice its agent offered, as its session's
+   * page answers it, each sending that choice's id.
+   */
+  it('answers a held tool call with the choice pressed, in one press each', async () => {
+    const HELD: Attention = {
+      id: 'c0nv0001#900', kind: 'permission', title: 'npm test', where: 'engine', since: '2026-09-21T11:00:00Z', session: 'c0nv0001',
+      detail: 'Fix the loader waits on your answer before this tool call runs; it is refused if nobody answers within 15 minutes.',
+      permission: {
+        session: 'c0nv0001', request: '900', call: null, title: 'npm test', kind: 'execute', since: '2026-09-21T11:00:00Z',
+        choices: [{ id: 'allow', name: 'Allow', kind: 'allow_once' }, { id: 'never', name: 'Reject always', kind: 'reject_always' }],
+      },
+    };
+    const acts = everyAct();
+    render(<AttentionRow item={HELD} acts={acts} onOpen={vi.fn()} />);
+
+    expect(screen.getByText('an agent asks permission')).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Allow once' }));
+    expect(acts.permission).toHaveBeenLastCalledWith(HELD, 'allow');
+    await userEvent.click(screen.getByRole('button', { name: 'Always refuse' }));
+    expect(acts.permission).toHaveBeenLastCalledWith(HELD, 'never');
     expect(screen.getByRole('button', { name: /Open/ })).toBeInTheDocument();
   });
 

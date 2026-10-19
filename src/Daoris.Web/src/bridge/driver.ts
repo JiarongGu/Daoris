@@ -1,11 +1,12 @@
 import { useCallback } from 'react';
 import { type QueryClient, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useShenora, useShenoraEvent } from '@shenora/react';
-import { keys } from '../data/queries';
+import type { SyncStanding } from '../data/api';
+import { keys, SYNC_SLICE } from '../data/queries';
 import type { AccountWaitTick, Consideration, TrustHold } from '../data/signals';
 import type { AccessLevel } from '../settings/Access';
 import type { CommitRule } from '../settings/Commits';
-import type { HeavyGate } from '../settings/HeavyGates';
+import type { HeavyGate, HeavyMarks } from '../settings/HeavyGates';
 import type { HelperRule } from '../settings/Helpers';
 import type { LandingRule } from '../settings/Landings';
 import type { LanguageOption } from '../settings/Languages';
@@ -192,6 +193,26 @@ export const driverSlice: SliceSpec = {
     const parts = DRIVER_PARTITIONS.map((name) => partitions.get(name));
     if (!parts.every((part) => typeof part === 'object' && part !== null && !Array.isArray(part))) return undefined;
     return Object.assign({}, ...parts) as DriverState;
+  },
+};
+
+/**
+ * Where each wired circle stands as the shell pushes it (PUSH1a2, D182): a partition per circle, named as the remotes map names it,
+ * each the record `/api/sync` answers for it, pushed whole when a pass, a quest's write or *Sync now* moved it. Composed into one entry
+ * by circle, which `useSyncStanding` reads with `standingOf`; a circle with no partition has no remote here. Nothing composed until the
+ * owner has judged every wired circle, so a window never reads a wired circle as unwired.
+ */
+export const syncSlice: SliceSpec = {
+  name: SYNC_SLICE,
+  key: keys.syncEvery,
+  read: () => readSlice(SYNC_SLICE),
+  compose: (partitions, judged) => {
+    if (!judged) return undefined;
+    const standings: Record<string, SyncStanding> = {};
+    for (const [circle, part] of partitions) {
+      if (typeof part === 'object' && part !== null && !Array.isArray(part)) standings[circle] = part as SyncStanding;
+    }
+    return standings;
   },
 };
 
@@ -422,8 +443,8 @@ export const useSyncNow = () => {
     mutationFn: (workspace: string) => call<SyncNowReport>('SYNC_NOW', { workspace }),
     onError: () => {
       // A pass refused as an error publishes nothing (D169 point 5), and one that failed part way may have recorded where it
-      // stood: this window, which pressed it, asks again itself.
-      void client.invalidateQueries({ queryKey: keys.allSync });
+      // stood: this window, which pressed it, asks again itself. Where the shell pushes the standings, the pass's end pushes them (PUSH1a2).
+      void client.invalidateQueries({ queryKey: keys.allSync, predicate: notPushed(client) });
       void client.invalidateQueries({ queryKey: keys.allQuests });
       // The records themselves, where the shell pushes them, are pushed as the pass moved them (PUSH1d2).
       void client.invalidateQueries({ queryKey: keys.allSessions, predicate: notPushed(client) });
@@ -448,3 +469,17 @@ export const useSetStanding = () => useDriverChange<{ repository: string; says?:
  */
 export const useSetHeavyGates = () =>
   useDriverChange<{ repository: string; gates: HeavyGate[] | null }>('SET_HEAVY_GATES');
+
+/**
+ * Whether a repository's own `daoris.gates.json` marks heavy gates, so wins over this machine's list (HEAVYRUN1b2c, D180's note): the
+ * driver's reading of that one file in the checkout it holds (`HEAVY_MARKS`), never the page's. A read; `enabled` holds it back until
+ * the section it serves is drawn, and the file is asked again whenever the page is, since nothing wakes it on an edit to the file.
+ */
+export const useHeavyMarks = (repository: string, { enabled = true }: { enabled?: boolean } = {}) => {
+  const { isAvailable } = useShenora();
+  return useQuery({
+    queryKey: keys.heavyMarks(repository),
+    queryFn: () => call<HeavyMarks & { repository: string }>('HEAVY_MARKS', { repository }),
+    enabled: isAvailable && enabled && repository !== '',
+  });
+};

@@ -39,9 +39,9 @@
  *    declares, plus every `npm run` step the release workflow runs that the declaration does not (the
  *    release and family rehearsals). The order is by kind (a devkit check, then the suites, then the
  *    rehearsals); within a kind the declared order holds, and the workflow's own rehearsals go before the
- *    declared ones, so the declaration's last gate, the deployment rehearsal, ends the run. That rehearsal
- *    starts after `dotnet build-server shutdown`: on 2026-09-30 a long-lived build server carried a broken
- *    environment into a publish.
+ *    declared ones, so the declaration's last gate, the deployment rehearsal, ends the plan. On 2026-09-30 a
+ *    long-lived build server carried a broken environment into a publish, so that rehearsal started after
+ *    `dotnet build-server shutdown`; since REHLANE2b its builds keep servers of their own, and no gate has a step before it.
  *    GATESLIM1: by default a merge runs the blocking checks alone (`BLOCKING`: the universal gates, the code map and the
  *    orientation index's check); every other gate it reaches is listed and skipped, "in the CI beside" (`--full --beside`).
  *    `--gated` runs what follows: of the plan, the baseline (`BASELINE`: the blocking checks and the CLI's `verify`, at every
@@ -214,9 +214,10 @@
  * the 0b44c7a run started `driver-process` beside cli, service and web and two timing tests failed there. The cost is
  * the light lane's tail, about 7 to 8 minutes of a full set of an hour or more, since the Process lane is the long pole
  * either way. The git half and the driver's other Process half never overlap: the Process lane is one gate at a time, though
- * each gate's classes run at once, but for the family rehearsal beside the git half (REHLANE1, below). `--stale` and `--rerun` run through the same `runGates`, so they follow
+ * each gate's classes run at once, but for the release, family and deployment rehearsals beside the git half (REHLANE1,
+ * REHLANE2, REHLANE2b, below). `--stale` and `--rerun` run through the same `runGates`, so they follow
  * the same order. A Process-lane gate whose command names no project, a rehearsal, starts once the light lane has ended:
- * it builds the hosts behind its script's name, and the deployment rehearsal first shuts the build servers down. A
+ * it builds the hosts behind its script's name. A
  * Process gate's failures are re-run alone only once the light lane has ended, and the gate beside it in its own lane,
  * so a pass alone is still a pass with nothing beside it (FLAKE1).
  *
@@ -264,12 +265,36 @@
  * `tools/rehearsal-kit.mjs`, the SDK's `--artifacts-path`), and the service's hosts where the driver finds a development
  * build, in folders no Process half builds; and it shuts no build server down. A test reads its tool for both.
  *
- * The deployment rehearsal and the release rehearsal are not of `BESIDE_GIT_HALF` (its comment says why): they run alone,
- * the deployment rehearsal last, where its build-server shutdown stops no build. D115's REHLANE1 note has what was rejected.
+ * The deployment rehearsal ran alone and last then, where its build-server shutdown stopped no build (D115's REHLANE1
+ * note); REHLANE2b, below, moved it beside.
  *
- * A git half that re-runs its failures alone (FLAKE1) waits for the family rehearsal beside it to end, and no Process-lane
- * gate starts meanwhile. A rehearsal that died and is run again whole (LEFT1) does not wait: that re-run is about a process
- * that ended, and two gates each waiting for the other to end would never start.
+ * A git half that re-runs its failures alone (FLAKE1) waits for the rehearsal beside it to end, and no Process-lane gate
+ * starts meanwhile, the next rehearsal beside it neither. A rehearsal that died and is run again whole (LEFT1) does not
+ * wait: that re-run is about a process that ended, and two gates each waiting for the other to end would never start.
+ *
+ * ## The release rehearsal beside the git half too (REHLANE2)
+ *
+ * The release rehearsal packs the CLI in its own folder: `prepack` stages the canon, the README, the LICENSE and a built
+ * `dist/` there, which the CLI's bin prefers over its sources, and `postpack` removes them. It builds no .NET project,
+ * starts no host, takes no port and runs no git of its own. No desktop test reads the CLI's folder outside `src/` and
+ * `test/`, which no pack writes, nor runs its bin (a test reads every desktop source for both), so no Process half sees the
+ * staging. So it is of `BESIDE_GIT_HALF`, before the family in the plan's order, and runs beside the git half, whose
+ * classes no neighbour's load can fail; the family, which runs the CLI's bin, starts once it has ended, and two
+ * Process-lane gates at once stays the ceiling. The driver's other Process half and the modules' run beside nothing: they
+ * hold the clock-bound classes. It waits for the whole light lane, whose cli gate runs the bin, and the deployment
+ * rehearsal, which packs the same folder, waits for it. D180's REHLANE2 note has what was rejected.
+ *
+ * ## The deployment rehearsal beside the git half last (REHLANE2b)
+ *
+ * The deployment rehearsal (12 to 14 minutes) publishes every desktop project and both service hosts, packs the CLI in its
+ * folder as the release rehearsal does, builds the driver's host, runs the CLI's bin and opens the installed window. Its
+ * publishes are told an output of its own (`desktop-publish --artifacts-path`, `_fixtures/rehearsal-builds/deployment`),
+ * where their `obj/`, `bin/` and stages go, and its host's build goes there by `ownBuild`; and every build it makes keeps
+ * build servers of its own (`OWN_BUILD_SERVERS` in the kit, a run beside's `BESIDE_ENVIRONMENT`), so it no longer starts
+ * after a shutdown of every server on the machine, which beside the git half would stop the builds of all beside it. So it
+ * is of `BESIDE_GIT_HALF`, last: it starts once the release rehearsal (which packs the same folder) and the family (which
+ * runs the bin it would shadow) have ended, still beside the git half, and the modules' Process half waits for it. D180's
+ * REHLANE2b note says why its window's checks share nothing with the git half but load, the walls, and what was rejected.
  *
  * ## The web gate's unit run beside service (WEBSPLIT1)
  *
@@ -318,7 +343,6 @@ import { endOrphans, endStranded } from './processes.mjs';
 export const MAIN = 'main';
 const SCRATCH = 'local/scratch';
 const STATE = `${SCRATCH}/merge-batch.json`;
-const SHUTDOWN = 'dotnet build-server shutdown';
 const KINDS = ['check', 'suite', 'rehearsal'];
 
 /**
@@ -373,12 +397,13 @@ export const isGitHalf = (gate) => /git\.process\.runsettings/.test(gate.run);
 
 /**
  * The rehearsals that may run beside a git half (REHLANE1), by the root script each runs. Each builds the desktop's projects,
- * which the Process halves build into and run from, only into an output of its own (`ownBuild` in `tools/rehearsal-kit.mjs`),
- * and shuts no build server down: a test reads each one's tool for both. The deployment rehearsal is not one: it publishes
- * every desktop project through the install's own recipe and shuts the build servers down first, so it runs alone, last. Nor
- * is the release rehearsal, which stages the CLI's package in the CLI's own folder.
+ * which the Process halves build into and run from, only into an output of its own (`ownBuild` in `tools/rehearsal-kit.mjs`,
+ * and `desktop-publish --artifacts-path` for the deployment rehearsal's publishes), or builds no .NET project at all, and
+ * shuts no build server down: a test reads each one's tool for both. They run one after the other, in this order, never
+ * beside each other; the header's REHLANE2 and REHLANE2b sections say why the release and deployment rehearsals may run here
+ * and not beside the family or each other.
  */
-export const BESIDE_GIT_HALF = Object.freeze(['rehearse:family']);
+export const BESIDE_GIT_HALF = Object.freeze(['rehearse', 'rehearse:family', 'rehearse:deploy']);
 
 /** Whether a gate runs a rehearsal of `BESIDE_GIT_HALF` (REHLANE1), read from its command as the lanes are. */
 export const runsBesideGitHalf = (gate) => BESIDE_GIT_HALF.includes(scriptNamed(gate.run) ?? '');
@@ -485,8 +510,8 @@ export const reuseBuild = (built, tree) => Boolean(built?.tree && tree && built.
  * The two lanes of a run (GATELANES1), and what each Process-lane gate starts after. Two builds of one project at once
  * fight over its `obj/` and `bin/`, so a Process-lane gate whose command names a component waits for the light gates of
  * that component, which run first in their lane, and one that names none (a rehearsal: it builds the hosts behind its
- * script's name, and the deployment rehearsal shuts the build servers down) waits for the whole light lane. Within each
- * rule, the plan's order holds.
+ * script's name, and the release and deployment rehearsals stage the dist/ the cli gate's bin prefers) waits for the whole
+ * light lane. Within each rule, the plan's order holds.
  *
  * GATELANES2: up to `width` light gates run at once, never two that build one component (`components`, read through
  * the root `scripts` a gate names). GATEBUILD1: `reuses` names, for each Process half, the light gate that builds the
@@ -494,7 +519,9 @@ export const reuseBuild = (built, tree) => Boolean(built?.tree && tree && built.
  *
  * REHLANE1: `beside` names, for each Process-lane gate, the ones it may run beside: a git half and each rehearsal of
  * `BESIDE_GIT_HALF`. The lane's order is the plan's, but each such rehearsal goes right after the last git half, and a
- * Process-lane gate starts once every gate before it in the lane has ended but those it may run beside.
+ * Process-lane gate starts once every gate before it in the lane has ended but those it may run beside. REHLANE2: those
+ * rehearsals are never beside each other, so each starts once the one before it has ended, all beside the git half
+ * (REHLANE2b: the release, the family, then the deployment).
  */
 export function laneSchedule(gates, { scripts = {}, width = LIGHT_WIDTH } = {}) {
   const lane = gates.filter(isProcessLane);
@@ -707,7 +734,6 @@ export function gatePlan(declared, workflow = '') {
         name,
         run: gate.run.trim(),
         kind,
-        before: /\brehearse:deploy\b/.test(gate.run) ? [SHUTDOWN] : [],
         ...(gate.cwd ? { cwd: gate.cwd } : {}),
         ...(gate.clock ? { clock: true } : {}),
       };
@@ -2669,20 +2695,12 @@ async function rerunAlone(root, gate, dir, tests, step, trees = null) {
 }
 
 /**
- * A gate's steps before it, then the gate (as `command`, its own run unless given), into one log: the gate's exit, or
- * `STEP_ENDED` once the run ended its trees, the steps after the one ended left unstarted (CIPRIO1c).
+ * The gate (as `command`, its own run unless given) into its log: the gate's exit, or `STEP_ENDED` once the run ended its
+ * trees (CIPRIO1c). A gate has one step: BEFORESTEP1 removed the steps before it.
  */
 function runSteps(root, gate, log, step, command = gate.run, trees = null) {
   const cwd = gate.cwd ? join(root, gate.cwd) : root;
   return withLog(log, async (fd) => {
-    for (const before of gate.before) {
-      const beforeCode = await step(before, root, fd);
-      if (endedBy(beforeCode, trees)) {
-        writeSync(fd, `\n(${endedNote(trees)})\n`);
-        return STEP_ENDED;
-      }
-      writeSync(fd, `\n(exited ${beforeCode}${beforeCode ? '; carried on: it only clears a server' : ''})\n\n`);
-    }
     const exit = await step(command, cwd, fd, { raise: isProcessLane(gate) || gate.clock ? rehearsalRaise() : null });
     if (endedBy(exit, trees)) {
       writeSync(fd, `\n(${endedNote(trees)})\n`);
@@ -2802,12 +2820,13 @@ function laneLines(schedule) {
     : [`  the light lane, up to ${schedule.width} gates at once (${turn}):`];
   out.push(`    light    ${names(schedule.light.map((gate) => gate.name))}`);
   if (schedule.process.length) out.push(`    Process  ${names(schedule.process.map((gate) => gate.name))}, one at a time`);
-  // REHLANE1: the rehearsals that run beside a git half.
-  for (const gate of schedule.process.filter(runsBesideGitHalf)) {
-    const halves = schedule.beside[gate.name] ?? [];
-    if (halves.length) {
-      out.push(`    ${gate.name} runs beside ${names(halves)}: it builds what the Process lane builds into its own output, and shuts no build server down`);
-    }
+  // REHLANE1: the rehearsals that run beside a git half; REHLANE2: one after the other when there are more than one.
+  const besideGit = schedule.process.filter((gate) => runsBesideGitHalf(gate) && schedule.beside[gate.name]?.length);
+  if (besideGit.length === 1) {
+    const [gate] = besideGit;
+    out.push(`    ${gate.name} runs beside ${names(schedule.beside[gate.name])}: it builds nothing into a folder a Process half runs from, and shuts no build server down`);
+  } else if (besideGit.length > 1) {
+    out.push(`    ${names(besideGit.map((gate) => gate.name))} run beside ${names(schedule.beside[besideGit[0].name])}, one after the other: none builds into a folder a Process half runs from, or shuts a build server down`);
   }
   // GATELANES2: the light gates that build one component, which run in turn.
   const building = new Map();
@@ -3037,8 +3056,7 @@ function laneReport(root, branch) {
 
 function planLines(plan) {
   return plan.map((gate, i) => {
-    const before = gate.before.length ? `   (after ${gate.before.join(', ')})` : '';
-    return `  ${pad(`${i + 1}.`, 4)}${pad(gate.name, 16)} ${pad(gate.kind, 10)} ${gate.run}${before}`;
+    return `  ${pad(`${i + 1}.`, 4)}${pad(gate.name, 16)} ${pad(gate.kind, 10)} ${gate.run}`;
   });
 }
 

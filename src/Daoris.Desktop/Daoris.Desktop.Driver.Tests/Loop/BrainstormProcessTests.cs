@@ -231,6 +231,11 @@ public sealed class BrainstormProcessTests : IDisposable
 
         Assert.True(files.ReadState(id)!.State == BrainstormStates.Ended, string.Join('\n', events) + "\n" + File.ReadAllText(files.PathOf(id, "state.json")));
 
+        // USAGECAP1a4: a pass's turns are kept under the account its walk chose; the stubs have a toolchain, so each owns its name.
+        var passTurns = UsageHistory.ReadTurns(_home).Turns.Where(turn => turn.Session.StartsWith($"brainstorm-{id}-", StringComparison.Ordinal)).ToList();
+        Assert.NotEmpty(passTurns);
+        Assert.All(passTurns, turn => Assert.NotNull(turn.Agent));
+
         // One packet, byte for byte, in every room; each room the packet and its instruction (and the synthesis's proposals) alone.
         var frozen = Convert.ToHexStringLower(SHA256.HashData(files.PacketBytes(id)!));
         var saw = Directory.EnumerateFiles(Path.Combine(_home, "saw")).Select(path => JsonNode.Parse(File.ReadAllText(path))!).ToList();

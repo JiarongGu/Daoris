@@ -705,6 +705,11 @@ public sealed class SessionTrees(string home, LandingPlugins? plugins = null) : 
         CancellationToken ct = default) =>
         Cleanups.CleanPlanAsync(repositories, inUse, ct);
 
+    /// <inheritdoc cref="LandedCleanups.SweepPartAsync"/>
+    public Task<SweepPlan> SweepPartAsync(
+        string repository, string? workspace, string root, IReadOnlySet<string> inUse, CancellationToken ct = default) =>
+        Cleanups.SweepPartAsync(repository, workspace, root, inUse, ct);
+
     /// <inheritdoc cref="LandedCleanups.CleanAsync"/>
     public Task<SweepDone> CleanAsync(
         IEnumerable<(string Repository, string? Workspace, string? Root)> repositories, IReadOnlySet<string> inUse,

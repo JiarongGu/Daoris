@@ -47,9 +47,10 @@ export function evidenceFolder(repoRoot, name, started = new Date()) {
 
 /**
  * Where a rehearsal builds what the Process lane builds (REHLANE1): a folder of its own under `_fixtures/rehearsal-builds/`.
- * The family rehearsal runs beside the driver's git half, which builds into and runs from the desktop projects' own `bin/`
- * and `obj/`; two builds of one project there fight over them, and a build can find a file a running test holds. Outside
- * the rehearsal's scratch, which each run wipes, so the next run's build is incremental.
+ * The family and deployment rehearsals run beside the driver's git half (REHLANE2b the deployment's), which builds into and
+ * runs from the desktop projects' own `bin/` and `obj/`; two builds of one project there fight over them, and a build can
+ * find a file a running test holds. Outside the rehearsal's scratch, which each run wipes, so the next run's build is
+ * incremental.
  */
 export const ownBuildRoot = (repoRoot, name) => join(repoRoot, '_fixtures', 'rehearsal-builds', name);
 
@@ -64,6 +65,14 @@ export const ownBuild = (project, root) => `dotnet build "${project}" --artifact
  * case>/`, with no framework folder for a project of one framework. Measured on the driver host with `-getProperty:TargetPath`.
  */
 export const ownBuilt = (root, project, file) => join(root, 'bin', basename(project), 'debug', file);
+
+/**
+ * Build servers of a rehearsal's own (REHLANE2b), as a run beside's (`BESIDE_ENVIRONMENT` in `tools/merge-branch.mjs`, whose
+ * twin a merge test holds this to): no MSBuild node outlives the build that started it, none is joined that a build before it
+ * left, and no MSBuild or compiler server serves it. So a build beside the Process lane stops no other build's servers and
+ * borrows none of their environment, which is what a shutdown before the deployment rehearsal once guarded against.
+ */
+export const OWN_BUILD_SERVERS = Object.freeze({ MSBUILDDISABLENODEREUSE: '1', DOTNET_CLI_USE_MSBUILD_SERVER: '0', UseSharedCompilation: 'false' });
 
 /** How long a kept check's folder name may be: a label is a sentence, and a deep checkout's paths are long. */
 const NAME_LIMIT = 60;

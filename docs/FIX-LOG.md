@@ -5,6 +5,45 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-20 — A pushed window asked the held permissions every 4 s, which a second window's snapshot test counted (AUTONOMY1b3b)
+
+- **Symptom:** `pushedState.test.tsx`'s *reads one snapshot in a second window, and nothing judged again* failed on main: the
+  reads in its 2 s window held a third route beside `STATE_SLICE` and `UNDER_WAY`.
+- **Root cause:** AUTONOMY1b3c (`c8a0de1e8`) made `usePermissionWaits` ask `PERMISSION_WAITS` on a 4 s clock while a session
+  works, pushed slices or not, since nothing woke the page as a request was held; the test's pushed session works, so the
+  clock's read could land in its window.
+- **Fix:** AUTONOMY1b3b marks a held request's call `waiting` in the pushed `calls` slice; where the calls are pushed, the waits
+  are asked as the marks move and never on the clock (`permissionsAgainIn`'s `pushed`, `bridge/sessions.ts`). A host that
+  pushes no calls keeps the clock.
+- **Verify:** the test red with the clock, green after; `pushedState.test.tsx`'s two new cases (no read over 20 s, one read per
+  mark's move; the older host's clock kept).
+
+## 2026-10-20 — The CI beside shut down every build server on the machine before its deployment gate (SHUTDOWNBESIDE1)
+
+- **Symptom:** a full set's deployment log (0a5c608) begins `$ dotnet build-server shutdown`, *Shutting down MSBuild
+  server… Shutting down VB/C# compiler server…*: in a run beside, while workers and the owner built.
+- **Root cause:** the gate's `before` step, added for a merge's run (a long-lived server once carried a broken build), ran in
+  every mode; CIPRIO1 gave the run beside its own servers and said it never shuts one down, but nothing held `runSteps` to it.
+  A scout reading the lanes for REHLANE2 found it.
+- **Fix:** under `BESIDE_ENVIRONMENT` (`besideBuilds()`), `runSteps` leaves the shutdown out and writes why in the log.
+- **Verify:** `merge-branch.test.ts`'s new case, red then green (a merge's run keeps the step, a run beside leaves it out), with
+  the shutdown-before-deployment and rehearsal re-run cases green.
+## 2026-10-20 — The driver's git tests left a folder each, and rooted it in the main checkout from a worktree (SCRATCHLEAK1)
+
+- **Symptom:** `_fixtures/landed` held 14,796 entries and `_fixtures/landing` 2,158; every git and disk scan on the machine
+  walked them.
+- **Root cause:** about thirty test classes removed their scratch with one `Directory.Delete` and swallowed the refusal.
+  Git writes its objects read-only and `Directory.Delete` refuses a read-only file on Windows (PROCSPEED1), so each test left
+  its folder, and a straggler's hold on a file did the same. Nineteen classes also found the checkout by walking up to a
+  `.git` directory only: a linked worktree's `.git` is a file, so a run there walked past it and wrote into the main
+  checkout's `_fixtures`.
+- **Fix:** one `GitSeed.Remove` (read-only made writable, 12 tries a quarter second apart), `GitSeed.Discard` for a test's
+  `Dispose` (the same, the last refusal let go), and one `GitSeed.RepoRoot` walk that stops at `.git` as a directory or a file.
+  Every class goes through them; `GitSeedTests` has a guard that no test under `_fixtures` calls a recursive
+  `Directory.Delete` or writes its own `.git` walk. Existing leftovers are cleared by the repository cleanup procedure, not here.
+- **Verify:** `GitSeedTests` (a worktree-shaped tree resolves to its own root; a briefly held file is waited for; the guard),
+  red before the helper and the sweep, green after.
+
 ## 2026-10-20 — The desktop read a session variable the scratch-environment census had not named (HEAVYRUN1b2a)
 
 - **Symptom:** the CI on `7f72756` failed the CLI's `desktop-tool.test.ts` (*every machine-local override the desktop reads is

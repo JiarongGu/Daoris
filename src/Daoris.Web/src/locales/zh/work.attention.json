@@ -79,5 +79,10 @@
   "work.attention.ask.letRunMachine": "{{account}} 将加入本机的列表——{{workspace}} 以及所有没有指定自己账户的工作区都在这个列表上运行——此后 Daoris 可以在它上面启动这些工作，并使用该账户的额度。终端里：{{command}}",
   "work.attention.helper": "智能体想请助手",
   "work.attention.helperWhy": "{{session}} 想请另一个智能体帮忙。在你同意之前，不会去问。",
-  "work.attention.work": "清理受阻"
+  "work.attention.work": "清理受阻",
+  "work.attention.permission": "智能体请求权限",
+  "work.attention.permissionWhy": "{{session}} 在这个工具调用运行前等你答复；{{minutes}} 分钟内无人答复则拒绝它。",
+  "work.attention.act.allowOnce": "允许这一次",
+  "work.attention.act.refuseOnce": "拒绝",
+  "work.attention.act.refuseAlways": "始终拒绝"
 }

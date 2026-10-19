@@ -282,6 +282,8 @@
   "work.facts.waiting": "已等待 {{time}}",
   "work.facts.firstAnswer": "尚无回答，{{time}}发出",
   "work.facts.calling": "正在运行 {{title}}，已 {{elapsed}}",
+  "work.facts.callWaits": "{{title}} 等你答复，已 {{elapsed}}",
+  "work.facts.callWaitsUnnamed": "一个工具调用等你答复，已 {{elapsed}}",
   "work.facts.started": "{{ago}}开始",
   "work.facts.attempt": "第 {{attempt}} 次尝试：之前 {{count}} 次失败",
   "work.facts.attempt_other": "第 {{attempt}} 次尝试：之前 {{count}} 次失败",

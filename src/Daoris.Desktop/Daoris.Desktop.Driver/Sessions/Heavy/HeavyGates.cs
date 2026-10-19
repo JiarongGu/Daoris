@@ -21,6 +21,12 @@ public sealed record HeavyChoice(IReadOnlyList<HeavyGate> Gates, string? Refusal
 /// <param name="Mapped">Whether the gates are this machine's mapping, the file marking none.</param>
 public sealed record HeavyDeclared(IReadOnlyList<HeavyGate> Gates, string? Repository, bool Mapped);
 
+/// <summary>Whether a checkout's own file marks heavy gates (HEAVYRUN1b2c).</summary>
+/// <param name="Marks">True where it marks some; false where it marks none or there is no file; null where it cannot be told.</param>
+/// <param name="Names">The heavy gates' names, in order, where it marks some.</param>
+/// <param name="Refusal">Why it cannot be told; null otherwise.</param>
+public sealed record HeavyMarks(bool? Marks, IReadOnlyList<string> Names, string? Refusal);
+
 /// <summary>
 /// Which gates a repository's heavy run runs (HEAVYRUN1a, D180's HEAVYRUN1 note): those its <c>daoris.gates.json</c> marks
 /// <c>"heavy": true</c>, where it declares its gates, in the order it declares them; a repository names its heavy gates itself. Where
@@ -106,6 +112,29 @@ public static class HeavyGates
             : throw new DriverException(
                 $"no {FileName} at {checkout}, and this machine sets no heavy gates for `{repository}`: `run-heavy` runs the gates a "
                 + $"repository marks heavy there, or those `daoris-driver heavy {repository} <name>=<command>…` sets here.");
+    }
+
+    /// <summary>
+    /// Whether <paramref name="checkout"/>'s own file wins (HEAVYRUN1b2c): it marks a heavy gate (true, their names), marks none or has no
+    /// file (false, this machine's list is used), or does not read (null, the driver's words). A read of the one file; it never asks the
+    /// mapping and never throws, since "cannot tell" is never "marks none".
+    /// </summary>
+    public static HeavyMarks Marks(string checkout)
+    {
+        if (!File.Exists(Path.Combine(checkout, FileName))) return new HeavyMarks(false, [], null);
+        try
+        {
+            var names = Read(checkout).Where(gate => gate.Heavy).Select(gate => gate.Name).ToList();
+            return new HeavyMarks(names.Count > 0, names, null);
+        }
+        catch (DriverException error)
+        {
+            return new HeavyMarks(null, [], error.Message);
+        }
+        catch (IOException error)
+        {
+            return new HeavyMarks(null, [], $"{FileName} could not be read: {error.Message}");
+        }
     }
 
     /// <summary>Every heavy gate in order, or the one <paramref name="named"/>; or why none, with the exit that says it.</summary>

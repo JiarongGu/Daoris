@@ -68,7 +68,8 @@ describe('the driver domain', () => {
 
     invoke.mockImplementation(async () => { throw Object.assign(new Error('no remote'), { code: 'DRIVER_REFUSED' }); });
     await expect(result.current.mutateAsync('aurora')).rejects.toThrow('no remote');
-    await waitFor(() => expect(invalidate).toHaveBeenCalledWith({ queryKey: keys.allSync }));
+    // Passing over the standings where the shell pushes them: the pass's end pushes what it moved (PUSH1a2).
+    await waitFor(() => expect(invalidate).toHaveBeenCalledWith({ queryKey: keys.allSync, predicate: expect.any(Function) }));
   });
 
   /**
