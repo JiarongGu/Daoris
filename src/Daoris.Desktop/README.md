@@ -192,7 +192,11 @@ A driven session is told to use it (`HeavyTold`, HEAVYRUN1b1): where its reposit
 checks while it works and those gates once, at its end, through `run-heavy`, never whole another way. A repository whose own file
 marks none takes this machine's heavy gates for it (`HeavyMapping`, HEAVYRUN1b2a): `heavyGates` in `driver.json`, by repository, a
 list in the order they run, set by `daoris-driver heavy` and never written into the repository; the run reads it under the
-repository its session is handed, and the start's instruction says it too.
+repository its session is handed, and the start's instruction says it too. Each gate's test runner is held to two workers
+(`HeavyWorkers`, HEAVYRUN1a2): a gate whose one command is `jest` or `vitest`, or an `npm test`/`npm run` whose script in the
+folder's `package.json` is, gets `--maxWorkers=2` (through npm, after its `--`) where the version installed between its folder
+and the checkout is one whose flag was read; a chain, another runner, an owner's own bound or an unknown version runs as written,
+and the run says which under the gate's line.
 
 `Conversations/` keeps the onion for its model and rules alone (STRUCT3h, D166's STRUCT3h note): `Domain/` holds a
 conversation's pure records, rules and words (the message, the resume's judgement and its reasons, the hand-over's codes,
