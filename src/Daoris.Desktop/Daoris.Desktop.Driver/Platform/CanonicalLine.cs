@@ -68,10 +68,13 @@ public static class CanonicalLine
         return lines;
     }
 
-    /// <summary>The line, with the checkout asked only when nothing is set.</summary>
+    /// <summary>
+    /// The line, with the checkout asked only when nothing is set, and git only when what it reads moved since it was last asked
+    /// (<see cref="LineGuesses"/>, IDLECPU1).
+    /// </summary>
     public static Task<Line> ResolveAsync(
         string root, string repository, string? workspace, DriverConfig config, CancellationToken ct = default) =>
-        ResolveAsync(root, repository, workspace, config, WorkingTree.DefaultBranchAsync, ct);
+        ResolveAsync(root, repository, workspace, config, LineGuesses.Shared.GuessAsync, ct);
 
     /// <summary>
     /// The same, with the checkout's guess asked of <paramref name="guess"/>: a look that asks git once per checkout
