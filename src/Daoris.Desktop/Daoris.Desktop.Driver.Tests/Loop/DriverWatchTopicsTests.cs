@@ -308,7 +308,52 @@ public sealed class DriverWatchTopicsTests : IDisposable
         }
     }
 
-    private (DriverWatch Watch, StandInRuns Runs) Watch(RemoteSyncSet sync, int pollSeconds, MachineLog? log = null, IChangeSource? source = null)
+    /// <summary>
+    /// PARALLEL1a (D181 point 2): each move a source heard is told to the facts' judges, a topic's wake as it comes and a repository's
+    /// refs once the ref watch judges them; a plain nudge, a press, is no move and tells nothing, and a ref is never told twice.
+    /// </summary>
+    [Fact]
+    public async Task A_move_heard_is_told_to_the_facts_judges_and_a_press_is_not()
+    {
+        var common = Path.Combine(_home, "engine", ".git");
+        Directory.CreateDirectory(common);
+        new SessionBranches(_home).Record(new GrownBranch("engine", "default", "daoris/s-0001", "main", new string('a', 40), null, DateTimeOffset.UtcNow));
+        var source = new FakeChangeSource();
+        var told = new List<(string Topic, string Subject)>();
+        List<(string Topic, string Subject)> Told()
+        {
+            lock (told) return [.. told];
+        }
+
+        using var sync = Counted();
+        var (watch, _) = Watch(sync, pollSeconds: 60, source: source, heard: (topic, subject) =>
+        {
+            lock (told) told.Add((topic, subject));
+        });
+
+        watch.Nudge();
+        watch.Nudge(ChangeTopics.Ledger, "quests");
+        watch.Said("s1");
+        watch.Nudge(ChangeTopics.Refs, "engine");
+        Assert.Equal([(ChangeTopics.Ledger, "quests"), (ChangeTopics.Requests, "s1")], Told());
+
+        var reports = new List<TickReport>();
+        var watching = watch.RunAsync(Into(reports), onError: null, _closing.Token);
+        try
+        {
+            await Poll.Until(() => Count(reports) >= 1 && source.On(common) is not null, () => "no look, or the repository never watched", Bound);
+            source.On(common)!.Raise("refs/heads/daoris/s-0001", ChangeKind.Renamed);
+            await Poll.Until(() => Told().Contains((ChangeTopics.Refs, "engine")), () => string.Join(", ", Told()), Bound);
+        }
+        finally
+        {
+            await _closing.CancelAsync();
+            await Settled(watching);
+        }
+    }
+
+    private (DriverWatch Watch, StandInRuns Runs) Watch(
+        RemoteSyncSet sync, int pollSeconds, MachineLog? log = null, IChangeSource? source = null, Action<string, string>? heard = null)
     {
         var config = DaorisHome.Entry(_home, HomeEntry.DriverConfig);
         File.WriteAllText(config, $$"""
@@ -324,6 +369,7 @@ public sealed class DriverWatchTopicsTests : IDisposable
             Stops = runs.Stops,
             Log = log,
             Source = source,
+            Heard = heard,
         };
         runs.Keeping = watch.Running;
         return (watch, runs);

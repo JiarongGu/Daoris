@@ -127,6 +127,13 @@ public sealed class DriverWatch(
     /// <summary>What watches the home's record files (<see cref="HomeWatch"/>): the machine's watchers unless a test hands its fake.</summary>
     internal IChangeSource? Source { get; init; }
 
+    /// <summary>
+    /// Told each move a change source heard (PARALLEL1a, D181 point 2): its topic and subject, a repository's refs as the ref watch
+    /// judges them and every topic's wake, for the judges that keep the machine's facts. Never a plain nudge, which is a press, not a
+    /// move, and never a deadline. Null tells nobody.
+    /// </summary>
+    public Action<string, string>? Heard { get; init; }
+
     private HomeWatch? _files;
 
     private RefWatch? _refs;
@@ -202,6 +209,9 @@ public sealed class DriverWatch(
     {
         if (wake is null) Interlocked.Exchange(ref _everything, 1);
         else if (heard) _landing.Hear(wake.Topic, wake.Subject);
+
+        // PARALLEL1a: a move is told to the facts' judges too; a ref's is told where the ref watch hears it, so not twice.
+        if (wake is not null && heard && wake.Topic != ChangeTopics.Refs) Heard?.Invoke(wake.Topic, wake.Subject);
         Volatile.Write(ref _woke, wake);
         // FABRIC-END4a: what can unblock a refused tidy wakes link 2 too: a press (a plain nudge), the home's files, a ledger family.
         _refs?.Unblocked(wake is null ? ChainEvents.Press
@@ -322,7 +332,11 @@ public sealed class DriverWatch(
             },
         };
         await using var refs = RefWatch.ForDriver(home, service.RegistryAsync, source: Source, log: Log,
-            heard: repository => LandingWakes.Moved(home, repository, Nudge), // FABRIC-END7: a due tree that moved wakes its landing.
+            heard: repository =>
+            {
+                LandingWakes.Moved(home, repository, Nudge); // FABRIC-END7: a due tree that moved wakes its landing.
+                Heard?.Invoke(ChangeTopics.Refs, repository); // PARALLEL1a: and the facts that repository's refs move.
+            },
             tidy: effect);
         _refs = refs;
         refs.Start();
