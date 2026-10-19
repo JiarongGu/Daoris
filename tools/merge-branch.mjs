@@ -313,6 +313,7 @@ import { constants as osConstants, setPriority as osSetPriority } from 'node:os'
 import { basename, dirname, join, relative, resolve } from 'node:path';
 import { gluedLabels, records } from './doc-duplicates.mjs';
 import { isMain, renameHeld, stagedTree, writeAtomic } from './fsx.mjs';
+import { endOrphans } from './processes.mjs';
 
 export const MAIN = 'main';
 const SCRATCH = 'local/scratch';
@@ -3616,9 +3617,11 @@ export function readGateLock(home, alive = pidAlive) {
 /**
  * The lock taken for `commit`, created only where none is (`wx`), or a refusal naming the run that holds it: one full
  * set beside the merges at a time, since two would load the machine twice over and share one gate tree. A lock whose
- * process no longer runs (its window closed on it) is taken over, and returned as `stale` for the caller to say.
+ * process no longer runs (its window closed on it) is taken over, and returned as `stale` for the caller to say, with
+ * `ended`: the pids `end` (CIPRIO1d, `endOrphans`) ended, the dead pid's direct children started since the lock's `at`
+ * with their trees. Only Windows ends any: elsewhere `endOrphans` is a no-op.
  */
-export function takeGateLock(home, { commit, alive = pidAlive, now = nowIso } = {}) {
+export function takeGateLock(home, { commit, alive = pidAlive, now = nowIso, end = endOrphans } = {}) {
   const file = join(home, GATE_TREE_LOCK);
   mkdirSync(dirname(file), { recursive: true });
   let stale = null;
@@ -3632,7 +3635,11 @@ export function takeGateLock(home, { commit, alive = pidAlive, now = nowIso } = 
       if (held?.running) {
         throw new Refusal(`a full set beside the merges is running already: on ${held.commit.slice(0, 7)} since ${when(held.at)} (pid ${held.pid}, ${GATE_TREE}); one runs at a time`);
       }
-      if (held) stale = { pid: held.pid, commit: held.commit, at: held.at };
+      if (held) {
+        // CIPRIO1d: a run killed outright left its steps' tree running; end what its pid started since the lock's `at`.
+        const since = Date.parse(held.at);
+        stale = { pid: held.pid, commit: held.commit, at: held.at, ended: Number.isNaN(since) ? [] : end(held.pid, since) };
+      }
       rmSync(file, { force: true });
       continue;
     }
@@ -3998,7 +4005,7 @@ async function gateBeside(root, options) {
   const trees = stepTrees();
   const unhook = stopOnInterrupt(trees);
   try {
-    if (stale) console.log(`the gate tree's lock was left by pid ${stale.pid} (on ${stale.commit.slice(0, 7)} since ${when(stale.at)}), which no longer runs: taken over`);
+    if (stale) console.log(`the gate tree's lock was left by pid ${stale.pid} (on ${stale.commit.slice(0, 7)} since ${when(stale.at)}), which no longer runs: taken over${stale.ended.length ? `; ended what it left running (pid ${stale.ended.join(', ')})` : ''}`);
     // CIPRIO1: before the tree is made or anything installed or built, so every descendant inherits the lowered class.
     startBesideRun();
     const started = nowIso();
