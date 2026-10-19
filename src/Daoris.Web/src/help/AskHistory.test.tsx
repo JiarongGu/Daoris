@@ -115,6 +115,23 @@ describe.each(['en', 'zh'])('Ask Daoris’s history in %s', (language) => {
     expect(screen.queryByText(/starts anew|将开始新对话/)).toBeNull();
   });
 
+  /** HELPMODE1b (D183 point 3): a conversation that ran with full access says so on its row, in the warning colour. */
+  it('names the mode of a conversation that ran with full access, and of none that ran restricted', async () => {
+    await i18n.changeLanguage(language);
+    draw({
+      rows: [
+        row({ session: 'h1', title: 'clean the trees', opening: 'clean the trees', mode: 'full' }),
+        row({ session: 'h2', title: 'what is a lane?', opening: 'what is a lane?', mode: 'restricted' }),
+        row({ session: 'h3', title: 'an older one', opening: 'an older one' }),
+      ],
+    });
+
+    const full = within(door('clean the trees')).getByText(i18n.t('help.history.full'));
+    expect(full).toHaveClass('text-warn');
+    expect(within(door('what is a lane?')).queryByText(i18n.t('help.history.full'))).toBeNull();
+    expect(within(door('an older one')).queryByText(i18n.t('help.history.full'))).toBeNull();
+  });
+
   it('shows what a conversation was about as plain words, its Markdown’s marks gone', async () => {
     await i18n.changeLanguage(language);
     draw();
