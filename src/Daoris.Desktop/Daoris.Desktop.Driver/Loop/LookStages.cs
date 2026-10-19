@@ -5,7 +5,8 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// What each part of the loop's looks took (LOOKWAIT1, D181 point 6): every stage of a look, and every piece of the work that runs
-/// beside it (the remote sync, a start's preparation that outlived its look, a plugin's word on an ending, a packet frozen), timed
+/// beside it (the remote sync, a start's preparation that outlived its look, a plugin's word on an ending, a packet frozen, and since
+/// PARALLEL1g an owed opinion's, a helper's ask's and a landing selection's judgment), timed
 /// as a span with its subject, so a slow look names its slow part in the machine log rather than only its length.
 /// </summary>
 /// <remarks>
