@@ -42,13 +42,16 @@ internal static class Program
         // The home before anything else (D63): an install's `data/` folder is the Daoris home for this
         // process and every host and session it spawns. Before the builder, because every module
         // captures its path at construction — and a workspace build is left alone, so the dev loop's
-        // scratch home stays the dev loop's.
+        // scratch home stays the dev loop's. An install's older home is moved into D172's places here too
+        // (HOMELAYOUT3), before anything resolves a path: the log and the window's memory among them.
         var home = InstallHome.Establish(AppContext.BaseDirectory);
 
         // The machine log (LOG1, D94), opened as soon as there is a home to put it in, so an exception
-        // nothing else catches is written before the process ends; with no home it writes nothing.
+        // nothing else catches is written before the process ends; with no home it writes nothing. Then
+        // what the move did, which ran before the log had its place.
         using var log = Daoris.Driver.MachineLog.Open("desktop");
         log.WatchUnhandled();
+        InstallHome.Log(home, log);
         var started = DateTimeOffset.UtcNow;
 
         // 🔴 No home is a sentence, not a silent exit (REV3). A workspace build started with no
@@ -72,18 +75,21 @@ internal static class Program
 
         // 🔴 The kit anchors its data area (the engine's profile, the window's geometry) at the bundle's
         // root, which it takes to be the executable's folder unless told. An install's application runs
-        // from `app/` (D93), so it is told the install's root, and its data lands in the install's
-        // `data/` rather than a second one inside `app/`. A `--app-root` given still wins.
+        // from `app/` (D93), so it is told the install's root. A `--app-root` given still wins. Its data
+        // area is the window's memory (D172 point 4, HOMELAYOUT3): the home's `window` entry under that
+        // root where it is an install, `profiles/window/` once moved and the install's `data/` until then,
+        // never a second one inside `app/`.
         var installRoot = InstallHome.RootOf(AppContext.BaseDirectory);
         var inInstallApp = !string.Equals(
             installRoot, Path.TrimEndingDirectorySeparator(AppContext.BaseDirectory), StringComparison.OrdinalIgnoreCase);
+        var kitRoot = inInstallApp ? AppRootArgument.Resolve(args, installRoot) : null;
 
         var builder = ShenoraApplication.CreateBuilder(new ShenoraApplicationOptions
         {
             Args = args,
             ApplicationName = "Daoris",
-            Paths = inInstallApp
-                ? new ShenoraPathsOptions { ExplicitRoot = AppRootArgument.Resolve(args, installRoot) }
+            Paths = kitRoot is not null
+                ? new ShenoraPathsOptions { ExplicitRoot = kitRoot, DataDirectory = InstallHome.WindowMemory(kitRoot) }
                 : new ShenoraPathsOptions(),
         });
 
