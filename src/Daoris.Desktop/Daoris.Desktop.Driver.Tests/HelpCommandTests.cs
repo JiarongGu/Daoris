@@ -71,6 +71,8 @@ public sealed class HelpCommandTests : IDisposable
         new[] { "list", "--limit", "0" },
         new[] { "list", "--limit", "many" },
         new[] { "forget", "h1" },
+        new[] { "mode", "everything" },
+        new[] { "mode", "full", "now" },
     };
 
     [Theory]
@@ -93,6 +95,40 @@ public sealed class HelpCommandTests : IDisposable
         Assert.Equal(new HelpVerbAsk("rename") { Id = "h1", Clear = true }, HelpCommand.Read(["rename", "h1", "--clear"], out _));
         Assert.Equal(new HelpVerbAsk("unpin") { Id = "h1" }, HelpCommand.Read(["unpin", "h1"], out _));
         Assert.Equal(new HelpVerbAsk("delete") { Id = "h1", Yes = true }, HelpCommand.Read(["delete", "h1", "--yes"], out _));
+        Assert.Equal(new HelpVerbAsk("mode"), HelpCommand.Read(["mode"], out _));
+        Assert.Equal(new HelpVerbAsk("mode") { Text = HelpModes.Full }, HelpCommand.Read(["mode", "Full"], out _));
+        Assert.Contains("mode", HelpCommand.Verbs);
+    }
+
+    /// <summary>
+    /// HELPMODE1a1 (D183 points 1-2): <c>help mode</c> says the mode Ask Daoris runs in, and with one names it in the driver's file,
+    /// from the next start, saying what it means; the default is written by taking the key out, and the same mode again changes
+    /// nothing. The terminal's door to the mode, beside the page's to come (HELPMODE1b).
+    /// </summary>
+    [Fact]
+    public void Mode_says_the_mode_and_sets_it_from_the_next_start()
+    {
+        var path = Path.Combine(_home, "driver.json");
+        File.WriteAllText(path, """{ "helperAdapter": "claude-code-acp" }""");
+        string Mode(params string[] args)
+        {
+            var output = new StringWriter();
+            Assert.Equal(0, HelpCommand.Mode(HelpCommand.Read(["mode", .. args], out _)!, path, output));
+            return output.ToString();
+        }
+
+        Assert.Contains("restricted", Mode());
+        var full = Mode("full");
+        Assert.Contains("full access", full);
+        Assert.Contains("next start", full);
+        Assert.Equal(HelpModes.Full, DriverConfig.Load(path).HelpMode);
+        Assert.Equal("claude-code-acp", DriverConfig.Load(path).HelperAdapter);
+        Assert.Contains("full access", Mode());
+        Assert.Contains("already", Mode("full"));
+
+        Assert.Contains("restricted", Mode("restricted"));
+        Assert.Equal(HelpModes.Restricted, DriverConfig.Load(path).HelpMode);
+        Assert.DoesNotContain("helpMode", File.ReadAllText(path));
     }
 
     /// <summary>The listing: Ask Daoris's conversations the person spoke in, each with when, its title and its line; nothing else.</summary>

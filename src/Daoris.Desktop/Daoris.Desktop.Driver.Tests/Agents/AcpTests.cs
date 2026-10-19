@@ -1264,8 +1264,65 @@ public sealed class AcpTests
             .RunAsync("D:/fam/Game", "do the thing", CancellationToken.None);
 
         Assert.Equal("auto", ModeSet(agent));
-        // 🔴 Never the one that judges nothing, however available the wire makes it.
+        // 🔴 Never the one that judges nothing, however available the wire makes it, unless the posture asked is Ask Daoris's full
+        // access, the person's own choice (HELPMODE1a1, D183), held below.
         Assert.DoesNotContain(agent.Sent, line => line.Contains("bypassPermissions"));
+    }
+
+    /// <summary>
+    /// HELPMODE1a1 (D183 points 1, 3): a posture marked required, Ask Daoris's full access, is set by name where the agent offers it:
+    /// Claude Code's mode that asks nothing, which no other posture ever reaches.
+    /// </summary>
+    [Fact]
+    public async Task A_required_posture_is_set_where_the_agent_offers_it()
+    {
+        var agent = PostureAgent("""
+            {"id":"default","name":"Manual"},{"id":"acceptEdits","name":"Accept edits"},
+            {"id":"auto","name":"Auto"},{"id":"bypassPermissions","name":"Bypass"}
+            """);
+        var full = AdapterSet.Built().Resolve("claude-code-acp").FullPosture;
+
+        await new AcpSession(agent.Incoming, agent.Outgoing, _ => { }, closeTimeout: null, $"{HelpModes.Required}{full}")
+            .RunAsync("D:/fam/Game", "do the thing", CancellationToken.None);
+
+        Assert.Equal("bypassPermissions", ModeSet(agent));
+    }
+
+    /// <summary>
+    /// HELPMODE1a1 (D183 point 3): a required posture the agent does not offer (Claude's adapter hides <c>bypassPermissions</c> in
+    /// some environments), or an agent that offers no modes at all, fails the open plainly, naming the mode asked, what the agent
+    /// offers, and the person's two ways on. Nothing is set and nothing is prompted, so it never runs narrower under the full label.
+    /// </summary>
+    [Theory]
+    [InlineData("""{"sessionId":"s-1","modes":{"currentModeId":"default","availableModes":[{"id":"default"},{"id":"acceptEdits"}]}}""", "`acceptEdits`")]
+    [InlineData("""{"sessionId":"s-1"}""", "offers no modes")]
+    public async Task A_required_posture_the_agent_does_not_offer_fails_the_open_saying_so(string created, string offered)
+    {
+        var agent = new FakeAgent((frame, self) =>
+        {
+            _ = self;
+            var method = frame.TryGetProperty("method", out var m) ? m.GetString() : null;
+            return method switch
+            {
+                "session/new" => Ok(frame, created),
+                _ => frame.TryGetProperty("id", out _) ? Ok(frame, "{}") : null,
+            };
+        });
+        var session = new AcpSession(agent.Incoming, agent.Outgoing, _ => { }, closeTimeout: null, $"{HelpModes.Required}bypassPermissions");
+        try
+        {
+            var refused = await Assert.ThrowsAsync<DriverException>(() => session.OpenAsync("D:/fam/Game", CancellationToken.None));
+
+            Assert.Contains("`bypassPermissions`", refused.Message);
+            Assert.Contains(offered, refused.Message);
+            Assert.Contains("help mode restricted", refused.Message);
+            Assert.Contains("another agent", refused.Message);
+            Assert.Null(ModeSet(agent));
+        }
+        finally
+        {
+            session.Release();
+        }
     }
 
     /// <summary>
@@ -1285,6 +1342,7 @@ public sealed class AcpTests
             .RunAsync("D:/fam/Game", "do the thing", CancellationToken.None);
 
         Assert.Equal("acceptEdits", ModeSet(agent));
+        // Not unless the posture asked is Ask Daoris's full access (HELPMODE1a1), held above.
         Assert.DoesNotContain(agent.Sent, line => line.Contains("bypassPermissions"));
     }
 

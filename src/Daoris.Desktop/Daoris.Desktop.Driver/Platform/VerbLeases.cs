@@ -11,7 +11,7 @@ namespace Daoris.Driver;
 /// <list type="bullet">
 /// <item><b>Reads</b>: <c>trace</c>, <c>git</c>, <c>logs</c>, <c>workflow run</c>, the lists (<c>sessions</c>, <c>history</c>,
 /// <c>trees</c>, <c>trees list</c>, <c>trees state</c>, <c>work state</c>, <c>work held</c> naming no word), <c>plugins show</c> and <c>activity</c>, <c>sync status</c>,
-/// <c>help list</c>, <c>opinion show</c>, an <c>update</c> that only asks where it stands, any <c>--plan</c>, and asking for
+/// <c>help list</c>, <c>help mode</c> naming no mode, <c>opinion show</c>, an <c>update</c> that only asks where it stands, any <c>--plan</c>, and asking for
 /// the usage.</item>
 /// <item><b>The service's own doors</b>, whose one writer is the service already (§7.1): <c>quest delete</c>, <c>accept</c>,
 /// <c>done</c>, <c>check</c> and <c>review</c>, <c>answer</c>, an ask's words, publish, close and delete, and <c>ask channel</c>.</item>
@@ -55,7 +55,8 @@ public static class VerbLeases
             "work" => next == "recovery" || (next == "held" && args.Skip(2).Any(arg => HeldResolutions.All.Contains(arg))),
             "plugins" => next is "install" or "new" or "try",
             "sync" => next != "status",
-            "help" => next is "rename" or "pin" or "unpin" or "delete",
+            // `help mode` alone says the mode; naming one writes the driver's file (HELPMODE1a1).
+            "help" => next is "rename" or "pin" or "unpin" or "delete" || (next == "mode" && args.Count > 2),
             "opinion" => next is "ask" or "stop" or "anyway" or "myself",
             "update" => args.Skip(1).Any(arg => arg is "--when-idle" or "--now" or "--cancel"),
             _ => true,
@@ -74,7 +75,7 @@ public static class VerbLeases
         "land", "remove", "clean", "sync", "hand", "stop", "finish", "decline", "say", "take-back", "reword", "archive",
         "unarchive", "delete", "go-on-new", "helper", "pause", "resume", "abandon", "clear", "rename", "pin", "unpin", "ask",
         "anyway", "myself", "install", "new", "try", "keep", "dismiss", "forward","--pause", "--resume", "--abandon", "--clear",
-        "--workspace", "--when-idle", "--now", "--cancel", "recovery", "held",
+        "--workspace", "--when-idle", "--now", "--cancel", "recovery", "held", "mode",
     };
 
     private static bool IsWord(string value) => value.Length > 0 && value.All(c => c is >= 'a' and <= 'z' or '-');

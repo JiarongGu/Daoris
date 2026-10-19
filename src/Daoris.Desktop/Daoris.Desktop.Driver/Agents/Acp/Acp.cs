@@ -1646,6 +1646,11 @@ public sealed class AcpSession(
     /// its postures in order, and the first the agent offers is set. An agent that offers no modes is
     /// left exactly alone — its permissions are its own business, which is the stub's shape and any
     /// future harness's right.</para>
+    ///
+    /// <para>🔴 <b>A posture marked required is set, or the session does not open</b> (HELPMODE1a1, D183 point 3): Ask Daoris's
+    /// full access, <see cref="HelpModes.Required"/> before the adapter's <see cref="ISessionAdapter.FullPosture"/>. Left alone, an
+    /// agent that does not offer it would run in its own narrower mode under the full label; it fails plainly instead, naming
+    /// what the agent offers and the person's two ways on. Every other posture keeps the leniency above.</para>
     /// </remarks>
     private async Task SetPostureAsync(JsonElement created, CancellationToken ct)
     {
@@ -1653,10 +1658,19 @@ public sealed class AcpSession(
         // stub, whose permissions are its own business (ACP3).
         if (posture is not { Length: > 0 }) return;
 
+        var required = posture[0] == HelpModes.Required;
+        var named = required ? posture[1..] : posture;
+        DriverException Unoffered(IReadOnlyCollection<string> offers) => new(
+            $"the agent does not offer `{named}`, the mode that asks nothing which full access needs ("
+            + (offers.Count > 0 ? $"it offers {string.Join(", ", offers.Order(StringComparer.Ordinal).Select(mode => $"`{mode}`"))}" : "it offers no modes")
+            + "), so it does not start in a narrower one under that name. Choose restricted access for Ask Daoris "
+            + "(`daoris-driver help mode restricted`), or another agent for it.");
+
         if (!created.TryGetProperty("modes", out var modes)
             || !modes.TryGetProperty("availableModes", out var available)
             || available.ValueKind != JsonValueKind.Array)
         {
+            if (required) throw Unoffered([]);
             return;
         }
 
@@ -1668,9 +1682,13 @@ public sealed class AcpSession(
 
         // The adapter names its postures in order of preference, `|`-separated (D81): the first the
         // agent offers is the one. None offered is left alone, exactly as a single posture was.
-        var chosen = posture.Split('|', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries)
+        var chosen = named.Split('|', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries)
             .FirstOrDefault(offered.Contains);
-        if (chosen is null) return;
+        if (chosen is null)
+        {
+            if (required) throw Unoffered(offered);
+            return;
+        }
 
         // Already there is nothing to ask for — and an agent that started in the posture is a fact
         // worth not overwriting with an identical call.

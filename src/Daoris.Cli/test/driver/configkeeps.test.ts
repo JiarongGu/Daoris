@@ -3,7 +3,9 @@ import assert from 'node:assert/strict';
 import { readFileSync, rmSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { landingEdited, readDriverChoices, writeDriverChoices, type DriverChoices, type LandingRule } from '../../src/driver/driverconfig.ts';
+import {
+  landingEdited, readDriverChoices, writeDriverChoices, type DriverChoices, type HelpMode, type LandingRule,
+} from '../../src/driver/driverconfig.ts';
 import { makeFixture } from '../_fixture.ts';
 
 /**
@@ -12,7 +14,10 @@ import { makeFixture } from '../_fixture.ts';
  * `fixtures/driver-config-keeps.json`, row for row with the driver's `DriverConfigKeepsTests`.
  */
 
-type Edit = { op: string; repository?: string; workspace?: string; on?: boolean; rule?: LandingRule; branch?: string; adapter?: string; kind?: string };
+type Edit = {
+  op: string; repository?: string; workspace?: string; on?: boolean; rule?: LandingRule; branch?: string; adapter?: string; kind?: string;
+  mode?: HelpMode;
+};
 type Change = { from: string[]; to: string[] };
 type Row = { name: string; edit: Edit; changes: Change[]; between?: Change[]; crlf?: boolean; refused?: string; missing?: boolean };
 type Twice = { changes: Change[]; notify: boolean; workCycles: Record<string, Record<string, unknown>>; refused: string };
@@ -31,6 +36,7 @@ function applied(choices: DriverChoices, edit: Edit): DriverChoices {
     case 'landing-clear': return landingEdited(choices, edit.repository!, null, null);
     case 'line': return { ...choices, lines: { ...choices.lines, [edit.repository!]: edit.branch! } };
     case 'intake': return { ...choices, intakeAdapter: edit.adapter! };
+    case 'help-mode': return { ...choices, helpMode: edit.mode! };
     case 'notify': return { ...choices, notify: edit.on! };
     case 'work-cycle-clear': {
       const { [edit.kind!]: _gone, ...kinds } = choices.workCycles[edit.repository!] ?? {};

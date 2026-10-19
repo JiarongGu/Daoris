@@ -48,8 +48,9 @@ public static class HelpRoom
     public const string Repository = "daoris:help";
 
     /// <summary>
-    /// The mode its session asks for on the protocol door: the agent's own asking mode, whatever it
-    /// started in, where the agent offers it.
+    /// The mode its session asks for on the protocol door in restricted access (HELPMODE1a1, D183): the agent's own asking mode,
+    /// whatever it started in, where the agent offers it. Full access asks the harness's mode that asks nothing instead
+    /// (<see cref="HelpAccess"/>), only by the person's choice.
     /// </summary>
     /// <remarks>
     /// 🔴 Since D81 a session runs in its harness's own <c>auto</c> mode, which judges each action
@@ -236,6 +237,13 @@ public static class HelpRoom
     }
 
     /// <summary>
+    /// What its session is handed in full access (HELPMODE1a1, D183 point 1): no allow-list and nothing asked, since its harness's
+    /// mode asks nothing; every deny the person's rules compose, the shipped no-push among them while it is on, which still wins.
+    /// </summary>
+    public static RuleLists FullRules(PermissionFile file) =>
+        new([], [], PermissionRules.Compose(file, workspace: null, repository: null).Deny);
+
+    /// <summary>
     /// The machine as the driver already holds it — its file, the registry, each repository's line, the
     /// roster — so the room says what the screens say. Names and states, and the root of a checkout only
     /// where reading across lets the helper read it (D107): no other root, no profile's home, no key.
@@ -311,6 +319,14 @@ public static class HelpRoom
 /// <remarks>MOD6: each section says its facts in its own file; PART4 keeps the facts in this one declaration, under a comment per section.</remarks>
 public sealed record HelpMachine
 {
+    // The intro's, which the may-do section reads too.
+
+    /// <summary>
+    /// The access mode its conversation runs in (HELPMODE1a1, D183 point 3), as the driver's file said when the room was written:
+    /// one of <see cref="HelpModes"/>. The room is written again at each start, so it says the mode that start was placed under.
+    /// </summary>
+    public string Mode { get; init; } = HelpModes.Restricted;
+
     // The room's scope (ASKSCOPE1b).
 
     /// <summary>

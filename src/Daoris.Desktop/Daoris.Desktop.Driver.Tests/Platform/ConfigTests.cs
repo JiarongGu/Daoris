@@ -87,6 +87,30 @@ public sealed class ConfigTests
         TheHarnessSurvives("helperAdapter", config => config.HelperAdapter, (config, adapter) => config.WithHelper(adapter));
     }
 
+    /// <summary>
+    /// HELPMODE1a1 (D183 points 1-2): Ask Daoris's access mode is the person's choice, restricted until full is named, written
+    /// only while full and kept by every other edit. Anything else the file says reads as restricted, never as full; and an edit
+    /// naming another mode is refused.
+    /// </summary>
+    [Fact]
+    public void Ask_daoris_runs_restricted_until_the_person_names_full()
+    {
+        Assert.Equal(HelpModes.Restricted, DriverConfig.Parse("{}").HelpMode);
+        Assert.DoesNotContain("helpMode", DriverConfig.Empty.ToJson());
+        Assert.Equal(HelpModes.Restricted, DriverConfig.Parse("""{"helpMode":"everything"}""").HelpMode);
+        Assert.Equal(HelpModes.Full, DriverConfig.Parse("""{"helpMode":" Full "}""").HelpMode);
+
+        var full = DriverConfig.Parse("""{"helpMode":"full","drivable":["engine"]}""");
+        var edited = DriverConfig.Parse(full.WithNotify(false).WithDrivable("tools", true).ToJson());
+        Assert.Equal(HelpModes.Full, edited.HelpMode);
+        Assert.Equal(HelpModes.Full, DriverConfig.Parse(DriverConfig.Empty.WithHelpMode("full").ToJson()).HelpMode);
+
+        var restricted = edited.WithHelpMode(HelpModes.Restricted).ToJson();
+        Assert.Equal(HelpModes.Restricted, DriverConfig.Parse(restricted).HelpMode);
+        Assert.DoesNotContain("helpMode", restricted);
+        Assert.Throws<DriverException>(() => DriverConfig.Empty.WithHelpMode("everything"));
+    }
+
     private static void TheHarnessSurvives(
         string field, Func<DriverConfig, string?> read, Func<DriverConfig, string?, DriverConfig> set)
     {

@@ -7,6 +7,10 @@ namespace Daoris.Driver;
 /// cannot reach, so it routes a repository's own work there rather than guessing at it (HELP4, HELP5). Since
 /// D107 it may read the checkouts reading across allows, and it says which, where and how.
 /// </summary>
+/// <remarks>
+/// HELPMODE1a1 (D183): all of that is restricted mode's, and the section says so. In full access it says the helper acts on this
+/// machine itself, with every server the plugins here declare, and what the doctrine still asks of it (D183 point 5).
+/// </remarks>
 internal sealed class HelpRoomMayDo : IHelpRoomSection
 {
     /// <summary>
@@ -19,6 +23,30 @@ internal sealed class HelpRoomMayDo : IHelpRoomSection
         var workspaceOf = registry
             .GroupBy(known => known.Repository, StringComparer.OrdinalIgnoreCase)
             .ToDictionary(named => named.Key, named => named.First().Workspace, StringComparer.OrdinalIgnoreCase);
+        var described = Restricted(machine, sources, registry, workspaceOf);
+        return machine.Mode == HelpModes.Full ? Full(described, sources) : described;
+    }
+
+    /// <summary>
+    /// HELPMODE1a1 (D170 as D183 amends it): in full access its spawn is handed every server the plugins here declare, for it or for
+    /// sessions, approved or not (<c>ChatRunner.HandServersAsync</c>), each once by name; so none waits, and none is offered.
+    /// </summary>
+    private static HelpMachine Full(HelpMachine machine, HelpMachineSources sources)
+    {
+        var named = new HashSet<string>(StringComparer.Ordinal);
+        return machine with
+        {
+            PluginServers = [.. sources.Plugins.Contributing.SelectMany(plugin => plugin.Manifest.Servers
+                .Where(server => named.Add(server.Name))
+                .Select(server => new HelpPluginServer(plugin.Manifest.Id, server.Name, server.Allow) { Writes = server.Writes }))],
+            PluginServersWaiting = [],
+            PluginServersOffered = [],
+        };
+    }
+
+    private static HelpMachine Restricted(
+        HelpMachine machine, HelpMachineSources sources, IReadOnlyList<RepoView> registry, Dictionary<string, string> workspaceOf)
+    {
         return machine with
         {
             Reads = [.. AcrossRules.Readable(sources.Config, registry)
@@ -65,6 +93,8 @@ internal sealed class HelpRoomMayDo : IHelpRoomSection
 
     public string Render(HelpMachine machine)
     {
+        if (machine.Mode == HelpModes.Full) return RenderFull(machine);
+
         var text = new StringBuilder();
         text.Append("## What you may do\n\n");
         text.Append("You read, you advise, and you propose. You change nothing yourself: every change is the person's, made\n");
@@ -75,6 +105,11 @@ internal sealed class HelpRoomMayDo : IHelpRoomSection
         text.Append("checks each proposal first by the rules of the screen that makes the same change, and one those rules\n");
         text.Append("would refuse never reaches the person: you are told why instead. Read the family through\n");
         text.Append("`daoris-knowledge` (the registry, its knowledge, its quests) when the question needs more than this page.\n\n");
+        // HELPMODE1a1 (D183 point 2): asked to clean up a tree Daoris made, the helper said it could change nothing and listed
+        // commands, and never that this was a mode the person could change. Said, and where; full access is never proposed.
+        text.Append("This is restricted mode. In full access you would act on this machine yourself; only the person chooses it,\n");
+        text.Append("with `daoris-driver help mode full`, from the next conversation's start. When they ask why you cannot do\n");
+        text.Append("something yourself, say so and where it is chosen: it is never yours to propose.\n\n");
         text.Append("Never offer to push, merge, discard, sign in, or handle a key: those stay the person's own presses,\n");
         text.Append("where they already are.\n\n");
         // HELP4: the first repository question met a shell refused before it ran, then a guess at the
@@ -182,6 +217,42 @@ internal sealed class HelpRoomMayDo : IHelpRoomSection
             text.Append("Repositories → the repository's page → Setup → Reach, and for a whole workspace under\n");
             text.Append("Repositories → the workspace's page → Setup → Defaults → Read by agents outside, or with `daoris driver across <repository> read on`\n");
             text.Append("(`--workspace <name>` in place of the repository for a whole workspace).\n\n");
+        }
+
+        return text.ToString();
+    }
+
+    /// <summary>
+    /// The section in full access (HELPMODE1a1, D183 points 1, 5): it acts on this machine itself, with every server the plugins here
+    /// declare; and the doctrine still speaks, a repository's work through a quest and Daoris's own housekeeping its to do. Nothing
+    /// restricted mode's alone is said: no shell refused, nothing waiting for approval, no reading switched off.
+    /// </summary>
+    private static string RenderFull(HelpMachine machine)
+    {
+        var text = new StringBuilder();
+        text.Append("## What you may do\n\n");
+        text.Append("You act on this machine yourself, as the person chose: a shell, file edits, Daoris's own commands (`daoris`,\n");
+        text.Append("`daoris-driver`) and the plugins' servers below, with no asking. What you do is your own act, not a proposal,\n");
+        text.Append("so say what you will do before you do it, and what you did after; the proposal tools (below) still serve\n");
+        text.Append("where the person would rather press it themselves. Read the family through `daoris-knowledge` (the registry,\n");
+        text.Append("its knowledge, its quests) when the question needs more than this page.\n\n");
+        // D183 point 5: words, not a gate; the mode is the gate.
+        text.Append("A repository's own work (its branches, its uncommitted work, what is ready to push) is still asked for through\n");
+        text.Append("a quest: propose an ask for it with `ask_propose`, so that repository's agent does it with its own tools, or\n");
+        text.Append("take the person there with `go_propose`, the repository and their words filled.\n");
+        text.Append("Daoris's own housekeeping is yours to do: its trees, the session branches whose work landed, and its home.\n");
+        text.Append("Never push, sign in, or handle a key: those stay the person's own presses, and where your agent takes\n");
+        text.Append("Daoris's rules, the person's own denies still hold.\n\n");
+        if (machine.PluginServers.Count > 0)
+        {
+            var servers = string.Join(", ", machine.PluginServers.Select(server => $"`{server.Server}` (plugin `{server.Plugin}`)"));
+            text.Append($"Plugins installed here hand you every server they declare, with nothing to approve: {servers}.\n");
+            text.Append("What such a tool does outside Daoris is the plugin's own act, as the person who installed it.\n\n");
+        }
+
+        if (machine.PluginSkills.Count > 0)
+        {
+            text.Append($"Plugins installed here also hand you these skills: {string.Join(", ", machine.PluginSkills.Select(skill => $"`{skill}`"))}.\n\n");
         }
 
         return text.ToString();

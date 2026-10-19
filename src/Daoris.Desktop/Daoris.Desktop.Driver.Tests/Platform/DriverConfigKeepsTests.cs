@@ -79,6 +79,7 @@ public sealed class DriverConfigKeepsTests
             "landing-clear" => config.WithLanding(Text("repository"), null),
             "line" => config.WithLine(Text("repository"), Text("branch")),
             "intake" => config.WithIntake(Text("adapter")),
+            "help-mode" => config.WithHelpMode(Text("mode")),
             "notify" => config.WithNotify(edit.GetProperty("on").GetBoolean()),
             "work-cycle-clear" => config.WithWorkCycle(Text("repository"), Text("kind"), null),
             var op => throw new InvalidOperationException($"the table names an edit this test does not make: {op}"),

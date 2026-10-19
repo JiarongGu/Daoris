@@ -366,6 +366,28 @@ public sealed class AdapterTests
     }
 
     /// <summary>
+    /// HELPMODE1a1 (D183 point 1): a conversation naming its permission mode, as Ask Daoris in full access does, runs in it on the
+    /// native door, <c>bypassPermissions</c> in place of <c>acceptEdits</c> and never beside it, a resumed one too; one naming none
+    /// keeps <c>acceptEdits</c>. The native door never took the asking mode HELP1a meant, which reached the protocol door alone.
+    /// </summary>
+    [Fact]
+    public void A_chat_naming_its_permission_mode_runs_in_it_and_one_naming_none_keeps_accept_edits()
+    {
+        var adapter = AdapterSet.Built().Resolve("claude-code");
+
+        foreach (var target in new[] { Chat(), Chat() with { Resume = "0b5e7c1a" } })
+        {
+            var full = adapter.PrepareChat(target with { PermissionMode = adapter.FullPosture }, null).ArgumentList.ToList();
+            Assert.Equal("bypassPermissions", full[full.IndexOf("--permission-mode") + 1]);
+            Assert.Single(full, argument => argument == "--permission-mode");
+            Assert.DoesNotContain("acceptEdits", full);
+
+            var restricted = adapter.PrepareChat(target, null).ArgumentList.ToList();
+            Assert.Equal("acceptEdits", restricted[restricted.IndexOf("--permission-mode") + 1]);
+        }
+    }
+
+    /// <summary>
     /// An adapter that has not been wired for turn-taking refuses in the harness's own terms, rather
     /// than spawning something that will never answer — the same shape as an unknown adapter name.
     /// </summary>

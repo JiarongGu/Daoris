@@ -24,7 +24,7 @@ Listed first, because nothing below restates their rows: open one of these for w
 | `decisions.md` | each decision's title with its entry's lines, then each dated note with its lines |
 | `outlines/<path>.md` | the declarations or headings of a file over 40 KB, each with its line range |
 
-## Files over 40 KB (179)
+## Files over 40 KB (180)
 
 Each has its outline at `outlines/<its path>.md`: open the outline, then read the range you need, not the file.
 
@@ -69,16 +69,17 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Accounts/HarnessTests.cs` | 53 | 1143 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Agents/AcpBackgroundTests.cs` | 53 | 1121 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Agents/AcpSteerTests.cs` | 48 | 953 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Agents/AcpTests.cs` | 119 | 2191 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Agents/AcpTests.cs` | 122 | 2249 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Agents/ToolInstallTests.cs` | 41 | 726 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Agents/ToolResourcesTests.cs` | 40 | 559 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Conversations/ChatGoOnTests.cs` | 46 | 883 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Help/HelpCoverageTests.cs` | 112 | 1812 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Help/Proposals/HelpSettingProposalsTests.cs` | 53 | 784 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Help/golden/help-room/empty.md` | 48 | 349 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Help/golden/help-room/full.md` | 53 | 415 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Help/golden/help-room/scoped.md` | 50 | 403 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Help/golden/help-room/sparse.md` | 47 | 348 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Help/golden/help-room/empty.md` | 48 | 356 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Help/golden/help-room/full-access.md` | 52 | 398 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Help/golden/help-room/full.md` | 53 | 422 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Help/golden/help-room/scoped.md` | 51 | 410 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Help/golden/help-room/sparse.md` | 48 | 355 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Loop/DriverCommandTests.cs` | 43 | 675 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Loop/SessionMessagesTickTests.cs` | 46 | 844 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Loop/SessionsOutliveTheirLookTests.cs` | 43 | 957 |
@@ -103,14 +104,14 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Accounts/Harnesses/HarnessSettings.cs` | 51 | 974 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Accounts/Rotation/AccountRotation.cs` | 73 | 1189 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Accounts/Usage/UsageHistory.cs` | 47 | 925 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/Acp/Acp.cs` | 115 | 2307 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/Adapters/Adapters.cs` | 122 | 2153 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/Conversations/Chat/ChatRunner.cs` | 117 | 2142 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/Acp/Acp.cs` | 117 | 2325 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/Adapters/Adapters.cs` | 125 | 2199 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/Conversations/Chat/ChatRunner.cs` | 122 | 2228 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Help/Proposals/HelpSettingProposals.cs` | 53 | 924 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Loop/Driver.cs` | 194 | 3161 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Loop/DriverContinuations.cs` | 48 | 786 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Loop/DriverWatch.cs` | 47 | 822 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/Platform/DriverConfig.cs` | 79 | 1376 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/Platform/DriverConfig.cs` | 81 | 1399 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Platform/NoteCodes.cs` | 70 | 1138 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Platform/SystemWiring.cs` | 50 | 1070 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Plugins/Hooks.cs` | 59 | 1155 |
@@ -180,14 +181,14 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 |---|---|---|
 | `src/Daoris.Cli/src/agents/toolchain.ts` | 156 | 2986 |
 | `src/Daoris.Cli/src/doctrine/materialize.ts` | 47 | 935 |
-| `src/Daoris.Cli/src/driver/driverconfig.ts` | 130 | 2338 |
+| `src/Daoris.Cli/src/driver/driverconfig.ts` | 131 | 2353 |
 | `src/Daoris.Cli/src/plugins/plugins.ts` | 80 | 1550 |
 | `src/Daoris.Cli/src/workflows/namedworkflows.ts` | 44 | 874 |
 | `src/Daoris.Cli/src/workflows/workflowdoor.ts` | 46 | 839 |
 | `src/Daoris.Cli/test/agents/toolchain.test.ts` | 110 | 2080 |
 | `src/Daoris.Cli/test/desktop-tool.test.ts` | 44 | 835 |
 | `src/Daoris.Cli/test/dogfood.test.ts` | 48 | 847 |
-| `src/Daoris.Cli/test/driver/driverconfig.test.ts` | 135 | 2476 |
+| `src/Daoris.Cli/test/driver/driverconfig.test.ts` | 136 | 2500 |
 | `src/Daoris.Cli/test/usage-report.test.ts` | 71 | 1227 |
 | `src/Daoris.Cli/tool-test/desktop-publish.test.ts` | 67 | 1172 |
 | `src/Daoris.Cli/tool-test/merge-branch.test.ts` | 292 | 4436 |
@@ -240,4 +241,4 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `docs/2026-10-09-workflow-design.md` | 79 | 1038 |
 | `docs/2026-10-16-fabric-events-design.md` | 175 | 2131 |
 | `docs/DAORIS_UNIFIED_COLLABORATION_ARCHITECTURE_AND_PLAN_2026-10-16.md` | 164 | 5380 |
-| `src/Daoris.Desktop/README.md` | 98 | 558 |
+| `src/Daoris.Desktop/README.md` | 99 | 558 |

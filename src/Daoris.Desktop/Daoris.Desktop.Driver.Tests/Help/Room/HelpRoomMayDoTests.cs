@@ -276,6 +276,87 @@ public sealed class HelpRoomMayDoTests
         }
     }
 
+    /// <summary>
+    /// HELPMODE1a1 (D183 point 2): in restricted mode the room says its limits are the mode's, that full access is the person's own
+    /// choice and where it is made, and that it is never the helper's to propose.
+    /// </summary>
+    [Fact]
+    public void In_restricted_mode_the_room_says_its_limits_are_the_modes_and_where_the_person_chooses_full()
+    {
+        var room = HelpRoom.Render(HelpRoomFixture.Machine);
+
+        Assert.Contains("This is restricted mode", room);
+        Assert.Contains("`daoris-driver help mode full`", room);
+        Assert.Contains("never yours to propose", room);
+        Assert.Contains("You change nothing yourself", room);
+    }
+
+    /// <summary>
+    /// HELPMODE1a1 (D183 points 1, 5): in full access the room says it acts on this machine itself, with every server the plugins
+    /// here declare and nothing to approve; it says nothing that is restricted mode's alone (no shell, nothing changed, servers
+    /// waiting, reading switched off); and the doctrine still speaks: a repository's work through a quest, Daoris's housekeeping its
+    /// own, a push and a key the person's.
+    /// </summary>
+    [Fact]
+    public void In_full_access_the_room_says_it_acts_itself_and_drops_what_is_restricted_modes_alone()
+    {
+        var room = HelpRoom.Render(HelpRoomFixture.Machine with
+        {
+            Mode = HelpModes.Full,
+            Reads = [],
+            PluginServers = [new("acme.tickets", "tickets", ["search"]), new("in-app-browser", "browser", [])],
+            PluginServersWaiting = [new("acme.wiki", "wiki", ["lookup"])],
+        });
+
+        Assert.Contains("You act on this machine yourself, as the person chose", room);
+        Assert.Contains("say what you will do before you do it", room);
+        Assert.Contains("`ask_propose`", room);
+        Assert.Contains("Daoris's own housekeeping is yours to do", room);
+        Assert.Contains("Never push, sign in, or handle a key", room);
+        Assert.Contains("every server they declare, with nothing to approve: `tickets` (plugin `acme.tickets`), `browser` (plugin `in-app-browser`)", room);
+        foreach (var restricted in new[]
+                 {
+                     "You have no shell", "You change nothing yourself", "Not yours yet", "Reading the checkouts here is switched off",
+                     "This is restricted mode",
+                 })
+        {
+            Assert.DoesNotContain(restricted, room);
+        }
+    }
+
+    /// <summary>
+    /// HELPMODE1a1: in full access the servers it is said to be handed are every one the plugins here declare, for it or for
+    /// sessions, approved or not, as its spawn is handed them (<c>ChatRunner.HandServersAsync</c>); none waits.
+    /// </summary>
+    [Fact]
+    public void In_full_access_the_servers_it_is_handed_are_every_one_declared_here()
+    {
+        var home = Path.Combine(Path.GetTempPath(), "daoris-help-full-servers-" + Guid.NewGuid().ToString("N")[..8]);
+        try
+        {
+            Directory.CreateDirectory(DaorisHome.Entry(home, HomeEntry.Plugins, "acme.tools"));
+            File.WriteAllText(DaorisHome.Entry(home, HomeEntry.Plugins, "acme.tools", PluginCatalog.ManifestName), """
+                { "id": "acme.tools", "servers": [
+                    { "name": "tickets", "command": ["tickets"], "to": ["help"], "allow": ["search"], "writes": ["create_issue"] },
+                    { "name": "docs", "command": ["docs"] } ] }
+                """);
+            var catalog = PluginCatalog.Load(home);
+
+            var machine = HelpRoom.Describe(
+                DriverConfig.Empty.WithHelpMode(HelpModes.Full), new Snapshot([], [], []), [], [], _ => null, asks: 0, plugins: catalog,
+                grants: HelpGrants.Read(home, catalog));
+
+            Assert.Equal(["tickets", "docs"], machine.PluginServers.Select(server => server.Server));
+            Assert.Equal(["create_issue"], machine.PluginServers[0].Writes);
+            Assert.Empty(machine.PluginServersWaiting);
+            Assert.Empty(machine.PluginServersOffered);
+        }
+        finally
+        {
+            try { Directory.Delete(home, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
+        }
+    }
+
     /// <summary>The checkouts it may read are the driver's own answer: each readable one, in every workspace.</summary>
     [Fact]
     public void The_checkouts_it_may_read_are_described_from_the_drivers_setting_and_registry()
