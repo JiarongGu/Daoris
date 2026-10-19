@@ -59,7 +59,9 @@ describe.each(['en', 'zh'])('configured access in %s', (language) => {
     expect(within(row('checkouts')).getByText(i18n.t('help.grants.default.inherited'))).toBeInTheDocument();
     expect(within(row('settings')).getByText(i18n.t('help.grants.state.off'))).toBeInTheDocument();
     expect(within(row('shell')).getByText(i18n.t('help.grants.state.later'))).toBeInTheDocument();
-    expect(within(row('shell')).getByText(i18n.t('help.grants.why.shell'))).toBeInTheDocument();
+    // A sentence's backticks are code, never shown as backticks.
+    expect(within(row('shell')).getByText('cd', { selector: 'code' })).toBeInTheDocument();
+    expect(row('shell').textContent).not.toContain('`');
   });
 
   it('opens a grant’s operations from its door, each chosen on its own, and hands each choice up', async () => {
@@ -113,7 +115,9 @@ describe.each(['en', 'zh'])('configured access in %s', (language) => {
     show({ opened: ['checkouts', 'settings'] });
 
     expect(within(row('checkouts')).getAllByRole('checkbox')).toEqual([box('checkouts', 'read')]);
-    expect(within(row('checkouts')).getByText(i18n.t('help.grants.never.checkouts'))).toBeInTheDocument();
+    // Its git commands are code, never shown as backticks.
+    expect(row('checkouts').querySelectorAll('code').length).toBeGreaterThan(0);
+    expect(row('checkouts').textContent).not.toContain('`');
     expect(within(row('settings')).getAllByRole('checkbox')).toEqual(
       ['notify', 'language', 'timeout', 'cap', 'cooloff'].map((setting) => box('settings', setting)),
     );
@@ -135,7 +139,11 @@ describe.each(['en', 'zh'])('configured access in %s', (language) => {
     for (const id of ['browser', 'checkouts'] as const) {
       expect(within(row(id)).getByText(i18n.t('help.grants.state.unavailable'))).toBeInTheDocument();
       expect(within(row(id)).queryByText(i18n.t('help.grants.state.on'))).toBeNull();
-      for (const each of within(row(id)).getAllByRole('checkbox')) expect(each).toBeDisabled();
+      for (const each of within(row(id)).getAllByRole('checkbox')) {
+        expect(each).toBeDisabled();
+        // Its sentence reads as disabled too, not only its box.
+        expect(each.closest('label')!.className).toContain('cursor-not-allowed');
+      }
     }
     expect(within(row('browser')).getByText(i18n.t('help.grants.why.browser', { agent: 'Codex' }))).toBeInTheDocument();
     expect(within(row('checkouts')).getByText(i18n.t('help.grants.why.checkouts', { agent: 'Codex' }))).toBeInTheDocument();
