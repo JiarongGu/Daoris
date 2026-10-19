@@ -65,6 +65,12 @@ export type DriverState = {
   intakeAdapter?: string;
   /** The agent Ask Daoris runs on (HELP1, D89), or "" for none; absent on a shell older than it. */
   helperAdapter?: string;
+  /**
+   * Ask Daoris's access mode as the person chose it (HELPMODE1a2, D183 point 2): `restricted` or `full`, what its next start
+   * reads; a value the page does not know reads as restricted (`helpModeOf`). Absent on a shell older than it, which offers no
+   * choice. A conversation's own mode, the one its start got, is its history row's `mode`.
+   */
+  helpMode?: string;
   /** The Daoris home (D63): the directory every machine-local file lives in. Absent on an older shell. */
   home?: string;
   /**
@@ -350,6 +356,13 @@ export const retryNotice = (quest: string, state: DriverState): [string, Record<
 
 /** Name the agent Ask Daoris runs on, or null for none — `daoris driver helper <agent>|off` (D50, D89). */
 export const useSetHelper = () => useDriverChange<{ adapter: string | null }>('SET_HELPER');
+
+/**
+ * Ask Daoris's access mode, `restricted` or `full` (HELPMODE1b, D183 point 2): the person's press alone, from the panel's chip or
+ * Settings, over the key `daoris-driver help mode` sets (D50). It takes the next start; a conversation running keeps the mode its
+ * start got until it starts again (D183's HELPMODE1a2 note). No proposal names it, so it is no door of Ask Daoris's.
+ */
+export const useSetHelpMode = () => useDriverChange<{ mode: 'restricted' | 'full' }>('SET_HELP_MODE');
 
 /**
  * Which agent answers an ask the declarations leave (INT4b), or null for none — the field `daoris
