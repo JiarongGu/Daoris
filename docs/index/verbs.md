@@ -22,8 +22,8 @@ Each verb is a module of `src/Daoris.Cli/src/cli/`, its row in `COMMANDS` (`src/
 | `import` | management | `cli/import.ts:5` | `service/manage.ts:87` commandImport | [folder] register a folder's subdirectories in one go; safe to |
 | `brainstorm` | management | `cli/brainstorm.ts:5` | `service/brainstorm.ts:53` commandBrainstorm | [verb] a question put to this machine\'s agents (D176), through |
 | `remote` | management | `cli/remote.ts:5` | `service/remotes.ts:90` commandRemote | [verb] this machine's remotes, one per workspace: |
-| `agent` | management | `cli/agent.ts:6` | `agents/toolchain.ts:1622` commandHarness | [verb] this machine's agents — Claude Code, Codex, dsh — and the |
-| `driver` | management | `cli/driver.ts:7` | `driver/driverconfig.ts:1003` commandDriver | [verb] what this machine drives ($DAORIS_HOME/driver.json): |
+| `agent` | management | `cli/agent.ts:6` | `agents/toolchain.ts:1625` commandHarness | [verb] this machine's agents — Claude Code, Codex, dsh — and the |
+| `driver` | management | `cli/driver.ts:7` | `driver/driverconfig.ts:1002` commandDriver | [verb] what this machine drives ($DAORIS_HOME/driver.json): |
 | `plugin` | management | `cli/plugin.ts:5` | `plugins/plugins.ts:1311` commandPlugin | [verb] this machine's plugins ($DAORIS_HOME/plugins/<id>/plugin.json): |
 | `browser` | management | `cli/browser.ts:5` | `browser/browser.ts:316` commandBrowser | [verb] Daoris's browser: its favorites and its settings… |
 | `tool` | management | `cli/tool.ts:7` | `tools/toolinstall.ts:429` commandTool | [verb] the programs Daoris runs beside its agents — Git, Node.js, |
@@ -80,7 +80,7 @@ Routed in `src/Daoris.Devkit/Daoris.Devkit.Cli/Program.cs`.
 
 ## `npm run desktop -- <verb>`
 
-Each a `case` in `tools/desktop.mjs`: `build` 856 · `run` 860 · `restart` 861 · `kill` 865 · `shot` 877 · `eval` 1003 · `click` 1025 · `doctor` 1047.
+Each a `case` in `tools/desktop.mjs`: `build` 858 · `run` 862 · `restart` 863 · `kill` 867 · `shot` 879 · `eval` 1005 · `click` 1027 · `doctor` 1049.
 
 ## npm scripts in `package.json`
 
