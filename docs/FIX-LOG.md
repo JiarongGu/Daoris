@@ -20,6 +20,21 @@ repository.
   none; `ProcessJobTests` and `PseudoConsoleTests` green under `process.runsettings`, and the group that failed green on its
   next run.
 - **Commit:** `1691ba181`
+## 2026-10-19 — Ask Daoris's start waited on its own reading of the whole machine, bounded at 30 seconds (PARALLEL1a)
+
+- **Symptom:** the owner's Ask Daoris message sat `queued` for minutes (HELPSTUCK1); HELPSTUCK1's fix bounded the wait at
+  30 seconds, which the owner refused: "30 s blocking is still blocking" (D181).
+- **Root cause:** the start awaited the module's reading of the machine (`HelpRoutes.HelpMachineAsync`) before writing the room:
+  every repository's line, the session look across every tree, each workspace's history plan and the work inventory, read in
+  turn with git, on every start. The change sources already heard each ref and record move (FABRIC-EVENT2-4); nothing kept
+  what they woke, so every press read again.
+- **Fix:** `MachineFacts` keeps the facts, judged on background tasks on the loop's wakes and at each deadline, read as an
+  immutable snapshot; `HelpFacts` names the room's topics, and the room is written from the snapshot with no git, saying
+  *not read yet* for what is not judged and written again as it lands. The 30-second bound holds only a home with no fact ever
+  judged and no room written. D181's PARALLEL1a note has the rest.
+- **Verify:** `MachineFactsTests`, `HelpFactsTests`, `HelpStartReadTests` (a repository whose judge never answers: the start
+  is at once, its room says it not read yet, and the start's path starts no git), `DriverWatchTopicsTests`' move told and
+  `DriverModuleHelpStartTests` through `START_HELP`, each red first, then green.
 
 ## 2026-10-19 — A start waited on another account's question, and one beside a question in flight was counted (PARALLEL1c)
 

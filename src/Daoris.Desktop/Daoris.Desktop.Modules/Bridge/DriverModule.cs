@@ -81,7 +81,9 @@ public sealed class DriverModule : ModuleBase
     {
         _context = new DriverContext(events, loop, openFolder, pickFile);
         _handlers = [.. Domains.Select(domain => domain.Build(_context))];
-        // Ask Daoris's room as START_HELP writes it, for a conversation going on in it (ASKHIST1).
+        // Ask Daoris's room as START_HELP writes it, for a conversation going on in it (ASKHIST1). Since PARALLEL1a from the facts the
+        // judges keep on the loop: their judges registered here, and the room written again as the facts it said not read yet land.
+        HelpRoutes.KeepFacts(_context);
         loop.DescribeHelp = cancellationToken => HelpRoutes.HelpMachineNowAsync(_context, cancellationToken);
         // A change told from elsewhere (the terminal's press, the loop's own) overtakes the reads under way as this module's
         // presses do (SWEEPFLIGHT1). The bus does not wait for its subscribers, so this is the backstop; a press made here

@@ -548,13 +548,14 @@ public sealed class ChatRunner : IDisposable
     }
 
     /// <summary>
-    /// Run Ask Daoris's conversation placed by <see cref="PlaceHelpAsync"/> (HELPSTART1): the machine read, the room written from
-    /// it, then the agent spawned as any conversation's. A reading or a room that fails ends the record <c>failed</c> saying why,
-    /// so a conversation the person was handed says what became of it rather than waiting at <c>queued</c>. A reading that does
-    /// not answer within <see cref="HelpReadBound"/> (HELPSTUCK1) leaves it to the room as last written, said first in its
-    /// conversation, or with none written before ends it <c>failed</c> saying so (<see cref="ChatHelp.ReadAsync"/>).
+    /// Run Ask Daoris's conversation placed by <see cref="PlaceHelpAsync"/> (HELPSTART1): the room written from the machine as the
+    /// facts the judges keep say it (PARALLEL1a), at once, then the agent spawned as any conversation's. A reading or a room that
+    /// fails ends the record <c>failed</c> saying why, so a conversation the person was handed says what became of it rather than
+    /// waiting at <c>queued</c>. Where no fact was ever judged, the room as last written serves, said first in its conversation;
+    /// with none written before, the first judgement is waited for within <see cref="HelpReadBound"/> (HELPSTUCK1), and past it the
+    /// conversation ends <c>failed</c> saying so (<see cref="ChatHelp.ReadAsync"/>).
     /// </summary>
-    /// <param name="machine">The machine as the room says it; null where it could not be read.</param>
+    /// <param name="machine">The machine as the room says it, from the facts as last judged; null where it could not be read.</param>
     public async Task<ChatStart> RunHelpAsync(
         HelpPlaced placed, DriverConfig config, Func<CancellationToken, Task<HelpMachine?>> machine,
         Func<string, string, Task>? onEnded = null, CancellationToken ct = default)
@@ -570,11 +571,12 @@ public sealed class ChatRunner : IDisposable
             IReadOnlyList<HelpRead> reads;
             try
             {
-                // 🔴 HELPSTUCK1: the reading is waited for within its bound. It walks git across every tree and repository, and on
-                // the owner's loaded machine it did not answer for minutes while this conversation sat at `queued`: nothing said, no
-                // agent started, the person's words held for it. Past the bound, the room as last written serves, said first in
-                // its conversation; with none written before, it ends below saying why.
-                var (read, late) = await _help.ReadAsync(machine, ct).ConfigureAwait(false);
+                // 🔴 HELPSTUCK1, then PARALLEL1a (D181 point 1): the room is the facts the judges keep, as last judged, which answer at
+                // once; a reading of its own walked git across every tree and repository and, on the owner's loaded machine, did not
+                // answer for minutes while this conversation sat at `queued`. Only a home whose facts were never judged waits, and
+                // only where no room was written before, within the bound; else it starts on the room as last written, said first in
+                // its conversation; with none written and no answer in the bound, it ends below saying why.
+                var (read, late, waited) = await _help.ReadAsync(machine, ct).ConfigureAwait(false);
                 if (late && !HelpRoom.Written(_home))
                 {
                     var unread = ChatHelp.NotRead(_help.ReadBound);
@@ -585,12 +587,14 @@ public sealed class ChatRunner : IDisposable
                 if (late)
                 {
                     (room, reads) = (HelpRoom.PathOf(_home), []);
-                    _context.Note(sessionId, ChatHelp.AsWritten(_help.ReadBound));
+                    _context.Note(sessionId, waited ? ChatHelp.AsWritten(_help.ReadBound) : ChatHelp.NotReadYet());
                 }
                 else
                 {
                     var machineRead = read ?? throw new DriverException("this machine could not be read for it: the service is not answering yet");
                     (room, reads) = (HelpRoom.Prepare(_home, machineRead), machineRead.Reads);
+                    // What the facts had not read yet is said first, so the person knows the room may name less than there is.
+                    if (machineRead.NotReadYet.Any) _context.Note(sessionId, ChatHelp.NotReadYet());
                 }
             }
             catch (Exception error)

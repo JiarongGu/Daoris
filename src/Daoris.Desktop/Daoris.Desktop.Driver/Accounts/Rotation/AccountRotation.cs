@@ -66,11 +66,13 @@ public enum WalkStep { Cooling, Refused, SignedOut, Kept, Near, Room, Fewest, La
 /// anything (TOOL6c, §5.2): null is unknown, never spent and never fresh.
 /// </summary>
 /// <remarks>
-/// It holds no weekly reset a limit told (USAGERESET1): that says when a week turns over and not how much of it would lapse,
-/// which only a reading of its use says (<see cref="UsageCurves.Lapsing"/>).
+/// <para>It holds no weekly reset a limit told (USAGERESET1): that says when a week turns over and not how much of it would lapse,
+/// which only a reading of its use says (<see cref="UsageCurves.Lapsing"/>).</para>
+/// <para><see cref="Projected"/> is its use projected to now (USAGEPROBE1), set only for the start's line, which says it as
+/// projected: the walk ranks on <see cref="Said"/> alone, as near and over are a reading's (D130 point 9, D179 point 7).</para>
 /// </remarks>
 public sealed record AccountFacts(
-    int Running = 0, DateTimeOffset? LastStarted = null, long? Chosen = null, AccountSaid? Said = null);
+    int Running = 0, DateTimeOffset? LastStarted = null, long? Chosen = null, AccountSaid? Said = null, AccountProjection? Projected = null);
 
 /// <summary>The step that chose a start's account, and the one that chose it among the rest where the first passed one.</summary>
 public sealed record WalkChoice(WalkStep Step, WalkStep? Rest = null)
@@ -872,12 +874,15 @@ public static class RotationWords
     public static Noted? AccountsSaid(IReadOnlyList<string> accounts, IReadOnlyDictionary<string, AccountFacts> facts, RotationUse use, DateTimeOffset now)
     {
         if (!accounts.Any(account => facts.GetValueOrDefault(account)?.Said is not null)) return null;
-        var each = Joined([.. accounts.Select(account => Account(account, facts.GetValueOrDefault(account)?.Said, use, now))], "; ");
+        var each = Joined([.. accounts.Select(account => Account(account, facts.GetValueOrDefault(account)?.Said, use, now, facts.GetValueOrDefault(account)?.Projected))], "; ");
         return new Noted("What each account said: ", []).Then("", each).Then(".");
     }
 
-    /// <summary>One account in <see cref="Said"/>: its name, how long ago, and what it said, in Daoris's words and by code.</summary>
-    private static Noted Account(string name, AccountSaid? said, RotationUse use, DateTimeOffset now)
+    /// <summary>
+    /// One account in <see cref="Said"/>: its name, how long ago, and what it said, in Daoris's words and by code; and where
+    /// Daoris's own turns since moved its projection (USAGEPROBE1), each window's projected use, said as projected.
+    /// </summary>
+    private static Noted Account(string name, AccountSaid? said, RotationUse use, DateTimeOffset now, AccountProjection? projected = null)
     {
         if (said is null) return Noted.Of(NoteCodes.OpeningSaidNothing, $"`{name}` nothing yet", ("account", name));
 
@@ -905,6 +910,14 @@ public static class RotationWords
         {
             parts.Add(Noted.Of(
                 NoteCodes.OpeningSaidOver, $"over its {over.Window.Window} curve's {Points(over.Curve)}%", ("window", over.Window.Window), ("curve", Points(over.Curve))));
+        }
+        // What it is projected to have used by now, where Daoris's turns since moved it a whole percent (USAGEPROBE1).
+        foreach (var window in (projected?.Windows ?? []).Where(each => each.How == ProjectedBy.Measured && Whole(each.Projected) > Whole(each.Read))
+                     .OrderBy(each => each.Window.ToLowerInvariant() switch { "session" => 0, AccountWindows.Weekly => 1, _ => 2 }))
+        {
+            parts.Add(Noted.Of(
+                NoteCodes.OpeningSaidProjected, $"about {Percent(window.Projected)} of its {window.Window} limit by now, projected from Daoris's turns since",
+                ("projected", Whole(window.Projected)), ("window", window.Window)));
         }
         // A reading with no number, no warning and no credits is its agent's clear word alone.
         if (parts.Count == 0) parts.Add(Noted.Of(NoteCodes.OpeningSaidClear, "clear, by its own word"));

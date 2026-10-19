@@ -257,6 +257,8 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
 
         var entry = new CoolingEntry(agent, profile, seen.Until, seen.Stated, seen.Window, now, session, seen.AssumedZone, seen.NotBelieved);
         AccountCooling.Cool(Home, entry, now);
+        // A limit's sentence is a set point: the account's maker is asked once it is ready again, its reading older (USAGEPROBE1).
+        if (profile is not null) _limitSaid[AccountKey(agent, profile)] = now;
 
         // A weekly reset the agent named is that account's for the weeks after (TOOL6b, D130 §16.3 step 4): a start spends a
         // week about to lapse first. Only a named account's, since the tool's own sign-in is never in a list (D125 §3.7).
@@ -1029,11 +1031,12 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
         var scope = ours ? Walked(named, owner, toolchain) : named;
 
         // Where the agent's door carries none of its windows, its own server is asked them first, for each account of the list
-        // the start could take whose last reading is stale (CODEXUSE1): a start, never a look or a panel, which count nothing.
+        // the start could take that a set point owes a question (CODEXUSE1, USAGEPROBE1): never read, unread for the interval,
+        // projected near its curve, or a limit or a credit said of it. A start, never a look or a panel, which count nothing.
         // Each under its own account's lock and under no gate of the walk's (PARALLEL1c), so another start never waits on them.
         if (counts && picked is null && scope.List.Count > 0)
         {
-            await FreshenAsync(resolved.Name, owner, scope.List, config, ct).ConfigureAwait(false);
+            await FreshenAsync(resolved.Name, owner, scope.List, config, ct, scope.Use).ConfigureAwait(false);
         }
 
         // The first look, before any question: read again under the gate once the questions are asked (PARALLEL1c).
@@ -1225,7 +1228,8 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
         {
             Choice = scope.Use.Use == "goal" && order.Count > 1 ? new AccountChoice(choice.Step, RotationWords.Text(steps)) : null,
             Steps = steps,
-            AccountsSaid = RotationWords.AccountsSaid(walked, facts, scope.Use, now),
+            // A start's line says what was projected (USAGEPROBE1); a panel, which a person waits on, reads no history for it.
+            AccountsSaid = RotationWords.AccountsSaid(walked, counts ? Projected(owner, walked, facts, now) : facts, scope.Use, now),
             Rotated = string.Equals(runs, begins, StringComparison.OrdinalIgnoreCase)
                 ? null
                 : new RotatedStart(begins, passed?.Cooling, steps[0].Text)
@@ -1792,6 +1796,15 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
     // as long as a reading stands before it is asked again.
     private readonly ConcurrentDictionary<string, DateTimeOffset> _usageAsked = new(StringComparer.OrdinalIgnoreCase);
 
+    // When a limit was last said of each account in this process, by owner and account (USAGEPROBE1): a cool-off the person
+    // ended early leaves none in the file to say it.
+    private readonly ConcurrentDictionary<string, DateTimeOffset> _limitSaid = new(StringComparer.OrdinalIgnoreCase);
+
+    // The usage history's last week in memory, read on as it grows (USAGEPROBE1): what each start's projection reads.
+    private UsageLedger? _ledger;
+
+    private UsageLedger Ledger => LazyInitializer.EnsureInitialized(ref _ledger, () => new UsageLedger(Home));
+
     /// <summary>
     /// How this adapter's accounts' windows are asked (CODEXUSE1): its own question, else its owner's, since a door's readings
     /// are its owner's as its accounts are (AGT7). Null asks nothing.
@@ -1815,11 +1828,14 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
     public bool Speaks(string adapter) => WindowsOf(adapter) is not null || UsageOf(adapter) is not null;
 
     /// <summary>
-    /// A start's walk over a list (CODEXUSE1): each account it could take whose last reading is older than
-    /// <see cref="CodexUsage.Fresh"/>, asked at once, each under its own lock, before the walk reads what each said.
+    /// The accounts of a list asked their windows at once, each under its own lock, before the walk reads what each said: each it
+    /// could take whose last reading is older than its question's floor (<see cref="CodexUsage.Fresh"/>, or Claude's
+    /// <see cref="ClaudeUsage.Floor"/>, CODEXUSE1), and, for a start's walk (<paramref name="use"/>), only where a set point owes
+    /// it a question (USAGEPROBE1, <see cref="UsageProjection.Owed"/>).
     /// </summary>
+    /// <param name="use">The start's scope's use, whose curve the projections are measured against; null asks past the floor alone.</param>
     private async Task FreshenAsync(
-        string adapter, string owner, IReadOnlyList<string> list, DriverConfig config, CancellationToken ct)
+        string adapter, string owner, IReadOnlyList<string> list, DriverConfig config, CancellationToken ct, RotationUse? use = null)
     {
         if (UsageOf(adapter) is not { } question) return;
 
@@ -1836,13 +1852,79 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
             return;
         }
 
+        IReadOnlyList<CoolingEntry> offered = use is null ? [] : Offered(now);
         var asking = list
             .Where(account => present.Contains(account, StringComparer.OrdinalIgnoreCase))
             .Where(account => Before(owner, account, now).IsReady && !SaidOut(reads, account))
             .Where(account => !Recent(owner, account, now, question.Fresh))
+            .Where(account => use is null || Owed(owner, account, use, now, offered) is not null)
             .Select(account => AskUsageAsync(adapter, owner, account, config, ct))
             .ToList();
         await Task.WhenAll(asking).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Whether a start owes this account's maker a question now, and why (USAGEPROBE1); null where the walk ranks on what it
+    /// holds. A limit's sentence counts from this process's own hearing or from a cool-off ended within a day.
+    /// </summary>
+    private ProbeWhy? Owed(string owner, string account, RotationUse use, DateTimeOffset now, IReadOnlyList<CoolingEntry> offered)
+    {
+        var said = SaidOf(owner, account, now);
+        DateTimeOffset? limit = _limitSaid.TryGetValue(AccountKey(owner, account), out var heard) ? heard : null;
+        foreach (var ended in offered)
+        {
+            if (string.Equals(ended.Agent, owner, StringComparison.OrdinalIgnoreCase)
+                && string.Equals(ended.Account, account, StringComparison.OrdinalIgnoreCase)
+                && (limit is null || ended.Seen > limit))
+            {
+                limit = ended.Seen;
+            }
+        }
+
+        return UsageProjection.Owed(said, ProjectionOf(owner, account, said, now), use, now, limit);
+    }
+
+    /// <summary>The cool-offs that ended within a day, as the file still holds them; none where it does not read.</summary>
+    private IReadOnlyList<CoolingEntry> Offered(DateTimeOffset now)
+    {
+        try
+        {
+            return AccountCooling.Offered(Home, now);
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+        {
+            return [];
+        }
+    }
+
+    /// <summary>
+    /// An account's windows projected to now (USAGEPROBE1): its last reading plus Daoris's own turns on it since, by its measured
+    /// ratio, read from the usage history in memory; null where it said no number.
+    /// </summary>
+    private AccountProjection? ProjectionOf(string owner, string account, AccountSaid? said, DateTimeOffset now)
+    {
+        if (said is null) return null;
+        var (readings, turns) = Ledger.Of(owner, account, now);
+        return UsageProjection.Of(said, readings, turns, now);
+    }
+
+    /// <summary>
+    /// The walk's facts with each account's projection beside its reading (USAGEPROBE1), for the start's line alone, which says
+    /// it as projected: the walk ranked on the readings.
+    /// </summary>
+    private Dictionary<string, AccountFacts> Projected(
+        string owner, IReadOnlyList<string> accounts, IReadOnlyDictionary<string, AccountFacts> facts, DateTimeOffset now)
+    {
+        var projected = new Dictionary<string, AccountFacts>(facts, StringComparer.OrdinalIgnoreCase);
+        foreach (var account in accounts)
+        {
+            if (projected.GetValueOrDefault(account) is { Said: { } said } known)
+            {
+                projected[account] = known with { Projected = ProjectionOf(owner, account, said, now) };
+            }
+        }
+
+        return projected;
     }
 
     /// <summary>

@@ -11,6 +11,7 @@ import type { OpinionRule } from '../settings/Opinions';
 import type { ReviewLook, ReviewRule } from '../settings/Reviews';
 import type { ReviewShown } from '../work/ReviewChip';
 import { call, refusedNotReady } from './call';
+import { notPushed, pushedOf, readPushed, type SliceSpec, usePushedLive } from './slices';
 
 // The driver's standing state and its dials (MOD3): what this machine drives and holds, what it says
 // when a session parks, how many failures park a quest, which agent answers an ask, and a look now.
@@ -146,25 +147,63 @@ export type DriverState = {
   workspaceHelpers?: { workspace: string; rule: HelperRule }[];
 };
 
+/**
+ * A pushed slice's snapshot, as last judged and read from memory (PUSH1a, D182 point 3): `{ slice, epoch, status, partitions }`,
+ * or nothing for a slice this shell does not push. Every slice's spec reads it here, so the route has one bridge file. A read: it
+ * declares nothing and tells nothing.
+ */
+export const readSlice = (slice: string) => call<unknown>('STATE_SLICE', { slice });
+
+/** The partitions the shell pushes the driver's state in (`DriverStateSlice`), composed in this order. */
+const DRIVER_PARTITIONS = ['shell', 'choices', 'running'] as const;
+
+/**
+ * The driver's state as the shell pushes it (PUSH1a, D182): its standing choices and holds (`choices`), what runs and waits for
+ * review (`running`) and the shell's own standing (`shell`), each pushed whole when it moves, composed into the one entry the
+ * pull answers (`STATE`), whose fields the shell's allow-list picks. A shell older than the push keeps the pull.
+ */
+export const driverSlice: SliceSpec = {
+  name: 'driver',
+  key: keys.driver,
+  read: () => readSlice('driver'),
+  compose: (partitions) => {
+    const parts = DRIVER_PARTITIONS.map((name) => partitions.get(name));
+    if (!parts.every((part) => typeof part === 'object' && part !== null && !Array.isArray(part))) return undefined;
+    return Object.assign({}, ...parts) as DriverState;
+  },
+};
+
 export const useDriver = () => {
   // The same detection path ShellSignals uses — one answer to "is a shell here", not two that can
   // drift. (The kit reads the bridge per render; in the desktop the bridge exists before the page.)
   const { isAvailable } = useShenora();
+  const client = useQueryClient();
+  // Pushed (PUSH1a): read from memory, written by the pushes, so neither a focus nor going stale asks the shell again.
+  const pushed = usePushedLive(driverSlice.name);
   return useQuery({
     queryKey: keys.driver,
-    queryFn: () => call<DriverState>('STATE'),
+    queryFn: () => readPushed(client, driverSlice.name, () => call<DriverState>('STATE')),
     enabled: isAvailable,
+    ...(pushed ? { staleTime: Infinity, refetchOnWindowFocus: false } : {}),
   });
+};
+
+/**
+ * The driver's state a press answered (MOD3), written into this window's cache where the state is pulled. Where it is pushed
+ * (PUSH1a), the push is the one writer, so an answer arriving after a newer push can never set it back.
+ */
+export const writeAnswered = (client: QueryClient, state: DriverState) => {
+  if (!pushedOf(client).live(driverSlice.name)) client.setQueryData(keys.driver, state);
 };
 
 /**
  * Ask again what the driver could not answer before its service was up (LOOK2a): its own answers, all keyed under the
  * driver (its state, which now says ready, the lines, the clean-up's list, which repositories a look takes), and every
  * other query it refused as not ready, such as a session's review or preview. A query refused for a reason of its own
- * keeps its answer.
+ * keeps its answer. The state itself where it is pushed is not asked: its push says it is ready (PUSH1a).
  */
 export const askAgainWhenReady = (client: QueryClient) => {
-  void client.invalidateQueries({ queryKey: keys.driver });
+  void client.invalidateQueries({ queryKey: keys.driver, predicate: notPushed(client) });
   void client.invalidateQueries({ predicate: (query) => refusedNotReady(query.state.error) });
 };
 
@@ -256,7 +295,7 @@ export function useDriverChange<TVariables extends Record<string, unknown>>(type
   const client = useQueryClient();
   return useMutation({
     mutationFn: (variables: TVariables) => call<DriverState>(type, variables),
-    onSuccess: (state) => client.setQueryData(keys.driver, state),
+    onSuccess: (state) => writeAnswered(client, state),
   });
 }
 
