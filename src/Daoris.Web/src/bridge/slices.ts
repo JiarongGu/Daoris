@@ -14,8 +14,12 @@ export type SliceSpec = {
   key: QueryKey;
   /** Its snapshot, as the shell answers it (`readSlice`): a host older than the push refuses it, or answers nothing. */
   read: () => Promise<unknown>;
-  /** The entry's data from the partitions held as judged, or undefined while one it needs is not judged yet. */
-  compose: (partitions: ReadonlyMap<string, unknown>) => unknown;
+  /**
+   * The entry's data from the partitions held as judged, or undefined while one it needs is not judged yet. `judged` says the owner
+   * has judged the slice (its snapshot said so, or a push came): a list judged to have no partition is an empty list (PUSH1d2),
+   * where one not judged yet keeps the pull.
+   */
+  compose: (partitions: ReadonlyMap<string, unknown>, judged: boolean) => unknown;
   /** A delta's data applied to its partition; absent where the slice pushes whole replacements only, and a delta is read again whole. */
   merge?: (held: unknown, delta: unknown, removed: readonly string[]) => unknown;
 };
@@ -30,7 +34,7 @@ type Push = {
   slice: string; epoch: string; partition: string; seq: number; status: string; data: unknown; baseSeq: number | null; removed: string[];
 };
 type Partition = { partition: string; seq: number; status: string; data: unknown };
-type Snapshot = { epoch: string; partitions: Partition[] };
+type Snapshot = { epoch: string; judged: boolean; partitions: Partition[] };
 type Manifest = { slice: string; epoch: string; partitions: { partition: string; seq: number }[] };
 
 type Held = { seq: number; status: string; data: unknown };
@@ -44,6 +48,8 @@ type Slice = {
   mode: 'unknown' | 'live' | 'pull';
   epoch: string | null;
   partitions: Map<string, Held>;
+  /** Whether the owner has judged it in this epoch: its snapshot said `ready`, or a push of it was applied. */
+  judged: boolean;
   /** What was heard before the baseline, applied after it where newer. */
   waiting: Push[];
   asking: Promise<void> | null;
@@ -72,7 +78,11 @@ function partitionOf(value: unknown): Partition | null {
 function snapshotOf(value: unknown, slice: string): Snapshot | null {
   const snapshot = value as Record<string, unknown> | null | undefined;
   if (!snapshot || snapshot.slice !== slice || !named(snapshot.epoch) || !Array.isArray(snapshot.partitions)) return null;
-  return { epoch: snapshot.epoch, partitions: snapshot.partitions.map(partitionOf).filter((each): each is Partition => each !== null) };
+  return {
+    epoch: snapshot.epoch,
+    judged: snapshot.status === READY,
+    partitions: snapshot.partitions.map(partitionOf).filter((each): each is Partition => each !== null),
+  };
 }
 
 function manifestOf(value: unknown): Manifest | null {
@@ -101,7 +111,7 @@ class Pushed {
   /** Read a slice pushed from now: what is heard of it is kept until its snapshot answers. */
   register(spec: SliceSpec) {
     if (!this.slices.has(spec.name)) {
-      this.slices.set(spec.name, { spec, mode: 'unknown', epoch: null, partitions: new Map(), waiting: [], asking: null });
+      this.slices.set(spec.name, { spec, mode: 'unknown', epoch: null, partitions: new Map(), judged: false, waiting: [], asking: null });
     }
   }
 
@@ -128,7 +138,7 @@ class Pushed {
   /** The pushed entry's data from memory, or undefined where the slice is not live or a partition it needs is not judged yet. */
   data(name: string): unknown {
     const slice = this.slices.get(name);
-    return slice?.mode === 'live' ? slice.spec.compose(ready(slice)) : undefined;
+    return slice?.mode === 'live' ? slice.spec.compose(ready(slice), slice.judged) : undefined;
   }
 
   /** Whether `queryKey` is a live slice's own entry, which the pushes write and no broad invalidation asks again. */
@@ -203,7 +213,9 @@ class Pushed {
     if (snapshot.epoch !== slice.epoch) {
       slice.epoch = snapshot.epoch;
       slice.partitions = new Map();
+      slice.judged = false;
     }
+    slice.judged ||= snapshot.judged;
     const judged = new Set(snapshot.partitions.map((each) => each.partition));
     for (const [partition, held] of slice.partitions) {
       // Not in the owner's snapshot: no longer judged, kept by its number so an older push of it changes nothing.
@@ -231,6 +243,7 @@ class Pushed {
     if (held && push.seq <= held.seq) return false;
     if (push.baseSeq === null) {
       slice.partitions.set(push.partition, { seq: push.seq, status: push.status, data: push.status === GONE ? undefined : push.data });
+      slice.judged = true;
       return true;
     }
     // A delta needs its base: a missed one, or a slice that pushes none, is read again whole.
@@ -239,11 +252,12 @@ class Pushed {
       return false;
     }
     slice.partitions.set(push.partition, { seq: push.seq, status: push.status, data: slice.spec.merge(held.data, push.data, push.removed) });
+    slice.judged = true;
     return true;
   }
 
   private write(slice: Slice) {
-    const data = slice.spec.compose(ready(slice));
+    const data = slice.spec.compose(ready(slice), slice.judged);
     if (data !== undefined) this.client.setQueryData(slice.spec.key, data);
   }
 }
@@ -282,6 +296,17 @@ export async function readPushed<T>(client: QueryClient, name: string, pull: () 
  * asks again what is read beneath it and never the pushed entry.
  */
 export const notPushed = (client: QueryClient) => (query: Pick<Query, 'queryKey'>) => !pushedOf(client).feeds(query.queryKey);
+
+/**
+ * A keyed partition's delta applied (PUSH1d2, the shell's `StateSlice.Keyed`): the partition an object of records by key, the delta
+ * the records that moved, `removed` the keys gone. A new object, so what was held is never changed under a reader.
+ */
+export function mergeKeyed(held: unknown, delta: unknown, removed: readonly string[]): Record<string, unknown> {
+  const object = (value: unknown) => (typeof value === 'object' && value !== null && !Array.isArray(value) ? value : {});
+  const merged: Record<string, unknown> = { ...object(held), ...object(delta) };
+  for (const key of removed) delete merged[key];
+  return merged;
+}
 
 /** Whether `name` is live in this window: a pushed entry's query asks nothing on a focus or as it goes stale. */
 export function usePushedLive(name: string): boolean {

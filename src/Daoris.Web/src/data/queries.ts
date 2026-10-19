@@ -1,5 +1,9 @@
-import { keepPreviousData, useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/react-query';
-import { api, type AskAction, HELP_REPOSITORY, type QuestAction, type SetUpRef, type SubmissionRef, type Verdict } from './api';
+import { useCallback } from 'react';
+import { keepPreviousData, useMutation, useQueries, useQuery, useQueryClient, type UseQueryOptions } from '@tanstack/react-query';
+import { notPushed, readPushed, usePushedLive } from '../bridge/slices';
+import {
+  api, type AskAction, HELP_REPOSITORY, type QuestAction, type Session, SESSION_ACTIVE, type SetUpRef, type SubmissionRef, type Verdict,
+} from './api';
 import { useScope } from './scope';
 import { workspaceOf, workspacesOf } from './workspaces';
 
@@ -321,15 +325,67 @@ export const useQuests = (repository: string | null, includeClosed: boolean, ena
   });
 };
 
+/**
+ * The session records the shell pushes (PUSH1d2, D182; its spec is `sessionsSlice` in `bridge/sessions`): the widest list, every
+ * repository, closed included, every workspace, under the key the pull of that list reads, from which each view's list is read.
+ */
+export const SESSIONS_SLICE = 'sessions';
+
+/** The service's own name for a workspace asked of it (`Workspaces.Normalize`), its ASCII letters folded as its `NOCASE` folds them. */
+const circle = (workspace: string) => (workspace.trim() || 'default').replace(/[A-Z]/g, (letter) => letter.toLowerCase());
+
+/**
+ * One view's list read from the widest the shell pushes (PUSH1d2), as the service filters `/api/sessions`: the repository named
+ * exactly, the workspace as the service compares it, the open ones alone unless the closed are asked for, in the order given. The
+ * widest asked for is the list itself.
+ */
+export function sessionsIn(all: Session[], repository: string | null, includeClosed: boolean, workspace: string | null): Session[] {
+  if (repository === null && includeClosed && workspace === null) return all;
+  const named = workspace === null ? null : circle(workspace);
+  return all.filter((session) => (repository === null || session.repository === repository)
+    && (named === null || circle(session.workspace ?? '') === named)
+    && (includeClosed || SESSION_ACTIVE.has(session.state)));
+}
+
+/**
+ * Where the shell pushes the sessions (PUSH1d2), every list is read from the one entry its pushes write, from memory: never stale and
+ * never asked on a focus. Elsewhere (a plain browser, an older shell) each list is the pull it always was, under its own key; and while
+ * a window's first snapshot is on its way, a list asked then waits for it and is read from it, never pulled beside it.
+ */
+function useSessionsRead(
+  repository: string | null, includeClosed: boolean, workspace: string | null,
+): { pushed: boolean; read: UseQueryOptions<Session[], Error, Session[]> } {
+  const client = useQueryClient();
+  const pushed = usePushedLive(SESSIONS_SLICE);
+  const select = useCallback(
+    (all: Session[]) => sessionsIn(all, repository, includeClosed, workspace), [repository, includeClosed, workspace]);
+  return pushed
+    ? {
+      pushed,
+      read: {
+        queryKey: keys.sessions(null, true, null),
+        queryFn: () => readPushed(client, SESSIONS_SLICE, () => api.sessions(null, true, null)),
+        select, staleTime: Infinity, refetchOnWindowFocus: false,
+      },
+    }
+    : {
+      pushed,
+      read: {
+        queryKey: keys.sessions(repository, includeClosed, workspace),
+        queryFn: async ({ signal }) => {
+          const all = await readPushed<Session[] | null>(client, SESSIONS_SLICE, async () => null);
+          return all === null ? api.sessions(repository, includeClosed, workspace, signal) : sessionsIn(all, repository, includeClosed, workspace);
+        },
+      },
+    };
+}
+
 /** Session records are read-only here: the controls act where a driver is attached (D46 §6). */
 /** The sessions in scope; `enabled` false asks nothing, for a reader that needs them only sometimes (a review's title, UX6c). */
 export const useSessions = (repository: string | null, includeClosed: boolean, enabled = true) => {
   const { workspace } = useScope();
-  return useQuery({
-    queryKey: keys.sessions(repository, includeClosed, workspace),
-    queryFn: ({ signal }) => api.sessions(repository, includeClosed, workspace, signal),
-    enabled,
-  });
+  const { read } = useSessionsRead(repository, includeClosed, workspace);
+  return useQuery({ ...read, enabled });
 };
 
 /**
@@ -354,12 +410,11 @@ export const useHelpSessions = (
    * to a window with no bus. False asks only when the list is stale.
    */
   refetchInterval: number | false = false,
-) =>
-  useQuery({
-    queryKey: keys.sessions(HELP_REPOSITORY, true, null),
-    queryFn: ({ signal }) => api.sessions(HELP_REPOSITORY, true, null, signal),
-    refetchInterval,
-  });
+) => {
+  // Pushed (PUSH1d2): its record's every move is pushed, so it is never asked again on a clock.
+  const { pushed, read } = useSessionsRead(HELP_REPOSITORY, true, null);
+  return useQuery({ ...read, refetchInterval: pushed ? false : refetchInterval });
+};
 
 /**
  * How a view asks a knowledge read (FRAME1f): only while it is in front, since the application holds Search and
@@ -464,7 +519,8 @@ function useReviewChange<TVariables>(fn: (variables: TVariables) => Promise<Ques
       void client.invalidateQueries({ queryKey: keys.allQuests });
       void client.invalidateQueries({ queryKey: keys.allAsks });
       void client.invalidateQueries({ queryKey: keys.allLandings });
-      void client.invalidateQueries({ queryKey: keys.allSessions });
+      // What is read under the sessions' key, but the records where the shell pushes them (PUSH1d2): their pushes write them.
+      void client.invalidateQueries({ queryKey: keys.allSessions, predicate: notPushed(client) });
     },
   });
 }
@@ -526,7 +582,8 @@ export const useAnswerSession = () => {
     mutationFn: ({ id, answer }: { id: string; answer: string | null }) => api.answerSession(id, answer),
     onSuccess: () => {
       invalidate();
-      void client.invalidateQueries({ queryKey: keys.allSessions });
+      // The record's move is pushed where the shell pushes the sessions (PUSH1d2): the service's change stream tells it.
+      void client.invalidateQueries({ queryKey: keys.allSessions, predicate: notPushed(client) });
     },
   });
 };

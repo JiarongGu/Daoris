@@ -24,7 +24,7 @@ public sealed class HelpDeleteProposals : IHelpProposalKind
         var quests = await service.EveryQuestAsync(ct).ConfigureAwait(false);
         var asks = await service.EveryAskAsync(ct).ConfigureAwait(false);
         return (
-            [.. quests.Select(quest => new HelpQuestFacts(quest.Id, quest.Title, quest.To, quest.Status, quest.Deletable))],
+            [.. quests.Select(quest => new HelpQuestFacts(quest.Id, quest.Title, quest.To, quest.Status, quest.Deletable, quest.Workspace))],
             [.. asks.Select(ask => new HelpAskFacts(ask.Id, ask.Sentence, ask.Workspace, ask.State, ask.Quests, ask.Deletable))]);
     }
 
@@ -34,6 +34,22 @@ public sealed class HelpDeleteProposals : IHelpProposalKind
 
     // SESSUX1h2b: a session's delete, which D126 §7.3 gave this kind rather than the `session` kind.
     public IReadOnlyList<string> Doors { get; } = ["quest", "ask", "session"];
+
+    /// <summary>ASKSCOPE1c2: the quest, the ask or the session it names by id, filed under the workspace its record says.</summary>
+    HelpNames IHelpProposalKind.Named(HelpProposal proposal, HelpMachineFacts facts)
+    {
+        var id = proposal.Target?.Trim().TrimStart('#') ?? "";
+        return new([proposal.Workspace], [proposal.Repository])
+        {
+            Records = proposal.Door switch
+            {
+                "quest" => HelpNames.OfQuest(facts, id),
+                "ask" => HelpNames.OfAsk(facts, id),
+                "session" => HelpNames.OfSession(facts, id),
+                _ => [],
+            },
+        };
+    }
 
     public HelpPlan Plan(HelpProposal proposal, DriverConfig config, HelpMachineFacts facts)
     {
@@ -181,7 +197,11 @@ public sealed class HelpDeleteProposals : IHelpProposalKind
 
 /// <summary>A quest as the service answered it, with its own reading of whether it may be deleted (D95).</summary>
 /// <param name="Status">`Open`, `Taken`, `Done` or `Declined`, as the service spells it.</param>
-public sealed record HelpQuestFacts(string Id, string Title, string To, string Status, bool Deletable);
+/// <param name="Workspace">
+/// The circle it is held in (D48), as the service answered it, the default where a host answers none: what a conversation bound to
+/// one workspace judges a proposal naming it by (ASKSCOPE1c2).
+/// </param>
+public sealed record HelpQuestFacts(string Id, string Title, string To, string Status, bool Deletable, string Workspace = RemoteTarget.DefaultWorkspace);
 
 /// <summary>An ask as the service answered it, with the quests it became and whether it may be deleted (D95).</summary>
 public sealed record HelpAskFacts(string Id, string Sentence, string Workspace, string State, IReadOnlyList<string> Quests, bool Deletable);

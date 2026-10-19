@@ -77,6 +77,13 @@ export type SessionGrouping = {
    * *Discard*, unforced. Never beside `lands`. Absent where it offers none, and on a host older than the fact.
    */
   discards?: DiscardOffer | null;
+  /**
+   * The call a working session's agent is inside, as the driver heard it from the session's events (WAITSAY1b, D152's UX7c
+   * amendment): its title, and when it began by the driver's clock, a call begun before this window opened among them. Its
+   * row and its head say *running … for …*. Held in the driver's memory, never the record; null where none is open, and
+   * absent on a host older than the fact.
+   */
+  calling?: { title: string; since: string } | null;
 };
 
 /** What an ended session's tree offers to land (LAND4): the driver's `LandOffer`, as `SESSION_GROUPS` answers it. */

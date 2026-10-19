@@ -22,6 +22,18 @@ internal sealed class HelpAcceptProposals : IHelpProposalKind
 
     public IReadOnlyList<string> Doors { get; } = ["accept"];
 
+    /// <summary>ASKSCOPE1c2: the quest it names by id, filed under the workspace the service answers for it.</summary>
+    public HelpNames Named(HelpProposal proposal, HelpMachineFacts facts)
+    {
+        var id = proposal.Target?.Trim().TrimStart('#') ?? "";
+        return new([proposal.Workspace], [proposal.Repository])
+        {
+            Records = facts.QuestRecords.FirstOrDefault(each => string.Equals(each.Id, id, StringComparison.OrdinalIgnoreCase)) is { } quest
+                ? [HelpNames.Quest(quest.Id, quest.Workspace)]
+                : [],
+        };
+    }
+
     public HelpPlan Plan(HelpProposal proposal, DriverConfig config, HelpMachineFacts facts)
     {
         var id = proposal.Target?.Trim().TrimStart('#') ?? "";

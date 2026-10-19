@@ -363,6 +363,15 @@ export type SessionState =
   | 'queued' | 'starting' | 'working' | 'awaiting-person'
   | 'completed' | 'declined' | 'stood-down' | 'failed' | 'stopped';
 /**
+ * Which states still hold their repository — the wire half of `Session.Active`, exhaustive here for
+ * the reason the tone map is: the rail, the quest card and the attention band all ask it, and a set
+ * spelled out three times acquires a tenth state in two of them. Spelled beside the states, so the
+ * sessions' query reads the open ones from a pushed list as the service does (PUSH1d2); `design/ui`
+ * says it again for the views.
+ */
+export const SESSION_ACTIVE: ReadonlySet<SessionState> =
+  new Set<SessionState>(['queued', 'starting', 'working', 'awaiting-person']);
+/**
  * A session's RECORD (D46) — the process lives on the driving machine, never here.
  *
  * `kind` is how it was entered (D49 §3): the driver planned a `driven` one from a quest, a person

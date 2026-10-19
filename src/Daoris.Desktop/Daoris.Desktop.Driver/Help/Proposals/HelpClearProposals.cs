@@ -37,9 +37,30 @@ internal sealed class HelpClearProposals : IHelpProposalKind
 
     public IReadOnlyList<string> Doors { get; } = ["quest", "ask", "failed", "workspace"];
 
-    /// <summary>ASKSCOPE1c: a workspace's clear names the workspace as its target; a quest's or an ask's names a record by id.</summary>
+    /// <summary>
+    /// ASKSCOPE1c: a workspace's clear names the workspace as its target. ASKSCOPE1c2: a quest's, an ask's and a closed quest's
+    /// failed sessions' name a record by id, filed under the workspace the plan read for it says.
+    /// </summary>
     public HelpNames Named(HelpProposal proposal, HelpMachineFacts facts) =>
-        new([proposal.Workspace, proposal.Door == "workspace" ? proposal.Target : null], [proposal.Repository]);
+        new([proposal.Workspace, proposal.Door == "workspace" ? proposal.Target : null], [proposal.Repository])
+        {
+            Records = UnitOf(proposal, facts) is { } unit
+                ? [unit.Kind == HistoryKinds.Ask ? HelpNames.Ask(unit.Id, unit.Workspace) : HelpNames.Quest(unit.Id, unit.Workspace)]
+                : [],
+        };
+
+    /// <summary>ASKSCOPE1c2: the unit a quest's, an ask's or a failed clear names, as <see cref="OnePlan"/> finds it; null for none.</summary>
+    private static HistoryUnitPlan? UnitOf(HelpProposal proposal, HelpMachineFacts facts)
+    {
+        HistoryScope? scope = proposal.Door switch { "quest" => HistoryScope.Quest, "ask" => HistoryScope.Ask, "failed" => HistoryScope.Failed, _ => null };
+        if (scope is not { } named) return null;
+        var id = proposal.Target?.Trim().TrimStart('#').Trim() ?? "";
+        return facts.History.FirstOrDefault(plan => plan.Scope == named && string.Equals(plan.Id, id, StringComparison.OrdinalIgnoreCase))?
+            .Units.FirstOrDefault(unit => unit.Kind == KindOf(named) && string.Equals(unit.Id, id, StringComparison.OrdinalIgnoreCase));
+    }
+
+    private static string KindOf(HistoryScope scope) =>
+        scope switch { HistoryScope.Ask => HistoryKinds.Ask, HistoryScope.Failed => HistoryKinds.Failed, _ => HistoryKinds.Quest };
 
     public HelpProposal Read(HelpProposal proposal, JsonElement file)
     {
@@ -116,7 +137,7 @@ internal sealed class HelpClearProposals : IHelpProposalKind
     /// </summary>
     private static HelpPlan OnePlan(HistoryScope scope, string id, HistoryPlan? read, IReadOnlyList<HistoryUnitName>? held)
     {
-        var kind = scope switch { HistoryScope.Ask => HistoryKinds.Ask, HistoryScope.Failed => HistoryKinds.Failed, _ => HistoryKinds.Quest };
+        var kind = KindOf(scope);
         var unit = read?.Units.FirstOrDefault(each => each.Kind == kind && string.Equals(each.Id, id, StringComparison.OrdinalIgnoreCase));
         if (unit is null) return Refused($"there is no {(scope == HistoryScope.Ask ? "ask" : "quest")} `#{id}` on this machine.");
         if (unit.Keep is { Word: HistoryWords.Unknown } unknown) return Refused(unknown.Message);

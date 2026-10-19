@@ -30,6 +30,27 @@ internal sealed class HelpPauseProposals : IHelpProposalKind
 
     public IReadOnlyList<string> Doors { get; } = ["pause", "resume"];
 
+    /// <summary>
+    /// ASKSCOPE1c2: the ask or the quest it names by id, filed under the workspace its work's record says: the ask as the service
+    /// answered it, or the quest named. A pause whose work has gone names none.
+    /// </summary>
+    public HelpNames Named(HelpProposal proposal, HelpMachineFacts facts)
+    {
+        var id = proposal.Target?.Trim().TrimStart('#').Trim() ?? "";
+        var records = new List<(string Said, string? Workspace)>();
+        foreach (var scope in Kinds(proposal))
+        {
+            var work = WorkOf(facts, scope, id);
+            if (scope == WorkScope.Ask && work?.Ask is { } ask) records.Add(HelpNames.Ask(ask.Id, ask.Workspace));
+            if (scope == WorkScope.Quest && work?.Pieces.Quests.FirstOrDefault(quest => quest.Joined == WorkJoin.Named) is { } named)
+            {
+                records.Add(HelpNames.Quest(named.Quest.Id, named.Quest.Workspace));
+            }
+        }
+
+        return new([proposal.Workspace], [proposal.Repository]) { Records = records };
+    }
+
     public HelpPlan Plan(HelpProposal proposal, DriverConfig config, HelpMachineFacts facts)
     {
         static HelpPlan Refused(string why) => new(why, "", "", null);
@@ -46,13 +67,7 @@ internal sealed class HelpPauseProposals : IHelpProposalKind
 
         var pause = proposal.Door == "pause";
         // A resume also finds a pause whose ask or quest has gone: the pause is this machine's, and only Resume takes it away.
-        // The box says which was named (PAUSE1f-c); a file from before it, or a word that is neither, is left to the lookup.
-        var kinds = proposal.Value?.Trim().ToLowerInvariant() switch
-        {
-            "ask" => [WorkScope.Ask],
-            "quest" => [WorkScope.Quest],
-            _ => new[] { WorkScope.Ask, WorkScope.Quest },
-        };
+        var kinds = Kinds(proposal);
         var found = kinds
             .Select(scope => (Scope: scope, Work: WorkOf(facts, scope, id)))
             .Where(each => each.Work is not null || (!pause && WorkPausing.Entry(config, each.Scope, id) is not null))
@@ -198,6 +213,17 @@ internal sealed class HelpPauseProposals : IHelpProposalKind
             : $"`#{stay.Quest}` stays paused with {What(stay.By)}: `{stay.By.Door}` resumes it."));
         return new HelpPlan(null, string.Join(' ', said), work.Door, null) { Pause = work };
     }
+
+    /// <summary>
+    /// Which it names: the box says (PAUSE1f-c); a file from before it, or a word that is neither, is left to the lookup, as an
+    /// ask's or a quest's.
+    /// </summary>
+    private static WorkScope[] Kinds(HelpProposal proposal) => proposal.Value?.Trim().ToLowerInvariant() switch
+    {
+        "ask" => [WorkScope.Ask],
+        "quest" => [WorkScope.Quest],
+        _ => [WorkScope.Ask, WorkScope.Quest],
+    };
 
     /// <summary>The work of this scope and id among the facts, matched in any case, or null where this machine has none.</summary>
     private static WorkPlan? WorkOf(HelpMachineFacts facts, WorkScope scope, string id) =>
