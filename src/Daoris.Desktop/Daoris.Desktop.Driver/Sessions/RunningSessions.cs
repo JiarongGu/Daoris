@@ -77,6 +77,44 @@ public sealed class RunningSessions
         lock (_gate) _opinions.Remove(key);
     }
 
+    /// <summary>
+    /// Whether a run of this loop holds <paramref name="key"/>'s claim now (PARALLEL1g): an opinion's judgment beside the looks reads it
+    /// before the gate, and finds no pass owed while one is in flight, whose end the next judgment reads.
+    /// </summary>
+    internal bool OpinionHeld(string key)
+    {
+        lock (_gate) return _opinions.Contains(key);
+    }
+
+    /// <summary>The facts the judges beside the looks keep for the plan (PARALLEL1g, D181 point 3), shared across the looks as the runs are.</summary>
+    internal LookFacts Facts { get; } = new();
+
+    // A judgment beside the looks moved a fact the plan reads since the last look took it (PARALLEL1g).
+    private bool _factsMoved;
+
+    /// <summary>
+    /// A judgment beside the looks moved a fact the plan reads (PARALLEL1g): a chain it held or let go, an ask it read. Wakes a wait as an
+    /// ending does, so the plan reads it at once; a judgment that moved nothing wakes nothing, so a hold never spins the loop.
+    /// </summary>
+    internal void FactsMoved()
+    {
+        TaskCompletionSource moved;
+        lock (_gate)
+        {
+            _factsMoved = true;
+            moved = _moved;
+            _moved = NewSignal();
+        }
+
+        moved.TrySetResult();
+    }
+
+    /// <summary>Taken by the look that reads the facts, before it reads them: one that moves after is the next look's.</summary>
+    internal void TakeFactsMoved()
+    {
+        lock (_gate) _factsMoved = false;
+    }
+
     // The starts of this loop's not yet open (PARALLEL1b), each reserved by the look that began it until its record opens or it comes
     // to nothing; and what a start came to after the look that began it let go of it, for a later look's report.
     private readonly List<StartReservation> _reserved = [];
@@ -418,8 +456,8 @@ public sealed class RunningSessions
     }
 
     /// <summary>
-    /// Completes once an ending waits to be reported, or the claims a sync beside the looks may have moved wait to be asked
-    /// (PARALLEL1b) — at once when one already does.
+    /// Completes once an ending waits to be reported, the claims a sync beside the looks may have moved wait to be asked
+    /// (PARALLEL1b), or a judgment beside them moved a fact the plan reads (PARALLEL1g) — at once when one already does.
     /// </summary>
     public async Task EndedAsync(CancellationToken ct = default)
     {
@@ -428,7 +466,7 @@ public sealed class RunningSessions
             Task moved;
             lock (_gate)
             {
-                if (_ended.Count > 0 || _claimsDue || _came.Any(came => came.Opened)) return;
+                if (_ended.Count > 0 || _claimsDue || _factsMoved || _came.Any(came => came.Opened)) return;
                 moved = _moved.Task;
             }
 
