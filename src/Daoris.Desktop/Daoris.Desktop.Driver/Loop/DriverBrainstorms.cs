@@ -149,13 +149,19 @@ internal sealed class DriverBrainstorms(LoopContext context, Driver driver)
         {
             try
             {
-                return [await _driver.Stages.TimeAsync("freeze", () => freeze(token), $"{kind}:{id}", beside: true).ConfigureAwait(false)];
+                var said = await _driver.Stages.TimeAsync("freeze", () => freeze(token), $"{kind}:{id}", beside: true).ConfigureAwait(false);
+                _context.Runs.Facts.Judged($"freeze/{kind}:{id}");
+                return [said];
             }
             catch (Exception error) when (error is HttpRequestException or DriverException or JsonException or IOException
                                               or UnauthorizedAccessException
                                               || (error is OperationCanceledException && !token.IsCancellationRequested))
             {
-                return [$"{kind} `{id}` could not be looked at this look, and is looked at again at the next: {error.Message}"];
+                // Said once until it is frozen (PARALLEL1b2): its line wakes the next look, which asks it again, so a freeze that keeps
+                // failing would spin the loop (LookFacts.Failed).
+                return _context.Runs.Facts.Failed($"freeze/{kind}:{id}")
+                    ? [$"{kind} `{id}` could not be looked at this look, and is looked at again at the next: {error.Message}"]
+                    : [];
             }
         }, ct);
 

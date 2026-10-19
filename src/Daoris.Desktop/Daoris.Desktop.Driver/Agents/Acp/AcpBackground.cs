@@ -73,11 +73,14 @@ internal sealed class AcpBackground
     }
 
     /// <summary>The work still running, by its names, in the order it was announced.</summary>
-    public IReadOnlyList<string> Running
+    public IReadOnlyList<string> Running => RunningWork.Select(work => work.Name).ToList();
+
+    /// <summary>The work still running, by id and name, read at once (BGWAIT2d): what a note names, held before any wait that work may end during.</summary>
+    public IReadOnlyList<(string Id, string Name)> RunningWork
     {
         get
         {
-            lock (_gate) return [.. _work.Where(work => work.State is null).Select(work => work.Name)];
+            lock (_gate) return [.. _work.Where(work => work.State is null).Select(work => (work.Id, work.Name))];
         }
     }
 
@@ -89,13 +92,16 @@ internal sealed class AcpBackground
     /// said it all ended, and what the agent said after it, a woken turn's end among it, was read before the stream's end. An
     /// ending the wire said before the stream's end is an ending, whichever of the two this wait sees first (BGWAIT2c).
     /// </summary>
-    public async Task<IReadOnlyList<(string Name, string State)>?> EndedAsync(Task ended, CancellationToken ct)
+    public async Task<IReadOnlyList<(string Name, string State)>?> EndedAsync(
+        Task ended, CancellationToken ct, IEnumerable<string>? announced = null)
     {
         HashSet<string> watched;
         int since;
         lock (_gate)
         {
-            watched = [.. _work.Where(work => work.State is null).Select(work => work.Id)];
+            // 🔴 BGWAIT2d: what the caller read as running before it awaited anything is watched too, so work that ended meanwhile
+            // is still named by its ending, never left out of it.
+            watched = [.. _work.Where(work => work.State is null).Select(work => work.Id), .. announced ?? []];
             since = _work.Count;
         }
 
