@@ -1,7 +1,7 @@
 import { type InfiniteData, type QueryClient, useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useShenora } from '@shenora/react';
 import { keys } from '../data/queries';
-import { type HelpListing, joinPages, listingPage } from '../help/history';
+import { type HelpListing, joinPages, listingPage, sameWorkspace } from '../help/history';
 import type { HelpProposal } from '../help/ProposalCard';
 import type { HelpPlace } from '../help/places';
 import { call, pressBound } from './call';
@@ -20,14 +20,22 @@ import { usePollUnlessTold } from './published';
  * after, and the words said to it meanwhile wait as its queue, opening. A driver before it answers once it runs.
  *
  * Its route publishes the sessions it opened one among, and the state hub asks them again in every window (STATEHUB1h, D169).
+ *
+ * The press names the workspace its conversation is in (ASKSCOPE1d, D158's ASKSCOPE1 note, point 1): the caller reads the
+ * window's at the press and hands it here, so a window that changes workspace while the start is under way moves nothing. None
+ * is today's start, `default`'s, which the panel sends only where the machine holds no other workspace to choose.
  */
 export const useStartHelp = () =>
   useMutation({
-    mutationFn: () => call<{ sessionId: string | null; message: string; running?: boolean; starting?: boolean }>('START_HELP'),
+    mutationFn: (workspace?: string) => call<{ sessionId: string | null; message: string; running?: boolean; starting?: boolean }>(
+      'START_HELP', workspace ? { workspace } : undefined),
   });
 
-/** Which Ask Daoris conversation waits unseen for the person's first words, and which have had theirs. */
-type HelpReadied = { readied: string | null; spoken: string[] };
+/**
+ * Which Ask Daoris conversation waits unseen for the person's first words, and which have had theirs; and, since ASKSCOPE1d, the
+ * workspace each was opened ahead in, so one opened in another workspace never takes this one's words.
+ */
+type HelpReadied = { readied: string | null; spoken: string[]; workspaces?: Record<string, string> };
 const NOTHING_READIED: HelpReadied = { readied: null, spoken: [] };
 
 /**
@@ -50,10 +58,27 @@ export const useHelpReadied = () => {
   });
   const change = (next: (was: HelpReadied) => HelpReadied) =>
     client.setQueryData<HelpReadied>(keys.helpReadied, (was) => next(was ?? NOTHING_READIED));
+  const held = data ?? NOTHING_READIED;
+  const opened = held.workspaces ?? {};
+  const unspoken = [...new Set([...(held.readied ? [held.readied] : []), ...Object.keys(opened)])]
+    .filter((id) => !held.spoken.includes(id));
   return {
-    readied: data?.readied ?? null,
-    /** Opened ahead: kept unseen until spoken in, unless it has been already. */
-    ready: (id: string) => change((was) => (was.spoken.includes(id) ? was : { ...was, readied: id })),
+    readied: held.readied,
+    /**
+     * The conversation opened ahead in `workspace` that nobody has spoken in (ASKSCOPE1d), or null: the newest where it is that
+     * workspace's, else an earlier one that is. One opened ahead with no workspace said is any workspace's, as before.
+     */
+    readiedIn: (workspace: string): string | null => {
+      const fits = (id: string) => opened[id] === undefined || sameWorkspace(opened[id], workspace);
+      if (held.readied && !held.spoken.includes(held.readied) && fits(held.readied)) return held.readied;
+      return unspoken.filter((id) => opened[id] !== undefined && fits(id)).at(-1) ?? null;
+    },
+    /** Every conversation opened ahead that nobody has spoken in, whatever its workspace: none is shown as a workspace's newest. */
+    unspoken,
+    /** Opened ahead in `workspace`: kept unseen until spoken in, unless it has been already. */
+    ready: (id: string, workspace?: string) => change((was) => (was.spoken.includes(id) ? was : {
+      ...was, readied: id, ...(workspace === undefined ? {} : { workspaces: { ...was.workspaces, [id]: workspace } }),
+    })),
     /** The person's words went to it: seen from now on. */
     spoke: (id: string) => change((was) => ({
       readied: was.readied === id ? null : was.readied,
@@ -144,13 +169,18 @@ const joined = (data: InfiniteData<HelpListing, number>): HelpListing => joinPag
  * An offset points into one order, which a change moves (D158's ASKHIST1d1 note). Asked again, an infinite query asks from
  * offset 0 and takes each next offset from the page it just read, as many pages as it held, so the rows after a change are read
  * in the new order, not half in the old. The first ask is the one a driver before pages took: no offset.
+ *
+ * `workspace` is whose conversations (ASKSCOPE1d, D158's ASKSCOPE1 note, point 6): that workspace's, searched and counted by the
+ * driver before it takes a page, or every workspace's for null. It is part of the key, so one scope's pages never answer
+ * another's.
  */
-export const useHelpConversations = (search: string, enabled = true) => {
+export const useHelpConversations = (search: string, enabled = true, workspace: string | null = null) => {
   const { isAvailable } = useShenora();
   const words = search.trim();
   return useInfiniteQuery({
-    queryKey: [...HISTORY, words],
+    queryKey: [...HISTORY, workspace ?? '*', words],
     queryFn: async ({ pageParam }) => listingPage(await call<unknown>('HELP_CONVERSATIONS', {
+      ...(workspace ? { workspace } : {}),
       ...(words ? { q: words } : {}),
       ...(pageParam > 0 ? { offset: pageParam } : {}),
     })),
@@ -249,11 +279,13 @@ export const usePinHelp = () =>
 
 /**
  * A new Ask Daoris conversation from an earlier one's words (ASKHIST1): the driver opens it as it opens any, setting aside the
- * one running, and hands it the earlier one's transcript with the person's first message.
+ * one running, and hands it the earlier one's transcript with the person's first message. It is opened in the workspace the
+ * window shows at the press (ASKSCOPE1d), whatever the earlier one's was; none is `default`'s, as `useStartHelp`'s.
  */
 export const useHelpStartFrom = () =>
   useMutation({
-    mutationFn: (id: string) => call<{ sessionId: string | null; message: string; from: string }>('HELP_START_FROM', { id }),
+    mutationFn: ({ id, workspace }: { id: string; workspace?: string }) =>
+      call<{ sessionId: string | null; message: string; from: string }>('HELP_START_FROM', workspace ? { id, workspace } : { id }),
   });
 
 /**

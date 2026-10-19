@@ -29,6 +29,12 @@ public sealed record HelpVerbAsk(string Verb)
     /// <summary>A listing's <c>--limit</c>: the most its page holds, or null for <see cref="HelpConversations.PageLimit"/>.</summary>
     public int? Limit { get; init; }
 
+    /// <summary>A listing's <c>--workspace</c> (ASKSCOPE1d): the workspace whose conversations it lists, or null for every one's.</summary>
+    public string? Workspace { get; init; }
+
+    /// <summary>A listing's <c>--all</c> (ASKSCOPE1d): every workspace's, said outright, as a listing that names none is.</summary>
+    public bool All { get; init; }
+
     /// <summary>A rename's <c>--clear</c>: its first question is its title again.</summary>
     public bool Clear { get; init; }
 
@@ -55,7 +61,7 @@ public static class HelpCommand
 {
     public const string Usage =
         """
-        usage: daoris-driver help list [--search "…"] [--json] [--offset <n>] [--limit <n>]
+        usage: daoris-driver help list [--search "…"] [--json] [--offset <n>] [--limit <n>] [--workspace <name> | --all]
                daoris-driver help resume <id> "…" [--file <path>]…
                daoris-driver help rename <id> "…" | --clear  ·  help pin <id>  ·  help unpin <id>
                daoris-driver help delete <id> [--yes]
@@ -66,9 +72,15 @@ public static class HelpCommand
     public static IReadOnlySet<string> Verbs { get; } =
         new HashSet<string>(StringComparer.Ordinal) { "list", "resume", "rename", "pin", "unpin", "delete", "mode" };
 
-    /// <summary>The fields of a conversation in <c>--json</c>, in order: <c>HELP_CONVERSATIONS</c>' row, field for field.</summary>
+    /// <summary>
+    /// The fields of a conversation in <c>--json</c>, in order: <c>HELP_CONVERSATIONS</c>' row, field for field. ASKSCOPE1d added
+    /// <c>workspace</c>, the one it started in, after <c>mode</c>.
+    /// </summary>
     public static IReadOnlyList<string> JsonFields { get; } =
-        ["session", "title", "name", "opening", "about", "created", "last", "pinned", "live", "mode", "resumable", "from", "handed", "found", "foundLine"];
+    [
+        "session", "title", "name", "opening", "about", "created", "last", "pinned", "live", "mode", "workspace", "resumable", "from",
+        "handed", "found", "foundLine",
+    ];
 
     /// <summary>
     /// How much of a conversation's line the terminal's listing shows (ASKHIST1d). The terminal shows it raw, so it cuts it to a
@@ -187,6 +199,20 @@ public static class HelpCommand
                 case "--limit":
                     problem = $"`--limit` takes how many a page holds: a whole number from 1 to {HelpConversations.PageLimit}.";
                     return null;
+                // ASKSCOPE1d: one workspace's, or every one's; never both, and each said once.
+                case "--workspace" or "--all" when ask.Workspace is not null || ask.All:
+                    problem = "`help list` takes one of `--workspace <name>` and `--all`, once.";
+                    return null;
+                case "--workspace" when at + 1 < rest.Count && !rest[at + 1].StartsWith('-') && rest[at + 1].Trim() is { Length: > 0 } workspace:
+                    ask = ask with { Workspace = workspace };
+                    at++;
+                    break;
+                case "--workspace":
+                    problem = "`--workspace` takes one workspace's name.";
+                    return null;
+                case "--all":
+                    ask = ask with { All = true };
+                    break;
                 default:
                     problem = $"`{rest[at]}` is not a word `help list` takes.";
                     return null;
@@ -216,8 +242,9 @@ public static class HelpCommand
         var events = new SessionEvents(DaorisHome.Entry(world.Home, HomeEntry.Sessions));
         if (ask.Verb == "list")
         {
+            // ASKSCOPE1d: the workspace named, or every one's; a terminal stands in no workspace, so naming none is every one's.
             var listing = new HelpConversations(world.Home).List(
-                records, events, resumes, ask.Search, ask.Offset, ask.Limit ?? HelpConversations.PageLimit);
+                records, events, resumes, ask.Search, ask.Offset, ask.Limit ?? HelpConversations.PageLimit, ask.Workspace);
             output.WriteLine(ask.Json ? Json(listing) : Listed(listing, ask, DateTimeOffset.UtcNow));
             return 0;
         }
@@ -282,14 +309,22 @@ public static class HelpCommand
     /// The listing in the terminal's words: each conversation's id, when it was last spoken in, its title and marks, then its line;
     /// and, for a page that does not hold them all, which it holds of how many and the words that list the next.
     /// </summary>
+    /// <remarks>
+    /// ASKSCOPE1d, row for row the panel's: a listing of every workspace's labels each row with its workspace, last among its
+    /// marks, as the panel's *All workspaces* does; one workspace's says it where it holds none, and the next page's words keep it.
+    /// </remarks>
     internal static string Listed(HelpListing listing, HelpVerbAsk ask, DateTimeOffset now)
     {
         var search = ask.Search;
+        var circle = ask.Workspace;
         if (listing.Conversations.Count == 0)
         {
             return listing.Total > 0 ? $"help: the list holds {listing.Total}, so none from {ask.Offset + 1} on."
-                : search is { Length: > 0 } words ? $"help: no Ask Daoris conversation on this machine holds “{words}”."
-                : "help: Ask Daoris has no conversations on this machine yet.";
+                : search is { Length: > 0 } words ? circle is null
+                    ? $"help: no Ask Daoris conversation on this machine holds “{words}”."
+                    : $"help: no Ask Daoris conversation in the workspace `{circle}` holds “{words}”."
+                : circle is null ? "help: Ask Daoris has no conversations on this machine yet."
+                : $"help: Ask Daoris has no conversations in the workspace `{circle}` yet; `--all` lists every workspace's.";
         }
 
         var text = new StringBuilder();
@@ -302,6 +337,7 @@ public static class HelpCommand
             // The mode it ran under (HELPMODE1a2): full access marked, restricted, the default, not.
             if (row.Mode == HelpModes.Full) marks.Add("full access");
             if (row.From is { } from) marks.Add($"from {from}");
+            if (circle is null) marks.Add($"in {row.Workspace}");
             text.Append(row.Session).Append("  ").Append(Ago(row.Last, now)).Append("  ").Append(row.Title);
             if (marks.Count > 0) text.Append("  · ").Append(string.Join(" · ", marks));
             text.Append('\n');
@@ -315,6 +351,7 @@ public static class HelpCommand
             if (listing.Next is { } next)
             {
                 text.Append("; `daoris-driver help list")
+                    .Append(circle is not null ? $" --workspace {Word(circle)}" : ask.All ? " --all" : "")
                     .Append(search is { Length: > 0 } words ? $" --search \"{words}\"" : "")
                     .Append(CultureInfo.InvariantCulture, $" --offset {next}")
                     .Append(ask.Limit is { } limit ? string.Create(CultureInfo.InvariantCulture, $" --limit {limit}") : "")
@@ -325,6 +362,9 @@ public static class HelpCommand
         }
 
         return text.ToString().TrimEnd('\n');
+
+        // A workspace's name as the next line types it: quoted where a space or a quote would split it.
+        static string Word(string name) => name.Any(c => char.IsWhiteSpace(c) || c is '"' or '\'') ? $"\"{name.Replace("\"", "\\\"")}\"" : name;
     }
 
     /// <summary>How long ago, in the terminal's short words.</summary>
@@ -361,6 +401,7 @@ public static class HelpCommand
                 Text(writer, "pinned", Moments.Write(row.Pinned));
                 writer.WriteBoolean("live", row.Live);
                 writer.WriteString("mode", row.Mode);
+                writer.WriteString("workspace", row.Workspace);
                 writer.WriteBoolean("resumable", row.Resumable);
                 Text(writer, "from", row.From);
                 Text(writer, "handed", row.Handed);

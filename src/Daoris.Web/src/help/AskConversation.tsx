@@ -3,7 +3,9 @@ import { useTranslation } from 'react-i18next';
 import { HELP_REPOSITORY } from '../data/api';
 import { type Carry, NO_CARRY } from '../compose/carry';
 import { sentence } from '../locales/format';
-import { useHelpSessions } from '../data/queries';
+import { useHelpSessions, useWorkspaces } from '../data/queries';
+import { useScope } from '../data/scope';
+import { DEFAULT_WORKSPACE, workspaceOf } from '../data/workspaces';
 import {
   type HelpSettled, NO_TURNS, helpModeOf, useCancelTurn, useChatTurns, useDeleteSession, useDriver, useEditQueued, useEndChat,
   useHarnesses, useHelpConversations, useHelpProposals, useHelpReadied, useHelpStartFrom, useHelpWired, usePinHelp, usePlugins,
@@ -20,7 +22,7 @@ import { Composer } from '../work/Composer';
 import { BackToBottom, SessionConversation, type TailState } from '../work/SessionConversation';
 import { AskHistory } from './AskHistory';
 import { searchable } from '../lib/searchable';
-import { type HelpConversationRow } from './history';
+import { type HelpConversationRow, sameWorkspace } from './history';
 import type { AskConversationSlot } from './AskPanel';
 import { placeDoor } from './places';
 import { ProposalCard } from './ProposalCard';
@@ -47,6 +49,8 @@ type FirstWords = {
    * and its sentence, said if nothing took them.
    */
   late?: { before: string[]; at: number; why: string };
+  /** The workspace the start is in (ASKSCOPE1d), read at its press: only a conversation of that workspace takes them. */
+  circle?: string;
 };
 
 /** Words on their way to one conversation (SENDLOST1), shown the moment they are sent until it holds them. */
@@ -79,9 +83,9 @@ export type AskOpening = { text: string; id: number; draft?: boolean };
  * and its composer, so the panel holds neither.
  *
  * @remarks
- * **One conversation per machine, carried on across opens** (design §2): the panel shows the newest help
- * session, running or ended. **With none running, one opens as the panel shows** (HELP5) — the driver
- * writes the room from the machine as it stands, spawns the agent and opens its session — so that is done
+ * **One conversation per workspace, carried on across opens** (design §2, D158's ASKSCOPE1 note): the panel shows the
+ * newest help session of the window's workspace, running or ended. **With none running, one opens as the panel shows**
+ * (HELP5) — the driver writes the room from the machine as it stands, spawns the agent and opens its session — so that is done
  * before the person types, and there is no start button to press before asking. Nobody has spoken in it
  * yet, so the panel goes on showing what it showed until the first message goes to it. One that could not
  * open says nothing: **a message with none to take it starts one**, and says why when it cannot.
@@ -119,6 +123,23 @@ export function useAskConversation(
   onGo?: (door: StarterDoor) => void,
 ) {
   const { t } = useTranslation();
+  // The workspace the panel's conversations are in (ASKSCOPE1d, D158's ASKSCOPE1 note, points 1 and 6): the window's; where it
+  // shows every workspace, the one there is, or `default` where none is registered. Null where it shows several, so a start
+  // asks which; undefined while this machine's workspaces are still being read. One unreadable is none registered.
+  const { workspace: scoped, setWorkspace } = useScope();
+  const circles = useWorkspaces();
+  const registered = circles.data ?? (circles.isError ? [] : undefined);
+  const here: string | null | undefined = scoped
+    ?? (registered === undefined ? undefined : registered.length > 1 ? null : registered[0] ?? DEFAULT_WORKSPACE);
+  const inHere = (workspace?: string) => typeof here === 'string' && sameWorkspace(workspace ?? DEFAULT_WORKSPACE, here);
+  // What a start names, read at its press: the workspace it is in, or none where the window chose none and none is registered,
+  // which is `default`'s, as every start before ASKSCOPE1d was. Never `default` read for a window that shows several.
+  const startIn = (workspace: string) => (scoped === null && registered?.length === 0 ? undefined : workspace);
+  // The window's workspace now, for an answer that arrives after it moved.
+  const hereNow = useRef(here);
+  useEffect(() => {
+    hereNow.current = here;
+  }, [here]);
   // The conversation the person chose from the history, or went on in (ASKHIST1): shown in the newest's place.
   const [chosen, setChosen] = useState<string | null>(null);
   // Words said to an ended conversation, waiting for its record to go on: the list is asked again until it has.
@@ -131,14 +152,22 @@ export function useAskConversation(
   // The conversation opened as the panel showed (HELP5), which nobody has spoken in: not shown, so the
   // starters, or the conversation that ended, stay in front of the person until the first words go to it.
   const help = useHelpReadied();
-  const { readied } = help;
+  // The one opened ahead in this window's workspace (ASKSCOPE1d): one opened in another never takes this one's words.
+  const readied = typeof here === 'string' ? help.readiedIn(here) : null;
   const helpSessions = (sessions.data ?? []).filter((session) => session.repository === HELP_REPOSITORY);
-  const newest = helpSessions
-    .filter((session) => session.id !== readied)
+  // The window's workspace's conversations (ASKSCOPE1d): its newest is shown, and its running one carried on. A window on every
+  // workspace shows the newest of any, named; one whose workspaces are still being read shows none yet.
+  const mine = here === null ? helpSessions : helpSessions.filter((session) => inHere(session.workspace));
+  const newest = mine
+    .filter((session) => !help.unspoken.includes(session.id))
     .sort((a, b) => b.created.localeCompare(a.created))[0] ?? null;
   const picked = chosen ? helpSessions.find((session) => session.id === chosen) ?? null : null;
   const shown = picked ?? (newest && newest.id !== cleared ? newest : null);
   const live = shown ? SESSION_ACTIVE.has(shown.state) : false;
+  // The workspace the conversation shown started in; another workspace's is read here, named, and gone on in only once the
+  // window has switched to it (ASKSCOPE1d, point 1): words are never taken up in another workspace from this one.
+  const shownIn = shown ? workspaceOf(shown) : null;
+  const elsewhere = shown !== null && typeof here === 'string' && !inHere(shown.workspace);
   useEffect(() => {
     if (goingOn && shown?.id === goingOn && live) setGoingOn(null);
   }, [goingOn, shown?.id, live]);
@@ -150,9 +179,19 @@ export function useAskConversation(
   const [historyRefusal, setHistoryRefusal] = useState<string | null>(null);
   const words = search.trim();
   const searching = searchable(words);
-  // Each a page at a time, every page read joined (ASKHIST1d2).
-  const rows = useHelpConversations('', helper !== null);
-  const found = useHelpConversations(words, helper !== null && historyOpen && searching);
+  // Whose conversations the history lists (ASKSCOPE1d, point 6): the window's workspace's, unless the person chose every
+  // workspace's; a window on every workspace lists every one's. Its search runs over that scope alone. The choice is offered
+  // where there is another workspace to see; a machine whose one workspace is `default` lists every one's, unlabelled, as before,
+  // so a conversation of a workspace since gone is still reached, and named once it is opened.
+  const [everyWorkspace, setEveryWorkspace] = useState(false);
+  const offerEvery = typeof here === 'string' && ((registered?.length ?? 0) > 1 || !sameWorkspace(here, DEFAULT_WORKSPACE));
+  const listIn = typeof here === 'string' && offerEvery && !everyWorkspace ? here : null;
+  const historyScope = here === undefined ? undefined
+    : here === null ? { workspace: null }
+      : offerEvery ? { workspace: listIn, here, onEvery: setEveryWorkspace } : undefined;
+  // Each a page at a time, every page read joined (ASKHIST1d2); asked once the window's workspace is known.
+  const rows = useHelpConversations('', helper !== null && here !== undefined, listIn);
+  const found = useHelpConversations(words, helper !== null && here !== undefined && historyOpen && searching, listIn);
   const listing = searching ? found : rows;
   // The last list answered, held while a newer one comes, so a search typed never blanks the rows (UX §4; ASKHIST1c).
   const [lastListing, setLastListing] = useState<typeof rows.data>(undefined);
@@ -264,13 +303,17 @@ export function useAskConversation(
     box.current = draftKey;
   }, [draftKey]);
   // 🔴 A message that did not arrive goes back into the box, its files with it, never lost (the composer's own rule).
+  const putBack = (text: string, files: File[]) => editDraft(box.current, (was) => ({
+    text: [text, was.text.trim()].filter(Boolean).join('\n\n'),
+    carry: { ...was.carry, files: [...files, ...was.carry.files] },
+  }));
   const giveBack = (text: string, files: File[], why: string) => {
     setRefusal(why);
-    editDraft(box.current, (was) => ({
-      text: [text, was.text.trim()].filter(Boolean).join('\n\n'),
-      carry: { ...was.carry, files: [...files, ...was.carry.files] },
-    }));
+    putBack(text, files);
   };
+  // A start asked for on a window that shows several workspaces (ASKSCOPE1d, point 6): which workspace is asked first. The words
+  // wait in the box meanwhile, and a new conversation from an earlier one's words waits by that one's id.
+  const [choosing, setChoosing] = useState<{ from?: string; unknown?: boolean } | null>(null);
 
   // The last preface each conversation was handed, so an unchanged screen is not said again.
   const told = useRef(new Map<string, string>());
@@ -335,18 +378,23 @@ export function useAskConversation(
     // Asked again as the record, the queue or the list moves; the words themselves are read from this render.
   }, [record.events, record.loaded, turns.queued, live, lateShown.length]);
 
-  // The opening ahead still on its way (HELP5): what it answers, the conversation it opened or null.
+  // The opening ahead still on its way (HELP5): what it answers, the conversation it opened or null; and the workspace it was
+  // opened in (ASKSCOPE1d), whose words alone it takes.
   const ahead = useRef<Promise<string | null> | null>(null);
+  const aheadIn = useRef<string | null>(null);
   // First words waiting on that answer: the box holds its fire, as it does while a send opens one.
   const [joining, setJoining] = useState(false);
 
   // First words handed to the conversation that takes them: seen from now on, in both hosts, however late an opening's
   // answer arrives, and shown as the conversation now, whichever the person had chosen (ASKHIST1).
-  const handFirst = (id: string, words: ChatMessage, files: File[]) => {
+  const handFirst = (id: string, words: ChatMessage, files: File[], circle?: string) => {
     help.spoke(id);
     setCleared(null);
-    setChosen(null);
-    setFirstWords({ words, files, session: id });
+    // A window moved to another workspace while the start was under way (ASKSCOPE1d, point 1): the conversation stays in the
+    // workspace of its press, so it is shown by its id, named as that workspace's, rather than as this one's newest.
+    const moved = circle !== undefined && typeof hereNow.current === 'string' && !sameWorkspace(circle, hereNow.current);
+    setChosen(moved ? id : null);
+    setFirstWords({ words, files, session: id, circle });
     // Called by its first question, as the driver will call it, until the history says so (ASKHIST1c).
     const first = words.text.split('\n', 1)[0]!.trim();
     if (first) setSpoken({ session: id, title: first });
@@ -360,9 +408,11 @@ export function useAskConversation(
     const words = firstWords;
     if (!words?.late || words.session !== undefined || sessions.dataUpdatedAt <= words.late.at) return;
     const late = words.late;
-    const opened = helpSessions.find((session) => SESSION_ACTIVE.has(session.state) && !late.before.includes(session.id));
+    // Of the workspace the start was in alone (ASKSCOPE1d): one opened meanwhile in another is not theirs.
+    const opened = helpSessions.find((session) => SESSION_ACTIVE.has(session.state) && !late.before.includes(session.id)
+      && (words.circle === undefined || sameWorkspace(workspaceOf(session), words.circle)));
     if (opened) {
-      handFirst(opened.id, words.words, words.files);
+      handFirst(opened.id, words.words, words.files, words.circle);
       return;
     }
     setFirstWords(null);
@@ -373,19 +423,60 @@ export function useAskConversation(
   const onSend = (text: string, files: File[]) => {
     logEvent('message.sent', { kind: 'help', length: text.length, files: files.length, ...(shown && (live || goesOn) ? { session: shown.id } : {}) });
     setRefusal(null);
-    // The one running, or one that ended the person chose and that goes on in itself (ASKHIST1).
-    if (shown && (live || goesOn)) {
+    // The one running, or one that ended the person chose and that goes on in itself (ASKHIST1); never another workspace's
+    // (ASKSCOPE1d), whose box is not drawn, and a question handed in from another door starts one in this window's instead.
+    if (shown && (live || goesOn) && !elsewhere) {
       if (startedFrom?.session === shown.id) setStartedFrom(null);
       deliver(shown.id, text, files);
       return;
     }
 
+    // A start is in the window's workspace, read now (ASKSCOPE1d, point 1). A window that shows several asks which first, and
+    // never starts one in `default` by itself: the words go back in the box once the composer has cleared it, and wait there.
+    if (typeof here !== 'string') {
+      queueMicrotask(() => putBack(text, files));
+      setChoosing({ unknown: here === undefined });
+      return;
+    }
+    startWith(text, files, here);
+  };
+
+  // The workspace chosen for a start on a window that shows several: the words waiting in the box go to a new conversation there,
+  // or the earlier conversation waiting by its id is started from. The window stays where it is.
+  const startChosen = (circle: string) => {
+    const waiting = choosing;
+    setChoosing(null);
+    if (waiting?.from) {
+      beginFrom(waiting.from, circle);
+      return;
+    }
+    const kept = drafts[NEW_DRAFT] ?? NO_DRAFT;
+    if (!kept.text.trim() && kept.carry.files.length === 0) return;
+    setDrafts(({ [NEW_DRAFT]: _taken, ...rest }) => rest);
+    startWith(kept.text.trim(), kept.carry.files, circle);
+  };
+  // Asked only because this machine's workspaces were still being read: once they name one to be in, the words go there. Read
+  // as several, the question stands.
+  useEffect(() => {
+    if (choosing?.unknown && typeof here === 'string') startChosen(here);
+    // Only the workspaces' answer settles it; the words are read from this render.
+  }, [choosing, here]);
+
+  // The conversation opened ahead in `circle` that nobody has spoken in and that still runs, or null.
+  const readiedFor = (circle: string) => {
+    const id = help.readiedIn(circle);
+    const row = id === null ? undefined : helpSessions.find((session) => session.id === id);
+    return id !== null && (row === undefined || SESSION_ACTIVE.has(row.state)) ? id : null;
+  };
+
+  /** A new conversation's first words, in `circle`, the workspace read at the press. */
+  const startWith = (text: string, files: File[], circle: string) => {
     const said = { text, files: files.map((file) => file.name) };
     // The conversations listed as the words are said: one listed later is one opened for them.
     const before = helpSessions.map((session) => session.id);
-    setFirstWords({ words: said, files });
-    const handTo = (id: string) => handFirst(id, said, files);
-    const begin = () => start.mutate(undefined, {
+    setFirstWords({ words: said, files, circle });
+    const handTo = (id: string) => handFirst(id, said, files, circle);
+    const begin = () => start.mutate(startIn(circle), {
       // The driver's own sentence when it cannot: no agent named, the agent signed out, one already
       // running elsewhere. Shown where the person pressed send, whole.
       onSuccess: (answer) => {
@@ -399,7 +490,7 @@ export function useAskConversation(
       onError: (error) => {
         if (stoppedWaiting(error)) {
           // SENDLOST1: kept, saying the machine has not answered yet, and the list read again.
-          setFirstWords({ words: said, files, late: { before, at: Date.now(), why: sentence(error) } });
+          setFirstWords({ words: said, files, circle, late: { before, at: Date.now(), why: sentence(error) } });
           void sessions.refetch();
           return;
         }
@@ -409,11 +500,14 @@ export function useAskConversation(
     });
 
     // The conversation opened ahead takes the words (HELP5): open already, or still opening, in which case
-    // they wait for it. One that could not open leaves the send to open one, and to say why it cannot.
-    const pending = ahead.current;
-    ahead.current = null;
-    if (readied !== null && readiedLive) {
-      handTo(readied);
+    // they wait for it. One that could not open leaves the send to open one, and to say why it cannot. Only one opened in the
+    // start's own workspace (ASKSCOPE1d); one still opening in another is left to finish there.
+    const ready = readiedFor(circle);
+    const fits = aheadIn.current !== null && sameWorkspace(aheadIn.current, circle);
+    const pending = fits ? ahead.current : null;
+    if (fits) ahead.current = null;
+    if (ready !== null) {
+      handTo(ready);
     } else if (pending) {
       setJoining(true);
       void pending.then((id) => {
@@ -431,37 +525,47 @@ export function useAskConversation(
   // again after *New conversation*; never while one runs, which is carried on, nor while words are on
   // their way to one; never twice under React's development double-mount, which keeps this ref. One that
   // is refused says nothing and is not asked again: the send asks for itself, and says why.
+  //
+  // In the window's workspace (ASKSCOPE1d): idle is none of its own running, and a window that switches opens its new
+  // workspace's once per round. A window that shows several opens none, since which workspace is the person's to say.
   const [round, setRound] = useState(0);
-  const openedAhead = useRef<number | null>(null);
-  const idle = helper !== null && sessions.isSuccess
-    && !helpSessions.some((session) => SESSION_ACTIVE.has(session.state))
+  const openedAhead = useRef(new Set<string>());
+  const idle = helper !== null && sessions.isSuccess && typeof here === 'string'
+    && !mine.some((session) => SESSION_ACTIVE.has(session.state))
     && !readiedLive && !start.isPending && firstWords === null;
   useEffect(() => {
-    if (!idle || openedAhead.current === round) return;
-    openedAhead.current = round;
-    const answer = readying.mutateAsync(undefined).then(
+    if (!idle || typeof here !== 'string') return;
+    const key = `${round} ${here.toLowerCase()}`;
+    if (openedAhead.current.has(key)) return;
+    openedAhead.current.add(key);
+    const circle = here;
+    const answer = readying.mutateAsync(startIn(circle)).then(
       // One the driver hands back as running is carried on, not opened ahead: the list shows it as it is.
       (started) => (started.sessionId && !started.running ? started.sessionId : null),
       () => null,
     );
     ahead.current = answer;
+    aheadIn.current = circle;
     void answer.then((id) => {
-      // Words took it meanwhile, and they are handed to it by the send that took it.
-      if (ahead.current !== answer) return;
-      ahead.current = null;
-      if (id) help.ready(id);
+      // Kept as opened ahead in its workspace: words that took it meanwhile were handed to it by the send that took it, which
+      // marked it spoken in just after, and one opened in a workspace the window has left waits there for its words.
+      if (id) help.ready(id, circle);
+      if (ahead.current === answer) ahead.current = null;
     });
-    // Only a new round, or the panel coming idle, opens one; the mutation is not a reason to open again.
-  }, [idle, round]);
+    // Only a new round, a workspace newly shown, or the panel coming idle, opens one; the mutation is not a reason to open again.
+  }, [idle, round, here]);
 
   // Each opening once: a re-render, or React mounting an effect twice in development, must not ask twice. A draft (CTX1's
   // *Ask Daoris about it*) goes into the box for the person's question instead, and sends nothing.
   const opened = useRef<number | null>(null);
   // Until the list has answered, which conversation is shown is not known, and a draft put in the wrong box stays there (NEW1g).
   const listed0 = !sessions.isPending;
+  // Nor, until this machine's workspaces are read, which workspace a question would start in (ASKSCOPE1d).
+  const placed = here !== undefined;
   useEffect(() => {
     if (!opening || opened.current === opening.id) return;
     if (opening.draft && !listed0) return;
+    if (!opening.draft && !placed) return;
     opened.current = opening.id;
     if (opening.draft) {
       // A draft that will start a new conversation shows one (NEW1g): where the one shown is not live, the panel clears to a
@@ -476,7 +580,7 @@ export function useAskConversation(
     // From the effect, never the render (frontend-architecture §4b): the holder clears what was sent.
     onOpened?.();
     // Only a new opening asks; `onSend` reads this render's session and is not a reason to ask again.
-  }, [opening?.id, listed0]);
+  }, [opening?.id, listed0, placed]);
 
   // The panel cleared to a blank new conversation, ending nothing: the one shown and the newest are set aside, the next opens
   // ahead, and the box takes the focus, since writing is what comes next.
@@ -498,7 +602,9 @@ export function useAskConversation(
   // or the line under one that cannot go on.
   const onNew = () => {
     if (end.isPending) return;
-    if (shown && live) {
+    setChoosing(null);
+    // Another workspace's running conversation is that workspace's to finish (ASKSCOPE1d): the panel only clears.
+    if (shown && live && !elsewhere) {
       // The host owns the ending. Keep its conversation and draft until it accepts the request.
       end.mutate(shown.id, {
         onSuccess: (answer) => {
@@ -536,10 +642,18 @@ export function useAskConversation(
     setHistoryOpen(false);
     setFocusHead((was) => was + 1);
   };
-  const beginFrom = (id: string) => {
+  // In the window's workspace, read at the press (ASKSCOPE1d), whatever the earlier one's was; a window that shows several asks
+  // which first, the history closed so the question is seen.
+  const beginFrom = (id: string, chosenIn?: string) => {
     setHistoryRefusal(null);
+    const circle = chosenIn ?? (typeof here === 'string' ? here : null);
+    if (circle === null) {
+      setChoosing({ from: id });
+      setHistoryOpen(false);
+      return;
+    }
     const title = rowOf(id)?.title ?? id;
-    startFrom.mutate(id, {
+    startFrom.mutate({ id, workspace: startIn(circle) }, {
       onSuccess: (answer) => {
         if (!answer.sessionId) {
           setHistoryRefusal(answer.message);
@@ -573,6 +687,7 @@ export function useAskConversation(
       loadingMore={listing.isFetchingNextPage}
       moreError={listing.isFetchNextPageError && !listing.isFetching ? sentence(listing.error) : null}
       search={search}
+      scope={historyScope}
       shown={shown?.id ?? null}
       busy={startFrom.isPending || pin.isPending || end.isPending}
       refusal={historyRefusal ?? (historyOpen ? refusal : null)}
@@ -683,8 +798,9 @@ export function useAskConversation(
   const unanswered = Boolean(firstWords?.late) || going.some((each) => each.late);
 
   // No box under one the person chose that cannot go on, or is still being checked (ASKHIST1c): words typed there started a
-  // fresh conversation without its own, the press offering one from its words below the transcript, perhaps out of view.
-  const composer = readOnly ? null : (
+  // fresh conversation without its own, the press offering one from its words below the transcript, perhaps out of view. None
+  // under another workspace's either (ASKSCOPE1d): its words are written once the window has switched to it.
+  const composer = readOnly || elsewhere ? null : (
     <Composer
       key={draftKey}
       // A message always reaches something: the one running, or the one it starts.
@@ -758,7 +874,7 @@ export function useAskConversation(
     <Button variant="ghost" className="px-0 text-small text-accent" disabled={startFrom.isPending} onClick={onClick}>{t(key)}</Button>
   );
   const ended = shown !== null && !live;
-  const note: ReactNode = !shown ? undefined
+  const own: ReactNode = !shown ? undefined
     : startedFrom?.session === shown.id ? line('help.startedFrom', { title: startedFrom.title })
       : !ended ? undefined
         : picked !== null ? (
@@ -784,6 +900,52 @@ export function useAskConversation(
                 : press('help.history.startFrom', () => beginFrom(shown.id))}
             </>
           ) : undefined;
+
+  // ASKSCOPE1d (D158's ASKSCOPE1 note, points 1 and 6), ahead of what the next words do: which workspace a start on a window
+  // that shows several is in, asked with a press per workspace; another workspace's conversation named, with the switch that
+  // goes on in it, where this window can show that workspace; and on a window that shows every workspace, whose each is.
+  const switchable = shownIn !== null && registered?.find((name) => sameWorkspace(name, shownIn));
+  const goesOnThere = elsewhere && (live || goesOn || (picked !== null && checking));
+  const note: ReactNode = choosing ? (
+    <>
+      {line('help.scope.which')}
+      <div className="flex flex-wrap gap-2">
+        {registered === undefined
+          ? <p role="status" className="m-0 text-small text-ink-soft">{t('help.scope.reading')}</p>
+          : registered.map((name) => (
+            <Button key={name} disabled={start.isPending || startFrom.isPending} onClick={() => startChosen(name)}>
+              {t('help.scope.startIn', { workspace: name })}
+            </Button>
+          ))}
+        <Button variant="ghost" onClick={() => setChoosing(null)}>{t('common.cancel')}</Button>
+      </div>
+    </>
+  ) : elsewhere ? (
+    <>
+      {line('help.scope.elsewhere', { workspace: shownIn!, here: here as string })}
+      {!goesOnThere ? own : switchable ? (
+        <Button
+          variant="primary"
+          onClick={() => {
+            setWorkspace(switchable);
+            setFocusBox((was) => was + 1);
+          }}
+        >
+          {t('help.scope.switch', { workspace: switchable })}
+        </Button>
+      ) : (
+        <>
+          {line('help.scope.notOffered', { workspace: shownIn!, here: here as string })}
+          {press('help.history.startFrom', () => beginFrom(shown!.id))}
+        </>
+      )}
+    </>
+  ) : shown && here === null ? (
+    <>
+      {line('help.scope.in', { workspace: shownIn! })}
+      {own}
+    </>
+  ) : own;
 
   // What the open conversation's head calls it: the history's title, else the person's first words, else a conversation.
   const title = !shown ? null

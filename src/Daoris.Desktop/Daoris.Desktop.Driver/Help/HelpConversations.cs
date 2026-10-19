@@ -53,6 +53,12 @@ public sealed record HelpConversation(string Session, string State)
     public string Mode { get; init; } = HelpModes.Restricted;
 
     /// <summary>
+    /// The workspace it started in, its record's (ASKSCOPE1d, D158's ASKSCOPE1 note, points 1 and 6): kept from its start and never
+    /// moved; a record from before ASKSCOPE1a keeps none, and is <c>default</c>'s, as it was recorded.
+    /// </summary>
+    public string Workspace { get; init; } = RemoteTarget.DefaultWorkspace;
+
+    /// <summary>
     /// Whether words written to it once it ended go on in its own conversation (D137 §2.2): its harness conversation's id was
     /// kept, on an agent whose door resumes. One from before ids were kept for it is offered a new conversation from its words.
     /// </summary>
@@ -188,22 +194,31 @@ public sealed class HelpConversations(string home)
     /// <para><b>An offset into one order.</b> Ties go by when each was opened, newest first, then by id, so a page's edge is the
     /// same each time it is asked. A conversation that moves between two asks (spoken in, pinned) can show on two pages or on
     /// neither until the list is asked again from its start.</para>
+    ///
+    /// <para><b>One workspace's, or every one's</b> (ASKSCOPE1d, D158's ASKSCOPE1 note, point 6). A workspace named keeps the records
+    /// its conversations started in, its name matched whatever its letters' case (D48), before anything is ordered, searched or
+    /// counted, so another workspace's never fill its page, and its total and next page are its own. None named is every
+    /// workspace's, the list as it was. A record from before keeps no workspace and is <c>default</c>'s, never guessed from its
+    /// words.</para>
     /// </remarks>
     /// <param name="resumes">Whether an adapter's door resumes a conversation by its id, by the adapter's name.</param>
     /// <param name="search">Words to find; too few to search with (<see cref="SessionEventText.Searchable"/>), nothing is found.</param>
     /// <param name="offset">Where the page starts in the whole list; below 0 is 0.</param>
     /// <param name="limit">The most the page holds; below 1, or above <see cref="PageLimit"/>, is <see cref="PageLimit"/>.</param>
+    /// <param name="workspace">The workspace whose conversations are listed; null, or blank, for every workspace's.</param>
     public HelpListing List(
         IEnumerable<SessionRecord> records, SessionEvents events, Func<string, bool> resumes, string? search = null,
-        int offset = 0, int limit = PageLimit)
+        int offset = 0, int limit = PageLimit, string? workspace = null)
     {
         var wanted = search?.Trim();
         if (wanted is not null && !SessionEventText.Searchable(wanted)) return new([], 0, null);
         offset = Math.Max(0, offset);
         limit = limit is < 1 or > PageLimit ? PageLimit : limit;
+        var circle = string.IsNullOrWhiteSpace(workspace) ? null : RemoteTarget.Workspace(workspace);
 
         var help = records
             .Where(record => record.Repository == HelpRoom.Repository && !record.Teammate && SessionEventText.IsId(record.Id))
+            .Where(record => circle is null || string.Equals(record.Workspace, circle, StringComparison.OrdinalIgnoreCase))
             .ToList();
         var openings = events.Openings(help.Select(record => record.Id));
 
@@ -256,6 +271,7 @@ public sealed class HelpConversations(string home)
                 Pinned = each.Kept.Pinned,
                 Live = each.Record.Live,
                 Mode = HelpModes.Recorded(each.Record.HelpMode),
+                Workspace = each.Record.Workspace,
                 Resumable = conversation is not null && resumes(conversation.Adapter),
                 From = each.Kept.From,
                 Handed = each.Kept.Handed,

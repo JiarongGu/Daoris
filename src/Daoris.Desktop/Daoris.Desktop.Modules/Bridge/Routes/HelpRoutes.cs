@@ -1127,7 +1127,9 @@ public sealed class HelpRoutes(DriverContext context)
 
     // A page of Ask Daoris's conversations, pinned first, then the newest; with `q`, those whose name or words hold it, each with
     // where. `offset` and `limit` are the terminal's `--offset` and `--limit` (ASKHIST1d): every record is ordered and searched
-    // before the page is taken, and the answer says how many there are and where the next page starts.
+    // before the page is taken, and the answer says how many there are and where the next page starts. `workspace` is the
+    // terminal's `--workspace` (ASKSCOPE1d, D158's ASKSCOPE1 note, point 6): that workspace's conversations, searched and counted
+    // before the page; none named is every workspace's, as the list was and as `--all` says, each row naming its own.
     [DriverRoute("HELP_CONVERSATIONS")]
     private async Task<object?> HelpConversationsAsync(IpcRequest request, CancellationToken cancellationToken)
     {
@@ -1136,7 +1138,8 @@ public sealed class HelpRoutes(DriverContext context)
         var listing = new HelpConversations(_loop.Home).List(
             records, _loop.Events, Resumes, Optional(request, "q"),
             (int)Math.Clamp(Number(request, "offset") ?? 0, 0, int.MaxValue),
-            (int)Math.Clamp(Number(request, "limit") ?? HelpConversations.PageLimit, 0, HelpConversations.PageLimit));
+            (int)Math.Clamp(Number(request, "limit") ?? HelpConversations.PageLimit, 0, HelpConversations.PageLimit),
+            Optional(request, "workspace"));
         return HistoryAnswer(listing);
     }
 
@@ -1148,9 +1151,9 @@ public sealed class HelpRoutes(DriverContext context)
     {
         Conversations = listing.Conversations.Select(row => new
         {
-            // HELPMODE1a2: the mode it ran under, its record's, after whether it runs.
-            row.Session, row.Title, row.Name, row.Opening, row.About, row.Created, row.Last, row.Pinned, row.Live, row.Mode, row.Resumable,
-            row.From, row.Handed, row.Found, row.FoundLine,
+            // HELPMODE1a2: the mode it ran under, its record's, after whether it runs; ASKSCOPE1d: the workspace it started in after it.
+            row.Session, row.Title, row.Name, row.Opening, row.About, row.Created, row.Last, row.Pinned, row.Live, row.Mode, row.Workspace,
+            row.Resumable, row.From, row.Handed, row.Found, row.FoundLine,
         }).ToArray(),
         listing.Cut,
         listing.Total,

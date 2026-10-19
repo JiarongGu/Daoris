@@ -6,6 +6,12 @@ with the version and date at release.
 ## Unreleased
 
 - Three of a repository's pauses can be turned off at a terminal, for the repository, its workspace or this machine:
+- Ask Daoris follows the window's workspace. A conversation starts in the workspace the window shows when you press send,
+  and stays there if the window moves while it starts. A window that shows every workspace asks which before it starts one,
+  keeping your words in the box. Its history lists the window's workspace's conversations, or every workspace's with each
+  labelled, and searches only the one chosen. Another workspace's conversation can be read from any window, named as that
+  workspace's, and *Switch to games and continue* moves the window there before you write to it. In the terminal,
+  `daoris-driver help list` takes `--workspace <name>` or `--all`.
 - Removing a session's tree no longer deletes what a link in it points at. On Windows git's removal followed a junction out
   of the tree, so a tree holding `npm link`'s link, a workspace's junction or a link of the session's own could take files in
   your checkout or another repository with it. Each link in a tree now goes as a link before git removes the tree, whether
