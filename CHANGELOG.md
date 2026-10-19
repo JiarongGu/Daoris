@@ -5,6 +5,10 @@ with the version and date at release.
 
 ## Unreleased
 
+- Ask Daoris starts at once. It no longer reads every repository and session tree with git before its first answer: Daoris
+  keeps what it knows of the machine as it changes (a branch moved, a session ended) and Ask Daoris starts on that. Where
+  something is not read yet, a repository whose line Daoris has not looked at, say, Ask Daoris is told so rather than guessing,
+  its conversation says so first, and it learns the rest as it is read.
 - Choosing an account for a start no longer waits for a question Daoris is asking another account: a sign-in or usage read
   that is slow to answer holds only the start that asked it. A start whose account another question still holds after 30
   seconds runs on the next account of its list, or waits for the next start where none is left, rather than running beside

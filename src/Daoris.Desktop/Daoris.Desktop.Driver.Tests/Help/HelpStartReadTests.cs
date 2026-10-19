@@ -7,7 +7,9 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <summary>
 /// HELPSTUCK1: Ask Daoris's start waits for the machine's reading for its room only so long. On the owner's loaded machine the
 /// reading walked git across every tree and repository and did not answer, and the conversation placed for the person's words
-/// sat at <c>queued</c>: nothing said, no agent started, the words held for it.
+/// sat at <c>queued</c>: nothing said, no agent started, the words held for it. Since PARALLEL1a (D181 point 1) the room is
+/// written from the facts the judges keep and the start waits on nothing, the bound only a backstop for a home with no facts
+/// judged and no room written.
 /// </summary>
 /// <remarks>No process: the start gate's stand-in answers the agent's start (PROCSTART2), and the service is a stand-in.</remarks>
 public sealed class HelpStartReadTests : IDisposable
@@ -55,17 +57,19 @@ public sealed class HelpStartReadTests : IDisposable
     }
 
     /// <summary>
-    /// A room written before serves: the agent is started in it once the reading's bound passes, and its conversation says so
-    /// first, by a code the page words. The reading left behind writes the room for the next conversation when it answers.
+    /// PARALLEL1a (D181 point 1): a start before the machine's facts were ever judged, with a room written before, starts at once
+    /// on that room, never waiting the bound: the agent is started in it, and its conversation says so first, by a code the page
+    /// words. The reading left behind writes the room for the next conversation when it answers.
     /// </summary>
     [Fact]
-    public async Task A_reading_that_does_not_answer_in_time_starts_on_the_room_as_last_written_and_says_so()
+    public async Task A_start_before_the_facts_were_judged_starts_at_once_on_the_room_as_last_written_and_says_so()
     {
         HelpRoom.Prepare(_home, Machine);
         await using var service = StandInService.Start(_home);
         var (runner, events, client, config, placed) = Placed(service, "help0001");
         using var _c = client;
         using var _r = runner;
+        runner.HelpReadBound = TimeSpan.FromMinutes(5);
         var late = new TaskCompletionSource<HelpMachine?>(TaskCreationOptions.RunContinuationsAsynchronously);
         ProcessStartInfo? spawned = null;
 
@@ -78,20 +82,70 @@ public sealed class HelpStartReadTests : IDisposable
             await runner.RunHelpAsync(placed, config, _ => late.Task).WaitAsync(Within);
         }
 
-        // Past the reading: the agent's start was made, in the room.
+        // At once, though the bound is minutes: the agent's start was made, in the room.
         Assert.NotNull(spawned);
         Assert.Equal(Path.GetFullPath(HelpRoom.PathOf(_home)), Path.GetFullPath(spawned!.WorkingDirectory));
         var said = Assert.Single(events.Page("help0001").Events, e => e.Kind == SessionEventKind.Note && e.Parts is { Count: > 0 });
-        var part = Assert.Single(said.Parts!);
-        Assert.Equal("help.room-as-written", part.Code);
-        // Whole seconds, a part of one said as one.
-        Assert.Equal(1L, Convert.ToInt64(part.Value("seconds"), System.Globalization.CultureInfo.InvariantCulture));
-        Assert.Contains("room as last written", said.Text);
+        Assert.Equal("help.room-not-read-yet", Assert.Single(said.Parts!).Code);
+        Assert.Contains("not read yet", said.Text);
 
         // The reading answers later: the room is written from it, for the next conversation.
         late.SetResult(Machine with { Repositories = [new("written-late", "default") { Checkout = true }] });
         var agents = Path.Combine(HelpRoom.PathOf(_home), "AGENTS.md");
         await Poll.Until(() => File.ReadAllText(agents).Contains("`written-late`", StringComparison.Ordinal), within: Within);
+    }
+
+    /// <summary>
+    /// PARALLEL1a's proof: one repository's judge never answers, and a start does not wait on it. The room is written at once from
+    /// the facts as they stand, saying that repository not read yet and the other's line, and the conversation says first that some
+    /// of the machine is not read yet; the start's own path starts no git.
+    /// </summary>
+    [Fact]
+    public async Task A_start_with_a_repository_whose_judge_never_answers_starts_at_once_and_its_room_says_it_not_read_yet()
+    {
+        await using var service = StandInService.Start(_home);
+        var (runner, events, client, config, placed) = Placed(service, "help0005");
+        using var _c = client;
+        using var _r = runner;
+        runner.HelpReadBound = TimeSpan.FromMinutes(5);
+        using var facts = new MachineFacts();
+        var engine = new RepoView("engine", Adopted: true, Root: "checkouts/engine");
+        var site = new RepoView("site", Adopted: true, Root: "checkouts/site");
+        HelpFacts.Keep(facts, new HelpFactJudges(
+            Machine: _ => Task.FromResult<HelpMachineWhole?>(new(new Snapshot([], [engine, site], []), [], [])),
+            Sessions: _ => Task.FromResult<SessionLook?>(new SessionLook([], [], [])),
+            History: _ => Task.FromResult<IReadOnlyList<HistoryReading>?>([]),
+            Work: _ => Task.FromResult<HelpWork?>(new HelpWork([], [], [])))
+        {
+            Guess = (root, _) => root == site.Root ? new TaskCompletionSource<string?>().Task : Task.FromResult<string?>("main"),
+        });
+        facts.Start();
+        await facts.FirstAsync(HelpFacts.Lines, "engine", CancellationToken.None).WaitAsync(Within);
+        var gits = 0;
+        var took = Stopwatch.StartNew();
+
+        using (ProcessStarts.Within(_ => null))
+        {
+            WorkingTree.Started.Value = _ => Interlocked.Increment(ref gits);
+            try
+            {
+                await runner.RunHelpAsync(
+                        placed, config, async ct => HelpFactsTests.Describe((await HelpFacts.ReadAsync(facts, config, ct))!, config))
+                    .WaitAsync(Within);
+            }
+            finally
+            {
+                WorkingTree.Started.Value = null;
+            }
+        }
+
+        Assert.True(took.Elapsed < TimeSpan.FromSeconds(5), $"the start took {took.Elapsed}");
+        Assert.Equal(0, gits);
+        var agents = File.ReadAllText(Path.Combine(HelpRoom.PathOf(_home), "AGENTS.md"));
+        Assert.Contains("| `site` | not driven | not read yet |", agents);
+        Assert.Contains("| `engine` | not driven | `main` (the checkout's own) |", agents);
+        var said = Assert.Single(events.Page("help0005").Events, e => e.Kind == SessionEventKind.Note && e.Parts is { Count: > 0 });
+        Assert.Equal("help.room-not-read-yet", Assert.Single(said.Parts!).Code);
     }
 
     /// <summary>
