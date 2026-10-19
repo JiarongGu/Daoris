@@ -5,7 +5,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <summary>
 /// QUEUEDTREE1 (D51, GOONTREE1; D181's PARALLEL1f note): the tree a start opened for a session whose record never opened goes by the
 /// clean path, on no token, on each way out that starts nothing and on the driver's close before the record's open is asked. On the
-/// loop's token the close made the removal throw at its first git, so the tree was left at every close for the sweep.
+/// loop's token the close makes the removal throw at its first git, and the tree is left for the sweep.
 /// </summary>
 /// <remarks>
 /// The fast half: no process starts. The removal is handed in, so each row sees what was let go; the start's own path through the

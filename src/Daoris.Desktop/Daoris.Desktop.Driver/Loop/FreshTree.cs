@@ -5,9 +5,9 @@ namespace Daoris.Driver;
 /// by the clean path on each way out that starts nothing, and on the driver's close before the record's open is asked.
 /// </summary>
 /// <remarks>
-/// <para><b>On no token</b>, as the put-back's move is (<c>DriverContinuations.PutBackAsync</c>). The close is what cancelled the
-/// loop's token, and a removal on it threw at its first git, so every way out the close reached left the tree, and its branch, to the
-/// sweep. The removal is git's few starts, each bounded by its own timeout.</para>
+/// <para><b>On no token</b>, as the put-back's move is (<c>DriverContinuations.PutBackAsync</c>). The close cancels the loop's token,
+/// and a removal on it throws at its first git, leaving the tree and its branch to the sweep. The removal is git's few starts, each
+/// bounded by its own timeout.</para>
 ///
 /// <para><b>Until the open is asked.</b> Once the record's open is asked the ledger may hold the tree (LEFT2), even where the close cut
 /// its answer off, so a close after that leaves it to the sweep, which reads the ledger. A refused open still lets it go itself.</para>
