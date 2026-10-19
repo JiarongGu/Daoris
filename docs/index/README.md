@@ -115,7 +115,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Loop/Driver.cs` | 202 | 3291 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Loop/DriverContinuations.cs` | 52 | 854 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Loop/DriverWatch.cs` | 48 | 837 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/Platform/DriverConfig.cs` | 84 | 1444 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/Platform/DriverConfig.cs` | 86 | 1466 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Platform/NoteCodes.cs` | 73 | 1161 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Platform/SystemWiring.cs` | 50 | 1070 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Plugins/Hooks.cs` | 59 | 1155 |
@@ -186,7 +186,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 |---|---|---|
 | `src/Daoris.Cli/src/agents/toolchain.ts` | 156 | 2986 |
 | `src/Daoris.Cli/src/doctrine/materialize.ts` | 47 | 935 |
-| `src/Daoris.Cli/src/driver/driverconfig.ts` | 139 | 2494 |
+| `src/Daoris.Cli/src/driver/driverconfig.ts` | 141 | 2523 |
 | `src/Daoris.Cli/src/plugins/plugins.ts` | 80 | 1550 |
 | `src/Daoris.Cli/src/workflows/namedworkflows.ts` | 44 | 874 |
 | `src/Daoris.Cli/src/workflows/workflowdoor.ts` | 46 | 839 |
@@ -217,7 +217,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 
 | File | KB | Lines |
 |---|---|---|
-| `.claude/knowledge/twins.md` | 106 | 180 |
+| `.claude/knowledge/twins.md` | 108 | 182 |
 | `docs/2026-09-19-platform-ux.md` | 65 | 679 |
 | `docs/2026-09-21-dsh-evaluation.md` | 43 | 483 |
 | `docs/2026-09-21-working-surface-components.md` | 54 | 354 |

@@ -5,6 +5,27 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-20 — Two writers of `driver.json` at once lost one's change, and a name written twice in any case read two ways (CONFIG1)
+
+- **Symptom:** the limits D173's second re-check named, each shown red by a test before the change. Another writer's edit landing
+  between a keeping write's re-read and its rename was dropped (`KeepLockTests`' two in-process cases and `KeepLockProcessTests`'
+  terminal-holds case in the driver; `keeplock.test.ts`' two child-process cases in the CLI). Two writers each adding a repository to
+  `drivable` kept only the later's array (8 `driver-config-keeps.json` rows red in both twins). A name written twice in any case in
+  `lines`, `workspaceLines`, `readAcross`, `workspaceReadAcross`, `writeAcross` or `forgiven` read as the first spelling with the last
+  value in the driver and as two names in the terminal (7 `names` rows red in both twins).
+- **Root cause:** the keeping write (`DriverConfig.Save`, `JsonKeeping.Save`; `writeDriverChoices`, `writeKeeping`) read the file
+  again and renamed its own text over it as two steps with nothing between other writers and that window; the keep core measured an
+  edit by key paths and held any changed array as one value, so the edit's whole array replaced the other writer's; and those six
+  readers were written before the "first readable in any case" rule the later maps keep, the driver's assigning through a
+  case-blind dictionary's indexer and the CLI's into a plain object.
+- **Fix:** D173's CONFIG1 note. Both twins hold `<file>.lock` (`KeepLock`, `keeplock.ts`) from the re-read to the rename: put in place
+  with no overwrite, waited for ten seconds, stale when its process is gone, older than a minute or unreadable. `drivable`, `holds`,
+  `trees` and each `writeAcross` list are sets (`DriverConfig.Sets`, `DRIVER_SETS`), merged by the names an edit added and took,
+  compared without case. The six readers read a name where first readable.
+- **Verification:** `DriverConfigKeepsTests`, `KeepLockTests`, `KeepLockProcessTests` (Process), and the CLI's `configkeeps.test.ts`
+  and `keeplock.test.ts`, over `driver-config-keeps.json`'s rows, `sets`, `names` and `lock`; the driver classes over every config
+  and home-file writer (1,011 and 323 tests) and the CLI's config, home-file, plugin, permission and toolchain tests pass.
+
 ## 2026-10-20 — A repository's Setup test still read asking mode's old hint, that any other call is refused (AUTONOMY1b3)
 
 - **Symptom:** `ProjectsView.test.tsx`'s *sets its sessions' access on DAORIS.DRIVER, full access only through its ask, and
