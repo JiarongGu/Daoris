@@ -1183,7 +1183,7 @@ check(
     && /[\\/]intake[\\/]default$/.test(intakeSession.tree ?? ''),
   `${intakeRun.out}\n${JSON.stringify(intakeSession)}`,
 );
-const intakeRoom = join(scratch, 'intake', 'default');
+const intakeRoom = homeEntry(scratch, 'intake', 'default');
 check(
   '…its room holds the circle’s declarations, and the session saw an ask and itself — never a quest',
   existsSync(join(intakeRoom, 'AGENTS.md')) && readFileSync(join(intakeRoom, 'AGENTS.md'), 'utf8').includes('`newcomer`')
@@ -3605,7 +3605,8 @@ section('15. The toolchain: which tool, and which account (D49 §4)');
 const toolchainHome = join(scratch, 'toolchain');
 const harnessConfig = join(toolchainHome, 'harnesses.json');
 const HARNESS_ENV = { DAORIS_HARNESS_CONFIG: harnessConfig };
-const profileAt = (harness, name) => join(toolchainHome, 'harnesses', harness, name);
+// An account's folder, where the home's table keeps it (HOMELAYOUT3): `profiles/agents/` for one made now.
+const profileAt = (harness, name) => homeEntry(toolchainHome, 'agent-homes', harness, name);
 mkdirSync(toolchainHome, { recursive: true });
 
 // `alpha` has been logged into — the harness put something in it, which is what a login does.
@@ -3673,7 +3674,8 @@ const sessionsBeforeRefusal =
   ((await api('GET', '/api/sessions?repository=newcomer&includeClosed=true')).json ?? []).length;
 // What the person's press read (ROSTER1): a look reads no account, so the start is held only once `fresh` is known to be
 // signed out. Any read time holds it: should the hour's backstop ask again, the stub still answers logged out.
-writeFileSync(join(toolchainHome, 'reads.json'), `${JSON.stringify({
+mkdirSync(dirname(homeEntry(toolchainHome, 'reads')), { recursive: true });
+writeFileSync(homeEntry(toolchainHome, 'reads'), `${JSON.stringify({
   stub: { accounts: { fresh: { login: 'out', read: new Date().toISOString().replace(/\.\d{3}Z$/, 'Z') } } },
 }, null, 2)}\n`);
 const loggedOutRun = driver({ serviceUrl: BASE, config: driverConfig, harness: HARNESS_ENV });
@@ -3746,11 +3748,10 @@ check(
 // (ROSTER1b), which outlives the run, so logging it in is a sign-in Daoris sees: the mark a sign-in
 // through either door leaves (TOOL6g), after which the next start asks `alpha` again.
 setProfile('alpha');
-mkdirSync(join(toolchainHome, 'harnesses', '.probing', 'stub'), { recursive: true });
-writeFileSync(
-  join(toolchainHome, 'harnesses', '.probing', 'stub', 'alpha.signed-in'),
-  `${JSON.stringify({ at: new Date().toISOString().replace(/\.\d{3}Z$/, 'Z') })}\n`,
-);
+// Where the home's probe marks are (HOMELAYOUT3: `run/probing/`, beside the locks the looks above took).
+const signedMark = homeEntry(toolchainHome, 'probing', 'stub', 'alpha.signed-in');
+mkdirSync(dirname(signedMark), { recursive: true });
+writeFileSync(signedMark, `${JSON.stringify({ at: new Date().toISOString().replace(/\.\d{3}Z$/, 'Z') })}\n`);
 const releasedRun = driver({ serviceUrl: BASE, config: driverConfig, harness: HARNESS_ENV, mode: '--until-idle' });
 check(
   'logging the account in releases the queue with no restart — the file is the truth',
@@ -3816,7 +3817,7 @@ const REHEARSAL_KEY = 'sk-ant-api03-rehearsal-0000-wxyz';
 const keyed = capture(`node "${cliBin}" agent key claude-code`, scratch, {
   env: HARNESS_ENV, input: `${REHEARSAL_KEY}\n`,
 });
-const keysFile = join(toolchainHome, 'keys.json');
+const keysFile = homeEntry(toolchainHome, 'keys');
 check(
   '`daoris agent key` keeps an API key as an account, and says it back only as its last four',
   keyed.code === 0 && /…wxyz/.test(keyed.out) && !keyed.out.includes(REHEARSAL_KEY)
@@ -3830,7 +3831,7 @@ check(
 // of them (a Claude Code rule means nothing to another program), so the FILE is what is asserted here;
 // the spawn's half is the driver's tests, and a rule firing is a real session's.
 const cliRules = (args) => run(`node "${cliBin}" agent rules ${args}`, scratch, { DAORIS_HOME: toolchainHome });
-const rulesFile = join(toolchainHome, 'permissions.json');
+const rulesFile = homeEntry(toolchainHome, 'permissions');
 const ruled = cliRules('deny "Bash(rm -rf:*)" --repository newcomer');
 check(
   '`daoris agent rules deny --repository` writes that repository’s scope in the home’s permissions.json',
@@ -3858,7 +3859,7 @@ check(
 // narrowing and holds a widening. 🔴 A widening never applies without the person — so the file is
 // written here exactly as the connector writes it and the driver leaves it, and the person's yes is
 // the thing asserted. The tick's half is the driver's tests; the connector's is the service's.
-const proposalsDir = join(toolchainHome, 'proposals');
+const proposalsDir = homeEntry(toolchainHome, 'rule-proposals');
 mkdirSync(proposalsDir, { recursive: true });
 const proposalFile = (id, change) => {
   const path = join(proposalsDir, `${id}.json`);
@@ -4353,8 +4354,8 @@ check(
   `before:\n${outsideBefore}\nafter:\n${outsideAfter}`,
 );
 
-const archivedMarks = existsSync(join(scratch, 'sessions', 'archived.json'))
-  ? JSON.parse(readFileSync(join(scratch, 'sessions', 'archived.json'), 'utf8')).archived.map((mark) => mark.session)
+const archivedMarks = existsSync(homeEntry(scratch, 'sessions', 'archived.json'))
+  ? JSON.parse(readFileSync(homeEntry(scratch, 'sessions', 'archived.json'), 'utf8')).archived.map((mark) => mark.session)
   : [];
 check(
   '…the tree only Daoris held is gone with its branch, the pushed one stays, and the first session is archived while the second stays to review',
@@ -4535,7 +4536,7 @@ check(
 );
 
 // The record is the driver's home's (D76 §2): this run's config names the scratch folder as its home.
-const acpChatEvents = join(scratch, 'sessions', `${acpChatRecord?.id}.events.jsonl`);
+const acpChatEvents = homeEntry(scratch, 'sessions', `${acpChatRecord?.id}.events.jsonl`);
 const acpSaid = existsSync(acpChatEvents)
   ? readFileSync(acpChatEvents, 'utf8').split('\n').filter(Boolean).map((line) => JSON.parse(line))
     .filter((e) => e.kind === 'user' || e.kind === 'turn').map((e) => (e.kind === 'user' ? `${e.origin}: ${e.text}` : 'turn'))
@@ -4597,7 +4598,7 @@ check(
 const stopRecords = (await api('GET', '/api/sessions?repository=newcomer&includeClosed=true')).json ?? [];
 const stopRecord = stopRecords
   .find((s) => s.kind === 'chat' && s.adapter === 'acp-stub' && s.id !== acpChatRecord?.id);
-const stopEvents = join(scratch, 'sessions', `${stopRecord?.id}.events.jsonl`);
+const stopEvents = homeEntry(scratch, 'sessions', `${stopRecord?.id}.events.jsonl`);
 const stopSaid = existsSync(stopEvents)
   ? readFileSync(stopEvents, 'utf8').split('\n').filter(Boolean).map((line) => JSON.parse(line))
     .filter((e) => e.kind === 'user' || e.kind === 'turn').map((e) => (e.kind === 'user' ? `${e.origin}: ${e.text}` : `turn ${e.stopReason}`))
@@ -4633,11 +4634,12 @@ check(
 
 const attachRecord = ((await api('GET', '/api/sessions?repository=newcomer&includeClosed=true')).json ?? [])
   .find((s) => s.kind === 'chat' && s.adapter === 'acp-stub' && s.id !== acpChatRecord?.id && s.id !== stopRecord?.id);
-const attachEvents = join(scratch, 'sessions', `${attachRecord?.id}.events.jsonl`);
+const attachEvents = homeEntry(scratch, 'sessions', `${attachRecord?.id}.events.jsonl`);
 const attachAsked = existsSync(attachEvents)
   ? readFileSync(attachEvents, 'utf8').split('\n').filter(Boolean).map((line) => JSON.parse(line)).find((e) => e.kind === 'user')
   : null;
-const keptFolder = join(scratch, 'sessions', attachRecord?.id ?? 'none', 'files');
+// A conversation's kept files: `work/files/sessions/<id>/` in a home made since HOMELAYOUT3.
+const keptFolder = homeEntry(scratch, 'session-files', attachRecord?.id ?? 'none');
 check(
   '…kept for the conversation under the home, named in its record, and never written into the repository',
   attachAsked?.text === 'what does this log say?' && JSON.stringify(attachAsked?.files) === '["crash.log"]'
@@ -4679,7 +4681,7 @@ const portParkRun = driver({ serviceUrl: BASE, config: acpConfig, mode: '--once'
 const portPark = (await portRecords()).find((s) => s.id !== portCutId) ?? null;
 let portKept = null;
 try {
-  portKept = JSON.parse(readFileSync(join(scratch, 'sessions', `${portPark?.id}.harness.json`), 'utf8'));
+  portKept = JSON.parse(readFileSync(homeEntry(scratch, 'sessions', `${portPark?.id}.harness.json`), 'utf8'));
 } catch {
   // Not kept, or not JSON: the check below says so.
 }
@@ -4724,7 +4726,7 @@ check(
   portTranscript.slice(-1600) || `${portGoneOn?.transcript}`,
 );
 
-const portEvents = join(scratch, 'sessions', `${portGoneOn?.id}.events.jsonl`);
+const portEvents = homeEntry(scratch, 'sessions', `${portGoneOn?.id}.events.jsonl`);
 const portPersonSaid = existsSync(portEvents)
   ? readFileSync(portEvents, 'utf8').split('\n').filter(Boolean).map((line) => JSON.parse(line))
     .filter((e) => e.kind === 'user' && e.origin === 'person')
@@ -4778,7 +4780,7 @@ writeFileSync(sayConfig, `${JSON.stringify({ ...JSON.parse(readFileSync(acpConfi
 const sayFromTerminal = (id, words) => driver({ serviceUrl: BASE, config: sayConfig, mode: `sessions say ${id} "${words}"` });
 const heardTranscript = (record) => (existsSync(record?.transcript ?? '') ? readFileSync(record.transcript, 'utf8') : '');
 const heardEvents = () => {
-  const path = join(scratch, 'sessions', `${heardId}.events.jsonl`);
+  const path = homeEntry(scratch, 'sessions', `${heardId}.events.jsonl`);
   return existsSync(path) ? readFileSync(path, 'utf8').split('\n').filter(Boolean).map((line) => JSON.parse(line)) : [];
 };
 // Ended again, its words taken and the stub's resumed turn heard them: read until then, or for 45 seconds.
@@ -5010,7 +5012,7 @@ const atlasQuests = async () => (await api('GET', '/api/quests?repository=atlas&
 const askCount = async () => ((await api('GET', '/api/asks?includeClosed=true')).json ?? []).length;
 // The press's rule lands in the home its driver's choices sit in (`permissions.json`, PERM1), this run's scratch.
 const atlasAllows = () => {
-  const file = join(scratch, 'permissions.json');
+  const file = homeEntry(scratch, 'permissions');
   return existsSync(file) ? JSON.parse(readFileSync(file, 'utf8')).repositories?.atlas?.allow ?? [] : [];
 };
 const sessionStarts = (out) => out.split(/\r?\n/).filter((line) => line.trim()).flatMap((line) => {
@@ -5317,16 +5319,16 @@ writeFileSync(planConfig, `${JSON.stringify({
 const onPlanMachine = (mode, env = {}) => driver({ serviceUrl: BASE, config: planConfig, mode, env: { ...PLAN_MACHINE, ...env } });
 // The plan is the driver's file under the home its choices sit in (`<home>/setup/<workspace>.json`), this run's scratch;
 // the press's rule lands beside it in `permissions.json`, under the workspace's key.
-const planFile = join(scratch, 'setup', `${PLAN_WORKSPACE}.json`);
+const planFile = () => homeEntry(scratch, 'setup', `${PLAN_WORKSPACE}.json`);
 const readPlan = () => {
   try {
-    return JSON.parse(readFileSync(planFile, 'utf8'));
+    return JSON.parse(readFileSync(planFile(), 'utf8'));
   } catch {
     return null;
   }
 };
 const allowsOf = (scope, name) => {
-  const file = join(scratch, 'permissions.json');
+  const file = homeEntry(scratch, 'permissions');
   return existsSync(file) ? JSON.parse(readFileSync(file, 'utf8'))[scope]?.[name]?.allow ?? [] : [];
 };
 const questsTo = async (name) => (await api('GET', `/api/quests?repository=${name}&includeClosed=true`)).json ?? [];
@@ -5346,7 +5348,7 @@ check(
     && preview.rows.every((row) => row.now === 'to go' && row.refusals.length === 0)
     && preview.atOnce === '1 (at most 1 while the cap is 2, so other work keeps a slot)'
     && JSON.stringify(preview.rules) === JSON.stringify(SETUP_RULES) && preview.nothingWritten
-    && !existsSync(planFile) && allowsOf('workspaces', PLAN_WORKSPACE).length === 0
+    && !existsSync(planFile()) && allowsOf('workspaces', PLAN_WORKSPACE).length === 0
     && (await questsTo(PLANNED[0])).length === 0 && (await questsTo(PLANNED[1])).length === 0,
   `${plannedAdded.map((added) => added.text).join('\n')}\n${previewed.out}`,
 );
@@ -5497,7 +5499,7 @@ const headOf = (tree) => (tree && existsSync(tree) ? run('git rev-parse HEAD', t
 const landedBranches = () => run('git branch --list "review/*"', newcomer).out.trim();
 const landingOf = (session) => {
   try {
-    return (JSON.parse(readFileSync(join(reviewHome, 'landings.json'), 'utf8')).branches ?? []).find((entry) => entry.session === session) ?? null;
+    return (JSON.parse(readFileSync(homeEntry(reviewHome, 'landings'), 'utf8')).branches ?? []).find((entry) => entry.session === session) ?? null;
   } catch {
     return null;
   }
@@ -5894,7 +5896,7 @@ section('18. Three plugins: one declares a harness, one hands a server, one hold
 // this rehearsal is `scratch` — so the plugins live there, and the CLI's two doors onto the same
 // folder are pointed there too, for this phase only.
 const PLUGIN_HOME = { DAORIS_HOME: scratch };
-const agentPlugin = join(scratch, 'plugins', 'rehearsal.agent');
+const agentPlugin = homeEntry(scratch, 'plugins', 'rehearsal.agent');
 mkdirSync(agentPlugin, { recursive: true });
 writeFileSync(join(agentPlugin, 'plugin.json'), `${JSON.stringify({
   id: 'rehearsal.agent',
@@ -5909,10 +5911,10 @@ const pluginAdded = run(`node "${cliBin}" plugin add "${join(examplesRoot, 'plug
 check(
   '`daoris plugin add` copies the tracked example in under its id',
   pluginAdded.code === 0 && /added plugin `hold-by-title`/.test(pluginAdded.out)
-    && existsSync(join(scratch, 'plugins', 'hold-by-title', 'hooks.mjs')),
+    && existsSync(homeEntry(scratch, 'plugins', 'hold-by-title', 'hooks.mjs')),
   pluginAdded.out,
 );
-const pluginFolder = join(scratch, 'plugins', 'hold-by-title');
+const pluginFolder = homeEntry(scratch, 'plugins', 'hold-by-title');
 
 const browserAdded = run(`node "${cliBin}" plugin add "${join(examplesRoot, 'plugins', 'browser')}"`, scratch, PLUGIN_HOME);
 check(
@@ -5994,7 +5996,7 @@ check(
   gateTranscript.slice(0, 600),
 );
 
-const endedLog = join(scratch, 'plugins', '.data', 'hold-by-title', 'ended.log');
+const endedLog = homeEntry(scratch, 'plugins', '.data', 'hold-by-title', 'ended.log');
 const endedSoFar = () => (existsSync(endedLog) ? readFileSync(endedLog, 'utf8') : '(no ended.log)');
 check(
   'the ending was told to the plugin, which kept it in ITS data folder — beside the install, never in it',
