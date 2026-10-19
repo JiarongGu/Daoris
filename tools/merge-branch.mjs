@@ -293,10 +293,8 @@
  * build servers of its own (`OWN_BUILD_SERVERS` in the kit, a run beside's `BESIDE_ENVIRONMENT`), so it no longer starts
  * after a shutdown of every server on the machine, which beside the git half would stop the builds of all beside it. So it
  * is of `BESIDE_GIT_HALF`, last: it starts once the release rehearsal (which packs the same folder) and the family (which
- * runs the bin it would shadow) have ended, still beside the git half, and the modules' Process half waits for it. Its
- * ports are taken apart (REHEARSEPORT1); the git half's classes start git alone, with no window, host or port, and its
- * waits ask the processes and the page again until a clock or a count of asks runs out, each ask slower under load. The
- * three chained (about 31 to 37 minutes) fit in the git half's 42 to 65. D180's REHLANE2b note has the rest.
+ * runs the bin it would shadow) have ended, still beside the git half, and the modules' Process half waits for it. D180's
+ * REHLANE2b note says why its window's checks share nothing with the git half but load, the walls, and what was rejected.
  *
  * ## The web gate's unit run beside service (WEBSPLIT1)
  *
