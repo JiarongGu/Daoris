@@ -285,7 +285,8 @@ public sealed class OpinionPacketTests : IDisposable
     [Fact]
     public void An_opinion_s_folder_is_under_the_home_by_its_id_and_never_a_path_its_id_could_name()
     {
-        Assert.Equal(Path.Combine(_tree, "opinions", "op1"), OpinionPackets.Folder(_tree, "op1"));
+        // Under `work/opinions/` in a new home (HOMELAYOUT3).
+        Assert.Equal(Path.Combine(_tree, "work", "opinions", "op1"), OpinionPackets.Folder(_tree, "op1"));
         Assert.Throws<DriverException>(() => OpinionPackets.Folder(_tree, "../elsewhere"));
         Assert.Throws<DriverException>(() => OpinionPackets.Folder(_tree, ""));
     }
@@ -295,10 +296,10 @@ public sealed class OpinionPacketTests : IDisposable
     {
         var path = OpinionTree.PathFor(_tree, "work", "reports");
 
-        Assert.Equal(Path.Combine(_tree, "trees", "work", "reports"), Path.GetDirectoryName(path));
+        Assert.Equal(Path.Combine(_tree, "work", "trees", "work", "reports"), Path.GetDirectoryName(path));
         Assert.StartsWith(OpinionTree.Prefix, Path.GetFileName(path), StringComparison.Ordinal);
         Assert.NotEqual(path, OpinionTree.PathFor(_tree, "work", "reports"));
-        Assert.Equal(Path.Combine(_tree, "trees", "default", "reports"), Path.GetDirectoryName(OpinionTree.PathFor(_tree, null, "reports")));
+        Assert.Equal(Path.Combine(_tree, "work", "trees", "default", "reports"), Path.GetDirectoryName(OpinionTree.PathFor(_tree, null, "reports")));
     }
 
     [Fact]

@@ -105,7 +105,7 @@ public sealed class AbandonTests : IDisposable
 
     private WorkWorld World(ServiceClient service, FakeTrees trees, List<string> events, MachineLog? log = null,
         Func<string, SyncReport?>? sync = null) =>
-        new(service, _home, ConfigPath, new SessionProcesses(DaorisHome.Entry(_home, HomeEntry.Sessions)))
+        new(service, _home, ConfigPath, new SessionProcesses(DaorisHome.Entry(_home, HomeEntry.SessionPids)))
         {
             Log = log,
             Clock = () => Now,
@@ -456,7 +456,9 @@ public sealed class AbandonTests : IDisposable
         var events = new List<string>();
         var ledger = Family();
         using var self = Process.GetCurrentProcess();
-        File.WriteAllText(DaorisHome.Entry(_home, HomeEntry.SessionPids, "w0rk1ng0"), $"{self.Id} {self.StartTime.ToUniversalTime().Ticks}");
+        var pid = DaorisHome.Entry(_home, HomeEntry.SessionPids, "w0rk1ng0");
+        Directory.CreateDirectory(Path.GetDirectoryName(pid)!);
+        File.WriteAllText(pid, $"{self.Id} {self.StartTime.ToUniversalTime().Ticks}");
         using var service = ledger.Client();
         var output = new StringWriter();
         var world = World(service, Trees(events), events) with { Wait = TimeSpan.FromMilliseconds(200) };

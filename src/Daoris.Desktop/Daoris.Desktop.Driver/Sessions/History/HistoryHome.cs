@@ -126,6 +126,18 @@ internal static class HistoryHome
             if (!string.Equals(id, RequestsFolder, StringComparison.OrdinalIgnoreCase) && Gone(id)) Add(folder, folder: true);
         }
 
+        // A session's kept files and its process's marker have places of their own since HOMELAYOUT3 (`work/files/sessions/`,
+        // `run/sessions/`): read there too, where a home made after the switch keeps them.
+        foreach (var folder in DaorisHome.Places(world.Home, HomeEntry.SessionFiles).Take(1).Where(place => !SamePlace(place, sessions)).SelectMany(Folders))
+        {
+            if (Gone(Path.GetFileName(folder))) Add(folder, folder: true);
+        }
+
+        foreach (var file in DaorisHome.Places(world.Home, HomeEntry.SessionPids).Take(1).Where(place => !SamePlace(place, sessions)).SelectMany(Files))
+        {
+            if (IdOf(Path.GetFileName(file), SessionHomeFiles.SessionSuffixes) is { } id && Gone(id)) Add(file, folder: false);
+        }
+
         foreach (var file in Files(DaorisHome.Entry(world.Home, HomeEntry.Spawn)))
         {
             if (IdOf(Path.GetFileName(file), SessionHomeFiles.SpawnSuffixes) is { } id && Gone(id)) Add(file, folder: false);
@@ -186,6 +198,11 @@ internal static class HistoryHome
             return [];
         }
     }
+
+    /// <summary>Two spellings of one folder: an entry whose new place is its old one in a home is read once.</summary>
+    private static bool SamePlace(string a, string b) =>
+        string.Equals(Path.TrimEndingDirectorySeparator(Path.GetFullPath(a)), Path.TrimEndingDirectorySeparator(Path.GetFullPath(b)),
+            StringComparison.OrdinalIgnoreCase);
 
     /// <summary>When anything last touched a file, or a folder and everything in it; now, where it cannot be read, so it is never taken.</summary>
     private static DateTimeOffset Touched(string path, bool folder)
