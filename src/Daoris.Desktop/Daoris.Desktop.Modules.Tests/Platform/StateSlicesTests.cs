@@ -154,6 +154,86 @@ public sealed class StateSlicesTests
         Assert.Equal("test", Told().Single(each => each.Type == StateSlice.ManifestType).CoalesceKey);
     }
 
+    /// <summary>A keyed slice (PUSH1d2) over one partition `w` of four records by key, each as <see cref="_records"/> holds it.</summary>
+    private readonly Dictionary<string, object> _records = new(StringComparer.Ordinal)
+    {
+        ["s1"] = new { State = "working" }, ["s2"] = new { State = "working" }, ["s3"] = new { State = "completed" }, ["s4"] = new { State = "failed" },
+    };
+
+    private StateSlice Keyed() =>
+        new("keyed", _bus, _ =>
+        {
+            lock (_records)
+            {
+                return Task.FromResult<IReadOnlyList<SliceJudged>?>(
+                    _records.Count == 0 ? [] : [new SliceJudged("w", new Dictionary<string, object>(_records, StringComparer.Ordinal))]);
+            }
+        }, epoch: "k1") { Keyed = true };
+
+    private void Record(string key, object? record)
+    {
+        lock (_records)
+        {
+            if (record is null) _records.Remove(key);
+            else _records[key] = record;
+        }
+    }
+
+    private static string Keys(object? data) =>
+        string.Join(",", System.Text.Json.JsonSerializer.SerializeToNode(data, Shenora.Core.Ipc.IpcJson.Options)!.AsObject().Select(each => each.Key));
+
+    /// <summary>
+    /// PUSH1d2 (D182 point 3): a keyed partition whose judgement moved a few of its keys pushes those alone, on the number the window
+    /// holds, with the keys gone named; never coalesced, since a delta coalesced away loses what it carried; the snapshot stays whole.
+    /// </summary>
+    [Fact]
+    public async Task A_keyed_slice_pushes_the_keys_a_judgement_moved_as_a_delta_on_the_number_held_never_coalesced()
+    {
+        var slice = Keyed();
+        await slice.JudgeAsync();
+        Assert.Equal(("w", 1L, (long?)null, "s1,s2,s3,s4"), (Pushes()[0].Partition, Pushes()[0].Seq, Pushes()[0].BaseSeq, Keys(Pushes()[0].Data)));
+
+        Record("s2", new { State = "completed" });
+        await slice.JudgeAsync();
+
+        var delta = Pushes()[^1];
+        Assert.Equal((2L, (long?)1L, "s2"), (delta.Seq, delta.BaseSeq, Keys(delta.Data)));
+        Assert.Equal([], delta.Removed!);
+        Assert.Null(Told().Where(each => each.Type == StateSlice.PushType).Last().CoalesceKey);
+        Assert.Equal("s1,s2,s3,s4", Keys(slice.Snapshot().Partitions.Single().Data));
+
+        Record("s4", null);
+        await slice.JudgeAsync();
+        Assert.Equal((3L, (long?)2L, "", "s4"), (Pushes()[^1].Seq, Pushes()[^1].BaseSeq, Keys(Pushes()[^1].Data), string.Join(",", Pushes()[^1].Removed!)));
+        Assert.Equal("w@3:ready", Versions(slice.Snapshot()));
+
+        // Unchanged: nothing.
+        await slice.JudgeAsync();
+        Assert.Equal(3, Pushes().Count);
+    }
+
+    /// <summary>A delta that would carry half the partition or more is pushed whole, as is a partition back from gone.</summary>
+    [Fact]
+    public async Task A_keyed_delta_carrying_half_the_partition_or_more_and_a_return_from_gone_are_pushed_whole()
+    {
+        var slice = Keyed();
+        await slice.JudgeAsync();
+
+        Record("s1", new { State = "completed" });
+        Record("s2", new { State = "completed" });
+        await slice.JudgeAsync();
+        Assert.Equal((2L, (long?)null, "s1,s2,s3,s4", "keyed/w"),
+            (Pushes()[^1].Seq, Pushes()[^1].BaseSeq, Keys(Pushes()[^1].Data), Told().Where(each => each.Type == StateSlice.PushType).Last().CoalesceKey));
+
+        foreach (var key in new[] { "s1", "s2", "s3", "s4" }) Record(key, null);
+        await slice.JudgeAsync();
+        Assert.Equal((3L, StateSlice.Gone), (Pushes()[^1].Seq, Pushes()[^1].Status));
+
+        Record("s5", new { State = "working" });
+        await slice.JudgeAsync();
+        Assert.Equal((4L, (long?)null, "s5"), (Pushes()[^1].Seq, Pushes()[^1].BaseSeq, Keys(Pushes()[^1].Data)));
+    }
+
     [Fact]
     public async Task The_manifest_names_each_partition_s_number_and_follows_the_pushes_it_covers()
     {

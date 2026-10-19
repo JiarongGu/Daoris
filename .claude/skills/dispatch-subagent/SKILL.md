@@ -47,7 +47,9 @@ its README asks the README to describe the change (the docs gate). New words on 
 Run only your own tests, filtered (the ones you add or change and those covering the code you change), and the quick
 checks before hand-back; never a whole project, a fast half, the web's whole suite or `npm run verify`: the CI beside
 runs those after the merge (the owner, 2026-10-19). A control moved or renamed: search the other views' tests for its
-name and run those files (HEAD2d's *Pause…*, pressed in QuestsView.work.test.tsx). An archive entry is appended at the file's end, after one
+name and run those files (HEAD2d's *Pause…*, pressed in QuestsView.work.test.tsx). A machine path in a fixture is neutral,
+`X:/daoris/…`: the universal gate's sensitive scan refuses a home-shaped one (`C:/home/…`, `/home/…`, `C:/Users/…`), and
+two merges on 2026-10-19 stopped on it. An archive entry is appended at the file's end, after one
 blank line, in its neighbours' shape (`## ROW — title (date, Dn)`, the quoted row, `**Outcome** date: …`).
 Orientation pack:
 <the scout's pack, as it came back, with any pointer you corrected marked>

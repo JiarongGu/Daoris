@@ -419,7 +419,8 @@ export const useSyncNow = () => {
       // stood: this window, which pressed it, asks again itself.
       void client.invalidateQueries({ queryKey: keys.allSync });
       void client.invalidateQueries({ queryKey: keys.allQuests });
-      void client.invalidateQueries({ queryKey: keys.allSessions });
+      // The records themselves, where the shell pushes them, are pushed as the pass moved them (PUSH1d2).
+      void client.invalidateQueries({ queryKey: keys.allSessions, predicate: notPushed(client) });
       void client.invalidateQueries({ queryKey: keys.allRegistry });
     },
   });
