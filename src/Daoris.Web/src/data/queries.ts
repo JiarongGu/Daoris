@@ -541,6 +541,23 @@ export const useDismissConflict = () => {
   });
 };
 
+/**
+ * Bring this machine's lost take forward (SYNCMERGE1c2, D178 point 3), invalidating as a dismissal does. Read again on a refusal too:
+ * a bring-forward that lost again is refused, and it left the quest a conflict it did not have (the fresh take's).
+ */
+export const useForwardConflict = () => {
+  const invalidate = useInvalidateQuestWork();
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, machine, sequence }: { id: string; machine: string; sequence: number }) =>
+      api.forwardConflict(id, machine, sequence),
+    onSettled: () => {
+      invalidate();
+      void client.invalidateQueries({ queryKey: keys.allSync });
+    },
+  });
+};
+
 /** What a re-scan can change: the index and what reads it — never a quest, a session, or the tick's own answers. */
 const FED_BY_THE_INDEX = new Set<unknown>([
   keys.status[0], keys.allRepositories[0], keys.allRegistry[0], 'code-map', 'entry', 'convergence', 'search',
