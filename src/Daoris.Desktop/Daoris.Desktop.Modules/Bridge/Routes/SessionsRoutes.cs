@@ -551,8 +551,9 @@ public sealed class SessionsRoutes(DriverContext context)
         Discards = row.Discards is { } discards
             ? new { discards.Branch, discards.Tree, discards.Says, discards.Work.Keeps, discards.KeptAt }
             : null,
-        // WAITSAY1b: the call a working session's agent is inside, as the loop heard it, which its row and head say with how long.
-        Calling = row.Calling is { } call ? new { call.Title, call.Since } : null,
+        // WAITSAY1b: the call a working session's agent is inside, as the loop heard it, which its row and head say with how long;
+        // AUTONOMY1b3b: whether it waits on the person's answer to its permission request.
+        Calling = row.Calling is { } call ? new { call.Title, call.Since, call.Waiting } : null,
     };
 
     private static object Mark(ArchiveMark mark) => new { mark.Session, mark.At };

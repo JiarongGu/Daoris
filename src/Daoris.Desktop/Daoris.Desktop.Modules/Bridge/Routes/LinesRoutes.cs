@@ -269,22 +269,24 @@ public sealed class LinesRoutes(DriverContext context)
     {
         // RPC1b3: `trees clean --workspace` takes one workspace's checkouts alone, as that workspace's Branches tab does; none takes every one.
         var workspace = Optional(request, "workspace");
+        // PUSH1c4a: the pull-request answers kept before this look, so what its asks wrote reaches the pushed list at once (below).
+        var kept = request.Type == "SWEEP_PLAN" ? new LandedBranches(_loop.Home).Entries() : null;
         var (repositories, inUse) = await CheckoutsAndSessionsAsync(_loop, null, cancellationToken, workspace);
         var trees = new SessionTrees(_loop.Home);
 
-        if (request.Type == "SWEEP_PLAN")
+        if (kept is not null)
         {
             var plan = await trees.CleanPlanAsync(repositories, inUse, cancellationToken);
+            // The person's look asks the plugins (D148 point 2) and keeps their answers in the landing record, which no watch hears and
+            // which moves no ref: each repository whose kept answers it wrote has its part of the pushed list judged again now
+            // (PUSH1c4a), rather than at its next ref move or deadline. Asked of no plugin again: the part reads what was kept.
+            SweepStateSlice.Asked(_loop.Facts, kept, new LandedBranches(_loop.Home).Entries());
             // LAND4: the session each kept branch's tree is, so its row says how to land it as that session's page does. The
             // records are read only where a row could offer one, and records that do not read offer none: the list stands.
-            var records = plan.Sessions.Any(item => item.Kind == SweepKind.Unlanded && item.Tree is not null)
+            var records = plan.Sessions.Any(OffersLanding)
                 ? await SessionBranchDoors.RecordsOrNoneAsync(_loop.Service ?? throw NotReady(), cancellationToken)
                 : [];
-            return new
-            {
-                Branches = plan.Sessions.Select(item => SweepRow(item, SessionBranchDoors.SessionOfTree(records, item.Tree))).ToArray(),
-                Landed = plan.Landed.Select(LandedRow).ToArray(),
-            };
+            return SweepAnswer(plan, records);
         }
 
         HashSet<string>? only = null;
@@ -663,8 +665,25 @@ public sealed class LinesRoutes(DriverContext context)
         item.Commits, item.LeftOut, item.Detail, item.Replays,
     };
 
+    /// <summary>
+    /// The clean-up's list as <c>SWEEP_PLAN</c> answers it and the pushed <c>sweep</c> slice carries each repository's part of it
+    /// (PUSH1c4a, <see cref="SweepStateSlice"/>): one builder, two doors. A row names its session (LAND4) only where it could offer that
+    /// session's landing (<see cref="OffersLanding"/>), the only rows the door reads the records for, so a row says the same whichever
+    /// other rows stand beside it.
+    /// </summary>
+    /// <param name="records">The sessions' records: the service's at the door, the machine's facts' look in the slice.</param>
+    public static object SweepAnswer(SweepPlan plan, IReadOnlyList<SessionRecord> records) => new
+    {
+        Branches = plan.Sessions
+            .Select(item => SweepRow(item, OffersLanding(item) ? SessionBranchDoors.SessionOfTree(records, item.Tree) : null)).ToArray(),
+        Landed = plan.Landed.Select(LandedRow).ToArray(),
+    };
+
+    /// <summary>Whether a kept branch's row could offer its session's landing (LAND4): unlanded, its tree still here.</summary>
+    private static bool OffersLanding(SweepItem item) => item.Kind == SweepKind.Unlanded && item.Tree is not null;
+
     /// <summary>A landed branch's row: what the proof found, and the files that keep it where some do (WSR5).</summary>
-    private static object LandedRow(LandedItem item) => new
+    public static object LandedRow(LandedItem item) => new
     {
         item.Repository, item.Workspace, item.Branch, item.Kind, item.Where, item.Files, item.Detail,
         item.PullRequest, item.Commits, item.Removable,

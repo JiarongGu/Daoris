@@ -252,6 +252,13 @@ describe('the permissions held for the person', () => {
     expect(permissionsAgainIn(false, 0)).toBe(false);
   });
 
+  /** AUTONOMY1b3b: where the calls are pushed, a held request's waiting mark wakes the page, so nothing is asked on a clock. */
+  it('is never asked on a clock where the calls are pushed, whatever works or is held', () => {
+    expect(permissionsAgainIn(true, 0, true)).toBe(false);
+    expect(permissionsAgainIn(true, 2, true)).toBe(false);
+    expect(permissionsAgainIn(true, 0, false)).toBeGreaterThan(0);
+  });
+
   it('answers on SESSION_PERMISSION_ANSWER with the chosen option, and asks the waits again itself', async () => {
     const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     const invalidate = vi.spyOn(client, 'invalidateQueries');

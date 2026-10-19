@@ -217,6 +217,36 @@ public sealed class PullRequestStateTests : LandedFixture
     }
 
     /// <summary>
+    /// PUSH1c4a (D182, D148 point 2): the machine's facts judge one repository's list by the answer the record keeps and ask no plugin.
+    /// A squash-merged branch D102 cannot see stays kept until the person's look asks; once its answer is kept, the part judges it as
+    /// the look did, and still asks nothing.
+    /// </summary>
+    [Fact]
+    public async Task The_facts_part_of_the_list_judges_by_the_kept_answer_and_asks_no_plugin()
+    {
+        var (root, origin) = await RepositoryWithOriginAsync("engine");
+        var trees = Trees();
+        var merged = await LandAsync(trees, root, "merged.txt", "merged\n", new LandingSubject("s1", "q1", "Merged"));
+        var tip = trees.Recorded.Of("engine", merged.Branch!)!.Tip;
+        var mergedAt = await SquashOnPlatformAsync(origin, merged.Branch!, then: ("merged.txt", "changed on the line since\n"));
+        await GitAsync(root, "fetch", "--quiet", "--prune", "origin");
+        _answers[merged.Branch!] = () => Completed(mergedAt, tip);
+
+        var before = Landed(await trees.SweepPartAsync("engine", "aurora", root, new HashSet<string>()), merged.Branch!);
+
+        Assert.Equal(0, _asked);
+        Assert.False(before.Removable);
+        Assert.Null(trees.Recorded.Landing("s1")!.PullRequestState);
+
+        var look = Landed(await trees.CleanPlanAsync([("engine", "aurora", root)], new HashSet<string>()), merged.Branch!);
+        var after = Landed(await trees.SweepPartAsync("engine", "aurora", root, new HashSet<string>()), merged.Branch!);
+
+        Assert.Equal(1, _asked);
+        Assert.Equal((LandedKind.PullRequest, "origin/main", true), (after.Kind, after.Where, after.Removable));
+        Assert.Equal((look.Kind, look.Where, look.Commits, look.State, look.StateCode), (after.Kind, after.Where, after.Commits, after.State, after.StateCode));
+    }
+
+    /// <summary>
     /// A session branch whose landed branch the person deleted after its pull request completed by squash: D88 can no longer see
     /// its commits on any branch of theirs, the clean-up's look asks, and the press removes it as carried, kept on the entry.
     /// A source commit this machine never had keeps everything (<c>source-not-here</c>).

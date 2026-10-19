@@ -440,13 +440,18 @@ public sealed class SessionsCommandTests : IDisposable
         var since = new DateTimeOffset(2026, 10, 19, 12, 0, 0, TimeSpan.Zero);
         var calling = new SessionGrouping("w0rk1ng0", SessionGroup.Working, "working") { Calling = new RunningCall("npm test", since) };
         var idle = new SessionGrouping("1dle0000", SessionGroup.Working, "working");
+        // AUTONOMY1b3b: a call held for the person's answer says it waits.
+        var held = new SessionGrouping("h0ld1ng0", SessionGroup.Working, "working") { Calling = new RunningCall("git push", since) { Waiting = true } };
 
-        using var answer = JsonDocument.Parse(SessionsCommand.Json([calling, idle]));
+        using var answer = JsonDocument.Parse(SessionsCommand.Json([calling, idle, held]));
         var rows = answer.RootElement.GetProperty("sessions").EnumerateArray().ToList();
 
         Assert.Equal("npm test", rows[0].GetProperty("calling").GetProperty("title").GetString());
         Assert.Equal(since, rows[0].GetProperty("calling").GetProperty("since").GetDateTimeOffset());
+        Assert.False(rows[0].GetProperty("calling").GetProperty("waiting").GetBoolean());
         Assert.Equal(JsonValueKind.Null, rows[1].GetProperty("calling").ValueKind);
+        Assert.Equal(["title", "since", "waiting"], rows[2].GetProperty("calling").EnumerateObject().Select(field => field.Name));
+        Assert.True(rows[2].GetProperty("calling").GetProperty("waiting").GetBoolean());
         Assert.Equal(SessionsCommand.JsonFields, rows[0].EnumerateObject().Select(field => field.Name));
     }
 

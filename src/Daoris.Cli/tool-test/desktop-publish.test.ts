@@ -14,6 +14,7 @@ import {
   KEPT_LOCALES, LAUNCHER, MANIFEST_SCHEMA, MARKER, MARKER_HEADER, OFFERED_PLUGINS, OWN, PLUGIN_OFFERS, RESOURCES, RESOURCES_SOURCE, RETIRED_IN_APP,
   RETIRED_LAUNCHERS, SHELL_EXE, SHELL_FILES, SHELL_HOME, STAGE, STAGED, STAGED_REQUIRED, SWAP_JOURNAL, buildId, cliLaunchers, insideFixtures,
   DRIVER_EXE, DRIVER_HOME, DRIVER_LAUNCHERS, DRIVER_PROJECT, driverLaunchers, driverPublishCommand, layDriverLaunchers,
+  APP_PROJECT, LAUNCHER_PROJECT, appPublishCommand, artifactsOf, launcherPublishCommand, publishStages,
   installedNote, isInstall, layCli, layOffers, layResources, promoteStage, recordedShellFiles, refusal, retiredPaths, servicePlan, stageRefusal,
   stagedManifest, ungatedRefusal, unstage, writeManifest, GATE_TREE_LOCK, GATE_TREE_RECORD, childArgs, gatedSource, recordStaged,
   // @ts-expect-error — untyped workspace tooling; see above
@@ -624,6 +625,63 @@ test('a service host is published self-contained, single-file, its native librar
   assert.match(command, / -p:PublishSingleFile=true /);
   assert.match(command, / -p:IncludeNativeLibrariesForSelfExtract=true /);
   assert.ok(command.endsWith(` -o "${join(tmpdir(), 'an-install', ...CONNECTOR_HOME)}"`), command);
+});
+
+/**
+ * REHLANE2b: the deployment rehearsal runs beside the driver's git half, which builds into and runs from the desktop
+ * projects' own `bin/` and `obj/`. So, told an output of its own (`--artifacts-path`), every `dotnet publish` this script
+ * runs builds there, by the SDK's own `--artifacts-path`, and the stages it lays an install out from go there too. Untold,
+ * each recipe is the install's as it always was. The merge test's own-output rule reads the rehearsal's half.
+ */
+test('told an output of its own, every publish builds and stages there; untold, each recipe is as it was', () => {
+  const repo = join(tmpdir(), 'a-checkout');
+  const own = join(tmpdir(), 'an-output');
+  const folder = join(tmpdir(), 'an-install', 'x');
+  const told: string[] = [
+    launcherPublishCommand(folder, own), appPublishCommand(folder, own), driverPublishCommand(folder, 'win-x64', own),
+    ...HOSTS.map((host: unknown) => publishCommand(host, 'win-x64', folder, own)),
+  ];
+  for (const command of told) {
+    assert.ok(command.startsWith('dotnet publish "'), command);
+    assert.ok(command.endsWith(` --artifacts-path "${own}"`), command);
+    assert.equal(command.split('--artifacts-path').length, 2, command);
+  }
+  const untold: string[] = [
+    launcherPublishCommand(folder), appPublishCommand(folder), driverPublishCommand(folder),
+    ...HOSTS.map((host: unknown) => publishCommand(host, 'win-x64', folder)),
+  ];
+  for (const command of untold) assert.doesNotMatch(command, /--artifacts-path/, command);
+  assert.ok(launcherPublishCommand(folder).startsWith(`dotnet publish "${LAUNCHER_PROJECT}" -c Release -r win-x64 --self-contained false `));
+  assert.match(launcherPublishCommand(folder), / -p:PublishSingleFile=true /);
+  assert.ok(appPublishCommand(folder).startsWith(`dotnet publish "${APP_PROJECT}" -c Release -r win-x64 --self-contained false `));
+  for (const command of [launcherPublishCommand(folder), appPublishCommand(folder)]) {
+    assert.match(command, / -p:DebugType=none -p:AllowedReferenceRelatedFileExtensions=none /, command);
+    assert.match(command, new RegExp(` -o "${folder.replace(/[\\.]/g, '\\$&')}" --nologo$`), command);
+  }
+  assert.equal(publishStages(repo, own), join(own, 'publish-stage'));
+  assert.equal(publishStages(repo), join(repo, ...APP_PROJECT.split('/'), 'bin', 'publish-stage'));
+
+  // The flag: a folder, made absolute as `--to` is; given with none, a refusal before anything is built.
+  assert.deepEqual(artifactsOf(['--to', 'x'], repo), { artifacts: null, refusal: null });
+  assert.deepEqual(artifactsOf(['--artifacts-path', own, '--service'], repo), { artifacts: own, refusal: null });
+  assert.deepEqual(artifactsOf(['--artifacts-path', 'out'], repo), { artifacts: join(repo, 'out'), refusal: null });
+  for (const argv of [['--to', 'x', '--artifacts-path'], ['--artifacts-path', '--service']]) {
+    const read = artifactsOf(argv, repo);
+    assert.equal(read.artifacts, null);
+    assert.match(read.refusal ?? '', /--artifacts-path <folder>/);
+  }
+
+  // And the publish itself runs every `dotnet publish` through those recipes, each told the output it was given.
+  const text = readFileSync(join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..', 'tools', 'desktop-publish.mjs'), 'utf8');
+  const main = text.slice(text.indexOf('async function main()'));
+  assert.ok(main.length > 1000, 'the publish has no main any more: this test has stopped reading it');
+  assert.doesNotMatch(main, /\b(?:run|execSync|spawnSync)\(\s*`dotnet\b/, 'the publish runs a dotnet command no recipe here builds');
+  for (const recipe of ['launcherPublishCommand', 'appPublishCommand', 'driverPublishCommand', 'publishHost']) {
+    const calls = [...main.matchAll(new RegExp(`\\b${recipe}\\(([^)]*)\\)`, 'g'))].map((call) => call[1]!);
+    assert.ok(calls.length >= 1, `the publish no longer runs ${recipe}`);
+    for (const args of calls) assert.match(args, /,\s*artifacts$/, `${recipe}(${args}) builds into the projects' own folders`);
+  }
+  assert.match(main, /\bpublishStages\(repoRoot, artifacts\)/);
 });
 
 /**

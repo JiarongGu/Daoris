@@ -3,9 +3,22 @@ using System.Runtime.CompilerServices;
 namespace Daoris.Driver;
 
 /// <summary>The call a live session's agent is inside (WAITSAY1b): its title, and when this process first heard of it.</summary>
-/// <param name="Title">The newest title the call's events gave it, as the record keeps it.</param>
-/// <param name="Since">The stamp of the first event of the call this process heard, by the record's clock.</param>
-public sealed record RunningCall(string Title, DateTimeOffset Since);
+/// <param name="Title">
+/// The newest title the call's events gave it, as the record keeps it; for a call that waits, the request's own where the record
+/// named none, and empty where neither did.
+/// </param>
+/// <param name="Since">
+/// The stamp of the first event of the call this process heard, by the record's clock; for a call that waits, when its request was
+/// held.
+/// </param>
+public sealed record RunningCall(string Title, DateTimeOffset Since)
+{
+    /// <summary>
+    /// Whether the call waits on the person's answer to its permission request (AUTONOMY1b3b): held for them under the repository's
+    /// asking permission prompts (<see cref="HeldPermissions"/>), so the session stands still until they answer or the bound refuses it.
+    /// </summary>
+    public bool Waiting { get; init; }
+}
 
 /// <summary>
 /// The call each live session's agent is inside, heard from its record's events as they are written (WAITSAY1b, D152's UX7c
@@ -31,8 +44,15 @@ public sealed record RunningCall(string Title, DateTimeOffset Since);
 /// it moved, judged under the watch's lock and told after it, so the pushed <c>calls</c> slice is woken by a call's start and end
 /// and by nothing that leaves the call as it was.</para>
 ///
+/// <para><b>A call held for the person waits</b> (AUTONOMY1b3b): while the session holds a tool's permission request for the person
+/// (<see cref="HeldPermissions"/>, AUTONOMY1b3a), its newest hold is the call answered, marked <see cref="RunningCall.Waiting"/> and
+/// timed from the hold, so the rail says the session waits on the person, not that it runs. A hold writes no call's event, and the
+/// protocol does not order a call's announcement before its request, so the hold is the call: named as the record named its call where
+/// that call is open here, else by the request's own title. The registry's <see cref="HeldPermissions.Changed"/> moves it as
+/// <see cref="SessionEvents.Evented"/> moves a call.</para>
+///
 /// <para>Bounded: each record's watch holds the calls of at most <see cref="Remembered"/> sessions, the oldest call's session
-/// dropped past it.</para>
+/// dropped past it. The holds are the registry's, which holds each only while its session's agent waits.</para>
 /// </remarks>
 public sealed class RunningCalls
 {
@@ -46,12 +66,25 @@ public sealed class RunningCalls
     // Each session's open calls, in the order they began.
     private readonly Dictionary<string, List<Open>> _open = new(StringComparer.OrdinalIgnoreCase);
 
+    // AUTONOMY1b3b: each session's newest request held for the person, as the registry last told it.
+    private readonly Dictionary<string, HeldPermission> _waiting = new(StringComparer.OrdinalIgnoreCase);
+
+    private readonly HeldPermissions _held;
+
     private readonly int _remembered;
 
     private RunningCalls(SessionEvents events, int remembered)
     {
         _remembered = remembered;
+        _held = HeldPermissions.Of(events);
         events.Evented += Heard;
+        _held.Changed += Held;
+        // A request held before this watch began is read now (oldest first, so each session keeps its newest); one held from here on
+        // is told, and read again under the lock, so either way it is marked.
+        lock (_gate)
+        {
+            foreach (var hold in _held.Now()) _waiting[hold.Session] = hold;
+        }
     }
 
     /// <summary>
@@ -90,16 +123,30 @@ public sealed class RunningCalls
         lock (_gate)
         {
             var now = new Dictionary<string, RunningCall>(StringComparer.OrdinalIgnoreCase);
-            foreach (var (session, calls) in _open)
+            foreach (var session in _open.Keys.Concat(_waiting.Keys))
             {
-                if (Current(calls) is { } call) now[session] = call;
+                if (!now.ContainsKey(session) && CurrentOf(session) is { } call) now[session] = call;
             }
 
             return now;
         }
     }
 
-    private RunningCall? CurrentOf(string session) => _open.TryGetValue(session, out var calls) ? Current(calls) : null;
+    private RunningCall? CurrentOf(string session)
+    {
+        var calls = _open.GetValueOrDefault(session);
+        return _waiting.TryGetValue(session, out var hold) ? Waits(hold, calls) : calls is null ? null : Current(calls);
+    }
+
+    /// <summary>
+    /// The call <paramref name="hold"/> waits on (AUTONOMY1b3b): named as the record named its call where that call is open here, else
+    /// by the request's own title, else by none; timed from when it was held.
+    /// </summary>
+    private static RunningCall Waits(HeldPermission hold, List<Open>? calls)
+    {
+        var named = hold.Call is { } id ? calls?.Find(call => call.Id == id)?.Title : null;
+        return new RunningCall(named is { Length: > 0 } ? named : hold.Title ?? "", hold.Since) { Waiting = true };
+    }
 
     private static RunningCall? Current(List<Open> calls)
     {
@@ -131,6 +178,26 @@ public sealed class RunningCalls
         // Told outside the lock (WAITSAY1c1): a hearer that reads the calls again on another thread is never held behind it.
         if (moved) Tell(session);
         foreach (var each in forgotten ?? []) Tell(each);
+    }
+
+    /// <summary>
+    /// The registry's word that what <paramref name="session"/> holds for the person moved (AUTONOMY1b3b): its holds read again and
+    /// judged as an event is, told after the lock.
+    /// </summary>
+    private void Held(string session)
+    {
+        bool moved;
+        lock (_gate)
+        {
+            var before = CurrentOf(session);
+            // Read under this watch's lock, so two moves told on two threads land as the registry last holds them, whichever is told
+            // first. The registry tells only after its own lock is let go, so this is the one order the two locks are taken in.
+            if (_held.Held(session) is [.., var newest]) _waiting[session] = newest;
+            else _waiting.Remove(session);
+            moved = CurrentOf(session) != before;
+        }
+
+        if (moved) Tell(session);
     }
 
     private void Called(string session, string id, SessionEvent e, ref List<string>? forgotten)
