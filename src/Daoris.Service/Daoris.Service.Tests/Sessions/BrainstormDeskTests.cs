@@ -224,6 +224,31 @@ public sealed class BrainstormDeskTests : IDisposable
         Assert.Null(desk.Show("zz000000"));
     }
 
+    /// <summary>BRAINSTORM-RESERVED1: `meetings` holds the meetings' records (AGENTROOM1a), so no door treats it as a brainstorm's id.</summary>
+    [Fact]
+    public void The_reserved_id_meetings_is_no_brainstorm_and_clear_leaves_every_meeting_whole()
+    {
+        var desk = new BrainstormDesk(_home);
+        Put("meetings/ab12cd34", "request.json", """{ "question": "Why?" }""");
+        Put("meetings", "request.json", """{ "question": "Why?" }""");
+        var kept = Path.Combine(Folder("meetings"), "ab12cd34", "request.json");
+
+        foreach (var id in new[] { "meetings", "Meetings" })
+        {
+            Assert.Null(desk.Find(id));
+            Assert.Null(desk.Show(id));
+            var sent = desk.Send(id, At);
+            Assert.Equal(BrainstormRefusal.NotFound, sent.Refusal);
+            Assert.Contains("`meetings` holds the meetings' records, not a brainstorm", sent.Message);
+            var cleared = desk.Clear(id);
+            Assert.Equal(BrainstormRefusal.NotFound, cleared.Refusal);
+            Assert.Contains("`meetings` holds the meetings' records, not a brainstorm", cleared.Message);
+        }
+
+        Assert.True(File.Exists(kept));
+        Assert.DoesNotContain(desk.List(), each => each.Id.Equals("meetings", StringComparison.OrdinalIgnoreCase));
+    }
+
     /// <summary>An id is a plain name: one that is not reaches nothing, and nothing outside the brainstorms is read or removed.</summary>
     [Fact]
     public void An_id_that_is_not_a_plain_name_reaches_nothing()
