@@ -168,8 +168,7 @@ count includes a plugin step's attempt held for the person, which `WORK_STATE` l
 their word (`useResolveHeld` in `bridge/lines.ts`, `WORK_HELD`, FABRIC-PERFORM1g), and a tool call a session holds for
 their answer under asking (`usePermissionWaits` in `bridge/sessions.ts`, `PERMISSION_WAITS`, AUTONOMY1b3c), answered
 with a choice its agent offered on the session's head and foot and on its row (`useAnswerPermission`,
-`SESSION_PERMISSION_ANSWER`). Neither route publishes, so the waits are asked every few seconds while a session works or
-one is held, and an answer asks them again itself.
+`SESSION_PERMISSION_ANSWER`); neither route publishes, so the page asks again itself (D184's AUTONOMY1b3c note).
 
 The build outputs into `../Daoris.Service/Daoris.Service.Http/wwwroot`, so the page and the API share one
 origin. That is what makes CORS unnecessary in a real deployment — the `DAORIS_WEB_ORIGIN` variable

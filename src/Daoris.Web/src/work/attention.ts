@@ -210,8 +210,7 @@ export function attentionOffers(item: Attention): AttentionOffer[] {
     case 'rule': return plain('accept-rule', 'decline-rule');
     // An agent's ask for a helper (MIXAGENT2c): its session's page's own yes and no, each one press, as they are there.
     case 'helper': return plain('let-ask', 'not-now');
-    // A tool call held for the person (AUTONOMY1b3c): its session's page's own presses, one each, since an allow lets this call
-    // alone run and widens nothing standing (D184's AUTONOMY1b3a note), as the console's yes does.
+    // A tool call held for the person (AUTONOMY1b3c): its session's card's own presses, one each, as `PermissionAsks` says why.
     case 'permission': return permissionOffers(item);
     // A second opinion that waits on the person (XAGENT1g, §8.5): *Go on anyway…* only where no press of theirs is coming (the
     // work lands by itself, or none could be had and the rule requires one), and a pass asked again; the rest are its session's.
