@@ -46,6 +46,7 @@ public static class PluginPage
             return page with
             {
                 Help = grant?.State ?? (HelpGrants.Refusal(server) is null ? HelpGrants.Waits : HelpGrants.Refused),
+                Changed = grant?.Changed ?? false,
                 Accepted = grant?.Accepted ?? [],
                 Refusal = grant?.Refusal ?? HelpGrants.Refusal(server),
             };

@@ -129,6 +129,32 @@ public sealed class PluginsCommandTests : IDisposable
         Assert.Equal(["mcp__issues__create_issue"], grants.Ask);
     }
 
+    /// <summary>PLUGINSHOWCHANGED1: <c>show</c> says an approval changed since, as the page does (D50), and the JSON carries <c>changed</c>.</summary>
+    [Fact]
+    public async Task Show_says_when_an_approval_changed_since()
+    {
+        var folder = DaorisHome.Entry(_home, HomeEntry.Plugins, "acme.tickets");
+        Directory.CreateDirectory(folder);
+        var manifest = Path.Combine(folder, "plugin.json");
+        File.WriteAllText(manifest, """
+            { "id": "acme.tickets", "servers": [
+                { "name": "issues", "command": ["issues"], "to": ["help"], "allow": ["search"] } ] }
+            """);
+        await Run("approve", "acme.tickets", "issues", "--reads-only");
+        File.WriteAllText(manifest, """
+            { "id": "acme.tickets", "servers": [
+                { "name": "issues", "command": ["issues"], "to": ["help"], "allow": ["search", "get_issue"] } ] }
+            """);
+
+        var (exit, said) = await Run("show", "acme.tickets");
+        var (_, json) = await Run("show", "acme.tickets", "--json");
+
+        Assert.Equal(0, exit);
+        Assert.Contains("changed since you approved it, so it asks again and Ask Daoris is handed nothing of it until you do", said);
+        Assert.DoesNotContain("waiting for your approval", said);
+        Assert.True(JsonDocument.Parse(json).RootElement.GetProperty("servers")[0].GetProperty("changed").GetBoolean());
+    }
+
     [Fact]
     public async Task Show_with_json_is_the_page_as_data_and_still_no_value()
     {

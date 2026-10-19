@@ -37,7 +37,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Web/src/agents/AgentsView.test.tsx` | 115 | 2187 |
 | `src/Daoris.Web/src/agents/agents.test.ts` | 45 | 774 |
 | `src/Daoris.Web/src/app/App.test.tsx` | 50 | 978 |
-| `src/Daoris.Web/src/app/App.tsx` | 73 | 1319 |
+| `src/Daoris.Web/src/app/App.tsx` | 74 | 1320 |
 | `src/Daoris.Web/src/data/api.ts` | 43 | 711 |
 | `src/Daoris.Web/src/design/ui.test.tsx` | 48 | 975 |
 | `src/Daoris.Web/src/design/ui.tsx` | 79 | 1683 |
@@ -145,7 +145,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Modules/Bridge/Routes/HelpRoutes.cs` | 72 | 1241 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules/Bridge/Routes/LinesRoutes.cs` | 51 | 860 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules/Bridge/Routes/TreesRoutes.cs` | 60 | 1031 |
-| `src/Daoris.Desktop/Daoris.Desktop.Modules/Loop/DriverLoop.cs` | 67 | 1199 |
+| `src/Daoris.Desktop/Daoris.Desktop.Modules/Loop/DriverLoop.cs` | 67 | 1202 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules/Loop/SessionWords.cs` | 50 | 1031 |
 
 ### Service (`service`)
@@ -186,7 +186,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Cli/src/workflows/workflowdoor.ts` | 46 | 839 |
 | `src/Daoris.Cli/test/agents/toolchain.test.ts` | 110 | 2080 |
 | `src/Daoris.Cli/test/desktop-tool.test.ts` | 44 | 835 |
-| `src/Daoris.Cli/test/dogfood.test.ts` | 48 | 842 |
+| `src/Daoris.Cli/test/dogfood.test.ts` | 48 | 847 |
 | `src/Daoris.Cli/test/driver/driverconfig.test.ts` | 135 | 2476 |
 | `src/Daoris.Cli/test/usage-report.test.ts` | 71 | 1227 |
 | `src/Daoris.Cli/tool-test/desktop-publish.test.ts` | 67 | 1172 |

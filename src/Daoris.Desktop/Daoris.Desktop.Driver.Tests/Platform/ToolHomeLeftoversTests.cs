@@ -62,8 +62,8 @@ public sealed class ToolHomeLeftoversTests : IDisposable
 
     private static string Tree(string home, string session) => DaorisHome.Entry(home, HomeEntry.Trees, "main", "repo", session);
 
-    private static object Record(string id, string? tree, string state = "completed", string? profile = "work", string repository = "repo", string? ask = null) =>
-        new { id, tree, state, profile, repository, ask, workspace = "main" };
+    private static object Record(string id, string? tree, string state = "completed", string? profile = "work", string repository = "repo", string? ask = null, string workspace = "main") =>
+        new { id, tree, state, profile, repository, ask, workspace };
 
     private static string Records(params object[] rows) => JsonSerializer.Serialize(rows);
 
@@ -83,7 +83,7 @@ public sealed class ToolHomeLeftoversTests : IDisposable
         var treeB = Tree(home, "s-5e6f7a8b");
         var help = HelpRoom.PathOf(home);
         var origins = ToolHomeLeftovers.Origins(home, Records(
-            Record("a", treeA), Record("b", treeB, profile: null, state: "failed"), Record("h", null, repository: "daoris:help")));
+            Record("a", treeA), Record("b", treeB, profile: null, state: "failed"), Record("h", null, repository: "daoris:help", workspace: "default")));
         string[] mine = [ToolHomeLeftovers.Flatten(treeA), ToolHomeLeftovers.Flatten(treeB), ToolHomeLeftovers.Flatten(help)];
         string[] theirs =
         [
@@ -101,6 +101,26 @@ public sealed class ToolHomeLeftoversTests : IDisposable
         Assert.Null(listing.Why);
         Assert.Equal(["a"], listing.Folders.Single(folder => folder.Name == mine[0]).By);
         Assert.Equal(["h"], listing.Folders.Single(folder => folder.Name == mine[2]).By);
+    }
+
+    /// <summary>A help record's tree is its own room (HOMEROOMS1): a named workspace's room folder is claimed for it, not the default room's.</summary>
+    [Fact]
+    public void A_named_workspace_s_help_room_is_claimed_for_its_own_record_alone()
+    {
+        var (home, tool, projects) = Homes();
+        var alpha = HelpRoom.PathOf(home, "alpha");
+        var origins = ToolHomeLeftovers.Origins(home, JsonSerializer.Serialize(new object[]
+        {
+            new { id = "h1", repository = "daoris:help", state = "completed", profile = "work", workspace = "alpha" },
+            new { id = "h2", repository = "daoris:help", state = "completed", profile = "work" },
+        }));
+        Project(projects, ToolHomeLeftovers.Flatten(alpha), Old);
+        Project(projects, ToolHomeLeftovers.Flatten(HelpRoom.PathOf(home)), Old);
+
+        var listing = ToolHomeLeftovers.List(WorldOf(home, tool, origins));
+
+        Assert.Equal(["h1"], listing.Folders.Single(folder => folder.Name == ToolHomeLeftovers.Flatten(alpha)).By);
+        Assert.Equal(["h2"], listing.Folders.Single(folder => folder.Name == ToolHomeLeftovers.Flatten(HelpRoom.PathOf(home))).By);
     }
 
     [Fact]

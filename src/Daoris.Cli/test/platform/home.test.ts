@@ -266,6 +266,13 @@ test('the driver’s and the service’s tables are this one, cell for cell (HOM
   assert.equal(csharpTwice(readFileSync(serviceFile('DaorisHome.cs'), 'utf8')), HOME_TWICE, 'the service’s refusal');
 });
 
+/** HOMEROOMS1: a named workspace's Ask Daoris room (`help-<name>`, ASKSCOPE1b) is an entry beside the default room's. */
+test('the table names a named workspace’s help room beside the default one (HOMEROOMS1)', () => {
+  const room = HOME_ENTRIES.find((entry) => entry.name === 'help-rooms');
+  assert.ok(room);
+  assert.deepEqual([room.category, room.new, room.old, [...room.holds]], ['work', 'help-*', 'help-*', ['CLAUDE.md']]);
+});
+
 test('each entry is named once, its places are relative, and an item’s parts are the same in both places', () => {
   assert.equal(new Set(HOME_ENTRIES.map((entry) => entry.name)).size, HOME_ENTRIES.length);
   for (const entry of HOME_ENTRIES) {
