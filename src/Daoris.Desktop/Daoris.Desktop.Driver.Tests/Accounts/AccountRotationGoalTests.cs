@@ -241,10 +241,12 @@ public sealed class AccountRotationGoalTests : IDisposable
         Assert.Equal(("account-2", "Daoris started on it least recently"), (oldest.Profile, oldest.Choice!.Clause));
     }
 
-    // ——— Its week lapsing (§16.3 step 4): a weekly reset a limit told, carried a week where the maker fixes it.
+    // ——— Its week lapsing (§16.3 step 4, as USAGERESET1 weighs it): what would lapse is known only from a reading of the
+    // week's use. A weekly reset a limit told, and the same carried a week on where the maker fixes it, say when and not how
+    // much: neither earns the account anything (absent is never zero, D57).
 
     [Fact]
-    public async Task A_weekly_reset_a_limit_told_puts_its_account_first_in_its_last_day()
+    public async Task A_weekly_reset_a_limit_told_with_no_reading_earns_nothing_in_its_last_day()
     {
         Accounts("account-1", "account-2", "account-3");
         Wire(s => s.WithRotation("fake", ["account-1", "account-2", "account-3"]));
@@ -253,19 +255,16 @@ public sealed class AccountRotationGoalTests : IDisposable
 
         var selection = await Present().SelectAsync("fake", Config, null, null);
 
-        Assert.Equal("account-3", selection.Profile);
-        Assert.Equal(
-            new AccountChoice(WalkStep.Lapsing, $"its week resets first, at Oct 2, 10:00 ({Zone.Id})"),
-            selection.Choice);
+        Assert.Equal(("account-1", WalkStep.List), (selection.Profile, selection.Choice!.Step));
     }
 
     [Fact]
-    public async Task A_passed_weekly_reset_is_carried_a_week_where_the_maker_fixes_it_and_dropped_where_not()
+    public async Task A_weekly_reset_carried_a_week_on_earns_nothing_where_the_maker_fixes_it_or_not()
     {
         Accounts("account-1", "account-2");
         AccountsOf("loose", "account-1", "account-2");
         Wire(s => s.WithRotation("fake", ["account-1", "account-2"]).WithRotation("loose", ["account-1", "account-2"]));
-        // Told a week ago, less four hours: passed, and next week's falls within the day.
+        // Told a week ago, less four hours: passed, and next week's falls within the day where the maker fixes it.
         AccountWindows.Told(_home, "fake", "account-2", Seen.AddDays(-7).AddHours(4), Seen.AddDays(-8), "s0");
         AccountWindows.Told(_home, "loose", "account-2", Seen.AddDays(-7).AddHours(4), Seen.AddDays(-8), "s0");
         var roster = Present();
@@ -273,7 +272,8 @@ public sealed class AccountRotationGoalTests : IDisposable
         var carried = await roster.SelectAsync("fake", Config, null, null);
         var dropped = await roster.SelectAsync("loose", Config with { Adapter = "loose" }, null, null);
 
-        Assert.Equal(("account-2", WalkStep.Lapsing), (carried.Profile, carried.Choice!.Step));
+        Assert.Equal(Seen.AddHours(4), AccountWindows.WeekOf(_home, "fake", "account-2", Seen, fixedWeek: true));
+        Assert.Equal(("account-1", WalkStep.List), (carried.Profile, carried.Choice!.Step));
         Assert.Equal(("account-1", WalkStep.List), (dropped.Profile, dropped.Choice!.Step));
     }
 
@@ -709,16 +709,35 @@ public sealed class AccountRotationGoalTests : IDisposable
     }
 
     [Fact]
-    public async Task A_week_the_agent_said_resets_within_the_day_goes_first_its_reset_read_from_the_reading()
+    public async Task A_week_the_agent_said_resets_within_the_day_goes_first_by_what_would_lapse_read_from_the_reading()
     {
         Accounts("account-1", "account-2", "account-3");
         Wire(s => s.WithRotation("fake", ["account-1", "account-2", "account-3"]));
+        // account-3: half its week unused, resetting in 20 hours; account-2: 3 points, resetting in 2. By its time alone
+        // account-2's went first and account-3's half lapsed (USAGERESET1).
         Said("account-3", 0.10, weekly: 0.50, weekHours: 20);
+        Said("account-2", 0.10, weekly: 0.97, weekHours: 2);
 
         var selection = await Present().SelectAsync("fake", Config, null, null);
 
         Assert.Equal("account-3", selection.Profile);
-        Assert.Equal(new AccountChoice(WalkStep.Lapsing, $"its week resets first, at Oct 2, 10:00 ({Zone.Id})"), selection.Choice);
+        Assert.Equal(
+            new AccountChoice(WalkStep.Lapsing, "its weekly window resets in 20 h with 50% of it unused, read 20 min ago"), selection.Choice);
+    }
+
+    [Fact]
+    public async Task A_weekly_reading_older_than_a_newer_five_hour_frame_earns_nothing()
+    {
+        Accounts("account-1", "account-2");
+        Wire(s => s.WithRotation("fake", ["account-1", "account-2"]));
+        // account-2's week was read three hours ago; a session's frame has said its five-hour window since, so the account
+        // ran after the week was read, and what would lapse there is not known.
+        AccountWindows.Said(_home, "fake", "account-2", [new WindowReading("weekly", 0.40, _now.AddHours(8))], _now.AddHours(-3), null);
+        AccountWindows.Said(_home, "fake", "account-2", [new WindowReading("session", 0.10, _now.AddHours(4), "clear")], _now.AddMinutes(-5), "s0");
+
+        var selection = await Present().SelectAsync("fake", Config, null, null);
+
+        Assert.NotEqual(WalkStep.Lapsing, selection.Choice!.Step);
     }
 
     [Fact]

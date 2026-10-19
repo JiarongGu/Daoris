@@ -48,12 +48,17 @@ public sealed class UsageCurvesTests
     public void A_three_point_curve_joins_its_points_with_straight_lines(double elapsed, double expected) =>
         Assert.Equal(expected, UsageCurves.Value([new CurvePoint(20, 10), new CurvePoint(60, 50), new CurvePoint(90, 90)], elapsed), 6);
 
+    // USAGERESET1: from three-quarters gone the week's tail rises evenly to the whole week at its reset, never in a jump, so
+    // the last 5% is spent rather than left to lapse, and headroom shrinks only as the reset nears.
     [Theory]
     [InlineData(0, 20)]
     [InlineData(50, 70)]
     [InlineData(75, 95)]
-    [InlineData(100, 95)]
-    public void The_smart_weekly_is_its_pace_plus_twenty_never_above_ninety_five(double elapsed, double expected) =>
+    [InlineData(80, 96)]
+    [InlineData(90, 98)]
+    [InlineData(99, 99.8)]
+    [InlineData(100, 100)]
+    public void The_smart_weekly_is_its_pace_plus_twenty_to_ninety_five_then_rises_evenly_to_a_hundred_at_its_reset(double elapsed, double expected) =>
         Assert.Equal(expected, UsageCurves.Value(UsageCurves.Smart("weekly")!, elapsed), 6);
 
     [Theory]
@@ -165,5 +170,140 @@ public sealed class UsageCurvesTests
         Assert.Null(UsageCurves.TightestSaid(Use("smart"), null, Now));
         Assert.Null(UsageCurves.TightestSaid(Use("smart"), new AccountSaid([Said("session", null, 60)]), Now));
         Assert.Null(UsageCurves.TightestSaid(Use("smart"), new AccountSaid([Said("monthly", 0.99, 60)]), Now));
+    }
+
+    // ——— What would lapse at a week's reset (USAGERESET1, D165's note): within its last day, the week's room under its curve
+    // over the hours left to its reset, an hour at the least; nothing that is not known earns any.
+
+    private static WindowSaid Seen(string window, double? used, TimeSpan toReset, TimeSpan ago) =>
+        new(window, used, Now + toReset, Standing: null, Credits: false, Seen: Now - ago, Session: "s0");
+
+    private static (string Window, double Room, double Rate)? Lapsing(RotationUse use, params WindowSaid[] windows) =>
+        UsageCurves.Lapsing(use, windows.Length == 0 ? null : new AccountSaid(windows), Now) is { } lapse
+            ? (lapse.Window.Window, Math.Round(lapse.Room, 6), Math.Round(lapse.Rate, 6))
+            : null;
+
+    /// <summary>The smart week's room with <paramref name="hours"/> left and <paramref name="used"/> of it used: 95 at
+    /// three-quarters gone, rising evenly to 100 at its reset.</summary>
+    private static double SmartRoom(double hours, double used) => 95 + 5 * ((1 - hours / 168) * 100 - 75) / 25 - used * 100;
+
+    [Fact]
+    public void Within_its_last_day_a_week_s_room_over_the_hours_to_its_reset_is_what_would_lapse()
+    {
+        var eight = Lapsing(Use("smart"), Seen("weekly", 0.60, TimeSpan.FromHours(8), TimeSpan.FromMinutes(5)))!.Value;
+        Assert.Equal(("weekly", Math.Round(SmartRoom(8, 0.60), 6), Math.Round(SmartRoom(8, 0.60) / 8, 6)), eight);
+
+        // A whole day ahead still counts; a minute past it does not.
+        Assert.NotNull(Lapsing(Use("smart"), Seen("weekly", 0.60, UsageCurves.LastDay, TimeSpan.FromMinutes(5))));
+        Assert.Null(Lapsing(Use("smart"), Seen("weekly", 0.10, UsageCurves.LastDay + TimeSpan.FromMinutes(1), TimeSpan.FromMinutes(5))));
+        Assert.Null(Lapsing(Use("smart"), Seen("weekly", 0.10, TimeSpan.FromDays(4), TimeSpan.FromMinutes(5))));
+    }
+
+    [Fact]
+    public void Its_last_hour_counts_as_an_hour_so_a_sliver_of_room_resetting_now_is_not_the_most_urgent()
+    {
+        // About 3 points in half an hour: over half an hour it would be 6 an hour, ahead of 78 points over 20 hours' 3.9.
+        var half = Lapsing(Use("smart"), Seen("weekly", 0.97, TimeSpan.FromMinutes(30), TimeSpan.FromMinutes(1)))!.Value;
+        Assert.Equal(half.Room, half.Rate);
+        Assert.True(half.Rate < Lapsing(Use("smart"), Seen("weekly", 0.20, TimeSpan.FromHours(20), TimeSpan.FromMinutes(1)))!.Value.Rate);
+    }
+
+    [Fact]
+    public void A_week_with_no_reading_or_no_number_earns_nothing()
+    {
+        Assert.Null(Lapsing(Use("smart")));
+        Assert.Null(Lapsing(Use("smart"), Seen("session", 0.10, TimeSpan.FromHours(2), TimeSpan.FromMinutes(5))));
+        // A week its agent said a word about and gave no number for.
+        Assert.Null(Lapsing(Use("smart"), Seen("weekly", null, TimeSpan.FromHours(8), TimeSpan.FromMinutes(5)) with { Standing = "warned" }));
+    }
+
+    [Fact]
+    public void An_explicit_zero_is_a_week_all_unused_and_earns_its_whole_room()
+    {
+        var zero = Lapsing(Use("smart"), Seen("weekly", 0, TimeSpan.FromHours(8), TimeSpan.FromMinutes(5)))!.Value;
+        Assert.Equal(Math.Round(SmartRoom(8, 0), 6), zero.Room);
+    }
+
+    [Fact]
+    public void A_week_not_yet_opened_earns_nothing_its_reset_made_up_a_week_after_the_read()
+    {
+        // Claude Code answers no reset for a week not yet opened, and its read places one a week after the read
+        // (`ClaudeUsage`): the soonest it could turn over, a few seconds before the reading's own moment was stamped.
+        var read = TimeSpan.FromDays(6.5);
+        Assert.Null(Lapsing(Use("smart"), Seen("weekly", 0, TimeSpan.FromDays(7) - read - TimeSpan.FromSeconds(3), read)));
+        // The same reading with any use is an opened week, its reset said.
+        Assert.NotNull(Lapsing(Use("smart"), Seen("weekly", 0.01, TimeSpan.FromDays(7) - read - TimeSpan.FromSeconds(3), read)));
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(-60)]
+    public void A_week_resetting_now_or_already_reset_earns_nothing(int minutesToReset) =>
+        Assert.Null(Lapsing(Use("smart"), Seen("weekly", 0.20, TimeSpan.FromMinutes(minutesToReset), TimeSpan.FromHours(3))));
+
+    [Fact]
+    public void A_weekly_reading_older_than_the_newest_window_earns_nothing()
+    {
+        // A five-hour window said since: the account ran after the week was read, so its room is not known.
+        Assert.Null(Lapsing(
+            Use("smart"),
+            Seen("session", 0.30, TimeSpan.FromHours(4), TimeSpan.FromMinutes(5)),
+            Seen("weekly", 0.40, TimeSpan.FromHours(8), TimeSpan.FromHours(3))));
+        // Read together, as a read answers both.
+        Assert.NotNull(Lapsing(
+            Use("smart"),
+            Seen("session", 0.30, TimeSpan.FromHours(4), TimeSpan.FromMinutes(5)),
+            Seen("weekly", 0.40, TimeSpan.FromHours(8), TimeSpan.FromMinutes(5))));
+    }
+
+    [Fact]
+    public void A_week_on_or_over_its_curve_earns_nothing()
+    {
+        Assert.Null(Lapsing(Use("smart"), Seen("weekly", 1.0, TimeSpan.FromHours(8), TimeSpan.FromMinutes(5))));
+        Assert.Null(Lapsing(Use("curve", UseCurve.Flat("weekly", 40)), Seen("weekly", 0.40, TimeSpan.FromHours(8), TimeSpan.FromMinutes(5))));
+    }
+
+    [Fact]
+    public void Only_the_whole_plan_s_week_counts_never_the_five_hour_window_nor_a_model_s_week()
+    {
+        // The five-hour window recovers in hours: its reset is never what lapses.
+        Assert.Null(Lapsing(Use("smart"), Seen("session", 0.10, TimeSpan.FromMinutes(30), TimeSpan.FromMinutes(1))));
+        // A model's week draws only that model's work, which this session may not be: the walk reads only `weekly`.
+        Assert.Null(Lapsing(Use("smart"), Seen("seven_day_opus", 0.10, TimeSpan.FromHours(8), TimeSpan.FromMinutes(1))));
+        // Beside the five-hour window, the week's own room, however tight the five-hour window is.
+        var both = Lapsing(
+            Use("smart"),
+            Seen("session", 0.89, TimeSpan.FromHours(1), TimeSpan.FromMinutes(1)),
+            Seen("weekly", 0.60, TimeSpan.FromHours(8), TimeSpan.FromMinutes(1)))!.Value;
+        Assert.Equal(("weekly", Math.Round(SmartRoom(8, 0.60), 6)), (both.Window, both.Room));
+    }
+
+    [Fact]
+    public void Codex_s_week_is_read_by_its_length_whichever_slot_holds_it_and_a_missing_week_earns_nothing()
+    {
+        var (week, five) = (Now.AddHours(8).ToUnixTimeSeconds(), Now.AddHours(2).ToUnixTimeSeconds());
+        static AccountSaid? Read(string answer) =>
+            CodexUsage.Read(System.Text.Json.JsonDocument.Parse(answer).RootElement.Clone()) is { Count: > 0 } readings
+                ? new AccountSaid([.. readings.Select(each => new WindowSaid(
+                    each.Window, each.Used, each.Reset, each.Standing, each.Credits, Now.AddMinutes(-1), null, AccountWindows.SourceRead))])
+                : null;
+        var swapped = $$$"""
+            {"rateLimits":{"limitId":"codex","primary":{"usedPercent":60,"windowDurationMins":10080,"resetsAt":{{{week}}}},
+            "secondary":{"usedPercent":10,"windowDurationMins":300,"resetsAt":{{{five}}}},"rateLimitReachedType":null}}
+            """;
+        var weekless = $$$"""
+            {"rateLimits":{"limitId":"codex","primary":{"usedPercent":10,"windowDurationMins":300,"resetsAt":{{{five}}}},
+            "secondary":null,"rateLimitReachedType":null}}
+            """;
+
+        Assert.Equal("weekly", UsageCurves.Lapsing(Use("smart"), Read(swapped), Now)!.Value.Window.Window);
+        Assert.Null(UsageCurves.Lapsing(Use("smart"), Read(weekless), Now));
+    }
+
+    [Fact]
+    public void A_person_s_curve_measures_the_room()
+    {
+        var own = Lapsing(Use("curve", UseCurve.Flat("weekly", 50)), Seen("weekly", 0.30, TimeSpan.FromHours(10), TimeSpan.FromMinutes(5)))!.Value;
+        Assert.Equal(("weekly", 20.0, 2.0), own);
     }
 }

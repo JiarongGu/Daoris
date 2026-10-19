@@ -130,15 +130,14 @@ public sealed class AccountGoalTickTests : IDisposable
         foreach (var id in working) Assert.True(processes.Stop(id));
         await driver.Running.SettledAsync().WaitAsync(TimeSpan.FromSeconds(90));
 
-        // In its next week's last day, with nothing running, the week about to lapse goes first.
+        // In its next week's last day, with nothing running: the week the limit told is carried on, and says when it resets
+        // but not how much of it is unused, so it earns the account nothing (USAGERESET1: what would lapse is a reading's).
         _now = Until.AddDays(6).AddHours(12);
+        Assert.Equal(Until.AddDays(7), AccountWindows.WeekOf(_home, "stub", "account-1", _now, fixedWeek: true));
         var snapshot = await service.SnapshotAsync();
         roster.Look(snapshot.Started, roster.Mark());
         var next = await roster.SelectAsync("acp-stub", config, "default", null);
-        Assert.Equal("account-1", next.Profile);
-        Assert.Equal(
-            new AccountChoice(WalkStep.Lapsing, $"its week resets first, at Oct 10, 16:02 ({Zone.Id})"),
-            next.Choice);
+        Assert.NotEqual(WalkStep.Lapsing, next.Choice!.Step);
     }
 
     /// <summary>

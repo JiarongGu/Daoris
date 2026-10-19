@@ -10,9 +10,10 @@
 //      has no curve here, so its number passes nothing.
 //   2. The share gone is `1 - (reset - now) / length`, clamped to 0..1, as a percent.
 //   3. A curve's value joins its points with straight lines, flat before the first and after the last.
-//   4. The smart curve: `session` flat at 90; `weekly` (0, 20), (75, 95), (100, 95), its pace plus 20 and never above 95. Under
-//      `curve` a window the person set takes their points and the rest the smart curve's; under `smart` and `off` the smart
-//      curve, since a start under `off` still passes an account over it (the switch design §3).
+//   4. The smart curve: `session` flat at 90; `weekly` (0, 20), (75, 95), (100, 100), its pace plus 20 up to 95, then rising
+//      evenly to the whole week at its reset, never in a jump (USAGERESET1). Under `curve` a window the person set takes
+//      their points and the rest the smart curve's; under `smart` and `off` the smart curve, since a start under `off` still
+//      passes an account over it (the switch design §3).
 //   5. Room is the curve now less the used percent; the tightest window is the one said with the least room among those with a
 //      number, the first said on a tie; an account is over its curve where that room is below zero.
 //
@@ -37,12 +38,14 @@ export const CURVE_WINDOWS = ['session', 'weekly'] as const;
  */
 export type CurveScope = { switch?: Switch; curve?: Record<string, CurvePoint[]> };
 
-// The smart curve's five-hour window, and the smart week's lead over its pace and its cap, in percent. 🔴 Duplicated
-// deliberately: the driver's copies are `RotationUse.SmartSession`, `UsageCurves.WeeklyLead` and `WeeklyCap`, the CLI's
-// `SMART_SESSION`, `WEEKLY_LEAD` and `WEEKLY_CAP`; the shared table holds all three to the same numbers.
+// The smart curve's five-hour window, and the smart week's lead over its pace, the knee its tail rises from and the end it
+// reaches at its reset, in percent. 🔴 Duplicated deliberately: the driver's copies are `RotationUse.SmartSession`,
+// `UsageCurves.WeeklyLead`, `WeeklyKnee` and `WeeklyEnd`, the CLI's `SMART_SESSION`, `WEEKLY_LEAD`, `WEEKLY_KNEE` and
+// `WEEKLY_END`; the shared table holds all three to the same numbers.
 export const SMART_SESSION = 90;
 const WEEKLY_LEAD = 20;
-const WEEKLY_CAP = 95;
+const WEEKLY_KNEE = 95;
+const WEEKLY_END = 100;
 
 const HOUR = 3_600_000;
 
@@ -71,7 +74,7 @@ export function curveValue(points: readonly CurvePoint[], gone: number): number 
 /** Rule 4: Daoris's own curve for a window, or null for a window this build does not know. */
 export function smartCurve(window: string): CurvePoint[] | null {
   if (window === 'session') return [[0, SMART_SESSION]];
-  if (window === 'weekly') return [[0, WEEKLY_LEAD], [WEEKLY_CAP - WEEKLY_LEAD, WEEKLY_CAP], [100, WEEKLY_CAP]];
+  if (window === 'weekly') return [[0, WEEKLY_LEAD], [WEEKLY_KNEE - WEEKLY_LEAD, WEEKLY_KNEE], [100, WEEKLY_END]];
   return null;
 }
 

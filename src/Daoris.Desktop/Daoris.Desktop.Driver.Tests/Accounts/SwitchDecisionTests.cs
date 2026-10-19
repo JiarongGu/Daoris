@@ -196,6 +196,37 @@ public sealed class SwitchDecisionTests
         Assert.Equal(new SwitchChoice.Stay(SwitchStay.Room), Decide(Said(0.45), [Ready("account-3", Said(0.10))]));
     }
 
+    // ——— What would lapse chooses only where a required move goes (USAGERESET1, the switch design §4): among the candidates
+    // with the margin's room, the most of a week that would lapse per hour to its reset first, then the most room.
+
+    /// <summary>A candidate whose week resets in <paramref name="hours"/> with <paramref name="weekly"/> of it used.</summary>
+    private static AccountSaid Lapsing(double weekly, int hours, double session = 0.10) =>
+        new([Window("session", session, 60), Window("weekly", weekly, hours * 60)]);
+
+    [Fact]
+    public void A_required_move_goes_where_more_would_lapse_before_where_there_is_more_room()
+    {
+        // account-2: 60 points of room half a week off; account-3: 40 points of room resetting in 8 hours, 5 an hour.
+        var choice = Decide(Over, [Ready("account-2", Said(0.10)), Ready("account-3", Lapsing(0.59, 8))]);
+
+        Assert.Equal("account-3", Assert.IsType<SwitchChoice.MoveTo>(choice).Account);
+        // Of two lapsing, the more an hour; the margin still holds on every window.
+        Assert.Equal("account-2", Assert.IsType<SwitchChoice.MoveTo>(
+            Decide(Over, [Ready("account-3", Lapsing(0.59, 20)), Ready("account-2", Lapsing(0.59, 8))])).Account);
+        Assert.Equal("account-2", Assert.IsType<SwitchChoice.MoveTo>(
+            Decide(Over, [Ready("account-3", Lapsing(0.59, 8, session: 0.85)), Ready("account-2", Said(0.10))])).Account);
+    }
+
+    [Fact]
+    public void A_healthy_session_never_moves_to_chase_a_reset()
+    {
+        var lapsing = new[] { Ready("account-3", Lapsing(0.10, 2)) };
+
+        Assert.Equal(new SwitchChoice.Stay(SwitchStay.Room), Decide(Said(0.30), lapsing));
+        // Within the margin and not over: still no move.
+        Assert.Equal(new SwitchChoice.Stay(SwitchStay.Room), Decide(Said(0.65), lapsing));
+    }
+
     [Fact]
     public void The_hold_the_freshness_and_the_margin_are_the_design_s()
     {

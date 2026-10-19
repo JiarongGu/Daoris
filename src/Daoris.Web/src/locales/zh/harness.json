@@ -125,7 +125,7 @@
   "harness.use.switch.smart": "智能",
   "harness.use.switch.curve": "我的曲线",
   "harness.use.switch.off": "关闭",
-  "harness.use.switch.smartSays": "Daoris 的曲线：5 小时窗口用到 90%；每周窗口用到本周节奏加 20 个百分点，最多 95%。",
+  "harness.use.switch.smartSays": "Daoris 的曲线：5 小时窗口用到 90%；每周窗口用到本周节奏加 20 个百分点，到 95% 后在重置前平稳升到 100%，少让额度作废。",
   "harness.use.switch.curveSays": "你自己的行，每个窗口一组；你没设的窗口沿用 Daoris 的曲线。",
   "harness.use.switch.offSays": "会话运行时不切换。启动仍跳过超出 Daoris 曲线的账户，触顶时仍会让会话接续下去。",
   "harness.use.switch.silent": "{{product}} 在这里的会话不会说明每个窗口已用多少，所以启动不会因用量跳过任何账户。",

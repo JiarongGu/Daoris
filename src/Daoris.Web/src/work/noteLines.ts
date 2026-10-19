@@ -385,7 +385,9 @@ export const OPENING_REASONS: Readonly<Record<string, { key: string; values: rea
   near: { key: 'note.opening.why.near', values: ['over'] },
   room: { key: 'note.opening.why.room', values: ['over', 'used', 'against'] },
   fewest: { key: 'note.opening.why.fewest', values: [] },
+  // No longer written (USAGERESET1: step 4 weighs what would lapse, said by `lapses`); a line written before keeps it.
   lapsing: { key: 'note.opening.why.lapsing', values: ['at'] },
+  lapses: { key: 'note.opening.why.lapses', values: ['window', 'unused', 'at', 'seen'] },
   'most-room': { key: 'note.opening.why.most-room', values: ['room', 'window'] },
   // The week's pace, written under `switch: off` only since the curve (SWITCH1b-ii).
   behind: { key: 'note.opening.why.behind', values: ['used', 'gone'] },
@@ -425,6 +427,8 @@ export const NOTE_VALUES: Readonly<
   tokens: 'count', count: 'count',
   // A curve's value now is a whole percent, as a window's use is (SWITCH1b-ii).
   used: 'percent', near: 'percent', gone: 'percent', against: 'percent', curve: 'percent',
+  // The share of a week unused at its reset, as a window's use is (USAGERESET1).
+  unused: 'percent',
   adapter: 'text', now: 'text', then: 'text',
   // An account id is worded by the name the person gave it where the page knows it (NOTENAME1); `owner` is the agent.
   account: 'account', over: 'account', first: 'account',

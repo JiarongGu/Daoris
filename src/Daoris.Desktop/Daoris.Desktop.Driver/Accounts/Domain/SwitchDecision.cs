@@ -56,8 +56,10 @@ public static class SwitchStay
 /// <remarks>
 /// <para>The order: <c>off</c> stays; an account that said no number stays; one with the margin's room stays and reads nothing;
 /// within the margin, a ready candidate said long ago or never is read first, unless the session is held; not over stays;
-/// held stays; then the ready candidate with the most room on its tightest window, at least <see cref="UsageCurves.SwitchMargin"/>,
-/// the scope's list order breaking a tie, as the walk orders its step 5 (SWITCH1b-ii); none stays.</para>
+/// held stays; then, of the ready candidates with at least <see cref="UsageCurves.SwitchMargin"/> on every window they said, the
+/// one where the most of a week would lapse per hour to its reset (<see cref="UsageCurves.Lapsing"/>, USAGERESET1, as the walk's
+/// step 4), then the most room on its tightest window (step 5, SWITCH1b-ii), the scope's list order breaking a tie; none stays.
+/// What would lapse never makes a move: a session under its curve stays whatever another account's reset.</para>
 /// <para>A limit reached is not this path: a cut-off session carries on by TOOL4f, held or not.</para>
 /// </remarks>
 public static class SwitchDecision
@@ -97,12 +99,18 @@ public static class SwitchDecision
         if (tightest.Room >= 0) return new SwitchChoice.Stay(SwitchStay.Room);
         if (held) return new SwitchChoice.Stay(SwitchStay.Held);
 
-        // OrderByDescending is stable: equal room keeps the scope's list order.
+        // The move is required by now; what would lapse only chooses where it goes (USAGERESET1, the switch design §4): the most
+        // of a week that would lapse per hour first, as the walk's step 4, then the most room. OrderByDescending and ThenBy
+        // are stable: equal keeps the scope's list order.
         var target = others
             .Where(each => each.Ready)
-            .Select(each => (each.Account, Room: UsageCurves.TightestSaid(use, each.Said, now)?.Room))
+            .Select(each => (
+                each.Account,
+                Room: UsageCurves.TightestSaid(use, each.Said, now)?.Room,
+                Lapse: UsageCurves.Lapsing(use, each.Said, now)?.Rate ?? 0))
             .Where(each => each.Room >= UsageCurves.SwitchMargin)
-            .OrderByDescending(each => each.Room)
+            .OrderByDescending(each => each.Lapse)
+            .ThenByDescending(each => each.Room)
             .Select(each => each.Account)
             .FirstOrDefault();
         return target is null

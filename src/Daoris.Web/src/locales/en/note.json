@@ -247,6 +247,7 @@
   "note.opening.why.room": "both are near; it has more room, {{used}} used against `{{over}}`'s {{against}}",
   "note.opening.why.fewest":"it runs the fewest of Daoris's sessions",
   "note.opening.why.lapsing": "its week resets first, at {{at}}",
+  "note.opening.why.lapses": "its {{window}} window resets at {{at}} with {{unused}} of it unused, as read at {{seen}}",
   "note.opening.why.most-room": "it has the most room under its curve, {{room}} points on its {{window}} window",
   "note.opening.why.behind": "it is furthest behind its week's pace, {{used}} of its weekly limit used with {{gone}} of its week gone",
   "note.opening.why.ahead": "`{{over}}` is ahead of its week's pace, {{used}} of its weekly limit used with {{gone}} of its week gone",

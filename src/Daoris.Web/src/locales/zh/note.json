@@ -247,6 +247,7 @@
   "note.opening.why.room": "两者都接近上限；它余量更多，已用 {{used}}，`{{over}}` 为 {{against}}",
   "note.opening.why.fewest":"它运行的 Daoris 会话最少",
   "note.opening.why.lapsing": "它的一周额度最先重置，在 {{at}}",
+  "note.opening.why.lapses": "它的{{window}}窗口在 {{at}} 重置，按 {{seen}} 的读数还有 {{unused}} 未用",
   "note.opening.why.most-room": "它在曲线下的余量最多：{{window}}窗口还有 {{room}} 个百分点",
   "note.opening.why.behind": "它最落后于本周的用量节奏：每周上限已用 {{used}}，本周已过去 {{gone}}",
   "note.opening.why.ahead": "`{{over}}` 超前于本周的用量节奏：每周上限已用 {{used}}，本周已过去 {{gone}}",
