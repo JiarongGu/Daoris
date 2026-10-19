@@ -406,12 +406,47 @@ describe("a row as the list's reader places it", () => {
     expect(screen.getByText(/^engine · driven · /)).toBeInTheDocument();
   });
 
+  /**
+   * WAITSAY1b (D152's UX7c amendment): the rail holds no session's events, so the call a working session's agent is inside is
+   * the reader's, as the driver heard it: said on the row's line with how long it has run, and why in its tip.
+   */
+  it('says the call a working session is running, and for how long', () => {
+    const calling = { title: 'npm test', since: '2026-09-21T11:52:00Z' };
+    const { rerender } = render(<SessionRow session={session()} place="engine" grouping={placed({ group: 'working', shown: 'working', calling })} />);
+    expect(screen.getByText(/^engine · running npm test for 8m · driven · /)).toBeInTheDocument();
+    expect(screen.getByTitle(/The tool call its agent is inside/)).toBeInTheDocument();
+
+    // Not said where none is open, nor of a chat between turns, nor once the session no longer works.
+    rerender(<SessionRow session={session()} grouping={placed({ group: 'working', shown: 'working', calling: null })} />);
+    expect(screen.queryByText(/running/)).toBeNull();
+    rerender(<SessionRow session={session({ kind: 'chat' })} taking={false} grouping={placed({ group: 'working', shown: 'working', calling })} />);
+    expect(screen.queryByText(/running/)).toBeNull();
+    rerender(<SessionRow session={session({ state: 'awaiting-person' })} grouping={placed({ group: 'you', shown: 'awaiting-person', calling })} />);
+    expect(screen.queryByText(/running/)).toBeNull();
+  });
+
+  /** WAITSAY1b: a call begun before the window opened is timed from when the driver heard it begin, never from the window's. */
+  it('times a call begun before the window opened from its start', () => {
+    const calling = { title: 'dotnet test', since: '2026-09-21T10:30:00Z' };
+    const { rerender } = render(<SessionRow session={session()} grouping={placed({ group: 'working', shown: 'working', calling })} />);
+    expect(screen.getByText(/running dotnet test for 1h 30m/)).toBeInTheDocument();
+
+    vi.setSystemTime(new Date('2026-09-21T12:05:00Z'));
+    rerender(<SessionRow session={session()} grouping={placed({ group: 'working', shown: 'working', calling: { ...calling } })} />);
+    expect(screen.getByText(/running dotnet test for 1h 35m/)).toBeInTheDocument();
+  });
+
   it('says it in 中文 too', async () => {
     await i18n.changeLanguage('zh');
     try {
       render(<SessionRow session={session({ state: 'failed' })} place="engine" grouping={placed({ group: 'you', shown: 'parked', strikes: 3 })} />);
       expect(screen.getByText('已挂起')).toBeInTheDocument();
       expect(screen.getByText(/^engine · 3 个会话失败后挂起/)).toBeInTheDocument();
+
+      // WAITSAY1b: the running call, in the head's own words.
+      render(<SessionRow session={session()} grouping={placed({ group: 'working', shown: 'working', calling: { title: 'npm test', since: '2026-09-21T11:52:00Z' } })} />);
+      expect(screen.getByText(/正在运行 npm test，已 8 分钟/)).toBeInTheDocument();
+      expect(screen.getByTitle(/它的智能体正在进行的工具调用/)).toBeInTheDocument();
     } finally {
       await i18n.changeLanguage('en');
     }

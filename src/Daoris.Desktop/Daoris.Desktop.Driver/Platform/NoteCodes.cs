@@ -597,6 +597,9 @@ public static class NoteCodes
     public static readonly NoteCode LandingOpinion = new("landing.opinion", []);
     public static readonly NoteCode LandingNoTree = new("landing.no-tree", []);
     public static readonly NoteCode LandingNotDone = new("landing.not-done", []);
+    // The access setup says `landing: rule` and the rule merges (ACCESSWORDS1): `access` is where the setup was set (repository,
+    // workspace or machine); a merge still waits for Accept.
+    public static readonly NoteCode LandingMerges = new("landing.merges", ["access"]);
 
     // ——— A conversation's first line, where a start's account was chosen (UX7d-1, RotatedOpening): said in the conversation's
     // record, which never leaves the machine (D76 §2), so its values name accounts and a workspace. The line, then the rest's

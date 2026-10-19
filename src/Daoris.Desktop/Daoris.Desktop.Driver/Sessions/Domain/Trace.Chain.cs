@@ -751,7 +751,14 @@ public sealed record TraceTry(DateTimeOffset At, string Code)
 
 /// <summary>The landing rule a branch was made under, as it stood then (LAND2b, D145 point 6).</summary>
 /// <param name="Source">Where the rule came from, one of <see cref="LandingSource"/>.</param>
-public sealed record TraceRule(string? Plugin, bool AutoAccept, string Source);
+public sealed record TraceRule(string? Plugin, bool AutoAccept, string Source)
+{
+    /// <summary>
+    /// Where the access setup that turned the rule's switch on was set (ACCESSWORDS1, <see cref="LandedRule.Access"/>), one of
+    /// <see cref="AccessRules.FromRepository"/> and the rest; null where the rule's own switch stood, and in a record from before.
+    /// </summary>
+    public string? Access { get; init; }
+}
 
 /// <summary>A session a landing names and the service holds no record of: what the landing alone says.</summary>
 public sealed record TraceUnrecordedLink(string Session)
@@ -1190,7 +1197,7 @@ internal static partial class TraceChains
         RemovedAs = landing.GoneAt is null ? null : landing.RemovedAs,
         RemovedOn = landing.GoneAt is null || landing.RemovedAs is null ? null : landing.RemovedOn,
         AcceptedBy = landing.AcceptedBy,
-        Rule = landing.Rule is { } rule ? new TraceRule(rule.Plugin, rule.AutoAccept, rule.Source) : null,
+        Rule = landing.Rule is { } rule ? new TraceRule(rule.Plugin, rule.AutoAccept, rule.Source) { Access = rule.Access } : null,
         Review = landing.Review,
         Opinion = landing.Opinion,
         Workflow = landing.Workflow,

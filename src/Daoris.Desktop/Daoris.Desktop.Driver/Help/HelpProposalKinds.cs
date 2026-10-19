@@ -39,7 +39,8 @@ internal interface IHelpProposalKind
     /// <summary>
     /// The workspaces and repositories it names (ASKSCOPE1c): what a conversation bound to one workspace may name only of its own,
     /// judged before <see cref="Plan"/> (<see cref="HelpProposalScope"/>). By default the file's <c>workspace</c> and
-    /// <c>repository</c>; a kind whose target or value names one says so in its file.
+    /// <c>repository</c>; a kind whose target or value names one says so in its file, and one naming a quest, an ask or a session
+    /// by id names that record with its workspace, as the facts its judge reads hold it (ASKSCOPE1c2).
     /// </summary>
     HelpNames Named(HelpProposal proposal, HelpMachineFacts facts) => new([proposal.Workspace], [proposal.Repository]);
 

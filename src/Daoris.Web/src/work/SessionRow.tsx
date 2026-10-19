@@ -148,6 +148,9 @@ export function SessionRow({
   const running = SESSION_ACTIVE.has(session.state);
   const shown = shownOf(session, grouping, taking);
   const placed = placedFact(grouping, shown);
+  // WAITSAY1b: the rail holds no session's events, so the call its agent is inside is the reader's, as the driver heard it,
+  // timed from its start whenever this window opened; said only while it works, never of a chat between turns.
+  const calling = shown === 'working' ? grouping?.calling : null;
 
   // One line of secondary facts, each absent when it has nothing to say — `MetaLine`'s rule, and
   // what keeps a rail of a dozen rows readable at 18rem. What the two absences MEAN is on the
@@ -158,6 +161,7 @@ export function SessionRow({
     archived ? t('work.rail.archived') : null,
     parts && parts > 1 ? t('work.rail.parts', { count: parts }) : null,
     placed ? t(placed.line, placed.values) : null,
+    calling ? t('work.rail.calling', { title: calling.title, elapsed: elapsed(calling.since) }) : null,
     // An intake is a chat only by the way it was opened (INT4b); it says what it is (INT4g). So is a second opinion's reviewer,
     // marked as one (XAGENT1g, the second-agent design §9).
     t(isIntake(session) ? 'work.intake.kind' : isOpinion(session) ? 'opinion.session.kind'
@@ -177,6 +181,7 @@ export function SessionRow({
   const tip = [
     archived ? t('work.rail.archivedTip') : null,
     placed ? t(placed.tip) : null,
+    calling ? t('work.rail.callingTip') : null,
     landed ? t(landed.state === 'gone' ? 'work.rail.landedGoneTip' : 'work.rail.landedTip') : null,
     tree ? t('work.rail.treeTip') : null,
     origin ? t('work.rail.onTip') : null,

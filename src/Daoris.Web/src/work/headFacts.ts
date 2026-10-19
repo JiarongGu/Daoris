@@ -96,7 +96,9 @@ export function sessionFacts(t: TFunction, of: SessionFactsOf): string[] {
     // WAITSHOWN1: its agent has said nothing since it was asked; a resumed long conversation can wait many minutes.
     if (of.waitingSince && session.state === 'working') facts.push(t('work.facts.firstAnswer', { time: moment(of.waitingSince) }));
     // WAITSAY1: a call that runs for minutes is what the session waits on; said with how long, and only while it is working.
-    if (of.calling && session.state === 'working') facts.push(t('work.facts.calling', { title: of.calling.title, elapsed: elapsed(of.calling.since) }));
+    // WAITSAY1b: the record read here first, which moves live; else the call the driver heard, which the row's reader carries.
+    const calling = of.calling ?? grouping?.calling;
+    if (calling && session.state === 'working') facts.push(t('work.facts.calling', { title: calling.title, elapsed: elapsed(calling.since) }));
     return facts.filter((fact): fact is string => Boolean(fact));
   }
 

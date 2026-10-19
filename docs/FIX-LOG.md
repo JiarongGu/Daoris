@@ -5,6 +5,17 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-19 — A tool call the rules refused read as still running in a session's head (WAITSAY1b)
+
+- **Symptom:** found reading the doors for WAITSAY1b: after an ask was refused (D52), a working session's head could say
+  *running git push for 9m* of the refused call until its turn ended, and named it over a call still running beside it.
+- **Root cause:** WAITSAY1's `runningCall` counted a call ended only on `completed`, `failed` or `cut`; both doors close a
+  refused call with `refused` (`ClaudeStreamJson.Refuse` and its failed result, `AcpSession`'s failed update read as refused).
+- **Fix:** `runningCall` passes over `refused` too; the driver's `RunningCalls`, built in the same row, ends a call on any
+  status but none, `pending` and `in_progress`.
+- **Verify:** `conversation.test.ts`' *passes over a call the rules refused* failed first, then green; `RunningCallsTests`'
+  refusal case.
+
 ## 2026-10-19 — The setup kit's early-exit row counted the stub's start under load (STUB3, FLAKE1)
 
 - **Symptom:** the CI beside on `b0a786d` (five workers beside it, below normal) failed `setup-kit.test.ts`'s *a stub that exits

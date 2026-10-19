@@ -303,6 +303,71 @@
         {"id": "pull-request", "kind": "pull-request", "participation": "you", "executor": "plugin", "press": "merge", "source": {"rule": "landing", "level": "workspace"}, "settings": {"plugin": "example.pull-request"}, "runtime": "partial", "limit": "pull-request-at-clean-up"}
       ],
       "version": "83b8aa0b7aa6"
+    },
+    {
+      "name": "CURRENTVIEW1: a repository's access setup lands by the rule, so a branch rule whose switch is off is drawn automatic",
+      "config": {"landings": {"web-app": {"form": "branch", "pattern": "feature/{quest}"}}, "access": {"web-app": {"landing": "rule"}}},
+      "repository": "web-app",
+      "workspace": null,
+      "plugins": [],
+      "startHolds": [],
+      "steps": [
+        {"id": "work", "kind": "work", "participation": "agent", "executor": "agent", "press": null, "source": {"rule": null, "level": "default"}, "settings": {"standing": null}, "runtime": "built", "limit": null},
+        {"id": "landing", "kind": "landing", "participation": "automatic", "executor": "daoris", "press": null, "source": {"rule": "landing", "level": "repository"}, "settings": {"form": "branch", "accept": "automatic", "pattern": "feature/{quest}", "plugin": null, "tidy": false}, "runtime": "built", "limit": null}
+      ],
+      "version": "08ae41a54402"
+    },
+    {
+      "name": "CURRENTVIEW1: full access on this machine lands a workspace's branch rule by the rule",
+      "config": {"workspaceLandings": {"work": {"form": "branch", "pattern": "work/{quest}"}}, "machineAccess": "full"},
+      "repository": "web-app",
+      "workspace": "work",
+      "plugins": [],
+      "startHolds": [],
+      "steps": [
+        {"id": "work", "kind": "work", "participation": "agent", "executor": "agent", "press": null, "source": {"rule": null, "level": "default"}, "settings": {"standing": null}, "runtime": "built", "limit": null},
+        {"id": "landing", "kind": "landing", "participation": "automatic", "executor": "daoris", "press": null, "source": {"rule": "landing", "level": "workspace"}, "settings": {"form": "branch", "accept": "automatic", "pattern": "work/{quest}", "plugin": null, "tidy": false}, "runtime": "built", "limit": null}
+      ],
+      "version": "ac9889410ac2"
+    },
+    {
+      "name": "CURRENTVIEW1: a merge rule keeps Accept whatever the setup says",
+      "config": {"machineAccess": "full"},
+      "repository": "web-app",
+      "workspace": null,
+      "plugins": [],
+      "startHolds": [],
+      "steps": [
+        {"id": "work", "kind": "work", "participation": "agent", "executor": "agent", "press": null, "source": {"rule": null, "level": "default"}, "settings": {"standing": null}, "runtime": "built", "limit": null},
+        {"id": "landing", "kind": "landing", "participation": "you", "executor": "daoris", "press": "accept", "source": {"rule": "landing", "level": "default"}, "settings": {"form": "merge", "accept": "you", "pattern": null, "plugin": null, "tidy": false}, "runtime": "built", "limit": null}
+      ],
+      "version": "06e90f358edc"
+    },
+    {
+      "name": "CURRENTVIEW1: the repository's own landing: person outranks the machine's full access, so the press stays",
+      "config": {"landings": {"web-app": {"form": "branch", "pattern": "feature/{quest}"}}, "access": {"web-app": {"landing": "person"}}, "machineAccess": "full"},
+      "repository": "web-app",
+      "workspace": null,
+      "plugins": [],
+      "startHolds": [],
+      "steps": [
+        {"id": "work", "kind": "work", "participation": "agent", "executor": "agent", "press": null, "source": {"rule": null, "level": "default"}, "settings": {"standing": null}, "runtime": "built", "limit": null},
+        {"id": "landing", "kind": "landing", "participation": "you", "executor": "daoris", "press": "accept", "source": {"rule": "landing", "level": "repository"}, "settings": {"form": "branch", "accept": "you", "pattern": "feature/{quest}", "plugin": null, "tidy": false}, "runtime": "built", "limit": null}
+      ],
+      "version": "a7e08fab11cd"
+    },
+    {
+      "name": "CURRENTVIEW1: the workspace's Current reads the workspace's setup, never a repository's",
+      "config": {"workspaceLandings": {"work": {"form": "branch", "pattern": "work/{quest}"}}, "workspaceAccess": {"work": {"landing": "rule"}}, "access": {"web-app": {"landing": "person"}}},
+      "repository": null,
+      "workspace": "work",
+      "plugins": [],
+      "startHolds": [],
+      "steps": [
+        {"id": "work", "kind": "work", "participation": "agent", "executor": "agent", "press": null, "source": {"rule": null, "level": "default"}, "settings": {"standing": null}, "runtime": "built", "limit": null},
+        {"id": "landing", "kind": "landing", "participation": "automatic", "executor": "daoris", "press": null, "source": {"rule": "landing", "level": "workspace"}, "settings": {"form": "branch", "accept": "automatic", "pattern": "work/{quest}", "plugin": null, "tidy": false}, "runtime": "built", "limit": null}
+      ],
+      "version": "ac9889410ac2"
     }
   ],
   "limits": [

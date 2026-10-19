@@ -62,9 +62,10 @@ public sealed class SessionGroupsTests
         JsonObject[] records, QuestView[]? quests = null, Consideration[]? considered = null,
         (string Tree, TreeWork Work)[]? trees = null, string[]? archived = null, Func<string, int>? forgiven = null,
         string[]? kept = null, (string Session, string[] Said)[]? unable = null, AccountWait[]? waits = null,
-        string[]? chats = null, (string Session, WordsHold Holds)[]? held = null) =>
+        string[]? chats = null, (string Session, WordsHold Holds)[]? held = null, (string Session, RunningCall Call)[]? calls = null) =>
         SessionLook.From(new JsonArray([.. records]).ToJsonString(), quests ?? [], considered ?? [], forgiven ?? (_ => 0)) with
         {
+            Calls = (calls ?? []).ToDictionary(each => each.Session, each => each.Call, StringComparer.OrdinalIgnoreCase),
             Trees = (trees ?? []).ToDictionary(each => SessionGroups.Normal(each.Tree), each => each.Work, StringComparer.OrdinalIgnoreCase),
             Archived = (archived ?? []).ToDictionary(id => id, _ => T0, StringComparer.Ordinal),
             Kept = new HashSet<string>(kept ?? [], StringComparer.Ordinal),
@@ -105,6 +106,9 @@ public sealed class SessionGroupsTests
     /// <summary>The ref an unforced discard of <see cref="Tree"/> keeps its commits at (SQUASHTIDY1c).</summary>
     private const string Kept = "refs/daoris/discarded/daoris/s-1a2b3c4d";
 
+    /// <summary>A call the driver heard begin eight minutes into the session (WAITSAY1b). Before the table, which reads it.</summary>
+    private static readonly RunningCall NpmTest = new("npm test", T0.AddMinutes(8));
+
     /// <summary>A squash merge onto <c>main</c> holds the tree's work, and its discard would go now (SQUASHTIDY1b). Before the table, which reads it.</summary>
     private static readonly HeldWork Squashed = new(new ContentHold("main", Squash: true), Kept, null);
 
@@ -123,6 +127,33 @@ public sealed class SessionGroupsTests
                 "s3", SessionGroup.Working, "working")
             {
                 Also = row => Assert.Equal(2, row.Strikes),
+            },
+        // WAITSAY1b (D152's UX7c amendment): a working session of this machine's says the call its agent is inside, as the
+        // driver heard it; one that waits on the person, a teammate's and an ended one say none, whatever the memory holds.
+        ["a working session says the call its agent is inside"] =
+            new(Look([Record("s1", "working", "q1")], [Taken], calls: [("s1", NpmTest)]), "s1", SessionGroup.Working, "working")
+            {
+                Also = row => Assert.Equal(NpmTest, row.Calling),
+            },
+        ["a working session with no call open says none"] =
+            new(Look([Record("s1", "working", "q1")], [Taken], calls: [("s2", NpmTest)]), "s1", SessionGroup.Working, "working")
+            {
+                Also = row => Assert.Null(row.Calling),
+            },
+        ["a parked session says no call"] =
+            new(Look([Record("s1", "awaiting-person", "q1")], [Taken], calls: [("s1", NpmTest)]), "s1", SessionGroup.You, "awaiting-person")
+            {
+                Also = row => Assert.Null(row.Calling),
+            },
+        ["a teammate's working session says no call of this machine's"] =
+            new(Look([Record("laptop/s1", "working", "q1")], [Taken], calls: [("laptop/s1", NpmTest)]), "laptop/s1", SessionGroup.Working, "working")
+            {
+                Also = row => Assert.Null(row.Calling),
+            },
+        ["an ended session says no call"] =
+            new(Look([Record("s1", "failed", "q1")], [Taken], calls: [("s1", NpmTest)]), "s1", SessionGroup.Ended, "failed")
+            {
+                Also = row => Assert.Null(row.Calling),
             },
         ["a state this build does not know is live, never archivable"] =
             new(Look([Record("s1", "thinking-hard")]), "s1", SessionGroup.Working, "thinking-hard"),

@@ -60,7 +60,9 @@ describe('the shell push channel (ShellSignals)', () => {
     // And the rules: a tick settles what agents proposed about them (PERM2), and the band reads that.
     // And the registry (FG4): a folder imported from a terminal left Overview saying *no workspace
     // yet* until a reload, because nothing told the page the registry had moved.
-    for (const key of [keys.allSessions, keys.allQuests, keys.allAsks, keys.allRepositories, keys.allSync, keys.rules, keys.allRegistry]) {
+    // What is read under the sessions' key, passing over the records where the shell pushes them (PUSH1d2).
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: keys.allSessions, predicate: expect.any(Function) });
+    for (const key of [keys.allQuests, keys.allAsks, keys.allRepositories, keys.allSync, keys.rules, keys.allRegistry]) {
       expect(invalidate).toHaveBeenCalledWith({ queryKey: key });
     }
     // What is read under the driver's key, passing over its state where the shell pushes it (PUSH1a, `pushedState.test.tsx`).
@@ -180,7 +182,7 @@ describe('the shell push channel (ShellSignals)', () => {
     // A park wears the status tone, because it is the one that is WAITING on somebody.
     expect(notify).toHaveBeenCalledWith(
       'engine — a session needs you: Two ways forward; I recommend capping.', 'error');
-    expect(invalidate).toHaveBeenCalledWith({ queryKey: keys.allSessions });
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: keys.allSessions, predicate: expect.any(Function) });
   });
 
   /**
@@ -225,7 +227,7 @@ describe('the shell push channel (ShellSignals)', () => {
     });
 
     expect(notify).toHaveBeenCalledWith('engine — a conversation answered you', 'ok');
-    expect(invalidate).toHaveBeenCalledWith({ queryKey: keys.allSessions });
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: keys.allSessions, predicate: expect.any(Function) });
   });
 
   /**
@@ -287,7 +289,7 @@ describe('the shell push channel (ShellSignals)', () => {
 
     eventHandlers.get('DAORIS.SESSION_ENDED')!({ session: 'c0ffee11', state: 'completed' });
 
-    expect(invalidate).toHaveBeenCalledWith({ queryKey: keys.allSessions });
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: keys.allSessions, predicate: expect.any(Function) });
     expect(notify).not.toHaveBeenCalled();
   });
 

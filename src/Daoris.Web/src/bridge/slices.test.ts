@@ -14,7 +14,7 @@ vi.mock('@shenora/react', () => ({
 }));
 
 import { readSlice } from './driver';
-import { notPushed, pushedOf, readPushed, type SliceSpec } from './slices';
+import { mergeKeyed, notPushed, pushedOf, readPushed, type SliceSpec } from './slices';
 
 const KEY = ['test-slice'] as const;
 
@@ -193,6 +193,45 @@ describe('a pushed slice (PUSH1a)', () => {
     store.heard(push('b', 1, { b: 1 }));
 
     expect(client.getQueryData(KEY)).toEqual({ a: 1, b: 1 });
+  });
+
+  it('merges a keyed delta: its keys over the held, the keys removed taken away, the held left as it was (PUSH1d2)', () => {
+    const held = { s1: { state: 'working' }, s2: { state: 'working' } };
+
+    const merged = mergeKeyed(held, { s1: { state: 'completed' }, s3: { state: 'queued' } }, ['s2']);
+
+    expect(merged).toEqual({ s1: { state: 'completed' }, s3: { state: 'queued' } });
+    expect(held.s2).toEqual({ state: 'working' });
+    // A delta of any other shape changes nothing but what it removes.
+    expect(mergeKeyed(held, null, ['s1'])).toEqual({ s2: { state: 'working' } });
+  });
+
+  it('tells its compose whether the owner judged: a judged slice of no partition composes, a slice not judged pulls (PUSH1d2)', async () => {
+    /** A list of every partition's rows, which is empty and true once the owner judged none. */
+    const listed: SliceSpec = {
+      name: 'listed', key: ['listed'], read: () => readSlice('listed'),
+      compose: (partitions, judged) => (judged ? [...partitions.values()].flat() : undefined),
+    };
+    const open = async (answer: unknown) => {
+      invoke.mockImplementationOnce(async () => answer);
+      const client = new QueryClient();
+      pushedOf(client).register(listed);
+      await pushedOf(client).resync('listed');
+      return client;
+    };
+
+    const none = await open({ slice: 'listed', epoch: 'e1', status: 'ready', partitions: [] });
+    await expect(readPushed(none, 'listed', async () => 'pulled')).resolves.toEqual([]);
+    expect(none.getQueryData(['listed'])).toEqual([]);
+
+    const notYet = await open({ slice: 'listed', epoch: 'e1', status: 'notJudged', partitions: [] });
+    await expect(readPushed(notYet, 'listed', async () => 'pulled')).resolves.toBe('pulled');
+
+    // Its only partition gone: judged, and empty, never the last rows held.
+    const one = await open({ slice: 'listed', epoch: 'e1', status: 'ready', partitions: [{ partition: 'w', seq: 1, status: 'ready', data: ['s1'] }] });
+    expect(one.getQueryData(['listed'])).toEqual(['s1']);
+    pushedOf(one).heard({ slice: 'listed', epoch: 'e1', partition: 'w', seq: 2, status: 'gone', data: null });
+    expect(one.getQueryData(['listed'])).toEqual([]);
   });
 
   it('waits for the first snapshot under way rather than pulling beside it', async () => {

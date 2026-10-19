@@ -36,6 +36,13 @@ internal sealed class HelpSessionProposals : IHelpProposalKind
 
     public IReadOnlyList<string> Doors { get; } = ["archive", "unarchive"];
 
+    /// <summary>
+    /// ASKSCOPE1c2: each session it names by id, filed under the workspace its record says. Archive what ended names none by id,
+    /// and takes every ended row Sessions' list places, as before.
+    /// </summary>
+    public HelpNames Named(HelpProposal proposal, HelpMachineFacts facts) =>
+        new([proposal.Workspace], [proposal.Repository]) { Records = [.. Ids(proposal).SelectMany(id => HelpNames.OfSession(facts, id))] };
+
     public HelpPlan Plan(HelpProposal proposal, DriverConfig config, HelpMachineFacts facts)
     {
         static HelpPlan Refused(string why) => new(why, "", "", null);
@@ -47,10 +54,7 @@ internal sealed class HelpSessionProposals : IHelpProposalKind
         }
 
         var archive = proposal.Door == "archive";
-        var named = (proposal.Target ?? "").Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries)
-            .Select(id => id.TrimStart('#').Trim())
-            .Where(id => id.Length > 0)
-            .ToList();
+        var named = Ids(proposal);
         var ended = string.Equals(proposal.Value?.Trim(), Ended, StringComparison.OrdinalIgnoreCase);
         if (named.Count == 0 && ended)
         {
@@ -112,6 +116,12 @@ internal sealed class HelpSessionProposals : IHelpProposalKind
         return new HelpPlan(null, said + theirs + also, terminal, null) { Sessions = [.. acts.Select(record => record.Id)] };
     }
 
+    /// <summary>The ids its target names, comma-joined, each with a <c>#</c> before it stripped.</summary>
+    private static List<string> Ids(HelpProposal proposal) =>
+        [.. (proposal.Target ?? "").Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries)
+            .Select(id => id.TrimStart('#').Trim())
+            .Where(id => id.Length > 0)];
+
     public async Task<HelpApplied> ApplyAsync(HelpApplying applying, CancellationToken ct)
     {
         var plan = applying.Plan;
@@ -130,8 +140,10 @@ internal sealed class HelpSessionProposals : IHelpProposalKind
     /// </summary>
     private static HelpPlan EndedPlan(HelpMachineFacts facts)
     {
-        var ended = facts.Placed.Where(row => row.Group == SessionGroup.Ended && !row.Archived).Select(row => row.Session).ToList();
-        var (you, review) = (facts.Placed.Count(row => row.Group == SessionGroup.You), facts.Placed.Count(row => row.Group == SessionGroup.Review));
+        // ASKSCOPE1c3: under a circle, only the workspace's own rows; a row no session record files is left out.
+        var mine = facts.Placed.Where(row => HelpProposalScope.InCircle(facts, row.Session)).ToList();
+        var ended = mine.Where(row => row.Group == SessionGroup.Ended && !row.Archived).Select(row => row.Session).ToList();
+        var (you, review) = (mine.Count(row => row.Group == SessionGroup.You), mine.Count(row => row.Group == SessionGroup.Review));
         var stays = (you, review) switch
         {
             (0, 0) => "",
