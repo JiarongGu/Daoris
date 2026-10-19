@@ -772,6 +772,11 @@ public sealed partial class HelpCoverageTests
         ("projects", "useSweep", null, new Exempt(
             "it removes session trees and branches whose work landed, a discard, which stays the person's own press "
             + "(D89); its screen is a workspace's page → Branches → *Clean up…* since UX6g.")),
+        // PUSH1c4b (D182, D148 point 2): the Branches' *Look again*, the person's press of `SWEEP_PLAN`.
+        ("projects", "useSweepLook", null, new Exempt(
+            "a look asks the pull-request plugins about the landings' branches only at the occasions D148 point 2 names, the "
+            + "person's clean-up look among them, and keeps their answers; it removes nothing, which the clean-up's own press "
+            + "does (D89).")),
         // LAND3b (D102): a failed attempt's branch, discarded from a Branches row or a session whose tree is gone.
         // HIST1e (D153): a workspace's *Clear history…*, and a quest's and an ask's clears pressed through the same owner; the
         // `clear` kind's doors since HIST1f-b, the hook's scope telling them apart (The_history_clear_is_the_clear_kinds_door…).
