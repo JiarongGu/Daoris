@@ -22,7 +22,7 @@ vi.mock('@shenora/react', () => ({
   },
 }));
 
-import '../locales/i18n';
+import i18n from '../locales/i18n';
 import { SignIn } from './SignIn';
 
 const ID = 'claude-code:login';
@@ -182,6 +182,81 @@ describe('signing in on the row', () => {
     // The link's own copy is still the link.
     await userEvent.click(screen.getByRole('button', { name: 'Copy link' }));
     expect(writeText).toHaveBeenLastCalledWith('https://auth.openai.com/codex/device');
+  });
+
+  /**
+   * CODEXSIGNIN3: the code is read by its shape, not by one version's words — a link to the device page, then a code of letters
+   * and digits in groups joined by a hyphen — so a newer pin that rewords the sentence asking for it still shows it, and until
+   * a code is printed the step says it comes later.
+   */
+  it('reads the device code by its shape from a reworded output, and says code later until one is printed', async () => {
+    const id = 'codex-acp:login-new';
+    invoke.mockImplementation(async (_module: string, type: string) => (type === 'TAIL_SESSION'
+      ? { session: id, lines: [{ sequence: 1, text: '$ codex login --device-auth' }], sequence: 1, live: true, dropped: 0 }
+      : {}));
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(
+      <QueryClientProvider client={client}>
+        <Tooltip.Provider>
+          <SignIn id={id} harness="codex-acp" action="login-new" tool="Codex" />
+        </Tooltip.Provider>
+      </QueryClientProvider>,
+    );
+    expect(await screen.findByText('Signing in to another Codex account')).toBeTruthy();
+    const send = async (...texts: string[]) => act(async () => {
+      eventHandlers.get('DAORIS.SESSION_OUTPUT')!({ session: id, lines: texts.map((text) => ({ sequence: ++sequence, text })) });
+    });
+
+    await send('Welcome to Codex [v0.200.0]', 'Open this page and sign in:', '   https://auth.openai.com/codex/device', '');
+    await screen.findByRole('link', { name: /auth\.openai\.com/ });
+    expect(screen.getByText(/The box appears when the tool asks/)).toBeTruthy();
+
+    await send('Then type the code below (valid for 15 minutes):', '   WXYZ-98765', 'Never share this code. A one-time-use token.');
+    expect(await screen.findByText('WXYZ-98765')).toBeTruthy();
+    expect(screen.getByText('Enter this code on that page.')).toBeTruthy();
+    expect(screen.queryByText(/The box appears when the tool asks/)).toBeNull();
+  });
+
+  /**
+   * CODEXSIGNIN2: a start the driver refused is said in this panel, whole, with the ways on: try again or close. The tool's
+   * steps and its cancel are not shown, since nothing is running to cancel.
+   */
+  it('says a refused start in its panel, with Try again and Close', async () => {
+    const retry = vi.fn();
+    const close = vi.fn();
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(
+      <QueryClientProvider client={client}>
+        <Tooltip.Provider>
+          <SignIn id={ID} harness="claude-code" profile="work" refused="Another sign-in is running." onRetry={retry} onClose={close} />
+        </Tooltip.Provider>
+      </QueryClientProvider>,
+    );
+    expect((await screen.findByRole('alert')).textContent).toBe('Another sign-in is running.');
+    expect(screen.queryByRole('button', { name: /Cancel/ })).toBeNull();
+    await userEvent.click(screen.getByRole('button', { name: 'Try again' }));
+    expect(retry).toHaveBeenCalledTimes(1);
+    await userEvent.click(screen.getByRole('button', { name: 'Close' }));
+    expect(close).toHaveBeenCalledTimes(1);
+  });
+
+  it('says a refused start with its ways on in Chinese too',async () => {
+    await i18n.changeLanguage('zh');
+    try {
+      const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+      render(
+        <QueryClientProvider client={client}>
+          <Tooltip.Provider>
+            <SignIn id={ID} harness="claude-code" profile="work" refused="已有登录在进行。" onRetry={() => {}} onClose={() => {}} />
+          </Tooltip.Provider>
+        </QueryClientProvider>,
+      );
+      expect((await screen.findByRole('alert')).textContent).toBe('已有登录在进行。');
+      expect(screen.getByRole('button', { name: '重试' })).toBeTruthy();
+      expect(screen.getByRole('button', { name: '关闭' })).toBeTruthy();
+    } finally {
+      await i18n.changeLanguage('en');
+    }
   });
 
   /** The tool's own words are one disclosure away, never the surface. */
