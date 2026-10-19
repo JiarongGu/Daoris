@@ -114,7 +114,7 @@ public sealed class DriverLoop(
     /// <summary>The slices this Daoris pushes (PUSH1a): the snapshot route finds them here, and <see cref="Start"/> runs them.</summary>
     public StateSlices Slices => LazyInitializer.EnsureInitialized(ref _slices, () => new StateSlices(
         DriverSlice, LinesStateSlice.Of(this, eventBus), SessionsStateSlice.Of(this, eventBus), CallsStateSlice.Of(this, eventBus),
-        WorkStateSlice.Of(this, eventBus), GroupsStateSlice.Of(this, eventBus)));
+        WorkStateSlice.Of(this, eventBus), GroupsStateSlice.Of(this, eventBus), SyncStateSlice.Of(this, eventBus)));
 
     private StateSlices? _slices;
 
@@ -132,6 +132,15 @@ public sealed class DriverLoop(
         HelpFacts.Wake(Facts, topic, subject, mine);
         MoveHeard?.Invoke(topic, subject);
     }
+
+    /// <summary>
+    /// Each sync pass's end, the tick's and <i>Sync now</i>'s (PUSH1a2): told by the loop's one set, so the slice of where each circle
+    /// stands reads it again. A pass rewrites when it last tried, which the change stream does not carry.
+    /// </summary>
+    public event Action? Passed;
+
+    /// <summary>What the loop's sync set tells at the end of each pass: whoever hears the passes.</summary>
+    public void HeardPass() => Passed?.Invoke();
 
     /// <summary>The slices' workers, from <see cref="Start"/> until the stop.</summary>
     private Task? _pushing;
@@ -609,6 +618,8 @@ public sealed class DriverLoop(
         // tick, in the shell exactly as in the headless host. Absence is silent and local.
         using var sync = RemoteSyncSet.FromEnvironment(service.BaseUrl, key);
         _sync = sync;
+        // PUSH1a2: each pass's end, the tick's or *Sync now*'s, asks the sync slice to read where each circle stands again.
+        sync.Passed += HeardPass;
 
         // Live console lines become IPC events, BATCHED by the library's relay (D49 §2). The shell's
         // half is only what a batch becomes: the page asks for the backlog once over `TAIL_SESSION`
