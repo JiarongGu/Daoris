@@ -218,7 +218,8 @@ public sealed class AcpRefusal(
 /// process could not be tested without one. Every rule below is provable against two in-memory
 /// streams and a fake agent.</para>
 ///
-/// <para><b>Permission requests are refused, always</b> — see <see cref="AnswerPermission"/>.</para>
+/// <para><b>Permission requests are refused</b> — see <see cref="AnswerPermission"/> — except under a repository's asking
+/// permission prompts, where each is held for the person to answer (AUTONOMY1b3a, <see cref="Permissions"/>).</para>
 /// </remarks>
 /// <param name="closeTimeout">
 /// How long to wait for the agent to acknowledge `session/close`. The turn is already over by then,
@@ -290,6 +291,25 @@ public sealed class AcpSession(
     /// access, whose required posture came first (HELPMODE1a1).
     /// </summary>
     public Func<string, string, string>? Unoffered { get; init; }
+
+    /// <summary>
+    /// The mark a posture carries after <see cref="HelpModes.Required"/> where the person answers its permission requests (AUTONOMY1b3a,
+    /// D184 point 3): a driven start's asking permission prompts on the protocol door (<see cref="DrivenAccess"/>). Never set on the wire.
+    /// </summary>
+    public const char PersonAnswers = '?';
+
+    /// <summary>
+    /// Where this session's permission requests are held for the person (AUTONOMY1b3a, <see cref="HeldPermissions"/>): only where its
+    /// posture carries <see cref="PersonAnswers"/>. Null, or a posture without the mark, refuses each as it comes, as every other
+    /// posture always has (D52).
+    /// </summary>
+    public PermissionHolds? Permissions { get; init; }
+
+    /// <summary>Whether the posture says the person answers this session's permission requests.</summary>
+    private readonly bool _personAnswers = Marks(posture).PersonAnswers;
+
+    /// <summary>The answers to held requests still on their way, which the stream's end waits for before it says it ended.</summary>
+    private readonly List<Task> _answering = [];
 
     private readonly TimeSpan _closeTimeout = closeTimeout ?? TimeSpan.FromSeconds(5);
 
@@ -1257,8 +1277,22 @@ public sealed class AcpSession(
     /// winds its work up and answers the prompt with its own stop reason. A notification, so there is
     /// nothing to wait for here.
     /// </summary>
-    public Task CancelTurnAsync() =>
-        _sessionId is null ? Task.CompletedTask : NotifyAsync("session/cancel", new { sessionId = _sessionId });
+    /// <remarks>
+    /// A permission request held for the person (AUTONOMY1b3a) is answered <c>cancelled</c> after the cancel goes, as the protocol asks
+    /// of a client that cancels: the turn it was asked in is stopping, and nothing the person says now could land in it.
+    /// </remarks>
+    public async Task CancelTurnAsync()
+    {
+        if (_sessionId is null) return;
+        try
+        {
+            await NotifyAsync("session/cancel", new { sessionId = _sessionId }).ConfigureAwait(false);
+        }
+        finally
+        {
+            await ReleaseHeldAsync(PermissionWhy.Cancelled).ConfigureAwait(false);
+        }
+    }
 
     /// <summary>
     /// Stop one piece of background work the session started (CONSOLE3a): the adapter's own request,
@@ -1287,6 +1321,9 @@ public sealed class AcpSession(
     public async Task CloseAsync(CancellationToken ct)
     {
         if (_sessionId is null) return;
+
+        // Nothing held for the person outlives the session it was asked in (AUTONOMY1b3a): answered before the close goes.
+        await ReleaseHeldAsync(PermissionWhy.Ended).ConfigureAwait(false);
 
         using var closing = CancellationTokenSource.CreateLinkedTokenSource(ct);
         closing.CancelAfter(_closeTimeout);
@@ -1380,6 +1417,10 @@ public sealed class AcpSession(
             // agent that died mid-handshake into a sentence rather than a hang. 🔴 BGWAIT2: where the timeout said it was
             // ending the process before the stream ended, the sentence is the timeout's; whatever is said after is not.
             lock (_endGate) _streamOver = true;
+
+            // What it held for the person ends with the stream, said before the stream's end is (AUTONOMY1b3a): there is no wire to
+            // answer on now, and an answer the person gives after would land nowhere.
+            await ReleaseHeldAsync(PermissionWhy.Ended).ConfigureAwait(false);
             Fail(StreamEnded(
                 "the ACP agent's stream ended before it answered — the agent exited, or it is not "
                 + "speaking ACP on stdout."));
@@ -1593,9 +1634,15 @@ public sealed class AcpSession(
     ///
     /// <para><b>With no refusal offered, the answer is `cancelled`</b> — never the first option that
     /// happens to be present. Fail closed means closed even when the menu is unhelpful.</para>
+    ///
+    /// <para><b>Under a repository's asking permission prompts it is held for the person instead</b> (AUTONOMY1b3a, D184 point 3,
+    /// <see cref="HoldPermission"/>): the person's press is the say D37 and D52 keep for them, one call at a time; the driver itself
+    /// still allows nothing.</para>
     /// </remarks>
     private async Task AnswerPermissionAsync(JsonElement id, JsonElement frame)
     {
+        if (HoldPermission(id, frame)) return;
+
         var rejectId = RejectOption(frame);
         var outcome = rejectId is null
             ? new JsonObject { ["outcome"] = "cancelled" }
@@ -1637,6 +1684,161 @@ public sealed class AcpSession(
         }).ConfigureAwait(false);
     }
 
+    // ---- A permission request held for the person (AUTONOMY1b3a, D184 point 3) ----
+
+    /// <summary>
+    /// Hold a permission request for the person where this session's posture says the person answers them (<see cref="PersonAnswers"/>)
+    /// and it was given a door (<see cref="Permissions"/>): listed with what the person may choose, said on the console and in the record, and
+    /// answered off the read loop once the person answers or it is released. False leaves it to the refusal, as before.
+    /// </summary>
+    /// <remarks>
+    /// <para>🔴 <b>Off the loop.</b> The reader dispatches each frame before it reads the next, so a hold awaited here would stall every
+    /// frame after it: the agent's updates, a cancel's answer, the stream's end. The answer goes later, through the same serialized
+    /// writer as every other frame.</para>
+    ///
+    /// <para><b>A request this client cannot read is still refused at once</b> (REV3): params or options of an unexpected shape hold
+    /// nothing, and the refusal answers it as it always did.</para>
+    /// </remarks>
+    private bool HoldPermission(JsonElement id, JsonElement frame)
+    {
+        if (!_personAnswers || Permissions is not { } holds || Offered(frame) is not { } offered) return false;
+
+        var call = frame.GetProperty("params").TryGetProperty("toolCall", out var named) && named.ValueKind == JsonValueKind.Object
+            ? named : (JsonElement?)null;
+        var callId = call is { } c && c.TryGetProperty("toolCallId", out var asked) && asked.ValueKind == JsonValueKind.String
+            ? asked.GetString() : null;
+        var title = Named(call);
+        var request = id.ValueKind == JsonValueKind.String ? id.GetString() ?? "" : id.GetRawText();
+        // The registry keeps the agent's own title and kind, plain, for the page to word; the notes say it as a reader knows it.
+        var plain = call is { } p && Json.Text(p, "title")?.Trim() is { Length: > 0 } written ? TextBounds.Clip(written, 160) : null;
+        if (holds.Hold(request, callId, plain, offered, call is { } k ? Json.Text(k, "kind") : null) is not { } held) return false;
+
+        var raw = call is { } shown ? Compact(shown) : "a tool call";
+        Said($"  permission held for the person's answer: {raw}",
+            Noted.Of(NoteCodes.AskingHeld, "permission held for the person's answer:").Then(" ", Noted.Said(title, NoteBy.Agent)), callId);
+        var answering = AnsweredAsync(id, raw, callId, title, held, holds.Bound);
+        lock (_answering)
+        {
+            _answering.RemoveAll(each => each.IsCompleted);
+            _answering.Add(answering);
+        }
+
+        return true;
+    }
+
+    /// <summary>
+    /// The options a permission request offered, read without trusting the frame's shape: null where its params or options are not
+    /// what the protocol says, and then nothing is held. An option with no id or no kind is not one the person can choose.
+    /// </summary>
+    private static IReadOnlyList<PermissionChoice>? Offered(JsonElement frame)
+    {
+        if (!frame.TryGetProperty("params", out var p) || p.ValueKind != JsonValueKind.Object
+            || !p.TryGetProperty("options", out var options) || options.ValueKind != JsonValueKind.Array)
+        {
+            return null;
+        }
+
+        var offered = new List<PermissionChoice>();
+        foreach (var option in options.EnumerateArray())
+        {
+            if (option.ValueKind != JsonValueKind.Object
+                || Json.Text(option, "optionId") is not { Length: > 0 } optionId || Json.Text(option, "kind") is not { Length: > 0 } kind)
+            {
+                continue;
+            }
+
+            offered.Add(new PermissionChoice(optionId, Json.Text(option, "name") ?? optionId, kind));
+        }
+
+        return offered;
+    }
+
+    /// <summary>
+    /// The answer to a held request, once the person answers it or it is released: the option the person chose where it allows the
+    /// call, else the offered rejection they chose, else <c>cancelled</c>; said on the console and in the record, and sent unless the
+    /// stream is over. A call it did not allow is marked refused, so its later <c>failed</c> reads as what it was (HELP4).
+    /// </summary>
+    private async Task AnsweredAsync(JsonElement id, string raw, string? callId, string title, Task<PermissionEnd> held, TimeSpan bound)
+    {
+        var end = await held.ConfigureAwait(false);
+        JsonObject outcome;
+        try
+        {
+            if (end.Chosen is { Allows: true } allowed)
+            {
+                Said($"  permission allowed by the person: {raw}",
+                    Noted.Of(NoteCodes.AskingAllowed, "permission allowed by the person:").Then(" ", Noted.Said(title, NoteBy.Agent)), callId);
+                outcome = new JsonObject { ["outcome"] = "selected", ["optionId"] = allowed.Id };
+            }
+            else
+            {
+                if (callId is not null) _refused[callId] = 0;
+                var minutes = Math.Max(1, (int)Math.Ceiling(bound.TotalMinutes));
+                var close = end.Why switch
+                {
+                    PermissionWhy.Answered => Noted.Of(NoteCodes.AskingDenied, "— the person refused it"),
+                    PermissionWhy.Cancelled => Noted.Of(NoteCodes.AskingCancelled, "— the turn was stopped before the person answered"),
+                    PermissionWhy.Bound => Noted.Of(
+                        NoteCodes.AskingBound,
+                        $"— nobody answered within its {minutes}-minute bound, and a turn is never left waiting for ever",
+                        ("minutes", minutes)),
+                    _ => Noted.Of(NoteCodes.AskingEnded, "— the session ended before the person answered"),
+                };
+                Said($"  permission refused: {raw} {close.Note}",
+                    Noted.Of(NoteCodes.RefusedLead, "permission refused:").Then(" ", Noted.Said(title, NoteBy.Agent)).Then(" ", close), callId);
+                outcome = end.Chosen is { } rejection
+                    ? new JsonObject { ["outcome"] = "selected", ["optionId"] = rejection.Id }
+                    : new JsonObject { ["outcome"] = "cancelled" };
+            }
+        }
+        catch (Exception error) when (error is not OperationCanceledException)
+        {
+            // The console that would say it is gone; the answer still goes, failing closed.
+            outcome = new JsonObject { ["outcome"] = "cancelled" };
+        }
+
+        bool over;
+        lock (_endGate) over = _streamOver;
+        if (over) return;
+        try
+        {
+            await SendAsync(new JsonObject
+            {
+                ["jsonrpc"] = "2.0",
+                ["id"] = JsonNode.Parse(id.GetRawText()),
+                ["result"] = new JsonObject { ["outcome"] = outcome },
+            }).ConfigureAwait(false);
+        }
+        catch (Exception error) when (error is IOException or ObjectDisposedException or InvalidOperationException)
+        {
+            // The agent's input closed as it was answered: its stream's end says the rest.
+        }
+    }
+
+    /// <summary>The driver's line about one call: the console's raw view, and the record's coded note, kept with its call.</summary>
+    private void Said(string line, Noted noted, string? callId)
+    {
+        _console.End();
+        onLine(line);
+        Emit(new SessionEvent { Kind = SessionEventKind.Note, Id = callId, Text = noted.Note, Parts = noted.Parts });
+    }
+
+    /// <summary>End what this session holds for the person, saying why, and wait for each answer to be said.</summary>
+    private async Task ReleaseHeldAsync(string why)
+    {
+        Permissions?.ReleaseAll(why);
+        Task[] answering;
+        lock (_answering) answering = [.. _answering];
+        try
+        {
+            await Task.WhenAll(answering).ConfigureAwait(false);
+        }
+        catch (Exception error) when (error is not OperationCanceledException)
+        {
+            // Each answer keeps its own failure; the stream's end is said whatever became of them.
+        }
+    }
+
     /// <summary>
     /// The permission posture Daoris drives under, expressed as this wire's own mode (ACP2).
     /// </summary>
@@ -1668,8 +1870,7 @@ public sealed class AcpSession(
         // stub, whose permissions are its own business (ACP3).
         if (posture is not { Length: > 0 }) return;
 
-        var required = posture[0] == HelpModes.Required;
-        var named = required ? posture[1..] : posture;
+        var (required, _, named) = Marks(posture);
         DriverException Refused(IReadOnlyCollection<string> offers)
         {
             var offered = offers.Count > 0
@@ -1717,6 +1918,23 @@ public sealed class AcpSession(
 
         await RequestAsync("session/set_mode", new { sessionId = _sessionId, modeId = chosen }, ct)
             .ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// A posture's marks and the modes it names: <see cref="HelpModes.Required"/> (set, or the session does not open) and
+    /// <see cref="PersonAnswers"/> (its permission requests held for the person), in either order, before the modes.
+    /// </summary>
+    private static (bool Required, bool PersonAnswers, string Named) Marks(string? posture)
+    {
+        var (required, held, at) = (false, false, 0);
+        while (posture is not null && at < posture.Length && posture[at] is HelpModes.Required or PersonAnswers)
+        {
+            required |= posture[at] == HelpModes.Required;
+            held |= posture[at] == PersonAnswers;
+            at++;
+        }
+
+        return (required, held, posture?[at..] ?? "");
     }
 
     /// <summary>

@@ -3108,6 +3108,7 @@ public sealed class Driver(
                 onConversation: keepAs is null ? null : conversation => Context.Conversations.Keep(sessionId, keepAs, conversation))
             {
                 Unoffered = unoffered,
+                Permissions = HeldPermissions.Of(Context.Events).For(sessionId), // AUTONOMY1b3a: held only under asking's mark
             };
             ending?.Open(session);
             // What it says about its account's windows, kept as it says it (TOOL6c).
