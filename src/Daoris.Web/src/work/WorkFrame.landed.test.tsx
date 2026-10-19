@@ -199,6 +199,36 @@ describe('a session’s page header and its acts', () => {
   });
 
   /**
+   * AUTONOMY1b3c (D184 point 3): a tool call the running session holds for the person's answer under asking stands in its head,
+   * read off `PERMISSION_WAITS`, and *Allow once* sends `SESSION_PERMISSION_ANSWER` with the option the agent offered; a refusal of
+   * the answer is said where it was pressed, by its code in the catalogue's words.
+   */
+  it('answers a tool call a running session holds for the person with the option they pressed', async () => {
+    const held = {
+      session: 's1a2b3c4', request: '900', call: 'tc-1', title: 'npm test', kind: 'execute', since: '2026-10-20T09:00:00Z',
+      choices: [{ id: 'allow', name: 'Allow', kind: 'allow_once' }, { id: 'reject', name: 'Reject', kind: 'reject_once' }],
+    };
+    let answer: unknown = { answered: false, why: 'unheld', message: 'Session `s1a2b3c4` holds no permission request `900`.' };
+    invoke.mockImplementation(async (_module: string, type: string) => {
+      if (type === 'PERMISSION_WAITS') return { waits: [held] };
+      if (type === 'SESSION_PERMISSION_ANSWER') return answer;
+      return DRIVER_STATE;
+    });
+    show('s1a2b3c4');
+
+    const section = await screen.findByRole('region', { name: 'Tool calls held for your answer' });
+    expect(section).toHaveTextContent('npm test');
+    const user = userEvent.setup();
+    await user.click(within(section).getByRole('button', { name: 'Allow once' }));
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_PERMISSION_ANSWER', { payload: { session: 's1a2b3c4', request: '900', option: 'allow' } });
+    expect(await within(section).findByRole('alert')).toHaveTextContent('It no longer waits: it was answered or released first. Nothing was answered.');
+
+    answer = { answered: true, why: null, message: 'Refused.' };
+    await user.click(within(section).getByRole('button', { name: 'Refuse' }));
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_PERMISSION_ANSWER', { payload: { session: 's1a2b3c4', request: '900', option: 'reject' } });
+  });
+
+  /**
    * MIXAGENT2b (D163 points 2 and 3; the mixed-agents design §3, §5): the session's asks of helpers stand in its head under
    * *Helpers*, an agent's that waits on the person with *Let it ask*, which sends `SESSION_HELPER_APPROVE`; *Ask another agent…*
    * folds into the head's ⋯ and asks under the head, its *Ask* sending `SESSION_HELPER_ASK` with the question, the agent left to

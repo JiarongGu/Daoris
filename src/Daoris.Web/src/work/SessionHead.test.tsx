@@ -1245,3 +1245,30 @@ describe('the rules a session proposed', () => {
     expect(screen.queryByRole('region', { name: 'Rules it proposed' })).toBeNull();
   });
 });
+
+/** AUTONOMY1b3c (D184 point 3): a tool call it holds for the person's answer stands in its head, a wait's section, with its presses. */
+describe('the tool calls a session holds for the person', () => {
+  const HELD = {
+    session: 's1a2b3c4', request: '900', call: 'tc-1', title: 'npm test', kind: 'execute', since: '2026-09-21T11:58:00Z',
+    choices: [{ id: 'allow', name: 'Allow', kind: 'allow_once' }, { id: 'reject', name: 'Reject', kind: 'reject_once' }],
+  };
+
+  it('shows its own with a press per choice, the same door the strip presses', async () => {
+    const onAnswer = vi.fn();
+    render(<SessionHead session={session()} permissions={{ waits: [HELD, { ...HELD, session: 'o7h3r000', request: '1' }], onAnswer }} />);
+    const section = screen.getByRole('region', { name: 'Tool calls held for your answer' });
+    expect(section).toHaveAttribute('data-wait-section');
+    const items = within(section).getAllByRole('listitem');
+    expect(items).toHaveLength(1);
+    await userEvent.click(within(items[0]!).getByRole('button', { name: 'Refuse' }));
+    expect(onAnswer).toHaveBeenCalledWith(HELD, 'reject', { done: expect.any(Function), refused: expect.any(Function) });
+  });
+
+  it('shows none where it holds none, and no press where nothing can answer one', () => {
+    const { unmount } = render(<SessionHead session={session()} permissions={{ waits: [{ ...HELD, session: 'o7h3r000' }], onAnswer: vi.fn() }} />);
+    expect(screen.queryByRole('region', { name: 'Tool calls held for your answer' })).toBeNull();
+    unmount();
+    render(<SessionHead session={session()} permissions={{ waits: [HELD] }} />);
+    expect(within(screen.getByRole('region', { name: 'Tool calls held for your answer' })).queryByRole('button')).toBeNull();
+  });
+});
