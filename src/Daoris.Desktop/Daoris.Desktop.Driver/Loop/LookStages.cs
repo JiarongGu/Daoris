@@ -120,7 +120,8 @@ public sealed class LookStages
             ("stage", span.Stage),
             ("subject", span.Subject),
             ("beside", span.Beside),
-            ("ms", _clock() - span.Began));
+            ("ms", _clock() - span.Began),
+            ("queued", span.QueuedSoFar()));
 
     private sealed record Ended(string Stage, string? Subject, bool Beside, long Began, long Held, long Queued);
 
@@ -183,6 +184,15 @@ public sealed class LookStages
             }
 
             return new Wait(this);
+        }
+
+        /// <summary>
+        /// Its queue so far (LOOKSLOW2): what was waited, and a wait open now counted to now, so a look slow at its threshold says
+        /// whether it is waiting for a place or working. Written always, 0 included, never held to <see cref="Floor"/>.
+        /// </summary>
+        internal long QueuedSoFar()
+        {
+            lock (_gate) return Interlocked.Read(ref _queued) + (_waits > 0 ? _stages._clock() - _waitingSince : 0);
         }
 
         private void Waited()
