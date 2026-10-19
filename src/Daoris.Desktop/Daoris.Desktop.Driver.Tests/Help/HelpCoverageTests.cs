@@ -458,6 +458,11 @@ public sealed partial class HelpCoverageTests
         ("app", "useSay", null, Own("sessions",
             "the words an *Accept* on the Agents page sends to the session that proposed the rule tell that session its own "
             + "proposal was kept (PROPOSEHERE1c), said to it as its box would (D137 §5.4)")),
+        // RPC1c, PERSONDOOR1f: the card under the strip, a terminal's press confirmed or refused in the window.
+        ("app", "useAnswerConfirmation", null, new Exempt(
+            "it is the person's Confirm or Refuse of a press a terminal sent, which Daoris cannot tell from an agent's (D156 §4.2): "
+            + "only the person answers it, in the window, and an agent's proposal of an answer would make the card the approval "
+            + "surface for agents the design rules out (D52), so its default stays no and nothing is proposed.")),
 
         // Quests: a quest's own page, and the list's presses, in `quests/QuestsView` (STRUCT5c).
         ("quests", "usePublishQuest", null, Own("quests",

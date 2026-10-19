@@ -34,6 +34,14 @@ export const keys = {
   helpReadied: ['help-readied'] as const,
   /** Where the install's update stands (UPDATE1, D139): asked once, then kept by the shell's `UPDATE_STATE`. */
   update: ['update'] as const,
+  /** What a terminal asked the window to confirm over the pipe (RPC1c): asked as the page mounts, then kept by `CONFIRMATIONS`. */
+  terminalAsks: ['terminal-asks'] as const,
+  /** What waits at the service for the person's confirmation (PERSONDOOR1f): asked only while the page holds the person key. */
+  serviceAsks: ['service-asks'] as const,
+  /** Whether the host holds a person key the page does not (PERSONDOOR1f's adoption notice): asked once a page holds none. */
+  hostKeyed: ['host-keyed'] as const,
+  /** Whether the page holds the person key (PERSONDOOR1f): the key itself is `data/api.ts`'s, in memory, never in this cache. */
+  personKeyHeld: ['person-key-held'] as const,
   allRepositories: ['repositories'] as const,
   repositories: (workspace: string | null) => ['repositories', workspace ?? '*'] as const,
   allRegistry: ['registry'] as const,
