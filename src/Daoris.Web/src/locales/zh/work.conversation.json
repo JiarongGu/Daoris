@@ -15,6 +15,8 @@
   "work.conversation.working": "工作中…",
   "work.conversation.firstAnswer": "自 {{time}} 起等待它的第一次回答（已 {{elapsed}}）",
   "work.conversation.calling": "正在运行 {{title}}（已 {{elapsed}}）",
+  "work.conversation.callWaits": "{{title}} 等你答复，已 {{elapsed}}",
+  "work.conversation.callWaitsUnnamed": "一个工具调用等你答复，已 {{elapsed}}",
   "work.conversation.ended": "本轮结束：{{reason}}",
   "work.conversation.stopped": "本轮在此停止",
   "work.conversation.cut": "会话在此结束，早于这一轮。",
