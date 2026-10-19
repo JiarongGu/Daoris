@@ -4,8 +4,8 @@ import { useShenora, useShenoraEvent } from '@shenora/react';
 import { sentence } from '../locales/format';
 import { keys } from '../data/queries';
 import {
-  callsSlice, driverSlice, groupsSlice, linesSlice, notPushed, sessionsSlice, sweepSlice, useDriverReady, useStateHub, useStateSlices,
-  workSlice,
+  callsSlice, driverSlice, groupsSlice, linesSlice, notPushed, sessionsSlice, sweepSlice, syncSlice, useDriverReady, useStateHub,
+  useStateSlices, workSlice,
 } from '../bridge/shell';
 import { type AccountWaitTick, type Consideration, type TrustHold, newsFrom } from '../data/signals';
 import type { Notify } from '../design/ui';
@@ -13,7 +13,7 @@ import type { Notify } from '../design/ui';
 type Tick = { events?: string[]; considered?: Consideration[]; untrusted?: TrustHold[]; waits?: AccountWaitTick[] };
 
 /** The slices the shell pushes with their data and this page reads pushed (PUSH1a, D182); every other family keeps its pulls. */
-const PUSHED = [driverSlice, linesSlice, sessionsSlice, callsSlice, workSlice, groupsSlice, sweepSlice];
+const PUSHED = [driverSlice, linesSlice, sessionsSlice, callsSlice, workSlice, groupsSlice, syncSlice, sweepSlice];
 
 /**
  * The shell's push channel into the page (D46 §6): the driver's tick reports arrive as toasts, and
@@ -87,8 +87,9 @@ export function ShellSignals({ notify, onAttend, attended }: {
     // And the rules: a tick settles what agents proposed about them (PERM2), applying a narrowing and
     // holding a widening for the person — which *What needs you* reads.
     void client.invalidateQueries({ queryKey: keys.rules });
-    // Every tick runs a pass for each wired circle, so where each stands may have moved (SYNC6b).
-    void client.invalidateQueries({ queryKey: keys.allSync });
+    // Every tick runs a pass for each wired circle, so where each stands may have moved (SYNC6b); where the shell pushes the
+    // standings, the pass's end pushes what it moved (PUSH1a2), and a tick reads none of them again.
+    void client.invalidateQueries({ queryKey: keys.allSync, predicate: notPushed(client) });
     // 🔴 And the index. Seen on the deployed application: the status bar read "555 entries · 7
     // repositories" for as long as the window stayed open, on an index that held 1,050 across 17 —
     // the page had asked while a schema rebuild was still feeding, cached the partial answer, and

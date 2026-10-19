@@ -343,7 +343,6 @@ import { endOrphans, endStranded } from './processes.mjs';
 export const MAIN = 'main';
 const SCRATCH = 'local/scratch';
 const STATE = `${SCRATCH}/merge-batch.json`;
-const SHUTDOWN = 'dotnet build-server shutdown';
 const KINDS = ['check', 'suite', 'rehearsal'];
 
 /**
@@ -735,9 +734,6 @@ export function gatePlan(declared, workflow = '') {
         name,
         run: gate.run.trim(),
         kind,
-        // REHLANE2b: no gate has a step before it. The deployment rehearsal ran after `dotnet build-server shutdown` until its
-        // builds kept servers of their own; a shutdown beside the git half would stop the builds of every gate beside it.
-        before: [],
         ...(gate.cwd ? { cwd: gate.cwd } : {}),
         ...(gate.clock ? { clock: true } : {}),
       };
@@ -2699,26 +2695,12 @@ async function rerunAlone(root, gate, dir, tests, step, trees = null) {
 }
 
 /**
- * A gate's steps before it, then the gate (as `command`, its own run unless given), into one log: the gate's exit, or
- * `STEP_ENDED` once the run ended its trees, the steps after the one ended left unstarted (CIPRIO1c).
+ * The gate (as `command`, its own run unless given) into its log: the gate's exit, or `STEP_ENDED` once the run ended its
+ * trees (CIPRIO1c). A gate has one step: BEFORESTEP1 removed the steps before it.
  */
 function runSteps(root, gate, log, step, command = gate.run, trees = null) {
   const cwd = gate.cwd ? join(root, gate.cwd) : root;
   return withLog(log, async (fd) => {
-    for (const before of gate.before) {
-      // SHUTDOWNBESIDE1: under a run beside's own build servers (BESIDE_ENVIRONMENT) a shutdown clears nothing of the run's and
-      // stops every other build's on the machine, the owner's and the workers' (CIPRIO1): it is left out, and said.
-      if (before === SHUTDOWN && besideBuilds()) {
-        writeSync(fd, `(not run beside: ${SHUTDOWN}; this run's builds keep no server, and the machine's others are not its to stop)\n\n`);
-        continue;
-      }
-      const beforeCode = await step(before, root, fd);
-      if (endedBy(beforeCode, trees)) {
-        writeSync(fd, `\n(${endedNote(trees)})\n`);
-        return STEP_ENDED;
-      }
-      writeSync(fd, `\n(exited ${beforeCode}${beforeCode ? '; carried on: it only clears a server' : ''})\n\n`);
-    }
     const exit = await step(command, cwd, fd, { raise: isProcessLane(gate) || gate.clock ? rehearsalRaise() : null });
     if (endedBy(exit, trees)) {
       writeSync(fd, `\n(${endedNote(trees)})\n`);
@@ -3074,8 +3056,7 @@ function laneReport(root, branch) {
 
 function planLines(plan) {
   return plan.map((gate, i) => {
-    const before = gate.before.length ? `   (after ${gate.before.join(', ')})` : '';
-    return `  ${pad(`${i + 1}.`, 4)}${pad(gate.name, 16)} ${pad(gate.kind, 10)} ${gate.run}${before}`;
+    return `  ${pad(`${i + 1}.`, 4)}${pad(gate.name, 16)} ${pad(gate.kind, 10)} ${gate.run}`;
   });
 }
 
@@ -3915,9 +3896,6 @@ export function lowerPriority(setPriority = osSetPriority) {
  * none of theirs. The CI never runs `dotnet build-server shutdown`: it would stop the owner's servers too.
  */
 export const BESIDE_ENVIRONMENT = Object.freeze({ MSBUILDDISABLENODEREUSE: '1', DOTNET_CLI_USE_MSBUILD_SERVER: '0', UseSharedCompilation: 'false' });
-
-/** Whether this process's builds run under a run beside's own build servers: every variable of `BESIDE_ENVIRONMENT` set as it sets it. */
-const besideBuilds = (env = process.env) => Object.entries(BESIDE_ENVIRONMENT).every(([name, value]) => env[name] === value);
 
 /** The start of a run beside, once its lock is taken and before anything is built: lower the priority, set the environment. */
 export function startBesideRun({ setPriority = osSetPriority, env = process.env, say = console.log } = {}) {

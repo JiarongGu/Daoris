@@ -97,6 +97,12 @@ public sealed class RemoteSyncSet : IDisposable
     /// </summary>
     private readonly SemaphoreSlim _pass = new(1, 1);
 
+    /// <summary>
+    /// Told at the end of every pass, the tick's and <i>Sync now</i>'s, however it ended (PUSH1a2, D182): where each circle stands may
+    /// have moved, if only when it last tried. A hearer only asks for a reading; it is told outside the gate.
+    /// </summary>
+    public event Action? Passed;
+
     /// <summary>One pass — of every circle, or of the one <paramref name="workspace"/> names (SYNC6a).</summary>
     /// <exception cref="DriverException">A circle was named that this machine has no remote for.</exception>
     public async Task<SyncReport> RunOnceAsync(string? workspace, CancellationToken ct = default)
@@ -112,6 +118,7 @@ public sealed class RemoteSyncSet : IDisposable
         finally
         {
             _pass.Release();
+            Passed?.Invoke();
         }
     }
 

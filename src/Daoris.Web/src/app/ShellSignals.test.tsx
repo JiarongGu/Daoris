@@ -62,9 +62,11 @@ describe('the shell push channel (ShellSignals)', () => {
     // yet* until a reload, because nothing told the page the registry had moved.
     // What is read under the sessions' key, passing over the records where the shell pushes them (PUSH1d2).
     expect(invalidate).toHaveBeenCalledWith({ queryKey: keys.allSessions, predicate: expect.any(Function) });
-    for (const key of [keys.allQuests, keys.allAsks, keys.allRepositories, keys.allSync, keys.rules, keys.allRegistry]) {
+    for (const key of [keys.allQuests, keys.allAsks, keys.allRepositories, keys.rules, keys.allRegistry]) {
       expect(invalidate).toHaveBeenCalledWith({ queryKey: key });
     }
+    // Where each circle stands, passing over the standings where the shell pushes them (PUSH1a2): each pass pushes what it moved.
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: keys.allSync, predicate: expect.any(Function) });
     // What is read under the driver's key, passing over its state where the shell pushes it (PUSH1a, `pushedState.test.tsx`).
     expect(invalidate).toHaveBeenCalledWith({ queryKey: keys.driver, predicate: expect.any(Function) });
   });

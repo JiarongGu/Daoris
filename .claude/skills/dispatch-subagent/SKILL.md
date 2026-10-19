@@ -50,7 +50,9 @@ runs those after the merge (the owner, 2026-10-19). A control moved or renamed: 
 name and run those files (HEAD2d's *Pause…*, pressed in QuestsView.work.test.tsx). A machine path in a fixture is neutral,
 `X:/daoris/…`: the universal gate's sensitive scan refuses a home-shaped one (`C:/home/…`, `/home/…`, `C:/Users/…`), and
 two merges on 2026-10-19 stopped on it. An archive entry is appended at the file's end, after one
-blank line, in its neighbours' shape (`## ROW — title (date, Dn)`, the quoted row, `**Outcome** date: …`).
+blank line, in its neighbours' shape (`## ROW — title (date, Dn)`, the quoted row, `**Outcome** date: …`). A record (a
+decision's note, a row, an archive entry, a README, a comment, a commit message) states what was decided and why in its own
+words, and never quotes the owner: the owner's words in this brief are context for you, not text for a record.
 Orientation pack:
 <the scout's pack, as it came back, with any pointer you corrected marked>
 ```
@@ -97,8 +99,8 @@ once three batches hold the targets (MODELROLE1).
 4. **Name the lanes by id** (`daoris.lanes.json`, design §5) and the files the branch must not touch,
    which is anything a branch in flight holds. When two branches need the same lane, one waits for the
    other or the work is split.
-5. **Run at most five workers at once, and a CI run beside never lowers that** (the owner, 2026-10-19: "spin up more
-   subagents", then, when two were held back for a full set: "we should keep going for development when doing CI runs"; the CI
+5. **Run at most five workers at once, and a CI run beside never lowers that** (the owner's decision, 2026-10-19: more
+   workers, and development keeps going while a CI run is beside, never held back for a full set; the CI
    is the guest, below normal (CIPRIO1), so it slows and development does not; three before, while every merge
    ran its suites and rehearsals in the main checkout; since D180 a merge runs only its blocking checks and the CI runs
    beside, so a worker's own gates are the load that remains). More load makes real-process tests flake, and the owner's installed window shares
