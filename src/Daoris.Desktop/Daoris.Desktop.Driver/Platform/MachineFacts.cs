@@ -171,12 +171,17 @@ public sealed class MachineFacts : IDisposable
     /// <paramref name="subject"/> of <paramref name="topic"/> moved: it is judged again, once, after any judgement under way. A
     /// wake for a subject not known yet makes it known; one for a topic with no judge is nothing.
     /// </summary>
-    public void Wake(string topic, string subject)
+    /// <param name="afresh">
+    /// Past the subject's rest (OWNMOVES1): a move this process made itself, which a person is waiting to see land, judged at once, or
+    /// right after a judgement under way, which may have read the subject before the move. It waits for nothing, as a wake never does.
+    /// </param>
+    public void Wake(string topic, string subject, bool afresh = false)
     {
         Action? start;
         lock (_gate)
         {
             if (Known(topic, subject, out _) is not { } state) return;
+            if (afresh) state.Afresh = true;
             start = Due(_topics[topic], state);
         }
 
