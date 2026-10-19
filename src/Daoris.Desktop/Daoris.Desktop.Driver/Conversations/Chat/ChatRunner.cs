@@ -681,6 +681,7 @@ public sealed class ChatRunner : IDisposable
             Keeps = true,
             ServersTo = PluginServerTo.Help,
             Workspace = RemoteTarget.Workspace(workspace),
+            Reads = reads,
         };
 
     /// <summary>
@@ -698,6 +699,7 @@ public sealed class ChatRunner : IDisposable
             PermissionMode = access.PermissionMode,
             EveryServer = true,
             Guarded = false,
+            Reads = [],
         };
 
     /// <summary>
@@ -730,6 +732,24 @@ public sealed class ChatRunner : IDisposable
         foreach (var (sessionId, running) in _context.HelpModes)
         {
             if (HelpModes.TakesNextStart(running, mode) is { } line) _output?.Append(sessionId, line);
+        }
+    }
+
+    /// <summary>
+    /// Keep what an Ask Daoris start handed as its receipt (HELPWIRED1, D183 point 4), each server's approval and what restricted mode
+    /// lacks read from the plugins and the person's grants as they stand at this start. A receipt the disk will not take does not
+    /// hold the start: its console says so, and that start reads as not recorded.
+    /// </summary>
+    private void KeepWired(string sessionId, HelpHanded handed)
+    {
+        try
+        {
+            var catalog = PluginCatalog.Load(_home, AdapterSet.Built().Names);
+            new HelpWired(_home).Keep(sessionId, HelpWired.Compose(handed, catalog, HelpGrants.Read(_home, catalog), DateTimeOffset.UtcNow));
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+        {
+            _output?.Append(sessionId, $"— what this start handed could not be recorded: {error.Message}");
         }
     }
 
@@ -786,6 +806,12 @@ public sealed class ChatRunner : IDisposable
         /// access (HELPMODE1a1), whose housekeeping is outside its room.
         /// </summary>
         public bool Guarded { get; init; } = true;
+
+        /// <summary>
+        /// The checkouts its rules let it read (D107): Ask Daoris's in restricted mode, none in full access, whose rules allow nothing
+        /// by list, and none for a repository's conversation. What its receipt says it was granted (HELPWIRED1).
+        /// </summary>
+        public IReadOnlyList<HelpRead> Reads { get; init; } = [];
     }
 
     /// <summary>
@@ -853,6 +879,9 @@ public sealed class ChatRunner : IDisposable
         string? skills = null;
         object? meta = null;
         IReadOnlyList<AcpMcpServer> pluginServers = [];
+        // What its door is handed of the servers: the knowledge connector and the plugins', composed once for both doors, so the
+        // receipt names the list the spawn got (HELPWIRED1).
+        IReadOnlyList<AcpMcpServer> offered = [];
         Noted? browserNotice = null;
         var drivesBrowser = false;
         string? modeSaid = null;
@@ -910,12 +939,16 @@ public sealed class ChatRunner : IDisposable
             // What the conversation's agent may do (PERM1, D72), handed by each door's own way: a flag on
             // the pipe, `session/new`'s `_meta` on the protocol door, now that a conversation there opens a
             // session (CONV3b).
+            RuleLists? composed = null;
+            var guarded = false;
             if (resolved.TakesSettings)
             {
                 var file = PermissionRules.Load(_home);
+                composed = place.Rules(file, sessionId);
+                var guard = PermissionRules.GuardsTree(file) && place.Guarded ? TreeGuard.For(_home, workTree, place.Also) : null;
+                guarded = guard is not null;
                 rules = SpawnSettings.Write(
-                    _home, sessionId, place.Rules(file, sessionId), PermissionRules.HardDeny(file),
-                    PermissionRules.GuardsTree(file) && place.Guarded ? TreeGuard.For(_home, workTree, place.Also) : null,
+                    _home, sessionId, composed, PermissionRules.HardDeny(file), guard,
                     // Which agent made each call, and each subagent's start and stop (FABRIC-C1a).
                     ChildLineage.HookFor(_home, sessionId));
                 if (rules is not null && resolved.Wire == SessionWire.Pipe) resolved.HandSettings(info, rules);
@@ -942,10 +975,31 @@ public sealed class ChatRunner : IDisposable
             // protocol door carries them on `session/new` (`Servers`); a driven or intake session on the
             // pipe is handed a file — and a conversation on the pipe was handed nothing at all. A room
             // has no `.mcp.json` of its own, so its connector goes in the same file (HELP1a).
-            if (resolved.Wire == SessionWire.Pipe)
+            offered = resolved.Wire == SessionWire.Acp || place.ConnectorOnPipe ? Servers(sessionId, pluginServers) : pluginServers;
+            if (resolved.Wire == SessionWire.Pipe) servers = SpawnServers.Hand(resolved, info, _home, sessionId, offered);
+
+            // HELPWIRED1 (D183 point 4): what Ask Daoris's start handed, kept now its every input is composed and before its process
+            // starts, read from the spawn itself: whether its command line or its protocol door's meta names each file.
+            if (helpMode is not null)
             {
-                servers = SpawnServers.Hand(
-                    resolved, info, _home, sessionId, place.ConnectorOnPipe ? Servers(sessionId, pluginServers) : pluginServers);
+                var pipe = resolved.Wire == SessionWire.Pipe;
+                KeepWired(sessionId, new HelpHanded(helpMode, goOn is not null, resolved.Name, resolved.Wire, workTree)
+                {
+                    Version = selection.Version,
+                    Account = selection.Profile,
+                    Posture = pipe ? null : place.Posture ?? resolved.AcpPosture,
+                    PermissionMode = pipe ? place.PermissionMode : null,
+                    Rules = composed,
+                    RulesHanded = rules is not null && (pipe ? HelpWired.Names(info, rules) : HelpWired.Carries(meta, rules)),
+                    Guarded = guarded,
+                    Reads = place.Reads,
+                    SkillPlugins = skillPlugins,
+                    SkillsHanded = skillPlugins.Count > 0
+                        && skillPlugins.All(plugin => pipe ? HelpWired.Names(info, plugin) : HelpWired.Carries(meta, plugin)),
+                    Servers = offered,
+                    ServersHanded = !pipe || (servers is not null && HelpWired.Names(info, servers)),
+                    Withheld = browserNotice,
+                });
             }
 
             // Through the start gate (PROCSTART2): a conversation's press may reach here before its first wait.
@@ -1016,7 +1070,7 @@ public sealed class ChatRunner : IDisposable
         if (resolved.Wire == SessionWire.Acp)
         {
             chat = new ProtocolChat(
-                place.Posture ?? resolved.AcpPosture, meta, workTree, Servers(sessionId, pluginServers), Changed,
+                place.Posture ?? resolved.AcpPosture, meta, workTree, offered, Changed,
                 stopped: () => _processes.WasStopRequested(sessionId),
                 limited: failure => Limited(sessionId, resolved, selection.Profile, failure, config.CoolOff),
                 signedOut: failure => SignedOut(resolved, selection.Profile, failure),
