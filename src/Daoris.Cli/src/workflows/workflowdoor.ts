@@ -5,7 +5,9 @@
 // the home's `workflows/` (D63), beside `driver.json` as every door derives the home: `list`, `show <id>[@<version>]`, `new`,
 // `edit`, `apply`, `export` and `import`. A writer prints the change as Ask Daoris's card draws it (design §8.2) and saves a new
 // version, never editing one; `--plan` prints it and saves nothing. Every write is atomic, BOM-less and LF, and a file this door
-// cannot read is never written over. `use` and `kind` edit the choice in `driver.json` (WORKFLOW1e, design §4.7), through
+// cannot read is never written over. `apply` and `import` take a graph version too (FABRIC-GRAPH1f), judged whole as the driver
+// judges it (`nodegraphs.ts`), and every file is read and written with its values' text kept (`jsonsource.ts`), so a graph's digest
+// never moves with a write here. `use` and `kind` edit the choice in `driver.json` (WORKFLOW1e, design §4.7), through
 // `workflowchoice.ts`, the driver's twin on one table.
 //
 // 🔴 A choice names a workflow, and work binds its newest version at its first start (the driver's `WorkflowRunBindings`); every gate
@@ -32,8 +34,9 @@ import {
 import type { CommandArgs } from '../platform/types.ts';
 import { WORKFLOW_LIMITS, currentWorkflow, workflowPluginsOf, workflowSaid, type CurrentWorkflow } from './workflows.ts';
 import { GRAPH_SCHEMA } from './graphversions.ts';
+import { parseWithSource, stringifyWithSource } from './jsonsource.ts';
 import {
-  WORKFLOW_PRESETS, field, isWorkflowId, kindOf, planAddVersion, readSteps, readWorkflowFile, rendered, unrun, versionDigest,
+  WORKFLOW_PRESETS, field, isWorkflowId, kindOf, planAddVersion, readSteps, readVersion, readWorkflowFile, rendered, unrun, versionDigest,
   withGates, workflowDiff, workflowIdProblem, workflowLine, type NamedStep, type NamedVersion, type SavedStep, type WorkflowRead,
 } from './namedworkflows.ts';
 
@@ -126,7 +129,8 @@ export function commandWorkflow({ root, argv, write }: CommandArgs, context: Wor
     if (!existsSync(path)) return null;
     let file: unknown;
     try {
-      file = JSON.parse(readText(path));
+      // Every value's text kept (FABRIC-GRAPH1f), so a write over the file keeps a graph version as the driver reads it.
+      file = parseWithSource(readText(path));
     } catch {
       return { id, path, file: undefined, read: { id: null, name: null, versions: [], problem: `\`${id}.json\` is not readable JSON.` } };
     }
@@ -573,13 +577,18 @@ export function commandWorkflow({ root, argv, write }: CommandArgs, context: Wor
     const { version } = baseOf(found);
     const path = fileOperand(argv[3]!);
     const held = parsed(path);
+    // A graph (FABRIC-GRAPH1f): the file's own, a version's of schema 2, or a workflow's newest version's.
+    const versions = isRecord(held) && Array.isArray(held['versions']) ? held['versions'] : null;
+    const graph = graphIn(versions === null ? held : versions[versions.length - 1]);
+    if (graph !== undefined) return changeGraph(found, version, graph);
     const steps = Array.isArray(held) ? held
       : held !== null && typeof held === 'object' && Array.isArray((held as Record<string, unknown>)['steps']) ? (held as Record<string, unknown>)['steps']
         : held !== null && typeof held === 'object' && Array.isArray((held as Record<string, unknown>)['versions'])
           ? ((held as { versions: unknown[] }).versions[(held as { versions: unknown[] }).versions.length - 1] as Record<string, unknown> | undefined)?.['steps']
           : undefined;
     if (steps === undefined) {
-      throw new DaorisError(`\`${argv[3]}\` holds no steps: a list of steps, a version's \`steps\`, or a workflow's \`versions\`, its newest taken.`, 1);
+      throw new DaorisError(`\`${argv[3]}\` holds no steps and no graph: a list of steps, a version's \`steps\` or its \`graph\` (schema 2), a graph `
+        + 'itself, or a workflow\'s `versions`, its newest taken.', 1);
     }
     return change(found, version, steps as SavedStep[]);
   }
@@ -594,9 +603,28 @@ export function commandWorkflow({ root, argv, write }: CommandArgs, context: Wor
       write(`daoris: \`${found.id}\` v${base.version} already says this: nothing was written.`);
       return 0;
     }
-    write(`daoris: \`${found.id}\` v${base.version} → v${plan.version} — ${found.read.name}${base.steps === null
-      ? ` (v${base.version} cannot be read here, so the change is drawn from nothing)` : ''}:`);
+    write(`daoris: \`${found.id}\` v${base.version} → v${plan.version} — ${found.read.name}${base.steps !== null ? ''
+      : base.graph !== undefined ? ` (v${base.version} is a graph, so the change is drawn from nothing)`
+        : ` (v${base.version} cannot be read here, so the change is drawn from nothing)`}:`);
     said(next, workflowDiff(base.steps, next).said);
+    return saved(found.path, plan.result!);
+  }
+
+  /**
+   * A new version that is a graph (FABRIC-GRAPH1f), against the base: judged whole as the driver judges it (`planAddVersion`, through
+   * `nodegraphs.ts`), said with its digest, and saved unless `--plan`. The same graph as the base's is nothing to do.
+   */
+  function changeGraph(found: Found, base: NamedVersion, graph: unknown): ExitCode {
+    const plan = planAddVersion(found.file, { id: found.id, name: null, door: 'terminal', at: moment(now()), steps: null, graph },
+      readKeptVersions(folder, found.id));
+    if (plan.problem !== null) throw new DaorisError(plan.problem, 1);
+    const versions = plan.result!['versions'] as Record<string, unknown>[];
+    const next = readVersion(versions[versions.length - 1]!, plan.version!, []);
+    if (base.graph !== undefined && base.digest === next.digest) {
+      write(`daoris: \`${found.id}\` v${base.version} already says this: nothing was written.`);
+      return 0;
+    }
+    write(`daoris: \`${found.id}\` v${base.version} → v${plan.version} — ${found.read.name}: ${graphSaid(next)}`);
     return saved(found.path, plan.result!);
   }
 
@@ -605,7 +633,7 @@ export function commandWorkflow({ root, argv, write }: CommandArgs, context: Wor
     const id = named(argv[2]).id;
     const found = required(id);
     if (found.file === undefined) throw new DaorisError(`\`${id}\` cannot be exported: ${found.read.problem}`, 1);
-    const text = `${JSON.stringify(found.file, null, 2)}\n`;
+    const text = `${stringifyWithSource(found.file)}\n`;
     const to = flagValue(argv, '--to');
     if (to === undefined) {
       write(text.slice(0, -1));
@@ -625,7 +653,8 @@ export function commandWorkflow({ root, argv, write }: CommandArgs, context: Wor
     const file = parsed(fileOperand(from));
     const read = readWorkflowFile(file);
     if (read.problem !== null) throw new DaorisError(`\`${from}\` cannot be imported: ${read.problem}`, 1);
-    const unread = read.versions.find((each) => each.steps === null);
+    // A graph version that holds is a version like another here (FABRIC-GRAPH1f); one that does not read is refused.
+    const unread = read.versions.find((each) => each.steps === null && each.graph === undefined);
     if (unread !== undefined) throw new DaorisError(`\`${from}\` cannot be imported: ${unrun(unread)}`, 1);
     const id = read.id!;
     const newest = read.versions[read.versions.length - 1]!;
@@ -642,10 +671,22 @@ export function commandWorkflow({ root, argv, write }: CommandArgs, context: Wor
         + `versions differ: \`daoris driver workflow apply ${id} ${from}\` adds the file's newest version to it.`, 1);
     }
 
-    write(`daoris: \`${id}\` — ${read.name}, from ${from}: ${read.versions.length === 1 ? 'one version' : `${read.versions.length} versions`}, `
-      + `its newest v${newest.version}:`);
-    said(newest.steps!, workflowDiff(null, newest.steps!).said);
+    const header = `daoris: \`${id}\` — ${read.name}, from ${from}: ${read.versions.length === 1 ? 'one version' : `${read.versions.length} versions`}, `
+      + `its newest v${newest.version}:`;
+    if (newest.steps === null) {
+      write(`${header} ${graphSaid(newest)}`);
+    } else {
+      write(header);
+      said(newest.steps, workflowDiff(null, newest.steps).said);
+    }
     return saved(join(folder, `${id}.json`), file as Record<string, unknown>);
+  }
+
+  /** A graph version, as a writer says it: its size, its end and its digest, and that this build reads it and does not run it yet. */
+  function graphSaid(version: NamedVersion): string {
+    const { nodes, wires, end } = version.graph!;
+    return `a graph (schema ${GRAPH_SCHEMA}) of ${nodes.length} node${nodes.length === 1 ? '' : 's'} and ${wires.length} wire${wires.length === 1 ? '' : 's'}, `
+      + `ending at \`${end}\`, digest ${version.digest}, which this build reads and does not run yet.`;
   }
 
   /** The new version's line, then its change as the card draws it, under the header. */
@@ -659,7 +700,8 @@ export function commandWorkflow({ root, argv, write }: CommandArgs, context: Wor
     if (argv.includes('--plan')) {
       write('  --plan: nothing was written.');
     } else {
-      writeTextAtomic(path, `${JSON.stringify(file, null, 2)}\n`);
+      // Every value as read (FABRIC-GRAPH1f): a graph version's numbers by their own text and its keys in their order.
+      writeTextAtomic(path, `${stringifyWithSource(file)}\n`);
       write(`  Written to ${path}.`);
     }
     write(WHAT_CHOOSES);
@@ -674,11 +716,25 @@ export function commandWorkflow({ root, argv, write }: CommandArgs, context: Wor
   function parsed(path: string): unknown {
     if (!existsSync(path)) throw new DaorisError(`there is no file \`${path}\`.`);
     try {
-      return JSON.parse(readText(path));
+      return parseWithSource(readText(path));
     } catch {
       throw new DaorisError(`\`${path}\` is not readable JSON.`, 1);
     }
   }
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+/**
+ * The graph a file's version or a file holds (FABRIC-GRAPH1f): a version of schema 2's `graph`, or an object that is a graph itself — its
+ * `nodes` a list or its `schemaVersion` named, with no `steps`; else undefined, and the file is read for steps.
+ */
+function graphIn(value: unknown): unknown {
+  if (!isRecord(value)) return undefined;
+  if (value['schema'] === GRAPH_SCHEMA && value['graph'] !== undefined) return value['graph'];
+  return value['steps'] === undefined && (Array.isArray(value['nodes']) || value['schemaVersion'] !== undefined) ? value : undefined;
 }
 
 /** A moment as a version keeps it: UTC, to the second. */

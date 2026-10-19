@@ -585,7 +585,17 @@ public sealed class SessionLedger(
     /// (D126 §5.4). Every reader that asks a take of a quest keys on the record's quest, which a chat's is not, so the mark
     /// changes no carry-on and no stand-down.
     /// </remarks>
-    public async Task<bool> MarkTookAsync(string sessionId, string questId, CancellationToken ct = default)
+    public async Task<bool> MarkTookAsync(string sessionId, string questId, QuestTakeBind bind, CancellationToken ct = default) =>
+        await MarkTookAsync(sessionId, questId, ct, bind switch
+        {
+            QuestTakeBind.Expired => "expired",
+            QuestTakeBind.Replaced => "replaced",
+            QuestTakeBind.Remote => "remote",
+            _ => null,
+        }).ConfigureAwait(false);
+
+    /// <inheritdoc cref="MarkTookAsync(string, string, QuestTakeBind, CancellationToken)"/>
+    public async Task<bool> MarkTookAsync(string sessionId, string questId, CancellationToken ct = default, string? bind = null)
     {
         var session = await sessions.FindAsync(sessionId, ct).ConfigureAwait(false);
         if (session is not { Active: true, Origin: null }) return false;
@@ -595,7 +605,7 @@ public sealed class SessionLedger(
             : session.Kind == SessionKind.Chat;
         // CHATTAKE1: a chat's mark names the quest it took, which is what puts that quest in the chat's line (design §1.2 rule 2).
         return served && await sessions.MarkTookAsync(
-            sessionId, session.Quest is null ? questId.TrimStart('#') : null, ct).ConfigureAwait(false);
+            sessionId, session.Quest is null ? questId.TrimStart('#') : null, ct, bind).ConfigureAwait(false);
     }
 
     /// <summary>

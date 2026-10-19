@@ -383,7 +383,7 @@ public sealed class QuestTools(
             && string.Equals(action, "take", StringComparison.OrdinalIgnoreCase)
             && intake?.Session is { } session && ledger is not null)
         {
-            await ledger.MarkTookAsync(session, id, ct).ConfigureAwait(false);
+            await ledger.MarkTookAsync(session, id, outcome.TakeBind, ct).ConfigureAwait(false);
         }
 
         return outcome.Message;

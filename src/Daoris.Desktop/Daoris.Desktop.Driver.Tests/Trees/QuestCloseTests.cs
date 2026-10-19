@@ -1266,6 +1266,13 @@ public sealed class QuestCloseTests : IDisposable
         Assert.NotNull(said);
         Assert.Contains("#q7", said, StringComparison.Ordinal);
         Assert.Contains("done", said, StringComparison.Ordinal);
+        // CLOSETAKE1: and the line names why where the take's record says (an expired bind), nothing of it where it does not.
+        var why = ClosureBinding.UnboundAtEnd(bound, Taken("q7", null), "expired");
+        Assert.Contains("expired", why, StringComparison.Ordinal);
+        Assert.DoesNotContain("expired", said, StringComparison.Ordinal);
+        Assert.Contains("replaced", ClosureBinding.UnboundAtEnd(bound, Taken("q7", null), "replaced"), StringComparison.Ordinal);
+        Assert.Contains("remote", ClosureBinding.UnboundAtEnd(bound, Taken("q7", null), "remote"), StringComparison.Ordinal);
+        Assert.Null(ClosureBinding.UnboundAtEnd(bound, Taken("q7", digest), "expired"));
         Assert.Null(ClosureBinding.UnboundAtEnd(bound, Taken("q7", digest)));
         // Never taken, nothing named, or named and refused at the start: nothing to say at the end.
         Assert.Null(ClosureBinding.UnboundAtEnd(bound, open));

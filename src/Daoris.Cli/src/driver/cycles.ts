@@ -8,9 +8,20 @@
  * `test/fixtures/graph-homes.json`, row for row (`cycles.test.ts`, `NodeGraphHomesTests`). Each keeps a cycle as written, whether or
  * not its graph holds: the driver judges the graph where it reads it, and says one that does not hold. This module imports nothing
  * of `driverconfig.ts` but its types, which reads through it.
+ *
+ * The doors that set a cycle (FABRIC-GRAPH1c: `daoris driver landing … --cycle <file>` and `daoris driver work-cycle`) judge it as the
+ * driver's `WithLandingCycle` and `WithWorkCycle` do, through `nodegraphs.ts`, the twin of `NodeGraphs.Problems`: a cycle is refused at
+ * the door, naming its first problem in the driver's words, and nothing is written.
  */
+import { existsSync } from 'node:fs';
+import { isAbsolute, resolve } from 'node:path';
 import { atName, findName } from '../platform/casefold.ts';
+import { DaorisError } from '../platform/errors.ts';
+import { readText } from '../platform/fsx.ts';
 import { normalizeWorkspace } from '../service/remotemap.ts';
+import { readGraphParts } from '../workflows/graphversions.ts';
+import { parseWithSource, sourceOf, stringifyWithSource } from '../workflows/jsonsource.ts';
+import { cycleProblems, readGraph, type CycleRule } from '../workflows/nodegraphs.ts';
 import type { DriverChoices } from './driverconfig.ts';
 
 /**
@@ -77,24 +88,36 @@ export function cycleFor(choices: Pick<DriverChoices, 'landings' | 'workspaceLan
 /** A value the file keeps under the cycle's homes that no unit reads — the driver's `CycleStray`: where, its code and its sentence. */
 export interface CycleStray {
   at: string[];
-  code: 'kind' | 'shadowed';
+  code: 'kind' | 'shadowed' | 'unread';
   words: string;
 }
 
 /**
  * What the file keeps under the cycle's homes that no unit reads (FABRIC-GRAPH1's review, findings 2 and 3), each kept as written and said
- * here: a kind with no work cycle, a branch's included; and a name an earlier entry of `landings`, `workspaceLandings` or the work cycles
- * spells in another case, where the first written governs. The driver's `NodeGraphHomes.Strays`, row for row (`graph-homes.json`'s `strays`).
+ * here: a kind with no work cycle, a branch's included; a name an earlier entry of `landings`, `workspaceLandings` or the work cycles
+ * spells in another case, where the first written governs; and a landing rule that reads as no rule (FABRIC-GRAPH1d), which `unread` says
+ * why of (`driverconfig.ts`'s `landingRuleUnread`, handed in, since this module imports nothing of it but its types). The driver's
+ * `NodeGraphHomes.Strays`, row for row (`graph-homes.json`'s `strays`).
  */
-export function cycleStrays(choices: Pick<DriverChoices, 'source' | 'landings' | 'workspaceLandings' | 'workCycles' | 'workspaceWorkCycles'>): CycleStray[] {
+export function cycleStrays(
+  choices: Pick<DriverChoices, 'source' | 'landings' | 'workspaceLandings' | 'workCycles' | 'workspaceWorkCycles'>,
+  unread: (rule: unknown) => string | null,
+): CycleStray[] {
   if (choices.source === undefined) return [];
   const file = JSON.parse(choices.source) as Record<string, unknown>;
   const strays: CycleStray[] = [];
-  const map = (name: string, read: string[], governing?: (owner: string, value: Record<string, unknown>) => void): void => {
+  const map = (name: string, read: string[], governing?: (owner: string, value: Record<string, unknown>) => void, rules = false): void => {
     const entries = file[name];
     if (!isObject(entries)) return;
     const seen: string[] = [];
     for (const [entry, value] of Object.entries(entries)) {
+      // FABRIC-GRAPH1d: a rule both readers skip is said, never passed over without a word; null is none.
+      const why = rules ? unread(value) : null;
+      if (why !== null) {
+        strays.push({ at: [name, entry], code: 'unread',
+          words: `\`${entry}\` in \`${name}\` does not read as a landing rule, so work there lands as though it set none: ${why} It is kept as written, and nothing reads it.` });
+        continue;
+      }
       // The entry its reader kept for this name in any case; entries before it did not read, and those after it are shadowed.
       const governs = findName(read, entry);
       if (governs === null) continue;
@@ -115,11 +138,89 @@ export function cycleStrays(choices: Pick<DriverChoices, 'source' | 'landings' |
           + 'a branch\'s is its landing rule\'s `cycle`. It is kept as written, and nothing reads it.' });
     }
   };
-  map('landings', Object.keys(choices.landings));
-  map('workspaceLandings', Object.keys(choices.workspaceLandings));
+  map('landings', Object.keys(choices.landings), undefined, true);
+  map('workspaceLandings', Object.keys(choices.workspaceLandings), undefined, true);
   map('workCycles', Object.keys(choices.workCycles), kinds('workCycles'));
   map('workspaceWorkCycles', Object.keys(choices.workspaceWorkCycles), kinds('workspaceWorkCycles'));
   return strays;
+}
+
+/**
+ * A cycle's file, read for a door that sets it: its JSON, each number with its own text (`parseWithSource`), or the refusal naming the
+ * file. A path is the terminal's, from where the command was run.
+ */
+export function readCycleFile(root: string, file: string): unknown {
+  const path = isAbsolute(file) ? file : resolve(root, file);
+  if (!existsSync(path)) throw new DaorisError(`there is no file \`${file}\`. Nothing was written.`);
+  try {
+    return parseWithSource(readText(path));
+  } catch {
+    throw new DaorisError(`\`${file}\` is not readable JSON. Nothing was written.`);
+  }
+}
+
+/** Whether any object in `value` was written with a key twice: the driver keeps both, and JavaScript the last. */
+function written(value: unknown): boolean {
+  if (typeof value !== 'object' || value === null) return false;
+  if (sourceOf(value)?.twice === true) return true;
+  return Object.values(value).some(written);
+}
+
+/**
+ * Why this build would write `cycle` into `driver.json` other than as read, or null: the edit is written as JavaScript writes the value
+ * (`jsonkeep.ts`), so a number by other text than its own (`1.0`), a key that is a number out of its order, or a key written twice would
+ * reach the driver changed, and with it the graph's digest a run binds. The driver's door keeps each as written.
+ */
+function rewritten(cycle: unknown, file: string): string | null {
+  return !written(cycle) && stringifyWithSource(cycle) === stringifyWithSource(parseWithSource(JSON.stringify(cycle))) ? null
+    : `the cycle in \`${file}\` holds a value this build would write differently than the driver reads it: a number by other text than `
+      + 'JavaScript\'s, a key that is a number, or a key written twice. Write it as JavaScript writes it. Nothing was written.';
+}
+
+/**
+ * Why a door refuses a landing rule's cycle, or null — the driver's `WithLandingCycle`: the first problem of its graph after `rule`'s
+ * landing (`NodeGraphHomes.OfLanding`, here `cycleProblems`), in the driver's words; else a value this build cannot write as read.
+ */
+export function landingCycleRefusal(rule: CycleRule, cycle: unknown, file: string): string | null {
+  const [first] = cycleProblems(rule, cycle);
+  return first !== undefined ? `the cycle in \`${file}\` does not hold: ${first.words} Nothing was written.` : rewritten(cycle, file);
+}
+
+/** Why `work-cycle` refuses a kind, or null — the driver's `SetWorkCycle`: a branch's cycle is its landing rule's, and only quests and asks have one. */
+export function workCycleKindRefusal(kind: string): string | null {
+  if (kind === 'branch') {
+    return 'a branch\'s cycle is its landing rule\'s `cycle`, so that a repository\'s landing and its end move together (D164); no kind has '
+      + 'two homes. `daoris driver landing <repository> … --cycle <file>` sets it.';
+  }
+  return WORK_CYCLE_KINDS.includes(kind) ? null
+    : `\`${kind}\` is no kind of work with a cycle of its own here — ${WORK_CYCLE_KINDS.map((each) => `\`${each}\``).join(' or ')}.`;
+}
+
+/** Why a door refuses a work cycle, or null — the driver's `WithWorkCycle`: a whole graph's first problem (`NodeGraphs.Read`), in its words. */
+export function workCycleRefusal(cycle: unknown, file: string): string | null {
+  const [first] = readGraph(cycle).problems;
+  return first !== undefined ? `the cycle in \`${file}\` does not hold: ${first.words} Nothing was written.` : rewritten(cycle, file);
+}
+
+/**
+ * The work cycles with `owner`'s cycle for `kind` set, or cleared with null — the driver's `SetWorkCycle`: the owner matched in any case
+ * and kept in its spelling, its other kinds kept, and an owner left with no kind taken out.
+ */
+export function workCycleEdited(map: Record<string, Record<string, Cycle>>, owner: string, kind: string, cycle: Cycle | null): Record<string, Record<string, Cycle>> {
+  const spelled = findName(Object.keys(map), owner.trim()) ?? owner.trim();
+  const kinds: Record<string, Cycle> = { ...(map[spelled] ?? {}) };
+  if (cycle === null) delete kinds[kind];
+  else kinds[kind] = cycle;
+  const next = Object.fromEntries(Object.entries(map).filter(([name]) => name !== spelled));
+  return Object.keys(kinds).length > 0 ? { ...next, [spelled]: kinds } : next;
+}
+
+/** A cycle's size and end, as a door says it: `1 node and 1 wire, ending at `qa``; a fragment's end is the line where it names none. */
+export function cycleSaid(cycle: unknown, end = 'line'): string {
+  const { parts } = readGraphParts(cycle);
+  const nodes = parts?.nodes.length ?? 0;
+  const wires = parts?.wires.length ?? 0;
+  return `${nodes} node${nodes === 1 ? '' : 's'} and ${wires} wire${wires === 1 ? '' : 's'}, ending at \`${parts?.end ?? end}\``;
 }
 
 /**
