@@ -63,16 +63,48 @@ public sealed class DriverModuleHelpHistoryTests : DriverModuleBridge
         Assert.Contains("share a remote", hit.GetProperty("found").GetString());
     }
 
+    /// <summary>
+    /// ASKSCOPE1d (D158's ASKSCOPE1 note, point 6): <c>workspace</c> lists that workspace's conversations, whatever its letters'
+    /// case, its search run over them before the page is taken; none named lists every workspace's, as before. Each row says the
+    /// workspace its record keeps, and a record from before keeps none, so it is `default`'s.
+    /// </summary>
+    [Fact]
+    public async Task The_list_is_the_workspace_named_or_every_one_each_row_with_its_workspace()
+    {
+        var games = Record("h1");
+        games["workspace"] = "games";
+        var work = Record("h3");
+        work["workspace"] = "work";
+        var (loop, module, _) = await UpAsync(games, Record("h2"), work);
+        Said(loop, "h1", "what is a workspace?", "A circle of repositories that share a remote.");
+        Said(loop, "h2", "how do I land on a branch?", "Setup, then a remote.");
+        Said(loop, "h3", "which agent runs intake?", "Settings, and a remote.");
+
+        var named = await AnswerAsync(module, "HELP_CONVERSATIONS", new { workspace = "GAMES" });
+        var older = await AnswerAsync(module, "HELP_CONVERSATIONS", new { workspace = "default", q = "remote" });
+        var every = await AnswerAsync(module, "HELP_CONVERSATIONS", new { });
+
+        static Dictionary<string, string?> Rows(JsonElement answer) => answer.GetProperty("conversations").EnumerateArray()
+            .ToDictionary(row => row.GetProperty("session").GetString()!, row => row.GetProperty("workspace").GetString());
+        Assert.Equal(new Dictionary<string, string?> { ["h1"] = "games" }, Rows(named));
+        Assert.Equal(1, named.GetProperty("total").GetInt32());
+        Assert.Equal(new Dictionary<string, string?> { ["h2"] = "default" }, Rows(older));
+        Assert.Equal(1, older.GetProperty("total").GetInt32());
+        Assert.Equal(new Dictionary<string, string?> { ["h1"] = "games", ["h2"] = "default", ["h3"] = "work" }, Rows(every));
+    }
+
     /// <summary>The page's row is the terminal's <c>--json</c>, field for field, in order (D50: two doors, one answer).</summary>
     [Fact]
     public void A_row_is_the_terminals_json_field_for_field()
     {
         var camel = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
-        var listing = new HelpListing([new HelpConversation("h1", "completed") { Opening = "what is a workspace?" }], Total: 1, Next: null);
+        var listing = new HelpListing(
+            [new HelpConversation("h1", "completed") { Opening = "what is a workspace?", Workspace = "games" }], Total: 1, Next: null);
 
         var answer = JsonSerializer.SerializeToElement(HelpRoutes.HistoryAnswer(listing), camel);
 
         Assert.Equal(HelpCommand.JsonFields, answer.GetProperty("conversations")[0].EnumerateObject().Select(field => field.Name));
+        Assert.Equal("games", answer.GetProperty("conversations")[0].GetProperty("workspace").GetString());
         Assert.Equal(["conversations", "cut", "total", "next"], answer.EnumerateObject().Select(field => field.Name));
     }
 
