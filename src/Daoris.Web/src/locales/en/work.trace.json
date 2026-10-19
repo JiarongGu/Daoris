@@ -141,6 +141,8 @@
   "work.trace.ruleNoPlugin": "naming no plugin",
   "work.trace.ruleAuto": "accepting automatically",
   "work.trace.rulePress": "accepting at a press",
+  "work.trace.ruleAccess": "accepted by {{setup}}",
+  "work.trace.ruleAccessAs": "accepted by the access setup (`{{access}}`)",
   "work.trace.due.title": "Due to land automatically",
   "work.trace.due.closed": "due since {{since}} · closed {{closed}}",
   "work.trace.due.waiting": "due since {{since}} · still waiting",

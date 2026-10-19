@@ -487,8 +487,11 @@ const SET_AT: Readonly<Record<string, string>> = {
   default: 'work.handed.none.not-set',
 };
 
-/** The level that set the access setup a landing was made under (ACCESSWORDS1), worded whose; one this page does not know shows as recorded. */
-const ACCESS_AT: Readonly<Record<string, string>> = {
+/**
+ * The level that set the access setup a landing was made under (ACCESSWORDS1), worded whose; one this page does not know shows as
+ * recorded. The trace's landing words it by the same map (ACCESSWORDS1b).
+ */
+export const ACCESS_AT: Readonly<Record<string, string>> = {
   repository: 'settings.access.setupOf.repository',
   workspace: 'settings.access.setupOf.workspace',
   machine: 'settings.access.setupOf.machine',

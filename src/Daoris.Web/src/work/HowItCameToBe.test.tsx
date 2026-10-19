@@ -123,6 +123,29 @@ describe('how this came to be', () => {
     expect(due).toHaveTextContent(`${at('2026-10-03T10:05:00Z')} · landed · branch feature/q1-fix-the-dashboard-figure · 2 commits · at 1a2b3c4`);
   });
 
+  /** ACCESSWORDS1b (D184's AUTONOMY1c2 note): a landing the access setup accepted says whose setup it was, in place of the rule's switch. */
+  it('says a landing the access setup accepted, with whose setup it was, in either language, and a level it does not know as recorded', async () => {
+    const under = (access: string) => {
+      const chain = structuredClone(SESSION_CHAIN);
+      chain.links[2]!.session!.landing!.branches[0]!.rule!.access = access;
+      return answer(chain);
+    };
+    const { rerender } = render(<HowItCameToBe kind="session" id="s2" open onToggle={() => {}} answer={under('machine')} />);
+
+    const session = () => screen.getByText('Session s2').closest('li')!;
+    expect(session()).toHaveTextContent(
+      "accepted automatically when its quest was done · under the workspace's rule · naming the plugin github · accepted by this machine's access setup");
+    expect(session()).not.toHaveTextContent('accepting automatically');
+
+    rerender(<HowItCameToBe kind="session" id="s2" open onToggle={() => {}} answer={under('elsewhere')} />);
+    expect(session()).toHaveTextContent('naming the plugin github · accepted by the access setup (elsewhere)');
+
+    await i18n.changeLanguage('zh');
+    rerender(<HowItCameToBe kind="session" id="s2" open onToggle={() => {}} answer={under('workspace')} />);
+    expect(screen.getByText('会话 s2').closest('li')).toHaveTextContent('依据工作区的规则 · 指定插件 github · 由它所在工作区的访问配置采纳');
+    expect(screen.getByText('会话 s2').closest('li')).not.toHaveTextContent('· 自动采纳');
+  });
+
   it('says a session still waiting to land, and an earlier landing from before who accepted it was kept', () => {
     const { rerender } = render(<HowItCameToBe kind="session" id="s8" open onToggle={() => {}} answer={answer(WAITING_CHAIN)} />);
 
