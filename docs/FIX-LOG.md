@@ -5,6 +5,24 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-20 — A line's move inside the minute, a release under a live session, and a repository nothing recorded were each missed (ENDAGREE1)
+
+- **Symptom:** each shown red first. Origin's line moving 20 s after a pull request was asked was never asked about at the wakes after
+  the minute (`PullRequestMomentsTests`). A held done released while the person's words went on with its session landed nothing at that
+  session's end, only at the whole look (`AutoLandingWakesTests`). The `gates` topic woke on a write to any run's binding, its deadline
+  listing every run ever bound (`LandingWakesTests`). An unrecorded `daoris/x` in a registered repository with nothing else recorded
+  was never inventoried (`TidyEffectGitTests`, `CleanupLeftoversTests`).
+- **Root cause:** `PullRequestMoments.RefsAsync` (b42f5f86b) took the move into its baseline (`Seen`) before learning that nothing was
+  due, then returned, so the move was spent. `AutoLander.JudgeAsync` (78b040f03) leaves an entry whose tree a live session holds
+  without keeping a try, so its last try still says `held` and `LandingConcerns` lets only the `quests` family wake it; the release that
+  came was spent on the look that left it. The `gates` part was `HomePart.Records` over the whole `workflows/` folder (78b040f03), and
+  runs are kept one file each for good. `WorkInventories.GatherAsync` (73db7bdad) took its repositories from the records and trees alone.
+- **Fix:** D173's ENDAGREE1 note. The move is kept per repository until every open pull request there was asked after it; `LandingJudged`
+  keeps which entries a look left for a live session, which the `sessions` wake then concerns, and the runs the due entries' gates read,
+  which `HomePart.Workflows` alone lists of `runs/`, by name; the inventory reads each registered repository with a checkout here too.
+- **Verification:** the tests named above, filtered, and the Git classes `PullRequestMomentsGitTests`, `AutoLandingWakesTests` and
+  `TidyEffectGitTests`, green.
+
 ## 2026-10-20 — The CLI's graph reader read `1.0` as a whole number and said a graph's first fault in another order (GRAPHTWINS1)
 
 - **Symptom:** found by reading the CLI's reader against the driver's while writing the shared table `graph-problems.json`, each fault

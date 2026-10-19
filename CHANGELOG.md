@@ -5,6 +5,14 @@ with the version and date at release.
 
 ## Unreleased
 
+- Done work and its pull requests move on sooner:
+  - Focusing another main window asks about an open pull request as focusing the first one does.
+  - A pull request whose line you fetched within a minute of its last check is asked about at the next chance after that minute,
+    where the fetch was forgotten until you fetched again.
+  - Done work whose hold or review you let go while its session was still running lands as that session ends, instead of at the
+    next full look.
+  - A `daoris/…` branch Daoris did not record is shown, in Ask Daoris, `daoris-driver work state` and the page, in a repository
+    where nothing else of Daoris's is recorded too.
 - The terminal judges a workflow's graph as the desktop does, in the same words, and saves what it judges:
   - `daoris driver landing … --cycle <file>` sets a landing rule's cycle after the landing, and `--no-cycle` takes it away;
     `daoris driver work-cycle <repository> quest|ask <file>` sets the cycle a quest or an ask follows to its end. A cycle that does
