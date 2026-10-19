@@ -13,13 +13,14 @@ import type { ProjectTab, WorkspaceSection, WorkspaceTab } from './tabs';
 import { WorkspaceView } from './WorkspaceView';
 import { useRegistry, useRepositories } from '../data/queries';
 import { useScope } from '../data/scope';
+import { type AccessEdit, accessToast, isFull, resolveAccess } from '../settings/Access';
 import { type CommitEdit, commitToast } from '../settings/Commits';
 import { type HelperEdit, helperToast } from '../settings/Helpers';
 import type { LandingRule } from '../settings/Landings';
 import { type OpinionEdit, opinionToast } from '../settings/Opinions';
 import { type ReviewEdit, reviewToast } from '../settings/Reviews';
 import {
-  useAcross, useDriver, useHarnesses, useLines, usePlugins, useRuleAction, useRules, useSetCommits, useSetDrivable, useSetHelpers,
+  useAcross, useDriver, useHarnesses, useLines, usePlugins, useRuleAction, useRules, useSetAccess, useSetCommits, useSetDrivable, useSetHelpers,
   useSetHold, useSetLanding, useSetLanguage, useSetLine, useSetOpinion, useSetReadAcross, useSetReview, useSetStanding, useSetTrees,
   useSetupPlan, useSetupPress, useSetWriteAcross, useSweepPlan, useWorkflowCurrent,
 } from '../bridge/shell';
@@ -138,6 +139,7 @@ export function useProjectsView({
   const setOpinion = useSetOpinion();
   const setCommits = useSetCommits();
   const setHelpers = useSetHelpers();
+  const setAccess = useSetAccess();
   const setRead = useSetReadAcross();
   const setWrite = useSetWriteAcross();
   const ruleAction = useRuleAction();
@@ -162,6 +164,9 @@ export function useProjectsView({
   const commitsOf = (repository: string) => (Array.isArray(lines.data?.commits) ? lines.data.commits : [])
     .find((one) => one.repository === repository);
   const helpersOf = (repository: string) => (Array.isArray(lines.data?.helpers) ? lines.data.helpers : [])
+    .find((one) => one.repository === repository);
+  // And the access setup its sessions start under (AUTONOMY1d), each pause with where it was set: the driver's resolution.
+  const accessOf = (repository: string) => (Array.isArray(lines.data?.access) ? lines.data.access : [])
     .find((one) => one.repository === repository);
   // And how its work lands (WSR1), the driver's choice.
   const landingOf = (repository: string) => (Array.isArray(lines.data?.landings) ? lines.data.landings : [])
@@ -362,6 +367,26 @@ export function useProjectsView({
         : undefined,
     };
 
+    // Its sessions' access (AUTONOMY1d), where it can be driven; a shell older than it answers no access, and no section is drawn.
+    // What stands above it is its workspace's over this machine's, as set, so turning off a full access from above sets today's
+    // pauses here rather than clearing back into it. Full access answers its ask: done, or refused in the driver's sentence.
+    const resolvedAccess = accessOf(repository);
+    const access: RepositorySetupProps['access'] = driving && resolvedAccess && Array.isArray(resolvedAccess.pauses) ? {
+      workspace: resolvedAccess.workspace,
+      pauses: resolvedAccess.pauses,
+      aboveFull: isFull(resolveAccess([
+        { setting: ofWorkspace(driver.data.workspaceAccess, workspace)?.setting, source: 'workspace' },
+        { setting: driver.data.machineAccess, source: 'machine' },
+      ])),
+      onChange: (edit: AccessEdit, answered) => setAccess.mutate({ repository, ...edit }, {
+        onSuccess: () => {
+          notify(accessToast(t, repository, edit, false));
+          answered?.done();
+        },
+        onError: (error) => (answered ? answered.refused(sentence(error)) : onDriverError(error)),
+      }),
+    } : null;
+
     // Its standing answer (KNOWUSE1b), matched without case as the driver matches it; a shell older than it answers no
     // `standing`, and nothing is offered rather than a field whose save would be refused.
     const sessions: RepositorySetupProps['sessions'] = driving && {
@@ -426,12 +451,13 @@ export function useProjectsView({
       repository,
       driving,
       work,
+      access,
       sessions,
       reach,
       onOpenPlugin,
       busy: setLine.isPending || setLanding.isPending || setReview.isPending || setOpinion.isPending || setLanguage.isPending
-        || setCommits.isPending || setHelpers.isPending || setStanding.isPending || setRead.isPending || setWrite.isPending
-        || ruleAction.isPending,
+        || setCommits.isPending || setHelpers.isPending || setAccess.isPending || setStanding.isPending || setRead.isPending
+        || setWrite.isPending || ruleAction.isPending,
     };
   };
 
