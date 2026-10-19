@@ -1594,7 +1594,10 @@ public sealed class ClaudeAcpAdapter : ISessionAdapter
         // No login of its own: it runs `claude` and reads the home `claude` logged into.
         AccountOf: "claude-code",
         // The same harness underneath, so the same trust record governs this door too.
-        TrustFile: ClaudeTrust.FileName);
+        TrustFile: ClaudeTrust.FileName,
+        // Its prompt response's `usage` is each turn's own, not a running sum: measured on claude-code-acp 0.79.0, two turns
+        // (stream-json evidence, CONV5). Its own, since a report's meaning is its wire's (USAGECAP1a2).
+        TurnReport: UsageHistory.PerTurn);
 
     private IReadOnlyList<string> Resolve(IReadOnlyList<string>? command) =>
         command is { Count: > 0 } ? command : Toolchain!.Binary;
@@ -2018,7 +2021,10 @@ public sealed class ClaudeCodeAdapter : ISessionAdapter
         SignIn: ClaudeSignIn.Words,
         // Its own whole-account windows, asked of the native CLI with no prompt (USAGEREAD2a, D165 point 1): the protocol
         // door reads its owner's through `UsageOf` (AGT7).
-        Usage: ClaudeUsage.Question);
+        Usage: ClaudeUsage.Question,
+        // Its `result.usage` is each turn's own total, summed over the turn's calls: measured on 2.1.282 (stream-json evidence,
+        // CONV5). Read for the usage history's turns (USAGECAP1a2); its protocol door declares its own.
+        TurnReport: UsageHistory.PerTurn);
 
     /// <summary>
     /// What a pinned <c>claude</c> runs with so it stays the version pinned (AGT2). 🔴 Measured on a

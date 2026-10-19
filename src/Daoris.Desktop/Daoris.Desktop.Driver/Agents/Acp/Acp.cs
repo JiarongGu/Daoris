@@ -336,6 +336,11 @@ public sealed class AcpSession(
     private AcpUsage? _usage;
     private string? _sessionId;
 
+    // The models the turn's own updates named, and the response's split as this process last said it (USAGECAP1a2), both under
+    // `_measured`. Read on the reader's thread, as the turn's end is.
+    private readonly List<string?> _named = [];
+    private IReadOnlyDictionary<string, TurnTokens>? _split;
+
     /// <summary>The reader, which lives as long as the conversation does, and what ends it.</summary>
     private readonly CancellationTokenSource _pumpStop = new();
     private Task? _pump;
@@ -1046,6 +1051,29 @@ public sealed class AcpSession(
             : "unknown";
     }
 
+    /// <summary>
+    /// Which models a turn's tokens were spent on, for the usage history alone (USAGECAP1a2, D179 point 2): the models the turn's
+    /// updates named, and the response's <c>_meta.quota</c> by model where it agrees with the turn's <c>usage</c>. A small model the
+    /// harness called on its own is counted in the quota and not in <c>usage</c> (CONV5), so its tokens are kept beside the total.
+    /// The next turn's names are its own.
+    /// </summary>
+    private TurnModels TurnModelsOf(JsonElement result, TurnTokens? tokens)
+    {
+        var split = result.ValueKind == JsonValueKind.Object
+                    && result.TryGetProperty("_meta", out var meta) && meta.ValueKind == JsonValueKind.Object
+                    && meta.TryGetProperty("quota", out var quota) && quota.ValueKind == JsonValueKind.Object
+                    && quota.TryGetProperty("model_usage", out var byModel)
+            ? TurnModels.Read(byModel)
+            : null;
+        lock (_measured)
+        {
+            var models = TurnModels.Of(tokens, _named, TurnModels.FromUpdates, split, _split, TurnModels.FromQuota);
+            _named.Clear();
+            if (split is { Count: > 0 }) _split = split;
+            return models;
+        }
+    }
+
     /// <summary>A prompt's content: each text its own block (MSG1b), then each file a <c>resource_link</c> to where it is kept (CONV4c).</summary>
     private static object[] Blocks(IReadOnlyList<string> texts, IReadOnlyList<KeptFile>? files) =>
     [
@@ -1068,16 +1096,18 @@ public sealed class AcpSession(
 
             // A call a steer cut that never heard again ends with the turn it was cut in, as cut (STEER2a).
             CloseCut();
+            // The turn's own counts, where the agent reported them (CONV5): the response's `usage`.
+            var tokens = result.ValueKind == JsonValueKind.Object && result.TryGetProperty("usage", out var usage)
+                ? TurnTokens.Read(usage, "inputTokens", "outputTokens", "cachedReadTokens", "cachedWriteTokens")
+                : null;
             Emit(new SessionEvent
             {
                 Kind = SessionEventKind.Turn,
                 StopReason = result.ValueKind == JsonValueKind.Object && result.TryGetProperty("stopReason", out var reason)
                     ? reason.GetString() ?? "unknown"
                     : "unknown",
-                // The turn's own counts, where the agent reported them (CONV5): the response's `usage`.
-                Tokens = result.ValueKind == JsonValueKind.Object && result.TryGetProperty("usage", out var usage)
-                    ? TurnTokens.Read(usage, "inputTokens", "outputTokens", "cachedReadTokens", "cachedWriteTokens")
-                    : null,
+                Tokens = tokens,
+                Models = TurnModelsOf(result, tokens),
             });
         }
 
@@ -1599,6 +1629,12 @@ public sealed class AcpSession(
             {
                 onLine($"[what the session said about its account's windows could not be kept: {error.Message}]");
             }
+        }
+
+        // The model answering the turn, for the usage history alone (USAGECAP1a2): Claude Code's adapter says it beside the context.
+        if (meta.ValueKind == JsonValueKind.Object && Json.Text(meta, "_claude/model") is { Length: > 0 } model)
+        {
+            lock (_measured) _named.Add(model);
         }
 
         if (Json.Long(update, "used") is not { } used || Json.Long(update, "size") is not { } size) return;

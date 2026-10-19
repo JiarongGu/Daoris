@@ -124,7 +124,8 @@ public sealed class ChatRunner : IDisposable
         _usage = usage ?? new SessionUsage(home);
         _plugins = plugins ?? PluginLog.None;
         _harnesses = harnesses ?? new HarnessRoster(adapters);
-        _events = events ?? new SessionEvents(DaorisHome.Entry(home, HomeEntry.Sessions));
+        // Its turns kept in the usage history (USAGECAP1a2), watched once however many runners share the record.
+        _events = UsageTurns.Watched(home, events ?? new SessionEvents(DaorisHome.Entry(home, HomeEntry.Sessions)));
         _context = new ChatContext(service, home, processes, output, _harnesses, _events);
         _handOver = new ChatHandOver(_context, this);
         _curve = new CurveMove(_context, _handOver);
@@ -879,6 +880,9 @@ public sealed class ChatRunner : IDisposable
         // session's does: at its end, at its high-water mark, where the door reported one.
         void Measured(AcpUsage used) => _usage.Record(new UsageEntry(
             sessionId, place.Name, resolved.Name, selection.Profile, used.Used, used.Size, DateTimeOffset.UtcNow));
+
+        // Its turns are kept in the usage history under the account it runs as (USAGECAP1a2), as a driven session's are.
+        UsageTurns.Bound(_home, _events, sessionId, TurnBinding.Of(resolved, selection.Profile));
 
         // What its door says about its account's windows is kept for the next start's walk (TOOL6c), as a driven session's is.
         void Said(JsonElement info)

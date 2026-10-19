@@ -95,8 +95,11 @@ internal sealed class LoopContext(
     /// <summary>Shared across the per-tick instances, so a control surface can reach what is actually running.</summary>
     public SessionProcesses Processes { get; } = processes ?? new SessionProcesses();
 
-    /// <summary>Where a session's structure is kept (D76 §2): the shell's shared record, or the home's own, with nobody watching.</summary>
-    public SessionEvents Events { get; } = events ?? new SessionEvents(DaorisHome.Entry(home, HomeEntry.Sessions));
+    /// <summary>
+    /// Where a session's structure is kept (D76 §2): the shell's shared record, or the home's own. Its turns are kept in the usage
+    /// history (USAGECAP1a2), watched once however many looks share it.
+    /// </summary>
+    public SessionEvents Events { get; } = UsageTurns.Watched(home, events ?? new SessionEvents(DaorisHome.Entry(home, HomeEntry.Sessions)));
 
     public SessionOutput? Output { get; } = output;
 

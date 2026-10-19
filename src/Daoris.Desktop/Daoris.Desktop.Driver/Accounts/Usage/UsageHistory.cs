@@ -80,6 +80,9 @@ public sealed record HistoryRead(IReadOnlyList<KeptReading> Readings, IReadOnlyL
 /// and a <c>gap</c> record at the head of the next write says what went, from when to when, where a reader meets it. The
 /// month being written is never pruned: where it alone reaches the cap, a <c>full</c> record is written once and what follows
 /// that month is dropped, which a reader says as a gap to the month's end.</para>
+/// <para><b>The turns' log shares the bound</b> (USAGECAP1a2, <c>UsageHistory.Turns.cs</c>): the cap counts both logs' files,
+/// and a month pruned for size goes from both at once, each log's gap said in that log. A month of readings without its turns,
+/// or of turns without the readings around them, is nothing an estimate can be fitted on (D179 point 4).</para>
 /// <para><b>Never a reason to fail</b>: a write that cannot be made is dropped, as the machine log's is, and its caller goes on
 /// to <c>windows.json</c> as before.</para>
 /// <para><b>Never written</b> (D179 point 2): a prompt, a word, a raw frame, a key, an email, an organisation or who signed in.
@@ -91,7 +94,7 @@ public sealed record HistoryRead(IReadOnlyList<KeptReading> Readings, IReadOnlyL
 /// a sign-in or a reading, or the account's removal and a reading under its name again, begins the next. A plan first learned
 /// is the epoch's own. Only an account the history has met is marked.</para>
 /// </remarks>
-public static class UsageHistory
+public static partial class UsageHistory
 {
     /// <summary>The records' version.</summary>
     public const int Version = 1;
@@ -112,7 +115,11 @@ public static class UsageHistory
     public const string PlanFromStatus = "status";
 
     private const string ReadingsLog = "readings";
+    private const string TurnsLog = "turns";
     private const string EpochsFile = "epochs.json";
+
+    /// <summary>The logs the bound counts together (USAGECAP1a2): a month pruned for size goes from each.</summary>
+    private static readonly string[] Logs = [ReadingsLog, TurnsLog];
 
     /// <summary>How many readings' keys each home's history remembers, to write an exact duplicate once.</summary>
     private const int Remembered = 4096;
@@ -155,7 +162,7 @@ public static class UsageHistory
 
                 Directory.CreateDirectory(folder);
                 var plan = Word(from.Plan);
-                var epoch = EpochOf(home, from, plan);
+                var epoch = EpochOf(home, from.Agent, from.Account, plan, from.Seen);
                 Append(home, ReadingsLog, [.. fresh.Select(window => Reading(from, window, epoch, plan, now))], now, cap);
             }
         }
@@ -216,35 +223,7 @@ public static class UsageHistory
     /// </summary>
     public static HistoryRead Read(string home)
     {
-        var readings = new List<KeptReading>();
-        var gaps = new List<HistoryGap>();
-        var unread = 0;
-        try
-        {
-            if (!Directory.Exists(FolderOf(home))) return new([], [], 0);
-            foreach (var segment in Segments(home, ReadingsLog))
-            {
-                using var stream = new FileStream(
-                    DaorisHome.Entry(home, HomeEntry.UsageHistory, segment.Name), FileMode.Open, FileAccess.Read,
-                    FileShare.ReadWrite | FileShare.Delete);
-                using var reader = new StreamReader(stream, Utf8);
-                while (reader.ReadLine() is { } line)
-                {
-                    if (line.Length == 0) continue;
-                    switch (Record(line, segment))
-                    {
-                        case KeptReading reading: readings.Add(reading); break;
-                        case HistoryGap gap: gaps.Add(gap); break;
-                        case false: unread++; break;
-                    }
-                }
-            }
-        }
-        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
-        {
-            // What was read stands; the rest is not there.
-        }
-
+        var (readings, gaps, unread) = ReadLog(home, ReadingsLog, "reading", ReadingOf);
         return new(readings, gaps, unread);
     }
 
@@ -267,24 +246,27 @@ public static class UsageHistory
 
     // ——— The epoch.
 
-    /// <summary>The account's epoch for a reading, begun or moved on as <see cref="Rebound"/> says; null where the file does not read.</summary>
-    private static int? EpochOf(string home, ReadingFrom from, string? plan)
+    /// <summary>
+    /// The account's epoch for a reading or a turn (a session that ran), begun or moved on as <see cref="Rebound"/> says; null
+    /// where the file does not read.
+    /// </summary>
+    private static int? EpochOf(string home, string agent, string account, string? plan, DateTimeOffset at)
     {
         var path = DaorisHome.Entry(home, HomeEntry.UsageHistory, EpochsFile);
         var (root, unreadable) = AccountFileNodes.Read(path);
         if (unreadable) return null;
 
-        var held = Made(root, from.Agent);
+        var held = Made(root, agent);
         bool changed;
-        if (Child(held, from.Account) is not { } entry)
+        if (Child(held, account) is not { } entry)
         {
-            entry = new JsonObject { ["epoch"] = 1, ["plan"] = plan, ["since"] = Stamp(from.Seen) };
-            held[from.Account] = entry;
+            entry = new JsonObject { ["epoch"] = 1, ["plan"] = plan, ["since"] = Stamp(at) };
+            held[account] = entry;
             changed = true;
         }
         else
         {
-            changed = Rebound(entry, plan, from.Seen);
+            changed = Rebound(entry, plan, at);
         }
 
         if (changed)
@@ -337,10 +319,13 @@ public static class UsageHistory
 
     // ——— The log: appended a month to a file, bounded, its gaps said.
 
-    private sealed record Segment(string Name, DateTimeOffset Month, long Length);
+    private sealed record Segment(string Log, string Name, DateTimeOffset Month, long Length);
 
     private static string SegmentOf(string log, DateTimeOffset at) =>
         $"{log}-{at.UtcDateTime.ToString("yyyy-MM", CultureInfo.InvariantCulture)}.jsonl";
+
+    /// <summary>The month a moment falls in, in UTC: the month every log is writing then.</summary>
+    private static DateTimeOffset MonthOf(DateTimeOffset at) => new(at.UtcDateTime.Year, at.UtcDateTime.Month, 1, 0, 0, 0, TimeSpan.Zero);
 
     /// <summary>The log's files, oldest month first: each named <c>&lt;log&gt;-YYYY-MM.jsonl</c>; any other name is not the log's.</summary>
     private static List<Segment> Segments(string home, string log)
@@ -355,45 +340,62 @@ public static class UsageHistory
                 continue;
             }
 
-            segments.Add(new(name, new DateTimeOffset(start, TimeSpan.Zero), new FileInfo(path).Length));
+            segments.Add(new(log, name, new DateTimeOffset(start, TimeSpan.Zero), new FileInfo(path).Length));
         }
 
         return [.. segments.OrderBy(segment => segment.Month)];
     }
 
     /// <summary>
-    /// Append <paramref name="lines"/> to the month's file, after pruning: months that ended <see cref="KeptDays"/> ago, then the
-    /// oldest while the files and the write exceed <paramref name="cap"/>, each prune said by a gap record at the write's head.
-    /// Where the month alone is at the cap, a <c>full</c> record once, and the lines are dropped.
+    /// Append <paramref name="lines"/> to <paramref name="log"/>'s month's file, after pruning across every log the bound counts
+    /// (<see cref="Logs"/>): months that ended <see cref="KeptDays"/> ago, then the oldest month while the files and the write
+    /// exceed <paramref name="cap"/>, from each log at once. Each prune is said by a gap record in its own log: at the head of
+    /// this write in this one, at the end of its month's file in another. Where the month alone is at the cap, a <c>full</c>
+    /// record once in this log, and the lines are dropped.
     /// </summary>
     private static void Append(string home, string log, IReadOnlyList<byte[]> lines, DateTimeOffset now, long cap)
     {
         var current = SegmentOf(log, now);
-        var left = Segments(home, log);
+        var month = MonthOf(now);
+        var left = Logs.SelectMany(each => Segments(home, each)).ToList();
         var pruned = new List<(Segment Segment, string Why)>();
 
         var oldest = now.ToUniversalTime().AddDays(-KeptDays);
-        foreach (var segment in left.Where(segment => segment.Name != current && segment.Month.AddMonths(1) <= oldest).ToList())
+        foreach (var segment in left.Where(segment => segment.Month != month && segment.Month.AddMonths(1) <= oldest).ToList())
         {
             left.Remove(segment);
             if (Deleted(home, segment)) pruned.Add((segment, "age"));
         }
 
-        var body = Body(Gaps(pruned, now), lines);
-        while (left.Sum(segment => segment.Length) + body.Length > cap)
+        // Another log's gaps are written too, so they count against the cap as this write's own do.
+        long Elsewhere() => Logs.Where(other => other != log).Sum(other => (long)Body(Gaps(pruned, other, now), []).Length);
+        var body = Body(Gaps(pruned, log, now), lines);
+        while (left.Sum(segment => segment.Length) + body.Length + Elsewhere() > cap)
         {
-            if (left.FirstOrDefault(segment => segment.Name != current) is not { } older)
+            if (left.Where(segment => segment.Month != month).MinBy(segment => segment.Month) is not { } older)
             {
-                Full(home, current, Gaps(pruned, now), now, cap);
+                SaidElsewhere(home, log, pruned, now);
+                Full(home, current, Gaps(pruned, log, now), now, cap);
                 return;
             }
 
-            left.Remove(older);
-            if (Deleted(home, older)) pruned.Add((older, "size"));
-            body = Body(Gaps(pruned, now), lines);
+            foreach (var segment in left.Where(segment => segment.Month == older.Month).ToList())
+            {
+                left.Remove(segment);
+                if (Deleted(home, segment)) pruned.Add((segment, "size"));
+            }
+
+            body = Body(Gaps(pruned, log, now), lines);
         }
 
+        SaidElsewhere(home, log, pruned, now);
         Write(home, current, body);
+    }
+
+    /// <summary>The gaps a write pruned from the other logs, each at the end of its own log's month's file.</summary>
+    private static void SaidElsewhere(string home, string log, IReadOnlyList<(Segment Segment, string Why)> pruned, DateTimeOffset now)
+    {
+        foreach (var other in Logs.Where(other => other != log)) Write(home, SegmentOf(other, now), Body(Gaps(pruned, other, now), []));
     }
 
     /// <summary>A month removed, or false where it could not be: the next write tries again.</summary>
@@ -445,9 +447,9 @@ public static class UsageHistory
         return last.Contains("\"kind\":\"full\"", StringComparison.Ordinal);
     }
 
-    /// <summary>One gap record per reason, from the oldest month pruned to the end of the newest, never past now.</summary>
-    private static IReadOnlyList<byte[]> Gaps(IReadOnlyList<(Segment Segment, string Why)> pruned, DateTimeOffset now) =>
-        [.. pruned.GroupBy(each => each.Why).Select(group =>
+    /// <summary>One of the log's gap records per reason, from the oldest month pruned to the end of the newest, never past now.</summary>
+    private static IReadOnlyList<byte[]> Gaps(IReadOnlyList<(Segment Segment, string Why)> pruned, string log, DateTimeOffset now) =>
+        [.. pruned.Where(each => each.Segment.Log == log).GroupBy(each => each.Why).Select(group =>
         {
             var months = group.Select(each => each.Segment).OrderBy(segment => segment.Month).ToList();
             var to = months[^1].Month.AddMonths(1);
@@ -545,10 +547,73 @@ public static class UsageHistory
         moment.ToUniversalTime().ToString("yyyy-MM-dd'T'HH:mm:ss.fff'Z'", CultureInfo.InvariantCulture);
 
     /// <summary>
-    /// A line read back: a reading, a gap (a <c>full</c> record read as the rest of its month), null for a kind this reader
-    /// does not know, or false where it does not read.
+    /// A log read back, oldest month first and each in the order written: its records of <paramref name="kind"/>, the gaps a
+    /// reader meets, and how many lines did not read, which are counted and never guessed at. A record of a kind this reader
+    /// does not know is passed over. Never throws: what could not be read is not there.
     /// </summary>
-    private static object? Record(string line, Segment segment)
+    /// <param name="parse">A record of the kind read whole, or null where it does not read.</param>
+    private static (List<T> Records, List<HistoryGap> Gaps, int Unread) ReadLog<T>(
+        string home, string log, string kind, Func<JsonObject, T?> parse)
+        where T : class
+    {
+        var records = new List<T>();
+        var gaps = new List<HistoryGap>();
+        var unread = 0;
+        try
+        {
+            if (!Directory.Exists(FolderOf(home))) return (records, gaps, 0);
+            foreach (var segment in Segments(home, log))
+            {
+                using var stream = new FileStream(
+                    DaorisHome.Entry(home, HomeEntry.UsageHistory, segment.Name), FileMode.Open, FileAccess.Read,
+                    FileShare.ReadWrite | FileShare.Delete);
+                using var reader = new StreamReader(stream, Utf8);
+                while (reader.ReadLine() is { } line)
+                {
+                    if (line.Length == 0) continue;
+                    switch (Record(line, segment, kind, parse))
+                    {
+                        case HistoryGap gap: gaps.Add(gap); break;
+                        case T record: records.Add(record); break;
+                        case false: unread++; break;
+                    }
+                }
+            }
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+        {
+            // What was read stands; the rest is not there.
+        }
+
+        return (records, gaps, unread);
+    }
+
+    /// <summary>A reading read back whole, or null where it does not read.</summary>
+    private static KeptReading? ReadingOf(JsonObject record)
+    {
+        if (Json.Text(record, "agent") is not { } agent || Json.Text(record, "account") is not { } account
+            || Json.NonEmpty(record, "door") is not { } door || Json.NonEmpty(record, "window") is not { } window
+            || Json.NonEmpty(record, "source") is not { } source || Moments.ReadStrict(Json.Text(record, "seen")) is not { } seen
+            || Whole(record, "reader") is not { } reader)
+        {
+            return null;
+        }
+
+        var reset = Moments.ReadStrict(Json.Text(record, "reset"));
+        return new KeptReading(
+            agent, account, Whole(record, "epoch"), door,
+            new WindowSeen(
+                window, Json.NonEmpty(record, "walk"), Json.NonEmpty(record, "scope"), Whole(record, "minutes"),
+                Fraction(record, "used"), Fraction(record, "precision"), reset, reset is null ? null : Json.NonEmpty(record, "resetFrom")),
+            source, seen, Json.NonEmpty(record, "session"), Json.NonEmpty(record, "plan"), Json.NonEmpty(record, "planFrom"), reader);
+    }
+
+    /// <summary>
+    /// A line read back: a record of the log's kind, a gap (a <c>full</c> record read as the rest of its month), null for a
+    /// kind this reader does not know, or false where it does not read.
+    /// </summary>
+    private static object? Record<T>(string line, Segment segment, string kind, Func<JsonObject, T?> parse)
+        where T : class
     {
         JsonObject record;
         try
@@ -561,24 +626,10 @@ public static class UsageHistory
             return false;
         }
 
-        switch (Json.Text(record, "kind"))
+        var said = Json.Text(record, "kind");
+        if (said == kind) return (object?)parse(record) ?? false;
+        switch (said)
         {
-            case "reading":
-                if (Json.Text(record, "agent") is not { } agent || Json.Text(record, "account") is not { } account
-                    || Json.NonEmpty(record, "door") is not { } door || Json.NonEmpty(record, "window") is not { } window
-                    || Json.NonEmpty(record, "source") is not { } source || Moments.ReadStrict(Json.Text(record, "seen")) is not { } seen
-                    || Whole(record, "reader") is not { } reader)
-                {
-                    return false;
-                }
-
-                var reset = Moments.ReadStrict(Json.Text(record, "reset"));
-                return new KeptReading(
-                    agent, account, Whole(record, "epoch"), door,
-                    new WindowSeen(
-                        window, Json.NonEmpty(record, "walk"), Json.NonEmpty(record, "scope"), Whole(record, "minutes"),
-                        Fraction(record, "used"), Fraction(record, "precision"), reset, reset is null ? null : Json.NonEmpty(record, "resetFrom")),
-                    source, seen, Json.NonEmpty(record, "session"), Json.NonEmpty(record, "plan"), Json.NonEmpty(record, "planFrom"), reader);
             case "gap":
                 return Moments.ReadStrict(Json.Text(record, "from")) is { } from && Moments.ReadStrict(Json.Text(record, "to")) is { } to
                     ? new HistoryGap(from, to, Json.NonEmpty(record, "why") ?? "pruned", Json.TrimmedStrings(record["segments"]))

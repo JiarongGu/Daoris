@@ -1007,6 +1007,90 @@ public sealed class AcpTests
     }
 
     /// <summary>
+    /// USAGECAP1a2 (D179 point 2): a turn's models on this door, for the usage history alone. The model is what the turn's
+    /// <c>usage_update</c>s name in <c>_meta["_claude/model"]</c>, and the split the prompt response's <c>_meta.quota</c> by
+    /// model, taken where it agrees with the turn's <c>usage</c>. A small model the harness called on its own is counted in the
+    /// quota and not in <c>usage</c> (CONV5's probe, 909 input tokens): its tokens fall outside the total, so the turn is not whole.
+    /// The next turn's names are its own.
+    /// </summary>
+    /// <remarks>
+    /// 🔴 No frame on this machine holds <c>_meta.quota</c>'s counts or a <c>_claude/model</c> beside a turn: the shapes are the
+    /// evidence's words (the stream-json evidence's CONV5, the limit-signals evidence's table, <c>acp-agent.js:4772-4785</c>), the
+    /// quota's counts named as <c>usage</c> names them, and the totals the probe's second turn.
+    /// </remarks>
+    [Fact]
+    public async Task A_turn_s_models_are_its_updates_model_and_its_quota_split_with_a_helper_outside_the_total()
+    {
+        var events = new List<SessionEvent>();
+        var answers = new Queue<string>([
+            """{"stopReason":"end_turn","usage":{"inputTokens":4,"outputTokens":88,"cachedReadTokens":48666,"cachedWriteTokens":20035,"totalTokens":68793},"_meta":{"quota":{"model_usage":[{"model":"claude-opus-4-1","inputTokens":4,"outputTokens":88,"cachedReadTokens":48666,"cachedWriteTokens":20035},{"model":"claude-haiku-3-5","inputTokens":909,"outputTokens":30,"cachedReadTokens":0,"cachedWriteTokens":0}]}}}""",
+            """{"stopReason":"end_turn","usage":{"inputTokens":2,"outputTokens":3,"cachedReadTokens":35480,"cachedWriteTokens":39,"totalTokens":35524}}""",
+        ]);
+        var models = new Queue<string>(["claude-opus-4-1", "claude-sonnet-4-5"]);
+        var agent = new FakeAgent((frame, self) =>
+        {
+            switch (frame.GetProperty("method").GetString())
+            {
+                case "initialize": return Ok(frame, """{"protocolVersion":1}""");
+                case "session/new": return Ok(frame, """{"sessionId":"s-9"}""");
+                case "session/prompt":
+                    self.Push("""{"jsonrpc":"2.0","method":"session/update","params":{"sessionId":"s-9","update":{"sessionUpdate":"usage_update","used":900,"size":200000,"_meta":{"_claude/model":"""
+                              + $"\"{models.Dequeue()}\"}}}}}}}}");
+                    return Ok(frame, answers.Dequeue());
+                default: return frame.TryGetProperty("id", out _) ? Ok(frame, "{}") : null;
+            }
+        });
+
+        var session = new AcpSession(agent.Incoming, agent.Outgoing, _ => { }, onEvent: events.Add);
+        await session.OpenAsync("D:/fam/Game", CancellationToken.None);
+        await session.PromptAsync("one", CancellationToken.None);
+        await session.PromptAsync("two", CancellationToken.None);
+        session.Release();
+
+        var turns = events.Where(e => e.Kind == SessionEventKind.Turn).Select(e => e.Models!).ToList();
+        Assert.Equal(("claude-opus-4-1", (bool?)false, TurnModels.FromQuota), (turns[0].Model, turns[0].Whole, turns[0].From));
+        Assert.Equal(
+            [("claude-haiku-3-5", new TurnTokens(909, 30, 0, 0)), ("claude-opus-4-1", new TurnTokens(4, 88, 48666, 20035))],
+            turns[0].Split!.Select(each => (each.Model, each.Tokens)));
+        // A response with no quota is no split: the model the turn's update named stands, and its own, not the turn's before.
+        Assert.Equal(("claude-sonnet-4-5", (IReadOnlyList<ModelTokens>?)null, (bool?)null, TurnModels.FromUpdates),
+            (turns[1].Model, turns[1].Split, turns[1].Whole, turns[1].From));
+    }
+
+    /// <summary>
+    /// USAGECAP1a2: a turn the person stopped answers every count zero on this door (CONV5), which is no report, so its tokens
+    /// stay unknown; it is still a turn, cancelled, with the model its update named and no split.
+    /// </summary>
+    /// <remarks>🔴 Built as the test above, from the evidence's words.</remarks>
+    [Fact]
+    public async Task A_cancelled_turn_that_reported_zeros_keeps_its_model_and_no_counts()
+    {
+        var events = new List<SessionEvent>();
+        var agent = new FakeAgent((frame, self) =>
+        {
+            switch (frame.GetProperty("method").GetString())
+            {
+                case "initialize": return Ok(frame, """{"protocolVersion":1}""");
+                case "session/new": return Ok(frame, """{"sessionId":"s-10"}""");
+                case "session/prompt":
+                    self.Push("""{"jsonrpc":"2.0","method":"session/update","params":{"sessionId":"s-10","update":{"sessionUpdate":"usage_update","used":38000,"size":200000,"_meta":{"_claude/model":"claude-opus-4-1"}}}}""");
+                    return Ok(frame, """{"stopReason":"cancelled","usage":{"inputTokens":0,"outputTokens":0,"cachedReadTokens":0,"cachedWriteTokens":0,"totalTokens":0},"_meta":{"quota":{"model_usage":[]}}}""");
+                default: return frame.TryGetProperty("id", out _) ? Ok(frame, "{}") : null;
+            }
+        });
+
+        var session = new AcpSession(agent.Incoming, agent.Outgoing, _ => { }, onEvent: events.Add);
+        await session.OpenAsync("D:/fam/Game", CancellationToken.None);
+        await session.PromptAsync("stopped", CancellationToken.None);
+        session.Release();
+
+        var turn = Assert.Single(events, e => e.Kind == SessionEventKind.Turn);
+        Assert.Equal("cancelled", turn.StopReason);
+        Assert.Null(turn.Tokens);
+        Assert.Equal(("claude-opus-4-1", (IReadOnlyList<ModelTokens>?)null, (bool?)null), (turn.Models!.Model, turn.Models.Split, turn.Models.Whole));
+    }
+
+    /// <summary>
     /// Seen on the window (CONV5): <c>claude-code-acp</c> tallies a turn at its <c>result</c>, so a turn
     /// cancelled before one answers with every count zero — after reading 38,000 tokens of context. No
     /// turn that ran read nothing, so a report of nothing at all is no report, and the turn's tokens stay

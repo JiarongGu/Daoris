@@ -274,6 +274,14 @@ public sealed record SessionEvent
     public TurnTokens? Tokens { get; init; }
 
     /// <summary>
+    /// For <see cref="SessionEventKind.Turn"/>: which models its tokens were spent on, as its door said them (USAGECAP1a2, D179
+    /// point 2), for the usage history alone. Never written: the record and every page keep no model's name (D24, TOOL3), so it
+    /// rides in memory from the door to the history's watch, and an event read back from the record has none.
+    /// </summary>
+    [JsonIgnore]
+    public TurnModels? Models { get; init; }
+
+    /// <summary>
     /// For the instruction the driver composed (origin <c>target</c>): what it was handed, section by section (CONTEXT1, D143
     /// point 1): each section's size, its source and what its bound left out, and what was handed beside it. Null on every
     /// other event, and on an instruction handed before the account was kept.
