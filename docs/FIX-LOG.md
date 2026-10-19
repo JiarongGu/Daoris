@@ -5,6 +5,24 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-19 — An idle Daoris told every window a tick at every look, and each tick asked git of every checkout (IDLECPU1)
+
+- **Symptom:** the installed Daoris used about 1.7 cores with no session running and nobody pressing anything (the main process
+  0.7, its page's renderer 0.7, its GPU process 0.3, over five seconds); 31 processes held 4.1 GB.
+- **Root cause:** (1) the shell forwarded `DRIVER_TICK` whenever a look's report had any line (`DriverLoop.cs`, the condition
+  `report.Events.Count > 0`), and a standing condition says its line at every look: a plugin holding a quest (`held  #q → repo`),
+  a remote the sync cannot reach (`sync  …`), a note the remote gives at each pass. Each tick made every window ask its lists
+  again, about 17 reads in the application's window (`idle.test.tsx` counts them), `LINES` and `SWEEP_PLAN` among them, which ask
+  git of every checkout. (2) `LINES` asked git one to three times per checkout with no line set, at every ask, and every program
+  start on this machine costs 170-720 ms (DEVDRIVE1), paid partly in the shell's own process.
+- **Fix:** the tick is forwarded when the look's lines changed since the last look (`DriverLoop.LinesSignature`, the page's own
+  `newsFrom` rule), beside the signatures it already compared. A checkout's line guess is kept while the files git reads for it
+  keep their write time and size (`LineGuesses`, through `CanonicalLine.ResolveAsync`).
+- **Verify:** `TickLinesTests` and `LineGuessesTests` red first (neither member existed), then green; `idle.test.tsx` holds an
+  idle window's minute (the update's slow look only, and nothing while hidden) and what one tick asks. The install's CPU over a
+  minute idle, before and after, is the parent's measure; the page's own clocks were already quiet in the probe, so the
+  renderer's and the GPU's share is read from that measure, not from a test.
+
 ## 2026-10-19 — A second launch of the installed Daoris opened no window and the desktop wrote nothing of why (ONEINSTANCE2)
 
 - **Symptom:** a second `Daoris.exe`, and a direct `app\Daoris.Desktop.exe`, each exited while Daoris ran; no second main window
