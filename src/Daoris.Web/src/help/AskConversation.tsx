@@ -83,9 +83,9 @@ export type AskOpening = { text: string; id: number; draft?: boolean };
  * and its composer, so the panel holds neither.
  *
  * @remarks
- * **One conversation per machine, carried on across opens** (design §2): the panel shows the newest help
- * session, running or ended. **With none running, one opens as the panel shows** (HELP5) — the driver
- * writes the room from the machine as it stands, spawns the agent and opens its session — so that is done
+ * **One conversation per workspace, carried on across opens** (design §2, D158's ASKSCOPE1 note): the panel shows the
+ * newest help session of the window's workspace, running or ended. **With none running, one opens as the panel shows**
+ * (HELP5) — the driver writes the room from the machine as it stands, spawns the agent and opens its session — so that is done
  * before the person types, and there is no start button to press before asking. Nobody has spoken in it
  * yet, so the panel goes on showing what it showed until the first message goes to it. One that could not
  * open says nothing: **a message with none to take it starts one**, and says why when it cannot.
