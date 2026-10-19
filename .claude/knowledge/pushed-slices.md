@@ -45,6 +45,9 @@ note has the measure that chose it.
 | An ordered list | A place in the list is never a field (one move would push every row after it): each row carries, pushed-only, the sort inputs the reader orders its group by, and no more, so a write the order does not read pushes nothing; the page's compose twins the reader's order, written in the decision's note | `GroupsStateSlice.OrderedBy` (PUSH1c3a) |
 | A route's own look | Where a pull's freshness is the settled bar, the judge takes the route's look once per wake (and keeps what the route kept of it), rather than a fact that may lag it; the route's builders write each record | `GroupsStateSlice.LookAsync`, `SessionsRoutes.Grouped` |
 | A route that answers one subject at a time | No pull answers the widest, so the spec feeds a key no variant uses (`keys.syncEvery`), a subject with no partition reads as the route answers it (`wired: false`), and live but not yet judged leaves the read unanswered rather than pulling a partial map | `SyncStateSlice`, `standingOf` (PUSH1a2) |
+| A machine path the page reads only as present | The path is never pushed: a flag says what its presence said (a file's `kept`), the page's type gains it beside the path, and one helper reads either, so a pulled answer and a pushed one render alike | `QuestsStateSlice.Kept`, `fileKept` (PUSH1d3) |
+| An answer judged from other families | The service's answer reads more than its own table (an open quest's `deletable` reads the sessions, an ask's standing its quests): the slice hears each family its answer reads, not only its own | `QuestsStateSlice.Families`, `AsksStateSlice.Families` (PUSH1d3) |
+| One read shared by the variants | `pushedList` in `data/queries.ts`: live, the widest key with the view's `select`; not live, the view's own pull, waiting for a snapshot on its way | `useQuests`, `useAsks` (PUSH1d3) |
 
 ## A fact judged per repository, before its slice
 
