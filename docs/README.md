@@ -121,6 +121,7 @@ Paths below are relative to this file. Historical documents have their own [arch
 | `2026-10-05-ux7-design.md` | Contract: menus, accounts and page heads | D152 |
 | `2026-10-16-this-daoris-design.md` | Contract: Settings → This Daoris, every wire and its source, every setting found, the wiring set up | D171's WIRING1a note; WIRING rows in TASKS |
 | `2026-10-20-flowchart-design.md` | Proposed: processes drawn as flowcharts: one auto-laid layered diagram, each flow from its record and where it is mounted, the rail as its narrow placement, no layout library; the Map stays the map of requests | D186; FLOWCHART1 and MAPUX1 rows proposed |
+| `2026-10-20-ui-ux-design.md` | Proposed: every screen since UX7 audited; the wide-pane, waiting-step and refusal rules; meetings, brainstorms, sign-in, access, heavy runs and work state designed; the shared parts | D185; UIFIT1b, CLAUDESIGNIN1b, MEETUX1 and the feature rows in its §9 |
 
 ## Studies and evidence
 
