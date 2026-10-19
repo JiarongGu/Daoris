@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readdirSync, readFileSync } from 'node:fs';
 import { basename, join, relative } from 'node:path';
-import { HOME_ENTRIES } from '../../src/platform/home.ts';
+import { HOME_ENTRIES, INSTALL_DATA, homePlaces } from '../../src/platform/home.ts';
 import { DESKTOP } from '../_csharp.ts';
 
 /**
@@ -14,7 +14,8 @@ import { DESKTOP } from '../_csharp.ts';
  * a variable, field or property called `home`, `_home` or `Home`, alone or a member's. In the code every such join is one; in a
  * test, one that names an entry (a literal whose first part is a place the table holds, or a constant naming a folder or a
  * file), since a test's home is also its scratch. Each join kept is owed below with its reason; one fixed is a row this test
- * refuses until it is dropped. Scanned: every desktop and service project, and the CLI's sources and tests.
+ * refuses until it is dropped. Scanned: every desktop and service project, the CLI's sources and tests, and the repository's
+ * tools (HOMELAYOUT2b). A test's own names for the root it hands as `DAORIS_HOME` count as homes (HOMELAYOUT2c).
  */
 
 const SRC = join(DESKTOP, '..');
@@ -26,7 +27,32 @@ const TWINS = new Set(['DaorisHome.cs', 'home.ts']);
  * The joins kept, by file and join, each with why it is no entry of the table. A row the scan no longer finds is refused, so
  * the list holds only what is still there.
  */
-const OWED: readonly { readonly file: string; readonly join: string; readonly why: string }[] = [
+const OWED: readonly { readonly file: string; readonly join: string; readonly why: string; readonly like?: boolean }[] = [
+  {
+    file: 'knowledge-server.mjs',
+    join: "join(home, 'bin', executable)",
+    why: 'the connector locator starts before anything resolves, so it keeps its own copy of `data` and `bin` by design; the test below holds both to the table',
+  },
+  {
+    file: 'merge-branch.mjs',
+    join: 'join(home, ',
+    like: true,
+    why: '`home` is the main checkout, where the gate tree and its record are kept, no Daoris home',
+  },
+  {
+    file: 'desktop-publish.mjs',
+    join: 'join(home, ...GATE_TREE',
+    like: true,
+    why: '`home` is the main checkout, where the gate tree and its record are kept, no Daoris home',
+  },
+  { file: 'HostRootTests.cs', join: 'Path.Combine(root, "bin"', like: true, why: 'a host’s build output, no home' },
+  { file: 'deployment-rehearsal.test.ts', join: "join(root, 'bin', ", like: true, why: 'stub tools on a fixture’s PATH, no home' },
+  { file: 'desktop-tool.test.ts', join: "join(root, 'bin', ", like: true, why: 'a project’s build output, no home' },
+  { file: 'knowledge-server.test.ts', join: "join(fx.root, 'tools', 'knowledge-server.mjs')", why: 'a copy of the repository’s tools folder, no home' },
+  { file: 'fsx.test.ts', join: "join(fx.root, 'bin'", like: true, why: 'a folder put on PATH, no home' },
+  { file: 'toolinstall.test.ts', join: "join(fx.root, 'bin'", like: true, why: 'a folder put on PATH, no home' },
+  { file: 'landing-plugins.test.ts', join: "join(fx.root, 'bin'", like: true, why: 'a folder put on PATH, no home' },
+  { file: 'tools.test.ts', join: "join(fx.root, 'bin'", like: true, why: 'a folder put on PATH, no home (the tool entries are asked of the table)' },
   {
     file: 'InstallHome.cs',
     join: 'Path.Combine(home, name)',
@@ -94,6 +120,9 @@ function argumentsOf(source: string, open: number): string[] | null {
 /** A home: `home`, `_home` or `Home`, alone or as a member, `this.home` and `world.Home` among them. */
 const isHome = (part: string): boolean => /^(?:[A-Za-z_][\w]*(?:\(\))?\.)*_?[Hh]ome$/.test(part);
 
+/** The names a test gives the root it hands a tool as its home: a fixture's root, `at`, `root`, a C# test's `DataHome`. */
+const TEST_ROOT = /^(?:fx\.root|at|root|DataHome)$/;
+
 /** The first part of every place the table holds, and the names a place is known by: what a test's join may not name. */
 const NAMED = new Set(HOME_ENTRIES.flatMap((entry) => [
   ...[entry.new, entry.old].map((place) => place.split('/')[0]!).filter((part) => part.length > 0 && !part.includes('*')),
@@ -133,6 +162,8 @@ function census(): { found: Join[]; scanned: number } {
     { folder: join(SRC, 'Daoris.Service'), extension: '.cs', csharp: true },
     { folder: join(SRC, 'Daoris.Cli', 'src'), extension: '.ts', csharp: false },
     { folder: join(SRC, 'Daoris.Cli', 'test'), extension: '.ts', csharp: false },
+    // HOMELAYOUT2b: the tools ask the table too (they import the CLI's `homeEntry`).
+    { folder: join(SRC, '..', 'tools'), extension: '.mjs', csharp: false },
   ];
   const found: Join[] = [];
   let scanned = 0;
@@ -144,7 +175,10 @@ function census(): { found: Join[]; scanned: number } {
       const testing = /\.Tests\//.test(name) || name.startsWith('Daoris.Cli/test/');
       for (const each of joinsIn(name, readFileSync(path, 'utf8'), root.csharp)) {
         // A join has a part under the home: `resolve(home)` alone is the home made whole, no place in it.
-        if (each.parts.length < 2 || !isHome(each.parts[0]!)) continue;
+        if (each.parts.length < 2) continue;
+        // A test hands its scratch root as `DAORIS_HOME` under names of its own (HOMELAYOUT2c): there too, a place the table
+        // holds is asked of it.
+        if (!isHome(each.parts[0]!) && !(testing && TEST_ROOT.test(each.parts[0]!))) continue;
         if (testing && !namesEntry(each.parts[1])) continue;
         found.push(each);
       }
@@ -153,8 +187,24 @@ function census(): { found: Join[]; scanned: number } {
   return { found, scanned };
 }
 
+const owedMatches = (each: Join, owed: (typeof OWED)[number]): boolean =>
+  basename(each.file) === owed.file && (owed.like ? each.text.startsWith(owed.join) : each.text === owed.join);
+
+/**
+ * HOMELAYOUT2c's test files still reading a scratch root's place by hand: each joins `fx.root` with a place the table holds,
+ * and is converted to `homeEntry` before the move (HOMELAYOUT3) switches the places. A file the scan no longer finds is refused,
+ * so the list only shrinks; a new test never joins one.
+ */
+const PENDING_TESTS: ReadonlySet<string> = new Set([
+  'account-join.test.ts', 'accountnames.test.ts', 'accountreads.test.ts', 'agentsettings.test.ts', 'probelock.test.ts',
+  'rotation-use.test.ts', 'rotation.test.ts', 'windows.test.ts', 'channels.test.ts', 'ruleproposals.test.ts', 'toolchain.test.ts',
+  'brainstorms.test.ts', 'configkeeps.test.ts', 'driverconfig.test.ts', 'homefiles.test.ts', 'fsx.test.ts', 'lease.test.ts',
+  'shellword.test.ts', 'plugins.test.ts', 'remotes.test.ts', 'workflowchoice-door.test.ts', 'workflowdoor.test.ts',
+  'workflows.test.ts',
+]);
+
 const owedHere = (each: Join): boolean =>
-  OWED.some((owed) => basename(each.file) === owed.file && each.text === owed.join);
+  OWED.some((owed) => owedMatches(each, owed)) || PENDING_TESTS.has(basename(each.file));
 
 test('no code joins a home path by hand: each asks its twin for the entry by name (HOMELAYOUT2)', () => {
   const { found, scanned } = census();
@@ -162,8 +212,23 @@ test('no code joins a home path by hand: each asks its twin for the entry by nam
   const by = found.filter((each) => !owedHere(each)).map((each) => `${each.file}:${each.line}  ${each.text}`);
   assert.deepEqual(by, [], 'a join of a home by hand; ask the twin for the entry (DaorisHome.Entry, homeEntry) instead');
   for (const owed of OWED) {
-    assert.ok(found.some((each) => basename(each.file) === owed.file && each.text === owed.join), `${owed.file}: ${owed.join} is gone; drop its row`);
+    assert.ok(found.some((each) => owedMatches(each, owed)), `${owed.file}: ${owed.join} is gone; drop its row`);
   }
+  for (const file of PENDING_TESTS) {
+    const left = found.some((each) => basename(each.file) === file && !OWED.some((owed) => owedMatches(each, owed)));
+    assert.ok(left, `${file} joins no home place by hand any more; drop it from PENDING_TESTS`);
+  }
+});
+
+test('the connector locator’s own copy of `data` and `bin` is held to the table (HOMELAYOUT2b)', async () => {
+  // @ts-expect-error — untyped workspace tooling; the same seam dogfood.test.ts documents
+  const { INSTALL_HOME } = await import('../../../../tools/knowledge-server.mjs') as { INSTALL_HOME: string };
+  assert.equal(INSTALL_HOME, INSTALL_DATA, 'the install’s home folder is the table’s `data`');
+  const home = join(SRC, 'X-daoris', 'home');
+  const executable = process.platform === 'win32' ? 'daoris-knowledge.exe' : 'daoris-knowledge';
+  // The locator’s `bin` candidate is one of the places the table gives the entry; the move changes the table, and this fails
+  // until the copy follows it.
+  assert.ok(homePlaces(home, 'bin', executable).includes(join(home, 'bin', executable)), '`bin` moved: update the locator’s copy');
 });
 
 test('the census sees each way of joining a home, and never a join under an entry or another folder', () => {
@@ -178,5 +243,7 @@ test('the census sees each way of joining a home, and never a join under an entr
   assert.deepEqual(read("const a = path.join(root, 'driver.json');", false), []);
 
   assert.ok(namesEntry('"sessions"') && namesEntry('"help/proposals"') && namesEntry('MachineLog.Folder') && namesEntry('COOLING_FILE'));
+  assert.ok(['fx.root', 'at', 'root', 'DataHome'].every((name) => TEST_ROOT.test(name)) && !TEST_ROOT.test('repoRoot'));
+  assert.ok(namesEntry("'harnesses.json'") && namesEntry('TOOLS_FOLDER'));
   assert.ok(!namesEntry('"engine"') && !namesEntry('"agent.log"') && !namesEntry('name'));
 });

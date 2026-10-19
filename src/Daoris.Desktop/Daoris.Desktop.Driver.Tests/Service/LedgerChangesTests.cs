@@ -106,7 +106,7 @@ public sealed class LedgerChangesTests : IDisposable
     }
 
     /// <summary>Every family the service's change stream answers, as a bootstrap names them.</summary>
-    private const string Every = "sessions,quests,asks,channel";
+    private const string Every = "sessions,quests,asks,channel,words";
 
     /// <summary>A host from before has no door: asked once, and not again for a minute.</summary>
     [Fact]

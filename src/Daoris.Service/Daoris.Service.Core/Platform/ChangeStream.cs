@@ -40,15 +40,23 @@ public static class ChangeFamilies
     /// </summary>
     public const string Channel = "channel";
 
+    /// <summary>
+    /// The words kept on a session record without a note (PUSH1d1b): <c>words_revision.revision</c>, a count the sessions' trigger
+    /// moves each time a record's <c>said</c> list grows, whoever writes it, a connector built before the count included. Such a
+    /// word issues no session revision, since it never travels. Not on a take (the list shrinks or stays), a push's mark or a cursor.
+    /// </summary>
+    public const string Words = "words";
+
     /// <summary>Every family, in the order an answer names them.</summary>
-    public static IReadOnlyList<string> All { get; } = [Sessions, Quests, Asks, Channel];
+    public static IReadOnlyList<string> All { get; } = [Sessions, Quests, Asks, Channel, Words];
 
     /// <summary>Each family's revision, in <see cref="All"/>'s order, in one autocommit read.</summary>
     internal const string Revisions = """
         SELECT COALESCE((SELECT revision FROM session_revision WHERE one = 1), 0),
                COALESCE((SELECT MAX(position) FROM quest_log), 0),
                COALESCE((SELECT revision FROM ask_revision WHERE one = 1), 0),
-               COALESCE((SELECT revision FROM channel_revision WHERE one = 1), 0)
+               COALESCE((SELECT revision FROM channel_revision WHERE one = 1), 0),
+               COALESCE((SELECT revision FROM words_revision WHERE one = 1), 0)
         """;
 }
 

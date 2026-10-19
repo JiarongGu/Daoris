@@ -5,6 +5,12 @@ with the version and date at release.
 
 ## Unreleased
 
+- Restricted Ask Daoris can clean up Daoris's own branches and trees where you grant it: Settings → AI features → Ask Daoris's
+  access → *Configured access* → Daoris's housekeeping lets you choose to inspect what the cleanup would remove, clean up the
+  branches it clears, and discard a session branch by name, each on its own. It does these through Daoris's own tools, on
+  every agent, Codex included: each branch is judged again as it goes, nothing is forced, a branch a running or waiting
+  session holds stays, and only repositories of the conversation's workspace are reached. A grant takes the conversation's
+  next start; taking it back refuses its next use at once.
 - Under a repository's asking permission prompts, a tool call its rules do not allow now waits for your answer instead of
   being refused: the session's page and *What needs you* show the call as the agent named it, how long it has waited and
   that it is refused after 15 minutes, with *Allow once* and *Refuse* as the agent offers them. Allowing lets that call

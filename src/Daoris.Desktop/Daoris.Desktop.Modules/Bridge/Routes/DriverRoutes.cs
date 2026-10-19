@@ -222,6 +222,22 @@ public sealed class DriverRoutes(DriverContext context)
         return State(_loop);
     }
 
+    // Restricted mode's configured access (HELPMODE1c2b, D183's note): the person's choice of one housekeeping operation, set on Ask
+    // Daoris's screen, written to the home's own file. Each start reads it onto its allow-list, receipt and room, and each tool call
+    // is judged by it then, so a revoke refuses the next call and a grant takes the next start. No proposal names it: a helper never
+    // widens its own access. A grant or an operation this build does not act on is the driver's refusal, with nothing written.
+    [DriverRoute("SET_HELP_GRANT")]
+    [Publishes("SET_HELP_GRANT", StateScopes.Driver)]
+    private object? SetHelpGrant(IpcRequest request)
+    {
+        var grant = Optional(request, "grant") ?? ConfiguredAccess.HousekeepingGrant;
+        var operation = Optional(request, "operation")
+            ?? throw new DriverException("A grant's press names the operation it chooses; this one named none.");
+        var chosen = request.Payload is { } payload && payload.TryGetProperty("chosen", out var value) && value.ValueKind == JsonValueKind.True;
+        ConfiguredAccess.Choose(_loop.Home, grant, operation, chosen);
+        return State(_loop);
+    }
+
     // The person's grant of a folder the driver is holding for the harness's trust (D73) — the
     // screen's half of `daoris agent trust`. Only a pair this machine's last tick held is
     // granted, in the file that tick read; the terminal is the door that names any folder. The holds themselves are the tick's
@@ -403,6 +419,17 @@ public sealed class DriverRoutes(DriverContext context)
             // Ask Daoris's access mode as the person chose it (HELPMODE1a2): `restricted` or `full`, what its next start reads. A
             // conversation's own, the mode its start got, is its record's (`HELP_CONVERSATIONS`' `mode`).
             config.HelpMode,
+            // Restricted mode's configured access as the person chose it (HELPMODE1c2b): each grant the driver serves by its id, with the
+            // operations chosen, housekeeping's from the home's record, what the next start and every tool call read, and those it acts
+            // on, so the page offers no other.
+            HelpGrants = new[]
+            {
+                new
+                {
+                    Id = ConfiguredAccess.HousekeepingGrant, Chosen = ConfiguredAccess.Read(loop.Home).Housekeeping,
+                    Built = ConfiguredAccess.HousekeepingBuilt,
+                },
+            },
             // The lines as set (WSR2), as rows rather than an object's keys: a key policy on the
             // bridge would respell a repository's name.
             Lines = config.Lines.OrderBy(p => p.Key, StringComparer.Ordinal)

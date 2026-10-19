@@ -2,8 +2,9 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { COOLING_FILE, coolingLine, coolingOf, coolingWhen, coolingWhy, endCooling, readCooling } from '../../src/accounts/cooling.ts';
+import { coolingLine, coolingOf, coolingWhen, coolingWhy, endCooling, readCooling } from '../../src/accounts/cooling.ts';
 import type { CoolingEntry } from '../../src/accounts/cooling.ts';
+import { homeEntry } from '../../src/platform/home.ts';
 import {
   TOOLCHAINS, accountLines, addKeyAccount, commandHarness, profileHome, removeProfile, signInNew, signInTo,
 } from '../../src/agents/toolchain.ts';
@@ -61,7 +62,7 @@ const READ_ROWS: [name: string, file: Cell, now: string, agent: string, account:
 test('an entry reads as the driver reads it (the twin\'s table)', () => {
   for (const [index, [name, file, now, agent, account, entry]] of READ_ROWS.entries()) {
     const fx = makeFixture(`cooling-read-${index}`);
-    if (file !== null) writeFileSync(join(fx.root, COOLING_FILE), file, 'utf8');
+    if (file !== null) writeFileSync(homeEntry(fx.root, 'cooling'), file, 'utf8');
 
     const read = coolingOf(fx.root, agent, account, moment(now));
 
@@ -72,7 +73,7 @@ test('an entry reads as the driver reads it (the twin\'s table)', () => {
 
 test('every account cooling, by agent and then account, and none that has passed', () => {
   const fx = makeFixture('cooling-all');
-  writeFileSync(join(fx.root, COOLING_FILE), JSON.stringify({
+  writeFileSync(homeEntry(fx.root, 'cooling'), JSON.stringify({
     codex: { '': { until: '2026-10-03T10:17:00Z' } },
     'claude-code': { 'account-2': { until: '2026-10-03T10:17:00Z' }, 'account-1': { until: '2026-10-01T08:00:00Z' }, '': { until: '2026-10-02T00:00:00Z' } },
   }), 'utf8');
@@ -85,7 +86,7 @@ test('every account cooling, by agent and then account, and none that has passed
 
 test('accounts order as the driver\'s OrdinalIgnoreCase orders them: STRASSE before straße, which a wider capital would tie', () => {
   const fx = makeFixture('cooling-order');
-  writeFileSync(join(fx.root, COOLING_FILE), JSON.stringify({
+  writeFileSync(homeEntry(fx.root, 'cooling'), JSON.stringify({
     'claude-code': { 'straße': { until: '2026-10-03T10:17:00Z' }, STRASSE: { until: '2026-10-03T10:17:00Z' } },
   }), 'utf8');
 
@@ -118,7 +119,7 @@ const END_ROWS: [name: string, file: Cell, now: string, agent: string, account: 
 test('an entry ends as the driver ends it (the twin\'s table)', () => {
   for (const [index, [name, file, now, agent, account, ended, after]] of END_ROWS.entries()) {
     const fx = makeFixture(`cooling-end-${index}`);
-    const path = join(fx.root, COOLING_FILE);
+    const path = homeEntry(fx.root, 'cooling');
     if (file !== null) writeFileSync(path, file, 'utf8');
 
     assert.equal(endCooling(fx.root, agent, account, moment(now)), ended, `${name}: ended`);
@@ -193,7 +194,7 @@ function run(argv: string[], path: string): { code: number; out: string } {
 
 /** A cool-off a day ahead of now, written as the driver writes one. */
 function cooling(fx: { root: string }, held: Record<string, Record<string, unknown>>): void {
-  writeFileSync(join(fx.root, COOLING_FILE), `${JSON.stringify(held, null, 2)}\n`, 'utf8');
+  writeFileSync(homeEntry(fx.root, 'cooling'), `${JSON.stringify(held, null, 2)}\n`, 'utf8');
 }
 
 const AHEAD = () => new Date(Date.now() + 86_400_000).toISOString().replace(/\.\d+Z$/, 'Z');
@@ -203,7 +204,7 @@ test('`profile ready` ends an account\'s cool-off, and says so', () => {
   mkdirSync(profileHome(fx.root, 'claude-code', 'account-1'), { recursive: true });
   cooling(fx, { 'claude-code': { 'account-1': { until: AHEAD(), stated: true }, 'account-2': { until: AHEAD(), stated: true } } });
 
-  const ready = run(['profile', 'ready', 'claude-code', 'account-1'], join(fx.root, 'harnesses.json'));
+  const ready = run(['profile', 'ready', 'claude-code', 'account-1'], homeEntry(fx.root, 'harnesses'));
 
   assert.equal(ready.code, 0);
   assert.match(ready.out, /the `claude-code` account `account-1` is offered again: no start waits on its limit now/);
@@ -215,13 +216,13 @@ test('`profile ready` ends an account\'s cool-off, and says so', () => {
 test('`profile ready` on an account that is not cooling says so and changes nothing', () => {
   const fx = makeFixture('cooling-ready-not');
   cooling(fx, { 'claude-code': { 'account-2': { until: AHEAD(), stated: true } } });
-  const before = readFileSync(join(fx.root, COOLING_FILE), 'utf8');
+  const before = readFileSync(homeEntry(fx.root, 'cooling'), 'utf8');
 
-  const ready = run(['profile', 'ready', 'claude-code', 'account-1'], join(fx.root, 'harnesses.json'));
+  const ready = run(['profile', 'ready', 'claude-code', 'account-1'], homeEntry(fx.root, 'harnesses'));
 
   assert.equal(ready.code, 0);
   assert.match(ready.out, /the `claude-code` account `account-1` is not cooling, so nothing changed — cooling now: account-2/);
-  assert.equal(readFileSync(join(fx.root, COOLING_FILE), 'utf8'), before);
+  assert.equal(readFileSync(homeEntry(fx.root, 'cooling'), 'utf8'), before);
   fx.cleanup();
 });
 
@@ -229,8 +230,8 @@ test('`profile ready --own` ends the tool\'s own sign-in\'s cool-off, and a door
   const fx = makeFixture('cooling-ready-own');
   cooling(fx, { 'claude-code': { '': { until: AHEAD(), stated: false }, 'account-1': { until: AHEAD(), stated: true } } });
 
-  const own = run(['profile', 'ready', 'claude-code', '--own'], join(fx.root, 'harnesses.json'));
-  const door = run(['profile', 'ready', 'claude-code-acp', 'account-1'], join(fx.root, 'harnesses.json'));
+  const own = run(['profile', 'ready', 'claude-code', '--own'], homeEntry(fx.root, 'harnesses'));
+  const door = run(['profile', 'ready', 'claude-code-acp', 'account-1'], homeEntry(fx.root, 'harnesses'));
 
   assert.match(own.out, /`claude-code`'s own sign-in is offered again/);
   assert.match(door.out, /runs as `claude-code`/);
@@ -241,9 +242,9 @@ test('`profile ready --own` ends the tool\'s own sign-in\'s cool-off, and a door
 test('`profile ready` needs an account or --own, never both', () => {
   const fx = makeFixture('cooling-ready-args');
 
-  assert.match(captureError(() => run(['profile', 'ready', 'claude-code'], join(fx.root, 'harnesses.json'))).message,
+  assert.match(captureError(() => run(['profile', 'ready', 'claude-code'], homeEntry(fx.root, 'harnesses'))).message,
     /needs <agent> <profile>\|--own/);
-  assert.match(captureError(() => run(['profile', 'ready', 'claude-code', 'account-1', '--own'], join(fx.root, 'harnesses.json'))).message,
+  assert.match(captureError(() => run(['profile', 'ready', 'claude-code', 'account-1', '--own'], homeEntry(fx.root, 'harnesses'))).message,
     /`--own` names no account/);
   fx.cleanup();
 });
@@ -299,7 +300,7 @@ test('an account removed takes its cool-off with it, whether its directory was t
 // sign-in. Every agent is pinned to a version nothing installed, so the listing asks no tool anything.
 
 function listed(fx: { root: string }, wiring: Record<string, unknown>): string {
-  const path = join(fx.root, 'harnesses.json');
+  const path = homeEntry(fx.root, 'harnesses');
   const nowhere = { 'claude-code': '0.0.0-none', 'claude-code-acp': '0.0.0-none', codex: '0.0.0-none', 'codex-acp': '0.0.0-none', dsh: '0.0.0-none' };
   writeFileSync(path, JSON.stringify({ versions: nowhere, ...wiring }), 'utf8');
   return run(['list'], path).out;

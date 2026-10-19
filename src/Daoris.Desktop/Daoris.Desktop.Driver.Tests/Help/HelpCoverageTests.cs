@@ -665,6 +665,10 @@ public sealed partial class HelpCoverageTests
         ("ai", "useSetHelpMode", null, new Exempt(
             "Ask Daoris's access mode is the person's choice alone, never made for them (D183 point 2): no proposal names it, so "
             + "a helper can never widen its own access, nor narrow the person's choice.")),
+        // HELPMODE1c2b: restricted mode's configured access, each housekeeping operation chosen under Ask Daoris's access.
+        ("ai", "useSetHelpGrant", null, new Exempt(
+            "What Ask Daoris's own tools may do is the person's grant alone (D183's HELPMODE1c2a note): no proposal names it, so a "
+            + "helper can never grant itself housekeeping, nor take back what the person granted.")),
 
         ("driver", "useSetNotify", null, new Door("setting", "notify")),
         ("driver", "useSetStrikes", null, new Door("setting", "strikes")),

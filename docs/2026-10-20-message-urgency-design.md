@@ -50,8 +50,8 @@ conversation's stream-json, until STEER3 measures Codex's `turn/steer` and Claud
    the fabric events design §E5 says its session is told at its next step.
 5. **A claim with no next part is lost silently.** It stays on the channel past the entry's mark, and nobody is told it
    never reached anyone.
-6. **Queues are lost at a restart.** A conversation's waiting words live in `ChatTurns` alone (MSG1d2), and a driven
-   session's held words in `DrivenInbox` alone. The channel's mark moves when a message is held, not when it is taken
+6. **Queues are lost at a restart.** The record may show a waiting word, but a conversation's waiting words are delivered
+   from `ChatTurns`' memory alone (MSG1d2), and a driven session's held words from `DrivenInbox`'s. The channel's mark moves when a message is held, not when it is taken
    (`ChannelReach.cs:169-178`), so a restart between the two loses that message for the part.
 7. **ADR-D's four states are not told apart.** The record tells *said* from *taken*. The channel tells posted from read.
    Nothing tells a word sent to the harness from one it took, or one it took from one it answered (audit row 6).
