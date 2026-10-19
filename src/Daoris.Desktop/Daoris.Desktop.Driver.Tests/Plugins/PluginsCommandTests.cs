@@ -106,7 +106,27 @@ public sealed class PluginsCommandTests : IDisposable
         var (refused, why) = await Run("approve", "acme.tickets", "shell");
         Assert.Equal(2, refused);
         Assert.Contains("`run_command`", why);
-        Assert.Contains("plugins approve <id> <server> [--reads-only]", PluginsCommand.Usage);
+        Assert.Contains("plugins approve <id> <server> [--reads-only | --writes <tool,…>]", PluginsCommand.Usage);
+    }
+
+    /// <summary>HELPPLUG1c: the page accepts each write on its own, and its terminal twin takes the same list (D50).</summary>
+    [Fact]
+    public async Task Approve_with_writes_accepts_only_the_writes_named()
+    {
+        var folder = DaorisHome.Entry(_home, HomeEntry.Plugins, "acme.tickets");
+        Directory.CreateDirectory(folder);
+        File.WriteAllText(Path.Combine(folder, "plugin.json"), """
+            { "id": "acme.tickets", "servers": [
+                { "name": "issues", "command": ["issues"], "to": ["help"], "allow": ["search"], "writes": ["create_issue", "close_issue"] } ] }
+            """);
+
+        var (approved, said) = await Run("approve", "acme.tickets", "issues", "--writes", "close_issue");
+
+        Assert.Equal(0, approved);
+        Assert.Contains("write outside Daoris with close_issue on `issues`; create_issue stays asked", said);
+        var grants = HelpGrants.Read(_home, PluginCatalog.Load(_home));
+        Assert.Equal(["mcp__issues__search", "mcp__issues__close_issue"], grants.Allow);
+        Assert.Equal(["mcp__issues__create_issue"], grants.Ask);
     }
 
     [Fact]

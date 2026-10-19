@@ -173,6 +173,36 @@ describe('the Plugins view', () => {
     expect(await page('Acme gate')).toBeInTheDocument();
   });
 
+  /**
+   * HELPPLUG1c: the in-app browser's page approves `browser` for Ask Daoris through `PLUGIN_ACTION`, all its reads and each
+   * write the person ticked, and asks for the catalogue again; a withdrawal sends no writes.
+   */
+  it('approves a server for Ask Daoris with the writes ticked, and withdraws it, at the driver', async () => {
+    answer([{
+      ...BROWSER,
+      helpServers: [{ name: 'browser', allow: ['browser_navigate'], writes: ['browser_click', 'browser_type'], state: 'waits' }],
+    }]);
+    routes.PLUGIN_ACTION = ({ id, action }) => ({ id, action, data: null });
+    window.localStorage.setItem('daoris.list.plugins.chosen', 'in-app-browser');
+    show();
+
+    expect(await screen.findByText(/Ask Daoris is handed nothing of browser until you approve it/)).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('checkbox', { name: 'Accept browser_click, a write outside Daoris' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Approve browser for Ask Daoris' }));
+    await waitFor(() => expect(calls('PLUGIN_ACTION')).toEqual([
+      { id: 'in-app-browser', action: 'help-approve', server: 'browser', writes: ['browser_click'] },
+    ]));
+    await waitFor(() => expect(calls('PLUGINS').length).toBeGreaterThan(1));
+
+    answer([{
+      ...BROWSER,
+      helpServers: [{ name: 'browser', allow: ['browser_navigate'], writes: ['browser_click', 'browser_type'], state: 'approved', accepted: ['browser_click'] }],
+    }]);
+    hub.heard?.({ scopes: ['plugins'] });
+    await userEvent.click(await screen.findByRole('button', { name: 'Withdraw browser' }));
+    await waitFor(() => expect(calls('PLUGIN_ACTION')).toContainEqual({ id: 'in-app-browser', action: 'help-withdraw', server: 'browser' }));
+  });
+
   it('switches a plugin off at the driver, says so, and asks for the catalogue again', async () => {
     routes.PLUGIN_ACTION = ({ id, action }) => ({ id, action, data: null });
     window.localStorage.setItem('daoris.list.plugins.chosen', 'acme.gate');

@@ -354,6 +354,24 @@ public sealed class HelpStandInDoors : IHelpDoors
         return PluginRefusal is { } refused ? Task.FromException(new DriverException(refused)) : Task.CompletedTask;
     }
 
+    /// <summary>
+    /// The home whose approvals a plugin's approve and withdraw write, through <see cref="HelpGrants"/> as the page's press does
+    /// (HELPPLUG1c); null records the call only.
+    /// </summary>
+    public string? GrantsHome { get; init; }
+
+    public void ApproveHelp(string plugin, string server, IReadOnlyList<string> writes)
+    {
+        Calls.Add($"HELP_APPROVE {plugin} {server} {string.Join(",", writes)}".TrimEnd());
+        if (GrantsHome is { } home) HelpGrants.Approve(home, PluginCatalog.Load(home), plugin, server, writes);
+    }
+
+    public void WithdrawHelp(string plugin, string server)
+    {
+        Calls.Add($"HELP_WITHDRAW {plugin} {server}");
+        if (GrantsHome is { } home) HelpGrants.Withdraw(home, plugin, server);
+    }
+
     // IHelpRepositoryDoors
     public (bool Ok, string Message) Wired { get; set; } = (true, "`engine` is now in workspace `studio`.");
 

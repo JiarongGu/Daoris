@@ -1,7 +1,7 @@
-import type { ReactNode } from 'react';
+import { type ReactNode, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { cn } from '../lib/cn';
-import { Button, Inline, PathText, Pill, Prose } from '../design/ui';
+import { Button, CheckField, Inline, PathText, Pill, Prose } from '../design/ui';
 import { type KitPoint, type PluginTrialResult, pointGloss, TrialReport } from './PluginKit';
 import { PluginSourceLine, PluginUpdatePlan, type PluginUpdatePlanShown, updatable } from './PluginUpdate';
 import { type Answered, InlineConfirm } from '../work/InlineConfirm';
@@ -58,16 +58,18 @@ export type HelpPress = 'help-approve' | 'help-reads' | 'help-withdraw';
 
 /**
  * **What a plugin offers Ask Daoris** (HELPPLUG1a, D170 point 3 and its note): a line saying plainly that a plugin is code that
- * runs as the person, then each server in the mono face with the person's approval as it stands, what it reads with, what it
- * writes outside Daoris with and which of those writes they accepted, the driver's sentence for one refused, and the presses:
- * *Approve* (its exact tools, writes included) and *Approve its reads only* while it waits, *Withdraw* once approved. None for
- * a refused one, and none on an offer's page, which nothing here has installed. Nothing where it offers nothing.
+ * runs as the person, then each server in the mono face with the person's approval as it stands (approved, not approved, or
+ * changed since its approval and asking again, HELPPLUG1c), what it reads with, what it writes outside Daoris with and which
+ * of those writes they accepted, the driver's sentence for one refused, and the presses: while it waits, a box for each write
+ * and *Approve*, which approves all its reads and each write ticked (HELPPLUG1c); *Withdraw* once approved. None for a refused
+ * one, and none on an offer's page, which nothing here has installed. Nothing where it offers nothing.
  */
 export function HelpServers({ plugin, servers, onHelp }: {
   /** The plugin's id, which a press names; absent on an offer's page. */
   plugin?: string;
   servers?: HelpServerShown[];
-  onHelp?: (id: string, server: string, action: HelpPress) => void;
+  /** The press, with the writes the person ticked for an approval (each on its own, HELPPLUG1c); none for a withdrawal. */
+  onHelp?: (id: string, server: string, action: HelpPress, writes: string[]) => void;
 }) {
   const { t } = useTranslation();
   if (!servers?.length) return null;
@@ -75,48 +77,79 @@ export function HelpServers({ plugin, servers, onHelp }: {
     <PageSection title={t('plugin.section.help')}>
       <Body className="mb-2">{t('plugin.help.trusted')}</Body>
       <ul className="m-0 flex list-none flex-col gap-2.5 p-0">
-        {servers.map((server) => {
-          const writes = server.writes ?? [];
-          const accepted = writes.filter((tool) => server.accepted?.includes(tool));
-          const asked = writes.filter((tool) => !accepted.includes(tool));
-          const state = server.state ?? 'waits';
-          return (
-            <li key={server.name} className="flex flex-col gap-0.5 text-small text-ink-soft">
-              <span className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5">
-                <code className="font-mono text-meta text-ink">{server.name}</code>
-                <span>{t(`plugin.help.state.${state}`)}</span>
-              </span>
-              {server.allow.length > 0 && <span>{t('plugin.help.reads', { tools: server.allow.join(', ') })}</span>}
-              {state === 'approved' && accepted.length > 0 && <span>{t('plugin.help.writesAccepted', { tools: accepted.join(', ') })}</span>}
-              {state === 'approved' && asked.length > 0 && <span>{t('plugin.help.writesAsked', { tools: asked.join(', ') })}</span>}
-              {state !== 'approved' && writes.length > 0 && <span>{t('plugin.help.writes', { tools: writes.join(', ') })}</span>}
-              {server.allow.length === 0 && writes.length === 0 && <span>{t('plugin.help.callsNone')}</span>}
-              {state === 'refused' && server.refusal && <span><Inline text={server.refusal} /></span>}
-              {plugin && onHelp && state !== 'refused' && (
-                <span className="mt-1 flex flex-wrap gap-2">
-                  {state === 'approved' ? (
-                    <Button variant="ghost" aria-label={t('plugin.help.withdrawNamed', { name: server.name })} onClick={() => onHelp(plugin, server.name, 'help-withdraw')}>
-                      {t('plugin.help.withdraw')}
-                    </Button>
-                  ) : (
-                    <>
-                      <Button aria-label={t('plugin.help.approveNamed', { name: server.name })} onClick={() => onHelp(plugin, server.name, 'help-approve')}>
-                        {t('plugin.help.approve')}
-                      </Button>
-                      {writes.length > 0 && (
-                        <Button variant="ghost" onClick={() => onHelp(plugin, server.name, 'help-reads')}>{t('plugin.help.approveReads')}</Button>
-                      )}
-                    </>
-                  )}
-                </span>
-              )}
-            </li>
-          );
-        })}
+        {servers.map((server) => <HelpServerRow key={server.name} plugin={plugin} server={server} onHelp={onHelp} />)}
       </ul>
       <Body className="mt-2">{t('plugin.help.body')}</Body>
     </PageSection>
   );
+}
+
+/** One server a plugin offers Ask Daoris, with the writes the person has ticked so far for its approval (HELPPLUG1c). */
+function HelpServerRow({ plugin, server, onHelp }: {
+  plugin?: string;
+  server: HelpServerShown;
+  onHelp?: (id: string, server: string, action: HelpPress, writes: string[]) => void;
+}) {
+  const { t } = useTranslation();
+  const [ticked, setTicked] = useState<string[]>([]);
+  const writes = server.writes ?? [];
+  const accepted = writes.filter((tool) => server.accepted?.includes(tool));
+  const asked = writes.filter((tool) => !accepted.includes(tool));
+  const state = server.state ?? 'waits';
+  const pressing = Boolean(plugin && onHelp && state !== 'refused');
+  // The ticks are the person's, in the order the plugin declares its writes, as the approval keeps them.
+  const tick = (tool: string, on: boolean) =>
+    setTicked((was) => writes.filter((each) => (each === tool ? on : was.includes(each))));
+  return (
+    <li className="flex flex-col gap-0.5 text-small text-ink-soft">
+      <span className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5">
+        <code className="font-mono text-meta text-ink">{server.name}</code>
+        <span>{t(state === 'waits' && server.changed ? 'plugin.help.state.changed' : `plugin.help.state.${state}`)}</span>
+      </span>
+      {server.allow.length > 0 && <span>{t('plugin.help.reads', { tools: server.allow.join(', ') })}</span>}
+      {state === 'approved' && accepted.length > 0 && <span>{t('plugin.help.writesAccepted', { tools: accepted.join(', ') })}</span>}
+      {state === 'approved' && asked.length > 0 && <span>{t('plugin.help.writesAsked', { tools: asked.join(', ') })}</span>}
+      {state !== 'approved' && writes.length > 0 && <span>{t('plugin.help.writes', { tools: writes.join(', ') })}</span>}
+      {server.allow.length === 0 && writes.length === 0 && <span>{t('plugin.help.callsNone')}</span>}
+      {state === 'refused' && server.refusal && <span><Inline text={server.refusal} /></span>}
+      {pressing && state !== 'approved' && writes.length > 0 && (
+        <span className="mt-1 flex flex-col gap-1">
+          {writes.map((tool) => (
+            <CheckField
+              key={tool}
+              className="text-small"
+              checked={ticked.includes(tool)}
+              onChange={(on) => tick(tool, on)}
+              label={t('plugin.help.acceptWrite', { tool })}
+            />
+          ))}
+        </span>
+      )}
+      {pressing && (
+        <span className="mt-1 flex flex-wrap gap-2">
+          {state === 'approved' ? (
+            <Button variant="ghost" aria-label={t('plugin.help.withdrawNamed', { name: server.name })} onClick={() => onHelp!(plugin!, server.name, 'help-withdraw', [])}>
+              {t('plugin.help.withdraw')}
+            </Button>
+          ) : (
+            <Button aria-label={t('plugin.help.approveNamed', { name: server.name })} onClick={() => onHelp!(plugin!, server.name, 'help-approve', ticked)}>
+              {t('plugin.help.approve')}
+            </Button>
+          )}
+        </span>
+      )}
+    </li>
+  );
+}
+
+/**
+ * HELPPLUG1c: never taken away in silence. Each server a plugin offers Ask Daoris that is not approved, or changed since its
+ * approval, said at the head of the page, so nobody has to find the section to learn what Ask Daoris lacks.
+ */
+function HelpWaitsLead({ servers }: { servers?: HelpServerShown[] }) {
+  const { t } = useTranslation();
+  const waiting = (servers ?? []).filter((server) => (server.state ?? 'waits') === 'waits').map((server) => server.name);
+  return waiting.length > 0 ? <Lead text={t('plugin.help.lead', { servers: waiting.join(', ') })} /> : null;
 }
 
 /** Who a skill is handed to, by the words the page says it in (HELPPLUG1b). */
@@ -199,8 +232,11 @@ export function PluginPage({
   /** *Remove…*'s first press was made, and the page asks. */
   asking?: boolean;
   onSwitch: (id: string, action: 'enable' | 'disable') => void;
-  /** The person's approval of what a server offers Ask Daoris, or its withdrawal (D170's note); none offers no press. */
-  onHelp?: (id: string, server: string, action: HelpPress) => void;
+  /**
+   * The person's approval of what a server offers Ask Daoris, with the writes they ticked (HELPPLUG1c), or its withdrawal
+   * (D170's note); none offers no press.
+   */
+  onHelp?: (id: string, server: string, action: HelpPress, writes: string[]) => void;
   onTry: (id: string) => void;
   onAskUpdate: (id: string) => void;
   onApplyUpdate: (id: string) => void;
@@ -276,6 +312,7 @@ export function PluginPage({
     <ViewMain header={head} menu={menu}>
       {/* Status leads (platform language §4): a refused plugin's sentence comes first. */}
       {plugin.problem && <Lead text={plugin.problem} />}
+      <HelpWaitsLead servers={plugin.helpServers} />
 
       {asking && (
         <InlineConfirm

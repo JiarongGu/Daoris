@@ -337,11 +337,18 @@ public sealed class PluginsRoutes(DriverContext context)
             // HELPPLUG1a's tightening (D170's note): the person's approval of the exact tools a plugin's server offers Ask Daoris,
             // its writes too or its reads only, or its withdrawal; `daoris-driver plugins approve|withdraw` is the terminal's half.
             // A server that names a generic execution tool is refused with the reason, which the page says.
+            // HELPPLUG1c: `writes`, beside `help-approve`, names the writes the person ticked, each on its own; absent, every one.
             case "help-approve" or "help-reads":
+            {
+                IReadOnlyList<string>? writes = action == "help-reads" ? []
+                    : request.Payload is { } payload && payload.TryGetProperty("writes", out var named) && named.ValueKind == JsonValueKind.Array
+                        ? [.. named.EnumerateArray().Where(e => e.ValueKind == JsonValueKind.String).Select(e => e.GetString()!)]
+                        : null;
                 HelpGrants.Approve(
                     _loop.Home, PluginCatalog.Load(_loop.Home, AdapterSet.Built().Names), entry.Manifest.Id,
-                    PayloadHelper.GetRequiredValue<string>(request.Payload, "server"), readsOnly: action == "help-reads");
+                    PayloadHelper.GetRequiredValue<string>(request.Payload, "server"), writes);
                 break;
+            }
             case "help-withdraw":
                 HelpGrants.Withdraw(_loop.Home, entry.Manifest.Id, PayloadHelper.GetRequiredValue<string>(request.Payload, "server"));
                 break;
@@ -469,6 +476,8 @@ public sealed class PluginsRoutes(DriverContext context)
                 State = grant?.State ?? (refusal is null ? HelpGrants.Waits : HelpGrants.Refused),
                 Accepted = grant?.Accepted ?? [],
                 Refusal = refusal,
+                // HELPPLUG1c: approved once, and an update has changed its tools since, so the page asks again in so many words.
+                Changed = grant?.Changed ?? false,
             };
         }),
     ];

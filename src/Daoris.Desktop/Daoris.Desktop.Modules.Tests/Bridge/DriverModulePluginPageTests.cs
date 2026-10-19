@@ -134,6 +134,43 @@ public sealed class DriverModulePluginPageTests : DriverModuleBridge, IDisposabl
     }
 
     /// <summary>
+    /// HELPPLUG1c: the page's Approve sends the writes the person ticked, each on its own (<c>writes</c>), and the list says an
+    /// approval an update has changed since as <c>changed</c>, so the page asks again in so many words. A write the server does
+    /// not declare approves nothing.
+    /// </summary>
+    [Fact]
+    public async Task The_page_approves_the_writes_the_person_ticked_and_says_an_approval_an_update_changed()
+    {
+        var tickets = DaorisHome.Entry(Home, HomeEntry.Plugins, "acme.tickets");
+        Directory.CreateDirectory(tickets);
+        File.WriteAllText(Path.Combine(tickets, "plugin.json"), """
+            { "id": "acme.tickets", "servers": [
+                { "name": "tickets", "command": ["tickets"], "to": ["help"], "allow": ["search"], "writes": ["create_issue", "close_issue"] } ] }
+            """);
+        using var loop = Loop();
+        var module = new DriverModule(Bus, loop) { Offers = Path.Combine(Home, "no-offers") };
+        async Task<JsonElement> Tickets() => Assert.Single(Row(await AnswerAsync(module, "PLUGINS"), "acme.tickets").GetProperty("helpServers").EnumerateArray());
+
+        Assert.False((await Tickets()).GetProperty("changed").GetBoolean());
+        await AnswerAsync(module, "PLUGIN_ACTION", new { action = "help-approve", id = "acme.tickets", server = "tickets", writes = new[] { "close_issue" } });
+        var approved = await Tickets();
+        Assert.Equal(HelpGrants.Approved, approved.GetProperty("state").GetString());
+        Assert.Equal(["close_issue"], Strings(approved.GetProperty("accepted")));
+
+        var unknown = await AskAsync(module, "PLUGIN_ACTION", new { action = "help-approve", id = "acme.tickets", server = "tickets", writes = new[] { "drop_all" } });
+        Assert.False(unknown.Success);
+        Assert.Contains("`drop_all`", unknown.Error!.Message);
+
+        File.WriteAllText(Path.Combine(tickets, "plugin.json"), """
+            { "id": "acme.tickets", "servers": [
+                { "name": "tickets", "command": ["tickets"], "to": ["help"], "allow": ["search", "list_all"], "writes": ["create_issue", "close_issue"] } ] }
+            """);
+        var changed = await Tickets();
+        Assert.Equal(HelpGrants.Waits, changed.GetProperty("state").GetString());
+        Assert.True(changed.GetProperty("changed").GetBoolean());
+    }
+
+    /// <summary>
     /// HELPPLUG1b (D170 point 4): the list answers each plugin's skills, who each is handed to, and why one is not handed, for
     /// its page to say.
     /// </summary>

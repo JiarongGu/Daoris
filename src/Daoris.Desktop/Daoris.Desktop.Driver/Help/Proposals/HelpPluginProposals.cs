@@ -35,12 +35,17 @@ internal sealed class HelpPluginProposals : IHelpProposalKind
     // PLUG9: adding a plugin that has landed, or switching one; making one is an ask, never this.
     public string Tool => "plugin_propose";
 
-    public IReadOnlyList<string> Doors { get; } = ["add", "enable", "disable", "update"];
+    // HELPPLUG1c: `approve` and `withdraw`, the person's approval of what a plugin's server offers Ask Daoris, by their press.
+    public IReadOnlyList<string> Doors { get; } = ["add", "enable", "disable", "update", "approve", "withdraw"];
 
     public HelpProposal Read(HelpProposal proposal, JsonElement file) => proposal with
     {
         Folder = Text(file, "folder"),
         Offer = Text(file, "offer"),
+        Server = Text(file, "server"),
+        Writes = file.TryGetProperty("writes", out var writes) && writes.ValueKind == JsonValueKind.Array
+            ? [.. writes.EnumerateArray().Where(tool => tool.ValueKind == JsonValueKind.String).Select(tool => tool.GetString()!)]
+            : null,
     };
 
     public HelpPlan Plan(HelpProposal proposal, DriverConfig config, HelpMachineFacts facts) => proposal.Door switch
@@ -49,7 +54,9 @@ internal sealed class HelpPluginProposals : IHelpProposalKind
         "add" => PluginAdd(proposal, facts),
         "enable" or "disable" => PluginSwitch(proposal, facts),
         "update" => PluginUpdate(proposal, facts),
-        var door => new HelpPlan($"`{door}` is not a plugin's change — `add`, `enable`, `disable` or `update`.", "", "", null),
+        "approve" or "withdraw" => GrantPlan(proposal, facts),
+        var door => new HelpPlan(
+            $"`{door}` is not a plugin's change — `add`, `enable`, `disable`, `update`, `approve` or `withdraw`.", "", "", null),
     };
 
     public async Task<HelpApplied> ApplyAsync(HelpApplying applying, CancellationToken ct)
@@ -57,9 +64,12 @@ internal sealed class HelpPluginProposals : IHelpProposalKind
         var (proposal, plan, doors, id) = (applying.Proposal, applying.Plan, applying.Doors, applying.Id);
 
         // PLUG9: a copy, a swap or a row, and nothing started — the loop starts what it runs at its next look.
+        // HELPPLUG1c: an approval writes exactly the tools its card named, through the page's own code; a withdrawal takes it back.
         try
         {
-            if (proposal.Door == "add" && proposal.Offer?.Trim() is { Length: > 0 }) doors.AddOffer(plan.Plugin!.Id);
+            if (plan.Grant is { Withdraw: true } withdrawn) doors.WithdrawHelp(withdrawn.Plugin, withdrawn.Server);
+            else if (plan.Grant is { } grant) doors.ApproveHelp(grant.Plugin, grant.Server, grant.Accepted);
+            else if (proposal.Door == "add" && proposal.Offer?.Trim() is { Length: > 0 }) doors.AddOffer(plan.Plugin!.Id);
             else if (proposal.Door == "add") doors.AddPlugin(plan.Source!);
             else if (proposal.Door == "update") await doors.UpdatePluginAsync(plan.Plugin!.Id, ct).ConfigureAwait(false);
             else doors.SwitchPlugin(plan.Plugin!.Id, proposal.Door == "enable");
@@ -131,6 +141,101 @@ internal sealed class HelpPluginProposals : IHelpProposalKind
 
     /// <summary>One side of a change, as the card says it: code, or none.</summary>
     private static string Said(string value) => value.Length > 0 ? $"`{value}`" : "none";
+
+    /// <summary>
+    /// An approval of what a plugin's server offers Ask Daoris, or its withdrawal (HELPPLUG1c, D170's note), judged as the page's
+    /// press is (<see cref="HelpGrants"/>): a plugin here, switched on and sound, a server it declares for Ask Daoris (the one it
+    /// declares, where none is named), never one naming a generic execution tool (HELP4), each write accepted one it declares,
+    /// and a change from what is on file. The card names every tool, its reads and its writes apart.
+    /// </summary>
+    private static HelpPlan GrantPlan(HelpProposal proposal, HelpMachineFacts facts)
+    {
+        var id = proposal.Target?.Trim() ?? "";
+        var withdraw = proposal.Door == "withdraw";
+        static HelpPlan Refused(string why, string terminal = "") => new(why, "", terminal, null);
+        if (id.Length == 0) return Refused($"`{proposal.Door}` names the plugin by its id, as the room lists the plugins installed here.");
+        if (facts.Plugins.Contributing.FirstOrDefault(entry => string.Equals(entry.Manifest.Id, id, StringComparison.OrdinalIgnoreCase))
+            is not { } plugin)
+        {
+            var sound = facts.Plugins.Contributing.Select(entry => entry.Manifest.Id).ToList();
+            return Refused($"no plugin `{id}` on this machine is switched on and sound — "
+                + (sound.Count > 0 ? $"these are: {Names(sound)}." : "none is."));
+        }
+
+        var named = plugin.Manifest.Id;
+        var offered = plugin.Manifest.Servers.Where(server => server.HandedTo(PluginServerTo.Help)).ToList();
+        if (offered.Count == 0)
+        {
+            return Refused($"plugin `{named}` offers Ask Daoris no server: what it serves is handed to sessions only, as its manifest declares.");
+        }
+
+        var wanted = proposal.Server?.Trim() is { Length: > 0 } server ? server : null;
+        if (wanted is null && offered.Count > 1)
+        {
+            return Refused($"plugin `{named}` offers Ask Daoris {Names(offered.Select(each => each.Name))}: name the server.");
+        }
+
+        if ((wanted is null ? offered[0] : offered.FirstOrDefault(each => string.Equals(each.Name, wanted, StringComparison.Ordinal)))
+            is not { } declared)
+        {
+            return Refused($"plugin `{named}` offers Ask Daoris no server `{wanted}` — it offers {Names(offered.Select(each => each.Name))}.");
+        }
+
+        var grant = facts.Home is { Length: > 0 } home
+            ? HelpGrants.Read(home, facts.Plugins).All.FirstOrDefault(each =>
+                string.Equals(each.Plugin, named, StringComparison.OrdinalIgnoreCase) && each.Server.Name == declared.Name)
+            : null;
+        static string Tools(IEnumerable<string> tools) => string.Join(", ", tools.Select(tool => $"`{tool}`"));
+        var reads = declared.Allow.Count > 0 ? $"reads with {Tools(declared.Allow)}" : "reads with none of its tools";
+        if (withdraw)
+        {
+            var terminal = $"daoris-driver plugins withdraw {named} {declared.Name}";
+            if (grant is not { State: HelpGrants.Approved })
+            {
+                return Refused($"`{declared.Name}` of plugin `{named}` is not approved for Ask Daoris, so there is nothing to withdraw.", terminal);
+            }
+
+            var lost = grant.Accepted.Count > 0 ? $"{reads}, and changes things outside Daoris with {Tools(grant.Accepted)}" : reads;
+            return new HelpPlan(null,
+                $"Withdraw Ask Daoris's approval of server `{declared.Name}` of plugin `{named}`: it is handed it no more, from its next "
+                + $"conversation, so it no longer {lost}. Approving it again asks you again.",
+                terminal, null)
+            {
+                Grant = new HelpGrantView(named, plugin.Manifest.Name, declared.Name, declared.Allow, declared.Writes, grant.Accepted) { Withdraw = true },
+            };
+        }
+
+        var flags = "";
+        var accepted = proposal.Writes ?? [];
+        if (HelpGrants.Refusal(declared) is { } refusal) return Refused($"`{declared.Name}` is not approved: {refusal}");
+        if (accepted.FirstOrDefault(tool => !declared.Writes.Contains(tool, StringComparer.Ordinal)) is { } unknown)
+        {
+            return Refused($"`{unknown}` is not a write `{declared.Name}` declares — it writes outside Daoris with "
+                + (declared.Writes.Count > 0 ? Tools(declared.Writes) : "none of its tools") + ".");
+        }
+
+        // The declared order, as the approval keeps it; the terminal's flag spells what the card accepts.
+        var kept = declared.Writes.Where(tool => accepted.Contains(tool, StringComparer.Ordinal)).ToList();
+        var asked = declared.Writes.Except(kept, StringComparer.Ordinal).ToList();
+        if (declared.Writes.Count > 0 && kept.Count == 0) flags = " --reads-only";
+        else if (asked.Count > 0) flags = $" --writes {string.Join(",", kept)}";
+        if (grant is { State: HelpGrants.Approved } && grant.Accepted.ToHashSet(StringComparer.Ordinal).SetEquals(kept))
+        {
+            return Refused($"`{declared.Name}` of plugin `{named}` is already approved for Ask Daoris with exactly these tools, so nothing would change.");
+        }
+
+        var said = new List<string> { reads };
+        if (kept.Count > 0) said.Add($"changes things outside Daoris with {Tools(kept)}, as you, which you accept");
+        if (asked.Count > 0) said.Add($"is refused {Tools(asked)}, writes you do not accept");
+        var again = grant is { Changed: true } ? " It was approved before, and an update has changed its tools since." : "";
+        return new HelpPlan(null,
+            $"Approve server `{declared.Name}` of plugin `{named}` for Ask Daoris: from its next conversation it {string.Join("; it ", said)}. "
+            + $"A plugin is code that runs as you; an update that adds or widens a tool asks you again.{again}",
+            $"daoris-driver plugins approve {named} {declared.Name}{flags}", null)
+        {
+            Grant = new HelpGrantView(named, plugin.Manifest.Name, declared.Name, declared.Allow, declared.Writes, kept),
+        };
+    }
 
     /// <summary>
     /// An add: the folder resolved inside the checkout it names (or the whole path the person gave), never
@@ -338,6 +443,19 @@ public sealed record HelpPluginView(
     public bool Replaced { get; init; }
 }
 
+/// <summary>
+/// What a plugin proposal's approval or withdrawal names (HELPPLUG1c): the plugin, the server, each tool it reads with and each
+/// it writes outside Daoris with, as the plugin declares them, and the writes accepted, as the approval keeps them.
+/// </summary>
+/// <param name="Name">The plugin's name, as its manifest gives it.</param>
+/// <param name="Accepted">For an approval, the writes it accepts; for a withdrawal, those the approval had accepted.</param>
+public sealed record HelpGrantView(
+    string Plugin, string Name, string Server, IReadOnlyList<string> Reads, IReadOnlyList<string> Writes, IReadOnlyList<string> Accepted)
+{
+    /// <summary>Whether Apply takes the approval back, rather than writing it.</summary>
+    public bool Withdraw { get; init; }
+}
+
 /// <summary>A harness a plugin declares, or a server it hands: its name, and the command that runs it.</summary>
 public sealed record HelpPluginPart(string Name, IReadOnlyList<string> Command)
 {
@@ -373,4 +491,13 @@ public interface IHelpPluginDoors
     /// its install folder replaced from its source, what it kept untouched; the loop starts it again later.
     /// </summary>
     Task UpdatePluginAsync(string id, CancellationToken ct);
+
+    /// <summary>
+    /// <c>PLUGIN_ACTION</c>'s own <c>help-approve</c> (HELPPLUG1c, <see cref="HelpGrants.Approve(string, PluginCatalog, string, string, IReadOnlyList{string})"/>):
+    /// the server's exact reads and the writes accepted, the others asked. Ask Daoris's next spawn is handed it.
+    /// </summary>
+    void ApproveHelp(string plugin, string server, IReadOnlyList<string> writes);
+
+    /// <summary><c>PLUGIN_ACTION</c>'s own <c>help-withdraw</c> (HELPPLUG1c, <see cref="HelpGrants.Withdraw"/>).</summary>
+    void WithdrawHelp(string plugin, string server);
 }

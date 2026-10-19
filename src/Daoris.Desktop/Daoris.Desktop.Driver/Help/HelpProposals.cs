@@ -96,6 +96,15 @@ public sealed record HelpProposal(
     /// <summary>One of the install's own plugins to add, by its id (PLUG9 d) — never a path on this machine.</summary>
     public string? Offer { get; init; }
 
+    /// <summary>
+    /// The server an <c>approve</c> or a <c>withdraw</c> names (HELPPLUG1c), as the plugin declares it for Ask Daoris; null where
+    /// the plugin offers it one only.
+    /// </summary>
+    public string? Server { get; init; }
+
+    /// <summary>The writes an <c>approve</c> accepts, each by name (HELPPLUG1c); null or empty accepts none, its reads only.</summary>
+    public IReadOnlyList<string>? Writes { get; init; }
+
     // The sync kind's.
 
     /// <summary>The rows a sync proposal's look listed (HELP10), kept in its file; null before the person looked.</summary>
@@ -360,6 +369,9 @@ public sealed record HelpPlan(string? Refusal, string Describe, string Terminal,
 
     /// <summary>The folder a plugin is added from, resolved on this machine (PLUG9); null for every other plan.</summary>
     public string? Source { get; init; }
+
+    /// <summary>What an approval or a withdrawal names, every tool (HELPPLUG1c); null for every other plan.</summary>
+    public HelpGrantView? Grant { get; init; }
 
     // The repository kind's.
 

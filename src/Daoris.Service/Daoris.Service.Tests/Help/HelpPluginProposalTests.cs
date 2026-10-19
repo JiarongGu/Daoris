@@ -88,9 +88,53 @@ public sealed class HelpPluginProposalTests : HelpProposalBoxFixture
         Assert.False(Directory.Exists(DaorisHome.Entry(_home, HomeEntry.HelpProposals)));
     }
 
+    /// <summary>
+    /// HELPPLUG1c: the person's approval of what a plugin's server offers Ask Daoris, proposed (<c>approve</c>, with the writes
+    /// it accepts, each by name) or withdrawn (<c>withdraw</c>). Whether the plugin offers it that server, and whether a write is
+    /// one it declares, is the driver's, which judges it as the page's press does.
+    /// </summary>
+    [Fact]
+    public void An_approval_names_the_plugin_its_server_and_the_writes_it_accepts_and_a_withdrawal_its_server()
+    {
+        var (approved, message) = Box().ProposePlugin(" Approve ", "in-app-browser", null, null, "the person wants the browser back", "h1", Now,
+            server: "browser", writes: ["browser_click", " browser_type "]);
+        var (readsOnly, _) = Box().ProposePlugin("approve", "in-app-browser", null, null, "reads only", "h1", Now);
+        var (withdrawn, _) = Box().ProposePlugin("withdraw", "in-app-browser", null, null, "the person wants it gone", "h1", Now, server: "browser");
+
+        Assert.Contains($"#{approved}", message);
+        var approve = Written(approved!);
+        Assert.Equal(("plugin", "approve", "in-app-browser", "browser"),
+            (approve.GetProperty("kind").GetString(), approve.GetProperty("door").GetString(), approve.GetProperty("target").GetString(),
+                approve.GetProperty("server").GetString()));
+        Assert.Equal(["browser_click", "browser_type"], approve.GetProperty("writes").EnumerateArray().Select(tool => tool.GetString()));
+        var reads = Written(readsOnly!);
+        Assert.Equal(JsonValueKind.Null, reads.GetProperty("server").ValueKind);
+        Assert.Empty(reads.GetProperty("writes").EnumerateArray());
+        var withdraw = Written(withdrawn!);
+        Assert.Equal(("withdraw", "browser"), (withdraw.GetProperty("door").GetString(), withdraw.GetProperty("server").GetString()));
+        Assert.Equal(JsonValueKind.Null, withdraw.GetProperty("writes").ValueKind);
+    }
+
+    [Theory]
+    [InlineData("approve", "", "browser", "", "`approve` names the plugin by its id")]
+    [InlineData("approve", "in-app-browser", "two words", "", "one word")]
+    [InlineData("approve", "in-app-browser", "browser", "browser click", "one word")]
+    [InlineData("withdraw", "in-app-browser", "browser", "browser_click", "accepts writes; a withdrawal names none")]
+    [InlineData("enable", "in-app-browser", "browser", "", "server and writes are for `approve` and `withdraw`")]
+    public void A_malformed_approval_is_refused_with_nothing_written(string action, string id, string server, string write, string says)
+    {
+        var (written, message) = Box().ProposePlugin(action, Named(id), null, null, "a reason", "h1", Now,
+            server: Named(server), writes: write.Length > 0 ? [write] : null);
+
+        Assert.Null(written);
+        Assert.Contains(says, message);
+        Assert.Contains("Nothing was proposed", message);
+        Assert.False(Directory.Exists(DaorisHome.Entry(_home, HomeEntry.HelpProposals)));
+    }
+
     /// <summary>PLUG9: a plugin proposal's shape, checked here and nothing more; the driver's twin table holds what the catalogue says.</summary>
     [Theory]
-    [InlineData("install", "", "quiet-hours", "house-plugins", "`add`, `enable`, `disable` or `update`")]
+    [InlineData("install", "", "quiet-hours", "house-plugins", "`add`, `enable`, `disable`, `update`, `approve` or `withdraw`")]
     [InlineData("add", "", "", "house-plugins", "names the plugin's folder")]
     [InlineData("add", "acme.quiet-hours", "quiet-hours", "house-plugins", "names no id")]
     [InlineData("add", "", "quiet-hours", "", "the repository whose checkout holds it")]

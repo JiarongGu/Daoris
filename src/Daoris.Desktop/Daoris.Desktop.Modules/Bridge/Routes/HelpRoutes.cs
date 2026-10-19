@@ -323,6 +323,11 @@ public sealed class HelpRoutes(DriverContext context)
                     Changes = PluginsRoutes.ChangesOf(plugin.Changes),
                 }
                 : null,
+            // An approval of what a plugin's server offers Ask Daoris, or its withdrawal (HELPPLUG1c): every tool, reads and
+            // writes apart, and the writes it accepts.
+            Grant = plan.Grant is { } grant
+                ? new { grant.Plugin, grant.Name, grant.Server, grant.Reads, grant.Writes, grant.Accepted, grant.Withdraw }
+                : null,
             Sync = SyncShown(plan.Sync),
             // An accept's departures (DRIFT1d2), for the card to show the person's words before the yes.
             Accept = AcceptShown(plan.Accept),
@@ -750,6 +755,12 @@ public sealed class HelpRoutes(DriverContext context)
         // PLUGIN_UPDATE's own apply (PLUG9 c): the hook stopped, the folder swapped, the loop asked to look.
         public async Task UpdatePluginAsync(string id, CancellationToken ct) =>
             await PluginsRoutes.UpdatePluginAsync(context, id).ConfigureAwait(false);
+
+        // PLUGIN_ACTION's own help-approve and help-withdraw (HELPPLUG1c): the person's approval, written as the page writes it.
+        public void ApproveHelp(string plugin, string server, IReadOnlyList<string> writes) =>
+            HelpGrants.Approve(_loop.Home, PluginCatalog.Load(_loop.Home, AdapterSet.Built().Names), plugin, server, writes);
+
+        public void WithdrawHelp(string plugin, string server) => HelpGrants.Withdraw(_loop.Home, plugin, server);
     }
 
     /// <summary>

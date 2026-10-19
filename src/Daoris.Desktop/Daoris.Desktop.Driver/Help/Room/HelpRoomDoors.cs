@@ -287,12 +287,11 @@ internal sealed class HelpRoomDoors : IHelpRoomSection
             "Plugins → Daoris's own plugins → Install; Plugins → the plugin's page → Update…",
             "`daoris plugin add --offer <id>`, `daoris plugin update <id>`"),
         // HELPPLUG1a's tightening (D170's note): what a plugin's server offers Ask Daoris reaches it only as the person approved
-        // it, exact; exempt from Ask Daoris (HelpCoverageTests), since it widens what the helper itself may call.
-        ("let Ask Daoris call the exact tools a plugin's server offers it, its reads and its writes outside Daoris or its reads "
-            + "only, or take that back; an update that adds or widens a tool asks again (Ask Daoris never proposes it: what a "
-            + "plugin may do as you is your own trust)",
-            "Plugins → the plugin's page → Ask Daoris → Approve, Approve reads only, Withdraw",
-            "`daoris-driver plugins approve <id> <server> [--reads-only]`, `daoris-driver plugins withdraw <id> <server>`"),
+        // it, exact. HELPPLUG1c: the plugin kind's `approve` and `withdraw`, a card naming every tool, the person's press.
+        ("let Ask Daoris call the exact tools a plugin's server offers it, all its reads and each write outside Daoris you "
+            + "accept, or take that back; an update that adds or widens a tool asks again",
+            "Plugins → the plugin's page → Ask Daoris → Approve, Withdraw",
+            "`daoris-driver plugins approve <id> <server> [--reads-only | --writes <tool,…>]`, `daoris-driver plugins withdraw <id> <server>`"),
         ("choose Daoris's browser, where the page's links open, whether extensions are offered, and its favorites",
             "Settings → Browser",
             "`daoris browser use daoris|edge`, `daoris browser links system|daoris`, `daoris browser extensions offer|refuse`, "

@@ -2,9 +2,23 @@
   "id": "in-app-browser",
   "apiVersion": 1,
   "name": "In-app browser",
-  "version": "1.0.0",
-  "description": "Hands every session Daoris's own browser: the Playwright MCP server, attached over CDP to the window the person signs in to and watches.",
+  "version": "1.1.0",
+  "description": "Hands every session Daoris's own browser: the Playwright MCP server, attached over CDP to the window the person signs in to and watches. Offers it to Ask Daoris too, once the person approves its tools.",
   "servers": [
-    { "name": "browser", "command": ["npx", "-y", "@playwright/mcp@0.0.82", "--cdp-endpoint", "${browser}", "--output-dir", "${data}/output"] }
+    {
+      "name": "browser",
+      "command": ["npx", "-y", "@playwright/mcp@0.0.82", "--cdp-endpoint", "${browser}", "--output-dir", "${data}/output"],
+      "to": ["sessions", "help"],
+      "allow": [
+        "browser_navigate", "browser_navigate_back", "browser_navigate_forward", "browser_snapshot", "browser_take_screenshot",
+        "browser_find", "browser_wait_for", "browser_tabs", "browser_hover", "browser_console_messages", "browser_network_requests",
+        "browser_network_request"
+      ],
+      "writes": [
+        "browser_click", "browser_type", "browser_press_key", "browser_press_sequentially", "browser_fill_form",
+        "browser_select_option", "browser_check", "browser_uncheck", "browser_drag", "browser_drop", "browser_file_upload",
+        "browser_handle_dialog"
+      ]
+    }
   ]
 }

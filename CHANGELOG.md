@@ -15,6 +15,13 @@ with the version and date at release.
   network, so a git that never answers (a lock, a prompt nobody types) is stopped there with what it started, and what it was
   reading is read again at the next look. A review's read and a file's preview stop their git when you leave them, and a task's
   stop no longer waits for ever on a session that does not answer.
+- Ask Daoris can use Daoris's browser again, once you approve it. The *In-app browser* plugin, 1.1.0 (its page offers the
+  update), offers its `browser` to Ask Daoris as well as to every session: its page says at its head what Ask Daoris is not
+  handed yet, and under *Ask Daoris* you approve all its reads and tick each write you accept (clicking, typing, filling a form
+  and the like), or withdraw it. An approval an update changed says so and asks again. Ask Daoris says once, at the start, what
+  it lacks and where it is approved, and can propose the approval itself: its card names the plugin, the server and every tool,
+  reads and writes apart, and nothing changes until you press Apply. A tool that runs commands or a page's own code is never
+  handed to it. At a terminal, `daoris-driver plugins approve <id> <server> --writes <tool,…>` accepts only the writes named.
 - In a week's last day, a start now goes to the account where the most of its week would otherwise go unused, for the hours
   left to its reset, rather than to the one that resets first: three points resetting in two hours no longer go ahead of half
   a week resetting in twenty. Only a reading of the week's use counts; a reset known with no reading ranks nothing. Daoris's

@@ -140,8 +140,9 @@ export function usePluginsView({ active, chosen, onChoose, notify, onAsk }: {
     onError: failed,
   });
   // HELPPLUG1a's tightening (D170's note): the person's approval of what a server offers Ask Daoris; the list is asked again
-  // by the route's STATE_CHANGED, as a switch is.
-  const helpOne = (id: string, server: string, action: HelpPress) => act.mutate({ id, action, server }, { onError: failed });
+  // by the route's STATE_CHANGED, as a switch is. HELPPLUG1c: an approval carries the writes the person ticked.
+  const helpOne = (id: string, server: string, action: HelpPress, writes: string[]) =>
+    act.mutate(action === 'help-approve' ? { id, action, server, writes } : { id, action, server }, { onError: failed });
   // A refusal is said inside the ask, where *Remove plugin* was pressed (UXFIX2b1), not in a toast; a plugin the driver no
   // longer holds is the exception, since the page itself then says it has gone.
   const remove = (id: string, answered: Answered) => act.mutate({ id, action: 'remove' }, {

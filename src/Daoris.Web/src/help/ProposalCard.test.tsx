@@ -129,6 +129,53 @@ const press = async (proposal: HelpProposal, apply: string) => {
   expect(onDismiss).toHaveBeenCalledWith(proposal.id);
 };
 
+// HELPPLUG1c (D170's note): the person's approval of what a plugin's server offers Ask Daoris, proposed; and its withdrawal.
+const GRANT: HelpProposal = {
+  id: 'p9', kind: 'plugin',
+  describe: 'Approve server `browser` of plugin `in-app-browser` for Ask Daoris.',
+  terminal: 'daoris-driver plugins approve in-app-browser browser --writes browser_click',
+  why: 'the person wants Ask Daoris to read a page',
+  grant: {
+    plugin: 'in-app-browser', name: 'In-app browser', server: 'browser',
+    reads: ['browser_navigate', 'browser_snapshot'], writes: ['browser_click', 'browser_type'], accepted: ['browser_click'],
+  },
+};
+
+describe('an approval of what a plugin offers Ask Daoris', () => {
+  it('names the plugin, the server and every tool, reads and writes apart, in English and in 中文', async () => {
+    const onApply = vi.fn();
+    const { unmount } = render(<ul><ProposalCard proposal={GRANT} onApply={onApply} onDismiss={vi.fn()} /></ul>);
+
+    expect(screen.getByText('Ask Daoris asks for a plugin\'s tools')).toBeInTheDocument();
+    const tools = screen.getByRole('list', { name: 'what Ask Daoris would be handed' });
+    expect(within(tools).getByText(code('in-app-browser'), { exact: false })).toBeInTheDocument();
+    expect(tools).toHaveTextContent('server browser of plugin in-app-browser (In-app browser)');
+    expect(tools).toHaveTextContent('reads with browser_navigate, browser_snapshot');
+    expect(tools).toHaveTextContent('writes outside Daoris with browser_click, as you, accepted');
+    expect(tools).toHaveTextContent('writes outside Daoris with browser_type, not accepted: Ask Daoris is refused it');
+    await userEvent.click(screen.getByRole('button', { name: 'Apply' }));
+    expect(onApply).toHaveBeenCalledWith('p9');
+    unmount();
+
+    const { default: i18n } = await import('../locales/i18n');
+    await i18n.changeLanguage('zh');
+    try {
+      const shown = render(<ul><ProposalCard proposal={GRANT} onApply={vi.fn()} onDismiss={vi.fn()} /></ul>);
+      expect(screen.getByRole('list', { name: '问道衍会拿到什么' })).toHaveTextContent('读取：browser_navigate, browser_snapshot');
+      shown.unmount();
+    } finally {
+      await i18n.changeLanguage('en');
+    }
+  });
+
+  it('a withdrawal names what Ask Daoris would no longer be handed', () => {
+    render(<ul><ProposalCard proposal={{ ...GRANT, grant: { ...GRANT.grant!, withdraw: true } }} onApply={vi.fn()} onDismiss={vi.fn()} /></ul>);
+
+    expect(screen.getByText('Ask Daoris proposes taking a plugin\'s tools back')).toBeInTheDocument();
+    expect(screen.getByRole('list', { name: 'what Ask Daoris would no longer be handed' })).toHaveTextContent('reads with browser_navigate');
+  });
+});
+
 describe('the kinds that reach every door', () => {
   it('an agent\'s update says what moves and the command, with Apply and Not now', async () => {
     await press(UPDATE, 'Apply');
