@@ -48,6 +48,8 @@ export const keys = {
   remotes: ['remotes'] as const,
   browserSettings: ['browser-settings'] as const,
   lines: ['driver', 'lines'] as const,
+  /** Whether a repository's own `daoris.gates.json` marks heavy gates (HEAVYRUN1b2c) — a read of its checkout's file, so under the driver's key. */
+  heavyMarks: (repository: string) => ['driver', 'heavy-marks', repository] as const,
   // The running calls the shell pushes (WAITSAY1c2): written by the pushes alone, there is no pull beneath it.
   calls: ['driver', 'calls'] as const,
   /**

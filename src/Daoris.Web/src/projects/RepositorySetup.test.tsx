@@ -690,6 +690,13 @@ describe("a repository's heavy gates", () => {
     expect(heavy).toHaveAttribute('aria-expanded', 'false');
   });
 
+  /** HEAVYRUN1b2c: where the repository's own file marks heavy gates, its section says this list is not run, and its folded line cues it. */
+  it("says why this list is not run where the repository's own file wins (the folded line's cue is heavySummary's)", () => {
+    draw(withHeavy({ gates: [{ name: 'build', run: 'dotnet build' }], marks: { marks: true, names: ['web'] }, onSave: vi.fn() }));
+
+    expect(section('Heavy gates')).toHaveTextContent("engine's own daoris.gates.json marks heavy gates (web), so those are run and this list is not.");
+  });
+
   it('opens on a list set here, naming each gate in its order, and saves an edit whole', async () => {
     const onSave = vi.fn();
     draw(withHeavy({ gates: [{ name: 'build', run: 'dotnet build' }, { name: 'unit', run: 'dotnet test', cwd: 'tests' }], onSave }));

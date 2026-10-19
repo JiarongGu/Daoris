@@ -113,8 +113,8 @@ start no real process run beside the Process lane, one Process gate at a time (G
 two that build one .NET component (GATELANES2), and a Process half starts only
 once the heavy light gates (the CLI, .NET and web suites) have ended, so its timing tests run with no
 suite loading the CPU (GATEORDER1). A Process half runs `--no-build` when its fast half passed in the
-same run on the same tree (GATEBUILD1). The family rehearsal runs beside the git half, and every other
-Process-lane gate alone (REHLANE1); the web gate's vitests are a light gate of their own, `web-unit`, beside the
+same run on the same tree (GATEBUILD1). The release and family rehearsals run beside the git half, one after
+the other, and every other Process-lane gate alone (REHLANE1, REHLANE2); the web gate's vitests are a light gate of their own, `web-unit`, beside the
 service suite (WEBSPLIT1). The driver's Process half runs eight classes at once (PROCPAR1), and its
 slowest classes print by their own times beside the half's wall. Add `--one-at-a-time` on a
 loaded machine to run every gate in turn. `--full --beside` is a guest on the machine (CIPRIO1): it runs

@@ -17453,3 +17453,27 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **PUSH1c3a — session groups pushed, the host half** (modules; D182; after PUSH1c1; a scout's plan, 2026-10-20). A keyed `groups` slice, `rows` by session and `entries` by entry key, its judge taking its own look per wake as `GroupsAsync` does (fresh as the pull, a tree no part asked walked once), the rows carrying their sort inputs, `calling` pull-only; woken by the ledger's `sessions` and `quests`, an archive, an ending, the loop's report and a trees part landing. Proof: one session's move pushes its row alone; a hostile field never pushed; the twin of `SessionsRoutes.Grouped`.
 
 **Outcome** 2026-10-20: `Loop/GroupsStateSlice.cs` is registered in `DriverLoop.Slices`. Each row carries only the sort inputs its group is ordered by, so a working record's write pushes nothing. The loop's report wakes it through `DRIVER_TICK`, not beside `DriverSlice.Wake()`. The freshness, order, page twin, allow-list and wakes are in D182's PUSH1c3a note. The page half is PUSH1c3b.
+
+## WAITKIND1 — a knowledge document: every place a new wait the person answers goes (2026-10-20, D184)
+
+> - [ ] **WAITKIND1 — a knowledge document: every place a new wait the person answers goes** (records; AUTONOMY1b3c's hand-back). waits.ts, WaitStrip, SessionHead, AttendedSession, WorkFrame, attention.ts, AttentionRow, AttentionBand, App's badge and door, the glossary's kinds and accepted budgets, HelpCoverageTests' `Starts`, the band's route-set test, the stories; the helper ask (MIXAGENT2c) as the exemplar. Proof: the document and its index row.
+
+**Outcome** 2026-10-20: `.claude/knowledge/person-waits.md` (local) lists every place a wait the person answers goes, in order, with the rules each keeps (one set of handlers, never an answer not offered, counted where it holds work, "waiting on you" taken), the helper's ask as the exemplar; its index row regenerated. Written by the parent from AUTONOMY1b3c's hand-back.
+
+## PUSH1c3c — `SESSION_GROUPS` takes its look through the groups slice's (2026-10-20, D182)
+
+> - [ ] **PUSH1c3c — `SESSION_GROUPS` takes its look through the groups slice's** (modules; D182's PUSH1c3a note). The route and the slice take the same look in two places (`SessionsRoutes.GroupsAsync`, `GroupsStateSlice.LookAsync`), which can drift; the route takes it through the slice's builder. Proof: `DriverModuleSessionsTests` and `GroupsStateSliceTests` unchanged and green, one look builder.
+
+**Outcome** 2026-10-20: `SessionsRoutes.GroupsAsync` takes its look through `GroupsStateSlice.LookAsync` (new `only` and `walked` parameters), its answer unchanged; an archive still walks its asked trees with git at the press. On Sonnet. Detail: D182's PUSH1c3c note.
+
+## REHLANE2 — the rehearsals run beside the suites, not after them (2026-10-20, D180)
+
+> - [ ] **REHLANE2 — the rehearsals run beside the suites, not after them** (tools; D180's budget note). The full set ran the release, family and deployment rehearsals after the `Process` halves; each has its own scratch and builds, so they can run beside the suites (ports and scratch apart, REHEARSEPORT1). Proof: the merge test's lane tables; a full set's wall with the rehearsals beside.
+
+**Outcome** 2026-10-20: the release rehearsal is of `BESIDE_GIT_HALF`: it runs beside the driver's git half before the family rehearsal and never beside it (the family runs the CLI's bin, which the release's pack shadows with a staged `dist/`; no desktop test reads what a pack stages, which a merge test now holds), so at most two Process-lane gates run at once; the deployment rehearsal stays alone and last (REHLANE2b). A full set's wall with it beside is not yet measured. On Opus: about 129 tool calls, 32 minutes. Detail: D180's REHLANE2 note; D115's REHLANE1 line.
+
+## HEAVYRUN1b2c — the setup says whether the repository's own file wins (2026-10-20, D180)
+
+> - [ ] **HEAVYRUN1b2c — the setup says whether the repository's own file wins** (driver, modules, web; D180's HEAVYRUN1b2a and HEAVYRUN1b2b notes). The *Heavy gates* section says its list is used only where the repository's `daoris.gates.json` marks no heavy gate, but cannot say whether this repository's does, so a person may edit a list never run. `LINES` or `STATE` carries per repository whether its file marks heavy gates (`HeavyGates.Resolve`'s source), and the section says so. Proof: a route test on a checkout whose file marks one; the section's vitest.
+
+**Outcome** 2026-10-20: a read route `HEAVY_MARKS` (from `HeavyGates.Marks`, one file, never `Resolve`) answers whether a repository's file marks heavy gates, marks none or has no file, or cannot be told (the driver's words, never "marks none"). *Heavy gates* says it in its `where` sentence and cues "not used" on the folded line where the file wins (`useHeavyMarks`; not on `LINES` or `STATE`, which have no checkout file to read). On Sonnet: about 94 tool calls, 29 minutes. Detail: D180's HEAVYRUN1b2c line.

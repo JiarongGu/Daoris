@@ -485,6 +485,8 @@ describe("a repository's Setup on its page (UX6f)", () => {
     let refusing = false;
     invoke.mockImplementation(async (_module: string, type: string) => {
       if (type === 'SET_HEAVY_GATES' && refusing) throw new Error('`build` is named twice: each gate is named once.');
+      // HEAVYRUN1b2c: the driver's reading of the repository's own file, which here marks one heavy gate.
+      if (type === 'HEAVY_MARKS') return { repository: 'engine', marks: true, names: ['web'] };
       return { ...DRIVER_STATE, drivable: ['engine'], heavyGates: [{ repository: 'Engine', gates: [{ name: 'build', run: 'dotnet build' }] }] };
     });
     const notify = vi.fn();
@@ -494,6 +496,8 @@ describe("a repository's Setup on its page (UX6f)", () => {
     const heavy = within(repositoryMain()).getByRole('region', { name: 'Heavy gates' });
 
     expect(within(heavy).getByRole('list', { name: "engine's heavy gates, in the order they run" })).toHaveTextContent('builddotnet build');
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'HEAVY_MARKS', { payload: { repository: 'engine' } });
+    await vi.waitFor(() => expect(heavy).toHaveTextContent("engine's own daoris.gates.json marks heavy gates (web), so those are run and this list is not."));
     await vi.waitFor(() => expect(within(heavy).getByRole('button', { name: 'Edit' })).toBeEnabled());
     await userEvent.click(within(heavy).getByRole('button', { name: 'Edit' }));
     await userEvent.click(within(heavy).getByRole('button', { name: 'Add a gate' }));
