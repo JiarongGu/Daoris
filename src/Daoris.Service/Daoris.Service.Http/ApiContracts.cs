@@ -420,7 +420,10 @@ public sealed record SessionResponse(
     string? HelpMode = null,
     // AUTONOMY1a (D184 point 1): the access setup a driven session started under, each pause with its value; absent for a record told
     // none. This machine's own, like the opinion: answered to it only.
-    IReadOnlyDictionary<string, string>? Access = null);
+    IReadOnlyDictionary<string, string>? Access = null,
+    // CLOSETAKE1 (FABRIC-CLOSE1o-ii): why the closure graph named for its take did not bind it (`expired`, `replaced` or `remote`), for
+    // the driver's end line; additive, absent otherwise. This machine's own, like the opinion: answered to it only.
+    string? TookBind = null);
 // MSG1a: one word waiting on a record — its id, which the record's events say again where the session took it; the
 // words; when; its files' names, never where they are; and whether it was said after the record ended. XAGENT1c: `by`, the
 // second opinion whose findings these are, another agent's claims; absent, the person's words, as every word before it was.
