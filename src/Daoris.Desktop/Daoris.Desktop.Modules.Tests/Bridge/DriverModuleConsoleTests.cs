@@ -88,4 +88,41 @@ public sealed class DriverModuleConsoleTests : DriverModuleBridge
         Assert.Contains(Refusals.DriverRefused, await RefusalAsync(module, "STOP_TASK", new { id = "s1", key = "s2/task/t1" }));
         Assert.Equal(["t1"], asked);
     }
+
+    /// <summary>
+    /// PARALLEL1e (D181 point 4): a stop its session never answers holds nobody past the page's own wait. The route's token
+    /// reaches the question asked of the agent, where none did, and ends it when the page stops waiting.
+    /// </summary>
+    [Fact]
+    public async Task A_stop_its_session_never_answers_ends_with_the_pages_wait()
+    {
+        var loop = Loop();
+        var module = new DriverModule(Bus, loop);
+        loop.Output.Open("s1", new SessionStream("task/t1", SessionStreamKind.Task, "dev server", CanStop: true));
+        var handed = new TaskCompletionSource<CancellationToken>(TaskCreationOptions.RunContinuationsAsynchronously);
+        using var held = loop.Processes.OpenTaskStops("s1", async (_, ct) =>
+        {
+            handed.TrySetResult(ct);
+            await Task.Delay(Timeout.Infinite, ct);
+            return true;
+        });
+        using var page = new CancellationTokenSource();
+
+        var answer = module.HandleMessageAsync(
+            new Shenora.Core.Ipc.IpcRequest
+            {
+                Id = "stop",
+                Module = module.ModuleName,
+                Type = "STOP_TASK",
+                Payload = JsonSerializer.Deserialize<JsonElement>(JsonSerializer.Serialize(new { id = "s1", key = "s1/task/t1" })),
+            },
+            page.Token);
+        var token = await handed.Task.WaitAsync(TimeSpan.FromSeconds(30));
+        Assert.True(token.CanBeCanceled, "the agent's stop was asked on no token: nothing but its answer could end it");
+
+        await page.CancelAsync();
+        await Record.ExceptionAsync(() => answer.WaitAsync(TimeSpan.FromSeconds(30)));
+        Assert.True(answer.IsCompleted, "the route still waits on a session that never answers");
+        Assert.True(token.IsCancellationRequested);
+    }
 }
