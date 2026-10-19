@@ -466,6 +466,13 @@ public sealed record SessionGrouping(string Session, string Group, string Shown)
     /// neither its tree nor a landing of it. The page offers the act only here, D95's way.
     /// </summary>
     public bool Deletable { get; init; }
+
+    /// <summary>
+    /// For a working session of this machine's (WAITSAY1b, D152's UX7c amendment): the call its agent is inside, as this
+    /// process heard it (<see cref="RunningCalls"/>), which its row and head say as <i>running `npm test` for 8 min</i>. Null
+    /// otherwise, and where nothing heard it: the terminal's listing, which runs no session, never has one.
+    /// </summary>
+    public RunningCall? Calling { get; init; }
 }
 
 /// <summary>
@@ -543,6 +550,12 @@ public sealed record SessionLook(
     /// account cools, since a fresh plan cannot see a cool-off.
     /// </summary>
     public IReadOnlyDictionary<string, WordsHold> Held { get; init; } = new Dictionary<string, WordsHold>(StringComparer.Ordinal);
+
+    /// <summary>
+    /// The call each live session's agent is inside, by session (WAITSAY1b): what the process the look is taken in heard
+    /// (<see cref="RunningCalls.Now"/>). None where it runs no session, as the terminal's listing does not.
+    /// </summary>
+    public IReadOnlyDictionary<string, RunningCall> Calls { get; init; } = new Dictionary<string, RunningCall>(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>
     /// A look from the records as the service answered them: parsed, and each quest's last run and strikes read by the
@@ -960,6 +973,13 @@ public static class SessionGroups
                 if (!record.Teammate && record.Quest is { } quest && _look.Strikes.TryGetValue(quest, out var failed) && failed > 0)
                 {
                     row = row with { Strikes = failed };
+                }
+
+                // WAITSAY1b: the call its agent is inside, said only while it works; a park's turn ended, and a teammate's calls
+                // run on their machine, which this one heard none of.
+                if (!record.Teammate && record.State == "working" && _look.Calls.TryGetValue(record.Id, out var call))
+                {
+                    row = row with { Calling = call };
                 }
 
                 // ANSWER1c (D131): an answered park goes on at the driver's next look, so it is working, never waiting on you.
