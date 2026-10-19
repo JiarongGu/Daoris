@@ -368,7 +368,7 @@ while the screen still shows it. For anything else on the screen, ask them rathe
   - Left over from records already gone: 2 files, 4 KB, which a workspace's clear takes.
 - Daoris's browser: your Edge; links on the page open in Daoris's browser; other software's extensions refused; favorites https://site.example/board, https://docs.example/.
 - Plugins: `example.lands` (on, speaks on `work/land`, added from a folder), `example.off` (off, installed from this install's offer), `example.broken` (on, contributes nothing: `apiVersion` must be an integer., no record of where it came from), `example.quiet` (on, added from a folder).
-- Landed branches: `feature/q2-second` in `engine` (session `s2a3b4c5`, not pushed), `feature/q3-third` in `game` (session `s3`, pushed, pull request https://example.test/pr/3; its pull request: completed by squash into `main` on 2026-10-04 13:50 UTC, as `example.lands` answered at 2026-10-04 14:02 UTC), `feature/q4-fourth` in `game` (session `s4`, pushed; asking `example.lands` at 2026-10-04 14:30 UTC failed (`late`)).
+- Landed branches: `feature/q2-second` in `engine` (session `s2a3b4c5`, accepted by the access setup (machine), not pushed), `feature/q3-third` in `game` (session `s3`, pushed, pull request https://example.test/pr/3; its pull request: completed by squash into `main` on 2026-10-04 13:50 UTC, as `example.lands` answered at 2026-10-04 14:02 UTC), `feature/q4-fourth` in `game` (session `s4`, pushed; asking `example.lands` at 2026-10-04 14:30 UTC failed (`late`)).
 
 ## Where work has got to
 
