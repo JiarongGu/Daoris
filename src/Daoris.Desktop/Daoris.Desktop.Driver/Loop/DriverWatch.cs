@@ -66,6 +66,9 @@ public sealed class DriverWatch(
     /// <summary>The quests the evaluation runtime last read (FABRIC-CLOSE1q3): what a door judges a held close against; null before a pass has read.</summary>
     public IReadOnlyDictionary<string, QuestView>? LastQuests => _nodes?.LastQuests;
 
+    /// <summary>The loop's evaluation runtime once it runs, or null: a test holds its pass with one of its own (PARALLEL1h).</summary>
+    internal NodeRuntime? Nodes => _nodes;
+
     // Every nudge counted, so one that lands while a look runs — before the wait it would have ended —
     // still ends that wait (DEV3): looks are short now, and a person's control nudges the loop often.
     private int _nudges;
@@ -376,7 +379,8 @@ public sealed class DriverWatch(
                 Log?.Failed("the start's reconciliation of the tidy", error);
             }
         }, CancellationToken.None);
-        // FABRIC-RUN1, link 8: the evaluation runtime, after the plan on every wake it hears and at the look's deadline; only where this loop
+        // FABRIC-RUN1, link 8: the evaluation runtime, begun after the plan on every wake it hears and at the look's deadline, and run beside
+        // the look (PARALLEL1h); only where this loop
         // holds a hook set, and its passes write only where it holds the home's lease. It reads nothing unless a graph naming a plugin's
         // performed node governs a unit, and the next timer the node records persist wakes a plan at its moment. FABRIC-CLOSE1b: a closure graph
         // arms it too, and its `quest.close` is sent through this loop's service client, the local host's close door. FABRIC-CLOSE1l: a quest is
@@ -397,39 +401,47 @@ public sealed class DriverWatch(
 
         if (nodes is not null)
         {
-            chain.Bind(ChainRanks.Nodes, async (heard, token) =>
+            // PARALLEL1h (D181 point 3): link 8 begins the pass beside the look on the running set, one at a time and one more after it
+            // where asked, so a read or a plugin that holds a pass holds no next look; the closing loop waits for it as it waits for the
+            // sessions. A whole look's ask is kept until a pass takes it, so a pass that follows reads the units afresh for it.
+            NodeRuntime runtime = nodes;
+            var wholeAsked = 0;
+            chain.Bind(ChainRanks.Nodes, (heard, token) =>
             {
+                if (heard.Any(cause => cause.Key == Whole)) Interlocked.Exchange(ref wholeAsked, 1);
+                Running.PassBeside(PassAsync, token);
+                return Task.FromResult(ChainFired.Nothing);
+            });
+
+            // One pass, on the choices the latest look read. What it says joins the next look's report; what it acted on is in the records.
+            async Task<IReadOnlyList<string>> PassAsync(CancellationToken token)
+            {
+                var whole = Interlocked.Exchange(ref wholeAsked, 0) == 1;
                 NodeRuntimePass pass;
                 try
                 {
-                    pass = await Stages.TimeAsync("nodes", () => nodes.PassAsync(new NodeRuntimeLook(config, heard.Any(cause => cause.Key == Whole))
+                    pass = await Stages.TimeAsync("nodes", () => runtime.PassAsync(new NodeRuntimeLook(config, whole)
                     {
                         Units = NodeUnitsAsync,
                         Steps = () => [.. PluginCatalog.Load(home).Contributing.SelectMany(plugin => plugin.Manifest.Steps)],
                         // FABRIC-PERFORM1i: an observed node's event is bound to its branch's tip read now, once per checkout per pass.
                         Tips = NodeTips.ReadAsync,
-                    }, token)).ConfigureAwait(false);
+                    }, token), beside: true).ConfigureAwait(false);
                 }
                 catch (Exception error) when (error is DriverException or HttpRequestException or System.Text.Json.JsonException or IOException
                                                   or UnauthorizedAccessException)
                 {
-                    Said([$"work  the plugins' steps were not judged this time, and are judged again at the next look: {error.Message}"]);
-                    return ChainFired.Nothing;
+                    return [$"work  the plugins' steps were not judged this time, and are judged again at the next look: {error.Message}"];
                 }
 
-                NodesDue(nodesDue, nodes.NextDue);
-                Said(NodeRuntimeLines(pass));
+                NodesDue(nodesDue, runtime.NextDue);
 
                 // A set naming a plugin anew wakes one more plan, whose supervision starts the process the start then goes to.
                 if (pass.AwaitedChanged) Nudge(ChangeTopics.Nodes, "awaited");
-                return new ChainFired(pass.Performed.Count(done => Acted.Contains(done.What)), []);
-            });
-        }
-
-        // What link 8 says joins the report of the look it followed.
-        void Said(IReadOnlyList<string> lines)
-        {
-            if (lines.Count > 0 && looked is not null) looked = looked with { Events = [.. looked.Events, .. lines] };
+                var acted = pass.Performed.Count(done => Acted.Contains(done.What));
+                if (acted > 0) Log?.Info("chain.fired", ("link", ChainRanks.Nodes), ("topic", ChangeTopics.Nodes), ("count", acted));
+                return NodeRuntimeLines(pass);
+            }
         }
 
         Task<NodeUnitsRead> NodeUnitsAsync(CancellationToken token) => ReadNodeUnitsAsync(home, service, token);
