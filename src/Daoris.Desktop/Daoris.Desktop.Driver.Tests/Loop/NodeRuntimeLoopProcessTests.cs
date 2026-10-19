@@ -94,10 +94,10 @@ public sealed class NodeRuntimeLoopProcessTests : IDisposable
     private string[] Lines(string file) => File.Exists(Path.Combine(Folder, file)) ? File.ReadAllLines(Path.Combine(Folder, file)) : [];
 
     /// <summary>The loop as the shell runs it: the home's lease held, a hook set of its own, its choices in <c>driver.json</c>.</summary>
-    private async Task<int> RunAsync(string cycle, Func<List<TickReport>, bool> until)
+    private async Task<int> RunAsync(string cycle, Func<List<TickReport>, bool> until, int pollSeconds = 1)
     {
         var config = DaorisHome.Entry(_home, HomeEntry.DriverConfig);
-        File.WriteAllText(config, $$"""{ {{cycle}} "pollSeconds": 1 }""");
+        File.WriteAllText(config, $$"""{ {{cycle}} "pollSeconds": {{pollSeconds}} }""");
         using var lease = HomeLease.TryAcquire(_home, LeaseKind.Desktop, out _) ?? throw new InvalidOperationException("the home's lease was not taken");
         await using var hooks = new HookSet(_home, say: (_, _) => { });
         var watch = new DriverWatch(_ledger.Client(), config, _home, new SessionProcesses(), sync: null, hooks: hooks,
@@ -135,6 +135,29 @@ public sealed class NodeRuntimeLoopProcessTests : IDisposable
         var attempt = Assert.Single(record.Attempts);
         Assert.Equal((AttemptStates.Settled, WorkStates.Reached), (attempt.State, attempt.Outcome));
         Assert.Equal([attempt.Call.IdempotencyKey], Lines("effects.log"));
+    }
+
+    /// <summary>
+    /// FABRIC-RUN1d: with the look's deadline ten minutes off, the loop's start is its only look. The awaited set's own wake starts the
+    /// stand-in's process and sends the step with no plan, and the completion the stand-in sends at once is heard by link 8 alone and kept
+    /// within a second of the attempt's record. The stand-in writes nothing into the plugins folder here, whose change wakes a plan.
+    /// </summary>
+    [Fact]
+    public async Task A_completion_heard_is_kept_within_a_second_with_no_look_after_the_loops_start()
+    {
+        File.WriteAllText(Path.Combine(Folder, "work.mjs"), Script.Replace("appendFileSync(", "void (", StringComparison.Ordinal));
+        DateTimeOffset? reached = null;
+        var looks = await RunAsync(Cycle, _ =>
+        {
+            if (Record()?.Statuses.GetValueOrDefault("deploy")?.State != NodeStates.Reached) return false;
+            reached ??= DateTimeOffset.UtcNow;
+            return true;
+        }, pollSeconds: 600);
+
+        Assert.Equal(1, looks);
+        var attempt = Assert.Single(Record()!.Attempts);
+        Assert.Equal((AttemptStates.Settled, WorkStates.Reached), (attempt.State, attempt.Outcome));
+        Assert.InRange(reached!.Value - attempt.RecordedAt, TimeSpan.Zero, TimeSpan.FromSeconds(1));
     }
 
     [Fact]

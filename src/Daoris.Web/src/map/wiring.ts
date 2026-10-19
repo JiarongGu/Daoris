@@ -1,6 +1,6 @@
 /**
  * The wiring answer's shape (MAP1b) — held here, beside what draws it, and imported by the shell's
- * query the way `work/diff.ts` is: a molecule may not import the shell module at all, types included.
+ * query the way `work/review/diff.ts` is: a molecule may not import the shell module at all, types included.
  */
 
 /** Which rung of the resolution answered (D49 §4) — the order a start asks in. */

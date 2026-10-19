@@ -1670,7 +1670,7 @@ public sealed partial class HelpCoverageTests
     private static Dictionary<string, (bool Changes, IReadOnlyList<string> Actions)> BridgeHooks()
     {
         var hooks = new Dictionary<string, (bool, IReadOnlyList<string>)>(StringComparer.Ordinal);
-        foreach (var file in Directory.GetFiles(Path.Combine(Page, "bridge"), "*.ts").Where(file => !file.Contains(".test.", StringComparison.Ordinal))
+        foreach (var file in Directory.GetFiles(Path.Combine(Page, "bridge"), "*.ts", SearchOption.AllDirectories).Where(file => !file.Contains(".test.", StringComparison.Ordinal))
             .Append(PageFile("queries.ts")))
         {
             var parts = TopLevel().Split(File.ReadAllText(file).Replace("\r\n", "\n"));

@@ -3,7 +3,7 @@ import frame from './SettingsView.tsx?raw';
 import registry from './domains.ts?raw';
 import { SETTINGS_SECTIONS } from './SettingsView';
 import { en, zh } from '../locales';
-import { LIST_BOUNDS } from '../work/layout';
+import { LIST_BOUNDS } from '../work/frame/layout';
 import { rememberedDomain, SETTINGS_DOMAINS } from './domains';
 
 /**

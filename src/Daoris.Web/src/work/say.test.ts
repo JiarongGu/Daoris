@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import i18n from '../locales/i18n';
 import type { Session } from '../data/api';
-import type { AccountsAnswer, AgentAccounts } from '../settings/accounts';
+import type { AccountsAnswer, AgentAccounts } from '../settings/accounts/accounts';
 import type { ToolDoor } from '../agents/tools';
 import {
   boxOf, coolingFor, NATIVE_WORDS_LIMIT, NEVER, neverSentence, NEW_SESSION_REFUSED, newSessionSaid, reasonOf, startFromRefusal,

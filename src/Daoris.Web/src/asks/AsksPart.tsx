@@ -9,7 +9,7 @@ import {
   useAnswerGoAhead, useAsk, useAsks, useChooseAskReview, useChooseAskWorkflow, useCloseAsk, useDeleteAsk, usePublishAsk, useRegistry, useSessions,
 } from '../data/queries';
 import { useScope } from '../data/scope';
-import { namer } from '../settings/namer';
+import { namer } from '../settings/accounts/namer';
 import { askLines } from '../work/entries';
 import {
   useChannel, useChannelUnreads, useElsewhereAsks, useMarkChannel, usePostChannel,
@@ -20,14 +20,14 @@ import { useConsidered, useDriver, useHarnesses, useHistoryPlan, useNudge, useRe
 import { workspaceOf, workspacesOf } from '../data/workspaces';
 import { failure, type Notify, useErrorNotify } from '../design/ui';
 import { askStanding, freshest } from '../quests/records';
-import type { ChoiceStanding } from '../work/listPanes';
+import type { ChoiceStanding } from '../work/frame/listPanes';
 import type { AskRowFacts } from '../quests/QuestList';
 import { QuestsMainNotice } from '../quests/QuestPage';
-import type { HistoryDoor } from '../work/history';
-import { useHistoryActs } from '../work/historyActs';
+import type { HistoryDoor } from '../work/history/history';
+import { useHistoryActs } from '../work/history/historyActs';
 import type { Answered } from '../work/InlineConfirm';
-import { type AbandonAnswer, wiredFor, type WorkDoor, type WorkTarget } from '../work/pausing';
-import { useWorkActs } from '../work/workActs';
+import { type AbandonAnswer, wiredFor, type WorkDoor, type WorkTarget } from '../work/pausing/pausing';
+import { useWorkActs } from '../work/pausing/workActs';
 import { questName } from '../work/identity';
 import { AskComposer, type AskDraft } from './AskComposer';
 import { AskPage } from './AskPage';

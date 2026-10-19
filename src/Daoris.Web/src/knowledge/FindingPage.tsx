@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next';
 import type { Convergence } from '../data/api';
 import { Inline, Prose, SkeletonRows } from '../design/ui';
 import { contextOffer } from '../menus/press';
-import { type MainNotice, PageHead, ViewMain } from '../work/ViewMain';
+import { type MainNotice, PageHead, ViewMain } from '../work/frame/ViewMain';
 import { documentMenu, EntryPills, entryPlace, EntryText } from './EntryPage';
 import { type EntryReading, findingTitle } from './records';
 

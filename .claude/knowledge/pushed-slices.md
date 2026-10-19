@@ -9,7 +9,7 @@ enforces: a pushed slice has one owner in .NET whose partitions are allow-listed
 **A slice is pushed by one owner and held by each window's query cache (D182, its PUSH1a note). The host half and the page
 half share no code, so a slice is wired in every row below in the same change.** The driver's state is the worked example:
 `Loop/DriverStateSlice.cs` on the host, `driverSlice` in `bridge/driver.ts` on the page. `Loop/LinesStateSlice.cs` is the one
-judged from the machine's facts, a partition per repository (PUSH1b1); `linesSlice` in `bridge/lines.ts` is its page half
+judged from the machine's facts, a partition per repository (PUSH1b1); `linesSlice` in `bridge/repositories/lines.ts` is its page half
 (PUSH1b2), and the one whose rows carry a flag (`notReadYet`) that the page reads before the field it qualifies.
 
 | Place | What goes there | What holds it |
@@ -31,7 +31,7 @@ judged from the machine's facts, a partition per repository (PUSH1b1); `linesSli
 
 ## A family read under many keys, and a large one
 
-The sessions (PUSH1d2, `Loop/SessionsStateSlice.cs`, `sessionsSlice` in `bridge/sessions.ts`) are the worked example; D182's PUSH1d2
+The sessions (PUSH1d2, `Loop/SessionsStateSlice.cs`, `sessionsSlice` in `bridge/sessions/sessions.ts`) are the worked example; D182's PUSH1d2
 note has the measure that chose it.
 
 | Part | The shape | Where it is |

@@ -3,7 +3,7 @@ import { act, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import '../locales/i18n';
-import { ViewMain } from '../work/ViewMain';
+import { ViewMain } from '../work/frame/ViewMain';
 import { QuestPage } from '../quests/QuestPage';
 import { OPEN, TAKEN } from '../quests/fixtures';
 import { MainOffer, offerStore, useMainOffer } from './mainOffer';

@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { getBridge, useShenora, useShenoraEvent } from '@shenora/react';
-import type { OpenTerminal, TerminalOpening, TerminalShellChoice, Terminals } from '../work/terminals';
+import type { OpenTerminal, TerminalOpening, TerminalShellChoice, Terminals } from '../work/terminals/terminals';
 
 // The person's own terminals (MOD3), held by the frame over `DAORIS.TERMINAL` (D96).
 

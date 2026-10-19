@@ -8,8 +8,8 @@ import i18n from '../locales/i18n';
 import { ContextMenus } from '../menus/ContextMenu';
 import { menuActs, rightClick } from '../test/contextMenu';
 import { code } from '../test/code';
-import type { WorkDoor } from '../work/pausing';
-import { ABANDON_ANSWER, ABANDONED_ASK, MIXED_ASK, PAUSABLE_ASK, PAUSED_ASK } from '../work/pausingFixtures';
+import type { WorkDoor } from '../work/pausing/pausing';
+import { ABANDON_ANSWER, ABANDONED_ASK, MIXED_ASK, PAUSABLE_ASK, PAUSED_ASK } from '../work/pausing/pausingFixtures';
 import { AskPage } from './AskPage';
 import { BY_INTAKE, CLOSED, INTAKE_SESSION, PUBLISHED } from './fixtures';
 

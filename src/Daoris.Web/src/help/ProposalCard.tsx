@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { ago } from '../locales/format';
-import { SetupPlanFacts, type SetupShown } from '../projects/SetUpForAgents';
+import { SetupPlanFacts, type SetupShown } from '../projects/setup/SetUpForAgents';
 import { RequirementItem } from '../quests/Requirements';
 import { Button, Inline } from '../design/ui';
 

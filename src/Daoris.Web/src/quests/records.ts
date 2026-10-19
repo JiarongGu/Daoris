@@ -1,5 +1,5 @@
 import type { Ask, Quest, Session, SubmissionRef } from '../data/api';
-import type { ChoiceStanding } from '../work/listPanes';
+import type { ChoiceStanding } from '../work/frame/listPanes';
 
 // Quests' list and its memory as values (FRAME1d, D118 §2, §3f): its filters as kept, its groups, the record a
 // page shows, and the session that marks a quest. Pure, so every list a person could have is an argument.

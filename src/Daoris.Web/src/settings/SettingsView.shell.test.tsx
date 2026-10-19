@@ -22,7 +22,7 @@ vi.mock('@shenora/react', () => ({
 }));
 
 import { SettingsView } from './SettingsView';
-import { DOCK, frameLayout, LIST_BOUNDS, type ListChoice } from '../work/layout';
+import { DOCK, frameLayout, LIST_BOUNDS, type ListChoice } from '../work/frame/layout';
 import { DRIVER_STATE, respond, show, WIRING } from '../test/shellHarness';
 
 describe('the domain list, in a shell', () => {

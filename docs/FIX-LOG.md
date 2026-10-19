@@ -5,6 +5,21 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-20 — Four failing questions starved a fifth attempt, and a rule asking no opinion held its node for ever (FABRICRUN1)
+
+- **Symptom:** after a restart with five attempts due, the questions about the first four in file order failing with an I/O error, every
+  pass spent its four sends on those four and the fifth was never asked (`NodeRuntimeTests`' RUN1g case, red first). And once the live
+  second-opinion gate was handed to the runtime, an `opinion` node whose rule asks none stayed active, holding everything wired after it
+  (`GateNodesTests`' none case and `NodeRuntimeReadsTests`' gate case, red first).
+- **Root cause:** `WorkPerformer.ReconcileAsync` walked the records in file order from the first at every pass, and an unanswered
+  question leaves its attempt due at once. `OpinionNode` (WIRE1g) bound every judgement to the commit it was read at, but a landing door's
+  read of a rule asking no opinion returns before reading any commit (`TreeGates.OpinionAsync`), so that read never matched a binding.
+- **Fix:** D173's FABRICRUN1 note. Reconciliation takes the attempts due by unit and invocation from after the last one the pass before
+  reached (`_reconciled`), round again from the first. A `none` read with no commit passes the opinion over, whatever it is bound to; one
+  read at a commit stays that commit's.
+- **Verification:** the two cases above, and the neighbouring node suites (`WireEvaluationDecodedTests`' "none at an older commit" row
+  still pending), filtered, green.
+
 ## 2026-10-20 — Two writers of `driver.json` at once lost one's change, and a name written twice in any case read two ways (CONFIG1)
 
 - **Symptom:** the limits D173's second re-check named, each shown red by a test before the change. Another writer's edit landing
@@ -25,6 +40,19 @@ repository.
 - **Verification:** `DriverConfigKeepsTests`, `KeepLockTests`, `KeepLockProcessTests` (Process), and the CLI's `configkeeps.test.ts`
   and `keeplock.test.ts`, over `driver-config-keeps.json`'s rows, `sets`, `names` and `lock`; the driver classes over every config
   and home-file writer (1,011 and 323 tests) and the CLI's config, home-file, plugin, permission and toolchain tests pass.
+
+## 2026-10-20 — The full set on 3e88bcc failed three gates on tests the merges' filtered runs never reached (CONFIG1, PUSH1d1b)
+
+- **Symptom:** `cli` (the home census: `keeplock.test.ts` joined `driver.json` by hand), `tool-tests` (the reach scan:
+  `KeepLockProcessTests` read a CLI source no rule sent to `driver-process`) and `service` (`ChangeStreamHostTests` expected four
+  families where PUSH1d1b's `words` made five).
+- **Root cause:** each branch ran its own classes filtered, as the brief asks; the census, the reach scan and the HTTP host's
+  tests sit outside those filters, and CONFIG1 and HOMELAYOUT2 landed the same day, so neither saw the other's census.
+  `KeepLockProcessTests` built its import paths from spread parts, which the scan cannot read, so it saw a probe file.
+- **Fix:** `keeplock.test.ts` asks `homeEntry(fx.root, 'driver')`; `KeepLockProcessTests` names `keeplock.ts` and `driverconfig.ts`
+  whole; `ChangeStreamHostTests.Every` names `ChangeFamilies.Words`.
+- **Verify:** `keeplock.test.ts` 15 of 15; the census and the reach scan pass; `ChangeStreamHostTests` 5 of 5;
+  `KeepLockProcessTests` 2 of 2 under `process.runsettings`.
 
 ## 2026-10-20 — A repository's Setup test still read asking mode's old hint, that any other call is refused (AUTONOMY1b3)
 

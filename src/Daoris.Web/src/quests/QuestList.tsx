@@ -11,7 +11,7 @@ import { Button, Inline, Pill, QUEST_TONE, SESSION_ACTIVE, SESSION_TONE } from '
 import { cn } from '../lib/cn';
 import { contextOffer } from '../menus/press';
 import { questName } from '../work/identity';
-import { groupHeading, ListGroup, ListRowDoor } from '../work/ListPane';
+import { groupHeading, ListGroup, ListRowDoor } from '../work/frame/ListPane';
 import { questGroups, shownStatus } from './records';
 
 /** What a quest's row says beside the quest itself. */

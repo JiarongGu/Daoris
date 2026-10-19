@@ -5,11 +5,11 @@ import { buildChain } from '../map/chain';
 import { InTheme } from '../plugins/storyIcons';
 import { chinese } from '../design/storyLanguage';
 import { AttendedSession } from './AttendedSession';
-import { sessionFacts } from './headFacts';
+import { sessionFacts } from './head/headFacts';
 import { questName } from './identity';
-import { SessionPageHead } from './SessionPageHead';
-import { answer, SESSION_CHAIN } from './traceFixtures';
-import { ViewMain } from './ViewMain';
+import { SessionPageHead } from './head/SessionPageHead';
+import { answer, SESSION_CHAIN } from './head/traceFixtures';
+import { ViewMain } from './frame/ViewMain';
 
 const dark: Decorator = (Story) => <InTheme theme="dark"><Story /></InTheme>;
 

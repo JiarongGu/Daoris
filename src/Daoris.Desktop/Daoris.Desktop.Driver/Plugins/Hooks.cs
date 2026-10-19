@@ -891,6 +891,16 @@ public sealed class HookSet(
     /// </summary>
     public IReadOnlyList<WorkStepHeard> TakeSteps() => _work.TakeSteps();
 
+    /// <summary>
+    /// Told a plugin's id as a step event of its current process is queued for <see cref="TakeSteps"/> (FABRIC-RUN1d): the lease's loop wakes
+    /// its evaluation runtime alone, so a completion is kept at once rather than at the next look. Null tells nobody.
+    /// </summary>
+    public Action<string>? StepArrived
+    {
+        get => _work.Arrived;
+        set => _work.Arrived = value;
+    }
+
     /// <summary>The last <c>work/watch</c> frame whose send to that process completed (FABRIC-PERFORM1i, §C4's third rule), or null.</summary>
     public WorkWatchFrame? SentTo(string plugin, int generation) => _work.SentTo(plugin, generation);
 

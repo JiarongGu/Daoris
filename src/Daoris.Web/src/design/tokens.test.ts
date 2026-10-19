@@ -410,8 +410,8 @@ const STATUS_AS_SVG_TEXT = /<text\b[^>]*?(?<![\w-])(fill-st-(?:open|taken|done|d
  * for that branch, and its row goes when the swap lands. A red word is allowed nowhere (UXFIX5b).
  */
 const HUE_AS_COLOUR: Record<string, { hits: string[]; reason: string }> = {
-  './work/frame.tsx': { hits: ['text-st-open'], reason: "a mark: the status bar's setup icon, beside its words in the ink" },
-  './work/ConversationView.tsx': {
+  './work/frame/frame.tsx': { hits: ['text-st-open'], reason: "a mark: the status bar's setup icon, beside its words in the ink" },
+  './work/conversation/ConversationView.tsx': {
     hits: ['text-st-done'], reason: "a mark: a finished plan entry's check, aria-hidden beside its words",
   },
 };
@@ -552,8 +552,8 @@ describe('the status inks', () => {
     expect(statusAsText([['./map/MapCanvas.tsx', "<text\n  x={x}\n  className={cn('text-meta', parked ? 'fill-st-open' : 'fill-ink-soft')}\n>"]]))
       .toHaveLength(1);
     // A mark is allowed once in its file: a word beside it in the same hue still fails.
-    expect(statusAsText([['./work/frame.tsx', '<Icon name="plan" size={12} className="text-st-open" />']])).toEqual([]);
-    expect(statusAsText([['./work/frame.tsx', '<Icon className="text-st-open" /><span className="text-st-open">2</span>']]))
+    expect(statusAsText([['./work/frame/frame.tsx', '<Icon name="plan" size={12} className="text-st-open" />']])).toEqual([]);
+    expect(statusAsText([['./work/frame/frame.tsx', '<Icon className="text-st-open" /><span className="text-st-open">2</span>']]))
       .toHaveLength(1);
     // And what must keep passing: the inks themselves, a fill, a border, a mark's stroke or a shape's fill, and a word
     // that holds the prefix.
@@ -567,7 +567,7 @@ describe('the status inks', () => {
   });
 
   it('is reading the stylesheets too — a scan of none would hold nothing', () => {
-    expect(stylesheets.map(([path]) => path)).toEqual(expect.arrayContaining(['./tokens.css', './work/code.css']));
+    expect(stylesheets.map(([path]) => path)).toEqual(expect.arrayContaining(['./tokens.css', './work/review/code.css']));
   });
 
   it('holds: every status word in the platform wears its hue\'s ink', () => {
@@ -655,7 +655,7 @@ describe('dates and counts', () => {
  * the column (`ViewMain`) is the one place a line's length could be set; it sets none.
  *
  * So no source names a line's measure: Tailwind's `max-w-prose`, or a width counted in `ch` or `em`. A cap, if one is
- * ever set, goes on the column once, in `em` (D141 §3), and `work/ViewMain.tsx` is then the one file this check lets
+ * ever set, goes on the column once, in `em` (D141 §3), and `work/frame/ViewMain.tsx` is then the one file this check lets
  * name it. A named width (`max-w-3xl`, 48rem) capped five blocks of a quest's and an ask's pages beside blocks that ran
  * the pane, so no product source names one either; a story's frame stands in for the column a part is drawn in, and
  * is not read. That the column itself sets none is `ViewMain.test.tsx`'s to hold, on what it renders.
@@ -665,7 +665,7 @@ const NAMED_WIDTH = /(?<![\w-])max-w-(?:xs|sm|md|lg|xl|[2-7]xl)(?![\w-])/g;
 
 /** A named width that is no page's block, each with its reason. */
 const NAMED_WIDTH_HOMES: Record<string, string> = {
-  './work/CommandCenter.tsx': "the strip's command center, a control in the title bar, never a page's block",
+  './work/strip/CommandCenter.tsx': "the strip's command center, a control in the title bar, never a page's block",
 };
 
 export function lineMeasures(files: [path: string, source: string][]): string[] {
@@ -698,7 +698,7 @@ describe("the page's measure", () => {
       .toEqual(['./quests/QuestPage.tsx caps a block at a named width: max-w-3xl']);
     expect(namedWidths([['./asks/GoAheadList.tsx', 'className="m-0 grid max-w-xl list-none"']])).toHaveLength(1);
     expect(namedWidths([['./work/SessionHead.stories.tsx', '<div className="max-w-3xl"><Story /></div>']])).toEqual([]);
-    expect(namedWidths([['./work/CommandCenter.tsx', "'flex w-full min-w-0 max-w-md'"]])).toEqual([]);
+    expect(namedWidths([['./work/strip/CommandCenter.tsx', "'flex w-full min-w-0 max-w-md'"]])).toEqual([]);
     expect(namedWidths([['./x.tsx', 'className="max-w-[48rem] text-xl"']])).toEqual([]);
   });
 

@@ -30,8 +30,8 @@ import { ContextMenus } from '../menus/ContextMenu';
 import { menuActs, rightClick } from '../test/contextMenu';
 import { WorkspaceScopeProvider } from '../data/scope';
 import { REGISTRY, respond, serviceCalls, show, WIRING } from '../test/shellHarness';
-import { useListPanes } from '../work/listPanes';
-import { ViewFrame } from '../work/ViewFrame';
+import { useListPanes } from '../work/frame/listPanes';
+import { ViewFrame } from '../work/frame/ViewFrame';
 import type { AgentPart } from './agents';
 import { useAgentsView } from './AgentsView';
 

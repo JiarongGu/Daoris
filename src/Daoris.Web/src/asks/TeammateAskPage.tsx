@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next';
 import { ago, stamp } from '../locales/format';
 import { Pill } from '../design/ui';
 import type { Channel, ElsewhereAsk } from '../work/channel';
-import { PageHead, PageSection, ViewMain } from '../work/ViewMain';
+import { PageHead, PageSection, ViewMain } from '../work/frame/ViewMain';
 import { ChannelSection } from './ChannelSection';
 
 /**

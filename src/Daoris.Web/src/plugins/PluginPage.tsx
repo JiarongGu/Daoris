@@ -5,14 +5,14 @@ import { Button, CheckField, Inline, PathText, Pill, Prose } from '../design/ui'
 import { type KitPoint, type PluginTrialResult, pointGloss, TrialReport } from './PluginKit';
 import { PluginSourceLine, PluginUpdatePlan, type PluginUpdatePlanShown, updatable } from './PluginUpdate';
 import { type Answered, InlineConfirm } from '../work/InlineConfirm';
-import { PageHead, PageSection, ViewMain } from '../work/ViewMain';
+import { PageHead, PageSection, ViewMain } from '../work/frame/ViewMain';
 import {
   type HelpServerShown, type PluginShown, pluginState, shippedChanged, type SkillShown, speaks, takesShipped, updateWaits,
 } from './catalog';
 import { PluginIcon } from './PluginIcon';
 import { STATE_WORD } from './PluginList';
 
-// The main area's page header and its sections are every page's since FRAME1d (`work/ViewMain`).
+// The main area's page header and its sections are every page's since FRAME1d (`work/frame/ViewMain`).
 export { PageHead, PageSection };
 
 /**

@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import { Button, Inline, Pill } from '../design/ui';
 import type { KitPoint } from './PluginKit';
-import { ViewMain } from '../work/ViewMain';
+import { ViewMain } from '../work/frame/ViewMain';
 import type { OfferShown } from './catalog';
 import { PluginIcon } from './PluginIcon';
 import { Body, HelpServers, Lead, NameRows, PageHead, PageSection, PointRows, SkillRows } from './PluginPage';

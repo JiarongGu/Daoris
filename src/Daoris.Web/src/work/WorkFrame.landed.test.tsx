@@ -15,7 +15,7 @@ import { eventHandlers, invoke } from '../test/workFrameBridge';
 import {
   CHAT, DRIVEN, DRIVER_STATE, PARKED, QUESTS, REGISTRY, ROSTER, STRUCTURED_ROSTER, show, userEvent,
 } from '../test/workFrameKit';
-import { DiffPane } from './DiffPane';
+import { DiffPane } from './review/DiffPane';
 import { WorkFrame } from './WorkFrame';
 
 let SESSIONS: unknown[] = [DRIVEN];
