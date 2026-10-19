@@ -17424,3 +17424,9 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **HEAVYRUN1b2b — the mapping on a repository's setup page** (modules, web; after HEAVYRUN1b2a; D184's AUTONOMY1d section as the exemplar). A `SET_` door and a section of the repository's Setup that shows and edits its heavy gates, en and 中文. Proof: the route's tests; the section's vitest in both languages.
 
 **Outcome** 2026-10-20: `SET_HEAVY_GATES` (in `DriverRoutes.cs`) sets a repository's whole list through `HeavyMapping.Apply`, and `STATE`'s `heavyGates` rows sit in the `choices` partition; *Heavy gates* on a repository's Setup (`settings/HeavyGates.tsx`) shows and edits the list whole (name, command, folder, order), en and 中文 (重型检查), the driver's refusal said under Save; `useSetHeavyGates` is exempt from Ask Daoris with its reason. On Opus: about 239 tool calls, 66 minutes. Detail: D180's HEAVYRUN1b2b note.
+
+## QUEUEDTREE1b — a fast stand-in for a start's tree open (2026-10-20, D181)
+
+> - [ ] **QUEUEDTREE1b — a fast stand-in for a start's tree open** (driver; D51, D181's QUEUEDTREE1 and LOOKWAIT1b note). Only the Process half reaches `Driver.RunAsync` past its tree's open, so a close between the open and the record has no fast proof. A stand-in answering the open's git through `WorkingTree.Runs` and the harness probes through `ProcessStarts.Within` would give one. Proof: a fast row closing the loop after the open leaves no tree.
+
+**Outcome** 2026-10-20: `StartTreeCloseTests` drives a look with no `Runner` to the start's tree open over a stand-in git (`WorkingTree.Runs`), closes the loop at the new tree's head read, and sees the tree's removal and its branch's delete asked on no token and no record opened; seen failing first with the close's let-go set aside. No product seam. The parallel theme (D181) has no open row left. On Opus: about 60 minutes. Detail: D181's QUEUEDTREE1b note.
