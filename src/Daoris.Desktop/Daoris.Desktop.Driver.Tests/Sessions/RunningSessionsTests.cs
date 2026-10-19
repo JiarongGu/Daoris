@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using Daoris.Driver;
 
 namespace Daoris.Desktop.Driver.Tests;
@@ -206,5 +207,59 @@ public sealed class RunningSessionsTests
 
         Assert.False(await told.Task.WaitAsync(Bound), "told while the pass still counted as running");
         Assert.Empty(running.Drain());
+    }
+
+    /// <summary>
+    /// LOOKWAIT1b (D181 point 6): work kept beside the looks is never the stage that began it, which does not wait on it. Its git
+    /// waiting for a place while that stage still runs is not the stage's queue: said nowhere, or to a span of its own.
+    /// </summary>
+    [Theory]
+    [InlineData("judge")]
+    [InlineData("sync")]
+    [InlineData("pass")]
+    [InlineData("landing")]
+    public async Task Work_begun_beside_a_stage_waits_for_its_places_apart_from_that_stage(string beside)
+    {
+        long now = 0;
+        var stages = new LookStages(clock: () => Volatile.Read(ref now));
+        using var held = new ManualResetEventSlim();
+        var starts = new ProcessStarts(1, info =>
+        {
+            if (info.FileName == "holder") held.Wait(Bound);
+            return null;
+        });
+        var holder = starts.StartAsync(new ProcessStartInfo("holder") { UseShellExecute = false }, CancellationToken.None);
+        var waiting = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var waited = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var running = new RunningSessions();
+        Func<CancellationToken, Task<IReadOnlyList<string>>> work = async _ =>
+        {
+            var git = starts.StartAsync(new ProcessStartInfo("git") { UseShellExecute = false }, StartClass.Background, CancellationToken.None);
+            waiting.SetResult();
+            await git;
+            waited.SetResult();
+            return [];
+        };
+
+        using (var stage = stages.Begin("landing"))
+        {
+            await stage.RunAsync(async () =>
+            {
+                Assert.True(beside switch
+                {
+                    "judge" => running.Judge("opinion", "q1", 1, work, CancellationToken.None),
+                    "sync" => running.SyncBeside(work, CancellationToken.None),
+                    "pass" => running.PassBeside(work, CancellationToken.None),
+                    _ => running.Beside(work, CancellationToken.None),
+                });
+                await waiting.Task.WaitAsync(Bound);
+                Interlocked.Add(ref now, 2000);
+                held.Set();
+                await waited.Task.WaitAsync(Bound);
+            });
+        }
+
+        await holder.WaitAsync(Bound);
+        Assert.Equal("landing=2000", stages.Take());
     }
 }
