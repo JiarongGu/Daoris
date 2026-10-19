@@ -97,6 +97,11 @@ internal sealed class DriverBrainstorms(LoopContext context, Driver driver)
                         files.WriteState(new BrainstormState(request.Id, BrainstormStates.Ended, state?.Packet, BrainstormStates.Stopped, DateTimeOffset.UtcNow));
                         events.Add($"brainstorm `{request.Id}` stopped by the person before it ran: nothing went to any agent.");
                         break;
+                    case null when _context.Beside:
+                        // PARALLEL1b (D181 point 3): under the watch, as the `freeze` topic's judge beside the look, a request frozen
+                        // once however many looks meet it while it freezes, so a checkout or a search slow to answer holds no start.
+                        Freezing(request.Id, token => FreezeAsync(request, snapshot, files, token), ct);
+                        break;
                     case null:
                         events.Add(await FreezeAsync(request, snapshot, files, ct).ConfigureAwait(false));
                         break;
@@ -131,6 +136,28 @@ internal sealed class DriverBrainstorms(LoopContext context, Driver driver)
 
         return held + begun;
     }
+
+    /// <summary>How many packets are frozen at once beside the looks (PARALLEL1b; a topic bounded, the events design §A3).</summary>
+    internal const int FreezesAtOnce = 2;
+
+    /// <summary>
+    /// A request's packet frozen as the <c>freeze</c> topic's judge beside the look (PARALLEL1b), a brainstorm's or a meeting's: one
+    /// judgement per request, its line joining a later look's report, and what stops it said as the look would have said it.
+    /// </summary>
+    internal void Freezing(string id, Func<CancellationToken, Task<string>> freeze, CancellationToken ct, string kind = "brainstorm") =>
+        _context.Runs.Judge("freeze", $"{kind}:{id}", FreezesAtOnce, async token =>
+        {
+            try
+            {
+                return [await _driver.Stages.TimeAsync("freeze", () => freeze(token), $"{kind}:{id}", beside: true).ConfigureAwait(false)];
+            }
+            catch (Exception error) when (error is HttpRequestException or DriverException or JsonException or IOException
+                                              or UnauthorizedAccessException
+                                              || (error is OperationCanceledException && !token.IsCancellationRequested))
+            {
+                return [$"{kind} `{id}` could not be looked at this look, and is looked at again at the next: {error.Message}"];
+            }
+        }, ct);
 
     /// <summary>
     /// The policy standing for a request (D176 point 9): its repository's workspace's whole, else this machine's. A meeting's is the

@@ -80,6 +80,13 @@ internal sealed class LoopContext(
     /// </summary>
     public Func<BrainstormTurn, CancellationToken, Task<BrainstormTurnRun>>? MeetingTurns { get; set; }
 
+    /// <summary>
+    /// Whether this driver's looks leave beside them the work no part of the look waits on (PARALLEL1b, D181 point 3): the watch's,
+    /// whose driver is handed <see cref="Driver.Wanted"/>. A one-look run and a gate's run-until-idle do it in the look, as each reads
+    /// one look whole.
+    /// </summary>
+    public bool Beside { get; set; }
+
     public ServiceClient Service { get; } = service;
 
     public DriverConfig Config { get; } = config;

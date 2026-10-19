@@ -20,4 +20,10 @@ public sealed record SyncReport(string? Problem, IReadOnlyList<string> Notes)
     public SyncReport(string? problem) : this(problem, []) { }
 
     public static readonly SyncReport Clean = new((string?)null, []);
+
+    /// <summary>
+    /// How long the pass waited for the set's one gate before it ran (LOOKWAIT1, D181 point 6): the tick and *Sync now* share it,
+    /// so a look's sync is said as its queue apart from its hold. Zero where nothing waited.
+    /// </summary>
+    public TimeSpan Queued { get; init; }
 }
