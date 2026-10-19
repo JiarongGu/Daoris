@@ -47,6 +47,12 @@ public sealed record HelpConversation(string Session, string State)
     public bool Live { get; init; }
 
     /// <summary>
+    /// The access mode it ran under, its record's (HELPMODE1a2, D183 point 3): <see cref="HelpModes.Restricted"/> or
+    /// <see cref="HelpModes.Full"/>, the mode its last start got, never the mode chosen now; a record from before the modes ran restricted.
+    /// </summary>
+    public string Mode { get; init; } = HelpModes.Restricted;
+
+    /// <summary>
     /// Whether words written to it once it ended go on in its own conversation (D137 §2.2): its harness conversation's id was
     /// kept, on an agent whose door resumes. One from before ids were kept for it is offered a new conversation from its words.
     /// </summary>
@@ -249,6 +255,7 @@ public sealed class HelpConversations(string home)
                 Last = each.Last,
                 Pinned = each.Kept.Pinned,
                 Live = each.Record.Live,
+                Mode = HelpModes.Recorded(each.Record.HelpMode),
                 Resumable = conversation is not null && resumes(conversation.Adapter),
                 From = each.Kept.From,
                 Handed = each.Kept.Handed,

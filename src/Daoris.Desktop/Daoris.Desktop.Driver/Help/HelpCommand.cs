@@ -68,7 +68,7 @@ public static class HelpCommand
 
     /// <summary>The fields of a conversation in <c>--json</c>, in order: <c>HELP_CONVERSATIONS</c>' row, field for field.</summary>
     public static IReadOnlyList<string> JsonFields { get; } =
-        ["session", "title", "name", "opening", "about", "created", "last", "pinned", "live", "resumable", "from", "handed", "found", "foundLine"];
+        ["session", "title", "name", "opening", "about", "created", "last", "pinned", "live", "mode", "resumable", "from", "handed", "found", "foundLine"];
 
     /// <summary>
     /// How much of a conversation's line the terminal's listing shows (ASKHIST1d). The terminal shows it raw, so it cuts it to a
@@ -123,7 +123,10 @@ public static class HelpCommand
     /// <c>help mode [restricted|full]</c> (HELPMODE1a1, D183 points 1-2): which access mode Ask Daoris runs in, or the person's choice
     /// of one, written to the driver's file at <paramref name="configPath"/> and taken at its next start. Asks no service.
     /// </summary>
-    /// <remarks>A conversation already open keeps the mode it started in; a switch mid-conversation is HELPMODE1a2's.</remarks>
+    /// <remarks>
+    /// A conversation already open keeps the mode it started in until its next start (HELPMODE1a2): words to it once it ended resume it
+    /// under the mode chosen then, and its record and transcript say the change.
+    /// </remarks>
     /// <exception cref="DriverConfigUnreadableException">The file does not read, so nothing was written.</exception>
     public static int Mode(HelpVerbAsk ask, string configPath, TextWriter output)
     {
@@ -296,6 +299,8 @@ public static class HelpCommand
             if (row.Pinned is not null) marks.Add("pinned");
             if (row.Live) marks.Add("running");
             else if (!row.Resumable) marks.Add("starts anew");
+            // The mode it ran under (HELPMODE1a2): full access marked, restricted, the default, not.
+            if (row.Mode == HelpModes.Full) marks.Add("full access");
             if (row.From is { } from) marks.Add($"from {from}");
             text.Append(row.Session).Append("  ").Append(Ago(row.Last, now)).Append("  ").Append(row.Title);
             if (marks.Count > 0) text.Append("  · ").Append(string.Join(" · ", marks));
@@ -355,6 +360,7 @@ public static class HelpCommand
                 writer.WriteString("last", Moments.Write(row.Last));
                 Text(writer, "pinned", Moments.Write(row.Pinned));
                 writer.WriteBoolean("live", row.Live);
+                writer.WriteString("mode", row.Mode);
                 writer.WriteBoolean("resumable", row.Resumable);
                 Text(writer, "from", row.From);
                 Text(writer, "handed", row.Handed);

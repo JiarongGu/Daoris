@@ -26,8 +26,11 @@ public sealed class HelpPlaceWorkspaceTests : IDisposable
     /// <summary>A file that is there, so the agent is present by a look and nothing runs (AccountRotationTests' way).</summary>
     private string Command => Path.Combine(_home, "door-here");
 
-    /// <summary>A conversation's door with accounts, present by a look: nothing is probed or spawned.</summary>
-    private sealed class Door(HarnessToolchain toolchain) : ISessionAdapter
+    /// <summary>
+    /// A conversation's door with accounts, present by a look: nothing is probed or spawned. <paramref name="full"/> is its mode that
+    /// asks nothing (HELPMODE1a1), none by default.
+    /// </summary>
+    private sealed class Door(HarnessToolchain toolchain, string? full = null) : ISessionAdapter
     {
         public string Name => "door";
 
@@ -37,6 +40,8 @@ public sealed class HelpPlaceWorkspaceTests : IDisposable
 
         public HarnessToolchain? Toolchain => toolchain;
 
+        public string? FullPosture => full;
+
         public ProcessStartInfo Prepare(SessionTarget target, IReadOnlyList<string>? command) =>
             throw new InvalidOperationException("a placing test spawns nothing");
 
@@ -44,12 +49,13 @@ public sealed class HelpPlaceWorkspaceTests : IDisposable
             throw new InvalidOperationException("a placing test spawns nothing");
     }
 
-    private ChatRunner Runner(ChatLedger ledger)
+    private ChatRunner Runner(ChatLedger ledger, string? full = null)
     {
         var adapters = new AdapterSet(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
         {
-            ["door"] = new Door(new HarnessToolchain(
-                Binary: [Command], VersionArguments: ["--version"], ProfileVariable: "DOOR_HOME", ProbeByPresence: true)),
+            ["door"] = new Door(
+                new HarnessToolchain(Binary: [Command], VersionArguments: ["--version"], ProfileVariable: "DOOR_HOME", ProbeByPresence: true),
+                full),
         });
         var settings = DaorisHome.Entry(_home, HomeEntry.Harnesses);
         foreach (var account in new[] { "home", "office" }) Directory.CreateDirectory(HarnessSettings.ProfileHome(_home, "door", account));
@@ -144,6 +150,54 @@ public sealed class HelpPlaceWorkspaceTests : IDisposable
         Assert.Null(refused.SessionId);
         Assert.Contains("`door`", refused.Message);
         Assert.Equal("failed", ledger.Record(full.SessionId!)["state"]!.GetValue<string>());
+    }
+
+    /// <summary>
+    /// HELPMODE1a2 (D183 point 3): the ledger's open is told the mode the start got, the effective one, which its record keeps; a start
+    /// in the default mode tells it restricted.
+    /// </summary>
+    [Fact]
+    public async Task The_open_is_told_the_mode_its_start_got()
+    {
+        var ledger = new ChatLedger();
+        var runner = Runner(ledger, full: "bypassPermissions");
+
+        var full = await runner.PlaceHelpAsync("door", Config.WithHelpMode(HelpModes.Full), "alpha");
+        var restricted = await runner.PlaceHelpAsync("door", Config, "beta");
+
+        Assert.Equal([HelpModes.Full, HelpModes.Restricted], ledger.HelpModesAsked);
+        Assert.Equal(HelpModes.Full, ledger.Record(full.SessionId!)["helpMode"]!.GetValue<string>());
+        Assert.Equal(HelpModes.Restricted, (await ledger.Client().RecordAsync(restricted.SessionId!))!.HelpMode);
+    }
+
+    /// <summary>
+    /// 🔴 HELPMODE1a2 (D183 point 3): a conversation going on after the person's mode changed runs under the new one, and its record is
+    /// told so before anything is spawned; one going on under the mode it last ran under tells the record nothing.
+    /// </summary>
+    [Fact]
+    public async Task A_conversation_going_on_after_the_mode_changed_records_the_new_one()
+    {
+        var ledger = new ChatLedger();
+        var runner = Runner(ledger, full: "bypassPermissions");
+        var placed = await runner.PlaceHelpAsync("door", Config, "alpha");
+        var id = placed.SessionId!;
+        var full = Config.WithHelpMode(HelpModes.Full);
+        var ask = new ResumeAsk("conv-1", [], "— your words are the next turn of its own conversation.");
+        async Task<ChatStart> GoOnAsync() => await runner.RunAsync(
+            id, "goes on", placed.Adapter!, placed.Selection!, full, runner.HelpPlace(HelpRoom.PathOf(_home, "alpha"), [], "alpha"),
+            null, CancellationToken.None, new GoingOn((await ledger.Client().RecordAsync(id))!, ask));
+
+        var went = await GoOnAsync();
+
+        Assert.Equal([(id, HelpModes.Full)], ledger.HelpModesKept);
+        Assert.Equal(HelpModes.Full, (await ledger.Client().RecordAsync(id))!.HelpMode);
+        // The door spawns nothing, so it ends at its spawn, under the mode its record now says.
+        Assert.Equal("a placing test spawns nothing", went.Message);
+
+        ledger.Edit(id, record => record["state"] = "working");
+        await GoOnAsync();
+
+        Assert.Single(ledger.HelpModesKept);
     }
 
     /// <summary>

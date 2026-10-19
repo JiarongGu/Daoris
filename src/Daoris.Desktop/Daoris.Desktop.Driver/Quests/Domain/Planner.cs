@@ -252,6 +252,12 @@ public sealed record PriorSession(
     /// <summary>The adapter its record opened on (ANSWER1a, D131 §1): an answer resumes its conversation only on the same one.</summary>
     public string? Adapter { get; init; }
 
+    /// <summary>
+    /// The access mode an Ask Daoris record last ran under (HELPMODE1a2, D183 point 3), as the service answers it on loopback; null for
+    /// every other record and from a host before the field, which <see cref="HelpModes.Recorded"/> reads as restricted.
+    /// </summary>
+    public string? HelpMode { get; init; }
+
     /// <summary>The harness version its record opened on: a resumed run says so where the version moved since (D131 §1).</summary>
     public string? HarnessVersion { get; init; }
 
