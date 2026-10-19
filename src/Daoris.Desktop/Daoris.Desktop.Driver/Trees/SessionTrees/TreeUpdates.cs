@@ -210,11 +210,12 @@ internal sealed class TreeUpdates(
     /// the line's sync is not asked. With no commit (a host before it), or one this repository does not hold, only the line's sync
     /// runs, said once in the session's instruction. Before the start's own hold, as <see cref="StartInSyncAsync"/> is.</para>
     /// </remarks>
-    internal async Task<TreeStartSync> GoOnInSyncAsync(string tree, string source, string? commit, CancellationToken ct = default)
+    internal async Task<TreeStartSync> GoOnInSyncAsync(
+        string tree, string source, string? commit, CancellationToken ct = default, bool broughtForward = false)
     {
         var onto = commit is null
-            ? new SubmissionOnto(null, TreeStartWords.NoSubmissionCommit(source), Stops: false)
-            : await OntoSubmissionAsync(tree, source, commit, ct).ConfigureAwait(false);
+            ? new SubmissionOnto(null, TreeStartWords.NoSubmissionCommit(source, broughtForward), Stops: false)
+            : await OntoSubmissionAsync(tree, source, commit, broughtForward, ct).ConfigureAwait(false);
         if (onto.Stops) return new(null, onto.Told);
 
         var line = await StartInSyncAsync(tree, ct).ConfigureAwait(false);
@@ -226,7 +227,7 @@ internal sealed class TreeUpdates(
     /// The step's tree replayed onto <paramref name="commit"/> (FABRIC-CLOSE1c5), by <see cref="GoOnInSyncAsync"/>'s rules: what moved and
     /// what the session is told, or why it was left and that nothing else may change.
     /// </summary>
-    private async Task<SubmissionOnto> OntoSubmissionAsync(string tree, string source, string commit, CancellationToken ct)
+    private async Task<SubmissionOnto> OntoSubmissionAsync(string tree, string source, string commit, bool broughtForward, CancellationToken ct)
     {
         var named = TextBounds.ShortCommit(commit, 8);
         SubmissionOnto Left(string why, bool conflict = false) =>
@@ -249,7 +250,7 @@ internal sealed class TreeUpdates(
         // A commit this repository does not hold is no reason to leave the tree: the line is still synced, and that said.
         if (await CommitOfAsync(root, commit, ct).ConfigureAwait(false) is not { } onto)
         {
-            return new(null, TreeStartWords.SubmissionNotHere(source, named), Stops: false);
+            return new(null, TreeStartWords.SubmissionNotHere(source, named, broughtForward), Stops: false);
         }
 
         if (await CommitOfAsync(full, "HEAD", ct).ConfigureAwait(false) is not { } head) return Left("the tree has no commit");

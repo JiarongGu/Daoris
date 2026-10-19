@@ -62,16 +62,20 @@ internal sealed class StandInLedger : HttpMessageHandler
     /// The person brings this machine's lost take forward now (SYNCMERGE1a): its fresh take, made after every record so far, stands as
     /// <paramref name="standing"/>, and so does the claim, unless it lost again.
     /// </summary>
-    public ForwardTake BringForward(string standing = "held")
+    public ForwardTake BringForward(string standing = "held", string holder = "desk")
     {
         lock (_gate)
         {
             _clock = _clock.AddSeconds(1);
             _claimForward = new ForwardTake("desk", 7, _clock, standing);
             _claim = standing;
+            // The quest list names the holder beside this machine's id (SYNCMERGE1b1), as the press settles it: here is "desk" always.
+            _holder = holder;
             return _claimForward;
         }
     }
+
+    private string? _holder;
 
     /// <summary>While true the quest list does not answer, as a service that went away does.</summary>
     public bool Down { get; set; }
@@ -603,7 +607,12 @@ internal sealed class StandInLedger : HttpMessageHandler
                 case ("GET", "/api/quests"):
                     return Answer(HttpStatusCode.OK, new JsonArray([.. _quests
                         .Where(q => all || q["status"]!.GetValue<string>() is "Open" or "Taken")
-                        .Select(q => q.DeepClone())]));
+                        .Select(q =>
+                        {
+                            var row = q.DeepClone();
+                            if (_holder is not null) { row["holder"] = _holder; row["here"] = "desk"; }
+                            return row;
+                        })]));
 
                 case ("GET", "/api/registry"):
                     return Answer(HttpStatusCode.OK, new JsonArray([.. _registry.Select(r => r.DeepClone())]));

@@ -126,6 +126,51 @@ public sealed class BroughtForwardLookTests : IDisposable
         Assert.DoesNotContain("double someone else's", held + unconfirmed);
     }
 
+    /// <summary>
+    /// SYNCMERGE1b1: a look asks the claim of a stood-down quest only where this machine holds it, as the quest list's holder and here agree:
+    /// one another machine holds is asked nothing, every look.
+    /// </summary>
+    [Theory]
+    [InlineData("desk", 1)]
+    [InlineData("another", 0)]
+    public async Task A_stood_down_quests_claim_is_asked_only_where_this_machine_holds_it(string holder, int asked)
+    {
+        using var sync = new RemoteSyncSet([]);
+        _ledger.Publish("q1", "engine");
+        var (driver, _) = Driver(sync);
+        await driver.TickAsync(_closing.Token).WaitAsync(Bound);
+        _ledger.Claim = "lost";
+        await driver.TickAsync(_closing.Token).WaitAsync(Bound);
+        await Poll.Until(() => State("s1") == "stood-down", () => $"s1 is {State("s1")}", Bound);
+        _ledger.BringForward(holder: holder);
+        var before = _ledger.ClaimsAsked("q1");
+
+        using var client = _ledger.Client();
+        await client.SnapshotAsync(_closing.Token).WaitAsync(Bound);
+
+        Assert.Equal(asked, _ledger.ClaimsAsked("q1") - before);
+    }
+
+    /// <summary>
+    /// SYNCMERGE1b2: a brought-forward step's tree that cannot be told to hold a moved source (no commit named, or one not held here) is
+    /// never said to be brought up to date with its "new submission": the source may never have moved, so only the line is said (D178's
+    /// rejected wording: a branch said brought up to date where only the line was, kept: the words say which).
+    /// </summary>
+    [Fact]
+    public void A_brought_forward_trees_words_claim_no_new_submission_where_the_source_may_never_have_moved()
+    {
+        var unnamed = TreeStartWords.NoSubmissionCommit("#q1", broughtForward: true);
+        var missing = TreeStartWords.SubmissionNotHere("#q1", "01234567", broughtForward: true);
+
+        Assert.DoesNotContain("new submission", unnamed + missing);
+        Assert.Contains("only the line was brought up to date", unnamed);
+        Assert.Contains("only the line was brought up to date", missing);
+        Assert.DoesNotContain("the branch was brought up to date", unnamed + missing);
+        // A go-on's source did move, and its words are as they were.
+        Assert.Contains("`#q1`'s new submission", TreeStartWords.NoSubmissionCommit("#q1"));
+        Assert.Contains("`#q1`'s new submission", TreeStartWords.SubmissionNotHere("#q1", "01234567"));
+    }
+
     private string State(string session) => _ledger.Session(session)["state"]!.GetValue<string>();
 
     private (Daoris.Driver.Driver Driver, StandInRuns Runs) Driver(RemoteSyncSet sync)
