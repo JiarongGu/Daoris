@@ -17,7 +17,8 @@ vi.mock('@shenora/react', () => ({
 import { sentence } from '../locales/format';
 import i18n from '../locales/i18n';
 import {
-  useArchiveSessions, useDeleteSession, useGoOnNew, useOpenSessionFolder, useSessionGroups, type SessionGrouping,
+  PERMISSION_WAITS_KEY, permissionsAgainIn, useAnswerPermission, useArchiveSessions, useDeleteSession, useGoOnNew, useOpenSessionFolder,
+  usePermissionWaits, useSessionGroups, type SessionGrouping,
 } from './sessions';
 
 const wrapper = (client: QueryClient) => ({ children }: { children: ReactNode }) => (
@@ -199,5 +200,74 @@ describe('the sessions domain', () => {
     expect(await result.current.mutateAsync('s1')).toEqual({ sent: true, why: null, message: 'it goes on in a new session' });
     invoke.mockImplementation(async () => null);
     expect(await result.current.mutateAsync('s1')).toEqual({ sent: false, why: null, message: '' });
+  });
+});
+
+/**
+ * AUTONOMY1b3c (D184's AUTONOMY1b3a note): what this machine's driven sessions hold for the person under asking, and the person's
+ * answer. Neither route publishes, so the waits are asked every few seconds while a session works or one is held, and an answer
+ * asks them again itself.
+ */
+describe('the permissions held for the person', () => {
+  afterEach(() => {
+    invoke.mockReset();
+  });
+
+  const held = {
+    session: 'd1', request: '900', call: 'tc-1', title: 'npm test', kind: 'execute', since: '2026-10-20T09:00:00Z',
+    choices: [{ id: 'yes', name: 'Allow', kind: 'allow_once' }, { id: 'no', name: 'Reject', kind: 'reject_once' }],
+  };
+
+  it('asks PERMISSION_WAITS of DAORIS.DRIVER, and reads its rows defensively', async () => {
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    invoke.mockImplementation(async () => ({
+      waits: [
+        held,
+        // A row naming no session or no request has nothing to answer, and a choice without its id nothing to send.
+        { ...held, session: '' }, { ...held, request: null }, null,
+        { session: 'd2', request: '7', since: '2026-10-20T09:01:00Z', choices: [{ id: 'x', name: 'Allow', kind: 'allow_once' }, { name: 'gone' }] },
+      ],
+    }));
+
+    const { result } = renderHook(() => usePermissionWaits(false), { wrapper: wrapper(client) });
+
+    await waitFor(() => expect(result.current.data).toEqual([
+      held,
+      { session: 'd2', request: '7', call: null, title: null, kind: null, since: '2026-10-20T09:01:00Z', choices: [{ id: 'x', name: 'Allow', kind: 'allow_once' }] },
+    ]));
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'PERMISSION_WAITS', {});
+  });
+
+  it('reads an answer without rows as none held', async () => {
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    invoke.mockImplementation(async () => ({}));
+    const { result } = renderHook(() => usePermissionWaits(false), { wrapper: wrapper(client) });
+    await waitFor(() => expect(result.current.data).toEqual([]));
+  });
+
+  it('is asked again every few seconds while a session works or one is held, and never otherwise', () => {
+    expect(permissionsAgainIn(true, 0)).toBeGreaterThan(0);
+    expect(permissionsAgainIn(false, 1)).toBeGreaterThan(0);
+    expect(permissionsAgainIn(true, 0)).toBeLessThanOrEqual(5_000);
+    expect(permissionsAgainIn(false, 0)).toBe(false);
+  });
+
+  it('answers on SESSION_PERMISSION_ANSWER with the chosen option, and asks the waits again itself', async () => {
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const invalidate = vi.spyOn(client, 'invalidateQueries');
+    invoke.mockImplementation(async () => ({ answered: true, why: null, message: 'Answered `Allow`.' }));
+    const { result } = renderHook(() => useAnswerPermission(), { wrapper: wrapper(client) });
+
+    expect(await result.current.mutateAsync({ session: 'd1', request: '900', option: 'yes' }))
+      .toEqual({ answered: true, why: null, message: 'Answered `Allow`.' });
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_PERMISSION_ANSWER', { payload: { session: 'd1', request: '900', option: 'yes' } });
+    await waitFor(() => expect(invalidate).toHaveBeenCalledWith({ queryKey: PERMISSION_WAITS_KEY }));
+
+    // A refusal is the answer, by its code; a shell older than the route answers nothing answered.
+    invoke.mockImplementation(async () => ({ answered: false, why: 'unheld', message: 'Nothing was answered.' }));
+    expect(await result.current.mutateAsync({ session: 'd1', request: '900', option: 'yes' }))
+      .toEqual({ answered: false, why: 'unheld', message: 'Nothing was answered.' });
+    invoke.mockImplementation(async () => null);
+    expect(await result.current.mutateAsync({ session: 'd1', request: '900', option: 'no' })).toEqual({ answered: false, why: null, message: '' });
   });
 });

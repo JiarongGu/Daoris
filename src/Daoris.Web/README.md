@@ -165,7 +165,10 @@ the kit's colour scheme (`useEngineTheme` in `bridge/windows.ts`, THEMESCHEME1),
 also tells its frame Overview's *What needs you* count (`useTaskbarCount` in `bridge/windows.ts`, `SET_BADGE`,
 NOTIFY1b), which the frame wears on its taskbar button and in its title; a secondary window's page never does. That
 count includes a plugin step's attempt held for the person, which `WORK_STATE` lists as `held` and its row settles with
-their word (`useResolveHeld` in `bridge/lines.ts`, `WORK_HELD`, FABRIC-PERFORM1g).
+their word (`useResolveHeld` in `bridge/lines.ts`, `WORK_HELD`, FABRIC-PERFORM1g), and a tool call a session holds for
+their answer under asking (`usePermissionWaits` in `bridge/sessions.ts`, `PERMISSION_WAITS`, AUTONOMY1b3c), answered
+with a choice its agent offered on the session's head and foot and on its row (`useAnswerPermission`,
+`SESSION_PERMISSION_ANSWER`); neither route publishes, so the page asks again itself (D184's AUTONOMY1b3c note).
 
 The build outputs into `../Daoris.Service/Daoris.Service.Http/wwwroot`, so the page and the API share one
 origin. That is what makes CORS unnecessary in a real deployment — the `DAORIS_WEB_ORIGIN` variable

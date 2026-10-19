@@ -7,6 +7,7 @@ import type { SessionEvent } from '../work/conversation';
 import type { SessionEntry } from '../work/entries';
 import type { SessionGroupName, SessionGrouping } from '../work/groups';
 import type { HelperAskRow, HelperWait } from '../work/HelperAsks';
+import type { PermissionAnswered, PermissionChoice, PermissionWait } from '../work/PermissionAsks';
 import type { NewSessionAnswer } from '../work/say';
 import type { SessionWhere } from '../work/SessionRow';
 import { call } from './call';
@@ -447,6 +448,79 @@ export const useHelperWaits = () => {
         }));
     },
     enabled: isAvailable,
+  });
+};
+
+/**
+ * The held permissions' key (AUTONOMY1b3c): under the sessions', so a session's publication (a turn's cancel, a stop, a session's
+ * end, each a release) asks them again with the sessions.
+ */
+export const PERMISSION_WAITS_KEY = ['sessions', 'permissionWaits'] as const;
+
+/** How often the held permissions are asked while one may come or go: a person at the window answers within seconds. */
+const PERMISSIONS_EVERY = 4_000;
+
+/**
+ * When the held permissions are asked again (AUTONOMY1b3c): every few seconds while a session of this machine works, or while one is
+ * held, and never otherwise. Neither route publishes (`HeldPermissions` is in the driver's memory), and the pushed calls' wake comes
+ * as a call starts, before its agent asks permission for it, so it would read nothing held yet; while one is held, its release at
+ * the bound is seen. Once the call's waiting mark rides the calls slice (AUTONOMY1b3b), its wake is exact and this can go.
+ */
+export const permissionsAgainIn = (live: boolean, held: number): number | false => (live || held > 0 ? PERMISSIONS_EVERY : false);
+
+const readChoice = (value: unknown): PermissionChoice | null => {
+  if (!value || typeof value !== 'object') return null;
+  const choice = value as Record<string, unknown>;
+  const id = word(choice.id);
+  return id ? { id, name: typeof choice.name === 'string' ? choice.name : id, kind: typeof choice.kind === 'string' ? choice.kind : '' } : null;
+};
+
+/** The rows of `PERMISSION_WAITS`, read field by field: one naming no session or no request has nothing to answer, and is left out. */
+const readPermissionWaits = (rows: unknown): PermissionWait[] => {
+  if (!Array.isArray(rows)) return [];
+  return rows.filter((row): row is Record<string, unknown> => Boolean(row) && typeof row === 'object')
+    .filter((row) => word(row.session) !== null && word(row.request) !== null)
+    .map((row) => ({
+      session: row.session as string,
+      request: row.request as string,
+      call: word(row.call),
+      title: word(row.title),
+      kind: word(row.kind),
+      choices: Array.isArray(row.choices) ? row.choices.map(readChoice).filter((choice): choice is PermissionChoice => choice !== null) : [],
+      since: typeof row.since === 'string' ? row.since : '',
+    }));
+};
+
+/**
+ * What this machine's driven sessions hold for the person under their repository's asking permission prompts (AUTONOMY1b3a, D184
+ * point 3): each tool's request with its session, its title and kind as the agent wrote them, and what the person may choose, oldest
+ * first, off the driver's memory, so shell-only. `live`: a session of this machine works now, so one may be asked for at any moment.
+ */
+export const usePermissionWaits = (live: boolean) => {
+  const { isAvailable } = useShenora();
+  return useQuery({
+    queryKey: PERMISSION_WAITS_KEY,
+    queryFn: async () => readPermissionWaits((await call<{ waits?: unknown } | null>('PERMISSION_WAITS'))?.waits),
+    enabled: isAvailable,
+    refetchInterval: (query) => permissionsAgainIn(live, query.state.data?.length ?? 0),
+  });
+};
+
+/**
+ * The person's answer to a permission a session holds for them (AUTONOMY1b3a, D184 point 3): an option the agent offered, by its id,
+ * for this call alone; Daoris answers no allow by itself (D37, D52). A refusal is the answer, by its code (`unheld`, `unoffered`,
+ * `standing`). The route publishes nothing, so the waits are asked again here, and the card goes with the hold.
+ */
+export const useAnswerPermission = () => {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: async (answer: { session: string; request: string; option?: string | null }): Promise<PermissionAnswered> => {
+      const said = await call<{ answered?: unknown; why?: unknown; message?: unknown } | null>('SESSION_PERMISSION_ANSWER', {
+        session: answer.session, request: answer.request, ...(answer.option ? { option: answer.option } : {}),
+      });
+      return { answered: said?.answered === true, why: word(said?.why), message: typeof said?.message === 'string' ? said.message : '' };
+    },
+    onSettled: () => client.invalidateQueries({ queryKey: PERMISSION_WAITS_KEY }),
   });
 };
 

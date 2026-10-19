@@ -29,5 +29,17 @@
   "work.wait.raised": "由此等你处理：{{names}}",
   "work.wait.toWait": "到等待处：{{names}}",
   "work.wait.name.helper": "它请的助手",
-  "work.wait.helper.lead": "它想请另一个智能体帮忙。在你同意之前，不会去问。"
+  "work.wait.helper.lead": "它想请另一个智能体帮忙。在你同意之前，不会去问。",
+  "work.wait.name.permission": "待答复的工具调用",
+  "work.wait.permission.title": "扣住等你答复的工具调用",
+  "work.wait.permission.lead": "它的规则不会自行允许这些调用，所以每个都在等你答复。允许一个，只放行那一次调用。",
+  "work.wait.permission.kind": "`{{kind}}` 类工具调用",
+  "work.wait.permission.untitled": "无标题的工具调用",
+  "work.wait.permission.untitledKind": "无标题的 `{{kind}}` 工具调用",
+  "work.wait.permission.waited": "已等待 {{span}} · {{minutes}} 分钟内无人答复则拒绝",
+  "work.wait.permission.answered.allow": "已允许这一次：该调用继续。",
+  "work.wait.permission.answered.refuse": "已拒绝：智能体会得知，并在没有它的情况下继续。",
+  "work.wait.permission.refused.unheld": "它已不在等待：已先被答复或释放。未作答。",
+  "work.wait.permission.refused.unoffered": "智能体没有提供这个答复。未作答。",
+  "work.wait.permission.refused.standing": "这个答复会在会话剩余的时间里一直允许它，那是一条规则：请改为提议这条规则。未作答。"
 }

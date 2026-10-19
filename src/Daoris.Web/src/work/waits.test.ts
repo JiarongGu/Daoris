@@ -4,6 +4,7 @@ import type { RuleProposal } from '../settings/AgentRules';
 import type { SessionDiff } from './diff';
 import type { HelperAskRow } from './HelperAsks';
 import { GATES } from './opinionFixtures';
+import type { PermissionWait } from './PermissionAsks';
 import { conversationOffer, landingStands, rulesAsked, waitsOf } from './waits';
 
 // WAITFOOT1b (D168 point 2): which waits on the person stand, one rule the foot's strip and the head's work read, so the two
@@ -143,6 +144,28 @@ describe('the waits on the person', () => {
     const rules = { proposals: [proposal('r1', 'waiting')], onAnswer: press };
     expect(waitsOf({ session: session(), lands: LANDS, landing: PLAN, onLand: press, rules, helpers: { asks: [ask('a1')], onApprove: press } }))
       .toEqual([{ kind: 'rule', id: 'r1' }, { kind: 'helper', id: 'a1' }, { kind: 'accept' }]);
+  });
+
+  // AUTONOMY1b3c (D184 point 3): a tool call the session holds for the person's answer under asking is one of its waits, the first
+  // after a park's, since its turn stands still until they answer.
+  const held = (request: string, over: Partial<PermissionWait> = {}): PermissionWait => ({
+    session: 's1a2b3c4', request, call: null, title: 'npm test', kind: 'execute', since: '2026-10-20T09:00:00Z',
+    choices: [{ id: 'allow', name: 'Allow', kind: 'allow_once' }, { id: 'reject', name: 'Reject', kind: 'reject_once' }], ...over,
+  });
+
+  it('names each permission this session holds for the person, and none of another session', () => {
+    const waits = [held('7'), held('8', { session: 'o7h3r000' }), held('9')];
+    expect(waitsOf({ session: session({ state: 'working' }), permissions: { waits, onAnswer: press } }))
+      .toEqual([{ kind: 'permission', request: '7' }, { kind: 'permission', request: '9' }]);
+    // With no press to answer them (a browser, a teammate's record), none.
+    expect(waitsOf({ session: session({ state: 'working' }), permissions: { waits } })).toEqual([]);
+  });
+
+  it('stands before the rules and the helpers', () => {
+    const rules = { proposals: [proposal('r1', 'waiting')], onAnswer: press };
+    expect(waitsOf({
+      session: session({ state: 'working' }), rules, helpers: { asks: [ask('a1')], onApprove: press }, permissions: { waits: [held('7')], onAnswer: press },
+    })).toEqual([{ kind: 'permission', request: '7' }, { kind: 'rule', id: 'r1' }, { kind: 'helper', id: 'a1' }]);
   });
 });
 

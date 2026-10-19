@@ -44,10 +44,11 @@ public sealed class DrivenAccessTests : IDisposable
     [InlineData("claude-code", AccessRules.Asking, null, "default")]
     [InlineData("claude-code", AccessRules.Unrestricted, null, "bypassPermissions")]
     [InlineData("claude-code-acp", AccessRules.Auto, null, null)]
-    [InlineData("claude-code-acp", AccessRules.Asking, "!default", null)]
+    // AUTONOMY1b3a: the asking mode's posture is marked too, so the protocol door holds each request for the person.
+    [InlineData("claude-code-acp", AccessRules.Asking, "!?default", null)]
     [InlineData("claude-code-acp", AccessRules.Unrestricted, "!bypassPermissions", null)]
     [InlineData("codex-acp", AccessRules.Auto, null, null)]
-    [InlineData("codex-acp", AccessRules.Asking, "!read-only", null)]
+    [InlineData("codex-acp", AccessRules.Asking, "!?read-only", null)]
     [InlineData("codex-acp", AccessRules.Unrestricted, "!agent-full-access", null)]
     public void Each_harness_starts_in_the_mode_its_permission_prompts_name(string name, string permissions, string? posture, string? permissionMode)
     {
@@ -121,6 +122,29 @@ public sealed class DrivenAccessTests : IDisposable
         var auto = DrivenAccess.For(Permissions(AccessRules.Auto), "engine", Adapter("claude-code-acp")).Said;
         Assert.Contains("`auto` or `acceptEdits`", auto);
         Assert.DoesNotContain('\n', unrestricted + asking + codex + auto);
+    }
+
+    /// <summary>
+    /// AUTONOMY1b3a (D184 point 3): under asking, the protocol door holds each request for the person to allow once or refuse, and one
+    /// nobody answers is refused at its bound; the native door has no wire to hold one on, and says so plainly.
+    /// </summary>
+    [Fact]
+    public void Asking_says_the_protocol_door_holds_each_request_for_the_person_and_the_native_door_cannot()
+    {
+        var acp = DrivenAccess.For(Permissions(AccessRules.Asking), "engine", Adapter("claude-code-acp")).Said;
+        Assert.Contains("waits for the person", acp);
+        Assert.Contains($"{(int)HeldPermissions.Bound.TotalMinutes} minutes", acp);
+        Assert.DoesNotContain("refuses every", acp);
+
+        var codex = DrivenAccess.For(Permissions(AccessRules.Asking), "engine", Adapter("codex-acp")).Said;
+        Assert.Contains("waits for the person", codex);
+        Assert.Contains("takes no rules", codex);
+        Assert.DoesNotContain("refuses every", codex);
+
+        var native = DrivenAccess.For(Permissions(AccessRules.Asking), "engine", Adapter("claude-code")).Said;
+        Assert.Contains("cannot hold", native);
+        Assert.Contains("only what its rules allow", native);
+        Assert.DoesNotContain('\n', acp + codex + native);
     }
 
     /// <summary>
