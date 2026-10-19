@@ -58,6 +58,17 @@ function linkFacts(t: TFunction, session: Session, { continuesAgent, helping }: 
 }
 
 /**
+ * The call a working session is inside, with how long (WAITSAY1): one that waits on the person's answer to its permission request
+ * says so, timed from the hold (AUTONOMY1b3b), and one the agent named nothing for is a tool call.
+ */
+function callFact(t: TFunction, calling: { title: string; since: string; waiting?: boolean }): string {
+  if (!calling.waiting) return t('work.facts.calling', { title: calling.title, elapsed: elapsed(calling.since) });
+  return calling.title
+    ? t('work.facts.callWaits', { title: calling.title, elapsed: elapsed(calling.since) })
+    : t('work.facts.callWaitsUnnamed', { elapsed: elapsed(calling.since) });
+}
+
+/**
  * A session's facts line by its shown state (the UX7 design §5.2's table, as HEAD2c amends it): its repository first, then
  * its age and the one fact its state makes matter. A live session's age, and how many failed before it where its quest's
  * earlier sessions failed; what holds it, from the row's own line where the reader placed it (which names a cooling
@@ -97,8 +108,10 @@ export function sessionFacts(t: TFunction, of: SessionFactsOf): string[] {
     if (of.waitingSince && session.state === 'working') facts.push(t('work.facts.firstAnswer', { time: moment(of.waitingSince) }));
     // WAITSAY1: a call that runs for minutes is what the session waits on; said with how long, and only while it is working.
     // WAITSAY1b: the record read here first, which moves live; else the call the driver heard, which the row's reader carries.
-    const calling = of.calling ?? grouping?.calling;
-    if (calling && session.state === 'working') facts.push(t('work.facts.calling', { title: calling.title, elapsed: elapsed(calling.since) }));
+    // AUTONOMY1b3b: a call the driver marks held for the person's answer is said as one first, since the record shows no hold.
+    const heard = grouping?.calling;
+    const calling = heard?.waiting ? heard : of.calling ?? heard;
+    if (calling && session.state === 'working') facts.push(callFact(t, calling));
     return facts.filter((fact): fact is string => Boolean(fact));
   }
 

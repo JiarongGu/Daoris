@@ -1,4 +1,5 @@
 import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 import type { Quest, Session } from '../data/api';
 import { ago, elapsed, moment } from '../locales/format';
 import { Dot, Icon, Menu, SESSION_ACTIVE, SESSION_DOT, shownKey, StripMark } from '../design/ui';
@@ -8,6 +9,7 @@ import { actMenu, type SessionActId } from './acts';
 import { type SessionGrouping, shownOf } from './groups';
 import { isHelper, isIntake, isOpinion, ownTree, sessionOrigin, sessionTitle } from './identity';
 import { ListRowDoor } from './ListPane';
+import { PERMISSION_BOUND_MINUTES } from './PermissionAsks';
 import { movedAt } from './rail';
 import { useNow } from './useNow';
 
@@ -67,6 +69,18 @@ export type SessionWhere = {
   treeGone: boolean;
   landed?: { repository: string; branch: string; state: 'standing' | 'gone' } | null;
 };
+
+/**
+ * The call a working session is inside, with how long (WAITSAY1b): one whose permission request is held for the person says it
+ * waits for their answer, timed from the hold (AUTONOMY1b3b), so a glance at the rail finds the session that stands still on them;
+ * one the agent named nothing for is a tool call.
+ */
+function callLine(t: TFunction, calling: NonNullable<SessionGrouping['calling']>): string {
+  if (!calling.waiting) return t('work.rail.calling', { title: calling.title, elapsed: elapsed(calling.since) });
+  return calling.title
+    ? t('work.rail.callWaits', { title: calling.title, elapsed: elapsed(calling.since) })
+    : t('work.rail.callWaitsUnnamed', { elapsed: elapsed(calling.since) });
+}
 
 export function SessionRow({
   session, quest, opening, root, where, reads, continues, helps, taking, lastTurn, grouping, place, archived = false,
@@ -164,7 +178,7 @@ export function SessionRow({
     archived ? t('work.rail.archived') : null,
     parts && parts > 1 ? t('work.rail.parts', { count: parts }) : null,
     placed ? t(placed.line, placed.values) : null,
-    calling ? t('work.rail.calling', { title: calling.title, elapsed: elapsed(calling.since) }) : null,
+    calling ? callLine(t, calling) : null,
     // An intake is a chat only by the way it was opened (INT4b); it says what it is (INT4g). So is a second opinion's reviewer,
     // marked as one (XAGENT1g, the second-agent design §9).
     t(isIntake(session) ? 'work.intake.kind' : isOpinion(session) ? 'opinion.session.kind'
@@ -184,7 +198,7 @@ export function SessionRow({
   const tip = [
     archived ? t('work.rail.archivedTip') : null,
     placed ? t(placed.tip) : null,
-    calling ? t('work.rail.callingTip') : null,
+    calling ? t(calling.waiting ? 'work.rail.callWaitsTip' : 'work.rail.callingTip', { minutes: PERMISSION_BOUND_MINUTES }) : null,
     landed ? t(landed.state === 'gone' ? 'work.rail.landedGoneTip' : 'work.rail.landedTip') : null,
     tree ? t('work.rail.treeTip') : null,
     origin ? t('work.rail.onTip') : null,
