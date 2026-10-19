@@ -7,7 +7,9 @@ with the version and date at release.
 
 - Ask Daoris no longer sits silently while it starts on a busy machine. It waits up to 30 seconds to read this machine for its
   room; past that it starts on the room as last written and says so in the conversation, and the room is written again once the
-  reading finishes. On a machine where Ask Daoris never ran before, the start ends saying why instead of waiting.
+  reading finishes. On a machine where Ask Daoris never ran before, the start ends saying why instead of waiting. A
+  conversation left waiting to start by a Daoris that closed, which kept every new Ask Daoris conversation from opening, now
+  ends when you stop it.
 - A folder beside an agent's accounts whose name ends `.lock`, or starts with `.`, is no longer taken for an account: Claude Code
   makes such folders to lock an account's home, and two were listed, signed in to and run in. Nothing is deleted. Ask Daoris
   names each one, and says when one holds a sign-in: rename it to an account's name while nothing runs on it to keep it.
