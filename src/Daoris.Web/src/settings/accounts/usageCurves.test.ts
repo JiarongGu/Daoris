@@ -4,15 +4,14 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import i18n from '../../locales/i18n';
 import { sentence } from '../../locales/format';
 import { saidLine } from './accounts';
-import {
-  curveNow, curveProblem, curveSentence, type CurveScope, type CurvePoint, tightestSaid, wholePoints,
-} from './usageCurves';
+import { type CurvePoint, type CurveScope, ownPoints } from './usageCurves';
 
 /**
- * The usage curve on the page (SWITCH1d; D165 point 2; the switch design §2 and §5): how much of each window an account may have
- * used by now, which the Accounts screen draws each window against and the said line marks a window over. The page's half of a
- * TWIN with the driver's `UsageCurves` and the CLI's `usagecurves.ts`: 🔴 all three read the CLI's
- * `test/fixtures/usage-curves.json`, row for row.
+ * The usage curve on the page (SWITCH1d; D165 point 2; the switch design §2 and §5), since PUSH1e judged in .NET alone (D182 point
+ * 6): the driver's `UsageCurves` measures each window and the accounts' answer carries the verdicts, a window's curve now in whole
+ * points and whether it is over it, and each scope's accounts whose tightest window is over its curve. The page words them. 🔴 The
+ * CLI's `test/fixtures/usage-curves.json` holds the words: every `tightest` row's clause is the page's, given the verdict .NET
+ * pushes for that row (`DriverModuleAccountsTests.The_scopes_verdicts_are_the_shared_tables_rows` holds the verdicts to the rows).
  */
 
 type Switch = CurveScope['switch'];
@@ -23,43 +22,28 @@ type Tightest = { window: string; curve: number; room: number } | null;
 // From the page's package, where its suite runs, as `shellWord.test.ts` reads its table.
 const TABLE = JSON.parse(readFileSync(join(process.cwd(), '..', 'Daoris.Cli', 'test', 'fixtures', 'usage-curves.json'), 'utf8')) as {
   now: string;
-  value: [name: string, switched: Switch, curve: Curve | null, window: string, reset: string, value: number | null][];
   tightest: [name: string, switched: Switch, curve: Curve | null, said: Said[], tightest: Tightest, clause: string | null][];
 };
 const NOW = new Date(TABLE.now);
 
-const scope = (switched: Switch, curve: Curve | null): CurveScope => ({ switch: switched, curve: curve ?? {} });
-const sixPlaces = (value: number | null) => (value === null ? null : Math.round(value * 1e6) / 1e6);
+/** The verdict .NET pushes for a row: its tightest window over the curve, the curve's value a whole percent, a half away from zero. */
+const pushed = (tightest: Tightest) => (tightest === null || tightest.room >= 0 ? null : {
+  window: tightest.window, curve: Math.sign(tightest.curve) * Math.round(Math.abs(tightest.curve)),
+});
 
-describe('the usage curve, as the driver and the terminal measure it', () => {
+describe('the usage curve, as .NET judges it and the page words it (PUSH1e)', () => {
   it('reads the table at all: a table that holds nothing passes every row below', () => {
-    expect(TABLE.value.length).toBeGreaterThan(0);
     expect(TABLE.tightest.length).toBeGreaterThan(0);
   });
 
-  for (const [name, switched, curve, window, reset, expected] of TABLE.value) {
-    it(`now on a window: ${name}`, () => {
-      expect(sixPlaces(curveNow(scope(switched, curve), window, reset, NOW))).toBe(expected);
-    });
-  }
-
-  for (const [name, switched, curve, said, expected] of TABLE.tightest) {
-    it(`the tightest window said: ${name}`, () => {
-      const windows = said.map(([window, used, reset]) => ({ window, used, reset }));
-      const found = tightestSaid(scope(switched, curve), windows, NOW);
-      expect(found === null ? null : { window: found.window.window, curve: sixPlaces(found.curve), room: sixPlaces(found.room) })
-        .toEqual(expected);
-    });
-  }
-
   /**
-   * SWITCH1d: the page's said line marks a window over its curve with the curve's value now, as the terminal's `saidLine` and
-   * the start's line do, each row's clause in the page's words, which name the session window *five-hour*.
+   * SWITCH1d: the page's said line marks a window over its curve with the curve's value now, as the terminal's `saidLine` and the
+   * start's line do, each row's clause in the page's words, which name the session window *five-hour*.
    */
-  for (const [name, switched, curve, said, , clause] of TABLE.tightest) {
+  for (const [name, , , said, tightest, clause] of TABLE.tightest) {
     it(`the said line: ${name}`, () => {
       const windows = said.map(([window, used, reset]) => ({ window, used, reset, credits: false, seen: NOW.toISOString() }));
-      const line = saidLine({ seen: NOW.toISOString(), windows }, { use: scope(switched, curve), now: NOW });
+      const line = saidLine({ seen: NOW.toISOString(), windows }, { over: pushed(tightest) });
       if (clause === null) expect(line).not.toMatch(/over its/);
       else expect(line.endsWith(`; ${clause.replace('its session curve', 'its five-hour curve')}`)).toBe(true);
     });
@@ -71,43 +55,53 @@ describe('the usage curve, as the driver and the terminal measure it', () => {
     expect(saidLine(read)).toMatch(/^read .+: 20% of its five-hour limit used/);
   });
 
-  it('says a number of points as a whole number, a half away from zero', () => {
-    expect([wholePoints(0.5), wholePoints(-0.5), wholePoints(62.4)]).toEqual([1, -1, 62]);
-  });
-
-  it('reads a scope from a shell older than the switch as the smart curve', () => {
-    expect(curveNow({}, 'session', '2026-10-13T13:00:00Z', NOW)).toBe(90);
+  it('reads the person’s own points of a window, and none where they set none', () => {
+    expect(ownPoints({ switch: 'curve', curve: { session: [[0, 80]] } }, 'session')).toEqual([[0, 80]]);
+    expect(ownPoints({ switch: 'smart', curve: { session: [[0, 80]] } }, 'weekly')).toBeNull();
+    expect(ownPoints({}, 'constructor')).toBeNull();
   });
 });
 
 /**
- * A curve's rules on the page (SWITCH1d; the switch design §2): the point editor says what is wrong before it saves, in the
- * sentence the modules' `ACCOUNT_USE_CURVE` refusal is said in, its rule the catalogue's form. 🔴 The page's half of the twin the
- * CLI's `curveProblem` and the driver's `UseCurve.ProblemOf` keep: every `refusal` row of the CLI's `rotation-use.json` is found
- * by the page's rule and said in English word for word, so the catalogue cannot drift from the terminal's sentence.
+ * A curve's rules, said by the door (SWITCH1d; the switch design §2; PUSH1e): the point editor saves, and a curve that breaks a rule
+ * is refused by the modules' `ACCOUNT_USE_CURVE`, its rule the catalogue's form and its values the window, the point and the numbers.
+ * 🔴 The page's half of the refusal's words: each rule's values as the door sends them (the same rows as the modules'
+ * `A_curve_that_breaks_a_rule_is_refused_in_its_code_naming_the_rule`) say, in English, the sentence of the CLI's `rotation-use.json`
+ * `refusal` row for that curve, word for word, so the catalogue cannot drift from the terminal's sentence.
  */
-describe('a curve’s rules, as both doors refuse them', () => {
+describe('a curve’s rules, as the door refuses them', () => {
   type Row = [why: string, curve: string, refused: string | null];
   const ROWS = (JSON.parse(readFileSync(join(process.cwd(), '..', 'Daoris.Cli', 'test', 'fixtures', 'rotation-use.json'), 'utf8')) as {
     refusal: Row[];
   }).refusal;
+  const refusalOf = (curve: unknown) => ROWS.find(([, written]) => JSON.stringify(JSON.parse(written)) === JSON.stringify(curve))?.[2];
+
+  /** Each rule's curve and the values the door refuses it with, as the modules' theory holds them. */
+  const DOOR: [curve: unknown, values: Record<string, string>][] = [
+    [{ weekly: [[0, 30], [50, 70], [100, 60]] }, { context: 'falling', window: 'weekly', point: '3', previous: '2', value: '60', before: '70' }],
+    [{ weekly: [[50, 30], [40, 70]] }, { context: 'rising', window: 'weekly', point: '2', previous: '1', value: '40', before: '50' }],
+    [{ monthly: [[0, 50]] }, { context: 'window', window: 'monthly' }],
+    [{ weekly: '0:30' }, { context: 'list', window: 'weekly' }],
+    [{ weekly: [] }, { context: 'count', window: 'weekly', size: '0' }],
+    [{ weekly: [[0]] }, { context: 'point', window: 'weekly', point: '1', previous: '0' }],
+    [{ session: [[-5, 90]] }, { context: 'elapsed', window: 'session', point: '1', previous: '0', value: '-5' }],
+    [{ session: [[0, 101]] }, { context: 'used', window: 'session', point: '1', previous: '0', value: '101' }],
+    [[[0, 30]], { context: 'shape' }],
+  ];
 
   beforeEach(() => i18n.changeLanguage('en'));
 
-  it('reads the table at all', () => {
-    expect(ROWS.length).toBeGreaterThan(0);
-  });
-
-  for (const [why, curve, refused] of ROWS) {
-    it(`${why}: said as the terminal says it`, () => {
-      const problem = curveProblem(JSON.parse(curve));
-      expect(problem === null ? null : curveSentence(problem)).toBe(refused);
+  for (const [curve, values] of DOOR) {
+    it(`${values.context}: said as the terminal says it`, () => {
+      const refused = refusalOf(curve);
+      expect(refused).toBeTruthy();
+      expect(sentence({ code: 'ACCOUNT_USE_CURVE', parameters: { ...values, said: refused! } })).toBe(refused);
     });
   }
 
   it('says it in 中文, with the window and the numbers', async () => {
     await i18n.changeLanguage('zh');
-    expect(curveSentence(curveProblem({ weekly: [[0, 30], [50, 70], [100, 60]] })!))
+    expect(sentence({ code: 'ACCOUNT_USE_CURVE', parameters: DOOR[0]![1] }))
       .toBe('`weekly` 的第 3 个点已用 60%，少于第 2 个点的 70%——已用量不会下降。');
   });
 

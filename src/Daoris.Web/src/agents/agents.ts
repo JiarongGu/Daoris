@@ -6,7 +6,6 @@ import {
   coolingLine, heldLine, machineScope, nextLine, nextWhy, offeredLine, orderedWindows, percent, type WindowSaid, windowName,
   workspaceScope,
 } from '../settings/accounts/accounts';
-import { curveNow, type CurveScope, wholePoints } from '../settings/accounts/usageCurves';
 import type { AgentRulesState } from '../settings/repository/AgentRules';
 import { OPEN_STATES } from '../settings/repository/proposals';
 
@@ -170,9 +169,9 @@ export type WindowCell = {
   /** What a person acts on, in the ink: its share, its agent's own word, that it draws on credits; or *unknown*. */
   reading: string;
   /**
-   * Its share against its scope's curve now (SWITCH1d; the switch design §5): *its curve allows 45% now*, or *over its curve's
-   * 45% now*. Absent where no scope was handed (your own sign-in, which no list holds), where its agent gave no share, and on a
-   * window this build has no curve for.
+   * Its share against its scope's curve now (SWITCH1d; the switch design §5), as .NET judged it (PUSH1e): *its curve allows 45%
+   * now*, or *over its curve's 45% now*. Absent where it was not measured (your own sign-in, which no list holds, a window its agent
+   * gave no share of, one this build has no curve for, a shell older than PUSH1e).
    */
   curve?: string;
   /**
@@ -193,8 +192,8 @@ export type WindowCell = {
 /** What an account's agent last said, as its row draws it: a cell a window, and what is the account's and no window's. */
 export type AccountUsage = { cells: WindowCell[]; notes: string[] };
 
-/** A window as its agent last said it, as its cell says it: against its scope's curve where one is handed (SWITCH1d). */
-function windowCell(said: WindowSaid, now: Date, use?: CurveScope, product?: string): WindowCell {
+/** A window as its agent last said it, as its cell says it: against its scope's curve where .NET measured it (SWITCH1d, PUSH1e). */
+function windowCell(said: WindowSaid, now: Date, product?: string): WindowCell {
   const used = typeof said.used === 'number' ? said.used : null;
   // Claude Code's pace warning (`warned`) in its own words, *ahead of its pace*: near is the scope's, never this (USAGEREAD3b).
   const word = said.standing === 'refused' ? 'agents.window.reached' : said.standing === 'warned' ? 'agents.window.warned' : null;
@@ -205,12 +204,11 @@ function windowCell(said: WindowSaid, now: Date, use?: CurveScope, product?: str
   ];
   // A window with no share and no word of trouble is one its agent said was clear (the driver keeps none with neither).
   if (readings.length === 0) readings.push(i18n.t('harness.said.clear'));
-  // Its share against the curve now, the curve's value a whole percent as the terminal says it; over it is room below zero,
-  // so a share exactly on its curve is not over it (the twins' rule 5).
-  const curve = use && used !== null ? curveNow(use, said.window, said.reset, now) : null;
-  const against = curve === null ? {} : {
-    curve: i18n.t(curve - used! * 100 < 0 ? 'agents.window.overCurve' : 'agents.window.curve', { curve: `${wholePoints(curve)}%` }),
-    over: curve - used! * 100 < 0,
+  // Its share against the curve now, as .NET judged it beside the reading (PUSH1e): the curve's value a whole percent as the
+  // terminal says it, and over it where its room is below zero, so a share exactly on its curve is not over it.
+  const against = typeof said.curve !== 'number' || used === null ? {} : {
+    curve: i18n.t(said.over ? 'agents.window.overCurve' : 'agents.window.curve', { curve: `${said.curve}%` }),
+    over: said.over === true,
   };
   // Where its reading came from (USAGEREAD2a): read from its agent, asked with no prompt, or said by a session's frame.
   const age = said.source !== 'read'
@@ -244,11 +242,9 @@ function windowCell(said: WindowSaid, now: Date, use?: CurveScope, product?: str
  */
 export function usageCells(
   facts: Pick<AccountFacts, 'said' | 'offered'> | null | undefined, state: AccountState,
-  { fixed = false, now = new Date(), use, product }: {
+  { fixed = false, now = new Date(), product }: {
     fixed?: boolean;
     now?: Date;
-    /** The scope's switch and curve its windows are measured against (SWITCH1d); none measures none. */
-    use?: CurveScope;
     /** What a person calls the agent, for a reading read from it: *read from Claude Code 2 min ago*. */
     product?: string;
   } = {},
@@ -260,11 +256,11 @@ export function usageCells(
       ...FIXED_WINDOWS.map((window) => {
         const said = named(window);
         return said
-          ? windowCell(said, now, use, product)
+          ? windowCell(said, now, product)
           : { window, name: windowName(window), known: false, used: null, warned: false, reading: i18n.t('agents.window.unknown'), times: [] };
       }),
       ...orderedWindows(windows.filter((each) => !(FIXED_WINDOWS as readonly string[]).includes(each.window.toLowerCase())))
-        .map((each) => windowCell(each, now, use, product)),
+        .map((each) => windowCell(each, now, product)),
     ]
     : [];
   const resetSaid = cells.some((cell) => cell.known);

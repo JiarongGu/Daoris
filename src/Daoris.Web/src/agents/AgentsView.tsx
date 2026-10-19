@@ -262,7 +262,11 @@ function AgentsMain({ tool, adapter, notify, part, onAnchored, onOpenPlugin, say
 
   const scope: ScopeActs = {
     onOrder: (workspace, list) => accountUse.mutate({ harness: door, action: 'order', accounts: list, ...(workspace ? { workspace } : {}) }, { onError }),
-    onUse: (workspace, change) => accountUse.mutate({ harness: door, action: 'use', ...(workspace ? { workspace } : {}), ...change }, { onError }),
+    // A refusal the press's own place says (the curve's editor, PUSH1e) is told there, in the reader's language, and toasted nowhere.
+    onUse: (workspace, change, refused) => accountUse.mutate(
+      { harness: door, action: 'use', ...(workspace ? { workspace } : {}), ...change },
+      { onError: refused ? (error: unknown) => refused(sentence(error)) : onError },
+    ),
     onInherit: (workspace, answered) => told(accountUse.mutateAsync({ harness: door, action: 'inherit', workspace }), answered),
   };
   const where = (scopeName: string, name: string | undefined) => scopeName === 'machine'

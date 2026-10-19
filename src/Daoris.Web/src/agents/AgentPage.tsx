@@ -8,7 +8,7 @@ import {
 import { type Answered, InlineConfirm, Refused } from '../work/InlineConfirm';
 import { PageHead, ViewMain } from '../work/frame/ViewMain';
 import {
-  type AccountScope, type AgentAccounts, cannotLeave, machineScope, ownLine, useOf, workspaceScope,
+  type AccountScope, type AgentAccounts, cannotLeave, machineScope, ownLine, workspaceScope,
 } from '../settings/accounts/accounts';
 import { AccountSettingsForm, AccountSettingsSummary } from '../settings/accounts/AccountSettings';
 import { type AccountChoice, type ScopeActs, ScopeEditor, WorkspaceScope } from '../settings/accounts/AccountUse';
@@ -487,10 +487,9 @@ export function AgentPage({
     // end, so each reset the agent reported is said in its window's cell, and one Daoris chose the length of says the reset is
     // unknown (ACCTUX1). The session's and the week's cells are on every sign-in whose agent speaks, unknown until read
     // (ACCTUX4); a key's are drawn only where it said something, since a key has no window its agent was heard to keep.
-    // Each window against the curve of the list it is measured by, and where its reading came from (SWITCH1d).
-    const usage = usageCells(facts, state, {
-      fixed: Boolean(use?.speaks) && !account.key, now, use: use ? useOf(use, account.name) : undefined, product,
-    });
+    // Each window against the curve of the list it is measured by, as .NET judged it beside the reading (PUSH1e), and where its
+    // reading came from (SWITCH1d).
+    const usage = usageCells(facts, state, { fixed: Boolean(use?.speaks) && !account.key, now, product });
     return (
       <AccountRow
         key={account.home}

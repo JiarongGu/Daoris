@@ -1,5 +1,7 @@
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using Daoris.Driver;
+using Shenora.Core.Ipc;
 
 namespace Daoris.Desktop.Modules.Tests;
 
@@ -200,6 +202,180 @@ public sealed class DriverModuleAccountsTests : DriverModuleBridge
         Assert.Equal(JsonValueKind.Null, Account(codex, "account-1").GetProperty("said").ValueKind);
         // Near reads a list's accounts alone: 95% on the own sign-in is near nothing, since no list holds it.
         Assert.Empty(Scope(codex, null).GetProperty("near").EnumerateArray());
+    }
+
+    // ---------------------------------------------------------------- the verdicts .NET judges for the page (PUSH1e)
+
+    /// <summary>
+    /// PUSH1e (D182 point 6): each reading's window answers when it began, the curve's value on it now as a whole percent and whether
+    /// it is over that, measured by the curve of the scope its row is measured by: this machine's where its list holds the account
+    /// or no workspace's own list does, else the first workspace's whose own list holds it. The page words these and computes none.
+    /// </summary>
+    [Fact]
+    public async Task Each_window_answers_its_start_its_curve_now_and_whether_it_is_over_by_its_rows_scope()
+    {
+        Accounts("claude-code", "account-1", "account-2", "account-3");
+        Wiring("""
+            {
+              "rotation": { "claude-code": ["account-1"] },
+              "workspaceRotation": { "own": { "claude-code": ["account-2"] } },
+              "workspaceRotationUse": { "own": { "claude-code": { "switch": "curve", "curve": { "session": [[0, 80]] } } } }
+            }
+            """);
+        var week = Now.AddDays(4);
+        AccountWindows.Said(Home, "claude-code", "account-1", [new WindowReading("weekly", 0.70, week)], Now, "s1");
+        AccountWindows.Said(Home, "claude-code", "account-2", [new WindowReading("session", 0.85, Now.AddHours(2))], Now, "s2");
+        AccountWindows.Said(
+            Home, "claude-code", "account-3",
+            [new WindowReading("session", 0.85, Now.AddHours(2)), new WindowReading("60-minute", 0.99, Now.AddMinutes(30)), new WindowReading("weekly", null, week, "warned")],
+            Now, "s3");
+
+        var claude = Agent(await AnswerAsync(Module(), "ACCOUNTS"), "claude-code");
+
+        JsonElement Window(string account, string window) =>
+            Account(claude, account).GetProperty("said").GetProperty("windows").EnumerateArray().Single(each => each.GetProperty("window").GetString() == window);
+
+        // Three sevenths of the week gone: the smart week stands at 63%, and 70% is over it.
+        var weekly = Window("account-1", "weekly");
+        Assert.Equal((63, true), (weekly.GetProperty("curve").GetInt32(), weekly.GetProperty("over").GetBoolean()));
+        Assert.Equal(week.AddDays(-7).ToUnixTimeSeconds(), weekly.GetProperty("from").GetDateTimeOffset().ToUnixTimeSeconds());
+        // Measured by its workspace's own curve, the only list holding it: 80%, which 85% is over; this machine's would say 90.
+        var own = Window("account-2", "session");
+        Assert.Equal((80, true), (own.GetProperty("curve").GetInt32(), own.GetProperty("over").GetBoolean()));
+        // In no list: this machine's smart curve, 90%, which 85% is under.
+        var none = Window("account-3", "session");
+        Assert.Equal((90, false), (none.GetProperty("curve").GetInt32(), none.GetProperty("over").GetBoolean()));
+        // A window this build has no length for has no start and no curve; one with no number is not measured.
+        var odd = Window("account-3", "60-minute");
+        Assert.Equal(
+            (JsonValueKind.Null, JsonValueKind.Null, JsonValueKind.Null),
+            (odd.GetProperty("from").ValueKind, odd.GetProperty("curve").ValueKind, odd.GetProperty("over").ValueKind));
+        var unread = Window("account-3", "weekly");
+        Assert.Equal((JsonValueKind.Null, JsonValueKind.Null), (unread.GetProperty("curve").ValueKind, unread.GetProperty("over").ValueKind));
+        Assert.Equal(JsonValueKind.String, unread.GetProperty("from").ValueKind);
+    }
+
+    /// <summary>
+    /// PUSH1e: each scope answers the curve in effect on each window it names (the person's points under <c>curve</c> where set,
+    /// else Daoris's), each of its list's accounts' windows measured by it, and each account of its list whose tightest window is
+    /// over it, with the curve's value there: what the switch's charts draw and the said line's clause says.
+    /// </summary>
+    [Fact]
+    public async Task Each_scope_answers_its_curves_its_accounts_measured_by_them_and_which_are_over()
+    {
+        Accounts("claude-code", "account-1", "account-2");
+        Wiring("""
+            {
+              "rotation": { "claude-code": ["account-1", "account-2"] },
+              "workspaceRotation": { "own": { "claude-code": ["account-1"] } },
+              "workspaceRotationUse": { "own": { "claude-code": { "switch": "curve", "curve": { "session": [[0, 50]] } } } }
+            }
+            """);
+        AccountWindows.Said(
+            Home, "claude-code", "account-1",
+            [new WindowReading("session", 0.6, Now.AddHours(2)), new WindowReading("weekly", 0.1, Now.AddDays(4))], Now, "s1");
+        AccountWindows.Said(Home, "claude-code", "account-2", [new WindowReading("session", 0.95, Now.AddHours(2))], Now, "s2");
+
+        var claude = Agent(await AnswerAsync(Module(), "ACCOUNTS"), "claude-code");
+
+        static string Curves(JsonElement scope) => scope.GetProperty("curves").GetRawText();
+        static string[] Measured(JsonElement scope) =>
+        [
+            .. scope.GetProperty("measured").EnumerateArray().Select(each =>
+                $"{each.GetProperty("account").GetString()} {each.GetProperty("window").GetString()} {each.GetProperty("curve").GetInt32()} {each.GetProperty("over").GetBoolean()}"),
+        ];
+        static string[] Over(JsonElement scope) =>
+        [
+            .. scope.GetProperty("overCurve").EnumerateArray().Select(each =>
+                $"{each.GetProperty("account").GetString()} {each.GetProperty("window").GetString()} {each.GetProperty("curve").GetInt32()}"),
+        ];
+
+        var machine = Scope(claude, null);
+        Assert.Equal("""{"session":[[0,90]],"weekly":[[0,20],[75,95],[100,100]]}""", Curves(machine));
+        Assert.Equal(["account-1 session 90 False", "account-1 weekly 63 False", "account-2 session 90 True"], Measured(machine));
+        Assert.Equal(["account-2 session 90"], Over(machine));
+
+        var own = Scope(claude, "own");
+        Assert.Equal("""{"session":[[0,50]],"weekly":[[0,20],[75,95],[100,100]]}""", Curves(own));
+        Assert.Equal(["account-1 session 50 True", "account-1 weekly 63 False"], Measured(own));
+        Assert.Equal(["account-1 session 50"], Over(own));
+    }
+
+    /// <summary>
+    /// The page's verdicts are .NET's on the shared table (PUSH1e): for every <c>tightest</c> row of the CLI's
+    /// <c>usage-curves.json</c>, a scope with the row's switch and curve and an account saying the row's windows answers each
+    /// measured window's curve as the row's value in whole points, and the account among those over the curve exactly where the
+    /// row says its line has the clause, with the curve's value the clause names.
+    /// </summary>
+    [Fact]
+    public void The_scopes_verdicts_are_the_shared_tables_rows()
+    {
+        var table = JsonNode.Parse(File.ReadAllText(Path.Combine(RepositoryRoot(), "src", "Daoris.Cli", "test", "fixtures", "usage-curves.json")))!;
+        var now = DateTimeOffset.Parse(table["now"]!.GetValue<string>(), System.Globalization.CultureInfo.InvariantCulture);
+        var loop = Loop();
+        var rows = table["tightest"]!.AsArray();
+        Assert.True(rows.Count >= 10);
+        foreach (var row in rows)
+        {
+            var named = row![0]!.GetValue<string>();
+            var account = $"a{rows.IndexOf(row)}";
+            Accounts("claude-code", account);
+            var use = new JsonObject { ["switch"] = row[1]!.GetValue<string>() };
+            if (row[2] is { } curve) use["curve"] = curve.DeepClone();
+            Wiring(new JsonObject
+            {
+                ["rotation"] = new JsonObject { ["claude-code"] = new JsonArray(account) },
+                ["rotationUse"] = new JsonObject { ["claude-code"] = use },
+            }.ToJsonString());
+            AccountWindows.Said(
+                Home, "claude-code", account,
+                [.. row[3]!.AsArray().Select(window => new WindowReading(
+                    window![0]!.GetValue<string>(), window[1]?.GetValue<double>(),
+                    DateTimeOffset.Parse(window[2]!.GetValue<string>(), System.Globalization.CultureInfo.InvariantCulture),
+                    window[1] is null ? "clear" : null))],
+                now.AddMinutes(-1), "s1");
+
+            var answer = JsonSerializer.SerializeToElement(AccountsRoutes.AccountsAnswer(loop.Harnesses, null, now), KeepNulls);
+            var scope = Scope(Agent(answer, "claude-code"), null);
+            var over = scope.GetProperty("overCurve").EnumerateArray().Where(each => each.GetProperty("account").GetString() == account).ToList();
+            if (row[5] is null)
+            {
+                Assert.True(over.Count == 0, named);
+            }
+            else
+            {
+                var tightest = row[4]!;
+                Assert.True(over.Count == 1, named);
+                Assert.Equal(tightest["window"]!.GetValue<string>(), over[0].GetProperty("window").GetString());
+                Assert.Equal(UsageCurves.Points(tightest["curve"]!.GetValue<double>()), over[0].GetProperty("curve").GetInt32());
+                Assert.Contains($"{over[0].GetProperty("curve").GetInt32()}%", row[5]!.GetValue<string>(), StringComparison.Ordinal);
+            }
+
+            if (row[4] is { } least)
+            {
+                var measured = scope.GetProperty("measured").EnumerateArray()
+                    .Single(each => each.GetProperty("account").GetString() == account && each.GetProperty("window").GetString() == least["window"]!.GetValue<string>());
+                Assert.Equal(UsageCurves.Points(least["curve"]!.GetValue<double>()), measured.GetProperty("curve").GetInt32());
+                Assert.Equal(least["room"]!.GetValue<double>() < 0, measured.GetProperty("over").GetBoolean());
+            }
+            else
+            {
+                Assert.True(scope.GetProperty("measured").EnumerateArray().All(each => each.GetProperty("account").GetString() != account), named);
+            }
+        }
+    }
+
+    /// <summary>The wire's options with every null written, as the bridge answers the route.</summary>
+    private static readonly JsonSerializerOptions KeepNulls = new(IpcJson.Options)
+    {
+        DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.Never,
+    };
+
+    private static string RepositoryRoot()
+    {
+        var at = new DirectoryInfo(AppContext.BaseDirectory);
+        while (at is not null && !File.Exists(Path.Combine(at.FullName, "daoris.json"))) at = at.Parent;
+        return at?.FullName ?? throw new InvalidOperationException("no workspace root above the test binary");
     }
 
     /// <summary>

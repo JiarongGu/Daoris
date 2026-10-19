@@ -947,7 +947,7 @@ public static class RotationWords
     internal static int Whole(double share) => (int)Math.Round(share * 100, MidpointRounding.AwayFromZero);
 
     /// <summary>A curve's value or a room, already in percent points, as a whole number a part carries (SWITCH1b-ii): <i>63</i>.</summary>
-    internal static int Points(double points) => (int)Math.Round(points, MidpointRounding.AwayFromZero);
+    internal static int Points(double points) => UsageCurves.Points(points);
 
     /// <summary>How long ago something was said: <i>just now</i>, <i>20 min ago</i>, <i>3 h ago</i>, <i>2 d ago</i>.</summary>
     internal static string Age(DateTimeOffset seen, DateTimeOffset now)

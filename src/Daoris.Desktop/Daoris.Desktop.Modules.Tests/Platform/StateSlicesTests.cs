@@ -107,6 +107,28 @@ public sealed class StateSlicesTests
         Assert.Equal("a@1:ready,b@1:ready", Versions(slice.Snapshot()));
     }
 
+    /// <summary>
+    /// PUSH1e: a judgement that pushed something tells its hearers once, its snapshot already holding it, so a slice judged from this
+    /// one's memory reads what was pushed; one that moved nothing tells nothing, and a hearer's failure is said and stops no other.
+    /// </summary>
+    [Fact]
+    public async Task A_judgement_that_pushed_tells_its_hearers_once_and_one_that_moved_nothing_tells_none()
+    {
+        var failed = new List<Exception>();
+        var slice = new StateSlice("test", _bus, _ => Task.FromResult(Judged()), "e1") { Failed = failed.Add };
+        var heard = new List<string>();
+        slice.Pushed += () => throw new InvalidOperationException("a hearer that fails");
+        slice.Pushed += () => heard.Add(Versions(slice.Snapshot()));
+
+        await slice.JudgeAsync();
+        await slice.JudgeAsync();
+        Now("b", new { Count = 3 });
+        await slice.JudgeAsync();
+
+        Assert.Equal(["a@1:ready,b@1:ready", "a@1:ready,b@2:ready"], heard);
+        Assert.Equal(2, failed.Count);
+    }
+
     [Fact]
     public async Task A_changed_partition_alone_is_pushed_with_its_next_number()
     {

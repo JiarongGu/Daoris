@@ -4,8 +4,8 @@ import { useShenora, useShenoraEvent } from '@shenora/react';
 import { sentence } from '../locales/format';
 import { keys } from '../data/queries';
 import {
-  asksSlice, callsSlice, driverSlice, groupsSlice, linesSlice, notPushed, questsSlice, sessionsSlice, sweepSlice, syncSlice, useDriverReady,
-  useStateHub, useStateSlices, workSlice,
+  accountsSlice, asksSlice, callsSlice, driverSlice, groupsSlice, linesSlice, notPushed, questsSlice, sessionsSlice, sweepSlice, syncSlice,
+  usageSlice, useDriverReady, useStateHub, useStateSlices, workSlice,
 } from '../bridge/shell';
 import { type AccountWaitTick, type Consideration, type TrustHold, newsFrom } from '../data/signals';
 import type { Notify } from '../design/ui';
@@ -14,7 +14,8 @@ type Tick = { events?: string[]; considered?: Consideration[]; untrusted?: Trust
 
 /** The slices the shell pushes with their data and this page reads pushed (PUSH1a, D182); every other family keeps its pulls. */
 const PUSHED = [
-  driverSlice, linesSlice, sessionsSlice, callsSlice, workSlice, groupsSlice, syncSlice, sweepSlice, questsSlice, asksSlice,
+  driverSlice, linesSlice, sessionsSlice, callsSlice, workSlice, groupsSlice, syncSlice, sweepSlice, questsSlice, asksSlice, usageSlice,
+  accountsSlice,
 ];
 
 /**
@@ -107,8 +108,9 @@ export function ShellSignals({ notify, onAttend, attended }: {
     // tick when the registry moved, and this is the half that makes the page look again.
     void client.invalidateQueries({ queryKey: keys.allRegistry });
     // And the accounts (TOOL4g): a session's end may have cooled one, its door may have said what one has left, and the
-    // sessions running on each have moved. A file read, never a probe, so it is cheap to ask at every tick.
-    void client.invalidateQueries({ queryKey: keys.accounts });
+    // sessions running on each have moved. A file read, never a probe; where the shell pushes them (PUSH1e) its owner judges
+    // those once for every window, and a tick reads none of them again.
+    void client.invalidateQueries({ queryKey: keys.accounts, predicate: notPushed(client) });
   });
 
   // The driver's service is up (LOOK2a): what it refused while it came up is asked again now, not at the first tick.

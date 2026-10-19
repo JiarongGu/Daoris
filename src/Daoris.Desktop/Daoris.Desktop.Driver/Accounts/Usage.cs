@@ -60,9 +60,15 @@ public sealed class SessionUsage(string home)
     /// Which account carried what — the question "multiple accounts with usage management" actually
     /// asks. Derived from the sessions so the two can never disagree.
     /// </summary>
-    public IReadOnlyList<AccountUsage> ByAccount() =>
+    public IReadOnlyList<AccountUsage> ByAccount() => ByAccount(Load());
+
+    /// <summary>
+    /// Which account carried what, over sessions already read (PUSH1e): the route and the pushed slice group the one read they made,
+    /// so its sessions and its accounts can never disagree.
+    /// </summary>
+    public static IReadOnlyList<AccountUsage> ByAccount(IEnumerable<UsageEntry> sessions) =>
     [
-        .. Load()
+        .. sessions
             .GroupBy(e => (e.Harness, e.Profile))
             .Select(g => new AccountUsage(g.Key.Harness, g.Key.Profile, g.Count(), g.Sum(e => e.Used)))
             .OrderBy(a => a.Harness, StringComparer.Ordinal)

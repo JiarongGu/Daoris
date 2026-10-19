@@ -1,6 +1,6 @@
 import i18n from '../../locales/i18n';
 import { ago, elapsed, moment } from '../../locales/format';
-import { type CURVE_WINDOWS, type CurvePoint, type CurveScope, type Switch, tightestSaid, wholePoints } from './usageCurves';
+import type { CURVE_WINDOWS, CurvePoint, CurveScope, Switch } from './usageCurves';
 
 // How each agent's accounts are used, as the page reads it (TOOL4g; D125 §2.4, §3.7, §6; D130 §3.2, §9, §16.6): the shape
 // `bridge/agents/accounts.ts` answers, and the words each account's row and each scope say, in the reader's language. Pure: the
@@ -47,6 +47,18 @@ export type WindowSaid = {
   projected?: number | null;
   /** How it was made: `reading` (nothing spent since), `measured`, or `unweighed` (turns since that nothing weighs). */
   projectedBy?: 'reading' | 'measured' | 'unweighed' | (string & {}) | null;
+  /**
+   * When the window began, its reset less its length, as .NET knows the length (PUSH1e): what a chart places it by. Null for a window
+   * this build has no length for; absent from a shell older than PUSH1e.
+   */
+  from?: string | null;
+  /**
+   * Its row's scope's curve on it now, a whole percent, and whether its share is over it, as .NET judges them (PUSH1e, D182 point 6;
+   * the driver's `UsageCurves`): the page words them and measures nothing. Null where it is not measured (no share, a window with no
+   * curve, the tool's own sign-in, which no list holds); absent from a shell older than PUSH1e.
+   */
+  curve?: number | null;
+  over?: boolean | null;
 };
 
 /** What an account's agent last said: each window whose reset has not passed. Absent is nothing said, never zero. */
@@ -137,7 +149,22 @@ export type AccountScope = {
   near: { account: string; window: string; by: NearBy }[];
   /** Which account its next start would take, and why (TOOL6e); absent from a shell older than that. */
   next?: NextStart | null;
+  /**
+   * The verdicts .NET judges for the switch's charts and the said line (PUSH1e, D182 point 6), absent from a shell older than that:
+   * the curve in effect on each window it names (the person's points under `curve` where set, else Daoris's); each of its list's
+   * accounts on each window its agent gave a share of, the curve's value now in whole points and whether the share is over it; and
+   * each of its list's accounts whose tightest window is over its curve, with the curve's value there.
+   */
+  curves?: Partial<Record<string, CurvePoint[]>>;
+  measured?: CurveMeasured[];
+  overCurve?: CurveOver[];
 };
+
+/** One account of a scope's list on one window, against the scope's curve now, as .NET judges it (PUSH1e). */
+export type CurveMeasured = { account: string; window: string; curve: number; over: boolean };
+
+/** An account's tightest window over its scope's curve, and the curve's value there now in whole points (PUSH1e). */
+export type CurveOver = { account: string; window: string; curve: number };
 
 /** One agent's accounts, by the accounts' owner (AGT7): a door's accounts are its owner's. */
 export type AgentAccounts = {
@@ -208,17 +235,6 @@ export function machineScope(agent: AgentAccounts): AccountScope {
 /** A workspace's own scope, or null where it names neither a default nor a list of its own: it runs on this machine's. */
 export function workspaceScope(agent: AgentAccounts, workspace: string): AccountScope | null {
   return agent.scopes.find((scope) => scope.workspace === workspace) ?? null;
-}
-
-/**
- * How the list an account is measured by is used, for its windows against the curve (SWITCH1d): this machine's where its list
- * holds the account or none does, else the first workspace's whose own list holds it. An account in two lists is drawn against
- * this machine's, the scope its row's next start says first.
- */
-export function useOf(agent: AgentAccounts, account: string): ScopeUse {
-  const machine = machineScope(agent);
-  if (machine.list.includes(account)) return machine.use;
-  return agent.scopes.find((scope) => scope.workspace && scope.list.includes(account))?.use ?? machine.use;
 }
 
 /** The workspaces whose own list holds an account (D130 §3.2: each account's row names the workspaces that may run on it). */
@@ -306,15 +322,14 @@ export function orderedWindows(windows: readonly WindowSaid[]): WindowSaid[] {
  * What an account's agent last said, as its row says it (TOOL6c, D130 §5.2): how long ago, its own word where it gave one,
  * credits, and each window's use and reset. The CLI's `saidLine` says the same in the terminal's words. Nothing said is
  * said so, and is neither spent nor fresh (D57). Its pace warning is *ahead of its pace*, as the start's note says it, and
- * never near its limit (USAGEREAD3b). Where a scope is handed, its tightest window over the scope's curve is said with the
- * curve's value now, and the line is led by its newest reading's source, *read* or *said* (SWITCH1d).
+ * never near its limit (USAGEREAD3b). Where a scope's verdict is handed, its tightest window over the scope's curve is said with
+ * the curve's value now, as .NET judged it (PUSH1e), and the line is led by its newest reading's source, *read* or *said* (SWITCH1d).
  */
 export function saidLine(
   said: AccountSaid | null | undefined,
-  { use, now = new Date() }: {
-    /** The scope's switch and curve: its tightest window over it is said with the curve's value now (SWITCH1d). */
-    use?: CurveScope;
-    now?: Date;
+  { over }: {
+    /** The account's tightest window over its scope's curve and the curve's value there, the scope's `overCurve` entry for it. */
+    over?: Pick<CurveOver, 'window' | 'curve'> | null;
   } = {},
 ): string {
   if (!said || said.windows.length === 0) return i18n.t('harness.said.nothing');
@@ -329,12 +344,9 @@ export function saidLine(
       parts.push(i18n.t('harness.said.window', { used: percent(each.used), window: windowName(each.window), when: moment(each.reset) }));
     }
   }
-  // Over its curve on its tightest window, as the terminal's said line and the start's line add it (SWITCH1d, the twins'
-  // `tightest` rows); on its curve is not over it.
-  const over = use ? tightestSaid(use, said.windows, now) : null;
-  if (over && over.room < 0) {
-    parts.push(i18n.t('harness.said.over', { window: windowName(over.window.window), curve: `${wholePoints(over.curve)}%` }));
-  }
+  // Over its curve on its tightest window, as the terminal's said line and the start's line add it (SWITCH1d, the shared table's
+  // `tightest` rows), judged in .NET (PUSH1e): on its curve is not over it, and is handed no verdict.
+  if (over) parts.push(i18n.t('harness.said.over', { window: windowName(over.window), curve: `${over.curve}%` }));
   if (parts.length === 0) parts.push(i18n.t('harness.said.clear'));
   // Led by where its newest reading came from (USAGEREAD2b's lead, the terminal's): read from its agent, or said by a session.
   const newest = said.windows.reduce((best, each) => (
