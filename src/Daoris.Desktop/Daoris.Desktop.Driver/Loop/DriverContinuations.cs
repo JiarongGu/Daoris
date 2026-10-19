@@ -93,9 +93,14 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
     /// What the start did with the tree against the line before the words go on (LANDSYNC2, D87's 2026-10-15 amendment point 7), said
     /// after them: the conversation was handed no instruction it could read it in. Null for nothing to tell.
     /// </param>
+    /// <param name="permissions">
+    /// The mode its repository's permission prompts name on its harness now (AUTONOMY1b, D184 point 3), which it goes on under, saying
+    /// the change from the setup its record started under; null keeps the adapter's own.
+    /// </param>
     internal async Task<(StartRun? Run, ContinueReason? FellBack, bool AnswerKept)> ContinueAsync(
         Consideration start, PriorSession park, HarnessSelection selection, IReadOnlyList<RepoView> registry,
-        TreeLock? starting, Action onOpened, CancellationToken ct, string agent, ContinueReason? account = null, string? inSync = null)
+        TreeLock? starting, Action onOpened, CancellationToken ct, string agent, ContinueReason? account = null, string? inSync = null,
+        DrivenAccess? permissions = null)
     {
         var service = _context.Service;
         var config = _context.Config;
@@ -143,6 +148,8 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
             ReadsAcross = across.Reads,
             WritesAcross = across.Writes,
             Session = sessionId,
+            // It goes on under the permission prompts standing now, on either door and in each run after (AUTONOMY1b).
+            Access = permissions,
         };
         // Another agent's findings among the words (XAGENT1e, D155 point 7): said as that agent's, and answered with the one
         // tool they need, which the person's rules may not name.
@@ -180,6 +187,13 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
 
         // The ledger holds its tree again (LEFT2).
         starting?.Dispose();
+
+        // Under permission prompts changed since it started it says so first, with the mode it got (AUTONOMY1b, D183 point 3 as
+        // HELPMODE1a2 says Ask Daoris's). Its record keeps the setup it opened under.
+        if (permissions is not null && DrivenAccess.GoingOnNote(park, permissions) is { } changed)
+        {
+            _context.Events.Keep(sessionId, new SessionEvent { Kind = SessionEventKind.Note, Text = changed }, say: null);
+        }
 
         ResumeAsk? resume = null;
         // Whether its process started: a failure before then started no run, so the record goes back with its words (SAIDBACK1e).
