@@ -47,7 +47,7 @@ Routed in `src/Daoris.Desktop/Daoris.Desktop.Driver.Host/Program.cs`, its usage 
 | `quest` | `Program.cs:418` | `Daoris.Desktop.Driver.Host/WorkConsole.cs:10` WorkConsole | pause `WorkCommand.cs:39` · resume `WorkCommand.cs:39` · abandon `WorkCommand.cs:39` · delete `Program.cs:473` · accept `Program.cs:473` · done · reopen · go-on · check · review · clear |
 | `answer` | `Program.cs:495` | `Program.cs:495` (inline) | — |
 | `sessions` | `Program.cs:506` | `Daoris.Desktop.Driver.Host/SessionsConsole.cs:8` SessionsConsole | stop `SessionsCommand.cs:186` · finish `SessionsCommand.cs:191` · decline `SessionsCommand.cs:198` · archive `SessionsCommand.cs:203` · unarchive `SessionsCommand.cs:212` · delete `SessionsCommand.cs:217` · say `SessionsCommand.cs:222` · take-back `SessionsCommand.cs:224` · reword `SessionsCommand.cs:232` · go-on-new `SessionsCommand.cs:237` · start-from `SessionsCommand.cs:242` · hand-over `SessionsCommand.cs:247` · helper `SessionsCommand.cs:254` |
-| `help` | `Program.cs:513` | `Daoris.Desktop.Driver.Host/HelpConsole.cs:9` HelpConsole | list `HelpCommand.cs:67` · resume `HelpCommand.cs:67` · rename `HelpCommand.cs:67` · pin `HelpCommand.cs:67` · unpin `HelpCommand.cs:67` · delete `HelpCommand.cs:67` · mode `HelpConsole.cs:23` |
+| `help` | `Program.cs:513` | `Daoris.Desktop.Driver.Host/HelpConsole.cs:9` HelpConsole | list `HelpCommand.cs:73` · resume `HelpCommand.cs:73` · rename `HelpCommand.cs:73` · pin `HelpCommand.cs:73` · unpin `HelpCommand.cs:73` · delete `HelpCommand.cs:73` · mode `HelpConsole.cs:23` |
 | `access` | `Program.cs:520` | `Daoris.Desktop.Driver.Host/AccessConsole.cs:8` AccessConsole | — |
 | `history` | `Program.cs:528` | `Daoris.Desktop.Driver.Host/HistoryConsole.cs:11` HistoryConsole | clear `HistoryCommand.cs:54` |
 | `trees` | `Program.cs:535` | `Daoris.Desktop.Driver.Host/TreesConsole.cs:15` TreesConsole | list `TreesConsole.cs:139` · remove `TreesConsole.cs:167` · clean `TreesConsole.cs:183` · land `TreesConsole.cs:302` · hand `TreesConsole.cs:463` · state `TreesConsole.cs:527` · sync `TreesConsole.cs:245` |
@@ -60,7 +60,7 @@ Routed in `src/Daoris.Desktop/Daoris.Desktop.Driver.Host/Program.cs`, its usage 
 | `wiring` | `Program.cs:584` | `Daoris.Desktop.Driver/Platform/WiringCommand.cs:16` WiringCommand | — |
 | `logs` | `Program.cs:592` | `Daoris.Desktop.Driver.Host/LogsConsole.cs:18` LogsConsole | — |
 | `plugins` | `Program.cs:599` | `Daoris.Desktop.Driver/Plugins/PluginsCommand.cs:25` PluginsCommand | install `Program.cs:566` · new `PluginsCommand.cs:49` · try `PluginsCommand.cs:49` · show `PluginsCommand.cs:51` · activity `PluginsCommand.cs:53` · approve `PluginsCommand.cs:57` · withdraw `PluginsCommand.cs:75` |
-| `drive` | `Program.cs:332` | `Daoris.Desktop.Driver/Loop/DriverCommand.cs:254` DriverCommand.Read | — |
+| `drive` | `Program.cs:332` | `Daoris.Desktop.Driver/Loop/DriverCommand.cs:255` DriverCommand.Read | — |
 
 ## `daoris-devkit`
 
