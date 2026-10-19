@@ -101,6 +101,12 @@ the work, was most of what branches cost before D160 (`docs/2026-10-10-subagent-
   node outlives your build, run `dotnet build-server shutdown` before you hand back, and end every background task and
   monitor you started. A 2026-10-19 audit found thirteen MSBuild nodes (1.4 GB, three orphaned) and a loop that had run a
   hundred hours.
+- **Never run a suite to count it.** Report counts after your change only, and what you added; a whole suite run before
+  any edit, only for its count, cost USAGERESET1 ten minutes (2026-10-19).
+- **Build once, then run without building.** `dotnet test` rebuilds the whole test project every time, and the driver's is
+  one assembly of ten thousand tests: a run filtered to five tests still took three to ten minutes. Build the test project
+  once after an edit to code (`dotnet build <project> -nodeReuse:false`), then `dotnet test <project> --no-build --filter …`
+  for each run while only the filter changes; a code edit needs the build again.
 - **`npm run verify` once, at the end** (Finishing, step 1), never while working: it runs the CLI's whole suite, six
   minutes and more on a shared machine, and the merge runs it again. While working, run what your change reaches:
   `dotnet test` filtered to the classes you touch (`--filter FullyQualifiedName~<Class>`), each touched project whole
@@ -141,8 +147,8 @@ the work, was most of what branches cost before D160 (`docs/2026-10-10-subagent-
 
 ## Finishing
 
-1. Merge main again, resolve any conflict inside your lane, and run your gates: the touched projects whole, then
-   `npm run verify`, once. Run `post-feature`
+1. Merge main again, resolve any conflict inside your lane, and run your gates: each touched project whole once (the
+   driver's fast half included where you touched the driver), then `npm run verify`, once. Not a second whole run. Run `post-feature`
    (the Skill tool) over your diff; a non-trivial defect fixed also gets its `fix-log` entry.
 2. Commit once per part: `type(scope): <ROW>, <what>`, ending with the session's `Co-Authored-By:`
    line. The merge tool's commit check refuses a commit without that line. Leave nothing uncommitted in
