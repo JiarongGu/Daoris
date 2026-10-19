@@ -76,6 +76,10 @@ export const keys = {
    */
   allWorkState: ['driver', 'work-state'] as const,
   workState: (unit: string | null) => ['driver', 'work-state', unit] as const,
+  /**
+   * The clean-up's list (WSR3, WSR5), as the shell pushes it where it does (PUSH1c4b; its spec is `sweepSlice` in `bridge/lines`):
+   * its pushes write it, so no tick asks it again; pulled under the driver's key elsewhere.
+   */
   sweep: ['driver', 'sweep'] as const,
   landing: (session: string) => ['driver', 'landing', session] as const,
   /**

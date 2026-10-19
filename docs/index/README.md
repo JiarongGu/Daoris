@@ -44,7 +44,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Web/src/help/AskConversation.tsx` | 52 | 969 |
 | `src/Daoris.Web/src/help/AskDaoris.test.tsx` | 83 | 1667 |
 | `src/Daoris.Web/src/menus/commands.ts` | 40 | 793 |
-| `src/Daoris.Web/src/projects/ProjectsView.test.tsx` | 93 | 1636 |
+| `src/Daoris.Web/src/projects/ProjectsView.test.tsx` | 97 | 1715 |
 | `src/Daoris.Web/src/projects/RepositorySetup.test.tsx` | 42 | 742 |
 | `src/Daoris.Web/src/quests/QuestPage.tsx` | 55 | 1018 |
 | `src/Daoris.Web/src/quests/QuestsView.test.tsx` | 75 | 1464 |
