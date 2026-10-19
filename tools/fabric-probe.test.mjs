@@ -15,6 +15,7 @@ import { fileURLToPath } from 'node:url';
 import {
   HOOK, SERVER, childEnvironment, claudeLaunch, codexLaunch, connectorSession, lineageFile, parseArguments, prompt, runFiles, toml,
 } from './fabric-probe/launch.mjs';
+import { homeEntry } from '../src/Daoris.Cli/src/platform/home.ts';
 import { callLineage, receipt, receiptText, withoutPaths } from './fabric-probe/receipt.mjs';
 import { TOKEN, answer } from './fabric-probe/server.mjs';
 
@@ -128,14 +129,14 @@ test('with Daoris\'s connector, each launch hands it as the driver does, and Cla
   assert.equal(entry.command, 'daoris-knowledge.exe');
   assert.deepEqual(entry.env, {
     DAORIS_HOME: files.home, DAORIS_RULES_HOME: files.home, DAORIS_SESSION_ID: 'probe-r3',
-    DAORIS_KNOWLEDGE_REPOSITORY: files.repo, DAORIS_KNOWLEDGE_DB: join(files.home, 'knowledge.db'),
+    DAORIS_KNOWLEDGE_REPOSITORY: files.repo, DAORIS_KNOWLEDGE_DB: homeEntry(files.home, 'knowledge'),
   });
   assert.ok(settings.permissions.allow.includes('mcp__daoris-knowledge__knowledge_search'));
   const lineage = { type: 'command', command: 'node', args: ['lineage-hook.mjs', lineageFile(files, 'r3')], timeout: 10 };
   assert.deepEqual(settings.hooks.PreToolUse[1], { matcher: 'mcp__daoris-knowledge__.*', hooks: [lineage] });
   assert.deepEqual(settings.hooks.SubagentStart[1], { hooks: [lineage] });
   assert.deepEqual(settings.hooks.SubagentStop[1], { hooks: [lineage] });
-  assert.equal(lineageFile(files, 'r3'), join(files.home, 'sessions', 'probe-r3', 'lineage.jsonl'));
+  assert.equal(lineageFile(files, 'r3'), homeEntry(files.home, 'sessions', 'probe-r3', 'lineage.jsonl'));
   assert.equal(connectorSession('a.b c'), 'probe-a-b-c', 'a session id names no folder but its own');
 
   const { args } = codexLaunch({ files, run: 'r3', text: 'go', node: 'node', connector: 'daoris-knowledge.exe' });

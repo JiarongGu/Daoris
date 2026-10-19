@@ -17585,3 +17585,15 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **PUSH1d1b — the words kept without a note, a family of their own** (service; D182 point 5, D173's PUSH1d1 note). A helper's or a second opinion's word a connector keeps (`HelperDesk`, `OpinionDesk`) moves no family, so it waits for the look. A family that moves on a word kept and not on a look's take. Proof: `ChangeStreamTests` moves on a kept word, not on a take, and canary 5 holds.
 
 **Outcome** 2026-10-20: a word a connector keeps without a note (a helper's or a second opinion's, through `sessions.said`) moves a `words` family of its own, a trigger-kept `words_revision` on `said` growing, so a connector built before it moves it too; a take, a push mark and a cursor move nothing (canary 5 holds); the driver wakes the machine's answers and the sessions' look on it. On Sonnet: about 30 minutes. Detail: D173's PUSH1d1b note.
+
+## HOMELAYOUT2b — the tools ask for entries too (2026-10-20, D172)
+
+> - [ ] **HOMELAYOUT2b — the tools ask for entries too** (tools). `tools/desktop.mjs`, the rehearsals, `usage-report.mjs` and `knowledge-server.mjs` join the home by hand, so HOMELAYOUT3's move would leave them reading old places: import the CLI's `homeEntry`, and widen the census over `tools/`. D172 point 5. Proof: the census over `tools/` green; the rehearsals pass.
+
+**Outcome** 2026-10-20: the repository's tools (`desktop`, `usage-report`, `orient-report`, `service-publish`, `testbed`, `fabric-probe`, the deployment and family rehearsals) ask the home table through the CLI's `homeEntry` and join no home place by hand; the census scans `tools/*.mjs`; the connector locator's own `data` and `bin` copy is owed with its reason and held to the table by a test. On Sonnet, with HOMELAYOUT2c: about 106 tool calls, 17 minutes. Detail: D172's HOMELAYOUT2b-c note.
+
+## HOMELAYOUT2c — the census finds a home by what it is (2026-10-20, D172)
+
+> - [ ] **HOMELAYOUT2c — the census finds a home by what it is** (tests). Tests that name their home `fx.root`, `at`, `root` or `DataHome` still join entry places by hand (`cooling.test.ts`, `tools.test.ts`, `InstallUpdaterTests`): convert them, and flag a join whose second part is a table place under any root a test hands as `DAORIS_HOME`. D172 point 5. Proof: the widened census green.
+
+**Outcome** 2026-10-20: the census reads a test's own names for its home root (`fx.root`, `at`, `root`, `DataHome`) and flags a second part that is a table place; `cooling.test.ts`, `tools.test.ts` and `orient-report.test.ts` are converted, and 23 other test files wait in the ratchet list `PENDING_TESTS`, which only shrinks, for HOMELAYOUT3 to empty. Detail: D172's HOMELAYOUT2b-c note.

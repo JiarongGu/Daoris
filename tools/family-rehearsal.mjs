@@ -21,6 +21,8 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { setTimeout as sleep } from 'node:timers/promises';
 import { copyTree, treeDiff } from './fsx.mjs';
+// Every home place is asked of D172's table (HOMELAYOUT2b), never joined here.
+import { homeEntry } from '../src/Daoris.Cli/src/platform/home.ts';
 import {
   ACP_STUB_AGENT, STUB_COMMIT, capture, evidenceFolder, makeChecker, openTranscript, ownBuild, ownBuildRoot, ownBuilt, portRefusal,
   rehearsalRun, restartBetweenRequests, takePorts, waitFor,
@@ -2467,7 +2469,7 @@ const lingerWait = await waitFor(async () => {
     .catch(() => ({ json: [] }))).json ?? []).find((s) => s.quest === lingeringId && s.state === 'working');
   return lingeringSession !== undefined && stubSays('stub: lingering');
 }, { within: 2 * 60_000, settled: lingeringRun });
-const machineLogs = (home) => (existsSync(join(home, 'logs')) ? readdirSync(join(home, 'logs')).map((name) => join(home, 'logs', name)) : []);
+const machineLogs = (home) => (existsSync(homeEntry(home, 'logs')) ? readdirSync(homeEntry(home, 'logs')).map((name) => homeEntry(home, 'logs', name)) : []);
 const lingeringFiles = () => [
   lingeringSession?.transcript, stubSaid(lingeringId),
   ...machineLogs(process.env.DAORIS_HOME), ...machineLogs(hostBEnv.DAORIS_HOME),
