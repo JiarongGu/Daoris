@@ -599,6 +599,26 @@ const doorFailed = (event: SessionEvent): boolean =>
 /** When the turn the agent is on was asked, while it has not answered yet (WAITSHOWN1); undefined once it has, or when none is open. */
 export const firstAnswerWait = (turns: readonly Turn[]): string | undefined => turns[turns.length - 1]?.waitingSince;
 
+/** A call the agent is inside: its title, and when it began by the driver's clock (WAITSAY1). */
+export type RunningCall = { title: string; since: string };
+
+/**
+ * The call the agent is inside, in the last turn while it is open (WAITSAY1): the last tool block that neither finished nor was
+ * cut, pending or in progress. Read after `settle`, so a session that is not live says none — its open calls read stopped.
+ * A call this page holds only updates of has no title, and is not named.
+ */
+export function runningCall(turns: readonly Turn[]): RunningCall | null {
+  const turn = turns[turns.length - 1];
+  if (!turn || turn.ended || turn.cut) return null;
+  for (let at = turn.items.length - 1; at >= 0; at -= 1) {
+    const item = turn.items[at]!;
+    if (item.kind !== 'tool' || item.finished || item.stopped) continue;
+    if (item.status === 'completed' || item.status === 'failed' || item.status === 'cut') continue;
+    if (item.title) return { title: item.title, since: item.at };
+  }
+  return null;
+}
+
 /**
  * The key of the last thing the agent said, where it said anything: the jump to its last words (SESS1 S9), and what a parked
  * session asked the person, since its card keeps that message whole (PARK1; WAITFOOT1c).

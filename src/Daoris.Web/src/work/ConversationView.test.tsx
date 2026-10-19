@@ -113,6 +113,21 @@ describe('ConversationView', () => {
     expect(screen.queryByText(/waiting for its first answer/)).toBeNull();
   });
 
+  /** WAITSAY1: a call that has run for minutes is named, with how long. */
+  it('says a live turn is running a call, and for how long', () => {
+    const begun = new Date(Date.now() - 7 * 60_000).toISOString();
+    const events = [
+      ev({ kind: 'user', origin: 'person', text: 'test it' }),
+      ev({ kind: 'tool', id: 'k1', title: 'npm test', toolKind: 'execute', status: 'in_progress', at: begun }),
+    ];
+    const { unmount } = view(events, { live: true });
+    expect(screen.getByText('running npm test for 7m')).toBeTruthy();
+    unmount();
+
+    view([...events, ev({ kind: 'tool', id: 'k1', status: 'completed' })], { live: true });
+    expect(screen.queryByText(/running npm test for/)).toBeNull();
+  });
+
   /**
    * The agent speaks after its turn has ended when its background work finishes (CONSOLE2a). Those
    * words are no turn running: with the driver saying none is in flight, they carry no *working…*,

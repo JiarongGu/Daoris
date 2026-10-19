@@ -47,16 +47,16 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Web/src/projects/ProjectsView.test.tsx` | 83 | 1481 |
 | `src/Daoris.Web/src/quests/QuestPage.tsx` | 55 | 1018 |
 | `src/Daoris.Web/src/quests/QuestsView.test.tsx` | 75 | 1464 |
-| `src/Daoris.Web/src/work/ConversationView.test.tsx` | 56 | 1066 |
+| `src/Daoris.Web/src/work/ConversationView.test.tsx` | 57 | 1081 |
 | `src/Daoris.Web/src/work/SessionHead.test.tsx` | 65 | 1247 |
 | `src/Daoris.Web/src/work/SessionRail.test.tsx` | 52 | 1022 |
 | `src/Daoris.Web/src/work/WorkFrame.conversation.test.tsx` | 58 | 1141 |
 | `src/Daoris.Web/src/work/WorkFrame.landed.test.tsx` | 101 | 1779 |
 | `src/Daoris.Web/src/work/WorkFrame.test.tsx` | 81 | 1533 |
-| `src/Daoris.Web/src/work/WorkFrame.tsx` | 124 | 2220 |
+| `src/Daoris.Web/src/work/WorkFrame.tsx` | 124 | 2224 |
 | `src/Daoris.Web/src/work/WorkFrame.words.test.tsx` | 46 | 851 |
 | `src/Daoris.Web/src/work/attention.test.ts` | 48 | 943 |
-| `src/Daoris.Web/src/work/conversation.test.ts` | 55 | 1044 |
+| `src/Daoris.Web/src/work/conversation.test.ts` | 56 | 1079 |
 | `src/Daoris.Web/src/work/frame.tsx` | 40 | 877 |
 | `src/Daoris.Web/src/work/noteLines.test.ts` | 74 | 1095 |
 
@@ -193,7 +193,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Cli/test/driver/driverconfig.test.ts` | 136 | 2500 |
 | `src/Daoris.Cli/test/usage-report.test.ts` | 71 | 1227 |
 | `src/Daoris.Cli/tool-test/desktop-publish.test.ts` | 67 | 1172 |
-| `src/Daoris.Cli/tool-test/merge-branch.test.ts` | 292 | 4437 |
+| `src/Daoris.Cli/tool-test/merge-branch.test.ts` | 296 | 4503 |
 | `src/Daoris.Cli/tool-test/setup-kit.test.ts` | 52 | 956 |
 
 ### Tools (`tools`)
@@ -205,9 +205,9 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `tools/desktop.mjs` | 51 | 1057 |
 | `tools/family-rehearsal.mjs` | 348 | 6101 |
 | `tools/knowledge-bench.mjs` | 46 | 900 |
-| `tools/merge-branch.mjs` | 217 | 3831 |
+| `tools/merge-branch.mjs` | 218 | 3864 |
 | `tools/orient-index.mjs` | 66 | 1424 |
-| `tools/rehearsal-kit.mjs` | 45 | 876 |
+| `tools/rehearsal-kit.mjs` | 46 | 884 |
 | `tools/usage-report.mjs` | 57 | 1254 |
 
 ### No lane
