@@ -128,6 +128,76 @@ public sealed class GoOnInSyncTests : TreeSyncFixture
         Assert.Equal(head, await RevAsync(step.Path, "HEAD"));
     }
 
+    /// <summary>
+    /// SYNCMERGE1b (D178 point 3): the step's take lost to the person's reopen of its source and its session stood down; the source submitted
+    /// again (`p2`), and the person brought the step forward, its fresh take stamped with that submission. The planner brings the carry-on to
+    /// that source, naming the source's current commit, and the stood-down session's tree holds it before the carry-on starts.
+    /// </summary>
+    [Fact]
+    public async Task A_brought_forward_steps_carry_on_starts_in_a_tree_holding_its_current_source()
+    {
+        var (root, _) = await RepositoryWithOriginAsync("engine");
+        var trees = new SessionTrees(Home);
+        var (source, step) = await SourceAndStepAsync(trees, root);
+        await CommitAsync(source.Path, "p2.txt", "the source's new work\n", "p2");
+        var submitted = await RevAsync(source.Path, "HEAD");
+        var (stepView, sourceView, start) = BroughtForward(step.Path, submitted);
+
+        Assert.True(Planner.BringsForwardToSource(stepView, start));
+        var started = await trees.GoOnInSyncAsync(step.Path, $"#{stepView.Parent}", Planner.SourceCommit(stepView, sourceView));
+
+        Assert.Equal(0, await ExitAsync(step.Path, "merge-base", "--is-ancestor", submitted, "HEAD"));
+        Assert.Equal(["s1"], await SubjectsAsync(root, $"{submitted}..{step.Branch}"));
+        Assert.Equal(step.Branch, (await GitAsync(step.Path, "rev-parse", "--abbrev-ref", "HEAD")).Trim());
+        Assert.StartsWith($"Before this turn Daoris brought this tree up to date with `#q1`'s new submission (`{submitted[..8]}`)", started.Told);
+    }
+
+    /// <summary>
+    /// A take that lost is stopped mid-turn (D68 §5), so its tree may hold work it never committed: the bring-forward's carry-on leaves that
+    /// tree exactly as it was, uncommitted work and all, and the session is told why and to build nothing on the source's new work yet.
+    /// </summary>
+    [Fact]
+    public async Task A_brought_forward_tree_with_uncommitted_work_is_left_as_it_was_and_the_session_told()
+    {
+        var (root, _) = await RepositoryWithOriginAsync("engine");
+        var trees = new SessionTrees(Home);
+        var (source, step) = await SourceAndStepAsync(trees, root);
+        await CommitAsync(source.Path, "p2.txt", "the source's new work\n", "p2");
+        var submitted = await RevAsync(source.Path, "HEAD");
+        await File.WriteAllTextAsync(Path.Combine(step.Path, "s.txt"), "s, half done\n");
+        var head = await RevAsync(step.Path, "HEAD");
+        var (stepView, sourceView, _) = BroughtForward(step.Path, submitted);
+
+        var started = await trees.GoOnInSyncAsync(step.Path, "#q1", Planner.SourceCommit(stepView, sourceView));
+
+        Assert.Null(started.Moved);
+        Assert.StartsWith(
+            $"Daoris could not bring this tree up to date with `#q1`'s new submission (`{submitted[..8]}`) before this turn: its tree has "
+            + "uncommitted work (1 path(s)), which a replay does not carry. The tree is exactly as it was",
+            started.Told);
+        Assert.Equal(head, await RevAsync(step.Path, "HEAD"));
+        Assert.Equal("s, half done\n", (await File.ReadAllTextAsync(Path.Combine(step.Path, "s.txt"))).ReplaceLineEndings("\n"));
+    }
+
+    /// <summary>
+    /// The step q2 and its source q1 as the service answers them once the person brought q2 forward on q1's current submission (desk 43, at
+    /// <paramref name="commit"/>), and the carry-on the planner plans of the stood-down session that worked in <paramref name="tree"/>.
+    /// </summary>
+    private static (QuestView Step, QuestView Source, Consideration Start) BroughtForward(string tree, string commit)
+    {
+        var step = new QuestView("q2", "engine", "engine", "The step", "Body", "Taken") { Parent = "q1", GrewFrom = new QuestSubmissionRef("desk", 43) };
+        var source = new QuestView("q1", "game", "engine", "The source", "Body", "Done")
+        {
+            Submission = new QuestSubmissionView("desk", 43, null, "ready", commit),
+        };
+        var start = new Consideration(step, StartVerdict.Start, "carrying on")
+        {
+            Resumes = new PriorSession("s1", tree, "stood-down", Daoris.Driver.Driver.LostClaimToReopen),
+            BroughtForward = new ForwardTake("desk", 44, DateTimeOffset.UnixEpoch, "held"),
+        };
+        return (step, source, start);
+    }
+
     /// <summary>The source's tree with its first submission (`p1`), and the step grown from its branch there with one commit (`s1`).</summary>
     private static async Task<(TreeOpened Source, TreeOpened Step)> SourceAndStepAsync(SessionTrees trees, string root)
     {

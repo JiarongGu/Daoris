@@ -46,6 +46,33 @@ internal sealed class StandInLedger : HttpMessageHandler
 
     private string? _claimWhy;
 
+    /// <summary>
+    /// The take a person's bring-forward made (SYNCMERGE1b0), as the claim's answer names it beside the claim, for every quest; none while
+    /// null, as a host before the field answers.
+    /// </summary>
+    public ForwardTake? ClaimForward
+    {
+        get { lock (_gate) return _claimForward; }
+        set { lock (_gate) _claimForward = value; }
+    }
+
+    private ForwardTake? _claimForward;
+
+    /// <summary>
+    /// The person brings this machine's lost take forward now (SYNCMERGE1a): its fresh take, made after every record so far, stands as
+    /// <paramref name="standing"/>, and so does the claim, unless it lost again.
+    /// </summary>
+    public ForwardTake BringForward(string standing = "held")
+    {
+        lock (_gate)
+        {
+            _clock = _clock.AddSeconds(1);
+            _claimForward = new ForwardTake("desk", 7, _clock, standing);
+            _claim = standing;
+            return _claimForward;
+        }
+    }
+
     /// <summary>While true the quest list does not answer, as a service that went away does.</summary>
     public bool Down { get; set; }
 
@@ -757,7 +784,18 @@ internal sealed class StandInLedger : HttpMessageHandler
                 {
                     var quest = path["/api/quests/".Length..^"/claim".Length];
                     _claims[quest] = _claims.GetValueOrDefault(quest) + 1;
-                    return Answer(HttpStatusCode.OK, new JsonObject { ["claim"] = _claim, ["why"] = _claimWhy });
+                    var claim = new JsonObject { ["claim"] = _claim, ["why"] = _claimWhy };
+                    // SYNCMERGE1b0: written only where set, as the service answers it.
+                    if (_claimForward is { } forward)
+                    {
+                        claim["forward"] = new JsonObject
+                        {
+                            ["machine"] = forward.Machine, ["sequence"] = forward.Sequence, ["at"] = forward.At.ToString("O"),
+                            ["standing"] = forward.Standing,
+                        };
+                    }
+
+                    return Answer(HttpStatusCode.OK, claim);
                 }
 
                 default:
@@ -840,7 +878,6 @@ internal sealed class StandInRuns(ServiceClient service, StandInLedger ledger)
 
     private TaskCompletionSource<string> Ending(string quest) =>
         _endings.GetOrAdd(quest, _ => new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously));
-
     private async Task<StartRun> RunAsync(Consideration start, Action opened, CancellationToken ct)
     {
         var quest = start.Quest;

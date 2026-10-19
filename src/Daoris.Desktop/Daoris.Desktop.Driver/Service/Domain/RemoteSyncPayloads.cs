@@ -436,6 +436,28 @@ public static class RemoteSyncPayloads
         return document.RootElement.ValueKind == JsonValueKind.Object ? Text(document.RootElement, "why") : null;
     }
 
+    /// <summary>
+    /// The person's bring-forward the claim's take was made by, as its host answered beside the claim (SYNCMERGE1b0 point 3): whole, or
+    /// null where it said none (a host before the field) or one missing a field.
+    /// </summary>
+    public static ForwardTake? Forward(string claimJson)
+    {
+        using var document = JsonDocument.Parse(claimJson);
+        if (document.RootElement.ValueKind != JsonValueKind.Object
+            || !document.RootElement.TryGetProperty("forward", out var forward) || forward.ValueKind != JsonValueKind.Object)
+        {
+            return null;
+        }
+
+        return Text(forward, "machine") is { Length: > 0 } machine
+               && forward.TryGetProperty("sequence", out var sequence) && sequence.ValueKind == JsonValueKind.Number
+               && sequence.TryGetInt64(out var number)
+               && Moments.Read(Text(forward, "at")) is { } at
+               && Text(forward, "standing") is { Length: > 0 } standing
+            ? new ForwardTake(machine, number, at, standing)
+            : null;
+    }
+
     private static string Clip(string text) => TextBounds.Clip(text, 120);
 
     /// <param name="Write">The team's rows to write here — new, or with a declaration that changed.</param>

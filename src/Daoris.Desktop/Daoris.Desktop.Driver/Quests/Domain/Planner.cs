@@ -387,13 +387,31 @@ public sealed record PriorSession(
 /// since the quest's log names a machine by an id no person reads.
 /// </param>
 /// <param name="Why">Why a lost claim lost, as the host said it beside the claim (FABRIC-CLOSE1c18), or null.</param>
-public sealed record QuestTake(string Claim, bool Took = false, string? Teammate = null, string? Why = null)
+/// <param name="Forward">
+/// The person's bring-forward the take was made by (SYNCMERGE1b0 point 3), as the claim's answer names it, or null: what a stood-down
+/// session of this machine's is carried on by (SYNCMERGE1b, <see cref="Planner.BroughtForward"/>).
+/// </param>
+public sealed record QuestTake(string Claim, bool Took = false, string? Teammate = null, string? Why = null, ForwardTake? Forward = null)
 {
-    /// <summary>The claim was lost to the person's reopen of the work the step grew from, not to another machine's take (FABRIC-CLOSE1c20).</summary>
-    public bool Reopened => Claim == "lost" && Why == "source-reopened";
+    /// <summary>
+    /// The claim was lost to the person's reopen of the work the step grew from, not to another machine's take (FABRIC-CLOSE1c20). Never
+    /// while a bring-forward's take stands: the claim's <c>why</c> still names the reopen the take once lost to (SYNCMERGE1b).
+    /// </summary>
+    public bool Reopened => Claim == "lost" && Why == "source-reopened" && Forward is not { Stands: true };
 
     /// <summary>The take is this machine's by its claim: one a remote numbered, or one only here (D68 §4).</summary>
     public bool Here => Claim is "held" or "unconfirmed";
+}
+
+/// <summary>
+/// The fresh take a person's bring-forward made of a step this machine's take lost (SYNCMERGE1b0, D178 points 3 and 8), as the claim's
+/// answer names it: the take, when it was made, and where it stands in the claim's words.
+/// </summary>
+/// <param name="Standing"><c>held</c> once a remote numbered it, <c>unconfirmed</c> while it is only here, <c>lost</c> where it lost again.</param>
+public sealed record ForwardTake(string Machine, long Sequence, DateTimeOffset At, string Standing)
+{
+    /// <summary>The take stands this machine's: confirmed, or unconfirmed offline, which goes on all the same (D68 rule 1, D178 point 8).</summary>
+    public bool Stands => Standing is "held" or "unconfirmed";
 }
 
 /// <summary>
@@ -606,6 +624,14 @@ public sealed record Snapshot(
     /// and where: a taken quest no session here ran is somebody else's take.
     /// </summary>
     public IReadOnlyDictionary<string, PriorSession> LastRun { get; init; } =
+        new Dictionary<string, PriorSession>(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// The newest record of THIS machine's on each quest, by quest id, where it stood down (SYNCMERGE1b): a take that lost, which
+    /// <see cref="LastRun"/> never holds, and which the person's bring-forward carries on once (<see cref="Planner.BroughtForward"/>).
+    /// Derived from the same records, never kept. Absent is none.
+    /// </summary>
+    public IReadOnlyDictionary<string, PriorSession> StoodDown { get; init; } =
         new Dictionary<string, PriorSession>(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>
@@ -838,6 +864,13 @@ public sealed record Consideration(
     public bool GoesOn { get; init; }
 
     /// <summary>
+    /// For a carry-on of a stood-down session whose lost take the person brought forward (SYNCMERGE1b, D178 point 3): the fresh take, so
+    /// the start brings its tree up to date with the step's current source (<see cref="Planner.BringsForwardToSource"/>) and says the
+    /// press. Null for every other start.
+    /// </summary>
+    public ForwardTake? BroughtForward { get; init; }
+
+    /// <summary>
     /// For a start held at spawn (<see cref="StartVerdict.Blocked"/>): the accounts it passed not signed in (TOOL6g), whether
     /// it then waited on a cooling one or on none, so the page says each and its sign-in from facts. Null for every other.
     /// </summary>
@@ -994,9 +1027,7 @@ public static class Planner
             {
                 considerations.Add(Resume(quest, awaits, prior));
             }
-            else if (quest is { Status: "Taken", Awaits: null or "" }
-                     && snapshot.LastRun.TryGetValue(quest.Id, out var cutOff)
-                     && CarriesOn(cutOff))
+            else if (quest is { Status: "Taken", Awaits: null or "" } && CarriedOnFrom(quest) is { } cutOff)
             {
                 // Whose the take is, before anything a carry-on would sit for (CARRY2b): the ledger refuses one over a take
                 // that is not this machine's (CARRY2), whatever is opted in or held here.
@@ -1005,6 +1036,23 @@ public static class Planner
         }
 
         return considerations;
+
+        // The record a taken quest that waits on nothing is carried on from (D80): a newer stand-down whose lost take the person brought
+        // forward (SYNCMERGE1b), first, since that is the work they chose and its tree; else its last session here, where that carries on.
+        PriorSession? CarriedOnFrom(QuestView quest) =>
+            BroughtForwardFrom(quest)
+            ?? (snapshot.LastRun.TryGetValue(quest.Id, out var last) && CarriesOn(last) ? last : null);
+
+        // 🔴 The stand-down a bring-forward carries on (SYNCMERGE1b, D178 point 3), or null: the quest's newest record here stood down, and
+        // the take the claim reads stands by a press made after that record began. Once, by that alone, as the ledger opens it (SYNCMERGE1b0
+        // point 1): the record carried on is newer than the press, so its own stand-down carries nothing. No claim read, or no forward, or one
+        // that lost again, is none, and the quest reads as it did before.
+        PriorSession? BroughtForwardFrom(QuestView quest) =>
+            snapshot.StoodDown.TryGetValue(quest.Id, out var lost)
+            && snapshot.Takes.TryGetValue(quest.Id, out var take)
+            && BroughtForward(lost, take)
+                ? lost
+                : null;
 
         // Whether the loop below says anything of this quest: every open one, and a taken one whose last session here is
         // a stop, a cut-off, an answered park or the asker of a question (the branches below). A take this machine never ran,
@@ -1019,7 +1067,9 @@ public static class Planner
                     || string.Equals(run.State, "failed", StringComparison.OrdinalIgnoreCase)
                     || string.Equals(run.State, "stopped", StringComparison.OrdinalIgnoreCase)
                     || run is { State: "completed", Answer: not null }
-                    || StoppedByReopen(run)));
+                    || StoppedByReopen(run)))
+            // A stand-down the person's bring-forward carries on (SYNCMERGE1b), whatever ran here before it.
+            || (quest.Status == "Taken" && BroughtForwardFrom(quest) is not null);
 
         // Held for the person's choice (FABRIC-CLOSE1c2): the sentence names the step it grew from and both choices. The service
         // refuses its take, its done and its ready meanwhile, so nothing here would move it anyway.
@@ -1114,13 +1164,23 @@ public static class Planner
         // cut-off, and the third parks it — bar one an account's limit made, which is no strike: its carry-on is
         // planned as any is, and held at spawn while the account cools (TOOL4d, D125 §4).
         // A record the person's words wait on, an answered park among them, is planned by GoOn above.
+        // A stand-down the person brought forward (SYNCMERGE1b) is carried on the same way, its sentence naming the press and, offline,
+        // that the fresh take is not settled (D178 point 8).
         Consideration CarryOn(QuestView quest, PriorSession cutOff)
         {
             var considered = Consider(quest, into: cutOff);
+            var forward = string.Equals(cutOff.State, "stood-down", StringComparison.OrdinalIgnoreCase)
+                ? snapshot.Takes.GetValueOrDefault(quest.Id)?.Forward
+                : null;
             return considered.Verdict == StartVerdict.Start
                 ? considered with
                 {
-                    Reason = cutOff.Answer is { } answer
+                    Reason = forward is not null
+                        ? $"carrying on in `{quest.To}` — you brought the work of session `{cutOff.Session}` forward after its take lost"
+                          + (forward.Standing == "held"
+                              ? ", and the remote confirmed the fresh take."
+                              : "; the fresh take is unconfirmed until a sync reaches the remote, and may still lose there.")
+                        : cutOff.Answer is { } answer
                         ? $"carrying on in `{quest.To}` — you answered session `{cutOff.Session}`: {answer}"
                         : StoppedByReopen(cutOff)
                             ? $"carrying on in `{quest.To}` — you went on with it on the new work of `#{quest.Parent}`, after session "
@@ -1132,6 +1192,7 @@ public static class Planner
                             : $"carrying on in `{quest.To}` — session `{cutOff.Session}` was cut off: "
                               + (cutOff.Note is { Length: > 0 } note ? note : "it ended before closing the quest."),
                     Resumes = cutOff,
+                    BroughtForward = forward,
                 }
                 : considered;
         }
@@ -1164,7 +1225,8 @@ public static class Planner
                 };
             }
 
-            return !take.Took && quest.Updated is { } taken && cutOff.Updated is { } ended && taken > ended
+            // A take made after it ended by the person's bring-forward of it is the press's (SYNCMERGE1b), never a chat's.
+            return !take.Took && quest.Updated is { } taken && cutOff.Updated is { } ended && taken > ended && !BroughtForward(cutOff, take)
                 ? new(quest, StartVerdict.TakenElsewhere,
                     $"Quest `#{quest.Id}` was taken here after session `{cutOff.Session}` ended, by a chat or by work outside Daoris: {over}")
                 {
@@ -1511,7 +1573,30 @@ public static class Planner
     /// </summary>
     internal static bool TakenAway(QuestView quest, PriorSession last, QuestTake take) =>
         !take.Here
-        || (!take.Took && quest.Updated is { } taken && last.Updated is { } ended && taken > ended);
+        || (!take.Took && quest.Updated is { } taken && last.Updated is { } ended && taken > ended && !BroughtForward(last, take));
+
+    /// <summary>
+    /// Whether <paramref name="lost"/>, a record of this machine's that stood down, is carried on by the person's bring-forward of its lost
+    /// take (SYNCMERGE1b, D178 point 3), as the ledger opens it (SYNCMERGE1b0 point 1): <paramref name="take"/> stands this machine's by a
+    /// press made after the record was created. Its creation, not its end, so a stand-down written after the press still goes on. Once:
+    /// the session carried on is opened after the press, so its own stand-down is no carry-on.
+    /// </summary>
+    /// <remarks>A record with no creation said is none: nothing could tell the press after it.</remarks>
+    internal static bool BroughtForward(PriorSession lost, QuestTake take) =>
+        string.Equals(lost.State, "stood-down", StringComparison.OrdinalIgnoreCase)
+        && !lost.Teammate
+        && take is { Here: true, Forward: { Stands: true } forward }
+        && lost.Created is { } created
+        && forward.At > created;
+
+    /// <summary>
+    /// Whether a bring-forward's carry-on (SYNCMERGE1b, <see cref="Consideration.BroughtForward"/>) is first brought up to date with its
+    /// step's current source, then the line, as the go-on's is (FABRIC-CLOSE1c5's <c>GoOnInSyncAsync</c>): a step that grew from a source,
+    /// whose bring-forward took it as it stands. Any other carry-on of it syncs with the line alone. The sibling of
+    /// <see cref="ReopenTelling.BringsToSource"/>, which keys on the person's reopen.
+    /// </summary>
+    internal static bool BringsForwardToSource(QuestView step, Consideration start) =>
+        start.BroughtForward is not null && step is { GrewFrom: not null, Parent: { Length: > 0 } };
 
     /// <summary>
     /// The starts still opening a snapshot carries that take a place of their own (PARALLEL1b): each but one whose quest an active

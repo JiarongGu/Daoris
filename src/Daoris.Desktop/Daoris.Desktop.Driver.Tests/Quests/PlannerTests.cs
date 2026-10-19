@@ -1025,6 +1025,256 @@ public sealed class PlannerTests
         Assert.Null(quests[1].Updated);
     }
 
+    // ── a lost take brought forward (SYNCMERGE1b, D178 points 3 and 8) ─────────────────────────────────────────────────────────
+    //
+    // A take that lost stands its session down (D68 §5), and a stand-down is never a run (ReadLastRun). Once the person brings its work
+    // forward, the quest stands taken by the fresh take that settled its conflict, made after the record began, which the claim names as
+    // its `forward`: the planner carries that record on in its tree, once, as the ledger opens it (SYNCMERGE1b0 point 1). A forward that
+    // lost again carries nothing; no forward is the refusal as before; and a forward older than the stand-down is one already gone on with.
+
+    private static readonly DateTimeOffset LostAt = new(2026, 10, 19, 9, 0, 0, TimeSpan.Zero);
+
+    /// <summary>The session whose take lost, stood down by the driver with its tree kept (D68 §5).</summary>
+    private static readonly PriorSession Lost = new("s1", "D:/trees/s1", "stood-down", Daoris.Driver.Driver.LostClaim, Repository: "Game")
+    {
+        Created = LostAt, Updated = LostAt.AddMinutes(20),
+    };
+
+    /// <summary>The fresh take a bring-forward made, as the claim's answer names it, by default pressed after the stand-down ended.</summary>
+    private static ForwardTake Forward(string standing = "held", DateTimeOffset? at = null) => new("desk", 7, at ?? LostAt.AddMinutes(30), standing);
+
+    /// <summary>
+    /// q1, taken by the press (moved after the stand-down ended), its newest record here <paramref name="stoodDown"/>, and the claim as read.
+    /// The lost session never marked its take, so a take made after it ended reads as no session's but the press's.
+    /// </summary>
+    private static Snapshot StoodDownOn(QuestTake? take, PriorSession? stoodDown = null, PriorSession? lastRun = null)
+    {
+        var quest = Quest(status: "Taken") with { Updated = LostAt.AddMinutes(30) };
+        return (lastRun is null ? Ran([quest]) : Ran([quest], ("q1", lastRun))) with
+        {
+            StoodDown = new Dictionary<string, PriorSession>(StringComparer.OrdinalIgnoreCase) { ["q1"] = stoodDown ?? Lost },
+            Takes = take is null
+                ? new Dictionary<string, QuestTake>()
+                : new Dictionary<string, QuestTake>(StringComparer.OrdinalIgnoreCase) { ["q1"] = take },
+        };
+    }
+
+    /// <summary>
+    /// 🔴 The row's own case: a confirmed bring-forward carries the stood-down session on in its tree, naming the press, its fact beside the
+    /// sentence; the take made after the session ended is the press's, never a chat's, so nothing sits it as taken elsewhere.
+    /// </summary>
+    [Fact]
+    public void A_stood_down_session_whose_lost_take_the_person_brought_forward_is_carried_on_in_its_tree()
+    {
+        var forward = Forward();
+
+        var only = Assert.Single(Planner.Plan(StoodDownOn(new QuestTake("held", Forward: forward)), Config()));
+
+        Assert.Equal(StartVerdict.Start, only.Verdict);
+        Assert.Equal(Lost, only.Resumes);
+        Assert.Equal(forward, only.BroughtForward);
+        Assert.Null(only.TakenBy);
+        Assert.Equal(
+            "carrying on in `Game` — you brought the work of session `s1` forward after its take lost, and the remote confirmed the fresh take.",
+            only.Reason);
+    }
+
+    /// <summary>Offline (D68 rule 1, D178 point 8): an unconfirmed fresh take goes on as well, never said as settled.</summary>
+    [Fact]
+    public void An_unconfirmed_bring_forward_carries_on_saying_it_may_still_lose()
+    {
+        var only = Assert.Single(Planner.Plan(StoodDownOn(new QuestTake("unconfirmed", Forward: Forward("unconfirmed"))), Config()));
+
+        Assert.Equal(StartVerdict.Start, only.Verdict);
+        Assert.Equal(Lost, only.Resumes);
+        Assert.Equal(
+            "carrying on in `Game` — you brought the work of session `s1` forward after its take lost; the fresh take is unconfirmed until a "
+            + "sync reaches the remote, and may still lose there.",
+            only.Reason);
+        Assert.DoesNotContain("confirmed the fresh take", only.Reason);
+    }
+
+    /// <summary>
+    /// A take lost to the person's reopen and brought forward once the work was ready again: the claim still says why it once lost, and
+    /// the held take is carried on all the same, never said as lost to the reopen.
+    /// </summary>
+    [Fact]
+    public void A_bring_forward_of_a_take_lost_to_the_reopen_carries_on_though_the_claim_still_names_the_reopen()
+    {
+        var take = new QuestTake("held", Why: "source-reopened", Forward: Forward());
+
+        var only = Assert.Single(Planner.Plan(StoodDownOn(take), Config()));
+
+        Assert.False(take.Reopened);
+        Assert.Equal(StartVerdict.Start, only.Verdict);
+        Assert.Equal(Lost, only.Resumes);
+    }
+
+    /// <summary>A bring-forward that lost again (D178 point 3): nothing goes on, and nothing is said of a take not this machine's.</summary>
+    [Fact]
+    public void A_bring_forward_that_lost_again_carries_nothing()
+    {
+        Assert.Empty(Planner.Plan(StoodDownOn(new QuestTake("lost", Forward: Forward("lost"))), Config()));
+        Assert.Empty(Planner.Plan(StoodDownOn(new QuestTake("held", Forward: Forward("lost"))), Config()));
+    }
+
+    /// <summary>
+    /// No bring-forward is the refusal as before: a stand-down carries nothing on, and a cut-off before it sits as taken elsewhere, not
+    /// carried on over another machine's take. So does a claim not read.
+    /// </summary>
+    [Fact]
+    public void A_stand_down_with_no_bring_forward_is_refused_as_before()
+    {
+        Assert.Empty(Planner.Plan(StoodDownOn(new QuestTake("lost")), Config()));
+        Assert.Empty(Planner.Plan(StoodDownOn(take: null), Config()));
+
+        var cut = Assert.Single(Planner.Plan(StoodDownOn(new QuestTake("lost"), lastRun: Cut), Config()));
+        Assert.Equal(StartVerdict.TakenElsewhere, cut.Verdict);
+        Assert.Equal("Quest `#q1` is taken on another machine: the take is theirs, so session `s1` is not carried on over it.", cut.Reason);
+        Assert.Null(cut.Resumes);
+        Assert.Null(cut.BroughtForward);
+    }
+
+    /// <summary>
+    /// 🔴 Once: a forward made before the stand-down began is one already gone on with, since the session it carried on was opened after
+    /// the press (SYNCMERGE1b0 point 1). That session standing down too carries nothing, and nor does a press at the same moment.
+    /// </summary>
+    [Fact]
+    public void A_bring_forward_older_than_the_stand_down_carries_nothing_so_the_carry_on_goes_on_once()
+    {
+        var carried = new PriorSession("s2", "D:/trees/s1", "stood-down", Daoris.Driver.Driver.LostClaim, Repository: "Game")
+        {
+            Created = LostAt.AddMinutes(31), Updated = LostAt.AddMinutes(40),
+        };
+
+        Assert.Empty(Planner.Plan(StoodDownOn(new QuestTake("held", Forward: Forward()), carried), Config()));
+        Assert.Empty(Planner.Plan(StoodDownOn(new QuestTake("held", Forward: Forward(at: LostAt))), Config()));
+        Assert.Empty(Planner.Plan(StoodDownOn(new QuestTake("held", Forward: Forward() with { At = LostAt.AddMinutes(-1) })), Config()));
+        Assert.False(Planner.BroughtForward(Lost with { Created = null }, new QuestTake("held", Forward: Forward())));
+    }
+
+    /// <summary>The newer stand-down goes on, never an older cut-off before it, whose tree and words are not the ones brought forward.</summary>
+    [Fact]
+    public void A_bring_forward_carries_on_the_stand_down_not_an_older_cut_off()
+    {
+        var only = Assert.Single(Planner.Plan(StoodDownOn(new QuestTake("held", Took: true, Forward: Forward()), lastRun: Cut), Config()));
+
+        Assert.Equal(Lost, only.Resumes);
+    }
+
+    /// <summary>
+    /// A chain's step brought forward goes on with its branch brought up to date with its current source first, as the go-on's does
+    /// (FABRIC-CLOSE1c5), since its fresh take was made on that source as it stands; a quest that grew from none syncs with the line
+    /// alone, as every carry-on does. A cut-off's carry-on is not brought to its source.
+    /// </summary>
+    [Fact]
+    public void A_brought_forward_step_is_brought_up_to_date_with_its_current_source_first()
+    {
+        var step = Quest("q2", status: "Taken") with { Parent = "q1", GrewFrom = S2 };
+        var carried = new Consideration(step, StartVerdict.Start, "carrying on") { Resumes = Lost, BroughtForward = Forward() };
+
+        Assert.True(Planner.BringsForwardToSource(step, carried));
+        Assert.False(Planner.BringsForwardToSource(Quest(status: "Taken"), carried with { Quest = Quest(status: "Taken") }));
+        Assert.False(Planner.BringsForwardToSource(step, carried with { BroughtForward = null, Resumes = Cut }));
+        Assert.False(ReopenTelling.BringsToSource(step, Lost));
+    }
+
+    /// <summary>A pause holds a bring-forward's carry-on as any carry-on (PAUSE1b), and an active session on the quest holds it (DEV3).</summary>
+    [Fact]
+    public void A_bring_forward_waits_for_a_pause_and_for_a_session_still_on_its_quest()
+    {
+        var snapshot = StoodDownOn(new QuestTake("held", Forward: Forward()));
+
+        Assert.Equal(StartVerdict.Paused, Assert.Single(Planner.Plan(Paused(snapshot, ("q1", ByAsk)), Config())).Verdict);
+        var busy = Assert.Single(Planner.Plan(snapshot with { Active = [new SessionView("s1", "Game") { Quest = "q1" }] }, Config()));
+        Assert.Equal(StartVerdict.RepositoryBusy, busy.Verdict);
+    }
+
+    /// <summary>
+    /// The claim's answer names the bring-forward its take was made by (SYNCMERGE1b0 point 3), each field whole or none: an older host's
+    /// answer, and a forward missing a field, read as none.
+    /// </summary>
+    [Fact]
+    public void A_claim_s_bring_forward_is_read_whole_or_not_at_all()
+    {
+        Assert.Equal(
+            new ForwardTake("desk", 7, new DateTimeOffset(2026, 10, 19, 9, 30, 0, TimeSpan.Zero), "unconfirmed"),
+            RemoteSyncPayloads.Forward("""
+                { "quest": "q1", "claim": "unconfirmed",
+                  "forward": { "machine": "desk", "sequence": 7, "at": "2026-10-19T09:30:00+00:00", "standing": "unconfirmed" } }
+                """));
+        Assert.Null(RemoteSyncPayloads.Forward("""{ "quest": "q1", "claim": "held" }"""));
+        Assert.Null(RemoteSyncPayloads.Forward("""{ "claim": "held", "forward": { "machine": "desk", "sequence": 7, "standing": "held" } }"""));
+        Assert.Null(RemoteSyncPayloads.Forward("""{ "claim": "held", "forward": null }"""));
+    }
+
+    /// <summary>
+    /// The stand-down a bring-forward would carry on is read from the same records as the last run: each quest's newest record here, where
+    /// it stood down. A later run of any other ending, and a teammate's stand-down, name none.
+    /// </summary>
+    [Fact]
+    public void The_newest_record_here_that_stood_down_is_read_beside_the_last_run()
+    {
+        const string records = """
+            [{ "id": "s1", "quest": "q1", "state": "failed", "created": "2026-10-19T09:00:00Z" },
+             { "id": "s2", "quest": "q1", "state": "stood-down", "tree": "D:/trees/s2", "created": "2026-10-19T09:10:00Z" },
+             { "id": "s3", "quest": "q2", "state": "stood-down", "created": "2026-10-19T09:00:00Z" },
+             { "id": "s4", "quest": "q2", "state": "failed", "created": "2026-10-19T09:10:00Z" },
+             { "id": "alice-laptop/a1", "quest": "q3", "state": "stood-down", "created": "2026-10-19T09:00:00Z" }]
+            """;
+
+        var stoodDown = ServiceClient.ReadStoodDown(records);
+
+        Assert.Equal(("s2", "D:/trees/s2", (DateTimeOffset?)new DateTimeOffset(2026, 10, 19, 9, 10, 0, TimeSpan.Zero)),
+            (stoodDown["Q1"].Session, stoodDown["q1"].Tree, stoodDown["q1"].Created));
+        Assert.False(stoodDown.ContainsKey("q2"));
+        Assert.False(stoodDown.ContainsKey("q3"));
+        Assert.Equal("s1", ServiceClient.ReadLastRun(records)["q1"].Session);
+    }
+
+    /// <summary>The take's bring-forward rides beside its claim, for the quests it was read for.</summary>
+    [Fact]
+    public void A_take_s_bring_forward_is_read_beside_its_claim()
+    {
+        var forward = Forward();
+
+        var takes = ServiceClient.ReadTakes(
+            """[{ "id": "s1", "quest": "q1", "state": "stood-down", "created": "2026-10-19T09:00:00Z" }]""",
+            new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase) { ["q1"] = "held", ["q2"] = "held" },
+            forwards: new Dictionary<string, ForwardTake?>(StringComparer.OrdinalIgnoreCase) { ["q1"] = forward });
+
+        Assert.Equal(new QuestTake("held", Forward: forward), takes["q1"]);
+        Assert.Equal(new QuestTake("held"), takes["q2"]);
+    }
+
+    /// <summary>
+    /// A look asks the claim of a taken quest whose newest record here stood down, beside each carry-on, and its bring-forward reaches the
+    /// plan: the stand-down goes on. A taken quest this machine never ran is asked nothing.
+    /// </summary>
+    [Fact]
+    public async Task A_look_asks_the_claim_of_a_stand_down_and_carries_on_its_bring_forward()
+    {
+        var ledger = new StandInLedger();
+        ledger.Publish("q1", "Game");
+        ledger.Publish("q2", "Game");
+        using var service = ledger.Client();
+        var (lost, _) = await service.OpenSessionAsync("q1", "stub");
+        await service.AdvanceAsync(lost!, "working");
+        await service.AdvanceAsync(lost!, "stood-down", note: Daoris.Driver.Driver.LostClaim);
+        ledger.Move("q1", "Taken");
+        ledger.Move("q2", "Taken");
+        var forward = ledger.BringForward();
+
+        var snapshot = await service.SnapshotAsync();
+
+        Assert.Equal(lost, snapshot.StoodDown["q1"].Session);
+        Assert.Equal(new QuestTake("held", Forward: forward), snapshot.Takes["q1"]);
+        Assert.Equal(1, ledger.ClaimsAsked("q1"));
+        Assert.Equal(0, ledger.ClaimsAsked("q2"));
+        var carried = Assert.Single(Planner.Plan(snapshot with { Repositories = [Repo()] }, Config()));
+        Assert.Equal((StartVerdict.Start, lost), (carried.Verdict, carried.Resumes?.Session));
+    }
+
     // ── a person's stop holds its quest, and Try again releases it (SESSUX1b, D126 §3.3, §3.4) ───────
     //
     // Read from the code (M3): a take the person stopped was never looked at again, so it sat with no sentence and no

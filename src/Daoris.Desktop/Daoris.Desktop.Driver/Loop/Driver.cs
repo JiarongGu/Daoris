@@ -114,6 +114,19 @@ public sealed class Driver(
     public static Noted LostClaimToReopenNoted => Noted.Of(NoteCodes.EndedLostClaimReopened, LostClaimToReopen);
 
     /// <summary>
+    /// What a carry-on of a stood-down session whose lost take the person brought forward is told of the session before it (SYNCMERGE1b,
+    /// D178 point 3), in place of that record's stop, which said its work would double someone else's: the quest is this machine's again,
+    /// and, while the fresh take is only here, that it may still lose (D178 point 8).
+    /// </summary>
+    internal static string BroughtForwardTold(ForwardTake forward) =>
+        "its take of the quest lost: another machine's take, or the person's reopen of the work it grew from, reached the remote first, and "
+        + "this machine's driver stopped it with its work kept here. Since then the person brought that work forward, and "
+        + (forward.Standing == "held"
+            ? "the remote confirmed this machine's fresh take, so the quest is yours."
+            : "this machine's fresh take is not yet confirmed by the remote, which may still refuse it: until then the quest is yours, and if "
+              + "it is refused, this session is stopped as the one before it was.");
+
+    /// <summary>
     /// Why a person's line is refused for a driven session (INT4i), and where its work goes instead —
     /// the sentence the bridge carries verbatim, so a caller is told the truth rather than "it ended".
     /// </summary>
@@ -1484,8 +1497,10 @@ public sealed class Driver(
         // trees alone; never a reason to hold the start.
         // FABRIC-CLOSE1c5 (§E5): the person went on with a step whose source they reopened, so its tree is first brought up to date
         // with the source's new submission, then with the line; a conflict leaves both, and the session is told. FABRIC-CLOSE1c13: so
-        // is one whose session had ended normally, going on with the words Daoris told it of the go-on (ReopenTelling).
-        var inSync = resumedIn is { } reopenedIn && start.Resumes is { } goesFrom && ReopenTelling.BringsToSource(quest, goesFrom)
+        // is one whose session had ended normally, going on with the words Daoris told it of the go-on (ReopenTelling). SYNCMERGE1b: and
+        // a stand-down whose lost take the person brought forward, onto the step's current source, which its fresh take was made on.
+        var inSync = resumedIn is { } reopenedIn && start.Resumes is { } goesFrom
+                     && (ReopenTelling.BringsToSource(quest, goesFrom) || Planner.BringsForwardToSource(quest, start))
             ? await GoOnInSyncAsync(reopenedIn, quest, ct).ConfigureAwait(false)
             : (resumedIn ?? joinedIn) is { } goingOn ? await StartInSyncAsync(goingOn, ct).ConfigureAwait(false) : null;
 
@@ -1788,7 +1803,11 @@ public sealed class Driver(
                 // What cut the last session off, and what it left uncommitted (D80) — read by the
                 // driver, because the session may not run `git status` itself. An open quest's start, handed the words its
                 // session could not go on with (MSG1b), takes it as any first start does: it is not yet anyone's.
-                CutOff = carryingOn && quest.Status != "Open" ? start.Resumes!.Note ?? "it ended before closing the quest." : null,
+                // SYNCMERGE1b: a stand-down brought forward is told the quest is this machine's again, never its stop's words that its
+                // work would double someone else's.
+                CutOff = carryingOn && quest.Status != "Open"
+                    ? start.BroughtForward is { } forward ? BroughtForwardTold(forward) : start.Resumes!.Note ?? "it ended before closing the quest."
+                    : null,
                 // A further part gone into its session's tree is told what the part before it left uncommitted there (SESSONE1d).
                 InFlight = carryingOn || joinedIn is not null ? await WorkingTree.UncommittedAsync(workTree, ct: ct).ConfigureAwait(false) : [],
                 // What its start did against the line in the tree it goes on in (LANDSYNC2).
@@ -1836,7 +1855,7 @@ public sealed class Driver(
             var startingNote = StartingNote(
                 opened, quest, answered, resumedIn, carryingOn, start.Resumes, written, elsewhere, fellBack,
                 handedOver: carryingOn && handedFrom, walked: carryingOn && handedFrom && passedAccount is not null,
-                joinedSession: joinedIn is not null ? start.Entry?.Into?.Session : null);
+                joinedSession: joinedIn is not null ? start.Entry?.Into?.Session : null, broughtForward: start.BroughtForward is not null);
             await service.AdvanceAsync(sessionId, "starting", note: startingNote?.Note, ct: ct, parts: startingNote?.Parts).ConfigureAwait(false);
 
             // The answer beneath the question it answers (STANDDOWN2): the session that asked ends with
@@ -2428,10 +2447,11 @@ public sealed class Driver(
     /// <param name="handedOver">The quest was handed over from <paramref name="resumes"/> (MIXAGENT1a-ii): said by the agent it came from.</param>
     /// <param name="walked">The account the hand-over named could not run it, and another account of the named agent did.</param>
     /// <param name="joinedSession">The earlier part's session whose free tree this start went into (SESSONE1g), or null.</param>
+    /// <param name="broughtForward">It carries on a stand-down whose lost take the person brought forward (SYNCMERGE1b): said as that.</param>
     internal static Noted? StartingNote(
         TreeOpened? opened, QuestView quest, QuestView? answered, string? resumedIn, bool carryingOn,
         PriorSession? resumes, PriorSession? written, bool elsewhere, ContinueReason? fellBack, bool handedOver = false, bool walked = false,
-        string? joinedSession = null)
+        string? joinedSession = null, bool broughtForward = false)
     {
         if (opened is not null) return opened.Opening ?? Noted.From(opened.Sentence, null);
 
@@ -2473,6 +2493,10 @@ public sealed class Driver(
                     NoteCodes.StartedHandedOver,
                     $"carries `#{quest.Id}` on: session `{session}` was handed over from {resumes.Adapter ?? "its agent"}",
                     [.. facts, ("agent", resumes.Adapter ?? "its agent")])
+            : broughtForward
+                ? Noted.Of(
+                    NoteCodes.StartedBroughtForward,
+                    $"carries `#{quest.Id}` on: you brought the work of session `{session}` forward after its take lost", facts)
             : resumes.PersonStopped
                 ? Noted.Of(NoteCodes.StartedReleased, $"carries `#{quest.Id}` on: you stopped session `{session}`, and released it", facts)
                 : Noted.Of(NoteCodes.StartedCutOff, $"carries `#{quest.Id}` on after session `{session}` was cut off", facts);

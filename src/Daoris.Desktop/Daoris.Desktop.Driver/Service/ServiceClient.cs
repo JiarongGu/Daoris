@@ -139,21 +139,24 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
         var active = ReadSessions(await activeRead.ConfigureAwait(false));
         var records = await recordsRead.ConfigureAwait(false);
         var lastRun = ReadLastRun(records);
+        // The stand-downs a bring-forward would carry on (SYNCMERGE1b), which the last run never holds.
+        var stoodDown = ReadStoodDown(records);
         // The closed quests a session written to served (MSG1b, D137 §2.2), read only where one waits: no open list holds them.
         var open = quests.Select(quest => quest.Id).ToList();
         var closed = lastRun.Any(run => run.Value.WordsWaiting && !open.Contains(run.Key, StringComparer.OrdinalIgnoreCase))
             ? ReadClosed(await GetAsync("/api/quests?includeClosed=true", ct).ConfigureAwait(false), lastRun, open)
             : [];
-        var (claims, whys) = await CarryOnClaimsAsync(quests, lastRun, ct).ConfigureAwait(false);
+        var (claims, whys, forwards) = await CarryOnClaimsAsync(quests, lastRun, stoodDown, ct).ConfigureAwait(false);
         return new Snapshot(quests, repositories, active, ReadStrikes(records))
         {
             LastRun = lastRun,
+            StoodDown = stoodDown,
             // The session a taken quest's reopen names, where a later one is its last here (FABRIC-CLOSE1c9): its words go on in it.
             NamedByReopen = ReadNamedByReopen(records, quests, lastRun),
             Started = ReadStarted(records, active),
             Closed = closed,
             // Whose the take is on each taken quest a look would carry on (CARRY2b), the claim asked of the host for those alone.
-            Takes = ReadTakes(records, claims, whys),
+            Takes = ReadTakes(records, claims, whys, forwards),
             // Each record's entry, which a quest's publisher names its line by (SESSONE1d).
             Entries = ReadEntries(records),
         };
@@ -164,15 +167,20 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
     /// here ended as a carry-on goes on from (<see cref="Planner.CarriesOn"/>), a stop the person still holds included, which
     /// the planner holds by the stop first. A claim the host does not answer is unread, and the carry-on is planned as before. A
     /// step the person's reopen holds is not asked (FABRIC-CLOSE1c2): nothing carries it on until their go-on, which the next look reads.
+    /// And one whose newest record here stood down (<paramref name="stoodDown"/>, SYNCMERGE1b): its claim names the person's bring-forward,
+    /// where one made the take, which carries that record on.
     /// </summary>
-    private async Task<(IReadOnlyDictionary<string, string> Claims, IReadOnlyDictionary<string, string?> Whys)> CarryOnClaimsAsync(
-        IReadOnlyList<QuestView> quests, IReadOnlyDictionary<string, PriorSession> lastRun, CancellationToken ct)
+    private async Task<(IReadOnlyDictionary<string, string> Claims, IReadOnlyDictionary<string, string?> Whys,
+        IReadOnlyDictionary<string, ForwardTake?> Forwards)> CarryOnClaimsAsync(
+        IReadOnlyList<QuestView> quests, IReadOnlyDictionary<string, PriorSession> lastRun, IReadOnlyDictionary<string, PriorSession> stoodDown,
+        CancellationToken ct)
     {
         var claims = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         var whys = new Dictionary<string, string?>(StringComparer.OrdinalIgnoreCase);
+        var forwards = new Dictionary<string, ForwardTake?>(StringComparer.OrdinalIgnoreCase);
         var asked = quests
             .Where(quest => quest is { Status: "Taken", Awaits: null or "", HeldByReopen: false }
-                            && lastRun.TryGetValue(quest.Id, out var last) && Planner.CarriesOn(last))
+                            && ((lastRun.TryGetValue(quest.Id, out var last) && Planner.CarriesOn(last)) || stoodDown.ContainsKey(quest.Id)))
             .ToArray();
 
         // PARALLEL1b (D181 point 3): asked at once, at most ClaimsAtOnce together, so a host slow to answer for one quest holds that
@@ -183,22 +191,23 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
             {
                 try
                 {
-                    var (claim, why) = await ClaimStandingAsync(quest.Id, token).ConfigureAwait(false);
+                    var (claim, why, forward) = await ClaimTakeAsync(quest.Id, token).ConfigureAwait(false);
                     lock (claims)
                     {
                         claims[quest.Id] = claim;
                         whys[quest.Id] = why;
+                        forwards[quest.Id] = forward;
                     }
                 }
                 catch (Exception error) when (error is DriverException or HttpRequestException or JsonException
                                                   // The client's own timeout (DEV3a): a host that took the question and stalled.
                                                   || (error is OperationCanceledException && !ct.IsCancellationRequested))
                 {
-                    // Unread: the ledger judges the carry-on, as it did before the planner asked.
+                    // Unread: the ledger judges the carry-on, as it did before the planner asked. A stand-down unread carries nothing.
                 }
             }).ConfigureAwait(false);
 
-        return (claims, whys);
+        return (claims, whys, forwards);
     }
 
     /// <summary>How many claim questions a snapshot asks the host together (PARALLEL1b): local, and each one small.</summary>
@@ -512,8 +521,18 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
     /// </summary>
     public async Task<(string Claim, string? Why)> ClaimStandingAsync(string id, CancellationToken ct = default)
     {
+        var (claim, why, _) = await ClaimTakeAsync(id, ct).ConfigureAwait(false);
+        return (claim, why);
+    }
+
+    /// <summary>
+    /// <see cref="ClaimStandingAsync"/>, with the person's bring-forward the take was made by where the host names one (SYNCMERGE1b0 point
+    /// 3): what a look carries a stood-down session on by (SYNCMERGE1b). Null from a host before it, and for any other take.
+    /// </summary>
+    public async Task<(string Claim, string? Why, ForwardTake? Forward)> ClaimTakeAsync(string id, CancellationToken ct = default)
+    {
         var json = await GetAsync($"/api/quests/{Uri.EscapeDataString(id)}/claim", ct).ConfigureAwait(false);
-        return (RemoteSyncPayloads.Claim(json), RemoteSyncPayloads.ClaimWhy(json));
+        return (RemoteSyncPayloads.Claim(json), RemoteSyncPayloads.ClaimWhy(json), RemoteSyncPayloads.Forward(json));
     }
 
     /// <summary>Ask the ledger to queue a session. A refusal is an answer, not an exception.</summary>
@@ -1792,6 +1811,34 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
     }
 
     /// <summary>
+    /// The newest record of this machine's on each quest where it stood down (SYNCMERGE1b; <see cref="Snapshot.StoodDown"/>): newer, by
+    /// that alone, than the quest's <see cref="ReadLastRun"/>, which skips it. The newest by when it was made, a later one in the answer
+    /// on a tie, as the ledger orders them (its last own record, which it carries a bring-forward on from).
+    /// </summary>
+    /// <remarks>
+    /// Read only so a look asks the claim of those quests: a stand-down carries nothing on unless the person's bring-forward made the take
+    /// the quest stands by (<see cref="Planner.BroughtForward"/>), which the remark on <see cref="ReadLastRun"/> still holds for every other.
+    /// </remarks>
+    internal static IReadOnlyDictionary<string, PriorSession> ReadStoodDown(string json)
+    {
+        using var document = JsonDocument.Parse(json);
+        var newest = new Dictionary<string, (JsonElement Session, DateTimeOffset At)>(StringComparer.OrdinalIgnoreCase);
+        foreach (var session in document.RootElement.EnumerateArray())
+        {
+            if (session.ValueKind != JsonValueKind.Object || IsTeams(session)) continue;
+            if (Text(session, "quest") is not { Length: > 0 } quest) continue;
+
+            var at = Moments.Read(Text(session, "created")) ?? DateTimeOffset.MinValue;
+            if (newest.TryGetValue(quest, out var seen) && seen.At > at) continue;
+            newest[quest] = (session, at);
+        }
+
+        return newest
+            .Where(pair => string.Equals(Text(pair.Value.Session, "state"), "stood-down", StringComparison.OrdinalIgnoreCase))
+            .ToDictionary(pair => pair.Key, pair => Prior(pair.Value.Session), StringComparer.OrdinalIgnoreCase);
+    }
+
+    /// <summary>
     /// The record each taken quest's standing reopen names (FABRIC-CLOSE1c9; <see cref="Snapshot.NamedByReopen"/>), where it is
     /// this machine's and not the quest's last record here (<paramref name="lastRun"/>), from the same records.
     /// </summary>
@@ -1837,8 +1884,10 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
     /// </summary>
     /// <param name="claims">This machine's claim on each quest read, by quest id (<see cref="ClaimAsync"/>).</param>
     /// <param name="whys">Why a lost claim lost, by quest id (<see cref="ClaimStandingAsync"/>), where the host said.</param>
+    /// <param name="forwards">The bring-forward each take was made by, by quest id (<see cref="ClaimTakeAsync"/>), where the host named one.</param>
     internal static IReadOnlyDictionary<string, QuestTake> ReadTakes(
-        string json, IReadOnlyDictionary<string, string> claims, IReadOnlyDictionary<string, string?>? whys = null)
+        string json, IReadOnlyDictionary<string, string> claims, IReadOnlyDictionary<string, string?>? whys = null,
+        IReadOnlyDictionary<string, ForwardTake?>? forwards = null)
     {
         var took = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         var teammates = new Dictionary<string, (string Id, DateTimeOffset At)>(StringComparer.OrdinalIgnoreCase);
@@ -1862,7 +1911,8 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
         return claims.ToDictionary(
             pair => pair.Key,
             pair => new QuestTake(pair.Value, took.Contains(pair.Key), teammates.TryGetValue(pair.Key, out var teammate) ? teammate.Id : null,
-                whys is not null && whys.TryGetValue(pair.Key, out var why) ? why : null),
+                whys is not null && whys.TryGetValue(pair.Key, out var why) ? why : null,
+                forwards?.GetValueOrDefault(pair.Key)),
             StringComparer.OrdinalIgnoreCase);
     }
 

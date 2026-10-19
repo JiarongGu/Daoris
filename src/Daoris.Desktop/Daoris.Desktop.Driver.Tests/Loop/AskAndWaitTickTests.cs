@@ -265,6 +265,9 @@ public sealed class AskAndWaitTickTests : IDisposable
         /// <summary>What a quest's claim door answers (D68 §4), or null where the stand-in has none, as before.</summary>
         public string? Claim { get; set; }
 
+        /// <summary>The person's bring-forward the claim door names beside the claim (SYNCMERGE1b0), or null for none, as before.</summary>
+        public JsonObject? ClaimForward { get; set; }
+
         public int SessionCount { get { lock (_sessions) return _sessions.Count; } }
 
         public JsonObject Session(string id)
@@ -383,7 +386,12 @@ public sealed class AskAndWaitTickTests : IDisposable
                     }
 
                     case ("GET", _) when Claim is not null && path.StartsWith("/api/quests/", StringComparison.Ordinal) && path.EndsWith("/claim", StringComparison.Ordinal):
-                        return (200, new JsonObject { ["claim"] = Claim }.ToJsonString());
+                    {
+                        var claim = new JsonObject { ["claim"] = Claim };
+                        // Written only where set, as the service answers it.
+                        if (ClaimForward is not null) claim["forward"] = ClaimForward.DeepClone();
+                        return (200, claim.ToJsonString());
+                    }
 
                     case ("POST", _) when path.StartsWith("/api/sessions/", StringComparison.Ordinal) && path.EndsWith("/state", StringComparison.Ordinal):
                     {
