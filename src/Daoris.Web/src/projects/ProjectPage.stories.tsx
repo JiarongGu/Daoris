@@ -506,6 +506,39 @@ export const SetupHeavyGates: Story = {
   },
 };
 
+/**
+ * Setup's *Heavy gates* where the repository's own `daoris.gates.json` marks heavy gates (HEAVYRUN1b2c): the section says those are run
+ * and this list is not, and its folded line cues it "not used".
+ */
+export const SetupHeavyGatesFileWins: Story = {
+  args: {
+    start: 'setup',
+    setup: {
+      ...SETUP_DEFAULTS,
+      heavy: {
+        gates: [{ name: 'build', run: 'dotnet build -nodeReuse:false' }],
+        marks: { marks: true, names: ['web', 'e2e'] },
+        onSave: (_gates, answered) => answered.done(),
+      },
+    },
+  },
+};
+
+/** Setup's *Heavy gates* where its file does not read: the driver's words, "cannot tell", never "marks none". */
+export const SetupHeavyGatesCannotTell: Story = {
+  args: {
+    start: 'setup',
+    setup: {
+      ...SETUP_DEFAULTS,
+      heavy: {
+        gates: [{ name: 'build', run: 'dotnet build -nodeReuse:false' }],
+        marks: { marks: null, names: [], refusal: 'daoris.gates.json is not valid JSON: unexpected end of input.' },
+        onSave: (_gates, answered) => answered.done(),
+      },
+    },
+  },
+};
+
 /** Setup's *Heavy gates* where none is set, folded to its line and offering *Add heavy gates* once opened; narrow, in 中文. */
 export const SetupHeavyGatesNoneChinese: Story = {
   args: { start: 'setup', setup: { ...opened('heavy'), heavy: { gates: [], onSave: (_gates, answered) => answered.done() } } },

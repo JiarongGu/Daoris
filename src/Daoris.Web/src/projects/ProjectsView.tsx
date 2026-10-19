@@ -21,7 +21,7 @@ import type { LandingRule } from '../settings/Landings';
 import { type OpinionEdit, opinionToast } from '../settings/Opinions';
 import { type ReviewEdit, reviewToast } from '../settings/Reviews';
 import {
-  useAcross, useDriver, useHarnesses, useLines, usePlugins, useRuleAction, useRules, useSetAccess, useSetCommits, useSetDrivable, useSetHeavyGates, useSetHelpers,
+  useAcross, useDriver, useHarnesses, useLines, usePlugins, useRuleAction, useRules, useSetAccess, useSetCommits, useHeavyMarks, useSetDrivable, useSetHeavyGates, useSetHelpers,
   useSetHold, useSetLanding, useSetLanguage, useSetLine, useSetOpinion, useSetReadAcross, useSetReview, useSetStanding, useSetTrees,
   useSetupPlan, useSetupPress, useSetWriteAcross, useSweepPlan, useWorkflowCurrent,
 } from '../bridge/shell';
@@ -178,6 +178,9 @@ export function useProjectsView({
   const setupShown = active && driver.data !== undefined && tab === 'setup' && chosenRepository !== null;
   const across = useAcross({ enabled: setupShown });
   const rules = useRules();
+  // Whether its own daoris.gates.json marks heavy gates, so wins over this machine's list (HEAVYRUN1b2c): the driver's reading, asked
+  // for the chosen repository only while its Setup shows.
+  const heavyMarks = useHeavyMarks(chosenRepository ?? '', { enabled: setupShown });
   const catalog = usePlugins({ enabled: setupShown });
   const landers = (catalog.data?.plugins ?? [])
     .filter((plugin) => plugin.enabled && !plugin.problem && plugin.points.includes('work/land'))
@@ -394,6 +397,8 @@ export function useProjectsView({
     const heavyGates = driver.data.heavyGates;
     const heavy: RepositorySetupProps['heavy'] = driving && Array.isArray(heavyGates) ? {
       gates: heavyGates.find((row) => same(row.repository))?.gates ?? [],
+      // Until the driver has answered (or on a shell older than the read) the section says only the general rule.
+      marks: heavyMarks.data && typeof heavyMarks.data.marks !== 'undefined' ? heavyMarks.data : null,
       onSave: (gates, answered) => setHeavy.mutate({ repository, gates }, {
         onSuccess: () => {
           notify(heavyToast(t, repository, gates));
