@@ -692,6 +692,15 @@ public sealed class QuestStore
     /// </summary>
     public static readonly TimeSpan TakeBindLife = TimeSpan.FromHours(1);
 
+    /// <summary>
+    /// The version of what this build keeps in the store (CLOSETAKE1, QUESTSTOREVER1), stamped in <c>quest_store_version</c>. 1 is the
+    /// build with owned take binds (FABRIC-CLOSE1w); raise it with any change to a table or a contract an older build would misread.
+    /// </summary>
+    public const int StoreVersion = 1;
+
+    /// <summary>The version a newer build stamped on this store, or null where this build's is the newest that has written it.</summary>
+    public int? NewerVersion { get; private set; }
+
     /// <summary>The connection's gate: every command here runs inside it (SQLITETX1).</summary>
     private readonly ConnectionGate _db;
 
@@ -893,8 +902,29 @@ public sealed class QuestStore
                   PRIMARY KEY (take_machine, take_sequence)
                 );
                 CREATE INDEX IF NOT EXISTS quest_forwards_quest ON quest_forwards (quest);
+                -- The build that last changed what this store keeps (CLOSETAKE1, QUESTSTOREVER1). Not PRAGMA user_version: the quest tables
+                -- share the knowledge index's file, whose rebuild owns that number. Never lowered, never pushed or served.
+                CREATE TABLE IF NOT EXISTS quest_store_version (
+                  one     INTEGER PRIMARY KEY CHECK (one = 1),
+                  version INTEGER NOT NULL
+                );
                 """;
             await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
+        }
+
+        // 🔴 A store a newer build stamped keeps its stamp and refuses what this build cannot write into it (a take's bind: the next
+        // change to that contract would hide its rows in a new table, as FABRIC-CLOSE1w's did); it never refuses to open, since the
+        // quests and their history are read and moved as before.
+        await using (var stamp = _db.Command())
+        {
+            stamp.CommandText = """
+                INSERT INTO quest_store_version (one, version) VALUES (1, $version)
+                ON CONFLICT(one) DO UPDATE SET version = MAX(version, excluded.version)
+                RETURNING version
+                """;
+            stamp.Parameters.AddWithValue("$version", StoreVersion);
+            var stamped = Convert.ToInt32(await stamp.ExecuteScalarAsync(ct).ConfigureAwait(false));
+            NewerVersion = stamped > StoreVersion ? stamped : null;
         }
 
         await using (var command = _db.Command())
@@ -1776,6 +1806,8 @@ public sealed class QuestStore
         {
             var held = await FindAsync(id, transaction, inside).ConfigureAwait(false);
             if (held is null) return new QuestMove(null, Moved: false);
+            // CLOSETAKE1: a store a newer build stamped takes no bind from this one (the exchange says why).
+            if (NewerVersion is not null) return new QuestMove(held, Moved: false);
             var history = await HistoryAsync(id, transaction, inside).ConfigureAwait(false);
             // A row the log never saw is given its history now, as a move gives it: its publication is what the bind is owned by.
             if (history.Count == 0) history = await GiveHistoryAsync(held, transaction, inside).ConfigureAwait(false);

@@ -903,8 +903,19 @@ public static class ClosureBinding
     /// unbound (FABRIC-CLOSE1o: a bind expired, a remote since, another session's take): said once, at that end, since a later start reads
     /// the quest taken and unbound and names nothing. Null everywhere else.
     /// </summary>
-    public static string? UnboundAtEnd(ClosureBound? named, QuestView? after) =>
+    /// <param name="why">
+    /// What the take's record says it made of the graph (CLOSETAKE1, FABRIC-CLOSE1o-ii: <c>expired</c>, <c>replaced</c> or <c>remote</c>); the
+    /// line names it. None where the record says nothing (another session's take, a host from before the field): the line leaves it to the answer.
+    /// </param>
+    public static string? UnboundAtEnd(ClosureBound? named, QuestView? after, string? why = null) =>
         named is { Bound: true } && after is { Status: "Taken" or "Done", Closure: null or "" }
-            ? $" #{after.Id}'s closure graph was named for its take, and its take did not bind it (its answer said why), so it closes by its done."
+            ? $" #{after.Id}'s closure graph was named for its take, and its take did not bind it ("
+              + (why switch
+              {
+                  "expired" => "its naming expired before the take came",
+                  "replaced" => "the quest was replaced since it was named",
+                  "remote" => "its workspace syncs through a remote now",
+                  _ => "its answer said why",
+              }) + "), so it closes by its done."
             : null;
 }

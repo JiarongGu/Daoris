@@ -220,6 +220,13 @@ public sealed record Session(
     public string? TookQuest { get; init; }
 
     /// <summary>
+    /// Why the closure graph named for this session's take did not bind it (CLOSETAKE1, FABRIC-CLOSE1o-ii): <c>expired</c>,
+    /// <c>replaced</c> or <c>remote</c>, as the take's own write judged it; null for a bound take and for a take no graph was named for.
+    /// Machine-local: it is read by the driver that started the session and travels nowhere.
+    /// </summary>
+    public string? TookBind { get; init; }
+
+    /// <summary>
     /// The person's words waiting for this record to go on with them, in the order said (MSG1a, D137 §2.4): an answer to
     /// a park (STANDDOWN2, ANSWER1b), or words to a session that ended, which reopen it. A second word joins the first and
     /// never replaces it. Kept until taken, by the resumed run's first prompt or the session a fallback handed them to;
@@ -491,6 +498,7 @@ public sealed class SessionStore
         // CHATTAKE1 (D167, the design's §1.2 rule 2): the quest a conversation took, which `took` alone never said. It travels, as the
         // entry does, since a teammate's reader keys the quest by it. A record from before says none, which is the old reading.
         await SchemaColumns.EnsureAsync(_db, "sessions", "took_quest", "took_quest TEXT NULL", ct).ConfigureAwait(false);
+        await SchemaColumns.EnsureAsync(_db, "sessions", "took_bind", "took_bind TEXT NULL", ct).ConfigureAwait(false);
 
         // HELPMODE1a2 (D183 point 3): the access mode an Ask Daoris record's run got. This machine's own, as `opinion` is: no wire carries
         // it, and a help record from before says none, which reads as restricted, what it ran under.
@@ -1185,6 +1193,7 @@ public sealed class SessionStore
         Entry = reader.IsDBNull(reader.GetOrdinal("entry")) ? null : reader.GetString(reader.GetOrdinal("entry")),
         Took = !reader.IsDBNull(reader.GetOrdinal("took")) && reader.GetInt64(reader.GetOrdinal("took")) != 0,
         TookQuest = reader.IsDBNull(reader.GetOrdinal("took_quest")) ? null : reader.GetString(reader.GetOrdinal("took_quest")),
+        TookBind = reader.IsDBNull(reader.GetOrdinal("took_bind")) ? null : reader.GetString(reader.GetOrdinal("took_bind")),
         Said = SaidOf(reader),
         Interrupted = !reader.IsDBNull(reader.GetOrdinal("interrupted")) && reader.GetInt64(reader.GetOrdinal("interrupted")) != 0,
         Limit = !reader.IsDBNull(reader.GetOrdinal("limited")) && reader.GetInt64(reader.GetOrdinal("limited")) != 0,
@@ -1420,7 +1429,7 @@ public sealed class SessionStore
     /// Mark that this session took its quest itself (STANDDOWN2) — said by the session's own connector
     /// at the moment of the take. False when there is no such record of this machine's.
     /// </summary>
-    public Task<bool> MarkTookAsync(string id, string? quest = null, CancellationToken ct = default) => _db.RunAsync<bool>(async () =>
+    public Task<bool> MarkTookAsync(string id, string? quest = null, CancellationToken ct = default, string? bind = null) => _db.RunAsync<bool>(async () =>
     {
         await using var command = _db.Command();
         // CHATTAKE1: a chat has no quest of its own, so the quest it took is named here, which keeps an earlier take's id when none is said.
@@ -1430,7 +1439,19 @@ public sealed class SessionStore
             : $"UPDATE sessions SET took = 1, took_quest = $quest, revision = {NextRevision} WHERE id = $id AND origin IS NULL";
         command.Parameters.AddWithValue("$id", id);
         if (quest is not null) command.Parameters.AddWithValue("$quest", quest);
-        return await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false) > 0;
+        if (await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false) == 0) return false;
+
+        // CLOSETAKE1: why the take's graph did not bind, kept on this machine's record alone (no revision: it is not pushed).
+        if (bind is not null)
+        {
+            await using var kept = _db.Command();
+            kept.CommandText = "UPDATE sessions SET took_bind = $bind WHERE id = $id AND origin IS NULL";
+            kept.Parameters.AddWithValue("$id", id);
+            kept.Parameters.AddWithValue("$bind", bind);
+            await kept.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
+        }
+
+        return true;
     }, ct);
 
     /// <summary>Whitespace is nothing said, not a value: an empty version reads as a version of "".</summary>

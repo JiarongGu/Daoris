@@ -31,7 +31,8 @@ public static class UsageCurves
     private static readonly TimeSpan MadeUp = TimeSpan.FromMinutes(1);
 
     // The smart week: its pace plus the lead up to the knee, then evenly to the end at its reset (USAGERESET1). Duplicated
-    // deliberately in the CLI's and the page's `usagecurves.ts` / `usageCurves.ts`; the shared table holds the three as one.
+    // deliberately in the CLI's `usagecurves.ts`; the shared table holds the two as one. The page holds none since PUSH1e: the
+    // accounts' answer carries each scope's curve in effect (`AccountsRoutes`).
     private const int WeeklyLead = 20, WeeklyKnee = 95, WeeklyEnd = 100;
 
     /// <summary>A window's length, or null for a window this build does not know.</summary>
@@ -41,6 +42,18 @@ public static class UsageCurves
         "weekly" => TimeSpan.FromDays(7),
         _ => null,
     };
+
+    /// <summary>
+    /// When a window began: its reset less its length, or null for a window this build does not know (PUSH1e). The page places an
+    /// account on a window's chart by it, so it never holds a window's length of its own.
+    /// </summary>
+    public static DateTimeOffset? From(string window, DateTimeOffset reset) => Length(window) is { } length ? reset - length : null;
+
+    /// <summary>
+    /// A curve's value, or a room, in whole points, a half away from zero, as every reader says it (PUSH1e): the accounts' answer the
+    /// page words, and the start's line (<c>AccountRotation.Points</c>); the shared table's said clause holds the rule.
+    /// </summary>
+    public static int Points(double points) => (int)Math.Round(points, MidpointRounding.AwayFromZero);
 
     /// <summary>How much of the window has passed at <paramref name="now"/>, from its reset: 0 to 100, or null for an unknown window.</summary>
     public static double? Elapsed(string window, DateTimeOffset reset, DateTimeOffset now) =>

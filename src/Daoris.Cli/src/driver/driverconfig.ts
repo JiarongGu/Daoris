@@ -30,7 +30,11 @@ import { isoMoment } from '../accounts/cooling.ts';
 import { isPluginId, readPlugins, type PluginCatalog } from '../plugins/plugins.ts';
 import { normalizeWorkspace } from '../service/remotemap.ts';
 import { TOOLCHAINS } from '../agents/toolchain.ts';
-import { cycleOf, workCycleMap, type Cycle } from './cycles.ts';
+import {
+  cycleOf, cycleSaid, cycleStrays, landingCycleRefusal, readCycleFile, workCycleEdited, workCycleKindRefusal, workCycleMap, workCycleRefusal,
+  type Cycle,
+} from './cycles.ts';
+import { cycleProblems } from '../workflows/nodegraphs.ts';
 import { failuresOf, type RecordsReader } from './strikes.ts';
 import {
   applyReviewEdit, holdsProcedure, inScope, reviewGate, reviewListed, reviewSays, reviewsOf, type CheckoutsReader,
@@ -1328,7 +1332,7 @@ export function commandDriver(
     case 'landing': {
       const workspace = flagValue(argv, '--workspace');
       const clear = argv.includes('--clear');
-      const words = operands(argv, new Set(['--workspace', '--plugin', '--key'])).slice(1);
+      const words = operands(argv, new Set(['--workspace', '--plugin', '--key', '--cycle'])).slice(1);
       const name = workspace ?? words.shift();
       const [form, pattern] = words;
       if (!name || (!clear && !form)) {
@@ -1386,7 +1390,29 @@ export function commandDriver(
       const unready = rule?.plugin === undefined ? null : landingPluginProblem(rule.plugin, readPlugins(dirname(path)));
       if (unready !== null) throw new DaorisError(`${unready} Nothing was written.`);
 
-      writeDriverChoices(path, landingEdited(choices, name, workspace, rule));
+      // The work's cycle after the landing (FABRIC-GRAPH1c): `--cycle <file>` sets it, judged after this rule's landing as the driver's
+      // `WithLandingCycle` judges it, and `--no-cycle` takes it; with neither, the rule keeps the one it has (FABRIC-GRAPH1's choice 3).
+      const cycleAt = argv.indexOf('--cycle');
+      const cycleFile = cycleAt === -1 ? undefined : argv[cycleAt + 1];
+      if (cycleAt !== -1 && (cycleFile === undefined || cycleFile.startsWith('--'))) {
+        throw new DaorisError('`--cycle` needs the file holding the cycle\'s JSON — `--cycle <file>`, a graph fragment after the landing.');
+      }
+      if (cycleFile !== undefined && argv.includes('--no-cycle')) {
+        throw new DaorisError('a rule sets its cycle or takes it away — say `--cycle <file>` or `--no-cycle`, not both.');
+      }
+      if (rule === null && (cycleFile !== undefined || argv.includes('--no-cycle'))) {
+        throw new DaorisError('`--clear` takes the rule and its cycle with it — a cycle rides its rule (D164). Nothing was written.');
+      }
+      let cycle: { set: Cycle } | 'clear' | 'keep' = argv.includes('--no-cycle') ? 'clear' : 'keep';
+      if (cycleFile !== undefined) {
+        const read = readCycleFile(args.root, cycleFile);
+        const refused = landingCycleRefusal({ form: rule!.form, plugin: rule!.plugin ?? null }, read, cycleFile);
+        if (refused !== null) throw new DaorisError(refused);
+        cycle = { set: read };
+      }
+
+      const held = workspace ? atName(choices.workspaceLandings, workspace) : atName(choices.landings, name);
+      writeDriverChoices(path, landingEdited(choices, name, workspace, rule, cycle));
 
       const whose = workspace ? `repositories in the workspace \`${workspace}\`` : `\`${name}\``;
       if (rule === null) {
@@ -1427,11 +1453,58 @@ export function commandDriver(
         write('  The branch holds the session\'s own commits — a repository\'s own rule replaces its workspace\'s whole, the squash with it.');
       }
 
+      // The cycle (FABRIC-GRAPH1c): set, taken, or kept and judged under the rule as it now stands, since a form that changed under a
+      // cycle keeps it and the driver says one that does not hold (FABRIC-GRAPH1's choice 3).
+      if (typeof cycle === 'object') {
+        write(`  After the landing, its cycle: ${cycleSaid(cycle.set)}.`);
+      } else if (cycle === 'clear') {
+        write('  Its cycle is cleared: the work ends when the line holds it.');
+      } else if (rule !== null && held?.cycle !== undefined) {
+        const [first] = cycleProblems({ form: rule.form, plugin: rule.plugin ?? null }, held.cycle);
+        write(first === undefined ? `  Its cycle is kept: ${cycleSaid(held.cycle)}.`
+          : `  Its cycle is kept as written, and does not hold under this rule: ${first.words}`);
+      }
+
       if (rule !== null && workspace) {
         write('  A repository with a rule of its own keeps it — `daoris driver landing <repository> --clear` hands it back.');
       }
 
       write(`  Written to ${path} — the review reads it at each press, so nothing restarts.`);
+      return 0;
+    }
+
+    // A quest's or an ask's cycle of work (FABRIC-GRAPH1c; the fabric events design §D7's `workCycles`): a whole graph for one kind, for
+    // a repository or with `--workspace` for each repository there naming none of that kind, judged as the driver's `WithWorkCycle`
+    // judges it. A branch's cycle is its landing rule's (`landing … --cycle`).
+    case 'work-cycle': {
+      const workspace = flagValue(argv, '--workspace');
+      const clear = argv.includes('--clear');
+      const words = operands(argv, new Set(['--workspace'])).slice(1);
+      const owner = workspace ?? words.shift();
+      const [kind, file] = words;
+      if (!owner || !kind || clear === (file !== undefined)) {
+        throw new DaorisError('`driver work-cycle` needs <repository>|--workspace <name>, then quest|ask, then <file>|--clear — e.g. '
+          + '`daoris driver work-cycle aurora-engine quest cycle.json`, a whole graph its work of that kind follows to its end.');
+      }
+
+      const refusedKind = workCycleKindRefusal(kind);
+      if (refusedKind !== null) throw new DaorisError(refusedKind);
+      let cycle: Cycle | null = null;
+      if (file !== undefined) {
+        cycle = readCycleFile(args.root, file);
+        const refused = workCycleRefusal(cycle, file);
+        if (refused !== null) throw new DaorisError(refused);
+      }
+
+      writeDriverChoices(path, workspace
+        ? { ...choices, workspaceWorkCycles: workCycleEdited(choices.workspaceWorkCycles, workspace, kind, cycle) }
+        : { ...choices, workCycles: workCycleEdited(choices.workCycles, owner, kind, cycle) });
+      const unit = kind === 'ask' ? 'an ask' : `a ${kind}`;
+      const where = workspace ? `each repository of the workspace \`${workspace}\` that names none of its own` : `\`${owner}\``;
+      write(cycle !== null
+        ? `daoris: ${unit} in ${where} follows its cycle: ${cycleSaid(cycle, '')}.`
+        : `daoris: ${unit} in ${where} takes ${workspace ? 'none' : 'its workspace\'s cycle'} again${workspace ? '' : ', else none'}.`);
+      write(`  Written to ${path} — the driver re-reads it every tick, so nothing restarts.`);
       return 0;
     }
 
@@ -1723,6 +1796,12 @@ export function commandDriver(
 
     for (const [workspace, rule] of Object.entries(choices.workspaceLandings)) {
       write(`  landing    workspace ${workspace}  ${spelled(rule)}  (for each repository there that sets none)`);
+    }
+
+    // FABRIC-GRAPH1d: what the file keeps that no unit reads, a landing rule that reads as no rule among it, is said, never skipped
+    // without a word — the driver's `NodeGraphHomes.Strays`.
+    for (const stray of cycleStrays(choices, landingRuleUnread)) {
+      write(`  unread     ${stray.words}`);
     }
 
     // Reading across (D107): on unless switched off, the repository's own over its workspace's.
@@ -2452,50 +2531,83 @@ function targetMap(value: unknown): Record<string, string[]> {
 }
 
 /**
- * A map of names to landing rules; one that could not land work is skipped, as the driver skips it, and a ticket's key it
- * refuses is ignored, the rest of the rule standing.
+ * A map of names to landing rules; one that could not land work is skipped, as the driver skips it, and said by `cycleStrays`
+ * (FABRIC-GRAPH1d, `landingRuleUnread`); a ticket's key it refuses is ignored, the rest of the rule standing.
  */
 function ruleMap(value: unknown): Record<string, LandingRule> {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return {};
   const held: Record<string, LandingRule> = {};
   for (const [name, rule] of Object.entries(value as Record<string, unknown>)) {
-    if (!rule || typeof rule !== 'object') continue;
-    const { form, pattern, key, tidy, plugin, autoAccept, squash, cycle } = rule as Record<string, unknown>;
-    // The cycle (FABRIC-GRAPH1) is kept as written, as the driver reads it, whether or not it is a graph: only null is none (the
-    // review's finding 2), and the driver says one that does not read.
-    const graph = cycleOf(cycle);
-    const read: LandingRule = {
-      form: typeof form === 'string' ? form : '',
-      ...(typeof pattern === 'string' ? { pattern } : {}),
-      // An empty key is none, as the driver reads it (PROCESS1b-i).
-      ...(typeof key === 'string' && key.length > 0 ? { key } : {}),
-      ...(tidy === true ? { tidy: true } : {}),
-      // An empty name is no name, as the driver reads it.
-      ...(typeof plugin === 'string' && plugin.length > 0 ? { plugin } : {}),
-      // Only JSON `true` (LAND2a): `"true"` or 1 is not the person's say-so for a push with no press.
-      ...(autoAccept === true ? { autoAccept: true } : {}),
-      // Only JSON `true` squashes (PROCESS1b-ii), as the driver reads it.
-      ...(squash === true ? { squash: true } : {}),
-      ...(graph !== undefined ? { cycle: graph } : {}),
-    };
-    // A key refused here is ignored and the rest of the rule stands (PROCESS1b-i), as the driver reads it: a key another reader
-    // took never drops the rule, which would land the repository's work by its workspace's rule or a merge unasked.
-    if (read.key !== undefined && landingProblem(read) !== null) delete read.key;
+    const read = landingRuleRead(rule);
     // The first rule written in any case governs, as the driver reads it (the review's finding 3), and a later spelling is said.
-    if (landingProblem(read) === null && findName(Object.keys(held), name) === null) held[name] = kept(read);
+    if (read !== null && findName(Object.keys(held), name) === null) held[name] = kept(read);
   }
 
   return held;
 }
 
 /**
- * The choices with a repository's landing rule, or a workspace's, set or cleared (null), as the `landing` verb sets it. The verb has no
- * field for the rule's cycle (FABRIC-GRAPH1), so a rule it sets keeps the one there is, as the driver's `WithLanding` does; clearing the
- * rule takes its cycle with it.
+ * Why a landing rule the file holds does not read, in a sentence, or null where it reads or is none (null) — the driver's
+ * `DriverConfig.RuleOf` (FABRIC-GRAPH1d): no object, no `form`, or a rule `landingProblem` refuses. Both readers skip such a rule, and
+ * the work there lands as though it set none; `cycleStrays` says it.
  */
-export function landingEdited(choices: DriverChoices, name: string, workspace: string | null | undefined, rule: LandingRule | null): DriverChoices {
+export function landingRuleUnread(value: unknown): string | null {
+  if (value === null || value === undefined) return null;
+  if (typeof value !== 'object' || Array.isArray(value)) return 'it holds no rule\'s object.';
+  if (landingRuleRead(value) !== null) return null;
+  const { form } = value as Record<string, unknown>;
+  return typeof form !== 'string' || form.length === 0 ? 'it names no `form`, `merge` or `branch`.' : landingProblem(ruleOf(value as Record<string, unknown>));
+}
+
+/** A landing rule as `ruleMap` reads it, or null where it could not land work. */
+function landingRuleRead(value: unknown): LandingRule | null {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
+  const read = ruleOf(value as Record<string, unknown>);
+  return landingProblem(read) === null ? read : null;
+}
+
+/** A rule object's fields as the driver reads them, a ticket's key it refuses ignored. */
+function ruleOf(rule: Record<string, unknown>): LandingRule {
+  const { form, pattern, key, tidy, plugin, autoAccept, squash, cycle } = rule;
+  // The cycle (FABRIC-GRAPH1) is kept as written, as the driver reads it, whether or not it is a graph: only null is none (the
+  // review's finding 2), and the driver says one that does not read.
+  const graph = cycleOf(cycle);
+  const read: LandingRule = {
+    form: typeof form === 'string' ? form : '',
+    ...(typeof pattern === 'string' ? { pattern } : {}),
+    // An empty key is none, as the driver reads it (PROCESS1b-i).
+    ...(typeof key === 'string' && key.length > 0 ? { key } : {}),
+    ...(tidy === true ? { tidy: true } : {}),
+    // An empty name is no name, as the driver reads it.
+    ...(typeof plugin === 'string' && plugin.length > 0 ? { plugin } : {}),
+    // Only JSON `true` (LAND2a): `"true"` or 1 is not the person's say-so for a push with no press.
+    ...(autoAccept === true ? { autoAccept: true } : {}),
+    // Only JSON `true` squashes (PROCESS1b-ii), as the driver reads it.
+    ...(squash === true ? { squash: true } : {}),
+    ...(graph !== undefined ? { cycle: graph } : {}),
+  };
+  // A key refused here is ignored and the rest of the rule stands (PROCESS1b-i), as the driver reads it: a key another reader
+  // took never drops the rule, which would land the repository's work by its workspace's rule or a merge unasked.
+  if (read.key !== undefined && landingProblem(read) !== null) delete read.key;
+  return read;
+}
+
+/**
+ * The choices with a repository's landing rule, or a workspace's, set or cleared (null), as the `landing` verb sets it. With no
+ * `--cycle` and no `--no-cycle` (`keep`), a rule it sets keeps the cycle there is, as the driver's `WithLanding` does (FABRIC-GRAPH1);
+ * `--cycle` sets one judged at the door and `--no-cycle` takes it (FABRIC-GRAPH1c, the driver's `WithLandingCycle`); clearing the rule
+ * takes its cycle with it.
+ */
+export function landingEdited(
+  choices: DriverChoices, name: string, workspace: string | null | undefined, rule: LandingRule | null,
+  cycle: { set: Cycle } | 'clear' | 'keep' = 'keep',
+): DriverChoices {
   const held = workspace ? atName(choices.workspaceLandings, workspace) : atName(choices.landings, name);
-  const whole = rule !== null && held?.cycle !== undefined ? { ...rule, cycle: held.cycle } : rule;
+  const { cycle: _given, ...plain } = rule ?? { form: '' };
+  const whole = rule === null ? null
+    : typeof cycle === 'object' ? { ...plain, cycle: cycle.set }
+      : cycle === 'keep' && held?.cycle !== undefined ? { ...plain, cycle: held.cycle }
+        : cycle === 'keep' ? rule : plain;
   return workspace
     ? { ...choices, workspaceLandings: withEntry(choices.workspaceLandings, workspace, whole && kept(whole)) }
     : { ...choices, landings: withEntry(choices.landings, name, whole && kept(whole)) };

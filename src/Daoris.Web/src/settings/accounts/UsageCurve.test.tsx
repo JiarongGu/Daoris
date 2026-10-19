@@ -64,25 +64,31 @@ describe('a window’s own points, edited', () => {
 
   it('says a window it leaves out takes Daoris’s curve, and starts its own from Daoris’s points', async () => {
     const onSave = vi.fn();
-    render(<CurvePoints window="weekly" points={null} hint="`daoris agent profile use claude-code --curve weekly=<elapsed>:<used>,…`" onSave={onSave} />);
+    // Daoris's week as the accounts' answer carries the curve in effect (PUSH1e): its pace plus 20 up to 95 at three-quarters gone,
+    // then to the whole week at its reset (USAGERESET1).
+    render(
+      <CurvePoints
+        window="weekly" points={null} start={[[0, 20], [75, 95], [100, 100]]}
+        hint="`daoris agent profile use claude-code --curve weekly=<elapsed>:<used>,…`" onSave={onSave}
+      />,
+    );
 
     expect(screen.getByText("The weekly window takes Daoris's curve.")).toBeTruthy();
     await userEvent.click(screen.getByRole('button', { name: 'Set my own curve' }));
 
     const editor = screen.getByRole('group', { name: 'Your rows for the weekly window' });
-    // Daoris's week rises from 95 at three-quarters gone to the whole week at its reset (USAGERESET1).
     expect(within(editor).getAllByRole('spinbutton').map((field) => (field as HTMLInputElement).value)).toEqual(['0', '20', '75', '95', '100', '100']);
     await userEvent.clear(within(editor).getByRole('spinbutton', { name: 'Used, % · row 1' }));
     await userEvent.type(within(editor).getByRole('spinbutton', { name: 'Used, % · row 1' }), '30');
     await userEvent.click(within(editor).getByRole('button', { name: 'Save the curve' }));
 
-    expect(onSave).toHaveBeenCalledWith([[0, 30], [75, 95], [100, 100]]);
+    expect(onSave).toHaveBeenCalledWith([[0, 30], [75, 95], [100, 100]], expect.any(Function));
   });
 
   /** A point added after the last, and one taken out; the terminal's twin of what is saved. */
   it('adds a point after the last and takes one out', async () => {
     const onSave = vi.fn();
-    render(<CurvePoints window="session" points={[[0, 50], [80, 90]]} hint="`daoris agent profile use claude-code --curve session=0:50,80:90`" onSave={onSave} />);
+    render(<CurvePoints window="session" points={[[0, 50], [80, 90]]} start={[[0, 50], [80, 90]]} hint="`daoris agent profile use claude-code --curve session=0:50,80:90`" onSave={onSave} />);
 
     const editor = screen.getByRole('group', { name: 'Your rows for the five-hour window' });
     expect(document.body.textContent).toContain('daoris agent profile use claude-code --curve session=0:50,80:90');
@@ -90,13 +96,22 @@ describe('a window’s own points, edited', () => {
     await userEvent.click(within(editor).getByRole('button', { name: 'Remove row 1' }));
     await userEvent.click(within(editor).getByRole('button', { name: 'Save the curve' }));
 
-    expect(onSave).toHaveBeenCalledWith([[80, 90], [90, 90]]);
+    expect(onSave).toHaveBeenCalledWith([[80, 90], [90, 90]], expect.any(Function));
   });
 
-  /** Points that break a rule are said in the door's own sentence, and nothing is saved. */
-  it('says what is wrong in the door’s sentence, and saves nothing', async () => {
-    const onSave = vi.fn();
-    render(<CurvePoints window="weekly" points={[[0, 30], [50, 70]]} hint="" onSave={onSave} />);
+  /**
+   * Points that break a rule are refused by the door (PUSH1e: the rules are .NET's alone), whose sentence the editor says under the
+   * rows it keeps, and an empty field is sent as no number, which the door refuses as no point. A change clears it.
+   */
+  it('says what the door refused in its own sentence, keeping the rows', async () => {
+    const said: string[] = [];
+    const onSave = vi.fn((points: unknown, refused: (problem: string) => void) => {
+      said.push(JSON.stringify(points));
+      refused(said.length === 1
+        ? "`weekly`'s point 2 has used 20%, less than point 1's 30% — used never falls."
+        : "`weekly`'s point 2 is not two whole numbers [elapsed, used].");
+    });
+    render(<CurvePoints window="weekly" points={[[0, 30], [50, 70]]} start={[[0, 30], [50, 70]]} hint="" onSave={onSave} />);
 
     const editor = screen.getByRole('group', { name: 'Your rows for the weekly window' });
     await userEvent.clear(within(editor).getByRole('spinbutton', { name: 'Used, % · row 2' }));
@@ -105,16 +120,18 @@ describe('a window’s own points, edited', () => {
 
     expect(screen.getByRole('alert').textContent)
       .toBe("`weekly`'s point 2 has used 20%, less than point 1's 30% — used never falls.");
-    expect(onSave).not.toHaveBeenCalled();
+    expect((within(editor).getByRole('spinbutton', { name: 'Used, % · row 2' }) as HTMLInputElement).value).toBe('20');
 
     await userEvent.clear(within(editor).getByRole('spinbutton', { name: 'Used, % · row 2' }));
+    expect(screen.queryByRole('alert')).toBeNull();
     await userEvent.click(within(editor).getByRole('button', { name: 'Save the curve' }));
+    expect(said[1]).toBe('[[0,30],[50,null]]');
     expect(screen.getByRole('alert').textContent).toBe("`weekly`'s point 2 is not two whole numbers [elapsed, used].");
   });
 
   it('says it in 中文', async () => {
     await i18n.changeLanguage('zh');
-    render(<CurvePoints window="weekly" points={null} hint="" onSave={() => {}} />);
+    render(<CurvePoints window="weekly" points={null} start={[[0, 20], [75, 95], [100, 100]]} hint="" onSave={() => {}} />);
     expect(screen.getByText('每周窗口沿用 Daoris 的曲线。')).toBeTruthy();
     await userEvent.click(screen.getByRole('button', { name: '设定我的曲线' }));
     expect(screen.getByRole('group', { name: '你为每周窗口设的行' })).toBeTruthy();

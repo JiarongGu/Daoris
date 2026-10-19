@@ -193,6 +193,43 @@ public sealed class QuestTakeBindTests : IAsyncLifetime
         Assert.Equal(QuestRespondRefusal.None, (await _exchange.RespondAsync(_open.Id, "done", "Built.", Now)).Refusal);
     }
 
+    /// <summary>CLOSETAKE1 (QUESTSTOREVER1): a store a newer build stamped refuses a take's bind, saying so; one never stamped binds as before and is stamped.</summary>
+    [Fact]
+    public async Task A_store_stamped_by_a_newer_build_refuses_a_take_bind_and_an_unstamped_one_binds_as_before()
+    {
+        await ExecuteAsync("UPDATE quest_store_version SET version = $ahead", ("$ahead", QuestStore.StoreVersion + 1));
+        await OpenAsync();
+
+        var refused = await _exchange.BindAsync(_open.Id, Graph, Now, atTake: true, session: Session);
+
+        Assert.Equal(QuestRespondRefusal.NotInGraph, refused.Refusal);
+        Assert.Contains("written by a newer Daoris", refused.Message, StringComparison.Ordinal);
+        Assert.Equal(0, await PendingAsync());
+        // The newer stamp is kept, never written back down, and the take itself is today's.
+        Assert.Equal((long)QuestStore.StoreVersion + 1, await ScalarAsync("SELECT version FROM quest_store_version"));
+        Assert.Equal(QuestRespondRefusal.None, (await _exchange.RespondAsync(_open.Id, "take", null, Now, session: Session)).Refusal);
+
+        // A store from before the stamp has none: it binds, and is stamped.
+        await ExecuteAsync("DROP TABLE quest_store_version");
+        await OpenAsync();
+        var other = (await _exchange.PublishAsync("checker", "reports", "Another report", "Through the bridge.", Now)).Quest!;
+        Assert.Equal(QuestRespondRefusal.None, (await _exchange.BindAsync(other.Id, Graph, Now, atTake: true, session: Session)).Refusal);
+        Assert.Equal((long)QuestStore.StoreVersion, await ScalarAsync("SELECT version FROM quest_store_version"));
+    }
+
+    /// <summary>CLOSETAKE1 (FABRIC-CLOSE1o-ii): a take's answer carries what its bind made, for the session to keep.</summary>
+    [Fact]
+    public async Task A_take_says_what_its_bind_made_beside_its_answer()
+    {
+        Assert.Equal(QuestRespondRefusal.None, (await _exchange.BindAsync(_open.Id, Graph, Now, atTake: true, session: Session)).Refusal);
+
+        var take = await _exchange.RespondAsync(_open.Id, "take", null, Now + QuestStore.TakeBindLife + TimeSpan.FromSeconds(1), session: Session);
+
+        Assert.Equal(QuestTakeBind.Expired, take.TakeBind);
+        var plain = (await _exchange.PublishAsync("checker", "reports", "Plain", "Nothing named.", Now)).Quest!;
+        Assert.Equal(QuestTakeBind.None, (await _exchange.RespondAsync(plain.Id, "take", null, Now, session: Session)).TakeBind);
+    }
+
     [Fact]
     public async Task An_older_build_writes_into_the_upgraded_table_and_its_unowned_row_never_binds()
     {

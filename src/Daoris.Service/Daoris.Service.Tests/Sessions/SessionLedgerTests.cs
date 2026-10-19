@@ -262,6 +262,21 @@ public sealed class SessionLedgerTests : IAsyncLifetime
         Assert.Equal(SessionOpenRefusal.None, carried.Refusal);
     }
 
+    /// <summary>CLOSETAKE1 (FABRIC-CLOSE1o-ii): the take's bind outcome is kept on the session's record beside its take, and read back from it.</summary>
+    [Fact]
+    public async Task A_take_keeps_what_its_bind_made_on_the_session_record()
+    {
+        var quest = await Publish();
+        var took = await Working(quest, Now);
+        Assert.Null((await _ledger.FindAsync(took.Id))!.TookBind);
+
+        Assert.True(await _ledger.MarkTookAsync(took.Id, quest.Id, QuestTakeBind.Expired));
+
+        var kept = (await _ledger.FindAsync(took.Id))!;
+        Assert.True(kept.Took);
+        Assert.Equal("expired", kept.TookBind);
+    }
+
     /// <summary>
     /// SESSUX1b2 (D126 §3.3): the person's stop holds its quest in the driver until Try again releases it,
     /// and a released take is carried on in the stop's tree, so the ledger opens it. The take is this
