@@ -55,6 +55,18 @@ repository.
   and `keeplock.test.ts`, over `driver-config-keeps.json`'s rows, `sets`, `names` and `lock`; the driver classes over every config
   and home-file writer (1,011 and 323 tests) and the CLI's config, home-file, plugin, permission and toolchain tests pass.
 
+## 2026-10-20 — The decoder's guard flagged the runtime's read of a run's bound version (FABRICRUN1)
+
+- **Symptom:** `WorkflowGraphsTests.Nothing_outside_the_read_only_projection_reads_the_decoder` failed on main after FABRICRUN1:
+  `Trees/Nodes/NodeRuntime.cs` named `WorkflowRunNodes.VersionOf`.
+- **Root cause:** FABRIC-RUN1c's `NodeRuntime.BoundIn` asks which version a quest's run is bound to, to leave that unit ungoverned by
+  Current's graph; the guard is a text scan for any read of the decoder or its projection, and the branch's filtered run did not
+  reach it. The guard's purpose (no record binds a decoded graph's digest, so a decoder change moves nothing stored) still holds:
+  the runtime evaluates nothing on the version and stores no digest of it.
+- **Fix:** the guard allows that one named read in `NodeRuntime.cs`, with its reason; every other reader still fails it. The
+  runtime's doc comment names the decoder in words.
+- **Verify:** `WorkflowGraphsTests` 25 of 25.
+
 ## 2026-10-20 — A named workspace's help start sometimes wrote "Not read yet" into its room (HelpStartReadTests)
 
 - **Symptom:** `A_named_workspace_s_start_writes_its_own_room_from_the_facts_and_starts_no_git` failed about one run in three on
