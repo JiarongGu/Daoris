@@ -1110,6 +1110,11 @@ public sealed class AcpSession(
                 Models = TurnModelsOf(result, tokens),
             });
         }
+        else
+        {
+            // An error answered the prompt, and the turn its updates named ends without a response: its names are not the next's.
+            lock (_measured) _named.Clear();
+        }
 
         ChatMessage? taken = null;
         lock (_promptsGate)

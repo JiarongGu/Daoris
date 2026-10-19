@@ -1058,6 +1058,42 @@ public sealed class AcpTests
     }
 
     /// <summary>
+    /// USAGECAP1a2: a prompt an error answered ends no turn on this door, and the model its update named is not the next turn's:
+    /// the next turn names its own, never <c>mixed</c> with one that never ended.
+    /// </summary>
+    /// <remarks>🔴 Built as the tests above, from the evidence's words.</remarks>
+    [Fact]
+    public async Task A_prompt_an_error_answered_leaves_its_named_model_to_no_later_turn()
+    {
+        var events = new List<SessionEvent>();
+        var models = new Queue<string>(["claude-opus-4-1", "claude-sonnet-4-5"]);
+        var failing = true;
+        var agent = new FakeAgent((frame, self) =>
+        {
+            switch (frame.GetProperty("method").GetString())
+            {
+                case "initialize": return Ok(frame, """{"protocolVersion":1}""");
+                case "session/new": return Ok(frame, """{"sessionId":"s-11"}""");
+                case "session/prompt":
+                    self.Push("""{"jsonrpc":"2.0","method":"session/update","params":{"sessionId":"s-11","update":{"sessionUpdate":"usage_update","used":900,"size":200000,"_meta":{"_claude/model":"""
+                              + $"\"{models.Dequeue()}\"}}}}}}}}");
+                    if (!failing) return Ok(frame, """{"stopReason":"end_turn","usage":{"inputTokens":2,"outputTokens":3,"cachedReadTokens":35480,"cachedWriteTokens":39}}""");
+                    failing = false;
+                    return $$$"""{"jsonrpc":"2.0","id":{{{frame.GetProperty("id").GetRawText()}}},"error":{"code":-32603,"message":"overloaded"}}""";
+                default: return frame.TryGetProperty("id", out _) ? Ok(frame, "{}") : null;
+            }
+        });
+
+        var session = new AcpSession(agent.Incoming, agent.Outgoing, _ => { }, onEvent: events.Add);
+        await session.OpenAsync("D:/fam/Game", CancellationToken.None);
+        await Assert.ThrowsAnyAsync<Exception>(() => session.PromptAsync("refused", CancellationToken.None));
+        await session.PromptAsync("answered", CancellationToken.None);
+        session.Release();
+
+        Assert.Equal("claude-sonnet-4-5", Assert.Single(events, e => e.Kind == SessionEventKind.Turn).Models!.Model);
+    }
+
+    /// <summary>
     /// USAGECAP1a2: a turn the person stopped answers every count zero on this door (CONV5), which is no report, so its tokens
     /// stay unknown; it is still a turn, cancelled, with the model its update named and no split.
     /// </summary>

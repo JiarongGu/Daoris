@@ -803,6 +803,10 @@ public sealed class ChatRunner : IDisposable
             return new(null, error.Message);
         }
 
+        // Its turns are kept in the usage history under the account it runs as (USAGECAP1a2), as a driven session's are: bound
+        // before any word is queued to it.
+        UsageTurns.Bound(_home, _events, sessionId, TurnBinding.Of(resolved, selection.Profile));
+
         // The conversation outlives this call: the person types, the harness answers, and the record
         // moves when the process does. Watched on an unbound token deliberately — a chat is not ended
         // by the request that started it.
@@ -880,9 +884,6 @@ public sealed class ChatRunner : IDisposable
         // session's does: at its end, at its high-water mark, where the door reported one.
         void Measured(AcpUsage used) => _usage.Record(new UsageEntry(
             sessionId, place.Name, resolved.Name, selection.Profile, used.Used, used.Size, DateTimeOffset.UtcNow));
-
-        // Its turns are kept in the usage history under the account it runs as (USAGECAP1a2), as a driven session's are.
-        UsageTurns.Bound(_home, _events, sessionId, TurnBinding.Of(resolved, selection.Profile));
 
         // What its door says about its account's windows is kept for the next start's walk (TOOL6c), as a driven session's is.
         void Said(JsonElement info)
