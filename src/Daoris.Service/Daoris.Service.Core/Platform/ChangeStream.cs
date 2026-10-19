@@ -25,13 +25,21 @@ public static class ChangeFamilies
     /// </summary>
     public const string Quests = "quests";
 
+    /// <summary>
+    /// The asks (PUSH1d1): <c>ask_revision.revision</c>, a count the asks' triggers move on every insert, update and delete of an
+    /// ask, whoever writes it, a connector built before the count included. A write that changes no ask (no row has its id, or the
+    /// go-aheads were decided to stay) finds no row and moves nothing.
+    /// </summary>
+    public const string Asks = "asks";
+
     /// <summary>Every family, in the order an answer names them.</summary>
-    public static IReadOnlyList<string> All { get; } = [Sessions, Quests];
+    public static IReadOnlyList<string> All { get; } = [Sessions, Quests, Asks];
 
     /// <summary>Each family's revision, in <see cref="All"/>'s order, in one autocommit read.</summary>
     internal const string Revisions = """
         SELECT COALESCE((SELECT revision FROM session_revision WHERE one = 1), 0),
-               COALESCE((SELECT MAX(position) FROM quest_log), 0)
+               COALESCE((SELECT MAX(position) FROM quest_log), 0),
+               COALESCE((SELECT revision FROM ask_revision WHERE one = 1), 0)
         """;
 }
 

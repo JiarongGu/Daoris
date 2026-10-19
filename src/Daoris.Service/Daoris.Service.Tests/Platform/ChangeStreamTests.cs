@@ -23,6 +23,7 @@ public sealed class ChangeStreamTests : IAsyncLifetime
     private SqliteConnection _writer = null!;
     private SessionStore _sessions = null!;
     private QuestStore _quests = null!;
+    private AskStore _asks = null!;
     private ChangeStream _stream = null!;
 
     public async Task InitializeAsync()
@@ -32,6 +33,7 @@ public sealed class ChangeStreamTests : IAsyncLifetime
         await _writer.OpenAsync();
         _quests = await QuestStore.OpenAsync(_writer);
         _sessions = await SessionStore.OpenAsync(_writer);
+        _asks = await AskStore.OpenAsync(_writer);
         _stream = await Open();
     }
 
@@ -140,6 +142,112 @@ public sealed class ChangeStreamTests : IAsyncLifetime
         Assert.Equal([ChangeFamilies.Quests], answer.Moved);
     }
 
+    private static readonly Ask Asked = new("a5c0de", Workspaces.Default, "Make the bridge faster", AskState.Open, "declarations", Now, Now);
+
+    /// <summary>
+    /// PUSH1d1 (D182 point 5; the design §A4.2): the asks family moves on every write an ask takes, each path its own (an agent's
+    /// connector makes most of them from its own process): asked, saved whole again, published, closed, served by an intake, a word,
+    /// each list appended to, the go-aheads decided, and deleted. Every one names the asks family alone.
+    /// </summary>
+    [Theory]
+    [InlineData("asked")]
+    [InlineData("saved again")]
+    [InlineData("published")]
+    [InlineData("closed")]
+    [InlineData("intake")]
+    [InlineData("word")]
+    [InlineData("review choice")]
+    [InlineData("review proposal")]
+    [InlineData("workflow choice")]
+    [InlineData("workflow proposal")]
+    [InlineData("go-aheads")]
+    [InlineData("deleted")]
+    public async Task Every_write_to_an_ask_moves_the_asks_family_alone(string write)
+    {
+        if (write != "asked") await _asks.SaveAsync(Asked);
+        var since = await Bootstrap();
+        var waiting = _stream.WaitAsync(since, Long);
+
+        var later = Now.AddMinutes(1);
+        await (write switch
+        {
+            "asked" => _asks.SaveAsync(Asked),
+            "saved again" => _asks.SaveAsync(Asked with { Updated = later, Note = "Narrowed to the bridge." }),
+            "published" => _asks.RecordPublishedAsync(Asked.Id, "q1", null, later),
+            "closed" => _asks.RecordClosedAsync(Asked.Id, "Not needed now.", later),
+            "intake" => _asks.RecordIntakeAsync(Asked.Id, "s1", later),
+            "word" => _asks.RecordWordAsync(Asked.Id, new AskWord(AskWordKind.Answered, "Yes, the bridge.", later, "s1"), later),
+            "review choice" => _asks.RecordReviewChoiceAsync(Asked.Id, new AskReviewChoice("skip", later), later),
+            "review proposal" => _asks.RecordReviewProposalAsync(Asked.Id, new AskReviewProposal("skip", "A one-line change.", later), later),
+            "workflow choice" => _asks.RecordWorkflowChoiceAsync(Asked.Id, new AskWorkflowChoice("fix", null, later), later),
+            "workflow proposal" => _asks.RecordWorkflowProposalAsync(Asked.Id, new AskWorkflowProposal("fix", "A defect.", later), later),
+            "go-aheads" => _asks.DecideGoAheadsAsync<int>(Asked.Id, entries => (entries, 0), later),
+            "deleted" => _asks.DeleteAsync(Asked.Id),
+            _ => throw new ArgumentOutOfRangeException(nameof(write), write, null),
+        });
+        var answer = await waiting.WaitAsync(Long);
+
+        Assert.Equal([ChangeFamilies.Asks], answer.Moved);
+    }
+
+    /// <summary>
+    /// PUSH1d1: the revision is kept by triggers in the database, so a connector built before it, which writes the row and knows
+    /// nothing of the revision, still moves it. Here that build's write is the bare statement, on a connection that never opened the
+    /// asks' store.
+    /// </summary>
+    [Fact]
+    public async Task An_older_connector_s_write_to_an_ask_moves_the_asks_family()
+    {
+        await _asks.SaveAsync(Asked);
+        var since = await Bootstrap();
+        var waiting = _stream.WaitAsync(since, Long);
+
+        await using (var older = new SqliteConnection($"Data Source={_file};Pooling=False"))
+        {
+            await older.OpenAsync();
+            await using var command = older.CreateCommand();
+            command.CommandText = "UPDATE asks SET state = 'Closed', note = 'An older build closed it.' WHERE id = 'a5c0de'";
+            Assert.Equal(1, await command.ExecuteNonQueryAsync());
+        }
+
+        Assert.Equal([ChangeFamilies.Asks], (await waiting.WaitAsync(Long)).Moved);
+    }
+
+    /// <summary>
+    /// PUSH1d1, canary 5's half for the asks (the design §A4.2): what changes no ask moves no family. A connector's start opens the
+    /// store again, a write on an id no ask has finds no row, and go-aheads decided to stay as they are write nothing.
+    /// </summary>
+    [Fact]
+    public async Task A_write_that_changes_no_ask_moves_no_family()
+    {
+        await _asks.SaveAsync(Asked);
+        var since = await Bootstrap();
+        var seen = _stream.Seen;
+        // TESTWAIT2, as below: held until the observer has seen a commit after every write here, then cancelled.
+        using var release = new CancellationTokenSource();
+        var waiting = _stream.WaitAsync(since, Long, release.Token);
+
+        await using (var connector = new SqliteConnection($"Data Source={_file};Pooling=False"))
+        {
+            await connector.OpenAsync();
+            await AskStore.OpenAsync(connector);
+        }
+
+        Assert.False(await _asks.RecordWordAsync("0ther0", new AskWord(AskWordKind.Added, "Nobody's.", Now), Now));
+        await _asks.RecordClosedAsync("0ther0", "Nobody's.", Now);
+        Assert.Equal((true, 0), await _asks.DecideGoAheadsAsync<int>(Asked.Id, _ => (null, 0), Now));
+        await Execute("CREATE TABLE IF NOT EXISTS scratch (x INTEGER); INSERT INTO scratch VALUES (1);");
+
+        var deadline = DateTime.UtcNow + Long;
+        while (_stream.Seen <= seen && DateTime.UtcNow < deadline) await Task.Delay(20);
+        var observed = _stream.Seen > seen;
+        release.Cancel();
+        var answer = await waiting.WaitAsync(Long);
+
+        Assert.True(observed, "no write was seen, so the canary proves nothing");
+        Assert.Empty(answer.Moved);
+    }
+
     /// <summary>A family that moved several times since the cursor is answered once; one asked after it moved answers at once.</summary>
     [Fact]
     public async Task Moves_before_the_ask_are_answered_at_once_and_once()
@@ -153,7 +261,7 @@ public sealed class ChangeStreamTests : IAsyncLifetime
         var answer = await _stream.WaitAsync(since, Long);
 
         Assert.True(clock.Elapsed < TimeSpan.FromSeconds(3), $"{clock.Elapsed}");
-        Assert.Equal(ChangeFamilies.All, answer.Moved);
+        Assert.Equal([ChangeFamilies.Sessions, ChangeFamilies.Quests], answer.Moved);
     }
 
     /// <summary>
@@ -286,6 +394,7 @@ public sealed class ChangeStreamTests : IAsyncLifetime
             {
                 await store.OpenAsync();
                 await QuestStore.OpenAsync(store);
+                await AskStore.OpenAsync(store);
                 var sessions = await SessionStore.OpenAsync(store);
                 await sessions.CreateAsync(null, "Owner", "stub", Now, kind: SessionKind.Chat);
             }

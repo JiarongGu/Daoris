@@ -291,6 +291,38 @@ public sealed class AskStore
         // each holding none, so a page heads it with its sentence's first line as it did.
         await SchemaColumns.EnsureAsync(_db, "asks", "short_title", "short_title TEXT NULL", ct).ConfigureAwait(false);
 
+        // PUSH1d1 (D182 point 5): the asks' revision, the change stream's `asks` family, one row moved by every insert, update and
+        // delete of an ask. Kept by triggers, as `session_revision` is, because the triggers live in the file: a connector built
+        // before them writes the row and still moves it, and no writer here has to remember to. A count, not a moment, so a
+        // delete moves it too. Made after every column above, so a store's own upgrade moves nothing; opened again, it keeps its
+        // count.
+        await using (var revision = _db.Command())
+        {
+            revision.CommandText = """
+                CREATE TABLE IF NOT EXISTS ask_revision (
+                  one      INTEGER PRIMARY KEY CHECK (one = 1),
+                  revision INTEGER NOT NULL
+                );
+                INSERT OR IGNORE INTO ask_revision (one, revision) VALUES (1, 0);
+
+                CREATE TRIGGER IF NOT EXISTS ask_revision_asked AFTER INSERT ON asks
+                BEGIN
+                  UPDATE ask_revision SET revision = revision + 1 WHERE one = 1;
+                END;
+
+                CREATE TRIGGER IF NOT EXISTS ask_revision_changed AFTER UPDATE ON asks
+                BEGIN
+                  UPDATE ask_revision SET revision = revision + 1 WHERE one = 1;
+                END;
+
+                CREATE TRIGGER IF NOT EXISTS ask_revision_deleted AFTER DELETE ON asks
+                BEGIN
+                  UPDATE ask_revision SET revision = revision + 1 WHERE one = 1;
+                END;
+                """;
+            await revision.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
+        }
+
         return this;
     }
 
