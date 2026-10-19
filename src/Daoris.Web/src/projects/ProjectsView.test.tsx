@@ -446,7 +446,7 @@ describe("a repository's Setup on its page (UX6f)", () => {
     const access = within(repositoryMain()).getByRole('region', { name: "Sessions' access" });
     const permissions = within(access).getByText('Permission prompts', { selector: 'span' }).closest('.\\@container') as HTMLElement;
 
-    expect(permissions).toHaveTextContent('The agent runs in its asking mode: it uses what its rules allow, and any other tool call is refused');
+    expect(permissions).toHaveTextContent('The agent runs in its asking mode: it uses what its rules allow, and any other tool call waits for your answer');
     expect(permissions).toHaveTextContent('From this machine.');
     await userEvent.click(within(permissions).getByRole('button', { name: 'Set for this repository' }));
     await userEvent.click(within(permissions).getByRole('radio', { name: 'Auto mode' }));

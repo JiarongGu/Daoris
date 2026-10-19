@@ -5,6 +5,16 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-20 — A repository's Setup test still read asking mode's old hint, that any other call is refused (AUTONOMY1b3)
+
+- **Symptom:** `ProjectsView.test.tsx`'s *sets its sessions' access on DAORIS.DRIVER, full access only through its ask, and
+  says what changed* failed on main: it looked for *…any other tool call is refused* in the *Permission prompts* row.
+- **Root cause:** AUTONOMY1b3 changed asking mode, so a call outside the rules waits for the person's answer and is refused only
+  after 15 minutes, and its hint's words with it; the merge's filtered runs did not reach this test, and no full set had run
+  the web unit gate on main since.
+- **Fix:** the expectation reads the hint as it now stands, *…any other tool call waits for your answer*.
+- **Verify:** `ProjectsView.test.tsx` whole, 58 of 58.
+
 ## 2026-10-20 — A pushed window asked the held permissions every 4 s, which a second window's snapshot test counted (AUTONOMY1b3b)
 
 - **Symptom:** `pushedState.test.tsx`'s *reads one snapshot in a second window, and nothing judged again* failed on main: the
