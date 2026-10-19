@@ -808,6 +808,15 @@ public sealed record DriverConfig(
     }
 
     /// <summary>
+    /// The arrays of <c>driver.json</c> that are sets (CONFIGMERGE1, D173's CONFIG1 note): an edit of one is the names it added and took,
+    /// compared without case, made onto the file's array as it stands, so two writers each adding a repository keep both
+    /// (<see cref="JsonKeeping.Kept"/>). Each is a key path, <c>*</c> any one name; every other array is a value, written whole
+    /// (<c>commands</c>' lists are ordered, <c>heavyGates</c>' read whole or not at all, a cycle's its own). Duplicated deliberately as
+    /// the CLI's <c>DRIVER_SETS</c>; both are held to <c>test/fixtures/driver-config-keeps.json</c>'s <c>sets</c>.
+    /// </summary>
+    public static readonly IReadOnlyList<string> Sets = ["drivable", "holds", "trees", "writeAcross.*"];
+
+    /// <summary>
     /// Write the choices back — atomically, beside-then-rename, like every write in this family: the
     /// watch loop re-reads this file every tick, and a torn read must never be what it finds.
     /// </summary>
@@ -819,20 +828,24 @@ public sealed record DriverConfig(
     /// re-check, finding 1, <see cref="JsonKeeping"/>): an object taken out since is made again with only the edit's keys, and one that is
     /// no longer an object refuses it. A config built in memory is written whole, and one parsed from a text (<see cref="Parse"/>) or read
     /// from another file over that text (<see cref="ToJson"/>). The CLI's <c>writeDriverChoices</c> does the same.
+    /// <para>🔴 The re-read and the rename are made holding the file's lock (CONFIGLOCK1, D173's CONFIG1 note; <see cref="KeepLock"/>),
+    /// which the CLI's writer takes too: with none, another writer's change landing between them was lost.</para>
     /// </remarks>
     /// <exception cref="DriverConfigUnreadableException">
     /// The file there now does not read, holds a key twice, or holds no object where this edit changes something inside one; nothing was
     /// written.
     /// </exception>
+    /// <exception cref="IOException">Another writer held the file's lock for the whole of the wait; nothing was written.</exception>
     public void Save(string path)
     {
         var file = Path.GetFullPath(path);
         Directory.CreateDirectory(Path.GetDirectoryName(file)!);
+        using var held = KeepLock.Take(file);
         var same = OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
         string text;
         try
         {
-            text = Source is not null && string.Equals(SourceFile, file, same) ? JsonKeeping.Kept(Current(path), Understood(), Written()) : ToJson();
+            text = Source is not null && string.Equals(SourceFile, file, same) ? JsonKeeping.Kept(Current(path), Understood(), Written(), Sets) : ToJson();
         }
         catch (JsonEditRefusedException refused)
         {
@@ -877,7 +890,7 @@ public sealed record DriverConfig(
     /// read and written with no edit, the same bytes. A config built in memory is written whole. <see cref="Save"/> writes the edit over the
     /// file as it stands instead.
     /// </summary>
-    public string ToJson() => Source is null ? Written() : JsonKeeping.Kept(Source, Understood(), Written());
+    public string ToJson() => Source is null ? Written() : JsonKeeping.Kept(Source, Understood(), Written(), Sets);
 
     /// <summary>The choices' own shape, written by hand for the same AOT reason it is read by hand.</summary>
     private string Written()
@@ -1088,7 +1101,10 @@ public sealed record DriverConfig(
         writer.WriteEndObject();
     }
 
-    /// <summary>A map of names to booleans; an entry of any other type is not read (D107).</summary>
+    /// <summary>
+    /// A map of names to booleans; an entry of any other type is not read (D107). A name written twice in any case is read where first
+    /// readable, as the CLI reads it (CASEMAP1, D173's CONFIG1 note: the last value was read here, each spelling there).
+    /// </summary>
     private static IReadOnlyDictionary<string, bool> FlagMap(JsonElement root, string name)
     {
         var map = new Dictionary<string, bool>(StringComparer.OrdinalIgnoreCase);
@@ -1096,9 +1112,10 @@ public sealed record DriverConfig(
         {
             foreach (var property in element.EnumerateObject())
             {
-                if (property.Value.ValueKind is JsonValueKind.True or JsonValueKind.False && property.Name.Trim().Length > 0)
+                if (property.Value.ValueKind is JsonValueKind.True or JsonValueKind.False && property.Name.Trim() is { Length: > 0 } named
+                    && !map.ContainsKey(named))
                 {
-                    map[property.Name.Trim()] = property.Value.GetBoolean();
+                    map[named] = property.Value.GetBoolean();
                 }
             }
         }
@@ -1109,7 +1126,8 @@ public sealed record DriverConfig(
     /// <summary>
     /// The declared relationships (D107): each repository's list of other names, once each in any case, in
     /// the order first written. A list that is not one, an entry that is not a name, and the repository
-    /// itself are not read; a repository left with none has no entry.
+    /// itself are not read; a repository left with none has no entry. A repository written twice in any case
+    /// is read where first readable, as the CLI reads it (CASEMAP1: the last list was read here).
     /// </summary>
     private static IReadOnlyDictionary<string, IReadOnlyList<string>> TargetMap(JsonElement root, string name)
     {
@@ -1118,7 +1136,7 @@ public sealed record DriverConfig(
 
         foreach (var property in element.EnumerateObject())
         {
-            if (property.Value.ValueKind != JsonValueKind.Array || property.Name.Trim().Length == 0) continue;
+            if (property.Value.ValueKind != JsonValueKind.Array || property.Name.Trim().Length == 0 || map.ContainsKey(property.Name.Trim())) continue;
             var targets = new List<string>();
             foreach (var item in property.Value.EnumerateArray())
             {
@@ -1224,7 +1242,10 @@ public sealed record DriverConfig(
         return map;
     }
 
-    /// <summary>A map of names to branch names; an entry that is not one git would take is skipped.</summary>
+    /// <summary>
+    /// A map of names to branch names; an entry that is not one git would take is skipped. A name written twice in any case is read
+    /// where first readable, as the CLI reads it (CASEMAP1: the first spelling was kept here with the last value).
+    /// </summary>
     private static IReadOnlyDictionary<string, string> BranchMap(JsonElement root, string name)
     {
         var map = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
@@ -1233,7 +1254,7 @@ public sealed record DriverConfig(
             foreach (var property in element.EnumerateObject())
             {
                 if (property.Value.ValueKind == JsonValueKind.String
-                    && property.Value.GetString() is { } branch && BranchName.IsValid(branch))
+                    && property.Value.GetString() is { } branch && BranchName.IsValid(branch) && !map.ContainsKey(property.Name))
                 {
                     map[property.Name] = branch;
                 }
@@ -1381,8 +1402,9 @@ public sealed record DriverConfig(
         {
             foreach (var property in element.EnumerateObject())
             {
+                // A quest written twice in any case is read where first readable, as the CLI reads it (CASEMAP1).
                 if (property.Value.ValueKind == JsonValueKind.Number
-                    && property.Value.TryGetInt32(out var mark) && mark > 0)
+                    && property.Value.TryGetInt32(out var mark) && mark > 0 && !forgiven.ContainsKey(property.Name))
                 {
                     forgiven[property.Name] = mark;
                 }

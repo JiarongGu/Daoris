@@ -17621,3 +17621,21 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **FABRIC-CLOSE1c17 — Daoris's own words marked on the say door, so the go-on's gate reads a mark, not a sentence** (service, driver; after CLOSE1c13). CLOSE1c13's gate (`ReopenTelling.BringsToSource`) compares the waiting words with Daoris's go-on sentence, since the say door cannot mark a word as Daoris's: a person's words equal to it would sync the same way, and any rewording breaks it. Add a `from: daoris` (or a kind) on a word the driver says, kept on the record and read back; the gate reads it. Proof: a person's words equal to the sentence do not sync; Daoris's do; an older host's word reads as the person's.
 
 **Outcome** 2026-10-20: folded into COWORK1b, where Daoris's own words are marked as Daoris's and the gate reads the mark, not the sentence.
+
+## CASEMAP1 — every per-name map in `driver.json` reads a name written twice in any case the same way in both twins (2026-10-20, D173)
+
+> - [ ] **CASEMAP1 — every per-name map in `driver.json` reads a name written twice in any case the same way in both twins** (driver, cli; `twins.md`). `lines`, `readAcross`, `writeAcross` keep the last spelling in C#; the CLI's reading is unchecked. Proof: a shared-table row per map.
+
+**Outcome** 2026-10-20: built as CONFIG1, one feature end to end (D187): every per-name map in `driver.json` (`lines`, `workspaceLines`, `readAcross`, `workspaceReadAcross`, `writeAcross`, `forgiven`) reads a name written twice in any case where first readable, keeping the first spelling and value, in both twins (the fixture's `names` rows). Detail: D173's CONFIG1 note, the FIX-LOG's CONFIG1 entry.
+
+## CONFIGLOCK1 — a `driver.json` write holds its re-read and its rename together (2026-10-20, D173)
+
+> - [ ] **CONFIGLOCK1 — a `driver.json` write holds its re-read and its rename together** (driver, cli; after GRAPH1). The two steps have no lock, so a change landing between them is lost. Proof: a writer held between the re-read and the move loses nothing.
+
+**Outcome** 2026-10-20: built as CONFIG1, one feature end to end (D187): a keeping write holds `<file>.lock` beside its file from its re-read to its rename in both twins (`KeepLock`, `keeplock.ts`; created with no overwrite, `{pid, since}`, a 10 s wait, stale when its process is gone or past a minute), taken by `DriverConfig.Save`, `JsonKeeping.Save`, `writeDriverChoices` and `writeKeeping`, so `driver.json`, `plugins.json`, `permissions.json` and `keys.json` lose no writer's change; `KeepLockProcessTests` runs a C# and a node writer at once, and the merge tool sends a change to the CLI's side to the driver's Process half. Detail: D173's CONFIG1 note, the FIX-LOG's CONFIG1 entry. On Opus, all three: about 215 tool calls, 59 minutes.
+
+## CONFIGMERGE1 — two writers adding to one set-like array both kept (2026-10-20, D173)
+
+> - [ ] **CONFIGMERGE1 — two writers adding to one set-like array both kept** (driver, cli; after GRAPH1). The later writer's whole array wins (`drivable`). Proof: a shared-table row adding to `drivable` from two writers, both kept in both twins.
+
+**Outcome** 2026-10-20: built as CONFIG1, one feature end to end (D187): `drivable`, `holds`, `trees` and each `writeAcross` list are sets in both twins (`DriverConfig.Sets`, `DRIVER_SETS`, the fixture's `sets`): an edit applies the names it added and took, compared without case, to the file's array as it stands, so two writers adding to one set are both kept; every other array is written whole. Detail: D173's CONFIG1 note, the FIX-LOG's CONFIG1 entry.

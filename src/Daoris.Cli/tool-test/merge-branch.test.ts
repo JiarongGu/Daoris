@@ -989,6 +989,7 @@ test('a merge runs the baseline and what each changed path can reach, but the lo
     ['a tool-test file', ['src/Daoris.Cli/tool-test/setup-kit.test.ts'], [...BASE, 'tool-tests']],
     ['the fixture the tool-tests share', ['src/Daoris.Cli/test/_fixture.ts'], [...BASE, 'tool-tests']],
     ['the tarball reader the publish imports', ['src/Daoris.Cli/src/platform/tarball.ts'], [...BASE, 'tool-tests', 'driver', 'rehearse', 'rehearse-family', 'web', 'deployment']],
+    ["the CLI's keeping lock the driver's Process half runs", ['src/Daoris.Cli/src/platform/keeplock.ts'], [...BASE, 'driver', 'driver-process', 'rehearse', 'rehearse-family', 'web', 'deployment']],
     ['what the merge tool imports',['tools/doc-duplicates.mjs'], [...BASE, 'tool-tests']],
     ['the deployment rehearsal', ['tools/deployment-rehearsal.mjs'], [...BASE, 'deployment']],
     ['the canon', ['canon/core/rules/task-lifecycle.md'], [...BASE, 'service', 'rehearse', 'rehearse-family']],
