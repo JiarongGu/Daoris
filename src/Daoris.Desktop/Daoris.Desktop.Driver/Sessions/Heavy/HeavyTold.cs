@@ -24,12 +24,18 @@ public static class HeavyTold
 
     /// <summary>
     /// What a session in <paramref name="root"/> is told, or null: where its PATH finds no <see cref="Verb"/> beside
-    /// <paramref name="home"/>, or the repository marks no heavy gate.
+    /// <paramref name="home"/>, or the repository marks no heavy gate and this machine sets none for it.
     /// </summary>
-    public static string? For(string root, string? home)
+    /// <param name="root">The tree the session works in.</param>
+    /// <param name="home">The driver's home, whose launchers and driver file are read.</param>
+    /// <param name="repository">
+    /// The repository the session is handed by name, which this machine's mapping is keyed by (HEAVYRUN1b2a); null names it by the
+    /// folder its git folder is in, as a run a person starts does.
+    /// </param>
+    public static string? For(string root, string? home, string? repository = null)
     {
-        if (!Reaches(home)) return null;
-        var gates = Marked(root);
+        if (home is null || !Reaches(home)) return null;
+        var gates = Marked(root, home, repository);
         return gates.Count == 0 ? null : Words(gates);
     }
 
@@ -40,19 +46,21 @@ public static class HeavyTold
         + "turn behind another session's run of this repository rather than running beside it. Never run those gates whole another way.";
 
     /// <summary>Whether a session's PATH finds the verb: an install's launcher for it beside the home.</summary>
-    private static bool Reaches(string? home) =>
-        home is not null && Tools.InstallBin(home) is { } bin && Launchers.Any(name => File.Exists(Path.Combine(bin, name)));
+    private static bool Reaches(string home) =>
+        Tools.InstallBin(home) is { } bin && Launchers.Any(name => File.Exists(Path.Combine(bin, name)));
 
     /// <summary>
-    /// The heavy gates the repository's own file marks, in its order; none where it has no file or one <c>run-heavy</c> would refuse,
-    /// whose session runs its gates as it would. HEAVYRUN1b2 adds the machine-local mapping here, for a repository that marks none.
+    /// The heavy gates <c>run-heavy</c> would run there, in its order (<see cref="HeavyGates.Resolve"/>): those the repository's own file
+    /// marks, else this machine's mapping for it (HEAVYRUN1b2a); none where it has neither, or a file or a driver file <c>run-heavy</c>
+    /// would refuse, whose session runs its gates as it would.
     /// </summary>
-    private static IReadOnlyList<string> Marked(string root)
+    private static IReadOnlyList<string> Marked(string root, string home, string? repository)
     {
-        if (!File.Exists(Path.Combine(root, HeavyGates.FileName))) return [];
+        var named = repository?.Trim() is { Length: > 0 } handed ? handed : HeavySlot.RepositoryOf(root) ?? Path.GetFileName(Path.TrimEndingDirectorySeparator(root));
         try
         {
-            return [.. HeavyGates.Read(root).Where(gate => gate.Heavy).Select(gate => gate.Name)];
+            var declared = HeavyGates.Resolve(root, named, () => HeavyMapping.For(DriverConfig.Load(DriverConfig.ResolvePath(home)), named));
+            return [.. HeavyGates.Choose(declared, null).Gates.Select(gate => gate.Name)];
         }
         catch (Exception error) when (error is DriverException or IOException or UnauthorizedAccessException)
         {

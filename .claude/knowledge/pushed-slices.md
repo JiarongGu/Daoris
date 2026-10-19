@@ -58,11 +58,13 @@ inventory (FACTSPLIT1a) and the sessions' trees (FACTSPLIT1b, both D181's notes)
 | Rules | A deadline, a bound, how many parts at once, and a `Rest` where a burst of one repository's moves should be one judgement | `LinesRules`, `WorkRules`, `TreesRules` |
 | The merge | `HelpFacts.Read` merges the parts in name order, the leftover part last (the trees into the look, by path), and reads null while any part was never judged, so *not read yet* keeps its meaning | `HelpFacts.Read`, `HelpNotReadYet` |
 | Its lines | Each part's lines carry their repository as data, so a workspace's room filters them by it, never by the words | `InventoryUnread`, `HelpRoomScope.Project` |
+| A door reading the parts | A route that reads the cheap half itself, as fresh as before, takes the git half from the parts: each part says what it asked (`HelpTrees.Asked`), so asked-and-empty and never-judged differ; what no part asked is walked by the door alone, after one wait in the facts' life for the parts' first judgement, and the facts' look is judged afresh where it is behind the door's (PUSH1c1) | `HelpFacts.WithTreesAsync`, `HelpFacts.TreesJudged` |
 
 **What `MachineFacts` does underneath.** A judge returning null drops the subject's fact (`Land`); one that throws keeps the
 last fact. Judgements run in the execution context captured at `Start()`, so a test counting git starts wraps `facts.Start()`
 in `ProcessStarts.Within`, not the wake. The tests to copy: `HelpFactsTests`' per-repository count (a `refs` wake judges only
-its part), its merge, a gone repository dropping its part, and the git count under the seam.
+its part), its merge, a gone repository dropping its part, and the git count under the seam; for a door, the four `A_door…` cases
+and `A_tree_no_part_asked_yet…`, and the route's `DriverModuleSessionsTests.The_groups_take_each_trees_judgement_from_the_facts…`.
 
 ## A part of the look judged beside it
 

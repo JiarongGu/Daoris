@@ -65,6 +65,40 @@ public sealed class HeavyToldTests : IDisposable
     }
 
     /// <summary>
+    /// HEAVYRUN1b2a: a repository that marks no heavy gate of its own is told this machine's mapping for it, read from the home's
+    /// driver file under the repository the start names, else the folder its git folder is in; its own marks win where it has any.
+    /// </summary>
+    [Fact]
+    public void A_repository_that_marks_none_is_told_this_machine_s_mapping_for_it()
+    {
+        Launcher("daoris-driver.cmd");
+        File.WriteAllText(
+            Path.Combine(Home, "driver.json"),
+            """{"heavyGates":{"engine":[{"name":"build","run":"dotnet build"},{"name":"e2e","run":"npm run e2e"}],"shop":[{"name":"web","run":"npm test"}]}}""");
+
+        Assert.Equal(Said, HeavyTold.For(_fixture.Checkout, Home));
+        Assert.Equal(Said, HeavyTold.For(_fixture.Tree, Home));
+        Assert.Equal(HeavyTold.Words(["web"]), HeavyTold.For(_fixture.Checkout, Home, "SHOP"));
+        Assert.Null(HeavyTold.For(_fixture.Checkout, Home, "game"));
+
+        _fixture.Gates(_fixture.Checkout, ("lint", "npm run lint", null));
+        Assert.Equal(Said, HeavyTold.For(_fixture.Checkout, Home));
+
+        _fixture.Gates(_fixture.Checkout, ("unit", "npm test", true));
+        Assert.Equal(HeavyTold.Words(["unit"]), HeavyTold.For(_fixture.Checkout, Home));
+    }
+
+    /// <summary>A driver file that does not read tells nothing of a mapping: the session runs its gates as it would.</summary>
+    [Fact]
+    public void A_driver_file_that_does_not_read_tells_nothing_of_a_mapping()
+    {
+        Launcher("daoris-driver.cmd");
+        File.WriteAllText(Path.Combine(Home, "driver.json"), "{ not json");
+
+        Assert.Null(HeavyTold.For(_fixture.Checkout, Home));
+    }
+
+    /// <summary>
     /// The verb is reached by its bare name on the session's PATH, which starts with the install's launchers wherever they are beside
     /// the home, wiring step or none: where they are not (a workspace build, no home), nothing promises a verb the session cannot run.
     /// </summary>

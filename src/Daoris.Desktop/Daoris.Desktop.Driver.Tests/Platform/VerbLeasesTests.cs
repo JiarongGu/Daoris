@@ -32,6 +32,8 @@ public sealed class VerbLeasesTests
     [InlineData("access --workspace w landing=rule")]
     [InlineData("access permissions=asking")]
     [InlineData("access engine --clear")]
+    [InlineData("heavy engine build=x")]
+    [InlineData("heavy engine --clear")]
     [InlineData("opinion myself 12")]
     [InlineData("setup some-repository")]
     [InlineData("setup --workspace w --pause")]
@@ -68,6 +70,8 @@ public sealed class VerbLeasesTests
     [InlineData("access")]
     [InlineData("access engine")]
     [InlineData("access --workspace w")]
+    [InlineData("heavy")]
+    [InlineData("heavy engine")]
     [InlineData("opinion show 12")]
     [InlineData("update")]
     [InlineData("trees --help")]
@@ -106,6 +110,7 @@ public sealed class VerbLeasesTests
     [InlineData("trees remove some/tree/path", "daoris-driver trees remove")]
     [InlineData("register", "daoris-driver register")]
     [InlineData("help mode full", "daoris-driver help mode")]
+    [InlineData("heavy engine build=x", "daoris-driver heavy")]
     public void A_lease_names_the_verb_and_never_its_arguments(string words, string named) =>
         Assert.Equal(named, VerbLeases.Name(words.Split(' ')));
 }
