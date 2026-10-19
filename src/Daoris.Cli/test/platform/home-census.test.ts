@@ -120,7 +120,11 @@ function argumentsOf(source: string, open: number): string[] | null {
 /** A home: `home`, `_home` or `Home`, alone or as a member, `this.home` and `world.Home` among them. */
 const isHome = (part: string): boolean => /^(?:[A-Za-z_][\w]*(?:\(\))?\.)*_?[Hh]ome$/.test(part);
 
-/** The names a test gives the root it hands a tool as its home: a fixture's root, `at`, `root`, a C# test's `DataHome`. */
+/**
+ * The names a test gives the root it hands a tool as its home: a fixture's root, `at`, `root`, a C# test's `DataHome`. A fixture's
+ * own relative path (`fx.read('workflows/docs.json')`) is not read here: most name a file a per-file override hands over, so a
+ * test reads a home's place through `fx.entry` or `homeEntry` by its own care (HOMELAYOUT3 found two such reads merged from main).
+ */
 const TEST_ROOT = /^(?:fx\.root|at|root|DataHome)$/;
 
 /**

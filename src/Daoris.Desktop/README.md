@@ -414,7 +414,9 @@ home** (D63): on first start the shell sets `DAORIS_HOME` to it for its own proc
 session it spawns inherits it — and, once, for the account when it has none, so a terminal's `daoris`
 meets the same machine. A second or moved install runs on its own `data/` even when the account's
 variable names another folder, leaves that variable as it is, and says so on Settings' home row
-(D105). Nothing of Daoris's lives under the user profile; a `~/.daoris` from before
+(D105). Beside `data/` the install's folder holds `profiles/`, `work/`, `cache/`, `run/` and `logs/`
+(D172). A start with the last update settled and nothing else of the folder running moves into
+them, once, what an older build kept in `data/`, and says so (HOMELAYOUT3, `HomePlacing`). Nothing of Daoris's lives under the user profile; a `~/.daoris` from before
 the decision moves in on that first start, `bin/` excepted, and the shell says so once. **Starting it
 starts the driver loop.** The publish refuses a folder it did not
 write; `--beside` installs next to whatever is there — the repositories it drives, typically — and
