@@ -355,6 +355,7 @@ public static class NoteCodes
         new(OpeningWhy.Room, ["over", "used", "against"], "note.opening.why.room"),
         new(OpeningWhy.Fewest, [], "note.opening.why.fewest"),
         new(OpeningWhy.Lapsing, ["at"], "note.opening.why.lapsing"),
+        new(OpeningWhy.Lapses, ["window", "unused", "at", "seen"], "note.opening.why.lapses"),
         new(OpeningWhy.MostRoom, ["room", "window"], "note.opening.why.most-room"),
         new(OpeningWhy.Behind, ["used", "gone"], "note.opening.why.behind"),
         new(OpeningWhy.Ahead, ["over", "used", "gone"], "note.opening.why.ahead"),
@@ -1056,8 +1057,17 @@ public static class OpeningWhy
     /// <summary>It runs the fewest of Daoris's sessions.</summary>
     public const string Fewest = "fewest";
 
-    /// <summary>Its week resets first.</summary>
+    /// <summary>
+    /// Its week resets first. Written before USAGERESET1, when step 4 ranked by the reset's time alone; nothing writes it now
+    /// (<see cref="Lapses"/> does), and a note written before keeps it.
+    /// </summary>
     public const string Lapsing = "lapsing";
+
+    /// <summary>
+    /// More of its week would lapse at its reset, per hour left (step 4, USAGERESET1): the window, its unused share, its reset
+    /// and when that reading was seen.
+    /// </summary>
+    public const string Lapses = "lapses";
 
     /// <summary>It has the most room under its curve, on its tightest window (SWITCH1b-ii, the switch design §3).</summary>
     public const string MostRoom = "most-room";

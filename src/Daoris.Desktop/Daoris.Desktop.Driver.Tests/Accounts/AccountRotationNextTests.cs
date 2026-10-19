@@ -111,7 +111,7 @@ public sealed class AccountRotationNextTests
         // Moved off a ready beginning: the step that put it ahead of where the list begins.
         { "account-1 account-2 account-3", "account-1:r1", "", "account-2", NextReason.Fewest, "account-1", "account-3=ready account-1=ready" },
         { "account-1 account-2 account-3", "account-1:r1 account-2:r1", "", "account-3", NextReason.Fewest, "account-1", "account-1=ready account-2=ready" },
-        { "account-1 account-2 account-3", "account-3:w+5h", "", "account-3", NextReason.Lapsing, "account-1", "account-1=ready account-2=ready" },
+        { "account-1 account-2 account-3", "account-3:W60@+5h", "", "account-3", NextReason.Lapsing, "account-1", "account-1=ready account-2=ready" },
         { "account-1 account-2 account-3", "account-1:W40@+4d account-2:W10@+4d account-3:W20@+4d", "", "account-2", NextReason.Pace, "account-1", "account-3=ready account-1=ready" },
         { "account-1 account-2 account-3", "account-1:s-1h account-2:s-3h account-3:s-2h", "", "account-2", NextReason.LeastRecent, "account-1", "account-3=ready account-1=ready" },
         { "account-1 account-2 account-3", "account-1:s-1h account-2:s-3h", "", "account-3", NextReason.NotStarted, "account-1", "account-2=ready account-1=ready" },
@@ -150,7 +150,8 @@ public sealed class AccountRotationNextTests
     [Fact]
     public void A_week_lapsing_names_when_it_resets()
     {
-        var next = Next("account-1 account-2 account-3", "account-3:w+5h");
+        // Its week's reset as its reading said it (USAGERESET1): a reset known with no reading ranks nothing.
+        var next = Next("account-1 account-2 account-3", "account-3:W60@+5h");
 
         Assert.Equal(NextReason.Lapsing, next.Reason);
         Assert.Equal(Now.AddHours(5), next.When);
