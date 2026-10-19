@@ -30,10 +30,11 @@ namespace Daoris.Desktop;
 ///
 /// <para><b>Its wakes.</b> The service's answers and the work's parts landing, by their values' references (<see cref="HearFacts"/>);
 /// and a change a press declared to the landings, the clean-up or the sessions, which also reads the held attempts afresh. A landing
-/// moves its repository's refs, which judge its part (<c>RefMoves.Mine</c>), but a landing's records and a sweep's tree-only removal
-/// may move no ref the watch hears: so a landing's or a sweep's declared scope judges every part afresh, past the rest a burst of refs
-/// is held to, and the sessions' wakes them under it (<see cref="HearPresses"/>). An attempt the runtime holds says nothing: the
-/// slice's period reads it.</para>
+/// moves its repository's refs as Daoris's own move, which judges its part at once (<c>RefMoves.Mine</c>, OWNMOVES1), but the clean-up,
+/// a discard, a recovery's drop and a work press tell no own move, and a tree-only removal or a recovery ref's delete may reach the ref
+/// watch not at all: so a landing's or a sweep's declared scope wakes every part afresh, past the rest a burst of refs is held to, and
+/// the sessions' wakes them under it (<see cref="HearPresses"/>). An attempt the runtime holds says nothing: the slice's period reads
+/// it.</para>
 ///
 /// <para><b>Desktop-only.</b> A tree's and a folder moved aside's resource is this machine's path, and an unread line may quote git's
 /// own (D182 point 2).</para>
@@ -187,9 +188,11 @@ public static class WorkStateSlice
     }
 
     /// <summary>
-    /// The work's parts asked again where a press declared what may move them with no ref the watch hears (PUSH1c2a): a landing's or a
-    /// sweep's scope judges every part afresh, past its rest, as the person waits on it; the sessions', told at every record's move, wakes
-    /// them under it, a burst one judgement each rest. Their landing wakes the slice. Disposed, it hears no more.
+    /// The work's parts asked again where a press declared what may move them with no ref the watch hears as Daoris's own (PUSH1c2a): a
+    /// landing's or a sweep's scope wakes every part afresh (<see cref="MachineFacts.Wake"/>'s <c>afresh</c>), past its rest, as the person
+    /// waits on it; the sessions', told at every record's move, wakes them under it, a burst one judgement each rest. Every loop on the home
+    /// keeps the facts and hears the scopes, a terminal's `trees` press's among them, where only the lease's holder runs the ref watch.
+    /// Their landing wakes the slice. Disposed, it hears no more.
     /// </summary>
     public static IDisposable HearPresses(IEventBus bus, MachineFacts facts) =>
         bus.Subscribe(StateSlice.Module, StatePublisher.Type, message =>
@@ -197,12 +200,7 @@ public static class WorkStateSlice
             if (message.Payload is not StateChanged changed || HelpFacts.WorkParts(facts.Current) is not { } parts) return Task.CompletedTask;
             var afresh = changed.Scopes.Any(scope => scope is "landing" or "sweep");
             if (!afresh && !changed.Scopes.Contains("sessions")) return Task.CompletedTask;
-            foreach (var (part, _) in parts)
-            {
-                if (afresh) _ = facts.JudgedAsync(HelpFacts.Work, part, CancellationToken.None);
-                else facts.Wake(HelpFacts.Work, part);
-            }
-
+            foreach (var (part, _) in parts) facts.Wake(HelpFacts.Work, part, afresh);
             return Task.CompletedTask;
         });
 
