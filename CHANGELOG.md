@@ -5,6 +5,10 @@ with the version and date at release.
 
 ## Unreleased
 
+- A session that waited on its own background work no longer hangs after it: when the work ends and Claude Code wakes the
+  agent by itself, that turn's end is the session's end, where Daoris used to send a prompt the agent never answered and wait
+  for the timeout. A session the timeout ends after its quest reached done is recorded completed, and its conversation says it
+  timed out rather than that the agent exited.
 - A start no longer asks each account's agent how much it has used before choosing one, a process and a few seconds each
   time. Daoris works it out from the account's last reading and its own sessions on it since, and asks only where that comes
   within ten points of the account's usage curve, where the account has gone thirty minutes unread, where Daoris cannot weigh
