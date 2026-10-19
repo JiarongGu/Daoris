@@ -709,6 +709,7 @@ export function gatePlan(declared, workflow = '') {
         kind,
         before: /\brehearse:deploy\b/.test(gate.run) ? [SHUTDOWN] : [],
         ...(gate.cwd ? { cwd: gate.cwd } : {}),
+        ...(gate.clock ? { clock: true } : {}),
       };
     });
 }
@@ -730,7 +731,10 @@ export function readDeclared(root) {
       throw new Refusal("daoris.gates.json: every gate needs both 'name' and 'run'");
     }
   }
-  return gates.map(({ name, run, cwd }) => (typeof cwd === 'string' ? { name, run, cwd } : { name, run }));
+  // FAMILYFAIL1d: `"clock": true` marks a gate whose tests are bounded by the wall clock, which a run beside raises.
+  return gates.map(({ name, run, cwd, clock }) => ({
+    name, run, ...(typeof cwd === 'string' ? { cwd } : {}), ...(clock === true ? { clock: true } : {}),
+  }));
 }
 
 export function readPlan(root) {
@@ -2679,7 +2683,7 @@ function runSteps(root, gate, log, step, command = gate.run, trees = null) {
       }
       writeSync(fd, `\n(exited ${beforeCode}${beforeCode ? '; carried on: it only clears a server' : ''})\n\n`);
     }
-    const exit = await step(command, cwd, fd, { raise: isProcessLane(gate) ? rehearsalRaise() : null });
+    const exit = await step(command, cwd, fd, { raise: isProcessLane(gate) || gate.clock ? rehearsalRaise() : null });
     if (endedBy(exit, trees)) {
       writeSync(fd, `\n(${endedNote(trees)})\n`);
       return STEP_ENDED;

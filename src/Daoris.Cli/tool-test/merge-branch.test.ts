@@ -21,7 +21,7 @@ import { makeFixture } from '../test/_fixture.ts';
  * this suite sits in would merge into it.
  */
 
-interface Gate { name: string; run: string; kind: string; before: string[]; cwd?: string }
+interface Gate { name: string; run: string; kind: string; before: string[]; cwd?: string; clock?: boolean }
 interface Lane { id: string; title: string; summary: string; steward: boolean; paths: string[]; gates?: string[] }
 interface Classified { lanes: { id: string; title: string; files: string[] }[]; steward: string[]; shared: string[]; laneless: string[]; outside: string[] }
 interface Options {
@@ -3326,6 +3326,21 @@ test('a run beside raises a rehearsal step\'s child to normal, touches no suite\
       step: async (_command, _cwd, _fd, options) => { fastRaised = Boolean(options?.raise); return 0; },
     });
     assert.equal(fastRaised, false);
+
+    // FAMILYFAIL1d: a gate the repository marks clock-bound (`"clock": true`) is raised too, though it is no Process half:
+    // the CLI's suites hold real processes on wall-clock bounds. The mark is read from daoris.gates.json and planned.
+    writeFileSync(join(fx.root, 'daoris.gates.json'), JSON.stringify({ gates: [
+      { name: 'cli', run: 'npm run verify', clock: true },
+      { name: 'light', run: 'node tools/check.mjs' },
+    ] }));
+    const plan = tool.readPlan(fx.root);
+    assert.equal(plan.find((gate) => gate.name === 'cli')?.clock, true);
+    assert.equal('clock' in (plan.find((gate) => gate.name === 'light') ?? {}), false);
+    let clockRaised = false;
+    await tool.runGate(fx.root, plan.find((gate) => gate.name === 'cli')!, fx.root, {
+      step: async (_command, _cwd, _fd, options) => { clockRaised = Boolean(options?.raise); return 0; },
+    });
+    assert.equal(clockRaised, true);
 
     // A run that could not lower itself raises nothing; one whose raise fails says so once.
     tool.startBesideRun({ setPriority: () => { throw new Error('denied'); }, env: {}, say: () => {} });
