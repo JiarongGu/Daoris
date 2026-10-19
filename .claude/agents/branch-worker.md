@@ -97,6 +97,10 @@ the work, was most of what branches cost before D160 (`docs/2026-10-10-subagent-
   with it. Also `dotnet test` on the .NET project
   your lane changes, one suite at a time. A desktop suite runs its fast half only:
   `dotnet test src/Daoris.Desktop/<project> --filter Category!=Process` (MOD8).
+- **Leave nothing running.** Build with `-nodeReuse:false` (or `MSBUILDDISABLENODEREUSE=1` in your shell) so no MSBuild
+  node outlives your build, run `dotnet build-server shutdown` before you hand back, and end every background task and
+  monitor you started. A 2026-10-19 audit found thirteen MSBuild nodes (1.4 GB, three orphaned) and a loop that had run a
+  hundred hours.
 - **`npm run verify` once, at the end** (Finishing, step 1), never while working: it runs the CLI's whole suite, six
   minutes and more on a shared machine, and the merge runs it again. While working, run what your change reaches:
   `dotnet test` filtered to the classes you touch (`--filter FullyQualifiedName~<Class>`), each touched project whole
