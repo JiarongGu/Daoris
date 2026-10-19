@@ -946,6 +946,28 @@ describe('noteLines', () => {
     expect(chinese.text).toMatch(/^它运行时用的账户冷却至 .+（智能体如此说明），在此之前不会在它上面启动任何会话。$/);
   });
 
+  /**
+   * TREEDEPS1 (D51's note): a tree its checkout's dependencies were copied into says which, each as code, and a project that copied
+   * none says why; `started.tree` keeps saying a fresh tree holds no installed dependencies, as the openings written before it did.
+   */
+  it('words a tree opened with its checkout’s dependencies copied in, and why a project’s were not, in either language', () => {
+    const parts = [
+      coded('started.tree-copied', 'opened a session tree …', { branch: 'daoris/s1', basedOn: 'main', copied: ['node_modules', 'web/node_modules'] }),
+      coded('started.uncopied-workspace', '`tools/node_modules` was not copied …', { modules: 'tools/node_modules', workspace: 'packages/ui' }),
+    ];
+
+    const [copied, workspace] = noteLines(t, { parts }, 'en');
+    expect(copied.text).toMatch(
+      /^Opened a session tree on daoris\/s1, from main, with the dependencies your checkout installed at the same lockfile copied in \(`node_modules`.+`web\/node_modules`\): `npm ci` is not needed there unless a lockfile changes\. It holds no build outputs\.$/,
+    );
+    expect(workspace.text).toBe("`tools/node_modules` was not copied from your checkout: the lockfile of its npm workspace `packages/ui` differs from the checkout's.");
+    const [copiedZh, workspaceZh] = noteLines(zh, { parts }, 'zh');
+    expect(copiedZh.text).toMatch(/^已从 main 在 daoris\/s1 上打开会话工作树，并复制了你的检出按同一锁文件安装的依赖（`node_modules`.+`web\/node_modules`）/);
+    expect(workspaceZh.text).toBe('`tools/node_modules` 没有从你的检出复制：它的 npm 工作区 `packages/ui` 的锁文件与检出的不同。');
+    expect(noteLines(t, { parts: [coded('started.tree', 'opened …', { branch: 'daoris/s1', basedOn: 'main' })] }, 'en')[0].text)
+      .toMatch(/no installed dependencies, no build outputs\.$/);
+  });
+
   /** A program's words pass through as written, as `DRIVER_REFUSED` passes the driver's sentence. */
   it('passes a program’s words through as written', () => {
     expect(noteLines(zh, { parts: [words('System.IO.IOException: The process cannot access the file.', 'program')] }, 'zh'))

@@ -83,7 +83,8 @@ and the ledger will not need to move.
 3. **A session tree exists only on request, per repository.** Silence means what happens today, byte
    for byte: sessions run in the registered root. The same rule as the profiles (D49 §4) — an additive
    feature or a trap, and there is no third option.
-4. **A fresh tree holds nothing git does not track** — no installed dependencies, no build outputs, no
+4. **A fresh tree holds nothing git does not track** — no installed dependencies but the npm ones its
+   checkout installed at the same lockfile, copied in (D51's TREEDEPS1 note), no build outputs, no
    untracked local configuration. That is the real price of this decision, it is paid per tree by
    whatever the repository's own setup costs, and it is stated **in the sentence that creates the
    tree** rather than discovered by a session whose gates cannot run.

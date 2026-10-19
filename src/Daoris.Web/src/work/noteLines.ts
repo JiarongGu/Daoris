@@ -77,6 +77,15 @@ export const NOTE_CODES: Readonly<Record<string, NoteCode>> = {
   // While it starts and works.
   'started.tree': { values: ['branch', 'basedOn'] },
   'started.tree-unrecorded': { values: [] },
+  // TREEDEPS1: a tree its checkout's dependencies were copied into, and why a project's were not.
+  'started.tree-copied': { values: ['branch', 'basedOn', 'copied'] },
+  'started.uncopied-manager': { values: ['modules'] },
+  'started.uncopied-moved': { values: ['modules'] },
+  'started.uncopied-uninstalled': { values: ['modules'] },
+  'started.uncopied-workspace': { values: ['modules', 'workspace'] },
+  'started.uncopied-link': { values: ['modules'] },
+  'started.uncopied-unignored': { values: ['modules'] },
+  'started.uncopied-failed': { values: ['modules'] },
   'started.joined': { values: ['session'] },
   'started.resumes-answered': { values: ['quest', 'answered'] },
   'started.in-asking-tree': { values: ['session'] },
@@ -454,6 +463,8 @@ export const NOTE_VALUES: Readonly<
   // `to` and `from` are a code's accounts where it says so (`NoteCode.accounts`: a move by the curve, SWITCH1c-i).
   named: 'text', to: 'text', from: 'text', commit: 'text', who: 'text',
   owner: 'text', branch: 'text', basedOn: 'text', plugin: 'text', agent: 'text', workspace: 'text',
+  // The dependency folders a tree's open copied from its checkout, each as code, and one it did not copy (TREEDEPS1).
+  copied: 'names', modules: 'text',
   why: 'why',
   cooling: 'cooling',
   window: 'window',
