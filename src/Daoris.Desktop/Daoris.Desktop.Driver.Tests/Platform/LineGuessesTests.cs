@@ -27,20 +27,10 @@ public sealed class LineGuessesTests : IDisposable
 
     public void Dispose()
     {
-        try
-        {
-            Directory.Delete(_root, recursive: true);
-        }
-        catch (IOException) { /* a straggling handle */ }
+        GitSeed.Discard(_root);
     }
 
-    // The checkout's root, a worktree's included (its `.git` is a file): scratch stays in the repository (`_fixtures`).
-    private static string RepoRoot()
-    {
-        var directory = new DirectoryInfo(AppContext.BaseDirectory);
-        while (directory is not null && !Path.Exists(Path.Combine(directory.FullName, ".git"))) directory = directory.Parent;
-        return directory?.FullName ?? AppContext.BaseDirectory;
-    }
+    private static string RepoRoot() => GitSeed.RepoRoot();
 
     private void Write(string name, string text)
     {
