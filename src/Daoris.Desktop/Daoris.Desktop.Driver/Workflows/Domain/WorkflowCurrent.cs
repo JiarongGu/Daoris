@@ -197,7 +197,9 @@ public static class WorkflowCurrent
                 WorkflowRuntime.Partial, WorkflowLimits.LookPartial));
         }
 
-        var landing = LandingRules.Choose(read, named, workspace);
+        // The rule work lands by, the access setup composed (CURRENTVIEW1, D184's AUTONOMY1c2 note), as every gate reads it: a branch
+        // rule the setup lands is drawn automatic. The file's own rules are untouched; a merge keeps its press.
+        var landing = LandingRules.Effective(read, named, workspace);
         var rule = landing.Rule;
         var plugin = rule.Form == LandingForm.Branch ? rule.Plugin : null;
         // The plugin a rule names, as PluginProblem finds it: the first of that id in any case.

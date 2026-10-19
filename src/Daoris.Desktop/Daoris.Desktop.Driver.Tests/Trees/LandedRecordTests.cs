@@ -148,6 +148,23 @@ public sealed class LandedRecordTests : IDisposable
     public void The_review_reads_as_landed_while_its_branch_stands_or_its_tree_is_gone(string state, bool treeGone, bool landed) =>
         Assert.Equal(landed, new LandedReview(Entry("feature/q1-fix", "s1"), state).ReadsAsLanded(treeGone));
 
+    /// <summary>ACCESSWORDS1: the review's note says the access setup accepted a landing, and at which level, only for its own landing.</summary>
+    [Fact]
+    public void The_review_says_a_landing_the_access_setup_accepted()
+    {
+        var entry = Entry("feature/q1-fix", "s1a2b3c4") with
+        {
+            AcceptedBy = AcceptedBy.Auto,
+            Rule = new LandedRule(null, AutoAccept: true, LandingSource.Repository) { Access = AccessRules.FromWorkspace },
+        };
+        Assert.Contains(", accepted by the access setup (workspace)", LandedReviewWords.Describe("s1a2b3c4", new LandedReview(entry, LandedState.Standing)));
+
+        var own = entry with { Rule = entry.Rule! with { Access = null } };
+        var said = LandedReviewWords.Describe("s1a2b3c4", new LandedReview(own, LandedState.Standing));
+        Assert.Contains(", accepted automatically when its quest was done", said);
+        Assert.DoesNotContain("access setup", said);
+    }
+
     /// <summary>The terminal's sentence: the branch, when, in which repository, and where that branch stands — each state its own.</summary>
     [Fact]
     public void Each_state_of_a_landed_branch_is_said_in_its_own_sentence()

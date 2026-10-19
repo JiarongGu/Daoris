@@ -602,6 +602,23 @@ public sealed class TraceTests : IDisposable
         Assert.DoesNotContain("'s rule, naming", Block(older, "session s2"));
     }
 
+    /// <summary>ACCESSWORDS1: a landing the access setup accepted says so in the trace, with the level that set it; a rule's own switch does not.</summary>
+    [Fact]
+    public async Task A_landing_the_access_setup_accepted_reads_back_saying_so()
+    {
+        new LandedBranches(_home).Record(new LandedBranch(
+            "dashboards", "work", "feature/q1-fix-the-dashboard-figure", "main", "1a2b3c4d5e6f708192a3b4c5d6e7f80910111213", "s2", "q1",
+            "Fix the dashboard figure", At(10, 5))
+        {
+            AcceptedBy = AcceptedBy.Auto,
+            Rule = new LandedRule(null, AutoAccept: true, LandingSource.Workspace) { Access = AccessRules.FromMachine },
+        });
+
+        var (_, said, _) = await TraceAsync(new TraceAsk("s2"));
+
+        Assert.Contains("under the workspace's rule, naming no plugin, accepted by the access setup (machine)", Block(said, "session s2"));
+    }
+
     /// <summary>
     /// PLUGHOOK1c (D148 point 6, design §2.5): a landing reads back with what its plugin last answered about its pull request, with
     /// when, and a failed ask beside it. The trace reads the kept answer and asks nothing.

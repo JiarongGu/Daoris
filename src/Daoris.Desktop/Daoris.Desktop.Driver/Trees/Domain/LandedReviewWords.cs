@@ -15,7 +15,12 @@ public static class LandedReviewWords
             ? ""
             : $" on {at.ToUniversalTime().ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture)} UTC";
         // Who accepted it (LAND2b, D145 point 4): said where it was the rule's switch, since a press is what the review offers.
-        var by = entry.AcceptedByOf(session) == AcceptedBy.Auto ? ", accepted automatically when its quest was done" : "";
+        // AUTONOMY1c2's setup accepts by the rule: its record keeps the level that set it, said (ACCESSWORDS1). Only the landing's own
+        // acceptance is the setup's; an advance of the branch keeps no rule.
+        var by = entry.AcceptedByOf(session) != AcceptedBy.Auto ? ""
+            : string.Equals(entry.Session, session, StringComparison.OrdinalIgnoreCase) && entry.Rule?.Access is { } access
+                ? $", accepted by the access setup ({access})"
+                : ", accepted automatically when its quest was done";
         var landed = string.Equals(entry.Session, session, StringComparison.OrdinalIgnoreCase)
             ? $"`{session}` landed on `{entry.Branch}` in `{entry.Repository}`{when}{by}"
             : $"`{session}` moved `{entry.Branch}` on in `{entry.Repository}`{when}, after `{entry.Session}`'s landing{by}";

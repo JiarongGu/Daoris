@@ -398,6 +398,18 @@ describe('noteLines', () => {
       ]);
     });
 
+    it("words a merge the access setup's landing rule leaves waiting for Accept, with the level that set it (ACCESSWORDS1)", () => {
+      const merges = (access: string) => coded('landing.merges', 'its quest was done, …', { access });
+      expect(noteLines(t, { parts: [merges('machine')] }, 'en')).toEqual([
+        { kind: 'said', text: "Its quest was done, and this machine's access setup lands work by its rule, but the rule merges into the line, and a merge never lands by itself: its work waits for your Accept…" },
+      ]);
+      expect(noteLines(t, { parts: [merges('repository')] }, 'en')[0].text).toContain("its repository's access setup lands");
+      expect(noteLines(zh, { parts: [merges('workspace')] }, 'zh')[0].text)
+        .toBe('委托已完成，它所在工作区的访问配置按落地规则落地工作，但这条规则是合并进主线，而合并从不自动落地：它的工作等你采纳…');
+      // A level this page does not know shows as recorded rather than guessed.
+      expect(noteLines(t, { parts: [merges('elsewhere')] }, 'en')[0].kind).toBe('recorded');
+    });
+
     it('words the process a conversation was told by its commit rule and where it was set, under its own lead', () => {
       // PROCESS1d-ii: never the browser's lead; the words after it are Daoris's English to the agent, shown as written.
       const told = (source: string) => coded('chat.told-process', "told the agent this repository's process, …:", { mode: 'ask', source });
