@@ -411,7 +411,7 @@ test('every .NET test project is run by a declared gate', () => {
  * `Parallel=Git` four at once, by a second file. The test above counts a suite as reached by any half,
  * so losing a Process half would leave its tests run by no gate while every check stayed green.
  */
-test('a suite gated without its Process tests has gates that run them: one class at a time, and its git-only classes four at once', () => {
+test('a suite gated without its Process tests has gates that run them: bounded, each suite its own parallelism, and its git-only classes four at once', () => {
   const gates = JSON.parse(readText(join(repoRoot, 'daoris.gates.json'))) as {
     gates: { name: string; run: string }[];
   };
@@ -429,9 +429,14 @@ test('a suite gated without its Process tests has gates that run them: one class
   let marking = 0;
   for (const target of fast) {
     const serial = filtered(target, 'Category=Process&amp;Parallel!=Git');
-    assert.ok(serial, `${target} is gated without its Process tests, and no gate runs them one class at a time`);
-    assert.match(serial.settings, /<ParallelizeTestCollections>false<\/ParallelizeTestCollections>/,
-      `${target}'s Process tests are gated in parallel — load is what fails them (FLAKE1)`);
+    assert.ok(serial, `${target} is gated without its Process tests, and no gate runs them`);
+    // PROCPAR1 (D180's budget note): the settings leave whether classes run at once to each suite's assembly (the modules' run
+    // one at a time by their own attribute, which a value here would override), and bound how many run; what a class shares
+    // with its neighbours runs alone after the rest, which the driver's CategoryTests hold.
+    assert.doesNotMatch(serial.settings, /<ParallelizeTestCollections>/,
+      `${target}'s Process settings override its assembly's parallelism (PROCPAR1)`);
+    assert.match(serial.settings, /<MaxParallelThreads>\d+<\/MaxParallelThreads>/,
+      `${target}'s Process tests run at once with no bound — load is what fails them (FLAKE1)`);
 
     // PROC1b: a suite that marks a class to run four at once has the gate that runs those, and only four.
     const marks = listFiles(join(repoRoot, target), (name) => name.endsWith('.cs'))

@@ -373,12 +373,18 @@ test('a plugin whose folder a running process holds is not updated, and stays wh
   writeFileSync(join(source, 'gate.mjs'), '// v2');
   const installed = join(pluginsRoot(home), 'acme.gate');
   const { spawn } = await import('node:child_process');
-  const holder = spawn(process.execPath, ['-e', 'setTimeout(() => {}, 20000)'], { cwd: installed, stdio: 'ignore' });
+  const holder = spawn(process.execPath, ['-e', "process.stdout.write('up'); setTimeout(() => {}, 20000)"],
+    { cwd: installed, stdio: ['ignore', 'pipe', 'ignore'] });
   // The folder is let go when the holder has ended, not a fixed while after the kill: under load that while was too
   // short and the cleanup met EPERM (FLAKE1, 2026-10-07).
   const ended = new Promise((resolve) => holder.once('exit', resolve));
   try {
-    await new Promise((resolve) => setTimeout(resolve, 300));
+    // Held once the holder says it is up, not a fixed while after its spawn: a start on this machine takes up to 1.5 s,
+    // and the CI beside, below normal, met the update before the holder held the folder (2026-10-19).
+    await new Promise((resolve, reject) => {
+      holder.stdout!.once('data', resolve);
+      holder.once('exit', () => reject(new Error('the holder ended before it held the folder')));
+    });
     assert.match(refused(['update', 'acme.gate', '--yes'], home).message, /was not updated/);
     assert.equal(readFileSync(join(installed, 'gate.mjs'), 'utf8'), '// v1');
     assert.deepEqual(readdirSync(pluginsRoot(home)), ['acme.gate']);

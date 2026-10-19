@@ -56,7 +56,7 @@ public static class DriverStateSlice
     [
         new(StatePublisher.Type, payload => payload is StateChanged changed
             && changed.Scopes.Any(scope => scope is "driver" or "sessions" or "harnesses")),
-        new("SESSION_ENDED"),
+        new(DriverLoop.EndedType),
         new("DRIVER_READY"),
     ];
 

@@ -963,7 +963,10 @@ public sealed class DriverLoop(
     /// runner took up by itself is announced by it (MSG1c2).
     /// </summary>
     internal static Task Ended(IEventBus bus, string session, string state) =>
-        bus.EmitAsync("DAORIS", "SESSION_ENDED", new { Session = session, State = state });
+        bus.EmitAsync("DAORIS", EndedType, new { Session = session, State = state });
+
+    /// <summary>The event's type, spelled here alone: a slice that wakes on it names it by this (PUSH1a).</summary>
+    public const string EndedType = "SESSION_ENDED";
 
     /// <summary>
     /// What the person's words to a session do, whatever its state (MSG1d, D137 §2): the one judge <c>SESSION_INPUT</c> and
