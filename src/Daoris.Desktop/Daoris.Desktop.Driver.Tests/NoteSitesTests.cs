@@ -242,6 +242,53 @@ public sealed class NoteSitesTests
         Assert.Equal(NoteBy.Program, unrecorded.Parts[2].By);
     }
 
+    /// <summary>TREEDEPS1 (D51's note): a tree its checkout's dependencies were copied into says so, and why any were not.</summary>
+    [Fact]
+    public void A_tree_s_opening_says_the_dependencies_copied_in_and_why_any_were_not()
+    {
+        var path = Path.Combine("data", "trees", "default", "engine", "s-1a2b3c4d");
+        var copied = SessionTrees.OpeningOf(path, "daoris/s-1a2b3c4d", "`main` (the line set for `engine`)", "main", unrecorded: null,
+            new DependencyCopy(["node_modules", "web/node_modules"], [new Uncopied("tools/node_modules", UncopiedWhy.Moved)]));
+        Line(copied,
+            $"opened a session tree at {path} on `daoris/s-1a2b3c4d`, from `main` (the line set for `engine`) — a fresh tree holds what git "
+            + "tracks, and here the dependencies your checkout installed at the same lockfile, copied in: `node_modules`, `web/node_modules`. "
+            + "`npm ci` is not needed there unless a lockfile changes; the rest of the repository's own setup cost, build outputs included, "
+            + "is paid here, and in exchange the root's uncommitted work holds nothing. `tools/node_modules` was not copied from your "
+            + "checkout: this tree's lockfile beside it differs from the checkout's, so it is installed afresh.",
+            "started.tree-copied", "started.uncopied-moved");
+        Assert.Equal(("daoris/s-1a2b3c4d", "main"), ((string?)copied.Parts[0].Value("branch"), (string?)copied.Parts[0].Value("basedOn")));
+        // The folders as a list, each set as code and joined the reader's way.
+        Assert.Equal(["node_modules", "web/node_modules"], Assert.IsAssignableFrom<IReadOnlyList<string>>(copied.Parts[0].Value("copied")));
+        Assert.Equal("tools/node_modules", copied.Parts[1].Value("modules"));
+
+        // Nothing copied: the opening as it was, then why each was not.
+        var none = SessionTrees.OpeningOf(path, "daoris/s-1a2b3c4d", "`main` (the line set for `engine`)", "main", unrecorded: null,
+            new DependencyCopy([],
+            [
+                new Uncopied("node_modules", UncopiedWhy.Manager), new Uncopied("a/node_modules", UncopiedWhy.Uninstalled),
+                new Uncopied("b/node_modules", UncopiedWhy.Workspace, Workspace: "packages/ui"), new Uncopied("c/node_modules", UncopiedWhy.Link),
+                new Uncopied("d/node_modules", UncopiedWhy.Unignored), new Uncopied("e/node_modules", UncopiedWhy.Failed, Detail: "disk full"),
+            ]));
+        Assert.Equal(
+            $"opened a session tree at {path} on `daoris/s-1a2b3c4d`, from `main` (the line set for `engine`) — a fresh tree holds "
+            + "nothing git does not track: no installed dependencies, no build outputs. The repository's own setup cost is paid "
+            + "here, and in exchange the root's uncommitted work holds nothing. "
+            + "`node_modules` was not copied from your checkout: pnpm or yarn installs it, and Daoris copies only what npm installed. "
+            + "`a/node_modules` was not copied from your checkout: the checkout holds no install of it at its lockfile. "
+            + "`b/node_modules` was not copied from your checkout: the lockfile of its npm workspace `packages/ui` differs from the checkout's. "
+            + "`c/node_modules` was not copied from your checkout: a link in it leads outside what this tree holds. "
+            + "`d/node_modules` was not copied from your checkout: git does not ignore it here, so a copy would read as this tree's work. "
+            + "`e/node_modules` was not copied from your checkout: the copy failed (disk full).",
+            none.Note);
+        NoteAssert.Holds(none);
+        Assert.Equal(
+            ["started.tree", "started.uncopied-manager", "started.uncopied-uninstalled", "started.uncopied-workspace", "started.uncopied-link",
+                "started.uncopied-unignored", "started.uncopied-failed", null],
+            NoteAssert.Codes(none.Parts));
+        Assert.Equal("packages/ui", none.Parts[3].Value("workspace"));
+        Assert.Equal(NoteBy.Program, none.Parts[7].By);
+    }
+
     private static QuestView Quest(string status = "Taken") => new("q1", "game", "engine", "Fix it", "Body", status);
 
     [Fact]

@@ -18,7 +18,7 @@
   "work.start.tree.detached": "分离的 HEAD",
   "work.start.tree.own":"独立工作树",
   "work.start.tree.ownNote": "在检出旁新开一棵工作树",
-  "work.start.ownTreeCost": "独立工作树里只有 git 跟踪的内容：没有已安装的依赖、没有构建产物、没有未跟踪的本地配置。这份代价按工作树计算，取决于这个仓库自身的准备成本。",
+  "work.start.ownTreeCost": "独立工作树里只有 git 跟踪的内容，以及在工作树的锁文件一致时从你的检出复制来的 npm 依赖：没有构建产物、没有其他安装、没有未跟踪的本地配置。这份代价按工作树计算，取决于这个仓库其余的准备成本。",
   "work.start.agentAccount": "智能体与账户",
   "work.start.harness": "智能体",
   "work.start.harnessDefault": "本机默认",
