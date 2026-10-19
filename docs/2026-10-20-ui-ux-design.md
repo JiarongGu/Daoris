@@ -910,11 +910,11 @@ heads, and D173's milestone's facts stand.
 
 **The rows follow D187**: each is one feature a person can see working, named by its outcome and built end to end by one
 builder across every lane it needs (driver, modules, service, the page), never a host half and a page half. A feature too
-large for one builder is split only into parts that each work on their own (the meeting's four). A part shared by several
-features (`PhaseList`, `SettingList`) is built by the first feature that shows it. Each is about a hundred turns; each proof
-includes its stories at R6's widths, its tests red first, the web's `i18n:check` and `names:check -- --strict` where words
-change, and the parent's look on the window at 1546 and 680 px in both themes and languages. UIFIT1a (the parent's shots)
-comes first, unchanged.
+large for one builder's context is split only into parts that each work on their own and are each seen working (the
+meeting's four, D187 point 5). A part shared by several features (`PhaseList`, `SettingList`) is built by the first feature
+that shows it. Each proof includes its stories at R6's widths, its tests red first (its own `Process` classes among them,
+D187 point 4), the web's `i18n:check` and `names:check -- --strict` where words change, and the parent's look on the window
+at 1546 and 680 px in both themes and languages. UIFIT1a (the parent's shots) comes first, unchanged.
 
 1. **UIFIT1b, changed — Settings' rows and cards use the pane.** Absorbs UIFIT1c. R1's label track (`SettingList`) and its
    16 px card spacing in every Settings domain and Setup tab, R6's story widths for them, R1's and R6's notes in the platform
