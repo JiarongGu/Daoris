@@ -122,6 +122,9 @@ export const NOTE_CODES: Readonly<Record<string, NoteCode>> = {
   'chat.ended': { values: [] },
   'chat.cancelled': { values: [] },
   'chat.not-kept': { values: [] },
+  // Ask Daoris's start, where the machine's reading for its room did not answer in time (HELPSTUCK1).
+  'help.room-as-written': { values: ['seconds'] },
+  'help.room-unread': { values: ['seconds'] },
   // A landing at the quest's done, under a rule that accepts automatically (LAND2b).
   'landing.accepted': { values: ['branch'] },
   'landing.plugin-unready': { values: ['branch', 'plugin'] },
@@ -420,6 +423,8 @@ export const NOTE_VALUES: Readonly<
   option: 'text', chosen: 'text', work: 'text', state: 'bgstate', repository: 'text',
   until: 'moment', at: 'moment', seen: 'moment',
   exit: 'number', minutes: 'number', paths: 'number', turn: 'number',
+  // How long Ask Daoris's start waited for the machine's reading, in whole seconds (HELPSTUCK1).
+  seconds: 'number',
   // An account's room under its usage curve, in whole percent points (SWITCH1b-ii).
   room: 'number',
   tokens: 'count', count: 'count',
