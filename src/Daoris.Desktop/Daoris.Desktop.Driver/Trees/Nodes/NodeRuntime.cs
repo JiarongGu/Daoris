@@ -47,6 +47,20 @@ public sealed record NodeRuntimeLook(DriverConfig Config, bool Whole)
     /// </summary>
     public Func<string, IReadOnlyCollection<string>, CancellationToken, Task<IReadOnlyDictionary<string, string>>> Tips { get; init; } =
         (_, _, _) => Task.FromResult<IReadOnlyDictionary<string, string>>(new Dictionary<string, string>());
+
+    /// <summary>
+    /// Each named branch's remote-tracking ref in one checkout (FABRIC-RUN1b, <see cref="NodeTips.RemotesAsync"/>): what <c>pushed</c> reads,
+    /// once per checkout per pass, and only where a <c>pushed</c> node waits on a landing a plugin answered it pushed. Empty where the ref is not
+    /// there; a branch it could not read is absent, and its node stays unknown.
+    /// </summary>
+    public Func<string, IReadOnlyCollection<string>, CancellationToken, Task<IReadOnlyDictionary<string, string>>> Remotes { get; init; } =
+        (_, _, _) => Task.FromResult<IReadOnlyDictionary<string, string>>(new Dictionary<string, string>());
+
+    /// <summary>
+    /// Whether one commit holds another in one checkout (FABRIC-RUN1b, <see cref="NodeTips.HoldsAsync"/>): an ahead <c>pull-request</c>'s check,
+    /// asked only where one waits on a completed answer from a newer commit; null where git could not say.
+    /// </summary>
+    public Func<string, string, string, CancellationToken, Task<bool?>> Holds { get; init; } = (_, _, _, _) => Task.FromResult<bool?>(null);
 }
 
 /// <summary>
@@ -357,6 +371,10 @@ public sealed class NodeRuntime(
             // binding), never kept past the pass.
             var tips = new PassTips(look.Tips, Observing(governed.Values));
 
+            // FABRIC-RUN1b: the look's git reads for the observed built-ins, each checkout's remote-tracking refs read once a pass, and only where
+            // a node waits on them.
+            var git = new PassGit(look.Remotes, look.Holds, Pushing(governed.Values));
+
             // FABRIC-RUN1e: one count of calls for the whole pass, reconciliation's first, so four is the pass's bound and not its starts' alone.
             var sends = new WorkSends(SendsPerPass);
             var done = new List<WorkPerformed>();
@@ -400,10 +418,10 @@ public sealed class NodeRuntime(
             foreach (var each in concerned)
             {
                 if (each.Closes) Settle(each, done, said);
-                await EvaluateAsync(each, sends, done, said, look.Units, tips, ct).ConfigureAwait(false);
+                await EvaluateAsync(each, sends, done, said, look.Units, tips, git, ct).ConfigureAwait(false);
             }
 
-            await HearAgainAsync(lagging, governed, concerned, sends, done, said, look.Units, tips, ct).ConfigureAwait(false);
+            await HearAgainAsync(lagging, governed, concerned, sends, done, said, look.Units, tips, git, ct).ConfigureAwait(false);
             var changed = Tell(governed.Values);
             return new NodeRuntimePass(true, done, [.. concerned.Select(each => each.Unit.Id)], said) { AwaitedChanged = changed };
         }
@@ -419,7 +437,7 @@ public sealed class NodeRuntime(
     /// </summary>
     private async Task EvaluateAsync(
         GovernedUnit governed, WorkSends sends, List<WorkPerformed> done, List<string> said, Func<CancellationToken, Task<NodeUnitsRead>> units,
-        PassTips tips, CancellationToken ct)
+        PassTips tips, PassGit git, CancellationToken ct)
     {
         var unit = governed.Unit.Id;
         // FABRIC-PERFORM1m: a branch unit's observed plugin nodes bind to its branch's tip read this pass, not to the unit's revision, which is
@@ -434,7 +452,9 @@ public sealed class NodeRuntime(
                 break;
             }
 
-            var (before, evaluated) = Evaluate(governed, record, tipped, tip);
+            // FABRIC-RUN1b: what git says for the built-ins this round's record holds waiting on it, read once a pass.
+            var reads = await GitReadsAsync(governed, record, git, ct).ConfigureAwait(false);
+            var (before, evaluated) = Evaluate(governed, record, tipped, tip, reads);
             if (evaluated.Refusal is { } refusal)
             {
                 said.Add($"work  {unit}: its graph was not judged ({refusal}: {string.Join(", ", evaluated.Missing)}), so nothing on it is started.");
@@ -486,9 +506,11 @@ public sealed class NodeRuntime(
     /// <summary>
     /// A unit's graph evaluated on its record as it stands (FABRIC-RUN1): each node's status before (the record's, else a fresh one), and
     /// the evaluation on the unit's revision and the triggers its record has fired; a branch unit's observed plugin nodes on the tip its pass
-    /// read (FABRIC-PERFORM1m), handed in. Pure: what it moves is the caller's to keep. No git is read.
+    /// read (FABRIC-PERFORM1m), and what git said for its built-ins (FABRIC-RUN1b, <paramref name="git"/>), handed in. Pure: what it moves is
+    /// the caller's to keep, and it reads no git itself.
     /// </summary>
-    private static (Dictionary<string, NodeStatus> Before, WireEvaluated Evaluated) Evaluate(GovernedUnit governed, NodeRecord record, bool tipped = false, string? tip = null)
+    private static (Dictionary<string, NodeStatus> Before, WireEvaluated Evaluated) Evaluate(
+        GovernedUnit governed, NodeRecord record, bool tipped = false, string? tip = null, NodeGitReads? git = null)
     {
         var unit = governed.Unit.Id;
         var nodes = governed.Graph.Nodes.Select(node => governed.Declared[node.Id]).ToList();
@@ -499,8 +521,49 @@ public sealed class NodeRuntime(
             NodeRevisions = tipped ? ObservedRevisions(governed, tip, before) : new Dictionary<string, string?>(StringComparer.Ordinal),
             Fired = record.Fired.ToHashSet(StringComparer.Ordinal),
             Units = new Dictionary<string, WorkUnit>(StringComparer.Ordinal) { [unit] = governed.Unit },
+            Git = git,
         };
         return (before, WireEvaluation.Evaluate(nodes, governed.Graph.Wires, before, run));
+    }
+
+    /// <summary>
+    /// What git says for a branch unit's observed built-ins that wait on it (FABRIC-RUN1b; NODE1's choice 8, the look's git reads): a
+    /// <c>pushed</c> active or unknown on a landing a plugin answered it pushed reads the landed branch's remote-tracking ref, and a
+    /// <c>pull-request</c> active or unknown on an answer completed from another commit asks git's ancestry, each through the pass's one read
+    /// (<paramref name="git"/>). Null where nothing waits on git, so a unit with no such node asks it nothing; what was not read stays absent,
+    /// and its node unknown.
+    /// </summary>
+    private static async Task<NodeGitReads?> GitReadsAsync(GovernedUnit governed, NodeRecord record, PassGit git, CancellationToken ct)
+    {
+        if (governed.Unit.Kind != WorkUnitKind.Branch || BuiltInNodes.LandingOf(governed.Unit) is not { } landing) return null;
+        bool Waits(string kind) => governed.Graph.Nodes.Any(node => node.Kind == kind
+            && record.Statuses.GetValueOrDefault(node.Id)?.State is NodeStates.Active or NodeStates.Unknown);
+
+        var root = governed.Watched.Root;
+        var remote = Waits(NodeKinds.Pushed) && BuiltInNodes.AsksRemote(landing);
+        var tip = remote ? await git.RemoteAsync(root, landing.Branch, ct).ConfigureAwait(false) : null;
+        var ancestry = Waits(NodeKinds.PullRequest) ? BuiltInNodes.AncestryOf(landing) : null;
+        var holds = ancestry is var (holder, held) ? await git.HoldsAsync(root, holder, held, ct).ConfigureAwait(false) : null;
+        if (!remote && ancestry is null) return null;
+        return new NodeGitReads(
+            remote ? each => string.Equals(each.Branch, landing.Branch, StringComparison.Ordinal) ? tip : null : null,
+            ancestry is null ? null : (holder, held) => (holder, held) == ancestry ? holds : null);
+    }
+
+    /// <summary>Each checkout's landed branches a pass may judge <c>pushed</c> on (FABRIC-RUN1b): what the pass's one read of its remote refs serves.</summary>
+    private static Dictionary<string, IReadOnlyCollection<string>> Pushing(IEnumerable<GovernedUnit> governed)
+    {
+        var branches = new Dictionary<string, IReadOnlyCollection<string>>(StringComparer.Ordinal);
+        var pushing = governed.Where(each => each.Unit.Kind == WorkUnitKind.Branch && each.Watched.Root.Length > 0
+                && each.Graph.Nodes.Any(node => node.Kind == NodeKinds.Pushed))
+            .Select(each => (each.Watched.Root, Landing: BuiltInNodes.LandingOf(each.Unit)))
+            .Where(each => each.Landing is { } landing && BuiltInNodes.AsksRemote(landing));
+        foreach (var same in pushing.GroupBy(each => each.Root, StringComparer.Ordinal))
+        {
+            branches[same.Key] = same.Select(each => each.Landing!.Branch).Distinct(StringComparer.Ordinal).ToList();
+        }
+
+        return branches;
     }
 
     /// <summary>
@@ -756,7 +819,7 @@ public sealed class NodeRuntime(
     /// </summary>
     private async Task HearAgainAsync(
         List<WorkLagging> lagging, IReadOnlyDictionary<string, GovernedUnit> governed, IReadOnlyList<GovernedUnit> concerned, WorkSends sends,
-        List<WorkPerformed> done, List<string> said, Func<CancellationToken, Task<NodeUnitsRead>> units, PassTips tips, CancellationToken ct)
+        List<WorkPerformed> done, List<string> said, Func<CancellationToken, Task<NodeUnitsRead>> units, PassTips tips, PassGit git, CancellationToken ct)
     {
         if (lagging.Count == 0) return;
         var again = await _observer.HearAsync([.. lagging.Select(each => each.Heard)], governed, tips.ReadAsync, ct).ConfigureAwait(false);
@@ -764,7 +827,7 @@ public sealed class NodeRuntime(
         var taken = again.Where(each => each.What == PerformedWhat.Applied).Select(each => each.Unit).ToHashSet(StringComparer.Ordinal);
         foreach (var each in concerned.Where(each => taken.Contains(each.Unit.Id)))
         {
-            await EvaluateAsync(each, sends, done, said, units, tips, ct).ConfigureAwait(false);
+            await EvaluateAsync(each, sends, done, said, units, tips, git, ct).ConfigureAwait(false);
         }
     }
 

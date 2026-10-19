@@ -138,7 +138,25 @@ public sealed class NodeRuntimeTests : IDisposable
             Interlocked.Increment(ref _stepsRead);
             return [Step, Build];
         },
+        // FABRIC-RUN1b: every git read the runtime may make, counted, so an install with no graph is seen to start none.
+        Tips = (_, _, _) =>
+        {
+            Interlocked.Increment(ref _gitRead);
+            return Task.FromResult<IReadOnlyDictionary<string, string>>(new Dictionary<string, string>());
+        },
+        Remotes = (_, _, _) =>
+        {
+            Interlocked.Increment(ref _gitRead);
+            return Task.FromResult<IReadOnlyDictionary<string, string>>(new Dictionary<string, string>());
+        },
+        Holds = (_, _, _, _) =>
+        {
+            Interlocked.Increment(ref _gitRead);
+            return Task.FromResult<bool?>(null);
+        },
     };
+
+    private int _gitRead;
 
     /// <summary>The plugin's build step (FABRIC-PERFORM1c): a pipeline's producer, its artifact a deploy's release.</summary>
     private static readonly NodeDeclaration Build = Step with { Id = Plugin + "/build", Kind = Plugin + "/build" };
@@ -239,7 +257,7 @@ public sealed class NodeRuntimeTests : IDisposable
         }
 
         Assert.False(NodeRuntime.Armed(DriverConfig.Parse(config)));
-        Assert.Equal((0, 0), (_unitsRead, _stepsRead));
+        Assert.Equal((0, 0, 0), (_unitsRead, _stepsRead, _gitRead));
         Assert.Equal((0, 0, 0, 0), (_port.Told.Count, _port.Taken, _port.Sent.Count, _port.Asked.Count));
         Assert.False(Directory.Exists(NodeRecordFiles.FolderOf(_home)));
         Assert.Null(runtime.NextDue);

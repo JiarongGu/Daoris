@@ -200,6 +200,74 @@ public static class NodeTips
 
         return tips;
     }
+
+    /// <summary>
+    /// The commit origin's remote-tracking ref holds for each of <paramref name="branches"/> in <paramref name="root"/> (FABRIC-RUN1b, NODE1's
+    /// choice 8: what <c>pushed</c> reads): <c>refs/remotes/origin/&lt;branch&gt;</c>, one <c>for-each-ref</c> for them all. Empty where git says
+    /// the ref is not there; absent where its read failed, which establishes nothing.
+    /// </summary>
+    public static async Task<IReadOnlyDictionary<string, string>> RemotesAsync(string root, IReadOnlyCollection<string> branches, CancellationToken ct)
+    {
+        var tips = new Dictionary<string, string>(StringComparer.Ordinal);
+        if (root.Length == 0 || !Directory.Exists(root)) return tips;
+        var refs = RefSnapshot.Take(root);
+        foreach (var branch in branches.Distinct(StringComparer.Ordinal))
+        {
+            if (await refs.CommitAsync("refs/remotes/origin/" + branch, ct).ConfigureAwait(false) is (true, var commit)) tips[branch] = commit ?? "";
+        }
+
+        return tips;
+    }
+
+    /// <summary>
+    /// Whether <paramref name="holder"/> holds <paramref name="held"/> in <paramref name="root"/>, is it or descends from it (FABRIC-RUN1b: an ahead
+    /// <c>pull-request</c>'s check): <c>merge-base --is-ancestor</c>'s 0 or 1; null where git could not say, which establishes nothing.
+    /// </summary>
+    public static async Task<bool?> HoldsAsync(string root, string holder, string held, CancellationToken ct)
+    {
+        if (root.Length == 0 || !Directory.Exists(root)) return null;
+        var (code, _, _) = await WorkingTree.GitAsync(root, ["merge-base", "--is-ancestor", held, holder], ct).ConfigureAwait(false);
+        return code switch { 0 => true, 1 => false, _ => null };
+    }
+}
+
+/// <summary>
+/// One pass's git reads for the observed built-ins (FABRIC-RUN1b; NODE1's choice 8): each checkout's remote-tracking refs read once, at the
+/// first ask, for every landed branch the pass may judge <c>pushed</c> on there as well as the one asked; each ancestry asked once. Made for
+/// one pass and dropped with it, so nothing git said is carried into the next (LANDGIT1).
+/// </summary>
+/// <param name="remotes">The look's read of one checkout's remote-tracking refs (<see cref="NodeRuntimeLook.Remotes"/>).</param>
+/// <param name="holds">The look's ancestry question (<see cref="NodeRuntimeLook.Holds"/>).</param>
+/// <param name="pushing">Each checkout's landed branches the pass may judge <c>pushed</c> on.</param>
+public sealed class PassGit(
+    Func<string, IReadOnlyCollection<string>, CancellationToken, Task<IReadOnlyDictionary<string, string>>> remotes,
+    Func<string, string, string, CancellationToken, Task<bool?>> holds,
+    IReadOnlyDictionary<string, IReadOnlyCollection<string>> pushing)
+{
+    private readonly Dictionary<string, IReadOnlyDictionary<string, string>> _remotes = new(StringComparer.Ordinal);
+
+    private readonly Dictionary<(string Root, string Holder, string Held), bool?> _holds = [];
+
+    /// <summary>The commit <paramref name="branch"/>'s remote-tracking ref holds in <paramref name="root"/>: empty where it is not there, null where not read.</summary>
+    public async Task<string?> RemoteAsync(string root, string branch, CancellationToken ct)
+    {
+        if (root.Length == 0 || branch.Length == 0) return null;
+        if (!_remotes.TryGetValue(root, out var read))
+        {
+            var all = (pushing.GetValueOrDefault(root) ?? []).Append(branch).Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal).ToList();
+            _remotes[root] = read = await remotes(root, all, ct).ConfigureAwait(false);
+        }
+
+        return read.GetValueOrDefault(branch);
+    }
+
+    /// <summary>Whether <paramref name="holder"/> holds <paramref name="held"/> in <paramref name="root"/>, asked once a pass; null where git could not say.</summary>
+    public async Task<bool?> HoldsAsync(string root, string holder, string held, CancellationToken ct)
+    {
+        if (root.Length == 0) return null;
+        if (_holds.TryGetValue((root, holder, held), out var known)) return known;
+        return _holds[(root, holder, held)] = await holds(root, holder, held, ct).ConfigureAwait(false);
+    }
 }
 
 /// <summary>

@@ -104,7 +104,7 @@ public static class BuiltInNodes
         if (node.Kind == NodeKinds.Claimed) return Claimed(unit, Seen, Reached);
         if (!unit.OwnerKnown) return Seen(NodeStates.Unknown, "no record names its unit, so nothing of it is said");
 
-        var landing = unit.Records.Landings.LastOrDefault(each => each.GoneAt is null) ?? unit.Records.Landings.LastOrDefault();
+        var landing = LandingOf(unit);
         var branch = unit.Records.Branch;
         switch (node.Kind)
         {
@@ -155,6 +155,28 @@ public static class BuiltInNodes
                 return PullRequest(landing, git, Seen, Reached);
         }
     }
+
+    /// <summary>The landing a branch unit's <c>handed</c>, <c>pushed</c> and <c>pull-request</c> read: its newest standing, else its newest; null where none.</summary>
+    public static LandedBranch? LandingOf(WorkUnit unit) =>
+        unit.Records.Landings.LastOrDefault(each => each.GoneAt is null) ?? unit.Records.Landings.LastOrDefault();
+
+    /// <summary>
+    /// Whether <c>pushed</c>'s observation of <paramref name="landing"/> asks git's remote-tracking ref (FABRIC-RUN1b): only where a plugin
+    /// answered that it pushed, naming the commit, so a reader asks git nothing for a landing no plugin pushed.
+    /// </summary>
+    public static bool AsksRemote(LandedBranch landing) => landing is { Pushed: true, PushedTip: not null };
+
+    /// <summary>
+    /// The ancestry <c>pull-request</c>'s observation of <paramref name="landing"/> asks (FABRIC-RUN1b; D148 point 4's third check): whether its
+    /// completed answer's source holds the landed tip, where the answer passes the first check and was completed from another commit; null
+    /// where it asks none.
+    /// </summary>
+    public static (string Holder, string Held)? AncestryOf(LandedBranch landing) =>
+        landing.PullRequestState is { State: PullRequestStates.Completed, MergeCommit.Length: > 0, SourceCommit: { Length: > 0 } source } answer
+        && landing.Line is not null && string.Equals(answer.Target, landing.Line, StringComparison.Ordinal)
+        && !string.Equals(source, landing.Tip, StringComparison.Ordinal)
+            ? (source, landing.Tip)
+            : null;
 
     private static NodeObservation Claimed(
         WorkUnit unit, Func<string?, string, NodeObservation> seen, Func<string, string?, string, string, string, NodeObservation> reached) =>
