@@ -306,6 +306,23 @@ public sealed class NoteSitesTests
         Assert.Null(Daoris.Driver.Driver.StartingNote(null, Quest(), null, null, false, null, null, false, null));
     }
 
+    /// <summary>
+    /// SYNCMERGE1b (D178 point 7): a stand-down carried on once the person brought its lost take forward says the press, by its own code,
+    /// never that the session was cut off.
+    /// </summary>
+    [Fact]
+    public void A_bring_forward_s_carry_on_says_the_press_never_a_cut_off()
+    {
+        var lost = new PriorSession("s0", "/t", "stood-down", Daoris.Driver.Driver.LostClaim);
+
+        var carried = Daoris.Driver.Driver.StartingNote(null, Quest(), null, "/t", true, lost, null, false, null, broughtForward: true)!;
+
+        Line(carried, "carries `#q1` on: you brought the work of session `s0` forward after its take lost, in the tree it worked in.",
+            "started.brought-forward", "started.same-tree");
+        Assert.Equal(("q1", "s0"), ((string?)carried.Parts[0].Value("quest"), (string?)carried.Parts[0].Value("session")));
+        Assert.DoesNotContain("cut off", carried.Note);
+    }
+
     [Fact]
     public void A_resumed_conversation_says_it_goes_on_while_it_works()
     {

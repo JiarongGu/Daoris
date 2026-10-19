@@ -467,6 +467,8 @@ public static class NoteCodes
     public static readonly NoteCode StartedAnswer = new("started.answer", ["quest", "session"]);
     public static readonly NoteCode StartedReleased = new("started.released", ["quest", "session"]);
     public static readonly NoteCode StartedCutOff = new("started.cut-off", ["quest", "session"]);
+    // A stand-down carried on once the person brought its lost take forward (SYNCMERGE1b, D178 point 3): the press, never a cut-off.
+    public static readonly NoteCode StartedBroughtForward = new("started.brought-forward", ["quest", "session"]);
     // A quest handed to another agent (MIXAGENT1a-ii, D163 point 1): the carry-on's first line says which agent it came from, and
     // where the account the hand-over named could not run it, that another of the named agent's did. Facts only, no account's name.
     public static readonly NoteCode StartedHandedOver = new("started.handed-over", ["quest", "session", "agent"]);

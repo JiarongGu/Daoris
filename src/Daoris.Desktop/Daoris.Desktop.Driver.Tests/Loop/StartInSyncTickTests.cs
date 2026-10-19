@@ -114,6 +114,45 @@ public sealed class StartInSyncTickTests : IDisposable
     }
 
     /// <summary>
+    /// SYNCMERGE1b (D178 point 3): a carry-on of a session whose take lost, once the person brought its work forward. The session that
+    /// carried the cut-off on stood down in its tree when its take lost, and the line came to hold the tree's commit meanwhile; once the
+    /// claim names the bring-forward, that stand-down goes on in the tree, from the line, told the press and never its stop's words.
+    /// </summary>
+    [Fact]
+    public async Task A_bring_forwards_carry_on_starts_on_the_line_in_the_stood_down_tree_and_is_told_the_press()
+    {
+        await using var service = AskAndWaitTickTests.StandIn.Start(_repository);
+        var driver = Driver(service, "fail");
+
+        await driver.RunOnceAsync().WaitAsync(TimeSpan.FromSeconds(60));
+        Assert.Equal("failed", service.Session("s1")["state"]!.GetValue<string>());
+        var tree = service.Session("s1")["tree"]!.GetValue<string>();
+        SquashOntoLine(tree);
+        var lostAt = DateTimeOffset.UtcNow;
+        service.Keep(new JsonObject
+        {
+            ["id"] = "s2", ["quest"] = "q1", ["repository"] = "engine", ["state"] = "stood-down", ["kind"] = "drive", ["tree"] = tree,
+            ["note"] = Daoris.Driver.Driver.LostClaim, ["created"] = lostAt.ToString("O"),
+        });
+        service.Claim = "held";
+        service.ClaimForward = new JsonObject
+        {
+            ["machine"] = "desk", ["sequence"] = 7, ["at"] = lostAt.AddSeconds(1).ToString("O"), ["standing"] = "held",
+        };
+        await driver.RunOnceAsync().WaitAsync(TimeSpan.FromSeconds(60));
+
+        var carried = Runs().Last();
+        var told = carried["target"]!.GetValue<string>();
+        Assert.Equal(Path.GetFullPath(tree), Path.GetFullPath(carried["cwd"]!.GetValue<string>()), ignoreCase: true);
+        Assert.Contains("You are carrying on quest `#q1`", told);
+        Assert.Contains("the person brought that work forward", told);
+        Assert.DoesNotContain("double someone else's", told);
+        Assert.Contains(BroughtUp, told);
+        Assert.Equal(Rev("main"), carried["head"]!.GetValue<string>());
+        Assert.Equal("Done", service.Status("q1"));
+    }
+
+    /// <summary>
     /// The person's words going on in the session's own conversation (ANSWER1a, MSG1b): no instruction is handed again, so what the
     /// start did with the tree is said after the words, in the same prompt, and the conversation goes on from the line.
     /// </summary>

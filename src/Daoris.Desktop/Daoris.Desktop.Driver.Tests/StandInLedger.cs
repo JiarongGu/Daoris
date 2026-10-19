@@ -878,7 +878,6 @@ internal sealed class StandInRuns(ServiceClient service, StandInLedger ledger)
 
     private TaskCompletionSource<string> Ending(string quest) =>
         _endings.GetOrAdd(quest, _ => new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously));
-
     private async Task<StartRun> RunAsync(Consideration start, Action opened, CancellationToken ct)
     {
         var quest = start.Quest;
