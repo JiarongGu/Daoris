@@ -89,6 +89,19 @@ public static class CanonicalLine
         return Choose(config, repository, workspace, await guess(root, ct).ConfigureAwait(false));
     }
 
+    /// <summary>
+    /// The line as far as the checkout's guess was judged (PARALLEL1a, PUSH1b1): what is set first; with no checkout here
+    /// (<paramref name="root"/> empty), what is set alone; else <paramref name="guessed"/>, the guess as the machine's facts last
+    /// judged it, or null where it was not judged yet, so the reader says the line not read yet rather than guess or wait. The twin
+    /// of <see cref="OfAsync"/> over what was judged: Ask Daoris's room and the lines slice read it, and it asks no git.
+    /// </summary>
+    public static Line? Judged(DriverConfig config, string repository, string? workspace, string? root, HelpLineGuess? guessed)
+    {
+        var chosen = Choose(config, repository, workspace, guess: null);
+        if (chosen.Branch is not null || string.IsNullOrWhiteSpace(root)) return chosen;
+        return guessed is null ? null : Choose(config, repository, workspace, guessed.Branch);
+    }
+
     /// <summary>The line, spelled for a person: the branch and what said so.</summary>
     public static string Describe(Line line) => line.Source switch
     {

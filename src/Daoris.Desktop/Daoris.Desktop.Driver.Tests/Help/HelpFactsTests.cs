@@ -68,6 +68,23 @@ public sealed class HelpFactsTests : IDisposable
         Assert.Equal(("trunk", LineSource.Repository), (read.Lines.Single().Branch, read.Lines.Single().Source));
     }
 
+    /// <summary>
+    /// PUSH1b1: the line as far as the checkout's guess was judged, which the room and the lines slice both read: what is set first,
+    /// with no checkout what is set alone, else the judged guess, and none where it was not judged yet. It asks no git.
+    /// </summary>
+    [Fact]
+    public void The_line_as_far_as_it_was_judged_is_what_is_set_then_the_judged_guess_and_none_where_none_was_judged()
+    {
+        var config = DriverConfig.Empty.WithLine("alpha", "trunk").WithWorkspaceLine("w2", "develop");
+
+        Assert.Equal(new Line("trunk", LineSource.Repository), CanonicalLine.Judged(config, "alpha", "w1", "checkouts/alpha", guessed: null));
+        Assert.Equal(new Line("develop", LineSource.Workspace), CanonicalLine.Judged(config, "beta", "w2", "checkouts/beta", guessed: null));
+        Assert.Equal(new Line(null, LineSource.None), CanonicalLine.Judged(config, "gamma", "w1", root: null, guessed: null));
+        Assert.Equal(new Line("main", LineSource.Checkout), CanonicalLine.Judged(config, "gamma", "w1", "checkouts/gamma", new HelpLineGuess("main")));
+        Assert.Equal(new Line(null, LineSource.None), CanonicalLine.Judged(config, "gamma", "w1", "checkouts/gamma", new HelpLineGuess(null)));
+        Assert.Null(CanonicalLine.Judged(config, "gamma", "w1", "checkouts/gamma", guessed: null));
+    }
+
     [Fact]
     public void Nothing_judged_of_the_machine_is_no_reading_and_the_sessions_history_and_work_not_judged_are_said_not_read_yet()
     {
