@@ -72,6 +72,7 @@ need Apply.
 
 **Housekeeping is built first**, narrowly: inspection, and removing branches and trees the judges have cleared, without
 force or recovery deletion. It is what D183's own trigger asked for, and Daoris enforces it, so it holds on every agent.
+*Built 2026-10-20 (HELPMODE1c2a, 1c2b):* the channel, the record and the screen's row are D183's note of that day.
 
 **The traps:** a grant made to work by widening the harness's mode; grants read once and reused on a resume (each start
 composes them again, each act is judged at execution, each start leaves its receipt); a typed tool that takes a path

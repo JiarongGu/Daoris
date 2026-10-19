@@ -74,6 +74,12 @@ export type DriverState = {
    * choice. A conversation's own mode, the one its start got, is its history row's `mode`.
    */
   helpMode?: string;
+  /**
+   * Restricted mode's configured access as this machine chose it (HELPMODE1c2b): each grant the driver serves, by its id, with the
+   * operations chosen and those it acts on (`built`); housekeeping's today. What the next start of Ask Daoris and every call of its
+   * tools read. Absent on a shell older than it, which draws no configured access.
+   */
+  helpGrants?: { id: string; chosen: string[]; built?: string[] }[];
   /** The Daoris home (D63): the directory every machine-local file lives in. Absent on an older shell. */
   home?: string;
   /**
@@ -400,6 +406,12 @@ export const useSetHelper = () => useDriverChange<{ adapter: string | null }>('S
  * start got until it starts again (D183's HELPMODE1a2 note). No proposal names it, so it is no door of Ask Daoris's.
  */
 export const useSetHelpMode = () => useDriverChange<{ mode: 'restricted' | 'full' }>('SET_HELP_MODE');
+
+/**
+ * One operation of restricted mode's configured access chosen or taken back (HELPMODE1c2b, D183's note): housekeeping's, the
+ * person's press alone. A revoke refuses Ask Daoris's next call of that tool; a grant takes its next start. No proposal names it.
+ */
+export const useSetHelpGrant = () => useDriverChange<{ grant: string; operation: string; chosen: boolean }>('SET_HELP_GRANT');
 
 /**
  * Which agent answers an ask the declarations leave (INT4b), or null for none — the field `daoris
