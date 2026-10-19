@@ -16983,3 +16983,15 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **PUSHMOUNT1 — the hub's signals mounted first in the main window's root** (web; D182 point 3; D182's PUSH1a note). The main window mounts `ShellSignals` near the end of its tree, so a view using `useDriver` that renders before it could pull `STATE` once at mount; the secondary root already mounts it first. Proof: a `pushedState`-style count with the Sessions view as the opening view.
 
 **Outcome** 2026-10-19: `ShellSignals` is the main window's root's first child, inside its providers, so its effects run before any view's: at its first mount the bridge had taken 0 calls, against 6 before (`pushedState.test.tsx`'s order test). On Sonnet: about 45 tool calls, 8 minutes. Detail: D182's PUSH1a note, its PUSHMOUNT1 line.
+
+## PLUGINSHOWCHANGED1 — `daoris-driver plugins show` says an approval changed since (2026-10-19, D170)
+
+> - [ ] **PLUGINSHOWCHANGED1 — `daoris-driver plugins show` says an approval changed since** (driver; D170's HELPPLUG1c note). The page says "changed since: asks again" where the terminal says "waits". Proof: a `PluginsCommandTests` row.
+
+**Outcome** 2026-10-19: `PageServer.Changed` carries `HelpGrant.Changed`, so `daoris-driver plugins show` says a server changed since its approval asks again and Ask Daoris is handed nothing of it until then, and its `--json` page carries `changed`; a never-approved server still waits for its approval. On Sonnet, with CLIEXIT1: about 45 tool calls, 10 minutes. Detail: D170's HELPPLUG1c note, its line of this day.
+
+## CLIEXIT1 — the CLI aborts on a libuv assertion at exit after a service request (2026-10-19, D124)
+
+> - [ ] **CLIEXIT1 — the CLI aborts on a libuv assertion at exit after a service request** (cli). `daoris import <folder> --workspace <w>` against the installed service did its work and printed its answer, then Node aborted: `Assertion failed: !(handle->flags & UV_HANDLE_CLOSING), file src\win\async.c, line 94` (2026-10-19, Node 24 on Windows), so a script reading its exit code sees a failure for work that was done. Likely `process.exit` while a fetch's keep-alive socket or a timer handle is closing. Close what the request opened, or let the loop drain, before the exit. Proof: a CLI test that runs a management command against a stub service in a child process and asserts exit 0 and no assertion text, red first on Windows.
+
+**Outcome** 2026-10-19: The CLI's entry sets `process.exitCode` and lets the loop drain rather than calling `process.exit`, as STUB1 did for the same libuv abort; no command leaves a handle that would hold it open (audited). The abort did not reproduce on this machine, against keep-alive or a closed socket: `exit.test.ts` spawns the real entry against a stub service as a guard, and the installed proof is the owner's next `daoris import`. Detail: FIX-LOG's CLIEXIT1 entry.
