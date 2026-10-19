@@ -46,7 +46,7 @@ import { App } from './App';
 import { ShellSignals } from './ShellSignals';
 import { AT_START } from '../help/setupGuide';
 import { WorkspaceScopeProvider } from '../data/scope';
-import { keys, useHelpSessions, useSessions } from '../data/queries';
+import { keys, useHelpSessions, useSessions, useSyncStanding } from '../data/queries';
 import { type DriverState, useDriver } from '../bridge/driver';
 import { useLines, useWorkState } from '../bridge/lines';
 import { useSessionEntries, useSessionGroups } from '../bridge/sessions';
@@ -135,8 +135,22 @@ const WORK_SNAPSHOT = {
   ],
 };
 
+/** Where the one wired circle stands, as `/api/sync` answers it for `default`. */
+const STANDING = {
+  workspace: 'default', wired: true, ahead: 2, behind: ['q7'], conflicts: [], synced: '2026-10-20T08:00:00+00:00', tried: '2026-10-20T09:00:00+00:00',
+};
+
+/** The sync slice as the shell's owner holds it (PUSH1a2): a partition per wired circle, each the route's record for it. */
+const SYNC_SNAPSHOT = {
+  slice: 'sync', epoch: 'y1', status: 'ready',
+  partitions: [{ partition: 'default', seq: 1, status: 'ready', data: STANDING }],
+};
+
 /** How often the page read the sessions from the service: `/api/sessions` with any of its questions, never a record's own door. */
 const sessionReads = () => vi.mocked(fetch).mock.calls.filter(([input]) => /^\/api\/sessions(\?|$)/.test(String(input))).length;
+
+/** How often the page asked the service where a circle stands (`/api/sync`), whichever circle. */
+const syncReads = () => vi.mocked(fetch).mock.calls.filter(([input]) => /^\/api\/sync(\?|$)/.test(String(input))).length;
 
 function respond(url: string): Response {
   if (url.startsWith('/api/registry')) {
@@ -171,7 +185,7 @@ function host(pushes: boolean) {
       if (pushes) {
         const slice = options?.payload?.slice;
         return slice === 'lines' ? LINES_SNAPSHOT : slice === 'sessions' ? SESSIONS_SNAPSHOT : slice === 'calls' ? CALLS_SNAPSHOT
-          : slice === 'work' ? WORK_SNAPSHOT : slice === 'groups' ? GROUPS_SNAPSHOT : SNAPSHOT;
+          : slice === 'work' ? WORK_SNAPSHOT : slice === 'groups' ? GROUPS_SNAPSHOT : slice === 'sync' ? SYNC_SNAPSHOT : SNAPSHOT;
       }
       throw Object.assign(new Error('NO_ROUTE'), { code: 'NO_ROUTE' });
     }
@@ -222,8 +236,9 @@ describe("the driver's state, pushed (PUSH1a)", () => {
     host(true);
     const client = await open();
     // One snapshot for each slice the window reads pushed (the driver's state, the lines, the sessions, the calls, the work, the
-    // groups), and no pull beside any.
-    expect(asked().get('DAORIS.DRIVER.STATE_SLICE')).toBe(6);
+    // groups, where each circle stands), and no pull beside any.
+    expect(asked().get('DAORIS.DRIVER.STATE_SLICE')).toBe(7);
+    expect(syncReads()).toBe(0);
     expect(asked().get('DAORIS.DRIVER.WORK_STATE')).toBeUndefined();
     expect(asked().get('DAORIS.DRIVER.SESSION_GROUPS')).toBeUndefined();
     expect(asked().get('DAORIS.DRIVER.STATE')).toBeUndefined();
@@ -249,7 +264,7 @@ describe("the driver's state, pushed (PUSH1a)", () => {
     // The view that mounts the driver's state and the lines first, remembered as the opening one.
     window.localStorage.setItem('daoris.view', 'sessions');
     await open();
-    expect(asked().get('DAORIS.DRIVER.STATE_SLICE')).toBe(6);
+    expect(asked().get('DAORIS.DRIVER.STATE_SLICE')).toBe(7);
     expect(asked().get('DAORIS.DRIVER.STATE')).toBeUndefined();
     expect(asked().get('DAORIS.DRIVER.LINES')).toBeUndefined();
     expect(asked().get('DAORIS.DRIVER.SESSION_GROUPS')).toBeUndefined();
@@ -361,7 +376,7 @@ describe("the driver's state, pushed (PUSH1a)", () => {
     // One snapshot for each slice, and no pull. The first window's own ask of the held permissions, every few seconds while a
     // session works (AUTONOMY1b3c, `permissionsAgainIn`), is not this window's, and may land in these two seconds.
     const { 'DAORIS.DRIVER.PERMISSION_WAITS': _firstWindows, ...read } = since(before, asked());
-    expect(read).toEqual({ 'DAORIS.DRIVER.STATE_SLICE': 6, 'DAORIS.DRIVER.UNDER_WAY': 1 });
+    expect(read).toEqual({ 'DAORIS.DRIVER.STATE_SLICE': 7, 'DAORIS.DRIVER.UNDER_WAY': 1 });
     expect(sessionReads()).toBe(reads);
     expect(second.getQueryData<{ id: string }[]>(keys.sessions(null, true, null))?.map((each) => each.id)).toEqual(['a-1', 'a-2', 'g-1']);
   });
@@ -596,6 +611,102 @@ describe("the driver's state, pushed (PUSH1a)", () => {
     expect(some).toEqual([]);
     expect(since(before, asked())['DAORIS.DRIVER.SESSION_GROUPS']).toBeUndefined();
     expect(since(before, asked())['DAORIS.DRIVER.STATE_SLICE']).toBeUndefined();
+  });
+
+  it('holds where each circle stands from its snapshot, and a tick, a pass\'s scope or a focus reads no /api/sync (PUSH1a2)', async () => {
+    host(true);
+    const client = await open();
+    let standing: unknown;
+    let unwired: unknown;
+    let spelled: unknown;
+    function Standings() {
+      standing = useSyncStanding('default').data;
+      unwired = useSyncStanding('games').data;
+      spelled = useSyncStanding(' Default ').data;
+      return null;
+    }
+    render(<QueryClientProvider client={client}><WorkspaceScopeProvider initial={null}><Standings /></WorkspaceScopeProvider></QueryClientProvider>);
+    await later(1_000);
+
+    // The route's own answer for each: the wired circle's record, a circle with no remote here `wired: false` and nothing else, and
+    // a circle asked as a person spells it named as asked, trimmed, the service comparing it without case.
+    expect(standing).toEqual(STANDING);
+    expect(unwired).toEqual({ workspace: 'games', wired: false, ahead: 0, behind: [], conflicts: [] });
+    expect(spelled).toEqual({ ...STANDING, workspace: 'Default' });
+    const before = asked();
+
+    await act(async () => {
+      heard.get('DRIVER_TICK')?.({ events: [], considered: [], untrusted: [], waits: [] });
+      // *Sync now*'s declared change, as `SYNC_NOW` publishes it.
+      heard.get('STATE_CHANGED')?.({ scopes: ['sessions', 'quests', 'sync', 'registry'] });
+      await vi.advanceTimersByTimeAsync(2_000);
+    });
+    await later(20_000);
+    hidden(true);
+    hidden(false);
+    await later(1_000);
+
+    expect(syncReads()).toBe(0);
+    expect(since(before, asked())['DAORIS.DRIVER.STATE_SLICE']).toBeUndefined();
+  });
+
+  it('moves where a circle stands in two windows from the push a pass made, with no read in either (PUSH1a2)', async () => {
+    host(true);
+    const client = await open();
+    const firstWindow = heard.get('STATE_PUSH')!;
+    let first: { ahead: number; tried?: string | null } | undefined;
+    function First() {
+      first = useSyncStanding('default').data;
+      return null;
+    }
+    render(<QueryClientProvider client={client}><WorkspaceScopeProvider initial={null}><First /></WorkspaceScopeProvider></QueryClientProvider>);
+    await later(1_000);
+    const before = asked();
+
+    const second = new QueryClient();
+    let other: { ahead: number; tried?: string | null } | undefined;
+    function Second() {
+      other = useSyncStanding('default').data;
+      return null;
+    }
+    // The hub first, as each root mounts it (PUSHMOUNT1), then what reads where the circle stands.
+    render(
+      <QueryClientProvider client={second}>
+        <WorkspaceScopeProvider initial={null}><ShellSignals notify={() => {}} /><Second /></WorkspaceScopeProvider>
+      </QueryClientProvider>,
+    );
+    await later(2_000);
+    const secondWindow = heard.get('STATE_PUSH')!;
+    expect(other).toMatchObject({ ahead: 2 });
+
+    // A pass that brought the circle level: the shell pushes the circle's record to each window.
+    const pushed = { slice: 'sync', epoch: 'y1', partition: 'default', seq: 2, status: 'ready', data: { ...STANDING, ahead: 0, tried: '2026-10-20T09:05:00+00:00' } };
+    await act(async () => {
+      firstWindow(pushed);
+      secondWindow(pushed);
+      await vi.advanceTimersByTimeAsync(1_000);
+    });
+
+    expect(first).toMatchObject({ ahead: 0, tried: '2026-10-20T09:05:00+00:00' });
+    expect(other).toMatchObject({ ahead: 0, tried: '2026-10-20T09:05:00+00:00' });
+    expect(syncReads()).toBe(0);
+    // The second window's own snapshots alone; the first window's ask of the held permissions is not this window's (AUTONOMY1b3c).
+    const { 'DAORIS.DRIVER.PERMISSION_WAITS': _firstWindows, ...read } = since(before, asked());
+    expect(read).toEqual({ 'DAORIS.DRIVER.STATE_SLICE': 7, 'DAORIS.DRIVER.UNDER_WAY': 1 });
+  });
+
+  it('keeps where a circle stands pulled on a host older than the push: read as the window opens, and read again at a tick (PUSH1a2)', async () => {
+    host(false);
+    await open();
+    const opened = syncReads();
+    expect(opened).toBeGreaterThan(0);
+
+    await act(async () => {
+      heard.get('DRIVER_TICK')?.({ events: [], considered: [], untrusted: [], waits: [] });
+      await vi.advanceTimersByTimeAsync(2_000);
+    });
+
+    expect(syncReads()).toBeGreaterThan(opened);
   });
 
   it('keeps the groups pulled on a host older than the push: read as the window opens, and read again at a tick (PUSH1c3b)', async () => {
