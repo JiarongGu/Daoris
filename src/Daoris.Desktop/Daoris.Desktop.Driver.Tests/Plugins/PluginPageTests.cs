@@ -78,6 +78,31 @@ public sealed class PluginPageTests : IDisposable
         Assert.Contains("browser  `browser`; handed to every session beside Daoris's own knowledge host", shown);
     }
 
+    /// <summary>PLUGINSHOWCHANGED1 (D170's HELPPLUG1c note): an approval the manifest has outgrown reads as changed; one never given does not.</summary>
+    [Fact]
+    public void A_server_whose_approval_no_longer_matches_is_changed_and_a_never_approved_one_is_not()
+    {
+        Install("acme.tools", """
+            { "id": "acme.tools", "servers": [
+                { "name": "tickets", "command": ["tickets"], "to": ["help"], "allow": ["search"] },
+                { "name": "docs", "command": ["docs"], "to": ["help"], "allow": ["read"] } ] }
+            """);
+        HelpGrants.Approve(Home, PluginCatalog.Load(Home), "acme.tools", "tickets", readsOnly: true);
+        Install("acme.tools", """
+            { "id": "acme.tools", "servers": [
+                { "name": "tickets", "command": ["tickets"], "to": ["help"], "allow": ["search", "get_issue"] },
+                { "name": "docs", "command": ["docs"], "to": ["help"], "allow": ["read"] } ] }
+            """);
+
+        var page = PluginPage.Read(Home, "acme.tools");
+
+        Assert.Equal([true, false], page.Servers.Select(server => server.Changed));
+        Assert.Equal([HelpGrants.Waits, HelpGrants.Waits], page.Servers.Select(server => server.Help));
+        var shown = PluginsCommand.Show(page);
+        Assert.Contains("offered to Ask Daoris, changed since you approved it, so it asks again and Ask Daoris is handed nothing of it until you do", shown);
+        Assert.Contains("docs  `docs`; offered to Ask Daoris, waiting for your approval", shown);
+    }
+
     [Fact]
     public void The_manifest_is_read_as_written_with_each_agent_and_the_hook()
     {
