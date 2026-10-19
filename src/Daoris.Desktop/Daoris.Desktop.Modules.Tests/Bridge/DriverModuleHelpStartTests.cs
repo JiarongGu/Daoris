@@ -94,6 +94,91 @@ public sealed class DriverModuleHelpStartTests : DriverModuleBridge
         Assert.Equal("failed", service.State("h2"));
     }
 
+    /// <summary>
+    /// 🔴 ASKSCOPE1a (D158's ASKSCOPE1 note, points 1 and 3): the press names the workspace its window is on, captured there.
+    /// Two workspaces' presses each place their own conversation, the other's still starting, and a second press in one is
+    /// handed that one's; each answer names its workspace, so a late one is known for the workspace it was asked in. Both
+    /// start in the one room folder their workspaces share until ASKSCOPE1b, each reaching its own spawn; none named is
+    /// <c>default</c>'s and sends none, as before.
+    /// </summary>
+    [Fact]
+    public async Task Each_workspace_s_press_places_its_own_conversation_and_a_second_is_handed_its_own()
+    {
+        var (loop, module, service) = await UpAsync();
+        service.Registry = """
+            [{"repository":"engine","workspace":"alpha","adopted":true},{"repository":"site","workspace":"beta","adopted":true}]
+            """;
+        var reading = new TaskCompletionSource<HelpMachine?>(TaskCreationOptions.RunContinuationsAsynchronously);
+        loop.DescribeHelp = _ => reading.Task;
+
+        var alpha = await AnswerAsync(module, "START_HELP", new { workspace = "alpha" }).WaitAsync(TimeSpan.FromSeconds(10));
+        var beta = await AnswerAsync(module, "START_HELP", new { workspace = "beta" }).WaitAsync(TimeSpan.FromSeconds(10));
+        var again = await AnswerAsync(module, "START_HELP", new { workspace = "Alpha" }).WaitAsync(TimeSpan.FromSeconds(10));
+        var unnamed = await AnswerAsync(module, "START_HELP").WaitAsync(TimeSpan.FromSeconds(10));
+
+        Assert.Equal(("h1", "alpha"), (alpha.GetProperty("sessionId").GetString(), alpha.GetProperty("workspace").GetString()));
+        Assert.Equal(("h2", "beta"), (beta.GetProperty("sessionId").GetString(), beta.GetProperty("workspace").GetString()));
+        // A name is one workspace whatever its letters' case; the answer names it as it was asked.
+        Assert.Equal(("h1", "Alpha"), (again.GetProperty("sessionId").GetString(), again.GetProperty("workspace").GetString()));
+        Assert.True(again.GetProperty("starting").GetBoolean());
+        Assert.Equal(("h3", "default"), (unnamed.GetProperty("sessionId").GetString(), unnamed.GetProperty("workspace").GetString()));
+        Assert.Equal(["alpha", "beta", null], service.Asked);
+        Assert.Equal(("alpha", "beta", "default"), (service.Workspace("h1"), service.Workspace("h2"), service.Workspace("h3")));
+
+        // Words said to one go to it alone.
+        await AnswerAsync(module, "SESSION_INPUT", new { id = "h2", text = Words });
+        Assert.Empty((await AnswerAsync(module, "SESSION_QUEUE", new { id = "h1" })).GetProperty("queued").EnumerateArray());
+
+        reading.SetResult(new HelpMachine { Adapter = "talk", Helper = "talk" });
+
+        await UntilAsync(() => Raised.Count(m => m.Type == "SESSION_ENDED") == 3);
+        Assert.All(new[] { "h1", "h2", "h3" }, id => Assert.Contains("this test spawns nothing", service.Note(id)));
+        Assert.True(File.Exists(Path.Combine(HelpRoom.PathOf(loop.Home), "AGENTS.md")));
+        await UntilAsync(() => loop.Events.Page("h2").Events.Any(e => e.Kind == SessionEventKind.User && e.Text == Words));
+    }
+
+    /// <summary>A workspace this machine does not hold is refused at the press, naming those it does, and nothing is opened.</summary>
+    [Fact]
+    public async Task A_workspace_this_machine_does_not_hold_is_refused_and_opens_nothing()
+    {
+        var (loop, module, service) = await UpAsync();
+        service.Registry = """[{"repository":"engine","workspace":"alpha","adopted":true}]""";
+        service.Seed("h1", "completed");
+        loop.Events.Append("h1", new SessionEvent { Kind = SessionEventKind.User, Origin = "person", Text = Words });
+
+        var refused = await RefusalAsync(module, "START_HELP", new { workspace = "gamma" });
+
+        Assert.Contains("there is no workspace `gamma` on this machine", refused);
+        Assert.Contains("`alpha`", refused);
+        Assert.Contains("`default`", refused);
+        Assert.Contains("there is no workspace `gamma` on this machine", await RefusalAsync(module, "HELP_START_FROM", new { id = "h1", workspace = "gamma" }));
+        Assert.Equal(0, service.Opened);
+    }
+
+    /// <summary>
+    /// Starting from an earlier conversation is placed in the workspace its press names (ASKSCOPE1a), as <c>START_HELP</c> is,
+    /// whatever workspace the earlier one was in.
+    /// </summary>
+    [Fact]
+    public async Task Starting_from_an_earlier_conversation_is_placed_in_the_workspace_its_press_names()
+    {
+        var (loop, module, service) = await UpAsync();
+        service.Registry = """[{"repository":"engine","workspace":"alpha","adopted":true}]""";
+        service.Seed("h1", "completed");
+        loop.Events.Append("h1", new SessionEvent { Kind = SessionEventKind.User, Origin = "person", Text = Words });
+        var reading = new TaskCompletionSource<HelpMachine?>(TaskCreationOptions.RunContinuationsAsynchronously);
+        loop.DescribeHelp = _ => reading.Task;
+
+        var answer = await AnswerAsync(module, "HELP_START_FROM", new { id = "h1", workspace = "alpha" }).WaitAsync(TimeSpan.FromSeconds(10));
+
+        Assert.Equal(("h2", "alpha"), (answer.GetProperty("sessionId").GetString(), answer.GetProperty("workspace").GetString()));
+        Assert.Equal("alpha", service.Workspace("h2"));
+        Assert.Equal(["alpha"], service.Asked);
+
+        reading.SetResult(new HelpMachine { Adapter = "talk", Helper = "talk" });
+        await UntilAsync(() => Raised.Any(m => m.Type == "SESSION_ENDED"));
+    }
+
     /// <summary>A room that cannot be read is said in the conversation the press placed, which ends, rather than lost with the request.</summary>
     [Fact]
     public async Task A_room_that_cannot_be_read_ends_the_conversation_saying_why()
@@ -240,12 +325,21 @@ public sealed class DriverModuleHelpStartTests : DriverModuleBridge
 
         public int Opened { get; private set; }
 
+        /// <summary>The workspace each open named in its body, in order: null where it named none (ASKSCOPE1a).</summary>
+        public List<string?> Asked { get; } = [];
+
         /// <summary>What <c>/api/registry</c> answers: none registered unless a test says otherwise.</summary>
         public string Registry { get; set; } = "[]";
 
         public string? State(string id)
         {
             lock (_gate) return Find(id)?["state"]?.GetValue<string>();
+        }
+
+        /// <summary>The workspace a record keeps.</summary>
+        public string? Workspace(string id)
+        {
+            lock (_gate) return Find(id)?["workspace"]?.GetValue<string>();
         }
 
         public string Note(string id)
@@ -291,17 +385,21 @@ public sealed class DriverModuleHelpStartTests : DriverModuleBridge
                         return (HttpStatusCode.OK, "[]");
                     case ("POST", "/api/sessions/help"):
                     {
-                        // One running per room, as the ledger holds it.
-                        if (_sessions.Any(s => s["state"]!.GetValue<string>() is "queued" or "starting" or "working"))
+                        // One running per workspace, as the ledger holds it (ASKSCOPE1a); none named is `default`'s.
+                        var named = JsonNode.Parse(body)!["workspace"]?.GetValue<string>();
+                        Asked.Add(named);
+                        var workspace = named ?? "default";
+                        if (_sessions.FirstOrDefault(s => s["state"]!.GetValue<string>() is "queued" or "starting" or "working"
+                                && string.Equals(s["workspace"]?.GetValue<string>() ?? "default", workspace, StringComparison.OrdinalIgnoreCase)) is { } running)
                         {
-                            return (HttpStatusCode.Conflict, """{"error":"Ask Daoris `h1` is running."}""");
+                            return (HttpStatusCode.Conflict, $$"""{"error":"Ask Daoris `{{running["id"]}}` is running in `{{workspace}}`."}""");
                         }
 
                         Opened++;
                         var session = new JsonObject
                         {
                             ["id"] = $"h{_sessions.Count + 1}", ["repository"] = HelpRoom.Repository, ["state"] = "queued", ["kind"] = "chat",
-                            ["adapter"] = "talk", ["created"] = "2026-10-15T06:42:13Z", ["said"] = new JsonArray(),
+                            ["adapter"] = "talk", ["created"] = "2026-10-15T06:42:13Z", ["said"] = new JsonArray(), ["workspace"] = workspace,
                         };
                         _sessions.Add(session);
                         return (HttpStatusCode.OK, new JsonObject { ["session"] = session.DeepClone(), ["message"] = "opened" }.ToJsonString());
