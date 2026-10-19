@@ -17,7 +17,7 @@ public sealed class ReopenTellingTests : IDisposable
 
     private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-reopen-" + Guid.NewGuid().ToString("N")[..8]);
 
-    private readonly CancellationTokenSource _closing = new(TimeSpan.FromSeconds(60));
+    private readonly CancellationTokenSource _closing = new(Poll.Patience);
 
     public ReopenTellingTests() => Directory.CreateDirectory(Tree);
 

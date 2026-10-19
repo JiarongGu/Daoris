@@ -5,6 +5,57 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-19 — The CI beside on f617bc1 failed three more tests the branches never ran: one writer, the Process gate's rule, a held folder (PUSH1a, PROCPAR1)
+
+- **Symptom:** `modules`: `DriverLoopChatTakenUpTests.A_conversations_end_has_one_writer` found `"SESSION_ENDED"` spelled in
+  `DriverStateSlice.cs` beside `DriverLoop.cs`. `cli`: *a suite gated without its Process tests has gates that run them: one
+  class at a time …* failed for the driver; *a plugin whose folder a running process holds is not updated* returned normally.
+- **Root cause:** PUSH1a's slice wakes on the conversation's end and spelled its type again. PROCPAR1 made the Process half run
+  eight classes at once by leaving parallelism to each assembly, and the dogfood test still required the settings to name it
+  off. The held-folder test waited a fixed 300 ms after spawning its holder; a process start on this machine takes up to 1.5 s,
+  and the CI beside runs below normal (CIPRIO1), so the update met a folder not yet held. Each branch ran only its own tests (D180).
+- **Fix:** the type is `DriverLoop.EndedType`, spelled once, and the slice names it by that; the dogfood test holds PROCPAR1's
+  rule (no collection parallelism in the settings, a bound on threads); the holder says it is up and the test waits for that.
+- **Verify:** `DriverLoopChatTakenUpTests` and `DriverStateSliceTests` (14), the two CLI tests green.
+
+## 2026-10-19 — The CI beside failed two of the merge tool's own tests: the priority it already had, and a settings file read as a folder (CIPRIO1, PROCPAR1)
+
+- **Symptom:** the full set beside on `f617bc184` failed `tool-tests` twice. *A gate step started after the run lowered itself runs at
+  the lowered priority* said "lowered from 10 to 10". *Every repository file a .NET suite reads …* (MOD9) said `CategoryTests.cs`
+  reads `src/Daoris.Desktop/process.runsettings/probe.txt`, no file the repository tracks.
+- **Root cause:** CIPRIO1's test asserted the priority rose, but a run beside lowers itself before its gates, so its tool-tests
+  start already below normal. MOD9's scan read a `"src", "Daoris.Desktop", "process.runsettings"` run as a folder, since its file
+  test is by extension and `.runsettings` is not one; once read as a file, a change there reached no `driver` gate though the fast
+  `CategoryTests` reads it; and the scan took `CategoryTests` for a Process class of the git half from trait attributes inside its
+  fixtures' raw strings. Neither failed in the branches: each ran its own tests, filtered, at normal priority (D180).
+- **Fix:** the test holds the priority at least below normal; the scan reads a tracked file as itself whatever its extension and
+  reads a class's traits from its code with its strings blanked; `process.runsettings` reaches the `driver` gate too.
+- **Verify:** the scan, lane-table, STRUCT5d and priority tests: 9 pass.
+- **Commit:** `f252a70b2`
+
+## 2026-10-19 — A finished driven session waited 48 minutes on its own go-on and was recorded failed (BGWAIT2)
+
+- **Symptom:** the owner, "one session just failed". A driven session on the install committed and closed its quest done in
+  the turn its harness woke after its background work ended; Daoris then waited 48 minutes on its go-on prompt until the
+  90-minute timeout killed it, and the record said `failed`, *"the ACP agent's stream ended before it answered — the agent
+  exited"*.
+- **Root cause:** BGWAIT1 (480e1afdf) sent its go-on 250 ms after the work ended and awaited its answer with no bound, on the
+  assumption, never observed, that the adapter answers a prompt sent into the woken turn. `claude-agent-acp` 0.79.0 settles a
+  prompt only at a user turn's result or an idle it owns; the woken turn's result is autonomous, skipped, and its idle absorbed,
+  so a prompt that turn takes is never answered (D83's BGWAIT2 note has the lines). Two more faults made the ending false:
+  the conclusion read every timeout as `failed` whatever the quest's status, and the door said the kill's end of stream as the
+  agent exiting, since nothing told it the timeout came first.
+- **Fix:** `AcpWake` reads the woken turn from the wire, and the autonomous `usage_update` ends it as the turn's end; the go-on
+  goes only where nothing woke within `AcpWake.Quiet` (`AcpSession.AfterBackgroundAsync`). `Driver.WaitAsync` says the timeout
+  to the door before the kill (`AcpEnding`, `AcpSession.Ending`, `AcpEnded`), recorded by `ended.timeout`'s line.
+  `Observation.AfterTimeout` makes a timeout after this run's done `completed`, in `Driver.cs`'s conclusion and
+  `DriverContinuations`'.
+- **Verify:** `AcpBackgroundTests`, whose fake agent now never answers a go-on, as the install's adapter did not (the woken
+  turn's end, the fallback, six ends that are not one, the long call, the second work, the person's words before, at and after,
+  the stream's end, the shutdown, the timeout in both orders), and `ObservationTests`' timeout case: 19 seen red on the old
+  behaviour, then all 56 green, with `AcpTests`, `AcpSteerTests`, `AcpResumeTests`, the note tests and `StructureTests`.
+- **Commit:** 062452f7b, 93f69cd20
+
 ## 2026-10-19 — Three Chinese notes of Ask Daoris's room said 这台机器 where the glossary says 本机 (PARALLEL1a, HELPSTUCK1)
 
 - **Symptom:** `names.test.ts`' "say in sentences only what the audit found to be another thing's word" failed on main, listing
@@ -340,6 +391,22 @@ repository.
   answers, and two minutes still separates the two. No assertion changed.
 - **Verification:** see the branch's hand-back (touched fast classes, the driver fast half, the AutoLanding git classes, the touched
   Process classes).
+
+## 2026-10-19 — The driver's tick tests still waited 60 and 90 seconds of their own (TESTPATIENCE3)
+
+- **Symptom:** one `WaitAsync` of 60 s ran out under outside load while its test ran alone (the Process tick group, PROCPAR1).
+- **Root cause:** TESTPATIENCE2 took the 15-30 s bounds and left the 60 and 90 s ones, on the same signals (a tick, a run, a
+  session's start) that a starved machine delays.
+- **Fix:** each signal wait is `Poll.Patience`. Sites (129 in 30 files): `Loop/` SessionMessagesTick 21, AccountRotationTick 12,
+  SessionsOutliveTheirLookProcess 10, ChannelNextStepTick 9, StartInSyncTick 8, DrivenSessionInput 8, AskAndWaitTick 8,
+  HandOverQuestTick 6, SignInRefusalTick 5, StopHoldTick 4, AnswerContinuesTick 4, AccountGoalTick 4, PauseTick 3, AcpTurnFailureTick 3,
+  AccountLimitTick 3, HelperProcess 2, AccountReadingTick 2, SessionRequestTick 1, StartGitCount 1, BrainstormProcess 1 (its 90 s wait),
+  NodeRuntimeLoopProcess 1 (the close token); the close tokens of AnswerGoesOnOnce, GoAheadsGoOn, RegistrationFollowLoop, ReopenTelling,
+  WorkflowBindingLook, DriverWatchTopics, LookParallel and LookWait; `Review/OpinionResumeTick` 7. `Poll.Until(…, TimeSpan)` calls pass no
+  bound now. Left, as claims: `BrainstormProcessTests`' `< 60 s` elapsed bound; the 120 s close tokens, the 20/30 s bounds and
+  `SessionsOutliveTheirLookTests`' minutes.
+- **Verification:** the touched fast classes (the eight close-token classes) 60 of 60; the Process classes are for the parent's tick
+  group runs.
 
 ## 2026-10-19 — The instance door's tests gave a stand-in two seconds to connect and answer (TESTWAIT7)
 

@@ -1916,7 +1916,8 @@ public sealed class Driver(
                                 lastWords: SessionLastWords.ParkedWords(Context.Events, sessionId, transcript),
                                 // FABRIC-CLOSE1c2: the person's reopen of the work it grew from holds its quest as it ends.
                                 reopenedFrom: after is { HeldByReopen: true } ? after.Parent : null)
-                            : SessionConclusion.Of("failed", Observation.TimedOut(config.TimeoutMinutes));
+                            // BGWAIT2: a done this run reached outranks the timeout, as it outranks a messy exit.
+                            : Observation.AfterTimeout(config.TimeoutMinutes, quest.Status, status);
 
                     conclusion = AccountRefused(conclusion, adapter, selection, ended);
                     conclusion = AccountSignedOut(conclusion, adapter, selection, turnFailed);
@@ -2644,12 +2645,15 @@ public sealed class Driver(
             });
             held.Attach(interrupt: null);
         }
+        // BGWAIT2: the timeout is said to the protocol door before the process is killed, so the stream's end it causes is said as
+        // the timeout's, never as the agent having exited.
+        var ending = adapter.Wire == SessionWire.Acp ? new AcpEnding() : null;
         var acp = adapter.Wire == SessionWire.Acp
             // The posture rides with it, because it is the ADAPTER's (ACP3): three harnesses name the
             // same D37 boundary three different ways, and one of them does not name it on the wire.
             ? CaptureAcpAsync(
                 process, transcript, sessionId, cwd, prompt, adapter.AcpPosture, harnessNotice, ct, scope, rules.Meta, handedServers ?? Context.Servers,
-                target.PersonSaid, inbox, said, keepAs, resume, account, waitsOnBackground, noConnector)
+                target.PersonSaid, inbox, said, keepAs, resume, account, waitsOnBackground, noConnector, ending)
             : null;
         // What the native door's harness says in its own words, apart from its agent's, for its ending (AGT3c).
         var own = new HarnessWords();
@@ -2674,7 +2678,9 @@ public sealed class Driver(
 
         working?.Invoke();
 
-        var exitCode = await WaitAsync(process, ct, minutes).ConfigureAwait(false);
+        var exitCode = await WaitAsync(
+                process, ct, minutes, timingOut: ending is null ? null : bound => ending.Say(Observation.TimedOut(bound)))
+            .ConfigureAwait(false);
         await capture.ConfigureAwait(false);
 
         // What it consumed, where the door reported it (TOOL3/D57 §4). A pipe with only text reports
@@ -2768,10 +2774,15 @@ public sealed class Driver(
     /// nobody is observing is the one thing worse than a failed one.
     /// </summary>
     /// <param name="minutes">The bound where it is not the machine's session timeout: a reviewer's pass (XAGENT1d).</param>
-    internal async Task<int?> WaitAsync(Process process, CancellationToken ct, int? minutes = null)
+    /// <param name="timingOut">
+    /// Told the bound, in minutes, when the timeout ends the process, before it is killed (BGWAIT2): what lets the protocol door
+    /// say the stream's end that follows as the timeout's. Never told for a shutdown.
+    /// </param>
+    internal async Task<int?> WaitAsync(Process process, CancellationToken ct, int? minutes = null, Action<int>? timingOut = null)
     {
+        var bound = minutes ?? config.TimeoutMinutes;
         using var timeout = CancellationTokenSource.CreateLinkedTokenSource(ct);
-        timeout.CancelAfter(TimeSpan.FromMinutes(minutes ?? config.TimeoutMinutes));
+        timeout.CancelAfter(TimeSpan.FromMinutes(bound));
         try
         {
             await process.WaitForExitAsync(timeout.Token).ConfigureAwait(false);
@@ -2779,6 +2790,8 @@ public sealed class Driver(
         }
         catch (OperationCanceledException)
         {
+            // Said before the kill, since the stream's end can reach the door's reader before anything after it here runs.
+            if (!ct.IsCancellationRequested) timingOut?.Invoke(bound);
             process.Kill(entireProcessTree: true);
             await process.WaitForExitAsync(CancellationToken.None).ConfigureAwait(false);
             if (ct.IsCancellationRequested) throw; // shutdown: the caller records "stopped"
@@ -2876,13 +2889,14 @@ public sealed class Driver(
     /// <param name="account">What the prompt was composed of (CONTEXT1), kept beside it on its event; null for a resume.</param>
     /// <param name="waitsOnBackground">Whether a turn that ended on its own background work waits for it (BGWAIT1); null never.</param>
     /// <param name="noConnector">What is said where there is no connector, when it is neither a quest's nor an intake's sentence.</param>
+    /// <param name="ending">Where the run's wait says the timeout before its kill (BGWAIT2), handed the door once it is made.</param>
     private async Task<(AcpOutcome? Outcome, string? Failure, IReadOnlyList<ChatMessage> Left)> CaptureAcpAsync(
         Process process, string transcript, string sessionId, string cwd, string prompt,
         string? posture, string? harnessNotice, CancellationToken ct,
         IReadOnlyDictionary<string, string>? scope = null, object? meta = null,
         IReadOnlyList<AcpMcpServer>? servers = null, string? personSaid = null, DrivenInbox? inbox = null,
         Action<JsonElement>? said = null, string? keepAs = null, ResumeAsk? resume = null, InstructionAccount? account = null,
-        Func<CancellationToken, Task<bool>>? waitsOnBackground = null, string? noConnector = null)
+        Func<CancellationToken, Task<bool>>? waitsOnBackground = null, string? noConnector = null, AcpEnding? ending = null)
     {
         await using var file = TranscriptFile.Open(transcript, append: resume is not null);
 
@@ -2957,6 +2971,7 @@ public sealed class Driver(
                 process.StandardOutput, process.StandardInput, Line, closeTimeout: null, posture, meta, Event,
                 streams: output is null ? null : new SessionStreams(output, sessionId),
                 onConversation: keepAs is null ? null : conversation => Context.Conversations.Keep(sessionId, keepAs, conversation));
+            ending?.Open(session);
             // What it says about its account's windows, kept as it says it (TOOL6c).
             if (said is not null) session.LimitsSaid += said;
             using var stops = output is null ? null : Context.Processes.OpenTaskStops(sessionId, session.StopTaskAsync);
@@ -3025,8 +3040,9 @@ public sealed class Driver(
             // cannot carry it here: the driver closes stdin below and the agent winds up and exits 0,
             // so an account limit that refused the turn mid-edit read as a clean exit, and a taken
             // quest as a stand-down. A failed call is not the session describing its work, which is
-            // the self-report D46 §4 keeps out; it is the door saying the work was cut off.
-            SaidByCode(DoorNotes.Failed(error.Message));
+            // the self-report D46 §4 keeps out; it is the door saying the work was cut off. 🔴 BGWAIT2: a stream the timeout
+            // ended is said as the timeout, by its own line; the install's record said "the agent exited" of one.
+            SaidByCode(error is AcpEnded ended ? ended.Why : DoorNotes.Failed(error.Message));
             // 🔴 The person's words it never took (TURNFAIL1, USERSHOWN1): sent behind the failed turn, or held for its end. They
             // go back to the run, which keeps them on the record once it ended, to go again (WordsLeft); closed here, so the
             // finally below says nothing of them.

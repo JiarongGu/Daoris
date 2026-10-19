@@ -78,7 +78,7 @@ public sealed class SessionMessagesTickTests : IDisposable
         await using var service = SaidStandIn.Start(_repository);
         var driver = Protocol(service, "resumes");
 
-        await driver.RunOnceAsync().WaitAsync(TimeSpan.FromSeconds(60));
+        await driver.RunOnceAsync().WaitAsync(Poll.Patience);
         Assert.Equal(("completed", "Done"), (service.State("s1"), service.Status("q1")));
         Assert.Equal(new HarnessConversation("acp-stub", "conv-s1"), new HarnessConversations(_home).Read("s1"));
 
@@ -88,7 +88,7 @@ public sealed class SessionMessagesTickTests : IDisposable
         Assert.Equal("w2", await service.SayAsync("s1", "And use 9090."));
         var before = service.Record("s1");
 
-        var look = await driver.RunOnceAsync().WaitAsync(TimeSpan.FromSeconds(60));
+        var look = await driver.RunOnceAsync().WaitAsync(Poll.Patience);
 
         // Said whole on failure: the record before the look, the plan, what the look did, and the record after it.
         var seen = $"before: {before}\nplan: {string.Join(" | ", look.Considerations.Select(c => $"{c.Quest.Id} {c.Verdict}: {c.Reason}"))}"
@@ -112,7 +112,7 @@ public sealed class SessionMessagesTickTests : IDisposable
         Assert.Contains(Events("s1"), e => e is { Kind: SessionEventKind.User, Origin: "person", Id: "w2", Text: "And use 9090." });
 
         // Nothing waits now, so the next look plans nothing for it.
-        await driver.RunOnceAsync().WaitAsync(TimeSpan.FromSeconds(60));
+        await driver.RunOnceAsync().WaitAsync(Poll.Patience);
         Assert.Single(Heard(), line => line["method"]!.GetValue<string>() == "session/resume");
     }
 
@@ -126,11 +126,11 @@ public sealed class SessionMessagesTickTests : IDisposable
     {
         await using var service = SaidStandIn.Start(_repository);
         var driver = Protocol(service, "elsewhere");
-        await driver.RunOnceAsync().WaitAsync(TimeSpan.FromSeconds(60));
+        await driver.RunOnceAsync().WaitAsync(Poll.Patience);
         await service.SayAsync("s1", "Also log the port.");
         var before = service.Record("s1");
 
-        var look = await driver.RunOnceAsync().WaitAsync(TimeSpan.FromSeconds(60));
+        var look = await driver.RunOnceAsync().WaitAsync(Poll.Patience);
 
         var seen = $"before: {before}\nlook: {string.Join(" | ", look.Events)}\nafter: {service.Record("s1")}";
         Assert.True(service.SessionCount == 1, seen);
@@ -142,11 +142,11 @@ public sealed class SessionMessagesTickTests : IDisposable
         Assert.Equal(ContinueWhy.Elsewhere, new GoOnMarks(_home).Read("s1")!.Why);
         Assert.Single(Heard(), line => line["method"]!.GetValue<string>() == "session/resume");
 
-        await driver.RunOnceAsync().WaitAsync(TimeSpan.FromSeconds(60));
+        await driver.RunOnceAsync().WaitAsync(Poll.Patience);
         Assert.Single(Heard(), line => line["method"]!.GetValue<string>() == "session/resume");
 
         await service.SayAsync("s1", "Try again now.");
-        await driver.RunOnceAsync().WaitAsync(TimeSpan.FromSeconds(60));
+        await driver.RunOnceAsync().WaitAsync(Poll.Patience);
         Assert.Equal(2, Heard().Count(line => line["method"]!.GetValue<string>() == "session/resume"));
     }
 
@@ -159,7 +159,7 @@ public sealed class SessionMessagesTickTests : IDisposable
     {
         await using var service = SaidStandIn.Start(_repository);
         var driver = Protocol(service, "resumes");
-        await driver.RunOnceAsync().WaitAsync(TimeSpan.FromSeconds(60));
+        await driver.RunOnceAsync().WaitAsync(Poll.Patience);
         var tree = JsonNode.Parse(service.Record("s1"))!["tree"]?.GetValue<string>();
         if (tree is { Length: > 0 } && Directory.Exists(tree))
         {
@@ -172,7 +172,7 @@ public sealed class SessionMessagesTickTests : IDisposable
         var branches = Branches();
         var folders = TreeFolders();
 
-        var look = await driver.RunOnceAsync().WaitAsync(TimeSpan.FromSeconds(60));
+        var look = await driver.RunOnceAsync().WaitAsync(Poll.Patience);
 
         var seen = $"look: {string.Join(" | ", look.Events)}\nafter: {service.Record("s1")}\nbranches: {string.Join(",", Branches())}";
         Assert.True(service.SessionCount == 1, seen);
@@ -237,10 +237,10 @@ public sealed class SessionMessagesTickTests : IDisposable
             harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)));
 
         var tick = driver.RunOnceAsync();
-        await Poll.Until(() => File.Exists(taken) && processes.InboxOf("s1") is not null, () => "the first run never took its quest", TimeSpan.FromSeconds(60));
+        await Poll.Until(() => File.Exists(taken) && processes.InboxOf("s1") is not null, () => "the first run never took its quest");
         Assert.True(processes.InboxOf("s1")!.Hold(new ChatMessage("Also log the port.", [])));
         File.WriteAllText(go, "");
-        await tick.WaitAsync(TimeSpan.FromSeconds(90));
+        await tick.WaitAsync(Poll.Patience);
 
         var runs = Heard();
         Assert.Equal(2, runs.Length);
@@ -270,10 +270,10 @@ public sealed class SessionMessagesTickTests : IDisposable
         var tick = driver.RunOnceAsync();
         await Poll.Until(
             () => service.Status("q1") == "Taken" && processes.InboxOf("s1") is not null,
-            () => "the first run never took its quest", TimeSpan.FromSeconds(60));
+            () => "the first run never took its quest");
         Assert.True(processes.InboxOf("s1")!.Hold(new ChatMessage("Also log the port.", [])));
         File.WriteAllText(Path.Combine(_home, "go.flag"), "");
-        await tick.WaitAsync(TimeSpan.FromSeconds(90));
+        await tick.WaitAsync(Poll.Patience);
 
         var first = $"record: {service.Record("s1")}";
         Assert.True(service.State("s1") == "failed", first);
@@ -281,7 +281,7 @@ public sealed class SessionMessagesTickTests : IDisposable
         Assert.Contains("ECONNRESET", service.Note("s1"));
         Assert.Contains(Events("s1"), e => e.Parts?.Any(part => part.Code == NoteCodes.EndedWordsWait.Code) == true);
 
-        var look = await driver.RunOnceAsync().WaitAsync(TimeSpan.FromSeconds(60));
+        var look = await driver.RunOnceAsync().WaitAsync(Poll.Patience);
 
         var seen = $"look: {string.Join(" | ", look.Events)}\nafter: {service.Record("s1")}\nheard: {string.Join(" | ", Heard().Select(h => h.ToJsonString()))}";
         Assert.True(service.SessionCount == 1, seen);
@@ -304,12 +304,12 @@ public sealed class SessionMessagesTickTests : IDisposable
     {
         await using var service = SaidStandIn.Start(_repository);
         var driver = Protocol(service, "resumes");
-        await driver.RunOnceAsync().WaitAsync(TimeSpan.FromSeconds(60));
+        await driver.RunOnceAsync().WaitAsync(Poll.Patience);
         Assert.Equal("w1", await service.SayAsync("s1", "Also log the port."));
         Assert.Equal("w2", await service.SayAsync("s1", "And use 9090."));
         service.TakeBackAtMove("s1", "w1");
 
-        var look = await driver.RunOnceAsync().WaitAsync(TimeSpan.FromSeconds(60));
+        var look = await driver.RunOnceAsync().WaitAsync(Poll.Patience);
 
         var seen = $"look: {string.Join(" | ", look.Events)}\nafter: {service.Record("s1")}\nheard: {string.Join(" | ", Heard().Select(h => h.ToJsonString()))}";
         var prompt = Heard().Last(line => line["method"]!.GetValue<string>() == "session/prompt");
@@ -329,13 +329,13 @@ public sealed class SessionMessagesTickTests : IDisposable
     public async Task Words_whose_run_could_not_be_spawned_wait_on_the_record_as_it_ended()
     {
         await using var service = SaidStandIn.Start(_repository);
-        await Protocol(service, "resumes").RunOnceAsync().WaitAsync(TimeSpan.FromSeconds(60));
+        await Protocol(service, "resumes").RunOnceAsync().WaitAsync(Poll.Patience);
         Assert.Equal("w1", await service.SayAsync("s1", "Also log the port."));
         var ended = (service.State("s1"), service.Note("s1"));
         var notAProgram = Path.Combine(_home, "not-a-program.txt");
         File.WriteAllText(notAProgram, "not a program");
 
-        var look = await Protocol(service, "resumes", command: [notAProgram]).RunOnceAsync().WaitAsync(TimeSpan.FromSeconds(60));
+        var look = await Protocol(service, "resumes", command: [notAProgram]).RunOnceAsync().WaitAsync(Poll.Patience);
 
         var seen = $"look: {string.Join(" | ", look.Events)}\nafter: {service.Record("s1")}";
         Assert.True(service.MovesAfterWords("s1").SequenceEqual(["working", "completed"]), seen);
@@ -354,7 +354,7 @@ public sealed class SessionMessagesTickTests : IDisposable
     private async Task FailedFirstRunAsync(SaidStandIn service)
     {
         File.WriteAllText(Path.Combine(_home, "go.flag"), "");
-        await Protocol(service, "fails").RunOnceAsync().WaitAsync(TimeSpan.FromSeconds(90));
+        await Protocol(service, "fails").RunOnceAsync().WaitAsync(Poll.Patience);
         Assert.True(service.State("s1") == "failed", service.Record("s1"));
     }
 
@@ -373,7 +373,7 @@ public sealed class SessionMessagesTickTests : IDisposable
         Assert.Equal("w2", await service.SayAsync("s1", "And use 9090."));
         service.TakeBackAtMoveBack("s1", "w1");
 
-        var look = await Protocol(service, "elsewhere").RunOnceAsync().WaitAsync(TimeSpan.FromSeconds(90));
+        var look = await Protocol(service, "elsewhere").RunOnceAsync().WaitAsync(Poll.Patience);
 
         var seen = $"look: {string.Join(" | ", look.Events)}\nafter: {service.Record("s1")}\ntaken: {string.Join(" | ", service.Taken)}";
         Assert.True(service.SessionCount == 2, seen);
@@ -395,7 +395,7 @@ public sealed class SessionMessagesTickTests : IDisposable
         var branches = Branches();
         var folders = TreeFolders();
 
-        var look = await Protocol(service, "elsewhere").RunOnceAsync().WaitAsync(TimeSpan.FromSeconds(90));
+        var look = await Protocol(service, "elsewhere").RunOnceAsync().WaitAsync(Poll.Patience);
 
         var seen = $"look: {string.Join(" | ", look.Events)}\nafter: {service.Record("s1")}\nbranches: {string.Join(",", Branches())}";
         Assert.True(service.SessionCount == 1, seen);

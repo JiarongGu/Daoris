@@ -20,13 +20,14 @@ public sealed class LookParallelTests : IDisposable
 
     private readonly StandInLedger _ledger = new();
 
-    private readonly CancellationTokenSource _closing = new(TimeSpan.FromSeconds(90));
+    private readonly CancellationTokenSource _closing = new(Poll.Patience);
 
     public LookParallelTests()
     {
         Directory.CreateDirectory(_home);
-        _ledger.Register("engine", Path.Combine(_home, "engine")).Register("tools", Path.Combine(_home, "tools"))
-            .Register("docs", Path.Combine(_home, "docs"));
+        // The checkouts sit under a folder of their own: `tools` beside the home would read as its entry (HOMELAYOUT2's census).
+        _ledger.Register("engine", Path.Combine(_home, "repos", "engine")).Register("tools", Path.Combine(_home, "repos", "tools"))
+            .Register("docs", Path.Combine(_home, "repos", "docs"));
     }
 
     public void Dispose()

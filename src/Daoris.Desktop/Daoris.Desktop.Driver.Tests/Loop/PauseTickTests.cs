@@ -62,7 +62,7 @@ public sealed class PauseTickTests : IDisposable
         var first = Driver(service).RunOnceAsync();
         await UntilAsync(() => service.SessionCount == 1 && service.Status("q1") == "Taken");
         var paused = await WorkPausing.PauseAsync(world, WorkScope.Ask, "a1", PluginEvents.Screen).WaitAsync(Poll.Patience);
-        await first.WaitAsync(TimeSpan.FromSeconds(60));
+        await first.WaitAsync(Poll.Patience);
 
         Assert.Equal(new WorkStop("s1", "q1"), Assert.Single(paused.Stopped));
         var stopped = service.Session("s1");
@@ -88,7 +88,7 @@ public sealed class PauseTickTests : IDisposable
         Assert.Equal(new WorkStop("s1", "q1"), Assert.Single(resumed.Released));
         Assert.Empty(resumed.Holds!);
 
-        await Driver(service).RunOnceAsync().WaitAsync(TimeSpan.FromSeconds(60));
+        await Driver(service).RunOnceAsync().WaitAsync(Poll.Patience);
 
         var carried = service.Session("s2");
         Assert.Equal("completed", carried["state"]!.GetValue<string>());
@@ -124,7 +124,7 @@ public sealed class PauseTickTests : IDisposable
 
         // 3. Resume: the next look starts it where it stood, oldest first, and it closes.
         await WorkPausing.ResumeAsync(world, WorkScope.Quest, "q1", PluginEvents.Terminal).WaitAsync(Poll.Patience);
-        await Driver(service).RunOnceAsync().WaitAsync(TimeSpan.FromSeconds(60));
+        await Driver(service).RunOnceAsync().WaitAsync(Poll.Patience);
 
         Assert.Equal("completed", service.Session("s1")["state"]!.GetValue<string>());
         Assert.Equal("Done", service.Status("q1"));

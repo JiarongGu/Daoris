@@ -781,7 +781,7 @@ public sealed class DriverLoop(
                 // none moves anything above, and the page said *no workspace yet* over 29 repositories
                 // just registered, until it was reloaded.
                 var registered = await RegisteredAsync(service, ct).ConfigureAwait(false);
-                if (registered is not null && registered != lastRegistered)
+                if (RegistryHeard(Facts, registered, lastRegistered))
                 {
                     changed = true;
                     lastRegistered = registered;
@@ -963,7 +963,10 @@ public sealed class DriverLoop(
     /// runner took up by itself is announced by it (MSG1c2).
     /// </summary>
     internal static Task Ended(IEventBus bus, string session, string state) =>
-        bus.EmitAsync("DAORIS", "SESSION_ENDED", new { Session = session, State = state });
+        bus.EmitAsync("DAORIS", EndedType, new { Session = session, State = state });
+
+    /// <summary>The event's type, spelled here alone: a slice that wakes on it names it by this (PUSH1a).</summary>
+    public const string EndedType = "SESSION_ENDED";
 
     /// <summary>
     /// What the person's words to a session do, whatever its state (MSG1d, D137 §2): the one judge <c>SESSION_INPUT</c> and
@@ -1058,6 +1061,18 @@ public sealed class DriverLoop(
         {
             return null;
         }
+    }
+
+    /// <summary>
+    /// Whether the registry's signature the tick read is a change. A change also wakes the machine's facts (REGWAKE1): a repository
+    /// imported from a terminal moves no ledger family, so the pushed lines saw it only at the facts' deadline. The first
+    /// signature heard (null before) is not a change to wake for.
+    /// </summary>
+    public static bool RegistryHeard(MachineFacts facts, string? registered, string? last)
+    {
+        if (registered is null || registered == last) return false;
+        if (last is not null) facts.Wake(HelpFacts.Machine, HelpFacts.Whole);
+        return true;
     }
 
     /// <summary>What the registry holds, or null when the host could not answer — never a change.</summary>

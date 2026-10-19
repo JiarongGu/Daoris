@@ -170,8 +170,9 @@ public sealed class HelpRoutes(DriverContext context)
     private HelpMachine HelpMachineOf(DriverConfig config, HelpFactsRead read)
     {
         var whole = read.Whole;
-        // The asks by id too (HELP6), so a delete of one made by mistake can name it.
-        var asks = whole.Standing.Count(ask => ask.State == "Proposed");
+        // The asks by id too (HELP6), so a delete of one made by mistake can name it; counted by the rule a workspace's room counts
+        // its own by (ASKSCOPE1b).
+        var asks = HelpRoom.AsksWaiting(whole.Standing);
         // This machine's sessions as the Sessions list places them (SESSUX1h3), with what holds them as the loop's last look says.
         var sessions = read.Sessions is { } look ? look with { Waits = _loop.Look.Waits } : null;
         // And the branches landings made here (WSR5b), so a hand-off names one the record holds.

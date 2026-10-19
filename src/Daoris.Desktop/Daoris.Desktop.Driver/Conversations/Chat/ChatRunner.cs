@@ -8,8 +8,8 @@ namespace Daoris.Driver;
 public sealed record ChatStart(string? SessionId, string Message);
 
 /// <summary>
-/// Ask Daoris's conversation placed (HELPSTART1, <see cref="ChatRunner.PlaceHelpAsync"/>): its record open in the room's folder,
-/// its agent and account chosen, nothing spawned yet.
+/// Ask Daoris's conversation placed (HELPSTART1, <see cref="ChatRunner.PlaceHelpAsync"/>): its record open in its workspace's room
+/// folder (ASKSCOPE1b), its agent and account chosen, nothing spawned yet.
 /// </summary>
 /// <param name="SessionId">The record's id — null when nothing was placed, and <paramref name="Message"/> says why.</param>
 /// <param name="Message">The ledger's sentence, or why nothing was placed.</param>
@@ -525,8 +525,9 @@ public sealed class ChatRunner : IDisposable
 
     /// <summary>
     /// Place Ask Daoris's conversation (HELPSTART1, D89's note): its agent resolved, its account chosen and its record opened in
-    /// the room's folder, which is the same folder for every conversation, so nothing is read or written yet. What the person's
-    /// press waits for; <see cref="RunHelpAsync"/> reads the machine, writes the room and spawns the agent after.
+    /// its workspace's room folder (ASKSCOPE1b, <see cref="HelpRoom.PathOf(string, string?)"/>), whose path is known before
+    /// anything is read or written. What the person's press waits for; <see cref="RunHelpAsync"/> reads the machine, writes the
+    /// room and spawns the agent after.
     /// </summary>
     /// <param name="workspace">
     /// The workspace the person's window was on at the press (ASKSCOPE1a, D158's ASKSCOPE1 note point 1), captured there, so a
@@ -554,8 +555,9 @@ public sealed class ChatRunner : IDisposable
         var selection = await _harnesses.SelectAsync(resolved.Name, config, workspace, null, StartKind.Conversation, ct).ConfigureAwait(false);
         if (!selection.Allowed) return new(null, selection.Refusal!);
 
+        // Its workspace's own room (ASKSCOPE1b), which its record keeps as its tree: the folder its harness keeps it by.
         var (sessionId, message) = await _service
-            .OpenHelpAsync(resolved.Name, HelpRoom.PathOf(_home), selection.Version, selection.Profile, workspace, ct)
+            .OpenHelpAsync(resolved.Name, HelpRoom.PathOf(_home, workspace), selection.Version, selection.Profile, workspace, ct)
             .ConfigureAwait(false);
         if (sessionId is null) return new(null, message);
 
@@ -572,7 +574,10 @@ public sealed class ChatRunner : IDisposable
     /// with none written before, the first judgement is waited for within <see cref="HelpReadBound"/> (HELPSTUCK1), and past it the
     /// conversation ends <c>failed</c> saying so (<see cref="ChatHelp.ReadAsync"/>).
     /// </summary>
-    /// <param name="machine">The machine as the room says it, from the facts as last judged; null where it could not be read.</param>
+    /// <param name="machine">
+    /// The whole machine from the facts as last judged; null where it could not be read. The room written is the placed
+    /// workspace's (ASKSCOPE1b): the machine projected to it (<see cref="HelpMachine.Within"/>) in its own folder.
+    /// </param>
     public async Task<ChatStart> RunHelpAsync(
         HelpPlaced placed, DriverConfig config, Func<CancellationToken, Task<HelpMachine?>> machine,
         Func<string, string, Task>? onEnded = null, CancellationToken ct = default)
@@ -593,8 +598,8 @@ public sealed class ChatRunner : IDisposable
                 // answer for minutes while this conversation sat at `queued`. Only a home whose facts were never judged waits, and
                 // only where no room was written before, within the bound; else it starts on the room as last written, said first in
                 // its conversation; with none written and no answer in the bound, it ends below saying why.
-                var (read, late, waited) = await _help.ReadAsync(machine, ct).ConfigureAwait(false);
-                if (late && !HelpRoom.Written(_home))
+                var (read, late, waited) = await _help.ReadAsync(machine, placed.Workspace, ct).ConfigureAwait(false);
+                if (late && !HelpRoom.Written(_home, placed.Workspace))
                 {
                     var unread = ChatHelp.NotRead(_help.ReadBound);
                     await Conclude(sessionId, "failed", unread, onEnded).ConfigureAwait(false);
@@ -603,12 +608,14 @@ public sealed class ChatRunner : IDisposable
 
                 if (late)
                 {
-                    (room, reads) = (HelpRoom.PathOf(_home), []);
+                    (room, reads) = (HelpRoom.PathOf(_home, placed.Workspace), []);
                     _context.Note(sessionId, waited ? ChatHelp.AsWritten(_help.ReadBound) : ChatHelp.NotReadYet());
                 }
                 else
                 {
-                    var machineRead = read ?? throw new DriverException("this machine could not be read for it: the service is not answering yet");
+                    // ASKSCOPE1b: its workspace's room, the facts projected to it, so what is not read yet is its own.
+                    var machineRead = (read ?? throw new DriverException("this machine could not be read for it: the service is not answering yet"))
+                        .Within(placed.Workspace);
                     (room, reads) = (HelpRoom.Prepare(_home, machineRead), machineRead.Reads);
                     // What the facts had not read yet is said first, so the person knows the room may name less than there is.
                     if (machineRead.NotReadYet.Any) _context.Note(sessionId, ChatHelp.NotReadYet());

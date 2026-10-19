@@ -119,8 +119,8 @@ public sealed class AccountReadingTickTests : IDisposable
 
     private static async Task Look(Daoris.Driver.Driver driver)
     {
-        await driver.TickAsync().WaitAsync(TimeSpan.FromSeconds(90));
-        await driver.Running.SettledAsync().WaitAsync(TimeSpan.FromSeconds(90));
+        await driver.TickAsync().WaitAsync(Poll.Patience);
+        await driver.Running.SettledAsync().WaitAsync(Poll.Patience);
     }
 
     private static string? Opening(SessionEvents events, System.Text.Json.Nodes.JsonObject record) =>

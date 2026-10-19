@@ -20,7 +20,7 @@ public sealed class DriverWatchTopicsTests : IDisposable
 
     private readonly StandInLedger _ledger = new();
 
-    private readonly CancellationTokenSource _closing = new(TimeSpan.FromSeconds(60));
+    private readonly CancellationTokenSource _closing = new(Poll.Patience);
 
     // The remote sync's passes: each reads the remotes map once, as does the set's making.
     private int _passes;

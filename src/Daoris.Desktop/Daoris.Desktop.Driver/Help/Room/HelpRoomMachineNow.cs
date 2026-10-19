@@ -94,7 +94,8 @@ internal sealed class HelpRoomMachineNow : IHelpRoomSection
             ? $"- The intake: asks are answered on `{intake}`.\n"
             : "- The intake: no agent answers asks, so an ask the declarations do not settle waits for the person.\n");
         if (machine.Helper is { Length: > 0 } helper) text.Append($"- Ask Daoris: you, on `{helper}`.\n");
-        text.Append($"- {Count(machine.Waiting.Count, "session waits", "sessions wait")} on the person; "
+        // ASKSCOPE1b: a workspace's room counts its own, and says so where it counts.
+        text.Append($"- {In(machine)}{Count(machine.Waiting.Count, "session waits", "sessions wait")} on the person; "
             + $"{Count(machine.Asks, "ask waits", "asks wait")} for an answer.\n");
         // ENTRY1f2: by id and where each runs, so a go names one it was shown.
         text.Append("- Sessions waiting on the person: "
@@ -103,7 +104,7 @@ internal sealed class HelpRoomMachineNow : IHelpRoomSection
         // SESSUX1h3: the Sessions list's groups, and the ended by id, so an archive or a delete names one it was shown.
         if (machine.Sessions is { } sessions)
         {
-            text.Append("- This machine's sessions by the Sessions list's groups, archived ones and Ask Daoris's own not counted: "
+            text.Append($"- {Whose(machine)} sessions by the Sessions list's groups, archived ones and Ask Daoris's own not counted: "
                 + $"{sessions.You} waiting on you, {sessions.Review} to review, {sessions.Working} working, "
                 + $"{sessions.Later} resuming later, {sessions.Ended} ended.\n");
             var more = sessions.Ended - sessions.Listed.Count;
@@ -115,7 +116,7 @@ internal sealed class HelpRoomMachineNow : IHelpRoomSection
         }
         else
         {
-            text.Append($"- This machine's sessions by the Sessions list's groups: {NotRead(machine.NotReadYet.Sessions)}.\n");
+            text.Append($"- {Whose(machine)} sessions by the Sessions list's groups: {NotRead(machine.NotReadYet.Sessions)}.\n");
         }
 
         // HELP10: by id and repository, so a retry names one the quest's page would offer Try again on.
@@ -131,7 +132,7 @@ internal sealed class HelpRoomMachineNow : IHelpRoomSection
                 : "none")
             + ".\n");
         // PAUSE1f-b (D132 §7.4): by scope and id, so a resume names a pause this machine keeps.
-        text.Append("- Paused on this machine until resumed: "
+        text.Append($"- Paused {(machine.Workspace is { } workspace ? $"in workspace `{workspace}`" : "on this machine")} until resumed: "
             + (machine.Paused.Count > 0 ? string.Join(", ", machine.Paused.Select(paused => $"{paused.Word} `#{paused.Id}`")) : "none")
             + ".\n");
         // HIST1f-b (design §2.4, §6.4): what each workspace keeps, so a clear names one that keeps something.
@@ -186,6 +187,12 @@ internal sealed class HelpRoomMachineNow : IHelpRoomSection
     }
 
     private static string Count(int count, string one, string many) => $"{count} {(count == 1 ? one : many)}";
+
+    /// <summary>Where a workspace's room counts (ASKSCOPE1b): its workspace, named; nothing in the machine's room.</summary>
+    private static string In(HelpMachine machine) => machine.Workspace is { } workspace ? $"In workspace `{workspace}`: " : "";
+
+    /// <summary>Whose sessions a room counts (ASKSCOPE1b): its workspace's, or this machine's.</summary>
+    private static string Whose(HelpMachine machine) => machine.Workspace is { } workspace ? $"Workspace `{workspace}`'s" : "This machine's";
 
     /// <summary>A part with nothing read: not judged yet by the facts (PARALLEL1a), or not read at all.</summary>
     internal static string NotRead(bool yet) => yet ? "not read yet" : "not read";

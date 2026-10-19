@@ -47,7 +47,8 @@ region on its own away from Sessions, with its own width, is gone.
 ## 3. The room
 
 `<home>/help/`, re-rendered at every open (the intake's rule, D65 §1b), never a repository and never
-a `SessionTree`:
+a `SessionTree` (*amended by D158's ASKSCOPE1b note, 2026-10-19: `help` is `default`'s room, the whole machine; a named
+workspace's conversation runs in a room of its own beside it, written from that workspace's facts*):
 - **`AGENTS.md`**: what Daoris is, the doors table (§5), and the machine as it stands, rendered from
   the host's own answers: the workspaces and their repositories, what is drivable and held, each
   repository's line and landing rule, the agents and accounts with their sign-in state, and what

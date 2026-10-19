@@ -58,7 +58,7 @@ public sealed class StopHoldTickTests : IDisposable
         var first = Driver(service, config).RunOnceAsync();
         await UntilAsync(() => service.SessionCount == 1 && service.Status("q1") == "Taken");
         Assert.True(_processes.Stop("s1"));
-        await first.WaitAsync(TimeSpan.FromSeconds(60));
+        await first.WaitAsync(Poll.Patience);
         var stopped = service.Session("s1");
         Assert.Equal("stopped", stopped["state"]!.GetValue<string>());
         Assert.Equal("the person stopped it.", stopped["note"]!.GetValue<string>());
@@ -77,7 +77,7 @@ public sealed class StopHoldTickTests : IDisposable
         }
 
         // 3. Try again: released from that stop, the next look carries the quest on in the same tree, and it closes.
-        await Driver(service, config.WithReleased("q1", "s1")).RunOnceAsync().WaitAsync(TimeSpan.FromSeconds(60));
+        await Driver(service, config.WithReleased("q1", "s1")).RunOnceAsync().WaitAsync(Poll.Patience);
 
         var carried = service.Session("s2");
         Assert.Equal("completed", carried["state"]!.GetValue<string>());
@@ -99,7 +99,7 @@ public sealed class StopHoldTickTests : IDisposable
         var first = Driver(service, config).RunOnceAsync();
         await UntilAsync(() => File.Exists(log));
         await UntilAsync(() => _processes.Stop("s1"));
-        await first.WaitAsync(TimeSpan.FromSeconds(60));
+        await first.WaitAsync(Poll.Patience);
         Assert.Equal("stopped", service.Session("s1")["state"]!.GetValue<string>());
         Assert.Equal("Open", service.Status("q1"));
 
@@ -113,7 +113,7 @@ public sealed class StopHoldTickTests : IDisposable
         }
 
         // 3. Try again: the next look starts it as a first start, which takes it and closes it.
-        await Driver(service, config.WithReleased("q1", "s1")).RunOnceAsync().WaitAsync(TimeSpan.FromSeconds(60));
+        await Driver(service, config.WithReleased("q1", "s1")).RunOnceAsync().WaitAsync(Poll.Patience);
 
         Assert.Equal("completed", service.Session("s2")["state"]!.GetValue<string>());
         Assert.Equal("Done", service.Status("q1"));

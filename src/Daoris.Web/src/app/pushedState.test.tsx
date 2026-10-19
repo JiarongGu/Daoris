@@ -26,6 +26,21 @@ vi.mock('@shenora/react', async () => {
   };
 });
 
+// The real hub, with a probe run in an effect declared before its own (so first among its effects), for PUSHMOUNT1's order.
+const { mountProbe } = vi.hoisted(() => ({ mountProbe: { current: null as (() => void) | null } }));
+vi.mock('./ShellSignals', async () => {
+  const actual = await vi.importActual<typeof import('./ShellSignals')>('./ShellSignals');
+  const React = await import('react');
+  return {
+    ...actual,
+    ShellSignals: (props: React.ComponentProps<typeof actual.ShellSignals>) => {
+      // A sibling ahead of the hub: its effect runs just before the hub's own, after every effect of what renders earlier.
+      const Probe = () => { React.useEffect(() => { mountProbe.current?.(); }, []); return null; };
+      return React.createElement(React.Fragment, null, React.createElement(Probe), React.createElement(actual.ShellSignals, props));
+    },
+  };
+});
+
 import '../locales/i18n';
 import { App } from './App';
 import { ShellSignals } from './ShellSignals';
@@ -159,6 +174,27 @@ describe("the driver's state, pushed (PUSH1a)", () => {
     // Every other family keeps its pulls until its own slice moves.
     expect(tick['DAORIS.DRIVER.LINES']).toBeUndefined();
     expect(tick).toMatchObject({ 'DAORIS.DRIVER.SWEEP_PLAN': 1 });
+  });
+
+  it('opens on the Sessions view with one snapshot of each slice and neither pull (PUSHMOUNT1)', async () => {
+    host(true);
+    // The view that mounts the driver's state and the lines first, remembered as the opening one.
+    window.localStorage.setItem('daoris.view', 'sessions');
+    await open();
+    expect(asked().get('DAORIS.DRIVER.STATE_SLICE')).toBe(2);
+    expect(asked().get('DAORIS.DRIVER.STATE')).toBeUndefined();
+    expect(asked().get('DAORIS.DRIVER.LINES')).toBeUndefined();
+  });
+
+  it('mounts the hub before any view asks the shell anything (PUSHMOUNT1)', async () => {
+    host(true);
+    window.localStorage.setItem('daoris.view', 'sessions');
+    // The hub's effects run first when it is the first thing the root renders: nothing below it has asked the bridge by then.
+    const callsAtMount: number[] = [];
+    mountProbe.current = () => callsAtMount.push(invoke.mock.calls.length);
+    await open();
+    mountProbe.current = null;
+    expect(callsAtMount[0]).toBe(0);
   });
 
   it('puts the lines in the cache composed from the repositories, with no pull', async () => {

@@ -227,6 +227,16 @@ public sealed class SystemWiringTests : IDisposable
         Assert.Equal("not-daoris", (string?)left["stranger.txt"]["why"]);
     }
 
+    /// <summary>A named workspace's Ask Daoris room (ASKSCOPE1b) is the table's (HOMEROOMS1), so the census does not list it left over.</summary>
+    [Theory]
+    [InlineData("help", true)]
+    [InlineData("help-alpha", true)]
+    [InlineData("help-e4_b8_ad", true)]
+    [InlineData("helper", false)]
+    [InlineData("xhelp-alpha", false)]
+    public void A_named_workspace_s_help_room_is_held_by_the_table_and_a_look_alike_is_not(string name, bool held) =>
+        Assert.Equal(held, WiringSizes.Held(name));
+
     [Fact]
     public void A_walk_past_its_budget_or_cancelled_answers_what_it_counted_and_says_so()
     {

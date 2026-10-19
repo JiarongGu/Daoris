@@ -74,7 +74,7 @@ public sealed class StartGitCountTests : IDisposable
             return Process.Start(info);
         }))
         {
-            await driver.RunOnceAsync().WaitAsync(TimeSpan.FromSeconds(90));
+            await driver.RunOnceAsync().WaitAsync(Poll.Patience);
         }
 
         // The git starts before the harness's own run (node on the script): what the start asked before the session spawned.

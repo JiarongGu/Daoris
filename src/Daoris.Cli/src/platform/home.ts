@@ -137,6 +137,7 @@ export const HOME_ENTRIES = [
   row('window', 'profiles', '', '', 'chromium', 'config'),
   row('trees', 'work', 'trees/*/*/*', 'trees/*/*/*'),
   row('help-room', 'work', 'help', 'help', 'CLAUDE.md'),
+  row('help-rooms', 'work', 'help-*', 'help-*', 'CLAUDE.md'),
   row('intake', 'work', 'intake/*', 'intake/*'),
   row('opinion-packets', 'work', 'opinions/*', 'opinions/*'),
   row('quest-files', 'work', 'quests/*', 'quests/*'),
