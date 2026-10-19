@@ -7,7 +7,7 @@ import { useHarnesses, useSessionEvents, useSessionSearch } from '../bridge/shel
 import { Icon } from '../design/ui';
 import { accountNames } from './accountNames';
 import { type AnchorAsks, type Anchors, anchorsOf, type AnchorWait, marksOf } from './anchors';
-import { firstAnswerWait, lastWords, settle, toTurns, type Usage } from './conversation';
+import { firstAnswerWait, lastWords, type RunningCall, runningCall, settle, toTurns, type Usage } from './conversation';
 import { ConversationFind } from './ConversationFind';
 import { type Cooling, ConversationView } from './ConversationView';
 import type { ReasonValues } from './say';
@@ -113,7 +113,7 @@ export function SessionConversation({
    */
   onUsage?: (session: string, usage?: Usage) => void;
   /** Told when the turn its agent is on was asked, while the agent has answered nothing (WAITSHOWN1); undefined once it has. */
-  onWaiting?: (session: string, since?: string) => void;
+  onWaiting?: (session: string, since?: string, calling?: RunningCall) => void;
 }) {
   const { events, opening, firstFailure, earlier, loaded, loadEarlier } = useSessionEvents(session);
   // The door's own word on what an empty record means — undefined until the roster answers, which reads
@@ -137,9 +137,15 @@ export function SessionConversation({
   useEffect(() => { report.current?.(session, usage); }, [session, usage]);
   // The wait for the first answer goes up the same way (WAITSHOWN1), for the head's facts; only while the session is live.
   const waitingSince = live ? firstAnswerWait(turns) : undefined;
+  // And the call it is inside (WAITSAY1), read from the settled turns, so a session not live says none.
+  const call = live ? runningCall(turns) : null;
+  const callTitle = call?.title;
+  const callSince = call?.since;
   const reportWait = useRef(onWaiting);
   reportWait.current = onWaiting;
-  useEffect(() => { reportWait.current?.(session, waitingSince); }, [session, waitingSince]);
+  useEffect(() => {
+    reportWait.current?.(session, waitingSince, callTitle && callSince ? { title: callTitle, since: callSince } : undefined);
+  }, [session, waitingSince, callTitle, callSince]);
 
   // What changes when the conversation grows: the last event, and its text as chunks join it.
   const last = events[events.length - 1];

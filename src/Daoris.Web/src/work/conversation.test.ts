@@ -24,7 +24,7 @@ vi.mock('@shenora/react', () => ({
 import { en, zh } from '../locales';
 import { useChatTurns, useSay, useSessionEvents, useSessionReach } from '../bridge/shell';
 import { driverSource } from '../test/driverSource';
-import { CONVERSATION_CODES, firstAnswerWait, mergeEvents, runCount, segments, type SessionEvent, settle, toTurns } from './conversation';
+import { CONVERSATION_CODES, firstAnswerWait, mergeEvents, runCount, runningCall, segments, type SessionEvent, settle, toTurns } from './conversation';
 
 const said = (seq: number, text = `m${seq}`): SessionEvent => ({ seq, at: '2026-09-25T00:00:00Z', kind: 'message', text });
 
@@ -530,6 +530,41 @@ describe('the wait for a turn’s first answer', () => {
   it('is not the wait of words waiting at the foot', () => {
     const { turns } = toTurns([e(1, { kind: 'user', text: 'later', reaches: 'resume', id: 'w1' })]);
     expect(firstAnswerWait(turns)).toBeUndefined();
+  });
+});
+
+/** WAITSAY1: the call the agent is inside, read from the record alone. */
+describe('the call a session is running', () => {
+  const ask = e(1, { kind: 'user', text: 'test it', origin: 'person' });
+  const call = (seq: number, id: string, title: string, status: string) => e(seq, { kind: 'tool', id, title, status });
+
+  it('is the open call’s title and when it began, pending or in progress', () => {
+    for (const status of ['pending', 'in_progress']) {
+      const { turns } = toTurns([ask, call(2, 'a', 'npm test', status)]);
+      expect(runningCall(settle(turns, true))).toEqual({ title: 'npm test', since: turns[0]!.items[0]!.at });
+    }
+  });
+
+  it('is none once the call completed, failed or was cut', () => {
+    for (const status of ['completed', 'failed', 'cut']) {
+      const { turns } = toTurns([ask, call(2, 'a', 'npm test', 'in_progress'), call(3, 'a', 'npm test', status)]);
+      expect(runningCall(settle(turns, true))).toBeNull();
+    }
+  });
+
+  it('is none when the session is not live, its open calls read stopped', () => {
+    const { turns } = toTurns([ask, call(2, 'a', 'npm test', 'in_progress')]);
+    expect(runningCall(settle(turns, false))).toBeNull();
+  });
+
+  it('is none when the turn ended', () => {
+    const { turns } = toTurns([ask, call(2, 'a', 'npm test', 'in_progress'), e(3, { kind: 'turn', stopReason: 'end_turn' })]);
+    expect(runningCall(settle(turns, true))).toBeNull();
+  });
+
+  it('is the latest of two open calls', () => {
+    const { turns } = toTurns([ask, call(2, 'a', 'npm test', 'in_progress'), call(3, 'b', 'npm run build', 'pending')]);
+    expect(runningCall(turns)?.title).toBe('npm run build');
   });
 });
 
