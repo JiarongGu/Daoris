@@ -240,6 +240,26 @@ public static class Continuations
         : after;
 
     /// <summary>
+    /// What a session going on in its own conversation is told of its go-aheads (AUTONOMY1c, D184 points 3 and 5): where its
+    /// repository's setup as it stands now asks other go-aheads than the one <paramref name="record"/> started under, the change in
+    /// a paragraph; nothing where they are the same. The conversation is not handed its instruction again, so without this a person
+    /// who set go-aheads back to <c>named</c> would find it still asking none. A record from before the setup was told today's.
+    /// </summary>
+    internal static string? GoAheadsChanged(PriorSession record, ResolvedAccess now)
+    {
+        var was = record.Access?.GetValueOrDefault(AccessRules.GoAheads) ?? AccessRules.Pause(AccessRules.GoAheads).Default;
+        var goAheads = now.Value(AccessRules.GoAheads);
+        if (string.Equals(was, goAheads, StringComparison.Ordinal)) return null;
+        return goAheads == AccessRules.Never
+            ? "This repository's access setup has changed since you started: it now asks no go-ahead but what the quest or the "
+              + "person's words demand. Where the work needs an act on a production system or outside this repository, do it without "
+              + "asking and name it under **Readings** in your closing note; a push, a publish or a release stays as your instruction's "
+              + "boundary says."
+            : "This repository's access setup has changed since you started: ask the person a go-ahead again before an act outside "
+              + "this repository or on a production system, or for one this repository or the quest says needs it.";
+    }
+
+    /// <summary>
     /// Where a quest's record goes back to when the driver moved it to working and no run of it then started (SAIDBACK1e, D137
     /// §2.4), its words waiting on it again. An ended record goes back to how it ended, its note, its parts and its flags as the
     /// look read them. A park whose words were all taken back waits on the person again; one whose run could not start ends as a

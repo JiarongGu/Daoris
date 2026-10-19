@@ -264,6 +264,13 @@ public sealed record PriorSession(
     /// </summary>
     public string? HelpMode { get; init; }
 
+    /// <summary>
+    /// The access setup it started under (AUTONOMY1a, D184 point 1), each pause by name with its value, as the service answers it on
+    /// loopback; null from a host or a record before the setup. A session going on in its own conversation is compared with it
+    /// (AUTONOMY1c, <see cref="Continuations.GoAheadsChanged"/>).
+    /// </summary>
+    public IReadOnlyDictionary<string, string>? Access { get; init; }
+
     /// <summary>The harness version its record opened on: a resumed run says so where the version moved since (D131 §1).</summary>
     public string? HarnessVersion { get; init; }
 
