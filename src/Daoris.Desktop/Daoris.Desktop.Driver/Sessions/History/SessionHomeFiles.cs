@@ -27,7 +27,7 @@ public sealed record SessionFilesRemoved(
 /// <remarks>
 /// <para><b>What goes, by name</b>, in this order: its conversation, its transcript, its files (the whole
 /// <c>sessions/&lt;id&gt;/</c>, its native children's lineage among them, <see cref="ChildLineage"/>), its harness conversation id, a leftover process marker, its go-on mark and its reopen mark (<see cref="ReopenMarks"/>, both named <c>mark</c>), its choice of a new
-/// session, the spawn files a crash left, Ask Daoris's name and pin for it (ASKHIST1), its held words, its closed automatic
+/// session, the spawn files a crash left, Ask Daoris's name and pin for it (ASKHIST1) and its receipts (HELPWIRED1), its held words, its closed automatic
 /// landing and its archive mark. Until HIST1c the
 /// delete took the first five and the mark, and left the mark, the choice, the held words and the landing behind.</para>
 ///
@@ -53,7 +53,10 @@ public sealed class SessionHomeFiles(string home, Action<string, bool>? remover 
     public const string HandOver = "hand-over";
     public const string Spawn = "spawn";
 
-    /// <summary>Ask Daoris's conversation's name, pin and start (ASKHIST1, <see cref="HelpConversations"/>).</summary>
+    /// <summary>
+    /// Ask Daoris's conversation's name, pin and start (ASKHIST1, <see cref="HelpConversations"/>), and what each of its starts handed
+    /// (HELPWIRED1, <see cref="HelpWired"/>).
+    /// </summary>
     public const string Help = "help";
     public const string Held = "held";
     public const string Landing = "landing";
@@ -78,6 +81,9 @@ public sealed class SessionHomeFiles(string home, Action<string, bool>? remover 
     /// <summary>
     /// The inventory (§2.2), in the order the files go, written once (HIST1j): what a reading measures, what a clear and a delete
     /// remove, and what a left-over file is read by. A per-session file a later change adds is named here, and every door takes it.
+    /// A new name is a word a delete's <c>stayed</c> carries, which the page says from its own catalogues (<c>KeptNamesTwinTests</c>,
+    /// <c>kept-names.json</c>), so a file an existing name already covers goes under that name, as HELPWIRED1's receipts go under
+    /// <see cref="Help"/>.
     /// </summary>
     private static readonly SessionFile[] Inventory =
     [
@@ -94,6 +100,8 @@ public sealed class SessionHomeFiles(string home, Action<string, bool>? remover 
         new(Spawn, Place.Spawn, ".mcp.json", false, Beside),
         new(Spawn, Place.Spawn, ".settings.json", false, Beside),
         new(Help, Place.Sessions, HelpConversations.Suffix, false, Beside),
+        // HELPWIRED1: what each of its starts handed, Ask Daoris's too, so it goes under the same name.
+        new(Help, Place.Sessions, HelpWired.Suffix, false, Beside),
     ];
 
     /// <summary>The suffixes a session's own files under <c>sessions/</c> carry after its id, the longest first.</summary>

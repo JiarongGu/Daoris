@@ -45,6 +45,15 @@ describe('a session’s facts line', () => {
     expect(sessionFacts(t, { session: session({ state: 'completed' }), shown: 'completed', waitingSince: since }).join()).not.toMatch(/no answer/);
   });
 
+  /** WAITSAY1: a working session inside a long call names it and says for how long. */
+  it('says a working session is running a call, and for how long', () => {
+    const calling = { title: 'npm test', since: '2026-10-05T09:40:00Z' };
+    const facts = sessionFacts(t, { session: session(), shown: 'working', calling });
+    expect(facts.at(-1)).toBe('running npm test for 20m');
+    expect(sessionFacts(t, { session: session(), shown: 'working' }).join()).not.toMatch(/running npm/);
+    expect(sessionFacts(t, { session: session({ state: 'completed' }), shown: 'completed', calling }).join()).not.toMatch(/running npm/);
+  });
+
   /** The install's fourth try, three failed before it, was the fourth line of a strip in mono; the head says it. */
   it('says a working session is another try, and how many failed before it', () => {
     expect(sessionFacts(t, { session: session({ profile: 'account-1' }), shown: 'working', grouping: grouping({ strikes: 3 }) }))

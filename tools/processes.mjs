@@ -155,3 +155,24 @@ const CLOSE = `
 /** Close these processes as {@link stopAll} closes an executable's applications. */
 export const stopProcesses = (pids) => (pids.length === 0 ? '' : powershell(
   `Get-Process -Id ${pids.join(',')} -ErrorAction SilentlyContinue | ForEach-Object { ${CLOSE} }`));
+
+/**
+ * End what a killed process left running (FAMILYFAIL1): every process `parent` started, at or after `since` (epoch
+ * milliseconds), each with everything it started in turn. Answers the pids it ended.
+ *
+ * 🔴 On Windows a kill reaches the one process it names. A command run in a shell and killed by its timeout loses the shell
+ * alone, and what the shell started runs on, its parent's id still naming the dead shell: the family rehearsal's driver, a
+ * `dotnet` under `cmd.exe`, kept its home's lease after its bound, and every phase after it read or raced what it went on to
+ * do. `since` keeps a later process that reused the id out of it. Elsewhere a shell's single command replaces the shell, so
+ * the kill reaches it, and this ends nothing.
+ */
+export function endOrphans(parent, since) {
+  if (process.platform !== 'win32' || !Number.isInteger(parent) || parent <= 0) return [];
+  const orphans = powershell(
+    `Get-CimInstance Win32_Process -Filter "ParentProcessId = ${parent}" -ErrorAction SilentlyContinue | `
+    + `Where-Object { $_.CreationDate -ge [DateTimeOffset]::FromUnixTimeMilliseconds(${Math.floor(since) - 1000}).LocalDateTime } | `
+    + 'ForEach-Object { $_.ProcessId }')
+    .split('\n').map((line) => Number(line.trim())).filter((pid) => Number.isInteger(pid) && pid > 0);
+  for (const pid of orphans) spawnSync('taskkill', ['/F', '/T', '/PID', String(pid)], { stdio: 'ignore', windowsHide: true });
+  return orphans;
+}

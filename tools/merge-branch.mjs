@@ -806,9 +806,14 @@ export const REACH = Object.freeze([
   { paths: ['tools/family-rehearsal.mjs', 'tools/usage-report.mjs'], gates: ['rehearse-family'], why: 'the family rehearsal, what it imports, and what it runs' },
   { paths: ['tools/setup-kit.mjs'], gates: ['tool-tests', 'rehearse-family'], why: "the family rehearsal's set-up kit, and its tool-tests, which run it for real in a scratch repository (GATESLIM1)" },
   {
-    paths: ['tools/desktop-publish.mjs', 'tools/processes.mjs'],
+    paths: ['tools/desktop-publish.mjs'],
     gates: ['tool-tests', 'deployment', 'rehearse-family'],
     why: 'the publish the deployment rehearsal drives, and what it imports; the family rehearsal runs usage-report, which imports it; and its tool-tests (GATESLIM1)',
+  },
+  {
+    paths: ['tools/processes.mjs'],
+    gates: ['tool-tests', 'deployment', 'rehearse-family', 'rehearse'],
+    why: "what the publish imports (the rule above), and what the rehearsals' kit ends a timed-out command's leftovers with, so all three rehearsals (FAMILYFAIL1)",
   },
   { paths: ['tools/deployment-rehearsal.mjs', 'tools/desktop.mjs'], gates: ['deployment'], why: 'the deployment rehearsal and what it imports' },
   { paths: ['src/Daoris.Devkit/**'], gates: ['devkit'], why: 'its own suite; it is also the universal gates and the code map, which every merge runs' },
