@@ -38,7 +38,8 @@ internal sealed class HelpRoomMayDo : IHelpRoomSection
 
     /// <summary>
     /// HELPPLUG1c: each server an installed plugin's newer copy in the install would offer Ask Daoris and the installed copy does
-    /// not, the owner's in-app browser after HELPPLUG1a: said with its update first, so it is not missing in silence.
+    /// not, as an installed in-app browser 1.0.0 is beside the shipped 1.1.0: said with its update first, so it is not missing
+    /// in silence.
     /// </summary>
     private static IEnumerable<HelpPluginServerOffered> Offered(HelpMachineSources sources)
     {
@@ -128,8 +129,8 @@ internal sealed class HelpRoomMayDo : IHelpRoomSection
         }
 
         // A manifest describes and grants nothing (D170's note): a server waiting for the person's approval is handed nothing.
-        // HELPPLUG1c: the owner's in-app browser left Ask Daoris with nobody told; what it would have, and where it is approved,
-        // is said once at the start, and the helper proposes the approval rather than only opening the page.
+        // HELPPLUG1c: a server it lacked left Ask Daoris with nobody told; what it would have, and where it is approved, is said
+        // once at the start, and the helper proposes the approval rather than only opening the page.
         if (machine.PluginServersWaiting.Count > 0 || machine.PluginServersOffered.Count > 0)
         {
             static string Named(IEnumerable<string> tools) => string.Join(", ", tools.Select(tool => $"`{tool}`"));

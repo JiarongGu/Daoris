@@ -86,3 +86,11 @@ and `HelpStandInDoors`; the modules' gate and the facts read only for it in `Hel
 (with `StatePublisherTests` and `test/publishing.ts`); the page's union in `ProposalCard.tsx`, its title in both catalogues,
 the room's `HelpRoomMayPropose` row and the Ask Daoris design's §3 list. A kind whose facts start a process takes its world
 through a seam the modules' fast half stands in for (`DriverContext.SetupWorlds`).
+
+HELPPLUG1c's `approve` and `withdraw` on the `plugin` kind are the worked example of a door on an existing kind, which is a
+branch in the service lane too: `HelpProposalKindsTests` fails until the kind's `Help<Kind>ProposalWriter.cs` spells each
+door, so the writer, its `Help<Kind>Tool.cs` parameters and `HelpProposalBox`'s `Propose…` move with the judge. The kinds'
+folder holds one file per kind and nothing else (`Every_kind_is_a_class_in_a_file_of_its_own`), so a door's judge goes in
+its kind's file; the fields it reads join `HelpProposal` and `HelpPlan` under the kind's comment, its card data
+`HELP_PROPOSALS`' `CardBody`, its doors `IHelp<Kind>Doors`, `ScreenDoors` and `HelpStandInDoors`; and a page control the
+door now answers for turns its `HelpCoverageTests` row from `Exempt` into a `Door`.
