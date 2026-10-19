@@ -5,6 +5,11 @@ with the version and date at release.
 
 ## Unreleased
 
+- A driven session asks you only what it cannot decide: a credential or a sign-in, a choice the task leaves to you, or a
+  go-ahead (for an act outside its repository or on a production system, as before, or one its repository or task names). A
+  name, or which of two sound ways, it now decides itself and says under *Readings* in its closing note, for you to change in
+  review. It asks in its last message, and goes on in the same conversation when you answer. A session that asks again after
+  your answer is announced again, and one you had already answered is not.
 - Ask Daoris can act on this machine itself, if you choose. `daoris-driver help mode full` runs it with full access from its
   next start, in its agent's own mode that asks nothing (Claude Code's `bypassPermissions`, Codex's full access). It then has a
   shell, file edits, Daoris's commands and every plugin server here, and your own denies still hold where its agent takes them.
