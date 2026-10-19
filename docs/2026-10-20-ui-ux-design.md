@@ -1,7 +1,8 @@
 # The screens since UX7, designed: what was found, the rules it shows are missing, each newer surface, and the parts they share (UIDESIGN1)
 
-**Standing: proposed (D185), 2026-10-20.** Written from main at `02632075f` before any build. The owner reviews it, with
-another maker's read, before a row it files starts. It builds nothing; §9's rows do.
+**Standing: proposed (D185), 2026-10-20.** Written from main at `02632075f` before any build, then revised the same day
+after another maker's read, each finding checked against main at `872520fa5` (DESIGNREAD1, D185's note says what changed and
+what did not). The owner reviews it before a row it files starts. It builds nothing; §9's rows do.
 
 > UIDESIGN1, decided as **D185** once the owner accepts it. `Dnn` is `docs/decisions/Dnn.md`. The owner's report of
 > 2026-10-20 asked for the features built since UX7 to have a UI/UX design of the same standing as the fabric's
@@ -25,9 +26,10 @@ It amends the platform language's §4 and §5 (D41), the frame model's §3b (D11
   A few files in that list were moves of older ones (`App.tsx`, `ui.tsx`) and are read only where a newer part sits in them.
 - **The frame's own numbers** (`work/layout.ts`): the side bar opens at 45% of the window and the main area keeps a 400 px
   floor; Settings' list is 176 px to start (the frame model §3a). At the install's 1546 px window, Settings' main area is
-  about **1,290 px with the side bar closed** and about **630 px with it open**; at a 680 px window, with the list and the
-  side bar at their strips, about **540 px**. The wireframes below are drawn at these three widths, named **wide**, **half**
-  and **narrow**.
+  about **1,290 px with the side bar closed** and about **630 px with it open**; the main area's own floor is **400 px**
+  (`CENTRE_FLOOR`, `work/layout.ts:47`), which the side bar's opening reaches at any window. The wireframes below are drawn
+  at these three widths, named **wide**, **half** and **narrow** (the floor). A 680 px window, with the list and the side bar
+  at their strips, leaves about 540 px, between half and narrow: what holds at the floor holds there.
 - **The decisions behind them**: D176 (brainstorms), D177 (meetings), D180 (heavy runs), D182 (pushed state), D183 (Ask
   Daoris's modes), D184 (sessions' access, asking mode), D173 with the fabric design's parts D and E (where work stands),
   and D171's This Daoris design.
@@ -82,8 +84,8 @@ story has none of its own; one drawn inside another's stories says whose.
 | Review and second opinion (`ReviewGate.tsx`, `OpinionGate.tsx`) | The session's head (D154, D155) | The review environment; the opinion's findings and disputes | Twenty-odd stories each, narrow and dark | — | None found |
 | Landing on the head (`Lands.tsx`, `LandingSync.tsx`, `HeldDiscard.tsx`, `EntryAccept.tsx`) | Head and foot | *Accept…*, the rebase, a held discard | Asks once | — | Drawn only inside `WaitStrip`'s and `SessionHead`'s stories |
 | The running call (WAITSAY1: `ConversationView.tsx:274`, `SessionRow.tsx:166`) | The conversation and the rail | *running {call} for {time}* | A wait said with its time | — | A call that waits on something else (the heavy-run slot) reads as running |
-| Where this work stands (`WorkMilestone.tsx`) | The attended session's record (`AttendedSession.tsx:289`); its line under a tidied branch (`WorkspaceTidied.tsx:121`) | The end and its proof, the result, the clean-up, the recovery (the fabric's §D0) | Nothing judged again; the driver's clauses as recorded | Four facts set as a definition list of small type, where they are a sequence (§2's fourth rule) | No story; the work state is read in four places as lines (`App.tsx:304`, `AttentionBand.tsx:125`, `WorkspaceView.tsx:262`, `WorkFrame.tsx:1243`) with no designed screen |
-| The attended session's record head (`AttendedSession.tsx:271-291`) | Sessions' main area | Since UX7: the parts strip, *Accept*, relations, the channel, the milestone, before *How it came to be* | Each block folded or one line | UX7 §6.2's budget, the conversation at most 200 px down, measured before five blocks joined | Nothing has measured it since |
+| Where this work stands (`WorkMilestone.tsx`) | The attended session's record (`AttendedSession.tsx:289`); its line under a tidied branch (`WorkspaceTidied.tsx:121`) | The end and its proof, the result, the clean-up, the recovery (the fabric's §D0) | Nothing judged again; the driver's clauses as recorded; each fact by its own value | Its rows drawn whole under the record head, with no disclosure (`WorkMilestone.tsx:66-116`, mounted at `AttendedSession.tsx:289`) | No story; the work state is read in four places as lines (`App.tsx:304`, `AttentionBand.tsx:125`, `WorkspaceView.tsx:262`, `WorkFrame.tsx:1243`) with no designed screen |
+| The attended session's record head (`AttendedSession.tsx:271-291`) | Sessions' main area | Since UX7: the parts strip, *Accept*, relations, the channel, the milestone, before *How it came to be* | The chain and the trace folded to a line, the channel folded | UX7 §6.2's budget, the conversation at most 200 px down, measured before five blocks joined; the milestone is not folded, its four facts and any held attempt drawn whole | Nothing has measured it since |
 | The workflow's run (`WorkflowRunView.tsx`, `WorkflowLine.tsx`) | A session view in the side bar (`WorkFrame.tsx:1147`); a quest's and an ask's page (`QuestPage.tsx:468`, `AskPage.tsx:287`) | Where a piece of work stands in its workflow | Derived, never inferred; hues by whose wait | — | The only drawn process, a vertical rail (FLOWCHART1) |
 
 **Repositories and quests**
@@ -94,7 +96,10 @@ story has none of its own; one drawn inside another's stories says whose.
 | Clean-up, recoveries, kept history (`WorkspaceBranches.tsx`, `WorkspaceTidied.tsx`, `WorkspaceRecoveries.tsx`, `KeptHistory.tsx`) | A workspace's Branches tab; Details | What the look cleaned, what is kept aside, what may be cleared | Asks once; lists what goes and what stays | — | `WorkspaceRecoveries` has no story |
 | Set up for agents (`SetUpForAgents.tsx`) | A repository not adopted (`ProjectPage.tsx:237`, LAYOUT8) | Its plan, then *Set it up* | Stories in `ProjectPage` | — | Its run is a quest's session; nothing in place says its phases |
 | The Workflow tab (`WorkflowTab.tsx`, `WorkflowChart.tsx`) | A repository's and a workspace's page (`ProjectPage.tsx:272`, `WorkspaceView.tsx:350`) | The current workflow as a rail of steps | Read-only, a list for the keyboard, nothing fixed-width | — | A rail where a flow is meant (FLOWCHART1) |
-| A teammate's ask, an ask's review choice, conflicts (`TeammateAskPage.tsx`, `AskReview.tsx`, `Conflicts.tsx`) | Quests' main area (`AsksPart.tsx:358`, `AskPage.tsx:442`) | A teammate's ask read only; the review environment an ask chooses; conflicts | Read-only where it is not the person's | — | None has a story of its own |
+| A teammate's ask, an ask's review choice, conflicts (`TeammateAskPage.tsx`, `AskReview.tsx`, `Conflicts.tsx`) | Quests' main area (`AsksPart.tsx:358`, `AskPage.tsx:442`) | A teammate's ask read only; the review environment an ask chooses; conflicts | Read-only where it is not the person's | The review choice's refusal is a toast (`AsksPart.tsx:338-341`) | None has a story of its own |
+| An ask's kind of work (`asks/AskWorkflowKind.tsx`) | An ask's page, its *kind* section (`AskPage.tsx:446-452`) | The kind the person chose and each proposal its intake kept, with *Apply* (WORKFLOW1i-c) | A proposal never applies itself (D74); *Apply* only while the ask is live | *Apply*'s refusal is a toast (`AsksPart.tsx:342-345`), never said at the proposal (§4) | Drawn only inside `AskPage`'s stories (`KindProposed`, en and zh), at one width |
+| An ask's lines of work (`asks/AskLines.tsx`) | An ask's page, its *sessions* section (`AskPage.tsx:517-522`) | One line per repository's line of work: its parts counted, its leading part's word, a door into Sessions (SESSONE1c) | A door only where Sessions is; a word it lacks said as recorded | — | No story: no `AskPage` story hands it lines |
+| A quest's closure states (`quests/QuestStatus.tsx`) | Wherever a quest's status is drawn off its page: the chain, the map's detail, an ask's work, a session's relations, Overview; `QuestList.tsx:158` reads the same | *submitted* for a closure graph's quest whose work is ready, and *source reopened* beside it (FABRIC-CLOSE1d2) | The pill keeps its status's tone, since a submission is not a status (§E5) | — | No story of its own: *submitted* changes what a list reads as done, and no story shows it or *source reopened* |
 | The workspace switcher (`app/WorkspaceSwitcher.tsx`) | The status bar's scope item | Which circle the console looks at | Absent with one workspace; stories | — | None found |
 
 **Built with no screen**
@@ -124,18 +129,22 @@ story has none of its own; one drawn inside another's stories says whose.
    rounds: each is a process the person started and waits on, and none says where it is or for how long. Two built
    screens already do it right: the held call (`PermissionAsks.tsx:161-163`) and the running call (WAITSAY1).
 3. **A refusal as a toast.** A refused sign-in start closed its panel and toasted (`harnessRuns.tsx:194-199`, until
-   CODEXSIGNIN2 said it in the panel); a pause's change refused on Setup or Driver toasts (`DriverDomain.tsx:257`); full
-   access's own confirmation has no place to say one. The language says it in the form, whole, for a start and for a confirm
+   CODEXSIGNIN2 said it in the panel); a pause's change refused on Setup or Driver toasts (`DriverDomain.tsx:257`); an ask's
+   *Apply* and its review choice toast (`AsksPart.tsx:338-345`); full access's own confirmation has no place to say one. The language says it in the form, whole, for a start and for a confirm
    (§4); the newer screens did not carry it to every press, and each fix so far was one screen's.
 4. **A process said as words.** The work state is read in four places and drawn as lines in each; the milestone's four facts
-   are a sequence set as a list; the workflow rail is the only drawn process (FLOWCHART1).
+   are drawn whole under the record head, with no disclosure; the workflow rail is the only drawn process (FLOWCHART1).
 5. **A surface with no door.** Brainstorms and meetings have no place, the heavy slot no line, a session's access no fact on
    its head.
 6. **Stories at one width, and organisms with none.** The sign-in panel, *What it has*, the milestone, sessions' access,
-   recoveries, a teammate's ask, an ask's review choice and the commit graph have no story of their own.
+   recoveries, a teammate's ask, an ask's review choice, an ask's lines of work, a quest's closure states and the commit graph
+   have no story of their own; an ask's kind of work is drawn only inside its page's, at one width. Where a story sets a
+   width, it is a local decorator (`mainAt`, `WorkspacePage.stories.tsx:310`, `WorkflowTab.stories.tsx:15`), and only a
+   handful draw the main area's 400 px floor (an agent's page, a workspace's branches and workflow).
 7. **The window's width inside a region.** `md:` in three forms and `max-sm:` in the side bar's *What it has*, where the
    frame model §3b says a region lays out by its own width.
-8. **The record head grew.** UX7 measured the conversation at most 200 px down; five blocks joined above it since.
+8. **The record head grew.** UX7 measured the conversation at most 200 px down; five blocks joined above it since, and the
+   milestone among them is never folded.
 
 ## 2. The rules the audit shows are missing
 
@@ -148,12 +157,14 @@ the access feature's, R4 by the milestone's, R5 by the first meeting feature.
 
 *Amends §4, Forms and settings: "a setting is a row", "a form is sized to what it holds".*
 
-- **A card's rows share one label track.** The track is the widest of the card's labels, at least 12rem and at most 22rem;
-  the value column is the rest. Every row's value starts at the track's edge, so a short value (a switch, a number, a pill,
+- **A card's rows share one label track.** The track is the widest of the card's labels, between a floor and a cap; the
+  value column is the rest. The bounds are set by UIFIT1 from its shots of the English and Chinese labels at the window's
+  widths: 12rem and 22rem are this design's starting proposal, not its decision, since no window was looked at. Every row's value starts at the track's edge, so a short value (a switch, a number, a pill,
   a size) sits beside its words and the values of a card form one column the eye runs down. A long value (a path, a list, a
   sentence) takes the value column's width. The row's own acts (*Open*, *Edit*, *Clear*) follow its value, never the pane's
-  far edge. The hint (the terminal twin) and the ⓘ stay under and beside the label; a row's notice sits in the value
-  column, under the value it is about.
+  far edge, so a control's own `justify-end` wrapper goes with the row's (`SetupParts.tsx:122` nests one). The hint (the
+  terminal twin) and the ⓘ stay under and beside the label; a row's notice sits in the value column, under the value it is
+  about, where today it spans both (`ui.tsx:1477`). `SettingRow` stays the one row: the card's list hands it the track.
 - **Below 32rem of the card's own width** the track goes: the value goes under its words at the card's full width, as WSR4's
   26rem row did. The floor moves from the row to the card because the track is the card's.
 - **What the right of a wide card holds is what its values need.** Nothing is stretched to fill it: a card of short values
@@ -161,56 +172,79 @@ the access feature's, R4 by the milestone's, R5 by the first meeting feature.
 - **A form is sized to its content up to the pane.** Each field by what it holds: a number 4.5rem, a name 16rem, a branch
   pattern 20rem, an address, a command or a folder the rest of the form's width. The form lays out by its own container,
   never the window's, and nothing caps it below the pane: the 40rem and 48rem caps go. A form of rows (heavy gates, rules,
-  favourites) keeps its columns while its container holds them and stacks each row below its floor.
+  favourites) keeps its columns while its container holds them and stacks each row below its floor, by a container query of
+  its own: removing a cap is not the rule, and a fixed column (the heavy gates' `8rem` ones, `HeavyGates.tsx:158`, which
+  never stack) yields to its container.
 - **Cards are 16 px apart, set once by the domain's container.** A card sets no outer margin of its own. 16 px is the scale's
   step; the `mt-3.5` cards wear today is 14 px, which is not on it.
 - **Why:** at the wide pane a value at the far edge is read by crossing a gulf, and a capped form leaves half the pane to a
-  form that wants it; neither is visible in a story drawn at 46rem. **Check:** `SettingList`'s test reads every row's value
-  starting at the track's edge in a wide container and under its words in a narrow one; `tokens.test.ts` fails on an outer
-  margin on a `Card` and on a `max-w-[…rem]` on a form; the stories of R6.
+  form that wants it; neither is visible in a story drawn at 46rem. **Check:** the geometry in a rendered browser, since the
+  unit runner's jsdom lays nothing out (`vite.config.ts:29`, with `css: false`; `ResizeObserver` stubbed, `test/setup.tsx:34`)
+  and a class proves no alignment: a Playwright check over the page at the wide and the narrow width reads each row's value
+  box starting at the track's edge, and under its words at the narrow one. `SettingList`'s unit test holds its structure
+  only; `tokens.test.ts` fails on an outer margin on a `Card` and on a `max-w-[…rem]` on a form; the stories of R6; the
+  window.
 
 ### R2. A step that waits says its phase and how long
 
 *Amends §4, after "a step in a task happens where it was started".*
 
-- **Anything the person started and waits on for longer than a moment is a list of its phases, where it was started**: a
-  sign-in, an install or an update, a heavy run, a brainstorm's passes, a meeting's rounds, a set-up for agents, a
-  verification lane once built. The phases done, each with the time it took; the phase now, with how long it has run; the
-  phases to come. One line names the whole's time.
+- **What it covers: a press whose answer is a start, its end arriving later.** Such a process says its phase where it was
+  started: a sign-in (its action answers `started`, then its end as news), a heavy run, a brainstorm's passes, a meeting's
+  rounds, each built by a row of §9. A press answered within its own request is §4's *while it waits it says so*, not a
+  phase list. Today's other such processes keep their present words until a row takes them (§6): an agent's install or pin,
+  the install's update (its standing already says *draining* with what it waits on, *waiting* and *applying*, with no time,
+  `settings/Update.tsx:48-64`), a set-up for agents (a quest's session, whose state the rail says), a verification lane once
+  built.
+- **One line first, the phases behind it.** The line says the phase now with its mark, how long it has run, and the whole's
+  time; a failed phase says its sentence on that line. A disclosure (*n phases*) opens the list: the phases done, each with
+  the time it took, and the ones to come by name. Where the process is its own surface (the sign-in panel, a meeting's page)
+  the list may stand open; in a head, a row or a record (a session's head, the rail, the record head) it is the line alone,
+  since UX7's budget for the record head, the conversation at most 200 px down (`docs/2026-10-05-ux7-design.md:677`), has
+  no room for a list per wait.
 - **A bound is said when one is known, never invented**: *the code expires in 13 min*, *refused by itself in 12 min* (the
   held call's). Where the usual time has been measured (CLAUDESIGNIN1 measures a sign-in's), a phase past it says it is
   *taking longer than usual* and what the usual is; where nothing was measured, it says only its time.
-- **The phases are the driver's**, written where the process runs (its relay, its record) and read by the page; never
-  guessed from a tool's printed words, which stay the fallback for a link or a code a tool prints.
+- **The phases are the driver's**, written with each one's start where the process runs (its relay, its record) and read by
+  the page. A phase is a step the driver performs or observes itself: what happens inside a tool it cannot see (a browser's
+  return) is no phase of its own, and ends when the tool does. Never guessed from a tool's printed words, which stay the
+  fallback for a link or a code a tool prints, read by its shape. An older host that writes no phases draws as today, with
+  the time since the press.
 - **Hues**: the phase now wears the live mark while Daoris or an agent works it (§3: a live mark means something runs); a
   phase that waits on the person is open's hue, theirs alone; a phase that waits on another session or on Daoris is neutral
   and names what it waits on; a failed phase wears the danger ink with its sentence. Done is done's ink. Never hue alone.
 - **Time steps by its own clock**, seconds in the first minute and minutes after, and stops when its phase ends; nothing at
   rest moves (§3, FREEZE1).
 - **Why:** a process that looks the same at five seconds and at five minutes cannot be told from a hung one, and the person
-  stops it or waits for ever. **Check:** `PhaseList`'s stories per state; each holder's test reads its phases from the
-  driver's words in both languages; a fake clock steps the time.
+  stops it or waits for ever; and a list per wait would push a session's conversation off its head. **Check:**
+  `PhaseList`'s stories per state, as the line and opened; each holder's test reads its phases from the driver's words in
+  both languages; a fake clock steps the time.
 
 ### R3. A refusal is said where its action was started
 
 *Amends §4's toast and `InlineConfirm` rules into one rule for every press.*
 
 - **The place a press was made says its refusal, whole, in the driver's sentence**: a setting's change under its row's
-  editor, a mode switch under its chip, a sign-in in its panel at the phase that failed, a list under its *Save* (built). The
-  editor or panel stays open with what the person typed, and the press is offered again.
+  editor, a mode switch under its chip, a sign-in in its panel at the phase that failed, an ask's *Apply* under its proposal
+  and its review choice under its press, a list under its *Save* (built). The editor or panel stays open with what the person
+  typed, and the press is offered again.
 - **A toast is for what has no place to stand in**: the place has gone (the person left it), or the act was started by a door
   that drew nothing (a menu item, a key, the palette). A cancel the person pressed is never said back.
 - **Why:** a toast in the corner reads as about whatever is there, and it closes the form that would let the person try
   again. **Check:** each holder's test refuses a press and reads the sentence beside it, with no toast.
 
-### R4. A process is drawn as a flow where its shape matters, and as phases where its present matters
+### R4. A process is drawn as a flow where its shape matters, as phases where its present matters, and independent facts as facts
 
 *Amends §4 and §5; the flowchart is FLOWCHART1's (D186).*
 
-- **One run, in its place, now**: R2's phase list. **A process's life** (a quest, a session, a unit of work, a workflow's
-  run, landing and clean-up): FLOWCHART1's chart on its record, drawn from the record. This design draws no flowchart.
-- **A state that is one of a sequence is shown in its sequence** where room allows: the milestone's four facts are four
-  phases (§3.7); a run's step is its place on the chart.
+- **One run, in its place, now**: R2's line and its phases. **A process's life** (a quest, a session, a unit of work, a
+  workflow's run, landing and clean-up): FLOWCHART1's chart on its record, drawn from the record. This design draws no
+  flowchart. A run's step is its place on the chart.
+- **A record's standing that is several independent facts is a fact list**, each fact marked by its own value, never drawn
+  as a progression: no fact is done because another is, and none is to come because another is not reached. The milestone
+  is the case (§3.7): its result, clean-up and recovery are separate collections (`milestone.ts:85-97`), and a clean-up
+  completed with nothing kept for recovery is ordinary (`WorkMilestone.test.tsx:30-38`), which a sequence would draw as a
+  recovery done.
 
 ### R5. Every surface is reached from the frame
 
@@ -218,11 +252,15 @@ the access feature's, R4 by the milestone's, R5 by the first meeting feature.
 
 - **No new place on the activity bar**: a tenth is a decision with its own counts (UX6 §8). A newer surface lives in the
   place that holds its thing.
-- **Each surface has**: its place and its list; a door from *What needs you* when it waits on the person; its verb in one
-  menu and the palette (D152's one table); a door in Ask Daoris or an exemption with its reason (`HelpCoverageTests`); and
-  its terminal twin at its foot. §3.9 tables each.
-- **Why:** a surface reached only by a terminal is a surface the person who reads this application never finds.
-  **Check:** the command table's test and `HelpCoverageTests` name each surface's verb and door.
+- **Each surface has**: its place and its list; a door from *What needs you* when it waits on the person; a door in Ask
+  Daoris or an exemption with its reason (`HelpCoverageTests`); and its terminal twin at its foot.
+- **A verb is reached by what it acts on.** A verb that starts something from no chosen item (*New meeting…*) is in one menu
+  and the palette (D152's one table). A verb on an item (*Sign in* on an account's row) is that item's act and its ⋯ entry,
+  and no palette command of its own. A surface that only says a state (a heavy run's slot, a session's access, where work
+  stands) has no verb: its door is its thing's place. §3.9 tables each, a dash in its menu column being one of the last two.
+- **Why:** a surface reached only by a terminal is a surface the person who reads this application never finds; a command
+  for every surface would fill the palette with verbs that need an item it cannot choose. **Check:** the command table's
+  test names each starting verb, and `HelpCoverageTests` each door.
 
 ### R6. A story shows the widths the frame gives, without help
 
@@ -230,8 +268,9 @@ the access feature's, R4 by the milestone's, R5 by the first meeting feature.
 catalogue.*
 
 - **A main-area organism's stories are drawn at wide, half and narrow**, from one helper (`storyWidths`: 80rem, 39rem and
-  34rem of main area), in English and 中文, light and dark. A side-bar view's at the side bar's floor (300 px) and at 45%
-  of the install's window.
+  25rem of main area, narrow being the main area's 400 px floor, `CENTRE_FLOOR`, `work/layout.ts:47`), in English and
+  中文, light and dark. The helper replaces the local `mainAt` and `at` decorators stories carry today. A side-bar view's at
+  the side bar's floor (300 px) and at 45% of the install's window.
 - **No decorator adds what the page does not have**: a gap, a cap, a padding. A domain's cards are drawn in the domain's own
   container.
 - **An organism that holds a hook splits a molecule for its states**, so every state has a story: the sign-in panel becomes
@@ -243,11 +282,15 @@ catalogue.*
 
 *Amends the frame model §3b ("it lays out by its own width, never the viewport's") from a rule into a check.*
 
-- **No viewport variant inside a region** (`sm:`, `md:`, `lg:`, `max-sm:` and their kin): a container query on the region or
-  the component. The strip and the status bar keep theirs, since both are the window's (the status items at
-  `work/frame.tsx:419-451`).
+- **No viewport variant inside a region** (`sm:`, `md:`, `lg:`, `max-sm:`, `min-[…]:` and their kin): a container query on
+  the region or the component.
+- **What is placed against the window keeps its viewport variants**, by its responsibility, not its file: the strip and the
+  status bar (the status items at `work/frame.tsx:419-451`), the toast viewport that stands beside an open drawer
+  (`design/ui.tsx:1619-1630`, platform-ux's UXTOAST1 rule), a drawer and its scrim. The toasts share `ui.tsx` with atoms a
+  region draws, so a file-level exemption would pass both.
 - **Why:** the side bar and the list narrow a region without the window changing; a form at 630 px of pane kept its three
-  columns because the window was 1546. **Check:** `tokens.test.ts` fails on a viewport variant outside the strip's files.
+  columns because the window was 1546. **Check:** `tokens.test.ts` fails on a viewport variant anywhere but the window's
+  parts, which its allow-list names by component, each with its reason.
 
 ## 3. Each newer surface
 
@@ -309,7 +352,7 @@ reported. **What changes:** the layout of rows, forms and cards (R1). No word ch
 ```
 
 ```
- narrow (540 px), the same card: the track goes, each value under its words
+ narrow (the 400 px floor), the same card: the track goes, each value under its words
 ┌──────────────────────────────────────────────┐
 │ Folders                      [Measure again] │
 │ The Daoris folder                            │
@@ -348,16 +391,20 @@ UIFIT1c:** §9.
 ### 3.2 Signing in
 
 **Place:** under the account's row on an agent's page; *Add an account…*'s second step (UX7 §4.5); under a sign-in row of
-*What needs you* (UX6d). Never a drawer or a toast. **The phases** are the driver's (CLAUDESIGNIN1b's split): written into the
-same relay as the tool's output and read by the page.
+*What needs you* (UX6d). Never a drawer or a toast. **The phases** are the driver's own steps, each written with its start
+into the same relay as the tool's output and read by the page. **The record comes first:** today a console line carries
+only its sequence and its text (`bridge/console.ts:23`), and the action answers `started`, then its end as news
+(`bridge/agents.ts:136-164`), so the row builds the phase events before the panel draws them. The driver sees the tool's
+process start and exit, then runs its own read of who signed in and its own write of the lists (`AgentActions.cs:325-350`):
+those are the phases. What the tool does with the browser in between is one phase that ends when the tool exits. An older
+host sends no phases, and the panel draws as today, with the time since the press.
 
 | Phase | Says, while it is the phase now | Ends when |
 |---|---|---|
-| Starting {tool} | — | the tool's process is up |
-| Waiting on your browser | the link with *Copy link*, opening in the system's browser; or, for a device code, the code with *Copy code* and when it expires | the tool reports the browser's return, or asks for the code |
-| (Codex's device code, or a pasted code) Entering the code | the box, focused, and *Continue* | the code is sent |
-| Checking who signed in | — | `auth status` answers |
-| Joining the lists | — (for *Add an account…*, step 3 follows: its name and lists) | the roster reads the account |
+| Starting {tool} | — | the driver has the tool's process up |
+| Waiting on your browser | *Waiting for the tool to open the page…*; then the link with *Copy link*, opening in the system's browser, or for a device code the code with *Copy code* and when it expires; where the tool asks for a code, the box, focused, with *Continue*. The link, the code and the ask are read from the tool's output by their shape (CODEXSIGNIN3), the fallback R2 keeps: none is a phase | the tool's process exits |
+| Checking who signed in | — | the driver's own read of who signed in answers |
+| Joining the lists | — (for *Add an account…*, step 3 follows: its name and lists) | the driver has written the lists |
 
 ```
  wide, Claude Code's page, account-2's row, signing in (1 min 12 s)
@@ -408,7 +455,6 @@ same relay as the tool's output and read by the page.
 |---|---|---|
 | `signin.phase.start` | Starting {{tool}} | 正在启动 {{tool}} |
 | `signin.phase.browser` | Waiting on your browser | 等你在浏览器中完成 |
-| `signin.phase.code` | Entering the code | 输入代码 |
 | `signin.phase.who` | Checking who signed in | 正在确认登录的是谁 |
 | `signin.phase.lists` | Joining the lists | 正在加入列表 |
 | `signin.device.enter` | Open the page and enter this code: | 打开页面并输入这个代码： |
@@ -429,10 +475,12 @@ when its phase changes, not each second. **Themes:** the marks are §3's: done's
 person's phase, danger ink for a failed one. **Narrow:** the head's time moves under the title; the link truncates in the
 middle with the whole on *Copy link*.
 
-**What changes in the existing rows:** CLAUDESIGNIN1b is one feature built end to end by one builder (D187), not split at
-the driver and page seam as its row says: the driver writes the phases, the page draws them through `PhaseList`, and `SignIn`
-splits over `SignInSteps`, a molecule with a story per state above; its "UX7 §4.5 note first" is this section. CODEXSIGNIN2's
-refused panel, merged, becomes the list's *Refused at the start* state, keeping its words and its two presses.
+**What changes in the existing rows:** CLAUDESIGNIN1b (the backlog holds it inside SIGNIN1) is one feature built end to end
+by one builder (D187), not split at the driver and page seam as its row said: the driver writes the phases, the page draws
+them through `PhaseList`, and `SignIn` splits over `SignInSteps`, a molecule with a story per state above; its "UX7 §4.5 note
+first" is this section. CODEXSIGNIN2's refused panel, merged, becomes the list's *Refused at the start* state, keeping its
+words and its two presses. The panel is the sign-in's own surface, so its list stands open (R2); the row under *What needs
+you* says the line alone.
 
 ### 3.3 Sessions' access and the call held for the person
 
@@ -444,8 +492,12 @@ refused panel, merged, becomes the list's *Refused at the start* state, keeping 
   editor (R3: `Inheritable` gains a refusal line, as `HeavyGates` has).
 - **A session's head says its access** (D184 point 1, kept on its record and shown nowhere): where it started under full
   access, its facts line wears the plain warning chip Ask Daoris's full access wears, *Full access*; its *Details* lists each
-  pause as it started (*Permission prompts: asking · Landing: your Accept*). A session started under today's defaults says
-  nothing more, so an untouched start reads as it did.
+  pause as it started (*Permission prompts: asking · Landing: your Accept*). A session whose pauses were not all open wears
+  no chip, so an untouched start reads as it did.
+- **Only what the record keeps.** The record holds each pause and its value as the driver resolved them at the start
+  (`data/api.ts:433-438`), and nothing of where each was set, nor whether it was this machine's default. So *full access* is
+  `isFull` over the recorded pauses (`settings/Access.tsx:75-77`: a pause the page does not know is never read as open), and
+  *Details* says each pause's value as recorded, never where it was set: today's settings are never read into an old record.
 - **The held call** keeps its shape (`PermissionAsks`), the exemplar of R2: what is asked, how long it has waited, the bound,
   a press per choice, a status, a refusal in place. PERMUNTIL1 takes its bound from the driver; PERMANCHOR1 leads it to its
   call in the conversation.
@@ -460,9 +512,9 @@ refused panel, merged, becomes the list's *Refused at the start* state, keeping 
 
 | State | Shows |
 |---|---|
-| Today's defaults | Nothing on the head; *Details* says *as this machine's defaults* |
+| Not every pause open | Nothing on the head; *Details* lists each pause and its value as recorded |
 | Full access | The chip on the facts line; *Details* lists every pause open |
-| Some pauses changed | No chip; *Details* lists each pause and where it was set |
+| A pause the page does not know | Listed by its name and value as recorded; never counted as open |
 | A record from before | *Details* says *not recorded* |
 | Setup, a change refused | The sentence under the row; the editor open |
 
@@ -471,7 +523,6 @@ refused panel, merged, becomes the list's *Refused at the start* state, keeping 
 | `work.access.full` | Full access | 完全访问 |
 | `work.access.details` | Access | 访问权限 |
 | `work.access.asStarted` | {{pause}}: {{value}} | {{pause}}：{{value}} |
-| `work.access.defaults` | As this machine's defaults | 按本机的默认 |
 | `work.access.notRecorded` | Not recorded | 未记录 |
 
 **Keys:** the chip is text, not a control; *Details* is the head's fold. **Themes:** the chip's warning line and icon, never
@@ -482,8 +533,10 @@ red (full access is a choice, not an outcome, §3). **Narrow:** the facts line w
 **Place:** the panel's composer bar (the chip), its *What it has* view, and Settings → AI features. The screen's name for
 the place stands, *AI features* (AI 功能); D183 point 2's *Daoris's own AI* is the card's description there, not a place.
 
-- **One confirmation.** Full access is asked through `InlineConfirm` (warning tone), carrying the servers it would add as its
-  body and when it takes effect; it says it waits, and a refusal is said inside it (§4). `FullAccessConfirm` goes.
+- **One confirmation.** Full access is asked through `InlineConfirm` in a warning tone, which it gains beside its danger and
+  primary ones (`InlineConfirm.tsx:183-184`), carrying the servers it would add as its body and when it takes effect; it says
+  it waits, stays open until the driver answers, and a refusal is said inside it (§4). Today's confirm closes before the
+  answer (`useModeChoice`'s `enable`, `HelpModePicker.tsx:33-36`). `FullAccessConfirm` goes.
 - **The chip keeps its chevron.** A value picked from a short menu is drawn as `SelectField` is, its chevron included; §4's
   *an arrow is a direction, never a menu* is about a region's menu, which is ⋯ (an amendment of wording, §8). A switch the
   driver refuses is said under the chip, in the composer bar (R3).
@@ -531,12 +584,21 @@ form.
 **Place:** a repository's Setup (the list, built); the session that runs or waits (new); the repository's Details (new).
 What runs the gates and holds the slot is the driver's (`daoris-driver run-heavy`, HEAVYRUN1a); the page reads it.
 
+**The record comes first.** The holder's record keeps its process, its gates, since when and the session its environment
+named, where one did (`HeavySlot.cs:8-20`); it keeps neither the gate it runs now nor who waits. A gate's start goes to the
+run's output (`HeavyRun.cs:246-256`), and a waiter only looks again. So HEAVYSLOT1 builds the record before the screens: the
+holder rewrites its record at each gate with that gate and its start, and each waiter keeps a record of its own beside the
+slot, gone as it takes the slot or ends. Neither file alone is a hold: the handle is the lock, and a holder that died
+leaves its record behind (`HeavySlot.cs:46-52`, `:181-194`), so a record whose process (its id and its start) is gone holds
+nothing and waits for nothing. A holder whose environment named no session (a run from a terminal) is said as *a run from a
+terminal*, with no door.
+
 - **Setup:** the list as built, its editor laid out by R1's form rule (the narrow wireframe in §3.1). The moves keep ˄ and ˅,
   since each moves one way (§4).
 - **The session running its heavy gates** says, in place of *running daoris-driver run-heavy for 6 min*, the gates as
-  phases: on the rail's line *heavy gates · 2 of 3 · test:web · 6 min*, and on the head's facts line the same, opening to the
-  phase list in *Details*. A gate that failed is said with its exit and its sentence as recorded; the session's turn goes on
-  reading it, as the agent does.
+  phases: on the rail's line *heavy gates · 2 of 3 · test:web · 6 min*, and on the head's facts line the same, R2's line,
+  opening to the phase list in *Details*. A gate that failed is said with its exit and its sentence as recorded; the
+  session's turn goes on reading it, as the agent does.
 - **The session waiting for the slot** says *waiting for the heavy run · behind {session} · 3 min*, neutral (it waits on
   another session, not on the person), its *{session}* a door to that session. It is never a row of *What needs you*.
 - **The repository's Details** gains one row, *Heavy run*: who holds the slot and at which gate, for how long, and how many
@@ -564,6 +626,8 @@ What runs the gates and holds the slot is the driver's (`daoris-driver run-heavy
 | None set | Setup: *No heavy gates set here*, *Add heavy gates*; the repository's file's rule said |
 | The repository's file wins | Setup says so, with no editor (built, HEAVYRUN1b2c) |
 | Running, gate i of n | The session's line and head; Details' row |
+| Held by a run from a terminal | Details' row says so, with no door; a waiting session's line says *behind a run from a terminal* |
+| A record left by a holder that died | Nothing: the slot is free, and the next run ends what it named (HEAVYRUN1a) |
 | Waiting behind another | The waiter's line, neutral, the holder a door; the holder told (HEAVYRUN1b3) |
 | A gate failed | Its exit and sentence on the head's phase list; the line says *heavy gates failed at {gate}* |
 | A list refused | Under *Save* (built) |
@@ -576,6 +640,7 @@ What runs the gates and holds the slot is the driver's (`daoris-driver run-heavy
 | `projects.heavy.slot` | Heavy run | 重型检查运行 |
 | `projects.heavy.none` | No heavy run now | 当前没有重型检查在运行 |
 | `projects.heavy.waits` | {{count}} waits: {{sessions}} | {{count}} 个在等：{{sessions}} |
+| `projects.heavy.terminal` | a run from a terminal | 从终端发起的一次运行 |
 
 **Keys:** the holder and the waiters are doors (Enter opens the session); the rail's keys are unchanged. **Themes:** live
 mark for the running gate; neutral for the wait. **Narrow:** the line wraps after its separators; the gate's name is cut
@@ -594,33 +659,50 @@ engine* (or *brainstorm · …*). The ⋯'s *by repository* puts a meeting under
 **Starting one** follows New conversation (D162), not a drawer: Workspace › *New meeting…*, the rail's `＋` (*New
 conversation* first, then *New meeting…*), the palette, and Ask Daoris's door. Sessions' main area shows the composer: the
 question in the person's words, *Talk · Brainstorm* (a segmented choice), the agents (a chip per maker, two at first, the
-account by the walk, D125, never chosen here), the repository (a chip; *no repository* asks the question alone), the
-attachments by the composer's carry, and for a brainstorm its criteria in words (optional). Its press is *Assemble the
-context*: it spends nothing, makes the packet and opens the meeting's page on it.
+account by the walk, D125, never chosen here), and the repository (a chip; *no repository* asks the question alone). A
+meeting's request holds its question, its repository and its agents, and nothing else (`MeetingFiles.cs:7-9`), so the
+composer offers no attachments and no criteria until a row gives the request and the packet a place for them (§6). Its
+press is *Assemble the context*: it spends nothing, makes the packet and opens the meeting's page on it.
 
 **The meeting's page** (the main area): UX7's head, then the phase list, then the packet, then the transcript or the
 document.
 
 - **Head:** its state's pill and its question's first line; its facts line *Talk* or *Brainstorm*, the agents, the
-  repository, *round 1 of 2*; its loud act by state (*Send to 2 agents* while the packet waits; *Stop…* while a round or a
-  pass runs; *Send round 2* when the first ended); ⋯ with *Copy ID* and *Clear from this machine…* (asks once, D153).
-- **Phases** (R2): for Talk, *Context assembled → Shown to you → Round 1: Claude Code, Codex → Round 2 (by your press)*, each
-  agent's turn a phase with its time; for a brainstorm, *Context assembled → Shown to you → Proposals: Claude Code, Codex →
-  Synthesis → Challenge → Document*. A pass that stalled, failed or met a limit says so at its phase, by code, in words.
+  repository, *round 1*; its loud act by state (*Send to 2 agents* while the packet waits; *Stop…* while a round or a pass
+  runs); ⋯ with *Copy ID* and *Clear from this machine…* (asks once, D153).
+- **Round 2 is an act, never a phase to come.** A meeting holds a second round only by the person's press, and no more
+  (`MeetingPacket.cs:40-41`), so once the first round ends the head offers *Send round 2* as its next act, its packet shown
+  first; the phases say nothing of a round not sent.
+- **Phases** (R2): for Talk, *Context assembled → Shown to you → Round 1: Claude Code, then Codex*, each agent's turn a phase,
+  in the order the turns run, one at a time (`DriverMeetings.cs:14-17`); for a brainstorm, *Context assembled → Shown to
+  you → Proposals: Claude Code, Codex → Synthesis → Document*, with *Challenge* before the document once BRAINSTORM1e runs
+  one. A pass that stalled, failed or met a limit says so at its phase, by code, in words.
+- **Each phase's time comes from a record.** A pass record keeps its role, who ran it, its state, its codes and its turns,
+  and no time (`BrainstormDocument.cs:6-13`), so MEETUX1a adds a start and an end to each pass record (fields added beside
+  the old; a record from before says no time). A round's start is its state's own time (`MeetingFiles.cs:11-17`), and *Sent
+  14:02* the send's (`:140`).
 - **What the agents will read** (the packet, D176 point 2): the tier that found its sources (*meaning*, *words*, *files*),
-  the question, the constraints, the attachments, then each source (its kind, its path and lines, the revision it was read
-  at, why it was taken, *kept 4,000 of 12,000 characters*), each with *Leave out*; *Add a file…*; *Left out*, folded, with why.
-  A change makes a new packet, said as such. Once sent it is read-only: *Sent 14:02 to Claude Code and Codex*. A refreshed
-  packet for round 2 says what it adds beyond the first (D177 point 2).
+  the question, then each source (its kind, its path and lines, the revision it was read at, why it was taken, *kept 4,000
+  of 12,000 characters*); *Left out*, folded, with why. A packet is frozen once per round and named by its digest, and the
+  send names that digest (`MeetingPacket.cs:18-29`): no verb revises one, so the page offers no *Leave out* and no *Add a
+  file…* (§6). Once sent it is read-only: *Sent 14:02 to Claude Code and Codex*. A refreshed packet for round 2 says what it
+  adds beyond the first (D177 point 2).
 - **The transcript** (Talk): a section per round; each message its maker's mark and agent's name (the account on this machine
-  only), when, and its words as written. A turn that did not answer is said in its round's line.
+  only), its turn's end once pass records keep one (a message has no time of its own, `MeetingPacket.cs:12-16`), and its
+  words as written. A turn that did not answer is said in its round's line. **Turns answer the packet, never each other in
+  the round**: no turn reads another's message of its round, which reaches the others in the next round's packet
+  (`DriverMeetings.cs:19-21`), so a round is drawn as each turn's answer to the packet, in turn order, never as a reply
+  thread.
 - **The document** (Brainstorm, D176 points 3–6): its coverage first (*2 makers answered: Claude Code, Codex*, or *one maker
   answered: this is no cross-maker brainstorm*); then the ranked groups, each its rank, title, merged idea and why the
   synthesis ranked it (*the synthesis's claim*), its flags as chips (*hard to reverse*, *risky*), how many makers named it,
-  its members folded with each proposal's fields, and the challenge's findings beside it as claims (*stands*, *weakened*,
-  *unsupported*, *unknown*); a required challenge that did not finish holds its group out of the ranking, *not challenged*,
-  with *Challenge again* (a new spend, said as one) and *Rank it unchallenged*. Then what was left out with why, and what the
-  passes needed that the packet lacked, with *Add to a new packet*. Its foot: *Copy as Markdown* and *Attach to a new ask…*.
+  its members folded with each proposal's fields. Once BRAINSTORM1e records them, the challenge's findings stand beside it
+  as claims (*stands*, *weakened*, *unsupported*, *unknown*); a required challenge that did not finish holds its group out of
+  the ranking, *not challenged*, with *Challenge again* (a new spend, said as one) and *Rank it unchallenged*. Today's
+  document holds no challenge (`BrainstormDocument.cs:43-50`) and the verb offers ask, show, send, stop, clear and list
+  (`BrainstormCommand.cs:13-16`): the findings and both presses are BRAINSTORM1e's to give the driver first. Then what was
+  left out with why, and what the passes needed that the packet lacked. Its foot: *Copy as Markdown* and *Attach to a new
+  ask…*.
 - **The side bar** for an attended meeting: the console a tab per turn running (CONSOLE2); the timeline its rounds; the review
   says *a meeting changes no files* (no box where nothing listens).
 
@@ -636,9 +718,9 @@ document.
 │  │  ● Fix the FTS index's …     │ What the agents will read                                                    │
 │  │ ▾ Ended                  12  │ Question  Should the index move to SQLite FTS5? …                            │
 │  │                              │ Sources   decision  docs/decisions/D24.md:1-40 · at 02632075f · "tier"       │
-│  │                              │           kept 4,000 of 9,812 characters                       [Leave out]   │
-│  │                              │           knowledge .claude/knowledge/model-decoupling.md · …  [Leave out]   │
-│  │                              │           [Add a file…]   ▸ Left out (2)                                     │
+│  │                              │           kept 4,000 of 9,812 characters                                     │
+│  │                              │           knowledge .claude/knowledge/model-decoupling.md · …                │
+│  │                              │           ▸ Left out (2)                                                     │
 └──┴──────────────────────────────┴──────────────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -666,12 +748,11 @@ document.
  narrow, Talk, round 1 running
 ┌──────────────────────────────────────────────┐
 │ ● Working  Which of the two retry shapes …   │
-│ Talk · Claude Code, Codex · round 1 of 2     │
+│ Talk · Claude Code, Codex · round 1          │
 │ [Stop…] ⋯                                    │
 │ ✓ Context assembled   ✓ Sent 14:02           │
 │ ● Round 1: Claude Code  ✓ 3 min              │
 │            Codex        ● 1 min 20 s so far  │
-│ ○ Round 2 (by your press)                    │
 │ Round 1                                      │
 │ CC Claude Code · 14:05                       │
 │    <its words, as written>                   │
@@ -685,10 +766,11 @@ document.
 | Waiting for your send | The packet, *Send to N agents* loud, open's hue | *What needs you*: a row whose door is the page (reading first, never *Send* from the row) |
 | Waiting for the driver | *Nothing drives here now: it starts when Daoris drives this home* (the verb's own wait, D176 point 1) | — |
 | Running | The phase now, its time; *Stop…* | The rail under *Working* |
-| Round ended | The next round's packet frozen and shown, with what it adds; *Send round 2* | *What needs you*, as *Waiting for your send* |
+| Round 1 ended | The next round's packet frozen and shown, with what it adds; *Send round 2* offered as the next act, which the person may leave unpressed | *What needs you*, as *Waiting for your send* |
+| Round 2 ended | The transcript whole; no further round is offered (two at most) | — |
 | An agent's ask for a brainstorm | *An agent in {repository} asks for this brainstorm*, the packet, *Send* or *Refuse* (BRAINSTORM1d's `ask`) | *What needs you* |
 | Stopped | What answered kept; *Stopped by you* | — |
-| Interrupted | *Interrupted when Daoris stopped; nothing runs again by itself*, *Run the missing passes* (a new spend, said) | — |
+| Interrupted | *Interrupted when Daoris stopped; nothing runs again by itself*; what answered kept. No verb resumes the missing passes, so none is offered: the same question may be asked again as a new one (a new spend, said) | — |
 | Refused | *Not in this machine's policy* or *No agent could answer*, with the codes in words | — |
 | Done, partial | Coverage first, then the document | — |
 | Done, unranked | *Unranked: the synthesis did not finish*, with why, the proposals by maker | — |
@@ -702,11 +784,10 @@ document.
 | `meeting.protocol.talk` / `.brainstorm` | Talk / Brainstorm | 交谈 / 头脑风暴 |
 | `meeting.assemble` | Assemble the context | 整理上下文 |
 | `meeting.packet.title` | What the agents will read | 智能体将读到的内容 |
-| `meeting.packet.leaveOut` | Leave out | 不纳入 |
 | `meeting.packet.left` | Left out | 已排除 |
 | `meeting.packet.kept` | kept {{kept}} of {{total}} characters | 保留 {{total}} 个字符中的 {{kept}} 个 |
 | `meeting.send` | Send to {{count}} agents | 发给 {{count}} 个智能体 |
-| `meeting.round` | Round {{n}} of {{total}} | 第 {{n}} 轮，共 {{total}} 轮 |
+| `meeting.round` | Round {{n}} | 第 {{n}} 轮 |
 | `meeting.sendRound` | Send round {{n}} | 发送第 {{n}} 轮 |
 | `meeting.waitDriver` | Nothing drives here now: it starts when Daoris drives this home | 现在没有驱动在这里运行：Daoris 驱动这个主目录时它才开始 |
 | `meeting.interrupted` | Interrupted when Daoris stopped; nothing runs again by itself | Daoris 停止时中断；不会自行重新运行 |
@@ -725,7 +806,7 @@ document.
 the document counts makers and the glossary names none.
 
 **Keys:** the rail's ↑ ↓ and Enter open a meeting as they open a session. On the page, Tab runs the head's loud act, the
-phases (read, not pressed), each source's *Leave out*, *Add a file…*, then the rounds or the groups; each round and group is a
+phases (read, not pressed), *Left out*'s fold, then the rounds or the groups; each round and group is a
 section with a heading, reached by a reader's heading keys; F6 moves between regions. *Send* has no key: it spends (UX7
 §7's rule for an act a slip must not reach). **Themes:** waiting for the person in open's hue; a running pass's live mark;
 flags in the warning line, never red (a flag is a claim from the fields, not an outcome); a maker's mark by its two letters
@@ -743,37 +824,49 @@ and a blocked clean-up, built as rows), the line under a tidied branch (built), 
 answer. The unit's whole life, its nodes and wires, is FLOWCHART1's chart (FABRIC-GRAPHVIEW1's running view, the fabric
 design §E8); this section is its present tense.
 
-- **The milestone is a phase list** (R4): *End reached → Result kept → Clean-up → Recovery kept*. Each phase its sentence as
-  today (the driver's clauses as recorded); the end's proof and time on the first; the clean-up *pending* is the phase now,
-  with what waits and why, a blocked entry in the danger ink; *completed* is done; the recovery's *kept until* is a bound
-  (R2), the earliest date the person must act by. A held plugin step's attempt sits under the phase it holds.
-- **The record head keeps its budget.** UX7's 200 px is measured again with the parts strip, *Accept*, the relations, the
-  channel and the milestone; what passes it folds to one line (the milestone to its `MilestoneLine`, *ended · clean-up
-  pending · recovery until 3 Nov*), opening in place.
+- **The milestone is four facts, never a sequence** (R4): *End*, *Result*, *Clean-up*, *Recovery*, each marked by its own
+  value with `Dot`'s tones (§4) and said as today in the driver's clauses as recorded. The end is *reached* with its proof
+  and time, or *not reached* with the driver's why, or *handed*, *dropped* or *unknown* by its own word, an unknown end never
+  read as reached. The result is what was kept, or *nothing kept*. The clean-up is *pending*, with what waits and why and a
+  blocked entry in the danger ink, or *completed*, with what went. The recovery is kept until a date, a bound (R2) and the
+  earliest the person must act by, or *nothing kept*, which wears no done mark: no fact is marked because another is. A held
+  plugin step's attempt stays its own row under them (`WorkMilestone.tsx:98-105`).
+- **Folded to its line by default, opened in place.** `MilestoneLine`'s *ended · clean-up pending · recovery until 3 Nov*
+  heads it with a disclosure, and gains *blocked* when a clean-up entry is blocked and *held* when an attempt is held, so
+  nothing that waits on the person hides behind the fold. Today the facts draw whole under the record head
+  (`AttendedSession.tsx:289`), the one block there with no fold.
+- **The record head keeps its budget.** UX7's 200 px is measured again with every block present (the parts strip, *Accept*,
+  the relations, the channel and the milestone's line), in a rendered browser, since jsdom measures nothing; what passes it
+  folds to one line, opening in place.
 
 ```
- half, the attended session's record, the milestone open
+ half, the attended session's record, the milestone opened from its line
 ┌────────────────────────────────────────────────────────────────┐
-│ Where this work stands                                       ˄ │
-│ ✓ End reached     merged into main at 3f9a12c · 14:02          │
-│ ✓ Result kept     the branch's commits on main                 │
-│ ● Clean-up        pending: the tree waits for its session's    │
-│                   last turn                                    │
-│ ○ Recovery kept   the moved-aside folder until 3 Nov           │
+│ ended · clean-up pending · recovery until 3 Nov              ˄ │
+│ End        ● reached: merged into main at 3f9a12c · 14:02      │
+│ Result     ● kept: the branch's commits on main                │
+│ Clean-up   ● pending: the tree waits for its session's last    │
+│              turn                                              │
+│ Recovery   ● kept until 3 Nov: the moved-aside folder          │
 └────────────────────────────────────────────────────────────────┘
+ each ● is that fact's own tone and word: done's ink for reached and kept, the waiting tone for pending, the danger
+ ink for a blocked entry, none for nothing kept
 ```
 
 | State | Shows |
 |---|---|
-| Not reached | The first phase now: *not reached*, with the driver's why |
-| Reached, clean-up pending | Two done, the third now with what waits |
-| Blocked | The clean-up's blocked entry in the danger ink; *What needs you* holds its row |
-| Completed | Four done; folded to its line by default |
-| Dropped or handed | The end's own word (*dropped*, *handed*), as today |
+| End not reached | *not reached*, with the driver's why; the other facts as they stand |
+| End unknown, handed or dropped | The end's own word, as today; never *reached* |
+| Clean-up pending | Its waits and why, each by its own value |
+| Clean-up blocked | The blocked entry in the danger ink; the line says *blocked*; *What needs you* holds its row |
+| Clean-up completed | What went; the recovery says what it keeps until when, or *nothing kept*, unmarked |
+| An attempt held | Its row under the facts, as today; the line says *held* |
 | No unit (a chat, a record from before) | Nothing drawn |
 
-No word is new: `work.milestone.*` stand. **Keys:** the fold is a disclosure button; the phases are a list. **Themes and
-narrow:** the phase marks of §4; the label column stacks under 24rem of its own width.
+No word is new but the line's *blocked* and *held* (`work.milestone.line.blocked`, *blocked* / 受阻;
+`work.milestone.line.held`, *held for you* / 等你处理); `work.milestone.*` stand. **Keys:** the fold is a disclosure
+button; the facts are a description list. **Themes and narrow:** `Dot`'s tones (§4); the label column stacks under 24rem of
+its own width.
 
 ### 3.8 Pushed state
 
@@ -781,7 +874,11 @@ No surface: D182 moves where the page's data comes from, not what it shows. Thre
 
 - **A slice not yet judged is loading, never empty**: skeleton rows, never an empty state's sentence. *Nothing needs you*
   drawn before the attention slice is judged is a false statement.
+- **A view that combines inputs is judged when every one is.** *What needs you* reads over a dozen inputs, each empty by
+  default while unanswered (`AttentionBand.tsx:159-162`), so *Nothing needs you* waits for all of them, never for one.
 - **A resync holds the last render** at the language's reduced opacity until the snapshot lands (§4 *Loading*); nothing jumps.
+  A resync is a state of its own, which the slice keeps while it asks (`bridge/slices.ts:187-204`) and the page reads; a
+  query's fetching is not it.
 - **A partition gone is its item's *gone* state** (the frame model §3b), never a blank main area.
 
 ### 3.9 How each is reached
@@ -798,6 +895,9 @@ by the row that adds its press.
 | Heavy runs | Setup (list); a session (running, waiting); a repository's Details (slot) | — | — | a door to the repository's Details (HEAVYSLOT1's row) | `daoris-driver heavy`, `run-heavy` |
 | Meetings and brainstorms | Sessions, the rail; its `＋` | waiting for your send; an agent's ask | Workspace › New meeting…; the palette | a door to the composer with its question (MEETUX1d's row) | `daoris-driver meeting`, `brainstorm` |
 | Where work stands | A session's record; a quest's page; Branches | held attempts, blocked clean-ups, as today | — | its answer (FABRIC-MILESTONE1c) | `daoris-driver work state` |
+
+A dash in *Menu and palette* is R5's: a verb on an item, which is that item's act and its ⋯ entry, or a surface that only
+says a state and has no verb.
 
 ## 4. The component catalogue
 
@@ -822,41 +922,49 @@ own), and a component's layer is what it imports. Stories follow R6.
 
 | Part | Layer and home | What it is | Its stories |
 |---|---|---|---|
-| `PhaseMark` | atom, `ui.tsx` | A phase's mark by state: done, now (the live mark), waits on you, waits on another, failed, to come; named in words | Each state, light and dark |
-| `Elapsed` | atom, `ui.tsx` | A span of time stepping by its own clock (seconds, then minutes), stopping when told; never a live region by itself | Under a minute, minutes, hours; stopped |
-| `PhaseList` | molecule, `design/` | R2's list: phases with marks, time, a bound, *longer than usual*, a detail slot under the phase now, a refusal at a failed phase, the whole's time in its head | Starting, waiting on the person, waiting on another, longer than usual, bound, failed at the first and at a middle phase, done; en and zh; light and dark; 300 px and narrow |
-| `SettingList` | molecule, `ui.tsx` | The wide setting row: a card's rows on one label track (12–22rem) with the rule between rows; below 32rem of its own width, stacked; `SettingRow` keeps its props | Short values, a path, a notice, a long label, a row with acts; at wide, half and narrow; en and zh |
-| `FormGrid` | molecule, `ui.tsx` | A form laid by its own width: fields by kind (`number`, `name`, `pattern`, `long`), a form of rows stacking each row below its floor | One field, three fields, a list of rows; wide, half, narrow |
+| `Dot` and `DotMark`, extended | atoms, `ui.tsx:386-430` | A phase's or a fact's mark, by the liveness mark that already names its state in words: `live` (now), `parked` (waits on you), `failed`, `ended` and `idle` stand, and `done` and `waits` (on another, neutral) join them. No second mark and no second palette | Each tone, light and dark |
+| `Elapsed` | atom, `ui.tsx` | A span stepping by its own clock and stopping when told, over what exists: `useNow` (`work/useNow.ts:7`, which stops on `null`) and `span` and `elapsed` (`locales/format.ts:111-139`). No second timer and no second formatter; never a live region by itself | Under a minute, minutes, hours; stopped |
+| `PhaseList` | molecule, `design/` | R2's line and its list: the phase now with its mark and time, the whole's time, a failed phase's sentence on the line; behind *n phases*, the phases with their times, a bound, *longer than usual*, a detail slot under the phase now; open by default only on a process's own surface | The line and the list opened; starting, waiting on the person, waiting on another, longer than usual, bound, failed at the first and at a middle phase, done; en and zh; light and dark; 300 px and narrow |
+| `SettingList` | molecule, `ui.tsx` | A layout wrapper, never a second row: it gives a card's `SettingRow`s one label track and the rule between them, and below 32rem of its own width stacks them. `SettingRow` (`ui.tsx:1453-1481`) stays the one row, with its label, hint, ⓘ and narrow form, reading the track, its notice moved into the value column | Short values, a path, a notice, a long label, a row with acts; at wide, half and narrow; en and zh |
+| `FormGrid` | molecule, `ui.tsx` | A form laid by its own width: fields by kind (`number`, `name`, `pattern`, `long`), each yielding to its container, a form of rows stacking each row below its floor by a container query | One field, three fields, a list of rows; wide, half, narrow |
 | `SignInSteps` | molecule, `agents/` | The sign-in's phases and their details (link, code, box), from props; `SignIn` keeps the hooks | Every state in §3.2's table, en and zh, both themes, narrow |
-| `AccessFact` | molecule, `work/` | A session's access on its head (the chip) and in *Details* (each pause) | Defaults, full, some pauses, not recorded |
-| `HeavySlotLine` | molecule, `work/` | The running or waiting line, and the Details row | Running, waiting, failed gate, none; narrow |
-| `MeetingComposer` | molecule, `work/` | §3.6's composer: question, protocol, agents, repository, files, criteria | Empty, typed, a brainstorm with criteria, refused, a browser (absent), narrow, zh |
-| `PacketView` | molecule, `work/` | The packet: tier, question, constraints, attachments, sources with *Leave out*, left out, sent | Unsent, a source left out, sent, refreshed for round 2, files-only tier, zh |
-| `TranscriptRound` | molecule, `work/` | A round's messages with makers' marks, a turn that did not answer | Two answers, one silent, a long message, zh |
-| `ProposalGroup` | molecule, `work/` | A ranked group: rank, title, merged idea, why (a claim), flags, makers' count, members folded, challenge beside | Ranked, flagged and weakened, not challenged with its presses, unranked by maker; zh; dark |
+| `AccessFact` | molecule, `work/` | A session's access from its record's pause map: the chip on its head where `isFull` holds over it, each pause and its value as recorded in *Details* | No pause open, some open, every pause open, a pause the page does not know, not recorded |
+| `HeavySlotLine` | molecule, `work/` | The running or waiting line, and the Details row | Running, waiting, failed gate, held by a run from a terminal, none; narrow |
+| `MeetingComposer` | molecule, `work/` | §3.6's composer: question, protocol, agents and repository, through New conversation's `AgentChip` and `RepositoryPicker` (`NewConversation.tsx:10-11`) rather than copies; its carry (`compose/carry`, `:221-225`) joins once a meeting's request holds files | Empty, typed, refused, a browser (absent), narrow, zh |
+| `PacketView` | molecule, `work/` | The packet, read-only: tier, question, sources, left out, sent | Unsent, sent, refreshed for round 2, files-only tier, zh |
+| `TranscriptRound` | molecule, `work/` | A round's turns in order, each its maker's mark and its answer to the packet, a turn that did not answer | Two answers, one silent, a long message, zh |
+| `ProposalGroup` | molecule, `work/` | A ranked group: rank, title, merged idea, why (a claim), flags, makers' count, members folded; the challenge beside it once BRAINSTORM1e records one | Ranked, flagged, unranked by maker; after BRAINSTORM1e weakened and not challenged with its presses; zh; dark |
 | `MeetingPage` | organism, `work/` | The page: head, phases, packet, transcript or document | Its states through the molecules' stories, and a story per page state at wide and narrow |
 
-`FullAccessConfirm` goes (into `InlineConfirm`); `WorkMilestone` is redrawn on `PhaseList`, `MilestoneLine` kept.
+`FullAccessConfirm` goes (into `InlineConfirm`, which gains its warning tone). `WorkMilestone` keeps its own fact list, marked
+by `Dot`'s tones and folded to `MilestoneLine` (§3.7): it is no `PhaseList`, since its facts are no sequence.
 
 ## 5. The traps, each a test or a story
 
 | Trap | Test or story |
 |---|---|
-| A row's value drifts to the far edge again | `SettingList`'s test: in an 80rem container every value starts at the track's edge |
+| A row's value drifts to the far edge again | A rendered-browser check (Playwright) at wide and narrow: every value's box starts at the track's edge, or under its words; jsdom lays nothing out, so no unit test can hold it |
 | A story hides the page's spacing | A story test: no decorator under `settings/` adds a gap, a cap or a padding; the domain's container draws its cards |
 | A card margin returns | `tokens.test.ts` fails on an outer margin on `Card` |
-| The window chooses a region's columns | `tokens.test.ts` fails on a viewport variant outside the strip |
+| The window chooses a region's columns | `tokens.test.ts` fails on a viewport variant outside the window's parts, which its allow-list names by component |
+| A window overlay flagged as a region | The same test passes the toast viewport beside a drawer, the drawer, the strip and the status bar, each by its reason |
 | A wait looks hung | `PhaseList`'s stories at 5 s and 5 min differ in words; each holder's test reads its phase from the driver's words |
+| A phase invented from a tool's words | The sign-in's driver test: its phases come from the driver's own steps (start, exit, the who-read, the lists); a link and a code are read by their shape |
+| A list per wait pushes the head down | `PhaseList`'s line is the default in a head or a row; its stories draw the line and the list opened |
 | A bound is invented | The sign-in's test: no *expires* line without the tool's bound; no *longer than usual* without a measured usual |
 | A clock keeps the window drawing | `Elapsed` stops when its phase ends (a fake clock reads no render after) |
-| A refusal leaves its place | Each holder's test (sign-in, a pause on Setup and Driver, the mode chip) refuses and reads the sentence in place, with no toast |
+| A refusal leaves its place | Each holder's test (sign-in, a pause on Setup and Driver, the mode chip, an ask's *Apply* and review choice) refuses and reads the sentence in place, with no toast |
 | A sign-in's link or code read by one version's words | CODEXSIGNIN3's fixtures per recorded version |
-| Full access hides on a session | `AccessFact`'s test: a record with `access: full` wears the chip; an untouched one says nothing |
+| Full access hides on a session, or an old record is read against today | `AccessFact`'s test over the record's pause map: every pause at its open value wears the chip; a pause closed, or one the page does not know, wears none; nothing is resolved against today's settings |
+| A milestone fact marked by another's | `WorkMilestone`'s test: a clean-up completed with nothing kept for recovery says *nothing kept*, unmarked; an unknown or dropped end is never *reached*; a held attempt keeps its row |
+| A stale heavy holder read as a live hold | HEAVYSLOT1's driver test: a record whose process is gone holds nothing and waits for nothing |
 | A meeting's packet sent from a row | *What needs you*'s test: the row is a door, it carries no *Send* |
+| A meeting drawn as a session | The rail's test: a meeting is attended by its own identity, and a session's acts are never offered on it |
+| Turns read as replies within a round | `TranscriptRound`'s story: each turn answers the packet; the others' messages arrive in the next round's |
 | A brainstorm's rank read as fact | `ProposalGroup`'s story labels the rank the synthesis's claim and the challenge's findings claims |
 | A flag drawn as an outcome | `tokens.test.ts`'s ink rule: a flag never wears the danger ink |
-| An empty state before a slice is judged | A pushed-slice test: an unjudged attention slice draws skeleton rows, not *Nothing needs you* |
-| The record head pushes the conversation down | A story at narrow with every block present measures the conversation's top under UX7's budget |
+| An empty state before a slice is judged | A pushed-slice test: an unjudged attention slice draws skeleton rows, not *Nothing needs you*; so does a judged one while another input of the band is not |
+| The record head pushes the conversation down | A rendered-browser measurement at narrow with every block present: the conversation's top under UX7's budget |
 | One word for two things | `names:check -- --strict` with *meeting*, *brainstorm* and *maker*; the glossary's *wire* (a workspace to a remote) kept apart from the fabric's wires (FLOWCHART1's names) |
 
 ## 6. What is not built here
@@ -870,6 +978,14 @@ own), and a component's layer is what it imports. Stories follow R6.
   reject them.
 - **Settings' Plugins section** (PLUGSET1) and the grants' build (HELPMODE1c2-c3).
 - **The usual times** a phase compares itself with: CLAUDESIGNIN1 and SIGNINLOG1 measure them.
+- **R2's later holders**: an agent's install or pin, the install's update (its standing says its state in words with no
+  time), a set-up for agents. Each keeps its present words until a row gives its process phases with their times.
+- **A meeting's attachments, constraints and criteria, and a packet revised before *Send*** (*Leave out*, *Add a file…*):
+  the request and the packet hold none, and a revision must keep the send naming the digest the person read (D177 point 2).
+  A later row gives the driver the verb and the fields first.
+- **Resuming a brainstorm's missing passes**: no verb does it; the same question is asked again as a new one.
+- **A message's own time in a meeting's transcript**: a message keeps none; its turn's end, once pass records keep it,
+  stands for it.
 - **The window.** Each row's proof includes it; this document does not.
 
 ## 7. Considered and rejected
@@ -890,11 +1006,20 @@ own), and a component's layer is what it imports. Stories follow R6.
 - **A heavy-run wait in *What needs you*.** It waits on another session, not on the person.
 - **Removing the chips' chevrons** to keep §4's arrow rule to the letter: the platform's own select carries one, and a
   value picker without it reads as a label.
+- **The milestone as a progress sequence** (*End reached → Result kept → Clean-up → Recovery kept*), this design's first
+  proposal: its facts are independent, and a sequence draws a recovery that was never kept as done (R4, §3.7).
+- **A full phase list on every wait**, this design's first proposal: in a head or a row it spends the 200 px the
+  conversation is owed; the line comes first and the list opens (R2).
+- **Round 2 drawn as a phase to come**, this design's first proposal: a second round is the person's choice, and a phase
+  to come says it will happen.
+- **Every surface's verb in the palette** (R5's first wording): a verb on an item needs the item, which the palette cannot
+  choose.
 
 ## 8. What this amends
 
 - **The platform language §4** (D41): *Forms and settings* takes R1 and R3; after *a step happens where it was started*, R2;
-  *an arrow is a direction, never a menu* is worded for a region's menu, a value picker keeping its chevron; *Doors* takes R5.
+  *an arrow is a direction, never a menu* is worded for a region's menu, a value picker keeping its chevron; *Doors* takes R5;
+  the ask-once confirmation gains a warning tone, for a choice that loosens and destroys nothing (full access).
 - **The platform language §5**: Sessions lists meetings (§3.6); Repositories' Details the heavy run (§3.5); a session's head
   its access (§3.3); Settings' rows R1.
 - **The frame model §3b** (D118): R7 as a check.
@@ -912,36 +1037,68 @@ heads, and D173's milestone's facts stand.
 builder across every lane it needs (driver, modules, service, the page), never a host half and a page half. A feature too
 large for one builder's context is split only into parts that each work on their own and are each seen working (the
 meeting's four, D187 point 5). A part shared by several features (`PhaseList`, `SettingList`) is built by the first feature
-that shows it. Each proof includes its stories at R6's widths, its tests red first (its own `Process` classes among them,
-D187 point 4), the web's `i18n:check` and `names:check -- --strict` where words change, and the parent's look on the window
-at 1546 and 680 px in both themes and languages. UIFIT1a (the parent's shots) comes first, unchanged.
+that shows it. Each proof includes its stories at R6's widths (the 400 px floor among them), its tests red first (its own
+`Process` classes among them, D187 point 4), a rendered-browser check where it claims a geometry (jsdom lays nothing out),
+the web's `i18n:check` and `names:check -- --strict` where words change, and the parent's look on the window at 1546 and
+680 px in both themes and languages. A row whose screen needs a record nothing keeps builds the record first, in the same
+feature. UIFIT1a (the parent's shots) comes first, unchanged. **Each row names its trap**: the mistake its builder is most
+likely to make, which its proof must catch.
 
-1. **UIFIT1b, changed — Settings' rows and cards use the pane.** Absorbs UIFIT1c. R1's label track (`SettingList`) and its
-   16 px card spacing in every Settings domain and Setup tab, R6's story widths for them, R1's and R6's notes in the platform
-   language with their checks.
+1. **UIFIT1b, changed — Settings' rows and cards use the pane** (the backlog joins it with UIFIT1d as UIFIT1). Absorbs
+   UIFIT1c. R1's label track (`SettingList`, around `SettingRow`) with its bounds set from UIFIT1a's shots in both
+   languages, and its 16 px card spacing in every Settings domain and Setup tab, R6's story widths for them, R1's and R6's
+   notes in the platform language with their checks. *Trap:* changing the outer row and leaving the nested `justify-end`
+   wrappers (`SetupParts.tsx:122`) and the full-span notice (`ui.tsx:1477`) as they are, so values still drift or notices
+   sit under the label.
 2. **UIFIT1d — Forms take the pane.** R1's form rule (`FormGrid`): the 40–48rem caps and the `md:` and `max-sm:` columns go,
-   the heavy gates editor and *What it has* lay out by their own width, and R7's check holds it.
-3. **CLAUDESIGNIN1b, changed — The sign-in panel says its phase and how long.** The driver writes the phases, the panel draws
-   them (§3.2), one builder end to end; it builds `PhaseMark`, `Elapsed`, `PhaseList` and `SignInSteps`, and writes R2.
+   the heavy gates editor and *What it has* lay out by their own width, and R7's check holds it with its allow-list of the
+   window's parts. *Trap:* deleting the caps and calling it responsive: the heavy gates' fixed `8rem` columns
+   (`HeavyGates.tsx:158`) must yield to their container and stack by a rule of their own.
+3. **CLAUDESIGNIN1b, changed — The sign-in panel says its phase and how long** (the backlog holds it inside SIGNIN1). The
+   driver writes its own steps as phase events with their times, the panel draws them (§3.2), one builder end to end; it
+   extends `Dot`, builds `Elapsed` over `useNow` and `span`, `PhaseList` and `SignInSteps`, and writes R2. *Trap:* moving the
+   panel's word-matching (`SignIn.tsx:61-70`) into .NET and calling it the phases: a process's start and exit cannot tell
+   the browser's states apart (`HarnessActions.cs:487-517`), so the browser's wait is one phase that ends with the tool.
 4. **ACCESSASK1 — Access changes ask once and say a refusal where they were pressed.** Full access through the one
-   `InlineConfirm`, a pause's refusal under its row, a mode switch's under its chip, Driver's lead paragraph to its ⓘ; R3.
-5. **SESSACCESS1 — A session says the access it runs under.** The head's chip and *Details*' pauses from the record (§3.3).
-6. **MILESTONEUX1 — Where a piece of work stands reads as its phases.** The milestone on `PhaseList`, the record head's
-   budget measured again and kept (§3.7); R4.
-7. **HEAVYSLOT1 — A heavy run is seen running and waiting.** The driver answers the slot, the session's line and head and the
-   repository's Details say it (§3.5).
-8. **MEETUX1a — A meeting is started from the window, its context read and sent.** The rail's kind, the composer, the page's
-   head, phases and packet, *Send*, *Stop*, the bridge to the driver's meetings (§3.6); R5. After BRAINSTORM1c and
-   AGENTROOM1b-c.
-9. **MEETUX1b — A meeting's rounds are followed on its page.** The transcript, round 2's packet and *Send round 2*, the side
-   bar's views.
+   `InlineConfirm` in its new warning tone, open until the driver answers; a pause's refusal under its row, a mode switch's
+   under its chip, Driver's lead paragraph to its ⓘ; R3, whose census of toasting presses also brings an ask's *Apply* and
+   review choice (`AsksPart.tsx:338-345`) to say theirs in place. *Trap:* swapping the component and keeping
+   `useModeChoice`'s `enable`, which closes the confirm before the answer (`HelpModePicker.tsx:33-36`).
+5. **SESSACCESS1 — A session says the access it runs under.** The head's chip by `isFull` over the record's pauses, and
+   *Details*' pauses as recorded (§3.3). *Trap:* reading `access` as a word `full`, or resolving an old record against
+   today's settings: it is the pause map the driver resolved at the start (`data/api.ts:433-438`), and the tests' fixture is
+   that map.
+6. **MILESTONEUX1, changed — Where a piece of work stands reads at a glance and opens in place.** The milestone's four facts
+   marked by `Dot`'s tones, folded to `MilestoneLine` with *blocked* and *held* on it, the record head's budget measured again
+   in a rendered browser and kept (§3.7); R4. *Trap:* marking an absent recovery done, losing *unknown* and *dropped*, or
+   dropping the held attempts (`WorkMilestone.tsx:19-31`, `:98-105`) to fit four stages.
+7. **HEAVYSLOT1 — A heavy run is seen running and waiting.** The driver records the gate running and each waiter, and answers
+   the slot; the session's line and head and the repository's Details say it, a run from a terminal included (§3.5).
+   *Trap:* parsing the run's output, or reading a holder's record left behind as a live hold: the handle is the lock
+   (`HeavySlot.cs:46-52`, `:181-194`).
+8. **MEETUX1a — A meeting is started from the window, its context read and sent.** The rail's kind, the composer (question,
+   protocol, agents, repository), the page's head, phases and read-only packet, *Send*, *Stop*, a start and an end on each
+   pass record, the bridge to the driver's meetings (§3.6); R5. After BRAINSTORM1c and AGENTROOM1b-c. *Trap:* drawing a
+   meeting as a session to reuse the rail's selection and acts: the rail selects a bare session id and offers a session's
+   acts (`SessionRail.tsx:46-58`); an attended item needs a typed identity, a session or a meeting.
+9. **MEETUX1b — A meeting's rounds are followed on its page.** The transcript by round and turn, round 2's packet and *Send
+   round 2* as an optional next act, the side bar's views. *Trap:* implying replies within a round: each turn answers the
+   frozen packet, and another's message reaches it only in the next round (`DriverMeetings.cs:19-21`).
 10. **MEETUX1c — A brainstorm's document is read on its page.** Coverage, ranked groups, flags, the challenge's claims and its
-    presses, left out and needs, *Copy as Markdown*, *Attach to a new ask…*.
+    presses, left out and needs, *Copy as Markdown*, *Attach to a new ask…*. After MEETUX1a and BRAINSTORM1e, which records
+    the challenge and gives the driver *Challenge again* and *Rank it unchallenged*. *Trap:* drawing the challenge's claims
+    or its presses before BRAINSTORM1e supplies them.
 11. **MEETUX1d — A meeting that waits on the person is in What needs you, and Ask Daoris opens one.** Its rows, an agent's ask,
-    the go door and its `HelpCoverageTests` row.
-12. **PUSHUX1 — Nothing reads as empty before it is known.** An unjudged pushed slice draws skeleton rows (§3.8).
+    the go door and its `HelpCoverageTests` row. After MEETUX1a and BRAINSTORM1d's caller, through which an agent's ask
+    comes. *Trap:* building the door and leaving out the agent's request's life (held for the person's yes under `ask`,
+    refused under `off`), which BRAINSTORM1d's caller owns.
+12. **PUSHUX1 — Nothing reads as empty before it is known.** An unjudged pushed slice draws skeleton rows, a combined view
+    waits for every input, a resync is read as its own state (§3.8). *Trap:* gating one slice: *What needs you* combines a
+    dozen inputs, each empty by default today (`AttentionBand.tsx:159-162`).
 13. **STORYGAP1 — Every screen since UX7 is in the catalogue at the frame's widths.** Stories for those with none that no row
-    above draws (§1.2 item 6).
+    above draws (§1.2 item 6): `WorkspaceRecoveries`, `TeammateAskPage`, `AskReview`, `Conflicts`, `CommitGraph`, `AskLines`,
+    `QuestStatus` (*submitted*, *source reopened*) and `AskWorkflowKind` at every width. *Trap:* taking §1.1's list as
+    complete (it missed three screens until DESIGNREAD1) and drawing narrow at 34rem only: the floor is 400 px.
 
 The backlog holds each in its own shape (contract by this document's section, proof); the steward files them with
 UIDESIGN1's archive entry once the owner accepts the design.
@@ -952,8 +1109,9 @@ UIDESIGN1's archive entry once the owner accepts the design.
   show one cause outweighing the others, and R1 answers all three.
 - **No count was taken.** UX6's measures (concepts, controls, words, screens) were not run on any story; MEETUX1a's and
   UIFIT1b's proofs take them before and after.
-- **The driver's half is assumed where a phase is read**: the sign-in's phases (CLAUDESIGNIN1b's driver half), the heavy
-  slot (HEAVYSLOT1), a meeting's state (D176's and D177's records) each must answer what §3 draws; this document names
-  the fields by meaning, not by wire shape.
+- **The driver's half is named by meaning, not by wire shape.** The read checked each wireframe against the records at
+  `872520fa5`: what no record keeps is either built first by its row (the sign-in's phase events, the heavy slot's gate and
+  waiters, a pass's start and end) or taken off the wireframe (where a session's access was set, a meeting's attachments
+  and its packet's revision, a message's own time, a brainstorm's resumed passes). The fields' shapes are each row's.
 - **The words are proposals** for D116's check. `verify` checks this document's place in the router and D185's shape; it
   checks none of the words, and no claim about what the code does beyond the lines cited.
