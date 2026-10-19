@@ -118,4 +118,113 @@ public sealed class RunningCallsTests : IDisposable
         Assert.Null(RunningCalls.Of(Record()).Calling("s1"));
         Assert.Same(RunningCalls.Of(events), RunningCalls.Of(events));
     }
+
+    /// <summary>
+    /// WAITSAY1c1: <see cref="RunningCalls.Changed"/> names a session whenever what <see cref="RunningCalls.Calling"/> answers of it
+    /// moved, so the pushed slice is woken by a call's start and its end and by nothing that leaves it as it was.
+    /// </summary>
+    [Fact]
+    public void Changed_names_the_session_as_its_call_starts_and_ends_and_never_for_a_repeat()
+    {
+        var events = RunningCalls.Watched(Record());
+        var calls = RunningCalls.Of(events);
+        var told = new List<string>();
+        calls.Changed += told.Add;
+
+        events.Append("s1", Call("c1", "in_progress", "npm test", at: 1));
+        Assert.Equal(["s1"], told);
+
+        // Its output streamed, the same status again and the same title again leave the call as it was.
+        events.Append("s1", Call("c1", null, at: 2) with { Output = "PASS 12 of 40" });
+        events.Append("s1", Call("c1", "in_progress", "npm test", at: 3));
+        events.Append("s1", new SessionEvent { Kind = SessionEventKind.Message, Text = "running the suite", At = T0.AddMinutes(4) });
+        Assert.Equal(["s1"], told);
+
+        events.Append("s1", Call("c1", "completed", at: 5));
+        Assert.Equal(["s1", "s1"], told);
+
+        // An end of a call never heard begun moves nothing.
+        events.Append("s1", Call("c7", "completed", at: 6));
+        Assert.Equal(["s1", "s1"], told);
+    }
+
+    [Fact]
+    public void Changed_names_a_title_arriving_a_turn_s_end_and_an_ask_and_only_the_session_they_moved()
+    {
+        var events = RunningCalls.Watched(Record());
+        var calls = RunningCalls.Of(events);
+        var told = new List<string>();
+        calls.Changed += told.Add;
+
+        // Open but unnamed: nothing is running yet, so nothing moved; named by a later update, it runs.
+        events.Append("s1", Call("c1", null, at: 1) with { Output = "…" });
+        Assert.Empty(told);
+        events.Append("s1", Call("c1", "in_progress", "Run the suite", at: 2));
+        Assert.Equal(["s1"], told);
+
+        // Another session's call is its own; its words shown waiting (STEER1) are no ask.
+        events.Append("s2", Call("c9", "in_progress", "dotnet build", at: 3));
+        events.Append("s2", new SessionEvent { Kind = SessionEventKind.User, Origin = "person", Text = "also the readme", Reaches = "next-step", Id = "w1" });
+        Assert.Equal(["s1", "s2"], told);
+
+        // A newer call with no name leaves the named one running; an older call renamed beneath a newer one moves nothing.
+        events.Append("s1", Call("c2", "pending", at: 4));
+        events.Append("s1", Call("c3", "in_progress", "git push", at: 5));
+        Assert.Equal(["s1", "s2", "s1"], told);
+        events.Append("s1", Call("c1", "in_progress", "Run the whole suite", at: 6));
+        Assert.Equal(["s1", "s2", "s1"], told);
+
+        events.Append("s1", new SessionEvent { Kind = SessionEventKind.Turn, StopReason = "end_turn", At = T0.AddMinutes(7) });
+        events.Append("s2", new SessionEvent { Kind = SessionEventKind.User, Origin = "person", Text = "go on", Id = "w2" });
+        Assert.Equal(["s1", "s2", "s1", "s1", "s2"], told);
+
+        // A turn's end with nothing open moves nothing.
+        events.Append("s1", new SessionEvent { Kind = SessionEventKind.Turn, StopReason = "end_turn", At = T0.AddMinutes(8) });
+        Assert.Equal(5, told.Count);
+    }
+
+    /// <summary>
+    /// Told after the watch's lock is let go: a hearer reading the calls again from another thread (the slice's worker) is never held
+    /// behind it; and a hearer that throws costs its own view, never the call kept or the record's other watchers.
+    /// </summary>
+    [Fact]
+    public void Changed_is_told_outside_the_lock_and_a_hearer_s_failure_is_its_own()
+    {
+        var events = RunningCalls.Watched(Record());
+        var calls = RunningCalls.Of(events);
+        var readBeside = new List<bool>();
+        calls.Changed += _ => readBeside.Add(Task.Run(() => calls.Now()).Wait(TimeSpan.FromSeconds(10)));
+        calls.Changed += _ => throw new InvalidOperationException("a hearer's own failure");
+        var watchedAfter = 0;
+        events.Evented += (_, _) => watchedAfter++;
+
+        events.Append("s1", Call("c1", "in_progress", "npm test", at: 1));
+
+        Assert.Equal([true], readBeside);
+        Assert.Equal("npm test", calls.Calling("s1")?.Title);
+        Assert.Equal(1, watchedAfter);
+    }
+
+    /// <summary>
+    /// Past the bound, the session whose oldest open call began first is forgotten, and named; the one just begun is kept (bounded
+    /// before its call was held, it was the one forgotten). A watch of three stands in for the record's 1024.
+    /// </summary>
+    [Fact]
+    public void Past_the_bound_the_oldest_call_s_session_is_forgotten_and_named()
+    {
+        var events = Record();
+        var calls = RunningCalls.Of(events, remembered: 3);
+        events.Append("s1", Call("c1", "in_progress", "npm test", at: 2));
+        events.Append("s0", Call("c1", "in_progress", "npm test", at: 1));
+        events.Append("s2", Call("c1", "in_progress", "npm test", at: 3));
+        var told = new List<string>();
+        calls.Changed += told.Add;
+
+        events.Append("newest", Call("c1", "in_progress", "dotnet build", at: 4));
+
+        Assert.Equal(["newest", "s0"], told.Order(StringComparer.Ordinal));
+        Assert.Null(calls.Calling("s0"));
+        Assert.Equal("dotnet build", calls.Calling("newest")?.Title);
+        Assert.Equal(["newest", "s1", "s2"], calls.Now().Keys.Order(StringComparer.Ordinal));
+    }
 }
