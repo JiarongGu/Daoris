@@ -3,18 +3,66 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// TREELINK1 (D51's note): the walk that takes a tree's links off before git removes it, its pure halves: a tree with no link is left
-/// as it was, a gone tree is nothing to do, the tree's own <c>.git</c> is never looked into, and past its bound it takes nothing off
-/// and says why the tree stays. The links themselves, made with a process on Windows, are <c>TreeLinkRemovalTests</c>'.
+/// TREELINK1 (D51's note): the walk that takes a tree's links off before git removes it, over files alone: a link goes as a link and
+/// what it points at stands, a link is never walked into, a tree whose own folder is a link stays, a tree with no link is left as it
+/// was, a gone tree is nothing to do, the tree's own <c>.git</c> is never looked into, and past its bound it takes nothing off and
+/// says why the tree stays. Each link is made as TREEDEPS1's copy makes one, a junction with no process on Windows. Git's removal
+/// over them is <c>TreeLinkRemovalTests</c>'.
 /// </summary>
 public sealed class TreeLinksTests : IDisposable
 {
+    private const string Persons = "the person's own\n";
     private readonly string _scratch = Path.Combine(WorkspaceRoot.Folder, "_fixtures", "tree-links", Guid.NewGuid().ToString("N")[..8]);
     private string Tree => Path.Combine(_scratch, "tree");
+    private string Outside => Path.Combine(_scratch, "outside");
 
-    public TreeLinksTests() => Directory.CreateDirectory(Tree);
+    public TreeLinksTests()
+    {
+        Directory.CreateDirectory(Tree);
+        Directory.CreateDirectory(Outside);
+        File.WriteAllText(Path.Combine(Outside, "notes.md"), Persons);
+    }
 
-    public void Dispose() => Directory.Delete(_scratch, recursive: true);
+    // A link a failed test left goes as a link, never followed.
+    public void Dispose() => TreeSetAside.DeleteNeverFollowing(_scratch);
+
+    [Fact]
+    public void A_link_in_the_tree_is_taken_off_as_a_link_and_what_it_points_at_stands()
+    {
+        Write(Path.Combine("node_modules", "kept", "index.js"));
+        var link = Path.Combine(Tree, "node_modules", "@fixture", "web");
+        TreeDependencies.Link(link, Outside);
+
+        Assert.Null(TreeLinks.Unlinked(Tree));
+
+        Assert.False(Path.Exists(link));
+        Assert.True(File.Exists(Path.Combine(Tree, "node_modules", "kept", "index.js")));
+        Assert.Equal(Persons, File.ReadAllText(Path.Combine(Outside, "notes.md")));
+    }
+
+    [Fact]
+    public void A_link_is_never_walked_into_nor_what_it_holds_counted()
+    {
+        foreach (var name in new[] { "a", "b", "c" }) File.WriteAllText(Path.Combine(Outside, $"{name}.md"), Persons);
+        TreeDependencies.Link(Path.Combine(Tree, "linked"), Outside);
+
+        Assert.Null(TreeLinks.Unlinked(Tree, limit: 1));
+
+        Assert.Equal(4, Directory.GetFiles(Outside).Length);
+    }
+
+    [Fact]
+    public void A_tree_whose_own_folder_is_a_link_stays_and_nothing_through_it_is_touched()
+    {
+        TreeDependencies.Link(Path.Combine(Outside, "inner"), Path.Combine(_scratch, "tree"));
+        var linked = Path.Combine(_scratch, "linked-tree");
+        TreeDependencies.Link(linked, Outside);
+
+        Assert.Equal("its tree's folder is itself a link, which git's removal would reach through", TreeLinks.Unlinked(linked));
+
+        Assert.True(Path.Exists(Path.Combine(Outside, "inner")));
+        Assert.Equal(Persons, File.ReadAllText(Path.Combine(linked, "notes.md")));
+    }
 
     private void Write(string relative)
     {
