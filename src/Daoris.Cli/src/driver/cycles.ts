@@ -88,24 +88,36 @@ export function cycleFor(choices: Pick<DriverChoices, 'landings' | 'workspaceLan
 /** A value the file keeps under the cycle's homes that no unit reads — the driver's `CycleStray`: where, its code and its sentence. */
 export interface CycleStray {
   at: string[];
-  code: 'kind' | 'shadowed';
+  code: 'kind' | 'shadowed' | 'unread';
   words: string;
 }
 
 /**
  * What the file keeps under the cycle's homes that no unit reads (FABRIC-GRAPH1's review, findings 2 and 3), each kept as written and said
- * here: a kind with no work cycle, a branch's included; and a name an earlier entry of `landings`, `workspaceLandings` or the work cycles
- * spells in another case, where the first written governs. The driver's `NodeGraphHomes.Strays`, row for row (`graph-homes.json`'s `strays`).
+ * here: a kind with no work cycle, a branch's included; a name an earlier entry of `landings`, `workspaceLandings` or the work cycles
+ * spells in another case, where the first written governs; and a landing rule that reads as no rule (FABRIC-GRAPH1d), which `unread` says
+ * why of (`driverconfig.ts`'s `landingRuleUnread`, handed in, since this module imports nothing of it but its types). The driver's
+ * `NodeGraphHomes.Strays`, row for row (`graph-homes.json`'s `strays`).
  */
-export function cycleStrays(choices: Pick<DriverChoices, 'source' | 'landings' | 'workspaceLandings' | 'workCycles' | 'workspaceWorkCycles'>): CycleStray[] {
+export function cycleStrays(
+  choices: Pick<DriverChoices, 'source' | 'landings' | 'workspaceLandings' | 'workCycles' | 'workspaceWorkCycles'>,
+  unread: (rule: unknown) => string | null,
+): CycleStray[] {
   if (choices.source === undefined) return [];
   const file = JSON.parse(choices.source) as Record<string, unknown>;
   const strays: CycleStray[] = [];
-  const map = (name: string, read: string[], governing?: (owner: string, value: Record<string, unknown>) => void): void => {
+  const map = (name: string, read: string[], governing?: (owner: string, value: Record<string, unknown>) => void, rules = false): void => {
     const entries = file[name];
     if (!isObject(entries)) return;
     const seen: string[] = [];
     for (const [entry, value] of Object.entries(entries)) {
+      // FABRIC-GRAPH1d: a rule both readers skip is said, never passed over without a word; null is none.
+      const why = rules ? unread(value) : null;
+      if (why !== null) {
+        strays.push({ at: [name, entry], code: 'unread',
+          words: `\`${entry}\` in \`${name}\` does not read as a landing rule, so work there lands as though it set none: ${why} It is kept as written, and nothing reads it.` });
+        continue;
+      }
       // The entry its reader kept for this name in any case; entries before it did not read, and those after it are shadowed.
       const governs = findName(read, entry);
       if (governs === null) continue;
@@ -126,8 +138,8 @@ export function cycleStrays(choices: Pick<DriverChoices, 'source' | 'landings' |
           + 'a branch\'s is its landing rule\'s `cycle`. It is kept as written, and nothing reads it.' });
     }
   };
-  map('landings', Object.keys(choices.landings));
-  map('workspaceLandings', Object.keys(choices.workspaceLandings));
+  map('landings', Object.keys(choices.landings), undefined, true);
+  map('workspaceLandings', Object.keys(choices.workspaceLandings), undefined, true);
   map('workCycles', Object.keys(choices.workCycles), kinds('workCycles'));
   map('workspaceWorkCycles', Object.keys(choices.workspaceWorkCycles), kinds('workspaceWorkCycles'));
   return strays;

@@ -1,5 +1,5 @@
 {
-  "about": "FABRIC-GRAPH1: which cycle governs a unit, and from where (the fabric events design §C2, §D7, §E7; D164's whole-rule inheritance). Read row for row by the CLI's cycles.test.ts and the driver's NodeGraphHomesTests. A row's config is a driver.json; `cycle` is the governing cycle as the file holds it, null where none is set; `source` is repository, workspace or default. `strays` (the review's findings 2 and 3) are what the file keeps that no unit reads, each said: `at` its place from the file's top, `code` `kind` (a kind with no work cycle) or `shadowed` (a name an earlier entry spells in another case, which governs).",
+  "about": "FABRIC-GRAPH1: which cycle governs a unit, and from where (the fabric events design §C2, §D7, §E7; D164's whole-rule inheritance). Read row for row by the CLI's cycles.test.ts and the driver's NodeGraphHomesTests. A row's config is a driver.json; `cycle` is the governing cycle as the file holds it, null where none is set; `source` is repository, workspace or default. `strays` (the review's findings 2 and 3) are what the file keeps that no unit reads, each said: `at` its place from the file's top, `code` `kind` (a kind with no work cycle), `shadowed` (a name an earlier entry spells in another case, which governs) or `unread` (FABRIC-GRAPH1d: a landing rule that reads as no rule, no object or one that could not land work, which both readers skip and the work there lands as though it set none; null is none, and says nothing).",
   "rows": [
     {
       "name": "nothing set: the default, today's",
@@ -149,16 +149,36 @@
       ]
     },
     {
-      "name": "a name an earlier entry spells in another case, kept and said; one that does not read shadows none",
+      "name": "a name an earlier entry spells in another case, kept and said; one that does not read shadows none, and is said unread",
       "config": {
         "landings": { "ENGINE": { "form": "sideways" }, "Engine": { "form": "merge" }, "engine": { "form": "merge", "tidy": true } },
         "workspaceLandings": { "shop": { "form": "merge" }, "Shop": { "form": "merge" } },
         "workCycles": { "Engine": { "quest": { "end": "a" } }, "engine": { "chore": {} } }
       },
       "strays": [
+        { "at": ["landings", "ENGINE"], "code": "unread" },
         { "at": ["landings", "engine"], "code": "shadowed" },
         { "at": ["workspaceLandings", "Shop"], "code": "shadowed" },
         { "at": ["workCycles", "engine"], "code": "shadowed" }
+      ]
+    },
+    {
+      "name": "a landing rule that reads as no rule, holding only `tidy` or a branch with no pattern, kept and said (FABRIC-GRAPH1d)",
+      "config": {
+        "landings": { "engine": { "tidy": true, "cycle": { "end": "qa" } }, "orders": { "form": "merge" } },
+        "workspaceLandings": { "shop": { "form": "branch" } }
+      },
+      "strays": [
+        { "at": ["landings", "engine"], "code": "unread" },
+        { "at": ["workspaceLandings", "shop"], "code": "unread" }
+      ]
+    },
+    {
+      "name": "a landing rule that is no object is said unread; one written null is none, and says nothing",
+      "config": { "landings": { "engine": "merge", "orders": null, "shop": [] } },
+      "strays": [
+        { "at": ["landings", "engine"], "code": "unread" },
+        { "at": ["landings", "shop"], "code": "unread" }
       ]
     }
   ]

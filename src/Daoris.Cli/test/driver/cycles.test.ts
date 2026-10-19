@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { commandDriver, landingEdited, readDriverChoices, writeDriverChoices } from '../../src/driver/driverconfig.ts';
+import { commandDriver, landingEdited, landingRuleUnread, readDriverChoices, writeDriverChoices } from '../../src/driver/driverconfig.ts';
 import { WORK_CYCLE_KINDS, cycleStrays, workCycleFor } from '../../src/driver/cycles.ts';
 import { driverFile } from '../_csharp.ts';
 import { makeFixture } from '../_fixture.ts';
@@ -38,10 +38,21 @@ const STRAYS = (JSON.parse(readFileSync(join(here, 'fixtures', 'graph-homes.json
 test('graph-homes: what the file keeps that no unit reads is said as the driver says it', () => {
   const fx = makeFixture('cycles-strays');
   for (const row of STRAYS) {
-    const said = cycleStrays(readDriverChoices(fx.write('driver.json', JSON.stringify(row.config))));
+    const said = cycleStrays(readDriverChoices(fx.write('driver.json', JSON.stringify(row.config))), landingRuleUnread);
     assert.deepEqual({ name: row.name, strays: said.map(({ at, code }) => ({ at, code })) }, { name: row.name, strays: row.strays });
     for (const stray of said) assert.ok(stray.words.includes(`\`${stray.at.at(-1)}\``), stray.words);
   }
+});
+
+test('graph-homes: `driver list` names a landing rule that does not read, and every value no unit reads (FABRIC-GRAPH1d)', () => {
+  const fx = makeFixture('cycles-strays-list');
+  const path = fx.write('driver.json', JSON.stringify({ landings: { engine: { tidy: true } }, workCycles: { engine: { chore: {} } } }));
+  const { out } = run(['list'], path);
+  assert.match(out, /\n {2}unread {5}`engine` in `landings` does not read as a landing rule, so work there lands as though it set none: it names no `form`, `merge` or `branch`\. It is kept as written, and nothing reads it\./);
+  assert.match(out, /\n {2}unread {5}`chore` under `engine` in `workCycles` is no kind of work with a cycle of its own/);
+  // Its words say why: the twin's sentence for a rule that could not land work.
+  fx.write('driver.json', JSON.stringify({ workspaceLandings: { shop: { form: 'branch' } } }));
+  assert.match(run(['list'], path).out, /`shop` in `workspaceLandings` does not read as a landing rule, so work there lands as though it set none: a branch pattern needs a name/);
 });
 
 test('graph-homes: a cycle that is not an object, and a kind no unit reads, are kept by an edit beside them', () => {

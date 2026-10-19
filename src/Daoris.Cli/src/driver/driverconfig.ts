@@ -31,7 +31,7 @@ import { isPluginId, readPlugins, type PluginCatalog } from '../plugins/plugins.
 import { normalizeWorkspace } from '../service/remotemap.ts';
 import { TOOLCHAINS } from '../agents/toolchain.ts';
 import {
-  cycleOf, cycleSaid, landingCycleRefusal, readCycleFile, workCycleEdited, workCycleKindRefusal, workCycleMap, workCycleRefusal,
+  cycleOf, cycleSaid, cycleStrays, landingCycleRefusal, readCycleFile, workCycleEdited, workCycleKindRefusal, workCycleMap, workCycleRefusal,
   type Cycle,
 } from './cycles.ts';
 import { cycleProblems } from '../workflows/nodegraphs.ts';
@@ -1798,6 +1798,12 @@ export function commandDriver(
       write(`  landing    workspace ${workspace}  ${spelled(rule)}  (for each repository there that sets none)`);
     }
 
+    // FABRIC-GRAPH1d: what the file keeps that no unit reads, a landing rule that reads as no rule among it, is said, never skipped
+    // without a word — the driver's `NodeGraphHomes.Strays`.
+    for (const stray of cycleStrays(choices, landingRuleUnread)) {
+      write(`  unread     ${stray.words}`);
+    }
+
     // Reading across (D107): on unless switched off, the repository's own over its workspace's.
     for (const [repository, read] of Object.entries(choices.readAcross)) {
       write(`  across     ${repository}  read ${read ? 'on' : 'off'}`);
@@ -2525,40 +2531,65 @@ function targetMap(value: unknown): Record<string, string[]> {
 }
 
 /**
- * A map of names to landing rules; one that could not land work is skipped, as the driver skips it, and a ticket's key it
- * refuses is ignored, the rest of the rule standing.
+ * A map of names to landing rules; one that could not land work is skipped, as the driver skips it, and said by `cycleStrays`
+ * (FABRIC-GRAPH1d, `landingRuleUnread`); a ticket's key it refuses is ignored, the rest of the rule standing.
  */
 function ruleMap(value: unknown): Record<string, LandingRule> {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return {};
   const held: Record<string, LandingRule> = {};
   for (const [name, rule] of Object.entries(value as Record<string, unknown>)) {
-    if (!rule || typeof rule !== 'object') continue;
-    const { form, pattern, key, tidy, plugin, autoAccept, squash, cycle } = rule as Record<string, unknown>;
-    // The cycle (FABRIC-GRAPH1) is kept as written, as the driver reads it, whether or not it is a graph: only null is none (the
-    // review's finding 2), and the driver says one that does not read.
-    const graph = cycleOf(cycle);
-    const read: LandingRule = {
-      form: typeof form === 'string' ? form : '',
-      ...(typeof pattern === 'string' ? { pattern } : {}),
-      // An empty key is none, as the driver reads it (PROCESS1b-i).
-      ...(typeof key === 'string' && key.length > 0 ? { key } : {}),
-      ...(tidy === true ? { tidy: true } : {}),
-      // An empty name is no name, as the driver reads it.
-      ...(typeof plugin === 'string' && plugin.length > 0 ? { plugin } : {}),
-      // Only JSON `true` (LAND2a): `"true"` or 1 is not the person's say-so for a push with no press.
-      ...(autoAccept === true ? { autoAccept: true } : {}),
-      // Only JSON `true` squashes (PROCESS1b-ii), as the driver reads it.
-      ...(squash === true ? { squash: true } : {}),
-      ...(graph !== undefined ? { cycle: graph } : {}),
-    };
-    // A key refused here is ignored and the rest of the rule stands (PROCESS1b-i), as the driver reads it: a key another reader
-    // took never drops the rule, which would land the repository's work by its workspace's rule or a merge unasked.
-    if (read.key !== undefined && landingProblem(read) !== null) delete read.key;
+    const read = landingRuleRead(rule);
     // The first rule written in any case governs, as the driver reads it (the review's finding 3), and a later spelling is said.
-    if (landingProblem(read) === null && findName(Object.keys(held), name) === null) held[name] = kept(read);
+    if (read !== null && findName(Object.keys(held), name) === null) held[name] = kept(read);
   }
 
   return held;
+}
+
+/**
+ * Why a landing rule the file holds does not read, in a sentence, or null where it reads or is none (null) — the driver's
+ * `DriverConfig.RuleOf` (FABRIC-GRAPH1d): no object, no `form`, or a rule `landingProblem` refuses. Both readers skip such a rule, and
+ * the work there lands as though it set none; `cycleStrays` says it.
+ */
+export function landingRuleUnread(value: unknown): string | null {
+  if (value === null || value === undefined) return null;
+  if (typeof value !== 'object' || Array.isArray(value)) return 'it holds no rule\'s object.';
+  if (landingRuleRead(value) !== null) return null;
+  const { form } = value as Record<string, unknown>;
+  return typeof form !== 'string' || form.length === 0 ? 'it names no `form`, `merge` or `branch`.' : landingProblem(ruleOf(value as Record<string, unknown>));
+}
+
+/** A landing rule as `ruleMap` reads it, or null where it could not land work. */
+function landingRuleRead(value: unknown): LandingRule | null {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
+  const read = ruleOf(value as Record<string, unknown>);
+  return landingProblem(read) === null ? read : null;
+}
+
+/** A rule object's fields as the driver reads them, a ticket's key it refuses ignored. */
+function ruleOf(rule: Record<string, unknown>): LandingRule {
+  const { form, pattern, key, tidy, plugin, autoAccept, squash, cycle } = rule;
+  // The cycle (FABRIC-GRAPH1) is kept as written, as the driver reads it, whether or not it is a graph: only null is none (the
+  // review's finding 2), and the driver says one that does not read.
+  const graph = cycleOf(cycle);
+  const read: LandingRule = {
+    form: typeof form === 'string' ? form : '',
+    ...(typeof pattern === 'string' ? { pattern } : {}),
+    // An empty key is none, as the driver reads it (PROCESS1b-i).
+    ...(typeof key === 'string' && key.length > 0 ? { key } : {}),
+    ...(tidy === true ? { tidy: true } : {}),
+    // An empty name is no name, as the driver reads it.
+    ...(typeof plugin === 'string' && plugin.length > 0 ? { plugin } : {}),
+    // Only JSON `true` (LAND2a): `"true"` or 1 is not the person's say-so for a push with no press.
+    ...(autoAccept === true ? { autoAccept: true } : {}),
+    // Only JSON `true` squashes (PROCESS1b-ii), as the driver reads it.
+    ...(squash === true ? { squash: true } : {}),
+    ...(graph !== undefined ? { cycle: graph } : {}),
+  };
+  // A key refused here is ignored and the rest of the rule stands (PROCESS1b-i), as the driver reads it: a key another reader
+  // took never drops the rule, which would land the repository's work by its workspace's rule or a merge unasked.
+  if (read.key !== undefined && landingProblem(read) !== null) delete read.key;
+  return read;
 }
 
 /**
