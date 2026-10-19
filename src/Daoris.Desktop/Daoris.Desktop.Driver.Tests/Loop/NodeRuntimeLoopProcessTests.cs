@@ -53,7 +53,7 @@ public sealed class NodeRuntimeLoopProcessTests : IDisposable
 
     private readonly StandInLedger _ledger = new();
 
-    private readonly CancellationTokenSource _closing = new(TimeSpan.FromSeconds(90));
+    private readonly CancellationTokenSource _closing = new(Poll.Patience);
 
     public NodeRuntimeLoopProcessTests()
     {

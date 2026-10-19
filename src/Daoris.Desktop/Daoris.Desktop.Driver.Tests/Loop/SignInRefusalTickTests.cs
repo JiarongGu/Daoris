@@ -78,7 +78,7 @@ public sealed class SignInRefusalTickTests : IDisposable
 
         // Nothing read yet, as on the install after its update: the first start runs on account-1, the list's first.
         Assert.Empty(AccountReads.Of(_home, "stub").Accounts);
-        await driver.RunOnceAsync().WaitAsync(TimeSpan.FromSeconds(60));
+        await driver.RunOnceAsync().WaitAsync(Poll.Patience);
 
         var refused = service.Session("s1");
         Assert.Equal(("failed", "account-1"), (refused["state"]!.GetValue<string>(), refused["profile"]!.GetValue<string>()));
@@ -100,7 +100,7 @@ public sealed class SignInRefusalTickTests : IDisposable
         }
 
         // The next start walks past account-1 to account-2, and closes the quest.
-        var next = await driver.RunOnceAsync().WaitAsync(TimeSpan.FromSeconds(60));
+        var next = await driver.RunOnceAsync().WaitAsync(Poll.Patience);
 
         Assert.DoesNotContain(next.Considerations, c => c.Verdict == StartVerdict.Exhausted);
         var carried = service.Session("s2");
@@ -148,9 +148,9 @@ public sealed class SignInRefusalTickTests : IDisposable
         var driver = new Daoris.Driver.Driver(client, config, adapters, _home, processes: new SessionProcesses(), harnesses: roster);
         AccountReads.Keep(_home, "stub", "account-1", LoginState.In, Seen.AddMinutes(-30));
 
-        await driver.RunOnceAsync().WaitAsync(TimeSpan.FromSeconds(60));
-        var retried = await driver.RunOnceAsync().WaitAsync(TimeSpan.FromSeconds(60));
-        var next = await driver.RunOnceAsync().WaitAsync(TimeSpan.FromSeconds(60));
+        await driver.RunOnceAsync().WaitAsync(Poll.Patience);
+        var retried = await driver.RunOnceAsync().WaitAsync(Poll.Patience);
+        var next = await driver.RunOnceAsync().WaitAsync(Poll.Patience);
 
         // One status question, of account-1 alone, at the look after its refusal; the yes ran it, and nothing asked it again.
         Assert.Equal(["status account-1"], Asked.Where(line => line.StartsWith("status ", StringComparison.Ordinal)));

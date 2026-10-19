@@ -17,7 +17,7 @@ public sealed class WorkflowBindingLookTests : IDisposable
 
     private readonly StandInLedger _ledger = new();
 
-    private readonly CancellationTokenSource _closing = new(TimeSpan.FromSeconds(60));
+    private readonly CancellationTokenSource _closing = new(Poll.Patience);
 
     public WorkflowBindingLookTests()
     {

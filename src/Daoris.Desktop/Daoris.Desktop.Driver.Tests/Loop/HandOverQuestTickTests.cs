@@ -52,7 +52,7 @@ public sealed class HandOverQuestTickTests : IDisposable
         var driver = Driver(service, Config(log));
 
         // 1. The machine's agent, the protocol stub, takes the quest and works on it.
-        await driver.TickAsync().WaitAsync(TimeSpan.FromSeconds(60));
+        await driver.TickAsync().WaitAsync(Poll.Patience);
         await UntilAsync(() => service.SessionCount == 1 && service.Status("q1") == "Taken");
         var first = service.Session("s1");
         Assert.Equal("acp-stub", first["adapter"]!.GetValue<string>());
@@ -60,18 +60,18 @@ public sealed class HandOverQuestTickTests : IDisposable
 
         // 2. The person hands it to `stub`: the look takes the box and stops the session as theirs, with the hand-over's own line.
         new HandOverBox(_home).Write("s1", new HandOverRequest("stub", null, HandOverWhy.Press, HandOverBy.Person, DateTimeOffset.UtcNow));
-        var taking = await driver.TickAsync().WaitAsync(TimeSpan.FromSeconds(60));
+        var taking = await driver.TickAsync().WaitAsync(Poll.Patience);
         Assert.Contains(taking.Events, line => line == "hand-over  session `s1` (#q1): stopped, and `#q1` goes on with stub.");
         await UntilAsync(() => service.Session("s1")["state"]!.GetValue<string>() == "stopped");
-        await driver.Running.SettledAsync().WaitAsync(TimeSpan.FromSeconds(60));
+        await driver.Running.SettledAsync().WaitAsync(Poll.Patience);
         Assert.Contains("Handed over to stub", service.Session("s1")["note"]!.GetValue<string>());
         Assert.Equal("Taken", service.Status("q1"));
         Assert.Equal("stub", new HandedQuests(_home).Read("q1")!.Agent);
         Assert.Null(new HandOverBox(_home).Read("s1"));
 
         // 3. The next look reads that stop as released: the quest is carried on in the same tree, on `stub`, and closes.
-        await driver.TickAsync().WaitAsync(TimeSpan.FromSeconds(60));
-        await driver.Running.SettledAsync().WaitAsync(TimeSpan.FromSeconds(60));
+        await driver.TickAsync().WaitAsync(Poll.Patience);
+        await driver.Running.SettledAsync().WaitAsync(Poll.Patience);
 
         var carried = service.Session("s2");
         Assert.Equal("stub", carried["adapter"]!.GetValue<string>());
@@ -89,7 +89,7 @@ public sealed class HandOverQuestTickTests : IDisposable
         Assert.DoesNotContain("released", run["target"]!.GetValue<string>());
 
         // Held until the quest leaves this machine: it closed, so the next look sends it back to the machine's agent.
-        await driver.TickAsync().WaitAsync(TimeSpan.FromSeconds(60));
+        await driver.TickAsync().WaitAsync(Poll.Patience);
         Assert.Empty(new HandedQuests(_home).All());
     }
 

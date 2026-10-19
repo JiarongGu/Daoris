@@ -81,7 +81,7 @@ public sealed class HelperProcessTests : IDisposable
 
     private static async Task SettleAsync(Daoris.Driver.Driver driver, HelperFiles files, Func<HelperState?, bool> done)
     {
-        await driver.Running.SettledAsync().WaitAsync(TimeSpan.FromSeconds(90));
+        await driver.Running.SettledAsync().WaitAsync(Poll.Patience);
         var until = DateTime.UtcNow.AddSeconds(30);
         while (!done(files.ReadState(AskId)))
         {
@@ -163,7 +163,7 @@ public sealed class HelperProcessTests : IDisposable
         driver.Context.Catalog = PluginCatalog.Load(_home, adapters.Names);
 
         await driver.HelpersAsync(new Snapshot([], [], []), 0, [], CancellationToken.None);
-        await driver.Running.SettledAsync().WaitAsync(TimeSpan.FromSeconds(90));
+        await driver.Running.SettledAsync().WaitAsync(Poll.Patience);
 
         Assert.Single(service.Opened);
         SkillsSpawnProbe.AssertHandedAndRemoved(_home);

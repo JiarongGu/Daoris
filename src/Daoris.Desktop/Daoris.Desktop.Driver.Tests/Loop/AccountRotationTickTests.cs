@@ -99,7 +99,7 @@ public sealed class AccountRotationTickTests : IDisposable
             });
 
         // The first session runs on account-1, the default, takes the quest and is cut off.
-        await driver.RunOnceAsync().WaitAsync(TimeSpan.FromSeconds(60));
+        await driver.RunOnceAsync().WaitAsync(Poll.Patience);
         var cut = service.Session("s1");
         Assert.Equal(("failed", "account-1"), (cut["state"]!.GetValue<string>(), cut["profile"]!.GetValue<string>()));
         var tree = cut["tree"]!.GetValue<string>();
@@ -110,7 +110,7 @@ public sealed class AccountRotationTickTests : IDisposable
         await client.AdvanceAsync("s1", "failed", note: cut["note"]!.GetValue<string>(), limit: true);
 
         // The carry-on rotates to account-2, in the same tree, and closes the quest.
-        await driver.RunOnceAsync().WaitAsync(TimeSpan.FromSeconds(60));
+        await driver.RunOnceAsync().WaitAsync(Poll.Patience);
 
         var carried = service.Session("s2");
         Assert.Equal("completed", carried["state"]!.GetValue<string>());
@@ -194,7 +194,7 @@ public sealed class AccountRotationTickTests : IDisposable
         var driver = new Daoris.Driver.Driver(client, config, adapters, _home, processes: new SessionProcesses(), harnesses: roster);
 
         // The first session runs on stub account 1, the default, takes the quest, and its turn is refused for the limit.
-        await driver.RunOnceAsync().WaitAsync(TimeSpan.FromSeconds(60));
+        await driver.RunOnceAsync().WaitAsync(Poll.Patience);
         var cut = service.Session("s1");
         Assert.Equal(("failed", "account-1"), (cut["state"]!.GetValue<string>(), cut["profile"]!.GetValue<string>()));
         Assert.True(cut["limit"]!.GetValue<bool>());
@@ -220,7 +220,7 @@ public sealed class AccountRotationTickTests : IDisposable
         }
 
         // The carry-on opens on stub account 2, in the same tree, and closes the quest.
-        await driver.RunOnceAsync().WaitAsync(TimeSpan.FromSeconds(60));
+        await driver.RunOnceAsync().WaitAsync(Poll.Patience);
 
         var carried = service.Session("s2");
         Assert.Equal("completed", carried["state"]!.GetValue<string>());
@@ -341,12 +341,12 @@ public sealed class AccountRotationTickTests : IDisposable
         using var client = new ServiceClient(service.Url, null);
         var driver = new Daoris.Driver.Driver(client, Resuming("closes"), adapters, _home, processes: new SessionProcesses(), harnesses: roster);
 
-        await driver.RunOnceAsync().WaitAsync(TimeSpan.FromSeconds(60));
+        await driver.RunOnceAsync().WaitAsync(Poll.Patience);
         Assert.Equal(("completed", "Done", "account-1"), (service.State("s1"), service.Status("q1"), Profile(service, "s1")));
         Assert.Equal("account-2", roster.Next("stub", "default").Account);
 
         await service.SayAsync("s1", "Also log the port.");
-        var look = await driver.RunOnceAsync().WaitAsync(TimeSpan.FromSeconds(60));
+        var look = await driver.RunOnceAsync().WaitAsync(Poll.Patience);
 
         var seen = $"look: {string.Join(" | ", look.Events)}\nafter: {service.Record("s1")}";
         Assert.True(service.SessionCount == 1, seen);
@@ -371,13 +371,13 @@ public sealed class AccountRotationTickTests : IDisposable
         using var client = new ServiceClient(service.Url, null);
         var driver = new Daoris.Driver.Driver(client, Resuming("fails"), adapters, _home, processes: new SessionProcesses(), harnesses: roster);
 
-        await driver.RunOnceAsync().WaitAsync(TimeSpan.FromSeconds(60));
+        await driver.RunOnceAsync().WaitAsync(Poll.Patience);
         Assert.Equal(("failed", "Taken", "account-1"), (service.State("s1"), service.Status("q1"), Profile(service, "s1")));
         var tree = JsonNode.Parse(service.Record("s1"))!["tree"]!.GetValue<string>();
         AccountCooling.Cool(_home, new CoolingEntry("stub", "account-1", Until, true, "weekly", Seen, "s0"), Seen);
         await service.SayAsync("s1", "Also log the port.");
 
-        var held = await driver.RunOnceAsync().WaitAsync(TimeSpan.FromSeconds(60));
+        var held = await driver.RunOnceAsync().WaitAsync(Poll.Patience);
 
         var seen = $"look: {string.Join(" | ", held.Events)}\nafter: {service.Record("s1")}";
         var verdict = Assert.Single(held.Considerations, c => c.Quest.Id == "q1");
@@ -397,13 +397,13 @@ public sealed class AccountRotationTickTests : IDisposable
         Assert.Single(Events("s1"), e => e.Text?.StartsWith("— it does not go on yet: the `stub` account `account-1` is cooling", StringComparison.Ordinal) == true);
 
         // A second look while it cools holds it again, and says nothing more in its conversation.
-        await driver.RunOnceAsync().WaitAsync(TimeSpan.FromSeconds(60));
+        await driver.RunOnceAsync().WaitAsync(Poll.Patience);
         Assert.Single(Events("s1"), e => e.Text?.StartsWith("— it does not go on yet:", StringComparison.Ordinal) == true);
         Assert.Equal(1, service.SessionCount);
 
         var chose = await GoOnNew.AskAsync(client, _home, (adapter, profile) => roster.CoolingOf(adapter ?? "acp-stub", profile), "s1", Seen);
         Assert.True(chose.Sent, chose.Message);
-        await driver.RunOnceAsync().WaitAsync(TimeSpan.FromSeconds(60));
+        await driver.RunOnceAsync().WaitAsync(Poll.Patience);
 
         seen = $"after: {service.Record("s1")}";
         Assert.True(service.SessionCount == 2, seen);
@@ -439,7 +439,7 @@ public sealed class AccountRotationTickTests : IDisposable
         var first = new Daoris.Driver.Driver(
             client, Resuming("fails"), adapters, _home, processes: new SessionProcesses(),
             harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)) { Clock = () => Seen, Zone = Zone });
-        await first.RunOnceAsync().WaitAsync(TimeSpan.FromSeconds(60));
+        await first.RunOnceAsync().WaitAsync(Poll.Patience);
         Assert.Equal(("failed", "account-1"), (service.State("s1"), Profile(service, "s1")));
         await service.SayAsync("s1", "Also log the port.");
 
@@ -449,7 +449,7 @@ public sealed class AccountRotationTickTests : IDisposable
         var signedOut = new Daoris.Driver.Driver(
             client, Resuming("fails", signedOut: "account-1"), adapters, _home, processes: new SessionProcesses(),
             harnesses: roster);
-        var look = await signedOut.RunOnceAsync().WaitAsync(TimeSpan.FromSeconds(60));
+        var look = await signedOut.RunOnceAsync().WaitAsync(Poll.Patience);
 
         var seen = $"look: {string.Join(" | ", look.Events)}\nafter: {service.Record("s1")}";
         Assert.True(service.SessionCount == 2, seen);

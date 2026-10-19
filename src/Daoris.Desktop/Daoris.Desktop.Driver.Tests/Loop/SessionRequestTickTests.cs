@@ -66,7 +66,7 @@ public sealed class SessionRequestTickTests : IDisposable
         var output = new StringWriter();
         var ask = SessionsCommand.Read(["stop", "s1"], out _)!;
         var exit = await SessionsCommand.RunAsync(ask, new SessionsWorld(verbClient, _home, config, SessionWire.Pipe, Log: null), output);
-        await running.WaitAsync(TimeSpan.FromSeconds(60));
+        await running.WaitAsync(Poll.Patience);
 
         Assert.True(exit == 0, output.ToString());
         Assert.Contains("stopped s1 — the loop that runs it took the request", output.ToString());

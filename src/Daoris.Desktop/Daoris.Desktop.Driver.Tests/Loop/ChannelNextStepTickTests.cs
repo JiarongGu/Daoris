@@ -83,13 +83,13 @@ public sealed class ChannelNextStepTickTests : IDisposable
         var processes = new SessionProcesses();
         var driver = Protocol(service, "queues", processes);
 
-        await driver.TickAsync().WaitAsync(TimeSpan.FromSeconds(60));
+        await driver.TickAsync().WaitAsync(Poll.Patience);
         await Poll.Until(
             () => service.Status("q1") == "Taken" && processes.InboxOf("s1") is not null && Prompts().Length == 1,
-            () => "the first run never took its quest", TimeSpan.FromSeconds(60));
+            () => "the first run never took its quest");
         var at = service.Post("m1", "tools", Words);
 
-        var look = await driver.TickAsync().WaitAsync(TimeSpan.FromSeconds(60));
+        var look = await driver.TickAsync().WaitAsync(Poll.Patience);
 
         await Poll.Until(() => Prompts().Length == 2, () => $"no second prompt was sent; look: {string.Join(" | ", look.Events)}", Poll.Patience);
         Assert.Contains(look.Events, line => line.Contains("message `m1`", StringComparison.Ordinal) && line.Contains("at its next step", StringComparison.Ordinal));
@@ -99,7 +99,7 @@ public sealed class ChannelNextStepTickTests : IDisposable
         Assert.Contains("that agent's claim, not the person's words", claim, StringComparison.Ordinal);
 
         await Poll.Until(() => service.Mark == at, () => $"the mark never moved: {service.Mark}", Poll.Patience);
-        await Poll.Until(() => service.State("s1") == "completed", () => $"the run never ended: {service.Record("s1")}", TimeSpan.FromSeconds(60));
+        await Poll.Until(() => service.State("s1") == "completed", () => $"the run never ended: {service.Record("s1")}");
 
         var turns = Events("s1").Where(e => e is { Kind: SessionEventKind.User } && e.Text?.Contains(Words, StringComparison.Ordinal) == true).ToList();
         // Shown as said, reaching the next step, then again under the same id once the agent took it.
@@ -124,14 +124,14 @@ public sealed class ChannelNextStepTickTests : IDisposable
         var processes = new SessionProcesses();
         var driver = Protocol(service, "turnend", processes);
 
-        await driver.TickAsync().WaitAsync(TimeSpan.FromSeconds(60));
+        await driver.TickAsync().WaitAsync(Poll.Patience);
         await Poll.Until(
             () => service.Status("q1") == "Taken" && processes.InboxOf("s1") is not null && Prompts().Length == 1,
-            () => "the first run never took its quest", TimeSpan.FromSeconds(60));
+            () => "the first run never took its quest");
         service.Post("m1", "tools", Words);
 
-        var first = await driver.TickAsync().WaitAsync(TimeSpan.FromSeconds(60));
-        var second = await driver.TickAsync().WaitAsync(TimeSpan.FromSeconds(60));
+        var first = await driver.TickAsync().WaitAsync(Poll.Patience);
+        var second = await driver.TickAsync().WaitAsync(Poll.Patience);
         await Task.Delay(500);
 
         Assert.Single(Prompts());
@@ -139,7 +139,7 @@ public sealed class ChannelNextStepTickTests : IDisposable
         Assert.Null(service.Mark);
 
         File.WriteAllText(Go, "");
-        await Poll.Until(() => service.State("s1") == "completed", () => $"the run never ended: {service.Record("s1")}", TimeSpan.FromSeconds(60));
+        await Poll.Until(() => service.State("s1") == "completed", () => $"the run never ended: {service.Record("s1")}");
 
         Assert.Single(Prompts());
         Assert.Null(service.Mark);

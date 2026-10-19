@@ -74,13 +74,13 @@ public sealed class AccountLimitTickTests : IDisposable
         var said = new List<AttentionEvent>();
 
         // The first session takes the quest and is cut off by a failure no table recognises: a strike, as today.
-        said.AddRange(attention.Observe(await driver.RunOnceAsync().WaitAsync(TimeSpan.FromSeconds(60))));
+        said.AddRange(attention.Observe(await driver.RunOnceAsync().WaitAsync(Poll.Patience)));
         Assert.Equal("failed", service.Session("s1")["state"]!.GetValue<string>());
         Assert.Null(service.Session("s1")["limit"]);
         Assert.Null(roster.CoolingOf("acp-stub", null));
 
         // Carrying it on, the next is refused mid-turn by observation 4's sentence: a limit, which cools the account.
-        said.AddRange(attention.Observe(await driver.RunOnceAsync().WaitAsync(TimeSpan.FromSeconds(60))));
+        said.AddRange(attention.Observe(await driver.RunOnceAsync().WaitAsync(Poll.Patience)));
         var refused = service.Session("s2");
         Assert.Equal("failed", refused["state"]!.GetValue<string>());
         Assert.True(refused["limit"]!.GetValue<bool>());
@@ -119,7 +119,7 @@ public sealed class AccountLimitTickTests : IDisposable
 
         // At the reset the carry-on runs, on the account that became ready, and closes the quest.
         now = Until.AddMinutes(1);
-        await driver.RunOnceAsync().WaitAsync(TimeSpan.FromSeconds(60));
+        await driver.RunOnceAsync().WaitAsync(Poll.Patience);
 
         Assert.Equal(3, service.SessionCount);
         Assert.Equal("completed", service.Session("s3")["state"]!.GetValue<string>());

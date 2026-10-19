@@ -76,7 +76,7 @@ public sealed class AccountGoalTickTests : IDisposable
         for (var i = 0; i < Cap; i++) _ledger.Publish($"q{i + 1}", Repositories[i]);
 
         // One look: K starts, chosen at once, counted as they are chosen.
-        await driver.TickAsync().WaitAsync(TimeSpan.FromSeconds(90));
+        await driver.TickAsync().WaitAsync(Poll.Patience);
 
         var records = _ledger.Sessions;
         Assert.Equal(Cap, records.Count);
@@ -95,8 +95,7 @@ public sealed class AccountGoalTickTests : IDisposable
             var id = record["id"]!.GetValue<string>();
             await Poll.Until(
                 () => events.After(id, 0).Events.Count > 0,
-                () => $"session {id} has kept no event yet",
-                TimeSpan.FromSeconds(90));
+                () => $"session {id} has kept no event yet");
             var opening = events.After(id, 0).Events[0];
             Assert.Equal(SessionEventKind.Note, opening.Kind);
             Assert.StartsWith($"opened on `{record["profile"]!.GetValue<string>()}`: ", opening.Text);
@@ -109,8 +108,7 @@ public sealed class AccountGoalTickTests : IDisposable
         string State(string id) => _ledger.Session(id)["state"]!.GetValue<string>();
         await Poll.Until(
             () => Of("account-1").All(id => State(id) == "failed"),
-            () => string.Join(", ", _ledger.Sessions.Select(record => $"{record["id"]}:{record["profile"]}:{record["state"]}")),
-            TimeSpan.FromSeconds(90));
+            () => string.Join(", ", _ledger.Sessions.Select(record => $"{record["id"]}:{record["profile"]}:{record["state"]}")));
         Assert.All(Of("account-1"), id => Assert.True(_ledger.Session(id)["limit"]?.GetValue<bool>(), id));
         var working = Of("account-2").Concat(Of("account-3")).ToList();
         Assert.All(working, id => Assert.Equal("working", State(id)));
@@ -128,7 +126,7 @@ public sealed class AccountGoalTickTests : IDisposable
         Assert.Equal(Until, AccountWindows.WeekOf(_home, "stub", "account-1", _now, fixedWeek: true));
 
         foreach (var id in working) Assert.True(processes.Stop(id));
-        await driver.Running.SettledAsync().WaitAsync(TimeSpan.FromSeconds(90));
+        await driver.Running.SettledAsync().WaitAsync(Poll.Patience);
 
         // In its next week's last day, with nothing running: the week the limit told is carried on, and says when it resets
         // but not how much of it is unused, so it earns the account nothing (USAGERESET1: what would lapse is a reading's).

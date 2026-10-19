@@ -364,6 +364,22 @@ repository.
 - **Verification:** see the branch's hand-back (touched fast classes, the driver fast half, the AutoLanding git classes, the touched
   Process classes).
 
+## 2026-10-19 — The driver's tick tests still waited 60 and 90 seconds of their own (TESTPATIENCE3)
+
+- **Symptom:** one `WaitAsync` of 60 s ran out under outside load while its test ran alone (the Process tick group, PROCPAR1).
+- **Root cause:** TESTPATIENCE2 took the 15-30 s bounds and left the 60 and 90 s ones, on the same signals (a tick, a run, a
+  session's start) that a starved machine delays.
+- **Fix:** each signal wait is `Poll.Patience`. Sites (129 in 30 files): `Loop/` SessionMessagesTick 21, AccountRotationTick 12,
+  SessionsOutliveTheirLookProcess 10, ChannelNextStepTick 9, StartInSyncTick 8, DrivenSessionInput 8, AskAndWaitTick 8,
+  HandOverQuestTick 6, SignInRefusalTick 5, StopHoldTick 4, AnswerContinuesTick 4, AccountGoalTick 4, PauseTick 3, AcpTurnFailureTick 3,
+  AccountLimitTick 3, HelperProcess 2, AccountReadingTick 2, SessionRequestTick 1, StartGitCount 1, BrainstormProcess 1 (its 90 s wait),
+  NodeRuntimeLoopProcess 1 (the close token); the close tokens of AnswerGoesOnOnce, GoAheadsGoOn, RegistrationFollowLoop, ReopenTelling,
+  WorkflowBindingLook, DriverWatchTopics, LookParallel and LookWait; `Review/OpinionResumeTick` 7. `Poll.Until(…, TimeSpan)` calls pass no
+  bound now. Left, as claims: `BrainstormProcessTests`' `< 60 s` elapsed bound; the 120 s close tokens, the 20/30 s bounds and
+  `SessionsOutliveTheirLookTests`' minutes.
+- **Verification:** the touched fast classes (the eight close-token classes) 60 of 60; the Process classes are for the parent's tick
+  group runs.
+
 ## 2026-10-19 — The instance door's tests gave a stand-in two seconds to connect and answer (TESTWAIT7)
 
 - **Symptom:** beside loaded merges, four `InstanceDoorTests` failed (exit 2 for 0; "trees: Daoris is running on this home … did not
