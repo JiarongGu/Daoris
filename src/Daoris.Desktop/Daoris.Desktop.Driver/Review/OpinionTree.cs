@@ -139,7 +139,8 @@ public static class OpinionTree
             {
                 if (!Directory.Exists(full)) return null;
                 Writable(full);
-                Directory.Delete(full, recursive: true);
+                // Never following a link (TREELINK1b): .NET's recursive delete is not proven safe against what a link points at.
+                TreeSetAside.DeleteNeverFollowing(full);
                 return null;
             }
             catch (Exception error) when (error is IOException or UnauthorizedAccessException)

@@ -35,7 +35,8 @@ public sealed class SessionTreesTests : IDisposable
     {
         try
         {
-            Directory.Delete(folder, recursive: true);
+            // Never following a link, and read-only git objects made writable (TREESCRATCH2).
+            if (Directory.Exists(folder)) TreeSetAside.DeleteNeverFollowing(folder);
         }
         catch (IOException)
         {
