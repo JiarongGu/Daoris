@@ -29,7 +29,10 @@ explains captures and shutdown; [Installing it](#installing-it-2026-09-22) expla
 
 The adapters are the stub, `acp-stub` (the protocol door with no model in it), `claude-code`, and the
 protocol door's configurations `claude-code-acp`, `codex-acp` and `dsh`. A session's record is
-concluded from its exit code and its quest, never from what it said.
+concluded from its exit code and its quest, never from what it said. A driven turn that ends on its own background work waits
+for that work and then for the turn its harness wakes by itself, whose autonomous `usage_update` is its end; Daoris's go-on
+goes only where none woke (`Agents/Acp/AcpWake.cs`, D83's BGWAIT2 note). A timeout is said to the door before the kill, and a
+run that brought its quest to done before it concludes completed (`Observation.AfterTimeout`).
 
 An account's use is measured against a curve by `Accounts/Domain/UsageCurves.cs` (D165, SWITCH1b-i): the share of a window
 passed at a given moment, the person's or the smart curve's value there, and each account's room in points on its tightest

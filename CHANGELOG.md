@@ -5,6 +5,10 @@ with the version and date at release.
 
 ## Unreleased
 
+- A session that waited on its own background work no longer hangs after it: when the work ends and Claude Code wakes the
+  agent by itself, that turn's end is the session's end, where Daoris used to send a prompt the agent never answered and wait
+  for the timeout. A session the timeout ends after its quest reached done is recorded completed, and its conversation says it
+  timed out rather than that the agent exited.
 - Several tasks no longer wait for each other to start. A task whose start is slow (its tree being made, its account being
   chosen, a plugin taking its time to answer) holds only itself: a task published meanwhile starts beside it, and the slow one
   is still started once, in its place under your limit of sessions at once. The sync with a remote runs on its own, so a remote

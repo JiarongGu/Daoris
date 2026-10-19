@@ -263,6 +263,10 @@ public sealed class AcpRefusal(
 /// Told the id <c>session/new</c>'s answer names, the moment it arrives (ANSWER1a, D131 §1): what an answer
 /// to a park resumes, kept before the first turn can fail or park. Null where nobody keeps it.
 /// </param>
+/// <param name="wakeQuiet">
+/// How long a session whose turn waited on its own background work waits, once the work ended, for its harness to wake its
+/// agent before Daoris's own go-on goes (BGWAIT2, <see cref="AcpWake"/>); <see cref="AcpWake.Quiet"/> when not given.
+/// </param>
 public sealed class AcpSession(
     TextReader incoming,
     TextWriter outgoing,
@@ -274,7 +278,8 @@ public sealed class AcpSession(
     TimeSpan? quiet = null,
     SessionStreams? streams = null,
     Action<IReadOnlyList<AcpConfigOption>>? onOptions = null,
-    Action<string>? onConversation = null)
+    Action<string>? onConversation = null,
+    TimeSpan? wakeQuiet = null)
 {
     /// <summary>The protocol version this client speaks. Stated, never negotiated downward silently.</summary>
     private const int ProtocolVersion = 1;
@@ -353,6 +358,41 @@ public sealed class AcpSession(
 
     /// <summary>The background work its harness says it runs (BGWAIT1), read whether or not its streams are kept.</summary>
     private readonly AcpBackground _background = new();
+
+    /// <summary>The turns its harness starts by itself when that work ends (BGWAIT2), read from the session's opening.</summary>
+    private readonly AcpWake _wake = new();
+
+    private readonly TimeSpan _wakeQuiet = wakeQuiet ?? AcpWake.Quiet;
+
+    /// <summary>
+    /// Why the process is being ended from outside (BGWAIT2, <see cref="Ending"/>), and whether the stream is over, after which
+    /// nothing said changes how it ended. Under the lock.
+    /// </summary>
+    private readonly object _endGate = new();
+    private Noted? _ending;
+    private bool _streamOver;
+
+    /// <summary>
+    /// Told why the agent's process is about to be ended from outside the session (BGWAIT2): the timeout, said before its kill.
+    /// The stream's end that follows is then that cause's, said by its own line (<see cref="AcpEnded"/>), and never the agent
+    /// having exited, as the install's record said of a session the timeout killed. Said once; a stream already over keeps its
+    /// own diagnosis, since the agent ended it first.
+    /// </summary>
+    public void Ending(Noted why)
+    {
+        lock (_endGate)
+        {
+            if (!_streamOver) _ending ??= why;
+        }
+    }
+
+    /// <summary>The stream's end as a failure: its cause's where one was said before it (<see cref="Ending"/>), else <paramref name="sentence"/>.</summary>
+    private DriverException StreamEnded(string sentence)
+    {
+        Noted? why;
+        lock (_endGate) why = _ending;
+        return why is not null ? new AcpEnded(why) : new DriverException(sentence);
+    }
 
     /// <summary>
     /// The largest context reading this session has reported (TOOL3), or null when it reported none —
@@ -579,17 +619,24 @@ public sealed class AcpSession(
 
     /// <summary>
     /// A turn that ended while the session's own background work runs (BGWAIT1): not a question. Where the driver says its
-    /// quest would otherwise park it on the person, the session stays open until the harness says that work ended, and is
-    /// then told so in a turn of Daoris's own, whose stop reason this answers. Null where nothing runs, or nothing waits.
+    /// quest would otherwise park it on the person, the session stays open until the harness says that work ended, then until
+    /// the turn its harness woke for it ends (BGWAIT2), whose stop reason this answers. Null where nothing runs, or nothing waits.
     /// </summary>
     /// <remarks>
-    /// <para><b>Why a turn of Daoris's own.</b> The harness wakes its agent itself when the work ends, with no prompt open
-    /// (CONSOLE2a), so that turn's end never reaches the wire as an answer. A prompt does: where the agent takes one during
-    /// a turn (STEER1) it is folded into a woken turn still running, and its answer is the end the run waits for.</para>
+    /// <para><b>The woken turn's end is the turn's end.</b> The harness wakes its agent itself when the work ends, with no prompt
+    /// open (CONSOLE2a), and the adapter answers no prompt for that turn: its end is the autonomous result's
+    /// <c>usage_update</c> (<see cref="AcpWake"/>). It ends here as an answered turn does, a turn in the record, and the run's
+    /// loop reads again what runs and what its quest says, so a real question still parks and work it started is waited for.</para>
+    ///
+    /// <para><b>Daoris's own turn only where none woke.</b> 🔴 BGWAIT1 sent its go-on at once, assuming its answer would come:
+    /// a prompt sent into the woken turn is taken by it and never answered, and the install's session waited 48 minutes for the
+    /// timeout (2026-10-19). It goes now only where nothing was said for <see cref="AcpWake.Quiet"/> with no turn running and no
+    /// prompt open, as a fresh turn the adapter answers. Nothing is cancelled: a cancel is the session's, never one turn's, and
+    /// would land on the person's words as readily as on Daoris's.</para>
     ///
     /// <para><b>Bounded by the session's own bounds</b>: the person's stop and the timeout end the process, the reader with
-    /// it, and the wait with that; the driver's shutdown cancels it. Work that never ends (a dev server) is waited for until
-    /// one of those, as a park would have held its tree for the person (D83).</para>
+    /// it, and the wait with that; the driver's shutdown cancels it. Work that never ends (a dev server), and a woken turn whose
+    /// end is never said, are waited for until one of those, as a park would have held its tree for the person (D83).</para>
     /// </remarks>
     /// <exception cref="DriverException">The agent's stream ended first: a failure of the door, never a clean turn's end.</exception>
     private async Task<string?> AfterBackgroundAsync(Func<CancellationToken, Task<bool>>? waits, CancellationToken ct)
@@ -611,18 +658,33 @@ public sealed class AcpSession(
         if (!waiting) return null;
 
         Note(BackgroundNotes.Waits(running));
-        var ended = await _background.EndedAsync(Ended, ct).ConfigureAwait(false)
-            ?? throw new DriverException(
-                "the ACP agent's stream ended while the session waited for its own background work — the agent exited, or it "
-                + "was ended.");
+        const string waited =
+            "the ACP agent's stream ended while the session waited for its own background work — the agent exited, or it was "
+            + "ended.";
+        var ended = await _background.EndedAsync(Ended, ct).ConfigureAwait(false) ?? throw StreamEnded(waited);
 
         var said = BackgroundNotes.EndedSaid(ended);
         Note(BackgroundNotes.Ended(ended));
-        return await SendPromptAsync(
-                $"Your background work has ended: {said}. Go on with your quest from where you left off.",
-                files: null, ct, sent: null, words: null)
-            .ConfigureAwait(false);
+        switch (await _wake.AfterAsync(Prompted, _wakeQuiet, Ended, ct).ConfigureAwait(false))
+        {
+            case true:
+                // The turn its harness woke has ended, by the adapter's word: a turn's end as an answer's is, with no counts,
+                // since no answer carried any.
+                CloseCut();
+                Emit(new SessionEvent { Kind = SessionEventKind.Turn, StopReason = WokenStop, Models = TurnModelsOf(default, null) });
+                return WokenStop;
+            case false:
+                return await SendPromptAsync(
+                        $"Your background work has ended: {said}. Go on with your quest from where you left off.",
+                        files: null, ct, sent: null, words: null)
+                    .ConfigureAwait(false);
+            default:
+                throw StreamEnded(waited);
+        }
     }
+
+    /// <summary>The stop reason of a turn its harness woke, which ends as a turn the agent finished does (BGWAIT2).</summary>
+    private const string WokenStop = "end_turn";
 
     /// <summary>
     /// The person's words this run sent and the session never took, once the run has ended (TURNFAIL1): on the wire behind a
@@ -1133,6 +1195,15 @@ public sealed class AcpSession(
         }
 
         if (taken is not null) Asked(taken);
+
+        // A prompt fewer is open: the wait for a woken turn reads again whether its quiet may run (BGWAIT2).
+        _wake.Stir();
+    }
+
+    /// <summary>Whether a prompt is on the wire and not yet answered (STEER1): what the agent says meanwhile is its turn's.</summary>
+    private bool Prompted()
+    {
+        lock (_promptsGate) return _prompts.Count > 0;
     }
 
     /// <summary>
@@ -1298,8 +1369,10 @@ public sealed class AcpSession(
             _console.Dispose();
 
             // Whatever was still awaited will never be answered. Faulting it here is what turns an
-            // agent that died mid-handshake into a sentence rather than a hang.
-            Fail(new DriverException(
+            // agent that died mid-handshake into a sentence rather than a hang. 🔴 BGWAIT2: where the timeout said it was
+            // ending the process before the stream ended, the sentence is the timeout's; whatever is said after is not.
+            lock (_endGate) _streamOver = true;
+            Fail(StreamEnded(
                 "the ACP agent's stream ended before it answered — the agent exited, or it is not "
                 + "speaking ACP on stdout."));
         }
@@ -1353,9 +1426,14 @@ public sealed class AcpSession(
 
             Interlocked.Increment(ref _updates);
 
-            // The session's own background work (BGWAIT1), before the console takes the same frames for its streams.
+            // The session's own background work (BGWAIT1), before the console takes the same frames for its streams, and the
+            // turns its harness wakes when that work ends (BGWAIT2), read in the same order.
             var from = StringField(p, "sessionId");
-            if (from is null || from == _sessionId) _background.Take(update);
+            if (from is null || from == _sessionId)
+            {
+                _background.Take(update);
+                _wake.Take(update, Prompted());
+            }
 
             // The agent went on after an error answered the turn before a word (USERSHOWN1): its words, thinking, calls or plan
             // are that word's turn, so it was taken. A meter or a mode said meanwhile is nobody's answer.

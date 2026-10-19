@@ -5,6 +5,29 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-19 — A finished driven session waited 48 minutes on its own go-on and was recorded failed (BGWAIT2)
+
+- **Symptom:** the owner, "one session just failed". A driven session on the install committed and closed its quest done in
+  the turn its harness woke after its background work ended; Daoris then waited 48 minutes on its go-on prompt until the
+  90-minute timeout killed it, and the record said `failed`, *"the ACP agent's stream ended before it answered — the agent
+  exited"*.
+- **Root cause:** BGWAIT1 (480e1afdf) sent its go-on 250 ms after the work ended and awaited its answer with no bound, on the
+  assumption, never observed, that the adapter answers a prompt sent into the woken turn. `claude-agent-acp` 0.79.0 settles a
+  prompt only at a user turn's result or an idle it owns; the woken turn's result is autonomous, skipped, and its idle absorbed,
+  so a prompt that turn takes is never answered (D83's BGWAIT2 note has the lines). Two more faults made the ending false:
+  the conclusion read every timeout as `failed` whatever the quest's status, and the door said the kill's end of stream as the
+  agent exiting, since nothing told it the timeout came first.
+- **Fix:** `AcpWake` reads the woken turn from the wire, and the autonomous `usage_update` ends it as the turn's end; the go-on
+  goes only where nothing woke within `AcpWake.Quiet` (`AcpSession.AfterBackgroundAsync`). `Driver.WaitAsync` says the timeout
+  to the door before the kill (`AcpEnding`, `AcpSession.Ending`, `AcpEnded`), recorded by `ended.timeout`'s line.
+  `Observation.AfterTimeout` makes a timeout after this run's done `completed`, in `Driver.cs`'s conclusion and
+  `DriverContinuations`'.
+- **Verify:** `AcpBackgroundTests`, whose fake agent now never answers a go-on, as the install's adapter did not (the woken
+  turn's end, the fallback, six ends that are not one, the long call, the second work, the person's words before, at and after,
+  the stream's end, the shutdown, the timeout in both orders), and `ObservationTests`' timeout case: 19 seen red on the old
+  behaviour, then all 56 green, with `AcpTests`, `AcpSteerTests`, `AcpResumeTests`, the note tests and `StructureTests`.
+- **Commit:** 062452f7b, 93f69cd20
+
 ## 2026-10-19 — Three Chinese notes of Ask Daoris's room said 这台机器 where the glossary says 本机 (PARALLEL1a, HELPSTUCK1)
 
 - **Symptom:** `names.test.ts`' "say in sentences only what the audit found to be another thing's word" failed on main, listing
