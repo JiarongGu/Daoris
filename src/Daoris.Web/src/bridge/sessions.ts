@@ -1,7 +1,7 @@
 import { type InfiniteData, useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useShenora, useShenoraEvent } from '@shenora/react';
-import type { Session } from '../data/api';
-import { keys } from '../data/queries';
+import { type Session, SESSION_ACTIVE } from '../data/api';
+import { keys, SESSIONS_SLICE } from '../data/queries';
 import { searchable } from '../lib/searchable';
 import type { SessionEvent } from '../work/conversation';
 import type { SessionEntry } from '../work/entries';
@@ -10,9 +10,41 @@ import type { HelperAskRow, HelperWait } from '../work/HelperAsks';
 import type { NewSessionAnswer } from '../work/say';
 import type { SessionWhere } from '../work/SessionRow';
 import { call } from './call';
+import { readSlice } from './driver';
+import { mergeKeyed, type SliceSpec } from './slices';
 
 // A session's life on this machine (MOD3): the person's answer to a parked one, a stop and how it is
 // said, and finding sessions by their first words and by what they said.
+
+/** The service's order of its records (`Sessions.ListAsync`): the open ones first, then by when each began. */
+const inServiceOrder = (a: Session, b: Session) => {
+  const open = Number(!SESSION_ACTIVE.has(a.state)) - Number(!SESSION_ACTIVE.has(b.state));
+  if (open !== 0) return open;
+  const began = (Date.parse(a.created) || 0) - (Date.parse(b.created) || 0);
+  return began !== 0 ? began : a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
+};
+
+const isRecord = (value: unknown): value is Session =>
+  typeof value === 'object' && value !== null && typeof (value as { id?: unknown }).id === 'string';
+
+/**
+ * The session records as the shell pushes them (PUSH1d2, D182): a partition per workspace, each its records by id with the fields the
+ * page reads (`SessionsStateSlice.Fields`), a record's move a delta of that record (`mergeKeyed`), composed into the widest list the
+ * service answers, in its order; `useSessions` reads each view's list from it. Nothing judged yet composes nothing, which keeps the
+ * pull; a slice judged to hold no record is an empty list.
+ */
+export const sessionsSlice: SliceSpec = {
+  name: SESSIONS_SLICE,
+  key: keys.sessions(null, true, null),
+  read: () => readSlice(SESSIONS_SLICE),
+  compose: (partitions, judged) => {
+    if (!judged) return undefined;
+    return [...partitions.values()]
+      .flatMap((part) => (typeof part === 'object' && part !== null && !Array.isArray(part) ? Object.values(part).filter(isRecord) : []))
+      .sort(inServiceOrder);
+  },
+  merge: mergeKeyed,
+};
 
 /**
  * The person's answer to a session parked at a checkpoint (design §4).
