@@ -5,6 +5,12 @@ with the version and date at release.
 
 ## Unreleased
 
+- A start no longer asks each account's agent how much it has used before choosing one, a process and a few seconds each
+  time. Daoris works it out from the account's last reading and its own sessions on it since, and asks only where that comes
+  within ten points of the account's usage curve, where the account has gone thirty minutes unread, where Daoris cannot weigh
+  what it spent there, or after a limit or usage credits were said; *Read now* still asks at once. Whether an account is near
+  or over its curve is still only what its agent said. Where Daoris's own turns moved an account's use since its reading, the
+  start's first line says that use as projected.
 - Each window holds Daoris's own state (what it drives and holds, the choices on Settings, what is running) as Daoris sends it
   when it changes: a choice made in one window or at a terminal shows in every window, and an open window no longer asks for
   it again when Daoris looks, when something changes elsewhere or when the window is brought forward.
