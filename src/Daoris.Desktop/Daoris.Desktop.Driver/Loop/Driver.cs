@@ -522,14 +522,14 @@ public sealed class Driver(
 
         if (sync is not null && (Part == LookPart.Look | Context.Runs.TakeClaimsDue()))
         {
-            using (Stages.Begin("claims")) await StopLostClaimsAsync(events, ct).ConfigureAwait(false);
+            await Stages.TimeAsync("claims", () => StopLostClaimsAsync(events, ct)).ConfigureAwait(false);
         }
 
         // The plugins, read fresh each tick like the config (D64): a harness declared since the
         // last look is spawnable now, a server declared since is handed now, a hook process
         // disabled since is stopped now. The catalogue refuses a name this build carries before
         // anything of that plugin is taken.
-        using (Stages.Begin("plugins"))
+        await Stages.TimeAsync("plugins", async () =>
         {
             var catalog = PluginCatalog.Load(home, _built.Names);
             Context.Adapters = _built.WithPlugins(catalog);
@@ -540,7 +540,7 @@ public sealed class Driver(
             {
                 events.AddRange(await hooks.ReconcileAsync(catalog, ct).ConfigureAwait(false));
             }
-        }
+        }).ConfigureAwait(false);
 
         // What sessions proposed about the rules (PERM2, D74), settled BEFORE this tick spawns anything:
         // a narrowing is applied at once, so this tick's sessions are already handed it, and a widening
@@ -793,17 +793,18 @@ public sealed class Driver(
         }
 
         // Each start's preparation, from its holds to its record open or to what it came to (LOOKWAIT1), timed with its quest or ask. Its
-        // reservation is let go the moment its record opens, when the ledger holds it, or once it came to nothing (PARALLEL1b).
+        // reservation is let go the moment its record opens, when the ledger holds it, or once it came to nothing (PARALLEL1b). Run as
+        // its span's own work, so its git waiting for a place is said as its queue (LOOKWAIT1b); the look that holds the span is not.
         async Task<StartCame> BeginAsync(StartBegun started, LookStages.StageSpan span, StartReservation reserved, Func<List<TrustHold>, Action, Task<StartRun>> start)
         {
             var own = new List<TrustHold>();
             try
             {
-                var came = await Context.Runs.StartAsync(opened => start(own, () =>
+                var came = await span.RunAsync(() => Context.Runs.StartAsync(opened => start(own, () =>
                 {
                     Context.Runs.Release(reserved);
                     opened();
-                })).ConfigureAwait(false);
+                }))).ConfigureAwait(false);
                 return new StartCame(started, came, own);
             }
             finally
@@ -871,7 +872,10 @@ public sealed class Driver(
                     }
                 }
 
-                return await (Runner is { } runner ? runner(start, opened, ct) : RunAsync(start, snapshot.Repositories, own, opened, ct))
+                // QUEUEDTREE1: the tree the start opens goes on the driver's close before its record's open is asked, on no token.
+                var fresh = new FreshTree(path => Context.Trees.RemoveAsync(path));
+                return await fresh.UntilOpenAsync(
+                        () => Runner is { } runner ? runner(start, opened, ct) : RunAsync(start, snapshot.Repositories, own, opened, fresh, ct), ct)
                     .ConfigureAwait(false);
             }
             finally
@@ -1130,7 +1134,8 @@ public sealed class Driver(
         SyncReport synced;
         using (var syncing = Stages.Begin("sync", beside: beside))
         {
-            synced = await sync.RunOnceAsync(ct).ConfigureAwait(false);
+            // Its gate's queue, and its git's waits for a place (LOOKWAIT1b), said as one.
+            synced = await syncing.RunAsync(() => sync.RunOnceAsync(ct)).ConfigureAwait(false);
             syncing.Queued(synced.Queued);
         }
 
@@ -1445,8 +1450,9 @@ public sealed class Driver(
     /// </returns>
     /// <param name="registry">The registry as this tick's snapshot answered it: what the session may reach across (D107).</param>
     /// <param name="onOpened">Called once the session's record is open, and never for a start that held or was refused (DEV3).</param>
+    /// <param name="fresh">The tree this start opens, let go on each way out that starts nothing, on no token (QUEUEDTREE1).</param>
     private async Task<StartRun> RunAsync(
-        Consideration start, IReadOnlyList<RepoView> registry, List<TrustHold> untrusted, Action onOpened, CancellationToken ct)
+        Consideration start, IReadOnlyList<RepoView> registry, List<TrustHold> untrusted, Action onOpened, FreshTree fresh, CancellationToken ct)
     {
         var quest = start.Quest;
         var root = start.Root!;
@@ -1624,6 +1630,7 @@ public sealed class Driver(
                             : entryTree is not null ? EntryLanded(start.Entry!, quest.To) : null,
                         partOf: entryTree is not null ? start.Entry!.Into!.Session : null)
                     .ConfigureAwait(false);
+                fresh.Opened(opened.Path);
             }
             catch (DriverException error)
             {
@@ -1638,7 +1645,7 @@ public sealed class Driver(
         var setUp = ReviewSetUps.Environment(config, quest, start.Workspace);
         if (setUp is not null && ReviewSetUps.ProcedureMissing(setUp, quest, workTree) is { } unfollowable)
         {
-            if (opened is not null) await Context.Trees.RemoveAsync(opened.Path, ct: ct).ConfigureAwait(false);
+            await fresh.LetGoAsync().ConfigureAwait(false);
             return Hold(unfollowable);
         }
 
@@ -1646,7 +1653,7 @@ public sealed class Driver(
         // design §2.3 step 1): a tab an agent opens over CDP has no window. A browser that will not open one holds the start.
         if (setUp is not null && Reviews is { } desk && await desk.OpenForStepAsync(quest, setUp, ct).ConfigureAwait(false) is { } unshowable)
         {
-            if (opened is not null) await Context.Trees.RemoveAsync(opened.Path, ct: ct).ConfigureAwait(false);
+            await fresh.LetGoAsync().ConfigureAwait(false);
             return Hold(unshowable);
         }
 
@@ -1703,10 +1710,11 @@ public sealed class Driver(
                     permissions: permissions)
                 .ConfigureAwait(false);
             // The fresh tree opened above is used by none of the returns that follow, so each lets it go by the clean path (GOONTREE1,
-            // D51): a tree and branch for a start that is never made would be left at every look.
+            // D51): a tree and branch for a start that is never made would be left at every look. On no token (QUEUEDTREE1): a
+            // continuation returns as the driver closes, and a removal on the closed token would leave it to the sweep.
             if (continued is not null)
             {
-                if (opened is not null) await Context.Trees.RemoveAsync(opened.Path, ct: ct).ConfigureAwait(false);
+                await fresh.LetGoAsync().ConfigureAwait(false);
                 return continued;
             }
 
@@ -1715,7 +1723,7 @@ public sealed class Driver(
             park = await GoOns.HandedOnRecordAsync(park, ct).ConfigureAwait(false);
             if (!park.Parked && !park.Running && !park.WordsWaiting)
             {
-                if (opened is not null) await Context.Trees.RemoveAsync(opened.Path, ct: ct).ConfigureAwait(false);
+                await fresh.LetGoAsync().ConfigureAwait(false);
                 return DriverContinuations.TakenBackFirst(quest, park.Session);
             }
 
@@ -1725,7 +1733,7 @@ public sealed class Driver(
             // waiting as said, marked so a later look leaves them there, and the person's press is the next move (MSG1f).
             if (fellBack!.Never || quest.Status is not ("Open" or "Taken"))
             {
-                if (opened is not null) await Context.Trees.RemoveAsync(opened.Path, ct: ct).ConfigureAwait(false);
+                await fresh.LetGoAsync().ConfigureAwait(false);
                 return GoOns.CannotGoOn(quest, park, fellBack);
             }
 
@@ -1734,7 +1742,7 @@ public sealed class Driver(
             // A helper's answer is the same (MIXAGENT2a-ii): another agent's claim, never carried to a new session as the person's.
             if ((park.Findings.Count > 0 || park.Helpers.Count > 0) && !park.Waiting.Any(word => word.Persons))
             {
-                if (opened is not null) await Context.Trees.RemoveAsync(opened.Path, ct: ct).ConfigureAwait(false);
+                await fresh.LetGoAsync().ConfigureAwait(false);
                 return GoOns.CannotGoOn(quest, park, fellBack);
             }
 
@@ -1755,19 +1763,19 @@ public sealed class Driver(
                 }
                 catch (DriverException error)
                 {
-                    if (opened is not null) await Context.Trees.RemoveAsync(opened.Path, ct: ct).ConfigureAwait(false);
+                    await fresh.LetGoAsync().ConfigureAwait(false);
                     return Hold(error.Message);
                 }
 
                 if (!selection.Allowed)
                 {
-                    if (opened is not null) await Context.Trees.RemoveAsync(opened.Path, ct: ct).ConfigureAwait(false);
+                    await fresh.LetGoAsync().ConfigureAwait(false);
                     return Hold(selection.Refusal!) with { Cooling = selection.Cooling, SignedOut = selection.SignedOut };
                 }
 
                 if (!ReferenceEquals(resumed, selection) && Untrusted(selection) is { } walkedUntrusted)
                 {
-                    if (opened is not null) await Context.Trees.RemoveAsync(opened.Path, ct: ct).ConfigureAwait(false);
+                    await fresh.LetGoAsync().ConfigureAwait(false);
                     return walkedUntrusted;
                 }
             }
@@ -1790,7 +1798,9 @@ public sealed class Driver(
         var continues = ContinuesFrom(handedQuest, carryingOn ? start.Resumes : null, selection.Profile, selection.Steps?.FirstOrDefault()?.Why);
 
         // The ledger judges the open — the same door any other client would use. A refusal here is
-        // an answer (someone else got there first), not an error.
+        // an answer (someone else got there first), not an error. Once asked, the ledger may hold the
+        // tree even where a close cuts its answer off, so a close from here leaves it (QUEUEDTREE1).
+        fresh.Asked();
         var (sessionId, message) = await service
             // The tree this spawn will hold (D51) — its own where the repository opted in, the
             // registered root otherwise. Stated rather than left to the service to infer, because
@@ -1804,10 +1814,7 @@ public sealed class Driver(
         {
             // A fresh tree for a session that never opened has no work in it, so the clean removal
             // path takes it — and if anything landed there in the meantime, the refusal keeps it.
-            if (opened is not null)
-            {
-                await Context.Trees.RemoveAsync(opened.Path, ct: ct).ConfigureAwait(false);
-            }
+            await fresh.LetGoAsync().ConfigureAwait(false);
 
             // The words of a record the person wrote to are the start's own to say (TICKSHOWN1, D137): carried as the hold's
             // sentence, the consideration reads Blocked and the record's row says its words wait and why, not only going on.
@@ -1911,6 +1918,8 @@ public sealed class Driver(
                 InSync = inSync?.Told,
                 // What its tree's open copied of the checkout's dependencies, so it skips the `npm ci` that would delete them (TREEDEPS1).
                 Dependencies = opened?.Dependencies,
+                // Its repository's heavy gates, once at its end through `run-heavy`, where its PATH finds the verb (HEAVYRUN1b1).
+                Heavy = HeavyTold.For(workTree, home),
                 GrewFrom = opened?.GrewFrom,
                 // The parts before it on its session's line, and how its tree stands to theirs (SESSONE1d).
                 Parts = start.Entry is { } entry ? await PartsAsync(entry, joinedIn, entryTree, opened, quest.To, ct).ConfigureAwait(false) : null,
@@ -2708,8 +2717,10 @@ public sealed class Driver(
         // Through the start gate (PROCSTART2): a press that starts a session reaches here before its first wait, and the
         // runtime's start lock is no thread's to wait on but the pool's. Seen through once begun, as the start always was.
         // PARALLEL1d: a run that goes on with the person's words (ANSWER1a) is the person's start; every other the loop's.
+        // PARALLEL1f: its wait for a place is on the loop's token, so a driver closing ends a start still queued, which throws
+        // before `spawned` is told: its caller puts back what it took, or closes its record as the driver's (D104).
         var whose = resume is null ? StartClass.Background : StartClass.Person;
-        using var process = await ProcessStarts.Shared.StartAsync(info, whose, CancellationToken.None).ConfigureAwait(false)
+        using var process = await ProcessStarts.Shared.StartAsync(info, whose, ct).ConfigureAwait(false)
             ?? throw new DriverException($"the {adapter.Name} adapter's process did not start");
         spawned?.Invoke();
         // Kept beside the process, so who is driving Daoris's browser lasts exactly as long as it (BRW8).

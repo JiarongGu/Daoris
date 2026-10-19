@@ -1,9 +1,9 @@
-import { render, screen, within } from '@testing-library/react';
+import { cleanup, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import { describe, expect, it, vi } from 'vitest';
 import { code } from '../test/code';
-import { AiJobs, type IntakeJob, type SearchTier } from './AiJobs';
+import { AiJobs, type HelpAccessJob, type HelpGrantsJob, type IntakeJob, type SearchTier } from './AiJobs';
 import type { StartWiring } from '../map/wiring';
 
 // AGT6: Daoris's own AI on the Settings page — each job it may use a model for, the tier that answers
@@ -115,6 +115,25 @@ describe('AI features', () => {
   it('has no Ask Daoris row where it is given none', () => {
     show({ search: LEXICAL });
     expect(screen.queryByRole('combobox', { name: 'the Ask Daoris agent' })).toBeNull();
+  });
+
+  /** HELPMODE1c1 (D183 point 1; the modes design §5): restricted mode's configured access, under Ask Daoris's access. */
+  it('draws configured access under Ask Daoris’s access while restricted, and none under full access or where it is given none', () => {
+    const access: HelpAccessJob = {
+      mode: 'restricted', confirming: false, adds: [], onPick: vi.fn(), onEnable: vi.fn(), onCancel: vi.fn(),
+    };
+    const grants: HelpGrantsJob = { agent: { name: 'Claude Code', rules: true }, grants: [], onChoose: vi.fn() };
+
+    show({ search: LEXICAL, access, grants });
+    expect(screen.getByRole('region', { name: 'Configured access' })).toBeInTheDocument();
+
+    cleanup();
+    show({ search: LEXICAL, access: { ...access, mode: 'full' }, grants });
+    expect(screen.queryByRole('region', { name: 'Configured access' })).toBeNull();
+
+    cleanup();
+    show({ search: LEXICAL, access });
+    expect(screen.queryByRole('region', { name: 'Configured access' })).toBeNull();
   });
 
   /** Which account runs it is the driver's answer, per circle, named the way the roster names it. */

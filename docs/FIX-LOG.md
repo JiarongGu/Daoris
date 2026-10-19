@@ -5,6 +5,60 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-20 — A start's fresh tree was left at the driver's close (QUEUEDTREE1)
+
+- **Symptom:** PARALLEL1f's hand-back: a continuation that returns as the driver closes leaves the tree its start opened, and its
+  `daoris/` branch, for the sweep, though the record is already right.
+- **Root cause:** two ways. Each return after the open that starts nothing (GOONTREE1's) removed the tree on the loop's token, which
+  the close cancels, so the removal threw at its first git (the gate's wait checks the token first). And every await between the
+  open and the record's open (the go-on's record read, a carry-on's walk, the tree's head) is on the loop's token, so a close there
+  threw past every removal. The first alone is rare: a record whose own tree stands opens no fresh tree, so the second is the close's
+  usual way out.
+- **Fix:** `Loop/FreshTree.cs` holds the opened tree. Each return lets it go once on no token, as the put-back's move is; the start
+  runs through it from `ClaimedAsync`, which lets the tree go on the close until the record's open is asked (after that the ledger may
+  hold it, so a close is the sweep's), then closes on. Other failures, the untrusted hold and a replay's hold keep their tree as before.
+- **Verify:** `FreshTreeTests` (six rows) red first as a missing type, then green; `QueuedStartCloseTests` green. The start's own
+  path opens its tree with git, so its end-to-end proof is the Process half's (GOONTREE1's row in `SessionMessagesTickTests`), not run
+  on the branch.
+
+## 2026-10-20 — The CI on f290807: a read no gate reached, a sentence one test still expected, a slow glossary check (PUSH1d2, ACCESSWORDS1)
+
+- **Symptom:** the full set on `f290807` failed the tool tests' read census (`SessionsStateSliceTests` reads the service's
+  `ApiContracts.cs`, and a change to it reached no `modules` gate), `RepositorySetup.test.tsx`'s access row (it expected the
+  `landing: rule` sentence without ACCESSWORDS1's *A merge rule still waits for your Accept…*), and `names.test.ts`'s strict
+  check (20 s, under load); also timeouts in the stub turns, the CLI's plugin test and one end-to-end click, and the page's
+  structure (`help/` at 21 sources, HELPMODE1c1's).
+- **Root cause:** each builder ran its own files; PUSH1d2's twin test read across a lane, and ACCESSWORDS1 changed a sentence
+  a test in another folder held. The glossary check runs the script twice in processes of its own.
+- **Fix:** a path rule sends `ApiContracts.cs` to the service lane's gates and `modules`; the access row's expectation says the
+  sentence; the glossary check takes 90 s. `help/`'s cut is its own row (STRUCTHELP1); the timeouts are load (FLAKE1).
+- **Verify:** the read census green (48 s); `RepositorySetup.test.tsx` and `names.test.ts` green (79).
+
+## 2026-10-20 — The CI's Process half could not pass beside the work, and a start's git ceiling missed TREEDEPS1 (FAMILYFAIL1c)
+
+- **Symptom:** the full set on `b0a786d` (beside five workers) failed 59 of the driver's Process tests; re-run one at a
+  time, eight failed again: seven timed out, and `StartGitCountTests` counted 12 git starts before a session spawns against
+  a ceiling of 11.
+- **Root cause:** the Process halves and the re-runs alone ran below normal (CIPRIO1), and their tests are bounded by the
+  clock (FAMILYFAIL1b had raised only the rehearsals). The ceiling predates TREEDEPS1, whose lockfile listing
+  (`git ls-files … package-lock.json …`) is one more start on every fresh tree, and its builder did not run the Process class.
+- **Fix:** `runSteps` hands the raise to every Process-lane step and `rerunAlone` to each test it re-runs (D180's
+  FAMILYFAIL1c note); the ceiling is 12, its comment naming TREEDEPS1.
+- **Verify:** `merge-branch.test.ts`'s raise test, red then green (a Process half's full run and its alone re-run raised, the
+  fast half not), with the re-run and rehearsal tests; `StartGitCountTests` green; the CLI typecheck clean.
+
+## 2026-10-20 — The heavy run's gate start broke three of the driver's start censuses (HEAVYRUN1a)
+
+- **Symptom:** on main after HEAVYRUN1a's merge, `ProcessStartsCensusTests` (three direct starts outside the gate),
+  `EveryChildIsHandedTheToolsTests` (a `ProcessStartInfo` neither handed the tools nor excused) and `NoConsoleWindowTests`
+  (a start without `CreateNoWindow`) failed on `Sessions/Heavy/HeavyStep.cs`; PARALLEL1f's builder saw two of them.
+- **Root cause:** the builder ran its own classes, filtered, and not the censuses that scan every source (D180's split
+  leaves them to the CI beside); the pack named none of them.
+- **Fix:** the start census names `HeavyStep`'s three starts with their reason (a suspended `CreateProcessW` into the
+  run's kill-on-close job, in the verb's own process; `/bin/sh` off Windows); the `/bin/sh` start says why it is not handed
+  the tools (the calling session's environment already is) and takes `CreateNoWindow`.
+- **Verify:** the three censuses, `StructureTests`, `SourceFilesTests` and the heavy-run classes green (65).
+
 ## 2026-10-19 — A tool call the rules refused read as still running in a session's head (WAITSAY1b)
 
 - **Symptom:** found reading the doors for WAITSAY1b: after an ask was refused (D52), a working session's head could say

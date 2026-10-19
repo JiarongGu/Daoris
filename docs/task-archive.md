@@ -17265,3 +17265,97 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **PARALLEL1h — the terminal requests and the node pass off the look's path** (driver; D181 point 3). Terminal requests wait under one gate (`SessionRequestWatch._one`), and the node runtime's pass runs after each plan on the look's chain. Proof: a slow request holds only its own session; a slow node pass holds no next look.
 
 **Outcome** 2026-10-19: a look claims each session it has a request for and honours it beside the others, a session's own in the order asked; the folder's look returns once begun, and the watch's close cancels and waits. Link 8 begins the runtime's pass beside the look (`RunningSessions.PassBeside`, one at a time and one after), timed `~nodes`, its lines joining the next report without a wake; the runtime's one lock stays exclusive. On Opus: about 130 tool calls, 39 minutes. Detail: D181's PARALLEL1h note; `SessionRequestBesideTests`, `LookParallelTests.A_slow_node_pass_holds_no_next_look`.
+
+## HEAVYRUN1a — one heavy-run slot per repository, through a wrapper a session runs (2026-10-19, D180)
+
+> - [ ] **HEAVYRUN1a — one heavy-run slot per repository, through a wrapper a session runs** (driver; D180's HEAVYRUN1 note; the owner, 2026-10-19: "current local Daoris spends 1 hour doing nothing"). `daoris-driver run-heavy [--gate <name>]` holds one slot per repository across its trees (keyed so a root checkout and every tree of it share it), runs the gates its repository's `daoris.gates.json` marks heavy one after another inside a kill-on-close job, says a waiting run with the holder and the elapsed time, and releases the slot only once its own descendants have ended (cancel and failure included, never by a timed lease). Proof: two runs never overlap (instrumented intervals); a cancel releases after its children end; a killed wrapper admits no second run beside survivors.
+
+**Outcome** 2026-10-19: `run-heavy` in `Sessions/Heavy/`: a slot keyed by the repository's common git folder (read from git's files, named by the folder's identity) under the home's `locks/heavy/`, with a holder record a waiter reads to say whom it waits behind and for how long; gates started suspended into a named kill-on-close job and emptied before the slot goes; a dead holder's job ended by the next; a nested run inside the held slot; no home lease, and no access setting read. On Opus: about 193 tool calls, 74 minutes. Detail: D180's HEAVYRUN1a note; `HeavySlotTests`, `HeavyRunCommandTests`, `HeavyRunProcessTests` (Process, run at the merge).
+
+## ACCESSWORDS1b — the page's trace and Ask Daoris say a landing the access setup accepted (2026-10-19, D184)
+
+> - [ ] **ACCESSWORDS1b — the page's trace and Ask Daoris say a landing the access setup accepted** (web, driver; D184's AUTONOMY1c2 note; after ACCESSWORDS1). The server's trace and `TraceRule` carry `access`, but the page's trace (`HowItCameToBe.tsx`, `work.trace.json`, its TS type) draws only the rule's source, and Ask Daoris's room does not say a landing was the setup's. Proof: the trace's vitest in en and zh; the room's golden.
+
+**Outcome** 2026-10-19: the page's trace (in place of the rule's switch) and the room's landed line say whose access setup accepted a landing, only where the switch accepted it; the full goldens' landed line alone moved. On Opus: about 70 tool calls, 40 minutes. Detail: D184's ACCESSWORDS1b line; `HowItCameToBe.test.tsx`, `HelpRoomMachineNowTests`.
+
+## SHEN4 — take Shenora 0.22.0 (2026-10-20, D22)
+
+> - [ ] **SHEN4 — take Shenora 0.22.0** (desktop, web; D22's SHEN3 note; the owner, 2026-10-20: "released shenora 0.22 which fixed some issue you can update too").
+
+**Outcome** 2026-10-20: the three packages and `@shenora/react` at 0.22.0; its break (a frameless maximize is the system's, and `WindowState = Normal` un-minimizes a maximized window un-maximized) reached `MainForm.TakeBack` and `SessionNotifier.Show`, which restore with `SW_RESTORE` through `MainForm.Unminimize`; the window-command overrides stay. The app builds; the window's behaviour is the installed proof. Detail: D22's SHEN4 note.
+## PARALLEL1f — a queued start's place waits on the loop's token (2026-10-19, D181)
+
+> - [ ] **PARALLEL1f — a queued start's place waits on the loop's token** (driver; D181 point 4, its PARALLEL1de note). `HoldAsync` and `DriverContinuations`' start places wait on no token, so a stopping loop cannot end a start still queued for a place. Proof: a cancelled start's record and the person's words are put back.
+
+**Outcome** 2026-10-19: starts and go-on runs wait for their place on the loop's token. Closed before its spawn, an ended record goes back as it ended, words waiting, nothing handed on; a park stays the close's interrupted take, words kept; a go-on's taken words are said unreached. Detail: D181's PARALLEL1f note; `QueuedStartCloseTests`.
+
+## WAITSAY1c1 — a `calls` slice: each working session's running call, pushed as it starts and ends (2026-10-20, D182)
+
+> - [ ] **WAITSAY1c1 — a `calls` slice: each working session's running call, pushed as it starts and ends** (driver, modules; D182's PUSH1d2 note, `pushed-slices.md`; D152's WAITSAY1b line). Not on the `sessions` slice (it judges by reading the service, which does not hold the call) and not a groups slice (none exists; `SESSION_GROUPS` walks git and plans). `RunningCalls` raises `Changed(session)` when a session's current call moves (its start, its end, a title arriving, a turn or an ask clearing it; computed in the lock, raised outside it; a repeat raises nothing; a session dropped by the bound raises too), and a keyed `calls` slice, one partition of session id to `{title, since}`, judges from `RunningCalls.Now()` in memory and hears `Changed`. Proof: a call's start wakes the slice once and pushes one key; another session's events wake nothing; an end pushes `removed`.
+
+**Outcome** 2026-10-20: `RunningCalls.Changed` names a session whenever its running call moves, told outside the watch's lock; the keyed `calls` slice (`Loop/CallsStateSlice.cs`, one partition `calling`, written as `SESSION_GROUPS` writes `calling`) judges it from memory with no service, and the bound now keeps the session just begun. A keyed partition is pushed whole once half its keys move, so the page's spec takes both (WAITSAY1c2). On Opus: about 112 tool calls, 50 minutes. Detail: D182's WAITSAY1c1 note; `RunningCallsTests`, `CallsStateSliceTests`.
+
+## HEAVYRUN1b1 — a session is told to run focused checks while it works and its heavy gates once, through `run-heavy` (2026-10-20, D180)
+
+> - [ ] **HEAVYRUN1b1 — a session is told to run focused checks while it works and its heavy gates once, through `run-heavy`** (driver; D180's HEAVYRUN1 and HEAVYRUN1a notes; after HEAVYRUN1a). A piece of `TargetPrompt`'s `Tail` (as TREEDEPS1's dependencies line), said only where the repository declares heavy gates (`HeavyGates.Read`) or, after HEAVYRUN1b2, has a mapping; the session can reach `daoris-driver` and the home (the launcher on its PATH, or the command named whole). Proof: a `heavy` target-prompt golden; the other goldens unchanged; a start in a repository with none says nothing.
+
+**Outcome** 2026-10-20: a quest's every start in an installed Daoris says, before the close, to run focused checks while working and the repository's marked heavy gates once, at the end, through `daoris-driver run-heavy`; the verb is reached by its bare name on the PATH `Tools.Hand` already hands and the home is inherited, so nothing new is handed, and a workspace build is told nothing. On Opus: about 108 tool calls, 45 minutes. Detail: D180's HEAVYRUN1b1 note; `HeavyTold.cs`, `HeavyToldTests`, the `heavy` golden.
+
+## HEAVYRUN1c — this repository marks its heavy gates (2026-10-20, D180)
+
+> - [ ] **HEAVYRUN1c — this repository marks its heavy gates** (tools, records; after HEAVYRUN1b1). `daoris.gates.json` marks none `heavy`, so `run-heavy` refuses here and Daoris's own driven sessions are told nothing. Mark the suites and rehearsals a session would run whole, and hold the shape where `merge-branch.mjs`'s and `dogfood.test.ts`'s readers pin it. Proof: `run-heavy` here runs the marked sequence; the tool tests and the dogfood test green.
+
+**Outcome** 2026-10-20: decided against, not built: this repository's suites run whole in the CI beside after each merge, and marking them would have each driven session run about thirty minutes of them at its end. Detail: D180's HEAVYRUN1c note.
+## ACCESSWORDS1c — the server's trace says the setup accepted a landing only where its switch did (2026-10-20, D184)
+
+> - [x] **ACCESSWORDS1c — the server's trace says the setup accepted a landing only where its switch did** (driver; D184's ACCESSWORDS1b line). `Trace.Words.cs:449` says *accepted by the access setup (<level>)* whenever `rule.access` is set, but the record keeps the level on a landing the person pressed under the setup too (`LandingRules.Effective`, `TreeLands.cs:548`), so the trace can say the person's press and the setup at once. Guard on `acceptedBy` as the review's note and the page's trace do. Proof: a `TraceTests` case with `acceptedBy: person` and `access` set keeps the rule's words.
+
+**Outcome** 2026-10-20: the trace says it only where `acceptedBy` is `auto`; a person's press keeps the rule's switch words. Detail: D184's ACCESSWORDS1c line; `TraceTests`.
+
+## VERBCENSUS1 — the usage census misses hyphenated verbs (2026-10-20, D184)
+
+> - [x] **VERBCENSUS1 — the usage census misses hyphenated verbs** (driver; HEAVYRUN1a's hand-back). `DriverCommandTests.The_usage_names_every_verb_the_host_answers` matches `args is ["[a-z]+"`, so a verb such as `run-heavy` could lose its usage line unnoticed. Widen it to `[a-z-]+` and fix any line that turns up missing. Proof: the test fails when `run-heavy`'s usage line is removed.
+
+**Outcome** 2026-10-20: the census matches `[a-z-]+`; `run-heavy`'s usage line was present, and the census failed with it removed; `HeavyRunCommandTests`' redundant usage assertion dropped. Detail: `DriverCommandTests`.
+
+## TREEDEPS1b — a conversation in its own tree is told what was copied (2026-10-20, D51)
+
+> - [ ] **TREEDEPS1b — a conversation in its own tree is told what was copied** (driver; D51's TREEDEPS1 note; after TREEDEPS1). A conversation's tree opens through the same `OpenAsync` and gets the copy, but its agent is not told to skip the `npm ci` that deletes it. Say `TreeOpened.Dependencies` where the conversation's instruction is composed. Proof: a conversation opened with a copy is told; one without is not.
+
+**Outcome** 2026-10-20: `ChatRunner.ProcessTold` joins `TreeOpened.Dependencies` after the process's words, so a conversation in its own tree is told to skip `npm ci` where its dependencies were copied, riding `chat.told-process` with no new note code; with nothing copied the words are as before. On Sonnet: about 17 tool calls, 10 minutes. Detail: D51's TREEDEPS1b note; `ChatNoteCodeTests`.
+
+## WAITSAY1c2 — the rail and the head read the pushed call (2026-10-20, D182)
+
+> - [ ] **WAITSAY1c2 — the rail and the head read the pushed call** (web; after WAITSAY1c1). A `calls` spec beside `sessionsSlice`, in `PUSHED`; the rail (`SessionRail.tsx` ~122, 214, 335) and the head (`WorkFrame.tsx` ~1372, `headFacts.ts` ~100) overlay the pushed call on `SESSION_GROUPS`' `calling` where live, which stays the pull's and an older host's answer; the row's elapsed time keeps its own clock. Proof: a pushed call shows on the rail with no groups read; an older host keeps the pull.
+
+**Outcome** 2026-10-20: the page's `callsSlice` (one partition, session to `{title, since}`, `mergeKeyed`, so a delta, a whole push and `{}` are all taken) is in `PUSHED`; live, the rail's and the head's grouping take the pushed call (`withCall`), so an end clears at once, and the row and the head step its time on a 15 s clock; a browser and an older host keep the pull. On Sonnet: about 70 tool calls, 26 minutes. Detail: D182's WAITSAY1c2 line; `sessions.pushed.test.ts`, `pushedState.test.tsx`, `SessionRow.test.tsx`.
+
+## PUSH1c1 — `SESSION_GROUPS` judged from the machine's facts, so a window's tick runs no git (2026-10-20, D182)
+
+> - [ ] **PUSH1c1 — `SESSION_GROUPS` judged from the machine's facts, so a window's tick runs no git** (driver, modules; D182; a scout's plan, 2026-10-20). Every window at every tick walked git for each ended session's tree (`SessionGroups.JudgeAsync`); the facts already hold the look and the trees per repository (`HelpFacts`). No push yet. Proof: a tick and a second window run no git; the terminal's and the screen's rows equal.
+
+**Outcome** 2026-10-20: the route reads the records, the quests, the verdicts and the marks as before and each tree from the facts' parts (`HelpFacts.WithTreesAsync`; each part says what it asked, `HelpTrees.Asked`): two windows' asks start no git, red at two before. A tree no part asked is walked by the route alone and the facts' look judged afresh; the parts' first judgement is waited for once (10 s); an archive walks its trees at the press. Left: Daoris's own ref moves wait out the trees' rest. On Opus: about 85 tool calls. Detail: D182's PUSH1c1 note; `HelpFactsTests`, `DriverModuleSessionsTests`.
+
+## HEAVYRUN1b2a — a machine-local heavy-gate mapping for a repository that declares none: the config, the reader and the verb (2026-10-20, D180)
+
+> - [ ] **HEAVYRUN1b2a — a machine-local heavy-gate mapping for a repository that declares none: the config, the reader and the verb** (driver, cli; D180's HEAVYRUN1 and HEAVYRUN1b1 notes; D184's `access` as the exemplar). A per-repository map in `driver.json` (its shape decided and noted under D180: each gate's name, run and folder, in order), read by `HeavyGates` when the repository's file marks none and by `HeavyTold`'s `Marked(root)` seam, set by a `daoris-driver heavy <repo> …` verb under the home's lease, kept byte for byte by the CLI's `driverconfig.ts` (the twins' keeps row). Never an edit to the repository. Proof: `run-heavy` in a repository with no gates file runs the mapping; the instruction is said for it; the keeps row.
+
+**Outcome** 2026-10-20: `heavyGates` in `driver.json`, by repository (keyed as `access` is), a list of `{name, run, cwd?}` in the order the gates run, read whole or not at all (`HeavyMapping`); `run-heavy` and a driven start's instruction take it where the repository's own `daoris.gates.json` marks no heavy gate, the run keyed by its session's `DAORIS_REPOSITORY`, else the checkout's folder; `daoris-driver heavy` lists, says, sets and clears it under the home's lease; the CLI's `driverconfig.ts` reads and keeps it, held by one read table and three keeps rows. The start in `Driver.cs` still names the repository by its folder (HEAVYRUN1b2a2). On Opus: about 110 tool calls. Detail: D180's HEAVYRUN1b2a note; `HeavyMappingTests`, `fixtures/heavy-gates.json`.
+
+## QUEUEDTREE1 — a continuation closed with the loop leaves no fresh tree (2026-10-20, D181)
+
+> - [ ] **QUEUEDTREE1 — a continuation closed with the loop leaves no fresh tree** (driver; D51, GOONTREE1; PARALLEL1f's hand-back). When a continuation returns during a close, `Driver.cs` ~1709 removes the fresh tree it opened with the cancelled token (`Context.Trees.RemoveAsync(opened.Path, ct: ct)`), which throws, so the tree is left for the sweep; the record is already right. Remove it on no token, as the put-back does. Proof: a closed continuation with an opened tree leaves no tree.
+
+**Outcome** 2026-10-20: `FreshTree` holds a start's opened tree. Each return that starts nothing lets it go once on no token, and a close before the record's open is asked lets it go and closes on; that close is usually a throw from an await on the loop's token, which no removal was reached by. On Opus, with LOOKWAIT1b: about 152 tool calls, 70 minutes. Detail: D181's QUEUEDTREE1 and LOOKWAIT1b note; FIX-LOG's QUEUEDTREE1 entry; `FreshTreeTests`.
+
+## LOOKWAIT1b — a process start's queue timed apart from its run (2026-10-20, D181)
+
+> - [ ] **LOOKWAIT1b — a process start's queue timed apart from its run** (driver; D181 point 6, its PARALLEL1b note). `ProcessStarts`' wait for a place shows nowhere in a look's `stages`. Proof: a stage whose git waited for a place shows `stage.queue`.
+
+**Outcome** 2026-10-20: a start's wait for a place is said as the queue of the stage whose work made it (`stage.queue`, or `~stage.queue` beside the look), through an async-local queue set inside that stage's work alone (`ProcessStarts.QueuedToAsync`, `StageSpan.RunAsync`, every `TimeAsync`), counted on the span's clock as the time any of its starts waited; work the running set keeps beside the looks begins said to no stage. On Opus, with QUEUEDTREE1. Detail: D181's QUEUEDTREE1 and LOOKWAIT1b note; `LookWaitTests`, `ProcessStartsTests`, `RunningSessionsTests`.
+
+## HELPWIREDLIVE1 — *What it has* kept current while open (2026-10-20, D183)
+
+> - [ ] **HELPWIREDLIVE1 — *What it has* kept current while open** (web; the modes design §6, D183 point 4). It is read each time it opens, not when a resume adds a receipt meanwhile. Re-read it when the `sessions` family is published: since PUSH1d2 it can hang off the pushed `sessions` entry, or the hub's `sessions` scope, which still invalidates what is read beneath it. Proof: a page test where a published `sessions` refreshes an open *What it has*.
+
+**Outcome** 2026-10-20: the hub's `help` scope asks `help-wired` again (`bridge/stateHub.ts`), so a receipt recorded while *What it has* is open shows with no reopening; a resume's event can land before its receipt is written (HELPWIREDLIVE1b), and `SET_HELP_MODE` records no receipt until the next start. On Sonnet: about 46 tool calls, 19 minutes. Detail: D183's HELPWIREDLIVE1 line; `stateHub.test.tsx`, `AskDaoris.test.tsx`.

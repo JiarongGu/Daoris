@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { act, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import i18n from '../locales/i18n';
 import type { Quest, Session, SessionState } from '../data/api';
@@ -434,6 +434,16 @@ describe("a row as the list's reader places it", () => {
     vi.setSystemTime(new Date('2026-09-21T12:05:00Z'));
     rerender(<SessionRow session={session()} grouping={placed({ group: 'working', shown: 'working', calling: { ...calling } })} />);
     expect(screen.getByText(/running dotnet test for 1h 35m/)).toBeInTheDocument();
+  });
+
+  /** WAITSAY1c2: a pushed call arrives once, so its time steps by the row's own clock with no new record. */
+  it('steps a call\'s elapsed time on its own while it is said', () => {
+    const calling = { title: 'npm test', since: '2026-09-21T11:52:00Z' };
+    render(<SessionRow session={session()} grouping={placed({ group: 'working', shown: 'working', calling })} />);
+    expect(screen.getByText(/running npm test for 8m/)).toBeInTheDocument();
+
+    act(() => { vi.advanceTimersByTime(60_000); });
+    expect(screen.getByText(/running npm test for 9m/)).toBeInTheDocument();
   });
 
   it('says it in 中文 too', async () => {

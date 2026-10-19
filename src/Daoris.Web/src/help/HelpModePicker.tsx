@@ -41,9 +41,10 @@ export function useModeChoice(selected: HelpMode, onChoose: (mode: HelpMode) => 
 /**
  * Ask Daoris's access chip (design §1): the mode the conversation in view runs under, its record's, or the mode chosen before any
  * start; a switch waiting for the next start reads *Restricted · full access next start*. Full access, now or next, wears the
- * warning colour. Its menu offers the two modes, the chosen one ticked; Radix gives it the keyboard.
+ * warning colour. Its menu offers the two modes, the chosen one ticked; Radix gives it the keyboard. Given a door to restricted
+ * mode's configured access, it offers *Configure restricted access…* under them (HELPMODE1c1, design §5).
  */
-export function HelpModeChip({ selected, running = null, busy = false, open, onPick }: {
+export function HelpModeChip({ selected, running = null, busy = false, open, onPick, onConfigure }: {
   /** The mode chosen for this machine: what the next start reads. */
   selected: HelpMode;
   /** The mode the conversation in view runs under, its record's; null before a start, and in Settings. */
@@ -53,6 +54,8 @@ export function HelpModeChip({ selected, running = null, busy = false, open, onP
   /** Changed to a new number to open the menu: a lack's door to the mode (design §6). */
   open?: number;
   onPick: (mode: HelpMode) => void;
+  /** The door to restricted mode's configured access (HELPMODE1c1); none offers no row. */
+  onConfigure?: () => void;
 }) {
   const { t } = useTranslation();
   const [shown, setShown] = useState(false);
@@ -111,6 +114,12 @@ export function HelpModeChip({ selected, running = null, busy = false, open, onP
             </Menu.RadioItem>
           ))}
         </Menu.RadioGroup>
+        {onConfigure && (
+          <>
+            <Menu.Separator />
+            <Menu.Item tick={false} onSelect={onConfigure}>{t('help.mode.configure')}</Menu.Item>
+          </>
+        )}
       </Menu.Content>
     </Menu.Root>
   );

@@ -116,6 +116,27 @@ describe.each(['en', 'zh'])('Ask Daoris’s access chip in %s', (language) => {
     expect(screen.getByText(i18n.t('help.mode.confirm.addsReading'))).toBeInTheDocument();
   });
 
+  // HELPMODE1c1 (design §5): the menu's door to restricted mode's configured access, offered only where a holder gives it one.
+  it('offers Configure restricted access… only where its holder gives it a door, and presses that', async () => {
+    await i18n.changeLanguage(language);
+    const onConfigure = vi.fn();
+    const openMenu = async () => {
+      screen.getByRole('button', { name: (name) => name.startsWith(i18n.t('help.mode.trigger', { mode: '' })) }).focus();
+      await userEvent.keyboard('{Enter}');
+      await screen.findByRole('menuitemradio', { name: i18n.t('help.mode.option.restricted') });
+    };
+    render(<Tooltip.Provider><HelpModeChip selected="restricted" onPick={vi.fn()} onConfigure={onConfigure} /></Tooltip.Provider>);
+
+    await openMenu();
+    await userEvent.click(screen.getByRole('menuitem', { name: i18n.t('help.mode.configure') }));
+    expect(onConfigure).toHaveBeenCalledOnce();
+
+    cleanup();
+    render(<Picker selected="restricted" onChoose={vi.fn()} />);
+    await openMenu();
+    expect(screen.queryByRole('menuitem', { name: i18n.t('help.mode.configure') })).toBeNull();
+  });
+
   it('asks nothing when the mode chosen is picked again', async () => {
     await i18n.changeLanguage(language);
     const onChoose = vi.fn();

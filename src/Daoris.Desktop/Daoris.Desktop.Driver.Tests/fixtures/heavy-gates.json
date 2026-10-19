@@ -1,0 +1,70 @@
+{
+  "about": "This machine's heavy gates for a repository that marks none of its own, `heavyGates` in driver.json (HEAVYRUN1b2a, D180's HEAVYRUN1b2a note): the table both twins hold, the CLI's driverconfig.ts and the driver's HeavyMapping. Each `read` row is the value a file holds under `heavyGates` (the file is `{\"heavyGates\": <value>}`) and the map each twin reads from it: by repository, each name trimmed, a blank one passed over, a name written twice in any case read where first readable; each a list of gates in the order they run, read only where it is a list of one gate or more, every one an object whose `name` and `run` are text with something in it (kept trimmed) and whose `cwd` is absent, null, blank (none) or a folder under the repository's root (kept trimmed: no `:`, not starting with `/` or `\\`, no `..` part), no name twice in any case; a list with any gate that does not read is not read, whole; what a gate has no field for is passed over.",
+  "read": [
+    { "name": "nothing set is no mapping", "heavyGates": null, "read": {} },
+    {
+      "name": "a repository's gates in the order they run, a gate's folder kept",
+      "heavyGates": { "engine": [{ "name": "build", "run": "npm run build" }, { "name": "web", "run": "npm test -- --maxWorkers=2", "cwd": "src/web" }] },
+      "read": { "engine": [{ "name": "build", "run": "npm run build" }, { "name": "web", "run": "npm test -- --maxWorkers=2", "cwd": "src/web" }] }
+    },
+    {
+      "name": "names, commands and folders read trimmed, a blank or null folder none",
+      "heavyGates": { " engine ": [{ "name": " build ", "run": " npm run build ", "cwd": "  " }, { "name": "unit", "run": "npm test", "cwd": null }, { "name": "web", "run": "npm test", "cwd": " web " }] },
+      "read": { "engine": [{ "name": "build", "run": "npm run build" }, { "name": "unit", "run": "npm test" }, { "name": "web", "run": "npm test", "cwd": "web" }] }
+    },
+    {
+      "name": "what a gate has no field for is passed over",
+      "heavyGates": { "engine": [{ "name": "build", "run": "dotnet build", "heavy": false, "workers": 2 }] },
+      "read": { "engine": [{ "name": "build", "run": "dotnet build" }] }
+    },
+    {
+      "name": "a list with a gate that does not read is not read, whole, and another repository's still is",
+      "heavyGates": { "engine": [{ "name": "build", "run": "dotnet build" }, { "name": "web" }], "shop": [{ "name": "build", "run": "npm run build" }] },
+      "read": { "shop": [{ "name": "build", "run": "npm run build" }] }
+    },
+    {
+      "name": "a blank name or a blank command is no gate",
+      "heavyGates": { "engine": [{ "name": " ", "run": "dotnet build" }], "shop": [{ "name": "build", "run": "  " }] },
+      "read": {}
+    },
+    {
+      "name": "a name, a command or a folder that is no text is no gate",
+      "heavyGates": { "engine": [{ "name": 3, "run": "dotnet build" }], "shop": [{ "name": "build", "run": ["npm", "test"] }], "game": [{ "name": "build", "run": "x", "cwd": 5 }] },
+      "read": {}
+    },
+    {
+      "name": "a gate named twice in any case is no list",
+      "heavyGates": { "engine": [{ "name": "build", "run": "dotnet build" }, { "name": "BUILD", "run": "npm run build" }] },
+      "read": {}
+    },
+    {
+      "name": "a folder is one under the repository's root: rooted, a drive, a share or climbing out is no list",
+      "heavyGates": {
+        "a": [{ "name": "g", "run": "x", "cwd": "/srv/web" }],
+        "b": [{ "name": "g", "run": "x", "cwd": "X:/web" }],
+        "c": [{ "name": "g", "run": "x", "cwd": "web/../.." }],
+        "d": [{ "name": "g", "run": "x", "cwd": "\\\\server\\share" }],
+        "e": [{ "name": "g", "run": "x", "cwd": "src\\web" }],
+        "f": [{ "name": "g", "run": "x", "cwd": "./web" }],
+        "g": [{ "name": "g", "run": "x", "cwd": ".." }]
+      },
+      "read": { "e": [{ "name": "g", "run": "x", "cwd": "src\\web" }], "f": [{ "name": "g", "run": "x", "cwd": "./web" }] }
+    },
+    {
+      "name": "an empty list, a gate that is no list, and an entry that is no object are none",
+      "heavyGates": { "a": [], "b": { "name": "g", "run": "x" }, "c": ["npm test"], "d": null },
+      "read": {}
+    },
+    {
+      "name": "a blank repository is passed over, and one written twice in any case is read where first readable",
+      "heavyGates": {
+        " ": [{ "name": "g", "run": "x" }],
+        "Engine": [{ "name": "build" }],
+        "ENGINE": [{ "name": "build", "run": "first" }],
+        "engine": [{ "name": "build", "run": "second" }]
+      },
+      "read": { "ENGINE": [{ "name": "build", "run": "first" }] }
+    },
+    { "name": "a map that is no object is none", "heavyGates": [{ "name": "build", "run": "x" }], "read": {} }
+  ]
+}

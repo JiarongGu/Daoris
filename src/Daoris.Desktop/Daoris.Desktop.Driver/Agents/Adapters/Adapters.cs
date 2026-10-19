@@ -143,6 +143,13 @@ public sealed record SessionTarget(
     public string? Dependencies { get; init; }
 
     /// <summary>
+    /// For a session in a repository that marks heavy gates, with <c>daoris-driver</c> on its PATH (HEAVYRUN1b1, D180's HEAVYRUN1
+    /// notes): to run focused checks while it works and those gates once, at its end, through <c>run-heavy</c>
+    /// (<see cref="HeavyTold.For"/>), said before how to take the quest. Null where neither holds, and the instruction reads as it did.
+    /// </summary>
+    public string? Heavy { get; init; }
+
+    /// <summary>
     /// What the person answered, when the session before parked to ask them (STANDDOWN2) — the carry-on
     /// is handed it in their words. Null for a carry-on after a cut-off.
     /// </summary>
@@ -375,6 +382,8 @@ public static class TargetPrompt
         new(HandedSections.Close, target.InSync is { Length: > 0 } told ? $"\n{told}\n" : ""),
         // What its tree's open copied of the checkout's dependencies (TREEDEPS1): the driver's own words, counted with the close.
         new(HandedSections.Close, target.Dependencies is { Length: > 0 } copied ? $"\n{copied}\n" : ""),
+        // Its repository's heavy gates, once at its end through the slot (HEAVYRUN1b1): the driver's own words, counted with the close.
+        new(HandedSections.Close, target.Heavy is { Length: > 0 } heavy ? $"\n{heavy}\n" : ""),
         // A set-up step's own section (REVIEWENV1c, design §2.2), before the close it changes, and accounted as its own since the
         // page words it (REVIEWENV1c2).
         new(HandedSections.SetUp, SetUp(target)),

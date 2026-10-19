@@ -594,7 +594,8 @@ describe("a repository's sessions' access", () => {
     expect(head("Sessions' access")).toHaveAttribute('aria-expanded', 'true');
     const access = section("Sessions' access");
     expect(row(access, 'Permission prompts')).toHaveTextContent('From the workspace aurora.');
-    expect(row(access, 'Landing')).toHaveTextContent('Finished work lands by the landing rule, with no press. Set for this repository.');
+    // ACCESSWORDS1: a merge rule still waits for the person's Accept, and the sentence says so before its source.
+    expect(row(access, 'Landing')).toHaveTextContent('Finished work lands by the landing rule, with no press. A merge rule still waits for your Accept…. Set for this repository.');
     await userEvent.click(within(row(access, 'Landing')).getByRole('button', { name: 'Clear' }));
     expect(onChange).toHaveBeenLastCalledWith({ access: { landing: null } });
     await userEvent.click(within(row(access, 'Permission prompts')).getByRole('button', { name: 'Set for this repository' }));

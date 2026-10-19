@@ -104,6 +104,14 @@
     "    \"landing\": \"rule\",",
     "    \"later\": \"a pause a newer build knows\"",
     "  },",
+    "  \"heavyGates\": {",
+    "    \"engine\": [",
+    "      {",
+    "        \"name\": \"build\",",
+    "        \"run\": \"dotnet build\"",
+    "      }",
+    "    ]",
+    "  },",
     "  \"readAcross\": {",
     "    \"shop-api\": false",
     "  },",
@@ -223,6 +231,56 @@
       "edit": { "op": "machine-access", "setting": "full" },
       "changes": [
         { "from": ["  \"machineAccess\": {", "    \"landing\": \"rule\",", "    \"later\": \"a pause a newer build knows\"", "  },"], "to": ["  \"machineAccess\": \"full\","] }
+      ]
+    },
+    {
+      "name": "a repository's heavy gates on this machine replaced (HEAVYRUN1b2a): the list whole, in the order given, a gate's folder after its command",
+      "edit": { "op": "heavy", "repository": "engine", "gates": [{ "name": "build", "run": "dotnet build" }, { "name": "web", "run": "npm test -- --maxWorkers=2", "cwd": "web" }] },
+      "changes": [
+        {
+          "from": ["        \"run\": \"dotnet build\"", "      }", "    ]"],
+          "to": [
+            "        \"run\": \"dotnet build\"",
+            "      },",
+            "      {",
+            "        \"name\": \"web\",",
+            "        \"run\": \"npm test -- --maxWorkers=2\",",
+            "        \"cwd\": \"web\"",
+            "      }",
+            "    ]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "heavy gates set for a repository that had none (HEAVYRUN1b2a): its list after the one before it",
+      "edit": { "op": "heavy", "repository": "shop-api", "gates": [{ "name": "build", "run": "npm run build" }] },
+      "changes": [
+        {
+          "from": ["    ]", "  },", "  \"readAcross\": {"],
+          "to": ["    ],", "    \"shop-api\": [", "      {", "        \"name\": \"build\",", "        \"run\": \"npm run build\"", "      }", "    ]", "  },", "  \"readAcross\": {"]
+        }
+      ]
+    },
+    {
+      "name": "the last repository's heavy gates cleared (HEAVYRUN1b2a): the key goes, since neither twin writes an empty map",
+      "edit": { "op": "heavy", "repository": "engine", "gates": null },
+      "changes": [
+        {
+          "from": [
+            "    \"later\": \"a pause a newer build knows\"",
+            "  },",
+            "  \"heavyGates\": {",
+            "    \"engine\": [",
+            "      {",
+            "        \"name\": \"build\",",
+            "        \"run\": \"dotnet build\"",
+            "      }",
+            "    ]",
+            "  },"
+          ],
+          "to": ["    \"later\": \"a pause a newer build knows\"", "  },"]
+        }
       ]
     },
     {

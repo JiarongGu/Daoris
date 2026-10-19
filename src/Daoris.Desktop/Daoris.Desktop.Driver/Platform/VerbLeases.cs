@@ -11,7 +11,7 @@ namespace Daoris.Driver;
 /// <list type="bullet">
 /// <item><b>Reads</b>: <c>trace</c>, <c>git</c>, <c>logs</c>, <c>workflow run</c>, the lists (<c>sessions</c>, <c>history</c>,
 /// <c>trees</c>, <c>trees list</c>, <c>trees state</c>, <c>work state</c>, <c>work held</c> naming no word), <c>plugins show</c> and <c>activity</c>, <c>sync status</c>,
-/// <c>help list</c>, <c>help mode</c> naming no mode, <c>access</c> naming no change, <c>opinion show</c>, an <c>update</c> that only asks where it stands, any <c>--plan</c>, and asking for
+/// <c>help list</c>, <c>help mode</c> naming no mode, <c>access</c> and <c>heavy</c> naming no change, <c>opinion show</c>, an <c>update</c> that only asks where it stands, any <c>--plan</c>, and asking for
 /// the usage.</item>
 /// <item><b>The service's own doors</b>, whose one writer is the service already (§7.1): <c>quest delete</c>, <c>accept</c>,
 /// <c>done</c>, <c>check</c> and <c>review</c>, <c>answer</c>, an ask's words, publish, close and delete, and <c>ask channel</c>.</item>
@@ -19,6 +19,8 @@ namespace Daoris.Driver;
 /// <c>hand-over</c>): it runs for as long as the person talks, and holding the home that long would keep the desktop's loop
 /// from starting; RPC1g moves its turns into the running instance.</item>
 /// <item><b>The loop</b> (<c>drive</c>), which takes the lease as an instance, for its life.</item>
+/// <item><b>A repository's heavy gates</b> (<c>run-heavy</c>, HEAVYRUN1a): they run for minutes, and holding the home that long would
+/// keep every other verb and the desktop's start waiting on a build; the run writes the home only in its own slot's files.</item>
 /// </list>
 /// </remarks>
 public static class VerbLeases
@@ -45,6 +47,7 @@ public static class VerbLeases
         {
             "chat" or "answer" => false,
             "drive" or "--once" or "--until-idle" => false,
+            "run-heavy" => false,
             "workflow" => next == "keep",
             "ask" => args.Skip(1).Any(AskWork.Contains),
             "quest" => next is not null && !ServiceQuests.Contains(next),
@@ -59,6 +62,8 @@ public static class VerbLeases
             "help" => next is "rename" or "pin" or "unpin" or "delete" || (next == "mode" && args.Count > 2),
             // `access` naming no change says the setup; a change writes the driver's file (AUTONOMY1a).
             "access" => AccessCommand.Read([.. args.Skip(1)], out _)?.Edit is not null,
+            // `heavy` naming no change lists or says the gates; a set or a clear writes the driver's file (HEAVYRUN1b2a).
+            "heavy" => HeavyMappingCommand.Read([.. args.Skip(1)], out _)?.Changes == true,
             "opinion" => next is "ask" or "stop" or "anyway" or "myself",
             "update" => args.Skip(1).Any(arg => arg is "--when-idle" or "--now" or "--cancel"),
             _ => true,

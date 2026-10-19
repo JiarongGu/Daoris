@@ -947,6 +947,13 @@ export const REACH = Object.freeze([
   // is compiled by the driver gate as well as by the publish. A path rule replaces its lane's, so the modules' readers stay.
   { paths: ['src/Daoris.Desktop/Daoris.Desktop.Launcher/**'], gates: [...MODULES_READERS, 'driver'], why: 'the modules lane\'s own, and the driver gate builds the launcher, which links driver files (LAUNCHGATE1)' },
   { lane: 'modules', gates: MODULES_READERS, why: 'the application, its launcher and the modules it hosts: the deployed shell (D60)' },
+  // PUSH1d2: the modules' SessionsStateSliceTests holds the sessions slice's fields to the service's `SessionResponse`, reading
+  // the file by its path; a path rule replaces the service lane's, so its readers stay.
+  {
+    paths: ['src/Daoris.Service/Daoris.Service.Http/ApiContracts.cs'],
+    gates: ['service', 'devkit', 'driver', 'rehearse-family', 'web', 'web-unit', 'deployment', 'modules'],
+    why: "the service lane's own, and the modules' SessionsStateSliceTests holds the sessions slice's fields to its `SessionResponse` (PUSH1d2)",
+  },
   {
     lane: 'service',
     gates: ['service', 'devkit', 'driver', 'rehearse-family', 'web', 'web-unit', 'deployment'],
@@ -2541,7 +2548,7 @@ async function rerunAlone(root, gate, dir, tests, step) {
   await withLog(log, async (fd, partial) => {
     for (const test of tests) {
       const from = statSync(partial).size;
-      const code = await step(rerunCommand(gate.run, test), cwd, fd);
+      const code = await step(rerunCommand(gate.run, test), cwd, fd, { raise: rehearsalRaise() });
       const output = readFileSync(partial).subarray(from).toString('utf8');
       writeSync(fd, `\n(exited ${code})\n\n`);
       if (code !== 0 || !rerunPassed(output)) failed.push(test);
@@ -2559,7 +2566,7 @@ function runSteps(root, gate, log, step, command = gate.run) {
       const beforeCode = await step(before, root, fd);
       writeSync(fd, `\n(exited ${beforeCode}${beforeCode ? '; carried on: it only clears a server' : ''})\n\n`);
     }
-    const exit = await step(command, cwd, fd, { raise: isRehearsalGate(gate) ? rehearsalRaise() : null });
+    const exit = await step(command, cwd, fd, { raise: isProcessLane(gate) ? rehearsalRaise() : null });
     writeSync(fd, `\n(exited ${exit})\n`);
     return exit;
   });
@@ -3714,8 +3721,9 @@ export function startBesideRun({ setPriority = osSetPriority, env = process.env,
 }
 
 /**
- * The rehearsals' bounds are wall-clock and starved below normal (FAMILYFAIL1b, D180): a rehearsal's step is raised to
- * normal and what it starts inherits that. A failure to raise is said once and the step goes on.
+ * The Process lane's bounds are wall-clock and starved below normal (FAMILYFAIL1b, D180: the rehearsals; FAMILYFAIL1c: the
+ * Process halves and each test re-run alone too, 59 of whose timing tests failed beside five workers): its step is raised
+ * to normal and what it starts inherits that. A failure to raise is said once and the step goes on.
  */
 function raiseTo(setPriority, say) {
   let told = false;
@@ -3731,11 +3739,8 @@ function raiseTo(setPriority, say) {
 
 let raiser = null;
 
-/** The raise a run beside hands a rehearsal's step; null in any run that did not lower itself. */
+/** The raise a run beside hands a Process-lane step (a rehearsal's, a Process half's, a test re-run alone); null in any run that did not lower itself. */
 export const rehearsalRaise = () => raiser;
-
-/** A rehearsal gate: what the Process lane names `npm run rehearse*` (the rehearse, rehearse-family and deployment gates). */
-const isRehearsalGate = (gate) => isProcessLane(gate) && gateKind(gate.run) === 'rehearsal';
 
 /**
  * A run of main's tip (`commit`; null for a run given a named commit, which is never superseded) asks, before each gate,

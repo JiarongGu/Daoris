@@ -122,6 +122,30 @@ public sealed class GatedStartsTests : IDisposable
         SeenOnceOffTheCaller();
     }
 
+    /// <summary>
+    /// PARALLEL1f (D181's PARALLEL1de note): a session's start waits for its place on the loop's token, so a driver closing while
+    /// it waits ends the wait, starts nothing and tells no spawn, which its caller reads as a run that never began. On no token,
+    /// the start was made once a place came, though the loop that wanted it had gone.
+    /// </summary>
+    [Fact]
+    public async Task A_sessions_start_whose_loop_closed_while_it_waited_starts_nothing()
+    {
+        using var service = new ServiceClient("http://stand-in", null, new HttpClient(new Empty()));
+        var driver = new Daoris.Driver.Driver(service, DriverConfig.Empty, AdapterSet.Built(), _home);
+        var spawned = false;
+        using var closed = new CancellationTokenSource();
+        await closed.CancelAsync();
+
+        using var _ = Refusing();
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => Calling(() => driver.HoldAsync(
+            adapter: null!, info: new ProcessStartInfo(Nowhere), target: null!, sessionId: "s1", transcript: Path.Combine(_home, "s1.log"),
+            cwd: _home, harnessNotice: null, rules: (null, null, null), handed: null, refusesInput: null,
+            conclude: (_, _, _, _) => Task.FromResult(0), ct: closed.Token, spawned: () => spawned = true)));
+
+        Assert.False(spawned);
+        Assert.Empty(_seen);
+    }
+
     private PluginEntry Plugin() =>
         new(new PluginManifest("probe", 1, "probe", "1.0.0", "", [], new PluginHooks([Nowhere, "hooks.mjs"], ["quest/consider"]), []),
             DaorisHome.Entry(_home, HomeEntry.Plugins, "probe"), DaorisHome.Entry(_home, HomeEntry.Plugins, PluginCatalog.DataFolder, "probe"),

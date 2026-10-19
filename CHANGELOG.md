@@ -5,8 +5,30 @@ with the version and date at release.
 
 ## Unreleased
 
+- The window minimizes, maximizes and restores with Windows' own animations, Win+Up and Snap maximize it, and a window
+  minimized while maximized comes back maximized from the tray, a notification or a later launch (the UI kit, Shenora
+  0.22).
+- Closing Daoris while a session waits its turn to start ends the wait at once, rather than starting the session first to stop
+  it. A finished session you had written to, closed before it went on, keeps how it ended with your words still waiting, and
+  goes on with them the next time Daoris starts.
 - A terminal's words or stop for one session no longer wait behind another session's slow delivery, and the plugins'
   evaluation steps run beside the driver's look instead of holding the next one.
+- The sessions list no longer runs git in every ended session's tree each time a window refreshes it. Whether a tree holds
+  work to review is judged once per repository as its branches move, and every open window reads that, so more windows cost
+  no more git; a tree's *Accept* may stay offered up to half a minute after a landing that followed close on another change.
+- A repository's heavy checks run one at a time across its trees: `daoris-driver run-heavy`, run in a checkout, runs the gates
+  its `daoris.gates.json` marks `"heavy": true` one after another, or the one `--gate <name>` names, and stops at the first that
+  fails. A second run of the same repository, from its checkout or any tree of it, waits rather than running beside the first,
+  and says whose run it waits behind and for how long. Everything a gate starts, a build's lingering workers included, is ended
+  before the next run begins, whether the run passed, failed, was stopped with Ctrl+C or was killed.
+- In an installed Daoris, a session started in a repository that marks heavy gates is told to run the checks that cover its
+  change while it works, and those gates once, at its end, through `daoris-driver run-heavy`, so two sessions finishing
+  together take turns. A repository that marks none is told nothing new.
+- A repository that marks no heavy gates of its own can be given them on this machine, never in the repository:
+  `daoris-driver heavy <repository> "build=npm run build" "test=npm test -- --maxWorkers=2"` sets them in the order they run
+  (`--cwd <folder>` after a gate runs it in a folder of the repository), `--clear` takes them away, and `heavy` alone lists
+  them. `run-heavy` then runs them for that repository, and its sessions are told to, wherever its own `daoris.gates.json`
+  marks none.
 - A working session's row in the sessions list says the tool call its agent is inside and how long it has run, *running npm
   test for 8m*, as its page's head does, timed from the call's start even where it began before the window opened. A tool
   call the rules refused no longer reads as still running.
@@ -29,7 +51,8 @@ with the version and date at release.
   own words on the ask or the task demand is still asked. `landing=rule` lands a session's finished work when its quest is done,
   without your *Accept…*, as a branch rule's *Accept automatically* does: on its branch, and pushed with a pull request where the
   rule names a plugin. A held done still waits for you, and a rule that merges still waits for your Accept, its conversation
-  saying why. `full` turns them all off. Nothing changes until you set it, and a
+  saying why. A landing the setup accepted says so, and whose setup it was, in its session's *How this came to be* and to Ask
+  Daoris. `full` turns them all off. Nothing changes until you set it, and a
   session that goes on in its own conversation is told where its go-aheads changed since it started.
 - A session's own tree of a Node repository starts with the dependencies your checkout installed with npm, copied in where
   the tree's `package-lock.json` is the checkout's and the checkout's install is at it, so its session no longer spends

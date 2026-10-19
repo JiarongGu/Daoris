@@ -137,6 +137,26 @@ public sealed class ChatNoteCodeTests
         Assert.Equal($"{process.Words}\n\nopen the board", new ChatMessage("open the board", []) { Process = process }.Prompt);
     }
 
+    /// <summary>
+    /// TREEDEPS1b: a conversation whose tree had its dependencies copied is told so after its process, in the same field, so
+    /// it does not run the install that would delete the copy; where nothing was copied the words are as they were.
+    /// </summary>
+    [Fact]
+    public void A_copy_of_the_dependencies_is_told_after_the_process_and_otherwise_nothing_changes()
+    {
+        var commits = new ResolvedCommits(new CommitRule(CommitRules.Ask, null), OpinionSource.Repository);
+        var plan = new LandingPlan(LandingForm.Merge, "main", LandingSource.Default);
+        var bare = ChatRunner.ProcessTold(commits, plan);
+        const string copied = "Its dependencies were copied; do not run npm ci.";
+
+        var told = ChatRunner.ProcessTold(commits, plan, copied);
+        Assert.Equal($"{bare.Words}\n\n{copied}", told.Words);
+        Assert.Equal((bare.Mode, bare.Source), (told.Mode, told.Source));
+        Assert.Equal(bare.Words, ChatRunner.ProcessTold(commits, plan, null).Words);
+        Assert.Equal(bare.Words, ChatRunner.ProcessTold(commits, plan, "").Words);
+        Assert.Equal($"{told.Words}\n\nhello", new ChatMessage("hello", []) { Process = told }.Prompt);
+    }
+
     /// <summary>The process is kept as a note of its own, by its code with its facts, never under the browser's lead.</summary>
     [Fact]
     public void The_process_told_is_kept_as_a_note_of_its_own_with_its_facts()

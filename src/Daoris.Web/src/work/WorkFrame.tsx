@@ -12,7 +12,7 @@ import {
   logEvent, useTerminals, useRemotes, useWorkPlan, useSay, useSessionReach, useStartFrom, type WordsAnswer,
   useParkGoAhead, useAccounts, useGoOnNew, useTrace, useDiscardSessionBranch, useLanding, useLandSessionTree, useSessionDiff,
   useDiscardSessionTree, useDriver, useOpinionGate, useWorkflowRun, useRules, useSessionEvents, stoppedWaiting, useUnderWay,
-  useEntryLanding, useLandEntry, useSessionHelpers, useUnderWaySubject, useSessionProcess, useWorkState,
+  useEntryLanding, useLandEntry, useSessionHelpers, useUnderWaySubject, useSessionProcess, useWorkState, usePushedCalls, withCall,
 } from '../bridge/shell';
 import { type Sent, useSending, useSettled } from './sending';
 import { WorkflowRunView } from '../workflow/WorkflowRunView';
@@ -1369,7 +1369,11 @@ export function WorkFrame({
   }, [intent]);
 
   // The attended session's page header (§3.2): its acts by the one rule, its stop asking under it (§3.3).
-  const grouping = attended ? (groups.data ?? []).find((row) => row.session === attended.id) ?? null : null;
+  // The call it is making is the shell's push where that is live (WAITSAY1c2), laid over the pull's, and stepped by its own clock.
+  const pushedCalls = usePushedCalls();
+  const pulled = attended ? (groups.data ?? []).find((row) => row.session === attended.id) ?? null : null;
+  const grouping = withCall(pulled, pushedCalls) ?? null;
+  useNow(grouping?.calling ? 15_000 : null);
   // What its own tree offers to land, whatever its ending (LAND4), as the driver's reader said it, and where accepting would
   // put it: the review's own plan, asked only where there is something to land, under the review's key.
   const driverOffers = attended && here && grouping?.lands ? grouping.lands : null;

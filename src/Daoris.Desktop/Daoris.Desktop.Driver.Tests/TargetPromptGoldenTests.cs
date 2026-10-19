@@ -1,4 +1,5 @@
 using Daoris.Driver;
+using HelpRoomGoldenTests = Daoris.Driver.Tests.HelpRoomGoldenTests;
 
 namespace Daoris.Desktop.Driver.Tests;
 
@@ -191,6 +192,8 @@ public sealed class TargetPromptGoldenTests
         "channel" => Channel,
         // FABRIC-CLOSE1l (CLOSE1g): a quest its closure graph closes, bound at its take: its session says `ready`, never `done`.
         "ready" => Bare with { Ready = true },
+        // HEAVYRUN1b1: a repository that marks heavy gates, its session told to run them once, at its end, through `run-heavy`.
+        "heavy" => Bare with { Heavy = HeavyTold.Words(["build", "test"]) },
         _ => throw new ArgumentOutOfRangeException(nameof(which), which, null),
     };
 
@@ -226,9 +229,11 @@ public sealed class TargetPromptGoldenTests
     [InlineData("part-alongside")]
     [InlineData("channel")]
     [InlineData("ready")]
+    [InlineData("heavy")]
     public void The_quests_instruction_is_its_golden_text(string which)
     {
-        Assert.Equal(File.ReadAllText(GoldenPath($"{which}.md")), TargetPrompt.Compose(Of(which)));
+        // GOLDEN1's switch: DAORIS_GOLDEN_WRITE=1 writes the golden from the render, and without it a difference fails.
+        HelpRoomGoldenTests.Settle(GoldenPath($"{which}.md"), TargetPrompt.Compose(Of(which)), HelpRoomGoldenTests.WriteRequested);
         // The text the account is kept beside is the same instruction, byte for byte (CONTEXT1).
         Assert.Equal(File.ReadAllText(GoldenPath($"{which}.md")), TargetPrompt.Composed(Of(which)).Text);
     }
@@ -269,12 +274,13 @@ public sealed class TargetPromptGoldenTests
     [InlineData("part-alongside")]
     [InlineData("channel")]
     [InlineData("ready")]
+    [InlineData("heavy")]
     public void The_account_beside_it_is_its_golden(string which)
     {
         var account = TargetPrompt.Composed(Of(which)).Account;
 
-        Assert.Equal(File.ReadAllText(GoldenPath($"{which}.md")).Length, account.Chars);
-        Assert.Equal(File.ReadAllText(GoldenPath($"{which}.account.json")), Written(account));
+        HelpRoomGoldenTests.Settle(GoldenPath($"{which}.account.json"), Written(account), HelpRoomGoldenTests.WriteRequested);
+        Assert.Equal(TargetPrompt.Compose(Of(which)).Length, account.Chars);
     }
 
     /// <summary>The account as the record's JSON spells it, indented and LF, so a golden reads the same on every machine.</summary>
