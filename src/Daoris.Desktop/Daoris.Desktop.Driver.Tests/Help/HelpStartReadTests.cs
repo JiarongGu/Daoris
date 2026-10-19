@@ -94,6 +94,28 @@ public sealed class HelpStartReadTests : IDisposable
         await Poll.Until(() => File.ReadAllText(agents).Contains("`written-late`", StringComparison.Ordinal), within: Within);
     }
 
+    /// <summary>
+    /// A start that never spawned and left its record <c>queued</c> (the owner's `dc46ef27`, its driver gone) holds the room: every
+    /// later Ask Daoris start is refused naming it. The person's stop on that one record ends it, as it ends one left
+    /// <c>starting</c>; the loop's own sweep still takes neither.
+    /// </summary>
+    [Fact]
+    public async Task The_person_s_stop_ends_a_record_left_queued_that_nothing_here_runs()
+    {
+        await using var service = StandInService.Start(_home);
+        service.Seed("help0003", "queued");
+        service.Seed("help0004", "queued");
+        using var client = new ServiceClient(service.Url, null);
+        var processes = new SessionProcesses(DaorisHome.Entry(_home, HomeEntry.Sessions));
+
+        var swept = await Orphans.EndAsync(client, processes);
+        var stopped = await SessionMoves.StopAsync(processes, client, "help0003");
+
+        Assert.Empty(swept);
+        Assert.True(stopped.Stopped);
+        Assert.Equal(("stopped", "queued"), (service.State("help0003"), service.State("help0004")));
+    }
+
     /// <summary>No room was ever written: nothing can serve, so the start ends failed saying why, by a code, never queued.</summary>
     [Fact]
     public async Task A_reading_that_does_not_answer_in_time_with_no_room_written_ends_failed_saying_why()

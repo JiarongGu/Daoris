@@ -22,8 +22,11 @@ repository.
   conversation by code (`help.room-as-written`), the late reading writing the room when it answers; with no room ever written the
   start ends `failed` saying so (`help.room-unread`). A conversation going on in the room takes the same bound. A folder ending
   `.lock` or starting `.` is no account (twin rule 1, `NotAnAccount` and `notAnAccount`), named as a stray with whether it holds
-  a sign-in (`HarnessReport.Strays`, Ask Daoris's room); nothing touches it. D89's and D125's notes of this date.
-- **Verification:** `HelpStartReadTests` (a reading that never answers; both timed out first), `RosterReadTests`' stray test,
+  a sign-in (`HarnessReport.Strays`, Ask Daoris's room); nothing touches it. A record left `queued` by a start whose driver went
+  holds the room and nothing ended it, so the person's stop on it now takes `queued` as it took `starting` (`Orphans`). D89's
+  and D125's notes of this date.
+- **Verification:** `HelpStartReadTests` (a reading that never answers, both timed out first; the person's stop on a `queued`
+  record, failed first), `RosterReadTests`' stray test,
   `HelpRoomTests`' stray line and `HarnessSettingsTests`' rows, each seen failing first, and the CLI's profiles test, failed
   first; the driver's fast half, the touched modules classes, and the web's note tests pass. Not run here: the Process half, the
   window, the install.
