@@ -389,7 +389,8 @@ machine paths (D46/D47: paths never reach a browser).
    **"every workspace · N" is the stated default** (the D24 shape — report the scope that ran — where
    the door itself never invents one); the choice is **remembered per browser** like the language,
    never machine wiring and never in a tracked file, and a remembered circle the deployment no longer
-   holds falls back to every, out loud; and the scope **rides the query layer** — every cross-repository
+   holds falls back to every, out loud (since MAINWINDOWS3, D171's note, each main window holds its own, starting from
+   the last remembered, and a window it opens follows it); and the scope **rides the query layer** — every cross-repository
    hook reads it and carries it in its cache key — so no view changed a call and no circle's answers can
    serve another's from the cache. Web-only, as §8 said: every door already took the argument.
 

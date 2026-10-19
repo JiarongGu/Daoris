@@ -412,7 +412,7 @@ describe('the window\'s title', () => {
 
   it('is this page\'s title, moving with the window\'s scope', () => {
     const { rerender } = renderHook(({ workspace }: { workspace: string | null }) => useWindowTitle(workspace), {
-      initialProps: { workspace: 'games' },
+      initialProps: { workspace: 'games' as string | null },
     });
     expect(document.title).toBe('Daoris (道衍) — games');
 

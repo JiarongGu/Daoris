@@ -132,14 +132,14 @@ export function WorkspaceScopeProvider({ initial, search, own = SESSION_STORE, c
 
   const [workspace, set] = useState<string | null>(() => (pinned ? initial : follows ? followed(self) : starting(own)));
 
+  // Chosen here, it is this window's, and the last chosen anywhere, which the next main window starts from.
   const setWorkspace = useCallback((next: string | null) => {
     set(next);
     remember(next);
-    if (!pinned) own.write(OWN, next ?? '');
-  }, [pinned, own]);
+  }, []);
 
-  // A main window keeps what it holds as its own from its first paint, so a reload keeps it whatever another window has
-  // chosen since; and a window that opens others says what it holds under its name, which they follow.
+  // A main window keeps what it holds as its own from its first paint and on each change, so a reload keeps it whatever
+  // another window has chosen since; and a window that opens others says what it holds under its name, which they follow.
   useEffect(() => {
     if (!pinned && !follows) own.write(OWN, workspace ?? '');
     if (tells) store(HELD + self, workspace ?? '');
