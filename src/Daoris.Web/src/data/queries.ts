@@ -2,7 +2,8 @@ import { useCallback } from 'react';
 import { keepPreviousData, useMutation, useQueries, useQuery, useQueryClient, type UseQueryOptions } from '@tanstack/react-query';
 import { notPushed, readPushed, usePushedLive } from '../bridge/slices';
 import {
-  api, type AskAction, HELP_REPOSITORY, type QuestAction, type Session, SESSION_ACTIVE, type SetUpRef, type SubmissionRef, type Verdict,
+  api, type AskAction, HELP_REPOSITORY, type QuestAction, type Session, SESSION_ACTIVE, type SetUpRef, type SubmissionRef, type SyncStanding,
+  type Verdict,
 } from './api';
 import { useScope } from './scope';
 import { workspaceOf, workspacesOf } from './workspaces';
@@ -36,9 +37,14 @@ export const keys = {
   allRegistry: ['registry'] as const,
   registry: (workspace: string | null) => ['registry', workspace ?? '*'] as const,
   codeMap: (repository: string) => ['code-map', repository] as const,
-  /** Where each circle stands with its remote (SYNC6a) — refetched by every tick, which runs a pass. */
+  /** Where each circle stands with its remote (SYNC6a) — refetched by every tick, which runs a pass, where it is pulled. */
   allSync: ['sync'] as const,
   sync: (workspace: string) => ['sync', workspace] as const,
+  /**
+   * Where every wired circle stands, by circle, as the shell pushes it (PUSH1a2, `syncSlice` in `bridge/driver`): under the family's
+   * key so its invalidations reach it where it is pulled, and `null` where a circle's name goes, so no circle's own entry is it.
+   */
+  syncEvery: ['sync', null] as const,
   /**
    * The driver's state, and the prefix of everything read beneath it. The entry itself is written by the shell's pushes where it
    * pushes them (PUSH1a, `bridge/slices.ts`) and pulled otherwise; what is read beneath it is pulled.
@@ -188,17 +194,61 @@ export const keys = {
 export const useStatus = () =>
   useQuery({ queryKey: keys.status, queryFn: ({ signal }) => api.status(signal) });
 
+/** Where the shell's sync slice is read (PUSH1a2; its spec is `syncSlice` in `bridge/driver`): a partition per wired circle. */
+export const SYNC_SLICE = 'sync';
+
+/** A circle's name as the service finds its remote (C#'s `OrdinalIgnoreCase`): each character upper-cased where it maps to one. */
+const remoteName = (name: string) => [...name].map((character) => {
+  const upper = character.toUpperCase();
+  return [...upper].length === 1 ? upper : character;
+}).join('');
+
+/**
+ * One circle's standing read from every wired circle's, as the shell pushes them (PUSH1a2), the way `/api/sync` answers it: the circle
+ * named as asked, trimmed (`Workspaces.Normalize`), its record found as the service finds the circle's remote; a circle the shell holds
+ * no record of has no remote here, which the route answers `wired: false` and nothing else, its null fields left out as the host does.
+ */
+export function standingOf(all: unknown, workspace: string): SyncStanding {
+  const asked = workspace.trim() || 'default';
+  const held = typeof all === 'object' && all !== null && !Array.isArray(all)
+    ? Object.entries(all).find(([name]) => remoteName(name) === remoteName(asked))?.[1] as unknown
+    : undefined;
+  return typeof held === 'object' && held !== null && !Array.isArray(held)
+    ? { ...(held as SyncStanding), workspace: asked }
+    : { workspace: asked, wired: false, ahead: 0, behind: [], conflicts: [] };
+}
+
 /**
  * Where one circle stands with its remote (SYNC6a): ahead, behind, in conflict, when it last synced.
  * Over HTTP from this machine's own host, so a browser on this machine reads it too — only *Sync now*
  * needs the shell. Null asks nothing: "every circle" has no single standing to show.
+ *
+ * Where the shell pushes the standings (PUSH1a2), the circle's is read from every wired circle's entry with a stable `select`, from
+ * memory: never stale and never asked on a focus, and no tick or pass reaches it. Elsewhere (a plain browser, an older shell) it is the
+ * pull it always was, waiting for the window's first snapshot where one is on its way and read from it.
  */
-export const useSyncStanding = (workspace: string | null) =>
-  useQuery({
-    queryKey: keys.sync(workspace ?? '*'),
-    queryFn: ({ signal }) => api.syncStanding(workspace!, signal),
-    enabled: workspace !== null,
-  });
+export const useSyncStanding = (workspace: string | null) => {
+  const client = useQueryClient();
+  const pushed = usePushedLive(SYNC_SLICE);
+  const select = useCallback((all: unknown) => standingOf(all, workspace ?? ''), [workspace]);
+  const read: UseQueryOptions<unknown, Error, SyncStanding, readonly unknown[]> = pushed && workspace !== null
+    ? {
+      queryKey: keys.syncEvery,
+      // No route answers every circle at once: until the shell has judged them, the standing is not answered yet, as a pull to a
+      // service still coming up is not, and the first push writes it.
+      queryFn: () => readPushed<unknown>(client, SYNC_SLICE, () => Promise.reject(new Error('where each circle stands is not judged yet'))),
+      select, staleTime: Infinity, refetchOnWindowFocus: false,
+    }
+    : {
+      queryKey: keys.sync(workspace ?? '*'),
+      queryFn: async ({ signal }) => {
+        const all = await readPushed<unknown>(client, SYNC_SLICE, async () => null);
+        return all === null ? api.syncStanding(workspace!, signal) : standingOf(all, workspace!);
+      },
+      enabled: workspace !== null,
+    };
+  return useQuery(read);
+};
 
 export const useRepositories = () => {
   const { workspace } = useScope();
@@ -301,7 +351,8 @@ function useDelete(fn: (id: string) => ReturnType<typeof api.deleteQuest>) {
       void client.invalidateQueries({ queryKey: keys.allQuests });
       void client.invalidateQueries({ queryKey: keys.allAsks });
       void client.invalidateQueries({ queryKey: keys.allRegistry });
-      void client.invalidateQueries({ queryKey: keys.allSync });
+      // Where the shell pushes the standings, a delete's quest write is heard on the change stream and pushed (PUSH1a2).
+      void client.invalidateQueries({ queryKey: keys.allSync, predicate: notPushed(client) });
     },
   });
 }
@@ -610,7 +661,8 @@ export const useDismissConflict = () => {
       api.dismissConflict(id, machine, sequence),
     onSuccess: () => {
       invalidate();
-      void client.invalidateQueries({ queryKey: keys.allSync });
+      // Where the shell pushes the standings, the dismissal's quest write is heard on the change stream and pushed (PUSH1a2).
+      void client.invalidateQueries({ queryKey: keys.allSync, predicate: notPushed(client) });
     },
   });
 };
@@ -627,7 +679,7 @@ export const useForwardConflict = () => {
       api.forwardConflict(id, machine, sequence),
     onSettled: () => {
       invalidate();
-      void client.invalidateQueries({ queryKey: keys.allSync });
+      void client.invalidateQueries({ queryKey: keys.allSync, predicate: notPushed(client) });
     },
   });
 };
