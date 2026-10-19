@@ -77,9 +77,10 @@ public static class HelpGrants
                 var approval = approvals.FirstOrDefault(each => Same(each, plugin.Manifest.Id, server.Name));
                 var exact = approval is not null && approval.Allow.ToHashSet(StringComparer.Ordinal).SetEquals(server.Allow)
                             && approval.Writes.All(tool => server.Writes.Contains(tool, StringComparer.Ordinal));
+                // HELPPLUG1c: an approval on file that no longer matches is said as changed since, never as never approved.
                 grants.Add(exact
                     ? new HelpGrant(plugin.Manifest.Id, server, Approved, null) { Accepted = approval!.Writes }
-                    : new HelpGrant(plugin.Manifest.Id, server, Waits, null));
+                    : new HelpGrant(plugin.Manifest.Id, server, Waits, null) { Changed = approval is not null });
             }
         }
 
@@ -91,19 +92,32 @@ public static class HelpGrants
     /// <paramref name="readsOnly"/>. Answers the grant it makes.
     /// </summary>
     /// <exception cref="DriverException">No such server here for Ask Daoris, one that is refused, or a file that does not read.</exception>
-    public static HelpGrant Approve(string home, PluginCatalog catalog, string plugin, string server, bool readsOnly)
+    public static HelpGrant Approve(string home, PluginCatalog catalog, string plugin, string server, bool readsOnly) =>
+        Approve(home, catalog, plugin, server, readsOnly ? [] : null);
+
+    /// <summary>
+    /// The person's approval of a server's exact reads, and of the writes they accepted, each on its own (HELPPLUG1c): null
+    /// accepts every write it declares, an empty list none. The writes not accepted are asked, which Ask Daoris's mode refuses.
+    /// </summary>
+    /// <exception cref="DriverException">
+    /// No such server here for Ask Daoris, one that is refused, a write it does not declare, or a file that does not read.
+    /// </exception>
+    public static HelpGrant Approve(string home, PluginCatalog catalog, string plugin, string server, IReadOnlyList<string>? writes)
     {
-        var entry = catalog.Contributing.FirstOrDefault(each => string.Equals(each.Manifest.Id, plugin, StringComparison.OrdinalIgnoreCase));
-        var declared = entry?.Manifest.Servers.FirstOrDefault(each =>
-            string.Equals(each.Name, server, StringComparison.Ordinal) && each.HandedTo(PluginServerTo.Help))
-            ?? throw new DriverException(
-                $"no plugin `{plugin}` on this machine, switched on and sound, offers Ask Daoris a server `{server}`; `daoris-driver plugins show {plugin}` says what it offers.");
+        var (entry, declared) = Declared(catalog, plugin, server);
         if (Refusal(declared) is { } refusal) throw new DriverException($"`{server}` is not approved: {refusal}");
+        if (writes?.FirstOrDefault(tool => !declared.Writes.Contains(tool, StringComparer.Ordinal)) is { } unknown)
+        {
+            throw new DriverException($"`{unknown}` is not a write `{declared.Name}` declares, so nothing was approved: it writes outside Daoris with "
+                + (declared.Writes.Count > 0 ? string.Join(", ", declared.Writes.Select(tool => $"`{tool}`")) : "none of its tools") + ".");
+        }
 
         var approvals = Approvals(home) ?? (File.Exists(PathIn(home))
             ? throw new DriverException($"`{FileName}` under the home could not be read, so nothing was approved over it.")
             : []);
-        var approval = new HelpApproval(entry!.Manifest.Id, declared.Name, declared.Allow, readsOnly ? [] : declared.Writes);
+        // The declared order, whatever order the person accepted them in, so the file reads as the manifest does.
+        var accepted = writes is null ? declared.Writes : [.. declared.Writes.Where(tool => writes.Contains(tool, StringComparer.Ordinal))];
+        var approval = new HelpApproval(entry.Manifest.Id, declared.Name, declared.Allow, accepted);
         Write(home, [.. approvals.Where(each => !Same(each, approval.Plugin, approval.Server)), approval]);
         return new HelpGrant(approval.Plugin, declared, Approved, null) { Accepted = approval.Writes };
     }
@@ -116,6 +130,18 @@ public static class HelpGrants
         var approvals = Approvals(home)
             ?? throw new DriverException($"`{FileName}` under the home could not be read, so nothing was withdrawn from it.");
         Write(home, [.. approvals.Where(each => !Same(each, plugin, server))]);
+    }
+
+    /// <summary>The contributing plugin and its server declared for Ask Daoris, as an approval and Ask Daoris's proposal name them.</summary>
+    /// <exception cref="DriverException">No such plugin here, switched on and sound, offering Ask Daoris that server.</exception>
+    internal static (PluginEntry Entry, PluginServer Server) Declared(PluginCatalog catalog, string plugin, string server)
+    {
+        var entry = catalog.Contributing.FirstOrDefault(each => string.Equals(each.Manifest.Id, plugin, StringComparison.OrdinalIgnoreCase));
+        var declared = entry?.Manifest.Servers.FirstOrDefault(each =>
+            string.Equals(each.Name, server, StringComparison.Ordinal) && each.HandedTo(PluginServerTo.Help))
+            ?? throw new DriverException(
+                $"no plugin `{plugin}` on this machine, switched on and sound, offers Ask Daoris a server `{server}`; `daoris-driver plugins show {plugin}` says what it offers.");
+        return (entry!, declared);
     }
 
     private static bool Same(HelpApproval approval, string plugin, string server) =>
@@ -182,6 +208,12 @@ public sealed record HelpGrant(string Plugin, PluginServer Server, string State,
 {
     /// <summary>The writes the person accepted, where approved: allowed; the server's other writes are asked.</summary>
     public IReadOnlyList<string> Accepted { get; init; } = [];
+
+    /// <summary>
+    /// Where it waits: whether the person approved it once and an update has changed its tools since (HELPPLUG1c), so it is
+    /// said as asked again rather than as never approved. False for every other state.
+    /// </summary>
+    public bool Changed { get; init; }
 }
 
 /// <summary>Every grant, and what Ask Daoris's spawn takes of them: the approved servers, and the rules for their tools.</summary>

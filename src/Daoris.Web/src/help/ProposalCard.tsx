@@ -47,6 +47,8 @@ export type HelpProposal = {
   terminal: string;
   why: string;
   plugin?: HelpPluginShown | null;
+  /** The person's approval of what a plugin's server offers Ask Daoris, or its withdrawal (`plugin`'s `approve`, HELPPLUG1c). */
+  grant?: HelpGrantShown | null;
   /** Bringing up to date (HELP10): whether the person has looked, and every row the look listed. */
   sync?: HelpSyncShown | null;
   /** A yes to a departure (DRIFT1d2): the quest, and each departure its done answered. */
@@ -104,6 +106,44 @@ export type HelpSyncShown = {
   /** The repositories with a checkout here that the look left apart, holding no branch of Daoris's. */
   apart?: string[];
 };
+
+/**
+ * What an approval of a plugin's server for Ask Daoris names (HELPPLUG1c, D170's note), as the driver's judge read the
+ * manifest: the plugin, the server, each tool it reads with and each it writes outside Daoris with, and the writes the approval
+ * accepts; for a withdrawal (`withdraw`), those it had accepted. The bridge leaves a false out.
+ */
+export type HelpGrantShown = {
+  plugin: string;
+  name: string;
+  server: string;
+  reads: string[];
+  writes: string[];
+  accepted: string[];
+  withdraw?: boolean;
+};
+
+/**
+ * Every tool an approval hands Ask Daoris, or a withdrawal takes back (HELPPLUG1c): its reads, the writes accepted and those
+ * not, each named as the plugin declares it, so the person sees exactly what their press widens or narrows.
+ */
+function GrantTools({ grant }: { grant: HelpGrantShown }) {
+  const { t } = useTranslation();
+  const tools = (names: string[]) => names.map((name) => `\`${name}\``).join(', ');
+  const asked = grant.writes.filter((tool) => !grant.accepted.includes(tool));
+  const said = (text: string, key: string) => (
+    <li key={key} className="m-0 text-meta text-ink-soft"><Inline text={text} /></li>
+  );
+  return (
+    <ul aria-label={t(grant.withdraw ? 'help.proposal.grant.loses' : 'help.proposal.grant.shows')} className="m-0 mt-1 flex list-none flex-col gap-0.5 p-0">
+      {said(grant.name && grant.name !== grant.plugin
+        ? t('help.proposal.grant.serverNamed', { server: grant.server, plugin: grant.plugin, name: grant.name })
+        : t('help.proposal.grant.server', { server: grant.server, plugin: grant.plugin }), 'server')}
+      {said(grant.reads.length > 0 ? t('help.proposal.grant.reads', { tools: tools(grant.reads) }) : t('help.proposal.grant.readsNone'), 'reads')}
+      {grant.accepted.length > 0 && said(t('help.proposal.grant.writesAccepted', { tools: tools(grant.accepted) }), 'accepted')}
+      {!grant.withdraw && asked.length > 0 && said(t('help.proposal.grant.writesAsked', { tools: tools(asked) }), 'asked')}
+    </ul>
+  );
+}
 
 /** A command as a terminal takes it: a word holding a space quoted, as the driver spells it. */
 const line = (command: string[]) => command.map((word) => (word.includes(' ') ? `"${word}"` : word)).join(' ');
@@ -265,6 +305,7 @@ export function ProposalCard({ proposal, pending = false, onApply, onDismiss }: 
   const deleting = proposal.kind === 'delete';
   const going = proposal.kind === 'go';
   const plugin = proposal.kind === 'plugin' ? proposal.plugin ?? null : null;
+  const grant = proposal.kind === 'plugin' ? proposal.grant ?? null : null;
   const handing = proposal.kind === 'hand';
   const syncing = proposal.kind === 'sync' ? proposal.sync ?? { looked: false, rows: [] } : null;
   const looking = syncing !== null && !syncing.looked;
@@ -283,6 +324,7 @@ export function ProposalCard({ proposal, pending = false, onApply, onDismiss }: 
       <p className={deleting ? 'm-0 text-small font-semibold text-ink-danger' : 'm-0 text-small font-semibold text-accent'}>
         {t(deleting ? 'help.proposal.titleDelete'
           : going ? 'help.proposal.titleGo'
+            : grant ? (grant.withdraw ? 'help.proposal.titleWithdraw' : 'help.proposal.titleGrant')
             : proposal.kind === 'plugin' ? 'help.proposal.titlePlugin'
               : handing ? 'help.proposal.titleHand'
                 : syncing ? 'help.proposal.titleSync'
@@ -293,6 +335,7 @@ export function ProposalCard({ proposal, pending = false, onApply, onDismiss }: 
         ? <WorkflowChange workflow={workflow} />
         : <p className="m-0 mt-1 text-small text-ink"><Inline text={proposal.describe} /></p>}
       {plugin && <PluginRuns plugin={plugin} />}
+      {grant && <GrantTools grant={grant} />}
       {setup && <SetupPlanFacts plan={setup} />}
       {departures.length > 0 && (
         <ol aria-label={t('help.proposal.departures')} className="m-0 mt-2 grid list-none gap-2.5 p-0">

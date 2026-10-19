@@ -17,9 +17,13 @@ public sealed class HelpPluginTool(IntakeScope? intake = null, HelpProposalBox? 
         + "from where an installed plugin came from. The card shows what the plugin runs (and for an update what changes) "
         + "before the person presses Apply, and nothing is copied, switched, replaced or started until they do. Never for "
         + "a plugin that has not landed: making one is work, proposed with ask_propose at the workspace of the repository "
-        + "that holds plugins.")]
+        + "that holds plugins. `approve` proposes the person's approval of what an installed plugin's server offers you, "
+        + "the plugin's page's Approve (`daoris-driver plugins approve <id> <server>`): name the plugin's `id`, its `server`, "
+        + "and in `writes` only the writes outside Daoris the person said they accept; the card names every tool, its reads "
+        + "and its writes apart, and you are handed it from your next conversation once they press Apply. `withdraw` takes "
+        + "an approval back.")]
     public string ProposePlugin(
-        [Description("add, enable, disable, or update.")]
+        [Description("add, enable, disable, update, approve, or withdraw.")]
         string action,
         [Description("Why: what the person asked, and what the plugin does. The person decides on this.")]
         string why,
@@ -27,12 +31,16 @@ public sealed class HelpPluginTool(IntakeScope? intake = null, HelpProposalBox? 
         string? repository = null,
         [Description("For add: the plugin's folder from that checkout's root, like `quiet-hours` or `plugins/quiet-hours`; a whole path only when the person gave one, with no repository.")]
         string? folder = null,
-        [Description("For enable, disable and update: the plugin's id, as the room lists the plugins installed here.")]
+        [Description("For enable, disable, update, approve and withdraw: the plugin's id, as the room lists the plugins installed here.")]
         string? id = null,
         [Description("For add, instead of a repository and folder: one of Daoris's own plugins this install offers, by its id as the room lists them.")]
-        string? offer = null)
+        string? offer = null,
+        [Description("For approve and withdraw: the server the plugin offers you, as the room names it; omit it where the plugin offers you one only.")]
+        string? server = null,
+        [Description("For approve: the writes outside Daoris the person accepts, each a tool's name as the room lists it; none accepts its reads only.")]
+        string[]? writes = null)
     {
         var box = help ?? HelpProposalBox.FromEnvironment();
-        return box.ProposePlugin(action, id, folder, repository, why, intake?.Session, DateTimeOffset.UtcNow, offer).Message;
+        return box.ProposePlugin(action, id, folder, repository, why, intake?.Session, DateTimeOffset.UtcNow, offer, server, writes).Message;
     }
 }

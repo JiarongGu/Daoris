@@ -103,7 +103,9 @@ makes the same change and applied through that screen's own route.
 
 **A plugin** (PLUG9, §9.7): one that has landed, added from its folder in the checkout of the
 repository that holds it (`plugin_propose`), or one installed here switched on or off; since D103 one
-of the install's own by its id, or an update of one from where it came from. Making one is
+of the install's own by its id, or an update of one from where it came from; since HELPPLUG1c (D170's
+note) the person's approval of what an installed plugin's server offers Ask Daoris (`approve`, its
+`server` and the `writes` accepted), or its withdrawal (`withdraw`), the card naming every tool. Making one is
 never a proposal of this kind: it is an ask at that repository's workspace, since a plugin runs as the
 person and is made with tests and reviewed like any other work.
 

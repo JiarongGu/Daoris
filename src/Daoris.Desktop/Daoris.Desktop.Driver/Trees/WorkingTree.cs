@@ -939,6 +939,13 @@ public static class WorkingTree
     /// </summary>
     internal static readonly AsyncLocal<Func<IReadOnlyList<string>, (int Code, string Stdout, string Stderr)?>?> Answered = new();
 
+    /// <summary>
+    /// The test seam for git's run (PARALLEL1e): where set, it stands in for the runner, handed the arguments, the bound the call
+    /// runs under and the caller's token, so a test sees the bound a kind is given and the token that reaches git, and answers a
+    /// run that never ended in it. Null in production, and an async local.
+    /// </summary>
+    internal static readonly AsyncLocal<Func<IReadOnlyList<string>, TimeSpan, CancellationToken, Task<ChildRun>>?> Runs = new();
+
     // Internal rather than private since D51: SessionTrees asks git the same way for the same reason —
     // one process-spawning implementation, not two that differ in encoding or error shape.
     internal static Task<(int Code, string Stdout, string Stderr)> GitAsync(
@@ -985,6 +992,23 @@ public static class WorkingTree
         GitFacts.Ran(arguments);
         Started.Value?.Invoke(arguments);
         if (Answered.Value?.Invoke(arguments) is { } answered) return answered;
+        // PARALLEL1e (D181 point 4): no git runs unbounded. The caller's bound where it passed one (a fetch, a replay), else
+        // its kind's; past it git's tree is ended and the answer is a failure saying so, which every caller reads as a read
+        // that failed: its subject unknown until the next wake asks again.
+        var bound = GitBounds.Of(arguments, timeout);
+        if (Runs.Value is { } stand)
+        {
+            try
+            {
+                return Answer(await stand(arguments, bound, ct).ConfigureAwait(false), bound);
+            }
+            finally
+            {
+                RefSnapshot.Ran(arguments);
+                GitFacts.Ran(arguments);
+            }
+        }
+
         var (info, refusal) = GitStart(root, arguments, DaorisHome.Resolve());
         // A git the person chose that cannot run is git's answer, said in the resolution's words (TOOLS5): never PATH's.
         if (info is null) return (-1, "", refusal!);
@@ -1004,11 +1028,9 @@ public static class WorkingTree
         try
         {
             var run = input is null
-                ? await ChildProcess.RunAsync(info, timeout ?? Timeout.InfiniteTimeSpan, ct, closeInput: false).ConfigureAwait(false)
-                : await ChildProcess.RunAsync(info, timeout ?? Timeout.InfiniteTimeSpan, ct, input, ProcessStarts.Shared).ConfigureAwait(false);
-            if (!run.Started) return (-1, "", run.Error?.Message ?? "git did not start");
-            if (run.TimedOut) return (-1, "", $"git did not answer within {timeout!.Value.TotalSeconds:0} seconds, and was stopped.");
-            return (run.ExitCode!.Value, run.Stdout, run.Stderr);
+                ? await ChildProcess.RunAsync(info, bound, ct, closeInput: false).ConfigureAwait(false)
+                : await ChildProcess.RunAsync(info, bound, ct, input, ProcessStarts.Shared).ConfigureAwait(false);
+            return Answer(run, bound);
         }
         catch (Exception error) when (error is not OperationCanceledException)
         {
@@ -1022,6 +1044,14 @@ public static class WorkingTree
         }
     }
 
+    /// <summary>A run's end as git's answer: its code and streams, or a failure saying it did not start or did not answer in time.</summary>
+    private static (int Code, string Stdout, string Stderr) Answer(ChildRun run, TimeSpan bound)
+    {
+        if (!run.Started) return (-1, "", run.Error?.Message ?? "git did not start");
+        if (run.TimedOut) return (-1, "", $"git did not answer within {bound.TotalSeconds:0} seconds, and was stopped.");
+        return (run.ExitCode!.Value, run.Stdout, run.Stderr);
+    }
+
     /// <summary>
     /// The first <paramref name="limit"/> bytes git writes, as bytes (REVIEW2): a blob read for a preview, which may be
     /// binary and may be larger than any preview shows. Null where git failed or would not start.
@@ -1030,6 +1060,8 @@ public static class WorkingTree
     /// Bytes rather than <see cref="GitAsync(string, IReadOnlyList{string}, CancellationToken)"/>'s text, since a blob
     /// decoded as UTF-8 on its way in is no longer the blob; and bounded, since a file has no upper size. Once the bound
     /// is read, git is stopped rather than drained: the rest is only counted, from what git said of the blob's size.
+    /// PARALLEL1e: bounded in time too, by its kind (<see cref="GitBounds"/>); past it, or on the caller's cancellation, git's
+    /// tree is ended, and the answer is null, or the cancellation thrown.
     /// </remarks>
     internal static async Task<(byte[] Bytes, int Count)?> GitBytesAsync(
         string root, IReadOnlyList<string> arguments, int limit, CancellationToken ct)
@@ -1039,31 +1071,44 @@ public static class WorkingTree
         if (info is null) return null;
 
         Process? process = null;
+        Task<string>? stderr = null;
+        using var within = CancellationTokenSource.CreateLinkedTokenSource(ct);
         try
         {
-            // Through the process-wide gate, off the caller's thread (UIFREEZE1).
-            process = await ProcessStarts.Shared.StartAsync(info, ct).ConfigureAwait(false) ?? throw new DriverException("git did not start");
-            var stderr = process.StandardError.ReadToEndAsync(ct);
+            // Through the process-wide gate, off the caller's thread (UIFREEZE1), as the background's (PARALLEL1d).
+            process = await ProcessStarts.Shared.StartAsync(info, StartClass.Background, ct).ConfigureAwait(false)
+                      ?? throw new DriverException("git did not start");
+            within.CancelAfter(GitBounds.Of(arguments));
+            using var ending = Ending(within.Token, process);
+            stderr = process.StandardError.ReadToEndAsync(within.Token);
             var buffer = new byte[Math.Max(0, limit)];
             var count = 0;
             var stream = process.StandardOutput.BaseStream;
             while (count < buffer.Length)
             {
-                var got = await stream.ReadAsync(buffer.AsMemory(count), ct).ConfigureAwait(false);
+                var got = await stream.ReadAsync(buffer.AsMemory(count), within.Token).ConfigureAwait(false);
                 if (got == 0) break;
                 count += got;
             }
 
             // More than the bound is waiting: git would block on a full pipe, so it is stopped. What it wrote is whole.
-            var bounded = count == buffer.Length && await stream.ReadAsync(new byte[1], ct).ConfigureAwait(false) > 0;
+            var bounded = count == buffer.Length && await stream.ReadAsync(new byte[1], within.Token).ConfigureAwait(false) > 0;
             if (bounded)
             {
                 ChildProcess.KillTree(process);
             }
 
-            await process.WaitForExitAsync(ct).ConfigureAwait(false);
+            await process.WaitForExitAsync(within.Token).ConfigureAwait(false);
             await stderr.ConfigureAwait(false);
+            // A read the kill below ended answers as git's end would: past the bound, it is none.
+            within.Token.ThrowIfCancellationRequested();
             return bounded || process.ExitCode == 0 ? (buffer, count) : null;
+        }
+        catch (OperationCanceledException) when (process is not null)
+        {
+            await EndAsync(process, stderr).ConfigureAwait(false);
+            ct.ThrowIfCancellationRequested();
+            return null;
         }
         catch (Exception error) when (error is not OperationCanceledException)
         {
@@ -1073,6 +1118,23 @@ public static class WorkingTree
         {
             process?.Dispose();
         }
+    }
+
+    /// <summary>
+    /// A streamed git ended as its bound passes or its caller cancels (PARALLEL1e): a read of a pipe does not always hear its
+    /// token, and the kill closes the pipe under it, so the read ends with git.
+    /// </summary>
+    private static CancellationTokenRegistration Ending(CancellationToken within, Process process) =>
+        within.Register(() => ChildProcess.KillTree(process));
+
+    /// <summary>
+    /// A streamed git past its bound or its caller's cancellation (PARALLEL1e): its tree ended, never left running unowned as
+    /// a cancelled read once left it, and its error stream's read let finish unobserved, the answer already "none".
+    /// </summary>
+    private static async Task EndAsync(Process process, Task<string>? stderr)
+    {
+        ChildProcess.KillTree(process);
+        if (stderr is not null) await stderr.ContinueWith(_ => { }, TaskScheduler.Default).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -1092,6 +1154,8 @@ public static class WorkingTree
     /// <remarks>
     /// <see cref="GitBytesAsync"/>'s shape for text: a range's patch has no upper size, and a review that has spent its
     /// bound reads no further. git's words on the error stream are drained beside it, so a full pipe never holds git.
+    /// PARALLEL1e: bounded in time by its kind (<see cref="GitBounds"/>); past it git's tree is ended and the answer is -1, a
+    /// read that failed, and on the caller's cancellation its tree is ended and the cancellation thrown.
     /// </remarks>
     internal static async Task<int> ReadGitAsync(
         string root, IReadOnlyList<string> arguments, Func<ReadOnlyMemory<char>, bool> take, CancellationToken ct)
@@ -1100,15 +1164,20 @@ public static class WorkingTree
         if (info is null) return -1;
 
         Process? process = null;
+        Task<string>? stderr = null;
+        using var within = CancellationTokenSource.CreateLinkedTokenSource(ct);
         try
         {
-            // Through the process-wide gate, off the caller's thread (UIFREEZE1).
-            process = await ProcessStarts.Shared.StartAsync(info, ct).ConfigureAwait(false) ?? throw new DriverException("git did not start");
-            var stderr = process.StandardError.ReadToEndAsync(ct);
+            // Through the process-wide gate, off the caller's thread (UIFREEZE1), as the background's (PARALLEL1d).
+            process = await ProcessStarts.Shared.StartAsync(info, StartClass.Background, ct).ConfigureAwait(false)
+                      ?? throw new DriverException("git did not start");
+            within.CancelAfter(GitBounds.Of(arguments));
+            using var ending = Ending(within.Token, process);
+            stderr = process.StandardError.ReadToEndAsync(within.Token);
             var buffer = new char[16 * 1024];
             var stopped = false;
             int got;
-            while (!stopped && (got = await process.StandardOutput.ReadAsync(buffer.AsMemory(), ct).ConfigureAwait(false)) > 0)
+            while (!stopped && (got = await process.StandardOutput.ReadAsync(buffer.AsMemory(), within.Token).ConfigureAwait(false)) > 0)
             {
                 stopped = !take(buffer.AsMemory(0, got));
             }
@@ -1118,9 +1187,17 @@ public static class WorkingTree
                 ChildProcess.KillTree(process);
             }
 
-            await process.WaitForExitAsync(ct).ConfigureAwait(false);
+            await process.WaitForExitAsync(within.Token).ConfigureAwait(false);
             await stderr.ConfigureAwait(false);
+            // A read the kill ended answers as git's end would: past the bound, it is a read that failed.
+            within.Token.ThrowIfCancellationRequested();
             return stopped ? 0 : process.ExitCode;
+        }
+        catch (OperationCanceledException) when (process is not null)
+        {
+            await EndAsync(process, stderr).ConfigureAwait(false);
+            ct.ThrowIfCancellationRequested();
+            return -1;
         }
         catch (Exception error) when (error is not OperationCanceledException)
         {

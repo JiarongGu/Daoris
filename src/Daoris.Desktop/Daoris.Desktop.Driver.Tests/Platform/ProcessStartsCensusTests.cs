@@ -1,4 +1,5 @@
 using System.Text.RegularExpressions;
+using Daoris.Driver;
 
 namespace Daoris.Desktop.Driver.Tests;
 
@@ -73,6 +74,66 @@ public sealed class ProcessStartsCensusTests
         var source = Sources().Single(each => each.File == file).Source;
 
         Assert.Contains(gate, source);
+    }
+
+    /// <summary>
+    /// Whose each start through the shared gate is (PARALLEL1d, D181 point 5), by file: a background start names
+    /// <c>StartClass.Background</c>, so the person's place is never its; a person's names none, and takes any place free.
+    /// </summary>
+    private static readonly Dictionary<string, StartClass> Whose = new(StringComparer.Ordinal)
+    {
+        // git's own streams, the loop's agent starts (a run going on with the person's words is a person's), a plugin's
+        // hook program, and the usage probe.
+        ["Daoris.Desktop.Driver/Trees/WorkingTree.cs"] = StartClass.Background,
+        ["Daoris.Desktop.Driver/Loop/Driver.cs"] = StartClass.Background,
+        ["Daoris.Desktop.Driver/Plugins/HookProcess.cs"] = StartClass.Background,
+        ["Daoris.Desktop.Driver/Accounts/Usage/CodexUsage.cs"] = StartClass.Background,
+        // A conversation's agent, a session going on with the person's words, a press, a terminal, and the host the window
+        // waits on.
+        ["Daoris.Desktop.Driver/Conversations/Chat/ChatRunner.cs"] = StartClass.Person,
+        ["Daoris.Desktop.Driver/Loop/DriverContinuations.cs"] = StartClass.Person,
+        ["Daoris.Desktop.Driver/Accounts/Harnesses/HarnessActions.cs"] = StartClass.Person,
+        ["Daoris.Desktop.Driver/Plugins/PluginTrialProcess.cs"] = StartClass.Person,
+        ["Daoris.Desktop.Modules/Loop/HostSupervisor.cs"] = StartClass.Person,
+        ["Daoris.Desktop.App/EngineBrowserHost.cs"] = StartClass.Person,
+        ["Daoris.Desktop.Modules/Update/UpdateLauncher.cs"] = StartClass.Person,
+        ["Daoris.Desktop.Modules/Windows/OpenFolder.cs"] = StartClass.Person,
+        ["Daoris.Desktop.Modules/Windows/TerminalModule.cs"] = StartClass.Person,
+    };
+
+    [Fact]
+    public void Every_start_through_the_shared_gate_says_whose_it_is()
+    {
+        var unnamed = new List<string>();
+        var wrong = new List<string>();
+        var seen = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var (file, source) in Sources())
+        {
+            if (!Regex.IsMatch(source, @"\bProcessStarts\.Shared\.(?:StartAsync|RunAsync)\(")) continue;
+            seen.Add(file);
+            if (!Whose.TryGetValue(file, out var whose))
+            {
+                unnamed.Add(file);
+                continue;
+            }
+
+            var background = source.Contains("StartClass.Background", StringComparison.Ordinal);
+            if (background != (whose == StartClass.Background)) wrong.Add($"{file}: expected {whose}");
+        }
+
+        Assert.True(unnamed.Count == 0, "a start nobody said is whose: name it in Whose, a person's or the background's:\n"
+            + string.Join('\n', unnamed));
+        Assert.True(wrong.Count == 0, "a start that is not what Whose says:\n" + string.Join('\n', wrong));
+        Assert.All(Whose.Keys, file => Assert.True(seen.Contains(file), $"{file} starts nothing through the gate now: take it off Whose"));
+    }
+
+    /// <summary>The one runner's runs are questions read to their end: the background's (PARALLEL1d).</summary>
+    [Fact]
+    public void The_child_runner_starts_as_the_background()
+    {
+        var source = Sources().Single(each => each.File == "Daoris.Desktop.Driver/Platform/ChildProcess.cs").Source;
+
+        Assert.Contains("starts.StartAsync(info, StartClass.Background, ct)", source);
     }
 
     /// <summary>The launcher is called by <c>OpenFolders.OpenAsync</c> alone, which passes the gate: no module calls it itself.</summary>

@@ -22,13 +22,41 @@ internal sealed class HelpRoomMayDo : IHelpRoomSection
             // HELPPLUG1a: the servers the person approved for it, as its spawn is handed them (HelpGrants), and those waiting.
             PluginServers = [.. (sources.Grants?.All ?? []).Where(grant => grant.State == HelpGrants.Approved)
                 .Select(grant => new HelpPluginServer(grant.Plugin, grant.Server.Name, grant.Server.Allow) { Writes = grant.Accepted })],
+            // HELPPLUG1c: what each would bring, reads and writes apart, and one an update changed since its approval.
             PluginServersWaiting = [.. (sources.Grants?.All ?? []).Where(grant => grant.State == HelpGrants.Waits)
-                .Select(grant => new HelpPluginServer(grant.Plugin, grant.Server.Name, [.. grant.Server.Allow, .. grant.Server.Writes]))],
+                .Select(grant => new HelpPluginServer(grant.Plugin, grant.Server.Name, grant.Server.Allow)
+                {
+                    Writes = grant.Server.Writes, Changed = grant.Changed,
+                })],
+            PluginServersOffered = [.. Offered(sources)],
             // HELPPLUG1b: the skills its spawn is handed (SpawnSkills.Write), as the harness names them.
             PluginSkills = [.. sources.Plugins.Contributing.SelectMany(plugin => plugin.Manifest.Skills
                 .Where(skill => skill.HandedTo(PluginServerTo.Help) && SpawnSkills.Judge(plugin.Folder, skill.Name) is null)
                 .Select(skill => $"{plugin.Manifest.Id}:{skill.Name}"))],
         };
+    }
+
+    /// <summary>
+    /// HELPPLUG1c: each server an installed plugin's newer copy in the install would offer Ask Daoris and the installed copy does
+    /// not, as an installed in-app browser 1.0.0 is beside the shipped 1.1.0: said with its update first, so it is not missing
+    /// in silence.
+    /// </summary>
+    private static IEnumerable<HelpPluginServerOffered> Offered(HelpMachineSources sources)
+    {
+        foreach (var offer in sources.Offers.Where(offer => offer.Installed && offer.Problem is null))
+        {
+            if (sources.Plugins.Plugins.FirstOrDefault(entry => string.Equals(entry.Manifest.Id, offer.Id, StringComparison.OrdinalIgnoreCase))
+                is not { } installed)
+            {
+                continue;
+            }
+
+            foreach (var server in offer.Manifest.Servers.Where(server => server.HandedTo(PluginServerTo.Help)
+                && !installed.Manifest.Servers.Any(each => each.Name == server.Name && each.HandedTo(PluginServerTo.Help))))
+            {
+                yield return new HelpPluginServerOffered(installed.Manifest.Id, server.Name, installed.Manifest.Version, offer.Manifest.Version);
+            }
+        }
     }
 
     public string Render(HelpMachine machine)
@@ -101,12 +129,36 @@ internal sealed class HelpRoomMayDo : IHelpRoomSection
         }
 
         // A manifest describes and grants nothing (D170's note): a server waiting for the person's approval is handed nothing.
-        if (machine.PluginServersWaiting.Count > 0)
+        // HELPPLUG1c: a server it lacked left Ask Daoris with nobody told; what it would have, and where it is approved, is said
+        // once at the start, and the helper proposes the approval rather than only opening the page.
+        if (machine.PluginServersWaiting.Count > 0 || machine.PluginServersOffered.Count > 0)
         {
-            text.Append("These servers wait for the person's approval on the plugin's page (Plugins → the plugin's page → Ask Daoris),\n");
-            text.Append("so you are handed none of them; point the person there when a question needs one: ");
-            text.Append(string.Join(", ", machine.PluginServersWaiting.Select(server => $"`{server.Server}` (plugin `{server.Plugin}`)")));
-            text.Append(".\n\n");
+            static string Named(IEnumerable<string> tools) => string.Join(", ", tools.Select(tool => $"`{tool}`"));
+            text.Append("### Not yours yet\n\n");
+            text.Append("Plugins here offer you these servers, and you are handed none of them until the person approves its exact\n");
+            text.Append("tools: all its reads, and each write outside Daoris only as they accept it.\n\n");
+            foreach (var server in machine.PluginServersWaiting)
+            {
+                var said = new List<string>();
+                if (server.Tools.Count > 0) said.Add($"would read with {Named(server.Tools)}");
+                if (server.Writes.Count > 0) said.Add($"would change things outside Daoris with {Named(server.Writes)}, each write only as the person accepts it");
+                if (said.Count == 0) said.Add("would call none of its tools");
+                if (server.Changed) said.Add("approved once, and an update has changed its tools since, so it asks again");
+                text.Append($"- `{server.Server}` (plugin `{server.Plugin}`): {string.Join("; ", said)}\n");
+            }
+
+            foreach (var offered in machine.PluginServersOffered)
+            {
+                text.Append($"- `{offered.Server}` (plugin `{offered.Plugin}`): this install's own `{offered.Plugin}` {offered.Shipped} offers it you, ");
+                text.Append($"and the {offered.Installed} installed here does not, so it is updated first (`plugin_propose`, `update`), then approved\n");
+            }
+
+            text.Append('\n');
+            text.Append("Say so once, at the start of your first answer in a conversation, in a sentence: what you do not have yet\n");
+            text.Append("and where it is approved, so nothing the person relied on is taken away in silence. The person approves one\n");
+            text.Append("on its page (Plugins → the plugin's page → Ask Daoris → Approve). When they ask for what one does,\n");
+            text.Append("propose the approval with `plugin_propose` (`approve`, the plugin's `id` and its `server`, and in `writes`\n");
+            text.Append("only the writes they said they accept), rather than only taking them to the page.\n\n");
         }
 
         // HELPPLUG1b (D170 point 4): the skills a plugin hands it, by the names the harness gives them.
@@ -138,6 +190,18 @@ public sealed record HelpRead(string Name, string Workspace, string Path);
 /// <summary>A server a plugin hands Ask Daoris (HELPPLUG1a): the plugin, the server's name, and the tools that read it may call there.</summary>
 public sealed record HelpPluginServer(string Plugin, string Server, IReadOnlyList<string> Tools)
 {
-    /// <summary>The writes outside Daoris the person accepted, which it may call too.</summary>
+    /// <summary>
+    /// The writes outside Daoris the person accepted, which it may call too; for one that waits, every write it declares
+    /// (HELPPLUG1c), each the person's to accept.
+    /// </summary>
     public IReadOnlyList<string> Writes { get; init; } = [];
+
+    /// <summary>For one that waits: approved once, and an update has changed its tools since (HELPPLUG1c).</summary>
+    public bool Changed { get; init; }
 }
+
+/// <summary>
+/// A server the install's newer copy of a plugin installed here offers Ask Daoris, which the installed copy does not
+/// (HELPPLUG1c): the plugin, the server, and the two versions.
+/// </summary>
+public sealed record HelpPluginServerOffered(string Plugin, string Server, string Installed, string Shipped);

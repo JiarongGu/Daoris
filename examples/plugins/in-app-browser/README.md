@@ -16,6 +16,17 @@ daoris agent rules allow mcp__browser            # or --workspace <name> for one
 browser*), go to the ticket system, and sign in. The sign-in stays in the browser's profile, and
 every session after uses it. Signing in is the person's to do, never a session's.
 
+**Ask Daoris uses it once you approve it.** The server is offered to Ask Daoris too (`"to": ["sessions",
+"help"]`), and Ask Daoris is handed it only once you approve its exact tools on the plugin's page
+(Plugins → *In-app browser* → *Ask Daoris* → *Approve*), or press Apply on Ask Daoris's own proposal of
+it, or run `daoris-driver plugins approve in-app-browser browser`. Its reads (`allow`: navigating,
+reading a page's snapshot, a screenshot, its tabs, its console and its requests) are approved
+whole; each write (`writes`: clicking, typing, filling a form, choosing, dragging, uploading a file,
+answering a dialog) only as you tick it, since it acts on a page as you. The tools that run a
+page's own code (`browser_evaluate`, `browser_run_code_unsafe`) are offered to no one here: Ask
+Daoris is never handed a generic execution tool (HELP4). An update that adds or widens a tool asks
+you again.
+
 `${browser}` is the in-app browser's endpoint. The driver fills it in when it hands a session its
 servers, and brings the window up first, without taking focus. Where no shell answers (the headless
 `daoris-driver`, or a gate), the server is not handed, and the session's transcript says why. For a

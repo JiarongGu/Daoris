@@ -18,30 +18,41 @@ internal sealed class HelpPluginProposalWriter(HelpProposalFile file)
     /// <param name="folder">For add: the folder from the repository's checkout root, or a whole path the person gave.</param>
     /// <param name="repository">For add: the repository whose checkout holds it; null only for a whole path.</param>
     /// <param name="offer">For add, instead of a folder: one of the install's own plugins, by its id (PLUG9 d) — never a path.</param>
+    /// <param name="server">For approve and withdraw: the server the plugin offers Ask Daoris; null where it offers one only.</param>
+    /// <param name="writes">For approve: the writes the person accepts, each by name; none accepts its reads only.</param>
     /// <remarks>
     /// Since PLUG9 (c) and (d) (D103) an <c>add</c> may name an offer, and an <c>update</c> takes a newer copy of an
     /// installed plugin from where it came from. Whether the install offers it, and whether the plugin recorded
-    /// where it came from, is the driver's, which reads both with its own code.
+    /// where it came from, is the driver's, which reads both with its own code. Since HELPPLUG1c an <c>approve</c> proposes
+    /// the person's approval of what a plugin's server offers Ask Daoris, and a <c>withdraw</c> takes it back: whether the
+    /// plugin offers that server, and whether each write is one it declares, is the driver's, as the page's press judges it.
     /// </remarks>
     public (string? Id, string Message) Propose(
         string action, string? id, string? folder, string? repository, string why, string? session, DateTimeOffset at,
-        string? offer = null)
+        string? offer = null, string? server = null, IReadOnlyList<string>? writes = null)
     {
         var door = action.Trim().ToLowerInvariant();
         var named = Blank(id);
         var where = Blank(folder);
         var holder = Blank(repository);
         var offered = Blank(offer);
+        var served = Blank(server);
+        var accepted = (writes ?? []).Select(tool => tool.Trim()).Where(tool => tool.Length > 0).ToList();
+        var granting = door is "approve" or "withdraw";
         if (string.IsNullOrWhiteSpace(why)) return NoReason;
-        var refused = door is not ("add" or "enable" or "disable" or "update")
-            ? "a plugin's change is `add`, `enable`, `disable` or `update`: add copies a plugin that has landed, or one of "
-              + "Daoris's own, into Daoris's home; enable or disable switches one installed here; update takes a newer copy "
-              + "from where an installed one came from."
+        var refused = door is not ("add" or "enable" or "disable" or "update" or "approve" or "withdraw")
+            ? "a plugin's change is `add`, `enable`, `disable`, `update`, `approve` or `withdraw`: add copies a plugin that has "
+              + "landed, or one of Daoris's own, into Daoris's home; enable or disable switches one installed here; update takes "
+              + "a newer copy from where an installed one came from; approve lets Ask Daoris call what a plugin's server offers "
+              + "it, and withdraw takes that back."
+            : !granting && (served is not null || accepted.Count > 0) ? "a server and writes are for `approve` and `withdraw`."
             : door == "add" ? AddRefusal(named, where, holder, offered)
             : named is null ? $"`{door}` names the plugin by its id, as the room lists the plugins installed here."
             : where is not null || holder is not null || offered is not null
                 ? $"`{door}` names only the plugin's id — a folder or an offer is for `add`."
-            : Word(named, "an id");
+            : door == "withdraw" && accepted.Count > 0 ? "only `approve` accepts writes; a withdrawal names none."
+            : Word(named, "an id") ?? (served is null ? null : Word(served, "a server"))
+              ?? accepted.Select(tool => Word(tool, "a write")).FirstOrDefault(word => word is not null);
         if (refused is not null) return (null, $"{Capital(refused)} Nothing was proposed.");
 
         return file.Write(writer =>
@@ -55,6 +66,18 @@ internal sealed class HelpPluginProposalWriter(HelpProposalFile file)
             Nullable(writer, "repository", door == "add" ? holder : null);
             Nullable(writer, "folder", door == "add" ? where : null);
             Nullable(writer, "offer", door == "add" ? offered : null);
+            // HELPPLUG1c: the server and the writes an approval accepts; a withdrawal names its server only.
+            Nullable(writer, "server", granting ? served : null);
+            if (door == "approve")
+            {
+                writer.WriteStartArray("writes");
+                foreach (var tool in accepted) writer.WriteStringValue(tool);
+                writer.WriteEndArray();
+            }
+            else
+            {
+                writer.WriteNull("writes");
+            }
         }, why, session, at);
     }
 
