@@ -7,6 +7,11 @@ with the version and date at release.
 
 - A terminal's words or stop for one session no longer wait behind another session's slow delivery, and the plugins'
   evaluation steps run beside the driver's look instead of holding the next one.
+- A repository's heavy checks run one at a time across its trees: `daoris-driver run-heavy`, run in a checkout, runs the gates
+  its `daoris.gates.json` marks `"heavy": true` one after another, or the one `--gate <name>` names, and stops at the first that
+  fails. A second run of the same repository, from its checkout or any tree of it, waits rather than running beside the first,
+  and says whose run it waits behind and for how long. Everything a gate starts, a build's lingering workers included, is ended
+  before the next run begins, whether the run passed, failed, was stopped with Ctrl+C or was killed.
 - A working session's row in the sessions list says the tool call its agent is inside and how long it has run, *running npm
   test for 8m*, as its page's head does, timed from the call's start even where it began before the window opened. A tool
   call the rules refused no longer reads as still running.

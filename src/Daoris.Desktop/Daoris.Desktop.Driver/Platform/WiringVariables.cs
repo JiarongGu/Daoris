@@ -110,6 +110,7 @@ public static class WiringVariables
         ["DAORIS_QUEST_BODY"] = "handed to a plugin's hook by the driver",
         ["DAORIS_QUEST_ASKER"] = "handed to a plugin's hook by the driver",
         ["DAORIS_ASK_ID"] = "handed to an intake's connector by the driver",
+        ["DAORIS_HEAVY_RUN"] = "handed to a heavy run's gates by the driver: the slot their run holds, so a run inside it never waits on it",
         ["DAORIS_SESSION_WORKSPACE"] = "handed to Ask Daoris's connector by the driver: the workspace its conversation is bound to",
         ["DAORIS_REPOSITORY"] = "handed to a plugin's hook by the driver",
         ["DAORIS_PLUGIN_ID"] = "handed to a plugin's process by the driver",

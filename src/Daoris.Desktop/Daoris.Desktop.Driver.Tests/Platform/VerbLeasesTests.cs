@@ -90,6 +90,9 @@ public sealed class VerbLeasesTests
     [InlineData("sessions hand-over s-1 --agent codex")]
     [InlineData("drive --once")]
     [InlineData("--until-idle")]
+    // A repository's heavy gates, which run for minutes and write the home only in their own slot (HEAVYRUN1a).
+    [InlineData("run-heavy")]
+    [InlineData("run-heavy --gate web")]
     public void A_read_or_another_writers_verb_holds_none(string words) => Assert.False(VerbLeases.Holds(words.Split(' ')), words);
 
     [Fact]

@@ -19,6 +19,11 @@ namespace Daoris.Driver;
 ///
 /// <para>Best effort by construction. A process that exited before it could join, or a job the
 /// system refused, leaves the session running exactly as it did before this existed.</para>
+///
+/// <para>A heavy run (HEAVYRUN1a) holds its gates the other way round, and not as a best effort: an empty job made first
+/// (<see cref="Create"/>), each gate started suspended and joined before it runs, its count read (<see cref="Active"/>), and
+/// everything in it ended and waited for (<see cref="Terminate"/>, <see cref="WaitEmptyAsync"/>) before the run lets go of its
+/// slot. A gate that could not join is not run.</para>
 /// </remarks>
 public sealed class ProcessJob : IDisposable
 {
@@ -42,16 +47,10 @@ public sealed class ProcessJob : IDisposable
         var job = CreateJobObject(IntPtr.Zero, null);
         if (job == IntPtr.Zero) return new ProcessJob(IntPtr.Zero);
 
-        var limits = new JobObjectExtendedLimitInformation
-        {
-            BasicLimitInformation = new JobObjectBasicLimitInformation { LimitFlags = KillOnJobClose },
-        };
-        var size = Marshal.SizeOf<JobObjectExtendedLimitInformation>();
         var joined = false;
         try
         {
-            joined = SetInformationJobObject(job, ExtendedLimitInformation, ref limits, (uint)size)
-                     && AssignProcessToJobObject(job, processHandle());
+            joined = KillOnClose(job) && AssignProcessToJobObject(job, processHandle());
         }
         catch (Exception error) when (error is InvalidOperationException or System.ComponentModel.Win32Exception)
         {
@@ -64,6 +63,100 @@ public sealed class ProcessJob : IDisposable
         return new ProcessJob(IntPtr.Zero);
     }
 
+    /// <summary>
+    /// An empty job that ends what it holds on close, for processes this library starts suspended and joins (<see cref="Join"/>)
+    /// before they can start anything: a heavy run's gates (HEAVYRUN1a). Named where <paramref name="name"/> is given, so the next
+    /// holder of the run's slot can find one a dead holder left (<see cref="EndNamedAsync"/>). Null off Windows, where there is no
+    /// job, and where the system refused one or the name is already another's: a job that is not wholly this one's holds nothing.
+    /// </summary>
+    internal static ProcessJob? Create(string? name = null)
+    {
+        if (!OperatingSystem.IsWindows()) return null;
+
+        var job = CreateJobObject(IntPtr.Zero, name);
+        if (job == IntPtr.Zero) return null;
+        if (Marshal.GetLastWin32Error() == AlreadyExists || !KillOnClose(job))
+        {
+            CloseHandle(job);
+            return null;
+        }
+
+        return new ProcessJob(job);
+    }
+
+    /// <summary>Put a process this library started suspended into the job, before it can start anything. False where it could not.</summary>
+    internal bool Join(IntPtr processHandle)
+    {
+        var handle = Volatile.Read(ref _handle);
+        return handle != IntPtr.Zero && AssignProcessToJobObject(handle, processHandle);
+    }
+
+    /// <summary>
+    /// How many processes the job holds now, those of jobs nested in it among them; null where there is no job, or the count did not
+    /// read. A process leaves the count as it exits, whoever still holds a handle to it.
+    /// </summary>
+    public int? Active
+    {
+        get
+        {
+            var handle = Volatile.Read(ref _handle);
+            if (handle == IntPtr.Zero) return null;
+            return QueryInformationJobObject(
+                handle, BasicAccountingInformation, out var accounting, (uint)Marshal.SizeOf<JobObjectBasicAccountingInformation>(), IntPtr.Zero)
+                ? (int)accounting.ActiveProcesses
+                : null;
+        }
+    }
+
+    /// <summary>Have every process in the job end now, the job left open: <see cref="WaitEmptyAsync"/> waits until they have.</summary>
+    public void Terminate(uint exitCode = 1)
+    {
+        var handle = Volatile.Read(ref _handle);
+        if (handle != IntPtr.Zero) TerminateJobObject(handle, exitCode);
+    }
+
+    /// <summary>
+    /// Until the job holds no live process. Never timed: a run's slot is let go only once this returns (HEAVYRUN1a), and a bound would
+    /// let it go beside what is still running. A count that does not read ends the wait, and the handle's close ends what is left.
+    /// </summary>
+    public async Task WaitEmptyAsync()
+    {
+        while (Active is > 0) await Task.Delay(EmptyPoll).ConfigureAwait(false);
+    }
+
+    /// <summary>Whether a job by that name is still there: one some process still holds a handle to.</summary>
+    internal static bool Exists(string name)
+    {
+        if (!OperatingSystem.IsWindows()) return false;
+        var job = OpenJobObject(JobQuery, false, name);
+        if (job == IntPtr.Zero) return false;
+        CloseHandle(job);
+        return true;
+    }
+
+    /// <summary>
+    /// End the job a dead holder of a heavy-run slot named, if it is still there, and wait until it holds nothing (HEAVYRUN1a): true
+    /// where it was. A name no job answers to is a job whose last handle closed, which ended what it held as it closed.
+    /// </summary>
+    /// <exception cref="System.ComponentModel.Win32Exception">It is there and would not open: cannot tell, which is never "ended".</exception>
+    internal static async Task<bool> EndNamedAsync(string name)
+    {
+        if (!OperatingSystem.IsWindows()) return false;
+
+        var handle = OpenJobObject(JobQuery | JobTerminate, false, name);
+        if (handle == IntPtr.Zero)
+        {
+            var error = Marshal.GetLastWin32Error();
+            if (error is FileNotFound or InvalidName) return false;
+            throw new System.ComponentModel.Win32Exception(error);
+        }
+
+        using var job = new ProcessJob(handle);
+        job.Terminate();
+        await job.WaitEmptyAsync().ConfigureAwait(false);
+        return true;
+    }
+
     /// <summary>End every process still in the job.</summary>
     public void Dispose()
     {
@@ -71,8 +164,38 @@ public sealed class ProcessJob : IDisposable
         if (handle != IntPtr.Zero) CloseHandle(handle);
     }
 
+    private static bool KillOnClose(IntPtr job)
+    {
+        var limits = new JobObjectExtendedLimitInformation
+        {
+            BasicLimitInformation = new JobObjectBasicLimitInformation { LimitFlags = KillOnJobClose },
+        };
+        return SetInformationJobObject(job, ExtendedLimitInformation, ref limits, (uint)Marshal.SizeOf<JobObjectExtendedLimitInformation>());
+    }
+
+    private static readonly TimeSpan EmptyPoll = TimeSpan.FromMilliseconds(25);
+
     private const uint KillOnJobClose = 0x2000;
+    private const int BasicAccountingInformation = 1;
     private const int ExtendedLimitInformation = 9;
+    private const uint JobQuery = 0x0004;
+    private const uint JobTerminate = 0x0008;
+    private const int FileNotFound = 2;
+    private const int InvalidName = 123;
+    private const int AlreadyExists = 183;
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct JobObjectBasicAccountingInformation
+    {
+        public long TotalUserTime;
+        public long TotalKernelTime;
+        public long ThisPeriodTotalUserTime;
+        public long ThisPeriodTotalKernelTime;
+        public uint TotalPageFaultCount;
+        public uint TotalProcesses;
+        public uint ActiveProcesses;
+        public uint TotalTerminatedProcesses;
+    }
 
     [StructLayout(LayoutKind.Sequential)]
     private struct JobObjectBasicLimitInformation
@@ -121,6 +244,18 @@ public sealed class ProcessJob : IDisposable
     [DllImport("kernel32.dll", SetLastError = true)]
     [return: MarshalAs(UnmanagedType.Bool)]
     private static extern bool AssignProcessToJobObject(IntPtr job, IntPtr process);
+
+    [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
+    private static extern IntPtr OpenJobObject(uint access, [MarshalAs(UnmanagedType.Bool)] bool inherit, string name);
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool QueryInformationJobObject(
+        IntPtr job, int infoClass, out JobObjectBasicAccountingInformation info, uint length, IntPtr returned);
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool TerminateJobObject(IntPtr job, uint exitCode);
 
     [DllImport("kernel32.dll", SetLastError = true)]
     [return: MarshalAs(UnmanagedType.Bool)]
