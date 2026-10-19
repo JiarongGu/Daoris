@@ -59,6 +59,19 @@ public static class HelpModes
           + "since the rules, servers and room its start handed are not changed while it runs. End it, and your next words resume it "
           + $"{Runs(chosen)}.";
 
+    /// <summary>Whether choosing <paramref name="chosen"/> under a conversation running <paramref name="running"/> narrows it: full to restricted (HELPMODE1a5).</summary>
+    public static bool Narrows(string running, string chosen) => Recorded(running) == Full && Recorded(chosen) == Restricted;
+
+    /// <summary>
+    /// What a running conversation's console is told where the person narrows the mode under it (HELPMODE1a5, D183 point 2): full
+    /// access is never kept past the choice, so it ends, at once where it is idle and at its turn's end otherwise; its next words
+    /// resume it restricted, and its transcript says the change.
+    /// </summary>
+    public static string EndsForNarrowing(bool idle) =>
+        "— Ask Daoris's mode is now restricted: full access is not kept past your choice, so this conversation "
+        + (idle ? "ends now" : "ends at its turn's end")
+        + ". Your next words resume it restricted.";
+
     /// <summary>
     /// The mark before a protocol door's posture that must be set (<c>AcpSession.SetPostureAsync</c>): an agent that does not offer
     /// it fails the start, so a full start never runs in a narrower mode under the full label (D183 point 3), nor a driven start in
