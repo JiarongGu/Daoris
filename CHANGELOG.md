@@ -5,6 +5,10 @@ with the version and date at release.
 
 ## Unreleased
 
+- Choosing an account for a start no longer waits for a question Daoris is asking another account: a sign-in or usage read
+  that is slow to answer holds only the start that asked it. A start whose account another question still holds after 30
+  seconds runs on the next account of its list, or waits for the next start where none is left, rather than running beside
+  that question, which could sign the account out.
 - In a week's last day, a start now goes to the account where the most of its week would otherwise go unused, for the hours
   left to its reset, rather than to the one that resets first: three points resetting in two hours no longer go ahead of half
   a week resetting in twenty. Only a reading of the week's use counts; a reset known with no reading ranks nothing. Daoris's

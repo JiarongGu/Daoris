@@ -5,6 +5,25 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-19 — A start waited on another account's question, and one beside a question in flight was counted (PARALLEL1c)
+
+- **Symptom:** (read, not observed on the install; Codex's wait inventory, 2026-10-19) every counted start took one gate
+  (`HarnessRoster._walking`) and held it across its list's usage reads, the binary's question, each status question it owed and
+  the wait for its chosen account's lock, so one account's question that did not answer held every other start, of any agent.
+  And where the chosen account's lock stayed held past its thirty seconds, the start was counted and ran anyway.
+- **Root cause:** (1) the gate was taken around the whole walk (`ChooseAsync`; TOOL6b's count, `2e4d8e1d2`, and TOOL6g put the
+  status questions and the lock wait inside it, `48813b9f7`): its only job, a choice and its count read together, needed no
+  question under it. (2) The count read
+  `await using (await ProbeLock.TakeAsync(...))` and counted in its body; `TakeAsync` answers null for a lock not had, and a null
+  `await using` runs its body, so the start ran beside a status question that might be spending the account's single-use
+  refresh token, the race TOOL6g's lock exists to keep out.
+- **Fix:** a pass of the walk (`HarnessRoster.Pass`) reads files and counts under the gate; every question and the lock wait are
+  outside it, an owed question claimed per account (`_asking`). The count comes before the lock wait, and a lock not had takes
+  it back and leaves the account unknown for that walk (`WaitedOutAsync`, `LoginAnswer.Locked`); D125's PARALLEL1c note.
+- **Verify:** `AccountWalkGateTests`, red first: two starts beside a question that never answers timed out, a lock held past its
+  patience was counted, and a status question's lock not had was waited for twice; then green, with the walk's fast classes
+  (726 tests) unchanged.
+
 ## 2026-10-19 — An idle Daoris told every window a tick at every look, and each tick asked git of every checkout (IDLECPU1)
 
 - **Symptom:** the installed Daoris used about 1.7 cores with no session running and nobody pressing anything (the main process
