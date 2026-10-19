@@ -111,6 +111,7 @@
   "note.opening.said-used": "It had used {{used}} of its {{window}} limit.",
   "note.opening.said-near-at": "That is at or over the {{near}} that counts as near.",
   "note.opening.said-over": "That is over its {{window}} curve's {{curve}}.",
+  "note.opening.said-projected": "Projected from Daoris's own turns since, about {{projected}} of its {{window}} limit is used by now.",
   "note.opening.said-clear": "It said it is clear.",
   "note.resumed.opening": "— {{why}} the next turn of its own conversation, resumed on `{{adapter}}`.",
   "note.resumed.moved": "It is on version {{now}} now; it opened on {{then}}.",

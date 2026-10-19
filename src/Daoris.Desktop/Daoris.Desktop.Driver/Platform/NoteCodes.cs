@@ -603,6 +603,9 @@ public static class NoteCodes
     // before keeps `opening.said-near-at`, the scope's one number, which nothing writes now.
     public static readonly NoteCode OpeningSaidNearAt = new("opening.said-near-at", ["near"]);
     public static readonly NoteCode OpeningSaidOver = new("opening.said-over", ["window", "curve"]);
+    // A window's use projected to now from its reading and Daoris's own turns since, by the account's measured ratio
+    // (USAGEPROBE1): what decided the start asked nothing of it, never near or over, which a reading alone says.
+    public static readonly NoteCode OpeningSaidProjected = new("opening.said-projected", ["projected", "window"]);
     public static readonly NoteCode OpeningSaidClear = new("opening.said-clear", []);
 
     // ——— A resumed conversation's first line (CONVNOTE2a, Continuations.Opening): the adapter it resumed on is a fact, and
