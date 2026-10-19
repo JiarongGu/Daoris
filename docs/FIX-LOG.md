@@ -5,6 +5,25 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-20 — A lost done's follow-up stood everywhere, and a step whose session ran across the go-on never got its source's work (CLOSEREOPEN1)
+
+- **Symptom:** shown red, never seen on an install (nothing binds there). B took a chain's parent and closed it done offline, and its
+  done published the follow-up, while A's take of the parent reached the remote first: raced (A's take landing between B's fetch and
+  its push), or plain with B's own take of the follow-up, the follow-up stood on the remote and every machine, its take B's, on a done
+  that lost (`QuestSyncTests`' CLOSE1e2 theory, three of four cases red). And a step whose session was running when the person reopened
+  its source and went on with it ended as a park after the go-on, so its branch never got the source's new submission.
+- **Root cause:** CLOSE1c21's remote rule held back only a step naming the submission it grew from; a done's follow-up names none, so
+  the remote numbered it while the parent was behind. The rebase's `ForgetFollowUpsAsync` forgot a follow-up only while its history was
+  its one unpushed publication, so a take of it kept it and synced it on its own. The session's end judged the reopen only by the step
+  held as it ended (`HeldByReopen`), and once gone on the step reads unheld, so the end was ordinary, its record later than the go-on,
+  and neither CLOSE1c2's carry-on nor CLOSE1c13's telling read it.
+- **Fix:** D173's CLOSEREOPEN1 note. The remote answers behind for a pushed step naming no source while it holds the parent not done
+  (`AwaitsItsSourceAsync`); the rebase forgets a lost close's follow-up with this machine's unpushed work, a take rewritten as a conflict
+  (`ForgetFollowUpsAsync` through `ForgetStepsAsync`). The end reads the step's source moved since the run started
+  (`Planner.ReopenedFrom`) and ends as the reopen stopped it, so CLOSE1c2's carry-on brings the branch up to date once.
+- **Verification:** `QuestSyncTests` (the theory, and the raced lost-step guard probed red with CLOSE1c21's rule off), `PlannerTests`
+  (`ReopenedFrom` red by compile, the carry-on once), filtered, green.
+
 ## 2026-10-20 — Four failing questions starved a fifth attempt, and a rule asking no opinion held its node for ever (FABRICRUN1)
 
 - **Symptom:** after a restart with five attempts due, the questions about the first four in file order failing with an I/O error, every
