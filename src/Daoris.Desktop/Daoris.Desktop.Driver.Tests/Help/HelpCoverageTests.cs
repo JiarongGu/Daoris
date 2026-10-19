@@ -66,6 +66,13 @@ public sealed partial class HelpCoverageTests
         + "since a rule narrowing is applied with nobody's press (PERM2).";
 
     /// <summary>
+    /// *Sessions' access* (AUTONOMY1d, D184): on a repository's Setup and a workspace's, and this machine's under Settings → Driver.
+    /// </summary>
+    private const string SessionAccess =
+        "the pauses a session stops at are the person's own choice, and full access chosen by an agent is rejected (D184): no "
+        + "proposal names `SET_ACCESS`, so a helper can neither widen what its own sessions may do nor narrow the person's choice.";
+
+    /// <summary>
     /// ACCT2's <c>daoris agent profile rename</c> and the route's <c>profile-rename</c>: exempt, since an account's name is the
     /// person's own word. The agent's page presses it (UX7b), and this is its control's row.
     /// </summary>
@@ -648,6 +655,8 @@ public sealed partial class HelpCoverageTests
         ("driver", "useSetNotify", null, new Door("setting", "notify")),
         ("driver", "useSetStrikes", null, new Door("setting", "strikes")),
         ("driver", "useSetCoolOff", null, new Door("setting", "cooloff")),
+        // AUTONOMY1d: this machine's sessions' access, the level under every workspace's and repository's.
+        ("driver", "useSetAccess", null, new Exempt(SessionAccess)),
         // UPDATE1e: the install's update, *Update when idle*, *Update now* and *Not now*, read once the hooks exported as
         // functions were; UPDATE1f gave the room its row.
         ("driver", "useSayUpdate", null, UpdateDoor),
@@ -727,6 +736,8 @@ public sealed partial class HelpCoverageTests
         // the twins of Ask Daoris's `commits` and `helpers` doors (DOORS1a).
         ("projects", "useSetCommits", null, new Door("setting", "commits")),
         ("projects", "useSetHelpers", null, new Door("setting", "helpers")),
+        // AUTONOMY1d: *Sessions' access*, on a repository's Setup and a workspace's.
+        ("projects", "useSetAccess", null, new Exempt(SessionAccess)),
         ("projects", "useSetStanding", null, new Door("setting", "standing")),
         ("projects", "useSetReadAcross", null, new Door("setting", "across")),
         ("projects", "useSetWriteAcross", null, new Door("setting", "across")),
