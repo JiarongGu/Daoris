@@ -36,7 +36,7 @@ public static class DriverStateSlice
             "drivable", "holds", "trees", "notify", "strikes", "coolOff", "forgiven", "intakeAdapter", "helperAdapter", "helpMode",
             "lines", "workspaceLines", "landings", "workspaceLandings", "readAcross", "workspaceReadAcross", "writeAcross", "standing",
             "languages", "workspaceLanguages", "languageTable", "reviews", "workspaceReviews", "opinions", "workspaceOpinions",
-            "helpers", "workspaceHelpers", "commits", "workspaceCommits", "access", "workspaceAccess", "machineAccess",
+            "helpers", "workspaceHelpers", "commits", "workspaceCommits", "access", "workspaceAccess", "machineAccess", "heavyGates",
         ],
         ["running"] = ["running", "drivingBrowser", "inReview"],
     };

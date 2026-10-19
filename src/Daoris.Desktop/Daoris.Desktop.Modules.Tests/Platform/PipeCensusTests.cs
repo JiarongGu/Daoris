@@ -94,6 +94,8 @@ public sealed class PipeCensusTests
     [InlineData("DAORIS.DRIVER", "SESSION_INPUT", PipeClass.Person)]
     [InlineData("DAORIS.DRIVER", "OPINION_MYSELF", PipeClass.Person)]
     [InlineData("DAORIS.DRIVER", "SET_REVIEW", PipeClass.Person)]
+    // HEAVYRUN1b2b: the commands this machine runs for a repository's heavy gates are the person's to write.
+    [InlineData("DAORIS.DRIVER", "SET_HEAVY_GATES", PipeClass.Person)]
     // What only a window does: the pickers, the file manager, Daoris's browser, its frame, its shells.
     [InlineData("DAORIS.DRIVER", "TOOLS_PICK", PipeClass.Window)]
     [InlineData("DAORIS.DRIVER", "SESSION_OPEN_FOLDER", PipeClass.Window)]
