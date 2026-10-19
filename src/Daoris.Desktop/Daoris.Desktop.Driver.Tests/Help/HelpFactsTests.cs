@@ -6,7 +6,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// PARALLEL1a (D181 points 1-2): Ask Daoris's room is written from the facts the judges keep, never from a read of its own. A
 /// repository whose line was not judged yet is said *not read yet*, as are the sessions, the history and the work; a ref moved
 /// judges that repository's line again alone, and the next room has it; a room that said something not read yet is written again
-/// as the facts land. FACTSPLIT1a: the work is judged per repository, a part each, merged as the room reads it.
+/// as the facts land. FACTSPLIT1a: the work is judged per repository, a part each, merged as the room reads it. FACTSPLIT1b: the
+/// sessions' trees alike, beside the look without them, which a ref never moves.
 /// </summary>
 /// <remarks>No process and no git, but where a test counts git's starts: the judges are stand-ins.</remarks>
 public sealed class HelpFactsTests : IDisposable
@@ -20,6 +21,9 @@ public sealed class HelpFactsTests : IDisposable
     private static readonly RepoView Site = new("site", Adopted: true, Root: "checkouts/site");
 
     private static readonly RepoView Docs = new("docs", Adopted: true, Root: null);
+
+    /// <summary>A part of the trees that judged none.</summary>
+    private static readonly HelpTrees NoTrees = new(new Dictionary<string, TreeWork>(StringComparer.OrdinalIgnoreCase));
 
     private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-help-facts-" + Guid.NewGuid().ToString("N")[..8]);
 
@@ -105,6 +109,8 @@ public sealed class HelpFactsTests : IDisposable
             .With(HelpFacts.Machine, HelpFacts.Whole, new JudgedFact(Whole(Engine), At))
             .With(HelpFacts.Lines, "engine", new JudgedFact(new HelpLineGuess("main"), At))
             .With(HelpFacts.Sessions, HelpFacts.Whole, new JudgedFact(new SessionLook([], [], []), At))
+            .With(HelpFacts.Trees, "engine", new JudgedFact(NoTrees, At))
+            .With(HelpFacts.Trees, HelpFacts.NoCheckout, new JudgedFact(NoTrees, At))
             .With(HelpFacts.History, HelpFacts.Whole, new JudgedFact(new List<HistoryReading>(), At))
             .With(HelpFacts.Work, "engine", new JudgedFact(new HelpWork([], [], []), At))
             .With(HelpFacts.Work, HelpFacts.NoCheckout, new JudgedFact(new HelpWork([], [], []), At));
@@ -117,8 +123,11 @@ public sealed class HelpFactsTests : IDisposable
     }
 
     /// <summary>
-    /// A ref moves its repository's line and its part of the work (FACTSPLIT1a), and the trees' sessions; a session's records moving
-    /// move every part of the work, as they moved the whole, and a part is named only once the service's answers name it.
+    /// A ref moves its repository's line, its part of the work (FACTSPLIT1a) and its part of the trees (FACTSPLIT1b), never the
+    /// sessions' look, which holds no git; a session's records moving move the look and every part of the work, as they moved the
+    /// whole, and the trees' parts as the look lands (<see cref="A_session_ended_judges_its_repository_s_trees_again_as_the_look_lands_and_no_other"/>);
+    /// the configuration the look and every part of the trees, whose commits a line set holds. A part is named only once the
+    /// service's answers name it.
     /// </summary>
     [Fact]
     public void A_ref_moved_wakes_its_repository_s_line_and_work_and_the_trees_and_a_ledger_move_the_machine()
@@ -126,7 +135,7 @@ public sealed class HelpFactsTests : IDisposable
         var facts = MachineFactsSnapshot.Empty.With(HelpFacts.Machine, HelpFacts.Whole, new JudgedFact(Whole(Site, Engine, Docs), At));
 
         Assert.Equal(
-            [(HelpFacts.Lines, "site"), (HelpFacts.Sessions, HelpFacts.Whole), (HelpFacts.Work, "site")],
+            [(HelpFacts.Lines, "site"), (HelpFacts.Trees, "site"), (HelpFacts.Work, "site")],
             HelpFacts.Woken(ChangeTopics.Refs, "site", facts));
         Assert.Equal(
             [
@@ -141,7 +150,15 @@ public sealed class HelpFactsTests : IDisposable
         Assert.Equal(
             [(HelpFacts.Machine, HelpFacts.Whole), (HelpFacts.Sessions, HelpFacts.Whole), (HelpFacts.History, HelpFacts.Whole)],
             HelpFacts.Woken(ChangeTopics.Ledger, "quests", facts));
-        Assert.Equal([(HelpFacts.Machine, HelpFacts.Whole), (HelpFacts.Sessions, HelpFacts.Whole)], HelpFacts.Woken(ChangeTopics.Config, "driver.json", facts));
+        Assert.Equal(
+            [
+                (HelpFacts.Machine, HelpFacts.Whole), (HelpFacts.Sessions, HelpFacts.Whole),
+                (HelpFacts.Trees, "engine"), (HelpFacts.Trees, "site"), (HelpFacts.Trees, HelpFacts.NoCheckout),
+            ],
+            HelpFacts.Woken(ChangeTopics.Config, "driver.json", facts));
+        Assert.Equal(
+            [(HelpFacts.Machine, HelpFacts.Whole), (HelpFacts.Sessions, HelpFacts.Whole)],
+            HelpFacts.Woken(ChangeTopics.Config, "driver.json", MachineFactsSnapshot.Empty));
         // A press's words and the window's focus move none of the room's facts.
         Assert.Empty(HelpFacts.Woken(ChangeTopics.Words, "s1", facts));
         Assert.Empty(HelpFacts.Woken(ChangeTopics.Focus, "window", facts));
@@ -237,6 +254,214 @@ public sealed class HelpFactsTests : IDisposable
         var room = HelpRoom.Render(Describe(read, DriverConfig.Empty));
         Assert.Contains("- not read: git could not list `site`'s recovery refs: fatal: bad object\n", room);
         Assert.Contains("- not read: `docs` has no checkout here, so its recovery refs were not read\n", room);
+    }
+
+    /// <summary>
+    /// 🔴 FACTSPLIT1b (D181 points 2-3): one repository's refs judge its part of the sessions' trees again alone, and never the look
+    /// without them. The other repository's part and the part of the repositories with no checkout here stand as last judged.
+    /// </summary>
+    [Fact]
+    public async Task A_refs_wake_judges_that_repository_s_trees_again_alone_and_never_the_look()
+    {
+        var judged = new Dictionary<string, int>(StringComparer.Ordinal);
+        var looked = 0;
+        var clock = new Clock();
+        using var facts = new MachineFacts(clock.Now);
+        HelpFacts.Keep(facts, Judges(Whole(Engine, Site, Docs)) with
+        {
+            Sessions = _ =>
+            {
+                Interlocked.Increment(ref looked);
+                return Task.FromResult<SessionLook?>(new SessionLook([], [], []));
+            },
+            Trees = (part, _) =>
+            {
+                var subject = part.Repository ?? HelpFacts.NoCheckout;
+                lock (judged) judged[subject] = judged.GetValueOrDefault(subject) + 1;
+                return Task.FromResult<HelpTrees?>(NoTrees);
+            },
+        });
+        facts.Start();
+        foreach (var part in (string[])["engine", "site", HelpFacts.NoCheckout])
+        {
+            await facts.FirstAsync(HelpFacts.Trees, part, CancellationToken.None).WaitAsync(Within);
+        }
+
+        // Past the rest a burst of one repository's refs is held to.
+        clock.Pass(HelpFacts.TreesRules.Rest + TimeSpan.FromSeconds(1));
+        HelpFacts.Wake(facts, ChangeTopics.Refs, "site");
+        await Poll.Until(() => Judged(judged, "site") == 2, within: Within);
+        await facts.Settled().WaitAsync(Within);
+
+        Assert.Equal((1, 2, 1), (Judged(judged, "engine"), Judged(judged, "site"), Judged(judged, HelpFacts.NoCheckout)));
+        Assert.Equal(1, Volatile.Read(ref looked));
+    }
+
+    /// <summary>
+    /// 🔴 FACTSPLIT1b: the room reads the sessions as it read the whole look, the look without trees with every part's trees merged
+    /// in by their path; while the look or any part was never judged the sessions are not read yet, as the whole was.
+    /// </summary>
+    [Fact]
+    public void The_room_reads_the_sessions_merged_from_the_look_and_its_trees_and_none_while_one_is_not_judged_yet()
+    {
+        var engineTree = Path.Combine("trees", "default", "engine", "s-1");
+        var siteTree = Path.Combine("trees", "alpha", "site", "s-2");
+        var docsTree = Path.Combine("trees", "default", "docs", "s-3");
+        var look = new SessionLook([Ended("e1", "engine", engineTree), Ended("s2", "site", siteTree), Ended("d3", "docs", docsTree)], [], []);
+        var partly = MachineFactsSnapshot.Empty
+            .With(HelpFacts.Machine, HelpFacts.Whole, new JudgedFact(Whole(Site, Engine, Docs), At))
+            .With(HelpFacts.Trees, "engine", new JudgedFact(TreesOf((engineTree, new TreeWork(2, 0))), At))
+            .With(HelpFacts.Trees, HelpFacts.NoCheckout, new JudgedFact(TreesOf((docsTree, new TreeWork(0, 1))), At));
+
+        Assert.Null(HelpFacts.Read(partly, DriverConfig.Empty)!.Sessions);
+        var unread = HelpFacts.Read(partly.With(HelpFacts.Sessions, HelpFacts.Whole, new JudgedFact(look, At)), DriverConfig.Empty)!;
+        Assert.Null(unread.Sessions);
+        Assert.True(unread.NotReadYet.Sessions);
+        Assert.Contains("- This machine's sessions by the Sessions list's groups: not read yet.\n", HelpRoom.Render(Describe(unread, DriverConfig.Empty)));
+
+        var whole = partly
+            .With(HelpFacts.Sessions, HelpFacts.Whole, new JudgedFact(look, At))
+            .With(HelpFacts.Trees, "site", new JudgedFact(TreesOf((siteTree, new TreeWork(0, 0))), At));
+        var read = HelpFacts.Read(whole, DriverConfig.Empty)!;
+
+        Assert.False(read.NotReadYet.Sessions);
+        Assert.Equal(look.Records, read.Sessions!.Records);
+        Assert.Equal(
+            [SessionGroups.Normal(siteTree), SessionGroups.Normal(docsTree), SessionGroups.Normal(engineTree)],
+            read.Sessions.Trees.Keys.Order(StringComparer.Ordinal));
+        // Keyed as the Sessions list keys them, whatever the case a path is asked in.
+        Assert.Equal(2, read.Sessions.Trees[SessionGroups.Normal(engineTree).ToUpperInvariant()].Commits);
+        Assert.Contains(", 2 to review, 0 working, 0 resuming later, 1 ended.\n", HelpRoom.Render(Describe(read, DriverConfig.Empty)));
+    }
+
+    /// <summary>🔴 FACTSPLIT1b: a repository the registry no longer names drops its part of the trees; what is left is read whole.</summary>
+    [Fact]
+    public async Task A_repository_gone_from_the_registry_loses_its_part_of_the_trees()
+    {
+        var whole = Whole(Engine, Site);
+        using var facts = new MachineFacts();
+        HelpFacts.Keep(facts, Judges(null) with
+        {
+            Machine = _ => Task.FromResult<HelpMachineWhole?>(Volatile.Read(ref whole)),
+            Sessions = _ => Task.FromResult<SessionLook?>(new SessionLook([], [], [])),
+        });
+        facts.Start();
+        foreach (var part in (string[])["engine", "site", HelpFacts.NoCheckout])
+        {
+            await facts.FirstAsync(HelpFacts.Trees, part, CancellationToken.None).WaitAsync(Within);
+        }
+
+        Volatile.Write(ref whole, Whole(Engine));
+        await facts.JudgedAsync(HelpFacts.Machine, HelpFacts.Whole, CancellationToken.None).WaitAsync(Within);
+
+        Assert.Null(facts.Current.Of(HelpFacts.Trees, "site"));
+        Assert.False(HelpFacts.Read(facts.Current, DriverConfig.Empty)!.NotReadYet.Sessions);
+    }
+
+    /// <summary>
+    /// 🔴 FACTSPLIT1b: the trees a part judges are read from the look, so a session ending, which moves its records and no ref, judges
+    /// its repository's part again as the look lands: at once, not held by the rest its refs keep, and no other part.
+    /// </summary>
+    [Fact]
+    public async Task A_session_ended_judges_its_repository_s_trees_again_as_the_look_lands_and_no_other()
+    {
+        var engineTree = Path.Combine("trees", "default", "engine", "s-1");
+        var running = new SessionLook([Ended("e1", "engine", engineTree) with { State = "working" }, Ended("s2", "site", Path.Combine("trees", "default", "site", "s-2"))], [], []);
+        var look = running;
+        var judged = new Dictionary<string, int>(StringComparer.Ordinal);
+        var asked = new List<IReadOnlyList<string>>();
+        using var facts = new MachineFacts(new Clock().Now);
+        HelpFacts.Keep(facts, Judges(Whole(Engine, Site)) with
+        {
+            Sessions = _ => Task.FromResult<SessionLook?>(Volatile.Read(ref look)),
+            Trees = (part, _) =>
+            {
+                var subject = part.Repository ?? HelpFacts.NoCheckout;
+                lock (judged)
+                {
+                    judged[subject] = judged.GetValueOrDefault(subject) + 1;
+                    if (subject == "engine") asked.Add(SessionGroups.TreesToJudge(part.Look, _ => true, part.Sessions));
+                }
+
+                return Task.FromResult<HelpTrees?>(NoTrees);
+            },
+        });
+        facts.Start();
+        foreach (var part in (string[])["engine", "site", HelpFacts.NoCheckout])
+        {
+            await facts.FirstAsync(HelpFacts.Trees, part, CancellationToken.None).WaitAsync(Within);
+        }
+
+        // The clock stands still, so a judgement the rest held would wait half a minute.
+        Volatile.Write(ref look, running with { Records = [running.Records[0] with { State = "completed" }, running.Records[1]] });
+        await facts.JudgedAsync(HelpFacts.Sessions, HelpFacts.Whole, CancellationToken.None).WaitAsync(Within);
+        await Poll.Until(() => Judged(judged, "engine") == 2, within: Within);
+        await facts.Settled().WaitAsync(Within);
+
+        Assert.Equal((2, 1, 1), (Judged(judged, "engine"), Judged(judged, "site"), Judged(judged, HelpFacts.NoCheckout)));
+        lock (judged)
+        {
+            Assert.Empty(asked[0]);
+            Assert.Equal([engineTree], asked[1]);
+        }
+    }
+
+    /// <summary>
+    /// 🔴 FACTSPLIT1b: one repository's judgement of its trees starts git in its own trees alone, in every workspace's folder of it;
+    /// another repository's trees start none, nor does the look landing again with no tree of a part moved.
+    /// </summary>
+    [Fact]
+    public async Task One_repository_s_trees_judgement_starts_git_in_its_own_trees_alone()
+    {
+        var trees = new SessionTrees(_home).TreesRoot;
+        string Tree(string workspace, string repository, string name)
+        {
+            var tree = Path.Combine(trees, workspace, repository, name);
+            Directory.CreateDirectory(tree);
+            // Linked as git links a worktree, so git is asked of it.
+            File.WriteAllText(Path.Combine(tree, ".git"), "gitdir: elsewhere\n");
+            return tree;
+        }
+
+        string[] engineTrees = [Tree("default", "engine", "s-1"), Tree("alpha", "engine", "s-2")];
+        var look = new SessionLook(
+            [
+                Ended("e1", "engine", engineTrees[0]), Ended("e2", "engine", engineTrees[1]) with { Workspace = "alpha" },
+                Ended("s3", "site", Tree("default", "site", "s-3")), Ended("d4", "docs", Tree("default", "docs", "s-4")),
+            ],
+            [], []);
+        var starts = new List<string>();
+        using var facts = new MachineFacts();
+        HelpFacts.Keep(facts, Judges(Whole(Engine, Site, Docs)) with
+        {
+            Sessions = _ => Task.FromResult<SessionLook?>(look),
+            Trees = async (part, ct) => await HelpFacts.ReadTreesAsync(_home, part, ct),
+        });
+        using (ProcessStarts.Within(info =>
+               {
+                   lock (starts) starts.Add(Path.GetFullPath(info.WorkingDirectory));
+                   return null;
+               }))
+        {
+            facts.Start();
+        }
+
+        foreach (var part in (string[])["engine", "site", HelpFacts.NoCheckout])
+        {
+            await facts.FirstAsync(HelpFacts.Trees, part, CancellationToken.None).WaitAsync(Within);
+        }
+
+        await facts.Settled().WaitAsync(Within);
+        lock (starts) starts.Clear();
+
+        await facts.JudgedAsync(HelpFacts.Trees, "engine", CancellationToken.None).WaitAsync(Within);
+        await facts.JudgedAsync(HelpFacts.Sessions, HelpFacts.Whole, CancellationToken.None).WaitAsync(Within);
+        await facts.Settled().WaitAsync(Within);
+
+        lock (starts)
+        {
+            Assert.Equal(engineTrees.Select(Path.GetFullPath).Order(StringComparer.Ordinal), starts.Order(StringComparer.Ordinal));
+        }
     }
 
     [Fact]
@@ -439,6 +664,8 @@ public sealed class HelpFactsTests : IDisposable
         var landed = unread
             .With(HelpFacts.Lines, "site", new JudgedFact(new HelpLineGuess("main"), At))
             .With(HelpFacts.Sessions, HelpFacts.Whole, new JudgedFact(new SessionLook([], [], []), At))
+            .With(HelpFacts.Trees, "site", new JudgedFact(NoTrees, At))
+            .With(HelpFacts.Trees, HelpFacts.NoCheckout, new JudgedFact(NoTrees, At))
             .With(HelpFacts.History, HelpFacts.Whole, new JudgedFact(new List<HistoryReading>(), At))
             .With(HelpFacts.Work, "site", new JudgedFact(new HelpWork([], [], []), At))
             .With(HelpFacts.Work, HelpFacts.NoCheckout, new JudgedFact(new HelpWork([], [], []), At));
@@ -474,6 +701,14 @@ public sealed class HelpFactsTests : IDisposable
     {
         lock (judged) return judged.GetValueOrDefault(subject);
     }
+
+    /// <summary>A part of the trees, each tree's work keyed by its path as the Sessions list keys it.</summary>
+    private static HelpTrees TreesOf(params (string Tree, TreeWork Work)[] trees) =>
+        new(trees.ToDictionary(each => SessionGroups.Normal(each.Tree), each => each.Work, StringComparer.OrdinalIgnoreCase));
+
+    /// <summary>A session of this machine's on <paramref name="repository"/> that ended in <paramref name="tree"/>, the newest on it.</summary>
+    private static SessionRecord Ended(string id, string repository, string tree) =>
+        new(id, repository, "completed") { Tree = tree, Created = At.AddHours(-1), Updated = At.AddMinutes(-30) };
 
     /// <summary>A unit of <paramref name="repository"/> whose cleanup waits on a tree a session holds, so the room lists it.</summary>
     private static WorkMilestone Unit(string unit, string repository) => new(
