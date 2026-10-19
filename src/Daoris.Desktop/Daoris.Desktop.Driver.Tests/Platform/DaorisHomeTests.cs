@@ -221,6 +221,23 @@ public sealed class DaorisHomeTests
         Assert.Null(HomeEntry.Named("nothing"));
     }
 
+    /// <summary>
+    /// USAGECAP1a1 (D179 point 2): every usage reading kept, in a folder of its own beside <c>windows.json</c>, a record of the
+    /// machine's own (the install layout design §2's seventh test: no key, no agent works in it, nothing fetched, no process
+    /// holds it, not the machine log), its files asked by name under it.
+    /// </summary>
+    [Fact]
+    public void The_usage_history_is_a_data_folder_of_its_own_its_files_asked_under_it()
+    {
+        Assert.Same(HomeEntry.UsageHistory, HomeEntry.Named("usage-history"));
+        Assert.Equal(HomeCategory.Data, HomeEntry.UsageHistory.Category);
+        Assert.Equal("usage-history", HomeEntry.UsageHistory.New);
+        var home = Path.Combine(AppContext.BaseDirectory, "usage-history-home");
+        Assert.Equal(
+            Path.Combine(DaorisHome.Entry(home, HomeEntry.UsageHistory), "epochs.json"),
+            DaorisHome.Entry(home, HomeEntry.UsageHistory, "epochs.json"));
+    }
+
     /// <summary>A file asked of the environment's home is the entry, by D172 point 5, or nothing with no home.</summary>
     [Fact]
     public void An_entry_asked_of_the_environment_is_the_entry_or_none_with_no_home()

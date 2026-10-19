@@ -5,6 +5,11 @@ with the version and date at release.
 
 ## Unreleased
 
+- Daoris keeps every usage reading it sees, in `usage-history/` in its data folder: each window's use and reset as a session or a
+  read said it, the account's plan word and when, for the estimate of how much work each window holds that comes later. Nothing
+  reads it yet. It stays on this machine, holds no email, organisation, key or words, keeps 90 days and 64 MiB at most, and says
+  what it pruned.
+
 - A first brainstorm across agents, at the terminal: `daoris-driver brainstorm "<question>" [--repository <name>] [--agents a,b]`.
   Daoris freezes one context packet from its own knowledge of the repository, which `brainstorm show <id>` prints whole; nothing
   goes to any agent until `brainstorm send <id>`. Each named agent then proposes once, in a folder holding only that packet,

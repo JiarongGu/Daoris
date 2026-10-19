@@ -160,6 +160,71 @@ public sealed class AccountReadingsTests
             Read(frame));
     }
 
+    // ——— What the usage history keeps of a frame (USAGECAP1a1, D179 point 2): a parse beside the walk's, every window the
+    // frame says, by its key, its length and its scope, with the precision its number was written to.
+
+    private static IReadOnlyList<WindowSeen> Seen(string frame) =>
+        AccountReadings.Seen(JsonDocument.Parse(frame).RootElement.Clone(), Claude);
+
+    [Fact]
+    public void The_recorded_frame_is_kept_for_the_history_window_by_window_its_key_its_length_and_its_precision()
+    {
+        Assert.Equal(
+            [
+                new WindowSeen("five_hour", "session", null, 300, 0.88, 0.01, In(2.0), UsageHistory.ResetSaid),
+                new WindowSeen("seven_day", "weekly", null, 10080, 0.14, 0.01, In(105.3), UsageHistory.ResetSaid),
+            ],
+            Seen(Recorded(Now)));
+    }
+
+    [Fact]
+    public void A_scoped_week_is_kept_for_the_history_while_the_walk_s_readings_are_unchanged()
+    {
+        var frame = Placed("""
+            {"status":"allowed","resetsAt":<+2 h>,"rateLimitType":"five_hour",
+             "unifiedWindows":{"five_hour":{"utilization":0.5,"resetsAt":<+2 h>},"seven_day":{"utilization":0.2,"resetsAt":<+90 h>},
+                               "seven_day_opus":{"utilization":0.375,"resetsAt":<+90 h>}}}
+            """, Now);
+
+        Assert.Equal([new WindowReading("session", 0.5, In(2), "clear"), new WindowReading("weekly", 0.2, In(90))], Read(frame));
+        Assert.Equal(
+            [
+                new WindowSeen("five_hour", "session", null, 300, 0.5, 0.1, In(2), UsageHistory.ResetSaid),
+                new WindowSeen("seven_day", "weekly", null, 10080, 0.2, 0.1, In(90), UsageHistory.ResetSaid),
+                new WindowSeen("seven_day_opus", null, "opus", 10080, 0.375, 0.001, In(90), UsageHistory.ResetSaid),
+            ],
+            Seen(frame));
+    }
+
+    [Fact]
+    public void The_history_keeps_a_named_window_the_walk_has_no_name_for_and_a_use_with_no_reset_as_null()
+    {
+        // The walk reads neither: a window it does not name, and one with no reset (the `Unread` rows above).
+        var frame = Placed("""
+            {"status":"allowed_warning","resetsAt":<+40 h>,"rateLimitType":"seven_day_sonnet","utilization":0.61,
+             "unifiedWindows":{"seven_day":{"utilization":0.3},"five_hour":{"resetsAt":<+1 h>},"overage":{}}}
+            """, Now);
+
+        Assert.Empty(Read(frame));
+        Assert.Equal(
+            [
+                new WindowSeen("seven_day", "weekly", null, 10080, 0.3, 0.1, null, null),
+                new WindowSeen("five_hour", "session", null, 300, null, null, In(1), UsageHistory.ResetSaid),
+                new WindowSeen("seven_day_sonnet", null, "sonnet", 10080, 0.61, 0.01, In(40), UsageHistory.ResetSaid),
+            ],
+            Seen(frame));
+    }
+
+    [Theory]
+    [InlineData("[1, 2]")]
+    [InlineData("""{"status":"allowed","rateLimitType":"five_hour"}""")]
+    [InlineData("""{"status":"allowed","unifiedWindows":[1]}""")]
+    [InlineData("""{"status":"allowed","unifiedWindows":{"seven_day":{"utilization":-0.1,"resetsAt":"soon"}}}""")]
+    public void A_frame_that_says_no_window_s_use_or_reset_keeps_nothing_for_the_history(string frame)
+    {
+        Assert.Empty(Seen(frame));
+    }
+
     // ——— Near (§6 as the evidence corrects it; D165 point 2): the agent's word that a limit was reached, drawing on usage
     // credits, or a window's use over the scope's curve now (SWITCH1b-ii, the switch design §2–§3). Claude Code's `allowed`
     // came at 88% with two hours left (evidence §1.3), so its word alone would pass nothing a number says; the number, which

@@ -127,6 +127,7 @@ export const HOME_ENTRIES = [
   row('browser-favorites', 'data', 'browser/favorites.json', 'browser/favorites.json'),
   row('home-id', 'data', 'home.json', 'home.json'),
   row('brainstorms', 'data', 'brainstorms', 'brainstorms'),
+  row('usage-history', 'data', 'usage-history', 'usage-history'),
   row('keys', 'profiles', 'keys.json', 'keys.json'),
   row('remotes', 'profiles', 'remotes.json', 'remotes.json'),
   row('agent-homes', 'profiles', 'harnesses/*/*', 'harnesses/*/*'),
