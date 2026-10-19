@@ -152,7 +152,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Service/Daoris.Service.Core/Asks/History.cs` | 41 | 826 |
 | `src/Daoris.Service/Daoris.Service.Core/Knowledge/KnowledgeService.cs` | 55 | 1086 |
 | `src/Daoris.Service/Daoris.Service.Core/Quests/QuestExchange.cs` | 150 | 2653 |
-| `src/Daoris.Service/Daoris.Service.Core/Quests/QuestLog.cs` | 43 | 651 |
+| `src/Daoris.Service/Daoris.Service.Core/Quests/QuestLog.cs` | 43 | 655 |
 | `src/Daoris.Service/Daoris.Service.Core/Quests/Quests.cs` | 245 | 4215 |
 | `src/Daoris.Service/Daoris.Service.Core/Sessions/SessionLedger.cs` | 80 | 1499 |
 | `src/Daoris.Service/Daoris.Service.Core/Sessions/Sessions.cs` | 79 | 1360 |
@@ -165,7 +165,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Service/Daoris.Service.Tests/Mcp/McpToolsTests.cs` | 49 | 846 |
 | `src/Daoris.Service/Daoris.Service.Tests/Quests/QuestClosureTests.cs` | 42 | 786 |
 | `src/Daoris.Service/Daoris.Service.Tests/Quests/QuestReopenTests.cs` | 42 | 724 |
-| `src/Daoris.Service/Daoris.Service.Tests/Remote/QuestReopenSyncTests.cs` | 60 | 1035 |
+| `src/Daoris.Service/Daoris.Service.Tests/Remote/QuestReopenSyncTests.cs` | 61 | 1059 |
 | `src/Daoris.Service/Daoris.Service.Tests/Remote/QuestSyncTests.cs` | 102 | 2018 |
 | `src/Daoris.Service/Daoris.Service.Tests/Sessions/SessionLedgerTests.cs` | 81 | 1615 |
 | `src/Daoris.Service/README.md` | 93 | 781 |
