@@ -366,6 +366,67 @@ public sealed class ChangeStreamTests : IAsyncLifetime
         Assert.Empty(answer.Moved);
     }
 
+    /// <summary>
+    /// PUSH1d1b: a word kept without a note (a helper's or a second opinion's, through a connector) moves the words family alone,
+    /// since no revision is issued for it; a keep with a note moves the sessions family too, as it always did.
+    /// </summary>
+    [Fact]
+    public async Task A_word_kept_without_a_note_moves_the_words_family_alone()
+    {
+        var session = await _sessions.CreateAsync(null, "Owner", "stub", Now, kind: SessionKind.Chat);
+        var since = await Bootstrap();
+        var waiting = _stream.WaitAsync(since, Long);
+
+        await _sessions.KeepSaidAsync(session.Id, new SaidWord("w1", "A helper's word.", Now, [], Helper: "desk"));
+
+        Assert.Equal([ChangeFamilies.Words], (await waiting.WaitAsync(Long)).Moved);
+    }
+
+    /// <summary>PUSH1d1b: a connector built before the family keeps a word with the bare statement and still moves it.</summary>
+    [Fact]
+    public async Task An_older_connector_s_word_moves_the_words_family()
+    {
+        var session = await _sessions.CreateAsync(null, "Owner", "stub", Now, kind: SessionKind.Chat);
+        var since = await Bootstrap();
+        var waiting = _stream.WaitAsync(since, Long);
+
+        await Execute($"UPDATE sessions SET said = json_array(json_object('id', 'w1', 'text', 'Hi.', 'at', '2026-10-17T09:00:00Z', 'files', json('[]'))) WHERE id = '{session.Id}'");
+
+        Assert.Equal([ChangeFamilies.Words], (await waiting.WaitAsync(Long)).Moved);
+    }
+
+    /// <summary>
+    /// PUSH1d1b, canary 5's half for the words: a take (the session's own read of them) and a push's mark and cursor move no
+    /// family; a take of an id the record does not hold rewrites the list unchanged.
+    /// </summary>
+    [Fact]
+    public async Task A_take_a_push_mark_or_a_cursor_moves_no_family()
+    {
+        var session = await _sessions.CreateAsync(null, "Owner", "stub", Now, kind: SessionKind.Chat);
+        await _sessions.KeepSaidAsync(session.Id, new SaidWord("w1", "One.", Now, []));
+        await _sessions.KeepSaidAsync(session.Id, new SaidWord("w2", "Two.", Now, []));
+        var since = await Bootstrap();
+        var seen = _stream.Seen;
+        using var release = new CancellationTokenSource();
+        var waiting = _stream.WaitAsync(since, Long, release.Token);
+
+        await _sessions.TakeSaidAsync(session.Id, ["nothing"]);
+        await _sessions.TakeSaidAsync(session.Id, ["w1"]);
+        await _sessions.TakeSaidAsync(session.Id, ["w2"]);
+        await _sessions.MarkPushedAsync([session.Id]);
+        await _sessions.AdvanceCursorAsync(Workspaces.Default, pushed: 2, fetched: 7);
+        await Execute("CREATE TABLE IF NOT EXISTS scratch (x INTEGER); INSERT INTO scratch VALUES (1);");
+
+        var deadline = DateTime.UtcNow + Long;
+        while (_stream.Seen <= seen && DateTime.UtcNow < deadline) await Task.Delay(20);
+        var observed = _stream.Seen > seen;
+        release.Cancel();
+        var answer = await waiting.WaitAsync(Long);
+
+        Assert.True(observed, "no write was seen, so the canary proves nothing");
+        Assert.Empty(answer.Moved);
+    }
+
     /// <summary>A family that moved several times since the cursor is answered once; one asked after it moved answers at once.</summary>
     [Fact]
     public async Task Moves_before_the_ask_are_answered_at_once_and_once()
