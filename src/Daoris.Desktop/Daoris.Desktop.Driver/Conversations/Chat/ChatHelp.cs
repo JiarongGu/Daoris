@@ -24,6 +24,16 @@ internal sealed class ChatHelp(ChatContext context, ChatRunner runner)
     private static readonly TimeSpan SetAsideBound = TimeSpan.FromSeconds(10);
 
     /// <summary>
+    /// How long a start waits for the machine's reading before the room as last written serves (HELPSTUCK1). The reading walks git
+    /// across every tree and repository: 24.9 s for its session look alone on a loaded machine at HELPSTART1, and no answer for
+    /// minutes at HELPSTUCK1, while the conversation sat at <c>queued</c>.
+    /// </summary>
+    public static readonly TimeSpan DefaultReadBound = TimeSpan.FromSeconds(30);
+
+    /// <summary>How long a start waits for the machine's reading (<see cref="DefaultReadBound"/>); a test's is shorter.</summary>
+    public TimeSpan ReadBound { get; set; } = DefaultReadBound;
+
+    /// <summary>
     /// The machine as the room says it (ASKHIST1): the shell's reading, which <c>START_HELP</c> writes the room from, so a
     /// conversation going on finds the room as an open would. Null where nothing reads it, or it read nothing.
     /// </summary>
@@ -106,15 +116,18 @@ internal sealed class ChatHelp(ChatContext context, ChatRunner runner)
 
     /// <summary>
     /// The room as the machine stands now, written again as an open writes it, and what reading across lets it read (D107); the
-    /// room as last written, reading nothing outside it, where nothing hands a reading or the reading failed.
+    /// room as last written, reading nothing outside it, where nothing hands a reading, the reading failed, or it did not answer
+    /// within <see cref="ReadBound"/> (HELPSTUCK1), which the conversation <paramref name="sessionId"/> is told.
     /// </summary>
-    public async Task<(string Room, IReadOnlyList<HelpRead> Reads)> HelpRoomNowAsync(CancellationToken ct)
+    public async Task<(string Room, IReadOnlyList<HelpRead> Reads)> HelpRoomNowAsync(string sessionId, CancellationToken ct)
     {
         if (DescribeHelp is { } describe)
         {
             try
             {
-                if (await describe(ct).ConfigureAwait(false) is { } machine) return (HelpRoom.Prepare(context.Home, machine), machine.Reads);
+                var (machine, late) = await ReadAsync(describe, ct).ConfigureAwait(false);
+                if (machine is not null) return (HelpRoom.Prepare(context.Home, machine), machine.Reads);
+                if (late) context.Note(sessionId, AsWritten(ReadBound));
             }
             catch (Exception error) when (error is not OperationCanceledException || !ct.IsCancellationRequested)
             {
@@ -124,4 +137,81 @@ internal sealed class ChatHelp(ChatContext context, ChatRunner runner)
 
         return (HelpRoom.PathOf(context.Home), []);
     }
+
+    /// <summary>
+    /// How long a reading left behind by its start's bound may still run, writing the room when it answers (HELPSTUCK1), before
+    /// it is cancelled.
+    /// </summary>
+    public static readonly TimeSpan ReadBackstop = TimeSpan.FromMinutes(10);
+
+    /// <summary>
+    /// The machine read for the room within <see cref="ReadBound"/> (HELPSTUCK1): its reading, or null and late where it did not
+    /// answer in time. A start never waits past the bound in silence: the caller starts on the room as last written, saying so,
+    /// or ends saying why. The reading left behind goes on, until <see cref="ReadBackstop"/>, and writes the room when it answers,
+    /// so the next conversation starts on the machine as read rather than on the room this one was handed.
+    /// </summary>
+    /// <exception cref="OperationCanceledException"><paramref name="ct"/> was cancelled while it waited.</exception>
+    public async Task<(HelpMachine? Read, bool Late)> ReadAsync(
+        Func<CancellationToken, Task<HelpMachine?>> machine, CancellationToken ct)
+    {
+        var backstop = CancellationTokenSource.CreateLinkedTokenSource(ct);
+        backstop.CancelAfter(ReadBackstop);
+        Task<HelpMachine?> reading;
+        try
+        {
+            reading = machine(backstop.Token);
+        }
+        catch
+        {
+            backstop.Dispose();
+            throw;
+        }
+
+        _ = reading.ContinueWith(_ => backstop.Dispose(), CancellationToken.None, TaskContinuationOptions.None, TaskScheduler.Default);
+        try
+        {
+            return (await reading.WaitAsync(ReadBound, ct).ConfigureAwait(false), false);
+        }
+        catch (TimeoutException)
+        {
+            _ = WriteWhenReadAsync(reading);
+            return (null, true);
+        }
+    }
+
+    /// <summary>A reading left behind writes the room once it answers (HELPSTUCK1); one that fails late writes nothing.</summary>
+    private async Task WriteWhenReadAsync(Task<HelpMachine?> reading)
+    {
+        try
+        {
+            if (await reading.ConfigureAwait(false) is { } read && !context.Closing) HelpRoom.Prepare(context.Home, read);
+        }
+        catch (Exception)
+        {
+            // Late, failed or cancelled at its backstop: the room as last written stands, and the next start reads again.
+        }
+    }
+
+    /// <summary>Whole seconds of a bound as a note says it: a part of one is one.</summary>
+    private static int Seconds(TimeSpan bound) => Math.Max(1, (int)Math.Ceiling(bound.TotalSeconds));
+
+    /// <summary>
+    /// The line a conversation is told first where it starts on the room as last written (HELPSTUCK1): the machine was not read
+    /// within the bound, and checkouts outside the room are not read until the next conversation.
+    /// </summary>
+    public static Noted AsWritten(TimeSpan bound) => Noted.Of(
+        NoteCodes.HelpRoomAsWritten,
+        $"This machine was not read within {Seconds(bound)} seconds, so Ask Daoris starts on its room as last written, reading no "
+        + "checkout outside it; the room is written again once the machine is read.",
+        ("seconds", Seconds(bound)));
+
+    /// <summary>
+    /// What a start says where the machine was not read within the bound and no room was ever written (HELPSTUCK1): nothing can
+    /// serve, so it ends failed.
+    /// </summary>
+    public static Noted NotRead(TimeSpan bound) => Noted.Of(
+        NoteCodes.HelpRoomUnread,
+        $"Ask Daoris's room could not be written: this machine was not read within {Seconds(bound)} seconds, and no room was "
+        + "written before. Ask again once it is less busy.",
+        ("seconds", Seconds(bound)));
 }

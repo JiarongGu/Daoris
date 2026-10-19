@@ -556,6 +556,11 @@ public static class NoteCodes
     public static readonly NoteCode ChatCancelled = new("chat.cancelled", []);
     public static readonly NoteCode ChatNotKept = new("chat.not-kept", []);
 
+    // ——— Ask Daoris's start, where the machine's reading for its room did not answer within its bound (HELPSTUCK1): started on
+    // the room as last written, said in its conversation; or, with no room written before, ended saying so.
+    public static readonly NoteCode HelpRoomAsWritten = new("help.room-as-written", ["seconds"]);
+    public static readonly NoteCode HelpRoomUnread = new("help.room-unread", ["seconds"]);
+
     // ——— A landing at the quest's done, under a rule that accepts automatically (LAND2b): said in the conversation's record.
     public static readonly NoteCode LandingAccepted = new("landing.accepted", ["branch"]);
     public static readonly NoteCode LandingUnready = new("landing.plugin-unready", ["branch", "plugin"]);

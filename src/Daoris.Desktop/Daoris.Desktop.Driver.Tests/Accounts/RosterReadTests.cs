@@ -128,6 +128,40 @@ public sealed class RosterReadTests : IDisposable
     }
 
     /// <summary>
+    /// HELPSTUCK1: a lock's folder beside the accounts is no account. The owner's machine listed Claude Code's lock folders as
+    /// accounts, a start's walk went to one read signed in, and a conversation ran there. The report names each as a stray,
+    /// saying whether it holds a sign-in (a reading that said so, or a sign-in's mark), so it is said rather than lost, and
+    /// no start walks to it.
+    /// </summary>
+    [Fact]
+    public async Task A_lock_s_folder_beside_the_accounts_is_a_stray_the_report_names_and_no_start_walks_to()
+    {
+        foreach (var stray in new[] { "Gmail.lock", "account-1.lock", "account-2.lock" })
+        {
+            Directory.CreateDirectory(Path.Combine(HarnessSettings.ProfileHome(_home, "agent", "account-1"), "..", stray));
+        }
+
+        AccountReads.Keep(_home, "agent", "account-1", LoginState.Out, Ten);
+        AccountReads.Keep(_home, "agent", "account-2", LoginState.Out, Ten);
+        AccountReads.Keep(_home, "agent", "account-2.lock", LoginState.In, Ten);
+        var mark = ProbeLock.SignedInPathOf(_home, "agent", "account-1.lock");
+        Directory.CreateDirectory(Path.GetDirectoryName(mark)!);
+        File.WriteAllText(mark, "{}");
+        var roster = Roster();
+
+        var report = (await roster.ReportAsync("agent", Config))!;
+        var selection = await roster.SelectAsync("agent", Config, null, null);
+
+        Assert.Equal(["account-1", "account-2"], report.Profiles.Select(profile => profile.Name));
+        Assert.Equal(
+            [new StrayFolder("Gmail.lock", SignedIn: false), new StrayFolder("account-1.lock", SignedIn: true), new StrayFolder("account-2.lock", SignedIn: true)],
+            report.Strays);
+        Assert.NotEqual("account-2.lock", selection.Profile);
+        Assert.False(selection.Allowed);
+        Assert.Empty(Asked);
+    }
+
+    /// <summary>
     /// The report lists the accounts on disk, each with what was last read of it and when, and the tool's own sign-in's; one
     /// never read says so. A removed account is gone from it at once, and a restart reads the same.
     /// </summary>
