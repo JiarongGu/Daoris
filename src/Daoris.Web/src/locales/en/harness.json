@@ -125,7 +125,7 @@
   "harness.use.switch.smart": "Smart",
   "harness.use.switch.curve": "My own curve",
   "harness.use.switch.off": "Off",
-  "harness.use.switch.smartSays": "Daoris's curve: the five-hour window up to 90%, and the week its pace plus 20 points, never above 95%.",
+  "harness.use.switch.smartSays": "Daoris's curve: the five-hour window up to 90%, and the week its pace plus 20 points up to 95%, then rising evenly to 100% at its reset, so little of it lapses.",
   "harness.use.switch.curveSays": "Your own rows, a window each; a window you leave out takes Daoris's curve.",
   "harness.use.switch.offSays": "No switch while a session runs. A start still passes an account over Daoris's curve, and a limit still carries a session on.",
   "harness.use.switch.silent": "{{product}}'s sessions here do not say how much of each window is used, so a start passes no account by its use.",

@@ -175,8 +175,9 @@ describe('what is said', () => {
       .toBe('The next start takes account-2: it has more room under its curve than work@example.invalid.');
     expect(nextLine(next({ account: 'account-2', reason: 'pace', over: 'account-1' }), scope({ ...list, use: { ...USE_DEFAULTS, early: false } }), labelOf))
       .toBe('The next start takes account-2: it is further behind its week\'s pace than work@example.invalid.');
+    // Step 4 weighs what would lapse at the reset, not only when (USAGERESET1).
     expect(nextLine(next({ reason: 'lapsing', when: '2026-10-04T10:00:00Z' }), list, labelOf))
-      .toMatch(/^The next start takes work@example\.invalid: its week resets first, .+\.$/);
+      .toMatch(/^The next start takes work@example\.invalid: its week resets .+, with more of it left to spend before then\.$/);
     expect(nextLine(next({ account: 'account-3', reason: 'notStarted' }), list, labelOf))
       .toBe('The next start takes account-3: Daoris has not started on it yet.');
     expect(nextLine(next({ account: 'account-2', reason: 'onlyReady', over: null }), list, labelOf))
