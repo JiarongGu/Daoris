@@ -97,9 +97,9 @@ public sealed class DriverModuleHelpStartTests : DriverModuleBridge
     /// <summary>
     /// 🔴 ASKSCOPE1a (D158's ASKSCOPE1 note, points 1 and 3): the press names the workspace its window is on, captured there.
     /// Two workspaces' presses each place their own conversation, the other's still starting, and a second press in one is
-    /// handed that one's; each answer names its workspace, so a late one is known for the workspace it was asked in. Both
-    /// start in the one room folder their workspaces share until ASKSCOPE1b, each reaching its own spawn; none named is
-    /// <c>default</c>'s and sends none, as before.
+    /// handed that one's; each answer names its workspace, so a late one is known for the workspace it was asked in. Since
+    /// ASKSCOPE1b each starts in its own workspace's room folder, written for that workspace, each reaching its own spawn; none
+    /// named is <c>default</c>'s, sends none and starts in <c>help</c>, as before.
     /// </summary>
     [Fact]
     public async Task Each_workspace_s_press_places_its_own_conversation_and_a_second_is_handed_its_own()
@@ -134,6 +134,10 @@ public sealed class DriverModuleHelpStartTests : DriverModuleBridge
         await UntilAsync(() => Raised.Count(m => m.Type == "SESSION_ENDED") == 3);
         Assert.All(new[] { "h1", "h2", "h3" }, id => Assert.Contains("this test spawns nothing", service.Note(id)));
         Assert.True(File.Exists(Path.Combine(HelpRoom.PathOf(loop.Home), "AGENTS.md")));
+        // ASKSCOPE1b: each workspace's room in its own folder, saying its workspace; `default`'s is `help`, saying none.
+        Assert.All(new[] { "alpha", "beta" }, workspace => Assert.Contains(
+            $"This conversation is workspace `{workspace}`'s", File.ReadAllText(Path.Combine(HelpRoom.PathOf(loop.Home, workspace), "AGENTS.md"))));
+        Assert.DoesNotContain("This conversation is workspace", File.ReadAllText(Path.Combine(HelpRoom.PathOf(loop.Home), "AGENTS.md")));
         await UntilAsync(() => loop.Events.Page("h2").Events.Any(e => e.Kind == SessionEventKind.User && e.Text == Words));
     }
 
