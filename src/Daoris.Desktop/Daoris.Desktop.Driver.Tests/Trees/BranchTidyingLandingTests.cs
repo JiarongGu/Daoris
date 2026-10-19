@@ -9,9 +9,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// and takes the branches landings made once it does, after their sessions' branches. Split from
 /// <see cref="BranchTidyingProcessTests"/> (PROC1g), and kept out of the git half: its looks judge the most branches of the tidy's
 /// classes, and with a gate set beside it one ran past the fixture's four-minute <c>Bound</c> alone, so four at once there would
-/// break it. Three classes of one look each (PROCPAR1): a class runs its tests one after another, and the three in one were the
-/// Process half's longest class, three minutes the half waited on; eight at once with the half's other classes, a look took about
-/// a minute, as it did one class at a time.
+/// break it. Three classes of one look each (PROCPAR1): a class runs its tests one after another, and three looks in one class
+/// made the Process half's longest class.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
 public sealed class BranchTidyingLandingTests : BranchTidyingFixture

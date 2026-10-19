@@ -2,9 +2,8 @@ namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
 /// A heartbeat file a real child rewrites every 100 ms, read beside its writer: whether it moves, and what it holds. One read for
-/// every class that watches one (PROCPAR1): <see cref="ProcessJobTests"/> had kept a copy that shared only reading, which met the
-/// writer's open handle and threw at the Process half's first run eight classes at once, as <see cref="PseudoConsoleTests"/>'s had
-/// twice in a row under load (TEST4).
+/// every class that watches one, since a read that shares only reading meets the writer's open handle and throws (TEST4; PROCPAR1's
+/// fix-log entry).
 /// </summary>
 internal static class Heartbeat
 {

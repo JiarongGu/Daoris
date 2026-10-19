@@ -1,9 +1,8 @@
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The heartbeat a real child rewrites is read beside its writer's open handle (TEST4, PROCPAR1). A read that shared only reading
-/// threw there: <see cref="PseudoConsoleTests"/> twice in a row under load, and <see cref="ProcessJobTests"/>, which kept its own
-/// copy of the read, at the Process half's first run eight classes at once. No process here: the writer is a handle this test holds.
+/// The heartbeat a real child rewrites is read beside its writer's open handle (<see cref="Heartbeat"/>; TEST4, PROCPAR1). No
+/// process here: the writer is a handle this test holds.
 /// </summary>
 public sealed class HeartbeatTests : IDisposable
 {
