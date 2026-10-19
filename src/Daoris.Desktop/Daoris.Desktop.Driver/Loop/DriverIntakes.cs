@@ -134,9 +134,12 @@ internal sealed class DriverIntakes(LoopContext context, Driver driver)
 
         // The room, written from the circle's declarations as they stand now.
         string room;
+        IReadOnlyList<string> routedByIntake;
         try
         {
             var declarations = await service.DeclarationsAsync(ask.Workspace, ct).ConfigureAwait(false);
+            // AUTONOMY1c (D184 point 3): the repositories whose setup takes the intake's route without the person's accept.
+            routedByIntake = IntakePrompt.RoutedByIntake(config, ask.Workspace, declarations.Select(declaration => declaration.Repository));
             // WORKFLOW1i-b: the workspace's kinds per repository, read from the choices as they stand now, like the declarations.
             room = IntakeRoom.Prepare(
                 home, ask.Workspace, declarations,
@@ -196,7 +199,7 @@ internal sealed class DriverIntakes(LoopContext context, Driver driver)
                 Session = sessionId,
                 // Its workspace's session language (LANG1c): an intake answers a workspace's ask, in no repository.
                 Prompt = IntakePrompt.Compose(
-                    ask, SessionLanguages.OfWorkspace(config, ask.Workspace), InAppBrowserServers.Told(browserDrivers)),
+                    ask, SessionLanguages.OfWorkspace(config, ask.Workspace), InAppBrowserServers.Told(browserDrivers), routedByIntake),
             };
             var (info, harnessNotice) = _driver.Prepare(adapter, target, selection);
 
