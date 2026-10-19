@@ -283,6 +283,7 @@ public sealed record HomeEntry(string Name, HomeCategory Category, string New, s
     public static readonly HomeEntry Window = new("window", HomeCategory.Profiles, "", "", "chromium", "config");
     public static readonly HomeEntry Trees = new("trees", HomeCategory.Work, "trees/*/*/*", "trees/*/*/*");
     public static readonly HomeEntry HelpRoom = new("help-room", HomeCategory.Work, "help", "help", "CLAUDE.md");
+    public static readonly HomeEntry HelpRooms = new("help-rooms", HomeCategory.Work, "help-*", "help-*", "CLAUDE.md");
     public static readonly HomeEntry Intake = new("intake", HomeCategory.Work, "intake/*", "intake/*");
     public static readonly HomeEntry OpinionPackets = new("opinion-packets", HomeCategory.Work, "opinions/*", "opinions/*");
     public static readonly HomeEntry QuestFiles = new("quest-files", HomeCategory.Work, "quests/*", "quests/*");
@@ -316,7 +317,7 @@ public sealed record HomeEntry(string Name, HomeCategory Category, string New, s
         Landings, SessionBranches, LinesMoved, RegistryFollowed, Abandoned, Update, Knowledge, Sessions, Helpers, Handed, Setup,
         Workflows, HelpProposals, OpinionGates, OpinionDues, BrowserSettings, BrowserFavorites, HomeId, Brainstorms, UsageHistory,
         Keys, Remotes, AgentHomes, BrowserEngine, BrowserEdge, EdgeCookies, Window,
-        Trees, HelpRoom, Intake, OpinionPackets, QuestFiles, AskFiles, SessionFiles, Proof, UsageRead, BrainstormRooms,
+        Trees, HelpRoom, HelpRooms, Intake, OpinionPackets, QuestFiles, AskFiles, SessionFiles, Proof, UsageRead, BrainstormRooms,
         Toolchain, ToolVersions, Bin,
         HomeLease, DriverLock, Running, Locks, Spawn, Starts, Hooks, Probing, SessionPids, Requests, EdgeRecord, Pipe,
         Logs,
