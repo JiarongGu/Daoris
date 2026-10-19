@@ -220,6 +220,32 @@ public sealed class MachineFactsTests
         await Poll.Until(() => asked["engine"] == 2, within: Within);
     }
 
+    /// <summary>
+    /// A topic's rest makes a burst of wakes one judgement each rest; a door that asks afresh and waits (<c>JudgedAsync</c>) is
+    /// judged now.
+    /// </summary>
+    [Fact]
+    public async Task Wakes_within_a_subject_s_rest_wait_for_it_and_an_ask_afresh_does_not()
+    {
+        var asked = new Asked();
+        using var facts = new MachineFacts();
+        facts.Topic(Lines, Rules with { Rest = TimeSpan.FromMinutes(5) }, (subject, _) =>
+        {
+            asked.Add(subject);
+            return Task.FromResult<object?>($"{subject} #{asked[subject]}");
+        });
+        facts.Subject(Lines, "engine");
+        facts.Start();
+        await facts.FirstAsync(Lines, "engine", CancellationToken.None).WaitAsync(Within);
+
+        facts.Wake(Lines, "engine");
+        await Task.Delay(200);
+        Assert.Equal(1, asked["engine"]);
+
+        await facts.JudgedAsync(Lines, "engine", CancellationToken.None).WaitAsync(Within);
+        Assert.Equal("engine #2", facts.Current.Value<string>(Lines, "engine"));
+    }
+
     private static readonly AsyncLocal<string?> Waker = new();
 
     [Fact]

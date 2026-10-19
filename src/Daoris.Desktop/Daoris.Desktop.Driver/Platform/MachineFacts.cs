@@ -203,7 +203,8 @@ public sealed class MachineFacts : IDisposable
 
     /// <summary>
     /// Wake <paramref name="subject"/> and wait for a judgement of it that began after this call to end, landed or not: a test's
-    /// step, or a door that asks for the facts afresh and is willing to wait for them.
+    /// step, or a door that asks for the facts afresh and is willing to wait for them. Never held by the subject's rest, which is
+    /// for a burst of wakes.
     /// </summary>
     public Task JudgedAsync(string topic, string subject, CancellationToken ct)
     {
@@ -213,6 +214,7 @@ public sealed class MachineFacts : IDisposable
         {
             if (Known(topic, subject, out _) is not { } state) return Task.CompletedTask;
             state.Waiting.Add((state.Begun + 1, ended));
+            state.Afresh = true;
             start = Due(_topics[topic], state);
         }
 
@@ -323,7 +325,7 @@ public sealed class MachineFacts : IDisposable
 
         var rest = topic.Rules.Rest;
         var now = _clock();
-        if (rest > TimeSpan.Zero && state.Ended is { } ended && now - ended < rest)
+        if (!state.Afresh && rest > TimeSpan.Zero && state.Ended is { } ended && now - ended < rest)
         {
             if (!state.Resting)
             {
@@ -336,6 +338,7 @@ public sealed class MachineFacts : IDisposable
         }
 
         state.Again = false;
+        state.Afresh = false;
         state.Running = true;
         state.Begun++;
         return () => Launch(() => state.Run = JudgeAsync(topic, state));
@@ -541,6 +544,9 @@ public sealed class MachineFacts : IDisposable
         public Task? Run { get; set; }
 
         public bool Resting { get; set; }
+
+        /// <summary>Asked for afresh by a door that waits (<see cref="JudgedAsync"/>): its next judgement does not wait out the rest.</summary>
+        public bool Afresh { get; set; }
 
         public DateTimeOffset? Began { get; set; }
 
