@@ -207,6 +207,12 @@ internal static class Program
             sp.GetRequiredService<MainForm>().ShowWaiting(count, description);
             sp.GetRequiredService<SecondaryWindowHost>().ShowWaiting();
         });
+        // And the workspace each main window's page holds, worn in its title (MAINWINDOWS3b): no name is the first main window.
+        builder.Services.AddSingleton<ShowWorkspace>(sp => (name, workspace) =>
+        {
+            if (name is null) sp.GetRequiredService<MainForm>().ShowWorkspace(workspace);
+            else sp.GetRequiredService<SecondaryWindowHost>().ShowWorkspace(name, workspace);
+        });
         builder.Services.AddIpcModule<WindowsModule>();
         // The page's own report into the machine log (LOG1b, D94): what is used and what fails on the
         // screen, taken only as the catalogue names it — the module is where no word gets through. And

@@ -421,6 +421,14 @@ describe('the window\'s title', () => {
     rerender({ workspace: null });
     expect(document.title).toBe('Daoris (道衍)');
   });
+
+  it('is told to the frame, which wears the workspace after its own name (MAINWINDOWS3b)', async () => {
+    invoke.mockClear();
+    invoke.mockResolvedValue({});
+    renderHook(() => useWindowTitle('games'));
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith(
+      'DAORIS.WINDOWS', 'SET_TITLE', { payload: { title: 'Daoris (道衍) — games' } }));
+  });
 });
 
 /**
