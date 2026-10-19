@@ -1157,6 +1157,18 @@ public sealed class HelpRoutes(DriverContext context)
         listing.Next,
     };
 
+    // HELPWIRED1 (D183 point 4, the Ask Daoris modes design §6): what each start of one Ask Daoris conversation handed its agent,
+    // newest first, as the start kept it (`HelpWired`): `{ session, recorded, receipts }`, a conversation from before answering
+    // `recorded: false`. Read from the home alone, off the window's thread (UIFREEZE1), answered as the file's own JSON so a null is
+    // kept. A read: it declares nothing. Desktop-only: its folders are this machine's, and no shared host or feed carries it.
+    [DriverRoute("HELP_WIRED")]
+    private Task<object?> HelpWiredAsync(IpcRequest request, CancellationToken cancellationToken)
+    {
+        var session = PayloadHelper.GetRequiredValue<string>(request.Payload, "session");
+        var home = _loop.Home;
+        return Task.Run<object?>(() => HelpWired.Answer(session, new HelpWired(home).Read(session)), cancellationToken);
+    }
+
     // Name an Ask Daoris conversation, or clear its name with none: its first question is its title again. A history act
     // declares the history and the conversations the panel shows (STATEHUB1h, D169), as pinning and starting from one do.
     [DriverRoute("HELP_RENAME")]
