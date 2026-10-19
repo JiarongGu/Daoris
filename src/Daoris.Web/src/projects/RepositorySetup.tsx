@@ -4,6 +4,7 @@ import { type AccessEdit, AccessRows, accessSummary, type ResolvedPause } from '
 import type { RepositoryAcross } from '../settings/Across';
 import type { RuleListName } from '../settings/AgentRules';
 import { COMMIT_DEFAULT, type CommitEdit, CommitField, commitRowSays, commitSummary, type RepositoryCommits } from '../settings/Commits';
+import { type HeavyGate, HeavyGates, heavySummary } from '../settings/HeavyGates';
 import { HELPER_DEFAULT, type HelperEdit, HelperField, helperRowSays, helperSummary, type RepositoryHelpers } from '../settings/Helpers';
 import {
   type Accepting, AcceptingNote, LandingField, landingFrom, landingProcessSays, type LandingRule, type RepositoryLanding,
@@ -18,8 +19,21 @@ import { RepositoryRules, type RuleLists } from './RepositoryRules';
 import { Inheritable, landingRowSays, landingSays, SetupSection } from './SetupParts';
 import { StandingAnswer } from './StandingAnswer';
 
-/** The sections of a repository's Setup (UX6f, D150 §4.2; *Sessions' access* since AUTONOMY1d), in the order the page draws them. */
-export type SetupSectionId = 'driving' | 'work' | 'access' | 'sessions' | 'reach';
+/**
+ * The sections of a repository's Setup (UX6f, D150 §4.2; *Sessions' access* since AUTONOMY1d, *Heavy gates* since HEAVYRUN1b2b), in
+ * the order the page draws them.
+ */
+export type SetupSectionId = 'driving' | 'work' | 'access' | 'heavy' | 'sessions' | 'reach';
+
+/**
+ * This machine's heavy gates for it (HEAVYRUN1b2b, D180's HEAVYRUN1b2a note), used where its own `daoris.gates.json` marks none, and
+ * the press that sets the whole list or clears it; absent on a shell older than it, and the section is not drawn.
+ */
+export type HeavySetup = {
+  /** In the order they run; none where none is set here. */
+  gates: HeavyGate[];
+  onSave: (gates: HeavyGate[] | null, answered: Answered) => void;
+};
 
 /**
  * The access setup its sessions start under (AUTONOMY1d, D184 points 1-3), as the driver resolves it, and the press that changes it
@@ -118,6 +132,8 @@ export type RepositorySetupProps = {
   work?: WorkSetup | null;
   /** Its sessions' access, where it can be driven. */
   access?: AccessSetup | null;
+  /** This machine's heavy gates for it, where it can be driven. */
+  heavy?: HeavySetup | null;
   /** Its sessions' language and standing answer, where it can be driven. */
   sessions?: SessionsSetup | null;
   reach?: ReachSetup | null;
@@ -135,7 +151,8 @@ const JOIN = ' · ';
  * **A repository's Setup** (UX6f, D150 §4.2): every setting the repository holds on this machine, in five sections, each
  * folding to a line that names its values. *Driving* (drive, hold, a tree per session), *Line and landing* (its line, how
  * its work lands, how it is committed, DOORS1b; the design's *Work*, which the catalogue keeps for no name since the view
- * it named was retired), *Sessions' access* (full access or each pause, AUTONOMY1d, D184), *Sessions* (the language they
+ * it named was retired), *Sessions' access* (full access or each pause, AUTONOMY1d, D184), *Heavy gates* (this machine's builds
+ * and suites for it where its own `daoris.gates.json` marks none, edited whole, HEAVYRUN1b2b), *Sessions* (the language they
  * write in, what a helper their agent asks for does, the standing answer) and *Reach* (read by agents outside it, what its
  * sessions also write into, Claude Code's rules here).
  *
@@ -153,7 +170,7 @@ const JOIN = ' · ';
  *
  * A molecule: every state is reached by its props, and every press goes out.
  */
-export function RepositorySetup({ repository, driving, work, access, sessions, reach, busy = false, open, onOpenPlugin }: RepositorySetupProps) {
+export function RepositorySetup({ repository, driving, work, access, heavy, sessions, reach, busy = false, open, onOpenPlugin }: RepositorySetupProps) {
   const { t } = useTranslation();
   const marked = (value: string, source: 'repository' | 'workspace' | 'daoris') =>
     source === 'repository' ? value : t(`projects.setup.marked.${source}`, { value });
@@ -242,6 +259,8 @@ export function RepositorySetup({ repository, driving, work, access, sessions, r
     driving: false,
     work: lineOwn || landingOwn || commitsOwn || reviewOwn || opinionOwn,
     access: accessOwn,
+    // This machine's heavy gates are set for this repository alone, so a list set is its own.
+    heavy: (heavy?.gates.length ?? 0) > 0,
     sessions: languageOwn || helpersOwn || standing !== null,
     reach: readOwn || writesTo.length > 0 || ruleCount > 0,
   };
@@ -407,6 +426,13 @@ export function RepositorySetup({ repository, driving, work, access, sessions, r
           onChange={accessShown.onChange}
         />
       ),
+    });
+  }
+  if (heavy) {
+    sections.push({
+      id: 'heavy',
+      summary: heavySummary(t, heavy.gates),
+      body: <HeavyGates repository={repository} gates={heavy.gates} busy={busy} onSave={heavy.onSave} />,
     });
   }
   if (sessions && sessionsParts && sessionsParts.length > 0) {
