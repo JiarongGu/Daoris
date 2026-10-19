@@ -102,6 +102,9 @@ public sealed class StateSlice
     private bool _judged;
     private long _judgements;
 
+    /// <summary>Whether the last judgement failed; read and written only within a judgement's turn.</summary>
+    private bool _failing;
+
     private sealed record Held(long Seq, string Status, object? Data, string Json);
 
     /// <param name="name">The slice's name, in the page's words.</param>
@@ -128,7 +131,10 @@ public sealed class StateSlice
     /// <summary>What on the kit's bus wakes the judge while the worker runs.</summary>
     public IReadOnlyList<SliceWake> WakesOn { get; init; } = [];
 
-    /// <summary>Where a judgement's failure is said; the last judged state stands, and the next wake judges again.</summary>
+    /// <summary>
+    /// Where a judgement's failure is said, once until one succeeds again; the last judged state stands, and the next wake judges
+    /// again.
+    /// </summary>
     public Action<Exception>? Failed { get; init; }
 
     /// <summary>How many judgements were made: a window's snapshot makes none.</summary>
@@ -177,7 +183,9 @@ public sealed class StateSlice
             }
             catch (Exception error) when (error is not OperationCanceledException)
             {
-                Failed?.Invoke(error);
+                // Said once until a judgement succeeds again: a file that stays unreadable is not a line at every look.
+                if (!_failing) Failed?.Invoke(error);
+                _failing = true;
                 return;
             }
             finally
@@ -185,6 +193,7 @@ public sealed class StateSlice
                 Interlocked.Increment(ref _judgements);
             }
 
+            _failing = false;
             var pushes = new List<SlicePush>();
             lock (_gate)
             {

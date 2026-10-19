@@ -181,10 +181,18 @@ public sealed class StateSlicesTests
 
         fail = true;
         await slice.JudgeAsync();
+        // Said once while it keeps failing, so a file that stays unreadable is not a line at every look.
+        await slice.JudgeAsync();
 
         Assert.Equal("unreadable", Assert.Single(failures).Message);
         Assert.Equal(2, Pushes().Count);
         Assert.Equal("a@1:ready,b@1:ready", Versions(slice.Snapshot()));
+
+        fail = false;
+        await slice.JudgeAsync();
+        fail = true;
+        await slice.JudgeAsync();
+        Assert.Equal(2, failures.Count);
     }
 
     [Fact]
