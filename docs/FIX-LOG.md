@@ -5,6 +5,27 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-19 — A tree's removal deleted what a junction in it pointed at, outside it (TREELINK1)
+
+- **Symptom:** TREEDEPS1's builder probed git 2.53.0.windows.3 on the owner's machine: a junction in a worktree to a folder
+  outside it, then `git worktree remove --force`, and the file in that folder was gone. Not seen on the install. A session that
+  links outside its tree (`npm link`, a workspace's junction, which npm makes absolute into the checkout, a link of its own)
+  would have lost the target, the checkout's files or another repository's, when its tree was removed.
+- **Root cause:** every path that removes a session tree with git handed git a folder that could hold a link: the removal
+  (`TreeRemovals`), a landing's tidy (`TreeTidies`), the clean-up's press (`TreeSweeps`) and an undone opening
+  (`TreeOpenings.UndoAsync`, `--force` twice). Git for Windows' delete follows a junction, unforced too, where the junction sits
+  in an ignored build folder the checkout also holds, which SQUASHTIDY1c lets go with the tree. The look's own tidy and the
+  strays never had git delete a folder: they move it aside whole, and the purge never follows a link (TIDIEDLINK1).
+- **Fix:** `TreeLinks.Unlinked` walks the tree before git runs, never entering a link, skipping its `.git`, looking at no more
+  than a million entries, and takes each link off as a link (the folder call on Windows, an unlink elsewhere); the four paths
+  keep the tree, said, where it cannot, or where the tree's own folder is a link. D51's TREELINK1 note.
+- **Verify:** `TreeLinkRemovalTests` reproduces the probe over real git for each path: six red before the fix, five with the
+  outside file gone (the forced and the unforced removal, the landing's tidy of the pressed tree and of another, the press,
+  the undo) and a tree whose own folder is a link removed through it; the set-aside and the strays green before and after.
+  All eight green after it, with `TreeLinksTests`' four (the bound, `.git`, no link, a gone tree), and the neighbouring Git
+  classes' 91 (`SessionTreesTests`, `SweepTests`, `LandingTidyTests`, `CleanupGitTests`, `ContentProofLossTests`,
+  `BranchTidyingFolderTests`).
+
 ## 2026-10-19 — A park answered and asking again could go unsaid, and an answered one was said (AUTONOMY1e)
 
 - **Symptom:** found reading the answer path, not seen on the install. `AttentionWatch` said a park once per move into
