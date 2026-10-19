@@ -239,6 +239,7 @@
   "projects.setup.summary.sharedTree": "sessions in its checkout",
   "projects.setup.summary.line": "line `{{branch}}`",
   "projects.setup.summary.noLine": "no line",
+  "projects.setup.summary.lineNotRead": "line not read yet",
   "projects.setup.summary.landsMerge": "lands into its line",
   "projects.setup.summary.landsBranch": "lands on `{{pattern}}`",
   "projects.setup.summary.pushedBy": "pushed by {{plugin}}",
