@@ -942,6 +942,30 @@ public sealed class QuestReopenSyncTests : IAsyncLifetime
     }
 
     /// <summary>
+    /// 🔴 SYNCMERGE1a2 (D178 point 7): a plain dismissal settled B's first conflict before B's fresh take lost, so the fresh take's loss is
+    /// to A's take of the step, not to the person's reopen, which the dismissal superseded. The claim's reason is the true one: B reads
+    /// lost, and not lost to the reopen, whether it ran its bring-forward offline first or not.
+    /// </summary>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task A_fresh_take_lost_after_a_plain_dismissal_settled_the_conflict_is_not_lost_to_the_reopen(bool offlineFirst)
+    {
+        var (quest, step, conflict) = await LostToTheReopenAsync();
+        await ReboundAsync(quest);
+        Assert.Equal(1, (await _a.DismissAsync(step.Id, conflict.Machine, conflict.Sequence, Now.AddHours(5))).Dismissed);
+        await SyncAsync(_a);
+        var brought = await _b.BringForwardAsync(step.Id, conflict, Now.AddHours(5));
+        Assert.Equal(QuestForwardRefusal.None, brought.Refusal);
+        if (offlineFirst) Assert.NotNull((await QuestSync.RunAsync(_b, _ => true, new UnreachableRemote(), Workspaces.Default)).Problem);
+
+        var report = await SyncAsync(_b);
+
+        Assert.Single(report.Conflicts);
+        Assert.Equal((QuestClaim.Lost, false), (await _b.ClaimAsync(step.Id), await _b.LostToTheReopenAsync(step.Id)));
+    }
+
+    /// <summary>
     /// 🔴 SYNCMERGE1a (D178 point 8, the offline trap): B presses offline. The fresh take and the marked dismissal stay on B, unconfirmed,
     /// through a restart; meanwhile A's take of the step reaches the remote. Once B reaches it, the fresh take loses, the mark with it, and
     /// B's first conflict is back on the step beside the new one: unconfirmed throughout, then lost, and never settled.

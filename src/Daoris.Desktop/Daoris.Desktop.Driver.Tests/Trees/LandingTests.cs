@@ -26,10 +26,11 @@ public sealed class LandingTests : IDisposable
     {
         try
         {
-            Directory.Delete(_scratch, recursive: true);
+            // Git's read-only objects made writable first (PROCSPEED1): refused, the folder stays.
+            GitSeed.Remove(_scratch);
         }
         catch (IOException) { /* a straggling git handle */ }
-        catch (UnauthorizedAccessException) { /* read-only pack files under .git */ }
+        catch (UnauthorizedAccessException) { /* a file something still holds */ }
     }
 
     /// <summary>The pattern rule. The CLI's <c>driverconfig.test.ts</c> holds these cases, answer for answer.</summary>
@@ -768,15 +769,25 @@ public sealed class LandingTests : IDisposable
         (workspace ? DriverConfig.Empty.WithWorkspaceLanding("aurora", rule) : DriverConfig.Empty.WithLanding("engine", rule))
             .Save(DaorisHome.Entry(_home, HomeEntry.DriverConfig));
 
+    /// <summary>
+    /// A repository on `main` with one commit, its README: a copy of the run's seed of this shape (<see cref="GitSeed"/>, PROC1h;
+    /// PROCSPEED1), five git starts a test fewer. No test here reads the first commit's id or time.
+    /// </summary>
     private async Task<string> RepositoryAsync(string name)
     {
+        var seed = await GitSeed.SeedAsync($"landing:{name}", folder => BuildRepositoryAsync(Path.Combine(folder, name), name));
         var root = Path.Combine(_scratch, name);
+        GitSeed.Copy(Path.Combine(seed, name), root);
+        return root;
+    }
+
+    private static async Task BuildRepositoryAsync(string root, string name)
+    {
         Directory.CreateDirectory(root);
         await GitAsync(root, "init", "--quiet", "-b", "main");
         await GitAsync(root, "config", "user.email", "fixture@example.test");
         await GitAsync(root, "config", "user.name", "Fixture");
         await CommitAsync(root, "README.md", $"# {name}", "first");
-        return root;
     }
 
     private static async Task CommitAsync(string tree, string file, string content, string message)

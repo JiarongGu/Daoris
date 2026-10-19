@@ -1414,6 +1414,12 @@ public sealed class QuestSyncTests : IAsyncLifetime
             var open = (await store.FindAsync(step.Id))!;
             var conflict = Assert.Single(open.Conflicts);
             Assert.Equal((QuestStatus.Open, _b.Machine, QuestStatus.Taken), (open.Status, conflict.Machine, conflict.Attempted));
+
+            // FABRIC-CLOSE1c25: either order, the take's note keeps its words and says why it lost, naming the source.
+            Assert.StartsWith("B's step session.", conflict.Note);
+            Assert.Contains($"#{quest.Id}", conflict.Note);
+            Assert.Contains(anewFirst ? "published anew" : "went with this machine's take", conflict.Note);
+            Assert.DoesNotContain("reopen", conflict.Note);
         }
 
         // B's session goes on, and its store refuses what it makes inside the write: no reopen is why.

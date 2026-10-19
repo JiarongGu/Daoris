@@ -2976,6 +2976,18 @@ public sealed class QuestStore
                 Kind = QuestOperationKind.Conflict, Attempted = QuestTransitions.Target(operation.Kind), WhileOpen = false, Close = null,
                 Submission = null,
             };
+
+            // A step's take made on a submission the step no longer grew from (FABRIC-CLOSE1c25): another machine's chain published
+            // the step anew on other work, so the take's own words alone would not say why it lost. Read from the stamp and the step
+            // alone, as the source's own history may not be rewritten yet. A take that lost to the person's reopen of the source
+            // (its rebind moves the step's GrewFrom too) keeps the take's words.
+            if (operation.Kind == QuestOperationKind.Taken && operation.Submission is { } stamped
+                && quest is { Status: QuestStatus.Open, SourceReopened: null, Parent: { Length: > 0 } source } && stamped != quest.GrewFrom
+                && !QuestLog.LostToTheReopen(replayed.Append(lost), Machine))
+            {
+                lost = lost with { Note = StepPublishedAnew(source, operation.Note), NoteParts = null };
+            }
+
             await RewriteAsync(position, lost, transaction, ct).ConfigureAwait(false);
             quest = quest is null ? null : QuestLog.Step(quest, lost);
             replayed.Add(lost);
@@ -3199,6 +3211,17 @@ public sealed class QuestStore
                                    + "remote first"
                       : $"went with this machine's take of #{parent}: another machine's take reached the remote first")
                    + ". The step went with it, so its work is not wanted.";
+        return string.IsNullOrWhiteSpace(note) ? said : $"{note.TrimEnd()} {said}";
+    }
+
+    /// <summary>
+    /// A lost step's take's note as it was given, then why it lost (FABRIC-CLOSE1c25): the step was published anew on other work,
+    /// from the submission another machine made of <paramref name="parent"/>, so a take made on the work that went is not wanted.
+    /// </summary>
+    internal static string StepPublishedAnew(string parent, string? note)
+    {
+        var said = $"This quest was the next step of #{parent}'s submission, and was published anew on other work, from the submission "
+                   + $"another machine made of #{parent}. This machine's take of it, made on the work that went, is not wanted.";
         return string.IsNullOrWhiteSpace(note) ? said : $"{note.TrimEnd()} {said}";
     }
 

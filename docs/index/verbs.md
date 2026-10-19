@@ -85,18 +85,19 @@ Each a `case` in `tools/desktop.mjs`: `build` 854 · `run` 858 · `restart` 859 
 |---|---|---|
 | `test` | 14 | `npm test -w daoris` |
 | `verify` | 15 | `npm run typecheck -w daoris && npm test -w daoris && node…` |
-| `rehearse` | 16 | `node tools/release-rehearsal.mjs` |
-| `rehearse:family` | 17 | `node tools/family-rehearsal.mjs` |
-| `rehearse:deploy` | 18 | `node tools/deployment-rehearsal.mjs` |
-| `test:web` | 19 | `npm run test:web:unit && npm run test:web:e2e` |
-| `test:web:unit` | 20 | `npm --prefix src/Daoris.Web run test` |
-| `test:web:e2e` | 21 | `npm --prefix src/Daoris.Web run build && dotnet build…` |
-| `desktop` | 22 | `node tools/desktop.mjs` |
-| `testbed` | 23 | `node tools/testbed.mjs` |
-| `publish:service` | 24 | `node tools/service-publish.mjs` |
-| `knowledge:build` | 25 | `node tools/knowledge-server.mjs build` |
-| `publish:desktop` | 26 | `node tools/desktop-publish.mjs` |
-| `release-prep:check` | 27 | `node tools/release-prep.mjs --check` |
+| `tooltests` | 16 | `npm run tooltests -w daoris` |
+| `rehearse` | 17 | `node tools/release-rehearsal.mjs` |
+| `rehearse:family` | 18 | `node tools/family-rehearsal.mjs` |
+| `rehearse:deploy` | 19 | `node tools/deployment-rehearsal.mjs` |
+| `test:web` | 20 | `npm run test:web:unit && npm run test:web:e2e` |
+| `test:web:unit` | 21 | `npm --prefix src/Daoris.Web run test` |
+| `test:web:e2e` | 22 | `npm --prefix src/Daoris.Web run build && dotnet build…` |
+| `desktop` | 23 | `node tools/desktop.mjs` |
+| `testbed` | 24 | `node tools/testbed.mjs` |
+| `publish:service` | 25 | `node tools/service-publish.mjs` |
+| `knowledge:build` | 26 | `node tools/knowledge-server.mjs build` |
+| `publish:desktop` | 27 | `node tools/desktop-publish.mjs` |
+| `release-prep:check` | 28 | `node tools/release-prep.mjs --check` |
 
 ## npm scripts in `src/Daoris.Web/package.json`
 
