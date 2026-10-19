@@ -62,8 +62,8 @@ public sealed record SliceManifest(string Slice, string Epoch, IReadOnlyList<Sli
 /// <remarks>
 /// <para><b>One owner, one judgement at a time.</b> A wake only asks (<see cref="Wake"/>): the bus's subscribers and the loop's look
 /// write one waiting wake and return, and the slice's worker judges. Judgements never overlap, so a slow one's completion can never
-/// land over a newer one's, and each partition is compared with what was last pushed: a changed one is numbered and pushed whole, an
-/// unchanged one, a reconciliation's included, is pushed nothing.</para>
+/// land over a newer one's, and each partition is compared with what was last pushed: a changed one is numbered and pushed whole (a
+/// keyed one's moved keys alone, <see cref="Keyed"/>), an unchanged one, a reconciliation's included, is pushed nothing.</para>
 ///
 /// <para><b>One ordered outbox.</b> Every push and manifest of a slice is told by the judgement that numbered it, one at a time, so
 /// the pump receives them in the order they were numbered; the kit's pump may coalesce a whole replacement by its partition and a
