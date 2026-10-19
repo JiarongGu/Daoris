@@ -78,8 +78,19 @@ public static class HelpRoom
         // Two harnesses read AGENTS.md; Claude Code reads CLAUDE.md — the canon's own shape (D59).
         AtomicFile.WriteText(Path.Combine(room, "CLAUDE.md"), "@AGENTS.md\n");
         AtomicFile.WriteText(Path.Combine(room, ".claude", "settings.json"), Settings());
+        Unread[Path.GetFullPath(room)] = machine.NotReadYet.Any;
         return room;
     }
+
+    // What the room this process wrote last under each home said was not read yet (PARALLEL1a): the catch-up writes only such a room
+    // again. A room another process wrote, or one written before this process, is written again at the next start.
+    private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, bool> Unread = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// Whether the room this process wrote last under <paramref name="home"/> said something was not read yet (PARALLEL1a), so it
+    /// is written again as the facts land (<see cref="HelpRoomCatchUp"/>).
+    /// </summary>
+    public static bool SaidNotReadYet(string home) => Unread.GetValueOrDefault(Path.GetFullPath(PathOf(home)));
 
     /// <summary>
     /// What its session is handed at spawn (PERM1): the room's allows and a read of the files its
@@ -129,6 +140,7 @@ public static class HelpRoom
     /// <param name="history">What each workspace keeps of finished work (HIST1f-b), as <c>HISTORY_PLAN</c> reads it; null where none was read.</param>
     /// <param name="workflows">The named workflows under the home (WORKFLOW1h-b, <see cref="WorkflowStore.List"/>), which name the version each repository follows; null where none were read.</param>
     /// <param name="grants">The person's approvals of what plugins hand it (<see cref="HelpGrants.Read"/>, HELPPLUG1a); none read, none named.</param>
+    /// <param name="notReadYet">What the facts the judges keep had not read yet (PARALLEL1a, <see cref="HelpFacts.Read"/>); none by default.</param>
     public static HelpMachine Describe(
         DriverConfig config, Snapshot snapshot, IReadOnlyList<RepositoryLine> lines,
         IReadOnlyList<HarnessReport> roster, Func<string, string?> product, int asks,
@@ -136,14 +148,15 @@ public static class HelpRoom
         IReadOnlyList<PluginOffer>? offers = null, IReadOnlyList<ParkedQuest>? parked = null, HelpBrowserFacts? browser = null,
         IReadOnlyList<HeldQuest>? held = null, SessionLook? sessions = null, IReadOnlyList<HistoryReading>? history = null,
         IReadOnlyList<WorkflowFileFound>? workflows = null, HelpGrantSet? grants = null,
-        IReadOnlyList<WorkMilestone>? work = null, IReadOnlyList<string>? workUnread = null, IReadOnlyList<InventoryEntry>? workRecovery = null)
+        IReadOnlyList<WorkMilestone>? work = null, IReadOnlyList<string>? workUnread = null, IReadOnlyList<InventoryEntry>? workRecovery = null,
+        HelpNotReadYet? notReadYet = null)
     {
         var sources = new HelpMachineSources(
             config, snapshot, lines, roster, product, asks, standing ?? [], plugins ?? PluginCatalog.None, landed ?? [], offers ?? [],
             parked ?? [], browser)
         {
             Held = held ?? [], Sessions = sessions, History = history, Workflows = workflows, Grants = grants,
-            Work = work, WorkUnread = workUnread ?? [], WorkRecovery = workRecovery ?? [],
+            Work = work, WorkUnread = workUnread ?? [], WorkRecovery = workRecovery ?? [], NotReadYet = notReadYet ?? HelpNotReadYet.None,
         };
         return HelpRoomSections.All.Aggregate(new HelpMachine(), (machine, section) => section.Describe(machine, sources));
     }
@@ -238,6 +251,12 @@ public sealed record HelpMachine
     /// </summary>
     public IReadOnlyList<HistoryReading>? History { get; init; }
 
+    /// <summary>
+    /// What the facts the judges keep had not read yet when the room was written (PARALLEL1a, D181 point 1): each said <i>not read
+    /// yet</i> where its section says it, and the room written again as they land.
+    /// </summary>
+    public HelpNotReadYet NotReadYet { get; init; } = HelpNotReadYet.None;
+
     // The may-do section's.
 
     /// <summary>The checkouts it may read, by name; a path here is one reading across allows, and no other.</summary>
@@ -316,4 +335,7 @@ internal sealed record HelpMachineSources(
 
     /// <summary>Daoris's own recoveries no unit names (RECOVERYASK1).</summary>
     public IReadOnlyList<InventoryEntry> WorkRecovery { get; init; } = [];
+
+    /// <summary>What the facts the judges keep had not read yet (PARALLEL1a).</summary>
+    public HelpNotReadYet NotReadYet { get; init; } = HelpNotReadYet.None;
 }

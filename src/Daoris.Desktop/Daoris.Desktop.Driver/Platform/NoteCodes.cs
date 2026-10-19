@@ -561,6 +561,10 @@ public static class NoteCodes
     public static readonly NoteCode HelpRoomAsWritten = new("help.room-as-written", ["seconds"]);
     public static readonly NoteCode HelpRoomUnread = new("help.room-unread", ["seconds"]);
 
+    // ——— Ask Daoris's start on the facts the judges keep (PARALLEL1a, D181 point 1): started at once, on a room that says what is
+    // not read yet, or on the room as last written where no fact was ever judged.
+    public static readonly NoteCode HelpRoomNotReadYet = new("help.room-not-read-yet", []);
+
     // ——— A landing at the quest's done, under a rule that accepts automatically (LAND2b): said in the conversation's record.
     public static readonly NoteCode LandingAccepted = new("landing.accepted", ["branch"]);
     public static readonly NoteCode LandingUnready = new("landing.plugin-unready", ["branch", "plugin"]);
