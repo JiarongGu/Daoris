@@ -283,6 +283,12 @@ public static class AccessRules
         return "Access setup: " + string.Join(", ", access.Pauses.Select(pause => $"{pause.Pause} {pause.Value} ({Whose(pause.Source)})")) + ".";
     }
 
+    /// <summary>
+    /// What a driven start's transcript notes of its setup, once its record is open: nothing where every pause is today's behaviour, so
+    /// a start nobody changed reads as it always did, and <see cref="Said"/>'s one line otherwise. Its record keeps the setup either way.
+    /// </summary>
+    public static string? StartNote(ResolvedAccess access) => access.Today ? null : Said(access);
+
     /// <summary>Where a value was set, in a sentence.</summary>
     public static string Whose(string source) => source switch
     {
