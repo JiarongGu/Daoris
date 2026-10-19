@@ -24,6 +24,12 @@ public sealed record QuestView(string Id, string From, string To, string Title, 
     /// <summary>The quest whose close published this one, when it is a step of a chain.</summary>
     public string? Parent { get; init; }
 
+    /// <summary>The machine that holds the quest, as the list answers it (SYNCMERGE1b1); null where none is named.</summary>
+    public string? Holder { get; init; }
+
+    /// <summary>This machine's id where the list answers it as the page's (SYNCMERGE1b1); null off this machine or from a host before it.</summary>
+    public string? Here { get; init; }
+
     /// <summary>
     /// The question its taker waits on (D79) — another quest, asked of the repository that knows — or
     /// null. A taken quest carrying one is its taker's to resume once the question closes. Only a taken quest waits: a
