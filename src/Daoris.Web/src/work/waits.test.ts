@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { GoAhead, Session } from '../data/api';
-import type { RuleProposal } from '../settings/AgentRules';
+import type { RuleProposal } from '../settings/repository/AgentRules';
 import type { SessionDiff } from './diff';
 import type { HelperAskRow } from './HelperAsks';
 import { GATES } from './opinionFixtures';

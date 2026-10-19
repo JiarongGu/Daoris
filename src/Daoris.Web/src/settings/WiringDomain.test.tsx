@@ -20,7 +20,7 @@ import i18n from '../locales/i18n';
 import { code } from '../test/code';
 import { DRIVER_STATE, respond, show, WIRING } from '../test/shellHarness';
 import type { SystemWiring } from '../bridge/system';
-import { DEVELOPMENT, MEASURING, WIRED } from './wiringFixtures';
+import { DEVELOPMENT, MEASURING, WIRED } from './wiring/wiringFixtures';
 
 const NO_UPDATE = { state: 'none', staged: null, mode: null, driven: 0, turns: 0, problem: null, outcome: null, last: null };
 

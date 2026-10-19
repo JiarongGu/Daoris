@@ -35,8 +35,8 @@ import { conversationOffer, rulesAsked, waitsOf } from './waits';
 import { useWaitsOnScreen } from './waitsOnScreen';
 import { sayDiscard } from '../settings/Sweep';
 import { doorOf, toolOf } from '../agents/tools';
-import { agentOf, machineScope, workspaceScope } from '../settings/accounts';
-import { namer } from '../settings/namer';
+import { agentOf, machineScope, workspaceScope } from '../settings/accounts/accounts';
+import { namer } from '../settings/accounts/namer';
 import {
   boxOf, coolingFor, NATIVE_WORDS_LIMIT, neverSentence, type NewSessionAnswer, startFromRefusal, takesWords, tooLong,
 } from './say';

@@ -17,7 +17,7 @@ import {
   standingStep,
 } from './records';
 import { QuestPage, QuestsMainNotice } from './QuestPage';
-import { namer } from '../settings/namer';
+import { namer } from '../settings/accounts/namer';
 import {
   retryNotice, useConsidered, useDriver, useHarnesses, useHistoryPlan, useNudge, useRemotes, useRetryQuest, useSessionGroups, useSetHold, useTrace,
   useTrustFolder, useUntrusted, useWorkflowRun, useWorkPlan,

@@ -49,8 +49,8 @@ Repositories. The desktop's seven menus share one command table, with shortcuts 
 Each Settings domain is `src/settings/<Name>Domain.tsx`, with its tests beside it, and
 `src/settings/domains.ts` lists them: the one place a domain is added, since the frame
 (`settings/SettingsView.tsx`) renders whichever one is chosen and names none itself (MOD4).
-*This Daoris* (`WiringDomain.tsx`) draws one read, `SYSTEM_WIRING`, as cards (`Wiring*.tsx`, molecules over props); its card
-*Left in your own tool home* (`WiringToolHome.tsx`, OWNSPACE2) lists the folders Daoris's session records show its sessions
+*This Daoris* (`WiringDomain.tsx`) draws one read, `SYSTEM_WIRING`, as cards (`wiring/Wiring*.tsx`, molecules over props); its card
+*Left in your own tool home* (`wiring/WiringToolHome.tsx`, OWNSPACE2) lists the folders Daoris's session records show its sessions
 ran in, read-only: Daoris removes none of them yet, and the card says a person can by hand.
 *AI features* (`AiDomain.tsx`) draws Ask Daoris's *Configured access* (`help/access/ConfiguredAccess.tsx`) under its access row
 while restricted: each grant the driver serves comes from `STATE`'s `helpGrants`, with the operations it acts on (`built`), and is
@@ -59,7 +59,7 @@ serve yet is drawn from `help/access/grants.ts` alone and sends nothing (HELPMOD
 
 **An account is named by one rule, wherever it is said** (`src/agents/agents.ts`, D125's ACCTNAME1 and ACCOUNTID1b notes):
 `accountName` leads a row, `accountWho` sits beside it, and `accountLabel` is the one line a chip, a pill, a note or the
-roster's namer (`settings/namer.ts`, so a session's header) says. Where two of an agent's sign-ins share an email, each
+roster's namer (`settings/accounts/namer.ts`, so a session's header) says. Where two of an agent's sign-ins share an email, each
 says what tells it apart, after the email and once. A surface that names an account goes through these, never its own.
 
 **The design language is written down** — `docs/2026-09-19-platform-ux.md` (D41): the console shell
@@ -156,6 +156,10 @@ A folder past twenty sources keeps its scopes in folders named for what they hol
 - `projects/`: the place's view, its list, a repository's page and the drawers at its top; `git/` (a repository's
   Branches and History, a branch's page and the graph), `setup/` (a repository's and a workspace's Setup, its parts and
   rules, the standing answer) and `workspace/` (a workspace's page and its sections).
+- `settings/`: the frame, the domains' list and each `<Name>Domain.tsx` at its top, with the parts one domain draws;
+  `wiring/` (This Daoris's cards), `accounts/` (how each agent's accounts are used, the usage curve, the roster's namer)
+  and `repository/` (what a repository's Setup, a workspace's and this machine's set, each where it was set, and the
+  agents' rules).
 
 A take the person's own reopen made lose is said as that wherever a lost claim is read (FABRIC-CLOSE1c20): the hand-over's
 `quest-reopened`, the abandon's `source-reopened` and the pause's `asks.work.reopenedTake` each have their own sentence,

@@ -3,7 +3,7 @@ import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import i18n from '../locales/i18n';
 import type { GoAhead, Session } from '../data/api';
-import type { RuleProposal } from '../settings/AgentRules';
+import type { RuleProposal } from '../settings/repository/AgentRules';
 import type { HelperAskRow, HelperWaits } from './HelperAsks';
 import type { PermissionWait } from './PermissionAsks';
 import { STEP_SHOWN } from './reviewFixtures';

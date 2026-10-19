@@ -10,7 +10,7 @@ import { workspacesOf } from '../data/workspaces';
 import { useModeChoice } from '../help/access/HelpModePicker';
 import { fullAdds } from '../help/access/modes';
 import { AiJobs, type SearchTier } from './AiJobs';
-import { namer } from './namer';
+import { namer } from './accounts/namer';
 
 /**
  * Daoris's own AI (AGT6): the jobs it may use a model for, the tier answering each, and how to

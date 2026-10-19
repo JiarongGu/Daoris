@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQuests, useSessions } from '../data/queries';
-import { namer } from '../settings/namer';
+import { namer } from '../settings/accounts/namer';
 import { useChatTurns, useHarnesses, useSessionOpenings, useSessionProcess, useSessionStreams } from '../bridge/shell';
 import { frameShortcut } from '../menus/shortcuts';
 import { EmptyState, type Notify, SESSION_ACTIVE, SkeletonRows, useErrorNotify } from '../design/ui';

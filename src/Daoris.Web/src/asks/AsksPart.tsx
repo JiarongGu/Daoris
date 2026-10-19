@@ -9,7 +9,7 @@ import {
   useAnswerGoAhead, useAsk, useAsks, useChooseAskReview, useChooseAskWorkflow, useCloseAsk, useDeleteAsk, usePublishAsk, useRegistry, useSessions,
 } from '../data/queries';
 import { useScope } from '../data/scope';
-import { namer } from '../settings/namer';
+import { namer } from '../settings/accounts/namer';
 import { askLines } from '../work/entries';
 import {
   useChannel, useChannelUnreads, useElsewhereAsks, useMarkChannel, usePostChannel,

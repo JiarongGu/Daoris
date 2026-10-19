@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { LIST_TONE, RULE_LISTS, type RuleListName } from '../../settings/AgentRules';
+import { LIST_TONE, RULE_LISTS, type RuleListName } from '../../settings/repository/AgentRules';
 import { Button, Icon, Pill, SelectField } from '../../design/ui';
 
 /** One scope's three lists of Claude Code's rules (PERM1, D72): what it allows, asks for and denies. */

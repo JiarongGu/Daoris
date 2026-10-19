@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useShenora } from '@shenora/react';
 import { keys } from '../data/queries';
-import type { AgentRulesState, RuleListName, RuleScopeName } from '../settings/AgentRules';
+import type { AgentRulesState, RuleListName, RuleScopeName } from '../settings/repository/AgentRules';
 import { call } from './call';
 
 // What an agent Daoris starts may do (MOD3): the machine's `permissions.json`, and an agent's proposals (D72, D74).

@@ -1,7 +1,7 @@
 import type { GoAhead, Session } from '../data/api';
 import { answeredPark } from '../design/ui';
-import type { RuleProposal } from '../settings/AgentRules';
-import { OPEN_STATES } from '../settings/proposals';
+import type { RuleProposal } from '../settings/repository/AgentRules';
+import { OPEN_STATES } from '../settings/repository/proposals';
 import { workflowHolds } from '../workflow/gate';
 import type { LineBehind, SessionDiff } from './diff';
 import type { DiscardOffer, LandOffer } from './groups';

@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import i18n from '../locales/i18n';
-import type { RuleProposal } from '../settings/AgentRules';
+import type { RuleProposal } from '../settings/repository/AgentRules';
 import { ProposedRules } from './ProposedRules';
 
 // PROPOSEHERE1b (D168 point 2, D74): the rules a session proposed, answered where the person talks to it. *Allow…* asks once,

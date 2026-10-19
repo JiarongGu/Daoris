@@ -1,5 +1,5 @@
 import type { Registration, Repository } from '../data/api';
-import type { RepositoryLine } from '../settings/Lines';
+import type { RepositoryLine } from '../settings/repository/Lines';
 import type { GraphCommitRow } from './git/CommitGraph';
 import type { RepositorySetupProps } from './setup/RepositorySetup';
 import type { SetupShown } from './setup/SetUpForAgents';

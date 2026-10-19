@@ -1,5 +1,5 @@
 import type { Session } from '../data/api';
-import { type AccountsAnswer, type AccountScope, agentOf, machineScope, workspaceScope } from '../settings/accounts';
+import { type AccountsAnswer, type AccountScope, agentOf, machineScope, workspaceScope } from '../settings/accounts/accounts';
 import { toolOf, type ToolDoor } from '../agents/tools';
 import { coolingFor } from './say';
 

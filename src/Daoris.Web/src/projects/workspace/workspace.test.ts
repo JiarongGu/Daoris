@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { THREE } from '../../settings/accountsFixtures';
+import { THREE } from '../../settings/accounts/accountsFixtures';
 import { byTool, type Tool, type ToolDoor } from '../../agents/tools';
 import { accountsHere, hostOf } from './workspace';
 

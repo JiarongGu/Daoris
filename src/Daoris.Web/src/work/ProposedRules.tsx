@@ -3,8 +3,8 @@ import { useTranslation } from 'react-i18next';
 import { ago } from '../locales/format';
 import { cn } from '../lib/cn';
 import { Button, Inline } from '../design/ui';
-import type { RuleProposal } from '../settings/AgentRules';
-import { proposalChange } from '../settings/proposals';
+import type { RuleProposal } from '../settings/repository/AgentRules';
+import { proposalChange } from '../settings/repository/proposals';
 import { type Answered, InlineConfirm, Refused } from './InlineConfirm';
 import { InConversation } from './WaitAnchor';
 

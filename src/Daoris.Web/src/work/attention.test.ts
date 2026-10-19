@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import i18n from '../locales/i18n';
 import type { Ask, GoAhead, Quest, Registration, Session } from '../data/api';
-import type { RuleProposal } from '../settings/AgentRules';
+import type { RuleProposal } from '../settings/repository/AgentRules';
 import type { Consideration } from '../data/signals';
 import { byTool } from '../agents/tools';
 import type { AccountRowFacts, NamedAccount } from './accountAttention';

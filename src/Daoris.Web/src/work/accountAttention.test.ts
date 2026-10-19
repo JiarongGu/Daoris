@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import '../locales/i18n';
 import type { Ask, Quest, Registration } from '../data/api';
 import { clockOf, moment } from '../locales/format';
-import { type AccountScope, type AccountsAnswer, USE_DEFAULTS } from '../settings/accounts';
+import { type AccountScope, type AccountsAnswer, USE_DEFAULTS } from '../settings/accounts/accounts';
 import type { AccountWaitTick, Consideration } from '../data/signals';
 import { byTool, type ToolDoor } from '../agents/tools';
 import { accountAttention, type AccountsKnown } from './accountAttention';

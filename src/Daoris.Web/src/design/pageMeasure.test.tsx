@@ -36,7 +36,7 @@ const modules = rooted(import.meta.glob([
   '/src/work/SessionPageHead.stories.tsx',
   '/src/work/WorkAsks.stories.tsx',
   '/src/work/ConversationView.stories.tsx',
-  '/src/settings/*.stories.tsx',
+  '/src/settings/**/*.stories.tsx',
 ], { eager: true }) as Record<string, StoriesModule>);
 
 const STORY_FRAME = /(?:^|:)max-w-(?:xs|sm|md|lg|xl|[2-7]xl)$/;

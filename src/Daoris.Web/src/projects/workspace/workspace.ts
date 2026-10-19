@@ -1,5 +1,5 @@
 import i18n from '../../locales/i18n';
-import { type AccountsAnswer, agentOf, machineScope, workspaceScope } from '../../settings/accounts';
+import { type AccountsAnswer, agentOf, machineScope, workspaceScope } from '../../settings/accounts/accounts';
 import type { Tool } from '../../agents/tools';
 
 // What a workspace's page reads (UX6g, D150 §4.3), worked out from answers the page already holds. Pure, so every

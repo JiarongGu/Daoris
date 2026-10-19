@@ -1,7 +1,7 @@
 import type { TFunction } from 'i18next';
 import { type ReactNode, useEffect, useId, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { LandingRule } from '../../settings/Landings';
+import type { LandingRule } from '../../settings/repository/Landings';
 import { Button, Icon, Inline, SettingRow } from '../../design/ui';
 
 // The parts a Setup tab is made of (UX6f, UX6g; D150 §1 rule 4, §4.2, §4.3): a section that folds to the line naming its

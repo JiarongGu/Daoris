@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { AccountScope, AccountsAnswer, AgentAccounts, NextStart } from '../settings/accounts';
+import type { AccountScope, AccountsAnswer, AgentAccounts, NextStart } from '../settings/accounts/accounts';
 import type { ToolDoor } from '../agents/tools';
 import { handOverOffer } from './handOverOffer';
 

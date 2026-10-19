@@ -13,13 +13,13 @@ import type { ProjectTab, WorkspaceSection, WorkspaceTab } from './tabs';
 import { WorkspaceView } from './workspace/WorkspaceView';
 import { useRegistry, useRepositories } from '../data/queries';
 import { useScope } from '../data/scope';
-import { type AccessEdit, accessToast, isFull, resolveAccess } from '../settings/Access';
-import { type CommitEdit, commitToast } from '../settings/Commits';
-import { heavyToast } from '../settings/HeavyGates';
-import { type HelperEdit, helperToast } from '../settings/Helpers';
-import type { LandingRule } from '../settings/Landings';
-import { type OpinionEdit, opinionToast } from '../settings/Opinions';
-import { type ReviewEdit, reviewToast } from '../settings/Reviews';
+import { type AccessEdit, accessToast, isFull, resolveAccess } from '../settings/repository/Access';
+import { type CommitEdit, commitToast } from '../settings/repository/Commits';
+import { heavyToast } from '../settings/repository/HeavyGates';
+import { type HelperEdit, helperToast } from '../settings/repository/Helpers';
+import type { LandingRule } from '../settings/repository/Landings';
+import { type OpinionEdit, opinionToast } from '../settings/repository/Opinions';
+import { type ReviewEdit, reviewToast } from '../settings/repository/Reviews';
 import {
   useAcross, useDriver, useHarnesses, useLines, usePlugins, useRuleAction, useRules, useSetAccess, useSetCommits, useHeavyMarks, useSetDrivable, useSetHeavyGates, useSetHelpers,
   useSetHold, useSetLanding, useSetLanguage, useSetLine, useSetOpinion, useSetReadAcross, useSetReview, useSetStanding, useSetTrees,

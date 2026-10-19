@@ -1,7 +1,7 @@
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { useShenora } from '@shenora/react';
 import { keys } from '../data/queries';
-import type { AccountsAnswer, AccountUseChange } from '../settings/accounts';
+import type { AccountsAnswer, AccountUseChange } from '../settings/accounts/accounts';
 import { call } from './call';
 
 // How each agent's accounts are used (TOOL4g; D125 §2.4, §3.7, §6; D130 §3.2, §9, §16.6): each scope's list and how it is

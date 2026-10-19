@@ -28,8 +28,8 @@ vi.mock('@shenora/react', async () => {
 import '../locales/i18n';
 import { keys } from '../data/queries';
 import { WorkspaceScopeProvider } from '../data/scope';
-import type { RuleProposal } from '../settings/AgentRules';
-import { type AccountScope, type AccountsAnswer, USE_DEFAULTS } from '../settings/accounts';
+import type { RuleProposal } from '../settings/repository/AgentRules';
+import { type AccountScope, type AccountsAnswer, USE_DEFAULTS } from '../settings/accounts/accounts';
 import type { HarnessRoster } from '../bridge/shell';
 import type { AccountWaitTick, Consideration, TrustHold } from '../data/signals';
 import { AttentionBand, type AttentionDoors } from './AttentionBand';

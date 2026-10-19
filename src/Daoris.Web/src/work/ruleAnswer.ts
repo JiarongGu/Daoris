@@ -3,8 +3,8 @@ import { useRuleProposal } from '../bridge/shell';
 import type { Session } from '../data/api';
 import type { Notify } from '../design/ui';
 import { sentence } from '../locales/format';
-import type { RuleProposal } from '../settings/AgentRules';
-import { proposalChange } from '../settings/proposals';
+import type { RuleProposal } from '../settings/repository/AgentRules';
+import { proposalChange } from '../settings/repository/proposals';
 import { isIntake } from './identity';
 import type { Answered } from './InlineConfirm';
 

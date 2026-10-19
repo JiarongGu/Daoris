@@ -1,6 +1,6 @@
 import type { TFunction } from 'i18next';
-import { COMMIT_DEFAULT, commitRowSays, type RepositoryCommits } from '../settings/Commits';
-import { landingRuleSays, type RepositoryLanding } from '../settings/Landings';
+import { COMMIT_DEFAULT, commitRowSays, type RepositoryCommits } from '../settings/repository/Commits';
+import { landingRuleSays, type RepositoryLanding } from '../settings/repository/Landings';
 
 /**
  * The process a session's own tree runs under (PROCESS1e, D164's amendment point 3), as `SESSION_PROCESS` answers it: its

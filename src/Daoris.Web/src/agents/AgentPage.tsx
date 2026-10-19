@@ -9,10 +9,10 @@ import { type Answered, InlineConfirm, Refused } from '../work/InlineConfirm';
 import { PageHead, ViewMain } from '../work/ViewMain';
 import {
   type AccountScope, type AgentAccounts, cannotLeave, machineScope, ownLine, useOf, workspaceScope,
-} from '../settings/accounts';
-import { AccountSettingsForm, AccountSettingsSummary } from '../settings/AccountSettings';
-import { type AccountChoice, type ScopeActs, ScopeEditor, WorkspaceScope } from '../settings/AccountUse';
-import { AgentRules, type AgentRulesState, type RuleAddition, type RuleScopeName } from '../settings/AgentRules';
+} from '../settings/accounts/accounts';
+import { AccountSettingsForm, AccountSettingsSummary } from '../settings/accounts/AccountSettings';
+import { type AccountChoice, type ScopeActs, ScopeEditor, WorkspaceScope } from '../settings/accounts/AccountUse';
+import { AgentRules, type AgentRulesState, type RuleAddition, type RuleScopeName } from '../settings/repository/AgentRules';
 import { ACCOUNT_COLUMNS, AccountColumnsHead, AccountRow } from './AccountRow';
 import { type BackAccount, PlaceAccount, RenameAccount, ReSignIn } from './AddAccount';
 import {

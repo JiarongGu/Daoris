@@ -4,7 +4,7 @@ import { accountLabel, accountState, accountStates, joinChoices, ownState, runsF
 import { clockOf, list, moment } from '../locales/format';
 import {
   type AccountCooling, type AccountScope, type AccountsAnswer, type AgentAccounts, agentOf, machineScope, workspaceScope,
-} from '../settings/accounts';
+} from '../settings/accounts/accounts';
 import type { AccountWaitTick, Consideration } from '../data/signals';
 import type { Tool } from '../agents/tools';
 import { workspaceOf } from '../data/workspaces';

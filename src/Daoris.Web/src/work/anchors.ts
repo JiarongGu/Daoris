@@ -1,5 +1,5 @@
 import type { GoAhead } from '../data/api';
-import type { RuleProposal } from '../settings/AgentRules';
+import type { RuleProposal } from '../settings/repository/AgentRules';
 import { type Block, lastWords, type Turn } from './conversation';
 import { inputObject } from './preview';
 import type { Wait } from './waits';

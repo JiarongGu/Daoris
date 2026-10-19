@@ -2,8 +2,8 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import i18n from '../locales/i18n';
 import { ago, clockOf, moment } from '../locales/format';
 import { byTool, type ToolDoor } from './tools';
-import { scopeOf, THREE } from '../settings/accountsFixtures';
-import type { AgentAccounts } from '../settings/accounts';
+import { scopeOf, THREE } from '../settings/accounts/accountsFixtures';
+import type { AgentAccounts } from '../settings/accounts/accounts';
 import {
   accountAct, accountLabel, accountName, accountState, accountWho, agentRows, ownWho, doorsSummary, heldBy, joinChoices, nextStartSaid, nextStartSaidFor,
   ownSaid, ownState, readLine, rulesSummary, runsFor, runsForLine, settingsSummary, sharesOwn, signedOutHeld, stateWhen, stateWord,

@@ -1,18 +1,18 @@
 import { type ReactNode, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { type AccessEdit, AccessRows, accessSummary, type ResolvedPause } from '../../settings/Access';
-import type { RepositoryAcross } from '../../settings/Across';
-import type { RuleListName } from '../../settings/AgentRules';
-import { COMMIT_DEFAULT, type CommitEdit, CommitField, commitRowSays, commitSummary, type RepositoryCommits } from '../../settings/Commits';
-import { type HeavyGate, HeavyGates, type HeavyMarks, heavySummary } from '../../settings/HeavyGates';
-import { HELPER_DEFAULT, type HelperEdit, HelperField, helperRowSays, helperSummary, type RepositoryHelpers } from '../../settings/Helpers';
+import { type AccessEdit, AccessRows, accessSummary, type ResolvedPause } from '../../settings/repository/Access';
+import type { RepositoryAcross } from '../../settings/repository/Across';
+import type { RuleListName } from '../../settings/repository/AgentRules';
+import { COMMIT_DEFAULT, type CommitEdit, CommitField, commitRowSays, commitSummary, type RepositoryCommits } from '../../settings/repository/Commits';
+import { type HeavyGate, HeavyGates, type HeavyMarks, heavySummary } from '../../settings/repository/HeavyGates';
+import { HELPER_DEFAULT, type HelperEdit, HelperField, helperRowSays, helperSummary, type RepositoryHelpers } from '../../settings/repository/Helpers';
 import {
   type Accepting, AcceptingNote, LandingField, landingFrom, landingProcessSays, type LandingRule, type RepositoryLanding,
-} from '../../settings/Landings';
-import { LanguageChoice, type LanguageOption, type RepositoryLanguage } from '../../settings/Languages';
-import { LineField, type RepositoryLine } from '../../settings/Lines';
-import { type OpinionEdit, OpinionField, opinionRowSays, opinionSummary, type RepositoryOpinion } from '../../settings/Opinions';
-import { type RepositoryReview, type ReviewEdit, ReviewField, reviewRowSays, reviewSummary } from '../../settings/Reviews';
+} from '../../settings/repository/Landings';
+import { LanguageChoice, type LanguageOption, type RepositoryLanguage } from '../../settings/repository/Languages';
+import { LineField, type RepositoryLine } from '../../settings/repository/Lines';
+import { type OpinionEdit, OpinionField, opinionRowSays, opinionSummary, type RepositoryOpinion } from '../../settings/repository/Opinions';
+import { type RepositoryReview, type ReviewEdit, ReviewField, reviewRowSays, reviewSummary } from '../../settings/repository/Reviews';
 import { Button, CheckField, Chip, Icon, Segmented, SelectField, SettingRow } from '../../design/ui';
 import type { Answered } from '../../work/InlineConfirm';
 import { RepositoryRules, type RuleLists } from './RepositoryRules';

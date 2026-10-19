@@ -5,10 +5,10 @@ import {
   type AccountCooling, type AccountFacts, type AccountSaid, type AccountScope, type AccountsAnswer, type AgentAccounts, agentOf,
   coolingLine, heldLine, machineScope, nextLine, nextWhy, offeredLine, orderedWindows, percent, type WindowSaid, windowName,
   workspaceScope,
-} from '../settings/accounts';
-import { curveNow, type CurveScope, wholePoints } from '../settings/usageCurves';
-import type { AgentRulesState } from '../settings/AgentRules';
-import { OPEN_STATES } from '../settings/proposals';
+} from '../settings/accounts/accounts';
+import { curveNow, type CurveScope, wholePoints } from '../settings/accounts/usageCurves';
+import type { AgentRulesState } from '../settings/repository/AgentRules';
+import { OPEN_STATES } from '../settings/repository/proposals';
 
 // The Agents place's facts and words (UX6e, D150 §5), as the list, the page and the activity bar read them. Pure: the
 // molecules and the tests read these, with no bridge. An account's state is what was last known, with when it was read;

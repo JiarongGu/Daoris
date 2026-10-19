@@ -1,7 +1,7 @@
 import i18n from '../locales/i18n';
 import { type Ask, canBeAsked, type GoAhead, type Quest, type Registration, type Session } from '../data/api';
-import type { RuleProposal } from '../settings/AgentRules';
-import { proposalAuthor, proposalChange } from '../settings/proposals';
+import type { RuleProposal } from '../settings/repository/AgentRules';
+import { proposalAuthor, proposalChange } from '../settings/repository/proposals';
 import { type Consideration, type TrustHold, sittingSentence } from '../data/signals';
 import { answeredPark } from '../design/ui';
 import { workspaceOf } from '../data/workspaces';
