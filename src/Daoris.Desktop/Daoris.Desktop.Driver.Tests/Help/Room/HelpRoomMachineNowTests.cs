@@ -99,6 +99,29 @@ public sealed class HelpRoomMachineNowTests
     }
 
     /// <summary>
+    /// ACCESSWORDS1b (D184's AUTONOMY1c2 note): a landing the access setup accepted says so, with the level that set it, as the review's
+    /// note and the trace do; one the rule's own switch accepted says nothing of it, nor one the person's press made under the setup,
+    /// whose record keeps the level too.
+    /// </summary>
+    [Fact]
+    public void A_landing_the_access_setup_accepted_says_so_with_its_level()
+    {
+        LandedBranch Landed(string session, string acceptedBy, string? access) =>
+            new("engine", "work", $"feature/{session}", "main", "abc1234", session, "q2", "Second", DateTimeOffset.UnixEpoch)
+            {
+                AcceptedBy = acceptedBy, Rule = new LandedRule(null, AutoAccept: true, LandingSource.Workspace) { Access = access },
+            };
+
+        var machine = HelpRoom.Describe(DriverConfig.Empty, new Snapshot([], [], []), [], [], _ => null, asks: 0,
+            landed: [Landed("s1", AcceptedBy.Auto, "machine"), Landed("s2", AcceptedBy.Auto, null), Landed("s3", AcceptedBy.Person, "machine")]);
+
+        Assert.Equal(new string?[] { "machine", null, null }, machine.Landed.Select(landed => landed.Access));
+        var said = HelpRoom.Render(HelpRoomFixture.Machine with { Landed = machine.Landed });
+        Assert.Contains("`feature/s1` in `engine` (session `s1`, accepted by the access setup (machine), not pushed), "
+            + "`feature/s2` in `engine` (session `s2`, not pushed), `feature/s3` in `engine` (session `s3`, not pushed).", said);
+    }
+
+    /// <summary>
     /// HELP10: the quests the driver's last look parked by their failed sessions, by id and repository, so a retry
     /// names one the drawer would offer Retry on; and none said as none, so the helper does not guess one parked.
     /// </summary>

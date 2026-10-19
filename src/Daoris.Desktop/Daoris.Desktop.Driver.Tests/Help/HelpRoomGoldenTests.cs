@@ -131,7 +131,8 @@ public sealed class HelpRoomGoldenTests
         Browser = new HelpBrowser("edge", "daoris", "refuse", ["https://site.example/board", "https://docs.example/"]),
         Landed =
         [
-            new HelpLanded("engine", "feature/q2-second", "s2a3b4c5", Pushed: false, PullRequest: null),
+            // ACCESSWORDS1b: this machine's access setup accepted it, which the room says with the level.
+            new HelpLanded("engine", "feature/q2-second", "s2a3b4c5", Pushed: false, PullRequest: null) { Access = "machine" },
             // PLUGHOOK1c: the kept answer about its pull request, which the helper reads rather than asks.
             new HelpLanded("game", "feature/q3-third", "s3", Pushed: true, PullRequest: "https://example.test/pr/3")
             {
