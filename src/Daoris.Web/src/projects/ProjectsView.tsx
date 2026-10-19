@@ -15,12 +15,13 @@ import { useRegistry, useRepositories } from '../data/queries';
 import { useScope } from '../data/scope';
 import { type AccessEdit, accessToast, isFull, resolveAccess } from '../settings/Access';
 import { type CommitEdit, commitToast } from '../settings/Commits';
+import { heavyToast } from '../settings/HeavyGates';
 import { type HelperEdit, helperToast } from '../settings/Helpers';
 import type { LandingRule } from '../settings/Landings';
 import { type OpinionEdit, opinionToast } from '../settings/Opinions';
 import { type ReviewEdit, reviewToast } from '../settings/Reviews';
 import {
-  useAcross, useDriver, useHarnesses, useLines, usePlugins, useRuleAction, useRules, useSetAccess, useSetCommits, useSetDrivable, useSetHelpers,
+  useAcross, useDriver, useHarnesses, useLines, usePlugins, useRuleAction, useRules, useSetAccess, useSetCommits, useSetDrivable, useSetHeavyGates, useSetHelpers,
   useSetHold, useSetLanding, useSetLanguage, useSetLine, useSetOpinion, useSetReadAcross, useSetReview, useSetStanding, useSetTrees,
   useSetupPlan, useSetupPress, useSetWriteAcross, useSweepPlan, useWorkflowCurrent,
 } from '../bridge/shell';
@@ -140,6 +141,7 @@ export function useProjectsView({
   const setCommits = useSetCommits();
   const setHelpers = useSetHelpers();
   const setAccess = useSetAccess();
+  const setHeavy = useSetHeavyGates();
   const setRead = useSetReadAcross();
   const setWrite = useSetWriteAcross();
   const ruleAction = useRuleAction();
@@ -387,6 +389,20 @@ export function useProjectsView({
       }),
     } : null;
 
+    // This machine's heavy gates for it (HEAVYRUN1b2b), where it can be driven, matched without case as the driver keys them; a shell
+    // older than them answers none, and no section is drawn. The whole list goes out, and a refusal is said where Save was pressed.
+    const heavyGates = driver.data.heavyGates;
+    const heavy: RepositorySetupProps['heavy'] = driving && Array.isArray(heavyGates) ? {
+      gates: heavyGates.find((row) => same(row.repository))?.gates ?? [],
+      onSave: (gates, answered) => setHeavy.mutate({ repository, gates }, {
+        onSuccess: () => {
+          notify(heavyToast(t, repository, gates));
+          answered.done();
+        },
+        onError: (error) => answered.refused(sentence(error)),
+      }),
+    } : null;
+
     // Its standing answer (KNOWUSE1b), matched without case as the driver matches it; a shell older than it answers no
     // `standing`, and nothing is offered rather than a field whose save would be refused.
     const sessions: RepositorySetupProps['sessions'] = driving && {
@@ -452,12 +468,13 @@ export function useProjectsView({
       driving,
       work,
       access,
+      heavy,
       sessions,
       reach,
       onOpenPlugin,
       busy: setLine.isPending || setLanding.isPending || setReview.isPending || setOpinion.isPending || setLanguage.isPending
-        || setCommits.isPending || setHelpers.isPending || setAccess.isPending || setStanding.isPending || setRead.isPending
-        || setWrite.isPending || ruleAction.isPending,
+        || setCommits.isPending || setHelpers.isPending || setAccess.isPending || setHeavy.isPending || setStanding.isPending
+        || setRead.isPending || setWrite.isPending || ruleAction.isPending,
     };
   };
 
