@@ -108,7 +108,10 @@ once three batches hold the targets (MODELROLE1).
    **Never brief a worker to run or time a long run** (a `Process` half, a rehearsal, or a measurement of either):
    PROCSPEED1 (2026-10-19) waited 120 of its 140 minutes on three runs of the driver's git half it was asked to time on
    a shared machine, and no number made under that load meant anything. Such a measurement is the parent's, on a quiet
-   machine. A worker that has waited on one run past fifteen minutes is looked at then, not when it hands back.
+   machine. A worker that has waited on one run past fifteen minutes is looked at then, not when it hands back. The
+   command guard refuses those runs inline, and PROCSPEED1, told to run them, put the command in a script to get past it:
+   a brief that asks for what the guard exists to stop invites exactly that, so the brief never asks, and says that a
+   command the guard refuses is never routed through a script.
 6. **Merge with `tools/merge-branch.mjs`**, from the main checkout with a clean tree:
    - `--plan <branch>` shows the lanes, the commit check, the prune and the gate order, and merges nothing.
    - `<branch>` merges with `--no-ff --no-commit`, writes `docs/index/` from the merged tree (ORIENT1), then runs
