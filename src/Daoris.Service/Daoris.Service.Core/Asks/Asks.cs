@@ -294,8 +294,7 @@ public sealed class AskStore
         // PUSH1d1 (D182 point 5): the asks' revision, the change stream's `asks` family, one row moved by every insert, update and
         // delete of an ask. Kept by triggers, as `session_revision` is, because the triggers live in the file: a connector built
         // before them writes the row and still moves it, and no writer here has to remember to. A count, not a moment, so a
-        // delete moves it too. Made after every column above, so a store's own upgrade moves nothing; opened again, it keeps its
-        // count.
+        // delete moves it too. Opened again, it keeps its count.
         await using (var revision = _db.Command())
         {
             revision.CommandText = """
