@@ -342,4 +342,22 @@ public sealed class HelpRoomDoorsTests
             clear.Terminal);
         Assert.Equal(order.IndexOf(delete.To) + 1, order.IndexOf(clear.To));
     }
+
+    /// <summary>
+    /// ASKSCOPE1e (D158's ASKSCOPE1d note point 1): the history's terminal door names its workspace flags as
+    /// <c>daoris-driver help list</c>'s usage spells them, so a helper asked for another workspace's conversation sends the
+    /// person to a list that holds it.
+    /// </summary>
+    [Fact]
+    public void The_rooms_history_row_names_the_list_s_workspace_flags()
+    {
+        var history = HelpRoomDoors.Doors.Single(door => door.Terminal.Contains("daoris-driver help list", StringComparison.Ordinal));
+
+        Assert.Equal(
+            "`daoris-driver help list [--workspace <name> | --all] [--search \"…\"]`, `daoris-driver help resume <id> \"…\"`, "
+            + "`daoris-driver help rename|pin|unpin|delete <id>`",
+            history.Terminal);
+        Assert.Contains("[--workspace <name> | --all]", DriverCommand.Usage);
+        Assert.Contains("[--workspace <name> | --all]", HelpCommand.Usage);
+    }
 }
