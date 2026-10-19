@@ -419,6 +419,8 @@ none: these are the record's facts, not measurements.
   *Now, cutting its step* (now), offered only where the agent steers; elsewhere it is shown disabled, with the reason.
 - **Enter sends at the default**, as Enter queues today.
 - **No level is remembered**: each word starts at the default.
+- **On a text-only conversation there is no menu.** The tip says its words go at once, whatever their level
+  (`work.composer.levelNoTurns`).
 
 ### 8.2 The conversation and the held-words line
 
@@ -433,8 +435,9 @@ none: these are the record's facts, not measurements.
 - **A level is changed only while the word waits.** It is `SESSION_QUEUE_EDIT` with `level`. Raising a word to *now* steers
   it past what waits, as STEER2a allows. A word already on its way belongs to the agent and is changed by nothing (STEER2
   point 3).
-- **Receipts fold under a taken message**: *sent 14:02 · taken 14:03 · answered 14:09*. A message that never reached its
-  agent says so at its place.
+- **Receipts fold under a taken message**: *sent 14:02 · taken 14:03 · answered 14:09*, each only where it was observed
+  (§7). A message that never reached its agent says so at its place. An uncertain word says *It may have read this* at its
+  place, with *Say it again* where the words are the person's own.
 
 ### 8.3 A wait for the person
 
@@ -446,8 +449,8 @@ nobody takes is handed today.
 ### 8.4 The ask's channel and a session's channel panel
 
 - Each message names its level where it is urgent.
-- For each repository it addresses, the message shows its receipt: *waiting*, *taken by `repository`*, *answered* or *not
-  reached*.
+- For each repository it addresses, the message shows its receipt: *waiting*, *partly handed to `repository`*, *read by
+  `repository`*, *taken by `repository`*, *answered* or *not reached*.
 - A message not reached, or held on a turn-end door, offers *Send to its session* (§4.2), the person's press.
 - A teammate's message shows the receipts of this machine's own parts only.
 
@@ -463,11 +466,14 @@ nobody takes is handed today.
 | `work.composer.levelUrgent` | menu item | At its next step | 下一步时 |
 | `work.composer.levelNow` | menu item | Now, cutting its step | 立即，打断当前这一步 |
 | `work.conversation.held.urgentTurnEnd` | sentence | Urgent, held: its door takes words only when its turn ends. | 紧急，已暂存：它的接入方式只在本轮结束时接收消息。 |
-| `work.conversation.held.claimNextPart` | sentence | Held for its next part: it takes another agent's words only during a turn or at a new part. | 留待它的下一段：它只在一轮进行中或新的一段开始时接收其他智能体的话。 |
+| `work.conversation.held.claimNextPart` | sentence | Held: it takes another agent's words during a turn, beside words it gets anyway, at a new part, or when it reads the channel. | 已暂存：它只在一轮进行中、随它本就会收到的话、新的一段开始时，或自己读取频道时，接收其他智能体的话。 |
+| `work.composer.levelNoTurns` | sentence | This agent's door carries only text, so your words go at once, whatever their level. | 这个智能体的接入方式只传文本，所以你的话会立即发出，不论紧急程度。 |
+| `work.conversation.sayAgain` | button | Say it again | 再说一次 |
 | `work.steer.stopKeeping` | button | Stop its turn so this goes next… | 停止本轮，让这条接着送达… |
 | `work.steer.stopKeepingAsk` | sentence | This stops the step it is on and its turn. What it has done stays, and what waits goes next. | 这会停止它正在进行的这一步和本轮。已完成的工作保留，等待中的内容接着送达。 |
 | `work.queue.makeUrgent` / `makeOrdinary` | menu item | Make urgent / Make ordinary | 改为紧急 / 改为普通 |
 | `work.receipt.held` / `sent` / `taken` / `answered` / `notReached` | state | held / sent / taken / answered / not reached | 已暂存 / 已发出 / 已收下 / 已回应 / 未送达 |
+| `work.receipt.read` / `partly` / `uncertain` | state | read / partly handed / may have read | 已读取 / 部分送达 / 可能已读 |
 | `work.wait.answerAlone` | sentence | {{agent}}'s answer would take this work on a third time with nobody between. | {{agent}} 的回答会让这项工作在无人参与的情况下第三次继续。 |
 | `work.wait.goOnAnswer` | button | Go on with this answer | 带着这个回答继续 |
 | `asks.channel.forward` | button | Send to its session | 发给它的会话 |
@@ -492,9 +498,10 @@ Each is a field added beside the others. A record from before reads as it did (t
 
 | Shape | Field | A value from before reads as |
 |---|---|---|
-| `SaidWord` (`Sessions.cs:329-330`) and the driver's `SaidWordView` | `Level` (`ordinary` / `urgent` / `now`); `From` (`daoris`, FABRIC-CLOSE1c17) | no level: the person's word as urgent, every other word as ordinary, which is today's reach for each; no `From`: as before, by `By`, `Helper` and `Channel` |
-| The record's `user` event (`SessionEvents.cs:166-172`) | `level`; the receipt events `sent` and `answered` under the word's id | no level: as before; no receipts: shown as today, said and taken only |
-| `channel` row and `ChannelWire` (travels) | `urgent` (true only; said only where true) | a message from before, or from an older teammate's machine, keeps today's reach: next step where the door takes words then. It shows no level |
+| `SaidWord` (`Sessions.cs:329-330`) and the driver's `SaidWordView` | `Level` (`ordinary` / `urgent` / `now`); `Key`, the producer's (§6); `Attempt`, the moment the dispatcher first wrote it to a harness; `From`, its author where that is not the person: `daoris` (FABRIC-CLOSE1c17), or `agent` for a claim the person passed on (§4.2), whose `Channel` names the message | no level: the person's word as urgent, every other word as ordinary, which is today's reach for each; no key: each word its own, as today; no attempt: never attempted; no `From`: as before, by `By` and `Helper`. **Authorship is never read from `Channel`**, which says only how the word came: the person's own channel message is kept with it (`ChannelReach.cs:202-210`) and is the person's |
+| The record's `user` event (`SessionEvents.cs:166-172`) | `level`; the receipt events `sent`, `taken` (written on the door's word, §7), `answered` and `uncertain` under the word's id | no level: as before; no receipts: shown as today, said and taken only |
+| `channel` row and `ChannelWire` (travels) | `urgent`, **said on every message kept from now**: true, or an explicit false, decided in the insert's own statement, so a part's fourth urgent post is kept false | absent only on a message from before, or from an older teammate's machine: it keeps today's reach, next step where the door takes words then, and shows no level. Absent never means ordinary, so a new ordinary post is never mistaken for one from before. An older machine reading a new message ignores the field and keeps its own reach, which this machine cannot change |
+| The channel's acknowledgments (new, in the channel's store beside the entry's mark) | one row per ask, entry and message: `taking`, `sent`, `taken`, `read` or `partly`, the part's session and the moment (§6) | an entry with a mark and no rows counts every message at or before its mark as taken, as today |
 | `helpers/<id>.ask.json` (twins: `HelperBox` and `HelperFiles`) | `urgent` | ordinary, today's delivery |
 | `SESSION_INPUT`, `SESSION_QUEUE_EDIT` | `level` | `now: true` is read as `level: now`; nothing is the default |
 | `sessions say` request file (`SessionRequest`) | `level` | `now` as before |
@@ -506,45 +513,69 @@ field. The record's `said` stays machine-only and never travels (`session-record
 
 1. **A message stops a turn.** No delivery path calls a door's interrupt. Only the stop routes do: `CANCEL_TURN`, the
    session's stop, the keeping stop. *Test:* `DrivenInboxTests` and `ChatTurnsTests`: *now* on a turn-end door sends no
-   interrupt, the turn runs on, and the answer is `no-interrupt`. Also a census of the interrupt's callers.
+   interrupt, the turn runs on, and the answer is `no-interrupt`; the native driven run's line offers no keeping stop. Also a
+   census of the interrupt's callers.
 2. ***Send now* with nothing typed stops a turn.** It is not offered. *Test:* the composer's test, en and zh.
 3. **An unsolicited claim extends a run.** At a turn's end with only claims held, the run ends and the claim waits for the
-   next part. *Test:* `ChannelNextStepTickTests`' stub that declares nothing, kept, and an urgent claim on it.
+   next part. A claim that arrives once the answer to the inbox's last open prompt is read is refused (§2.3). *Test:*
+   `ChannelNextStepTickTests`' stub that declares nothing, kept, and an urgent claim on it; `DrivenInboxTests`: a claim held
+   after the last prompt's answer is read is refused, while a person's word is held.
 4. **An ordinary claim enters a running turn.** *Test:* `ChannelReachTests`: an ordinary claim to a next-step part is not
-   held, and the connector's next answer says it waits.
-5. **An agent's words read as the person's.** *Test:* `SaidWord.Persons` excludes `helper`, `by`, `channel` and `from`;
-   the intake's DRIFT1 never takes them as the person's.
+   held, and the connector's next answer says it waits; held at a turn's end beside the person's word, it rides that prompt.
+5. **An agent's words read as the person's, or the person's as an agent's.** *Test:* `SaidWord.Persons` excludes `helper`,
+   `by` and `from`, and reads nothing from `channel`: the person's channel message, kept with `channel`, is the person's, and a
+   claim they passed on, kept with `from: agent`, is not. The intake's DRIFT1 never takes an agent's word as the person's.
 6. **Daoris's words read as the person's** (FABRIC-CLOSE1c17). *Test:* the person's words equal to Daoris's sentence are
    the person's; Daoris's carry `from` and sync as Daoris's; an older host's word reads as the person's.
-7. **A restart loses a word.** *Test (Process):* a conversation's waiting word and a driven session's held word survive a
-   shell restart, and go once.
-8. **A restart sends a word twice.** A word sent and not taken before a crash is not sent again. *Test:* the come-up reads
-   `said` and the receipts, and the word reads *it may have read this*.
-9. **The channel's mark passes a message held but not taken.** *Test:* a restart between hold and take hands the
-   message again to the same part, once.
+7. **A restart loses a word.** *Test (Process):* a conversation's waiting word and a driven session's held word, never
+   attempted, survive a shell restart and go in their order.
+8. **A restart sends a word twice.** A word attempted and not confirmed taken before a crash is not sent again. *Test:* the
+   come-up reads `said`'s attempts and the receipts; the word reads *it may have read this*, and the person's offers *Say it
+   again*.
+9. **The channel passes a message held but not taken.** *Test:* a restart between hold and take hands the message to the
+   entry's next part, never twice to the same one; an ordinary message waiting while a later urgent one is taken is handed
+   after it; a message whose moment equals the mark's, and one mirrored late with an older moment, are handed.
 10. **Urgent flooding.** A part's fourth urgent post is kept as ordinary, and the tool's answer says so. *Test:*
-    `ChannelTests`' bound, in the insert's own statement as the ten-post bound is.
+    `ChannelTests`' bound, in the insert's own statement as the ten-post bound is, writing an explicit false; a new
+    ordinary post reads as ordinary, never as a message from before.
 11. **Answers alone loop.** Under `helpers: on`, the third answer in a row with nobody between waits for the person.
-    *Test:* the driver's go-on over a stand-in; the wait's places (`person-waits.md`).
+    *Test:* the count over a stand-in, through the driver's go-on and a conversation's turn pump alike, across a hand-over,
+    and with two answers handed at once under separate asks; an urgent answer taken inside a running turn counts nothing;
+    the wait's places (`person-waits.md`).
 12. **A level from before.** *Test:* a `SaidWord`, a channel row and a helper ask with no level each read as their old
     reach; an older page's `now: true` reads as *now*.
 13. **Urgent past ordinary is out of order.** *Test:* an urgent word goes at the next step past a held ordinary one; at the
     turn's end, the rest go in the order said, and the record shows each where it was taken.
 14. **A steer answered `promptRequired`** (STEER2d) at *now* still goes first. *Test:* `AcpSteerTests`' case, kept.
-15. **A claim vanishes.** *Test:* an ask whose quests all close marks each untaken message *not reached* for its entry;
+15. **A claim vanishes, or is closed while a part could still take it.** *Test:* an ask whose quests all close, with no part
+    of the entry running, marks each untaken message *not reached* for its entry; with a part still running, it does not.
     `channel_read` and the page say so.
 16. **A meeting's barrier pierced.** No level reaches a turn in a round. *Test:* `MeetingTests`: a message posted at
     urgent during a round reaches no turn of it.
-17. **Daoris's word said late.** A reopen answered by a later submission is dropped, not told. *Test:* `ReopenTelling`'s
-    tests at urgent.
+17. **Daoris's word said late, or not said to a running session.** A reopen answered by a later submission is dropped, not
+    told, judged by the key the word carries. A running session is told at its next step. *Test:* `ReopenTelling`'s tests at
+    urgent, a running record among them.
 18. **Words cut or clashing.** *Test:* stories in long 中文; `i18n:check`, `names:check -- --strict`.
+19. **A producer's retry keeps a second word.** *Test:* the say door's tests: a second say with a key the record holds,
+    waiting or taken, keeps nothing new and answers the word kept; `ReopenTelling` failing between its say and its mark tells
+    one word.
+20. **Two senders reorder the queue.** *Test:* two words kept at once to one running session reach it in `said`'s order,
+    through its one dispatcher.
+21. **Two parts take one message.** *Test:* `ChannelReachTests` with two live parts of one entry: one claims the message, the
+    other takes nothing.
+22. **A mark mover passes a message.** *Test:* `channel_read` acknowledges only what it returned whole; a start's packet
+    acknowledges its cut and left-out messages as `partly`, which a new part is handed again.
+23. **A text-only conversation claims a level.** *Test:* its composer offers no menu and says why; its words go at once, and
+    nothing on its record says *taken*.
 
 ## 11. What only a measured turn can settle
 
 The parent runs these with the owner, on accounts the owner names. They are not this design's rows.
 
 - **STEER3.** It measures Codex's `turn/steer` (does `preempt` cut a step?), Claude Code's `--input-format stream-json` on a
-  driven run, and whether an empty steer at `now` folds words already queued. Until then, the turn-end doors are §3.1's.
+  driven run, and whether an empty steer at `now` folds words already queued. Until then, the turn-end doors are §3.1's. It
+  also measures whether a next-step door answers a queueing prompt to an idle session apart from one it folds in, which
+  would close §2.3's race on that door.
 - **BGWAIT2b.** It probes words said into a harness's own woken turn, which may be taken and never answered. Until its
   probe, an urgent word sent into a woken turn is a known risk: the run would wait on it until its timeout. The rule
   does not change. BGWAIT2b's case decides whether such a word is held for the woken turn's end.
@@ -562,6 +593,12 @@ The parent runs these with the owner, on accounts the owner names. They are not 
 - **A clock that decays urgency.** A message that finds no running turn already waits as ordinary.
 - **One store for every message.** Each path keeps its store, and `said` is the one queue to a session.
 - **The level on the travelling session record.** `said` stays machine-only.
+- **Sending an attempted word again after a restart** (DESIGNREAD2). No harness drops a repeated prompt by its id, so a
+  replay could make the agent act twice. An uncertain word is shown, and only the person says it again.
+- **An urgent bound per entry** (DESIGNREAD2). The ten-post cap it sits inside is a part's. Counted over an entry's whole
+  life, a part started days later would find the bound spent by parts long ended. So it bounds a part, and an entry with
+  several live parts may send three from each: the person's alongside requests made those parts.
+- **An absent `urgent` read as ordinary** (DESIGNREAD2). It cannot be told from a message from before.
 
 **Left out, not rejected:**
 - A person's urgency for a meeting, where the person already grants every round.
@@ -576,8 +613,9 @@ The parent runs these with the owner, on accounts the owner names. They are not 
   turn-end door it holds the words and stops nothing; the keeping stop is the person's separate press, and the terminal's
   *its turn is stopping* line retires.
 - **D167 point 7.** A channel message reaches a running session at its next step where it is urgent and the door takes
-  words then. An ordinary one waits for a natural point. The entry's mark moves on taking. A message never taken expires
-  visibly, and the person may pass it on. The co-working design §2.3's table is read with §5's.
+  words then. An ordinary one waits for a natural point. The entry acknowledges each message by its id, and its mark is kept
+  for display. One part of an entry takes a message. A message never taken expires visibly, and the person may pass it on.
+  The co-working design §2.3's table is read with §5's.
 - **D163 point 2.** A helper's answer reaches its asker at its ask's level: as its next turn, or, where the ask was
   urgent, at the asker's next step. A run goes on by answers alone at most twice in a row.
 - **D155's XAGENT1e delivery rule.** Findings are a solicited answer at ordinary. Their delivery is unchanged, now one rule
@@ -596,8 +634,9 @@ The parent runs these with the owner, on accounts the owner names. They are not 
 - D79's wait and resume.
 - D167's amendment: a request runs alongside.
 
-**D173's ADR-D** is this design's for delivery: durable, correlated by id, deduplicated by the record's events, and the
-four states told apart (§7). D173's note points here.
+**D173's ADR-D** is this design's for delivery: durable, correlated by id, kept once by the producer's key, at most once
+across a restart with an uncertain outcome said, and the four states told apart where a door can observe them (§7). D173's
+note points here.
 
 ## 14. The rows
 
@@ -606,10 +645,10 @@ builder, and handed back working. The rule is built in sub-features, each workin
 then Daoris's, then the durable queue, then agents' messages. STEER3 and BGWAIT2b stay the parent's, with the owner.
 Each row names its Ask Daoris door or its reason (D110).
 
-- [ ] **COWORK1a — the person's words reach a working agent at the level they choose, and no word stops a turn** (driver, modules, web-shell; D188 points 1-3; design §2, §3, §5, §8.1-§8.2, §8.5-§8.6, traps 1, 2, 12-14). `SESSION_INPUT` and `sessions say` take `level` (`now: true` read as now); `DrivenInbox` and `ChatTurns` hold ordinary for the turn's end, send urgent at the next step, steer *now* where the agent steers and otherwise say why, never interrupting; the keeping stop as its own press and `sessions stop --turn`; the composer's level menu, the held line's level and `SESSION_QUEUE_EDIT`'s `level`; the glossary's *urgency*; Ask Daoris rows for any new hook. Opus. Proof: `DrivenInboxTests`, `ChatTurnsTests`, `AcpSteerTests`, `SessionsSayCommandTests`, `DriverModuleConversationTests`, the web's tests en and zh, `i18n:check`, `names:check --strict`; seen on the window: a word at each level on Claude Code's door and on the stub's, and *Send now* on the stub holding without a stop.
-- [ ] **COWORK1b — Daoris's own words marked as Daoris's, and its urgent words reach a running session** (service, driver, web-shell; after 1a; absorbs FABRIC-CLOSE1c17; design §2.2, §4.1, §4.3, §5, traps 6, 17). `SaidWord.From` (`daoris`) through the say door and the record's chain (`session-record-fields.md`, a word's field); `ReopenTelling` says the reopen and the step's go-on at urgent, into a running session at its next step and held elsewhere, dropped when a later submission answers it; the gate reads the mark, not the sentence; the conversation shows them as Daoris's. Opus. Proof: the say door's tests, `ReopenTelling`'s, CLOSE1c17's three cases, the page's en and zh; seen on the window: a reopen told to a running Claude Code session.
-- [ ] **COWORK1c — every word to a session waits on its record, survives a restart, and shows its four receipts** (service, driver, modules, web-shell; after 1a; absorbs MSG1d2; design §6, §7, §8.2, §9, traps 7-9). The say door keeps words for a running record; the driven inbox and the conversation's turns are views of `said`, filled at the come-up and taken off by id once on the wire; the receipt events `sent` and `answered`; the page folds them under a taken word. Opus. Proof: the service store's tests (a running record's `said`, an elder record), `DrivenInboxTests`, `ChatTurnsTests`, a `Process` test of a shell restart with a conversation's and a driven session's waiting word, the page's en and zh; seen on the window: a word waiting across a restart.
-- [ ] **COWORK1d — agents' messages by level: an ordinary claim waits for a natural point, an urgent one reaches the next step, a helper's answer at its ask's level, and nothing undelivered vanishes** (service, driver, web-shell; after 1c; design §2.2-§2.3, §4, §5, §8.3-§8.4, traps 3-5, 10, 11, 15, 16). `channel_post`'s `urgent` with its bound, `ChannelWire`'s field, the connector's answers naming what waits, the mark moving on taking, expiry when the ask has no quest open, `channel_read`'s receipts; `helper_ask`'s `urgent` (both twins) and its answer at the next step; the answers-alone bound as a person's wait (`person-waits.md`'s places); the ask's channel and the session's panel with receipts and *Send to its session*. Opus. Proof: `ChannelTests`, `ChannelReachTests`, `ChannelSyncTests`, `ChannelNextStepTickTests` (`Process`), the MCP tools' tests, `HelperBoxShapeTests` and `HelperFilesTests`, `MeetingTests`' barrier, `HelpCoverageTests`' rows, the page's en and zh; seen on the window: two sessions of one ask, an ordinary and an urgent post, a message not reached.
+- [ ] **COWORK1a — the person's words reach a working agent at the level they choose, and no word stops a turn** (driver, modules, web-shell; D188 points 1-3; design §2, §3, §5, §8.1-§8.2, §8.5-§8.6, traps 1, 2, 12-14, 23). `SESSION_INPUT` and `sessions say` take `level` (`now: true` read as now); `DrivenInbox` and `ChatTurns` hold ordinary for the turn's end, send urgent at the next step, steer *now* where the agent steers and otherwise say why, never interrupting, door by door as §3.0 has it; the keeping stop as its own press and `sessions stop --turn`, offered only where the door has an interrupt that keeps the session, never on the native driven run; a text-only conversation's composer offering no level and saying why; the composer's level menu, the held line's level and `SESSION_QUEUE_EDIT`'s `level`; the glossary's *urgency*; Ask Daoris rows for any new hook. **Trap:** `DrivenInbox.Flow()` drains every held word onto the wire once the first prompt leaves (`DrivenInbox.cs:110-121`), ordinary ones with them, and the turn-end fallbacks of `HoldNowAsync` and `TakeNowAsync` still call the interrupt (`DrivenInbox.cs:252-256`, `ChatTurns.cs:331-335`); a builder who changes the default reach and leaves these, or offers the keeping stop on a door with no interrupt, ships a stop or a press that does nothing. Test each path apart. Opus. Proof: `DrivenInboxTests`, `ChatTurnsTests`, `AcpSteerTests`, `SessionsSayCommandTests`, `DriverModuleConversationTests`, the web's tests en and zh, `i18n:check`, `names:check --strict`; seen on the window: a word at each level on Claude Code's door and on the stub's, and *Send now* on the stub holding without a stop.
+- [ ] **COWORK1b — Daoris's own words marked as Daoris's, and its urgent words reach a running session** (service, driver, web-shell; after 1a; absorbs FABRIC-CLOSE1c17; design §2.2, §4.1, §4.3, §5, §6's producer key, traps 6, 17, 19). `SaidWord.From` (`daoris`) through the say door and the record's chain (`session-record-fields.md`, a word's field); `SaidWord.Key` and the say door keeping a word once by its producer's key, first used here; `ReopenTelling` says the reopen and the step's go-on at urgent, each carrying its fact's key, into a running session at its next step and held elsewhere, its own return on a running record removed, dropped when a later submission answers it, and on a park its answer as today; the gate reads the mark, not the sentence; the conversation shows them as Daoris's. **Trap:** widening the say door and leaving `ReopenTelling`'s own `if (record.Running) return;` (`ReopenTelling.cs:152`), which still tells a running session nothing; or judging whether a reopen still stands, or whether words are Daoris's go-on, by the sentence's text as `BringsToSource` does (`ReopenTelling.cs:206-210`), instead of by the key and `from` the word carries. Opus. Proof: the say door's tests (a repeated key keeps one word), `ReopenTelling`'s (a running record; a failure between its say and its mark), CLOSE1c17's three cases, the page's en and zh; seen on the window: a reopen told to a running Claude Code session.
+- [ ] **COWORK1c — every word to a session waits on its record, goes once or is shown uncertain across a restart, and shows the receipts its door can observe** (service, driver, modules, web-shell; after 1a and 1b; absorbs MSG1d2; design §6, §7, §8.2, §9, traps 7, 8, 20). The say door keeps words for a running record, once by key, the page's press giving one key per press; one dispatcher per session drains `said` in its order, and the driven inbox and the conversation's turns are its views; `attempt` marked on the word before the wire, *sent* at the write's return, *taken* only on the door's word (today's early *taken* on an idle protocol prompt moved after the wire), the word taken off by id, awaited; at the come-up a word never attempted goes and one attempted is *uncertain*, with *Say it again* on the person's own; the receipt events; the page folds them under a word, each only where observed. **Trap:** taking `SendPromptAsync`'s completion for *sent*, though it completes with the prompt's answer (`Acp.cs:2238-2258`); keeping the take-off fired and forgotten (`ChatHelperWords.cs:54`); giving words the queues' own ids (`said-n` at `DrivenInbox.cs:200`, a fresh one at `ChatRunner.cs:2102`) instead of `said`'s; or letting a caller hold a word itself once its own write returns, which reorders two senders. Opus. Proof: the service store's tests (a running record's `said`, an elder record, a key kept once, an attempt), `DrivenInboxTests`, `ChatTurnsTests` (two words kept at once go in `said`'s order), a `Process` test of a shell restart with a conversation's and a driven session's waiting word and one attempted word, the page's en and zh; seen on the window: a word waiting across a restart, and an uncertain one.
+- [ ] **COWORK1d — agents' messages by level: an ordinary claim waits for a natural point, an urgent one reaches the next step, a helper's answer at its ask's level, and nothing undelivered vanishes** (service, driver, web-shell; after 1c; design §2.2-§2.3, §4, §5, §6's channel, §8.3-§8.4, §9, traps 3-5, 9-11, 15, 16, 21, 22). `channel_post`'s `urgent` with its bound, kept true or an explicit false in the insert's own statement, and `ChannelWire`'s field said on every message; the entry's acknowledgments by message id, written by every hand that moved the mark (the look, a start's packet, `channel_read`), with the mark kept for display; one part of an entry claiming a message; an ordinary claim riding a prompt the run sends anyway; the inbox refusing claims once its last prompt's answer is read (§2.3's race); the connector's answers naming what waits; expiry when the ask has no quest open and no part of the entry runs here; `channel_read`'s receipts; a claim passed on kept with `from: agent`; `helper_ask`'s `urgent` (both twins) and its answer at the next step; the answers-alone count read from the line's records, through the driver's go-on and a conversation's turn pump, across hand-overs, judged by the session's dispatcher, its third answer a person's wait (`person-waits.md`'s places); the ask's channel and the session's panel with receipts and *Send to its session*. **Trap:** fixing `LookAtAsync` and leaving the other two hands that move the mark by moment, `channel_read` (`Channel.cs:544-569`) and the start's bounded packet (`ChannelReach.cs:101-133`); writing a new ordinary post with `urgent` absent, which reads as a message from before and so reaches the next step; or counting answers alone in the driver's go-on only, which a conversation's turn pump (`ChatHelperWords.cs:47-62`) and a second ask's own claim (`DriverHelpers.cs:137-159`) pass by. Opus. Proof: `ChannelTests` (the explicit false, the acknowledgments, one claim per entry), `ChannelReachTests` (two live parts, an ordinary message behind an urgent one, equal and late moments), `ChannelSyncTests`, `ChannelNextStepTickTests` (`Process`), the MCP tools' tests, `HelperBoxShapeTests` and `HelperFilesTests`, `MeetingTests`' barrier, `HelpCoverageTests`' rows, the page's en and zh; seen on the window: two sessions of one ask, an ordinary and an urgent post, a message not reached.
 
 **Rows that change** (the parent's to write into TASKS):
 - **MSG1d2** is COWORK1c's.
