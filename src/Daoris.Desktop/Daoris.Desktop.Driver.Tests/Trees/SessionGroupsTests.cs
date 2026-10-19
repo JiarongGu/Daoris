@@ -62,9 +62,11 @@ public sealed class SessionGroupsTests
         JsonObject[] records, QuestView[]? quests = null, Consideration[]? considered = null,
         (string Tree, TreeWork Work)[]? trees = null, string[]? archived = null, Func<string, int>? forgiven = null,
         string[]? kept = null, (string Session, string[] Said)[]? unable = null, AccountWait[]? waits = null,
-        string[]? chats = null, (string Session, WordsHold Holds)[]? held = null, (string Session, RunningCall Call)[]? calls = null) =>
+        string[]? chats = null, (string Session, WordsHold Holds)[]? held = null, (string Session, RunningCall Call)[]? calls = null,
+        string[]? between = null) =>
         SessionLook.From(new JsonArray([.. records]).ToJsonString(), quests ?? [], considered ?? [], forgiven ?? (_ => 0)) with
         {
+            Between = new HashSet<string>(between ?? [], StringComparer.Ordinal),
             Calls = (calls ?? []).ToDictionary(each => each.Session, each => each.Call, StringComparer.OrdinalIgnoreCase),
             Trees = (trees ?? []).ToDictionary(each => SessionGroups.Normal(each.Tree), each => each.Work, StringComparer.OrdinalIgnoreCase),
             Archived = (archived ?? []).ToDictionary(id => id, _ => T0, StringComparer.Ordinal),
@@ -102,6 +104,12 @@ public sealed class SessionGroupsTests
     private static readonly QuestView Open = Quest("q1", "Open");
     private static readonly QuestView Asking = Quest("q1", "Taken", awaits: "q2");
     private static readonly QuestView Question = Quest("q2", "Open", to: "game");
+
+    /// <summary>A taken step whose standing reopen names session <c>s1</c> (FABRIC-CLOSE1c9), its submission's session.</summary>
+    private static readonly QuestView ReopenNamesS1 = Taken with
+    {
+        Reopened = new QuestReopenView("desk", 3, new QuestSubmissionRef("desk", 2), "Do it again.", T0, Session: "s1"),
+    };
 
     /// <summary>The ref an unforced discard of <see cref="Tree"/> keeps its commits at (SQUASHTIDY1c).</summary>
     private const string Kept = "refs/daoris/discarded/daoris/s-1a2b3c4d";
@@ -410,6 +418,58 @@ public sealed class SessionGroupsTests
         ["an earlier session of a quest whose words wait on a later one is ended"] =
             new(Look([Record("s1", "failed", "q1", said: ["w1"]), Record("s2", "completed", "q1", at: 10, said: ["w2"])], [Taken], [GoesOn(Taken)]),
                 "s1", SessionGroup.Ended, "failed"),
+        // FABRIC-CLOSE1c11 (D137 §3.2, D173's CLOSE1c9 note): the planner goes on with a reopen's words in the session the reopen
+        // names though a later one is the quest's last record here, so that row reads going on, or later with the planner's hold.
+        ["the session a reopen names goes on with its words though a later one is the quest's last"] =
+            new(Look([Record("s1", "completed", "q1", Tree, said: ["w1"]), Record("s2", "completed", "q1", at: 10)], [ReopenNamesS1], [GoesOn(ReopenNamesS1)]),
+                "s1", SessionGroup.Working, ShownState.GoingOn)
+            {
+                Also = row => Assert.Null(row.Holds),
+            },
+        ["the later last session of a quest whose reopen's words go on in an earlier one rests as it ended"] =
+            new(Look([Record("s1", "completed", "q1", Tree, said: ["w1"]), Record("s2", "completed", "q1", at: 10)], [ReopenNamesS1], [GoesOn(ReopenNamesS1)]),
+                "s2", SessionGroup.Ended, "completed"),
+        ["a pause holding a reopen's words on the session it names resumes later, naming the pause"] =
+            new(Look([Record("s1", "completed", "q1", said: ["w1"]), Record("s2", "completed", "q1", at: 10)], [ReopenNamesS1], [PausedVerdict(ReopenNamesS1)]),
+                "s1", SessionGroup.Later, "completed")
+            {
+                Also = row =>
+                {
+                    Assert.Equal(WordsHold.Paused, row.Holds!.Why);
+                    Assert.Equal(ByAsk, row.PausedBy);
+                },
+            },
+        ["the person's stop of the last session holds the words on the session a reopen names"] =
+            new(Look([Record("s1", "completed", "q1", said: ["w1"]), Record("s2", "stopped", "q1", at: 10)], [ReopenNamesS1], [Verdict(ReopenNamesS1, StartVerdict.Stopped)]),
+                "s1", SessionGroup.Later, "completed")
+            {
+                Also = row => Assert.Equal((WordsHold.Waits, "the planner's sentence"), (row.Holds!.Why, row.Holds.Reason)),
+            },
+        // ACCEPTFOOT1b (D164's ACCEPTFOOT1 note): an open conversation's record stays `working` between turns. Once its turn has ended
+        // with nothing waiting, its own tree offers its work to land as an ended session's does (LAND4), and it stays working; while a
+        // turn runs, nothing. Never a discard while it is open: its tree is still in use.
+        ["an open conversation between turns offers its tree's work to land, and stays working"] =
+            new(Look([Record("s1", "working", kind: "chat", tree: Tree)], trees: [(Tree, new TreeWork(2, 1))], between: ["s1"]),
+                "s1", SessionGroup.Working, "working")
+            {
+                Also = row =>
+                {
+                    Assert.Equal(new LandOffer("daoris/s-1a2b3c4d", "s-1a2b3c4d", 2, 1), row.Lands);
+                    Assert.Null(row.Discards);
+                },
+            },
+        ["an open conversation whose turn runs offers nothing to land"] =
+            new(Look([Record("s1", "working", kind: "chat", tree: Tree)], trees: [(Tree, new TreeWork(2, 0))]),
+                "s1", SessionGroup.Working, "working")
+            {
+                Also = row => Assert.Null(row.Lands),
+            },
+        ["an open conversation between turns whose work the line holds by content offers no discard"] =
+            new(Look([Record("s1", "working", kind: "chat", tree: Tree)], trees: [(Tree, new TreeWork(2, 0) { Held = Squashed })], between: ["s1"]),
+                "s1", SessionGroup.Working, "working")
+            {
+                Also = row => Assert.Equal((null, null), (row.Lands, row.Discards)),
+            },
         // MSG1f3: a chat's words are its runner's, which takes them up at once, so a chat they wait on goes on, unless its
         // runner said what holds them; one whose every word could not go on is not among them, and rests as it ended.
         ["an ended chat whose words wait is going on: its runner takes them up at once"] =
@@ -773,6 +833,52 @@ public sealed class SessionGroupsTests
         Assert.Equal([SessionGroups.Normal(Tree), carried, parked, held], judged.Select(SessionGroups.Normal), StringComparer.OrdinalIgnoreCase);
         // Asked for one session, only its tree.
         Assert.Empty(SessionGroups.TreesToJudge(look, _ => true, only: ["bare", "old"]));
+    }
+
+    /// <summary>ACCEPTFOOT1b: an open conversation's own tree is judged between its turns alone, since only then does it offer its work.</summary>
+    [Fact]
+    public void An_open_conversations_tree_is_judged_between_its_turns_alone()
+    {
+        const string talking = "X:/daoris/trees/aurora/engine/s-talking";
+        var look = Look([Record("rest", "working", kind: "chat", tree: Tree), Record("turn", "working", kind: "chat", tree: talking)], between: ["rest"]);
+
+        Assert.Equal([SessionGroups.Normal(Tree)], SessionGroups.TreesToJudge(look, _ => true).Select(SessionGroups.Normal));
+    }
+
+    /// <summary>
+    /// ACCEPTFOOT1b: which open conversations of this machine's are between turns. The word of the runner that holds a conversation
+    /// first, as the page's foot reads it (CONV4a); where nothing in this process holds it (a terminal's listing, or a conversation
+    /// another process runs), its own record of its turns, which its runner writes as each ends. Only a live conversation of this
+    /// machine's: a driven session's turn is its run's, an ended one offers its work as any ended session does, and a teammate's runs
+    /// on their machine.
+    /// </summary>
+    [Fact]
+    public void A_conversation_is_between_turns_by_its_runners_word_else_by_its_record_of_its_turns()
+    {
+        var directory = Path.Combine(Path.GetTempPath(), "daoris-between-" + Guid.NewGuid().ToString("N")[..8]);
+        try
+        {
+            var events = new SessionEvents(directory);
+            foreach (var id in new[] { "said", "c2", "driven", "ended", "laptop/c9" }.Where(SessionEventText.IsLocalId))
+            {
+                events.Append(id, new SessionEvent { Kind = SessionEventKind.User, Origin = "person", Text = "hi" });
+                events.Append(id, new SessionEvent { Kind = SessionEventKind.Turn, StopReason = "end_turn" });
+            }
+
+            events.Append("said", new SessionEvent { Kind = SessionEventKind.User, Origin = "person", Text = "and then?" });
+            var records = SessionRecords.Parse(new JsonArray(
+                Record("c1", "working", kind: "chat"), Record("runs", "working", kind: "chat"), Record("c2", "working", kind: "chat"),
+                Record("said", "working", kind: "chat"), Record("driven", "working", kind: "driven"),
+                Record("ended", "completed", kind: "chat"), Record("laptop/c9", "working", kind: "chat")).ToJsonString());
+            // The runner here holds c1, its turn ended, and `runs`, whose turn runs though its record says it ended; nothing else.
+            bool? Runner(string id) => id switch { "c1" => true, "runs" => false, _ => null };
+
+            Assert.Equal(["c1", "c2"], SessionGroups.Between(records, Runner, events).Order(StringComparer.Ordinal));
+        }
+        finally
+        {
+            if (Directory.Exists(directory)) Directory.Delete(directory, recursive: true);
+        }
     }
 
     /// <summary>The judgement is asked once per tree and kept by the tree, whatever the record spelled it as; a tree it cannot speak for is none.</summary>

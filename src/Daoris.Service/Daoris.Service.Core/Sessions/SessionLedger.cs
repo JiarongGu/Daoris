@@ -647,6 +647,13 @@ public sealed class SessionLedger(
     private const string CarryOn = "carry on.";
 
     /// <summary>
+    /// The driver's code for a session the person's reopen of the work its step grew from stopped (FABRIC-CLOSE1c2; its
+    /// <c>NoteCodes.EndedSourceReopened</c>, a twin read here by its spelling): the one ending the ledger reads by a code, since
+    /// the record's state alone, <c>completed</c>, says the work finished (FABRIC-CLOSE1c26).
+    /// </summary>
+    internal const string EndedSourceReopened = "ended.source-reopened";
+
+    /// <summary>
     /// Keep <paramref name="said"/> as a park's answer, joining any before it (MSG1a), with its line on the note: inside the
     /// store's lock, by a caller that found the record parked there.
     /// </summary>
@@ -1072,10 +1079,13 @@ public sealed class SessionLedger(
             ? (await quests.ReadTakesAsync(quest.Id, ct).ConfigureAwait(false)).BroughtForwardBy(quests.Machine)
             : null;
         var brought = forward is not null && forward.At > last!.Created;
+        // And a session the person's reopen of the work its step grew from stopped (FABRIC-CLOSE1c26, D173's CLOSE1c2 note): it ended
+        // completed with its quest still taken, said by the driver's code alone, and their go-on carries it on in its tree.
         var carriesOn = last is { State: SessionState.Failed }
                 or { State: SessionState.Completed, Answer: not null }
                 or { State: SessionState.Stopped, Interrupted: true }
             || (last is { State: SessionState.Stopped } && tookHere)
+            || (last is { State: SessionState.Completed } && NoteParts.Carries(last.NoteParts, EndedSourceReopened))
             || brought;
 
         if (quest.Status != QuestStatus.Open && !resumes && !carriesOn)

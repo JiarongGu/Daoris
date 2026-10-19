@@ -445,6 +445,8 @@ public sealed class ChatRunner : IDisposable
 
         // The record is open, so the ledger holds the tree and a replay's own look sees it in use (LEFT2).
         starting?.Dispose();
+        // Marked as this process's start until its spawn's marker replaces it, so a sweep ends it only if this process goes (QUEUED1).
+        _processes.MarkOpening(sessionId);
 
         // A new conversation holds no context yet, so it rotates like a start (TOOL4f, D125 §3.3), and only here, at its
         // opening: its account is its process's home, set at spawn. Its first line says which account and why.
@@ -568,6 +570,8 @@ public sealed class ChatRunner : IDisposable
             .OpenHelpAsync(resolved.Name, HelpRoom.PathOf(_home, workspace), selection.Version, selection.Profile, workspace, access.Mode, ct)
             .ConfigureAwait(false);
         if (sessionId is null) return new(null, message);
+        // Marked as this process's start until its spawn's marker replaces it: placed, it waits for its run (QUEUED1).
+        _processes.MarkOpening(sessionId);
 
         // Ask Daoris's opening rotates like a start, on its scope's order (TOOL4f, D125 §3.2), and says so first.
         RotatedOpening.Say(_service, _events, sessionId, resolved.Name, selection, carried: null);
@@ -1389,6 +1393,16 @@ public sealed class ChatRunner : IDisposable
     /// <summary>Where a conversation's turns stand; <see cref="ChatQueue.Idle"/> for one nothing here holds.</summary>
     public ChatQueue Queue(string sessionId) =>
         _context.Turned.TryGetValue(sessionId, out var chat) ? chat.Turns.State : ChatQueue.Idle;
+
+    /// <summary>
+    /// Whether a conversation this runner holds has ended its turn with nothing waiting or opening (ACCEPTFOOT1b), as a curve's move
+    /// reads a turn's end (<see cref="CurveMove.TurnJustEnded"/>): the word the page's foot offers its <i>Accept…</i> by, which the
+    /// session list's look in this process reads too (<see cref="SessionGroups.Between"/>). Null for one nothing here holds.
+    /// </summary>
+    public bool? TurnEnded(string sessionId) =>
+        _context.Turned.TryGetValue(sessionId, out var chat)
+            ? chat.Turns.State is { Taking: false, Opening: false, Queued.Count: 0, LastTurnEnded: not null }
+            : null;
 
     /// <summary>
     /// Take back or reword one word a conversation holds for its turn (QUEUEEDIT1a); <see cref="QueueEdit.Taken"/> where a turn

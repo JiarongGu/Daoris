@@ -382,6 +382,90 @@ public sealed class SessionProcesses(string? markers = null)
         }
     }
 
+    /// <summary>
+    /// Mark a record this process has just opened and is starting (QUEUED1): until its spawn's <see cref="Track"/> replaces it, the
+    /// record's marker names the process that opened it, with the word <c>opening</c>, so a loop's sweep tells a <c>queued</c> or
+    /// <c>starting</c> record a live driver here is starting from one whose driver went (<see cref="OpenerWent"/>).
+    /// </summary>
+    /// <remarks>
+    /// An opener's mark is no process of the session's: <see cref="AliveOnThisMachine"/> reads it as none, as a build before it
+    /// does (its third field), so a word, a stop and the history's clearing judge the record as before. A start that comes to nothing
+    /// ends its record itself, and the sweep reads a mark only for a record still <c>queued</c> or <c>starting</c>, so a mark left by
+    /// one is read by nothing until the history's clearing removes it with the session.
+    /// </remarks>
+    public void MarkOpening(string sessionId)
+    {
+        using var self = Process.GetCurrentProcess();
+        MarkOpening(sessionId, self);
+    }
+
+    /// <summary>The mark of <paramref name="opener"/>, another process: a test's driver that went.</summary>
+    internal void MarkOpening(string sessionId, Process opener)
+    {
+        if (MarkerOf(sessionId) is not { } marker) return;
+        try
+        {
+            var line = $"{opener.Id} {opener.StartTime.ToUniversalTime().Ticks} {OpeningWord}";
+            Directory.CreateDirectory(markers!);
+            AtomicFile.WriteText(marker, line);
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException or InvalidOperationException
+                                          or System.ComponentModel.Win32Exception)
+        {
+            // Unmarked, the start is left as before this mark: only the person's stop ends it.
+        }
+    }
+
+    /// <summary>The third field of an opener's mark (QUEUED1).</summary>
+    private const string OpeningWord = "opening";
+
+    /// <summary>
+    /// Whether the process that opened this record and was starting it has gone (QUEUED1): its opener's mark is kept, no process of
+    /// the session's is held here, and no process runs as the one it names. False where there is no such mark: a record opened
+    /// before the mark, in the breath between its open and its mark, by another home, or whose spawn's marker replaced it; and where
+    /// the mark cannot be read, since "cannot tell" must never become "claim it".
+    /// </summary>
+    public bool OpenerWent(string sessionId)
+    {
+        lock (_gate)
+        {
+            if (_running.ContainsKey(sessionId)) return false;
+        }
+
+        if (MarkerOf(sessionId) is not { } marker || !File.Exists(marker)) return false;
+
+        string[] fields;
+        try
+        {
+            fields = File.ReadAllText(marker).Trim().Split(' ');
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+        {
+            return false;
+        }
+
+        if (fields.Length != 3 || fields[2] != OpeningWord || !int.TryParse(fields[0], out var pid) || !long.TryParse(fields[1], out var started))
+        {
+            return false;
+        }
+
+        try
+        {
+            using var process = Process.GetProcessById(pid);
+            return Math.Abs(process.StartTime.ToUniversalTime().Ticks - started) >= TimeSpan.TicksPerSecond;
+        }
+        catch (ArgumentException)
+        {
+            // No process has that id now.
+            return true;
+        }
+        catch (Exception error) when (error is InvalidOperationException or System.ComponentModel.Win32Exception)
+        {
+            // Exited as we looked: gone. A start time not ours to read: taken as alive.
+            return error is InvalidOperationException;
+        }
+    }
+
     /// <summary>The marker's path, or null where this registry keeps none or the id could not be a file name.</summary>
     private string? MarkerOf(string sessionId) =>
         markers is null || !SafeNames.IsFolderId(sessionId)

@@ -1826,6 +1826,8 @@ public sealed class Driver(
         // The record is open, so the ledger holds the tree and a replay's own look sees it in use (LEFT2).
         starting?.Dispose();
         restarting?.Dispose();
+        // Marked as this process's start until its spawn's marker replaces it, so a sweep ends it only if this driver goes (QUEUED1).
+        Context.Processes.MarkOpening(sessionId);
         onOpened();
         var openedAt = DateTimeOffset.UtcNow;
 
@@ -2044,7 +2046,9 @@ public sealed class Driver(
                                 took: status == "Taken" && await service.TookAsync(sessionId, ct).ConfigureAwait(false),
                                 lastWords: SessionLastWords.ParkedWords(Context.Events, sessionId, transcript),
                                 // FABRIC-CLOSE1c2: the person's reopen of the work it grew from holds its quest as it ends.
-                                reopenedFrom: after is { HeldByReopen: true } ? after.Parent : null)
+                                reopenedFrom: after is { HeldByReopen: true } ? after.Parent : null,
+                                // BGWAIT1c: the native door's harness ended its own background work with its turn.
+                                backgroundCut: ended.BackgroundCut)
                             // BGWAIT2: a done this run reached outranks the timeout, as it outranks a messy exit.
                             : Observation.AfterTimeout(config.TimeoutMinutes, quest.Status, status);
 

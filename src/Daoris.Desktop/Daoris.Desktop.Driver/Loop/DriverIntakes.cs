@@ -175,6 +175,8 @@ internal sealed class DriverIntakes(LoopContext context, Driver driver)
             return new StartRun($"refused  intake for {named}: {message}", false);
         }
 
+        // Marked as this process's start until its spawn's marker replaces it (QUEUED1).
+        _context.Processes.MarkOpening(sessionId);
         onOpened();
 
         // An intake on another account of the order says so, as a quest's start does (TOOL4f, D125 §3.2).

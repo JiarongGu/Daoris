@@ -31,7 +31,8 @@ namespace Daoris.Desktop;
 /// <para><b>Its wakes</b>, each only asking. The change stream's <c>sessions</c> and <c>quests</c> families (<see cref="HearLedger"/>),
 /// which is how a connector's write arrives; a change declared to the sessions (an archive, a delete, a stop, the driver's own record
 /// moves), a conversation's end and the service coming up; the loop's look told to the windows (<c>DRIVER_TICK</c>), where its verdicts
-/// or its waits moved, which is when every window pulled the groups before; and a tree's part landing (<see cref="HearTrees"/>). Never a
+/// or its waits moved, which is when every window pulled the groups before; a conversation's turns moving (<c>SESSION_QUEUED</c>), whose
+/// end offers its tree's work to land (ACCEPTFOOT1b); and a tree's part landing (<see cref="HearTrees"/>). Never a
 /// running call's move: <c>calling</c> is the pull's, and the <c>calls</c> slice pushes it.</para>
 ///
 /// <para><b>Desktop-only.</b> No field is a machine path (an offer names its tree, never its path), but a discard's sentences may name
@@ -100,6 +101,9 @@ public static class GroupsStateSlice
         new(DriverLoop.EndedType),
         new("DRIVER_READY"),
         new("DRIVER_TICK"),
+        // ACCEPTFOOT1b: a conversation's turns moving, told as the queue is: its turn's end offers its tree's work to land, and its next
+        // turn takes the offer back. Human-paced: a word said, a turn begun or ended.
+        new("SESSION_QUEUED"),
     ];
 
     /// <summary>The slice the shell's loop owns, taking <paramref name="loop"/>'s look once its service answers.</summary>
@@ -126,8 +130,11 @@ public static class GroupsStateSlice
     {
         var config = DriverConfig.Load(loop.ConfigPath);
         var at = DateTimeOffset.UtcNow;
+        // ACCEPTFOOT1b: an open conversation's turns by the word of the runner that holds it, as the page's foot reads them.
+        var chat = loop.Chat;
         var look = await SessionGroups.LookAsync(
-                service, config, DriverContext.DoorOf(loop, config), loop.Look.Latest, loop.Home, walked ? only : [], ct)
+                service, config, DriverContext.DoorOf(loop, config), loop.Look.Latest, loop.Home, walked ? only : [], ct,
+                turnEnded: chat is null ? null : chat.TurnEnded)
             .ConfigureAwait(false);
         look = look with { Waits = loop.Look.Waits, Calls = RunningCalls.Of(loop.Events).Now() };
         if (only is null) loop.SessionsLooked.Keep(look, at);

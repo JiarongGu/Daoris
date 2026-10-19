@@ -81,6 +81,59 @@ public sealed class NativeStreamsTests : IDisposable
         Assert.DoesNotContain("# console3 room", said);
     }
 
+    /// <summary>A native turn that backgrounded its gates and ended (BGWAIT1c), shaped on the console3 probe's lines.</summary>
+    private static readonly string[] BackgroundCut = File.ReadAllLines(Path.Combine(
+            Daoris.Desktop.Driver.Tests.WorkspaceRoot.Folder, "src", "Daoris.Desktop", "Daoris.Desktop.Driver.Tests", "fixtures", "native", "claude-background-cut.stream.jsonl"))
+        .Where(line => line.Length > 0)
+        .ToArray();
+
+    /// <summary>
+    /// BGWAIT1c: the background work the harness ended with the turn is read off the stream as the run's ending, whether or not a
+    /// console keeps the streams that take the task lines: a command still running at the turn's <c>result</c> and ended after it,
+    /// never one that finished before, and never a subagent's.
+    /// </summary>
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task The_work_its_harness_ended_with_the_turn_is_the_runs_ending_whatever_keeps_the_streams(bool console)
+    {
+        var own = new HarnessWords();
+
+        await HarnessCapture.CaptureStructuredAsync(
+            new StringReader(string.Join('\n', BackgroundCut)), new StringReader(""), Path.Combine(_root, "cut.log"), "cut1",
+            console ? new SessionOutput() : null, events: null, new ClaudeStreamJson(), prompt: null, CancellationToken.None, own: own);
+
+        Assert.Equal(["npm run gates"], own.Ended(0).BackgroundCut);
+    }
+
+    /// <summary>
+    /// BGWAIT1c: what is no cut. The stream ending at the turn's end, with the work's end unsaid; the work ending before the turn's
+    /// end; a subagent; and a run begun again, which reads its own lines alone.
+    /// </summary>
+    [Fact]
+    public void Work_that_ended_before_the_turn_or_was_never_ended_after_it_is_no_cut()
+    {
+        var result = Array.FindIndex(BackgroundCut, line => line.Contains("\"type\":\"result\"", StringComparison.Ordinal));
+        string[] Heard(params string[] lines)
+        {
+            var own = new HarnessWords();
+            foreach (var line in lines) own.Heard(line);
+            return [.. own.Ended(0).BackgroundCut];
+        }
+
+        Assert.Empty(Heard(BackgroundCut[..(result + 1)]));
+        Assert.Empty(Heard([.. BackgroundCut[..result], .. BackgroundCut[(result + 1)..], BackgroundCut[result]]));
+        Assert.Empty(Heard(
+            System("task_started", new { task_id = "a1", tool_use_id = "toolu_ag", description = "Read README", task_type = "local_agent" }),
+            Json(new { type = "result", subtype = "success", is_error = false }),
+            System("task_updated", new { task_id = "a1", patch = new { status = "killed" } })));
+
+        var again = new HarnessWords();
+        foreach (var line in BackgroundCut) again.Heard(line);
+        again.Begin();
+        Assert.Empty(again.Ended(0).BackgroundCut);
+    }
+
     /// <summary>A stream still open when the session's output ends is ended with it, and says so.</summary>
     [Fact]
     public async Task A_stream_open_at_the_end_ends_with_the_session()

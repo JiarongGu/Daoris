@@ -373,7 +373,28 @@ public sealed class SessionEvents(string directory)
     /// read from the file's end, so a list that orders every conversation by it reads a line of each rather than the whole of
     /// each. Null for no record, an unreadable one, one with no readable event, or an id that is not one.
     /// </summary>
-    public DateTimeOffset? LastAt(string sessionId)
+    public DateTimeOffset? LastAt(string sessionId) => Newest<DateTimeOffset>(sessionId, e => e.At);
+
+    /// <summary>
+    /// Whether a conversation's last turn has ended with nothing said since (ACCEPTFOOT1b), read from its record's end as
+    /// <see cref="LastAt"/> reads it: the newest event that says where its turns stand is a turn's end. A word said after it, or the
+    /// agent's words, a call, its reasoning or a plan (a turn its harness woke by itself), is a turn under way; a note, a usage or
+    /// anything this build has no kind for says nothing of a turn. False for no turn yet, no record, an unreadable one, or an id
+    /// that is not one. What a process that does not hold the conversation reads in place of its runner's word.
+    /// </summary>
+    public bool TurnEnded(string sessionId) => Newest<bool>(sessionId, e => e.Kind switch
+    {
+        SessionEventKind.Turn => true,
+        SessionEventKind.User or SessionEventKind.Message or SessionEventKind.Thought or SessionEventKind.Tool or SessionEventKind.Plan => false,
+        _ => (bool?)null,
+    }) ?? false;
+
+    /// <summary>
+    /// The newest readable event's answer to <paramref name="read"/>, read from the file's end, so a list asking it of many records
+    /// reads a line of each rather than the whole of each; an event it answers null for is passed over. Null for no record, an
+    /// unreadable one, one with no event answered for, or an id that is not one.
+    /// </summary>
+    private T? Newest<T>(string sessionId, Func<SessionEvent, T?> read) where T : struct
     {
         if (!SessionEventText.IsId(sessionId)) return null;
         try
@@ -382,7 +403,7 @@ public sealed class SessionEvents(string directory)
             if (!File.Exists(path)) return null;
             using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
             var length = stream.Length;
-            // A window from the end, grown until it holds a whole readable line: a line longer than the window is read in a later one.
+            // A window from the end, grown until it holds a line answered for: a line longer than the window is read in a later one.
             for (var window = 4096L; ; window *= 4)
             {
                 var start = Math.Max(0, length - window);
@@ -394,7 +415,7 @@ public sealed class SessionEvents(string directory)
                 // A window's first line is part of one unless the window starts the file.
                 for (var at = lines.Length - 1; at >= (start == 0 ? 0 : 1); at--)
                 {
-                    if (Event(lines[at]) is { } e) return e.At;
+                    if (Event(lines[at]) is { } e && read(e) is { } answered) return answered;
                 }
 
                 if (start == 0) return null;
