@@ -79,6 +79,15 @@ public sealed class TreesPlanWordsTests
     }
 
     [Fact]
+    public void A_plugins_own_lines_come_first_as_the_alone_path_says_them_as_they_come()
+    {
+        var said = TreesWords.CleanPlan(new SweepPlan([], []), [], Clean).After(["  plugin:pushes  asked about #12"]);
+
+        Assert.Equal(["  plugin:pushes  asked about #12", TreesCommand.NothingToClean(Clean)], said.Out);
+        Assert.Same(said, said.After([]));
+    }
+
+    [Fact]
     public void A_sync_list_that_took_no_repository_says_none_held_a_branch_and_one_up_to_date_says_so()
     {
         Assert.Equal(TreesCommand.NoneHeld(Sync), TreesWords.SyncPlan(new SyncPlan([], [], []), Sync, DateTimeOffset.UtcNow).Out[^1]);

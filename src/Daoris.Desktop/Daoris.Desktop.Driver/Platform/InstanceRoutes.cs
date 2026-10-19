@@ -75,6 +75,14 @@ public static class OpenRoutes
         ("sessions", SessionGroups, "the list"),
         ("sync", SyncNow, "an open press (D156 §3: sync)"),
         ("register", RegistryRefresh, "an open press (D156 §3: refresh)"),
+        // The other open reads of RPC1e: each is read alone beside an instance, with the same words, until its route answers them as
+        // `said` as the six above do (RPCOPEN1 built the shape, and the reads that follow it name no new one).
+        ("trace", null, "alone: its words are built from the sources the host reads itself; TRACE answers the page's shape only"),
+        ("git branches", null, "alone: its words are built from the registry's checkouts the host reads itself; GIT_BRANCHES answers the page's shape only"),
+        ("workflow", null, "alone: WORKFLOW_RUN answers the page's shape only, and `workflow keep` writes its run"),
+        ("help list", null, "alone: HELP_CONVERSATIONS answers the page's shape only"),
+        ("history", null, "alone: HISTORY_PLAN answers the page's shape only, and its clear is a person's press"),
+        ("plugins show", null, "alone: PLUGIN_READ answers the page's shape only"),
     ];
 }
 

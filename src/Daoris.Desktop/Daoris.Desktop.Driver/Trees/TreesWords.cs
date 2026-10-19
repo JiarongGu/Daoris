@@ -28,6 +28,9 @@ public sealed record TreesSaid(IReadOnlyList<string> Out, IReadOnlyList<string> 
             ? this
             : new([.. Out, .. followed.Out], [.. Error, .. followed.Error], Code);
 
+    /// <summary>The words with a plugin's own lines said before them, as the alone path says them as they come (RPCOPEN1).</summary>
+    public TreesSaid After(IReadOnlyList<string> pluginLines) => pluginLines.Count == 0 ? this : new([.. pluginLines, .. Out], Error, Code);
+
     /// <summary>The words as an answer carries them (<c>said</c>): added beside the page's fields, never in their place.</summary>
     public object ToWire() => new { Out, Error, Code };
 

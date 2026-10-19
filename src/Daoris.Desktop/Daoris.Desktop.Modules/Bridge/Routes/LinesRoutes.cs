@@ -272,7 +272,9 @@ public sealed class LinesRoutes(DriverContext context)
         // PUSH1c4a: the pull-request answers kept before this look, so what its asks wrote reaches the pushed list at once (below).
         var kept = request.Type == "SWEEP_PLAN" ? new LandedBranches(_loop.Home).Entries() : null;
         var (repositories, inUse) = await CheckoutsAndSessionsAsync(_loop, null, cancellationToken, workspace);
-        var trees = new SessionTrees(_loop.Home);
+        // RPCOPEN1: a terminal's list says a plugin's own lines as they come, under its name, as its alone path does; the page's says none.
+        var pluginLines = new List<string>();
+        var trees = kept is not null && Flag(request, "said") ? Asking(pluginLines) : new SessionTrees(_loop.Home);
 
         if (kept is not null)
         {
@@ -288,7 +290,7 @@ public sealed class LinesRoutes(DriverContext context)
                 : [];
             // RPCOPEN1: `trees clean` asks for the verb's words beside the list's fields (`said`); the page does not.
             return Flag(request, "said")
-                ? SweepAnswer(plan, records, TreesWords.CleanPlan(plan, records, new TreesAsk(TreesLook.Clean) { Workspace = workspace }))
+                ? SweepAnswer(plan, records, TreesWords.CleanPlan(plan, records, new TreesAsk(TreesLook.Clean) { Workspace = workspace }).After(pluginLines))
                 : SweepAnswer(plan, records);
         }
 
@@ -444,7 +446,9 @@ public sealed class LinesRoutes(DriverContext context)
     {
         var named = Optional(request, "repository");
         var (repositories, inUse) = await CheckoutsAndSessionsAsync(_loop, named, cancellationToken, Optional(request, "workspace"));
-        var trees = new SessionTrees(_loop.Home);
+        // RPCOPEN1: a terminal's list says a plugin's own lines as they come, under its name, as its alone path does; the page's says none.
+        var pluginLines = new List<string>();
+        var trees = request.Type == "TREES_SYNC_PLAN" && Flag(request, "said") ? Asking(pluginLines) : new SessionTrees(_loop.Home);
         // Which repositories it takes (D112): those holding Daoris's branches, and the ones the person included — every
         // one (`all`), the ones ticked (`also`), or the one named. The press takes each a listed row names besides.
         var also = Names(request, "also");
@@ -474,7 +478,7 @@ public sealed class LinesRoutes(DriverContext context)
                     Deletes = plan.Deletes.Select(LandedRow).ToArray(),
                     Looked = plan.Looked.Select(Repository).ToArray(),
                     Apart = plan.Apart.Select(Repository).ToArray(),
-                    Said = TreesWords.SyncPlan(plan, asked, DateTimeOffset.UtcNow).ToWire(),
+                    Said = TreesWords.SyncPlan(plan, asked, DateTimeOffset.UtcNow).After(pluginLines).ToWire(),
                 };
             }
 
@@ -696,6 +700,13 @@ public sealed class LinesRoutes(DriverContext context)
             .Select(item => SweepRow(item, OffersLanding(item) ? SessionBranchDoors.SessionOfTree(records, item.Tree) : null)).ToArray(),
         Landed = plan.Landed.Select(LandedRow).ToArray(),
     };
+
+    /// <summary>
+    /// The trees' look a terminal asks for (RPCOPEN1): its landing plugins say their own lines into <paramref name="lines"/> as the alone
+    /// path says them on its console, under the plugin's name, and the answer's words carry them first.
+    /// </summary>
+    private SessionTrees Asking(List<string> lines) => new(
+        _loop.Home, new LandingPlugins(_loop.Home, say: (plugin, line) => lines.Add(TreesWords.PluginLine(plugin, line)), log: _loop.Log, health: _loop.Health));
 
     /// <summary><see cref="SweepAnswer(SweepPlan, IReadOnlyList{SessionRecord})"/> with the words <c>trees clean</c> prints for it (RPCOPEN1, §7.3).</summary>
     public static object SweepAnswer(SweepPlan plan, IReadOnlyList<SessionRecord> records, TreesSaid said) => new
