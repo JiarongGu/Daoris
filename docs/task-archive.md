@@ -17317,3 +17317,9 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [x] **VERBCENSUS1 — the usage census misses hyphenated verbs** (driver; HEAVYRUN1a's hand-back). `DriverCommandTests.The_usage_names_every_verb_the_host_answers` matches `args is ["[a-z]+"`, so a verb such as `run-heavy` could lose its usage line unnoticed. Widen it to `[a-z-]+` and fix any line that turns up missing. Proof: the test fails when `run-heavy`'s usage line is removed.
 
 **Outcome** 2026-10-20: the census matches `[a-z-]+`; `run-heavy`'s usage line was present, and the census failed with it removed; `HeavyRunCommandTests`' redundant usage assertion dropped. Detail: `DriverCommandTests`.
+
+## TREEDEPS1b — a conversation in its own tree is told what was copied (2026-10-20, D51)
+
+> - [ ] **TREEDEPS1b — a conversation in its own tree is told what was copied** (driver; D51's TREEDEPS1 note; after TREEDEPS1). A conversation's tree opens through the same `OpenAsync` and gets the copy, but its agent is not told to skip the `npm ci` that deletes it. Say `TreeOpened.Dependencies` where the conversation's instruction is composed. Proof: a conversation opened with a copy is told; one without is not.
+
+**Outcome** 2026-10-20: `ChatRunner.ProcessTold` joins `TreeOpened.Dependencies` after the process's words, so a conversation in its own tree is told to skip `npm ci` where its dependencies were copied, riding `chat.told-process` with no new note code; with nothing copied the words are as before. On Sonnet: about 17 tool calls, 10 minutes. Detail: D51's TREEDEPS1b note; `ChatNoteCodeTests`.
