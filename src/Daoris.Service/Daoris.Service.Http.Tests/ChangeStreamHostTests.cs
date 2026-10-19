@@ -11,7 +11,7 @@ namespace Daoris.Service.Http.Tests;
 /// </summary>
 public sealed class ChangeStreamHostTests(KeyedHost host) : IClassFixture<KeyedHost>
 {
-    private static readonly string[] Every = [ChangeFamilies.Sessions, ChangeFamilies.Quests, ChangeFamilies.Asks];
+    private static readonly string[] Every = [ChangeFamilies.Sessions, ChangeFamilies.Quests, ChangeFamilies.Asks, ChangeFamilies.Channel];
 
     private static (string Since, string[] Moved) Read(Answer answer)
     {

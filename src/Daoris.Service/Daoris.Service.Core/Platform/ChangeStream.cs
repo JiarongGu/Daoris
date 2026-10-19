@@ -32,14 +32,23 @@ public static class ChangeFamilies
     /// </summary>
     public const string Asks = "asks";
 
+    /// <summary>
+    /// The asks' channels (PUSH1d1): <c>channel_revision.revision</c>, a count the channel's triggers move on every message kept
+    /// (posted here or mirrored from a teammate), changed or deleted, an ask's channel forgotten with it included, which the newest
+    /// arrival number alone would miss. Not on a read mark, a sync's cursor, a teammate's message mirrored again or a post the
+    /// cap refused.
+    /// </summary>
+    public const string Channel = "channel";
+
     /// <summary>Every family, in the order an answer names them.</summary>
-    public static IReadOnlyList<string> All { get; } = [Sessions, Quests, Asks];
+    public static IReadOnlyList<string> All { get; } = [Sessions, Quests, Asks, Channel];
 
     /// <summary>Each family's revision, in <see cref="All"/>'s order, in one autocommit read.</summary>
     internal const string Revisions = """
         SELECT COALESCE((SELECT revision FROM session_revision WHERE one = 1), 0),
                COALESCE((SELECT MAX(position) FROM quest_log), 0),
-               COALESCE((SELECT revision FROM ask_revision WHERE one = 1), 0)
+               COALESCE((SELECT revision FROM ask_revision WHERE one = 1), 0),
+               COALESCE((SELECT revision FROM channel_revision WHERE one = 1), 0)
         """;
 }
 

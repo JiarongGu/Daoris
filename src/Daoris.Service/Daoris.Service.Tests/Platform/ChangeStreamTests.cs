@@ -24,6 +24,7 @@ public sealed class ChangeStreamTests : IAsyncLifetime
     private SessionStore _sessions = null!;
     private QuestStore _quests = null!;
     private AskStore _asks = null!;
+    private ChannelStore _channel = null!;
     private ChangeStream _stream = null!;
 
     public async Task InitializeAsync()
@@ -34,6 +35,7 @@ public sealed class ChangeStreamTests : IAsyncLifetime
         _quests = await QuestStore.OpenAsync(_writer);
         _sessions = await SessionStore.OpenAsync(_writer);
         _asks = await AskStore.OpenAsync(_writer);
+        _channel = await ChannelStore.OpenAsync(_writer);
         _stream = await Open();
     }
 
@@ -142,7 +144,29 @@ public sealed class ChangeStreamTests : IAsyncLifetime
         Assert.Equal([ChangeFamilies.Quests], answer.Moved);
     }
 
-    private static readonly Ask Asked = new("a5c0de", Workspaces.Default, "Make the bridge faster", AskState.Open, "declarations", Now, Now);
+    /// <summary>
+    /// PUSH1d1's choice for a rebase's rewrite in place, which the newest position does not see: a pending take that lost is
+    /// rewritten as a conflict inside the integration that kept the winner's take, in the same commit, so the family moves by the
+    /// operation kept and the rewrite needs no revision of its own.
+    /// </summary>
+    [Fact]
+    public async Task A_rebase_s_rewrite_moves_the_quests_family_by_the_operation_it_kept()
+    {
+        var asked = new Quest("feedc0ffee01", "Asker", "Owner", "Do the thing", "Here is why.", QuestStatus.Open, null, Now, Now, Workspaces.Default);
+        await _quests.IntegrateAsync(Workspaces.Default,
+            [new QuestOperation(asked.Id, QuestOperationKind.Published, "m2", 1, Now, Published: asked, Number: 1)], 1);
+        Assert.True((await _quests.MoveAsync(asked.Id, QuestStatus.Taken, null, Now.AddMinutes(1))).Moved);
+        var since = await Bootstrap();
+        var waiting = _stream.WaitAsync(since, Long);
+
+        var integrated = await _quests.IntegrateAsync(Workspaces.Default,
+            [new QuestOperation(asked.Id, QuestOperationKind.Taken, "m3", 1, Now.AddMinutes(2), Number: 2)], 2);
+
+        Assert.Equal(QuestOperationKind.Conflict, Assert.Single(integrated.Conflicts).Kind);
+        Assert.Equal([ChangeFamilies.Quests], (await waiting.WaitAsync(Long)).Moved);
+    }
+
+    private static readonly Ask Asked =new("a5c0de", Workspaces.Default, "Make the bridge faster", AskState.Open, "declarations", Now, Now);
 
     /// <summary>
     /// PUSH1d1 (D182 point 5; the design §A4.2): the asks family moves on every write an ask takes, each path its own (an agent's
@@ -248,6 +272,100 @@ public sealed class ChangeStreamTests : IAsyncLifetime
         Assert.Empty(answer.Moved);
     }
 
+    private static ChannelMessage Message(string id, string ask, string? session = null, string? origin = null) =>
+        new(id, ask, Workspaces.Default, Now, session, session is null ? null : "Owner", session is null ? null : "stub",
+            session is null ? null : "ask:" + ask, To: null, Re: null, Question: false, "Start with the bridge.", origin);
+
+    /// <summary>
+    /// PUSH1d1: the channel family moves on every change to what a channel holds: a message posted (the person's or a session's,
+    /// through a connector), a teammate's mirrored by a sync pass, and an ask's channel forgotten with the ask. The forgotten one is
+    /// an older message than another ask's, so the newest arrival number stays where it was and the count alone tells it.
+    /// </summary>
+    [Theory]
+    [InlineData("posted")]
+    [InlineData("mirrored")]
+    [InlineData("forgotten")]
+    public async Task Every_change_to_a_channel_moves_the_channel_family_alone(string write)
+    {
+        if (write == "forgotten")
+        {
+            Assert.True(await _channel.AddAsync(Message("m1", Asked.Id), 10));
+            Assert.True(await _channel.AddAsync(Message("m2", "0ther0"), 10));
+        }
+
+        var since = await Bootstrap();
+        var waiting = _stream.WaitAsync(since, Long);
+
+        await (write switch
+        {
+            "posted" => _channel.AddAsync(Message("m1", Asked.Id, session: "s1"), 10),
+            "mirrored" => _channel.MirrorAsync(Message("m1", Asked.Id, origin: "teammate@machine")),
+            "forgotten" => _channel.ForgetAsync(Asked.Id),
+            _ => throw new ArgumentOutOfRangeException(nameof(write), write, null),
+        });
+        var answer = await waiting.WaitAsync(Long);
+
+        Assert.Equal([ChangeFamilies.Channel], answer.Moved);
+    }
+
+    /// <summary>PUSH1d1: a connector built before the count posts with the bare statement, and still moves the family.</summary>
+    [Fact]
+    public async Task An_older_connector_s_post_moves_the_channel_family()
+    {
+        var since = await Bootstrap();
+        var waiting = _stream.WaitAsync(since, Long);
+
+        await using (var older = new SqliteConnection($"Data Source={_file};Pooling=False"))
+        {
+            await older.OpenAsync();
+            await using var command = older.CreateCommand();
+            command.CommandText = """
+                INSERT INTO channel (id, ask, workspace, at, text) VALUES ('m1', 'a5c0de', 'default', '2026-10-17T09:00:00Z', 'Hello.')
+                """;
+            Assert.Equal(1, await command.ExecuteNonQueryAsync());
+        }
+
+        Assert.Equal([ChangeFamilies.Channel], (await waiting.WaitAsync(Long)).Moved);
+    }
+
+    /// <summary>
+    /// PUSH1d1, canary 5's half for the channel: what changes no message moves no family. A read mark is one reader's place, moved
+    /// by a read and by the driver as a part starts, and a cursor is the sync's own; a teammate's message mirrored again, a post its
+    /// session's cap refused and a connector's start opening the store again change nothing it holds.
+    /// </summary>
+    [Fact]
+    public async Task A_read_mark_a_cursor_or_a_message_seen_again_moves_no_family()
+    {
+        var mirrored = Message("m1", Asked.Id, origin: "teammate@machine");
+        await _channel.MirrorAsync(mirrored);
+        Assert.True(await _channel.AddAsync(Message("m2", Asked.Id, session: "s1"), 1));
+        var since = await Bootstrap();
+        var seen = _stream.Seen;
+        using var release = new CancellationTokenSource();
+        var waiting = _stream.WaitAsync(since, Long, release.Token);
+
+        await using (var connector = new SqliteConnection($"Data Source={_file};Pooling=False"))
+        {
+            await connector.OpenAsync();
+            await ChannelStore.OpenAsync(connector);
+        }
+
+        await _channel.MoveMarkAsync(Asked.Id, "person", Now.AddMinutes(1));
+        await _channel.AdvanceCursorAsync(Workspaces.Default, pushed: 2, fetched: 7);
+        await _channel.MirrorAsync(mirrored);
+        Assert.False(await _channel.AddAsync(Message("m3", Asked.Id, session: "s1"), 1));
+        await Execute("CREATE TABLE IF NOT EXISTS scratch (x INTEGER); INSERT INTO scratch VALUES (1);");
+
+        var deadline = DateTime.UtcNow + Long;
+        while (_stream.Seen <= seen && DateTime.UtcNow < deadline) await Task.Delay(20);
+        var observed = _stream.Seen > seen;
+        release.Cancel();
+        var answer = await waiting.WaitAsync(Long);
+
+        Assert.True(observed, "no write was seen, so the canary proves nothing");
+        Assert.Empty(answer.Moved);
+    }
+
     /// <summary>A family that moved several times since the cursor is answered once; one asked after it moved answers at once.</summary>
     [Fact]
     public async Task Moves_before_the_ask_are_answered_at_once_and_once()
@@ -266,7 +384,8 @@ public sealed class ChangeStreamTests : IAsyncLifetime
 
     /// <summary>
     /// Canary 5 (the design §A4.2): a look that changes nothing wakes nothing. The driver's own sync pass records itself
-    /// (<c>quest_passes</c>), its cursors and what it pushed, every one a write the observer sees, and moves no family.
+    /// (<c>quest_passes</c>), its cursors and what it pushed, every one a write the observer sees, and moves no family; with the
+    /// asks and the channel among the families (PUSH1d1), the channel's pass too, and an ask held through both.
     /// </summary>
     [Fact]
     public async Task A_sync_pass_moves_no_family()
@@ -280,11 +399,14 @@ public sealed class ChangeStreamTests : IAsyncLifetime
         await using var remoteConnection = new SqliteConnection("Data Source=:memory:");
         await remoteConnection.OpenAsync();
         var remote = new StoreRemote(
-            await QuestStore.OpenAsync(remoteConnection), await SessionStore.OpenAsync(remoteConnection), service, "person@machine");
+            await QuestStore.OpenAsync(remoteConnection), await SessionStore.OpenAsync(remoteConnection), service, "person@machine",
+            await ChannelStore.OpenAsync(remoteConnection));
 
-        // What this machine made before: a quest and a session, both still to go up.
+        // What this machine made before: a quest, a session and a message on an ask's channel, all still to go up, and the ask.
         await _quests.PublishAsync("Asker", "Owner", "Do the work", "why", Now);
         await _sessions.CreateAsync(null, "Owner", "stub", Now, kind: SessionKind.Chat);
+        await _asks.SaveAsync(Asked);
+        Assert.True(await _channel.AddAsync(Message("m1", Asked.Id), 10));
 
         var since = await Bootstrap();
         var seen = _stream.Seen;
@@ -297,6 +419,9 @@ public sealed class ChangeStreamTests : IAsyncLifetime
         {
             Assert.Null((await QuestSync.RunAsync(_quests, service, remote, Workspaces.Default)).Problem);
             Assert.Null((await SessionSync.RunAsync(_sessions, _quests, service, remote, Workspaces.Default)).Problem);
+            var channel = await ChannelSync.RunAsync(_channel, _sessions, service, remote, Workspaces.Default);
+            Assert.Null(channel.Problem);
+            Assert.Equal(pass == 0 ? 1 : 0, channel.Pushed);
         }
 
         var deadline = DateTime.UtcNow + Long;
@@ -395,6 +520,7 @@ public sealed class ChangeStreamTests : IAsyncLifetime
                 await store.OpenAsync();
                 await QuestStore.OpenAsync(store);
                 await AskStore.OpenAsync(store);
+                await ChannelStore.OpenAsync(store);
                 var sessions = await SessionStore.OpenAsync(store);
                 await sessions.CreateAsync(null, "Owner", "stub", Now, kind: SessionKind.Chat);
             }
