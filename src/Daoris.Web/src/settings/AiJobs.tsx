@@ -1,5 +1,7 @@
 import { useTranslation } from 'react-i18next';
+import type { HelpMode } from '../bridge/help';
 import { Card, Pill, Prose, SelectField, SettingRow } from '../design/ui';
+import { FullAccessConfirm, HelpModeChip } from '../help/HelpModePicker';
 import type { StartWiring } from '../map/wiring';
 
 /** What the service says answers search and convergence (D24) — its own words, verbatim. */
@@ -30,6 +32,24 @@ export type HelperJob = {
   agents: { value: string; label: string }[];
   onChange: (adapter: string | null) => void;
   busy?: boolean;
+  /** Whether it runs with full access (HELPMODE1b), which its sentence then says: it acts, rather than proposes. */
+  full?: boolean;
+};
+
+/**
+ * Ask Daoris's access on THIS machine (HELPMODE1b, D183 point 2): the mode its next start reads, chosen by the panel's chip's rule,
+ * which the domain holds: restricted at once, full access only on its confirmation.
+ */
+export type HelpAccessJob = {
+  mode: HelpMode;
+  /** Full access picked, and asked before it is set. */
+  confirming: boolean;
+  /** The servers full access would add, by name; null while they are being read. */
+  adds: readonly string[] | null;
+  busy?: boolean;
+  onPick: (mode: HelpMode) => void;
+  onEnable: () => void;
+  onCancel: () => void;
 };
 
 /** Off, as the control's value. The terminal spells it the same way (`daoris driver intake off`). */
@@ -54,7 +74,9 @@ const OFF = 'off';
  * intake <agent>|off` (D50), and which account an intake runs as is the driver's answer per circle,
  * read rather than recomputed, so the page cannot name an account the loop would not take.
  */
-export function AiJobs({ search, intake, helper }: { search?: SearchTier; intake?: IntakeJob; helper?: HelperJob }) {
+export function AiJobs({ search, intake, helper, access }: {
+  search?: SearchTier; intake?: IntakeJob; helper?: HelperJob; access?: HelpAccessJob;
+}) {
   const { t } = useTranslation();
 
   return (
@@ -75,6 +97,7 @@ export function AiJobs({ search, intake, helper }: { search?: SearchTier; intake
 
       {intake && <Intake intake={intake} />}
       {helper && <Helper helper={helper} />}
+      {access && <HelpAccess access={access} />}
     </Card>
   );
 }
@@ -178,8 +201,35 @@ function Helper({ helper }: { helper: HelperJob }) {
       )}
     >
       <p className="m-0 text-small text-ink-soft">
-        {helper.adapter ? t('settings.ai.helper.tierOn', { agent: helper.adapter }) : t('settings.ai.helper.tierOff')}
+        {helper.adapter
+          ? t(helper.full ? 'settings.ai.helper.tierOnFull' : 'settings.ai.helper.tierOn', { agent: helper.adapter })
+          : t('settings.ai.helper.tierOff')}
       </p>
+    </SettingRow>
+  );
+}
+
+/**
+ * Ask Daoris's access (HELPMODE1b, D183 point 2; the modes design §5): the panel's own chip, beside its agent, this machine's choice
+ * for every workspace. Full access's confirmation opens under the row, where it has the row's width.
+ */
+function HelpAccess({ access }: { access: HelpAccessJob }) {
+  const { t } = useTranslation();
+  return (
+    <SettingRow
+      label={t('settings.ai.helpMode.label')}
+      hint={t('settings.ai.helpMode.hint')}
+      why={t('settings.ai.helpMode.why')}
+      control={<HelpModeChip selected={access.mode} busy={access.busy} onPick={access.onPick} />}
+    >
+      <p className="m-0 text-small text-ink-soft">
+        {t(access.mode === 'full' ? 'settings.ai.helpMode.tierFull' : 'settings.ai.helpMode.tierRestricted')}
+      </p>
+      {access.confirming && (
+        <div className="mt-2">
+          <FullAccessConfirm adds={access.adds} busy={access.busy} onEnable={access.onEnable} onCancel={access.onCancel} />
+        </div>
+      )}
     </SettingRow>
   );
 }
