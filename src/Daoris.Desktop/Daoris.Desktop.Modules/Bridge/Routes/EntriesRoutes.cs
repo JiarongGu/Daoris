@@ -40,7 +40,14 @@ public sealed class EntriesRoutes(DriverContext context)
         var service = _loop.Service ?? throw NotReady();
         var (entries, rows) = await LookAsync(service, entry => entry.Key == key, cancellationToken).ConfigureAwait(false);
         var entry = entries.FirstOrDefault() ?? new SessionEntry(key, "", "", SessionGroup.Ended, "", []);
-        if (request.Type == "ENTRY_LANDING") return await PlanAsync(service, entry, rows, cancellationToken).ConfigureAwait(false);
+        if (request.Type == "ENTRY_LANDING")
+        {
+            // RPCOPEN1: `trees land --entry --plan` asks for the verb's words (`said`) where the page asks for the plan's fields.
+            return Flag(request, "said")
+                ? await PlanSaidAsync(service, entries.Take(1).ToList(), rows, isAsk: false, key, cancellationToken).ConfigureAwait(false)
+                : await PlanAsync(service, entry, rows, cancellationToken).ConfigureAwait(false);
+        }
+
 
         // RPC1b4: what `trees land --entry` prints rides beside the page's fields; a refusal the driver throws is its sentence, as there.
         var (plugins, notes) = (new List<string>(), new List<string>());
@@ -68,6 +75,12 @@ public sealed class EntriesRoutes(DriverContext context)
         var own = EntriesOf(ask, entries);
         if (request.Type == "ASK_LANDING")
         {
+            if (Flag(request, "said"))
+            {
+                return await PlanSaidAsync(
+                    service, [.. own.Where(entry => PartsOf(entry, rows).Count > 0)], rows, isAsk: true, ask, cancellationToken).ConfigureAwait(false);
+            }
+
             var plans = new List<object>();
             foreach (var entry in own.Where(entry => PartsOf(entry, rows).Count > 0))
             {
@@ -228,6 +241,25 @@ public sealed class EntriesRoutes(DriverContext context)
     {
         var (plan, held) = await Accepts(service).PlanAsync(entry, rows, cancellationToken).ConfigureAwait(false);
         return Plan(entry.Key, entry.Repository, plan, held);
+    }
+
+    /// <summary>
+    /// What <c>trees land --entry</c> and <c>--ask</c> print for <c>--plan</c> (RPCOPEN1): each entry's plan in the verb's lines, or its
+    /// sentence where none has work to land here, beside nothing of the page's fields. The page does not ask for it.
+    /// </summary>
+    private async Task<object> PlanSaidAsync(
+        ServiceClient service, IReadOnlyList<SessionEntry> entries, IReadOnlyList<SessionGrouping> rows, bool isAsk, string id,
+        CancellationToken cancellationToken)
+    {
+        if (entries.Count == 0) return new { Said = TreesWords.EntryNone(isAsk, id).ToWire() };
+        var lines = new List<string>();
+        foreach (var entry in entries)
+        {
+            var (plan, held) = await Accepts(service).PlanAsync(entry, rows, cancellationToken).ConfigureAwait(false);
+            lines.AddRange(TreesWords.EntryPlanned(entry, plan, held));
+        }
+
+        return new { Said = TreesWords.EntryPlan(lines).ToWire() };
     }
 
     /// <summary>The press on one entry, which the terminal's lands too (<see cref="EntryAccepts.LandAsync"/>, ACCEPTALL1e).</summary>

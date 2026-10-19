@@ -55,6 +55,17 @@ public sealed record TreesSaid(IReadOnlyList<string> Out, IReadOnlyList<string> 
         return said.Code;
     };
 
+    /// <summary>
+    /// A read's answer in the verb's own words (RPC1b2): printed and its exit code returned where the answer carries them, else null,
+    /// so <see cref="InstanceDoor.ReadAsync"/> reads alone, as it does for an instance from before the field.
+    /// </summary>
+    public static Func<JsonElement, int?> ReadWords(TextWriter output, TextWriter error) => answer =>
+    {
+        if (Read(answer) is not { } said) return null;
+        said.Print(output, error);
+        return said.Code;
+    };
+
     private static JsonElement? Property(JsonElement from, string name)
     {
         if (from.ValueKind != JsonValueKind.Object) return null;
@@ -75,7 +86,7 @@ public sealed record TreesSaid(IReadOnlyList<string> Out, IReadOnlyList<string> 
 /// The words of the <c>trees</c> presses, one function per press, shared by the alone path and the routes (RPC1b3). Each takes the
 /// record the press's core returns and says what <c>daoris-driver trees</c> prints; nothing here runs git or asks the service.
 /// </summary>
-public static class TreesWords
+public static partial class TreesWords
 {
     /// <summary>A plugin's own line, said under its name as the landing and the hand-off say it (D64 §4).</summary>
     public static string PluginLine(string plugin, string line) => $"  plugin:{plugin}  {line}";
