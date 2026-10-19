@@ -1484,8 +1484,10 @@ public sealed class Driver(
         // trees alone; never a reason to hold the start.
         // FABRIC-CLOSE1c5 (§E5): the person went on with a step whose source they reopened, so its tree is first brought up to date
         // with the source's new submission, then with the line; a conflict leaves both, and the session is told. FABRIC-CLOSE1c13: so
-        // is one whose session had ended normally, going on with the words Daoris told it of the go-on (ReopenTelling).
-        var inSync = resumedIn is { } reopenedIn && start.Resumes is { } goesFrom && ReopenTelling.BringsToSource(quest, goesFrom)
+        // is one whose session had ended normally, going on with the words Daoris told it of the go-on (ReopenTelling). SYNCMERGE1b: and
+        // a stand-down whose lost take the person brought forward, onto the step's current source, which its fresh take was made on.
+        var inSync = resumedIn is { } reopenedIn && start.Resumes is { } goesFrom
+                     && (ReopenTelling.BringsToSource(quest, goesFrom) || Planner.BringsForwardToSource(quest, start))
             ? await GoOnInSyncAsync(reopenedIn, quest, ct).ConfigureAwait(false)
             : (resumedIn ?? joinedIn) is { } goingOn ? await StartInSyncAsync(goingOn, ct).ConfigureAwait(false) : null;
 
