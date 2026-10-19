@@ -182,6 +182,7 @@
   "help.wired.field.lacks": "What it lacks",
   "help.wired.account.own": "the agent’s own sign-in",
   "help.wired.none": "none",
+  "help.wired.plugin": "of plugin {{plugin}}",
   "help.wired.tools.full": "every tool Daoris’s connector offers, with nothing asked",
   "help.wired.rules.none": "none: this agent takes no rules file",
   "help.wired.rules.counts": "allow {{allow}} · ask {{ask}} · deny {{deny}}",

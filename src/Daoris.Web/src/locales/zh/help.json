@@ -182,6 +182,7 @@
   "help.wired.field.lacks": "它缺少的",
   "help.wired.account.own": "智能体自己的登录",
   "help.wired.none": "无",
+  "help.wired.plugin": "来自插件 {{plugin}}",
   "help.wired.tools.full": "Daoris 连接器提供的全部工具，无需询问",
   "help.wired.rules.none": "无：这个智能体不接受规则文件",
   "help.wired.rules.counts": "允许 {{allow}} · 询问 {{ask}} · 拒绝 {{deny}}",
