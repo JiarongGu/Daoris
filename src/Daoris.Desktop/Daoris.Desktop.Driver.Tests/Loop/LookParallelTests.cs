@@ -216,6 +216,113 @@ public sealed class LookParallelTests : IDisposable
         }
     }
 
+    /// <summary>
+    /// 🔴 A plugin slow to hear of an ending holds no later look: the plugins hear each ending as their topic's judge beside the look,
+    /// so a quest published after it starts while the plugin still has not answered.
+    /// </summary>
+    [Fact]
+    public async Task A_plugin_slow_to_hear_of_an_ending_holds_no_later_start()
+    {
+        _ledger.Publish("q1", "engine");
+        var hearing = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var heard = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        Plugin("acme.ears", ["session/ended"]);
+        await using var hooks = new HookSet(_home, start: (_, _, _) => Task.FromResult<IHookChannel>(new Considering(
+            _ => Task.FromResult(HookDecision.Allow),
+            async () =>
+            {
+                heard.TrySetResult();
+                await hearing.Task.WaitAsync(_closing.Token);
+            },
+            ["session/ended"])));
+        var (watch, runs) = Watch(hooks: hooks);
+
+        var watching = Task.Run(() => watch.RunAsync((_, _) => Task.CompletedTask, onError: null, _closing.Token));
+        try
+        {
+            await Poll.Until(() => runs.Started.Contains("q1"), () => "q1 never started", Bound);
+            runs.End("q1");
+            await heard.Task.WaitAsync(Bound);
+
+            _ledger.Publish("q2", "tools");
+            watch.Nudge(ChangeTopics.Ledger, "quests");
+            await Poll.Until(() => runs.Started.Contains("q2"), () => "q2 waited for the plugin to hear of q1's end", Bound);
+        }
+        finally
+        {
+            hearing.TrySetResult();
+            await _closing.CancelAsync();
+            await Settled(watching);
+        }
+    }
+
+    /// <summary>
+    /// 🔴 The lost-claim checks are asked at once, bounded: one host slow to answer for one session's quest no longer holds the next
+    /// session's check until the client gives up on the first.
+    /// </summary>
+    [Fact]
+    public async Task The_lost_claim_checks_are_asked_at_once()
+    {
+        _ledger.Publish("q1", "engine");
+        _ledger.Publish("q2", "tools");
+        using var sync = new RemoteSyncSet([]);
+        var service = _ledger.Client(TimeSpan.FromSeconds(5));
+        var runs = new StandInRuns(service, _ledger);
+        var adapters = AdapterSet.Built();
+        var config = DriverConfig.Empty with { Drivable = ["engine", "tools"], Adapter = "stub", Cap = 3, PollSeconds = 1, Trees = ["engine", "tools"] };
+        var driver = new Daoris.Driver.Driver(
+            service, config, adapters, _home, sync: sync, harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)))
+        {
+            Runner = runs.Runner,
+            Stops = runs.Stops,
+        };
+        runs.Keeping = driver.Running;
+        await driver.TickAsync(_closing.Token).WaitAsync(Bound);
+        Assert.Equal(2, runs.Started.Count);
+
+        // Each claim is answered only once the other has been asked too: one after another, the first asked waits out the client's
+        // five seconds, whichever it is, and its session is not stopped.
+        var asked = new Dictionary<string, TaskCompletionSource>
+        {
+            ["/api/quests/q1/claim"] = new(TaskCreationOptions.RunContinuationsAsynchronously),
+            ["/api/quests/q2/claim"] = new(TaskCreationOptions.RunContinuationsAsynchronously),
+        };
+        _ledger.Claim = "lost";
+        _ledger.Before = async (request, token) =>
+        {
+            var path = request.RequestUri!.AbsolutePath;
+            if (!asked.TryGetValue(path, out var mine)) return;
+            mine.TrySetResult();
+            await Task.WhenAll(asked.Values.Select(each => each.Task)).WaitAsync(token);
+        };
+
+        var look = await driver.TickAsync(_closing.Token).WaitAsync(Bound);
+
+        Assert.Contains(look.Events, line => line.StartsWith("stop  session s1 (#q1)", StringComparison.Ordinal));
+        Assert.Contains(look.Events, line => line.StartsWith("stop  session s2 (#q2)", StringComparison.Ordinal));
+        await driver.Running.SettledAsync().WaitAsync(Bound);
+    }
+
+    /// <summary>🔴 A snapshot's reads are asked at once: one door slow to answer holds its own read, not the reads after it.</summary>
+    [Fact]
+    public async Task A_snapshot_s_reads_are_asked_at_once()
+    {
+        _ledger.Publish("q1", "engine");
+        var registryAsked = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        _ledger.Before = async (request, token) =>
+        {
+            var path = request.RequestUri!.AbsolutePath;
+            if (path == "/api/registry") registryAsked.TrySetResult();
+            if (path == "/api/quests") await registryAsked.Task.WaitAsync(token);
+        };
+        using var service = _ledger.Client(TimeSpan.FromSeconds(5));
+
+        var snapshot = await service.SnapshotAsync(_closing.Token).WaitAsync(Bound);
+
+        Assert.Equal("q1", Assert.Single(snapshot.Quests).Id);
+        Assert.Equal(3, snapshot.Repositories.Count);
+    }
+
     private (DriverWatch Watch, StandInRuns Runs) Watch(
         RemoteSyncSet? sync = null, int cap = 3, int pollSeconds = 60, StartGate? gate = null, HookSet? hooks = null)
     {
@@ -277,17 +384,18 @@ public sealed class LookParallelTests : IDisposable
         };
     }
 
-    /// <summary>A plugin's channel that answers each consideration as the test says, by its quest.</summary>
-    private sealed class Considering(Func<string, Task<HookDecision>> consider) : IHookChannel
+    /// <summary>A plugin's channel that answers each consideration as the test says, by its quest, and hears each ending as it says.</summary>
+    private sealed class Considering(
+        Func<string, Task<HookDecision>> consider, Func<Task>? ended = null, IReadOnlyList<string>? points = null) : IHookChannel
     {
-        public IReadOnlyList<string> Points => ["quest/consider"];
+        public IReadOnlyList<string> Points => points ?? ["quest/consider"];
 
         public bool Alive => true;
 
         public Task<HookDecision> ConsiderAsync(object payload, CancellationToken ct) =>
             consider(System.Text.Json.JsonSerializer.SerializeToElement(payload).GetProperty("quest").GetProperty("id").GetString()!);
 
-        public Task EndedAsync(object payload, CancellationToken ct) => Task.CompletedTask;
+        public Task EndedAsync(object payload, CancellationToken ct) => ended?.Invoke() ?? Task.CompletedTask;
 
         public Task<PluginLanding> LandAsync(object payload, CancellationToken ct) =>
             Task.FromResult(new PluginLanding("acme", true, null, "pushed"));

@@ -1087,11 +1087,20 @@ public sealed class Driver(
         }
 
         // Contained: nothing a plugin says here changes the record, which moved on the exit code and the
-        // quest before this line ran (D46 §4).
+        // quest before this line ran (D46 §4). PARALLEL1b: under the watch, as the `hooks` topic's judge beside the look, a session's
+        // ending told once and HooksAtOnce endings at a time, so a plugin slow to hear holds no later look; what it says joins a later
+        // report. A one-look run and a gate's run-until-idle tell them in the look, as before.
         if (Context.Hooks is { } hooks)
         {
             foreach (var ended in concluded)
             {
+                if (Wanted is not null)
+                {
+                    Context.Runs.Judge("hooks", ended.Session, HooksAtOnce,
+                        token => Stages.TimeAsync("hooks", () => hooks.EndedAsync(ended, token), ended.Session, beside: true), ct);
+                    continue;
+                }
+
                 events.AddRange(await Stages.TimeAsync("hooks", () => hooks.EndedAsync(ended, ct), ended.Session).ConfigureAwait(false));
             }
         }
@@ -1113,29 +1122,43 @@ public sealed class Driver(
     /// </remarks>
     private async Task StopLostClaimsAsync(List<string> events, CancellationToken ct)
     {
-        foreach (var (quest, session) in Context.Runs.Live)
-        {
-            string claim;
-            string? why;
-            try
+        // PARALLEL1b (D181 point 3): asked at once, at most ClaimsAtOnce together, so a host slow to answer for one quest holds that
+        // question alone, not every session's after it until the client gives up on it.
+        await Parallel.ForEachAsync(
+            Context.Runs.Live.ToArray(), new ParallelOptions { MaxDegreeOfParallelism = ClaimsAtOnce, CancellationToken = ct },
+            async (live, token) =>
             {
-                (claim, why) = await service.ClaimStandingAsync(quest, ct).ConfigureAwait(false);
-            }
-            catch (Exception error) when (error is DriverException or HttpRequestException or System.Text.Json.JsonException
-                                              // The client's own timeout (DEV3a): a host that took the question and stalled.
-                                              || (error is OperationCanceledException && !ct.IsCancellationRequested))
-            {
-                continue; // The host did not answer; the next pass asks again.
-            }
+                var (quest, session) = (live.Key, live.Value);
+                string claim;
+                string? why;
+                try
+                {
+                    (claim, why) = await service.ClaimStandingAsync(quest, token).ConfigureAwait(false);
+                }
+                catch (Exception error) when (error is DriverException or HttpRequestException or System.Text.Json.JsonException
+                                                  // The client's own timeout (DEV3a): a host that took the question and stalled.
+                                                  || (error is OperationCanceledException && !ct.IsCancellationRequested))
+                {
+                    return; // The host did not answer; the next pass asks again.
+                }
 
-            // FABRIC-CLOSE1c18: a take lost to the person's reopen is stopped alike, and said as that, never as another machine's take.
-            var reopened = why == "source-reopened";
-            if (claim == "lost" && (Stops ?? StopForLostClaim)(session, reopened ? LostClaimToReopenNoted : LostClaimNoted))
-            {
-                lock (events) events.Add($"stop  session {session} (#{quest}): {(reopened ? LostClaimToReopen : LostClaim)}");
-            }
-        }
+                // FABRIC-CLOSE1c18: a take lost to the person's reopen is stopped alike, and said as that, never as another machine's take.
+                var reopened = why == "source-reopened";
+                if (claim == "lost" && (Stops ?? StopForLostClaim)(session, reopened ? LostClaimToReopenNoted : LostClaimNoted))
+                {
+                    lock (events) events.Add($"stop  session {session} (#{quest}): {(reopened ? LostClaimToReopen : LostClaim)}");
+                }
+            }).ConfigureAwait(false);
     }
+
+    /// <summary>How many claim questions the lost-claim stop asks this machine's host together (PARALLEL1b): local, and each one small.</summary>
+    internal const int ClaimsAtOnce = 4;
+
+    /// <summary>
+    /// How many endings the plugins hear at once beside the looks (PARALLEL1b; a topic bounded, the events design §A3): one slow answer
+    /// holds its own ending, and a burst of endings reaches each plugin's one process two requests at a time, never all at once.
+    /// </summary>
+    internal const int HooksAtOnce = 2;
 
     /// <summary>The process's stop, unless the driver already stopped it for its reason: true only when it stopped it now.</summary>
     private bool StopForLostClaim(string session, Noted reason) =>

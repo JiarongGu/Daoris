@@ -124,13 +124,20 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
     /// <summary>Everything one tick decides from, fetched together so the plan is coherent.</summary>
     public async Task<Snapshot> SnapshotAsync(CancellationToken ct = default)
     {
-        var quests = ReadQuests(await GetAsync("/api/quests", ct).ConfigureAwait(false));
-        var repositories = ReadRegistry(await GetAsync("/api/registry", ct).ConfigureAwait(false));
-        var active = ReadSessions(await GetAsync("/api/sessions", ct).ConfigureAwait(false));
+        // PARALLEL1b (D181 point 3): the four reads asked at once, so one door slow to answer holds its own read, not the reads after it.
+        // Each is still the service's answer as it stood when asked; the plan was never one transaction across them.
+        var questsRead = GetAsync("/api/quests", ct);
+        var registryRead = GetAsync("/api/registry", ct);
+        var activeRead = GetAsync("/api/sessions", ct);
         // A second read rather than deriving both from one (DRV6): `/api/sessions` means ACTIVE, the
         // planner's "is this repository busy" rests on that, and re-deriving active-ness here would
         // put a second opinion about it on this side of the wire.
-        var records = await GetAsync("/api/sessions?includeClosed=true", ct).ConfigureAwait(false);
+        var recordsRead = GetAsync("/api/sessions?includeClosed=true", ct);
+        await Task.WhenAll(questsRead, registryRead, activeRead, recordsRead).ConfigureAwait(false);
+        var quests = ReadQuests(await questsRead.ConfigureAwait(false));
+        var repositories = ReadRegistry(await registryRead.ConfigureAwait(false));
+        var active = ReadSessions(await activeRead.ConfigureAwait(false));
+        var records = await recordsRead.ConfigureAwait(false);
         var lastRun = ReadLastRun(records);
         // The closed quests a session written to served (MSG1b, D137 §2.2), read only where one waits: no open list holds them.
         var open = quests.Select(quest => quest.Id).ToList();
@@ -163,28 +170,39 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
     {
         var claims = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         var whys = new Dictionary<string, string?>(StringComparer.OrdinalIgnoreCase);
-        foreach (var quest in quests)
-        {
-            if (quest is not { Status: "Taken", Awaits: null or "", HeldByReopen: false }
-                || !lastRun.TryGetValue(quest.Id, out var last) || !Planner.CarriesOn(last))
-            {
-                continue;
-            }
+        var asked = quests
+            .Where(quest => quest is { Status: "Taken", Awaits: null or "", HeldByReopen: false }
+                            && lastRun.TryGetValue(quest.Id, out var last) && Planner.CarriesOn(last))
+            .ToArray();
 
-            try
+        // PARALLEL1b (D181 point 3): asked at once, at most ClaimsAtOnce together, so a host slow to answer for one quest holds that
+        // question alone, not the snapshot's every other.
+        await Parallel.ForEachAsync(
+            asked, new ParallelOptions { MaxDegreeOfParallelism = ClaimsAtOnce, CancellationToken = ct },
+            async (quest, token) =>
             {
-                (claims[quest.Id], whys[quest.Id]) = await ClaimStandingAsync(quest.Id, ct).ConfigureAwait(false);
-            }
-            catch (Exception error) when (error is DriverException or HttpRequestException or JsonException
-                                              // The client's own timeout (DEV3a): a host that took the question and stalled.
-                                              || (error is OperationCanceledException && !ct.IsCancellationRequested))
-            {
-                // Unread: the ledger judges the carry-on, as it did before the planner asked.
-            }
-        }
+                try
+                {
+                    var (claim, why) = await ClaimStandingAsync(quest.Id, token).ConfigureAwait(false);
+                    lock (claims)
+                    {
+                        claims[quest.Id] = claim;
+                        whys[quest.Id] = why;
+                    }
+                }
+                catch (Exception error) when (error is DriverException or HttpRequestException or JsonException
+                                                  // The client's own timeout (DEV3a): a host that took the question and stalled.
+                                                  || (error is OperationCanceledException && !ct.IsCancellationRequested))
+                {
+                    // Unread: the ledger judges the carry-on, as it did before the planner asked.
+                }
+            }).ConfigureAwait(false);
 
         return (claims, whys);
     }
+
+    /// <summary>How many claim questions a snapshot asks the host together (PARALLEL1b): local, and each one small.</summary>
+    private const int ClaimsAtOnce = 4;
 
     /// <summary>Every repository this host holds, in every circle — what the page's scope is read from (FG4).</summary>
     public async Task<IReadOnlyList<RepoView>> RegistryAsync(CancellationToken ct = default) =>

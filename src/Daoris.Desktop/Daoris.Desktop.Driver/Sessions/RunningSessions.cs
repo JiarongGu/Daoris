@@ -155,7 +155,10 @@ public sealed class RunningSessions
     /// </summary>
     public bool Idle
     {
-        get { lock (_gate) return _running == 0 && _ended.Count == 0 && _came.Count == 0 && _landing is null && _syncing is null; }
+        get
+        {
+            lock (_gate) return _running == 0 && _ended.Count == 0 && _came.Count == 0 && _landing is null && _syncing is null && _judging.Count == 0;
+        }
     }
 
     // The remote sync beside the looks (PARALLEL1b), while a pass works, and the pass asked for meanwhile, which runs once after it.
@@ -166,6 +169,63 @@ public sealed class RunningSessions
     internal bool Syncing
     {
         get { lock (_gate) return _syncing is not null; }
+    }
+
+    // The judges beside the looks (PARALLEL1b; the events design §A3): each topic's places, and the subjects being judged now.
+    private readonly Dictionary<string, SemaphoreSlim> _topics = new(StringComparer.Ordinal);
+    private readonly HashSet<string> _judging = new(StringComparer.Ordinal);
+
+    /// <summary>
+    /// Judge <paramref name="subject"/> of <paramref name="topic"/> beside the looks (PARALLEL1b, D181 point 3; the events design §A3):
+    /// its work runs on its own task, a topic judging at most <paramref name="bound"/> subjects at once, and one subject never twice at
+    /// once. What it says joins the next look's report and wakes a wait, as an ending does; a judgement that says nothing wakes nothing.
+    /// </summary>
+    /// <returns>False where that subject is being judged already: nothing more is begun, and the next look asks again.</returns>
+    internal bool Judge(string topic, string subject, int bound, Func<CancellationToken, Task<IReadOnlyList<string>>> work, CancellationToken ct)
+    {
+        SemaphoreSlim places;
+        lock (_gate)
+        {
+            if (!_judging.Add($"{topic}\n{subject}")) return false;
+            if (!_topics.TryGetValue(topic, out places!)) _topics[topic] = places = new SemaphoreSlim(bound, bound);
+        }
+
+        _ = Task.Run(() => JudgeAsync(topic, subject, places, work, ct), CancellationToken.None);
+        return true;
+    }
+
+    private async Task JudgeAsync(
+        string topic, string subject, SemaphoreSlim places, Func<CancellationToken, Task<IReadOnlyList<string>>> work, CancellationToken ct)
+    {
+        IReadOnlyList<string> said;
+        try
+        {
+            await places.WaitAsync(ct).ConfigureAwait(false);
+            try
+            {
+                said = await work(ct).ConfigureAwait(false);
+            }
+            finally
+            {
+                places.Release();
+            }
+        }
+        catch (Exception error)
+        {
+            // A closing loop cancels it; anything else past the work's own catches is said once, in the next report.
+            said = ct.IsCancellationRequested ? [] : [$"{topic}  `{subject}` was not judged this time, and is judged again at a later look: {error.Message}"];
+        }
+
+        TaskCompletionSource moved;
+        lock (_gate)
+        {
+            _ended.AddRange(said.Select(line => new StartRun(line, Opened: false)));
+            _judging.Remove($"{topic}\n{subject}");
+            moved = _moved;
+            _moved = NewSignal();
+        }
+
+        moved.TrySetResult();
     }
 
     // A pass beside the looks ended while a session of this loop's held a quest, so the next look asks where each claim stands.
@@ -371,8 +431,9 @@ public sealed class RunningSessions
     }
 
     /// <summary>
-    /// Completes once nothing runs: every session concluded and its record written, and no landing pass or remote sync works (LAND2b,
-    /// PARALLEL1b). Never cancelled, on purpose — it is what a closing driver waits on, so every record says how it ended (REV3, D104).
+    /// Completes once nothing runs: every session concluded and its record written, and no landing pass, remote sync or judge works
+    /// (LAND2b, PARALLEL1b). Never cancelled, on purpose — it is what a closing driver waits on, so every record says how it ended
+    /// (REV3, D104).
     /// </summary>
     public async Task SettledAsync()
     {
@@ -381,7 +442,7 @@ public sealed class RunningSessions
             Task moved;
             lock (_gate)
             {
-                if (_running == 0 && _landing is null && _syncing is null) return;
+                if (_running == 0 && _landing is null && _syncing is null && _judging.Count == 0) return;
                 moved = _moved.Task;
             }
 

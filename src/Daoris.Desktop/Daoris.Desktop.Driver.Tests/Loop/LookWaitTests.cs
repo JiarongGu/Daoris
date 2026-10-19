@@ -83,7 +83,9 @@ public sealed class LookWaitTests : IDisposable
             var watching = watch.RunAsync((_, _) => Task.CompletedTask, onError: null, _closing.Token);
             try
             {
-                await Poll.Until(() => Lines("look.slow").Length > 0, () => "no stage named slow", Bound);
+                // The start's line: under load another stage may pass a tenth of a second too, and be named as well.
+                await Poll.Until(
+                    () => Lines("look.slow").Any(data => data.GetProperty("stage").GetString() == "start"), () => "the hung start never named", Bound);
             }
             finally
             {
