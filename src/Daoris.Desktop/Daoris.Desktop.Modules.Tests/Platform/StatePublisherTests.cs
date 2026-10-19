@@ -561,6 +561,8 @@ public sealed partial class StatePublisherTests : DriverModuleBridge
     [InlineData("HELP_APPLY", "sessions,quests,asks,driver,rules,history,registry,plugins,harnesses,help,browser", null)]
     [InlineData("HELP_PROPOSALS", "", null)]
     [InlineData("HELP_CONVERSATIONS", "", null)]
+    // HELPWIRED1: what each start handed, read from the home; it changes nothing.
+    [InlineData("HELP_WIRED", "", null)]
     [InlineData("STOP_TASK", "", null)]
     [InlineData("TAIL_SESSION", "", null)]
     [InlineData("TRACE", "", null)]

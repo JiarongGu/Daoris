@@ -1,4 +1,4 @@
-import { createContext, type ReactNode, useContext, useEffect, useState } from 'react';
+import { createContext, type ReactNode, useContext, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { compact, elapsed, moment, span } from '../locales/format';
 import { cn } from '../lib/cn';
@@ -6,7 +6,8 @@ import { Button, Dot, Icon, Inline, Tip } from '../design/ui';
 import type { NotePart } from '../data/api';
 import { turnEnd } from './anchors';
 import { CHANNEL_CLAIM_OPENING } from './channel';
-import { type Ask, type Block, CONVERSATION_CODES, type PlanEntry, runCount, segments, type Turn } from './conversation';
+import { type Ask, type Block, CONVERSATION_CODES, type PlanEntry, runCount, type RunningCall, runningCall, segments, type Turn } from './conversation';
+import { useNow } from './useNow';
 import type { AccountNames } from './accountNames';
 import { HandedAccount } from './HandedAccount';
 import { Markdown } from './Markdown';
@@ -236,6 +237,7 @@ function TurnView({ turn, tree, running, onLoadEarlier, reveal }: {
   const { marks } = useContext(WaitMarks);
   // The run in hand stays open while the turn goes on, and where the session ended inside it.
   const parts = segments(turn.items, running || Boolean(turn.cut));
+  const calling = running ? runningCall([turn]) : null;
 
   return (
     <div className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-1.5">
@@ -248,6 +250,7 @@ function TurnView({ turn, tree, running, onLoadEarlier, reveal }: {
       {running && <Dot tone="live" label={t('work.conversation.working')} className="mt-1" />}
       {/* A resumed conversation can wait many minutes on its model before anything shows (WAITSHOWN1): said, with the count. */}
       {running && turn.waitingSince && <FirstAnswer since={turn.waitingSince} />}
+      {calling && <CallingLine call={calling} />}
       {/* The session ended inside this turn (SESS1 S4): said once, in the passive, never as a failure —
           the driver's note above says why, when it knows. */}
       {turn.cut && <p className="m-0 text-meta text-ink-faint">{t('work.conversation.cut')}</p>}
@@ -264,14 +267,15 @@ function TurnView({ turn, tree, running, onLoadEarlier, reveal }: {
   );
 }
 
-/** Re-reads the clock every `every` ms while mounted, so a count of elapsed time steps without a new record (WAITSHOWN1). */
-function useNow(every: number): number {
-  const [now, setNow] = useState(() => Date.now());
-  useEffect(() => {
-    const timer = setInterval(() => setNow(Date.now()), every);
-    return () => clearInterval(timer);
-  }, [every]);
-  return now;
+/** The call a turn is inside (WAITSAY1): its title and how long it has run, ticking, so a long tool call is no bare *working…*. */
+function CallingLine({ call }: { call: RunningCall }) {
+  const { t } = useTranslation();
+  const now = useNow(10_000);
+  return (
+    <p role="status" className="m-0 text-meta text-ink-faint">
+      {t('work.conversation.calling', { title: call.title, elapsed: elapsed(call.since, new Date(now).toISOString()) })}
+    </p>
+  );
 }
 
 /** The wait for a turn's first answer (WAITSHOWN1): when it was asked, and for how long it has waited, ticking. */

@@ -198,6 +198,13 @@ const WAITING: SessionEvent[] = [
 ];
 export const WaitingForFirstAnswer: Story = { args: { turns: toTurns(WAITING).turns, live: true } };
 export const WaitingForFirstAnswerChinese: Story = { ...WaitingForFirstAnswer, decorators: [chinese] };
+/** WAITSAY1: a call that has run for nine minutes, named with how long. */
+const CALLING: SessionEvent[] = [
+  ev({ kind: 'user', origin: 'person', at: new Date(Date.now() - 12 * 60_000).toISOString(), text: 'Run the tests and fix what fails.' }),
+  ev({ kind: 'tool', id: 'long1', title: 'npm test', toolKind: 'execute', status: 'in_progress', at: new Date(Date.now() - 9 * 60_000).toISOString() }),
+];
+export const RunningALongCall: Story = { args: { turns: toTurns(CALLING).turns, live: true } };
+export const RunningALongCallChinese: Story = { ...RunningALongCall, decorators: [chinese] };
 export const FailedAndCancelled: Story ={ args: { turns: toTurns(FAILED).turns } };
 export const Stopped: Story = { args: { turns: toTurns(STOPPED).turns } };
 export const ToldWhileWorking: Story = { args: { turns: toTurns(TOLD).turns, live: true } };
