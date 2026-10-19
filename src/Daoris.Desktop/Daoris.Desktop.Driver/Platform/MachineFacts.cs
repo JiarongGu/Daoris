@@ -13,7 +13,8 @@ public sealed record FactRules(TimeSpan Deadline, TimeSpan Bound, int AtOnce = 2
 {
     /// <summary>
     /// The least time between two judgements of one subject that wakes ask for: a burst of wakes on a busy machine is one judgement
-    /// each rest, for a topic whose judgement reads the whole machine. None by default.
+    /// each rest, for a topic whose judgement reads the whole machine. None by default. A wake afresh (<see cref="MachineFacts.Wake"/>'s,
+    /// OWNMOVES1) and an ask that waits (<see cref="MachineFacts.JudgedAsync"/>) are never held by it.
     /// </summary>
     public TimeSpan Rest { get; init; } = TimeSpan.Zero;
 }
