@@ -2087,7 +2087,12 @@ public sealed class Driver(
                     // here once, beside its take's own answer, since its next start reads it unbound and names nothing.
                     return new StartRun(
                         $"{conclusion.State}  session {sessionId} (#{quest.Id} → {quest.To}){where}: {conclusion.Note}"
-                        + ClosureBinding.UnboundAtEnd(closure, after),
+                        + ClosureBinding.UnboundAtEnd(
+                            closure, after,
+                            // CLOSETAKE1: why, read off the session's record only where there is something to say.
+                            closure is { Bound: true } && after is { Status: "Taken" or "Done", Closure: null or "" }
+                                ? await TookBindOrNullAsync(service, sessionId, ct).ConfigureAwait(false)
+                                : null),
                         true,
                         // 🔴 The stop flag IS the "whose decision was this" answer (SURF5b) — the same
                         // one that outranks the observation above. Read once, used for both. A park is
@@ -3231,6 +3236,22 @@ public sealed class Driver(
             DaorisHome.Resolve(),
             AppContext.BaseDirectory,
             scope: KnowledgeConnector.SessionScope(home, sessionId, scope));
+
+    /// <summary>
+    /// Why the graph named for a session's take did not bind it (CLOSETAKE1), or null: a line's extra word is never worth failing the end of a
+    /// run for, so a service that did not answer says nothing more than the line already did.
+    /// </summary>
+    private static async Task<string?> TookBindOrNullAsync(ServiceClient service, string sessionId, CancellationToken ct)
+    {
+        try
+        {
+            return await service.TookBindAsync(sessionId, ct).ConfigureAwait(false);
+        }
+        catch (Exception error) when (error is DriverException or HttpRequestException or System.Text.Json.JsonException or IOException)
+        {
+            return null;
+        }
+    }
 
     /// <summary>
     /// A quest's target with the person's words on the ask it was asked by (DRIFT1b, D133 §2), read from the ask for this
