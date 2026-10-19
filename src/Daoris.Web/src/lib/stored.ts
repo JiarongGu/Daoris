@@ -24,3 +24,25 @@ export function store(key: string, value: string | null): void {
     // Not remembered: the page still works for as long as it lives.
   }
 }
+
+/**
+ * What this window alone remembers (MAINWINDOWS3): its own session storage, which a reload of the window keeps and no
+ * other window reads, since the host opens each window as a document of its own. Guarded as `stored` is.
+ */
+export function storedHere(key: string): string | null {
+  try {
+    return window.sessionStorage.getItem(key);
+  } catch {
+    return null;
+  }
+}
+
+/** Remember `value` under `key` for this window alone, or forget the key when it is null. A refusal is dropped. */
+export function storeHere(key: string, value: string | null): void {
+  try {
+    if (value === null) window.sessionStorage.removeItem(key);
+    else window.sessionStorage.setItem(key, value);
+  } catch {
+    // Not remembered: this window still holds it for as long as it lives.
+  }
+}
