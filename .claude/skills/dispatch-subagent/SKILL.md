@@ -44,8 +44,10 @@ each failing test first and RUN it to watch it fail before writing the code (a c
 and say which you saw fail; commit each piece once its tests pass. A component's sources changed on a later day than
 its README asks the README to describe the change (the docs gate). New words on the page run `src/locales`' tests too:
 `names:check --strict` does not hold a sentence's glossary words, `names.test.ts` does (WORKFLOW1h-d's 这台机器).
-A control moved or renamed runs the whole web suite, not only the touched files: other views' tests press it by name
-(HEAD2d's *Pause…*, pressed in QuestsView.work.test.tsx). An archive entry is appended at the file's end, after one
+Run only your own tests, filtered (the ones you add or change and those covering the code you change), and the quick
+checks before hand-back; never a whole project, a fast half, the web's whole suite or `npm run verify`: the CI beside
+runs those after the merge (the owner, 2026-10-19). A control moved or renamed: search the other views' tests for its
+name and run those files (HEAD2d's *Pause…*, pressed in QuestsView.work.test.tsx). An archive entry is appended at the file's end, after one
 blank line, in its neighbours' shape (`## ROW — title (date, Dn)`, the quoted row, `**Outcome** date: …`).
 Orientation pack:
 <the scout's pack, as it came back, with any pointer you corrected marked>
