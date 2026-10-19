@@ -48,6 +48,8 @@ export const keys = {
   remotes: ['remotes'] as const,
   browserSettings: ['browser-settings'] as const,
   lines: ['driver', 'lines'] as const,
+  /** Whether a repository's own `daoris.gates.json` marks heavy gates (HEAVYRUN1b2c) — a read of its checkout's file, so under the driver's key. */
+  heavyMarks: (repository: string) => ['driver', 'heavy-marks', repository] as const,
   // The running calls the shell pushes (WAITSAY1c2): written by the pushes alone, there is no pull beneath it.
   calls: ['driver', 'calls'] as const,
   /**
@@ -335,6 +337,12 @@ export const SESSIONS_SLICE = 'sessions';
 
 /** The call each running session is making, as the shell pushes it (WAITSAY1c2; its spec is `callsSlice` in `bridge/sessions`). */
 export const CALLS_SLICE = 'calls';
+
+/**
+ * The session list's groups and entries, as the shell pushes them (PUSH1c3b; its spec is `groupsSlice` in `bridge/sessions`): what
+ * `SESSION_GROUPS` answers for every session, under that pull's widest key.
+ */
+export const GROUPS_SLICE = 'groups';
 
 /** The service's own name for a workspace asked of it (`Workspaces.Normalize`), its ASCII letters folded as its `NOCASE` folds them. */
 const circle = (workspace: string) => (workspace.trim() || 'default').replace(/[A-Z]/g, (letter) => letter.toLowerCase());

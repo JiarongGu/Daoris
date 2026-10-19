@@ -243,6 +243,37 @@ public sealed class SessionsRoutes(DriverContext context)
         return Task.FromResult<object?>(new { Declined = answer.Stands, answer.Why, answer.Message });
     }
 
+    // What this machine's driven sessions hold for the person under their repository's asking permission prompts (AUTONOMY1b3a, D184
+    // point 3), oldest first: each request with its session, its call as the agent named it, and what the person may choose (never a
+    // standing allow). A read off the driver's memory (`HeldPermissions`), which a restart empties with the agents that asked.
+    [DriverRoute("PERMISSION_WAITS")]
+    private Task<object?> PermissionWaitsAsync(IpcRequest request, CancellationToken cancellationToken)
+    {
+        var waits = HeldPermissions.Of(_loop.Events).Now()
+            .Select(held => new
+            {
+                held.Session, held.Request, held.Call, held.Title, held.Kind,
+                Choices = held.Choices.Select(choice => new { choice.Id, choice.Name, choice.Kind }),
+                Since = Moments.Write(held.Since),
+            })
+            .ToList();
+        return Task.FromResult<object?>(new { Waits = waits });
+    }
+
+    // The person's answer to a request a session holds for them (AUTONOMY1b3a): an option the agent offered, by its id, or none to
+    // refuse it, which takes the offered one-time rejection, else none. The allow is the person's press for this call alone, and
+    // Daoris never answers one by itself (D37, D52); a standing allow is a rule's to give (D74). What cannot is `answered: false` with
+    // its code (`unheld`, `unoffered`, `standing`) and the registry's sentence, the hold left as it was. Its session hears the answer
+    // at once, off its own reader, and the hold's end is told through the registry's `Changed`; the route publishes nothing.
+    [DriverRoute("SESSION_PERMISSION_ANSWER")]
+    private Task<object?> SessionPermissionAnswerAsync(IpcRequest request, CancellationToken cancellationToken)
+    {
+        var session = PayloadHelper.GetRequiredValue<string>(request.Payload, "session");
+        var held = PayloadHelper.GetRequiredValue<string>(request.Payload, "request");
+        var answer = HeldPermissions.Of(_loop.Events).Answer(session, held, Optional(request, "option"));
+        return Task.FromResult<object?>(new { answer.Answered, answer.Why, answer.Message });
+    }
+
     private const string PersonMoves =
         "A person may finish, decline or stop a parked session — not move it anywhere else. "
         + "Answering it so it carries on is a message, not a move.";
@@ -429,26 +460,9 @@ public sealed class SessionsRoutes(DriverContext context)
         IReadOnlyCollection<string>? only, CancellationToken cancellationToken, bool walked = false)
     {
         var service = _loop.Service ?? throw NotReady();
-        var config = DriverConfig.Load(_loop.ConfigPath);
-        // When it began, which its records are as old as.
-        var at = DateTimeOffset.UtcNow;
-        // PUSH1c1 (D182 point 4): the records, the quests, the verdicts and the marks read now, as fresh as before, and no tree judged
-        // here unless walked: each tree's judgement is the machine's facts', judged per repository on its own wakes, so no window's
-        // tick starts git.
-        var look = await SessionGroups.LookAsync(
-                service, config, _context.Door(config), _loop.Look.Latest, _loop.Home, walked ? only : [], cancellationToken)
-            .ConfigureAwait(false);
-        // The cool-offs the loop's last look held starts on (MSG1f2): what a record whose words one holds says, its reset. And the
-        // call each live session's agent is inside, as this loop heard it from the events its sessions write (WAITSAY1b).
-        look = look with { Waits = _loop.Look.Waits, Calls = RunningCalls.Of(_loop.Events).Now() };
-        // A look at every session is kept with its time, for Ask Daoris's room to read where it is recent (HELPSTART1), and kept before
-        // its trees are read, so a facts' look judged again for a session that just ended reads this one.
-        if (only is null) _loop.SessionsLooked.Keep(look, at);
-        if (!walked)
-        {
-            var trees = new SessionTrees(_loop.Home);
-            look = await HelpFacts.WithTreesAsync(_loop.Facts, look, trees.Holds, trees.WorkAsync, only, ct: cancellationToken).ConfigureAwait(false);
-        }
+        // PUSH1c3c: the one look, in the groups slice's builder (PUSH1c1: no tree judged here unless walked; the waits, the calls and
+        // the kept look are laid there), so the route and the pushed slice cannot drift.
+        var look = await GroupsStateSlice.LookAsync(_loop, service, cancellationToken, only, walked).ConfigureAwait(false);
 
         return (look, SessionGroups.Read(look, only));
     }
@@ -537,8 +551,9 @@ public sealed class SessionsRoutes(DriverContext context)
         Discards = row.Discards is { } discards
             ? new { discards.Branch, discards.Tree, discards.Says, discards.Work.Keeps, discards.KeptAt }
             : null,
-        // WAITSAY1b: the call a working session's agent is inside, as the loop heard it, which its row and head say with how long.
-        Calling = row.Calling is { } call ? new { call.Title, call.Since } : null,
+        // WAITSAY1b: the call a working session's agent is inside, as the loop heard it, which its row and head say with how long;
+        // AUTONOMY1b3b: whether it waits on the person's answer to its permission request.
+        Calling = row.Calling is { } call ? new { call.Title, call.Since, call.Waiting } : null,
     };
 
     private static object Mark(ArchiveMark mark) => new { mark.Session, mark.At };

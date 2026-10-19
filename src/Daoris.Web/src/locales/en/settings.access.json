@@ -27,7 +27,7 @@
   "settings.access.value.landing.rule": "Landing rule",
   "settings.access.value.goAheads.named": "Named acts",
   "settings.access.value.goAheads.never": "Never",
-  "settings.access.says.permissions.asking": "The agent runs in its asking mode: it uses what its rules allow, and any other tool call is refused, since no prompt reaches you yet.",
+  "settings.access.says.permissions.asking": "The agent runs in its asking mode: it uses what its rules allow, and any other tool call waits for your answer on its session’s page and in What needs you, refused if nobody answers within 15 minutes. An agent not run over its protocol cannot ask, and refuses it.",
   "settings.access.says.permissions.auto": "The agent's auto mode decides each tool call its rules do not settle, as today.",
   "settings.access.says.permissions.unrestricted": "No permission prompt: the agent runs in its own mode that asks nothing.",
   "settings.access.says.routing.person": "An ask its declarations do not settle waits for you to accept the route its intake proposes, as today.",

@@ -14,13 +14,14 @@ import { type Answered, InlineConfirm } from './InlineConfirm';
 import { hasNote, type NoteRecord } from './noteLines';
 import { type OpinionWait, opinionState } from './opinion';
 import { unsettledWords } from './OpinionGate';
+import type { PermissionWait } from './PermissionAsks';
 import { TrustAsk } from './TrustAsk';
 
 /** The kinds of thing *What needs you* lists (design §6.2), each in one of its three groups (`ATTENTION_GROUP`). */
 export type AttentionKind =
   | 'parked' | 'parked-quest' | 'go-ahead' | 'trust' | 'account-wait' | 'signed-out'
   | 'proposal' | 'intake' | 'departure' | 'set-up' | 'rule' | 'unanswerable'
-  | 'review' | 'opinion' | 'helper' | 'work';
+  | 'review' | 'opinion' | 'helper' | 'work' | 'permission';
 
 /**
  * One thing that is waiting on a person, as Overview's band shows it.
@@ -74,6 +75,11 @@ export type Attention = {
   opinion?: OpinionWait;
   /** A `work` row's plugin step's attempt held for the person (FABRIC-PERFORM1g): what their word is on. */
   held?: HeldAttempt;
+  /**
+   * A `permission` row's tool call held for the person's answer (AUTONOMY1b3c): what its presses answer, by the choices its agent
+   * offered. Its `session` is the session that holds it, whose page its door opens.
+   */
+  permission?: PermissionWait;
   /** A `proposal`'s receivers, as its declarations named them: what *Publish to …* publishes to, in one press. */
   publishTo?: string[];
   /** A `proposal`'s other receivers: every repository its workspace can ask, which *Choose…* offers. */
@@ -149,6 +155,8 @@ export type AttentionActs = {
   helper?: (item: Attention, yes: boolean) => void;
   /** The person's word on a plugin step's attempt held for them (FABRIC-PERFORM1g): `daoris-driver work held`'s. */
   held?: (item: Attention, resolution: HeldResolution) => void;
+  /** A tool call held for the person answered with the option they pressed, by its agent's id (AUTONOMY1b3c). */
+  permission?: (item: Attention, option: string) => void;
 };
 
 /** Which handler each act needs. */
@@ -173,6 +181,9 @@ const HANDLER: Record<AttentionActId, keyof AttentionActs> = {
   'opinion-anyway': 'opinionAnyway',
   'let-ask': 'helper',
   'not-now': 'helper',
+  'allow-once': 'permission',
+  'refuse-once': 'permission',
+  'refuse-always': 'permission',
   happened: 'held',
   'did-not': 'held',
   'stop-step': 'held',
@@ -259,8 +270,9 @@ export function AttentionRow({ item, onOpen, onRun, acts = {}, busy = false, ope
     : item.read ? t('agents.read.at', { when: clockOf(item.read) }) : null;
 
   const done = () => { setAsking(null); setWords(''); setChoice(''); };
-  const press = ({ act, account }: AttentionOffer) => {
+  const press = ({ act, account, option }: AttentionOffer) => {
     if (ASKS_ONCE.has(act)) { setAsking(act); return; }
+    if (HANDLER[act] === 'permission') { if (option) acts.permission?.(item, option); return; }
     if (act === 'publish') acts.publish?.(item, item.publishTo ?? []);
     else if (act === 'retry') acts.retry?.(item);
     else if (act === 'accept-departure') acts.acceptDeparture?.(item);
@@ -307,6 +319,10 @@ export function AttentionRow({ item, onOpen, onRun, acts = {}, busy = false, ope
       case 'opinion-anyway': return t('opinion.act.anyway');
       case 'let-ask': return t('work.helper.approve');
       case 'not-now': return t('work.helper.decline');
+      // AUTONOMY1b3c: the session's card's own words, one per choice its agent offered.
+      case 'allow-once': return t('work.attention.act.allowOnce');
+      case 'refuse-once': return t('work.attention.act.refuseOnce');
+      case 'refuse-always': return t('work.attention.act.refuseAlways');
       // FABRIC-PERFORM1g: each says what it does, as `daoris-driver work held` names it.
       case 'happened': return t('work.milestone.held.act.happened');
       case 'did-not': return t('work.milestone.held.act.did-not');
@@ -363,7 +379,7 @@ export function AttentionRow({ item, onOpen, onRun, acts = {}, busy = false, ope
       {(offered.length > 0 || onOpen || onRun) && (
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5 @3xl/main:justify-end">
           {offered.map((offer) => (
-            <Button key={`${offer.act}:${offer.account ?? ''}`} disabled={busy || asking !== null} onClick={() => press(offer)}>
+            <Button key={`${offer.act}:${offer.account ?? offer.option ?? ''}`} disabled={busy || asking !== null} onClick={() => press(offer)}>
               {label(offer.act, offer.account)}
             </Button>
           ))}

@@ -13,7 +13,7 @@ public sealed class HeartbeatTests : IDisposable
 
     public void Dispose()
     {
-        try { Directory.Delete(_folder, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
+        GitSeed.Discard(_folder);
     }
 
     [Fact]

@@ -185,8 +185,8 @@ public sealed class PipeCensus
             // Reads (D156 §3's reads stay open): they change nothing and declare nothing (D169 point 2).
             "ACCOUNTS", "ACROSS", "ASKS_ELSEWHERE", "ASK_LANDING", "CHANNEL_READ", "CHECKOUT_BRANCH", "ENTRY_LANDING",
             "GIT_BLAME", "GIT_BRANCHES", "GIT_COMMIT", "GIT_COMPARE", "GIT_GRAPH", "GIT_HISTORY", "HANDOFF_PLAN", "HARNESSES",
-            "HELPER_WAITS", "HELP_CONVERSATIONS", "HELP_PROPOSALS", "HELP_WIRED", "HISTORY_PLAN", "LANDING", "LINES", "OPINION_GATE",
-            "OPINION_WAITS", "PLUGIN", "PLUGINS", "PLUGIN_ACTIVITY", "PLUGIN_READ", "RULES", "SESSION_DIFF", "SESSION_FILE",
+            "HELPER_WAITS", "HELP_CONVERSATIONS", "HELP_PROPOSALS", "HELP_WIRED", "HEAVY_MARKS", "HISTORY_PLAN", "LANDING", "LINES", "OPINION_GATE",
+            "OPINION_WAITS", "PERMISSION_WAITS", "PLUGIN", "PLUGINS", "PLUGIN_ACTIVITY", "PLUGIN_READ", "RULES", "SESSION_DIFF", "SESSION_FILE",
             "SESSION_FILES", "SESSION_GROUPS", "SESSION_HELPERS", "SESSION_HISTORY", "SESSION_OPENINGS", "SESSION_OPTIONS",
             "SESSION_PROCESS", "SESSION_QUEUE", "SESSION_SEARCH", "SESSION_STREAMS", "SESSION_WHERE", "SETUP_PLAN", "STARTS",
             "STATE", "STATE_SLICE", "SWEEP_PLAN", "SYSTEM_WIRING", "TAIL_SESSION", "TOOLS_LIST", "TRACE", "TREES_SYNC_PLAN", "TREES_SYNC_SCOPE",
@@ -203,8 +203,9 @@ public sealed class PipeCensus
             // FABRIC-PERFORM1g: the person's word on a plugin step's attempt held for them, which settles what nothing else can.
             "WORK_HELD",
             "HELP_DISMISS", "CHANNEL_MARK",
-            // A go-ahead's answer, a parked session's yes or no, a helper's, a quest retried after its strikes.
-            "SESSION_GO_AHEAD", "RESOLVE_SESSION", "SESSION_HELPER_APPROVE", "SESSION_HELPER_DECLINE", "SESSION_HELPER_ASK",
+            // A go-ahead's answer, a parked session's yes or no, a helper's, a quest retried after its strikes, and the answer to a
+            // permission a session holds for the person (AUTONOMY1b3a), whose allow is the person's alone.
+            "SESSION_GO_AHEAD", "RESOLVE_SESSION", "SESSION_HELPER_APPROVE", "SESSION_HELPER_DECLINE", "SESSION_HELPER_ASK", "SESSION_PERMISSION_ANSWER",
             "RETRY_QUEST", "HELP_APPLY",
             // The person's words, and a conversation begun or carried on with them.
             "SESSION_INPUT", "SESSION_QUEUE_EDIT", "CHANNEL_POST", "START_CHAT", "START_HELP", "HELP_START_FROM",

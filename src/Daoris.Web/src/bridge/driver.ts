@@ -5,7 +5,7 @@ import { keys } from '../data/queries';
 import type { AccountWaitTick, Consideration, TrustHold } from '../data/signals';
 import type { AccessLevel } from '../settings/Access';
 import type { CommitRule } from '../settings/Commits';
-import type { HeavyGate } from '../settings/HeavyGates';
+import type { HeavyGate, HeavyMarks } from '../settings/HeavyGates';
 import type { HelperRule } from '../settings/Helpers';
 import type { LandingRule } from '../settings/Landings';
 import type { LanguageOption } from '../settings/Languages';
@@ -448,3 +448,17 @@ export const useSetStanding = () => useDriverChange<{ repository: string; says?:
  */
 export const useSetHeavyGates = () =>
   useDriverChange<{ repository: string; gates: HeavyGate[] | null }>('SET_HEAVY_GATES');
+
+/**
+ * Whether a repository's own `daoris.gates.json` marks heavy gates, so wins over this machine's list (HEAVYRUN1b2c, D180's note): the
+ * driver's reading of that one file in the checkout it holds (`HEAVY_MARKS`), never the page's. A read; `enabled` holds it back until
+ * the section it serves is drawn, and the file is asked again whenever the page is, since nothing wakes it on an edit to the file.
+ */
+export const useHeavyMarks = (repository: string, { enabled = true }: { enabled?: boolean } = {}) => {
+  const { isAvailable } = useShenora();
+  return useQuery({
+    queryKey: keys.heavyMarks(repository),
+    queryFn: () => call<HeavyMarks & { repository: string }>('HEAVY_MARKS', { repository }),
+    enabled: isAvailable && enabled && repository !== '',
+  });
+};

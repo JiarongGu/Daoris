@@ -10,18 +10,21 @@ import { type HelperAskRow, waitsOnWord } from './HelperAsks';
 import { isIntake } from './identity';
 import type { LandingPlan } from './Lands';
 import { acceptAnswers, opinionAsked, opinionHolds, opinionState, opinionTone } from './opinion';
+import { heldFor, type PermissionWait } from './PermissionAsks';
 import { REVIEW_TONE, reviewHolds, reviewState } from './review';
 
 /**
  * What waits on the person in a session, one at a time (WAITFOOT1b, D168 point 2): its question, an intake's ask, each
- * go-ahead still open, each rule it proposed that the person still answers (PROPOSEHERE1b), each helper it asked for that waits
- * on their word (MIXAGENT2c), and what its work offers them, *Accept…*, the rebase words, a gate in their hue, or a discard the
- * line holds. The foot's strip names them; the head draws the same.
+ * go-ahead still open, each tool call it holds for their answer under asking (AUTONOMY1b3c), each rule it proposed that the
+ * person still answers (PROPOSEHERE1b), each helper it asked for that waits on their word (MIXAGENT2c), and what its work offers
+ * them, *Accept…*, the rebase words, a gate in their hue, or a discard the line holds. The foot's strip names them; the head
+ * draws the same.
  */
 export type Wait =
   | { kind: 'question'; below: boolean }
   | { kind: 'intake'; ask: string }
   | { kind: 'goAhead'; number: number }
+  | { kind: 'permission'; request: string }
   | { kind: 'rule'; id: string }
   | { kind: 'helper'; id: string }
   | { kind: 'accept' }
@@ -108,6 +111,8 @@ export type WaitFacts = {
   onAnswerAsk?: unknown;
   goAheads?: GoAhead[];
   onGoAhead?: unknown;
+  /** The permissions this machine's sessions hold for the person as the shell read them, and the door that answers one (AUTONOMY1b3c). */
+  permissions?: { waits?: readonly PermissionWait[]; onAnswer?: unknown } | null;
   /** The machine's rule proposals as the shell read them, and the door that answers them (PROPOSEHERE1b). */
   rules?: { proposals?: unknown; onAnswer?: unknown } | null;
   /** The helpers it asked for as the driver's look left them, and the yes that answers one (MIXAGENT2c). */
@@ -142,6 +147,11 @@ export function waitsOf(facts: WaitFacts): Wait[] {
     for (const goAhead of facts.goAheads ?? []) {
       if (goAhead.state === 'asked') waits.push({ kind: 'goAhead', number: goAhead.number });
     }
+  }
+  // A tool call it holds for the person's answer under asking (AUTONOMY1b3c, D184 point 3): its turn stands still until they
+  // answer, or the bound refuses it, so it comes before what only waits beside a running turn.
+  if (facts.permissions?.onAnswer) {
+    for (const held of heldFor(facts.permissions.waits ?? [], session.id)) waits.push({ kind: 'permission', request: held.request });
   }
   // Whatever its state: a session refused something files the proposal and goes on, or ends its turn (PROPOSEHERE1b).
   if (facts.rules?.onAnswer) {

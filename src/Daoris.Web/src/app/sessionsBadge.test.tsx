@@ -71,7 +71,7 @@ function respond(url: string): Response {
 }
 
 /** What the driver's own lists say waits on the person besides the tick's: an agent's ask for a helper, and a second opinion. */
-type DriverWaits = { helpers?: unknown[]; opinions?: unknown[] };
+type DriverWaits = { helpers?: unknown[]; opinions?: unknown[]; permissions?: unknown[] };
 
 function start(considered: Consideration[], proposals: RuleProposal[] = [], driverWaits: DriverWaits = {}) {
   vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => respond(String(input))));
@@ -80,6 +80,7 @@ function start(considered: Consideration[], proposals: RuleProposal[] = [], driv
     if (module === 'DAORIS.DRIVER' && type === 'RULES') return { proposals };
     if (module === 'DAORIS.DRIVER' && type === 'HELPER_WAITS') return { waits: driverWaits.helpers ?? [] };
     if (module === 'DAORIS.DRIVER' && type === 'OPINION_WAITS') return { waits: driverWaits.opinions ?? [] };
+    if (module === 'DAORIS.DRIVER' && type === 'PERMISSION_WAITS') return { waits: driverWaits.permissions ?? [] };
     if (module === 'DAORIS.DRIVER' && type === 'SESSION_GROUPS' && driverWaits.opinions) {
       // One session to review, so the second opinions are asked at all (the band asks them only while there is one to name).
       return { sessions: [{ session: 'r3v13w00', group: 'review', shown: 'completed', archived: false, teammate: false }] };
@@ -227,6 +228,24 @@ describe("The taskbar's count", () => {
     await waitFor(() => expect(within(overviewButton()).getByText('5')).toBeInTheDocument());
     await waitFor(() => expect(badges().at(-1)).toEqual(
       ['DAORIS.WINDOWS', 'SET_BADGE', { payload: { count: 5, description: '5 waiting on you' } }]));
+  });
+
+  /**
+   * AUTONOMY1b3c (D184 point 3): a tool call a session holds for the person's answer stands its turn still until they answer, or
+   * the bound refuses it, so the badge counts it as the band lists it: the window behind others still says a turn waits on them.
+   */
+  it('counts a tool call a session holds for the person, as the band lists it', async () => {
+    start([], [], {
+      permissions: [{
+        session: 'c4a7c4a7', request: '900', call: null, title: 'npm test', kind: 'execute', since: '2026-10-01T11:00:00Z',
+        choices: [{ id: 'allow', name: 'Allow', kind: 'allow_once' }],
+      }],
+    });
+
+    // The two the band lists with no tick (see 'holds no parked quest'), and the held call.
+    await waitFor(() => expect(within(overviewButton()).getByText('3')).toBeInTheDocument());
+    await waitFor(() => expect(badges().at(-1)).toEqual(
+      ['DAORIS.WINDOWS', 'SET_BADGE', { payload: { count: 3, description: '3 waiting on you' } }]));
   });
 
   it('is never told from a secondary window’s page', async () => {

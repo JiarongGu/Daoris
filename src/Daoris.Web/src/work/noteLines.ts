@@ -197,6 +197,14 @@ export const NOTE_CODES: Readonly<Record<string, NoteCode>> = {
   // A permission the rules refused (CONVNOTE2b): the call's title rides between the two as the agent's words.
   'refused.lead': { values: [] },
   'refused.governs': { values: [] },
+  // A permission held for the person under asking (AUTONOMY1b3a, D184): the call's title rides after the lead as the agent's words; a
+  // refusal leads with `refused.lead`, and its close says who or what refused it, the bound's minutes a fact.
+  'asking.held': { values: [] },
+  'asking.allowed': { values: [] },
+  'asking.denied': { values: [] },
+  'asking.cancelled': { values: [] },
+  'asking.ended': { values: [] },
+  'asking.bound': { values: ['minutes'] },
   // A press's note and a chat's settings (CONVNOTE2c): a landing's and a preface's sentence follow their lead as a program's words.
   'landing.person-accepted': { values: [] },
   'landing.person-handed': { values: [] },

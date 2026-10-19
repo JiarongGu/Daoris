@@ -270,6 +270,289 @@ public sealed class AcpTests
         Assert.Contains("cancelled", answered);
     }
 
+    // ---- AUTONOMY1b3a (D184 point 3): under asking, the protocol door holds a request for the person ----
+
+    /// <summary>A repository's setup with its permission prompts set to <paramref name="value"/>, the rest today's.</summary>
+    private static ResolvedAccess PermissionsOf(string value) => AccessRules.ResolveLevels(
+        new AccessSetting { Pauses = new Dictionary<string, string> { [AccessRules.Permissions] = value } }, null, null);
+
+    /// <summary>A driven start of `engine` on Claude's protocol door under its repository's asking permission prompts.</summary>
+    private static DrivenAccess Asking() =>
+        DrivenAccess.For(PermissionsOf(AccessRules.Asking), "engine", AdapterSet.Built().Resolve("claude-code-acp"));
+
+    private const string Choices =
+        """[{"optionId":"always","name":"Always allow","kind":"allow_always"},{"optionId":"yes","name":"Allow","kind":"allow_once"},{"optionId":"no","name":"Reject","kind":"reject_once"}]""";
+
+    /// <summary>
+    /// An agent in Claude's asking mode that, prompted, announces call <c>c9</c>, asks permission for it as request 900 and, while
+    /// that waits, announces <c>c10</c>. It answers its prompt only once request 900 is answered: the call completed where an option
+    /// it offered allowed it, else failed, and the turn <c>cancelled</c> where a cancel came first. Each answer to 900 is kept.
+    /// </summary>
+    private static FakeAgent AskingAgent(string options, ConcurrentQueue<JsonElement> answers)
+    {
+        JsonElement? prompt = null;
+        var cancelled = false;
+        return new FakeAgent((frame, self) =>
+        {
+            if (!frame.TryGetProperty("method", out var method))
+            {
+                if (frame.TryGetProperty("id", out var id) && id.GetRawText() == "900")
+                {
+                    var outcome = frame.GetProperty("result").GetProperty("outcome").Clone();
+                    answers.Enqueue(outcome);
+                    var allowed = outcome.TryGetProperty("optionId", out var chosen) && chosen.GetString() is "yes" or "always";
+                    self.Push(Update("s-1", $$"""{"sessionUpdate":"tool_call_update","toolCallId":"c9","status":"{{(allowed ? "completed" : "failed")}}"}"""));
+                    self.Push(Ok(prompt!.Value, cancelled ? """{"stopReason":"cancelled"}""" : """{"stopReason":"end_turn"}"""));
+                }
+
+                return null;
+            }
+
+            switch (method.GetString())
+            {
+                case "initialize": return Ok(frame, """{"protocolVersion":1}""");
+                case "session/new":
+                    return Ok(frame, """{"sessionId":"s-1","modes":{"currentModeId":"default","availableModes":[{"id":"default"},{"id":"acceptEdits"},{"id":"bypassPermissions"}]}}""");
+                case "session/prompt":
+                    prompt = frame.Clone();
+                    self.Push(Update("s-1", """{"sessionUpdate":"tool_call","toolCallId":"c9","title":"npm start","kind":"execute","status":"pending"}"""));
+                    self.Push($$$"""{"jsonrpc":"2.0","id":900,"method":"session/request_permission","params":{"sessionId":"s-1","toolCall":{"toolCallId":"c9","title":"npm start","kind":"execute"},"options":{{{options}}}}}""");
+                    self.Push(Update("s-1", """{"sessionUpdate":"tool_call","toolCallId":"c10","title":"read the log","kind":"read","status":"pending"}"""));
+                    return null;
+                case "session/cancel":
+                    cancelled = true;
+                    return null;
+                default: return frame.TryGetProperty("id", out _) ? Ok(frame, "{}") : null;
+            }
+        });
+    }
+
+    /// <summary>The hold the registry lists for <paramref name="session"/>, once it is there.</summary>
+    private static async Task<HeldPermission> HeldAsync(HeldPermissions registry, string session)
+    {
+        HeldPermission? held = null;
+        await UntilAsync(() => (held = registry.Held(session).FirstOrDefault()) is not null, $"nothing was held for `{session}`");
+        return held!;
+    }
+
+    private static async Task UntilAsync(Func<bool> condition, string what)
+    {
+        for (var tries = 0; tries < 500; tries++)
+        {
+            if (condition()) return;
+            await Task.Delay(10);
+        }
+
+        throw new TimeoutException(what);
+    }
+
+    private static string Coded(IEnumerable<SessionEvent> events, string code) => events
+        .Single(e => e.Kind == SessionEventKind.Note && e.Parts?.Any(part => part.Code == code) == true).Text!;
+
+    /// <summary>
+    /// 🔴 Under asking, a permission request is held for the person, off the read loop: nothing answers it while it waits, the frames
+    /// after it are still read, and the person's choice of an option the agent offered is the answer, by its id. The record says it
+    /// was held and that the person allowed it, by code.
+    /// </summary>
+    [Fact]
+    public async Task Under_asking_a_request_is_held_off_the_loop_until_the_person_answers_with_an_offered_option()
+    {
+        var answers = new ConcurrentQueue<JsonElement>();
+        var events = new ConcurrentQueue<SessionEvent>();
+        var lines = new ConcurrentQueue<string>();
+        var registry = new HeldPermissions();
+        var agent = AskingAgent(Choices, answers);
+        var asking = Asking();
+        var session = new AcpSession(agent.Incoming, agent.Outgoing, lines.Enqueue, closeTimeout: null, asking.Posture, onEvent: events.Enqueue)
+        {
+            Unoffered = asking.Unoffered,
+            Permissions = registry.For("d1"),
+        };
+
+        var run = session.RunAsync("X:/daoris/engine", "start the server", CancellationToken.None);
+        var held = await HeldAsync(registry, "d1");
+
+        Assert.Equal(("900", "c9", "npm start", "execute"), (held.Request, held.Call, held.Title, held.Kind));
+        Assert.Equal(["yes", "no"], held.Choices.Select(choice => choice.Id));
+        // The frame after the request is read while it waits: a hold on the loop would stall it until the answer.
+        await UntilAsync(() => events.Any(e => e is { Kind: SessionEventKind.Tool, Id: "c10" }), "the frame after the request was not read");
+        Assert.Empty(answers);
+        Assert.False(run.IsCompleted);
+
+        Assert.True(registry.Answer("d1", "900", "yes").Answered);
+        await run.WaitAsync(TimeSpan.FromSeconds(10));
+
+        var answer = Assert.Single(answers);
+        Assert.Equal(("selected", "yes"), (answer.GetProperty("outcome").GetString(), answer.GetProperty("optionId").GetString()));
+        Assert.Equal("permission held for the person's answer: `npm start`", Coded(events, NoteCodes.AskingHeld.Code));
+        Assert.Equal("permission allowed by the person: `npm start`", Coded(events, NoteCodes.AskingAllowed.Code));
+        Assert.Equal("completed", events.Last(e => e is { Kind: SessionEventKind.Tool, Id: "c9" }).Status);
+        Assert.Contains(lines, line => line.StartsWith("  permission allowed by the person:", StringComparison.Ordinal));
+        Assert.Empty(registry.Held("d1"));
+    }
+
+    /// <summary>
+    /// 🔴 Never an invented allow: where the agent offered no allow the person may choose, the person can only refuse, which with no
+    /// rejection offered is <c>cancelled</c>, and the call the agent then fails reads <c>refused</c>.
+    /// </summary>
+    [Fact]
+    public async Task With_no_allow_offered_the_persons_answer_can_only_refuse()
+    {
+        var answers = new ConcurrentQueue<JsonElement>();
+        var events = new ConcurrentQueue<SessionEvent>();
+        var registry = new HeldPermissions();
+        var agent = AskingAgent("""[{"optionId":"always","name":"Always allow","kind":"allow_always"}]""", answers);
+        var asking = Asking();
+        var session = new AcpSession(agent.Incoming, agent.Outgoing, _ => { }, closeTimeout: null, asking.Posture, onEvent: events.Enqueue)
+        {
+            Permissions = registry.For("d1"),
+        };
+
+        var run = session.RunAsync("X:/daoris/engine", "start the server", CancellationToken.None);
+        var held = await HeldAsync(registry, "d1");
+        Assert.Empty(held.Choices);
+        Assert.Equal("standing", registry.Answer("d1", "900", "always").Why);
+        Assert.True(registry.Answer("d1", "900", option: null).Answered);
+        await run.WaitAsync(TimeSpan.FromSeconds(10));
+
+        Assert.Equal("cancelled", Assert.Single(answers).GetProperty("outcome").GetString());
+        Assert.Equal("refused", events.Last(e => e is { Kind: SessionEventKind.Tool, Id: "c9" }).Status);
+        Assert.Equal("permission refused: `npm start` — the person refused it", Coded(events, NoteCodes.AskingDenied.Code));
+    }
+
+    /// <summary>
+    /// A turn's cancel releases what it held: the cancel goes first, then each held request is answered <c>cancelled</c>, as the
+    /// protocol asks of a client that cancels, and the record says the turn was stopped before the person answered.
+    /// </summary>
+    [Fact]
+    public async Task A_cancel_releases_a_held_request_cancelled_saying_why()
+    {
+        var answers = new ConcurrentQueue<JsonElement>();
+        var events = new ConcurrentQueue<SessionEvent>();
+        var registry = new HeldPermissions();
+        var agent = AskingAgent(Choices, answers);
+        var asking = Asking();
+        var session = new AcpSession(agent.Incoming, agent.Outgoing, _ => { }, closeTimeout: null, asking.Posture, onEvent: events.Enqueue)
+        {
+            Permissions = registry.For("d1"),
+        };
+
+        var run = session.RunAsync("X:/daoris/engine", "start the server", CancellationToken.None);
+        await HeldAsync(registry, "d1");
+        await session.CancelTurnAsync();
+        var outcome = await run.WaitAsync(TimeSpan.FromSeconds(10));
+
+        Assert.Equal("cancelled", outcome.StopReason);
+        Assert.Equal("cancelled", Assert.Single(answers).GetProperty("outcome").GetString());
+        var sent = agent.Sent.Select(line => JsonDocument.Parse(line).RootElement).ToList();
+        Assert.True(
+            sent.FindIndex(f => f.TryGetProperty("method", out var m) && m.GetString() == "session/cancel")
+            < sent.FindIndex(f => !f.TryGetProperty("method", out _) && f.GetProperty("id").GetRawText() == "900"));
+        Assert.Equal(
+            "permission refused: `npm start` — the turn was stopped before the person answered",
+            Coded(events, NoteCodes.AskingCancelled.Code));
+        Assert.Empty(registry.Held("d1"));
+        Assert.False(registry.Answer("d1", "900", "yes").Answered);
+    }
+
+    /// <summary>
+    /// The stream's end releases what it held, a stop's kill among its causes: nothing is sent on a wire that is gone, and the record
+    /// says the session ended before the person answered.
+    /// </summary>
+    [Fact]
+    public async Task The_streams_end_releases_a_held_request_saying_why()
+    {
+        var answers = new ConcurrentQueue<JsonElement>();
+        var events = new ConcurrentQueue<SessionEvent>();
+        var registry = new HeldPermissions();
+        var agent = AskingAgent(Choices, answers);
+        var asking = Asking();
+        var session = new AcpSession(agent.Incoming, agent.Outgoing, _ => { }, closeTimeout: null, asking.Posture, onEvent: events.Enqueue)
+        {
+            Permissions = registry.For("d1"),
+        };
+
+        var run = session.RunAsync("X:/daoris/engine", "start the server", CancellationToken.None);
+        await HeldAsync(registry, "d1");
+        agent.Close();
+
+        await Assert.ThrowsAsync<DriverException>(() => run.WaitAsync(TimeSpan.FromSeconds(10)));
+        Assert.Empty(answers);
+        Assert.Empty(registry.Held("d1"));
+        Assert.Equal(
+            "permission refused: `npm start` — the session ended before the person answered",
+            Coded(events, NoteCodes.AskingEnded.Code));
+    }
+
+    /// <summary>
+    /// 🔴 An unanswered request is a turn hung for ever (REV3): one nobody answers is released at its bound, answered <c>cancelled</c>,
+    /// and the record says nobody answered within it.
+    /// </summary>
+    [Fact]
+    public async Task A_held_request_nobody_answers_is_released_cancelled_at_its_bound()
+    {
+        var answers = new ConcurrentQueue<JsonElement>();
+        var events = new ConcurrentQueue<SessionEvent>();
+        var registry = new HeldPermissions();
+        var agent = AskingAgent(Choices, answers);
+        var asking = Asking();
+        var session = new AcpSession(agent.Incoming, agent.Outgoing, _ => { }, closeTimeout: null, asking.Posture, onEvent: events.Enqueue)
+        {
+            Permissions = registry.For("d1", bound: TimeSpan.FromMilliseconds(100)),
+        };
+
+        await session.RunAsync("X:/daoris/engine", "start the server", CancellationToken.None).WaitAsync(TimeSpan.FromSeconds(10));
+
+        Assert.Equal("cancelled", Assert.Single(answers).GetProperty("outcome").GetString());
+        Assert.StartsWith("permission refused: `npm start` — nobody answered within its", Coded(events, NoteCodes.AskingBound.Code));
+        Assert.Equal("refused", events.Last(e => e is { Kind: SessionEventKind.Tool, Id: "c9" }).Status);
+        Assert.Empty(registry.Held("d1"));
+    }
+
+    /// <summary>
+    /// 🔴 Every other posture keeps today's answer exactly, a registry given or not (D52): auto, the adapter's own, unrestricted, and
+    /// Ask Daoris's unmarked asking mode refuse at once by the rejection's kind, and nothing is ever held.
+    /// </summary>
+    [Theory]
+    [InlineData(null)]
+    [InlineData("auto|acceptEdits")]
+    [InlineData("default")]
+    [InlineData("!bypassPermissions")]
+    public async Task Outside_asking_a_request_is_refused_at_once_and_nothing_is_held(string? posture)
+    {
+        string? answered = null;
+        var agent = new FakeAgent((frame, self) =>
+        {
+            if (!frame.TryGetProperty("method", out var method))
+            {
+                answered = frame.GetProperty("result").GetProperty("outcome").GetRawText();
+                return null;
+            }
+
+            switch (method.GetString())
+            {
+                case "initialize": return Ok(frame, """{"protocolVersion":1}""");
+                case "session/new":
+                    return Ok(frame, """{"sessionId":"s-1","modes":{"currentModeId":"default","availableModes":[{"id":"default"},{"id":"acceptEdits"},{"id":"bypassPermissions"}]}}""");
+                case "session/prompt":
+                    self.Push($$$"""{"jsonrpc":"2.0","id":900,"method":"session/request_permission","params":{"sessionId":"s-1","toolCall":{"title":"push"},"options":{{{Choices}}}}}""");
+                    return Ok(frame, """{"stopReason":"end_turn"}""");
+                default: return frame.TryGetProperty("id", out _) ? Ok(frame, "{}") : null;
+            }
+        });
+        var registry = new HeldPermissions();
+        var moved = 0;
+        registry.Changed += _ => moved++;
+
+        await new AcpSession(agent.Incoming, agent.Outgoing, _ => { }, closeTimeout: null, posture) { Permissions = registry.For("d1") }
+            .RunAsync("X:/daoris/engine", "push the branch", CancellationToken.None);
+
+        Assert.NotNull(answered);
+        Assert.Contains("selected", answered);
+        Assert.Contains("\"no\"", answered);
+        Assert.Equal(0, moved);
+    }
+
     /// <summary>
     /// A tool call and its outcome reach the console as readable lines — the structured source the
     /// timeline needs, rendered for the transcript without anything being parsed out of stdout.

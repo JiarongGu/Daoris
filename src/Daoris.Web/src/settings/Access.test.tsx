@@ -111,10 +111,11 @@ describe("a level's access rows", () => {
   it('shows each pause with what it means, its value and where it came from', () => {
     draw(MIXED);
 
-    // Asking refuses what the rules do not allow, since no prompt reaches the person yet (AUTONOMY1b; AUTONOMY1b3 is the row).
+    // Asking holds what the rules do not allow for the person's answer (AUTONOMY1b3c), where the protocol door can hold it.
     expect(row('Permission prompts')).toHaveTextContent(
-      'The agent runs in its asking mode: it uses what its rules allow, and any other tool call is refused, since no prompt reaches '
-      + 'you yet. From the workspace aurora.');
+      'The agent runs in its asking mode: it uses what its rules allow, and any other tool call waits for your answer on its '
+      + 'session’s page and in What needs you, refused if nobody answers within 15 minutes. An agent not run over its protocol '
+      + 'cannot ask, and refuses it. From the workspace aurora.');
     expect(row('Intake routing')).toHaveTextContent(
       'An ask its declarations do not settle goes where its intake routed it; you may route it again. From this machine.');
     expect(row('Landing')).toHaveTextContent("Finished work waits for your Accept… before it lands, as today. Daoris's default: nothing is set.");
@@ -229,6 +230,9 @@ describe("a level's access rows", () => {
     expect(screen.getByText('权限提示', { selector: 'span' })).toBeInTheDocument();
     expect(screen.getByText('放行', { selector: 'span' })).toBeInTheDocument();
     expect(row('落地')).toHaveTextContent('完成的工作等你采纳…之后才落地，和现在一样。Daoris 的默认：哪里都没有设定。');
+    expect(row('权限提示')).toHaveTextContent(
+      '智能体以它的询问模式运行：规则允许的照用，其他工具调用都在它的会话页面和“等你处理”里等你答复，15 分钟内无人答复则被拒绝。'
+      + '不通过其协议运行的智能体无法询问，会直接拒绝。');
     expect(accessSummary(t, MIXED, 'repository')).toBe(
       '权限用询问模式（工作区的默认），受理直接分派（本机的默认），等你采纳…才落地（Daoris 的默认），不请你放行');
   });

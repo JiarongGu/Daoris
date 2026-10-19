@@ -49,6 +49,7 @@ import { WorkspaceScopeProvider } from '../data/scope';
 import { keys, useHelpSessions, useSessions } from '../data/queries';
 import { type DriverState, useDriver } from '../bridge/driver';
 import { useLines, useWorkState } from '../bridge/lines';
+import { useSessionEntries, useSessionGroups } from '../bridge/sessions';
 
 const CHOICES = { drivable: ['engine'], holds: [], trees: [], notify: false, strikes: 3, forgiven: {} };
 
@@ -97,6 +98,28 @@ const CALL = { title: 'npm test', since: '2026-10-20T08:00:00+00:00' };
 const CALLS_SNAPSHOT = {
   slice: 'calls', epoch: 'c1', status: 'ready',
   partitions: [{ partition: 'calling', seq: 1, status: 'ready', data: { 'a-1': CALL } }],
+};
+
+const grouping = (session: string, group: string) =>
+  ({ session, group, shown: group === 'working' ? 'working' : 'completed', archived: false, teammate: false });
+const entry = (session: string, group: string) => ({
+  entry: `session:${session}/engine`, origin: `session:${session}`, repository: 'engine', group, leading: session,
+  parts: [{ session, quest: null, shown: grouping(session, group).shown, group, began: 'opened', after: null, askedBy: null }],
+});
+
+/** The session groups' slice (PUSH1c3a): each row under its session with its group's sort inputs, each entry under its key. */
+const GROUPS_SNAPSHOT = {
+  slice: 'groups', epoch: 'g1', status: 'ready',
+  partitions: [
+    { partition: 'entries', seq: 1, status: 'ready', data: { 'session:a-2/engine': entry('a-2', 'ended'), 'session:a-1/engine': entry('a-1', 'working') } },
+    {
+      partition: 'rows', seq: 1, status: 'ready',
+      data: {
+        'a-2': { ...grouping('a-2', 'ended'), updated: '2026-10-19T09:00:00+00:00' },
+        'a-1': { ...grouping('a-1', 'working'), repository: 'engine', created: '2026-10-19T08:00:00+00:00' },
+      },
+    },
+  ],
 };
 
 const unitRow = (unit: string, repository: string) =>
@@ -148,7 +171,7 @@ function host(pushes: boolean) {
       if (pushes) {
         const slice = options?.payload?.slice;
         return slice === 'lines' ? LINES_SNAPSHOT : slice === 'sessions' ? SESSIONS_SNAPSHOT : slice === 'calls' ? CALLS_SNAPSHOT
-          : slice === 'work' ? WORK_SNAPSHOT : SNAPSHOT;
+          : slice === 'work' ? WORK_SNAPSHOT : slice === 'groups' ? GROUPS_SNAPSHOT : SNAPSHOT;
       }
       throw Object.assign(new Error('NO_ROUTE'), { code: 'NO_ROUTE' });
     }
@@ -198,9 +221,11 @@ describe("the driver's state, pushed (PUSH1a)", () => {
   it('is read once as its snapshot when the window opens, and a tick reads none of it again', async () => {
     host(true);
     const client = await open();
-    // One snapshot for each slice the window reads pushed (the driver's state, the lines, the sessions, the calls, the work), and no pull beside any.
-    expect(asked().get('DAORIS.DRIVER.STATE_SLICE')).toBe(5);
+    // One snapshot for each slice the window reads pushed (the driver's state, the lines, the sessions, the calls, the work, the
+    // groups), and no pull beside any.
+    expect(asked().get('DAORIS.DRIVER.STATE_SLICE')).toBe(6);
     expect(asked().get('DAORIS.DRIVER.WORK_STATE')).toBeUndefined();
+    expect(asked().get('DAORIS.DRIVER.SESSION_GROUPS')).toBeUndefined();
     expect(asked().get('DAORIS.DRIVER.STATE')).toBeUndefined();
     expect(asked().get('DAORIS.DRIVER.LINES')).toBeUndefined();
     expect(client.getQueryData<DriverState>(keys.driver)?.drivable).toEqual(['engine']);
@@ -224,9 +249,10 @@ describe("the driver's state, pushed (PUSH1a)", () => {
     // The view that mounts the driver's state and the lines first, remembered as the opening one.
     window.localStorage.setItem('daoris.view', 'sessions');
     await open();
-    expect(asked().get('DAORIS.DRIVER.STATE_SLICE')).toBe(5);
+    expect(asked().get('DAORIS.DRIVER.STATE_SLICE')).toBe(6);
     expect(asked().get('DAORIS.DRIVER.STATE')).toBeUndefined();
     expect(asked().get('DAORIS.DRIVER.LINES')).toBeUndefined();
+    expect(asked().get('DAORIS.DRIVER.SESSION_GROUPS')).toBeUndefined();
     expect(sessionReads()).toBe(0);
   });
 
@@ -332,8 +358,10 @@ describe("the driver's state, pushed (PUSH1a)", () => {
     render(<QueryClientProvider client={second}><WorkspaceScopeProvider initial={null}><Second /></WorkspaceScopeProvider></QueryClientProvider>);
     await later(2_000);
 
-    // One snapshot for each slice, and no pull.
-    expect(since(before, asked())).toEqual({ 'DAORIS.DRIVER.STATE_SLICE': 5, 'DAORIS.DRIVER.UNDER_WAY': 1 });
+    // One snapshot for each slice, and no pull. The first window's own ask of the held permissions, every few seconds while a
+    // session works (AUTONOMY1b3c, `permissionsAgainIn`), is not this window's, and may land in these two seconds.
+    const { 'DAORIS.DRIVER.PERMISSION_WAITS': _firstWindows, ...read } = since(before, asked());
+    expect(read).toEqual({ 'DAORIS.DRIVER.STATE_SLICE': 6, 'DAORIS.DRIVER.UNDER_WAY': 1 });
     expect(sessionReads()).toBe(reads);
     expect(second.getQueryData<{ id: string }[]>(keys.sessions(null, true, null))?.map((each) => each.id)).toEqual(['a-1', 'a-2', 'g-1']);
   });
@@ -422,6 +450,50 @@ describe("the driver's state, pushed (PUSH1a)", () => {
     expect(since(before, asked())['DAORIS.DRIVER.STATE_SLICE']).toBeUndefined();
   });
 
+  /**
+   * AUTONOMY1b3b: where the calls are pushed, the held permissions are asked as a pushed call's waiting mark moves, and never every
+   * few seconds while a session works: the mark comes with the hold and goes with its answer or release.
+   */
+  it('asks the held permissions as a pushed call is marked waiting and unmarked, and never on a clock (AUTONOMY1b3b)', async () => {
+    host(true);
+    await open();
+    const before = asked();
+    await later(20_000);
+    expect(since(before, asked())['DAORIS.DRIVER.PERMISSION_WAITS']).toBeUndefined();
+
+    const held = asked();
+    await act(async () => {
+      heard.get('STATE_PUSH')?.({
+        slice: 'calls', epoch: 'c1', partition: 'calling', seq: 2, status: 'ready', baseSeq: 1, removed: [],
+        data: { 'a-1': { title: 'git push', since: '2026-10-20T08:03:00+00:00', waiting: true } },
+      });
+      await vi.advanceTimersByTimeAsync(1_000);
+    });
+    expect(since(held, asked())['DAORIS.DRIVER.PERMISSION_WAITS']).toBe(1);
+
+    const answered = asked();
+    await act(async () => {
+      heard.get('STATE_PUSH')?.({
+        slice: 'calls', epoch: 'c1', partition: 'calling', seq: 3, status: 'ready', baseSeq: 2, removed: [], data: { 'a-1': CALL },
+      });
+      await vi.advanceTimersByTimeAsync(1_000);
+    });
+    expect(since(answered, asked())['DAORIS.DRIVER.PERMISSION_WAITS']).toBe(1);
+    await later(20_000);
+    expect(since(answered, asked())['DAORIS.DRIVER.PERMISSION_WAITS']).toBe(1);
+  });
+
+  /** A host older than the calls' push has no mark to wake the page: it keeps asking every few seconds while a session works. */
+  it('keeps asking the held permissions every few seconds on a host that pushes no calls', async () => {
+    host(false);
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => (/^\/api\/sessions(\?|$)/.test(String(input))
+      ? Response.json([record('a-1', { state: 'working' })]) : respond(String(input)))));
+    await open();
+    const before = asked();
+    await later(20_000);
+    expect(since(before, asked())['DAORIS.DRIVER.PERMISSION_WAITS']).toBeGreaterThanOrEqual(4);
+  });
+
   it('holds the work milestones from their snapshot, a push changing them and a tick or a focus reading no WORK_STATE (PUSH1c2b)', async () => {
     host(true);
     const client = await open();
@@ -458,6 +530,86 @@ describe("the driver's state, pushed (PUSH1a)", () => {
     expect(unit?.units.map((each) => each.unit)).toEqual(['u-2']);
     expect(unit?.recovery).toEqual([]);
     expect(since(before, asked())['DAORIS.DRIVER.WORK_STATE']).toBeUndefined();
+  });
+
+  it('holds the session groups from their snapshot in the reader\'s order, and a tick, a focus or a change reads no SESSION_GROUPS (PUSH1c3b)', async () => {
+    host(true);
+    const client = await open();
+    expect(asked().get('DAORIS.DRIVER.SESSION_GROUPS')).toBeUndefined();
+    // Working before ended, the order's inputs left out, each entry at its leading row's place.
+    const held = client.getQueryData<{ sessions: { session: string }[]; entries: { leading: string }[] }>(['sessions', 'groups', '*']);
+    expect(held?.sessions).toEqual([grouping('a-1', 'working'), grouping('a-2', 'ended')]);
+    expect(held?.entries.map((each) => each.leading)).toEqual(['a-1', 'a-2']);
+    const before = asked();
+
+    await act(async () => {
+      heard.get('DRIVER_TICK')?.({ events: [], considered: [], untrusted: [], waits: [] });
+      heard.get('SESSION_ENDED')?.({ session: 'a-1', state: 'completed' });
+      heard.get('SESSION_ATTENTION')?.({ headline: 'It ended', kind: 'Ended', session: 'a-1' });
+      heard.get('STATE_CHANGED')?.({ scopes: ['sessions'], sessions: ['a-1'] });
+      await vi.advanceTimersByTimeAsync(2_000);
+    });
+    await later(20_000);
+    hidden(true);
+    hidden(false);
+    await later(1_000);
+
+    expect(since(before, asked())['DAORIS.DRIVER.SESSION_GROUPS']).toBeUndefined();
+    expect(since(before, asked())['DAORIS.DRIVER.STATE_SLICE']).toBeUndefined();
+  });
+
+  it("changes the rail's groups where a push says, a session's delta alone, with no read, and some sessions' variant read from them (PUSH1c3b)", async () => {
+    host(true);
+    const client = await open();
+    const before = asked();
+    let rows: { session: string }[] | undefined;
+    let entries: { leading: string }[] | undefined;
+    let some: { session: string }[] | undefined;
+    function Rail() {
+      rows = useSessionGroups().data;
+      entries = useSessionEntries().data;
+      some = useSessionGroups(['a-2']).data;
+      return null;
+    }
+    render(<QueryClientProvider client={client}><WorkspaceScopeProvider initial={null}><Rail /></WorkspaceScopeProvider></QueryClientProvider>);
+    await later(1_000);
+    expect(rows?.map((each) => each.session)).toEqual(['a-1', 'a-2']);
+    expect(entries?.map((each) => each.leading)).toEqual(['a-1', 'a-2']);
+    expect(some?.map((each) => each.session)).toEqual(['a-2']);
+
+    // A session began in another repository and one went: its entry and its row, each a delta, the entries first as the owner pushes.
+    await act(async () => {
+      heard.get('STATE_PUSH')?.({
+        slice: 'groups', epoch: 'g1', partition: 'entries', seq: 2, status: 'ready', baseSeq: 1, removed: ['session:a-2/engine'],
+        data: { 'session:a-3/engine': entry('a-3', 'working') },
+      });
+      heard.get('STATE_PUSH')?.({
+        slice: 'groups', epoch: 'g1', partition: 'rows', seq: 2, status: 'ready', baseSeq: 1, removed: ['a-2'],
+        data: { 'a-3': { ...grouping('a-3', 'working'), repository: 'Alpha', created: '2026-10-19T10:00:00+00:00' } },
+      });
+      await vi.advanceTimersByTimeAsync(1_000);
+    });
+
+    // Working by repository without case: 'Alpha' before 'engine', though it began later.
+    expect(rows?.map((each) => each.session)).toEqual(['a-3', 'a-1']);
+    expect(entries?.map((each) => each.leading)).toEqual(['a-3', 'a-1']);
+    expect(some).toEqual([]);
+    expect(since(before, asked())['DAORIS.DRIVER.SESSION_GROUPS']).toBeUndefined();
+    expect(since(before, asked())['DAORIS.DRIVER.STATE_SLICE']).toBeUndefined();
+  });
+
+  it('keeps the groups pulled on a host older than the push: read as the window opens, and read again at a tick (PUSH1c3b)', async () => {
+    host(false);
+    await open();
+    const opened = asked().get('DAORIS.DRIVER.SESSION_GROUPS') ?? 0;
+    expect(opened).toBeGreaterThan(0);
+
+    await act(async () => {
+      heard.get('DRIVER_TICK')?.({ events: [], considered: [], untrusted: [], waits: [] });
+      await vi.advanceTimersByTimeAsync(2_000);
+    });
+
+    expect(asked().get('DAORIS.DRIVER.SESSION_GROUPS')).toBeGreaterThan(opened);
   });
 
   it('keeps the pull on a host older than the push: its state is read, and read again at a tick', async () => {

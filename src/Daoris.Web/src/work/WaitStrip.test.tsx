@@ -5,6 +5,7 @@ import i18n from '../locales/i18n';
 import type { GoAhead, Session } from '../data/api';
 import type { RuleProposal } from '../settings/AgentRules';
 import type { HelperAskRow, HelperWaits } from './HelperAsks';
+import type { PermissionWait } from './PermissionAsks';
 import { STEP_SHOWN } from './reviewFixtures';
 import { WaitStrip } from './WaitStrip';
 
@@ -248,6 +249,40 @@ describe('the strip of what waits on the person, at the foot', () => {
     expect(strip()).toHaveTextContent('its question · go-ahead #2 · a helper it asked for');
 
     const { container } = render(<WaitStrip session={session({ state: 'working' })} helpers={helpers({ onApprove: undefined })} onTop={vi.fn()} />);
+    expect(container).toBeEmptyDOMElement();
+  });
+
+  // AUTONOMY1b3c (D184 point 3): a tool call the session holds for the person's answer under asking, with the head's own press per
+  // choice the agent offered, and none another session holds.
+  const HELD: PermissionWait = {
+    session: 's1a2b3c4', request: '900', call: 'tc-1', title: 'npm test', kind: 'execute', since: '2026-09-21T11:00:00Z',
+    choices: [{ id: 'allow', name: 'Allow', kind: 'allow_once' }, { id: 'reject', name: 'Reject', kind: 'reject_once' }],
+  };
+
+  it('answers a tool call it holds for the person with the option they pressed, and shows none of another session', async () => {
+    const onAnswer = vi.fn();
+    render(
+      <WaitStrip
+        session={session({ state: 'working' })}
+        permissions={{ waits: [HELD, { ...HELD, session: 'o7h3r000', request: '1', title: 'rm -rf build' }], onAnswer }}
+        onTop={vi.fn()}
+      />,
+    );
+
+    expect(within(strip()).getByText(/Its rules do not allow these by themselves/)).toBeInTheDocument();
+    const items = within(strip()).getAllByRole('listitem');
+    expect(items).toHaveLength(1);
+    expect(items[0]).toHaveTextContent('npm test');
+    await userEvent.click(within(items[0]!).getByRole('button', { name: 'Allow once' }));
+    expect(onAnswer).toHaveBeenCalledWith(HELD, 'allow', { done: expect.any(Function), refused: expect.any(Function) });
+  });
+
+  it('folds naming a tool call to answer, and has none where nothing can answer it', async () => {
+    render(<WaitStrip session={session({ state: 'working' })} permissions={{ waits: [HELD], onAnswer: vi.fn() }} helpers={helpers()} onTop={vi.fn()} />);
+    await userEvent.click(within(strip()).getByRole('button', { name: 'Fold' }));
+    expect(strip()).toHaveTextContent('a tool call to answer · a helper it asked for');
+
+    const { container } = render(<WaitStrip session={session({ state: 'working' })} permissions={{ waits: [HELD] }} onTop={vi.fn()} />);
     expect(container).toBeEmptyDOMElement();
   });
 

@@ -13,7 +13,9 @@ import {
   useParkGoAhead, useAccounts, useGoOnNew, useTrace, useDiscardSessionBranch, useLanding, useLandSessionTree, useSessionDiff,
   useDiscardSessionTree, useDriver, useOpinionGate, useWorkflowRun, useRules, useSessionEvents, stoppedWaiting, useUnderWay,
   useEntryLanding, useLandEntry, useSessionHelpers, useUnderWaySubject, useSessionProcess, useWorkState, usePushedCalls, withCall,
+  useAnswerPermission, usePermissionWaits,
 } from '../bridge/shell';
+import { permissionSaid, type PermissionWaits } from './PermissionAsks';
 import { type Sent, useSending, useSettled } from './sending';
 import { WorkflowRunView } from '../workflow/WorkflowRunView';
 import { opinionAsked, opinionHolds } from './opinion';
@@ -1339,6 +1341,19 @@ export function WorkFrame({
     },
     busy: actions.approvingHelper,
   } : null;
+  // The tool calls the attended session holds for the person's answer under asking (AUTONOMY1b3c, D184 point 3): the driver's own
+  // list, this machine's record alone, asked every few seconds while it runs (the routes publish nothing), and the answer's one
+  // owner, so the head and the foot press the same. A refusal of the answer is said where it was pressed, in the catalogue's words.
+  const permissionWaits = usePermissionWaits(Boolean(attended && here && (attended.state === 'working' || attended.state === 'starting')));
+  const answerPermission = useAnswerPermission();
+  const heldPermissions: PermissionWaits | null = attended && here && permissionWaits.data ? {
+    waits: permissionWaits.data,
+    onAnswer: (held, option, answered) => answerPermission.mutate({ session: held.session, request: held.request, option }, {
+      onSuccess: (answer) => (answer.answered ? answered.done() : answered.refused(permissionSaid(t, answer.why, answer.message))),
+      onError: (error) => answered.refused(sentence(error)),
+    }),
+    busy: answerPermission.isPending,
+  } : null;
 
   // The menu bar's verbs that are this frame's (UX7a, D152 §3.2): the attended session's answer, the views of the regions,
   // a new terminal where the attended session works, and *Archive what ended…*'s first press. Each from an effect, since
@@ -1484,6 +1499,8 @@ export function WorkFrame({
     // The helpers it asked for (MIXAGENT2b), with the yes and the no: an agent's ask the look holds waiting on the person's word is
     // one of its waits, at the head and at the foot alike (MIXAGENT2c, D168).
     helpers: helperWaits,
+    // The tool calls it holds for the person's answer (AUTONOMY1b3c): one of its waits, at the head and at the foot alike.
+    permissions: heldPermissions,
     // Its review, wherever the review stands (SESS2 H4): the move beside unlanded work.
     onReview: () => openView('review'),
     // LAND4: commits its tree holds, offered to land beside what it left; the press is the review's Accept, its sentence said

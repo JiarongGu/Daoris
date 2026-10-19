@@ -696,6 +696,7 @@ internal sealed class DriverBrainstorms(LoopContext context, Driver driver)
                     return Task.FromResult(new BrainstormTurnRun(true, selection.Profile, code, $"{code ?? "completed"}  brainstorm turn {turn.Turn}"));
                 },
                 ct, scope: scope, handedServers: [], minutes: turn.Minutes,
+                said: _driver.Said(adapter, selection, sessionId),
                 noConnector: "— this machine has no connector, so this pass cannot give its answer.", movedFirst: true)
                 .ConfigureAwait(false);
         }
