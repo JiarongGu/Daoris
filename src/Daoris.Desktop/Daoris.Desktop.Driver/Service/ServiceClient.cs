@@ -1424,6 +1424,12 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
     public Task<string> QuestsJsonAsync(CancellationToken ct = default) => GetAsync("/api/quests?includeClosed=true", ct);
 
     /// <summary>
+    /// Every ask, closed and done ones included, each as it stands, as the service wrote them: what the asks' pushed slice reads
+    /// (PUSH1d3), which <see cref="AskView"/> leaves out because no planner needs it.
+    /// </summary>
+    public Task<string> AsksJsonAsync(CancellationToken ct = default) => GetAsync("/api/asks?includeClosed=true", ct);
+
+    /// <summary>
     /// The ledger's judgement of deleting a session's record (SESSUX1f, D126 §5.4), deleting nothing: whether it would, and
     /// if not, its sentence, its word and the facts the word names.
     /// </summary>

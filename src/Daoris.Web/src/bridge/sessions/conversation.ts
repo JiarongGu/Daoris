@@ -527,9 +527,9 @@ export const useParkGoAhead = () => {
       return { ...wordsOf(answered), waits: waits === true, message: typeof message === 'string' ? message : '' };
     },
     onError: () => {
-      // The records themselves, where the shell pushes them, are pushed as they moved (PUSH1d2).
+      // The records and the asks themselves, where the shell pushes them, are pushed as they moved (PUSH1d2, PUSH1d3).
       void client.invalidateQueries({ queryKey: keys.allSessions, predicate: notPushed(client) });
-      void client.invalidateQueries({ queryKey: keys.allAsks });
+      void client.invalidateQueries({ queryKey: keys.allAsks, predicate: notPushed(client) });
     },
   });
 };

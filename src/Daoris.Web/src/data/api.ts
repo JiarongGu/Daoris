@@ -52,9 +52,12 @@ export type Convergence = {
 /**
  * A file a quest carries, by name (D65 §2). `path` is where THIS machine keeps it — answered only to a
  * caller on this machine, and only when the bytes are here — so the page reads its PRESENCE as "can be
- * opened" and never shows the path itself: a page does not name a machine path.
+ * opened" and never shows the path itself: a page does not name a machine path. Where the shell pushes
+ * the quests and the asks (PUSH1d3), the path is never pushed and `kept` says the same; `fileKept` reads either.
  */
-export type QuestAttachment = { name: string; sha256: string; bytes: number; path?: string };
+export type QuestAttachment = { name: string; sha256: string; bytes: number; path?: string; kept?: boolean };
+/** Whether this machine keeps a file's bytes, so it can be opened: a path pulled, or `kept` pushed (PUSH1d3). */
+export const fileKept = (file: QuestAttachment): boolean => Boolean(file.path) || file.kept === true;
 export type Quest = {
   id: string; from: string; to: string; title: string; body: string;
   status: 'Open' | 'Taken' | 'Done' | 'Declined';

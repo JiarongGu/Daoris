@@ -17705,3 +17705,9 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **BGWAIT1c — native background cutoff** (driver/web). Coded cutoff instead of park after harness-killed work. D83/D137/D142; stream fixture.
 
 **Outcome** 2026-10-20: built as SESSTRUE1, one feature end to end (D187): a native turn whose own background work the harness ended with the turn is cut off (`ended.background-cut`, worded in en and zh) and carried on in the same tree, where it used to park. Commit `826f25a13`. Detail: D126's SESSTRUE1 note.
+
+## PUSH1d3 — quests and asks pushed (2026-10-20, D182)
+
+> - [ ] **PUSH1d3 — quests and asks pushed** (modules, web; D182 points 2-4, 7; after PUSH1d2). As PUSH1d2 for `/api/quests` and `/api/asks`, each allow-listed (an attachment's `path` stripped), `notPushed` on their invalidations and on the mutations' settling (`useAskChange`, `useDelete`, the quest families). Proof: a tick reads neither; a connector's ask reaches the windows by a push.
+
+**Outcome** 2026-10-20: the `quests` and `asks` slices (`Loop/QuestsStateSlice.cs`, `AsksStateSlice.cs`), a keyed partition per workspace carrying only the fields the page's types declare (a quest's evidence and an ask's words never pushed; a file's `path` replaced by `kept`), woken by the `quests`, `asks` and `sessions` families; on the page `questsSlice` and `asksSlice` read through `pushedList` with `questsIn`/`asksIn`, every family invalidation passing `notPushed`. A tick, a focus and a declared change read neither route; an ask a connector writes reaches two windows by one push; an older host still pulls. The install's measurement (D182 point 8) is open. On Opus: about 196 tool calls, 35 minutes. Detail: D182's PUSH1d3 note.
