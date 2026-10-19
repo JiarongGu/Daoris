@@ -1,6 +1,6 @@
 import { type ReactNode, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { api, type Quest, type Session, type SubmissionRef } from '../data/api';
+import { api, fileKept, type Quest, type Session, type SubmissionRef } from '../data/api';
 import { isImage } from '../compose/attachments';
 import { ago, sessionTool, size, stamp } from '../locales/format';
 import { ExternalLink } from '../design/links';
@@ -877,13 +877,13 @@ export function QuestPage({
       {(quest.attachments?.length ?? 0) > 0 && (
         /* The files, by name (D65 §2). One this machine keeps opens through the host's own route — never by its
            path, which a page does not show — and a picture is shown as one. One named on the record and kept
-           elsewhere says so, rather than looking like a broken link. */
+           elsewhere says so, rather than looking like a broken link. Kept here is a path pulled or `kept` pushed (PUSH1d3). */
         <div className="mt-4">
           <PageSection title={t('quests.detail.files')}>
             <ul className="m-0 grid list-none gap-2 p-0">
               {quest.attachments!.map((file) => (
                 <li key={file.sha256} className="min-w-0 text-body">
-                  {file.path ? (
+                  {fileKept(file) ? (
                     <ExternalLink href={api.attachmentUrl(quest.id, file.sha256)} className="group inline-grid max-w-full gap-1.5 text-accent">
                       <span className="inline-flex min-w-0 items-center gap-1.5">
                         <Icon name="attach" size={12} />

@@ -46,7 +46,7 @@ import { App } from './App';
 import { ShellSignals } from './ShellSignals';
 import { AT_START } from '../help/setupGuide';
 import { WorkspaceScopeProvider } from '../data/scope';
-import { keys, useHelpSessions, useSessions, useSyncStanding } from '../data/queries';
+import { keys, useAsks, useHelpSessions, useQuests, useSessions, useSyncStanding } from '../data/queries';
 import { type DriverState, useDriver } from '../bridge/driver';
 import { useLines, useSweepLook, useSweepPlan, useWorkState } from '../bridge/repositories/lines';
 import { useSessionEntries, useSessionGroups } from '../bridge/sessions/sessions';
@@ -155,6 +155,35 @@ const SWEEP_SNAPSHOT = {
   partitions: [{ partition: 'engine', seq: 1, status: 'ready', data: { branches: [sweepRow('daoris/s-one')], landed: [] } }],
 };
 
+const quest = (id: string, extra: Record<string, unknown> = {}) => ({
+  id, from: 'person', to: 'engine', title: `quest ${id}`, body: 'the body', status: 'Open', filed: '2026-10-19T08:00:00+00:00',
+  updated: '2026-10-19T09:00:00+00:00', workspace: 'default', links: [], attachments: [], ...extra,
+});
+
+/** The quests' slice as the shell's owner holds it (PUSH1d3): a partition per workspace, its quests by id. */
+const QUESTS_SNAPSHOT = {
+  slice: 'quests', epoch: 'q1', status: 'ready',
+  partitions: [
+    { partition: 'default', seq: 1, status: 'ready', data: { 'q-1': quest('q-1'), 'q-2': quest('q-2', { status: 'Done' }) } },
+    { partition: 'games', seq: 1, status: 'ready', data: { 'q-3': quest('q-3', { to: 'site', workspace: 'games' }) } },
+  ],
+};
+
+const askRecord = (id: string, extra: Record<string, unknown> = {}) => ({
+  id, workspace: 'default', sentence: `ask ${id}`, state: 'Published', tier: 'declarations', asked: '2026-10-19T08:00:00+00:00',
+  updated: '2026-10-19T09:00:00+00:00', links: [], attachments: [], proposal: [], quests: ['q-1'], ...extra,
+});
+
+/** The asks' slice as the shell's owner holds it (PUSH1d3): a partition per workspace, its asks by id. */
+const ASKS_SNAPSHOT = {
+  slice: 'asks', epoch: 'k1', status: 'ready',
+  partitions: [{ partition: 'default', seq: 1, status: 'ready', data: { 'k-1': askRecord('k-1'), 'k-2': askRecord('k-2', { state: 'Closed' }) } }],
+};
+
+/** How often the page read the quests or the asks from the service: either list with any of its questions, never one record's own door. */
+const questReads = () => vi.mocked(fetch).mock.calls.filter(([input]) => /^\/api\/quests(\?|$)/.test(String(input))).length;
+const askReads = () => vi.mocked(fetch).mock.calls.filter(([input]) => /^\/api\/asks(\?|$)/.test(String(input))).length;
+
 /** How often the page read the sessions from the service: `/api/sessions` with any of its questions, never a record's own door. */
 const sessionReads = () => vi.mocked(fetch).mock.calls.filter(([input]) => /^\/api\/sessions(\?|$)/.test(String(input))).length;
 
@@ -195,7 +224,7 @@ function host(pushes: boolean) {
         const slice = options?.payload?.slice;
         return slice === 'lines' ? LINES_SNAPSHOT : slice === 'sessions' ? SESSIONS_SNAPSHOT : slice === 'calls' ? CALLS_SNAPSHOT
           : slice === 'work' ? WORK_SNAPSHOT : slice === 'groups' ? GROUPS_SNAPSHOT : slice === 'sync' ? SYNC_SNAPSHOT
-            : slice === 'sweep' ? SWEEP_SNAPSHOT : SNAPSHOT;
+            : slice === 'sweep' ? SWEEP_SNAPSHOT : slice === 'quests' ? QUESTS_SNAPSHOT : slice === 'asks' ? ASKS_SNAPSHOT : SNAPSHOT;
       }
       throw Object.assign(new Error('NO_ROUTE'), { code: 'NO_ROUTE' });
     }
@@ -247,9 +276,11 @@ describe("the driver's state, pushed (PUSH1a)", () => {
     host(true);
     const client = await open();
     // One snapshot for each slice the window reads pushed (the driver's state, the lines, the sessions, the calls, the work, the
-    // groups, where each circle stands, the clean-up's list), and no pull beside any.
-    expect(asked().get('DAORIS.DRIVER.STATE_SLICE')).toBe(8);
+    // groups, where each circle stands, the clean-up's list, the quests and the asks), and no pull beside any.
+    expect(asked().get('DAORIS.DRIVER.STATE_SLICE')).toBe(10);
     expect(syncReads()).toBe(0);
+    expect(questReads()).toBe(0);
+    expect(askReads()).toBe(0);
     expect(asked().get('DAORIS.DRIVER.WORK_STATE')).toBeUndefined();
     expect(asked().get('DAORIS.DRIVER.SWEEP_PLAN')).toBeUndefined();
     expect(asked().get('DAORIS.DRIVER.SESSION_GROUPS')).toBeUndefined();
@@ -276,11 +307,13 @@ describe("the driver's state, pushed (PUSH1a)", () => {
     // The view that mounts the driver's state and the lines first, remembered as the opening one.
     window.localStorage.setItem('daoris.view', 'sessions');
     await open();
-    expect(asked().get('DAORIS.DRIVER.STATE_SLICE')).toBe(8);
+    expect(asked().get('DAORIS.DRIVER.STATE_SLICE')).toBe(10);
     expect(asked().get('DAORIS.DRIVER.STATE')).toBeUndefined();
     expect(asked().get('DAORIS.DRIVER.LINES')).toBeUndefined();
     expect(asked().get('DAORIS.DRIVER.SESSION_GROUPS')).toBeUndefined();
     expect(sessionReads()).toBe(0);
+    expect(questReads()).toBe(0);
+    expect(askReads()).toBe(0);
   });
 
   it('mounts the hub before any view asks the shell anything (PUSHMOUNT1)', async () => {
@@ -388,9 +421,110 @@ describe("the driver's state, pushed (PUSH1a)", () => {
     // One snapshot for each slice, and no pull. The first window's own ask of the held permissions, every few seconds while a
     // session works (AUTONOMY1b3c, `permissionsAgainIn`), is not this window's, and may land in these two seconds.
     const { 'DAORIS.DRIVER.PERMISSION_WAITS': _firstWindows, ...read } = since(before, asked());
-    expect(read).toEqual({ 'DAORIS.DRIVER.STATE_SLICE': 8, 'DAORIS.DRIVER.UNDER_WAY': 1 });
+    expect(read).toEqual({ 'DAORIS.DRIVER.STATE_SLICE': 10, 'DAORIS.DRIVER.UNDER_WAY': 1 });
     expect(sessionReads()).toBe(reads);
     expect(second.getQueryData<{ id: string }[]>(keys.sessions(null, true, null))?.map((each) => each.id)).toEqual(['a-1', 'a-2', 'g-1']);
+  });
+
+  it('reads the quests and the asks as their snapshots, and neither a tick, a declared change nor a focus reads /api/quests or /api/asks (PUSH1d3)', async () => {
+    host(true);
+    const client = await open();
+    // The widest lists, every workspace's, closed included, in the service's order: the open quests first, the newest ask first.
+    expect(client.getQueryData<{ id: string }[]>(keys.quests(null, true, null))?.map((each) => each.id)).toEqual(['q-1', 'q-3', 'q-2']);
+    expect(client.getQueryData<{ id: string }[]>(keys.asks(true, null))?.map((each) => each.id)).toEqual(['k-1', 'k-2']);
+    let outstanding: { id: string }[] | undefined;
+    let site: { id: string }[] | undefined;
+    let asks: { id: string }[] | undefined;
+    function Lists() {
+      outstanding = useQuests(null, false).data;
+      site = useQuests('site', true).data;
+      asks = useAsks(false).data;
+      return null;
+    }
+    render(<QueryClientProvider client={client}><WorkspaceScopeProvider initial={null}><Lists /></WorkspaceScopeProvider></QueryClientProvider>);
+    await later(1_000);
+    expect(outstanding?.map((each) => each.id)).toEqual(['q-1', 'q-3']);
+    expect(site?.map((each) => each.id)).toEqual(['q-3']);
+    expect(asks?.map((each) => each.id)).toEqual(['k-1']);
+
+    await act(async () => {
+      heard.get('DRIVER_TICK')?.({ events: [], considered: [], untrusted: [], waits: [] });
+      heard.get('STATE_CHANGED')?.({ scopes: ['quests', 'asks'] });
+      await vi.advanceTimersByTimeAsync(2_000);
+    });
+    await later(20_000);
+    hidden(true);
+    hidden(false);
+    await later(1_000);
+
+    expect(questReads()).toBe(0);
+    expect(askReads()).toBe(0);
+  });
+
+  it('carries an ask a connector wrote to two windows by one push, with no read in either (PUSH1d3)', async () => {
+    host(true);
+    const client = await open();
+    const firstWindow = heard.get('STATE_PUSH')!;
+    let first: { id: string }[] | undefined;
+    function First() {
+      first = useAsks(false).data;
+      return null;
+    }
+    render(<QueryClientProvider client={client}><WorkspaceScopeProvider initial={null}><First /></WorkspaceScopeProvider></QueryClientProvider>);
+    await later(1_000);
+    const before = asked();
+
+    const second = new QueryClient();
+    let other: { id: string }[] | undefined;
+    function Second() {
+      other = useAsks(false).data;
+      return null;
+    }
+    // The hub first, as each root mounts it (PUSHMOUNT1), then what reads the asks.
+    render(
+      <QueryClientProvider client={second}>
+        <WorkspaceScopeProvider initial={null}><ShellSignals notify={() => {}} /><Second /></WorkspaceScopeProvider>
+      </QueryClientProvider>,
+    );
+    await later(2_000);
+    const secondWindow = heard.get('STATE_PUSH')!;
+    expect(other?.map((each) => each.id)).toEqual(['k-1']);
+
+    // A connector's ask, heard on the change stream: the owner pushes that ask alone, a delta, to each window.
+    const pushed = {
+      slice: 'asks', epoch: 'k1', partition: 'default', seq: 2, status: 'ready', baseSeq: 1, removed: [],
+      data: { 'k-3': askRecord('k-3', { state: 'Open', asked: '2026-10-19T10:00:00+00:00' }) },
+    };
+    await act(async () => {
+      firstWindow(pushed);
+      secondWindow(pushed);
+      await vi.advanceTimersByTimeAsync(1_000);
+    });
+
+    expect(first?.map((each) => each.id)).toEqual(['k-3', 'k-1']);
+    expect(other?.map((each) => each.id)).toEqual(['k-3', 'k-1']);
+    expect(askReads()).toBe(0);
+    // The second window's own snapshots alone. The first window's ask of the held permissions is not this window's (AUTONOMY1b3c),
+    // nor its badge, which the new ask moved: what needs the person read it from the push.
+    const { 'DAORIS.DRIVER.PERMISSION_WAITS': _firstWindows, 'DAORIS.WINDOWS.SET_BADGE': _badge, ...read } = since(before, asked());
+    expect(read).toEqual({ 'DAORIS.DRIVER.STATE_SLICE': 10, 'DAORIS.DRIVER.UNDER_WAY': 1 });
+  });
+
+  it('keeps the quests and the asks pulled on a host older than the push: read as the window opens, and read again at a tick (PUSH1d3)', async () => {
+    host(false);
+    await open();
+    const quests = questReads();
+    const asks = askReads();
+    expect(quests).toBeGreaterThan(0);
+    expect(asks).toBeGreaterThan(0);
+
+    await act(async () => {
+      heard.get('DRIVER_TICK')?.({ events: [], considered: [], untrusted: [], waits: [] });
+      await vi.advanceTimersByTimeAsync(2_000);
+    });
+
+    expect(questReads()).toBeGreaterThan(quests);
+    expect(askReads()).toBeGreaterThan(asks);
   });
 
   it('reads the sessions as their snapshot, and neither a tick, a focus nor an ending reads /api/sessions (PUSH1d2)', async () => {
@@ -751,7 +885,7 @@ describe("the driver's state, pushed (PUSH1a)", () => {
     expect(syncReads()).toBe(0);
     // The second window's own snapshots alone; the first window's ask of the held permissions is not this window's (AUTONOMY1b3c).
     const { 'DAORIS.DRIVER.PERMISSION_WAITS': _firstWindows, ...read } = since(before, asked());
-    expect(read).toEqual({ 'DAORIS.DRIVER.STATE_SLICE': 8, 'DAORIS.DRIVER.UNDER_WAY': 1 });
+    expect(read).toEqual({ 'DAORIS.DRIVER.STATE_SLICE': 10, 'DAORIS.DRIVER.UNDER_WAY': 1 });
   });
 
   it('keeps where a circle stands pulled on a host older than the push: read as the window opens, and read again at a tick (PUSH1a2)', async () => {

@@ -227,3 +227,16 @@ describe('a quest’s body under its head', () => {
     expect(bodyUnderHead('Fix it', 'Because.', true)).toBe('Fix it\n\nBecause.');
   });
 });
+
+describe('a quest’s files as the shell pushes them (PUSH1d3)', () => {
+  /** The push carries no path, only whether this machine keeps the bytes: a kept one opens, one kept elsewhere says so. */
+  it('opens a file pushed as kept here, and says one pushed as not kept is elsewhere', () => {
+    const [kept, elsewhere] = OPEN.attachments!;
+    page({ quest: { ...OPEN, attachments: [{ ...kept!, kept: true }, { ...elsewhere!, kept: false }] } });
+
+    expect(screen.getByRole('link', { name: /before\.png/ })).toHaveAttribute(
+      'href', expect.stringContaining(`/api/quests/abc123/attachments/ab12cd34ef56${'0'.repeat(52)}`));
+    expect(screen.queryByRole('link', { name: /trace\.log/ })).toBeNull();
+    expect(screen.getByText(/kept on the machine that published it/)).toBeInTheDocument();
+  });
+});

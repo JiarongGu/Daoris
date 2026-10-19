@@ -21,6 +21,7 @@ export * from './repositories/lines';
 export * from './log';
 export * from './plugins';
 export * from './repositories/registry';
+export * from './sessions/quests';
 export * from './repositories/remotes';
 export * from './agents/rules';
 export * from './sessions/sessions';
