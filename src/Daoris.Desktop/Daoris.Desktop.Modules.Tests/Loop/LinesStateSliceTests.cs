@@ -344,6 +344,36 @@ public sealed class LinesStateSliceTests : DriverModuleBridge
         await running;
     }
 
+    /// <summary>
+    /// A repository imported from a terminal moves no ledger family, and the tick hears it in the registry's signature (REGWAKE1): a
+    /// changed signature has the service's answers judged again within the tick; the first one heard, and an unchanged one, wake nothing.
+    /// </summary>
+    [Fact]
+    public async Task A_registry_change_the_tick_hears_judges_the_service_s_answers_again_and_the_first_signature_wakes_nothing()
+    {
+        _service.Registry = Registry(("alpha", "w1", true));
+        var (loop, _, slice) = await UpAsync();
+        using var stop = new CancellationTokenSource();
+        var running = slice.RunAsync(stop.Token);
+        await LandedAsync(loop);
+        await UntilAsync(() => Branch("alpha") == "main");
+
+        var asked = _service.RegistryReads;
+        Assert.True(DriverLoop.RegistryHeard(loop.Facts, "a", null));
+        Assert.True(DriverLoop.RegistryHeard(loop.Facts, "a", "a") is false);
+        await Task.Delay(300);
+        Assert.Equal(asked, _service.RegistryReads);
+
+        _service.Registry = Registry(("alpha", "w1", true), ("gamma", "w1", true));
+        Assert.True(DriverLoop.RegistryHeard(loop.Facts, "b", "a"));
+
+        await UntilAsync(() => Branch("gamma") == "main");
+        Assert.True(_service.RegistryReads > asked);
+        Assert.Contains("gamma", slice.Snapshot().Partitions.Select(each => each.Partition));
+        await stop.CancelAsync();
+        await running;
+    }
+
     /// <summary>The facts' other topics land often (the sessions, the history, the work) and move nothing here, so they wake nothing.</summary>
     [Fact]
     public async Task The_slice_hears_the_service_s_answers_and_the_lines_land_and_no_other_fact()
