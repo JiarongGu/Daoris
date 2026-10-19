@@ -19,6 +19,10 @@ namespace Daoris.Driver;
 /// look marked <c>~</c>; a stage under <see cref="Floor"/> left out. A subject is a name, a quest's <c>#id</c>, a session or a
 /// repository, never a path.</para>
 ///
+/// <para><b>A start's queue</b> (LOOKWAIT1b). A start the work of a stage makes waits for its place in <see cref="ProcessStarts"/>
+/// apart from its run: the work a span runs (<see cref="StageSpan.RunAsync{T}"/>, and every <see cref="TimeAsync{T}"/>) says those
+/// waits as its queue, the innermost span's alone. A wait with no span's work in flight, or begun beside one, is said nowhere.</para>
+///
 /// <para>Shared across the looks of one watch, as its running sessions are, since the work beside a look ends during a later one.</para>
 /// </remarks>
 public sealed class LookStages
@@ -51,18 +55,21 @@ public sealed class LookStages
     /// <param name="beside">Whether it runs beside the look rather than in it: marked <c>~</c> on the line.</param>
     public StageSpan Begin(string stage, string? subject = null, bool beside = false) => new(this, stage, subject, beside, _clock());
 
-    /// <summary>Run <paramref name="work"/> as a span of <paramref name="stage"/>, ended however the work ends.</summary>
+    /// <summary>
+    /// Run <paramref name="work"/> as a span of <paramref name="stage"/>, ended however the work ends, its starts' waits for a place
+    /// its queue (<see cref="StageSpan.RunAsync{T}"/>).
+    /// </summary>
     public async Task<T> TimeAsync<T>(string stage, Func<Task<T>> work, string? subject = null, bool beside = false)
     {
         using var span = Begin(stage, subject, beside);
-        return await work().ConfigureAwait(false);
+        return await span.RunAsync(work).ConfigureAwait(false);
     }
 
-    /// <summary>Run <paramref name="work"/> as a span of <paramref name="stage"/>, ended however the work ends.</summary>
+    /// <inheritdoc cref="TimeAsync{T}(string, Func{Task{T}}, string?, bool)"/>
     public async Task TimeAsync(string stage, Func<Task> work, string? subject = null, bool beside = false)
     {
         using var span = Begin(stage, subject, beside);
-        await work().ConfigureAwait(false);
+        await span.RunAsync(work).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -122,9 +129,15 @@ public sealed class LookStages
     {
         private readonly LookStages _stages;
         private readonly Timer? _slow;
+        private readonly object _gate = new();
         private long _queued;
         private int _ended;
         private volatile bool _beside;
+
+        // Its work's starts waiting for a place now, under _gate, and since when one has (LOOKWAIT1b): the time any waited is its
+        // queue, so a fan-out's waits side by side are said once, on the span's own clock, never longer than the span.
+        private int _waits;
+        private long _waitingSince;
 
         internal StageSpan(LookStages stages, string stage, string? subject, bool beside, long began)
         {
@@ -149,6 +162,49 @@ public sealed class LookStages
         public void Queued(TimeSpan queued) => Interlocked.Add(ref _queued, (long)queued.TotalMilliseconds);
 
         /// <summary>
+        /// Run <paramref name="work"/> as this span's own (LOOKWAIT1b, D181 point 6): each start of it that waits for a place
+        /// (<see cref="ProcessStarts"/>) is said as the span's queue, apart from its hold. Only within the work, never in the flow
+        /// that began the span, so a span held in a variable while other work goes on takes none of that work's waits.
+        /// </summary>
+        public Task<T> RunAsync<T>(Func<Task<T>> work) => ProcessStarts.QueuedToAsync(Waiting, work);
+
+        /// <inheritdoc cref="RunAsync{T}(Func{Task{T}})"/>
+        public Task RunAsync(Func<Task> work) => ProcessStarts.QueuedToAsync(Waiting, work);
+
+        /// <summary>
+        /// A start of its work waits for a place, until what this returns is disposed. A wait still open as the span ends is said
+        /// nowhere: the work it was made for has ended without it.
+        /// </summary>
+        internal IDisposable Waiting()
+        {
+            lock (_gate)
+            {
+                if (_waits++ == 0) _waitingSince = _stages._clock();
+            }
+
+            return new Wait(this);
+        }
+
+        private void Waited()
+        {
+            lock (_gate)
+            {
+                if (--_waits == 0) Interlocked.Add(ref _queued, _stages._clock() - _waitingSince);
+            }
+        }
+
+        /// <summary>One wait, ended once however often it is disposed.</summary>
+        private sealed class Wait(StageSpan span) : IDisposable
+        {
+            private int _ended;
+
+            public void Dispose()
+            {
+                if (Interlocked.Exchange(ref _ended, 1) == 0) span.Waited();
+            }
+        }
+
+        /// <summary>
         /// It runs on beside the look that began it, which let go of it (PARALLEL1b: a start not yet open), so it is marked as work
         /// beside the look in the line it ends in, never read as a later look's own.
         /// </summary>
@@ -163,7 +219,8 @@ public sealed class LookStages
         {
             if (Interlocked.Exchange(ref _ended, 1) == 1) return;
             _slow?.Dispose();
-            var queued = Interlocked.Read(ref _queued);
+            long queued;
+            lock (_gate) queued = Interlocked.Read(ref _queued);
             var took = _stages._clock() - Began;
             _stages.Keep(new Ended(Stage, Subject, Beside, Began, Math.Max(0, took - queued), queued));
         }
