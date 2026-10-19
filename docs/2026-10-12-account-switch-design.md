@@ -47,10 +47,9 @@ the five-hour use unchanged over repeated reads).
 
 ### 1.2 When it reads
 
-- **At a start over a list**, for each candidate whose newest reading is older than five minutes, in parallel, bounded
-  at ten seconds. A failed read keeps the older reading, its age shown; absent is never zero (D57). Since USAGEPROBE1 (D165's
-  note), only at set points: never read, unread for thirty minutes, projected within ten points of its curve, run on since by
-  what nothing weighs, or a limit or a credit said of it.
+- **At a start over a list**, for each candidate a set point owes a question (D165's USAGEPROBE1 note: its projected use
+  near its curve, thirty minutes unread, and the rest), in parallel, bounded at ten seconds. A failed read keeps the older
+  reading, its age shown; absent is never zero (D57).
 - **At a running session's turn's end**, for the other accounts of its scope, only where its own account is over its
   curve or within ten points of it, so idle accounts are read when a switch is near and not otherwise.
 - **On the Accounts screen**, as it opens and at its *Read now*, where a reading is older than a minute.
