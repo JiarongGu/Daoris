@@ -5,6 +5,19 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-19 — The CI beside on f617bc1 failed three more tests the branches never ran: one writer, the Process gate's rule, a held folder (PUSH1a, PROCPAR1)
+
+- **Symptom:** `modules`: `DriverLoopChatTakenUpTests.A_conversations_end_has_one_writer` found `"SESSION_ENDED"` spelled in
+  `DriverStateSlice.cs` beside `DriverLoop.cs`. `cli`: *a suite gated without its Process tests has gates that run them: one
+  class at a time …* failed for the driver; *a plugin whose folder a running process holds is not updated* returned normally.
+- **Root cause:** PUSH1a's slice wakes on the conversation's end and spelled its type again. PROCPAR1 made the Process half run
+  eight classes at once by leaving parallelism to each assembly, and the dogfood test still required the settings to name it
+  off. The held-folder test waited a fixed 300 ms after spawning its holder; a process start on this machine takes up to 1.5 s,
+  and the CI beside runs below normal (CIPRIO1), so the update met a folder not yet held. Each branch ran only its own tests (D180).
+- **Fix:** the type is `DriverLoop.EndedType`, spelled once, and the slice names it by that; the dogfood test holds PROCPAR1's
+  rule (no collection parallelism in the settings, a bound on threads); the holder says it is up and the test waits for that.
+- **Verify:** `DriverLoopChatTakenUpTests` and `DriverStateSliceTests` (14), the two CLI tests green.
+
 ## 2026-10-19 — The CI beside failed two of the merge tool's own tests: the priority it already had, and a settings file read as a folder (CIPRIO1, PROCPAR1)
 
 - **Symptom:** the full set beside on `f617bc184` failed `tool-tests` twice. *A gate step started after the run lowered itself runs at
