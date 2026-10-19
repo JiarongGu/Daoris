@@ -5,6 +5,18 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-20 — The heavy run's gate start broke three of the driver's start censuses (HEAVYRUN1a)
+
+- **Symptom:** on main after HEAVYRUN1a's merge, `ProcessStartsCensusTests` (three direct starts outside the gate),
+  `EveryChildIsHandedTheToolsTests` (a `ProcessStartInfo` neither handed the tools nor excused) and `NoConsoleWindowTests`
+  (a start without `CreateNoWindow`) failed on `Sessions/Heavy/HeavyStep.cs`; PARALLEL1f's builder saw two of them.
+- **Root cause:** the builder ran its own classes, filtered, and not the censuses that scan every source (D180's split
+  leaves them to the CI beside); the pack named none of them.
+- **Fix:** the start census names `HeavyStep`'s three starts with their reason (a suspended `CreateProcessW` into the
+  run's kill-on-close job, in the verb's own process; `/bin/sh` off Windows); the `/bin/sh` start says why it is not handed
+  the tools (the calling session's environment already is) and takes `CreateNoWindow`.
+- **Verify:** the three censuses, `StructureTests`, `SourceFilesTests` and the heavy-run classes green (65).
+
 ## 2026-10-19 — A tool call the rules refused read as still running in a session's head (WAITSAY1b)
 
 - **Symptom:** found reading the doors for WAITSAY1b: after an ask was refused (D52), a working session's head could say
