@@ -85,6 +85,24 @@ public sealed class HelpPlaceWorkspaceTests : IDisposable
     }
 
     /// <summary>
+    /// ASKSCOPE1b (D158's ASKSCOPE1 note point 4): each conversation is opened in its workspace's own room folder, which its record
+    /// keeps as its tree, so the harness keeps it there; none named opens in <c>help</c>, as every conversation before did.
+    /// </summary>
+    [Fact]
+    public async Task Each_workspace_s_conversation_is_opened_in_its_own_room_folder()
+    {
+        var ledger = new ChatLedger();
+        var runner = Runner(ledger);
+
+        var alpha = await runner.PlaceHelpAsync("door", Config, "alpha");
+        var unnamed = await runner.PlaceHelpAsync("door", Config);
+
+        Assert.Equal(HelpRoom.PathOf(_home, "alpha"), ledger.Record(alpha.SessionId!)["tree"]!.GetValue<string>());
+        Assert.Equal(HelpRoom.PathOf(_home), ledger.Record(unnamed.SessionId!)["tree"]!.GetValue<string>());
+        Assert.NotEqual(HelpRoom.PathOf(_home), HelpRoom.PathOf(_home, "alpha"));
+    }
+
+    /// <summary>
     /// The active sessions the loop and the page read carry their workspace (ASKSCOPE1a): what the start hands the running one
     /// of its own workspace by. A record from before, which names none, is <c>default</c>, never guessed.
     /// </summary>

@@ -433,7 +433,9 @@ internal sealed class ChatGoOn
             Continuations.OpeningNoted(adapter.Name, selection.Version, record.HarnessVersion, answer: false),
             files: word => ChatFiles.Kept(_context.Home, sessionId, word.Files));
 
-        var (room, reads) = await _help.HelpRoomNowAsync(sessionId, ct).ConfigureAwait(false);
+        // ASKSCOPE1b: the room it ran in, its workspace's, or the machine's where it started there before each workspace had its own.
+        var (room, reads) = await _help.HelpRoomNowAsync(sessionId, HelpRoom.GoesOnIn(_context.Home, record.Workspace, record.Tree), ct)
+            .ConfigureAwait(false);
         return await _runner.RunAsync(
             sessionId, $"Ask Daoris `{sessionId}` goes on with your words in its own conversation.", adapter, selection, config,
             _runner.HelpPlace(room, reads, record.Workspace), onEnded, ct, new GoingOn(record, ask)).ConfigureAwait(false);

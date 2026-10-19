@@ -36,7 +36,10 @@ internal sealed class HelpRoomWork : IHelpRoomSection
 
         if (units.Count == 0)
         {
-            text.Append("No unit of work is recorded on this machine.\n\n");
+            // ASKSCOPE1b: a workspace's room lists its own units alone.
+            text.Append(machine.Workspace is { } workspace
+                ? $"No unit of workspace `{workspace}`'s work is recorded on this machine.\n\n"
+                : "No unit of work is recorded on this machine.\n\n");
             Recoveries(text, machine.WorkRecovery);
             return text.ToString();
         }
