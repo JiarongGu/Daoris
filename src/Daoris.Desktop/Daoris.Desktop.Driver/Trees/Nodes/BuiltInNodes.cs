@@ -35,12 +35,21 @@ public sealed record NodeObservation(string Unit, string Node, string Kind, stri
     /// <summary>Why nothing was observed: <see cref="NodeRefusal.NotObserved"/> or <see cref="NodeRefusal.NotThisUnit"/>.</summary>
     public string? Refused { get; init; }
 
+    /// <summary>
+    /// Who made the outcome where the record keeps the person's own word (FABRIC-NODE1b: a look's <i>not yet</i> or skip, a go-ahead refused):
+    /// <see cref="NodeCause.Person"/>; null for an outcome by the kind's authority, or an unknown by Daoris.
+    /// </summary>
+    public string? By { get; init; }
+
+    /// <summary>The person's words the record kept with their rejection or their skip (FABRIC-NODE1b); null for every other outcome.</summary>
+    public string? Words { get; init; }
+
     /// <summary>The report as a move on an active node: an outcome by its authority, an unknown by Daoris; none where there is no outcome.</summary>
     public NodeMove? Move => Refused is not null || Outcome is null
         ? null
-        : new NodeMove(Outcome, Outcome == NodeStates.Unknown ? NodeCause.Daoris : NodeCause.Authority)
+        : new NodeMove(Outcome, By ?? (Outcome == NodeStates.Unknown ? NodeCause.Daoris : NodeCause.Authority))
         {
-            Source = Source, Attempt = Attempt, Acceptance = Acceptance, Code = Code,
+            Source = Source, Attempt = Attempt, Acceptance = Acceptance, Code = Code, Words = Words,
         };
 }
 

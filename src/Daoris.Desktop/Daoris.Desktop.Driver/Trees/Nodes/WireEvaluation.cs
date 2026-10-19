@@ -90,6 +90,13 @@ public sealed record WireRun(string GraphDigest, string Run)
     /// has no read, so its look stays the person's to answer.
     /// </summary>
     public IReadOnlyDictionary<string, ReviewGateState> Reviews { get; init; } = ImmutableDictionary<string, ReviewGateState>.Empty;
+
+    /// <summary>
+    /// The go-aheads each unit's work holds on its ask, by <see cref="WorkUnit.Id"/>, as the service answers them (D135): the caller's read,
+    /// which a started <c>go-ahead</c> node observes (FABRIC-NODE1b, <see cref="GoAheadNode"/>). A unit it leaves out has none read, so its
+    /// go-ahead waits, never guessed.
+    /// </summary>
+    public IReadOnlyDictionary<string, IReadOnlyList<GoAheadView>> GoAheads { get; init; } = ImmutableDictionary<string, IReadOnlyList<GoAheadView>>.Empty;
 }
 
 /// <summary>One trigger's firing (§E3): its wire started its target on one receipt. Its key is what the record writer keeps.</summary>
@@ -306,14 +313,16 @@ public static class WireEvaluation
             if (lapsing.TryGetValue(node.Id, out var lapse)) Make(node, new NodeMove(NodeStates.Invalidated, NodeCause.Daoris), lapse.Why, lapse.Detail);
         }
 
-        // 2. The observed built-ins still bound, read from their records: NODE1's choice 8, with the caller's git reads; and an opinion,
-        // from its gate's judgement as the caller read it (FABRIC-WIRE1g). An observation moves an active or unknown node, which holds no
-        // receipt, so it takes none away from what step 1 judged current.
+        // 2. The observed built-ins still bound, read from their records: NODE1's choice 8, with the caller's git reads; and D157's gates, each
+        // from its records as the caller read them: an opinion from its gate's judgement (FABRIC-WIRE1g), a look from its gate's verdict and a
+        // go-ahead from D135's answers (FABRIC-NODE1b). An observation moves an active or unknown node, which holds no receipt, so it takes none
+        // away from what step 1 judged current.
         foreach (var node in declared.Where(node => !moved.Contains(node.Id)))
         {
             var status = now[node.Id];
             if (status.State is not (NodeStates.Active or NodeStates.Unknown) || status.Binding is not { } binding
-                || !(BuiltInNodes.Observed.Contains(node.Kind) || node.Kind is NodeKinds.Opinion or NodeKinds.Look) || !run.Units.TryGetValue(status.Unit, out var unit))
+                || !(BuiltInNodes.Observed.Contains(node.Kind) || node.Kind is NodeKinds.Opinion or NodeKinds.Look or NodeKinds.GoAhead)
+                || !run.Units.TryGetValue(status.Unit, out var unit))
             {
                 continue;
             }
@@ -322,6 +331,7 @@ public static class WireEvaluation
             {
                 NodeKinds.Opinion => OpinionNode.Observe(unit, node, binding, run.Opinions.GetValueOrDefault(status.Unit)),
                 NodeKinds.Look => LookNode.Observe(unit, node, binding, run.Reviews.GetValueOrDefault(status.Unit)),
+                NodeKinds.GoAhead => GoAheadNode.Observe(unit, node, binding, run.GoAheads.GetValueOrDefault(status.Unit)),
                 _ => BuiltInNodes.Observe(unit, node, binding, run.Git),
             };
             if (observation.Move is not { } move || (status.State == NodeStates.Unknown && move.To == NodeStates.Unknown)) continue;
