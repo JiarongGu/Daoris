@@ -18,7 +18,7 @@ import {
   useDiscardSessionBranch, useDropRecoveries, useSetAccess, useSetCommits, useSetHelpers, useSetLanding, useSetLanguage, useSetLine, useSetOpinion,
   useSetReadAcross,
   useSetReview, useStarts,
-  useSweep, useSweepPlan, useTreesSync, useTreesSyncPlan, useTreesSyncScope, useUnwireRemote, useWireRemote, useWorkflowCurrent,
+  useSweep, useSweepLook, useSweepPlan, useTreesSync, useTreesSyncPlan, useTreesSyncScope, useUnwireRemote, useWireRemote, useWorkflowCurrent,
   useWorkState,
 } from '../bridge/shell';
 import { byTool } from '../agents/tools';
@@ -248,6 +248,9 @@ function BranchesPart({ workspace, repositories, notify, onOpenRepository, onOpe
 }) {
   const { t } = useTranslation();
   const plan = useSweepPlan();
+  // The person's *Look* (PUSH1c4b): one press of `SWEEP_PLAN`, the occasion its pull-request asks are made at (D148 point 2); what it
+  // heard reaches the list as the shell's push where it pushes one, and as its answer where the list is pulled.
+  const look = useSweepLook();
   const sweep = useSweep();
   // A failed or superseded attempt's branch, discarded by its own press (LAND3b): `daoris-driver trees remove … --force`.
   const discard = useDiscardSessionBranch();
@@ -289,8 +292,8 @@ function BranchesPart({ workspace, repositories, notify, onOpenRepository, onOpe
       <SweepList
         branches={Array.isArray(plan.data?.branches) ? mine(plan.data.branches, workspace) : undefined}
         landed={Array.isArray(plan.data?.landed) ? mine(plan.data.landed, workspace) : undefined}
-        busy={sweep.isPending || plan.isFetching}
-        onLook={() => void plan.refetch()}
+        busy={sweep.isPending || look.isPending || plan.isFetching}
+        onLook={() => look.mutate(undefined, { onError: failure(notify) })}
         onClean={(only) => sweep.mutate(only, {
           onSuccess: (done) => notify(t('settings.sweep.done', { removed: done.removed, count: only.length })),
           onError: failure(notify),

@@ -15,7 +15,7 @@ import type { LinePull, RebaseBranch, SyncInclude, SyncPlan, SyncRepository } fr
 import { type HeldResolution, readWorkState, type RecoveryDropGroup, type RecoveryDropResult, type WorkState, workOf } from '../work/milestone';
 import { call, lookBound, pressBound } from './call';
 import { type DriverState, readSlice, useDriverChange, writeAnswered } from './driver';
-import { readPushed, type SliceSpec, usePushedLive } from './slices';
+import { pushedOf, readPushed, type SliceSpec, usePushedLive } from './slices';
 
 // Whether a look or a press ended because the page stopped waiting (WSR7): the section says so where it was asked.
 export { stoppedWaiting } from './call';
@@ -122,19 +122,64 @@ export const useSetLanding = () => {
   });
 };
 
+/** What `SWEEP_PLAN` answers: the session branches, and the landings' branches from a shell since WSR5. */
+export type SweepAnswer = { branches: SweepBranch[]; landed?: LandedBranch[] };
+
+/**
+ * The clean-up's list as the shell pushes it (PUSH1c4b, D182's PUSH1c4a note): a partition per repository with a checkout here, each
+ * `{branches, landed}` as `SWEEP_PLAN`'s own builder writes it, composed into the one entry the pull answers, repositories in name order
+ * by UTF-16 unit, as the door orders its checkouts (`Ordinal`). Nothing composed until the owner judged the list whole, which keeps the
+ * pull; a part of another shape keeps it too. A list judged with no repository is empty.
+ */
+export const sweepSlice: SliceSpec = {
+  name: 'sweep',
+  key: keys.sweep,
+  read: () => readSlice('sweep'),
+  compose: (partitions, judged) => {
+    if (!judged) return undefined;
+    const object = (value: unknown): value is Record<string, unknown> => typeof value === 'object' && value !== null && !Array.isArray(value);
+    const parts = [...partitions.keys()].sort().map((name) => partitions.get(name));
+    if (!parts.every(object)) return undefined;
+    const rows = (field: string) => parts.flatMap((part) => (Array.isArray(part[field]) ? part[field] as unknown[] : []));
+    return { branches: rows('branches'), landed: rows('landed') } as SweepAnswer;
+  },
+};
+
 /**
  * Every session branch here with what it holds (WSR3, D88) — the clean-up's list — and every branch a
  * landing made, judged against the line (WSR5). Desktop-only: it is read off this machine's checkouts.
  * A shell older than WSR5 answers no `landed`.
+ *
+ * Pushed where the shell pushes it (PUSH1c4b): read from memory, written by the pushes, so neither a tick, a focus nor a declared
+ * change reads `SWEEP_PLAN`, each of whose reads asks the pull-request plugin (D148 point 2); the person's *Look* does (`useSweepLook`).
+ * Elsewhere (a plain browser, an older shell) it is the pull it always was, after the first snapshot where one is on its way.
  */
 export const useSweepPlan = () => {
   const { isAvailable } = useShenora();
+  const client = useQueryClient();
+  const pushed = usePushedLive(sweepSlice.name);
   return useQuery({
     queryKey: keys.sweep,
-    queryFn: () => call<{ branches: SweepBranch[]; landed?: LandedBranch[] }>('SWEEP_PLAN'),
+    queryFn: () => readPushed(client, sweepSlice.name, () => call<SweepAnswer>('SWEEP_PLAN')),
     enabled: isAvailable,
-    // It asks git in every repository with a checkout here: a minute is fresh enough to read a session by.
-    staleTime: 60_000,
+    // Pulled, it asks git in every repository with a checkout here: a minute is fresh enough to read a session by.
+    ...(pushed ? { staleTime: Infinity, refetchOnWindowFocus: false } : { staleTime: 60_000 }),
+  });
+};
+
+/**
+ * The clean-up's *Look* (PUSH1c4b): the person's press of `SWEEP_PLAN`, the occasion its pull-request asks are made at (D148 point 2),
+ * and never a read the page makes on its own. Where the pushes compose the list, its answer is not written: the shell judges again
+ * each repository whose kept answers the look moved (`SweepStateSlice.Asked`), and its push brings them. Where the list is pulled, or
+ * the owner has not judged it yet, the answer is the list, written where it is read, as the read again was.
+ */
+export const useSweepLook = () => {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: () => call<SweepAnswer>('SWEEP_PLAN'),
+    onSuccess: (answer) => {
+      if (pushedOf(client).data(sweepSlice.name) === undefined) client.setQueryData(keys.sweep, answer);
+    },
   });
 };
 

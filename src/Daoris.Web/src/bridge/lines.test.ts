@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { linesSlice, workSlice } from './lines';
+import { linesSlice, sweepSlice, workSlice } from './lines';
 import { workOf, type MilestoneUnit, type WorkState } from '../work/milestone';
 
 // The lines slice's page half (PUSH1b2, D182): one partition per repository, composed into the eight arrays `LINES` answers.
@@ -102,5 +102,40 @@ describe("a unit's variant of the work (PUSH1c2b)", () => {
     expect(picked.recovery).toEqual([]);
     expect(picked.held.map((each) => each.unit)).toEqual(['u-1']);
     expect(workOf(all, 'nothing').held).toEqual([]);
+  });
+});
+
+const sweepRow = (repository: string, branch: string, extra: Record<string, unknown> = {}) =>
+  ({ repository, workspace: 'default', branch, hasTree: false, kind: 'empty', commits: 0, removable: true, ...extra });
+const landedRow = (repository: string, branch: string) =>
+  ({ repository, workspace: 'default', branch, kind: 'inside', where: 'main', files: [], commits: 1, removable: true });
+
+describe("the clean-up's list slice (PUSH1c4b)", () => {
+  it("is the clean-up's list entry, named as the shell names it", () => {
+    expect(sweepSlice.name).toBe('sweep');
+    expect(sweepSlice.key).toEqual(['driver', 'sweep']);
+  });
+
+  it("composes each repository's branches and landings' branches in the repositories' name order, as SWEEP_PLAN answers them", () => {
+    const parts = new Map<string, unknown>([
+      ['zeta', { branches: [sweepRow('zeta', 'daoris/z-1')], landed: [landedRow('zeta', 'land/z')] }],
+      ['Beta', { branches: [], landed: [landedRow('Beta', 'land/b')] }],
+      ['alpha', {
+        branches: [sweepRow('alpha', 'daoris/a-1'), sweepRow('alpha', 'daoris/a-2', { kind: 'unlanded', landable: true })],
+        landed: [landedRow('alpha', 'land/a')],
+      }],
+    ]);
+    const composed = sweepSlice.compose(parts, true) as { branches: { branch: string }[]; landed: { branch: string }[] };
+    // By UTF-16 unit, as the door orders its checkouts (`LinesRoutes.Checkouts`, `Ordinal`): 'Beta' before 'alpha'.
+    expect(composed.branches.map((row) => row.branch)).toEqual(['daoris/a-1', 'daoris/a-2', 'daoris/z-1']);
+    expect(composed.landed.map((row) => row.branch)).toEqual(['land/b', 'land/a', 'land/z']);
+    expect(composed.branches[1]).toEqual(sweepRow('alpha', 'daoris/a-2', { kind: 'unlanded', landable: true }));
+  });
+
+  it('composes an empty list judged with no repository, and nothing until judged or for a part of another shape, which keeps the pull', () => {
+    expect(sweepSlice.compose(new Map(), true)).toEqual({ branches: [], landed: [] });
+    expect(sweepSlice.compose(new Map([['alpha', { branches: [], landed: [] }]]), false)).toBeUndefined();
+    expect(sweepSlice.compose(new Map([['alpha', 'x']]), true)).toBeUndefined();
+    expect(sweepSlice.compose(new Map([['alpha', [sweepRow('alpha', 'daoris/a-1')]]]), true)).toBeUndefined();
   });
 });
