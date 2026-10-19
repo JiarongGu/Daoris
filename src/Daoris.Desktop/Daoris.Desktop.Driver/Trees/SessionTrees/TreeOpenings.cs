@@ -67,10 +67,20 @@ internal static class TreeOpenings
     /// (<c>--force</c> twice); what git did not delete of the folder is deleted here, where the open made it; and its branch goes.
     /// Each step runs to its end whatever the open's token said, since a cancel is what brought it here.
     /// </summary>
+    /// <remarks>
+    /// TREELINK1: git's removal follows a junction out of the tree, as a copy of the dependencies may leave one, so each link in it
+    /// goes as a link first, where the open made the folder or git may keep it as this tree (one git cannot list may be). A tree whose
+    /// links cannot all go is left, with its branch, for the look, which moves its folder aside whole (<see cref="TreeStrays"/>).
+    /// </remarks>
     /// <param name="ours">Whether the open made the folder: one that was there before the add is never deleted.</param>
     internal static async Task UndoAsync(string root, string path, string branch, bool ours)
     {
         var done = CancellationToken.None;
+        if ((ours || await TreeLeftovers.RegisteredAsync(root, path, done).ConfigureAwait(false) is not false) && TreeLinks.Unlinked(path) is not null)
+        {
+            return;
+        }
+
         await WorkingTree.GitAsync(root, ["worktree", "remove", "--force", "--force", path], done).ConfigureAwait(false);
         if (ours && Directory.Exists(path))
         {
