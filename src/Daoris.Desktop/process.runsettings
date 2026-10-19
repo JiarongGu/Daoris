@@ -1,15 +1,26 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
   The desktop suites' Process half (MOD8): the test classes that start real processes, run real ticks,
-  or hold a wall-clock bound on either, run one class at a time. They are the ones another worktree's
-  load has failed (FLAKE1). The parent runs them at its merge, with this file as the test run's
-  settings; a subagent's worktree runs the rest, filtered to Category!=Process. daoris.gates.json
-  declares both halves of each suite, and each test project's Category.cs says which classes carry
-  the trait, and why.
+  or hold a wall-clock bound on either. They are the ones another worktree's load has failed (FLAKE1).
+  The parent runs them in its full set, with this file as the test run's settings; a subagent's worktree
+  runs the rest, filtered to Category!=Process. daoris.gates.json declares both halves of each suite, and
+  each test project's Category.cs says which classes carry the trait, and why.
 
-  The driver's git-only classes, marked Parallel=Git as well (PROC1b), are left to git.process.runsettings,
-  which runs them four at once; a suite that marks none, as the modules' marks none, runs every Process
-  class here. A test without the second trait is Parallel!=Git, as one without a category is Category!=Process.
+  The driver's git-only classes, marked Parallel=Git as well (PROC1b), are left to git.process.runsettings;
+  a suite that marks none, as the modules' marks none, runs every Process class here. A test without the
+  second trait is Parallel!=Git, as one without a category is Category!=Process.
+
+  The driver's half runs eight classes at once (PROCPAR1), each with its own home, scratch and ports. What
+  a class shares with its neighbours (a variable of the process's environment it sets, the process's
+  handles it measures, a bound of a few seconds on a real process) puts it in a collection that runs
+  alone, after the rest: the driver's Alone.cs says which and why, and its CategoryTests holds the first
+  two. xUnit's default algorithm starts a test only while fewer than eight run, an awaiting one included,
+  so eight bounds the real processes too. The measurement behind eight is in D180's budget note.
+
+  Whether a suite runs its classes at once is its assembly's to say, so this file says nothing of it: a
+  ParallelizeTestCollections here would override the modules' Parallelism.cs, which runs that suite one
+  class at a time because its modules read the process's environment. The driver's suite says nothing
+  either, and xUnit's default runs its collections at once; CategoryTests holds this file to that.
 
   A file, not a run-settings argument at the end of the command line: VSTest ANDs this filter with any
   filter the caller adds, so the merge tool can re-run one failed test alone by adding its own. Whatever
@@ -21,6 +32,6 @@
     <TestCaseFilter>Category=Process&amp;Parallel!=Git</TestCaseFilter>
   </RunConfiguration>
   <xUnit>
-    <ParallelizeTestCollections>false</ParallelizeTestCollections>
+    <MaxParallelThreads>8</MaxParallelThreads>
   </xUnit>
 </RunSettings>

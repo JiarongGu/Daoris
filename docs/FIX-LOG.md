@@ -5,6 +5,21 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-19 — A job's heartbeat read threw on its child's write handle once the Process half ran eight at once (PROCPAR1)
+
+- **Symptom:** `ProcessJobTests.A_child_that_outlives_its_parent_ends_when_the_session_is_untracked` failed at its first run eight
+  classes at once (a filtered group under `process.runsettings`): `IOException`, the heartbeat file "being used by another process",
+  thrown from the test's own `Beating`.
+- **Root cause:** `Beating` read the heartbeat with `File.ReadAllText`, which opens sharing reading alone, while the detached node
+  child rewrites the file every 100 ms: a read that met the child's open write handle was refused. `PseudoConsoleTests` met the same
+  refusal under load and was fixed in its own copy (TEST4: share reading, writing and deletion, retry briefly); `ProcessJobTests`
+  kept the old copy, which one class at a time rarely reached and eight at once did at once.
+- **Fix:** one read for both, `Heartbeat` in the driver's tests (`ReadAsync` shares `ReadWrite | Delete` and retries an
+  `IOException` twenty times; `Beating` compares two reads 800 ms apart); both classes' copies removed.
+- **Verify:** `HeartbeatTests`, red first (no `Heartbeat`), then green: a heartbeat held open for writing is read, and none yet is
+  none; `ProcessJobTests` and `PseudoConsoleTests` green under `process.runsettings`, and the group that failed green on its
+  next run.
+- **Commit:** `1691ba181`
 ## 2026-10-19 — Ask Daoris's start waited on its own reading of the whole machine, bounded at 30 seconds (PARALLEL1a)
 
 - **Symptom:** the owner's Ask Daoris message sat `queued` for minutes (HELPSTUCK1); HELPSTUCK1's fix bounded the wait at

@@ -24,7 +24,10 @@ namespace Daoris.Desktop.Driver.Tests;
 ///
 /// The Process half runs as two (PROC1b): a Process class that starts git and nothing else that waits on a short
 /// bound also carries <c>[Trait(Category.Parallel, Category.Git)]</c>, and those classes run four at once in one
-/// host (<c>git.process.runsettings</c>, which says why four), the rest one at a time (<c>process.runsettings</c>).
+/// host (<c>git.process.runsettings</c>, which says why four), the rest several at once too (<c>process.runsettings</c>,
+/// PROCPAR1), but for the classes in <see cref="Alone"/>'s collection or <see cref="ProcessPath"/>'s, which run alone after
+/// them: a class that sets the process's environment or measures the whole process joins one (<c>CategoryTests</c> holds
+/// it), and so does one whose claim is a bound of a few seconds on a real process.
 /// A class joins only when it holds no wall-clock bound a neighbour's load could break (a node hook under a
 /// landing's default patience may; three seconds may not, so <c>LandingPluginPatienceTests</c> is a class of its own,
 /// PROC1f), starts no stub, tick, host or

@@ -12,9 +12,11 @@ namespace Daoris.Desktop.Driver.Tests;
 /// into the line while the planner sat a review step for it.
 /// </summary>
 /// <remarks>
-/// The variable is the process's, and set here for the class's life: the class runs in the Process half, one class at a time, and
-/// every other door holding a home ignores an override in another one (<see cref="ConfigSeamTests"/>).
+/// The variable is the process's, and set here for the class's life: the class runs alone, after the rest of the Process half
+/// (<see cref="Alone"/>, PROCPAR1), since a door with no home in hand, and every child a class beside it started, would read this
+/// override. Every other door holding a home ignores an override in another one (<see cref="ConfigSeamTests"/>).
 /// </remarks>
+[Collection(Alone.Name)]
 [Trait(Category.Name, Category.Process)]
 public sealed class ConfigSeamLandingTests : IDisposable
 {
