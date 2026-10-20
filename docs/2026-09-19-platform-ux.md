@@ -293,25 +293,25 @@ controls are in the frame design's §3.
   under the pointer, in a ten-pixel lane that takes a grab across its whole width.
 - **A setting is a row** (`SettingRow`, the owner: *"this really long list of setup … can be
   improved"*): the label, a one-line hint that is its terminal twin, written as code (U55), the
-  value beside its words, and the paragraph that motivated it on an info glyph. **A card's rows share one
-  label track** (R1 of the UI/UX design, D185; UIFIT1, 2026-10-20): `SettingList` is the card's one grid and each row
-  a subgrid of it, so the track is the widest label of the card between a floor of 12rem and a cap of 22rem (half the
-  card where the card is narrower than 44rem; D185's UIFIT1 note has the shots that set them), and every value starts
-  at the track's edge, the values one column the eye runs down. A row's acts (*Open*, *Edit*, *Clear*) follow its
-  value, never the pane's far edge, and its notice sits in the value column under the value it is about. The hint
-  sets no width (`contain-inline-size`): a hint is a sentence, and the track is the labels'. Before the track the
-  label's column had a floor of 16rem or half the row and the value sat at the row's far edge, read across a gulf at
-  the wide pane; the floor stays, since a path as the value once crushed its label to one character a line (U58), and
-  a path still breaks at its separators. **Below 32rem of the card's own width the track goes** and each value sits
-  under its words at the card's full width (WSR4, 2026-09-30, whose floor moved from the row to the card: with
-  Settings' nav and the side bar open a row was 309px, the floor left the control 130px, and a fixed-width branch
-  pattern spilled left over the row's words); a row alone is its own container and stacks by the same rule. A field
-  in a control gives way to its column (`min-w-0 max-w-full`, and the form around it `min-w-0`). A settings page laid
-  out as an essay is read once and scrolled past every time after; a page of rows is scanned. A rarely used form
-  (wiring a deployment, adding an account) is one press away. The rule between rows belongs to what has siblings: a
-  row alone in its list item lost both. **Check:** jsdom lays nothing out, so `ui.test.tsx` holds the structure and
-  `measured/settings.spec.ts` the geometry in a browser, every value's box at its track's edge at the wide and the
-  half width and under its words at the floor, in both languages.
+  value beside its words, and the paragraph that motivated it on an info glyph. A field in a control gives way to
+  its column (`min-w-0 max-w-full`, and the form around it `min-w-0`). A settings page laid out as an essay is read
+  once and scrolled past every time after; a page of rows is scanned. A rarely used form (wiring a deployment, adding
+  an account) is one press away. The rule between rows belongs to what has siblings: a row alone in its list item
+  lost both.
+- **A card's rows share one label track** (R1 of the UI/UX design, D185; UIFIT1, 2026-10-20): `SettingList` is the
+  card's one grid and each `SettingRow` a subgrid of it, so the track is the widest label of the card between a
+  floor of 12rem and a cap of 22rem (half the card where the card is narrower than 44rem; D185's UIFIT1 note has the
+  measurements that set them), and every value starts at the track's edge, the values one column the eye runs down.
+  A row's acts (*Open*, *Edit*, *Clear*) follow its value, never the pane's far edge, and its notice sits in the value
+  column under the value it is about. The hint sets no width (`contain-inline-size`): a hint is a sentence, and the
+  track is the labels'. The floor keeps the label's room, since a path as the value once crushed its label to one
+  character a line (U58), and a path breaks at its separators. **Below 32rem of the card's own width the track goes**
+  and each value sits under its words at the card's full width: WSR4's floor (2026-09-30: with Settings' nav and the
+  side bar open a row was 309px, the floor left the control 130px, and a fixed-width branch pattern spilled left over
+  the row's words), moved from the row to the card; a row alone is its own container and stacks by the same rule.
+  **Check:** jsdom lays nothing out, so `ui.test.tsx` holds the structure and `measured/settings.spec.ts` the
+  geometry in a browser, every value's box at its track's edge at the wide and the half width and under its words at
+  the floor, in both languages.
 - **Cards are 16 px apart, set once by the domain's container** (R1; `CardStack`): a card sets no outer margin of its
   own, which `tokens.test.ts` holds. The 14 px margin each card wore was off the scale's step, a domain's first card
   needed it undone, and two cards that forgot it touched.
