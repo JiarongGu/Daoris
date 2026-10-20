@@ -126,7 +126,14 @@ public sealed class CapCountTests
 
         Assert.Equal(holds, ActiveSessions.HoldsSlot(session));
         Assert.Equal(holds ? 1 : 0, Snapshot([], session).SlotsHeld);
+        // The same rule over a record's fields, which the Sessions badge and the status bar count by (SESSBADGE1).
+        Assert.Equal(holds, ActiveSessions.HoldsSlot(kind, repository, ask, serves, opinion));
     }
+
+    /// <summary>A record whose host answers no kind is driven work over its fields too, as <see cref="SessionView.Kind"/> reads it.</summary>
+    [Fact]
+    public void A_record_with_no_kind_holds_a_slot_over_its_fields_as_over_its_view() =>
+        Assert.True(ActiveSessions.HoldsSlot(kind: null, repository: "A", ask: null, serves: null, opinion: null));
 
     /// <summary>The count and the list differ: the snapshot keeps every active session and counts those the driver started.</summary>
     [Fact]
