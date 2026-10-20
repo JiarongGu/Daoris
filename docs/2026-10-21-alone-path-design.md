@@ -1,15 +1,16 @@
 # The alone path: a CLI management verb runs the driver's own program (proposed, 2026-10-21)
 
-**Standing:** proposed under D194 (PUSH1f2), for the reads D191 asks. Revised the same day by Codex's read: every finding was checked
-against the code and is taken or answered in §8, where the reads are kept. Nothing here is built; its rows (§5) build it. Nothing in it
-waits for the owner (D191 point 3): it publishes nothing, spends no account and loses no data. Whether it changes a foundation is said
-in §8: after this round it does, narrowly, and whether Fable reads it is the steward's to decide.
+**Standing:** proposed under D194 (PUSH1f2), for the reads D191 asks. Revised the same day by Codex's read of the whole, then by
+Fable's read of §1.1 and §1.4, the two sections that change a foundation (D191's note): every finding was checked against the code and
+is taken or answered in §8, where the reads are kept. Nothing here is built; its rows (§5) build it. Nothing in it waits for the owner
+(D191 point 3): it publishes nothing, spends no account and loses no data.
 
 Read for it: D182 points 6 and its PUSH1a note's *Left* (lines 35-40, 98-104), its PUSH1e note's *Left* (497-502); D171's PUSH1f
 note (392-428); D50 (1-24); D156 points 1-4 and 7, its rejected *positive identity for agents* and its D50 relation (lines 10-48, 70,
 91); the terminal RPC design §4.2, §5, §7 and §9-§10; the PUSH1f and RPC1f archive entries; D193 part 10; D191 and its note;
-`.claude/knowledge/twins.md`'s table (rows 78-142). Every statement about today was read from the code at `49aa46e47` and names its
-file and line; the rows Codex's read touched were read again at `ff01a5881` and cite that commit's lines. None was run.
+`.claude/knowledge/twins.md`'s table (rows 78-142); D173's KEEPALL1 and CONFIG1 notes (lines 2304-2337, 4369-4391). Every statement
+about today was read from the code at `49aa46e47` and names its file and line; the rows Codex's read touched were read again at
+`ff01a5881`, and those Fable's touched at `65c47fcdc`, each citing its commit's lines. None was run.
 
 ## 0. The case, and what the design rests on
 
@@ -34,11 +35,14 @@ the tools 1,867), with 887 more they share (`jsonkeep.ts`, `keeplock.ts`, `lease
 | The other families' bodies are mostly the driver library's already: `Tools`, `ToolInstall`, `HarnessKeys`, `HarnessSettings`, `PluginInstall` | `ToolsRoutes.cs:124-213`, `AgentsRoutes.cs:362-430`, `Driver/Plugins/PluginInstall.cs:26` |
 | A plugin's remove and update stop its process before its folder moves: on Windows a running hook holds its folder | `Modules/Bridge/Routes/PluginsRoutes.cs:308-336, 545-560` |
 | The host already edits `driver.json` from a terminal through a library command whose rules the route calls too (`access`, `heavy`, `help mode`) | `Driver.Host/AccessConsole.cs:8-30`, `Driver/Sessions/AccessCommand.cs:31-125`, `docs/index/verbs.md:51-53` |
-| The host takes the home's lease at its top for a verb that holds it; beside an instance a verb's lease holds nothing; the desktop's loop, finding a verb holding it, waits | `Driver.Host/Program.cs:293-317`, `Driver/Platform/VerbLeases.cs:38-71`, `HomeLease.cs:213-251`, `Modules/Loop/DriverLoop.cs:1082-1092` |
-| A download stages at `<version>.part`, which no reader takes for a version, and becomes the version by one folder move; a sign-in makes its account's folder before the agent's flow, in the window (`PrepareLogin`) as at the terminal | `Driver/Agents/ToolInstall/ToolInstall.cs:37-41, 57, 196-238`, `Driver/Accounts/Harnesses/HarnessActions.cs:412-433`, `toolchain.ts:1181-1183` |
+| The host takes the home's lease at its top for a verb that holds it, and an unclassed verb holds it: `VerbLeases.Holds` reads a verb's first two words, and a later one only through a command's own reading (`access`, `heavy`). Beside an instance a verb's lease holds nothing; the desktop's loop, finding a verb holding it, waits with no deadline, saying so once the hold has lasted thirty seconds | `Driver.Host/Program.cs:293-317`, `Driver/Platform/VerbLeases.cs:38-71`, `HomeLease.cs:213-251`, `Modules/Loop/DriverLoop.cs:1075-1127` |
+| A download stages at the fixed `<version>.part`, deleting what is there at its start and at its end, which no reader takes for a version (`Downloaded` takes version names alone), and becomes the version by one folder move, replacing a folder its start found holding nothing that runs. A crash's `.part` stays until that version is downloaded again, `tool delete` refusing its name. A channel pin stages alike at `<where>.part`; an npm pin installs in place. The window keeps its own downloads apart within its process; the CLI keeps two terminals' apart by the lease it holds for the whole run | `Driver/Agents/ToolInstall/ToolInstall.cs:56-57, 73-85, 181-239, 318-321`, `Driver/Setup/ClaudeReleaseDownloads.cs:81-84, 130-144`, `Driver/Accounts/Harnesses/HarnessActions.cs:102-106`, `Driver/Agents/ToolInstall/ToolActions.cs:100-104`, `service.ts:534-544` |
+| A sign-in makes its account's folder before the agent's flow, in the window (`PrepareLogin`) as at the terminal: `Directory.CreateDirectory`, under an id drawn at random and never reused. The window removes it in a `finally` where the sign-in did not finish | `HarnessActions.cs:412-443`, `Driver/Accounts/Harnesses/HarnessSelection.cs:579-583`, `Driver/Accounts/AccountNames.cs:297-311`, `Modules/Bridge/AgentActions.cs:386-458`, `toolchain.ts:1181-1183` |
+| A harness action's start redirects its three streams and opens no window; the window relays the output line by line and sends the page's typed line through `HarnessRun.Send`. The CLI's `relay` starts the agent with the terminal's own streams for that reason, and maps a failed start to its message and any status but 0 to 2 | `HarnessActions.cs:27-40, 445-517`, `toolchain.ts:2910-2943` |
+| `KeepLock.Take` is taken by `DriverConfig.Save` and `JsonKeeping.Save` alone: `driver.json`; `plugins.json`, `permissions.json`, `keys.json`. `tools.json`, `accounts.json` and `cooling.json` are read at the write and written with no lock, `cooling.json`'s gate in its own process; `harnesses.json` is written whole from a copy read earlier | `Driver/Platform/DriverConfig.cs:866`, `Driver/Platform/JsonKeeping.cs:68-71`, `HarnessSelection.cs:177`, `Driver/Agents/Tools.cs:362-394, 425-457`, `AccountNames.cs:360-364`, `Driver/Accounts/AccountCooling.cs:161-182`, `Driver/Accounts/Harnesses/HarnessSettings.cs:153-163`; D173's KEEPALL1 note (KEEPALL1b) |
 | The host's verbs are the running Daoris's clients through `InstanceDoor.PressAsync`; a refusal over the pipe is `{verb}: {message} ({code})`; a lost answer is asked by `RESULT`, never sent again; a pipe that speaks another protocol is refused (`protocol`) | `Driver/Platform/InstanceDoor.cs:78-154, 171-226` |
-| The host registers its Ctrl+C handler for the loop alone, after every other verb is routed; `chat` has its own | `Driver.Host/Program.cs:642-662` |
-| The host references the driver library alone, runs with invariant globalization; the modules sit on the window kit's package | `Driver.Host.csproj:5-15`, `Modules.csproj:21-30` |
+| The host registers its Ctrl+C handler for the loop alone, after every other verb is routed, cancelling `closing`, made at `:360`; `chat` and `run-heavy` each have their own. Its one catch takes a cancellation, a `DriverException`, a lease's exception and a request's, never an `IOException` | `Driver.Host/Program.cs:358-360, 642-662, 804-833`, `Driver.Host/ChatConsole.cs:189-273`, `Driver.Host/HeavyConsole.cs:31-50` |
+| The host references the driver library alone, runs with invariant globalization, and is built as `daoris-driver`, an apphost beside its DLL; the modules sit on the window kit's package | `Driver.Host.csproj:5-15` (`:9`), `Modules.csproj:21-30` |
 | The CLI starts a process only in `startChild`, which hands every child the managed tools' `PATH`; a `.cmd` or `.bat` goes through `cmd.exe`, quoted by the CLI; no doctrine command reaches it. The host's `agent install` finds the machine's npm on the `PATH` it inherited | `agents/toolchain.ts:2947-3016`, `test/dogfood.test.ts:610-705`, `HarnessActions.cs:73-86, 160-174` |
 | An install carries the host framework-dependent in `app/daoris-driver/`, its launchers in `app/bin/`, the CLI package in `app/cli/`: one `app/`, replaced whole | `tools/desktop-publish.mjs:304, 316, 355-373` |
 | A `daoris` finds its install by the folder it runs from; a checkout has none | `platform/home.ts:47-61` |
@@ -72,9 +76,11 @@ operation in the driver library, every route and its answer staying as they are.
   is not the one a Daoris install carries, and `DAORIS_DRIVER_PROGRAM` names none. Run the install's `daoris` (its `app/bin/`), or
   `daoris-driver driver …` where it is installed; nothing was done.* Never `PATH`, never a checkout's build output found by itself,
   never the install that holds the home: each is a guess at which build acts, and from a checkout the last would make a gate's
-  `daoris` a live install's client (FINDDAORIS1's hazard). A `DAORIS_DRIVER_PROGRAM` naming a `.cmd` or a `.bat` is refused, exit 2:
-  Node starts such a file only through `cmd.exe` (`toolchain.ts:2947-2989`), which would read the person's words. No TypeScript
-  fallback (§6).
+  `daoris` a live install's client (FINDDAORIS1's hazard). `DAORIS_DRIVER_PROGRAM` names the apphost a build writes beside its DLL,
+  `daoris-driver.exe` (`daoris-driver` off Windows), the host's `AssemblyName` (`Driver.Host.csproj:9`), never the DLL the family
+  rehearsal runs through `dotnet` today (`family-rehearsal.mjs:91`). A value that is not an existing file of that name is refused,
+  exit 2, naming it: a `.dll`, which no start runs; a quoted value, which names no file; a folder; and a `.cmd` or a `.bat`, which Node
+  starts only through `cmd.exe` (`toolchain.ts:2947-2989`), where the person's words would be read again. No TypeScript fallback (§6).
 - **Which build answers.** The program and this `daoris` are one build: an install's `app/` carries both and is replaced whole by a
   republish and by an update's swap (`desktop-publish.mjs:304, 363`); `DAORIS_DRIVER_PROGRAM` names a build of the same checkout, as
   the dev loop and the rehearsal set it (2a). No other pairing is supported, and none is checked. The CLI reads none of the host's
@@ -82,7 +88,8 @@ operation in the driver library, every route and its answer staying as they are.
   having done nothing (`Program.cs:642-650` for a family it does not know, each family command's usage for the rest).
 - **How it starts.** Through the one spawn site, `startChild`, so D50's rule and the dogfood test hold as they are. The `.exe`
   itself, never its `.cmd` launcher. `shell: false`; the terminal's own standard input, output and error (`stdio: 'inherit'`), so
-  `agent key` reads the person's typing and `agent login` the agent's prompts with no copy held by the CLI; and **the terminal's
+  `agent key` reads the person's typing and the agent's own prompts reach the person with no copy held by the CLI, the host handing
+  its console on in turn (*The second hop*); and **the terminal's
   environment exactly**, every variable the host reads (`DAORIS_HOME`, `DAORIS_DRIVER_CONFIG`, `DAORIS_HARNESS_CONFIG`,
   `DAORIS_INSTANCE`, `DAORIS_SERVICE_URL`, `DAORIS_SESSION_ID`) as typed and nothing added. Not the tools' `PATH`, which `startChild`
   hands every other child (TOOLS5): the host's `agent install` is the machine's npm's job and finds it on the `PATH` it inherited
@@ -90,15 +97,35 @@ operation in the driver library, every route and its answer staying as they are.
   The host hands its own children the tools itself (`EveryChildIsHandedTheToolsTests`). So `startChild` takes an option only the seam
   passes, starting the driver's program with the environment it was given, and the dogfood test's TOOLS5 rule names that one
   exception.
-- **Its exit.** The host's 0, 1 or 2 is the run's. Any other status is 2, said in one line naming the program and its status: a
+- **The second hop.** At a terminal the host starts an agent's own command (its installer, its updater, its sign-in, a pin's npm) as
+  the CLI's `relay` starts it today (`toolchain.ts:2910-2933`): with the console's three streams, un-redirected, so the person answers
+  the agent's prompts and the agent finds a terminal, and Ctrl+C reaches the agent itself. The window's start redirects all three with
+  no window (`HarnessActions.cs:459-477`), relays the output line by line (`:513-516`) and sends the page's typed line through
+  `HarnessRun.Send` (`:27-40`); at a terminal nothing would feed `Send`, and a sign-in waiting for a pasted code would wait for ever.
+  So the start takes a terminal's form beside the window's: the same facts (`HarnessProbe.Apply`, `Tools.Hand`, the account's
+  variable, the pin's environment) through the same start gate, the streams left as the host's and no window flag set. A pump from
+  `Console.In` into `Send`, as `chat` reads the person's lines (`ChatConsole.cs:202-212`), was weighed: it carries lines only, and an
+  agent whose sign-in wants a terminal would find a pipe.
+- **Nothing before the start.** The CLI writes nothing of its own before the start: Node writes to a Windows console asynchronously,
+  so a line written before the synchronous start can land after the host's. The allow-list's forwarding (§5) says no line of its own.
+  The seam's test holds it: the dispatcher's stand-in finds nothing written when it is called (§3).
+- **Its exit**, as `relay` maps an agent's today (`toolchain.ts:2935-2943`), with the host's statuses kept. The host's 0, 1 or 2 is the
+  run's. A start that fails (Node's `error`, with no status and no signal: `EACCES`, `EINVAL`, `UNKNOWN`) is 2, said in one line naming
+  the program and the error's message. The status a Ctrl+C ends a process with, `0xC000013A` on Windows and `SIGINT` elsewhere, is 2
+  with nothing said: the person pressed it. Any other status or signal is 2, said in one line naming the program and its status: a
   framework-dependent program (`desktop-publish.mjs:367-373`) that found no runtime, or one that crashed, ends with the runtime's own
-  codes. An end by a signal is 2.
-- **Ctrl+C** reaches both processes, which share the console. The CLI keeps it from ending itself while the host runs (a `SIGINT`
-  listener set before the synchronous start, so its event waits until the start returns) and returns the host's status. The host's
-  own handler is the loop's alone (`Program.cs:652-662`), so each family command registers its own, as `chat` does: a wait on the pipe
-  stops (the press may still be confirmed in the window; its sent record is kept, so `daoris-driver result <id>` asks for it), a
-  download stops and its staging goes (`ToolInstall.cs:228-238`), a sign-in's child is ended and its account removed as on a failure,
-  and a write under way completes, being atomic. The command says what was done and what was not, exit 2.
+  codes.
+- **Ctrl+C** reaches every process on the console. The CLI keeps it from ending itself while the host runs: a `SIGINT` listener and a
+  `SIGBREAK` one, each doing nothing, set before the synchronous start, so their events wait until the start returns and the run's
+  status is the host's. `SIGBREAK` is Windows' Ctrl+Break, which would otherwise end the CLI and leave the host writing to a shell that
+  has moved on. The host takes it in one handler, registered where the four families are routed, after `closing` is made
+  (`Program.cs:360`): it keeps the process and cancels `closing`, whose token each family command is handed. One handler, where
+  `run-heavy` and `chat` each wrote their own (`HeavyConsole.cs:31-50`, `ChatConsole.cs:189-273`); registered there, not at `:360`
+  itself, so a verb routed in between keeps the runtime's own Ctrl+C rather than one it never reads. The token: a wait on the pipe
+  stops (the press may still be confirmed in the window; its sent record is kept, so `daoris-driver result <id>` asks for it); a
+  download stops and its staging goes; a key's read stops, nothing written; the wait for the lease to publish stops (§1.4); an agent's
+  own command, sharing the console, has the key itself and ends by its own rule while the host waits for it, a sign-in that did not
+  finish removed after (§1.4); and a write under way completes, being atomic. The command says what was done and what was not, exit 2.
 - **The words arrive whole.** Node quotes each argument for the Windows command line by the convention .NET reads back. Held by a
   native fixture: a small .NET program the driver's tests build, printing its arguments as it read them, started through the seam by
   a driver test, since a Node stand-in would read them with Node's own parser. The hard cases: quotes, `&`, `%`, a backslash before a
@@ -124,9 +151,13 @@ operation in the driver library, every route and its answer staying as they are.
   §1.3) and its words; the switch, `RESULT`, the sent-press record and the *waiting for you to confirm* line are the host's as built
   (`InstanceDoor.cs:171-226`). A verb with no route acts alone. `Program.cs` routes each family through a thin console, as it routes
   `access` and `heavy`.
-- **The lease** (`VerbLeases`): a change holds it from the top, a read none (`list`, `show`, `tool path`, a bare `tool locations`,
-  `agent which`, `workflow show|list|export`, any `--plan`). A long verb, one that downloads, runs the agent's own flow or reads the
-  person's input, holds none while it waits and takes it to publish (§1.4).
+- **The lease** (`VerbLeases`): a short change holds it from the top, a read none (`list`, `show`, `tool path`, a bare `tool
+  locations`, `agent which`, `workflow show|list|export`, any `--plan`, the usage). A long verb, one that downloads, runs the agent's
+  own flow or reads the person's input, holds none at its top and takes it itself to publish (§1.4). `Holds` reads each family through
+  its command's own reading, as it reads `access` and `heavy` (`VerbLeases.cs:64-66`): otherwise it reads no word past the second
+  (`:42-43`), so `tool use <id> managed` could not be told from `tool use <id> system`, and it holds an unclassed verb (`:69`), so a
+  family with no row would hold the home through a whole download or sign-in. Each family's row adds its words to `VerbLeasesTests`'
+  two theories (`VerbLeasesTests.cs:49, 101`): every short change holds, and every read, long verb, `--plan` and usage holds none.
 - **A named file isolates what it names.** With `DAORIS_DRIVER_CONFIG` set, the driver family acts on that file's home alone, sends
   nothing and holds nothing, as today: every file its changes write is that home's. With `DAORIS_HARNESS_CONFIG` set, the agent
   family's wiring, accounts, keys and managed versions are that file's home's and act alone there as today; but its rules and their
@@ -173,23 +204,69 @@ a rename's `name`, a deleted version's `folder`, a look's `looks`, a location's 
 ### 1.4 The long verbs: staged, and published under the lease
 
 A long verb waits on something no lease should hold the home for: a download, the agent's own installer or sign-in, the person's
-typing. It holds nothing while it waits; what it makes is staged where no reader takes it; and it **publishes** under
-`HomeLease.ForVerb`, taken for the publication alone. Free, it is held. Held by another verb, a migration or a swap, it is waited for
-thirty seconds, then refused, exit 1, and the staging removed. Held by an instance (the desktop started meanwhile), it is taken beside
-it holding nothing (`HomeLease.cs:242-246`), and the publication is made as every route-less change is made beside an instance today:
-each file written under its keep lock (CONFIGLOCK1, KEEPALL1), the instance's judges reading it at their next look.
+typing. It holds nothing while it waits (`VerbLeases` holds none at its top, §1.2); what it makes is staged where no reader takes it
+and no other run meets it; and it **publishes** under `HomeLease.ForVerb`, taken for the publication alone.
 
 | Verb | Staged | Published under the lease |
 |---|---|---|
-| `tool download`, `update`; `tool use … managed` | at `<version>.part`, as today (`ToolInstall.cs:196-208`) | the one folder move (`:218`) and, for a use or an update, `Tools.UseManaged`'s write; `DownloadAsync` is split at its move |
-| `agent pin`, a pinned `agent update` | the version installed in place under the managed folder, as today; nothing reads it until a pin names it, but a re-pin's check, which takes a folder whose program is there (`HarnessActions.cs:128-133`), unchanged | the pin's write |
+| `tool download`, `update`; `tool use … managed` | at `<version>.part-<pid>`, its own process's (below) | a look for the version published meanwhile, then the one folder move (`ToolInstall.cs:218`) and, for a use or an update, `Tools.UseManaged`'s write; `DownloadAsync` is split at its move |
+| `agent pin`, a pinned `agent update` | from a maker's channel, at `<where>.part-<pid>` (it stages at `<where>.part` today, `ClaudeReleaseDownloads.cs:81-84`); through npm, installed in place under the version's folder as today (`HarnessActions.cs:102-106`), which nothing resolves until a pin names it; two npm pins of one version at once meet in npm's prefix, as today (§7) | the channel's move after the same look; the pin's write |
 | `agent install`, an unpinned `agent update` | nothing: the agent's own installer writes the machine, not the home | nothing; no lease |
-| `agent login` | the account's folder, made before the flow as the window's sign-in makes it (`PrepareLogin`), never moved after: an agent's own store may be keyed to its path. Made as a new folder only, so a sign-in the window starts at once takes the next id. The desktop starting meanwhile reads it as a signed-out account until the end, as it reads its own sign-in's | its end: the sign-in marked, the cool-off ended, its name and its joins; a sign-in that did not finish removes the folder under it |
+| `agent login` | the account's folder, made before the flow (below) | its end: the sign-in marked, the cool-off ended, its name and its joins |
 | `agent key` | the key read from standard input | the key's account written |
 
+- **The lease is waited for, never refused.** Free, it is held. Held by another verb, a migration or a swap, the publication waits as
+  the desktop's loop waits for an act (`DriverLoop.cs:1075-1127`): with no deadline, saying once the hold has lasted thirty seconds
+  who holds it, and taking the lease the moment that one lets go. A refusal there would throw away what the person waited for, a
+  verified archive or a finished sign-in, where a short verb refused at its top has done nothing; and a verb's hold is now a short
+  act's, the long verbs holding only to publish. The person's Ctrl+C ends the wait (§1.1): a download's staging goes, and a sign-in
+  that finished is kept (below). Held by an instance (the desktop started meanwhile), the lease is taken beside it holding nothing
+  (`HomeLease.cs:242-246`).
+- **Beside an instance, a file's keep lock is the publication's protection, and four files have none today.** `KeepLock.Take` is
+  taken by `DriverConfig.Save` and `JsonKeeping.Save` alone (`DriverConfig.cs:866`, `JsonKeeping.cs:71`): `driver.json`,
+  `plugins.json`, `permissions.json` and `keys.json`, the key's file (`HarnessSelection.cs:177`). `tools.json` (`Tools.SetWay`,
+  `AddLocation`, `RemoveLocation`, `Tools.cs:362-394, 425-457`), `accounts.json` (`AccountNames.cs:360-364`) and `cooling.json`
+  (`AccountCooling.cs:161-182`, its gate its own process's) are read at the write and written with no lock; `harnesses.json`, the
+  pin's and the joins' file, is written whole from a copy read earlier (`HarnessSettings.cs:153-163`; D173's KEEPALL1 note). So a
+  window's change and a terminal's landing together lose one, today, whenever the window runs. The row whose publication writes each
+  file takes its lock first, before its long verbs publish: 2c `tools.json`'s three writers, and 2e `accounts.json`'s and
+  `cooling.json`'s, each holding `KeepLock.Take` over the read it already makes at the write and the write (CONFIGLOCK1's guarantee,
+  their merge unchanged); and 2e `harnesses.json`'s, through one change under the lock, `HarnessSettings.Change(path, edit)` (the
+  lock, the file read, the edit, the whole write), every writer of the file through it, the routes' and the command's, so its
+  whole-file layout (KEEPALL1b) stays as it is.
+- **Each run stages under its own name.** The fixed `<version>.part` is deleted at a download's start and at its end
+  (`ToolInstall.cs:196-200, 233-239`), so a second download of one version deletes the first's staging under it; on Windows the
+  delete throws on the first's open archive, an `IOException` that neither of `DownloadAsync`'s catches (`:223-232`) nor the host's
+  one catch (`Program.cs:804-833`) takes. Today the lease held for a terminal's whole run keeps two terminals apart
+  (`service.ts:534-544`) and `ToolActions`' gate the window's own (`ToolActions.cs:100-104`), while a terminal's and the window's
+  already meet; with the lease taken only to publish, two terminals would meet too. So a run stages at `<version>.part-<pid>`, its own
+  process's id: two runs never touch each other's staging, and nothing waits. `Downloaded` takes version names alone
+  (`ToolInstall.cs:82`), so no reader sees one. The publication looks again under the lease: a version another run published meanwhile
+  is kept, this run's staging removed and the run said as *already downloaded*; a folder holding nothing that runs is replaced as today
+  (`:210-215`), judged now rather than at the start; then the one move (`:218`). A run's start removes its folder's stagings whose
+  process no longer runs, so a crash between the staging and the publication leaves nothing for good, where a `.part` stays today
+  until its version is downloaded again (`tool delete` refuses its name, `:318-321`); a process id the system reused keeps its staging
+  only until that process ends. A bare `.part` an older build left goes when its version is downloaded again, as today. A download
+  stages so in 2c once `toolinstall.ts` has left, and a channel pin in 2e once `channels.ts` has, so no twin is held to the old name.
+- **A sign-in.** Its account's folder is made before the agent's flow, as the window's sign-in makes it (`PrepareLogin`), and never
+  moved after: an agent's own store may be keyed to its path. Its id is drawn at random and never reused (`AccountNames.NewId`,
+  `AccountNames.cs:303-311`), so a sign-in the window starts at the same moment has a folder of its own; `Directory.CreateDirectory`
+  makes it (`HarnessSelection.cs:582`), asking nothing of what is there. The desktop starting meanwhile reads it as a signed-out
+  account until the end, as it reads its own sign-in's. The end decides as the window's does (`AgentActions.cs:402-458`): a new
+  account whose sign-in did not finish (the agent failed, was stopped, or ended signed out) is removed in a `finally`, so a stop, a
+  failure and an exception each leave the list as it was; a sign-in that finished is kept, and its end is then published. A Ctrl+C
+  while that publication waits keeps the account, signed in, and says what was not written (its name, its joins) and how to finish
+  (`daoris agent profile rename|join …`). A host killed mid-flow leaves the folder, a signed-out account until the person removes it,
+  as the window killed mid-flow leaves its own today (§7).
+
 Rejected: holding the lease for the whole run, the CLI's tools' way today (the desktop's loop waits on a verb's hold,
-`DriverLoop.cs:1082-1092`, so a sign-in would hold its start for as long as the person takes); staging a sign-in's folder and moving it
-after the agent signed in.
+`DriverLoop.cs:1075-1127`, so a sign-in would hold its start for as long as the person takes); staging a sign-in's folder and moving it
+after the agent signed in; refusing a publication after the lease's thirty seconds and removing what it staged (above); a lock of the
+staging's own, where a name per process keeps two runs apart with nothing to wait on; the four unlocked writers moved onto
+`JsonKeeping.Save`, where the three that read at the write need only the lock over it, and `harnesses.json`'s keeping is KEEPALL1b's
+question, which the keeping write would answer by the way; a marker in a sign-in's folder, read as absent while its process runs and
+swept once it is gone: it would close a host killed mid-sign-in at both doors, but every reader of the account list would read it, in
+both twins until 2e, for a leftover the person sees as signed out and removes (§7).
 
 ## 2. The person's class alone (point 3)
 
