@@ -18407,3 +18407,9 @@ in zh. The sessions page's held words (`WordsHold`) still carry the driver's sen
 > - [ ] **STOREBOUND1 — the compatible-build boundary written down** (knowledge). Twice, keeping stored rows safe from already-shipped builds needed a shape those builds cannot see (a new table) rather than a mark they do not read: write it beside "a stored shape is never changed in place". Proof: the document is indexed in `.claude/INDEX.md` and names CLOSE1o and CLOSE1w.
 
 **Outcome** 2026-10-21: `.claude/knowledge/compatible-builds.md`, local since its cases are this repository's, and its row in `.claude/INDEX.md` by `daoris sync`. It walks FABRIC-CLOSE1o's nullable columns, which an older build kept reading and writing around, to FABRIC-CLOSE1w's `quest_owned_take_binds`, which no older build knows. It names when nullable columns are enough, and says CLOSETAKE1's `quest_store_version` guards only the builds from the stamp on. The branch-worker's "a stored shape is never changed in place" now points to it. No code changed.
+
+## APPCWD1 — the application does not lend `app/` as a working folder (2026-10-21, D139)
+
+> - [ ] **APPCWD1 — the application does not lend `app/` as a working folder** (desktop, driver; D139 §5, D93). Children started without a working folder inherit `app/` and block the swap's move while they live. Proof: such a child does not hold `app/`; the rehearsal green. Speculative until DEPLOYBUSY1b's evidence.
+
+**Outcome** 2026-10-21: the launcher started the application in `app/`, so its children that name no working folder (the in-app Edge, harness and tool runs) stood there, outside §5's wait. The application now moves to the install's root first thing (`InstallHome.WorkingFolder`), and the launcher starts it there. Proof: `InstallHomeTests`, `AppWorkingFolderProcessTests`; the rehearsal at the merge. On Opus, by a driven session. Detail: D139's APPCWD1 note.
