@@ -461,6 +461,7 @@ folder.
 
 ## Development and agent layout
 
+- [ ] **AGENTDEFS1 — two proposed changes to the parent's own agent instructions await the owner** (the owner; found 2026-10-20 and 2026-10-21). The parent's change to `.claude/skills/dispatch-subagent/SKILL.md` (2026-10-20) and a line a session of the install proposed for `.claude/agents/branch-worker.md` (STOREBOUND1, 2026-10-21: rows a shipped build cannot reach go to a new table, never under a mark it never reads; see `.claude/knowledge/compatible-builds.md`) both change the instructions the parent's own agents run under; the parent's tool refused the first as self-modification, so neither is committed by the parent, and each waits for the owner to apply or decline it. Proof: the owner's choice, recorded.
 Contracts: self-development (D115), agent-layout (D117 §7), entry-point evidence.
 DEV5 → 6 → 7, then 8/9, then 10/11. Predictions wait for LAYOUT2 measurement.
 
