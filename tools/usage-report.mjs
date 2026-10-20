@@ -16,8 +16,9 @@
  * refused because nobody was at the prompt, per session by adapter and repository), the rule proposals
  * (UNBLOCK5: what waits for the person, and those made in the period by week and state), the set-ups
  * (WSSETUP11: each set-up session's minutes, tool calls, tokens and context), the parks (WSSETUP11: the
- * sessions that stopped to ask the person, per week by workspace, beside the sessions started there), what
- * was refused (by code, most first), what failed (exceptions, the page's errors, error-level log lines,
+ * sessions that stopped to ask the person, per week by workspace, beside the sessions started there), the
+ * agent actions (SIGNIN1: each sign-in, install or pin by agent and action, how it ended and each phase's time),
+ * what was refused (by code, most first, a harness action's by its action), what failed (exceptions, the page's errors, error-level log lines,
  * failed or slow requests, grouped) and the lifecycle (starts, stops, uptime, versions). `--json` is the
  * same as data.
  *
@@ -896,7 +897,9 @@ export function summarise(lines, { from, to, skipped = 0, proposals = [], record
     const code = named(line.data.code) ?? 'an unnamed code';
     const entry = refused.get(code) ?? { code, count: 0, requests: [] };
     entry.count++;
-    entry.requests.push(named(line.data.request) ?? 'an unnamed request');
+    // A harness action's refusal says which action beside its request (SIGNIN1), so a refused sign-in is told from an install.
+    const action = named(line.data.action);
+    entry.requests.push(`${named(line.data.request) ?? 'an unnamed request'}${action ? ` ${action}` : ''}`);
     refused.set(code, entry);
   }
 
@@ -945,8 +948,46 @@ export function summarise(lines, { from, to, skipped = 0, proposals = [], record
     refused: [...refused.values()]
       .sort((a, b) => b.count - a.count)
       .map((entry) => ({ ...entry, requests: counted(entry.requests) })),
+    harness: harnessActionsOf(lines),
     failed: failures(lines),
   };
+}
+
+/**
+ * Each agent action's runs (SIGNIN1, `harness.started`, `harness.prompted`, `harness.ended`): by agent and action, how many
+ * started and asked the person, how they ended, and each phase's time — from the press to the tool's process up, from there
+ * to its first link, the tool's run, the driver's read of who signed in, its write of the lists, and the whole. A phase a run
+ * never reached is null in the log and is not timed here. Most started first.
+ */
+function harnessActionsOf(lines) {
+  const rows = new Map();
+  const rowOf = (line) => {
+    const harness = named(line.data.harness) ?? '(unnamed)';
+    const action = named(line.data.action) ?? '(unnamed)';
+    const id = `${harness}\u0000${action}`;
+    if (!rows.has(id)) rows.set(id, { harness, action, started: [], prompted: [], ended: [] });
+    return rows.get(id);
+  };
+  for (const line of lines) {
+    if (line.event === 'harness.started') rowOf(line).started.push(line);
+    else if (line.event === 'harness.prompted') rowOf(line).prompted.push(line);
+    else if (line.event === 'harness.ended') rowOf(line).ended.push(line);
+  }
+  return [...rows.values()]
+    .map((row) => ({
+      harness: row.harness,
+      action: row.action,
+      started: row.started.length,
+      prompted: row.prompted.length,
+      ended: counted(row.ended.map((line) => named(line.data.outcome) ?? 'unknown')),
+      starting: timing(row.started, 'ms'),
+      asking: timing(row.prompted, 'ms'),
+      tool: timing(row.ended, 'toolMs'),
+      who: timing(row.ended, 'whoMs'),
+      lists: timing(row.ended, 'listsMs'),
+      whole: timing(row.ended, 'ms'),
+    }))
+    .sort((a, b) => b.started - a.started || a.harness.localeCompare(b.harness) || a.action.localeCompare(b.action));
 }
 
 /** A span in milliseconds, as a person reads it: 412 ms · 5.8 s · 3m 10s. */
@@ -1200,6 +1241,17 @@ export function render(report, folder) {
     rows('by repository', outcomes.byRepository, (group) => group.repository);
     rows('by agent and account, each quest under its first session', outcomes.byAgent,
       (group) => (group.account === null ? group.agent : `${group.agent} · ${group.account}`));
+  }
+
+  out.push('', 'Agent actions');
+  if (report.harness.length === 0) out.push('  none');
+  const actionWidth = Math.max(0, ...report.harness.map((row) => `${row.harness} ${row.action}`.length));
+  for (const row of report.harness) {
+    const ends = row.ended.length ? ` · ${listed(row.ended)}` : '';
+    const times = [['starting', row.starting], ['to the link', row.asking], ['the tool', row.tool], ['who', row.who], ['lists', row.lists]]
+      .filter(([, value]) => value.count > 0)
+      .map(([label, value]) => `${label} median ${duration(value.medianMs)}`);
+    out.push(`  ${`${row.harness} ${row.action}`.padEnd(actionWidth)}  ${row.started} started${ends}${times.length ? ` — ${times.join(' · ')}` : ''}`);
   }
 
   out.push('', 'Refused');
