@@ -5,6 +5,25 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-20 — A session ending at its `ready` parked and never landed; a done already landed waited on an opinion with nothing to land (CLOSELAND1)
+
+- **Symptom:** each shown red first. Through a real tick, a bound quest's session that took its quest, committed and said `ready` ended
+  `awaiting-person` ("It stopped with its quest still taken, to ask you"), and no automatic landing was due (`SubmittedEndTickTests`). A
+  session landed, then concluded again with nothing new under an opinion rule added after its landing, stayed due as `opinion` with no due
+  owed, its branch already holding everything (`AutoLandingTriesTests`, CLOSE1h19).
+- **Root cause:** FABRIC-CLOSE1h (a2a9e925f) handed `QuestResults.Status(after)` to the landing's conclusion, but the record's own state
+  still came from `Observation.Conclude(…, after.Status)`: in a closure graph the quest stays `Taken` at its submission, and a session
+  holding the quest it took parks (STANDDOWN2). `AutoLandingRules.Concluded` refuses a parked state, and the look leaves a live session's
+  tree, so the "due at `ready`" the note claimed was never reached; no test drove the call site. For CLOSE1h19: CLOSE1h18 (5f1141d30) closes
+  the due as landed by git where the tree is on the branch made, and CLOSE1h17 (11f13401a) does not owe it again after such a close, while
+  the look still read the gate, whose opinion part held, before D88's proof, which only the landing reads.
+- **Fix:** `Observation.Conclude` and `Resumed` take `submitted` (`QuestResults.Submitted(after)`) and end such a session `completed` with
+  `ended.submitted` (worded by `statusHint.Submitted`), at a first run's end and a carried-on run's. `AutoLander.JudgeAsync` reads D88's
+  proof before the gate where a standing landing names the session and nothing is uncommitted, and closes the entry `already`. D173's
+  CLOSELAND1 note.
+- **Verification:** `SubmittedEndTickTests` (Process), `AutoLandingTriesTests`' new case (Git) and `ObservationTests`, green; the page's
+  map of note codes owes `ended.submitted` its line (web).
+
 ## 2026-10-20 — Ask Daoris's conversations were listed among the chat sessions (ASKRAIL1)
 
 - **Symptom:** the Sessions rail drew an *Ask Daoris* group beside the repositories' (and its rows by state, its name search and the

@@ -106,7 +106,8 @@ public sealed record LandingSubject(string Session, string? Quest, string? Title
 
     /// <summary>
     /// The quest the session itself served (FABRIC-UNITLINK1, D173's CLOSELAND1 note), whatever <see cref="Quest"/> names it for: the
-    /// landing's record keeps it on the landing or its advance. Set by <see cref="SessionTrees.OwnSubjectAsync"/>; null for a conversation.
+    /// landing's record keeps it on the landing or its advance. Set where a door names the session's landing
+    /// (<see cref="SessionTrees.OwnSubjectAsync"/>, an entry's parts); null for a conversation, and where no door set it.
     /// </summary>
     public string? Served { get; init; }
 
