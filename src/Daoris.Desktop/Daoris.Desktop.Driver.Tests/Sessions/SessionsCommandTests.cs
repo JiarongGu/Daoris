@@ -537,6 +537,48 @@ public sealed class SessionsCommandTests : IDisposable
         Assert.Empty(new SessionRequests(_home).Pending(DateTimeOffset.UtcNow));
     }
 
+    /// <summary>
+    /// COWORK1a (the message-urgency design §3.2, §8.6): <c>stop &lt;id&gt; --turn</c> is the keeping stop's twin, the person's own
+    /// press: it stops the session's turn so what waits goes next, through the Daoris that runs it, and says what it came to. Where
+    /// the door has no stop that keeps the session it refuses and says why; with no turn to stop it stops nothing; and where nothing
+    /// here holds its turns it could not.
+    /// </summary>
+    [Theory]
+    [InlineData(KeepingStops.Stopped, 0, "sessions: stopping w0rk1ng0's turn: what waits goes next, and what it has done stays.\n")]
+    [InlineData(KeepingStops.Nothing, 1, "sessions: w0rk1ng0 has no turn running with words waiting for its end, so nothing was stopped.\n")]
+    [InlineData(KeepingStops.NoInterrupt, 1,
+        "sessions: w0rk1ng0's door cannot stop a turn and keep the session, so nothing was stopped: what waits goes when its turn ends, and `daoris-driver sessions stop w0rk1ng0` ends the session.\n")]
+    [InlineData(KeepingStops.NotHere, 1, "sessions: nothing here runs w0rk1ng0, so it has no turn to stop.\n")]
+    public async Task Stop_turn_is_the_keeping_stop_and_says_what_it_came_to(string came, int code, string line)
+    {
+        var ledger = Family();
+        using var service = ledger.Client();
+        string? asked = null;
+        var world = World(ledger, service) with { StopTurn = (id, _) => { asked = id; return Task.FromResult(came); } };
+
+        var (exit, said) = await RunAsync(ledger, ["stop", "w0rk1ng0", "--turn"], world: world);
+
+        Assert.Equal((code, line), (exit, said));
+        Assert.Equal("w0rk1ng0", asked);
+        Assert.Equal("working", ledger.State("w0rk1ng0"));
+    }
+
+    [Fact]
+    public async Task Stop_turn_where_nothing_here_holds_a_turn_could_not_and_the_usage_names_it()
+    {
+        var ledger = Family();
+        Assert.Equal(("stop-turn", "w0rk1ng0"), (SessionsCommand.Read(["stop", "w0rk1ng0", "--turn"], out _)!.Verb, "w0rk1ng0"));
+        Assert.Contains("sessions stop <id> [--turn]", SessionsCommand.Usage);
+
+        var (exit, said) = await RunAsync(ledger, ["stop", "w0rk1ng0", "--turn"]);
+
+        Assert.Equal(2, exit);
+        Assert.Equal(
+            "sessions: the Daoris that runs w0rk1ng0 holds its turns and did not answer here; stop its turn in Daoris's window, beside the words that wait.\n",
+            said);
+        Assert.Equal("working", ledger.State("w0rk1ng0"));
+    }
+
     /// <summary>Nothing that runs it took the request in time: it is withdrawn, and the verb could not, which is exit 2.</summary>
     [Fact]
     public async Task A_request_nothing_takes_in_time_is_withdrawn_and_said()

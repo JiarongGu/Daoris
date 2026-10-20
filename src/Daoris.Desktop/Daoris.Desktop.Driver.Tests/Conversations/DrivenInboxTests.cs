@@ -305,8 +305,9 @@ public sealed class DrivenInboxTests
         var inbox = new DrivenInbox(_ => { });
         inbox.Attach(() => { stopped++; return Task.CompletedTask; });
 
-        await inbox.HoldNowAsync(Said("one"));
-        await inbox.HoldNowAsync(Said("two"));
+        inbox.Hold(Said("one"));
+        inbox.Hold(Said("two"));
+        await inbox.SendNowAsync();
         await inbox.SendNowAsync();
         Assert.Equal(1, stopped);
 
@@ -327,7 +328,8 @@ public sealed class DrivenInboxTests
         var inbox = new DrivenInbox(_ => { });
         inbox.Attach(async () => { await gate.Task; landed++; });
 
-        var pressing = inbox.HoldNowAsync(Said("start with the tests"));
+        inbox.Hold(Said("start with the tests"));
+        var pressing = inbox.SendNowAsync();
         var waiting = inbox.NextOrClose();
 
         Assert.Null(waiting?.Held);
@@ -394,21 +396,166 @@ public sealed class DrivenInboxTests
     }
 
     /// <summary>
-    /// STEER2a (D90): on a door that takes words only at the turn's end, *Send now* holds the words as before and stops the turn
-    /// so they go next; nothing is withdrawn.
+    /// 🔴 COWORK1a (D188 point 3, the message-urgency design trap 1): on a door that takes words only at the turn's end, *now*
+    /// holds the words for that end and stops nothing, said <c>no-interrupt</c>; the turn runs on. The stop that keeps the session
+    /// is the person's own press (<see cref="DrivenInbox.SendNowAsync"/>), never a word's.
     /// </summary>
     [Fact]
-    public async Task Sending_now_on_a_turn_end_door_holds_the_words_and_stops_the_turn_so_they_go_next()
+    public async Task Now_on_a_turn_end_door_holds_the_words_stops_nothing_and_says_so()
     {
         var stopped = 0;
         var inbox = new DrivenInbox(_ => { });
         inbox.Attach(() => { stopped++; return Task.CompletedTask; });
 
-        var now = await inbox.HoldNowAsync(Said("stop: the tests are in /spec"));
+        var now = await inbox.HoldNowAsync(Said("stop: the tests are in /spec") with { Level = MessageLevel.Now });
 
-        Assert.Equal(new SentNow("turn-end", true, null), now);
+        Assert.Equal(new SentNow("turn-end", false, SendNowWhy.NoInterrupt), now);
+        Assert.Equal(0, stopped);
+        Assert.Equal(["stop: the tests are in /spec"], inbox.State.Queued.Select(m => m.Text));
+        Assert.True(inbox.KeepingStop);
+
+        // The keeping stop, pressed: the turn stops and what waits goes next.
+        Assert.True((await inbox.SendNowAsync()).Cancelled);
         Assert.Equal(1, stopped);
         Assert.Equal("stop: the tests are in /spec", inbox.TakeOrClose()?.Text);
+    }
+
+    /// <summary>
+    /// 🔴 COWORK1a (the design §3.0): an ordinary word on a door that takes words at its next step waits for the turn's end, told
+    /// so; an urgent word said after it goes at the next step past it, since its sender chose sooner; and at the turn's end the
+    /// ordinary one is the next prompt, after every word sent is answered.
+    /// </summary>
+    [Fact]
+    public async Task An_ordinary_word_waits_for_the_turns_end_and_an_urgent_one_goes_at_the_next_step_past_it()
+    {
+        var sent = new List<string>();
+        var answer = new TaskCompletionSource<string>();
+        var told = new List<(string Text, DrivenReach Reach)>();
+        var inbox = new DrivenInbox(_ => { });
+        inbox.OnSaid((message, reach) => told.Add((message.Text, reach)));
+        inbox.Attach(() => Task.CompletedTask, message => { sent.Add(message.Text); return answer.Task; });
+        inbox.Flow();
+
+        Assert.True(inbox.Hold(Said("when you are done, tidy the readme") with { Level = MessageLevel.Ordinary }));
+        Assert.True(inbox.Hold(Said("the budget is 64 KiB")));
+
+        Assert.Equal(["the budget is 64 KiB"], sent);
+        Assert.Equal(["when you are done, tidy the readme"], inbox.State.Queued.Select(m => m.Text));
+        Assert.Equal([("when you are done, tidy the readme", DrivenReach.TurnEnd), ("the budget is 64 KiB", DrivenReach.NextStep)], told);
+
+        var first = inbox.NextOrClose();
+        Assert.Null(first?.Held);
+        answer.SetResult("end_turn");
+        Assert.Equal("when you are done, tidy the readme", inbox.NextOrClose()?.Held?.Text);
+        Assert.Equal(["the budget is 64 KiB"], sent);
+    }
+
+    /// <summary>
+    /// 🔴 COWORK1a (the design §14's trap): the first prompt on the wire sends the urgent words held while the session opened, and
+    /// keeps the ordinary ones for the turn's end; before, every held word went with it.
+    /// </summary>
+    [Fact]
+    public void The_first_prompt_on_the_wire_sends_the_urgent_words_held_and_keeps_the_ordinary_ones()
+    {
+        var sent = new List<string>();
+        var inbox = new DrivenInbox(_ => { });
+        inbox.Hold(Said("tidy the readme after") with { Level = MessageLevel.Ordinary });
+        inbox.Hold(Said("the tests are in /spec"));
+        inbox.Attach(() => Task.CompletedTask, message => { sent.Add(message.Text); return new TaskCompletionSource<string>().Task; });
+
+        inbox.Flow();
+
+        Assert.Equal(["the tests are in /spec"], sent);
+        Assert.Equal(["tidy the readme after"], inbox.State.Queued.Select(m => m.Text));
+    }
+
+    /// <summary>
+    /// COWORK1a (the design §8.2): a held word's level is changed while it waits, under its id. Made urgent on a door that takes
+    /// words at its next step it goes there at once, told again under the same id with its new reach; made ordinary it stays held,
+    /// told again. A word no longer held is the session's, and nothing changes it.
+    /// </summary>
+    [Fact]
+    public void A_held_words_level_is_changed_under_its_id_and_made_urgent_it_goes_at_the_next_step()
+    {
+        var sent = new List<string>();
+        var told = new List<(string? Id, DrivenReach Reach, MessageLevel Level)>();
+        var inbox = new DrivenInbox(_ => { });
+        inbox.OnSaid((message, reach) => told.Add((message.Id, reach, message.Level)));
+        inbox.Attach(() => Task.CompletedTask, message => { sent.Add(message.Text); return new TaskCompletionSource<string>().Task; });
+        inbox.Flow();
+        inbox.Hold(Said("tidy the readme") with { Level = MessageLevel.Ordinary });
+
+        Assert.Equal(QueueEdit.Done, inbox.Edit("said-1", text: null, MessageLevel.Urgent));
+
+        Assert.Equal(["tidy the readme"], sent);
+        Assert.Empty(inbox.State.Queued);
+        Assert.Equal(("said-1", DrivenReach.NextStep, MessageLevel.Urgent), told.Last());
+        Assert.Equal(QueueEdit.Taken, inbox.Edit("said-1", text: null, MessageLevel.Ordinary));
+
+        var holding = new DrivenInbox(_ => { });
+        var heard = new List<(string? Id, DrivenReach Reach, MessageLevel Level)>();
+        holding.OnSaid((message, reach) => heard.Add((message.Id, reach, message.Level)));
+        holding.Attach(() => Task.CompletedTask);
+        holding.Hold(Said("the budget is 64 KiB"));
+
+        Assert.Equal(QueueEdit.Done, holding.Edit("said-1", text: null, MessageLevel.Ordinary));
+        Assert.Equal(MessageLevel.Ordinary, Assert.Single(holding.State.Queued).Level);
+        Assert.Equal(("said-1", DrivenReach.TurnEnd, MessageLevel.Ordinary), heard.Last());
+    }
+
+    /// <summary>
+    /// COWORK1a (the design §7, §9): the record keeps a level beside the person's own words, urgent where none was said, and none
+    /// beside another session's claim, whose level is its own row's (COWORK1d), so nothing reads a claim's default as stated. The
+    /// person's channel message is theirs, and keeps one.
+    /// </summary>
+    [Fact]
+    public void The_level_the_record_keeps_is_said_beside_the_persons_own_words_only()
+    {
+        var claim = new ChannelItemView(ChannelItemView.Message, DateTimeOffset.UtcNow) { Id = "m1", Person = false };
+        var persons = claim with { Person = true };
+
+        Assert.Equal("urgent", Said("the budget is 64 KiB").LevelSaid);
+        Assert.Equal("ordinary", (Said("tidy the readme after") with { Level = MessageLevel.Ordinary }).LevelSaid);
+        Assert.Equal("now", (Said("stop") with { Level = MessageLevel.Now, Channel = persons }).LevelSaid);
+        Assert.Null((Said("another agent's claim") with { Channel = claim }).LevelSaid);
+    }
+
+    /// <summary>
+    /// 🔴 COWORK1a (the design trap 1, a census of the interrupt's callers): no delivery path decides a stop. In the driven inbox only
+    /// the keeping stop does; in a conversation's turns only the keeping stop and the withdrawing stop, each the person's own press.
+    /// </summary>
+    [Fact]
+    public void Only_a_stop_press_decides_a_stop_and_no_word_does()
+    {
+        var root = Daoris.Desktop.Driver.Tests.EveryChildIsHandedTheToolsTests.SourceRoot();
+
+        Assert.Equal(
+            ["SendNowAsync"],
+            Callers(File.ReadAllText(Path.Combine(root, "Daoris.Desktop.Driver", "Conversations", "DrivenInbox.cs")), "StopThisTurn()"));
+        Assert.Equal(
+            ["StopKeepingAsync"],
+            Callers(File.ReadAllText(Path.Combine(root, "Daoris.Desktop.Driver", "Conversations", "Chat", "ChatTurns.cs")), "StopKeeping()"));
+    }
+
+    /// <summary>
+    /// The members whose code calls <paramref name="call"/>, each by the last member signature above the call; comments and the
+    /// called member's own declaration left out.
+    /// </summary>
+    internal static List<string> Callers(string source, string call)
+    {
+        var signature = new System.Text.RegularExpressions.Regex(@"^    (?:public|private|internal)\b[^=;]*?\b(\w+)\s*\(");
+        var name = call[..call.IndexOf('(')];
+        var callers = new List<string>();
+        string? member = null;
+        foreach (var line in source.Split('\n'))
+        {
+            if (line.TrimStart().StartsWith("//", StringComparison.Ordinal)) continue;
+            if (signature.Match(line) is { Success: true } declared) member = declared.Groups[1].Value;
+            if (member is null || member == name || !line.Contains(call, StringComparison.Ordinal)) continue;
+            if (!callers.Contains(member)) callers.Add(member);
+        }
+
+        return callers;
     }
 
     /// <summary>

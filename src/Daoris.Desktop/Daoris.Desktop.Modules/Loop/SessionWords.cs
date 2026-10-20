@@ -47,6 +47,12 @@ public sealed record WordsAnswer(bool Sent, string? Reaches, string? Why)
     public string? Message { get; init; }
 
     /// <summary>
+    /// What a running session's door can do with a word while a turn runs (COWORK1a): whether its agent steers, and whether it has
+    /// the keeping stop. Null where nothing here runs it, its door is not known yet, or it carries only text.
+    /// </summary>
+    public TurnDoor? Door { get; init; }
+
+    /// <summary>
     /// The person's words waiting on its record (SAIDBACK1b, D137 §2.4), where the record was read: what the queue lists when
     /// nothing here holds the session, so the composer's *Edit* and *Remove* reach them. Null where the record was not read (a
     /// session running here, or nothing known); empty on a record that runs again, whose run is taking them.
@@ -261,7 +267,12 @@ public sealed class SessionWords : IDisposable
     /// </summary>
     public WordsAnswer? ReachHere(string id)
     {
-        if (_loop.Processes.InboxOf(id) is { State.Taking: true } inbox) return new(true, Spelled(inbox.Reach), null);
+        // What the door can do while a turn runs rides it (COWORK1a): whether its agent steers, and whether it can stop a turn
+        // keeping the session, which the page offers the levels and the keeping stop by.
+        if (_loop.Processes.InboxOf(id) is { State.Taking: true } inbox)
+        {
+            return new(true, Spelled(inbox.Reach), null) { Door = inbox.Reach is null ? null : new TurnDoor(inbox.Steers, inbox.KeepingStop) };
+        }
 
         // Ask Daoris's conversation still starting (HELPSTART1): a word waits for its door, which opens with it as its first turn.
         if (_loop.HelpStarting.Queue(id) is not null) return new(true, null, null);
@@ -270,7 +281,7 @@ public sealed class SessionWords : IDisposable
         {
             // A conversation this machine runs (D49 §3): a word goes into the running turn where its agent takes words at its
             // next step (MSG1c), waits for the turn to end elsewhere, or starts one now (CONV4a).
-            return new(true, _loop.Chat?.Reach(id), null);
+            return new(true, _loop.Chat?.Reach(id), null) { Door = _loop.Chat?.Door(id) };
         }
 
         return null;
@@ -308,18 +319,21 @@ public sealed class SessionWords : IDisposable
     /// not answering yet and nothing here runs the session, so nothing can keep them.
     /// </summary>
     /// <param name="door">Where they were said, <c>screen</c> or <c>terminal</c>: the machine log names it (D137 §3.3).</param>
-    /// <param name="now">
-    /// The person's *Send now* (STEER2a, D136's 2026-10-16 note): a session running here carries it out by its door
-    /// (<see cref="DrivenInbox.HoldNowAsync"/>, <see cref="ChatRunner.SayNowAsync"/>). One that parked or ended has no turn to
-    /// steer or stop, and goes on with the words as before.
+    /// <param name="level">
+    /// When the person asked the words to reach a working session (COWORK1a, D188 point 1): urgent by default, at its next step where
+    /// its door takes words then; ordinary at its turn's end; <c>now</c>, the person's *Send now* (STEER2a), carried out by its door
+    /// (<see cref="DrivenInbox.HoldNowAsync"/>, <see cref="ChatRunner.SayNowAsync"/>). No level stops a turn. One that parked or
+    /// ended has no turn running, and goes on with the words as before.
     /// </param>
     /// <exception cref="DriverException">
     /// A session this machine runs that takes no words at all (an intake, INT4h), in the driver's words; files the person
     /// attached that a conversation cannot carry; or a service whose answer could not be read.
     /// </exception>
     public async Task<WordsAnswer?> SayAsync(
-        string id, string text, IReadOnlyList<ChatUpload> files, string? preface, string door, CancellationToken ct, bool now = false)
+        string id, string text, IReadOnlyList<ChatUpload> files, string? preface, string door, CancellationToken ct,
+        MessageLevel level = MessageLevel.Urgent)
     {
+        var now = level == MessageLevel.Now;
         // A driven session that hears words during its run (SESS3, D136; the native door's run, MSG1b).
         if (_loop.Processes.InboxOf(id) is { } inbox)
         {
@@ -328,7 +342,10 @@ public sealed class SessionWords : IDisposable
                 return new(true, sentNow.Reaches, sentNow.Why) { Running = true, Now = sentNow.Now };
             }
 
-            if (!now && inbox.Hold(new ChatMessage(text, []))) return new(true, Spelled(inbox.Reach), null) { Running = true };
+            if (!now && inbox.Hold(new ChatMessage(text, []) { Level = level }))
+            {
+                return new(true, Spelled(inbox.ReachAt(level)), null) { Running = true };
+            }
         }
 
         if (id.Contains('/')) return WordsAnswer.Refused("teammate");
@@ -353,7 +370,7 @@ public sealed class SessionWords : IDisposable
                     return new(true, sentNow.Reaches, sentNow.Why) { Running = true, Now = sentNow.Now };
                 }
             }
-            else if (chat.Say(id, text, out var reaches, files, preface))
+            else if (chat.Say(id, text, out var reaches, files, preface, level))
             {
                 return new(true, reaches, null) { Running = true };
             }
@@ -561,12 +578,12 @@ public sealed class SessionWords : IDisposable
     {
         var text = request.Text ?? "";
         var said = await SayAsync(
-                request.Session, text, Kept(request.Session, request.Files), preface: null, RequestDoor.Terminal, ct, request.Now)
+                request.Session, text, Kept(request.Session, request.Files), preface: null, RequestDoor.Terminal, ct, request.Asked)
             .ConfigureAwait(false);
         if (said is null) return WordsHeld.Failed(NotUp);
         if (said.Running) KeepOnAsk(request.Session, text);
         // A *Send now* is answered whole (STEER2c): what the door did, and why where it did not; any other say as it always was.
-        if (said.Sent && request.Now) return new WordsHeld(true, said.Reaches, said.Why) { Word = said.Word, Now = said.Now };
+        if (said.Sent && request.Asked == MessageLevel.Now) return new WordsHeld(true, said.Reaches, said.Why) { Word = said.Word, Now = said.Now };
         if (said.Sent) return new WordsHeld(true, said.Reaches, null) { Word = said.Word };
         return said.Why is { } why ? WordsHeld.Refused(why, said.Message) : WordsHeld.Failed(said.Message ?? NotUp);
     }

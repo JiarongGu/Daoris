@@ -13,6 +13,13 @@ const show = (props: Partial<Parameters<typeof Composer>[0]> = {}) => render(
 
 const box = () => screen.getByLabelText('Message');
 
+/** A Radix menu opens on the keyboard, as the other pages' tests open theirs. */
+const openMenu = async (name: string) => {
+  const user = userEvent.setup();
+  screen.getByRole('button', { name }).focus();
+  await user.keyboard('{Enter}');
+};
+
 describe('the composer', () => {
   it('sends what was typed and clears the box', async () => {
     const send = vi.fn();
@@ -193,46 +200,122 @@ describe('the composer', () => {
   });
 
   /**
-   * STEER2b (D136): while a turn runs, *Send now* stands beside *Queue* and sends the box's words with the press, where
-   * Enter stays the queue. With the box empty and words held it presses what is held (a stop that keeps them); with
-   * neither it is not drawn. It is one press at a time: not while words are being sent or the turn is stopping.
+   * COWORK1a (D188; the message-urgency design §8.1, trap 2): while a turn runs, one press, *Send*, at the person's default,
+   * and a menu of the three levels beside it, each sending the box's words at its level. Enter sends at the default. With
+   * nothing typed nothing presses now: the stop that press was is the keeping stop's own (trap 2).
    */
-  it('sends the box’s words now beside Queue, and the held words when the box is empty', async () => {
-    const sendNow = vi.fn();
-    const sendHeld = vi.fn();
+  it('sends at the default while a turn runs, or at the level chosen from the menu beside it', async () => {
     const send = vi.fn();
-    const { rerender } = show({ taking: true, stoppable: true, onSend: send, onSendNow: sendNow, onSendHeld: sendHeld });
+    show({ taking: true, stoppable: true, levels: { nextStep: true, steers: true }, onSend: send, queued: [{ id: 'a', text: 'cap it', files: [] }] });
 
-    expect(screen.queryByRole('button', { name: 'Send now' })).not.toBeInTheDocument();
-    await userEvent.type(box(), 'cap it now');
-    expect(screen.getByRole('button', { name: 'Queue' })).toBeInTheDocument();
-    await userEvent.click(screen.getByRole('button', { name: 'Send now' }));
-    expect(sendNow).toHaveBeenCalledWith('cap it now', []);
-    expect(send).not.toHaveBeenCalled();
+    expect(screen.queryByRole('button', { name: 'Queue' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Send now' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'When it reads this' })).toBeDisabled();
+    await userEvent.type(box(), 'the budget is 64 KiB{Enter}');
+    expect(send).toHaveBeenLastCalledWith('the budget is 64 KiB', []);
+
+    await userEvent.type(box(), 'tidy the readme after');
+    await openMenu('When it reads this');
+    await userEvent.click(screen.getByRole('menuitem', { name: /When its turn ends/ }));
+    expect(send).toHaveBeenLastCalledWith('tidy the readme after', [], 'ordinary');
     expect(box()).toHaveValue('');
 
-    // Enter is still the queue.
-    await userEvent.type(box(), 'later{Enter}');
-    expect(send).toHaveBeenCalledWith('later', []);
-    expect(sendNow).toHaveBeenCalledTimes(1);
+    await userEvent.type(box(), 'stop: the tests are in /spec');
+    await openMenu('When it reads this');
+    await userEvent.click(screen.getByRole('menuitem', { name: /Now, cutting its step/ }));
+    expect(send).toHaveBeenLastCalledWith('stop: the tests are in /spec', [], 'now');
 
-    const again = (props: Partial<Parameters<typeof Composer>[0]>) => rerender(
-      <Tooltip.Provider>
-        <Composer live onSend={send} onFinish={() => {}} onSendNow={sendNow} onSendHeld={sendHeld} {...props} />
-      </Tooltip.Provider>,
-    );
-    again({ taking: true, stoppable: true, queued: [{ id: 'a', text: 'cap it', files: [] }] });
-    await userEvent.click(screen.getByRole('button', { name: 'Send now' }));
-    expect(sendHeld).toHaveBeenCalledOnce();
-    expect(sendNow).toHaveBeenCalledTimes(1);
+    await userEvent.type(box(), 'and the changelog');
+    await userEvent.click(screen.getByRole('button', { name: 'Send' }));
+    expect(send).toHaveBeenLastCalledWith('and the changelog', []);
+  });
 
-    again({ taking: true, stoppable: true, stopping: true, queued: [{ id: 'a', text: 'cap it', files: [] }] });
-    expect(screen.getByRole('button', { name: 'Send now' })).toBeDisabled();
-    // No turn, no press; and a held word on a door that cannot stop a turn has nothing to press.
-    again({ taking: false, queued: [{ id: 'a', text: 'cap it', files: [] }] });
-    expect(screen.queryByRole('button', { name: 'Send now' })).not.toBeInTheDocument();
-    again({ taking: true, stoppable: false, queued: [{ id: 'a', text: 'cap it', files: [] }] });
-    expect(screen.queryByRole('button', { name: 'Send now' })).not.toBeInTheDocument();
+  /** COWORK1a (the design §8.1): *Now, cutting its step* is offered only where the agent steers; elsewhere it is disabled, saying why. */
+  it.each([
+    [{ nextStep: true, steers: false }, 'Its agent cannot be steered mid-turn, so these go at its next step.'],
+    [{ nextStep: false, steers: false }, 'Its door cannot take words in a running turn, so these are held for its turn to end.'],
+  ])('offers now only where the agent steers, and says why on %o', async (levels, why) => {
+    const send = vi.fn();
+    show({ taking: true, levels, onSend: send });
+
+    await userEvent.type(box(), 'stop: the tests are in /spec');
+    await openMenu('When it reads this');
+    const now = screen.getByRole('menuitem', { name: /Now, cutting its step/ });
+    expect(now).toHaveAttribute('aria-disabled', 'true');
+    expect(now).toHaveTextContent(why);
+    await userEvent.click(screen.getByRole('menuitem', { name: /At its next step/ }));
+    expect(send).toHaveBeenCalledWith('stop: the tests are in /spec', [], 'urgent');
+  });
+
+  /** COWORK1a (the design §8.1, trap 23): a door that carries only text has no turns, so no level is offered, and its press says why. */
+  it('offers no level on a door that carries only text, and its press says why', async () => {
+    show({ taking: false, context: { door: 'text' } });
+
+    expect(screen.queryByRole('button', { name: 'When it reads this' })).toBeNull();
+    await userEvent.type(box(), 'hello');
+    await userEvent.hover(screen.getByRole('button', { name: 'Send' }));
+    expect(await screen.findByRole('tooltip')).toHaveTextContent(
+      "This agent's door carries only text, so your words go at once, whatever their level.");
+  });
+
+  /**
+   * COWORK1a (the design §3.2): where words wait for the turn's end and the door can stop a turn keeping the session, the
+   * keeping stop stands beside them: it asks once, naming the step it cuts, and only the second press stops the turn. Not on a
+   * door that takes words at its next step, where an urgent word reaches sooner, nor where nothing waits.
+   */
+  it('offers the keeping stop beside words held for the turn’s end, and stops only on the second press', async () => {
+    const keep = vi.fn((answered: { done: () => void }) => answered.done());
+    const queued = [{ id: 'a', text: 'start with the tests', files: [], level: 'now' as const }];
+    const { unmount } = show({ taking: true, levels: { nextStep: false, steers: false }, queued, onKeepingStop: keep });
+
+    expect(within(screen.getByRole('list', { name: 'waiting for this turn to end' })).getByText('now')).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Stop its turn so this goes next…' }));
+    expect(keep).not.toHaveBeenCalled();
+    expect(screen.getByText('This stops the step it is on and its turn. What it has done stays, and what waits goes next.')).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Stop its turn' }));
+    expect(keep).toHaveBeenCalledOnce();
+    unmount();
+
+    const stepping = show({ taking: true, levels: { nextStep: true, steers: true }, queued, onKeepingStop: keep });
+    expect(screen.queryByRole('button', { name: 'Stop its turn so this goes next…' })).toBeNull();
+    stepping.unmount();
+    show({ taking: true, levels: { nextStep: false, steers: false }, queued: [], onKeepingStop: keep });
+    expect(screen.queryByRole('button', { name: 'Stop its turn so this goes next…' })).toBeNull();
+  });
+
+  /**
+   * COWORK1a (the design §8.2): each waiting word of the person's has its level's menu: *Make urgent*, *Make ordinary*, and
+   * *Send now* where the agent steers, each changing the word by its id while it waits.
+   */
+  it('changes a waiting word’s level from its own menu', async () => {
+    const level = vi.fn().mockResolvedValue({ done: true });
+    show({
+      taking: true, levels: { nextStep: true, steers: true }, onLevel: level, onRemove: vi.fn(), onEdit: vi.fn(),
+      queued: [{ id: 'a1', text: 'tidy the readme after', files: [], level: 'ordinary' }],
+    });
+
+    await openMenu('When it reads: tidy the readme after');
+    expect(screen.queryByRole('menuitem', { name: 'Make ordinary' })).toBeNull();
+    await userEvent.click(screen.getByRole('menuitem', { name: 'Make urgent' }));
+    expect(level).toHaveBeenLastCalledWith('a1', 'urgent');
+
+    await openMenu('When it reads: tidy the readme after');
+    await userEvent.click(screen.getByRole('menuitem', { name: 'Send now' }));
+    expect(level).toHaveBeenLastCalledWith('a1', 'now');
+  });
+
+  it('speaks the levels in Chinese', async () => {
+    await i18n.changeLanguage('zh');
+    try {
+      show({ taking: true, levels: { nextStep: true, steers: true } });
+      await userEvent.type(screen.getByRole('textbox'), '预算是 64 KiB');
+      await openMenu('何时读到');
+      expect(screen.getByRole('menuitem', { name: /本轮结束时/ })).toBeInTheDocument();
+      expect(screen.getByRole('menuitem', { name: /下一步时/ })).toBeInTheDocument();
+      expect(screen.getByRole('menuitem', { name: /立即，打断当前这一步/ })).toBeInTheDocument();
+    } finally {
+      await i18n.changeLanguage('en');
+    }
   });
 
   /**

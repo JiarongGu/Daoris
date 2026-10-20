@@ -13,40 +13,52 @@ const show = (props: Partial<Parameters<typeof SessionBox>[0]> & Pick<Parameters
   render(<Tooltip.Provider><SessionBox onSend={() => {}} {...props} /></Tooltip.Provider>);
 
 describe('SessionBox', () => {
-  /** D136: a working session's running door, its words held behind its turn and sent now on a press. */
-  it('offers a working session the running door’s box, and Send now only with something held', async () => {
+  /**
+   * D136, COWORK1a: a working session's running door, its words held behind its turn. *Send* goes at the person's default;
+   * nothing presses now with nothing typed (the design's trap 2), and with no levels known the press queues as it did.
+   */
+  it('offers a working session the running door’s box, at its default', async () => {
     const onSend = vi.fn();
-    const onSendNow = vi.fn();
-    const { unmount } = show({ box: { kind: 'steer' }, held: { queued: [], taking: true }, onSend, onSendNow });
+    const { unmount } = show({ box: { kind: 'steer' }, held: { queued: [], taking: true }, onSend, levels: { nextStep: true, steers: false } });
 
     const field = screen.getByLabelText('Message');
     expect(field).toHaveAttribute('placeholder', expect.stringMatching(/tell it something while it works/));
     expect(screen.queryByRole('button', { name: 'Attach files' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Send now' })).toBeNull();
     await userEvent.type(field, 'the budget is in level.json');
-    await userEvent.click(screen.getByRole('button', { name: 'Queue' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Send' }));
     expect(onSend).toHaveBeenCalledWith('the budget is in level.json');
     unmount();
 
-    show({ box: { kind: 'steer' }, held: { queued: [{ text: 'cap it', files: [] }], taking: true }, onSendNow });
+    show({ box: { kind: 'steer' }, held: { queued: [{ text: 'cap it', files: [] }], taking: true } });
     expect(screen.getByText('cap it')).toBeInTheDocument();
-    await userEvent.click(screen.getByRole('button', { name: 'Send now' }));
-    expect(onSendNow).toHaveBeenCalled();
+    expect(screen.getByRole('button', { name: 'Queue' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'When it reads this' })).toBeNull();
   });
 
-  /** STEER2b (D136): with words in the box, *Send now* sends them in the running turn; Enter and *Queue* stay the default. */
-  it('sends the typed words now beside Queue on the running door', async () => {
+  /**
+   * COWORK1a (the message-urgency design §3.2, §8.1): the running door's words go at the level chosen from the menu beside
+   * *Send*; the keeping stop stands beside what waits for the turn's end only where the door can stop a turn keeping the
+   * session, which the native door's run cannot.
+   */
+  it('sends at a chosen level, and offers the keeping stop only where the door has one', async () => {
     const onSend = vi.fn();
-    const onSayNow = vi.fn();
-    const onSendNow = vi.fn();
-    show({ box: { kind: 'steer' }, held: { queued: [{ text: 'cap it', files: [] }], taking: true }, onSend, onSayNow, onSendNow });
+    const onKeepingStop = vi.fn();
+    const held = { queued: [{ id: 'said-1', text: 'cap it', files: [] }], taking: true };
+    const { unmount } = show({ box: { kind: 'steer' }, held, onSend, onKeepingStop, levels: { nextStep: false, steers: false } });
 
     await userEvent.type(screen.getByLabelText('Message'), 'use the blue one');
-    expect(screen.getByRole('button', { name: 'Queue' })).toBeInTheDocument();
-    await userEvent.click(screen.getByRole('button', { name: 'Send now' }));
-    expect(onSayNow).toHaveBeenCalledWith('use the blue one');
-    expect(onSend).not.toHaveBeenCalled();
-    expect(onSendNow).not.toHaveBeenCalled();
+    const user = userEvent.setup();
+    screen.getByRole('button', { name: 'When it reads this' }).focus();
+    await user.keyboard('{Enter}');
+    await userEvent.click(screen.getByRole('menuitem', { name: /When its turn ends/ }));
+    expect(onSend).toHaveBeenCalledWith('use the blue one', 'ordinary');
+    expect(screen.getByRole('button', { name: 'Stop its turn so this goes next…' })).toBeInTheDocument();
+    unmount();
+
+    // The native door's run: its words wait for its turn's end, and nothing stops a turn keeping it.
+    show({ box: { kind: 'steer' }, held, onSend, levels: { nextStep: false, steers: false } });
+    expect(screen.queryByRole('button', { name: 'Stop its turn so this goes next…' })).toBeNull();
   });
 
   /** QUEUEEDIT1b: a held word with an id can be taken back out, or reworded, on the running door's box. */

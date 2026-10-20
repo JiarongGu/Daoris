@@ -133,12 +133,15 @@ public sealed class SessionsThroughInstanceTests
     private static (SessionsAsk Ask, string Route, string Payload) Verb(string name) => name switch
     {
         "stop" => (new("stop") { Ids = [Id] }, "STOP_SESSION", $$"""{"id":"{{Id}}","said":true}"""),
+        "stop-turn" => (new("stop-turn") { Ids = [Id] }, "CANCEL_TURN", $$"""{"id":"{{Id}}","keep":true,"said":true}"""),
         "finish" => (new("finish") { Ids = [Id], Note = "looked" }, "RESOLVE_SESSION",
             $$"""{"id":"{{Id}}","state":"completed","note":"looked","said":true}"""),
         "decline" => (new("decline") { Ids = [Id], Note = "not this" }, "RESOLVE_SESSION",
             $$"""{"id":"{{Id}}","state":"declined","note":"not this","said":true}"""),
         "say" => (new("say") { Ids = [Id], Text = "go on", Now = true }, "SESSION_INPUT",
             $$"""{"id":"{{Id}}","text":"go on","now":true,"said":true}"""),
+        "say-level" => (new("say") { Ids = [Id], Text = "go on", Level = "ordinary" }, "SESSION_INPUT",
+            $$"""{"id":"{{Id}}","text":"go on","level":"ordinary","said":true}"""),
         "take-back" => (new("take-back") { Ids = [Id], Word = "w1" }, "SESSION_QUEUE_EDIT", $$"""{"session":"{{Id}}","id":"w1","said":true}"""),
         "reword" => (new("reword") { Ids = [Id], Word = "w1", Text = "instead" }, "SESSION_QUEUE_EDIT",
             $$"""{"session":"{{Id}}","id":"w1","text":"instead","said":true}"""),
@@ -161,9 +164,11 @@ public sealed class SessionsThroughInstanceTests
     /// </summary>
     [Theory]
     [InlineData("stop")]
+    [InlineData("stop-turn")]
     [InlineData("finish")]
     [InlineData("decline")]
     [InlineData("say")]
+    [InlineData("say-level")]
     [InlineData("take-back")]
     [InlineData("reword")]
     [InlineData("delete")]
@@ -199,6 +204,7 @@ public sealed class SessionsThroughInstanceTests
     /// <summary>RPC1d: refused in the window, each verb is exit 1 with the instance's sentence, and this process did nothing.</summary>
     [Theory]
     [InlineData("stop", "refused")]
+    [InlineData("stop-turn", "expired")]
     [InlineData("finish", "expired")]
     [InlineData("decline", "refused")]
     [InlineData("say", "expired")]

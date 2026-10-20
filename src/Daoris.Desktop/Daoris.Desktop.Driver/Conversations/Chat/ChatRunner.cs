@@ -1295,12 +1295,17 @@ public sealed class ChatRunner : IDisposable
     /// the turn on the wire, <c>turn-end</c> where they wait for the running turn, and null where they are its turn now or
     /// its door carries only text.
     /// </param>
+    /// <param name="level">
+    /// When the person asked it to reach the agent (COWORK1a): urgent, the default, at the running turn's next step where its door
+    /// takes words then; ordinary as a turn of its own after it. <c>now</c> is <see cref="SayNowAsync"/>'s.
+    /// </param>
     /// <exception cref="DriverException">The files are more than a message carries.</exception>
     public bool Say(
-        string sessionId, string message, out string? reaches, IReadOnlyList<ChatUpload>? files = null, string? preface = null)
+        string sessionId, string message, out string? reaches, IReadOnlyList<ChatUpload>? files = null, string? preface = null,
+        MessageLevel level = MessageLevel.Urgent)
     {
         reaches = null;
-        var said = Compose(sessionId, message, files, preface);
+        var said = Compose(sessionId, message, files, preface) with { Level = level };
 
         if (_context.Turned.TryGetValue(sessionId, out var chat))
         {
@@ -1315,10 +1320,10 @@ public sealed class ChatRunner : IDisposable
     }
 
     /// <summary>
-    /// The person's *Send now* to a live chat (STEER2a, D136's 2026-10-16 note), carried out by its door: steered into the running
-    /// turn where its agent steers, else queued with the turn stopped keeping them so they go next (D90), or the next turn at once
-    /// where none runs (<see cref="ChatTurns.TakeNowAsync"/>). A text-only door has no turn to steer or stop: its words go as they
-    /// always did, said so. Null when there is nothing listening.
+    /// The person's words at <c>now</c> to a live chat (STEER2a, COWORK1a), carried out by its door: steered into the running turn
+    /// where its agent steers, else at its next step or queued for the turn's end, said why, never stopping the turn; or the next
+    /// turn at once where none runs (<see cref="ChatTurns.TakeNowAsync"/>). A text-only door has no turn to steer or stop: its
+    /// words go as they always did, said so. Null when there is nothing listening.
     /// </summary>
     /// <exception cref="DriverException">The files are more than a message carries.</exception>
     public async Task<SentNow?> SayNowAsync(
@@ -1382,6 +1387,19 @@ public sealed class ChatRunner : IDisposable
             ? chat is ProtocolChat { Session.NextStep: true } && !chat.Turns.Stopped ? "next-step" : "turn-end"
             : null;
 
+    /// <summary>
+    /// What a live conversation's door can do with a word while a turn runs (COWORK1a, the design §3.0, §8.1): whether its agent
+    /// steers, so a word at <c>now</c> cuts its step; and whether the door can stop a turn and keep the conversation, so the keeping
+    /// stop is offered beside words held for the turn's end. Null for one nothing here holds, and for a text-only door, which has
+    /// no turns and honours no level.
+    /// </summary>
+    public TurnDoor? Door(string sessionId) =>
+        _context.Turned.TryGetValue(sessionId, out var chat)
+            ? chat is ProtocolChat protocol
+                ? new TurnDoor(Steers: protocol.Session is { Steers: true }, KeepingStop: true)
+                : new TurnDoor(Steers: false, KeepingStop: chat is NativeChat { Interrupts: true })
+            : null;
+
     /// <summary>A word's reach in the spelling the record and the page use (D136 §3).</summary>
     private static string? Spelled(TurnReach? reach) => reach switch
     {
@@ -1408,8 +1426,9 @@ public sealed class ChatRunner : IDisposable
     /// Take back or reword one word a conversation holds for its turn (QUEUEEDIT1a); <see cref="QueueEdit.Taken"/> where a turn
     /// took it already, or nothing here holds the conversation.
     /// </summary>
-    public QueueEdit EditQueued(string sessionId, string id, string? text) =>
-        _context.Turned.TryGetValue(sessionId, out var chat) ? chat.Turns.EditQueued(id, text) : QueueEdit.Taken;
+    /// <param name="level">A waiting word's new urgency (COWORK1a), under its own id; null leaves it as it is.</param>
+    public QueueEdit EditQueued(string sessionId, string id, string? text, MessageLevel? level = null) =>
+        _context.Turned.TryGetValue(sessionId, out var chat) ? chat.Turns.EditQueued(id, text, level) : QueueEdit.Taken;
 
     /// <summary>
     /// Stop the turn a conversation is taking and keep the conversation (CONV4a): what was waiting is
@@ -2116,7 +2135,7 @@ public sealed class ChatRunner : IDisposable
             var words = message with { Id = $"said-{Guid.NewGuid():N}"[..13] };
             if (Told(words) is { } told) _record(told);
             _line($"— the person added, which reaches the conversation at its next step: {words.Text}");
-            _record(ChatMessage.Words(words) with { Reaches = "next-step" });
+            _record(ChatMessage.Words(words) with { Reaches = "next-step", Level = words.LevelSaid });
             lock (_gate) _onTheirWay.Add(words.Id!);
             return AnsweredAsync(words, session.SayAsync(words, CancellationToken.None));
         }
@@ -2135,7 +2154,7 @@ public sealed class ChatRunner : IDisposable
             var words = message with { Id = $"said-{Guid.NewGuid():N}"[..13] };
             if (Told(words) is { } told) _record(told);
             _line($"— the person sent now, which the conversation takes at once: {words.Text}");
-            _record(ChatMessage.Words(words) with { Reaches = SendNowWhy.Spelled(TurnReach.Steered) });
+            _record(ChatMessage.Words(words) with { Reaches = SendNowWhy.Spelled(TurnReach.Steered), Level = MessageLevels.Now });
             return session.SteeredAsync(words, CancellationToken.None, "conversation", handBack: back => Turns.HandBack(back with { Said = true }));
         }
 
@@ -2309,6 +2328,7 @@ public sealed class ChatRunner : IDisposable
             string sessionId, ISessionAdapter adapter, SessionProcesses processes, Action<SessionEvent> record,
             Action<ChatQueue> changed, Task<bool>? ready = null, Action? wentOn = null)
         {
+            Interrupts = adapter.FrameInterrupt() is not null;
             Turns = new ChatTurns(
                 ready: () => ready ?? Task.FromResult(true),
                 take: (message, sent) =>
@@ -2354,6 +2374,12 @@ public sealed class ChatRunner : IDisposable
         }
 
         public ChatTurns Turns { get; }
+
+        /// <summary>
+        /// Whether its harness takes a stop that keeps the conversation (COWORK1a): Claude Code's <c>interrupt</c> control request.
+        /// The keeping stop is offered only where it does.
+        /// </summary>
+        public bool Interrupts { get; }
 
         /// <summary>The turn's end is in the record: the next message may go.</summary>
         public void TurnEnded()

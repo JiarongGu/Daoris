@@ -110,6 +110,9 @@ public static class PersonPresses
     /// <summary><c>sessions stop &lt;id&gt;</c>: a session stopped.</summary>
     public static InstanceRoute SessionStop { get; } = Person("STOP_SESSION");
 
+    /// <summary><c>sessions stop &lt;id&gt; --turn</c>: the keeping stop, a session's turn stopped so what waits goes next (COWORK1a).</summary>
+    public static InstanceRoute SessionStopTurn { get; } = Person("CANCEL_TURN");
+
     /// <summary><c>sessions finish</c> and <c>decline</c>: a parked session's resolution.</summary>
     public static InstanceRoute SessionResolve { get; } = Person("RESOLVE_SESSION");
 
@@ -146,6 +149,7 @@ public static class PersonPresses
         ("sessions archive <id>…", SessionArchive),
         ("sessions unarchive <id>…", SessionArchive),
         ("sessions stop <id>", SessionStop),
+        ("sessions stop <id> --turn", SessionStopTurn),
         ("sessions finish <id>", SessionResolve),
         ("sessions decline <id>", SessionResolve),
         ("sessions say <id> \"…\"", SessionSay),

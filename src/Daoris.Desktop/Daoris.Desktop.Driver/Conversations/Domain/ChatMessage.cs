@@ -20,6 +20,19 @@ public sealed record ChatMessage(string Text, IReadOnlyList<KeptFile> Files)
     public string? Preface { get; init; }
 
     /// <summary>
+    /// When the sender asked it to reach a working agent (COWORK1a, D188 point 1): urgent unless said, which is every path's reach
+    /// from before (the person's default, D136; another session's claim at its next step until COWORK1d). The door gives what it
+    /// can and says so; no level stops a turn.
+    /// </summary>
+    public MessageLevel Level { get; init; } = MessageLevel.Urgent;
+
+    /// <summary>
+    /// The level the record keeps beside the person's words while they wait (COWORK1a): spelled for the person's own, null for
+    /// another session's claim, whose level its own row carries (COWORK1d), so nothing reads a claim's default as one stated.
+    /// </summary>
+    internal string? LevelSaid => Channel is { Person: false } ? null : MessageLevels.Spelled(Level);
+
+    /// <summary>
     /// The words' id in a driven session's record (STEER1, D136), stamped by its inbox: it pairs the words shown at once,
     /// while they wait, with the same words where the session took them. Null for a conversation's message.
     /// </summary>

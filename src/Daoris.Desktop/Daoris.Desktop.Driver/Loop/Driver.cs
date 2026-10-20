@@ -2784,7 +2784,7 @@ public sealed class Driver(
             held.OnSaid((message, _) =>
             {
                 output?.Append(sessionId, $"— the person added, which reaches the session when its turn ends: {message.Text}");
-                Context.Events.Keep(sessionId, ChatMessage.Words(message) with { Reaches = "turn-end" }, say: null);
+                Context.Events.Keep(sessionId, ChatMessage.Words(message) with { Reaches = "turn-end", Level = message.LevelSaid }, say: null);
             });
             // A word the person took back or reworded while it waited is settled, by its id (QUEUEEDIT1a).
             held.OnWithdrawn(message =>
@@ -3149,7 +3149,8 @@ public sealed class Driver(
                         DrivenReach.Steered => $"— the person sent now, which the session takes at once: {message.Text}",
                         _ => $"— the person added, which reaches the session when its turn ends: {message.Text}",
                     });
-                Event(ChatMessage.Words(message) with { Reaches = SendNowWhy.Spelled(reach) });
+                // Its level beside its reach (COWORK1a): what was asked, and what the door gave.
+                Event(ChatMessage.Words(message) with { Reaches = SendNowWhy.Spelled(reach), Level = message.LevelSaid });
             });
             // A word the person took back or reworded while it waited is settled, by its id (QUEUEEDIT1a).
             inbox?.OnWithdrawn(message =>

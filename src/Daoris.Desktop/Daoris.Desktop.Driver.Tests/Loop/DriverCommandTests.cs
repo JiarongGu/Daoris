@@ -425,11 +425,11 @@ public sealed class DriverCommandTests
     {
         var usage = DriverCommand.Usage.ReplaceLineEndings("\n");
         Assert.Contains("\n  sessions [--group you|review|working|later|ended|archived] [--repository <name>] [--json]\n", usage);
-        Assert.Contains("\n  sessions stop <id>  ·  sessions finish <id> [--note \"…\"]  ·  sessions decline <id> --reason \"…\"\n", usage);
+        Assert.Contains("\n  sessions stop <id> [--turn]  ·  sessions finish <id> [--note \"…\"]  ·  sessions decline <id> --reason \"…\"\n", usage);
         Assert.Contains("\n  sessions archive <id>… | --ended [--yes]  ·  sessions unarchive <id>…  ·  sessions delete <id>\n", usage);
-        Assert.Contains("sessions stop <id>", SessionsCommand.Usage);
-        // MSG1e (D137 §5.2): what the screen's box says to a session, a terminal says too.
-        Assert.Contains("\n  sessions say <id> \"…\" [--file <path>]… [--now]\n", usage);
+        Assert.Contains("sessions stop <id> [--turn]", SessionsCommand.Usage);
+        // MSG1e (D137 §5.2): what the screen's box says to a session, a terminal says too, at a level (COWORK1a).
+        Assert.Contains("\n  sessions say <id> \"…\" [--file <path>]… [--level ordinary|urgent|now] [--now]\n", usage);
         Assert.Contains("sessions say <id> \"…\" [--file <path>]…", SessionsCommand.Usage);
 
         var program = File.ReadAllText(Path.Combine(SourceRoot(), "Daoris.Desktop.Driver.Host", "Program.cs"));

@@ -53,20 +53,27 @@ export const TurnRunning: Story = {
 };
 
 /**
- * STEER2b (D136): words typed while a turn runs offer *Send now* beside *Queue*. With the box empty it presses what waits
- * (a stop that keeps it), so the waiting words are shown here with an empty box.
+ * COWORK1a (D188; the message-urgency design §8.1): words typed while a turn runs go with *Send* at the person's default, and
+ * the level menu beside it sends them at another; here the agent steers, so *Now, cutting its step* is offered.
  */
-export const SendNowOfferedWithWords: Story = {
+export const LevelsWhileATurnRuns: Story = {
   args: {
-    taking: true, stoppable: true, onStopTurn: () => {}, onSendNow: () => {}, onSendHeld: () => {},
+    taking: true, stoppable: true, onStopTurn: () => {}, levels: { nextStep: true, steers: true },
+    onLevel: async () => ({ done: true }), onRemove: async () => ({ done: true }), onEdit: async () => ({ done: true }),
     draft: 'use the blue one instead', onDraft: () => {},
+    queued: [{ id: 'a1', text: 'and tidy the readme once you are done', files: [], level: 'ordinary' }],
   },
 };
 
-export const SendNowOfWaitingWords: Story = {
+/**
+ * COWORK1a (the design §3.2): a door that takes words only when its turn ends holds them, the person's words at now named so,
+ * and the keeping stop stands beside them, asking once.
+ */
+export const KeepingStopBesideHeldWords: Story = {
   args: {
-    taking: true, stoppable: true, onStopTurn: () => {}, onSendNow: () => {}, onSendHeld: () => {},
-    queued: [{ id: 'a1', text: 'and then run the streaming tests', files: [] }],
+    taking: true, stoppable: true, onStopTurn: () => {}, levels: { nextStep: false, steers: false }, onKeepingStop: () => {},
+    onLevel: async () => ({ done: true }),
+    queued: [{ id: 'a1', text: 'stop: the streaming tests are in /spec, run those first', files: [], level: 'now' }],
   },
 };
 

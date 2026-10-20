@@ -1,7 +1,8 @@
 import { useTranslation } from 'react-i18next';
 import type { Session } from '../../data/api';
 import { Composer } from './Composer';
-import type { ChatMessage } from './conversation';
+import type { ChatMessage, Level } from './conversation';
+import type { Answered } from '../InlineConfirm';
 import { type Box, neverSentence } from '../say';
 import type { HeadLink } from '../head/SessionHead';
 
@@ -11,9 +12,10 @@ import type { HeadLink } from '../head/SessionHead';
  * with its turns and its endings (CONV4); this is every other box.
  *
  * @remarks
- * - **The running door** (D136): a working driven session whose door listens. What it holds waits above the box, and
- *   *Send now* beside *Queue* sends the box's words in the running turn (STEER2b), and with the box empty stops the turn
- *   so what is held goes, offered then only while something is held.
+ * - **The running door** (D136): a working driven session whose door listens. What it holds waits above the box, each
+ *   word with its level's menu, and *Send* sends the box's words at the person's default, the level menu beside it at
+ *   another (COWORK1a). Where words wait for the turn's end on a door that can stop a turn keeping the session, the keeping
+ *   stop stands beside them, its own press; never on the native door's run, which has no such stop.
  * - **The park's answer** (D126 §3.1): its box is the answer, as *Answer…* opens it; a second word joins the first.
  * - **A session that ended**: the same session goes on with the words. Nothing to attach: the resumed run is handed the
  *   words alone (MSG1d), so a file would be promised and never read.
@@ -29,8 +31,14 @@ import type { HeadLink } from '../head/SessionHead';
  */
 export function SessionBox({
   box, quest, draft, onDraft, sending = false, refusal, held, ending = [], waiting = [], stopping = false, focus = 0, accepts, onSend,
-  onSendNow, onSayNow, onRemove, onEdit, going, continued, onOpenSession,
+  levels, onLevel, onKeepingStop, onRemove, onEdit, going, continued, onOpenSession,
 }: {
+  /** What the running door does with a word while its turn runs (COWORK1a), which the box offers the levels by; absent, none. */
+  levels?: { nextStep: boolean; steers: boolean };
+  /** A held word's level changed by its id (COWORK1a); absent, none is offered. */
+  onLevel?: (id: string, level: Level) => Promise<{ done: boolean } | void>;
+  /** The keeping stop (COWORK1a), offered where the running door can stop a turn keeping the session; absent, none. */
+  onKeepingStop?: (answered: Answered) => void;
   /**
    * The conversation a handed-over or moved one went on in (HANDWORDS1-ii), as the frame holds it: its record and its title.
    * The line names it only where it is the one the driver's `continued` names.
@@ -62,15 +70,12 @@ export function SessionBox({
   ending?: string[];
   /** The words waiting on a parked or ended record for the same session to go on with, as the driver lists them (SAIDBACK1b). */
   waiting?: ChatMessage[];
-  /** *Send now* was asked for, and the driver has not answered. */
+  /** The keeping stop was asked for, and the driver has not answered. */
   stopping?: boolean;
   /** Bumped to put the focus in the box: *Answer…* from a row, *Send back…* from a review. */
   focus?: number;
-  onSend: (text: string) => void;
-  /** *Send now* on the running door with the box empty: stop the turn so what is held goes now. */
-  onSendNow?: () => void;
-  /** *Send now* with words in the box (STEER2b): they go in the running turn, as `SESSION_INPUT` with `now`. */
-  onSayNow?: (text: string) => void;
+  /** The words, and the level chosen from the running door's menu (COWORK1a); none is the person's default. */
+  onSend: (text: string, level?: Level) => void;
 }) {
   const { t } = useTranslation();
 
@@ -102,7 +107,7 @@ export function SessionBox({
   // Every box here: words alone, no endings of its own (the page header and the parked card own those, D126 §3.3).
   const shared = {
     live: true, endings: false, attachments: false, sending, refusal, draft, onDraft, focus, accepts, going,
-    onSend: (text: string) => onSend(text.trim()), onFinish: () => {},
+    onSend: (text: string, _files: File[], level?: Level) => (level ? onSend(text.trim(), level) : onSend(text.trim())), onFinish: () => {},
   };
 
   if (box.kind === 'steer') {
@@ -112,12 +117,12 @@ export function SessionBox({
         placeholder={t('work.steer.placeholder')}
         queued={held?.queued ?? []}
         taking={held?.taking ?? false}
-        // One *Send now* (STEER2b): the box's words go in the running turn; with the box empty it stops the turn so what is
-        // held goes, which only something held can ask (with nothing held, stopping the turn would end the work).
-        stoppable
+        // The levels beside *Send* and each held word's (COWORK1a); the keeping stop beside what waits for the turn's end,
+        // its own press, which only something held can ask (with nothing held, stopping the turn would end the work).
+        levels={levels}
+        onLevel={onLevel}
+        onKeepingStop={onKeepingStop}
         stopping={stopping}
-        onSendNow={onSayNow ? (text) => onSayNow(text.trim()) : undefined}
-        onSendHeld={onSendNow}
         onRemove={onRemove}
         onEdit={onEdit}
       />

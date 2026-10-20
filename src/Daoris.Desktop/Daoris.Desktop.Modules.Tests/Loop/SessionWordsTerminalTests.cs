@@ -75,21 +75,33 @@ public sealed class SessionWordsTerminalTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// STEER2c: a terminal's *Send now* is carried out by the session's door as the screen's press is, and answered whole: that it
-    /// was (<c>now</c>), and where it was not, why, beside <c>sent</c>. A say with no <c>now</c> keeps its old answer.
+    /// STEER2c, COWORK1a: a terminal's words at <c>now</c> are carried out by the session's door as the screen's press is, and
+    /// answered whole: where it was not now, why, beside <c>sent</c>. A door that takes words only when its turn ends holds them for
+    /// it and stops nothing (D188 point 3). A request's <c>level</c> reads as the page's: ordinary waits for the turn's end on a
+    /// door that takes words at its next step.
     /// </summary>
     [Fact]
     public async Task A_terminals_send_now_is_carried_out_by_the_door_and_answered_whole()
     {
         var service = new StandIn();
         var loop = await UpAsync(service);
+        var stopped = 0;
         var inbox = loop.Processes.OpenInbox("s1");
-        inbox.Attach(() => Task.CompletedTask);
+        inbox.Attach(() => { stopped++; return Task.CompletedTask; });
 
         var now = await loop.Words.HoldAsync(Say("s1", "the level file moved") with { Now = true }, CancellationToken.None);
 
-        Assert.Equal((true, "turn-end", (string?)null, true), (now.Sent, now.Reaches, now.Why, now.Now));
+        Assert.Equal((true, "turn-end", SendNowWhy.NoInterrupt, false), (now.Sent, now.Reaches, now.Why, now.Now));
+        Assert.Equal(0, stopped);
         Assert.Equal("the level file moved", inbox.TakeOrClose()?.Text);
+
+        var stepping = loop.Processes.OpenInbox("s2");
+        stepping.Attach(() => Task.CompletedTask, _ => new TaskCompletionSource<string>().Task);
+        stepping.Flow();
+        var ordinary = await loop.Words.HoldAsync(Say("s2", "tidy the readme after") with { Level = "ordinary" }, CancellationToken.None);
+
+        Assert.Equal((true, "turn-end"), (ordinary.Sent, ordinary.Reaches));
+        Assert.Equal(MessageLevel.Ordinary, Assert.Single(stepping.State.Queued).Level);
     }
 
     /// <summary>

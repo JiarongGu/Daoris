@@ -510,6 +510,38 @@ describe('ConversationView', () => {
   });
 
   /**
+   * COWORK1a (the message-urgency design §3.1, §8.2): words held for the turn's end say what their level asked and what the door
+   * gave: urgent words, *Urgent, held*, since their door takes words only then; words at now say the same and wear a *now* chip,
+   * a word in a neutral chip; ordinary words say only that they wait, and no chip names them. A level told again under the same
+   * id is where the word stands, drawn once. In 中文 too.
+   */
+  it.each([
+    ['en', 'Urgent, held: its door takes words only when its turn ends.', 'Its door cannot take words in a running turn, so these are held for its turn to end.', 'Held: it reads this when its turn ends.', 'now'],
+    ['zh', '紧急，已暂存：它的接入方式只在本轮结束时接收消息。', '它的通道无法在一轮运行期间收下消息，所以这些先暂存，等本轮结束再发出。', '已暂存：它会在本轮结束时读到。', '立即'],
+  ])('says what a held word’s level asked and its door gave, in %s', async (language, urgent, now, ordinary, chip) => {
+    await i18n.changeLanguage(language);
+    try {
+      const { unmount } = view([
+        ev({ kind: 'user', origin: 'target', text: 'go' }),
+        ev({ kind: 'user', origin: 'person', id: 'said-1', reaches: 'turn-end', level: 'urgent', text: 'cap it at 64 KiB' }),
+        ev({ kind: 'user', origin: 'person', id: 'said-2', reaches: 'turn-end', level: 'now', text: 'stop: the tests are in /spec' }),
+        ev({ kind: 'user', origin: 'person', id: 'said-3', reaches: 'turn-end', level: 'urgent', text: 'tidy the readme after' }),
+        // Made ordinary while it waited: told again under its id.
+        ev({ kind: 'user', origin: 'person', id: 'said-3', reaches: 'turn-end', level: 'ordinary', text: 'tidy the readme after' }),
+      ]);
+
+      expect(screen.getByText(urgent)).toBeTruthy();
+      expect(screen.getByText(now)).toBeTruthy();
+      expect(screen.getByText(ordinary)).toBeTruthy();
+      expect(screen.getAllByText(chip)).toHaveLength(1);
+      expect(screen.getAllByText('tidy the readme after')).toHaveLength(1);
+      unmount();
+    } finally {
+      await i18n.changeLanguage('en');
+    }
+  });
+
+  /**
    * STEER2b (D136): words *Send now* put into the running turn show where they were taken, saying so, never as waiting; and
    * a call the steer cut reads as cut, in the quiet tone, even after the session ended.
    */

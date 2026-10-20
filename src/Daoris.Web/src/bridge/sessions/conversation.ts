@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { getBridge, useShenora, useShenoraEvent } from '@shenora/react';
 import { keys } from '../../data/queries';
-import { type ChatMessage, type EventPage, mergeEvents, type SessionEvent } from '../../work/conversation/conversation';
+import { type ChatMessage, type EventPage, type Level, levelOf, mergeEvents, type SessionEvent } from '../../work/conversation/conversation';
 import type { SessionOption } from '../../work/conversation/SessionOptions';
 import type { Reach } from '../../work/say';
 import { toUpload } from '../../compose/attachments';
@@ -145,10 +145,13 @@ const messagesOf = (list: unknown): ChatMessage[] =>
   (Array.isArray(list) ? list : []).flatMap((item) => {
     const message = item as Partial<ChatMessage> | null;
     if (typeof message?.text !== 'string') return [];
+    // Its level (COWORK1a), where the driver says one; a shell from before says none.
+    const level = levelOf(message.level);
     return [{
       ...(typeof message.id === 'string' && message.id ? { id: message.id } : {}),
       text: message.text,
       files: Array.isArray(message.files) ? message.files.filter((name): name is string => typeof name === 'string') : [],
+      ...(level ? { level } : {}),
     }];
   });
 
@@ -303,15 +306,17 @@ export const useCancelTurn = () =>
 export type QueueEdit = { done: boolean; why?: 'taken' };
 
 /**
- * Remove or reword one message waiting behind the turn (QUEUEEDIT1b, D76), by its id. A reword keeps its place and
- * files but takes a new id, so the list is read again from `SESSION_QUEUED`, never kept by the old one.
+ * Remove, reword or change the level of one message waiting behind the turn (QUEUEEDIT1b, D76; COWORK1a), by its id. A reword
+ * keeps its place and files but takes a new id, so the list is read again from `SESSION_QUEUED`, never kept by the old one; a
+ * level keeps its id, and raised where the door takes words at its next step the word goes there.
  */
 export const useEditQueued = (session: string | null) => {
   const edit = useMutation({
-    mutationFn: async (change: { id: string; text?: string }): Promise<QueueEdit> => {
+    mutationFn: async (change: { id: string; text?: string; level?: Level }): Promise<QueueEdit> => {
       if (session === null) return { done: false, why: 'taken' };
       const answer = await call<{ done?: unknown; why?: unknown }>('SESSION_QUEUE_EDIT', {
         session, id: change.id, ...(change.text === undefined ? {} : { text: change.text }),
+        ...(change.level === undefined ? {} : { level: change.level }),
       });
       return answer?.done === true ? { done: true } : { done: false, why: 'taken' };
     },
@@ -319,6 +324,7 @@ export const useEditQueued = (session: string | null) => {
   return {
     remove: (id: string) => edit.mutateAsync({ id }),
     reword: (id: string, text: string) => edit.mutateAsync({ id, text }),
+    level: (id: string, level: Level) => edit.mutateAsync({ id, level }),
   };
 };
 
@@ -374,9 +380,9 @@ export type WordsAnswer = {
   /** The conversation a `continued` one went on in (HANDWORDS1); present only then. */
   to?: string;
   /**
-   * For a *Send now* (STEER2b, D136): whether the press was carried out. True with `reaches: "now"` is the words taken at
-   * once in the running turn, and with `turn-end` the turn stopping so they go next. False carries a coded `why` and the
-   * words stay held. Absent from an answer to a plain send.
+   * For words at `now` (STEER2b, COWORK1a): whether the press was carried out. True with `reaches: "now"` is the words taken
+   * at once in the running turn. False carries a coded `why` and the words go at the next step or wait for the turn's end; no
+   * turn is stopped for them. Absent from an answer to a plain send.
    */
   now?: boolean;
 };
@@ -402,7 +408,14 @@ const wordsOf = (answer: unknown): WordsAnswer => {
  */
 const reachOf = (answer: unknown): Reach => {
   const { reaches, why, to } = wordsOf(answer);
-  return { reaches, why, ...(to ? { to } : {}) };
+  // What the door can do while a turn runs (COWORK1a), where the shell says it: whether its agent steers, and whether it has the
+  // keeping stop. A shell from before says neither.
+  const door = answer as { steers?: unknown; keepingStop?: unknown } | null | undefined;
+  return {
+    reaches, why, ...(to ? { to } : {}),
+    ...(typeof door?.steers === 'boolean' ? { steers: door.steers } : {}),
+    ...(typeof door?.keepingStop === 'boolean' ? { keepingStop: door.keepingStop } : {}),
+  };
 };
 
 /**
@@ -473,16 +486,23 @@ export const useSessionReach = (session: { id: string; state: string } | null, l
 export const useSendMessage = () =>
   useMutation({
     // A preface (HELP1b) is where the person is, handed to the agent ahead of the words; absent for most.
-    // `now` (STEER2b, D136) is *Send now*: the words go in the running turn by the door it has, never the queue.
-    mutationFn: async (message: { id: string; text: string; files?: File[]; preface?: string; now?: boolean }) => {
+    // `level` (COWORK1a, D188) is when the words should reach a working session; none is the person's default, urgent.
+    mutationFn: async (message: { id: string; text: string; files?: File[]; preface?: string; level?: Level }) => {
       const files = message.files?.length ? await Promise.all(message.files.map(toUpload)) : [];
       return wordsOf(await call<unknown>('SESSION_INPUT', {
         id: message.id, text: message.text, ...(files.length > 0 ? { files } : {}),
         ...(message.preface ? { preface: message.preface } : {}),
-        ...(message.now ? { now: true } : {}),
+        ...levelPayload(message.level),
       }));
     },
   });
+
+/**
+ * A level as `SESSION_INPUT` takes it (COWORK1a): `level`, and beside *now* the older `now: true` (STEER2b), which a shell
+ * from before reads as *Send now*. None sends neither: the person's default.
+ */
+const levelPayload = (level: Level | undefined) =>
+  (level ? { level, ...(level === 'now' ? { now: true } : {}) } : {});
 
 /**
  * The person's words to a session that is not a live chat (MSG1f, D137 §5.1): a working driven session's running door, a
@@ -494,8 +514,8 @@ export const useSendMessage = () =>
  */
 export const useSay = () =>
   useMutation({
-    mutationFn: async (words: { id: string; text: string; now?: boolean }) =>
-      wordsOf(await call<unknown>('SESSION_INPUT', { id: words.id, text: words.text, ...(words.now ? { now: true } : {}) })),
+    mutationFn: async (words: { id: string; text: string; level?: Level }) =>
+      wordsOf(await call<unknown>('SESSION_INPUT', { id: words.id, text: words.text, ...levelPayload(words.level) })),
   });
 
 /**

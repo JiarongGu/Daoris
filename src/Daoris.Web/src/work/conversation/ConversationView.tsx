@@ -2,11 +2,13 @@ import { createContext, type ReactNode, useContext, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { compact, elapsed, moment, span } from '../../locales/format';
 import { cn } from '../../lib/cn';
-import { Button, Dot, Icon, Inline, Tip } from '../../design/ui';
+import { Button, Chip, Dot, Icon, Inline, Tip } from '../../design/ui';
 import type { NotePart } from '../../data/api';
 import { turnEnd } from '../waits/anchors';
 import { CHANNEL_CLAIM_OPENING } from '../channel';
-import { type Ask, type Block, CONVERSATION_CODES, type PlanEntry, runCount, type RunningCall, runningCall, segments, type Turn } from './conversation';
+import {
+  type Ask, type Block, CONVERSATION_CODES, type Level, type PlanEntry, runCount, type RunningCall, runningCall, segments, type Turn,
+} from './conversation';
 import { useNow } from '../useNow';
 import type { AccountNames } from '../accountNames';
 import { HandedAccount } from './HandedAccount';
@@ -420,11 +422,17 @@ function Attached({ files }: { files?: string[] }) {
   );
 }
 
-/** When the person's words reach the session, by the door's reach (D136, MSG1f): a chat's conversation opens again. */
-const heldKey = (reaches: string | null | undefined, chat: boolean) => {
+/**
+ * When the person's words reach the session, by the door's reach (D136, MSG1f): a chat's conversation opens again. Held for the
+ * turn's end at a level the door could not honour (COWORK1a, the message-urgency design §3.1, §8.2), the line says so: urgent
+ * words, and words at now, whose door takes words only when its turn ends.
+ */
+const heldKey = (reaches: string | null | undefined, chat: boolean, level?: Level) => {
   if (reaches === 'next-step') return 'work.conversation.held.nextStep';
   if (reaches === 'now') return 'work.conversation.held.now';
   if (reaches === 'resume') return chat ? 'work.conversation.held.reopen' : 'work.conversation.held.resume';
+  if (level === 'urgent') return 'work.conversation.held.urgentTurnEnd';
+  if (level === 'now') return 'work.steer.notNowTurnEnd';
   return 'work.conversation.held.turnEnd';
 };
 
@@ -446,12 +454,17 @@ function HeldAsk({ block }: { block: Block }) {
   const when = block.settled ? null
     : block.unreached ? t('work.conversation.held.never')
       : reset ? t('work.conversation.held.cooling', { time: moment(cooling.until) })
-        : t(heldKey(block.reaches, chat));
+        : t(heldKey(block.reaches, chat, block.level));
 
   return (
     // Dashed while it waits; words taken already (`now`, STEER2b) are drawn solid, as a turn's ask is.
     <div className={cn('rounded-card border px-3 py-2', block.reaches === 'now' ? 'border-line-strong' : 'border-dashed border-line-strong')}>
-      <span className="text-meta text-ink-faint">{t('work.conversation.you')}</span>
+      <span className="flex items-center gap-2">
+        <span className="text-meta text-ink-faint">{t('work.conversation.you')}</span>
+        {/* The level named only where it is not quiet (COWORK1a, the design §8.2): the person's own words sent now. A word in a
+            neutral chip, never a hue, and never a wait's. */}
+        {block.level === 'now' && <Chip>{t('work.level.now')}</Chip>}
+      </span>
       {block.text && <p className="m-0 mt-0.5 whitespace-pre-wrap wrap-anywhere text-body text-ink-soft">{block.text}</p>}
       <Attached files={block.files} />
       {when && <p className="m-0 mt-1 text-meta text-ink-faint">{when}</p>}

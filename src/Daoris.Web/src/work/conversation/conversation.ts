@@ -63,6 +63,12 @@ export type SessionEvent = {
    * turn: they come again under the same `id` as the ask of the turn that goes on, or a note settles them.
    */
   reaches?: string | null;
+  /**
+   * For the person's words to a running session (COWORK1a): the level they asked for, `ordinary`, `urgent` or `now`, beside
+   * `reaches`, what the door gave. A word whose level changes while it waits is told again under the same `id`, and the latest
+   * says where it stands. Absent on a record from before.
+   */
+  level?: string | null;
   /** For the person's words shown the moment they are said (MSG1d): the door they were said at, `screen` or `terminal`. */
   door?: string | null;
   /**
@@ -200,6 +206,8 @@ export type Block = {
   id?: string | null;
   /** For `held`: when the words reach the session, `next-step`, `turn-end` or `resume` (MSG1f); `now` is taken already (STEER2b). */
   reaches?: string | null;
+  /** For `held`: the level the person asked for (COWORK1a), beside the reach the door gave; absent on a record from before. */
+  level?: Level;
   /** For `held`: the names of what the person attached. */
   files?: string[];
   /** For `held`: the session ended without taking the words (STEER1) — said, never left waiting for ever. */
@@ -268,7 +276,20 @@ export type ChatMessage = {
   id?: string;
   text: string;
   files: string[];
+  /** The level a waiting word asked for (COWORK1a), which its menu changes; absent from a shell before it. */
+  level?: Level;
 };
+
+/**
+ * A message's urgency (COWORK1a, D188 point 1): when the sender asked it to reach a working agent. `ordinary` at a natural point,
+ * never inside a turn in flight; `urgent`, the person's default, at its next step where its door takes words then; `now`
+ * cutting its step where its agent steers. A request: the door gives what it can and says so, and no level stops a turn.
+ */
+export type Level = 'ordinary' | 'urgent' | 'now';
+
+/** A level from the driver's word, read defensively: any other is none. */
+export const levelOf = (word: unknown): Level | undefined =>
+  (word === 'ordinary' || word === 'urgent' || word === 'now' ? word : undefined);
 
 /**
  * One turn: what was asked, what the agent did about it, and how it ended. A turn with no `ended`
@@ -394,12 +415,26 @@ export function toTurns(
     taken = null;
     switch (event.kind) {
       case 'user': {
+        // A waiting word told again under its id (COWORK1a: its level changed while it waited): the latest says where it stands,
+        // in its place, and no second copy is drawn.
+        const told = event.reaches && event.id ? waiting.get(event.id) : undefined;
+        if (told) {
+          told.block.reaches = event.reaches;
+          const again = levelOf(event.level);
+          if (again) told.block.level = again;
+          else delete told.block.level;
+          where[event.seq] = told.key;
+          break;
+        }
+
         if (event.reaches) {
           // After the record ended (MSG1f): at its foot, in the turn already waiting there or a new one, never in the
           // run that ended before the words were said.
           const turn = event.reaches === 'resume' ? foot(key) : here(key);
+          const level = levelOf(event.level);
           const block: Block = {
             key, kind: 'held', at: event.at, text: event.text ?? '', id: event.id, reaches: event.reaches,
+            ...(level ? { level } : {}),
             ...(event.files?.length ? { files: event.files } : {}),
           };
           turn.items.push(block);

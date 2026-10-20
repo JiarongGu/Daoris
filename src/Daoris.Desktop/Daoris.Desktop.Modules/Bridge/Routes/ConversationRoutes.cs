@@ -93,6 +93,9 @@ public sealed class ConversationRoutes(DriverContext context)
     {
         var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id");
         var text = PayloadHelper.GetRequiredValue<string>(request.Payload, "text");
+        // COWORK1a (D188 point 1): `level` is when the words should reach a working session, `ordinary`, `urgent` or `now`; an older
+        // page's `now: true` is now; none is the person's default, urgent. No level stops a turn.
+        var level = LevelOf(request);
         // RPC1d: `sessions say` sent over the pipe asks for the verb's own words and names the files it was given by their paths on this
         // machine, which the verb reads as it does alone; the page asks for none and attaches its files whole.
         if (Flag(request, "said"))
@@ -101,16 +104,21 @@ public sealed class ConversationRoutes(DriverContext context)
                 ? listed.EnumerateArray().Where(path => path.ValueKind == JsonValueKind.String).Select(path => path.GetString()!).ToList()
                 : [];
             return await SessionsVerbs.SaidAsync(
-                context, new SessionsAsk("say") { Ids = [id], Text = text, Files = paths, Now = Flag(request, "now") }, cancellationToken)
+                context,
+                new SessionsAsk("say")
+                {
+                    Ids = [id], Text = text, Files = paths, Now = level == MessageLevel.Now, Level = Optional(request, "level"),
+                },
+                cancellationToken)
                 .ConfigureAwait(false);
         }
 
         // What the person attached, kept for its session before the words go (CONV4c).
         var files = request.Payload is { } payload ? FilesOf(payload) : [];
-        // Where the person is (HELP1b), which a conversation's agent is handed ahead of the words; absent for most. `now: true`
-        // is the person's *Send now* (STEER2a, D136's 2026-10-16 note), which a running session carries out by its door.
+        // Where the person is (HELP1b), which a conversation's agent is handed ahead of the words; absent for most. `now` is the
+        // person's *Send now* (STEER2a), which a running session carries out by its door.
         var said = await _loop.Words
-            .SayAsync(id, text, files, Optional(request, "preface"), door: "screen", cancellationToken, now: Flag(request, "now"))
+            .SayAsync(id, text, files, Optional(request, "preface"), door: "screen", cancellationToken, level)
             .ConfigureAwait(false) ?? throw NotReady();
         // Words a running session took are kept on its ask now (DRIFT1a2); words kept on a record are kept there once a
         // session takes them (MSG1a's taken door), so they are never posted twice.
@@ -222,12 +230,19 @@ public sealed class ConversationRoutes(DriverContext context)
     // person rather than lose it. Refused for a session that takes no input, as a message is,
     // and for a door that carries only text, in the driver's words: it has no turn to stop. It publishes as a word said does
     // (STATEHUB1h, D169): a driven session's held words go as its next prompt. `keep: true` (STEER2a) stops a conversation's
-    // turn keeping what waits for the next turn, withdrawing nothing: the turn-end door's *Send now* (D90).
+    // turn keeping what waits for the next turn, withdrawing nothing: the keeping stop (COWORK1a, the message-urgency design
+    // §3.2), the person's own press beside words held for the turn's end, which no word presses for them (D188 point 3).
+    // RPC1d: `sessions stop <id> --turn` sent over the pipe asks for the verb's own words.
     [DriverRoute("CANCEL_TURN")]
     [Publishes("CANCEL_TURN", StateScopes.Sessions, Session = "id")]
     private async Task<object?> CancelTurnAsync(IpcRequest request, CancellationToken cancellationToken)
     {
         var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id");
+        if (Flag(request, "said"))
+        {
+            return await SessionsVerbs.SaidAsync(context, new SessionsAsk("stop-turn") { Ids = [id] }, cancellationToken).ConfigureAwait(false);
+        }
+
         // A driven session's stop sends what is held NOW (SESS3): the turn stops, nothing is
         // withdrawn, and the person's words are its next prompt. With nothing held it stops nothing.
         if (_loop.Processes.InboxOf(id) is { } inbox)
@@ -265,6 +280,10 @@ public sealed class ConversationRoutes(DriverContext context)
             }
         }
 
+        // COWORK1a (the message-urgency design §8.2): `level` changes the urgency of a word that waits for a running turn, under its
+        // own id; raised where the door takes words at its next step, it goes there.
+        MessageLevel? level = Optional(request, "level") is null ? null : LevelOf(request);
+
         // RPC1d: `sessions take-back` and `reword` sent over the pipe ask for the verb's own words, which the service's take-back door
         // judges as the alone path asks it.
         if (Flag(request, "said"))
@@ -278,17 +297,18 @@ public sealed class ConversationRoutes(DriverContext context)
         QueueEdit edit;
         if (_loop.Processes.InboxOf(session) is { } inbox)
         {
-            edit = inbox.Edit(id, text);
+            edit = inbox.Edit(id, text, level);
         }
         else
         {
             if (_loop.Processes.RefusesInput(session) is { } why) throw new DriverException(why);
-            edit = _loop.Chat?.EditQueued(session, id, text) ?? QueueEdit.Taken;
+            edit = _loop.Chat?.EditQueued(session, id, text, level) ?? QueueEdit.Taken;
         }
 
         // Neither holds it: the record's words, which only the service can take back (SAIDBACK1b). A record that runs again
-        // answers taken there, so a word a live turn took a moment ago is still the answer it was.
-        if (edit == QueueEdit.Taken)
+        // answers taken there, so a word a live turn took a moment ago is still the answer it was. A level alone is never asked of
+        // the record: its words wait for no running turn, and a take-back with no words would remove them.
+        if (edit == QueueEdit.Taken && (text is not null || level is null))
         {
             edit = await _loop.Words.TakeBackAsync(session, id, text, cancellationToken).ConfigureAwait(false);
         }
@@ -378,8 +398,52 @@ public sealed class ConversationRoutes(DriverContext context)
     /// runs the session and its record has not answered. <c>to</c> names the conversation a <c>continued</c> one went on in
     /// (HANDWORDS1), and is left out with the rest of the nulls.
     /// </summary>
+    /// <remarks>
+    /// <c>steers</c> and <c>keepingStop</c> (COWORK1a, the message-urgency design §8.1-§8.2) say what a running session's door can
+    /// do while a turn runs: whether its agent steers, so the composer offers <i>Now, cutting its step</i>; and whether it can stop
+    /// a turn keeping the session, so the keeping stop is offered beside words held for the turn's end. Left out where nothing
+    /// here runs it, its door is not known yet, or it carries only text.
+    /// </remarks>
     public static object? ReachOf(WordsAnswer? reach) =>
-        reach is null or { Sent: false, Why: null } ? null : new { reach.Reaches, reach.Why, reach.To };
+        reach is null or { Sent: false, Why: null }
+            ? null
+            : new { reach.Reaches, reach.Why, reach.To, Steers = reach.Door?.Steers, KeepingStop = reach.Door?.KeepingStop };
+
+    /// <summary>
+    /// The level a press asked for (COWORK1a): its <c>level</c>, or an older page's <c>now: true</c>, else the person's default,
+    /// urgent. A level this build does not know is refused in a sentence, before anything is kept.
+    /// </summary>
+    internal static MessageLevel LevelOf(IpcRequest request)
+    {
+        var word = Optional(request, "level");
+        if (word is not null && MessageLevels.Read(word) is null)
+        {
+            throw new DriverException($"`{word}` is no level: when it reads your words is ordinary, urgent or now; nothing was kept.");
+        }
+
+        return MessageLevels.Asked(word, Flag(request, "now"));
+    }
+
+    /// <summary>
+    /// The keeping stop (COWORK1a, the message-urgency design §3.2): a running session's turn stopped so what waits goes next, the
+    /// person's own press, answered as a <see cref="KeepingStops"/> code for <c>sessions stop &lt;id&gt; --turn</c>. A driven session's
+    /// door stops only where it can keep the session and words wait for its turn's end; a conversation's stops keeping what waits.
+    /// </summary>
+    /// <exception cref="DriverException">A session that takes no input, or a conversation that carries only text, in the driver's words.</exception>
+    internal static async Task<string> KeepingStopAsync(DriverLoop loop, string id)
+    {
+        if (loop.Processes.InboxOf(id) is { } inbox)
+        {
+            if (!inbox.KeepingStop) return KeepingStops.NoInterrupt;
+            return (await inbox.SendNowAsync().ConfigureAwait(false)).Cancelled ? KeepingStops.Stopped : KeepingStops.Nothing;
+        }
+
+        if (loop.Processes.RefusesInput(id) is { } why) throw new DriverException(why);
+        if (loop.Chat is not { } chat || !loop.Processes.Running.Contains(id, StringComparer.OrdinalIgnoreCase)) return KeepingStops.NotHere;
+        if (chat.Door(id) is { KeepingStop: false }) return KeepingStops.NoInterrupt;
+        // A text-only door refuses here, in the driver's words: it has no turn to stop.
+        return (await chat.CancelTurnAsync(id, keep: true).ConfigureAwait(false)).Cancelled ? KeepingStops.Stopped : KeepingStops.Nothing;
+    }
 
     /// <summary>
     /// A conversation's options as the page reads them (AGT6b), the answer and the live event alike: each
@@ -429,11 +493,12 @@ public sealed class ConversationRoutes(DriverContext context)
     }
 
     /// <summary>
-    /// A message as the page is told it: the words, the names of its files — never where they are kept — and the id a queued
-    /// word is taken back or reworded by (QUEUEEDIT1a), null where it has none.
+    /// A message as the page is told it: the words, the names of its files — never where they are kept — the id a queued
+    /// word is taken back or reworded by (QUEUEEDIT1a), null where it has none, and the level it waits at (COWORK1a), which the
+    /// held line names and changes.
     /// </summary>
     public static object Said(ChatMessage message) =>
-        new { message.Id, message.Text, Files = message.Files.Select(file => file.Name).ToArray() };
+        new { message.Id, message.Text, Files = message.Files.Select(file => file.Name).ToArray(), Level = MessageLevels.Spelled(message.Level) };
 
     /// <summary>A word waiting on a record (SAIDBACK1b) in the same shape: its id on the record, its words, its files' names.</summary>
     public static object Said(WaitingWord word) => new { word.Id, word.Text, Files = word.Files.ToArray() };

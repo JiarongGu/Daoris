@@ -597,10 +597,10 @@ public sealed class DriverModuleConversationTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// STEER2a (D136's 2026-10-16 note): <c>SESSION_INPUT</c> with <c>now</c> answers what the session's door did, as
-    /// <c>{ sent, reaches, why, to, now }</c>: steered into the running turn (<c>now</c>), held with the turn stopped so they go
-    /// next (<c>turn-end</c>), or held as before where the door has no way, <c>now: false</c> by its code. Without <c>now</c> the
-    /// words go as they always did, and the answer says it was not asked.
+    /// STEER2a, COWORK1a (D188 point 3): <c>SESSION_INPUT</c> at <c>now</c>, as <c>level: "now"</c> or an older page's
+    /// <c>now: true</c>, answers what the session's door did, as <c>{ sent, reaches, why, to, now }</c>: steered into the running
+    /// turn (<c>now</c>), or held for the turn's end, <c>now: false</c> with <c>no-interrupt</c>, whether or not the door could stop
+    /// the turn: no word stops one. Without a level the words go as they always did, and the answer says now was not asked.
     /// </summary>
     [Fact]
     public async Task Send_now_to_a_driven_session_answers_what_its_door_did()
@@ -619,22 +619,125 @@ public sealed class DriverModuleConversationTests : DriverModuleBridge
 
         foreach (var (id, reaches, now, why) in new[]
                  {
-                     ("d1", "turn-end", true, (string?)null), ("d2", "turn-end", false, SendNowWhy.NoInterrupt), ("d3", "now", true, null),
+                     ("d1", "turn-end", false, SendNowWhy.NoInterrupt), ("d2", "turn-end", false, SendNowWhy.NoInterrupt),
+                     ("d3", "now", true, (string?)null),
                  })
         {
             var sent = await AnswerAsync(module, "SESSION_INPUT", new { id, text = "start with the tests", now = true });
-            Assert.Equal(
-                (id, true, reaches, now, why),
-                (id, sent.GetProperty("sent").GetBoolean(), sent.GetProperty("reaches").GetString(), sent.GetProperty("now").GetBoolean(),
-                    sent.GetProperty("why").GetString()));
+            var leveled = await AnswerAsync(module, "SESSION_INPUT", new { id, text = "and the readme", level = "now" });
+            foreach (var answer in new[] { sent, leveled })
+            {
+                Assert.Equal(
+                    (id, true, reaches, now, why),
+                    (id, answer.GetProperty("sent").GetBoolean(), answer.GetProperty("reaches").GetString(), answer.GetProperty("now").GetBoolean(),
+                        answer.GetProperty("why").GetString()));
+            }
         }
 
-        Assert.Equal(1, stopped);
-        Assert.Equal(["start with the tests"], steered);
-        var plain = await AnswerAsync(module, "SESSION_INPUT", new { id = "d1", text = "and the readme" });
+        Assert.Equal(0, stopped);
+        Assert.Equal(["start with the tests", "and the readme"], steered);
+        var plain = await AnswerAsync(module, "SESSION_INPUT", new { id = "d1", text = "and the changelog" });
         Assert.False(plain.GetProperty("now").GetBoolean());
         Assert.Equal(JsonValueKind.Null, plain.GetProperty("why").ValueKind);
+        Assert.Equal(0, stopped);
+    }
+
+    /// <summary>
+    /// COWORK1a (the message-urgency design §3.0, §9): <c>SESSION_INPUT</c>'s <c>level</c> is when the words should reach a
+    /// working session. Ordinary on a door that takes words at its next step waits for the turn's end, and the queue lists it with
+    /// its level; urgent goes at the next step; a level this build does not know is refused in a sentence, and nothing is kept.
+    /// </summary>
+    [Fact]
+    public async Task A_level_to_a_driven_session_is_held_or_sent_by_its_door_and_listed_with_it()
+    {
+        var (loop, module) = await UpAsync(new Ledger());
+        var sent = new List<string>();
+        var inbox = loop.Processes.OpenInbox("d3");
+        inbox.Attach(() => Task.CompletedTask, message => { sent.Add(message.Text); return new TaskCompletionSource<string>().Task; });
+        inbox.Flow();
+
+        var ordinary = await AnswerAsync(module, "SESSION_INPUT", new { id = "d3", text = "tidy the readme after", level = "ordinary" });
+        var urgent = await AnswerAsync(module, "SESSION_INPUT", new { id = "d3", text = "the budget is 64 KiB", level = "urgent" });
+        var refusal = await RefusalAsync(module, "SESSION_INPUT", new { id = "d3", text = "hello", level = "priority" });
+
+        Assert.Equal(("turn-end", "next-step"), (ordinary.GetProperty("reaches").GetString(), urgent.GetProperty("reaches").GetString()));
+        Assert.Equal(["the budget is 64 KiB"], sent);
+        Assert.Contains("ordinary, urgent or now", refusal);
+        var queued = Assert.Single((await AnswerAsync(module, "SESSION_QUEUE", new { id = "d3" })).GetProperty("queued").EnumerateArray());
+        Assert.Equal(("tidy the readme after", "ordinary"), (queued.GetProperty("text").GetString(), queued.GetProperty("level").GetString()));
+    }
+
+    /// <summary>
+    /// COWORK1a (the design §8.1, §8.2): the queue's reach says what the door can do while a turn runs, which the page offers the
+    /// levels and the keeping stop by: whether its agent steers, and whether it can stop a turn keeping the session. The native
+    /// door's run can do neither; a protocol door that takes words at its next step and steers can do both.
+    /// </summary>
+    [Fact]
+    public async Task The_queue_says_whether_the_door_steers_and_has_a_keeping_stop()
+    {
+        var (loop, module) = await UpAsync(new Ledger());
+        loop.Processes.OpenInbox("d2").Attach(interrupt: null);
+        var steering = loop.Processes.OpenInbox("d3");
+        steering.Attach(() => Task.CompletedTask, _ => new TaskCompletionSource<string>().Task, _ => Task.FromResult("injected"));
+        steering.Flow();
+
+        foreach (var (id, steers, keeps) in new[] { ("d2", false, false), ("d3", true, true) })
+        {
+            var reach = (await AnswerAsync(module, "SESSION_QUEUE", new { id })).GetProperty("reach");
+            Assert.Equal((id, steers, keeps), (id, reach.GetProperty("steers").GetBoolean(), reach.GetProperty("keepingStop").GetBoolean()));
+        }
+    }
+
+    /// <summary>
+    /// COWORK1a (the design §8.2): <c>SESSION_QUEUE_EDIT</c> with <c>level</c> changes a held word's level under its id; raised on a
+    /// door that takes words at its next step it goes there. A word nothing here holds answers taken, and its record is left alone:
+    /// a level means nothing to words waiting on a record that is not running.
+    /// </summary>
+    [Fact]
+    public async Task A_held_words_level_is_changed_by_its_id_and_a_records_word_is_left_alone()
+    {
+        var ledger = new Ledger { Records = Records(Waiting("s1", "completed", Word("w1", "also the changelog"))) };
+        var (loop, module) = await UpAsync(ledger);
+        var sent = new List<string>();
+        var inbox = loop.Processes.OpenInbox("d3");
+        inbox.Attach(() => Task.CompletedTask, message => { sent.Add(message.Text); return new TaskCompletionSource<string>().Task; });
+        inbox.Flow();
+        inbox.Hold(new ChatMessage("tidy the readme after", []) { Level = MessageLevel.Ordinary });
+        var id = Assert.Single(inbox.State.Queued).Id!;
+
+        var raised = await AnswerAsync(module, "SESSION_QUEUE_EDIT", new { session = "d3", id, level = "urgent" });
+        var record = await AnswerAsync(module, "SESSION_QUEUE_EDIT", new { session = "s1", id = "w1", level = "urgent" });
+
+        Assert.True(raised.GetProperty("done").GetBoolean());
+        Assert.Equal(["tidy the readme after"], sent);
+        Assert.Equal("taken", record.GetProperty("why").GetString());
+        Assert.DoesNotContain(ledger.Posts, post => post.Path.EndsWith("/take-back", StringComparison.Ordinal));
+    }
+
+    /// <summary>
+    /// COWORK1a (the design §8.6, RPC1d): <c>CANCEL_TURN</c> asked for its words by <c>sessions stop &lt;id&gt; --turn</c> is the
+    /// keeping stop, answering the lines the verb prints: the turn stopped so what waits goes next; a door with no stop that keeps the
+    /// session says so and stops nothing.
+    /// </summary>
+    [Fact]
+    public async Task The_keeping_stop_asked_for_its_words_answers_the_verbs_lines()
+    {
+        var (loop, module) = await UpAsync(new Ledger { Records = Records(Record("d1", "working"), Record("d2", "working", quest: "q2")) });
+        var stopped = 0;
+        var keeping = loop.Processes.OpenInbox("d1");
+        keeping.Attach(() => { stopped++; return Task.CompletedTask; });
+        keeping.Hold(new ChatMessage("the tests are in /spec", []));
+        loop.Processes.OpenInbox("d2").Attach(interrupt: null);
+
+        var stop = (await AnswerAsync(module, "CANCEL_TURN", new { id = "d1", keep = true, said = true })).GetProperty("said");
+        var none = (await AnswerAsync(module, "CANCEL_TURN", new { id = "d2", keep = true, said = true })).GetProperty("said");
+
+        Assert.Equal(
+            (0, "sessions: stopping d1's turn: what waits goes next, and what it has done stays."),
+            (stop.GetProperty("code").GetInt32(), Assert.Single(stop.GetProperty("out").EnumerateArray()).GetString()));
         Assert.Equal(1, stopped);
+        Assert.Equal(1, none.GetProperty("code").GetInt32());
+        Assert.StartsWith("sessions: d2's door cannot stop a turn and keep the session", Assert.Single(none.GetProperty("out").EnumerateArray()).GetString());
     }
 
     /// <summary>

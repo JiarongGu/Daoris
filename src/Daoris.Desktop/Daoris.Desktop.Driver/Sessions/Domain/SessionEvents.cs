@@ -172,6 +172,14 @@ public sealed record SessionEvent
     public string? Reaches { get; init; }
 
     /// <summary>
+    /// For the person's words shown the moment they are said to a running session (COWORK1a, D188 point 1): the urgency they
+    /// asked for, <c>ordinary</c>, <c>urgent</c> or <c>now</c>, beside <see cref="Reaches"/>, what the door gave. A word whose level
+    /// changes while it waits is told again under the same <see cref="Id"/>, and the latest says where it stands. Null on a record
+    /// from before, read as it was.
+    /// </summary>
+    public string? Level { get; init; }
+
+    /// <summary>
     /// For the person's words shown the moment they are said (MSG1d, D137 §3.3): the door they were said at, <c>screen</c> or
     /// <c>terminal</c>, which the machine log's <c>session.reopened</c> names when the words reopen the session. Null where
     /// the door kept none.

@@ -961,15 +961,16 @@ describe('starting and holding a conversation', () => {
   });
 
   /**
-   * SESS3: a driven
-   * session the driver says listens — the protocol door — has a box; what is sent waits for its turn to
-   * end, and *send now* stops the turn so it goes at once. One the driver says does not listen keeps none.
+   * SESS3, COWORK1a: a driven session the driver says listens — the protocol door — has a box; what is sent goes at the
+   * person's default, waiting for its turn's end on a door that takes words only then. No word stops the turn: the keeping stop
+   * beside what waits does, asked once (`CANCEL_TURN` with `keep`). One the driver says does not listen keeps none.
    */
-  it('lets the person tell a working driven session something, held for its turn\'s end or sent now', async () => {
-    let queue: object = { session: 's1a2b3c4', queued: [], taking: true, listening: true };
+  it('lets the person tell a working driven session something, held for its turn\'s end, and stop its turn on their own press', async () => {
+    const reach = { reaches: 'turn-end', steers: false, keepingStop: true };
+    let queue: object = { session: 's1a2b3c4', queued: [], taking: true, listening: true, reach };
     invoke.mockImplementation(async (_module: string, type: string) => {
       if (type === 'SESSION_QUEUE') return queue;
-      if (type === 'SESSION_INPUT') return { sent: true };
+      if (type === 'SESSION_INPUT') return { sent: true, reaches: 'turn-end' };
       if (type === 'CANCEL_TURN') return { cancelled: true, withdrawn: [] };
       return DRIVER_STATE;
     });
@@ -979,33 +980,53 @@ describe('starting and holding a conversation', () => {
     const box = await screen.findByLabelText('Message');
     expect(box).toHaveAttribute('placeholder', expect.stringMatching(/tell it something while it works/));
     await userEvent.type(box, 'the budget is in level.json');
-    await userEvent.click(screen.getByRole('button', { name: 'Queue' }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Send' }));
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_INPUT', { payload: { id: 's1a2b3c4', text: 'the budget is in level.json' } });
 
-    // What the driver holds shows as waiting, and only then can it be sent now.
+    // What the driver holds shows as waiting, and only then is the keeping stop offered; never a word's own press.
     expect(screen.queryByRole('button', { name: 'Send now' })).toBeNull();
-    queue = { session: 's1a2b3c4', queued: [{ text: 'the budget is in level.json', files: [] }], taking: true, listening: true };
+    expect(screen.queryByRole('button', { name: 'Stop its turn so this goes next…' })).toBeNull();
+    queue = { session: 's1a2b3c4', queued: [{ id: 'said-1', text: 'the budget is in level.json', files: [], level: 'urgent' }], taking: true, listening: true };
     await act(async () => { eventHandlers.get('DAORIS.SESSION_QUEUED')!(queue); });
     expect(screen.getByText('the budget is in level.json')).toBeInTheDocument();
+    expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'CANCEL_TURN', expect.anything());
 
-    await userEvent.click(screen.getByRole('button', { name: 'Send now' }));
-    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'CANCEL_TURN', { payload: { id: 's1a2b3c4' } });
-    await waitFor(() => expect(notify).toHaveBeenCalledWith('Stopping its turn: what you added goes next.'));
+    await userEvent.click(screen.getByRole('button', { name: 'Stop its turn so this goes next…' }));
+    expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'CANCEL_TURN', expect.anything());
+    await userEvent.click(screen.getByRole('button', { name: 'Stop its turn' }));
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'CANCEL_TURN', { payload: { id: 's1a2b3c4', keep: true } });
+    await waitFor(() => expect(notify).toHaveBeenCalledWith('Asked the agent to stop this turn; the conversation stays open.'));
 
     // It stops listening as it ends: the box goes.
     await act(async () => { eventHandlers.get('DAORIS.SESSION_QUEUED')!({ session: 's1a2b3c4', queued: [], taking: false, listening: false }); });
     expect(screen.queryByLabelText('Message')).toBeNull();
   });
 
+  /** A Radix menu opens on the keyboard, as the other pages' tests open theirs. */
+  const openMenu = async (name: string) => {
+    const user = userEvent.setup();
+    (await screen.findByRole('button', { name })).focus();
+    await user.keyboard('{Enter}');
+  };
+
+  /** Words at a level, chosen from the menu beside *Send* (COWORK1a). */
+  const sendAt = async (item: RegExp) => {
+    await openMenu('When it reads this');
+    await userEvent.click(await screen.findByRole('menuitem', { name: item }));
+  };
+
   /**
-   * STEER2b (D136): *Send now* beside *Queue* sends the typed words with `now: true`. The answer says what came of it: taken
-   * at once in the running turn (nothing to say), the turn stopping so they go next, or that the door could not, the words
-   * held as a queue's are, said in one line.
+   * STEER2b, COWORK1a: *Now, cutting its step*, from the level menu beside *Send*, sends the typed words with `level: now`
+   * (and `now: true` for a shell from before). The answer says what came of it: taken at once in the running turn (nothing to
+   * say), or that the door could not, the words going at its next step or held for its turn's end, said in one line. No turn is
+   * stopped for them.
    */
   it('sends typed words to a working driven session now, and says what the door did', async () => {
     let answer: object = { sent: true, reaches: 'now', why: null, now: true };
     invoke.mockImplementation(async (_module: string, type: string) => {
-      if (type === 'SESSION_QUEUE') return { session: 's1a2b3c4', queued: [], taking: true, listening: true };
+      if (type === 'SESSION_QUEUE') {
+        return { session: 's1a2b3c4', queued: [], taking: true, listening: true, reach: { reaches: 'next-step', steers: true, keepingStop: true } };
+      }
       if (type === 'SESSION_INPUT') return answer;
       return DRIVER_STATE;
     });
@@ -1014,29 +1035,27 @@ describe('starting and holding a conversation', () => {
 
     const box = await screen.findByLabelText('Message');
     await userEvent.type(box, 'drop the cache');
-    await userEvent.click(screen.getByRole('button', { name: 'Send now' }));
-    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_INPUT', { payload: { id: 's1a2b3c4', text: 'drop the cache', now: true } });
+    await sendAt(/Now, cutting its step/);
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_INPUT', {
+      payload: { id: 's1a2b3c4', text: 'drop the cache', level: 'now', now: true },
+    });
     expect(box).toHaveValue('');
     expect(notify).not.toHaveBeenCalled();
 
-    answer = { sent: true, reaches: 'turn-end', why: null, now: true };
-    await userEvent.type(box, 'then the build');
-    await userEvent.click(screen.getByRole('button', { name: 'Send now' }));
-    await waitFor(() => expect(notify).toHaveBeenCalledWith('Stopping its turn: what you added goes next.'));
-
     answer = { sent: true, reaches: 'turn-end', why: 'no-interrupt', now: false };
     await userEvent.type(box, 'and the tests');
-    await userEvent.click(screen.getByRole('button', { name: 'Send now' }));
+    await sendAt(/Now, cutting its step/);
     await waitFor(() => expect(notify).toHaveBeenCalledWith(
       'Its door cannot take words in a running turn, so these are held for its turn to end.'));
     // Held, not lost: nothing is put back in the box.
     expect(box).toHaveValue('');
+    expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'CANCEL_TURN', expect.anything());
 
     // No turn was running: an ordinary send, with nothing said.
     notify.mockClear();
     answer = { sent: true, reaches: null, why: null, now: true };
     await userEvent.type(box, 'idle');
-    await userEvent.click(screen.getByRole('button', { name: 'Send now' }));
+    await sendAt(/Now, cutting its step/);
     await waitFor(() => expect(box).toHaveValue(''));
     expect(notify).not.toHaveBeenCalled();
   });
@@ -1050,7 +1069,9 @@ describe('starting and holding a conversation', () => {
     [{ sent: true, reaches: 'turn-end', why: 'something-new', now: false }, 'It could not take these now, so they are held as queued words are.'],
   ])('says in one line what a working driven session did with words sent now: %j', async (reply, line) => {
     invoke.mockImplementation(async (_module: string, type: string) => {
-      if (type === 'SESSION_QUEUE') return { session: 's1a2b3c4', queued: [], taking: true, listening: true };
+      if (type === 'SESSION_QUEUE') {
+        return { session: 's1a2b3c4', queued: [], taking: true, listening: true, reach: { reaches: 'next-step', steers: true, keepingStop: true } };
+      }
       if (type === 'SESSION_INPUT') return reply;
       return DRIVER_STATE;
     });
@@ -1059,23 +1080,28 @@ describe('starting and holding a conversation', () => {
 
     const box = await screen.findByLabelText('Message');
     await userEvent.type(box, 'more');
-    await userEvent.click(screen.getByRole('button', { name: 'Send now' }));
+    await sendAt(/Now, cutting its step/);
     await waitFor(() => expect(notify).toHaveBeenCalledWith(line));
     // Held, not lost: nothing is put back in the box.
     expect(box).toHaveValue('');
   });
 
   /**
-   * STEER2b (D136): a conversation's *Send now* with words in the box sends them with `now: true`; with the box empty and
-   * words waiting it stops the turn and keeps them (`CANCEL_TURN` with `keep`), which comes back with nothing withdrawn.
-   * *Stop turn* stays the withdrawal.
+   * COWORK1a: a conversation's words go at the level chosen from the menu (`level: ordinary` here); with words waiting for the
+   * turn's end on a door that can stop a turn keeping the conversation, the keeping stop stops it (`CANCEL_TURN` with `keep`),
+   * withdrawing nothing, once asked. *Stop turn* stays the withdrawal, beside it.
    */
-  it('sends a conversation’s words now, and with an empty box stops the turn keeping what waits', async () => {
+  it('sends a conversation’s words at a level, and stops its turn keeping what waits on the person’s own press', async () => {
     SESSIONS = [CHAT];
     invoke.mockImplementation(async (_module: string, type: string) => {
       if (type === 'HARNESSES') return STRUCTURED_ROSTER;
-      if (type === 'SESSION_QUEUE') return { session: 'c0ffee11', queued: [{ id: 'q1', text: 'and then test it', files: [] }], taking: true };
-      if (type === 'SESSION_INPUT') return { sent: true, reaches: 'now', why: null, now: true };
+      if (type === 'SESSION_QUEUE') {
+        return {
+          session: 'c0ffee11', queued: [{ id: 'q1', text: 'and then test it', files: [], level: 'urgent' }], taking: true,
+          reach: { reaches: 'turn-end', steers: false, keepingStop: true },
+        };
+      }
+      if (type === 'SESSION_INPUT') return { sent: true, reaches: 'turn-end', why: null, now: false };
       if (type === 'CANCEL_TURN') return { cancelled: true, withdrawn: [] };
       return DRIVER_STATE;
     });
@@ -1083,15 +1109,16 @@ describe('starting and holding a conversation', () => {
     show('c0ffee11', notify);
 
     await screen.findByRole('list', { name: 'waiting for this turn to end' });
-    // Empty box, words waiting: the stop that keeps them.
-    await userEvent.click(await screen.findByRole('button', { name: 'Send now' }));
+    expect(screen.getByRole('button', { name: 'Stop turn' })).toBeInTheDocument();
+    await userEvent.click(await screen.findByRole('button', { name: 'Stop its turn so this goes next…' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Stop its turn' }));
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'CANCEL_TURN', { payload: { id: 'c0ffee11', keep: true } });
-    await waitFor(() => expect(notify).toHaveBeenCalledWith('Stopping its turn: what you added goes next.'));
+    await waitFor(() => expect(notify).toHaveBeenCalledWith('Asked the agent to stop this turn; the conversation stays open.'));
     expect(screen.getByLabelText('Message')).toHaveValue('');
 
     await userEvent.type(screen.getByLabelText('Message'), 'use the blue one');
-    await userEvent.click(screen.getByRole('button', { name: 'Send now' }));
-    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_INPUT', { payload: { id: 'c0ffee11', text: 'use the blue one', now: true } });
+    await sendAt(/When its turn ends/);
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_INPUT', { payload: { id: 'c0ffee11', text: 'use the blue one', level: 'ordinary' } });
   });
 
   /**

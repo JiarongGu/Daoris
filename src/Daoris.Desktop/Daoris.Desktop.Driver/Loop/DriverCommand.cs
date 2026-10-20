@@ -127,16 +127,18 @@ public static class DriverCommand
           sessions [--group you|review|working|later|ended|archived] [--repository <name>] [--json]
               this machine's sessions by what they need: waiting on you first, then to review, working,
               resumes later and ended.
-          sessions stop <id>  ·  sessions finish <id> [--note "…"]  ·  sessions decline <id> --reason "…"
+          sessions stop <id> [--turn]  ·  sessions finish <id> [--note "…"]  ·  sessions decline <id> --reason "…"
               stop a live session (its quest is then held here until `daoris driver retry`), or finish or
-              decline one that waits on you.
+              decline one that waits on you. --turn stops only its turn, keeping the session, so the words
+              waiting for its turn's end go next, where its door can.
           sessions archive <id>… | --ended [--yes]  ·  sessions unarchive <id>…  ·  sessions delete <id>
               take ended sessions out of the list, or bring them back; delete a conversation that served no quest.
-          sessions say <id> "…" [--file <path>]… [--now]
+          sessions say <id> "…" [--file <path>]… [--level ordinary|urgent|now] [--now]
               say something to a session of this machine's: read at its next step or when its turn ends while it
-              works, or, parked or ended, the same session goes on with it. Prints where the words stand. --now is
-              the page's Send now: steered into the running turn where its agent steers, or the turn stopped so they
-              go next; it says what the door did, and why where it could not.
+              works, or, parked or ended, the same session goes on with it. Prints where the words stand. --level
+              is when it reads them while it works: ordinary at its turn's end, urgent (the default) at its next
+              step, now cutting its step where its agent steers; no level stops its turn. --now is --level now. It
+              says what the door did, and why where it could not.
           sessions take-back <id> [<word>]  ·  sessions reword <id> <word> "…"
               take back one of your words waiting on a parked or ended session before it goes on with them, or put
               new words in its place; with no word, list those waiting with their ids.
