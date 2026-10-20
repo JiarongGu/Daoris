@@ -80,6 +80,7 @@ export function QuestList({
 
   const facts = new Map(quests.map((row) => [row.quest.id, row]));
   const groups = questGroups(quests.map((row) => row.quest), closed);
+  const { waiting, becoming } = placeAsks(asks, new Set(groups.flatMap((group) => group.quests.map((quest) => quest.id))));
 
   return (
     <div>
@@ -87,9 +88,9 @@ export function QuestList({
         <p className="m-0 truncate px-2.5 pb-0.5 pt-2 text-meta text-ink-faint">{t('quests.list.filtered', { repository: filteredTo })}</p>
       )}
       {/* Each heading's id is what a door into its group brings into view (ENTRY1b). */}
-      {asks.length > 0 && (
-        <ListGroup id={groupHeading('quests', 'asks')} title={t('asks.group', { count: asks.length })}>
-          {asks.map(({ ask, intake, unread }) => (
+      {waiting.length > 0 && (
+        <ListGroup id={groupHeading('quests', 'asks')} title={t('asks.group', { count: waiting.length })}>
+          {waiting.map(({ ask, intake, unread }) => (
             <AskRow key={ask.id} ask={ask} intake={intake ?? null} unread={unread} chosen={chosen === askItem(ask.id)} onOpen={() => onChoose(askItem(ask.id))} />
           ))}
         </ListGroup>
@@ -108,6 +109,7 @@ export function QuestList({
             <QuestRow
               key={quest.id}
               facts={facts.get(quest.id)!}
+              ask={becoming.get(quest.id) ?? null}
               chosen={chosen === quest.id}
               resuming={resuming}
               onChoose={onChoose}
@@ -116,16 +118,38 @@ export function QuestList({
           ))}
         </ListGroup>
       ))}
-      {quests.length === 0 && asks.length > 0 && (
+      {quests.length === 0 && waiting.length > 0 && (
         <p className="m-0 border-t border-line px-2.5 py-2.5 text-small text-ink-soft">{empty}</p>
       )}
     </div>
   );
 }
 
+/**
+ * Which asks keep a row of their own and which are their quest's row (QUESTLISTS1, D185): an ask that became exactly one
+ * quest, which this list shows, is that one piece of work, so the quest's row names it and the ask rides its route line.
+ * An ask keeps its row while it waits on something of its own: open, proposed, an intake parked asking the person, several
+ * quests, or a quest this list does not show (filtered out, or closed and not included), so no work vanishes from the list.
+ */
+export function placeAsks(asks: readonly AskRowFacts[], shown: ReadonlySet<string>) {
+  const waiting: AskRowFacts[] = [];
+  const becoming = new Map<string, Ask>();
+  for (const row of asks) {
+    const { ask } = row;
+    const [only] = ask.quests;
+    const merged = (ask.state === 'Published' || ask.state === 'Done') && ask.quests.length === 1
+      && row.intake !== 'awaiting-person' && shown.has(only) && !becoming.has(only);
+    if (merged) becoming.set(only, ask);
+    else waiting.push(row);
+  }
+  return { waiting, becoming };
+}
+
 /** One quest as a row of the list: its pill and marks, its title, its route and how long, and why it sits. */
-function QuestRow({ facts, chosen, resuming, onChoose, onResume }: {
+function QuestRow({ facts, ask, chosen, resuming, onChoose, onResume }: {
   facts: QuestRowFacts;
+  /** The ask this quest is the only quest of: it names the row and rides the route line. */
+  ask: Ask | null;
   chosen: boolean;
   resuming: boolean;
   onChoose: (item: string) => void;
@@ -134,6 +158,8 @@ function QuestRow({ facts, chosen, resuming, onChoose, onResume }: {
   const { t } = useTranslation();
   const { quest, session, waits, sitting } = facts;
   const sat = sittingDays(quest.filed);
+  // The ask's short title names the work where it gave one; else the quest's own name, as before.
+  const name = ask?.short?.trim() ? ask.short.trim() : questName(quest);
   // A done a departure holds still waits on the person (DRIFT1d2), so it reads as live, never dimmed as ended.
   const ended = (quest.status === 'Done' || quest.status === 'Declined') && quest.held !== true;
   // Only a hold is the person's to lift here; any other reason is said, and offers nothing.
@@ -141,9 +167,11 @@ function QuestRow({ facts, chosen, resuming, onChoose, onResume }: {
   // A row offers what it does on a right-click (CTX1, D138 §4): opening it, its hold's resume, and its id; what is done to
   // the quest is its page's.
   const menu = {
-    label: questName(quest),
+    label: name,
     acts: [
       { id: 'open', label: t('contextMenu.act.open'), onSelect: () => onChoose(quest.id) },
+      // The ask has no row of its own now (QUESTLISTS1), so its page, where it is paused or abandoned, opens from here.
+      ...(ask ? [{ id: 'open-ask', label: t('contextMenu.act.openAsk'), onSelect: () => onChoose(askItem(ask.id)) }] : []),
       ...(resume
         ? [{ id: 'resume', label: t('quests.card.resume', { repository: quest.to }), icon: 'resume' as const, disabled: resuming, onSelect: () => resume(quest.to) }]
         : []),
@@ -179,7 +207,7 @@ function QuestRow({ facts, chosen, resuming, onChoose, onResume }: {
           </span>
         </span>
         {/* Its name (SESSUX1j), the short title where there is one, whole title on its tip. */}
-        <span title={quest.title} className={cn('mt-0.5 block truncate text-body', ended ? 'text-ink-soft' : 'text-ink')}>{questName(quest)}</span>
+        <span title={quest.title} className={cn('mt-0.5 block truncate text-body', ended ? 'text-ink-soft' : 'text-ink')}>{name}</span>
         <span className="block truncate font-mono text-meta text-ink-faint">
           <span className="text-accent">{quest.from} → {quest.to}</span>
           {/* The lanes of the repository it asks (D115 §2.2), beside the repository: `to` stays one. */}
@@ -195,6 +223,8 @@ function QuestRow({ facts, chosen, resuming, onChoose, onResume }: {
           {quest.updated !== quest.filed && <> · {t('quests.card.moved', { ago: ago(quest.updated) })}</>}
           {/* A step of a chain says which quest's close published it (D65 §4). */}
           {quest.parent && <> · {t('quests.card.follows', { id: quest.parent })}</>}
+          {/* The ask it came from, the one piece of work's other name (QUESTLISTS1). */}
+          {ask && <> · <span title={t('quests.card.fromAskHint')}>{t('quests.card.fromAsk', { id: ask.id.slice(0, 6) })}</span></>}
         </span>
         {/* Why this machine's driver leaves it waiting (USE1): its record said so, the row did not, and a quest to
             a held repository read as a request that would not start. */}

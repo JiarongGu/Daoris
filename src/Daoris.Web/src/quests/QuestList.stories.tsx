@@ -104,6 +104,23 @@ export const AsksThenQuests: Story = {};
 /** An ask chosen: its row wears the list's choice. */
 export const AnAskChosen: Story = { args: { chosen: `ask:${PROPOSED.id}` } };
 
+/**
+ * One piece of work, one row (QUESTLISTS1): the first two asks each became one quest, so they are their quests' rows, named
+ * by the ask's short title with the ask on the route line; the asks group keeps only what waits on something of its own.
+ * Switch the toolbar's locale for 中文.
+ */
+export const OneRowPerWork: Story = {
+  args: {
+    asks: [
+      { ask: { ...PUBLISHED, id: '5d2e8f13c0a1', short: 'Streaming budget', quests: [OPEN.id] } },
+      { ask: { ...PUBLISHED, id: '8e7d6c5b4a39', short: 'Config field names', quests: [TAKEN.id] } },
+      { ask: PUBLISHED },
+      { ask: PROPOSED },
+    ],
+    quests: [{ quest: OPEN }, { quest: TAKEN }, { quest: SITTING }],
+  },
+};
+
 /** Closed quests included from the ⋯: a group of their own, read as finished. */
 export const ClosedIncluded: Story = { args: { closed: true, quests: [...QUESTS, ...CLOSED_QUESTS] } };
 

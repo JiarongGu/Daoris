@@ -5,6 +5,9 @@ with the version and date at release.
 
 ## Unreleased
 
+- The Quests list shows one row for one piece of work: an ask that became a single quest is that quest's row, named by the
+  ask's short title with the ask on its second line (its page opens from the row's right-click menu), and the Asks group
+  keeps only asks still waiting on something of their own. A published ask no longer wears the finished colour.
 - How many sessions Daoris starts at once on this machine is set in Settings → Driver, beside the strike limit and the
   cool-off, and `daoris driver cap <n>` sets the same number while Daoris runs. It counts the sessions Daoris starts, never
   a conversation you hold yourself.

@@ -5,6 +5,7 @@
   "contextMenu.act.search": "用 Daoris 搜索",
   "contextMenu.act.ask": "就此问道衍",
   "contextMenu.act.open": "打开",
+  "contextMenu.act.openAsk": "打开需求",
   "contextMenu.act.openInBrowser": "用 Daoris 浏览器打开",
   "contextMenu.act.copyLink": "复制链接",
   "contextMenu.act.copyQuest": "复制委托 ID",

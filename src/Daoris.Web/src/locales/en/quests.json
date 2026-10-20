@@ -24,6 +24,8 @@
   "quests.card.files": "{{count}} file",
   "quests.card.files_other": "{{count}} files",
   "quests.card.follows": "follows #{{id}}",
+  "quests.card.fromAsk": "ask #{{id}}",
+  "quests.card.fromAskHint": "The ask this quest came from.",
   "quests.card.lanes": "lane {{lanes}}",
   "quests.card.lanes_other": "lanes {{lanes}}",
   "quests.card.lanesHint": "It asks these lanes of {{repository}}: work for those lanes' sessions, not the whole repository.",
