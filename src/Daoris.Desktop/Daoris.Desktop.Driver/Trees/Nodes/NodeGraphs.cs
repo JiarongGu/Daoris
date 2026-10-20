@@ -239,7 +239,7 @@ public static class NodeGraphs
             }
         }
 
-        // D157 §2.2's protected order: the gates come before the landing, the opinion before the look. Of them the opinion (FABRIC-WORKFLOW2)
+        // D157 §2.2's protected order: the gates come before the landing. Of them the opinion (FABRIC-WORKFLOW2)
         // and the look are nodes (§E4), so each must be reached before every landing starts: through wires a reach satisfies, never a
         // failure's or a rejection's path. The holds stay the rules' gate at the landing, no node yet. FABRIC-CUTOVER1b (the cutover design
         // §5.1): the opinion is not asked to reach a look, whose set-up the review gate holds while an agent reads the opinion.
