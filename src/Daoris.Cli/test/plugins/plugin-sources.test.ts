@@ -429,6 +429,12 @@ test('the offers are the install\'s app/plugin-offers, beside the home', () => {
   fx.cleanup();
 });
 
+test('a development run’s root is its own Daoris folder, so its offers are its app/plugin-offers', () => {
+  const fx = makeFixture('plugoffer-dev-root');
+  assert.equal(offersFolder(fx.root), join(fx.root, ...OFFERS_DIR));
+  fx.cleanup();
+});
+
 /** The README's requirement lines, the twin's table (`PluginOfferTests.What_an_offer_needs…`). */
 test('what an offer needs is its README\'s own section, emphasis dropped and code kept', () => {
   const { fx } = machine('plugoffer-needs');

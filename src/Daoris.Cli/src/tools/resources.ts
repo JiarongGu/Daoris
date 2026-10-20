@@ -26,8 +26,8 @@
 
 import { createHash } from 'node:crypto';
 import { existsSync, readFileSync } from 'node:fs';
-import { dirname, join, resolve } from 'node:path';
-import { homeEntry } from '../platform/home.ts';
+import { join, resolve } from 'node:path';
+import { homeEntry, homeFolder } from '../platform/home.ts';
 import {
   TOOLS, TOOLS_FOLDER, declaredTool, isAddress, isExactVersion, isInsidePath, isLoopbackHost, readTools, type ToolsRead,
 } from './tools.ts';
@@ -362,9 +362,9 @@ export function readResourceFile(path: string, origin: string): ResourceList {
   };
 }
 
-/** The list built in, beside the home as the offers are (`OFFERS_DIR`): in an install, the two are one folder. */
+/** The list built in, in the home's Daoris folder as the offers are (`OFFERS_DIR`, HOMELAYOUT4): in an install, the two are one folder. */
 export function builtInList(home: string): string {
-  return join(dirname(resolve(home)), ...BUILT_IN_LAYOUT);
+  return join(homeFolder(resolve(home)).folder, ...BUILT_IN_LAYOUT);
 }
 
 /** Where a location's fetched copy is kept: named by the sha256 of its address as written. */

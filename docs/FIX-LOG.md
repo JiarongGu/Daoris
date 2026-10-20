@@ -5,6 +5,21 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-20 — Ask Daoris's conversations were listed among the chat sessions (ASKRAIL1)
+
+- **Symptom:** the Sessions rail drew an *Ask Daoris* group beside the repositories' (and its rows by state, its name search and the
+  words search), while Ask Daoris has its own panel and history. Red first: `SessionRail.test.tsx`, *Ask Daoris's records beside a
+  session's*, en and 中文.
+- **Root cause:** the rail never excluded `daoris:help`; it had been spared by what the list was asked. Until ASKSCOPE1a (0759e9465) a
+  help record carried no workspace, so the workspace-scoped sessions read left it out; ASKSCOPE1a gave it the workspace it was started
+  in, so every scoped read held it. HELP1a (a42219eaf) had even labelled its group by name (`label` in `repositoryFacts`), which made it
+  look intended. PUSH1d2 (4da91876f) then made each list a client-side filter of the one widest slice (`sessionsIn`), with no help
+  exclusion, and PUSH1c3b's pushed groups/entries answer carries every record's too.
+- **Fix:** `SessionRail` takes Ask Daoris's records (`isHelp`) out of its sessions and out of the groups and entries read beside them,
+  so the groups, the name search and the words search (joined to the listed sessions) never hold them; `useHelpSessions` and so Ask
+  Daoris's history are unchanged. D158's note, ASKRAIL1.
+- **Verification:** `SessionRail.test.tsx` and the rail and `src/help` suites, green.
+
 ## 2026-10-20 — A line's move inside the minute, a release under a live session, and a repository nothing recorded were each missed (ENDAGREE1)
 
 - **Symptom:** each shown red first. Origin's line moving 20 s after a pull request was asked was never asked about at the wakes after
@@ -105,6 +120,16 @@ repository.
 - **Verification:** `DriverConfigKeepsTests`, `KeepLockTests`, `KeepLockProcessTests` (Process), and the CLI's `configkeeps.test.ts`
   and `keeplock.test.ts`, over `driver-config-keeps.json`'s rows, `sets`, `names` and `lock`; the driver classes over every config
   and home-file writer (1,011 and 323 tests) and the CLI's config, home-file, plugin, permission and toolchain tests pass.
+
+## 2026-10-20 — The trees words were one class split across two hand-written files (RPCOPEN1)
+
+- **Symptom:** the full set's `cli` gate failed on c932f50: `partials: TreesWords is declared partial in 2 hand-written files`.
+- **Root cause:** RPCOPEN1 put the trees reads' words beside `TreesWords` as a second `partial` half (`TreesPlanWords.cs`); the
+  repository keeps `partial` for generated code, and the branch's checks did not run `tools/partials.mjs`.
+- **Fix:** the reads' words are their own class, `TreesPlanWords`, and its callers (the host's `TreesConsole`, the three routes, the
+  tests) name it; it calls `TreesWords.Describe` by name.
+- **Verify:** `tools/partials.mjs` clean; `TreesPlanWordsTests`, `TreesWordsTests`, `DriverCommandTests` 100 of 100;
+  `DriverModuleTreesReadsTests` and `DriverModuleTreesWordsTests` 25 of 25.
 
 ## 2026-10-20 — The decoder's guard flagged the runtime's read of a run's bound version (FABRICRUN1)
 

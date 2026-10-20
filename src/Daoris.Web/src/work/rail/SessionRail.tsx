@@ -1,6 +1,6 @@
-import { type ComponentProps, Fragment, type ReactNode, useLayoutEffect, useRef, useState } from 'react';
+import { type ComponentProps, Fragment, type ReactNode, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { HELP_REPOSITORY, type Quest, type Session } from '../../data/api';
+import { type Quest, type Session } from '../../data/api';
 import { useAsks, useOpinions, useQuests, useRegistry, useSessions } from '../../data/queries';
 import { searchable } from '../../lib/searchable';
 import {
@@ -21,7 +21,7 @@ import { groupHeading, useBringGroup } from '../frame/ListPane';
 import { SessionRow } from './SessionRow';
 import { Refused } from '../InlineConfirm';
 import { ArchiveEndedAsk, type RepositoryFacts, SessionList, type SessionRowFacts, SessionStrip } from './SessionList';
-import { askName, isIntake, isOpinion, linkedSessions, ownTree, sessionTitle } from '../identity';
+import { askName, isHelp, isIntake, isOpinion, linkedSessions, ownTree, sessionTitle } from '../identity';
 import { byName, marked, readable } from './railSearch';
 import { type SessionDoors, useSessionActs } from '../sessionActs';
 
@@ -101,7 +101,14 @@ export function SessionRail({
   const { t } = useTranslation();
   // Closed records included, then filtered here: the rail needs the attended one whatever state it
   // reached, and this is the query key the quest view already warms.
-  const sessions = useSessions(null, true);
+  const pulled = useSessions(null, true);
+  // Ask Daoris's records (`daoris:help`) are no session of this list (ASKRAIL1): they are reached from Ask Daoris's panel and its
+  // history, so the list, its groups, its entries and its search never hold them.
+  const helpIds = useMemo(() => new Set((pulled.data ?? []).filter(isHelp).map((session) => session.id)), [pulled.data]);
+  const sessions = useMemo(
+    () => ({ ...pulled, data: pulled.data && helpIds.size > 0 ? pulled.data.filter((session) => !helpIds.has(session.id)) : pulled.data }),
+    [pulled, helpIds],
+  );
   const quests = useQuests(null, true);
   const registry = useRegistry();
   const driver = useDriver();
@@ -113,13 +120,19 @@ export function SessionRail({
   // The same answer, so nothing more is asked. The monitor's list is the present tense, by record; a host before entries
   // answers none and the list is the records it always was.
   const entryAnswer = useSessionEntries(undefined, { enabled: !live });
-  const entries = live ? undefined : entryAnswer.data;
+  const entries = useMemo(
+    () => (live ? undefined : entryAnswer.data?.filter((entry) => !entry.parts.some((part) => helpIds.has(part.session)))),
+    [live, entryAnswer.data, helpIds],
+  );
   // Each act on a row, by the one owner the page header calls too (SESSUX1d); an archive reaches every part of its entry.
   const actions = useSessionActs({ notify, doors, entries });
   // A query that is not asking and has never answered is one with no driver to ask: a browser (D47 §4).
   const noReader = live || (groups.fetchStatus === 'idle' && groups.status === 'pending');
   const drawn: SessionArrangement = noReader ? 'repository' : arrangement;
-  const groupings = live ? undefined : groups.data;
+  const groupings = useMemo(
+    () => (live ? undefined : groups.data?.filter((row) => !helpIds.has(row.session))),
+    [live, groups.data, helpIds],
+  );
   // A conversation's name is what was first said in it (RAIL1), from this machine's record.
   const openings = useSessionOpenings(sessions.data);
   // What the list holds: every record, or where the rail is live, what runs and the attended session, whatever state it
@@ -288,8 +301,6 @@ export function SessionRail({
       && !(isIntake(session) && session.state === 'awaiting-person'));
     const registration = registered.get(repository);
     return {
-      // Ask Daoris's records are kept in `daoris:help`, which is no repository and no name (HELP1a).
-      label: repository === HELP_REPOSITORY ? t('help.title') : undefined,
       drivable: driver.data && driver.data.drivable.includes(repository),
       held: driver.data && driver.data.holds.includes(repository),
       busy: holding ? (ownTree(holding, registration?.root) ?? true) : null,

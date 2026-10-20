@@ -47,7 +47,11 @@ public sealed class ToolResourcesTests : IDisposable
 
     private string Home => Path.Combine(_root, "data");
 
-    public ToolResourcesTests() => Directory.CreateDirectory(Home);
+    public ToolResourcesTests()
+    {
+        Directory.CreateDirectory(Home);
+        File.WriteAllText(Path.Combine(_root, DaorisHome.InstallMarker), "# Daoris — installed desktop\n");
+    }
 
     public void Dispose()
     {
@@ -506,6 +510,15 @@ public sealed class ToolResourcesTests : IDisposable
         Assert.Equal(
             "gh [the built-in list] 2.62.0=beside.example newest 2.62.0",
             Render(ToolResources.Merge(ToolResources.ReadLists(Home, application), "win-x64")));
+    }
+
+    /// <summary>HOMELAYOUT4: a development run's root is its own Daoris folder, so the list built in is its <c>app/resources.json</c>.</summary>
+    [Fact]
+    public void A_dev_runs_list_built_in_is_its_roots_own_app_resources()
+    {
+        var scratch = Path.Combine(_root, "scratch");
+        Assert.Equal(Path.Combine([scratch, .. ToolResources.Layout]), ToolResources.BesideHome(scratch));
+        Assert.Equal(Path.Combine([scratch, "data", .. ToolResources.Layout]), ToolResources.BesideHome(Path.Combine(scratch, "data")));
     }
 
     [Fact]

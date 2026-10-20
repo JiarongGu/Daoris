@@ -202,6 +202,9 @@ public sealed class NodeRuntime(
     /// <summary>The last unit a pass evaluated when the units concerned passed <see cref="UnitsPerPass"/>: the next pass begins after it (FABRIC-RUN1e).</summary>
     private string? _after;
 
+    /// <summary>Whether this pass read the units afresh (FABRIC-CLOSE1s): the governed revisions are then as current as the pass; set under <see cref="_one"/>.</summary>
+    private bool _readThisPass;
+
     /// <summary>Whether the plugins were last told a set naming anything: a disarmed pass empties it once.</summary>
     private volatile bool _told;
 
@@ -392,6 +395,7 @@ public sealed class NodeRuntime(
             var choices = look.Config.Source ?? look.Config.ToJson();
             // FABRIC-CLOSE1q2: a word on a close is judged on the quests as they stand, so a pass applying one reads them afresh.
             var fresh = look.Whole || _governed is null || !string.Equals(choices, _choices, StringComparison.Ordinal) || _closer?.Worded() == true;
+            _readThisPass = fresh;
             if (fresh)
             {
                 var read = await look.Units(ct).ConfigureAwait(false);
@@ -462,6 +466,7 @@ public sealed class NodeRuntime(
             }
 
             await HearAgainAsync(lagging, governed, concerned, sends, done, said, look.Units, tips, git, ct).ConfigureAwait(false);
+            if (fresh || done.Count > 0) Prune();
             var changed = Tell(governed.Values);
             return new NodeRuntimePass(true, done, [.. concerned.Select(each => each.Unit.Id)], said) { AwaitedChanged = changed };
         }
@@ -532,6 +537,20 @@ public sealed class NodeRuntime(
                 }
                 else if (governed.Dispatchable.Contains(node.Id) && sends.Left > 0 && port.GenerationOf(PluginOf(node.Kind)) is not null && sends.Take())
                 {
+                    // FABRIC-CLOSE1s: a bound quest's revision is its chain's and branches', from the last full read, which a wake reuses: a start
+                    // on a wake reads them again first, and a start whose revision moved is not made, so no attempt is bound to an old tip.
+                    if (governed.Closes && !_readThisPass && governed.Unit.Records.Quest is { } bound)
+                    {
+                        var again = await units(ct).ConfigureAwait(false);
+                        if (Moved(governed, bound, again, Quests(again)) is { } moved)
+                        {
+                            _governed = null;
+                            var line = $"work  {unit}: its `{node.Id}` was not started: {moved}, so it is judged again on what is there now.";
+                            if (!said.Contains(line, StringComparer.Ordinal)) said.Add(line);
+                            return;
+                        }
+                    }
+
                     // A process not up yet is awaited (Tell below), and the start is made at a later pass once it is: never sent blind.
                     var sent = await _performer.StartAsync(node, start, ct).ConfigureAwait(false);
                     done.Add(sent);
@@ -651,7 +670,13 @@ public sealed class NodeRuntime(
                 : null;
         }
 
-        if (judged.Waits is not null) return null;
+        if (judged.Waits is not null)
+        {
+            // FABRIC-CLOSE1x: a close that waits on its own judgement says why, once a pass however many rounds propose it; none once it closes.
+            var waiting = $"work  {governed.Unit.Id}: its close waits: {judged.Waits}.";
+            if (!said.Contains(waiting, StringComparer.Ordinal)) said.Add(waiting);
+            return null;
+        }
 
         // FABRIC-CLOSE1t: the evaluation that proposed this start fenced this quest's own prerequisites; each other quest the close names is
         // fenced in its own graph, on its own record, before anything is sent or read again. Said once a pass, however many rounds propose it.
@@ -671,18 +696,13 @@ public sealed class NodeRuntime(
         // leaves the close waiting.
         var again = await units(ct).ConfigureAwait(false);
         var quests = Quests(again);
-        var stale = !quests.TryGetValue(quest.Id, out var now) ? "its quest was not read again"
-            : !string.Equals(now.Closure, governed.GraphDigest, StringComparison.Ordinal) ? "its binding moved"
-            // FABRIC-CLOSE1r: a read that asked no git never closes, so a production read that forgets the tips cannot bring CLOSE1p's defect back.
-            : again.Tips is null ? "git's tips were not read for this look"
-            : QuestClosing.Unread(now, quests, again.Units, again.Tips) is { } unread ? $"git did not say where `{unread}`, a branch it worked, stands"
-            : QuestClosing.Revision(now, quests, again.Units, again.Tips) != governed.Unit.Subject.Revision ? "its chain or a branch it worked moved since it was judged"
-            : !QuestClosing.Judge(now, quests).Named.SequenceEqual(judged.Named) ? "what it would close moved"
-            : null;
+        var stale = Moved(governed, quest, again, quests)
+            ?? (!QuestClosing.Judge(quests[quest.Id], quests).Named.SequenceEqual(judged.Named) ? "what it would close moved" : null);
         if (stale is not null)
         {
             _governed = null;
-            said.Add($"work  {governed.Unit.Id}: its close was not sent: {stale}, so it is judged again on what is there now.");
+            var line = $"work  {governed.Unit.Id}: its close was not sent: {stale}, so it is judged again on what is there now.";
+            if (!said.Contains(line, StringComparer.Ordinal)) said.Add(line);
             return null;
         }
 
@@ -690,6 +710,20 @@ public sealed class NodeRuntime(
         said.AddRange(_closer.TakeSaid());
         return sent;
     }
+
+    /// <summary>
+    /// Why a bound quest's unit, governed on the revision of the read before, no longer stands on it in <paramref name="again"/>, the units
+    /// read afresh: its quest, its binding, git's tips, or the chain's and its branches' revision (FABRIC-CLOSE1l, CLOSE1p, CLOSE1r). Null
+    /// where it stands, so a close or a plugin's start made now rests on what is there.
+    /// </summary>
+    private static string? Moved(GovernedUnit governed, QuestView quest, NodeUnitsRead again, Dictionary<string, QuestView> quests) =>
+        !quests.TryGetValue(quest.Id, out var now) ? "its quest was not read again"
+        : !string.Equals(now.Closure, governed.GraphDigest, StringComparison.Ordinal) ? "its binding moved"
+        // FABRIC-CLOSE1r: a read that asked no git never closes, so a production read that forgets the tips cannot bring CLOSE1p's defect back.
+        : again.Tips is null ? "git's tips were not read for this look"
+        : QuestClosing.Unread(now, quests, again.Units, again.Tips) is { } unread ? $"git did not say where `{unread}`, a branch it worked, stands"
+        : QuestClosing.Revision(now, quests, again.Units, again.Tips) != governed.Unit.Subject.Revision ? "its chain or a branch it worked moved since it was judged"
+        : null;
 
     /// <summary>
     /// The first quest a chain's close names, besides its own, whose own graph has not reached its close (FABRIC-CLOSE1t; §E5 step 1), said as
@@ -763,6 +797,35 @@ public sealed class NodeRuntime(
             var home = NodeGraphHomes.Work(config, each.Unit.Owner.Repository ?? "", each.Unit.Owner.Workspace, WorkUnitKind.Quest);
             if (home.Graph is { } graph && home.Cycle is { } json && NodeGraphs.Digest(graph) == each.GraphDigest) ClosureGraphs.Keep(records.Home, each.GraphDigest, json);
         }
+    }
+
+    /// <summary>How long a graph kept stays before the pass may drop it unbound: the take binds it within seconds of its keeping.</summary>
+    private static readonly TimeSpan KeptGrace = TimeSpan.FromMinutes(10);
+
+    /// <summary>
+    /// Drops the closure graphs nothing needs (FABRIC-CLOSE1m, §E5): one a quest bound to it that is not Done reads needs, and one whose
+    /// governed unit still has a close attempt unsettled or a live close node, or a record that does not read, so the runtime disarms once
+    /// the last bound quest is Done and settled. Called holding <see cref="_one"/>, after the pass's moves are kept.
+    /// </summary>
+    private void Prune()
+    {
+        if (_closer is null || _governed is null || !ClosureGraphs.Any(records.Home)) return;
+        var (all, unreadable) = records.All();
+        if (unreadable.Count > 0) return;
+        var needed = _quests.Values.Where(quest => quest.Closure is { Length: > 0 } && quest.Status != "Done").Select(quest => quest.Closure!)
+            .ToHashSet(StringComparer.Ordinal);
+        foreach (var each in _governed.Values.Where(each => each.Closes))
+        {
+            if (all.FirstOrDefault(record => record.Unit == each.Unit.Id) is not { } record) continue;
+            var closes = each.Graph.Nodes.Where(node => node.Kind == NodeKinds.QuestClose).Select(node => node.Id).ToHashSet(StringComparer.Ordinal);
+            if (record.Attempts.Any(attempt => attempt.State != AttemptStates.Settled)
+                || record.Statuses.Any(status => closes.Contains(status.Key) && NodeStates.Live.Contains(status.Value.State)))
+            {
+                needed.Add(each.GraphDigest);
+            }
+        }
+
+        ClosureGraphs.Prune(records.Home, needed.Contains, clock(), KeptGrace);
     }
 
     /// <summary>A close attempt that closed what it named.</summary>

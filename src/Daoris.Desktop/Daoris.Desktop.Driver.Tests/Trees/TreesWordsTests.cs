@@ -317,12 +317,12 @@ public sealed class TreesWordsTests : IAsyncLifetime
     [InlineData("TreesWords.NoTreeToLand(")]
     [InlineData("TreesWords.LandedBeforeAsync(")]
     // RPCOPEN1: the reads' words, which the routes answer as `said` and the verb prints as a client of the running Daoris.
-    [InlineData("TreesWords.CleanPlan(")]
-    [InlineData("TreesWords.SyncPlan(")]
-    [InlineData("TreesWords.LandPlanAsync(")]
-    [InlineData("TreesWords.LandedPlan(")]
-    [InlineData("TreesWords.HandPlan(")]
-    [InlineData("TreesWords.EntryPlanned(")]
+    [InlineData("TreesPlanWords.CleanPlan(")]
+    [InlineData("TreesPlanWords.SyncPlan(")]
+    [InlineData("TreesPlanWords.LandPlanAsync(")]
+    [InlineData("TreesPlanWords.LandedPlan(")]
+    [InlineData("TreesPlanWords.HandPlan(")]
+    [InlineData("TreesPlanWords.EntryPlanned(")]
     public void TreesConsoleUsesTheWords(string call)
     {
         var console = File.ReadAllText(Path.Combine(SourceRoot(), "Daoris.Desktop.Driver.Host", "TreesConsole.cs"));

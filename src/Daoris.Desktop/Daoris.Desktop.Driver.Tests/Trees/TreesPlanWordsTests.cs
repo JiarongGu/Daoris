@@ -26,7 +26,7 @@ public sealed class TreesPlanWordsTests
     [Fact]
     public void A_clean_up_with_nothing_to_list_says_so_in_the_verbs_sentence()
     {
-        var said = TreesWords.CleanPlan(new SweepPlan([], []), [], Clean);
+        var said = TreesPlanWords.CleanPlan(new SweepPlan([], []), [], Clean);
 
         Assert.Equal([TreesCommand.NothingToClean(Clean)], said.Out);
         Assert.Equal(0, said.Code);
@@ -37,7 +37,7 @@ public sealed class TreesPlanWordsTests
     {
         var plan = new SweepPlan([Branch(SweepKind.Empty), Branch(SweepKind.Dirty, "daoris/s-2")], [Landed()]);
 
-        var said = TreesWords.CleanPlan(plan, [], CleanWorkspace);
+        var said = TreesPlanWords.CleanPlan(plan, [], CleanWorkspace);
 
         Assert.Equal(0, said.Code);
         Assert.Equal(
@@ -55,7 +55,7 @@ public sealed class TreesPlanWordsTests
     [Fact]
     public void A_clean_up_that_removes_nothing_says_every_branch_holds_something()
     {
-        var said = TreesWords.CleanPlan(new SweepPlan([Branch(SweepKind.InUse)], []), [], Clean);
+        var said = TreesPlanWords.CleanPlan(new SweepPlan([Branch(SweepKind.InUse)], []), [], Clean);
 
         Assert.Equal("trees: nothing to clean — every branch listed holds something of its own.", said.Out[^1]);
     }
@@ -69,7 +69,7 @@ public sealed class TreesPlanWordsTests
             Apart = [new SyncRepository("engine", "default", false)],
         };
 
-        var said = TreesWords.SyncPlan(plan, Sync, DateTimeOffset.UtcNow);
+        var said = TreesPlanWords.SyncPlan(plan, Sync, DateTimeOffset.UtcNow);
 
         Assert.Equal(0, said.Code);
         Assert.Equal($"  moves  {SyncWords.Describe(Pull())}", said.Out[0]);
@@ -81,7 +81,7 @@ public sealed class TreesPlanWordsTests
     [Fact]
     public void A_plugins_own_lines_come_first_as_the_alone_path_says_them_as_they_come()
     {
-        var said = TreesWords.CleanPlan(new SweepPlan([], []), [], Clean).After(["  plugin:pushes  asked about #12"]);
+        var said = TreesPlanWords.CleanPlan(new SweepPlan([], []), [], Clean).After(["  plugin:pushes  asked about #12"]);
 
         Assert.Equal(["  plugin:pushes  asked about #12", TreesCommand.NothingToClean(Clean)], said.Out);
         Assert.Same(said, said.After([]));
@@ -90,10 +90,10 @@ public sealed class TreesPlanWordsTests
     [Fact]
     public void A_sync_list_that_took_no_repository_says_none_held_a_branch_and_one_up_to_date_says_so()
     {
-        Assert.Equal(TreesCommand.NoneHeld(Sync), TreesWords.SyncPlan(new SyncPlan([], [], []), Sync, DateTimeOffset.UtcNow).Out[^1]);
+        Assert.Equal(TreesCommand.NoneHeld(Sync), TreesPlanWords.SyncPlan(new SyncPlan([], [], []), Sync, DateTimeOffset.UtcNow).Out[^1]);
 
         var upToDate = new SyncPlan([Pull(PullKind.UpToDate)], [], []) { Looked = [new SyncRepository("game", "default", true)] };
-        Assert.Equal("trees: everything here is up to date.", TreesWords.SyncPlan(upToDate, Sync, DateTimeOffset.UtcNow).Out[^1]);
+        Assert.Equal("trees: everything here is up to date.", TreesPlanWords.SyncPlan(upToDate, Sync, DateTimeOffset.UtcNow).Out[^1]);
     }
 
     [Fact]
@@ -104,7 +104,7 @@ public sealed class TreesPlanWordsTests
         Assert.Equal(
             "trees: accepting `s1a2b3c4` would put its work on the branch `daoris/work` (s1a2b3c4), then plugin `pushes` would push it and open "
             + "the pull request. It would be refused now: the plugin is not ready.",
-            TreesWords.Planned("s1a2b3c4", plan));
+            TreesPlanWords.Planned("s1a2b3c4", plan));
     }
 
     [Fact]
@@ -112,7 +112,7 @@ public sealed class TreesPlanWordsTests
     {
         var plan = new HandPlan("game", "daoris/landed", "pushes", "its checkout is gone", "#12", 3);
 
-        var said = TreesWords.HandPlan(plan, ["  plugin:pushes  asked"]);
+        var said = TreesPlanWords.HandPlan(plan, ["  plugin:pushes  asked"]);
 
         Assert.Equal(
             [
@@ -127,7 +127,7 @@ public sealed class TreesPlanWordsTests
     public void An_entry_with_no_part_to_land_says_so()
     {
         var entry = new SessionEntry("k", "ask:a1", "game", SessionGroup.Ended, "s1", []);
-        var lines = TreesWords.EntryPlanned(entry, new EntryPlan(LandingForm.Branch, "", []), new Dictionary<string, string>()).ToList();
+        var lines = TreesPlanWords.EntryPlanned(entry, new EntryPlan(LandingForm.Branch, "", []), new Dictionary<string, string>()).ToList();
 
         Assert.Equal(["trees: `k` (game) has no part with work to land here."], lines);
     }
@@ -164,11 +164,11 @@ public sealed class TreesPlanWordsTests
         var route = (InstanceRoute)typeof(OpenRoutes).GetProperty(read)!.GetValue(null)!;
         var said = read switch
         {
-            nameof(OpenRoutes.SweepPlan) => TreesWords.CleanPlan(new SweepPlan([Branch(SweepKind.Empty)], [Landed()]), [], Clean),
-            nameof(OpenRoutes.TreesSyncPlan) => TreesWords.SyncPlan(
+            nameof(OpenRoutes.SweepPlan) => TreesPlanWords.CleanPlan(new SweepPlan([Branch(SweepKind.Empty)], [Landed()]), [], Clean),
+            nameof(OpenRoutes.TreesSyncPlan) => TreesPlanWords.SyncPlan(
                 new SyncPlan([Pull()], [], []) { Looked = [new SyncRepository("game", "default", true)] }, Sync, DateTimeOffset.UtcNow),
-            nameof(OpenRoutes.HandoffPlan) => TreesWords.HandPlan(new HandPlan("game", "b", "pushes", null, null, 1), ["  plugin:pushes  asked"]),
-            _ => TreesWords.EntryPlan(["trees: accepting `k` (game) would merge its work into `main`, 1 tree(s), oldest first.", "  s1  is held: review"]),
+            nameof(OpenRoutes.HandoffPlan) => TreesPlanWords.HandPlan(new HandPlan("game", "b", "pushes", null, null, 1), ["  plugin:pushes  asked"]),
+            _ => TreesPlanWords.EntryPlan(["trees: accepting `k` (game) would merge its work into `main`, 1 tree(s), oldest first.", "  s1  is held: review"]),
         };
         await using var home = new InstanceTestHome();
         home.Serve();

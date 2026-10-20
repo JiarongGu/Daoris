@@ -93,6 +93,18 @@ public sealed class ConversationRoutes(DriverContext context)
     {
         var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id");
         var text = PayloadHelper.GetRequiredValue<string>(request.Payload, "text");
+        // RPC1d: `sessions say` sent over the pipe asks for the verb's own words and names the files it was given by their paths on this
+        // machine, which the verb reads as it does alone; the page asks for none and attaches its files whole.
+        if (Flag(request, "said"))
+        {
+            var paths = request.Payload is { } named && named.TryGetProperty("paths", out var listed) && listed.ValueKind == JsonValueKind.Array
+                ? listed.EnumerateArray().Where(path => path.ValueKind == JsonValueKind.String).Select(path => path.GetString()!).ToList()
+                : [];
+            return await SessionsVerbs.SaidAsync(
+                context, new SessionsAsk("say") { Ids = [id], Text = text, Files = paths, Now = Flag(request, "now") }, cancellationToken)
+                .ConfigureAwait(false);
+        }
+
         // What the person attached, kept for its session before the words go (CONV4c).
         var files = request.Payload is { } payload ? FilesOf(payload) : [];
         // Where the person is (HELP1b), which a conversation's agent is handed ahead of the words; absent for most. `now: true`
@@ -118,6 +130,9 @@ public sealed class ConversationRoutes(DriverContext context)
     private async Task<object?> SessionStartFromAsync(IpcRequest request, CancellationToken cancellationToken)
     {
         var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id");
+        // RPC1d: `sessions start-from` sent over the pipe asks for the verb's own words; the conversation opens in this window.
+        if (Flag(request, "said")) return await SessionsVerbs.SaidAsync(context, new SessionsAsk("start-from") { Ids = [id] }, cancellationToken).ConfigureAwait(false);
+
         var chat = _loop.Chat ?? throw NotReady();
         var config = DriverConfig.Load(_loop.ConfigPath);
         var started = await chat.StartFromAsync(
@@ -141,6 +156,14 @@ public sealed class ConversationRoutes(DriverContext context)
     {
         var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id");
         var agent = PayloadHelper.GetRequiredValue<string>(request.Payload, "agent");
+        // RPC1d: `sessions hand-over` sent over the pipe asks for the verb's own words (the person's press, its reason `press`).
+        if (Flag(request, "said"))
+        {
+            return await SessionsVerbs.SaidAsync(
+                context, new SessionsAsk("hand-over") { Ids = [id], Agent = agent, Account = Optional(request, "account") }, cancellationToken)
+                .ConfigureAwait(false);
+        }
+
         var why = Optional(request, "why") ?? HandOverWhy.Press;
         var chat = _loop.Chat ?? throw NotReady();
         var config = DriverConfig.Load(_loop.ConfigPath);
@@ -240,6 +263,15 @@ public sealed class ConversationRoutes(DriverContext context)
             {
                 throw new DriverException("Say what it should say instead, or take it back: words reworded to nothing are not kept.");
             }
+        }
+
+        // RPC1d: `sessions take-back` and `reword` sent over the pipe ask for the verb's own words, which the service's take-back door
+        // judges as the alone path asks it.
+        if (Flag(request, "said"))
+        {
+            return await SessionsVerbs.SaidAsync(
+                context, new SessionsAsk(text is null ? "take-back" : "reword") { Ids = [session], Word = id, Text = text }, cancellationToken)
+                .ConfigureAwait(false);
         }
 
         // A driven session's held words; a conversation's turns otherwise. The one that holds the word answers.
