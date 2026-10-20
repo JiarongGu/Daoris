@@ -468,6 +468,7 @@ folder.
 
 ## Development and agent layout
 
+- [ ] **UNIONGLUE1 — two branches' archive entries merge with a blank line between them** (tools; DOGFOOD1's finding, 2026-10-20). When two branches each append an entry to `docs/task-archive.md` (merged by union, `.gitattributes:37`), the merged file can join the second entry's `## ` heading to the first entry's last line, with no blank line between; two merges of the install's landed branches did so on 2026-10-20 and were spaced by hand. The same can happen in the other union records (`CHANGELOG.md`, `FIX-LOG.md`, a decision's notes). Wanted: `tools/merge-branch.mjs` spaces a heading the union joined, in each union record the merge touched, before its gates, and says so; or a check that refuses the joined shape. Proof: a `merge-branch.test.ts` case merging two branches that each append an archive entry, the result spaced.
 Contracts: self-development (D115), agent-layout (D117 §7), entry-point evidence.
 DEV5 → 6 → 7, then 8/9, then 10/11. Predictions wait for LAYOUT2 measurement.
 
