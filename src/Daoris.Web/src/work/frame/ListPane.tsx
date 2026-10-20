@@ -47,7 +47,7 @@ const OPENED_ELSEWHERE = `[data-radix-popper-content-wrapper], [role="menu"], [r
  * The rows carry `data-list-row`, and ↑, ↓, Home and End move between them (`listKeys`).
  */
 export function ListPane({
-  name, labels, layout, bounds, make, more, head, strip, loading = false, empty, onOpen, onClose, onDismiss, onResize, children,
+  name, labels, layout, bounds, make, more, head, strip, loading = false, resyncing = false, empty, onOpen, onClose, onDismiss, onResize, children,
 }: {
   /** The list's name, as its header says it. */
   name: string;
@@ -67,6 +67,11 @@ export function ListPane({
   strip?: ReactNode;
   /** The list's first load: skeleton rows, and the strip its controls alone. */
   loading?: boolean;
+  /**
+   * Its pushed slice read again whole (PUSHUX1, the UI/UX design §3.8): the last rows held at reduced opacity until the snapshot
+   * lands, never a first load's skeleton nor an empty state.
+   */
+  resyncing?: boolean;
   /** The list holds nothing: the empty state, with the `＋`'s act. */
   empty?: { headline: string; body: string };
   /** The strip's open, whether the person or the window drew the strip. */
@@ -125,7 +130,11 @@ export function ListPane({
   );
 
   const body = (
-    <div className="min-h-0 flex-1 overflow-y-auto" onKeyDown={keys}>
+    <div
+      aria-busy={resyncing || undefined}
+      className={cn('min-h-0 flex-1 overflow-y-auto', resyncing && 'opacity-60 transition-opacity duration-(--speed)')}
+      onKeyDown={keys}
+    >
       {loading
         ? <div className="px-2.5 py-2"><SkeletonRows rows={5} /></div>
         : empty

@@ -22,6 +22,35 @@ repository.
 - **Verification:** `AcpBackgroundTests`, `BackgroundWaitJudgementTests`, `NoteCodesTests`, `AcpTests` (150 passed), the page's
   `note.test.ts` and `noteLines.test.ts`; `DoneEndTickTests` (Process) failed at its 90 s bound before the driver's half and
   passed in 28 s after it, the stand-in's test run ended with its tree.
+## 2026-10-20 — Two fast tests timed by the wall clock failed under a loaded machine (FLAKE1)
+
+- **Symptom:** the full set on 9717f8d failed `StagedBuildTests.A_file_held_in_app_for_a_moment_does_not_roll_the_swap_back`
+  (the swap rolled back) and the rehearsal kit's "a command its timeout ends is ended with what it started" (the command never
+  said its id within its timeout), with six of the install's sessions, three builders and the CI's own gates on the machine.
+- **Root cause:** each gave the machine's clock a job the load could outlast. The swap test let go of its hold from a thread-pool
+  task's 300 ms delay while the swap waited up to ten seconds on the test's own thread, and the pool was starved past the wait;
+  the kit's test gave a fresh node five seconds to start and write its id, and a node start took longer.
+- **Fix:** the swap test lets go by the swap's own clock (its `clock` and `sleep` seams), as the longer hold's test beside it
+  already did, so it no longer reads the wall clock; the kit's test runs the command again with thirty seconds where the first
+  five saw no id, and only then says nothing was asked.
+- **Verification:** both, alone and with the CI beside.
+## 2026-10-20 — The window's counts disagreed: the title kept an older count, the status bar counted the person's conversations (SESSBADGE1)
+
+- **Symptom:** on the install, two captures ten minutes apart: the title read (5) while Overview's badge, from the same value, read
+  4; the status bar read one more than the rail's working group, an Ask Daoris conversation idle between turns among its count.
+- **Root cause:** the page tells the frame each *What needs you* count over `SET_BADGE` and waits for no answer
+  (`useTaskbarCount`), and the window posts each to its own thread as the module hands it on (`MainForm.ShowWaiting`). Nothing held
+  two counts told close together in the order they were told, so a 5 then a 4 could be worn as 4 then 5, the title keeping the
+  older. Not proven on the window to be the case seen; no other path from one value to two readings was found. The status bar
+  counted every active record of the sessions list (`liveSessions`, `SESSION_ACTIVE`), a rule of its own beside the cap's
+  (CAPCOUNT1), and ASKRAIL1 took Ask Daoris out of the rail but not out of that count.
+- **Fix:** each `SET_BADGE` carries an `order` later than the one before (`nextBadgeOrder` in `bridge/windows.ts`, the clock's
+  milliseconds so a reloaded page tells later), and `WindowsModule` wears a count only under a lock and only where its order is
+  later than the one worn. The status bar reads the attention slice's `working` partition, the sessions the driver runs by
+  `ActiveSessions.HoldsSlot` judged in .NET, the count Sessions' badge shows (D76's SESSBADGE1 note).
+- **Verification:** `WindowsModuleTests` (a count told before the one worn is not worn; forty told at once from as many threads
+  end on the latest, each worn in order) and `windows.test.tsx` (each order later than the one before, within one millisecond),
+  both seen failing first; `sessionsBadge.test.tsx`'s status bar case.
 
 ## 2026-10-20 — The full set's driver Process half failed a race's control and a start's git ceiling (TREELOCK1, FLAKE1)
 

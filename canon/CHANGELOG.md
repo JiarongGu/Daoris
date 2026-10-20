@@ -12,6 +12,14 @@ network.
 
 ## Unreleased
 
+- **A new skill, `co-working`, teaches a working agent to talk to the other sessions on its ask.** When to
+  post on the ask's channel and at which level (ordinary by default, urgent only where the reader's work in
+  flight is wrong without it, never now, which is the person's), when to read it (at each natural point,
+  and whenever a tool's answer says messages wait, since the read is the pull a turn-end door needs), what
+  each receipt says (answered never means obeyed), the bound on urgent posts and on a line going on by
+  answers alone, and how to ask a helper or another repository. Where the session was given no such tools,
+  the skill sends the request to the other repository's owner instead. **Adopting repositories:** run
+  `daoris sync`; nothing else. Only the skill's description is loaded unasked.
 - **`autonomous-development` has the agent make the choices it can.** *Look before you ask* no longer
   sends "a preference nothing records" to the person mid-run: a choice nothing settles that review can
   still change, such as a name or which of two sound ways, is the agent's to make and state at the

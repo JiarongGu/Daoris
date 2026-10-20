@@ -7,9 +7,10 @@ import { sentence } from '../locales/format';
 import { buildChain } from '../map/chain';
 import { askItem, type OpenGroup, questsItem } from '../app/opener';
 import {
-  useAcceptQuest, useContinueQuest, useDeleteQuest, useDismissConflict, useForwardConflict, usePersonDone, usePublishQuest, useQuestMoves, useQuests,
+  ASKS_SLICE, QUESTS_SLICE, useAcceptQuest, useContinueQuest, useDeleteQuest, useDismissConflict, useForwardConflict, usePersonDone, usePublishQuest, useQuestMoves, useQuests,
   useRegistry, useReopenQuest, useRespondQuest, useSessions,
 } from '../data/queries';
+import { usePushedResyncing } from '../bridge/state/slices';
 import type { QuestMovesDoor } from './QuestFlow';
 import { EMPTY_QUEST, QuestComposer, type QuestDraft } from './QuestComposer';
 import { QuestList } from './QuestList';
@@ -148,6 +149,9 @@ export function useQuestsView({
   if (!active && goAll) setGoAll(false);
   const receiver = goAll ? null : filters.to;
   const quests = useQuests(receiver, filters.closed);
+  // Either list read again whole holds the last rows, dimmed (PUSHUX1).
+  const questsResyncing = usePushedResyncing(QUESTS_SLICE);
+  const asksResyncing = usePushedResyncing(ASKS_SLICE);
   // Every quest, closed ones included: a page for one the list leaves out, the chain a page shows (MAP1), whose
   // step before this one is usually closed and very often somebody else's, and the question a quest waits on.
   const everything = useQuests(null, true);
@@ -577,6 +581,7 @@ export function useQuestsView({
         />
       ),
       loading: quests.isPending || asks.loading,
+      resyncing: questsResyncing || asksResyncing,
       empty: listed && rows.length === 0 && asks.rows.length === 0 && asks.teammates.length === 0
         ? { headline, body: t('quests.empty.body') }
         : undefined,

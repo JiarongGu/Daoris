@@ -68,7 +68,7 @@ reviewer, and the passes of a brainstorm and a meeting, never a conversation the
 turns. `ActiveSessions.HoldsSlot` tells them by the record's kind, its place and the mark each of the driver's own carries
 (`ask`, `serves`, `opinion`), and `Snapshot.SlotsHeld` is the one count every site that spends a slot reads: the planner's starts and
 a look's intakes, helpers, brainstorms and meetings. `Snapshot.Active` still lists every active session, for a busy tree and a
-repository's holder.
+repository's holder. The same rule over a record's fields is what the Sessions badge and the status bar count (SESSBADGE1).
 A judgement reads a checkout's refs and working trees once (`RefSnapshot`, PROC1d-ii and -iii) and asks its git each question of
 commits by their ids once (PROC1d-iv), every write in its flow dropping both; a landing's planning keeps its facts in `GitFacts`
 (LANDGIT1). D88's notes say what each keeps.
@@ -304,8 +304,9 @@ window that holds it; and how each agent's accounts are used the twelfth (`Accou
 (`AccountsRoutes.AccountsAnswer`) once per wake for every window, a partition per agent, the curve's verdicts judged beside each
 reading, woken by the roster's scope, a harness action's end, a session's end and a running count the records slice moved
 (`StateSlice.Pushed`), so a tick and a focus read `ACCOUNTS` in no window and a probe's result moves every window by one push; and
-who needs the person the thirteenth (`AttentionStateSlice`, PUSH1d4), *What needs you*'s rows and the Sessions badge's count judged
-in .NET (`NeedsAPerson`, `AccountAttention`) from the other slices' snapshots, the registry the machine's facts hold and what the
+who needs the person the thirteenth (`AttentionStateSlice`, PUSH1d4), *What needs you*'s rows, what waits on the person in Sessions
+and the sessions the driver runs (`working`, the cap's own count by `ActiveSessions.HoldsSlot`, which the Sessions badge and the status
+bar count, SESSBADGE1) judged in .NET (`NeedsAPerson`, `AccountAttention`) from the other slices' snapshots, the registry the machine's facts hold and what the
 driver's look kept, read from memory once every input slice has judged, woken by their pushes (the sessions' only where what the judge
 reads of them moved), each look, a held tool call's move and the rules', sessions', driver's and roster's scopes, so no window judges
 who needs the person and a tick reads none of what the band was judged from. A keyed slice's partition
@@ -370,7 +371,9 @@ them is an HTTP route. A session's *record* is on the host; its console, events 
   frame Overview's *What needs you* count over `DAORIS.WINDOWS SET_BADGE`, and the window wears it as the button's
   overlay (`TaskbarBadge`, a number on a circle drawn at run time through `ITaskbarList3`, *9+* past nine, put back on
   each `TaskbarButtonCreated`) and in its title, `(3) Daoris (道衍)`, the taskbar's hover and Alt-Tab's label. What it
-  says is `WaitingBadge`'s, in the modules where it is tested; a secondary window's page never sends it.
+  says is `WaitingBadge`'s, in the modules where it is tested; a secondary window's page never sends it. Each count
+  carries the order its page told it in, and the module never wears one told before the count the window wears
+  (SESSBADGE1): the page waits on no answer, so two told close together may arrive in either order.
 - **It notifies, and decides nothing** (SURF5b): a session that parks, or ends without the person
   asking, or a conversation that answers the person's words (NOTIFY1a), raises an OS balloon unless
   one of its windows has focus. `AttentionWatch` in the library makes the judgement, so `daoris-driver`

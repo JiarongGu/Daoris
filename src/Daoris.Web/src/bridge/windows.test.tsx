@@ -85,10 +85,30 @@ describe('the taskbar\'s count (NOTIFY1b)', () => {
     rerender({ count: 0, words: '0 个等你处理' });
 
     expect(told().map(([, , request]) => request)).toEqual([
-      { payload: { count: 2, description: '2 waiting on you' } },
-      { payload: { count: 0, description: '0 waiting on you' } },
-      { payload: { count: 0, description: '0 个等你处理' } },
+      { payload: { count: 2, description: '2 waiting on you', order: expect.any(Number) } },
+      { payload: { count: 0, description: '0 waiting on you', order: expect.any(Number) } },
+      { payload: { count: 0, description: '0 个等你处理', order: expect.any(Number) } },
     ]);
+  });
+
+  /**
+   * SESSBADGE1: each count is told without waiting, so two told close together may reach the frame in either order; the title once
+   * kept 5 while the band read 4. Each carries a later order than the one before, even within one millisecond and across a reload of
+   * the page, and the frame never wears a count told before the one it wears (`WindowsModuleTests`).
+   */
+  it('tells each count with a later order than the one before', () => {
+    invoke.mockResolvedValue({ applied: true });
+    const now = vi.spyOn(Date, 'now').mockReturnValue(1_760_950_000_000);
+    const { rerender } = renderHook(({ count }) => useTaskbarCount(count, `${count} waiting on you`), { initialProps: { count: 5 } });
+    rerender({ count: 4 });
+    rerender({ count: 5 });
+    now.mockRestore();
+
+    const orders = told().map(([, , request]) => (request as { payload: { order: number } }).payload.order);
+    expect(orders).toHaveLength(3);
+    expect(orders[0]).toBeGreaterThanOrEqual(1_760_950_000_000);
+    expect(orders[1]).toBeGreaterThan(orders[0]!);
+    expect(orders[2]).toBeGreaterThan(orders[1]!);
   });
 
   it('says nothing from a secondary window, and a frame that cannot be told is not a failure', async () => {

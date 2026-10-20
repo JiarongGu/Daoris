@@ -208,14 +208,18 @@ in (`SET_THEME`, and `DAORIS.WINDOWS` for a secondary window, WINDOW2), and tell
 the kit's colour scheme (`useEngineTheme` in `bridge/windows.ts`, THEMESCHEME1), so Chromium's own UI and
 `prefers-color-scheme` follow an explicit light or dark, and *System* still follows the OS. The main window's page
 also tells its frame Overview's *What needs you* count (`useTaskbarCount` in `bridge/windows.ts`, `SET_BADGE`,
-NOTIFY1b), which the frame wears on its taskbar button and in its title; a secondary window's page never does. That
-count includes a plugin step's attempt held for the person, which `WORK_STATE` lists as `held` and its row settles with
+NOTIFY1b), which the frame wears on its taskbar button and in its title; a secondary window's page never does. Each
+count carries a later `order` than the one before, so the frame never wears an older count over a newer (SESSBADGE1).
+That count includes a plugin step's attempt held for the person, which `WORK_STATE` lists as `held` and its row settles with
 their word (`useResolveHeld` in `bridge/repositories/lines.ts`, `WORK_HELD`, FABRIC-PERFORM1g), and a tool call a session holds for
 their answer under asking (`usePermissionWaits` in `bridge/sessions/sessions.ts`, `PERMISSION_WAITS`, AUTONOMY1b3c), answered
 with a choice its agent offered on the session's head and foot and on its row (`useAnswerPermission`,
 `SESSION_PERMISSION_ANSWER`); neither route publishes, so the page asks again itself: as a pushed call's `waiting`
 mark comes and goes where the calls are pushed, and every few seconds on a host that pushes none (D184's AUTONOMY1b3c
 and AUTONOMY1b3b notes). The rail's row and the head say such a call waits for the person's answer, timed from the hold.
+Sessions' badge counts the sessions the driver runs, and the status bar says the same count, both read from the attention
+slice's `working` partition (`useAttention`, SESSBADGE1, D76's note); what waits on the person in Sessions is a dot in the
+waiting hue beside the count, and the place's tip says both in words.
 
 The build outputs into `../Daoris.Service/Daoris.Service.Http/wwwroot`, so the page and the API share one
 origin. That is what makes CORS unnecessary in a real deployment — the `DAORIS_WEB_ORIGIN` variable

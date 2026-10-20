@@ -134,6 +134,31 @@ describe('ActivityBar', () => {
     expect(screen.getByText('3').className).toContain('text-accent');
   });
 
+  /**
+   * SESSBADGE1 (D76's note): Sessions counts the sessions the driver runs, a quantity in the accent, and marks what waits on the
+   * person there beside it in the waiting hue: a dot, a shape of its own, since at badge size that hue and the accent read alike
+   * (UX5 U24). Never a mark alone (D41 §6): the counts in words are the place's tip and its description.
+   */
+  it('marks what waits on the person beside a count, and says both in words', async () => {
+    const items = [{ ...VIEWS[1]!, badge: 4, tone: undefined, waiting: true, detail: '4 active · 1 waiting on you' }];
+    const { rerender } = render(<ActivityBar label="Views" items={items} active="overview" onSelect={() => {}} />);
+
+    const sessions = screen.getByRole('button', { name: 'Sessions' });
+    expect(screen.getByText('4').className).toContain('text-accent');
+    expect(sessions.querySelector('.bg-st-open')).not.toBeNull();
+    expect(sessions).toHaveAccessibleDescription('4 active · 1 waiting on you');
+    await userEvent.hover(sessions);
+    expect((await screen.findByRole('tooltip')).textContent).toContain('4 active · 1 waiting on you');
+
+    rerender(<ActivityBar label="Views" items={[{ ...items[0]!, badge: 0, detail: '1 waiting on you' }]} active="overview" onSelect={() => {}} />);
+    expect(screen.queryByText('0')).toBeNull();
+    expect(screen.getByRole('button', { name: 'Sessions' }).querySelector('.bg-st-open')).not.toBeNull();
+
+    rerender(<ActivityBar label="Views" items={[{ ...items[0]!, waiting: false, detail: undefined }]} active="overview" onSelect={() => {}} />);
+    expect(screen.getByRole('button', { name: 'Sessions' }).querySelector('.bg-st-open')).toBeNull();
+    expect(screen.getByRole('button', { name: 'Sessions' })).not.toHaveAttribute('aria-description');
+  });
+
   it('carries the counts, and wears nothing at zero', () => {
     const { rerender } = render(
       <ActivityBar label="Views" items={VIEWS} active="overview" onSelect={() => {}} />,
@@ -252,6 +277,17 @@ describe('StatusBar', () => {
       expect(catalogue['work.status.sessionsLabel']).not.toMatch(/running|运行中/);
       expect(catalogue['work.status.sessionsTip']).toMatch(/waiting on you|等你/);
     }
+  });
+
+  /**
+   * SESSBADGE1: it counts what the Sessions badge counts, the sessions the driver runs (CAPCOUNT1's rule), and never the person's
+   * own conversations: it counted an Ask Daoris conversation idle between turns. Its tip says so, in both languages.
+   */
+  it('says it counts the sessions the driver runs, and not the person\'s own conversations', () => {
+    expect(en['work.status.sessionsTip']).toMatch(/driver/);
+    expect(en['work.status.sessionsTip']).toMatch(/your own conversations are not counted/i);
+    expect(zh['work.status.sessionsTip']).toMatch(/驱动/);
+    expect(zh['work.status.sessionsTip']).toMatch(/你自己的对话不计在内/);
   });
 
   it('states the four ambient facts', () => {

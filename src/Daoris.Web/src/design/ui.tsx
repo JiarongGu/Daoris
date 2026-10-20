@@ -646,19 +646,29 @@ export function CardHeader({ title, aside }: { title: ReactNode; aside?: ReactNo
   );
 }
 
-/** The stat-tile contract: label · value · context. Values wear proportional figures, deliberately. */
+/**
+ * The stat-tile contract: label · value · context. Values wear proportional figures, deliberately. A value not known yet is null:
+ * static placeholders on the value's and the context's lines, never a zero (PUSHUX1).
+ */
 export function Tile({ label, value, note, warn }: {
-  label: string; value: ReactNode; note: string; warn?: boolean;
+  label: string; value: ReactNode | null; note: string; warn?: boolean;
 }) {
+  const known = value !== null;
   return (
-    <div className={cn(
-      'grid content-start gap-0.5 rounded-card border border-line bg-raised px-4 pb-3.5 pt-3',
-      warn && 'border-l-[3px] border-l-st-open',
-    )}
+    <div
+      aria-busy={!known || undefined}
+      className={cn(
+        'grid content-start gap-0.5 rounded-card border border-line bg-raised px-4 pb-3.5 pt-3',
+        warn && known && 'border-l-[3px] border-l-st-open',
+      )}
     >
       <span className="text-small text-ink-soft">{label}</span>
-      <span className="text-value font-semibold leading-[1.15] tracking-[-0.01em]">{value}</span>
-      <span className={cn('text-small', warn ? 'text-ink-open' : 'text-ink-faint')}>{note}</span>
+      {known
+        ? <span className="text-value font-semibold leading-[1.15] tracking-[-0.01em]">{value}</span>
+        : <i aria-hidden className="my-1 block h-5 w-12 rounded-[4px] bg-accent-soft opacity-55" />}
+      {known
+        ? <span className={cn('text-small', warn ? 'text-ink-open' : 'text-ink-faint')}>{note}</span>
+        : <i aria-hidden className="my-1 block h-3 w-3/4 rounded-[4px] bg-accent-soft opacity-55" />}
     </div>
   );
 }

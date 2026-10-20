@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { clockOf, figure } from '../locales/format';
 import type { Account, AccountSettingsChange, Tool } from './tools';
 import {
-  Button, Chip, Icon, Inline, Menu, type MenuAct, Pill, Prose, SectionTitle, Tip,
+  Button, Chip, Icon, Inline, Menu, type MenuAct, Pill, Prose, SectionTitle, SkeletonRows, Tip,
 } from '../design/ui';
 import { type Answered, InlineConfirm, Refused } from '../work/InlineConfirm';
 import { PageHead, ViewMain } from '../work/frame/ViewMain';
@@ -120,8 +120,8 @@ export function AgentPage({
   use: AgentAccounts | null;
   /** The rules file's answer (PERM1): null where it is not read, and *What it may do* is absent. */
   rules: AgentRulesState | null;
-  /** What each of its accounts has carried (TOOL3), by its doors. */
-  usage: AgentUsage[];
+  /** What each of its accounts has carried (TOOL3), by its doors; null while it is not answered yet, never nothing measured (PUSHUX1). */
+  usage: AgentUsage[] | null;
   /** Every workspace this machine has, the unnamed `default` included: the CLI sets that one's accounts too. */
   workspaces: string[];
   /** The workspace the window is looking at, or null for every one: its next start is said above the accounts (ACCTUX4c). */
@@ -185,7 +185,7 @@ export function AgentPage({
   const scopeWorkspaces = [...new Set([
     ...workspaces, ...(use?.scopes.map((scope) => scope.workspace).filter((name): name is string => Boolean(name)) ?? []),
   ])].sort();
-  const sessions = usage.reduce((sum, account) => sum + account.sessions, 0);
+  const sessions = (usage ?? []).reduce((sum, account) => sum + account.sessions, 0);
   const rulesShown = tool.takesRules && rules !== null;
   const settingsShown = Boolean(tool.settingsChoices) && tool.accounts.some((account) => account.settings);
   const joinable = (name: string) => joinChoices(tool, use, scopeWorkspaces, labelOf, name);
@@ -899,9 +899,10 @@ export function AgentPage({
       {/* What each account has carried (TOOL3, D57 §4): measured, never priced, and nothing measured said so; an agent not
           installed has carried nothing here, so it has no usage to fold (§5.1, D152 §4.6). */}
       {(tool.present || sessions > 0) && (
-        <Fold section="usage" title={t('usage.title')} summary={usageSummary(sessions)} open={open.has('usage')} onToggle={toggle}>
+        <Fold section="usage" title={t('usage.title')} summary={usage === null ? t('agents.usage.reading') : usageSummary(sessions)} open={open.has('usage')} onToggle={toggle}>
           <Prose className="text-small">{t('usage.body')}</Prose>
-          {usage.length > 0 && (
+          {usage === null && <SkeletonRows rows={2} />}
+          {usage !== null && usage.length > 0 && (
             <ul className="m-0 mt-2 list-none p-0">
               {usage.map((account) => {
                 const called = account.profile ? labelOf(account.profile) : ownLabel;

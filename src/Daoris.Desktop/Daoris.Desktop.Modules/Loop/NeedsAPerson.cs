@@ -313,6 +313,27 @@ public static class NeedsAPerson
     }
 
     /// <summary>
+    /// The sessions the driver runs on this machine (SESSBADGE1, D76's note), each by a key of its own with its workspace for the window's
+    /// scope: what the Sessions badge counts as a quantity and the status bar beside it. One count, the cap's: an active record of this
+    /// machine's that takes a place under the cap (CAPCOUNT1, <see cref="ActiveSessions.HoldsSlot(string?, string?, string?, string?, string?)"/>),
+    /// a parked one among them, never a conversation the person holds, Ask Daoris's or a chat. A teammate's runs on its own machine.
+    /// </summary>
+    public static IReadOnlyList<(string Key, JsonObject Value)> Working(AttentionFacts facts) =>
+    [
+        .. facts.Sessions
+            .Where(session => Text(session, "id") is { Length: > 0 } id && !Elsewhere(id) && Active.Contains(Text(session, "state") ?? "")
+                && ActiveSessions.HoldsSlot(
+                    Text(session, "kind"), Text(session, "repository"), Text(session, "ask"), Text(session, "serves"), Text(session, "opinion")))
+            .Select(session => ($"session:{Text(session, "id")}", new JsonObject { ["workspace"] = Text(session, "workspace") ?? "default" })),
+    ];
+
+    /// <summary>
+    /// The states in which a record still holds its repository, the service's <c>Session.Active</c>: what the planner's snapshot lists as
+    /// active, so the count is made over the records it counts.
+    /// </summary>
+    private static readonly HashSet<string> Active = new(StringComparer.Ordinal) { "queued", "starting", "working", "awaiting-person" };
+
+    /// <summary>
     /// One row per folder in one file: two quests held on one untrusted tree are one grant (D73), waiting since the oldest thing it holds.
     /// Its identity is the file AND the folder (REV3): the folder alone gave one folder held in two accounts' files two rows with one key.
     /// </summary>

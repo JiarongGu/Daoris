@@ -24,6 +24,8 @@ export type ListSpec = {
   head?: ReactNode;
   strip?: ReactNode;
   loading?: boolean;
+  /** Its pushed slice read again whole (PUSHUX1): the last rows held, dimmed (`ListPane`). */
+  resyncing?: boolean;
   empty?: { headline: string; body: string };
   /** The item the list has chosen: a change of it is a choice, which closes a list laid over the main area. */
   chosen?: string | null;
@@ -165,6 +167,7 @@ export function ViewListPane({ spec, layout, lists, onOver }: {
       head={spec.head}
       strip={spec.strip}
       loading={spec.loading}
+      resyncing={spec.resyncing}
       empty={spec.empty}
       // The strip's open: beside where there is room, over the main area where the window drew the strip.
       onOpen={() => {

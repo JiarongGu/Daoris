@@ -40,6 +40,10 @@ public sealed class WindowsModule(
 {
     public override string ModuleName => "DAORIS.WINDOWS";
 
+    /// <summary>The order of the count the main window wears, as its page told it (SESSBADGE1), and the lock both are held by.</summary>
+    private readonly Lock _badgeGate = new();
+    private long _badgeOrder = long.MinValue;
+
     protected override Task<object?> RouteMessageAsync(
         IpcRequest request, IModuleContext context, CancellationToken cancellationToken)
     {
@@ -85,7 +89,21 @@ public sealed class WindowsModule(
             {
                 var count = Math.Max(0, PayloadHelper.GetRequiredValue<int>(request.Payload, "count"));
                 var description = PayloadHelper.GetOptionalValue<string>(request.Payload, "description");
-                badge?.Invoke(count, count > 0 && !string.IsNullOrWhiteSpace(description) ? description : null);
+                // SESSBADGE1: the page tells each count without waiting, so two may arrive here in either order and the window
+                // posts each to its thread as it comes: the title once kept 5 over a band reading 4. Each carries the order the page
+                // told it in, and one told before the count the frame wears is never worn over it; a page that tells none is worn.
+                var order = PayloadHelper.GetOptionalValue<long?>(request.Payload, "order");
+                lock (_badgeGate)
+                {
+                    if (order is { } told)
+                    {
+                        if (told <= _badgeOrder) return Task.FromResult<object?>(new { Applied = false });
+                        _badgeOrder = told;
+                    }
+
+                    badge?.Invoke(count, count > 0 && !string.IsNullOrWhiteSpace(description) ? description : null);
+                }
+
                 return Task.FromResult<object?>(new { Applied = badge is not null });
             }
 
