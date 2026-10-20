@@ -1,0 +1,13 @@
+{
+  "about": "A repository's development pipeline under Current: which checks its sessions run, `sessionChecks` in driver.json (FABRIC-PIPELINE1b, D192 point 4; the pipeline design §3.1): the table both twins hold, the CLI's driverconfig.ts and the driver's SessionChecks. Each `read` row is the value a file holds under `sessionChecks` (the file is `{\"sessionChecks\": <value>}`) and the map each twin reads from it: by repository, each name trimmed, a blank one passed over; each value text, trimmed and matched in any case against `light` or `heavy-at-end`, kept in that spelling; any other value is not read and shadows none; a name written twice in any case read where first readable, in its first spelling; anything but an object is no map. Absent is today's: a session runs as it did.",
+  "read": [
+    { "name": "nothing set is no rule", "sessionChecks": null, "read": {} },
+    { "name": "each repository's choice", "sessionChecks": { "engine": "light", "shop": "heavy-at-end" }, "read": { "engine": "light", "shop": "heavy-at-end" } },
+    { "name": "names and values read trimmed, a value in any case kept in its own spelling", "sessionChecks": { " engine ": " Light ", "shop": "HEAVY-AT-END" }, "read": { "engine": "light", "shop": "heavy-at-end" } },
+    { "name": "a value that is no choice is not read", "sessionChecks": { "engine": "heavy", "shop": true, "web": null, "docs": "light" }, "read": { "docs": "light" } },
+    { "name": "a name twice in any case is read where first readable, in its first spelling", "sessionChecks": { "Engine": "light", "engine": "heavy-at-end" }, "read": { "Engine": "light" } },
+    { "name": "a value that does not read shadows none", "sessionChecks": { "engine": "never", "Engine": "heavy-at-end" }, "read": { "Engine": "heavy-at-end" } },
+    { "name": "a blank name is passed over", "sessionChecks": { "  ": "light", "engine": "light" }, "read": { "engine": "light" } },
+    { "name": "anything but an object is no rule", "sessionChecks": ["light"], "read": {} }
+  ]
+}

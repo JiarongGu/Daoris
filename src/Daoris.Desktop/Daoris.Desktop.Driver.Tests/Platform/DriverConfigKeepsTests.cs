@@ -145,6 +145,8 @@ public sealed class DriverConfigKeepsTests
             "machine-access" => config.WithAccess(Access(edit, new AccessEdit { Machine = true })),
             // HEAVYRUN1b2a: a repository's heavy gates on this machine, through the door the terminal's `heavy` goes through.
             "heavy" => config.WithHeavyGates(Text("repository"), Gates(edit.GetProperty("gates"))),
+            // FABRIC-PIPELINE1b: a repository's sessions' checks, through the door the terminal's `checks` and Setup go through.
+            "session-checks" => config.WithSessionChecks(Text("repository"), edit.GetProperty("checks").GetString()),
             // MIXAGENT1c: a repository's hand-over rule, through the edit the route and the terminal make.
             "hand-over" => HandOverRules.Apply(
                 config, new HandOverEdit { Repository = Text("repository"), Set = new HandOverSet { Mode = Text("mode"), ModeGiven = true } }),

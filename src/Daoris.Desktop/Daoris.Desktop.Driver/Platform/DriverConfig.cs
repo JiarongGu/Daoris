@@ -373,6 +373,19 @@ public sealed record DriverConfig(
     /// <exception cref="DriverException">The edit's refusal, nothing changed.</exception>
     public DriverConfig WithHeavyGates(string repository, IReadOnlyList<HeavyGate>? gates) => HeavyMapping.Apply(this, repository, gates);
 
+    /// <summary>
+    /// Which checks each repository's sessions run under Current (FABRIC-PIPELINE1b, D192 point 4), by repository: <c>light</c> or
+    /// <c>heavy-at-end</c>; absent is today's. What a driven start's words, its deny rules and <c>run-heavy</c>'s refusal read
+    /// (<see cref="Daoris.Driver.SessionChecks.Of"/>). Edited only through <see cref="Daoris.Driver.SessionChecks.Apply"/>; the CLI's
+    /// <c>driverconfig.ts</c> reads and keeps it the same way.
+    /// </summary>
+    public IReadOnlyDictionary<string, string> SessionChecks { get; init; } =
+        new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>A repository's sessions' checks set, or taken away with null, through <see cref="Daoris.Driver.SessionChecks.Apply"/>.</summary>
+    /// <exception cref="DriverException">The edit's refusal, nothing changed.</exception>
+    public DriverConfig WithSessionChecks(string? repository, string? checks) => Daoris.Driver.SessionChecks.Apply(this, repository, checks);
+
     /// <summary>A moment as the file keeps it: in UTC, to the second.</summary>
     private static DateTimeOffset ToTheSecond(DateTimeOffset at)
     {
@@ -996,6 +1009,8 @@ public sealed record DriverConfig(
             AccessRules.WriteMachine(writer, MachineAccess);
             // Written only when set (HEAVYRUN1b2a), as the CLI writes it: absent is the repository's own heavy gates alone.
             HeavyMapping.WriteMap(writer, HeavyGates);
+            // Written only when set (FABRIC-PIPELINE1b), as the CLI writes it: absent is today's, a session running as it did.
+            Daoris.Driver.SessionChecks.WriteMap(writer, SessionChecks);
             // Written only when set (D107), for the same reason: absent is reading on and no relationship.
             WriteFlags(writer, "readAcross", ReadAcross);
             WriteFlags(writer, "workspaceReadAcross", WorkspaceReadAcross);
@@ -1415,6 +1430,8 @@ public sealed record DriverConfig(
             MachineAccess = AccessRules.Machine(root),
             // Read as a stored shape (HEAVYRUN1b2a): a list with a gate that does not read is not read, whole.
             HeavyGates = HeavyMapping.Map(root),
+            // Read as a stored shape (FABRIC-PIPELINE1b): a value that is no choice is not read, and shadows none.
+            SessionChecks = Daoris.Driver.SessionChecks.Map(root),
             ReadAcross = FlagMap(root, "readAcross"),
             WorkspaceReadAcross = FlagMap(root, "workspaceReadAcross"),
             WriteAcross = TargetMap(root, "writeAcross"),

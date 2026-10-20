@@ -296,6 +296,16 @@
       ]
     },
     {
+      "name": "a repository's sessions' checks set where none was (FABRIC-PIPELINE1b): its rule after the heavy gates' place",
+      "edit": { "op": "session-checks", "repository": "engine", "checks": "light" },
+      "changes": [
+        {
+          "from": ["    ]", "  },", "  \"readAcross\": {"],
+          "to": ["    ]", "  },", "  \"sessionChecks\": {", "    \"engine\": \"light\"", "  },", "  \"readAcross\": {"]
+        }
+      ]
+    },
+    {
       "name": "notifications off: the one value changes",
       "edit": { "op": "notify", "on": false },
       "changes": [
