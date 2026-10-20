@@ -5,6 +5,9 @@ with the version and date at release.
 
 ## Unreleased
 
+- On Windows, the `daoris` command's own children start Git for Windows' git directly where Daoris's git is the system's,
+  as the desktop's do: one process where there were two, with the environment the `cmd\git.exe` launcher would have given
+  it. A git you named as a file, or a managed version, starts as it is.
 - A repository's Setup says which checks its driven sessions run, beside its heavy gates, and `daoris-driver checks` sets
   the same choice from a terminal. *Light* has sessions run the gates the repository does not mark heavy and the checks their
   change reaches, filtered; its heavy gates are left out of every session. Each session is told so when it starts,
