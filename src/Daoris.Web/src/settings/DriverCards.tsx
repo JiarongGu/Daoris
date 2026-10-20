@@ -4,6 +4,8 @@ import { Button, Card, CardStack, CheckField, Icon, PathText, SectionTitle, Sett
 import type { StarterDoor } from '../help/starters';
 import type { UpdateState } from '../update/UpdateBanner';
 import type { Answered } from '../work/InlineConfirm';
+import type { PluginShown } from '../plugins/catalog';
+import { PluginSettings } from './PluginSettings';
 import { type AccessEdit, type AccessLevel, AccessRows, resolveAccess } from './repository/Access';
 import { UpdateSection } from './Update';
 
@@ -36,6 +38,8 @@ export type DriverFacts = {
   placeAnswers: boolean;
   /** Where plugins are looked for (UX6j); none on an older shell, and the row is absent. */
   pluginsFolder: string | null;
+  /** The installed plugins, for the Plugins section (PLUGSET1); none on an older shell or before it answers, and the section is absent. */
+  plugins?: readonly PluginShown[] | null;
   notify: boolean;
   strikes: number;
   /** Minutes an account cools when its agent names no reset (TOOL4g); absent on a shell older than the field. */
@@ -254,6 +258,10 @@ export function DriverCards({ facts, busy, onGo, onNotify, onStrikes, onCoolOff,
           )}
         </SettingList>
       </Card>
+
+      {/* Each installed plugin with what it holds set (PLUGSET1, the modes design §4.1), beside the folder they are looked for
+          in: read only, each a door to its page, where its settings are changed. */}
+      {facts.plugins && <PluginSettings plugins={facts.plugins} onOpen={(id) => onGo({ view: 'plugins', item: id })} />}
 
       {/* This machine's sessions' access (AUTONOMY1d, D184 point 1): the level under every workspace's and repository's, whose
           own are on their Setup tabs. Here because it is the machine's, as the driver's dials are, and offered where the shell
