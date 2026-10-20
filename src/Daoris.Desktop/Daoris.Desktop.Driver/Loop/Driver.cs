@@ -1834,6 +1834,14 @@ public sealed class Driver(
                 $"refused  #{quest.Id} → {quest.To}: {message}", false, null, start.GoesOn ? $"the service refused the open: {message}" : null);
         }
 
+        // TREELOCK1 (D51's note): its own tree locked in its name while it holds it, so no tool that prunes merged branches takes it;
+        // asked before the starting hold goes, so the look's let-go of unheld locks sees it held. Never a reason to hold the start.
+        var locksTree = Context.Trees.Holds(workTree);
+        if (locksTree && await SessionLocks.HoldAsync(workTree, sessionId, ct).ConfigureAwait(false) is { } unlocked)
+        {
+            Log?.Warn("tree.unlocked", ("session", sessionId), ("why", unlocked));
+        }
+
         // The record is open, so the ledger holds the tree and a replay's own look sees it in use (LEFT2).
         starting?.Dispose();
         restarting?.Dispose();
@@ -1866,6 +1874,8 @@ public sealed class Driver(
 
         // The stop made of it before a close cut its conclusion off, told as its run lets go (FLAKE3).
         SessionStop? stoppedFirst = null;
+        // TREELOCK1: whether its record still holds its tree as the run ends, waiting on the person or going on at the next look.
+        var holdsTree = false;
         try
         {
             // The words a session could not go on with went to this one (MSG1b, D137 §2.2): off that record by their ids, kept
@@ -2101,6 +2111,7 @@ public sealed class Driver(
                     var where = opened is not null ? $" [own tree: {opened.Path}]"
                         : resumedIn is not null ? $" [own tree, resumed: {resumedIn}]"
                         : "";
+                    holdsTree = SessionStates.IsParked(conclusion.State) || swappedOn;
                     // FABRIC-CLOSE1o: a take its start named a graph for that went unbound (an expired bind, a remote since) is said
                     // here once, beside its take's own answer, since its next start reads it unbound and names nothing.
                     return new StartRun(
@@ -2191,6 +2202,10 @@ public sealed class Driver(
             // In the finally rather than the happy path, because a session that FAILED is the one
             // whose last lines someone most wants to read.
             output?.Close(sessionId);
+
+            // TREELOCK1: the session lets go of its tree however it ended, before any clean-up of Daoris's removes it; on no token,
+            // since a close is one of the ways. A record that still holds it keeps the lock.
+            if (locksTree && !holdsTree) await SessionLocks.LetGoAsync(workTree, sessionId, CancellationToken.None).ConfigureAwait(false);
         }
     }
 

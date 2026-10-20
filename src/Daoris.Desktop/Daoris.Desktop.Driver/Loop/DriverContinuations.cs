@@ -188,6 +188,14 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
             return (new StartRun($"held  #{quest.Id} → {quest.To}: {refused.Message}", false, null, refused.Message), null, false);
         }
 
+        // TREELOCK1 (D51's note): its tree locked in its name again while it goes on, a park's kept from its run before, asked before
+        // the starting hold goes, as a start's is. Never a reason to hold it.
+        var locksTree = _context.Trees.Holds(workTree);
+        if (locksTree && await SessionLocks.HoldAsync(workTree, sessionId, ct).ConfigureAwait(false) is { } unlocked)
+        {
+            _driver.Log?.Warn("tree.unlocked", ("session", sessionId), ("why", unlocked));
+        }
+
         // The ledger holds its tree again (LEFT2).
         starting?.Dispose();
 
@@ -220,6 +228,8 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
         var spawned = false;
         // The stop made of it before a close cut its conclusion off, told as its run lets go (FLAKE3).
         SessionStop? stoppedFirst = null;
+        // TREELOCK1: whether its record still holds its tree as the run ends.
+        var holdsTree = false;
         try
         {
             // Every word waiting once it moved, as the move left them (SAIDBACK1d): none can be taken back from a record that runs.
@@ -289,6 +299,8 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
                     ConcludeResumedAsync(quest, park, adapter, selection, resume, workTree, transcript, before, exitCode, used, turnFailed, ended,
                         openedAt, ct))
                 .ConfigureAwait(false);
+            // A record that parked again, or goes on at the next look, still holds its tree (TREELOCK1).
+            holdsTree = run is { Opened: true, Ended: null };
             return (run, refusedWhy, resume.Spoken);
         }
         catch (Exception error) when (!spawned && !(error is OperationCanceledException && ct.IsCancellationRequested))
@@ -366,6 +378,9 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
             output?.Close(sessionId);
             // A resume that was tried lets the starting hold go however it ended, so a carry-on takes it again (LEFT2).
             starting?.Dispose();
+            // TREELOCK1: the session lets go of its tree however this run ended, on no token, unless its record still holds it. A
+            // carry-on into the same tree takes the lock in its own name.
+            if (locksTree && !holdsTree) await SessionLocks.LetGoAsync(workTree, sessionId, CancellationToken.None).ConfigureAwait(false);
         }
     }
 
