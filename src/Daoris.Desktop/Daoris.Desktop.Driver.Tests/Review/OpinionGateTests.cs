@@ -421,13 +421,18 @@ public sealed class OpinionGateTests
         var said = "waits for a second opinion on the step before it, `#q1`, before it starts: Waits for a second opinion: being read by Codex.";
         var snapshot = new Snapshot([step, other], [registered], [])
         {
-            Opinions = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase) { ["q2"] = said },
+            Opinions = new Dictionary<string, OpinionSit>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["q2"] = new(said, new SittingFact(SittingFact.Steps) { Quest = "q1", State = OpinionGateStates.Reading }),
+            },
         };
 
         var plan = Planner.Plan(snapshot, DriverConfig.Empty with { Drivable = ["web-app"], Cap = 3 });
 
         var sits = Assert.Single(plan, considered => considered.Quest.Id == "q2");
         Assert.Equal((StartVerdict.WaitsForOpinion, said), (sits.Verdict, sits.Reason));
+        // OVERVIEWNOISE1c: the look's code rides beside its sentence, so the page words it.
+        Assert.Equal(new SittingFact(SittingFact.Steps) { Quest = "q1", State = OpinionGateStates.Reading }, sits.Said);
         Assert.NotEqual(StartVerdict.WaitsForOpinion, Assert.Single(plan, considered => considered.Quest.Id == "q3").Verdict);
     }
 

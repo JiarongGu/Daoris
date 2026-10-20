@@ -40,7 +40,7 @@ import {
 import { type SettingsAnchor, type SettingsSection, useSettingsLayout } from '../settings/SettingsView';
 import { ShellSignals } from './ShellSignals';
 import {
-  logEvent, useAttention, useDismissUpdate, useDriver, useHarnesses, useLinkOpener, useOpenBrowser, useOpenWindow, useRemotes,
+  logEvent, useAttention, useAttached, useDismissUpdate, useDriver, useHarnesses, useLinkOpener, useOpenBrowser, useOpenWindow, useRemotes,
   useSayUpdate, useShowReviewAgain, useSyncNow, useTaskbarCount, useUpdateState,
   useAnswerConfirmation, usePersonKey, useServiceConfirmations, useTerminalConfirmations, useUnkeyedHost,
 } from '../bridge/shell';
@@ -230,8 +230,9 @@ export function App() {
   const outstanding = useQuests(null, false);
   const refresh = useRefreshIndex();
   // The same "is a shell here" answer every control uses — one detection path, not two that drift.
+  // A shell whose driver has not answered yet is still a shell (PUSHUX2): it waits, never reading as a browser.
   const driver = useDriver();
-  const attached = driver.data !== undefined;
+  const attached = useAttached();
   // Ask Daoris (HELP1) is a view of the frame's regions on every view since DOCK1a: bumped each time the
   // person asks for it, and the frame opens whichever region holds it, on it.
   const [helpFocus, setHelpFocus] = useState(0);
@@ -438,7 +439,7 @@ export function App() {
   // Ready once the driver's service is up, not merely its file (LOOK2a); a shell older than the field says nothing, and reads ready.
   const presence: DriverPresence = driver.data
     ? (driver.data.ready === false ? 'starting' : 'running')
-    : driver.isError ? 'stopped' : 'absent';
+    : driver.isError ? 'stopped' : attached ? 'starting' : 'absent';
   // Overview's badge, the band's own rows as .NET judged them (PUSH1d4) — two answers to "how many need me" would disagree the
   // first time either was edited. Nothing before the first judgement, which is no count yet.
   const waiting = attention.state === 'known' ? attention.rows.length : 0;
@@ -1262,9 +1263,8 @@ export function App() {
         // Where the setup is done (SETUP1b): absent in a browser, and once the required steps are.
         setup={setupCount}
         onSetup={() => openSettings('start')}
-        tier={status.data
-          ? { label: status.data.tier, note: status.data.note ?? '', semantic: status.data.semantic }
-          : undefined}
+        // The tier by its value (OVERVIEWNOISE1c): the bar words it, and its note, in the page's language.
+        tier={status.data ? { semantic: status.data.semantic } : undefined}
         indexed={indexed > 0
           ? t('sidebar.count', {
             entries: figure(indexed),

@@ -218,6 +218,8 @@ public sealed class PlannerTests
         Assert.Equal(StartVerdict.NotAdopted, only.Verdict);
         Assert.Contains("connector", only.Reason);
         Assert.Contains("protocol door", only.Reason);
+        // OVERVIEWNOISE1c: which sentence, by code, so the page words it.
+        Assert.Equal(new SittingFact(SittingFact.NoConnector), only.Said);
     }
 
     /// <summary>
@@ -256,6 +258,7 @@ public sealed class PlannerTests
         Assert.Equal(StartVerdict.NotAdopted, only.Verdict);
         Assert.Contains("no root", only.Reason);
         Assert.DoesNotContain("connect", only.Reason);
+        Assert.Equal(new SittingFact(SittingFact.NoRoot), only.Said);
     }
 
     /// <summary>A quest to a repository this machine's registry does not hold says exactly that.</summary>
@@ -267,6 +270,7 @@ public sealed class PlannerTests
         var only = Assert.Single(plan);
         Assert.Equal(StartVerdict.NotAdopted, only.Verdict);
         Assert.Contains("not registered", only.Reason);
+        Assert.Equal(new SittingFact(SittingFact.Unregistered), only.Said);
     }
 
     /// <summary>No root, no working tree to spawn in — the reason names `connect` as the fix.</summary>
@@ -289,6 +293,7 @@ public sealed class PlannerTests
         var only = Assert.Single(plan);
         Assert.Equal(StartVerdict.RepositoryBusy, only.Verdict);
         Assert.Contains("s1", only.Reason);
+        Assert.Equal(new SittingFact(SittingFact.InRepository) { Session = "s1" }, only.Said);
     }
 
     // ── parallel sessions, one per tree (PAR1) ────────────────────────────────────────────────────
@@ -311,6 +316,9 @@ public sealed class PlannerTests
         var plan = Plan([Quest("q1"), Quest("q2"), Quest("q3")], config: Config(cap: 2) with { Trees = ["Game"] });
 
         Assert.Equal([StartVerdict.Start, StartVerdict.Start, StartVerdict.AtCapacity], plan.Select(c => c.Verdict));
+        // OVERVIEWNOISE1c: the cap as a number, which the page words; a start says no code.
+        Assert.Equal(new SittingFact(SittingFact.CapSpent) { Cap = 2 }, plan[2].Said);
+        Assert.Null(plan[0].Said);
     }
 
     /// <summary>
@@ -538,6 +546,7 @@ public sealed class PlannerTests
         Assert.Contains("#q2", waiting.Reason);
         Assert.Contains("Backend", waiting.Reason);
         Assert.Null(waiting.Resumes);
+        Assert.Equal(new SittingFact(SittingFact.Asked) { Quest = "q2", Repository = "Backend" }, waiting.Said);
     }
 
     /// <summary>
@@ -558,6 +567,7 @@ public sealed class PlannerTests
         Assert.Contains("your yes", waiting.Reason);
         Assert.Contains("`daoris-driver quest accept q2`", waiting.Reason);
         Assert.Null(waiting.Resumes);
+        Assert.Equal(new SittingFact(SittingFact.Departed) { Quest = "q2", Repository = "Backend" }, waiting.Said);
         Assert.DoesNotContain(plan, c => c.Quest.Id == "q2");
     }
 
@@ -581,6 +591,7 @@ public sealed class PlannerTests
             "waits on `#q2`, which `Backend` closed done: its evidence is read when session `s9` ends — it resumes, in the same "
             + "tree, once that evidence is found.",
             waiting.Reason);
+        Assert.Equal(new SittingFact(SittingFact.UnreadRunning) { Quest = "q2", Repository = "Backend", Session = "s9" }, waiting.Said);
     }
 
     /// <summary>
@@ -1669,6 +1680,7 @@ public sealed class PlannerTests
             "Quest `#q2` grew from the work of `#q1`, which you reopened: it is withdrawn, and nothing starts it until you go on with it on "
             + "the new work or abandon it.",
             withdrawn.Reason);
+        Assert.Equal(new SittingFact(SittingFact.Withdrawn) { Quest = "q1" }, withdrawn.Said);
         Assert.Null(withdrawn.Root);
         Assert.Equal(StartVerdict.Start, plan.Single(each => each.Quest.Id == "q3").Verdict);
     }
@@ -1701,6 +1713,7 @@ public sealed class PlannerTests
                     "Quest `#q2` grew from the work of `#q1`, which you reopened: it is held, and nothing carries it on until you go on "
                     + "with it on the new work or abandon it.",
                     held.Reason);
+                Assert.Equal(new SittingFact(SittingFact.HeldByReopen) { Quest = "q1" }, held.Said);
                 Assert.Null(held.Resumes);
             }
 

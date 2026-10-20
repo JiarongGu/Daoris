@@ -597,10 +597,10 @@ describe("a repository's sessions' access", () => {
     // ACCESSWORDS1: a merge rule still waits for the person's Accept, and the sentence says so before its source.
     expect(row(access, 'Landing')).toHaveTextContent('Finished work lands by the landing rule, with no press. A merge rule still waits for your Accept…. Set for this repository.');
     await userEvent.click(within(row(access, 'Landing')).getByRole('button', { name: 'Clear' }));
-    expect(onChange).toHaveBeenLastCalledWith({ access: { landing: null } });
+    expect(onChange).toHaveBeenLastCalledWith({ access: { landing: null } }, expect.anything());
     await userEvent.click(within(row(access, 'Permission prompts')).getByRole('button', { name: 'Set for this repository' }));
     await userEvent.click(within(row(access, 'Permission prompts')).getByRole('radio', { name: 'Auto mode' }));
-    expect(onChange).toHaveBeenLastCalledWith({ access: { permissions: 'auto' } });
+    expect(onChange).toHaveBeenLastCalledWith({ access: { permissions: 'auto' } }, expect.anything());
   });
 
   it('turns full access on only through its ask, and folds to full access where it is on', async () => {

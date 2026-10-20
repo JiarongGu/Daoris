@@ -41,7 +41,7 @@ const MACHINES = {
     sessions: [{ state: 'working' as const }],
     lines: [
       { repository: 'engine', workspace: 'aurora', branch: 'develop', source: 'workspace' as const },
-      // Not driven, so its missing line is not the setup's business — only a starter's.
+      // Not driven, so its missing line is neither the setup's business nor a starter's (STARTERSCOPE1).
       { repository: 'game', workspace: 'aurora', source: 'none' as const },
     ],
     landings: [
@@ -85,7 +85,7 @@ describe('the machine, read once for the guide and the starters', () => {
     const machine = readMachine(MACHINES.everythingDone);
     expect(machine).toMatchObject({
       repositories: ['engine', 'game'], drivable: ['engine'], helper: 'claude-code-acp', intake: 'claude-code-acp',
-      unnamedLines: ['game'], unlanded: [], waiting: 0,
+      unnamedLines: [], unlanded: [], waiting: 0,
     });
     expect(states('everythingDone')).toEqual({
       agent: 'done', helper: 'done', repositories: 'done', driven: 'done', landing: 'done', rules: 'optional',
@@ -97,12 +97,33 @@ describe('the machine, read once for the guide and the starters', () => {
     const base = MACHINES.everythingDone;
     const machine = readMachine({
       ...base,
+      driver: { ...base.driver, drivable: ['engine', 'game'] },
       lines: [
         { repository: 'engine', workspace: 'default', source: 'none', notReadYet: true },
         { repository: 'game', workspace: 'default', source: 'none' },
       ],
     });
     expect(machine.unnamedLines).toEqual(['game']);
+  });
+
+  it('counts no line of a repository imported and never driven, so no starter sends the person to it (STARTERSCOPE1)', () => {
+    const base = MACHINES.everythingDone;
+    const machine = readMachine({
+      ...base,
+      registry: [...base.registry, { repository: 'imported' }],
+      lines: [...base.lines, { repository: 'imported', workspace: 'aurora', source: 'none' as const }],
+    });
+    expect(machine.unnamedLines).toEqual([]);
+    expect(starters(machine).map((starter) => starter.id)).not.toContain('no-line');
+
+    // Driven, the same repository's missing line is a starter again.
+    const driven = readMachine({
+      ...base,
+      driver: { ...base.driver, drivable: ['engine', 'imported'] },
+      lines: [...base.lines, { repository: 'imported', workspace: 'aurora', source: 'none' as const }],
+    });
+    expect(driven.unnamedLines).toEqual(['imported']);
+    expect(starters(driven).find((starter) => starter.id === 'no-line')?.values).toEqual({ count: 1, first: 'imported' });
   });
 
   it('reads a browser as knowing only what is registered, and the rest as the desktop\'s', () => {

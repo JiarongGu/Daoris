@@ -340,14 +340,14 @@ export function useAsksPart({
           onAnswerGoAhead={(number, approved, words, answered) => onAnswerGoAhead(shown.id, number, approved, words, answered)}
           environments={environmentsIn(shown.workspace)}
           // The record as the door answers it, so the page shows the choice before the list catches up; a refusal (a
-          // repository that declares no environment) is the service's sentence.
-          onChooseReview={(choice, words) => chooseReview.mutate({ id: shown.id, choice, words }, {
-            onSuccess: (result) => { notify(result.message); setHeld(result.ask); },
-            onError: failure(notify),
+          // repository that declares no environment) is the service's sentence, said under the press (ACCESSASK1, R3).
+          onChooseReview={(choice, words, answered) => chooseReview.mutate({ id: shown.id, choice, words }, {
+            onSuccess: (result) => { notify(result.message); setHeld(result.ask); answered.done(); },
+            onError: (error) => answered.refused(sentence(error)),
           })}
-          onChooseKind={(kind, workflow) => chooseKind.mutate({ id: shown.id, kind, workflow }, {
-            onSuccess: (result) => { notify(result.message); setHeld(result.ask); },
-            onError: failure(notify),
+          onChooseKind={(kind, workflow, answered) => chooseKind.mutate({ id: shown.id, kind, workflow }, {
+            onSuccess: (result) => { notify(result.message); setHeld(result.ask); answered.done(); },
+            onError: (error) => answered.refused(sentence(error)),
           })}
           work={workDoor(shown)}
           history={historyDoor(shown)}

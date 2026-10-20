@@ -1,6 +1,6 @@
 import { type ComponentProps, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Button, Card, CardStack, CheckField, Icon, PathText, SectionTitle, SettingList, SettingRow } from '../design/ui';
+import { Button, Card, CardStack, CheckField, Icon, PathText, SectionTitle, SettingList, SettingRow, WhyGlyph } from '../design/ui';
 import type { StarterDoor } from '../help/starters';
 import type { UpdateState } from '../update/UpdateBanner';
 import type { Answered } from '../work/InlineConfirm';
@@ -257,12 +257,17 @@ export function DriverCards({ facts, busy, onGo, onNotify, onStrikes, onCoolOff,
 
       {/* This machine's sessions' access (AUTONOMY1d, D184 point 1): the level under every workspace's and repository's, whose
           own are on their Setup tabs. Here because it is the machine's, as the driver's dials are, and offered where the shell
-          answers it, since an older shell has no route to write it. Nothing stands above it, so turning full access off clears it. */}
+          answers it, since an older shell has no route to write it. Nothing stands above it, so turning full access off clears it.
+          Its lead paragraph is its title's ⓘ, as Setup's fold carries its summary line (ACCESSASK1, the UI/UX design §3.3). */}
       {facts.machineAccess && (
         <Card>
           <section aria-label={t('projects.setup.section.access')}>
-            <SectionTitle>{t('projects.setup.section.access')}</SectionTitle>
-            <p className="m-0 mb-2 text-small text-ink-soft">{t('settings.access.machineHint')}</p>
+            <SectionTitle>
+              <span className="inline-flex items-center gap-1.5">
+                {t('projects.setup.section.access')}
+                <WhyGlyph why={t('settings.access.machineHint')} />
+              </span>
+            </SectionTitle>
             <SettingList>
               <AccessRows
                 owner="machine"

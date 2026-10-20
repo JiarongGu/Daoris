@@ -7,6 +7,7 @@ import '../../locales/i18n';
 import { code } from '../../test/code';
 import { LANGUAGES } from '../fixtures';
 import { WorkspaceSetup, type WorkspaceSetupProps } from './WorkspaceSetup';
+import type { Answered } from '../../work/InlineConfirm';
 
 // A workspace's Setup as a molecule (UX6g, D150 §4.3): its defaults, its remote and its rules, each from props, and every
 // press going out. Where Settings → Workspace's defaults and wiring, and Permissions' workspace rows, went (§3.1).
@@ -411,7 +412,7 @@ describe("a workspace's sessions' access", () => {
     expect(row('Permission prompts')).toHaveTextContent('From this machine.');
     await userEvent.click(within(row('Intake routing')).getByRole('button', { name: 'Set for this workspace' }));
     await userEvent.click(within(row('Intake routing')).getByRole('radio', { name: 'Intake routes' }));
-    expect(onChange).toHaveBeenLastCalledWith({ access: { routing: 'intake' } });
+    expect(onChange).toHaveBeenLastCalledWith({ access: { routing: 'intake' } }, expect.anything());
   });
 
   it('opens on a pause the workspace sets, which carries Clear and its twin', async () => {
@@ -423,7 +424,21 @@ describe("a workspace's sessions' access", () => {
       'An ask its declarations do not settle goes where its intake routed it; you may route it again. Set for this workspace.');
     expect(within(row('Intake routing')).getByText(code('daoris-driver access --workspace aurora routing=person|intake'))).toBeInTheDocument();
     await userEvent.click(within(row('Intake routing')).getByRole('button', { name: 'Clear' }));
-    expect(onChange).toHaveBeenLastCalledWith({ access: { routing: null } });
+    expect(onChange).toHaveBeenLastCalledWith({ access: { routing: null } }, expect.anything());
+  });
+
+  // ACCESSASK1 (the UI/UX design R3, §3.3): a change the driver refused is said under the row it was pressed in, its editor open.
+  it('says a refused change under its row, the editor still open', async () => {
+    const onChange = vi.fn((_edit: unknown, answered?: Answered) => answered?.refused('The driver could not write aurora’s access.'));
+    at({ access: { pauses: pauses({ value: 'person', source: 'default' }), aboveFull: false, onChange } });
+
+    await userEvent.click(section("Sessions' access"));
+    await userEvent.click(within(row('Intake routing')).getByRole('button', { name: 'Set for this workspace' }));
+    await userEvent.click(within(row('Intake routing')).getByRole('radio', { name: 'Intake routes' }));
+
+    expect(within(row('Intake routing')).getByRole('alert')).toHaveTextContent('The driver could not write aurora’s access.');
+    expect(within(row('Intake routing')).getByRole('radiogroup')).toBeInTheDocument();
+    expect(within(row('Permission prompts')).queryByRole('alert')).toBeNull();
   });
 
   it('is absent on a shell older than it', () => {

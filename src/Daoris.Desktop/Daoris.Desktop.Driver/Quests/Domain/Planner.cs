@@ -478,6 +478,111 @@ public sealed record CannotShowFact(string Code, string Environment, string? Add
 public sealed record CannotShowSit(CannotShowFact Fact, string Reason);
 
 /// <summary>
+/// Which of a verdict's sentences the planner said, as a code with its facts (OVERVIEWNOISE1c), for the verdicts whose sentence
+/// the page had no words for: <see cref="StartVerdict.AtCapacity"/>, <see cref="StartVerdict.RepositoryBusy"/>,
+/// <see cref="StartVerdict.Waiting"/>, <see cref="StartVerdict.WaitsForOpinion"/>, <see cref="StartVerdict.NotAdopted"/> and
+/// <see cref="StartVerdict.SourceReopened"/>. The page words it in the reader's language by the code, never by reading the
+/// English beside it (<see cref="Consideration.Reason"/>), which stays the terminal's and an older page's. Each fact is null
+/// where the code's sentence names none.
+/// </summary>
+/// <param name="Code">One of the constants below, read with the verdict: the same code under two verdicts never meets.</param>
+public sealed record SittingFact(string Code)
+{
+    /// <summary>The concurrency cap that is spent (<see cref="StartVerdict.AtCapacity"/>).</summary>
+    public int? Cap { get; init; }
+
+    /// <summary>The session that holds the quest, its tree or its repository; or that will read a question's evidence.</summary>
+    public string? Session { get; init; }
+
+    /// <summary>The other quest the sentence names: one queued ahead, the question waited on, the step before, the reopened source.</summary>
+    public string? Quest { get; init; }
+
+    /// <summary>The repository a question waited on was asked of.</summary>
+    public string? Repository { get; init; }
+
+    /// <summary>The environment a set-up step waited on waits for review in, where it names one.</summary>
+    public string? Environment { get; init; }
+
+    /// <summary>The second opinion's state (<see cref="OpinionGateStates"/>); null where it is not judged yet.</summary>
+    public string? State { get; init; }
+
+    /// <summary><see cref="StartVerdict.AtCapacity"/>: the cap is spent.</summary>
+    public const string CapSpent = "cap";
+
+    /// <summary><see cref="StartVerdict.RepositoryBusy"/>: a session is already working on the quest.</summary>
+    public const string Serving = "serving";
+
+    /// <summary><see cref="StartVerdict.RepositoryBusy"/>: the quest is starting on this machine already.</summary>
+    public const string Opening = "opening";
+
+    /// <summary><see cref="StartVerdict.RepositoryBusy"/>: a session is active in the tree the quest goes back into.</summary>
+    public const string Tree = "tree";
+
+    /// <summary><see cref="StartVerdict.RepositoryBusy"/>: queued behind a quest starting in the tree it goes back into.</summary>
+    public const string TreeOpening = "treeOpening";
+
+    /// <summary><see cref="StartVerdict.RepositoryBusy"/>: queued behind a quest going into that tree at this look.</summary>
+    public const string TreeThisLook = "treeThisLook";
+
+    /// <summary><see cref="StartVerdict.RepositoryBusy"/>: a session is active in the repository, whose root is its one tree.</summary>
+    public const string InRepository = "repository";
+
+    /// <summary><see cref="StartVerdict.RepositoryBusy"/>: queued behind a quest starting in the repository at this look.</summary>
+    public const string Queued = "queued";
+
+    /// <summary><see cref="StartVerdict.RepositoryBusy"/>: queued behind a quest still starting in the repository's root.</summary>
+    public const string RepositoryOpening = "repositoryOpening";
+
+    /// <summary><see cref="StartVerdict.Waiting"/>: the question is not answered yet.</summary>
+    public const string Asked = "asked";
+
+    /// <summary><see cref="StartVerdict.Waiting"/>: the question was closed done, its evidence read when its session ends.</summary>
+    public const string UnreadRunning = "unreadRunning";
+
+    /// <summary><see cref="StartVerdict.Waiting"/>: the question was closed done, its evidence not read yet.</summary>
+    public const string Unread = "unread";
+
+    /// <summary><see cref="StartVerdict.Waiting"/>: as <see cref="Unread"/>, and no session here ended on it, so its check names a commit.</summary>
+    public const string UnreadAtCommit = "unreadAtCommit";
+
+    /// <summary><see cref="StartVerdict.Waiting"/>: the question was closed done without the evidence it names.</summary>
+    public const string Missing = "missing";
+
+    /// <summary><see cref="StartVerdict.Waiting"/>: the question is a set-up step waiting for the person's review.</summary>
+    public const string Unreviewed = "unreviewed";
+
+    /// <summary><see cref="StartVerdict.Waiting"/>: the question was closed done departing from what the person required.</summary>
+    public const string Departed = "departed";
+
+    /// <summary><see cref="StartVerdict.NotAdopted"/>: the repository is not registered on this machine.</summary>
+    public const string Unregistered = "unregistered";
+
+    /// <summary><see cref="StartVerdict.NotAdopted"/>: not adopted, and no root is known for it here.</summary>
+    public const string NoRoot = "noRoot";
+
+    /// <summary><see cref="StartVerdict.NotAdopted"/>: not adopted, and the pipe door would hand its session no connector.</summary>
+    public const string NoConnector = "noConnector";
+
+    /// <summary><see cref="StartVerdict.WaitsForOpinion"/>: a set-up step waits for the opinion on the work it shows.</summary>
+    public const string Landing = "landing";
+
+    /// <summary><see cref="StartVerdict.WaitsForOpinion"/>: a chain's next step waits for the opinion on the step before.</summary>
+    public const string Steps = "steps";
+
+    /// <summary><see cref="StartVerdict.SourceReopened"/>: open, so withdrawn until the person chooses.</summary>
+    public const string Withdrawn = "withdrawn";
+
+    /// <summary><see cref="StartVerdict.SourceReopened"/>: taken, so held until the person chooses.</summary>
+    public const string HeldByReopen = "held";
+}
+
+/// <summary>
+/// A quest a second opinion sits (XAGENT1f), with the sentence the look said and its code (OVERVIEWNOISE1c), so the planner's
+/// verdict carries both.
+/// </summary>
+public sealed record OpinionSit(string Reason, SittingFact Fact);
+
+/// <summary>
 /// One of the person's words waiting on a record (MSG1a, D137 §2.4), as the service answers it to this machine: its id,
 /// which the record's events say again where the session took it, the words, when, its files' names, and whether it was
 /// said after the record ended.
@@ -795,8 +900,8 @@ public sealed record Snapshot(
     /// The quests a second opinion sits, by quest id, each with its sentence (XAGENT1f; <see cref="StartVerdict.WaitsForOpinion"/>):
     /// the look reads them from the opinions owed and the gate's facts, as it reads <see cref="Paused"/>. Absent is none.
     /// </summary>
-    public IReadOnlyDictionary<string, string> Opinions { get; init; } =
-        new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+    public IReadOnlyDictionary<string, OpinionSit> Opinions { get; init; } =
+        new Dictionary<string, OpinionSit>(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>
     /// The quests held on another agent (MIXAGENT1a-ii, D163 point 1), by quest id, read from <see cref="HandedQuests"/> at each look.
@@ -970,6 +1075,14 @@ public sealed record Consideration(
     /// sentence is said from (CANNOTSHOW1a), so the page words it. Null for every other verdict.
     /// </summary>
     public CannotShowFact? CannotShow { get; init; }
+
+    /// <summary>
+    /// For <see cref="StartVerdict.AtCapacity"/>, <see cref="StartVerdict.RepositoryBusy"/>, <see cref="StartVerdict.Waiting"/>,
+    /// <see cref="StartVerdict.WaitsForOpinion"/>, <see cref="StartVerdict.NotAdopted"/> and <see cref="StartVerdict.SourceReopened"/>:
+    /// which of its sentences <see cref="Reason"/> is, as a code with its facts (OVERVIEWNOISE1c), so the page words it. Null for
+    /// every other verdict, and for a start.
+    /// </summary>
+    public SittingFact? Said { get; init; }
 
     /// <summary>
     /// For a start the person's words make (MSG1b, D137 §2.2): <see cref="Resumes"/> is the record they wait on, parked or
@@ -1197,7 +1310,10 @@ public static class Planner
             new(quest, StartVerdict.SourceReopened,
                 $"Quest `#{quest.Id}` grew from the work of `#{quest.Parent}`, which you reopened: "
                 + (quest.Status == "Open" ? "it is withdrawn, and nothing starts it" : "it is held, and nothing carries it on")
-                + " until you go on with it on the new work or abandon it.");
+                + " until you go on with it on the new work or abandon it.")
+            {
+                Said = new(quest.Status == "Open" ? SittingFact.Withdrawn : SittingFact.HeldByReopen) { Quest = quest.Parent },
+            };
 
         // Whether the quest was handed to another agent from this session (MIXAGENT1a-ii): the store names the session whose stop it is.
         bool HandedFrom(QuestView quest, PriorSession stop) =>
@@ -1411,14 +1527,18 @@ public static class Planner
             // its end reads the evidence; after it, the sentence names the cause and both doors, the check and the yes.
             if (question is { Held: true })
             {
-                return new(quest, StartVerdict.Waiting, HeldQuestion(question));
+                var (said, why) = HeldQuestion(question);
+                return new(quest, StartVerdict.Waiting, why) { Said = said };
             }
 
             if (question is not null)
             {
                 return new(quest, StartVerdict.Waiting,
                     $"waits on `#{question.Id}`, asked of `{question.To}` — it resumes, in the same tree, "
-                    + "once that is answered.");
+                    + "once that is answered.")
+                {
+                    Said = new(SittingFact.Asked) { Quest = question.Id, Repository = question.To },
+                };
             }
 
             var considered = Consider(quest, into: prior);
@@ -1429,32 +1549,40 @@ public static class Planner
 
         // Why a held question waits, and whose move it is (DRIFT1d; EVID1b, D144 §6). A host before evidence answers no cause,
         // and its one hold was a departure. The check names a commit where no session here ended on the question, since a done
-        // no driven end read must be read at a commit the person names (D144 §3).
-        string HeldQuestion(QuestView question)
+        // no driven end read must be read at a commit the person names (D144 §3). The code beside the sentence is which of them it
+        // is (OVERVIEWNOISE1c), so the page words it.
+        (SittingFact Said, string Reason) HeldQuestion(QuestView question)
         {
             var yes = $"once you accept the done as it stands, your yes: `daoris-driver quest accept {question.Id}`.";
-            var named = snapshot.LastRun.ContainsKey(question.Id) ? "" : " --commit <sha>";
+            var atCommit = !snapshot.LastRun.ContainsKey(question.Id);
+            var named = atCommit ? " --commit <sha>" : "";
+            SittingFact Fact(string code) => new(code) { Quest = question.Id, Repository = question.To };
             return question.Hold switch
             {
                 EvidenceCodes.Unread when snapshot.Active.FirstOrDefault(s => string.Equals(s.Quest, question.Id, StringComparison.OrdinalIgnoreCase))
                     is { } running =>
-                    $"waits on `#{question.Id}`, which `{question.To}` closed done: its evidence is read when session `{running.Id}` "
-                    + "ends — it resumes, in the same tree, once that evidence is found.",
+                    (Fact(SittingFact.UnreadRunning) with { Session = running.Id },
+                        $"waits on `#{question.Id}`, which `{question.To}` closed done: its evidence is read when session `{running.Id}` "
+                        + "ends — it resumes, in the same tree, once that evidence is found."),
                 EvidenceCodes.Unread =>
-                    $"waits on `#{question.Id}`, which `{question.To}` closed done, and its evidence is not read yet — it resumes, in "
-                    + $"the same tree, once the evidence is found, `daoris-driver quest check {question.Id}{named}`, or {yes}",
+                    (Fact(atCommit ? SittingFact.UnreadAtCommit : SittingFact.Unread),
+                        $"waits on `#{question.Id}`, which `{question.To}` closed done, and its evidence is not read yet — it resumes, in "
+                        + $"the same tree, once the evidence is found, `daoris-driver quest check {question.Id}{named}`, or {yes}"),
                 EvidenceCodes.MissingHold =>
-                    $"waits on `#{question.Id}`, which `{question.To}` closed done without the evidence it names — it resumes, in the "
-                    + $"same tree, once a later commit holds it, `daoris-driver quest check {question.Id} --commit <sha>`, or {yes}",
+                    (Fact(SittingFact.Missing),
+                        $"waits on `#{question.Id}`, which `{question.To}` closed done without the evidence it names — it resumes, in the "
+                        + $"same tree, once a later commit holds it, `daoris-driver quest check {question.Id} --commit <sha>`, or {yes}"),
                 // A set-up step waits for the person's review (REVIEWENV1c, D154 point 9), which a yes does not give.
                 EvidenceCodes.Unreviewed =>
-                    $"waits on `#{question.Id}`, which `{question.To}` closed done: it waits for your review"
-                    + (question.SetUpIn is { } environment ? $" in `{environment}`" : "")
-                    + $" — it resumes, in the same tree, once you say it is reviewed, `daoris-driver quest review {question.Id} reviewed`, "
-                    + $"or skip the review, `daoris-driver quest review {question.Id} skip`.",
+                    (Fact(SittingFact.Unreviewed) with { Environment = question.SetUpIn },
+                        $"waits on `#{question.Id}`, which `{question.To}` closed done: it waits for your review"
+                        + (question.SetUpIn is { } environment ? $" in `{environment}`" : "")
+                        + $" — it resumes, in the same tree, once you say it is reviewed, `daoris-driver quest review {question.Id} reviewed`, "
+                        + $"or skip the review, `daoris-driver quest review {question.Id} skip`."),
                 _ =>
-                    $"waits on `#{question.Id}`, which `{question.To}` closed done departing from what you required — it "
-                    + $"resumes, in the same tree, once you accept that, your yes: `daoris-driver quest accept {question.Id}`.",
+                    (Fact(SittingFact.Departed),
+                        $"waits on `#{question.Id}`, which `{question.To}` closed done departing from what you required — it "
+                        + $"resumes, in the same tree, once you accept that, your yes: `daoris-driver quest accept {question.Id}`."),
             };
         }
 
@@ -1472,7 +1600,10 @@ public static class Planner
             if (repo is null)
             {
                 return new(quest, StartVerdict.NotAdopted,
-                    $"`{quest.To}` is not registered on this machine, so there is nowhere to start it.");
+                    $"`{quest.To}` is not registered on this machine, so there is nowhere to start it.")
+                {
+                    Said = new(SittingFact.Unregistered),
+                };
             }
 
             // Registered is drivable over the protocol door; adopted is disciplined (D70). The pipe
@@ -1484,7 +1615,10 @@ public static class Planner
                 {
                     return new(quest, StartVerdict.NotAdopted,
                         $"`{quest.To}` has not adopted Daoris and no root is known for it on this machine, "
-                        + "so there is nothing to start and nothing there to see the quest.");
+                        + "so there is nothing to start and nothing there to see the quest.")
+                    {
+                        Said = new(SittingFact.NoRoot),
+                    };
                 }
 
                 if (door != SessionWire.Acp)
@@ -1492,7 +1626,10 @@ public static class Planner
                     return new(quest, StartVerdict.NotAdopted,
                         $"`{quest.To}` has not adopted Daoris, so a session there would have no connector to "
                         + "take the quest with — only the protocol door hands it one. Drive with an ACP "
-                        + "agent, or adopt it.");
+                        + "agent, or adopt it.")
+                    {
+                        Said = new(SittingFact.NoConnector),
+                    };
                 }
             }
 
@@ -1519,7 +1656,7 @@ public static class Planner
             // unsettled. The look reads each from its facts; the planner holds no copy of the gate. No strike: nothing ran.
             if (snapshot.Opinions.TryGetValue(quest.Id, out var opinion))
             {
-                return new(quest, StartVerdict.WaitsForOpinion, opinion);
+                return new(quest, StartVerdict.WaitsForOpinion, opinion.Reason) { Said = opinion.Fact };
             }
 
             if (repo.Root is null)
@@ -1554,7 +1691,10 @@ public static class Planner
                 is { } serving)
             {
                 return new(quest, StartVerdict.RepositoryBusy,
-                    $"session `{serving.Id}` is already working on `#{quest.Id}`.");
+                    $"session `{serving.Id}` is already working on `#{quest.Id}`.")
+                {
+                    Said = new(SittingFact.Serving) { Session = serving.Id },
+                };
             }
 
             // PARALLEL1b: a start of this machine's that has not yet opened its record holds the quest as its session will: the look
@@ -1562,7 +1702,10 @@ public static class Planner
             if (opening.Any(start => string.Equals(start.Quest, quest.Id, StringComparison.OrdinalIgnoreCase)))
             {
                 return new(quest, StartVerdict.RepositoryBusy,
-                    $"`#{quest.Id}` is starting on this machine already: its session opens once its tree and account are ready.");
+                    $"`#{quest.Id}` is starting on this machine already: its session opens once its tree and account are ready.")
+                {
+                    Said = new(SittingFact.Opening),
+                };
             }
 
             // 🔴 The TREE is the lock (D51), and where every session here opens its own there is no
@@ -1573,7 +1716,10 @@ public static class Planner
                     && snapshot.Active.FirstOrDefault(s => SameTree(s.Tree, tree) && !Itself(s)) is { } holder)
                 {
                     return new(quest, StartVerdict.RepositoryBusy,
-                        $"session `{holder.Id}` is active in the tree `#{quest.Id}` goes back into — one session per tree.");
+                        $"session `{holder.Id}` is active in the tree `#{quest.Id}` goes back into — one session per tree.")
+                    {
+                        Said = new(SittingFact.Tree) { Session = holder.Id },
+                    };
                 }
 
                 // PARALLEL1b: a start still opening holds the tree it goes back into, as its session will.
@@ -1581,14 +1727,20 @@ public static class Planner
                     && opening.FirstOrDefault(start => SameTree(start.Tree, reserved)) is { Quest: { } going })
                 {
                     return new(quest, StartVerdict.RepositoryBusy,
-                        $"queued behind quest `#{going}`, which is starting in the tree `#{quest.Id}` goes back into — one session per tree.");
+                        $"queued behind quest `#{going}`, which is starting in the tree `#{quest.Id}` goes back into — one session per tree.")
+                    {
+                        Said = new(SittingFact.TreeOpening) { Quest = going },
+                    };
                 }
 
                 // A further part planned into that tree at this look holds it as a live session would (SESSONE1d).
                 if (into is { Tree: { Length: > 0 } claimed } && treesThisTick.FirstOrDefault(claim => SameTree(claim.Tree, claimed)) is { Quest: { } ahead })
                 {
                     return new(quest, StartVerdict.RepositoryBusy,
-                        $"queued behind quest `#{ahead}`, which goes into the tree `#{quest.Id}` goes back into at this look — one session per tree.");
+                        $"queued behind quest `#{ahead}`, which goes into the tree `#{quest.Id}` goes back into at this look — one session per tree.")
+                    {
+                        Said = new(SittingFact.TreeThisLook) { Quest = ahead },
+                    };
                 }
             }
             else if ((continuing
@@ -1598,12 +1750,18 @@ public static class Planner
             {
                 return new(quest, StartVerdict.RepositoryBusy,
                     $"session `{session}` is active in `{quest.To}` — one session per repository, whose root "
-                    + "is its one tree. Sessions there run side by side once they open trees of their own.");
+                    + "is its one tree. Sessions there run side by side once they open trees of their own.")
+                {
+                    Said = new(SittingFact.InRepository) { Session = session },
+                };
             }
             else if (startedThisTick.TryGetValue(quest.To, out var ahead))
             {
                 return new(quest, StartVerdict.RepositoryBusy,
-                    $"queued behind quest `#{ahead}` in `{quest.To}` — oldest first, one at a time.");
+                    $"queued behind quest `#{ahead}` in `{quest.To}` — oldest first, one at a time.")
+                {
+                    Said = new(SittingFact.Queued) { Quest = ahead },
+                };
             }
             // PARALLEL1b: a start still opening in the root holds it, as its session will once it opens.
             else if (opening.FirstOrDefault(start => string.Equals(start.Repository, quest.To, StringComparison.OrdinalIgnoreCase)
@@ -1611,7 +1769,10 @@ public static class Planner
                      is { Quest: { } before })
             {
                 return new(quest, StartVerdict.RepositoryBusy,
-                    $"queued behind quest `#{before}`, which is starting in `{quest.To}` — one session per repository, whose root is its one tree.");
+                    $"queued behind quest `#{before}`, which is starting in `{quest.To}` — one session per repository, whose root is its one tree.")
+                {
+                    Said = new(SittingFact.RepositoryOpening) { Quest = before },
+                };
             }
 
             // An answered park already holds its slot among the active (ANSWER1a): going on, it starts no second session. An
@@ -1621,7 +1782,10 @@ public static class Planner
                 if (slots <= 0)
                 {
                     return new(quest, StartVerdict.AtCapacity,
-                        $"the concurrency cap ({config.Cap}) is spent — it frees as sessions finish.");
+                        $"the concurrency cap ({config.Cap}) is spent — it frees as sessions finish.")
+                    {
+                        Said = new(SittingFact.CapSpent) { Cap = config.Cap },
+                    };
                 }
 
                 slots--;

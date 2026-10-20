@@ -34,7 +34,8 @@
  *    staged before the gates choose (`GENERATED`, ORIENT1a), so a conflict in it alone does not stop the
  *    merge, and one beside others is written once they are resolved. Before it, each decision file the merge
  *    changed has a blank line set before a note's label union left under another note, one line said per
- *    note (`setApart`, MERGEJOIN1).
+ *    note (`setApart`, MERGEJOIN1); and each other union record it changed, before a heading union left under
+ *    another entry's last line, one line said per heading (`setApartHeadings`, UNIONGLUE1).
  * 6. The gates, in a fixed order, fast first, in two lanes (below). The plan is every gate `daoris.gates.json`
  *    declares, plus every `npm run` step the release workflow runs that the declaration does not (the
  *    release and family rehearsals). The order is by kind (a devkit check, then the suites, then the
@@ -43,7 +44,8 @@
  *    long-lived build server carried a broken environment into a publish, so that rehearsal started after
  *    `dotnet build-server shutdown`; since REHLANE2b its builds keep servers of their own, and no gate has a step before it.
  *    GATESLIM1: by default a merge runs the blocking checks alone (`BLOCKING`: the universal gates, the code map and the
- *    orientation index's check); every other gate it reaches is listed and skipped, "in the CI beside" (`--full --beside`).
+ *    orientation index's check), and each typecheck one of its paths reaches (`TYPECHECKS`, MERGETSC1: the web's
+ *    `tsc --noEmit` where the page's sources change); every other gate it reaches is listed and skipped, "in the CI beside" (`--full --beside`).
  *    `--gated` runs what follows: of the plan, the baseline (`BASELINE`: the blocking checks and the CLI's `verify`, at every
  *    merge) and each gate a path the merge changes can reach (`REACH`). A path no rule
  *    places reaches every gate, and so does a gate the table never names. A long gate (`isLongGate`) is
@@ -336,7 +338,7 @@ import {
 } from 'node:fs';
 import { constants as osConstants, setPriority as osSetPriority } from 'node:os';
 import { basename, dirname, join, relative, resolve } from 'node:path';
-import { gluedLabels, records } from './doc-duplicates.mjs';
+import { fenced, gluedLabels, records } from './doc-duplicates.mjs';
 import { isMain, renameHeld, stagedTree, writeAtomic } from './fsx.mjs';
 import { endOrphans, endStranded } from './processes.mjs';
 
@@ -692,14 +694,15 @@ export const slug = (name) => name.replace(/[^A-Za-z0-9._-]+/g, '-').replace(/^-
 
 /**
  * What kind of gate a command is, which orders it and never drops it: a devkit `dotnet run` and a tool's
- * `--check` (the orientation index, ORIENT1a) are checks, `npm run rehearse*` and `npm run test:*` are
- * rehearsals, and anything else is a suite. A command run through `tools/as-merged.mjs` (GATE1) is the kind of
+ * `--check` (the orientation index, ORIENT1a) and `npm run typecheck*` (MERGETSC1) are checks, `npm run rehearse*` and
+ * `npm run test:*` are rehearsals, and anything else is a suite. A command run through `tools/as-merged.mjs` (GATE1) is the kind of
  * what it runs: the universal gates read history as the merge would commit it, and are still the devkit's check.
  */
 export function gateKind(run) {
   const command = run.trim().replace(/^node tools\/as-merged\.mjs\s+/, '');
   if (/^dotnet run\b/.test(command) || /^node tools\/\S+\.mjs --check$/.test(command)) return 'check';
   const script = /^npm run (\S+)$/.exec(command)?.[1];
+  if (script && /^typecheck\b/.test(script)) return 'check';
   if (script && /^(rehearse|test:)/.test(script)) return 'rehearsal';
   return 'suite';
 }
@@ -784,6 +787,30 @@ export const BASELINE = Object.freeze(['universal', 'code-map', 'orient-index', 
  * (`--full --beside`); `--gated` runs what the merge's paths reach, `--full` every gate, `--rerun <gate>` a named one.
  */
 export const BLOCKING = Object.freeze(['universal', 'code-map', 'orient-index']);
+
+/**
+ * MERGETSC1: the typechecks a merge blocks on when one of its paths reaches what they read, beside `BLOCKING`. Two sides
+ * that each typecheck may not together (RAILLINE1's stories named a helper STORYGAP1 had renamed, 2026-10-21), and the CI
+ * beside found it hours after the commit; the web's `tsc --noEmit` takes about a minute. Each is reached by its own
+ * `paths`, and by a path the lane table's every-gate rule places (the gates, the scripts, the lanes), never by the rest of
+ * the table: a path no rule of `REACH` places reaches every other gate, and a typecheck stays a minute of the merges that
+ * change what it reads. `--gated` runs it where reached, `--full` always.
+ */
+export const TYPECHECKS = Object.freeze([
+  {
+    gate: 'web-types',
+    paths: ['src/Daoris.Web/src/**', 'src/Daoris.Web/tsconfig.json', 'src/Daoris.Web/vite.config.ts', 'src/Daoris.Web/package.json', 'src/Daoris.Web/package-lock.json'],
+    why: "the web's typecheck: the page's sources, what configures its compiler, or what changes how every gate runs (MERGETSC1)",
+  },
+]);
+
+const typecheckOf = (gate, typechecks = TYPECHECKS) => typechecks.find((check) => check.gate === gate) ?? null;
+
+/** Of `paths`, the ones that reach a typecheck (MERGETSC1): its own, and those the lane table sends to every gate. */
+const typecheckPaths = (typecheck, paths, reach, lanes) => {
+  const own = laneMatcher(typecheck.paths);
+  return paths.filter((path) => own(path) || ruleFor(path, reach, lanes)?.gates === '*');
+};
 
 // The .NET suites with a test that reads the page's catalogues or sources: MOD9's incident was two of them.
 const PAGE_READERS = ['service', 'driver', 'modules'];
@@ -1091,7 +1118,12 @@ function writeGenerated(root) {
  */
 export function setApart(text) {
   const lines = text.split('\n');
-  const glued = new Set(gluedLabels(lines));
+  return spaced(text, lines, gluedLabels(lines));
+}
+
+/** The text with one blank line set before each line of `indices`, its line ending the line above's; and each set (1-based). */
+function spaced(text, lines, indices) {
+  const glued = new Set(indices);
   if (glued.size === 0) return { text, set: [] };
   const out = [];
   const set = [];
@@ -1105,6 +1137,34 @@ export function setApart(text) {
   return { text: out.join('\n'), set };
 }
 
+/** The lines, by index, that are a markdown heading straight after a non-blank line, outside a fence (UNIONGLUE1). */
+export function gluedHeadings(lines) {
+  const inFence = fenced(lines);
+  return lines.flatMap((line, i) => (i > 0 && !inFence[i] && lines[i - 1].trim() !== '' && /^#{1,6} /.test(line) ? [i] : []));
+}
+
+/** A heading joined to the line above it, as the two lines, so the same join is known in another copy of the file. */
+const joinKey = (lines, i) => `${lines[i - 1].trimEnd()}\n${lines[i].trimEnd()}`;
+
+/**
+ * A union record with one blank line set before each heading the merge joined to the line above, and every other byte
+ * as it was; with each heading and its line once set (1-based) (UNIONGLUE1).
+ *
+ * Two branches that each append an entry to the task archive both open it with a blank line, and union keeps that line
+ * once, as `setApart` says of two notes: the second entry's `## ` heading lands under the first's last line. Two merges
+ * of the install's branches did so on 2026-10-20, each spaced by hand. A join either side already held (`sides`, the
+ * file as each side of the merge had it) is not the merge's: the archive and the fix log carry old ones, and spacing
+ * them would put lines the merge never touched into its diff.
+ */
+export function setApartHeadings(text, sides = []) {
+  const lines = text.split('\n');
+  const held = new Set(sides.flatMap((side) => {
+    const its = side.split('\n');
+    return gluedHeadings(its).map((i) => joinKey(its, i));
+  }));
+  return spaced(text, lines, gluedHeadings(lines).filter((i) => !held.has(joinKey(lines, i))));
+}
+
 /** How a note set apart is named: by the first task its label names (`UX6e`, not the decision `D130`), else by its label. */
 export function noteName(label) {
   const span = label.replace(/^\*+/, '').split('*')[0].trim();
@@ -1112,24 +1172,34 @@ export function noteName(label) {
   return task ? `${task} note` : `note "${span.length > 60 ? `${span.slice(0, 60)}…` : span}"`;
 }
 
+/** How a heading set apart is named: the heading, cut at 60 characters. */
+const headingName = (label) => `heading "${label.length > 60 ? `${label.slice(0, 60)}…` : label}"`;
+
 /**
- * Each decision file the merge in place changed, with its glued notes set apart and staged; one line per note. Only
- * the decisions record as a folder carries the fact: the other union records `doc-duplicates` checks are checked for
- * a line twice, which a join cannot make, and a record still one file is checked for a number twice.
+ * Each union record the merge in place changed, with what union joined set apart and staged; one line for each. In a
+ * file of the decisions folder, a note's label glued to the line above (MERGEJOIN1), which `doc-duplicates` refuses.
+ * In every other union record (`unionRecords`), a heading glued to the line above that neither side held glued
+ * (UNIONGLUE1): nothing refuses that, but a renderer reads the heading as the paragraph before it.
  */
-function setApartNotes(root) {
+function setApartJoins(root) {
   const folders = records(root).filter((record) => record.kind === 'decisions').map((record) => record.file.slice(0, -'/*.md'.length));
-  if (folders.length === 0) return;
+  const union = unionRecords(root).map(attributePattern);
   // What the merge brought, the parent's resolutions with it; a deleted file has nothing to set apart.
   const changed = zPaths(git(root, ['diff', '-z', '--name-only', '--no-renames', '--diff-filter=d', 'HEAD']).out);
+  const side = (commit, path) => git(root, ['show', `${commit}:${path}`], { allowFail: true });
   for (const path of changed) {
-    if (!folders.some((folder) => path.startsWith(`${folder}/`) && /^[^/]+\.md$/.test(path.slice(folder.length + 1)))) continue;
+    const decision = folders.some((folder) => path.startsWith(`${folder}/`) && /^[^/]+\.md$/.test(path.slice(folder.length + 1)));
+    if (!decision && !union.some((pattern) => pattern.test(path))) continue;
     const file = join(root, path);
-    const { text, set } = setApart(readFileSync(file, 'utf8'));
+    const before = readFileSync(file, 'utf8');
+    const sides = decision ? [] : ['HEAD', 'MERGE_HEAD'].map((commit) => side(commit, path)).filter((shown) => shown.status === 0).map((shown) => shown.out);
+    const { text, set } = decision ? setApart(before) : setApartHeadings(before, sides);
     if (set.length === 0) continue;
     writeAtomic(file, text);
     git(root, ['add', '--', path]);
-    for (const note of set) console.log(`set apart: ${basename(path, '.md')}'s ${noteName(note.label)} (${path}:${note.line})`);
+    for (const joined of set) {
+      console.log(`set apart: ${decision ? `${basename(path, '.md')}'s ${noteName(joined.label)}` : `${path}'s ${headingName(joined.label)}`} (${path}:${joined.line})`);
+    }
   }
 }
 
@@ -1174,7 +1244,7 @@ const namedGates = (reach) => new Set(reach.flatMap((rule) => (rule.gates === '*
  * set before staging; `full` runs every gate. `reached` is the lane table's answer, run or not, which is what
  * its tests hold to the code. `unplaced` is the paths no rule placed.
  */
-export function selectGates(plan, changed, { lanes = [], full = false, gated = false, reach = REACH } = {}) {
+export function selectGates(plan, changed, { lanes = [], full = false, gated = false, reach = REACH, typechecks = TYPECHECKS } = {}) {
   const names = new Set(plan.map((gate) => gate.name));
   const named = namedGates(reach);
   const reachedBy = new Map();
@@ -1200,6 +1270,14 @@ export function selectGates(plan, changed, { lanes = [], full = false, gated = f
   };
   const gates = plan.map((gate) => {
     if (BLOCKING.includes(gate.name) || (gated && BASELINE.includes(gate.name))) return { gate, run: true, reached: true, why: 'runs at every merge' };
+    const typecheck = typecheckOf(gate.name, typechecks);
+    if (typecheck) {
+      // MERGETSC1: a typecheck blocks the merges whose paths reach what it reads, and only those.
+      const by = typecheckPaths(typecheck, changed, reach, lanes);
+      if (full) return { gate, run: true, reached: by.length > 0, why: '--full runs every gate' };
+      if (by.length === 0) return { gate, run: false, reached: false, why: gated ? 'no changed path reaches it' : 'in the CI beside' };
+      return { gate, run: true, reached: true, why: `blocks the merge: ${andMore(by)} (${typecheck.why})` };
+    }
     const { reached, why } = BASELINE.includes(gate.name) ? { reached: true, why: 'the baseline' } : reachOf(gate);
     if (full) return { gate, run: true, reached, why: '--full runs every gate' };
     const detail = reached ? `; ${why.replace(/^everything runs: /, '')}` : '';
@@ -1217,7 +1295,9 @@ export function selectGates(plan, changed, { lanes = [], full = false, gated = f
  * its rule names. A verdict stays good until one of these changes, so the stage and `--rerun` ask this of the paths
  * changed since it was given. The test of the table checks that it and `selectGates` agree on every case.
  */
-export function pathsReaching(gate, paths, { lanes = [], reach = REACH } = {}) {
+export function pathsReaching(gate, paths, { lanes = [], reach = REACH, typechecks = TYPECHECKS } = {}) {
+  const typecheck = typecheckOf(gate, typechecks);
+  if (typecheck) return typecheckPaths(typecheck, paths, reach, lanes);
   if (BASELINE.includes(gate) || !namedGates(reach).has(gate)) return [...paths];
   return paths.filter((path) => {
     const rule = ruleFor(path, reach, lanes);
@@ -3177,8 +3257,8 @@ async function gateMerge(root, state, plan) {
   const branch = state.branches[state.at];
   const last = state.at === state.branches.length - 1;
   // Before the gates choose, so the merge's changed paths include what the writing changed (ORIENT1a). The notes
-  // first (MERGEJOIN1): a blank line moves the lines the decisions digest points to.
-  setApartNotes(root);
+  // first (MERGEJOIN1, UNIONGLUE1): a blank line moves the lines the decisions digest points to.
+  setApartJoins(root);
   writeGenerated(root);
   const { gates: selection, chosen: gates, skipped } = chooseGates(root, state, plan);
   const dir = join(root, SCRATCH, `merge-${slug(branch)}`);
@@ -3243,8 +3323,8 @@ async function rerunGates(root, options) {
   const { blocking, generated } = conflicts(root);
   if (blocking.length) return reportConflict(branch, blocking, generated);
   // A fix made in the merge may have moved what the index points to: it is written again before any gate, and a
-  // note a fix glued is set apart first.
-  setApartNotes(root);
+  // note or heading a fix glued is set apart first.
+  setApartJoins(root);
   writeGenerated(root);
   const plan = readPlan(root);
   const unknown = options.rerun.filter((name) => !plan.some((gate) => gate.name === name));

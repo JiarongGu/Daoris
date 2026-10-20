@@ -11,6 +11,13 @@ with the version and date at release.
   conversation as in a driven session, and said apart from a conversation the agent no longer has. A session whose agent is no
   longer installed waits for you to hand it to another, and one whose run could not start ends failed with your words still on
   it. Each move to a new session is said on both sessions, with how much context the old one held and the brief's size.
+- A machine fact Daoris could not judge in time, such as the help room's under load, is logged once as late, no longer a
+  second time as an error.
+- Ask Daoris no longer suggests setting a line for a repository you imported but Daoris does not drive: its *no line*
+  starter, like the setup guide, counts only the repositories Daoris drives.
+- The desktop window no longer starts out looking like a browser while Daoris's driver is still coming up. Sessions, the
+  machine's Settings and the place you last had open stay where they are, and the status bar says the driver is *Starting*,
+  where before the window moved to Overview, hid them and said Settings was a browser's.
 - A session that goes on from another (a hand-over, a move onto another account, a carry-on, a fallback) can read what its
   brief left out: Daoris's connector gains `line_read`, which pages the earlier parts' words, messages, tool calls, plans and notes
   from this machine's records, a bounded page at a time, and the brief's note of what it left out names it. It changes nothing,
@@ -25,6 +32,12 @@ with the version and date at release.
 - A repository moved to another workspace takes its knowledge with it: the workspace it moved to counts and searches its
   entries at once, rather than after the index is next read. Where the Overview finds the index empty, it offers *Refresh
   the index* there.
+- A piece of work you asked for has one name. A session's page heads it with the ask's short title, as its row in Sessions does,
+  and a quest an ask becomes takes the ask's short title where none other was given, instead of the ask's words cut short.
+- In Chinese, why a quest is sitting is now said in Chinese for every reason the driver gives: the concurrency cap (with its
+  number), a session or an earlier quest holding the repository or the tree, a question it waits on, a second opinion, a
+  repository not registered or not adopted, and a reopened source. The status bar says the recall tier in the page's language
+  too, with what it means in its tip.
 - A session waiting on its own background work, such as a long test run, now ends within about a minute once its quest closes,
   is declined or asks another repository, instead of working on until the session timeout. It is recorded completed where its
   quest reached done, its conversation says the work still running ended with it, and that work ends with its process.
@@ -42,6 +55,10 @@ with the version and date at release.
   the next turn, or at the next step where the agent asked for it urgently. On the ask's channel and a session's panel, each message
   says what it reached in each repository: waiting, held, taken, read, answered, or never reached once the ask's work ended, and
   *Send to its session* sends one on.
+- A change Daoris could not make is said where you pressed it, no longer in a corner toast. Turning Ask Daoris's full access on
+  asks once, waits for the driver with *Waiting…*, and says a refusal inside the ask so you can press again; a switch back is said
+  under its chip. A refused change to a session pause is said under that row on Setup and in Settings → Driver, with its choice
+  still open, and an ask's review choice or *Apply* says its refusal beside the press, keeping what you typed.
 - The Quests list shows one row for one piece of work: an ask that became a single quest is that quest's row, named by the
   ask's short title with the ask on its second line (its page opens from the row's right-click menu), and the Asks group
   keeps only asks still waiting on something of their own. A published ask no longer wears the finished colour.

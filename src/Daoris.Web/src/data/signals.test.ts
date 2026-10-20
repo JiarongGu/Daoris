@@ -437,6 +437,60 @@ describe('sittingSentence', () => {
     expect(zh).toContain('不会接续会话 `s1`');
     expect(zh).not.toContain('另一台机器');
   });
+
+  /**
+   * OVERVIEWNOISE1c: the six verdicts that kept the driver's English are worded by the code the tick names beside them, in each
+   * language, with the facts it carries — the cap as a number, the session, the other quest — and the terminal's doors verbatim.
+   */
+  describe('the verdicts the page words by their code', () => {
+    type Said = NonNullable<Consideration['said']>;
+    const coded = (verdict: string, said: Said): Consideration => ({ ...sits(verdict, 'the driver said so.'), said });
+    const cases: [string, Said, string, RegExp][] = [
+      ['AtCapacity', { code: 'cap', cap: 6 }, 'The concurrency cap (6) is spent — it frees as sessions finish.', /并发上限（6）已用满/],
+      ['RepositoryBusy', { code: 'serving', session: 's1' }, 'Session `s1` is already working on `#9a9492`.', /会话 `s1` 已在处理 `#9a9492`/],
+      ['RepositoryBusy', { code: 'opening' }, '`#9a9492` is starting on this machine already: its session opens once its tree and account are ready.', /`#9a9492` 已在本机启动中/],
+      ['RepositoryBusy', { code: 'tree', session: 's1' }, 'Session `s1` is active in the tree `#9a9492` goes back into — one session per tree.', /会话 `s1` 正在 `#9a9492` 要回到的工作树中运行/],
+      ['RepositoryBusy', { code: 'treeOpening', quest: 'q7' }, 'Queued behind quest `#q7`, which is starting in the tree `#9a9492` goes back into — one session per tree.', /排在委托 `#q7` 之后：它正在 `#9a9492` 要回到的工作树中启动/],
+      ['RepositoryBusy', { code: 'treeThisLook', quest: 'q7' }, 'Queued behind quest `#q7`, which goes into the tree `#9a9492` goes back into at this look — one session per tree.', /这一轮查看中，它会进入 `#9a9492` 要回到的工作树/],
+      ['RepositoryBusy', { code: 'repository', session: 's1' }, 'Session `s1` is active in the receiver\'s repository — one session per repository, whose root is its one tree. Sessions there run side by side once they open trees of their own.', /会话 `s1` 正在受托方的仓库中运行/],
+      ['RepositoryBusy', { code: 'queued', quest: 'q7' }, 'Queued behind quest `#q7` in the receiver\'s repository — oldest first, one at a time.', /排在委托 `#q7` 之后——先到先办/],
+      ['RepositoryBusy', { code: 'repositoryOpening', quest: 'q7' }, 'Queued behind quest `#q7`, which is starting in the receiver\'s repository — one session per repository, whose root is its one tree.', /排在委托 `#q7` 之后：它正在受托方的仓库中启动/],
+      ['Waiting', { code: 'asked', quest: 'q2', repository: 'Backend' }, 'Waits on `#q2`, asked of `Backend` — it goes on, in the same tree, once that is answered.', /在等 `#q2`（已向 `Backend` 提出）/],
+      ['Waiting', { code: 'unreadRunning', quest: 'q2', repository: 'Backend', session: 's9' }, 'Waits on `#q2`, which `Backend` closed done: its evidence is read when session `s9` ends — it goes on, in the same tree, once that evidence is found.', /会话 `s9` 停下时读取/],
+      ['Waiting', { code: 'unread', quest: 'q2', repository: 'Backend' }, 'Waits on `#q2`, which `Backend` closed done, and its evidence is not read yet — it goes on, in the same tree, once the evidence is found, `daoris-driver quest check q2`, or once you accept the done as it stands, your yes: `daoris-driver quest accept q2`.', /`daoris-driver quest check q2`）.*`daoris-driver quest accept q2`/],
+      ['Waiting', { code: 'unreadAtCommit', quest: 'q2', repository: 'Backend' }, 'Waits on `#q2`, which `Backend` closed done, and its evidence is not read yet — it goes on, in the same tree, once the evidence is found, `daoris-driver quest check q2 --commit <sha>`, or once you accept the done as it stands, your yes: `daoris-driver quest accept q2`.', /`daoris-driver quest check q2 --commit <sha>`/],
+      ['Waiting', { code: 'missing', quest: 'q2', repository: 'Backend' }, 'Waits on `#q2`, which `Backend` closed done without the evidence it names — it goes on, in the same tree, once a later commit holds it, `daoris-driver quest check q2 --commit <sha>`, or once you accept the done as it stands, your yes: `daoris-driver quest accept q2`.', /却没有它所指明的证据/],
+      ['Waiting', { code: 'unreviewed', quest: 'q2', repository: 'Backend', environment: 'local' }, 'Waits on `#q2`, which `Backend` closed done: it waits for your review in `local` — it goes on, in the same tree, once you say it is reviewed, `daoris-driver quest review q2 reviewed`, or skip the review, `daoris-driver quest review q2 skip`.', /正等你在 `local` 中审阅/],
+      ['Waiting', { code: 'unreviewed', quest: 'q2', repository: 'Backend' }, 'Waits on `#q2`, which `Backend` closed done: it waits for your review — it goes on, in the same tree, once you say it is reviewed, `daoris-driver quest review q2 reviewed`, or skip the review, `daoris-driver quest review q2 skip`.', /正等你审阅——/],
+      ['Waiting', { code: 'departed', quest: 'q2', repository: 'Backend' }, 'Waits on `#q2`, which `Backend` closed done departing from what you required — it goes on, in the same tree, once you accept that, your yes: `daoris-driver quest accept q2`.', /偏离了你的要求/],
+      ['NotAdopted', { code: 'unregistered' }, 'The receiver is not registered on this machine, so there is nowhere to start it.', /受托方没有在本机注册/],
+      ['NotAdopted', { code: 'noRoot' }, 'The receiver has not adopted Daoris and no root is known for it on this machine, so there is nothing to start and nothing there to see the quest.', /本机也不知道它的根目录/],
+      ['NotAdopted', { code: 'noConnector' }, 'The receiver has not adopted Daoris, so a session there would have no connector to take the quest with — only the protocol door hands it one. Drive with an ACP agent, or adopt it.', /没有连接器/],
+      ['WaitsForOpinion', { code: 'landing', state: 'reading' }, 'Set-up step `#9a9492` waits for a second opinion on the work it shows, so you look once at work that already answered another agent. The opinion: being read.', /搭建步骤 `#9a9492` 在等.*第二意见：/],
+      ['WaitsForOpinion', { code: 'landing', state: null }, 'Set-up step `#9a9492` waits for a second opinion on the work it shows, which is not judged yet.', /这条意见还没有评定/],
+      ['WaitsForOpinion', { code: 'steps', quest: 'q1', state: 'with-session' }, 'Waits for a second opinion on the step before it, `#q1`, before it starts. The opinion: being answered.', /上一步 `#q1` 的第二意见。第二意见：/],
+      ['WaitsForOpinion', { code: 'steps', quest: 'q1', state: null }, 'Waits for a second opinion on the step before it, `#q1`, before it starts: it is not judged yet.', /上一步 `#q1` 的第二意见：还没有评定/],
+      ['SourceReopened', { code: 'withdrawn', quest: 'q1' }, 'Quest `#9a9492` grew from the work of `#q1`, which you reopened: it is withdrawn, and nothing starts it until you go on with it on the new work or abandon it.', /它已撤回/],
+      ['SourceReopened', { code: 'held', quest: 'q1' }, 'Quest `#9a9492` grew from the work of `#q1`, which you reopened: it is set aside, and nothing carries it on until you go on with it on the new work or abandon it.', /它已搁置/],
+    ];
+
+    it.each(cases)('words %s by its code in English and in 中文 (%#)', async (verdict, said, english, chinese) => {
+      await i18n.changeLanguage('en');
+      expect(sittingSentence(coded(verdict, said))).toBe(english);
+      await i18n.changeLanguage('zh');
+      const zh = sittingSentence(coded(verdict, said));
+      expect(zh).toMatch(chinese);
+      expect(zh).not.toContain('the driver said so.');
+      expect(zh).not.toMatch(/\{\{|undefined/);
+    });
+
+    it('keeps the driver’s words where the code is not one it knows, or names another verdict’s, or the cap is missing', async () => {
+      await i18n.changeLanguage('zh');
+      expect(sittingSentence(coded('RepositoryBusy', { code: 'somethingNew' }))).toBe('the driver said so.');
+      expect(sittingSentence(coded('AtCapacity', { code: 'serving', session: 's1' }))).toBe('the driver said so.');
+      expect(sittingSentence(coded('AtCapacity', { code: 'cap' }))).toBe('the driver said so.');
+    });
+  });
 });
 
 describe('waitsForAccount', () => {

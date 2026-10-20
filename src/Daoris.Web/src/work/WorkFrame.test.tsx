@@ -117,6 +117,34 @@ describe('the Work frame', () => {
   });
 
   /**
+   * TITLEONE1: one piece of work, one name. A line of work an ask began is named in its head as its row names it, by the ask's
+   * short title, not by the quest's title cut from the ask's words.
+   */
+  it('names the head of a line of work an ask began as its row names it', async () => {
+    const ask = { id: 'a5k0t1', sentence: 'Expose a streaming budget on the level loader please', short: 'Streaming budget', state: 'Published', quests: ['abc123'] };
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.startsWith('/api/asks')) return Response.json([ask]);
+      return respond(url);
+    }));
+    invoke.mockImplementation(async (_module: string, type: string) => (type === 'SESSION_GROUPS'
+      ? {
+        sessions: [],
+        entries: [{
+          entry: `ask:${ask.id}/engine`, origin: `ask:${ask.id}`, repository: 'engine', group: 'working', leading: DRIVEN.id,
+          parts: [{ session: DRIVEN.id, quest: DRIVEN.quest, shown: 'working', group: 'working', began: 'opened', after: null, askedBy: null }],
+        }],
+      }
+      : DRIVER_STATE));
+    show(DRIVEN.id);
+
+    expect(await screen.findByRole('heading', { level: 1, name: 'Streaming budget' })).toBeInTheDocument();
+    const list = await screen.findByRole('complementary', { name: 'Sessions' });
+    expect(await within(list).findByText('Streaming budget')).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { level: 1, name: 'Expose a streaming budget' })).toBeNull();
+  });
+
+  /**
    * ENTRY1b (D161's ENTRY1 note): a door into what waits on the person names a group of Sessions' list, which the frame
    * hands its rail: the group's heading is brought into view and focused, and the door told.
    */

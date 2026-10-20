@@ -487,6 +487,42 @@ describe("a repository's Setup on its page (UX6f)", () => {
     await vi.waitFor(() => expect(notify).toHaveBeenCalledWith('Sessions in engine now stop at each pause as today.'));
   });
 
+  // ACCESSASK1 (the UI/UX design R3, §3.3): a pause's change the driver refused is said under its row on Setup, never a toast.
+  it("says a refused change to its sessions' access under the row it was pressed in", async () => {
+    invoke.mockImplementation(async (_module: string, type: string) => {
+      if (type === 'SET_ACCESS') throw new Error('The driver could not write engine’s access.');
+      if (type === 'LINES') {
+        return {
+          ...LINES,
+          access: [{
+            repository: 'engine', workspace: 'aurora', full: false, pauses: [
+              { pause: 'permissions', value: 'auto', source: 'default' }, { pause: 'routing', value: 'person', source: 'default' },
+              { pause: 'landing', value: 'person', source: 'default' }, { pause: 'goAheads', value: 'named', source: 'default' },
+              { pause: 'questions', value: 'claude-code', source: 'default' },
+            ],
+          }],
+        };
+      }
+      if (type === 'ACROSS') return ACROSS;
+      if (type === 'RULES') return RULES;
+      if (type === 'PLUGINS') return PLUGINS;
+      return { ...DRIVER_STATE, drivable: ['engine'], access: [], workspaceAccess: [], machineAccess: { full: false, pauses: [] } };
+    });
+    const notify = vi.fn();
+    show(<ProjectsView notify={notify} />);
+    await chooseRepository('engine');
+    await openSetup("Sessions' access");
+    const access = within(repositoryMain()).getByRole('region', { name: "Sessions' access" });
+    const landing = within(access).getByText('Landing', { selector: 'span' }).closest('[data-setting-row]') as HTMLElement;
+
+    await userEvent.click(within(landing).getByRole('button', { name: 'Set for this repository' }));
+    await userEvent.click(within(landing).getAllByRole('radio')[1]!);
+
+    expect(await within(landing).findByRole('alert')).toHaveTextContent('The driver could not write engine’s access.');
+    expect(within(landing).getByRole('radiogroup')).toBeInTheDocument();
+    expect(notify).not.toHaveBeenCalled();
+  });
+
   /**
    * HEAVYRUN1b2b (D180's HEAVYRUN1b2a note): this machine's heavy gates for it, read off the driver's state by its name in any case as
    * the driver keys them, the whole list sent on DAORIS.DRIVER over the key `daoris-driver heavy` edits, and the driver's refusal said

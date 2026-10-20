@@ -381,6 +381,8 @@ public sealed class MachineFacts : IDisposable
         lock (_gate) (slots, judge, bound) = (topic.Slots, topic.Judge, topic.Rules.Bound);
 
         var held = false;
+        var late = false;
+        CancellationTokenSource? bounded = null;
         try
         {
             await slots.WaitAsync(_stopping.Token).ConfigureAwait(false);
@@ -388,7 +390,7 @@ public sealed class MachineFacts : IDisposable
             var began = _clock();
             lock (_gate) state.Began = began;
 
-            var bounded = CancellationTokenSource.CreateLinkedTokenSource(_stopping.Token);
+            bounded = CancellationTokenSource.CreateLinkedTokenSource(_stopping.Token);
             bounded.CancelAfter(bound);
             Task<object?> judging;
             try
@@ -400,7 +402,8 @@ public sealed class MachineFacts : IDisposable
                 judging = Task.FromException<object?>(error);
             }
 
-            _ = judging.ContinueWith(_ => bounded.Dispose(), CancellationToken.None, TaskContinuationOptions.None, TaskScheduler.Default);
+            var disposing = bounded;
+            _ = judging.ContinueWith(_ => disposing.Dispose(), CancellationToken.None, TaskContinuationOptions.None, TaskScheduler.Default);
 
             // Past its bound its place is given back, so it holds no other subject; the subject stays judging until it ends.
             using (var waiting = CancellationTokenSource.CreateLinkedTokenSource(_stopping.Token))
@@ -411,7 +414,8 @@ public sealed class MachineFacts : IDisposable
                 {
                     slots.Release();
                     held = false;
-                    Log?.Warn("facts.late", ("topic", topic.Name), ("subject", state.Name), ("boundMs", (long)bound.TotalMilliseconds));
+                    late = true;
+                    Late(topic.Name, state.Name, bound);
                 }
             }
 
@@ -420,6 +424,11 @@ public sealed class MachineFacts : IDisposable
         catch (OperationCanceledException) when (_stopping.IsCancellationRequested)
         {
             // Stopping: nothing more is judged.
+        }
+        catch (OperationCanceledException) when (bounded?.IsCancellationRequested == true)
+        {
+            // Cut at its own bound: late, said once, never an error; the subject keeps the fact last judged.
+            if (!late) Late(topic.Name, state.Name, bound);
         }
         catch (Exception error)
         {
@@ -432,6 +441,10 @@ public sealed class MachineFacts : IDisposable
             Ended(topic, state);
         }
     }
+
+    /// <summary>A judgement past its bound, in the machine log.</summary>
+    private void Late(string topic, string subject, TimeSpan bound) =>
+        Log?.Warn("facts.late", ("topic", topic), ("subject", subject), ("boundMs", (long)bound.TotalMilliseconds));
 
     /// <summary>A judgement over: its waiters told, and the subject judged once more where it was woken meanwhile.</summary>
     private void Ended(TopicState topic, SubjectState state)

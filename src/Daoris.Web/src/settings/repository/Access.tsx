@@ -1,10 +1,10 @@
 import type { TFunction } from 'i18next';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { CheckField, Segmented, SettingRow } from '../../design/ui';
 import { shellWord } from '../../lib/shellWord';
 import { Inheritable } from '../../projects/setup/SetupParts';
-import { type Answered, InlineConfirm } from '../../work/InlineConfirm';
+import { type Answered, InlineConfirm, Refused } from '../../work/InlineConfirm';
 
 /**
  * Where a pause's value was set (AUTONOMY1a, D184 point 1): for the repository, its workspace, this machine, or nowhere, which is
@@ -175,11 +175,15 @@ const WARN_LINE = 'm-0 border-l-[3px] border-warn bg-raised px-3 py-1.5 text-sma
  * **Full access asks once** (the Ask Daoris modes design §5's shape): its press opens an inline ask saying what it turns off and
  * what stays, and only *Enable full access* sends it, waiting for the driver and saying a refusal inside the ask. Turning it off
  * asks nothing, since nothing loosens: it clears this level, or where the level above is full too, which clearing would leave in
- * force, sets today's pauses here. On, it wears the warning colour.
+ * force, sets today's pauses here. On, it wears the warning colour, and so does its ask (`InlineConfirm`'s warning tone).
  *
  * **Each pause is an `Inheritable`**: one from above says where it came from and offers *Set for this …*, which opens its choice
  * in place; one set here carries its choice and *Clear*, which takes it back to the level above. *Questions* is shown with no
  * choice, since every setup asks as Claude Code does (AUTONOMY1e). Each row's hint is its terminal twin, `daoris-driver access`.
+ *
+ * **A refusal is said where it was pressed** (ACCESSASK1, the UI/UX design R3, §3.3): every change carries how to answer it, and
+ * one the driver refused is said under its own row, the pause's editor or the full-access switch, in the driver's sentence and
+ * never a toast, until that row's next press.
  *
  * A molecule: every state is reached by its props, and every press goes out.
  */
@@ -196,11 +200,25 @@ export function AccessRows({ owner, name, workspace, pauses, aboveFull, busy = f
   busy?: boolean;
   /** The press that sets a pause at this level: *Set for this repository*, *… workspace*, *… machine*. */
   setHere: string;
-  /** A change at this level; full access's carries how to answer its ask. */
+  /** A change at this level, and how to answer the row it was pressed in. */
   onChange: (edit: AccessEdit, answered?: Answered) => void;
 }) {
   const { t } = useTranslation();
   const [asking, setAsking] = useState(false);
+  // Each row's refusal, by its pause, `full` for the switch's: one row's press never speaks for another's.
+  const [refusals, setRefusals] = useState<Record<string, string>>({});
+  const turns = useRef<Record<string, number>>({});
+  // A press in a row: its last refusal goes, and an edit, where it makes one, is sent with how to answer that row.
+  const change = (row: string, edit: AccessEdit | null) => {
+    const mine = (turns.current[row] ?? 0) + 1;
+    turns.current[row] = mine;
+    const say = (sentence: string | null) => {
+      if (turns.current[row] !== mine) return;
+      setRefusals(({ [row]: _gone, ...rest }) => (sentence === null ? rest : { ...rest, [row]: sentence }));
+    };
+    say(null);
+    if (edit) onChange(edit, { done: () => say(null), refused: say });
+  };
   const shown = known(pauses);
   const full = isFull(pauses);
   const target = owner === 'machine' ? t('settings.access.thisMachine') : name ?? '';
@@ -223,7 +241,11 @@ export function AccessRows({ owner, name, workspace, pauses, aboveFull, busy = f
             checked={full}
             disabled={busy || asking}
             label={t('settings.access.full.label')}
-            onChange={(on) => (on ? setAsking(true) : onChange({ access: aboveFull ? { ...TODAY } : null }))}
+            onChange={(on) => {
+              // Its ask says its own refusal; turning it off is said under the switch.
+              change('full', on ? null : { access: aboveFull ? { ...TODAY } : null });
+              if (on) setAsking(true);
+            }}
           />
         )}
       >
@@ -235,10 +257,11 @@ export function AccessRows({ owner, name, workspace, pauses, aboveFull, busy = f
         <p className="m-0 mt-1 text-small text-ink-faint">
           {[t('settings.access.full.offs'), t('settings.access.full.stays')].join(sentence)}
         </p>
+        {refusals.full && <Refused className="mt-2" sentence={refusals.full} />}
         {asking && (
           <InlineConfirm
-            className="mt-2 border-l-[3px] border-l-warn"
-            tone="primary"
+            className="mt-2"
+            tone="warn"
             label={t('settings.access.confirm.label', { name: target })}
             says={t(owner === 'machine' ? 'settings.access.confirm.machine' : 'settings.access.confirm.named', { name: target })}
             meanIt={t('settings.access.confirm.enable')}
@@ -270,13 +293,14 @@ export function AccessRows({ owner, name, workspace, pauses, aboveFull, busy = f
             says={[says, fromSays(t, each.source, owner, workspace)].filter(Boolean).join(sentence)}
             own={each.source === owner}
             busy={busy}
-            onClear={() => onChange({ access: { [each.pause]: null } })}
+            refusal={refusals[each.pause] ?? null}
+            onClear={() => change(each.pause, { access: { [each.pause]: null } })}
             editor={() => (
               <Segmented
                 label={t('settings.access.field', { pause: label, name: target })}
                 value={each.value}
                 options={pause.values.map((value) => ({ value, label: valueName(t, each.pause, value) }))}
-                onChange={(value) => !busy && onChange({ access: { [each.pause]: value } })}
+                onChange={(value) => !busy && change(each.pause, { access: { [each.pause]: value } })}
               />
             )}
           />

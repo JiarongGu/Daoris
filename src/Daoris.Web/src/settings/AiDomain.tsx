@@ -6,6 +6,7 @@ import {
 import type { HelpGrantChoice, HelpGrantId } from '../help/access/wired';
 import { doorLabel } from '../agents/tools';
 import { failure, type Notify } from '../design/ui';
+import { sentence } from '../locales/format';
 import { workspacesOf } from '../data/workspaces';
 import { useModeChoice } from '../help/access/HelpModePicker';
 import { fullAdds } from '../help/access/modes';
@@ -43,12 +44,16 @@ function MachineAi({ search, notify, onGo }: { search?: SearchTier; notify: Noti
   const workspaces = workspacesOf(registry.data ?? []);
   const answer = useStarts(workspaces);
   // Ask Daoris's access (HELPMODE1b, D183 point 2), by the panel chip's rule: restricted at once, full access on its confirmation,
-  // which names the servers the plugins offer it and wait for an approval, read only while it asks.
+  // which names the servers the plugins offer it and wait for an approval, read only while it asks. A refusal is said where it was
+  // pressed (ACCESSASK1, the UI/UX design R3): inside the ask, or under the chip, never a toast.
   const setHelpMode = useSetHelpMode();
   const helpMode = helpModeOf(driver.data?.helpMode);
-  const choice = useModeChoice(helpMode, (mode) => setHelpMode.mutate({ mode }, {
-    onSuccess: () => notify(t(mode === 'full' ? 'settings.ai.helpMode.full' : 'settings.ai.helpMode.restricted')),
-    onError: failure(notify),
+  const choice = useModeChoice(helpMode, (mode, answered) => setHelpMode.mutate({ mode }, {
+    onSuccess: () => {
+      notify(t(mode === 'full' ? 'settings.ai.helpMode.full' : 'settings.ai.helpMode.restricted'));
+      answered.done();
+    },
+    onError: (error) => answered.refused(sentence(error)),
   }));
   const plugins = usePlugins({ enabled: choice.confirming });
   const setHelpGrant = useSetHelpGrant();
@@ -122,6 +127,7 @@ function MachineAi({ search, notify, onGo }: { search?: SearchTier; notify: Noti
           confirming: choice.confirming,
           adds: plugins.isSuccess || plugins.isError ? fullAdds(null, plugins.data?.plugins) : null,
           busy: setHelpMode.isPending,
+          refusal: choice.refusal,
           onPick: choice.pick,
           onEnable: choice.enable,
           onCancel: choice.cancel,

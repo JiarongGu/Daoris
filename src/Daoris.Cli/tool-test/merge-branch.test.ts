@@ -151,8 +151,11 @@ const tool = await import(
   GENERATED: readonly { folder: string; tool: string }[];
   isGenerated: (path: string) => boolean;
   setApart: (text: string) => { text: string; set: { line: number; label: string }[] };
+  setApartHeadings: (text: string, sides?: string[]) => { text: string; set: { line: number; label: string }[] };
   noteName: (label: string) => string;
   REACH: readonly Rule[];
+  TYPECHECKS: readonly { gate: string; paths: string[]; why: string }[];
+  selectionLines: (gates: Selected[]) => string[];
   isLongGate: (gate: { name: string; run: string }) => boolean;
   selectGates: (plan: Gate[], changed: string[], options?: { lanes?: Lane[]; full?: boolean; gated?: boolean; reach?: readonly Rule[] }) => { gates: Selected[]; unplaced: string[] };
   pathsReaching: (gate: string, paths: string[], options?: { lanes?: Lane[]; reach?: readonly Rule[] }) => string[];
@@ -976,8 +979,8 @@ test('a merge runs the baseline and what each changed path can reach, but the lo
     ['docs only', ['docs/2026-09-30-parallel-development-design.md'], [...BASE, 'service']],
     ["the steward's records", ['TASKS.md', 'docs/task-archive.md'], [...BASE, 'service']],
     // The .NET suites read the page's catalogues and sources: MOD9's incident.
-    ['the web shell', ['src/Daoris.Web/src/App.tsx'], [...BASE, 'service', 'driver', 'modules', 'web', 'web-unit']],
-    ["the web's settings", ['src/Daoris.Web/src/settings/DriverDomain.tsx'], [...BASE, 'service', 'driver', 'modules', 'web', 'web-unit']],
+    ['the web shell', ['src/Daoris.Web/src/App.tsx'], [...BASE, 'web-types', 'service', 'driver', 'modules', 'web', 'web-unit']],
+    ["the web's settings", ['src/Daoris.Web/src/settings/DriverDomain.tsx'], [...BASE, 'web-types', 'service', 'driver', 'modules', 'web', 'web-unit']],
     ['the driver', ['src/Daoris.Desktop/Daoris.Desktop.Driver/Driver.cs'],
       [...BASE, 'driver', 'modules', 'driver-process', 'driver-process-git', 'modules-process', 'rehearse-family', 'deployment']],
     ['ServiceHostLocator', ['src/Daoris.Desktop/Daoris.Desktop.Driver/ServiceHostLocator.cs'],
@@ -992,10 +995,10 @@ test('a merge runs the baseline and what each changed path can reach, but the lo
     ['a browser test', ['src/Daoris.Web/e2e/platform.spec.ts'], [...BASE, 'web']],
     // FLOWCHART1e: what the measured-box check draws reaches its gate beside the web shell's; its own specs and config reach it alone.
     ...['flowLayout.ts', 'Flow.tsx', 'Flow.stories.tsx', 'flowFrames.tsx', 'ui.tsx', 'ui.stories.tsx', 'storyWidths.tsx'].map((name): [string, string[], string[]] =>
-      [`${name}, which the measured-box check draws`, [`src/Daoris.Web/src/design/${name}`], [...BASE, 'service', 'driver', 'modules', 'web', 'web-unit', 'web-measured']]),
+      [`${name}, which the measured-box check draws`, [`src/Daoris.Web/src/design/${name}`], [...BASE, 'web-types', 'service', 'driver', 'modules', 'web', 'web-unit', 'web-measured']]),
     ["the measured-box check's spec", ['src/Daoris.Web/measured/flow.spec.ts'], [...BASE, 'web-measured']],
     ["the measured-box check's config", ['src/Daoris.Web/playwright.measured.config.ts'], [...BASE, 'web-measured']],
-    ['a design file it does not draw', ['src/Daoris.Web/src/design/theme.ts'], [...BASE, 'service', 'driver', 'modules', 'web', 'web-unit']],
+    ['a design file it does not draw', ['src/Daoris.Web/src/design/theme.ts'], [...BASE, 'web-types', 'service', 'driver', 'modules', 'web', 'web-unit']],
     // MOD9c: the driver's console and occasion scans read every C# source of the modules and the app, from its source root.
     ['the modules', ['src/Daoris.Desktop/Daoris.Desktop.Modules/Bridge/DriverModule.cs'], [...BASE, 'driver', 'modules', 'modules-process', 'deployment']],
     ["the modules' loop", ['src/Daoris.Desktop/Daoris.Desktop.Modules/Loop/DriverLoop.cs'], [...BASE, 'driver', 'modules', 'modules-process', 'deployment']],
@@ -1086,7 +1089,9 @@ test('a merge runs the baseline and what each changed path can reach, but the lo
     ['the orientation index', ['docs/index/routes.md', 'docs/index/outlines/tools/merge-branch.mjs.md'], BASE],
     ['nothing at all', [], BASE],
   ];
-  for (const [what, paths, expected] of cases) {
+  for (const [what, paths, listed] of cases) {
+    // In the plan's order: the web's typecheck (MERGETSC1) is a check, before the CLI's verify.
+    const expected = ALL.filter((gate) => listed.includes(gate));
     assert.deepEqual(reaches(paths), expected, `${what}: what the table says can see it`);
     assert.deepEqual(runs(paths), expected.filter((gate) => !LONG.includes(gate)), `${what}: what a merge runs`);
     // GATE6: the stage reads the same table, so the gates a changed path makes stale are the ones it reaches.
@@ -1143,6 +1148,35 @@ test('a merge runs the baseline and what each changed path can reach, but the lo
   assert.equal(byDefault.find((entry) => entry.gate.name === 'cli')!.reached, true, 'the table still reaches the CLI at every merge');
   // --full still names every gate.
   assert.deepEqual(runs(['src/Daoris.Desktop/Daoris.Desktop.Driver/Driver.cs'], true), ALL);
+});
+
+test("a merge that changes the web's sources blocks on its typecheck, and one that does not lists it in the CI beside (MERGETSC1)", () => {
+  const page = ['src/Daoris.Web/src/App.tsx'];
+  const service = ['src/Daoris.Service/Daoris.Service.Core/Asks.cs'];
+  const check = repoPlan.find((gate) => gate.name === 'web-types')!;
+  assert.equal(check.run, 'npm run typecheck:web');
+  assert.equal(check.kind, 'check', 'among the checks, fast first');
+  assert.equal(tool.isHeavyGate(check), false);
+  assert.equal(tool.isProcessLane(check), false);
+  assert.deepEqual(tool.laneSchedule(repoPlan, { scripts: rootScripts() }).components['web-types'], [], 'it builds no .NET component');
+
+  // The plan names it, and why, as it names the other blocking checks.
+  assert.deepEqual(mergeRuns(page), [...BLOCKING, 'web-types']);
+  const entry = selected(page, false, false).find((candidate) => candidate.gate.name === 'web-types')!;
+  assert.match(entry.why, /^blocks the merge: src\/Daoris\.Web\/src\/App\.tsx \(the web's typecheck/);
+  assert.match(tool.selectionLines(selected(page, false, false)).join('\n'), /4\.\s+web-types\s+check\s+blocks the merge/);
+  assert.deepEqual(mergeRuns(['src/Daoris.Web/tsconfig.json']), [...BLOCKING, 'web-types'], 'what configures its compiler');
+
+  // A merge that changes nothing it reads skips it, even a path the lane table places nowhere.
+  for (const paths of [service, ['src/Daoris.Web/e2e/rail.spec.ts'], ['src/Daoris.Desktop/Daoris.Desktop.Driver/Driver.cs'], ['TASKS.md']]) {
+    assert.deepEqual(mergeRuns(paths), BLOCKING, paths[0]);
+    assert.equal(runs(paths).includes('web-types'), false, `--gated: ${paths[0]}`);
+    assert.equal(stalens(paths).includes('web-types'), false, `its verdict stands: ${paths[0]}`);
+  }
+  assert.equal(selected(service, false, false).find((candidate) => candidate.gate.name === 'web-types')!.why, 'in the CI beside');
+  assert.ok(runs(page).includes('web-types'));
+  assert.ok(stalens(page).includes('web-types'));
+  assert.ok(mergeRuns(service, true).includes('web-types'), '--full runs it');
 });
 
 /**
@@ -1212,6 +1246,23 @@ test("a note's label straight under a line gets one blank line above it; nothing
   assert.equal(tool.setApart('A.\r\n**Built 2026-10-04 (X1).**\r\n').text, 'A.\r\n\r\n**Built 2026-10-04 (X1).**\r\n');
 });
 
+// UNIONGLUE1: a heading union left under another entry's last line, set apart unless a side of the merge held it so.
+test("a heading straight under a line gets one blank line above it, unless a side already held that join", () => {
+  const old = ['# Archive', '', '## A1 — old (2026-10-01)', 'Done.', '## A2 — glued long ago (2026-10-02)', 'Done.'];
+  const merged = [...old, '## A3 — left (2026-10-20)', 'Left.', '## A4 — right (2026-10-20)', 'Right.',
+    // A fence's lines are text: a heading quoted there is not one.
+    '```', 'x', '## not a heading', '```', ''].join('\n');
+  const { text, set } = tool.setApartHeadings(merged, [[...old, '', '## A3 — left (2026-10-20)', 'Left.', ''].join('\n')]);
+  assert.equal(text, [...old, '', '## A3 — left (2026-10-20)', 'Left.', '', '## A4 — right (2026-10-20)', 'Right.',
+    '```', 'x', '## not a heading', '```', ''].join('\n'));
+  assert.deepEqual(set, [
+    { line: 8, label: '## A3 — left (2026-10-20)' },
+    { line: 11, label: '## A4 — right (2026-10-20)' },
+  ]);
+  assert.deepEqual(tool.setApartHeadings(text, [merged]), { text, set: [] });
+  assert.equal(tool.setApartHeadings('A.\r\n## B\r\n').text, 'A.\r\n\r\n## B\r\n');
+});
+
 test('a note set apart is named by its task, or by its label when it names none', () => {
   assert.equal(tool.noteName('**UX6e, built 2026-10-04: Agents is a place.** The bar.'), 'UX6e note');
   assert.equal(tool.noteName('**Built 2026-10-03 (DOC8b): the check for a folder** (point 4).'), 'DOC8b note');
@@ -1222,8 +1273,10 @@ test('a note set apart is named by its task, or by its label when it names none'
 test('a path no rule places runs every gate but the long ones, and says which path; --full runs every gate and says so', () => {
   const unplaced = tool.selectGates(repoPlan, ['docs/x.md', 'src/Daoris.Somewhere/Program.cs'], { lanes: repoLanes, gated: true });
   assert.deepEqual(unplaced.unplaced, ['src/Daoris.Somewhere/Program.cs']);
-  assert.ok(unplaced.gates.every((entry) => entry.reached), 'when unsure, a path reaches everything');
-  assert.deepEqual(unplaced.gates.filter((entry) => entry.run).map((entry) => entry.gate.name), ALL.filter((gate) => !LONG.includes(gate)));
+  // MERGETSC1: but a typecheck, which its own paths reach.
+  const typechecks = tool.TYPECHECKS.map((check) => check.gate);
+  assert.deepEqual(unplaced.gates.filter((entry) => !entry.reached).map((entry) => entry.gate.name), typechecks, 'when unsure, a path reaches everything');
+  assert.deepEqual(unplaced.gates.filter((entry) => entry.run).map((entry) => entry.gate.name), ALL.filter((gate) => !LONG.includes(gate) && !typechecks.includes(gate)));
   const driverProcess = unplaced.gates.find((entry) => entry.gate.name === 'driver-process')!;
   assert.match(driverProcess.why, /^in the full set before staging/);
   assert.match(driverProcess.why, /src\/Daoris\.Somewhere\/Program\.cs/);
@@ -2265,7 +2318,7 @@ test("this repository's Process lane is the real-process halves and the rehearsa
   assert.deepEqual(repoPlan.filter((gate) => tool.isProcessLane(gate)).map((gate) => gate.name),
     ['driver-process', 'driver-process-git', 'modules-process', 'rehearse', 'rehearse-family', 'deployment']);
   assert.deepEqual(repoPlan.filter((gate) => !tool.isProcessLane(gate)).map((gate) => gate.name),
-    ['universal', 'code-map', 'orient-index', 'cli', 'tool-tests', 'service', 'devkit', 'driver', 'modules', 'web', 'web-unit', 'web-measured']);
+    ['universal', 'code-map', 'orient-index', 'web-types', 'cli', 'tool-tests', 'service', 'devkit', 'driver', 'modules', 'web', 'web-unit', 'web-measured']);
   // By what each runs, as the long gates are: a renamed gate, a new Process half or a new rehearsal is still one.
   assert.equal(tool.isProcessLane({ name: 'renamed', run: 'dotnet test x --settings src/Daoris.Desktop/git.process.runsettings' }), true);
   assert.equal(tool.isProcessLane({ name: 'renamed', run: 'npm run rehearse:anything' }), true);
@@ -2316,7 +2369,7 @@ test("what a light gate's script builds behind its name is never a component the
 test("this repository's light lane runs the desktop suites' fast halves first, and the Process lane waits for what it shares", () => {
   const schedule = tool.laneSchedule(repoPlan);
   assert.deepEqual(schedule.light.map((gate) => gate.name),
-    ['driver', 'modules', 'universal', 'code-map', 'orient-index', 'cli', 'tool-tests', 'service', 'devkit', 'web', 'web-unit', 'web-measured']);
+    ['driver', 'modules', 'universal', 'code-map', 'orient-index', 'web-types', 'cli', 'tool-tests', 'service', 'devkit', 'web', 'web-unit', 'web-measured']);
   // REHLANE1, REHLANE2, REHLANE2b: the release, family and deployment rehearsals right after the git half, which they run
   // beside, one after the other.
   assert.deepEqual(schedule.process.map((gate) => gate.name),
@@ -2525,7 +2578,7 @@ test("this repository's light gates run three at once, never two that build one 
   assert.deepEqual(schedule.components['web-measured'], []);
   // GATELANES1's light order and GATEORDER1's waits hold.
   assert.deepEqual(schedule.light.map((gate) => gate.name),
-    ['driver', 'modules', 'universal', 'code-map', 'orient-index', 'cli', 'tool-tests', 'service', 'devkit', 'web', 'web-unit', 'web-measured']);
+    ['driver', 'modules', 'universal', 'code-map', 'orient-index', 'web-types', 'cli', 'tool-tests', 'service', 'devkit', 'web', 'web-unit', 'web-measured']);
   assert.deepEqual(schedule.waits['driver-process']!.after, ['driver', 'modules', 'cli', 'service', 'devkit', 'web', 'web-unit', 'web-measured']);
   // GATEBUILD1: each Process half reuses the build of its own test project's fast half.
   assert.deepEqual(schedule.reuses, { 'driver-process': 'driver', 'driver-process-git': 'driver', 'modules-process': 'modules' });
@@ -4122,6 +4175,51 @@ describe('the tool, end to end in a scratch repository', { concurrency: true }, 
     assert.equal(existsSync(dirname(repo.root)), false, 'the case left its scratch repository');
   });
 
+  test("a merge whose two sides typecheck but not together stops at the web's typecheck, before any commit (MERGETSC1)", async () => {
+    // The real compiler on a page of two files: main renames a helper, the branch names it by its old name.
+    const tsc = join(repoRoot, 'node_modules', 'typescript', 'bin', 'tsc');
+    const typecheck = [
+      "import { spawnSync } from 'node:child_process';",
+      "import { appendFileSync } from 'node:fs';",
+      "appendFileSync('local/ran.txt', 'web-types\\n');",
+      `const run = spawnSync(process.execPath, [${JSON.stringify(tsc)}, '--noEmit', '-p', 'src/Daoris.Web'], { stdio: 'inherit' });`,
+      'process.exit(run.status ?? 2);',
+      '',
+    ].join('\n');
+    const repo = scratch('typecheck', [
+      { name: 'universal', run: 'node gate.mjs universal' },
+      { name: 'web-types', run: 'node typecheck.mjs' },
+    ], {
+      'typecheck.mjs': typecheck,
+      'src/Daoris.Web/tsconfig.json': `${JSON.stringify({ compilerOptions: { strict: true, noEmit: true, module: 'ESNext', moduleResolution: 'bundler', target: 'ES2022', types: [] }, include: ['src'] })}\n`,
+      'src/Daoris.Web/src/rail.ts': 'export const railLine = (text: string): string => text.trim();\n',
+    });
+    branch(repo.root, 'feature/notes', { 'notes.txt': 'x\n' });
+    branch(repo.root, 'feature/story', { 'src/Daoris.Web/src/story.ts': "import { railLine } from './rail';\nexport const story = railLine(' a ');\n" });
+    writeFileSync(join(repo.root, 'src/Daoris.Web/src/rail.ts'), 'export const callLine = (text: string): string => text.trim();\n');
+    git(repo.root, 'commit', '--quiet', '-am', `rename the helper${TRAILER}`);
+
+    // A merge that changes nothing the typecheck reads lists it in the CI beside and does not run it.
+    const plain = await repo.run(['--plan', 'feature/notes'], { BY_DEFAULT: '1' });
+    assert.equal(plain.status, 0, plain.out);
+    assert.match(plain.out, /web-types[^\n]*in the CI beside/);
+
+    // The plan names it among the checks a merge blocks on, and why.
+    const plan = await repo.run(['--plan', 'feature/story'], { BY_DEFAULT: '1' });
+    assert.equal(plan.status, 0, plan.out);
+    assert.match(plan.out, /web-types[^\n]*blocks the merge: src\/Daoris\.Web\/src\/story\.ts/);
+
+    const head = git(repo.root, 'rev-parse', 'HEAD');
+    const result = await repo.run(['feature/story'], { BY_DEFAULT: '1' });
+    assert.equal(result.status, 1, result.out);
+    assert.match(result.out, /FAIL\s+web-types/);
+    assert.match(readFileSync(join(repo.root, 'local', 'scratch', 'merge-feature-story', 'web-types.log'), 'utf8'), /railLine/, 'the compiler said what broke');
+    assert.deepEqual(repo.ran().sort(), ['universal', 'web-types'], 'the light gates run side by side');
+    assert.equal(git(repo.root, 'rev-parse', 'HEAD'), head, 'nothing was committed');
+    git(repo.root, 'merge', '--abort');
+    repo.cleanup();
+  });
+
   test('a clean merge prints its lanes, runs every gate, keeps each whole output, and never commits', async () => {
     const repo = scratch('clean', [
       { name: 'first', run: 'node gate.mjs first' },
@@ -4304,6 +4402,37 @@ describe('the tool, end to end in a scratch repository', { concurrency: true }, 
     assert.match(result.out, /set apart: D1's UX6c note \(docs\/decisions\/D1\.md:11\)/);
     assert.equal(file(), merged + note('UX6b', 'main') + note('UX6c', 'third'));
     assert.match(result.out, /PASS\s+duplicates/);
+    repo.cleanup();
+  });
+
+  test('two archive entries a union merge leaves touching are spaced in the merge, and a join main already held is left', async () => {
+    // Main's archive holds one join from before, which the merge never made and so never touches.
+    const archive = '# Archive\n\n## A1 — old (2026-10-01)\n\nDone.\n## A2 — glued long ago (2026-10-02)\n\nDone.\n';
+    const entry = (task: string) => `\n## ${task} — built (2026-10-20)\n\n- [x] **${task}**\n**Outcome** 2026-10-20: ${task} landed.\n`;
+    const repo = scratch('archive', [{ name: 'first', run: 'node gate.mjs first' }], {
+      '.gitattributes': 'docs/task-archive.md merge=union\n',
+      'docs/task-archive.md': archive,
+    });
+    const file = () => readFileSync(join(repo.root, 'docs', 'task-archive.md'), 'utf8');
+
+    // Main took one branch's entry; a branch from before it appended its own.
+    branch(repo.root, 'right', { 'docs/task-archive.md': archive + entry('RIGHT1') });
+    writeFileSync(join(repo.root, 'docs', 'task-archive.md'), archive + entry('LEFT1'));
+    git(repo.root, 'commit', '--quiet', '-am', `main took an entry${TRAILER}`);
+
+    // Without the tool: union keeps once the blank line both sides opened with, so the second heading lands under the first entry.
+    git(repo.root, 'merge', '--quiet', '--no-ff', '--no-commit', 'right');
+    assert.equal(file(), archive + entry('LEFT1') + entry('RIGHT1').slice(1));
+    git(repo.root, 'merge', '--abort');
+
+    // With it: one blank line before the gates choose, said with its file and line, staged; the old join stays.
+    const result = await repo.run(['right']);
+    assert.equal(result.status, 0, result.out);
+    assert.match(result.out, /set apart: docs\/task-archive\.md's heading "## RIGHT1 — built \(2026-10-20\)" \(docs\/task-archive\.md:15\)/);
+    assert.ok(result.out.indexOf('set apart') < result.out.indexOf('gates for right'), 'set apart before the gates choose');
+    assert.equal((result.out.match(/set apart/g) ?? []).length, 1, result.out);
+    assert.equal(file(), archive + entry('LEFT1') + entry('RIGHT1'));
+    assert.equal(git(repo.root, 'diff', '--name-only'), '', 'what was set apart is staged with the merge');
     repo.cleanup();
   });
 

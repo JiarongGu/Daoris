@@ -151,13 +151,13 @@ describe("a level's access rows", () => {
     expect(within(permissions).getByRole('radiogroup', { name: 'Permission prompts for engine' })).toBeInTheDocument();
     expect(within(permissions).getByRole('radio', { name: 'Asking mode' })).toHaveAttribute('aria-checked', 'true');
     await userEvent.click(within(permissions).getByRole('radio', { name: 'None' }));
-    expect(onChange).toHaveBeenLastCalledWith({ access: { permissions: 'unrestricted' } });
+    expect(onChange).toHaveBeenLastCalledWith({ access: { permissions: 'unrestricted' } }, expect.anything());
 
     // Its own carries its value's choice and Clear, which takes the pause back to the level above.
     const goAheads = row('Go-aheads');
     expect(within(goAheads).getByRole('radio', { name: 'Never' })).toHaveAttribute('aria-checked', 'true');
     await userEvent.click(within(goAheads).getByRole('button', { name: 'Clear' }));
-    expect(onChange).toHaveBeenLastCalledWith({ access: { goAheads: null } });
+    expect(onChange).toHaveBeenLastCalledWith({ access: { goAheads: null } }, expect.anything());
   });
 
   it('asks once before full access, saying what it turns off and what stays, and sends it only on the second press', async () => {
@@ -197,7 +197,7 @@ describe("a level's access rows", () => {
     expect(on).toHaveTextContent('On: sessions start with every pause below off. Set for this repository.');
     expect(on).toHaveClass('border-warn');
     await userEvent.click(within(full).getByRole('checkbox', { name: 'Full access' }));
-    expect(onChange).toHaveBeenLastCalledWith({ access: null });
+    expect(onChange).toHaveBeenLastCalledWith({ access: null }, expect.anything());
   });
 
   it("turns full access from above off by setting today's pauses here, since clearing would leave it full", async () => {
@@ -205,7 +205,47 @@ describe("a level's access rows", () => {
 
     expect(row('Full access')).toHaveTextContent('On: sessions start with every pause below off. From the workspace aurora.');
     await userEvent.click(within(row('Full access')).getByRole('checkbox', { name: 'Full access' }));
-    expect(onChange).toHaveBeenLastCalledWith({ access: { permissions: 'auto', routing: 'person', landing: 'person', goAheads: 'named' } });
+    expect(onChange).toHaveBeenLastCalledWith({ access: { permissions: 'auto', routing: 'person', landing: 'person', goAheads: 'named' } }, expect.anything());
+  });
+
+  // ACCESSASK1 (the UI/UX design R3, §3.3): a refused change is said under the row it was pressed in, at every level, the editor
+  // still open to press again; no other row speaks for it, and the next press there takes it away.
+  it.each(['repository', 'workspace', 'machine'] as const)(
+    'says a pause’s change refused under its row, the editor open, on the %s’s rows',
+    async (owner) => {
+      const onChange = draw(MIXED, { owner });
+      const setHere = owner === 'repository' ? 'Set for this repository' : owner === 'workspace' ? 'Set for this workspace' : 'Set for this machine';
+
+      // The workspace's own value is open already; from above, its press opens it.
+      const permissions = row('Permission prompts');
+      const opens = within(permissions).queryByRole('button', { name: setHere });
+      if (opens) await userEvent.click(opens);
+      await userEvent.click(within(permissions).getByRole('radio', { name: 'None' }));
+      act(() => (onChange.mock.lastCall![1] as Answered).refused('The driver could not write its access file.'));
+
+      expect(within(permissions).getByRole('alert')).toHaveTextContent('The driver could not write its access file.');
+      expect(within(permissions).getByRole('radiogroup')).toBeInTheDocument();
+      expect(screen.getAllByRole('alert')).toHaveLength(1);
+
+      await userEvent.click(within(permissions).getByRole('radio', { name: 'Auto mode' }));
+      expect(within(permissions).queryByRole('alert')).toBeNull();
+      act(() => (onChange.mock.lastCall![1] as Answered).done());
+      expect(screen.queryByRole('alert')).toBeNull();
+    },
+  );
+
+  it('says turning full access off refused under its switch, and a Clear refused under its pause', async () => {
+    const onChange = draw(OPEN('repository'));
+
+    await userEvent.click(within(row('Full access')).getByRole('checkbox', { name: 'Full access' }));
+    act(() => (onChange.mock.lastCall![1] as Answered).refused('The driver could not clear it.'));
+    expect(within(row('Full access')).getByRole('alert')).toHaveTextContent('The driver could not clear it.');
+
+    await userEvent.click(within(row('Landing')).getByRole('button', { name: 'Clear' }));
+    act(() => (onChange.mock.lastCall![1] as Answered).refused('The driver could not clear landing.'));
+    expect(within(row('Landing')).getByRole('alert')).toHaveTextContent('The driver could not clear landing.');
+    // Each row keeps its own.
+    expect(within(row('Full access')).getByRole('alert')).toHaveTextContent('The driver could not clear it.');
   });
 
   it("says a workspace's and this machine's own values as theirs, each twin at its level", () => {

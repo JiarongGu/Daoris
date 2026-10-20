@@ -1,10 +1,11 @@
 import { type ReactElement } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { render as rtlRender, screen, within } from '@testing-library/react';
+import { act, render as rtlRender, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import i18n from '../locales/i18n';
 import type { Ask } from '../data/api';
+import type { Answered } from '../work/InlineConfirm';
 import { AskPage } from './AskPage';
 import { CLOSED, PROPOSED } from './fixtures';
 
@@ -48,7 +49,22 @@ describe("the kind of an ask's work", () => {
     expect(onChooseKind).not.toHaveBeenCalled();
     await user.click(within(section).getByRole('button', { name: 'Apply' }));
 
-    expect(onChooseKind).toHaveBeenCalledWith('docs', 'fix-flow');
+    expect(onChooseKind).toHaveBeenCalledWith('docs', 'fix-flow', expect.anything());
+  });
+
+  // ACCESSASK1 (the UI/UX design R3): an Apply refused is said under its proposal, in the service's sentence, never a toast.
+  it('says an Apply refused under its proposal, until it is pressed again', async () => {
+    const onChooseKind = vi.fn();
+    const user = userEvent.setup();
+    render(page(PROPOSING, { onChooseKind }));
+    const section = screen.getByRole('region', { name: 'Kind of work' });
+    await user.click(within(section).getByRole('button', { name: 'Apply' }));
+    act(() => (onChooseKind.mock.lastCall![2] as Answered).refused('No workflow declares the kind docs.'));
+
+    const proposal = within(section).getByText(/The intake proposed the kind docs/).closest('div')!;
+    expect(within(proposal).getByRole('alert')).toHaveTextContent('No workflow declares the kind docs.');
+    await user.click(within(proposal).getByRole('button', { name: 'Apply' }));
+    expect(within(section).queryByRole('alert')).toBeNull();
   });
 
   it('hides a proposal the latest choice already has', () => {

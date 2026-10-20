@@ -1,24 +1,27 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, render, screen, waitFor, within } from '@testing-library/react';
+import { act, cleanup, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import type { HelpMode } from '../../bridge/help';
 import i18n from '../../locales/i18n';
-import { FullAccessConfirm, HelpModeChip, useModeChoice } from './HelpModePicker';
+import { type Answered, Refused } from '../../work/InlineConfirm';
+import { FullAccessAsk, HelpModeChip, useModeChoice } from './HelpModePicker';
 
 // HELPMODE1b (D183 point 2; the modes design §1, §5): Ask Daoris's access, chosen from its chip. The chip shows the mode the
 // conversation in view runs under, a switch that waits for its next start, and full access in the warning colour; restricted is
-// set at once, and full access asks once, inline, naming the servers it would add and when it takes effect.
+// set at once, and full access asks once, inline, naming the servers it would add and when it takes effect. ACCESSASK1 (the UI/UX
+// design §3.4): the ask is the one `InlineConfirm`, open until the driver answers, and a refusal is said where it was pressed.
 
 /** The chip and its confirmation as their holders compose them: the panel's strip, and Settings' row. */
 function Picker({ selected, running = null, adds, onChoose }: {
-  selected: HelpMode; running?: HelpMode | null; adds?: string[] | null; onChoose: (mode: HelpMode) => void;
+  selected: HelpMode; running?: HelpMode | null; adds?: string[] | null; onChoose: (mode: HelpMode, answered: Answered) => void;
 }) {
   const choice = useModeChoice(selected, onChoose);
   return (
     <Tooltip.Provider>
+      {choice.confirming && <FullAccessAsk adds={adds} onEnable={choice.enable} onClose={choice.cancel} />}
       <HelpModeChip selected={selected} running={running} onPick={choice.pick} />
-      {choice.confirming && <FullAccessConfirm adds={adds} onEnable={choice.enable} onCancel={choice.cancel} />}
+      {choice.refusal && <Refused sentence={choice.refusal} />}
     </Tooltip.Provider>
   );
 }
@@ -69,8 +72,20 @@ describe.each(['en', 'zh'])('Ask Daoris’s access chip in %s', (language) => {
 
     await pick('restricted');
 
-    expect(onChoose).toHaveBeenCalledWith('restricted');
+    expect(onChoose).toHaveBeenCalledWith('restricted', expect.anything());
     expect(screen.queryByRole('group', { name: i18n.t('help.mode.confirm.label') })).toBeNull();
+  });
+
+  it('says a switch back the driver refused under the chip, until the next pick', async () => {
+    await i18n.changeLanguage(language);
+    const onChoose = vi.fn((_mode: HelpMode, answered: Answered) => answered.refused('The driver could not write its settings.'));
+    render(<Picker selected="full" running="full" onChoose={onChoose} />);
+
+    await pick('restricted');
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('The driver could not write its settings.');
+    await pick('full');
+    expect(screen.queryByRole('alert')).toBeNull();
   });
 
   it('asks once before full access, naming the servers it would add and when it takes effect', async () => {
@@ -80,10 +95,10 @@ describe.each(['en', 'zh'])('Ask Daoris’s access chip in %s', (language) => {
 
     await pick('full');
 
-    // Nothing is set by the pick: the confirmation asks first, and takes the focus.
+    // Nothing is set by the pick: the confirmation asks first, and its sentence takes the focus.
     expect(onChoose).not.toHaveBeenCalled();
     const asks = screen.getByRole('group', { name: i18n.t('help.mode.confirm.label') });
-    await waitFor(() => expect(asks).toHaveFocus());
+    await waitFor(() => expect(asks).toContainElement(document.activeElement as HTMLElement));
     expect(within(asks).getByText(i18n.t('help.mode.confirm.says'))).toBeInTheDocument();
     expect(within(asks).getByText(i18n.t('help.mode.confirm.adds'))).toBeInTheDocument();
     expect(within(asks).getByText('browser')).toBeInTheDocument();
@@ -94,8 +109,32 @@ describe.each(['en', 'zh'])('Ask Daoris’s access chip in %s', (language) => {
     expect(screen.getByRole('button', { name: i18n.t('help.mode.confirm.enable') })).toHaveFocus();
     await userEvent.keyboard('{Enter}');
 
-    expect(onChoose).toHaveBeenCalledWith('full');
+    expect(onChoose).toHaveBeenCalledWith('full', expect.anything());
+    // It waits for the driver's answer, open, and says so; only `done` puts it down.
+    expect(screen.getByRole('group', { name: i18n.t('help.mode.confirm.label') })).toBe(asks);
+    expect(within(asks).getByRole('status')).toHaveTextContent(i18n.t('work.confirm.pending'));
+    act(() => onChoose.mock.calls[0]![1].done());
     expect(screen.queryByRole('group', { name: i18n.t('help.mode.confirm.label') })).toBeNull();
+  });
+
+  it('says a refusal of full access inside its ask, which stays open to be pressed again, in the warning tone', async () => {
+    await i18n.changeLanguage(language);
+    const onChoose = vi.fn((_mode: HelpMode, answered: Answered) => answered.refused('The driver could not write its settings.'));
+    render(<Picker selected="restricted" onChoose={onChoose} adds={[]} />);
+
+    await pick('full');
+    const asks = screen.getByRole('group', { name: i18n.t('help.mode.confirm.label') });
+    expect(asks.className).toContain('border-l-warn');
+    const enable = within(asks).getByRole('button', { name: i18n.t('help.mode.confirm.enable') });
+    expect(enable.className).toContain('border-warn');
+    await userEvent.click(enable);
+
+    expect(within(asks).getByRole('alert')).toHaveTextContent('The driver could not write its settings.');
+    expect(enable).toBeEnabled();
+    // Never mind puts it down and gives the focus back to the chip.
+    await userEvent.click(within(asks).getByRole('button', { name: i18n.t('common.cancel') }));
+    expect(screen.queryByRole('group', { name: i18n.t('help.mode.confirm.label') })).toBeNull();
+    await waitFor(() => expect(chip(i18n.t('help.mode.restricted'))).toHaveFocus());
   });
 
   it('sets nothing on Never mind, and says when no server is withheld or the servers are still being read', async () => {
