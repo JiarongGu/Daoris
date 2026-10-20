@@ -267,3 +267,134 @@ describe('signing in on the row', () => {
     expect(screen.getByText('The tool\'s own output').closest('details')?.open).toBe(false);
   });
 });
+
+/**
+ * SIGNIN1 (the UI/UX design §3.2, R2): the sign-in says its phase and how long. The phases are the driver's, each a line of
+ * its relay that begins with the record separator and names the phase and its start; the link, the code and the ask stay
+ * read from the tool's lines by their shape. An older host writes no phases, and the panel draws as before with the time
+ * since the press.
+ */
+describe('signing in, phase by phase', () => {
+  const START = Date.parse('2026-10-20T09:00:00.000Z');
+  const CODEX = 'codex-acp:login-new';
+  const phase = (name: string, at: number) => `\u001e${JSON.stringify({ phase: name, at: new Date(at).toISOString() })}`;
+  let next = 1;
+  const push = async (id: string, ...texts: string[]) => act(async () => {
+    eventHandlers.get('DAORIS.SESSION_OUTPUT')!({ session: id, lines: texts.map((text) => ({ sequence: ++next, text })) });
+  });
+  const codex = (props: Partial<Parameters<typeof SignIn>[0]> = {}) => {
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    return render(
+      <QueryClientProvider client={client}>
+        <Tooltip.Provider>
+          <SignIn id={CODEX} harness="codex-acp" action="login-new" tool="Codex" {...props} />
+        </Tooltip.Provider>
+      </QueryClientProvider>,
+    );
+  };
+  const stateOf = (name: RegExp) => screen.getAllByRole('listitem').find((item) => name.test(item.textContent ?? ''))!.textContent;
+
+  beforeEach(() => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    vi.setSystemTime(START + 48_000);
+    next = 1;
+    invoke.mockImplementation(async (_module: string, type: string) => (type === 'TAIL_SESSION'
+      ? { session: CODEX, lines: [], sequence: 0, live: true, dropped: 0 }
+      : {}));
+  });
+  afterEach(() => {
+    vi.useRealTimers();
+    invoke.mockReset();
+  });
+
+  it('draws Codex\'s device code under its browser phase, then the driver\'s own phases, each with its time', async () => {
+    codex();
+    await push(CODEX, phase('start', START));
+    expect(await screen.findByText('Starting Codex')).toBeTruthy();
+    expect(stateOf(/^Starting Codex/)).toMatch(/now/);
+    expect(stateOf(/^Checking who signed in/)).toMatch(/to come/);
+    // The whole's time, from the driver's start, and the phase now's: here the same.
+    expect(screen.getAllByText('48s so far')).toHaveLength(2);
+
+    await push(CODEX,
+      phase('browser', START + 1_000), '$ codex login --device-auth', '',
+      'Follow these steps to sign in with ChatGPT using device code authorization:', '',
+      '1. Open this link in your browser and sign in to your account', '   https://auth.openai.com/codex/device', '',
+      '2. Enter this one-time code (expires in 15 minutes)', '   ABCD-12345', '');
+    expect(stateOf(/^Starting Codex/)).toMatch(/done.*1s/);
+    expect(stateOf(/^Waiting on your browser/)).toMatch(/waits on you.*47s so far/);
+    expect(screen.getByText('Open the page and enter this code:')).toBeTruthy();
+    expect(screen.getByText('ABCD-12345')).toBeTruthy();
+    // The tool's own bound, from when it was printed: fifteen minutes, forty-seven seconds gone.
+    expect(screen.getByText('Expires in 14m')).toBeTruthy();
+    expect(screen.getByRole('link', { name: /auth\.openai\.com/ }).getAttribute('href')).toBe('https://auth.openai.com/codex/device');
+    expect(screen.getByRole('status').textContent).toBe('Waiting on your browser, waits on you');
+
+    await push(CODEX, 'Successfully logged in', phase('who', START + 47_000));
+    expect(stateOf(/^Waiting on your browser/)).toMatch(/done.*46s/);
+    expect(stateOf(/^Checking who signed in/)).toMatch(/now/);
+    expect(screen.queryByText('ABCD-12345')).toBeNull();
+
+    await push(CODEX, phase('lists', START + 48_000));
+    expect(stateOf(/^Joining the lists/)).toMatch(/now/);
+    // A phase line is the driver's, never the tool's words.
+    await userEvent.click(screen.getByText('The tool\'s own output'));
+    expect(screen.getByText(/codex login --device-auth/).textContent).not.toMatch(/phase|\u001e/);
+  });
+
+  it('reads a run\'s phases after its own start, so a panel that stayed up through a second run reads that one', async () => {
+    codex();
+    await push(CODEX, phase('start', START), phase('browser', START + 1_000), phase('start', START + 40_000));
+
+    expect(await screen.findAllByText('8s so far')).toHaveLength(2);
+    expect(stateOf(/^Starting Codex/)).toMatch(/now/);
+    expect(stateOf(/^Waiting on your browser/)).toMatch(/to come/);
+  });
+
+  it('says a phase that failed with its sentence whole, the earlier ones done, and offers Try again and Close', async () => {
+    const retry = vi.fn();
+    const close = vi.fn();
+    codex({ failed: 'Sign-in did not finish (the tool exited 1), so nothing was kept. Its output says why.', onRetry: retry, onClose: close });
+    await push(CODEX, phase('start', START), phase('browser', START + 1_000));
+
+    expect((await screen.findByRole('alert')).textContent).toBe('Sign-in did not finish (the tool exited 1), so nothing was kept. Its output says why.');
+    expect(stateOf(/^Starting Codex/)).toMatch(/done/);
+    expect(stateOf(/^Waiting on your browser/)).toMatch(/failed/);
+    expect(screen.queryByRole('button', { name: /Cancel/ })).toBeNull();
+    await userEvent.click(screen.getByRole('button', { name: 'Try again' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Close' }));
+    expect([retry.mock.calls.length, close.mock.calls.length]).toEqual([1, 1]);
+  });
+
+  it('says a refused start as its first phase failed, with the driver\'s sentence whole', async () => {
+    codex({ refused: '`codex` is pinned to 0.160.0 on this machine, and nothing is installed at that version.' });
+
+    expect((await screen.findByRole('alert')).textContent).toBe('codex is pinned to 0.160.0 on this machine, and nothing is installed at that version.');
+    expect(stateOf(/^Starting Codex/)).toMatch(/failed/);
+    expect(screen.getByRole('button', { name: 'Try again' })).toBeTruthy();
+  });
+
+  it('from an older host that writes no phases, draws its steps as before with the time since the press', async () => {
+    codex({ pressedAt: START + 30_000 });
+    await push(CODEX, '$ codex login --device-auth');
+
+    expect(await screen.findByText('Waiting for the tool to open the page…')).toBeTruthy();
+    expect(screen.getByText('18s so far')).toBeTruthy();
+    expect(screen.queryByText('Starting Codex')).toBeNull();
+  });
+
+  it('names its phases in Chinese', async () => {
+    await i18n.changeLanguage('zh');
+    try {
+      codex();
+      await push(CODEX, phase('start', START), phase('browser', START + 1_000), '   https://auth.openai.com/codex/device');
+      expect(await screen.findByText('正在启动 Codex')).toBeTruthy();
+      expect(screen.getByText('等你在浏览器中完成')).toBeTruthy();
+      expect(screen.getByText('正在确认登录的是谁')).toBeTruthy();
+      expect(screen.getByText('正在加入列表')).toBeTruthy();
+      expect(screen.getByText('已用 48 秒')).toBeTruthy();
+    } finally {
+      await i18n.changeLanguage('en');
+    }
+  });
+});

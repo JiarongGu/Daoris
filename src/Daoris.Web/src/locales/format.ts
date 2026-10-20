@@ -139,6 +139,19 @@ export function span(ms: number, language?: string): string {
 }
 
 /**
+ * How long a phase has run (R2, SIGNIN1): whole seconds in the first minute, whole minutes after, then hours and minutes, so
+ * a time that steps by its own clock steps each second and then each minute (`design/phases`' `Elapsed`). Where `span`
+ * says a turn's length to the tenth, this says a wait's, which moves.
+ */
+export function phaseTime(ms: number): string {
+  const seconds = Math.floor(Math.max(0, ms) / 1000);
+  if (seconds < 60) return i18n.t('duration.seconds', { seconds });
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return i18n.t('duration.minutes', { count: minutes });
+  return i18n.t('duration.hours', { hours: Math.floor(minutes / 60), minutes: minutes % 60 });
+}
+
+/**
  * A refusal whose sentence names something its record may not have, and the form to read where the shell sent it
  * empty (CHATTAKE1c, D126's CHATTAKE1 note): a chat that took a quest is refused as having served one, but no quest
  * records which session took it, so the refusal names none, and the sentence that names one read `#`.
