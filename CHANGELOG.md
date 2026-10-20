@@ -5,6 +5,12 @@ with the version and date at release.
 
 ## Unreleased
 
+- Codex signs in through your browser again, as ChatGPT's desktop app does, so a ChatGPT workspace that turns device codes off can
+  add its account: *Add an account…* on Agents → Codex and `daoris agent login codex` open the page, and the device code stays
+  beside it (*Use a device code*, or `--device-code` at a terminal). Either way can be switched to while the other waits, which
+  stops the first. Where the ports Codex waits on for the browser (1455, else 1457) are both held, by another program or by a range
+  Windows reserves, the sign-in says so before it starts and offers the device code; a sign-in Codex refuses shows Codex's own
+  line, with the other way offered, in English and 中文.
 - `daoris driver` hands its standing choices to Daoris's own driver program, as `daoris-driver driver` with the same words: the
   one your install carries, or the build `DAORIS_DRIVER_PROGRAM` names. A `daoris` with neither, such as a checkout's, says so and
   does nothing. What each choice says is as before; a refusal is said on the error stream, and a refusal the window's route would
