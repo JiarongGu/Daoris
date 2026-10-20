@@ -802,6 +802,46 @@ describe("the driver's state, pushed (PUSH1a)", () => {
   });
 
   /**
+   * PUSHUX2 (PUSHUX1's hand-back, the UI/UX design §3.8): a shell is known before its driver answers. While the driver's snapshot is
+   * on its way the window keeps Sessions, the view it remembered, and Settings its machine's domains and the one it remembered, never
+   * reading as a browser; then the snapshot lands and nothing moves.
+   */
+  it("keeps a shell's places while its driver's snapshot is on its way (PUSHUX2)", async () => {
+    host(true);
+    const answered = invoke.getMockImplementation()!;
+    let answerDriver: () => void = () => {};
+    const driverAnswered = new Promise<void>((resolve) => { answerDriver = resolve; });
+    invoke.mockImplementation(async (module: string, type: string, options?: { payload?: { slice?: string } }) => {
+      if (module === 'DAORIS.DRIVER' && type === 'STATE_SLICE' && options?.payload?.slice === 'driver') await driverAnswered;
+      return answered(module, type, options);
+    });
+    window.localStorage.setItem('daoris.view', 'sessions');
+    window.localStorage.setItem('daoris.settings', 'driver');
+    const client = await open();
+    expect(client.getQueryData(keys.driver)).toBeUndefined();
+
+    const nav = screen.getByRole('navigation', { name: 'Views' });
+    expect(within(nav).getByRole('button', { name: 'Sessions' })).toHaveAttribute('aria-current', 'page');
+    expect(screen.queryByText('Absent')).toBeNull();
+
+    await act(async () => {
+      within(nav).getByRole('button', { name: 'Settings' }).click();
+      await vi.advanceTimersByTimeAsync(100);
+    });
+    const domains = screen.getByRole('navigation', { name: 'Settings domains' });
+    expect(within(domains).getByRole('button', { name: 'Driver' })).toHaveAttribute('aria-current', 'page');
+    expect(screen.queryByText("A machine's own settings are on the desktop, where the machine is.")).toBeNull();
+
+    await act(async () => {
+      answerDriver();
+      await vi.advanceTimersByTimeAsync(1_000);
+    });
+    expect(client.getQueryData<DriverState>(keys.driver)?.drivable).toEqual(['engine']);
+    expect(within(domains).getByRole('button', { name: 'Driver' })).toHaveAttribute('aria-current', 'page');
+    expect(within(nav).getByRole('button', { name: 'Sessions' })).toBeInTheDocument();
+  });
+
+  /**
    * A host older than the calls' push has no mark to wake the page: the working session's own page keeps asking every few seconds.
    * The window's badge asks nothing: who needs the person is pushed (PUSH1d4).
    */

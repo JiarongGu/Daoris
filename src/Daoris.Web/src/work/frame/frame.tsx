@@ -314,7 +314,8 @@ export function ActivityBar<T extends string>({
 
 /**
  * What the driver is, as a surface can honestly know it. `starting` is a shell whose driver answers from its file while
- * its service is not up yet, so every route that reads the service still refuses (LOOK2a).
+ * its service is not up yet, so every route that reads the service still refuses (LOOK2a), and a shell whose driver has not
+ * answered at all yet (PUSHUX2), which is coming up too and never `absent`.
  */
 export type DriverPresence = 'running' | 'starting' | 'stopped' | 'absent';
 

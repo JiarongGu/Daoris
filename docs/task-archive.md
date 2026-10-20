@@ -18299,3 +18299,9 @@ opinion's state in the gate's own words; no code, or an unknown one, keeps the d
 `{ semantic }` and says its label and its tip by that value (`work.status.tier*`). Proof: PlannerTests, OpinionGateTests,
 OpinionLookTests, TickConsiderationTests, DriverModuleWorkTests; signals.test.ts per verdict and code in en and zh; chrome.test.tsx
 in zh. The sessions page's held words (`WordsHold`) still carry the driver's sentence, out of this row.
+
+## PUSHUX2 — a window whose driver has not answered yet is not a browser (2026-10-21)
+
+> - [ ] **PUSHUX2 — a window whose driver has not answered yet is not a browser** (web-shell; PUSHUX1's hand-back, §3.8). `attached` is `useDriver().data !== undefined` (`App.tsx:234`, `SettingsView.tsx:80`), so until the driver's slice answers a shell's window draws the browser's frame, hides the shell-only places, sends a remembered one to Overview, and Settings says it is a browser and drops a machine domain for Appearance. A shell is known before its driver answers: a window there waits (skeleton) rather than reading as a browser. Proof: a window test whose driver snapshot is slow keeping Sessions and a Settings machine domain.
+
+**Outcome** 2026-10-21: whether the window is a shell's is `useAttached` (`bridge/driver.ts`), the driver's answer or the bridge with that answer still on its way, read by App and Settings; a shell's window keeps Sessions, a remembered shell-only place and Settings' machine domains while its driver's slice is on its way, its places waiting as PUSHUX1 made them, and the status bar says *Starting*. A driver whose read failed still reads as none. Held by `pushedState.test.tsx`'s PUSHUX2 case. Detail: D182's PUSHUX2 note.
