@@ -172,4 +172,44 @@ public sealed class MachineLogTests : IDisposable
 
         Assert.Empty(Lines("2026-09-30.host.jsonl"));
     }
+
+    /// <summary>
+    /// MACHINELOGAPPEND2: two writers of one source on one day's file — two sessions' knowledge hosts on the day's one
+    /// <c>mcp</c> file — each write at the file's end. Before, each wrote at its own handle's position, and the second's
+    /// line was gone after the first's next (the driver's twin, MACHINELOGAPPEND1).
+    /// </summary>
+    [Fact]
+    public void Two_logs_on_one_file_keep_each_others_lines()
+    {
+        using var first = Log("mcp");
+        using var second = Log("mcp");
+
+        first.Info("app.started");
+        second.Info("app.started", ("session", "76cdd5db"));
+        first.Info("tool.called", ("tool", "knowledge_search"));
+        second.Info("app.stopped");
+
+        var lines = Lines("2026-09-30.mcp.jsonl");
+        Assert.Equal(4, lines.Length);
+        Assert.Contains("\"event\":\"app.started\",\"data\":{}", lines[0]);
+        Assert.Contains("\"session\":\"76cdd5db\"", lines[1]);
+        Assert.Contains("\"event\":\"tool.called\"", lines[2]);
+        Assert.Contains("\"event\":\"app.stopped\"", lines[3]);
+    }
+
+    /// <summary>The two writing at once from many threads: every line of each lands, whole.</summary>
+    [Fact]
+    public void Two_logs_writing_at_once_land_every_line_whole()
+    {
+        using (var first = Log("mcp"))
+        using (var second = Log("mcp"))
+        {
+            Parallel.For(0, 400, i => (i % 2 == 0 ? first : second).Info("tool.called", ("session", $"s{i}"), ("callMs", i)));
+        }
+
+        var lines = Lines("2026-09-30.mcp.jsonl");
+        Assert.Equal(400, lines.Length);
+        Assert.All(lines, line => System.Text.Json.JsonDocument.Parse(line).Dispose());
+        Assert.Equal(400, lines.Distinct(StringComparer.Ordinal).Count());
+    }
 }
