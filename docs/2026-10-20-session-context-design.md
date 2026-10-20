@@ -183,8 +183,8 @@ chain. No model writes any of it.
    conversation's rules allow a read of its own kept folder alone (`ChatRunner.cs:494-506`, the folder
    `ChatFiles.cs:34-38`; D52 refuses every other ask), so a new part's rules also allow a read of the kept folders of the
    parts its line continues, which the brief names.
-6. **The outgoing agent's own note**, as its claim, at most 4,000 characters. MIXAGENT1c's tool for it, `handover_propose`,
-   is still to build and exists nowhere yet; until it does, the note is the closing note §2.2 asks for, where one is asked.
+6. **The outgoing agent's own note**, as its claim, at most 4,000 characters. One the agent writes by itself rests on
+   MIXAGENT1c's tool, `handover_propose`; until that is built, the note is the closing note §2.2 asks for, where one is asked.
 7. **The entry's other parts**, one line each (its quest, how it began, how it ended), as D167 §1.5 hands them today.
 8. **What was left out**, by count, that the record holds it, and the tool that reads it (§3.5).
 
