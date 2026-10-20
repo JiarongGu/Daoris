@@ -241,6 +241,22 @@ public sealed partial class McpToolDescriptionTests
     }
 
     /// <summary>
+    /// MIXAGENT1c: what a session reads of `handover_propose` says its note is its own claim, that the person's rule settles it, and
+    /// that it does not end the turn; and Ask Daoris's `hand_propose`, a different tool, says nothing of it.
+    /// </summary>
+    [Fact]
+    public void The_hand_over_tool_says_its_note_is_a_claim_and_the_rule_is_the_persons()
+    {
+        var propose = string.Join(" ", Descriptions().Where(d => d.Tool == "handover_propose").Select(d => d.Text));
+        var hand = string.Join(" ", Descriptions().Where(d => d.Tool == "hand_propose").Select(d => d.Text));
+
+        Assert.Contains("claim", propose);
+        Assert.Contains("person's rule", propose);
+        Assert.Contains("turn", propose);
+        Assert.DoesNotContain("handover_propose", hand);
+    }
+
+    /// <summary>
     /// SESSONE2a (D167 point 7; the co-working design §2.2): the channel's two tools say what it is for and that work stays a quest, that
     /// another repository's message is that agent's claim, and that a read moves the mark; no tool starts a session through it.
     /// </summary>

@@ -33,12 +33,13 @@ public static class OpinionPermissions
     /// Its connector's tools it is never given (§5.4): a quest's take and close, a publish, a go-ahead's ask, a rule's proposal,
     /// a set-up's serving and its ready, a working session's answer, a helper's ask and answer (MIXAGENT2a-i: a reviewer asks for
     /// no helper, and is none), the ask's channel (SESSONE2b, D167 point 7: each answers one question, and the service refuses both
-    /// it anyway), and the machine's own index rebuild.
+    /// it anyway), an ask to hand over (MIXAGENT1c: a reviewer and a helper answer one question and go on with nobody), and the
+    /// machine's own index rebuild.
     /// </summary>
     private static readonly string[] Acting =
     [
         "quest_respond", "quest_publish", "go_ahead_ask", "permission_propose", "review_serve", "review_ready", "opinion_answer",
-        "helper_ask", "helper_answer", "channel_post", "channel_read", "knowledge_refresh",
+        "helper_ask", "helper_answer", "channel_post", "channel_read", "handover_propose", "knowledge_refresh",
     ];
 
     /// <summary>What it reads its history with: git's reading commands, and the <c>cd</c> an agent prefixes one with.</summary>

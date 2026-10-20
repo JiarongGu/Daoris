@@ -33,6 +33,8 @@ public static class KnowledgeServer
         typeof(ReviewTools),
         typeof(GoAheadTools),
         typeof(HelperTools),
+        // A working session's ask to go on with another agent (MIXAGENT1c), settled by the person's hand-over rule.
+        typeof(HandOverTools),
         typeof(ChannelTools),
         typeof(OpinionTools),
         // A brainstorm pass's result tools (BRAINSTORM1a2), refused to every session the driver names no brainstorm turn for.
