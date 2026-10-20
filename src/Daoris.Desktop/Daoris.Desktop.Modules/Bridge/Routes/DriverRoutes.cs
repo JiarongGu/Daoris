@@ -309,7 +309,8 @@ public sealed class DriverRoutes(DriverContext context)
     }
 
     // Restricted mode's configured access (HELPMODE1c2b, D183's note): the person's choice of one housekeeping operation, or since
-    // HELPMODE1c3 one chosen setting, set on Ask Daoris's screen, written to the home's own file. Each start reads it onto its allow-list, receipt and room, and each tool call
+    // HELPMODE1c3 one chosen setting, or since HELPMODE1c4 one checkout turned off or on by its repository, set on Ask Daoris's screen,
+    // written to the home's own file. Each start reads it onto its allow-list, receipt and room, and each tool call
     // is judged by it then, so a revoke refuses the next call; a conversation running with another choice ends at its turn's end, its
     // next words resuming it with this one (ACCESSSWAP1). No proposal names it: a helper never widens its own access. A grant or an
     // operation this build does not act on is the driver's refusal, with nothing written.
@@ -472,6 +473,11 @@ public sealed class DriverRoutes(DriverContext context)
         var access = ConfiguredAccess.Read(loop.Home);
         // HELPMODE1c3: the browser's grant is its plugin's approval, drawn here read only from that record.
         var browser = HelpGrants.Read(loop.Home, PluginCatalog.Load(loop.Home, AdapterSet.Built().Names)).Browser;
+        // HELPMODE1c4: the checkouts D107 lets agents outside read, from the machine's facts as last judged, never a read of its own;
+        // none before the facts are judged, and the loop's next look pushes them.
+        string[] readable = loop.Facts.Current.Value<HelpMachineWhole>(HelpFacts.Machine, HelpFacts.Whole) is { } whole
+            ? [.. AcrossRules.Readable(config, whole.Snapshot.Repositories).Select(checkout => checkout.Repository)]
+            : [];
         return new
         {
             Retried = retried,
@@ -516,11 +522,15 @@ public sealed class DriverRoutes(DriverContext context)
             // turn takes (ACCESSSWAP1, the grant's *pending* mark), false once its agent has ended. HELPMODE1c3: the chosen settings
             // the same way; and the browser's, read only from its plugin's approval (`plugin-approvals.json`): `chosen` holds `reads`
             // and each write accepted, by its tool's name, once approved; `changed` an update since; `plugin` whose tab changes it, none
-            // where no plugin here attaches to Daoris's browser; no `built`, so the page offers nothing to choose.
+            // where no plugin here attaches to Daoris's browser; no `built`, so the page offers nothing to choose. HELPMODE1c4: the
+            // checkouts, on by default: `built` each readable checkout here by its repository, `chosen` those the person has not turned off.
             HelpGrants = new[]
             {
                 Grant(loop, ConfiguredAccess.HousekeepingGrant, access, ConfiguredAccess.HousekeepingBuilt),
                 Grant(loop, ConfiguredAccess.SettingsGrant, access, ConfiguredAccess.SettingsBuilt),
+                new HelpGrantRow(
+                    ConfiguredAccess.CheckoutsGrant, [.. readable.Where(access.Reads)], readable,
+                    loop.Chat?.GrantPending(ConfiguredAccess.CheckoutsGrant, access) == true, false, null),
                 new HelpGrantRow(
                     "browser",
                     browser is { State: HelpGrants.Approved } ? ["reads", .. browser.Accepted] : [],

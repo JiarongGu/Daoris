@@ -90,6 +90,57 @@ public sealed class DriverModuleHelpGrantTests : DriverModuleBridge
         Assert.False(approved.TryGetProperty("built", out var built) && built.ValueKind == JsonValueKind.Array);
     }
 
+    /// <summary>
+    /// 🔴 HELPMODE1c4: the checkouts' row is on by default. It answers each checkout here that D107 lets agents outside read as built,
+    /// from the machine's facts as last judged (none before they are), and each the person has not turned off as chosen; the route turns
+    /// one off and on again by its repository's name, the record keeping only those turned off.
+    /// </summary>
+    [Fact]
+    public async Task The_checkouts_row_answers_the_readable_checkouts_and_the_route_turns_one_off()
+    {
+        var loop = Loop();
+        var module = new DriverModule(Bus, loop);
+        static JsonElement Checkouts(JsonElement state) =>
+            state.GetProperty("helpGrants").EnumerateArray().Single(grant => grant.GetProperty("id").GetString() == "checkouts");
+        static IEnumerable<string?> Names(JsonElement grant, string field) => grant.GetProperty(field).EnumerateArray().Select(each => each.GetString());
+
+        Assert.Empty(Names(Checkouts(await AnswerAsync(module, "STATE")), "built"));
+
+        DriverConfig.Load(loop.ConfigPath).WithReadAcross("secret", false).Save(loop.ConfigPath);
+        var whole = new HelpMachineWhole(
+            new Snapshot(
+                [],
+                [
+                    new RepoView("engine", true, "X:/daoris/engine", "aurora"), new RepoView("game", true, "X:/daoris/game", "borealis"),
+                    new RepoView("secret", true, "X:/daoris/secret", "aurora"), new RepoView("elsewhere", true, null, "aurora"),
+                ],
+                []),
+            [], []);
+        loop.Facts.Topic(HelpFacts.Machine, HelpFacts.MachineRules, (_, _) => Task.FromResult<object?>(whole));
+        loop.Facts.Start();
+        try
+        {
+            await loop.Facts.FirstAsync(HelpFacts.Machine, HelpFacts.Whole, CancellationToken.None).WaitAsync(Poll.Patience);
+
+            var on = Checkouts(await AnswerAsync(module, "STATE"));
+            Assert.Equal(["engine", "game"], Names(on, "built"));
+            Assert.Equal(["engine", "game"], Names(on, "chosen"));
+            Assert.False(on.GetProperty("pending").GetBoolean());
+
+            var off = Checkouts(await AnswerAsync(module, "SET_HELP_GRANT", new { grant = "checkouts", operation = "engine", chosen = false }));
+            Assert.Equal(["game"], Names(off, "chosen"));
+            Assert.Equal(["engine"], ConfiguredAccess.Read(Home).CheckoutsOff);
+
+            var again = Checkouts(await AnswerAsync(module, "SET_HELP_GRANT", new { grant = "checkouts", operation = "engine", chosen = true }));
+            Assert.Equal(["engine", "game"], Names(again, "chosen"));
+            Assert.Empty(ConfiguredAccess.Read(Home).CheckoutsOff);
+        }
+        finally
+        {
+            loop.Facts.Dispose();
+        }
+    }
+
     /// <summary>A grant or an operation this build does not act on, or a press naming none, is refused in the driver's words, and nothing is written.</summary>
     [Fact]
     public async Task What_it_does_not_act_on_is_refused_and_nothing_is_written()
