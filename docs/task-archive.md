@@ -18545,3 +18545,9 @@ in zh. The sessions page's held words (`WordsHold`) still carry the driver's sen
 own operations alone, refused from a session's terminal; today's text kept by a 143-case table. The decisions and the measured
 start are D194's PUSH1f2a note. The handed verbs' TypeScript leaves in PUSH1f2b. Unproven until the install: `daoris driver drive`
 confirmed in the open window.
+
+## CACHECLEAR1 — clearing downloads (2026-10-21, D88)
+
+> - [ ] **CACHECLEAR1 — clearing downloads** (driver/web; after WIRING1c). An act on This Daoris's *Downloads* row that removes the agents' and tools' downloaded versions nothing uses, listed first then pressed (D88), saying what it keeps. Proof: driver tests per kept version; the list and press in en and zh.
+
+**Outcome** 2026-10-21: built. *Clear unused downloads…* on the Downloads row lists each version under `cache/toolchain` and `cache/tools` with its size and what keeps it (a pin of the machine's or a workspace's, Tools running it, a setting naming a file inside it, a file that cannot be read, a download within the hour), and one press removes those nothing uses, judged again right before each goes and moved aside first, so a version a program runs from is kept as in use; the answer says what it kept. `DownloadClearing` in the driver library, `SYSTEM_DOWNLOADS` and `SYSTEM_DOWNLOADS_CLEAR`, `WiringDownloads` en and zh. No terminal twin. Proof: `DownloadClearingTests` (16, one per kept version), `DriverModuleDownloadsTests`, `WiringDomain.test.tsx`'s list and press in en and zh. The window is WIRING1f's. On Opus: about 150 tool calls. Detail: D88's CACHECLEAR1 note.

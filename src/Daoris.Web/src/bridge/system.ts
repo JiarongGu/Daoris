@@ -1,7 +1,7 @@
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useShenora } from '@shenora/react';
 import { keys } from '../data/queries';
-import type { SystemWiring } from '../data/wiring';
+import type { DownloadCleared, DownloadedVersion, DownloadsListing, SystemWiring } from '../data/wiring';
 import { call, refusedNoRoute } from './call';
 import { pollUnlessTold } from './state/published';
 
@@ -9,7 +9,8 @@ import { pollUnlessTold } from './state/published';
 // `daoris-driver wiring`, one reader in the driver library. Shell-only: this machine's paths, variables and service (D47 §4).
 // The shape is a wire shape (`data/wiring.ts`, where the cards that draw it can name it): a field is added, never renamed.
 export type {
-  SystemWiring, WiringFile, WiringFolder, WiringLocated, WiringOld, WiringToolFolder, WiringVariable,
+  DownloadCleared, DownloadedVersion, DownloadsListing, SystemWiring, WiringFile, WiringFolder, WiringLocated, WiringOld, WiringToolFolder,
+  WiringVariable,
 } from '../data/wiring';
 // The page tells a shell older than it by this refusal, and reaches the route helper through the domain, not around it.
 export { refusedNoRoute } from './call';
@@ -48,3 +49,28 @@ export const useSystemWiring = () => {
   };
   return { available: isAvailable, query, measure };
 };
+
+/**
+ * The Downloads row's list (CACHECLEAR1): every version the agents and tools downloaded under `cache/`, with what keeps each. Read
+ * only once the row opens it, since it sizes each version's folder; a clearing's press tells `wiring`, which reads it again.
+ */
+export const useSystemDownloads = (open: boolean) => {
+  const { isAvailable } = useShenora();
+  return useQuery({
+    queryKey: keys.systemDownloads,
+    queryFn: () => call<DownloadsListing>('SYSTEM_DOWNLOADS'),
+    enabled: isAvailable && open,
+  });
+};
+
+/**
+ * The press after the list (CACHECLEAR1, D88's shape): the rows the page showed that nothing keeps, each judged again by the driver
+ * right before it goes. What it moved is asked again by the state hub, as the route declares it, and never by this hook.
+ */
+export const useClearDownloads = () =>
+  useMutation({
+    mutationFn: (versions: Pick<DownloadedVersion, 'kind' | 'name' | 'version' | 'unfinished'>[]) =>
+      call<{ cleared: DownloadCleared[] }>('SYSTEM_DOWNLOADS_CLEAR', {
+        versions: versions.map(({ kind, name, version, unfinished }) => ({ kind, name, version, unfinished })),
+      }),
+  });

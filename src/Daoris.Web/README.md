@@ -61,7 +61,9 @@ Each Settings domain is `src/settings/<Name>Domain.tsx`, with its tests beside i
 (`settings/SettingsView.tsx`) renders whichever one is chosen and names none itself (MOD4).
 *This Daoris* (`WiringDomain.tsx`) draws one read, `SYSTEM_WIRING`, as cards (`wiring/Wiring*.tsx`, molecules over props); its card
 *Left in your own tool home* (`wiring/WiringToolHome.tsx`, OWNSPACE2) lists the folders Daoris's session records show its sessions
-ran in, read-only: Daoris removes none of them yet, and the card says a person can by hand.
+ran in, read-only: Daoris removes none of them yet, and the card says a person can by hand. The *Downloads* row's clearing
+(`wiring/WiringDownloads.tsx`, CACHECLEAR1) is the page's one act: `SYSTEM_DOWNLOADS` lists the agents' and tools' downloaded versions
+with what keeps each, read only once the row opens it, and `SYSTEM_DOWNLOADS_CLEAR` removes those nothing uses, saying what it kept.
 *AI features* (`AiDomain.tsx`) draws Ask Daoris's *Configured access* (`help/access/ConfiguredAccess.tsx`) under its access row
 while restricted: each grant the driver serves comes from `STATE`'s `helpGrants`, with the operations it acts on (`built`), and is
 pressed over `SET_HELP_GRANT` one operation at a time; an operation not built is drawn disabled, and a grant the driver does not
