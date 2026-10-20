@@ -39,8 +39,8 @@ export type WorkflowTabProps = {
  * **A molecule**: the answer arrives as a prop and every door goes out. While the answer is on its way it says so, and a
  * refusal is said in its place, in the driver's words (the platform language §4: a page never goes blank).
  *
- * **Named workflows, kinds and the editor are not here yet** (WORKFLOW1d, 1e, 1g): with none, every repository follows
- * Current, and that is what this draws (design §2.8).
+ * **The start node comes first** (FABRIC-PIPELINE1a, `WorkflowStartNode`), where the answer carries one: each route, each kind
+ * among them, wired to the workflow it names, named or Current. The chart below it draws Current; the editor is WORKFLOW1g's.
  */
 export function WorkflowTab({ page, name, current, reading = false, refusal = null, doors, onAcceptGates, accepting = false }: WorkflowTabProps & {
   page: 'repository' | 'workspace';
