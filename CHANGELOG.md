@@ -5,6 +5,8 @@ with the version and date at release.
 
 ## Unreleased
 
+- A machine fact Daoris could not judge in time, such as the help room's under load, is logged once as late, no longer a
+  second time as an error.
 - A session that goes on from another (a hand-over, a move onto another account, a carry-on, a fallback) can read what its
   brief left out: Daoris's connector gains `line_read`, which pages the earlier parts' words, messages, tool calls, plans and notes
   from this machine's records, a bounded page at a time, and the brief's note of what it left out names it. It changes nothing,
