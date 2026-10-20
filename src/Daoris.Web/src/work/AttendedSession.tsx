@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import type { GoAhead, Quest, Session } from '../data/api';
 import { ChannelPanel } from '../asks/ChannelSection';
 import type { GoAheadAnswer } from '../asks/GoAheadList';
-import { answeredPark, Button, EmptyState } from '../design/ui';
+import { answeredPark, Button, EmptyState, shownState } from '../design/ui';
 import type { ChainStep } from '../map/chain';
 import { ChainLine } from '../map/ChainLine';
 import { ChainStrip } from '../map/ChainStrip';
@@ -19,7 +19,8 @@ import type { SayRebase } from './review/LandingSync';
 import type { SessionEntry } from './entries';
 import { EntryAccept } from './review/EntryAccept';
 import type { DiscardOffer, LandOffer } from './groups';
-import { type PartFacts, PartsStrip } from './head/PartsStrip';
+import { PartsFlow } from './head/PartsFlow';
+import type { PartFacts } from './head/PartsStrip';
 import type { SessionProcess } from './head/process';
 import type { Relations } from './head/relations';
 import type { LineBehind } from './review/diff';
@@ -268,7 +269,8 @@ export function AttendedSession({
         helpers={helpers}
         permissions={permissions}
       />
-      {parts && <PartsStrip {...parts} />}
+      {/* Its parts as a flowchart, the strip its rail (FLOWCHART1b); Accept's plan, once read, is where they would land. */}
+      {parts && <PartsFlow {...parts} plan={entryAccept?.open ? entryAccept.plans?.[0] ?? null : null} />}
       {/* One Accept for every part with work to land (ACCEPTALL1, D167's 2026-10-15 amendment), under the strip that lists them. */}
       {entryAccept && <div className="grid justify-items-start gap-1"><EntryAccept {...entryAccept} /></div>}
       {/* Every stop a door (the study's §5: "every stop pressable"): a session attends, a quest opens.
@@ -296,6 +298,7 @@ export function AttendedSession({
         <SessionTimeline
           session={session}
           quest={quest}
+          shown={shownState(session, taking)}
           hideCurrentNote={noteIsInTheHead(session, Boolean(onResolve))}
         />
       )}

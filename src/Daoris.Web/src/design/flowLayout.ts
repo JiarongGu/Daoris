@@ -23,8 +23,12 @@
  * ranks takes a lane nearer the drawing than a longer one, so their runs nest rather than cross.
  */
 
-/** How an edge is drawn: a move, a failure's or a rejection's short dashes, or a refused move (a conflict). */
-export type EdgeStyle = 'next' | 'failed' | 'rejected' | 'refused';
+/**
+ * How an edge is drawn: a move, a failure's or a rejection's short dashes, a refused move (a conflict), or a conditional one
+ * (FLOWCHART1b): a move made only on a guard, or one that has not happened, such as going on or where Accept would land. Dashed,
+ * like the failures; the cause is in words, never the ink.
+ */
+export type EdgeStyle = 'next' | 'failed' | 'rejected' | 'refused' | 'conditional';
 
 /** What the layout reads of a flow: its nodes in declared order, its edges, and where it is entered. */
 export type FlowShape = {
