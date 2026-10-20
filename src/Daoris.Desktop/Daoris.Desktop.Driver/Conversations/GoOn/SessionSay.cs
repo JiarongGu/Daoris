@@ -182,11 +182,6 @@ public sealed class LoopWords(SessionProcesses processes, Func<ServiceClient?> s
                 case { Outcome: InboxKeep.Held }:
                     _ = WordsOnAsk.Keep(service(), id, text);
                     return new WordsHeld(true, Spelled(kept.Reach), null) { Word = kept.Said?.Word?.Id };
-                case { Outcome: InboxKeep.OnRecord, Said.Word: { } waiting }:
-                    // Its run stopped taking words as they were kept: they wait on its record, and its go-on takes them.
-                    Events?.Keep(id, Shown(waiting, request.By), null);
-                    Nudge?.Invoke(id);
-                    return new WordsHeld(true, "resume", null) { Word = waiting.Id };
             }
         }
 

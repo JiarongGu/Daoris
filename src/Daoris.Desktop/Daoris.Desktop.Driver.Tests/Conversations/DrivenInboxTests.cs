@@ -758,6 +758,30 @@ public sealed class DrivenInboxTests
     }
 
     /// <summary>
+    /// COWORK1c (the design §6): a word whose keep was on its way as the inbox closed under the run never stays on the record, which
+    /// is ending: it is taken off again, and its caller holds it as words said while a session winds up are held.
+    /// </summary>
+    [Fact]
+    public async Task A_word_kept_as_the_inbox_closed_is_taken_off_the_ending_record()
+    {
+        var record = new StandInSaid();
+        var answer = new TaskCompletionSource();
+        record.Answering = _ => answer.Task;
+        var inbox = new DrivenInbox(_ => { });
+        inbox.Attach(interrupt: null);
+
+        var keeping = inbox.KeepAsync(record, Said("as it ends"), default);
+        await Task.Delay(20);
+        Assert.Empty(inbox.Close());
+        answer.SetResult();
+
+        Assert.Equal(InboxKeep.Closed, (await keeping).Outcome);
+        await inbox.TakingOff;
+        Assert.Equal(["w1"], record.TakenOff);
+        Assert.Empty(record.Said);
+    }
+
+    /// <summary>
     /// COWORK1c (the design §6: nothing undelivered vanishes): closed by anything but the person's own stop of the session (its door
     /// failed, the shell shut down), the words kept for the run stay on the record, told as left there, for the session's go-on; only
     /// the words held in this process alone come back, for the run to say. Closed by the person's stop, the kept words leave the

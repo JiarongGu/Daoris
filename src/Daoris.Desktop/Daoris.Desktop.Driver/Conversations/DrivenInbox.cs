@@ -379,8 +379,9 @@ public sealed class DrivenInbox(Action<ChatQueue> changed)
     /// <para><b>Kept before told.</b> The record keeps the word, then the inbox tells it with where it reaches the session; a word the
     /// record refused is never held, and its caller says so.</para>
     ///
-    /// <para><b>Closed meanwhile</b> (<see cref="InboxKeep.OnRecord"/>), the word waits on the record and the session's go-on takes
-    /// it, as words said to an ended record go on. <b>Closed before</b>, nothing is kept (<see cref="InboxKeep.Closed"/>).</para>
+    /// <para><b>Closed</b> (<see cref="InboxKeep.Closed"/>), before the keep or while it was on its way: the run takes no more words,
+    /// so nothing stays on the record, which is ending, and the caller holds the word as words said while a session winds up are held
+    /// (the design §6, HANDWORDS1).</para>
     /// </remarks>
     /// <exception cref="HttpRequestException">The record did not answer: nothing holds the word.</exception>
     public async Task<InboxKept> KeepAsync(ISaidDoor door, ChatMessage message, CancellationToken ct)
@@ -407,9 +408,15 @@ public sealed class DrivenInbox(Action<ChatQueue> changed)
                 lock (_gate)
                 {
                     _door ??= door;
-                    if (_closed) return new InboxKept(InboxKeep.OnRecord, said);
-
                     var kept = message with { Id = id, Kept = true };
+                    if (_closed)
+                    {
+                        // 🔴 Never left on a record that is ending (the design §6): off it again, and its caller holds it as words said
+                        // while a session winds up are held, until the record ends.
+                        TakeOff([kept]);
+                        return InboxKept.Closed;
+                    }
+
                     var reach = _reach is null ? (DrivenReach?)null : ReachOf(kept.Level);
                     // A producer's retry under the key of a word held already (trap 19): held once.
                     if (!_known.Add(id)) return new InboxKept(InboxKeep.Held, said) { Reach = reach };

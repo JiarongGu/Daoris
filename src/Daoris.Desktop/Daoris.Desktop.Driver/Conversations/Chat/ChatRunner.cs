@@ -1366,6 +1366,42 @@ public sealed class ChatRunner : IDisposable
     }
 
     /// <summary>
+    /// The person's words to a live chat kept on its record first (COWORK1c, D188 point 6; the message-urgency design §6), then taken by
+    /// its turns under the record's id at the level they carry, through its one dispatcher (<see cref="ChatTurns.KeepAsync"/>): a shell
+    /// that restarts before they go finds them waiting there. A text-only door has no turns: its words go at once, as before, and are
+    /// kept nowhere. Null when there is nothing listening.
+    /// </summary>
+    /// <param name="key">The press's key, so a press that arrives twice keeps one word.</param>
+    /// <exception cref="DriverException">The files are more than a message carries.</exception>
+    public async Task<ChatSaid?> SayKeptAsync(
+        string sessionId, string message, IReadOnlyList<ChatUpload>? files, string? preface, MessageLevel level, string? key,
+        CancellationToken ct = default)
+    {
+        if (!_context.Turned.TryGetValue(sessionId, out var chat))
+        {
+            if (level == MessageLevel.Now)
+            {
+                return await SayNowAsync(sessionId, message, files, preface).ConfigureAwait(false) is { } now
+                    ? new ChatSaid(now.Reaches, null) { Now = now }
+                    : null;
+            }
+
+            return Say(sessionId, message, out var reaches, files, preface, level) ? new ChatSaid(reaches, null) : null;
+        }
+
+        var said = Compose(sessionId, message, files, preface) with { Level = level, Key = key };
+        // Before it is taken, as a word said is (NOTIFY1a).
+        _answers.Asked(sessionId);
+        var kept = await chat.Turns.KeepAsync(new SaidDoor(_context.Service, sessionId), said, ct).ConfigureAwait(false);
+        return kept switch
+        {
+            null => null,
+            { Now: { } now } => new ChatSaid(now.Reaches, kept.Word) { Now = now },
+            _ => new ChatSaid(Spelled(kept.Reach), kept.Word),
+        };
+    }
+
+    /// <summary>
     /// The person's words at <c>now</c> to a live chat (STEER2a, COWORK1a), carried out by its door: steered into the running turn
     /// where its agent steers, else at its next step or queued for the turn's end, said why, never stopping the turn; or the next
     /// turn at once where none runs (<see cref="ChatTurns.TakeNowAsync"/>). A text-only door has no turn to steer or stop: its
@@ -1475,6 +1511,14 @@ public sealed class ChatRunner : IDisposable
     /// <param name="level">A waiting word's new urgency (COWORK1a), under its own id; null leaves it as it is.</param>
     public QueueEdit EditQueued(string sessionId, string id, string? text, MessageLevel? level = null) =>
         _context.Turned.TryGetValue(sessionId, out var chat) ? chat.Turns.EditQueued(id, text, level) : QueueEdit.Taken;
+
+    /// <summary>
+    /// <see cref="EditQueued"/>, where a word kept on the conversation's record is taken back there too, and reworded as a word said is
+    /// kept (COWORK1c).
+    /// </summary>
+    public Task<QueueEdit> EditQueuedAsync(
+        string sessionId, string id, string? text, MessageLevel? level = null, CancellationToken ct = default) =>
+        _context.Turned.TryGetValue(sessionId, out var chat) ? chat.Turns.EditQueuedAsync(id, text, level, ct) : Task.FromResult(QueueEdit.Taken);
 
     /// <summary>
     /// Stop the turn a conversation is taking and keep the conversation (CONV4a): what was waiting is
@@ -1796,9 +1840,11 @@ public sealed class ChatRunner : IDisposable
             _context.Handing.TryRemove(sessionId, out _);
             _context.Browsers.TryRemove(sessionId, out _);
             _toldProcess.TryRemove(sessionId, out _);
-            // Nothing waiting will be sent now, and the page is told its queue emptied.
-            chat?.Turns.Gone();
-            native?.Gone();
+            // Nothing waiting will be sent now, and the page is told its queue emptied. COWORK1c: words kept on its record wait there for
+            // it to go on, unless the person stopped it, which ends them with it.
+            var personStopped = _processes.StopMade(sessionId) is { Reason: null };
+            chat?.Turns.Gone(personStopped);
+            native?.Gone(personStopped);
             // Last, so the queue told empty above judges nothing it still waited on (NOTIFY1a).
             _answers.Forget(sessionId);
         });
@@ -2176,8 +2222,9 @@ public sealed class ChatRunner : IDisposable
         {
             if (Session is not { NextStep: true } session) return null;
 
-            // Its own id, so the words shown while they wait pair with the same words where the session took them (D136 §3).
-            var words = message with { Id = $"said-{Guid.NewGuid():N}"[..13] };
+            // Its own id, so the words shown while they wait pair with the same words where the session took them (D136 §3): the
+            // record's, where it kept them first (COWORK1c), never one of the door's own.
+            var words = Identified(message);
             if (Told(words) is { } told) _record(told);
             _line($"— the person added, which reaches the conversation at its next step: {words.Text}");
             _record(ChatMessage.Words(words) with { Reaches = "next-step", Level = words.LevelSaid });
@@ -2196,12 +2243,16 @@ public sealed class ChatRunner : IDisposable
         {
             if (Session is not { Steers: true } session) return null;
 
-            var words = message with { Id = $"said-{Guid.NewGuid():N}"[..13] };
+            var words = Identified(message);
             if (Told(words) is { } told) _record(told);
             _line($"— the person sent now, which the conversation takes at once: {words.Text}");
             _record(ChatMessage.Words(words) with { Reaches = SendNowWhy.Spelled(TurnReach.Steered), Level = MessageLevels.Now });
             return session.SteeredAsync(words, CancellationToken.None, "conversation", handBack: back => Turns.HandBack(back with { Said = true }));
         }
+
+        /// <summary>A word handed to the turn on the wire under the record's id where it was kept there (COWORK1c), or a fresh one of its own.</summary>
+        private static ChatMessage Identified(ChatMessage message) =>
+            message is { Kept: true, Id: not null } ? message : message with { Id = $"said-{Guid.NewGuid():N}"[..13] };
 
         /// <summary>
         /// A word handed to the running turn, answered: said where the agent refused it, where it never reached the agent, or
@@ -2440,9 +2491,10 @@ public sealed class ChatRunner : IDisposable
         }
 
         /// <summary>The harness has gone: nothing waiting is sent, and a turn waiting on its end stops waiting.</summary>
-        public void Gone()
+        /// <param name="personStopped">The person stopped it (COWORK1c): what was kept for its turns leaves its record with it.</param>
+        public void Gone(bool personStopped = false)
         {
-            Turns.Gone();
+            Turns.Gone(personStopped);
             TurnEnded();
         }
 

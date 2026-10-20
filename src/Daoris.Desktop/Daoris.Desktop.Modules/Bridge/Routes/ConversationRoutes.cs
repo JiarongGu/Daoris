@@ -305,7 +305,7 @@ public sealed class ConversationRoutes(DriverContext context)
         else
         {
             if (_loop.Processes.RefusesInput(session) is { } why) throw new DriverException(why);
-            edit = _loop.Chat?.EditQueued(session, id, text, level) ?? QueueEdit.Taken;
+            edit = _loop.Chat is { } chat ? await chat.EditQueuedAsync(session, id, text, level, cancellationToken).ConfigureAwait(false) : QueueEdit.Taken;
         }
 
         // Neither holds it: the record's words, which only the service can take back (SAIDBACK1b). A record that runs again

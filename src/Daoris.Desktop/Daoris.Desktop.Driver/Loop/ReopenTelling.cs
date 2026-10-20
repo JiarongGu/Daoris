@@ -248,8 +248,7 @@ public sealed class ReopenTelling(ReopenMarks marks)
     /// at its next step where its door takes words then, and are held for its turn's end where it takes them only then. Judged again
     /// where they leave a hold, by the quest as it stands then; the mark is written as they go. An inbox closing as the session
     /// winds up takes none, and a later look finds the record parked or ended. COWORK1c: kept on the running record first, under the
-    /// fact's key, through the session's one dispatcher, so a restart before they go leaves them waiting there; the record keeping
-    /// them as the run stops taking words leaves them there for its go-on, marked told as an ended record's are.
+    /// fact's key, through the session's one dispatcher, so a restart before they go leaves them waiting there.
     /// </summary>
     private async Task TellRunningAsync(
         IReopenDoors doors, DrivenInbox inbox, string quest, QuestReopenView reopen, string session, string key, List<string> lines,
@@ -266,16 +265,7 @@ public sealed class ReopenTelling(ReopenMarks marks)
             },
         };
         var kept = await inbox.KeepOrHoldAsync(doors.SaidOf(session), word, ct).ConfigureAwait(false);
-        switch (kept.Outcome)
-        {
-            case InboxKeep.Closed:
-                return;
-            case InboxKeep.OnRecord:
-                _settled[key] = true;
-                marks.Mark(session, quest, reopen, DateTimeOffset.UtcNow);
-                lines.Add($"reopen  session {session} was told the person reopened its submission on quest #{quest}, and goes on with Daoris's words");
-                return;
-        }
+        if (kept.Outcome == InboxKeep.Closed) return;
 
         _settled[key] = true;
         var when = kept.Reach switch

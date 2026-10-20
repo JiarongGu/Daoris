@@ -86,6 +86,93 @@ internal sealed class ChatTurns(
     private TaskCompletionSource _drained = Completed();
     private DateTimeOffset? _lastEnded;
 
+    // COWORK1c (the message-urgency design §6): the conversation's one dispatcher. Words are kept on its record one at a time, so the
+    // order they wait in is the record's; each kept word leaves the record by its id, in order, once its turn is on the wire or it is
+    // handed to the turn there, and before the turns finish.
+    private readonly SemaphoreSlim _keeping = new(1, 1);
+    private ISaidDoor? _door;
+    private Task _takingOff = Task.CompletedTask;
+    private readonly List<string> _untaken = [];
+    private readonly HashSet<string> _known = new(StringComparer.Ordinal);
+
+    /// <summary>
+    /// The record's door for words kept there before this queue took them (COWORK1c): a helper's answer, kept by the driver, taken off by
+    /// its id once its turn is on the wire, in the same order as the person's words. The first door named stays.
+    /// </summary>
+    internal void Keeps(ISaidDoor door)
+    {
+        lock (_gate) _door ??= door;
+    }
+
+    /// <summary>The take-offs on their way (COWORK1c), in order: what completes once every kept word that left so far is off the record. Never faults.</summary>
+    public Task TakingOff
+    {
+        get
+        {
+            lock (_gate) return _takingOff;
+        }
+    }
+
+    /// <summary>
+    /// Keep a word on the conversation's record first, then take it as <see cref="Take"/> or, at <c>now</c>,
+    /// <see cref="TakeNowAsync"/> takes it, under the record's id (COWORK1c, D188 point 6; the message-urgency design §6). One keep at
+    /// a time: two said at once wait in the order the record kept them (trap 20). A record that will not keep it, or does not answer,
+    /// leaves it waiting here alone, as before. Null, keeping nothing, once nothing more is heard (finishing, held for a hand-over's
+    /// take, or gone): such words must not land on a record that is ending (HANDWORDS1).
+    /// </summary>
+    public async Task<TurnKept?> KeepAsync(ISaidDoor door, ChatMessage message, CancellationToken ct)
+    {
+        await _keeping.WaitAsync(ct).ConfigureAwait(false);
+        try
+        {
+            lock (_gate)
+            {
+                if (_finishing || _gone || _held) return null;
+            }
+
+            SayAnswer? said;
+            try
+            {
+                said = await door.KeepAsync(message, ct).ConfigureAwait(false);
+            }
+            catch (Exception error) when (error is HttpRequestException or DriverException or ObjectDisposedException
+                                              or System.Text.Json.JsonException
+                                              || (error is OperationCanceledException && !ct.IsCancellationRequested))
+            {
+                said = null;
+            }
+
+            var id = said is { Kept: true, Word.Id: { } kept } ? kept : null;
+            var word = id is null ? message : message with { Id = id, Kept = true };
+            if (id is not null)
+            {
+                lock (_gate)
+                {
+                    _door ??= door;
+                    // A producer's retry under the key of a word that waits already: taken once.
+                    if (!_known.Add(id)) return new TurnKept(TurnReach.TurnEnd, id);
+                }
+            }
+
+            if (word.Level == MessageLevel.Now)
+            {
+                if (await TakeNowAsync(word).ConfigureAwait(false) is { } now) return new TurnKept(TurnReach.Steered, id) { Now = now };
+            }
+            else if (Take(word) is { } reach)
+            {
+                return new TurnKept(reach, id);
+            }
+
+            // Nothing more is heard since it was kept: off the record again, which is ending.
+            lock (_gate) TakeOff([word]);
+            return null;
+        }
+        finally
+        {
+            _keeping.Release();
+        }
+    }
+
     /// <summary>Where the turns stand now — what a page that just opened the conversation is told.</summary>
     public ChatQueue State
     {
@@ -155,40 +242,108 @@ internal sealed class ChatTurns(
     {
         lock (_gate)
         {
-            if (_holding is { OnRecord: false } holding && holding.Id == id)
-            {
-                _holding = text is null && level is null ? null : Changed(holding, text, level);
-            }
-            else
-            {
-                var at = _waiting.FindIndex(message => !message.OnRecord && message.Id == id);
-                if (at < 0) return QueueEdit.Taken;
-                if (text is null && level is null)
-                {
-                    _waiting.RemoveAt(at);
-                }
-                else
-                {
-                    var word = Changed(_waiting[at], text, level);
-                    _waiting.RemoveAt(at);
-                    if (!IntoTheTurn(word, at)) _waiting.Insert(at, word);
-                }
-            }
-
-            Publish();
-            return QueueEdit.Done;
+            return EditedHere(id, text, level, newId: null);
         }
     }
 
-    /// <summary>A waiting word reworded under a new id, or at a new level under its own. Called under the lock.</summary>
-    private ChatMessage Changed(ChatMessage message, string? text, MessageLevel? level) =>
-        (text is null ? message : Reworded(message, text)) with { Level = level ?? message.Level };
-
-    private ChatMessage Reworded(ChatMessage message, string text)
+    /// <summary>
+    /// <see cref="EditQueued"/>, and a word kept on the record reworded as a word said is kept (COWORK1c): the new words on the record
+    /// first, under their own id, then in the old one's place, which leaves the record. One a turn took meanwhile is the turn's, and the
+    /// new words leave the record again. Where the record will not keep them, they wait here alone.
+    /// </summary>
+    public async Task<QueueEdit> EditQueuedAsync(string id, string? text, MessageLevel? level = null, CancellationToken ct = default)
     {
+        ChatMessage? old;
+        ISaidDoor? door;
+        lock (_gate)
+        {
+            old = Waiting(id);
+            door = _door;
+        }
+
+        if (old is not { Kept: true } || text is null || door is null) return EditQueued(id, text, level);
+
+        await _keeping.WaitAsync(ct).ConfigureAwait(false);
+        try
+        {
+            SayAnswer? said;
+            try
+            {
+                said = await door.KeepAsync(old with { Text = text, Level = level ?? old.Level, Key = null, Id = null, Kept = false }, ct)
+                    .ConfigureAwait(false);
+            }
+            catch (Exception error) when (error is HttpRequestException or DriverException
+                                              || (error is OperationCanceledException && !ct.IsCancellationRequested))
+            {
+                said = null;
+            }
+
+            var kept = said is { Kept: true, Word.Id: { } newId } ? newId : null;
+            lock (_gate)
+            {
+                if (Waiting(id) is null)
+                {
+                    if (kept is not null) TakeOff([new ChatMessage(text, []) { Id = kept, Kept = true }]);
+                    return QueueEdit.Taken;
+                }
+
+                if (kept is not null) _known.Add(kept);
+                return EditedHere(id, text, level, kept);
+            }
+        }
+        finally
+        {
+            _keeping.Release();
+        }
+    }
+
+    /// <summary>The person's word waiting, the one the door opens for among them, by its id; null where none is. Called under the lock.</summary>
+    private ChatMessage? Waiting(string id) =>
+        _holding is { OnRecord: false } holding && holding.Id == id ? holding
+        : _waiting.FirstOrDefault(message => !message.OnRecord && message.Id == id);
+
+    /// <summary>
+    /// One waiting word taken back, reworded (under <paramref name="newId"/>, the record's, where it kept the new words), or at a new
+    /// level. A kept word taken back or reworded leaves the record (COWORK1c), so a restart never brings back what the person changed.
+    /// Called under the lock.
+    /// </summary>
+    private QueueEdit EditedHere(string id, string? text, MessageLevel? level, string? newId)
+    {
+        var withdrawn = text is not null || level is null;
+        if (_holding is { OnRecord: false } holding && holding.Id == id)
+        {
+            _holding = text is null && level is null ? null : Changed(holding, text, level, newId);
+            if (withdrawn) TakeOff([holding]);
+        }
+        else
+        {
+            var at = _waiting.FindIndex(message => !message.OnRecord && message.Id == id);
+            if (at < 0) return QueueEdit.Taken;
+            var old = _waiting[at];
+            _waiting.RemoveAt(at);
+            if (withdrawn) TakeOff([old]);
+            if (text is not null || level is not null)
+            {
+                var word = Changed(old, text, level, newId);
+                if (!IntoTheTurn(word, at)) _waiting.Insert(at, word);
+            }
+        }
+
+        Publish();
+        return QueueEdit.Done;
+    }
+
+    /// <summary>A waiting word reworded under a new id, or at a new level under its own. Called under the lock.</summary>
+    private ChatMessage Changed(ChatMessage message, string? text, MessageLevel? level, string? kept = null) =>
+        (text is null ? message : Reworded(message, text, kept)) with { Level = level ?? message.Level };
+
+    /// <summary>A waiting word reworded: under the record's new id where it kept the new words (COWORK1c), else under the queue's own.</summary>
+    private ChatMessage Reworded(ChatMessage message, string text, string? kept)
+    {
+        if (kept is not null) return message with { Text = text, Id = kept, Kept = true };
         var id = $"said-{++_said}";
         _stamped.Add(id);
-        return message with { Text = text, Id = id };
+        return message with { Text = text, Id = id, Kept = false };
     }
 
     /// <summary>
@@ -207,6 +362,7 @@ internal sealed class ChatTurns(
         if (word.Level == MessageLevel.Now && steerNow?.Invoke(handed) is { } steered)
         {
             _steered.Add(steered);
+            TakeOff([handed]);
             return true;
         }
 
@@ -214,6 +370,7 @@ internal sealed class ChatTurns(
         {
             _steered.Add(stepped);
             _onTheirWay.Add(stepped);
+            TakeOff([handed]);
             return true;
         }
 
@@ -279,6 +436,7 @@ internal sealed class ChatTurns(
             {
                 _steered.Add(answered);
                 _onTheirWay.Add(answered);
+                TakeOff([message]);
                 return TurnReach.NextStep;
             }
 
@@ -357,6 +515,7 @@ internal sealed class ChatTurns(
                 if (running && steerNow?.Invoke(message) is { } steered)
                 {
                     _steered.Add(steered);
+                    TakeOff([message]);
                     return Task.FromResult<SentNow?>(new SentNow(SendNowWhy.Spelled(TurnReach.Steered), Now: true, Why: null));
                 }
 
@@ -365,6 +524,7 @@ internal sealed class ChatTurns(
                 {
                     _steered.Add(stepped);
                     _onTheirWay.Add(stepped);
+                    TakeOff([message]);
                     return Task.FromResult<SentNow?>(new SentNow(
                         SendNowWhy.Spelled(TurnReach.NextStep), Now: false, onTheirWay ? SendNowWhy.Behind : SendNowWhy.NoInterrupt));
                 }
@@ -484,6 +644,8 @@ internal sealed class ChatTurns(
 
             withdrawn.AddRange(_waiting);
             _waiting.Clear();
+            // COWORK1c: the person's words handed back to them, so off the record too; a helper's answer stays there (below).
+            TakeOff([.. withdrawn.Where(message => !message.OnRecord)]);
             cancelled = _inFlight;
             if (_inFlight) _stopped = true;
             // Taken but not yet on the wire: the interrupt goes the moment it is (see `take`). A word said after the stop waits
@@ -503,23 +665,37 @@ internal sealed class ChatTurns(
 
     /// <summary>
     /// Take no more, and complete once every turn already asked for has ended — what finishing waits on
-    /// before it ends the input, on either door.
+    /// before it ends the input, on either door — and every kept word that left is off the record (COWORK1c).
     /// </summary>
     public Task FinishAsync()
     {
+        Task drained;
         lock (_gate)
         {
             _finishing = true;
-            return _drained.Task;
+            drained = _drained.Task;
+        }
+
+        return TakenOffAfterAsync(drained);
+
+        async Task TakenOffAfterAsync(Task turns)
+        {
+            await turns.ConfigureAwait(false);
+            await TakingOff.ConfigureAwait(false);
         }
     }
 
-    /// <summary>The harness has gone: nothing waiting will be sent, and nothing more is taken.</summary>
-    public void Gone()
+    /// <summary>
+    /// The harness has gone: nothing waiting will be sent, and nothing more is taken. Words kept on the record stay there for the
+    /// conversation to go on with (COWORK1c: nothing undelivered vanishes), unless <paramref name="personStopped"/>: the person's stop
+    /// ends them with the conversation, as it always did, rather than start it again.
+    /// </summary>
+    public void Gone(bool personStopped = false)
     {
         lock (_gate)
         {
             _gone = true;
+            if (personStopped) TakeOff([.. (_holding is null ? [] : new[] { _holding }).Concat(_waiting).Where(message => !message.OnRecord)]);
             _holding = null;
             _waiting.Clear();
             Publish();
@@ -605,8 +781,10 @@ internal sealed class ChatTurns(
                 await take(message, () =>
                 {
                     Sent();
-                    // A helper's answer comes off the record once its turn is on the wire (MIXAGENT2a-iii).
+                    // A helper's answer comes off the record once its turn is on the wire (MIXAGENT2a-iii), and a kept word by its id
+                    // (COWORK1c), after every take-off before it.
                     message.Delivered?.Invoke();
+                    lock (_gate) TakeOff([message]);
                 }).ConfigureAwait(false);
             }
             catch (Exception)
@@ -693,6 +871,47 @@ internal sealed class ChatTurns(
         catch (Exception)
         {
             // A listener's failure is its own; the queue has moved either way.
+        }
+    }
+
+    /// <summary>
+    /// Kept words on their way to the wire, handed back to the person or taken back (COWORK1c): off the record by their ids, after
+    /// every take-off before them, awaited in order and never fired and forgotten (the design §6). One that fails is tried again with
+    /// the next. Called under the lock.
+    /// </summary>
+    private void TakeOff(IReadOnlyList<ChatMessage> words)
+    {
+        if (_door is not { } door) return;
+        List<string> ids = [.. words.Where(word => word.Kept && word.Id is not null).Select(word => word.Id!)];
+        if (ids.Count == 0) return;
+        _takingOff = TakeOffAfterAsync(_takingOff, door, ids);
+    }
+
+    /// <summary>One take-off, after the one before it; never faults, and what it could not take waits for the next.</summary>
+    private async Task TakeOffAfterAsync(Task before, ISaidDoor door, IReadOnlyList<string> ids)
+    {
+        await before.ConfigureAwait(false);
+        List<string> taking;
+        lock (_gate)
+        {
+            taking = [.. _untaken, .. ids];
+            _untaken.Clear();
+        }
+
+        bool taken;
+        try
+        {
+            taken = await door.TakeOffAsync(taking, CancellationToken.None).ConfigureAwait(false);
+        }
+        catch (Exception error) when (error is HttpRequestException or DriverException or OperationCanceledException
+                                          or ObjectDisposedException or System.Text.Json.JsonException)
+        {
+            taken = false;
+        }
+
+        if (!taken)
+        {
+            lock (_gate) _untaken.InsertRange(0, taking);
         }
     }
 

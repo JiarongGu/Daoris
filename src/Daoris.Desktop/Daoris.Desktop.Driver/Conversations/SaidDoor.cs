@@ -39,13 +39,13 @@ public enum InboxKeep
     /// <summary>Kept on the record, and held, sent or steered under the record's id.</summary>
     Held,
 
-    /// <summary>Kept on the record as the run stopped taking words: it waits there for the session's go-on.</summary>
-    OnRecord,
-
     /// <summary>The record refused it, by the service's word: nothing holds it.</summary>
     Refused,
 
-    /// <summary>The run takes no more words: nothing was kept, and the caller keeps it on the record as it would for an ended one.</summary>
+    /// <summary>
+    /// The run takes no more words: nothing stays on its record, which is ending, and the caller holds the word as words said while a
+    /// session winds up are held, or keeps it on a record that has ended.
+    /// </summary>
     Closed,
 }
 

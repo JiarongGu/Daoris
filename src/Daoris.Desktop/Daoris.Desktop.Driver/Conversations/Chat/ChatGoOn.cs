@@ -95,10 +95,50 @@ internal sealed class ChatGoOn
         // The person's words to an ended chat are kept on its record and shown in its conversation by whichever door they
         // were said at (MSG1d); hearing them there is what takes them up at once (MSG1c, D137 §2.2).
         _context.Events.Evented += Heard;
+        // COWORK1c: a conversation the orphan sweep ended under words kept for its turns goes on with them as the sweep ends it.
+        _context.Service.Moved += Swept;
     }
 
     /// <summary>The runner is closing: the record's events are heard no more.</summary>
-    public void Stop() => _context.Events.Evented -= Heard;
+    public void Stop()
+    {
+        _context.Events.Evented -= Heard;
+        _context.Service.Moved -= Swept;
+    }
+
+    /// <summary>
+    /// A record moved through this machine's client to <c>stopped</c> (COWORK1c, the message-urgency design §6): where it is a
+    /// conversation nothing here holds, ended by the orphan sweep (<c>interrupted</c>) with words waiting, the words kept for its turns
+    /// before the shell that ran it was cut off go on now, as words an ended chat was written to go on. The shell's own come-up
+    /// (<see cref="TakeUpAsync"/>) reads the records before the sweep has ended them; this hears the sweep. The person's stop is never
+    /// <c>interrupted</c>, so it starts nothing again.
+    /// </summary>
+    private void Swept(SessionMoved moved)
+    {
+        if (_context.Closing || !string.Equals(moved.State, "stopped", StringComparison.OrdinalIgnoreCase)) return;
+        var session = moved.Session;
+        if (_context.Talking.ContainsKey(session) || _context.Turned.ContainsKey(session) || _context.GoingOn.ContainsKey(session)) return;
+
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                if (await _context.ReadAgainAsync(session, CancellationToken.None).ConfigureAwait(false)
+                        is not { Kind: "chat", Teammate: false, Interrupted: true, WordsWaiting: true } record
+                    || GoOnMarks.Judged(record, _context.Marks.Read(session)))
+                {
+                    return;
+                }
+
+                // No route started it, so its end is announced (MSG1c2).
+                await GoOnAsync(session, onEnded: Announce).ConfigureAwait(false);
+            }
+            catch (Exception)
+            {
+                // Said in its conversation wherever it could be; the words wait on the record for the next come-up.
+            }
+        });
+    }
 
     /// <summary>
     /// A conversation this runner took up by itself ended (MSG1c2): the session and the state its record took, as a start's

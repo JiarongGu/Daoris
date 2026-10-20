@@ -383,10 +383,6 @@ public sealed class SessionWords : IDisposable
                     return new(true, sentNow.Reaches, sentNow.Why) { Running = true, Now = sentNow.Now, Word = forRun.Said?.Word?.Id };
                 case { Outcome: InboxKeep.Held }:
                     return new(true, Spelled(forRun.Reach), null) { Running = true, Word = forRun.Said?.Word?.Id };
-                case { Outcome: InboxKeep.OnRecord, Said: { } said }:
-                    // Its run stopped taking words as they were kept: they wait on its record, and its go-on takes them.
-                    Show(id, said, new Word(text, [], door));
-                    return new(true, "resume", null) { Word = said.Word?.Id };
             }
         }
 
@@ -405,16 +401,12 @@ public sealed class SessionWords : IDisposable
         {
             // A conversation this machine runs (D49 §3): its turns take the words, into the running turn at its next step where
             // its agent takes them then (MSG1c), when the running one ends elsewhere (CONV4a), or now; its runner says which.
-            if (now)
+            // COWORK1c: kept on its record first, under the press's key, and its turns are their one dispatcher.
+            if (await chat.SayKeptAsync(id, text, files, preface, level, key ?? PressKey(), ct).ConfigureAwait(false) is { } chatSaid)
             {
-                if (await chat.SayNowAsync(id, text, files, preface).ConfigureAwait(false) is { } sentNow)
-                {
-                    return new(true, sentNow.Reaches, sentNow.Why) { Running = true, Now = sentNow.Now };
-                }
-            }
-            else if (chat.Say(id, text, out var reaches, files, preface, level))
-            {
-                return new(true, reaches, null) { Running = true };
+                return chatSaid.Now is { } sentNow
+                    ? new(true, sentNow.Reaches, sentNow.Why) { Running = true, Now = sentNow.Now, Word = chatSaid.Word }
+                    : new(true, chatSaid.Reaches, null) { Running = true, Word = chatSaid.Word };
             }
         }
 
