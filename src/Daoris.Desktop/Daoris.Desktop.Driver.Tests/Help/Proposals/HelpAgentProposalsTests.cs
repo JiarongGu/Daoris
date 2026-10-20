@@ -213,11 +213,11 @@ public sealed class HelpAgentProposalsTests : HelpProposalsFixture
     {
         var unknown = HelpProposals.Plan(Use("claude-code", new UseChange(Switch: "sometimes")), DriverConfig.Empty, Listed);
         var broken = HelpProposals.Plan(
-            Use("claude-code", new UseChange(Switch: "curve")) with { AccountCurveRefused = "`weekly` has 0 points — a window's curve has one to twelve." },
+            Use("claude-code", new UseChange(Switch: "curve")) with { AccountCurveRefused = "`weekly` has 0 rows — a window's curve has one to twelve." },
             DriverConfig.Empty, Listed);
 
         Assert.Contains("`sometimes` is not when to switch accounts — smart (Daoris's curve), curve (your own) or off.", unknown.Refusal);
-        Assert.Equal("`weekly` has 0 points — a window's curve has one to twelve.", broken.Refusal);
+        Assert.Equal("`weekly` has 0 rows — a window's curve has one to twelve.", broken.Refusal);
     }
 
     /// <summary><c>profile use</c>'s refusals, in its words, before the person ever sees a card.</summary>
@@ -296,7 +296,7 @@ public sealed class HelpAgentProposalsTests : HelpProposalsFixture
         Assert.Equal([new CurvePoint(0, 30), new CurvePoint(100, 100)], set.AccountUse.Curve!["weekly"]);
         Assert.Null(set.AccountCurveRefused);
         Assert.True(cleared.AccountUse!.NoCurve);
-        Assert.Equal("`weekly` has 0 points — a window's curve has one to twelve.", broken.AccountCurveRefused);
+        Assert.Equal("`weekly` has 0 rows — a window's curve has one to twelve.", broken.AccountCurveRefused);
     }
 
     /// <summary>TOOL4l-b: the use, order and ready doors are listed, since the service's <c>agent_propose</c> writes them.</summary>

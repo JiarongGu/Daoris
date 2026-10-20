@@ -108,8 +108,8 @@ describe('a window’s own points, edited', () => {
     const onSave = vi.fn((points: unknown, refused: (problem: string) => void) => {
       said.push(JSON.stringify(points));
       refused(said.length === 1
-        ? "`weekly`'s point 2 has used 20%, less than point 1's 30% — used never falls."
-        : "`weekly`'s point 2 is not two whole numbers [elapsed, used].");
+        ? "`weekly`'s row 2 has used 20%, less than row 1's 30% — used never falls."
+        : "`weekly`'s row 2 is not two whole numbers [elapsed, used].");
     });
     render(<CurvePoints window="weekly" points={[[0, 30], [50, 70]]} start={[[0, 30], [50, 70]]} hint="" onSave={onSave} />);
 
@@ -119,14 +119,14 @@ describe('a window’s own points, edited', () => {
     await userEvent.click(within(editor).getByRole('button', { name: 'Save the curve' }));
 
     expect(screen.getByRole('alert').textContent)
-      .toBe("`weekly`'s point 2 has used 20%, less than point 1's 30% — used never falls.");
+      .toBe("`weekly`'s row 2 has used 20%, less than row 1's 30% — used never falls.");
     expect((within(editor).getByRole('spinbutton', { name: 'Used, % · row 2' }) as HTMLInputElement).value).toBe('20');
 
     await userEvent.clear(within(editor).getByRole('spinbutton', { name: 'Used, % · row 2' }));
     expect(screen.queryByRole('alert')).toBeNull();
     await userEvent.click(within(editor).getByRole('button', { name: 'Save the curve' }));
     expect(said[1]).toBe('[[0,30],[50,null]]');
-    expect(screen.getByRole('alert').textContent).toBe("`weekly`'s point 2 is not two whole numbers [elapsed, used].");
+    expect(screen.getByRole('alert').textContent).toBe("`weekly`'s row 2 is not two whole numbers [elapsed, used].");
   });
 
   it('says it in 中文', async () => {
