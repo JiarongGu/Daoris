@@ -205,6 +205,11 @@ The build outputs into `../Daoris.Service/Daoris.Service.Http/wwwroot`, so the p
 origin. That is what makes CORS unnecessary in a real deployment — the `DAORIS_WEB_ORIGIN` variable
 exists only for the development server on another port, and it names an origin rather than wildcarding.
 
+A quest's flowchart is the same in both shells (FLOWCHART1a2, D186): opened, its section reads the quest's moves from the
+service's own `GET /api/quests/{id}/moves` (`useQuestMoves` in `data/queries.ts`), which either host answers, so a browser
+draws the way a quest went as the window does; *How this came to be* stays the shell's, since its trace reads this machine's
+records. A host from before the door answers it not found, and the flowchart draws the statuses alone and says so.
+
 ## Running it
 
 The HTTP host requires `DAORIS_HOME` or an explicit `DAORIS_KNOWLEDGE_DB`. Use a development
