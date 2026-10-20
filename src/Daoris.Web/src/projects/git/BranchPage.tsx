@@ -8,6 +8,7 @@ import { type ListedBranch, When } from './BranchList';
 import { kindOf, landedStanding, pullRequestSaid, standing } from './branchStanding';
 import { CommitGraph, type GraphCommitRow } from './CommitGraph';
 import { GraphFoot, useGraphPaging } from './GraphFoot';
+import { LandingFlow, type LandingDoor } from './LandingFlow';
 import { type GitRead, Nothing, Waiting } from './RepositoryGit';
 
 const noop = () => {};
@@ -51,7 +52,7 @@ export type BranchRead =
  * its way back are there in every state, so a branch the list no longer holds says so beside the press that leaves. Commit
  * rows keep no press (GIT1f's) and the branch carries no act of git's (GIT1g's); the walk's sides are not marked.
  */
-export function BranchPage({ repository, name, read, onBack, onMore }: {
+export function BranchPage({ repository, name, read, onBack, onMore, landing }: {
   repository: string;
   /** The branch's name, as the press that opened it named it. */
   name: string;
@@ -60,6 +61,11 @@ export function BranchPage({ repository, name, read, onBack, onMore }: {
   onBack: () => void;
   /** The next page, asked: the holder reads it and hands the commits back accumulated. */
   onMore?: () => void;
+  /**
+   * How a landed branch landed (FLOWCHART1c): its fold and its reads, which the holder keeps. Absent for any other kind of branch,
+   * and where nothing can read the trace (a browser).
+   */
+  landing?: LandingDoor;
 }) {
   const { t } = useTranslation();
   const body = useRef<HTMLDivElement>(null);
@@ -118,7 +124,14 @@ export function BranchPage({ repository, name, read, onBack, onMore }: {
     );
   })();
 
-  return <ViewMain header={head}>{shown}</ViewMain>;
+  // How a landed branch landed stands above its commits, once the list has read it (FLOWCHART1c).
+  return (
+    <ViewMain header={head}>
+      {landing && read.state === 'read'
+        ? <div className="grid min-w-0 gap-4"><LandingFlow name={name} door={landing} />{shown}</div>
+        : shown}
+    </ViewMain>
+  );
 }
 
 /** Its kind, as a word, and a session's state on the pill the rail gives it. */

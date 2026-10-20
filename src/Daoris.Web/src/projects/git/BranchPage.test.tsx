@@ -3,6 +3,8 @@ import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import i18n from '../../locales/i18n';
 import { BranchPage, type BranchRead } from './BranchPage';
+import type { LandingDoor } from './LandingFlow';
+import { SHARED_BRANCH, SHARED_DUE, SHARED_UNITS } from './landingFixtures';
 import { GIT_BRANCH_PARTED, GIT_BRANCH_PARTED_PAGES, GIT_BRANCHES_ENGINE } from '../fixtures';
 
 // A branch's page (UX6h3b, the built-in Git design §2.3): its header names it and its kind, says in one line where it stands
@@ -146,5 +148,57 @@ describe("a branch's page", () => {
     expect(head).toHaveTextContent('领先 main 2 个提交，也落后 2 个。');
     expect(within(head).getByRole('button', { name: '回到分支' })).toBeInTheDocument();
     expect(screen.getByRole('list', { name: `${PHYSICS} 与 main 分开以来` })).toBeInTheDocument();
+  });
+});
+
+describe("a landed branch's page: how it landed (FLOWCHART1c; the flowchart design §2.7)", () => {
+  afterEach(async () => { await i18n.changeLanguage('en'); });
+  const LANDED = 'review/q6-asset-cache';
+  const shown = (door: LandingDoor) =>
+    render(<BranchPage repository="engine" name={LANDED} read={listed(LANDED)} onBack={() => {}} landing={door} />);
+  const section = () => screen.getByRole('region', { name: 'How it landed' });
+
+  it('folds it to a line until it is opened, and asks for it only then', async () => {
+    const onToggle = vi.fn();
+    shown({ open: false, onToggle });
+    const fold = within(section()).getByRole('button', { name: /How it landed/ });
+    expect(fold).toHaveAttribute('aria-expanded', 'false');
+    expect(screen.queryByRole('list', { name: `How ${LANDED} landed` })).toBeNull();
+    await userEvent.click(fold);
+    expect(onToggle).toHaveBeenCalledTimes(1);
+  });
+
+  it('draws it once read: the tries stacked, the landing and its advances, the push, the pull request, the end, the clean-up', () => {
+    shown({ open: true, onToggle: () => {}, landing: { name: LANDED, branch: SHARED_BRANCH, due: SHARED_DUE, units: SHARED_UNITS } });
+    const flow = screen.getByRole('list', { name: `How ${LANDED} landed` });
+    const names = within(flow).getAllByRole('listitem').map((item) => item.getAttribute('data-flow-node'));
+    // In reading order, rank by rank: the push, the pull request and the first advance each hang from the landing, beside each other.
+    expect(names).toEqual([
+      'due', 'try:0', 'stack:try:1', 'try:4', 'landed', 'advance:0', 'pushed', 'pull-request', 'stack:advance:1', 'end', 'cleanup', 'recovery',
+    ]);
+    expect(within(flow).getByRole('listitem', { name: /^its quest is held for your yes ×3/ })).toBeInTheDocument();
+    expect(within(flow).getByRole('listitem', { name: /^Moved on by session s4 ×3/ })).toBeInTheDocument();
+    const pull = within(flow).getByRole('listitem', { name: /^Its pull request/ });
+    expect(within(pull).getByRole('link', { name: 'Open the pull request' })).toHaveAttribute('href', 'https://example.test/pull/42');
+    expect(within(flow).getByRole('listitem', { name: /^Landed on/ })).toHaveTextContent('made for session s2');
+  });
+
+  it('says it is reading, refused, that no landing names the branch, and that the units were not read', () => {
+    const { rerender } = shown({ open: true, onToggle: () => {}, reading: true });
+    expect(section()).toHaveTextContent('Reading how it landed…');
+    const again = (door: LandingDoor) => rerender(<BranchPage repository="engine" name={LANDED} read={listed(LANDED)} onBack={() => {}} landing={door} />);
+    again({ open: true, onToggle: () => {}, refusal: 'the driver did not answer' });
+    expect(section()).toHaveTextContent('How it landed could not be read: the driver did not answer');
+    again({ open: true, onToggle: () => {}, landing: null });
+    expect(section()).toHaveTextContent('No landing on this machine names this branch');
+    again({ open: true, onToggle: () => {}, landing: { name: LANDED, branch: SHARED_BRANCH, units: null }, unitsUnread: true });
+    expect(section()).toHaveTextContent('Where its work stands could not be read');
+  });
+
+  it('says it in 中文', async () => {
+    await i18n.changeLanguage('zh');
+    shown({ open: true, onToggle: () => {}, landing: { name: LANDED, branch: SHARED_BRANCH, due: SHARED_DUE, units: SHARED_UNITS } });
+    expect(screen.getByRole('region', { name: '它是如何落地的' })).toBeInTheDocument();
+    expect(screen.getByRole('list', { name: `${LANDED} 是如何落地的` })).toBeInTheDocument();
   });
 });

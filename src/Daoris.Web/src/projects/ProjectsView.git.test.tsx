@@ -20,6 +20,7 @@ import type { GitBranchList, GitGraphPage } from '../bridge/repositories/git';
 import {
   GIT_BRANCH_PARTED, GIT_BRANCH_PARTED_PAGES, GIT_BRANCHES_ENGINE, GIT_BRANCHES_GAME, GIT_HISTORY_ENGINE, GIT_HISTORY_PAGES,
 } from './fixtures';
+import { SHARED_BRANCH, SHARED_DUE, SHARED_UNITS, traceAnswerOf } from './git/landingFixtures';
 import { DRIVER_STATE, respond, show, WIRING } from '../test/shellHarness';
 import { chooseRepository, chooseWorkspace, ProjectsView, repositoryMain } from '../test/projectsView';
 
@@ -52,16 +53,20 @@ describe("a repository's Branches and History tabs", () => {
     window.localStorage.clear();
   });
 
-  const answering = ({ branches = () => ENGINE_LIST, graph = () => answer(PAGE), log = () => ({ lines: [] }) }: {
+  const answering = ({ branches = () => ENGINE_LIST, graph = () => answer(PAGE), log = () => ({ lines: [] }), trace, work }: {
     branches?: (payload: Record<string, unknown>) => unknown;
     graph?: (payload: Record<string, unknown>) => unknown;
     /** What the machine log answers `LINES` with (AUTOTIDY1a). */
     log?: () => unknown;
+    /** What `TRACE` and `WORK_STATE` answer (FLOWCHART1c). */
+    trace?: (payload: Record<string, unknown>) => unknown;
+    work?: (payload: Record<string, unknown>) => unknown;
   } = {}) =>
     invoke.mockImplementation(async (module: string, type: string, request?: { payload?: Record<string, unknown> }) => {
       if (module === 'DAORIS.REMOTES') return WIRING;
       if (module === 'DAORIS.LOG') return log();
-      const read = type === 'GIT_BRANCHES' ? branches : type === 'GIT_GRAPH' ? graph : null;
+      const read = type === 'GIT_BRANCHES' ? branches : type === 'GIT_GRAPH' ? graph
+        : type === 'TRACE' && trace ? trace : type === 'WORK_STATE' && work ? work : null;
       if (read) {
         const answered = read(request?.payload ?? {});
         if (answered instanceof Error) throw answered;
@@ -340,6 +345,63 @@ describe("a repository's Branches and History tabs", () => {
       expect(await within(repositoryMain()).findByText('No such branch here')).toBeInTheDocument();
       expect(asked('GIT_GRAPH').filter(([, , request]) => request.payload.sinceParted)).toEqual([]);
       expect(within(repositoryMain()).getByRole('button', { name: 'Back to Branches' })).toBeInTheDocument();
+    });
+  });
+
+  /**
+   * FLOWCHART1c (the flowchart design §2.7, §10's trap): a landed branch's page draws how it landed, read once its section opens:
+   * the trace of the session its landing record names, never a unit's executor, and the units of work the branch carries, by the
+   * branch. A door into it (the work's milestone, a run's landing step) opens the page with the section open.
+   */
+  describe('how a landed branch landed (FLOWCHART1c)', () => {
+    const LANDED = 'review/q6-asset-cache';
+    // The landing record names `s-21` (the list's fixture); a unit of the branch's names another executor, which is never read by.
+    const landed = { ...SHARED_BRANCH, branch: LANDED, session: 's-21' };
+    const reads = {
+      trace: (payload: Record<string, unknown>) => (payload.id === 's-21' ? traceAnswerOf('s-21', landed, SHARED_DUE) : { chain: null, unread: [] }),
+      work: () => ({ units: [...SHARED_UNITS, { ...SHARED_UNITS[0]!, unit: 'u-elsewhere', repository: 'game' }], recovery: [], unread: [], held: [] }),
+    };
+
+    it('reads it only once opened, by the session its landing names and its units by the branch, and draws it', async () => {
+      answering(reads);
+      show(<ProjectsView notify={() => {}} />);
+      const page = await chooseRepository('engine');
+      await userEvent.click(within(page).getByRole('tab', { name: 'Branches' }));
+      await userEvent.click(await within(repositoryMain()).findByRole('button', { name: `Open ${LANDED}` }));
+      const fold = await within(repositoryMain()).findByRole('button', { name: /^How it landed/ });
+      expect(asked('TRACE')).toEqual([]);
+      expect(asked('WORK_STATE')).toEqual([]);
+
+      await userEvent.click(fold);
+      const flow = await within(repositoryMain()).findByRole('list', { name: `How ${LANDED} landed` });
+      expect(asked('TRACE').map(([, , request]) => request.payload)).toEqual([{ kind: 'session', id: 's-21' }]);
+      expect(asked('WORK_STATE').map(([, , request]) => request.payload)).toEqual([{ unit: LANDED }]);
+      expect(within(flow).getByRole('listitem', { name: /^Landed on review\/q6-asset-cache/ })).toBeInTheDocument();
+      // The units are this repository's: the end says three, not the fourth another repository's unit named.
+      expect(within(flow).getByRole('listitem', { name: /^End/ }).querySelectorAll('p')).toHaveLength(3);
+    });
+
+    it('offers nothing of it on a branch that is no landing\'s', async () => {
+      answering(reads);
+      show(<ProjectsView notify={() => {}} />);
+      const page = await chooseRepository('engine');
+      await userEvent.click(within(page).getByRole('tab', { name: 'Branches' }));
+      await userEvent.click(await within(repositoryMain()).findByRole('button', { name: 'Open daoris/engine-physics-step' }));
+      await within(repositoryMain()).findByRole('heading', { level: 1, name: 'daoris/engine-physics-step' });
+      expect(within(repositoryMain()).queryByRole('button', { name: /^How it landed/ })).toBeNull();
+    });
+
+    it('opens on a door\'s word with the section open, and lets the word go', async () => {
+      answering(reads);
+      const onBranchOpened = vi.fn();
+      show(<ProjectsView notify={() => {}} door="engine" branchAsked={{ repository: 'engine', branch: LANDED }} onBranchOpened={onBranchOpened} />);
+      expect(await screen.findByRole('heading', { level: 1, name: LANDED }, { timeout: 4000 })).toBeInTheDocument();
+      expect(await within(repositoryMain()).findByRole('list', { name: `How ${LANDED} landed` })).toBeInTheDocument();
+      expect(within(repositoryMain()).getByRole('button', { name: /^How it landed/ })).toHaveAttribute('aria-expanded', 'true');
+      expect(onBranchOpened).toHaveBeenCalled();
+      // Its way back is its repository's Branches, as a branch opened from the list.
+      await userEvent.click(within(repositoryMain()).getByRole('button', { name: 'Back to Branches' }));
+      expect(await within(repositoryMain()).findByRole('region', { name: "engine's branches" })).toBeInTheDocument();
     });
   });
 
