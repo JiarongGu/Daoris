@@ -72,6 +72,31 @@ public sealed class WordsLeftTests : IDisposable
         Assert.Equal(("target", "daoris", "w9", "resume"), (shown.Origin, shown.From, shown.Id, shown.Reaches));
     }
 
+    /// <summary>
+    /// ACCESSSWAP1b (D183's note): words a run handed back at its turn's end because its setup changed never went at all, so they are
+    /// kept saying they go on under the new setup, by their own line, never the failed turn's "to go again".
+    /// </summary>
+    [Fact]
+    public async Task Words_a_changed_setup_handed_back_are_kept_saying_they_go_on_under_it()
+    {
+        var standIn = new StandIn(HttpStatusCode.OK, """
+            {"session":{"id":"s1","state":"completed"},"message":"Kept for session `s1` to go on with.",
+             "said":{"id":"w9","text":"and the prices","at":"2026-10-20T06:53:37+00:00","files":[],"reopens":true}}
+            """);
+        using var service = new ServiceClient("http://stand-in", null, new HttpClient(standIn));
+        var events = new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions));
+
+        var kept = await WordsLeft.KeepAsync(
+            service, events, "s1", [new ChatMessage("and the prices", []) { Id = "said-1" }], CancellationToken.None,
+            why: Observation.WordsUnderNewSetup);
+
+        Assert.Equal(1, kept);
+        var record = events.After("s1", 0).Events;
+        Assert.Equal(["said-1"], record[0].Words);
+        Assert.Equal(["ended.words-setup"], NoteAssert.Codes(record[0].Parts));
+        Assert.Equal("Your words go on at the next look, in the same conversation under the new setup.", record[0].Text);
+    }
+
     [Fact]
     public async Task Words_the_record_would_not_keep_are_said_never_to_have_reached_it()
     {

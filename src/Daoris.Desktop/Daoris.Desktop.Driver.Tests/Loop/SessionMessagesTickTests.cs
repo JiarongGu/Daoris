@@ -636,6 +636,12 @@ public sealed class SessionMessagesTickTests : IDisposable
 
         public string? Note(string id) => Field(id, "note");
 
+        /// <summary>The permission prompts the record names the setup it runs under by (AUTONOMY1b2), or null for none kept.</summary>
+        public string? Permissions(string id)
+        {
+            lock (_sessions) return Find(id)["access"]?[AccessRules.Permissions]?.GetValue<string>();
+        }
+
         public IReadOnlyList<string> Said(string id)
         {
             lock (_sessions) return [.. Find(id)["said"]!.AsArray().Select(word => word!["id"]!.GetValue<string>())];
@@ -772,9 +778,19 @@ public sealed class SessionMessagesTickTests : IDisposable
                             ["profile"] = body["profile"]?.GetValue<string>(),
                             ["created"] = DateTimeOffset.UtcNow.AddMinutes(_sessions.Count).ToString("O"),
                             ["said"] = new JsonArray(),
+                            // AUTONOMY1a: the setup it started under, as the service keeps it (ACCESSSWAP1b reads it back).
+                            ["access"] = body["access"]?.DeepClone(),
                         };
                         _sessions.Add(session);
                         return (200, new JsonObject { ["session"] = Wire(session), ["message"] = "opened" }.ToJsonString());
+                    }
+
+                    // AUTONOMY1b2: the setup a resumed record now runs under, kept as the service does.
+                    case ("POST", _) when path.StartsWith("/api/sessions/", StringComparison.Ordinal) && path.EndsWith("/access", StringComparison.Ordinal):
+                    {
+                        var session = Find(IdOf(path, "/access"));
+                        session["access"] = Body()["access"]?.DeepClone();
+                        return (200, new JsonObject { ["session"] = Wire(session), ["message"] = "kept" }.ToJsonString());
                     }
 
                     case ("POST", _) when path.StartsWith("/api/sessions/", StringComparison.Ordinal) && path.EndsWith("/state", StringComparison.Ordinal):
