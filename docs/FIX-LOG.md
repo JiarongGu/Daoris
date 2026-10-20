@@ -5,6 +5,21 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-21 — A turn that ended just after its background command did parked on the person (BGWAIT3)
+
+- **Symptom:** a driven session on the install backgrounded a test class, wrote that it would close its quest when the tests
+  finished, and ended its turn. The page said 等你处理, and nothing woke it.
+- **Root cause:** the command ended about three seconds before the turn did, after the agent's last step, so the harness had not
+  handed the agent the ending (its last words said the command still ran). The wire said the task ended, and BGWAIT1 waits only
+  on work still running at the turn's end, so the session closed and parked five seconds later, before the harness's wake for
+  that ending could come. The task frames had arrived: the record keeps none of them, so their absence there proved nothing.
+- **Fix:** `AcpWake.Unseen` names an ending read after the agent's last step, after the last woken turn began and after Daoris's
+  last go-on; a turn that ends on one waits for the woken turn, or sends the go-on after the quiet, where the quest would park.
+  Every protocol-door session asks for `asyncTasks`, so the headless loop gets the frames too. D83's BGWAIT3 note.
+- **Verification:** `AcpBackgroundTests`' install case (0.84.0's frames: the spawn at the call's result, the ending after the
+  last step), the go-on told once and the quest that does not wait failed before the fix; the reshaped real-question case
+  stays green. `AcpTests`' capabilities and task-frame cases failed before it.
+
 ## 2026-10-21 — The full set's run on d263cd0 failed three gates that its merges never ran
 
 - **Symptom:** the full set on d263cd0 failed `web-unit`, `cli` and `deployment`. The web design checks found

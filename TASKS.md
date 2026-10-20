@@ -39,7 +39,7 @@ holds the detail. The structural changes come first, so the features built after
 **Features, after:**
 
 - **The owner's UI/UX findings with many sessions running** (2026-10-20): all built and merged by 2026-10-21 (QUESTLISTS1, SESSBADGE1, RAILLINE1, OVERVIEWNOISE1a-d, TITLEONE1, DONEEND1, STARTERSCOPE1); they reach the owner's window with the next republish, and are looked at there.
-- **BGWAIT3**: a session that ended its turn on its own background command was shown as waiting for the person (等你处理), and nothing woke it when the command ended (the owner's report, 2026-10-21). Found answering it: PIPEOWNER1, a terminal that is not elevated cannot press into a Daoris that is.
+- **PIPEOWNER1**: a terminal that is not elevated cannot press into a Daoris that is (found answering BGWAIT3, 2026-10-21).
 - **CODEXLOGIN1**: a ChatGPT workspace that refuses device codes cannot add its Codex account, since Daoris signs Codex in by the device code only; the browser sign-in, as ChatGPT's desktop app does it, is wanted beside it (the owner's report, 2026-10-21).
 
 - **SIGNIN1b**: an account's sign-in says where it is and how long (SIGNIN1, merged: its phases, a late panel reading the code back, the log's harness lines); proved with the owner signing in on the install after the republish (SIGNIN1b).
@@ -351,8 +351,6 @@ EVID1a → b → c; corresponding EVID1 precedes EVID2; EVID1d also needs DEV5/7
 
 Contracts: session-management (D126 §9), session-messages (D137), answer-continues (D131),
 pause-and-clean-up (D132), D133/D136. Installed canaries follow completed build rows.
-
-- [ ] **BGWAIT3 — a turn that ends on the agent's own background command is not waiting for the person** (driver; the owner's report, 2026-10-21; D83's BGWAIT1). A driven session on the install (GITSTART4's) ran the driver's `SystemWiringTests` with Claude Code's background Bash, said it would close its quest when they finished, and ended its turn: the page said 等你处理, and nothing woke it when the command ended. Its last tool result reads "Command running in background with ID: …" and its events hold no `async_task_*` note, while `Agents/Acp/AcpBackground.cs` keeps only what `async_task_spawned` announces, so the end read as a question. Measure first, on the adapter the install pins, with a real sign-in: which frames a background Bash and a Monitor send with `asyncTasks` asked as BGWAIT1's streams ask it, and whether the harness wakes its agent when one ends. Then, whatever the wire says, a turn that ends while its own background command runs is the session's wait under D83's park rule, and the agent is woken when the command ends: by the frames where they come, else by the command's end as the harness records it, if the measure finds one. Proof: `AcpBackgroundTests` cases shaped on the measured frames, the park rule's table in `ObservationTests`, and the rail not saying 等你处理 for it.
 
 Found driving the installed home clean on 2026-10-15 (the owner: *"please drive daoris and please also clean up all unfinished task/session in this local daoris so we can start the next round of tasks; currently we find a lot of issues because this design is for as automated as possible"*):
 
