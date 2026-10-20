@@ -233,6 +233,38 @@ public sealed class WindowsModuleTests : Bridge
         Assert.Equal((3, "3 waiting on you"), _badges.Single());
     }
 
+    /// <summary>
+    /// SESSBADGE1: the page tells each count as it changes and waits for no answer, so two told close together may reach the frame in
+    /// either order. The title once read 5 while the band read 4 from the same value. Each count carries the order the page told it in,
+    /// and one told before the count the frame wears is never worn over it; a page that tells no order is worn as it comes.
+    /// </summary>
+    [Fact]
+    public async Task A_count_told_before_the_one_the_frame_wears_is_never_worn_over_it()
+    {
+        var module = Module();
+
+        await AnswerAsync(module, "SET_BADGE", new { count = 4, description = "4 waiting on you", order = 1760950000002L });
+        var stale = await AnswerAsync(module, "SET_BADGE", new { count = 5, description = "5 waiting on you", order = 1760950000001L });
+        var next = await AnswerAsync(module, "SET_BADGE", new { count = 3, description = "3 waiting on you", order = 1760950000003L });
+
+        Assert.False(stale.GetProperty("applied").GetBoolean());
+        Assert.True(next.GetProperty("applied").GetBoolean());
+        Assert.Equal([(4, "4 waiting on you"), (3, "3 waiting on you")], _badges);
+    }
+
+    /// <summary>Two told at once from two threads: whichever the module takes last, the frame ends on the later order's count.</summary>
+    [Fact]
+    public async Task Counts_told_at_once_end_on_the_latest_order()
+    {
+        var module = Module();
+
+        await Task.WhenAll(Enumerable.Range(1, 40).Reverse().Select(order => Task.Run(() =>
+            AnswerAsync(module, "SET_BADGE", new { count = order, description = $"{order} waiting on you", order = (long)order }))));
+
+        Assert.Equal(40, _badges[^1].Count);
+        Assert.Equal(_badges.Select(each => each.Count).Order(), _badges.Select(each => each.Count));
+    }
+
     [Fact]
     public async Task Nothing_waiting_takes_the_badge_off_and_a_count_below_none_is_none()
     {

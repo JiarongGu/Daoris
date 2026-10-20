@@ -485,6 +485,85 @@ public sealed class AttentionStateSliceTests : DriverModuleBridge
             counted.Select(each => $"{each.Key}={each.Value.ToJsonString()}").Order(StringComparer.Ordinal));
     }
 
+    // ---- the sessions the driver runs, which the Sessions badge and the status bar count (SESSBADGE1, D76's note) ----
+
+    /// <summary>
+    /// One count, the cap's (CAPCOUNT1, <see cref="ActiveSessions.HoldsSlot(SessionView)"/>): this machine's active sessions the driver
+    /// started, a driven quest's, an intake's, a helper's and a reviewer's, a parked one and one whose host answers no kind among them;
+    /// never a conversation the person holds (Ask Daoris's, a chat), a teammate's or one that ended. The records are the ones
+    /// <c>CapCountTests</c> reads as the planner does, and the count is the slots the planner holds for them.
+    /// </summary>
+    [Fact]
+    public void The_sessions_the_driver_runs_are_counted_by_the_cap_s_rule_never_a_conversation_the_person_holds()
+    {
+        JsonObject[] sessions =
+        [
+            Session("""{"id":"s1","repository":"A","kind":"driven","quest":"q1"}"""),
+            Session("""{"id":"h1","repository":"daoris:help","kind":"chat"}"""),
+            Session("""{"id":"c1","repository":"B","kind":"chat","state":"awaiting-person"}"""),
+            Session("""{"id":"i1","repository":"ask #a1","kind":"chat","ask":"a1"}"""),
+            Session("""{"id":"w1","repository":"C","kind":"chat","serves":"s1"}"""),
+            Session("""{"id":"r1","repository":"D","kind":"chat","opinion":"o1"}"""),
+            JsonNode.Parse("""{"id":"old","repository":"A","state":"working"}""")!.AsObject(),
+            Session("""{"id":"p4rk3d00","state":"awaiting-person"}"""),
+            Session("""{"id":"st4rt000","state":"queued"}"""),
+            Session("""{"id":"d0ne0000","state":"completed"}"""),
+            Session("""{"id":"f41led00","state":"failed"}"""),
+            Session("""{"id":"laptop/b05y0000"}"""),
+        ];
+
+        var working = NeedsAPerson.Working(new() { Sessions = sessions });
+
+        Assert.Equal(
+            ["session:i1", "session:old", "session:p4rk3d00", "session:r1", "session:s1", "session:st4rt000", "session:w1"],
+            working.Select(each => each.Key).Order(StringComparer.Ordinal));
+        // The slots the planner holds for the same records, read as it reads the active ones of this machine.
+        SessionView[] active =
+        [
+            .. sessions
+                .Where(record => record["state"]!.GetValue<string>() is "queued" or "starting" or "working" or "awaiting-person")
+                .Where(record => !record["id"]!.GetValue<string>().Contains('/'))
+                .Select(record => new SessionView(record["id"]!.GetValue<string>(), record["repository"]!.GetValue<string>(), record["state"]!.GetValue<string>(), null)
+                {
+                    Kind = record["kind"]?.GetValue<string>() ?? ActiveSessions.DrivenKind,
+                    Ask = record["ask"]?.GetValue<string>(),
+                    Serves = record["serves"]?.GetValue<string>(),
+                    Opinion = record["opinion"]?.GetValue<string>(),
+                }),
+        ];
+        Assert.Equal(new Snapshot([], [], active).SlotsHeld, working.Count);
+    }
+
+    /// <summary>Each counted session says its workspace, for the window's scope, as the badge's waiting ones do.</summary>
+    [Fact]
+    public void Each_session_the_driver_runs_says_its_workspace_for_the_window_s_scope()
+    {
+        var working = NeedsAPerson.Working(new()
+        {
+            Sessions = [Session("""{"id":"s1","workspace":"aurora"}"""), JsonNode.Parse("""{"id":"s2","repository":"A","state":"working"}""")!.AsObject()],
+        });
+
+        Assert.Equal(
+            ["session:s1={\"workspace\":\"aurora\"}", "session:s2={\"workspace\":\"default\"}"],
+            working.Select(each => $"{each.Key}={each.Value.ToJsonString()}").Order(StringComparer.Ordinal));
+    }
+
+    /// <summary>
+    /// What the count reads of a record moves the sessions' read, so the slice is woken where a record's kind or mark moves, as where
+    /// its state does.
+    /// </summary>
+    [Theory]
+    [InlineData("""{"kind":"chat"}""")]
+    [InlineData("""{"ask":"a1"}""")]
+    [InlineData("""{"serves":"s9"}""")]
+    [InlineData("""{"opinion":"o1"}""")]
+    public void A_record_s_kind_or_mark_moving_moves_what_the_judge_reads(string moved)
+    {
+        var working = Session();
+
+        Assert.NotEqual(AttentionStateSlice.SessionsRead([working]), AttentionStateSlice.SessionsRead([With(working, moved)]));
+    }
+
     // ---- a go-ahead asked on an ask (KNOWUSE1a) ----
 
     private static JsonObject GoAhead(string over = "{}") => With(
@@ -946,19 +1025,26 @@ public sealed class AttentionStateSliceTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// Two partitions, each keyed: <c>rows</c>, each row under its kind and id as the band keys it, and <c>sessions</c>, what the Sessions
-    /// badge counts. Judged empty, each is pushed empty, never gone. Not judged before every input it reads was judged (PUSHUX1).
+    /// Three partitions, each keyed: <c>rows</c>, each row under its kind and id as the band keys it; <c>sessions</c>, what waits on the
+    /// person in Sessions, which the badge marks; and <c>working</c>, the sessions the driver runs, which the badge and the status bar
+    /// count (SESSBADGE1). Judged empty, each is pushed empty, never gone. Not judged before every input it reads was judged (PUSHUX1).
     /// </summary>
     [Fact]
-    public void The_slice_is_two_keyed_partitions_judged_empty_as_empty_and_not_judged_before_its_inputs()
+    public void The_slice_is_three_keyed_partitions_judged_empty_as_empty_and_not_judged_before_its_inputs()
     {
         Assert.Null(AttentionStateSlice.Judge(null));
 
-        var judged = AttentionStateSlice.Judge(new AttentionFacts { Sessions = [Session("""{"state":"awaiting-person"}""")] })!;
-        Assert.Equal([AttentionStateSlice.Rows, AttentionStateSlice.Sessions], judged.Select(each => each.Partition));
+        var judged = AttentionStateSlice.Judge(new AttentionFacts
+        {
+            Sessions = [Session("""{"state":"awaiting-person"}"""), Session("""{"id":"w0rk1ng0"}"""), Session("""{"id":"c4a7c4a7","kind":"chat"}""")],
+        })!;
+        Assert.Equal([AttentionStateSlice.Rows, AttentionStateSlice.Sessions, AttentionStateSlice.Working], judged.Select(each => each.Partition));
         var rows = JsonSerializer.SerializeToNode(judged[0].Data, IpcJson.Options)!.AsObject();
         Assert.Equal(["parked:s1a2b3c4"], rows.Select(each => each.Key));
         Assert.Equal(["session:s1a2b3c4"], JsonSerializer.SerializeToNode(judged[1].Data, IpcJson.Options)!.AsObject().Select(each => each.Key));
+        Assert.Equal(
+            """{"session:s1a2b3c4":{"workspace":"default"},"session:w0rk1ng0":{"workspace":"default"}}""",
+            JsonSerializer.Serialize(judged[2].Data, IpcJson.Options));
 
         var empty = AttentionStateSlice.Judge(new AttentionFacts())!;
         Assert.All(empty, each => Assert.Equal("{}", JsonSerializer.Serialize(each.Data, IpcJson.Options)));

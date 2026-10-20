@@ -1,9 +1,9 @@
 import type { ReactElement } from 'react';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { render as rtlRender, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import * as Tooltip from '@radix-ui/react-tooltip';
-import '../../locales/i18n';
+import i18n from '../../locales/i18n';
 import { BrowserDoor } from './BrowserDoor';
 
 const render = (node: ReactElement) => rtlRender(<Tooltip.Provider>{node}</Tooltip.Provider>);
@@ -43,7 +43,7 @@ describe('who is driving', () => {
     render(<BrowserDoor onOpen={() => {}} drivers={ONE} onAttend={onAttend} />);
 
     const chip = screen.getByRole('button', { name: 'Daoris\'s browser is driven by engine · Read the ticket — open the session' });
-    expect(chip).toHaveTextContent('driven by engine · Read the ticket');
+    expect(chip).toHaveTextContent('browser driven by engine · Read the ticket');
     await userEvent.click(chip);
 
     expect(onAttend).toHaveBeenCalledWith('s1a2b3c4');
@@ -55,7 +55,7 @@ describe('who is driving', () => {
     render(<BrowserDoor onOpen={() => {}} drivers={TWO} onAttend={onAttend} />);
 
     const chip = screen.getByRole('button', { name: "Daoris's browser is driven by 2 sessions" });
-    expect(chip).toHaveTextContent('driven by 2 sessions');
+    expect(chip).toHaveTextContent('browser driven by 2 sessions');
     chip.focus();
     await user.keyboard('{Enter}');
     const items = await screen.findAllByRole('menuitem');
@@ -68,7 +68,30 @@ describe('who is driving', () => {
   it('still says who is driving where there is nowhere to open it, as words rather than a door', () => {
     render(<BrowserDoor onOpen={() => {}} drivers={ONE} />);
 
-    expect(screen.getByText('driven by engine · Read the ticket')).toBeTruthy();
+    expect(screen.getByText('browser driven by engine · Read the ticket')).toBeTruthy();
     expect(screen.getAllByRole('button')).toHaveLength(1);
+  });
+
+  /**
+   * SESSBADGE1: in Chinese the chip said *2 个会话正在操作* ("2 sessions are working") beside the browser's door, one more count of
+   * sessions working that disagreed with the others. It names the browser, first, so a long name is cut after it, never before.
+   */
+  describe('names the browser it counts for, in both languages', () => {
+    afterEach(() => i18n.changeLanguage('en'));
+
+    it('in English', () => {
+      render(<BrowserDoor onOpen={() => {}} drivers={TWO} />);
+      expect(screen.getByText('browser driven by 2 sessions')).toBeTruthy();
+    });
+
+    it('in Chinese', async () => {
+      await i18n.changeLanguage('zh');
+      const { unmount } = render(<BrowserDoor onOpen={() => {}} drivers={TWO} />);
+      expect(screen.getByText('浏览器由 2 个会话操作')).toBeTruthy();
+      unmount();
+
+      render(<BrowserDoor onOpen={() => {}} drivers={ONE} />);
+      expect(screen.getByText('浏览器由 engine · Read the ticket 操作')).toBeTruthy();
+    });
   });
 });

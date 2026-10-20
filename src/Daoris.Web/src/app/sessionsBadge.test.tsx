@@ -27,7 +27,7 @@ vi.mock('@shenora/react', async () => {
   };
 });
 
-import '../locales/i18n';
+import i18n from '../locales/i18n';
 import { App } from './App';
 import { AT_START } from '../help/setupGuide';
 import { WorkspaceScopeProvider } from '../data/scope';
@@ -86,11 +86,15 @@ function respond(url: string): Response {
   return Response.json([]);
 }
 
+/** The session the driver runs among the records above, as .NET counts it (SESSBADGE1): the person's chat and the teammate's are not. */
+const WORKING = { 'session:w0rk1ng0': { workspace: 'default' } };
+
 /**
  * The window over a shell that pushes who needs the person (PUSH1d4): its snapshot answers `STATE_SLICE` for the attention slice,
- * every other slice keeping its pull. `rows` are the band's, `counted` what the Sessions badge counts, each as .NET judged them.
+ * every other slice keeping its pull. `rows` are the band's, `counted` what waits on the person in Sessions, `working` the sessions
+ * the driver runs (SESSBADGE1), each as .NET judged them.
  */
-function start(rows: PushedAttention[], counted: Record<string, unknown> = COUNTED) {
+function start(rows: PushedAttention[], counted: Record<string, unknown> = COUNTED, working: Record<string, unknown> = WORKING) {
   vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => respond(String(input))));
   invoke.mockImplementation(async (module: string, type: string, request?: { payload?: Record<string, unknown> }) => {
     if (module === 'DAORIS.REMOTES') return { path: 'remotes.json', fromEnvironment: false, remotes: [] };
@@ -100,6 +104,7 @@ function start(rows: PushedAttention[], counted: Record<string, unknown> = COUNT
         partitions: [
           { partition: 'rows', seq: 1, status: 'ready', data: Object.fromEntries(rows.map((row) => [`${row.kind}:${row.id}`, row])) },
           { partition: 'sessions', seq: 1, status: 'ready', data: counted },
+          { partition: 'working', seq: 1, status: 'ready', data: working },
         ],
       };
     }
@@ -122,30 +127,64 @@ function start(rows: PushedAttention[], counted: Record<string, unknown> = COUNT
 }
 
 const sessionsButton = () => within(screen.getByRole('navigation', { name: 'Views' })).getByRole('button', { name: 'Sessions' });
+const statusBar = () => screen.getByLabelText('state of this machine');
 
+/**
+ * SESSBADGE1 (D76's note): with many driven sessions working, the owner saw the Sessions icon's number almost always empty, since it
+ * counted only what waited on them (UX5 U20); and the status bar counted an Ask Daoris conversation idle between turns. The badge
+ * counts the sessions the driver runs, as .NET counts them by the cap's rule, a quantity in the accent, and the status bar the same;
+ * what waits on the person in Sessions is marked beside the count in its own hue, and said in words in the place's tip.
+ */
 describe("Sessions' badge", () => {
-  afterEach(() => {
+  afterEach(async () => {
     cleanup();
     vi.unstubAllGlobals();
     invoke.mockReset();
     window.localStorage.clear();
+    await i18n.changeLanguage('en');
   });
 
-  /**
-   * It counts the list's first group as .NET counted it: this machine's session parked to ask, and the quest parked on its failed
-   * sessions, whose last session the list shows parked. The teammate's park is not the person's to press, though the band lists it.
-   */
-  it('counts what waits on the person: a session parked to ask, and a quest parked on its failed sessions', async () => {
+  const mark = () => sessionsButton().querySelector('.bg-st-open');
+
+  it('counts the sessions the driver runs as a quantity, never a conversation the person holds', async () => {
+    start([], {}, { ...WORKING, 'session:1n7a4e00': { workspace: 'default' }, 'session:r3v13w00': { workspace: 'default' } });
+
+    await waitFor(() => expect(within(sessionsButton()).getByText('3')).toBeInTheDocument());
+    expect(within(sessionsButton()).getByText('3').className).toContain('text-accent');
+    expect(mark()).toBeNull();
+  });
+
+  it('marks what waits on the person beside the count, in its own hue, and says both in words', async () => {
     start([...PARKS, PARKED_QUEST], { ...COUNTED, 'quest:q1': { kind: 'parked-quest' } });
 
-    await waitFor(() => expect(within(sessionsButton()).getByText('2')).toBeInTheDocument());
-    expect(within(sessionsButton()).getByText('2').className).toContain('text-ink-open');
+    await waitFor(() => expect(within(sessionsButton()).getByText('1')).toBeInTheDocument());
+    expect(within(sessionsButton()).getByText('1').className).toContain('text-accent');
+    expect(mark()).not.toBeNull();
+    expect(sessionsButton()).toHaveAccessibleDescription('1 active · 2 waiting on you');
   });
 
-  it('counts the sessions alone where nothing is parked', async () => {
+  it('marks what waits where nothing the driver runs is active', async () => {
+    start(PARKS, COUNTED, {});
+
+    await waitFor(() => expect(mark()).not.toBeNull());
+    expect(within(sessionsButton()).queryByText(/^\d+$/)).toBeNull();
+    expect(sessionsButton()).toHaveAccessibleDescription('1 waiting on you');
+  });
+
+  it('says its counts in Chinese', async () => {
+    await i18n.changeLanguage('zh');
     start(PARKS);
 
-    await waitFor(() => expect(within(sessionsButton()).getByText('1')).toBeInTheDocument());
+    const sessions = () => within(screen.getByRole('navigation', { name: '视图' })).getByRole('button', { name: '会话' });
+    await waitFor(() => expect(sessions()).toHaveAccessibleDescription('1 个进行中 · 1 个等你处理'));
+  });
+
+  /** The status bar counts the same sessions: the person's chat parked asking and the teammate's are in the list, and not counted. */
+  it('is the count the status bar says', async () => {
+    start(PARKS, COUNTED, { ...WORKING, 'session:1n7a4e00': { workspace: 'default' } });
+
+    await waitFor(() => expect(within(sessionsButton()).getByText('2')).toBeInTheDocument());
+    expect(within(statusBar()).getByText('2 sessions')).toBeInTheDocument();
   });
 });
 
@@ -242,7 +281,7 @@ describe("The taskbar's count", () => {
 
     await waitFor(() => expect(within(overviewButton()).getByText('3')).toBeInTheDocument());
     await waitFor(() => expect(badges().at(-1)).toEqual(
-      ['DAORIS.WINDOWS', 'SET_BADGE', { payload: { count: 3, description: '3 waiting on you' } }]));
+      ['DAORIS.WINDOWS', 'SET_BADGE', { payload: { count: 3, description: '3 waiting on you', order: expect.any(Number) } }]));
   });
 
   /**
@@ -265,7 +304,7 @@ describe("The taskbar's count", () => {
     // The two parks, the work ready to review, the helper's ask and the opinion.
     await waitFor(() => expect(within(overviewButton()).getByText('5')).toBeInTheDocument());
     await waitFor(() => expect(badges().at(-1)).toEqual(
-      ['DAORIS.WINDOWS', 'SET_BADGE', { payload: { count: 5, description: '5 waiting on you' } }]));
+      ['DAORIS.WINDOWS', 'SET_BADGE', { payload: { count: 5, description: '5 waiting on you', order: expect.any(Number) } }]));
   });
 
   /**
@@ -282,7 +321,7 @@ describe("The taskbar's count", () => {
     // The two parks, and the held call.
     await waitFor(() => expect(within(overviewButton()).getByText('3')).toBeInTheDocument());
     await waitFor(() => expect(badges().at(-1)).toEqual(
-      ['DAORIS.WINDOWS', 'SET_BADGE', { payload: { count: 3, description: '3 waiting on you' } }]));
+      ['DAORIS.WINDOWS', 'SET_BADGE', { payload: { count: 3, description: '3 waiting on you', order: expect.any(Number) } }]));
   });
 
   it('is never told from a secondary window’s page', async () => {

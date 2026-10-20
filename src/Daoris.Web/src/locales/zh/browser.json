@@ -1,7 +1,7 @@
 {
   "browser.door.open": "打开 Daoris 浏览器",
-  "browser.driving.one": "{{name}} 正在操作",
-  "browser.driving.several": "{{count}} 个会话正在操作",
+  "browser.driving.one": "浏览器由 {{name}} 操作",
+  "browser.driving.several": "浏览器由 {{count}} 个会话操作",
   "browser.driving.oneLabel": "{{name}} 正在操作 Daoris 的浏览器——打开这个会话",
   "browser.driving.severalLabel": "{{count}} 个会话正在操作 Daoris 的浏览器",
   "browser.driving.tip": "已交给它 Daoris 的浏览器，且仍在运行：它的智能体可以在那里的任何页面上动手，就在你两次按键之间。从交出那一刻算起，直到会话结束，不论它是否已经用过。",

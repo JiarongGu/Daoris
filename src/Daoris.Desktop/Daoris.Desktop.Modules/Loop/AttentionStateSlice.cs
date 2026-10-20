@@ -12,9 +12,11 @@ namespace Daoris.Desktop;
 /// hold in memory, and pushed by row, so no window judges them and no tick reads the band's inputs again.
 /// </summary>
 /// <remarks>
-/// <para><b>Two keyed partitions.</b> <see cref="Rows"/>, each row under its kind and id as the band keys it, its wait and the values the
-/// page words it from; and <see cref="Sessions"/>, each thing the Sessions badge counts. A row's move pushes that row alone. A row holds
-/// no place in the list: the page orders by group, then by wait, then by kind (D182's PUSH1d4 note, its PUSH1c3a rule).</para>
+/// <para><b>Three keyed partitions.</b> <see cref="Rows"/>, each row under its kind and id as the band keys it, its wait and the values
+/// the page words it from; <see cref="Sessions"/>, each thing that waits on the person in Sessions, which the badge marks; and
+/// <see cref="Working"/>, each session the driver runs, which the badge and the status bar count (SESSBADGE1). A row's move pushes that
+/// row alone. A row holds no place in the list: the page orders by group, then by wait, then by kind (D182's PUSH1d4 note, its PUSH1c3a
+/// rule).</para>
 ///
 /// <para><b>Its inputs, from memory.</b> The sessions, the quests, the asks, the groups and the work as their slices last judged them
 /// (<see cref="StateSlice.Snapshot"/>); the registry as the machine's facts hold it; and what the driver's look kept: the trust holds,
@@ -42,8 +44,17 @@ public static class AttentionStateSlice
     /// <summary>The rows' partition: each row of <i>What needs you</i>, keyed by its kind and id (the page's <c>attentionKey</c>).</summary>
     public const string Rows = "rows";
 
-    /// <summary>The Sessions badge's partition: each session parked to ask and each quest parked on its failed sessions, by a key of its own.</summary>
+    /// <summary>
+    /// What waits on the person in Sessions, which the badge marks in the waiting hue (SESSBADGE1; its count before, UX5 U20): each session
+    /// parked to ask and each quest parked on its failed sessions, by a key of its own.
+    /// </summary>
     public const string Sessions = "sessions";
+
+    /// <summary>
+    /// The sessions the driver runs (SESSBADGE1, D76's note), each by its key: what the Sessions badge counts as a quantity and the status
+    /// bar beside it, the cap's own count (<see cref="NeedsAPerson.Working"/>).
+    /// </summary>
+    public const string Working = "working";
 
     /// <summary>The slices it is judged from, each read from memory: none judged, nothing judged here.</summary>
     public static readonly IReadOnlyList<string> Inputs =
@@ -51,7 +62,7 @@ public static class AttentionStateSlice
 
     /// <summary>
     /// The allow-list: each shape a partition carries, and the fields of it pushed. <c>row</c> is a row, <c>waiting</c> what the badge
-    /// counts; the rest are what they hold (<see cref="Holds"/>), each picked as its source answers it.
+    /// marks, <c>working</c> what it counts; the rest are what they hold (<see cref="Holds"/>), each picked as its source answers it.
     /// </summary>
     public static readonly IReadOnlyDictionary<string, IReadOnlyList<string>> Fields = new Dictionary<string, IReadOnlyList<string>>(StringComparer.Ordinal)
     {
@@ -62,6 +73,7 @@ public static class AttentionStateSlice
             "permission", "blocked", "held", "wholeWorkspace", "holding", "read", "runs", "account",
         ],
         ["waiting"] = ["kind", "workspace"],
+        ["working"] = ["workspace"],
         ["note"] = ["note", "parts"],
         ["goAhead"] = ["kind", "on", "act"],
         ["departed"] = ["count", "number", "reason"],
@@ -175,7 +187,9 @@ public static class AttentionStateSlice
 
         var counted = new JsonObject();
         foreach (var (key, value) in NeedsAPerson.WaitingInSessions(facts)) counted[key] = Pick(value, "waiting");
-        return [new SliceJudged(Rows, rows), new SliceJudged(Sessions, counted)];
+        var working = new JsonObject();
+        foreach (var (key, value) in NeedsAPerson.Working(facts)) working[key] = Pick(value, "working");
+        return [new SliceJudged(Rows, rows), new SliceJudged(Sessions, counted), new SliceJudged(Working, working)];
     }
 
     /// <summary>A row as pushed: its fields of the allow-list, each shape it holds picked to its own.</summary>
@@ -309,8 +323,8 @@ public static class AttentionStateSlice
 
     /// <summary>
     /// What the judge reads of the session records, as one string (PUSH1d4): each record's id, state, answer, repository and workspace,
-    /// and, where it is not busy working, when it moved and its note. A working session's record is written at each word and moves its
-    /// time alone, which no row reads; its park moves its state.
+    /// its kind and the marks the cap's count reads (SESSBADGE1), and, where it is not busy working, when it moved and its note. A working
+    /// session's record is written at each word and moves its time alone, which no row reads; its park moves its state.
     /// </summary>
     public static string SessionsRead(IEnumerable<JsonObject> records) =>
         string.Join("\n", records.Select(record =>
@@ -319,6 +333,7 @@ public static class AttentionStateSlice
             var busy = state is "queued" or "starting" or "working";
             return string.Join("\t",
                 Json.Text(record, "id"), state, Json.Text(record, "answer"), Json.Text(record, "repository"), Json.Text(record, "workspace"),
+                Json.Text(record, "kind"), Json.Text(record, "ask"), Json.Text(record, "serves"), Json.Text(record, "opinion"),
                 busy ? "" : Json.Text(record, "updated"), busy ? "" : record["note"]?.ToJsonString(), busy ? "" : record["noteParts"]?.ToJsonString());
         }));
 

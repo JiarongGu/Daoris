@@ -28,7 +28,7 @@ import {
   askItem, type Compose, doorOpening, type OpenGroup, type Opening, type OpenPart, opening as plannedOpening, questsItem, workspaceItem,
 } from './opener';
 import { WorkspaceSwitcher } from './WorkspaceSwitcher';
-import { Drawer, failure, Prose, SESSION_ACTIVE, Toasts, useToasts } from '../design/ui';
+import { Drawer, failure, Prose, Toasts, useToasts } from '../design/ui';
 import { OverviewView } from '../overview/OverviewView';
 import { useKnowledgeMode, useKnowledgeView } from '../knowledge/KnowledgeView';
 import { MapView } from '../map/MapView';
@@ -274,12 +274,13 @@ export function App() {
     // frame instead of its message box (found looking at DOCK1d).
     window.setTimeout(() => setQuick(true), 0);
   };
-  // The status bar's other two facts. Both share caches the frames already fill, so neither is a
-  // second fetch — and both are absent in a browser, which is what the bar then says.
+  // The open sessions, for who drives the browser and the session attended, and the remotes, the status bar's. Both share caches
+  // the frames already fill, so neither is a second fetch — and both are absent in a browser, which is what the bar then says.
   const running = useSessions(null, false);
   const remotes = useRemotes();
-  // Who needs the person, as the shell pushes it (PUSH1d4): Overview's badge counts the band's rows, Sessions' its own sessions
-  // waiting, both judged in .NET once for every window, so the badge and the band are one judgement. A browser has none.
+  // Who needs the person, as the shell pushes it (PUSH1d4): Overview's badge counts the band's rows, and Sessions' the sessions the
+  // driver runs with what waits there marked (SESSBADGE1), all judged in .NET once for every window, so the badge and the band are
+  // one judgement, and the status bar's count is the badge's. A browser has none.
   const attention = useAttention();
   // The agents this machine has, for the Agents menu (UX6e): the roster the frame holds, asked once and kept.
   const roster = useHarnesses();
@@ -438,15 +439,18 @@ export function App() {
   const presence: DriverPresence = driver.data
     ? (driver.data.ready === false ? 'starting' : 'running')
     : driver.isError ? 'stopped' : 'absent';
-  // Not answered yet is no count, never a zero (PUSHUX1).
-  const liveSessions = running.data === undefined ? null : running.data.filter((s) => SESSION_ACTIVE.has(s.state)).length;
   // Overview's badge, the band's own rows as .NET judged them (PUSH1d4) — two answers to "how many need me" would disagree the
-  // first time either was edited. Sessions' badge is its own sessions only (U20): those parked asking and the quests parked on
-  // their failed sessions, judged beside the rows. Nothing before the first judgement, which is no count yet.
+  // first time either was edited. Nothing before the first judgement, which is no count yet.
   const waiting = attention.state === 'known' ? attention.rows.length : 0;
   // The same count on the window's taskbar button and in its title (NOTIFY1b), so it is seen with the window behind others.
   useTaskbarCount(waiting, t('nav.waiting', { count: waiting }));
+  // 🔴 One count of the sessions the driver runs (SESSBADGE1, D76's note), the cap's own (CAPCOUNT1), judged in .NET beside the rows:
+  // Sessions' badge counts it and the status bar says it, so the two never disagree; neither counts a conversation the person holds.
+  // What waits on the person in Sessions (the sessions parked asking, the quests parked on their failed sessions) is marked beside it.
+  const working = attention.state === 'known' ? attention.working : 0;
   const sessionsWaiting = attention.state === 'known' ? attention.sessions : 0;
+  // The status bar's: not judged yet is no count, never a zero (PUSHUX1); a plain browser has no driver here, so none it runs.
+  const workingSaid = attention.state === 'reading' ? null : working;
   // Where this circle stands with its remote (SYNC6b), from this machine's own host — so a browser on
   // the machine reads it too, and it says for itself whether the circle is wired. Before it answers,
   // the shell's map says; a browser with neither is not asked.
@@ -1106,14 +1110,21 @@ export function App() {
             tab: target,
             label: t(`nav.${target}`),
             icon,
-            // 🔴 A badge counts what its place holds (UX5 U20, the owner's choice): Overview the whole
-            // of What needs you, beside its band, and Sessions its own sessions waiting on the person.
-            // Both are that status and wear its hue; outstanding quests are a quantity, in the accent.
+            // 🔴 A badge counts what its place holds (UX5 U20, as SESSBADGE1 amended it in D76's note): Overview the whole of
+            // What needs you, beside its band, a status in its hue. Sessions the sessions the driver runs, a quantity in the
+            // accent as outstanding quests are, with what waits on the person there marked beside it in the waiting hue.
             badge: target === 'quests' ? outstandingCount
               : target === 'overview' ? waiting
-                : target === 'sessions' ? sessionsWaiting
+                : target === 'sessions' ? working
                   : target === 'agents' ? agentsWaiting : undefined,
-            tone: target === 'overview' || target === 'sessions' || target === 'agents' ? 'open' as const : undefined,
+            tone: target === 'overview' || target === 'agents' ? 'open' as const : undefined,
+            waiting: target === 'sessions' && sessionsWaiting > 0,
+            detail: target === 'sessions' && (working > 0 || sessionsWaiting > 0)
+              ? [
+                working > 0 ? t('nav.active', { count: working }) : null,
+                sessionsWaiting > 0 ? t('nav.waiting', { count: sessionsWaiting }) : null,
+              ].filter(Boolean).join(' · ')
+              : undefined,
             // Its key from the table, as Go prints it (UX7a); none in a browser, which keeps Ctrl+1–8.
             keys: entries.find((entry) => entry.id === `go.${target}`)?.keys[0]?.combo,
           }))}
@@ -1209,7 +1220,7 @@ export function App() {
           )
           : undefined}
         driver={presence}
-        sessions={liveSessions}
+        sessions={workingSaid}
         workspace={scopeNamed}
         remote={wired}
         sync={circle && standing.data?.wired

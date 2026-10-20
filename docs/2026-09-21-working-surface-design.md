@@ -272,6 +272,8 @@ not the mechanism.
   of sessions live is the status bar's (D56). Overview's icon carries how many need a person, beside
   the band that lists them, and Sessions' icon carries its own sessions waiting on the person. Both
   wear the waiting hue. The whole count on Sessions invited a press that showed a sixth of it.
+  *Amended 2026-10-20 (SESSBADGE1 → D76's note):* Sessions' icon counts the sessions the driver runs, the cap's count, in
+  the accent, with a dot in the waiting hue for what waits on the person there; the status bar says the same count.
 - **An OS notification on park and on end** — and never for an ending the person caused, because a
   toast telling you what you just pressed is how people learn to dismiss toasts unread. Per machine,
   off in one click, and off by default for nothing. This **closes driver design open question 5**: the

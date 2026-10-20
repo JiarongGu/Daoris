@@ -96,6 +96,10 @@ export function tellFrameTitle(title: string, name: string | null) {
  * **The main window's alone.** The taskbar button is the main window's, so a secondary window's page, which reads the same
  * counts, never tells it: the page is a secondary window when its own address names one (`work/window.ts`). Fire and
  * forget, as the theme is: a frame that cannot be told shows no count, which is what it showed before.
+ *
+ * 🔴 **In order** (SESSBADGE1): two counts told close together may reach the frame in either order, and the title once kept 5
+ * while the band read 4 from the same value. Each carries `order`, later than the one before (`nextBadgeOrder`), and the frame
+ * never wears a count told before the one it wears.
  */
 export function useTaskbarCount(count: number, description: string) {
   const { isAvailable } = useShenora();
@@ -103,8 +107,21 @@ export function useTaskbarCount(count: number, description: string) {
     const search = globalThis.location?.search ?? '';
     // The first main window's alone: another a later launch opened (ONEINSTANCE1) counts the same, and is no button of its own.
     if (!isAvailable || secondaryWindow(search) !== null || anotherMainWindow(search) !== null) return;
-    void getBridge().invoke('DAORIS.WINDOWS', 'SET_BADGE', { payload: { count, description } }).catch(() => {});
+    const order = nextBadgeOrder();
+    void getBridge().invoke('DAORIS.WINDOWS', 'SET_BADGE', { payload: { count, description, order } }).catch(() => {});
   }, [isAvailable, count, description]);
+}
+
+/** The order the last count was told in. */
+let badgeOrder = 0;
+
+/**
+ * The order of a count told now: the clock's milliseconds, so a reloaded page tells later than the one before it, and one past the
+ * last where two are told within one.
+ */
+function nextBadgeOrder(): number {
+  badgeOrder = Math.max(badgeOrder + 1, Date.now());
+  return badgeOrder;
 }
 
 /**

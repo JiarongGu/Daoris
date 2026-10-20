@@ -708,7 +708,7 @@ describe("the driver's state, pushed (PUSH1a)", () => {
     const client = await open();
     const badge = () => invoke.mock.calls.filter(([module, type]) => module === 'DAORIS.WINDOWS' && type === 'SET_BADGE').at(-1)?.[2];
     expect(client.getQueryData<{ rows: { id: string }[] }>(keys.attention)?.rows.map((row) => row.id)).toEqual(['a-1']);
-    expect(badge()).toEqual({ payload: { count: 1, description: '1 waiting on you' } });
+    expect(badge()).toEqual({ payload: { count: 1, description: '1 waiting on you', order: expect.any(Number) } });
 
     const before = asked();
     await act(async () => {
@@ -730,7 +730,7 @@ describe("the driver's state, pushed (PUSH1a)", () => {
       });
       await vi.advanceTimersByTimeAsync(1_000);
     });
-    expect(badge()).toEqual({ payload: { count: 2, description: '2 waiting on you' } });
+    expect(badge()).toEqual({ payload: { count: 2, description: '2 waiting on you', order: expect.any(Number) } });
     expect(Object.keys(since(pushed, asked())).filter((route) => route.startsWith('DAORIS.DRIVER.'))).toEqual([]);
   });
 

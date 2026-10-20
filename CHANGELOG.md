@@ -5,6 +5,10 @@ with the version and date at release.
 
 ## Unreleased
 
+- The Sessions icon counts the sessions Daoris is running for you, and the status bar shows the same number; neither counts
+  a conversation you hold yourself, Ask Daoris's included. Something in Sessions waiting on you is a dot in the waiting colour
+  beside the count, and hovering the icon says both in words. The window's title keeps to the count *What needs you* shows,
+  and the chip beside the browser's button names the browser in Chinese too.
 - The Quests list shows one row for one piece of work: an ask that became a single quest is that quest's row, named by the
   ask's short title with the ask on its second line (its page opens from the row's right-click menu), and the Asks group
   keeps only asks still waiting on something of their own. A published ask no longer wears the finished colour.

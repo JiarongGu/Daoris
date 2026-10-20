@@ -298,8 +298,15 @@ export type PushedAttention = {
   account?: PushedAccountFacts;
 };
 
-/** The slice's answer composed (`attentionSlice`): the rows in the band's order, and the keys of what the Sessions badge counts. */
-export type AttentionPushed = { rows: PushedAttention[]; sessions: { key: string; workspace?: string | null }[] };
+/**
+ * The slice's answer composed (`attentionSlice`): the rows in the band's order; the keys of what waits on the person in Sessions,
+ * which its badge marks; and the keys of the sessions the driver runs, which the badge and the status bar count (SESSBADGE1).
+ */
+export type AttentionPushed = {
+  rows: PushedAttention[];
+  sessions: { key: string; workspace?: string | null }[];
+  working: { key: string; workspace?: string | null }[];
+};
 
 /**
  * Each kind's place among the kinds of its group when two waited as long (design §6.2's order of kinds): the accounts', parks,

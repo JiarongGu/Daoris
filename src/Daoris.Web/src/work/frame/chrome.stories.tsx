@@ -9,8 +9,11 @@ import { CommandCenter } from '../strip/CommandCenter';
 
 // The bar's places as a shell draws them since UX6i (D150 §2.1): Search and Convergence are one place, Knowledge.
 const VIEWS = [
-  { tab: 'overview' as const, label: 'Overview', icon: 'overview' as const },
-  { tab: 'sessions' as const, label: 'Sessions', icon: 'frameWork' as const, badge: 2, tone: 'open' as const },
+  { tab: 'overview' as const, label: 'Overview', icon: 'overview' as const, badge: 3, tone: 'open' as const },
+  {
+    tab: 'sessions' as const, label: 'Sessions', icon: 'frameWork' as const, badge: 5, waiting: true,
+    detail: '5 active · 2 waiting on you',
+  },
   { tab: 'quests' as const, label: 'Quests', icon: 'quests' as const, badge: 1 },
   { tab: 'projects' as const, label: 'Repositories', icon: 'projects' as const },
   { tab: 'map' as const, label: 'Map', icon: 'map' as const },
@@ -78,9 +81,10 @@ export const CaptionRoomReserved: Story = { args: { captionRoom: true } };
 /* ------------------------------------------------------------------ activity bar */
 
 /**
- * The one navigation (D66): every view in one list, Settings alone at the foot (UX6j, D150 §2.1), and two counts —
- * sessions waiting on a person in the status hue, outstanding quests in the accent, each a true circle. Nine controls: the
- * eight places and the gear.
+ * The one navigation (D66): every view in one list, Settings alone at the foot (UX6j, D150 §2.1), and its counts — what needs
+ * the person on Overview in the status hue; the sessions the driver runs on Sessions and outstanding quests in the accent, each
+ * a true circle, with Sessions' dot in the waiting hue for what waits there (SESSBADGE1). Nine controls: the eight places and
+ * the gear.
  */
 export const Bar: StoryObj<typeof ActivityBar> = {
   render: () => (

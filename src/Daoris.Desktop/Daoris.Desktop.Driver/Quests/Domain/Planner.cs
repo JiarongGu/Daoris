@@ -678,11 +678,19 @@ public static class ActiveSessions
     /// of four for hours (2026-10-20). The list keeps them: a busy tree and a repository's holder read every active session, and so do the
     /// reads that need the whole list (<see cref="Snapshot.Active"/>).</para>
     /// </remarks>
-    public static bool HoldsSlot(SessionView session)
+    public static bool HoldsSlot(SessionView session) =>
+        HoldsSlot(session.Kind, session.Repository, session.Ask, session.Serves, session.Opinion);
+
+    /// <summary>
+    /// The same rule over a record's fields as the service answers them (SESSBADGE1): what the Sessions badge and the status bar count
+    /// the sessions the driver runs by, from the records every window holds, so the count a person reads is the one the cap spends.
+    /// A null <paramref name="kind"/> is a host that answers none, read as driven work, as <see cref="SessionView.Kind"/> reads it.
+    /// </summary>
+    public static bool HoldsSlot(string? kind, string? repository, string? ask, string? serves, string? opinion)
     {
-        if (session is { Ask.Length: > 0 } or { Serves.Length: > 0 } or { Opinion.Length: > 0 }) return true;
-        if (string.Equals(session.Repository, HelpRoom.Repository, StringComparison.Ordinal)) return false;
-        return !string.Equals(session.Kind, ChatKind, StringComparison.Ordinal);
+        if (ask is { Length: > 0 } || serves is { Length: > 0 } || opinion is { Length: > 0 }) return true;
+        if (string.Equals(repository, HelpRoom.Repository, StringComparison.Ordinal)) return false;
+        return !string.Equals(kind ?? DrivenKind, ChatKind, StringComparison.Ordinal);
     }
 
     /// <summary>How many of the sessions take a place under the cap (<see cref="HoldsSlot"/>).</summary>
