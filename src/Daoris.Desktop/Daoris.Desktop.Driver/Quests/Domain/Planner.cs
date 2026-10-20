@@ -1156,7 +1156,12 @@ public static class Planner
         // forward (SYNCMERGE1b), first, since that is the work they chose and its tree; else its last session here, where that carries on.
         PriorSession? CarriedOnFrom(QuestView quest) =>
             BroughtForwardFrom(quest)
-            ?? (snapshot.LastRun.TryGetValue(quest.Id, out var last) && CarriesOn(last) ? last : null);
+            ?? (snapshot.LastRun.TryGetValue(quest.Id, out var last) && CarriesOn(last) && !HeldForPerson(last) ? last : null);
+
+        // 🔴 SESSCTX1c (D189's amendment): a record whose words wait marked because another client holds its conversation waits for the
+        // person, as a park does, so no carry-on moves its quest to a new session meanwhile; a word said since is tried by WordsOn first.
+        bool HeldForPerson(PriorSession last) =>
+            snapshot.Unable.GetValueOrDefault(last.Session) is { Why: ContinueWhy.Elsewhere } mark && GoOnMarks.Judged(last, mark);
 
         // 🔴 The stand-down a bring-forward carries on (SYNCMERGE1b, D178 point 3), or null: the quest's newest record here stood down, and
         // the take the claim reads stands by a press made after that record began. Once, by that alone, as the ledger opens it (SYNCMERGE1b0
