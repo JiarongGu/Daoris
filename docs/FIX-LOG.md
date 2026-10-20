@@ -5,6 +5,22 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-21 — Landed session trees holding a test's scratch repository sat in *What needs you* as blocked cleanups (OVERVIEWNOISE1a)
+
+- **Symptom:** three landed session trees were listed as cleanups the look could not take, with no act, each holding a test's
+  scratch git repository under the ignored `_fixtures/`; one checkout held 33 orphaned seed run folders.
+- **Root cause:** the look's last guard kept any tree with a `.git` below its top (`TreeSetAside.NestedRepository`), though a tree
+  holding only ignored paths is otherwise moved aside for 14 days, so a scratch repository under an ignored path kept the tree
+  like one the tree's status cannot see. Two tests made such scratch and left it: GATESLIM1's "by default" case in
+  `merge-branch.test.ts` never called `repo.cleanup()`, and `GitSeed` removed `_fixtures/seeds/<run>` only at the test host's
+  exit, which a host killed at a session's timeout never reaches.
+- **Fix:** the guard lists every nested repository, none read into, and asks `git check-ignore` of each: an ignored one goes
+  aside with the tree, any other keeps it as before. The merge-branch case cleans up and asserts its folder is gone; `GitSeed`
+  sweeps, at a run's start, every run folder whose host's process id no longer runs.
+- **Verification:** `BranchTidyingProcessTests.A_repository_under_an_ignored_path_goes_aside_with_its_tree` and the existing
+  nested case (2 passed), `BranchTidyingTests` and the ignored-paths case (71 passed), `GitSeedTests` (9 passed), the
+  merge-branch GATESLIM1 case; the home-path, one-word and partials censuses.
+
 ## 2026-10-20 — A session whose quest closed while it waited on its background work worked on until the timeout (DONEEND1)
 
 - **Symptom:** on the install two driven sessions went on working, showing *Stop…* and holding a slot of the cap, after their

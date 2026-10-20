@@ -5,6 +5,9 @@ with the version and date at release.
 
 ## Unreleased
 
+- A finished session's tree that holds a repository inside a folder the project ignores, such as a test's scratch, is now tidied
+  away like the rest of its ignored files, moved aside for 14 days, instead of waiting in *What needs you* as a cleanup nobody
+  could do. A tree holding a repository the project does not ignore still waits for you.
 - A session waiting on its own background work, such as a long test run, now ends within about a minute once its quest closes,
   is declined or asks another repository, instead of working on until the session timeout. It is recorded completed where its
   quest reached done, its conversation says the work still running ended with it, and that work ends with its process.
