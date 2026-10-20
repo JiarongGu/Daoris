@@ -23,6 +23,9 @@ public sealed class SessionsRoutes(DriverContext context)
     private async Task<object?> StopSessionAsync(IpcRequest request, CancellationToken cancellationToken)
     {
         var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id");
+        // RPC1d: `sessions stop` sent over the pipe asks for the verb's own words; the page asks for none and its answer keeps its shape.
+        if (Flag(request, "said")) return await SaidAsync(new SessionsAsk("stop") { Ids = [id] }, cancellationToken).ConfigureAwait(false);
+
         // False is an answer, not an error: the session already finished, and its record says how.
         // 🔴 Unless the record says it still runs and nothing on this machine runs it — a chat
         // left behind by an application that closed, or a crash. Then the person's stop is how
@@ -88,6 +91,13 @@ public sealed class SessionsRoutes(DriverContext context)
 
         var service = _loop.Service ?? throw NotReady();
 
+        // RPC1d: `sessions finish` and `decline` sent over the pipe ask for the verb's own words (`stopped` is the page's alone).
+        if (Flag(request, "said") && state != "stopped")
+        {
+            return await SaidAsync(new SessionsAsk(state == "completed" ? "finish" : "decline") { Ids = [id], Note = note }, cancellationToken)
+                .ConfigureAwait(false);
+        }
+
         // The process first, then the record, with the person's words or the sentence that says they moved it: the one
         // implementation the terminal's request is honoured by too (SESSUX1g). False from the stop is the common case.
         var message = await SessionMoves.ResolveAsync(
@@ -108,6 +118,8 @@ public sealed class SessionsRoutes(DriverContext context)
     {
         var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id");
         var service = _loop.Service ?? throw NotReady();
+        if (Flag(request, "said")) return await SaidAsync(new SessionsAsk("go-on-new") { Ids = [id] }, cancellationToken).ConfigureAwait(false);
+
         var answer = await GoOnNew.AskAsync(
                 service, _loop.Home, (adapter, profile) => _loop.Harnesses.CoolingOf(adapter ?? "", profile), id,
                 DateTimeOffset.UtcNow, cancellationToken)
@@ -129,6 +141,11 @@ public sealed class SessionsRoutes(DriverContext context)
         var question = (Optional(request, "question") ?? "").Trim();
         var agent = Optional(request, "agent")?.Trim();
         var service = _loop.Service ?? throw NotReady();
+        // RPC1d: `sessions helper` sent over the pipe asks for the verb's own words, judged by the same code.
+        if (Flag(request, "said") && question.Length > 0)
+        {
+            return await SaidAsync(new SessionsAsk("helper") { Ids = [id], Text = question, Agent = agent }, cancellationToken).ConfigureAwait(false);
+        }
 
         static object Refused(string why, string sentence) => new { Asked = (string?)null, Why = why, Message = $"{sentence} Nothing was asked." };
         if (question.Length == 0) return Refused(HelperAskWhy.Blank, "A helper is asked a question, and none was given.");
@@ -215,14 +232,17 @@ public sealed class SessionsRoutes(DriverContext context)
     // agent waits on no yes, and one this session does not hold is gone: each `approved: false` with its code, its state untouched.
     [DriverRoute("SESSION_HELPER_APPROVE")]
     [Publishes("SESSION_HELPER_APPROVE", StateScopes.Sessions | StateScopes.Driver, Session = "session")]
-    private Task<object?> SessionHelperApproveAsync(IpcRequest request, CancellationToken cancellationToken)
+    private async Task<object?> SessionHelperApproveAsync(IpcRequest request, CancellationToken cancellationToken)
     {
-        var session = PayloadHelper.GetRequiredValue<string>(request.Payload, "session");
         var askId = PayloadHelper.GetRequiredValue<string>(request.Payload, "ask");
+        // RPC1d: `sessions helper --approve` names only the ask, and asks for the verb's own words.
+        if (Flag(request, "said")) return await SaidAsync(new SessionsAsk("helper-approve") { Ids = [askId] }, cancellationToken).ConfigureAwait(false);
+
+        var session = PayloadHelper.GetRequiredValue<string>(request.Payload, "session");
         // The judge is the library's, which the terminal's `sessions helper --approve` shares (HELPERTERM1).
         var answer = HelperPersonWord.Approve(new HelperFiles(_loop.Home), session, askId);
         if (answer.Wrote) _loop.Nudge();
-        return Task.FromResult<object?>(new { Approved = answer.Stands, answer.Why, answer.Message });
+        return new { Approved = answer.Stands, answer.Why, answer.Message };
     }
 
     // The person's no to an agent's ask under the `helpers` rule's `ask` (HELPERNO1, D163 point 3; design §5), beside the yes: the ask
@@ -234,13 +254,16 @@ public sealed class SessionsRoutes(DriverContext context)
     // gone: each `declined: false` with its code, its state untouched.
     [DriverRoute("SESSION_HELPER_DECLINE")]
     [Publishes("SESSION_HELPER_DECLINE", StateScopes.Sessions | StateScopes.Driver, Session = "session")]
-    private Task<object?> SessionHelperDeclineAsync(IpcRequest request, CancellationToken cancellationToken)
+    private async Task<object?> SessionHelperDeclineAsync(IpcRequest request, CancellationToken cancellationToken)
     {
-        var session = PayloadHelper.GetRequiredValue<string>(request.Payload, "session");
         var askId = PayloadHelper.GetRequiredValue<string>(request.Payload, "ask");
+        // RPC1d: `sessions helper --decline` names only the ask, and asks for the verb's own words.
+        if (Flag(request, "said")) return await SaidAsync(new SessionsAsk("helper-decline") { Ids = [askId] }, cancellationToken).ConfigureAwait(false);
+
+        var session = PayloadHelper.GetRequiredValue<string>(request.Payload, "session");
         // The judge is the library's, which the terminal's `sessions helper --decline` shares (HELPERTERM1).
         var answer = HelperPersonWord.Decline(new HelperFiles(_loop.Home), _loop.Events, _loop.Output, session, askId);
-        return Task.FromResult<object?>(new { Declined = answer.Stands, answer.Why, answer.Message });
+        return new { Declined = answer.Stands, answer.Why, answer.Message };
     }
 
     // What this machine's driven sessions hold for the person under their repository's asking permission prompts (AUTONOMY1b3a, D184
@@ -504,6 +527,9 @@ public sealed class SessionsRoutes(DriverContext context)
     {
         var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id");
         var service = _loop.Service ?? throw NotReady();
+        // RPC1d: `sessions delete` sent over the pipe asks for the verb's own words, a refusal said with its exit 1 as the alone path says it.
+        if (Flag(request, "said")) return await SaidAsync(new SessionsAsk("delete") { Ids = [id] }, cancellationToken).ConfigureAwait(false);
+
         var outcome = await new SessionDeletion(_loop.Home)
             .DeleteAsync(service, id, PluginEvents.Screen, _loop.Log, _loop.Events, cancellationToken)
             .ConfigureAwait(false);
@@ -533,6 +559,10 @@ public sealed class SessionsRoutes(DriverContext context)
             _ => Refusals.Because(Refusals.SessionOnRemote, outcome.Message, session, ("workspace", outcome.Workspace ?? "")),
         };
     }
+
+    /// <summary>The verb's own lines and exit code for a press a terminal sent (RPC1d), as <see cref="SessionsVerbs"/> runs it.</summary>
+    private Task<object> SaidAsync(SessionsAsk ask, CancellationToken cancellationToken) =>
+        SessionsVerbs.SaidAsync(_context, ask, cancellationToken);
 
     /// <summary>The session ids the page sent, or null where it sent none.</summary>
     private static IReadOnlyCollection<string>? Ids(IpcRequest request) =>

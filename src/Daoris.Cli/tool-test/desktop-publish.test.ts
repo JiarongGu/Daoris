@@ -469,6 +469,7 @@ test('the install note says Daoris’s own children find the doctrine tool first
   assert.match(prose, /Nothing puts `app\/bin\/` on your account's PATH, so a terminal of yours outside Daoris still runs whatever `daoris` you installed/);
   // What the note says is what the code finds: the install's home finds its own launchers, a home elsewhere none.
   const install = folder();
+  markInstalled(install);
   mkdirSync(join(install, HOME));
   mkdirSync(join(install, ...CLI_BIN), { recursive: true });
   assert.equal(installBin(join(install, HOME)), join(install, ...CLI_BIN));
@@ -1028,6 +1029,7 @@ test('the launchers are where the tools’ environment puts them first on every 
   assert.ok(driver.includes(`InstallBinLayout = [${CLI_BIN.map((part: string) => `"${part}"`).join(', ')}]`), 'Tools.InstallBinLayout');
 
   const install = folder();
+  markInstalled(install);
   mkdirSync(join(install, 'data'));
   mkdirSync(join(install, ...CLI_BIN), { recursive: true });
   assert.equal(installBin(join(install, 'data')), join(install, ...CLI_BIN), 'an install’s home finds its own launchers');

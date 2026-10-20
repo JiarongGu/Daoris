@@ -28,7 +28,7 @@ import { existsSync, statSync } from 'node:fs';
 import { delimiter, dirname, join, resolve } from 'node:path';
 import { DaorisError } from '../platform/errors.ts';
 import { onPath, readJsonObject, writeJsonAtomic } from '../platform/fsx.ts';
-import { homeEntry } from '../platform/home.ts';
+import { homeEntry, homeFolder } from '../platform/home.ts';
 
 type Env = Record<string, string | undefined>;
 
@@ -531,12 +531,13 @@ export const PATH_VARIABLE = 'PATH';
 export const INSTALL_BIN: readonly string[] = Object.freeze(['app', 'bin']);
 
 /**
- * The install's launchers' folder beside the home, where it is a folder: in an install the home is `data/`, its
- * sibling `app/bin/`. Null for a home with no install beside it, and for an `app/bin` that is not a folder. It is
- * Daoris's own program, not a tool (D124 §1.3): the install decides, so no file says otherwise.
+ * The launchers' folder in the home's Daoris folder (`homeFolder`, HOMELAYOUT4), where it is a folder: an install's `app/bin/`
+ * whichever way its home is named, and a development run's scratch root's. Null for a Daoris folder with none, and for an
+ * `app/bin` that is not a folder. It is Daoris's own program, not a tool (D124 §1.3): the install decides, so no file says
+ * otherwise.
  */
 export function installBin(home: string): string | null {
-  const bin = join(dirname(resolve(home)), ...INSTALL_BIN);
+  const bin = join(homeFolder(resolve(home)).folder, ...INSTALL_BIN);
   try {
     return statSync(bin).isDirectory() ? bin : null;
   } catch {

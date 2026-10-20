@@ -63,7 +63,7 @@ import { DaorisError } from '../platform/errors.ts';
 import { onPath, readJsonObject, readText, renameHeld } from '../platform/fsx.ts';
 import { writeKeeping } from '../platform/jsonkeep.ts';
 import type { ExitCode } from '../platform/errors.ts';
-import { daorisHome, HOME_SENTENCE, homeEntry } from '../platform/home.ts';
+import { daorisHome, HOME_SENTENCE, homeEntry, homeFolder } from '../platform/home.ts';
 import { TOOLCHAINS } from '../agents/toolchain.ts';
 import { TOOLS, isAddress } from '../tools/tools.ts';
 import type { CommandArgs } from '../platform/types.ts';
@@ -1004,9 +1004,9 @@ function sourceSaid(source: PluginSource): string {
 
 // ——— Daoris's own plugins, offered by the install (PLUG9 d, D103). Twin: `PluginOffers.cs`.
 
-/** The install's offers: `app/plugin-offers/` beside the home, which an install makes its `data/`. */
+/** The install's offers: `app/plugin-offers/` in the home's Daoris folder (`homeFolder`, HOMELAYOUT4). */
 export function offersFolder(home: string): string {
-  return join(dirname(resolve(home)), ...OFFERS_DIR);
+  return join(homeFolder(resolve(home)).folder, ...OFFERS_DIR);
 }
 
 /** One of Daoris's own plugins the install offers, read as the catalogue reads one, placeholders as written. */

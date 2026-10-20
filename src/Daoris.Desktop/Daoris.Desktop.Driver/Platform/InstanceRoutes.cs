@@ -96,19 +96,68 @@ public static class OpenRoutes
 /// no instance runs, the verb acts alone, as it did. Held to the census route by route by <c>PipeCensusTests</c>.
 /// </summary>
 /// <remarks>
-/// The first, <c>sessions archive</c> and <c>unarchive</c>, prove the door; the other sessions verbs (RPC1d), the host's presses
-/// (RPC1e) and the CLI's edits (RPC1f) follow it, each with its words from its route's answer (<c>said</c>), held to the alone path's.
+/// The first, <c>sessions archive</c> and <c>unarchive</c>, prove the door; the other sessions verbs (RPC1d, built the same way), the
+/// host's presses (RPC1e) and the CLI's edits (RPC1f) follow it, each with its words from its route's answer (<c>said</c>), held to
+/// the alone path's.
 /// </remarks>
 public static class PersonPresses
 {
     /// <summary><c>sessions archive &lt;id&gt;…</c> and <c>unarchive &lt;id&gt;…</c>: this machine's marks, the person's close.</summary>
     public static InstanceRoute SessionArchive { get; } = new(TreesRoutes.DriverModule, "SESSION_ARCHIVE", RouteClass.Person);
 
+    private static InstanceRoute Person(string route) => new(TreesRoutes.DriverModule, route, RouteClass.Person);
+
+    /// <summary><c>sessions stop &lt;id&gt;</c>: a session stopped.</summary>
+    public static InstanceRoute SessionStop { get; } = Person("STOP_SESSION");
+
+    /// <summary><c>sessions finish</c> and <c>decline</c>: a parked session's resolution.</summary>
+    public static InstanceRoute SessionResolve { get; } = Person("RESOLVE_SESSION");
+
+    /// <summary><c>sessions say</c>: the person's words to a session.</summary>
+    public static InstanceRoute SessionSay { get; } = Person("SESSION_INPUT");
+
+    /// <summary><c>sessions take-back</c> and <c>reword</c>: a word waiting on a session, taken back or reworded.</summary>
+    public static InstanceRoute SessionQueueEdit { get; } = Person("SESSION_QUEUE_EDIT");
+
+    /// <summary><c>sessions delete &lt;id&gt;</c>: a conversation's record deleted.</summary>
+    public static InstanceRoute SessionDelete { get; } = Person("SESSION_DELETE");
+
+    /// <summary><c>sessions go-on-new &lt;id&gt;</c>: words a resume holds go on in a new session.</summary>
+    public static InstanceRoute SessionGoOnNew { get; } = Person("SESSION_GO_ON_NEW");
+
+    /// <summary><c>sessions start-from &lt;id&gt;</c>: a conversation started with the words a session could not go on with.</summary>
+    public static InstanceRoute SessionStartFrom { get; } = Person("SESSION_START_FROM");
+
+    /// <summary><c>sessions hand-over &lt;id&gt;</c>: a conversation handed to another agent.</summary>
+    public static InstanceRoute SessionHandOver { get; } = Person("SESSION_HAND_OVER");
+
+    /// <summary><c>sessions helper &lt;id&gt; "…"</c>: the person's ask of a helper.</summary>
+    public static InstanceRoute SessionHelperAsk { get; } = Person("SESSION_HELPER_ASK");
+
+    /// <summary><c>sessions helper --approve &lt;ask&gt;</c>: the yes to an agent's ask of a helper.</summary>
+    public static InstanceRoute SessionHelperApprove { get; } = Person("SESSION_HELPER_APPROVE");
+
+    /// <summary><c>sessions helper --decline &lt;ask&gt;</c>: the no to an agent's ask of a helper.</summary>
+    public static InstanceRoute SessionHelperDecline { get; } = Person("SESSION_HELPER_DECLINE");
+
     /// <summary>Each person's press a verb sends over the pipe, in the verb's words, with its route.</summary>
     public static IReadOnlyList<(string Verb, InstanceRoute Route)> Presses { get; } =
     [
         ("sessions archive <id>…", SessionArchive),
         ("sessions unarchive <id>…", SessionArchive),
+        ("sessions stop <id>", SessionStop),
+        ("sessions finish <id>", SessionResolve),
+        ("sessions decline <id>", SessionResolve),
+        ("sessions say <id> \"…\"", SessionSay),
+        ("sessions take-back <id> <word>", SessionQueueEdit),
+        ("sessions reword <id> <word> \"…\"", SessionQueueEdit),
+        ("sessions delete <id>", SessionDelete),
+        ("sessions go-on-new <id>", SessionGoOnNew),
+        ("sessions start-from <id>", SessionStartFrom),
+        ("sessions hand-over <id>", SessionHandOver),
+        ("sessions helper <id> \"…\"", SessionHelperAsk),
+        ("sessions helper --approve <ask>", SessionHelperApprove),
+        ("sessions helper --decline <ask>", SessionHelperDecline),
     ];
 }
 

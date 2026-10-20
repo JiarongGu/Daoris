@@ -48,6 +48,7 @@ function touch(file: string): void {
 function laidOut(name: string) {
   const fx = makeFixture(name);
   const root = fx.root;
+  fx.write('INSTALLED.md', '# Daoris — installed desktop\n');
   const home = join(root, 'data');
   mkdirSync(home, { recursive: true });
   for (const [tool, version, exe, paths] of LAID) {
@@ -200,7 +201,16 @@ test('the install’s bin is found beside the home, however the home is spelled'
   assert.equal(installBin(at.home + sep), join(at.root, 'app', 'bin'));
   assert.equal(installBin(join(at.root, 'data', '..', 'data')), join(at.root, 'app', 'bin'));
   assert.equal(installBin(join(at.root, 'elsewhere', 'data')), null);
+  assert.equal(installBin(at.root), join(at.root, 'app', 'bin'), 'the install’s folder names itself');
   at.fx.cleanup();
+});
+
+test('a development run’s root holds its own app/bin: the root is its home, not a folder beside it', () => {
+  const fx = makeFixture('tools-children-dev-root');
+  mkdirSync(join(fx.root, 'app', 'bin'), { recursive: true });
+  assert.equal(installBin(fx.root), join(fx.root, 'app', 'bin'));
+  assert.equal(installBin(join(fx.root, 'data')), null, 'a `data` of no install is a root of its own');
+  fx.cleanup();
 });
 
 test('with every tool the system’s a child is handed the environment it inherited, byte for byte', () => {
