@@ -31,7 +31,7 @@ public sealed class SessionsSayCommandTests : IDisposable
 
     private string Sessions => DaorisHome.Entry(_home, HomeEntry.Sessions);
 
-    private string Requests => Path.Combine(Sessions, "requests");
+    private string Requests => DaorisHome.Entry(_home, HomeEntry.Requests);
 
     private static readonly DriverConfig Driving = DriverConfig.Empty with { Drivable = ["engine"] };
 
@@ -82,8 +82,12 @@ public sealed class SessionsSayCommandTests : IDisposable
     private void Alive(string id)
     {
         using var self = Process.GetCurrentProcess();
-        File.WriteAllText(Path.Combine(Sessions, $"{id}.pid"), $"{self.Id} {self.StartTime.ToUniversalTime().Ticks}");
+        Directory.CreateDirectory(Pids);
+        File.WriteAllText(Path.Combine(Pids, $"{id}.pid"), $"{self.Id} {self.StartTime.ToUniversalTime().Ticks}");
     }
+
+    /// <summary>Where a session's process is marked: the home's pid folder (`run/sessions/` since HOMELAYOUT3), as every tracker reads it.</summary>
+    private string Pids => DaorisHome.Entry(_home, HomeEntry.SessionPids);
 
     private bool AnyRequest() => Directory.Exists(Requests) && Directory.EnumerateFiles(Requests).Any();
 
@@ -187,7 +191,7 @@ public sealed class SessionsSayCommandTests : IDisposable
     {
         var room = Running();
         using var service = room.Client();
-        var processes = new SessionProcesses(Sessions);
+        var processes = new SessionProcesses(Pids);
         var inbox = processes.OpenInbox("w0rk1ng0");
         switch (door)
         {
@@ -346,7 +350,7 @@ public sealed class SessionsSayCommandTests : IDisposable
     {
         var room = Running();
         using var service = room.Client();
-        var processes = new SessionProcesses(Sessions);
+        var processes = new SessionProcesses(Pids);
         var inbox = processes.OpenInbox("w0rk1ng0");
         inbox.Attach(interrupt: null, deliver: _ => Task.FromResult(""));
         Alive("w0rk1ng0");
@@ -367,7 +371,7 @@ public sealed class SessionsSayCommandTests : IDisposable
     {
         var room = Running();
         using var service = room.Client();
-        var processes = new SessionProcesses(Sessions);
+        var processes = new SessionProcesses(Pids);
         processes.OpenInbox("w0rk1ng0").Attach(interrupt: null);
         Alive("w0rk1ng0");
         await using var loop = Loop(processes, service);
@@ -387,7 +391,7 @@ public sealed class SessionsSayCommandTests : IDisposable
     {
         var room = Running();
         using var service = room.Client();
-        var processes = new SessionProcesses(Sessions);
+        var processes = new SessionProcesses(Pids);
         processes.OpenInbox("w0rk1ng0").Attach(interrupt: null);
         Alive("w0rk1ng0");
         await using var loop = Loop(processes, service);
@@ -410,7 +414,7 @@ public sealed class SessionsSayCommandTests : IDisposable
     {
         var room = Ended();
         using var service = room.Client();
-        var processes = new SessionProcesses(Sessions);
+        var processes = new SessionProcesses(Pids);
         var events = new SessionEvents(Sessions);
         await using var loop = Loop(processes, service, events, nudge: () => room.GoOn("d0ne0000"));
 
@@ -434,7 +438,7 @@ public sealed class SessionsSayCommandTests : IDisposable
         var room = Ended();
         using var service = room.Client();
         var events = new SessionEvents(Sessions);
-        await using var loop = Loop(new SessionProcesses(Sessions), service, events, nudge: () =>
+        await using var loop = Loop(new SessionProcesses(Pids), service, events, nudge: () =>
         {
             room.Hand("d0ne0000");
             events.Append("d0ne0000", Continuations.Went(["w1"], "n3w00000", ContinueWhy.Of(ContinueWhy.Tree)));
@@ -456,7 +460,7 @@ public sealed class SessionsSayCommandTests : IDisposable
         var room = Ended();
         using var service = room.Client();
         var events = new SessionEvents(Sessions);
-        await using var loop = Loop(new SessionProcesses(Sessions), service, events, nudge: () =>
+        await using var loop = Loop(new SessionProcesses(Pids), service, events, nudge: () =>
             events.Append("d0ne0000", Continuations.Cannot(["w1"], ContinueWhy.Of(ContinueWhy.Gone))));
 
         var (exit, said) = await SayAsync(room, ["d0ne0000", "also the changelog"]);
@@ -473,7 +477,7 @@ public sealed class SessionsSayCommandTests : IDisposable
     {
         var room = Ended();
         using var service = room.Client();
-        await using var loop = Loop(new SessionProcesses(Sessions), service);
+        await using var loop = Loop(new SessionProcesses(Pids), service);
 
         var (exit, said) = await SayAsync(room, ["d0ne0000", "also the changelog"], World(service, wait: TimeSpan.FromMilliseconds(600)));
 
@@ -497,7 +501,7 @@ public sealed class SessionsSayCommandTests : IDisposable
     {
         var room = Ended();
         using var service = room.Client();
-        var processes = new SessionProcesses(Sessions);
+        var processes = new SessionProcesses(Pids);
         var clock = new HeldClock();
         var world = World(service, wait: TimeSpan.FromMilliseconds(300)) with { Clock = clock };
         var words = new LoopWords(processes, () => service) { Nudge = _ => room.GoOn("d0ne0000") };
@@ -536,7 +540,7 @@ public sealed class SessionsSayCommandTests : IDisposable
             Answer = TimeSpan.FromMinutes(1),
             Clock = clock,
         };
-        await using var loop = new SessionRequestWatch(_home, new SessionProcesses(Sessions), () => service, every: Late(world))
+        await using var loop = new SessionRequestWatch(_home, new SessionProcesses(Pids), () => service, every: Late(world))
         {
             Say = async (_, ct) =>
             {
@@ -564,7 +568,7 @@ public sealed class SessionsSayCommandTests : IDisposable
         using var service = room.Client();
         var clock = new HeldClock();
         var world = World(service, wait: TimeSpan.FromMilliseconds(300)) with { Answer = TimeSpan.FromMilliseconds(300), Clock = clock };
-        await using var loop = new SessionRequestWatch(_home, new SessionProcesses(Sessions), () => service, every: Late(world))
+        await using var loop = new SessionRequestWatch(_home, new SessionProcesses(Pids), () => service, every: Late(world))
         {
             Say = async (_, ct) =>
             {
@@ -592,7 +596,7 @@ public sealed class SessionsSayCommandTests : IDisposable
         {
             var room = Ended();
             using var service = room.Client();
-            await using var loop = Loop(new SessionProcesses(Sessions), service);
+            await using var loop = Loop(new SessionProcesses(Pids), service);
             var fell = new List<string>();
             var world = World(service, wait: TimeSpan.FromMilliseconds(600), config: Driving with { Holds = ["engine"] }) with { Fell = fell.Add };
 
@@ -620,7 +624,7 @@ public sealed class SessionsSayCommandTests : IDisposable
     {
         var room = new Room([Record("w1nd1ng0", "working")], [Quest("q1", "Done")]) { Winding = 3 };
         using var service = room.Client();
-        await using var loop = Loop(new SessionProcesses(Sessions), service, nudge: () => room.GoOn("w1nd1ng0"));
+        await using var loop = Loop(new SessionProcesses(Pids), service, nudge: () => room.GoOn("w1nd1ng0"));
 
         var (exit, said) = await SayAsync(room, ["w1nd1ng0", "and the tests"]);
 
@@ -648,7 +652,7 @@ public sealed class SessionsSayCommandTests : IDisposable
         };
         using var service = room.Client();
         var world = World(service, wait: TimeSpan.FromMilliseconds(400)) with { Clock = clock };
-        await using var loop = Loop(new SessionProcesses(Sessions), service, every: Late(world));
+        await using var loop = Loop(new SessionProcesses(Pids), service, every: Late(world));
 
         var (exit, said) = await SayAsync(room, ["w1nd1ng0", "and the tests"], world);
 
@@ -900,7 +904,7 @@ public sealed class SessionsSayCommandTests : IDisposable
         var room = Waiting("Use the blue one.", "And another.");
         using var service = room.Client();
         var events = new SessionEvents(Sessions);
-        var processes = new SessionProcesses(Sessions);
+        var processes = new SessionProcesses(Pids);
         await using var loop = new SessionRequestWatch(_home, processes, () => service, every: TimeSpan.FromMilliseconds(20))
         {
             TakeBack = new LoopWords(processes, () => service) { Events = events }.TakeBackAsync,
@@ -928,7 +932,7 @@ public sealed class SessionsSayCommandTests : IDisposable
         var room = Waiting("Use the blue one.");
         using var service = room.Client();
         var events = new SessionEvents(Sessions);
-        var processes = new SessionProcesses(Sessions);
+        var processes = new SessionProcesses(Pids);
         await using var loop = new SessionRequestWatch(_home, processes, () => service, every: TimeSpan.FromMilliseconds(20))
         {
             TakeBack = new LoopWords(processes, () => service) { Events = events }.TakeBackAsync,

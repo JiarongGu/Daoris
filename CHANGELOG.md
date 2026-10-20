@@ -5,6 +5,26 @@ with the version and date at release.
 
 ## Unreleased
 
+- Done work and its pull requests move on sooner:
+  - Focusing another main window asks about an open pull request as focusing the first one does.
+  - A pull request whose line you fetched within a minute of its last check is asked about at the next chance after that minute,
+    where the fetch was forgotten until you fetched again.
+  - Done work whose hold or review you let go while its session was still running lands as that session ends, instead of at the
+    next full look.
+  - A `daoris/…` branch Daoris did not record is shown, in Ask Daoris, `daoris-driver work state` and the page, in a repository
+    where nothing else of Daoris's is recorded too.
+- `daoris-driver sessions archive` and `unarchive` run in a terminal while Daoris is open now ask Daoris's window instead of
+  acting beside it: a card under the window's title bar names the press, every value it carries and the program that sent
+  it, says Daoris cannot tell whether you ran it or an agent did, and offers *Refuse* and *Confirm*. The terminal says it
+  waits, then prints what it printed before; refused, or left two minutes, nothing is done and the command exits 1. At most
+  five wait at once. With Daoris closed, the commands act on their own as before.
+- The Daoris folder keeps each kind of thing in a folder of its own beside `data/`: your sign-ins in `profiles/`, the agents'
+  work in `work/`, what Daoris downloads again in `cache/`, what a running Daoris holds in `run/`, and the logs in `logs/`, so
+  `data/` holds only your settings and records and no key. An install's `INSTALLED.md` says what each folder holds and which to
+  back up. An install from before moves into them once, at a start after its update has settled with nothing else of the
+  folder running, and says what moved; account homes, session trees, rooms, kept files and `data/bin/` stay where they are.
+  A `daoris` installed apart from the install and older than it no longer sees the keys, the remotes or the running Daoris:
+  update it too.
 - The terminal judges a workflow's graph as the desktop does, in the same words, and saves what it judges:
   - `daoris driver landing … --cycle <file>` sets a landing rule's cycle after the landing, and `--no-cycle` takes it away;
     `daoris driver work-cycle <repository> quest|ask <file>` sets the cycle a quest or an ask follows to its end. A cycle that does

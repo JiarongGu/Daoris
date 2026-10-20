@@ -160,8 +160,10 @@ public static class InstanceDoor
     /// <remarks>
     /// 🔴 <b>A timeout never means "do it here"</b> (§7.2): once a request was sent, a lost answer is asked for by <c>RESULT</c>
     /// with the request's key on a new connection, and what it says is said; the press is never sent again nor done alone.
-    /// <para>A route the census does not open is not sent, and the verb looks for no instance: until RPC1c confirms a person's press
-    /// in the window, a <c>person</c> verb acts alone as it does today, so no row takes a door from the terminal.</para>
+    /// <para><b>A person's press is confirmed in the window</b> (RPC1c, D156 §4.2): the instance shows it there naming this terminal,
+    /// and the verb says it waits as the instance tells it so (<c>CONFIRMING</c>); the confirmed press's answer is said in the verb's
+    /// words, and the person's refusal or the two minutes' end is the instance's sentence, exit 1, nothing done here. A window's
+    /// route is never sent: no terminal verb has one.</para>
     /// </remarks>
     /// <param name="payload">The route's payload, as a window's press sends it.</param>
     /// <param name="alone">The verb acting from its own process, as it does where no instance runs.</param>
@@ -170,7 +172,7 @@ public static class InstanceDoor
         InstanceRoute route, object? payload, Func<Task<int>> alone, Func<JsonElement, int> words, InstanceWorld world,
         CancellationToken ct = default)
     {
-        if (route.Class != RouteClass.Open) return await alone().ConfigureAwait(false);
+        if (route.Class == RouteClass.Window) return await alone().ConfigureAwait(false);
 
         var look = await FindAsync(world, ct).ConfigureAwait(false);
         switch (look.Found)
@@ -219,8 +221,18 @@ public static class InstanceDoor
 
         var (code, message, _) = Refusal(answer.Value);
         await world.Error.WriteLineAsync($"{world.Verb}: {message} ({code})").ConfigureAwait(false);
-        return 2;
+        // RPC1c: the person's refusal in the window, and the two minutes with no answer, are the person's word: a policy answer, exit 1.
+        return code is Refused or Expired ? 1 : 2;
     }
+
+    /// <summary>The instance's refusal of a person's press the person refused in its window (RPC1c, <c>InstancePipe.Refused</c>).</summary>
+    public const string Refused = "refused";
+
+    /// <summary>The instance's refusal of a person's press nobody confirmed within its two minutes (RPC1c, <c>InstancePipe.Expired</c>).</summary>
+    public const string Expired = "expired";
+
+    /// <summary>The notification that tells this terminal its press waits for the person in the window (<c>InstancePipe.Confirming</c>).</summary>
+    public const string Confirming = "CONFIRMING";
 
     /// <summary>
     /// Which of §7.2's rows a press that goes several routes in one run is in, asked once before the first: the connection it made is
@@ -354,13 +366,22 @@ public static class InstanceDoor
         return await again.ResultAsync(id, key, world.Answer, ct).ConfigureAwait(false);
     }
 
-    /// <summary>A route's progress, said as a line where it names this press and says something (§6).</summary>
+    /// <summary>
+    /// A route's progress, said as a line where it names this press and says something (§6); and that the press waits for the person
+    /// in the window (RPC1c), said once on the error, so the output stays the answer's.
+    /// </summary>
     private static void Told(JsonElement told, string id, InstanceWorld world)
     {
         if (!told.TryGetProperty("payload", out var batch) || batch.ValueKind != JsonValueKind.Array) return;
         foreach (var each in batch.EnumerateArray())
         {
             if (!each.TryGetProperty("payload", out var status) || InstanceClient.Text(status, "id") != id) continue;
+            if (InstanceClient.Text(each, "module") == InstanceClient.PipeModule && InstanceClient.Text(each, "type") == Confirming)
+            {
+                world.Error.WriteLine($"{world.Verb}: waiting for you to confirm this in Daoris's window…");
+                continue;
+            }
+
             if (status.TryGetProperty("detail", out var detail) && InstanceClient.Text(detail, "text") is { Length: > 0 } text)
             {
                 world.Out.WriteLine($"  {text}");

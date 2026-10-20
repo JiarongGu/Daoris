@@ -381,7 +381,8 @@ const COPY_ROWS: [string, string][] = [
 ];
 
 test('a location’s copy is named by the hash of its address, as the driver names it', () => {
-  for (const [address, name] of COPY_ROWS) assert.equal(locationCopy('HOME', address), join('HOME', ...LOCATIONS_FOLDER, name), address);
+  // Under the cache since HOMELAYOUT3 (D172 §3.4), as the driver's twin asks it.
+  for (const [address, name] of COPY_ROWS) assert.equal(locationCopy('HOME', address), join('HOME', 'cache', ...LOCATIONS_FOLDER, name), address);
 });
 
 /** [the address, what vouches for a list from it (§3.5)]. */
@@ -402,10 +403,20 @@ test('a list is vouched for by its host, or by this machine, as the driver says'
 
 function scratchHome(name: string) {
   const fx = makeFixture(name);
+  fx.write('INSTALLED.md', '# Daoris — installed desktop\n');
   const home = join(fx.root, 'data');
   mkdirSync(home, { recursive: true });
   return { fx, home };
 }
+
+test('a development run’s root is its own Daoris folder: the list built in is its app/, home or no `data/`', () => {
+  const fx = makeFixture('resources-dev-root');
+  assert.equal(builtInList(fx.root), join(fx.root, ...BUILT_IN_LAYOUT));
+  assert.equal(builtInList(join(fx.root, 'data')), join(fx.root, 'data', ...BUILT_IN_LAYOUT), 'a `data` folder of no install is a root itself');
+  fx.write('app/resources.json', listText('gh 2.62.0 win-x64 a maker.example'));
+  assert.equal(readLists(fx.root).at(-1)!.exists, true);
+  fx.cleanup();
+});
 
 test('the lists are the person’s locations in order, then the one built in beside the home', () => {
   const { fx, home } = scratchHome('resources-lists');

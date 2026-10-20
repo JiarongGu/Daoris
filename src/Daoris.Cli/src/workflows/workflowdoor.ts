@@ -19,11 +19,12 @@
 // handed, as `review` does.
 
 import { existsSync, readdirSync } from 'node:fs';
-import { dirname, isAbsolute, join, resolve } from 'node:path';
+import { isAbsolute, join, resolve } from 'node:path';
 import { flagValue } from '../platform/args.ts';
 import { atName } from '../platform/casefold.ts';
 import { DaorisError, type ExitCode } from '../platform/errors.ts';
 import { readText, writeTextAtomic } from '../platform/fsx.ts';
+import { homeEntry, homeOf } from '../platform/home.ts';
 import { readPlugins } from '../plugins/plugins.ts';
 import { normalizeWorkspace } from '../service/remotemap.ts';
 import { inScope, type CheckoutsReader } from '../driver/reviews.ts';
@@ -82,7 +83,8 @@ interface Found {
 
 /** `daoris driver workflow …` (design §4.7). */
 export function commandWorkflow({ root, argv, write }: CommandArgs, context: WorkflowDoorContext): ExitCode | Promise<ExitCode> {
-  const folder = join(dirname(context.path), 'workflows');
+  // The home's `workflows` entry, in the home the choices are in (HOMELAYOUT3: at its new place or its old, never beside a file).
+  const folder = homeEntry(homeOf(context.path, 'driver'), 'workflows');
   const now = context.now ?? (() => new Date());
   const verb = argv[1];
   switch (verb) {
@@ -442,9 +444,9 @@ export function commandWorkflow({ root, argv, write }: CommandArgs, context: Wor
     return 0;
   }
 
-  /** The plugins beside the file, as the driver reads them, the landing's and the opinion's doors with it. */
+  /** The plugins of the home the choices are in, as the driver reads them, the landing's and the opinion's doors with it. */
   function plugins() {
-    return workflowPluginsOf(readPlugins(dirname(context.path)));
+    return workflowPluginsOf(readPlugins(homeOf(context.path, 'driver')));
   }
 
   /**

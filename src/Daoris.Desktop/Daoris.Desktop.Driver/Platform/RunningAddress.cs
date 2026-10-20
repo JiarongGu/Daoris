@@ -74,6 +74,8 @@ public sealed class RunningAddress : IDisposable
             });
             Directory.CreateDirectory(home);
             var path = PathIn(home);
+            // The folder the address is in (`run/` since HOMELAYOUT3), which a new home has not made yet.
+            Directory.CreateDirectory(Path.GetDirectoryName(path)!);
             AtomicFile.WriteText(path, text);
             return new RunningAddress(path, text);
         }

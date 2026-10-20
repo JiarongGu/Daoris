@@ -550,37 +550,122 @@ export type OpinionRow = { id: string; working: string; session: string };
 /** Whether a read failed because the service holds nothing by that name: an answer, where any other failure is not. */
 export const notFound = (error: unknown): boolean => (error as { status?: unknown } | null)?.status === 404;
 
-async function post<T>(path: string, body: unknown, method: 'POST' | 'DELETE' = 'POST'): Promise<T> {
-  const response = await reach(path, {
+/**
+ * The person key (PERSONDOOR1f; D156 point 2, the person-door design §2.1 and §2.2): the key the shell minted for the host it
+ * started, asked of it over the bridge as the page loads (`usePersonKey`) and held here, in this module's memory alone, never in
+ * the page's storage, a cookie or a URL, and sent as `Daoris-Person` on every write. A reload asks again. None where the shell
+ * holds none (a host it adopted, a plain browser), and every write is sent as it was.
+ *
+ * @remarks
+ * The key goes only where `reach` sends a write: the host's loopback address inside the shell, or the page's own origin, which
+ * inside the shell is its host's (`onHost`, D92). Only the shell answers a key, so a page outside it never holds one.
+ */
+let personKey: string | null = null;
+let askKey: (() => Promise<string | null>) | null = null;
+
+/** The key `ask` answers, or none where it answers none or cannot be asked (an older shell). */
+async function askedKey(): Promise<string | null> {
+  if (!askKey) return null;
+  try {
+    const key = await askKey();
+    return typeof key === 'string' && key.length > 0 ? key : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Hold the key `ask` answers, and ask it again when a write is refused `stale` (a host the shell started again, design §2.3);
+ * null lets go of it. Answers the key now held.
+ */
+export async function holdPersonKey(ask: (() => Promise<string | null>) | null): Promise<string | null> {
+  askKey = ask;
+  personKey = await askedKey();
+  return personKey;
+}
+
+/** Whether the page holds the person key: the service's confirmations are the page's to answer only then (their door takes it). */
+export const holdsPersonKey = (): boolean => personKey !== null;
+
+const send = (path: string, body: unknown, method: 'POST' | 'DELETE') => {
+  const headers = {
+    ...(body === undefined ? {} : { 'content-type': 'application/json' }),
+    ...(personKey ? { 'Daoris-Person': personKey } : {}),
+  };
+  return reach(path, {
     method,
-    ...(body === undefined
-      ? {}
-      : { headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) }),
+    ...(Object.keys(headers).length > 0 ? { headers } : {}),
+    ...(body === undefined ? {} : { body: JSON.stringify(body) }),
   });
+};
+
+async function post<T>(path: string, body: unknown, method: 'POST' | 'DELETE' = 'POST'): Promise<T> {
+  let response = await send(path, body, method);
+  // PERSONDOOR1f (design §2.3, §5.2): a key from an earlier start of the host is refused `stale`. The shell is asked again and
+  // the write sent once more with the key it holds now; a second refusal is the host's sentence, said as every refusal is.
+  if (response.status === 403 && personKey !== null) {
+    const refused = await response.clone().json().catch(() => null);
+    if (refused?.code === 'stale') {
+      personKey = await askedKey();
+      response = await send(path, body, method);
+    }
+  }
   if (!response.ok) {
     // The service's refusal sentence IS the contract — a publish to a non-adopter, a decline with no
-    // reason, a respond racing a take that already won. It reaches the person verbatim (D38).
+    // reason, a respond racing a take that already won. It reaches the person verbatim (D38). Its code rides along where the
+    // host gives one (D156 §5.2's `person-only`, `stale`, `grant`), so a reader can tell the person's door from the rest.
     const parsed = await response.json().catch(() => null);
-    throw new Error(parsed?.error ?? `${response.status} ${response.statusText}`);
+    throw Object.assign(new Error(parsed?.error ?? `${response.status} ${response.statusText}`), {
+      status: response.status, ...(typeof parsed?.code === 'string' ? { code: parsed.code } : {}),
+    });
   }
   return response.json() as Promise<T>;
 }
+
+/** A nonce for the host's proof of possession (design §2.3): random, in base64url, never kept. */
+function nonce(): string {
+  const bytes = crypto.getRandomValues(new Uint8Array(24));
+  return btoa(String.fromCharCode(...bytes)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+
+/**
+ * A terminal's ask the window confirms at the service's own door (PERSONDOOR1b, D156 §4.2): the door's act in the host's table and
+ * every value the request carries, as `GET /api/confirmations` lists them. Never its secret's hash.
+ */
+export type ServiceConfirmation = {
+  id: string; state: string; method: string; path: string; route: string; act: string;
+  values: { name: string; type: string; value: string }[]; fields: { name: string; type: string; value: string }[];
+  asked: string; expires: string;
+};
 
 /**
  * A write only the person may make (D156 §3.2's person-only doors, PERSONDOOR1), as REVIEWENV1g presses them: a review's
  * verdict, their own set-up step, an ask, and what a review is set to.
  *
  * @remarks
- * **The seam where the person's key goes.** Today it is a plain write: a local host enforces its doors only once its starter
- * hands it a key (PERSONDOOR1a), and nothing hands the page one yet. PERSONDOOR1f gives `post` the key the bridge answers,
- * held in memory and sent as `Daoris-Person` on every write; these doors refuse without it, so they come through here, and a
- * refusal for want of it is the host's sentence, said as every refusal is. The other person-only doors (the yes, the done,
- * a go-ahead's answer, a delete) still call `post` and take the key there with every write.
+ * **The seam where the person's key goes.** `post` sends the key the bridge answered (PERSONDOOR1f, `holdPersonKey`), held in
+ * memory, as `Daoris-Person` on every write; these doors refuse without it, so they come through here, and a refusal for want of
+ * it is the host's sentence, said as every refusal is. The other person-only doors (the yes, the done, a go-ahead's answer, a
+ * delete) call `post` and take the key there with every write. A local host enforces its doors only once its starter hands it a
+ * key (PERSONDOOR1a), and the page holds one only where the shell answers one.
  */
 const asThePerson = <T>(path: string, body: unknown): Promise<T> => post<T>(path, body);
 
 export const api = {
   status: (signal?: AbortSignal) => get<Status>('/api/status', signal),
+  /**
+   * Whether the host holds a person key of its own (D156 §2.3): asked with a fresh nonce, a host holding one answers its `proof`,
+   * and one holding none answers as it always did. The page holding no key beside a host that holds one is the adoption notice's
+   * case (PERSONDOOR1f): the person's own acts are refused there.
+   */
+  hostHoldsAKey: async (signal?: AbortSignal): Promise<boolean> =>
+    typeof (await get<Status & { proof?: unknown }>(`/api/status${qs({ prove: nonce() })}`, signal)).proof === 'string',
+  /** What waits at the service for the person's confirmation (PERSONDOOR1b): a read, whatever key the page holds. */
+  confirmations: (signal?: AbortSignal) => get<ServiceConfirmation[]>('/api/confirmations', signal),
+  /** The person's Confirm or Refuse of one, a door of theirs alone, which takes the key `post` sends. */
+  answerConfirmation: (id: string, confirm: boolean) =>
+    post<{ confirmation: ServiceConfirmation; message: string }>(
+      `/api/confirmations/${encodeURIComponent(id)}/${confirm ? 'confirm' : 'refuse'}`, undefined),
   // Every cross-repository read below takes the scope (WSP5; D48 §4): null asks for every circle the
   // deployment holds, and the switcher says so; a name asks for that one, and nothing else is mixed in.
   repositories: (workspace: string | null, signal?: AbortSignal) =>

@@ -13,6 +13,9 @@ public sealed class McpHelperToolTests : McpToolsFixture
 {
     private string HelpersHome => Path.Combine(_root, "rules-home");
 
+    /// <summary>The helpers' box in that home, asked of the table as the box asks it (HOMELAYOUT3), and a file in it.</summary>
+    private string Helpers(params string[] file) => DaorisHome.Entry(HelpersHome, HomeEntry.Helpers, file);
+
     /// <summary>The connector a session is handed, with a ledger to read its record and a box under the rules home.</summary>
     private async Task<(HelperTools Tools, SessionStore Sessions)> HelperConnectorAsync(Func<SessionStore, Task<string?>> session)
     {
@@ -40,7 +43,7 @@ public sealed class McpHelperToolTests : McpToolsFixture
         var said = await tools.AskHelperAsync("Does the retry loop in Report.cs stop at five?", "codex-acp");
 
         Assert.Contains("driver takes it at its next look", said);
-        var file = Assert.Single(Directory.GetFiles(Path.Combine(HelpersHome, "helpers"), "*.ask.json"));
+        var file = Assert.Single(Directory.GetFiles(Helpers(), "*.ask.json"));
         using var kept = JsonDocument.Parse(File.ReadAllText(file));
         var root = kept.RootElement;
         Assert.EndsWith(".ask.json", file);
@@ -50,10 +53,10 @@ public sealed class McpHelperToolTests : McpToolsFixture
             (root.GetProperty("asker").GetString(), root.GetProperty("question").GetString(), root.GetProperty("agent").GetString(),
                 root.GetProperty("askedBy").GetString()));
         Assert.True(DateTimeOffset.TryParse(root.GetProperty("at").GetString(), out _));
-        var left = string.Join(' ', Directory.GetFiles(Path.Combine(HelpersHome, "helpers")));
+        var left = string.Join(' ', Directory.GetFiles(Helpers()));
         Assert.DoesNotContain(".tmp", left);
         Assert.DoesNotContain(".writing", left);
-        Assert.Empty(Directory.GetFiles(Path.Combine(HelpersHome, "helpers"), "*.state.json"));
+        Assert.Empty(Directory.GetFiles(Helpers(), "*.state.json"));
     }
 
     /// <summary>
@@ -83,7 +86,7 @@ public sealed class McpHelperToolTests : McpToolsFixture
         Assert.Contains("reads another session's work for second opinion `op1`", await AskAs(reviewer));
         Assert.Contains("an intake cannot ask for a helper", await AskAs(intake));
         Assert.Contains("needs the question", await AskAs(working, "   "));
-        Assert.False(Directory.Exists(Path.Combine(HelpersHome, "helpers")));
+        Assert.False(Directory.Exists(Helpers()));
     }
 
     /// <summary>
@@ -105,14 +108,14 @@ public sealed class McpHelperToolTests : McpToolsFixture
             intake: new IntakeScope(null, id), ledger: new SessionLedger(_quests, sessions, _service, AskStore.OpenAsync(_connection).GetAwaiter().GetResult()),
             helpers: new HelperBox(HelpersHome));
         await As(asker).AskHelperAsync("Where is the cap read?");
-        var askId = Path.GetFileName(Directory.GetFiles(Path.Combine(HelpersHome, "helpers"), "*.ask.json").Single())[..^".ask.json".Length];
+        var askId = Path.GetFileName(Directory.GetFiles(Helpers(), "*.ask.json").Single())[..^".ask.json".Length];
 
         Assert.Contains("speaks for no session", await As(null).AnswerHelperAsync("x"));
         Assert.Contains("is no helper", await As(asker).AnswerHelperAsync("x"));
         Assert.Contains("No question waits", await As(helper).AnswerHelperAsync("x"));
 
         // The driver alone writes the state: this is its shape, read back by the box.
-        var state = Path.Combine(HelpersHome, "helpers", askId + ".state.json");
+        var state = Helpers(askId + ".state.json");
         File.WriteAllText(state, $$"""{"id":"{{askId}}","state":"started","code":null,"helper":"{{helper}}","at":"2026-10-12T10:00:00.0000000+00:00"}""");
         Assert.Equal(("started", helper), (HelperBox.ReadState(HelpersHome, askId)!.State, HelperBox.ReadState(HelpersHome, askId)!.Helper));
         Assert.Contains("No question waits", await As(other).AnswerHelperAsync("x"));
@@ -121,11 +124,11 @@ public sealed class McpHelperToolTests : McpToolsFixture
         var said = await As(helper).AnswerHelperAsync("Line 41 of Cap.cs, once, at start.");
 
         Assert.Contains("answer is kept", said);
-        using var kept = JsonDocument.Parse(File.ReadAllText(Path.Combine(HelpersHome, "helpers", askId + ".answer.json")));
+        using var kept = JsonDocument.Parse(File.ReadAllText(Helpers(askId + ".answer.json")));
         Assert.Equal("Line 41 of Cap.cs, once, at start.", kept.RootElement.GetProperty("answer").GetString());
         Assert.True(DateTimeOffset.TryParse(kept.RootElement.GetProperty("at").GetString(), out _));
         Assert.Contains("already answered", await As(helper).AnswerHelperAsync("again"));
-        Assert.Contains("Line 41", File.ReadAllText(Path.Combine(HelpersHome, "helpers", askId + ".answer.json")));
+        Assert.Contains("Line 41", File.ReadAllText(Helpers(askId + ".answer.json")));
     }
 
     /// <summary>With no home the ask is refused and nothing is written, as a rule proposal is.</summary>

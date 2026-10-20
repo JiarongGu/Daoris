@@ -1,6 +1,7 @@
 import { linkSync, mkdirSync, readFileSync, unlinkSync, writeFileSync } from 'node:fs';
 import { randomBytes } from 'node:crypto';
-import { ensureHomeId, homeEntry } from './home.ts';
+import { dirname } from 'node:path';
+import { ensureHomeId, homePlaces } from './home.ts';
 
 /**
  * One writer per home (HOMELEASE1, the terminal RPC design §5): `<home>/home.lease`, the driver's lock (DRV8a's
@@ -22,7 +23,7 @@ import { ensureHomeId, homeEntry } from './home.ts';
  * design's §9. Until then they act as they always did.
  */
 
-/** The lease's name: the home's `home-lease` entry, which `homeEntry` places (D172, HOMELAYOUT2). */
+/** The lease's name: the home's `home-lease` entry, which the table places (D172; `run/` once HOMELAYOUT3 switched it on). */
 export const LEASE_FILE = 'home.lease';
 
 /** DRV8a's lock, which a build from before HOMELEASE1 still takes: read as that build's lease while its holder lives. */
@@ -86,12 +87,22 @@ export function processLives(pid: number): boolean {
   }
 }
 
+/**
+ * Where a lease of `home` is taken, and every other place an older build's may be (HOMELAYOUT3): the `home-lease` entry's new
+ * place (`run/home.lease`), which this build takes; its old place, where a build from before the switch takes it; and an older
+ * build's `driver.lock` at either of its places. A live holder at any of them holds the home; a stale one is left where it is.
+ */
+function leasePlaces(home: string): { path: string; older: string[] } {
+  const [path, ...old] = homePlaces(home, 'home-lease');
+  return { path: path!, older: [...old, ...homePlaces(home, 'driver-lock')] };
+}
+
 /** The live holder of `home`'s lease, or null when none holds it. */
 export function leaseHolder(home: string, lives: Lives = processLives): LeaseHolder | null {
-  for (const name of ['home-lease', 'driver-lock'] as const) {
-    const seen = readText(homeEntry(home, name));
-    const named = seen === null ? null : parse(seen);
-    if (named && lives(named.pid)) return named;
+  const { path, older } = leasePlaces(home);
+  for (const place of [path, ...older]) {
+    const named = leaseHolderIn(place, lives);
+    if (named) return named;
   }
   return null;
 }
@@ -101,9 +112,12 @@ export function tryLease(
   home: string, kind: LeaseKind, what: string | null = null, lives: Lives = processLives,
 ): { lease: Lease } | { holder: LeaseHolder } {
   mkdirSync(home, { recursive: true });
-  const path = homeEntry(home, 'home-lease');
-  const legacy = leaseHolderIn(homeEntry(home, 'driver-lock'), lives);
-  if (legacy) return { holder: legacy };
+  const { path, older } = leasePlaces(home);
+  mkdirSync(dirname(path), { recursive: true });
+  for (const place of older) {
+    const elsewhere = leaseHolderIn(place, lives);
+    if (elsewhere) return { holder: elsewhere };
+  }
 
   for (let attempt = 0; attempt < 8; attempt++) {
     const mine = describe(kind, what, home);

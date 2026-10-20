@@ -1,9 +1,10 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { commandDriver } from '../../src/driver/driverconfig.ts';
 import { DaorisError } from '../../src/platform/errors.ts';
+import { homeEntry } from '../../src/platform/home.ts';
 import type { CheckoutsReader } from '../../src/driver/reviews.ts';
 import { GATE_READS, WHAT_CHOOSES, commandWorkflow } from '../../src/workflows/workflowdoor.ts';
 import { makeFixture, type Fixture } from '../_fixture.ts';
@@ -49,8 +50,11 @@ async function refused(fx: Fixture, argv: string[], checkouts: CheckoutsReader =
 }
 
 function choices(fx: Fixture): { workflows?: Record<string, unknown>; workspaceWorkflows?: Record<string, unknown> } {
-  return JSON.parse(fx.read('driver.json'));
+  return JSON.parse(readFileSync(homeEntry(fx.root, 'driver'), 'utf8'));
 }
+
+/** A saved workflow's file, as the home's `workflows` entry holds it (HOMELAYOUT3: asked of the table, never joined by hand). */
+const workflowFile = (fx: Fixture, id: string): string => fx.entry('workflows', `${id}.json`);
 
 test('use names a workflow saved here for a repository, says what it replaces, and --plan writes nothing', async () => {
   const fx = makeFixture('workflowchoice-use');
@@ -65,7 +69,7 @@ test('use names a workflow saved here for a repository, says what it replaces, a
     '  --plan: nothing was written.',
     GATE_READS,
   ].join('\n'));
-  assert.equal(fx.exists('driver.json'), false);
+  assert.equal(existsSync(homeEntry(fx.root, 'driver')), false);
 
   const { code } = await run(fx, ['use', 'docs-to-pr', '--repository', 'web-app']);
   assert.equal(code, 0);
@@ -87,10 +91,10 @@ test('use names a workflow saved here for a repository, says what it replaces, a
 test('use names a workflow whose newest version is a graph, in words of its own, with --plan and without (FABRIC-GRAPH1b)', async () => {
   const fx = makeFixture('workflowchoice-use-graph');
   await run(fx, ['new', 'docs-to-pr', '--from', 'pull-request-no-press', '--name', 'Documentation to a pull request']);
-  const file = JSON.parse(fx.read('workflows/docs-to-pr.json')) as { versions: unknown[] };
+  const file = JSON.parse(readFileSync(workflowFile(fx, 'docs-to-pr'), 'utf8')) as { versions: unknown[] };
   const table = JSON.parse(readFileSync(join(process.cwd(), 'test', 'fixtures', 'workflow-graph-versions.json'), 'utf8')) as { graph: unknown };
   file.versions.push({ version: 2, at: '2026-10-18T09:00:00Z', door: 'terminal', schema: 2, graph: table.graph });
-  fx.write('workflows/docs-to-pr.json', JSON.stringify(file, null, 2) + '\n');
+  writeFileSync(workflowFile(fx, 'docs-to-pr'), JSON.stringify(file, null, 2) + '\n');
   const said = /v2 now: a graph \(schema 2\) of 5 nodes and 5 wires, digest gph-255acb35b9aa16275f47d33dfdda1c50, which this build reads and does not run yet\./;
 
   for (const where of [['--repository', 'web-app'], ['--workspace', 'work']]) {
@@ -114,12 +118,12 @@ test('use refuses a workflow not saved here, one whose newest version does not r
   assert.equal(missing.message, 'no workflow `docs-to-pr` is saved here — `daoris driver workflow list` names them, and `new` names one.');
 
   await run(fx, ['new', 'docs-to-pr', '--from', 'merge-after-accept']);
-  const file = JSON.parse(fx.read('workflows/docs-to-pr.json'));
+  const file = JSON.parse(readFileSync(workflowFile(fx, 'docs-to-pr'), 'utf8'));
   file.versions.push({
     version: 2, at: '2026-10-09T10:00:00Z', door: 'terminal',
     steps: [{ id: 'work', kind: 'work' }, { id: 'landing', kind: 'landing', form: 'queue', accept: 'you' }],
   });
-  fx.write('workflows/docs-to-pr.json', JSON.stringify(file));
+  writeFileSync(workflowFile(fx, 'docs-to-pr'), JSON.stringify(file));
   const notRead = await refused(fx, ['use', 'docs-to-pr', '--repository', 'web-app']);
   assert.equal(notRead.exitCode, 1);
   assert.match(notRead.message, /^`docs-to-pr` v2 cannot be read here: .* It can be chosen once a version that reads is saved after it\.$/);
@@ -136,7 +140,7 @@ test('use refuses a workflow not saved here, one whose newest version does not r
   }
   assert.match((await refused(fx, ['use', 'docs-to-pr', '--workspace', 'work', '--label', 'x'])).message,
     /^`--label` is not a flag `driver workflow use` takes — /);
-  assert.equal(fx.exists('driver.json'), false);
+  assert.equal(existsSync(homeEntry(fx.root, 'driver')), false);
   fx.cleanup();
 });
 
@@ -149,7 +153,7 @@ test('kind declares a workspace\'s kind with its paths, use maps it, a repositor
     'daoris: the workspace `work` declares kind `docs` — Documentation, its paths `docs/**`, `**/*.md`.',
     '  It maps to no workflow there: `daoris driver workflow use <id> --workspace work --kind docs` maps one, and `--repository <name>` '
       + 'maps it for one repository.',
-    `  Written to ${join(fx.root, 'driver.json')}.`,
+    `  Written to ${homeEntry(fx.root, 'driver')}.`,
     GATE_READS,
   ].join('\n'));
 
@@ -218,7 +222,7 @@ test('show draws the workflow a task of a kind would follow: the named one\'s ne
 
   // A choice whose workflow cannot be read is said, with what chose it.
   await run(fx, ['use', 'docs-to-pr', '--repository', 'notes-site']);
-  fx.write('workflows/docs-to-pr.json', '{ not json');
+  writeFileSync(workflowFile(fx, 'docs-to-pr'), '{ not json');
   const gone = await run(fx, ['show', '--repository', 'notes-site'], registry('elsewhere'));
   assert.equal(gone.code, 1);
   assert.match(gone.out, /^daoris: `notes-site` chooses `docs-to-pr`, `notes-site`'s default, which cannot be read here: `docs-to-pr\.json` is not readable JSON\.$/m);
@@ -228,13 +232,13 @@ test('show draws the workflow a task of a kind would follow: the named one\'s ne
 test('an edit keeps every version a bound run names beyond the newest twenty', async () => {
   const fx = makeFixture('workflowchoice-kept-runs');
   await run(fx, ['new', 'docs-to-pr', '--from', 'merge-after-accept']);
-  fx.write('workflows/runs/a1b2c3.json', JSON.stringify({ run: 'a1b2c3', workflow: 'docs-to-pr', version: 1 }));
+  writeFileSync(fx.entry('workflows', 'runs', 'a1b2c3.json'), JSON.stringify({ run: 'a1b2c3', workflow: 'docs-to-pr', version: 1 }));
   for (let n = 0; n < 21; n += 1) {
     const changed = n % 2 === 0 ? ['form=branch', 'pattern=docs/{quest}', 'plugin=none'] : ['form=merge', 'pattern=', 'plugin='];
     const { code } = await run(fx, ['edit', 'docs-to-pr', 'set', 'landing', ...changed]);
     assert.equal(code, 0);
   }
-  const versions = (JSON.parse(fx.read('workflows/docs-to-pr.json')) as { versions: { version: number }[] }).versions.map((each) => each.version);
+  const versions = (JSON.parse(readFileSync(workflowFile(fx, 'docs-to-pr'), 'utf8')) as { versions: { version: number }[] }).versions.map((each) => each.version);
   assert.equal(versions[0], 1, 'the bound run\'s version is kept');
   assert.equal(versions.length, 20);
   assert.equal(versions[versions.length - 1], 22);

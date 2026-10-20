@@ -186,8 +186,9 @@ public sealed class ToolHomeLeftoversTests : IDisposable
     {
         var (home, tool, projects) = Homes();
         var inside = Tree(home, "s-1");
-        // The sibling folder `<home>-trees/…` flattens to the same name, and lies outside every working root.
-        var outside = Path.Combine(home + "-trees", "main", "repo", "s-1");
+        // The sibling folder `<the trees' parent>-trees/…` flattens to the same name, and lies outside every working root.
+        var trees = DaorisHome.Entry(home, HomeEntry.Trees);
+        var outside = Path.Combine(Path.GetDirectoryName(trees) + "-" + Path.GetFileName(trees), "main", "repo", "s-1");
         var origins = ToolHomeLeftovers.Origins(home, Records(Record("a", inside), Record("b", outside)));
         Project(projects, ToolHomeLeftovers.Flatten(inside), Old);
 

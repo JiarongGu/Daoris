@@ -2045,8 +2045,10 @@ public sealed class Driver(
                                 // holding the quest it took and stopping is waiting on the person.
                                 took: status == "Taken" && await service.TookAsync(sessionId, ct).ConfigureAwait(false),
                                 lastWords: SessionLastWords.ParkedWords(Context.Events, sessionId, transcript),
-                                // FABRIC-CLOSE1c2: the person's reopen of the work it grew from holds its quest as it ends.
-                                reopenedFrom: after is { HeldByReopen: true } ? after.Parent : null,
+                                // FABRIC-CLOSE1c2: the person's reopen of the work it grew from holds its quest as it ends. FABRIC-CLOSE1c16:
+                                // or they reopened it and went on with the step while it ran, so it ends as the reopen stopped it, and is
+                                // carried on with its branch brought up to date.
+                                reopenedFrom: Planner.ReopenedFrom(quest, after),
                                 // BGWAIT1c: the native door's harness ended its own background work with its turn.
                                 backgroundCut: ended.BackgroundCut)
                             // BGWAIT2: a done this run reached outranks the timeout, as it outranks a messy exit.

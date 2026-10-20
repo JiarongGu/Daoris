@@ -255,12 +255,9 @@ public static class ToolResources
         };
     }
 
-    /// <summary>The list built in beside the home: its sibling <c>app/resources.json</c>, which an install makes one folder with the application's.</summary>
-    public static string BesideHome(string home)
-    {
-        var full = System.IO.Path.TrimEndingDirectorySeparator(System.IO.Path.GetFullPath(home));
-        return System.IO.Path.Combine([System.IO.Path.GetDirectoryName(full) ?? full, .. Layout]);
-    }
+    /// <summary>The list built in the home's Daoris folder (<see cref="DaorisHome.FolderOf"/>, HOMELAYOUT4): its <c>app/resources.json</c>, which an install makes one folder with the application's.</summary>
+    public static string BesideHome(string home) =>
+        System.IO.Path.Combine([DaorisHome.FolderOf(System.IO.Path.GetFullPath(home)).Folder, .. Layout]);
 
     /// <summary>The list built in beside a running application, whose folder is the install's <c>app/</c>.</summary>
     public static string BesideApplication(string baseDirectory) =>
@@ -270,9 +267,14 @@ public static class ToolResources
     public static string BuiltInFor(string home, string baseDirectory) =>
         File.Exists(BesideApplication(baseDirectory)) ? BesideApplication(baseDirectory) : BesideHome(home);
 
-    /// <summary>Where a location's fetched copy is kept: named by the sha256 of its address as written.</summary>
+    /// <summary>
+    /// Where a location's fetched copy is kept: named by the sha256 of its address as written, under the home's
+    /// <see cref="HomeEntry.ToolVersions"/> as the CLI's <c>locationCopy</c> asks it (HOMELAYOUT3: <c>cache/tools/locations</c>, or
+    /// where an older home keeps them).
+    /// </summary>
     public static string LocationCopy(string home, string address) =>
-        System.IO.Path.Combine([home, .. LocationsFolder, Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(address))) + ".json"]);
+        DaorisHome.Entry(home, HomeEntry.ToolVersions,
+            [.. LocationsFolder.Skip(1), Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(address))) + ".json"]);
 
     /// <summary>
     /// Every list, in read order (§3.3): the person's locations top to bottom, each from its fetched copy, then the

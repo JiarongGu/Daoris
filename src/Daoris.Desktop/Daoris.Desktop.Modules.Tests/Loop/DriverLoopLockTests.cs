@@ -31,6 +31,7 @@ public sealed class DriverLoopLockTests : Bridge
             ["started"] = self.StartTime.ToUniversalTime().Ticks, ["since"] = "2026-09-30T08:02:13+00:00",
         };
         if (what is not null) lease["what"] = what;
+        Directory.CreateDirectory(Path.GetDirectoryName(LeaseFile)!);
         File.WriteAllText(LeaseFile, lease.ToJsonString());
     }
 

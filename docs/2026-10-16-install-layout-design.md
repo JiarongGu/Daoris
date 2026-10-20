@@ -232,6 +232,9 @@ entry of two folders: `profiles/window/` if it is there, else the old home itsel
    move-in does (`HomeEstablished`).
 6. **Order with D63's move-in.** A `~/.daoris` of before D63 is moved into the old places first, then this move runs.
 
+As built (HOMELAYOUT3): `HomePlacing`, with a journal at `run/home-move.json` and two more log lines, `home.move-recovered`
+and `home.move-held`. D172's HOMELAYOUT3 note says when it runs, what an older `daoris` does, and that point 4 is not built.
+
 ## 8. Hazards, read from the code
 
 1. **A conversation keyed by its folder.** A tree, Ask Daoris's room and an intake's room are where an agent's

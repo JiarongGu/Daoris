@@ -700,16 +700,27 @@ Published from a Daoris workspace by \`tools/desktop-publish.mjs\`.
 |---|---|
 | \`${LAUNCHER}\` | **the application** — the only thing to run. A small launcher that starts \`${[...SHELL_HOME, SHELL_EXE].join('/')}\`. |
 | \`${SHELL_HOME[0]}/\` | the application itself, on the Chromium it carries (its files are listed in \`${SHELL_FILES.join('/')}\`), which is also Daoris's own browser; when published with \`--service\`, the HTTP host in \`${HOST_HOME.slice(1).join('/')}/\` and, in \`${CONNECTOR_HOME.slice(1).join('/')}/\`, the knowledge connector a session on the protocol door is handed, each run ahead of any in \`bin/\` under the home; and Daoris's own example plugins in \`${PLUGIN_OFFERS.slice(1).join('/')}/\` (${OFFERED_PLUGINS.join(', ')}), offered in the Plugins place and by \`daoris plugin list\`, none installed until you install one; and \`${RESOURCES.slice(1).join('/')}\`, the list of where each version of the tools Daoris runs downloads from, read and never rewritten; and the doctrine tool, in \`${CLI_HOME.slice(1).join('/')}/\` and \`${CLI_BIN.slice(1).join('/')}/\` (below), with the driver's verbs in \`${DRIVER_HOME.slice(1).join('/')}/\`. Nothing to open. |
-| \`${HOME}/\` | **the Daoris home**: the registry, the quests, the drivable set, the harness profiles, the installed service binaries — and the window's engine profile (\`chromium/\`) and its geometry. |
 | \`${STAGE[0]}/\` | an update: a build staged with \`--stage\` in \`${STAGED.slice(1).join('/')}/\`, which the application installs once its work allows, and the launcher's record of the last swap, \`${SWAP_JOURNAL}\` (D139). Present only once something was staged. |
+| \`${HOME}/\` | **your settings and records**, the Daoris home: your choices, the registry and the knowledge store, the conversations, the plugins you installed. Back it up: it is the only copy of each, and it holds no key, so it can be copied or handed to someone helping without handing over an account. |
+| \`profiles/\` | **sign-ins**: the API and deployment keys, Daoris's browser's profile, the window's own memory (\`profiles/window/\`: its engine profile, its place and its theme) and the agents' accounts made since. Lose it and you sign in again; keep a copy only somewhere as private as this machine. |
+| \`work/\` | where agents work and what records keep for them: session trees, Ask Daoris's rooms, attachments. Work in progress lives only here; Daoris cleans it as work lands. |
+| \`cache/\` | what Daoris fetched and fetches again: the agents' and the tools' versions, and the service's installed copy (\`cache/bin/\`). Never back it up: the next use downloads again. |
+| \`run/\` | what a running Daoris holds: its lease, its address for a terminal, its locks and what it hands each session. Each entry expires by its own rule; deleting it is safe only while Daoris is closed. |
+| \`logs/\` | the machine log, kept 30 days. |
 
-Anything else in this folder is not the application's — repositories it drives, typically — and a
-re-publish never touches it.
+Each of the folders after \`${HOME}/\` appears once something is written there (D172). Anything else in this
+folder is not the application's — repositories it drives, typically — and a re-publish never touches it, nor
+\`${HOME}/\` and the folders after it.
 
 ## Where everything lives
 
-In \`${HOME}/\`, and nowhere under your user profile. On first start the application sets
-\`DAORIS_HOME\` to that folder for itself and — once, if your account has none — for your account,
+In this folder, in \`${HOME}/\` and the folders after it above, and nowhere under your user profile.
+A start after an update moves what an older version kept in \`${HOME}/\` into the folders above, once, when
+the update has settled and nothing else of this folder runs: the keys, the logs, the downloaded versions,
+the browsers' and the window's profiles, and what a run holds (D172). Account homes, session trees, rooms,
+kept files and \`${HOME}/bin/\` stay where they are, read there, because something outside Daoris names them by
+path; the machine log says each move. On first start the application sets
+\`DAORIS_HOME\` to \`${HOME}/\` for itself and — once, if your account has none — for your account,
 which is how the \`daoris\` CLI on a terminal and the desktop are **two doors onto one machine**: what
 one sets the other sees. When your account's \`DAORIS_HOME\` already names another folder — another
 install's \`${HOME}/\`, or this one's before it moved — the application still runs on its own, leaves

@@ -195,6 +195,7 @@
         "agents.add.open", "agents.add.new", "agents.add.join", "agents.add.notNow", "agents.act.read", "agents.act.signInTo",
         "agents.act.place", "agents.rename.save",
         "update.whenIdle", "update.now", "update.notNow",
+        "person.refuse", "person.confirm",
         "asks.ask", "asks.channel.compose.send", "asks.channel.reply", "asks.compose.submit", "asks.goAhead.approve", "asks.goAhead.change", "asks.goAhead.refuse",
         "asks.record.abandon", "asks.record.abandonMeanIt", "asks.record.close",
         "asks.record.closeConfirm", "asks.record.pause", "asks.record.pauseMeanIt", "asks.record.resume",

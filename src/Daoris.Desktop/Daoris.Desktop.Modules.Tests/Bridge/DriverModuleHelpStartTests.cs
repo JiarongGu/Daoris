@@ -250,8 +250,7 @@ public sealed class DriverModuleHelpStartTests : DriverModuleBridge
     [Fact]
     public async Task The_room_reads_a_recent_look_and_takes_a_fresh_one_where_none_is()
     {
-        var logs = Path.GetDirectoryName(DriverConfigPath)!;
-        using var log = new MachineLog(logs, "driver");
+        using var log = new MachineLog(Home, "driver");
         var (loop, _, _) = await UpAsync(log);
         // A tree this home opened and no longer has: its part asks it, and git is never started for it.
         var tree = Path.Combine(new SessionTrees(loop.Home).TreesRoot, "default", "engine", "s-c9e1d000");
@@ -281,9 +280,9 @@ public sealed class DriverModuleHelpStartTests : DriverModuleBridge
         Assert.Contains(read!.Sessions!.Listed, each => each.Id == ended.Id);
         // The kept look's trees are none of the room's: its part judged the tree gone, so nothing waits to review.
         Assert.Equal(0, read.Sessions.Review);
-        Assert.Contains(LogLines(logs), line => line.Contains("\"event\":\"help.room.look\"") && line.Contains("\"kept\":true"));
+        Assert.Contains(LogLines(Home), line => line.Contains("\"event\":\"help.room.look\"") && line.Contains("\"kept\":true"));
         // FACTSPLIT1b: the part's walk says its own time and how many trees it asked, with none of the look's steps.
-        Assert.Contains(LogLines(logs), line => line.Contains("\"event\":\"help.room.look\"") && line.Contains("\"treesMs\":")
+        Assert.Contains(LogLines(Home), line => line.Contains("\"event\":\"help.room.look\"") && line.Contains("\"treesMs\":")
             && line.Contains("\"trees\":1") && !line.Contains("recordsMs"));
 
         loop.SessionsLooked.Keep(look, DateTimeOffset.UtcNow - HelpRoomLookLog.Recent - TimeSpan.FromSeconds(1));
@@ -292,10 +291,10 @@ public sealed class DriverModuleHelpStartTests : DriverModuleBridge
 
         Assert.DoesNotContain(fresh!.Sessions!.Listed, each => each.Id == ended.Id);
         // HELPROOM1: a fresh look says where its time went; a kept one took no steps and says none. The look judges no tree itself.
-        Assert.Contains(LogLines(logs), line => line.Contains("\"event\":\"help.room.look\"") && line.Contains("\"kept\":false")
+        Assert.Contains(LogLines(Home), line => line.Contains("\"event\":\"help.room.look\"") && line.Contains("\"kept\":false")
             && line.Contains("\"recordsMs\":") && line.Contains("\"questsMs\":") && line.Contains("\"verdictsMs\":")
             && line.Contains("\"marksMs\":") && line.Contains("\"waitingMs\":") && line.Contains("\"treesMs\":") && line.Contains("\"trees\":0"));
-        Assert.DoesNotContain(LogLines(logs), line => line.Contains("\"kept\":true") && line.Contains("Ms\":") && line.Contains("recordsMs"));
+        Assert.DoesNotContain(LogLines(Home), line => line.Contains("\"kept\":true") && line.Contains("Ms\":") && line.Contains("recordsMs"));
         Assert.NotNull(loop.SessionsLooked.Within(HelpRoomLookLog.Recent, DateTimeOffset.UtcNow));
         // The look's verdicts are a fresh plan's here, no loop having looked: it, the parts and the rest of the facts start no git.
         await loop.Facts.JudgedAsync(HelpFacts.Trees, HelpFacts.NoCheckout, CancellationToken.None).WaitAsync(TimeSpan.FromSeconds(20));

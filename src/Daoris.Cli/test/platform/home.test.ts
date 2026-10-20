@@ -1,10 +1,10 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
+import { basename, dirname, join, resolve } from 'node:path';
 import {
-  daorisHome, ensureHomeId, HOME_ENTRIES, HOME_ID_FILE, HOME_TWICE, homeEntry, HomeEntryTwice, homeFile, homeId, homePlaces,
-  HOME_VARIABLE, installOf, requireHomeFile, THIS_INSTALL, type HomeEntry,
+  daorisHome, ensureHomeId, HOME_ENTRIES, HOME_ID_FILE, HOME_TWICE, homeEntry, HomeEntryTwice, homeFile, homeId, homeOf, homePlaces,
+  HOME_VARIABLE, INSTALL_DATA, INSTALL_MARKER, installOf, requireHomeFile, THIS_INSTALL, type HomeEntry, type HomeEntryName,
 } from '../../src/platform/home.ts';
 import { DESKTOP, driverFile, driverRows, driverTestFile, type Cell } from '../_csharp.ts';
 import { captureError, makeFixture } from '../_fixture.ts';
@@ -33,10 +33,13 @@ test('a daoris the install carries finds the install’s data folder, and the va
     fx.write('INSTALLED.md', '# Daoris — installed desktop\n');
     const pkg = join(fx.root, 'app', 'cli', 'node_modules', 'daoris', 'src', 'platform');
     assert.equal(installOf(pkg), fx.root);
-    assert.equal(daorisHome({}, installOf(pkg)), join(fx.root, 'data'));
+    const data = join(fx.root, INSTALL_DATA);
+    assert.equal(daorisHome({}, installOf(pkg)), data);
     assert.equal(daorisHome({ DAORIS_HOME: 'D:/somewhere/data' }, fx.root), 'D:/somewhere/data');
-    assert.equal(homeFile({}, 'driver', fx.root), join(fx.root, 'data', 'driver.json'));
-    assert.equal(requireHomeFile({}, 'driver', fx.root), join(fx.root, 'data', 'driver.json'));
+    // The install's data entries are where they were (HOMELAYOUT3), in its `data/`, whichever spelling names the install.
+    assert.equal(homeFile({}, 'driver', fx.root), join(data, 'driver.json'));
+    assert.equal(requireHomeFile({}, 'driver', fx.root), join(data, 'driver.json'));
+    assert.equal(resolve(homeFile({ DAORIS_HOME: fx.root }, 'driver')!), resolve(data, 'driver.json'));
 
     // An `app` folder with no marker beside it is no install.
     assert.equal(installOf(join(fx.root, 'elsewhere', 'app', 'cli')), null);
@@ -55,7 +58,7 @@ test('absent, it is absent rather than the user profile', () => {
 });
 
 test('an entry asked of the environment’s home is the entry, or null when there is none', () => {
-  assert.equal(homeFile({ DAORIS_HOME: 'D:/somewhere/data' }, 'driver'), join('D:/somewhere/data', 'driver.json'));
+  assert.equal(homeFile({ DAORIS_HOME: 'X:/daoris' }, 'driver'), join('X:/daoris', 'data', 'driver.json'));
   assert.equal(homeFile({}, 'driver'), null);
 });
 
@@ -66,18 +69,20 @@ test('an entry asked of the environment’s home is the entry, or null when ther
 test('a home’s id is read from home.json by every path to the folder, and a file that does not read is none', () => {
   const fx = makeFixture('home-id');
   try {
-    const home = join(fx.root, 'data');
+    const home = fx.root;
     assert.equal(homeId(home), null);
-    fx.write(join('data', HOME_ID_FILE), JSON.stringify({ id: '0123456789abcdef0123456789abcdef', minted: '2026-10-16T08:00:00+00:00' }));
-    fx.write(join('data', 'sub', '.keep'), '');
+    const file = fx.entry('home-id');
+    assert.equal(basename(file), HOME_ID_FILE);
+    writeFileSync(file, JSON.stringify({ id: '0123456789abcdef0123456789abcdef', minted: '2026-10-16T08:00:00+00:00' }));
+    fx.write(join('sub', '.keep'), '');
     assert.equal(homeId(home), '0123456789abcdef0123456789abcdef');
     assert.equal(homeId(join(home, 'sub', '..')), '0123456789abcdef0123456789abcdef');
     if (process.platform === 'win32') assert.equal(homeId(home.toUpperCase()), '0123456789abcdef0123456789abcdef');
 
     for (const text of ['not json', '[]', '{ "id": "0123" }', '{ "id": "0123456789ABCDEF0123456789ABCDEF" }']) {
-      fx.write(join('data', HOME_ID_FILE), text);
+      writeFileSync(file, text);
       assert.equal(homeId(home), null, text);
-      assert.equal(fx.read(join('data', HOME_ID_FILE)), text);
+      assert.equal(readFileSync(file, 'utf8'), text);
     }
   } finally {
     fx.cleanup();
@@ -88,17 +93,18 @@ test('a home’s id is read from home.json by every path to the folder, and a fi
 test('a home with no id is minted one once, and a file that does not read is never replaced', () => {
   const fx = makeFixture('home-id-mint');
   try {
-    const home = join(fx.root, 'data');
+    const home = fx.root;
     const id = ensureHomeId(home);
     assert.match(id ?? '', /^[0-9a-f]{32}$/);
     assert.equal(ensureHomeId(home), id);
     assert.equal(ensureHomeId(join(home, '.')), id);
-    const text = fx.read(join('data', HOME_ID_FILE));
+    const file = homeEntry(home, 'home-id');
+    const text = readFileSync(file, 'utf8');
     assert.ok(!text.includes('\r') && text.includes('"minted"'), text);
 
-    fx.write(join('data', HOME_ID_FILE), 'not json');
+    writeFileSync(file, 'not json');
     assert.equal(ensureHomeId(home), null);
-    assert.equal(fx.read(join('data', HOME_ID_FILE)), 'not json');
+    assert.equal(readFileSync(file, 'utf8'), 'not json');
   } finally {
     fx.cleanup();
   }
@@ -162,6 +168,43 @@ const PLACES_ROWS: readonly (readonly string[])[] = [
   ['run/s/*.pid', 's/*.pid', '', 'run/s|s'],
 ];
 
+/**
+ * 🔴 D172 point 2 (HOMELAYOUT3): a home names its Daoris folder and the old home. The driver's `A_home_names_its_folder`, whose
+ * summary says each column, and the service's hold the same rows: each is held to these, cell for cell.
+ */
+const FOLDER_ROWS: readonly (readonly string[])[] = [
+  ['install', 'data', '', 'driver', '', 'data/driver.json'],
+  ['install', '', '', 'driver', '', 'data/driver.json'],
+  ['install', 'data', '', 'keys', '', 'profiles/keys.json'],
+  ['install', 'data', 'data/keys.json', 'keys', '', 'data/keys.json'],
+  ['install', '', 'data/keys.json', 'keys', '', 'data/keys.json'],
+  ['install', 'data', 'data/keys.json,profiles/keys.json', 'keys', '', 'refused'],
+  ['install', 'data', 'data/logs/desktop.log', 'logs', '', 'data/logs'],
+  ['install', 'data', '', 'logs', '', 'logs'],
+  ['install', 'data', 'data/chromium/', 'window', '', 'data'],
+  ['install', 'data', '', 'window', '', 'profiles/window'],
+  ['install', 'data', 'data/harnesses/claude-code/work/x', 'agent-homes', 'claude-code/work', 'data/harnesses/claude-code/work'],
+  ['install', 'data', 'data/harnesses/claude-code/work/x', 'agent-homes', 'claude-code/new', 'profiles/agents/claude-code/new'],
+  ['install', 'data', '', 'home-lease', '', 'run/home.lease'],
+  ['root', '', '', 'driver', '', 'data/driver.json'],
+  ['root', '', 'driver.json', 'driver', '', 'driver.json'],
+  ['root', '', '', 'running', '', 'run/running.json'],
+  ['root', '', '', 'logs', '', 'logs'],
+  ['root', 'data', '', 'driver', '', 'data/data/driver.json'],
+];
+
+/** The home a file of it is in: the driver's `A_home_is_found_from_its_entry_at_either_place`, and the service's. */
+const HOME_OF_ROWS: readonly (readonly string[])[] = [
+  ['install', 'data/driver.json', 'driver', 'data'],
+  ['install', 'data/harnesses.json', 'harnesses', 'data'],
+  ['root', 'data/driver.json', 'driver', ''],
+  ['root', 'driver.json', 'driver', ''],
+  ['install', 'profiles/browser/engine', 'browser-engine', 'data'],
+  ['install', 'data/browser/engine', 'browser-engine', 'data'],
+  ['root', 'profiles/browser/engine', 'browser-engine', ''],
+  ['root', 'browser/engine', 'browser-engine', ''],
+];
+
 /** The service's copy of a file, found by its name under the service's projects, the build's output aside. */
 function serviceFile(name: string): string {
   const found: string[] = [];
@@ -188,6 +231,49 @@ test('the driver’s and the service’s rows of an entry’s place are these, c
   for (const [owner, source] of [['the driver’s tests', DRIVER_TESTS()], ['the service’s tests', SERVICE_TESTS()]] as const) {
     assert.deepEqual(asStrings(driverRows(source, 'An_entry_is_where_it_is', {}, owner)), ENTRY_ROWS, owner);
     assert.deepEqual(asStrings(driverRows(source, 'A_list_reads_both_places', {}, owner)), PLACES_ROWS, owner);
+    assert.deepEqual(asStrings(driverRows(source, 'A_home_names_its_folder', {}, owner)), FOLDER_ROWS, owner);
+    assert.deepEqual(asStrings(driverRows(source, 'A_home_is_found_from_its_entry_at_either_place', {}, owner)), HOME_OF_ROWS, owner);
+  }
+});
+
+/** A row's root: the marker at it where the row is an install's. */
+function shaped(name: string, shape: string): ReturnType<typeof makeFixture> {
+  const fx = makeFixture(name);
+  if (shape === 'install') fx.write(INSTALL_MARKER, '# Daoris — installed desktop\n');
+  return fx;
+}
+
+const under = (root: string, place: string): string => resolve(join(root, ...place.split('/').filter(Boolean)));
+
+test('a home names its folder: an install by its folder or its data/, any other home itself (HOMELAYOUT3)', () => {
+  for (const [shape, homeAs, present, name, asked, expected] of FOLDER_ROWS) {
+    const fx = shaped('home-folder', shape!);
+    try {
+      lay(fx.root, present!);
+      const home = homeAs ? join(fx.root, homeAs) : fx.root;
+      const asking = asked!.split('/').filter(Boolean);
+      const why = `${shape} ${homeAs} ${present} ${name} ${asked}`;
+      if (expected === 'refused') {
+        const error = captureError(() => homeEntry(home, name as HomeEntryName, ...asking));
+        assert.ok(error instanceof HomeEntryTwice, why);
+        assert.deepEqual([(error as HomeEntryTwice).next, (error as HomeEntryTwice).old], homePlaces(home, name as HomeEntryName, ...asking), why);
+        continue;
+      }
+      assert.equal(resolve(homeEntry(home, name as HomeEntryName, ...asking)), under(fx.root, expected!), why);
+    } finally {
+      fx.cleanup();
+    }
+  }
+});
+
+test('a home is found from its entry at either place, an install’s spelled as its data/ (HOMELAYOUT3)', () => {
+  for (const [shape, file, name, expected] of HOME_OF_ROWS) {
+    const fx = shaped('home-of', shape!);
+    try {
+      assert.equal(homeOf(join(fx.root, ...file!.split('/')), name as HomeEntryName), under(fx.root, expected!), `${shape} ${file}`);
+    } finally {
+      fx.cleanup();
+    }
   }
 });
 
@@ -270,7 +356,7 @@ test('the driver’s and the service’s tables are this one, cell for cell (HOM
 test('the table names a named workspace’s help room beside the default one (HOMEROOMS1)', () => {
   const room = HOME_ENTRIES.find((entry) => entry.name === 'help-rooms');
   assert.ok(room);
-  assert.deepEqual([room.category, room.new, room.old, [...room.holds]], ['work', 'help-*', 'help-*', ['CLAUDE.md']]);
+  assert.deepEqual([room.category, room.new, room.old, [...room.holds]], ['work', 'work/rooms/help-*', 'help-*', ['CLAUDE.md']]);
 });
 
 test('each entry is named once, its places are relative, and an item’s parts are the same in both places', () => {
@@ -283,7 +369,12 @@ test('each entry is named once, its places are relative, and an item’s parts a
   }
 });
 
-/** 🔴 HOMELAYOUT2 names the entries and moves nothing: HOMELAYOUT3 switches the new places on with the move (the design §10). */
-test('every new place is still the old one (HOMELAYOUT2)', () => {
-  for (const entry of HOME_ENTRIES) assert.equal(entry.new, entry.old, entry.name);
+/**
+ * 🔴 D172 §3 switched on (HOMELAYOUT3): every new place is under the top folder its category names, and the logs are the `logs`
+ * folder itself, so the Daoris folder holds the seven categories and nothing else of Daoris's at its top.
+ */
+test('each new place is under its category’s folder (HOMELAYOUT3)', () => {
+  for (const entry of HOME_ENTRIES) {
+    assert.ok(entry.new === entry.category || entry.new.startsWith(`${entry.category}/`), `${entry.name}: ${entry.new}`);
+  }
 });

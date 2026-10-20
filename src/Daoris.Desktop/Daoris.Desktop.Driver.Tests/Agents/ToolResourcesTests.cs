@@ -47,7 +47,11 @@ public sealed class ToolResourcesTests : IDisposable
 
     private string Home => Path.Combine(_root, "data");
 
-    public ToolResourcesTests() => Directory.CreateDirectory(Home);
+    public ToolResourcesTests()
+    {
+        Directory.CreateDirectory(Home);
+        File.WriteAllText(Path.Combine(_root, DaorisHome.InstallMarker), "# Daoris — installed desktop\n");
+    }
 
     public void Dispose()
     {
@@ -446,7 +450,8 @@ public sealed class ToolResourcesTests : IDisposable
     [InlineData("https://例え.jp/r.json", "e2e2d45ac6cca9317d9ebea32cf02ce29eb338fe0926e0e2eecdd7111a125f9b.json")]
     public void A_location_s_copy_is_named_as_the_cli_names_it(string address, string name)
     {
-        Assert.Equal(Path.Combine(["HOME", .. ToolResources.LocationsFolder, name]), ToolResources.LocationCopy("HOME", address));
+        // Under the cache since HOMELAYOUT3 (D172 §3.4), as the CLI's twin asks it.
+        Assert.Equal(Path.Combine(["HOME", "cache", .. ToolResources.LocationsFolder, name]), ToolResources.LocationCopy("HOME", address));
     }
 
     [Theory]
@@ -470,7 +475,7 @@ public sealed class ToolResourcesTests : IDisposable
         const string second = "http://localhost:5177/resources.json";
         File.WriteAllText(DaorisHome.Entry(Home, HomeEntry.Tools), $$"""{"locations":["{{first}}","{{second}}"]}""");
         var firstText = ListText("gh 2.63.0 win-x64 b mirror.example");
-        Directory.CreateDirectory(Path.Combine([Home, .. ToolResources.LocationsFolder]));
+        Directory.CreateDirectory(Path.GetDirectoryName(ToolResources.LocationCopy(Home, first))!);
         File.WriteAllText(ToolResources.LocationCopy(Home, first), firstText);
         Directory.CreateDirectory(Path.Combine(_root, "app"));
         File.WriteAllText(Path.Combine([_root, .. ToolResources.Layout]), ListText("gh 2.62.0 win-x64 a maker.example"));
@@ -505,6 +510,15 @@ public sealed class ToolResourcesTests : IDisposable
         Assert.Equal(
             "gh [the built-in list] 2.62.0=beside.example newest 2.62.0",
             Render(ToolResources.Merge(ToolResources.ReadLists(Home, application), "win-x64")));
+    }
+
+    /// <summary>HOMELAYOUT4: a development run's root is its own Daoris folder, so the list built in is its <c>app/resources.json</c>.</summary>
+    [Fact]
+    public void A_dev_runs_list_built_in_is_its_roots_own_app_resources()
+    {
+        var scratch = Path.Combine(_root, "scratch");
+        Assert.Equal(Path.Combine([scratch, .. ToolResources.Layout]), ToolResources.BesideHome(scratch));
+        Assert.Equal(Path.Combine([scratch, "data", .. ToolResources.Layout]), ToolResources.BesideHome(Path.Combine(scratch, "data")));
     }
 
     [Fact]

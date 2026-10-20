@@ -1,12 +1,13 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { existsSync, readFileSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { dirname } from 'node:path';
 import {
-  ACCOUNTS_FILE, AccountNameError, accountNames, apartWords, signedInSentence, forgetName, nameOf, newAccountId, offeredName, renameAccount, resolveAccount,
+  AccountNameError, accountNames, apartWords, signedInSentence, forgetName, nameOf, newAccountId, offeredName, renameAccount, resolveAccount,
   shownAs, signInTarget,
 } from '../../src/accounts/accountnames.ts';
 import { readHarnessSettings } from '../../src/agents/toolchain.ts';
+import { homeEntry } from '../../src/platform/home.ts';
 import { driverRows as csharpRows, driverTestFile } from '../_csharp.ts';
 import { makeFixture } from '../_fixture.ts';
 
@@ -26,7 +27,10 @@ type Cell = string | null;
 const list = (text: string) => JSON.parse(text) as string[];
 
 function holding(root: string, file: Cell): void {
-  if (file !== null) writeFileSync(join(root, ACCOUNTS_FILE), file, 'utf8');
+  if (file === null) return;
+  const path = homeEntry(root, 'accounts');
+  mkdirSync(dirname(path), { recursive: true });
+  writeFileSync(path, file, 'utf8');
 }
 
 // ——— Reading: missing or unreadable is no name; a name is text, trimmed, not blank; agents and accounts compare
@@ -118,7 +122,7 @@ test('a name is given as the driver gives it (the twin\'s table)', () => {
   for (const [index, [why, accounts, file, agent, account, name, after]] of RENAME_ROWS.entries()) {
     const fx = makeFixture(`names-rename-${index}`);
     holding(fx.root, file);
-    const path = join(fx.root, ACCOUNTS_FILE);
+    const path = homeEntry(fx.root, 'accounts');
 
     let said: string;
     try {
@@ -156,7 +160,7 @@ test('both twins write the same file (the twin\'s table)', () => {
 
     renameAccount(fx.root, agent, ['account-1', 'account-2'], account, name);
 
-    assert.equal(readFileSync(join(fx.root, ACCOUNTS_FILE), 'utf8'), `${JSON.stringify(JSON.parse(after), null, 2)}\n`, why);
+    assert.equal(readFileSync(homeEntry(fx.root, 'accounts'), 'utf8'), `${JSON.stringify(JSON.parse(after), null, 2)}\n`, why);
     fx.cleanup();
   }
 });
@@ -179,8 +183,8 @@ test('a sign-in reaches the account the driver reaches (the twin\'s table)', () 
   for (const [index, [why, accounts, file, wiring, agent, given, reached]] of TARGET_ROWS.entries()) {
     const fx = makeFixture(`names-target-${index}`);
     holding(fx.root, file);
-    writeFileSync(join(fx.root, 'harnesses.json'), wiring, 'utf8');
-    const settings = readHarnessSettings(join(fx.root, 'harnesses.json'));
+    writeFileSync(fx.entry('harnesses'), wiring, 'utf8');
+    const settings = readHarnessSettings(fx.entry('harnesses'));
 
     const target = signInTarget(list(accounts), accountNames(fx.root, agent), settings.defaults[agent], given);
 
@@ -278,7 +282,7 @@ test('an account removed forgets its name and no other; nothing to forget writes
   forgetName(fx.root, 'claude-code', 'account-1');
   forgetName(fx.root, 'codex', 'account-1');
 
-  assert.deepEqual(JSON.parse(readFileSync(join(fx.root, ACCOUNTS_FILE), 'utf8')), { 'claude-code': { 'account-2': { name: 'seat' } } });
+  assert.deepEqual(JSON.parse(readFileSync(homeEntry(fx.root, 'accounts'), 'utf8')), { 'claude-code': { 'account-2': { name: 'seat' } } });
   fx.cleanup();
 });
 

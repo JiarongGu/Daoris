@@ -36,9 +36,122 @@ public sealed class DaorisHomeTests
     public void An_entry_asked_of_the_environment_is_the_entry_or_none_with_no_home()
     {
         Assert.Equal(
-            Path.Combine("D:/somewhere/data", "knowledge.db"),
-            DaorisHome.File(Env(("DAORIS_HOME", "D:/somewhere/data")), HomeEntry.Knowledge));
+            Path.Combine("X:/daoris", "data", "knowledge.db"),
+            DaorisHome.File(Env(("DAORIS_HOME", "X:/daoris")), HomeEntry.Knowledge));
         Assert.Null(DaorisHome.File(Env(), HomeEntry.Knowledge));
+    }
+
+    /// <summary>
+    /// 🔴 D172 point 2 (HOMELAYOUT3): a home names its Daoris folder, and the old home its entries were under. The driver's
+    /// <c>A_home_names_its_folder</c>, whose summary says each column, row for row; the CLI's <c>home.test.ts</c> holds both.
+    /// </summary>
+    [Theory]
+    [InlineData("install", "data", "", "driver", "", "data/driver.json")]
+    [InlineData("install", "", "", "driver", "", "data/driver.json")]
+    [InlineData("install", "data", "", "keys", "", "profiles/keys.json")]
+    [InlineData("install", "data", "data/keys.json", "keys", "", "data/keys.json")]
+    [InlineData("install", "", "data/keys.json", "keys", "", "data/keys.json")]
+    [InlineData("install", "data", "data/keys.json,profiles/keys.json", "keys", "", "refused")]
+    [InlineData("install", "data", "data/logs/desktop.log", "logs", "", "data/logs")]
+    [InlineData("install", "data", "", "logs", "", "logs")]
+    [InlineData("install", "data", "data/chromium/", "window", "", "data")]
+    [InlineData("install", "data", "", "window", "", "profiles/window")]
+    [InlineData("install", "data", "data/harnesses/claude-code/work/x", "agent-homes", "claude-code/work", "data/harnesses/claude-code/work")]
+    [InlineData("install", "data", "data/harnesses/claude-code/work/x", "agent-homes", "claude-code/new", "profiles/agents/claude-code/new")]
+    [InlineData("install", "data", "", "home-lease", "", "run/home.lease")]
+    [InlineData("root", "", "", "driver", "", "data/driver.json")]
+    [InlineData("root", "", "driver.json", "driver", "", "driver.json")]
+    [InlineData("root", "", "", "running", "", "run/running.json")]
+    [InlineData("root", "", "", "logs", "", "logs")]
+    [InlineData("root", "data", "", "driver", "", "data/data/driver.json")]
+    public void A_home_names_its_folder(string shape, string homeAs, string present, string name, string asked, string expected)
+    {
+        var root = Path.Combine(Path.GetTempPath(), "daoris-home-tests", Guid.NewGuid().ToString("N")[..8]);
+        Directory.CreateDirectory(root);
+        try
+        {
+            if (shape == "install") File.WriteAllText(Path.Combine(root, DaorisHome.InstallMarker), "# Daoris — installed desktop\n");
+            Lay(root, present);
+            var home = homeAs.Length == 0 ? root : Path.Combine(root, homeAs);
+            var entry = HomeEntry.Named(name)!;
+            var asking = asked.Split('/', StringSplitOptions.RemoveEmptyEntries);
+            if (expected == "refused")
+            {
+                var refusal = Assert.Throws<HomeEntryTwiceException>(() => DaorisHome.Entry(home, entry, asking));
+                Assert.Equal(DaorisHome.Places(home, entry, asking), [refusal.New, refusal.Old]);
+                return;
+            }
+
+            Assert.Equal(
+                Path.GetFullPath(Path.Combine([root, .. expected.Split('/', StringSplitOptions.RemoveEmptyEntries)])),
+                Path.GetFullPath(DaorisHome.Entry(home, entry, asking)));
+        }
+        finally
+        {
+            Directory.Delete(root, recursive: true);
+        }
+    }
+
+    /// <summary>
+    /// The home a file of it is in: the driver's <c>A_home_is_found_from_its_entry_at_either_place</c>, row for row; the CLI's
+    /// <c>home.test.ts</c> holds both.
+    /// </summary>
+    [Theory]
+    [InlineData("install", "data/driver.json", "driver", "data")]
+    [InlineData("install", "data/harnesses.json", "harnesses", "data")]
+    [InlineData("root", "data/driver.json", "driver", "")]
+    [InlineData("root", "driver.json", "driver", "")]
+    [InlineData("install", "profiles/browser/engine", "browser-engine", "data")]
+    [InlineData("install", "data/browser/engine", "browser-engine", "data")]
+    [InlineData("root", "profiles/browser/engine", "browser-engine", "")]
+    [InlineData("root", "browser/engine", "browser-engine", "")]
+    public void A_home_is_found_from_its_entry_at_either_place(string shape, string file, string name, string expected)
+    {
+        var root = Path.Combine(Path.GetTempPath(), "daoris-home-tests", Guid.NewGuid().ToString("N")[..8]);
+        Directory.CreateDirectory(root);
+        try
+        {
+            if (shape == "install") File.WriteAllText(Path.Combine(root, DaorisHome.InstallMarker), "# Daoris — installed desktop\n");
+            var path = Path.Combine([root, .. file.Split('/')]);
+            Assert.Equal(
+                Path.TrimEndingDirectorySeparator(Path.GetFullPath(Path.Combine([root, .. expected.Split('/', StringSplitOptions.RemoveEmptyEntries)]))),
+                DaorisHome.HomeOf(path, HomeEntry.Named(name)!));
+        }
+        finally
+        {
+            Directory.Delete(root, recursive: true);
+        }
+    }
+
+    /// <summary>🔴 D172 §3 switched on (HOMELAYOUT3): every new place is under the top folder its category names, as the driver's.</summary>
+    [Fact]
+    public void Each_new_place_is_under_its_categorys_folder()
+    {
+        Assert.All(HomeEntry.Table, entry =>
+        {
+            var folder = entry.Category.ToString().ToLowerInvariant();
+            Assert.True(entry.New == folder || entry.New.StartsWith(folder + "/", StringComparison.Ordinal), $"{entry.Name}: {entry.New}");
+        });
+    }
+
+    /// <summary>A row's disk, as the driver's rows lay it: <c>{}</c> for JSON and a letter otherwise, what follows <c>=</c>, a trailing <c>/</c> a folder.</summary>
+    private static void Lay(string root, string present)
+    {
+        foreach (var item in present.Split(',', StringSplitOptions.RemoveEmptyEntries))
+        {
+            var (file, text) = item.IndexOf('=') is var at and >= 0
+                ? (item[..at], item[(at + 1)..])
+                : (item, item.EndsWith(".json", StringComparison.Ordinal) ? "{}" : "x");
+            var path = Path.Combine([root, .. file.Split('/', StringSplitOptions.RemoveEmptyEntries)]);
+            if (file.EndsWith('/'))
+            {
+                Directory.CreateDirectory(path);
+                continue;
+            }
+
+            Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+            File.WriteAllText(path, text);
+        }
     }
 
     /// <summary>

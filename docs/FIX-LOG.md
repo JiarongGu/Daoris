@@ -5,6 +5,42 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-20 — A line's move inside the minute, a release under a live session, and a repository nothing recorded were each missed (ENDAGREE1)
+
+- **Symptom:** each shown red first. Origin's line moving 20 s after a pull request was asked was never asked about at the wakes after
+  the minute (`PullRequestMomentsTests`). A held done released while the person's words went on with its session landed nothing at that
+  session's end, only at the whole look (`AutoLandingWakesTests`). The `gates` topic woke on a write to any run's binding, its deadline
+  listing every run ever bound (`LandingWakesTests`). An unrecorded `daoris/x` in a registered repository with nothing else recorded
+  was never inventoried (`TidyEffectGitTests`, `CleanupLeftoversTests`).
+- **Root cause:** `PullRequestMoments.RefsAsync` (b42f5f86b) took the move into its baseline (`Seen`) before learning that nothing was
+  due, then returned, so the move was spent. `AutoLander.JudgeAsync` (78b040f03) leaves an entry whose tree a live session holds
+  without keeping a try, so its last try still says `held` and `LandingConcerns` lets only the `quests` family wake it; the release that
+  came was spent on the look that left it. The `gates` part was `HomePart.Records` over the whole `workflows/` folder (78b040f03), and
+  runs are kept one file each for good. `WorkInventories.GatherAsync` (73db7bdad) took its repositories from the records and trees alone.
+- **Fix:** D173's ENDAGREE1 note. The move is kept per repository until every open pull request there was asked after it; `LandingJudged`
+  keeps which entries a look left for a live session, which the `sessions` wake then concerns, and the runs the due entries' gates read,
+  which `HomePart.Workflows` alone lists of `runs/`, by name; the inventory reads each registered repository with a checkout here too.
+- **Verification:** the tests named above, filtered, and the Git classes `PullRequestMomentsGitTests`, `AutoLandingWakesTests` and
+  `TidyEffectGitTests`, green.
+
+## 2026-10-20 — A lost done's follow-up stood everywhere, and a step whose session ran across the go-on never got its source's work (CLOSEREOPEN1)
+
+- **Symptom:** shown red, never seen on an install (nothing binds there). B took a chain's parent and closed it done offline, and its
+  done published the follow-up, while A's take of the parent reached the remote first: raced (A's take landing between B's fetch and
+  its push), or plain with B's own take of the follow-up, the follow-up stood on the remote and every machine, its take B's, on a done
+  that lost (`QuestSyncTests`' CLOSE1e2 theory, three of four cases red). And a step whose session was running when the person reopened
+  its source and went on with it ended as a park after the go-on, so its branch never got the source's new submission.
+- **Root cause:** CLOSE1c21's remote rule held back only a step naming the submission it grew from; a done's follow-up names none, so
+  the remote numbered it while the parent was behind. The rebase's `ForgetFollowUpsAsync` forgot a follow-up only while its history was
+  its one unpushed publication, so a take of it kept it and synced it on its own. The session's end judged the reopen only by the step
+  held as it ended (`HeldByReopen`), and once gone on the step reads unheld, so the end was ordinary, its record later than the go-on,
+  and neither CLOSE1c2's carry-on nor CLOSE1c13's telling read it.
+- **Fix:** D173's CLOSEREOPEN1 note. The remote answers behind for a pushed step naming no source while it holds the parent not done
+  (`AwaitsItsSourceAsync`); the rebase forgets a lost close's follow-up with this machine's unpushed work, a take rewritten as a conflict
+  (`ForgetFollowUpsAsync` through `ForgetStepsAsync`). The end reads the step's source moved since the run started
+  (`Planner.ReopenedFrom`) and ends as the reopen stopped it, so CLOSE1c2's carry-on brings the branch up to date once.
+- **Verification:** `QuestSyncTests` (the theory, and the raced lost-step guard probed red with CLOSE1c21's rule off), `PlannerTests`
+  (`ReopenedFrom` red by compile, the carry-on once), filtered, green.
 ## 2026-10-20 — The CLI's graph reader read `1.0` as a whole number and said a graph's first fault in another order (GRAPHTWINS1)
 
 - **Symptom:** found by reading the CLI's reader against the driver's while writing the shared table `graph-problems.json`, each fault

@@ -26,7 +26,8 @@ public sealed class ChildLineageTests : IDisposable
     {
         Assert.Equal("lineage.jsonl", ChildLineage.FileName);
         Assert.Equal(DaorisHome.Entry(_home, HomeEntry.Sessions, "s1", "lineage.jsonl"), ChildLineage.PathOf(_home, "s1"));
-        Assert.Equal(["sessions", "s1", "lineage.jsonl"], Path.GetRelativePath(_home, ChildLineage.PathOf(_home, "s1")).Split(Path.DirectorySeparatorChar));
+        // The sessions' records are data (D172), under `data/` in a new home (HOMELAYOUT3), where they were in an install's.
+        Assert.Equal(["data", "sessions", "s1", "lineage.jsonl"], Path.GetRelativePath(_home, ChildLineage.PathOf(_home, "s1")).Split(Path.DirectorySeparatorChar));
     }
 
     [Fact]

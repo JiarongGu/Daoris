@@ -28,7 +28,7 @@ public sealed class HomeIdentityTests : IDisposable
         Assert.True(HomeIdentity.IsId(id), id);
         Assert.Equal(id, HomeIdentity.Ensure(_home));
         Assert.Equal(id, HomeIdentity.Read(_home));
-        Assert.Equal([HomeIdentity.FileName], Directory.GetFiles(_home).Select(Path.GetFileName));
+        Assert.Equal([HomeIdentity.FileName], Directory.GetFiles(_home, "*", SearchOption.AllDirectories).Select(Path.GetFileName));
         var text = File.ReadAllText(HomeIdentity.PathIn(_home));
         Assert.DoesNotContain('\r', text);
         Assert.Contains("\"minted\"", text);

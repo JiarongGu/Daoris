@@ -30,6 +30,7 @@ public sealed class ToolsChildProcessTests : IDisposable
     public ToolsChildProcessTests()
     {
         Directory.CreateDirectory(Home);
+        File.WriteAllText(Path.Combine(_root, DaorisHome.InstallMarker), "# Daoris — installed desktop\n");
         var folder = Path.Combine(_root, "stub-git");
         Directory.CreateDirectory(folder);
         if (OperatingSystem.IsWindows())

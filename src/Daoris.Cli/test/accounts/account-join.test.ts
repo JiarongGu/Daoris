@@ -1,7 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
 import { readHarnessSettings, writeHarnessSettings } from '../../src/agents/toolchain.ts';
 import { joinProblem, joinRefusal, placesOf, withJoined } from '../../src/accounts/rotation.ts';
 import { driverRows as csharpRows, driverTestFile } from '../_csharp.ts';
@@ -40,7 +39,7 @@ const JOIN_ROWS: [why: string, before: string, agent: string, account: string, w
 test('an account joins a list as the driver joins it (the twin\'s table)', () => {
   for (const [index, [why, before, agent, account, workspace, after]] of JOIN_ROWS.entries()) {
     const fx = makeFixture(`join-${index}`);
-    const path = join(fx.root, 'harnesses.json');
+    const path = fx.entry('harnesses');
     writeFileSync(path, before, 'utf8');
     const settings = readHarnessSettings(path);
 
@@ -74,7 +73,7 @@ const PLACE_ROWS: [why: string, wiring: string, agent: string, account: string, 
 test('an account\'s places read as the driver reads them (the twin\'s table)', () => {
   for (const [index, [why, wiring, agent, account, places]] of PLACE_ROWS.entries()) {
     const fx = makeFixture(`places-${index}`);
-    const path = join(fx.root, 'harnesses.json');
+    const path = fx.entry('harnesses');
     writeFileSync(path, wiring, 'utf8');
 
     assert.deepEqual(placesOf(readHarnessSettings(path), agent, account), JSON.parse(places), why);
@@ -101,7 +100,7 @@ const REFUSAL_ROWS: [why: string, workspace: string, sentence: string][] = [
 test('a refused join is said as the driver says it (the twin\'s table)', () => {
   for (const [index, [why, workspace, sentence]] of REFUSAL_ROWS.entries()) {
     const fx = makeFixture(`refusal-${index}`);
-    const path = join(fx.root, 'harnesses.json');
+    const path = fx.entry('harnesses');
     writeFileSync(path, '{}', 'utf8');
 
     const problem = joinProblem(readHarnessSettings(path), 'claude-code', workspace);

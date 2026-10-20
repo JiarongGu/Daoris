@@ -17783,3 +17783,105 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **PUSH1e — accounts and usage pushed, and their twins moved into .NET** (driver, modules, web, cli; D182 point 6; after PUSH1a). Sanitized account rows and curve points pushed on probe results and session changes, never a probe per window; the CLI's usage-curve, account-listing and home-table twins replaced by .NET through PUSH1f. Proof: the page and the CLI agree from one implementation.
 
 **Outcome** 2026-10-20: accounts and usage are judged in .NET and pushed: a `usage` slice (sessions and accounts' shares, through `USAGE`'s own builders) and an `accounts` slice (a partition per agent, through `ACCOUNTS`' own builder, its running counts from the records the sessions slice already holds, woken by `StateSlice.Pushed` when a count moved); the usage-curve verdicts (each window's start, its curve now and whether it is over; each scope's curves, measures and overs) are added to `ACCOUNTS`' answer, so the page's usage-curve twin is gone and the page only words them; a tick and a focus read neither route; an older host still pulls. Left: the account's state read from the roster's sign-ins (`HARNESSES`, never pushed), the CLI's twins (PUSH1f), the install's measurement. The merge mended `SessionsStateSliceTests` for CLOSETAKE1's `tookBind` (pull-only). On Opus: about 354 tool calls, 75 minutes. Detail: D182's PUSH1e note.
+
+## FABRIC-END6a — a later main window's focus is a moment too (2026-10-20, D173)
+
+> - [ ] **FABRIC-END6a — a later main window's focus is a moment too** (modules; after END6; §A4.3). Only the first main window's `Activated` reaches `DriverLoop.Focused`. Proof: the `SecondaryForm` main window's activation reaches it once.
+
+**Outcome** 2026-10-20: built as ENDAGREE1, one feature end to end (D187): each later main window's focus reaches `DriverLoop.Focused` as the first one's does (`SecondaryWindowHost` hands a `main:<n>` window's `Activated`; the monitor and a detached session hand nothing). Commit 5278ae22e. Detail: D173's ENDAGREE1 note. On Opus, the whole feature: about 216 tool calls, 46 minutes.
+
+## FABRIC-END6b — a line moved inside an ask's minute stays a moment (2026-10-20, D173)
+
+> - [ ] **FABRIC-END6b — a line moved inside an ask's minute stays a moment** (driver; after END6; §A4.3, §C6). Keep the move pending until the minute ends and ask at the next wake past it. Proof: origin moving at +20 s asked at the first wake after +60 s, never twice.
+
+**Outcome** 2026-10-20: built as ENDAGREE1, one feature end to end (D187): origin's line moving while a pull request is inside D148's minute is kept per repository until every open pull request there has been asked after it, and the first wake of that repository past the minute asks it once. Commit dedd8ed3d. Detail: D173's ENDAGREE1 note.
+
+## FABRIC-END6d — a landing's hold shown over real git (2026-10-20, D173)
+
+> - [ ] **FABRIC-END6d — a landing's hold shown over real git** (driver; after END6c). A moment due while a plugin landing runs asks nothing until the landing ends, then exactly once. Proof: a `PullRequestMomentsGitTests` row holding the platform's push.
+
+**Outcome** 2026-10-20: built as ENDAGREE1, one feature end to end (D187): a landing's hold shown over real git: a focus that comes due while a plugin landing's push is held asks nothing, and the landing's end asks the open pull request once (`PullRequestMomentsGitTests`). Commit 1c3ff765c. Detail: D173's ENDAGREE1 note.
+
+## FABRIC-END7b — a session's end concerns the entries on its tree (2026-10-20, D173)
+
+> - [ ] **FABRIC-END7b — a session's end concerns the entries on its tree** (driver; after END7; §A3, D173's END7 note). A hold or review released while a live session holds the entry's tree waits for the whole look, because the session's end does not concern `quests`-waiting entries: hand the concluded sessions' trees to the landing as wakes, and bound the `gates` deadline's listing of `workflows/runs/`. Proof: a held entry released under a live session lands at that session's end with no whole look; a count of the files the deadline lists.
+
+**Outcome** 2026-10-20: built as ENDAGREE1, one feature end to end (D187): `LandingJudged` keeps the due entries a look left because a live session held their tree, and the ledger's `sessions` wake looks at them, so a hold released under a live session lands at its end with no whole look; the `gates` deadline reads of `workflows/runs/` only the runs the due entries' gates read. Commit dc6a187db. Detail: D173's ENDAGREE1 note.
+
+## FABRIC-UNKNOWN1b — the repositories no record or tree names are read too (2026-10-20, D173)
+
+> - [ ] **FABRIC-UNKNOWN1b — the repositories no record or tree names are read too** (driver; after UNKNOWN1; §D3). List the registered repositories' roots so a repository with only an unrecorded `daoris/*` branch is seen. Proof: an empty home and a root holding `daoris/x`.
+
+**Outcome** 2026-10-20: built as ENDAGREE1, one feature end to end (D187): each registered repository with a checkout here, within the part, is read too with one `for-each-ref` each, so a repository no record or tree names is inventoried. Commit 2f5ca753a. Detail: D173's ENDAGREE1 note.
+
+## FABRIC-CLOSE1f — a step pushed before its parent's take was found lost (2026-10-20, D173)
+
+> - [ ] **FABRIC-CLOSE1f — a step pushed before its parent's take was found lost** (service; after CLOSE1e; §E5). Once numbered, no rebase forgets a lost submission's step. Proof: a `QuestSyncTests` race ending with the step declined or held for the person.
+
+**Outcome** 2026-10-20: built as CLOSEREOPEN1, one feature end to end (D187): found already done by FABRIC-CLOSE1c21: a step pushed while its parent's push is behind is answered behind and never numbered, so the next round loses it with its submission; no rebase is asked to forget a numbered step. Proof added: `QuestSyncTests`' lost-submission case raced with another machine's take, red with CLOSE1c21's rule off. Commit 26a87e3ed. Detail: D173's CLOSEREOPEN1 note (four choices recorded there for review), the FIX-LOG's entry. On Opus, the whole feature: about 252 tool calls, 57 minutes.
+
+## FABRIC-CLOSE1e2 — a lost done's follow-up that the remote kept while its parent's push was behind stands (2026-10-20, D173)
+
+> - [ ] **FABRIC-CLOSE1e2 — a lost done's follow-up that the remote kept while its parent's push was behind stands** (service; D65 §4; D173's FABRIC-CLOSE1e *Left*). A step published by a done names no source submission, so CLOSE1c21's `AwaitsItsSourceAsync` cannot hold it back: it stands on a done that lost, and its take stands until a person declines it. Proof: a `QuestSyncTests` case where a lost done and its follow-up are pushed with the parent behind (`RacedRemote`): the follow-up is nowhere afterwards.
+
+**Outcome** 2026-10-20: built as CLOSEREOPEN1, one feature end to end (D187): the remote answers behind for a pushed step naming no source while it holds the parent not done (`AwaitsItsSourceAsync`), and the rebase forgets a lost close's follow-up with this machine's unpushed work on it, its take rewritten as a conflict naming the close so its session is stopped. Commit 26a87e3ed. Detail: D173's CLOSEREOPEN1 note (four choices recorded there for review), the FIX-LOG's entry.
+
+## FABRIC-CLOSE1c6 — every submission's commit known, not only one whose evidence was read (2026-10-20, D173)
+
+> - [ ] **FABRIC-CLOSE1c6 — every submission's commit known, not only one whose evidence was read** (service, driver; after CLOSE1c5; §E5). A submission whose requirements name no evidence carries no commit, so the go-on brings its step up to date with the line alone: post the tree's commit at the session's end for every submission. Proof: a submission with no evidence wanted answers its commit; `GoOnInSyncTests`' carry-on holds it.
+
+**Outcome** 2026-10-20: built as CLOSEREOPEN1, one feature end to end (D187): the end of the session that said a `ready`, and the orphan sweep, post the tree's HEAD as a verdict reading no evidence for a submission that waits on none; the replay keeps it once (`QuestEvidenceVerdict.KeepsCommitOf`), holding and publishing nothing, and `submission.commit` answers it on every machine, so the go-on rebases the step onto it. Commits 56938a3b3, c473d6a6a. Detail: D173's CLOSEREOPEN1 note (four choices recorded there for review), the FIX-LOG's entry.
+
+## FABRIC-CLOSE1c16 — a step whose session ran across the reopen and the go-on is brought up to date (2026-10-20, D173)
+
+> - [ ] **FABRIC-CLOSE1c16 — a step whose session ran across the reopen and the go-on is brought up to date** (driver; after CLOSE1c13; §E5). A session still running when its source was reopened and then gone on with ends normally after the go-on, so neither CLOSE1c2's carry-on nor CLOSE1c13's telling reads it, and its branch never gets the source's new submission. Contract: §E5 (*its branch brought up to date*), D173's CLOSE1c5 and CLOSE1c13 notes. Proof: a `ReopenTellingTests` or `PlannerTests` case where the record ends after the step's `updated`, with no new submission, and is told or carried on once with the rebase.
+
+**Outcome** 2026-10-20: built as CLOSEREOPEN1, one feature end to end (D187): a session's end reads its step's source moved since the run started (`Planner.ReopenedFrom`) and ends `ended.source-reopened`, so CLOSE1c2's carry-on brings its branch up to date once. Commit c473d6a6a. Detail: D173's CLOSEREOPEN1 note (four choices recorded there for review), the FIX-LOG's entry.
+
+## PERSONDOOR1f — page authorization (2026-10-20, D156)
+
+> - [ ] **PERSONDOOR1f — page authorization** (web; after b/c). In-memory key, stale refresh, confirmation card, adoption notice and agent attribution. §2.2–§2.3/§4.2/§5.1.
+
+**Outcome** 2026-10-20: built with RPC1c as PERSONDOOR1 (D187): the page holds the person key the shell answers (`PERSON_KEY`, null until PERSONDOOR1g mints one) in memory only and sends it as `Daoris-Person` on every write, asking again once on `stale`; one card under the strip of every main window shows what waits for the person's Confirm (a terminal's press, and the service's confirmations while a key is held), *Refuse* before *Confirm*, nothing focused, a refusal said under its card; the adoption notice is asked of the host's proof and said once. Agent attribution waits on PERSONDOOR1c. On Opus, with RPC1c: about 368 tool calls, 86 minutes. Detail: D156's PERSONDOOR1 note.
+
+## RPC1c — a person's press from a terminal is confirmed in the window (2026-10-20, D156)
+
+> - [ ] **RPC1c — a person's press from a terminal is confirmed in the window** (desktop/web; after PERSONDOOR1f; D156 §4.2). A `person` route over the pipe shows PERSONDOOR1f's card with the terminal named, runs once on **Confirm** within two minutes, and the client says it waits; refused or expired, nothing runs. Proof: modules tests (confirmed, refused, expired, five waiting); the card's page test in en and zh; on the install, a confirmed terminal press. The verb that becomes a client sends `follow:true` on the three land presses (RPC1b5).
+
+**Outcome** 2026-10-20: built as PERSONDOOR1: a `person` route over the pipe waits on the window's card (`PipeConfirmations`; `PERSON_CONFIRMATIONS`, `PERSON_CONFIRM`), naming the terminal by the OS's word for the pipe's client, and runs once on Confirm within two minutes through the journal; refused, expired, cancelled or closing, nothing runs; five wait at once. `daoris-driver sessions archive` and `unarchive` are the first clients and say the alone path's words. Detail: D156's PERSONDOOR1 note.
+
+## HOMELAYOUT3 — the new places, and an old home moved on start (2026-10-20, D172)
+
+> - [ ] **HOMELAYOUT3 — the new places, and an old home moved on start** (desktop/driver; after 2). The new places switched on; D172's *moves* entries renamed once after a confirmed swap, nothing else of the folder running, under the home's lease (HOMELEASE1), a `home.moved` line each, nothing deleted; trees, rooms, kept files and account homes never moved (D172 point 6); a crash mid-move recovered before any resolver runs, from a small journal of incomplete moves (a second opinion). Design §7. Proof: a migration test over an old-layout copy, a crash between two folders recovered; the rehearsal's and the owner's installs upgraded, working. First, the 23 test files the home census holds in `PENDING_TESTS` (about 85 joins by hand, `join(fx.root, X_FILE)` to `homeEntry(fx.root, 'x')`) are converted and the list emptied (HOMELAYOUT2b-c's note on D172).
+
+**Outcome** 2026-10-20: the three home twins switched on D172's places: each entry under its category folder (`profiles/`, `work/`, `cache/`, `run/`, `logs/`), a new `home-move` journal; the Daoris folder found by point 2, `<install>/data` still the home handed down; the lease at `run/home.lease`, an older holder still counting. `HomePlacing` moves an install's old home once at a start with the last update at rest (never the first start after a swap), nothing else of the folder running and a migration lease taken, journaled and recovered after a crash, the window's `chromium/` and `config/` moved together; nothing deleted, leases, locks, `bin/`, agent homes, trees and session pids never moved. The census's `PENDING_TESTS` is empty, and the family rehearsal asks the table. The owner's install moves at its second start after the update, once the first has settled; a host adopted from an earlier start still running from `app/` holds the move off until a start with none. On Opus: about 893 tool calls, 2 h 46 min. Detail: D172's HOMELAYOUT3 note; the install layout design's §7.
+
+## FABRIC-CLOSE1x — a close's quiet waits said (2026-10-20, D173)
+
+> - [ ] **FABRIC-CLOSE1x — a close's quiet waits said** (driver; after CLOSE1t; §E5). When `QuestClosing.Judge` itself waits (no submission yet, a held submission, a quest not read, a quest bound to another graph), `CloseAsync` returns without a word, so a stalled chain says nothing: say `judged.Waits` once a pass. Proof: a chain whose first quest has no submission says it once a pass, and nothing once it closes.
+
+**Outcome** 2026-10-20: built as CLOSEWAIT1, one feature end to end (D187): a close whose own judgement waits says why once a pass in `NodeRuntime.CloseAsync` (a chain whose first quest has no submission, or a held or unread one, is named) and nothing once it closes; the fence's stale line is said once a pass too. Detail: D173's CLOSEWAIT1 note. On Sonnet, the whole feature: about 39 tool calls, 14 minutes; `CloseFenceGitTests` 2 of 2 at the merge.
+
+## FABRIC-CLOSE1s — a wake's plugin start on a bound quest binds the revision it judged (2026-10-20, D173)
+
+> - [ ] **FABRIC-CLOSE1s — a wake's plugin start on a bound quest binds the revision it judged** (driver; after CLOSE1p; RUN1e, §E5). Wake passes reuse the last full read's revision, so a prerequisite started on a wake may bind an old tip: the fence still stops the close, but that plugin run is wasted. Proof: a branch moved before a wake starts no plugin attempt bound to the old revision; git starts counted.
+
+**Outcome** 2026-10-20: built as CLOSEWAIT1, one feature end to end (D187): a plugin start on a bound quest made at a wake reads the units afresh through the shared `Moved` check and is not made where the binding, git's tips or the quest's revision moved; the next pass judges again at the new revision, so no attempt binds an old tip. Detail: D173's CLOSEWAIT1 note.
+
+## FABRIC-CLOSE1m — prune kept closure graphs (2026-10-20, D173)
+
+> - [ ] **FABRIC-CLOSE1m — prune kept closure graphs** (driver; §E5). A home that ever bound a quest keeps its graph under `workflows/closures/` for good and stays armed. Drop a kept graph once no quest bound to it is open and no close naming it waits. Proof: the runtime disarms once the last bound quest is Done and settled.
+
+**Outcome** 2026-10-20: built as CLOSEWAIT1, one feature end to end (D187): the runtime prunes the `closures/` folder (`ClosureGraphs.Prune`, `NodeRuntime.Prune`): a graph goes once no read quest bound to it is open and no governed close is unsettled, with a 10-minute grace for a graph just kept and none while a record does not read; the runtime then disarms once the last bound quest is done and settled. Detail: D173's CLOSEWAIT1 note.
+
+## RPC1d — the sessions verbs are the running Daoris's clients (2026-10-20, D171)
+
+> - [ ] **RPC1d — the sessions verbs are the running Daoris's clients** (driver host; after RPC1b). `sessions stop`, `finish`, `decline`, `say`, `take-back`, `reword`, `archive`, `unarchive`, `delete`, `go-on-new`, `start-from`, `hand-over` and `helper` send their routes while the desktop runs; the request folder stays for a headless loop. Proof: host tests per verb; the alone path's `SessionsCommandTests` unchanged. PERSONDOOR1 (2026-10-20): `sessions archive` and `unarchive` are the first clients through the window's confirmation card; the other sessions verbs follow the same way.
+
+**Outcome** 2026-10-20: `sessions stop`, `finish`, `decline`, `say`, `take-back`, `reword`, `delete`, `go-on-new`, `start-from`, `hand-over` and `helper` (with `--approve`/`--decline`) send their person routes to the running Daoris, wait on the window's confirmation card and print the alone path's own lines: each route asked for `said` runs the verb's own path in `SessionsVerbs`; with no instance the verbs act alone as before, the request-folder waits kept on that path. A person may see: `say --file` sends each file's full path; `start-from` and `hand-over` open their conversation in the window's runner. With archive and unarchive (PERSONDOOR1), every `sessions` verb is a client. On Sonnet: about 99 tool calls, 32 minutes; `HelpCoverageTests` 46 of 46 at the merge. Detail: D171's RPC1d note.
+
+## HOMELAYOUT4 — the publish and the dev loop in the same shape (2026-10-20, D172)
+
+> - [ ] **HOMELAYOUT4 — the publish and the dev loop in the same shape** (tools/desktop; after 1). `INSTALLED.md` says what each top folder is; the dev loop names one scratch root for `DAORIS_HOME` and `--app-root`; `engineLogOf` reads the window's memory; what a build ships stays in `app/` (no `res/`, D172). Design §6.1. Proof: the deployment rehearsal's install tree checked against the design. HOMELAYOUT3 (2026-10-20) built its `INSTALLED.md` (each top folder said) and engine-log parts; left: the dev loop's single root (§6.1): the readers that look beside the home (`installBin`, the resources' built-in layout, plugin offers, `Tools.InstallBin`, `ToolResources.BesideHome`) move to the Daoris folder's `app/`, and a dev run is handed its window's data folder.
+
+**Outcome** 2026-10-20: the publish's `INSTALLED.md` and the engine log's place landed with HOMELAYOUT3; this finished the dev loop: `npm run desktop -- run` lays out one scratch Daoris folder (`_fixtures/desktop/daoris/`, with `app/` and the category folders), named both `DAORIS_HOME` and `--app-root`; the readers that looked beside the home (`Tools.InstallBin`, `installBin`, `ToolResources.BesideHome`, `builtInList`, `PluginOffers.BesideHome`, `offersFolder`) look in the home's Daoris folder (an install's `app/` found whether the home is `<install>` or `<install>/data`); a dev run's window memory lands in `profiles/window/`. A `data` folder of no install is now a root of its own. On Sonnet: about 107 tool calls, 34 minutes. Detail: D172's HOMELAYOUT4 line.

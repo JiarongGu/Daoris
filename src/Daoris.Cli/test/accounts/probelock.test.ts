@@ -5,6 +5,7 @@ import { dirname, join, relative, sep } from 'node:path';
 import { markSignedIn, probeLockPath, probeLockStale, signedInPath, takeProbeLock } from '../../src/accounts/probelock.ts';
 import { probe, profileHome, readHarnessSettings, TOOLCHAINS } from '../../src/agents/toolchain.ts';
 import type { Toolchain } from '../../src/agents/toolchain.ts';
+import { homeEntry, homePlaces } from '../../src/platform/home.ts';
 import { driverRows, driverTestFile } from '../_csharp.ts';
 import { makeFixture } from '../_fixture.ts';
 
@@ -15,10 +16,10 @@ const DRIVER_TESTS = driverTestFile('ProbeLockTests.cs');
 const source = readFileSync(DRIVER_TESTS, 'utf8');
 
 const PATH_ROWS: [string, string | null, string][] = [
-  ['claude-code', 'account-1', 'harnesses/.probing/claude-code/account-1.lock'],
-  ['claude-code', 'work.account', 'harnesses/.probing/claude-code/work.account.lock'],
-  ['claude-code', null, 'harnesses/.probing/claude-code.lock'],
-  ['codex', 'account-2', 'harnesses/.probing/codex/account-2.lock'],
+  ['claude-code', 'account-1', 'run/probing/claude-code/account-1.lock'],
+  ['claude-code', 'work.account', 'run/probing/claude-code/work.account.lock'],
+  ['claude-code', null, 'run/probing/claude-code.lock'],
+  ['codex', 'account-2', 'run/probing/codex/account-2.lock'],
 ];
 
 const STALE_ROWS: [number, boolean][] = [
@@ -29,8 +30,8 @@ const STALE_ROWS: [number, boolean][] = [
 ];
 
 const MARK_ROWS: [string, string, string][] = [
-  ['claude-code', 'account-1', 'harnesses/.probing/claude-code/account-1.signed-in'],
-  ['codex', 'work', 'harnesses/.probing/codex/work.signed-in'],
+  ['claude-code', 'account-1', 'run/probing/claude-code/account-1.signed-in'],
+  ['codex', 'work', 'run/probing/codex/work.signed-in'],
 ];
 
 test('the lock table is the driver\'s, cell for cell', () => {
@@ -54,7 +55,9 @@ test('each lock lives beside the accounts, never inside one', () => {
   for (const [owner, profile, expected] of PATH_ROWS) {
     const path = probeLockPath(fx.root, owner, profile);
     assert.equal(relative(fx.root, path).split(sep).join('/'), expected);
-    assert.ok(!path.startsWith(join(fx.root, 'harnesses', owner) + sep), `${expected} is inside the account's folder`);
+    for (const accounts of homePlaces(fx.root, 'agent-homes', owner)) {
+      assert.ok(!path.startsWith(accounts + sep), `${expected} is inside the account's folder`);
+    }
   }
   fx.cleanup();
 });
@@ -135,7 +138,7 @@ test('the terminal\'s probe asks an account under its lock, and lets it go', () 
   const then = new Date(Date.now() - 5 * 60_000);
   utimesSync(lock, then, then);
 
-  const report = probe('fake', toolchain, fx.root, readHarnessSettings(join(fx.root, 'harnesses.json')));
+  const report = probe('fake', toolchain, fx.root, readHarnessSettings(homeEntry(fx.root, 'harnesses')));
 
   assert.deepEqual(report.profiles.map((p) => [p.name, p.login]), [['account-1', 'in']]);
   assert.equal(existsSync(lock), false);

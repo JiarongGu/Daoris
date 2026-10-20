@@ -214,6 +214,24 @@ public sealed class OpinionPromptGoldenTests
         Assert.Contains("`daoris.gates.json`", text);
     }
 
+    /// <summary>
+    /// FABRIC-CLOSE1c6: a submission's commit read alone at its session's end reads no evidence, so the instruction hands no reading of
+    /// evidence for it, and says none of the required evidence was read.
+    /// </summary>
+    [Fact]
+    public void A_commit_read_alone_is_handed_as_no_reading_of_evidence()
+    {
+        var alone = Full with
+        {
+            Quests = [Full.Quests[0] with { Evidence = new EvidenceVerdict("2222222222222222222222222222222222222222", EvidenceCodes.SessionEnd, []) }],
+        };
+
+        var text = OpinionInstruction.Compose(alone);
+
+        Assert.DoesNotContain("What Daoris read of its evidence itself", text);
+        Assert.Contains("Daoris has read none of its evidence yet.", text);
+    }
+
     /// <summary>The instruction names no machine path but the packet's own file, and none at all where it has none (D47 §4).</summary>
     [Fact]
     public void The_bare_instruction_names_the_commits_and_how_to_read_the_diff_in_the_copy()

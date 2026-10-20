@@ -4,9 +4,10 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
-  API_VERSION, KNOWLEDGE_SERVER, MANIFEST, STATE_FILE, commandPlugin, dataFolder, disablePlugin,
+  API_VERSION, KNOWLEDGE_SERVER, MANIFEST, commandPlugin, dataFolder, disablePlugin,
   enablePlugin, isPluginId, pluginsRoot, readPluginState, readPlugins, reservedHarnesses, resolvable,
 } from '../../src/plugins/plugins.ts';
+import { homeEntry } from '../../src/platform/home.ts';
 import { captureError, makeFixture } from '../_fixture.ts';
 import { cliSource, SOURCES, sourcePaths } from '../_sources.ts';
 
@@ -457,7 +458,7 @@ test('disabled is a row in plugins.json that stays one row per id', () => {
   assert.equal(off.enabled, false);
   assert.equal(off.problem, null);
   assert.equal(existsSync(off.folder), true);
-  assert.match(readFileSync(join(fx.root, STATE_FILE), 'utf8'), /acme\.agent/);
+  assert.match(readFileSync(homeEntry(fx.root, 'plugin-state'), 'utf8'), /acme\.agent/);
 
   enablePlugin(fx.root, 'acme.agent');
   assert.equal(readPlugins(fx.root).plugins[0]!.enabled, true);
@@ -476,7 +477,7 @@ test('disabled is a row in plugins.json that stays one row per id', () => {
 test('a disabled row is a plugin\'s only as the driver finds it: the Kelvin sign is not a k', () => {
   const fx = makeFixture('plugins-state-fold');
   plugin(fx.root, 'acme.keep', '{ "id": "acme.keep", "harnesses": [ { "name": "acme-keep", "command": ["acme"] } ] }');
-  writeFileSync(join(fx.root, STATE_FILE), JSON.stringify({ disabled: ['acme.\u{212A}eep'] }), 'utf8');
+  writeFileSync(fx.entry('plugin-state'), JSON.stringify({ disabled: ['acme.\u{212A}eep'] }), 'utf8');
 
   assert.equal(readPlugins(fx.root).plugins[0]!.enabled, true);
   disablePlugin(fx.root, 'acme.keep');
@@ -640,7 +641,7 @@ test('an id that is not a plugin id is refused before it becomes a path — the 
   const fx = makeFixture('plugins-remove-escape');
   plugin(fx.root, 'acme.agent', '{ "id": "acme.agent" }');
   mkdirSync(dataFolder(fx.root, 'acme.agent'), { recursive: true });
-  writeFileSync(join(fx.root, 'driver.json'), '{}', 'utf8');
+  writeFileSync(fx.entry('driver'), '{}', 'utf8');
 
   const saved = process.env.DAORIS_HOME;
   process.env.DAORIS_HOME = fx.root;
@@ -658,7 +659,7 @@ test('an id that is not a plugin id is refused before it becomes a path — the 
     else process.env.DAORIS_HOME = saved;
   }
 
-  assert.equal(existsSync(join(fx.root, 'driver.json')), true);
+  assert.equal(existsSync(homeEntry(fx.root, 'driver')), true);
   assert.equal(existsSync(join(pluginsRoot(fx.root), 'acme.agent')), true);
   assert.equal(existsSync(dataFolder(fx.root, 'acme.agent')), true);
   fx.cleanup();

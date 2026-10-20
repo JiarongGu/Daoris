@@ -433,7 +433,8 @@ public sealed class LandedBranches(string home)
             bool Forgotten(LandedBranch entry) => entry.GoneAt is not null && forget(entry);
             var count = all.Count(Forgotten);
             if (count == 0) return 0;
-            Directory.CreateDirectory(home);
+            // The home and the folder the record is in (`data/` since HOMELAYOUT3).
+            Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(FilePath))!);
             AtomicFile.WriteText(FilePath, ToJson([.. all.Where(entry => !Forgotten(entry))]));
             return count;
         }

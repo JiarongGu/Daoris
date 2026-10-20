@@ -1,5 +1,9 @@
 using System.Text.Json;
 using Daoris.Driver;
+using Microsoft.Extensions.DependencyInjection;
+using Shenora;
+using Shenora.Core.Events;
+using Shenora.Core.Ipc;
 
 namespace Daoris.Desktop.Modules.Tests;
 
@@ -398,6 +402,157 @@ public sealed class DriverModuleSessionsTests : DriverModuleBridge
         Assert.Contains($"session={session}", refusal);
         Assert.Contains(group, refusal);
         Assert.False(File.Exists(DaorisHome.Entry(Home, HomeEntry.Sessions,"archived.json")));
+    }
+
+    /// <summary>
+    /// RPC1c: asked with <c>said: true</c>, as <c>sessions archive</c> and <c>unarchive</c> ask it over the pipe, the archive answers
+    /// the terminal's words beside its fields, the alone path's own (<see cref="SessionArchive.ArchiveSaid"/>), and one session kept
+    /// is said with its exit code rather than thrown, so the terminal prints what it prints alone.
+    /// </summary>
+    [Fact]
+    public async Task Asked_for_its_words_the_archive_answers_the_terminal_s_lines_and_a_kept_one_is_said_not_thrown()
+    {
+        using var ledger = Ledger();
+        var loop = await UpAsync(ledger);
+        var module = new DriverModule(Bus, loop);
+        static IEnumerable<string?> Out(JsonElement answer) =>
+            answer.GetProperty("said").GetProperty("out").EnumerateArray().Select(line => line.GetString());
+
+        var kept = await AnswerAsync(module, "SESSION_ARCHIVE", new { ids = new[] { "running1" }, archived = true, said = true });
+        Assert.Equal(["sessions: kept running1: it is still running; stop it first."], Out(kept));
+        Assert.Equal(1, kept.GetProperty("said").GetProperty("code").GetInt32());
+        Assert.False(File.Exists(DaorisHome.Entry(Home, HomeEntry.Sessions, "archived.json")));
+
+        var archived = await AnswerAsync(module, "SESSION_ARCHIVE", new { ids = new[] { "done1" }, archived = true, said = true });
+        Assert.Equal(["sessions: archived done1."], Out(archived));
+        Assert.Equal(0, archived.GetProperty("said").GetProperty("code").GetInt32());
+        Assert.Equal(["done1"], archived.GetProperty("archived").EnumerateArray().Select(mark => mark.GetProperty("session").GetString()));
+
+        var back = await AnswerAsync(module, "SESSION_ARCHIVE", new { ids = new[] { "done1", "failed1" }, archived = false, said = true });
+        Assert.Equal(
+            ["sessions: unarchived done1; it is back in the group its state puts it in.", "sessions: failed1 was not archived, so nothing changed."],
+            Out(back));
+        Assert.Equal(["failed1"], back.GetProperty("notArchived").EnumerateArray().Select(id => id.GetString()));
+
+        // The page asks for no words, and its answers keep their shape.
+        Assert.False((await AnswerAsync(module, "SESSION_ARCHIVE", new { ids = new[] { "done1" }, archived = true })).TryGetProperty("said", out _));
+    }
+
+    /// <summary>
+    /// RPC1c end to end: <c>daoris-driver sessions archive</c> sent over the real pipe to the running Daoris, shown to the window,
+    /// archived once on the person's Confirm through the window's own route, and said by the terminal in the alone path's words.
+    /// </summary>
+    [Fact]
+    public async Task A_terminal_s_archive_waits_on_the_window_runs_once_on_Confirm_and_is_said_by_the_terminal()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        using var ledger = Ledger();
+        var loop = await UpAsync(ledger);
+        var module = new DriverModule(Bus, loop);
+        using var log = new MachineLog(Home, "desktop");
+        // The dispatcher as the shell composes it, over the real driver module, which the pipe dispatches the confirmed press to.
+        var services = new ServiceCollection();
+        services.AddSingleton<IEventBus>(Bus);
+        services.AddSingleton<IIpcRequestTracker>(new IpcRequestTracker(Bus, new IpcRequestTrackerOptions()));
+        services.AddSingleton<IIpcModule>(module);
+        services.UseMessageDispatcher((_, dispatcher) => dispatcher.Use(RefusalLog.Middleware(log)));
+        using var provider = services.BuildServiceProvider();
+        using var pipe = new InstancePipe(provider.GetRequiredService<IMessageDispatcher>(), Bus, Home, log);
+        loop.Pipe = pipe;
+        var name = pipe.Serve()!;
+        var output = new StringWriter();
+        var error = new StringWriter();
+        var world = new SessionsWorld(new ServiceClient(ledger.Address, null), Home, DriverConfig.Load(DriverConfigPath), SessionWire.Pipe, null)
+        {
+            // The pipe the dev loop names, as a rehearsal names it (the terminal RPC design §7.4): a workspace build reads no address file.
+            Instance = new InstanceWorld
+            {
+                Home = Home, Environment = variable => variable == InstanceDoor.Variable ? name : null, Out = output, Error = error, Verb = "sessions",
+            },
+        };
+
+        var verb = SessionsCommand.RunAsync(new SessionsAsk("archive") { Ids = ["done1"] }, world, output);
+
+        await UntilAsync(() => pipe.Confirmations.Now().Waiting.Count == 1);
+        var shown = pipe.Confirmations.Now().Waiting[0];
+        Assert.Equal("SESSION_ARCHIVE", shown.Route);
+        Assert.Contains(new PipeConfirmationField("/ids/0", "string", "done1"), shown.Fields);
+        Assert.Equal(Environment.ProcessId, shown.Asker.Pid);
+        Assert.False(File.Exists(new SessionArchive(Home).FilePath));
+
+        var confirmed = await AnswerAsync(module, "PERSON_CONFIRM", new { id = shown.Id, confirm = true });
+        Assert.True(confirmed.GetProperty("answered").GetBoolean());
+
+        Assert.Equal(0, await verb.WaitAsync(TimeSpan.FromMinutes(1)));
+        Assert.Equal("sessions: archived done1." + Environment.NewLine, output.ToString());
+        Assert.Equal("sessions: waiting for you to confirm this in Daoris's window…" + Environment.NewLine, error.ToString());
+        Assert.Contains("done1", new SessionArchive(Home).Marks().Keys);
+        Assert.Empty(pipe.Confirmations.Now().Waiting);
+    }
+
+    /// <summary>
+    /// RPC1d end to end: <c>daoris-driver sessions stop</c> and <c>delete</c> sent over the real pipe wait on the window, run once on the
+    /// person's Confirm through the route asked for its words, and are said by the terminal in the alone path's.
+    /// </summary>
+    [Fact]
+    public async Task A_terminal_s_stop_and_delete_wait_on_the_window_and_are_said_by_the_terminal_in_the_alone_paths_words()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        using var ledger = DeleteLedger(new Dictionary<string, string> { ["chat1"] = """{"deletable":true}""" });
+        var loop = await UpAsync(ledger);
+        loop.Events.Append("chat1", new SessionEvent { Kind = SessionEventKind.User, Origin = "person", Text = "a plan of mine" });
+        var module = new DriverModule(Bus, loop);
+        using var log = new MachineLog(Home, "desktop");
+        var services = new ServiceCollection();
+        services.AddSingleton<IEventBus>(Bus);
+        services.AddSingleton<IIpcRequestTracker>(new IpcRequestTracker(Bus, new IpcRequestTrackerOptions()));
+        services.AddSingleton<IIpcModule>(module);
+        services.UseMessageDispatcher((_, dispatcher) => dispatcher.Use(RefusalLog.Middleware(log)));
+        using var provider = services.BuildServiceProvider();
+        using var pipe = new InstancePipe(provider.GetRequiredService<IMessageDispatcher>(), Bus, Home, log);
+        loop.Pipe = pipe;
+        var name = pipe.Serve()!;
+        var output = new StringWriter();
+        var error = new StringWriter();
+        var world = new SessionsWorld(new ServiceClient(ledger.Address, null), Home, DriverConfig.Load(DriverConfigPath), SessionWire.Pipe, null)
+        {
+            Instance = new InstanceWorld
+            {
+                Home = Home, Environment = variable => variable == InstanceDoor.Variable ? name : null, Out = output, Error = error, Verb = "sessions",
+            },
+        };
+
+        foreach (var (verb, route, id, expected) in new[]
+        {
+            ("stop", "STOP_SESSION", "done1", "sessions: done1 has already ended (completed)." + Environment.NewLine),
+            ("delete", "SESSION_DELETE", "chat1", null),
+        })
+        {
+            output.GetStringBuilder().Clear();
+            var run = SessionsCommand.RunAsync(new SessionsAsk(verb) { Ids = [id] }, world, output);
+
+            await UntilAsync(() => pipe.Confirmations.Now().Waiting.Count == 1);
+            var shown = pipe.Confirmations.Now().Waiting[0];
+            Assert.Equal(route, shown.Route);
+            if (verb == "delete") Assert.NotEmpty(loop.Events.Openings(["chat1"]));
+
+            await AnswerAsync(module, "PERSON_CONFIRM", new { id = shown.Id, confirm = true });
+
+            var exit = await run.WaitAsync(TimeSpan.FromMinutes(1));
+            if (expected is not null)
+            {
+                Assert.Equal(1, exit);
+                Assert.Equal(expected, output.ToString());
+            }
+            else
+            {
+                Assert.Equal(0, exit);
+                Assert.StartsWith("sessions: ", output.ToString());
+                Assert.Empty(loop.Events.Openings(["chat1"]));
+            }
+        }
+
+        Assert.Contains("waiting for you to confirm", error.ToString());
     }
 
     /// <summary>The second press of *Archive what ended* judges each again: what may go is archived, and what may not is kept with its code.</summary>
@@ -881,6 +1036,95 @@ public sealed class DriverModuleSessionsTests : DriverModuleBridge
     }
 
     /// <summary>The loop with its service up over a ledger on this machine, and `engine` drivable, so its strikes can park a quest.</summary>
+    /// <summary>The lines and the exit code a route answered as <c>said</c> (RPC1d), which the terminal prints.</summary>
+    private static (string[] Out, int Code) SaidOf(JsonElement answer)
+    {
+        var said = answer.GetProperty("said");
+        return ([.. said.GetProperty("out").EnumerateArray().Select(line => line.GetString()!)], said.GetProperty("code").GetInt32());
+    }
+
+    /// <summary>
+    /// RPC1d: asked for its words (<c>said: true</c>) by <c>sessions stop</c>, <c>finish</c>, <c>decline</c>, <c>say</c> and <c>delete</c>
+    /// sent over the pipe, each route answers the lines and exit code the alone path prints, as an answer and never a refusal.
+    /// </summary>
+    [Fact]
+    public async Task The_routes_a_terminal_verb_presses_answer_the_alone_paths_words_when_asked_for_them()
+    {
+        using var ledger = DeleteLedger(new Dictionary<string, string> { ["chat1"] = """{"deletable":true}""" });
+        var loop = await UpAsync(ledger);
+        loop.Events.Append("chat1", new SessionEvent { Kind = SessionEventKind.User, Origin = "person", Text = "a plan of mine" });
+        var module = new DriverModule(Bus, loop);
+
+        static void Is(string line, (string[] Out, int Code) said)
+        {
+            Assert.Equal(line, Assert.Single(said.Out));
+            Assert.Equal(1, said.Code);
+        }
+
+        Is("sessions: done1 has already ended (completed).", SaidOf(await AnswerAsync(module, "STOP_SESSION", new { id = "done1", said = true })));
+        Is("sessions: no session here is nobody1.", SaidOf(await AnswerAsync(module, "STOP_SESSION", new { id = "nobody1", said = true })));
+        const string NotWaiting = "sessions: done1 is completed, not waiting on you; finish and decline answer a session that waits on you.";
+        Is(NotWaiting, SaidOf(await AnswerAsync(module, "RESOLVE_SESSION", new { id = "done1", state = "completed", said = true })));
+        Is(NotWaiting, SaidOf(await AnswerAsync(module, "RESOLVE_SESSION", new { id = "done1", state = "declined", note = "no", said = true })));
+        Is("sessions: no session here is nobody1.", SaidOf(await AnswerAsync(module, "SESSION_INPUT", new { id = "nobody1", text = "hello", said = true })));
+
+        var deleted = SaidOf(await AnswerAsync(module, "SESSION_DELETE", new { id = "chat1", said = true }));
+        Assert.Equal(0, deleted.Code);
+        Assert.StartsWith("sessions: ", Assert.Single(deleted.Out));
+        Assert.Empty(loop.Events.Openings(["chat1"]));
+    }
+
+    /// <summary>RPC1d: a finish or a decline asked of the route still needs what the page's press needs, refused as it refuses it.</summary>
+    [Fact]
+    public async Task A_decline_with_no_reason_is_refused_whatever_words_are_asked_for()
+    {
+        Assert.Contains(Refusals.SessionDeclineNeedsReason,
+            await RefusalAsync(Module(), "RESOLVE_SESSION", new { id = "s1a2b3c4", state = "declined", said = true }));
+    }
+
+    /// <summary>
+    /// RPC1d: the helper, go-on-new, take-back, start-from and hand-over presses answer their verbs' lines when asked, and the ask's
+    /// approve and decline need no session named, as the verb names only the ask.
+    /// </summary>
+    [Fact]
+    public async Task The_helper_go_on_new_and_conversation_routes_answer_the_alone_paths_words_when_asked_for_them()
+    {
+        using var ledger = Ledger();
+        var module = new DriverModule(Bus, await UpAsync(ledger));
+
+        var asked = SaidOf(await AnswerAsync(module, "SESSION_HELPER_ASK", new { id = "done1", question = "Why?", said = true }));
+        Assert.Equal(0, asked.Code);
+        Assert.StartsWith("sessions: asked `#", Assert.Single(asked.Out));
+
+        foreach (var route in new[] { "SESSION_HELPER_APPROVE", "SESSION_HELPER_DECLINE" })
+        {
+            var word = SaidOf(await AnswerAsync(module, route, new { ask = "#nope", said = true }));
+            Assert.Equal(1, word.Code);
+            Assert.EndsWith(" Nothing was changed.", Assert.Single(word.Out));
+        }
+
+        foreach (var (route, payload) in new (string, object)[]
+        {
+            ("SESSION_GO_ON_NEW", new { id = "nobody1", said = true }),
+            ("SESSION_QUEUE_EDIT", new { session = "nobody1", id = "w1", said = true }),
+        })
+        {
+            var said = SaidOf(await AnswerAsync(module, route, payload));
+            Assert.True(said.Code is 1 or 2, $"{route} answered exit {said.Code}");
+            Assert.StartsWith("sessions: ", Assert.Single(said.Out));
+        }
+
+        // A conversation a verb opens opens in a window's chat runner; with none up yet it is the same refusal as the page's press.
+        foreach (var (route, payload) in new (string, object)[]
+        {
+            ("SESSION_START_FROM", new { id = "nobody1", said = true }),
+            ("SESSION_HAND_OVER", new { id = "nobody1", agent = "codex", said = true }),
+        })
+        {
+            Assert.Contains(Refusals.DriverNotReady, await RefusalAsync(module, route, payload));
+        }
+    }
+
     private async Task<DriverLoop> UpAsync(LoopbackHost ledger)
     {
         (DriverConfig.Empty with { Drivable = ["engine"] }).Save(DriverConfigPath);

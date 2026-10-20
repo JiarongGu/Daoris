@@ -11,6 +11,7 @@ import {
 } from '../../src/agents/channels.ts';
 import type { Fetcher } from '../../src/agents/channels.ts';
 import { dearmor, readPublicKeys } from '../../src/agents/openpgp.ts';
+import { homeEntry } from '../../src/platform/home.ts';
 import { captureError, makeFixture } from '../_fixture.ts';
 import { signDetached, strangerKey } from '../_openpgp.ts';
 import { TAR_END, tarEntry } from '../_tar.ts';
@@ -141,7 +142,7 @@ test('a verified release lands as bin/<binary>, byte for byte, and its staging i
   const binary = Buffer.from('MZ-not-really-a-binary');
   const release = signedRelease('2.1.300', 'win32-x64', binary);
   const { fetcher, asked } = served(release.files);
-  const where = join(fx.root, 'toolchain', 'claude-code', '2.1.300');
+  const where = homeEntry(fx.root, 'toolchain', 'claude-code', '2.1.300');
   const out = lines();
 
   const executable = await installFromChannel({
@@ -170,7 +171,7 @@ test('the vendor’s real manifest verifies — and a binary that is not the one
     [`${CLAUDE_RELEASES}/2.1.281/manifest.json.sig`]: REAL_SIGNATURE,
     [`${CLAUDE_RELEASES}/2.1.281/win32-x64/claude.exe`]: 'something else entirely',
   });
-  const where = join(fx.root, 'toolchain', 'claude-code', '2.1.281');
+  const where = homeEntry(fx.root, 'toolchain', 'claude-code', '2.1.281');
   const out = lines();
 
   await assert.rejects(
@@ -197,7 +198,7 @@ test('a manifest with one changed byte is refused before any binary is fetched',
     [`${CLAUDE_RELEASES}/2.1.281/manifest.json`]: tampered,
     [`${CLAUDE_RELEASES}/2.1.281/manifest.json.sig`]: REAL_SIGNATURE,
   });
-  const where = join(fx.root, 'toolchain', 'claude-code', '2.1.281');
+  const where = homeEntry(fx.root, 'toolchain', 'claude-code', '2.1.281');
 
   await assert.rejects(
     installFromChannel({
@@ -306,7 +307,7 @@ test('a verified Codex package is unpacked whole, and bin/codex is what runs', a
   const fx = makeFixture('channel-codex-ok');
   const release = codexRelease('0.156.1', 'x86_64-pc-windows-msvc', true);
   const { fetcher, asked } = served(release.files);
-  const where = join(fx.root, 'toolchain', 'codex', '0.156.1');
+  const where = homeEntry(fx.root, 'toolchain', 'codex', '0.156.1');
   const out = lines();
 
   const executable = await installFromChannel({
@@ -335,7 +336,7 @@ test('the vendor’s real metadata and SUMS agree — and a package that is neit
     [`${base}/codex-package_SHA256SUMS`]: REAL_SUMS,
     [`${base}/codex-package-x86_64-pc-windows-msvc.tar.gz`]: 'not the package',
   });
-  const where = join(fx.root, 'toolchain', 'codex', '0.156.1');
+  const where = homeEntry(fx.root, 'toolchain', 'codex', '0.156.1');
 
   await assert.rejects(
     installFromChannel({
@@ -397,7 +398,7 @@ test('with no release.json, the GitHub release is asked instead — and verified
   const base = `${CODEX_RELEASES}/0.156.1`;
   const { [`${base}/release.json`]: metadata, ...rest } = release.files;
   const { fetcher, asked } = served({ ...rest, [`${CODEX_GITHUB}/rust-v0.156.1`]: metadata! });
-  const where = join(fx.root, 'toolchain', 'codex', '0.156.1');
+  const where = homeEntry(fx.root, 'toolchain', 'codex', '0.156.1');
 
   const executable = await installFromChannel({
     channel: 'codex-releases', version: '0.156.1', where, fetcher, write: () => {}, platform: 'darwin', arch: 'arm64',
@@ -452,7 +453,7 @@ test('a package with no bin/codex in it is refused, and nothing is left where th
   release.release.assets[0]!.digest = `sha256:${sha256(pkg)}`;
   release.release.assets[1]!.digest = `sha256:${sha256(sums)}`;
   const base = `${CODEX_RELEASES}/0.156.1`;
-  const where = join(fx.root, 'toolchain', 'codex', '0.156.1');
+  const where = homeEntry(fx.root, 'toolchain', 'codex', '0.156.1');
 
   await assert.rejects(
     installFromChannel({

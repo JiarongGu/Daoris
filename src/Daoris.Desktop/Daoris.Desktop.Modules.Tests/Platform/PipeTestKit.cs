@@ -31,6 +31,72 @@ internal sealed class HeldModule(string name) : ModuleBase
     }
 }
 
+/// <summary>
+/// A clock that stands still until the test moves it (RPC1c): a timer it made fires only once <see cref="Advance"/> passes its
+/// time, so a confirmation's two minutes are the test's to spend, never the machine's load.
+/// </summary>
+internal sealed class HeldClock : TimeProvider
+{
+    private readonly Lock _gate = new();
+    private readonly List<HeldTimer> _timers = [];
+    private DateTimeOffset _now = new(2026, 10, 20, 9, 0, 0, TimeSpan.Zero);
+
+    public override DateTimeOffset GetUtcNow()
+    {
+        lock (_gate) return _now;
+    }
+
+    public override ITimer CreateTimer(TimerCallback callback, object? state, TimeSpan dueTime, TimeSpan period)
+    {
+        var timer = new HeldTimer(this, callback, state);
+        timer.Change(dueTime, period);
+        return timer;
+    }
+
+    /// <summary>Moves the clock on by <paramref name="by"/>, firing each timer whose time it reached, once.</summary>
+    public void Advance(TimeSpan by)
+    {
+        List<HeldTimer> due;
+        lock (_gate)
+        {
+            _now += by;
+            due = [.. _timers.Where(timer => timer.Due is { } at && at <= _now)];
+            foreach (var timer in due) timer.Due = null;
+        }
+
+        foreach (var timer in due) timer.Fire();
+    }
+
+    private sealed class HeldTimer(HeldClock clock, TimerCallback callback, object? state) : ITimer
+    {
+        public DateTimeOffset? Due { get; set; }
+
+        public bool Change(TimeSpan dueTime, TimeSpan period)
+        {
+            lock (clock._gate)
+            {
+                Due = dueTime == Timeout.InfiniteTimeSpan ? null : clock._now + dueTime;
+                if (!clock._timers.Contains(this)) clock._timers.Add(this);
+            }
+
+            return true;
+        }
+
+        public void Fire() => callback(state);
+
+        public void Dispose()
+        {
+            lock (clock._gate) clock._timers.Remove(this);
+        }
+
+        public ValueTask DisposeAsync()
+        {
+            Dispose();
+            return ValueTask.CompletedTask;
+        }
+    }
+}
+
 /// <summary>A terminal's end of the running Daoris's pipe (RPC1a), as RPC1b's client will hold it: lines of JSON each way.</summary>
 internal sealed class PipeClient : IAsyncDisposable
 {

@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url';
 import { commandDriver, readDriverChoices } from '../../src/driver/driverconfig.ts';
 import { OPINION_DECLARED_ONLY } from '../../src/driver/opinions.ts';
 import { MANIFEST, pluginsRoot } from '../../src/plugins/plugins.ts';
+import { homeEntry } from '../../src/platform/home.ts';
 import type { CheckoutsReader } from '../../src/driver/reviews.ts';
 import { WORKFLOW_LIMITS, currentWorkflow, workflowCanonical, type WorkflowPlugin, type WorkflowStep } from '../../src/workflows/workflows.ts';
 import { commandWorkflow } from '../../src/workflows/workflowdoor.ts';
@@ -33,7 +34,9 @@ const TABLE = JSON.parse(readFileSync(join(dirname(dirname(fileURLToPath(import.
 };
 
 function at(fx: { root: string }): string {
-  return join(fx.root, 'driver.json');
+  const path = homeEntry(fx.root, 'driver');
+  mkdirSync(dirname(path), { recursive: true });
+  return path;
 }
 
 test('Current is derived from the rules as the driver derives it, step for step and cell for cell (the shared table)', () => {

@@ -1,3 +1,5 @@
+using System.Collections.Concurrent;
+
 namespace Daoris.Driver;
 
 /// <summary>A wake the landing hears (FABRIC-END7): the topic and subject that woke a look, never a value and never a path.</summary>
@@ -85,7 +87,9 @@ public static class LandingWaits
 /// configuration, or a version in the gate's files), the run's chain (<c>quests</c>) or the person's say-so on its binding (the gate's
 /// files). A push held back waits on its quest and its whole gate at once (FABRIC-CLOSE1h12), so any ledger family and the gate's files
 /// concern it. A tree's tip moving is the <c>refs</c> topic (FABRIC-END3, <see cref="Moved"/>). The configuration (FABRIC-EVENT4) can
-/// change the switch and every gate's rule, so it concerns every entry. The person's press nudges, and a plain nudge is the whole look.</para>
+/// change the switch and every gate's rule, so it concerns every entry. The person's press nudges, and a plain nudge is the whole look.
+/// A session's end (the ledger's <c>sessions</c>) also concerns an entry a look left because a live session held its tree, whatever it
+/// waits on, since that look kept no try (FABRIC-END7b, <see cref="LandingJudged"/>).</para>
 ///
 /// <para><b>A landing's own moves wake nothing.</b> Its branch moves the repository's refs but no due tree's tip, so a refs wake it
 /// causes concerns no entry; its due list, landing record and conversation note are files no watch hears.</para>
@@ -97,11 +101,17 @@ public static class LandingConcerns
     /// configuration, otherwise where one wake can release what the entry waits on (<see cref="LandingWaits.Of"/>).
     /// </summary>
     /// <param name="tipOf">A tree's tip as git's files say it, or null where they cannot (<see cref="TreeTips.Read"/>).</param>
-    public static bool Concerns(AutoLanding entry, IReadOnlyCollection<LandingWake>? woke, Func<string, string?> tipOf)
+    /// <param name="leftLive">
+    /// Whether a look left the entry because a live session held its tree (FABRIC-END7b, <see cref="LandingJudged"/>): a session's end
+    /// concerns it too, whatever its last try waits on, since that look kept no try. None where nothing was left so.
+    /// </param>
+    public static bool Concerns(
+        AutoLanding entry, IReadOnlyCollection<LandingWake>? woke, Func<string, string?> tipOf, Func<AutoLanding, bool>? leftLive = null)
     {
         if (woke is null) return true;
         var waits = LandingWaits.Of(entry);
         if (waits == LandingWaits.First || woke.Any(wake => wake.Topic == ChangeTopics.Config)) return true;
+        if (woke.Any(Sessions) && leftLive?.Invoke(entry) == true) return true;
         return waits switch
         {
             LandingWaits.Tree => TipMoved(entry, tipOf),
@@ -117,8 +127,75 @@ public static class LandingConcerns
         tipOf(entry.Tree) is not { } tip || !string.Equals(tip, entry.Last?.Tip, StringComparison.OrdinalIgnoreCase);
 
     /// <summary>The ledger's <c>quests</c> family among the families a wake names (<c>LedgerChanges</c> joins them with commas).</summary>
-    private static bool Quests(LandingWake wake) =>
-        wake.Topic == ChangeTopics.Ledger && wake.Subject.Split(',', StringSplitOptions.TrimEntries).Contains("quests", StringComparer.Ordinal);
+    private static bool Quests(LandingWake wake) => Family(wake, "quests");
+
+    /// <summary>
+    /// The ledger's <c>sessions</c> family among the families a wake names: a session's record moving, its end among them, and the loop's
+    /// own session end (<see cref="LandingTaken.Ended"/>).
+    /// </summary>
+    private static bool Sessions(LandingWake wake) => Family(wake, "sessions");
+
+    private static bool Family(LandingWake wake, string family) =>
+        wake.Topic == ChangeTopics.Ledger && wake.Subject.Split(',', StringSplitOptions.TrimEntries).Contains(family, StringComparer.Ordinal);
+}
+
+/// <summary>
+/// What the landing's looks judged of each due entry that its last try does not keep (FABRIC-END7b), in this process, per home: whether a
+/// look left it because a live session held its tree, and the run whose binding its gate read. A start's first look is the whole look,
+/// which judges every entry and keeps both again; an entry no longer due is forgotten at the next look.
+/// </summary>
+/// <remarks>
+/// <para><b>Left for a live session.</b> A look leaves an entry whose tree a live session holds, and keeps no try for it, so its last
+/// try still names what it waited on (a hold, the review). A release that came meanwhile was spent on that look, and the session's end
+/// is the next thing that can land it: the ledger's <c>sessions</c> concerns such an entry (<see cref="LandingConcerns.Concerns"/>).
+/// Looked at while the session still runs, it is left again with no git, since the records are read before the tree.</para>
+///
+/// <para><b>The runs a gate read.</b> A run's binding is a file under <c>workflows/runs/</c>, one per run and kept for good; only a run a
+/// due entry's gate read can release that entry (the person's say-so on it). The <c>gates</c> topic lists those runs by name, never the
+/// folder (<see cref="HomeWatch.ForDriver"/>).</para>
+/// </remarks>
+public static class LandingJudged
+{
+    private sealed record Judged(bool Live, string? Run);
+
+    private static readonly ConcurrentDictionary<string, Judged> Entries = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>A look left <paramref name="entry"/> for a live session on its tree (<paramref name="live"/>), or judged it past one.</summary>
+    public static void Live(string home, AutoLanding entry, bool live) =>
+        Entries.AddOrUpdate(Key(home, entry), new Judged(live, null), (_, was) => was with { Live = live });
+
+    /// <summary>Whether the last look that judged <paramref name="entry"/> left it for a live session on its tree.</summary>
+    public static bool LeftLive(string home, AutoLanding entry) => Entries.TryGetValue(Key(home, entry), out var judged) && judged.Live;
+
+    /// <summary>The run whose binding <paramref name="entry"/>'s gate read, or null where it read none (a run under Current, or unbound).</summary>
+    public static void Read(string home, AutoLanding entry, string? run) =>
+        Entries.AddOrUpdate(Key(home, entry), new Judged(false, run), (_, was) => was with { Run = run });
+
+    /// <summary>The runs the due entries' gates of <paramref name="home"/> read, each once.</summary>
+    public static IReadOnlyList<string> Runs(string home)
+    {
+        var prefix = Prefix(home);
+        return
+        [
+            .. Entries.Where(each => each.Key.StartsWith(prefix, StringComparison.OrdinalIgnoreCase) && each.Value.Run is not null)
+                .Select(each => each.Value.Run!).Distinct(StringComparer.OrdinalIgnoreCase),
+        ];
+    }
+
+    /// <summary>Forget every entry of <paramref name="home"/> that <paramref name="open"/>, the due list as it stands, no longer holds.</summary>
+    public static void Keep(string home, IEnumerable<AutoLanding> open)
+    {
+        var prefix = Prefix(home);
+        var kept = open.Select(entry => Key(home, entry)).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        foreach (var key in Entries.Keys.Where(key => key.StartsWith(prefix, StringComparison.OrdinalIgnoreCase) && !kept.Contains(key)))
+        {
+            Entries.TryRemove(key, out _);
+        }
+    }
+
+    private static string Prefix(string home) => $"{Homes.Full(home)}|";
+
+    private static string Key(string home, AutoLanding entry) => $"{Prefix(home)}{entry.Session}";
 }
 
 /// <summary>

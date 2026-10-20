@@ -39,6 +39,16 @@ internal sealed class QuestStandIn(Func<HttpRequestMessage, (HttpStatusCode Stat
             ["answers"] = new JsonArray([.. quest.Answers.Select(Answer)]),
         };
         if (quest.Evidence is { } read) json["evidence"] = JsonNode.Parse(read.Json());
+        // A closure graph's binding and its current submission (FABRIC-CLOSE1c6), each where set, as the service answers them.
+        if (quest.Closure is { } closure) json["closure"] = closure;
+        if (quest.Submission is { } submitted)
+        {
+            var submission = new JsonObject { ["machine"] = submitted.Machine, ["sequence"] = submitted.Sequence };
+            if (submitted.Commit is { } commit) submission["commit"] = commit;
+            if (submitted.Session is { } session) submission["session"] = session;
+            json["submission"] = submission;
+        }
+
         return json;
     }
 

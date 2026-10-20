@@ -173,7 +173,8 @@ internal interface IPullRequestMomentWorld
 /// <list type="bullet">
 /// <item><b>Origin's line moved</b> (<c>refs</c>): the ref watch tells each repository it judges (<see cref="Moved"/>), and origin's line
 /// is read from git's files and compared with the commit last seen here. The person's fetch brought the remote's facts, so nothing is
-/// fetched. The first reading of a repository's line is its baseline, and asks nothing.</item>
+/// fetched. The first reading of a repository's line is its baseline, and asks nothing. A move that came while a pull request was inside
+/// its minute is kept for it, and the first wake of that repository past the minute asks it, once (FABRIC-END6b).</item>
 /// <item><b>Daoris pushed</b> (<c>refs</c>, <see cref="Pushed"/>): after the landing's plugin step and its tidy, whose own ask (LAND3) it
 /// counts, and after a hand-off. The landing press's fetch of the line counts as the push's.</item>
 /// <item><b>The window's focus</b> (<c>focus</c>, <see cref="Focused"/>): every repository with an open pull request.</item>
@@ -221,6 +222,9 @@ public sealed class PullRequestMoments : IAsyncDisposable
     private readonly Dictionary<string, string?> _seen = new(StringComparer.OrdinalIgnoreCase);
     // The repositories a moment skipped while something held them (FABRIC-END6c), asked once they are let go.
     private readonly HashSet<string> _owed = new(StringComparer.OrdinalIgnoreCase);
+    // FABRIC-END6b: when origin's line last moved in each repository while a pull request there was inside its minute, kept until every
+    // open pull request of it was asked after that move, so the first wake past the minute asks it.
+    private readonly Dictionary<string, DateTimeOffset> _moved = new(StringComparer.OrdinalIgnoreCase);
     private bool _listening;
 
     /// <param name="world">What the moments read and do.</param>
@@ -369,24 +373,59 @@ public sealed class PullRequestMoments : IAsyncDisposable
 
     /// <summary>
     /// A repository's refs moved, or Daoris pushed there: a moment where origin's line moved since it was last seen here (nothing fetched,
-    /// since that fetch brought the remote's facts), or where Daoris pushed (fetched unless the line was within the minute).
+    /// since that fetch brought the remote's facts), or where Daoris pushed (fetched unless the line was within the minute). A move that
+    /// came while a pull request was inside its minute stays a moment for it (FABRIC-END6b), asked at the first wake past the minute.
     /// </summary>
     private async Task<int> RefsAsync(string name, CancellationToken ct)
     {
         // A push, or a moment skipped while the repository was held (FABRIC-END6c): asked as a push is, fetched where the minute allows.
         bool pushed;
-        lock (_gate) pushed = _pushed.Remove(name) | _owed.Remove(name);
+        DateTimeOffset? pending;
+        lock (_gate)
+        {
+            pushed = _pushed.Remove(name) | _owed.Remove(name);
+            pending = _moved.TryGetValue(name, out var since) ? since : null;
+        }
+
         var open = Concerning(name);
-        if (open.Count == 0) return 0;
+        if (open.Count == 0)
+        {
+            lock (_gate) _moved.Remove(name);
+            return 0;
+        }
+
         if (await KnownAsync(name, ct).ConfigureAwait(false) is not { } repository) return 0;
         if (await _world.LineAsync(repository, ct).ConfigureAwait(false) is not { } line) return 0;
 
         var now = _clock();
         var moved = Seen(repository, line, _world.OriginTip(repository, line));
         // The person's fetch is counted as one, so a moment inside its minute fetches nothing more.
-        if (moved) _world.HeardFetched(repository, line, now);
-        if (!moved && !pushed) return 0;
-        return await AskDueAsync(repository, line, open, fetch: !moved, now, ct).ConfigureAwait(false);
+        if (moved)
+        {
+            _world.HeardFetched(repository, line, now);
+            pending = now;
+        }
+
+        if (pending is null && !pushed) return 0;
+        // A push asks every open pull request; a move, each one not asked since it (its minute taken after it, or its record's ask).
+        List<LandedBranch> asking = pushed ? [.. open] : [.. open.Where(entry => AskedAt(entry) < pending)];
+        var asked = await AskDueAsync(repository, line, asking, fetch: !moved, now, ct).ConfigureAwait(false);
+
+        // One inside its minute is still owed the move; the moments run one at a time, so nothing wrote this since it was read.
+        lock (_gate)
+        {
+            if (pending is { } at && open.Any(entry => AskedAt(entry) < at)) _moved[name] = at;
+            else _moved.Remove(name);
+        }
+
+        return asked;
+    }
+
+    /// <summary>When an open pull request was last asked: its record's last ask, or its minute taken in this process, the later.</summary>
+    private DateTimeOffset AskedAt(LandedBranch entry)
+    {
+        var recorded = PullRequestAsking.LastAsked(entry);
+        return PullRequestMinute.TakenAt(_home, entry) is { } taken && taken > recorded ? taken : recorded;
     }
 
     /// <summary>The window's focus: each repository with an open pull request, its line fetched where the minute allows, then asked.</summary>

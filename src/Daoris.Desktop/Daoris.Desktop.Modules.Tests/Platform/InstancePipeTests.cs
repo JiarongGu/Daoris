@@ -127,8 +127,12 @@ public sealed class InstancePipeTests : Bridge
             answer.GetProperty("data").GetRawText());
     }
 
+    /// <summary>
+    /// A window's route and a module nobody classed are refused before anything runs; a person's route waits for the window instead
+    /// (RPC1c), and <c>PipeConfirmTests</c> holds how, so here it is shown and never run.
+    /// </summary>
     [Fact]
-    public async Task A_person_route_a_window_route_and_a_module_nobody_classed_are_refused_and_never_run()
+    public async Task A_window_route_and_a_module_nobody_classed_are_refused_and_a_person_route_runs_nothing_unconfirmed()
     {
         if (!OperatingSystem.IsWindows()) return;
         using var log = new MachineLog(Home, "desktop");
@@ -142,13 +146,13 @@ public sealed class InstancePipeTests : Bridge
         await using var client = await PipeClient.ConnectAsync(pipe.Serve()!);
         await client.HelloAsync(HomeId);
 
-        var person = await client.AnswerAsync(await client.SendAsync(DriverModule.Name, "LAND_SESSION_TREE", new { id = "s1a2b3c4" }));
+        await client.SendAsync(DriverModule.Name, "LAND_SESSION_TREE", new { id = "s1a2b3c4" });
         var window = await client.AnswerAsync(await client.SendAsync("DAORIS.WINDOWS", "OPEN", new { name = "session:s1a2b3c4" }));
         var nobody = await client.AnswerAsync(await client.SendAsync("TEST.ELSEWHERE", "ANYTHING"));
 
-        Assert.Equal(InstancePipe.ConfirmInWindow, Code(person));
         Assert.Equal(InstancePipe.WindowOnly, Code(window));
         Assert.Equal(InstancePipe.Unclassed, Code(nobody));
+        Assert.Equal("LAND_SESSION_TREE", Assert.Single(pipe.Confirmations.Now().Waiting).Route);
         Assert.Equal(0, driver.Ran);
         Assert.Equal(0, windows.Ran);
         Assert.Equal(0, elsewhere.Ran);
@@ -162,7 +166,6 @@ public sealed class InstancePipeTests : Bridge
         var refused = Lines().Where(line => line.GetProperty("event").GetString() == "refused").Select(line => line.GetProperty("data").GetRawText()).ToList();
         Assert.Equal(
             [
-                """{"code":"confirm-in-window","request":"DAORIS.DRIVER.LAND_SESSION_TREE","door":"terminal"}""",
                 """{"code":"window-only","request":"DAORIS.WINDOWS.OPEN","door":"terminal"}""",
                 """{"code":"unclassed","request":"TEST.ELSEWHERE.ANYTHING","door":"terminal"}""",
             ],
@@ -653,7 +656,10 @@ public sealed class InstancePipeTests : Bridge
         Assert.Equal("unknown", (await client.ResultAsync(id)).GetProperty("state").GetString());
     }
 
-    /// <summary>A route that is a look in one form and a press in another runs over the pipe only in its open form.</summary>
+    /// <summary>
+    /// A route that is a look in one form and a press in another runs over the pipe as asked only in its open form: its press waits
+    /// for the window (RPC1c), and runs nothing until the person confirms it there.
+    /// </summary>
     [Fact]
     public async Task A_route_classed_by_its_payload_runs_only_in_its_open_form()
     {
@@ -667,17 +673,18 @@ public sealed class InstancePipeTests : Bridge
         await using var client = await PipeClient.ConnectAsync(pipe.Serve()!);
         await client.HelloAsync(HomeId);
 
-        var file = await client.AnswerAsync(await client.SendAsync(DriverModule.Name, "TOOLS_GIT", new { way = "file", file = "C:/elsewhere/git.exe" }));
-        Assert.Equal(InstancePipe.ConfirmInWindow, Code(file));
+        await client.SendAsync(DriverModule.Name, "TOOLS_GIT", new { way = "file", file = "C:/elsewhere/git.exe" });
+        await UntilAsync(() => pipe.Confirmations.Now().Waiting.Count == 1);
         Assert.Equal(0, driver.Ran);
 
         var system = await client.AnswerAsync(await client.SendAsync(DriverModule.Name, "TOOLS_GIT", new { way = "system" }));
         Assert.True(system.GetProperty("success").GetBoolean(), system.GetRawText());
-        var apply = await client.AnswerAsync(await client.SendAsync(DriverModule.Name, "PLUGIN_UPDATE", new { id = "acme.watch", apply = true }));
-        Assert.Equal(InstancePipe.ConfirmInWindow, Code(apply));
+        await client.SendAsync(DriverModule.Name, "PLUGIN_UPDATE", new { id = "acme.watch", apply = true });
+        await UntilAsync(() => pipe.Confirmations.Now().Waiting.Count == 2);
         var preview = await client.AnswerAsync(await client.SendAsync(DriverModule.Name, "PLUGIN_UPDATE", new { id = "acme.watch" }));
         Assert.True(preview.GetProperty("success").GetBoolean(), preview.GetRawText());
         Assert.Equal(2, driver.Ran);
+        Assert.Equal(["TOOLS_GIT", "PLUGIN_UPDATE"], pipe.Confirmations.Now().Waiting.Select(each => each.Route));
     }
 
     /// <summary>A connection's requests under way are bounded: past the bound, one is answered busy and never run.</summary>

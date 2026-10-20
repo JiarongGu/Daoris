@@ -45,6 +45,7 @@ public sealed class DriverModuleHistoryTests : DriverModuleBridge
     private void Kept(string id)
     {
         Directory.CreateDirectory(DaorisHome.Entry(Home, HomeEntry.SessionFiles, id));
+        Directory.CreateDirectory(DaorisHome.Entry(Home, HomeEntry.Sessions));
         File.WriteAllText(DaorisHome.Entry(Home, HomeEntry.Sessions,$"{id}.events.jsonl"), "{\"seq\":1,\"kind\":\"user\",\"text\":\"a secret plan\"}\n");
         File.WriteAllText(DaorisHome.Entry(Home, HomeEntry.Sessions,$"{id}.log"), "the transcript");
         File.WriteAllText(DaorisHome.Entry(Home, HomeEntry.SessionFiles, id,"shot.png"), "png");

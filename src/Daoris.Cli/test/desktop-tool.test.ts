@@ -7,14 +7,17 @@ import { fileURLToPath } from 'node:url';
 import vm from 'node:vm';
 import { createServer, type Server } from 'node:net';
 import { readText, listFiles } from '../src/platform/fsx.ts';
+import { homeEntry, homePlaces } from '../src/platform/home.ts';
 import { desktopFile } from './_csharp.ts';
+import { makeFixture } from './_fixture.ts';
 // The workspace's own tooling is plain `.mjs` and ships no declarations, so this import is untyped
 // by construction. Suppressed at the one site rather than given a hand-written `.d.mts`, which would
 // be a second description of the tool to keep in step with it — and the thing this suite asserts is
 // the tool's BEHAVIOUR, which a stale declaration would not protect.
 import {
   CLEARED, PAGE_THEME, clickScript, REDIRECTED, SHELL_ORIGIN, THEME_KEY, assemblyExe, awaitDebugPort, closedPortReport, engineLogOf,
-  installEnvironment, installedExe, isShell, prune, scratchEnvironment, shotTarget, startedHere, withPageTheme,
+  installEnvironment, installedExe, isShell, prune, scratchDaoris, scratchEnvironment, scratchPlan, scratchRoot, shotTarget, startedHere,
+  withPageTheme,
   // @ts-expect-error — untyped workspace tooling; see above
 } from '../../../tools/desktop.mjs';
 // @ts-expect-error — untyped workspace tooling; see above
@@ -268,10 +271,48 @@ test('the report of an application that ended says so, and does not claim a wind
 
 test('the engine log is under the root the run gave the application', () => {
   const sep = (path: string) => path.replaceAll('\\', '/');
-  assert.equal(sep(engineLogOf({ install: '/i', real: true, exe: '/i/app/Daoris.Desktop.exe' })), '/i/data/chromium/cef.log');
+  // HOMELAYOUT4: an install's is in the window's memory, the home's `window` entry: its `data/` while an older build's engine
+  // profile is still there, `profiles/window/` once moved and for a new install.
+  const fx = makeFixture('desktop-engine-log');
+  try {
+    fx.write('INSTALLED.md', '# Daoris — installed desktop\n');
+    const exe = join(fx.root, 'app', 'Daoris.Desktop.exe');
+    const windowNow = homePlaces(fx.root, 'window')[0]!;
+    assert.equal(sep(windowNow).slice(sep(fx.root).length), '/profiles/window');
+    assert.equal(engineLogOf({ install: fx.root, real: true, exe }), join(windowNow, 'chromium', 'cef.log'));
+    fx.write('data/chromium/Default/Preferences', '{}');
+    assert.equal(engineLogOf({ install: fx.root, real: true, exe }), join(fx.root, 'data', 'chromium', 'cef.log'));
+  } finally {
+    fx.cleanup();
+  }
   assert.equal(sep(engineLogOf({ install: null, real: true, exe: '/b/Daoris.Desktop.exe' })), '/b/data/chromium/cef.log');
+  // A scratch run's window memory is its one root's `profiles/window/` (design §6.1), which `Program.cs` hands the kit.
   assert.match(sep(engineLogOf({ install: null, real: false, exe: '/b/Daoris.Desktop.exe' })),
-    /_fixtures\/desktop\/app\/data\/chromium\/cef\.log$/);
+    /_fixtures\/desktop\/daoris\/profiles\/window\/chromium\/cef\.log$/);
+});
+
+/**
+ * HOMELAYOUT4, the design §6.1: a scratch run is one Daoris folder as an install is. Its `DAORIS_HOME` and its `--app-root`
+ * name the same root, which holds `app/` and the home's category folders, and the window's memory is `profiles/window/`.
+ */
+test('a scratch run lays out one Daoris folder, home and app root alike, as an install does', () => {
+  const root = 'X:/daoris/scratch';
+  const plan = scratchPlan(root);
+  assert.equal(plan.home, root);
+  assert.equal(plan.appRoot, root);
+  assert.deepEqual(plan.folders.map((folder: string) => folder.slice(root.length + 1)),
+    ['app', 'data', 'profiles', 'work', 'cache', 'run', 'logs']);
+  assert.equal(plan.window.slice(root.length).replaceAll('\\', '/'), '/profiles/window');
+  assert.equal(plan.offers, join(root, 'app', 'plugin-offers'), 'the offers where an install carries them');
+  const env = scratchEnvironment({
+    home: plan.home, family: '/f', serviceUrl: 'http://127.0.0.1:5188', httpHost: '/h', mcpHost: '', cdpPort: 0,
+  });
+  assert.equal(env.DAORIS_HOME, root);
+  assert.equal(env.DAORIS_KNOWLEDGE_DB, homeEntry(root, 'knowledge'));
+  assert.equal(scratchPlan().home, scratchDaoris, 'by default the folder under the scratch root');
+  assert.ok(scratchDaoris.startsWith(scratchRoot));
+  // The folder holds no marker, so it is its own home (the design §5), not an install.
+  assert.equal(plan.folders.includes(join(root, 'INSTALLED.md')), false);
 });
 
 /**

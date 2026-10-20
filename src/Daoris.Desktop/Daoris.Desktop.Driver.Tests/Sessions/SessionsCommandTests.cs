@@ -83,7 +83,9 @@ public sealed class SessionsCommandTests : IDisposable
     private void Alive(string id)
     {
         using var self = Process.GetCurrentProcess();
-        File.WriteAllText(DaorisHome.Entry(_home, HomeEntry.SessionPids, id), $"{self.Id} {self.StartTime.ToUniversalTime().Ticks}");
+        var pid = DaorisHome.Entry(_home, HomeEntry.SessionPids, id);
+        Directory.CreateDirectory(Path.GetDirectoryName(pid)!);
+        File.WriteAllText(pid, $"{self.Id} {self.StartTime.ToUniversalTime().Ticks}");
     }
 
     public static TheoryData<string[]> Problems => new()

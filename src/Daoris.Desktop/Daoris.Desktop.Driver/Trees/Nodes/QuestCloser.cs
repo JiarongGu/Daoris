@@ -713,6 +713,31 @@ public static class ClosureGraphs
         }
     }
 
+    /// <summary>
+    /// Drops each kept graph <paramref name="needed"/> says nothing needs, and the folder once it is empty (FABRIC-CLOSE1m), so a home that
+    /// no longer binds a quest is not kept armed by it. A graph written within <paramref name="grace"/> of <paramref name="now"/> stays: it is
+    /// kept before the service binds its quest (<see cref="ClosureBinding.AtTakeAsync"/>), and no read shows that quest bound yet.
+    /// </summary>
+    public static void Prune(string home, Func<string, bool> needed, DateTimeOffset now, TimeSpan grace)
+    {
+        if (!Directory.Exists(FolderOf(home))) return;
+        try
+        {
+            foreach (var path in Directory.GetFiles(FolderOf(home), "*.json"))
+            {
+                var digest = Path.GetFileNameWithoutExtension(path);
+                if (!IsDigest(digest) || needed(digest) || now - new DateTimeOffset(File.GetLastWriteTimeUtc(path), TimeSpan.Zero) < grace) continue;
+                File.Delete(path);
+            }
+
+            if (!Directory.EnumerateFileSystemEntries(FolderOf(home)).Any()) Directory.Delete(FolderOf(home));
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+        {
+            // Left for the next pass: a graph kept is a graph that closes, never a lost one.
+        }
+    }
+
     private static string PathOf(string home, string digest) => Path.Combine(FolderOf(home), digest + ".json");
 
     /// <summary>A digest as <see cref="NodeGraphs.Digest"/> writes it, so no name the service answers is read as a path.</summary>

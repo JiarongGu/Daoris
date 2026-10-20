@@ -129,10 +129,8 @@ public static class AccountCooling
     /// </summary>
     public static bool SignedIn(string profileHome, DateTimeOffset now)
     {
-        // The layout `HarnessSettings.ProfileHome` makes: <home>/harnesses/<agent>/<profile>.
-        var account = new DirectoryInfo(Path.GetFullPath(profileHome));
-        if (account.Parent is not { Parent: { Name: "harnesses", Parent: { } home } } agent) return false;
-        return End(home.FullName, agent.Name, account.Name, now);
+        // The layout `HarnessSettings.ProfileHome` makes, at either place of the account homes (HOMELAYOUT3).
+        return HarnessSettings.AccountAt(profileHome) is { } at && End(at.Home, at.Agent, at.Account, now);
     }
 
     private static bool Same(CoolingEntry entry, string agent, string? account) =>

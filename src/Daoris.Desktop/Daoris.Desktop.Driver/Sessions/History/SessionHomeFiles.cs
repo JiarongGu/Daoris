@@ -70,6 +70,15 @@ public sealed class SessionHomeFiles(string home, Action<string, bool>? remover 
 
         /// <summary><c>spawn/</c>, where a session's servers and settings are handed to it (<see cref="SpawnServers"/>).</summary>
         Spawn,
+
+        /// <summary>
+        /// A session's kept files: <see cref="HomeEntry.SessionFiles"/>, in <c>work/files/sessions/</c> since HOMELAYOUT3, and its
+        /// folder under <c>sessions/</c> where an older home keeps them.
+        /// </summary>
+        Files,
+
+        /// <summary>Its process's marker: <see cref="HomeEntry.SessionPids"/>, at each of its places.</summary>
+        Pids,
     }
 
     /// <summary>
@@ -89,9 +98,9 @@ public sealed class SessionHomeFiles(string home, Action<string, bool>? remover 
     [
         new(Conversation, Place.Sessions, ".events.jsonl", false, bytes => HistoryBytes.None with { Conversations = bytes }),
         new(Transcript, Place.Sessions, ".log", false, bytes => HistoryBytes.None with { Transcripts = bytes }),
-        new(Files, Place.Sessions, "", true, bytes => HistoryBytes.None with { Files = bytes }),
+        new(Files, Place.Files, "", true, bytes => HistoryBytes.None with { Files = bytes }),
         new(Harness, Place.Sessions, HarnessConversations.Suffix, false, Beside),
-        new(Marker, Place.Sessions, ".pid", false, Beside),
+        new(Marker, Place.Pids, ".pid", false, Beside),
         new(Mark, Place.Sessions, GoOnMarks.Suffix, false, Beside),
         // FABRIC-CLOSE1c8: the reopens it was told of, a mark too, which goes with its record.
         new(Mark, Place.Sessions, ReopenMarks.Suffix, false, Beside),
@@ -104,8 +113,11 @@ public sealed class SessionHomeFiles(string home, Action<string, bool>? remover 
         new(Help, Place.Sessions, HelpWired.Suffix, false, Beside),
     ];
 
-    /// <summary>The suffixes a session's own files under <c>sessions/</c> carry after its id, the longest first.</summary>
-    internal static readonly string[] SessionSuffixes = Suffixes(Place.Sessions);
+    /// <summary>
+    /// The suffixes a session's own files under <c>sessions/</c> carry after its id, the longest first: its marker's among them,
+    /// which an older home keeps there.
+    /// </summary>
+    internal static readonly string[] SessionSuffixes = Suffixes(Place.Sessions, Place.Pids);
 
     /// <summary>The suffixes a session's spawn files carry after its id under <c>spawn/</c>, the longest first.</summary>
     internal static readonly string[] SpawnSuffixes = Suffixes(Place.Spawn);
@@ -128,17 +140,28 @@ public sealed class SessionHomeFiles(string home, Action<string, bool>? remover 
 
     private static HistoryBytes Beside(long bytes) => HistoryBytes.None with { Other = bytes };
 
-    private static string[] Suffixes(Place place) =>
+    private static string[] Suffixes(params Place[] places) =>
     [
-        .. Inventory.Where(file => file.Place == place && !file.Folder).Select(file => file.Suffix).OrderByDescending(suffix => suffix.Length),
+        .. Inventory.Where(file => places.Contains(file.Place) && !file.Folder).Select(file => file.Suffix).OrderByDescending(suffix => suffix.Length),
     ];
 
-    private string PathOf(SessionFile file, string id) => Path.Combine(file.Place == Place.Spawn ? SpawnFolder : Sessions, id + file.Suffix);
+    /// <summary>Each path a session's file may be at, once each: one, but two for what has its own place since HOMELAYOUT3.</summary>
+    private IReadOnlyList<string> PathsOf(SessionFile file, string id) => file.Place switch
+    {
+        Place.Spawn => [Path.Combine(SpawnFolder, id + file.Suffix)],
+        Place.Files => [.. new[] { DaorisHome.Places(home, HomeEntry.SessionFiles, id)[0], Path.Combine(Sessions, id) }
+            .DistinctBy(path => Path.GetFullPath(path), StringComparer.OrdinalIgnoreCase)],
+        // And beside its records, where a tracker handed the sessions' folder for its markers kept it.
+        Place.Pids => [.. DaorisHome.Places(home, HomeEntry.SessionPids, id).Append(Path.Combine(Sessions, id + file.Suffix))
+            .DistinctBy(path => Path.GetFullPath(path), StringComparer.OrdinalIgnoreCase)],
+        _ => [Path.Combine(Sessions, id + file.Suffix)],
+    };
 
     /// <summary>What the home keeps of one session, by kind; nothing for an id that is not a session's.</summary>
     public HistoryBytes Size(string id) =>
         SessionEventText.IsId(id)
-            ? Inventory.Aggregate(HistoryBytes.None, (sum, file) => sum + file.Counts(HistoryBytes.Of(PathOf(file, id))))
+            ? Inventory.Aggregate(HistoryBytes.None,
+                (sum, file) => PathsOf(file, id).Aggregate(sum, (each, path) => each + file.Counts(HistoryBytes.Of(path))))
             : HistoryBytes.None;
 
     /// <summary>
@@ -166,15 +189,17 @@ public sealed class SessionHomeFiles(string home, Action<string, bool>? remover 
         {
             foreach (var file in Inventory)
             {
-                var path = PathOf(file, id);
-                var refused = failed.Count;
-                // The conversation goes through the loop's record where there is one, so its numbering is forgotten too.
-                var (gone, went) = file.Name == Conversation && events is not null
-                    ? Take(path, () => events.Forget(id), failed)
-                    : Take(path, file.Folder, failed);
-                bytes[id] += file.Counts(went);
-                if (gone) Named(removed[id], file.Name);
-                if (failed.Count > refused) Named(stayed[id], file.Name);
+                foreach (var path in PathsOf(file, id))
+                {
+                    var refused = failed.Count;
+                    // The conversation goes through the loop's record where there is one, so its numbering is forgotten too.
+                    var (gone, went) = file.Name == Conversation && events is not null
+                        ? Take(path, () => events.Forget(id), failed)
+                        : Take(path, file.Folder, failed);
+                    bytes[id] += file.Counts(went);
+                    if (gone) Named(removed[id], file.Name);
+                    if (failed.Count > refused) Named(stayed[id], file.Name);
+                }
             }
         }
 

@@ -1,16 +1,15 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
-import { PERMISSIONS_FILE, commandRules, readPermissions } from '../src/agents/permissions.ts';
+import { commandRules, readPermissions } from '../src/agents/permissions.ts';
 import { commandRemote } from '../src/service/remotes.ts';
 import { readRemotes } from '../src/service/remotemap.ts';
 import {
   addKeyAccount, keyOf, profileHome, readHarnessSettings, writeHarnessSettings,
 } from '../src/agents/toolchain.ts';
-import { STATE_FILE, disablePlugin, readPluginState } from '../src/plugins/plugins.ts';
+import { disablePlugin, readPluginState } from '../src/plugins/plugins.ts';
 import { readDriverChoices, writeDriverChoices } from '../src/driver/driverconfig.ts';
-import { TOOLS_FILE, readTools, useSystem } from '../src/tools/tools.ts';
+import { readTools, useSystem } from '../src/tools/tools.ts';
 import { captureError, makeFixture } from './_fixture.ts';
 
 /**
@@ -43,7 +42,7 @@ const quiet = { root: process.cwd(), write: () => {}, packageRoot: process.cwd()
 
 test('permissions.json: a BOM reads, and an edit over a torn file is refused with the file untouched', () => {
   const fx = makeFixture('homefiles-permissions');
-  const path = join(fx.root, PERMISSIONS_FILE);
+  const path = fx.entry('permissions');
 
   writeFileSync(path, `${BOM}{ "machine": { "deny": ["Bash(rm:*)"] } }`, 'utf8');
   const read = readPermissions(path);
@@ -61,7 +60,7 @@ test('permissions.json: a BOM reads, and an edit over a torn file is refused wit
 
 test('remotes.json: a BOM reads as wired, and an edit over a torn map is refused with the map untouched', async () => {
   const fx = makeFixture('homefiles-remotes');
-  const path = join(fx.root, 'remotes.json');
+  const path = fx.entry('remotes');
   const entry = '"aurora": { "url": "https://aurora.example.com", "key": "dk_aurora_secret_key" }';
 
   writeFileSync(path, `${BOM}{ ${entry} }`, 'utf8');
@@ -86,7 +85,7 @@ test('remotes.json: a BOM reads as wired, and an edit over a torn map is refused
 
 test('harnesses.json: a BOM reads, and a write over a torn file is refused', () => {
   const fx = makeFixture('homefiles-harnesses');
-  const path = join(fx.root, 'harnesses.json');
+  const path = fx.entry('harnesses');
 
   writeFileSync(path, `${BOM}{ "defaults": { "codex": "work" } }`, 'utf8');
   assert.equal(readHarnessSettings(path).defaults.codex, 'work');
@@ -102,7 +101,7 @@ test('harnesses.json: a BOM reads, and a write over a torn file is refused', () 
 
 test('keys.json: a BOM reads, and a new key over a torn file is refused', () => {
   const fx = makeFixture('homefiles-keys');
-  const path = join(fx.root, 'keys.json');
+  const path = fx.entry('keys');
 
   writeFileSync(path, `${BOM}{ "claude-code": { "account-1": "sk-ant-first-key-0001" } }`, 'utf8');
   assert.equal(keyOf(fx.root, 'claude-code', 'account-1'), 'sk-ant-first-key-0001');
@@ -119,7 +118,7 @@ test('keys.json: a BOM reads, and a new key over a torn file is refused', () => 
 
 test('plugins.json: a BOM reads, and a switch over a torn file is refused', () => {
   const fx = makeFixture('homefiles-plugins');
-  const path = join(fx.root, STATE_FILE);
+  const path = fx.entry('plugin-state');
 
   writeFileSync(path, `${BOM}{ "disabled": ["acme.agent"] }`, 'utf8');
   assert.deepEqual(readPluginState(fx.root).disabled, ['acme.agent']);
@@ -134,7 +133,7 @@ test('plugins.json: a BOM reads, and a switch over a torn file is refused', () =
 
 test('driver.json: a BOM reads rather than refusing, and the writer holds the same rule', () => {
   const fx = makeFixture('homefiles-driver');
-  const path = join(fx.root, 'driver.json');
+  const path = fx.entry('driver');
 
   writeFileSync(path, `${BOM}{ "drivable": ["engine"] }`, 'utf8');
   const choices = readDriverChoices(path);
@@ -150,7 +149,7 @@ test('driver.json: a BOM reads rather than refusing, and the writer holds the sa
 
 test('tools.json: a BOM reads, and a write over a torn file is refused with the file untouched', () => {
   const fx = makeFixture('homefiles-tools');
-  const path = join(fx.root, TOOLS_FILE);
+  const path = fx.entry('tools');
 
   writeFileSync(path, `${BOM}{ "tools": { "git": { "use": "managed", "version": "2.51.0" } } }`, 'utf8');
   assert.deepEqual(readTools(fx.root).entries.git, { way: 'managed', version: '2.51.0', file: null, problem: null });

@@ -269,7 +269,7 @@ test('`effort <v> --for <model>` sets that model’s effort, and `unset` clears 
 test('with no account named, the machine’s default account is the one', () => {
   const fx = makeFixture('agent-settings-verb-default');
   const file = account(fx.root, 'work');
-  writeHarnessSettings(join(fx.root, 'harnesses.json'), {
+  writeHarnessSettings(homeEntry(fx.root, 'harnesses'), {
     defaults: { 'claude-code': 'work' }, workspaces: {}, versions: {}, workspaceVersions: {}, rotation: {}, workspaceRotation: {}, rotationUse: {}, workspaceRotationUse: {}, rest: {},
   });
 

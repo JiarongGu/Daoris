@@ -12,7 +12,7 @@ using Shenora.Windows;
 //
 //   DAORIS_HOME            where every machine-local file lives (D63)          (an install: `data/` beside this exe, set here)
 //   DAORIS_SERVICE_URL     where the service is, which the page calls         (default: http://localhost:5177)
-//                          — left in $DAORIS_HOME/running.json while it runs, for a terminal the install's
+//                          — left in the home's `running` entry (`run/running.json`, D172) while it runs, for a terminal the install's
 //                          launchers set nothing for (FINDDAORIS1, D171)
 //   DAORIS_DEVTOOLS_PORT   the engine's DevTools port, in development only     (absent: none)
 //   DAORIS_SERVICE_KEY     sent as a bearer token when set                     (absent: local trust, D21)
@@ -42,13 +42,16 @@ internal static class Program
         // The home before anything else (D63): an install's `data/` folder is the Daoris home for this
         // process and every host and session it spawns. Before the builder, because every module
         // captures its path at construction — and a workspace build is left alone, so the dev loop's
-        // scratch home stays the dev loop's.
+        // scratch home stays the dev loop's. An install's older home is moved into D172's places here too
+        // (HOMELAYOUT3), before anything resolves a path: the log and the window's memory among them.
         var home = InstallHome.Establish(AppContext.BaseDirectory);
 
         // The machine log (LOG1, D94), opened as soon as there is a home to put it in, so an exception
-        // nothing else catches is written before the process ends; with no home it writes nothing.
+        // nothing else catches is written before the process ends; with no home it writes nothing. Then
+        // what the move did, which ran before the log had its place.
         using var log = Daoris.Driver.MachineLog.Open("desktop");
         log.WatchUnhandled();
+        InstallHome.Log(home, log);
         var started = DateTimeOffset.UtcNow;
 
         // 🔴 No home is a sentence, not a silent exit (REV3). A workspace build started with no
@@ -72,19 +75,27 @@ internal static class Program
 
         // 🔴 The kit anchors its data area (the engine's profile, the window's geometry) at the bundle's
         // root, which it takes to be the executable's folder unless told. An install's application runs
-        // from `app/` (D93), so it is told the install's root, and its data lands in the install's
-        // `data/` rather than a second one inside `app/`. A `--app-root` given still wins.
+        // from `app/` (D93), so it is told the install's root. A `--app-root` given still wins. Its data
+        // area is the window's memory (D172 point 4, HOMELAYOUT3): the home's `window` entry under that
+        // root where it is an install, `profiles/window/` once moved and the install's `data/` until then,
+        // never a second one inside `app/`.
         var installRoot = InstallHome.RootOf(AppContext.BaseDirectory);
         var inInstallApp = !string.Equals(
             installRoot, Path.TrimEndingDirectorySeparator(AppContext.BaseDirectory), StringComparison.OrdinalIgnoreCase);
+        var kitRoot = inInstallApp ? AppRootArgument.Resolve(args, installRoot) : null;
+        // A development run is told its one root (`npm run desktop -- run`, HOMELAYOUT4): the scratch Daoris folder that is also
+        // its home, so its window's memory is that folder's `profiles/window/` as an install's is, not the kit's own `data/`.
+        var devRoot = kitRoot is null ? InstallHome.AppRootOf(args) : null;
 
         var builder = ShenoraApplication.CreateBuilder(new ShenoraApplicationOptions
         {
             Args = args,
             ApplicationName = "Daoris",
-            Paths = inInstallApp
-                ? new ShenoraPathsOptions { ExplicitRoot = AppRootArgument.Resolve(args, installRoot) }
-                : new ShenoraPathsOptions(),
+            Paths = kitRoot is not null
+                ? new ShenoraPathsOptions { ExplicitRoot = kitRoot, DataDirectory = InstallHome.WindowMemory(kitRoot) }
+                : devRoot is not null
+                    ? new ShenoraPathsOptions { ExplicitRoot = devRoot, DataDirectory = InstallHome.WindowMemoryOfRun(devRoot) }
+                    : new ShenoraPathsOptions(),
         });
 
         // The engine every window renders on (D92, CHR2): the Chromium the install ships. The pages are
@@ -143,7 +154,7 @@ internal static class Program
         // install, and never updates this way.
         builder.Services.AddSingleton(sp => new InstallUpdater(
             inInstallApp ? installRoot : null,
-            Path.GetDirectoryName(Path.GetFullPath(Daoris.Driver.DriverConfig.ResolvePath()))!,
+            Daoris.Driver.DriverConfig.HomeOf(Daoris.Driver.DriverConfig.ResolvePath()),
             log,
             work: () => sp.GetRequiredService<DriverLoop>().Work(),
             relaunch: ct => UpdateLauncher.StartAsync(installRoot, Environment.ProcessId, ct),
@@ -189,9 +200,9 @@ internal static class Program
         builder.Services.AddSingleton(sp => new MainWindows(() => sp.GetRequiredService<MainForm>().CloseForGood(), log));
         // Daoris's own browser (D78, D85): the engine's own window, in a process of its own
         // (`daoris-browser`: this executable with the browser's argument, CHR8), with its profile under
-        // the home — the directory `driver.json` sits in, as every machine file's is.
+        // the home — the home `driver.json` is in, as every machine file's is.
         builder.Services.AddSingleton(_ => new EngineBrowserHost(
-            Path.GetDirectoryName(Path.GetFullPath(Daoris.Driver.DriverConfig.ResolvePath()))!));
+            Daoris.Driver.DriverConfig.HomeOf(Daoris.Driver.DriverConfig.ResolvePath())));
         builder.Services.AddSingleton<Daoris.Driver.IInAppBrowser>(sp => sp.GetRequiredService<EngineBrowserHost>());
         // Its favorites and settings, as a Settings domain (CHR5, CHR7): the files `daoris browser`
         // edits, read by `daoris-browser` each time it starts.

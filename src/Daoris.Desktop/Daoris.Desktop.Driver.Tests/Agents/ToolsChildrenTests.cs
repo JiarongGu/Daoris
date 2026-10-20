@@ -45,6 +45,7 @@ public sealed class ToolsChildrenTests : IDisposable
     public ToolsChildrenTests()
     {
         Directory.CreateDirectory(Home);
+        File.WriteAllText(Path.Combine(_root, DaorisHome.InstallMarker), "# Daoris — installed desktop\n");
         foreach (var (tool, version, exe, paths) in Laid)
         {
             var folder = DaorisHome.Entry(Home, HomeEntry.ToolVersions,tool, version);
@@ -230,6 +231,17 @@ public sealed class ToolsChildrenTests : IDisposable
         Assert.Equal(Path.Combine(_root, "app", "bin"), Tools.InstallBin(Home + Path.DirectorySeparatorChar));
         Assert.Equal(Path.Combine(_root, "app", "bin"), Tools.InstallBin(Path.Combine(_root, "data", "..", "data")));
         Assert.Null(Tools.InstallBin(Path.Combine(_root, "elsewhere", "data")));
+        Assert.Equal(Path.Combine(_root, "app", "bin"), Tools.InstallBin(_root));
+    }
+
+    /// <summary>HOMELAYOUT4: a development run's one root is its home and its Daoris folder, so its launchers are in its own <c>app/bin/</c>.</summary>
+    [Fact]
+    public void A_dev_runs_root_holds_its_own_app_bin_and_a_data_folder_of_no_install_is_a_root_of_its_own()
+    {
+        var scratch = Path.Combine(_root, "scratch");
+        Directory.CreateDirectory(Path.Combine([scratch, .. Tools.InstallBinLayout]));
+        Assert.Equal(Path.Combine([scratch, .. Tools.InstallBinLayout]), Tools.InstallBin(scratch));
+        Assert.Null(Tools.InstallBin(Path.Combine(scratch, "data")));
     }
 
     [Fact]

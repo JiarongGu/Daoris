@@ -72,7 +72,7 @@ public sealed class WorkPausingTests : IDisposable
         ["a1", "b2"]);
 
     private WorkWorld World(ServiceClient service, MachineLog? log = null) =>
-        new(service, _home, ConfigPath, new SessionProcesses(DaorisHome.Entry(_home, HomeEntry.Sessions)))
+        new(service, _home, ConfigPath, new SessionProcesses(DaorisHome.Entry(_home, HomeEntry.SessionPids)))
         {
             Log = log,
             Clock = () => Now,
@@ -84,7 +84,9 @@ public sealed class WorkPausingTests : IDisposable
     private void Alive(string id)
     {
         using var self = Process.GetCurrentProcess();
-        File.WriteAllText(DaorisHome.Entry(_home, HomeEntry.SessionPids, id), $"{self.Id} {self.StartTime.ToUniversalTime().Ticks}");
+        var pid = DaorisHome.Entry(_home, HomeEntry.SessionPids, id);
+        Directory.CreateDirectory(Path.GetDirectoryName(pid)!);
+        File.WriteAllText(pid, $"{self.Id} {self.StartTime.ToUniversalTime().Ticks}");
     }
 
     private static readonly IReadOnlyDictionary<string, string> NoStops = new Dictionary<string, string>();

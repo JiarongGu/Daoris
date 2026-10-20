@@ -327,21 +327,94 @@ public static class SessionsCommand
     public static async Task<int> RunAsync(SessionsAsk ask, SessionsWorld world, TextWriter output, CancellationToken ct = default) =>
         ask.Verb switch
         {
-            "say" => await SayAsync(world, ask, output, ct).ConfigureAwait(false),
+            "say" => await SayThroughAsync(world, ask, output, ct).ConfigureAwait(false),
+            "take-back" or "reword" when ask.Word is not null => await ThroughAsync(
+                world, PersonPresses.SessionQueueEdit, QueueEditBody(ask), () => TakeBackAsync(world, ask, output, ct), output, ct).ConfigureAwait(false),
             "take-back" or "reword" => await TakeBackAsync(world, ask, output, ct).ConfigureAwait(false),
-            "go-on-new" => await GoOnNewAsync(world, ask.Ids[0], output, ct).ConfigureAwait(false),
-            "start-from" => await StartFromAsync(world, ask.Ids[0], output, ct).ConfigureAwait(false),
-            "hand-over" => await HandOverAsync(world, ask, output, ct).ConfigureAwait(false),
-            "helper" => await SessionsHelperCommand.RunAsync(world, ask, output, ct).ConfigureAwait(false),
-            "helper-approve" or "helper-decline" => await SessionsHelperCommand.RunWordAsync(world, ask, output).ConfigureAwait(false),
-            "stop" => await StopAsync(world, ask.Ids[0], output, ct).ConfigureAwait(false),
-            "finish" or "decline" => await ResolveAsync(world, ask, output, ct).ConfigureAwait(false),
+            "go-on-new" => await ThroughAsync(
+                world, PersonPresses.SessionGoOnNew, Body(("id", ask.Ids[0])), () => GoOnNewAsync(world, ask.Ids[0], output, ct), output, ct).ConfigureAwait(false),
+            "start-from" => await ThroughAsync(
+                world, PersonPresses.SessionStartFrom, Body(("id", ask.Ids[0])), () => StartFromAsync(world, ask.Ids[0], output, ct), output, ct).ConfigureAwait(false),
+            "hand-over" => await ThroughAsync(
+                world, PersonPresses.SessionHandOver, Body(("id", ask.Ids[0]), ("agent", ask.Agent), ("account", ask.Account)),
+                () => HandOverAsync(world, ask, output, ct), output, ct).ConfigureAwait(false),
+            "helper" => await ThroughAsync(
+                world, PersonPresses.SessionHelperAsk, Body(("id", ask.Ids[0]), ("question", ask.Text), ("agent", ask.Agent)),
+                () => SessionsHelperCommand.RunAsync(world, ask, output, ct), output, ct).ConfigureAwait(false),
+            "helper-approve" => await ThroughAsync(
+                world, PersonPresses.SessionHelperApprove, Body(("ask", ask.Ids[0])),
+                () => SessionsHelperCommand.RunWordAsync(world, ask, output), output, ct).ConfigureAwait(false),
+            "helper-decline" => await ThroughAsync(
+                world, PersonPresses.SessionHelperDecline, Body(("ask", ask.Ids[0])),
+                () => SessionsHelperCommand.RunWordAsync(world, ask, output), output, ct).ConfigureAwait(false),
+            "stop" => await ThroughAsync(
+                world, PersonPresses.SessionStop, Body(("id", ask.Ids[0])), () => StopAsync(world, ask.Ids[0], output, ct), output, ct).ConfigureAwait(false),
+            "finish" or "decline" => await ThroughAsync(
+                world, PersonPresses.SessionResolve,
+                Body(("id", ask.Ids[0]), ("state", ask.Verb == "finish" ? "completed" : "declined"), ("note", ask.Note)),
+                () => ResolveAsync(world, ask, output, ct), output, ct).ConfigureAwait(false),
             "archive" when ask.Ended => await ArchiveEndedAsync(world, ask.Yes, output, ct).ConfigureAwait(false),
             "archive" => await ArchiveAsync(world, ask.Ids, output, ct).ConfigureAwait(false),
-            "unarchive" => Unarchive(world, ask.Ids, output),
-            "delete" => await DeleteAsync(world, ask.Ids[0], output, ct).ConfigureAwait(false),
+            "unarchive" => await UnarchiveAsync(world, ask.Ids, output, ct).ConfigureAwait(false),
+            "delete" => await ThroughAsync(
+                world, PersonPresses.SessionDelete, Body(("id", ask.Ids[0])), () => DeleteAsync(world, ask.Ids[0], output, ct), output, ct).ConfigureAwait(false),
             _ => await ListAsync(world, ask, output, ct).ConfigureAwait(false),
         };
+
+    // ——— The person's presses through the running Daoris (RPC1d, the terminal RPC design §7.2): each is sent to the instance, which
+    // shows it in its window and runs it once on the person's Confirm, the verb saying it waits and then the lines the route answers
+    // (`said`, the alone path's own words); alone where no instance runs, as before. A verb that holds a request-folder wait keeps
+    // that wait on its alone path, and the instance runs the same path itself.
+
+    /// <summary>A press's payload: the route's own fields beside <c>said: true</c>, which asks for the verb's lines; an absent value is left out.</summary>
+    private static Dictionary<string, object?> Body(params (string Name, object? Value)[] fields)
+    {
+        var body = new Dictionary<string, object?>();
+        foreach (var (name, value) in fields)
+        {
+            if (value is not null) body[name] = value;
+        }
+
+        body["said"] = true;
+        return body;
+    }
+
+    /// <summary>A take-back's or a reword's payload: the record's word under its session, the new words only for a reword.</summary>
+    private static Dictionary<string, object?> QueueEditBody(SessionsAsk ask) =>
+        Body(("session", ask.Ids[0]), ("id", ask.Word), ("text", ask.Verb == "reword" ? ask.Text : null));
+
+    private static async Task<int> ThroughAsync(
+        SessionsWorld world, InstanceRoute route, object payload, Func<Task<int>> alone, TextWriter output, CancellationToken ct) =>
+        world.Instance is { } instance
+            ? await InstanceDoor.PressAsync(route, payload, alone, TreesSaid.Words(output, instance.Error, "sessions"), instance, ct).ConfigureAwait(false)
+            : await alone().ConfigureAwait(false);
+
+    /// <summary>
+    /// <c>say</c> through the instance: a file named is judged here first, where the person named it, as the alone path judges it; its
+    /// full path is sent, which the Daoris on this machine reads as <see cref="SayAsync"/> does.
+    /// </summary>
+    private static async Task<int> SayThroughAsync(SessionsWorld world, SessionsAsk ask, TextWriter output, CancellationToken ct)
+    {
+        if (world.Instance is null) return await SayAsync(world, ask, output, ct).ConfigureAwait(false);
+
+        var paths = new List<string>();
+        foreach (var path in ask.Files)
+        {
+            var full = Path.GetFullPath(path);
+            if (!File.Exists(full))
+            {
+                output.WriteLine($"sessions: `{path}` is not a file on this machine.");
+                return 2;
+            }
+
+            paths.Add(full);
+        }
+
+        return await ThroughAsync(
+            world, PersonPresses.SessionSay,
+            Body(("id", ask.Ids[0]), ("text", ask.Text ?? ""), ("paths", paths.Count > 0 ? paths : null), ("now", ask.Now ? true : null)),
+            () => SayAsync(world, ask, output, ct), output, ct).ConfigureAwait(false);
+    }
 
     /// <summary>
     /// The written form of one listing, as <c>SESSION_GROUPS</c> answers it: <c>{"sessions": [...]}</c>, and with
@@ -1430,27 +1503,26 @@ public static class SessionsCommand
 
     // ——— Archive, unarchive and delete: the screen's owners.
 
-    private static async Task<int> ArchiveAsync(SessionsWorld world, IReadOnlyList<string> ids, TextWriter output, CancellationToken ct)
+    /// <summary>
+    /// <c>archive &lt;id&gt;…</c>: the running Daoris's <c>SESSION_ARCHIVE</c> where one runs, a person's press its window confirms (RPC1c),
+    /// said in the words its answer carries; this process's own archive where none runs. Both say <see cref="SessionArchive.ArchiveSaid"/>.
+    /// </summary>
+    private static async Task<int> ArchiveAsync(SessionsWorld world, IReadOnlyList<string> ids, TextWriter output, CancellationToken ct) =>
+        world.Instance is { } instance
+            ? await InstanceDoor.PressAsync(
+                PersonPresses.SessionArchive, new { ids, archived = true, said = true }, () => ArchiveAloneAsync(world, ids, output, ct),
+                TreesSaid.Words(output, instance.Error, "sessions"), instance, ct).ConfigureAwait(false)
+            : await ArchiveAloneAsync(world, ids, output, ct).ConfigureAwait(false);
+
+    private static async Task<int> ArchiveAloneAsync(SessionsWorld world, IReadOnlyList<string> ids, TextWriter output, CancellationToken ct)
     {
         var look = await SessionGroups.LookAsync(world.Service, world.Config, world.Door, lastLook: null, world.Home, ids, ct).ConfigureAwait(false);
         var answer = new SessionArchive(world.Home).Archive(
             ids, SessionGroups.Read(look, ids), [.. look.Records.Select(record => record.Id)], DateTimeOffset.UtcNow);
-        foreach (var outcome in answer.Outcomes)
-        {
-            output.WriteLine(outcome.Verdict switch
-            {
-                ArchiveVerdict.Archived => $"sessions: archived {outcome.Session}.",
-                ArchiveVerdict.Live => $"sessions: kept {outcome.Session}: it is still running; stop it first.",
-                ArchiveVerdict.NeedsYou when outcome.Group == SessionGroup.Review =>
-                    $"sessions: kept {outcome.Session}: it has work to review; archive never hides what needs you.",
-                ArchiveVerdict.NeedsYou => $"sessions: kept {outcome.Session}: it is waiting on you; archive never hides what needs you.",
-                _ => $"sessions: kept {outcome.Session}: no session here is {outcome.Session}.",
-            });
-        }
-
-        var archived = answer.Outcomes.Count(outcome => outcome.Verdict == ArchiveVerdict.Archived);
-        SessionArchive.Said(world.Log, archived, PluginEvents.Terminal);
-        return archived == answer.Outcomes.Count ? 0 : 1;
+        var said = SessionArchive.ArchiveSaid(answer.Outcomes);
+        said.Print(output, output);
+        SessionArchive.Said(world.Log, answer.Outcomes.Count(outcome => outcome.Verdict == ArchiveVerdict.Archived), PluginEvents.Terminal);
+        return said.Code;
     }
 
     /// <summary>§5.3 at a terminal: the list first, what it would take and what stays; <c>--yes</c> archives what it holds, each judged again.</summary>
@@ -1489,17 +1561,20 @@ public static class SessionsCommand
         return 0;
     }
 
+    /// <summary><c>unarchive &lt;id&gt;…</c>: as <see cref="ArchiveAsync"/>, the same route with <c>archived: false</c> (RPC1c).</summary>
+    private static async Task<int> UnarchiveAsync(SessionsWorld world, IReadOnlyList<string> ids, TextWriter output, CancellationToken ct) =>
+        world.Instance is { } instance
+            ? await InstanceDoor.PressAsync(
+                PersonPresses.SessionArchive, new { ids, archived = false, said = true }, () => Task.FromResult(Unarchive(world, ids, output)),
+                TreesSaid.Words(output, instance.Error, "sessions"), instance, ct).ConfigureAwait(false)
+            : Unarchive(world, ids, output);
+
     private static int Unarchive(SessionsWorld world, IReadOnlyList<string> ids, TextWriter output)
     {
         var back = new SessionArchive(world.Home).Unarchive(ids);
-        foreach (var id in ids)
-        {
-            output.WriteLine(back.NotArchived.Contains(id, StringComparer.Ordinal)
-                ? $"sessions: {id} was not archived, so nothing changed."
-                : $"sessions: unarchived {id}; it is back in the group its state puts it in.");
-        }
-
-        return 0;
+        var said = SessionArchive.UnarchiveSaid(ids, back.NotArchived);
+        said.Print(output, output);
+        return said.Code;
     }
 
     /// <summary>The screen's owner at the terminal's door: 0 deleted, 1 refused, 2 deleted with a file the disk kept (SESSDEL1), as a clear's is.</summary>

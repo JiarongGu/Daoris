@@ -92,76 +92,79 @@ const row = <const N extends string>(name: N, category: HomeCategory, next: stri
 
 /**
  * D172's table, in order: the driver's and the service's `HomeEntry` hold the same rows, which `home.test.ts` holds cell for
- * cell. 🔴 Every new place is still the old one (HOMELAYOUT2): HOMELAYOUT3 switches the new places on with the move.
+ * cell. 🔴 The new places are switched on (HOMELAYOUT3): each under the top folder its category names, under the Daoris folder,
+ * and each old place under the old home (`homeFolder`), so an install's `data/` entries are where they were. An entry made by
+ * HOMELAYOUT3 itself had no old place: its old column repeats its new, a place under the old home nothing writes.
  */
 export const HOME_ENTRIES = [
-  row('driver', 'data', 'driver.json', 'driver.json'),
-  row('harnesses', 'data', 'harnesses.json', 'harnesses.json'),
-  row('accounts', 'data', 'accounts.json', 'accounts.json'),
-  row('cooling', 'data', 'cooling.json', 'cooling.json'),
-  row('windows', 'data', 'windows.json', 'windows.json'),
-  row('reads', 'data', 'reads.json', 'reads.json'),
-  row('permissions', 'data', 'permissions.json', 'permissions.json'),
-  row('rule-proposals', 'data', 'proposals', 'proposals'),
-  row('tools', 'data', 'tools.json', 'tools.json'),
-  row('plugin-state', 'data', 'plugins.json', 'plugins.json'),
-  row('plugins', 'data', 'plugins', 'plugins'),
-  row('plugin-approvals', 'data', 'plugin-approvals.json', 'plugin-approvals.json'),
-  row('usage', 'data', 'usage.json', 'usage.json'),
-  row('landings', 'data', 'landings.json', 'landings.json'),
-  row('session-branches', 'data', 'session-branches.json', 'session-branches.json'),
-  row('lines-moved', 'data', 'lines-moved.json', 'lines-moved.json'),
-  row('registry-followed', 'data', 'registry-followed.json', 'registry-followed.json'),
-  row('abandoned', 'data', 'abandoned.json', 'abandoned.json'),
-  row('update', 'data', 'update.json', 'update.json'),
-  row('knowledge', 'data', 'knowledge.db', 'knowledge.db'),
-  row('sessions', 'data', 'sessions', 'sessions'),
-  row('helpers', 'data', 'helpers', 'helpers'),
-  row('handed', 'data', 'handed', 'handed'),
-  row('setup', 'data', 'setup', 'setup'),
-  row('workflows', 'data', 'workflows', 'workflows'),
-  row('help-proposals', 'data', 'help/proposals', 'help/proposals'),
-  row('configured-access', 'data', 'configured-access.json', 'configured-access.json'),
-  row('opinion-gates', 'data', 'opinions/gates', 'opinions/gates'),
-  row('opinion-dues', 'data', 'opinions/due.json', 'opinions/due.json'),
-  row('browser-settings', 'data', 'browser/settings.json', 'browser/settings.json'),
-  row('browser-favorites', 'data', 'browser/favorites.json', 'browser/favorites.json'),
-  row('home-id', 'data', 'home.json', 'home.json'),
-  row('brainstorms', 'data', 'brainstorms', 'brainstorms'),
-  row('usage-history', 'data', 'usage-history', 'usage-history'),
-  row('keys', 'profiles', 'keys.json', 'keys.json'),
-  row('remotes', 'profiles', 'remotes.json', 'remotes.json'),
-  row('agent-homes', 'profiles', 'harnesses/*/*', 'harnesses/*/*'),
-  row('browser-engine', 'profiles', 'browser/engine', 'browser/engine'),
-  row('browser-edge', 'profiles', 'browser/edge', 'browser/edge'),
-  row('edge-cookies', 'profiles', 'browser/edge-session-cookies.bin', 'browser/edge-session-cookies.bin'),
-  row('window', 'profiles', '', '', 'chromium', 'config'),
-  row('trees', 'work', 'trees/*/*/*', 'trees/*/*/*'),
-  row('help-room', 'work', 'help', 'help', 'CLAUDE.md'),
-  row('help-rooms', 'work', 'help-*', 'help-*', 'CLAUDE.md'),
-  row('intake', 'work', 'intake/*', 'intake/*'),
-  row('opinion-packets', 'work', 'opinions/*', 'opinions/*'),
-  row('quest-files', 'work', 'quests/*', 'quests/*'),
-  row('ask-files', 'work', 'asks/*', 'asks/*'),
-  row('session-files', 'work', 'sessions/*/files', 'sessions/*/files'),
-  row('proof', 'work', 'proof/*', 'proof/*'),
-  row('usage-read', 'work', 'usage-read', 'usage-read'),
-  row('brainstorm-rooms', 'work', 'brainstorm-rooms/*', 'brainstorm-rooms/*'),
-  row('toolchain', 'cache', 'toolchain', 'toolchain'),
-  row('tool-versions', 'cache', 'tools', 'tools'),
-  row('bin', 'cache', 'bin', 'bin'),
-  row('home-lease', 'run', 'home.lease', 'home.lease'),
-  row('driver-lock', 'run', 'driver.lock', 'driver.lock'),
-  row('running', 'run', 'running.json', 'running.json'),
-  row('locks', 'run', 'locks', 'locks'),
-  row('spawn', 'run', 'spawn', 'spawn'),
-  row('starts', 'run', 'starts', 'starts'),
-  row('hooks', 'run', 'hooks', 'hooks'),
-  row('probing', 'run', 'harnesses/.probing', 'harnesses/.probing'),
-  row('session-pids', 'run', 'sessions/*.pid', 'sessions/*.pid'),
-  row('requests', 'run', 'sessions/requests', 'sessions/requests'),
-  row('edge-record', 'run', 'browser/edge.json', 'browser/edge.json'),
-  row('pipe', 'run', 'pipe', 'pipe'),
+  row('driver', 'data', 'data/driver.json', 'driver.json'),
+  row('harnesses', 'data', 'data/harnesses.json', 'harnesses.json'),
+  row('accounts', 'data', 'data/accounts.json', 'accounts.json'),
+  row('cooling', 'data', 'data/cooling.json', 'cooling.json'),
+  row('windows', 'data', 'data/windows.json', 'windows.json'),
+  row('reads', 'data', 'data/reads.json', 'reads.json'),
+  row('permissions', 'data', 'data/permissions.json', 'permissions.json'),
+  row('rule-proposals', 'data', 'data/proposals', 'proposals'),
+  row('tools', 'data', 'data/tools.json', 'tools.json'),
+  row('plugin-state', 'data', 'data/plugins.json', 'plugins.json'),
+  row('plugins', 'data', 'data/plugins', 'plugins'),
+  row('plugin-approvals', 'data', 'data/plugin-approvals.json', 'plugin-approvals.json'),
+  row('usage', 'data', 'data/usage.json', 'usage.json'),
+  row('landings', 'data', 'data/landings.json', 'landings.json'),
+  row('session-branches', 'data', 'data/session-branches.json', 'session-branches.json'),
+  row('lines-moved', 'data', 'data/lines-moved.json', 'lines-moved.json'),
+  row('registry-followed', 'data', 'data/registry-followed.json', 'registry-followed.json'),
+  row('abandoned', 'data', 'data/abandoned.json', 'abandoned.json'),
+  row('update', 'data', 'data/update.json', 'update.json'),
+  row('knowledge', 'data', 'data/knowledge.db', 'knowledge.db'),
+  row('sessions', 'data', 'data/sessions', 'sessions'),
+  row('helpers', 'data', 'data/helpers', 'helpers'),
+  row('handed', 'data', 'data/handed', 'handed'),
+  row('setup', 'data', 'data/setup', 'setup'),
+  row('workflows', 'data', 'data/workflows', 'workflows'),
+  row('help-proposals', 'data', 'data/help/proposals', 'help/proposals'),
+  row('configured-access', 'data', 'data/configured-access.json', 'configured-access.json'),
+  row('opinion-gates', 'data', 'data/opinions/gates', 'opinions/gates'),
+  row('opinion-dues', 'data', 'data/opinions/due.json', 'opinions/due.json'),
+  row('browser-settings', 'data', 'data/browser/settings.json', 'browser/settings.json'),
+  row('browser-favorites', 'data', 'data/browser/favorites.json', 'browser/favorites.json'),
+  row('home-id', 'data', 'data/home.json', 'home.json'),
+  row('brainstorms', 'data', 'data/brainstorms', 'brainstorms'),
+  row('usage-history', 'data', 'data/usage-history', 'usage-history'),
+  row('keys', 'profiles', 'profiles/keys.json', 'keys.json'),
+  row('remotes', 'profiles', 'profiles/remotes.json', 'remotes.json'),
+  row('agent-homes', 'profiles', 'profiles/agents/*/*', 'harnesses/*/*'),
+  row('browser-engine', 'profiles', 'profiles/browser/engine', 'browser/engine'),
+  row('browser-edge', 'profiles', 'profiles/browser/edge', 'browser/edge'),
+  row('edge-cookies', 'profiles', 'profiles/browser/edge-session-cookies.bin', 'browser/edge-session-cookies.bin'),
+  row('window', 'profiles', 'profiles/window', '', 'chromium', 'config'),
+  row('trees', 'work', 'work/trees/*/*/*', 'trees/*/*/*'),
+  row('help-room', 'work', 'work/rooms/help', 'help', 'CLAUDE.md'),
+  row('help-rooms', 'work', 'work/rooms/help-*', 'help-*', 'CLAUDE.md'),
+  row('intake', 'work', 'work/rooms/intake/*', 'intake/*'),
+  row('opinion-packets', 'work', 'work/opinions/*', 'opinions/*'),
+  row('quest-files', 'work', 'work/files/quests/*', 'quests/*'),
+  row('ask-files', 'work', 'work/files/asks/*', 'asks/*'),
+  row('session-files', 'work', 'work/files/sessions/*', 'sessions/*/files'),
+  row('proof', 'work', 'work/files/proof/*', 'proof/*'),
+  row('usage-read', 'work', 'work/usage-read', 'usage-read'),
+  row('brainstorm-rooms', 'work', 'work/brainstorm-rooms/*', 'brainstorm-rooms/*'),
+  row('toolchain', 'cache', 'cache/toolchain', 'toolchain'),
+  row('tool-versions', 'cache', 'cache/tools', 'tools'),
+  row('bin', 'cache', 'cache/bin', 'bin'),
+  row('home-lease', 'run', 'run/home.lease', 'home.lease'),
+  row('driver-lock', 'run', 'run/driver.lock', 'driver.lock'),
+  row('running', 'run', 'run/running.json', 'running.json'),
+  row('locks', 'run', 'run/locks', 'locks'),
+  row('spawn', 'run', 'run/spawn', 'spawn'),
+  row('starts', 'run', 'run/starts', 'starts'),
+  row('hooks', 'run', 'run/hooks', 'hooks'),
+  row('probing', 'run', 'run/probing', 'harnesses/.probing'),
+  row('session-pids', 'run', 'run/sessions/*.pid', 'sessions/*.pid'),
+  row('requests', 'run', 'run/requests', 'sessions/requests'),
+  row('edge-record', 'run', 'run/edge.json', 'browser/edge.json'),
+  row('pipe', 'run', 'run/pipe', 'pipe'),
+  row('home-move', 'run', 'run/home-move.json', 'run/home-move.json'),
   row('logs', 'logs', 'logs', 'logs'),
 ] as const;
 
@@ -239,28 +242,98 @@ function holds(entry: HomeEntry, place: string): boolean {
  */
 export function homeEntry(home: string, name: HomeEntryName | HomeEntry, ...asked: string[]): string {
   const entry = entryOf(name);
-  const next = expand(home, entry.new, asked);
-  let place = next.place;
-  if (entry.new !== entry.old) {
-    const old = expand(home, entry.old, asked).place;
+  const { folder, old: oldHome } = homeFolder(home);
+  const next = expand(folder, entry.new, asked);
+  const old = expand(oldHome, entry.old, asked).place;
+  let place: string;
+  if (samePlace(next.place, old)) {
+    // One place by two spellings (an install's data entries, a root's logs) is the old one, spelled under the home as named.
+    place = old;
+  } else {
     const held = holds(entry, next.place);
     if (held && next.whole && holds(entry, old)) throw new HomeEntryTwice(entry.name, next.place, old);
     place = held ? next.place : there(entry, old) ? old : next.place;
+    if (place === next.place) makeCategory(folder, entry);
   }
   return next.under.length === 0 ? place : join(place, ...next.under);
 }
 
 /**
- * Both places of an entry, asked as `homeEntry` is, without the disk: for a list of its items, which reads both (the design
- * §6.2). The new place first, then the old, once each.
+ * The folder of an entry's category, made where its new place is answered and the Daoris folder is there (HOMELAYOUT3), as the
+ * C# twins make it: a writer of a file the home's top held before now writes into its category's folder, which a new home has not
+ * made yet. Nothing else is made: an entry's own folders are its writer's, and a home that is not there stays not there.
+ */
+function makeCategory(folder: string, entry: HomeEntry): void {
+  const parts = entry.new.split('/').filter(Boolean);
+  if (parts.length < 2) return;
+  const category = join(folder, parts[0]!);
+  if (existsSync(category) || !existsSync(folder)) return;
+  try {
+    mkdirSync(category);
+  } catch {
+    // The writer that follows meets the same refusal and says it.
+  }
+}
+
+/**
+ * Both places of an entry, asked as `homeEntry` is, without reading them: for a list of its items, which reads both (the design
+ * §6.2). The new place first, then the old, once each. Only the marker that says which folder the home names is read
+ * (`homeFolder`).
  */
 export function homePlaces(home: string, name: HomeEntryName | HomeEntry, ...asked: string[]): string[] {
   const entry = entryOf(name);
-  const next = expand(home, entry.new, asked);
-  const old = expand(home, entry.old, asked);
-  const places = [next.place, old.place].map((place) => (next.under.length === 0 ? place : join(place, ...next.under)));
-  return [...new Set(places)];
+  const { folder, old: oldHome } = homeFolder(home);
+  const next = expand(folder, entry.new, asked);
+  const old = expand(oldHome, entry.old, asked);
+  const places = samePlace(next.place, old.place) ? [old.place] : [next.place, old.place];
+  return places.map((place) => (next.under.length === 0 ? place : join(place, ...next.under)));
 }
+
+/**
+ * The Daoris folder a home names, and the old home its entries were under before D172's places (D172 point 2, HOMELAYOUT3): an
+ * install's folder (it holds the marker), whose old home is its `data/`; that `data/`, which names the same install and is its
+ * old home, as every account that met D63 names it; and any other home, which is both. The C# twins' `DaorisHome.FolderOf`.
+ */
+export function homeFolder(home: string): { folder: string; old: string } {
+  const trimmed = home.length > 1 ? home.replace(/[\\/]+$/, '') || home : home;
+  if (existsSync(join(trimmed, INSTALL_MARKER))) return { folder: trimmed, old: join(trimmed, INSTALL_DATA) };
+  const parent = dirname(trimmed);
+  if (basename(trimmed).toLowerCase() === INSTALL_DATA && parent !== trimmed && existsSync(join(parent, INSTALL_MARKER))) {
+    return { folder: parent, old: trimmed };
+  }
+  return { folder: trimmed, old: trimmed };
+}
+
+/**
+ * The home a file or folder of it is in, the entry it is named (HOMELAYOUT3): undone from the entry's new place, the Daoris
+ * folder, spelled as its `data/` where that folder is an install, as every install's home has been since D63; else undone from
+ * its old place, the old home. For a reader that holds a file rather than its home (the harnesses' wiring, the driver's
+ * choices). The C# twins' `DaorisHome.HomeOf`. An entry kept per item is not asked here.
+ */
+export function homeOf(path: string, name: HomeEntryName | HomeEntry): string {
+  const entry = entryOf(name);
+  const full = resolve(path).replace(/[\\/]+$/, '') || resolve(path);
+  const folder = undone(full, entry.new);
+  if (folder !== null) return existsSync(join(folder, INSTALL_MARKER)) ? join(folder, INSTALL_DATA) : folder;
+  return undone(full, entry.old) ?? dirname(full);
+}
+
+/** The folder a place's parts sit under in `full`, or null where it does not end with them. */
+function undone(full: string, place: string): string | null {
+  let at = full;
+  for (const part of place.split('/').filter(Boolean).reverse()) {
+    const parent = dirname(at);
+    if (!sameName(basename(at), part) || parent === at) return null;
+    at = parent;
+  }
+  return at;
+}
+
+const WINDOWS = process.platform === 'win32';
+const sameName = (a: string, b: string): boolean => (WINDOWS ? a.toLowerCase() === b.toLowerCase() : a === b);
+
+/** Two spellings of one place: whole, and without regard to case where the file system has none. */
+const samePlace = (a: string, b: string): boolean => sameName(resolve(a), resolve(b));
 
 /** An entry under the environment's home, or null when there is no home. */
 export function homeFile(env: Env, name: HomeEntryName, install: string | null = THIS_INSTALL): string | null {

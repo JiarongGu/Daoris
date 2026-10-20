@@ -58,7 +58,7 @@ test('writeTextAtomic writes BOM-less UTF-8 and leaves no temp file', () => {
 // moved each other's staging file. The driver's `AtomicFile` names it per write.
 test('two writers of one file never share a staging file, and each is beside the file', () => {
   const fx = makeFixture('fsx-staging');
-  const target = join(fx.root, 'driver.json');
+  const target = join(fx.root, 'choices.json');
   const staged: string[] = [];
   const recording = (from: string, to: string) => { staged.push(from); renameSync(from, to); };
   writeTextAtomic(target, '{}\n', { rename: recording });
@@ -66,13 +66,13 @@ test('two writers of one file never share a staging file, and each is beside the
   assert.equal(staged.length, 2);
   assert.notEqual(staged[0], staged[1]);
   for (const each of staged) assert.equal(dirname(each), dirname(target));
-  assert.deepEqual(readdirSync(fx.root), ['driver.json']);
+  assert.deepEqual(readdirSync(fx.root), ['choices.json']);
   fx.cleanup();
 });
 
 test('a write whose move fails leaves no staging file behind', () => {
   const fx = makeFixture('fsx-staging-failed');
-  const target = join(fx.root, 'driver.json');
+  const target = join(fx.root, 'choices.json');
   const refused = refusing('EXDEV', 1);
   assert.throws(() => writeTextAtomic(target, '{}\n', { rename: refused.rename }), /EXDEV/);
   assert.deepEqual(readdirSync(fx.root), []);

@@ -105,7 +105,7 @@ public sealed class GoOnInSyncTests : TreeSyncFixture
         Assert.Null(started.Moved);
         Assert.Equal(
             "Daoris could not bring this tree up to date with `#q1`'s new submission: the service names no commit for it (a host before "
-            + "it, or a submission no evidence was read for), so only the line was brought up to date. Read what `#q1` now holds before "
+            + "it, or a submission whose commit no session's end read), so only the line was brought up to date. Read what `#q1` now holds before "
             + "you build on its work.",
             started.Told);
         Assert.Equal(head, await RevAsync(step.Path, "HEAD"));
@@ -126,6 +126,45 @@ public sealed class GoOnInSyncTests : TreeSyncFixture
         Assert.Null(started.Moved);
         Assert.StartsWith("Daoris could not bring this tree up to date with `#q1`'s new submission (`01234567`): this repository does not hold that commit", started.Told);
         Assert.Equal(head, await RevAsync(step.Path, "HEAD"));
+    }
+
+    /// <summary>
+    /// 🔴 FABRIC-CLOSE1c6: the source's new submission named no evidence, so no verdict gave its commit. The end of the session that said its
+    /// <c>ready</c> posts its tree's HEAD alone, read by git; the service answers it on the submission, as the driver's client reads it; and
+    /// the step's carry-on starts in a tree holding it, where it once had the line alone.
+    /// </summary>
+    [Fact]
+    public async Task A_submission_with_no_evidence_wanted_is_held_by_the_carry_on_through_the_commit_its_end_posted()
+    {
+        var (root, _) = await RepositoryWithOriginAsync("engine");
+        var trees = new SessionTrees(Home);
+        var (source, step) = await SourceAndStepAsync(trees, root);
+        await CommitAsync(source.Path, "p2.txt", "the source's new work\n", "p2");
+        var posted = new List<System.Text.Json.Nodes.JsonObject>();
+        using var client = QuestStandIn.Client(request =>
+        {
+            if (request.Method != HttpMethod.Post || !request.RequestUri!.AbsolutePath.EndsWith("/evidence", StringComparison.Ordinal)) return null;
+            posted.Add(QuestStandIn.Body(request));
+            return (System.Net.HttpStatusCode.OK, """{"quest":{"id":"q1"},"message":"Kept the commit."}""");
+        });
+        var ending = new QuestView("q1", "game", "engine", "The source", "Body", "Taken")
+        {
+            Closure = "gph-0123", Submission = new QuestSubmissionView("desk", 43, null, "ready", Session: "s-source"),
+        };
+
+        await EvidenceCheck.AtEndAsync(client, ending, new EvidenceAt(source.Path, EvidenceCodes.SessionEnd) { Session = "s-source" }, null);
+
+        var commit = Assert.Single(posted)["commit"]!.GetValue<string>();
+        Assert.Equal(await RevAsync(source.Path, "HEAD"), commit);
+        var sourceView = ServiceClient.ReadQuests(
+            $$$"""[{"id":"q1","from":"game","to":"engine","title":"The source","body":"","status":"Taken","closure":"gph-0123","submission":{"machine":"desk","sequence":43,"commit":"{{{commit}}}"}}]""")[0];
+        var stepView = new QuestView("q2", "engine", "engine", "The step", "Body", "Taken") { Parent = "q1", GrewFrom = new QuestSubmissionRef("desk", 43) };
+
+        var started = await trees.GoOnInSyncAsync(step.Path, "#q1", Planner.SourceCommit(stepView, sourceView));
+
+        Assert.Equal(0, await ExitAsync(step.Path, "merge-base", "--is-ancestor", commit, "HEAD"));
+        Assert.Equal(["s1"], await SubjectsAsync(root, $"{commit}..{step.Branch}"));
+        Assert.StartsWith($"Before this turn Daoris brought this tree up to date with `#q1`'s new submission (`{commit[..8]}`)", started.Told);
     }
 
     /// <summary>

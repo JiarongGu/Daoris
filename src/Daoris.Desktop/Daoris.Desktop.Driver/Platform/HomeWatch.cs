@@ -7,6 +7,29 @@ namespace Daoris.Driver;
 /// <param name="Stamps">What the topic's judge reads: each file's full path and its stamp, in whatever order.</param>
 public sealed record HomePart(string Folder, bool Subfolders, Func<string, ChangeKind, bool> Hears, Func<IEnumerable<KeyValuePair<string, string>>> Stamps)
 {
+    /// <summary>
+    /// Files the judge reads by name alone, never by listing a folder (FABRIC-END7b), each stamped present or absent: a name entering or
+    /// leaving this list is the list's change, never the file's, so it moves nothing. None by default.
+    /// </summary>
+    public Func<IEnumerable<string>>? ByName { get; init; }
+
+    /// <summary>
+    /// The workflows (FABRIC-END7, FABRIC-END7b): each version's file by its stamp, and of the runs' bindings under <c>runs/</c>, kept one
+    /// per run for good, only those <paramref name="runs"/> names, by name: the runs a due entry's gate read, which alone can release a
+    /// landing. Every <c>*.json</c> under the folder is heard, and its judge reads the same.
+    /// </summary>
+    public static HomePart Workflows(string folder, Func<IEnumerable<string>> runs)
+    {
+        var full = Path.GetFullPath(folder);
+        return Records(full, subfolders: true) with
+        {
+            Stamps = () => Directory.Exists(full)
+                ? Directory.EnumerateFiles(full, "*.json", SearchOption.TopDirectoryOnly).Select(file => KeyValuePair.Create(file, HomeWrites.Stamp(file)))
+                : [],
+            ByName = () => runs().Where(WorkflowRunBindings.IsRunId).Select(run => Path.Combine(full, WorkflowRunBindings.Folder, run + ".json")),
+        };
+    }
+
     /// <summary>One file of a folder, heard by its final name alone: a writer's temporary and its neighbours are not it.</summary>
     public static HomePart File(string path)
     {
@@ -144,10 +167,23 @@ public sealed class HomeWatch : IAsyncDisposable
         var words = HeldWordsFile.PathOf(home);
         watch.Topic(ChangeTopics.Words, Path.GetFileName(words), HomePart.File(words));
         // The landing gate's files (FABRIC-END7): what releases a second opinion's or a workflow's hold when another process writes it.
-        watch.Topic(ChangeTopics.Gates, ChangeTopics.Gates,
-            HomePart.Records(DaorisHome.Entry(home, HomeEntry.OpinionGates), subfolders: false), HomePart.Records(WorkflowStore.FolderOf(home), subfolders: true));
+        watch.Topic(ChangeTopics.Gates, ChangeTopics.Gates, GateParts(home));
         return watch;
     }
+
+    /// <summary>
+    /// The <c>gates</c> topic's places (FABRIC-END7): the second opinions' records and the workflows, whose runs are listed by the names
+    /// the due entries' gates read (FABRIC-END7b, <see cref="LandingJudged.Runs"/>), so the deadline's listing grows with the due list,
+    /// never with every run there ever was.
+    /// </summary>
+    internal static HomePart[] GateParts(string home) =>
+    [
+        HomePart.Records(DaorisHome.Entry(home, HomeEntry.OpinionGates), subfolders: false),
+        HomePart.Workflows(WorkflowStore.FolderOf(home), () => LandingJudged.Runs(home)),
+    ];
+
+    /// <summary>What a topic's judge lists of <paramref name="parts"/>, each file's full path with its stamp, which a test counts.</summary>
+    internal static IReadOnlyDictionary<string, string> Listed(IEnumerable<HomePart> parts) => Read(parts).Stamps;
 
     /// <summary>
     /// Ask Daoris's proposals folder alone (<see cref="ChangeTopics.Help"/>, FABRIC-EVENT5a): the window's own process watches it, whoever
@@ -182,7 +218,8 @@ public sealed class HomeWatch : IAsyncDisposable
     /// </summary>
     public void Topic(string topic, string subject, params HomePart[] parts)
     {
-        lock (_gate) _heard[topic] = new Heard(subject, parts, Read(parts));
+        var (stamps, named) = Read(parts);
+        lock (_gate) _heard[topic] = new Heard(subject, parts, stamps) { Named = named };
         _chain.Topic(topic, ChainEvents.Home, _every);
         foreach (var part in parts) _changes.Watch(topic, topic, part.Folder, part.Hears, part.Subfolders);
     }
@@ -193,15 +230,23 @@ public sealed class HomeWatch : IAsyncDisposable
     /// <summary>The machine resumed from sleep: every folder is reopened and every topic judged now.</summary>
     public void Resumed() => _changes.Resumed();
 
-    private static Dictionary<string, string> Read(IEnumerable<HomePart> parts)
+    /// <summary>Each file's stamp, and which of them were read by name (<see cref="HomePart.ByName"/>, FABRIC-END7b).</summary>
+    private static (Dictionary<string, string> Stamps, HashSet<string> Named) Read(IEnumerable<HomePart> parts)
     {
         var stamps = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        var named = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         foreach (var part in parts)
         {
             foreach (var (key, stamp) in part.Stamps()) stamps[key] = stamp;
+            foreach (var path in part.ByName?.Invoke() ?? [])
+            {
+                var key = Path.GetFullPath(path);
+                stamps[key] = HomeWrites.Stamp(key);
+                named.Add(key);
+            }
         }
 
-        return stamps;
+        return (stamps, named);
     }
 
     /// <summary>Link 7 on the home's files: each topic heard is read afresh, and emits nothing into the chain.</summary>
@@ -221,19 +266,21 @@ public sealed class HomeWatch : IAsyncDisposable
             if (!_heard.TryGetValue(topic, out known!)) return 0;
         }
 
-        var now = Read(known.Parts);
+        var (now, named) = Read(known.Parts);
         var moved = false;
         lock (_gate)
         {
             foreach (var (key, stamp) in now)
             {
-                if (known.Last.TryGetValue(key, out var before) && before == stamp) continue;
+                // FABRIC-END7b: a name newly read by name is the list's change, not the file's; its next stamp is compared with this one.
+                if (known.Last.TryGetValue(key, out var before) ? before == stamp : named.Contains(key)) continue;
                 if (!HomeWrites.Is(key, stamp)) moved = true;
             }
 
-            // A plugin's folder gone, or a file no longer listed, is a move that is nobody's mark.
-            if (known.Last.Keys.Any(key => !now.ContainsKey(key))) moved = true;
+            // A plugin's folder gone, or a file no longer listed, is a move that is nobody's mark; a name no longer read by name is not.
+            if (known.Last.Keys.Any(key => !now.ContainsKey(key) && !known.Named.Contains(key))) moved = true;
             known.Last = now;
+            known.Named = named;
         }
 
         if (!moved) return 0;
@@ -250,5 +297,8 @@ public sealed class HomeWatch : IAsyncDisposable
         public HomePart[] Parts { get; } = parts;
 
         public Dictionary<string, string> Last { get; set; } = last;
+
+        /// <summary>Which of <see cref="Last"/> were read by name (FABRIC-END7b).</summary>
+        public HashSet<string> Named { get; set; } = new(StringComparer.OrdinalIgnoreCase);
     }
 }

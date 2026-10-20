@@ -12,15 +12,27 @@ namespace Daoris.Desktop;
 /// The home this start inherited from the account and did not use (HOME1, D105): another install's
 /// `data/`, or this one's before it moved. Null when nothing was inherited, or it was this install's own.
 /// </param>
+/// <param name="Placing">What this start's move into D172's places did (HOMELAYOUT3), or null where none was tried.</param>
 public sealed record HomeEstablished(
     string Home, bool SetForUser, IReadOnlyList<string> Moved, IReadOnlyList<string> Failed, string Notice,
-    string? Overrode = null)
+    string? Overrode = null, HomePlaced? Placing = null)
 {
+    /// <summary>The entries this start renamed into their D172 places (HOMELAYOUT3).</summary>
+    public IReadOnlyList<HomeMove> Placed => Placing?.Moved ?? [];
+
+    /// <summary>The entries that should have moved into their places and could not, each still read where it was, with why.</summary>
+    public IReadOnlyList<HomeMove> NotPlaced => Placing?.Failed ?? [];
+
+    /// <summary>Why this start tried no move at all (an update not settled, another process of the folder, the lease held), or null.</summary>
+    public string? PlaceHeld => Placing?.Held;
+
     /// <summary>
     /// True when the person should hear about it: something moved, something could not, their
-    /// account's environment changed, or the home their account names is not the one this window runs on.
+    /// account's environment changed, or the home their account names is not the one this window runs on. A move held off for
+    /// this start is the machine log's to say, not the window's: the next start tries again.
     /// </summary>
-    public bool Worth => SetForUser || Overrode is not null || Moved.Count > 0 || Failed.Count > 0;
+    public bool Worth => SetForUser || Overrode is not null || Moved.Count > 0 || Failed.Count > 0
+        || Placed.Count > 0 || NotPlaced.Count > 0;
 }
 
 /// <summary>
@@ -117,6 +129,10 @@ public static class InstallHome
     /// <param name="leaseWait">
     /// How long the move waits for the home's lease while another act holds it (HOMELEASE1); <see cref="HomeLease.Wait"/>.
     /// </param>
+    /// <param name="othersRunning">
+    /// The processes of the install's folder other than this one and its launcher, which hold the move into D172's places off
+    /// (HOMELAYOUT3); <see cref="HomePlacing.OthersRunningFrom"/>.
+    /// </param>
     public static HomeEstablished? Establish(
         string baseDirectory,
         Func<string, string?> processEnvironment,
@@ -124,7 +140,8 @@ public static class InstallHome
         Func<string?> userEnvironment,
         Action<string> setUser,
         string legacy,
-        TimeSpan? leaseWait = null)
+        TimeSpan? leaseWait = null,
+        Func<string, IReadOnlyList<int>>? othersRunning = null)
     {
         var root = RootOf(baseDirectory);
         if (!File.Exists(Path.Combine(root, Marker))) return null;
@@ -134,7 +151,15 @@ public static class InstallHome
         string? overrode = null;
         if (DaorisHome.Resolve(processEnvironment) is { } named)
         {
-            if (SamePath(named, home)) return null;
+            // The install's own home, as the account names it: nothing to establish, and its move into D172's places runs on it
+            // all the same (HOMELAYOUT3), said where it moved or could not.
+            if (SamePath(named, home))
+            {
+                var placing = HomePlacing.Place(root, home, othersRunning ?? HomePlacing.OthersRunningFrom);
+                return placing.Any
+                    ? new HomeEstablished(home, false, [], [], Said($"Daoris home: {home}", placing) + ".", Placing: placing)
+                    : null;
+            }
 
             // 🔴 HOME1: the account's variable reaches every process the person starts, so a second or
             // moved install inherited the first one's home and ran on it without a word. A value that
@@ -161,6 +186,10 @@ public static class InstallHome
 
         var (moved, failed) = HasState(home) ? ([], []) : Migrate(legacy, home, leaseWait ?? HomeLease.Wait);
 
+        // Then the move into D172's places (HOMELAYOUT3, the design §7.6): what D63's move-in laid at the old places is moved on
+        // with the rest, under the same rules.
+        var placed = HomePlacing.Place(root, home, othersRunning ?? HomePlacing.OthersRunningFrom);
+
         var notice = $"Daoris home: {home}";
         if (overrode is not null)
         {
@@ -169,9 +198,71 @@ public static class InstallHome
         }
         if (moved.Count > 0) notice += $" — moved in from {legacy}: {string.Join(", ", moved)}";
         if (failed.Count > 0) notice += $" — could not move {string.Join(", ", failed)}; still at {legacy}";
+        notice = Said(notice, placed);
         if (setForUser) notice += $" — {DaorisHome.Variable} set for your account, so a terminal's daoris sees the same machine";
 
-        return new HomeEstablished(home, setForUser, moved, failed, notice + ".", overrode);
+        return new HomeEstablished(home, setForUser, moved, failed, notice + ".", overrode, placed.Any ? placed : null);
+    }
+
+    /// <summary>The notice with what the move into D172's places did added, once (the design §7.5), as D63's move-in is said.</summary>
+    private static string Said(string notice, HomePlaced placed)
+    {
+        if (placed.Moved.Count > 0)
+        {
+            notice += $" — moved into the Daoris folder's own folders (D172): {string.Join(", ", placed.Moved.Select(move => move.Entry))}";
+        }
+
+        if (placed.Failed.Count > 0)
+        {
+            notice += $" — could not move {string.Join("; ", placed.Failed.Select(move => $"{move.Entry} ({move.Reason})"))}; each is "
+                + "read where it is, and the next start tries again";
+        }
+
+        return notice;
+    }
+
+    /// <summary>
+    /// What the move into D172's places did, into the machine log (the design §7.5, the machine log design §4): a
+    /// <c>home.moved</c> line for each rename, a <c>home.move-failed</c> line for each that could not be, a
+    /// <c>home.move-recovered</c> line for each a stopped start left and this one put back, and <c>home.move-held</c> where
+    /// nothing was tried. Written once the log is open, which the move ran before, since the log is one of the entries it moves.
+    /// </summary>
+    public static void Log(HomeEstablished? established, MachineLog log)
+    {
+        if (established?.Placing is not { } placed) return;
+        foreach (var move in placed.Moved) log.Info("home.moved", ("entry", move.Entry), ("from", move.From), ("to", move.To));
+        foreach (var move in placed.Recovered) log.Info("home.move-recovered", ("entry", move.Entry), ("from", move.From), ("to", move.To));
+        foreach (var move in placed.Failed) log.Warn("home.move-failed", ("entry", move.Entry), ("reason", move.Reason));
+        if (placed.Held is { } held) log.Info("home.move-held", ("reason", held));
+    }
+
+    /// <summary>
+    /// The window's memory, the UI kit's data area (D172 point 4, the design §6.2), for a kit rooted at <paramref name="root"/>:
+    /// where that root is an install, its home's <see cref="HomeEntry.Window"/>, <c>profiles/window/</c> once moved and the
+    /// install's <c>data/</c> while its <c>chromium/</c> or <c>config/</c> is still there; elsewhere null, the kit's own.
+    /// </summary>
+    public static string? WindowMemory(string root) =>
+        File.Exists(Path.Combine(root, Marker)) ? DaorisHome.Entry(root, HomeEntry.Window) : null;
+
+    /// <summary>
+    /// The window's memory for a run whose one root was named with <c>--app-root</c> (HOMELAYOUT4, the design §6.1): a
+    /// development run's scratch Daoris folder, which is no install and is its own home, so the same entry as an install's.
+    /// </summary>
+    public static string WindowMemoryOfRun(string root) => DaorisHome.Entry(root, HomeEntry.Window);
+
+    /// <summary>The folder a <c>--app-root</c> argument names (<c>--app-root &lt;folder&gt;</c> or <c>--app-root=&lt;folder&gt;</c>), whole; null when none is given.</summary>
+    public static string? AppRootOf(IReadOnlyList<string> args)
+    {
+        const string name = "--app-root";
+        for (var at = 0; at < args.Count; at++)
+        {
+            string? value = null;
+            if (args[at] == name) value = at + 1 < args.Count ? args[at + 1] : null;
+            else if (args[at].StartsWith(name + "=", StringComparison.Ordinal)) value = args[at][(name.Length + 1)..];
+            if (!string.IsNullOrWhiteSpace(value)) return Path.GetFullPath(value);
+        }
+
+        return null;
     }
 
     /// <summary>
@@ -217,7 +308,7 @@ public static class InstallHome
         }
     }
 
-    /// <summary>The same, against this process, this user, and the profile directory a previous version used.</summary>
+    /// <summary>The same, against this process, this user, the profile directory a previous version used, and this machine's processes.</summary>
     public static HomeEstablished? Establish(string baseDirectory) => Establish(
         baseDirectory,
         Environment.GetEnvironmentVariable,
@@ -230,7 +321,8 @@ public static class InstallHome
             if (OperatingSystem.IsWindows())
                 Environment.SetEnvironmentVariable(DaorisHome.Variable, value, EnvironmentVariableTarget.User);
         },
-        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".daoris"));
+        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".daoris"),
+        othersRunning: HomePlacing.OthersRunningFrom);
 
     private static bool HasState(string home) =>
         Directory.EnumerateFileSystemEntries(home)
