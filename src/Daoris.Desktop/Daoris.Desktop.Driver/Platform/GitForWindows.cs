@@ -17,6 +17,9 @@ namespace Daoris.Driver;
 /// <para>Recognised only where the layout is unmistakable: a <c>git.exe</c> in a <c>cmd</c> folder, a git under a known
 /// prefix beside it, and <c>usr\bin</c>. An install with an <c>etc\git-bash.config</c>, whose <c>MSYS=</c> lines the
 /// launcher reads, starts through the launcher as before, as does any other layout and any other platform.</para>
+/// <para>🔴 A TWIN of the CLI's <c>gitforwindows.ts</c> (GITSTART4), which the CLI's toolchain and the repository's tools
+/// start their git through; <c>gitforwindows.test.ts</c> holds <c>GitForWindowsTests</c>' tables row for row. A rule
+/// changed here is changed there, in the same commit.</para>
 /// </remarks>
 public static class GitForWindows
 {

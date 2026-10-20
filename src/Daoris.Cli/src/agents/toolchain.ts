@@ -50,7 +50,8 @@
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { daorisHome, homeEntry, homeOf, homePlaces, requireHomeFile } from '../platform/home.ts';
-import { commandOnTheSystem, commandThroughTools, handTools } from '../tools/tools.ts';
+import { commandOnTheSystem, commandThroughTools, handTools, readTools } from '../tools/tools.ts';
+import { pastLauncher } from '../tools/gitforwindows.ts';
 import { join, resolve } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import type { SpawnSyncReturns, StdioOptions } from 'node:child_process';
@@ -3003,16 +3004,30 @@ type Env = Record<string, string | undefined>;
  * from `$DAORIS_HOME/tools.json` through `tools.ts`, and its file found on that PATH. So an agent's probe, its
  * installer, its login and a pin's npm see the git and node a session of the desktop's would. With no home, or every
  * tool the system's, the environment is `base` exactly. Held by the dogfood test: the one `spawnSync` is here.
+ *
+ * GITSTART4: the system's git, where it is Git for Windows' launcher, starts as the git behind it with the launcher's
+ * variables, one process where it was two (`gitforwindows.ts`, the driver's `WorkingTree.GitStart`). A git the person
+ * named or a managed one starts as it is.
  */
 function startChild(
   command: string[], base: Env, options: { stdio?: StdioOptions; timeout?: number },
 ): SpawnSyncReturns<string> {
-  const env = handTools(base, daorisHome(base));
-  const [file, argv, verbatim] = spawnable(command, env);
+  const home = daorisHome(base);
+  const handed = handTools(base, home);
+  const [named, argv, verbatim] = spawnable(command, handed);
+  const past = verbatim ? null : pastLauncher(named, handed);
+  const { file, env } = past !== null && systemsGit(home) ? past : { file: named, env: handed };
   return spawnSync(file, argv, {
     ...options, env, encoding: 'utf8', shell: false, windowsHide: true,
     ...(verbatim ? { windowsVerbatimArguments: true } : {}),
   });
+}
+
+/** Whether Daoris's git is the system's: with no home it is, and with one, where its entry reads so (§2.3). */
+function systemsGit(home: string | null): boolean {
+  if (home === null) return true;
+  const entry = readTools(home).entries.git!;
+  return entry.problem === null && entry.way === 'system';
 }
 
 /**
