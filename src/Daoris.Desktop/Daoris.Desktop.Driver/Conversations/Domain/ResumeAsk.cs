@@ -111,6 +111,8 @@ internal sealed class ResumeAsk(
                 Origin = word.Persons ? "person" : "target",
                 From = word.Daoris ? DaorisWords.From : null,
                 Opinion = word.By,
+                // COWORK1e: a helper's answer by its mark, which the answers-alone bound counts (AnswersAlone).
+                Helper = word.Helper,
                 Id = word.Id,
                 Text = word.Text,
                 Files = word.Files.Count > 0 ? word.Files : null,

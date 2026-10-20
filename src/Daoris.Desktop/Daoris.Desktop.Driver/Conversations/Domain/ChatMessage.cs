@@ -171,6 +171,8 @@ public sealed record ChatMessage(string Text, IReadOnlyList<KeptFile> Files)
         // COWORK1d: a helper's answer taken at a step of a turn is Daoris's words around that helper's claim too.
         Origin = message.Channel is { Person: false } || message.Daoris is not null || message.Helped is not null ? "target" : "person",
         From = message.Daoris is not null ? DaorisWords.From : null,
+        // COWORK1e: a helper's answer by its mark (AnswersAlone): taken at a step, it is no go-on and counts nothing.
+        Helper = message.Helped?.Helper,
         // SESSCTX1b: the channel's message these words carry, marked by its id, so a reader never tells it by Daoris's English.
         Channel = message.Channel?.Id is { Length: > 0 } channel ? channel : null,
         Id = message.Id,

@@ -1692,7 +1692,8 @@ public sealed class ChatRunner : IDisposable
         {
             // Daoris's words around another agent's claim (MIXAGENT2a-iii), under the id the record gave them so they pair with the
             // event that showed them waiting; never the person's, so no preface and no browser line ride beside them.
-            yield return new SessionEvent { Kind = SessionEventKind.User, Origin = "target", Id = helped.Id, Text = message.Text };
+            // COWORK1e: marked as that helper's, so the answers-alone bound counts the turn it prompts.
+            yield return new SessionEvent { Kind = SessionEventKind.User, Origin = "target", Helper = helped.Helper, Id = helped.Id, Text = message.Text };
             yield break;
         }
 
