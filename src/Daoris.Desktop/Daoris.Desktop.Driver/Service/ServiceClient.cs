@@ -441,8 +441,14 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
     /// never an exception: a refusal carries the service's word beside its sentence, and a host without the door (one older
     /// than MSG1a, or a shared one) says so.
     /// </summary>
+    /// <param name="from">
+    /// Their author where that is not the person (COWORK1b, <see cref="DaorisWords.From"/>): kept as Daoris's, never read as the
+    /// person's. A service from before the field ignores it and keeps the person's words, which is how such a word reads back.
+    /// </param>
+    /// <param name="key">The producer's key (COWORK1b): a say under a key the record holds is answered with the word kept.</param>
     public async Task<SayAnswer> SayAsync(
-        string id, string text, IReadOnlyList<string>? files = null, CancellationToken ct = default, string? channel = null)
+        string id, string text, IReadOnlyList<string>? files = null, CancellationToken ct = default, string? channel = null,
+        string? from = null, string? key = null)
     {
         var body = WriteJson(writer =>
         {
@@ -450,6 +456,8 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
             writer.WriteString("text", text);
             // SESSONE2e: the channel message these words are, which the ask holds already; an older service ignores it.
             if (channel is { Length: > 0 }) writer.WriteString("channel", channel);
+            if (from is { Length: > 0 }) writer.WriteString("from", from);
+            if (key is { Length: > 0 }) writer.WriteString("key", key);
             if (files is { Count: > 0 })
             {
                 writer.WriteStartArray("files");
@@ -2158,6 +2166,9 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
                 By = Text(word, "by") is { Length: > 0 } by ? by : null,
                 // A helper's answer is its own mark, never `by` (MIXAGENT2a-i): the person's words are neither.
                 Helper = Text(word, "helper") is { Length: > 0 } helper ? helper : null,
+                // COWORK1b: Daoris's own words, and the producer's key; a host from before says neither, and its word is the person's.
+                From = Text(word, "from") is { Length: > 0 } from ? from : null,
+                Key = Text(word, "key") is { Length: > 0 } key ? key : null,
             }
             : null;
 

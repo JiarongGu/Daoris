@@ -157,6 +157,8 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
         // A helper's answer (MIXAGENT2a-ii) is another agent's claim too: said as its, never as the person's.
         var helper = park.Helpers.Count > 0;
         var persons = park.Waiting.Any(word => word.Persons);
+        // Daoris's own words (COWORK1b): a reopen told, a step's go-on, said as Daoris's, never as the person's.
+        var daoris = park.Waiting.Any(word => word.Daoris);
         var transcript = DaorisHome.Entry(home, HomeEntry.Sessions, $"{sessionId}.log");
 
         // 🔴 SAIDBACK1e (D137 §2.4): the ledger's move to working comes before the words are read and the run is spawned, so a
@@ -166,6 +168,7 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
         var workingNote = park.Parked ? Continuations.WorkingNoted
             : findings && !persons ? Continuations.GoingOnWithFindingsNoted
             : helper && !persons ? Continuations.GoingOnWithHelperNoted
+            : daoris && !persons ? Continuations.GoingOnWithDaorisNoted
             : Continuations.GoingOnNoted;
         try
         {
@@ -228,7 +231,7 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
             var after = await ResumedAfterAsync(service, quest, sessionId, target.Language, ct).ConfigureAwait(false);
             resume = new ResumeAsk(
                 kept.Conversation, words,
-                Continuations.OpeningNoted(adapter.Name, selection.Version, park.HarnessVersion, answer: park.Parked, findings, persons, helper),
+                Continuations.OpeningNoted(adapter.Name, selection.Version, park.HarnessVersion, answer: park.Parked, findings, persons, helper, daoris),
                 // Where its go-aheads changed since it started (AUTONOMY1c), told after the rest, since its instruction is not handed again.
                 Continuations.AfterWords(
                     Continuations.AfterWords(inSync, after),
@@ -664,8 +667,9 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
         _context.NewSessions.Clear(record.Session);
         // 🔴 Only the person's words go on in a new session (XAGENT1e, design §6.7): another agent's findings would reach it as the
         // person's, which DRIFT1 would make requirements. They stay on the record, marked as words that cannot go on there, and
-        // go to the person instead.
-        if (record.Findings.Count > 0 || record.Helpers.Count > 0)
+        // go to the person instead. So do Daoris's own words (COWORK1b): a message of Daoris's never starts a new session (the
+        // message-urgency design §4.1).
+        if (record.Waiting.Any(word => !word.Persons))
         {
             _context.Marks.Mark(record.Session, record.Waiting.Where(word => !word.Persons).Select(word => word.Id).OfType<string>(), why, DateTimeOffset.UtcNow);
             _driver.Deliverer.FindingsToPerson(record, why);
@@ -762,7 +766,12 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
                 return (exitCode, used);
             }
 
-            if (held.TakeAllOrClose() is not { Count: > 0 } words) break;
+            if (held.TakeAllOrClose() is not { Count: > 0 } taken) break;
+            // COWORK1b (the message-urgency design §4.3): Daoris's words held for the run's end are judged again here, by their key; one
+            // whose fact a later submission answered is dropped, said so, and never goes late. None left, the next take closes.
+            var words = await DaorisWords.GoingAsync(
+                taken, note => _context.Events.Keep(sessionId, note, say: null), ct).ConfigureAwait(false);
+            if (words.Count == 0) continue;
             carried = words;
             // The id its harness named, kept as each run's output ended (ANSWER1a); never read from the account's home.
             var conversation = _context.Conversations.Read(sessionId)?.Conversation ?? resume?.Conversation;
@@ -844,15 +853,22 @@ internal static class NativeWords
     /// The run's opening in the record: the driver's line, then the same words again under the ids they were shown with
     /// while they waited, now that the session took them (D137 §3.1).
     /// </summary>
-    public static IReadOnlyList<SessionEvent> Opening(string adapter, IReadOnlyList<ChatMessage> words) =>
-    [
-        new SessionEvent
-        {
-            Kind = SessionEventKind.Note,
-            Text = $"— what you said while it worked is the next turn of its own conversation, resumed on `{adapter}`.",
-            Parts = [NoteCodes.ResumedNative.Part(
-                $"— what you said while it worked is the next turn of its own conversation, resumed on `{adapter}`.", ("adapter", adapter))],
-        },
-        .. words.Select(ChatMessage.Words),
-    ];
+    /// <remarks>Daoris's own words alone (COWORK1b) are said as Daoris's, never as what the person said.</remarks>
+    public static IReadOnlyList<SessionEvent> Opening(string adapter, IReadOnlyList<ChatMessage> words)
+    {
+        var daoris = words.Count > 0 && words.All(word => word.Daoris is not null);
+        var line = daoris
+            ? $"— what Daoris told it while it worked is the next turn of its own conversation, resumed on `{adapter}`."
+            : $"— what you said while it worked is the next turn of its own conversation, resumed on `{adapter}`.";
+        return
+        [
+            new SessionEvent
+            {
+                Kind = SessionEventKind.Note,
+                Text = line,
+                Parts = [(daoris ? NoteCodes.ResumedNativeDaoris : NoteCodes.ResumedNative).Part(line, ("adapter", adapter))],
+            },
+            .. words.Select(ChatMessage.Words),
+        ];
+    }
 }
