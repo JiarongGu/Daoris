@@ -2,7 +2,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { render, screen, within } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as Tooltip from '@radix-ui/react-tooltip';
-import '../locales/i18n';
+import userEvent from '@testing-library/user-event';
+import i18n from '../locales/i18n';
 import { OverviewView } from './OverviewView';
 import { WorkspaceScopeProvider } from '../data/scope';
 import { columnsFollow } from '../test/mainSplit';
@@ -91,6 +92,63 @@ describe('Overview', () => {
     show();
     const rows = (await screen.findAllByText('engine')).at(-1)!.closest('ul')!;
     expect(rows).toHaveClass('@container');
+  });
+});
+
+/**
+ * OVERVIEWNOISE1d: an empty index's card promised the next refresh and offered no way to start one, while the workspace's
+ * repositories held thousands of entries stamped with the workspace they had moved from. It now offers the shell's refresh.
+ */
+describe("Overview's empty index", () => {
+  beforeEach(() => vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL, init?: RequestInit) =>
+    String(input).startsWith('/api/repositories') ? Response.json([]) : respond(String(input), init))));
+  afterEach(async () => {
+    vi.unstubAllGlobals();
+    await i18n.changeLanguage('en');
+  });
+
+  function empty(props: { onRefresh?: () => void; refreshing?: boolean }) {
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    return render(
+      <QueryClientProvider client={client}>
+        <Tooltip.Provider>
+          <WorkspaceScopeProvider initial={null}>
+            <OverviewView onNavigate={() => {}} onOpenQuest={() => {}} notify={() => {}} {...props} />
+          </WorkspaceScopeProvider>
+        </Tooltip.Provider>
+      </QueryClientProvider>,
+    );
+  }
+
+  it('offers the refresh it names, and presses the shell\'s', async () => {
+    const onRefresh = vi.fn();
+    empty({ onRefresh });
+
+    await screen.findByText('The index holds nothing yet');
+    await userEvent.click(screen.getByRole('button', { name: 'Refresh the index' }));
+
+    expect(onRefresh).toHaveBeenCalledTimes(1);
+  });
+
+  it('waits on a refresh that is running', async () => {
+    empty({ onRefresh: vi.fn(), refreshing: true });
+
+    expect(await screen.findByRole('button', { name: 'Refreshing the index…' })).toBeDisabled();
+  });
+
+  it('offers nothing where no refresh was handed to it', async () => {
+    empty({});
+
+    await screen.findByText('The index holds nothing yet');
+    expect(screen.queryByRole('button', { name: 'Refresh the index' })).not.toBeInTheDocument();
+  });
+
+  it('says it in Chinese', async () => {
+    await i18n.changeLanguage('zh');
+    empty({ onRefresh: vi.fn() });
+
+    await screen.findByText('索引里还什么都没有');
+    expect(screen.getByRole('button', { name: '刷新索引' })).toBeEnabled();
   });
 });
 

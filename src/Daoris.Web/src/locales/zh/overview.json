@@ -27,7 +27,9 @@
   "overview.repositories.local": "本地 {{count}}",
   "overview.repositories.more": "另有 {{count}} 个，在「仓库」中",
   "overview.repositories.emptyHeadline": "索引里还什么都没有",
-  "overview.repositories.emptyBody": "已注册仓库的知识，会在下次刷新索引后出现在这里。",
+  "overview.repositories.emptyBody": "已注册仓库的知识，会在索引读过它之后出现在这里。",
+  "overview.repositories.refresh": "刷新索引",
+  "overview.repositories.refreshing": "正在刷新索引…",
   "overview.repositories.adoptedDot": "已采用——带着自己的声明与规范",
   "overview.repositories.hint": "● 已采用——带着自己的声明与规范。其余仓库尚未采用，其中已在本机注册且有根目录的，仍可接受委托。「本地」是仓库自己的材料——没有这份索引，任何同族仓库都触及不到的那一部分。"
 }
