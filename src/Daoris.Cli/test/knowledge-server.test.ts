@@ -244,6 +244,10 @@ test('started with no build anywhere, it speaks the protocol on its standard str
   // A copy of the tool in a checkout of its own, so the build it looks for is this fixture's, not the workspace's.
   fx.write('tools/knowledge-server.mjs', readFileSync(toolPath, 'utf8'));
   fx.write('tools/fsx.mjs', readFileSync(join(dirname(toolPath), 'fsx.mjs'), 'utf8'));
+  // What `fsx.mjs` starts git through (GITSTART4), at the paths it imports them from.
+  for (const file of ['tools/gitforwindows.ts', 'platform/fsx.ts', 'platform/errors.ts']) {
+    fx.write(`src/Daoris.Cli/src/${file}`, readFileSync(join(dirname(toolPath), '..', 'src', 'Daoris.Cli', 'src', file), 'utf8'));
+  }
   mkdirSync(join(fx.root, '.git'), { recursive: true });
 
   const env = { ...process.env };

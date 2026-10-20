@@ -835,9 +835,12 @@ const DRIVER_READERS = [...DESKTOP_SUITES, 'rehearse-family', 'deployment'];
  */
 export const REACH = Object.freeze([
   {
-    paths: ['daoris.gates.json', 'daoris.lanes.json', 'package.json', 'package-lock.json', '.gitattributes', '.gitignore', 'tools/fsx.mjs'],
+    paths: [
+      'daoris.gates.json', 'daoris.lanes.json', 'package.json', 'package-lock.json', '.gitattributes', '.gitignore', 'tools/fsx.mjs',
+      'src/Daoris.Cli/src/tools/gitforwindows.ts',
+    ],
     gates: '*',
-    why: 'it changes how every gate runs or reaches a path: the gates, lanes, scripts, line endings, what is tracked, or the file helpers every rehearsal imports',
+    why: 'it changes how every gate runs or reaches a path: the gates, lanes, scripts, line endings, what is tracked, or the file helpers every rehearsal imports and the git they start (GITSTART4)',
   },
   // GATESLIM1: the tests of the tools only the parent runs (the merge tool, the install's publisher, the family rehearsal's kit) are
   // the tool-tests gate, no longer part of verify. These rules come first and keep what each path reached before.
