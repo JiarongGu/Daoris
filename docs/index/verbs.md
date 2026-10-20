@@ -47,7 +47,7 @@ Routed in `src/Daoris.Desktop/Daoris.Desktop.Driver.Host/Program.cs`, its usage 
 | `meeting` | `Program.cs:427` | `Daoris.Desktop.Driver/Brainstorms/MeetingCommand.cs:13` MeetingCommand | ask `MeetingCommand.cs:42` · show `MeetingCommand.cs:32` · stop `MeetingCommand.cs:38` · clear `MeetingCommand.cs:40` · send `MeetingCommand.cs:34` · list `MeetingCommand.cs:30` |
 | `quest` | `Program.cs:437` | `Daoris.Desktop.Driver.Host/WorkConsole.cs:10` WorkConsole | pause `WorkCommand.cs:39` · resume `WorkCommand.cs:39` · abandon `WorkCommand.cs:39` · delete `Program.cs:492` · accept `Program.cs:492` · done · reopen · go-on · check · review · clear |
 | `answer` | `Program.cs:514` | `Program.cs:514` (inline) | — |
-| `sessions` | `Program.cs:525` | `Daoris.Desktop.Driver.Host/SessionsConsole.cs:8` SessionsConsole | stop `SessionsCommand.cs:192` · finish `SessionsCommand.cs:197` · decline `SessionsCommand.cs:204` · archive `SessionsCommand.cs:209` · unarchive `SessionsCommand.cs:218` · delete `SessionsCommand.cs:223` · say `SessionsCommand.cs:228` · take-back `SessionsCommand.cs:230` · reword `SessionsCommand.cs:238` · go-on-new `SessionsCommand.cs:243` · start-from `SessionsCommand.cs:248` · hand-over `SessionsCommand.cs:253` · helper `SessionsCommand.cs:260` |
+| `sessions` | `Program.cs:525` | `Daoris.Desktop.Driver.Host/SessionsConsole.cs:8` SessionsConsole | stop `SessionsCommand.cs:224` · finish `SessionsCommand.cs:231` · decline `SessionsCommand.cs:238` · archive `SessionsCommand.cs:243` · unarchive `SessionsCommand.cs:252` · delete `SessionsCommand.cs:257` · say `SessionsCommand.cs:262` · take-back `SessionsCommand.cs:264` · reword `SessionsCommand.cs:272` · go-on-new `SessionsCommand.cs:277` · start-from `SessionsCommand.cs:282` · hand-over `SessionsCommand.cs:287` · helper `SessionsCommand.cs:294` |
 | `help` | `Program.cs:532` | `Daoris.Desktop.Driver.Host/HelpConsole.cs:9` HelpConsole | list `HelpCommand.cs:73` · resume `HelpCommand.cs:73` · rename `HelpCommand.cs:73` · pin `HelpCommand.cs:73` · unpin `HelpCommand.cs:73` · delete `HelpCommand.cs:73` · mode `HelpConsole.cs:23` |
 | `access` | `Program.cs:539` | `Daoris.Desktop.Driver.Host/AccessConsole.cs:8` AccessConsole | — |
 | `heavy` | `Program.cs:546` | `Daoris.Desktop.Driver.Host/HeavyMappingConsole.cs:8` HeavyMappingConsole | — |
@@ -63,7 +63,7 @@ Routed in `src/Daoris.Desktop/Daoris.Desktop.Driver.Host/Program.cs`, its usage 
 | `wiring` | `Program.cs:617` | `Daoris.Desktop.Driver/Platform/WiringCommand.cs:16` WiringCommand | — |
 | `logs` | `Program.cs:625` | `Daoris.Desktop.Driver.Host/LogsConsole.cs:18` LogsConsole | — |
 | `plugins` | `Program.cs:632` | `Daoris.Desktop.Driver/Plugins/PluginsCommand.cs:25` PluginsCommand | install `Program.cs:599` · new `PluginsCommand.cs:49` · try `PluginsCommand.cs:49` · show `PluginsCommand.cs:51` · activity `PluginsCommand.cs:53` · approve `PluginsCommand.cs:57` · withdraw `PluginsCommand.cs:75` |
-| `drive` | `Program.cs:351` | `Daoris.Desktop.Driver/Loop/DriverCommand.cs:268` DriverCommand.Read | — |
+| `drive` | `Program.cs:351` | `Daoris.Desktop.Driver/Loop/DriverCommand.cs:270` DriverCommand.Read | — |
 
 ## `daoris-devkit`
 

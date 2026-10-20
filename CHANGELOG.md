@@ -5,6 +5,13 @@ with the version and date at release.
 
 ## Unreleased
 
+- Words to a working session no longer stop its turn. While a turn runs the box's press is *Send*, which reaches the agent at
+  its next step where its door takes words then, and the menu beside it sends at another time: *When its turn ends*, *At its
+  next step*, or *Now, cutting its step*, offered only where the agent can be steered and otherwise shown with the reason.
+  Each waiting word has the same choices, *Make urgent*, *Make ordinary* and *Send now*. Where a session takes words only when
+  its turn ends, they wait for it, said so, and *Stop its turn so this goes next…* beside them stops the turn on your own press,
+  asking first; a Claude Code run started with `claude -p` has no such stop and offers none. `daoris-driver sessions say` takes
+  `--level ordinary|urgent|now` (`--now` is `--level now`), and `daoris-driver sessions stop <id> --turn` is the same stop.
 - Done work and its pull requests move on sooner:
   - Focusing another main window asks about an open pull request as focusing the first one does.
   - A pull request whose line you fetched within a minute of its last check is asked about at the next chance after that minute,
