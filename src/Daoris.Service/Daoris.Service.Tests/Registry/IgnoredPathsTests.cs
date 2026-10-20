@@ -104,6 +104,38 @@ public sealed class IgnoredPathsTests : IDisposable
         Assert.DoesNotContain(entries, entry => entry.RelativePath.Contains("node_modules", StringComparison.Ordinal));
         Assert.DoesNotContain(entries, entry => entry.RelativePath == "docs/scratch.md");
     }
+
+    [Fact]
+    public void The_start_names_the_real_git_behind_the_launcher_with_its_variables()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        // GITSTART2: an install laid as Git for Windows lays one, empty files, its launcher's folder first on PATH.
+        var top = Path.Combine(_root, "Git");
+        Write("Git/cmd/git.exe", "");
+        var real = Write("Git/mingw64/bin/git.exe", "");
+        Directory.CreateDirectory(Path.Combine(top, "usr", "bin"));
+        var path = Path.Combine(top, "cmd") + @";C:\a";
+
+        var start = IgnoredPaths.Start(_root, ["docs"], path);
+
+        Assert.Equal(real, start.FileName);
+        Assert.Equal("MINGW64", start.Environment["MSYSTEM"]);
+        Assert.StartsWith($@"{Path.Combine(top, "mingw64", "bin")};{Path.Combine(top, "usr", "bin")};", start.Environment["PATH"]);
+        Assert.EndsWith(";" + path, start.Environment["PATH"]);
+        Assert.Equal(["-C", _root, "ls-files", "-z", "--others", "--ignored", "--exclude-standard", "--directory", "--", "docs"], start.ArgumentList);
+        Assert.Equal(Path.GetDirectoryName(_root), start.Environment["GIT_CEILING_DIRECTORIES"]);
+    }
+
+    [Fact]
+    public void The_start_names_git_bare_where_PATH_finds_no_launcher()
+    {
+        Write("other/git.exe", "");
+
+        var start = IgnoredPaths.Start(_root, [], Path.Combine(_root, "other"));
+
+        Assert.Equal("git", start.FileName);
+        Assert.Equal(Environment.GetEnvironmentVariable("MSYSTEM"), start.Environment.TryGetValue("MSYSTEM", out var msystem) ? msystem : null);
+    }
 }
 
 /// <summary>A real git checkout for a test: initialised, never committed to, and deleted whatever git made read-only.</summary>
