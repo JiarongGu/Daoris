@@ -93,7 +93,7 @@ Paths below are relative to this file. Historical documents have their own [arch
 | `2026-10-20-message-urgency-design.md` | Contract (accepted 2026-10-20): how a message reaches a working agent; three levels (ordinary, urgent, now) and no message stops a turn; who may send each; one delivery rule over every path; `said` as each session's durable queue; four receipts | D188; COWORK1a-d proposed |
 | `2026-10-20-session-context-design.md` | Accepted: a session's context is Daoris's record; the agent's own conversation resumed wherever it holds; a move to another agent, account or past a lost conversation a new part handed a brief composed without a model; compaction, cost and measurements owed | D189; SESSCTX1 rows |
 | `2026-10-20-fabric-cutover-design.md` | Contract (accepted 2026-10-20 under D191): a run bound to a graph version governed by its graph; a steps run unchanged | D190; FABRIC-CUTOVER1 rows |
-| `2026-10-20-pipeline-design.md` | Proposed: a start node routes each piece of work into a pipeline; a development pipeline's sessions run light checks only; verification a pipeline of its own, a `check` Daoris performs on landed work, batched and superseded | D192; FABRIC-PIPELINE1a-j, proposed |
+| `2026-10-20-pipeline-design.md` | Proposed: a start node routes work into pipelines; sessions run light checks; verification its own pipeline on landed work | D192; FABRIC-PIPELINE1a-j |
 
 ## UI, browser, tools and plugin contracts
 
