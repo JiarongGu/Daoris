@@ -38,6 +38,20 @@ describe('the chain line', () => {
     expect(onExpand).toHaveBeenCalled();
   });
 
+  // HEADFIT1b (D185): one line at every width, the stops cut with an ellipsis and whole in their tip, the press at the line's end.
+  it('keeps its press at the line\'s end, never wrapped, and says the stops whole in their tip', () => {
+    render(<ChainLine chain={buildChain('b', QUESTS, [])} onExpand={() => {}} />);
+
+    const line = screen.getByRole('navigation', { name: 'How this work ran' });
+    expect(line.className).not.toContain('flex-wrap');
+    const stops = line.firstElementChild as HTMLElement;
+    expect(stops.className).toContain('truncate');
+    expect(stops.title).toBe('How this work ran ask #abc123 › Develop it done › this quest taken › next: engine');
+    const show = within(line).getByRole('button', { name: 'Show how it ran' });
+    expect(line.lastElementChild).toBe(show);
+    expect(show.className).toContain('shrink-0');
+  });
+
   // FABRIC-CLOSE1d2: the words the quest's page reads, in the line's plain ink.
   it('says submitted for a closure graph\'s submitted quest, and source reopened for a step held so', () => {
     const quests = [

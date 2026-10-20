@@ -273,6 +273,14 @@ session of the same line and the flow being read must stay open. Accept's plan i
 folded is still over UX7's 200 px, so `head.spec.ts` keeps the budget as an expected failure; D185's HEADFIT1 note says by how much and
 what remains.
 
+The budget binds a typical record (HEADFIT1b): the page head, the record's head and *Details*, the chain's line and the trace's line,
+drawn as the `Typical*` stories beside the every-block ones. The record's blocks are 8 px apart, and so are the pinned page head and
+the conversation from them (`SessionPageHead`'s margin, `AttendedSession`'s grid, the conversation's top in `WorkFrame` and
+`DetachedSession`, and the stories' stand-in): one rhythm, which the measured check holds. Two blocks hold one line at every width:
+the session's page head keeps its acts beside its title (`PageHead`'s `actsBeside`; at 640 px of the main area or less *Stop…* is
+its square, named and tipped by its words), and `ChainLine` truncates its stops, whole in their tip, before it wraps its press. The
+typical record keeps 200 px at every width, unmarked; the every-block head is a ratchet. D185's HEADFIT1b notes have the heights.
+
 ## Running it
 
 The HTTP host requires `DAORIS_HOME` or an explicit `DAORIS_KNOWLEDGE_DB`. Use a development

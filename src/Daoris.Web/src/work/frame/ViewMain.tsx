@@ -25,7 +25,7 @@ import { usePublishedOffer } from '../../menus/mainOffer';
  * whole in its tip and on *Show all* where it was cut; and `facts` is the line under it, the facts the state makes
  * matter, said once. Such a head has no id line: the id is its ⋯'s and its *Details*'.
  */
-export function PageHead({ title, version, pills, id, line, acts, fold, more, icon, lead, clamp, facts, fact, wholeElsewhere }: {
+export function PageHead({ title, version, pills, id, line, acts, fold, more, icon, lead, clamp, facts, fact, wholeElsewhere, actsBeside = false }: {
   title: string; version?: string; pills?: ReactNode; id?: string; line?: string; icon?: ReactNode;
   /**
    * The acts (HEAD2a, D162 §3, the entry-and-heads design §2): primary first, then the secondary. They hold still: above
@@ -53,10 +53,18 @@ export function PageHead({ title, version, pills, id, line, acts, fold, more, ic
    * and drops its *Show all*: one way to the same text.
    */
   wholeElsewhere?: boolean;
+  /**
+   * The acts stay beside the title at every width (HEADFIT1b, D185): a session's head, whose acts at the narrow width are an icon
+   * and the ⋯, so a row of their own under the facts would spend 38 px of the record head's 200.
+   */
+  actsBeside?: boolean;
 }) {
   const said = facts && facts.length > 0 ? facts.join(' · ') : null;
   return (
-    <header className="mb-4 grid gap-x-4 gap-y-2 @[40rem]/main:grid-cols-[minmax(0,1fr)_auto] @[40rem]/main:items-start">
+    <header className={cn('mb-4 grid gap-x-4 gap-y-2', actsBeside
+      ? 'grid-cols-[minmax(0,1fr)_auto] items-start'
+      : '@[40rem]/main:grid-cols-[minmax(0,1fr)_auto] @[40rem]/main:items-start')}
+    >
       <div className="flex min-w-0 items-start gap-3">
         {icon && <span className="shrink-0">{icon}</span>}
         <div className="min-w-0 flex-1">
@@ -80,7 +88,7 @@ export function PageHead({ title, version, pills, id, line, acts, fold, more, ic
         </div>
       </div>
       {(acts || fold || more) && (
-        <div className="flex items-center justify-end gap-2 @[40rem]/main:self-start">
+        <div className={cn('flex items-center justify-end gap-2', actsBeside ? 'self-start' : '@[40rem]/main:self-start')}>
           {acts}
           {fold && <div className="hidden @[40rem]/main:contents">{fold}</div>}
           {more}

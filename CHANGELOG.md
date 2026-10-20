@@ -37,6 +37,11 @@ with the version and date at release.
   look. `daoris workflow apply` and `import` refuse one that does not, saying which, and a stored one reads as unreadable with
   the same words. Your look no longer has to be wired after the second opinion: Daoris already holds its set-up while an agent
   reads the opinion, so the look can stand beside it, and both still come before the landing.
+- A session's page puts its conversation higher: the lines above it, its details, how the work ran, the folded parts, who it
+  worked with, the channel, where the work stands and how it came to be, now sit 8 px apart instead of 16, and so do the page's
+  head above them and the conversation below. On a half-width or narrower window the page's head keeps *Stop…* beside the title
+  as its square button (its name in its tip), and how the work ran stays one line, its stops cut short with the whole line in
+  their tip. A typical session's conversation starts within the top 200 px at every width.
 - Your limit of sessions at once counts what the driver starts: a quest's session, an ask's intake, a helper, a second opinion and
   a brainstorm's or a meeting's pass. A conversation you hold, an Ask Daoris conversation or a chat, takes no place under it, idle
   or working, so conversations left open between turns no longer hold quests back. Ask Daoris says so when it describes the limit.
