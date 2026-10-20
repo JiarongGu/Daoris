@@ -91,7 +91,9 @@ internal sealed class HelpRoomMachineNow : IHelpRoomSection
         }
 
         text.Append(machine.Adapter is { Length: > 0 } adapter
-            ? $"- The driver: quests run on `{adapter}`, up to {machine.Cap} sessions at once.\n"
+            ? $"- The driver: quests run on `{adapter}`, up to {machine.Cap} sessions at once. The cap counts what the driver starts (a quest's "
+              + "session, an intake, a helper, a second opinion, a brainstorm's pass) and never a conversation the person holds, so an Ask Daoris "
+              + "conversation or a chat takes no slot, idle or not.\n"
             : "- The driver: no agent is set for quests.\n");
         text.Append(machine.Intake is { Length: > 0 } intake
             ? $"- The intake: asks are answered on `{intake}`.\n"

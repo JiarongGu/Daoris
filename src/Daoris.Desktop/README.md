@@ -61,6 +61,12 @@ note). The words beside a clean-up row, which the terminal and the bridge say, a
 Git for Windows' removal follows a junction out of a tree, so each path that has git delete a tree's folder (the removal, a
 landing's tidy, the press, an undone opening) first takes every link in it off as a link with `TreeLinks`, and keeps a tree it
 cannot (TREELINK1, D51's note); the look's own tidy moves folders aside and never needs it.
+The machine's `cap` counts what the driver starts (CAPCOUNT1, D130's note): a driven quest's session, an intake, a helper and a
+reviewer, and the passes of a brainstorm and a meeting, never a conversation the person holds, which spends nothing resting between
+turns. `ActiveSessions.HoldsSlot` tells them by the record's kind, its place and the mark each of the driver's own carries
+(`ask`, `serves`, `opinion`), and `Snapshot.SlotsHeld` is the one count every site that spends a slot reads: the planner's starts and
+a look's intakes, helpers, brainstorms and meetings. `Snapshot.Active` still lists every active session, for a busy tree and a
+repository's holder.
 A judgement reads a checkout's refs and working trees once (`RefSnapshot`, PROC1d-ii and -iii) and asks its git each question of
 commits by their ids once (PROC1d-iv), every write in its flow dropping both; a landing's planning keeps its facts in `GitFacts`
 (LANDGIT1). D88's notes say what each keeps.

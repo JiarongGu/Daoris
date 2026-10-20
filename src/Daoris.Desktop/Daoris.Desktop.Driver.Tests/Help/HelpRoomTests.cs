@@ -43,6 +43,8 @@ public sealed class HelpRoomTests : IDisposable
         Assert.Contains("quests run on `claude-code`", agents);
         Assert.Contains("asks are answered on `claude-code-acp`", agents);
         Assert.Contains("up to 4 sessions at once", agents);
+        // CAPCOUNT1: what the cap counts, so the room does not tell a person their own conversation holds a slot.
+        Assert.Contains("never a conversation the person holds", agents);
         Assert.Contains("2 sessions wait on the person", agents);
         Assert.Contains("1 ask waits for an answer", agents);
         // The agents, by the tool's own answer — and one that is not installed is said, not dropped.

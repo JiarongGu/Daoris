@@ -708,7 +708,7 @@ public sealed class Driver(
         // it, and only in the slots the quests left: work somebody already asked for goes first. PARALLEL1b: a start still opening
         // holds its slot, and an ask whose intake is still opening is not begun again. A start a plugin will hold still counts here,
         // since each start asks its plugins on its own below: the intakes may wait a look for a slot a hold left, never overrun the cap.
-        var slotsLeft = config.Cap - snapshot.Active.Count - Planner.Opening(snapshot).Count - starts.Count - passes;
+        var slotsLeft = config.Cap - snapshot.SlotsHeld - Planner.Opening(snapshot).Count - starts.Count - passes;
         var intakes = (await Stages.TimeAsync("intakes", () => IntakesDueAsync(slotsLeft, events, ct)).ConfigureAwait(false))
             .Where(ask => !snapshot.Starting.Any(start => string.Equals(start.Ask, ask.Id, StringComparison.OrdinalIgnoreCase)))
             .ToList();

@@ -137,9 +137,9 @@ public sealed class BrainstormBoundsTests : IDisposable
         return (driver, script);
     }
 
-    private static async Task LookAsync(Daoris.Driver.Driver driver)
+    private static async Task LookAsync(Daoris.Driver.Driver driver, params SessionView[] active)
     {
-        await driver.BrainstormsAsync(new Snapshot([], [], []), 0, [], CancellationToken.None);
+        await driver.BrainstormsAsync(new Snapshot([], [], active), 0, [], CancellationToken.None);
         await driver.Running.SettledAsync().WaitAsync(TimeSpan.FromSeconds(30));
     }
 
@@ -321,6 +321,30 @@ public sealed class BrainstormBoundsTests : IDisposable
 
         Assert.Equal(1, script.Most);
         Assert.Equal("answered", Of(Pass(id, "g2")).State);
+    }
+
+    /// <summary>
+    /// CAPCOUNT1 (D130's note): the cap counts what the driver starts. On a cap of one a driven session in the look holds the only slot
+    /// and no brainstorm begins; a conversation the person holds (Ask Daoris's, here) holds none, and its passes run in turn.
+    /// </summary>
+    [Fact]
+    public async Task A_conversation_the_person_holds_takes_no_slot_from_a_pass_but_a_driven_session_does()
+    {
+        var (driver, script) = Start(cap: 1);
+        var id = await SentAsync(driver, "stub", "acp-stub");
+        script.Answers["g1"] = Give("Make the window inclusive");
+        script.Answers["g2"] = Give("Cache the report");
+        script.Answers["s1"] = Synthesize("P1", "P2");
+
+        await LookAsync(driver, new SessionView("s1", "engine", "working") { Quest = "q1" });
+
+        Assert.Empty(script.Started);
+        Assert.Equal(BrainstormStates.Frozen, Files.ReadState(id)!.State);
+
+        await LookAsync(driver, new SessionView("h1", HelpRoom.Repository, "working") { Kind = "chat" });
+
+        Assert.Equal(["answered", "answered"], [Of(Pass(id, "g1")).State, Of(Pass(id, "g2")).State]);
+        Assert.Equal(1, script.Most);
     }
 
     /// <summary>🔴 A pass that finds no slot by the generators' deadline never starts, and is said as <c>cap-full</c>.</summary>

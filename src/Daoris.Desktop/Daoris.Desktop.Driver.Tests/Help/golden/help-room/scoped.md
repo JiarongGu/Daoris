@@ -352,7 +352,7 @@ while the screen still shows it. For anything else on the screen, ask them rathe
 
 ## This machine, now
 
-- The driver: quests run on `claude-code`, up to 3 sessions at once.
+- The driver: quests run on `claude-code`, up to 3 sessions at once. The cap counts what the driver starts (a quest's session, an intake, a helper, a second opinion, a brainstorm's pass) and never a conversation the person holds, so an Ask Daoris conversation or a chat takes no slot, idle or not.
 - The intake: no agent answers asks, so an ask the declarations do not settle waits for the person.
 - Ask Daoris: you, on `claude-code-acp`.
 - In workspace `alpha`: 1 session waits on the person; 1 ask waits for an answer.

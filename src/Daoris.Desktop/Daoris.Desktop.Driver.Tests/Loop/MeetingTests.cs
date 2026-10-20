@@ -132,10 +132,10 @@ public sealed class MeetingTests : IDisposable
     }
 
     /// <summary>One look at the meetings, and every round it started waited out; the lines the rounds ended with.</summary>
-    private static async Task<List<string>> LookAsync(Daoris.Driver.Driver driver)
+    private static async Task<List<string>> LookAsync(Daoris.Driver.Driver driver, params SessionView[] active)
     {
         var events = new List<string>();
-        await driver.MeetingsAsync(new Snapshot([], [], []), 0, events, CancellationToken.None);
+        await driver.MeetingsAsync(new Snapshot([], [], active), 0, events, CancellationToken.None);
         await driver.Running.SettledAsync().WaitAsync(TimeSpan.FromSeconds(30));
         return [.. events, .. driver.Running.Drain().Select(run => run.Line)];
     }
@@ -579,5 +579,27 @@ public sealed class MeetingTests : IDisposable
         Assert.Equal(4, script.Started.Count);
         Assert.Equal(1, script.Most);
         Assert.Equal((BrainstormStates.Frozen, 2), (Files.ReadState(two)!.State, Files.ReadState(two)!.Round));
+    }
+
+    /// <summary>
+    /// CAPCOUNT1 (D130's note): the cap counts what the driver starts, so a conversation the person holds (Ask Daoris's, here) takes no
+    /// slot from a round, where a driven session in the same look still does.
+    /// </summary>
+    [Fact]
+    public async Task A_conversation_the_person_holds_takes_no_slot_from_a_round_but_a_driven_session_does()
+    {
+        var (driver, script) = Start(Second, cap: 1);
+        var id = await SentAsync(driver);
+        foreach (var turn in new[] { "r1-a1", "r1-a2" }) script.Answers[turn] = Say($"Turn {turn}.");
+
+        await LookAsync(driver, new SessionView("s1", "engine", "working") { Quest = "q1" });
+
+        Assert.Empty(script.Started);
+        Assert.Equal((BrainstormStates.Frozen, 1), (Files.ReadState(id)!.State, Files.ReadState(id)!.Round));
+
+        await LookAsync(driver, new SessionView("h1", HelpRoom.Repository, "working") { Kind = "chat" });
+
+        Assert.Equal(2, script.Started.Count);
+        Assert.Equal((BrainstormStates.Frozen, 2), (Files.ReadState(id)!.State, Files.ReadState(id)!.Round));
     }
 }
