@@ -28,9 +28,10 @@ D75), where its own rules live; this is what a view may assume of it.
 - **The app strip** (36px) is the title bar: the mark, the menus of verbs and places (*Workspace · Edit ·
   View · Go · Run · Terminal · Help*, D152), the command center naming the scope, and the window's controls. **The
   activity bar** (48px) is the one navigation, a place per icon and Settings alone at its foot (UX6j),
-  and a badge counts what its place holds: Overview the whole of *What needs you*, Sessions its own sessions waiting on the person
-  (UX5 U20), its list's *Waiting on you*: a parked quest counts there too (D126 §2.5), and Agents the signed-out accounts a
-  list or a default holds (UX6e, D150 §2.1). **The status bar** states the machine's standing facts: the driver, the active sessions,
+  and a badge counts what its place holds: Overview the whole of *What needs you*; Sessions the sessions the driver runs, the cap's
+  count, with its list's *Waiting on you* marked beside it by a dot in the waiting hue, a parked quest there too (UX5 U20 as
+  SESSBADGE1 amended it in D76's note, D126 §2.5); and Agents the signed-out accounts a list or a default holds (UX6e, D150 §2.1).
+  **The status bar** states the machine's standing facts: the driver, the sessions the driver runs (the Sessions badge's count),
   the workspace, the remote, the index and the recall tier (D24, stated on every screen). Global state
   lives in exactly one place; views never restate it.
 - **The content column is the window's whole width** (UX5 U59, the owner: under a 72rem cap a

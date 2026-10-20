@@ -5,6 +5,10 @@ with the version and date at release.
 
 ## Unreleased
 
+- The Sessions icon counts the sessions Daoris is running for you, and the status bar shows the same number; neither counts
+  a conversation you hold yourself, Ask Daoris's included. Something in Sessions waiting on you is a dot in the waiting colour
+  beside the count, and hovering the icon says both in words. The window's title keeps to the count *What needs you* shows,
+  and the chip beside the browser's button names the browser in Chinese too.
 - How many sessions Daoris starts at once on this machine is set in Settings → Driver, beside the strike limit and the
   cool-off, and `daoris driver cap <n>` sets the same number while Daoris runs. It counts the sessions Daoris starts, never
   a conversation you hold yourself.
