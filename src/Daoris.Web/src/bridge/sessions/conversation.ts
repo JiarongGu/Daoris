@@ -584,6 +584,17 @@ export const useStartFrom = () => useMutation({
 });
 
 /**
+ * *Go on with Daoris's brief* (SESSCTX1c part B, D189 point 3): `SESSION_GO_ON_BRIEF`, one act of the driver's beside the fresh start.
+ * The session goes on in a new part of itself, in its tree on its agent and account, handed Daoris's brief and then the words that
+ * waited, which leave its record naming the new part. What it refuses, it refuses before anything opens, by a code; its answer reads
+ * as a start-from's does.
+ */
+export const useGoOnBrief = () => useMutation({
+  mutationFn: async (from: { session: string }): Promise<StartedFrom> =>
+    startedOf(await call<unknown>('SESSION_GO_ON_BRIEF', { id: from.session })),
+});
+
+/**
  * What *Go on with another agent…* did (MIXAGENT1b-i, D163): the conversation it opened, where it opened at once; whether the
  * ask stands (taken now, or kept for the conversation's turn to end); why nothing was done by a code; and the driver's sentence.
  */

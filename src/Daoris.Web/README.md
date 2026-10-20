@@ -36,7 +36,10 @@ session's title; a new part's first prompt is shown as Daoris's brief of the ses
 another session's channel message is told by its event's `channel` mark before the claim's opening; *Details* holds *Continues* and *Helping*
 with a door to that session, or its id where the list holds none; the row says *continues* or *helps* and the title, from
 the record's own `from` and `serves` joined in the rail; and a helper is titled *Helper* and, as a reviewer is, offered
-no box. Review reads a session's work against its line (REVIEWBASE1): the head says, in one line, when the latest line the
+no box. Where a session's words wait for the person on a reason that leaves its tree to go on in (SESSCTX1c part B, `BRIEF_WAITS`),
+the line saying they cannot go on offers *Go on with Daoris's brief* (`SESSION_GO_ON_BRIEF`) beside *Start a conversation with these
+words*, on a session's page and in Ask Daoris's dock; the new part is attended once it opens, and a refusal is said by its code
+(`GO_ON_BRIEF`, twinned with the driver's `GoOnBrief`). Review reads a session's work against its line (REVIEWBASE1): the head says, in one line, when the latest line the
 host knows has commits the work does not, naming *Updates* on the workspace's *Branches*; a tree holding nothing beyond the
 line says so where *Nothing landed* would be false. Such a tree has nothing to land (REVIEWBASE4): the foot says so where
 *Accept* would be, offers neither *Accept* nor *Send back…*, and *Discard tree* leads; the head names the branch the tree

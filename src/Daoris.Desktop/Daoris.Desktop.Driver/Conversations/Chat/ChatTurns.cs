@@ -452,6 +452,28 @@ internal sealed class ChatTurns(
     }
 
     /// <summary>
+    /// The one closing turn a hand-over's take asks of the outgoing agent while its turns are held (SESSCTX1c part B, the session-context
+    /// design §2.2): taken as a turn of its own though held, every other word still taking nothing, and what completes once that turn has
+    /// ended. Null where the turns are not held by <see cref="Hold"/>, or something runs or waits, or the conversation is finishing or gone.
+    /// </summary>
+    public Task? TakeHeld(ChatMessage message)
+    {
+        Task drained;
+        lock (_gate)
+        {
+            if (!_held || _pumping || _holding is not null || _waiting.Count > 0 || _finishing || _gone) return null;
+            _waiting.Add(Stamped(message));
+            _pumping = true;
+            _drained = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            drained = _drained.Task;
+        }
+
+        _ = PumpAsync();
+        lock (_gate) Publish();
+        return drained;
+    }
+
+    /// <summary>
     /// Take a word at the level it carries (COWORK1a): an urgent one handed to the turn on the wire where the door takes words at
     /// its next step and no urgent word waits before it (MSG1c); an ordinary one, and any other, queued as a turn of its own. Null
     /// once the conversation is finishing, held for a hand-over's take, or gone: nothing more is heard.

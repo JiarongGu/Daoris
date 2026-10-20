@@ -383,6 +383,72 @@ public sealed class HandOverTests : IDisposable
         Assert.DoesNotContain("The browser", recorded[1].Text);
     }
 
+    /// <summary>
+    /// 🔴 SESSCTX1c part B (D189's amendment, the session-context design §2.2): the outgoing agent is asked for one closing note only
+    /// where the move is the person's press or a change of agent its own agent asked for and left no note with; never where the account
+    /// forces it (<c>near</c>, <c>limit</c>, <c>curve</c>), nor for a reason no box takes (a resume, a carry-on, a fallback).
+    /// </summary>
+    [Theory]
+    [InlineData(HandOverWhy.Press, HandOverBy.Person, null, true)]
+    [InlineData(HandOverWhy.Agent, HandOverBy.Agent, null, true)]
+    [InlineData(HandOverWhy.Agent, HandOverBy.Agent, "I was about to wire the toggle.", false)]
+    [InlineData(HandOverWhy.Near, HandOverBy.Daoris, null, false)]
+    [InlineData(HandOverWhy.Near, HandOverBy.Person, null, false)]
+    [InlineData(HandOverWhy.Limit, HandOverBy.Daoris, null, false)]
+    [InlineData(HandOverWhy.Curve, HandOverBy.Daoris, null, false)]
+    [InlineData(HandOverWhy.Resume, HandOverBy.Daoris, null, false)]
+    public void The_closing_note_is_asked_only_on_the_persons_press_or_a_change_of_agent_with_none_left(string why, string by, string? note, bool asked)
+    {
+        Assert.Equal(asked, HandOverNote.Asks(new HandOverRequest("codex-acp", null, why, by, DateTimeOffset.UtcNow), note));
+        var ask = HandOverNote.Ask("codex-acp");
+        Assert.Contains("codex-acp", ask);
+        Assert.Contains("4,000 characters", ask);
+    }
+
+    /// <summary>
+    /// 🔴 SESSCTX1c part B (the session-context design §2.2): the closing note is the agent's last message of its one turn, as a turn's
+    /// outcome is read, kept as its claim; a turn with no message of the agent's leaves it absent.
+    /// </summary>
+    [Fact]
+    public void The_closing_note_is_the_agents_last_message_of_its_turn()
+    {
+        SessionEvent Said(string text) => new() { Kind = SessionEventKind.Message, Text = text };
+        IReadOnlyList<SessionEvent> turn =
+        [
+            new() { Kind = SessionEventKind.User, Origin = "target", Text = HandOverNote.Ask("codex-acp") },
+            Said("Looking."),
+            new() { Kind = SessionEventKind.Tool, Id = "t1", Title = "Read notes.md", Status = "completed" },
+            Said("I was about "), Said("to wire the toggle."),
+            new() { Kind = SessionEventKind.Usage, Used = 10 },
+            new() { Kind = SessionEventKind.Turn, StopReason = "end_turn" },
+        ];
+
+        Assert.Equal("I was about to wire the toggle.", HandOverNote.Written(turn));
+        Assert.Null(HandOverNote.Written([turn[0], turn[^1]]));
+    }
+
+    /// <summary>
+    /// 🔴 SESSCTX1c part B (the session-context design §2): a part that goes on from a lost conversation is handed the brief, then the
+    /// person's words that waited on the part it continues, in one prompt: the record keeps the opening line, the brief as Daoris's, then
+    /// the words as the person's, with the files said beside them.
+    /// </summary>
+    [Fact]
+    public void A_new_part_handed_the_brief_and_the_persons_words_records_both_in_that_order()
+    {
+        var brief = ContextBrief.Compose(new BriefLine(HandOverWhy.Resume, [new BriefPart("c0nv0001", "claude-code", [])]));
+        var opening = HandOverNotes.MovedFrom("c0nv0001", "claude-code", null, HandOverWhy.Resume, null, brief.Text.Length);
+        var message = new ChatMessage("Also log the port.", [new KeptFile("trace.txt", "kept/trace.txt")]) { Brief = brief, TakenOver = opening };
+
+        var recorded = ChatRunner.Recorded(message).ToList();
+
+        Assert.Equal([SessionEventKind.Note, SessionEventKind.User, SessionEventKind.User], recorded.Select(e => e.Kind));
+        Assert.Equal(("target", "c0nv0001"), (recorded[1].Origin, recorded[1].Continues));
+        Assert.Equal(("person", "Also log the port."), (recorded[2].Origin, recorded[2].Text));
+        Assert.Equal(["trace.txt"], recorded[2].Files!);
+        Assert.StartsWith(brief.Text, message.Prompt, StringComparison.Ordinal);
+        Assert.EndsWith("\n\nAlso log the port.", message.Prompt, StringComparison.Ordinal);
+    }
+
     // ——— The terminal's door (D50): `daoris-driver sessions hand-over <id> --agent <adapter> [--account <name>]`.
 
     [Fact]

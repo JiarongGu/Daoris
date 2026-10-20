@@ -218,6 +218,8 @@
   "work.say.tooLong": "这个智能体的接入方式一次最多接收 {{count}} 个字符；请缩短，或分几次发送。",
   "work.say.cannot": "它无法在这个会话里继续，因为{{why}}。",
   "work.say.startChat": "用这些话开始对话",
+  "work.say.goOnBrief": "带着 Daoris 的简报继续",
+  "work.say.goOnBriefRefused.agentGone": "它运行的智能体已不在本机上：把它转交给另一个智能体来继续这些话。",
   "work.say.goOnNew": "在新会话中继续",
   "work.say.newSession.loses": "新会话现在就可以接手你的话，但没有这段对话的上下文。",
   "work.say.newSession.sent": "驱动的下一轮会由新会话接手你的话，不带这段对话的上下文。",

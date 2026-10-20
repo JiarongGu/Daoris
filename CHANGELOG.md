@@ -5,6 +5,11 @@ with the version and date at release.
 
 ## Unreleased
 
+- A conversation whose agent has lost it goes on by itself in a new conversation in the same folder, handed Daoris's record of it
+  and then your words, and says so on both. A conversation its agent could still go on with never moves without you: your words
+  wait, and beside *Start a conversation with these words* there is *Go on with Daoris's brief*, which goes on in a new part of the
+  same session with that record. The same holds for a session whose quest has closed and for Ask Daoris's conversations. Handing a
+  conversation over yourself first asks its agent for a short closing note, which the new conversation is given.
 - A plugin's line on stderr longer than 8 KB is shown under `plugin:<id>` clipped to its start and ending ` …`, and the lines
   after it as before, so a plugin that writes without a line end can no longer grow Daoris's memory.
 - An agent's page in Agents says what would lapse where its next start goes to an account for its week's last day: *its

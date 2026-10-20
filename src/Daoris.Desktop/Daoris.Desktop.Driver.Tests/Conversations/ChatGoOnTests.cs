@@ -69,12 +69,14 @@ public sealed class ChatGoOnTests : IDisposable
     };
 
     /// <summary>
-    /// 🔴 A chat whose agent named no conversation (a text door, or one from before MSG1c) cannot go on: the record stays as
-    /// it ended, its words wait marked by their ids, its conversation says why with the code the page words (`unkept`), and
-    /// the machine log says it did not resume — all from the words being shown, with nothing else asked.
+    /// 🔴 A chat whose agent named no conversation (a text door, or one from before MSG1c) has lost it (`unkept`), so since SESSCTX1c part
+    /// B (D189 point 3) it goes on by itself in a new part of its session: a conversation opened in its tree, on its agent and account,
+    /// its record naming the one it continues, why <c>resume</c>, by Daoris. Here that part's start fails, since a judgement test spawns
+    /// nothing, so the words wait on the record as it ended, marked by their ids, its conversation saying why with the code the page words
+    /// and offers its presses by; and the machine log says once that it did not resume — all from the words being shown.
     /// </summary>
     [Fact]
-    public async Task A_chat_whose_conversation_was_not_kept_cannot_go_on_and_says_why()
+    public async Task A_chat_whose_conversation_was_not_kept_goes_on_in_a_new_part_and_waits_where_that_cannot_start()
     {
         var ledger = new ChatLedger().Register("engine", _root);
         ledger.Chat("c1", "completed", "talk", _root).Say("w1", "Also log the port.");
@@ -85,6 +87,12 @@ public sealed class ChatGoOnTests : IDisposable
         events.Append("c1", Shown("w1", "Also log the port."));
 
         var cannot = await NoteAsync(events, "c1", e => e.Why is not null);
+        Assert.Equal(2, ledger.Count);
+        var part = ledger.Record("c2");
+        Assert.Equal(
+            ("c1", HandOverWhy.Resume, HandOverBy.Daoris, _root, "talk"),
+            (part["from"]?.GetValue<string>(), part["fromWhy"]?.GetValue<string>(), part["fromBy"]?.GetValue<string>(),
+             part["tree"]?.GetValue<string>(), part["adapter"]?.GetValue<string>()));
         Assert.Equal(ContinueWhy.Unkept, cannot.Why);
         Assert.Equal(["w1"], cannot.Words!);
         Assert.Equal("completed", ledger.State("c1"));
@@ -197,6 +205,29 @@ public sealed class ChatGoOnTests : IDisposable
         Assert.EndsWith("this start runs on another. That account is not on this machine any more.", cannot.Text);
         Assert.Equal(("completed", 0), (ledger.State("c1"), ledger.Moves("c1").Count));
         Assert.Equal(ContinueWhy.Account, new GoOnMarks(_home).Read("c1")!.Why);
+        // SESSCTX1c part B: an account proves nothing of the conversation's loss, so no new part opens without the person.
+        Assert.Equal(1, ledger.Count);
+    }
+
+    /// <summary>
+    /// 🔴 SESSCTX1c part B (the session-context design §2): a lost conversation goes on in a new part only with the person's words, since
+    /// another agent's answer is never a new part's words (XAGENT1e, MIXAGENT2a-iii). With only a helper's answer waiting, nothing opens:
+    /// the answer waits, marked, and its conversation says why.
+    /// </summary>
+    [Fact]
+    public async Task A_lost_conversation_with_only_another_agents_answer_waiting_opens_no_new_part()
+    {
+        var ledger = new ChatLedger().Register("engine", _root);
+        ledger.Chat("c1", "completed", "talk", _root).Helped("w1", "Another agent says five.");
+        var events = Events;
+        using var runner = Runner(ledger, events);
+
+        events.Append("c1", Shown("w1", "Another agent says five.") with { Origin = "target" });
+
+        Assert.Equal(ContinueWhy.Unkept, (await NoteAsync(events, "c1", e => e.Why is not null)).Why);
+        Assert.Equal(1, ledger.Count);
+        Assert.Equal(["w1"], ledger.Said("c1"));
+        Assert.Equal(ContinueWhy.Unkept, new GoOnMarks(_home).Read("c1")!.Why);
     }
 
     /// <summary>

@@ -222,11 +222,15 @@ public static class HandOverTake
     /// accounts. Null for every other take, and for a curve's box taken where the decision is not held (a shell come up since),
     /// whose lines are the hand-over's, its reason <c>curve</c>.
     /// </param>
+    /// <param name="closing">
+    /// The outgoing agent's closing note, where the take asked one (SESSCTX1c part B, §2.2): carried as the brief's note, or said absent;
+    /// null where none was asked.
+    /// </param>
     public static async Task<HandedOver> RunAsync(
         ServiceClient service, string home, SessionEvents events, SessionOutput? output, string id, HandOverRequest ask,
         Func<string, IReadOnlyList<string>?> accountsOf, Func<string, Task> end,
         Func<PriorSession, HandOverRequest, ContinuedFrom, CancellationToken, Task<ChatStart>> start, Func<string, ChatMessage, Task<bool>> say,
-        CancellationToken ct = default, SwitchChoice.MoveTo? moved = null)
+        CancellationToken ct = default, SwitchChoice.MoveTo? moved = null, ClosingNote? closing = null)
     {
         var box = new HandOverBox(home);
         try
@@ -235,11 +239,14 @@ public static class HandOverTake
             if (refused is not null) return new HandedOver(null, false, refused.Why, refused.Message);
 
             var from = prior!.Adapter ?? "its agent";
-            // MIXAGENT1c: where its agent asked to hand over, its own note, told after Daoris's record as that agent's claim.
-            var note = ask.AskedBy == HandOverBy.Agent ? new HandOverAskFiles(home).Ask(id)?.Note : null;
+            // MIXAGENT1c: where its agent asked to hand over, its own note, told after Daoris's record as that agent's claim; SESSCTX1c part
+            // B: else the closing note the take asked, or that none was written.
+            var note = (ask.AskedBy == HandOverBy.Agent ? new HandOverAskFiles(home).Ask(id)?.Note : null) ?? closing?.Note;
             // SESSCTX1b: Daoris's brief of the whole line (ContextBrief), in place of the request, the last plan and words and what
             // is uncommitted, the note its own section (the design §3.1 item 6).
-            var brief = await ContextBriefs.ComposeAsync(service, events, home, id, ask.Why, conversation: true, note: note, ct: ct).ConfigureAwait(false);
+            var brief = await ContextBriefs.ComposeAsync(
+                    service, events, home, id, ask.Why, conversation: true, note: note, ct: ct, noteAsked: closing is not null, before: closing?.Before)
+                .ConfigureAwait(false);
 
             await end(id).ConfigureAwait(false);
 

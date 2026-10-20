@@ -103,6 +103,13 @@ public static class HandOverBy
 /// </summary>
 public sealed record ContinuedFrom(string Session, string Why, string By);
 
+/// <summary>
+/// The outgoing agent's closing note as a take asked it (SESSCTX1c part B, the session-context design §2.2): what it wrote in its one turn,
+/// null where it wrote none, and how many of its conversation's events stood before the ask, which the brief is composed from, so the
+/// closing turn is told once, as the note.
+/// </summary>
+public sealed record ClosingNote(string? Note, int Before);
+
 /// <summary>A conversation's hand-over as asked (MIXAGENT1a-i): the agent and account it goes to, why, by whom, and when.</summary>
 /// <param name="Agent">The adapter the new conversation runs on.</param>
 /// <param name="Account">The account it runs as, or null for the one the roster picks.</param>

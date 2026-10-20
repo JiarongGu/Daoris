@@ -49,7 +49,10 @@ public sealed class SessionMessagesTickTests : IDisposable
     private IReadOnlyList<SessionEvent> Events(string session) => new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions)).After(session, 0).Events;
 
     /// <param name="command">What the protocol door runs in place of the stand-in agent: a file that is no program, so its spawn fails.</param>
-    private Daoris.Driver.Driver Protocol(SaidStandIn service, string mode, SessionProcesses? processes = null, IReadOnlyList<string>? command = null)
+    /// <param name="goesOnLost">The shell's chat runner's seam a closed quest's lost session goes on through (SESSCTX1c part B); none headless.</param>
+    private Daoris.Driver.Driver Protocol(
+        SaidStandIn service, string mode, SessionProcesses? processes = null, IReadOnlyList<string>? command = null,
+        Func<string, ContinueReason, CancellationToken, Task<StartedFrom>>? goesOnLost = null)
     {
         var adapters = AdapterSet.Built();
         var config = DriverConfig.Empty with
@@ -63,7 +66,54 @@ public sealed class SessionMessagesTickTests : IDisposable
         };
         return new Daoris.Driver.Driver(
             new ServiceClient(service.Url, null), config, adapters, _home, processes: processes ?? new SessionProcesses(),
-            harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)));
+            harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)))
+        {
+            GoesOnLost = goesOnLost,
+        };
+    }
+
+    /// <summary>
+    /// 🔴 SESSCTX1c part B (D189 point 3; the steward's choice: a closed quest opens no driven record): a closed quest's session whose
+    /// agent no longer has its conversation (<c>resource_not_found</c>) has lost it, so it goes on by itself as a conversation in its tree,
+    /// handed to the shell's chat runner, which conversations are; its words are not marked and its conversation says nothing of waiting.
+    /// A host with no runner (the headless one) has no conversation to open, so there it waits for the person, marked by the reason, as
+    /// before, the page's press ready.
+    /// </summary>
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task A_closed_quests_session_whose_conversation_was_lost_goes_on_as_a_conversation_where_a_runner_is(bool shell)
+    {
+        await using var service = SaidStandIn.Start(_repository);
+        await Protocol(service, "resumes").RunOnceAsync().WaitAsync(Poll.Patience);
+        Assert.Equal(("completed", "Done"), (service.State("s1"), service.Status("q1")));
+        Assert.Equal("w1", await service.SayAsync("s1", "Also log the port."));
+        var handed = new List<(string Session, string Why)>();
+        Task<StartedFrom> GoesOn(string session, ContinueReason why, CancellationToken _)
+        {
+            lock (handed) handed.Add((session, why.Code));
+            return Task.FromResult(new StartedFrom("c9", true, null, $"`{session}` goes on in conversation `c9`."));
+        }
+
+        var look = await Protocol(service, "gone", goesOnLost: shell ? GoesOn : null).RunOnceAsync().WaitAsync(Poll.Patience);
+
+        var seen = $"look: {string.Join(" | ", look.Events)}\nafter: {service.Record("s1")}";
+        Assert.True(service.SessionCount == 1, seen);
+        Assert.True((service.State("s1"), service.Status("q1")) == ("completed", "Done"), seen);
+        Assert.EndsWith("It cannot go on in this session, because the agent no longer has its conversation.", service.Note("s1"));
+        if (shell)
+        {
+            lock (handed) Assert.Equal([("s1", ContinueWhy.Gone)], handed);
+            Assert.Null(new GoOnMarks(_home).Read("s1"));
+            Assert.DoesNotContain(Events("s1"), e => e.Why is not null && e.To is null);
+            Assert.Contains(look.Events, line => line.Contains("conversation `c9`", StringComparison.Ordinal));
+        }
+        else
+        {
+            lock (handed) Assert.Empty(handed);
+            Assert.Equal(ContinueWhy.Gone, new GoOnMarks(_home).Read("s1")!.Why);
+            Assert.Contains(Events("s1"), e => e.Words is ["w1"] && e.Why == ContinueWhy.Gone);
+        }
     }
 
     /// <summary>
@@ -659,6 +709,9 @@ public sealed class SessionMessagesTickTests : IDisposable
                 } else if (mode === 'refuses') {
                   // SESSCTX1c: a refusal on the wire that proves no loss and names no other client.
                   send({ jsonrpc: '2.0', id: frame.id, error: { code: -32603, message: 'Internal error: the thread could not be loaded' } });
+                } else if (mode === 'gone') {
+                  // SESSCTX1c part B: the agent no longer has the conversation, which proves it lost.
+                  send({ jsonrpc: '2.0', id: frame.id, error: { code: -32002, message: 'Resource not found: ' + frame.params?.sessionId } });
                 } else {
                   conversation = frame.params.sessionId;
                   resumed = true;

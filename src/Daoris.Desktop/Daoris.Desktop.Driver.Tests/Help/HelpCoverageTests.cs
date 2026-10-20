@@ -247,6 +247,16 @@ public sealed partial class HelpCoverageTests
         + "proposes none; it can name `daoris-driver sessions start-from` and the screen's press.");
 
     /// <summary>
+    /// SESSCTX1c part B's *Go on with Daoris's brief* (D189 point 3), the page's press beside *Start a conversation with these words*:
+    /// exempt, since it moves the person's own words out of a session that waits for them into a new part of it, a choice the design
+    /// leaves the person where nothing proves the conversation lost.
+    /// </summary>
+    private static readonly Exempt GoOnBriefDoor = new(
+        "going on with Daoris's brief moves the person's own words (D133 §1) out of a session whose agent could still go on with them "
+        + "into a new part of it, which D189 point 3 leaves the person to choose wherever the conversation is not proven lost, so Ask "
+        + "Daoris proposes none; it can name the screen's press.");
+
+    /// <summary>
     /// MIXAGENT1a-i's <c>daoris-driver sessions hand-over</c> (D163, D50), a verb of the headless host, and MIXAGENT1b-i's page press
     /// (<c>useHandOver</c>, *Go on with another agent…*): exempt, since it ends the person's conversation to go on with another
     /// agent's, an exchange of their agent and their allowance that stays theirs. Daoris's own offer when an account is near or cut
@@ -618,6 +628,9 @@ public sealed partial class HelpCoverageTests
         ("work", "useDeleteSession", null, SessionDeleteDoor),
         ("work", "useGoOnNew", null, GoOnNewDoor),
         ("work", "useStartFrom", null, StartFromDoor),
+        // SESSCTX1c part B (D189 point 3): *Go on with Daoris's brief*, on a session's page and in Ask Daoris's own room.
+        ("work", "useGoOnBrief", null, GoOnBriefDoor),
+        ("help", "useGoOnBrief", null, GoOnBriefDoor),
         ("work", "useHandOver", null, HandOverDoor),
         // MIXAGENT2b (D163 points 2 and 3): *Ask another agent…* and the person's yes to an agent's ask; HELPERNO1: their no.
         ("work", "useAskHelper", null, HelperAskDoor),

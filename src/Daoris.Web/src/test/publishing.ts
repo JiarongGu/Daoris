@@ -33,6 +33,7 @@ export const DECLARED: Readonly<Record<string, { scopes: readonly string[]; sess
   SET_LANDING: { scopes: ['landing', 'lines'] },
   START_CHAT: { scopes: ['sessions', 'driver'] },
   SESSION_START_FROM: { scopes: ['sessions', 'driver'], session: 'id' },
+  SESSION_GO_ON_BRIEF: { scopes: ['sessions', 'driver'], session: 'id' },
   SESSION_HAND_OVER: { scopes: ['sessions', 'driver'], session: 'id' },
   STOP_SESSION: { scopes: ['sessions', 'driver'], session: 'id' },
   RESOLVE_SESSION: { scopes: ['sessions', 'quests', 'driver'], session: 'id' },

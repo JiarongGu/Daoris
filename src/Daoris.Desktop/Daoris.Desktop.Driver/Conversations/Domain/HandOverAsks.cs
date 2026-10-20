@@ -1,3 +1,6 @@
+using System.Globalization;
+using System.Text;
+
 namespace Daoris.Driver;
 
 /// <summary>Where an agent's ask to hand its session over stands, one of <see cref="All"/> (MIXAGENT1c; the service's <c>HandOverAskBox.States</c>).</summary>
@@ -172,6 +175,62 @@ public static class HandOverNote
         ? "Before it was handed over, its agent left you this note. It is that agent's own claim, not Daoris's record: check it "
           + "before you rely on it.\n\n" + TextBounds.Quote(TextBounds.Clip(words, Limit), bareBlank: false)
         : null;
+
+    /// <summary>
+    /// The brief's line where the outgoing agent was asked for its closing note and wrote none in its one turn (SESSCTX1c part B, the
+    /// session-context design §2.2): a move never waits more than that turn, so the note is said absent rather than waited for.
+    /// </summary>
+    public const string Absent = "Before it was handed over, its agent was asked for a closing note and left none.";
+
+    /// <summary>
+    /// Whether the outgoing agent is asked for one closing note at its turn's end (SESSCTX1c part B, D189's amendment; the design §2.2):
+    /// where the move is the person's press, or a change of agent its own agent asked for and left no note with (MIXAGENT1c's own note
+    /// stands for it). Never where the account forces the move (<c>near</c>, <c>limit</c>, <c>curve</c>): that account is near or past
+    /// its limit, and each turn's last message is already kept. A reason no box takes never reaches a take.
+    /// </summary>
+    /// <param name="held">The agent's own note, where it asked to hand over with one.</param>
+    public static bool Asks(HandOverRequest ask, string? held) =>
+        ask.Why switch
+        {
+            HandOverWhy.Press => ask.AskedBy == HandOverBy.Person,
+            HandOverWhy.Agent => held?.Trim() is not { Length: > 0 },
+            _ => false,
+        };
+
+    /// <summary>
+    /// What the outgoing agent is asked, as one turn of Daoris's, in Daoris's one English (D142 point 6): one line, so a door that takes a
+    /// line at a time takes it whole.
+    /// </summary>
+    /// <param name="agent">The agent the conversation goes on with.</param>
+    public static string Ask(string agent) =>
+        $"Daoris is handing this conversation over to {agent} now: it goes on in a new conversation in this tree, handed Daoris's record "
+        + $"of this one. In this one reply, of at most {Limit.ToString("N0", CultureInfo.InvariantCulture)} characters and with no tool calls, write a closing note for it: what you "
+        + "were doing, what is left, and anything Daoris's record would not show. This is your last turn in this conversation.";
+
+    /// <summary>
+    /// The closing note the outgoing agent wrote in its one turn: its last message of the turn, as a turn's outcome is read (the agent's
+    /// chunks joined, broken by anything but a usage reading), from the events the turn added. Null where it wrote none.
+    /// </summary>
+    public static string? Written(IReadOnlyList<SessionEvent> turn)
+    {
+        StringBuilder? last = null;
+        var running = false;
+        foreach (var e in turn)
+        {
+            if (e.Kind == SessionEventKind.Usage) continue;
+            if (e.Kind == SessionEventKind.Message)
+            {
+                if (!running) last = new StringBuilder();
+                last!.Append(e.Text);
+                running = true;
+                continue;
+            }
+
+            running = false;
+        }
+
+        return last?.ToString().Trim() is { Length: > 0 } note ? note : null;
+    }
 }
 
 /// <summary>The lines an agent's ask to hand over writes on its session's record (MIXAGENT1c), each by its code with facts only.</summary>

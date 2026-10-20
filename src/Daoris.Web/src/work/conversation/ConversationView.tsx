@@ -16,7 +16,7 @@ import { HandedAccount } from './HandedAccount';
 import { Markdown } from './Markdown';
 import { Note } from '../Note';
 import { noteText } from '../noteLines';
-import { type NewSessionAnswer, newSessionSaid, reasonOf, type ReasonValues } from '../say';
+import { BRIEF_WAITS, type NewSessionAnswer, newSessionSaid, reasonOf, type ReasonValues } from '../say';
 import { ToolCard } from './ToolCard';
 import { WaitMark } from '../waits/WaitAnchor';
 import type { Wait } from '../waits/waits';
@@ -53,6 +53,8 @@ type Said = {
   chat: boolean;
   onSession?: (id: string) => void;
   onStartFrom?: (words: string[]) => void;
+  /** *Go on with Daoris's brief* (SESSCTX1c part B): the session's words go on in a new part of it, handed Daoris's brief. */
+  onGoOnBrief?: () => void;
   /** *Say it again* (COWORK1c): the person's own words that may have reached the agent, said anew. */
   onSayAgain?: (words: string[]) => void;
   reasons: ReasonValues;
@@ -94,8 +96,13 @@ const SaidDoors = createContext<Said>({ chat: false, reasons: {} });
  */
 export function ConversationView({
   turns, tree, structured, chat = false, live = false, turnRunning, loaded = true, earlier = false, onLoadEarlier,
-  reveal, toolbar, onSession, onStartFrom, onSayAgain, reasons = {}, cooling, names, marks, onToWait, callMark,
+  reveal, toolbar, onSession, onStartFrom, onGoOnBrief, onSayAgain, reasons = {}, cooling, names, marks, onToWait, callMark,
 }: {
+  /**
+   * *Go on with Daoris's brief* (SESSCTX1c part B, D189 point 3): beside the fresh start under a line saying the words wait for the person,
+   * the session goes on in a new part of itself, handed Daoris's brief and then the words. Absent, no press is drawn.
+   */
+  onGoOnBrief?: () => void;
   /**
    * *Say it again* (COWORK1c, the message-urgency design §6, §8.2): the person's own words a shell before attempted, which may have
    * reached the agent and were never sent again, said anew, a new word. Absent, no press is drawn.
@@ -181,7 +188,7 @@ export function ConversationView({
     // own: the agent's words are content, shown at the width they are given (UX5 U16: a 768px
     // cap was half a maximized window).
     // A chat's words go on with the next word said to it, never by themselves at a reset (MSG1c), so its cool-off is not said.
-    <SaidDoors.Provider value={{ chat, onSession, onStartFrom, onSayAgain, reasons, cooling: chat ? undefined : cooling, names }}>
+    <SaidDoors.Provider value={{ chat, onSession, onStartFrom, onGoOnBrief, onSayAgain, reasons, cooling: chat ? undefined : cooling, names }}>
       <WaitMarks.Provider value={onToWait ? { marks, onToWait } : {}}>
         <section aria-label={t('work.conversation.label')} className="grid w-full grid-cols-[minmax(0,1fr)] gap-3">
           {/* Pinned beneath the session's page header where one is pinned above it (SESSUX1d, D126 §3.2): the header says its
@@ -560,20 +567,28 @@ function HandedLine({ block, to }: { block: Block; to: string }) {
 /**
  * The person's words cannot go on in this session (MSG1f, D137 §2.2): why, in the page's words, and one press that starts
  * a conversation with them — the person's, since a new conversation has none of this one's context. The press only where
- * the page holds every word the note names, so what it starts with is what they said.
+ * the page holds every word the note names, so what it starts with is what they said. Where the words wait for the person on a
+ * reason that leaves a tree to go on in (SESSCTX1c part B), *Go on with Daoris's brief* goes first beside it: a new part of the same
+ * session, handed Daoris's brief, so it keeps the context the fresh start does not.
  */
 function CannotLine({ block }: { block: Block }) {
   const { t } = useTranslation();
-  const { onStartFrom, reasons } = useContext(SaidDoors);
+  const { onStartFrom, onGoOnBrief, reasons } = useContext(SaidDoors);
   const why = block.why ? reasonOf(t, block.why, reasons) : null;
   if (!why) return <NoteLine text={block.text ?? ''} parts={block.parts} />;
   const said = block.said;
+  const brief = onGoOnBrief && BRIEF_WAITS.has(block.why ?? '') && said && said.length > 0;
 
   return (
     <div className="grid justify-items-start gap-1.5">
       <p className="m-0 text-small text-ink-soft">{t('work.say.cannot', { why })}</p>
-      {onStartFrom && said && said.length > 0 && (
-        <Button onClick={() => onStartFrom(said)}>{t('work.say.startChat')}</Button>
+      {(brief || (onStartFrom && said && said.length > 0)) && (
+        <div className="flex flex-wrap gap-2">
+          {brief && <Button onClick={() => onGoOnBrief!()}>{t('work.say.goOnBrief')}</Button>}
+          {onStartFrom && said && said.length > 0 && (
+            <Button onClick={() => onStartFrom(said)}>{t('work.say.startChat')}</Button>
+          )}
+        </div>
       )}
     </div>
   );
