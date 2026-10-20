@@ -18,7 +18,7 @@ import { applyHelperEdit, helperFor, helperListed, helperRuleOf } from '../../sr
 import { applyHandOverEdit, handOverFor, handOverRuleOf } from '../../src/driver/handover.ts';
 import { MANIFEST, pluginsRoot, readPlugins } from '../../src/plugins/plugins.ts';
 import {
-  applyWorkflowEdit, keptVersions, resolveWorkflow, workflowChoiceOf, type WorkflowChoiceEdit, type WorkflowTaskChoice,
+  applyWorkflowEdit, keptVersions, resolveLanded, resolveWorkflow, workflowChoiceOf, type WorkflowChoiceEdit, type WorkflowTaskChoice,
 } from '../../src/workflows/workflowchoice.ts';
 import type { RecordsReader } from '../../src/driver/strikes.ts';
 import type { VerbPress } from '../../src/platform/door.ts';
@@ -2290,6 +2290,7 @@ const SELECTION_TABLE = JSON.parse(readFileSync(join(dirname(dirname(fileURLToPa
   resolve: (SelectionRow & {
     file: unknown; repository: string | null; workspace: string | null; task: WorkflowTaskChoice | null; selection: unknown;
   })[];
+  landed: (SelectionRow & { file: unknown; repository: string | null; workspace: string | null; route: unknown })[];
   edits: (SelectionRow & { file: unknown; edit: WorkflowChoiceEdit; read: unknown | null; refusal: string | null })[];
   kept: (SelectionRow & { runs: unknown[]; workflow: string; versions: number[] })[];
 };
@@ -2329,6 +2330,16 @@ test('a selection resolves as the driver resolves it, in §4.1\'s order (the sha
   for (const row of SELECTION_TABLE.resolve) {
     writeFileSync(at(fx), JSON.stringify(row.file), 'utf8');
     assert.deepEqual(resolveWorkflow(readDriverChoices(at(fx)), row.repository, row.workspace, row.task), row.selection, row.name);
+  }
+  fx.cleanup();
+});
+
+test('a landed route resolves on its own, as the driver resolves it (FABRIC-PIPELINE1a, the shared table)', () => {
+  const fx = makeFixture('driver-workflow-landed');
+  assert.ok(SELECTION_TABLE.landed.length >= 6);
+  for (const row of SELECTION_TABLE.landed) {
+    writeFileSync(at(fx), JSON.stringify(row.file), 'utf8');
+    assert.deepEqual(resolveLanded(readDriverChoices(at(fx)), row.repository, row.workspace), row.route, row.name);
   }
   fx.cleanup();
 });
