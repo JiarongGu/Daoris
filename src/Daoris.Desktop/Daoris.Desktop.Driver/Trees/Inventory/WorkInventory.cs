@@ -249,8 +249,9 @@ public static partial class WorkInventory
         {
             foreach (var landing in draft.Landings)
             {
-                draft.Sessions.Add(landing.Session);
-                foreach (var advance in landing.Advances) draft.Sessions.Add(advance.Session);
+                // FABRIC-UNITLINK1: a landing carrying several units says each session's own on its work, so a session executes the unit its
+                // work is; where the record does not say (a landing from before), every unit it carries, as before.
+                foreach (var work in landing.Work().Where(work => Executes(landing, work, draft.Id))) draft.Sessions.Add(work.Session);
             }
         }
 
@@ -263,6 +264,30 @@ public static partial class WorkInventory
         var units = new List<WorkUnit>();
         foreach (var draft in drafts.Values) units.Add(Unit(draft, facts, trees.GetValueOrDefault(draft.Id) ?? []));
         return (units, recoveries);
+    }
+
+    /// <summary>
+    /// Whether <paramref name="work"/> is <paramref name="unit"/>'s (FABRIC-UNITLINK1): every session's is, where the landing carries this
+    /// unit alone or is a unit of its own; else only the work the record names this unit for, and the work it names none for, as before.
+    /// </summary>
+    private static bool Executes(LandedBranch landing, LandedWork work, string unit) =>
+        landing.Units.Count <= 1 || !landing.Units.Contains(unit, StringComparer.Ordinal) || work.Unit is null
+        || string.Equals(work.Unit, unit, StringComparison.Ordinal);
+
+    /// <summary>
+    /// The quests <paramref name="unit"/> was produced by, by what its landings name (FABRIC-UNITLINK1): a landing carrying it alone names
+    /// its own quest for it, as before, and each session's work the record names this unit for names the quest that session served, the
+    /// landing's own falling back to the quest the landing names. Never a guess: work the record names no unit for links nothing.
+    /// </summary>
+    private static IEnumerable<string> QuestsOf(LandedBranch landing, string unit)
+    {
+        if (landing.Quest is { Length: > 0 } named && landing.Units.Count <= 1) yield return named;
+        var work = landing.Work();
+        for (var at = 0; at < work.Count; at++)
+        {
+            if (!string.Equals(work[at].Unit, unit, StringComparison.Ordinal)) continue;
+            if ((work[at].Quest ?? (at == 0 ? landing.Quest : null)) is { Length: > 0 } quest) yield return quest;
+        }
     }
 
     private static string Name(string path) => Path.GetFileName(Path.TrimEndingDirectorySeparator(path));
@@ -481,8 +506,8 @@ public static partial class WorkInventory
             : branch is not null ? SessionBranches.FileName
             : draft.Landings.Count > 0 ? LandedBranches.FileName
             : AutoLandings.FileName;
-        var quests = draft.Landings.Where(landing => landing.Quest is { Length: > 0 } && landing.Units.Count <= 1)
-            .Select(landing => new WorkLink(WorkRelation.ProducedBy, QuestUnits.IdOf(landing.Quest!))).Distinct().ToList();
+        var quests = draft.Landings.SelectMany(landing => QuestsOf(landing, draft.Id))
+            .Select(quest => new WorkLink(WorkRelation.ProducedBy, QuestUnits.IdOf(quest))).Distinct().ToList();
         return new WorkUnit(
             draft.Id, WorkUnitKind.Branch, new WorkOwner(draft.Repository, draft.Workspace, record, WorkRecord.DriverWriter),
             new WorkSubject(branch?.Branch ?? draft.Landings.FirstOrDefault()?.Branch ?? draft.Standing, end.Revision), end, entries)

@@ -255,9 +255,12 @@ internal sealed class EntryLands(TreeContext context, TreeLands lands, TreeLandS
                 continue;
             }
 
+            // FABRIC-UNITLINK1, FABRIC-CLOSE1h13: its record keeps the quest the part served and its submission, not its entry's first part's.
+            var named = Joining(await NamedAsync(part, subject, form, ct).ConfigureAwait(false), part.Session, form, target)
+                with { Served = part.Own?.Served, Submission = part.Own?.Submission };
             // FABRIC-CLOSE1h3: each part held to its own quest's result, judged again under its own tree's hold and before its push, so
             // a part whose result moved while an earlier one landed or waited makes nothing (D173's note).
-            var landed = await lands.LandAsync(part.Tree, Joining(await NamedAsync(part, subject, form, ct).ConfigureAwait(false), part.Session, form, target),
+            var landed = await lands.LandAsync(part.Tree, named,
                 ct, inUse, AcceptedBy.Person, part.Gate,
                 joins: form == LandingForm.Branch, fetched: true,
                 judged: part.Pressed?.Judged, beforePush: part.Pressed?.BeforePush).ConfigureAwait(false);

@@ -105,6 +105,18 @@ public sealed record LandingSubject(string Session, string? Quest, string? Title
     public string? EnteredName => string.IsNullOrWhiteSpace(Entered) ? null : Entered.Trim();
 
     /// <summary>
+    /// The quest the session itself served (FABRIC-UNITLINK1, D173's CLOSELAND1 note), whatever <see cref="Quest"/> names it for: the
+    /// landing's record keeps it on the landing or its advance. Set by <see cref="SessionTrees.OwnSubjectAsync"/>; null for a conversation.
+    /// </summary>
+    public string? Served { get; init; }
+
+    /// <summary>
+    /// That quest's current submission as the door read it (FABRIC-CLOSE1h13), by its machine and sequence, which the record keeps as
+    /// what the landing was made on; null for a done and a conversation.
+    /// </summary>
+    public QuestSubmissionRef? Submission { get; init; }
+
+    /// <summary>
     /// The branch an entry's Accept lands this part on (ACCEPTALL1, D167's 2026-10-15 amendment point 1): the entry's one branch,
     /// named once for its first part, so its parts land together. Null names it by the rule for this subject, as before; a name the
     /// person entered still comes first, and a tree on a branch of its own still lands as that branch (TREEFOLLOW1).

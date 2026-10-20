@@ -613,10 +613,16 @@ public sealed class SessionTrees(string home, LandingPlugins? plugins = null) : 
         var lead = EntryAccepts.EntryLead(records, session);
         var named = lead?.Id ?? session;
         var subject = await LandingRules.SubjectAsync(named, lead is null ? quest : lead.Quest, find, opening(named)).ConfigureAwait(false);
-        if (lead is null) return subject;
+        // FABRIC-UNITLINK1, FABRIC-CLOSE1h13: whatever it is named for, the quest this session served and the submission its landing is
+        // made on, as the door's own find read it (each door's find reads a quest once), which the landing's record keeps.
+        var served = quest is null ? null : quest.TrimStart('#');
+        var submission = served is null ? null : (await find(served).ConfigureAwait(false))?.Submission is { } made
+            ? new QuestSubmissionRef(made.Machine, made.Sequence)
+            : null;
+        if (lead is null) return subject with { Served = served, Submission = submission };
         // ACCEPTFOOT2: a conversation's entry is named for its first part's work, not for the part pressed here.
         subject = await Lands.EntryForWorkAsync(subject, lead.Tree, path, ct).ConfigureAwait(false);
-        var joined = await JoinEntryAsync(path, session, subject, ct, process).ConfigureAwait(false);
+        var joined = await JoinEntryAsync(path, session, subject, ct, process).ConfigureAwait(false) with { Served = served, Submission = submission };
         // TREEFOLLOWNAME1: a tree on a branch of its own lands as that branch, so it is named for its own quest, not its entry's first part's.
         if (joined.EntryBranch is null || !await Entries.FollowsOwnAsync(path, ct).ConfigureAwait(false)) return joined;
         return joined.NamedFor(await LandingRules.SubjectAsync(session, quest, find, opening(session)).ConfigureAwait(false));

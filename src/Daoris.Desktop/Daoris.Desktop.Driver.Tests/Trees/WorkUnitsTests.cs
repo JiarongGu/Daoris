@@ -212,6 +212,36 @@ public sealed class WorkUnitsTests : IDisposable
         Assert.All(several, unit => Assert.Empty(unit.Links));
     }
 
+    /// <summary>
+    /// FABRIC-UNITLINK1 (D173's CLOSELAND1 note): a landing carrying several units keeps each advance's quest and unit, so each unit is
+    /// executed by its own sessions and produced by its own quest, read from the record alone, with no session records. A landing from
+    /// before, whose advances name no unit, reads as it did: every session executes every unit it carries, and none is linked by it.
+    /// </summary>
+    [Fact]
+    public void A_landing_carrying_several_units_links_each_to_its_own_quest_and_session_from_its_own_advance()
+    {
+        var landing = Landed(["unit-a", "unit-b"], quest: "q1") with
+        {
+            Served = "q1",
+            Advances = [new LandedAdvance("t1", "t2", Then, "s2") { Quest = "q2", Unit = "unit-b" }],
+        };
+        var branches = WorkInventory.Units(Facts(branches: [Grown(), Grown("daoris/s2", "unit-b")], landings: [landing]));
+        var all = WorkUnits.Linked(branches, QuestUnits.Read([Quest("q1", "Taken"), Quest("q2", "Taken")], []), [], []);
+
+        WorkUnit Of(string id) => all.Single(unit => unit.Id == id);
+        Assert.Equal(["s1"], Of("unit-a").Executors);
+        Assert.Equal(["s2"], Of("unit-b").Executors);
+        Assert.Equal([new WorkLink(WorkRelation.ProducedBy, "quest:q1")], Of("unit-a").Links);
+        Assert.Equal([new WorkLink(WorkRelation.ProducedBy, "quest:q2")], Of("unit-b").Links);
+        Assert.Equal([new WorkLink(WorkRelation.Produced, "unit-a")], Of("quest:q1").Links);
+        Assert.Equal([new WorkLink(WorkRelation.Produced, "unit-b")], Of("quest:q2").Links);
+
+        var older = WorkInventory.Units(Facts(branches: [Grown(), Grown("daoris/s2", "unit-b")], landings:
+            [Landed(["unit-a", "unit-b"], quest: "q1") with { Advances = [new LandedAdvance("t1", "t2", Then, "s2")] }]));
+        Assert.All(older, unit => Assert.Equal(["s1", "s2"], unit.Executors));
+        Assert.All(older, unit => Assert.Empty(unit.Links));
+    }
+
     /// <summary>Every kind's milestone is read the same way: a done quest has nothing of its own to clean; an open one waits for its end.</summary>
     [Fact]
     public void A_quests_milestone_is_read_as_a_branch_units_is()

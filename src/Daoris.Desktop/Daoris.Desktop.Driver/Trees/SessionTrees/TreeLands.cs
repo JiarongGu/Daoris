@@ -523,13 +523,16 @@ internal sealed class TreeLands(
             if (landed.Landed && tip is not null && landed.AdvancedFrom is { } advancedFrom)
             {
                 // Moved on (LAND2c): the entry's tip is the new commit, and the advance is kept with who accepted it (D143).
+                var unit = UnitOf(full, repository);
                 landed = Remember(landed, () => context.Recorded.Advanced(repository, landed.Branch!,
                     new LandedAdvance(advancedFrom, tip, DateTimeOffset.UtcNow, subject.Session)
                     {
                         AcceptedBy = acceptedBy, Review = review?.Landing, Opinion = gate?.Opinion.Landing, Workflow = named?.Record,
                         // The record moves to the session tip this advance squashed (PROCESS1b-ii point 4); a fast-forward keeps it.
                         Squashed = branched.Squashed,
-                    }, UnitOf(full, repository)));
+                        // FABRIC-UNITLINK1, FABRIC-CLOSE1h13: whose work this is, its unit, and the submission it was accepted on.
+                        Quest = subject.Served, Unit = unit, Submission = subject.Submission,
+                    }, unit));
             }
             else if (landed.Landed && tip is not null)
             {
@@ -556,6 +559,9 @@ internal sealed class TreeLands(
                     Squashed = branched.Squashed,
                     // The branch work unit whose work it carries (FABRIC-END2, design §D2), where the session's entry has one.
                     Units = UnitOf(full, repository) is { } unit ? [unit] : [],
+                    // FABRIC-CLOSE1h11, FABRIC-CLOSE1h13: the quest its session served and the submission it was accepted on.
+                    Served = subject.Served,
+                    Submission = subject.Submission,
                 }));
             }
 

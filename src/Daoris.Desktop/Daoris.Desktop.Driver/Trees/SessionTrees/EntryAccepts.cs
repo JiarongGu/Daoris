@@ -139,6 +139,15 @@ public sealed class EntryAccepts(
             // TREEFOLLOWNAME1: its own words, which name its landing where its tree is on a branch of its own.
             var own = await LandingRules.SubjectAsync(part.Session, part.Quest, quest => quests.FindAsync(quest, cancellationToken),
                 events.Openings([part.Session]).GetValueOrDefault(part.Session)).ConfigureAwait(false);
+            // FABRIC-UNITLINK1, FABRIC-CLOSE1h13: the quest the part served and its submission as read here, which its landing keeps.
+            if (part.Quest is { } served && await quests.FindAsync(served, cancellationToken).ConfigureAwait(false) is { } read)
+            {
+                own = own with
+                {
+                    Served = read.Id,
+                    Submission = read.Submission is { } made ? new QuestSubmissionRef(made.Machine, made.Sequence) : null,
+                };
+            }
             // Judged again under its own tree's hold whether or not that hold waits: the press's fetch and its earlier parts come first.
             parts.Add(new EntryLandingPart(part.Session, tree)
             {

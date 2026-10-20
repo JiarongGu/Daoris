@@ -279,6 +279,52 @@ public sealed class LandedRecordTests : IDisposable
     }
 
     /// <summary>
+    /// FABRIC-UNITLINK1 and FABRIC-CLOSE1h13 (D173's CLOSELAND1 note): an advance keeps the quest its session served, its branch work
+    /// unit and the submission its acceptance was made on, and the landing keeps its own session's quest and submission. Each is written
+    /// only where it is known, so an advance or a landing without them, and a record from before them, reads none, and equals itself
+    /// read twice.
+    /// </summary>
+    [Fact]
+    public void An_advance_keeps_its_quest_unit_and_submission_and_a_record_from_before_reads_none()
+    {
+        var landings = new LandedBranches(_home);
+        landings.Record(Entry("feature/q1-fix", "s1") with { Served = "q1", Submission = new QuestSubmissionRef("desk", 41) });
+        landings.Advanced("engine", "feature/q1-fix", new LandedAdvance("tip00001", "tip00002", At, "s2")
+        {
+            Quest = "q2", Unit = "unit-b", Submission = new QuestSubmissionRef("laptop", 7),
+        }, "unit-b");
+        landings.Advanced("engine", "feature/q1-fix", new LandedAdvance("tip00002", "tip00003", At, "s3"));
+
+        var read = new LandedBranches(_home).Of("engine", "feature/q1-fix")!;
+        Assert.Equal(("q1", new QuestSubmissionRef("desk", 41)), (read.Served, read.Submission));
+        var (served, unwritten) = (read.Advances[0], read.Advances[1]);
+        Assert.Equal(("q2", "unit-b", new QuestSubmissionRef("laptop", 7)), (served.Quest, served.Unit, served.Submission));
+        Assert.True(unwritten is { Quest: null, Unit: null, Submission: null });
+
+        // A landing written without them, as one from before them was, has none on disk and reads none.
+        landings.Record(Entry("feature/q2-fix", "s4"));
+        var written = File.ReadAllText(DaorisHome.Entry(_home, HomeEntry.Landings));
+        foreach (var key in new[] { "\"served\"", "\"submission\"", "\"unit\"" })
+        {
+            Assert.DoesNotContain(key, written.Split("feature/q2-fix")[1], StringComparison.Ordinal);
+        }
+
+        var older = new LandedBranches(_home).Of("engine", "feature/q2-fix")!;
+        Assert.True(older is { Served: null, Submission: null });
+        Assert.Equal(older, new LandedBranches(_home).Of("engine", "feature/q2-fix"));
+
+        // An advance a build before them kept, read from its file: none of them.
+        File.WriteAllText(DaorisHome.Entry(_home, HomeEntry.Landings), """
+            { "branches": [ { "repository": "engine", "workspace": "aurora", "branch": "feature/q9-old", "tip": "tip00002", "session": "s1",
+              "quest": "q9", "landedAt": "2026-09-30T12:00:00.0000000+00:00",
+              "advances": [ { "from": "tip00001", "to": "tip00002", "at": "2026-09-30T12:00:00.0000000+00:00", "session": "s2" } ] } ] }
+            """);
+        var before = new LandedBranches(_home).Of("engine", "feature/q9-old")!;
+        Assert.True(before is { Served: null, Submission: null });
+        Assert.True(Assert.Single(before.Advances) is { Quest: null, Unit: null, Submission: null });
+    }
+
+    /// <summary>
     /// PLUGHOOK1a (D148 point 6, design §2.5): the entry keeps the latest answer about its pull request with who answered and
     /// when, the latest failed ask beside it, the session branches removed on its word, and a removal on it; each round trips,
     /// a trace takes them as a standing entry does, and a record from before keeps none of them.

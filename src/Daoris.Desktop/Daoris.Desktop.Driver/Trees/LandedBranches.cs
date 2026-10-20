@@ -134,6 +134,71 @@ public sealed record LandedBranch(
     /// </summary>
     public IReadOnlyList<string> Units { get; init; } = [];
 
+    /// <summary>
+    /// The quest its own session served (FABRIC-CLOSE1h11, D173's CLOSELAND1 note): <see cref="Quest"/> names the one it is named for, a
+    /// chain's first (WSR5), which need not be its session's. Null where the session served none, and in a record from before.
+    /// </summary>
+    public string? Served { get; init; }
+
+    /// <summary>
+    /// The submission its own session's acceptance was made on (FABRIC-CLOSE1h13), by its machine and sequence, as the door read it; null
+    /// for a done, a conversation, and a record from before.
+    /// </summary>
+    public QuestSubmissionRef? Submission { get; init; }
+
+    /// <summary>
+    /// The work of each session it carries, oldest first (FABRIC-UNITLINK1, FABRIC-CLOSE1h11): its own session's, then each advance's,
+    /// each with the commit the branch stood at once that work was on it, and the quest, the unit and the submission the record keeps for
+    /// it, null where it keeps none.
+    /// </summary>
+    public IReadOnlyList<LandedWork> Work()
+    {
+        var work = new List<LandedWork>(Advances.Count + 1)
+        {
+            new(Session, Advances.Count > 0 ? Advances[0].From : Tip) { Quest = Served, Unit = OwnUnit(), Submission = Submission },
+        };
+        foreach (var advance in Advances)
+        {
+            work.Add(new(advance.Session, advance.To) { Quest = advance.Quest, Unit = advance.Unit, Submission = advance.Submission });
+        }
+
+        return work;
+    }
+
+    /// <summary>
+    /// The work no push of it has carried yet (FABRIC-CLOSE1h11): all of it where no plugin answered that it pushed the branch, else what
+    /// came after the commit it pushed. A pushed commit that is none of theirs leaves all of it unpushed, the side that judges more.
+    /// </summary>
+    public IReadOnlyList<LandedWork> Unpushed()
+    {
+        var work = Work();
+        if (!Pushed || PushedTip is not { } pushed) return work;
+        var at = work.Count - 1;
+        while (at >= 0 && !string.Equals(work[at].Tip, pushed, StringComparison.OrdinalIgnoreCase)) at--;
+        return at < 0 ? work : [.. work.Skip(at + 1)];
+    }
+
+    /// <summary>
+    /// Its own session's branch work unit as the record says it (FABRIC-UNITLINK1): the first it carries, where every advance names its
+    /// own and they account for the rest, in the order each was added. Null where it is not said: an advance from before names none,
+    /// another session's advance names that first unit (which the record cannot tell from a landing whose own session had none), or the
+    /// units are not the ones its advances added.
+    /// </summary>
+    private string? OwnUnit()
+    {
+        if (Units.Count == 0) return null;
+        var own = Units[0];
+        var added = new List<string> { own };
+        foreach (var advance in Advances)
+        {
+            if (advance.Unit is not { } unit) return null;
+            if (string.Equals(unit, own, StringComparison.Ordinal) && !string.Equals(advance.Session, Session, StringComparison.OrdinalIgnoreCase)) return null;
+            if (!added.Contains(unit, StringComparer.Ordinal)) added.Add(unit);
+        }
+
+        return added.SequenceEqual(Units, StringComparer.Ordinal) ? own : null;
+    }
+
     /// <summary>Whether this landing names <paramref name="session"/>: the session that made it, or one whose done moved it on (LAND2c).</summary>
     public bool Names(string session) =>
         string.Equals(Session, session, StringComparison.OrdinalIgnoreCase)
@@ -179,6 +244,40 @@ public sealed record LandedAdvance(string From, string To, DateTimeOffset At, st
     /// <see cref="LandedBranch.Squashed"/> moves to; null for a fast-forward, and in a record from before.
     /// </summary>
     public string? Squashed { get; init; }
+
+    /// <summary>
+    /// The quest its session served (FABRIC-UNITLINK1, D173's CLOSELAND1 note), which a hand-off and a push judge it on and its unit is
+    /// linked to; null where the session served none, and in a record from before.
+    /// </summary>
+    public string? Quest { get; init; }
+
+    /// <summary>
+    /// Its session's branch work unit (FABRIC-UNITLINK1), which <see cref="LandedBranch.Units"/> gains where it is new; null where the
+    /// session's tree had none, and in a record from before.
+    /// </summary>
+    public string? Unit { get; init; }
+
+    /// <summary>
+    /// The submission its acceptance was made on (FABRIC-CLOSE1h13), by its machine and sequence: one made again since holds a person's
+    /// hand-off of its work back. Null for a done, and in a record from before, whose session is judged only on its result being in.
+    /// </summary>
+    public QuestSubmissionRef? Submission { get; init; }
+}
+
+/// <summary>
+/// One session's work a landed branch carries (FABRIC-UNITLINK1, FABRIC-CLOSE1h11; <see cref="LandedBranch.Work"/>): the session, the
+/// commit the branch stood at once its work was on it, and what the record keeps of it, each null where it keeps none.
+/// </summary>
+public sealed record LandedWork(string Session, string Tip)
+{
+    /// <summary>The quest the session served; null where it served none, or the record does not say.</summary>
+    public string? Quest { get; init; }
+
+    /// <summary>Its branch work unit; null where the record does not say which.</summary>
+    public string? Unit { get; init; }
+
+    /// <summary>The submission its acceptance was made on; null for a done, or where the record does not say.</summary>
+    public QuestSubmissionRef? Submission { get; init; }
 }
 
 /// <summary>
@@ -535,6 +634,10 @@ public sealed class LandedBranches(string home)
                     if (advance.Opinion is { } read) WriteOpinion(writer, read);
                     if (advance.Workflow is { } went) WriteWorkflow(writer, went);
                     if (advance.Squashed is not null) writer.WriteString("squashed", advance.Squashed);
+                    // FABRIC-UNITLINK1, FABRIC-CLOSE1h13: each only where it is known, so an advance from before reads as it did.
+                    if (advance.Quest is not null) writer.WriteString("quest", advance.Quest);
+                    if (advance.Unit is not null) writer.WriteString("unit", advance.Unit);
+                    if (advance.Submission is { } made) WriteSubmission(writer, made);
                     writer.WriteEndObject();
                 }
 
@@ -576,12 +679,36 @@ public sealed class LandedBranches(string home)
                 writer.WriteEndArray();
             }
 
+            // FABRIC-CLOSE1h11, FABRIC-CLOSE1h13: each only where it is known, so a landing from before reads as it did.
+            if (entry.Served is not null) writer.WriteString("served", entry.Served);
+            if (entry.Submission is { } submission) WriteSubmission(writer, submission);
             writer.WriteEndObject();
         }
 
         writer.WriteEndArray();
         writer.WriteEndObject();
     });
+
+    /// <summary>The submission a landing or an advance was made on (FABRIC-CLOSE1h13): its machine and sequence.</summary>
+    private static void WriteSubmission(Utf8JsonWriter writer, QuestSubmissionRef submission)
+    {
+        writer.WriteStartObject("submission");
+        writer.WriteString("machine", submission.Machine);
+        writer.WriteNumber("sequence", submission.Sequence);
+        writer.WriteEndObject();
+    }
+
+    /// <summary>
+    /// The submission a landing or an advance kept, or null: absent, which is every record from before FABRIC-CLOSE1h13 and every done's,
+    /// or named only in half.
+    /// </summary>
+    private static QuestSubmissionRef? SubmissionOf(JsonElement element) =>
+        element.TryGetProperty("submission", out var submission) && submission.ValueKind == JsonValueKind.Object
+        && Text(submission, "machine") is { Length: > 0 } machine
+        && submission.TryGetProperty("sequence", out var sequence) && sequence.ValueKind == JsonValueKind.Number
+        && sequence.TryGetInt64(out var number) && number > 0
+            ? new QuestSubmissionRef(machine, number)
+            : null;
 
     /// <summary>The review that let a landing go (REVIEWENV1c), each field only where it is known.</summary>
     private static void WriteReview(Utf8JsonWriter writer, LandingReview review)
@@ -803,6 +930,8 @@ public sealed class LandedBranches(string home)
             Squashed = Text(element, "squashed"),
             Held = HeldFact.Read(element),
             Units = UnitsOf(element),
+            Served = Text(element, "served"),
+            Submission = SubmissionOf(element),
         };
     }
 
@@ -839,7 +968,7 @@ public sealed class LandedBranches(string home)
             advances.Add(new LandedAdvance(from, to, at, session)
             {
                 AcceptedBy = Text(each, "acceptedBy"), Review = ReviewOf(each), Opinion = OpinionOf(each), Workflow = WorkflowOf(each),
-                Squashed = Text(each, "squashed"),
+                Squashed = Text(each, "squashed"), Quest = Text(each, "quest"), Unit = Text(each, "unit"), Submission = SubmissionOf(each),
             });
         }
 
