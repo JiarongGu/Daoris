@@ -670,6 +670,28 @@ public static class LandingRules
           + "request, so each done's branch waits here for you to push it. Switch it off to accept each one yourself.";
 
     /// <summary>
+    /// What finds a branch's ticket (PROCESS1b-i), said as a rule is set: by <c>daoris-driver driver landing</c> and Ask Daoris's card
+    /// (TWINWORDS1, <c>landing-says.json</c>'s <c>ticket</c>).
+    /// </summary>
+    public static string TicketSays(string? key) =>
+        $"`{{ticket}}` is the first match of `{key ?? DefaultKey}` in the title, then the request, then its links, as written"
+        + $"{(key is null ? " (the default shape)" : "")}; where none is found, the session's id stands in.";
+
+    /// <summary>
+    /// What Accept makes under a rule that squashes (PROCESS1b-ii), in the terminal's three lines; Ask Daoris's card says them as one
+    /// (<see cref="Squashed"/>, <c>landing-says.json</c>'s <c>squash</c>).
+    /// </summary>
+    public static IReadOnlyList<string> SquashSays { get; } =
+    [
+        "Squashed: Accept makes the pull request's branch one commit from the session's work — the quest's title, then",
+        "each of the session's commits' subjects — made by git as the repository's own `user.name` and `user.email`;",
+        "where git has none there, Accept is refused and says how to set them. A tree on a branch of its own lands as it stands.",
+    ];
+
+    /// <summary><see cref="SquashSays"/> as one sentence.</summary>
+    public static string Squashed => string.Join(' ', SquashSays);
+
+    /// <summary>
     /// What the conversation's record keeps of a landing (D100): the whole sentence the press said, the
     /// plugin's part in it. Machine-local, like every note there — a plugin's word never rides the
     /// session record, which travels (D64 §4).

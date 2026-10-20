@@ -5,6 +5,7 @@ import { storyWidths } from '../../design/storyWidths';
 import { CardStack } from '../../design/ui';
 import { InTheme } from '../../plugins/storyIcons';
 import { WiringCards } from './WiringCards';
+import { WiringDownloads } from './WiringDownloads';
 import { WiringFiles } from './WiringFiles';
 import { WiringFolders } from './WiringFolders';
 import { WiringHead, WiringOlder } from './WiringHead';
@@ -16,7 +17,7 @@ import { WiringTerminal } from './WiringTerminal';
 import { WiringToolHome } from './WiringToolHome';
 import { WiringVariablesCard } from './WiringVariables';
 import { WiringVersions } from './WiringVersions';
-import { DEVELOPMENT, MEASURING, WIRED } from './wiringFixtures';
+import { DEVELOPMENT, DOWNLOADS, MEASURING, WIRED } from './wiringFixtures';
 
 // Settings → This Daoris's cards (WIRING1c, the this-Daoris design §3.1-3.3, §7), in the shape `SYSTEM_WIRING` answers: an
 // install with every size counted, a walk under way, a development run with the account naming another home and a service
@@ -68,6 +69,45 @@ export const FoldersUnreadable: Story = {
 
 /** A narrow main area: the row stacks its value under its label, and a path breaks at its separators. */
 export const FoldersNarrow: Story = { render: () => <WiringFolders wiring={WIRED} onMeasure={() => {}} />, decorators: narrow };
+
+// CACHECLEAR1: the Downloads row's clearing, open under its row: the list with what keeps each version, and the press's answer.
+const clearing = (props: Partial<Parameters<typeof WiringDownloads>[0]> = {}) => (
+  <WiringFolders
+    wiring={WIRED}
+    onMeasure={() => {}}
+    downloads={<WiringDownloads listing={DOWNLOADS} onClear={() => {}} onClose={() => {}} {...props} />}
+  />
+);
+
+/** The Downloads row offers its clearing. */
+export const DownloadsOffered: Story = { render: () => <WiringFolders wiring={WIRED} onMeasure={() => {}} onDownloads={() => {}} /> };
+
+/** The list: two versions nothing uses, and what keeps each of the rest. */
+export const DownloadsListed: Story = { render: () => clearing(), decorators: inTheme('light') };
+
+/** The same, in dark. */
+export const DownloadsListedDark: Story = { render: () => clearing(), decorators: inTheme('dark') };
+
+/** The list on its way. */
+export const DownloadsListing: Story = { render: () => clearing({ listing: undefined }) };
+
+/** Every version in use: nothing to remove. */
+export const DownloadsAllKept: Story = {
+  render: () => clearing({ listing: { why: null, versions: DOWNLOADS.versions.filter((row) => row.keeps) } }),
+};
+
+/** After the press: one removed, and one the driver kept because a program runs from it. */
+export const DownloadsCleared: Story = {
+  render: () => clearing({
+    cleared: [
+      { kind: 'agent', name: 'claude-code', version: '2.0.1', unfinished: false, outcome: 'removed', bytes: 120_000_000 },
+      { kind: 'tool', name: 'gh', version: '2.61.0', unfinished: false, outcome: 'kept', bytes: 30_000_000, keeps: 'in-use', by: [] },
+    ],
+  }),
+};
+
+/** A narrow main area, in 中文. */
+export const DownloadsNarrowChinese: Story = { render: () => clearing(), decorators: [...narrow, chinese] };
 
 /** The service this window started, answering, with its programs and a workspace's remote. */
 export const ServiceAnswering: Story = { render: () => <WiringService wiring={WIRED} />, decorators: inTheme('light') };

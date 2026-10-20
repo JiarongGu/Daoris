@@ -22,6 +22,7 @@ import { command as driver } from './cli/driver.ts';
 import { command as plugin } from './cli/plugin.ts';
 import { command as browser } from './cli/browser.ts';
 import { command as tool } from './cli/tool.ts';
+import { runDriverProgram, type DriverProgramSeam } from './agents/toolchain.ts';
 
 /** The package root — `src/` sits one level below it, `dist/` likewise once built. */
 export const packageRoot = dirname(dirname(fileURLToPath(import.meta.url)));
@@ -70,10 +71,12 @@ const USAGE = [
   "  and agent spawns each agent's own tooling. Of them only agent pin and agent",
   "  update open a connection themselves, to a maker's release channel for Claude",
   "  Code and Codex, and tool download, use … managed, update and look, to a tool's",
-  '  maker and a resource location; driver retry without --at asks this machine\'s',
-  "  service for the quest's session records. While Daoris runs on that home, agent,",
-  "  driver, plugin and tool send what they change to it over its own pipe, and its",
-  '  window asks you to confirm it; with none running they edit the files themselves.',
+  "  maker and a resource location. driver's standing choices are run by Daoris's own",
+  '  driver program, the one this install carries in app/daoris-driver/ (or the one',
+  '  DAORIS_DRIVER_PROGRAM names); a daoris with neither says so and does nothing.',
+  '  While Daoris runs on that home, agent, driver, plugin and tool send what they',
+  '  change to it over its own pipe, and its window asks you to confirm it; with none',
+  '  running they edit the files themselves.',
   '  Every doctrine command is offline.',
   '',
   'Options:',
@@ -82,10 +85,15 @@ const USAGE = [
   '  --help, --version',
 ].join('\n');
 
+/**
+ * @param driverProgram Daoris's driver program, which a management family hands its verbs to (PUSH1f2a, D194 point 1): the real one, or
+ * the dispatcher's test's stand-in, which records what it was handed. `--help` stays this dispatcher's own, wherever it stands.
+ */
 export function runCli(
   argv: string[],
   cwd: string,
   write: (line: string) => void = console.log,
+  driverProgram: DriverProgramSeam = (family, words) => runDriverProgram(family, words),
 ): ExitCode | Promise<ExitCode> {
   try {
     if (argv.includes('--help')) {
@@ -114,7 +122,7 @@ export function runCli(
         : `unknown command '${command}' — run 'daoris --help'`);
     }
 
-    const result = handler({ root: cwd, argv: argv.slice(1), write, packageRoot });
+    const result = handler({ root: cwd, argv: argv.slice(1), write, packageRoot, driverProgram });
 
     // A command may be async, and a `try` does not catch a rejected promise — so a DaorisError thrown
     // inside it escaped as an unhandled rejection and printed a stack trace instead of its message.

@@ -211,17 +211,10 @@ public sealed class LinesRoutes(DriverContext context)
             rule = LandingKept(rule, standing, request.Payload);
         }
 
-        // The rule's plugin must be able to land work here, said as `daoris driver landing` says it (D100);
-        // the shape is the file's own question, asked first by the edit below.
-        if (rule is { Plugin: { } plugin } && LandingRules.Problem(rule) is null
-            && LandingRules.PluginProblem(plugin, PluginCatalog.Load(_loop.Home, AdapterSet.Built().Names)) is { } problem)
-        {
-            throw new DriverException(problem);
-        }
-
-        _context.Change(config => workspace is not null
-            ? config.WithWorkspaceLanding(workspace, rule)
-            : config.WithLanding(repository!, rule));
+        // The rule's plugin must be able to land work here, said as `daoris driver landing` says it (D100): the library's operation
+        // asks it before anything is written, as the terminal's command acting alone asks it (PUSH1f2a).
+        var catalog = PluginCatalog.Load(_loop.Home, AdapterSet.Built().Names);
+        _context.Change(config => StandingChoices.Landing(config, repository, workspace, rule, catalog));
         return DriverRoutes.State(_loop);
     }
 
@@ -794,52 +787,23 @@ public sealed class LinesRoutes(DriverContext context)
         // The twin's refusals come first, in its words, before the registry is asked anything.
         ReviewRules.Apply(DriverConfig.Load(_loop.ConfigPath), edit);
 
-        IReadOnlyList<string> lacking = [];
-        var unchecked_ = false;
+        // PUSH1f2a: the look is the library's operation, which `daoris-driver driver review` acting alone calls too.
+        ReviewLooked? looked = null;
         if (edit.Put is { Procedure: { } procedure })
         {
             var service = _loop.Service ?? throw NotReady();
             var registry = (await service.RegistryAsync(cancellationToken).ConfigureAwait(false))
                 .Select(row => (Repository: row.Repository, Workspace: (string?)row.Workspace, Root: row.Root)).ToList();
-            lacking = ReviewRules.Lacking(registry, edit, procedure);
-            if (edit.Repository is { } repository)
-            {
-                if (lacking.Count > 0) throw new DriverException(ReviewRules.NotHeld(repository.Trim(), procedure));
-                unchecked_ = !registry.Any(row => row.Root is { Length: > 0 }
-                    && string.Equals(row.Repository, repository.Trim(), StringComparison.OrdinalIgnoreCase));
-            }
-            else
-            {
-                unchecked_ = !registry.Any(row => row.Root is { Length: > 0 }
-                    && string.Equals(RemoteTarget.Workspace(row.Workspace), RemoteTarget.Workspace(edit.Workspace), StringComparison.OrdinalIgnoreCase));
-            }
+            looked = StandingChoices.Review(registry, edit, procedure);
         }
 
         _context.Change(config => ReviewRules.Apply(config, edit));
         // Only a put looked for anything, so only a put says what the look found.
-        return DriverRoutes.State(_loop, reviewed: edit.Put is null ? null : new { Lacking = lacking, Unchecked = unchecked_ });
+        return DriverRoutes.State(_loop, reviewed: looked is null ? null : new { looked.Lacking, looked.Unchecked });
     }
 
-    /// <summary>The page's edit, read as the shared table's: a field of another type is absent, <c>none</c> and <c>clear</c> only when true.</summary>
-    private static ReviewEdit ReviewEditOf(JsonElement? payload)
-    {
-        if (payload is not { ValueKind: JsonValueKind.Object } root) return new ReviewEdit();
-
-        return new ReviewEdit
-        {
-            Repository = Text(root, "repository"),
-            Workspace = Text(root, "workspace"),
-            Put = root.TryGetProperty("put", out var put) && put.ValueKind == JsonValueKind.Object
-                ? new ReviewSpelled(Text(put, "name"), Text(put, "kind"), Text(put, "procedure"), Text(put, "address"), Text(put, "run"))
-                : null,
-            Required = root.TryGetProperty("required", out var required) && required.ValueKind is JsonValueKind.True or JsonValueKind.False
-                ? required.GetBoolean()
-                : null,
-            None = root.TryGetProperty("none", out var none) && none.ValueKind == JsonValueKind.True,
-            Drop = Text(root, "drop"),
-            Clear = root.TryGetProperty("clear", out var clear) && clear.ValueKind == JsonValueKind.True,
-        };
-    }
+    /// <summary>The page's edit, read as the shared table's (<see cref="ReviewRules.EditOf"/>, the terminal's payload read the same way).</summary>
+    internal static ReviewEdit ReviewEditOf(JsonElement? payload) => ReviewRules.EditOf(payload);
 
     /// <summary>
     /// A rule as the bridge carries it (REVIEWENV1a): whether it is none here, whether work waits for the person's look, and

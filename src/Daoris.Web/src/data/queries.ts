@@ -149,6 +149,8 @@ export const keys = {
    * family the design gives WIRING1e's presses' scope (§6); until that scope is declared, read again by its stale time and a focus.
    */
   systemWiring: ['system', 'wiring'] as const,
+  /** The Downloads row's list (CACHECLEAR1) — shell-only: the versions under this install's `cache/`, read when the row opens it. */
+  systemDownloads: ['system', 'downloads'] as const,
   /**
    * Git's reads (GIT1d-b, D147) — shell-only: they read this machine's checkouts. The branch list moves, so it is keyed by its
    * scope alone; every other read is named by whole commit ids (D147 §4.2), so a commit is cached by its commit and never changes.

@@ -18,6 +18,7 @@
     "mcp__daoris-knowledge__browser_propose",
     "mcp__daoris-knowledge__channel_post",
     "mcp__daoris-knowledge__channel_read",
+    "mcp__daoris-knowledge__checkout_read",
     "mcp__daoris-knowledge__clear_propose",
     "mcp__daoris-knowledge__delete_propose",
     "mcp__daoris-knowledge__go_ahead_ask",

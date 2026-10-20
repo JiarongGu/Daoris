@@ -46,7 +46,15 @@ public static class SessionMove
     /// </summary>
     public const string Set = "set";
 
-    public static bool Known(string move) => move is Stop or Finish or Decline or Say or TakeBack or Housekeep or Set;
+    /// <summary>
+    /// Ask Daoris's checkout tool asking to read one checkout (HELPMODE1c4, D183's note): a file, a folder, <c>git status</c> or the
+    /// branch list, by a repository and a path relative to its checkout; written by the connector as a setting request is, taken by
+    /// the loop running the conversation, judged there at the call, and answered beside the request in <see cref="CheckoutAnswer"/>'s
+    /// shape, what was read beside its words. Keyed as a say is.
+    /// </summary>
+    public const string Read = "read";
+
+    public static bool Known(string move) => move is Stop or Finish or Decline or Say or TakeBack or Housekeep or Set or Read;
 }
 
 /// <summary>Who asked, as the machine log's <c>door</c> names a door: a word, never a sentence.</summary>
@@ -121,13 +129,14 @@ public sealed record SessionRequest(string Session, string Move, DateTimeOffset 
 
     /// <summary>
     /// A housekeeping request's operation, one of <see cref="ConfiguredAccess.HousekeepingBuilt"/> (HELPMODE1c2a); a setting request's
-    /// setting, one of <see cref="ConfiguredAccess.SettingsBuilt"/> (HELPMODE1c3); null for any other move.
+    /// setting, one of <see cref="ConfiguredAccess.SettingsBuilt"/> (HELPMODE1c3); a checkout read's, one of
+    /// <see cref="HelpCheckouts.Operations"/> (HELPMODE1c4); null for any other move.
     /// </summary>
     public string? Operation { get; init; }
 
     /// <summary>
     /// A housekeeping request's repository, by its registered name, null for a look at every one; a language's repository, for a
-    /// setting request; null for any other move.
+    /// setting request; the checkout's repository, for a checkout read; null for any other move.
     /// </summary>
     public string? Repository { get; init; }
 
@@ -139,6 +148,68 @@ public sealed record SessionRequest(string Session, string Move, DateTimeOffset 
 
     /// <summary>A language's workspace, for a setting request (HELPMODE1c3); null for any other.</summary>
     public string? Workspace { get; init; }
+
+    /// <summary>
+    /// A checkout read's path, relative to the checkout of <see cref="Repository"/> as the agent wrote it (HELPMODE1c4); null for its
+    /// top, and for any other move. Never trusted: <see cref="HelpCheckouts"/> judges it at the call.
+    /// </summary>
+    public string? Path { get; init; }
+}
+
+/// <summary>
+/// What became of a checkout read (HELPMODE1c4), written beside it for the tool that asked, in the chosen settings' answer's fields and
+/// one more: the operation, whether it was read, a code where it was not, the words the agent reads, and <see cref="Text"/>, what was
+/// read. A twin: the service's <c>CheckoutBox</c> reads <c>said</c> and <c>text</c> by the same names.
+/// </summary>
+public sealed record CheckoutAnswer(string Operation, bool Done, string? Code, string Said)
+{
+    /// <summary>A file's text, at most <see cref="HelpCheckouts.Bound"/> of it; a folder's entries, one a line; git's answer. Null where nothing was read.</summary>
+    public string? Text { get; init; }
+
+    /// <summary>No service answered, so no record could be read.</summary>
+    public const string NoService = "no-service";
+
+    /// <summary>The session is not an Ask Daoris conversation of this machine's.</summary>
+    public const string NotHelp = "not-help";
+
+    /// <summary>The request named no operation of the three, no repository, or a path where its operation takes none.</summary>
+    public const string Named = "named";
+
+    /// <summary>No repository of that name is registered here.</summary>
+    public const string Unknown = "unknown";
+
+    /// <summary>The repository is registered in another workspace than the conversation's.</summary>
+    public const string Outside = "outside";
+
+    /// <summary>The repository has no checkout on this machine.</summary>
+    public const string NoCheckout = "no-checkout";
+
+    /// <summary>The repository's own reading by agents outside it is switched off (D107), so it is no checkout of the grant's.</summary>
+    public const string NotReadable = "not-readable";
+
+    /// <summary>The person turned the checkout off in configured access.</summary>
+    public const string NotGranted = "not-granted";
+
+    /// <summary>Not handed at this conversation's start: it holds from its next turn.</summary>
+    public const string NotHanded = "not-handed";
+
+    /// <summary>
+    /// A path that is no path inside the checkout: <c>..</c>, an absolute path, a drive or a stream, a wildcard, git's own folder, or
+    /// a link leading out of it.
+    /// </summary>
+    public const string Escapes = "escapes";
+
+    /// <summary>Git ignores it, or a folder it lies in (<c>local/</c>, build output, secrets kept ignored).</summary>
+    public const string Ignored = "ignored";
+
+    /// <summary>No file or folder by that path in the checkout.</summary>
+    public const string Missing = "missing";
+
+    /// <summary>The read failed on its way: git could not say what it ignores, or the disk or git refused.</summary>
+    public const string Failed = "failed";
+
+    /// <summary>A refusal of <paramref name="operation"/> with its code, its words ending that nothing was read.</summary>
+    public static CheckoutAnswer Refusal(string operation, string code, string said) => new(operation, false, code, $"{said} Nothing was read.");
 }
 
 /// <summary>
@@ -518,6 +589,14 @@ public sealed partial class SessionRequests(string home)
         AtomicFile.WriteText(path, ToJson(answer.Setting, answer.Done, answer.Code, answer.Said));
     }
 
+    /// <summary>What became of a checkout read (HELPMODE1c4), written beside it in the same fields with what was read as <c>text</c>.</summary>
+    public void Answer(SessionRequest request, CheckoutAnswer answer)
+    {
+        var path = AnswerPath(request);
+        Directory.CreateDirectory(Folder);
+        AtomicFile.WriteText(path, ToJson(answer.Operation, answer.Done, answer.Code, answer.Said, answer.Text, withText: true));
+    }
+
     /// <summary>
     /// A say's answer, read once and removed; null while none is written. One held open that moment is read at the next ask,
     /// never dropped; one that does not read as an answer is removed.
@@ -601,6 +680,7 @@ public sealed partial class SessionRequests(string home)
                     : [],
                 Value = Text("value"),
                 Workspace = Text("workspace"),
+                Path = Text("path"),
             };
         }
         catch (JsonException)
@@ -669,6 +749,13 @@ public sealed partial class SessionRequests(string home)
             if (request.Repository is not null) writer.WriteString("repository", request.Repository);
             if (request.Workspace is not null) writer.WriteString("workspace", request.Workspace);
         }
+        else if (request.Operation is not null && request.Move == SessionMove.Read)
+        {
+            // HELPMODE1c4: a checkout read's fields, in the connector's order.
+            writer.WriteString("operation", request.Operation);
+            if (request.Repository is not null) writer.WriteString("repository", request.Repository);
+            if (request.Path is not null) writer.WriteString("path", request.Path);
+        }
         else if (request.Operation is not null)
         {
             writer.WriteString("operation", request.Operation);
@@ -681,17 +768,21 @@ public sealed partial class SessionRequests(string home)
         writer.WriteEndObject();
     });
 
-    // The twin's fields, in its order (HELPMODE1c2a, and HELPMODE1c3's settings alike): the service's boxes read `said`.
-    private static string ToJson(string operation, bool done, string? code, string said) => JsonFile.Serialize(writer =>
-    {
-        writer.WriteStartObject();
-        writer.WriteString("operation", operation);
-        writer.WriteBoolean("done", done);
-        if (code is null) writer.WriteNull("code");
-        else writer.WriteString("code", code);
-        writer.WriteString("said", said);
-        writer.WriteEndObject();
-    });
+    // The twin's fields, in its order (HELPMODE1c2a, and HELPMODE1c3's settings alike): the service's boxes read `said`; a checkout
+    // read's (HELPMODE1c4) carries `text` after them, null where nothing was read.
+    private static string ToJson(string operation, bool done, string? code, string said, string? text = null, bool withText = false) =>
+        JsonFile.Serialize(writer =>
+        {
+            writer.WriteStartObject();
+            writer.WriteString("operation", operation);
+            writer.WriteBoolean("done", done);
+            if (code is null) writer.WriteNull("code");
+            else writer.WriteString("code", code);
+            writer.WriteString("said", said);
+            if (withText && text is null) writer.WriteNull("text");
+            else if (withText) writer.WriteString("text", text);
+            writer.WriteEndObject();
+        });
 
     private static string ToJson(WordsHeld held) => JsonFile.Serialize(writer =>
     {

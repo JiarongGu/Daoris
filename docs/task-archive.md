@@ -18472,6 +18472,11 @@ in zh. The sessions page's held words (`WordsHold`) still carry the driver's sen
 
 **Outcome** 2026-10-21: built. A hold stamps its file's time when taken and let go; `LandingHolds.Sweep` removes a file no door has held for longer than `Wait`, reading its time again under its own handle, and keeps one held or let go within the bound; a taken hold sweeps its home at most once per `Wait` in a process. Proof: three tests in `LandingHoldsTests`. Detail: D173's LANDHOLDSWEEP1 note.
 
+## HELPMODE1c4 — the scoped checkouts grant (2026-10-21, D183)
+
+> - [ ] **HELPMODE1c4 — the scoped checkouts grant built on Claude** (driver, service, web-shell; the modes design's §4.1; after HELPMODE1c3). Restricted mode's *checkouts* grant is still drawn as the design's mock on Claude (on Codex it says unavailable until a scoped read tool exists): build it as HELPMODE1c3 built chosen settings, a typed tool reading only the checkouts chosen, judged by the driver at each call against the grant handed at the start. Proof: the grant's refusal off and its read on, a checkout not chosen refused; the page's row chosen in en and zh.
+
+**Outcome** 2026-10-21: built for Claude and Codex alike. Ask Daoris reads its checkouts through one connector tool, `checkout_read` (a file, a folder, `status`, `branches`), which the driver's `HelpCheckouts` judges at every call, in place of the `Read` and git rules a restricted start handed Claude; the checkouts are on by default from D107's readable set, each turned off on its own in *Configured access*. Detail: D183's HELPMODE1c4 note.
 ## GITSTART6 — the remaining tests' git past the launcher (2026-10-21, D121)
 
 > - [ ] **GITSTART6 — the remaining tests' git past the launcher** (driver, modules tests). `DriverModuleGitTests`, `DriverModuleWorkflowRunTests`, `TreeSyncReplayTests`' holder and two `--version` checks. Proof: those classes once each.
@@ -18537,3 +18542,17 @@ in zh. The sessions page's held words (`WordsHold`) still carry the driver's sen
 > - [ ] **PIPEOWNER1 — a terminal that is not elevated presses into a Daoris that is** (driver, modules; found 2026-10-21 answering BGWAIT3's session). The install's Daoris ran elevated, so its pipe's owner was `BUILTIN\Administrators`, an elevated token's default owner. `InstanceClient.ConnectAsync` (`Platform/InstanceClient.cs:50`) opens with `PipeOptions.CurrentUserOnly`, whose check compares the pipe's owner with the caller's token's, so a terminal of the same user that was not elevated was refused in 50 ms and told "Its pipe did not answer within 5 seconds" (`Platform/InstanceDoor.cs:125`); its reads went alone without a word, so only a press showed it. Wanted: `InstancePipe.Create` (`Modules/Platform/InstancePipe.cs:342`) sets the pipe's owner to the user's SID, so the pipe is this user's at either elevation (such a client already connects past the ACL), and the client says a refused connection as a refusal, not as silence; the CLI's own pipe client (`service.ts`'s hello) is read for the same assumption. Proof: a test that the served pipe's owner is the current user's SID, and a client case whose refused connect says so.
 
 **Outcome** 2026-10-21: built. The pipe is owned by the user's SID; the driver's client reads the owner itself (the user's SID or its token's default owner), since the server's change alone refused every elevated terminal; a refused connect is said as one, by the CLI too. Proof: the owner, door and CLI rows, each red first. Detail: D171's PIPEOWNER1 note, FIX-LOG. On Opus.
+## PUSH1f2a — the seam, proved by the driver's standing choices (2026-10-21, D194)
+
+> - [ ] **PUSH1f2a — the seam, proved by the driver's standing choices** (cli, driver, modules, tools; first; D194, the alone-path design §5). Read its row in §5 and the sections it names; build it end to end (D187), the family's TypeScript leaving as §4 says. Proof: as §5 names it.
+
+**Outcome** 2026-10-21: `daoris driver`'s standing choices run `daoris-driver driver`, the running Daoris's client or the library's
+own operations alone, refused from a session's terminal; today's text kept by a 143-case table. The decisions and the measured
+start are D194's PUSH1f2a note. The handed verbs' TypeScript leaves in PUSH1f2b. Unproven until the install: `daoris driver drive`
+confirmed in the open window.
+
+## CACHECLEAR1 — clearing downloads (2026-10-21, D88)
+
+> - [ ] **CACHECLEAR1 — clearing downloads** (driver/web; after WIRING1c). An act on This Daoris's *Downloads* row that removes the agents' and tools' downloaded versions nothing uses, listed first then pressed (D88), saying what it keeps. Proof: driver tests per kept version; the list and press in en and zh.
+
+**Outcome** 2026-10-21: built. *Clear unused downloads…* on the Downloads row lists each version under `cache/toolchain` and `cache/tools` with its size and what keeps it (a pin of the machine's or a workspace's, Tools running it, a setting naming a file inside it, a file that cannot be read, a download within the hour), and one press removes those nothing uses, judged again right before each goes and moved aside first, so a version a program runs from is kept as in use; the answer says what it kept. `DownloadClearing` in the driver library, `SYSTEM_DOWNLOADS` and `SYSTEM_DOWNLOADS_CLEAR`, `WiringDownloads` en and zh. No terminal twin. Proof: `DownloadClearingTests` (16, one per kept version), `DriverModuleDownloadsTests`, `WiringDomain.test.tsx`'s list and press in en and zh. The window is WIRING1f's. On Opus: about 150 tool calls. Detail: D88's CACHECLEAR1 note.

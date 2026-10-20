@@ -5,7 +5,8 @@ namespace Daoris.Driver;
 /// <summary>
 /// What the helper may do (HELP1a, D89): read, advise and propose, never change a thing itself — and what it
 /// cannot reach, so it routes a repository's own work there rather than guessing at it (HELP4, HELP5). Since
-/// D107 it may read the checkouts reading across allows, and it says which, where and how.
+/// D107 it may read the checkouts reading across allows, and it says which and how: since HELPMODE1c4 through
+/// <c>checkout_read</c>, less those the person turned off.
 /// </summary>
 /// <remarks>
 /// HELPMODE1a1 (D183): all of that is restricted mode's, and the section says so. In full access it says the helper acts on this
@@ -128,19 +129,31 @@ internal sealed class HelpRoomMayDo : IHelpRoomSection
         // HELP4: the first repository question met a shell refused before it ran, then a guess at the
         // repository's branches presented as its tree. HELP5: a later one spent a turn on a ticket's URL,
         // refused the same way. Said plainly, so none of them happens again. D107: the checkouts reading
-        // across allows are read by file and by two git commands its rules allow, which is still no shell.
-        if (machine.Reads.Count > 0)
+        // across allows are read, since HELPMODE1c4, through one typed tool Daoris judges at each call, on
+        // every agent, which is still no shell; so the room names no path, which no tool of its takes.
+        var reads = machine.Reads.Where(read => !machine.CheckoutsOff.Contains(read.Name, StringComparer.OrdinalIgnoreCase)).ToList();
+        var off = machine.Reads.Where(read => !reads.Contains(read)).Select(read => $"`{read.Name}`").ToList();
+        if (reads.Count > 0)
         {
             text.Append("You have no shell and no web fetch or search: a command or a web page is refused before it runs, so\n");
-            text.Append("never try one. You may read the checkouts below and change nothing in them: their files where they lie,\n");
-            text.Append("and how each stands with `git -C <path> status` and `git -C <path> branch --list`, the path written as\n");
-            text.Append("below. Any other file outside this room is refused.\n\n");
-            foreach (var read in machine.Reads)
+            text.Append("never try one. You may read the checkouts below, and change nothing in them, with `checkout_read` alone:\n");
+            text.Append("name the repository and a path from the top of its checkout (`src/Game.cs`; none for its top) to read a\n");
+            text.Append("file's text or list a folder, or ask `status` or `branches` for how it stands (`git status` and\n");
+            text.Append("`git branch --list`). Daoris judges each read: a path out of the checkout, git's own folder and\n");
+            text.Append("anything git ignores are refused, and a file past 200 KB is cut. Any other file outside this room is\n");
+            text.Append("refused.\n\n");
+            foreach (var read in reads)
             {
-                text.Append($"- `{read.Name}` (workspace `{read.Workspace}`) — `{AcrossRules.GitPath(read.Path)}`\n");
+                text.Append($"- `{read.Name}` (workspace `{read.Workspace}`)\n");
             }
 
             text.Append('\n');
+            if (off.Count > 0)
+            {
+                text.Append($"The person turned reading off for you in {string.Join(", ", off)} under Ask Daoris's configured access\n");
+                text.Append("(Settings → AI features): say so when one is asked about, and that they turn it on there.\n\n");
+            }
+
             text.Append("What you read is how a tree stands now. Changing it (its branches, its uncommitted work, what is\n");
             text.Append("ready to push) is still a repository's own work, so route it there. Propose an ask for it with\n");
         }
@@ -223,7 +236,14 @@ internal sealed class HelpRoomMayDo : IHelpRoomSection
         // the design. A door it lacks is one Daoris owes, and the room lists them.
         text.Append("Where you have no door to propose what the person wants, that is never a limit of yours: where the act is\n");
         text.Append("under *Doors Daoris still owes* (below), say Daoris still owes that door and name its command.\n\n");
-        if (machine.Reads.Count == 0 && machine.Repositories.Any(repository => repository.Checkout))
+        if (reads.Count == 0 && off.Count > 0)
+        {
+            // HELPMODE1c4: every readable checkout turned off under configured access, which is the person's choice for Ask Daoris
+            // alone, not the repositories' reading switched off.
+            text.Append("The person turned reading off for you in every checkout here under Ask Daoris's configured access. They\n");
+            text.Append("turn one on again under Settings → AI features → Configured access → Reading checkouts.\n\n");
+        }
+        else if (machine.Reads.Count == 0 && machine.Repositories.Any(repository => repository.Checkout))
         {
             // HELPSETUP1: a repository's reading is on its Setup since UX6f; a workspace's is on its own page since UX6g.
             text.Append("Reading the checkouts here is switched off. The person turns it on for a repository under\n");

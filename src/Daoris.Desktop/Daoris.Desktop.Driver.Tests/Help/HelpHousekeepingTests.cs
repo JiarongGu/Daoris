@@ -112,7 +112,7 @@ public sealed class HelpHousekeepingTests : IDisposable
         Assert.Contains("`everything`", Assert.Throws<DriverException>(() => ConfiguredAccess.Choose(_home, "housekeeping", "everything", true)).Message);
         Assert.Contains("not built", Assert.Throws<DriverException>(() => ConfiguredAccess.Choose(_home, "housekeeping", "drop-recovery", true)).Message);
         Assert.Contains("plugin", Assert.Throws<DriverException>(() => ConfiguredAccess.Choose(_home, "browser", "reads", true)).Message);
-        Assert.Contains("not built", Assert.Throws<DriverException>(() => ConfiguredAccess.Choose(_home, "checkouts", "read", true)).Message);
+        Assert.Contains("not built", Assert.Throws<DriverException>(() => ConfiguredAccess.Choose(_home, "shell", "run", true)).Message);
         Assert.False(File.Exists(ConfiguredAccess.PathOf(_home)));
 
         Choose("{ not json");

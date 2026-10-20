@@ -615,6 +615,9 @@ public sealed partial class StatePublisherTests : DriverModuleBridge
     [InlineData("TRACE", "", null)]
     // WIRING1b: This Daoris's read; asking it to measure starts a walk and moves no state a window shows.
     [InlineData("SYSTEM_WIRING", "", null)]
+    // CACHECLEAR1: the Downloads row's list reads; its press removes versions the agents' and tools' pages and the sizes say.
+    [InlineData("SYSTEM_DOWNLOADS", "", null)]
+    [InlineData("SYSTEM_DOWNLOADS_CLEAR", "harnesses,tools,wiring", null)]
     // RPC1c: what waits for the window is told by its own event (`CONFIRMATIONS`), and a confirmed press publishes what it changes
     // as it runs; the answer itself moves no scope. PERSONDOOR1f: the key is a read.
     [InlineData("PERSON_CONFIRMATIONS", "", null)]

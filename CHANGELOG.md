@@ -8,15 +8,30 @@ with the version and date at release.
 - A terminal that is not run as administrator can now press into a Daoris that is, such as `daoris-driver sessions say`. Where
   the running Daoris's pipe does refuse a terminal, it says so (*Its pipe belongs to another Windows account or elevation.*)
   rather than that the pipe did not answer within 5 seconds.
+- `daoris driver` hands its standing choices to Daoris's own driver program, as `daoris-driver driver` with the same words: the
+  one your install carries, or the build `DAORIS_DRIVER_PROGRAM` names. A `daoris` with neither, such as a checkout's, says so and
+  does nothing. What each choice says is as before; a refusal is said on the error stream, and a refusal the window's route would
+  make carries its code here too. `daoris driver retry <quest>` with Daoris closed now judges the quest as the window's *Try again*
+  does, and refuses one that is neither parked nor held by your stop. From a terminal Daoris started for a session, a change no
+  window confirms is refused: it is yours to make in the window or your own terminal. The window's terminal no longer passes a
+  session's marker to the shells it opens.
 - A conversation whose agent has lost it goes on by itself in a new conversation in the same folder, handed Daoris's record of it
   and then your words, and says so on both. A conversation its agent could still go on with never moves without you: your words
   wait, and beside *Start a conversation with these words* there is *Go on with Daoris's brief*, which goes on in a new part of the
   same session with that record. The same holds for a session whose quest has closed and for Ask Daoris's conversations. Handing a
   conversation over yourself first asks its agent for a short closing note, which the new conversation is given.
+- Ask Daoris in restricted mode reads your checkouts through one tool Daoris checks at every read, on Codex as on Claude Code: a
+  file (up to 200 KB, saying when it is cut), a folder's entries, `git status` and `git branch --list`, never outside the
+  checkout and never what git ignores. Each checkout its repository lets agents outside read is on by default; turn one off under
+  Settings → AI features → *Configured access* → *Reading checkouts*, and the next read of it is refused.
 - A plugin's line on stderr longer than 8 KB is shown under `plugin:<id>` clipped to its start and ending ` …`, and the lines
   after it as before, so a plugin that writes without a line end can no longer grow Daoris's memory.
 - An agent's page in Agents says what would lapse where its next start goes to an account for its week's last day: *its
   weekly window resets at … with 40% of it unused, as read at …*, as the start's own first line says it, in English and 中文.
+- Settings → This Daoris can clear downloads: *Clear unused downloads…* on the *Downloads* row lists every version the agents and
+  tools downloaded, with its size and what keeps it (a pin on this machine or a workspace, Tools running it, a setting naming a
+  file in it, or a download within the last hour), and one press removes those nothing uses. A version a program is running from
+  is kept and said, and the next use downloads a removed version again.
 - A repository's and a workspace's Workflow tab now begins with where work there goes: the default, each kind of task, and the
   work that lands on the line, each wired to the workflow it follows and saying what chose it. A workflow can be made a
   verification workflow of checks (marked `verification` in the file you import), which only the route for landed work names:

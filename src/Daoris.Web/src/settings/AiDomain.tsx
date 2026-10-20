@@ -60,8 +60,8 @@ function MachineAi({ search, notify, onGo }: { search?: SearchTier; notify: Noti
 
   const harnesses = Array.isArray(roster.data?.harnesses) ? roster.data.harnesses : [];
   // Restricted mode's configured access (HELPMODE1c2b): the grants the driver serves, as it holds them, each press one operation
-  // over SET_HELP_GRANT; one it does not act on is never sent. Housekeeping and the chosen settings (HELPMODE1c3) are chosen here;
-  // the checkouts are drawn as the mock draws them until their grant is built, so a press there says so and sends nothing; and the
+  // over SET_HELP_GRANT; one it does not act on is never sent. Housekeeping, the chosen settings (HELPMODE1c3) and the checkouts
+  // (HELPMODE1c4, each readable checkout the driver serves turned off or on by its repository's name) are chosen here; and the
   // browser's is its plugin's approval, drawn read only, its door that plugin's tab (the modes design §4.1's decided note).
   const served = Array.isArray(driver.data?.helpGrants) ? driver.data.helpGrants : null;
   const helperDoor = harnesses.find((door) => door.harness === driver.data?.helperAdapter);
@@ -72,7 +72,8 @@ function MachineAi({ search, notify, onGo }: { search?: SearchTier; notify: Noti
       notify(t('settings.ai.grants.notYet'));
       return;
     }
-    const named = t(`help.grants.op.${grant}.${operation}`);
+    // A checkout is named by its repository, as written.
+    const named = grant === 'checkouts' ? operation : t(`help.grants.op.${grant}.${operation}`);
     setHelpGrant.mutate({ grant, operation, chosen }, {
       onSuccess: () => notify(t(chosen ? 'settings.ai.grants.granted' : 'settings.ai.grants.revoked', { operation: named })),
       onError: failure(notify),

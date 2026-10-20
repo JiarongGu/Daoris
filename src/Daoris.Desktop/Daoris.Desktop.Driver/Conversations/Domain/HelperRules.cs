@@ -162,6 +162,17 @@ public static class HelperRules
         rule.Agents.Count == 0 ? rule.Mode : $"{rule.Mode}: {string.Join(", else ", rule.Agents.Select(agent => $"`{agent}`"))}";
 
     /// <summary>
+    /// What the terminal and Ask Daoris's card say of a mode as it is set (TWINWORDS1, <c>landing-says.json</c>'s <c>helpers</c>): one
+    /// function, <c>daoris-driver driver helpers</c>' and the card's.
+    /// </summary>
+    public static string Says(string mode) => mode switch
+    {
+        On => "A helper an agent asks for starts at once, within the limits: two at once for a session, one turn each.",
+        Off => "A helper is not offered to a session here: only your own press asks one.",
+        _ => "Each helper an agent asks for waits for your yes.",
+    };
+
+    /// <summary>
     /// One change made to the config, or its refusal thrown in the twin's words, nothing changed — the CLI's
     /// <c>applyHelperEdit</c>. A set changes what it names over the rule set there, or over the default; the key keeps the
     /// spelling first written.

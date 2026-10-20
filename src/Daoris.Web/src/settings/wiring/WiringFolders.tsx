@@ -1,6 +1,7 @@
+import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { SystemWiring, WiringFolder } from '../../data/wiring';
-import { PathText, Pill, SettingRow } from '../../design/ui';
+import { Button, PathText, Pill, SettingRow } from '../../design/ui';
 import { moment, size } from '../../locales/format';
 import { Fact, Unread, WiringCard } from './WiringParts';
 
@@ -33,10 +34,14 @@ function Size({ folder, measuring }: { folder: Pick<WiringFolder, 'present' | 'b
  * A molecule: drawn from props, so every state is reachable without a shell. The notices are the host's own sentences, passed
  * through as the Driver page passed them; the account's standing is read from the state's field, never from a notice's English.
  */
-export function WiringFolders({ wiring, busy = false, onMeasure }: {
+export function WiringFolders({ wiring, busy = false, onMeasure, downloads, onDownloads }: {
   wiring: Pick<SystemWiring, 'folder' | 'folders' | 'leftOver' | 'measuring'>;
   busy?: boolean;
   onMeasure: () => void;
+  /** The Downloads row's clearing, open (CACHECLEAR1): drawn under that row in place of its press. */
+  downloads?: ReactNode;
+  /** Opens the clearing's list; absent where the shell offers none. */
+  onDownloads?: () => void;
 }) {
   const { t } = useTranslation();
   const { folder, folders, leftOver, measuring } = wiring;
@@ -73,6 +78,9 @@ export function WiringFolders({ wiring, busy = false, onMeasure }: {
               ))}
             </ul>
           )}
+          {each.id === 'cache' && each.present && (downloads ?? (onDownloads && (
+            <p className="m-0"><Button variant="ghost" onClick={onDownloads}>{t('settings.daoris.downloads.open')}</Button></p>
+          )))}
         </SettingRow>
       ))}
       {leftOver.length > 0 && (
