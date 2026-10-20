@@ -54,7 +54,7 @@ describe('the hand-over field', () => {
     const onChange = draw(undefined, { mode: 'off' });
     expect(screen.getByRole('radio', { name: 'Refuse' })).toBeChecked();
 
-    await userEvent.click(screen.getByRole('radio', { name: 'At the turn’s end' }));
+    await userEvent.click(screen.getByRole('radio', { name: 'At turn’s end' }));
 
     expect(onChange).toHaveBeenCalledWith({ set: { mode: 'on' } });
   });
@@ -62,7 +62,7 @@ describe('the hand-over field', () => {
   it('sends nothing for the mode set here already', async () => {
     const onChange = draw({ mode: 'on' });
 
-    await userEvent.click(screen.getByRole('radio', { name: 'At the turn’s end' }));
+    await userEvent.click(screen.getByRole('radio', { name: 'At turn’s end' }));
 
     expect(onChange).not.toHaveBeenCalled();
   });

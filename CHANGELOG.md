@@ -5,6 +5,12 @@ with the version and date at release.
 
 ## Unreleased
 
+- A session's agent can ask to hand its session over to another agent, with a note of where the work stands that the next agent
+  reads as its claim, after what Daoris kept of the session. Each repository's or workspace's *Hand-over* row on its Setup, and
+  `daoris driver handover`, say what such an ask does: by default it waits at the foot of the session's page with *Hand over to …*
+  and *Not now* (or `daoris-driver sessions hand-over <id> --approve|--decline`); set to take it, the session goes on with the next
+  agent in your order once its turn ends, never in the middle of one; set to refuse, the session's timeline says so. A session that
+  was itself just handed over cannot ask again before a turn of its own.
 - What you say to a session or a conversation while it works is kept on its record before it waits, so a restart of Daoris never
   loses it: once Daoris is back, the same session goes on with your words in the order you said them. A word Daoris had already
   written to the agent when it went away may have reached it, so it is never sent again: its place says *It may have read this; its

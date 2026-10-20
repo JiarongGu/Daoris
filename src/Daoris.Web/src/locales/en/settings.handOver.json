@@ -14,7 +14,7 @@
   "settings.handOver.summary.off": "hand-overs refused",
   "settings.handOver.mode": "What an agent in {{name}} asking to hand its session over does",
   "settings.handOver.modes.ask": "Ask me",
-  "settings.handOver.modes.on": "At the turn’s end",
+  "settings.handOver.modes.on": "At turn’s end",
   "settings.handOver.modes.off": "Refuse",
   "settings.handOver.saved.ask": "An agent in {{name}} asking to hand its session over now waits for your yes.",
   "settings.handOver.saved.on": "An agent in {{name}} asking to hand its session over now goes on with the next agent when its turn ends.",
