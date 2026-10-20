@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Text;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 
 namespace Daoris.Driver;
 
@@ -17,8 +18,11 @@ public sealed record HeavyBound(string Run, string Said);
 /// <para><b>The runner is what the repository declares, never a guess at the text.</b> A gate whose one command is <c>jest</c> or
 /// <c>vitest</c>, or either through <c>npx</c>, is that runner; <c>npm test</c> and <c>npm run &lt;script&gt;</c> are read through the
 /// gate folder's own <c>package.json</c>, and bound through npm, after its <c>--</c>, only where that script is one command whose runner is
-/// Jest or Vitest. A chain in the gate or its script, Angular's <c>ng test</c>, any other runner, npm pointed at another package, a script
-/// that cannot be read, a runner whose options already end with <c>--</c>: each runs as written, said.</para>
+/// Jest or Vitest. <c>yarn test</c>, <c>yarn run &lt;script&gt;</c>, <c>pnpm test</c> and <c>pnpm run &lt;script&gt;</c> are read the same
+/// way and bound as the yarn or pnpm the folder runs hands a script its words (HEAVYRUN1a3), only where that version is recorded and was
+/// read. A chain in the gate or its script, Angular's <c>ng test</c>, any other runner, npm or pnpm pointed at other packages, a tool's
+/// own options before its script, a script that cannot be read, a runner whose options already end with <c>--</c>: each runs as
+/// written, said.</para>
 ///
 /// <para><b>An owner's bound is never doubled.</b> A gate or script that already names <c>--maxWorkers</c>, <c>--max-workers</c>, <c>-w</c>,
 /// <c>--pool</c> or <c>--poolOptions</c> keeps it untouched: the bound an owner writes into this machine's mapping
@@ -57,6 +61,8 @@ public static class HeavyWorkers
         if (Words(run) is not { } words) return As(gate, $"{named} is more than one command, so it runs as written.");
         if (words.Count == 0) return As(gate, $"{named} names no command, so it runs as written.");
         if (Is(words[0], "npm")) return Npm(gate, run, words, folder, checkout);
+        if (Is(words[0], "yarn")) return Yarn(gate, run, words, folder, checkout);
+        if (Is(words[0], "pnpm")) return Pnpm(gate, run, words, folder, checkout);
 
         var (runner, at, other) = Classify(words);
         if (runner is null) return As(gate, $"{named} {other}, so it runs as written.");
@@ -94,25 +100,159 @@ public static class HeavyWorkers
             return As(gate, $"{named} points npm at another package (`{elsewhere}`), whose script is not read here, so it runs as written.");
         }
 
-        if (Script(folder, script, out var problem) is not { } declared)
+        var declared = Declared(gate, words, "npm", script, folder);
+        if (declared.Refusal is { } refused) return As(gate, refused);
+        return AfterDashes(gate, run, words, dashes, declared, $" through npm's `{script}` script", folder, checkout);
+    }
+
+    /// <summary>
+    /// <c>yarn test</c> or <c>yarn run &lt;script&gt;</c> (HEAVYRUN1a3): every yarn read (1–4) hands each word after the script's name to
+    /// the script, so the bound goes at the end; a <c>--</c> there is taken away by yarn 1 and handed on by yarn 2 and later, so it runs as
+    /// written. Bound only where the yarn the folder runs is known (<see cref="ManagerVersion"/>) and is one of those majors.
+    /// </summary>
+    private static HeavyBound Yarn(HeavyGate gate, string run, List<string> words, string folder, string checkout)
+    {
+        var named = $"`{gate.Name}`";
+        var verb = words.Count > 1 ? words[1] : "";
+        string script;
+        int after;
+        if (verb == "test")
         {
-            return As(gate, $"{named} runs npm's `{script}` script, and its folder{problem}, so it runs as written.");
+            (script, after) = ("test", 2);
+        }
+        else if (verb == "run")
+        {
+            if (words.Count < 3 || words[2].StartsWith('-')) return As(gate, $"{named} runs `yarn run` with no script named after it, so it runs as written.");
+            (script, after) = (words[2], 3);
+        }
+        else if (verb.StartsWith('-'))
+        {
+            return As(gate, $"{named} names yarn's own options before its script, so it runs as written.");
+        }
+        else
+        {
+            return As(gate, $"{named} runs `{(verb.Length > 0 ? $"yarn {verb}" : "yarn")}`, which is not `yarn test` or `yarn run <script>`, so it runs as written.");
         }
 
-        var scripted = $"`{gate.Name}`'s npm script `{script}`";
-        if (Words(declared) is not { } scriptWords) return As(gate, $"{scripted} is more than one command, so it runs as written.");
-        if (scriptWords.Count == 0) return As(gate, $"{scripted} names no command, so it runs as written.");
+        var declared = Declared(gate, words, "yarn", script, folder);
+        if (declared.Refusal is { } refused) return As(gate, refused);
+        if (words.IndexOf("--", after) >= 0)
+        {
+            return As(gate, $"{named} puts `--` after yarn's script, which yarn 1 takes away and yarn 2 and later hand on, so it runs as written.");
+        }
+
+        if (ManagerVersion("yarn", folder, checkout, out var other) is not { } version) return As(gate, Unrecorded(gate, "yarn", script, other));
+        if (Major(version) is not (>= 1 and <= 4)) return As(gate, Unforwarded(gate, "yarn", version, script));
+        if (Ended(declared.Words, declared.At + 1)) return As(gate, $"{declared.Named} {EndedSaid}");
+        return Versioned(gate, declared.Runner!, $" through yarn {version}'s `{script}` script", folder, checkout, $"{run} {Flag}");
+    }
+
+    /// <summary>
+    /// <c>pnpm test</c> (<c>t</c>, <c>tst</c>) or <c>pnpm run &lt;script&gt;</c> (HEAVYRUN1a3), bound as the pnpm the folder runs takes a
+    /// script's words: pnpm 6 reads every flag as its own until its <c>--</c>, and its test command does so through pnpm 9; from pnpm 7
+    /// <c>run</c> hands the script every word after its name, and from pnpm 10 <c>test</c> does too, spelled so (never <c>t</c> or
+    /// <c>tst</c>). Bound only where that pnpm is known (<see cref="ManagerVersion"/>) and is 6 to 11.
+    /// </summary>
+    private static HeavyBound Pnpm(HeavyGate gate, string run, List<string> words, string folder, string checkout)
+    {
+        var named = $"`{gate.Name}`";
+        var verb = words.Count > 1 ? words[1] : "";
+        string script;
+        int after;
+        if (verb is "test" or "t" or "tst")
+        {
+            (script, after) = ("test", 2);
+        }
+        else if (verb is "run" or "run-script")
+        {
+            if (words.Count < 3 || words[2].StartsWith('-')) return As(gate, $"{named} runs `pnpm {verb}` with no script named after it, so it runs as written.");
+            (script, after) = (words[2], 3);
+        }
+        else if (verb.StartsWith('-'))
+        {
+            return As(gate, $"{named} names pnpm's own options before its script, so it runs as written.");
+        }
+        else
+        {
+            return As(gate, $"{named} runs `{(verb.Length > 0 ? $"pnpm {verb}" : "pnpm")}`, which is not `pnpm test` or `pnpm run <script>`, so it runs as written.");
+        }
+
+        var declared = Declared(gate, words, "pnpm", script, folder);
+        if (declared.Refusal is { } refused) return As(gate, refused);
+        if (ManagerVersion("pnpm", folder, checkout, out var other) is not { } version) return As(gate, Unrecorded(gate, "pnpm", script, other));
+
+        var major = Major(version);
+        var verbatim = major switch
+        {
+            6 => false,
+            >= 7 and <= 9 => after == 3,
+            >= 10 and <= 11 => after == 3 || verb == "test",
+            _ => (bool?)null,
+        };
+        if (verbatim is null) return As(gate, Unforwarded(gate, "pnpm", version, script));
+
+        var via = $" through pnpm {version}'s `{script}` script";
+        if (verbatim == true)
+        {
+            // Every word after the script's name reaches its runner, a `--` among them too.
+            if (Ended(words, after)) return As(gate, $"{named} {EndedSaid}");
+            if (Ended(declared.Words, declared.At + 1)) return As(gate, $"{declared.Named} {EndedSaid}");
+            return Versioned(gate, declared.Runner!, via, folder, checkout, $"{run} {Flag}");
+        }
+
+        // pnpm's own options come before its `--`; one that points it at other packages runs their scripts, not the folder's.
+        var dashes = words.IndexOf("--", after);
+        var options = words.Skip(after).Take((dashes < 0 ? words.Count : dashes) - after);
+        if (options.FirstOrDefault(PnpmElsewhere) is { } elsewhere)
+        {
+            return As(gate, $"{named} points pnpm at other packages (`{elsewhere}`), whose scripts are not read here, so it runs as written.");
+        }
+
+        return AfterDashes(gate, run, words, dashes, declared, via, folder, checkout);
+    }
+
+    /// <summary>
+    /// A script whose tool ends its own options with <c>--</c> and hands the script what follows it (npm; pnpm where it reads flags as
+    /// its own): the bound after the gate's <c>--</c>, or after one added.
+    /// </summary>
+    private static HeavyBound AfterDashes(HeavyGate gate, string run, List<string> words, int dashes, Scripted declared, string via, string folder, string checkout)
+    {
+        if (dashes >= 0 && Ended(words, dashes + 1)) return As(gate, $"`{gate.Name}` {EndedSaid}");
+        if (Ended(declared.Words, declared.At + 1)) return As(gate, $"{declared.Named} {EndedSaid}");
+        return Versioned(gate, declared.Runner!, via, folder, checkout, dashes >= 0 ? $"{run} {Flag}" : $"{run} -- {Flag}");
+    }
+
+    /// <summary>A script a gate runs through its package manager: its runner, its words, the word naming the runner and how it is said; or why it is not bound.</summary>
+    private sealed record Scripted(Runner? Runner, List<string> Words, int At, string Named, string? Refusal);
+
+    /// <summary>
+    /// The script <paramref name="tool"/> runs by <paramref name="name"/>, read from the folder's own package.json: bound only where it
+    /// is one command whose runner is Jest or Vitest, and neither it nor the gate names the owner's own bound.
+    /// </summary>
+    private static Scripted Declared(HeavyGate gate, List<string> words, string tool, string name, string folder)
+    {
+        var named = $"`{gate.Name}`";
+        var scripted = $"`{gate.Name}`'s {tool} script `{name}`";
+        Scripted No(string said) => new(null, [], 0, scripted, said);
+
+        if (Script(folder, name, out var problem) is not { } declared) return No($"{named} runs {tool}'s `{name}` script, and its folder{problem}, so it runs as written.");
+        if (Words(declared) is not { } scriptWords) return No($"{scripted} is more than one command, so it runs as written.");
+        if (scriptWords.Count == 0) return No($"{scripted} names no command, so it runs as written.");
 
         var (runner, at, other) = Classify(scriptWords);
-        if (runner is null) return As(gate, $"{scripted} {other}, so it runs as written.");
-        if (Own(words) is { } own) return As(gate, $"{named} names its own worker bound (`{own}`), so it runs as written.");
-        if (Own(scriptWords) is { } owned) return As(gate, $"{scripted} names its own worker bound (`{owned}`), so it runs as written.");
-        if (dashes >= 0 && Ended(words, dashes + 1)) return As(gate, $"{named} {EndedSaid}");
-        if (Ended(scriptWords, at + 1)) return As(gate, $"{scripted} {EndedSaid}");
-
-        // What follows npm's `--` reaches the script's runner; a gate that already has one passes the bound after it.
-        return Versioned(gate, runner, $" through npm's `{script}` script", folder, checkout, dashes >= 0 ? $"{run} {Flag}" : $"{run} -- {Flag}");
+        if (runner is null) return No($"{scripted} {other}, so it runs as written.");
+        if (Own(words) is { } own) return No($"{named} names its own worker bound (`{own}`), so it runs as written.");
+        if (Own(scriptWords) is { } owned) return No($"{scripted} names its own worker bound (`{owned}`), so it runs as written.");
+        return new Scripted(runner, scriptWords, at, scripted, null);
     }
+
+    /// <summary>Said where the version of <paramref name="tool"/> the folder runs is not recorded, or the nearest record names <paramref name="other"/>.</summary>
+    private static string Unrecorded(HeavyGate gate, string tool, string script, string? other) => other is not null
+        ? $"`{gate.Name}` runs {tool}'s `{script}` script, and the package.json nearest it declares `{other}` as its package manager, so it runs as written."
+        : $"`{gate.Name}` runs {tool}'s `{script}` script, and which {tool} version runs it is recorded neither by a `packageManager` field nor by its install, so it runs as written.";
+
+    private static string Unforwarded(HeavyGate gate, string tool, string version, string script) =>
+        $"`{gate.Name}` runs {tool} {version}'s `{script}` script, and how this {tool} version hands a script its words is not known here, so it runs as written.";
 
     /// <summary>The bound where the installed version's flag is known; as written, said, where it is not or cannot be told.</summary>
     private static HeavyBound Versioned(HeavyGate gate, Runner runner, string via, string folder, string checkout, string bound)
@@ -244,32 +384,111 @@ public static class HeavyWorkers
     private static bool Installed(string package, string folder, string checkout, out string? version)
     {
         version = null;
-        var root = Path.TrimEndingDirectorySeparator(Path.GetFullPath(checkout));
-        var at = Path.TrimEndingDirectorySeparator(Path.GetFullPath(folder));
-        while (at is not null && (at.Equals(root, Paths) || at.StartsWith(root + Path.DirectorySeparatorChar, Paths)))
+        foreach (var at in Up(folder, checkout))
         {
             var manifest = Path.Combine(at, "node_modules", package, "package.json");
             if (File.Exists(manifest))
             {
-                version = VersionOf(manifest);
+                version = Field(manifest, "version");
                 return true;
             }
-
-            if (at.Equals(root, Paths)) break;
-            at = Path.GetDirectoryName(at);
         }
 
         return false;
     }
 
-    private static string? VersionOf(string manifest)
+    /// <summary><paramref name="folder"/>, then each folder above it up to <paramref name="checkout"/>, never past it.</summary>
+    private static IEnumerable<string> Up(string folder, string checkout)
+    {
+        var root = Path.TrimEndingDirectorySeparator(Path.GetFullPath(checkout));
+        var at = Path.TrimEndingDirectorySeparator(Path.GetFullPath(folder));
+        while (at is not null && (at.Equals(root, Paths) || at.StartsWith(root + Path.DirectorySeparatorChar, Paths)))
+        {
+            yield return at;
+            if (at.Equals(root, Paths)) break;
+            at = Path.GetDirectoryName(at);
+        }
+    }
+
+    /// <summary>
+    /// The version of <paramref name="tool"/> (yarn or pnpm) the gate's folder runs, read without starting a process, each from the
+    /// folder up to the checkout, the nearest winning (HEAVYRUN1a3): the <c>packageManager</c> field corepack reads; then the install's
+    /// own record, pnpm's <c>node_modules/.modules.yaml</c> (<c>packageManager: pnpm@x.y.z</c>), or yarn's <c>.yarnrc.yml</c>
+    /// <c>yarnPath</c> release (<c>yarn-x.y.z.cjs</c>) and a <c>node_modules/.yarn-integrity</c>, which only yarn 1 writes (said
+    /// <c>1.x</c>). Null where none records it, or where the field names another tool, given in <paramref name="other"/>.
+    /// </summary>
+    private static string? ManagerVersion(string tool, string folder, string checkout, out string? other)
+    {
+        other = null;
+        var up = Up(folder, checkout).ToList();
+        foreach (var at in up)
+        {
+            var manifest = Path.Combine(at, "package.json");
+            if (!File.Exists(manifest) || Field(manifest, "packageManager") is not { } declared) continue;
+            if (Named(declared, tool) is { } version) return version;
+            other = declared;
+            return null;
+        }
+
+        if (tool == "pnpm")
+        {
+            foreach (var at in up)
+            {
+                if (Line(Path.Combine(at, "node_modules", ".modules.yaml"), "packageManager") is { } recorded) return Named(recorded, "pnpm");
+            }
+
+            return null;
+        }
+
+        foreach (var at in up)
+        {
+            if (Line(Path.Combine(at, ".yarnrc.yml"), "yarnPath") is not { } release) continue;
+            var match = Regex.Match(release.Replace('\\', '/').Split('/')[^1], @"^yarn-(\d.*?)\.c?js$");
+            if (match.Success) return match.Groups[1].Value;
+        }
+
+        return up.Any(at => File.Exists(Path.Combine(at, "node_modules", ".yarn-integrity"))) ? "1.x" : null;
+    }
+
+    /// <summary>The version in <c>tool@version</c>, a corepack hash after <c>+</c> taken off; or null where it names another tool.</summary>
+    private static string? Named(string declared, string tool)
+    {
+        var text = declared.Trim();
+        if (!text.StartsWith(tool + "@", StringComparison.Ordinal)) return null;
+        var version = text[(tool.Length + 1)..];
+        var plus = version.IndexOf('+', StringComparison.Ordinal);
+        return (plus < 0 ? version : version[..plus]) is { Length: > 0 } read ? read : null;
+    }
+
+    /// <summary>A top-level <c>key: value</c> line's value in a YAML file, its quotes taken off; or null.</summary>
+    private static string? Line(string file, string key)
+    {
+        try
+        {
+            if (!File.Exists(file)) return null;
+            foreach (var line in File.ReadLines(file))
+            {
+                if (!line.StartsWith(key + ":", StringComparison.Ordinal)) continue;
+                var value = line[(key.Length + 1)..].Trim().Trim('"', '\'');
+                return value.Length > 0 ? value : null;
+            }
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+        {
+        }
+
+        return null;
+    }
+
+    /// <summary>A string field of a package.json's top level, trimmed; or null where it gives none that reads.</summary>
+    private static string? Field(string manifest, string name)
     {
         try
         {
             using var document = JsonDocument.Parse(File.ReadAllText(manifest));
             return document.RootElement.ValueKind == JsonValueKind.Object
-                   && document.RootElement.TryGetProperty("version", out var version) && version.ValueKind == JsonValueKind.String
-                   && version.GetString()!.Trim() is { Length: > 0 } text
+                   && document.RootElement.TryGetProperty(name, out var field) && field.ValueKind == JsonValueKind.String
+                   && field.GetString()!.Trim() is { Length: > 0 } text
                 ? text
                 : null;
         }
@@ -279,15 +498,23 @@ public static class HeavyWorkers
         }
     }
 
+    /// <summary>A release's major; null for a prerelease, which promises nothing, or a version that does not read.</summary>
+    private static int? Major(string version)
+    {
+        if (version.Contains('-', StringComparison.Ordinal)) return null;
+        var dot = version.IndexOf('.', StringComparison.Ordinal);
+        return int.TryParse(dot < 0 ? version : version[..dot], NumberStyles.None, CultureInfo.InvariantCulture, out var major) ? major : null;
+    }
+
+    /// <summary>A pnpm option, read as pnpm's own before its <c>--</c>, that runs other packages' scripts.</summary>
+    private static bool PnpmElsewhere(string word) =>
+        word is "-r" or "-F" or "-C" or "-w" || word.StartsWith("-F=", StringComparison.Ordinal) || Names(word, "--recursive")
+        || Names(word, "--filter") || Names(word, "--filter-prod") || Names(word, "--dir") || Names(word, "--workspace-root");
+
     /// <summary>A test runner: its package, its name as said, and the majors whose command line was read declaring <c>maxWorkers</c>.</summary>
     private sealed record Runner(string Package, string Name, int[] Majors)
     {
         /// <summary>Whether <paramref name="version"/> is a release of a major read declaring the flag; a prerelease promises nothing.</summary>
-        public bool Takes(string version)
-        {
-            if (version.Contains('-', StringComparison.Ordinal)) return false;
-            var dot = version.IndexOf('.', StringComparison.Ordinal);
-            return int.TryParse(dot < 0 ? version : version[..dot], NumberStyles.None, CultureInfo.InvariantCulture, out var major) && Majors.Contains(major);
-        }
+        public bool Takes(string version) => Major(version) is { } major && Majors.Contains(major);
     }
 }

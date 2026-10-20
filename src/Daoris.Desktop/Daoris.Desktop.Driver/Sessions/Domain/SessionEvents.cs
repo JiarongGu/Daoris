@@ -38,6 +38,23 @@ public static class SessionEventKind
 
     /// <summary>Something the wire said that this build has no kind for — kept, never dropped.</summary>
     public const string Raw = "raw";
+
+    /// <summary>
+    /// What the door observed of a word under its <see cref="SessionEvent.Id"/> (COWORK1c, D188 point 7; the message-urgency design §7),
+    /// as <see cref="SessionEvent.Receipt"/> says: each written only where it was observed. <i>Taken</i> is the word's own event as
+    /// the turn's ask, and <i>uncertain</i> the <see cref="SessionEventCodes.Lost"/> note.
+    /// </summary>
+    public const string Receipt = "receipt";
+}
+
+/// <summary>The receipts a <see cref="SessionEventKind.Receipt"/> event names (COWORK1c, the message-urgency design §7).</summary>
+public static class Receipts
+{
+    /// <summary>The write to the harness returned: the prompt, the steer or the resume's opening. Never the prompt's answer.</summary>
+    public const string Sent = "sent";
+
+    /// <summary>The turn that took the word ended <c>end_turn</c>: acted upon, never obeyed.</summary>
+    public const string Answered = "answered";
 }
 
 /// <summary>
@@ -227,6 +244,12 @@ public sealed record SessionEvent
     /// driver's English, for the console, the terminal and a page that does not know the code.
     /// </summary>
     public string? Code { get; init; }
+
+    /// <summary>
+    /// For <see cref="SessionEventKind.Receipt"/> (COWORK1c): what was observed of the word under <see cref="Id"/>, one of
+    /// <see cref="Receipts"/>. Null on every other event.
+    /// </summary>
+    public string? Receipt { get; init; }
 
     /// <summary>
     /// For a driver's note whose lines are worded by code (LAND2b, LANG1a): its parts, as a session record's note carries them

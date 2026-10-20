@@ -39,11 +39,26 @@ public sealed class CodexAccountProcessTests : IDisposable
               process.exit(0);
             }
             if (verb === 'login' && sub === '--device-auth' && process.argv.length === 4) {
-              fs.writeFileSync(path.join(home, 'auth.json'), '{}');
-              console.log('Successfully logged in');
-              process.exit(0);
+              // As 0.160.0 prints it (D125's CODEXACCT2 note): one write, the link and the code in colour; then it reads
+              // nothing on its input and polls until the code is entered on the maker's page, here a file the test writes.
+              const blue = '\x1b[94m', gray = '\x1b[90m', reset = '\x1b[0m';
+              process.stdout.write(
+                'Follow these steps to sign in with ChatGPT using device code authorization:\n\n'
+                + `1. Open this link in your browser and sign in to your account\n   ${blue}https://auth.openai.com/codex/device${reset}\n\n`
+                + `2. Enter this one-time code ${gray}(expires in 15 minutes)${reset}\n   ${blue}ABCD-12345${reset}\n\n`);
+              const began = Date.now();
+              const poll = setInterval(() => {
+                if (fs.existsSync(new URL('./granted', import.meta.url))) {
+                  clearInterval(poll);
+                  fs.writeFileSync(path.join(home, 'auth.json'), '{}');
+                  console.error('Successfully logged in');
+                  process.exit(0);
+                }
+                if (Date.now() - began > 60000) process.exit(1);
+              }, 50);
+            } else {
+              process.exit(1);
             }
-            process.exit(1);
             """);
     }
 
@@ -104,7 +119,9 @@ public sealed class CodexAccountProcessTests : IDisposable
 
     /// <summary>
     /// *Add an account…*'s sign-in: <c>codex login --device-auth</c> (CODEXACCT2) into a new folder Daoris owns, with that
-    /// folder as its <c>CODEX_HOME</c>, and the end's question reads it signed in. Never the tool's own home.
+    /// folder as its <c>CODEX_HOME</c>, and the end's question reads it signed in. Never the tool's own home. SIGNIN1: the
+    /// stand-in waits as Codex does, so the link and the code reach the relay as plain lines while it waits, and it ends once
+    /// the code is entered.
     /// </summary>
     [Fact]
     public async Task A_sign_in_to_a_new_codex_account_runs_codex_login_into_its_own_folder()
@@ -114,12 +131,22 @@ public sealed class CodexAccountProcessTests : IDisposable
         var fresh = AccountNames.NewId(_home, "codex");
         var home = HarnessSettings.ProfileHome(_home, "codex", fresh);
         var said = new List<string>();
+        void Say(string line)
+        {
+            lock (said) said.Add(line);
+        }
 
-        var code = await HarnessActions.LoginAsync(
-            agent.Toolchain, roster.SignInCommand("codex-acp", Config)!, home, said.Add, fresh: true);
+        var signing = HarnessActions.LoginAsync(
+            agent.Toolchain, roster.SignInCommand("codex-acp", Config)!, home, Say, fresh: true);
+        await Poll.Until(() => { lock (said) return said.Contains("   ABCD-12345"); }, within: Poll.Patience);
+        lock (said) Assert.Contains("   https://auth.openai.com/codex/device", said);
+        Assert.False(signing.IsCompleted);
+        File.WriteAllText(Path.Combine(_home, "granted"), "");
+        var code = await signing;
         var login = (await roster.LoginOfAsync("codex-acp", Config, fresh)).Login;
 
         Assert.Equal(0, code);
+        Assert.Contains("Successfully logged in", said);
         Assert.True(File.Exists(Path.Combine(home, "auth.json")));
         Assert.False(File.Exists(Path.Combine(Own, "auth.json")));
         Assert.Contains($"{fresh} login --device-auth", Asked);

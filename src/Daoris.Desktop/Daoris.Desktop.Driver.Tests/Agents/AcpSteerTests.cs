@@ -112,7 +112,8 @@ public sealed class AcpSteerTests
         });
 
     /// <summary>The run's record and what it was told, in one order: the events, each word said and each word taken.</summary>
-    private sealed class Record
+    /// <param name="receipts">Whether the receipts the record keeps under a word's id are among the lines (COWORK1c).</param>
+    private sealed class Record(bool receipts = false)
     {
         private readonly List<string> _lines = [];
 
@@ -138,6 +139,7 @@ public sealed class AcpSteerTests
                 SessionEventKind.Message => $"message:{e.Text}",
                 SessionEventKind.Note => $"note:{e.Text}",
                 SessionEventKind.Tool => $"tool:{e.Id}:{e.Status}",
+                SessionEventKind.Receipt when receipts => $"receipt:{e.Receipt}:{e.Id}",
                 _ => null,
             };
             if (line is not null) lock (_lines) _lines.Add(line);
@@ -219,6 +221,71 @@ public sealed class AcpSteerTests
             ],
             record.Lines);
         Assert.False(inbox.Hold(new ChatMessage("after it closed", [])));
+    }
+
+    /// <summary>
+    /// 🔴 COWORK1c (the message-urgency design §6, §7, trap 8): a word kept on the record and held for the turn's end is marked
+    /// attempted before its prompt is written, never after; once written it is <c>sent</c> and leaves the record; it is taken at the
+    /// first thing the agent does for it, never before the wire; and its turn ending <c>end_turn</c> is its <c>answered</c>. Each
+    /// receipt under the word's id, and <c>sent</c> is the write's return, never the prompt's answer.
+    /// </summary>
+    [Fact]
+    public async Task A_kept_words_prompt_is_attempted_before_the_wire_sent_taken_at_its_first_update_and_answered()
+    {
+        var record = new Daoris.Driver.Tests.StandInSaid();
+        var first = new TaskCompletionSource<int>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var second = new TaskCompletionSource<int>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var attemptedFirst = false;
+        var agent = new Agent((frame, self) =>
+        {
+            switch (frame.GetProperty("method").GetString())
+            {
+                case "initialize":
+                    return Ok(frame, Silent);
+                case "session/new":
+                    return Ok(frame, """{"sessionId":"s-1"}""");
+                case "session/prompt" when !first.Task.IsCompleted:
+                    first.SetResult(frame.GetProperty("id").GetInt32());
+                    return null;
+                case "session/prompt":
+                    attemptedFirst = record.Attempted.Contains("w1");
+                    second.SetResult(frame.GetProperty("id").GetInt32());
+                    return null;
+                default:
+                    return frame.TryGetProperty("id", out _) ? Ok(frame, "{}") : null;
+            }
+        });
+        var lines = new Record(receipts: true);
+        var inbox = new DrivenInbox(_ => { });
+        inbox.OnSaid(lines.SaidTo);
+
+        var run = new AcpSession(agent.Incoming, agent.Outgoing, _ => { }, onEvent: lines.Event)
+            .RunAsync("D:/fam/Game", "read the five files", CancellationToken.None, inbox: inbox, asked: lines.Asked);
+        var task = await first.Task.WaitAsync(Poll.Patience);
+        Assert.Equal(InboxKeep.Held, (await inbox.KeepAsync(record, new ChatMessage("put PINEAPPLE after the words", []), default)).Outcome);
+        agent.Push(Answer(task, "end_turn"));
+        var words = await second.Task.WaitAsync(Poll.Patience);
+        await Poll.Until(() => lines.Lines.Contains("receipt:sent:w1"), () => string.Join(" | ", lines.Lines), Poll.Patience);
+        Assert.DoesNotContain(lines.Lines, line => line.StartsWith("taken:", StringComparison.Ordinal));
+
+        agent.Push(Said("on it"));
+        agent.Push(Answer(words, "end_turn"));
+        await run.WaitAsync(Poll.Patience);
+        await inbox.TakingOff;
+
+        Assert.True(attemptedFirst);
+        Assert.Equal(["w1"], record.TakenOff);
+        Assert.Equal(
+            [
+                "said:w1:TurnEnd:put PINEAPPLE after the words",
+                "turn:end_turn",
+                "receipt:sent:w1",
+                "taken:w1:put PINEAPPLE after the words",
+                "message:on it",
+                "turn:end_turn",
+                "receipt:answered:w1",
+            ],
+            lines.Lines);
     }
 
     /// <summary>

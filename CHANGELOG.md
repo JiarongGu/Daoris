@@ -5,6 +5,21 @@ with the version and date at release.
 
 ## Unreleased
 
+- What you say to a session or a conversation while it works is kept on its record before it waits, so a restart of Daoris never
+  loses it: once Daoris is back, the same session goes on with your words in the order you said them. A word Daoris had already
+  written to the agent when it went away may have reached it, so it is never sent again: its place says *It may have read this; its
+  answer was not kept*, with *Say it again* under your own words. Under words the agent took, the conversation shows when they were
+  sent, taken and answered, each only where Daoris saw it.
+- A session's Timeline draws its states as a flowchart, the one it is in lit and going on drawn as a guarded move; a session page draws its parts as a flowchart in the parts strip's place, the strip its list, and Accept's plan as a dashed node of where they would land.
+- Signing an account in says where it is and for how long: *Starting*, *Waiting on your browser*, *Checking who signed in*
+  and *Joining the lists*, each with its time, the one now counting. Codex's device code shows under the browser's step with
+  when it expires, and the link and the code are there again when you come back to the page mid-sign-in. A sign-in that ends
+  without signing anyone in says why in its own panel, with *Try again* and *Close*; one you cancel closes saying nothing. Under
+  a row of *What needs you* the sign-in shows its step now alone.
+- `daoris-driver run-heavy` holds a heavy gate's Jest or Vitest to two workers when the gate runs it through `yarn test`,
+  `yarn run`, `pnpm test` or `pnpm run`, as it already did through npm. The flag goes where that yarn or pnpm version passes it
+  on to the script; the version comes from the `packageManager` field or the install's own record. Where the version is not
+  recorded, or is one whose argument handling was not read, the gate runs as written, and the run says why under the gate's line.
 - A change of a repository's permission prompts reaches a driven session already running there at its next turn, whether made on
   its Setup tab or with `daoris-driver access`. Where you have said something to the session for its next turn, its run ends as the
   turn ends, never mid-turn, your words wait on it, and at the next look it goes on in the same conversation under the new setup,

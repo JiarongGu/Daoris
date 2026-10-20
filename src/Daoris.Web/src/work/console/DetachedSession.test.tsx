@@ -106,8 +106,11 @@ describe('a session in a window of its own', () => {
   it('heads a chat by its opening, and idle between turns, as the other windows do', async () => {
     show();
 
-    expect(await screen.findByRole('heading', { name: 'start the dev server' })).toBeInTheDocument();
-    expect(await screen.findByText('idle')).toBeInTheDocument();
+    const heading = await screen.findByRole('heading', { name: 'start the dev server' });
+    // The record's head says it beside its title; the Timeline's states flow (FLOWCHART1b) says the shown word again below.
+    const head = heading.closest('header[data-record-head]');
+    expect(head).not.toBeNull();
+    expect(within(head as HTMLElement).getByText('idle')).toBeInTheDocument();
   });
 
   /**

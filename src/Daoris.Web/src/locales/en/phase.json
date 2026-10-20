@@ -1,0 +1,8 @@
+{
+  "phase.elapsed": "{{time}} so far",
+  "phase.state.done": "done",
+  "phase.state.now": "now",
+  "phase.state.waits": "waits on you",
+  "phase.state.failed": "failed",
+  "phase.state.toCome": "to come"
+}

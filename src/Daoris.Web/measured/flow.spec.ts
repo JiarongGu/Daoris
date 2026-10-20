@@ -38,6 +38,22 @@ const TABLE: Record<string, Record<number, number>> = {
   'quest/WentChinese': { 400: 0, 544: 0, 1200: 0 },
   // Its refused edge ranks Done after Declined, so each rank holds one node and the side bar's floor draws it top to bottom.
   'quest/Refused': { 300: 0, 400: 0, 544: 0, 1200: 0 },
+  // A session's states (FLOWCHART1b): five ranks of one node each, the outcomes last, its three skipping edges threading the
+  // ranks between and the working ⇄ awaiting-person return and going on each on a lane of their own.
+  // Top to bottom it crosses nothing; left to right, its three skipping edges cross each other and the returns' runs.
+  'session/Working': { 400: 0, 544: 0, 1200: 7 },
+  'session/WorkingChinese': { 400: 0, 544: 0, 1200: 7 },
+  'session/WaitingOnYou': { 400: 0, 544: 0, 1200: 7 },
+  'session/Completed': { 400: 0, 544: 0, 1200: 7 },
+  'session/StoodDown': { 400: 0, 544: 0, 1200: 7 },
+  // A session's parts (FLOWCHART1b): the strip is the rail at the side bar's floor. A retry and an asked part, and with the landing
+  // plan's dashed node, draw top to bottom from 400 px; a fork's six parts need a rank of three, so its 400 px frame is the rail.
+  'parts/Retry': { 400: 0, 544: 0, 1200: 0 },
+  'parts/RetryChinese': { 400: 0, 544: 0, 1200: 0 },
+  'parts/Fork': { 544: 0, 1200: 0 },
+  'parts/ForkChinese': { 544: 0, 1200: 0 },
+  'parts/WithTheLandingPlan': { 400: 0, 544: 0, 1200: 0 },
+  'parts/WithTheLandingPlanChinese': { 400: 0, 544: 0, 1200: 0 },
 };
 
 /** The story drawn, its faces loaded, and every drawn flow's edges drawn and holding still. */

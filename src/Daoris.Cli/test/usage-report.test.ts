@@ -49,7 +49,14 @@ type Report = {
   setups: { started: number; byState: Counted[]; sessions: SetupCost[]; total: Omit<SetupCost, 'session' | 'repository' | 'workspace' | 'state' | 'parked'> & { sessions: number } };
   parks: { parked: number; byKind: Counted[]; byWeek: { week: string; parked: number; started: number; byWorkspace: { name: string; parked: number; started: number }[] }[] };
   refused: { code: string; count: number; requests: Counted[] }[];
+  harness: HarnessRow[];
   failed: Failure[];
+};
+
+/** One agent action's runs in the period (SIGNIN1): how many, how they ended, and each phase's time. */
+type HarnessRow = {
+  harness: string; action: string; started: number; prompted: number; ended: Counted[];
+  starting: Timing; asking: Timing; tool: Timing; who: Timing; lists: Timing; whole: Timing;
 };
 
 /** One set-up session's cost, as the report reads it from the log: absent is null, never zero. */
@@ -262,6 +269,53 @@ test('what was refused, by code, most first, with the requests that met it', () 
       { code: 'NO_ROUTE', count: 1, requests: [{ name: 'DAORIS.LOG.READ', count: 1 }] },
     ]);
   });
+});
+
+/**
+ * SIGNIN1: an agent's sign-in, install or pin tells its life to the log (`harness.started`, `harness.prompted`,
+ * `harness.ended`), and a refused one names its action. The report says each action's runs, how they ended and each phase's
+ * time, and a refusal by its request and action; never anything a line does not hold, so a time a run never reached is left
+ * out rather than counted as zero.
+ */
+test('agent actions: each one\'s runs by how they ended and each phase\'s time, and a refused one by its action', () => {
+  const at = (minute: number) => `2026-09-30T09:${String(minute).padStart(2, '0')}:00.000Z`;
+  const codex = { harness: 'codex-acp', action: 'login-new' };
+  const claude = { harness: 'claude-code', action: 'login' };
+  const lines = [
+    line(at(0), 'desktop', 'info', 'harness.started', { ...codex, ms: 1200 }),
+    line(at(1), 'desktop', 'info', 'harness.prompted', { ...codex, ms: 1800 }),
+    line(at(2), 'desktop', 'info', 'harness.ended', { ...codex, outcome: 'done', code: 0, startMs: 1200, toolMs: 110000, whoMs: 900, listsMs: 4, ms: 112500 }),
+    line(at(3), 'desktop', 'info', 'harness.started', { ...codex, ms: 800 }),
+    line(at(4), 'desktop', 'info', 'harness.ended', { ...codex, outcome: 'cancelled', code: -1, startMs: 800, toolMs: 30000, whoMs: null, listsMs: null, ms: 31000 }),
+    line(at(5), 'desktop', 'info', 'harness.started', { ...claude, ms: 9000 }),
+    line(at(6), 'desktop', 'info', 'harness.prompted', { ...claude, ms: 21000 }),
+    line(at(7), 'desktop', 'info', 'harness.ended', { ...claude, outcome: 'failed', code: 1, startMs: 9000, toolMs: 60000, whoMs: null, listsMs: null, ms: 70000 }),
+    line(at(8), 'desktop', 'info', 'refused', { code: 'DRIVER_REFUSED', request: 'DAORIS.DRIVER.HARNESS_ACTION', ...codex }),
+    line(at(9), 'desktop', 'info', 'refused', { code: 'DRIVER_REFUSED', request: 'DAORIS.DRIVER.START_CHAT' }),
+  ].map(parseLine);
+
+  const report: Report = summarise(lines, { from: since, to: NOW, skipped: 0 });
+
+  assert.deepEqual(report.refused, [{
+    code: 'DRIVER_REFUSED', count: 2,
+    requests: [{ name: 'DAORIS.DRIVER.HARNESS_ACTION login-new', count: 1 }, { name: 'DAORIS.DRIVER.START_CHAT', count: 1 }],
+  }]);
+  assert.deepEqual(report.harness.map((row) => [row.harness, row.action, row.started, row.prompted, row.ended]), [
+    ['codex-acp', 'login-new', 2, 1, [{ name: 'cancelled', count: 1 }, { name: 'done', count: 1 }]],
+    ['claude-code', 'login', 1, 1, [{ name: 'failed', count: 1 }]],
+  ]);
+  const [signIn] = report.harness;
+  assert.deepEqual([signIn!.starting.medianMs, signIn!.starting.count], [1000, 2]);
+  assert.deepEqual([signIn!.asking.medianMs, signIn!.tool.slowestMs, signIn!.whole.count], [1800, 110000, 2]);
+  // A phase a run never reached is not timed: the cancelled one checked nobody, and joined nothing.
+  assert.deepEqual([signIn!.who.count, signIn!.who.medianMs, signIn!.lists.count], [1, 900, 1]);
+
+  const text: string = render(report, 'logs');
+  assert.match(text, /^Agent actions$/m);
+  assert.match(text, /codex-acp login-new\s+2 started · cancelled 1 · done 1 — starting median 1\.0 s · to the link median 1\.8 s · the tool median 1m 10s · who median 900 ms · lists median 4 ms/);
+  assert.match(text, /claude-code login\s+1 started · failed 1 — starting median 9\.0 s · to the link median 21\.0 s · the tool median 1m 0s/);
+  assert.match(text, /DRIVER_REFUSED\s+2\s+DAORIS\.DRIVER\.HARNESS_ACTION login-new 1 · DAORIS\.DRIVER\.START_CHAT 1/);
+  assert.match(render(summarise([], { from: since, to: NOW, skipped: 0 }), 'logs'), /^Agent actions\n {2}none$/m);
 });
 
 test('what failed, grouped, most first: exceptions, the page\'s errors, error-level log lines and failed requests', () => {

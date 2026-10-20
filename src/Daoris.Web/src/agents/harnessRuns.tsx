@@ -55,6 +55,16 @@ export type HarnessRun = {
   refusal: string | null;
   retry: () => void;
   dismiss: () => void;
+  /**
+   * When the running action was pressed (SIGNIN1), so a sign-in's panel says how long it has run where its host writes no
+   * phases of its own; null with nothing pressed.
+   */
+  pressedAt: number | null;
+  /**
+   * A sign-in that ended without signing in (SIGNIN1, the UI/UX design §3.2's *Failed at a phase*): its sentence and when it
+   * ended. Its panel stays up and says it, with *Try again* and *Close*, as a refused start's does; null otherwise.
+   */
+  failure: { sentence: string; at: number } | null;
 };
 
 const Runs = createContext<HarnessRun | null>(null);
@@ -96,6 +106,8 @@ function useRunState(notify: Notify): HarnessRun {
   // The same key, readable from the event handler without re-subscribing on every render.
   const runningRef = useRef<string | null>(null);
   const [refusal, setRefusal] = useState<string | null>(null);
+  const [failure, setFailure] = useState<{ sentence: string; at: number } | null>(null);
+  const [pressedAt, setPressedAt] = useState<number | null>(null);
   const lastSignIn = useRef<{ harness: string; action: HarnessRunAction; profile?: string } | null>(null);
 
   // Read the roster at the moment an action ends: a rename or a view change can happen while a sign-in runs.
@@ -116,9 +128,22 @@ function useRunState(notify: Notify): HarnessRun {
   const ended = (
     action: string, profile: string | undefined, exitCode: number, problem: string | null,
     account?: string | null, kept?: boolean | null, places?: AccountPlace[] | null, offered?: string | null,
+    cancelled?: boolean | null,
   ) => {
+    const signIn = action === 'login' || action === 'login-new';
+    // SIGNIN1: a sign-in that did not sign in says so in its own panel, which stays up with its way on (the UI/UX design
+    // §3.2's *Failed at a phase*), not as a toast with the panel gone; one the person cancelled closes, saying nothing.
+    const failed = !signIn || cancelled ? null
+      : problem ?? (exitCode !== 0
+        ? t(action === 'login-new' ? 'harness.loginNew.failed' : 'harness.login.failed', { code: exitCode })
+        : action === 'login-new' && !kept ? t('harness.loginNew.nobody') : null);
+    if (failed) {
+      setFailure({ sentence: failed, at: Date.now() });
+      return;
+    }
     setRunningProfile(null);
     setSigningInNew(null);
+    if (signIn && cancelled) return;
     if (problem) {
       notify(problem, 'error');
       return;
@@ -155,13 +180,18 @@ function useRunState(notify: Notify): HarnessRun {
   useHarnessEnded((news) => {
     if (runningRef.current !== `${news.harness}:${news.action}`) return;
     setInFlight(null);
-    ended(news.action, news.profile ?? undefined, news.exitCode, news.problem, news.account, news.kept, news.places, news.offered);
+    ended(
+      news.action, news.profile ?? undefined, news.exitCode, news.problem, news.account, news.kept, news.places, news.offered,
+      news.cancelled,
+    );
   });
 
   const run: HarnessRun['run'] = (harness, action, profile, version, workspace, answered) => {
     // Never over one still running: whose end the news belongs to is the one thing this must not lose.
     if (inFlight !== null) return;
     setRefusal(null);
+    setFailure(null);
+    setPressedAt(Date.now());
     if (action === 'login' || action === 'login-new') lastSignIn.current = { harness, action, profile };
     setRunning(`${harness}:${action}`);
     runningRef.current = `${harness}:${action}`;
@@ -223,6 +253,7 @@ function useRunState(notify: Notify): HarnessRun {
   };
   const dismiss = () => {
     setRefusal(null);
+    setFailure(null);
     setRunning(null);
     runningRef.current = null;
     setRunningProfile(null);
@@ -232,6 +263,7 @@ function useRunState(notify: Notify): HarnessRun {
   // Already started, so nothing is sent: only the end is waited for, as a process started here waits.
   const follow: HarnessRun['follow'] = (harness, action) => {
     if (inFlight !== null) return;
+    setPressedAt(Date.now());
     setRunning(`${harness}:${action}`);
     runningRef.current = `${harness}:${action}`;
     setInFlight(`${harness}:${action}`);
@@ -239,7 +271,7 @@ function useRunState(notify: Notify): HarnessRun {
 
   return {
     running, inFlight, runningProfile, signingInNew, busy: act.isPending || inFlight !== null, run, follow,
-    refusal, retry, dismiss,
+    refusal, retry, dismiss, pressedAt, failure,
     added, settleAdded: () => setAdded(null),
   };
 }

@@ -3271,6 +3271,8 @@ public sealed class Driver(
                     // Each of the person's words its own block (MSG1b, D137 §2.2), and taken once the prompt is on the wire.
                     blocks: resume?.Blocks,
                     prompted: resume is null ? null : () => resume.Prompted = true,
+                    // COWORK1c: marked attempted on the record before the opening prompt carrying them is written.
+                    attempting: resume is null ? null : () => SaidDoor.AttemptedAsync(service, sessionId, resume.Words),
                     // The files said with them, a link each after the blocks (MSG1d3, D137 §2.4).
                     files: resume?.Files,
                     waitsOnBackground: waitsOnBackground)

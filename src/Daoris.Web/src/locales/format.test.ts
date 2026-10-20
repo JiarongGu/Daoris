@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import i18n from './i18n';
-import { ago, compact, elapsed, figure, sentence, sessionTool, sittingDays, span, stamp } from './format';
+import { ago, compact, elapsed, figure, list, sentence, sessionTool, sittingDays, span, stamp } from './format';
 
 /** ACCTNAME1 (D152 §4.2): a session's agent line names its account by the person's name where the roster's namer is handed. */
 describe('sessionTool', () => {
@@ -227,5 +227,18 @@ describe('stamp and figure', () => {
     await i18n.changeLanguage('en');
     expect(stamp(moment)).toBe(new Date(moment).toLocaleString('en'));
     expect(figure(1234567)).toBe((1234567).toLocaleString('en'));
+  });
+});
+
+/** FLOWCHART1b: a list of alternatives is joined the way the reader's language says *or*, as a list of items is joined by *and*. */
+describe('list', () => {
+  afterEach(() => vi.unstubAllGlobals());
+
+  it('joins items by and, and alternatives by or, as the reader\'s language does', () => {
+    vi.stubGlobal('navigator', { ...navigator, language: 'en-US' });
+    expect(list(['a', 'b', 'c'], 'en')).toBe('a, b, and c');
+    expect(list(['a', 'b', 'c'], 'en', 'or')).toBe('a, b, or c');
+    expect(list(['a', 'b'], 'en', 'or')).toBe('a or b');
+    expect(list(['甲', '乙', '丙'], 'zh', 'or')).toBe('甲、乙或丙');
   });
 });

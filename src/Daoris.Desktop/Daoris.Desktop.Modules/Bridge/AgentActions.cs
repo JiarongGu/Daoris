@@ -1,9 +1,31 @@
 using System.Collections.Concurrent;
+using System.Diagnostics;
+using System.Globalization;
+using System.Text.Json;
 using Daoris.Driver;
 using Shenora.Core.Events;
 using Shenora.Core.Ipc;
 
 namespace Daoris.Desktop;
+
+/// <summary>
+/// A sign-in's phases as the driver writes them into its relay (SIGNIN1, the UI/UX design §3.2): each a step the driver
+/// performs or observes itself, never one guessed from the tool's words.
+/// </summary>
+internal static class SignInPhase
+{
+    /// <summary>From the press until the tool's process is up.</summary>
+    public const string Start = "start";
+
+    /// <summary>The tool's process up until it exits: whatever it does with the browser is this one phase.</summary>
+    public const string Browser = "browser";
+
+    /// <summary>The driver's own read of who signed in.</summary>
+    public const string Who = "who";
+
+    /// <summary>The driver's own write of the lists the account joins.</summary>
+    public const string Lists = "lists";
+}
 
 /// <summary>
 /// The one harness action running on this machine, and the path that starts it (PART10f, D166): Agents' <c>HARNESS_ACTION</c>,
@@ -24,6 +46,20 @@ public sealed class AgentActions(IEventBus events, DriverLoop loop)
     // Which `harness:action` holds the one slot, from its start until `RunActionAsync` ends it (REV3).
     private string? _acting;
 
+    // What each `harness:action` said in its latest run, and the life of the one running (SIGNIN1).
+    private readonly ConcurrentDictionary<string, Said> _said = new(StringComparer.Ordinal);
+    private readonly ConcurrentDictionary<string, Life> _lives = new(StringComparer.Ordinal);
+
+    /// <summary>
+    /// Every action <c>HARNESS_ACTION</c> takes, in the order its unknown-action refusal names them: the words a refused one is
+    /// logged by (SIGNIN1), so the log never holds a word the page sent that is not one of them.
+    /// </summary>
+    internal static readonly IReadOnlyList<string> Words =
+    [
+        "install", "update", "login", "login-new", "key-add", "key-replace", "pin", "unpin",
+        "profile-add", "profile-remove", "profile-default", "profile-rename", "profile-join",
+    ];
+
     /// <summary>
     /// A harness action's output, relayed as it happens — the same console the session drawer already
     /// renders (D49 §2), because an install that printed nothing until it finished is indistinguishable
@@ -35,16 +71,64 @@ public sealed class AgentActions(IEventBus events, DriverLoop loop)
     /// session's.</para>
     ///
     /// <para>The sequence still counts, because the page's merge rule is "drop anything already
-    /// seen" — every line arriving as number 0 would render as one line repeatedly overwritten. There
-    /// is no backlog to catch up on here (nothing buffers a harness action), so the counter starts at
-    /// 1 and only has to be monotonic.</para>
+    /// seen" — every line arriving as number 0 would render as one line repeatedly overwritten.</para>
+    ///
+    /// <para><b>The latest run's lines are kept</b> (SIGNIN1), bounded as a session's are, and answered over
+    /// <c>TAIL_SESSION</c> (<see cref="Tail"/>): a sign-in's panel mounted after its link was printed, as one is on coming
+    /// back to its page, read nothing, and its phases are lines too. The number goes on across runs of one action, so a panel
+    /// that stayed up through a *Try again* merges the second run's lines after the first's rather than dropping them as seen.</para>
     /// </remarks>
     internal Action<string> Relay(string harness, string action)
     {
-        var sequence = 0L;
-        return line => DriverLoop.EmitOutput(
-            _events, $"{harness}:{action}", [new ConsoleLine(Interlocked.Increment(ref sequence), line)]);
+        var key = $"{harness}:{action}";
+        return line => Say(key, line);
     }
+
+    /// <summary>One line into <paramref name="key"/>'s relay: kept for a late panel, read for the log's ask, then sent.</summary>
+    private void Say(string key, string text)
+    {
+        var said = _said.GetOrAdd(key, _ => new Said());
+        ConsoleLine line;
+        lock (said)
+        {
+            line = new ConsoleLine(++said.Sequence, text);
+            said.Lines.Enqueue(line);
+            while (said.Lines.Count > SessionOutput.LinesPerSession)
+            {
+                said.Lines.Dequeue();
+                said.Dropped += 1;
+            }
+        }
+
+        if (_lives.TryGetValue(key, out var life) && life.Action is "login" or "login-new") life.Heard(text, _loop.Log);
+        _ = DriverLoop.EmitOutput(_events, key, [line]);
+    }
+
+    /// <summary>
+    /// What <paramref name="key"/>'s latest run has said since <paramref name="after"/>, and whether it still runs; null where
+    /// no action of that key has said anything here (SIGNIN1). <c>TAIL_SESSION</c> answers it for a key no session holds.
+    /// </summary>
+    internal ConsoleTail? Tail(string key, long after)
+    {
+        if (!_said.TryGetValue(key, out var said)) return null;
+        lock (said)
+        {
+            return new([.. said.Lines.Where(line => line.Sequence > after)], said.Sequence, Volatile.Read(ref _acting) == key, said.Dropped);
+        }
+    }
+
+    /// <summary>
+    /// The line a sign-in's phase is written as, with its start (SIGNIN1, the UI/UX design §3.2): the record separator, which
+    /// begins no line a tool prints (<see cref="HarnessActions.Clean"/> drops it), then the phase and when it began, in UTC.
+    /// </summary>
+    internal static string PhaseLine(string phase, DateTimeOffset at) =>
+        "\u001e" + JsonSerializer.Serialize(new
+        {
+            phase,
+            at = at.ToUniversalTime().ToString("yyyy-MM-dd'T'HH:mm:ss.fff'Z'", CultureInfo.InvariantCulture),
+        });
+
+    private void Phase(Life life, string phase) => Say(life.Key, PhaseLine(phase, DateTimeOffset.UtcNow));
 
     /// <summary>
     /// A process action on a harness, answered once it has started — <c>HARNESS_ACTION</c>'s own start,
@@ -70,9 +154,20 @@ public sealed class AgentActions(IEventBus events, DriverLoop loop)
         var owner = toolchain.Owner(harness);
         var key = $"{harness}:{action}";
         var started = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var signsIn = action is "login" or "login-new";
+        // Its life from the press (SIGNIN1): each phase's start, for its panel and the machine log.
+        var life = new Life(key, harness, action);
         Action<HarnessRun> track = run =>
         {
             _actions[key] = run;
+            if (life.Up is null)
+            {
+                life.Up = life.Now;
+                _loop.Log?.Info("harness.started", ("harness", harness), ("action", action), ("ms", life.Up));
+                // The tool's process is up: what it does with the browser now is one phase, ending when it exits (R2).
+                if (signsIn) Phase(life, SignInPhase.Browser);
+            }
+
             started.TrySetResult();
         };
         var home = _loop.Harnesses.Home;
@@ -116,9 +211,10 @@ public sealed class AgentActions(IEventBus events, DriverLoop loop)
         {
             "install" => () => HarnessActions.InstallAsync(toolchain, stream, CancellationToken.None, track),
             "update" => () => UpdateAsync(harness, toolchain, command, stream, CancellationToken.None, track),
-            "login" => () => SignInToAsync(owner, target!, signingToolchain, signingRun!, profileHome, stream, track, lists),
+            "login" => () => SignInToAsync(
+                harness, owner, target!, signingToolchain, signingRun!, profileHome, stream, config, track, lists, life),
             "login-new" => () => SignInAsync(
-                harness, owner, fresh!, signingToolchain, signingRun!, profileHome, stream, config, track, lists, name),
+                harness, owner, fresh!, signingToolchain, signingRun!, profileHome, stream, config, track, lists, name, life),
             // The managed toolchain (TOOL2/D57) — the desktop's half of `daoris agent pin|unpin`, over
             // the same file.
             _ => () => PinAsync(harness, toolchain, stream, version!, CancellationToken.None, track),
@@ -137,8 +233,19 @@ public sealed class AgentActions(IEventBus events, DriverLoop loop)
                 ("running", busy));
         }
 
+        // The run's lines are its own from here, and a sign-in says its first phase (SIGNIN1): a panel mounted later reads them.
+        var said = _said.GetOrAdd(key, _ => new Said());
+        lock (said)
+        {
+            said.Lines.Clear();
+            said.Dropped = 0;
+        }
+
+        _lives[key] = life;
+        if (signsIn) Phase(life, SignInPhase.Start);
+
         var reaching = fresh ?? target ?? profile;
-        var work = RunActionAsync(key, harness, action, reaching, run, started.Task, config, ended);
+        var work = RunActionAsync(key, harness, action, reaching, run, started.Task, config, life, ended);
 
         await Task.WhenAny(started.Task, work);
         // A refusal before the process started — no installer, no login flow, a binary that did not
@@ -154,27 +261,31 @@ public sealed class AgentActions(IEventBus events, DriverLoop loop)
     /// </summary>
     private async Task RunActionAsync(
         string key, string harness, string action, string? profile, Func<Task<int>> run, Task started,
-        DriverConfig config, Action<int, string?>? ended = null)
+        DriverConfig config, Life life, Action<int, string?>? ended = null)
     {
         int code;
         try
         {
             code = await run();
+            life.Exited ??= life.Now;
         }
         catch (Exception error) when (started.IsCompletedSuccessfully)
         {
-            await AnnounceAsync(harness, action, profile, -1, error.Message, config);
+            await AnnounceAsync(harness, action, profile, -1, error.Message, config, life);
+            Ended(life, "error", null);
             Tell(-1, error.Message);
             return;
         }
         finally
         {
             _actions.TryRemove(key, out _);
+            _lives.TryRemove(key, out _);
             // The slot goes with the action, however it ended — before it started included.
             Volatile.Write(ref _acting, null);
         }
 
-        await AnnounceAsync(harness, action, profile, code, null, config);
+        await AnnounceAsync(harness, action, profile, code, null, config, life);
+        Ended(life, life.Cancelled ? "cancelled" : code != 0 ? "failed" : life.Nobody ? "nobody" : "done", code);
         Tell(code, null);
 
         // Whoever asked to hear the end (HELP6: Ask Daoris's conversation) hears it after the news; a
@@ -192,18 +303,32 @@ public sealed class AgentActions(IEventBus events, DriverLoop loop)
         }
     }
 
+    /// <summary>
+    /// An action's end in the machine log (SIGNIN1, the machine-log design §4): how it ended by a word, its exit code, and each
+    /// phase's milliseconds, null for one it never reached. Never the tool's output, a link, a code or who signed in.
+    /// </summary>
+    private void Ended(Life life, string outcome, int? code)
+    {
+        var now = life.Now;
+        _loop.Log?.Info("harness.ended",
+            ("harness", life.Harness), ("action", life.Action), ("outcome", outcome), ("code", code),
+            ("startMs", life.Up), ("toolMs", life.Exited - life.Up),
+            ("whoMs", life.WhoDone - life.Who), ("listsMs", life.Joined - life.Lists), ("ms", now));
+    }
+
     private async Task AnnounceAsync(
-        string harness, string action, string? profile, int code, string? problem, DriverConfig config)
+        string harness, string action, string? profile, int code, string? problem, DriverConfig config, Life? life = null)
     {
         // What the act changed is read again before the news, and nothing else (ROSTER1): a sign-in's end reads its
-        // account, the binary an install, an update or a pin changed; a sign-in to another account read its own already.
+        // account, the binary an install, an update or a pin changed; a sign-in to another account read its own already, and
+        // a sign-in back in to one read who before it joined the lists (SIGNIN1).
         HarnessReport? report = null;
         var signingIn = action is "login" or "login-new" && profile is not null;
         try
         {
             await AgentsRoutes.ChangedAsync(_loop, harness, action, config, CancellationToken.None);
             report = action == "login" && profile is not null
-                ? await _loop.Harnesses.ReportAsync(harness, config, refresh: true, CancellationToken.None, account: profile)
+                ? life?.Read ?? await _loop.Harnesses.ReportAsync(harness, config, refresh: true, CancellationToken.None, account: profile)
                 : signingIn ? await _loop.Harnesses.ReportAsync(harness, config, ct: CancellationToken.None) : null;
         }
         catch (Exception)
@@ -238,6 +363,8 @@ public sealed class AgentActions(IEventBus events, DriverLoop loop)
             Places = signingIn
                 ? AgentsRoutes.PlacesShown(_loop.Harnesses.Settings.PlacesOf(owner, profile!))
                 : null,
+            // Whether the person's *Cancel* stopped it (SIGNIN1), so its end is no failure to say: the page closes its panel.
+            Cancelled = life?.Cancelled ?? false,
         });
     }
 
@@ -275,7 +402,7 @@ public sealed class AgentActions(IEventBus events, DriverLoop loop)
     private async Task<int> SignInAsync(
         string harness, string owner, string fresh, HarnessToolchain toolchain, HarnessCommand run,
         string profileHome, Action<string> stream, DriverConfig config, Action<HarnessRun> track,
-        IReadOnlyList<string?> joins, string? name)
+        IReadOnlyList<string?> joins, string? name, Life life)
     {
         var code = -1;
         try
@@ -286,12 +413,22 @@ public sealed class AgentActions(IEventBus events, DriverLoop loop)
         }
         finally
         {
+            life.Exited ??= life.Now;
+            // The tool has exited: what the driver does now are phases of its own (SIGNIN1), who signed in, then the lists.
+            if (code == 0)
+            {
+                life.Who = life.Now;
+                Phase(life, SignInPhase.Who);
+            }
+
             var said = code == 0
                 ? await _loop.Harnesses.LoginOfAsync(harness, config, fresh, CancellationToken.None)
                 : new LoginRead(LoginState.Out, null);
+            if (code == 0) life.WhoDone = life.Now;
 
             if (code != 0 || said.Login == LoginState.Out)
             {
+                life.Nobody = code == 0;
                 try
                 {
                     HarnessSettings.RemoveProfile(_loop.Harnesses.Home, owner, fresh);
@@ -313,7 +450,10 @@ public sealed class AgentActions(IEventBus events, DriverLoop loop)
                     ? AccountNames.ApartWords(accounts, AccountNames.Of(_loop.Harnesses.Home, owner), fresh, who, said.Org, said.Plan)
                     : null;
                 stream(AgentsRoutes.SignedInSentence(said.Account, owner, called, fresh, apart));
+                life.Lists = life.Now;
+                Phase(life, SignInPhase.Lists);
                 Placed(owner, fresh, joins, stream);
+                life.Joined = life.Now;
             }
         }
     }
@@ -322,12 +462,34 @@ public sealed class AgentActions(IEventBus events, DriverLoop loop)
     /// Sign back in to an account that is here (ACCT1): the tool's own login flow into its folder, never a new one, and at
     /// its end the lists the person named joined and where it runs said.
     /// </summary>
+    /// <remarks>
+    /// Who signed in is read before the lists are joined (SIGNIN1, the UI/UX design §3.2's phases), and the end's news says it
+    /// from that one reading rather than asking the tool again; where the reading failed, the end reads as before.
+    /// </remarks>
     private async Task<int> SignInToAsync(
-        string owner, string account, HarnessToolchain toolchain, HarnessCommand run, string profileHome,
-        Action<string> stream, Action<HarnessRun> track, IReadOnlyList<string?> joins)
+        string harness, string owner, string account, HarnessToolchain toolchain, HarnessCommand run, string profileHome,
+        Action<string> stream, DriverConfig config, Action<HarnessRun> track, IReadOnlyList<string?> joins, Life life)
     {
         var code = await HarnessActions.LoginAsync(toolchain, run, profileHome, stream, CancellationToken.None, track);
-        if (code == 0) Placed(owner, account, joins, stream);
+        life.Exited = life.Now;
+        if (code != 0) return code;
+
+        life.Who = life.Now;
+        Phase(life, SignInPhase.Who);
+        try
+        {
+            life.Read = await _loop.Harnesses.ReportAsync(harness, config, refresh: true, CancellationToken.None, account: account);
+        }
+        catch (Exception)
+        {
+            // The end's news reads it again, as it did before this reading came first.
+        }
+
+        life.WhoDone = life.Now;
+        life.Lists = life.Now;
+        Phase(life, SignInPhase.Lists);
+        Placed(owner, account, joins, stream);
+        life.Joined = life.Now;
         return code;
     }
 
@@ -422,6 +584,71 @@ public sealed class AgentActions(IEventBus events, DriverLoop loop)
                 Refusals.HarnessActionIdle,
                 $"nothing is running for `{harness}` {action} — it finished, or was never started.",
                 ("harness", harness), ("action", action));
+    }
+
+    /// <summary>Stop the action running under `harness:action`, its end then told to the log as cancelled (SIGNIN1).</summary>
+    internal void Cancel(IpcRequest request)
+    {
+        var run = Running(request);
+        var key = $"{PayloadHelper.GetRequiredValue<string>(request.Payload, "harness")}:{PayloadHelper.GetRequiredValue<string>(request.Payload, "action")}";
+        if (_lives.TryGetValue(key, out var life)) life.Cancelled = true;
+        run.Cancel();
+    }
+
+    /// <summary>What one `harness:action` said in its latest run, bounded as a session's console is (SIGNIN1).</summary>
+    private sealed class Said
+    {
+        public readonly Queue<ConsoleLine> Lines = new();
+        public long Sequence;
+        public long Dropped;
+    }
+
+    /// <summary>
+    /// A process action's life (SIGNIN1): when each of its phases began, in milliseconds from the press by the driver's own
+    /// clock, how it ended, and a sign-in back in's reading of who, which its end's news says rather than reading again.
+    /// </summary>
+    private sealed class Life(string key, string harness, string action)
+    {
+        private readonly Stopwatch _clock = Stopwatch.StartNew();
+        private int _prompted;
+
+        public string Key { get; } = key;
+
+        public string Harness { get; } = harness;
+
+        public string Action { get; } = action;
+
+        public long Now => _clock.ElapsedMilliseconds;
+
+        public long? Up { get; set; }
+
+        public long? Exited { get; set; }
+
+        public long? Who { get; set; }
+
+        public long? WhoDone { get; set; }
+
+        public long? Lists { get; set; }
+
+        public long? Joined { get; set; }
+
+        public bool Cancelled { get; set; }
+
+        public bool Nobody { get; set; }
+
+        public HarnessReport? Read { get; set; }
+
+        /// <summary>
+        /// A line the tool printed: the first that offers the person a link, read by its shape alone, is when it asked them
+        /// (<c>harness.prompted</c>), once. The link is never written.
+        /// </summary>
+        public void Heard(string text, MachineLog? log)
+        {
+            if (Up is not { } up || Volatile.Read(ref _prompted) != 0) return;
+            if (!text.Contains("https://", StringComparison.OrdinalIgnoreCase) && !text.Contains("http://", StringComparison.OrdinalIgnoreCase)) return;
+            if (Interlocked.Exchange(ref _prompted, 1) != 0) return;
+            log?.Info("harness.prompted", ("harness", Harness), ("action", Action), ("ms", Now - up));
+        }
     }
 
     /// <summary>

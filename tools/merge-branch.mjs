@@ -954,6 +954,8 @@ export const REACH = Object.freeze([
       'GoOnNew.cs', 'SessionSay.cs', 'Continuation.cs', 'ChatRunner.StartFrom.cs',
       // MIXAGENT1b-i: the say twin holds the hand-over's refusal table to its codes.
       'HandOver.cs',
+      // FLOWCHART1b: the parts flow's twin holds its words to `PartBegan`.
+      'SessionEntries.cs',
     ].map((name) => `src/Daoris.Desktop/Daoris.Desktop.Driver/**/${name}`),
     gates: [...DRIVER_READERS, 'web-unit'],
     why: "the driver's own, and the page's note, conversation, handed, trace and say vitests parse their declarations (MOD9e, MSG1g3)",
@@ -977,6 +979,19 @@ export const REACH = Object.freeze([
   { paths: ['src/Daoris.Cli/test/**'], gates: [], why: "the CLI's tests, which verify runs at every merge" },
   // GATE6: a fix to a browser test was re-gated by the web gate alone, and the stage then voided every other verdict.
   { paths: ['src/Daoris.Web/e2e/**'], gates: ['web'], why: "the page's end-to-end specs, which only the web gate runs: no .NET suite reads them" },
+  // FLOWCHART1e: the measured-box check's own specs, harness and config, which no other suite reads (tsc and the vitests read src/ alone).
+  {
+    paths: ['src/Daoris.Web/measured/**', 'src/Daoris.Web/playwright.measured.config.ts'],
+    gates: ['web-measured'],
+    why: "the measured-box check's specs, harness and config, which only its gate runs",
+  },
+  // FLOWCHART1e: what the measured-box check draws and measures, the flowchart and the setting rows; a path rule replaces the
+  // web-shell lane's, so the lane's gates stay.
+  {
+    paths: ['flow*', 'Flow*', 'ui.tsx', 'ui.stories.tsx', 'storyWidths*'].map((name) => `src/Daoris.Web/src/design/${name}`),
+    gates: ['web-measured', 'web', 'web-unit', ...PAGE_READERS],
+    why: "the web shell's own, and the measured-box check draws the flowchart's and the setting rows' stories from them (FLOWCHART1e)",
+  },
   { lane: 'web-shell', gates: ['web', 'web-unit', ...PAGE_READERS], why: "the page's own suites, and the .NET suites that read its catalogues and sources (MOD9's incident)" },
   { lane: 'web-settings', gates: ['web', 'web-unit', ...PAGE_READERS], why: "the page's own suites, and the .NET suites that read its catalogues and sources (MOD9's incident)" },
   {

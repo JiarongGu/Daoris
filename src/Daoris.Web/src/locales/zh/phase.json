@@ -1,0 +1,8 @@
+{
+  "phase.elapsed": "已用 {{time}}",
+  "phase.state.done": "已完成",
+  "phase.state.now": "进行中",
+  "phase.state.waits": "等你操作",
+  "phase.state.failed": "失败",
+  "phase.state.toCome": "待进行"
+}

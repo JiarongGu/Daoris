@@ -64,6 +64,15 @@ names in `helpSwapping` in view as it ends, so the next words resume it under th
 roster's namer (`settings/accounts/namer.ts`, so a session's header) says. Where two of an agent's sign-ins share an email, each
 says what tells it apart, after the email and once. A surface that names an account goes through these, never its own.
 
+**A step that waits says its phase and how long** (the UI/UX design R2, SIGNIN1): `src/design/phases.tsx`'s `PhaseList`
+draws a process's phases, each named by its words and its state in words, the done ones with the time each took, the one
+now with its time stepping by its own clock (`Elapsed`, seconds in the first minute and minutes after) and what it says, a
+failed one with its sentence; standing open on its own surface, or as the line alone in a row. A sign-in's phases are the
+driver's, lines of its relay read by `phaseOf` (`bridge/sessions/console.ts`), and `agents/SignInSteps.tsx` draws them
+under `SignIn`, the link, the code and the ask read from the tool's lines by their shape; a host that writes none draws the
+steps as before, with the time since the press. A sign-in that ends without signing in says so in its panel with *Try
+again* and *Close*, and one the person cancelled closes saying nothing.
+
 **The design language is written down** — `docs/2026-09-19-platform-ux.md` (D41): the console shell
 (an activity bar, page headers, one primary action per view), the token system, the drawer as the single
 detail-and-form surface alongside the frame's list and main panes (D118), toasts carrying the service's sentences verbatim, and a status palette that
@@ -211,6 +220,21 @@ A quest's flowchart is the same in both shells (FLOWCHART1a2, D186): opened, its
 service's own `GET /api/quests/{id}/moves` (`useQuestMoves` in `data/queries.ts`), which either host answers, so a browser
 draws the way a quest went as the window does; *How this came to be* stays the shell's, since its trace reads this machine's
 records. A host from before the door answers it not found, and the flowchart draws the statuses alone and says so.
+
+A session's states are drawn at the head of the side bar's *Timeline* view (FLOWCHART1b, D186): `work/head/sessionLife.ts` holds
+the page's copy of the ledger's `SessionLedger.Allowed` and its nine states, which its test reads from the service's source,
+and draws the four live states, the working ⇄ awaiting-person return on a lane of its own, one node of outcomes and going on
+as a guarded edge (refused, with its reason, for a record that can never go on). The record keeps where a session stands and
+not how it got there, so the drawing lights the state it is in, in the tone of the word the page shows it as, and draws no path
+and no time.
+
+A session's parts are a flowchart in the parts strip's place on its page (FLOWCHART1b): `work/head/partsLife.ts` hangs each part by
+what it followed (`EntryPart.after`) and labels the edge by how it began, an asked part from a faint node for the repository that
+asked it and a part with no `after` from the start, and draws Accept's plan, once its ask is open and read, as a dashed node of
+where the parts *would* land. Parts are lineage, never a cause or a concurrency, and a part keeps no time, so its agent and when it
+began are said only where the page holds that part's record. The strip is the flow's rail, drawn where only the rail fits or the
+person chose the list (`Flow`'s `rail`), and a press on a node, or Enter on it, shows that part as the strip's button did. The
+measured check (`e2e:measured`) draws both flows' stories in a rendered browser, each frame with a ceiling of crossings.
 
 ## Running it
 

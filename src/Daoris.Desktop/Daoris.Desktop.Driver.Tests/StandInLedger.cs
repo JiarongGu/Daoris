@@ -738,7 +738,9 @@ internal sealed class StandInLedger : HttpMessageHandler
                     var id = path["/api/sessions/".Length..^"/say".Length];
                     var session = _sessions.Single(s => s["id"]!.GetValue<string>() == id);
                     var state = session["state"]!.GetValue<string>();
-                    if (state is "queued" or "starting" or "working")
+                    // COWORK1c: a running record keeps a word for its run where the driver that runs it asks so.
+                    var forRun = state is "queued" or "starting" or "working";
+                    if (forRun && body!["running"]?.GetValue<bool>() != true)
                     {
                         return Answer(HttpStatusCode.Conflict, new JsonObject
                         {
@@ -762,10 +764,11 @@ internal sealed class StandInLedger : HttpMessageHandler
                     var word = new JsonObject
                     {
                         ["id"] = $"w{said.Count + 1}", ["text"] = body!["text"]!.GetValue<string>().Trim(), ["at"] = _clock.ToString("O"),
-                        ["files"] = new JsonArray(), ["reopens"] = state != "awaiting-person",
+                        ["files"] = new JsonArray(), ["reopens"] = state != "awaiting-person" && !forRun,
                     };
                     if (body!["from"]?.GetValue<string>() is { } from) word["from"] = from;
                     if (key is not null) word["key"] = key;
+                    if (body!["level"]?.GetValue<string>() is { } level) word["level"] = level;
                     said.Add(word);
                     var persons = said.Where(each => each!["from"] is null).Select(each => each!["text"]!.GetValue<string>()).ToList();
                     if (persons.Count > 0) session["answer"] = string.Join("\n\n", persons);
@@ -773,6 +776,37 @@ internal sealed class StandInLedger : HttpMessageHandler
                     {
                         ["session"] = session.DeepClone(), ["message"] = $"Kept for session `{id}` to go on with.", ["said"] = word.DeepClone(),
                     });
+                }
+
+                // COWORK1c: the attempt door, the first moment kept on each word named that still waits.
+                case ("POST", _) when path.StartsWith("/api/sessions/", StringComparison.Ordinal) && path.EndsWith("/attempt", StringComparison.Ordinal):
+                {
+                    var id = path["/api/sessions/".Length..^"/attempt".Length];
+                    var session = _sessions.Single(s => s["id"]!.GetValue<string>() == id);
+                    var named = body!["said"]!.AsArray().Select(word => word!.GetValue<string>()).ToHashSet(StringComparer.Ordinal);
+                    _clock = _clock.AddSeconds(1);
+                    foreach (var word in (session["said"] as JsonArray ?? []).OfType<JsonObject>())
+                    {
+                        if (named.Contains(word["id"]!.GetValue<string>()) && word["attempt"] is null) word["attempt"] = _clock.ToString("O");
+                    }
+
+                    return Answer(HttpStatusCode.OK, new JsonObject { ["session"] = session.DeepClone(), ["message"] = "marked", ["unmarked"] = new JsonArray() });
+                }
+
+                // SAIDBACK1a's take-back door, without a reword: a word waiting on a record that runs no more leaves it.
+                case ("POST", _) when path.StartsWith("/api/sessions/", StringComparison.Ordinal) && path.EndsWith("/take-back", StringComparison.Ordinal):
+                {
+                    var id = path["/api/sessions/".Length..^"/take-back".Length];
+                    var session = _sessions.Single(s => s["id"]!.GetValue<string>() == id);
+                    var named = body!["word"]!.GetValue<string>();
+                    var said = session["said"] as JsonArray ?? [];
+                    if (said.FirstOrDefault(word => word!["id"]!.GetValue<string>() == named) is not { } waiting)
+                    {
+                        return Answer(HttpStatusCode.OK, new JsonObject { ["done"] = false, ["why"] = "taken", ["message"] = "no longer waits" });
+                    }
+
+                    said.Remove(waiting);
+                    return Answer(HttpStatusCode.OK, new JsonObject { ["done"] = true, ["message"] = "taken back", ["session"] = session.DeepClone() });
                 }
 
                 // The taken door (MSG1a): the words a session took leave its record by their ids.

@@ -5,6 +5,55 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-20 — The measured check's first story timed out on Vite's cold compile, and a window's test met the states flow's word (FLOWCHART1e, FLOWCHART1b)
+
+- **Symptom:** the full set on 3aeb4b81a failed `web-measured` (2 of 58: the first story of each spec, `page.goto` past the
+  test's 60 s) and `web-unit` (`DetachedSession.test.tsx`'s "heads a chat … idle": *Found multiple elements with the text:
+  idle*). FLOWCHART1e's session saw the first once, on one story in three runs.
+- **Root cause:** Vite compiles the page's modules on their first request; on the loaded machine the CI beside runs on, that
+  first compile took past a test's minute, paid by whichever story each worker opened first. And FLOWCHART1b's states flow in the
+  Timeline view says the session's shown word again below the head, so a whole-window query for the head's word met two.
+- **Fix:** `measured/warm.ts`, the measured config's global setup, loads one story with a bound of its own before any check;
+  the window's test asks the record's head (`header[data-record-head]`) for the word.
+- **Verification:** `npm --prefix src/Daoris.Web run e2e:measured` 58 passed; `DetachedSession.test.tsx` 7 passed.
+
+## 2026-10-20 — A page test walked the driver's whole folder, so no driver change reached its gate (FLOWCHART1b)
+
+- **Symptom:** the full set on 3aeb4b81a failed `tool-tests`' SESSDEL1c scan, "every file outside the page a page's vitest reads
+  is one whose change reaches the web gate": it read `src/Daoris.Desktop/Daoris.Desktop.Driver/` (the folder's probe).
+- **Root cause:** FLOWCHART1b's `partsLife.test.ts` held its words to the driver's `PartBegan` by walking the driver's folder for
+  `SessionEntries.cs`; a walk reads the whole folder, and MOD9e's row sends only the named sources the page parses to the web
+  gate's unit run. The branch ran its vitests, not the tool tests.
+- **Fix:** the test reads the file by name through the shared `driverSource` helper, and MOD9e's row names `SessionEntries.cs`.
+- **Verification:** `partsLife.test.ts` 19 passed, `tsc` clean, the SESSDEL1c and MOD9e cases of `merge-branch.test.ts` pass.
+
+## 2026-10-20 — A new Process test joined the driver's config path by hand (ACCESSSWAP1b)
+
+- **Symptom:** a session the owner's install drove (HEAVYRUN1a3, DOGFOOD1) found `npm run verify` failing on main at d0e51b54b: the
+  home census, "no code joins a home path by hand", named `AccessSwapTickTests.cs:47  Path.Combine(_home, "driver.json")`.
+- **Root cause:** ACCESSSWAP1b's new Process class built its config path by hand; its branch ran its own classes and the quick
+  checks, not the CLI's census, which reads every C# source for a home place joined by hand. Its siblings ask the table.
+- **Fix:** `DaorisHome.Entry(_home, HomeEntry.DriverConfig)`, as `ChatGoesOnProcessTests` does (96a85f758).
+- **Verification:** `home-census.test.ts` 3 passed; `AccessSwapTickTests` (Process) 2 passed. The two `orient-report` tests the
+  session also saw fail pass on main (13); its tree's environment carried the driven session's variables (ENVLEAK1).
+
+## 2026-10-20 — A sign-in panel mounted after Codex printed its code never showed the code (SIGNIN1)
+
+- **Symptom:** found with a faithful stand-in, not yet on the window: a Codex sign-in, whose tool prints its link and its device
+  code in one write and then nothing until the code is entered, leaves a panel mounted after that write (the sign-in's page
+  left and opened again, or its other place opened) on *Waiting for the tool to open the page…* for ever, so the code the tool
+  waits on is never shown there. Codex's sign-in was reported not finishing on the install; whether this is why is not measured.
+- **Root cause:** a harness action's relay (`AgentActions.Relay`) sent each line as `SESSION_OUTPUT` and kept none, and a panel
+  catches up by `TAIL_SESSION`, which read only the sessions' buffers (`SessionOutput`), where `<harness>:<action>` has none: a
+  late panel's tail was empty, and a tool that prints once has nothing later to show. Claude Code's flow hid it, since its
+  browser opens by itself and the person needs no line from the panel. The stand-ins hid it too: Codex's printed only
+  *Successfully logged in* and exited at once.
+- **Fix:** `AgentActions` keeps each action's latest run's lines, bounded as a session's are, its numbers going on across runs,
+  and `ConsoleRoutes`' `TAIL_SESSION` answers them for a key no session holds. Codex's stand-ins now print as 0.160.0 did and
+  wait, reading no input, until the code is entered.
+- **Verification:** `SignInPhasesTests` (modules, `Process`): with the faithful stand-in waiting, `TAIL_SESSION` for
+  `codex-acp:login-new` answers the code line and the phases so far, and the sign-in keeps its account once the code is entered;
+  `CodexAccountProcessTests` (driver) the same through `HarnessActions.LoginAsync`.
 ## 2026-10-20 — The merge tool's prune took a running Daoris session's tree (DOGFOOD1)
 
 - **Symptom:** the first session the owner's install drove on this repository (HEAVYRUN1a3, DOGFOOD1) stopped mid-work and
@@ -44,6 +93,11 @@ repository.
   where it answers the new place.
 - **Fix:** the check waits up to 30 s for the record, asking the table each second, and says where it looked.
 - **Verification:** the next full set's deployment rehearsal; `node --check` here.
+- **Amended 2026-10-20:** the full set on 3cf9d20ec failed the same check after the wait. The record is never the install's: the
+  rehearsal runs the deployed shell with `DAORIS_HOME` at a scratch home (its HERMETIC table), so the record is that home's.
+  The check's subject was the install's own state, which before D172 was `data/` and is now the window's Chromium profile, the
+  table's `window` entry (`profiles/window/`, found by its `chromium/`), which the fixture's install held. The check now asks
+  for that, inside the install.
 
 ## 2026-10-20 — An orphaned-session test failed on its stand-in's teardown, not its assertion (FLAKE1)
 

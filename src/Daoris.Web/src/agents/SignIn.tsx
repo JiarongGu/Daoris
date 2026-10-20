@@ -1,8 +1,9 @@
 import { type FormEvent, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useHarnessCancel, useHarnessInput, useSessionConsole } from '../bridge/shell';
-import { ExternalLink } from '../design/links';
-import { Button, Dot, Icon, Inline, MonoWell } from '../design/ui';
+import { phaseOf, useHarnessCancel, useHarnessInput, useSessionConsole } from '../bridge/shell';
+import { Elapsed } from '../design/phases';
+import { Button, Icon, MonoWell } from '../design/ui';
+import { type SignInPhase, SignInSteps } from './SignInSteps';
 
 /**
  * Signing an account in, on the row that asked for it (2026-09-23).
@@ -16,26 +17,22 @@ import { Button, Dot, Icon, Inline, MonoWell } from '../design/ui';
  * brackets; the prompt never arrived at all, and nothing could have answered it — so the flow could
  * not complete, and every control on the page stayed disabled until the window closed.
  *
- * Three steps, in the order the person meets them, each stated once: open the page (the link is
- * offered here, because a windowless child's "open the browser" is a hope rather than a fact),
- * paste the code the page shows, and the result — which is the row's own pill, not a second
- * sentence here. The tool's own output is one disclosure away and never the surface, the same rule
- * the setting rows follow for their why.
+ * The steps are `SignInSteps`' (SIGNIN1, the UI/UX design §3.2): the driver's phases, each written with its start into the
+ * relay the tool's output takes, drawn as a list standing open, or as the line alone under a row of *What needs you*; the
+ * link, the code and the ask are read from the tool's lines by their shape, and an older host that writes no phases draws
+ * the steps as before, with the time since the press. The tool's own output is one disclosure away and never the surface,
+ * the same rule the setting rows follow for their why; a phase line is the driver's and never shown there.
  *
  * An organism: it holds the console hook ONCE — the steps read the stream and the disclosure shows
  * it, from one subscription rather than two — and the two mutations, and renders only where a shell
  * is attached, because only a driver has a process to answer.
  *
- * `login-new` is signing in to ANOTHER account (D66 §3): the same three steps, with no account to
- * name yet — who it is, is what the sign-in finds out.
- *
- * A device code (CODEXACCT2) runs the second step the other way: Codex signs in by `--device-auth`, since its browser
- * sign-in waits on a local port that Windows reserves on some machines. It opens no page and asks nothing on its
- * input; it prints a link and, on the line after the sentence asking for it, a one-time code the person enters on that
- * page. So the first step says to open the link, and the second shows the code to copy, as the link is copied.
+ * `login-new` is signing in to ANOTHER account (D66 §3): the same steps, with no account to name yet — who it is, is what
+ * the sign-in finds out. A device code (CODEXACCT2) is Codex's: it opens no page and asks nothing on its input, and prints a
+ * link and a one-time code the person enters on that page, with the code's own bound.
  */
 export function SignIn({
-  id, harness, profile, action = 'login', tool, refused, onRetry, onClose,
+  id, harness, profile, action = 'login', tool, refused, failed, failedAt, pressedAt, shown = 'list', onRetry, onClose,
 }: {
   id: string;
   harness: string;
@@ -45,9 +42,16 @@ export function SignIn({
   tool?: string;
   /**
    * The driver's sentence where it refused to start this sign-in (CODEXSIGNIN2): said here, whole, where the press was, with
-   * *Try again* and *Close*, rather than as a toast with the panel gone. Nothing runs then, so no steps and no cancel.
+   * *Try again* and *Close*, rather than as a toast with the panel gone. Nothing runs then, so no cancel.
    */
   refused?: string | null;
+  /** The sentence of a sign-in that ended without signing in, and when (SIGNIN1): the phase it was in failed. */
+  failed?: string | null;
+  failedAt?: number | null;
+  /** When the sign-in was pressed: the time an older host's panel says, since it writes no phases. */
+  pressedAt?: number | null;
+  /** The list standing open, its own surface; or the line alone, under a row of *What needs you* (§3.2). */
+  shown?: 'list' | 'line';
   onRetry?: () => void;
   onClose?: () => void;
 }) {
@@ -58,20 +62,19 @@ export function SignIn({
   const [code, setCode] = useState('');
   const [copied, setCopied] = useState<'link' | 'code' | null>(null);
 
-  // What the tool has said so far, read for the two facts the steps need: where to sign in, and
-  // whether it has asked for the code yet. Both are the harness's own words, matched loosely —
-  // the exact sentence is somebody else's to change.
-  // Measured twice on the real binary: with no stdin it prints the link and asks for the code;
-  // with a stdin it says only "Opening browser…" and waits for the browser to call back. Both are
-  // one flow to the person, so each step says what has actually happened.
-  const url = lines.map((line) => line.text.match(/https?:\/\/\S+/)?.[0]).find(Boolean);
-  const opened = lines.some((line) => /opening.*browser/i.test(line.text));
-  const asked = lines.some((line) => /paste.*code/i.test(line.text));
-  const device = deviceCode(lines.map((line) => line.text));
-  const sent = input.isSuccess;
+  // The driver's phases and the tool's own lines, apart: a phase line is never the tool's words.
+  const phases: SignInPhase[] = [];
+  const texts: string[] = [];
+  for (const line of lines) {
+    const phase = phaseOf(line.text);
+    if (phase) phases.push(phase);
+    else texts.push(line.text);
+  }
+  const ended = Boolean(refused || failed);
+  const starts = phases.filter((each) => each.phase === 'start');
+  const since = starts[starts.length - 1]?.at ?? pressedAt ?? null;
 
-  const copy = async (what: 'link' | 'code', text: string | null | undefined) => {
-    if (!text) return;
+  const copy = async (what: 'link' | 'code', text: string) => {
     try {
       await navigator.clipboard.writeText(text);
       setCopied(what);
@@ -90,145 +93,50 @@ export function SignIn({
 
   const title = profile ? t('signin.title', { profile }) : t('signin.titleNew', { harness: tool ?? harness });
 
-  if (refused) {
-    return (
-      <section aria-label={title} className="mt-2 basis-full rounded-card border border-line bg-raised p-3">
-        <header className="flex items-center gap-2">
-          <span className="text-body font-semibold text-ink">{title}</span>
-        </header>
-        <p role="alert" className="m-0 mt-2 text-small text-ink-danger"><Inline text={refused} /></p>
-        <div className="mt-2 flex flex-wrap items-center gap-2">
-          <Button variant="primary" onClick={onRetry}>{t('signin.retry')}</Button>
-          <Button variant="ghost" onClick={onClose}>{t('signin.close')}</Button>
-        </div>
-      </section>
-    );
-  }
-
   return (
-    <section
-      aria-label={title}
-      className="mt-2 basis-full rounded-card border border-line bg-raised p-3"
-    >
-      <header className="flex items-center gap-2">
-        <Dot tone="live" label={t('console.live')} />
+    <section aria-label={title} className="mt-2 basis-full rounded-card border border-line bg-raised p-3">
+      <header className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
         <span className="text-body font-semibold text-ink">{title}</span>
-        <Button
-          variant="ghost"
-          className="ml-auto"
-          disabled={cancel.isPending}
-          onClick={() => cancel.mutate({ harness, action })}
-        >
-          <Icon name="x" size={13} />
-          {t('signin.cancel')}
-        </Button>
+        {since !== null && !refused && (
+          <Elapsed from={since} to={failed ? failedAt ?? null : null} className="text-meta text-ink-faint" />
+        )}
+        {!ended && (
+          <Button
+            variant="ghost"
+            className="ml-auto"
+            disabled={cancel.isPending}
+            onClick={() => cancel.mutate({ harness, action })}
+          >
+            <Icon name="x" size={13} />
+            {t('signin.cancel')}
+          </Button>
+        )}
       </header>
 
-      <ol className="m-0 mt-2 grid list-none gap-2.5 p-0">
-        <li className="grid grid-cols-[1.25rem_1fr] gap-x-2">
-          <span className="text-small font-semibold text-ink-faint">1</span>
-          <div className="min-w-0">
-            <p className="m-0 text-body text-ink">{t(device ? 'signin.step.openLink' : 'signin.step.open')}</p>
-            {url ? (
-              <div className="mt-1 flex flex-wrap items-center gap-2">
-                {/* Always the system's browser, whatever links are set to (BRW7): an account's sign-in is
-                    the person's own, and never belongs in a browser any process here can drive. */}
-                <ExternalLink
-                  href={url}
-                  system
-                  className="inline-flex max-w-full items-center gap-1 truncate font-mono text-small text-accent underline-offset-2 hover:underline"
-                >
-                  <Icon name="external" size={12} />
-                  <span className="truncate">{url}</span>
-                </ExternalLink>
-                <Button variant="ghost" onClick={() => copy('link', url)}>
-                  <Icon name="copy" size={12} />
-                  {copied === 'link' ? t('signin.copied') : t('signin.copy')}
-                </Button>
-                <span className="text-meta text-ink-faint">{t('signin.step.openHint')}</span>
-              </div>
-            ) : (
-              <p className="m-0 mt-0.5 text-small text-ink-faint">
-                {t(opened ? 'signin.opened' : 'signin.waiting')}
-              </p>
-            )}
+      <SignInSteps
+        title={title}
+        tool={tool ?? harness}
+        action={action}
+        phases={phases}
+        texts={texts}
+        refused={refused}
+        failed={failed}
+        failedAt={failedAt}
+        shown={shown}
+        acts={{
+          copied, onCopy: (what, text) => { void copy(what, text); }, code, onCode: setCode, onSend: submit,
+          sending: input.isPending, sent: input.isSuccess, onRetry, onClose,
+        }}
+      />
+
+      {!refused && (
+        <details className="mt-2">
+          <summary className="cursor-pointer text-meta text-ink-faint">{t('signin.output')}</summary>
+          <div className="mt-2">
+            <MonoWell label={t('console.label')} live={live} dropped={dropped} text={texts.join('\n')} />
           </div>
-        </li>
-
-        <li className="grid grid-cols-[1.25rem_1fr] gap-x-2">
-          <span className="text-small font-semibold text-ink-faint">2</span>
-          <div className="min-w-0">
-            <p className="m-0 text-body text-ink">{t(device && !asked ? 'signin.step.enter' : 'signin.step.code')}</p>
-            {asked ? (
-              sent ? (
-                <p className="m-0 mt-0.5 text-small text-ink-soft">{t('signin.sent')}</p>
-              ) : (
-                <form className="mt-1 flex flex-wrap items-center gap-2" onSubmit={submit}>
-                  <input
-                    autoFocus
-                    value={code}
-                    onChange={(event) => setCode(event.target.value)}
-                    aria-label={t('signin.codeLabel')}
-                    placeholder={t('signin.codePlaceholder')}
-                    spellCheck={false}
-                    className="min-w-56 flex-1 rounded-control border border-line-strong bg-raised px-2.5 py-1 font-mono text-small text-ink outline-none placeholder:text-ink-faint"
-                  />
-                  <Button type="submit" variant="primary" disabled={input.isPending || !code.trim()}>
-                    {t('signin.continue')}
-                  </Button>
-                </form>
-              )
-            ) : device ? (
-              <div className="mt-1 flex flex-wrap items-center gap-2">
-                <span className="select-all font-mono text-body font-semibold text-ink">{device}</span>
-                <Button variant="ghost" onClick={() => copy('code', device)}>
-                  <Icon name="copy" size={12} />
-                  {copied === 'code' ? t('signin.copied') : t('signin.copyCode')}
-                </Button>
-              </div>
-            ) : (
-              <p className="m-0 mt-0.5 text-small text-ink-faint">{t('signin.codeLater')}</p>
-            )}
-          </div>
-        </li>
-
-        <li className="grid grid-cols-[1.25rem_1fr] gap-x-2">
-          <span className="text-small font-semibold text-ink-faint">3</span>
-          <p className="m-0 text-small text-ink-soft">
-            {t(action === 'login-new' ? 'signin.readyNew' : 'signin.ready')}
-          </p>
-        </li>
-      </ol>
-
-      <details className="mt-2">
-        <summary className="cursor-pointer text-meta text-ink-faint">{t('signin.output')}</summary>
-        <div className="mt-2">
-          <MonoWell
-            label={t('console.label')}
-            live={live}
-            dropped={dropped}
-            text={lines.map((line) => line.text).join('\n')}
-          />
-        </div>
-      </details>
+        </details>
+      )}
     </section>
   );
-}
-
-/**
- * The one-time code a tool shows for the person to enter on its page (CODEXACCT2, CODEXSIGNIN3): read by its own shape, not by
- * a version's words, since the sentence asking for it is the tool's to change. Codex prints a link to its device page and then
- * a code of capital letters and digits in groups joined by a hyphen (`ABCD-12345` in 0.160.0, on the line after
- * `2. Enter this one-time code (expires in 15 minutes)`), so the code is the first such group after the first line with a
- * link, or null where none is shown yet. A line with a link is never the code.
- */
-function deviceCode(texts: readonly string[]): string | null {
-  const linked = texts.findIndex((text) => /https?:\/\/\S+/.test(text));
-  if (linked < 0) return null;
-  for (const text of texts.slice(linked + 1)) {
-    if (/https?:\/\/\S+/.test(text)) continue;
-    const found = text.match(/(?<![\w-])[A-Z0-9]{3,}(?:-[A-Z0-9]{3,})+(?![\w-])/)?.[0];
-    if (found) return found;
-  }
-  return null;
 }

@@ -138,6 +138,34 @@ describe('the attended session', () => {
   });
 
   /**
+   * FLOWCHART1b (the flowchart design §2.3): Accept's plan, read once its ask is open, is where the parts would land: a dashed node in
+   * the parts' flow beside the press, drawn from the same plan and not before it is open.
+   */
+  it('draws the landing plan Accept read as a prospective node in the parts\' flow, once its ask is open', async () => {
+    const { EVIDENCE_ENTRIES, EVIDENCE_SESSIONS } = await import('./entries.fixtures');
+    vi.useRealTimers();
+    vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function (this: HTMLElement) {
+      const width = this.hasAttribute('data-flow-pane') ? 1200 : 0;
+      return { width, height: 0, top: 0, left: 0, right: width, bottom: 0, x: 0, y: 0, toJSON: () => ({}) } as DOMRect;
+    });
+    vi.stubGlobal('ResizeObserver', class { observe() {} unobserve() {} disconnect() {} });
+    try {
+      const rows = Object.fromEntries(EVIDENCE_SESSIONS.map((row) => [row.id, { session: row }]));
+      const plan = { entry: EVIDENCE_ENTRIES[0]!.entry, repository: 'app', form: 'branch', target: 'daoris/t-one', parts: [{ session: 'ap000001' }, { session: 'ap000002' }] };
+      const accept = { scope: 'entry' as const, offered: 2, open: false, onOpen: vi.fn(), plans: [plan], onLand: vi.fn() };
+      const parts = { entry: EVIDENCE_ENTRIES[0]!, attended: 'ap000003', rows, onShow: vi.fn() };
+      const { rerender } = render(<AttendedSession session={session({ id: 'ap000003' })} parts={parts} entryAccept={accept} />);
+      expect(screen.queryByText('Accept would land these on daoris/t-one')).toBeNull();
+
+      rerender(<AttendedSession session={session({ id: 'ap000003' })} parts={parts} entryAccept={{ ...accept, open: true }} />);
+      expect(screen.getByRole('listitem', { name: /^Accept would land these on daoris\/t-one/ })).toBeInTheDocument();
+    } finally {
+      vi.restoreAllMocks();
+      vi.unstubAllGlobals();
+    }
+  });
+
+  /**
    * One rule for where a parked session's note is shown, read by the column AND the dock (REV3). The
    * dock hid the note of every parked session, while the head shows it only where it can be answered
    * here — so another machine's parked note, on a wide window, was shown nowhere.

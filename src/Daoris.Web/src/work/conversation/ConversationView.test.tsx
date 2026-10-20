@@ -790,6 +790,70 @@ describe('ConversationView', () => {
   });
 
   /**
+   * COWORK1c (the message-urgency design §6, §8.2): a word a shell before attempted may have reached its agent, so it was never sent
+   * again; where it was the person's own, *Say it again* is their press, which hands its words back to be said anew. Daoris's words,
+   * and a page with no door to say them, offer none. Both languages.
+   */
+  it('offers the person’s own uncertain words a press that says them again, in both languages', async () => {
+    const uncertain = (from?: 'daoris') => [
+      ev({ kind: 'user', origin: from ? 'target' : 'person', ...(from ? { from } : {}), id: 'w1', reaches: 'turn-end', text: 'Use port 9090.' }),
+      ev({ kind: 'note', text: '— it may have read what you added; its answer was not kept.', words: ['w1'], code: 'lost' }),
+    ];
+    const onSayAgain = vi.fn();
+    const { unmount } = view(uncertain(), { onSayAgain });
+    expect(screen.getByText('It may have read this; its answer was not kept.')).toBeTruthy();
+    await userEvent.click(screen.getByRole('button', { name: 'Say it again' }));
+    expect(onSayAgain).toHaveBeenCalledWith(['Use port 9090.']);
+    unmount();
+
+    const { unmount: daoris } = view(uncertain('daoris'), { onSayAgain });
+    expect(screen.queryByRole('button', { name: 'Say it again' })).toBeNull();
+    daoris();
+    const { unmount: doorless } = view(uncertain());
+    expect(screen.queryByRole('button', { name: 'Say it again' })).toBeNull();
+    doorless();
+
+    await i18n.changeLanguage('zh');
+    try {
+      view(uncertain(), { onSayAgain });
+      expect(screen.getByRole('button', { name: '再说一次' })).toBeTruthy();
+    } finally {
+      await i18n.changeLanguage('en');
+    }
+  });
+
+  /**
+   * COWORK1c (the message-urgency design §7, §8.2): what the door observed of a word folds under the ask it became, each where it was
+   * observed and never otherwise: sent, taken and answered, each with its moment. Both languages.
+   */
+  it('folds a word’s receipts under its ask, each only where observed, in both languages', async () => {
+    const received = (answered: boolean) => [
+      ev({ kind: 'user', origin: 'person', id: 'w1', reaches: 'turn-end', text: 'and the readme' }),
+      { ...ev({ kind: 'receipt', id: 'w1' }), receipt: 'sent' },
+      ev({ kind: 'user', origin: 'person', id: 'w1', text: 'and the readme' }),
+      ev({ kind: 'message', text: 'on it' }),
+      ev({ kind: 'turn', stopReason: 'end_turn' }),
+      ...(answered ? [{ ...ev({ kind: 'receipt', id: 'w1' }), receipt: 'answered' }] : []),
+    ];
+    const { container, unmount } = view(received(true));
+    const fold = container.querySelector('[data-receipts]');
+    expect(fold?.textContent).toMatch(/^sent [^·]+ · taken [^·]+ · answered [^·]+$/);
+    unmount();
+
+    const { container: unanswered, unmount: shown } = view(received(false));
+    expect(unanswered.querySelector('[data-receipts]')?.textContent).toMatch(/^sent [^·]+ · taken [^·]+$/);
+    shown();
+
+    await i18n.changeLanguage('zh');
+    try {
+      const { container: zh } = view(received(true));
+      expect(zh.querySelector('[data-receipts]')?.textContent).toMatch(/^已发出 [^·]+ · 已收下 [^·]+ · 已回应 [^·]+$/);
+    } finally {
+      await i18n.changeLanguage('en');
+    }
+  });
+
+  /**
    * CONVNOTE1 (D125's SIGNIN1b note): a conversation its agent refused for its sign-in carries the driver's note with its
    * parts, and the page words it from them in the reader's language, as a session record's note is (LANG1b). The driver's
    * English is never shown where the page could word it, and a part the page cannot word shows as recorded, marked.

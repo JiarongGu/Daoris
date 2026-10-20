@@ -317,6 +317,10 @@ jobs:
       - name: Web end-to-end
         run: npm run test:web:e2e
 
+      # The measured-box check (FLOWCHART1e): the flowchart's and the setting rows' stories in Chromium, every box measured.
+      - name: Web measured boxes
+        run: npm run test:web:measured
+
       # Packed from the package directory, where `prepack` stages the canon, the
       # licence and the readme in from the workspace root.
       - name: Pack

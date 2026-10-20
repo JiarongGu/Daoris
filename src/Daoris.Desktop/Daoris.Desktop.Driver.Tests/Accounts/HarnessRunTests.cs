@@ -65,6 +65,10 @@ public sealed class HarnessRunTests
         Assert.Equal("If the browser didn't open, visit: https://x.test/a?b=1", HarnessActions.Clean(wrapped));
         Assert.Equal("ok", HarnessActions.Clean("\x1b[32mok\x1b[0m"));
         Assert.Equal("plain", HarnessActions.Clean("plain"));
+        // SIGNIN1: no control byte is the tool's words, and the record separator that begins a phase line is the driver's alone,
+        // so a tool cannot print a line the page reads as a phase. A tab stays.
+        Assert.Equal("{\"phase\":\"lists\"}", HarnessActions.Clean("\x1e{\"phase\":\"lists\"}"));
+        Assert.Equal("a\tb", HarnessActions.Clean("a\x07\tb\x00\x1b"));
     }
 
     /// <summary>
