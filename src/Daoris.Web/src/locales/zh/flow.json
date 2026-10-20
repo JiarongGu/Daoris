@@ -11,5 +11,14 @@
   "flow.moves": "{{first}}；{{second}}",
   "flow.back": "回到 {{node}}，{{says}}。",
   "flow.footBack": "回到 {{node}}，{{says}}",
-  "flow.join": "{{first}}{{second}}"
+  "flow.join": "{{first}}{{second}}",
+  "flow.stack.title": "{{word}} ×{{count}}",
+  "flow.stack.when": "最早 {{first}}，最晚 {{last}}",
+  "flow.stack.open": "展开全部 {{count}} 个",
+  "flow.stack.close": "重新收起这 {{count}} 个",
+  "flow.stack.holds": "共 {{count}} 个同类：{{word}}。",
+  "flow.stack.between": "其间：{{says}}。",
+  "flow.stack.times": "{{says}} ×{{count}}",
+  "flow.stack.member": "{{count}} 个同类中的第一个：按 Enter 重新收起。",
+  "flow.stack.memberPress": "{{count}} 个同类中的第一个，用其中的按钮重新收起。"
 }

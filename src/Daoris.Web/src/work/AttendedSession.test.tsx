@@ -139,6 +139,22 @@ describe('the attended session', () => {
   });
 
   /**
+   * FLOWCHART1c (the flowchart design §2.7): the work's milestone opens how its landing branch landed, on that branch's page, by
+   * the branch the unit's landing made and never by its session; a unit no landing branch names offers nothing.
+   */
+  it("opens how its work's landing branch landed from the milestone, and nothing where no landing branch is named", async () => {
+    vi.useRealTimers();
+    const { SHARED_UNITS, WAITING_UNITS } = await import('../projects/git/landingFixtures');
+    const onOpenBranch = vi.fn();
+    const { rerender } = render(<AttendedSession session={session()} milestone={SHARED_UNITS[1]!} onOpenBranch={onOpenBranch} />);
+    screen.getByRole('button', { name: 'How review/q6-asset-cache landed' }).click();
+    expect(onOpenBranch).toHaveBeenCalledWith('engine', 'review/q6-asset-cache');
+
+    rerender(<AttendedSession session={session()} milestone={{ ...WAITING_UNITS[0]!, result: [] }} onOpenBranch={onOpenBranch} />);
+    expect(screen.queryByRole('button', { name: /landed$/ })).toBeNull();
+  });
+
+  /**
    * SESSONE1c (D167 point 5): a session that is a part of an entry of several shows its parts under its head, and a press shows
    * another part; a record alone shows no strip.
    */

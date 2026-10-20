@@ -2,11 +2,15 @@ import { useMemo, useState } from 'react';
 import {
   type GitAnswer, type GitBranch, type GitGraphPage, type GitLogCommit, type GitRepositoryBranches, gitRefusal, useGitBranches, useGitGraphPages,
 } from '../../bridge/repositories/git';
+import { useWorkState } from '../../bridge/repositories/lines';
 import { useSessionOpenings } from '../../bridge/sessions/sessions';
+import { useTrace } from '../../bridge/sessions/trace';
 import { sentence } from '../../locales/format';
 import { useQuests, useSessions } from '../../data/queries';
 import { questName, sessionTitle } from '../../work/identity';
 import { BranchPage, type BranchRead } from './BranchPage';
+import type { LandingDoor } from './LandingFlow';
+import { landingOf } from './landingLife';
 import { BranchesTab, type GitRead, HistoryTab, type HistoryRead } from './RepositoryGit';
 import { WorkspaceBranches, type WorkspaceGroups } from '../workspace/WorkspaceBranches';
 
@@ -42,7 +46,7 @@ export function RepositoryBranches({ repository, workspace, here, onOpenBranch, 
  * list joins it, and its graph since it parted from its line: `GIT_GRAPH` with `sinceParted` and the two tips D147 names, the
  * branch's commit then the line's, a page at a time. A branch the list no longer holds is said gone, and asks no graph.
  */
-export function RepositoryBranch({ repository, workspace, here, branch, onBack }: {
+export function RepositoryBranch({ repository, workspace, here, branch, onBack, landingOpen = false }: {
   repository: string;
   workspace: string;
   here: boolean;
@@ -50,9 +54,11 @@ export function RepositoryBranch({ repository, workspace, here, branch, onBack }
   branch: string;
   /** Back to the repository's Branches. */
   onBack: () => void;
+  /** Opened by a door into how it landed (FLOWCHART1c: the work's milestone, a run's landing step): that section opens with the page. */
+  landingOpen?: boolean;
 }) {
   return here
-    ? <BranchPageRead repository={repository} workspace={workspace} name={branch} onBack={onBack} />
+    ? <BranchPageRead repository={repository} workspace={workspace} name={branch} onBack={onBack} landingOpen={landingOpen} />
     : <BranchPage repository={repository} name={branch} read={{ state: 'noCheckout' }} onBack={onBack} />;
 }
 
@@ -257,9 +263,12 @@ function HistoryRead({ repository, workspace }: { repository: string; workspace:
  * with the branch's tip then the line's, as `sinceParted` requires, and drawn with the line's first, so the line keeps the
  * leftmost lane as it does in History.
  */
-function BranchPageRead({ repository, workspace, name, onBack }: { repository: string; workspace: string; name: string; onBack: () => void }) {
+function BranchPageRead({ repository, workspace, name, onBack, landingOpen }: {
+  repository: string; workspace: string; name: string; onBack: () => void; landingOpen: boolean;
+}) {
   const list = useRepositoryBranches(repository, workspace);
   const branch = list.state === 'read' ? list.value.branches.find((each) => each.name === name) ?? null : null;
+  const landing = useLandingDoor(repository, name, branch?.landed?.session ?? null, landingOpen);
   const line = list.state === 'read' ? list.value.line : null;
   const tip = branch?.commit ?? null;
   const lineTip = line?.commit ?? null;
@@ -276,7 +285,32 @@ function BranchPageRead({ repository, workspace, name, onBack }: { repository: s
     if (!lineTip) return { state: 'read', value, graph: { state: 'noLine' } };
     return { state: 'read', value, graph: graph.state === 'read' ? { state: 'read', value: { tips: drawn, ...graph.value } } : graph };
   })();
-  return <BranchPage repository={repository} name={name} read={read} onBack={onBack} onMore={onMore} />;
+  return <BranchPage repository={repository} name={name} read={read} onBack={onBack} onMore={onMore} landing={landing} />;
+}
+
+/**
+ * How a landed branch landed, read once its section opens (FLOWCHART1c; the flowchart design §2.7): the trace of the session its
+ * landing record names (`TRACE`), which carries the landing with its advances and units and that session's due entry, and the units
+ * of work the branch carries (`WORK_STATE` by the branch, in this repository), which carry the end, the clean-up and the recovery.
+ * Never by a unit's executor, which is any of its sessions: the record names the one it was made for. Absent where the branch is no
+ * landing's, and where nothing reads the trace (a browser, D47 §4).
+ */
+function useLandingDoor(repository: string, name: string, session: string | null, opened: boolean): LandingDoor | undefined {
+  const [open, setOpen] = useState(opened);
+  const asked = open && session ? session : null;
+  const trace = useTrace('session', asked);
+  const work = useWorkState(name, asked !== null);
+  if (!session || !trace.available) return undefined;
+  const of = trace.query.data ? landingOf(trace.query.data, session, name) : undefined;
+  const units = work.data ? work.data.units.filter((unit) => same(unit.repository, repository)) : null;
+  return {
+    open,
+    onToggle: () => setOpen((was) => !was),
+    reading: asked !== null && trace.query.isPending,
+    refusal: trace.query.error ? sentence(trace.query.error) : null,
+    landing: of === undefined ? undefined : of === null ? null : { name, ...of, units },
+    unitsUnread: Boolean(work.error),
+  };
 }
 
 /**

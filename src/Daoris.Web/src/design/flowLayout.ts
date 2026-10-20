@@ -30,12 +30,35 @@
  */
 export type EdgeStyle = 'next' | 'failed' | 'rejected' | 'refused' | 'conditional';
 
-/** What the layout reads of a flow: its nodes in declared order, its edges, and where it is entered. */
+/**
+ * What the layout reads of a flow: its nodes in declared order, its edges, and where it is entered. A node's `stack` is what makes
+ * it like another for a stack (FLOWCHART1c): a try's code, a kind and its state. Absent, the node never stacks.
+ */
 export type FlowShape = {
-  nodes: readonly { id: string }[];
+  nodes: readonly { id: string; stack?: string }[];
   edges: readonly { id: string; from: string; to: string; style?: EdgeStyle }[];
   entries: readonly string[];
 };
+
+/**
+ * A stack (FLOWCHART1c; the flowchart design §3.5, §3.6 step 1): three or more like nodes, each following the one before in a
+ * chain, which a flow draws as one fold until it is opened. Its edges are named apart: those into its first member and out of its
+ * last cross its boundary and are drawn to the fold; those between its members are said in its description.
+ */
+export type Stack = {
+  /** The fold's id, from its first member's, so it is the same while the shape is. */
+  id: string;
+  /** What its members share. */
+  key: string;
+  /** Its members, in the chain's order. */
+  members: string[];
+  into: string[];
+  out: string[];
+  within: string[];
+};
+
+/** Fewer than three like nodes stay apart, so a single retry stays visible (§3.6). */
+const STACK_LEAST = 3;
 
 /** One place in a rank: a node, or a waypoint slot one path takes through the rank. */
 export type Slot = { kind: 'node'; id: string } | { kind: 'way'; path: string; key: string };
@@ -177,6 +200,51 @@ export function layoutFlow(shape: FlowShape): FlowLayout {
 
   const order = ranks.flatMap((slots) => slots.flatMap((slot) => (slot.kind === 'node' ? [slot.id] : [])));
   return { ranks, rank, order, paths, lanes: back.length };
+}
+
+/**
+ * The stacks in a flow (FLOWCHART1c; the flowchart design §3.6 step 1, D191): each run of three or more like nodes, every one a
+ * link of a chain (at most one edge in and one out, never to itself), each following the one before. Two like nodes stay apart.
+ * Pure, and reads only the shape: a node's `stack`, its edges' ends and the declared order, so the same graph stacks the same way.
+ * A stack applies at any size, where §3.6's other folds wait for 24 nodes: an instance repeats itself (a try, an advance), and a
+ * repeat said once is what a person reads.
+ */
+export function findStacks(shape: FlowShape): Stack[] {
+  const known = new Set(shape.nodes.map((node) => node.id));
+  const key = new Map(shape.nodes.flatMap((node) => (node.stack === undefined ? [] : [[node.id, node.stack] as const])));
+  const into = new Map<string, string[]>();
+  const out = new Map<string, { id: string; to: string }[]>();
+  for (const edge of shape.edges) {
+    if (!known.has(edge.from) || !known.has(edge.to)) continue;
+    into.set(edge.to, [...(into.get(edge.to) ?? []), edge.id]);
+    out.set(edge.from, [...(out.get(edge.from) ?? []), { id: edge.id, to: edge.to }]);
+  }
+  const selfLooped = new Set(shape.edges.filter((edge) => edge.from === edge.to).map((edge) => edge.from));
+  const link = (id: string) => key.has(id) && !selfLooped.has(id) && (into.get(id)?.length ?? 0) <= 1 && (out.get(id)?.length ?? 0) <= 1;
+  const next = (id: string) => out.get(id)?.[0]?.to;
+  const previous = new Map<string, string>();
+  for (const [from, edges] of out) for (const edge of edges) previous.set(edge.to, from);
+
+  const stacks: Stack[] = [];
+  for (const { id } of shape.nodes) {
+    if (!link(id)) continue;
+    // A run starts where the node before it is not a like link: a loop of like nodes has no start, and stacks nothing.
+    const before = previous.get(id);
+    if (before !== undefined && link(before) && key.get(before) === key.get(id) && next(before) === id) continue;
+    const members = [id];
+    for (let at = next(id); at !== undefined && link(at) && key.get(at) === key.get(id) && !members.includes(at); at = next(at)) members.push(at);
+    if (members.length < STACK_LEAST) continue;
+    const last = members[members.length - 1]!;
+    stacks.push({
+      id: `stack:${id}`,
+      key: key.get(id)!,
+      members,
+      into: into.get(id) ?? [],
+      out: (out.get(last) ?? []).map((edge) => edge.id),
+      within: members.slice(0, -1).map((member) => out.get(member)![0]!.id),
+    });
+  }
+  return stacks;
 }
 
 /**

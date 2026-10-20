@@ -19,6 +19,8 @@ export type RunDoors = {
   ask?: (id: string) => void;
   /** A session's review, where its work is accepted. */
   review?: (session: string) => void;
+  /** A landed branch's page in its repository, with how it landed (FLOWCHART1c). */
+  branch?: (repository: string, branch: string) => void;
 };
 
 /** The run as a chart's workflow: its Current, each step as the driver drew it, a step the work added among them. */
@@ -107,6 +109,10 @@ function doorOf(t: ReturnType<typeof useTranslation>['t'], run: WorkflowRun, ste
   }
   if (kind === 'landing' && ['waiting-on-you', 'cannot-start'].includes(step.state) && step.session && doors?.review) {
     return button(t('workflow.run.door.review'), () => doors.review?.(step.session!));
+  }
+  // Landed on a branch (FLOWCHART1c): its page draws how it landed. A landing into the line keeps no branch, so it has none.
+  if (kind === 'landing' && step.state === 'done' && step.detail === 'branch' && step.branch && doors?.branch) {
+    return button(t('landing.door', { branch: step.branch }), () => doors.branch?.(run.repository, step.branch!));
   }
   if (kind === 'pull-request' && step.pullRequest) {
     return (

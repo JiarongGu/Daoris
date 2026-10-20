@@ -88,6 +88,19 @@ describe('the opener', () => {
     expect(doorOpening({ view: 'projects', item: 'engine', tab: 'setup' })).toEqual(opening('projects', 'engine', { tab: 'setup' }));
   });
 
+  /**
+   * FLOWCHART1c: a door into how a landed branch landed (the work's milestone, a run's landing step) opens its repository at
+   * Branches with that branch's page; it names the branch with its repository, and nothing on any other view.
+   */
+  it('opens a landed branch\'s page on its repository\'s Branches, where the door names the repository', () => {
+    expect(opening('projects', 'engine', { branch: 'review/q6-asset-cache' })).toEqual({
+      view: 'projects', chosen: { view: 'projects', item: 'engine' }, tab: 'branches',
+      branch: { repository: 'engine', branch: 'review/q6-asset-cache' },
+    });
+    expect(opening('projects', null, { branch: 'review/q6-asset-cache' })).toEqual({ view: 'projects' });
+    expect(opening('quests', 'abc123', { branch: 'review/q6-asset-cache' })).toEqual({ view: 'quests', chosen: { view: 'quests', item: 'abc123' } });
+  });
+
   /** UX6g (D150 §4.1): Repositories' list holds workspaces and repositories, so an item there names which. */
   it('names a workspace as a workspace, since Repositories\' list holds both', () => {
     expect(workspaceItem('aurora')).toBe('workspace:aurora');

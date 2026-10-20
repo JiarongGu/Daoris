@@ -11,6 +11,7 @@ import * as driver from '../src/settings/Driver.stories';
 import * as wiring from '../src/settings/wiring/Wiring.stories';
 import * as parts from '../src/work/head/PartsFlow.stories';
 import * as session from '../src/work/head/SessionFlow.stories';
+import * as landing from '../src/projects/git/LandingFlow.stories';
 import * as head from '../src/work/AttendedSession.head.stories';
 
 // The measured-box checks' page (FLOWCHART1a1; the flowchart design §7, trap 3; UIFIT1, the UI/UX design §5's first trap):
@@ -28,6 +29,8 @@ const books: Record<string, Record<string, ComponentType>> = {
   session: composeStories(session) as unknown as Record<string, ComponentType>,
   // A session's parts (FLOWCHART1b): a fork and a retry, an asked part from a faint node, the landing plan as a dashed node.
   parts: composeStories(parts) as unknown as Record<string, ComponentType>,
+  // How a landed branch landed (FLOWCHART1c): tries and advances stacked, the push and the pull request hung apart from the landing.
+  landing: composeStories(landing) as unknown as Record<string, ComponentType>,
   // Settings' rows on their tracks (UIFIT1): the atoms' story, This Daoris, Driver and AI features whole, and a workspace's Setup.
   ui: composeStories(ui) as unknown as Record<string, ComponentType>,
   wiring: composeStories(wiring) as unknown as Record<string, ComponentType>,

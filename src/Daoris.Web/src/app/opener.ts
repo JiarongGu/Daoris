@@ -55,6 +55,8 @@ export type OpenPart = {
   anchor?: SettingsAnchor; drawer?: 'add' | 'import'; drawerWorkspace?: string; tab?: ProjectTab; code?: string; agentPart?: AgentPart;
   workspaceTab?: WorkspaceTab; workspaceSection?: WorkspaceSection; knowledge?: KnowledgeMode; group?: OpenGroup;
   compose?: Compose;
+  /** A landed branch of the repository the door names, whose page opens with how it landed (FLOWCHART1c). */
+  branch?: string;
 };
 
 /** What opening a view does, as a value. */
@@ -107,6 +109,11 @@ export type Opening = {
   group?: OpenGroup;
   /** The composer opened with these (NEW1d-b): Sessions' main area, the repository chosen and the words in. */
   compose?: Compose;
+  /**
+   * A landed branch's page to open on its repository's Branches, with how it landed open (FLOWCHART1c): the work's milestone and a
+   * run's landing step name it. Page state of Repositories', so it is an event its view consumes, as a drawer is.
+   */
+  branch?: { repository: string; branch: string };
 };
 
 const listed =(view: View): view is View & ListView => Object.hasOwn(LIST_BOUNDS, view);
@@ -137,6 +144,11 @@ export function opening(view: View, item?: string | null, part: OpenPart = {}, h
     if (part.drawerWorkspace) plan.drawerWorkspace = part.drawerWorkspace;
   }
   if (view === 'projects' && part.tab) plan.tab = part.tab;
+  // A branch is a repository's: with none named, there is no page to open it on.
+  if (view === 'projects' && part.branch && item && 'repository' in projectsItem(item)) {
+    plan.tab = 'branches';
+    plan.branch = { repository: item, branch: part.branch };
+  }
   if (view === 'projects' && workspaceTab) plan.workspaceTab = workspaceTab;
   if (view === 'projects' && part.workspaceSection) plan.workspaceSection = part.workspaceSection;
   if (view === 'map' && part.code) plan.code = part.code;

@@ -11,6 +11,11 @@ with the version and date at release.
   and *Not now* (or `daoris-driver sessions hand-over <id> --approve|--decline`); set to take it, the session goes on with the next
   agent in your order once its turn ends, never in the middle of one; set to refuse, the session's timeline says so. A session that
   was itself just handed over cannot ask again before a turn of its own.
+- A landed branch's page draws how it landed as a flowchart, folded under *How it landed* above its commits until you open it:
+  its tries to land, three alike in a row folded into one you can open, the landing with who accepted it, each later session that
+  moved it on, the push, its pull request's latest answer, where its work ended, its clean-up and what is kept for recovery. The
+  work's milestone on a session's page and a run's landing step open it. `daoris-driver trace` now names the session a landing was
+  made for, each session that moved it on, and the units of work it carries, and finds the landing from any of those sessions.
 - Where a piece of work stands reads in one line on a session's record, folded: *Ended · clean-up pending · recovery kept
   until 10 Nov*, which says *blocked* and *held for you* when something waits on you, and opens in place to four facts, the end,
   the result, the clean-up and the recovery, each marked by its own colour: reached and kept in green, a clean-up that waits in

@@ -69,7 +69,7 @@ const list = <T,>(value: unknown): T[] => (Array.isArray(value) ? value as T[] :
 export function useProjectsView({
   active, chosen, onChoose, tab = 'details', onTab, workspaceTab = 'details', onWorkspaceTab, workspaceSection = null, notify,
   onOpenCode, onOpenAgent, onOpenPlugin, onSyncNow, syncing = false, addRequested = false, onAddOpened, importRequested = false, onImportOpened,
-  drawerWorkspace = null, onOpenQuest, onOpenAsk, onAttend,
+  drawerWorkspace = null, onOpenQuest, onOpenAsk, onAttend, branchAsked = null, onBranchOpened,
 }: {
   /** The view is in front: only then are its errors said. */
   active: boolean;
@@ -119,6 +119,13 @@ export function useProjectsView({
   onOpenQuest?: (id: string) => void;
   onOpenAsk?: (id: string) => void;
   onAttend?: (session: string) => void;
+  /**
+   * A door into how a landed branch landed (FLOWCHART1c: the work's milestone, a run's landing step), an EVENT like the drawers':
+   * the branch's page opens on its repository's Branches with that section open, and its holder lets the word go through
+   * `onBranchOpened`. The door's opening chose the repository and the tab already.
+   */
+  branchAsked?: { repository: string; branch: string } | null;
+  onBranchOpened?: () => void;
 }): ViewLayout {
   const { t } = useTranslation();
   // A chosen item names a workspace or a repository (UX6g, §4.1).
@@ -232,7 +239,13 @@ export function useProjectsView({
   const [managing, setManaging] = useState<Registration | null>(null);
   // The branch open on a repository's page (UX6h3b): page state, as the Map holds its code map, never remembered across a
   // restart. It shows while its repository is chosen at Branches, whose page it is, and its way back clears it.
-  const [branchOpen, setBranchOpen] = useState<{ repository: string; branch: string } | null>(null);
+  // A door into how it landed opens it with that section open (FLOWCHART1c); the list's presses open the page alone.
+  const [branchOpen, setBranchOpen] = useState<{ repository: string; branch: string; landing?: boolean } | null>(null);
+  useEffect(() => {
+    if (!branchAsked) return;
+    setBranchOpen({ ...branchAsked, landing: true });
+    onBranchOpened?.();
+  }, [branchAsked, onBranchOpened]);
   // The list's own press opens the item it names, never a branch left open on it.
   const choose = (item: string | null) => {
     setBranchOpen(null);
@@ -588,6 +601,7 @@ export function useProjectsView({
           workspace={workspaceOf(shown)}
           here={Boolean(shown.root)}
           branch={branchShown}
+          landingOpen={branchOpen?.landing === true}
           onBack={() => {
             // The focus goes back to the branch's name button (UX6h3d); a branch no longer listed leaves it on the page's heading.
             const label = t('projects.git.branches.open', { branch: branchShown });

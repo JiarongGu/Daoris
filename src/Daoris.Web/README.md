@@ -236,6 +236,16 @@ began are said only where the page holds that part's record. The strip is the fl
 person chose the list (`Flow`'s `rail`), and a press on a node, or Enter on it, shows that part as the strip's button did. The
 measured check (`e2e:measured`) draws both flows' stories in a rendered browser, each frame with a ceiling of crossings.
 
+A landed branch's page draws how it landed (FLOWCHART1c, D186): a section above its commits, folded until it is opened, then read
+by the branch (`projects/git/RepositoryGitView.tsx`'s `useLandingDoor`): `TRACE` for the session its landing record names, whose
+landing carries the session it was made for, each advance with its session, and the units it carries, and `WORK_STATE` for the
+branch, whose units carry the end, the clean-up and the recovery. `projects/git/landingLife.ts` draws the due entry's tries by
+their codes (`AutoLandingCode`, held to the driver's source with `EndBy`, `PullRequestStates` and `LandedKind`), the landing and
+its advances, the push as a fact with no time and the pull request's latest answer as a snapshot, each hung from the landing.
+`Flow` folds three or more like nodes in a chain into a stack (`flowLayout.ts`' `findStacks`), its boundary edges kept and the
+edges between its members said in its description. The work's milestone and a run's landing step open the page through the
+application's opener (`opening`'s `branch`), with the section open.
+
 A session's record folds where its work stands (`work/head/WorkMilestone`, MILESTONEUX1, the UI/UX design §3.7 and R4): the
 milestone's end, result, clean-up and recovery are four independent facts, each marked by `Dot`'s own tone for its value
 (`done` for what is reached or kept, `waits` for what waits on another, the danger hue for a blocked entry, none for a
