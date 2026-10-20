@@ -813,6 +813,88 @@ describe('the Agents place', () => {
   });
 
   /**
+   * CODEXLOGIN1: Codex signs in by its browser first and its device code beside it (the roster's `deviceCode`). Switching while
+   * one runs asks the driver to stop it and start the other (`switch`), and the stopped one's end, told as switched, keeps the
+   * panel and says nothing; a start the driver refused for its held port offers the device code, which starts as a press.
+   */
+  it('Agents → Codex switches a running sign-in to its device code, the stopped one\'s end saying nothing', async () => {
+    const CODEX = {
+      settingsPath: ROSTER.settingsPath,
+      adapter: 'claude-code',
+      harnesses: [{
+        harness: 'codex-acp', accountOf: 'codex', product: 'Codex', maker: 'OpenAI', wire: 'acp',
+        present: true, version: 'codex-acp 1.12.0', problem: null, machineDefault: null, pinned: null, managed: null, pinnable: true,
+        signsIn: true, deviceCode: true, takesKey: false, ownLogin: 'in', ownRead: READ, workspaceDefaults: [], profiles: [],
+      }],
+    };
+    invoke.mockImplementation(async (_module: string, type: string) => {
+      if (type === 'HARNESS_ACTION') return { harness: 'codex-acp', action: 'login-new', started: true, profile: 'acct-5e6f7a8b' };
+      return type === 'HARNESSES' ? CODEX : WIRING;
+    });
+    const notify = vi.fn();
+    place(notify, { first: 'codex' });
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Sign in for Daoris' }));
+    expect(await screen.findByText('Signing in to another Codex account')).toBeTruthy();
+    await userEvent.click(await screen.findByRole('button', { name: 'Use a device code' }));
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'HARNESS_ACTION', {
+      payload: { harness: 'codex-acp', action: 'login-new', way: 'device-code', switch: true },
+    });
+
+    await act(async () => {
+      eventHandlers.get('DAORIS.HARNESS_ENDED')!({
+        harness: 'codex-acp', action: 'login-new', profile: 'acct-5e6f7a8b', exitCode: -1, problem: null,
+        kept: false, cancelled: true, switched: true,
+      });
+    });
+    expect(screen.getByText('Signing in to another Codex account')).toBeTruthy();
+    expect(screen.queryByRole('alert')).toBeNull();
+    expect(notify).not.toHaveBeenCalled();
+    // The device code runs now, so the other way offered is the browser.
+    expect(await screen.findByRole('button', { name: 'Use the browser' })).toBeTruthy();
+
+    await act(async () => {
+      eventHandlers.get('DAORIS.HARNESS_ENDED')!({
+        harness: 'codex-acp', action: 'login-new', profile: 'acct-5e6f7a8b', exitCode: 0, problem: null, account: null, kept: true, places: [],
+      });
+    });
+    expect(notify).toHaveBeenCalledTimes(1);
+  });
+
+  it('Agents → Codex offers its device code where the browser sign-in was refused for its held port', async () => {
+    const CODEX = {
+      settingsPath: ROSTER.settingsPath,
+      adapter: 'claude-code',
+      harnesses: [{
+        harness: 'codex-acp', accountOf: 'codex', product: 'Codex', maker: 'OpenAI', wire: 'acp',
+        present: true, version: 'codex-acp 1.12.0', problem: null, machineDefault: null, pinned: null, managed: null, pinnable: true,
+        signsIn: true, deviceCode: true, takesKey: false, ownLogin: 'in', ownRead: READ, workspaceDefaults: [], profiles: [],
+      }],
+    };
+    invoke.mockImplementation(async (_module: string, type: string, request?: { payload?: { way?: string } }) => {
+      if (type === 'HARNESS_ACTION' && request?.payload?.way !== 'device-code') {
+        throw Object.assign(new Error('refused'), {
+          code: 'DRIVER_REFUSED',
+          parameters: { message: '`codex login` waits for your browser on port 1455, else 1457, and neither can be taken now.' },
+        });
+      }
+      if (type === 'HARNESS_ACTION') return { harness: 'codex-acp', action: 'login-new', started: true, profile: 'acct-5e6f7a8b' };
+      return type === 'HARNESSES' ? CODEX : WIRING;
+    });
+    place(vi.fn(), { first: 'codex' });
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Sign in for Daoris' }));
+    expect((await screen.findByRole('alert')).textContent).toMatch(/neither can be taken now/);
+    await userEvent.click(screen.getByRole('button', { name: 'Use a device code' }));
+
+    expect(invoke).toHaveBeenLastCalledWith('DAORIS.DRIVER', 'HARNESS_ACTION', {
+      payload: { harness: 'codex-acp', action: 'login-new', way: 'device-code' },
+    });
+    await waitFor(() => expect(screen.queryByRole('alert')).toBeNull());
+    expect(await screen.findByRole('button', { name: 'Use the browser' })).toBeTruthy();
+  });
+
+  /**
    * D152 §4.2 and ACCT2: one name leads, the account's, the person's where they gave one, with who signed in beside it where
    * the two differ, never one as title and the other faint; a fresh id the person never chose never leads.
    */

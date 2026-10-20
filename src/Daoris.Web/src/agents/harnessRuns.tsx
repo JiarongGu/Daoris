@@ -4,6 +4,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { sentence } from '../locales/format';
 import { type DefaultStanding, type HarnessRoster, useHarnessAction, useHarnessEnded } from '../bridge/shell';
 import { byTool, type AccountPlace } from './tools';
+import type { SignInWay } from './SignInSteps';
 import { accountLabel } from './agents';
 import { keys } from '../data/queries';
 import type { Notify } from '../design/ui';
@@ -65,6 +66,16 @@ export type HarnessRun = {
    * ended. Its panel stays up and says it, with *Try again* and *Close*, as a refused start's does; null otherwise.
    */
   failure: { sentence: string; at: number } | null;
+  /**
+   * The way the last sign-in's agent has beside the one it ran (CODEXLOGIN1): the device code where it ran the browser, the
+   * browser where it ran the device code; null where the agent has one way (the roster's `deviceCode`) or no sign-in was pressed.
+   */
+  otherWay: SignInWay | null;
+  /**
+   * The same sign-in the other way: while one runs, the driver stops it and starts this one in its place (`switch`), and the
+   * stopped one's end says nothing; after one failed or was refused, it starts as a press would.
+   */
+  switchWay: () => void;
 };
 
 const Runs = createContext<HarnessRun | null>(null);
@@ -108,7 +119,17 @@ function useRunState(notify: Notify): HarnessRun {
   const [refusal, setRefusal] = useState<string | null>(null);
   const [failure, setFailure] = useState<{ sentence: string; at: number } | null>(null);
   const [pressedAt, setPressedAt] = useState<number | null>(null);
-  const lastSignIn = useRef<{ harness: string; action: HarnessRunAction; profile?: string } | null>(null);
+  const lastSignIn = useRef<{ harness: string; action: HarnessRunAction; profile?: string; way: SignInWay } | null>(null);
+  // The last sign-in's way and whether its agent has the other (CODEXLOGIN1), as state, so its panel draws the switch; and
+  // whether the one a switch replaces was heard stopped.
+  const [signedWay, setSignedWay] = useState<{ way: SignInWay; deviceCode: boolean } | null>(null);
+  const stopped = useRef(false);
+
+  // Whether a door's agent signs in by a device code beside its own sign-in, read from the roster the page already holds.
+  const deviceCodeOf = (harness: string) => {
+    const roster = client.getQueryData<HarnessRoster>(keys.harnesses);
+    return Boolean(roster?.harnesses.find((each) => each.harness === harness)?.deviceCode);
+  };
 
   // Read the roster at the moment an action ends: a rename or a view change can happen while a sign-in runs.
   // Looking in the shared cache asks no agent to read its sign-in again.
@@ -179,6 +200,11 @@ function useRunState(notify: Notify): HarnessRun {
   // than a request may take on the bridge. Only the action this state started is this state's.
   useHarnessEnded((news) => {
     if (runningRef.current !== `${news.harness}:${news.action}`) return;
+    // Stopped for the same sign-in by the other way (CODEXLOGIN1), which runs on in the same panel: nothing to say.
+    if (news.switched) {
+      stopped.current = true;
+      return;
+    }
     setInFlight(null);
     ended(
       news.action, news.profile ?? undefined, news.exitCode, news.problem, news.account, news.kept, news.places, news.offered,
@@ -186,20 +212,35 @@ function useRunState(notify: Notify): HarnessRun {
     );
   });
 
-  const run: HarnessRun['run'] = (harness, action, profile, version, workspace, answered) => {
-    // Never over one still running: whose end the news belongs to is the one thing this must not lose.
-    if (inFlight !== null) return;
+  /**
+   * Start an action; a sign-in by `way`, the first where none is named (CODEXLOGIN1), and with `switching`, in the place of the
+   * same sign-in running another way, which the driver stops first.
+   */
+  const start = (
+    harness: string, action: HarnessRunAction, profile?: string, version?: string, workspace?: string, answered?: Answered,
+    way: SignInWay = 'browser', switching = false,
+  ) => {
+    // Never over one still running: whose end the news belongs to is the one thing this must not lose. A switch takes the
+    // running sign-in's place, its end told as switched and said by nobody.
+    if (inFlight !== null && !switching) return;
+    stopped.current = false;
     setRefusal(null);
     setFailure(null);
     setPressedAt(Date.now());
-    if (action === 'login' || action === 'login-new') lastSignIn.current = { harness, action, profile };
+    const signIn = action === 'login' || action === 'login-new';
+    if (signIn) {
+      lastSignIn.current = { harness, action, profile, way };
+      setSignedWay({ way, deviceCode: deviceCodeOf(harness) });
+    }
     setRunning(`${harness}:${action}`);
     runningRef.current = `${harness}:${action}`;
     setRunningProfile(action === 'login' ? profile ?? null : null);
     setSigningInNew(action === 'login-new' ? harness : null);
     // Another new account starts over: the last one's question was set aside.
     if (action === 'login-new') setAdded(null);
-    act.mutate({ harness, action, profile, version, workspace }, {
+    // The way only where it is not the first or it switches, so a press says what it always said.
+    const how = signIn && (way !== 'browser' || switching) ? { way, ...(switching ? { switch: true } : {}) } : {};
+    act.mutate({ harness, action, profile, version, workspace, ...how }, {
       // A file edit ends inside the request; a process answers `started` and ends as news, heard
       // above. Either way the end is said once, by the same sentence.
       onSuccess: (result) => {
@@ -233,8 +274,11 @@ function useRunState(notify: Notify): HarnessRun {
         ended(action, profile, result.exitCode ?? 0, null);
       },
       onError: (error: unknown) => {
-        // A sign-in's refusal is said in its own panel, which stays up with its way on (CODEXSIGNIN2), not as a toast.
-        if (!answered && (action === 'login' || action === 'login-new')) {
+        // A sign-in's refusal is said in its own panel, which stays up with its way on (CODEXSIGNIN2), not as a toast. A
+        // switch refused after the driver stopped the one running leaves nothing running; one refused before it did (its
+        // way's own refusal) leaves that one running, still followed (CODEXLOGIN1).
+        if (!answered && signIn) {
+          if (!switching || stopped.current) setInFlight(null);
           setRefusal(sentence(error));
           return;
         }
@@ -246,11 +290,22 @@ function useRunState(notify: Notify): HarnessRun {
     });
   };
 
-  // The same sign-in again, from its refused panel; or the panel closed with nothing left of the press.
+  const run: HarnessRun['run'] = (harness, action, profile, version, workspace, answered) =>
+    start(harness, action, profile, version, workspace, answered);
+
+  // The same sign-in again, by the same way, from its refused or failed panel; or the panel closed with nothing left of the
+  // press. Over one still running, again or the other way takes its place (CODEXLOGIN1).
   const retry = () => {
     const last = lastSignIn.current;
-    if (last) run(last.harness, last.action, last.profile);
+    if (last) start(last.harness, last.action, last.profile, undefined, undefined, undefined, last.way, inFlight !== null);
   };
+  const switchWay = () => {
+    const last = lastSignIn.current;
+    if (!last) return;
+    start(last.harness, last.action, last.profile, undefined, undefined, undefined,
+      last.way === 'device-code' ? 'browser' : 'device-code', inFlight !== null);
+  };
+  const otherWay: SignInWay | null = signedWay?.deviceCode ? (signedWay.way === 'device-code' ? 'browser' : 'device-code') : null;
   const dismiss = () => {
     setRefusal(null);
     setFailure(null);
@@ -271,7 +326,7 @@ function useRunState(notify: Notify): HarnessRun {
 
   return {
     running, inFlight, runningProfile, signingInNew, busy: act.isPending || inFlight !== null, run, follow,
-    refusal, retry, dismiss, pressedAt, failure,
+    refusal, retry, dismiss, pressedAt, failure, otherWay, switchWay,
     added, settleAdded: () => setAdded(null),
   };
 }

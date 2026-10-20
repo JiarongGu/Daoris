@@ -5,6 +5,12 @@ with the version and date at release.
 
 ## Unreleased
 
+- Codex signs in through your browser again, as ChatGPT's desktop app does, so a ChatGPT workspace that turns device codes off can
+  add its account: *Add an account…* on Agents → Codex and `daoris agent login codex` open the page, and the device code stays
+  beside it (*Use a device code*, or `--device-code` at a terminal). Either way can be switched to while the other waits, which
+  stops the first. Where the ports Codex waits on for the browser (1455, else 1457) are both held, by another program or by a range
+  Windows reserves, the sign-in says so before it starts and offers the device code; a sign-in Codex refuses shows Codex's own
+  line, with the other way offered, in English and 中文.
 - A driven session whose background command ends just before its turn does, before its agent was told, is no longer shown as
   waiting for you (等你处理): it stays working until its agent is woken with the ending, or Daoris tells it after a minute's
   quiet, and goes on with its quest. A session that `daoris-driver drive` starts from a terminal now waits on its own background

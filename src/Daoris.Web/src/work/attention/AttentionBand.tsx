@@ -332,6 +332,8 @@ function Band({ doors, notify, onSessions, onRun }: {
   const ends = {
     refused: harnessRun.refusal, failed: harnessRun.failure?.sentence, failedAt: harnessRun.failure?.at,
     pressedAt: harnessRun.pressedAt, onRetry: harnessRun.retry, onClose: harnessRun.dismiss, shown: 'line' as const,
+    // The other way in, where the agent has one (CODEXLOGIN1): Codex's device code beside its browser.
+    other: harnessRun.otherWay, onSwitch: harnessRun.switchWay,
   };
   const below = (item: Attention) => {
     if (signingNewRow && item.id === signingNewRow.id && item.kind === signingNewRow.kind) {

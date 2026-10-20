@@ -182,7 +182,7 @@ function AgentsMain({ tool, adapter, notify, part, onAnchored, onOpenPlugin, say
   const inView = chosenScope.workspace ?? (known.length === 1 ? known[0]! : null);
   const {
     running, runningProfile, signingInNew, busy: acting, run, added, settleAdded, refusal, retry, dismiss, pressedAt,
-    failure: failed,
+    failure: failed, otherWay, switchWay,
   } = useHarnessRun();
   const onError = failure(notify);
   const door = tool.doors[0]!.harness;
@@ -372,6 +372,7 @@ function AgentsMain({ tool, adapter, notify, part, onAnchored, onOpenPlugin, say
           <SignIn
             id={running} harness={door} profile={labelOf(runningProfile)} tool={product} refused={refusal}
             failed={failed?.sentence} failedAt={failed?.at} pressedAt={pressedAt} onRetry={retry} onClose={dismiss}
+            other={otherWay} onSwitch={switchWay}
           />
         )
         : null}
@@ -380,6 +381,7 @@ function AgentsMain({ tool, adapter, notify, part, onAnchored, onOpenPlugin, say
           <SignIn
             id={`${door}:login-new`} harness={door} action="login-new" tool={product} refused={refusal}
             failed={failed?.sentence} failedAt={failed?.at} pressedAt={pressedAt} onRetry={retry} onClose={dismiss}
+            other={otherWay} onSwitch={switchWay}
           />
         )
         : null}

@@ -383,6 +383,120 @@ describe('signing in, phase by phase', () => {
     expect(screen.queryByText('Starting Codex')).toBeNull();
   });
 
+  /**
+   * CODEXLOGIN1, the browser with its port free: `codex login` 0.160.0 prints where it listens, then the page to open, then the
+   * other way (D125's note; the page's query values replaced). The link offered is the maker's page, never the local server's
+   * address, and the panel says the tool opened the browser; once the tool exits signed in, the driver's own phases follow.
+   */
+  it('offers the browser sign-in\'s page, never its local server, and says the tool opened the browser', async () => {
+    codex({ other: 'device-code', onSwitch: () => {} });
+    await push(CODEX,
+      phase('start', START), phase('browser', START + 1_000), '$ codex login',
+      'Starting local login server on http://localhost:1455.', 'If your browser did not open, navigate to this URL to authenticate:', '',
+      'https://auth.openai.com/oauth/authorize?response_type=code&client_id=CLIENT&state=STATE', '',
+      'On a remote or headless machine? Use `codex login --device-auth` instead.');
+
+    const link = await screen.findByRole('link', { name: /auth\.openai\.com/ });
+    expect(link.getAttribute('href')).toBe('https://auth.openai.com/oauth/authorize?response_type=code&client_id=CLIENT&state=STATE');
+    expect(screen.queryByRole('link', { name: /localhost/ })).toBeNull();
+    expect(screen.getByText(/opened your browser/)).toBeTruthy();
+    expect(screen.queryByText('Open the page and enter this code:')).toBeNull();
+
+    await push(CODEX, 'Successfully logged in', phase('who', START + 30_000));
+    expect(stateOf(/^Waiting on your browser/)).toMatch(/done/);
+    expect(stateOf(/^Checking who signed in/)).toMatch(/now/);
+  });
+
+  /**
+   * CODEXLOGIN1, the other way beside the one running: a device code while the browser waits, the browser while a device code
+   * waits, with a word on why, since a workspace that turns device codes off says so only on the maker's page while the tool
+   * waits out its fifteen minutes. The press is the organism's, which stops the one running and starts the other.
+   */
+  it('offers the other way while either waits, and says why under a device code', async () => {
+    const onSwitch = vi.fn();
+    const { unmount } = codex({ other: 'device-code', onSwitch });
+    await push(CODEX, phase('start', START), phase('browser', START + 1_000), 'https://auth.openai.com/oauth/authorize?state=STATE');
+    await userEvent.click(await screen.findByRole('button', { name: 'Use a device code' }));
+    expect(onSwitch).toHaveBeenCalledTimes(1);
+    expect(screen.queryByText(/turns device codes off/)).toBeNull();
+    unmount();
+
+    codex({ other: 'browser', onSwitch });
+    await push(CODEX, phase('start', START), phase('browser', START + 1_000),
+      '1. Open this link in your browser and sign in to your account', '   https://auth.openai.com/codex/device',
+      '2. Enter this one-time code (expires in 15 minutes)', '   ABCD-12345');
+    expect(await screen.findByText('ABCD-12345')).toBeTruthy();
+    expect(screen.getByText('A workspace that turns device codes off says so only on that page, and this one keeps waiting.')).toBeTruthy();
+    await userEvent.click(screen.getByRole('button', { name: 'Use the browser' }));
+    expect(onSwitch).toHaveBeenCalledTimes(2);
+  });
+
+  /**
+   * CODEXLOGIN1, the port held: the driver refused the browser sign-in before it started, its sentence naming each holder; the
+   * panel says it whole and offers the device code first, focused, with *Try again* and *Close* beside it.
+   */
+  it('says a held port whole and offers the device code first', async () => {
+    const onSwitch = vi.fn();
+    const held = '`codex login` waits for your browser on port 1455, else 1457, and neither can be taken now: 1455 is held by '
+      + 'another program; 1457 is held by a range Windows reserves, which a restart may move. Nothing was signed in — sign in '
+      + 'with a device code instead.';
+    codex({ refused: held, other: 'device-code', onSwitch, onRetry: () => {}, onClose: () => {} });
+
+    expect((await screen.findByRole('alert')).textContent).toBe(held.replace('`codex login`', 'codex login'));
+    const device = screen.getByRole('button', { name: 'Use a device code' });
+    expect(document.activeElement).toBe(device);
+    expect(screen.getByRole('button', { name: 'Try again' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Close' })).toBeTruthy();
+    await userEvent.click(device);
+    expect(onSwitch).toHaveBeenCalledTimes(1);
+  });
+
+  /**
+   * CODEXLOGIN1, a sign-in the account refused: where the tool says why on a line of its own (`Error logging in…:`, as 0.160.0
+   * ends a refused one), the panel says that line beside its own sentence, and offers the other way.
+   */
+  it('says the tool\'s own refusal line and offers the other way', async () => {
+    codex({
+      failed: 'Sign-in did not finish (the tool exited 1). Its output says why.', failedAt: START + 5_000,
+      other: 'browser', onSwitch: () => {}, onRetry: () => {}, onClose: () => {},
+    });
+    await push(CODEX, phase('start', START), phase('browser', START + 1_000), '$ codex login --device-auth',
+      'Error logging in with device code: device code login is not enabled for this Codex server. Use the browser login or verify the server URL.');
+
+    expect(await screen.findByText('Codex said: Error logging in with device code: device code login is not enabled for this Codex '
+      + 'server. Use the browser login or verify the server URL.')).toBeTruthy();
+    expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Use the browser' }));
+  });
+
+  /**
+   * CODEXLOGIN1, the switch mid-sign-in: the panel stays up through both runs, and reads the latest one after its own start,
+   * so the browser's page from the first run is never offered beside the device code of the second.
+   */
+  it('reads the latest run\'s lines after a switch, never the first run\'s page', async () => {
+    codex({ other: 'browser', onSwitch: () => {} });
+    await push(CODEX, phase('start', START), phase('browser', START + 1_000),
+      'https://auth.openai.com/oauth/authorize?state=STATE', 'this way was stopped for the other, so nothing was kept from it.',
+      phase('start', START + 20_000), phase('browser', START + 21_000),
+      '1. Open this link in your browser and sign in to your account', '   https://auth.openai.com/codex/device',
+      '2. Enter this one-time code (expires in 15 minutes)', '   WXYZ-98765');
+
+    expect(await screen.findByText('WXYZ-98765')).toBeTruthy();
+    expect(screen.getByRole('link', { name: /auth\.openai\.com/ }).getAttribute('href')).toBe('https://auth.openai.com/codex/device');
+    expect(screen.queryByRole('link', { name: /oauth\/authorize/ })).toBeNull();
+  });
+
+  it('offers the other way in Chinese too', async () => {
+    await i18n.changeLanguage('zh');
+    try {
+      codex({ other: 'browser', onSwitch: () => {} });
+      await push(CODEX, phase('start', START), phase('browser', START + 1_000), '   https://auth.openai.com/codex/device', '   ABCD-12345');
+      expect(await screen.findByRole('button', { name: '改用浏览器' })).toBeTruthy();
+      expect(screen.getByText('关闭了设备代码的工作区只会在那个页面上说明，而这里会一直等待。')).toBeTruthy();
+    } finally {
+      await i18n.changeLanguage('en');
+    }
+  });
+
   it('names its phases in Chinese', async () => {
     await i18n.changeLanguage('zh');
     try {

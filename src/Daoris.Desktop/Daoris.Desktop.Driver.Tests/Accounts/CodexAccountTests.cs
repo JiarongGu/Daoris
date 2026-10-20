@@ -39,8 +39,11 @@ public sealed class CodexAccountTests : IDisposable
         Assert.Equal("codex", agent.Name);
         Assert.Equal(["codex"], agent.Toolchain.Binary);
         Assert.Equal("CODEX_HOME", agent.Toolchain.ProfileVariable);
-        // By its device code (CODEXACCT2): the browser sign-in's callback port is reserved on some machines (os error 10013).
-        Assert.Equal(["login", "--device-auth"], agent.Toolchain.LoginArguments!);
+        // CODEXLOGIN1: the browser sign-in first, as ChatGPT's desktop app signs in, on the ports 0.160.0 tries in order; the
+        // device code beside it, since a workspace may refuse either.
+        Assert.Equal(["login"], agent.Toolchain.LoginArguments!);
+        Assert.Equal(["login", "--device-auth"], agent.Toolchain.DeviceLoginArguments!);
+        Assert.Equal([1455, 1457], agent.Toolchain.LoginPorts!);
         Assert.Equal(["login", "status"], agent.Toolchain.LoginCheck!.Arguments);
         Assert.Equal(["codex"], Roster().AccountToolchain("codex-acp")!.Binary);
         // The door itself still has none: it runs `codex` and reads the home `codex` signed into (ACP3).
@@ -104,6 +107,10 @@ public sealed class CodexAccountTests : IDisposable
         Assert.Equal(Words(Field(entry, @"\n    binary: \[(?<v>[^\]]*)\]")), declared.Binary);
         Assert.Equal(Field(entry, @"\n    profileVariable: '(?<v>[^']*)'"), declared.ProfileVariable);
         Assert.Equal(Words(Field(entry, @"\n    login: \[(?<v>[^\]]*)\]")), declared.LoginArguments!);
+        // CODEXLOGIN1: the second way and the browser's ports, as the terminal declares them.
+        Assert.Equal(Words(Field(entry, @"\n    deviceLogin: \[(?<v>[^\]]*)\]")), declared.DeviceLoginArguments!);
+        Assert.Equal(
+            Words(Field(entry, @"\n    loginPorts: \[(?<v>[^\]]*)\]")).Select(int.Parse), declared.LoginPorts!);
 
         var check = Regex.Match(
             entry, @"\n    loginCheck: \{ args: \[(?<args>[^\]]*)\], in: /(?<in>.+?)/(?<inFlags>[a-z]*), out: /(?<out>.+?)/(?<outFlags>[a-z]*) \}");
@@ -159,8 +166,8 @@ public sealed class CodexAccountTests : IDisposable
     private string Fresh => HarnessSettings.ProfileHome(_home, "codex", "acct-0a1b2c3d");
 
     /// <summary>
-    /// Only a pin, no command named: the sign-in's start names the pinned <c>codex</c> and its device-code sign-in
-    /// (CODEXACCT2), into its new folder.
+    /// Only a pin, no command named: the sign-in's start names the pinned <c>codex</c> and its browser sign-in first
+    /// (CODEXLOGIN1), into its new folder; asked for, its device code (CODEXACCT2).
     /// </summary>
     [Fact]
     public void A_sign_in_with_only_a_pin_runs_the_pinned_codex_into_its_new_folder()
@@ -171,12 +178,118 @@ public sealed class CodexAccountTests : IDisposable
 
         var run = roster.SignInCommand("codex-acp", DriverConfig.Empty)!;
         var info = HarnessActions.PrepareLogin(roster.AccountToolchain("codex-acp")!, run, Fresh, fresh: true);
+        var device = HarnessActions.PrepareLogin(roster.AccountToolchain("codex-acp")!, run, Fresh, fresh: true, SignInWay.DeviceCode);
 
         Assert.Equal(binary, run.Managed);
         Assert.Equal(binary, info.FileName);
-        Assert.Equal(["login", "--device-auth"], info.ArgumentList);
+        Assert.Equal(["login"], info.ArgumentList);
+        Assert.Equal(["login", "--device-auth"], device.ArgumentList);
         Assert.Equal(Fresh, info.Environment["CODEX_HOME"]);
         Assert.True(Directory.Exists(Fresh));
+    }
+
+    /// <summary>
+    /// A device code asked of an agent that has none (Claude Code's own flow is its one way) is refused before anything
+    /// starts, with no folder made; the words name the two ways a press may send.
+    /// </summary>
+    [Fact]
+    public void A_device_code_asked_of_an_agent_with_none_is_refused_and_makes_nothing()
+    {
+        var claude = Roster().AccountToolchain("claude-code")!;
+        var run = new HarnessCommand("claude-code", ["claude"], null, null);
+
+        var refusal = Assert.Throws<DriverException>(() =>
+            HarnessActions.PrepareLogin(claude, run, Fresh, fresh: true, SignInWay.DeviceCode));
+
+        Assert.Equal("`claude-code` signs in by no device code, so nothing was signed in — its own sign-in is its one way.", refusal.Message);
+        Assert.False(Directory.Exists(Fresh));
+        Assert.Equal(SignInWay.Browser, SignInWays.Of(null));
+        Assert.Equal(SignInWay.DeviceCode, SignInWays.Of("device-code"));
+        Assert.Equal("`by-phone` is no way to sign in — `browser` or `device-code`.", Assert.Throws<DriverException>(() => SignInWays.Of("by-phone")).Message);
+    }
+
+    // ——— CODEXLOGIN1: the browser sign-in's ports, tried for a moment, never read from Windows' table.
+
+    /// <summary>
+    /// A port another program holds reads as held, and one nobody holds as free, by taking it on the loopback address as
+    /// <c>codex login</c> does; taking it leaves it free for the tool.
+    /// </summary>
+    [Fact]
+    public void A_port_is_tried_for_a_moment_and_one_another_program_holds_reads_as_held()
+    {
+        var holder = new System.Net.Sockets.TcpListener(System.Net.IPAddress.Loopback, 0);
+        holder.Start();
+        var held = ((System.Net.IPEndPoint)holder.LocalEndpoint).Port;
+        try
+        {
+            Assert.Equal(PortHold.InUse, SignInPorts.Hold(held));
+        }
+        finally
+        {
+            holder.Stop();
+        }
+
+        Assert.Equal(PortHold.Free, SignInPorts.Hold(held));
+        // Let go at once: the tool that starts next takes it.
+        Assert.Equal(PortHold.Free, SignInPorts.Hold(held));
+    }
+
+    /// <summary>
+    /// Where 1455 is held and 1457 free, Codex 0.160.0 takes 1457 (measured), so the browser sign-in starts; only where both
+    /// are held is it refused, in plain words naming each holder, with the device code offered. The CLI's
+    /// <c>portsHeld</c> says these words to the byte (<c>toolchain.test.ts</c>).
+    /// </summary>
+    [Theory]
+    [InlineData(PortHold.InUse, PortHold.Free, null)]
+    [InlineData(PortHold.Free, PortHold.InUse, null)]
+    [InlineData(PortHold.InUse, PortHold.Reserved,
+        "`codex login` waits for your browser on port 1455, else 1457, and neither can be taken now: 1455 is held by another "
+        + "program; 1457 is held by a range Windows reserves, which a restart may move. Nothing was signed in — sign in with a "
+        + "device code instead.")]
+    [InlineData(PortHold.Reserved, PortHold.Refused,
+        "`codex login` waits for your browser on port 1455, else 1457, and neither can be taken now: 1455 is held by a range "
+        + "Windows reserves, which a restart may move; 1457 is refused to Daoris. Nothing was signed in — sign in with a device "
+        + "code instead.")]
+    public void The_browser_sign_in_is_refused_only_where_none_of_its_ports_can_be_taken(PortHold first, PortHold second, string? said)
+    {
+        var asked = new List<int>();
+        var codex = Roster().AccountToolchain("codex-acp")!;
+
+        var refusal = SignInPorts.Refusal("codex", codex, port =>
+        {
+            asked.Add(port);
+            return port == 1455 ? first : second;
+        });
+
+        Assert.Equal(said, refusal);
+        Assert.Equal(first == PortHold.Free ? [1455] : [1455, 1457], asked);
+        // An agent that waits on no port is never refused for one, and nothing is tried.
+        Assert.Null(SignInPorts.Refusal("claude-code", Roster().AccountToolchain("claude-code")!, _ => throw new InvalidOperationException()));
+    }
+
+    /// <summary>
+    /// What <c>codex login</c> 0.160.0 printed on its error stream, measured on 2026-10-21 under a throwaway home and stopped
+    /// before any sign-in (D125's CODEXLOGIN1 note): where it listens, then the page to open, then the other way. The page's
+    /// address is the measured one with every value of its query replaced. It reaches the console as plain lines, and the
+    /// link to open is the one on <c>auth.openai.com</c>, never the local server's.
+    /// </summary>
+    [Fact]
+    public async Task Codex_s_browser_sign_in_reaches_the_console_as_plain_lines_with_its_page()
+    {
+        const string page = "https://auth.openai.com/oauth/authorize?response_type=code&client_id=CLIENT"
+            + "&redirect_uri=http%3A%2F%2F127.0.0.1%3A1455%2Fauth%2Fcallback&code_challenge=CHALLENGE&code_challenge_method=S256"
+            + "&state=STATE&scope=openid+profile+email+offline_access&originator=codex_cli_rs";
+        var printed = "Starting local login server on http://localhost:1455.\n"
+            + "If your browser did not open, navigate to this URL to authenticate:\n\n" + page + "\n\n"
+            + "On a remote or headless machine? Use `codex login --device-auth` instead.\n";
+        var lines = new List<string>();
+
+        await HarnessActions.PumpAsync(new StringReader(printed), lines.Add, CancellationToken.None);
+
+        Assert.Equal(
+            ["Starting local login server on http://localhost:1455.", "If your browser did not open, navigate to this URL to authenticate:",
+             "", page, "", "On a remote or headless machine? Use `codex login --device-auth` instead."],
+            lines);
     }
 
     /// <summary>A command named for <c>codex</c> has the last word over its pin, as at every spawn.</summary>

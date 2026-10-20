@@ -25,11 +25,14 @@
 // And since RPC1f, the running Daoris's own pipe (D171 point 3, the terminal RPC design §9): a management verb that edits what a
 // window's route edits sends that route while Daoris runs, so the instance's own handler judges, writes and publishes it, and takes
 // the home's lease where none runs (`instanceDoor`). Node opens a Windows named pipe with `net.connect`, so the wire is here too.
+//
+// And since CODEXLOGIN1, a local port tried for a moment before a browser sign-in starts (`portHold`): a socket all the same,
+// bound on the loopback address and let go, reaching no host, handed to `agent login` as the fetcher is to `agent pin`.
 
 import { createWriteStream, mkdirSync, readdirSync, readFileSync, statSync, unlinkSync } from 'node:fs';
 import { createHash, randomBytes, randomUUID } from 'node:crypto';
 import { once } from 'node:events';
-import { connect, type Socket } from 'node:net';
+import { connect, createServer, type Socket } from 'node:net';
 import { dirname, join } from 'node:path';
 import { finished } from 'node:stream/promises';
 import { DaorisError, RefusalError, type ExitCode } from '../platform/errors.ts';
@@ -38,6 +41,21 @@ import { daorisHome, homeEntry, homeId, isHomeId, THIS_INSTALL } from '../platfo
 import { leaseForVerb, leaseHolder, leaseNamed } from '../platform/lease.ts';
 import type { InstanceRoute, VerbDoor, VerbPress } from '../platform/door.ts';
 import type { Fetcher } from '../agents/channels.ts';
+
+/**
+ * Take `port` on the loopback address for a moment, exclusively, and say whether it could be (CODEXLOGIN1, D125's note): the
+ * toolchain's `PortHold`, its words the driver's `SignInPorts.Hold`'s. Tried by binding, never read from Windows' table of
+ * reserved ranges: a range is not the only holder. Its error's code tells another program (`EADDRINUSE`) from Windows'
+ * refusal (`EACCES`, os error 10013).
+ */
+export function portHold(port: number): Promise<'free' | 'in-use' | 'reserved' | 'refused'> {
+  return new Promise((resolve) => {
+    const server = createServer();
+    server.once('error', (error: NodeJS.ErrnoException) => resolve(
+      error.code === 'EADDRINUSE' ? 'in-use' : error.code === 'EACCES' ? 'reserved' : 'refused'));
+    server.listen({ port, host: '127.0.0.1', exclusive: true }, () => server.close(() => resolve('free')));
+  });
+}
 
 const NO_SERVICE =
   'no DAORIS_SERVICE_URL — this command talks to a knowledge service, and needs\n'

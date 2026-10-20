@@ -386,12 +386,15 @@ public static class HarnessActions
     /// <c>PATH</c>'s, as its status question asks it (CODEXACCT1).
     /// </param>
     /// <param name="fresh">Whether this sign-in opens a new account's folder; false signs in to one that must be there.</param>
+    /// <param name="way">The tool's own sign-in, first, or its device code (CODEXLOGIN1).</param>
     public static async Task<int> LoginAsync(
         HarnessToolchain toolchain, HarnessCommand run, string profileHome,
-        Action<string> write, CancellationToken ct = default, Action<HarnessRun>? started = null, bool fresh = false)
+        Action<string> write, CancellationToken ct = default, Action<HarnessRun>? started = null, bool fresh = false,
+        SignInWay way = SignInWay.Browser)
     {
-        var info = PrepareLogin(toolchain, run, profileHome, fresh);
-        var code = await RunAsync(info, [.. run.Run, .. toolchain.LoginArguments!], write, ct, started).ConfigureAwait(false);
+        var info = PrepareLogin(toolchain, run, profileHome, fresh, way);
+        var code = await RunAsync(info, [.. run.Run, .. SignInWays.Arguments(run.Harness, toolchain, way)], write, ct, started)
+            .ConfigureAwait(false);
         if (code == 0)
         {
             // And it is marked, so a start held on the account signed out asks it again (TOOL6g).
@@ -412,17 +415,14 @@ public static class HarnessActions
     /// <summary>
     /// The sign-in's start, prepared and not started (CODEXACCT1): the agent's own flow on the binary <paramref name="run"/>
     /// names, its pin's environment where it is the pin (AGT2), the account's folder made and named in the agent's variable.
-    /// Refused, with nothing made, for an agent with no sign-in flow, an account that is not here (ACCT1), and a pin with
-    /// nothing installed at it, which is never <c>PATH</c>'s instead (D57).
+    /// Refused, with nothing made, for an agent with no sign-in flow, a device code asked of one that has none (CODEXLOGIN1), an
+    /// account that is not here (ACCT1), and a pin with nothing installed at it, which is never <c>PATH</c>'s instead (D57).
     /// </summary>
-    public static ProcessStartInfo PrepareLogin(HarnessToolchain toolchain, HarnessCommand run, string profileHome, bool fresh)
+    /// <param name="way">The tool's own sign-in, first, or its device code (CODEXLOGIN1).</param>
+    public static ProcessStartInfo PrepareLogin(
+        HarnessToolchain toolchain, HarnessCommand run, string profileHome, bool fresh, SignInWay way = SignInWay.Browser)
     {
-        if (toolchain.LoginArguments is not { Count: > 0 } login)
-        {
-            throw new DriverException(
-                "that agent declares no sign-in flow — sign in with its own tooling, pointing its "
-                + "configuration-home variable at the account's directory.");
-        }
+        var login = SignInWays.Arguments(run.Harness, toolchain, way);
 
         if (!fresh && !Directory.Exists(profileHome))
         {

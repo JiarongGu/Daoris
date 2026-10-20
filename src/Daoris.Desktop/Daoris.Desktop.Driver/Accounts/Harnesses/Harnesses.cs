@@ -249,7 +249,15 @@ public sealed record HarnessToolchain(
     // What this door's turn counts mean (USAGECAP1a2, D179 point 2), the usage history's `meaning`: `per-turn` where a probe
     // measured each turn's own counts. A report's meaning is its wire's, so a door onto another agent declares its own and never
     // reads its owner's; null says it was never measured, which the history keeps as `unknown`. Not a twin: the CLI keeps no turn.
-    string? TurnReport = null)
+    string? TurnReport = null,
+    // The tool's sign-in by a device code, beside its own flow in `LoginArguments`, which is offered first (CODEXLOGIN1, D125's
+    // note): arguments to the binary, run as `LoginArguments` are. Declared only where measured; null offers no second way. The
+    // CLI's `deviceLogin` is the twin.
+    IReadOnlyList<string>? DeviceLoginArguments = null,
+    // The local ports the tool's own sign-in waits on for the browser's answer, in the order it tries them (CODEXLOGIN1: Codex
+    // 0.160.0 takes 1455, else 1457). Where none can be bound the sign-in is refused before it starts and the device code is
+    // offered (`SignInPorts`). Null checks nothing. The CLI's `loginPorts` is the twin.
+    IReadOnlyList<int>? LoginPorts = null)
 {
     /// <summary>The command this harness actually runs as: the machine's configured one, or the declared one.</summary>
     public IReadOnlyList<string> Command(IReadOnlyList<string>? configured) =>

@@ -179,6 +179,13 @@ export const useHarnessAction = () =>
       version?: string;
       /** Which circle a default is for — `profile-default` only (D49 §4); absent means the machine's. */
       workspace?: string;
+      /**
+       * A sign-in's way (CODEXLOGIN1): `browser`, the agent's own and the first, or `device-code`; absent is the first. The
+       * terminal's `--device-code`.
+       */
+      way?: 'browser' | 'device-code';
+      /** Whether this sign-in takes the place of the same one running another way, which the driver stops first (CODEXLOGIN1). */
+      switch?: boolean;
     }) => call<{
       harness: string; action: string; exitCode?: number; started?: boolean;
       /**
@@ -220,6 +227,11 @@ export type HarnessEnded = {
   places?: AccountPlace[] | null;
   /** Whether the person's *Cancel* stopped it (SIGNIN1), so its end is no failure to say; absent from an older shell. */
   cancelled?: boolean | null;
+  /**
+   * Whether it was stopped for the same sign-in by another way (CODEXLOGIN1), which runs on in the same panel: its end says
+   * nothing. Absent from an older shell.
+   */
+  switched?: boolean | null;
 };
 
 /**

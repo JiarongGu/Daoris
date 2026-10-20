@@ -7,6 +7,12 @@ import { Button, Icon } from '../design/ui';
 /** A phase the driver wrote with its start (the relay's phase lines, SIGNIN1). */
 export type SignInPhase = { phase: string; at: number };
 
+/**
+ * A sign-in's way (CODEXLOGIN1, D125's note): the tool's own, which for Codex opens the system's browser, offered first; or
+ * its device code. `HARNESS_ACTION`'s `way`; the terminal's `--device-code`.
+ */
+export type SignInWay = 'browser' | 'device-code';
+
 /** The driver's phases of a sign-in, in the order it runs them (the UI/UX design §3.2). */
 const ORDER = ['start', 'browser', 'who', 'lists'] as const;
 
@@ -21,6 +27,12 @@ export type SignInActs = {
   sent: boolean;
   onRetry?: () => void;
   onClose?: () => void;
+  /**
+   * The other way this sign-in's agent has (CODEXLOGIN1), and the press that stops the one running and starts it; absent where
+   * the agent has one way, or from a surface that holds no running sign-in.
+   */
+  other?: SignInWay | null;
+  onSwitch?: () => void;
 };
 
 /**
@@ -55,18 +67,36 @@ export function SignInSteps({
   const run = latestRun(phases);
   const read = readTool(texts);
   const ended = refused || failed;
+  // The other way (CODEXLOGIN1): offered while one waits, and first, focused, once one failed or was refused; never once the
+  // tool has signed someone in and the driver's own phases run.
+  const finishing = !ended && ['who', 'lists'].includes(run[run.length - 1]?.phase ?? '');
+  const other = acts.other && acts.onSwitch && !finishing ? acts.other : null;
+  const switchTo = other ? (
+    <Button variant={ended ? 'primary' : 'ghost'} autoFocus={Boolean(ended)} onClick={acts.onSwitch}>
+      {t(other === 'device-code' ? 'signin.switch.device' : 'signin.switch.browser')}
+    </Button>
+  ) : null;
 
   const ways = ended ? (
+    <>
+      {failed && read.said && <p className="m-0 mt-2 break-words text-small text-ink-soft">{t('signin.toolSaid', { tool, line: read.said })}</p>}
+      <div className="mt-2 flex flex-wrap items-center gap-2">
+        {switchTo}
+        <Button variant={other ? 'ghost' : 'primary'} autoFocus={!other} onClick={acts.onRetry}>{t('signin.retry')}</Button>
+        <Button variant="ghost" onClick={acts.onClose}>{t('signin.close')}</Button>
+      </div>
+    </>
+  ) : switchTo ? (
     <div className="mt-2 flex flex-wrap items-center gap-2">
-      <Button variant="primary" autoFocus onClick={acts.onRetry}>{t('signin.retry')}</Button>
-      <Button variant="ghost" onClick={acts.onClose}>{t('signin.close')}</Button>
+      {switchTo}
+      {other === 'browser' && <span className="text-meta text-ink-faint">{t('signin.switch.deviceHint')}</span>}
     </div>
   ) : null;
 
   if (run.length === 0 && !refused) {
     return failed
       ? <><p role="alert" className="m-0 mt-2 text-small text-ink-danger">{failed}</p>{ways}</>
-      : <Steps action={action} read={read} acts={acts} />;
+      : <><Steps action={action} read={read} acts={acts} />{ways}</>;
   }
 
   const labels: Record<(typeof ORDER)[number], string> = {
@@ -111,25 +141,38 @@ type ToolRead = {
   device: string | null;
   /** The minutes the tool gave its code, read from a line about it; null where it said none. */
   minutes: number | null;
+  /** The tool's own line saying why it did not sign in (`Error logging in: …`), the last such; null where it said none. */
+  said: string | null;
 };
 
 /**
- * What the tool's lines tell the steps: where to sign in, whether it opened a browser or asks for a code, and a device code
- * with its bound. The tool's own words, matched loosely, since the exact sentence is somebody else's to change.
+ * A link on a line, never one to this machine's own address (CODEXLOGIN1): `codex login` says where its local server listens
+ * (`http://localhost:1455`) before the page to open, and that address is the tool's, never a page for the person.
+ */
+function linkOf(text: string): string | null {
+  return text.match(/https?:\/\/\S+/g)?.find((link) => !/^https?:\/\/(?:localhost|127\.0\.0\.1|\[::1\])(?:[:/?#.]|$)/i.test(link)) ?? null;
+}
+
+/**
+ * What the tool's lines tell the steps: where to sign in, whether it opened a browser or asks for a code, a device code with
+ * its bound, and its own line saying why it did not sign in. The tool's own words, matched loosely, since the exact sentence is
+ * somebody else's to change: Codex 0.160.0 says *If your browser did not open* once it opened one, and ends a refused sign-in
+ * with *Error logging in: …* or *Error logging in with device code: …* (D125's CODEXLOGIN1 note).
  */
 function readTool(texts: readonly string[]): ToolRead {
-  const url = texts.map((text) => text.match(/https?:\/\/\S+/)?.[0]).find(Boolean) ?? null;
+  const url = texts.map(linkOf).find(Boolean) ?? null;
   const device = deviceCode(texts);
-  const linked = texts.findIndex((text) => /https?:\/\/\S+/.test(text));
+  const linked = texts.findIndex((text) => linkOf(text) !== null);
   const bound = device && linked >= 0
     ? texts.slice(linked).map((text) => text.match(/\b(\d{1,3})\s*min(?:ute)?s?\b/i)?.[1]).find(Boolean)
     : undefined;
   return {
     url,
-    opened: texts.some((text) => /opening.*browser/i.test(text)),
+    opened: texts.some((text) => /opening.*browser|browser did not open/i.test(text)),
     asked: texts.some((text) => /paste.*code/i.test(text)),
     device,
     minutes: bound ? Number(bound) : null,
+    said: [...texts].reverse().find((text) => /^\s*error\b[^:]*:\s*\S/i.test(text))?.trim() ?? null,
   };
 }
 
@@ -262,7 +305,7 @@ function Steps({ action, read, acts }: { action: 'login' | 'login-new'; read: To
  * link, or null where none is shown yet. A line with a link is never the code.
  */
 function deviceCode(texts: readonly string[]): string | null {
-  const linked = texts.findIndex((text) => /https?:\/\/\S+/.test(text));
+  const linked = texts.findIndex((text) => linkOf(text) !== null);
   if (linked < 0) return null;
   for (const text of texts.slice(linked + 1)) {
     if (/https?:\/\/\S+/.test(text)) continue;

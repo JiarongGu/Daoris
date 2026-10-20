@@ -50,6 +50,9 @@ public sealed class AgentActions(IEventBus events, DriverLoop loop)
     private readonly ConcurrentDictionary<string, Said> _said = new(StringComparer.Ordinal);
     private readonly ConcurrentDictionary<string, Life> _lives = new(StringComparer.Ordinal);
 
+    // Each `harness:action`'s latest run to its end, its news included: what a sign-in's switch waits for (CODEXLOGIN1).
+    private readonly ConcurrentDictionary<string, Task> _works = new(StringComparer.Ordinal);
+
     /// <summary>
     /// Every action <c>HARNESS_ACTION</c> takes, in the order its unknown-action refusal names them: the words a refused one is
     /// logged by (SIGNIN1), so the log never holds a word the page sent that is not one of them.
@@ -145,11 +148,16 @@ public sealed class AgentActions(IEventBus events, DriverLoop loop)
     /// <param name="ended">Told the exit code and any problem once the process ends, after the news goes out.</param>
     /// <param name="joins">The lists a sign-in puts its account in at its end (ACCT1): a workspace's name, or null for this machine's.</param>
     /// <param name="name">A new account's name, the person's, given as it is made (ACCT2).</param>
+    /// <param name="way">A sign-in's way (CODEXLOGIN1): the agent's own sign-in, its browser first, or its device code.</param>
+    /// <param name="switching">
+    /// Whether this sign-in takes the place of the same one running another way (CODEXLOGIN1): that one is stopped, its end
+    /// told as switched, before this one starts.
+    /// </param>
     /// <returns>The account a sign-in reaches: the one named, or a new account's fresh id; null for any other action.</returns>
     internal async Task<string?> StartProcessActionAsync(
         string harness, string action, string? profile, string? version, HarnessToolchain toolchain,
         IReadOnlyList<string>? command, Action<string> stream, DriverConfig config, Action<int, string?>? ended = null,
-        IReadOnlyList<string?>? joins = null, string? name = null)
+        IReadOnlyList<string?>? joins = null, string? name = null, SignInWay way = SignInWay.Browser, bool switching = false)
     {
         var owner = toolchain.Owner(harness);
         var key = $"{harness}:{action}";
@@ -160,6 +168,8 @@ public sealed class AgentActions(IEventBus events, DriverLoop loop)
         Action<HarnessRun> track = run =>
         {
             _actions[key] = run;
+            // Stopped for a switch before its process was up (CODEXLOGIN1): it stops as soon as there is one to stop.
+            if (life.Cancelled) run.Cancel();
             if (life.Up is null)
             {
                 life.Up = life.Now;
@@ -202,23 +212,42 @@ public sealed class AgentActions(IEventBus events, DriverLoop loop)
         var profileHome = HarnessSettings.ProfileHome(home, owner, fresh ?? target ?? profile ?? "default");
         // 🔴 A sign-in is its accounts' agent's (AGT7, CODEXACCT1): a door onto another agent runs that agent's own flow, on the
         // binary its status question asks: the command named for it, its pin, else PATH's (D57 rule 4). `codex-acp` has no flow
-        // of its own and runs `codex login --device-auth` (CODEXACCT2); refused as a door with none, Agents → Codex offered no
-        // account while `daoris agent login codex --new` made one (D50), and the install's only `codex` is its pin.
+        // of its own and runs `codex login`, its browser first, or `codex login --device-auth` asked for (CODEXLOGIN1); refused
+        // as a door with none, Agents → Codex offered no account while `daoris agent login codex --new` made one (D50), and
+        // the install's only `codex` is its pin.
         var signing = action is "login" or "login-new" ? _loop.Harnesses.AccountAgentOf(harness) : null;
         var signingToolchain = signing?.Toolchain ?? toolchain;
         var signingRun = signing is null ? null : _loop.Harnesses.SignInCommand(harness, config);
+        if (signsIn)
+        {
+            // The way asked is one the agent has (CODEXLOGIN1), refused before anything starts where it is not.
+            SignInWays.Arguments(owner, signingToolchain, way);
+            // 🔴 Its browser's answer needs a port of this machine (CODEXLOGIN1): each it tries is taken for a moment, once per
+            // press, and where none can be the sign-in is refused in plain words, the device code offered, nothing made and the
+            // running one left as it is. Never read from Windows' table alone: a range is not the only holder.
+            if (way == SignInWay.Browser && SignInPorts.Refusal(owner, signingToolchain, _loop.Harnesses.Ports) is { } held)
+            {
+                throw new DriverException(held);
+            }
+        }
+
         Func<Task<int>> run = action switch
         {
             "install" => () => HarnessActions.InstallAsync(toolchain, stream, CancellationToken.None, track),
             "update" => () => UpdateAsync(harness, toolchain, command, stream, CancellationToken.None, track),
             "login" => () => SignInToAsync(
-                harness, owner, target!, signingToolchain, signingRun!, profileHome, stream, config, track, lists, life),
+                harness, owner, target!, signingToolchain, signingRun!, profileHome, stream, config, track, lists, life, way),
             "login-new" => () => SignInAsync(
-                harness, owner, fresh!, signingToolchain, signingRun!, profileHome, stream, config, track, lists, name, life),
+                harness, owner, fresh!, signingToolchain, signingRun!, profileHome, stream, config, track, lists, name, life, way),
             // The managed toolchain (TOOL2/D57) — the desktop's half of `daoris agent pin|unpin`, over
             // the same file.
             _ => () => PinAsync(harness, toolchain, stream, version!, CancellationToken.None, track),
         };
+
+        // 🔴 A switch stops the same sign-in running another way, and waits for its end before this one claims the slot
+        // (CODEXLOGIN1): the person may change ways at any time, since a device code a workspace refuses may say so only on
+        // the maker's page while the tool waits out its fifteen minutes. The child is Daoris's own, stopped as *Cancel* stops it.
+        if (switching && signsIn) await StopForSwitchAsync(key);
 
         // 🔴 One at a time on this machine, claimed as the action starts and released by
         // `RunActionAsync` however it ends (REV3). The page re-enabled its buttons once the request
@@ -246,12 +275,38 @@ public sealed class AgentActions(IEventBus events, DriverLoop loop)
 
         var reaching = fresh ?? target ?? profile;
         var work = RunActionAsync(key, harness, action, reaching, run, started.Task, config, life, ended);
+        _works[key] = work;
 
         await Task.WhenAny(started.Task, work);
         // A refusal before the process started — no installer, no login flow, a binary that did not
         // start — travels as a refusal, exactly as it did when the request waited.
         if (work.IsCompleted) await work;
         return action is "login" or "login-new" ? reaching : null;
+    }
+
+    /// <summary>
+    /// Stop the sign-in running under <paramref name="key"/> for one by another way (CODEXLOGIN1), and wait for its end, its
+    /// news told as switched so the page keeps its panel. Nothing running there is nothing to stop: the switch starts as a
+    /// press would.
+    /// </summary>
+    private async Task StopForSwitchAsync(string key)
+    {
+        if (Volatile.Read(ref _acting) != key || !_works.TryGetValue(key, out var running)) return;
+        if (_lives.TryGetValue(key, out var life))
+        {
+            life.Switched = true;
+            life.Cancelled = true;
+        }
+
+        if (_actions.TryGetValue(key, out var run)) run.Cancel();
+        try
+        {
+            await running;
+        }
+        catch (Exception)
+        {
+            // Its end was said as news; this one starts whatever it was.
+        }
     }
 
     /// <summary>
@@ -365,6 +420,9 @@ public sealed class AgentActions(IEventBus events, DriverLoop loop)
                 : null,
             // Whether the person's *Cancel* stopped it (SIGNIN1), so its end is no failure to say: the page closes its panel.
             Cancelled = life?.Cancelled ?? false,
+            // Whether it was stopped for the same sign-in by another way (CODEXLOGIN1), which runs on in the same panel: the page
+            // says nothing of this end and keeps the panel. Absent from an older shell.
+            Switched = life?.Switched ?? false,
         });
     }
 
@@ -402,13 +460,13 @@ public sealed class AgentActions(IEventBus events, DriverLoop loop)
     private async Task<int> SignInAsync(
         string harness, string owner, string fresh, HarnessToolchain toolchain, HarnessCommand run,
         string profileHome, Action<string> stream, DriverConfig config, Action<HarnessRun> track,
-        IReadOnlyList<string?> joins, string? name, Life life)
+        IReadOnlyList<string?> joins, string? name, Life life, SignInWay way)
     {
         var code = -1;
         try
         {
             code = await HarnessActions.LoginAsync(
-                toolchain, run, profileHome, stream, CancellationToken.None, track, fresh: true);
+                toolchain, run, profileHome, stream, CancellationToken.None, track, fresh: true, way: way);
             return code;
         }
         finally
@@ -433,7 +491,9 @@ public sealed class AgentActions(IEventBus events, DriverLoop loop)
                 {
                     HarnessSettings.RemoveProfile(_loop.Harnesses.Home, owner, fresh);
                     _loop.Harnesses.Removed(owner, fresh);
-                    stream("nothing was signed in, so nothing was kept — the account opened for it is gone again.");
+                    stream(life.Switched
+                        ? "this way was stopped for the other, so nothing was kept from it — the account opened for it is gone again."
+                        : "nothing was signed in, so nothing was kept — the account opened for it is gone again.");
                 }
                 catch (Exception error) when (error is IOException or UnauthorizedAccessException)
                 {
@@ -468,9 +528,10 @@ public sealed class AgentActions(IEventBus events, DriverLoop loop)
     /// </remarks>
     private async Task<int> SignInToAsync(
         string harness, string owner, string account, HarnessToolchain toolchain, HarnessCommand run, string profileHome,
-        Action<string> stream, DriverConfig config, Action<HarnessRun> track, IReadOnlyList<string?> joins, Life life)
+        Action<string> stream, DriverConfig config, Action<HarnessRun> track, IReadOnlyList<string?> joins, Life life,
+        SignInWay way)
     {
-        var code = await HarnessActions.LoginAsync(toolchain, run, profileHome, stream, CancellationToken.None, track);
+        var code = await HarnessActions.LoginAsync(toolchain, run, profileHome, stream, CancellationToken.None, track, way: way);
         life.Exited = life.Now;
         if (code != 0) return code;
 
@@ -633,6 +694,9 @@ public sealed class AgentActions(IEventBus events, DriverLoop loop)
         public long? Joined { get; set; }
 
         public bool Cancelled { get; set; }
+
+        /// <summary>Stopped for the same sign-in by another way (CODEXLOGIN1); <see cref="Cancelled"/> with it.</summary>
+        public bool Switched { get; set; }
 
         public bool Nobody { get; set; }
 

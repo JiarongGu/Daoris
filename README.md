@@ -72,7 +72,8 @@ below can contact services or download tools when invoked.
 promote every locally-edited canonical file at once. `connect` accepts `--workspace <name>`,
 `status` accepts `--machine` to report this machine's wiring beside the repository's own declaration,
 and `agent login` accepts `--profile <account>` (an account already here, by its id or its name), `--new [--name
-<name>]` and `--join <workspace>`/`--join-machine` (the rotation lists it joins in the same step).
+<name>]`, `--join <workspace>`/`--join-machine` (the rotation lists it joins in the same step) and `--device-code`
+(Codex's device code, in place of its browser).
 
 **A workspace is the unit of sharing**: knowledge, quests and session records cross between repositories
 within one and never across one. Membership is **wiring, like a git remote** — `connect --workspace
