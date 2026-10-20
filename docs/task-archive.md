@@ -18484,3 +18484,9 @@ in zh. The sessions page's held words (`WordsHold`) still carry the driver's sen
 > - [ ] **KNOW-REFTX1 — a knowledge note on removals that rest on other refs** (knowledge). A ref removal whose proof reads other refs goes as one `update-ref --stdin` transaction with `verify` lines for exactly what the proof rested on, never delete-then-look-again; a holder is a branch of the person's before a session branch. Proof: the note, indexed.
 
 **Outcome** 2026-10-21: `.claude/knowledge/ref-removal-transactions.md`, indexed in `.claude/INDEX.md` by `daoris sync`: the removal, a `verify` for each ref and commit the proof returned and nothing found afterwards, rests carried down a chain, a holder by ancestry chosen as the line's form, then a branch of the person's, then a session branch, and what no ref says (a late checkout) kept as its own check. Written from D173's FABRIC-END4a review notes and `ContentHolds`. On Opus, by a session of the owner's install.
+
+## FABRIC-MILESTONEDOOR1 — a work row with no session opens Branches (2026-10-21, D173)
+
+> - [ ] **FABRIC-MILESTONEDOOR1 — a work row with no session opens Branches** (web-shell; after MILESTONE1b). A `work` row for a unit known only by a branch or a landing has no door: open the workspace's Branches. Proof: an attention test pressing the row.
+
+**Outcome** 2026-10-21: the door itself landed with OVERVIEWNOISE1b, whose `work` door in `App.tsx` opens the workspace's Branches for every row that is not a held attempt. This row adds its proof: `sessionsBadge.test.tsx` presses a unit's row known only by its branch, its owner unrecorded, and Projects opens on Branches, the tab remembered; seen failing with the door pointed at Details. Not looked at on the window. On Opus: about 30 tool calls.
