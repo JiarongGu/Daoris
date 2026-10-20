@@ -2,6 +2,7 @@ import type { GoAhead } from '../../data/api';
 import type { RuleProposal } from '../../settings/repository/AgentRules';
 import { type Block, lastWords, type Turn } from '../conversation/conversation';
 import { inputObject } from '../review/preview';
+import type { PermissionWait } from './PermissionAsks';
 import type { Wait } from './waits';
 
 /**
@@ -15,9 +16,11 @@ export const ANCHOR_BOUND_MS = 10 * 60_000;
 /**
  * A wait the conversation can show the raising event of (WAITFOOT1c, D168 point 4): a park's question (an intake's too), the work
  * to land (*Accept…* or the rebase words), the second opinion handed to the session, each go-ahead by its number, and each rule
- * proposal by its id (PROPOSEHERE1b), and each agent's ask for a helper by its id (WAITFOOT1e). A review's gate and a discard the line holds are raised by no event of the session's.
+ * proposal by its id (PROPOSEHERE1b), and each agent's ask for a helper by its id (WAITFOOT1e), and each tool call held for the
+ * person's answer by its request's id (PERMANCHOR1). A review's gate and a discard the line holds are raised by no event of the session's.
  */
-export type AnchorWait = 'question' | 'work' | 'opinion' | `goAhead:${number}` | `rule:${string}` | `helper:${string}`;
+export type AnchorWait =
+  | 'question' | 'work' | 'opinion' | `goAhead:${number}` | `rule:${string}` | `helper:${string}` | `permission:${string}`;
 
 /** The anchor a wait is found by, or null for one with no raising event. */
 export function anchorOf(wait: Wait): AnchorWait | null {
@@ -30,6 +33,7 @@ export function anchorOf(wait: Wait): AnchorWait | null {
     case 'goAhead': return `goAhead:${wait.number}`;
     case 'rule': return `rule:${wait.id}`;
     case 'helper': return `helper:${wait.id}`;
+    case 'permission': return `permission:${wait.request}`;
     default: return null;
   }
 }
@@ -144,6 +148,21 @@ export function helperKey(turns: readonly Turn[], ask: HelperFacts): string | un
   return nearest(turns, ask.at, (input) => text(input.question) === question && (!agent || text(input.agent).toLowerCase() === agent));
 }
 
+/** What a held tool call is joined on (PERMANCHOR1): the request's id, the call it asks for, and when the driver held it. */
+export type PermissionFacts = Pick<PermissionWait, 'request' | 'call' | 'since'>;
+
+/**
+ * A tool call held for the person's answer (AUTONOMY1b3c, D168 point 4) is raised by that call itself: the block whose id is the
+ * request's `call`, the agent's own id for it on the wire, which the driver reads from the same field as the call's events. An id
+ * joins them, so no time picks among blocks, as a rule's card has its call (WAITFOOT1c). None where the request names no call.
+ */
+export function permissionKey(turns: readonly Turn[], held: Pick<PermissionFacts, 'call'>): string | undefined {
+  const call = held.call?.trim();
+  if (!call) return undefined;
+  for (const block of calls(turns)) if (block.id === call) return block.key;
+  return undefined;
+}
+
 /** What the anchors are read for: the waits that stand, and what their joins name. */
 export type AnchorAsks = {
   /** The session the conversation is, whose go-ahead requests are its own. */
@@ -157,6 +176,8 @@ export type AnchorAsks = {
   proposals?: readonly (ProposalFacts & { id: string })[] | null;
   /** The helpers it asked for, as the frame read them (WAITFOOT1e): what each `helper_ask` call is joined on. */
   helpers?: readonly (HelperFacts & { id: string })[] | null;
+  /** The tool calls held for the person, as the shell read them (PERMANCHOR1): each call its request names. */
+  permissions?: readonly PermissionFacts[] | null;
 };
 
 /**
@@ -196,6 +217,11 @@ export function anchorsOf(
       const helper = asks.helpers?.find((row) => row.id === wait.id);
       key = helper ? helperKey(turns, helper) : undefined;
       older = earlier && Boolean(helper) && (Number.isNaN(begins) || time(helper!.at) <= begins + ANCHOR_BOUND_MS);
+    } else if (wait.kind === 'permission') {
+      // A call is held as it is made: held after the page began, the call would be on it, so where it is not found here it has none.
+      const held = asks.permissions?.find((row) => row.request === wait.request);
+      key = held ? permissionKey(turns, held) : undefined;
+      older = earlier && Boolean(held?.call) && (Number.isNaN(begins) || time(held!.since) <= begins + ANCHOR_BOUND_MS);
     } else if (anchor === 'question') key = lastWords(turns);
     else if (anchor === 'work') key = workKey(turns);
     else if (anchor === 'opinion') {
@@ -233,6 +259,8 @@ export type WaitEvents = {
   rules?: Readonly<Record<string, () => void>>;
   /** Each agent's ask for a helper, by its id (WAITFOOT1e). */
   helpers?: Readonly<Record<string, () => void>>;
+  /** Each tool call held for the person, by its request's id (PERMANCHOR1). */
+  permissions?: Readonly<Record<string, () => void>>;
 };
 
 /** The presses for the anchored waits, each showing its own; undefined where none is anchored. */
@@ -242,14 +270,17 @@ export function waitEvents(anchored: readonly AnchorWait[], show: (wait: AnchorW
   const goAheads: Record<number, () => void> = {};
   const rules: Record<string, () => void> = {};
   const helpers: Record<string, () => void> = {};
+  const permissions: Record<string, () => void> = {};
   for (const anchor of anchored) {
     if (anchor.startsWith('goAhead:')) goAheads[Number(anchor.slice('goAhead:'.length))] = () => show(anchor);
     else if (anchor.startsWith('rule:')) rules[anchor.slice('rule:'.length)] = () => show(anchor);
     else if (anchor.startsWith('helper:')) helpers[anchor.slice('helper:'.length)] = () => show(anchor);
+    else if (anchor.startsWith('permission:')) permissions[anchor.slice('permission:'.length)] = () => show(anchor);
     else events[anchor as 'question' | 'work' | 'opinion'] = () => show(anchor);
   }
   if (Object.keys(goAheads).length > 0) events.goAheads = goAheads;
   if (Object.keys(rules).length > 0) events.rules = rules;
   if (Object.keys(helpers).length > 0) events.helpers = helpers;
+  if (Object.keys(permissions).length > 0) events.permissions = permissions;
   return events;
 }

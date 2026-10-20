@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { GoAhead } from '../../data/api';
 import {
-  ANCHOR_BOUND_MS, anchorOf, anchorsOf, goAheadKey, helperKey, marksOf, opinionKey, proposalKey, turnEnd, waitEvents, workKey,
+  ANCHOR_BOUND_MS, anchorOf, anchorsOf, goAheadKey, helperKey, marksOf, opinionKey, permissionKey, proposalKey, turnEnd, waitEvents, workKey,
 } from './anchors';
 import { lastWords, type SessionEvent, toTurns } from '../conversation/conversation';
 import type { Wait } from './waits';
@@ -231,6 +231,48 @@ describe('an agent\'s ask for a helper', () => {
     const events = waitEvents(['helper:a1'], (anchor) => shown.push(anchor));
     events!.helpers!.a1!();
     expect(shown).toEqual(['helper:a1']);
+  });
+});
+
+describe('a tool call held for the person\'s answer (PERMANCHOR1)', () => {
+  const held = { request: 'p7', call: 't3', since: at(20) };
+  const asks = { session: SESSION, waits: [{ kind: 'permission', request: 'p7' } as Wait], permissions: [held] };
+
+  it('is raised by the call its request names, by the agent\'s id for it, never by its title or its time', () => {
+    const turns = turnsOf([
+      target,
+      call(2, 20, { title: 'npm start', id: 't2', status: 'pending' }),
+      call(3, 2, { title: 'git push', id: 't3', status: 'pending' }),
+      ended(4),
+    ]);
+    expect(permissionKey(turns, held)).toBe('e3');
+    expect(permissionKey(turns, { call: 't9' })).toBeUndefined();
+    // A request that names no call has none.
+    expect(permissionKey(turns, { call: null })).toBeUndefined();
+    expect(permissionKey(turns, { call: '  ' })).toBeUndefined();
+  });
+
+  it('anchors the wait by its request, and is on an earlier page only where it was held before the page begins', () => {
+    expect(anchorOf({ kind: 'permission', request: 'p7' })).toBe('permission:p7');
+    const turns = turnsOf([target, call(3, 20, { title: 'git push', id: 't3', status: 'pending' }), ended(4)]);
+    expect(anchorsOf(turns, asks).held).toEqual({ 'permission:p7': 'e3' });
+    // A wait whose request the frame does not hand has none, nor one whose request names no call.
+    expect(anchorsOf(turns, { ...asks, permissions: [] }, { earlier: true })).toEqual({ held: {}, earlier: [] });
+    expect(anchorsOf(turns, { ...asks, permissions: [{ ...held, call: null }] }, { earlier: true })).toEqual({ held: {}, earlier: [] });
+
+    const page = turnsOf([said(50, 'Running it.', 30), ended(51, 31)]);
+    expect(anchorsOf(page, asks, { earlier: true, from: at(30) }).earlier).toEqual(['permission:p7']);
+    expect(anchorsOf(page, asks, { earlier: true, from: at(5) }).earlier).toEqual([]);
+  });
+
+  it('marks its call with the wait and hands the wait its press', () => {
+    const wait = { kind: 'permission', request: 'p7' } as Wait;
+    expect(marksOf([wait], { 'permission:p7': 'e3' })).toEqual({ e3: [wait] });
+    const shown: string[] = [];
+    const events = waitEvents(['permission:p7'], (anchor) => shown.push(anchor));
+    events!.permissions!.p7!();
+    expect(shown).toEqual(['permission:p7']);
+    expect(events!.rules).toBeUndefined();
   });
 });
 

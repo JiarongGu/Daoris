@@ -6,7 +6,7 @@ import { cn } from '../../lib/cn';
 import { elapsed } from '../../locales/format';
 import { type Answered, Refused } from '../InlineConfirm';
 import { useNow } from '../useNow';
-import { SOUGHT } from './WaitAnchor';
+import { InConversation, SOUGHT } from './WaitAnchor';
 
 /**
  * One option an agent offered on a permission request it holds for the person (AUTONOMY1b3a, D184 point 3), as `PERMISSION_WAITS`
@@ -90,12 +90,14 @@ export const permissionSaid = (t: TFunction, why: string | null, message: string
  * `onAnswer` no press is drawn: a browser or a teammate's record still says what waits. Each waits in place, and a refusal of the
  * answer is said beside it (UXFIX2b3b).
  */
-export function PermissionAsks({ waits, onAnswer, busy = false, lead, marked }: {
+export function PermissionAsks({ waits, onAnswer, busy = false, lead, inConversation, marked }: {
   waits: readonly PermissionWait[];
   onAnswer?: PermissionAnswer;
   busy?: boolean;
   /** The line above the list, where it stands: absent, none. */
   lead?: string;
+  /** The way to each held call in the conversation, by its request's id, where the conversation found it (PERMANCHOR1). */
+  inConversation?: Readonly<Record<string, () => void>>;
   /** The request a press led to, outlined, by its id. */
   marked?: string;
 }) {
@@ -106,17 +108,21 @@ export function PermissionAsks({ waits, onAnswer, busy = false, lead, marked }: 
       {lead && <p className="m-0 mb-2 text-small text-ink-soft">{lead}</p>}
       <ul className="m-0 grid list-none gap-2 p-0">
         {waits.map((wait) => (
-          <PermissionAsk key={`${wait.session}#${wait.request}`} wait={wait} onAnswer={onAnswer} busy={busy} marked={marked === wait.request} />
+          <PermissionAsk
+            key={`${wait.session}#${wait.request}`} wait={wait} onAnswer={onAnswer} busy={busy}
+            onConversation={inConversation?.[wait.request]} marked={marked === wait.request}
+          />
         ))}
       </ul>
     </>
   );
 }
 
-function PermissionAsk({ wait, onAnswer, busy, marked }: {
+function PermissionAsk({ wait, onAnswer, busy, onConversation, marked }: {
   wait: PermissionWait;
   onAnswer?: PermissionAnswer;
   busy: boolean;
+  onConversation?: () => void;
   marked: boolean;
 }) {
   const { t } = useTranslation();
@@ -151,9 +157,13 @@ function PermissionAsk({ wait, onAnswer, busy, marked }: {
       data-permission={wait.request}
       className={cn('grid gap-1 rounded-control border border-line bg-raised px-3 py-2', marked ? SOUGHT : 'outline-none')}
     >
-      {/* The call as the agent named it (content, shown as written); its kind where it named one. */}
-      <p className="m-0 min-w-0 break-words text-body font-semibold">
-        {wait.title ? <CodeText text={wait.title} /> : <Inline text={untitled} />}
+      {/* The call as the agent named it (content, shown as written); its kind where it named one. *In the conversation* leads to
+          the call itself, where what it asks is read in context (PERMANCHOR1). */}
+      <p className="m-0 flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-1">
+        <span className="min-w-0 break-words text-body font-semibold">
+          {wait.title ? <CodeText text={wait.title} /> : <Inline text={untitled} />}
+        </span>
+        {onConversation && <span className="ml-auto"><InConversation onPress={onConversation} /></span>}
       </p>
       {wait.title && wait.kind && (
         <p className="m-0 text-small text-ink-soft"><Inline text={t('work.wait.permission.kind', { kind: wait.kind })} /></p>
