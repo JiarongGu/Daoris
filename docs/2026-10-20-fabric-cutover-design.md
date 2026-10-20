@@ -6,7 +6,8 @@ design builds nothing; its rows (§11) do.
 
 Read for it: the fabric events design §E7, §E2, §E3, §C4's five rules, §D2 and §D6; the workflow design §2.2, §4.5, §4.6, §5.1 and
 §5.2; D157 points 2, 6, 7, 8 and 11; D155's gate as `OpinionGate` builds it; D173's FABRIC-GRAPH1b, FABRICRUN1, GRAPHTWINS1 and
-CLOSE notes; D191. Every statement about today was read again from the code at `4e12716b9` and names its file and line; none was run.
+CLOSE notes; D191. Every statement about today was read again from the code at `d0e51b54b`, unchanged at `33c057386`, and names its
+file and line; none was run.
 Where a choice leans on behaviour no test shows, the first build row proves it (§11).
 
 ## 0. What the decisions rest on
@@ -222,7 +223,7 @@ subject moves, a new code beside `revision`. The runtime's paths that read the g
 - **The words go** that say a graph version does not run: `WorkflowNamed.cs:117-121`, the CLI's `namedworkflows.ts:130`, `:138` and
   `workflowdoor.ts:365`, `:691`, and the tests that hold them (`graphversions.test.ts`, `workflowchoice-door.test.ts`,
   `workflowdoor.test.ts`, `WorkflowGraphVersionsTests`). The first reading also named `HelpWorkflowProposals.cs`, whose words
-  (`:283`) speak of a step kind this build does not run, and stay. No e2e spec or rehearsal holds them at `4e12716b9`.
+  (`:283`) speak of a step kind this build does not run, and stay. No e2e spec or rehearsal holds them at `d0e51b54b`.
 
 ## 5. The person's two choices (WORKFLOW2b)
 
@@ -521,7 +522,7 @@ a schema-1 run's branch keeping its landing rule's cycle (§1's table).
 
 ## 14. What this document's gate does not cover
 
-Documents only; nothing is built. The statements about today were read again from the code at `4e12716b9`, and none was run. No test
+Documents only; nothing is built. The statements about today were read again from the code at `d0e51b54b`, and none was run. No test
 or run shows a node observed on a subject apart from its record's unit, the door's reading of `handed` agreeing with the pass that
 made it active, or arming's cost on a home with bound runs: CUTOVER1a, CUTOVER1d and CUTOVER1c are those proofs, CUTOVER1a first.
 `verify` checks this document's place and links, and none of its words.
