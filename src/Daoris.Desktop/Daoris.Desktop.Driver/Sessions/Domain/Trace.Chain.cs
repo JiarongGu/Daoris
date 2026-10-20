@@ -43,6 +43,9 @@ public static class TraceLinkGaps
 
     /// <summary>Its store holds none by the id the chain names.</summary>
     public const string NotFound = "not-found";
+
+    /// <summary>Its store's host is from before the door that reads it, so it is not kept there (a quest's moves, FLOWCHART1a2).</summary>
+    public const string NoDoor = "no-door";
 }
 
 /// <summary>Why this machine's record of a session is missing (D76).</summary>
@@ -397,7 +400,65 @@ public sealed record TraceQuestLink(string Id)
 
     /// <summary>The session records that name it, oldest first; null where the session records could not be read.</summary>
     public IReadOnlyList<TraceRecordRef>? Records { get; init; }
+
+    /// <summary>
+    /// Its moves, in the order its history replays (FLOWCHART1a2; D186, the flowchart design §2.1), from the service's
+    /// <c>GET /api/quests/{id}/moves</c>: what the quest's page draws on its flowchart. Null where they were not read, and
+    /// <see cref="MovesMissing"/> says why.
+    /// </summary>
+    public IReadOnlyList<TraceMove>? Moves { get; init; }
+
+    /// <summary>
+    /// Why its moves are not here: <see cref="TraceLinkGaps.NoDoor"/>, a host from before the door, so its path is not kept there; or
+    /// <see cref="TraceLinkGaps.Unread"/>, the door did not answer. Null where they were read, or the quest was not.
+    /// </summary>
+    public string? MovesMissing { get; init; }
+
+    /// <summary>What the moves' door said where it did not answer: the terminal's alone.</summary>
+    [JsonIgnore]
+    public string? MovesProblem { get; init; }
 }
+
+/// <summary>
+/// One move of a quest (FLOWCHART1a2), as the service answers it by allow-list: its kind as the wire spells it, when and on which
+/// machine it was made, its sequence there, and whether the replay applied it. Every other field is absent where the move keeps
+/// none, and a reader says it is not recorded.
+/// </summary>
+public sealed record TraceMove(string Kind, DateTimeOffset At, string Machine, long Sequence, bool Applied)
+{
+    /// <summary>Where the remote placed it in its order; null while it is pending, and on a machine with no remote.</summary>
+    public long? Number { get; init; }
+
+    /// <summary>The status it reached the quest at, as the record spells it; null before the publish.</summary>
+    public string? From { get; init; }
+
+    /// <summary>A conflict's: the status the move that lost attempted.</summary>
+    public string? Attempted { get; init; }
+
+    /// <summary>A dismissal's: the conflict it settles, by the machine and sequence the conflict keeps.</summary>
+    public TraceMoveRef? Dismisses { get; init; }
+
+    /// <summary>A wait's: the quest it waits on.</summary>
+    public string? WaitsOn { get; init; }
+
+    /// <summary>A submission's: the session that said its <c>ready</c>.</summary>
+    public string? Session { get; init; }
+
+    /// <summary>An evidence read's code: <c>found</c>, <c>missing</c> or <c>commit</c>.</summary>
+    public string? Evidence { get; init; }
+
+    /// <summary>A set-up's code: <c>local</c> or <c>deployed</c>.</summary>
+    public string? SetUp { get; init; }
+
+    /// <summary>A verdict's: <c>reviewed</c>, <c>not-yet</c> or <c>skipped</c>.</summary>
+    public string? Verdict { get; init; }
+
+    /// <summary>The hold it set (its code) or let go (<c>none</c>); null where it left the hold as it was.</summary>
+    public string? Hold { get; init; }
+}
+
+/// <summary>An operation by the machine and sequence that name it everywhere: what a dismissal names its conflict by.</summary>
+public sealed record TraceMoveRef(string Machine, long Sequence);
 
 /// <summary>One requirement: the person's words, its check, and how the done answered it (one of <see cref="TraceAnswers"/>).</summary>
 public sealed record TraceRequirement(int Number, string Quote, string Check, string Answer)
@@ -975,6 +1036,14 @@ internal static partial class TraceChains
             ],
             Then = [.. quest.Then.Select(step => new TraceStep(step.To, step.Title))],
             Records = records,
+            Moves = facts.Moves.GetValueOrDefault(quest.Id)?.Moves,
+            MovesMissing = facts.Moves.GetValueOrDefault(quest.Id) switch
+            {
+                { NoDoor: true } => TraceLinkGaps.NoDoor,
+                { Unread: not null } => TraceLinkGaps.Unread,
+                _ => null,
+            },
+            MovesProblem = facts.Moves.GetValueOrDefault(quest.Id)?.Unread,
         };
     }
 

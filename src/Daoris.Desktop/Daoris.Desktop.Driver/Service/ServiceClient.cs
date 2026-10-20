@@ -1440,6 +1440,22 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
     public Task<string> QuestsJsonAsync(CancellationToken ct = default) => GetAsync("/api/quests?includeClosed=true", ct);
 
     /// <summary>
+    /// One quest's moves as the service wrote them (FLOWCHART1a2, <c>GET /api/quests/{id}/moves</c>), in the order its history
+    /// replays: what a trace's quest link carries. Null from a host from before the door, which answers the route not found: its
+    /// path is not kept there, which is no failure (the flowchart design §7, trap 18). The door answers every id, one with no history
+    /// with no moves, so its own answer is never a 404.
+    /// </summary>
+    /// <exception cref="DriverException">The host answered the door with a failure.</exception>
+    public async Task<string?> QuestMovesJsonAsync(string id, CancellationToken ct = default)
+    {
+        var answer = await _doors.SendAsync(
+            ServiceVerb.Get, $"/api/quests/{Uri.EscapeDataString(id.TrimStart('#'))}/moves", null, ct).ConfigureAwait(false);
+        if (answer.Status == (int)System.Net.HttpStatusCode.NotFound) return null;
+        if (!answer.Ok) throw new DriverException($"the service would not read quest `#{id}`'s moves: {answer.Payload}");
+        return answer.Payload;
+    }
+
+    /// <summary>
     /// Every ask, closed and done ones included, each as it stands, as the service wrote them: what the asks' pushed slice reads
     /// (PUSH1d3), which <see cref="AskView"/> leaves out because no planner needs it.
     /// </summary>
