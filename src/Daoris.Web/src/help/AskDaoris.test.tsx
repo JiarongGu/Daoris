@@ -1639,6 +1639,39 @@ describe('Ask Daoris’s access and what it has', () => {
     expect(await chip('Restricted · full access next turn')).toBeInTheDocument();
   });
 
+  // ACCESSASK1 (the UI/UX design R3, §3.4): full access's refusal is said inside its ask, open to be pressed again, and a switch
+  // back refused under the chip in the composer bar; neither in the composer's own line.
+  it('says a refusal where it was pressed: inside full access’s ask, and under the chip for a switch back', async () => {
+    SESSIONS = [HELP];
+    ROWS = [row({ mode: 'restricted' })];
+    access();
+    const answered = invoke.getMockImplementation()!;
+    invoke.mockImplementation(async (module: string, type: string, ...rest: unknown[]) => {
+      if (type === 'SET_HELP_MODE') throw new Error('The driver could not write driver.json.');
+      return answered(module, type, ...rest);
+    });
+    show();
+
+    await chip('Restricted');
+    await pick('Full access — acts itself');
+    const asks = await screen.findByRole('group', { name: 'Enable full access?' });
+    await userEvent.click(within(asks).getByRole('button', { name: 'Enable full access' }));
+    expect(await within(asks).findByRole('alert')).toHaveTextContent('The driver could not write driver.json.');
+    expect(within(asks).getByRole('button', { name: 'Enable full access' })).toBeEnabled();
+    expect(screen.getAllByRole('alert')).toHaveLength(1);
+
+    cleanup();
+    MODE = 'full';
+    ROWS = [row({ mode: 'full' })];
+    show();
+    await chip('Full access');
+    await pick('Restricted — reads and proposes');
+    const alert = await screen.findByRole('alert');
+    expect(alert).toHaveTextContent('The driver could not write driver.json.');
+    // Under the chip, in the bar that holds it.
+    expect(alert.parentElement).toContainElement(screen.getByRole('button', { name: /^Ask Daoris’s access:/ }));
+  });
+
   it('ends the conversation opened ahead and not yet spoken in, so the next opens under the mode chosen', async () => {
     access();
     const answered = invoke.getMockImplementation()!;

@@ -72,7 +72,10 @@ describe('the driver domain', () => {
     const access = within(await screen.findByRole('region', { name: "Sessions' access" }));
     const row = (label: string) => access.getAllByText(label, { selector: 'span' })[0]!.closest('[data-setting-row]') as HTMLElement;
 
-    expect(access.getByText(/This machine's default, for every workspace and repository that sets none of its own/)).toBeTruthy();
+    // Its lead paragraph is its title's ⓘ (ACCESSASK1, the UI/UX design §3.3): the reason one press away, the rows first.
+    expect(access.getByRole('heading', { name: /Sessions' access/ })).toContainElement(
+      access.getByRole('note', { name: /This machine's default, for every workspace and repository that sets none of its own/ }));
+    expect(access.queryByText(/This machine's default/, { selector: 'p' })).toBeNull();
     expect(row('Go-aheads')).toHaveTextContent('No go-ahead is asked, save one the quest or your words demand. Set for this machine.');
     expect(row('Permission prompts')).toHaveTextContent("Daoris's default: nothing is set.");
     expect(within(row('Permission prompts')).getByRole('button', { name: 'Set for this machine' })).toBeTruthy();
@@ -89,6 +92,26 @@ describe('the driver domain', () => {
     await userEvent.click(access.getByRole('button', { name: 'Enable full access' }));
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SET_ACCESS', { payload: { machine: true, access: 'full' } });
     await vi.waitFor(() => expect(notify).toHaveBeenCalledWith('Sessions on this machine now start with full access.'));
+  });
+
+  // ACCESSASK1 (the UI/UX design R3, §3.3): a pause's change the driver refused is said under its row, the editor open, no toast.
+  it("says a refused change to this machine's access under its row, never a toast", async () => {
+    invoke.mockImplementation(async (module: string, type: string) => {
+      if (module !== 'DAORIS.DRIVER') return WIRING;
+      if (type === 'SET_ACCESS') throw new Error('The driver could not write driver.json.');
+      return { ...DRIVER_STATE, machineAccess: { full: false, pauses: [] } };
+    });
+    const notify = vi.fn();
+    show(<SettingsView notify={notify} section="driver" />);
+    const access = within(await screen.findByRole('region', { name: "Sessions' access" }));
+    const row = access.getAllByText('Permission prompts', { selector: 'span' })[0]!.closest('[data-setting-row]') as HTMLElement;
+
+    await userEvent.click(within(row).getByRole('button', { name: 'Set for this machine' }));
+    await userEvent.click(within(row).getByRole('radio', { name: 'Asking mode' }));
+
+    expect(await within(row).findByRole('alert')).toHaveTextContent('The driver could not write driver.json.');
+    expect(within(row).getByRole('radiogroup')).toBeTruthy();
+    expect(notify).not.toHaveBeenCalled();
   });
 
   it("offers no sessions' access on a shell older than it", async () => {

@@ -1,10 +1,11 @@
 import { type ReactElement, useState } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { render as rtlRender, screen, within } from '@testing-library/react';
+import { act, render as rtlRender, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import i18n from '../locales/i18n';
 import type { Ask } from '../data/api';
+import type { Answered } from '../work/InlineConfirm';
 import { NO_CARRY } from '../compose/carry';
 import { AskComposer, type AskDraft } from './AskComposer';
 import { AskPage } from './AskPage';
@@ -85,7 +86,38 @@ describe("the review choice for an ask's work", () => {
     await user.type(within(section).getByRole('textbox'), 'a typo');
     await user.click(within(section).getByRole('button', { name: 'Set' }));
 
-    expect(onChooseReview).toHaveBeenCalledWith('off', 'a typo');
+    expect(onChooseReview).toHaveBeenCalledWith('off', 'a typo', expect.anything());
+  });
+
+  // ACCESSASK1 (the UI/UX design R3): a refused choice is said under its press with the choice and the words still as typed, and
+  // an Apply refused under its proposal; neither is a toast.
+  it('says a refused choice under Set, keeping what was typed, and an Apply refused under its proposal', async () => {
+    const onChooseReview = vi.fn();
+    const user = userEvent.setup();
+    render(<AskPage ask={PROPOSING} receivers={[]} questTitles={{}} onPublish={vi.fn()} onClose={vi.fn()} onOpenQuest={vi.fn()} environments={['local']} onChooseReview={onChooseReview} />);
+    const section = screen.getByRole('region', { name: 'Review before it lands' });
+
+    await choose('change the review choice', 'Review it in local');
+    await user.type(within(section).getByRole('textbox'), 'run it locally');
+    await user.click(within(section).getByRole('button', { name: 'Set' }));
+    act(() => (onChooseReview.mock.lastCall![2] as Answered).refused('The repository engine declares no environment local.'));
+
+    const set = within(section).getByRole('button', { name: 'Set' }).parentElement!;
+    expect(within(set).getByRole('alert')).toHaveTextContent('The repository engine declares no environment local.');
+    expect(within(section).getByRole('textbox')).toHaveValue('run it locally');
+    expect(within(section).getByRole('combobox', { name: 'change the review choice' })).toHaveTextContent('Review it in local');
+
+    await user.click(within(section).getByRole('button', { name: 'Apply' }));
+    expect(within(set).queryByRole('alert')).toBeNull();
+    act(() => (onChooseReview.mock.lastCall![2] as Answered).refused('The ask is closed.'));
+    const proposal = within(section).getByRole('button', { name: 'Apply' }).parentElement!;
+    expect(within(proposal).getByRole('alert')).toHaveTextContent('The ask is closed.');
+
+    // Landed, the choice's press starts again.
+    await user.click(within(section).getByRole('button', { name: 'Set' }));
+    act(() => (onChooseReview.mock.lastCall![2] as Answered).done());
+    expect(within(section).queryByRole('alert')).toBeNull();
+    expect(within(section).queryByRole('textbox')).toBeNull();
   });
 
   it('says the choice standing, with the words it was set on', () => {
@@ -106,7 +138,7 @@ describe("the review choice for an ask's work", () => {
     expect(onChooseReview).not.toHaveBeenCalled();
     await user.click(within(section).getByRole('button', { name: 'Apply' }));
 
-    expect(onChooseReview).toHaveBeenCalledWith('off');
+    expect(onChooseReview).toHaveBeenCalledWith('off', undefined, expect.anything());
   });
 
   it('offers no change on a closed ask', () => {

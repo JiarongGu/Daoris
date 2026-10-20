@@ -120,7 +120,7 @@ export function AskPage({
    * An intake's kind proposal applied on the person's press (WORKFLOW1i-c, design §4.3), with the workflow the latest choice
    * already has. Absent where there is no door to set it through.
    */
-  onChooseKind?: (kind: string, workflow?: string | null) => void;
+  onChooseKind?: (kind: string, workflow: string | null | undefined, answered: Answered) => void;
   /**
    * Where its work stands in its workflow (WORKFLOW1c, the workflow design §3.8, §7): each run, one per chain and repository, said
    * in one line among the head's facts whose door opens it. Absent in a browser, which has no driver to read one.
@@ -130,9 +130,9 @@ export function AskPage({
   environments?: string[];
   /**
    * The person's review choice for the ask's work, or its intake's proposal applied (REVIEWENV1g, design §1.5), with their words.
-   * Absent where there is no door to set it through.
+   * Absent where there is no door to set it through. Answered where it was pressed: a refusal is said under that press (R3).
    */
-  onChooseReview?: (choice: string, words?: string) => void;
+  onChooseReview?: (choice: string, words: string | undefined, answered: Answered) => void;
   /** What a person calls an account (ACCTNAME1, D152 §4.2), from the roster; absent, the intake's record's id is said. */
   nameOf?: AccountNamer;
   ask: Ask;
