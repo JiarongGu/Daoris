@@ -70,10 +70,10 @@
     ["an old name whose value does not read goes, and nothing is read from it", {"rotationUse":{"claude-code":{"use":"order","early":"no","near":120}}}, {"rotationUse":{"claude-code":{"use":"order"}}}],
     ["a workspace's old names are written as the new", {"workspaceRotationUse":{"work":{"claude-code":{"near":80}}}}, {"workspaceRotationUse":{"work":{"claude-code":{"switch":"curve","curve":{"session":[[0,80]]}}}}}],
     ["the old names beside the switch are written over it", {"rotationUse":{"claude-code":{"switch":"curve","curve":{"session":[[0,80]]},"early":false}}}, {"rotationUse":{"claude-code":{"switch":"off","curve":{"session":[[0,80]]}}}}],
-    ["a curve goes out with its windows in one order and its numbers whole", "{\"rotationUse\":{\"claude-code\":{\"curve\":{\"weekly\":[[0,30.0],[100,100]],\"session\":[[0,80]]},\"switch\":\"curve\"}}}", {"rotationUse":{"claude-code":{"switch":"curve","curve":{"session":[[0,80]],"weekly":[[0,30],[100,100]]}}}}],
+    ["a curve's windows and an entry's fields stay in the order read, nothing written", {"rotationUse":{"claude-code":{"curve":{"weekly":[[0,30],[100,100]],"session":[[0,80]]},"switch":"curve"}}}, {"rotationUse":{"claude-code":{"curve":{"weekly":[[0,30],[100,100]],"session":[[0,80]]},"switch":"curve"}}}],
     ["a curve naming no window is not written", {"rotationUse":{"claude-code":{"curve":{},"use":"order"}}}, {"rotationUse":{"claude-code":{"use":"order"}}}],
     ["a curve this build does not read goes back as read", {"rotationUse":{"claude-code":{"curve":{"monthly":[[0,50]]}}}}, {"rotationUse":{"claude-code":{"curve":{"monthly":[[0,50]]}}}}],
-    ["a switch this build does not know goes back as read, after the ones it knows", {"rotationUse":{"claude-code":{"switch":"eager","use":"order"}}}, {"rotationUse":{"claude-code":{"use":"order","switch":"eager"}}}]
+    ["a switch this build does not know stays as read, where it was", {"rotationUse":{"claude-code":{"switch":"eager","use":"order"}}}, {"rotationUse":{"claude-code":{"switch":"eager","use":"order"}}}]
   ],
   "change": [
     ["one by one, in order, set on the machine", {}, "claude-code", {"use":"order"}, null, {"rotationUse":{"claude-code":{"use":"order"}}}],

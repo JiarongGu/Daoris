@@ -52,7 +52,10 @@ public sealed record RotationUse(string Use, string? Keep, string Switch, UseCur
     /// <summary>The old names (D130 §16.6), which D165 §6 replaced: read on, and never written.</summary>
     public static readonly IReadOnlyList<string> OldNames = ["early", "near"];
 
-    /// <summary>The settings §16.6 retired, which nothing released wrote: skipped by the reader, so gone at the next write.</summary>
+    /// <summary>
+    /// The settings §16.6 retired, which nothing released wrote: read as nothing and said as nothing, and gone at the next write, which
+    /// is measured from the entry as read (KEEPALL1b).
+    /// </summary>
     public static readonly IReadOnlyList<string> Retired = ["prefer", "parallel"];
 
     /// <summary>
@@ -95,7 +98,8 @@ public sealed record RotationUse(string Use, string? Keep, string Switch, UseCur
         if (entry["early"] is { } early && FlagOf(early) is null) unknown.Add("early");
         if (entry["near"] is { } near && NearOf(near) is null) unknown.Add("near");
         unknown.AddRange(entry.Fields.Select(field => field.Key)
-            .Where(name => !Fields.Contains(name, StringComparer.Ordinal) && !OldNames.Contains(name, StringComparer.Ordinal)));
+            .Where(name => !Fields.Contains(name, StringComparer.Ordinal) && !OldNames.Contains(name, StringComparer.Ordinal)
+                && !Retired.Contains(name, StringComparer.Ordinal)));
         return (use, unknown);
     }
 
@@ -183,12 +187,12 @@ public sealed record UseEntry(IReadOnlyList<KeyValuePair<string, JsonElement>> F
     }
 
     /// <summary>
-    /// The entry as written: its old names read on, and a curve that reads but names no window taken out — as the CLI's
-    /// <c>writtenUse</c> leaves it. An entry written as nothing is not written.
+    /// The entry as written: its old names read on, the retired names and a curve that reads but names no window taken out — as the
+    /// CLI's <c>writtenUse</c> leaves it. An entry written as nothing is not written.
     /// </summary>
     internal UseEntry Written()
     {
-        var folded = Folded();
+        var folded = RotationUse.Retired.Aggregate(Folded(), (entry, retired) => entry.With(retired, null));
         return folded["curve"] is { } raw && UseCurve.Read(raw) is { IsEmpty: true } ? folded.With("curve", null) : folded;
     }
 
@@ -266,6 +270,24 @@ public sealed record UseEntry(IReadOnlyList<KeyValuePair<string, JsonElement>> F
             writer.WritePropertyName(name);
             value.WriteTo(writer);
         }
+    }
+
+    /// <summary>
+    /// The entry as the file held it, each value as read, for the text a save's edit is measured from (KEEPALL1b): the settings this
+    /// build knows in their written order, then every other field in the order read, the old and retired names among them, so an
+    /// entry the writer would write alike measures as no edit, and its old and retired names as ones the edit takes out.
+    /// </summary>
+    internal void WriteAsRead(Utf8JsonWriter writer)
+    {
+        writer.WriteStartObject();
+        foreach (var (name, value) in RotationUse.Fields.Where(field => this[field] is not null).Select(field => KeyValuePair.Create(field, this[field]!.Value))
+            .Concat(Fields.Where(field => !RotationUse.Fields.Contains(field.Key, StringComparer.Ordinal))))
+        {
+            writer.WritePropertyName(name);
+            value.WriteTo(writer);
+        }
+
+        writer.WriteEndObject();
     }
 
     /// <summary>The fields as one object, each as held.</summary>
