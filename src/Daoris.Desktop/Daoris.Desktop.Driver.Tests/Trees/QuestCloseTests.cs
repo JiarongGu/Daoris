@@ -154,7 +154,10 @@ public sealed class QuestCloseTests : IDisposable
         public Task<(WorkReconcileAnswer Answer, int Generation)> ReconcileStepAsync(string plugin, WorkReconcileCall call, CancellationToken ct) =>
             Task.FromResult((new WorkReconcileAnswer(ReconcileStates.Unknown), 1));
 
-        public int? GenerationOf(string plugin) => 1;
+        /// <summary>The generation of the process that is up; null, none is, and a start waits for it (FABRIC-CLOSE1s).</summary>
+        public int? Up { get; set; } = 1;
+
+        public int? GenerationOf(string plugin) => Up;
 
         public void Watch(IReadOnlyDictionary<string, IReadOnlyList<WatchedUnit>> awaited)
         {
@@ -298,6 +301,123 @@ public sealed class QuestCloseTests : IDisposable
         Assert.Single(_door.Sent);
         Assert.Equal(NodeStates.Reached, Record().Statuses["close"].State);
         Assert.DoesNotContain(later.Said, line => line.Contains("closed by you", StringComparison.Ordinal));
+    }
+
+    /// <summary>
+    /// FABRIC-CLOSE1x (§E5): a close that itself waits says why once a pass, however many rounds propose it, and nothing once it closes.
+    /// </summary>
+    [Fact]
+    public async Task A_close_that_waits_for_a_submission_says_why_once_a_pass_and_nothing_once_it_closes()
+    {
+        var digest = Digest(Closing);
+        Quest(Taken("q7", digest));
+        var runtime = Runtime();
+        foreach (var _ in new[] { 1, 2 })
+        {
+            var pass = await runtime.PassAsync(Look(Closing), CancellationToken.None);
+            var said = Assert.Single(pass.Said, line => line.Contains("its close waits", StringComparison.Ordinal));
+            Assert.Contains("#q7 has no submission yet", said, StringComparison.Ordinal);
+            Assert.StartsWith("work  quest:q7:", said, StringComparison.Ordinal);
+        }
+
+        Quest(Taken("q7", digest, Ready41) with { Held = true, Hold = "evidence-unread" });
+        var held = await runtime.PassAsync(Look(Closing), CancellationToken.None);
+        Assert.Contains("held", Assert.Single(held.Said, line => line.Contains("its close waits", StringComparison.Ordinal)), StringComparison.Ordinal);
+
+        Quest(Taken("q7", digest, Ready41));
+        var closed = await runtime.PassAsync(Look(Closing), CancellationToken.None);
+        Assert.Single(_door.Sent);
+        Assert.DoesNotContain(closed.Said, line => line.Contains("its close waits", StringComparison.Ordinal));
+        var later = await runtime.PassAsync(Look(Closing), CancellationToken.None);
+        Assert.DoesNotContain(later.Said, line => line.Contains("its close waits", StringComparison.Ordinal));
+    }
+
+    private static void Age(string home, DateTimeOffset now)
+    {
+        foreach (var file in Directory.GetFiles(ClosureGraphs.FolderOf(home))) File.SetLastWriteTimeUtc(file, now.AddHours(-1).UtcDateTime);
+    }
+
+    /// <summary>
+    /// FABRIC-CLOSE1m (§E5): a kept closure graph is dropped once no quest bound to it is open and no close naming it waits, so the runtime
+    /// disarms; one kept moments ago, its quest not bound yet, is left.
+    /// </summary>
+    [Fact]
+    public async Task A_kept_closure_graph_is_dropped_once_its_last_bound_quest_is_done_and_settled_and_the_runtime_disarms()
+    {
+        var digest = Digest(Closing);
+        Quest(Taken("q7", digest, Ready41));
+        var runtime = Runtime();
+        await runtime.PassAsync(Look(Closing), CancellationToken.None);
+        Assert.Single(_door.Sent);
+        Assert.True(ClosureGraphs.Any(_home));
+
+        // Kept a moment ago: nothing bound to it yet is no reason to drop it, whatever the quests say.
+        Quest(Taken("q7", digest, Ready41) with { Status = "Done" });
+        await runtime.PassAsync(Look("{}"), CancellationToken.None);
+        Assert.True(ClosureGraphs.Any(_home));
+
+        // The quest is bound and open: kept, however old.
+        Quest(Taken("q7", digest, Ready41));
+        Age(_home, _now);
+        await runtime.PassAsync(Look("{}"), CancellationToken.None);
+        Assert.NotNull(ClosureGraphs.Read(_home, digest));
+
+        // Done and settled: dropped, the folder with it, and the next look reads nothing.
+        Quest(Taken("q7", digest, Ready41) with { Status = "Done" });
+        await runtime.PassAsync(Look("{}"), CancellationToken.None);
+        Assert.False(ClosureGraphs.Any(_home));
+        var idle = await runtime.PassAsync(Look("{}"), CancellationToken.None);
+        Assert.False(idle.Armed);
+    }
+
+    /// <summary>FABRIC-CLOSE1m: a Done quest whose close still waits for its answer keeps its graph.</summary>
+    [Fact]
+    public async Task A_closure_graph_is_kept_while_a_close_naming_it_has_not_settled()
+    {
+        var digest = Digest(Closing);
+        Quest(Taken("q7", digest, Ready41));
+        _door.Lose = true;
+        _door.Told = _ => throw new HttpRequestException("the door did not answer");
+        var runtime = Runtime();
+        await runtime.PassAsync(Look(Closing), CancellationToken.None);
+        Assert.Equal(AttemptStates.Unknown, Assert.Single(Record().Attempts).State);
+
+        Quest(Taken("q7", digest, Ready41) with { Status = "Done" });
+        Age(_home, _now);
+        await runtime.PassAsync(Look("{}"), CancellationToken.None);
+        Assert.NotNull(ClosureGraphs.Read(_home, digest));
+    }
+
+    /// <summary>
+    /// FABRIC-CLOSE1s (§E5): a prerequisite started on a wake binds the revision the pass judged, not the last full read's. A branch moved
+    /// since starts no attempt bound to the old one; the pass reads again, and the start is made at the new.
+    /// </summary>
+    [Fact]
+    public async Task A_wakes_plugin_start_on_a_bound_quest_binds_the_branch_tip_read_since_the_last_look()
+    {
+        var starts = new List<string>();
+        using var counting = Counting(starts);
+        var digest = Digest(Deployed);
+        _steps = [DeployStep];
+        var plugins = new Deploys { Up = null };
+        Quest(Taken("q7", digest, Ready41));
+        _branches["b7"] = ("q7", "tip-1");
+        var runtime = Runtime(plugins);
+        await runtime.PassAsync(Look(Deployed), CancellationToken.None);
+        Assert.Empty(plugins.Sent);
+
+        // The process comes up and the branch moves: the wake must not start the deploy on the revision judged at the look.
+        plugins.Up = 1;
+        _branches["b7"] = ("q7", "tip-2");
+        var wake = Look(Deployed) with { Whole = false };
+        await runtime.PassAsync(wake, CancellationToken.None);
+        Assert.Empty(plugins.Sent);
+
+        await runtime.PassAsync(wake, CancellationToken.None);
+        var read = await Look(Deployed).Units(CancellationToken.None);
+        var call = Assert.Single(plugins.Sent);
+        Assert.Equal(QuestClosing.Revision(_quests["q7"], _quests, read.Units, read.Tips), call.SubjectRevision);
+        Assert.Empty(starts);
     }
 
     /// <summary>
