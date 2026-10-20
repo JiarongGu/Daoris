@@ -706,6 +706,8 @@ public sealed partial class HelpCoverageTests
         ("driver", "useSetNotify", null, new Door("setting", "notify")),
         ("driver", "useSetStrikes", null, new Door("setting", "strikes")),
         ("driver", "useSetCoolOff", null, new Door("setting", "cooloff")),
+        // CAPSET1: the cap of sessions Daoris starts at once, set from the card as `setting cap` already proposes it.
+        ("driver", "useSetCap", null, new Door("setting", "cap")),
         // AUTONOMY1d: this machine's sessions' access, the level under every workspace's and repository's.
         ("driver", "useSetAccess", null, new Exempt(SessionAccess)),
         // UPDATE1e: the install's update, *Update when idle*, *Update now* and *Not now*, read once the hooks exported as
