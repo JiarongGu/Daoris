@@ -5,6 +5,13 @@ with the version and date at release.
 
 ## Unreleased
 
+- A repository's and a workspace's Workflow tab now begins with where work there goes: the default, each kind of task, and the
+  work that lands on the line, each wired to the workflow it follows and saying what chose it. A workflow can be made a
+  verification workflow of checks (marked `verification` in the file you import), which only the route for landed work names:
+  choose it on a repository's Setup, under *Line and landing*, or with `daoris driver workflow use <id> --repository <name>
+  --landed`, which shows the `daoris.gates.json` at the line's tip and accepts it. An edit of that file asks you again, with
+  *Accept the gates* on the Workflow tab. This version keeps the route and does not run the checks yet. A run's Workflow view
+  says which route chose its workflow, and `daoris driver workflow show` prints the routes before the steps.
 - A driven session whose own conversation cannot be resumed moves to a new session by itself only where waiting would not help.
   A refusal from its agent still carries it on, handed what Daoris kept of it, but a conversation open in another client of its
   agent now waits for you until you say more. Claude Code ending before it reopens a conversation is tried once more first, in a

@@ -20,9 +20,13 @@ One activity bar (D66), landing on management (D40). The views that read the fam
 **Sessions** is the working surface — the agent sessions this machine runs, attended one at a
 time (D55, `docs/2026-09-21-working-surface-design.md`) — and exists only in the desktop, because a
 stream never leaves its machine. **Map** is how a workspace's repositories are wired (MAP2).
-The session's Workflow view names its bound saved version, or Current for live declarations.
-Unreadable bindings show a problem without a completed diagram. Both the head and diff pane
-show workflow holds before Accept, preserving the driver's explanation and available terminal doors.
+The session's Workflow view names its bound saved version, or Current for live declarations, and the route that
+chose it (FABRIC-PIPELINE1a). Unreadable bindings show a problem without a completed diagram. Both the head and diff pane
+show workflow holds before Accept, preserving the driver's explanation and available terminal doors. A repository's and a
+workspace's Workflow tab draws its start node first, laid out by `Flow` (`workflow/WorkflowStartNode.tsx`): each route, the
+default, each kind by its label and paths, and the landed work, wired to the workflow it names; the landed route says where its
+gates stand against the line's tip and offers the person's *Accept the gates* (`WORKFLOW_LANDED`). A repository's Setup holds
+the same route as a row of *Line and landing* (`settings/repository/LandedRoute.tsx`).
 A second opinion's reviewer is a row of its own in Sessions' list, and says whose work it reads (XAGENT1g4c): the rail
 joins it to the working session through `GET /api/opinions`, asked only when the list holds a reviewer, and an unanswered
 read claims nothing. A session that continues another, and a helper, say so (MIXAGENT3a-i): the head's facts name the agent
