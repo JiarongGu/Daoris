@@ -5,6 +5,9 @@ with the version and date at release.
 
 ## Unreleased
 
+- A session running a long tool call, a shell command above all, says it in a few words: its row in Sessions and its page's head
+  each show the call's first 40 characters or so, the same call in both, and hovering shows it whole. The row keeps room for
+  its kind, its tree and when it moved, and the head's facts stay on one line.
 - The Sessions icon counts the sessions Daoris is running for you, and the status bar shows the same number; neither counts
   a conversation you hold yourself, Ask Daoris's included. Something in Sessions waiting on you is a dot in the waiting colour
   beside the count, and hovering the icon says both in words. The window's title keeps to the count *What needs you* shows,
