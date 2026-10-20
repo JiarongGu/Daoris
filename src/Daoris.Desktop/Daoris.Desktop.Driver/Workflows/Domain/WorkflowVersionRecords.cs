@@ -6,7 +6,15 @@ namespace Daoris.Driver;
 /// <param name="Door"><c>screen</c>, <c>terminal</c> or <c>ask-daoris:&lt;proposal&gt;</c>: never <i>the person</i> (design §2.5, D156 §4.1).</param>
 /// <param name="At">The moment, as ISO 8601 writes it.</param>
 /// <param name="Graph">A named graph as the version (schema 2, FABRIC-GRAPH1b), instead of <paramref name="Steps"/>: never both.</param>
-public sealed record WorkflowVersionAdded(string Id, string? Name, string Door, string At, JsonNode? Steps, JsonNode? Graph = null);
+public sealed record WorkflowVersionAdded(string Id, string? Name, string Door, string At, JsonNode? Steps, JsonNode? Graph = null)
+{
+    /// <summary>
+    /// The pipeline a new workflow is made as (FABRIC-PIPELINE1a, <see cref="WorkflowPipelines"/>): <c>verification</c> is written in its
+    /// file, <c>development</c> or null leaves the mark absent, today's shape. A later save keeps the file's, and one naming the other
+    /// is refused: a workflow of the other kind is a new workflow.
+    /// </summary>
+    public string? Pipeline { get; init; }
+}
 
 /// <summary>A version planned: the file after it, and the version's number; or the problem that writes nothing.</summary>
 public sealed record WorkflowAddPlan(JsonObject? Result, int? Version, string? Problem);

@@ -67,6 +67,23 @@ public sealed class WorkflowSelectionTests
         Assert.True(JsonNode.DeepEquals(JsonNode.Parse(row.GetProperty("selection").GetRawText()), said), $"{name}: {said.ToJsonString()}");
     }
 
+    /// <summary>
+    /// FABRIC-PIPELINE1a (D192 point 2, the pipeline design §1.2): the landed route resolves on its own, a repository's, else its
+    /// workspace's, else none, outside the rule by which a repository's development routes replace its workspace's.
+    /// </summary>
+    [Theory]
+    [MemberData(nameof(Rows), "landed")]
+    public void A_landed_route_resolves_on_its_own_as_the_cli_resolves_it(string name, int index)
+    {
+        var row = Table("landed")[index];
+
+        var route = WorkflowSelection.ResolveLanded(
+            DriverConfig.Parse(row.GetProperty("file").GetRawText()), Text(row, "repository"), Text(row, "workspace"));
+
+        var said = new JsonObject { ["workflow"] = route.Workflow, ["gates"] = route.Gates, ["level"] = route.Level };
+        Assert.True(JsonNode.DeepEquals(JsonNode.Parse(row.GetProperty("route").GetRawText()), said), $"{name}: {said.ToJsonString()}");
+    }
+
     [Theory]
     [MemberData(nameof(Rows), "edits")]
     public void An_edit_is_the_cli_s_or_refused_in_its_words(string name, int index)
@@ -153,6 +170,9 @@ public sealed class WorkflowSelectionTests
         {
             InKnown = edit.TryGetProperty("in", out _),
             In = Text(edit, "in"),
+            Landed = edit.TryGetProperty("landed", out var landed) && landed.ValueKind == JsonValueKind.True,
+            Gates = Text(edit, "gates"),
+            Pipeline = Text(edit, "pipeline"),
         };
     }
 

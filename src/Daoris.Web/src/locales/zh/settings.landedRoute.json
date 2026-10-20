@@ -1,0 +1,12 @@
+{
+  "settings.landedRoute.label": "落地工作的验证",
+  "settings.landedRoute.why": "落地到这个仓库主线上的工作所走的工作流：一个由检查组成的验证工作流，它按你采纳的样子运行 daoris.gates.json 声明的检查。仓库自己的路线只替换工作区对落地工作的路线；每件工作在落地之前如何推进，仍按它的其他路线。",
+  "settings.landedRoute.twin": "在终端里：`daoris driver workflow use <id> --repository {{repository}} --landed`",
+  "settings.landedRoute.says": "{{target}}，{{why}}。",
+  "settings.landedRoute.choices": "由什么验证落地到 {{repository}} 的工作",
+  "settings.landedRoute.follow": "跟随 {{workspace}} 的",
+  "settings.landedRoute.none": "这里没有保存验证工作流：`daoris driver workflow import <file>` 从一个标为 `verification` 的文件建立一个。",
+  "settings.landedRoute.accepts": "你选定一个时，就采纳了它主线最新提交上的 `daoris.gates.json`：它的检查不经询问地运行这些检查；它一旦改动，工作流标签页会再次请你采纳。",
+  "settings.landedRoute.summary": "由 {{name}} 验证",
+  "settings.landedRoute.summaryNone": "不做验证"
+}

@@ -287,6 +287,157 @@ public sealed class LandingHoldsTests : IDisposable
         Assert.Empty(said);
     }
 
+    /// <summary>
+    /// LANDHOLDSWEEP1: a sweep removes a hold's file no door has held for longer than the bound, and keeps one held, however old its
+    /// time, and one let go within the bound. A door after the sweep takes the tree as one that waited for nothing.
+    /// </summary>
+    [Fact]
+    public async Task A_sweep_removes_a_hold_left_past_the_bound_and_keeps_one_held_or_held_recently()
+    {
+        var path = LandingHolds.PathOf(_home, _tree);
+        var past = LandingHolds.Wait + TimeSpan.FromMinutes(1);
+        using (var landed = await LandingHolds.TakeAsync(_home, _tree)) landed!.Keep(Landed);
+        Assert.True(File.Exists(path));
+
+        Assert.Equal(0, LandingHolds.Sweep(_home, DateTime.UtcNow));
+        Assert.True(File.Exists(path), "let go just now: a door behind it may still read it");
+
+        var other = Path.Combine(_scratch, "trees", "aurora", "engine", "s-2");
+        Directory.CreateDirectory(other);
+        using (var held = await LandingHolds.TakeAsync(_home, other))
+        {
+            var heldPath = LandingHolds.PathOf(_home, other);
+            File.SetLastWriteTimeUtc(heldPath, DateTime.UtcNow - past);
+            Assert.Equal(1, LandingHolds.Sweep(_home, DateTime.UtcNow + past));
+            Assert.True(File.Exists(heldPath), "held, however old its time");
+        }
+
+        Assert.False(File.Exists(path), "no door held it past the bound");
+        using var next = await LandingHolds.TakeAsync(_home, _tree);
+        Assert.False(next!.Waited);
+        Assert.Null(next.Before);
+    }
+
+    /// <summary>
+    /// LANDHOLDSWEEP1: beside another process, a file it holds stays, whatever its time says; once that process lets go of it untouched,
+    /// the next sweep removes it.
+    /// </summary>
+    [Fact]
+    public void A_sweep_keeps_a_hold_another_process_holds()
+    {
+        var path = LandingHolds.PathOf(_home, _tree);
+        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+        using (var holder = new FileStream(path, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None))
+        {
+            File.SetLastWriteTimeUtc(holder.SafeFileHandle, DateTime.UtcNow - LandingHolds.Wait - TimeSpan.FromMinutes(1));
+            Assert.Equal(0, LandingHolds.Sweep(_home, DateTime.UtcNow));
+        }
+
+        Assert.True(File.Exists(path));
+        Assert.Equal(1, LandingHolds.Sweep(_home, DateTime.UtcNow));
+        Assert.False(File.Exists(path));
+    }
+
+    /// <summary>LANDHOLDSWEEP1: taking a hold sweeps the home's files left past the bound, so nothing has to call the sweep.</summary>
+    [Fact]
+    public async Task Taking_a_hold_sweeps_what_was_left_past_the_bound()
+    {
+        var folder = DaorisHome.Entry(_home, HomeEntry.Locks, "landings");
+        Directory.CreateDirectory(folder);
+        var left = Path.Combine(folder, "0123456789abcdef.lock");
+        File.WriteAllText(left, "");
+        File.SetLastWriteTimeUtc(left, DateTime.UtcNow - LandingHolds.Wait - TimeSpan.FromMinutes(1));
+
+        using var hold = await LandingHolds.TakeAsync(_home, _tree);
+
+        Assert.False(File.Exists(left));
+        Assert.True(File.Exists(LandingHolds.PathOf(_home, _tree)));
+    }
+
+    /// <summary>
+    /// LANDHOLD3: a door that waits behind another of this process names it, the holder's session and branch, as it says it waits;
+    /// one behind a holder that said nothing of itself waits unnamed, as LANDHOLD2's did.
+    /// </summary>
+    [Fact]
+    public async Task A_door_waiting_here_names_the_session_it_waits_behind()
+    {
+        var holder = new LandingHolder("s-first", "feature/first");
+        var said = new List<(bool, LandingHolder?)>();
+        using var told = LandingHoldNotice.Told((waiting, behind) => { lock (said) said.Add((waiting, behind)); });
+
+        var first = (await LandingHolds.TakeAsync(_home, _tree, by: holder))!;
+        var second = LandingHolds.TakeAsync(_home, _tree, by: new LandingHolder("s-second", null));
+        Assert.True(SpinWait.SpinUntil(() => LandingHolds.Waiting(_home, _tree) == 1, Bound));
+        lock (said) Assert.Equal([(true, holder)], said);
+        first.Dispose();
+        using (await second.WaitAsync(Bound)) { }
+        lock (said) Assert.Equal([(true, holder), (false, holder)], said);
+
+        lock (said) said.Clear();
+        using var unnamed = await LandingHolds.TakeAsync(_home, _tree);
+        Assert.Null(await LandingHolds.TakeAsync(_home, _tree, within: TimeSpan.FromMilliseconds(200)).WaitAsync(Bound));
+        lock (said) Assert.Equal([(true, (LandingHolder?)null), (false, null)], said);
+    }
+
+    /// <summary>
+    /// LANDHOLD3: the holder writes who it is to the hold's file as it takes it, beside what the file keeps, and shares reading it, so a
+    /// door in another process reads it through a handle of its own while no door can take it to write; it unwrites itself as it lets
+    /// go, and what it kept stands for the one behind.
+    /// </summary>
+    [Fact]
+    public async Task The_holder_writes_who_it_is_to_the_hold_where_another_process_reads_it()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        var path = LandingHolds.PathOf(_home, _tree);
+        var first = (await LandingHolds.TakeAsync(_home, _tree, by: new LandingHolder("s-first", "feature/first")))!;
+
+        Assert.Equal("""{"holder":{"session":"s-first","branch":"feature/first"}}""", ReadBeside(path));
+        Assert.Throws<IOException>(() => new FileStream(path, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.Read).Dispose());
+        first.Keep(Landed);
+        Assert.Contains("\"holder\":{\"session\":\"s-first\"", ReadBeside(path), StringComparison.Ordinal);
+        Assert.Contains("\"tip\":\"" + Landed.Tip + "\"", ReadBeside(path), StringComparison.Ordinal);
+
+        first.Dispose();
+        Assert.DoesNotContain("holder", ReadBeside(path), StringComparison.Ordinal);
+        using var next = await LandingHolds.TakeAsync(_home, _tree, by: new LandingHolder("s-next", null));
+        Assert.Null(next!.Before);
+    }
+
+    /// <summary>
+    /// LANDHOLD3: a door waiting behind another process's hold names it once that one has written who it is, by reading the file while
+    /// it waits; a landing that waited reads what that one kept as before, the name beside it changing nothing.
+    /// </summary>
+    [Fact]
+    public async Task A_door_waiting_on_another_process_names_it_once_it_says_who_it_is()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        var path = LandingHolds.PathOf(_home, _tree);
+        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+        var other = new FileStream(path, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.Read);
+        var said = new List<(bool, LandingHolder?)>();
+        using var told = LandingHoldNotice.Told((waiting, behind) => { lock (said) said.Add((waiting, behind)); });
+
+        var waiting = LandingHolds.TakeAsync(_home, _tree);
+        Assert.True(SpinWait.SpinUntil(() => LandingHolds.Waiting(_home, _tree) == 1, Bound));
+        var holder = new LandingHolder("s-terminal", "feature/terminal");
+        LandingHolds.Write(other, Landed, holder);
+        Assert.True(SpinWait.SpinUntil(() => { lock (said) return said.Count == 2; }, Bound), "named once it is written");
+        lock (said) Assert.Equal([(true, (LandingHolder?)null), (true, holder)], said);
+
+        await other.DisposeAsync();
+        using var took = await waiting.WaitAsync(Bound);
+        Assert.Equal(Landed, took!.Before);
+        lock (said) Assert.Equal((false, holder), said[^1]);
+    }
+
+    /// <summary>What the hold's file says, read through a second handle as another process would.</summary>
+    private static string ReadBeside(string path)
+    {
+        using var read = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+        using var text = new StreamReader(read);
+        return text.ReadToEnd();
+    }
+
     private static bool[] Snapshot(List<bool> said)
     {
         lock (said) return [.. said];

@@ -5,6 +5,40 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-21 — The service's machine log overwrote another knowledge host's lines (MACHINELOGAPPEND2)
+
+- **Symptom:** every session starts a knowledge host writing the day's one `mcp` file, and of two `Daoris.Knowledge.MachineLog`s
+  on one file, the second's line was gone after the first's next (the new tests, red on the old writer).
+- **Root cause:** the same as MACHINELOGAPPEND1's below. `FileMode.Append` seeks to the end once, at the open.
+- **Fix:** the driver's fix, written with the service's own code (the twins rule): each line seeks to the file's end under the
+  mutex `Local\Daoris.MachineLog.<hash of its full path>`, waiting a second at most, a mutex left by a dead writer taken on. A
+  writer that cannot open the mutex still writes at the end. That includes a platform without named mutexes, which the shared
+  host may run on.
+- **Verification:** the service's `MachineLogTests`, 13. Two logs on one file, in turn and from many threads at once, keep all
+  their lines. Both tests failed on the old writer.
+
+## 2026-10-21 — The change stream's and the help start's claims were timed on the machine's clock (TESTCLOCK3, TESTCLOCK1)
+
+- **Symptom:** TESTCLOCK1 left ten elapsed bounds in the modules' and the service's tests as they were. Each compared a `Stopwatch`
+  with a few seconds (500 ms to 10 s): "answered at once", "woken", "the stop answers a held wait", "the start does not wait for a
+  line". A loaded machine could fail any of them, and widening one would let the defect it guards pass.
+- **Root cause:** the claim was measured as the machine's time, not as what the code waited on. `ChangeStream` read a wait's bound
+  off `Stopwatch`, so no test could hold it.
+- **Fix:** `ChangeStream.OpenAsync` takes a `clock`, a `TimeProvider` used for a wait's bound only. The sampler's paces stay on the
+  machine's clock, since they set how often it looks and bound no wait. The local host passes the clock its services hold, so it
+  opens the stream after the build. `ChangeStreamTests` hands it the service tests' `MovedClock`, which stands still:
+  - the bootstrap, the moves before the ask and the ninth wait are answers at all, within `Poll.Patience`;
+  - the woken wait names its family without timing the wake;
+  - the 400 ms wait is answered only once the clock passes it, and not 1 ms before;
+  - the ninth wait that never queues is asked while the test holds the sampler (`HoldSamplerAsync`, standing in for a writer's lock).
+  The HTTP tests' `MovableClock` (now its own file) moves its timestamp and holds its timers. A `HeldChangesHost` fixture hands it
+  to `ChangeStreamHostTests`. The real host in `ChangeStreamProcessTests` runs on the machine's clock, so its wake and its stop are
+  judged against the wait's own 30 s end, counted from the ask, where the test's own 5 s and 10 s bounds read the machine's load.
+  `DriverModuleHelpStartTests`' line judge never answers and has no bound (`Timeout.InfiniteTimeSpan`). A start that waited for it
+  would never end, where the rules' 30 s would have let it end late.
+- **Verification:** `ChangeStreamTests` (48), the three HTTP classes with `ConfirmationTests` (24) and `DriverModuleHelpStartTests` (8)
+  were green alone, then three runs of each at once (about 1 m 55 s). Not run: the whole projects.
+
 ## 2026-10-21 — Two machine logs on one day's file overwrote each other's lines (MACHINELOGAPPEND1, ONEINSTANCE2)
 
 - **Symptom:** ONEINSTANCE2 measured that of two `MachineLog`s on one file, the second's line was gone after the first's next,

@@ -46,6 +46,11 @@ export const BoundVersion: Story = { args: { here: 'write', answer: answerOf({ .
   } })),
 }) } };
 
+/** FABRIC-PIPELINE1a: the run heads with the route that chose its workflow, the workspace's for Documentation. */
+export const ChosenByItsRoute: Story = { args: { answer: answerOf({ ...IN_REVIEW,
+  workflow: { ...IN_REVIEW.workflow, id: 'docs-to-pr', boundVersion: 2, route: { level: 'workspace-kind', kind: 'docs', label: 'Documentation' } } }) } };
+export const ChosenByItsRouteChinese: Story = { ...ChosenByItsRoute, decorators: [chinese] };
+
 /** An unread binding has no replacement graph and no completed mark. */
 export const BindingUnread: Story = { args: { answer: answerOf({ ...IN_REVIEW, steps: [], at: null,
   problem: 'Its stored run binding could not be read. Restore the binding to continue.' }) } };

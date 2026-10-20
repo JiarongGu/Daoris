@@ -150,5 +150,6 @@
   "workflow.run.door.review": "打开审阅",
   "workflow.run.door.pullRequest": "打开拉取请求",
   "workflow.run.door.view": "工作流",
-  "workflow.run.viewNamed": "打开这项工作在工作流中的进展"
+  "workflow.run.viewNamed": "打开这项工作在工作流中的进展",
+  "workflow.run.route": "它的路线：{{why}}。"
 }

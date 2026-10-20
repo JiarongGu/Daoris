@@ -58,8 +58,14 @@ export interface WorkflowRun {
   /** The driver's explanation where the bound process could not be read; an empty graph here is never a finished run. */
   problem?: string | null;
   workflowGate?: import('./gate').WorkflowGateState | null;
-  /** Its graph digest, bound identity when named, start plugins and each limit's sentence. */
-  workflow: { version: string; startHolds: string[]; limits: Record<string, string>; id?: string | null; boundVersion?: number | null };
+  /**
+   * Its graph digest, bound identity when named, start plugins and each limit's sentence; and the route that chose its workflow, as its
+   * binding keeps it (FABRIC-PIPELINE1a): the level, and the kind with its label where one chose it.
+   */
+  workflow: {
+    version: string; startHolds: string[]; limits: Record<string, string>; id?: string | null; boundVersion?: number | null;
+    route?: { level: string; kind?: string | null; label?: string | null } | null;
+  };
   steps: RunStep[];
 }
 

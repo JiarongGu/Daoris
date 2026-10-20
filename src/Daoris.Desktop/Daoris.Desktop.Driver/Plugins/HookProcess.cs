@@ -213,13 +213,24 @@ public sealed class HookProcess : IHookChannel
         _process.Dispose();
     }
 
-    private static async Task RelayAsync(StreamReader stderr, Action<string> onLine)
+    /// <summary>
+    /// The longest stderr line relayed whole, in UTF-8 bytes (PLUGSTDERR1, §C4): past any sentence a plugin says to a person, and still a bound
+    /// on what one line can hold. A longer line is relayed clipped to it, marked <see cref="Clipped"/>, and the next line as it comes.
+    /// </summary>
+    public const int StderrBytes = 8 * 1024;
+
+    /// <summary>What ends a clipped stderr line, so a reader sees it was cut rather than ended.</summary>
+    public const string Clipped = " …";
+
+    /// <summary>A plugin's stderr, line by line, each under <see cref="StderrBytes"/>: no line it writes can grow the driver's memory past it.</summary>
+    private static async Task RelayAsync(TextReader stderr, Action<string> onLine)
     {
         try
         {
-            while (await stderr.ReadLineAsync().ConfigureAwait(false) is { } line)
+            var lines = new BoundedLines(stderr, StderrBytes, clip: true);
+            while (await lines.ReadAsync(CancellationToken.None).ConfigureAwait(false) is { } line)
             {
-                if (line.Length > 0) onLine(line);
+                if (line.Text is { Length: > 0 } text) onLine(line.Clipped ? text + Clipped : text);
             }
         }
         catch (Exception error) when (error is IOException or ObjectDisposedException)

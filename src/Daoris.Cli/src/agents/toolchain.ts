@@ -3016,6 +3016,16 @@ function startChild(
 }
 
 /**
+ * git's answer in a checkout, read and never written (FABRIC-PIPELINE1a: `driver workflow use … --landed` reads the line's tip and
+ * its declaration's blob as git objects): started here, as every child is, with the tools' git. A git that would not start answers
+ * no status.
+ */
+export function gitAnswer(root: string, args: readonly string[]): { status: number | null; stdout: string } {
+  const ran = startChild(throughTools(['git', '-C', root, ...args]), process.env, { timeout: 30_000 });
+  return { status: ran.error ? null : ran.status, stdout: ran.stdout ?? '' };
+}
+
+/**
  * A command whose first word a tool answers for, with that word the file the tools resolve (TOOLS5): with no home,
  * as named, which is today's.
  */

@@ -127,7 +127,7 @@ public sealed class TreeSyncReplayTests : TreeSyncFixture
         var trees = new SessionTrees(Home);
         var tree = await trees.OpenAsync(root, "engine", "aurora");
         // Something whose working folder is the tree, as a terminal left open in it would be.
-        var holder = Process.Start(new ProcessStartInfo
+        var holder = Process.Start(TestGit.Past(new ProcessStartInfo
         {
             FileName = "git",
             ArgumentList = { "cat-file", "--batch" },
@@ -136,7 +136,7 @@ public sealed class TreeSyncReplayTests : TreeSyncFixture
             RedirectStandardOutput = true,
             UseShellExecute = false,
             CreateNoWindow = true,
-        })!;
+        }))!;
         try
         {
             var removed = await trees.RemoveAsync(tree.Path);

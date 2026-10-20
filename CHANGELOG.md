@@ -10,6 +10,18 @@ with the version and date at release.
   wait, and beside *Start a conversation with these words* there is *Go on with Daoris's brief*, which goes on in a new part of the
   same session with that record. The same holds for a session whose quest has closed and for Ask Daoris's conversations. Handing a
   conversation over yourself first asks its agent for a short closing note, which the new conversation is given.
+- A plugin's line on stderr longer than 8 KB is shown under `plugin:<id>` clipped to its start and ending ` …`, and the lines
+  after it as before, so a plugin that writes without a line end can no longer grow Daoris's memory.
+- A repository's and a workspace's Workflow tab now begins with where work there goes: the default, each kind of task, and the
+  work that lands on the line, each wired to the workflow it follows and saying what chose it. A workflow can be made a
+  verification workflow of checks (marked `verification` in the file you import), which only the route for landed work names:
+  choose it on a repository's Setup, under *Line and landing*, or with `daoris driver workflow use <id> --repository <name>
+  --landed`, which shows the `daoris.gates.json` at the line's tip and accepts it. An edit of that file asks you again, with
+  *Accept the gates* on the Workflow tab. This version keeps the route and does not run the checks yet. A run's Workflow view
+  says which route chose its workflow, and `daoris driver workflow show` prints the routes before the steps.
+- A review's *Accept* or hand button that waits for another landing or push of the same work names the session it waits behind
+  (*Waiting behind 0fda18aa…*, 排在 0fda18aa 之后…), and `daoris-driver trees land` and `trees hand` name that session and its
+  branch. A landing that does not say who it is, from an older Daoris, is still said only as *Waiting its turn…*.
 - A repository's Setup says which checks its driven sessions run, beside its heavy gates, and `daoris-driver checks` sets
   the same choice from a terminal. *Light* has sessions run the gates the repository does not mark heavy and the checks their
   change reaches, filtered; its heavy gates are left out of every session. Each session is told so when it starts,
@@ -28,6 +40,9 @@ with the version and date at release.
   could overwrite each other's in the day's file. An error that ends the desktop's application is written there before the log closes.
 - Settings → Driver lists the plugins installed here under *Installed plugins*: whether each is on, whether each of its servers is
   approved for Ask Daoris and which writes you accepted, and *Open*, which takes you to the plugin's page, where you change them.
+- A recovery ref a branch or a tag of yours holds is now kept for 30 days from when Daoris made it, where before they counted from
+  its commit's date, so one made for older work could go at the next tidy. Recovery refs made before this version still count
+  from their commit's date.
 
 - A usage curve that breaks a rule is refused naming its row, as the curve's editor shows it (*`weekly`'s row 2 has used
   20%…*, 第 2 行), on the Accounts screen, in `profile use --curve` and in Ask Daoris, where it said *point*.

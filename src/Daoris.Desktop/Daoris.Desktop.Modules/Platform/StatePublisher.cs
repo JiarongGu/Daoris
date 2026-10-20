@@ -105,11 +105,16 @@ public sealed record StateChanged(
 /// <param name="Session">The session the route's declaration names in the payload; absent where it names none.</param>
 /// <param name="Subject">The entry or ask the route's declaration names in the payload (ACCEPTALL1e); absent where it names none.</param>
 /// <param name="Step">The step its handler says it has reached (PRESSSTEP1, <see cref="PressSteps"/>); absent until it says one.</param>
+/// <param name="Behind">
+/// The session whose landing or push its <see cref="PressSteps.Waiting"/> step waits behind (LANDHOLD3), where that one said who it is;
+/// absent at any other step, and where it did not.
+/// </param>
 public sealed record PressUnderWay(
     string Route,
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? Session,
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? Subject = null,
-    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? Step = null);
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? Step = null,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? Behind = null);
 
 /// <summary>
 /// <c>UNDER_WAY</c> on the wire (STATEHUB1c, D169 point 7): every declared press dispatched and not yet answered, told whole at
@@ -187,9 +192,9 @@ public static class StatePublisher
             bus.Emit(Module, UnderWayType, underWay.Begin(press, new PressUnderWay(
                 request.Type, FieldOf(change.Session, request), FieldOf(change.Subject, request))));
             // The handler of this press says its step through PressSteps, which finds this press by the flow of the call.
-            using var steps = PressSteps.Within(step =>
+            using var steps = PressSteps.Within((step, behind) =>
             {
-                if (underWay.Reach(press, step) is { } told) bus.Emit(Module, UnderWayType, told);
+                if (underWay.Reach(press, step, behind) is { } told) bus.Emit(Module, UnderWayType, told);
             });
             try
             {
@@ -304,16 +309,17 @@ public sealed class PressesUnderWay
     }
 
     /// <summary>
-    /// <paramref name="press"/> has reached <paramref name="step"/> (PRESSSTEP1): the telling it makes, or null where it is not under
-    /// way or already says that step, so the same step told again numbers nothing.
+    /// <paramref name="press"/> has reached <paramref name="step"/> (PRESSSTEP1), behind <paramref name="behind"/>'s landing where it
+    /// waits (LANDHOLD3): the telling it makes, or null where it is not under way or already says that step behind that one, so the same
+    /// step told again numbers nothing.
     /// </summary>
-    public UnderWay? Reach(object press, string step)
+    public UnderWay? Reach(object press, string step, string? behind = null)
     {
         lock (_gate)
         {
             var at = _underWay.FindIndex(each => ReferenceEquals(each.Press, press));
-            if (at < 0 || _underWay[at].Told.Step == step) return null;
-            _underWay[at] = (press, _underWay[at].Told with { Step = step });
+            if (at < 0 || (_underWay[at].Told.Step == step && _underWay[at].Told.Behind == behind)) return null;
+            _underWay[at] = (press, _underWay[at].Told with { Step = step, Behind = behind });
             return Telling(++_seq);
         }
     }
@@ -358,32 +364,36 @@ public static class PressSteps
     public const string HandOff = "handOff";
 
     /// <summary>
-    /// A landing or hand-off waits behind another one's hold (LANDHOLD2, D145 point 2): said before it waits, and the step it was at
-    /// is said again when it has the hold.
+    /// A landing or hand-off waits behind another one's hold (LANDHOLD2, D145 point 2): said before it waits, with the session it
+    /// waits behind where that one said who it is (LANDHOLD3), and the step it was at is said again when it has the hold.
     /// </summary>
     public const string Waiting = "waiting";
 
-    private static readonly AsyncLocal<Action<string>?> Current = new();
+    private static readonly AsyncLocal<Action<string, string?>?> Current = new();
 
     /// <summary>
-    /// For the landing or hand-off this call makes (LANDHOLD2): where its hold is waited for, the press says <see cref="Waiting"/>, and
-    /// <paramref name="back"/> again once the wait is over. A press that waits for nothing says nothing more.
+    /// For the landing or hand-off this call makes (LANDHOLD2): where its hold is waited for, the press says <see cref="Waiting"/>
+    /// behind the holder's session once it is known (LANDHOLD3), and <paramref name="back"/> again once the wait is over. A press that
+    /// waits for nothing says nothing more.
     /// </summary>
     public static IDisposable WhileWaiting(string back) =>
-        LandingHoldNotice.Told(waiting => Reach(waiting ? Waiting : back));
+        LandingHoldNotice.Told((waiting, behind) => Reach(waiting ? Waiting : back, waiting ? behind?.Session : null));
 
-    /// <summary>The press this call runs in has reached <paramref name="step"/>; nothing where it runs in none.</summary>
-    public static void Reach(string step) => Current.Value?.Invoke(step);
+    /// <summary>
+    /// The press this call runs in has reached <paramref name="step"/>, behind <paramref name="behind"/>'s landing where it waits;
+    /// nothing where it runs in none.
+    /// </summary>
+    public static void Reach(string step, string? behind = null) => Current.Value?.Invoke(step, behind);
 
     /// <summary>What the publisher holds for the press it dispatches: its handler's steps reach <paramref name="reach"/> until disposed.</summary>
-    internal static IDisposable Within(Action<string> reach)
+    internal static IDisposable Within(Action<string, string?> reach)
     {
         var before = Current.Value;
         Current.Value = reach;
         return new Restore(before);
     }
 
-    private sealed class Restore(Action<string>? before) : IDisposable
+    private sealed class Restore(Action<string, string?>? before) : IDisposable
     {
         public void Dispose() => Current.Value = before;
     }

@@ -118,6 +118,7 @@ public sealed class ChangeStream : IAsyncDisposable
 
     private readonly string _database;
     private readonly MachineLog? _log;
+    private readonly TimeProvider _clock;
     private readonly TimeSpan _pace;
     private readonly TimeSpan? _identityPace;
     private readonly TimeSpan _reopenAfter;
@@ -145,10 +146,11 @@ public sealed class ChangeStream : IAsyncDisposable
     private Task? _pump;
     private TaskCompletionSource _moved = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
-    private ChangeStream(string database, MachineLog? log, TimeSpan pace, TimeSpan? identityPace, TimeSpan reopenAfter)
+    private ChangeStream(string database, MachineLog? log, TimeProvider clock, TimeSpan pace, TimeSpan? identityPace, TimeSpan reopenAfter)
     {
         _database = database;
         _log = log;
+        _clock = clock;
         _pace = pace;
         _identityPace = identityPace;
         _reopenAfter = reopenAfter;
@@ -160,12 +162,18 @@ public sealed class ChangeStream : IAsyncDisposable
     /// </summary>
     /// <param name="pace">How often the sampler reads while a wait is held; <see cref="Pace"/> unless a test hurries it.</param>
     /// <param name="identityPace">How often the path's identity is read; by default <see cref="IdentityPace"/>, and never on Windows.</param>
+    /// <param name="clock">
+    /// The clock a wait's bound is read on: the machine's unless a test holds it (TESTCLOCK3), so a wait the clock never ends is
+    /// answered only by a move, a cursor or a slot, and "at once" is a claim the test states without timing it. The sampler's
+    /// paces are how often it looks, not a bound, and stay on the machine's clock.
+    /// </param>
     public static async Task<ChangeStream> OpenAsync(
         string database, MachineLog? log = null, TimeSpan? pace = null, TimeSpan? identityPace = null, TimeSpan? reopenAfter = null,
-        CancellationToken ct = default)
+        TimeProvider? clock = null, CancellationToken ct = default)
     {
         var stream = new ChangeStream(
-            database, log, pace ?? Pace, identityPace ?? (OperatingSystem.IsWindows() ? null : IdentityPace), reopenAfter ?? ReopenAfter);
+            database, log, clock ?? TimeProvider.System, pace ?? Pace, identityPace ?? (OperatingSystem.IsWindows() ? null : IdentityPace),
+            reopenAfter ?? ReopenAfter);
         await stream.SampleAsync(ct).ConfigureAwait(false);
         return stream;
     }
@@ -187,6 +195,26 @@ public sealed class ChangeStream : IAsyncDisposable
     internal long Seen => Interlocked.Read(ref _seen);
 
     /// <summary>
+    /// Holds the sampler as a sample under way holds it, until the answer is disposed: what a writer's lock does to a sample, for as
+    /// long as a test needs (TESTCLOCK3), so "never queues behind it" is a wait that never ends rather than one timed.
+    /// </summary>
+    internal async Task<IDisposable> HoldSamplerAsync()
+    {
+        await _sampling.WaitAsync().ConfigureAwait(false);
+        return new Released(_sampling);
+    }
+
+    private sealed class Released(SemaphoreSlim held) : IDisposable
+    {
+        private int _released;
+
+        public void Dispose()
+        {
+            if (Interlocked.Exchange(ref _released, 1) == 0) held.Release();
+        }
+    }
+
+    /// <summary>
     /// What moved after <paramref name="since"/>, answered as soon as a family moves or at <paramref name="wait"/> with nothing.
     /// A cancelled wait answers what it would have answered then.
     /// </summary>
@@ -196,7 +224,7 @@ public sealed class ChangeStream : IAsyncDisposable
         if (wait > LongestWait) wait = LongestWait;
 
         // The wait is counted from its arrival, whatever a sample ahead of it takes.
-        var until = Stopwatch.GetTimestamp() + Ticks(wait);
+        var arrived = _clock.GetTimestamp();
         lock (_gate)
         {
             // A wait past the bound is answered at once with what the last sample counted, and never samples itself: it never
@@ -225,12 +253,12 @@ public sealed class ChangeStream : IAsyncDisposable
             while (true)
             {
                 var (answer, moved) = Judged(since);
-                var left = Stopwatch.GetElapsedTime(Stopwatch.GetTimestamp(), until);
+                var left = wait - _clock.GetElapsedTime(arrived);
                 if (answer.Moved.Count > 0 || left <= TimeSpan.Zero || ct.IsCancellationRequested) return answer;
 
                 try
                 {
-                    await moved.WaitAsync(left, ct).ConfigureAwait(false);
+                    await moved.WaitAsync(left, _clock, ct).ConfigureAwait(false);
                 }
                 catch (TimeoutException)
                 {

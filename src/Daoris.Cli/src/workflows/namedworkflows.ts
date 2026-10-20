@@ -138,13 +138,26 @@ export function unrun(version: NamedVersion): string | null {
   return version.steps !== null ? null : version.problem ?? `v${version.version}: it is a graph (schema ${GRAPH_SCHEMA}), which this build reads and does not run yet.`;
 }
 
-/** A workflow file as read: its id and name and every version, each readable or not; or the file's own first problem. */
+/**
+ * Which pipeline a workflow is (FABRIC-PIPELINE1a, D192 point 3, the pipeline design §2.1): its file's top-level `pipeline`, written
+ * when it is made and kept by every later save, absent read as `development` — the driver's `WorkflowPipelines`.
+ */
+export type Pipeline = 'development' | 'verification';
+
+/** A workflow file as read: its id and name, its pipeline and every version, each readable or not; or the file's own first problem. */
 export interface WorkflowRead {
   id: string | null;
   name: string | null;
+  /** The file's mark, or null where the file does not read. */
+  pipeline?: Pipeline | null;
   versions: NamedVersion[];
   problem: string | null;
 }
+
+const PIPELINE_PROBLEM = 'a workflow\'s `pipeline` is `development` or `verification`, as it was made; absent is `development`.';
+
+/** The kinds a verification pipeline's graph never holds: each observes a chain's work, or lands it (the pipeline design §2.1). */
+const NOT_VERIFIED: readonly string[] = ['claimed', 'opinion', 'look', 'go-ahead', 'handed', 'quest.close'];
 
 const ID_RULE = 'lower-case letters, digits and dashes, at most 40';
 const ENVIRONMENT_SHAPE = ID_SHAPE;
@@ -191,12 +204,16 @@ export function kindOf(kind: string): KindRow | undefined {
  * later version unreadable.
  */
 export function readWorkflowFile(value: unknown): WorkflowRead {
-  const none = (problem: string): WorkflowRead => ({ id: null, name: null, versions: [], problem });
+  const none = (problem: string): WorkflowRead => ({ id: null, name: null, pipeline: null, versions: [], problem });
   if (!isObject(value)) return none(FILE_SHAPE);
   const idProblem = workflowIdProblem(value['id']);
   if (idProblem !== null) return none(idProblem);
   const nameProblem = workflowNameProblem(value['name']);
   if (nameProblem !== null) return none(nameProblem);
+  // The mark (FABRIC-PIPELINE1a): absent or null is a development pipeline; a value this build does not know reads nothing.
+  const mark = value['pipeline'] ?? 'development';
+  if (mark !== 'development' && mark !== 'verification') return none(PIPELINE_PROBLEM);
+  const pipeline: Pipeline = mark;
   const versions = value['versions'];
   if (!Array.isArray(versions) || versions.length === 0) return none(VERSIONS_PROBLEM);
   let last = 0;
@@ -209,18 +226,22 @@ export function readWorkflowFile(value: unknown): WorkflowRead {
 
   const read: NamedVersion[] = [];
   for (const version of versions as Record<string, unknown>[]) {
-    read.push(readVersion(version, version['version'] as number, read.filter((each) => each.steps !== null)));
+    read.push(readVersion(version, version['version'] as number, read.filter((each) => each.steps !== null), pipeline));
   }
 
-  return { id: value['id'] as string, name: value['name'] as string, versions: read, problem: null };
+  return { id: value['id'] as string, name: value['name'] as string, pipeline, versions: read, problem: null };
 }
 
 /**
  * One version read (design §2.5): its `at`, its `door`, then its steps, the first problem said with the version's number.
  *
  * @param prior The versions before it that read, which a step's id is held to: an id is never used for another kind.
+ * @param pipeline The mark its workflow's file carries (FABRIC-PIPELINE1a): a development pipeline's graph lands its work once, and a
+ *   verification pipeline's versions are graphs holding its checks.
  */
-export function readVersion(value: Record<string, unknown>, number: number, prior: readonly NamedVersion[]): NamedVersion {
+export function readVersion(
+  value: Record<string, unknown>, number: number, prior: readonly NamedVersion[], pipeline: Pipeline = 'development',
+): NamedVersion {
   const at = typeof value['at'] === 'string' ? value['at'] : null;
   const door = typeof value['door'] === 'string' ? value['door'] : null;
   const unread = (problem: string): NamedVersion => ({ version: number, at, door, steps: null, problem, digest: null });
@@ -250,7 +271,7 @@ export function readVersion(value: Record<string, unknown>, number: number, prio
       // Judged whole as the driver's `NodeGraphs.Read` judges it (FABRIC-GRAPH1c, GRAPH1k), its first problem said.
       const read = readGraph(raw);
       if (read.problems.length > 0) return unread(`v${number}: its graph does not hold: ${read.problems[0]!.words}`);
-      const landing = oneLandingProblem(read.graph!, number);
+      const landing = pipeline === 'verification' ? verificationProblem(read.graph!, number) : oneLandingProblem(read.graph!, number);
       if (landing !== null) return unread(landing);
       // The driver reads this graph and this build cannot write its options as the driver does: no digest, and, where some option's text
       // was not kept (FABRIC-GRAPH1f: a file read with `JSON.parse`), no rewriting of the file.
@@ -262,8 +283,27 @@ export function readVersion(value: Record<string, unknown>, number: number, prio
     }
   }
 
+  // A verification pipeline's versions are graphs (the steps engine runs no `check`, D190 §10).
+  if (pipeline === 'verification') return unread(`v${number}: a verification pipeline's versions are graphs (schema ${GRAPH_SCHEMA}) holding its checks, never steps.`);
   const { steps, problem } = readSteps(hasSteps ? value['steps'] : undefined, number, prior);
   return steps === null ? unread(problem!) : { version: number, at, door, steps, problem: null, digest: versionDigest(steps) };
+}
+
+/**
+ * Why a verification pipeline's graph is not one, or null (FABRIC-PIPELINE1a, D192 point 3, the pipeline design §2.1): it holds none
+ * of `claimed`, `opinion`, `look`, `go-ahead`, `handed` or `quest.close`, whose subjects a landed run has none of, the first in node
+ * order named; then at least one `check`. A TWIN with the driver's `WorkflowNamed.VerificationProblem`, on
+ * `workflow-graph-versions.json`.
+ */
+function verificationProblem(graph: GraphForm, number: number): string | null {
+  const held = graph.nodes.find((node) => NOT_VERIFIED.includes(node.kind));
+  if (held !== undefined) {
+    return `v${number}: its graph holds \`${held.id}\`, a \`${held.kind}\`, and a verification pipeline's graph lands nothing and observes `
+      + 'no chain\'s work: it holds no `claimed`, `opinion`, `look`, `go-ahead`, `handed` or `quest.close`.';
+  }
+  return graph.nodes.some((node) => node.kind === 'check')
+    ? null
+    : `v${number}: its graph holds no \`check\`, and a verification pipeline's graph runs at least one.`;
 }
 
 /**
@@ -850,6 +890,12 @@ export interface VersionAdded {
    * the driver's `PlanAdd` judges it. Read by `parseWithSource`, its values are written back as read (`stringifyWithSource`).
    */
   graph?: unknown;
+  /**
+   * The pipeline a new workflow is made as (FABRIC-PIPELINE1a): `verification` is written in its file, `development` (or none) leaves
+   * the mark absent, today's shape. A later save keeps the file's, and one naming the other is refused: a workflow of the other kind
+   * is a new workflow.
+   */
+  pipeline?: Pipeline | null;
 }
 
 /**
@@ -874,13 +920,21 @@ export function planAddVersion(file: unknown, add: VersionAdded, kept: readonly 
     const problem = workflowIdProblem(add.id) ?? workflowNameProblem(add.name);
     if (problem !== null) return refused(problem);
     version.version = 1;
-    const read = readVersion(version, 1, []);
-    return read.problem !== null ? refused(read.problem) : { result: { id: add.id, name: add.name, versions: [version] }, version: 1, problem: null };
+    // The mark is written at creation (FABRIC-PIPELINE1a): a verification pipeline's, after the name; a development one's absent.
+    const verification = add.pipeline === 'verification';
+    const read = readVersion(version, 1, [], verification ? 'verification' : 'development');
+    return read.problem !== null ? refused(read.problem) : {
+      result: { id: add.id, name: add.name, ...(verification ? { pipeline: 'verification' } : {}), versions: [version] }, version: 1, problem: null,
+    };
   }
 
   const read = readWorkflowFile(file);
   if (read.problem !== null) return refused(`nothing was written: the workflow's file cannot be read — ${read.problem}`);
   if (read.id !== add.id) return refused(`nothing was written: the file holds the workflow \`${read.id}\`, not \`${add.id}\`.`);
+  if (add.pipeline !== undefined && add.pipeline !== null && add.pipeline !== read.pipeline) {
+    return refused(`nothing was written: \`${add.id}\` is a ${read.pipeline} pipeline, and a workflow keeps the pipeline it was made as: a `
+      + `${add.pipeline} pipeline is a new workflow.`);
+  }
   // A parse and a write of the file would change such a version's text, and with it the digest a run bound to it holds (FABRIC-GRAPH1b).
   const lossy = read.versions.find((each) => each.rewrites === true);
   if (lossy !== undefined) {
@@ -889,7 +943,7 @@ export function planAddVersion(file: unknown, add: VersionAdded, kept: readonly 
   }
 
   version.version = read.versions[read.versions.length - 1]!.version + 1;
-  const candidate = readVersion(version, version.version, read.versions.filter((each) => each.steps !== null));
+  const candidate = readVersion(version, version.version, read.versions.filter((each) => each.steps !== null), read.pipeline ?? 'development');
   if (candidate.problem !== null) return refused(candidate.problem);
 
   const versions = [...((file as Record<string, unknown>)['versions'] as Record<string, unknown>[]), version];

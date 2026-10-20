@@ -176,6 +176,53 @@ describe('a press under way, in the review', () => {
   });
 
   /**
+   * LANDHOLD3: where the driver says which session the wait is behind, the press names it in the page's language; the session is
+   * the driver's word, not translated. A `behind` beside any step but the wait says nothing.
+   */
+  it.each([
+    ['en', 'Waiting behind 0fda18aa…', 'Landing…'],
+    ['zh', '排在 0fda18aa 之后…', '落地中…'],
+  ])('names the session a waiting landing waits behind, in %s', async (language, waiting, landing) => {
+    await i18n.changeLanguage(language);
+    try {
+      answer();
+      root();
+      await screen.findByRole('button', { name: language === 'en' ? 'Accept' : '采纳' });
+      const press = { route: 'LAND_SESSION_TREE', session: 's1a2b3c4' };
+
+      told({ seq: 1, presses: [{ ...press, step: 'waiting', behind: '0fda18aa' }] });
+      expect(await screen.findByRole('button', { name: waiting })).toBeDisabled();
+
+      told({ seq: 2, presses: [{ ...press, step: 'landing', behind: '0fda18aa' }] });
+      expect(await screen.findByRole('button', { name: landing })).toBeDisabled();
+    } finally {
+      await i18n.changeLanguage('en');
+    }
+  });
+
+  /** LANDHOLD3: a hand-off waiting behind another push of its branch names that push's session, in both languages. */
+  it.each([
+    ['en', 'Waiting behind 0fda18aa…'],
+    ['zh', '排在 0fda18aa 之后…'],
+  ])('names the session a waiting hand-off waits behind, in %s', async (language, waiting) => {
+    await i18n.changeLanguage(language);
+    try {
+      answer();
+      const asked = invoke.getMockImplementation()!;
+      invoke.mockImplementation((module: string, type: string) => type === 'HANDOFF_PLAN'
+        ? Promise.resolve({ session: 's1a2b3c4', branch: 'feature/0fda18-fix-the-gap', repository: 'engine', plugin: 'example.lands', problem: null, commits: 1 })
+        : asked(module, type));
+      root();
+      await screen.findByRole('button', { name: language === 'en' ? 'Hand to example.lands' : /example\.lands/ });
+
+      told({ seq: 1, presses: [{ route: 'HANDOFF', session: 's1a2b3c4', step: 'waiting', behind: '0fda18aa' }] });
+      expect(await screen.findByRole('button', { name: waiting })).toBeDisabled();
+    } finally {
+      await i18n.changeLanguage('en');
+    }
+  });
+
+  /**
    * ACCEPTALL1h (D169's ACCEPTALL1e note): a part's own *Accept* holds while its line of work's one Accept, or its ask's, lands it,
    * from this window or another, read by the entry's and the ask's subject; another entry's or ask's press holds nothing.
    */

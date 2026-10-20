@@ -251,6 +251,23 @@ describe("Overview's What needs you, on a machine", () => {
     expect(window.localStorage.getItem('daoris.list.quests.chosen')).toBe('ask:7c1e9a04b2d5');
   });
 
+  /**
+   * FABRIC-MILESTONEDOOR1: a unit known only by its branch, whose owner nothing records, has no session to open; its row's door is
+   * the workspace's Branches, where the clean-up's press is (OVERVIEWNOISE1b).
+   */
+  it('opens the workspace’s Branches from a work row with no session', async () => {
+    start([{
+      kind: 'work', id: 'u-orphan', since: '2026-10-01T10:00:00Z', workspace: 'default', where: 'engine', title: 'daoris/s-orphan',
+      blocked: { unknown: true, entries: [] },
+    }]);
+
+    const row = await screen.findByRole('listitem', { name: 'daoris/s-orphan' });
+    await userEvent.click(within(row).getByRole('button', { name: 'Open' }));
+
+    expect(await screen.findByRole('tab', { name: 'Branches' })).toHaveAttribute('aria-selected', 'true');
+    expect(window.localStorage.getItem('daoris.list.projects.workspaceTab')).toBe('branches');
+  });
+
   it('holds no parked quest where none is pushed', async () => {
     start(PARKS);
 

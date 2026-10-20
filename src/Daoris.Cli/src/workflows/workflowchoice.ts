@@ -9,6 +9,11 @@
 // A repository's choice replaces its workspace's whole (§4.1), as its landing, review and opinion rules do: a repository that
 // names any workflow follows its own kinds and its own default, Current where it names none. `current` at any level is a choice
 // like any other. Pure: it reads no file but the runs `readKeptVersions` is pointed at, and reaches no network.
+//
+// The landed route (FABRIC-PIPELINE1a, D192 point 2, the pipeline design §1.2): a choice's `landed`, `{ workflow, gates? }`, the
+// verification pipeline for work that reaches the line and the blob id of the `daoris.gates.json` the person accepted. It resolves on
+// its own (`resolveLanded`: a repository's, else its workspace's, else none) and takes no part in the replacement rule above, which
+// stays the development routes' alone: a repository naming only `landed` keeps its workspace's default and kinds.
 
 import { existsSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
@@ -34,10 +39,22 @@ export interface WorkflowKindChoice {
   workflow: string | null;
 }
 
-/** One level's choice: its default and its kinds, in the order written. The driver's `WorkflowChoice`. */
+/**
+ * The landed route (FABRIC-PIPELINE1a): the verification pipeline for work that reaches the line, and the gates the person accepted,
+ * by git's blob id of `daoris.gates.json` (`none` where the line held none), or null where none were accepted yet. The driver's
+ * `WorkflowLanded`.
+ */
+export interface WorkflowLanded {
+  /** A verification pipeline's id, or `current`: no verification. */
+  workflow: string;
+  gates: string | null;
+}
+
+/** One level's choice: its default and its kinds, in the order written, and its landed route. The driver's `WorkflowChoice`. */
 export interface WorkflowChoice {
   default: string | null;
   kinds: [string, WorkflowKindChoice][];
+  landed: WorkflowLanded | null;
 }
 
 /** Both maps, as `driver.json` holds them. */
@@ -66,9 +83,25 @@ export interface WorkflowSelected {
   undeclared: string | null;
 }
 
-/** An edit to the choices, as both doors make it and the table writes it. */
+/** Which level set a landed route — the driver's `WorkflowLevels`' landed codes, and `current` where none names one. */
+export type LandedLevel = 'repository-landed' | 'workspace-landed' | 'current';
+
+/** The landed route work that reaches a repository's line follows — the driver's `WorkflowLandedSelected`. */
+export interface WorkflowLandedSelected {
+  workflow: string;
+  gates: string | null;
+  level: LandedLevel;
+}
+
+/**
+ * An edit to the choices, as both doors make it and the table writes it. A `use` with `landed` sets the landed route, with the
+ * `gates` the person accepted; `pipeline` is the mark the named workflow carries, as the door read it from its file (FABRIC-PIPELINE1a).
+ */
 export type WorkflowChoiceEdit =
-  | { use: string | null; repository?: string; workspace?: string; kind?: string; in?: string | null }
+  | {
+    use: string | null; repository?: string; workspace?: string; kind?: string; in?: string | null;
+    landed?: boolean; gates?: string; pipeline?: string;
+  }
   | { declare: string; workspace: string; label: string; paths: string[] }
   | { drop: string; workspace: string };
 
@@ -96,6 +129,28 @@ const undeclaredForRepository = (repository: string, workspace: string, kind: st
   `\`${repository}\`'s workspace, \`${workspace}\`, declares no kind \`${kind}\`: a kind is declared first, with its label.`;
 const noneToDrop = (workspace: string, kind: string): string =>
   `workspace \`${workspace}\` declares no kind \`${kind}\`, so there is none to drop.`;
+const LANDED = 'its `landed` is an object: its `workflow`, a verification pipeline\'s id or `current`, and its `gates` where they were accepted.';
+export const GATES_PROBLEM = 'its `landed` route\'s `gates` is the blob id git gives the `daoris.gates.json` you accepted, 40 or 64 lower-case '
+  + 'hex, or `none` where the line held none.';
+const LANDED_KIND = 'the `landed` route is one for a repository or a workspace, and takes no kind.';
+export const notVerification = (workflow: string): string =>
+  `\`${workflow}\` is not a verification pipeline: the \`landed\` route names only a workflow marked \`verification\` when it was made.`;
+export const verificationElsewhere = (workflow: string): string =>
+  `\`${workflow}\` is a verification pipeline: it verifies the work that lands, so only the \`landed\` route names it, never a default or a kind.`;
+
+/** The mark a verification pipeline's file carries (FABRIC-PIPELINE1a) — the driver's `WorkflowPipelines.Verification`. */
+export const VERIFICATION = 'verification';
+
+/** Gates accepted where the line held no declaration. */
+export const NO_GATES = 'none';
+
+/**
+ * The gates a landed route keeps: git's blob id of the `daoris.gates.json` the person accepted, 40 lower-case hex (SHA-1) or 64
+ * (SHA-256), or `none` — the driver's `WorkflowSelection.IsGates`.
+ */
+export function isGates(value: unknown): value is string {
+  return typeof value === 'string' && (value === NO_GATES || /^(?:[0-9a-f]{40}|[0-9a-f]{64})$/.test(value));
+}
 
 function isObject(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -148,7 +203,17 @@ export function workflowChoiceOf(entry: unknown, workspace: boolean): { choice: 
     }
   }
 
-  return { choice: { default: chosen, kinds }, problem: null };
+  // The landed route (FABRIC-PIPELINE1a), after the kinds: its workflow an id or `current`, its gates a blob id or `none` where accepted.
+  let landed: WorkflowLanded | null = null;
+  const route = entry['landed'];
+  if (route !== undefined && route !== null) {
+    if (!isObject(route) || !isWorkflowId(route['workflow'])) return refused(LANDED);
+    const gates = route['gates'] ?? null;
+    if (gates !== null && !isGates(gates)) return refused(GATES_PROBLEM);
+    landed = { workflow: route['workflow'], gates };
+  }
+
+  return { choice: { default: chosen, kinds, landed }, problem: null };
 }
 
 function kindOf(id: string, value: unknown, workspace: boolean): { kind: WorkflowKindChoice | null; problem: string | null } {
@@ -177,9 +242,17 @@ function kindOf(id: string, value: unknown, workspace: boolean): { kind: Workflo
   return { kind: { label: value['label'], paths, workflow }, problem: null };
 }
 
-/** Whether a choice says nothing: no default and no kind, so it is not kept. */
+/** Whether a choice says nothing: no default, no kind and no landed route, so it is not kept. */
 function namesNothing(choice: WorkflowChoice): boolean {
-  return choice.default === null && choice.kinds.length === 0;
+  return !namesDevelopment(choice) && choice.landed === null;
+}
+
+/**
+ * Whether a choice names a development route, a default or a kind — the driver's `WorkflowChoice.NamesDevelopment`: what makes a
+ * repository's choice replace its workspace's. A landed route alone does not (FABRIC-PIPELINE1a).
+ */
+export function namesDevelopment(choice: WorkflowChoice | undefined): boolean {
+  return choice !== undefined && (choice.default !== null || choice.kinds.length > 0);
 }
 
 /**
@@ -215,6 +288,9 @@ export function writtenChoices(map: Record<string, WorkflowChoice>, workspace: b
             : kind.workflow])),
         }
       : {}),
+    ...(choice.landed !== null
+      ? { landed: { workflow: choice.landed.workflow, ...(choice.landed.gates !== null ? { gates: choice.landed.gates } : {}) } }
+      : {}),
   }]));
 }
 
@@ -241,13 +317,31 @@ export function resolveWorkflow(
     ({ workflow, level, kind, label: declared?.label ?? null, paths: declared?.paths ?? [], undeclared });
 
   if (task?.workflow) return pick(task.workflow, 'task');
+  // A repository naming only its landed route names no development route, so its workspace's reach it (FABRIC-PIPELINE1a).
   const own = repository === null ? undefined : atName(maps.workflows, repository.trim());
-  if (own !== undefined) {
+  if (own !== undefined && namesDevelopment(own)) {
     const mapped = kind === null ? null : kindIn(own, kind)?.workflow ?? null;
     return mapped !== null ? pick(mapped, 'repository-kind') : pick(own.default ?? CURRENT, 'repository');
   }
   if (declared?.workflow) return pick(declared.workflow, 'workspace-kind');
   return shared?.default ? pick(shared.default, 'workspace') : pick(CURRENT, 'current');
+}
+
+/**
+ * The landed route work that reaches `repository`'s line follows (FABRIC-PIPELINE1a, the pipeline design §1.2) — the driver's
+ * `WorkflowSelection.ResolveLanded`: the repository's where it names one (its `current` keeping its workspace's away), else its
+ * workspace's, else none, read as Current. It resolves on its own, outside the rule by which a repository's development routes
+ * replace its workspace's.
+ *
+ * @param repository The repository, or null for the workspace's own route.
+ * @param workspace The repository's workspace, or null for none, read as the default workspace.
+ */
+export function resolveLanded(maps: WorkflowChoiceMaps, repository: string | null, workspace: string | null): WorkflowLandedSelected {
+  const own = repository === null ? undefined : atName(maps.workflows, repository.trim());
+  if (own?.landed) return { workflow: own.landed.workflow, gates: own.landed.gates, level: 'repository-landed' };
+  const shared = atName(maps.workspaceWorkflows, normalizeWorkspace(workspace));
+  if (shared?.landed) return { workflow: shared.landed.workflow, gates: shared.landed.gates, level: 'workspace-landed' };
+  return { workflow: CURRENT, gates: null, level: 'current' };
 }
 
 /**
@@ -264,8 +358,11 @@ export function applyWorkflowEdit(maps: WorkflowChoiceMaps, edit: WorkflowChoice
     else next[key] = choice;
     return { maps: { ...maps, [scope]: next }, refusal: null };
   };
-  const copy = (choice: WorkflowChoice | undefined): WorkflowChoice =>
-    ({ default: choice?.default ?? null, kinds: (choice?.kinds ?? []).map(([id, kind]) => [id, { ...kind, paths: [...kind.paths] }]) });
+  const copy = (choice: WorkflowChoice | undefined): WorkflowChoice => ({
+    default: choice?.default ?? null,
+    kinds: (choice?.kinds ?? []).map(([id, kind]) => [id, { ...kind, paths: [...kind.paths] }]),
+    landed: choice?.landed ? { ...choice.landed } : null,
+  });
 
   if ('declare' in edit) {
     const name = edit.workspace.trim();
@@ -299,10 +396,21 @@ export function applyWorkflowEdit(maps: WorkflowChoiceMaps, edit: WorkflowChoice
   if (name.length === 0) return refused(NAMED);
   if (edit.use !== null && !isWorkflowId(edit.use)) return refused(workflowChoiceProblem(edit.use));
   if (edit.kind !== undefined && !isKindId(edit.kind)) return refused(kindIdProblem(edit.kind));
+  // FABRIC-PIPELINE1a: the landed route names only a verification pipeline, and a default or a kind never one, by the mark the
+  // named workflow's file carries as the door read it; a route with none read is refused, a default or a kind not checked.
+  const landed = edit.landed === true;
+  const named = edit.use !== null && edit.use !== CURRENT ? edit.use : null;
+  if (landed && edit.kind !== undefined) return refused(LANDED_KIND);
+  if (landed && edit.gates !== undefined && !isGates(edit.gates)) return refused(GATES_PROBLEM);
+  if (landed && named !== null && edit.pipeline !== VERIFICATION) return refused(notVerification(named));
+  if (!landed && named !== null && edit.pipeline === VERIFICATION) return refused(verificationElsewhere(named));
 
   const scope = forWorkspace ? 'workspaceWorkflows' : 'workflows';
   const choice = copy(atName(maps[scope], name));
-  if (edit.kind === undefined) {
+  if (landed) {
+    // `current` is no verification, so it keeps no gates.
+    choice.landed = edit.use === null ? null : { workflow: edit.use, gates: named !== null ? edit.gates ?? null : null };
+  } else if (edit.kind === undefined) {
     choice.default = edit.use;
   } else if (forWorkspace) {
     // A kind is declared before it maps to anything; clearing one that is not declared changes nothing.

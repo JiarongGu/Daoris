@@ -213,14 +213,15 @@ public sealed class DriverModuleHelpStartTests : DriverModuleBridge
             [{"repository":"engine","workspace":"default","adopted":true,"root":"{{Root("engine")}}"},
              {"repository":"site","workspace":"default","adopted":true,"root":"{{Root("site")}}"}]
             """;
-        // The lines' judge stands in for git: engine's checkout says `main`, site's never answers.
-        loop.Facts.Topic(HelpFacts.Lines, HelpFacts.LinesRules, (repository, _) => repository == "site"
+        // The lines' judge stands in for git: engine's checkout says `main`, site's never answers, and is never cut off at a bound
+        // (TESTCLOCK3): a start that waited for its line would never end, where at the rules' 30 s it ended late.
+        var never = HelpFacts.LinesRules with { Bound = Timeout.InfiniteTimeSpan };
+        loop.Facts.Topic(HelpFacts.Lines, never, (repository, _) => repository == "site"
             ? new TaskCompletionSource<object?>().Task
             : Task.FromResult<object?>(new HelpLineGuess("main")));
         using (ProcessStarts.Within(_ => null)) loop.Facts.Start();
         await loop.Facts.FirstAsync(HelpFacts.Lines, "engine", CancellationToken.None).WaitAsync(Poll.Patience);
         var gits = 0;
-        var took = Stopwatch.StartNew();
 
         using (ProcessStarts.Within(info =>
                {
@@ -233,7 +234,6 @@ public sealed class DriverModuleHelpStartTests : DriverModuleBridge
             await UntilAsync(() => Raised.Any(m => m.Type == "SESSION_ENDED"));
         }
 
-        Assert.True(took.Elapsed < TimeSpan.FromSeconds(10), $"the start took {took.Elapsed}");
         Assert.Equal(0, gits);
         var room = File.ReadAllText(Path.Combine(HelpRoom.PathOf(loop.Home), "AGENTS.md"));
         Assert.Contains("| `site` | not driven | not read yet |", room);

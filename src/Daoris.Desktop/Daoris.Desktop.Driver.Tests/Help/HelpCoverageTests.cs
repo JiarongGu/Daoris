@@ -81,6 +81,15 @@ public sealed partial class HelpCoverageTests
         + "`SET_HEAVY_GATES`, so a helper never chooses what a session's end runs on the owner's machine.";
 
     /// <summary>
+    /// The landed route on a repository's Setup and its Workflow tab's <i>Accept the gates</i> (FABRIC-PIPELINE1a, the pipeline design
+    /// §1.3, §4.2): what verifies the work that lands, and the declaration its checks run unasked, accepted by its blob.
+    /// </summary>
+    private const string LandedRoute =
+        "accepting a repository's gates by their blob is what lets them run unasked, the person's door alone (D156), and an agent never "
+        + "lowers the person's part (D157 point 10): no proposal names `WORKFLOW_LANDED` until FABRIC-PIPELINE1i proposes a route for "
+        + "the person's press.";
+
+    /// <summary>
     /// *Sessions' checks* on a repository's Setup (FABRIC-PIPELINE1b, D192 point 4): which checks its sessions run, the twin of
     /// <c>daoris-driver checks</c>.
     /// </summary>
@@ -835,6 +844,8 @@ public sealed partial class HelpCoverageTests
         ("projects", "useSetAccess", null, new Exempt(SessionAccess)),
         // HEAVYRUN1b2b: *Heavy gates*, on a repository's Setup.
         ("projects", "useSetHeavyGates", null, new Exempt(HeavyGates)),
+        // FABRIC-PIPELINE1a: the landed route, on a repository's Setup and its Workflow tab.
+        ("projects", "useSetLanded", null, new Exempt(LandedRoute)),
         // FABRIC-PIPELINE1b: *Sessions' checks*, beside the heavy gates on a repository's Setup.
         ("projects", "useSetSessionChecks", null, new Exempt(ChecksOfSessions)),
         ("projects", "useSetStanding", null, new Door("setting", "standing")),

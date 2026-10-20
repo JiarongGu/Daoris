@@ -274,8 +274,8 @@
         "work.open",
         "work.panel.hide", "work.panel.show",
         "work.panel.stream.stopShort", "work.preview.close", "work.preview.reload", "work.rail.close",
-        "work.rail.open", "work.review.accept", "work.review.accepting", "work.review.acceptingGate", "work.review.acceptingWaiting", "work.review.discard",
-        "work.review.discardMeanIt", "work.review.hand", "work.review.handing", "work.review.handingWaiting","work.review.pullRequest",
+        "work.rail.open", "work.review.accept", "work.review.accepting", "work.review.acceptingGate", "work.review.acceptingWaiting", "work.review.acceptingWaitingBehind", "work.review.discard",
+        "work.review.discardMeanIt", "work.review.hand", "work.review.handing", "work.review.handingWaiting", "work.review.handingWaitingBehind", "work.review.pullRequest",
         "work.review.readAgain", "work.review.sendBack", "work.say.goOnBrief", "work.say.goOnNew", "work.say.startChat", "work.start.go", "work.start.going",
         "work.start.useOwnTree", "work.start.openHolder", "work.start.chooseRepository", "work.steer.now", "work.steer.stopKeeping", "work.steer.stopKeepingConfirm", "work.terminal.again", "work.terminal.close",
         "work.terminal.new", "work.terminal.open", "review.act.*", "review.ask.notYetMeanIt", "review.ask.skipMeanIt",
@@ -645,6 +645,8 @@
   "accepted": {
     "_why": "Budget judgements looked at and kept (NAME2; docs/2026-10-01-naming-design.md §6): the length is the name, and the element it renders in gives it more room than its kind's budget assumes, or a placeholder's typical value overstates it. Each holds the name it accepted in each language it accepts, and why, naming the room the code gives the element; the window confirms the room. scripts/names-check.mjs stops reporting a name while it is the one accepted, and reports it again once it is renamed, or once it fits and the acceptance can go.",
     "names": [
+      { "key": "work.review.acceptingWaitingBehind", "en": "Waiting behind {{session}}…", "zh": "排在 {{session}} 之后…", "why": "The review's Accept while its landing waits behind another's hold (LANDHOLD3), on the review's foot in a main area at least 400px wide; the session it names is an eight-character id the placeholder counts as eleven, and naming whom it waits behind is the row's whole point, which *Waiting its turn…* already said without." },
+      { "key": "work.review.handingWaitingBehind", "en": "Waiting behind {{session}}…", "zh": "排在 {{session}} 之后…", "why": "The review's hand button while its push waits behind another push of its branch (LANDHOLD3), beside Accept on the review's foot in a main area at least 400px wide; it names the session as the waiting Accept does." },
       { "key": "work.steer.stopKeeping", "en": "Stop its turn so this goes next…", "zh": "停止本轮，让这条接着送达…", "why": "The keeping stop's press, on its own line under the words waiting above the composer's box at the centre's width (COWORK1a); the message-urgency design names what it does and that it asks first (§3.2), since *Stop turn* beside it hands the waiting words back." },
       { "key": "help.door.browser", "en": "Open Browser settings", "why": "A press under a lack in *What it has*, on a row of its own in a side bar at least 300px wide (HELPMODE1b); *settings* says it opens Settings' Browser, not Daoris's browser itself." },
       { "key": "help.wired.close", "en": "Back to the conversation", "why": "The name of an icon-only press, read by a screen reader and drawn nowhere (HELPMODE1b)." },
