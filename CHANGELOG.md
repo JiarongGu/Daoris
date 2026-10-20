@@ -5,6 +5,13 @@ with the version and date at release.
 
 ## Unreleased
 
+- Agents on one ask now tell each other things without stopping each other. A message an agent posts on the ask's channel is
+  ordinary unless it says it is urgent: an ordinary one waits for a natural point, beside what the session is told anyway when its
+  turn ends, its next part, or its own read of the channel, and an urgent one reaches a working session at its next step (three of a
+  part's posts at most). Every answer an agent gets from Daoris's tools says when messages wait for it. A helper's answer arrives as
+  the next turn, or at the next step where the agent asked for it urgently. On the ask's channel and a session's panel, each message
+  says what it reached in each repository: waiting, held, taken, read, answered, or never reached once the ask's work ended, and
+  *Send to its session* sends one on.
 - A session that goes on in a new part, on another agent, on another account or after it was cut off, is handed everything it
   took: every word you said, once, what each turn did, where the work stands and the last check that failed, not just its last
   words. A handed-over conversation opens with *Daoris's brief of the session it continues*, folded. A session's Parts strip
