@@ -72,6 +72,75 @@ public sealed class SessionsThroughInstanceTests
         Assert.True(service.Requests > 0);
     }
 
+    /// <summary>
+    /// RPC1c: <c>sessions archive</c> and <c>unarchive</c> are the person's presses, sent to the running Daoris, which shows them in its
+    /// window; the terminal says it waits, then prints the lines the confirmed press answers, which are the alone path's words
+    /// (<see cref="SessionArchive.ArchiveSaid"/>), and this process reads and writes nothing.
+    /// </summary>
+    [Theory]
+    [InlineData("archive", true, "sessions: archived s1a2b3c4.")]
+    [InlineData("unarchive", false, "sessions: unarchived s1a2b3c4; it is back in the group its state puts it in.")]
+    public async Task Archive_and_unarchive_through_the_instance_wait_for_the_window_and_print_the_lines_it_answers(
+        string verb, bool archived, string line)
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        await using var home = new InstanceTestHome();
+        var standIn = home.Serve();
+        standIn.Confirming = true;
+        standIn.Data = new { archived = Array.Empty<object>(), said = new TreesSaid([line], [], 0).ToWire() };
+        var service = new EmptyService();
+        var output = new StringWriter();
+
+        var exit = await SessionsCommand.RunAsync(new SessionsAsk(verb) { Ids = ["s1a2b3c4"] }, World(service, home.Home, home.World("sessions")), output);
+
+        Assert.Equal(0, exit);
+        Assert.Equal(line + Environment.NewLine, output.ToString());
+        Assert.Equal($"sessions: waiting for you to confirm this in Daoris's window…{Environment.NewLine}", home.Error.ToString());
+        Assert.Equal(0, service.Requests);
+        Assert.False(File.Exists(new SessionArchive(home.Home).FilePath));
+        var press = Assert.Single(standIn.Presses);
+        Assert.Equal("SESSION_ARCHIVE", press.GetProperty("type").GetString());
+        Assert.Equal($$"""{"ids":["s1a2b3c4"],"archived":{{(archived ? "true" : "false")}},"said":true}""", press.GetProperty("payload").GetRawText());
+    }
+
+    /// <summary>RPC1c: refused in the window, the archive is the verb's exit 1 with the instance's sentence, and nothing is archived here.</summary>
+    [Fact]
+    public async Task An_archive_the_person_refuses_in_the_window_is_exit_1_and_archives_nothing()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        await using var home = new InstanceTestHome();
+        var standIn = home.Serve();
+        standIn.Confirming = true;
+        standIn.Press = StandInPress.Refuse;
+        standIn.Code = "refused";
+        var output = new StringWriter();
+
+        var exit = await SessionsCommand.RunAsync(
+            new SessionsAsk("archive") { Ids = ["s1a2b3c4"] }, World(new EmptyService(), home.Home, home.World("sessions")), output);
+
+        Assert.Equal(1, exit);
+        Assert.Equal("", output.ToString());
+        Assert.Contains("sessions: refused refused. (refused)", home.Error.ToString());
+        Assert.False(File.Exists(new SessionArchive(home.Home).FilePath));
+    }
+
+    /// <summary>With no instance running, the archive acts alone and says the same words as the instance's answer carries.</summary>
+    [Fact]
+    public async Task With_no_instance_an_archive_acts_alone_in_the_words_it_would_answer()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        await using var home = new InstanceTestHome();
+        var output = new StringWriter();
+
+        var exit = await SessionsCommand.RunAsync(
+            new SessionsAsk("archive") { Ids = ["s1a2b3c4"] }, World(new EmptyService(), home.Home, home.World("sessions")), output);
+
+        var said = SessionArchive.ArchiveSaid([new ArchiveOutcome("s1a2b3c4", ArchiveVerdict.Unknown)]);
+        Assert.Equal(said.Code, exit);
+        Assert.Equal(string.Concat(said.Out.Select(line => line + Environment.NewLine)), output.ToString());
+        Assert.Equal("sessions: kept s1a2b3c4: no session here is s1a2b3c4." + Environment.NewLine, output.ToString());
+    }
+
     [Fact]
     public async Task An_answer_with_no_lines_is_read_alone()
     {

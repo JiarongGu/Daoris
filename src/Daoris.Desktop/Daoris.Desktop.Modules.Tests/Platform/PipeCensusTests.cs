@@ -46,6 +46,38 @@ public sealed class PipeCensusTests
     }
 
     /// <summary>
+    /// RPC1c: the terminal's door reads the pipe's words for a confirmation as the pipe says them, a twin the driver library cannot
+    /// see from its side: the notification that says a press waits, and the two endings that are the person's word (exit 1).
+    /// </summary>
+    [Fact]
+    public void The_terminal_s_door_reads_the_pipe_s_confirmation_words_as_the_pipe_says_them()
+    {
+        Assert.Equal(InstancePipe.Module, Daoris.Driver.InstanceClient.PipeModule);
+        Assert.Equal(InstancePipe.Confirming, Daoris.Driver.InstanceDoor.Confirming);
+        Assert.Equal(InstancePipe.Refused, Daoris.Driver.InstanceDoor.Refused);
+        Assert.Equal(InstancePipe.Expired, Daoris.Driver.InstanceDoor.Expired);
+    }
+
+    /// <summary>
+    /// The person's presses the host's verbs send over the pipe (RPC1c): each names a route of the driver's module that the census
+    /// makes the person's, so the instance shows it in the window and runs it on the person's Confirm alone. A route the census opened
+    /// would run unconfirmed, and one it made the window's would be refused: either fails here, naming the verb.
+    /// </summary>
+    [Fact]
+    public void Each_person_press_a_verb_sends_names_a_route_the_census_makes_the_person_s()
+    {
+        Assert.NotEmpty(Daoris.Driver.PersonPresses.Presses);
+        foreach (var (verb, route) in Daoris.Driver.PersonPresses.Presses)
+        {
+            Assert.Equal(DriverModule.Name, route.Module);
+            Assert.Contains(route.Route, DriverModule.Routes);
+            Assert.True(
+                PipeCensus.Daoris.Of(route.Module, route.Route) == PipeClass.Person && route.Class == Daoris.Driver.RouteClass.Person,
+                $"`{verb}` sends {route.Route} as the person's, and the census classes it {PipeCensus.Daoris.Of(route.Module, route.Route)}");
+        }
+    }
+
+    /// <summary>
     /// The open reads and presses the host's verbs send (RPCOPEN1, RPC1e): each names a route of the driver's module that the census
     /// opens, and each verb of the scope left off the pipe says why. A route the census closes fails here, naming the verb that
     /// would send a press the instance refuses.
@@ -126,6 +158,10 @@ public sealed class PipeCensusTests
     // What only a window does: the pickers, the file manager, Daoris's browser, its frame, its shells.
     [InlineData("DAORIS.DRIVER", "TOOLS_PICK", PipeClass.Window)]
     [InlineData("DAORIS.DRIVER", "SESSION_OPEN_FOLDER", PipeClass.Window)]
+    // RPC1c, PERSONDOOR1f: a terminal never reads or answers what waits for the window, and never reads the person key (D156 point 2).
+    [InlineData("DAORIS.DRIVER", "PERSON_CONFIRMATIONS", PipeClass.Window)]
+    [InlineData("DAORIS.DRIVER", "PERSON_CONFIRM", PipeClass.Window)]
+    [InlineData("DAORIS.DRIVER", "PERSON_KEY", PipeClass.Window)]
     [InlineData("DAORIS.WINDOWS", "OPEN", PipeClass.Window)]
     [InlineData("DAORIS.TERMINAL", "INPUT", PipeClass.Window)]
     [InlineData("DAORIS.BROWSER", "SET_LINKS", PipeClass.Window)]

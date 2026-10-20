@@ -88,6 +88,36 @@ public sealed class SessionArchive(string home)
         if (count > 0) log?.Info("sessions.archived", ("count", count), ("door", door));
     }
 
+    /// <summary>
+    /// What <c>sessions archive &lt;id&gt;…</c> says of each outcome, and its exit: 0 where every one was archived, 1 where one was
+    /// kept (RPC1c, the terminal RPC design §7.3). The alone path prints it, and <c>SESSION_ARCHIVE</c> answers it as <c>said</c> to a
+    /// terminal that sent its archive over the pipe, so the two cannot drift.
+    /// </summary>
+    public static TreesSaid ArchiveSaid(IReadOnlyList<ArchiveOutcome> outcomes) => new(
+        [
+            .. outcomes.Select(outcome => outcome.Verdict switch
+            {
+                ArchiveVerdict.Archived => $"sessions: archived {outcome.Session}.",
+                ArchiveVerdict.Live => $"sessions: kept {outcome.Session}: it is still running; stop it first.",
+                ArchiveVerdict.NeedsYou when outcome.Group == SessionGroup.Review =>
+                    $"sessions: kept {outcome.Session}: it has work to review; archive never hides what needs you.",
+                ArchiveVerdict.NeedsYou => $"sessions: kept {outcome.Session}: it is waiting on you; archive never hides what needs you.",
+                _ => $"sessions: kept {outcome.Session}: no session here is {outcome.Session}.",
+            }),
+        ],
+        [],
+        outcomes.All(outcome => outcome.Verdict == ArchiveVerdict.Archived) ? 0 : 1);
+
+    /// <summary>What <c>sessions unarchive &lt;id&gt;…</c> says of each id asked, in the order asked: one not archived is said, never refused.</summary>
+    public static TreesSaid UnarchiveSaid(IEnumerable<string> ids, IReadOnlyCollection<string> notArchived) => new(
+        [
+            .. ids.Select(id => notArchived.Contains(id, StringComparer.Ordinal)
+                ? $"sessions: {id} was not archived, so nothing changed."
+                : $"sessions: unarchived {id}; it is back in the group its state puts it in."),
+        ],
+        [],
+        0);
+
     private static ArchiveOutcome Judge(string id, SessionGrouping? placed) => placed?.Group switch
     {
         null => new(id, ArchiveVerdict.Unknown),

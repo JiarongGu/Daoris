@@ -146,17 +146,63 @@ public sealed class InstanceDoorTests : IAsyncLifetime
         Assert.Equal(0, standIn.Connections);
     }
 
+    /// <summary>
+    /// RPC1c: a person's press goes to the instance that answers, which shows it in the window; the terminal says it waits there,
+    /// then says the answer the confirmed press gave, and nothing is done alone.
+    /// </summary>
     [Fact]
-    public async Task A_person_route_acts_alone_and_looks_for_no_instance_until_the_window_confirms_it()
+    public async Task A_person_route_is_sent_and_the_terminal_says_it_waits_for_the_window_then_says_its_answer()
     {
         if (!OperatingSystem.IsWindows()) return;
         var standIn = Serve();
+        standIn.Confirming = true;
+        standIn.Data = new { done = true, message = "archived s1a2b3c4." };
         using var running = RunningAddress.Write(_home, "http://localhost:5177", _pipe);
 
         var exit = await PressAsync(World(), Open with { Class = RouteClass.Person });
 
         Assert.Equal(0, exit);
-        Assert.Equal(1, _alone);
+        Assert.Equal(0, _alone);
+        Assert.Single(standIn.Presses);
+        Assert.Equal($"trees: archived s1a2b3c4.{Environment.NewLine}", _out.ToString());
+        Assert.Equal($"trees: waiting for you to confirm this in Daoris's window…{Environment.NewLine}", _error.ToString());
+    }
+
+    /// <summary>RPC1c: the person's refusal, and two minutes with no answer, are the verb's exit 1 with the instance's sentence; nothing is done alone.</summary>
+    [Theory]
+    [InlineData("refused")]
+    [InlineData("expired")]
+    public async Task A_person_route_the_window_refuses_or_lets_expire_is_exit_1_and_never_done_alone(string code)
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        var standIn = Serve();
+        standIn.Confirming = true;
+        standIn.Press = StandInPress.Refuse;
+        standIn.Code = code;
+        using var running = RunningAddress.Write(_home, "http://localhost:5177", _pipe);
+
+        var exit = await PressAsync(World(), Open with { Class = RouteClass.Person });
+
+        Assert.Equal(1, exit);
+        Assert.Equal(0, _alone);
+        Assert.Contains($"trees: refused {code}. ({code})", _error.ToString());
+        Assert.Equal("", _out.ToString());
+    }
+
+    /// <summary>A person's press with no instance running acts alone, as it always did (§7.2); a window's route is never sent.</summary>
+    [Fact]
+    public async Task A_person_route_with_no_instance_acts_alone_and_a_window_route_is_never_sent()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        var standIn = Serve();
+
+        Assert.Equal(0, await PressAsync(World(), Open with { Class = RouteClass.Person }));
+        using (RunningAddress.Write(_home, "http://localhost:5177", _pipe))
+        {
+            Assert.Equal(0, await PressAsync(World(), Open with { Class = RouteClass.Window }));
+        }
+
+        Assert.Equal(2, _alone);
         Assert.Equal(0, standIn.Connections);
     }
 

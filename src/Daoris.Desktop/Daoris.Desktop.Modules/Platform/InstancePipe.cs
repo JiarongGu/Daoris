@@ -38,6 +38,12 @@ public sealed class PipeLimits
     /// pile up only where a terminal sends on without reading what it was answered, and an answer to them could not be read either.
     /// </summary>
     public int Queued { get; init; } = 64;
+
+    /// <summary>How many of the person's presses may wait for the window at once (D156 §4.2's five): past it, one is refused.</summary>
+    public int Waiting { get; init; } = 5;
+
+    /// <summary>How long one waits for the person's answer in the window (D156 §4.2's two minutes).</summary>
+    public TimeSpan Confirm { get; init; } = TimeSpan.FromMinutes(2);
 }
 
 /// <summary>
@@ -57,9 +63,10 @@ public sealed class PipeLimits
 /// by id, a route's progress forwarded to the connection that sent it as the kit's notification envelope; <c>ROUTES</c> and
 /// <c>RESULT</c> are the pipe's own.</para>
 ///
-/// <para><b>The census decides what runs</b> (§4.2, <see cref="PipeCensus"/>): an open route runs; a person's is refused
-/// <see cref="ConfirmInWindow"/> until RPC1c confirms it in the window; a window's <see cref="WindowOnly"/>; a module the census
-/// does not name <see cref="Unclassed"/>. Nothing refused reaches the dispatcher.</para>
+/// <para><b>The census decides what runs</b> (§4.2, <see cref="PipeCensus"/>): an open route runs; a person's is shown to the
+/// window (<see cref="Confirmations"/>, RPC1c) and runs only on the person's <b>Confirm</b> within two minutes, the terminal told
+/// it waits (<see cref="Confirming"/>) and, refused, expired or withdrawn, how it ended; a window's is refused
+/// <see cref="WindowOnly"/>; a module the census does not name <see cref="Unclassed"/>. Nothing refused reaches the dispatcher.</para>
 ///
 /// <para><b>A request's id is durable</b> (§6.1, <see cref="PipeJournal"/>): a press runs on the instance's lifetime, not the
 /// connection's, so a lost terminal cancels nothing; an id seen before is answered from its line and never run twice, and
@@ -98,8 +105,26 @@ public sealed class InstancePipe : IDisposable
     /// <summary>The instance is closing or updating: its parameter <c>why</c> says which (<c>close</c>, <c>update</c>).</summary>
     public const string Stopping = "stopping";
 
-    /// <summary>A route the census makes the person's: confirmed in the window once RPC1c builds it, refused until then.</summary>
+    /// <summary>
+    /// A route the census makes the person's, as an instance from before RPC1c refused it: kept as a word of the wire, which a
+    /// client still reads from such an instance. This one asks the window instead.
+    /// </summary>
     public const string ConfirmInWindow = "confirm-in-window";
+
+    /// <summary>The notification that tells a terminal its press waits for the person in the window (RPC1c), naming its request.</summary>
+    public const string Confirming = "CONFIRMING";
+
+    /// <summary>The person refused the press in the window: nothing ran.</summary>
+    public const string Refused = "refused";
+
+    /// <summary>Nobody answered the press in the window within its two minutes: nothing ran.</summary>
+    public const string Expired = "expired";
+
+    /// <summary>As many of the person's presses as may wait already do (D156 §5.2's code): this one was not asked.</summary>
+    public const string Full = "confirmations-full";
+
+    /// <summary>A person's press whose values the window could not show whole: not asked.</summary>
+    public const string Shape = "shape";
 
     /// <summary>A route only a window may press.</summary>
     public const string WindowOnly = "window-only";
@@ -133,6 +158,8 @@ public sealed class InstancePipe : IDisposable
     private readonly Lock _gate = new();
     private readonly Dictionary<string, (PipeBinding Binding, Task<string> Answer)> _running = new(StringComparer.Ordinal);
     private readonly Dictionary<string, Connection> _owners = new(StringComparer.Ordinal);
+    // RPC1c: a person's press waiting for the window, by its request's id, to the confirmation that shows it (a cancel takes it back).
+    private readonly Dictionary<string, string> _waitingFor = new(StringComparer.Ordinal);
     private readonly HashSet<Connection> _connections = [];
     private SemaphoreSlim? _slots;
     private PipeJournal? _journal;
@@ -149,9 +176,10 @@ public sealed class InstancePipe : IDisposable
     /// <param name="census">What runs (<see cref="PipeCensus.Daoris"/> where none is named; a test names its own).</param>
     /// <param name="version">The build, as the hello names it.</param>
     /// <param name="limits">The bounds (<see cref="PipeLimits"/>'s where none are named).</param>
+    /// <param name="clock">The clock a confirmation's two minutes are read by: the system's, or a test's.</param>
     public InstancePipe(
         IMessageDispatcher dispatcher, IEventBus bus, string home, MachineLog? log = null, PipeCensus? census = null,
-        string? version = null, PipeLimits? limits = null)
+        string? version = null, PipeLimits? limits = null, TimeProvider? clock = null)
     {
         _dispatcher = dispatcher;
         _bus = bus;
@@ -160,7 +188,14 @@ public sealed class InstancePipe : IDisposable
         _census = census ?? PipeCensus.Daoris;
         _version = version ?? typeof(InstancePipe).Assembly.GetName().Version?.ToString() ?? "0";
         _limits = limits ?? new PipeLimits();
+        Confirmations = new PipeConfirmations(bus, _log, clock, _limits.Waiting, _limits.Confirm);
     }
+
+    /// <summary>
+    /// The person's presses a terminal sent, waiting for the window (RPC1c): the bridge's <c>PERSON_CONFIRMATIONS</c> reads them and
+    /// its <c>PERSON_CONFIRM</c> answers one, which a terminal never may.
+    /// </summary>
+    public PipeConfirmations Confirmations { get; }
 
     /// <summary>Whether an update drains this instance (UPDATE1, D139): a drain is a stop's beginning (§6.3).</summary>
     public Func<bool>? Draining { get; set; }
@@ -213,8 +248,15 @@ public sealed class InstancePipe : IDisposable
         }
     }
 
-    /// <summary>The stop begins (§6.3): every new hello and every new press is refused <see cref="Stopping"/> from here.</summary>
-    public void BeginStopping() => Interlocked.Exchange(ref _stopping, 1);
+    /// <summary>
+    /// The stop begins (§6.3): every new hello and every new press is refused <see cref="Stopping"/> from here, and what waits for
+    /// the window is taken back and answered <see cref="Stopping"/>, so nothing the person has not yet confirmed runs as Daoris closes.
+    /// </summary>
+    public void BeginStopping()
+    {
+        Interlocked.Exchange(ref _stopping, 1);
+        Confirmations.WithdrawAll();
+    }
 
     /// <summary>
     /// Wait up to <paramref name="within"/> for the presses under way to answer, and each answer to be written to the terminal
@@ -464,13 +506,11 @@ public sealed class InstancePipe : IDisposable
         }
 
         if (IsStopping) return (IpcJson.Serialize(RefuseStopping(request)), null);
-        switch (_census.Of(request.Module, request.Type, request.Payload))
+        var @class = _census.Of(request.Module, request.Type, request.Payload);
+        switch (@class)
         {
             case null:
                 return (IpcJson.Serialize(Refuse(request, Unclassed, "this route is not answered over the pipe.")), null);
-            case PipeClass.Person:
-                return (IpcJson.Serialize(Refuse(request, ConfirmInWindow,
-                    "this is the person's to do, and Daoris cannot tell whether a person or an agent ran this: do it in Daoris's window.")), null);
             case PipeClass.Window:
                 return (IpcJson.Serialize(Refuse(request, WindowOnly, "only Daoris's window does this.")), null);
         }
@@ -482,6 +522,15 @@ public sealed class InstancePipe : IDisposable
 
         if (!IsKey(key)) return (IpcJson.Serialize(Refuse(request, KeyMissing, "a request carries a key of its own, 16 to 128 characters.")), null);
         if (!connection.HasRoom) return (IpcJson.Serialize(Refuse(request, Busy, "this terminal has as much under way as Daoris takes from one; send it again once one answers.")), null);
+
+        // RPC1c: a person's press is shown to the window with every value it carries, so one the card could not show whole is not asked.
+        IReadOnlyList<PipeConfirmationField>? fields = null;
+        if (@class == PipeClass.Person)
+        {
+            var (shown, unshown) = PipeConfirmations.FieldsOf(request.Payload);
+            if (unshown is not null) return (IpcJson.Serialize(Refuse(request, Shape, $"{Capitalized(unshown)} Nothing was asked.")), null);
+            fields = shown;
+        }
 
         var binding = new PipeBinding(
             $"{request.Module}.{request.Type}",
@@ -515,9 +564,100 @@ public sealed class InstancePipe : IDisposable
             }
         }
 
-        if (mine is not null) _ = RunAsync(request, id, binding, mine);
+        if (mine is null) return (null, answer);
+        if (fields is null)
+        {
+            _ = RunAsync(request, id, binding, mine);
+            return (null, answer);
+        }
+
+        // RPC1c (D156 §4.2): the person's press waits for the window, which shows it naming this terminal, and runs on Confirm alone.
+        // The id is bound above before the window is asked, so the same id sent again meanwhile joins this one and asks nothing.
+        if (Confirmations.Ask(request.Module, request.Type, fields, connection.Asker) is not { } asked)
+        {
+            var bound = Confirmations.Bound == 5 ? "Five" : Confirmations.Bound.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            var full = IpcJson.Serialize(Refuse(request, Full,
+                $"{bound} acts already wait for the person's confirmation, so this one was not asked. Nothing was kept."));
+            lock (_gate)
+            {
+                _running.Remove(id);
+                _owners.Remove(id);
+            }
+
+            mine.SetResult(full);
+            return (full, null);
+        }
+
+        lock (_gate)
+        {
+            _waitingFor[id] = asked.Shown.Id;
+        }
+
+        _ = connection.WriteAsync(Waits(id, asked.Shown));
+        _ = ConfirmThenRunAsync(request, id, binding, mine, asked.Ended);
         return (null, answer);
     }
+
+    /// <summary>The notification that tells the terminal its press waits for the person in the window, and until when (RPC1c).</summary>
+    private static string Waits(string id, PipeConfirmation shown) => JsonSerializer.Serialize(
+        new
+        {
+            category = IpcCategories.Notification,
+            id = Guid.NewGuid().ToString("N"),
+            payload = new[] { new { module = Module, type = Confirming, payload = new { id, expires = shown.Expires } } },
+            timestamp = DateTimeOffset.UtcNow,
+        },
+        IpcJson.Options);
+
+    /// <summary>
+    /// A person's press once the window has answered (RPC1c): run, once, where the person confirmed it and the instance is not
+    /// closing; otherwise answered with how it ended and kept as its ending, so <c>RESULT</c> and the same id sent again say it.
+    /// </summary>
+    private async Task ConfirmThenRunAsync(
+        IpcRequest request, string id, PipeBinding binding, TaskCompletionSource<string> answered, Task<PipeConfirmationEnd> ended)
+    {
+        var end = await ended.ConfigureAwait(false);
+        lock (_gate)
+        {
+            _waitingFor.Remove(id);
+        }
+
+        if (end == PipeConfirmationEnd.Confirmed && !IsStopping)
+        {
+            await RunAsync(request, id, binding, answered).ConfigureAwait(false);
+            return;
+        }
+
+        var response = end switch
+        {
+            PipeConfirmationEnd.Refused => IpcResponse.CreateError(id, Refused, null,
+                "The person refused this in Daoris's window. Nothing was done."),
+            PipeConfirmationEnd.Expired => IpcResponse.CreateError(id, Expired, null,
+                "Nobody confirmed this in Daoris's window within two minutes. Nothing was done."),
+            _ when IsStopping => RefuseStopping(request),
+            _ => IpcResponse.CreateError(id, IpcErrorCodes.OperationCancelled, null,
+                "This terminal took its request back before the person answered it. Nothing was done."),
+        };
+        var text = IpcJson.Serialize(response);
+        try
+        {
+            if (_journal!.Begin(id, binding)) _journal.End(id, binding, text);
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+        {
+            // Not kept: the terminal still hears it now, and RESULT says it does not know, which is so.
+        }
+
+        lock (_gate)
+        {
+            _running.Remove(id);
+            _owners.Remove(id);
+        }
+
+        answered.SetResult(text);
+    }
+
+    private static string Capitalized(string text) => text.Length == 0 ? text : char.ToUpperInvariant(text[0]) + text[1..];
 
     /// <summary>A route as <c>ROUTES</c> lists it: a route classed by its payload says its rule beside its class.</summary>
     private static object Listed(PipeRoute route) => new
@@ -589,11 +729,13 @@ public sealed class InstancePipe : IDisposable
 
         if (!IsKey(key)) return IpcJson.Serialize(Refuse(request, KeyMissing, "a request carries a key of its own, 16 to 128 characters."));
         var holder = PipeBinding.Fingerprint(key!);
+        string? waiting = null;
         lock (_gate)
         {
             if (_running.TryGetValue(target, out var running))
             {
                 if (running.Binding.Key != holder) return IpcJson.Serialize(RefuseTaken(request));
+                waiting = _waitingFor.GetValueOrDefault(target);
             }
             else if (_journal?.Find(target) is { } seen && seen.Binding.Key == holder)
             {
@@ -606,6 +748,13 @@ public sealed class InstancePipe : IDisposable
         }
 
         _log.Info("pipe.cancelled", ("request", target));
+        // RPC1c: a press still waiting for the window is taken back from it, its card gone and nothing run. One the person answered
+        // meanwhile is under way, and the dispatcher's cancel reaches it as any press's does.
+        if (waiting is not null && Confirmations.Withdraw(waiting))
+        {
+            return IpcJson.Serialize(IpcResponse.CreateSuccess(request.Id, new { cancelled = true, state = "withdrawn" }));
+        }
+
         var answer = await _dispatcher.DispatchAsync(request, _lifetime.Token).ConfigureAwait(false);
         return IpcJson.Serialize(answer);
     }
@@ -671,6 +820,12 @@ public sealed class InstancePipe : IDisposable
 
         private int _underWay;
         private int _closed;
+
+        /// <summary>
+        /// The terminal at the far end, as the system names the pipe's client (RPC1c): what the window's card names as the asker,
+        /// read once as the connection is taken, never from what the terminal says of itself.
+        /// </summary>
+        public PipeAsker Asker { get; } = AskerOf(stream);
 
         /// <summary>Whether a press this connection sent has not been answered yet.</summary>
         public bool Answering => Volatile.Read(ref _underWay) > 0;
@@ -856,5 +1011,33 @@ public sealed class InstancePipe : IDisposable
             if (Interlocked.Exchange(ref _closed, 1) == 1) return;
             stream.Dispose();
         }
+
+        private static PipeAsker AskerOf(NamedPipeServerStream stream)
+        {
+            if (!OperatingSystem.IsWindows()) return new PipeAsker(null, null);
+            try
+            {
+                if (!GetNamedPipeClientProcessId(stream.SafePipeHandle, out var id)) return new PipeAsker(null, null);
+                var pid = (int)id;
+                try
+                {
+                    using var process = Process.GetProcessById(pid);
+                    return new PipeAsker(process.ProcessName, pid);
+                }
+                catch (Exception error) when (error is ArgumentException or InvalidOperationException or System.ComponentModel.Win32Exception)
+                {
+                    // Gone already, or not ours to read: the card names its process id alone.
+                    return new PipeAsker(null, pid);
+                }
+            }
+            catch (Exception error) when (error is InvalidOperationException or ObjectDisposedException or EntryPointNotFoundException)
+            {
+                return new PipeAsker(null, null);
+            }
+        }
+
+        [System.Runtime.InteropServices.DllImport("kernel32.dll", SetLastError = true)]
+        [return: System.Runtime.InteropServices.MarshalAs(System.Runtime.InteropServices.UnmanagedType.Bool)]
+        private static extern bool GetNamedPipeClientProcessId(Microsoft.Win32.SafeHandles.SafePipeHandle pipe, out uint clientProcessId);
     }
 }

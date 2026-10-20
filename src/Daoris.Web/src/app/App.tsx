@@ -42,8 +42,9 @@ import { ShellSignals } from './ShellSignals';
 import {
   logEvent, useConsidered, useDismissUpdate, useDriver, useHarnesses, useLinkOpener, useOpenBrowser, useOpenWindow, useRemotes,
   useHelperWaits, useOpinionWaits, useWorkState, useRules, useSayUpdate, useSessionGroups, useShowReviewAgain, useSyncNow, useTaskbarCount, useUntrusted, useUpdateState,
-  usePermissionWaits,
+  usePermissionWaits, useAnswerConfirmation, usePersonKey, useServiceConfirmations, useTerminalConfirmations, useUnkeyedHost,
 } from '../bridge/shell';
+import { Confirmations } from '../person/Confirmations';
 import { byTool } from '../agents/tools';
 import { useSay } from '../bridge/sessions/conversation';
 import { UpdateBanner } from '../update/UpdateBanner';
@@ -306,6 +307,15 @@ export function App() {
   const update = useUpdateState();
   const sayUpdate = useSayUpdate();
   const dismissUpdate = useDismissUpdate();
+  // The person's door in this window (PERSONDOOR1f, RPC1c; D156 points 2 and 4): the person key, asked of the shell as the page
+  // loads and held in memory for every write; what a terminal sent to be confirmed here, and, once the key is held, what waits at
+  // the service; the person's answer; and the adoption notice where the host gates with a key this window does not hold.
+  const personKey = usePersonKey();
+  const unkeyedHost = useUnkeyedHost(personKey);
+  const [unkeyedSaid, setUnkeyedSaid] = useState(false);
+  const terminalConfirmations = useTerminalConfirmations();
+  const serviceConfirmations = useServiceConfirmations(personKey.held);
+  const answerConfirmation = useAnswerConfirmation();
   // Opening a window is the shell's act, not the page's (SURF8). In a browser it simply rejects,
   // which is why the commands that use it are gated on a shell being here.
   const openWindow = useOpenWindow();
@@ -1088,6 +1098,17 @@ export function App() {
           busy={sayUpdate.isPending || dismissUpdate.isPending}
           onSay={(mode) => sayUpdate.mutate(mode, { onError: failure(notify) })}
           onDismiss={() => dismissUpdate.mutate(undefined, { onError: failure(notify) })}
+        />
+      )}
+
+      {/* What waits for the person's Confirm (PERSONDOOR1f, RPC1c; D156 §4.2): under the strip and above every view, so a
+          terminal's press is seen whichever view is open, each answered where it is drawn; and the adoption notice, said once. */}
+      {attached && (
+        <Confirmations
+          waiting={[...terminalConfirmations, ...serviceConfirmations]}
+          notice={unkeyedHost && !unkeyedSaid}
+          onAnswer={(waiting, confirm) => answerConfirmation.mutateAsync({ waiting, confirm })}
+          onDismissNotice={() => setUnkeyedSaid(true)}
         />
       )}
 

@@ -17837,3 +17837,15 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **FABRIC-CLOSE1c16 — a step whose session ran across the reopen and the go-on is brought up to date** (driver; after CLOSE1c13; §E5). A session still running when its source was reopened and then gone on with ends normally after the go-on, so neither CLOSE1c2's carry-on nor CLOSE1c13's telling reads it, and its branch never gets the source's new submission. Contract: §E5 (*its branch brought up to date*), D173's CLOSE1c5 and CLOSE1c13 notes. Proof: a `ReopenTellingTests` or `PlannerTests` case where the record ends after the step's `updated`, with no new submission, and is told or carried on once with the rebase.
 
 **Outcome** 2026-10-20: built as CLOSEREOPEN1, one feature end to end (D187): a session's end reads its step's source moved since the run started (`Planner.ReopenedFrom`) and ends `ended.source-reopened`, so CLOSE1c2's carry-on brings its branch up to date once. Commit c473d6a6a. Detail: D173's CLOSEREOPEN1 note (four choices recorded there for review), the FIX-LOG's entry.
+
+## PERSONDOOR1f — page authorization (2026-10-20, D156)
+
+> - [ ] **PERSONDOOR1f — page authorization** (web; after b/c). In-memory key, stale refresh, confirmation card, adoption notice and agent attribution. §2.2–§2.3/§4.2/§5.1.
+
+**Outcome** 2026-10-20: built with RPC1c as PERSONDOOR1 (D187): the page holds the person key the shell answers (`PERSON_KEY`, null until PERSONDOOR1g mints one) in memory only and sends it as `Daoris-Person` on every write, asking again once on `stale`; one card under the strip of every main window shows what waits for the person's Confirm (a terminal's press, and the service's confirmations while a key is held), *Refuse* before *Confirm*, nothing focused, a refusal said under its card; the adoption notice is asked of the host's proof and said once. Agent attribution waits on PERSONDOOR1c. On Opus, with RPC1c: about 368 tool calls, 86 minutes. Detail: D156's PERSONDOOR1 note.
+
+## RPC1c — a person's press from a terminal is confirmed in the window (2026-10-20, D156)
+
+> - [ ] **RPC1c — a person's press from a terminal is confirmed in the window** (desktop/web; after PERSONDOOR1f; D156 §4.2). A `person` route over the pipe shows PERSONDOOR1f's card with the terminal named, runs once on **Confirm** within two minutes, and the client says it waits; refused or expired, nothing runs. Proof: modules tests (confirmed, refused, expired, five waiting); the card's page test in en and zh; on the install, a confirmed terminal press. The verb that becomes a client sends `follow:true` on the three land presses (RPC1b5).
+
+**Outcome** 2026-10-20: built as PERSONDOOR1: a `person` route over the pipe waits on the window's card (`PipeConfirmations`; `PERSON_CONFIRMATIONS`, `PERSON_CONFIRM`), naming the terminal by the OS's word for the pipe's client, and runs once on Confirm within two minutes through the journal; refused, expired, cancelled or closing, nothing runs; five wait at once. `daoris-driver sessions archive` and `unarchive` are the first clients and say the alone path's words. Detail: D156's PERSONDOOR1 note.

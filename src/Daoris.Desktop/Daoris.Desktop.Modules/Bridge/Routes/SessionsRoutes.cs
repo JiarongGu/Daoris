@@ -440,25 +440,31 @@ public sealed class SessionsRoutes(DriverContext context)
         var archive = PayloadHelper.GetRequiredValue<bool>(request.Payload, "archived");
         var ids = Ids(request) ?? [];
         var marks = new SessionArchive(_loop.Home);
+        // RPC1c: `sessions archive` and `unarchive` sent over the pipe ask for their words (`said: true`), the alone path's own, and a
+        // terminal's lines; the page asks for none, and its answers keep their shape.
+        var said = Flag(request, "said");
 
         if (!archive)
         {
             var back = marks.Unarchive(ids);
-            return new { Archived = back.Marks.Select(Mark).ToArray(), back.NotArchived };
+            var marked = back.Marks.Select(Mark).ToArray();
+            return said
+                ? new { Archived = marked, back.NotArchived, Said = SessionArchive.UnarchiveSaid(ids, back.NotArchived).ToWire() }
+                : new { Archived = marked, back.NotArchived };
         }
 
         var (look, grouped) = await GroupsAsync(ids, cancellationToken, walked: true).ConfigureAwait(false);
         var answer = marks.Archive(ids, grouped, [.. look.Records.Select(record => record.Id)], DateTimeOffset.UtcNow);
         var kept = answer.Outcomes.Where(outcome => outcome.Verdict != ArchiveVerdict.Archived).ToList();
-        // SESSUX1g (D126 §7.4): counted in the machine log as the screen's, as the terminal's archive is counted as its own.
-        SessionArchive.Said(_loop.Log, answer.Outcomes.Count - kept.Count, PluginEvents.Screen);
+        // SESSUX1g (D126 §7.4): counted in the machine log by the door it came in by: the screen's, or the terminal's over the pipe.
+        SessionArchive.Said(_loop.Log, answer.Outcomes.Count - kept.Count, PipeDoor.Now == PipeDoor.Terminal ? PluginEvents.Terminal : PluginEvents.Screen);
+        var archived = answer.Marks.Select(Mark).ToArray();
+        var keptRows = kept.Select(outcome => new { outcome.Session, Code = CodeOf(outcome.Verdict), outcome.Group }).ToArray();
+        // A terminal is told one kept in its own words and exit, as it says it alone, never thrown.
+        if (said) return new { Archived = archived, Kept = keptRows, Said = SessionArchive.ArchiveSaid(answer.Outcomes).ToWire() };
         if (ids.Count == 1 && kept.Count == 1) throw Kept(kept[0]);
 
-        return new
-        {
-            Archived = answer.Marks.Select(Mark).ToArray(),
-            Kept = kept.Select(outcome => new { outcome.Session, Code = CodeOf(outcome.Verdict), outcome.Group }).ToArray(),
-        };
+        return new { Archived = archived, Kept = keptRows };
     }
 
     /// <summary>One look at the sessions, gathered by the driver library's one gatherer, which the terminal's <c>sessions</c> reads too.</summary>

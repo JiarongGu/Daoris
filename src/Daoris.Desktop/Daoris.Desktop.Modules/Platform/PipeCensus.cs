@@ -9,7 +9,7 @@ public enum PipeClass
     /// <summary>A read, or a press D156 §3 leaves to an agent or to the driver: run as asked.</summary>
     Open,
 
-    /// <summary>A press D156 §3 makes the person's alone: refused <c>confirm-in-window</c> until RPC1c confirms it in the window.</summary>
+    /// <summary>A press D156 §3 makes the person's alone: shown to the window, and run only on the person's Confirm there (RPC1c).</summary>
     Person,
 
     /// <summary>What only a window does (its own commands, the pickers, the file manager, Daoris's browser, its shells): refused.</summary>
@@ -63,7 +63,8 @@ public sealed record PipeRoute(string Module, string? Route, PipeClass Class, Pi
 /// <summary>
 /// The pipe's census (RPC1a, the terminal RPC design §4.2): every route the running Daoris accepts over its pipe, classed
 /// <see cref="PipeClass.Open"/>, <see cref="PipeClass.Person"/> or <see cref="PipeClass.Window"/>. The same account opens the
-/// pipe as runs <c>daoris-driver</c> (D156 point 4), so the pipe confers no person's authority, and only an open route runs.
+/// pipe as runs <c>daoris-driver</c> (D156 point 4), so the pipe confers no person's authority: only an open route runs as asked,
+/// and a person's runs once the person confirms it in the window (RPC1c, <see cref="PipeConfirmations"/>).
 /// </summary>
 /// <remarks>
 /// <para><b>The driver's routes are classed one by one</b>, against D156 §3's table of the local host's doors, and a test fails on
@@ -228,7 +229,10 @@ public sealed class PipeCensus
         Add(PipeClass.Window,
             // The file manager, the file picker and Daoris's browser are the window's; so is what is typed into an action a
             // window runs, and that action's stop.
-            "SESSION_OPEN_FOLDER", "PLUGIN_OPEN_FOLDER", "TOOLS_PICK", "SHOW_REVIEW_AGAIN", "HARNESS_INPUT", "HARNESS_CANCEL");
+            "SESSION_OPEN_FOLDER", "PLUGIN_OPEN_FOLDER", "TOOLS_PICK", "SHOW_REVIEW_AGAIN", "HARNESS_INPUT", "HARNESS_CANCEL",
+            // RPC1c, PERSONDOOR1f: what waits for the person's Confirm is the window's to read and answer, so a terminal can ask and never
+            // answer; and the person key is the window's, which the pipe never answers (D156 point 2, the terminal RPC design §4.3).
+            "PERSON_CONFIRMATIONS", "PERSON_CONFIRM", "PERSON_KEY");
         // One route, two forms. What a switch of git would change compares programs Daoris already knows (the PATH's, a
         // managed version), and with `way: "file"` runs whatever file the payload names: that form is the person's.
         table.Add("TOOLS_GIT", PipeRule.Of("way", PipeClass.Open, PipeClass.Person, "\"system\"", "\"managed\""));
