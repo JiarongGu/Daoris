@@ -102,9 +102,13 @@ public static class HandOverBriefing
     /// <param name="request">The request as the person first wrote it, or null.</param>
     /// <param name="lastWords">The agent's last words, or null.</param>
     /// <param name="uncommitted">What the tree holds uncommitted, by relative path.</param>
+    /// <param name="note">
+    /// The outgoing agent's own note, where it asked through <c>handover_propose</c> (MIXAGENT1c; design §2): its claim, said after
+    /// Daoris's record and marked as the agent's, never in its place; null or blank says nothing.
+    /// </param>
     public static string Compose(
         string agent, string session, string why, string? request, IReadOnlyList<PlanEntry> plan, string? lastWords,
-        IReadOnlyList<string> uncommitted)
+        IReadOnlyList<string> uncommitted, string? note = null)
     {
         var parts = new List<string>
         {
@@ -133,6 +137,8 @@ public static class HandOverBriefing
         {
             parts.Add("Uncommitted in this tree:\n\n" + string.Join("\n", uncommitted.Take(ListLimit).Select(path => $"    - {path}")) + More(uncommitted.Count));
         }
+
+        if (HandOverNote.Said(note) is { } claim) parts.Add(claim);
 
         return string.Join("\n\n", parts);
     }
