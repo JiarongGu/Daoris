@@ -5,6 +5,19 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-20 — Two fast tests timed by the wall clock failed under a loaded machine (FLAKE1)
+
+- **Symptom:** the full set on 9717f8d failed `StagedBuildTests.A_file_held_in_app_for_a_moment_does_not_roll_the_swap_back`
+  (the swap rolled back) and the rehearsal kit's "a command its timeout ends is ended with what it started" (the command never
+  said its id within its timeout), with six of the install's sessions, three builders and the CI's own gates on the machine.
+- **Root cause:** each gave the machine's clock a job the load could outlast. The swap test let go of its hold from a thread-pool
+  task's 300 ms delay while the swap waited up to ten seconds on the test's own thread, and the pool was starved past the wait;
+  the kit's test gave a fresh node five seconds to start and write its id, and a node start took longer.
+- **Fix:** the swap test lets go by the swap's own clock (its `clock` and `sleep` seams), as the longer hold's test beside it
+  already did, so it no longer reads the wall clock; the kit's test runs the command again with thirty seconds where the first
+  five saw no id, and only then says nothing was asked.
+- **Verification:** both, alone and with the CI beside.
+
 ## 2026-10-20 — The full set's driver Process half failed a race's control and a start's git ceiling (TREELOCK1, FLAKE1)
 
 - **Symptom:** the full set on 50634f5 failed two `Process` tests, each again when re-run alone: `ProbeRaceTests`' control (two
