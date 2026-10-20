@@ -5,6 +5,11 @@ with the version and date at release.
 
 ## Unreleased
 
+- What you say to a session or a conversation while it works is kept on its record before it waits, so a restart of Daoris never
+  loses it: once Daoris is back, the same session goes on with your words in the order you said them. A word Daoris had already
+  written to the agent when it went away may have reached it, so it is never sent again: its place says *It may have read this; its
+  answer was not kept*, with *Say it again* under your own words. Under words the agent took, the conversation shows when they were
+  sent, taken and answered, each only where Daoris saw it.
 - A change of a repository's permission prompts reaches a driven session already running there at its next turn, whether made on
   its Setup tab or with `daoris-driver access`. Where you have said something to the session for its next turn, its run ends as the
   turn ends, never mid-turn, your words wait on it, and at the next look it goes on in the same conversation under the new setup,
