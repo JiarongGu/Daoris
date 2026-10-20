@@ -28,6 +28,7 @@ import { resolveCanonRoot } from '../src/doctrine/canon.ts';
 import { OFFERS_DIR, readManifest } from '../src/plugins/plugins.ts';
 import { BUILT_IN, BUILT_IN_LAYOUT, parseResources } from '../src/tools/resources.ts';
 import { INSTALL_BIN, installBin } from '../src/tools/tools.ts';
+import { DRIVER_PROGRAM_FILE, DRIVER_PROGRAM_HOME } from '../src/agents/toolchain.ts';
 import { INSTALL_APP, INSTALL_DATA, INSTALL_MARKER, installOf } from '../src/platform/home.ts';
 import { RUNNING_FILE } from '../src/service/service.ts';
 import { makeFixture } from '../test/_fixture.ts';
@@ -1073,6 +1074,9 @@ test('the driver’s door is its own folder under app/ and one launcher for each
   assert.deepEqual([...DRIVER_HOME], [SHELL_HOME[0], 'daoris-driver']);
   assert.equal(DRIVER_EXE, 'daoris-driver.exe');
   assert.deepEqual([...DRIVER_LAUNCHERS], ['daoris-driver', 'daoris-driver.cmd']);
+  // PUSH1f2a (D194 point 1): the CLI finds the program its install carries where the publish lays it, two spellings held here.
+  assert.deepEqual([...DRIVER_PROGRAM_HOME], [...DRIVER_HOME]);
+  assert.equal(DRIVER_PROGRAM_FILE, process.platform === 'win32' ? DRIVER_EXE : DRIVER_EXE.replace(/\.exe$/, ''));
   const csproj = readFileSync(join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..', DRIVER_PROJECT, 'Daoris.Desktop.Driver.Host.csproj'), 'utf8');
   assert.ok(csproj.includes(`<AssemblyName>${DRIVER_HOME.at(-1)}</AssemblyName>`), 'the Host’s binary is the folder’s name');
   const command: string = driverPublishCommand(join(tmpdir(), 'an-install', ...DRIVER_HOME));
