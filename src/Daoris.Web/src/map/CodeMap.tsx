@@ -6,7 +6,7 @@ import { cn } from '../lib/cn';
 import { isComposing } from '../lib/composing';
 import { PathText } from '../design/ui';
 import { layerModules } from './codeLayout';
-import { useWidth } from './useWidth';
+import { useWidth } from '../design/useWidth';
 
 const BOX_W = 136;
 const BOX_H = 36;

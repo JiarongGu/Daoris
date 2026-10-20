@@ -1,0 +1,15 @@
+{
+  "flow.asList": "Show as list",
+  "flow.asChart": "Show as flowchart",
+  "flow.keys": "Arrow keys move between steps, Enter opens one, Tab reaches its controls.",
+  "flow.state": "{{word}}.",
+  "flow.actor": "{{actor}}.",
+  "flow.notReached": "Not reached.",
+  "flow.from": "From {{node}}: {{says}}.",
+  "flow.next": "Next: {{moves}}.",
+  "flow.move": "{{node}}, {{says}}",
+  "flow.moves": "{{first}}; {{second}}",
+  "flow.back": "Back to {{node}}, {{says}}.",
+  "flow.footBack": "back to {{node}}, {{says}}",
+  "flow.join": "{{first}} {{second}}"
+}

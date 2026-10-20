@@ -185,5 +185,14 @@
   "quests.facts.taken": "taken {{ago}}",
   "quests.facts.submitted": "submitted {{ago}}",
   "quests.facts.done": "done {{ago}}",
-  "quests.facts.declined": "declined {{ago}}"
+  "quests.facts.declined": "declined {{ago}}",
+  "quests.flow.title": "Flowchart",
+  "quests.flow.hint": "Lit where it stands now, with the moves it can make from there.",
+  "quests.flow.label": "How #{{id}} moves",
+  "quests.flow.here": "here now",
+  "quests.flow.move.Open.Taken": "when a repository's agent takes it",
+  "quests.flow.move.Open.Done": "when it is marked done before anyone takes it",
+  "quests.flow.move.Open.Declined": "when it is declined before anyone takes it",
+  "quests.flow.move.Taken.Done": "when its work is done",
+  "quests.flow.move.Taken.Declined": "when it is declined after it was taken"
 }

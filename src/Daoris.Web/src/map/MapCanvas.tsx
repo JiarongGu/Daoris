@@ -4,7 +4,7 @@ import { cn } from '../lib/cn';
 import { isComposing } from '../lib/composing';
 import { ASKS, type ChainEdge, type Live, type Topology, layoutRing } from './topology';
 import { type Frame, textWidth } from './measure';
-import { useTall, useWidth } from './useWidth';
+import { useTall, useWidth } from '../design/useWidth';
 
 /**
  * What a person has chosen on the map: a repository, the quests one way, what the asks put on one

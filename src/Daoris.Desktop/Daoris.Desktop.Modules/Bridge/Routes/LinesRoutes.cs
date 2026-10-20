@@ -290,7 +290,7 @@ public sealed class LinesRoutes(DriverContext context)
                 : [];
             // RPCOPEN1: `trees clean` asks for the verb's words beside the list's fields (`said`); the page does not.
             return Flag(request, "said")
-                ? SweepAnswer(plan, records, TreesWords.CleanPlan(plan, records, new TreesAsk(TreesLook.Clean) { Workspace = workspace }).After(pluginLines))
+                ? SweepAnswer(plan, records, TreesPlanWords.CleanPlan(plan, records, new TreesAsk(TreesLook.Clean) { Workspace = workspace }).After(pluginLines))
                 : SweepAnswer(plan, records);
         }
 
@@ -478,7 +478,7 @@ public sealed class LinesRoutes(DriverContext context)
                     Deletes = plan.Deletes.Select(LandedRow).ToArray(),
                     Looked = plan.Looked.Select(Repository).ToArray(),
                     Apart = plan.Apart.Select(Repository).ToArray(),
-                    Said = TreesWords.SyncPlan(plan, asked, DateTimeOffset.UtcNow).After(pluginLines).ToWire(),
+                    Said = TreesPlanWords.SyncPlan(plan, asked, DateTimeOffset.UtcNow).After(pluginLines).ToWire(),
                 };
             }
 

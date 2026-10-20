@@ -1,0 +1,15 @@
+{
+  "flow.asList": "以列表显示",
+  "flow.asChart": "以流程图显示",
+  "flow.keys": "方向键在步骤之间移动，Enter 打开一步，Tab 进入它的控件。",
+  "flow.state": "{{word}}。",
+  "flow.actor": "{{actor}}。",
+  "flow.notReached": "尚未到达。",
+  "flow.from": "来自 {{node}}：{{says}}。",
+  "flow.next": "下一步：{{moves}}。",
+  "flow.move": "{{node}}，{{says}}",
+  "flow.moves": "{{first}}；{{second}}",
+  "flow.back": "回到 {{node}}，{{says}}。",
+  "flow.footBack": "回到 {{node}}，{{says}}",
+  "flow.join": "{{first}}{{second}}"
+}
