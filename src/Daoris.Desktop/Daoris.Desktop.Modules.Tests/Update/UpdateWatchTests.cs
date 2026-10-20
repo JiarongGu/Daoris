@@ -17,6 +17,9 @@ public sealed class UpdateWatchTests : IDisposable
     public UpdateWatchTests()
     {
         Directory.CreateDirectory(Path.Combine(_install, "app"));
+        // An install's mark, which makes its data/ the install's home (D172 point 2, HOMEFIX1): unmarked, data/ is a root of its
+        // own, the request is placed in its data/data/, and the watch never opens the folder this class says a change in.
+        File.WriteAllText(Path.Combine(_install, InstallHome.Marker), "# Daoris — installed desktop\n");
         Directory.CreateDirectory(Path.Combine(_install, "update"));
         Directory.CreateDirectory(Data);
     }
