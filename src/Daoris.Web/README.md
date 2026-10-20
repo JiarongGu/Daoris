@@ -220,6 +220,9 @@ with a choice its agent offered on the session's head and foot and on its row (`
 `SESSION_PERMISSION_ANSWER`); neither route publishes, so the page asks again itself: as a pushed call's `waiting`
 mark comes and goes where the calls are pushed, and every few seconds on a host that pushes none (D184's AUTONOMY1b3c
 and AUTONOMY1b3b notes). The rail's row and the head say such a call waits for the person's answer, timed from the hold.
+It includes, too, a third answer in a row with nobody between, which the answers-alone bound holds for the person (`useAnswerWaits`
+in `bridge/sessions/sessions.ts`, `ANSWER_WAITS`, COWORK1e, D188 point 4), answered with *Go on with this answer* or *Not now* on the
+session's head and foot and on its row (`useAnswerAlone`, `SESSION_ANSWER_ALONE`, which publishes the sessions and the driver).
 Sessions' badge counts the sessions the driver runs, and the status bar says the same count, both read from the attention
 slice's `working` partition (`useAttention`, SESSBADGE1, D76's note); what waits on the person in Sessions is a dot in the
 waiting hue beside the count, and the place's tip says both in words.

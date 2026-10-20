@@ -5,6 +5,11 @@ with the version and date at release.
 
 ## Unreleased
 
+- Agents no longer go on answering each other with nobody between. A piece of work goes on by another agent's answers alone (a
+  helper's answer, a second opinion's findings) at most twice in a row; the third waits for you, in the session's head and foot and
+  in *What needs you*, which the badge counts, with *Go on with this answer* and *Not now*. Going on counts as your word, so the
+  next two answers go on alone again; *Not now* keeps the answer, which then goes on only with your own words. An answer taken
+  while the agent is working, and your own words or Daoris's, never count.
 - A driven session whose own conversation cannot be resumed moves to a new session by itself only where waiting would not help.
   A refusal from its agent still carries it on, handed what Daoris kept of it, but a conversation open in another client of its
   agent now waits for you until you say more. Claude Code ending before it reopens a conversation is tried once more first, in a
