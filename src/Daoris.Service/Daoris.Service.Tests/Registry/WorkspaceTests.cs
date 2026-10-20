@@ -302,6 +302,67 @@ public sealed class WorkspaceScopeTests : IAsyncLifetime
 }
 
 /// <summary>
+/// A repository moved to another workspace takes its knowledge with it (OVERVIEWNOISE1d). Its entries carry the
+/// workspace they were indexed under, and a local host reads its checkouts again only into an empty index or on
+/// request, so the workspace it moved to counted none of them until the move re-stamped them.
+/// </summary>
+public sealed class WorkspaceMoveTests : IAsyncLifetime
+{
+    private SqliteConnection _connection = null!;
+    private InMemoryKnowledgeStore _store = null!;
+    private KnowledgeService _service = null!;
+    private static readonly DateTimeOffset Now = DateTimeOffset.Parse("2026-10-20T10:00:00Z");
+
+    public async Task InitializeAsync()
+    {
+        _connection = new SqliteConnection("Data Source=:memory:");
+        await _connection.OpenAsync();
+        _store = new InMemoryKnowledgeStore();
+        _service = new KnowledgeService(
+            _store, new LexicalKnowledgeSearch(_store), new EmptyKnowledgeSource(),
+            DisclosurePolicy.LocalOnly, registry: new Registry(),
+            registrations: await RegistrationStore.OpenAsync(_connection));
+
+        await _service.RegisterAsync(Declared("engine", "aurora"), Now);
+        await _service.RegisterAsync(Declared("ledger", "aurora"), Now);
+        await _store.ReplaceRepositoryAsync("engine", [Entry("engine", "D1"), Entry("engine", "D2")]);
+        await _store.ReplaceRepositoryAsync("ledger", [Entry("ledger", "D1")]);
+    }
+
+    public async Task DisposeAsync() => await _connection.DisposeAsync();
+
+    private static Registration Declared(string name, string? workspace) => new(
+        name, Adopted: true, $"{name}.", ["x"], ["y"], [], Entries: 0, Workspace: workspace);
+
+    private static KnowledgeEntry Entry(string repository, string anchor) => new(
+        repository, EntryKind.Decision, Provenance.Local, $"{anchor} — a decision", "Why.", "docs/DECISIONS.md", anchor,
+        Workspace: "aurora");
+
+    [Fact]
+    public async Task A_rewired_repository_s_entries_count_in_the_workspace_it_moved_to()
+    {
+        var engine = Assert.Single(await _service.RegistryAsync(), r => r.Repository == "engine");
+        await _service.RegisterAsync(engine with { Workspace = "tools" }, Now.AddMinutes(1));
+
+        var tools = Assert.Single(await _service.SummarizeAsync("tools"));
+        Assert.Equal(("engine", 2, "tools"), (tools.Repository, tools.Total, tools.Workspace));
+        Assert.Equal("ledger", Assert.Single(await _service.SummarizeAsync("aurora")).Repository);
+        Assert.Equal("engine", Assert.Single(await _service.SearchAsync(
+            new KnowledgeQuery("decision") { Workspace = "tools" }), hit => hit.Entry.Anchor == "D2").Entry.Repository);
+    }
+
+    /// <summary>A re-registration that names no workspace moves nothing, so it rewrites nothing.</summary>
+    [Fact]
+    public async Task A_re_registration_that_stays_put_leaves_the_entries_as_they_were()
+    {
+        await _service.RegisterAsync(Declared("engine", null), Now.AddMinutes(1));
+
+        Assert.Equal(2, Assert.Single(await _service.SummarizeAsync("aurora"), r => r.Repository == "engine").Total);
+        Assert.Empty(await _service.SummarizeAsync("tools"));
+    }
+}
+
+/// <summary>
 /// The quest boundary (design §4): publishing checks that both sides share a workspace, and the
 /// refusal names both — because "no" that does not say which side is where leaves the asker with the
 /// one question the answer was supposed to settle.

@@ -417,12 +417,55 @@ public sealed class KnowledgeService(
     public async Task<Registration> RegisterAsync(
         Registration registration, DateTimeOffset now, CancellationToken ct = default)
     {
+        // Where it stood before, so a move is known as one (OVERVIEWNOISE1d).
+        var before = registrations is not null
+            ? (await registrations.AllAsync(ct).ConfigureAwait(false)).Named(registration.Repository)
+            : (registry?.Read() ?? []).Named(registration.Repository);
+
         var effective = registrations is not null
             ? await registrations.UpsertAsync(registration, now, ct).ConfigureAwait(false)
             : registration with { Workspace = registration.InWorkspace };
 
         registry?.Register(effective);
+        if (before is not null && !Workspaces.Same(before.InWorkspace, effective.InWorkspace))
+        {
+            await RestampAsync(effective.Repository, effective.InWorkspace, ct).ConfigureAwait(false);
+        }
+
         return effective;
+    }
+
+    /// <summary>
+    /// A moved repository's entries carried into its new workspace (OVERVIEWNOISE1d).
+    /// </summary>
+    /// <remarks>
+    /// An entry is stamped with the workspace it was indexed under, and a local host reads its checkouts again only
+    /// into an empty store or on request: a repository moved between workspaces kept its old stamp, and the
+    /// workspace it moved to counted none of its knowledge. Re-stamped under the refresh's lock, so a reading that
+    /// took the old wiring cannot land after it; over an index a newer Daoris wrote, nothing is rewritten (KSCHEMA1).
+    /// </remarks>
+    private async Task RestampAsync(string repository, string workspace, CancellationToken ct)
+    {
+        if (store.Refusal is not null) return;
+
+        await _refreshLock.WaitAsync(ct).ConfigureAwait(false);
+        try
+        {
+            var held = (await store.AllAsync(ct).ConfigureAwait(false))
+                .Where(entry => string.Equals(entry.Repository, repository, StringComparison.OrdinalIgnoreCase))
+                .GroupBy(entry => entry.Repository, StringComparer.Ordinal);
+            foreach (var group in held)
+            {
+                if (group.All(entry => Workspaces.Same(entry.Workspace, workspace))) continue;
+                await store.ReplaceRepositoryAsync(
+                    group.Key, group.Select(entry => entry with { Workspace = workspace }).ToList(), ct)
+                    .ConfigureAwait(false);
+            }
+        }
+        finally
+        {
+            _refreshLock.Release();
+        }
     }
 
     /// <summary>
