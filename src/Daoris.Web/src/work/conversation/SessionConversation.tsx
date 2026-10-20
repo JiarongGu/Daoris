@@ -67,8 +67,10 @@ export function BackToBottom({ onPress, className }: { onPress: () => void; clas
  */
 export function SessionConversation({
   session, adapter, chat = false, tree, live, turnRunning, scroller, onUsage, onWaiting, onSession, onStartFrom, reasons, cooling, onTail,
-  waits, onAnchors, onToWait, callMark,
+  waits, onAnchors, onToWait, callMark, onSayAgain,
 }: {
+  /** *Say it again* (COWORK1c): the person's own words that may have reached the agent, said anew — `ConversationView`'s. */
+  onSayAgain?: (words: string[]) => void;
   /** The call the driver's grouping says the session is in, held or not (AUTONOMY1b3e) — `ConversationView`'s. */
   callMark?: CallMark;
   /**
@@ -269,6 +271,7 @@ export function SessionConversation({
         reveal={reveal?.key}
         onSession={onSession}
         onStartFrom={onStartFrom}
+        onSayAgain={onSayAgain}
         reasons={reasons}
         cooling={cooling}
         names={names}

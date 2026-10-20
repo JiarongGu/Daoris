@@ -352,7 +352,47 @@ describe('toTurns', () => {
 
     const items = turns[0]!.items;
     expect(items.map((b) => [b.kind, b.settled ?? false])).toEqual([['held', true], ['note', false]]);
-    expect(items[1]).toMatchObject({ code: 'lost', words: ['said-1'] });
+    expect(items[1]).toMatchObject({ code: 'lost', words: ['said-1'], said: ['PINEAPPLE'], persons: true });
+  });
+
+  /**
+   * COWORK1c (the message-urgency design §6, §8.2): a word a shell before attempted may have reached its agent, and the line that
+   * says so names it as the person's own only where every word it settles was theirs, which *Say it again* offers; Daoris's never.
+   */
+  it('names an uncertain word the person’s own only where every word it settles was theirs', () => {
+    const { turns } = toTurns([
+      e(1, { kind: 'user', origin: 'person', id: 'w1', reaches: 'turn-end', text: 'Use port 9090.' }),
+      e(2, { kind: 'user', origin: 'target', from: 'daoris', id: 'w2', reaches: 'turn-end', text: 'Daoris: reopened.' }),
+      e(3, { kind: 'note', text: '— it may have read what you added; its answer was not kept.', words: ['w1'], code: 'lost' }),
+      e(4, { kind: 'note', text: '— it may have read what you added; its answer was not kept.', words: ['w2'], code: 'lost' }),
+    ]);
+
+    const notes = turns[0]!.items.filter((b) => b.kind === 'note');
+    expect(notes.map((note) => [note.said, note.persons ?? false])).toEqual([[['Use port 9090.'], true], [['Daoris: reopened.'], false]]);
+  });
+
+  /**
+   * COWORK1c (the message-urgency design §7, §8.2): the receipts a word's door observed fold under the ask it became, each where it
+   * was: sent when the write returned, taken as the ask's own moment, and answered when its turn ended so. A word with none folds
+   * nothing, and no receipt is ever a block of its own.
+   */
+  it('folds a word’s receipts under the ask it became, each only where observed', () => {
+    const { turns } = toTurns([
+      e(1, { kind: 'user', origin: 'person', text: 'read the five files' }),
+      e(2, { kind: 'user', origin: 'person', id: 'w1', reaches: 'turn-end', text: 'and the readme' }),
+      e(3, { kind: 'turn', stopReason: 'end_turn' }),
+      { seq: 4, at: '2026-09-25T00:01:00Z', kind: 'receipt', id: 'w1', receipt: 'sent' },
+      { seq: 5, at: '2026-09-25T00:02:00Z', kind: 'user', origin: 'person', id: 'w1', text: 'and the readme' },
+      e(6, { kind: 'message', text: 'on it' }),
+      e(7, { kind: 'turn', stopReason: 'end_turn' }),
+      { seq: 8, at: '2026-09-25T00:09:00Z', kind: 'receipt', id: 'w1', receipt: 'answered' },
+    ]);
+
+    expect(turns.map((turn) => turn.ask?.receipts)).toEqual([
+      undefined,
+      { sent: '2026-09-25T00:01:00Z', taken: '2026-09-25T00:02:00Z', answered: '2026-09-25T00:09:00Z' },
+    ]);
+    expect(turns.flatMap((turn) => turn.items).some((block) => block.kind === 'raw')).toBe(false);
   });
 
   /**
