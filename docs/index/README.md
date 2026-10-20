@@ -24,7 +24,7 @@ Listed first, because nothing below restates their rows: open one of these for w
 | `decisions.md` | each decision's title with its entry's lines, then each dated note with its lines |
 | `outlines/<path>.md` | the declarations or headings of a file over 40 KB, each with its line range |
 
-## Files over 40 KB (193)
+## Files over 40 KB (195)
 
 Each has its outline at `outlines/<its path>.md`: open the outline, then read the range you need, not the file.
 
@@ -189,16 +189,18 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 
 | File | KB | Lines |
 |---|---|---|
-| `src/Daoris.Cli/src/agents/toolchain.ts` | 156 | 2989 |
+| `src/Daoris.Cli/src/agents/toolchain.ts` | 163 | 3101 |
 | `src/Daoris.Cli/src/doctrine/materialize.ts` | 47 | 935 |
-| `src/Daoris.Cli/src/driver/driverconfig.ts` | 148 | 2634 |
-| `src/Daoris.Cli/src/plugins/plugins.ts` | 80 | 1550 |
+| `src/Daoris.Cli/src/driver/driverconfig.ts` | 156 | 2761 |
+| `src/Daoris.Cli/src/plugins/plugins.ts` | 82 | 1598 |
+| `src/Daoris.Cli/src/service/service.ts` | 41 | 862 |
 | `src/Daoris.Cli/src/workflows/namedworkflows.ts` | 44 | 882 |
 | `src/Daoris.Cli/src/workflows/workflowdoor.ts` | 50 | 897 |
 | `src/Daoris.Cli/test/agents/toolchain.test.ts` | 110 | 2082 |
 | `src/Daoris.Cli/test/desktop-tool.test.ts` | 46 | 878 |
-| `src/Daoris.Cli/test/dogfood.test.ts` | 48 | 847 |
-| `src/Daoris.Cli/test/driver/driverconfig.test.ts` | 141 | 2577 |
+| `src/Daoris.Cli/test/dogfood.test.ts` | 49 | 852 |
+| `src/Daoris.Cli/test/driver/driverconfig.test.ts` | 153 | 2786 |
+| `src/Daoris.Cli/test/tools/tools.test.ts` | 44 | 752 |
 | `src/Daoris.Cli/test/usage-report.test.ts` | 71 | 1227 |
 | `src/Daoris.Cli/tool-test/desktop-publish.test.ts` | 72 | 1255 |
 | `src/Daoris.Cli/tool-test/merge-branch.test.ts` | 328 | 5055 |
@@ -222,7 +224,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 
 | File | KB | Lines |
 |---|---|---|
-| `.claude/knowledge/twins.md` | 107 | 179 |
+| `.claude/knowledge/twins.md` | 110 | 180 |
 | `docs/2026-09-19-platform-ux.md` | 65 | 684 |
 | `docs/2026-09-21-dsh-evaluation.md` | 43 | 483 |
 | `docs/2026-09-21-working-surface-components.md` | 54 | 354 |
