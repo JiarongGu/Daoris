@@ -51,11 +51,11 @@ describe.each(['en', 'zh'])('Ask Daoris’s access chip in %s', (language) => {
     expect(chip(i18n.t('help.mode.full')).className).toContain('border-warn');
   });
 
-  it('says a switch that waits for the conversation’s next start, both ways', async () => {
+  it('says a switch that waits for the conversation’s next turn, both ways (ACCESSSWAP1)', async () => {
     await i18n.changeLanguage(language);
     render(<Picker selected="full" running="restricted" onChoose={vi.fn()} />);
     expect(chip(i18n.t('help.mode.toFull'))).toHaveTextContent(i18n.t('help.mode.toFull'));
-    expect(i18n.t('help.mode.toFull')).toBe(language === 'en' ? 'Restricted · full access next start' : '受限 · 下次启动起完全访问');
+    expect(i18n.t('help.mode.toFull')).toBe(language === 'en' ? 'Restricted · full access next turn' : '受限 · 下一轮起完全访问');
 
     cleanup();
     render(<Picker selected="restricted" running="full" onChoose={vi.fn()} />);

@@ -133,7 +133,10 @@ function MachineAi({ search, notify }: { search?: SearchTier; notify: Notify }) 
             name: helperDoor ? doorLabel(t, helperDoor) : driver.data?.helperAdapter ?? '',
             rules: helperDoor ? helperDoor.takesRules === true : true,
           },
-          grants: served.map((grant): HelpGrantChoice => ({ id: grant.id as HelpGrantId, chosen: grant.chosen })),
+          // Pending while a conversation running here was handed another choice, which its next turn takes (ACCESSSWAP1).
+          grants: served.map((grant): HelpGrantChoice => ({
+            id: grant.id as HelpGrantId, chosen: grant.chosen, pending: grant.pending === true,
+          })),
           built,
           busy: setHelpGrant.isPending,
           onChoose: chooseGrant,

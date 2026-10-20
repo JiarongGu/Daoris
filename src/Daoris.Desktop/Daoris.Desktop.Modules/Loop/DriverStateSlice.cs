@@ -38,7 +38,7 @@ public static class DriverStateSlice
             "languages", "workspaceLanguages", "languageTable", "reviews", "workspaceReviews", "opinions", "workspaceOpinions",
             "helpers", "workspaceHelpers", "commits", "workspaceCommits", "access", "workspaceAccess", "machineAccess", "heavyGates",
         ],
-        ["running"] = ["running", "drivingBrowser", "inReview"],
+        ["running"] = ["running", "drivingBrowser", "inReview", "helpSwapping"],
     };
 
     /// <summary>

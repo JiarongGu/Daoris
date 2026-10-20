@@ -725,6 +725,24 @@ export function useAskConversation(
   const offered = driver.data !== undefined && 'helpMode' in driver.data;
   const selectedMode = helpModeOf(driver.data?.helpMode);
   const runningMode = shown && known?.mode !== undefined ? helpModeOf(known.mode) : null;
+  // ACCESSSWAP1 (D183 point 2): the driver ends a conversation whose access changed at its turn's end, and the person's next words
+  // resume it under the access chosen (D131). Seen running under another access, it is kept in view as chosen once it ends, so those
+  // words go on in it rather than start another beside it. The ending and the driver's word that it no longer runs may come in either
+  // order, so having been seen pending is enough.
+  const swapping = Array.isArray(driver.data?.helpSwapping) ? driver.data.helpSwapping : [];
+  const swappingKey = swapping.join(' ');
+  const swapped = useRef<string | null>(null);
+  useEffect(() => {
+    if (!shown) return;
+    if (live) {
+      if (swapping.includes(shown.id)) swapped.current = shown.id;
+      return;
+    }
+    if (swapped.current !== shown.id) return;
+    swapped.current = null;
+    if (picked === null) setChosen(shown.id);
+    // Judged as the conversation shown, its running and the driver's list move; the rest is read from this render.
+  }, [shown?.id, live, swappingKey]);
   const setMode = useSetHelpMode();
   // Its own mutation, so ending the one opened ahead never reads as the person's New conversation pending.
   const retire = useEndChat();

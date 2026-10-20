@@ -161,7 +161,7 @@ describe.each(['en', 'zh'])('configured access in %s', (language) => {
     expect(within(row('browser')).getByText(i18n.t('help.grants.state.on'))).toBeInTheDocument();
   });
 
-  it('marks a choice the conversation in view did not start with as taking its next start, and only that one', async () => {
+  it('marks a choice a running conversation did not start with as taking its next turn, and only that one', async () => {
     await i18n.changeLanguage(language);
     show({ grants: [{ id: 'housekeeping', chosen: ['inspect'], pending: true }, { id: 'settings', chosen: ['notify'] }] });
 

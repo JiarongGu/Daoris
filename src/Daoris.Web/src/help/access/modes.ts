@@ -6,8 +6,8 @@ import type { HelpMode, HelpPluginOffer, HelpReceipt, HelpWiredLack } from './wi
 
 /**
  * What the chip says (design §1): the mode the conversation in view runs under, its record's, or the mode chosen before any start;
- * and, where the two differ, the chosen one as what the next start takes (*Restricted · full access next start*). The chosen mode
- * alone never stands for a conversation's own: a switch takes its next start (D183's HELPMODE1a2 note).
+ * and, where the two differ, the chosen one as what its next turn takes (*Restricted · full access next turn*). The chosen mode
+ * alone never stands for a conversation's own: a switch takes its next turn (D183's ACCESSSWAP1 note).
  */
 export function chipOf(selected: HelpMode, running: HelpMode | null): { now: HelpMode; next: HelpMode | null } {
   if (running === null || running === selected) return { now: selected, next: null };

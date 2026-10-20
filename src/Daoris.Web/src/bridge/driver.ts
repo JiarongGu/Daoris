@@ -69,17 +69,24 @@ export type DriverState = {
   /** The agent Ask Daoris runs on (HELP1, D89), or "" for none; absent on a shell older than it. */
   helperAdapter?: string;
   /**
-   * Ask Daoris's access mode as the person chose it (HELPMODE1a2, D183 point 2): `restricted` or `full`, what its next start
-   * reads; a value the page does not know reads as restricted (`helpModeOf`). Absent on a shell older than it, which offers no
-   * choice. A conversation's own mode, the one its start got, is its history row's `mode`.
+   * Ask Daoris's access mode as the person chose it (HELPMODE1a2, D183 point 2): `restricted` or `full`, what each conversation's
+   * next turn takes (ACCESSSWAP1); a value the page does not know reads as restricted (`helpModeOf`). Absent on a shell older than
+   * it, which offers no choice. A conversation's own mode, the one its start got, is its history row's `mode`.
    */
   helpMode?: string;
   /**
    * Restricted mode's configured access as this machine chose it (HELPMODE1c2b): each grant the driver serves, by its id, with the
-   * operations chosen and those it acts on (`built`); housekeeping's today. What the next start of Ask Daoris and every call of its
-   * tools read. Absent on a shell older than it, which draws no configured access.
+   * operations chosen and those it acts on (`built`); housekeeping's today. What each start of Ask Daoris and every call of its
+   * tools read; `pending` while a conversation running here was handed another choice, which its next turn takes (ACCESSSWAP1).
+   * Absent on a shell older than it, which draws no configured access.
    */
-  helpGrants?: { id: string; chosen: string[]; built?: string[] }[];
+  helpGrants?: { id: string; chosen: string[]; built?: string[]; pending?: boolean }[];
+  /**
+   * The Ask Daoris conversations running under another access than the one chosen (ACCESSSWAP1, D183 point 2): each ends at its
+   * turn's end, and its next words resume it under the access chosen, so the panel keeps it in view as it ends. Absent on an older
+   * shell, which ended none so.
+   */
+  helpSwapping?: string[];
   /** The Daoris home (D63): the directory every machine-local file lives in. Absent on an older shell. */
   home?: string;
   /**
@@ -402,14 +409,16 @@ export const useSetHelper = () => useDriverChange<{ adapter: string | null }>('S
 
 /**
  * Ask Daoris's access mode, `restricted` or `full` (HELPMODE1b, D183 point 2): the person's press alone, from the panel's chip or
- * Settings, over the key `daoris-driver help mode` sets (D50). It takes the next start; a conversation running keeps the mode its
- * start got until it starts again (D183's HELPMODE1a2 note). No proposal names it, so it is no door of Ask Daoris's.
+ * Settings, over the key `daoris-driver help mode` sets (D50). It takes each conversation's next turn: one running under another
+ * ends at its turn's end, and its next words resume it under this one (ACCESSSWAP1). No proposal names it, so it is no door of Ask
+ * Daoris's.
  */
 export const useSetHelpMode = () => useDriverChange<{ mode: 'restricted' | 'full' }>('SET_HELP_MODE');
 
 /**
  * One operation of restricted mode's configured access chosen or taken back (HELPMODE1c2b, D183's note): housekeeping's, the
- * person's press alone. A revoke refuses Ask Daoris's next call of that tool; a grant takes its next start. No proposal names it.
+ * person's press alone. A revoke refuses Ask Daoris's next call of that tool; either takes each conversation's next turn
+ * (ACCESSSWAP1). No proposal names it.
  */
 export const useSetHelpGrant = () => useDriverChange<{ grant: string; operation: string; chosen: boolean }>('SET_HELP_GRANT');
 

@@ -90,7 +90,7 @@ public sealed partial class AttentionStateSliceTests
     {
         var row = Assert.Single(Derive(waits: [Wait()]));
 
-        Assert.Equal(("account-wait", "work", true), (row["kind"]!.GetValue<string>(), row["where"]!.GetValue<string>(), row["circle"]!.GetValue<bool>()));
+        Assert.Equal(("account-wait", "work", true), (row["kind"]!.GetValue<string>(), row["where"]!.GetValue<string>(), row["wholeWorkspace"]!.GetValue<bool>()));
         // Since the first ask was asked: its accounts were held before it.
         Assert.Equal("2026-10-05T10:25:00Z", row["since"]!.GetValue<string>());
         Is("""{"quests":[],"asks":["a1","a2"]}""", row["holding"]!.AsObject());
@@ -106,7 +106,7 @@ public sealed partial class AttentionStateSliceTests
         Is("""{"quests":[],"asks":["a1"]}""", Assert.Single(Derive(waits: [Wait("""{"asks":["a1"]}""")]))["holding"]!.AsObject());
 
         var row = Assert.Single(Derive(waits: [Wait("""{"asks":[],"quests":["q1"]}""")], quests: [QuestIn()]));
-        Assert.Equal(("engine", false, "2026-10-05T10:30:00Z"), (row["where"]!.GetValue<string>(), row["circle"]!.GetValue<bool>(), row["since"]!.GetValue<string>()));
+        Assert.Equal(("engine", false, "2026-10-05T10:30:00Z"), (row["where"]!.GetValue<string>(), row["wholeWorkspace"]!.GetValue<bool>(), row["since"]!.GetValue<string>()));
     }
 
     [Fact]
@@ -144,7 +144,7 @@ public sealed partial class AttentionStateSliceTests
         var held = JsonNode.Parse(HeldOnCooling)!.AsObject();
         var row = Assert.Single(Derive(considered: [held, With(held, """{"quest":"q2"}""")], quests: [QuestIn(), QuestIn("""{"id":"q2"}""")], asks: []));
 
-        Assert.Equal(("account-wait", "engine", false), (row["kind"]!.GetValue<string>(), row["where"]!.GetValue<string>(), row["circle"]!.GetValue<bool>()));
+        Assert.Equal(("account-wait", "engine", false), (row["kind"]!.GetValue<string>(), row["where"]!.GetValue<string>(), row["wholeWorkspace"]!.GetValue<bool>()));
         Is("""{"quests":["q1","q2"],"asks":[]}""", row["holding"]!.AsObject());
     }
 
@@ -295,7 +295,7 @@ public sealed partial class AttentionStateSliceTests
         var row = Assert.Single(SignedOutAlone());
 
         Assert.Equal(("wait:claude-code/:signed-out", "work", true, "2026-10-05T10:25:00Z"),
-            (row["id"]!.GetValue<string>(), row["where"]!.GetValue<string>(), row["circle"]!.GetValue<bool>(), row["since"]!.GetValue<string>()));
+            (row["id"]!.GetValue<string>(), row["where"]!.GetValue<string>(), row["wholeWorkspace"]!.GetValue<bool>(), row["since"]!.GetValue<string>()));
         Assert.Equal("account-1=out", Named(row));
         Assert.Null(row["account"]!["outside"]);
         Is("""{"id":"account-4"}""", row["account"]!["readFirst"]!.AsObject());
@@ -341,7 +341,7 @@ public sealed partial class AttentionStateSliceTests
     {
         var row = Assert.Single(None());
 
-        Assert.Equal(("wait:claude-code:no-account", "work", true), (row["id"]!.GetValue<string>(), row["where"]!.GetValue<string>(), row["circle"]!.GetValue<bool>()));
+        Assert.Equal(("wait:claude-code:no-account", "work", true), (row["id"]!.GetValue<string>(), row["where"]!.GetValue<string>(), row["wholeWorkspace"]!.GetValue<bool>()));
         Assert.Equal((true, true, "claude-code"), (row["account"]!["noAccount"]!.GetValue<bool>(), row["account"]!["signsIn"]!.GetValue<bool>(), row["account"]!["harness"]!.GetValue<string>()));
         Assert.Empty(row["account"]!["named"]!.AsArray());
     }

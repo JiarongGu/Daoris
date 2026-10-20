@@ -5,6 +5,11 @@ with the version and date at release.
 
 ## Unreleased
 
+- A change of Ask Daoris's access reaches a running conversation at its next turn. Choosing full access or restricted, or granting
+  or taking back a housekeeping operation, ends the conversation's agent as its turn ends, never mid-turn and at once where it is
+  idle, and your next words go on in the same conversation under the new access, its history kept. Its console says so; the chip
+  and *Configured access* mark the change *next turn* until then; and the panel keeps that conversation in view, so your words go
+  on in it rather than starting a new one.
 - *What needs you* is judged once by Daoris for every window, which then shows it as it moves: no window works it out from its own
   lists, and its count on Overview, on Sessions and on the taskbar button is the same judgement as the band's. Until Daoris has
   judged it, the band shows placeholder rows rather than *Nothing needs you*. A plain browser lists nothing there and says *What needs

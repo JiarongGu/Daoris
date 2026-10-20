@@ -43,8 +43,8 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Web/src/data/queries.ts` | 46 | 873 |
 | `src/Daoris.Web/src/design/ui.test.tsx` | 48 | 975 |
 | `src/Daoris.Web/src/design/ui.tsx` | 78 | 1678 |
-| `src/Daoris.Web/src/help/AskConversation.tsx` | 52 | 969 |
-| `src/Daoris.Web/src/help/AskDaoris.test.tsx` | 83 | 1667 |
+| `src/Daoris.Web/src/help/AskConversation.tsx` | 53 | 987 |
+| `src/Daoris.Web/src/help/AskDaoris.test.tsx` | 85 | 1716 |
 | `src/Daoris.Web/src/menus/commands.ts` | 40 | 793 |
 | `src/Daoris.Web/src/projects/ProjectsView.test.tsx` | 97 | 1715 |
 | `src/Daoris.Web/src/projects/setup/RepositorySetup.test.tsx` | 42 | 742 |
@@ -111,7 +111,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Accounts/Usage/UsageHistory.cs` | 47 | 925 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/Acp/Acp.cs` | 129 | 2570 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/Adapters/Adapters.cs` | 133 | 2309 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/Conversations/Chat/ChatRunner.cs` | 135 | 2439 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/Conversations/Chat/ChatRunner.cs` | 138 | 2486 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Help/HelpFacts.cs` | 52 | 886 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Help/Proposals/HelpSettingProposals.cs` | 54 | 937 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Loop/Driver.cs` | 205 | 3324 |
