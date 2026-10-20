@@ -5,6 +5,18 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-21 — The service's machine log overwrote another knowledge host's lines (MACHINELOGAPPEND2)
+
+- **Symptom:** every session starts a knowledge host writing the day's one `mcp` file, and of two `Daoris.Knowledge.MachineLog`s
+  on one file, the second's line was gone after the first's next (the new tests, red on the old writer).
+- **Root cause:** the same as MACHINELOGAPPEND1's below. `FileMode.Append` seeks to the end once, at the open.
+- **Fix:** the driver's fix, written with the service's own code (the twins rule): each line seeks to the file's end under the
+  mutex `Local\Daoris.MachineLog.<hash of its full path>`, waiting a second at most, a mutex left by a dead writer taken on. A
+  writer that cannot open the mutex still writes at the end. That includes a platform without named mutexes, which the shared
+  host may run on.
+- **Verification:** the service's `MachineLogTests`, 13. Two logs on one file, in turn and from many threads at once, keep all
+  their lines. Both tests failed on the old writer.
+
 ## 2026-10-21 — Two machine logs on one day's file overwrote each other's lines (MACHINELOGAPPEND1, ONEINSTANCE2)
 
 - **Symptom:** ONEINSTANCE2 measured that of two `MachineLog`s on one file, the second's line was gone after the first's next,
