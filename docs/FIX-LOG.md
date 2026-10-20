@@ -5,6 +5,30 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-21 — The devkit's git started through Git for Windows' launcher, two processes a git (GITSTART3)
+
+- **Symptom:** from PowerShell and the installed window, `PATH` finds `C:\Program Files\Git\cmd\git.exe`, the launcher
+  that starts `mingw64\bin\git.exe` as a second process (GITSTART1). The devkit started every git bare: the staged scan one
+  `git show` per staged file, one after another, plus the docs gate's `git log` per tracked document and the history audit.
+- **Root cause:** GITSTART1 gave the launcher rule to the driver only (`Platform/GitForWindows.cs`). The devkit ships as
+  its own binary and references nothing of the desktop's, so its `Process.Run("git", …)` and `GitObjects`' `cat-file`
+  start never went past it.
+- **Fix:** every devkit git starts through `GitStart` (`Daoris.Devkit.Core/GitStart.cs`): the git `PATH` finds, by its
+  whole path (`Process.Locate`, the lookup `Process.Run` already made), and where that is the launcher, the real git with
+  the launcher's measured variables (`GitForWindows`, a twin of the driver's). A `PATH` finding no git or a `git.cmd`
+  starts as before. Call sites: `SensitiveGate.cs` (`CommandLineGit`), `GitObjects.cs`, `DocsGate.cs`, the CLI's
+  `install-hooks`.
+- **Verification:** `GitStartTests` (26: the driver's `GitForWindowsTests` rows for the layout and the variables, a bare
+  git resolved past the launcher, a `!` alias reaching `sh` and a start's own variables handed on through the direct
+  start), with `ProcessTests`, `SensitiveGateTests`, `DocsGateMergeTests`, `HistoryScanTests`, `VersionAndDocsGateTests`
+  and `LinksGateTests`, 77 in all, passing with `PATH` finding the launcher first. *Timed* from PowerShell with the
+  system's `PATH` (the launcher first, `MSYSTEM` unset): `scan --allow-builtins-only` on a scratch repository of 201
+  staged files (202 git starts a scan), Release builds of `4679b4c28` and of this change, other worktrees' builds and
+  tests and other agents' git beside, CPU 57–100%. Before: 204, 231, 223, 189 and 220 s (median 220), then 264 s after
+  the after runs; after: 123, 122 and 125 s. About half a second a start saved at this load, against GITSTART1's
+  110–180 ms on bare starts at less; the process table sampled during an after run showed the devkit's git children as
+  `mingw64\bin\git.exe` only.
+
 ## 2026-10-21 — Two machine logs on one day's file overwrote each other's lines (MACHINELOGAPPEND1, ONEINSTANCE2)
 
 - **Symptom:** ONEINSTANCE2 measured that of two `MachineLog`s on one file, the second's line was gone after the first's next,

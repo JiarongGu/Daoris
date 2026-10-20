@@ -5,6 +5,9 @@ with the version and date at release.
 
 ## Unreleased
 
+- On Windows, where the git `PATH` finds is Git for Windows' `cmd\git.exe` launcher, `daoris-devkit` now starts the git
+  behind it directly, with the environment the launcher would have given it: one process a git where it made two. Its
+  staged scan, which starts a git per staged file, took about half as long on 201 staged files.
 - A repository's Setup says which checks its driven sessions run, beside its heavy gates, and `daoris-driver checks` sets
   the same choice from a terminal. *Light* has sessions run the gates the repository does not mark heavy and the checks their
   change reaches, filtered; its heavy gates are left out of every session. Each session is told so when it starts,

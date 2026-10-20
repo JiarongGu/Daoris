@@ -145,6 +145,16 @@ daoris-devkit map             # write docs/code-map.json from the project files
 daoris-devkit map --check     # exit 1 when the committed code map is not what they say
 ```
 
+### The git it starts
+
+Every git the devkit runs starts through `GitStart` (GITSTART3): the git `PATH` finds, by its whole path.
+Where that is Git for Windows' launcher (`cmd\git.exe`, which starts `mingw64\bin\git.exe` as a second
+process), the real git starts directly with the variables the launcher would have handed it, so hooks
+and `!` aliases still find `sh`. `GitForWindows` in `GitStart.cs` is a twin of the driver's
+`Platform/GitForWindows.cs`, since the devkit references nothing of the desktop's: change the rule in
+both, and keep `GitStartTests` row for row with the driver's `GitForWindowsTests`. A `PATH` that finds no
+git, or a `git.cmd`, starts as before. The timings are in `docs/FIX-LOG.md`, GITSTART3.
+
 ### `map` — the code map from the project files
 
 A repository's code map (`docs/2026-09-23-map-design.md` §3) is the file the platform draws a
