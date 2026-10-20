@@ -59,23 +59,7 @@ public sealed class IgnoredPaths
 
         try
         {
-            var start = new ProcessStartInfo("git")
-            {
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-                UseShellExecute = false,
-                CreateNoWindow = true,
-                StandardOutputEncoding = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false),
-            };
-            foreach (var argument in new[] { "-C", root, "ls-files", "-z", "--others", "--ignored", "--exclude-standard", "--directory", "--" })
-            {
-                start.ArgumentList.Add(argument);
-            }
-            foreach (var folder in under) start.ArgumentList.Add(folder);
-            foreach (var variable in new[] { "GIT_DIR", "GIT_WORK_TREE", "GIT_INDEX_FILE", "GIT_COMMON_DIR" }) start.Environment.Remove(variable);
-            start.Environment["GIT_CEILING_DIRECTORIES"] = Path.GetDirectoryName(Path.GetFullPath(root).TrimEnd(Path.DirectorySeparatorChar, '/')) ?? string.Empty;
-
-            using var git = Process.Start(start);
+            using var git = Process.Start(Start(root, under));
             if (git is null) return None;
             var answer = git.StandardOutput.ReadToEndAsync();
             var said = git.StandardError.ReadToEndAsync();
@@ -101,6 +85,32 @@ public sealed class IgnoredPaths
         {
             return None;
         }
+    }
+
+    /// <summary>The start of the one git <see cref="Of"/> asks, past Git for Windows' launcher where that is the git found.</summary>
+    /// <param name="path">The <c>PATH</c> the start is handed; this process's own where null, as it always is outside a test.</param>
+    internal static ProcessStartInfo Start(string root, IReadOnlyList<string> under, string? path = null)
+    {
+        var start = new ProcessStartInfo("git")
+        {
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            UseShellExecute = false,
+            CreateNoWindow = true,
+            StandardOutputEncoding = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false),
+        };
+        foreach (var argument in new[] { "-C", root, "ls-files", "-z", "--others", "--ignored", "--exclude-standard", "--directory", "--" })
+        {
+            start.ArgumentList.Add(argument);
+        }
+        foreach (var folder in under) start.ArgumentList.Add(folder);
+        foreach (var variable in new[] { "GIT_DIR", "GIT_WORK_TREE", "GIT_INDEX_FILE", "GIT_COMMON_DIR" }) start.Environment.Remove(variable);
+        start.Environment["GIT_CEILING_DIRECTORIES"] = Path.GetDirectoryName(Path.GetFullPath(root).TrimEnd(Path.DirectorySeparatorChar, '/')) ?? string.Empty;
+        if (path is not null) start.Environment["PATH"] = path;
+        // GITSTART2: one process where the launcher made two, with the variables it would have set, read after this
+        // start's own are; any other git still starts by its bare name.
+        GitForWindows.Past(start);
+        return start;
     }
 
     /// <summary>Reads git's <c>ls-files -z</c> answer: paths separated by a zero byte, each folder with a trailing slash.</summary>
