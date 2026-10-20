@@ -5,6 +5,10 @@ with the version and date at release.
 
 ## Unreleased
 
+- `daoris driver`, `agent`, `plugin` and `tool`, run while Daoris is open on the same home, hand each change to Daoris instead of
+  writing its files beside it: Daoris's window asks you to confirm it, and every window shows it at once. With Daoris closed they
+  edit the files as before. A Daoris that is open and does not answer refuses the change, and nothing is written. What needs the
+  terminal itself (an agent's install, sign-in, key and pin; a tool's download) still runs there.
 - Settings, This Daoris and a repository's or a workspace's Setup use the pane. A setting's value sits beside its words, on one
   label column a card shares, so a card's values form one column the eye runs down rather than sitting at the pane's far edge;
   a row's acts follow its value, and a notice sits under the value it is about. Below about 512 px of card each value sits under

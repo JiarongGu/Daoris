@@ -2,6 +2,11 @@
  * A `daoris` verb's door to the running Daoris (RPC1f, D171 point 3, the terminal RPC design §7 and §9): the shapes a verb hands
  * its door, and the routes the management verbs send. The door itself, which reaches the pipe, is `service.ts`'s `instanceDoor`,
  * handed in by each verb's row as the records and the fetcher are, so the module that edits a file reaches no network (D50).
+ *
+ * A verb that changes the home goes through its door, a read never: its route named in the tables below with the class the census
+ * gives it (`door.test.ts` reads `PipeCensus.cs`), or null with why it acts alone; its own checks made before the send; and its
+ * words one function both paths call, so the terminal's text is one (§7.3). Its tests hand a door that records the press and answers
+ * as the instance would, and hold the client path's text to the alone path's.
  */
 import type { ExitCode } from './errors.ts';
 
