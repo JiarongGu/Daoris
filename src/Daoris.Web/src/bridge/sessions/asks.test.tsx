@@ -27,7 +27,9 @@ vi.mock('@shenora/react', async () => {
 });
 
 import { keys } from '../../data/queries';
-import { channelKey, elsewhereKey, useChannel, useElsewhereAsks, useChannelUnreads, useMarkChannel, usePostChannel } from './asks';
+import {
+  channelKey, elsewhereKey, useChannel, useElsewhereAsks, useChannelUnreads, useForwardChannel, useMarkChannel, usePostChannel,
+} from './asks';
 import { useStateHub } from '../state/stateHub';
 
 const wrapper = (client: QueryClient) => ({ children }: { children: ReactNode }) => (
@@ -123,6 +125,26 @@ describe('the asks domain', () => {
 
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'CHANNEL_POST', { payload: { ask: 'a1', text: 'hi', to: 'db', re: 'm1' } });
     expect(posted).toEqual({ posted: false, code: 'bad-to', message: null });
+  });
+
+  /**
+   * COWORK1d (the message-urgency design §4.2): the person's *Send to its session* is CHANNEL_FORWARD with the message and the
+   * repository whose line of work it goes to; the answer's code is read, and one of another shape is a refusal said `other`.
+   */
+  it('sends a message on to its session on CHANNEL_FORWARD and reads the answer’s code', async () => {
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    invoke.mockImplementation(async () => ({ sent: false, code: 'no-part', session: null }));
+    const { result } = renderHook(() => useForwardChannel(), { wrapper: wrapper(client) });
+
+    let forwarded;
+    await act(async () => { forwarded = await result.current.mutateAsync({ ask: 'a1', message: 'm1', repository: 'web' }); });
+
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'CHANNEL_FORWARD', { payload: { ask: 'a1', message: 'm1', repository: 'web' } });
+    expect(forwarded).toEqual({ sent: false, code: 'no-part', session: null });
+
+    invoke.mockImplementation(async () => ({ something: 'else' }));
+    await act(async () => { forwarded = await result.current.mutateAsync({ ask: 'a1', message: 'm1', repository: 'web' }); });
+    expect(forwarded).toEqual({ sent: false, code: 'other', session: null });
   });
 
   /**

@@ -203,6 +203,15 @@ public sealed partial class HelpCoverageTests
         + "the doors.");
 
     /// <summary>
+    /// COWORK1d's <c>CHANNEL_FORWARD</c> (D188; the message-urgency design §4.2): exempt, since sending another agent's message on to a
+    /// session is the person's own press, which may make a turn happen with nobody else between.
+    /// </summary>
+    private static readonly Exempt ChannelForwardDoor = new(
+        "sending another agent's message on to a session is the person's own press, which may make that session's turn happen "
+        + "or reopen it with nobody else between (D188 point 4, the message-urgency design §4.1-§4.2), so Ask Daoris proposes none; "
+        + "*Send to its session* on the ask's channel and the session's panel is the door.");
+
+    /// <summary>
     /// MSG1g's <c>daoris-driver sessions go-on-new</c> (D137 §2.2), a verb of the headless host: exempt, since it moves the
     /// person's words and trades their conversation's context for time, both the person's to choose (D133 §1, D143 point 4).
     /// </summary>
@@ -609,6 +618,9 @@ public sealed partial class HelpCoverageTests
         // SESSONE2c (D167 points 6 to 8): the ask's channel, posted to from the ask's page and a session's panel, and its mark.
         ("asks", "usePostChannel", null, ChannelPostDoor),
         ("work", "usePostChannel", null, ChannelPostDoor),
+        // COWORK1d: *Send to its session*, from the ask's page and a session's panel.
+        ("asks", "useForwardChannel", null, ChannelForwardDoor),
+        ("work", "useForwardChannel", null, ChannelForwardDoor),
         ("asks", "useMarkChannel", null, new Exempt(
             "it moves the person's own read mark on an ask's channel to what the page showed them, and changes nothing of the work "
             + "or the machine's settings, as reading is exempt, so there is nothing to propose (D167 point 7).")),

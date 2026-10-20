@@ -55,6 +55,32 @@ export const EmptyChinese: Story = { ...Empty, decorators: [chinese] };
 /** The channel on its way. */
 export const Reading: Story = { args: { channel: null } };
 
+/**
+ * COWORK1d: an urgent claim named so, and what each message reached in the repositories it addresses, with *Send to its session* where
+ * it waits or never reached one; an ordinary message says no level.
+ */
+export const Receipts: Story = {
+  args: {
+    onForward: (_message, _repository, answered) => answered.done(),
+    channel: {
+      ...CHANNEL,
+      items: [
+        {
+          kind: 'message', at: ago(9), id: 'u1', person: false, session: '3f2a9c10', repository: 'db', agent: 'claude-code', entry: 'ask:c98a7e/db',
+          urgent: true, text: 'Stop: the view now names the column `total_v3`, not `total`.',
+          receipts: [{ repository: 'app', state: 'taken' }, { repository: 'docs', state: 'not-reached' }],
+        },
+        {
+          kind: 'message', at: ago(4), id: 'o1', person: false, session: '81b7d2e4', repository: 'app', agent: 'codex', entry: 'ask:c98a7e/app',
+          urgent: false, text: 'When you can: the feed reads the view on the hour.',
+          receipts: [{ repository: 'db', state: 'held' }, { repository: 'docs', state: 'waiting' }],
+        },
+      ],
+    },
+  },
+};
+export const ReceiptsChinese: Story = { ...Receipts, decorators: [chinese] };
+
 /** A session's panel: the database repository's line of work, folded to its title; opened, it is kept to what concerns it. */
 export const Panel: StoryObj<typeof ChannelPanel> = {
   render: () => (

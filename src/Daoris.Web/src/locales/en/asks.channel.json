@@ -38,5 +38,21 @@
   "asks.channel.twin": "At a terminal, `daoris-driver ask channel {{id}}` reads it, and `daoris-driver ask channel {{id}} [--to <repository>] \"…\"` posts as you.",
   "asks.channel.panel.lead": "What the ask's channel holds for {{repository}}: what was said to everyone, to it, and by it.",
   "asks.channel.panel.empty": "Nothing for {{repository}} on the channel yet.",
-  "asks.channel.panel.open": "Open the whole channel"
+  "asks.channel.panel.open": "Open the whole channel",
+  "asks.channel.receipts": "What it reached",
+  "asks.channel.receipt.waiting": "waiting for {{repository}}",
+  "asks.channel.receipt.held": "held for {{repository}}’s session",
+  "asks.channel.receipt.sent": "sent to {{repository}}",
+  "asks.channel.receipt.taken": "taken by {{repository}}",
+  "asks.channel.receipt.read": "read by {{repository}}",
+  "asks.channel.receipt.partly": "partly handed to {{repository}}",
+  "asks.channel.receipt.answered": "answered by {{repository}}",
+  "asks.channel.receipt.other": "{{repository}}: {{state}}",
+  "asks.channel.notReached": "It never reached {{repository}}’s session: the ask’s work ended first.",
+  "asks.channel.forward": "Send to its session",
+  "asks.channel.forwarded": "Sent to its session.",
+  "asks.channel.forwardRefused.no-part": "No session of {{repository}}’s is on this machine to send it to.",
+  "asks.channel.forwardRefused.gone": "That message is no longer on the channel.",
+  "asks.channel.forwardRefused.held": "Another session of {{repository}}’s holds it now.",
+  "asks.channel.forwardRefused.other": "It was not sent: {{code}}"
 }

@@ -66,7 +66,7 @@ import { SessionTimeline } from './head/SessionTimeline';
 import { SessionRail } from './rail/SessionRail';
 import { type ActFacts, actMenu, headerActs, offeredActs, primaryAct, stopAsk } from './acts';
 import { askOfEntry, entryOfSession, isIntakeEntry } from './entries';
-import { useChannel, usePostChannel } from '../bridge/shell';
+import { useChannel, useForwardChannel, usePostChannel } from '../bridge/shell';
 import { keptSessionFilters, sessionFilters, shownOf } from './groups';
 import { sessionFacts } from './head/headFacts';
 import type { Answered } from './InlineConfirm';
@@ -424,6 +424,7 @@ export function WorkFrame({
   const channelAsk = attendedEntry && !isIntakeEntry(attendedEntry) ? askOfEntry(attendedEntry) : null;
   const channel = useChannel(channelAsk);
   const postChannel = usePostChannel();
+  const forwardChannel = useForwardChannel();
   const editQueued = useEditQueued(attended?.id ?? null);
   const quest = attended?.quest
     ? (quests.data ?? []).find((row) => row.id === attended.quest) ?? null
@@ -2034,6 +2035,11 @@ export function WorkFrame({
               only: { entry: attendedEntry.entry, repository: attendedEntry.repository },
               onPost: (post, answered) => postChannel.mutate({ ask: channelAsk, post }, {
                 onSuccess: (posted) => (posted.posted ? answered.done() : answered.refused(posted.code ?? 'other')),
+                onError: (error) => answered.refused(sentence(error)),
+              }),
+              // COWORK1d: *Send to its session*, the person's own press, as on the ask's page.
+              onForward: (message, repository, answered) => forwardChannel.mutate({ ask: channelAsk, message, repository }, {
+                onSuccess: (forwarded) => (forwarded.sent ? answered.done() : answered.refused(forwarded.code ?? 'other')),
                 onError: (error) => answered.refused(sentence(error)),
               }),
               onOpenQuest,

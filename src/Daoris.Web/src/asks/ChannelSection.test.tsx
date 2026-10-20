@@ -319,3 +319,70 @@ describe('a session’s panel', () => {
     expect(onOpenAsk).toHaveBeenCalledOnce();
   });
 });
+
+// COWORK1d (D188; the message-urgency design §7, §8.4): each message names its level where it is urgent, says what it reached in each
+// repository it addresses, never more than was observed, and offers *Send to its session* where it waits or never reached one.
+describe('what a message reached', () => {
+  afterEach(async () => { await i18n.changeLanguage('en'); });
+
+  const REACHED = MESSAGE('m9', 8, {
+    urgent: true,
+    text: 'Stop: the column moved.',
+    receipts: [
+      { repository: 'web', state: 'not-reached' },
+      { repository: 'api', state: 'taken' },
+      { repository: 'docs', state: 'waiting' },
+      { repository: 'cli', state: 'answered' },
+    ],
+  });
+
+  it('names an urgent message so, in words, and says nothing of an ordinary one or one from before', () => {
+    render(<ChannelSection channel={CHANNEL({ items: [REACHED, MESSAGE('m8', 9, { urgent: false, text: 'When you can.' }), MESSAGE('m7', 10, { text: 'From before.' })] })} onPost={() => {}} />);
+
+    expect(within(row('Stop: the column moved.')).getByText('urgent')).toBeInTheDocument();
+    expect(within(row('When you can.')).queryByText('urgent')).toBeNull();
+    expect(within(row('From before.')).queryByText('urgent')).toBeNull();
+  });
+
+  it('says what it reached in each repository, and offers Send to its session only where it waits or never reached one', async () => {
+    const onForward = vi.fn((_message, _repository, answered) => answered.done());
+    render(<ChannelSection channel={CHANNEL({ items: [REACHED] })} onPost={() => {}} onForward={onForward} />);
+
+    const message = row('Stop: the column moved.');
+    expect(within(message).getByText('It never reached web’s session: the ask’s work ended first.')).toBeInTheDocument();
+    expect(within(message).getByText('taken by api')).toBeInTheDocument();
+    expect(within(message).getByText('waiting for docs')).toBeInTheDocument();
+    expect(within(message).getByText('answered by cli')).toBeInTheDocument();
+    const presses = within(message).getAllByRole('button', { name: /Send to its session/ });
+    expect(presses).toHaveLength(2);
+
+    await userEvent.click(presses[0]);
+    expect(onForward).toHaveBeenCalledWith('m9', 'web', expect.anything());
+    expect(within(message).getByText('Sent to its session.')).toBeInTheDocument();
+  });
+
+  it('says why a message was not sent on, by the code the shell answered', async () => {
+    const onForward = vi.fn((_message, _repository, answered) => answered.refused('no-part'));
+    render(<ChannelSection channel={CHANNEL({ items: [REACHED] })} onPost={() => {}} onForward={onForward} />);
+
+    await userEvent.click(within(row('Stop: the column moved.')).getAllByRole('button', { name: /Send to its session/ })[0]);
+
+    expect(screen.getByText('No session of web’s is on this machine to send it to.')).toBeInTheDocument();
+  });
+
+  it('offers nothing to send on in a read-only channel, or where no press is handed', () => {
+    render(<ChannelSection channel={CHANNEL({ items: [REACHED] })} readOnly onPost={() => {}} onForward={() => {}} />);
+    expect(screen.queryByRole('button', { name: /Send to its session/ })).toBeNull();
+  });
+
+  it('reads in Chinese: the level, each receipt and the press', async () => {
+    await i18n.changeLanguage('zh');
+    render(<ChannelSection channel={CHANNEL({ items: [REACHED] })} onPost={() => {}} onForward={() => {}} />);
+
+    const message = within(screen.getByRole('list', { name: '频道' })).getByText('Stop: the column moved.').closest('li')!;
+    expect(within(message).getByText('紧急')).toBeInTheDocument();
+    expect(within(message).getByText('它没有送达 web 的会话：需求的工作先结束了。')).toBeInTheDocument();
+    expect(within(message).getByText('api 已收下')).toBeInTheDocument();
+    expect(within(message).getAllByRole('button', { name: /发给它的会话/ })).toHaveLength(2);
+  });
+});
