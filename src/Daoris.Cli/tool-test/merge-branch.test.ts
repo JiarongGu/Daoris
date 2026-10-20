@@ -151,6 +151,7 @@ const tool = await import(
   GENERATED: readonly { folder: string; tool: string }[];
   isGenerated: (path: string) => boolean;
   setApart: (text: string) => { text: string; set: { line: number; label: string }[] };
+  setApartHeadings: (text: string, sides?: string[]) => { text: string; set: { line: number; label: string }[] };
   noteName: (label: string) => string;
   REACH: readonly Rule[];
   isLongGate: (gate: { name: string; run: string }) => boolean;
@@ -1210,6 +1211,23 @@ test("a note's label straight under a line gets one blank line above it; nothing
   // Set apart already, it is left alone; and a file of CRLF lines gains a CRLF blank line, not a bare one.
   assert.deepEqual(tool.setApart(text), { text, set: [] });
   assert.equal(tool.setApart('A.\r\n**Built 2026-10-04 (X1).**\r\n').text, 'A.\r\n\r\n**Built 2026-10-04 (X1).**\r\n');
+});
+
+// UNIONGLUE1: a heading union left under another entry's last line, set apart unless a side of the merge held it so.
+test("a heading straight under a line gets one blank line above it, unless a side already held that join", () => {
+  const old = ['# Archive', '', '## A1 — old (2026-10-01)', 'Done.', '## A2 — glued long ago (2026-10-02)', 'Done.'];
+  const merged = [...old, '## A3 — left (2026-10-20)', 'Left.', '## A4 — right (2026-10-20)', 'Right.',
+    // A fence's lines are text: a heading quoted there is not one.
+    '```', 'x', '## not a heading', '```', ''].join('\n');
+  const { text, set } = tool.setApartHeadings(merged, [[...old, '', '## A3 — left (2026-10-20)', 'Left.', ''].join('\n')]);
+  assert.equal(text, [...old, '', '## A3 — left (2026-10-20)', 'Left.', '', '## A4 — right (2026-10-20)', 'Right.',
+    '```', 'x', '## not a heading', '```', ''].join('\n'));
+  assert.deepEqual(set, [
+    { line: 8, label: '## A3 — left (2026-10-20)' },
+    { line: 11, label: '## A4 — right (2026-10-20)' },
+  ]);
+  assert.deepEqual(tool.setApartHeadings(text, [merged]), { text, set: [] });
+  assert.equal(tool.setApartHeadings('A.\r\n## B\r\n').text, 'A.\r\n\r\n## B\r\n');
 });
 
 test('a note set apart is named by its task, or by its label when it names none', () => {
@@ -4301,6 +4319,37 @@ describe('the tool, end to end in a scratch repository', { concurrency: true }, 
     assert.match(result.out, /set apart: D1's UX6c note \(docs\/decisions\/D1\.md:11\)/);
     assert.equal(file(), merged + note('UX6b', 'main') + note('UX6c', 'third'));
     assert.match(result.out, /PASS\s+duplicates/);
+    repo.cleanup();
+  });
+
+  test('two archive entries a union merge leaves touching are spaced in the merge, and a join main already held is left', async () => {
+    // Main's archive holds one join from before, which the merge never made and so never touches.
+    const archive = '# Archive\n\n## A1 — old (2026-10-01)\n\nDone.\n## A2 — glued long ago (2026-10-02)\n\nDone.\n';
+    const entry = (task: string) => `\n## ${task} — built (2026-10-20)\n\n- [x] **${task}**\n**Outcome** 2026-10-20: ${task} landed.\n`;
+    const repo = scratch('archive', [{ name: 'first', run: 'node gate.mjs first' }], {
+      '.gitattributes': 'docs/task-archive.md merge=union\n',
+      'docs/task-archive.md': archive,
+    });
+    const file = () => readFileSync(join(repo.root, 'docs', 'task-archive.md'), 'utf8');
+
+    // Main took one branch's entry; a branch from before it appended its own.
+    branch(repo.root, 'right', { 'docs/task-archive.md': archive + entry('RIGHT1') });
+    writeFileSync(join(repo.root, 'docs', 'task-archive.md'), archive + entry('LEFT1'));
+    git(repo.root, 'commit', '--quiet', '-am', `main took an entry${TRAILER}`);
+
+    // Without the tool: union keeps once the blank line both sides opened with, so the second heading lands under the first entry.
+    git(repo.root, 'merge', '--quiet', '--no-ff', '--no-commit', 'right');
+    assert.equal(file(), archive + entry('LEFT1') + entry('RIGHT1').slice(1));
+    git(repo.root, 'merge', '--abort');
+
+    // With it: one blank line before the gates choose, said with its file and line, staged; the old join stays.
+    const result = await repo.run(['right']);
+    assert.equal(result.status, 0, result.out);
+    assert.match(result.out, /set apart: docs\/task-archive\.md's heading "## RIGHT1 — built \(2026-10-20\)" \(docs\/task-archive\.md:15\)/);
+    assert.ok(result.out.indexOf('set apart') < result.out.indexOf('gates for right'), 'set apart before the gates choose');
+    assert.equal((result.out.match(/set apart/g) ?? []).length, 1, result.out);
+    assert.equal(file(), archive + entry('LEFT1') + entry('RIGHT1'));
+    assert.equal(git(repo.root, 'diff', '--name-only'), '', 'what was set apart is staged with the merge');
     repo.cleanup();
   });
 
