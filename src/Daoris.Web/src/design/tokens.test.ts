@@ -711,6 +711,40 @@ describe("the page's measure", () => {
   });
 });
 
+/**
+ * 🔴 **A card sets no outer margin of its own** (the UI/UX design R1, UIFIT1): cards are 16 px apart, set once by the
+ * domain's container (`CardStack`). The `mt-3.5` cards wore was 14 px, off the scale's step, and a domain's first card
+ * needed `[&>*:first-child]:mt-0` to undo it; two cards that forgot it touched (UIFIT1a's shots of Driver).
+ */
+const CARD_MARGIN = /<Card\b[^>]*?className=(?:"[^"]*"|'[^']*'|\{[^}]*\})/g;
+const OUTER_MARGIN = /(?:^|[\s"'`])-?m[tbxylr]?-(?:\d|\[|px|auto)/;
+
+export function cardMargins(files: [path: string, source: string][]): string[] {
+  return files
+    .filter(([path]) => !/\.stories\.tsx$/.test(path))
+    .flatMap(([path, source]) =>
+      (source.match(CARD_MARGIN) ?? [])
+        .filter((card) => OUTER_MARGIN.test(card.slice(card.indexOf('className='))))
+        .map((card) => `${path} gives a card an outer margin: ${card.replace(/\s+/g, ' ')}`));
+}
+
+describe('the cards', () => {
+  it('catches a card with an outer margin — the check itself, in the shape the settings cards had', () => {
+    expect(cardMargins([['./settings/Tools.tsx', '<Card id="settings-tool-locations" className="mt-3.5 scroll-mt-3">']]))
+      .toHaveLength(1);
+    expect(cardMargins([['./settings/AiJobs.tsx', "<Card className={cn('mt-3.5', warn && 'x')}>"]])).toHaveLength(1);
+    expect(cardMargins([['./x.tsx', '<Card className="mb-4">']])).toHaveLength(1);
+    // And what must keep passing: a scroll margin, no class, a card accented, a story's own frame.
+    expect(cardMargins([['./settings/Update.tsx', '<Card id="settings-update" className="scroll-mt-3">']])).toEqual([]);
+    expect(cardMargins([['./x.tsx', '<Card accent warn>']])).toEqual([]);
+    expect(cardMargins([['./x.stories.tsx', '<Card className="mt-3.5">']])).toEqual([]);
+  });
+
+  it('holds: no card sets an outer margin; the domain\'s container spaces them', () => {
+    expect(cardMargins(components)).toEqual([]);
+  });
+});
+
 describe('the form controls', () => {
   it('catches a native select, checkbox or radio, and leaves ui.tsx its own', () => {
     expect(nativeChoices([['./work/Start.tsx', '<select value={x}>']])).toHaveLength(1);

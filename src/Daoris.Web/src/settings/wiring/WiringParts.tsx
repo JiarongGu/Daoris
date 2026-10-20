@@ -1,6 +1,6 @@
 import { type ReactNode, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Button, Card, SectionTitle } from '../../design/ui';
+import { Button, Card, SectionTitle, SettingList } from '../../design/ui';
 
 // The pieces This Daoris's cards share (WIRING1c): a fact not read says why in its own words, and a card is one titled section
 // with a press at its right. Molecules: drawn from props, so every state is reachable without a shell (D52 as amended).
@@ -49,7 +49,8 @@ export function WiringCard({ id, title, aside, children }: { id: string; title: 
           <SectionTitle>{title}</SectionTitle>
           {aside && <Button variant="ghost" disabled={aside.busy} onClick={aside.onPress}>{aside.label}</Button>}
         </div>
-        <div>{children}</div>
+        {/* The card's rows on one label track (R1); a fold under them spans it. */}
+        <SettingList>{children}</SettingList>
       </section>
     </Card>
   );

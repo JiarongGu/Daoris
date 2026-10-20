@@ -611,6 +611,15 @@ export function Card({ id, warn, accent, className, children }: {
 }
 
 /**
+ * A domain's cards, 16 px apart (the UI/UX design R1, UIFIT1): the spacing is the container's, set once, and a card
+ * sets no outer margin of its own (`tokens.test.ts`). The `mt-3.5` each card wore was 14 px, off the scale's step, and
+ * two cards that forgot it touched.
+ */
+export function CardStack({ className, children }: { className?: string; children: ReactNode }) {
+  return <div data-card-stack="" className={cn('grid min-w-0 gap-4', className)}>{children}</div>;
+}
+
+/**
  * Something waiting on the person — a parked session, a parked intake, a folder to trust. The one
  * frame each such card wears: the waiting tone on its left edge and on its heading. Four cards
  * wrote it out (REV3 CLEAN1), so a change of that tone is now one change.
@@ -1450,31 +1459,95 @@ export function WhyGlyph({ why }: { why: string }) {
   );
 }
 
+/**
+ * The label track's bounds (the UI/UX design R1; D185's UIFIT1 note has the shots that set them): the track is the
+ * widest label of the card's rows, content-sized between `floor` and `cap`, and below `stack` of the card's own width
+ * it goes, each value under its words. The classes below spell the same numbers; these are for the tests and the records.
+ */
+export const SETTING_TRACK = { floor: '12rem', cap: '22rem', stack: '32rem' } as const;
+
+/* The two columns every row reads: the track, then the value column, which is the rest. A `fit-content` track is the
+   labels' max-content up to the cap, never less than the label cell's floor; the cap is half the width where the card
+   is narrower than twice it, so a value keeps room down to the stack. */
+const TRACK_COLUMNS = 'grid-cols-[fit-content(min(22rem,50%))_minmax(0,1fr)]';
+
+const SettingListContext = createContext(false);
+
+/**
+ * A card's rows on one label track (the UI/UX design R1, §4.2; UIFIT1). A layout wrapper, never a second row: it is the
+ * one grid, each `SettingRow` in it a subgrid across its two columns, so the track is the widest of the card's labels
+ * and every value starts at its edge, the values forming one column the eye runs down. Below 32rem of its own width the
+ * track goes and each value sits under its words at the card's full width: WSR4's floor, moved from the row to the card,
+ * because the track is the card's. What is not a row (a fold, a sentence under the rows) spans both columns.
+ *
+ * jsdom lays nothing out, so `ui.test.tsx` holds the structure and `measured/settings.spec.ts` the geometry in a browser.
+ */
+export function SettingList({ id, className, children }: { id?: string; className?: string; children: ReactNode }) {
+  return (
+    <SettingListContext.Provider value>
+      <div
+        id={id}
+        data-setting-list=""
+        className={cn(
+          '@container grid gap-x-6 @max-[32rem]:grid-cols-1 [&>*:not([data-setting-row])]:col-span-full',
+          TRACK_COLUMNS,
+          className,
+        )}
+      >
+        {children}
+      </div>
+    </SettingListContext.Provider>
+  );
+}
+
 export function SettingRow({ label, hint, why, control, children }: {
   label: ReactNode; hint?: ReactNode; why?: string; control?: ReactNode; children?: ReactNode;
 }) {
-  return (
-    // The row is its own container (WSR4): below 26rem the control goes under the label at the row's
-    // full width. Beside a 155px label floor a 309px row left the control 130px, and a branch pattern
-    // showed eleven characters.
-    <div className="@container border-t border-line py-2.5 first:border-t-0 first:pt-0 last:pb-0">
-      {/* 🔴 The label's column has a floor, 16rem or half the row, and the control's gives way to it.
-          With `minmax(0,1fr)` a path as the control took its whole width first, and at 888 the label
-          beside it was 24px wide, one character a line (UX5 U58). A path breaks at its separators. */}
-      <div className="grid grid-cols-[minmax(min(16rem,50%),1fr)_auto] items-center gap-x-6 gap-y-1.5 @max-[26rem]:grid-cols-1">
-        <div className="min-w-0">
-          <div className="flex items-center gap-1.5 text-body font-medium text-ink">
-            <span>{label}</span>
-            {why && <WhyGlyph why={why} />}
-          </div>
-          {hint && (
-            <div className="mt-0.5 text-small text-ink-faint">
-              {typeof hint === 'string' ? <Inline text={hint} /> : hint}
-            </div>
-          )}
+  const listed = useContext(SettingListContext);
+  const cells = (
+    <>
+      {/* 🔴 The label's cell keeps a floor, and the value gives way to it. With `minmax(0,1fr)` a path as the control
+          took its whole width first, and at 888 the label beside it was 24px wide, one character a line (UX5 U58).
+          A path breaks at its separators. */}
+      <div data-setting-label="" className="min-w-[12rem]">
+        <div className="flex items-center gap-1.5 text-body font-medium text-ink">
+          <span>{label}</span>
+          {why && <WhyGlyph why={why} />}
         </div>
-        {control && <div className="flex min-w-0 shrink-0 items-center justify-end gap-2 @max-[26rem]:justify-start">{control}</div>}
-        {children && <div className="col-span-2 min-w-0 @max-[26rem]:col-span-1">{children}</div>}
+        {/* The hint takes the track's width and sets none of it (`contain-inline-size`): the track is the widest LABEL
+            of the card, and a hint is a sentence, which would have widened every track to the cap (seen in the measured
+            run of 2026-10-20: a card of 12-character 中文 labels had a 22rem track). */}
+        {hint && (
+          <div className="mt-0.5 contain-inline-size text-small text-ink-faint">
+            {typeof hint === 'string' ? <Inline text={hint} /> : hint}
+          </div>
+        )}
+      </div>
+      {/* The value starts at the track's edge, and the row's own acts follow it, never the pane's far edge (R1): no
+          `justify-end` here, and none in a control's own wrapper. The notice sits under the value, in its column. */}
+      {(control || children) && (
+        <div data-setting-value="" className="grid min-w-0 gap-y-1.5">
+          {control && <div className="flex min-w-0 flex-wrap items-center justify-start gap-2">{control}</div>}
+          {children && <div className="min-w-0">{children}</div>}
+        </div>
+      )}
+    </>
+  );
+  const rule = 'border-t border-line py-2.5 first:border-t-0 first:pt-0 last:pb-0';
+  if (listed) {
+    // In a list the row reads the list's track as a subgrid, and stacks when the list does (R1).
+    return (
+      <div data-setting-row="" className={cn('col-span-2 grid grid-cols-subgrid items-start gap-y-1.5 @max-[32rem]:col-span-1 @max-[32rem]:grid-cols-1', rule)}>
+        {cells}
+      </div>
+    );
+  }
+  return (
+    // A row alone is its own container (WSR4): below 32rem the value goes under the label at the row's full width.
+    // Beside a 155px label floor a 309px row left the control 130px, and a branch pattern showed eleven characters.
+    <div data-setting-row="" className={cn('@container', rule)}>
+      <div className={cn('grid items-start gap-x-6 gap-y-1.5 @max-[32rem]:grid-cols-1', TRACK_COLUMNS)}>
+        {cells}
       </div>
     </div>
   );

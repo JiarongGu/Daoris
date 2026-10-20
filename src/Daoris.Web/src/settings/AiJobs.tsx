@@ -99,7 +99,7 @@ export function AiJobs({ search, intake, helper, access, grants }: {
 
   return (
     // No title of its own: the main area's header names the domain (FRAME1g), and a lone card would say it twice.
-    <Card className="mt-3.5">
+    <Card>
       <Prose className="mb-3 mt-0 text-small text-ink-soft">{t('settings.ai.body')}</Prose>
 
       <SettingRow

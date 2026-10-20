@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { moment } from '../../locales/format';
 import { shellWord } from '../../lib/shellWord';
 import { type Answered, InlineConfirm } from '../../work/InlineConfirm';
-import { Button, CheckField, Icon, Inline, Pill, Prose, Segmented, SelectField, SettingRow, Tip } from '../../design/ui';
+import { Button, CheckField, Icon, Inline, Pill, Prose, Segmented, SelectField, SettingList, SettingRow, Tip } from '../../design/ui';
 import {
   type AccountCooling, type AccountFacts, type AccountScope, type AccountUseChange, type AgentAccounts, cannotLeave,
   coolingLine, heldLine, moved, nextLine, nothingSaid, offeredLine, ownLine, saidLine, switchOf, used,
@@ -206,7 +206,7 @@ export function ScopeEditor({ agent, product, scope, accounts, workspace, busy, 
   const hinted = { agent: agent.agent, scoped: scopedFlag(workspace) };
 
   return (
-    <div className="flex min-w-0 flex-col gap-1">
+    <SettingList className="min-w-0">
       {/* First: the question a person comes with is where the next start goes, and why (TOOL6e). */}
       <NextStartRow agent={agent} product={product} scope={scope} labelOf={labelOf} isKey={isKey} workspace={workspace} />
       <SettingRow
@@ -350,7 +350,7 @@ export function ScopeEditor({ agent, product, scope, accounts, workspace, busy, 
           <SwitchRow agent={agent} product={product} scope={scope} labelOf={labelOf} workspace={workspace} busy={busy} acts={acts} />
         </>
       )}
-    </div>
+    </SettingList>
   );
 }
 
@@ -476,7 +476,7 @@ export function WorkspaceScope({ agent, product, workspace, scope, machine, acco
       : t('harness.use.scope.inheritsOwn');
 
   return (
-    <div className="mt-2 border-t border-line pt-2">
+    <SettingList className="mt-2 border-t border-line pt-2">
       <SettingRow
         label={t('harness.use.workspace', { workspace })}
         hint={own ? undefined : t('harness.use.scope.hint', { agent: agent.agent, workspace: shellWord(workspace, '<workspace>') })}
@@ -532,6 +532,6 @@ export function WorkspaceScope({ agent, product, workspace, scope, machine, acco
           />
         </div>
       )}
-    </div>
+    </SettingList>
   );
 }

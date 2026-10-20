@@ -5,17 +5,8 @@ import { failure, useErrorNotify } from '../design/ui';
 import type { StarterDoor } from '../help/starters';
 import { DomainLoading } from './DomainLoading';
 import type { SettingsDomainProps } from './domains';
-import { WiringFiles } from './wiring/WiringFiles';
-import { WiringFolders } from './wiring/WiringFolders';
-import { WiringHead, WiringOlder } from './wiring/WiringHead';
-import { WiringKnowledge } from './wiring/WiringKnowledge';
-import { WiringLogs } from './wiring/WiringLogs';
-import { WiringLoop } from './wiring/WiringLoop';
-import { WiringService } from './wiring/WiringService';
-import { WiringTerminal } from './wiring/WiringTerminal';
-import { WiringToolHome } from './wiring/WiringToolHome';
-import { WiringVariablesCard } from './wiring/WiringVariables';
-import { WiringVersions } from './wiring/WiringVersions';
+import { WiringCards } from './wiring/WiringCards';
+import { WiringOlder } from './wiring/WiringHead';
 
 /** Where each file's door goes: the read names the place by a word, and the page knows its door (§3.4). */
 const FILE_DOORS: Record<string, StarterDoor> = {
@@ -38,7 +29,8 @@ const FILE_DOORS: Record<string, StarterDoor> = {
  * - **A shell older than the page** answers the route `NO_ROUTE` (`DriverModule.UnknownType`); the page says so in one line,
  *   and Driver's home row, kept as the fallback, is what that shell can show.
  *
- * The cards are molecules over props; this holds the hooks (`presentational.test.ts`).
+ * The cards are molecules over props, composed by `WiringCards` so a story draws the whole domain (R6); this holds the hooks
+ * (`presentational.test.ts`).
  */
 export function WiringDomain({ notify, onGo }: Pick<SettingsDomainProps, 'notify' | 'onGo'>) {
   const { t } = useTranslation();
@@ -72,38 +64,24 @@ export function WiringDomain({ notify, onGo }: Pick<SettingsDomainProps, 'notify
   const wiring = query.data;
 
   return (
-    <>
-      <WiringHead kind={wiring.folder.kind} />
-      <WiringFolders wiring={wiring} busy={busy} onMeasure={ask} />
-      <WiringService wiring={wiring} />
-      <WiringLoop loop={wiring.loop} onDriver={() => onGo({ view: 'settings', section: 'driver' })} />
-      <WiringFiles files={wiring.files} onDoor={(door) => onGo(FILE_DOORS[door] ?? { view: 'settings', section: 'driver' })} />
-      <WiringVariablesCard variables={wiring.variables} />
-      <WiringVersions
-        versions={wiring.versions}
-        update={update.data}
-        development={wiring.folder.kind === 'development'}
-        onTools={() => onGo({ view: 'settings', section: 'tools' })}
-        onDriver={() => onGo({ view: 'settings', section: 'driver' })}
-      />
-      <WiringTerminal terminal={wiring.terminal} variables={wiring.variables} />
-      <WiringKnowledge
-        knowledge={wiring.knowledge}
-        tier={wiring.service.tier}
-        tierWhy={wiring.service.tierWhy}
-        onAi={() => onGo({ view: 'settings', section: 'ai' })}
-      />
-      <WiringLogs
-        logs={wiring.logs}
-        onOpenFolder={() => openLogs.mutate(undefined, {
-          onSuccess: (answer) => {
-            if (!answer.opened && answer.folder) notify(t('settings.logs.notOpened', { folder: answer.folder }));
-          },
-          onError: failure(notify),
-        })}
-        onLog={() => onGo({ view: 'settings', section: 'logs' })}
-      />
-      {wiring.toolHome && <WiringToolHome toolHome={wiring.toolHome} measuring={wiring.measuring} />}
-    </>
+    <WiringCards
+      wiring={wiring}
+      update={update.data}
+      busy={busy}
+      onMeasure={ask}
+      onOpenLogFolder={() => openLogs.mutate(undefined, {
+        onSuccess: (answer) => {
+          if (!answer.opened && answer.folder) notify(t('settings.logs.notOpened', { folder: answer.folder }));
+        },
+        onError: failure(notify),
+      })}
+      doors={{
+        driver: () => onGo({ view: 'settings', section: 'driver' }),
+        tools: () => onGo({ view: 'settings', section: 'tools' }),
+        ai: () => onGo({ view: 'settings', section: 'ai' }),
+        logs: () => onGo({ view: 'settings', section: 'logs' }),
+        file: (door) => onGo(FILE_DOORS[door] ?? { view: 'settings', section: 'driver' }),
+      }}
+    />
   );
 }

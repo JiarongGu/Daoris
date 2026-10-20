@@ -395,7 +395,6 @@ function LandingDefault({ workspace, landing, busy, onOpenPlugin }: {
           landers={landing.landers}
           busy={busy}
           clearable={false}
-          alignStart
           onSave={(rule) => landing.onSet(rule)}
           onAccepting={setAccepting}
         />

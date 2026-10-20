@@ -1,6 +1,7 @@
 import type { Decorator, Meta, StoryObj } from '@storybook/react-vite';
 import { InTheme } from '../plugins/storyIcons';
 import { chinese } from '../design/storyLanguage';
+import { storyWidths } from '../design/storyWidths';
 import { FULL, NOTHING_SET, PLUGIN_UNREADY, WORK, WORKSPACE } from './fixtures';
 import { WorkflowTab } from './WorkflowTab';
 
@@ -11,18 +12,16 @@ import { WorkflowTab } from './WorkflowTab';
 
 const nothing = () => {};
 
-/** The main area at a width: 600 px at a 680 px window, the list a strip beside it, and 400 px, its floor. */
-const mainAt = (width: number): Decorator => (Story) => (
-  <div className="border border-line bg-page p-6" style={{ width }}><Story /></div>
-);
+// The main area at the frame's widths (the UI/UX design R6, UIFIT1): `storyWidths.half` is about 630 px, a 680 px
+// window with the list a strip beside it, and `storyWidths.narrow` the 400 px floor.
 const dark: Decorator = (Story) => <InTheme theme="dark"><Story /></InTheme>;
 
 const meta: Meta<typeof WorkflowTab> = {
   title: 'Workflow/WorkflowTab',
   component: WorkflowTab,
   args: { page: 'repository', name: 'engine', current: FULL, doors: { setup: nothing, workspaceSetup: nothing } },
-  // A repository's page's main area beside its list, at a common width.
-  decorators: [(Story) => <div className="max-w-full border border-line bg-page p-6" style={{ width: 880 }}><Story /></div>],
+  // A repository's page's main area beside its list, at the frame's wide width.
+  decorators: [storyWidths.wide],
 };
 export default meta;
 
@@ -88,10 +87,10 @@ export const AWorkspaceChinese: Story = { ...AWorkspace, decorators: [chinese] }
 export const Dark: Story = { decorators: [dark] };
 
 /** At a 680 px window: the main area 600 px wide, every line wrapping at its edge. */
-export const At680: Story = { decorators: [mainAt(600)] };
+export const At680: Story = { decorators: [storyWidths.half] };
 
 /** At the main area's 400 px floor: a step's chip and who acts go under its title, nothing shrinks. */
-export const AtTheFloor: Story = { decorators: [mainAt(400)] };
+export const AtTheFloor: Story = { decorators: [storyWidths.narrow] };
 
 /** At the floor, in 中文 and dark. */
-export const AtTheFloorChineseDark: Story = { decorators: [mainAt(400), chinese, dark] };
+export const AtTheFloorChineseDark: Story = { decorators: [storyWidths.narrow, chinese, dark] };

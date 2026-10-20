@@ -83,7 +83,7 @@ export function PluginKitCard({ points, busy, made, trial, onPick, onMake, onTry
   const ordered = points.map((point) => point.name).filter((name) => chosen.includes(name));
 
   return (
-    <Card className="mt-3.5 scroll-mt-3">
+    <Card className="scroll-mt-3">
       <Prose className="text-small text-ink-soft"><Inline text={t('plugin.kit.body')} /></Prose>
 
       <fieldset aria-label={t('plugin.kit.new')} className="m-0 mt-3 border-0 border-t border-line p-0 pt-3">

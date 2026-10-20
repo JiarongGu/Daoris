@@ -1,7 +1,7 @@
 import { type ReactNode, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
-  Button, Card, CheckField, Icon, Inline, PathText, Pill, Prose, SectionTitle, SelectField, SettingRow,
+  Button, Card, CheckField, Icon, Inline, PathText, Pill, Prose, SectionTitle, SelectField, SettingList, SettingRow,
 } from '../../design/ui';
 import { OPEN_STATES, proposalAuthor, proposalChange } from './proposals';
 
@@ -148,15 +148,17 @@ export function AgentRules({
   return (
     // No title of its own: the card is alone in *Permissions*, and the settings list names it (UX5
     // U57), as every card alone in its domain leaves it.
-    <Card className="mt-3.5">
+    <Card>
       {/* The row is the FILE, as Wiring's is the remotes map: what the card is, the list already
           says, and saying it again read as a heading and its echo on the window. */}
-      <SettingRow
-        label={t('settings.rules.file')}
-        hint={t('settings.rules.hint')}
-        why={t('settings.rules.why')}
-        control={<PathText path={rules.path} className="text-small text-ink-faint" />}
-      />
+      <SettingList>
+        <SettingRow
+          label={t('settings.rules.file')}
+          hint={t('settings.rules.hint')}
+          why={t('settings.rules.why')}
+          control={<PathText path={rules.path} className="text-small text-ink-faint" />}
+        />
+      </SettingList>
 
       {elsewhere}
 
