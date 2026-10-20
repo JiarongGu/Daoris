@@ -2704,6 +2704,12 @@ repository.
 - **The trap:** the load beside the runs (a scratch spinner on every core) froze the owner's installed window, and the parent
   stopped it. Reproduce a flake with plain repeated runs of its one class, never with a load generator.
 - **Commit:** `e8498d33`.
+- **Followed (REALHOSTPORT1, 2026-10-21):** `RealHost.StartAsync` took its host as up once anything answered at its port, so a
+  port taken between `FreePort` and the bind could pass another host off as this one. `RealHost.Launch` now mints the host's
+  home id under its scratch before it starts, and a start takes the host as up only when `/api/status` names that home; an
+  answer naming another is said in the exit's or the timeout's message.
+  `StartFailureTests.A_host_whose_port_another_host_answers_is_not_taken_for_up` holds it (a stand-in answering a status over
+  another home holds the port).
 
 ## 2026-10-15 — A service test's SQLite connection was disposed just after it opened, by another class's pool clearing (FLAKE3)
 

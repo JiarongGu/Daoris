@@ -18329,3 +18329,9 @@ in zh. The sessions page's held words (`WordsHold`) still carry the driver's sen
 > - [ ] **TWINSTOP1 — the shell's stop bound, held by both sides** (modules tests). The service's shell-started drain (`InputEndStop.Drain`, 3 s) assumes the shell kills at 5 s (`HostSupervisor.StopWithin`), and nothing ties them: pin `StopWithin` in `HostSupervisorTests` beside the service's test. FIX-LOG 2026-10-15 (FLAKE2).
 
 **Outcome** 2026-10-21: `HostSupervisorTests.The_shell_waits_five_seconds_for_the_host_it_started_before_it_kills_it` pins the default `StopWithin` at five seconds beside the LOG2a twin test, and names `InputEndStopTests`, whose drain test now names it back. No product code changed. On Opus.
+
+## REALHOSTPORT1 — a test host is its own before it is up (2026-10-21)
+
+> - [ ] **REALHOSTPORT1 — a test host is its own before it is up** (service tests). `RealHost.StartAsync` takes a host as up once anything answers on its port, so a port taken between `FreePort` and the bind talks to another host: check the process first, or match a per-start nonce in `/api/status`. FIX-LOG 2026-10-15 (FLAKE2).
+
+**Outcome** 2026-10-21: the nonce is the host's own home id. `RealHost.Launch` mints it under the scratch's home before the host starts, and `StartAsync` takes the host as up only when `/api/status` answers that `home`; an answer naming another home is said in the exit's or the timeout's message. An address the test names in `ASPNETCORE_URLS` is now the host's `Url`. Held by `StartFailureTests.A_host_whose_port_another_host_answers_is_not_taken_for_up`. Detail: FIX-LOG FLAKE2's *Followed (REALHOSTPORT1)* line.
