@@ -790,6 +790,34 @@ describe('ConversationView', () => {
     expect(screen.queryByRole('button', { name: 'Start a conversation with these words' })).toBeNull();
   });
 
+  /**
+   * SESSCTX1c part B (D189 point 3): where the words wait for the person, their session's resume refused without its conversation
+   * proven lost, *Go on with Daoris's brief* goes beside *Start a conversation with these words*: a new part of the same session, handed
+   * Daoris's brief. Where its tree is gone there is nothing to go on in, so only the fresh start is offered.
+   */
+  it('offers Go on with Daoris’s brief beside the fresh start where the words wait for the person, and none where the tree is gone', async () => {
+    const onGoOnBrief = vi.fn();
+    const words = [
+      ev({ kind: 'user', origin: 'person', id: 'w1', reaches: 'resume', text: 'first' }),
+    ];
+    const { unmount } = view([
+      ...words,
+      ev({ kind: 'note', text: '— It cannot go on in this session, because its conversation could not be resumed.', words: ['w1'], why: 'refused' }),
+    ], { onStartFrom: vi.fn(), onGoOnBrief });
+
+    expect(screen.getByRole('button', { name: 'Start a conversation with these words' })).toBeTruthy();
+    await userEvent.click(screen.getByRole('button', { name: "Go on with Daoris's brief" }));
+    expect(onGoOnBrief).toHaveBeenCalledTimes(1);
+    unmount();
+
+    view([
+      ...words,
+      ev({ kind: 'note', text: '— It cannot go on in this session, because its tree is gone.', words: ['w1'], why: 'tree' }),
+    ], { onStartFrom: vi.fn(), onGoOnBrief });
+    expect(screen.getByRole('button', { name: 'Start a conversation with these words' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: "Go on with Daoris's brief" })).toBeNull();
+  });
+
   it('words a reason that names an agent from what it is handed', () => {
     view([
       ev({ kind: 'user', origin: 'person', id: 'w1', reaches: 'resume', text: 'first' }),

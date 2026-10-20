@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { driverSource } from '../test/driverSource';
-import { HAND_OVER, NEVER, NEW_SESSION_REFUSED, START_FROM } from '../work/say';
+import { GO_ON_BRIEF, HAND_OVER, NEVER, NEW_SESSION_REFUSED, START_FROM } from '../work/say';
 import { en, zh } from '.';
 
 /**
@@ -32,6 +32,7 @@ const PAGE_OWN: Record<string, string[]> = {
   startFrom: [],
   newSession: [],
   handOver: [],
+  goOnBrief: [],
 };
 
 const tables = [
@@ -40,6 +41,8 @@ const tables = [
   { name: 'NEW_SESSION_REFUSED', table: NEW_SESSION_REFUSED, file: 'GoOnNew.cs', className: 'GoOnNew', own: PAGE_OWN.newSession },
   // MIXAGENT1b-i: the hand-over's own codes; what never goes on is `NEVER`'s, said through `neverSentence`.
   { name: 'HAND_OVER', table: HAND_OVER, file: 'HandOver.cs', className: 'HandOver', own: PAGE_OWN.handOver },
+  // SESSCTX1c part B: *Go on with Daoris's brief*'s own codes; the rest are `START_FROM`'s, the hand-over's tree and `NEVER`'s.
+  { name: 'GO_ON_BRIEF', table: GO_ON_BRIEF, file: 'BriefedMove.cs', className: 'GoOnBrief', own: PAGE_OWN.goOnBrief },
 ];
 
 describe('the refusal codes the driver declares, held to the page’s tables', () => {
@@ -50,6 +53,7 @@ describe('the refusal codes the driver declares, held to the page’s tables', (
       'continued', 'help', 'intake', 'not-found', 'stood-down', 'superseded', 'teammate',
     ]);
     expect(codesOf('ChatRunner.StartFrom.cs', 'StartFrom').sort()).toEqual(['carried', 'no-words', 'running']);
+    expect(codesOf('BriefedMove.cs', 'GoOnBrief')).toEqual(['agent-gone']);
     expect(codesOf('HandOver.cs', 'HandOver').sort()).toEqual([
       'no-door', 'not-conversation', 'not-its-account', 'not-last-run', 'parked', 'quest-closed', 'quest-elsewhere', 'quest-reopened', 'running',
       'same-agent', 'tree-gone', 'unbriefed', 'unknown-agent', 'waiting',

@@ -1,6 +1,16 @@
 namespace Daoris.Driver;
 
 /// <summary>
+/// The codes *Go on with Daoris's brief* is refused by that are its own (SESSCTX1c part B), beside <see cref="StartFrom"/>'s, the
+/// hand-over's tree and <see cref="WordsNever"/>'s: the page's <c>GO_ON_BRIEF</c> twin, held to this by <c>locales/say.test.ts</c>.
+/// </summary>
+public static class GoOnBrief
+{
+    /// <summary>The agent the session ran on is no longer one this machine has: the hand-over chooses another.</summary>
+    public const string AgentGone = "agent-gone";
+}
+
+/// <summary>
 /// A conversation, or a closed quest's session, goes on in a new part of its session handed Daoris's brief (SESSCTX1c part B, D189
 /// points 2-3; the session-context design §2): by itself where its own conversation is proven lost (<see cref="ContinueReason.Lost"/>),
 /// or by the person's *Go on with Daoris's brief* where it waits for them. A class over the runner's context, as
@@ -11,7 +21,7 @@ namespace Daoris.Driver;
 /// <para><b>Refused before anything starts</b>, by a code: what never goes on (<see cref="WordsNever"/>), a session that runs or parks
 /// (<see cref="StartFrom.Running"/>), no words of the person's waiting (<see cref="StartFrom.NoWords"/>), a quest still open or taken,
 /// whose words the driver carries on by itself (<see cref="StartFrom.Carried"/>), a tree that is gone (<see cref="HandOver.TreeGone"/>)
-/// and an agent this machine no longer has (<see cref="AgentGone"/>), which only the hand-over's choice of agent answers.</para>
+/// and an agent this machine no longer has (<see cref="GoOnBrief.AgentGone"/>), which only the hand-over's choice of agent answers.</para>
 ///
 /// <para><b>A closed quest's session goes on as a conversation</b> in its own tree (the steward's choice): a closed quest opens no
 /// driven record. <b>Ask Daoris's goes on in its own room</b>, a conversation of its workspace's, its link kept in the room's history
@@ -27,9 +37,6 @@ namespace Daoris.Driver;
 /// </remarks>
 internal sealed class BriefedMove(ChatContext context, ChatRunner runner, ChatHandOver handOver, ChatHelp help)
 {
-    /// <summary>The agent the session ran on is no longer one this machine has: the hand-over chooses another.</summary>
-    public const string AgentGone = "agent-gone";
-
     /// <summary>
     /// Go on in a new part handed the brief, one at a time per session: the person's press, a closed quest's session the driver hands
     /// over, and a conversation whose resume was refused on the wire once its run let go.
@@ -110,7 +117,7 @@ internal sealed class BriefedMove(ChatContext context, ChatRunner runner, ChatHa
 
         if (agent is not { Interactive: true })
         {
-            return Refused(AgentGone, $"`{record.Adapter}` is no longer an agent on this machine that holds conversations: hand {sessionId} over to another.");
+            return Refused(GoOnBrief.AgentGone,$"`{record.Adapter}` is no longer an agent on this machine that holds conversations: hand {sessionId} over to another.");
         }
 
         // The brief of its line, composed before the new part opens, while the old part is the last of it.

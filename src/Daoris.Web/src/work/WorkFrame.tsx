@@ -10,7 +10,7 @@ import {
   type TurnStop, useCancelTurn, useEditQueued, useEndChat, useHarnesses, useResolveSession, useSendMessage,
   NO_TURNS, useChatTurns, useSessionEntries, useSessionGroups, useSessionOpenings, useSessionOptions, useSessionStreams, useSessionWhere,
   useSetSessionOption, useStartChat, useStopTask, useSweepPlan, useTreeFiles, useTreeFile, useReviewedPatch,
-  logEvent, useTerminals, useRemotes, useWorkPlan, useSay, useSessionReach, useStartFrom, type WordsAnswer,
+  logEvent, useTerminals, useRemotes, useWorkPlan, useSay, useSessionReach, useStartFrom, useGoOnBrief, type WordsAnswer,
   useParkGoAhead, useAccounts, useGoOnNew, useTrace, useDiscardSessionBranch, useLanding, useLandSessionTree, useSessionDiff,
   useDiscardSessionTree, useDriver, useOpinionGate, useWorkflowRun, useRules, useSessionEvents, stoppedWaiting, useUnderWay,
   useEntryLanding, useLandEntry, useSessionHelpers, useUnderWaySubject, useSessionProcess, useWorkState, usePushedCalls, withCall,
@@ -42,7 +42,7 @@ import { doorOf, toolOf } from '../agents/tools';
 import { agentOf, machineScope, workspaceScope } from '../settings/accounts/accounts';
 import { namer } from '../settings/accounts/namer';
 import {
-  boxOf, coolingFor, levelsOf, NATIVE_WORDS_LIMIT, neverSentence, type NewSessionAnswer, startFromRefusal, takesWords, tooLong,
+  boxOf, coolingFor, goOnBriefRefusal, levelsOf, NATIVE_WORDS_LIMIT, neverSentence, type NewSessionAnswer, startFromRefusal, takesWords, tooLong,
 } from './say';
 import { SessionBox } from './conversation/SessionBox';
 import { askOf, pauseAsk, wiredFor, type WorkTarget } from './pausing/pausing';
@@ -808,6 +808,27 @@ export function WorkFrame({
         }
         attend(started.sessionId);
         if (!started.sent) notify(t('work.say.notTaken'), 'error');
+      },
+      onError: failure(notify),
+    });
+  };
+  // *Go on with Daoris's brief* (SESSCTX1c part B, D189 point 3): the same session goes on in a new part of itself, handed Daoris's brief
+  // and then the words, attended once it opens. One act of the driver's; a refusal is said by its code, as the fresh start's is.
+  const goOnBrief = useGoOnBrief();
+  const onGoOnBrief = () => {
+    if (!attended || goOnBrief.isPending) return;
+    goOnBrief.mutate({ session: attended.id }, {
+      onSuccess: (moved) => {
+        if (moved.why) {
+          notify(goOnBriefRefusal(t, moved.why, { quest: attended.quest }), 'error');
+          return;
+        }
+        if (!moved.sessionId) {
+          notify(moved.message, 'error');
+          return;
+        }
+        attend(moved.sessionId);
+        if (!moved.sent) notify(t('work.say.notTaken'), 'error');
       },
       onError: failure(notify),
     });
@@ -2170,6 +2191,8 @@ export function WorkFrame({
                   // that starts a conversation with them, where a chat can start here (MSG1f, D137 §3.1, §2.2).
                   onSession={(id) => attend(id)}
                   onStartFrom={rootOf(attended.repository) ? onStartFrom : undefined}
+                  // SESSCTX1c part B: and beside it, the same session going on in a new part handed Daoris's brief.
+                  onGoOnBrief={rootOf(attended.repository) ? onGoOnBrief : undefined}
                   // *Say it again* (COWORK1c): the person's own words that may have reached the agent before a restart, said anew.
                   onSayAgain={onSayAgain}
                   // Words its cooling account holds, and *Go on in a new session* with what it came to (MSG1g2, D137 §2.2).

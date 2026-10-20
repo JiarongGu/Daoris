@@ -145,6 +145,30 @@ export function startFromRefusal(t: Translate, code: string, { quest }: { quest?
 }
 
 /**
+ * The sentence for each code *Go on with Daoris's brief* is refused by that is its own (SESSCTX1c part B), by its key: the driver's
+ * `GoOnBrief`. The rest it shares: a session still running, no words and a quest carried on by itself are `START_FROM`'s, a tree gone
+ * is the hand-over's, and what never goes on is the box's (`NEVER`).
+ */
+export const GO_ON_BRIEF: Record<string, string> = {
+  'agent-gone': 'work.say.goOnBriefRefused.agentGone',
+};
+
+/**
+ * The reasons a session's words wait for the person on, under which *Go on with Daoris's brief* is offered (SESSCTX1c part B, D189 point
+ * 3): every reason the driver writes on a line that cannot go on but what never goes on, a tree that is gone (nothing to go on in), a
+ * record that had ended and the person's own start. A proven loss goes on by itself, so its line shows only where that move failed.
+ */
+export const BRIEF_WAITS: ReadonlySet<string> = new Set([
+  'account', 'adapter', 'unkept', 'unable', 'offered', 'gone', 'refused', 'elsewhere', 'exited',
+]);
+
+/** Why *Go on with Daoris's brief* opened nothing, in the page's own words (SESSCTX1c part B): its own codes, then those it shares. */
+export function goOnBriefRefusal(t: Translate, code: string, { quest }: { quest?: string | null }): string {
+  const key = GO_ON_BRIEF[code] ?? START_FROM[code] ?? (code === 'tree-gone' ? HAND_OVER[code] : undefined);
+  return key ? t(key) : neverSentence(t, code, { quest });
+}
+
+/**
  * The sentence for each code *Go on with another agent…* answers by that is not a never (MIXAGENT1b-i, D163), by its key.
  * `unbriefed` is an answer rather than a refusal: the conversation opened, its briefing did not reach it.
  */

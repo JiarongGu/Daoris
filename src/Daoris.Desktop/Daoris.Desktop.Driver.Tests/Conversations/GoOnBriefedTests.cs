@@ -88,7 +88,7 @@ public sealed class GoOnBriefedTests : IDisposable
     [InlineData("helper", StartFrom.NoWords)]
     [InlineData("open", StartFrom.Carried)]
     [InlineData("tree", HandOver.TreeGone)]
-    [InlineData("agent", BriefedMove.AgentGone)]
+    [InlineData("agent", GoOnBrief.AgentGone)]
     [InlineData("teammate", WordsNever.Teammate)]
     [InlineData("continued", WordsNever.Continued)]
     public async Task What_cannot_go_on_with_the_brief_is_refused_by_its_code_and_opens_nothing(string what, string code)
