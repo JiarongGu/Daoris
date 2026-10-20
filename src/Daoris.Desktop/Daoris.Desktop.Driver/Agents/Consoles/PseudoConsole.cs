@@ -298,21 +298,33 @@ public sealed class PseudoConsole : ITerminal
     /// <remarks>
     /// Sorted by name without regard to case, as the system keeps its own block. The tools are read from the home the
     /// launch names, else this process's; with none, nothing is added.
+    /// <para>The marker a session's shell carries (<see cref="IntakeRoom.SessionVariable"/>) is never handed on (PUSH1f2a, D194 point 5):
+    /// a terminal the window opens is the person's own, and a Daoris started from a session's shell would otherwise pass it to them.</para>
     /// </remarks>
-    internal static string EnvironmentBlock(IReadOnlyDictionary<string, string> added)
+    /// <param name="inherited">The variables the block starts from: this process's, where none are handed.</param>
+    internal static string EnvironmentBlock(IReadOnlyDictionary<string, string> added, IReadOnlyDictionary<string, string>? inherited = null)
     {
         var variables = new SortedDictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-        foreach (DictionaryEntry entry in Environment.GetEnvironmentVariables())
+        if (inherited is not null)
         {
-            if (entry.Key is string name && entry.Value is string value) variables[name] = value;
+            foreach (var (name, value) in inherited) variables[name] = value;
         }
+        else
+        {
+            foreach (DictionaryEntry entry in Environment.GetEnvironmentVariables())
+            {
+                if (entry.Key is string name && entry.Value is string value) variables[name] = value;
+            }
+        }
+
+        variables.Remove(IntakeRoom.SessionVariable);
 
         var home = added.FirstOrDefault(pair => string.Equals(pair.Key, DaorisHome.Variable, StringComparison.OrdinalIgnoreCase)).Value
             ?? DaorisHome.Resolve();
         if (home is not null)
         {
-            var inherited = variables.TryGetValue(Tools.PathVariable, out var path) ? path : null;
-            foreach (var (name, value) in Tools.ChildEnvironment(Tools.Read(home), home, inherited)) variables[name] = value;
+            var paths = variables.TryGetValue(Tools.PathVariable, out var path) ? path : null;
+            foreach (var (name, value) in Tools.ChildEnvironment(Tools.Read(home), home, paths)) variables[name] = value;
         }
 
         foreach (var (name, value) in added) variables[name] = value;

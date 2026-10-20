@@ -121,6 +121,7 @@ public static class WiringVariables
         ["DAORIS_PERSON_KEY_ON_INPUT"] = "handed to the service host the desktop starts: the person key's line",
         ["DAORIS_DEVTOOLS_PORT"] = "a development run's instruments only",
         [InstanceDoor.Variable] = "the dev loop's or a rehearsal's own instance, named for a workspace build, which reads no address file",
+        ["DAORIS_DRIVER_PROGRAM"] = "the dev loop's or a rehearsal's own build of the driver's program, which a checkout's `daoris` hands its management families to (D194); an install's finds its own",
         ["DAORIS_WEB_WORKERS"] = "the web tests' worker count",
         ["DAORIS_MEASURED_PORT"] = "the web's measured check's port, where a checkout's own is not wanted",
         ["DAORIS_CANON"] = "the doctrine tool's tests' fixture canon",
