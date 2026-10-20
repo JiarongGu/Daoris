@@ -14,6 +14,11 @@ with the version and date at release.
   left to right on a wide page, top to bottom on a narrower one, and as a list at the side bar's width; *Show as list* gives
   the list at any width and is remembered. The arrow keys move between the statuses and follow a move, and a screen reader
   hears each status with every move into and out of it.
+- When you reopen a submission, the session that made it is told even while it still works: at its next step where its door
+  takes words then, and when its turn ends where it takes them only then. What Daoris tells a session, a reopen or a step you
+  went on with, shows in its conversation as *Daoris's words*, never as yours, and is not listed among your waiting words. A
+  reopen that a later submission answered before the session read it is not sent, and the conversation says so. Your own
+  words, even when they repeat Daoris's sentence, stay yours and never bring a branch up to date as Daoris's go-on does.
 - Words to a working session no longer stop its turn. While a turn runs the box's press is *Send*, which reaches the agent at
   its next step where its door takes words then, and the menu beside it sends at another time: *When its turn ends*, *At its
   next step*, or *Now, cutting its step*, offered only where the agent can be steered and otherwise shown with the reason.
