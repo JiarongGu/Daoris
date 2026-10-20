@@ -218,7 +218,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `tools/desktop.mjs` | 53 | 1082 |
 | `tools/family-rehearsal.mjs` | 349 | 6105 |
 | `tools/knowledge-bench.mjs` | 46 | 900 |
-| `tools/merge-branch.mjs` | 235 | 4138 |
+| `tools/merge-branch.mjs` | 235 | 4140 |
 | `tools/orient-index.mjs` | 66 | 1425 |
 | `tools/rehearsal-kit.mjs` | 46 | 893 |
 | `tools/usage-report.mjs` | 60 | 1308 |
