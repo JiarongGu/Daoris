@@ -14,6 +14,7 @@ import { AnsweredPark } from '../waits/AnsweredPark';
 import { AwaitingIntake } from '../waits/AwaitingIntake';
 import { AwaitingPerson, type QuestClose, type Resolution } from '../waits/AwaitingPerson';
 import { type DetailRow, DetailsFold } from './DetailsFold';
+import { AccessChip, accessRow, startedFull } from '../AccessFact';
 import type { WaitEvents } from '../waits/anchors';
 import type { Answered } from '../InlineConfirm';
 import type { LineBehind } from '../review/diff';
@@ -387,6 +388,8 @@ export function SessionHead({
             {sessionTitle(session, quest, opening)}
           </h2>
           <span className="shrink-0"><Pill tone={SESSION_TONE[shown]}>{t(shownKey(shown))}</Pill></span>
+          {/* With no header's facts line to wear it, the full-access chip follows the word (SESSACCESS1). */}
+          {startedFull(session) && <AccessChip />}
         </div>
       )}
 
@@ -441,6 +444,8 @@ export function SessionHead({
           // The process its own tree runs under and where each rule was set (PROCESS1e, D164's amendment point 3), in Setup's words.
           { label: t('work.head.commits'), value: process ? <Inline text={processCommitsSays(t, process)} /> : null },
           { label: t('work.head.landing'), value: process ? <Inline text={processLandingSays(t, process)} /> : null },
+          // The access it started under (SESSACCESS1, D184 point 1): each pause as its record keeps it, never today's settings.
+          accessRow(t, session),
           { label: t('work.head.quest'), value: session.quest ? `#${session.quest}` : null, mono: true },
           { label: t('work.head.tool'), value: sessionTool({ adapter: session.adapter, harnessVersion: session.harnessVersion }) },
           {
