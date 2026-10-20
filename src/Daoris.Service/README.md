@@ -452,6 +452,9 @@ another repository's session starts. A host the install carries (`app/daoris-kno
 `app/daoris-knowledge-http/`), started with no `DAORIS_HOME` — a person's own agent's `.mcp.json`, a terminal — takes the
 install's own `data/` as its home, as the driver host does (SERVICEHOME2, D171 point 1). Elsewhere, with no home and no
 `DAORIS_KNOWLEDGE_DB`, the host says so on stderr and exits 2 rather than opening a database under the user profile.
+Hosts starting together wait for each other: each write waits while another host holds the file, up to the SQLite driver's
+command timeout (30 s). A write that reads back what it wrote (`RETURNING`) runs in a write transaction of its own, since the
+driver does not wait at such a write's commit when it runs alone (QUESTOPENLOCK1, D173's note).
 
 **An older build never touches a newer index, and works with the rest of the store** (KSCHEMA1). The index's schema has
 a version (`user_version`): an older one is rebuilt when it opens, as before. A newer one, which only a newer Daoris

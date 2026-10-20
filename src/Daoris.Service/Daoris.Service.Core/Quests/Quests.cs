@@ -915,17 +915,20 @@ public sealed class QuestStore
         // 🔴 A store a newer build stamped keeps its stamp and refuses what this build cannot write into it (a take's bind: the next
         // change to that contract would hide its rows in a new table, as FABRIC-CLOSE1w's did); it never refuses to open, since the
         // quests and their history are read and moved as before.
-        await using (var stamp = _db.Command())
+        // In a write transaction of its own, as every RETURNING write is (QUESTOPENLOCK1, ConnectionGate.InTransactionAsync says why).
+        NewerVersion = await InTransactionAsync(async (transaction, inside) =>
         {
+            await using var stamp = _db.Command();
+            stamp.Transaction = transaction;
             stamp.CommandText = """
                 INSERT INTO quest_store_version (one, version) VALUES (1, $version)
                 ON CONFLICT(one) DO UPDATE SET version = MAX(version, excluded.version)
                 RETURNING version
                 """;
             stamp.Parameters.AddWithValue("$version", StoreVersion);
-            var stamped = Convert.ToInt32(await stamp.ExecuteScalarAsync(ct).ConfigureAwait(false));
-            NewerVersion = stamped > StoreVersion ? stamped : null;
-        }
+            var stamped = Convert.ToInt32(await stamp.ExecuteScalarAsync(inside).ConfigureAwait(false));
+            return stamped > StoreVersion ? stamped : (int?)null;
+        }, ct).ConfigureAwait(false);
 
         await using (var command = _db.Command())
         {

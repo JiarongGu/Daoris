@@ -12,6 +12,9 @@ with the version and date at release.
 - A terminal that is not run as administrator can now press into a Daoris that is, such as `daoris-driver sessions say`. Where
   the running Daoris's pipe does refuse a terminal, it says so (*Its pipe belongs to another Windows account or elevation.*)
   rather than that the pipe did not answer within 5 seconds.
+- Several sessions starting at once no longer leave one without its quest tools: a session's connector waits while another
+  host is using Daoris's database, where it could exit at its start with *database is locked*. Posting on an ask's channel and
+  registering a repository wait the same way.
 - `daoris driver` hands its standing choices to Daoris's own driver program, as `daoris-driver driver` with the same words: the
   one your install carries, or the build `DAORIS_DRIVER_PROGRAM` names. A `daoris` with neither, such as a checkout's, says so and
   does nothing. What each choice says is as before; a refusal is said on the error stream, and a refusal the window's route would

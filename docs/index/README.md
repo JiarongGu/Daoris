@@ -186,12 +186,12 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | File | KB | Lines |
 |---|---|---|
 | `src/Daoris.Service/Daoris.Service.Core/Asks/Asks.cs` | 83 | 1513 |
-| `src/Daoris.Service/Daoris.Service.Core/Asks/Channel.cs` | 67 | 1184 |
+| `src/Daoris.Service/Daoris.Service.Core/Asks/Channel.cs` | 67 | 1188 |
 | `src/Daoris.Service/Daoris.Service.Core/Asks/History.cs` | 41 | 826 |
 | `src/Daoris.Service/Daoris.Service.Core/Knowledge/KnowledgeService.cs` | 57 | 1129 |
 | `src/Daoris.Service/Daoris.Service.Core/Quests/QuestExchange.cs` | 154 | 2718 |
 | `src/Daoris.Service/Daoris.Service.Core/Quests/QuestLog.cs` | 51 | 803 |
-| `src/Daoris.Service/Daoris.Service.Core/Quests/Quests.cs` | 256 | 4363 |
+| `src/Daoris.Service/Daoris.Service.Core/Quests/Quests.cs` | 256 | 4366 |
 | `src/Daoris.Service/Daoris.Service.Core/Sessions/SessionLedger.cs` | 97 | 1770 |
 | `src/Daoris.Service/Daoris.Service.Core/Sessions/Sessions.cs` | 94 | 1592 |
 | `src/Daoris.Service/Daoris.Service.Http.Tests/ConfirmationTests.cs` | 51 | 903 |
@@ -207,7 +207,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Service/Daoris.Service.Tests/Remote/QuestSyncTests.cs` | 107 | 2111 |
 | `src/Daoris.Service/Daoris.Service.Tests/Sessions/SessionLedgerTests.cs` | 99 | 1919 |
 | `src/Daoris.Service/Daoris.Service.Tests/Sessions/SessionStoreTests.cs` | 41 | 821 |
-| `src/Daoris.Service/README.md` | 105 | 799 |
+| `src/Daoris.Service/README.md` | 105 | 802 |
 
 ### CLI (`cli`)
 

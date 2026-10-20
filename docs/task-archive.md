@@ -18569,6 +18569,11 @@ confirmed in the open window.
 
 **Outcome** 2026-10-21: built. `HelpGrants` writes through `JsonKeeping.Save`: the top level's other keys and a row's own unknown keys stay as written, an untouched row is written as the file had it, a server approved again is changed where it stands, CRLF is kept, a key twice is refused, and a withdrawal of nothing writes nothing. Proof: six driver-only `approvals:` rows in `home-files-keep.json` (`only: driver`, which the CLI's twin skips) through `HomeFilesKeepTests`. On Opus: about 40 tool calls. Detail: D173's KEEPALL1d note; FIX-LOG 2026-10-21.
 
+## QUESTOPENLOCK1 — a knowledge host's open waits for another host instead of exiting (2026-10-21, D173)
+
+> - [ ] **QUESTOPENLOCK1 — a knowledge host's open waits for another host instead of exiting** (service; defect, never a backlog row). On the install, two of eight connectors started together exited at `QuestStore.EnsureSchemaAsync`'s version stamp with *database is locked*, and their sessions had no quest tools. Proof: a `RETURNING` write while another host holds the lock its commit needs waits and is kept, and `QuestStore.OpenAsync` from several connections at once under that lock opens.
+
+**Outcome** 2026-10-21: fixed. A `RETURNING` write on its own committed at its reader's end, where the driver never waits; the stamp, a channel post and a registration now run in the gate's `BEGIN IMMEDIATE`, as the quest log's four did. A source scan refuses the next. Proof: `ReturningLockTests`. Detail: D173's QUESTOPENLOCK1 note; FIX-LOG 2026-10-21.
 ## MERGEWEBRULES1 — a merge that changes the web's sources runs its design and structure checks (2026-10-21, D180)
 
 > - [ ] **MERGEWEBRULES1 — a merge that changes the web's sources runs its design and structure checks** (tools; found in the full set on d263cd0, 2026-10-21; D180). HEAVYSLOT1 and ACCESSASK1's stories each broke a design check (`design/tokens.test.ts`: a line's measure, a native control) that only the CI's `web-unit` runs, hours after their merges, though the two files run in seconds. Wanted: where a merge's paths reach `src/Daoris.Web/src/`, `design/tokens.test.ts` and `test/structure.test.ts` run among the blocking checks beside MERGETSC1's typecheck, said in the plan as the others are. Proof: a `merge-branch.test.ts` case as MERGETSC1's, and the plan naming the check.

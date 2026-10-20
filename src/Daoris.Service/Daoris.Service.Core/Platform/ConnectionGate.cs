@@ -119,6 +119,12 @@ internal sealed class ConnectionGate
     ///
     /// <para>Asked for inside work that already holds one, the work is part of that transaction: SQLite does not nest
     /// them, and the outer one commits or rolls back for both.</para>
+    ///
+    /// <para>🔴 A write with a <c>RETURNING</c> clause runs in one (QUESTOPENLOCK1). The driver waits out a lock another
+    /// host holds only at a statement's first step, and on its own such a write commits when its reader ends: the file
+    /// keeps a rollback journal, so a read under way in another host answered that commit as busy at once, and the write
+    /// threw <i>database is locked</i>. Here <c>BEGIN IMMEDIATE</c> and <c>COMMIT</c> are each a first step, and waited
+    /// on.</para>
     /// </remarks>
     public Task<T> InTransactionAsync<T>(Func<SqliteTransaction, CancellationToken, Task<T>> work, CancellationToken ct) =>
         RunAsync(async () =>

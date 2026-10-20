@@ -466,11 +466,15 @@ public sealed class ChannelStore
     /// cannot both pass the bound; a message of no session has none.
     /// </summary>
     /// <returns>The message as kept, its <see cref="ChannelMessage.Urgent"/> as the statement decided; null when the cap refused it.</returns>
+    /// <remarks>
+    /// A write transaction of its own, as every <c>RETURNING</c> write is (QUESTOPENLOCK1, ConnectionGate.InTransactionAsync says why).
+    /// </remarks>
     public Task<ChannelMessage?> KeepAsync(
         ChannelMessage message, int perPart, CancellationToken ct = default, int urgentPerPart = ChannelBounds.UrgentPerPart) =>
-        _db.RunAsync<ChannelMessage?>(async () =>
+        _db.InTransactionAsync<ChannelMessage?>(async (transaction, inside) =>
     {
         await using var command = _db.Command();
+        command.Transaction = transaction;
         command.CommandText = """
             INSERT INTO channel (id, ask, workspace, at, session, repository, agent, entry, to_repo, re, question, text, origin, urgent)
             SELECT $id, $ask, $workspace, $at, $session, $repository, $agent, $entry, $to, $re, $question, $text, $origin,
@@ -496,8 +500,8 @@ public sealed class ChannelStore
         command.Parameters.AddWithValue("$urgent", Level(message.Urgent));
         command.Parameters.AddWithValue("$cap", perPart);
         command.Parameters.AddWithValue("$urgentCap", urgentPerPart);
-        await using var reader = await command.ExecuteReaderAsync(ct).ConfigureAwait(false);
-        if (!await reader.ReadAsync(ct).ConfigureAwait(false)) return null;
+        await using var reader = await command.ExecuteReaderAsync(inside).ConfigureAwait(false);
+        if (!await reader.ReadAsync(inside).ConfigureAwait(false)) return null;
         return message with { Urgent = reader.IsDBNull(0) ? null : reader.GetInt32(0) != 0 };
     }, ct);
 

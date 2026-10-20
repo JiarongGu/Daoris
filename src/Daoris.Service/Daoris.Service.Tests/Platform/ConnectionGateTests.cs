@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using Daoris.Knowledge;
 using Microsoft.Data.Sqlite;
 
@@ -61,6 +62,55 @@ public sealed class ConnectionGateTests : IAsyncLifetime
             outside.Count == 0,
             "a command or a transaction outside the connection's gate meets whatever another request holds open:\n"
             + string.Join('\n', outside));
+    }
+
+    /// <summary>
+    /// QUESTOPENLOCK1: every write with a <c>RETURNING</c> clause runs in a write transaction, which only the gate opens, taken at once:
+    /// on its own it commits when its reader ends, where the driver never waits for another host's lock (<c>ReturningLockTests</c>). A
+    /// source scan, as the gate's is: the member around each statement takes the caller's transaction, or opens one, before it.
+    /// </summary>
+    [Fact]
+    public void Every_returning_write_runs_in_a_write_transaction()
+    {
+        var core = SourceRoot();
+        var found = 0;
+        var alone = new List<string>();
+
+        foreach (var file in Directory.EnumerateFiles(core, "*.cs", SearchOption.AllDirectories))
+        {
+            if (file.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}")
+                || file.Contains($"{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}"))
+            {
+                continue;
+            }
+
+            var lines = File.ReadAllLines(file);
+            for (var at = 0; at < lines.Length; at++)
+            {
+                var line = lines[at].TrimStart();
+                if (line.StartsWith("//", StringComparison.Ordinal) || line.StartsWith("--", StringComparison.Ordinal)
+                    || !Regex.IsMatch(line, @"\bRETURNING\b"))
+                {
+                    continue;
+                }
+
+                found++;
+                var member = at;
+                while (member > 0 && !Regex.IsMatch(lines[member], @"^    (public|private|internal|protected)\b")) member--;
+                var before = string.Join('\n', lines[member..at]);
+                if (!before.Contains("InTransactionAsync", StringComparison.Ordinal)
+                    && !before.Contains("SqliteTransaction transaction", StringComparison.Ordinal))
+                {
+                    alone.Add($"{Path.GetRelativePath(core, file)}:{at + 1}");
+                }
+            }
+        }
+
+        Assert.True(found >= 7, $"expected the seven RETURNING writes this scan was written over, found {found}");
+        Assert.True(
+            alone.Count == 0,
+            "a RETURNING write on its own fails with 'database is locked' while another host reads; run it in a write transaction:\n"
+            + string.Join('\n', alone));
     }
 
     /// <summary>A command made outside the gate is refused before it can run, naming why.</summary>
