@@ -18448,3 +18448,9 @@ in zh. The sessions page's held words (`WordsHold`) still carry the driver's sen
 > - [ ] **GITSTART2 — the service's git past the launcher** (service; after GITSTART1). `Registry/IgnoredPaths.cs:62` starts `git` bare. Give it the launcher rule (a twin of `GitForWindows`, or one shared home). Proof: a service test that the start names the real git with the launcher's variables.
 
 **Outcome** 2026-10-21: `IgnoredPaths`' git, where the `PATH` its start is handed finds Git for Windows' launcher first, starts as the real git with the launcher's variables; any other git still starts by its bare name. The rule is a twin, not a shared home: the service's `Platform/GitForWindows.cs` (`Past` reads the start's own `PATH`), its `GitForWindowsTests` holding the driver's rows case for case, and `IgnoredPathsTests` the start itself. No timing was taken: one start per read, the saving GITSTART1 measured. On Opus: about 45 tool calls. Detail: D121's 2026-10-21 note, the twins table.
+
+## FABRIC-MILESTONEDOOR1 — a work row with no session opens Branches (2026-10-21, D173)
+
+> - [ ] **FABRIC-MILESTONEDOOR1 — a work row with no session opens Branches** (web-shell; after MILESTONE1b). A `work` row for a unit known only by a branch or a landing has no door: open the workspace's Branches. Proof: an attention test pressing the row.
+
+**Outcome** 2026-10-21: the door itself landed with OVERVIEWNOISE1b, whose `work` door in `App.tsx` opens the workspace's Branches for every row that is not a held attempt. This row adds its proof: `sessionsBadge.test.tsx` presses a unit's row known only by its branch, its owner unrecorded, and Projects opens on Branches, the tab remembered; seen failing with the door pointed at Details. Not looked at on the window. On Opus: about 30 tool calls.
