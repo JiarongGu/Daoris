@@ -1,9 +1,10 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import {
-  Button, CheckField, Chip, CodeText, Dot, Drawer, EmptyState, Menu, MetaLine, MonoWell, PathText, Pill, SettingRow,
-  SkeletonRows, Tile, Toasts,
+  Button, Card, CardStack, CheckField, Chip, CodeText, Dot, Drawer, EmptyState, FormField, FormGrid, FormRow, Icon, Menu, MetaLine,
+  MonoWell, PathText, Pill, SettingList, SettingRow, SkeletonRows, Tile, Toasts,
 } from './ui';
 import { InTheme } from '../plugins/storyIcons';
+import { storyWidths } from './storyWidths';
 import { InlineConfirm } from '../work/InlineConfirm';
 
 // Every state of every primitive, on the shipped components — including the states real data rarely
@@ -101,36 +102,153 @@ export const StatusInks: StoryObj = { render: () => <StatusWords /> };
 export const StatusInksDark: StoryObj = { render: () => <InTheme theme="dark"><StatusWords /></InTheme> };
 
 /**
- * A setting is a row (2026-09-23): the four shapes the Machine view uses — a switch, a number, a
- * path that is read rather than set, and a row whose value earned a warning beneath it.
+ * A setting is a row (2026-09-23), and a card's rows share one label track (the UI/UX design R1, UIFIT1): a switch, a
+ * number with the notice its zero earned under it, a path with the row's own act after it, a long label that wraps at the
+ * track's cap, a short value, and a row with no control. Each value starts at the track's edge; in a main area under
+ * 32rem the track goes and each value sits under its words. In English and 中文, at the frame's three widths.
  */
-export const SettingRows: StoryObj = {
-  render: () => (
-    <div className="max-w-[48rem] rounded-card border border-line bg-raised px-[1.15rem] py-4">
-      <SettingRow
-        label="Tell me when a session parks or ends unasked"
-        hint="Also `daoris driver notify on|off` — one file, either door."
-        why="Nobody should have to watch a driver."
-        control={<CheckField hideLabel checked onChange={() => {}} label="Tell me when a session parks or ends unasked" />}
-      />
-      <SettingRow
-        label="Park a quest after this many failed sessions"
-        hint="Also `daoris driver strikes <n>`; stand-downs, declines and stops never count."
-        why="One quest whose session could not start ran eighteen times, and every run spent an account."
-        control={<input type="number" defaultValue={0} className="w-[4.5rem] rounded-control border border-line-strong bg-raised px-2.5 py-1 text-right text-body text-ink" />}
-      >
-        <p className="border-l-[3px] border-warn bg-page/60 px-3.5 py-2 text-body text-ink-soft">
-          Zero means it keeps trying.
-        </p>
-      </SettingRow>
-      <SettingRow
-        label="Daoris home"
-        hint="Every file on this page lives under it."
-        control={<PathText path="C:/somewhere/Daoris/data" className="text-small text-ink" />}
-      />
-    </div>
-  ),
-};
+const numberField = <input type="number" defaultValue={0} className="w-[4.5rem] rounded-control border border-line-strong bg-raised px-2.5 py-1 text-right text-body text-ink" />;
+
+function SettingRowsCards({ zh = false }: { zh?: boolean }) {
+  return (
+    <CardStack>
+      <Card>
+        <SettingList>
+          <SettingRow
+            label={zh ? '会话停泊或意外结束时通知我' : 'Tell me when a session parks or ends unasked'}
+            hint="Also `daoris driver notify on|off` — one file, either door."
+            why="Nobody should have to watch a driver."
+            control={<CheckField hideLabel checked onChange={() => {}} label="Tell me when a session parks or ends unasked" />}
+          />
+          <SettingRow
+            label={zh ? '委托在多少次失败会话后停泊' : 'Park a quest after this many failed sessions'}
+            hint="Also `daoris driver strikes <n>`; stand-downs, declines and stops never count."
+            why="One quest whose session could not start ran eighteen times, and every run spent an account."
+            control={numberField}
+          >
+            <p className="m-0 border-l-[3px] border-warn bg-page/60 px-3.5 py-2 text-body text-ink-soft">
+              {zh ? '零表示一直重试。' : 'Zero means it keeps trying.'}
+            </p>
+          </SettingRow>
+          <SettingRow
+            label={zh ? 'Daoris 主目录' : 'Daoris home'}
+            hint="Every file on this page lives under it."
+            control={(
+              <>
+                <PathText path="C:/somewhere/Daoris/data" className="text-small text-ink" />
+                <Button>{zh ? '打开本机' : 'Open This Daoris'}</Button>
+              </>
+            )}
+          />
+          <SettingRow
+            label={zh ? '没有指定时间时的冷却时长，按分钟计' : 'Cool-off when no time is named, and the label is long enough to wrap at the cap'}
+            hint="Also `daoris driver cool-off <minutes>`."
+            control={<span className="inline-flex items-center gap-1.5">{numberField}<span className="text-small text-ink-soft">min</span></span>}
+          />
+          <SettingRow label={zh ? '版本' : 'Version'} control={<Pill>0.22.0</Pill>} />
+          <SettingRow label={zh ? '上次交换' : 'Last swap'}>
+            <p className="m-0 text-small text-ink-soft">{zh ? '已安装 0.21.0。' : 'Installed 0.21.0.'}</p>
+          </SettingRow>
+        </SettingList>
+      </Card>
+      <Card>
+        <SettingList>
+          <SettingRow label={zh ? '完全访问' : 'Full access'} control={<CheckField hideLabel checked={false} onChange={() => {}} label="Full access" />}>
+            <p className="m-0 text-small text-ink-soft">{zh ? '关闭：以下每个暂停按设置生效。' : 'Off: each pause below as set.'}</p>
+          </SettingRow>
+          <SettingRow label={zh ? '权限提示' : 'Permission prompts'} control={<><span className="text-small text-ink">auto</span><Button variant="ghost">{zh ? '为本机设置' : 'Set for this machine'}</Button></>} />
+        </SettingList>
+      </Card>
+    </CardStack>
+  );
+}
+
+export const SettingRows: StoryObj = { render: () => <SettingRowsCards />, decorators: [storyWidths.wide] };
+
+/** The same at the half width, 630 px: the track still beside, at most half the card. */
+export const SettingRowsHalf: StoryObj = { render: () => <SettingRowsCards />, decorators: [storyWidths.half] };
+
+/** The same at the 400 px floor: the track goes, each value under its words. */
+export const SettingRowsNarrow: StoryObj = { render: () => <SettingRowsCards />, decorators: [storyWidths.narrow] };
+
+/** The same rows in 中文: shorter labels, the track at its floor. */
+export const SettingRowsChinese: StoryObj = { render: () => <SettingRowsCards zh />, decorators: [storyWidths.wide] };
+
+/** In 中文 at the half width. */
+export const SettingRowsChineseHalf: StoryObj = { render: () => <SettingRowsCards zh />, decorators: [storyWidths.half] };
+
+/** In 中文 at the floor. */
+export const SettingRowsChineseNarrow: StoryObj = { render: () => <SettingRowsCards zh />, decorators: [storyWidths.narrow] };
+
+/**
+ * A form laid by its own width (the UI/UX design R1, §4.2; UIFIT1d): one field, three fields, and a list of rows with its
+ * head row, each field by what it holds and nothing capped below the pane. Below the form's floor each row stacks, the
+ * head row goes and each field shows its own name. At the frame's three widths; `measured/settings.spec.ts` reads them.
+ */
+const field = (label: string, mono = false) => (
+  <input aria-label={label} defaultValue="" className={`min-w-0 rounded-control border border-line-strong bg-raised px-2.5 py-1.5 text-body text-ink ${mono ? 'font-mono' : ''}`} />
+);
+const GATES = [
+  { name: 'web', run: 'npm --prefix web test -- --run', cwd: 'web' },
+  { name: 'driver', run: 'dotnet test Driver.Tests --no-build', cwd: '' },
+];
+
+function FormGridsCards() {
+  return (
+    <CardStack>
+      <Card>
+        <SettingList>
+          <SettingRow label="Branch pattern" hint="One field: a pattern, 20rem.">
+            <FormGrid columns={['pattern']}>
+              <FormRow><FormField label="Pattern">{field('pattern', true)}</FormField></FormRow>
+            </FormGrid>
+          </SettingRow>
+        </SettingList>
+      </Card>
+      <Card>
+        <p className="m-0 mb-2 text-small text-ink-soft">Three fields: an address takes the rest, a title 16rem, the act after them.</p>
+        <FormGrid columns={['long', 'name', 'acts']}>
+          <FormRow>
+            <FormField label="Address">{field('address', true)}</FormField>
+            <FormField label="Title">{field('title')}</FormField>
+            <Button variant="primary">Add</Button>
+          </FormRow>
+        </FormGrid>
+      </Card>
+      <Card>
+        <p className="m-0 mb-2 text-small text-ink-soft">A list of rows: the heavy gates, their columns aligned, stacked below 40rem with each field named.</p>
+        <FormGrid columns={['short', 'long', 'short', 'acts']} floor="40rem">
+          <FormRow head>
+            <span className="text-meta text-ink-faint">Name</span>
+            <span className="text-meta text-ink-faint">Command</span>
+            <span className="text-meta text-ink-faint">Folder</span>
+            <span />
+          </FormRow>
+          {GATES.map((gate, at) => (
+            <FormRow key={gate.name}>
+              <FormField label="Name" when="stacked"><input aria-label={`Name of gate ${at + 1}`} defaultValue={gate.name} className="w-full min-w-0 rounded-control border border-line-strong bg-raised px-2.5 py-1 font-mono text-small text-ink" /></FormField>
+              <FormField label="Command" when="stacked"><input aria-label={`Command of gate ${at + 1}`} defaultValue={gate.run} className="w-full min-w-0 rounded-control border border-line-strong bg-raised px-2.5 py-1 font-mono text-small text-ink" /></FormField>
+              <FormField label="Folder" when="stacked"><input aria-label={`Folder of gate ${at + 1}`} defaultValue={gate.cwd} placeholder="the checkout" className="w-full min-w-0 rounded-control border border-line-strong bg-raised px-2.5 py-1 font-mono text-small text-ink placeholder:italic placeholder:text-ink-faint" /></FormField>
+              <span className="flex items-center">
+                <Button variant="ghost" aria-label={`Move gate ${at + 1} up`}><Icon name="chevronUp" size={12} /></Button>
+                <Button variant="ghost" aria-label={`Move gate ${at + 1} down`}><Icon name="chevronDown" size={12} /></Button>
+                <Button variant="ghost" aria-label={`Remove gate ${at + 1}`}><Icon name="x" size={12} /></Button>
+              </span>
+            </FormRow>
+          ))}
+        </FormGrid>
+      </Card>
+    </CardStack>
+  );
+}
+
+export const FormGrids: StoryObj = { render: () => <FormGridsCards />, decorators: [storyWidths.wide] };
+
+/** At the half width, 630 px: the one- and three-field forms keep their columns; the gates stack, since their value column is under 40rem. */
+export const FormGridsHalf: StoryObj = { render: () => <FormGridsCards />, decorators: [storyWidths.half] };
+
+/** At the 400 px floor: every row stacked, each field named. */
+export const FormGridsNarrow: StoryObj = { render: () => <FormGridsCards />, decorators: [storyWidths.narrow] };
 
 /**
  * A code span breaks only between its words (LOOK5): the installed window broke a setting's terminal twin inside

@@ -222,7 +222,7 @@ describe('Ask Daoris’s access on Settings', () => {
     expect(screen.getByText(/runs on claude-code-acp with full access/)).toBeInTheDocument();
     await pick('restricted');
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SET_HELP_MODE', { payload: { mode: 'restricted' } });
-    await waitFor(() => expect(notify).toHaveBeenCalledWith('Ask Daoris runs restricted from its next start.'));
+    await waitFor(() => expect(notify).toHaveBeenCalledWith('Ask Daoris runs restricted from each conversation’s next turn.'));
 
     await chip('Restricted');
     await pick('full');
@@ -232,7 +232,7 @@ describe('Ask Daoris’s access on Settings', () => {
     await userEvent.click(within(asks).getByRole('button', { name: 'Enable full access' }));
 
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SET_HELP_MODE', { payload: { mode: 'full' } });
-    await waitFor(() => expect(notify).toHaveBeenCalledWith('Ask Daoris runs with full access from its next start.'));
+    await waitFor(() => expect(notify).toHaveBeenCalledWith('Ask Daoris runs with full access from each conversation’s next turn.'));
   });
 
   it('offers no access on a shell older than the mode', async () => {
@@ -252,9 +252,11 @@ describe('Ask Daoris’s access on Settings', () => {
 describe('Ask Daoris’s configured access on Settings', () => {
   let chosen: string[] = [];
   let grants = true;
+  let pending = false;
   beforeEach(() => {
     chosen = [];
     grants = true;
+    pending = false;
     vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => respond(String(input))));
     invoke.mockImplementation(async (module: string, type: string, request?: { payload?: { operation?: string; chosen?: boolean } }) => {
       if (module !== 'DAORIS.DRIVER') return WIRING;
@@ -265,7 +267,7 @@ describe('Ask Daoris’s configured access on Settings', () => {
       if (type === 'STATE' || type === 'SET_HELP_GRANT') {
         return {
           ...DRIVER_STATE, helperAdapter: 'claude-code-acp', intakeAdapter: '', helpMode: 'restricted',
-          ...(grants ? { helpGrants: [{ id: 'housekeeping', chosen, built: ['inspect', 'clean-up', 'discard-branch'] }] } : {}),
+          ...(grants ? { helpGrants: [{ id: 'housekeeping', chosen, built: ['inspect', 'clean-up', 'discard-branch'], pending }] } : {}),
         };
       }
       if (type === 'HARNESSES') return { harnesses: [] };
@@ -328,6 +330,24 @@ describe('Ask Daoris’s configured access on Settings', () => {
 
     expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'SET_HELP_GRANT', expect.anything());
     expect(notify).toHaveBeenCalledWith(i18n.t('settings.ai.grants.notYet'));
+  });
+
+  // ACCESSSWAP1 (D183 point 2): the driver says the grant is pending while a conversation running started with another choice; its
+  // next turn takes it, and the mark clears once that conversation's agent has ended.
+  it.each(['en', 'zh'])('marks housekeeping pending while the driver says a running conversation has another choice, in %s', async (language) => {
+    await i18n.changeLanguage(language);
+    pending = true;
+    show(<SettingsView notify={() => {}} section="ai" />);
+
+    const grant = await screen.findByRole('listitem', { name: i18n.t('help.grants.name.housekeeping') });
+    expect(within(grant).getByText(i18n.t('help.grants.pending'))).toHaveAttribute('title', i18n.t('help.grants.pendingWhy'));
+  });
+
+  it('draws no pending mark where the driver says none', async () => {
+    show(<SettingsView notify={() => {}} section="ai" />);
+
+    const grant = await screen.findByRole('listitem', { name: i18n.t('help.grants.name.housekeeping') });
+    expect(within(grant).queryByText(i18n.t('help.grants.pending'))).toBeNull();
   });
 
   it('draws no configured access on a shell older than the grant', async () => {

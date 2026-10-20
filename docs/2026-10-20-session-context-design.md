@@ -55,16 +55,20 @@ still sees one session, with a part for each conversation in its *Parts* strip.
 ## 2. The rule: resume where the conversation holds; otherwise a new part, handed the brief
 
 The conversation resumes where its record has the same agent and account, its tree stands, its id was kept, and the door
-can resume (D131 point 2, `Continuation.cs:169-201`). The access is not among the conditions: the protocol door sets the
+can resume (D131 point 2, `Continuation.cs:169-201`). The access is not among the conditions: the protocol door asks for the
 posture on every resume (read: `Acp.cs:2373-2374`), and the native door names `--permission-mode` on every run (read:
-`Adapters.cs:1987-1995`, `:2045-2046`).
+`Adapters.cs:1987-1995`, `:2045-2046`). Asking is not having: a posture the agent does not offer is refused where it is
+required, as full access is, and left as it was where it is not (read: `Acp.cs:1880-1910`), and neither door's resume under
+another access has run here (§12). So a resumed start says the access it asked for and the posture the agent answered, and an
+access change that did not take is said, never assumed.
 
 | The change | Resumes? | Then |
 |---|---|---|
 | Access | yes, where the rest holds (ACCESSSWAP1) | the same part, under the new access |
 | Account | no: the conversation is in the other account's home (D131 point 2) | a new part, `from` with the move's why |
 | Agent | no | a new part, `from` with the move's why |
-| None, or access alone, and the resume refused (`unkept`, `unable`, `offered`, `gone`, `refused`, `elsewhere`) | no | a new part, `from` why `resume`, the code said |
+| None, or access alone, and the conversation gone or not resumable here (`unkept`, `unable`, `offered`, `gone`) | no | a new part, `from` why `resume`, the code said |
+| None, or access alone, and the resume refused otherwise (`elsewhere`: another client holds it; a bare `refused`) | no | held for the person, said why: wait, or go on in a new part handed the brief |
 | Its tree gone; a teammate's record, an intake, a stand-down | no | as today (D131, D137 §2.2) |
 
 - **The old part ends at its turn's end**, never mid-turn (D188 point 1), and before the new starts, since a tree is held by
@@ -75,11 +79,14 @@ posture on every resume (read: `Acp.cs:2373-2374`), and the native door names `-
   point 4). Its
   first prompt is the brief, then the words waiting in `said` (D188 points 5-6), which leave the old record by MSG1d's
   went note.
-- **A conversation, or a closed quest's session, whose own conversation cannot resume goes on by itself**, as a new
-  conversation in its tree and a part of its entry, said why. D137 §2.2 made it the person's press because a new
-  conversation had none of the old one's context; the brief is that context. An access change whose resume is refused goes
-  the same way, so no access change ends a conversation's line. *Start a conversation with these words* stays, as the
-  person's own press for a fresh start.
+- **A conversation, or a closed quest's session, whose own conversation is gone or cannot be resumed here goes on by
+  itself**, as a new conversation in its tree and a part of its entry, said why. D137 §2.2 made it the person's press because
+  a new conversation had none of the old one's context; the brief is that context. An access change whose resume finds its
+  conversation gone goes the same way, so no access change ends a conversation's line. **A resume refused for another reason
+  waits for the person**, said why, the brief ready if they go on: `elsewhere` says another client holds the conversation
+  (read: `Acp.cs:2355-2360`), so its context is not lost and a second writer in the same tree could redo its work; a bare
+  `refused` does not say the conversation is lost. *Start a conversation with these words* stays, as the person's own press
+  for a fresh start.
 - **A driven record's fallback (D131 point 3), a carry-on after a limit (D125 point 4) and a hand-over (D163)** stay what
   they are, a new part each, handed the brief in place of the four facts.
 - **A left conversation is not resumed again.** Once its line has moved on, it lacks what came after. It stays in its
@@ -91,40 +98,54 @@ posture on every resume (read: `Acp.cs:2373-2374`), and the native door names `-
 ### 3.1 What it carries
 
 A pure function, `ContextBrief.Compose`, which replaces `HandOverBriefing.Compose` (`HandOverRecords.cs:92-138`), composes it
-from the records of the line the new part continues: the part it moves from and, by their `from` links, the parts before it.
-No model writes any of it.
+from the records of the line the new part continues: the part it moves from and the parts it continued, one chain back,
+never the entry's other parts running beside it. Today `from` links only a hand-over and a move onto another account (read:
+`Driver.ContinuesFrom`, `Driver.cs:3298-3320`); a carry-on on the same account and a driven fallback write none. So SESSCTX1b
+first gives every continuation its link to the part it continued, and the brief follows that chain. No model writes any of it.
 
 1. **Its opening**, in Daoris's one English: which session it continues, on which agent it ran, why it moved, and that what
    follows is Daoris's record of the conversation, not the agent's memory.
 2. **The request** as first written, at most 4,000 characters, as today; a conversation's is its first word, not repeated in 3.
 3. **Every word the session took**, in order, marked by who said it as its record marks it: the person's, verbatim; another
    agent's answer or findings and a channel's message, as that agent's claim (D155 point 7, D167 point 7). Daoris's own
-   composed prompts are not repeated, since the new part's instruction is composed afresh.
+   composed prompts are not repeated, since the new part's instruction is composed afresh. One word is one id, as its latest
+   event says: a word shown when it was said and again when it was taken, or told again for its level, counts once (read:
+   `SessionEvents.cs:166-180`), and a word taken back before it was sent is left out (`:75-82`). A word the session already
+   answered is a past exchange, kept with the turn that answered it, never an open instruction. Words still waiting in
+   `said` are not in the brief; they follow it (§2).
 4. **Each turn's outcome**: the agent's last message of the turn, its end kept, at most 4,000 characters; and one line of what
    the turn did (the files it edited, the commands that failed), from the tool calls' kind, title, locations and status as
-   the events keep them.
-5. **The work's state**: the plan as last kept (50 steps at most); what the tree holds uncommitted and the commits on it since
-   the line began (50 each at most); the files the person attached, by name and where they lie, as a resumed run is handed
-   them (`ChatFiles.cs:105-109`).
+   the events keep them. The last check a part ran (a test or a build command) is said with its status and the tree's commit
+   at that part's end, so a fresh agent knows what was verified, on what.
+5. **The work's state**: the plan as last kept (50 steps at most), with the turn it was written in, since the newest plan may
+   predate later corrections (`LastPlan` returns the newest, however old); the questions the session asked that no word
+   answered (a go-ahead or a helper's ask still open); what the tree holds uncommitted and the commits on it since the line
+   began (50 each at most); the files the person attached, by name and where they lie, as a resumed run is handed them
+   (`ChatFiles.cs:105-109`).
 6. **The outgoing agent's own note**, where it wrote one through its tool (MIXAGENT1c), as its claim, at most 4,000 characters.
 7. **The entry's other parts**, one line each (its quest, how it began, how it ended), as D167 §1.5 hands them today.
 8. **What was left out**, by count, and that the record holds it.
 
 ### 3.2 Its bound
 
-**At most 40,000 characters.** Parts 1, 2 and 5 to 8 go first, each under its own cap. The person's words come before the
-agent's: all of them are kept, unless they alone would pass half the bound; then the oldest after the request go first,
-counted. The turns' outcomes fill what remains, newest first. The brief reads in the conversation's order.
+**At most 40,000 characters, a provisional ceiling** until SESSCTX1a counts briefs on each harness. Every item is clipped on
+its own, each cut said, and each section fills under its own cap in this order, with room kept for item 8's notice of what was
+left out: the opening and the request (4,000); the outgoing agent's note (4,000); the work's state (6,000: a plan step at most
+200 characters, each list counted past 50); the entry's other parts (2,000, counted past it). Then the person's words, up to
+half the bound, the oldest after the request left out first, counted; then the turns' outcomes, newest first, in what remains.
+The brief reads in the conversation's order.
 
 Why 40,000: about 11,000 tokens at the estimate of 3.6 characters a token (recorded: the subagent load evidence §2; an
-estimate, since the tokenizer is the harness's, economy design §1.7). That is under a quarter of the 50,000 tokens a
-general-purpose subagent started at (recorded, the same §2), so the brief costs a new part less than the harness's own start.
-SESSCTX1a reads its size as each harness counted it, and the bound moves on that number.
+estimate made on English, since the tokenizer is the harness's, economy design §1.7). Chinese and code count differently, so
+the estimate holds for neither language until measured. At that estimate it is under a quarter of the 50,000 tokens a
+general-purpose subagent started at (recorded, the same §2). SESSCTX1a counts briefs in both languages as each harness counted
+them, and the bound moves on those counts.
 
 ### 3.3 What it never carries
 
 - **The agent's thoughts or a tool call's output.** The first is the agent's working, not the conversation's. The second is
-  kept cut at 2,000 characters for the page, and the tree holds the files themselves. So the brief is never the transcript
+  the tool's, not the conversation's: its raw input and output are kept cut at 2,000 characters and its text content up to
+  64 KiB (read: `SessionEvents.cs:403-418`), and the tree holds the files themselves. So the brief is never the transcript
   whole, which D163 rejected and §8 keeps rejecting.
 - **A summary written by a model**, Daoris's or any other (D163; D24). It would be a model call Daoris makes and pays for, a
   tier to name, and a claim nobody can check against the conversation. The agent's own words (its last message of each turn,
@@ -178,11 +199,13 @@ the harness sends the same prefix after a restart and under another access (a di
 it), and on how long its provider keeps a cache. Neither was read. SESSCTX1a measures it on both doors before any row relies
 on it.
 
-**What follows without a measurement.** A move costs one write of S and B in place of H, and every later request carries B
-instead of H. B is bounded near 11,000 tokens, and H in a long conversation is far larger (the recorded turn grew to 679,000,
-economy design §1.6). So a move is cheaper on every request after it, and it costs the agent its exact memory. That trade is
-why the rule resumes first: the direction asks for a change of access or agent, not a cheaper conversation, and exact memory
-is worth paying for wherever it can be kept.
+**What follows, and what does not.** A move writes S and B where a resume reads or writes H, and its later requests carry B
+and what grows where a resume's carry H and what grows. But H here is the part's high-water (`ContextOf`), not the context a
+conversation sends after its harness compacted it, so H against B bounds no saving: a resumed conversation may carry far less
+than H, and a new part may spend turns reading back what the brief left out. So no way on is claimed cheaper; SESSCTX1a
+measures the first and the later requests of both. The rule resumes first for continuity, not for cost: the direction asks
+for a change of access or agent, and the agent's own conversation is the context it worked in, whatever its harness kept of
+it after a compaction (D137 promises nothing of what an agent remembers).
 
 **Kept.** Each move records H and B's characters on its line (§7). Each part keeps its own usage, with its cache reads and
 writes as its door reports them, and *not measured* where the door says none (TOOL3).
@@ -239,7 +262,7 @@ writes as its door reports them, and *not measured* where the door says none (TO
 - **A record that holds several conversations in turn.** D167 settled that a session is an entry and a part is one
   conversation. A record that changed agent and account mid-way would change every reader of its `adapter` and account and
   of its usage, for what the entry already shows as one session.
-- **Handing every event as it was kept.** A tool's output is cut at 2,000 characters and a thought is the agent's working,
+- **Handing every event as it was kept.** A tool's raw output is cut at 2,000 characters (its text at 64 KiB) and a thought is the agent's working,
   so such a replay is neither exact nor small; the tree holds the files.
 - **Going back to a left conversation with what came after it**: two histories that disagree on what is newest. Held until
   moves are measured.
@@ -251,13 +274,16 @@ writes as its door reports them, and *not measured* where the door says none (TO
 
 ## 10. For the owner's review
 
-Three choices the owner may turn:
+Four choices the owner may turn:
 
-1. **A conversation whose resume is refused goes on by itself** (§2). The alternative keeps the person's press and hands the
-   brief to it.
-2. **The bound, 40,000 characters** (§3.2).
-3. **No closing turn from the outgoing agent** (§9). The alternative asks it for a note at its turn's end, where it can still
-   take a turn.
+1. **A conversation whose own conversation is gone goes on by itself; one held elsewhere, or refused for another reason,
+   waits for the person** (§2, after another maker's read, §14). The alternative keeps the person's press for every refusal,
+   the brief handed to it.
+2. **The bound, 40,000 characters, provisional** (§3.2).
+3. **No closing turn from the outgoing agent** (§9). A note the agent writes through its tool in a turn already running is
+   carried as its claim (§3.1 item 6). The alternative asks it for a note at its turn's end, where it can still take a turn.
+4. **The line's history as a tool (SESSCTX1f), held.** Another maker's read would build it with the brief, since a brief that
+   counts what it left out gives the agent no way to read it. The alternative builds it after SESSCTX1b, beside SESSCTX1c.
 
 ## 11. Build rows
 
@@ -278,15 +304,17 @@ SESSCTX1f held.
 
 - **Claude Code's native `--resume`** has never run on this machine (`Adapters.cs:1985`): of an ended conversation, once
   unchanged and once under another `--permission-mode`.
-- **The protocol door's `session/resume` under another mode**, on `claude-agent-acp`; whether it takes
-  `bypassPermissions` at a load is HELPMODE1a3's, which SESSCTX1a may share.
+- **The protocol door's `session/resume` under another mode**, on `claude-agent-acp`, and its `session/load` fallback measured
+  apart; on each, whether the posture asked for is the one the agent answered, since an optional one it does not offer is
+  left as it was; whether it takes `bypassPermissions` at a load is HELPMODE1a3's, which SESSCTX1a may share.
 - **Codex**: whether a thread resumes after its `codex-acp` process has ended, and whether `thread_active_writer` (read,
   session messages design §1.1) clears once that process is gone.
 - **The cache** at each resume above: the first turn's input, cache reads and cache writes, against H.
 - **Usage at a turn's end** on the protocol door: whether it reports there too, or only as the turn runs (read as the latter,
   `Usage.cs:25-28`), which decides whether H at a move is the turn's last reading or its end's.
-- **A new part handed a 40,000-character brief**, on each agent: its first turn's input and cache write as the harness
-  counted them, against S.
+- **A new part handed a 40,000-character brief**, on each agent, one in English and one in Chinese: its first turn's input
+  and cache write as the harness counted them, against S; and a resumed conversation's later requests beside a new part's,
+  since H, a high-water, says nothing of what a compacted conversation sends.
 - **Only a real run proves** that a new part does not redo what the brief says was done, and only the window shows the
   *Parts* strip's line, in both languages. ANSWER1d and MSG1j's canaries prove the resume itself.
 
@@ -296,3 +324,18 @@ Documents only; nothing is built. Its statements about today were read from the 
 the harnesses were read from earlier designs that read the makers' packages and source (the session messages design §1, the
 limit-signals evidence §3), or from Daoris's code; none was measured by this design, and §12 lists what must be.
 `verify` checks this document's links and D189's place and shape, and none of their words.
+
+## 14. Another maker's read (2026-10-20)
+
+Eight findings, each checked against the code before it was taken; all eight changed this document.
+
+| # | Finding | Checked | Taken where |
+|---|---|---|---|
+| 1 | The brief followed `from`, which a carry-on on the same account never writes, so an earlier part's words could be lost | `Driver.cs:3298-3320` | §3.1: SESSCTX1b gives every continuation its link first; the brief follows that chain, never parallel parts |
+| 2 | "Every word taken" repeats a word told twice and revives one taken back | `SessionEvents.cs:75-82`, `:166-180` | §3.1 item 3: one word per id, its latest event; withdrawn left out; answered words as past exchanges; waiting words after the brief |
+| 3 | A resume asks for a posture; an optional one not offered is left as it was | `Acp.cs:1880-1910` | §2: a resumed start says the access asked and the posture answered; §12 measures both, `session/resume` and `session/load` apart |
+| 4 | "Cheaper on every later request" and "exact memory" outran the evidence: H is a high-water, and a harness's compaction keeps what it keeps | `AccountRotation.cs:662-678`; D137 | §5: no way on is claimed cheaper; resume first for continuity; §12 measures later requests |
+| 5 | The bound's allocation left sections without caps and no room for the omission notice | the design's §3.2 | §3.2: per-section caps, per-item clipping, the notice's room, the bound provisional and counted in both languages |
+| 6 | The brief carried activity more than actionable state; the plan's age was unsaid; the 2,000-character claim was wrong for text content | `SessionEvents.cs:403-418`; `LastPlan` | §3.1 items 4-5: the last check with its commit, open questions, the plan's turn; §3.3 and §9 corrected |
+| 7 | `elsewhere` is contention, not loss; a bare `refused` does not prove loss | `Acp.cs:2355-2360` | §2: those wait for the person, the brief ready; §10 choice 1 |
+| 8 | An optional note in a running turn is worth carrying; the pull tool should come with the brief | the design's §3.1, §3.5, §9 | already carried (§3.1 item 6); the pull's timing is §10 choice 4, the owner's |

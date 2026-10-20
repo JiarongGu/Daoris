@@ -261,7 +261,7 @@ export function SweepList({ branches, landed, busy, onLook, onClean, onDiscard, 
     : branch.kind === 'unknown' ? branch.detail ?? null : null;
 
   return (
-    <Card id="settings-sweep" className="mt-3.5 scroll-mt-3">
+    <Card id="settings-sweep" className="scroll-mt-3">
       <SectionTitle>{t('settings.sweep.title')}</SectionTitle>
       <Prose className="mt-1 text-small text-ink-soft">{t('settings.sweep.body')}</Prose>
 

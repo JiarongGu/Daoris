@@ -236,6 +236,32 @@ public sealed class SharedHostTests(SharedHost host) : IClassFixture<SharedHost>
     }
 
     /// <summary>
+    /// FLOWCHART1a2 (D186; the flowchart design §2.1): quests are service-visible (D47 §4), so a shared host answers a quest's moves
+    /// as a local one does, and a browser reading the team's deployment draws the flow too: its publish, applied, and nothing of
+    /// what it asked.
+    /// </summary>
+    [Fact]
+    public async Task A_shared_host_answers_a_quests_moves()
+    {
+        var key = (await host.MintAsync("mover@a-machine")).Key;
+        await RegisterAsync("MoveKeeper", key);
+        await RegisterAsync("MoveAsker", key);
+        var published = await host.PostAsync("/api/quests", new
+        {
+            from = "MoveAsker", to = "MoveKeeper", title = "Drawn at the remote", body = "Its words stay on the quest.",
+        }, key: key);
+        Assert.Equal(200, published.Status);
+        var id = published.Json.GetProperty("quest").GetProperty("id").GetString()!;
+
+        var answer = await host.GetAsync($"/api/quests/{id}/moves", key: key);
+
+        Assert.Equal(200, answer.Status);
+        var move = Assert.Single(answer.Json.GetProperty("moves").EnumerateArray());
+        Assert.Equal(("published", true), (move.GetProperty("kind").GetString(), move.GetProperty("applied").GetBoolean()));
+        Assert.DoesNotContain("Its words stay on the quest.", answer.Body);
+    }
+
+    /// <summary>
     /// A shared deployment has no door that removes a record (D95): a person deletes on their own machine,
     /// and the tombstone travels. Keyed, the verb finds no route — and the quest is still there after it.
     /// </summary>

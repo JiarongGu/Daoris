@@ -376,7 +376,10 @@ internal sealed class ChatGoOn
             sessionId,
             words.Any(word => word.Persons)
                 ? $"conversation `{sessionId}` goes on with your words in its own conversation."
-                : $"conversation `{sessionId}` goes on with another agent's answer in its own conversation.",
+                : words.All(word => word.Daoris)
+                    // COWORK1b: Daoris's own words alone are no agent's answer.
+                    ? $"conversation `{sessionId}` goes on with Daoris's words in its own conversation."
+                    : $"conversation `{sessionId}` goes on with another agent's answer in its own conversation.",
             adapter, selection, config,
             _runner.RepositoryPlace(config, registry, known, record.Repository!, record.Tree!), onEnded, ct,
             new GoingOn(record, ask)).ConfigureAwait(false);
@@ -451,17 +454,21 @@ internal sealed class ChatGoOn
         if (persons) return Continuations.GoingOnNoted;
         return waiting.Any(word => word.By is not null) ? Continuations.GoingOnWithFindingsNoted
             : waiting.Any(word => word.Helper is not null) ? Continuations.GoingOnWithHelperNoted
+            // COWORK1b: Daoris's own words alone.
+            : waiting.Any(word => word.Daoris) ? Continuations.GoingOnWithDaorisNoted
             : Continuations.GoingOnNoted;
     }
 
     /// <summary>
     /// The resumed conversation's first line (D131 §1), by what it goes on with: the same arguments the driven path passes
-    /// (<c>DriverContinuations</c>), so a helper's answer is said as that agent's claim and never as "your words" (MIXAGENT2a-iii).
+    /// (<c>DriverContinuations</c>), so a helper's answer is said as that agent's claim and Daoris's own words as Daoris's, never
+    /// as "your words" (MIXAGENT2a-iii, COWORK1b).
     /// </summary>
     internal static Noted OpeningNote(IReadOnlyList<SaidWordView> words, string adapter, string? now, string? then) =>
         Continuations.OpeningNoted(
             adapter, now, then, answer: false, findings: words.Any(word => word.By is not null),
-            persons: words.Any(word => word.Persons), helper: words.Any(word => word.Helper is not null));
+            persons: words.Any(word => word.Persons), helper: words.Any(word => word.Helper is not null),
+            daoris: words.Any(word => word.Daoris));
 
     /// <summary>
     /// The words went to the conversation (MSG1c): off its record by their ids (MSG1a's taken door), so the service keeps

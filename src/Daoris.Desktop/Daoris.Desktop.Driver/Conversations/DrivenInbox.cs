@@ -62,6 +62,18 @@ public sealed class DrivenInbox(Action<ChatQueue> changed)
     }
 
     /// <summary>
+    /// Whether any word is held for the run, Daoris's own among them (COWORK1b), which <see cref="State"/> never lists as the
+    /// person's: what the run reads before it waits on a session's background work.
+    /// </summary>
+    public bool Holds
+    {
+        get
+        {
+            lock (_gate) return !_closed && _held.Count > 0;
+        }
+    }
+
+    /// <summary>
     /// When a word said now reaches the session (MSG1d, D137 §5.3), which the modules answer the page with: null until the
     /// door is known, since a word said while it opens waits for its first prompt either way, and null once it has closed.
     /// </summary>
@@ -192,7 +204,8 @@ public sealed class DrivenInbox(Action<ChatQueue> changed)
     {
         lock (_gate)
         {
-            var at = _closed ? -1 : _held.FindIndex(message => message.Id == id);
+            // Daoris's own words are no word of the person's to edit (COWORK1b): the page never lists them.
+            var at = _closed ? -1 : _held.FindIndex(message => message.Id == id && message.Daoris is null);
             if (at < 0) return QueueEdit.Taken;
 
             var old = _held[at];
@@ -521,7 +534,8 @@ public sealed class DrivenInbox(Action<ChatQueue> changed)
         }
     }
 
-    private ChatQueue Now() => _closed ? ChatQueue.Idle : new ChatQueue(Taking: true, [.. _held]);
+    /// <summary>Where it stands for the page: the person's words held, never Daoris's own (COWORK1b), which the record shows as Daoris's.</summary>
+    private ChatQueue Now() => _closed ? ChatQueue.Idle : new ChatQueue(Taking: true, [.. _held.Where(message => message.Daoris is null)]);
 
     /// <summary>
     /// When a word reaches the session on the door known, by its level (COWORK1a, the design §3.0): an ordinary word at the turn's
@@ -550,6 +564,8 @@ public sealed class DrivenInbox(Action<ChatQueue> changed)
         // Observed here as well as by the run, which may have ended before it reads this one.
         _ = answer.ContinueWith(static sent => sent.Exception, TaskScheduler.Default);
         _sent.Enqueue(answer);
+        // COWORK1b: Daoris's word at the next step went now, as the look that held it judged it.
+        DaorisWords.Delivered(message);
     }
 
     /// <summary>Steer one word into the running turn now (STEER2a), under the gate as <see cref="Send"/> sends; the run waits for its answer.</summary>

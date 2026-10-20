@@ -86,8 +86,13 @@ public sealed class TraceTests : IDisposable
             [new JsonObject { ["requirement"] = 1, ["met"] = "the tile reads through v3 now" }]),
     ];
 
-    /// <summary>A service standing in: each request recorded with its method, then answered, or 404 where nothing is.</summary>
-    private sealed class StandIn(JsonArray sessions, JsonArray quests, Func<string, string?> asks) : HttpMessageHandler
+    /// <summary>
+    /// A service standing in: each request recorded with its method, then answered, or 404 where nothing is. A quest's moves
+    /// (FLOWCHART1a2) are answered by <paramref name="moves"/> with its status, and with none a host from before the door's 404.
+    /// </summary>
+    private sealed class StandIn(
+        JsonArray sessions, JsonArray quests, Func<string, string?> asks, Func<string, (HttpStatusCode Status, string Body)?>? moves = null)
+        : HttpMessageHandler
     {
         public List<string> Requests { get; } = [];
 
@@ -95,6 +100,12 @@ public sealed class TraceTests : IDisposable
         {
             var uri = request.RequestUri!;
             lock (Requests) Requests.Add($"{request.Method} {uri.PathAndQuery}");
+            if (uri.AbsolutePath.StartsWith("/api/quests/", StringComparison.Ordinal) && uri.AbsolutePath.EndsWith("/moves", StringComparison.Ordinal)
+                && moves?.Invoke(Uri.UnescapeDataString(uri.AbsolutePath["/api/quests/".Length..^"/moves".Length])) is var (status, answer))
+            {
+                return Task.FromResult(new HttpResponseMessage(status) { Content = new StringContent(answer, Encoding.UTF8, "application/json") });
+            }
+
             var body = uri.AbsolutePath switch
             {
                 "/api/sessions" when uri.Query.Contains("includeClosed=true") => sessions.ToJsonString(),
@@ -131,9 +142,10 @@ public sealed class TraceTests : IDisposable
     private DriverConfig Config() => DriverConfig.Empty.WithStanding("dashboards", "test on dev first, never production", At(9, 25));
 
     private async Task<(int Exit, string Said, StandIn Service)> TraceAsync(
-        TraceAsk asked, JsonArray? sessions = null, JsonArray? quests = null, Func<string, string?>? asks = null, DriverConfig? config = null)
+        TraceAsk asked, JsonArray? sessions = null, JsonArray? quests = null, Func<string, string?>? asks = null, DriverConfig? config = null,
+        Func<string, (HttpStatusCode, string)?>? moves = null)
     {
-        var standIn = new StandIn(sessions ?? Sessions(), quests ?? Quests(), asks ?? (id => id == "a1" ? AskJson() : null));
+        var standIn = new StandIn(sessions ?? Sessions(), quests ?? Quests(), asks ?? (id => id == "a1" ? AskJson() : null), moves);
         using var service = new ServiceClient("http://stand-in", null, new HttpClient(standIn));
         var said = new StringWriter { NewLine = "\n" };
         var exit = await TraceCommand.RunAsync(asked, new TraceSources(service, _home, config ?? Config()), said);
@@ -683,6 +695,85 @@ public sealed class TraceTests : IDisposable
     }
 
     /// <summary>A service that cannot be read is said, store by store, and a trace that needed it could not: exit 2.</summary>
+    /// <summary>
+    /// A quest's moves as the service's door answers them (FLOWCHART1a2), in the order its history replays: a take, another machine's
+    /// take kept as a conflict and dismissed by its reference, a done that held it, a second done the replay did not apply, this
+    /// machine's yes still pending though its clock made it earliest, and a kind this driver does not know.
+    /// </summary>
+    private const string MovesJson = """
+        {"quest":"q1","moves":[
+          {"kind":"published","at":"2026-10-03T09:02:00+00:00","machine":"m2","sequence":1,"number":1,"applied":true},
+          {"kind":"taken","at":"2026-10-03T09:05:00+00:00","machine":"m3","sequence":1,"number":2,"applied":true,"from":"Open"},
+          {"kind":"conflict","at":"2026-10-03T09:06:00+00:00","machine":"m4","sequence":7,"number":3,"applied":true,"from":"Taken","attempted":"Taken"},
+          {"kind":"dismissed","at":"2026-10-03T09:30:00+00:00","machine":"m3","sequence":2,"number":4,"applied":true,"from":"Taken",
+           "dismisses":{"machine":"m4","sequence":7}},
+          {"kind":"done","at":"2026-10-03T10:00:00+00:00","machine":"m3","sequence":3,"number":5,"applied":true,"from":"Taken","hold":"departed"},
+          {"kind":"done","at":"2026-10-03T10:01:00+00:00","machine":"m5","sequence":1,"number":6,"applied":false,"from":"Done"},
+          {"kind":"accepted","at":"2026-10-03T08:00:00+00:00","machine":"laptop","sequence":9,"applied":true,"from":"Done","hold":"none"},
+          {"kind":"rewound","at":"2026-10-03T10:02:00+00:00","machine":"m6","sequence":1,"applied":false,"from":"Done"}
+        ]}
+        """;
+
+    /// <summary>
+    /// FLOWCHART1a2 (D186; the flowchart design §2.1, trap 20): the quest's link carries its moves and the terminal says them, in the
+    /// order they replay and never by time: each with its machine, its time and the remote's number or none, one the replay did not
+    /// apply said recorded and not applied, the hold one set or let go, a dismissal matched to its conflict by its reference, and a
+    /// kind this driver does not know shown as recorded. The moves are read for the quest the trace reached, and for no other.
+    /// </summary>
+    [Fact]
+    public async Task A_quests_moves_are_carried_on_its_link_and_said_in_the_order_they_replay()
+    {
+        var (exit, said, standIn) = await TraceAsync(new TraceAsk("q1"), moves: id => id == "q1" ? (HttpStatusCode.OK, MovesJson) : null);
+
+        Assert.Equal(0, exit);
+        Assert.Contains("  its moves (8), in the order they replay (the service's history, GET /api/quests/q1/moves):\n"
+            + "    1 · published, on m2, 2026-10-03 09:02 UTC · the remote's #1\n"
+            + "    2 · taken, on m3, 2026-10-03 09:05 UTC · the remote's #2\n"
+            + "    3 · its Taken kept as a conflict, on m4, 2026-10-03 09:06 UTC · the remote's #3\n"
+            + "    4 · dismissed the conflict of move 3, on m3, 2026-10-03 09:30 UTC · the remote's #4\n"
+            + "    5 · done, on m3, 2026-10-03 10:00 UTC · the remote's #5 · held: departed\n"
+            + "    6 · done, on m5, 2026-10-03 10:01 UTC · the remote's #6 · recorded, not applied: it stood Done\n"
+            + "    7 · accepted: the person's yes to what held it, on laptop, 2026-10-03 08:00 UTC · only here: no remote has numbered it yet · let go what held it\n"
+            + "    8 · `rewound`, shown as recorded, on m6, 2026-10-03 10:02 UTC · only here: no remote has numbered it yet · recorded, not applied: it stood Done\n",
+            said);
+        Assert.DoesNotContain("no door on a local host reads the operations themselves", said);
+        Assert.Equal(["GET /api/quests/q1/moves"], standIn.Requests.Where(request => request.EndsWith("/moves", StringComparison.Ordinal)));
+
+        using var service = new ServiceClient("http://stand-in", null, new HttpClient(
+            new StandIn(Sessions(), Quests(), id => id == "a1" ? AskJson() : null, id => id == "q1" ? (HttpStatusCode.OK, MovesJson) : null)));
+        var read = await Trace.ReadChainAsync(new TraceAsk("q1"), new TraceSources(service, _home, Config()));
+        var link = read.Chain!.Links.Select(each => each.Quest).OfType<TraceQuestLink>().Single();
+        Assert.Null(link.MovesMissing);
+        Assert.Equal(["published", "taken", "conflict", "dismissed", "done", "done", "accepted", "rewound"], link.Moves!.Select(move => move.Kind));
+        Assert.Equal(new TraceMoveRef("m4", 7), link.Moves![3].Dismisses);
+        Assert.Equal((false, "Done"), (link.Moves![5].Applied, link.Moves![5].From));
+        Assert.Null(link.Moves![6].Number);
+    }
+
+    /// <summary>
+    /// Trap 18: a host from before the moves door answers it not found, which is no failure of the trace: the quest is read as before,
+    /// and its moves are said not kept there. A door that fails is said, in its words, the terminal's alone.
+    /// </summary>
+    [Fact]
+    public async Task A_host_without_the_moves_door_says_the_path_is_not_kept_and_one_that_fails_says_why()
+    {
+        var (exit, said, _) = await TraceAsync(new TraceAsk("q1"));
+
+        Assert.Equal(0, exit);
+        Assert.Contains("met: the tile reads through v3 now", said);
+        Assert.Contains("  its moves: this service answers none, a host from before the moves door, so its path is not kept here\n", said);
+
+        var (_, failed, _) = await TraceAsync(new TraceAsk("q1"), moves: _ => (HttpStatusCode.InternalServerError, """{"error":"the history did not read"}"""));
+        Assert.Contains("  its moves could not be read: ", failed);
+        Assert.Contains("the history did not read", failed);
+
+        using var service = new ServiceClient("http://stand-in", null, new HttpClient(
+            new StandIn(Sessions(), Quests(), id => id == "a1" ? AskJson() : null)));
+        var link = (await Trace.ReadChainAsync(new TraceAsk("q1"), new TraceSources(service, _home, Config())))
+            .Chain!.Links.Select(each => each.Quest).OfType<TraceQuestLink>().Single();
+        Assert.Equal((TraceMovesGaps.NoDoor, null), (link.MovesMissing, link.Moves));
+    }
+
     [Fact]
     public async Task A_service_that_does_not_answer_is_said_and_the_trace_could_not()
     {

@@ -1449,11 +1449,13 @@ describe('Ask Daoris, with no agent named', () => {
 
 /**
  * HELPMODE1b (D183 points 2-4; the modes design §1, §5, §6): Ask Daoris's access on its panel. The chip beside the box shows the mode
- * the conversation in view runs under, its record's, and a switch that waits for its next start; restricted is set at once and
- * full access asked once; *What it has* reads what its start handed, with the door that grants each thing it lacks.
+ * the conversation in view runs under, its record's, and a switch that waits for its next turn (ACCESSSWAP1); restricted is set at
+ * once and full access asked once; *What it has* reads what its start handed, with the door that grants each thing it lacks.
  */
 describe('Ask Daoris’s access and what it has', () => {
   let MODE = 'restricted';
+  // The conversations the driver says run under another access than the one chosen (ACCESSSWAP1).
+  let SWAPPING: string[] = [];
   let ROWS: unknown[] = [];
   let WIRED: unknown = { session: HELP.id, recorded: false, receipts: [] };
   let PLUGINS: unknown = { folder: 'plugins', plugins: [] };
@@ -1473,7 +1475,9 @@ describe('Ask Daoris’s access and what it has', () => {
       { kind: 'shell', name: 'shell', door: 'mode', why: 'restricted', plugin: null },
     ],
   };
-  const STATE = () => ({ drivable: ['engine'], holds: [], trees: [], helperAdapter: HELPER ?? '', helpMode: MODE });
+  const STATE = () => ({
+    drivable: ['engine'], holds: [], trees: [], helperAdapter: HELPER ?? '', helpMode: MODE, helpSwapping: SWAPPING,
+  });
 
   /** The bridge as {@link bridge} answers it, with the mode in the driver's state, its press, the history, the receipts and the plugins. */
   function access(start?: { sessionId: string | null; message: string }) {
@@ -1504,6 +1508,7 @@ describe('Ask Daoris’s access and what it has', () => {
 
   beforeEach(() => {
     MODE = 'restricted';
+    SWAPPING = [];
     ROWS = [];
     WIRED = { session: HELP.id, recorded: false, receipts: [] };
     PLUGINS = { folder: 'plugins', plugins: [] };
@@ -1519,14 +1524,58 @@ describe('Ask Daoris’s access and what it has', () => {
     window.localStorage.clear();
   });
 
-  it('shows the mode its conversation runs under, from its record, and a switch that waits for its next start', async () => {
+  it('shows the mode its conversation runs under, from its record, and a switch that waits for its next turn', async () => {
     SESSIONS = [HELP];
     ROWS = [row({ mode: 'restricted' })];
     MODE = 'full';
     access();
     show();
 
-    expect(await chip('Restricted · full access next start')).toBeInTheDocument();
+    expect(await chip('Restricted · full access next turn')).toBeInTheDocument();
+  });
+
+  /**
+   * ACCESSSWAP1 (D183 point 2): the driver ends a conversation whose access changed at its turn's end, and its next words resume the
+   * same conversation under the new access (D131). The panel keeps it in view as it ends, so those words go on in it, never in a new
+   * conversation opened beside it.
+   */
+  it('keeps a conversation ended for an access change in view, and its next words go on in it', async () => {
+    SESSIONS = [HELP];
+    ROWS = [row({ mode: 'restricted' })];
+    MODE = 'full';
+    SWAPPING = [HELP.id];
+    access({ sessionId: 'n3xt0000', message: 'opened' });
+    show();
+    await chip('Restricted · full access next turn');
+
+    // Its turn ended, and the driver ended its agent: pending no more.
+    SESSIONS = [{ ...HELP, state: 'completed' }];
+    ROWS = [row({ live: false, mode: 'restricted' })];
+    SWAPPING = [];
+    act(() => heard.get('STATE_CHANGED')?.({ scopes: ['sessions', 'driver', 'help'] }));
+
+    expect(await screen.findByText('This conversation has ended. Write to go on in it: it remembers what was said.')).toBeInTheDocument();
+    await userEvent.type(screen.getByLabelText('Message'), 'and now?');
+    await userEvent.click(screen.getByRole('button', { name: 'Send' }));
+
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_INPUT', {
+      payload: { id: HELP.id, text: 'and now?' },
+    }));
+    expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_INPUT', { payload: expect.objectContaining({ id: 'n3xt0000' }) });
+  });
+
+  it('starts a new conversation after one that ended for no access change, as before', async () => {
+    SESSIONS = [HELP];
+    ROWS = [row({ mode: 'restricted' })];
+    access({ sessionId: 'n3xt0000', message: 'opened' });
+    show();
+    await chip('Restricted');
+
+    SESSIONS = [{ ...HELP, state: 'completed' }];
+    ROWS = [row({ live: false, mode: 'restricted' })];
+    act(() => heard.get('STATE_CHANGED')?.({ scopes: ['sessions', 'driver', 'help'] }));
+
+    expect(await screen.findByText('This conversation has ended. A message starts a new one.')).toBeInTheDocument();
   });
 
   it('shows the mode chosen before any start, and says what full access does above the box', async () => {
@@ -1558,7 +1607,7 @@ describe('Ask Daoris’s access and what it has', () => {
     await pick('Restricted — reads and proposes');
 
     await waitFor(() => expect(pressed('restricted')).toBe(true));
-    expect(await chip('Full access · restricted next start')).toBeInTheDocument();
+    expect(await chip('Full access · restricted next turn')).toBeInTheDocument();
     expect(screen.queryByRole('group', { name: 'Enable full access?' })).toBeNull();
   });
 
@@ -1587,7 +1636,7 @@ describe('Ask Daoris’s access and what it has', () => {
 
     await userEvent.click(within(asks).getByRole('button', { name: 'Enable full access' }));
     await waitFor(() => expect(pressed('full')).toBe(true));
-    expect(await chip('Restricted · full access next start')).toBeInTheDocument();
+    expect(await chip('Restricted · full access next turn')).toBeInTheDocument();
   });
 
   it('ends the conversation opened ahead and not yet spoken in, so the next opens under the mode chosen', async () => {

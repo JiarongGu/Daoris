@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { useThemeChoice } from '../design/theme';
-import { Card, Segmented, SettingRow } from '../design/ui';
+import { Card, Segmented, SettingList, SettingRow } from '../design/ui';
 
 /**
  * How this window looks and speaks — per viewer, remembered by this window's profile like the scope,
@@ -15,6 +15,7 @@ export function AppearanceDomain() {
     // No title of its own: the main area's header names the domain (FRAME1g), and a card alone in it would
     // say it twice.
     <Card>
+      <SettingList>
       <SettingRow
         label={t('settings.theme.label')}
         hint={t('settings.theme.hint')}
@@ -48,6 +49,7 @@ export function AppearanceDomain() {
           />
         )}
       />
+      </SettingList>
     </Card>
   );
 }

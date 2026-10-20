@@ -402,7 +402,7 @@ describe("a repository's Setup on its page (UX6f)", () => {
     await chooseRepository('engine');
     await openSetup('Line and landing');
     const work = within(repositoryMain()).getByRole('region', { name: 'Line and landing' });
-    const commits = within(work).getByText('Commits', { selector: 'span' }).closest('.\\@container') as HTMLElement;
+    const commits = within(work).getByText('Commits', { selector: 'span' }).closest('[data-setting-row]') as HTMLElement;
 
     expect(commits).toHaveTextContent("Each piece that passes its checks is committed as the work goes. Daoris's default: nothing is set.");
     await userEvent.click(within(commits).getByRole('button', { name: 'Set for this repository' }));
@@ -413,7 +413,7 @@ describe("a repository's Setup on its page (UX6f)", () => {
 
     await openSetup('Sessions');
     const sessions = within(repositoryMain()).getByRole('region', { name: 'Sessions' });
-    const helpers = within(sessions).getByText('Helpers', { selector: 'span' }).closest('.\\@container') as HTMLElement;
+    const helpers = within(sessions).getByText('Helpers', { selector: 'span' }).closest('[data-setting-row]') as HTMLElement;
     expect(helpers).toHaveTextContent('Only dsh may help. From the workspace aurora.');
     await vi.waitFor(() => expect(within(helpers).getByRole('button', { name: 'Set for this repository' })).toBeEnabled());
     await userEvent.click(within(helpers).getByRole('button', { name: 'Set for this repository' }));
@@ -455,7 +455,7 @@ describe("a repository's Setup on its page (UX6f)", () => {
     await chooseRepository('engine');
     await openSetup("Sessions' access");
     const access = within(repositoryMain()).getByRole('region', { name: "Sessions' access" });
-    const permissions = within(access).getByText('Permission prompts', { selector: 'span' }).closest('.\\@container') as HTMLElement;
+    const permissions = within(access).getByText('Permission prompts', { selector: 'span' }).closest('[data-setting-row]') as HTMLElement;
 
     expect(permissions).toHaveTextContent('The agent runs in its asking mode: it uses what its rules allow, and any other tool call waits for your answer');
     expect(permissions).toHaveTextContent('From this machine.');
@@ -753,7 +753,7 @@ describe("a workspace's page (UX6g)", () => {
     await userEvent.click(within(repositoryMain()).getByRole('tab', { name: 'Setup' }));
     // A pause of its own opens the section.
     const access = await within(repositoryMain()).findByRole('region', { name: "Sessions' access" });
-    const row = (label: string) => within(access).getByText(label, { selector: 'span' }).closest('.\\@container') as HTMLElement;
+    const row = (label: string) => within(access).getByText(label, { selector: 'span' }).closest('[data-setting-row]') as HTMLElement;
 
     expect(row('Permission prompts')).toHaveTextContent('From this machine.');
     expect(row('Landing')).toHaveTextContent('Set for this workspace.');

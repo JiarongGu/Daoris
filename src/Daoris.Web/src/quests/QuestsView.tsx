@@ -7,9 +7,10 @@ import { sentence } from '../locales/format';
 import { buildChain } from '../map/chain';
 import { askItem, type OpenGroup, questsItem } from '../app/opener';
 import {
-  useAcceptQuest, useContinueQuest, useDeleteQuest, useDismissConflict, useForwardConflict, usePersonDone, usePublishQuest, useQuests, useRegistry,
-  useReopenQuest, useRespondQuest, useSessions,
+  useAcceptQuest, useContinueQuest, useDeleteQuest, useDismissConflict, useForwardConflict, usePersonDone, usePublishQuest, useQuestMoves, useQuests,
+  useRegistry, useReopenQuest, useRespondQuest, useSessions,
 } from '../data/queries';
+import type { QuestMovesDoor } from './QuestFlow';
 import { EMPTY_QUEST, QuestComposer, type QuestDraft } from './QuestComposer';
 import { QuestList } from './QuestList';
 import {
@@ -188,6 +189,10 @@ export function useQuestsView({
   // takes every session record and quest. Another quest's page opens folded.
   const [tracing, setTracing] = useState<string | null>(null);
   const trace = useTrace('quest', tracing);
+  // A quest's moves (FLOWCHART1a2): read only while its flowchart is open, for the quest it was opened on, from the service's door
+  // in a browser as in the window. Another quest's page opens folded.
+  const [flowing, setFlowing] = useState<string | null>(null);
+  const moves = useQuestMoves(flowing);
   // The last abandon's answer, for the quest it was of, said on its page before the record catches up.
   const [abandonedNow, setAbandonedNow] = useState<{ id: string; answer: AbandonAnswer; at: string } | null>(null);
   // The chosen quest as its page shows it: the list's copy, or the door's last answer while the list catches up.
@@ -480,6 +485,7 @@ export function useQuestsView({
         work={workDoor(quest)}
         history={historyDoor(quest)}
         trace={traceDoor(quest)}
+        moves={movesDoor(quest)}
         // A set-up step's review (REVIEWENV1g): its verdict goes to the step, its skip there, and *Set it up* is the work's,
         // never this page's, since a set-up step follows the work it shows.
         review={quest.setUpIn ? {
@@ -505,6 +511,18 @@ export function useQuestsView({
       answer: open ? trace.query.data : undefined,
       reading: open && trace.query.isPending,
       refusal: open && trace.query.error ? sentence(trace.query.error) : null,
+    };
+  };
+
+  // What the page is handed of its moves (FLOWCHART1a2): the fold, and the read once it is open, on either host.
+  const movesDoor = (quest: Quest): QuestMovesDoor => {
+    const open = flowing === quest.id;
+    return {
+      open,
+      onToggle: () => setFlowing(open ? null : quest.id),
+      moves: open ? moves.data : undefined,
+      reading: open && moves.isPending,
+      refusal: open && moves.error ? sentence(moves.error) : null,
     };
   };
 

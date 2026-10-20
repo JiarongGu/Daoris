@@ -2,6 +2,7 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using Daoris.Driver;
 using Shenora.Core.Ipc;
+using static Daoris.Desktop.Modules.Tests.AttentionTestRows;
 
 namespace Daoris.Desktop.Modules.Tests;
 
@@ -12,27 +13,11 @@ namespace Daoris.Desktop.Modules.Tests;
 /// its own tests over the rows pushed here; each row's membership, its identity and the values it carries are held here.
 /// </summary>
 /// <remarks>Every input is the test's own JSON in the page's shapes, as the other slices and the routes hold them: no service runs.</remarks>
-public sealed partial class AttentionStateSliceTests : DriverModuleBridge
+public sealed class AttentionStateSliceTests : DriverModuleBridge
 {
-    private static JsonObject With(string basis, string over)
-    {
-        var made = JsonNode.Parse(basis)!.AsObject();
-        foreach (var (field, value) in JsonNode.Parse(over)!.AsObject()) made[field] = value?.DeepClone();
-        return made;
-    }
-
-    private static JsonObject With(JsonObject basis, string over) => With(basis.ToJsonString(), over);
-
-    private static JsonObject Session(string over = "{}") => With(
-        """{"id":"s1a2b3c4","repository":"engine","adapter":"claude-code","state":"working","kind":"driven","created":"2026-09-21T09:00:00Z","updated":"2026-09-21T10:00:00Z"}""",
-        over);
-
     private static JsonObject Quest(string over = "{}") => With(
         """{"id":"7a82cc","from":"platform","to":"engine","title":"Expose a streaming budget on the chunk API","body":"World streaming needs a per-frame cap.","status":"Open","filed":"2026-09-14T09:00:00Z","updated":"2026-09-14T09:00:00Z"}""",
         over);
-
-    private static JsonObject Registration(string repository, string over = "{}") => With(
-        $$"""{"repository":"{{repository}}","adopted":true,"registered":true,"owns":[],"accepts":[],"packs":[],"entries":1}""", over);
 
     /// <summary>An ask the declarations tier proposed and nobody has settled (INT4a).</summary>
     private static JsonObject Ask(string over = "{}") => With(
@@ -46,22 +31,6 @@ public sealed partial class AttentionStateSliceTests : DriverModuleBridge
     /// <summary>The session an intake opened for the ask above (D65 §1b): a chat, in the ask's name.</summary>
     private static JsonObject Intake(string over = "{}") => With(
         Session("""{"id":"i9n8t7k6","repository":"ask #7c1e9a04b2d5","kind":"chat","adapter":"stub","ask":"7c1e9a04b2d5"}"""), over);
-
-    private static IReadOnlyList<JsonObject> Rows(AttentionFacts facts) => NeedsAPerson.Rows(facts);
-
-    /// <summary>Each row as the band keys it (`attentionKey`), in no order: the order is the page's.</summary>
-    private static string[] Keys(IEnumerable<JsonObject> rows) =>
-        [.. rows.Select(row => $"{row["kind"]!.GetValue<string>()}:{row["id"]!.GetValue<string>()}").Order(StringComparer.Ordinal)];
-
-    private static void Is(string expected, JsonObject row) => Assert.Equal(Normal(JsonNode.Parse(expected)!), Normal(row));
-
-    /// <summary>Key order apart, as the bridge and the pump each write an object.</summary>
-    private static string Normal(JsonNode node) => node switch
-    {
-        JsonObject each => "{" + string.Join(",", each.OrderBy(field => field.Key, StringComparer.Ordinal).Select(field => $"{field.Key}:{(field.Value is null ? "null" : Normal(field.Value))}")) + "}",
-        JsonArray items => "[" + string.Join(",", items.Select(item => item is null ? "null" : Normal(item))) + "]",
-        _ => node.ToJsonString(),
-    };
 
     private static JsonObject Only(IReadOnlyList<JsonObject> rows, string kind) => Assert.Single(rows, row => row["kind"]!.GetValue<string>() == kind);
 

@@ -143,6 +143,8 @@ public static class PersonDoors
         new("GET", "/api/quests", DoorClass.Open),
         new("GET", "/api/quests/{id}/attachments/{sha256}", DoorClass.Open),
         new("GET", "/api/quests/{id}/claim", DoorClass.Open),
+        // A quest's moves by allow-list (FLOWCHART1a2), on both hosts.
+        new("GET", "/api/quests/{id}/moves", DoorClass.Open),
         new("GET", "/api/asks", DoorClass.Open),
         new("GET", "/api/asks/{id}", DoorClass.Open),
         // An ask's channel (SESSONE2a): a read that moves no mark, so a driver and a page may both look.

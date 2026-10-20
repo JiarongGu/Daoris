@@ -27,6 +27,48 @@ public sealed class DrivenInboxTests
     }
 
     /// <summary>
+    /// COWORK1b (the message-urgency design §3.1, §5): Daoris's urgent word on a door that takes words only at its turn's end is
+    /// held for it, never refused as a claim is, and told with its reach. It is never the person's queue: the page lists none of
+    /// it, and no edit of the person's reaches it. The run still sees it held.
+    /// </summary>
+    [Fact]
+    public void Daoris_word_on_a_turn_end_door_is_held_for_it_and_never_listed_as_the_persons()
+    {
+        var told = new List<(string? Id, DrivenReach Reach)>();
+        var inbox = new DrivenInbox(_ => { });
+        inbox.OnSaid((message, reach) => told.Add((message.Id, reach)));
+        inbox.Attach(interrupt: null);
+
+        Assert.True(inbox.Hold(new ChatMessage("Daoris: the person reopened it.", []) { Daoris = new DaorisWord("reopen/q1/desk/44") }));
+
+        Assert.Equal([("said-1", DrivenReach.TurnEnd)], told);
+        Assert.Empty(inbox.State.Queued);
+        Assert.True(inbox.Holds);
+        Assert.Equal(QueueEdit.Taken, inbox.Edit("said-1", text: null));
+        Assert.Equal("Daoris: the person reopened it.", inbox.NextOrClose()?.Held?.Text);
+    }
+
+    /// <summary>COWORK1b: Daoris's word that goes at the next step is told delivered the moment it is sent, once.</summary>
+    [Fact]
+    public void Daoris_word_sent_at_the_next_step_is_told_delivered_once()
+    {
+        var inbox = new DrivenInbox(_ => { });
+        var sent = new List<string>();
+        inbox.Attach(interrupt: null, deliver: message =>
+        {
+            sent.Add(message.Text);
+            return Task.FromResult("end_turn");
+        });
+        inbox.Flow();
+        var delivered = 0;
+
+        Assert.True(inbox.Hold(new ChatMessage("Daoris: reopened.", []) { Daoris = new DaorisWord("reopen/q1/desk/44") { Delivered = () => delivered++ } }));
+
+        Assert.Equal(["Daoris: reopened."], sent);
+        Assert.Equal(1, delivered);
+    }
+
+    /// <summary>
     /// QUEUEEDIT1a: a held word is removed by its id, and the record, which showed it waiting, is told it was withdrawn; the
     /// rest keep their order, and the word is never taken.
     /// </summary>

@@ -21,7 +21,7 @@ const head = (name: string) => screen.getByRole('button', { name });
 const section = (name: string) => screen.getByRole('region', { name });
 
 /** One row of a section, found by its label. */
-const row = (within_: HTMLElement, label: string) => within(within_).getByText(label, { selector: 'span' }).closest('.\\@container') as HTMLElement;
+const row = (within_: HTMLElement, label: string) => within(within_).getByText(label, { selector: 'span' }).closest('[data-setting-row]') as HTMLElement;
 
 afterEach(async () => { await i18n.changeLanguage('en'); });
 

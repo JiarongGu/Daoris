@@ -5,6 +5,17 @@ with the version and date at release.
 
 ## Unreleased
 
+- Settings, This Daoris and a repository's or a workspace's Setup use the pane. A setting's value sits beside its words, on one
+  label column a card shares, so a card's values form one column the eye runs down rather than sitting at the pane's far edge;
+  a row's acts follow its value, and a notice sits under the value it is about. Below about 512 px of card each value sits under
+  its words. Cards are 16 px apart. A form (a remote's address and key, a favourite's address and title, a rule, the heavy
+  gates) takes the width its content needs up to the pane, by the pane's own width rather than the window's, and stacks its
+  fields where the pane is narrow.
+- A change of Ask Daoris's access reaches a running conversation at its next turn. Choosing full access or restricted, or granting
+  or taking back a housekeeping operation, ends the conversation's agent as its turn ends, never mid-turn and at once where it is
+  idle, and your next words go on in the same conversation under the new access, its history kept. Its console says so; the chip
+  and *Configured access* mark the change *next turn* until then; and the panel keeps that conversation in view, so your words go
+  on in it rather than starting a new one.
 - *What needs you* is judged once by Daoris for every window, which then shows it as it moves: no window works it out from its own
   lists, and its count on Overview, on Sessions and on the taskbar button is the same judgement as the band's. Until Daoris has
   judged it, the band shows placeholder rows rather than *Nothing needs you*. A plain browser lists nothing there and says *What needs
@@ -14,6 +25,17 @@ with the version and date at release.
   left to right on a wide page, top to bottom on a narrower one, and as a list at the side bar's width; *Show as list* gives
   the list at any width and is remembered. The arrow keys move between the statuses and follow a move, and a screen reader
   hears each status with every move into and out of it.
+- When you reopen a submission, the session that made it is told even while it still works: at its next step where its door
+  takes words then, and when its turn ends where it takes them only then. What Daoris tells a session, a reopen or a step you
+  went on with, shows in its conversation as *Daoris's words*, never as yours, and is not listed among your waiting words. A
+  reopen that a later submission answered before the session read it is not sent, and the conversation says so. Your own
+  words, even when they repeat Daoris's sentence, stay yours and never bring a branch up to date as Daoris's go-on does.
+- A quest's flowchart now shows how the quest actually moved, read when you open it, in a browser as in the window: the moves
+  it took drawn heavier, who made each and when, and inside each status what happened there, oldest first and three before
+  *n more*: a wait, a submission, your verdict, a conflict marked ✕ and its dismissal, and a move that was recorded but not
+  applied. A conflict that tried another status is drawn as a refused move toward it until it is dismissed, and a done held
+  for you says what it awaits in the colour of what waits on you. A service from before this keeps no moves, and the
+  flowchart says so. `daoris-driver trace quest <id>` lists the same moves.
 - Words to a working session no longer stop its turn. While a turn runs the box's press is *Send*, which reaches the agent at
   its next step where its door takes words then, and the menu beside it sends at another time: *When its turn ends*, *At its
   next step*, or *Now, cutting its step*, offered only where the agent can be steered and otherwise shown with the reason.

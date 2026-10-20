@@ -289,6 +289,8 @@ function BranchesPart({ workspace, repositories, notify, onOpenRepository, onOpe
       <WorkspaceTidied lines={tidiedLines} titles={titles} units={workState.data?.units} />
       {/* What Daoris keeps for recovery that no unit names (RECOVERYVIEW1): a shell older than the field answers none. */}
       <WorkspaceRecoveries recoveries={workState.data?.recovery} repositories={repositories} onDrop={(groups) => dropRecoveries.mutateAsync(groups)} />
+      {/* The card's spacing is this container's, as the sections above space themselves (R1): a card has no margin of its own. */}
+      <div className="pt-4">
       <SweepList
         branches={Array.isArray(plan.data?.branches) ? mine(plan.data.branches, workspace) : undefined}
         landed={Array.isArray(plan.data?.landed) ? mine(plan.data.landed, workspace) : undefined}
@@ -334,6 +336,7 @@ function BranchesPart({ workspace, repositories, notify, onOpenRepository, onOpe
           />
         )}
       />
+      </div>
     </InclusionContext.Provider>
   );
 }

@@ -51,4 +51,27 @@ public sealed class DriverModuleHelpGrantTests : DriverModuleBridge
     {
         Assert.Contains("helpGrants", DriverStateSlice.Partitions["choices"]);
     }
+
+    /// <summary>
+    /// 🔴 ACCESSSWAP1 (D183 point 2): the state says what has not reached a running conversation yet: each grant's <c>pending</c>, while
+    /// an Ask Daoris conversation running here was handed another choice of it, and <c>helpSwapping</c>, the conversations running under
+    /// another access than the one chosen, pushed with what runs. With none running, nothing is pending, before and after a choice.
+    /// </summary>
+    [Fact]
+    public async Task With_no_conversation_running_nothing_is_pending()
+    {
+        var module = Module();
+
+        var before = await AnswerAsync(module, "STATE");
+        var after = await AnswerAsync(module, "SET_HELP_GRANT", new { grant = "housekeeping", operation = "inspect", chosen = true });
+
+        foreach (var state in new[] { before, after })
+        {
+            var housekeeping = state.GetProperty("helpGrants").EnumerateArray().Single(grant => grant.GetProperty("id").GetString() == "housekeeping");
+            Assert.False(housekeeping.GetProperty("pending").GetBoolean());
+            Assert.Equal(0, state.GetProperty("helpSwapping").GetArrayLength());
+        }
+
+        Assert.Contains("helpSwapping", DriverStateSlice.Partitions["running"]);
+    }
 }

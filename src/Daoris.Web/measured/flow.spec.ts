@@ -32,6 +32,12 @@ const TABLE: Record<string, Record<number, number>> = {
   'quest/Taken': { 400: 0, 544: 0, 1200: 0 },
   'quest/TakenChinese': { 400: 0, 544: 0, 1200: 0 },
   'quest/Done': { 400: 0, 544: 0, 1200: 0 },
+  // The way a quest went (FLOWCHART1a2): its path drawn heavier and lines inside its statuses, which make its boxes taller and
+  // unequal; and a conflict's refused edge toward the status it attempted, a path of its own.
+  'quest/Went': { 400: 0, 544: 0, 1200: 0 },
+  'quest/WentChinese': { 400: 0, 544: 0, 1200: 0 },
+  // Its refused edge ranks Done after Declined, so each rank holds one node and the side bar's floor draws it top to bottom.
+  'quest/Refused': { 300: 0, 400: 0, 544: 0, 1200: 0 },
 };
 
 /** The story drawn, its faces loaded, and every drawn flow's edges drawn and holding still. */

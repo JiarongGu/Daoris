@@ -733,14 +733,27 @@ internal sealed class StandInLedger : HttpMessageHandler
                     }
 
                     if (session["said"] is not JsonArray said) session["said"] = said = [];
+                    // COWORK1b: a word kept once by its producer's key, and Daoris's kept as Daoris's, never in the person's answer.
+                    var key = body!["key"]?.GetValue<string>();
+                    if (key is not null && said.FirstOrDefault(each => each!["key"]?.GetValue<string>() == key) is { } kept)
+                    {
+                        return Answer(HttpStatusCode.OK, new JsonObject
+                        {
+                            ["session"] = session.DeepClone(), ["message"] = $"Already kept for session `{id}` under key `{key}`.", ["said"] = kept.DeepClone(),
+                        });
+                    }
+
                     _clock = _clock.AddSeconds(1);
                     var word = new JsonObject
                     {
                         ["id"] = $"w{said.Count + 1}", ["text"] = body!["text"]!.GetValue<string>().Trim(), ["at"] = _clock.ToString("O"),
                         ["files"] = new JsonArray(), ["reopens"] = state != "awaiting-person",
                     };
+                    if (body!["from"]?.GetValue<string>() is { } from) word["from"] = from;
+                    if (key is not null) word["key"] = key;
                     said.Add(word);
-                    session["answer"] = string.Join("\n\n", said.Select(each => each!["text"]!.GetValue<string>()));
+                    var persons = said.Where(each => each!["from"] is null).Select(each => each!["text"]!.GetValue<string>()).ToList();
+                    if (persons.Count > 0) session["answer"] = string.Join("\n\n", persons);
                     return Answer(HttpStatusCode.OK, new JsonObject
                     {
                         ["session"] = session.DeepClone(), ["message"] = $"Kept for session `{id}` to go on with.", ["said"] = word.DeepClone(),
@@ -756,8 +769,9 @@ internal sealed class StandInLedger : HttpMessageHandler
                     var left = (session["said"] as JsonArray ?? []).Where(word => !taken.Contains(word!["id"]!.GetValue<string>()))
                         .Select(word => word!.DeepClone()).ToList();
                     session["said"] = new JsonArray([.. left]);
-                    if (left.Count == 0) session.Remove("answer");
-                    else session["answer"] = string.Join("\n\n", left.Select(word => word["text"]!.GetValue<string>()));
+                    var persons = left.Where(word => word["from"] is null).Select(word => word["text"]!.GetValue<string>()).ToList();
+                    if (persons.Count == 0) session.Remove("answer");
+                    else session["answer"] = string.Join("\n\n", persons);
                     return Answer(HttpStatusCode.OK, new JsonObject { ["session"] = session.DeepClone(), ["message"] = "taken" });
                 }
 

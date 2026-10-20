@@ -33,9 +33,6 @@ public static class HelpModes
     /// <summary>How a conversation runs in <paramref name="mode"/>, in a sentence: restricted, or with full access.</summary>
     private static string Runs(string mode) => Recorded(mode) == Full ? "with full access" : "restricted";
 
-    /// <summary>The mode's name in a sentence: restricted, or full access.</summary>
-    private static string Spelled(string mode) => Recorded(mode) == Full ? "full access" : "restricted";
-
     /// <summary>
     /// What a conversation going on says first where it goes on under another mode than it last ran under (HELPMODE1a2, D183 point
     /// 3), before what it runs under now; null where the mode is the same.
@@ -45,32 +42,6 @@ public static class HelpModes
     public static string? ChangedSince(string? ran, string now) => Recorded(ran) == Recorded(now)
         ? null
         : $"Ask Daoris's mode changed since this conversation last ran: it ran {Runs(Recorded(ran))}, and goes on {Runs(now)}.";
-
-    /// <summary>
-    /// What a running conversation's console is told where the person's mode changes under it (HELPMODE1a2, D183 point 2): the switch
-    /// takes its next start, never the conversation as it runs, since what its start handed for its mode (its rules, its servers and
-    /// its room) is not changed while it runs; and how to take it now. Null where it already runs in the mode chosen.
-    /// </summary>
-    /// <param name="running">The mode it runs under, its start's.</param>
-    /// <param name="chosen">The mode the person chose now.</param>
-    public static string? TakesNextStart(string running, string chosen) => Recorded(running) == Recorded(chosen)
-        ? null
-        : $"— Ask Daoris's mode is now {Spelled(chosen)}, from this conversation's next start: it runs {Runs(running)} until then, "
-          + "since the rules, servers and room its start handed are not changed while it runs. End it, and your next words resume it "
-          + $"{Runs(chosen)}.";
-
-    /// <summary>Whether choosing <paramref name="chosen"/> under a conversation running <paramref name="running"/> narrows it: full to restricted (HELPMODE1a5).</summary>
-    public static bool Narrows(string running, string chosen) => Recorded(running) == Full && Recorded(chosen) == Restricted;
-
-    /// <summary>
-    /// What a running conversation's console is told where the person narrows the mode under it (HELPMODE1a5, D183 point 2): full
-    /// access is never kept past the choice, so it ends, at once where it is idle and at its turn's end otherwise; its next words
-    /// resume it restricted, and its transcript says the change.
-    /// </summary>
-    public static string EndsForNarrowing(bool idle) =>
-        "— Ask Daoris's mode is now restricted: full access is not kept past your choice, so this conversation "
-        + (idle ? "ends now" : "ends at its turn's end")
-        + ". Your next words resume it restricted.";
 
     /// <summary>
     /// The mark before a protocol door's posture that must be set (<c>AcpSession.SetPostureAsync</c>): an agent that does not offer

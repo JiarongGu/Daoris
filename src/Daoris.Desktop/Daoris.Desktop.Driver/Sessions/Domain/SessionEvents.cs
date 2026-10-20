@@ -63,8 +63,14 @@ public static class SessionEventCodes
     /// </summary>
     public const string Withdrawn = "withdrawn";
 
+    /// <summary>
+    /// Daoris's own word dropped where it was to be delivered (COWORK1b, the message-urgency design §4.3): the fact it stated no
+    /// longer held, a reopen a later submission answered or a go-on moved past, so it was never said late.
+    /// </summary>
+    public const string Dropped = "dropped";
+
     /// <summary>Every code, which both catalogues word.</summary>
-    public static IReadOnlyList<string> All { get; } = [Lost, Withdrawn];
+    public static IReadOnlyList<string> All { get; } = [Lost, Withdrawn, Dropped];
 }
 
 /// <summary>
@@ -152,8 +158,18 @@ public sealed record SessionEvent
 
     public string? Text { get; init; }
 
-    /// <summary>For <see cref="SessionEventKind.User"/>: <c>person</c>, or <c>target</c> for the driver's composed prompt.</summary>
+    /// <summary>
+    /// For <see cref="SessionEventKind.User"/>: <c>person</c>, or <c>target</c> for the driver's composed prompt and every word that is
+    /// not the person's (<see cref="Opinion"/>, <see cref="From"/>), so a reader that knows neither field never reads them as theirs.
+    /// </summary>
     public string? Origin { get; init; }
+
+    /// <summary>
+    /// For <see cref="SessionEventKind.User"/>: <c>daoris</c> on Daoris's own words to the session (COWORK1b, D188), a reopen told or
+    /// a step's go-on, whose <see cref="Origin"/> is <c>target</c>, so a page that does not read this field shows them as what Daoris
+    /// handed the session, never as the person's. Null on every other event, and on a record from before.
+    /// </summary>
+    public string? From { get; init; }
 
     /// <summary>
     /// For the turn Daoris handed a session with another agent's findings (XAGENT1e, D155 point 7): the second opinion they are

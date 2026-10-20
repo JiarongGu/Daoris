@@ -314,6 +314,63 @@ public sealed class AcpSteerTests
     }
 
     /// <summary>
+    /// COWORK1b (the message-urgency design §4.3, trap 17): Daoris's word held for the turn's end is judged again where it is
+    /// delivered, by the key it carries. Its fact still holding, it goes as the next prompt and is told delivered; answered by a
+    /// later submission meanwhile, it is dropped with a coded note naming it, never said late, and the run ends.
+    /// </summary>
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task Daoris_word_held_for_the_turns_end_goes_while_its_fact_holds_and_is_dropped_once_answered(bool stands)
+    {
+        var first = new TaskCompletionSource<int>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var agent = new Agent((frame, self) =>
+        {
+            switch (frame.GetProperty("method").GetString())
+            {
+                case "initialize":
+                    return Ok(frame, Silent);
+                case "session/new":
+                    return Ok(frame, """{"sessionId":"s-1"}""");
+                case "session/prompt" when !first.Task.IsCompleted:
+                    first.SetResult(frame.GetProperty("id").GetInt32());
+                    return null;
+                case "session/prompt":
+                    return Ok(frame, """{"stopReason":"end_turn"}""");
+                default:
+                    return frame.TryGetProperty("id", out _) ? Ok(frame, "{}") : null;
+            }
+        });
+        var record = new Record();
+        var inbox = new DrivenInbox(_ => { });
+        inbox.OnSaid(record.SaidTo);
+        var delivered = 0;
+        var told = new ChatMessage("Daoris: the person reopened it.", [])
+        {
+            Daoris = new DaorisWord("reopen/q1/desk/44") { Stands = _ => Task.FromResult(stands), Delivered = () => delivered++ },
+        };
+
+        var run = new AcpSession(agent.Incoming, agent.Outgoing, _ => { }, onEvent: record.Event)
+            .RunAsync("X:/daoris/Game", "read the five files", CancellationToken.None, inbox: inbox, asked: record.Asked);
+        var id = await first.Task.WaitAsync(Poll.Patience);
+        Assert.True(inbox.Hold(told));
+        agent.Push(Answer(id, "end_turn"));
+        await run.WaitAsync(Poll.Patience);
+
+        Assert.Equal(stands ? ["read the five files", "Daoris: the person reopened it."] : ["read the five files"], agent.Prompts);
+        Assert.Equal(stands ? 1 : 0, delivered);
+        var dropped = record.Notes.Where(note => note.Code == SessionEventCodes.Dropped).ToList();
+        if (stands)
+        {
+            Assert.Empty(dropped);
+            return;
+        }
+
+        Assert.Equal(["said-1"], Assert.Single(dropped).Words);
+        Assert.DoesNotContain(record.Lines, line => line.StartsWith("taken:", StringComparison.Ordinal));
+    }
+
+    /// <summary>
     /// The agent's own word decides, and only a <c>true</c> it gave: absent, false, a string, or the key elsewhere is an
     /// agent never sent a prompt during a turn (ACP3's rule for the posture, again: null is never a licence to guess).
     /// </summary>

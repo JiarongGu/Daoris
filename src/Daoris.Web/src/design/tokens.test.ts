@@ -711,6 +711,136 @@ describe("the page's measure", () => {
   });
 });
 
+/**
+ * 🔴 **A card sets no outer margin of its own** (the UI/UX design R1, UIFIT1): cards are 16 px apart, set once by the
+ * domain's container (`CardStack`). The `mt-3.5` cards wore was 14 px, off the scale's step, and a domain's first card
+ * needed `[&>*:first-child]:mt-0` to undo it; two cards that forgot it touched (UIFIT1a's shots of Driver).
+ */
+const CARD_MARGIN = /<Card\b[^>]*?className=(?:"[^"]*"|'[^']*'|\{[^}]*\})/g;
+const OUTER_MARGIN = /(?:^|[\s"'`])-?m[tbxylr]?-(?:\d|\[|px|auto)/;
+
+export function cardMargins(files: [path: string, source: string][]): string[] {
+  return files
+    .filter(([path]) => !/\.stories\.tsx$/.test(path))
+    .flatMap(([path, source]) =>
+      (source.match(CARD_MARGIN) ?? [])
+        .filter((card) => OUTER_MARGIN.test(card.slice(card.indexOf('className='))))
+        .map((card) => `${path} gives a card an outer margin: ${card.replace(/\s+/g, ' ')}`));
+}
+
+describe('the cards', () => {
+  it('catches a card with an outer margin — the check itself, in the shape the settings cards had', () => {
+    expect(cardMargins([['./settings/Tools.tsx', '<Card id="settings-tool-locations" className="mt-3.5 scroll-mt-3">']]))
+      .toHaveLength(1);
+    expect(cardMargins([['./settings/AiJobs.tsx', "<Card className={cn('mt-3.5', warn && 'x')}>"]])).toHaveLength(1);
+    expect(cardMargins([['./x.tsx', '<Card className="mb-4">']])).toHaveLength(1);
+    // And what must keep passing: a scroll margin, no class, a card accented, a story's own frame.
+    expect(cardMargins([['./settings/Update.tsx', '<Card id="settings-update" className="scroll-mt-3">']])).toEqual([]);
+    expect(cardMargins([['./x.tsx', '<Card accent warn>']])).toEqual([]);
+    expect(cardMargins([['./x.stories.tsx', '<Card className="mt-3.5">']])).toEqual([]);
+  });
+
+  it('holds: no card sets an outer margin; the domain\'s container spaces them', () => {
+    expect(cardMargins(components)).toEqual([]);
+  });
+});
+
+/**
+ * 🔴 **A form is sized to its content up to the pane** (the UI/UX design R1, UIFIT1d): nothing caps it below the pane.
+ * The 40rem and 48rem caps settings' forms wore left half of a wide pane to a form that wanted it, and every one of
+ * them passed its stories, which were drawn narrower than the cap. A field's own width (a number's 4.5rem, a name's
+ * 16rem) is what it holds, and stays; a cap on a form or a grid of fields goes, and `FormGrid` lays the form out.
+ */
+const FORM_CAP = /^(?=.*\bmax-w-\[\d+(?:\.\d+)?rem\])(?=.*(?:\bgrid\b|<form\b)).*$/gm;
+
+/** The one form kept at a measure, by component, with its reason. */
+const CAPPED_BY_DESIGN: Record<string, string> = {
+  // The start prompt is a reading column centred in the main area (D141 §4), not a card's form: its measure is the design's.
+  './work/start/NewConversation.tsx': 'NewConversation, the prompt centred in the main area',
+};
+
+export function formCaps(files: [path: string, source: string][]): string[] {
+  return files
+    .filter(([path]) => !/\.(?:stories|test)\.tsx$/.test(path) && !(path in CAPPED_BY_DESIGN))
+    .flatMap(([path, source]) =>
+      (source.match(FORM_CAP) ?? []).map((line) => `${path} caps a form below the pane: ${line.trim()}`));
+}
+
+describe('the forms', () => {
+  it('catches a form or a grid of fields capped in rem — the check itself, in the shapes the settings forms had', () => {
+    expect(formCaps([['./settings/repository/Commits.tsx', 'className="grid max-w-[40rem] gap-2"']])).toHaveLength(1);
+    expect(formCaps([['./settings/BrowserDomain.tsx', '<div className="grid max-w-[48rem] items-end gap-2 md:grid-cols-[minmax(0,1fr)_12rem_auto]">']]))
+      .toHaveLength(1);
+    expect(formCaps([['./x.tsx', '<form className="max-w-[40rem]">']])).toHaveLength(1);
+    // And what must keep passing: a field's own width, a tooltip's, the start prompt's column, a story's frame.
+    expect(formCaps([['./settings/repository/Reviews.tsx', 'className={`${FIELD} max-w-[12rem]`}']])).toEqual([]);
+    expect(formCaps([['./design/ui.tsx', 'className="pointer-events-none z-30 max-w-[22rem] rounded-card"']])).toEqual([]);
+    expect(formCaps([['./work/start/NewConversation.tsx', 'className="mx-auto grid w-full max-w-[48rem]"']])).toEqual([]);
+    expect(formCaps([['./x.stories.tsx', '<div className="grid max-w-[48rem]">']])).toEqual([]);
+  });
+
+  it('holds: no form is capped below the pane but the one the design keeps at a measure', () => {
+    expect(formCaps(components)).toEqual([]);
+    for (const path of Object.keys(CAPPED_BY_DESIGN)) {
+      expect(sources[path], `${path} is named by the allow-list and is there`).toBeDefined();
+      expect(sources[path]!.match(FORM_CAP) ?? [], `${path} still carries the cap the allow-list names, or leaves the list`).not.toEqual([]);
+    }
+  });
+});
+
+/**
+ * 🔴 **A region lays out by its own width, never the viewport's** (the frame model §3b, D118; the UI/UX design R7,
+ * UIFIT1d): no `sm:`, `md:`, `lg:`, `max-sm:`, `min-[…]:` or their kin inside a region, which is a container query on
+ * the region or the component. The side bar and the list narrow a region without the window changing: a form at 630 px
+ * of pane kept its three columns because the window was 1546. What is placed against the window keeps its viewport
+ * variants, by its responsibility, not its file, since the toasts share `ui.tsx` with atoms a region draws.
+ */
+const VIEWPORT_VARIANT = /(?<![@\w/-])(?:(?:max-)?(?:sm|md|lg|xl|2xl)|(?:min|max)-\[[^\]]+\]):(?=[\w[-])/g;
+
+/** What is placed against the window, by component, each with its reason; and what a branch in flight holds. */
+const WINDOW_PARTS: Record<string, string> = {
+  // The strip's toggles: the strip is the window's, drawn under its caption buttons.
+  './app/App.tsx': 'the strip (TOGGLES_ROOM)',
+  // The status bar's items, placed against the window's bottom edge.
+  './work/frame/frame.tsx': 'the status bar (sync, remote, indexed)',
+  // The toast viewport beside an open drawer: the corner is the window's (UXTOAST1).
+  './design/ui.tsx': 'the toast viewport beside a drawer (Toasts)',
+  // The main area is the container named `main` itself, and a container cannot query itself: its gutters follow the
+  // window until the padding moves inside it.
+  './work/frame/ViewMain.tsx': "the main area's gutters (ViewMain)",
+  // The dock is the frame's part, sized against the window by `layout.ts`.
+  './help/AskPanel.tsx': 'the dock (AskPanel, framed)',
+};
+
+export function viewportVariants(files: [path: string, source: string][]): string[] {
+  return files
+    .filter(([path]) => !/\.(?:stories|test)\.tsx$/.test(path) && !(path in WINDOW_PARTS))
+    .flatMap(([path, source]) =>
+      [...new Set(source.match(VIEWPORT_VARIANT) ?? [])].map((hit) => `${path} lays out by the viewport: ${hit}`));
+}
+
+describe('the regions', () => {
+  it('catches a viewport variant inside a region — the check itself, in the shapes the forms had', () => {
+    expect(viewportVariants([['./settings/BrowserDomain.tsx', 'className="grid gap-2 md:grid-cols-[minmax(0,1fr)_12rem_auto]"']]))
+      .toEqual(['./settings/BrowserDomain.tsx lays out by the viewport: md:']);
+    expect(viewportVariants([['./help/access/x.tsx', 'className="grid max-sm:grid-cols-1"']])).toHaveLength(1);
+    expect(viewportVariants([['./x.tsx', "'flex items-center max-[54rem]:hidden'"]])).toHaveLength(1);
+    expect(viewportVariants([['./x.tsx', "className={cn('a', beside && 'min-[56rem]:right-4')}"]])).toHaveLength(1);
+    // And what must keep passing: a container query, named or not; a window part; a story.
+    expect(viewportVariants([['./x.tsx', 'className="@max-[26rem]:grid-cols-1 @max-md:pt-6 @4xl/main:grid-cols-2 @max-3xl/main:px-3"']])).toEqual([]);
+    expect(viewportVariants([['./work/frame/frame.tsx', 'className="hidden sm:flex"']])).toEqual([]);
+    expect(viewportVariants([['./x.stories.tsx', 'className="md:flex"']])).toEqual([]);
+  });
+
+  it("holds: no region lays out by the viewport but the window's parts, each named with its reason", () => {
+    expect(viewportVariants(components)).toEqual([]);
+    for (const path of Object.keys(WINDOW_PARTS)) {
+      expect(sources[path], `${path} is named by the allow-list and is there`).toBeDefined();
+      expect(sources[path]!.match(VIEWPORT_VARIANT) ?? [], `${path} still carries a viewport variant, or leaves the list`).not.toEqual([]);
+    }
+  });
+});
+
 describe('the form controls', () => {
   it('catches a native select, checkbox or radio, and leaves ui.tsx its own', () => {
     expect(nativeChoices([['./work/Start.tsx', '<select value={x}>']])).toHaveLength(1);
