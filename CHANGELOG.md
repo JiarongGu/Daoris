@@ -5,6 +5,10 @@ with the version and date at release.
 
 ## Unreleased
 
+- *What needs you* lists a piece of work only where you can do something about it: work nothing records, or a session's
+  tree that only the session branches list on its workspace's Branches can remove, and its Open goes there. Such a row is
+  named by the session that worked in the tree, never by the tree's folder path, and says why once in the page's language.
+  A branch the clean-up kept says why in your language on its session's page, and says it will try again only where it will.
 - The Sessions icon counts the sessions Daoris is running for you, and the status bar shows the same number; neither counts
   a conversation you hold yourself, Ask Daoris's included. Something in Sessions waiting on you is a dot in the waiting colour
   beside the count, and hovering the icon says both in words. The window's title keeps to the count *What needs you* shows,

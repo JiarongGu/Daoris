@@ -232,8 +232,9 @@ public sealed record InventoryFacts(
 /// <para><b>The end is the kept fact</b> (<see cref="HeldFact"/>), never judged again here: a fact whose branch moved since is
 /// cleared by the next look (§B5), so this reads what the keeper last proved. Absent, the work is <i>handed</i> where a landing
 /// carries it and the line does not hold that, else <i>not ended</i> (<see cref="EndState"/>'s words).</para>
-/// <para><b>An unknown owner blocks</b> (canary 27): a tree no record names, or one git cannot read the branch of, is
-/// <see cref="InventoryDisposition.Blocked"/> and says so, in a unit of its own that is never read as ended.</para>
+/// <para><b>An unknown owner blocks</b> (canary 27): a tree no record and no session's record names, or one git cannot read the
+/// branch of, is <see cref="InventoryDisposition.Blocked"/> and says so, in a unit of its own that is never read as ended. A tree a
+/// session recorded is that session's (OVERVIEWNOISE1b, <see cref="InventoryFacts.Recorded"/>).</para>
 /// </remarks>
 public static partial class WorkInventory
 {

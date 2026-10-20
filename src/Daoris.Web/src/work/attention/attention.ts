@@ -282,7 +282,7 @@ export type PushedAttention = {
   trust?: TrustHold;
   quest?: string;
   proposal?: RuleProposal;
-  /** A title that is a value: a helper's question's first line, a unit's branch. */
+  /** A title that is a value: a helper's question's first line, a unit's branch or its tree's folder. */
   title?: string;
   permission?: PermissionWait;
   /**

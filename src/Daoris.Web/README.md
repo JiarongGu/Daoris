@@ -263,7 +263,9 @@ recovery with nothing kept), never a sequence and never a `PhaseList`. It is fol
 molecule's own state, and the page mounts it under the record's id so another record starts folded. The line is also a
 tidied branch row's. The record head's budget is measured in a rendered browser (`e2e:measured`, `measured/head.spec.ts`
 over `work/AttendedSession.head.stories.tsx`): how far down the main area the conversation starts, with every block of the
-head present, at the three widths and in both languages; D185's MILESTONEUX1 note says what it measured.
+head present, at the three widths and in both languages; D185's MILESTONEUX1 note says what it measured. A blocked entry is
+said by its code in the reader's language (`entryDetail` in `work/head/milestone.ts`, OVERVIEWNOISE1b), and a tree by its folder's
+name; *What needs you*'s row of a unit is named by the session that recorded its tree and opens the workspace's Branches.
 
 The parts and the relations fold likewise (HEADFIT1). `work/head/PartsFold` is one line (*Part 2 of 3*, how the newest began, *Show
 the parts*) that gives way to the flowchart, or to the strip where only the rail fits, on a press, with *Hide the parts* back;
