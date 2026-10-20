@@ -138,7 +138,9 @@ newer tip exists (CIPRIO1c), recorded as superseded and never as passed; a Ctrl+
 prove the long gates ran. Read D115 and the tool's usage before changing queue/merge behavior.
 
 A merge runs the blocking checks alone by default: the universal gates (with the sensitive scan), the code map and the
-index check. Every other gate its paths reach is listed and skipped, "in the CI beside": run `--full --beside` on main's
+index check, and the web's typecheck (`web-types`, `npm run typecheck:web`, about a minute) when its paths reach the
+page's sources or its compiler's configuration: two sides that each typecheck may not together (MERGETSC1). Every other
+gate its paths reach is listed and skipped, "in the CI beside": run `--full --beside` on main's
 tip after a merge or batch and fix what it reports. `--gated` runs what the paths reach, for a risky merge; the full set
 is still required before any stage (GATESLIM1, D115).
 

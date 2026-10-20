@@ -329,6 +329,7 @@ verification pipeline is the line's lane, at a batch. Neither design waits for t
 | Gate | Under the design | Why |
 |---|---|---|
 | `universal`, `code-map`, `orient-index` | light: a session's, and the merge's blocking set | seconds to a minute; what must never reach history (`merge-branch.mjs:786`, D180 point 1) |
+| `web-types` | light: a session's, and the merge's blocking set where the page's sources change | about a minute; two sides that each typecheck may not together (MERGETSC1, D180's note) |
 | `cli`, `tool-tests`, `service`, `devkit`, `driver`, `modules`, `driver-process`, `driver-process-git`, `modules-process`, `web`, `web-unit`, `web-measured`, `deployment` | `"heavy": true` | minutes to an hour each; the CI beside's (D180 point 2) |
 | `verification` (top-level) | `node tools/merge-branch.mjs --full --beside` | the merge tool already runs the full set in its lanes, in its gate tree, writes the verdict the stage reads, and keeps its logs |
 
