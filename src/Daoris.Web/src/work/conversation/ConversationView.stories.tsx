@@ -1,5 +1,6 @@
 import type { Decorator, Meta, StoryObj } from '@storybook/react-vite';
 import { chinese } from '../../design/storyLanguage';
+import { sessionWidths } from '../../design/storyWidths';
 import { InTheme } from '../../plugins/storyIcons';
 import { ConversationView } from './ConversationView';
 import { type SessionEvent, settle, toTurns } from './conversation';
@@ -173,13 +174,18 @@ const CHINESE: SessionEvent[] = [
 const meta: Meta<typeof ConversationView> = {
   title: 'Work/ConversationView',
   component: ConversationView,
-  decorators: [(Story) => <div className="max-w-4xl p-4"><Story /></div>],
+  // A session's page at the frame's widths (the UI/UX design R6, STORYGAP1): wide by default, a story's own width instead.
+  decorators: [sessionWidths.wide],
 };
 export default meta;
 
 type Story = StoryObj<typeof ConversationView>;
 
 export const DrivenAndFinished: Story = { args: { turns: toTurns(DRIVEN).turns } };
+/** The same at a 680 px window. */
+export const DrivenAndFinishedHalf: Story = { ...DrivenAndFinished, decorators: [sessionWidths.half] };
+/** The same at the main area's 400 px floor. */
+export const DrivenAndFinishedNarrow: Story = { ...DrivenAndFinished, decorators: [sessionWidths.narrow] };
 /** Another agent's findings handed as the session's next turn (XAGENT1g): a block from that agent, then the session's answer. */
 export const AnotherAgentsFindings: Story = {
   args: {
@@ -285,3 +291,5 @@ export const WaitsRaisedHereChinese: Story = { ...WaitsRaisedHere, decorators: [
 export const WaitsRaisedHereDark: Story = { ...WaitsRaisedHere, decorators: [darkTheme] };
 /** The same in dark and 中文. */
 export const WaitsRaisedHereDarkChinese: Story = { ...WaitsRaisedHere, decorators: [chinese, darkTheme] };
+/** The same at the main area's 400 px floor, in dark. */
+export const WaitsRaisedHereNarrowDark: Story = { ...WaitsRaisedHere, decorators: [sessionWidths.narrow, darkTheme] };

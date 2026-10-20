@@ -2,6 +2,7 @@ import type { Decorator, Meta, StoryObj } from '@storybook/react-vite';
 import { buildChain } from '../map/chain';
 import { InTheme } from '../plugins/storyIcons';
 import { chinese } from '../design/storyLanguage';
+import { storyWidths } from '../design/storyWidths';
 import type { HistoryDoor } from '../work/history/history';
 import { FAILED_PLAN, QUEST_ASKED, QUEST_PLAN } from '../work/history/historyFixtures';
 import type { WorkDoor } from '../work/pausing/pausing';
@@ -24,10 +25,11 @@ import { QuestPage, QuestsMainNotice } from './QuestPage';
 
 const nothing = () => {};
 
-/** Dark, as a person chooses it (D66): the main area's own box inside the theme's, which is no flex row the page can fill. */
-const dark: Decorator = (Story) => (
-  <InTheme theme="dark"><div className="flex h-[43rem] w-[51rem] max-w-full"><Story /></div></InTheme>
-);
+/**
+ * Dark, as a person chooses it (D66): a flex item of the main area's height frame, with no padding of its own, so the page's
+ * scroll box stays bounded.
+ */
+const dark: Decorator = (Story) => <InTheme theme="dark" className="flex min-h-0 min-w-0 flex-1 p-0"><Story /></InTheme>;
 
 const meta: Meta<typeof QuestPage> = {
   title: 'Quests/QuestPage',
@@ -37,12 +39,9 @@ const meta: Meta<typeof QuestPage> = {
     onRespond: nothing, onDelete: nothing, onDismiss: nothing, onRetry: nothing, onTrusting: nothing, onGrant: nothing,
     onOpenQuest: nothing,
   },
-  // The main area's height, and a width between the side bar's two states.
-  decorators: [(Story) => (
-    <div className="flex h-[44rem] w-[52rem] max-w-full border border-line bg-page">
-      <Story />
-    </div>
-  )],
+  // The main area's height, inside the main area at its wide width (the UI/UX design R6, STORYGAP1); a story's own width
+  // is drawn instead of it.
+  decorators: [(Story) => <div className="flex h-[44rem] border border-line bg-page"><Story /></div>, storyWidths.wide],
 };
 export default meta;
 
@@ -241,11 +240,11 @@ export const LongTitleWithAShortTitle: Story = { args: { quest: REFILED_NAMED, s
  */
 export const LongTitleWithNoShortTitle: Story = { args: { quest: REFILED_UNNAMED, session: STARTING } };
 
-/** The same at 680 px of window (a main area of about 596 px): the acts take a row under the facts, *Decline…* in the ⋯ only. */
-export const LongTitleNarrow: Story = {
-  args: { quest: REFILED_UNNAMED, session: STARTING },
-  decorators: [(Story) => <div className="flex h-[44rem] w-[37.25rem] max-w-full border border-line bg-page"><Story /></div>],
-};
+/** The same at a 680 px window (the main area at its half width): the acts take a row under the facts, *Decline…* in the ⋯ only. */
+export const LongTitleNarrow: Story = { args: { quest: REFILED_UNNAMED, session: STARTING }, decorators: [storyWidths.half] };
+
+/** The same at the main area's 400 px floor. */
+export const LongTitleAtTheFloor: Story = { args: { quest: REFILED_UNNAMED, session: STARTING }, decorators: [storyWidths.narrow] };
 
 /** The same in 中文, in dark. */
 export const LongTitleChineseDark: Story = { args: { quest: REFILED_UNNAMED, session: STARTING }, decorators: [chinese, dark] };

@@ -2,6 +2,7 @@ import type { Decorator, Meta, StoryObj } from '@storybook/react-vite';
 import { type ComponentProps, useState } from 'react';
 import { InTheme } from '../../plugins/storyIcons';
 import { chinese } from '../../design/storyLanguage';
+import { storyWidths } from '../../design/storyWidths';
 import { HowItCameToBe } from './HowItCameToBe';
 import {
   answer, MISSING_CHAIN, NO_ASK_CHAIN, NOTHING, OLD_CHAIN, QUEST_CHAIN, SESSION_CHAIN, UNREAD_ANSWER, WAITING_CHAIN,
@@ -11,10 +12,10 @@ import {
 // shows it; folded once read, with its story; a quest's chain whole, open; a session's; links nothing keeps, each said
 // where it would have been; a quest no ask asked, with a running session's rules; an ask from before words were kept, a
 // merge kept only as the acceptance, and a teammate's record; a store that did not answer; nothing found; reading; a
-// refusal; and each in 中文, in dark and narrow.
+// refusal; and each in 中文, in dark, at half the window and narrow. Drawn in a page's main area at the frame's widths
+// (the UI/UX design R6): a quest's page and a session's carry it.
 
 const dark: Decorator = (Story) => <InTheme theme="dark"><Story /></InTheme>;
-const narrow: Decorator = (Story) => <div style={{ width: 360 }}><Story /></div>;
 
 type Props = ComponentProps<typeof HowItCameToBe>;
 
@@ -32,6 +33,7 @@ const meta: Meta<typeof HowItCameToBe> = {
     onSession: () => {}, onQuest: () => {}, onAsk: () => {},
   },
   render: (args) => <Held {...args} />,
+  decorators: [storyWidths.wide],
 };
 export default meta;
 
@@ -91,8 +93,11 @@ export const Reading: Story = { args: { answer: undefined, reading: true } };
 /** The route refused, in its own sentence. */
 export const Refused: Story = { args: { answer: undefined, refusal: 'the driver is still coming up — its service is not answering yet. A moment.' } };
 
-/** A narrow pane: every line wraps at the pane's edge, a branch's name anywhere. */
-export const Narrow: Story = { ...Quest, decorators: [narrow] };
+/** At half the window: the chain's lines at the main area's half width. */
+export const Half: Story = { ...Quest, decorators: [storyWidths.half] };
+
+/** The main area's 400 px floor: every line wraps at the pane's edge, a branch's name anywhere. */
+export const Narrow: Story = { ...Quest, decorators: [storyWidths.narrow] };
 
 /** Narrow, in 中文. */
-export const NarrowChinese: Story = { ...Quest, decorators: [narrow, chinese] };
+export const NarrowChinese: Story = { ...Quest, decorators: [storyWidths.narrow, chinese] };

@@ -1,10 +1,16 @@
-import type { Meta, StoryObj } from '@storybook/react-vite';
+import type { Decorator, Meta, StoryObj } from '@storybook/react-vite';
 import type { Quest, Session } from '../../data/api';
+import { InTheme } from '../../plugins/storyIcons';
+import { chinese } from '../../design/storyLanguage';
+import { sessionWidths } from '../../design/storyWidths';
 import { SessionTimeline, TimelineEntry } from './SessionTimeline';
 
 // Each kind of observed event, then the assembled layer. What is NOT here is the point: there is no
 // story for "step 3 of 7", because the record has no such thing and reading one out of the stream
-// was rejected by name (D52).
+// was rejected by name (D52). Drawn in a session's page at the frame's widths (the UI/UX design R6), where a window
+// with no dock carries it; in 中文 and dark.
+
+const dark: Decorator = (Story) => <InTheme theme="dark"><Story /></InTheme>;
 
 const at = (minutesAgo: number) => new Date(Date.now() - minutesAgo * 60_000).toISOString();
 
@@ -35,7 +41,7 @@ const meta: Meta<typeof SessionTimeline> = {
   title: 'Work/SessionTimeline',
   component: SessionTimeline,
   args: { session: SESSION, quest: QUEST },
-  decorators: [(Story) => <div className="max-w-xl"><Story /></div>],
+  decorators: [sessionWidths.half],
 };
 export default meta;
 
@@ -43,6 +49,15 @@ type Story = StoryObj<typeof SessionTimeline>;
 
 /** A session that ran, closed its quest, and landed three commits. */
 export const Whole: Story = {};
+
+/** The same at a 1546 px window. */
+export const WholeWide: Story = { decorators: [sessionWidths.wide] };
+
+/** The same in 中文. */
+export const WholeChinese: Story = { decorators: [chinese] };
+
+/** The same in dark. */
+export const WholeDark: Story = { decorators: [dark] };
 
 /**
  * A session nothing has happened to yet. One entry is the honest answer — the alternative is
@@ -72,7 +87,7 @@ export const Parked: Story = {
 
 /**
  * A long note folds to four lines, with *Show all* (UX6b, design §2.5): the install's side bar showed an ended session's
- * whole verify report, in italics, past the window's foot. Drawn at the side bar's usual width.
+ * whole verify report, in italics, past the window's foot. Drawn at the main area's 400 px floor.
  */
 export const ALongNoteFolds: Story = {
   args: {
@@ -90,7 +105,7 @@ export const ALongNoteFolds: Story = {
       evidence: undefined,
     },
   },
-  decorators: [(Story) => <div className="w-[400px] p-3"><Story /></div>],
+  decorators: [sessionWidths.narrow],
 };
 
 /** The same fold across a note's blocks: Daoris's line worded in the reader's language, then the agent's words set apart. */
@@ -114,7 +129,7 @@ export const ALongNoteOfSeveralBlocksFolds: Story = {
       evidence: undefined,
     },
   },
-  decorators: [(Story) => <div className="w-[400px] p-3"><Story /></div>],
+  decorators: [sessionWidths.narrow],
 };
 
 /** Work that produced nothing. The driver's sentence says so and the timeline does not soften it. */
@@ -125,7 +140,7 @@ export const NothingLanded: Story = {
 /** Each kind on its own, which is where the marks and the wording are actually reviewed. */
 export const EveryKind: StoryObj = {
   render: () => (
-    <ol className="m-0 max-w-xl list-none p-0">
+    <ol className="m-0 list-none p-0">
       <TimelineEntry event={{ kind: 'opened', at: at(95) }} />
       <TimelineEntry event={{ kind: 'quest', at: at(90), status: 'Taken' }} />
       <TimelineEntry

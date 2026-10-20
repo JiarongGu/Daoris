@@ -1,19 +1,20 @@
 import type { ReactNode } from 'react';
-import type { Decorator, Meta, StoryObj } from '@storybook/react-vite';
+import type { Meta, StoryObj } from '@storybook/react-vite';
 import i18n from '../../locales/i18n';
 import { InTheme } from '../../plugins/storyIcons';
 import { chinese } from '../../design/storyLanguage';
+import { sessionWidths } from '../../design/storyWidths';
 import type { Session } from '../../data/api';
 import { AskHelper } from '../start/AskHelper';
 import { HandOverAsk, type HandOverRoster } from '../start/HandOverAsk';
 import { HandOverOfferLine } from '../start/HandOverOfferLine';
 import { DeleteAsk, SessionPageHead, StopAsk } from './SessionPageHead';
-import { ViewMain } from '../frame/ViewMain';
 import { PauseAsk } from '../pausing/WorkAsks';
 
 // A session's page header (SESSUX1d, D126 §3.2) pinned in Sessions' main area, in each state's acts, each stop's ask
 // (§3.3), a teammate's record, below 560 px and with a 中文 title. A molecule, so each is reached by passing it; the
-// conversation below is stand-in lines, scrolled under the header.
+// conversation below is stand-in lines, scrolled under the header. Drawn in a session's page at the frame's widths (the
+// UI/UX design R6): the helper gives the session's gutters, which the header's sticky box reaches over as it does there.
 
 const SESSION: Session = {
   id: 's1a2b3c4', quest: 'abc123', repository: 'engine', adapter: 'claude-code', state: 'working', kind: 'driven',
@@ -22,14 +23,15 @@ const SESSION: Session = {
 
 const TITLE = 'Expose a streaming budget on the chunk API so world streaming can cap hydration work per frame';
 
-/** A main area with something to scroll under the header, as a long run's page has. */
+/** The header with something to scroll under it, as a long run's page has. */
 function Page({ children }: { children: ReactNode }) {
   return (
-    <ViewMain gutters="session" header={children}>
+    <>
+      {children}
       {Array.from({ length: 40 }, (_, line) => (
         <p key={line} className="m-0 py-1 text-body text-ink-soft">The agent’s words, line {line + 1}.</p>
       ))}
-    </ViewMain>
+    </>
   );
 }
 
@@ -43,13 +45,8 @@ const meta: Meta<typeof SessionPageHead> = {
     onAct: () => {},
   },
   render: (args) => <Page><SessionPageHead {...args} /></Page>,
-  // The frame's height and a main area's width, beside a stand-in list.
-  decorators: [(Story) => (
-    <div className="flex h-[30rem] w-[56rem] max-w-full border border-line bg-page">
-      <div className="w-[17.5rem] shrink-0 border-r border-line p-3 text-meta text-ink-faint">The session list</div>
-      <div className="flex min-w-0 flex-1 flex-col"><Story /></div>
-    </div>
-  )],
+  // A session's page at half a 1546 px window, about the main area the session list leaves.
+  decorators: [sessionWidths.half],
 };
 export default meta;
 
@@ -148,12 +145,10 @@ export const DeleteAsking: Story = {
   },
 };
 
-/** At 480 px of main area (under 640 px): the acts take their own right-aligned row under the facts. */
+/** At the main area's 400 px floor (under 640 px): the acts take their own right-aligned row under the facts. */
 export const Narrow: Story = {
   args: { acts: ['stop', 'retry', 'review', 'openFolder', 'detach', 'copy'], primary: 'retry' },
-  decorators: [(Story) => (
-    <div className="flex h-[30rem] w-[30rem] max-w-full border border-line bg-page"><Story /></div>
-  )],
+  decorators: [sessionWidths.narrow],
 };
 
 /** A 中文 title, one line, whole on its tip. */
@@ -194,12 +189,10 @@ export const ParkedFacts: Story = {
   },
 };
 
-/** The same at 680 px of window (a main area of about 596 px): the acts take their own right-aligned row under the facts. */
+/** The same at 680 px of window (the main area's half width): the acts take their own right-aligned row under the facts. */
 export const FourthAttemptNarrow: Story = {
   args: { ...FourthAttemptWithNoShortTitle.args },
-  decorators: [(Story) => (
-    <div className="flex h-[30rem] w-[37.25rem] max-w-full border border-line bg-page"><Story /></div>
-  )],
+  decorators: [sessionWidths.half],
 };
 
 // ——— HEAD2c (D162; the entry-and-heads design §2): one line whatever the request's length, the acts where they were, the
@@ -208,30 +201,24 @@ export const FourthAttemptNarrow: Story = {
 
 const LONG_REQUEST = 'Repair streaming hydration budget for the sync look so a long request never wraps the head into a second line';
 
-/** The frame at a width: a main area of 1180 px beside a 1546 px window's side bar and list, 596 px at 680 px. */
-const at = (main: number): Decorator => (Story) => (
-  <div className="flex h-[30rem] max-w-full border border-line bg-page" style={{ width: main + 280 }}>
-    <div className="w-[17.5rem] shrink-0 border-r border-line p-3 text-meta text-ink-faint">The session list</div>
-    <div className="flex min-w-0 flex-1 flex-col"><Story /></div>
-  </div>
-);
+// The main area at the frame's widths: `sessionWidths.wide` at a 1546 px window, `sessionWidths.half` at 680 px.
 
 /** A long request at 1546 px: one line, cut with its tip, *Stop…* and ⋯ where they are, the facts one line. */
 export const OneLineAt1546: Story = {
   args: { title: LONG_REQUEST, facts: ['engine', '12m', 'attempt 4: the 3 before it failed'] },
-  decorators: [at(1180)],
+  decorators: [sessionWidths.wide],
 };
 
 /** The same at 680 px: the acts take their own row under the facts, *Stop…* still shown. */
 export const OneLineAt680: Story = {
   args: { ...OneLineAt1546.args },
-  decorators: [at(596)],
+  decorators: [sessionWidths.half],
 };
 
 /** The same in dark. */
 export const OneLineDark: Story = {
   args: { ...OneLineAt1546.args },
-  decorators: [at(1180), (Story) => <InTheme theme="dark"><Story /></InTheme>],
+  decorators: [sessionWidths.wide, (Story) => <InTheme theme="dark"><Story /></InTheme>],
 };
 
 /** The same in 中文, at 680 px. */
@@ -240,7 +227,7 @@ export const OneLineChinese: Story = {
     title: '修复同步外观中的流式水合预算，让很长的请求也不会把页头撑成第二行，并保持按钮不动',
     facts: ['engine', '12 分钟', '第 4 次尝试：之前 3 次失败'],
   },
-  decorators: [at(596), chinese],
+  decorators: [sessionWidths.half, chinese],
 };
 
 // ——— Whom it continues and whom a helper helps (MIXAGENT3a-i, the mixed-agents design §4): the facts line says the agent a
@@ -305,7 +292,7 @@ export const HandOverAskingIdle: Story = {
     acts: ['handOver', 'openFolder', 'terminal', 'detach', 'archive', 'delete', 'copy'],
     asking: <HandOverAsk from="claude-code" repository="engine" roster={ROSTER} onHandOver={() => {}} onClose={() => {}} />,
   },
-  decorators: [at(596)],
+  decorators: [sessionWidths.half],
 };
 
 /** While it works: *Stop…* stays the head's danger button, *Stop and hand over…* is in the ⋯, and the ask says its turn is stopped. */
@@ -315,7 +302,7 @@ export const HandOverAskingWhileItWorks: Story = {
     acts: ['stop', 'handOver', 'openFolder', 'terminal', 'detach', 'copy'],
     asking: <HandOverAsk from="claude-code" repository="engine" working roster={ROSTER} onHandOver={() => {}} onClose={() => {}} />,
   },
-  decorators: [at(596)],
+  decorators: [sessionWidths.half],
 };
 
 /** A refusal said in the ask, whole, with the choice kept (UX5 U68). */
@@ -329,19 +316,19 @@ export const HandOverRefused: Story = {
       />
     ),
   },
-  decorators: [at(596)],
+  decorators: [sessionWidths.half],
 };
 
 /** The idle ask in 中文, at 680 px. */
 export const HandOverAskingChinese: Story = {
   args: { ...HandOverAskingIdle.args, title: '限制每帧的水合工作量' },
-  decorators: [at(596), chinese],
+  decorators: [sessionWidths.half, chinese],
 };
 
 /** The working ask in 中文, at 680 px. */
 export const HandOverAskingWhileItWorksChinese: Story = {
   args: { ...HandOverAskingWhileItWorks.args, title: '限制每帧的水合工作量' },
-  decorators: [at(596), chinese],
+  decorators: [sessionWidths.half, chinese],
 };
 
 /** The refusal in 中文, at 680 px. */
@@ -356,7 +343,7 @@ export const HandOverRefusedChinese: Story = {
       />
     ),
   },
-  decorators: [at(596), chinese],
+  decorators: [sessionWidths.half, chinese],
 };
 
 // ——— *Ask another agent…* (MIXAGENT2b, D163 point 2): the helper's ask under the head, the question and the agent left to Daoris;
@@ -369,15 +356,15 @@ export const AskHelperAsking: Story = {
     acts: ['handOver', 'askHelper', 'openFolder', 'terminal', 'detach', 'archive', 'delete', 'copy'],
     asking: <AskHelper from="claude-code" roster={ROSTER} onAsk={() => {}} onClose={() => {}} />,
   },
-  decorators: [at(596)],
+  decorators: [sessionWidths.half],
 };
 export const AskHelperAskingChinese: Story = {
   args: { ...AskHelperAsking.args, title: '限制每帧的水合工作量' },
-  decorators: [at(596), chinese],
+  decorators: [sessionWidths.half, chinese],
 };
 export const AskHelperAskingDark: Story = {
   args: { ...AskHelperAsking.args },
-  decorators: [at(596), (Story) => <InTheme theme="dark"><Story /></InTheme>],
+  decorators: [sessionWidths.half, (Story) => <InTheme theme="dark"><Story /></InTheme>],
 };
 
 // ——— Daoris's offer to hand over (MIXAGENT1b-ii, D163): the line under the head where nothing else is asked, near the limit and
@@ -401,31 +388,31 @@ const CUT: Parameters<typeof HandOverOfferLine>[0]['offer'] = { why: 'limit', un
  */
 export const HandOverOfferNear: Story = {
   args: { ...OFFER_HEAD, acts: [...OFFER_HEAD.acts], asking: offerLine(NEAR) },
-  decorators: [at(596)],
+  decorators: [sessionWidths.half],
 };
 
 /** The account is cut: it says until when it is offered again. */
 export const HandOverOfferCut: Story = {
   args: { ...HandOverOfferNear.args, asking: offerLine(CUT) },
-  decorators: [at(596)],
+  decorators: [sessionWidths.half],
 };
 
 /** Long names wrap inside the line and keep every press. */
 export const HandOverOfferLongNames: Story = {
   args: { ...HandOverOfferNear.args, asking: offerLine(NEAR, 'Gemini CLI for the engine team', 'team-engineering@example.com') },
-  decorators: [at(596)],
+  decorators: [sessionWidths.half],
 };
 
 /** Near, in 中文. */
 export const HandOverOfferNearChinese: Story = {
   args: { ...HandOverOfferNear.args, title: '限制每帧的水合工作量' },
-  decorators: [at(596), chinese],
+  decorators: [sessionWidths.half, chinese],
 };
 
 /** Cut, in 中文. */
 export const HandOverOfferCutChinese: Story = {
   args: { ...HandOverOfferCut.args, title: '限制每帧的水合工作量' },
-  decorators: [at(596), chinese],
+  decorators: [sessionWidths.half, chinese],
 };
 
 /** A running driven session whose quest an ask asked (PAUSE1e): *Pause quest…* and *Pause ask…* in its ⋯. */

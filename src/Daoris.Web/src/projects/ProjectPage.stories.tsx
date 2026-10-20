@@ -3,6 +3,7 @@ import { useState } from 'react';
 import type { GitLogCommit, GitRepositoryBranches } from '../bridge/repositories/git';
 import { InTheme } from '../plugins/storyIcons';
 import { chinese } from '../design/storyLanguage';
+import { storyWidths } from '../design/storyWidths';
 import { FULL, NOTHING_SET, PLUGIN_UNREADY } from '../workflow/fixtures';
 import {
   CJK, COUNTS, ELSEWHERE, ENGINE, GAME, GIT_BRANCHES_ENGINE, GIT_HISTORY_ENGINE, GIT_HISTORY_PAGES, LINE, MIRRORED, NEWBIE, NEWBIE_SETUP,
@@ -28,10 +29,12 @@ import type { ProjectTab } from './tabs';
 
 const nothing = () => {};
 
-const dark: Decorator = (Story) => <InTheme theme="dark"><Story /></InTheme>;
+// A flex item of the main area's height frame, with no padding of its own, so the page's scroll box stays bounded.
+const dark: Decorator = (Story) => <InTheme theme="dark" className="flex min-h-0 min-w-0 flex-1 p-0"><Story /></InTheme>;
 
-/** The list beside the main area a strip and the side bar closed: the main area at 34 rem. */
-const narrow: Decorator = (Story) => <div className="flex h-[44rem] w-[34rem] max-w-full border border-line bg-page"><Story /></div>;
+// The main area at the frame's widths (the UI/UX design R6, STORYGAP1): wide by default, `storyWidths.half` a 680 px window
+// with the list a strip beside it, and `storyWidths.narrow` the main area's 400 px floor.
+const narrow = storyWidths.narrow;
 
 /** The title its holder joins for the session branch a record names (the rail's rule): its quest's name. */
 const TITLES = { 'daoris/engine-physics-step': 'Expose a streaming budget' };
@@ -122,12 +125,8 @@ const meta: Meta<typeof Tabbed> = {
     onManage: nothing,
     onOpenCode: nothing,
   },
-  // The main area's height, and a width between the side bar's two states.
-  decorators: [(Story) => (
-    <div className="flex h-[44rem] w-[52rem] max-w-full border border-line bg-page">
-      <Story />
-    </div>
-  )],
+  // The main area's height, inside the main area at its wide width; a story's own width is drawn instead of it.
+  decorators: [(Story) => <div className="flex h-[44rem] border border-line bg-page"><Story /></div>, storyWidths.wide],
 };
 export default meta;
 
@@ -271,10 +270,10 @@ export const WorkflowWithALimit: Story = { args: { start: 'workflow', workflow: 
 export const WorkflowChinese: Story = { args: { start: 'workflow' }, decorators: [chinese] };
 
 /** Its Workflow, narrow: the list a strip and the side bar closed, each step's words wrapping under its title. */
-export const WorkflowNarrow: Story = {
-  args: { start: 'workflow' },
-  decorators: [(Story) => <div className="flex h-[44rem] w-[34rem] max-w-full border border-line bg-page"><Story /></div>],
-};
+export const WorkflowNarrow: Story = { args: { start: 'workflow' }, decorators: [narrow] };
+
+/** Its Workflow at a 680 px window, the list a strip beside it. */
+export const WorkflowHalf: Story = { args: { start: 'workflow' }, decorators: [storyWidths.half] };
 
 /**
  * **The bundle without a shell** (D47 §4, the workflow design §6.1): a browser's page remembered at Workflow is Details
@@ -345,8 +344,11 @@ export const BranchesSessionsUnread: Story = {
 /** Branches by kind, dark. */
 export const BranchesDark: Story = { args: { start: 'branches' }, decorators: [dark] };
 
-/** Branches by kind with the main area at 34 rem: a long name and a commit's subject wrap, never cut. */
+/** Branches by kind at the main area's 400 px floor: a long name and a commit's subject wrap, never cut. */
 export const BranchesNarrow: Story = { args: { start: 'branches' }, decorators: [narrow] };
+
+/** Branches by kind at a 680 px window, in dark. */
+export const BranchesHalfDark: Story = { args: { start: 'branches' }, decorators: [storyWidths.half, dark] };
 
 /** Branches on their way: said, with rows drawn in their place. */
 export const BranchesReading: Story = { args: { start: 'branches', branches: branchesRead({ state: 'reading' }) } };
@@ -542,7 +544,7 @@ export const SetupHeavyGatesCannotTell: Story = {
 /** Setup's *Heavy gates* where none is set, folded to its line and offering *Add heavy gates* once opened; narrow, in 中文. */
 export const SetupHeavyGatesNoneChinese: Story = {
   args: { start: 'setup', setup: { ...opened('heavy'), heavy: { gates: [], onSave: (_gates, answered) => answered.done() } } },
-  decorators: [(Story) => <div className="flex h-[44rem] w-[34rem] max-w-full border border-line bg-page"><Story /></div>, chinese],
+  decorators: [narrow, chinese],
 };
 
 /**
@@ -553,10 +555,10 @@ export const SetupHeavyGatesNoneChinese: Story = {
 export const SetupOwn: Story = { args: { start: 'setup', setup: { ...SETUP_OWN, onOpenPlugin: () => {} } } };
 
 /** Setup folded, narrow: the list a strip and the side bar closed, a section's line wrapping under its name. */
-export const SetupNarrow: Story = {
-  args: { start: 'setup' },
-  decorators: [(Story) => <div className="flex h-[44rem] w-[34rem] max-w-full border border-line bg-page"><Story /></div>],
-};
+export const SetupNarrow: Story = { args: { start: 'setup' }, decorators: [narrow] };
+
+/** The person's own values at a 680 px window, the list a strip beside it. */
+export const SetupOwnHalf: Story = { args: { start: 'setup', setup: SETUP_OWN }, decorators: [storyWidths.half] };
 
 /** The person's own values, narrow: each row stacks below 26 rem (WSR4). */
 export const SetupOwnNarrow: Story = { ...SetupNarrow, args: { start: 'setup', setup: SETUP_OWN } };
