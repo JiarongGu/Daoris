@@ -430,6 +430,30 @@ public static class ReviewRules
         return repository is not null ? config with { Reviews = changed } : config with { WorkspaceReviews = changed };
     }
 
+    /// <summary>
+    /// One change as a door sends it, read as the shared table's (the page's edit, and <c>daoris-driver driver review</c>'s payload,
+    /// PUSH1f2a): a field of another type is absent, <c>none</c> and <c>clear</c> only when true.
+    /// </summary>
+    public static ReviewEdit EditOf(JsonElement? payload)
+    {
+        if (payload is not { ValueKind: JsonValueKind.Object } root) return new ReviewEdit();
+
+        return new ReviewEdit
+        {
+            Repository = Json.Text(root, "repository"),
+            Workspace = Json.Text(root, "workspace"),
+            Put = root.TryGetProperty("put", out var put) && put.ValueKind == JsonValueKind.Object
+                ? new ReviewSpelled(Json.Text(put, "name"), Json.Text(put, "kind"), Json.Text(put, "procedure"), Json.Text(put, "address"), Json.Text(put, "run"))
+                : null,
+            Required = root.TryGetProperty("required", out var required) && required.ValueKind is JsonValueKind.True or JsonValueKind.False
+                ? required.GetBoolean()
+                : null,
+            None = root.TryGetProperty("none", out var none) && none.ValueKind == JsonValueKind.True,
+            Drop = Json.Text(root, "drop"),
+            Clear = root.TryGetProperty("clear", out var clear) && clear.ValueKind == JsonValueKind.True,
+        };
+    }
+
     /// <summary>The refusal a repository's put says when its checkout here does not hold the procedure, nothing written.</summary>
     public static string NotHeld(string repository, string procedure) =>
         $"`{procedure}` is not a file in `{repository}`'s checkout here — a procedure is a document or a skill the repository "

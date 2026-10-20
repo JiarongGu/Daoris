@@ -1125,9 +1125,10 @@
       "exit": 2,
       "out": [],
       "err": [
-        "daoris: the landing rule names plugin `acme.pr`, which is not installed on this machine — `daoris plugin add <folder>` installs one, and `daoris plugin list` shows what there is. Nothing was written."
+        "daoris: the landing rule names plugin `acme.pr`, which is not installed on this machine — `daoris plugin add <folder>` installs one, and `daoris plugin list` shows what there is. Nothing was written. (DRIVER_REFUSED)"
       ],
-      "after": null
+      "after": null,
+      "changed": "The plugin's check is the operation's now (StandingChoices.Landing), the one the window's route asks, so its refusal is one line on both paths: the sentence and its code (D194 point 6)."
     },
     {
       "name": "landing --plugin, no id",
@@ -1701,9 +1702,10 @@
       "exit": 2,
       "out": [],
       "err": [
-        "daoris: `docs/missing.md` is not a file in `storefront`'s checkout here — a procedure is a document or a skill the repository holds, and writing it is that repository's own work. Nothing was written."
+        "daoris: `docs/missing.md` is not a file in `storefront`'s checkout here — a procedure is a document or a skill the repository holds, and writing it is that repository's own work. Nothing was written. (DRIVER_REFUSED)"
       ],
-      "after": null
+      "after": null,
+      "changed": "The procedure's look is the operation's now (StandingChoices.Review), the one the window's route makes, so its refusal is one line on both paths: the sentence and its code (D194 point 6)."
     },
     {
       "name": "review, a repository with no checkout here",
