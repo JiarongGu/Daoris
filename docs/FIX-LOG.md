@@ -44,6 +44,11 @@ repository.
   where it answers the new place.
 - **Fix:** the check waits up to 30 s for the record, asking the table each second, and says where it looked.
 - **Verification:** the next full set's deployment rehearsal; `node --check` here.
+- **Amended 2026-10-20:** the full set on 3cf9d20ec failed the same check after the wait. The record is never the install's: the
+  rehearsal runs the deployed shell with `DAORIS_HOME` at a scratch home (its HERMETIC table), so the record is that home's.
+  The check's subject was the install's own state, which before D172 was `data/` and is now the window's Chromium profile, the
+  table's `window` entry (`profiles/window/`, found by its `chromium/`), which the fixture's install held. The check now asks
+  for that, inside the install.
 
 ## 2026-10-20 — An orphaned-session test failed on its stand-in's teardown, not its assertion (FLAKE1)
 
