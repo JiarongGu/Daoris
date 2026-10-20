@@ -5,6 +5,10 @@ with the version and date at release.
 
 ## Unreleased
 
+- A driven session whose background command ends just before its turn does, before its agent was told, is no longer shown as
+  waiting for you (等你处理): it stays working until its agent is woken with the ending, or Daoris tells it after a minute's
+  quiet, and goes on with its quest. A session that `daoris-driver drive` starts from a terminal now waits on its own background
+  work as the app's sessions do.
 - `daoris driver` hands its standing choices to Daoris's own driver program, as `daoris-driver driver` with the same words: the
   one your install carries, or the build `DAORIS_DRIVER_PROGRAM` names. A `daoris` with neither, such as a checkout's, says so and
   does nothing. What each choice says is as before; a refusal is said on the error stream, and a refusal the window's route would

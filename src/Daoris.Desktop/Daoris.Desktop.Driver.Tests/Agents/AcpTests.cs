@@ -2105,10 +2105,12 @@ public sealed class AcpTests
     /// A session whose streams are kept asks for them, by the spelling that arrives: AIR's two
     /// capabilities, and the protocol's own <c>subagents</c> for when the SDK's schema carries it. It
     /// never asks for <c>terminal_output</c>, which streams nothing and moves a command's output out of
-    /// the field the record reads. A session given nowhere to keep them asks for nothing.
+    /// the field the record reads. A session given nowhere to keep them asks for its background tasks alone (BGWAIT3): the
+    /// task frames are what a driven turn that ends on its own background work waits by, and the headless loop's sessions
+    /// carried none. Its subagents stay on the session's own id, which only a session that keeps streams routes.
     /// </summary>
     [Fact]
-    public async Task A_session_given_streams_asks_for_subagents_and_tasks_and_one_given_none_asks_for_nothing()
+    public async Task A_session_given_streams_asks_for_subagents_and_tasks_and_one_given_none_asks_for_tasks_alone()
     {
         var kept = Simple();
         await new AcpSession(kept.Incoming, kept.Outgoing, _ => { }, streams: new SessionStreams(new SessionOutput(), "d-1"))
@@ -2128,7 +2130,27 @@ public sealed class AcpTests
 
         var none = plain.Frame(0).GetProperty("params").GetProperty("clientCapabilities");
         Assert.False(none.TryGetProperty("subagents", out _));
-        Assert.False(none.TryGetProperty("_meta", out _));
+        var tasks = none.GetProperty("_meta").GetProperty("jetbrains").GetProperty("air");
+        Assert.Equal(1, tasks.GetProperty("version").GetInt32());
+        Assert.Equal(["asyncTasks"], tasks.GetProperty("capabilities").EnumerateArray().Select(c => c.GetString()));
+        Assert.False(none.GetProperty("_meta").TryGetProperty("terminal_output", out _));
+    }
+
+    /// <summary>
+    /// BGWAIT3: where no streams take the task frames, the record keeps no row for them and the console prints none. They are
+    /// known, and not the conversation: the Bash call that started a task is its card, and the door's own notes say the waits.
+    /// A raw row would also carry the harness's output path into the record.
+    /// </summary>
+    [Theory]
+    [InlineData("""{"sessionUpdate":"async_task_spawned","asyncTaskId":"b71","name":"npm test","taskType":"shell","canStop":true,"outputFilePath":"D:/fam/tasks/b71.output","toolCallId":"toolu_b"}""")]
+    [InlineData("""{"sessionUpdate":"async_task_progress","asyncTaskId":"b71","outputFilePath":"D:/fam/tasks/b71.output"}""")]
+    [InlineData("""{"sessionUpdate":"async_task_state_update","asyncTaskId":"b71","state":"completed"}""")]
+    public void A_task_frame_no_stream_takes_is_neither_a_row_nor_a_line(string frame)
+    {
+        using var update = JsonDocument.Parse(frame);
+
+        Assert.Null(AcpSession.Map(update.RootElement));
+        Assert.Null(AcpSession.Render(update.RootElement, new Dictionary<string, string>()));
     }
 
     /// <summary>

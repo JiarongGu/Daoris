@@ -10,8 +10,10 @@ namespace Daoris.Driver;
 /// <remarks>
 /// <para><b>The harness's word, never the agent's.</b> The task frames are the adapter's report of processes it runs,
 /// which the agent's words cannot write (docs/2026-09-28-console2-streams-evidence.md). They arrive only where the client
-/// asked for AIR's <c>asyncTasks</c> at <c>initialize</c>, which a session whose streams are kept does (CONSOLE2); on a wire
-/// that carries none, nothing is running here, and the session ends as it always did.</para>
+/// asked for AIR's <c>asyncTasks</c> at <c>initialize</c>, which every protocol-door session does (BGWAIT3; before it, only one
+/// whose streams are kept, CONSOLE2); on a wire that carries none, nothing is running here, and the session ends as it always
+/// did. <c>claude-agent-acp</c> 0.84.0 recognises a background Bash from the call's result itself, and ends it on the SDK's
+/// own task events (<c>async-tasks.js</c>, read for BGWAIT3).</para>
 ///
 /// <para><b>The last state is the ending.</b> The adapter says <c>stopped</c> and then <c>completed</c> in one breath for a
 /// task that finished on its own; <c>running</c> and <c>paused</c> are not endings.</para>
@@ -78,6 +80,15 @@ internal sealed class AcpBackground
 
     /// <summary>The work still running, by its names, in the order it was announced.</summary>
     public IReadOnlyList<string> Running => RunningWork.Select(work => work.Name).ToList();
+
+    /// <summary>
+    /// The work the ids name that has ended, by name and its last state, in the order it was announced (BGWAIT3): what a note and
+    /// the go-on say of the endings its agent was never handed. An id this door never heard announced names nothing.
+    /// </summary>
+    public IReadOnlyList<(string Name, string State)> Ended(IReadOnlyCollection<string> ids)
+    {
+        lock (_gate) return [.. _work.Where(work => work.State is not null && ids.Contains(work.Id)).Select(work => (work.Name, work.State!))];
+    }
 
     /// <summary>The work still running, by id and name, read at once (BGWAIT2d): what a note names, held before any wait that work may end during.</summary>
     public IReadOnlyList<(string Id, string Name)> RunningWork
