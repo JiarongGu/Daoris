@@ -200,6 +200,7 @@ public static class SessionsCommand
                daoris-driver sessions go-on-new <id>
                daoris-driver sessions start-from <id>
                daoris-driver sessions hand-over <id> --agent <adapter> [--account <name>]
+               daoris-driver sessions hand-over <id> --approve|--decline
                daoris-driver sessions helper <id> "<question>" [--agent <name>]
                daoris-driver sessions helper --approve|--decline <ask>
         """;
@@ -288,8 +289,14 @@ public static class SessionsCommand
                 return new SessionsAsk("hand-over") { Ids = [id], Agent = agent };
             case ["hand-over", var id, "--agent", var agent, "--account", var account] when Id(id) && Id(agent) && Id(account):
                 return new SessionsAsk("hand-over") { Ids = [id], Agent = agent, Account = account };
+            // MIXAGENT1c: the person's yes or no to the agent's own ask to hand its session over.
+            case ["hand-over", var id, "--approve"] when Id(id):
+                return new SessionsAsk("hand-over-approve") { Ids = [id] };
+            case ["hand-over", var id, "--decline"] when Id(id):
+                return new SessionsAsk("hand-over-decline") { Ids = [id] };
             case ["hand-over", ..]:
-                problem = "`hand-over` takes one session's id, `--agent <adapter>` and, where one is wanted, `--account <name>`.";
+                problem = "`hand-over` takes one session's id, `--agent <adapter>` and, where one is wanted, `--account <name>`; "
+                    + "or `--approve` or `--decline` for its agent's own ask to hand it over.";
                 return null;
             case ["helper", ..]:
                 return SessionsHelperCommand.Read(args, out problem);
@@ -388,6 +395,12 @@ public static class SessionsCommand
             "hand-over" => await ThroughAsync(
                 world, PersonPresses.SessionHandOver, Body(("id", ask.Ids[0]), ("agent", ask.Agent), ("account", ask.Account)),
                 () => HandOverAsync(world, ask, output, ct), output, ct).ConfigureAwait(false),
+            "hand-over-approve" => await ThroughAsync(
+                world, PersonPresses.SessionHandOverApprove, Body(("session", ask.Ids[0])),
+                () => HandOverAskWord.RunAsync(world, ask, output), output, ct).ConfigureAwait(false),
+            "hand-over-decline" => await ThroughAsync(
+                world, PersonPresses.SessionHandOverDecline, Body(("session", ask.Ids[0])),
+                () => HandOverAskWord.RunAsync(world, ask, output), output, ct).ConfigureAwait(false),
             "helper" => await ThroughAsync(
                 world, PersonPresses.SessionHelperAsk, Body(("id", ask.Ids[0]), ("question", ask.Text), ("agent", ask.Agent)),
                 () => SessionsHelperCommand.RunAsync(world, ask, output, ct), output, ct).ConfigureAwait(false),

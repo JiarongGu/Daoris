@@ -151,6 +151,9 @@ public static class DriverCommand
           sessions hand-over <id> --agent <adapter> [--account <name>]
               a conversation goes on with another agent (D163): its own ends, and a new conversation in its tree
               starts, told what Daoris kept of it. Conversations only; a quest's session comes later.
+          sessions hand-over <id> --approve|--decline
+              your yes or no to a session's agent's own ask to hand it over that waits on you (the `handOver` rule's
+              `ask`), as its page takes it: a yes hands it to the agent named at the driver's next look; a no says so.
           sessions helper <id> "<question>" [--agent <name>]
               ask another agent, read-only, to answer one question about a session's work (D163): the driver takes
               it at its next look, and the answer comes back to that session as its next turn, marked as the helper's.

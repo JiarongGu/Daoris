@@ -70,6 +70,8 @@ internal static class HandOverFiles
             writer.WriteString("why", handed.Why);
             writer.WriteString("askedBy", handed.AskedBy);
             writer.WriteString("at", Moments.Write(handed.At));
+            // MIXAGENT1c: the outgoing agent's note, only where it left one, so every file from before keeps its shape.
+            if (handed.Note is { } note) writer.WriteString("note", note);
             writer.WriteEndObject();
         });
     }
@@ -92,7 +94,10 @@ internal static class HandOverFiles
                 return null;
             }
 
-            return new HandedQuest(agent, Text(root, "account") is { Length: > 0 } account ? account : null, from, why, by, at);
+            return new HandedQuest(agent, Text(root, "account") is { Length: > 0 } account ? account : null, from, why, by, at)
+            {
+                Note = Text(root, "note") is { Length: > 0 } note ? note : null,
+            };
         }
         catch (Exception error) when (error is JsonException or IOException or UnauthorizedAccessException)
         {

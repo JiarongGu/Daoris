@@ -62,6 +62,20 @@ public sealed class Driver(
         init => Context.Stops = value;
     }
 
+    /// <summary>How a conversation an agent asked to hand over is handed to the shell's chat runner (MIXAGENT1c): <see cref="LoopContext.HandsOver"/>.</summary>
+    public Func<string, string, CancellationToken, Task<HandedOver>>? HandsOver
+    {
+        get => Context.HandsOver;
+        init => Context.HandsOver = value;
+    }
+
+    /// <summary>The roster's doors a hand-over's order reads, a test's stand-in (MIXAGENT1c): <see cref="LoopContext.HandOverDoors"/>.</summary>
+    internal Func<CancellationToken, Task<IReadOnlyList<HandOverDoor>>>? HandOverDoors
+    {
+        get => Context.HandOverDoors;
+        init => Context.HandOverDoors = value;
+    }
+
     /// <summary>
     /// The world a look's workspace plans read (WSSETUP6): <see cref="WorkspaceSetupWorld"/> over this driver's client, unless
     /// a test hands in a stand-in, since every real press reads a line with git and asks the tools their version.
@@ -1961,6 +1975,8 @@ public sealed class Driver(
                 // The quest was handed over from that session (MIXAGENT1a-ii): told so, with the agent it ran on.
                 BroughtForward = carryingOn && quest.Status != "Open" && start.BroughtForward is not null,
                 HandedOver = carryingOn && handedFrom ? start.Resumes!.Adapter ?? "another agent" : null,
+                // MIXAGENT1c: the note its agent left where it asked to hand over, told as that agent's claim.
+                HandedNote = carryingOn && handedFrom ? handedQuest?.Note : null,
                 LastPlan = lastPlan,
                 LastWords = lastWords,
                 // Another agent's accounts are not this agent's: a hand-over says no account was cooling for it to be told of.
@@ -2069,6 +2085,15 @@ public sealed class Driver(
                     // ACCESSSWAP1b: a run Daoris ended at its turn's end for a changed setup is neither a park nor a failure, and goes on.
                     var swappedOn = stop is null && ended.SetupChanged is not null;
                     if (swappedOn) conclusion = Observation.SetupChanged(conclusion, ended.SetupChanged!);
+
+                    // MIXAGENT1c (D191): its agent's ask to hand over, where the person's rule or their yes lets it go, is taken at this
+                    // turn's end and never mid-turn: the quest is held on the next agent with the agent's note, written before the record
+                    // says it stopped, as the person's own hand-over stops it. Not over the person's stop, nor a run ended for a changed setup.
+                    if (stop is null && !swappedOn && exitCode is int && status == "Taken"
+                        && await HandOvers.AtTurnEndAsync(sessionId, quest.Id, ct).ConfigureAwait(false) is { } handedTo)
+                    {
+                        conclusion = SessionConclusion.Of("stopped", HandOverNotes.QuestHandedOver(handedTo));
+                    }
 
                     conclusion = AccountRefused(conclusion, adapter, selection, ended);
                     conclusion = AccountSignedOut(conclusion, adapter, selection, turnFailed);

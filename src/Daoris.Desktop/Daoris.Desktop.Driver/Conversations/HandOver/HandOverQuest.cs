@@ -95,7 +95,7 @@ public static class QuestHandOver
         ServiceClient service, string home, Func<string, HandOverAgent?> drives, string id, string agent, string? account,
         string why, string askedBy, DateTimeOffset now, CancellationToken ct = default)
     {
-        var (refused, _) = await JudgeAsync(service, drives, id, agent, account, ct).ConfigureAwait(false);
+        var (refused, _) = await JudgeAsync(service, drives, id, agent, account, ct, agentAsk: askedBy == HandOverBy.Agent).ConfigureAwait(false);
         if (refused is not null) return refused;
 
         var box = new HandOverBox(home);
@@ -120,8 +120,13 @@ public static class QuestHandOver
     /// What can be known of a quest's hand-over before anything is kept or taken: the refusal by its code, or the record as the
     /// ledger holds it. Judged again as the look takes the box, since the quest, its take or the roster may have changed meanwhile.
     /// </summary>
+    /// <param name="agentAsk">
+    /// The session's own agent asked (MIXAGENT1c): a park it ended its turn on is that ask's, not a question for the person, so it is
+    /// handed over rather than refused <see cref="HandOver.Parked"/>.
+    /// </param>
     public static async Task<(HandOverAnswer? Refused, PriorSession? Prior)> JudgeAsync(
-        ServiceClient service, Func<string, HandOverAgent?> drives, string id, string agent, string? account, CancellationToken ct = default)
+        ServiceClient service, Func<string, HandOverAgent?> drives, string id, string agent, string? account, CancellationToken ct = default,
+        bool agentAsk = false)
     {
         var json = await service.SessionRecordsJsonAsync(ct).ConfigureAwait(false);
         var record = SessionRecords.Parse(json).FirstOrDefault(each => string.Equals(each.Id, id, StringComparison.Ordinal));
@@ -141,7 +146,7 @@ public static class QuestHandOver
                 return (HandOver.Refused(HandOver.NotLastRun, $"#{quest} went on in a later session here, {last}: hand that one over."), null);
         }
 
-        if (record.State == "awaiting-person")
+        if (record.State == "awaiting-person" && !agentAsk)
         {
             return (HandOver.Refused(HandOver.Parked, $"{id} is waiting on you: answer it instead."), null);
         }

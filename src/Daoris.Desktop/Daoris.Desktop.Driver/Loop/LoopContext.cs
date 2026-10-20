@@ -47,6 +47,20 @@ internal sealed class LoopContext(
     /// </summary>
     public Func<string, Noted, bool>? Stops { get; set; }
 
+    /// <summary>
+    /// How a conversation an agent asked to hand over goes on with another agent (MIXAGENT1c): the shell's chat runner's own
+    /// hand-over (<c>ChatRunner.HandOverAsync</c> with the agent's why and asker), taken at once where the conversation is not talking,
+    /// kept for its turn's end where it is. Null where the loop holds no runner: the look keeps the box, which the runner takes at the
+    /// conversation's turn's end or as it comes up. Set once, before a look.
+    /// </summary>
+    public Func<string, string, CancellationToken, Task<HandedOver>>? HandsOver { get; set; }
+
+    /// <summary>
+    /// The roster's doors in its order, as a hand-over's order reads them (MIXAGENT1c, <see cref="HandOverOrder"/>), unless a test hands
+    /// in a stand-in, since the roster asks each binary its version once a process (MOD8).
+    /// </summary>
+    public Func<CancellationToken, Task<IReadOnlyList<HandOverDoor>>>? HandOverDoors { get; set; }
+
     /// <summary>How a helper's pass is run, unless a test hands in a stand-in, since a real pass spawns git and an agent (MOD8).</summary>
     public Func<HelperPassAsk, ReviewerChoice, CancellationToken, Task<HelperPassRun>>? HelperPasses { get; set; }
 
