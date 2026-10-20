@@ -53,7 +53,7 @@ public sealed class InputEndStopTests : IDisposable
     /// FLAKE2: the one wait in a host's stop that runs long by design is the framework's drain of the requests in flight, 30
     /// seconds by default, six times the five the shell waits before it kills the host it started (<c>HostSupervisor.StopWithin</c>)
     /// and twice what a test waits. A host the shell started bounds it under the shell's wait; one started from a terminal
-    /// keeps the framework's.
+    /// keeps the framework's. The shell's tests hold its five (TWINSTOP1, <c>HostSupervisorTests</c>).
     /// </summary>
     [Theory]
     [InlineData("1", true)]

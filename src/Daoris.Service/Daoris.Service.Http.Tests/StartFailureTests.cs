@@ -80,6 +80,66 @@ public sealed class StartFailureTests : IDisposable
     }
 
     /// <summary>
+    /// REALHOSTPORT1 (FLAKE2's finding): a start took its host as up once anything answered at its port, so a port taken
+    /// between being drawn and being bound talked to another host. Here another host holds the port and answers a status over
+    /// a home of its own: the start is not taken for up, and says what answered in its place.
+    /// </summary>
+    [Fact]
+    public async Task A_host_whose_port_another_host_answers_is_not_taken_for_up()
+    {
+        var holder = new TcpListener(IPAddress.Loopback, 0);
+        holder.Start();
+        using var stop = new CancellationTokenSource();
+        var other = "0123456789abcdef0123456789abcdef";
+        var answering = AnswerStatusAsync(holder, $"{{\"tier\":\"lexical only\",\"home\":\"{other}\"}}", stop.Token);
+        try
+        {
+            var url = $"http://127.0.0.1:{((IPEndPoint)holder.LocalEndpoint).Port}";
+            Assert.True(await RealHost.AnswersAsync(url), "the other host does not answer");
+
+            var failed = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+                RealHost.StartAsync(_scratch, new Dictionary<string, string?> { ["ASPNETCORE_URLS"] = url }));
+
+            Assert.Contains("exited", failed.Message);
+            Assert.Contains($"another host answered at its port, over home {other}", failed.Message);
+        }
+        finally
+        {
+            stop.Cancel();
+            holder.Stop();
+            await answering;
+        }
+    }
+
+    /// <summary>Answers every request on <paramref name="listener"/> with <paramref name="status"/>, until stopped.</summary>
+    private static async Task AnswerStatusAsync(TcpListener listener, string status, CancellationToken stop)
+    {
+        var body = System.Text.Encoding.UTF8.GetBytes(status);
+        var head = System.Text.Encoding.ASCII.GetBytes(
+            $"HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {body.Length}\r\nConnection: close\r\n\r\n");
+        while (!stop.IsCancellationRequested)
+        {
+            try
+            {
+                using var client = await listener.AcceptTcpClientAsync(stop);
+                var stream = client.GetStream();
+                // The request's head, read to its blank line; a status request has no body.
+                using (var reader = new StreamReader(stream, leaveOpen: true))
+                {
+                    while (!string.IsNullOrEmpty(await reader.ReadLineAsync(stop))) { }
+                }
+
+                await stream.WriteAsync(head, stop);
+                await stream.WriteAsync(body, stop);
+            }
+            catch (Exception error) when (error is OperationCanceledException or SocketException or IOException or ObjectDisposedException)
+            {
+                // Stopped, or a caller gone mid-answer.
+            }
+        }
+    }
+
+    /// <summary>
     /// Waits for <paramref name="host"/> to exit, which it must, unanswered; then its log's one <c>error</c> line, at
     /// <c>start</c>, with the exception's type, message and stack, and the runtime ending the process.
     /// </summary>

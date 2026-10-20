@@ -131,7 +131,8 @@ public sealed class SessionRequestChangeTests : IDisposable
 
     /// <summary>
     /// With the source silenced, the listing behind it takes the request inside the asking door's ten seconds (SessionsCommand's
-    /// <see cref="SessionsWorld.Wait"/>): the watch's default, unchanged by the test.
+    /// <see cref="SessionsWorld.DefaultWait"/>): the watch's default, unchanged by the test. TESTCLOCK2: "inside" is the listing's
+    /// period against the door's wait, both the code's own, where the machine's clock timed a take against ten seconds.
     /// </summary>
     [Fact]
     public async Task With_the_source_silenced_the_listing_takes_a_request_inside_the_asking_doors_wait()
@@ -141,11 +142,10 @@ public sealed class SessionRequestChangeTests : IDisposable
         var request = Say("s1");
         Requests.Write(request);
 
-        var asked = Stopwatch.StartNew();
         await Poll.Until(() => inbox.State.Queued.Count == 1, () => "the listing never took the words", Poll.Patience);
 
         Assert.Equal(TimeSpan.FromSeconds(3), SessionRequestWatch.Listing);
-        Assert.True(asked.Elapsed < TimeSpan.FromSeconds(10), $"{asked.Elapsed} waited");
+        Assert.True(SessionRequestWatch.Listing < SessionsWorld.DefaultWait, $"a listing every {SessionRequestWatch.Listing} is not inside {SessionsWorld.DefaultWait}");
     }
 
     /// <summary>

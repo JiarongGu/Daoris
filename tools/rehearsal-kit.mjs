@@ -492,15 +492,33 @@ const ask = (method, params) => new Promise((resolve) => {
 const update = (sessionId, body) =>
   send({ jsonrpc: '2.0', method: 'session/update', params: { sessionId, update: body } });
 
+// What an error says, with every cause under it (FLAKE4): Node's fetch says only \`fetch failed\`, and what refused it, the
+// system's code and the address, is its cause; a connection tried on more than one address carries a refusal for each.
+const why = (error) => {
+  const said = [error?.message ?? String(error)];
+  for (let cause = error?.cause; cause; cause = cause.cause) {
+    for (const each of Array.isArray(cause.errors) && cause.errors.length ? cause.errors : [cause]) {
+      const message = each?.message ?? String(each);
+      said.push(each?.code && !message.includes(each.code) ? each.code + ' ' + message : message);
+    }
+  }
+  return said.join(': ');
+};
+
 const url = process.env.DAORIS_SERVICE_URL;
 const id = process.env.DAORIS_QUEST_ID;
 const respond = async (action, reason) => {
-  const response = await fetch(url + '/api/quests/' + id + '/respond', {
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ action, reason }),
-  });
-  return { ok: response.ok, text: await response.text() };
+  try {
+    const response = await fetch(url + '/api/quests/' + id + '/respond', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ action, reason }),
+    });
+    return { ok: response.ok, text: await response.text() };
+  } catch (error) {
+    // Which door, which move, and what refused it, so a turn that fails on its fetch says why (FLAKE4).
+    throw new Error('the quest door at ' + url + ' did not answer ' + action + ': ' + why(error));
+  }
 };
 
 // A SET-UP (LAYOUT7a, D124 §2): the quest asks this repository's own session to take up the doctrine and
@@ -858,8 +876,8 @@ const handle = async (line) => {
         const stopReason = await work(frame.params?.sessionId ?? session, said);
         send({ jsonrpc: '2.0', id: frame.id, result: { stopReason } });
       } catch (error) {
-        say('turn failed:', error.message);
-        send({ jsonrpc: '2.0', id: frame.id, error: { code: -32000, message: error.message } });
+        say('turn failed:', why(error));
+        send({ jsonrpc: '2.0', id: frame.id, error: { code: -32000, message: why(error) } });
       }
       break;
     }

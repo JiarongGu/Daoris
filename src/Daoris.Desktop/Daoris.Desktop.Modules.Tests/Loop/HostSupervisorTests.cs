@@ -220,6 +220,16 @@ public sealed class HostSupervisorTests : IDisposable
     }
 
     /// <summary>
+    /// TWINSTOP1: the five seconds the shell gives the host it started before it kills it are a twin by value of what the
+    /// host assumes (FLAKE2): a host started with <see cref="HostSupervisor.StopOnInputEnd"/> bounds its drain of the
+    /// requests in flight (<c>InputEndStop.Drain</c>) under them, and <c>InputEndStopTests</c> holds that drain under five
+    /// seconds. The artefacts share no code, so each side's tests hold the number.
+    /// </summary>
+    [Fact]
+    public void The_shell_waits_five_seconds_for_the_host_it_started_before_it_kills_it() =>
+        Assert.Equal(TimeSpan.FromSeconds(5), new HostSupervisor("http://localhost:0").StopWithin);
+
+    /// <summary>
     /// The first real log's finding: the shell killed the host it started, so the host never wrote its
     /// stop. A host that goes when its input closes is let go, and never killed.
     /// </summary>
