@@ -449,6 +449,8 @@ export function App() {
   // What waits on the person in Sessions (the sessions parked asking, the quests parked on their failed sessions) is marked beside it.
   const working = attention.state === 'known' ? attention.working : 0;
   const sessionsWaiting = attention.state === 'known' ? attention.sessions : 0;
+  // The status bar's: not judged yet is no count, never a zero (PUSHUX1); a plain browser has no driver here, so none it runs.
+  const workingSaid = attention.state === 'reading' ? null : working;
   // Where this circle stands with its remote (SYNC6b), from this machine's own host — so a browser on
   // the machine reads it too, and it says for itself whether the circle is wired. Before it answers,
   // the shell's map says; a browser with neither is not asked.
@@ -1218,7 +1220,7 @@ export function App() {
           )
           : undefined}
         driver={presence}
-        sessions={working}
+        sessions={workingSaid}
         workspace={scopeNamed}
         remote={wired}
         sync={circle && standing.data?.wired

@@ -4,7 +4,8 @@ import { SessionConsole } from './console/SessionConsole';
 import { sentence } from '../locales/format';
 import { buildChain } from '../map/chain';
 import type { Compose, OpenGroup } from '../app/opener';
-import { useAnswerSession, useAsks, usePersonDone, useQuests, useRegistry, useSessions } from '../data/queries';
+import { SESSIONS_SLICE, useAnswerSession, useAsks, usePersonDone, useQuests, useRegistry, useSessions } from '../data/queries';
+import { usePushedResyncing } from '../bridge/state/slices';
 import {
   type TurnStop, useCancelTurn, useEditQueued, useEndChat, useHarnesses, useResolveSession, useSendMessage,
   NO_TURNS, useChatTurns, useSessionEntries, useSessionGroups, useSessionOpenings, useSessionOptions, useSessionStreams, useSessionWhere,
@@ -389,6 +390,7 @@ export function WorkFrame({
   };
 
   const sessions = useSessions(null, true);
+  const sessionsResyncing = usePushedResyncing(SESSIONS_SLICE);
   // A conversation's name (RAIL1): the same answer the rail asks for, from the same list, so the head
   // and the row read one name and the bridge is asked once.
   const openings = useSessionOpenings(sessions.data);
@@ -1867,6 +1869,7 @@ export function WorkFrame({
       />
     ),
     loading: sessions.isPending,
+    resyncing: sessionsResyncing,
     chosen: selected,
     // What waits on the person, then what runs, in the open list's order (FRAME6; D126 §2.5).
     strip: (

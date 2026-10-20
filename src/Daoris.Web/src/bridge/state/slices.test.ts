@@ -249,4 +249,31 @@ describe('a pushed slice (PUSH1a)', () => {
     await expect(reading).resolves.toEqual({ a: 1, b: 1 });
     expect(pull).not.toHaveBeenCalled();
   });
+
+  it('says a live slice read again is resyncing, holding what it held, and a first read is not (PUSHUX1)', async () => {
+    let answer: (value: unknown) => void = () => {};
+    invoke.mockImplementationOnce(() => new Promise((resolve) => { answer = resolve; }));
+    const client = new QueryClient();
+    const store = pushedOf(client);
+    store.register(spec);
+    const told = vi.fn();
+    store.subscribe(told);
+
+    const first = store.resync('test');
+    expect(store.resyncing('test')).toBe(false);
+    answer(snapshot(1, 1));
+    await first;
+
+    invoke.mockImplementationOnce(() => new Promise((resolve) => { answer = resolve; }));
+    told.mockClear();
+    store.heard({ ...push('a', 1, { a: 'new owner' }), epoch: 'e2' });
+    expect(store.resyncing('test')).toBe(true);
+    expect(told).toHaveBeenCalled();
+    expect(client.getQueryData(KEY)).toEqual({ a: 1, b: 1 });
+
+    answer(snapshot(2, 2, 'e2'));
+    await store.asking('test');
+    expect(store.resyncing('test')).toBe(false);
+    expect(client.getQueryData(KEY)).toEqual({ a: 2, b: 2 });
+  });
 });

@@ -33,18 +33,18 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | File | KB | Lines |
 |---|---|---|
 | `src/Daoris.Web/e2e/platform.spec.ts` | 56 | 964 |
-| `src/Daoris.Web/src/agents/AgentPage.tsx` | 53 | 981 |
-| `src/Daoris.Web/src/agents/AgentsView.test.tsx` | 120 | 2276 |
+| `src/Daoris.Web/src/agents/AgentPage.tsx` | 54 | 982 |
+| `src/Daoris.Web/src/agents/AgentsView.test.tsx` | 120 | 2289 |
 | `src/Daoris.Web/src/agents/agents.test.ts` | 47 | 804 |
 | `src/Daoris.Web/src/app/App.test.tsx` | 45 | 866 |
-| `src/Daoris.Web/src/app/App.tsx` | 75 | 1337 |
-| `src/Daoris.Web/src/app/pushedState.test.tsx` | 57 | 1218 |
+| `src/Daoris.Web/src/app/App.tsx` | 75 | 1339 |
+| `src/Daoris.Web/src/app/pushedState.test.tsx` | 60 | 1285 |
 | `src/Daoris.Web/src/bridge/sessions/sessions.ts` | 41 | 790 |
 | `src/Daoris.Web/src/data/api.ts` | 51 | 847 |
 | `src/Daoris.Web/src/data/queries.ts` | 47 | 890 |
 | `src/Daoris.Web/src/design/tokens.test.ts` | 48 | 856 |
 | `src/Daoris.Web/src/design/ui.test.tsx` | 58 | 1167 |
-| `src/Daoris.Web/src/design/ui.tsx` | 87 | 1840 |
+| `src/Daoris.Web/src/design/ui.tsx` | 87 | 1850 |
 | `src/Daoris.Web/src/help/AskConversation.tsx` | 53 | 987 |
 | `src/Daoris.Web/src/help/AskDaoris.test.tsx` | 85 | 1716 |
 | `src/Daoris.Web/src/menus/commands.ts` | 40 | 793 |
@@ -56,13 +56,13 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Web/src/work/WorkFrame.conversation.test.tsx` | 60 | 1168 |
 | `src/Daoris.Web/src/work/WorkFrame.landed.test.tsx` | 104 | 1815 |
 | `src/Daoris.Web/src/work/WorkFrame.test.tsx` | 81 | 1536 |
-| `src/Daoris.Web/src/work/WorkFrame.tsx` | 130 | 2303 |
+| `src/Daoris.Web/src/work/WorkFrame.tsx` | 130 | 2306 |
 | `src/Daoris.Web/src/work/WorkFrame.words.test.tsx` | 46 | 851 |
 | `src/Daoris.Web/src/work/conversation/ConversationView.test.tsx` | 70 | 1306 |
 | `src/Daoris.Web/src/work/conversation/ConversationView.tsx` | 41 | 834 |
 | `src/Daoris.Web/src/work/conversation/conversation.test.ts` | 62 | 1173 |
 | `src/Daoris.Web/src/work/conversation/conversation.ts` | 43 | 847 |
-| `src/Daoris.Web/src/work/frame/frame.tsx` | 41 | 888 |
+| `src/Daoris.Web/src/work/frame/frame.tsx` | 41 | 891 |
 | `src/Daoris.Web/src/work/head/SessionHead.test.tsx` | 67 | 1274 |
 | `src/Daoris.Web/src/work/noteLines.test.ts` | 79 | 1161 |
 | `src/Daoris.Web/src/work/noteLines.ts` | 42 | 756 |
@@ -143,7 +143,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/LandedBranches.cs` | 56 | 989 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/Landing/AutoLander.cs` | 51 | 761 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/Landing/Landing.cs` | 60 | 1057 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/Nodes/NodeGraphs.cs` | 50 | 867 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/Nodes/NodeGraphs.cs` | 50 | 871 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/Nodes/NodeRuntime.cs` | 73 | 1133 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/Nodes/QuestCloser.cs` | 60 | 946 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/Nodes/WireEvaluation.cs` | 45 | 717 |
@@ -209,7 +209,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Cli/src/driver/driverconfig.ts` | 160 | 2848 |
 | `src/Daoris.Cli/src/plugins/plugins.ts` | 82 | 1598 |
 | `src/Daoris.Cli/src/service/service.ts` | 41 | 862 |
-| `src/Daoris.Cli/src/workflows/namedworkflows.ts` | 44 | 882 |
+| `src/Daoris.Cli/src/workflows/namedworkflows.ts` | 46 | 902 |
 | `src/Daoris.Cli/src/workflows/workflowdoor.ts` | 50 | 897 |
 | `src/Daoris.Cli/test/agents/toolchain.test.ts` | 110 | 2082 |
 | `src/Daoris.Cli/test/desktop-tool.test.ts` | 46 | 878 |
@@ -239,7 +239,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 
 | File | KB | Lines |
 |---|---|---|
-| `.claude/knowledge/twins.md` | 112 | 182 |
+| `.claude/knowledge/twins.md` | 113 | 182 |
 | `docs/2026-09-19-platform-ux.md` | 69 | 721 |
 | `docs/2026-09-21-dsh-evaluation.md` | 43 | 483 |
 | `docs/2026-09-21-working-surface-components.md` | 54 | 354 |

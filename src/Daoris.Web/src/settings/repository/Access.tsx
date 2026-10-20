@@ -79,6 +79,25 @@ export const isFull = (pauses: readonly ResolvedPause[]) =>
 /** The pauses this page knows, in their order; one a newer driver names is passed over, as the driver passes over one it does not. */
 const known = (pauses: readonly ResolvedPause[]) => pauses.filter((each) => each.pause in PAUSES);
 
+/**
+ * A session's record's pause map (`access`, AUTONOMY1a) as pauses: the ones this page knows in their order, then any other in the
+ * record's, each from `record`. Nothing is resolved against today's settings: the record is what the driver resolved at the start.
+ */
+export function recordedPauses(access: Readonly<Record<string, string>>): ResolvedPause[] {
+  const entries = Object.entries(access);
+  return [
+    ...ORDER.filter((pause) => Object.hasOwn(access, pause)).map((pause) => ({ pause, value: access[pause]!, source: 'record' })),
+    ...entries.filter(([pause]) => !(pause in PAUSES)).map(([pause, value]) => ({ pause, value, source: 'record' })),
+  ];
+}
+
+/** Whether a record's pause map is full access: every pause this page knows recorded at its open value, and no other. */
+export const recordedFull = (access: Readonly<Record<string, string>> | null | undefined) =>
+  Boolean(access) && ORDER.every((pause) => Object.hasOwn(access!, pause)) && isFull(recordedPauses(access!));
+
+/** A pause's name, the setup's word for it: the pause itself, as code, where this page does not know it. */
+export const pauseName = (t: TFunction, pause: string) => (pause in PAUSES ? t(`settings.access.pause.${pause}`) : `\`${pause}\``);
+
 /** The one place every pause came from, or null where they came from several. */
 const sourceOf = (pauses: readonly ResolvedPause[]) => {
   const sources = new Set(pauses.map((each) => each.source));
@@ -97,7 +116,7 @@ function marked(t: TFunction, value: string, source: string | null, owner: Acces
 const valueKey = (pause: string, value: string) => (PAUSES[pause]?.values.includes(value) ? `${pause}.${value}` : null);
 
 /** A value's short name, the choice's label: the value itself, as code, where this page does not know it. */
-const valueName = (t: TFunction, pause: string, value: string) => {
+export const valueName = (t: TFunction, pause: string, value: string) => {
   const key = valueKey(pause, value);
   return key ? t(`settings.access.value.${key}`) : `\`${value}\``;
 };

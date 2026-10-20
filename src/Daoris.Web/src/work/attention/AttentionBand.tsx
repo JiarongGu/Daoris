@@ -138,7 +138,7 @@ function Band({ doors, notify, onSessions, onRun }: {
 
   if (waiting.length === 0) {
     return (
-      <AttentionRegion>
+      <AttentionRegion resyncing={attention.resyncing}>
         <NothingNeedsYou working={(sessions.data ?? []).filter((session) => WORKING.has(session.state)).length} />
       </AttentionRegion>
     );
@@ -338,7 +338,7 @@ function Band({ doors, notify, onSessions, onRun }: {
   };
 
   return (
-    <AttentionRegion>
+    <AttentionRegion resyncing={attention.resyncing}>
       <AttentionList
         items={waiting}
         doors={doors}

@@ -250,6 +250,8 @@ export function readVersion(value: Record<string, unknown>, number: number, prio
       // Judged whole as the driver's `NodeGraphs.Read` judges it (FABRIC-GRAPH1c, GRAPH1k), its first problem said.
       const read = readGraph(raw);
       if (read.problems.length > 0) return unread(`v${number}: its graph does not hold: ${read.problems[0]!.words}`);
+      const landing = oneLandingProblem(read.graph!, number);
+      if (landing !== null) return unread(landing);
       // The driver reads this graph and this build cannot write its options as the driver does: no digest, and, where some option's text
       // was not kept (FABRIC-GRAPH1f: a file read with `JSON.parse`), no rewriting of the file.
       if (read.lossy !== null) {
@@ -262,6 +264,24 @@ export function readVersion(value: Record<string, unknown>, number: number, prio
 
   const { steps, problem } = readSteps(hasSteps ? value['steps'] : undefined, number, prior);
   return steps === null ? unread(problem!) : { version: number, at, door, steps, problem: null, digest: versionDigest(steps) };
+}
+
+/**
+ * Why a named version's graph is not one landing, or null (FABRIC-CUTOVER1b; D190 point 4, the cutover design §4): it holds one
+ * `handed`, and at most one `opinion` and one `look`, since the process it is read as holds one of each. Judged after the graph holds and
+ * before what this build cannot write, in that order. A TWIN with the driver's `WorkflowNamed.OneLandingProblem`, on
+ * `workflow-graph-versions.json`.
+ */
+function oneLandingProblem(graph: GraphForm, number: number): string | null {
+  const of = (kind: string): string[] => graph.nodes.filter((node) => node.kind === kind).map((node) => `\`${node.id}\``);
+  const landings = of('handed');
+  if (landings.length === 0) return `v${number}: its graph holds no landing (\`handed\`), and a named workflow's graph lands its work once.`;
+  if (landings.length > 1) return `v${number}: its graph holds ${landings.length} landings, ${landings.join(' and ')}, and a named workflow's graph lands its work once.`;
+  for (const [kind, what] of [['opinion', 'opinions'], ['look', 'looks']] as const) {
+    const named = of(kind);
+    if (named.length > 1) return `v${number}: its graph holds ${named.length} ${what}, ${named.join(' and ')}, and a named workflow's graph holds at most one.`;
+  }
+  return null;
 }
 
 /**

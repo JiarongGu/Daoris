@@ -9,13 +9,13 @@ import { ListRowDoor } from '../work/frame/ListPane';
 
 /**
  * An ask's state as a pill tone: waiting on a person while it is asked or proposed — a proposal is a
- * person's to accept (INT4a) — done once it became quests and once their work finished (USE1c), quiet
- * once closed. Exhaustive at compile time, as `QUEST_TONE` is.
+ * person's to accept (INT4a) — quiet once it became quests (QUESTLISTS1: their work is not finished, so the done hue
+ * was a false report) or closed, done once their work finished (USE1c). Exhaustive at compile time, as `QUEST_TONE` is.
  */
 export const ASK_TONE: Record<AskState, 'open' | 'done' | 'neutral'> = {
   Open: 'open',
   Proposed: 'open',
-  Published: 'done',
+  Published: 'neutral',
   Done: 'done',
   Closed: 'neutral',
 };

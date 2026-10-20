@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { SectionTitle, Tip } from '../../design/ui';
+import { cn } from '../../lib/cn';
 import { type Attention, type AttentionActs, AttentionRow } from './AttentionRow';
 import { attentionGroups } from './attention';
 
@@ -109,7 +110,19 @@ export function NothingNeedsYou({ working }: { working: number }) {
  * The band's region, one element whatever it holds: the line while nothing waits and the list once something does are
  * one landmark, so a reader and a test holding it are not left with a node the page replaced as the answers arrived.
  */
-export function AttentionRegion({ children }: { children: ReactNode }) {
+export function AttentionRegion({ children, resyncing = false }: {
+  children: ReactNode;
+  /** Who needs the person read again whole (PUSHUX1): the last rows held at reduced opacity until it lands. */
+  resyncing?: boolean;
+}) {
   const { t } = useTranslation();
-  return <section aria-label={t('work.attention.title')} className="mb-5">{children}</section>;
+  return (
+    <section
+      aria-label={t('work.attention.title')}
+      aria-busy={resyncing || undefined}
+      className={cn('mb-5', resyncing && 'opacity-60 transition-opacity duration-(--speed)')}
+    >
+      {children}
+    </section>
+  );
 }

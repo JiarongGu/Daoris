@@ -4,7 +4,7 @@ import { ATTENTION_SLICE, inCircle, keys } from '../data/queries';
 import { useScope } from '../data/scope';
 import { type AttentionPushed, attentionInOrder, type PushedAttention } from '../work/attention/attention';
 import { readSlice } from './driver';
-import { mergeKeyed, readPushed, type SliceSpec } from './state/slices';
+import { mergeKeyed, readPushed, type SliceSpec, usePushedResyncing } from './state/slices';
 
 // Who needs the person, as the shell pushes it (PUSH1d4, D182 points 2-4 and 6): *What needs you*'s rows, what waits on the person in
 // Sessions and the sessions the driver runs (SESSBADGE1), judged in .NET once for every window (`AttentionStateSlice`). The page orders
@@ -60,12 +60,13 @@ export const attentionSlice: SliceSpec = {
 /**
  * What a window knows of who needs the person: in a plain browser, nothing, since the judgement is the app's (`app`); in a shell,
  * nothing yet until the owner has judged (`reading`), never an empty band (PUSHUX1); then, in its scope, the rows, how many things
- * wait on the person in Sessions (`sessions`), and how many sessions the driver runs (`working`, SESSBADGE1).
+ * wait on the person in Sessions (`sessions`), and how many sessions the driver runs (`working`, SESSBADGE1); and whether the
+ * slice is being read again whole, which holds those rows dimmed (`resyncing`).
  */
 export type AttentionRead =
   | { state: 'app' }
   | { state: 'reading' }
-  | { state: 'known'; rows: PushedAttention[]; sessions: number; working: number };
+  | { state: 'known'; rows: PushedAttention[]; sessions: number; working: number; resyncing: boolean };
 
 /**
  * Who needs the person in this window (PUSH1d4): the pushed rows, read from memory and never pulled, since no route answers them;
@@ -76,6 +77,7 @@ export const useAttention = (): AttentionRead => {
   const { isAvailable } = useShenora();
   const client = useQueryClient();
   const { workspace } = useScope();
+  const resyncing = usePushedResyncing(ATTENTION_SLICE);
   const read = useQuery({
     queryKey: keys.attention,
     // Read from the pushes once they are judged; until then nothing, which the pushes replace as they come.
@@ -92,5 +94,6 @@ export const useAttention = (): AttentionRead => {
     rows: read.data.rows.filter(scoped),
     sessions: read.data.sessions.filter(scoped).length,
     working: read.data.working.filter(scoped).length,
+    resyncing,
   };
 };

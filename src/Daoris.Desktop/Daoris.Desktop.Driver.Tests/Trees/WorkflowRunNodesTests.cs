@@ -178,11 +178,12 @@ public sealed class WorkflowRunNodesTests : IDisposable
             Review = Review(ReviewStates.NotShown, ReviewLevels.Chain),
         }, "look", ["land"], [("work", Reached), ("land", Ready)], [(WorkflowRunDifferences.Added, "look")]),
 
-        // The second opinion.
+        // The second opinion. FABRIC-CUTOVER1b (the cutover design §5.1): the decoded look stands beside the opinion, held while an agent
+        // reads it by the review gate, as schema 1 holds it, and going on beside one that waits on the person, as schema 1's does.
         ["an agent at the opinion holds the look"] = new(Opined, facts => Done(facts) with
         {
             Review = Review(ReviewStates.NotShown), Opinion = Opinion(OpinionGateStates.Reading),
-        }, "second", ["second"], [("work", Reached), ("second", Active), ("see", Blocked), ("land", Blocked)], []),
+        }, "second", ["second"], [("work", Reached), ("second", Active), ("see", NodeStates.Ready), ("land", Blocked)], []),
         ["a settled opinion lets the look go"] = new(Opined, facts => Done(facts) with
         {
             Review = Review(ReviewStates.NotShown), Opinion = Opinion(OpinionGateStates.Settled),
@@ -198,15 +199,15 @@ public sealed class WorkflowRunNodesTests : IDisposable
         ["a required opinion none could give waits, and schema 1's look goes on beside it"] = new(Opined, facts => Done(facts) with
         {
             Review = Review(ReviewStates.NotShown), Opinion = Opinion(OpinionGateStates.Unavailable, required: true),
-        }, "second", ["second"], [("second", Active), ("see", Blocked), ("land", Blocked)], [(WorkflowRunDifferences.LookBesideOpinion, "second")]),
-        ["a dispute: schema 1's look goes on beside it, and the decoded order holds it"] = new(Opined, facts => Done(facts) with
+        }, "second", ["second"], [("second", Active), ("see", Active), ("land", Blocked)], []),
+        ["a dispute: schema 1's look goes on beside it, and the decoded look does too"] = new(Opined, facts => Done(facts) with
         {
             Review = Review(ReviewStates.NotShown), Opinion = Opinion(OpinionGateStates.Disputed) with { Disputes = new OpinionDisputes([1], []) },
-        }, "second", ["second"], [("second", Active), ("see", Blocked), ("land", Blocked)], [(WorkflowRunDifferences.LookBesideOpinion, "second")]),
+        }, "second", ["second"], [("second", Active), ("see", Active), ("land", Blocked)], []),
         ["an opinion whose gate was not read is unknown, and the look goes on beside it"] = new(Opined, facts => Done(facts) with
         {
             Review = Review(ReviewStates.NotShown),
-        }, "second", ["second"], [("second", NodeStates.Unknown), ("see", Blocked), ("land", Blocked)], [(WorkflowRunDifferences.LookBesideOpinion, "second")]),
+        }, "second", ["second"], [("second", NodeStates.Unknown), ("see", Active), ("land", Blocked)], []),
         // FABRIC-GRAPH1h: the protected order held across a skip. The look's skip satisfies its own wire, and the opinion's and the work's
         // wires into the landing still hold it, as schema 1 does.
         ["a look skipped while an agent reads the opinion: the landing still waits on the opinion"] = new(Opined, facts => Done(facts) with
@@ -318,7 +319,8 @@ public sealed class WorkflowRunNodesTests : IDisposable
         foreach (var (name, recorded) in Runs)
         {
             var (run, projection) = Projected(recorded);
-            Assert.DoesNotContain(projection.Differences, each => each.Code == WorkflowRunDifferences.Unexplained);
+            Assert.False(projection.Differences.Any(each => each.Code == WorkflowRunDifferences.Unexplained),
+                $"{name}: unexplained at {string.Join(", ", projection.Differences.Where(each => each.Code == WorkflowRunDifferences.Unexplained).Select(each => each.Step))}");
             var equal = projection.Frontier.SequenceEqual(run.At is null ? [] : [run.At]);
             Assert.True(equal || projection.Differences.Count > 0, $"{name}: the graph offers [{string.Join(", ", projection.Frontier)}] where schema 1 stands at {run.At}, and no difference is named");
             Assert.Equal((name, equal && projection.Differences.Count == 0), (name, projection.Agrees));
@@ -326,21 +328,21 @@ public sealed class WorkflowRunNodesTests : IDisposable
     }
 
     /// <summary>
-    /// The mismatch, named and kept (the parent's decision; D173's FABRIC-WIRE1g note): schema 1 lets the look go on beside a disputed
-    /// opinion, whose Reviewed answers it, and is unchanged; the decoded order holds the look until the opinion is reached. The comparison
-    /// says so by name and does not agree, so the cutover settles it openly.
+    /// The mismatch D173's FABRIC-WIRE1g note named, settled (FABRIC-CUTOVER1b; D190 point 5, the cutover design §5.1): schema 1 lets the
+    /// look go on beside a disputed opinion, whose Reviewed answers it, and the decoded look now stands beside the opinion too, so it goes on
+    /// as well. The comparison stands at the opinion and agrees; <see cref="WorkflowRunDifferences.LookBesideOpinion"/> is kept for a history.
     /// </summary>
     [Fact]
-    public void Known_difference_a_disputed_opinion_holds_the_decoded_look_that_schema_1_lets_go_on()
+    public void A_disputed_opinion_lets_the_decoded_look_go_on_beside_it_as_schema_1_does()
     {
-        var (run, projection) = Projected(Runs["a dispute: schema 1's look goes on beside it, and the decoded order holds it"]);
+        var (run, projection) = Projected(Runs["a dispute: schema 1's look goes on beside it, and the decoded look does too"]);
 
         var look = projection.Steps.Single(row => row.Step.Step.Id == "see");
         Assert.Equal((WorkflowRunStates.WaitingOnYou, WorkflowRunDetails.NotShown), (look.Step.State, look.Step.Detail));
-        Assert.Equal((NodeStates.Blocked, false), (look.Status!.State, look.Offered));
+        Assert.Equal((NodeStates.Active, true), (look.Status!.State, look.Offered));
         Assert.Equal(("second", "second"), (run.At, projection.At));
-        Assert.Equal([new WorkflowRunDifference(WorkflowRunDifferences.LookBesideOpinion, "second")], projection.Differences);
-        Assert.False(projection.Agrees);
+        Assert.Empty(projection.Differences);
+        Assert.True(projection.Agrees);
     }
 
     /// <summary>
@@ -395,7 +397,7 @@ public sealed class WorkflowRunNodesTests : IDisposable
     /// <summary>The CLI twin's smallest version (its table's first row), with the identity and the graph digest the twin computed for it.</summary>
     private const string Smallest = """{ "id": "work", "kind": "work" }, { "id": "land", "kind": "landing", "form": "merge", "accept": "you" }""";
     private const string SmallestIdentity = "75906e6bfc40";
-    private const string SmallestGraph = "gph-68bea661115caab7ab124e145520bc92";
+    private const string SmallestGraph = "gph-b4536193efd05554429dcf52ae16eb3b";
 
     private static string File(params string[] versions) =>
         "{\n  \"id\": \"careful\",\n  \"name\": \"Careful\",\n  \"versions\": [\n"

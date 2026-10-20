@@ -2,6 +2,7 @@ import { type ReactNode, useLayoutEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Session } from '../../data/api';
 import { Button, Icon, Inline, Menu, Pill, SESSION_TONE, type ShownState, shownKey } from '../../design/ui';
+import { AccessChip, startedFull } from '../AccessFact';
 import { ACT_LOOK, actMenu, headerActs, type SessionActId } from '../acts';
 import { type Answered, InlineConfirm } from '../InlineConfirm';
 import { PageHead } from '../frame/ViewMain';
@@ -17,8 +18,8 @@ import { PageHead } from '../frame/ViewMain';
  *
  * - **On the left** (UX7c, D152 §7, the UX7 design §5.2): its shown word on its pill first, so the word stays in one place
  *   whatever the title's length; its title on one line, whole in its tip; and under them the facts its state makes matter,
- *   handed in (`sessionFacts`), faint. Its id is not a line here: it is the ⋯'s *Copy session ID* and the record's
- *   *Details*.
+ *   handed in (`sessionFacts`), faint, ending in the *Full access* chip where its record says it started so (SESSACCESS1).
+ *   Its id is not a line here: it is the ⋯'s *Copy session ID* and the record's *Details*.
  * - **On the right**: the primary act where the state has one (*Try again*, *Review*), then *Stop…* while it is live,
  *   then ⋯ with the rest in §3.1's order. *Answer…* is not here: the card under the header keeps the answer.
  * - **What asks under it** (the stop's ask, §3.3; the delete's, §5.4; the hand-over's, MIXAGENT1b-i) is pinned with it, since the ask is about the acts
@@ -89,6 +90,9 @@ export function SessionPageHead({ session, title, shown, facts = [], acts, prima
         clamp={1}
         lead={<Pill tone={SESSION_TONE[shown]}>{t(shownKey(shown))}</Pill>}
         facts={facts}
+        // Started under full access, by its record's pauses (SESSACCESS1, D184 point 1): the warning chip, last on the line, so the
+        // line wraps before it rather than cutting it. Any other start wears nothing.
+        fact={startedFull(session) ? <AccessChip /> : undefined}
         // One group names the buttons together, the ⋯ with them (its name is how the page's tests and readers find them), so
         // the ⋯ is inside `acts` rather than PageHead's `more` slot: the two sit in one flex row either way, and *Stop…* is
         // never PageHead's `fold`.

@@ -23,8 +23,9 @@ import { ABANDON_ANSWER, PAUSABLE_ASK, PAUSABLE_QUEST } from '../work/pausing/pa
 
 const ASK = {
   id: 'a1b2c3', workspace: 'aurora', sentence: 'Make chunk streaming smooth', state: 'Published', tier: 'named',
-  asked: '2026-10-02T00:00:00Z', updated: '2026-10-02T00:00:00Z', links: [], attachments: [], quests: ['abc123'], proposal: [],
+  asked: '2026-10-02T00:00:00Z', updated: '2026-10-02T00:00:00Z', links: [], attachments: [], quests: ['abc123', '9a8b7c'], proposal: [],
 };
+// Two quests, so the ask keeps its row: an ask with one is its quest's row (QUESTLISTS1), whose menu opens the ask.
 
 /** The quest's own plan: the shell harness's quest, taken here and running. */
 const QUEST_PLAN = { ...PAUSABLE_QUEST, id: 'abc123', quests: [{ ...PAUSABLE_QUEST.quests[0], quest: 'abc123', key: 'quest:abc123' }] };

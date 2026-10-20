@@ -300,5 +300,10 @@
   "work.facts.continues": "接续 {{agent}} 的会话",
   "work.facts.continuesAnother": "接续另一个会话",
   "work.facts.helping": "正在协助「{{title}}」",
-  "work.facts.helpingAnother": "正在协助另一个会话"
+  "work.facts.helpingAnother": "正在协助另一个会话",
+  "work.access.full": "完全访问",
+  "work.access.details": "访问权限",
+  "work.access.asStarted": "{{pause}}：{{value}}",
+  "work.access.notRecorded": "未记录",
+  "work.access.questions": "同 Claude Code 一样"
 }

@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { act, cleanup, render } from '@testing-library/react';
+import { act, cleanup, render, screen, within } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as Tooltip from '@radix-ui/react-tooltip';
 
@@ -732,6 +732,73 @@ describe("the driver's state, pushed (PUSH1a)", () => {
     });
     expect(badge()).toEqual({ payload: { count: 2, description: '2 waiting on you', order: expect.any(Number) } });
     expect(Object.keys(since(pushed, asked())).filter((route) => route.startsWith('DAORIS.DRIVER.'))).toEqual([]);
+  });
+
+  /**
+   * PUSHUX1 (the UI/UX design §3.8): every slice answered not judged, and the pulls beneath them not answered yet. Nothing a window
+   * shows reads as empty: who needs the person draws its skeleton, the quests' tiles and card their placeholders, the status bar
+   * no count. Then judged, each says so; and read again whole, the band holds its last rows, dimmed.
+   */
+  it('reads nothing as empty before it is judged, and holds the last render while a slice is read again (PUSHUX1)', async () => {
+    vi.useFakeTimers();
+    let answerLists: () => void = () => {};
+    const lists = new Promise<void>((resolve) => { answerLists = resolve; });
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (/^\/api\/(quests|sessions|asks)(\?|$)/.test(url)) await lists;
+      return respond(url);
+    }));
+    let again: ((value: unknown) => void) | null = null;
+    invoke.mockImplementation(async (module: string, type: string, options?: { payload?: { slice?: string } }) => {
+      if (module === 'DAORIS.REMOTES') return { path: 'remotes.json', fromEnvironment: false, remotes: [] };
+      if (module === 'DAORIS.DRIVER' && type === 'STATE_SLICE') {
+        const slice = options?.payload?.slice ?? '';
+        if (slice === 'driver') return SNAPSHOT;
+        if (slice === 'attention' && again === null && asked().get('DAORIS.DRIVER.STATE_SLICE')! > SLICES) {
+          return new Promise((resolve) => { again = resolve; });
+        }
+        return { slice, epoch: `${slice}-1`, status: 'notJudged', partitions: [] };
+      }
+      if (module === 'DAORIS.DRIVER' && type === 'STATE') return { ...CHOICES, running: [] };
+      return {};
+    });
+    window.localStorage.setItem(AT_START, 'off');
+    await open();
+
+    const band = screen.getByRole('region', { name: 'What needs you' });
+    expect(within(band).queryByText('Nothing needs you')).toBeNull();
+    expect(screen.queryByText('nothing is waiting')).toBeNull();
+    expect(screen.queryByText('Nothing is sitting')).toBeNull();
+    expect(screen.queryByText('0 sessions')).toBeNull();
+    expect(screen.getByText('Open quests').closest('[aria-busy]')).not.toBeNull();
+
+    await act(async () => {
+      answerLists();
+      for (const partition of ['rows', 'sessions']) {
+        heard.get('STATE_PUSH')?.({ slice: 'attention', epoch: 'attention-1', partition, seq: 1, status: 'ready', data: {}, baseSeq: null, removed: [] });
+      }
+      await vi.advanceTimersByTimeAsync(1_000);
+    });
+    expect(within(band).getByText('Nothing needs you')).toBeInTheDocument();
+    expect(screen.getByText('nothing is waiting')).toBeInTheDocument();
+    expect(screen.getByText('0 sessions')).toBeInTheDocument();
+    expect(band).not.toHaveAttribute('aria-busy');
+
+    // A push of another owner's life: the slice is read again whole, and until it lands the band holds what it said, dimmed.
+    await act(async () => {
+      heard.get('STATE_PUSH')?.({ slice: 'attention', epoch: 'attention-2', partition: 'rows', seq: 1, status: 'ready', data: {}, baseSeq: null, removed: [] });
+      await vi.advanceTimersByTimeAsync(100);
+    });
+    expect(band).toHaveAttribute('aria-busy', 'true');
+    expect(within(band).getByText('Nothing needs you')).toBeInTheDocument();
+    await act(async () => {
+      again?.({
+        slice: 'attention', epoch: 'attention-2', status: 'ready',
+        partitions: [{ partition: 'rows', seq: 1, status: 'ready', data: {} }, { partition: 'sessions', seq: 1, status: 'ready', data: {} }],
+      });
+      await vi.advanceTimersByTimeAsync(100);
+    });
+    expect(band).not.toHaveAttribute('aria-busy');
   });
 
   /**

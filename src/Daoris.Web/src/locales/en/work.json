@@ -300,5 +300,10 @@
   "work.facts.continues": "continues from {{agent}}",
   "work.facts.continuesAnother": "continues another session",
   "work.facts.helping": "helping {{title}}",
-  "work.facts.helpingAnother": "helping another session"
+  "work.facts.helpingAnother": "helping another session",
+  "work.access.full": "Full access",
+  "work.access.details": "Access",
+  "work.access.asStarted": "{{pause}}: {{value}}",
+  "work.access.notRecorded": "Not recorded",
+  "work.access.questions": "As Claude Code asks"
 }

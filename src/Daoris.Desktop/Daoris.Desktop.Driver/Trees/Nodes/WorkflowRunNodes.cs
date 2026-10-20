@@ -9,7 +9,9 @@ public static class WorkflowRunDifferences
     /// <summary>
     /// D173's FABRIC-WIRE1g mismatch: schema 1 holds the look only while an agent is at the opinion, so the look goes on beside an opinion
     /// that waits on the person or was not read (a dispute, commits since, a required one none could give), and the look's Reviewed
-    /// answers a dispute. The decoded order (every opinion reaches every look) holds the look until the opinion is reached. At the opinion.
+    /// answers a dispute. The decoded order (every opinion reaches every look) held the look until the opinion was reached. At the opinion.
+    /// Since FABRIC-CUTOVER1b the decoder wires the look beside the opinion and the comparison reads the review gate's hold, so no run
+    /// differs by it; the name is kept for what a history holds of it (the cutover design §5.1).
     /// </summary>
     public const string LookBesideOpinion = "look-beside-opinion";
 
@@ -69,6 +71,8 @@ public sealed record WorkflowRunProjection(WorkflowRun Run, DecodedVersion Versi
     /// <summary>
     /// The graph's eligible nodes as the comparison reads them, in the graph's order: a node standing for a step, whose wires hold, and which
     /// is not settled (reached or skipped). Not raw eligibility, which keeps a completed node, nor the starts, which leave a started one out.
+    /// A look beside an unsettled opinion is left out, the comparison standing at the opinion, where schema 1 holds it as the review gate does
+    /// or goes on with it as the graph does (FABRIC-CUTOVER1b).
     /// </summary>
     public IReadOnlyList<string> Frontier { get; init; } = [];
 
@@ -176,7 +180,18 @@ public static class WorkflowRunNodes
         var rows = run.Steps.Select(step => step.Added is null && counted.FirstOrDefault(node => node.Id == step.Step.Id) is { } node
             ? new WorkflowRunNode(step, node, statuses[node.Id], Offered(node.Id))
             : new WorkflowRunNode(step, null, null, false)).ToList();
-        var frontier = counted.Where(node => Offered(node.Id) && !Settled(node.Id)).Select(node => node.Id).ToList();
+        // FABRIC-CUTOVER1b (the cutover design §5.1): the look is wired beside the opinion, so while the opinion is unsettled the graph offers
+        // both, and the comparison stands at the opinion. The review gate holds the look's set-up while an agent still reads the opinion, which
+        // schema 1 draws as the look not reached (WorkflowRuns.Derive): that hold is the gate's, not the graph's. Otherwise schema 1's look goes
+        // on beside the opinion as the graph's does. Either way, no difference; a look schema 1 holds for another reason is still one.
+        var open = counted.FirstOrDefault(node => node.Kind == NodeKinds.Opinion && !Settled(node.Id)) is { } opinion ? steps[opinion.Id].State : null;
+        bool Beside(NodeDeclaration node) => open is not null && node.Kind == NodeKinds.Look && steps[node.Id].State switch
+        {
+            WorkflowRunStates.NotReached => open is WorkflowRunStates.Working or WorkflowRunStates.WaitingOnAgent,
+            WorkflowRunStates.CannotStart or WorkflowRunStates.Skipped => false,
+            _ => true,
+        };
+        var frontier = counted.Where(node => Offered(node.Id) && !Settled(node.Id) && !Beside(node)).Select(node => node.Id).ToList();
 
         return new(run, version)
         {

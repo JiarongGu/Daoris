@@ -9,6 +9,9 @@ with the version and date at release.
   a conversation you hold yourself, Ask Daoris's included. Something in Sessions waiting on you is a dot in the waiting colour
   beside the count, and hovering the icon says both in words. The window's title keeps to the count *What needs you* shows,
   and the chip beside the browser's button names the browser in Chinese too.
+- The Quests list shows one row for one piece of work: an ask that became a single quest is that quest's row, named by the
+  ask's short title with the ask on its second line (its page opens from the row's right-click menu), and the Asks group
+  keeps only asks still waiting on something of their own. A published ask no longer wears the finished colour.
 - How many sessions Daoris starts at once on this machine is set in Settings → Driver, beside the strike limit and the
   cool-off, and `daoris driver cap <n>` sets the same number while Daoris runs. It counts the sessions Daoris starts, never
   a conversation you hold yourself.
@@ -19,10 +22,21 @@ with the version and date at release.
   other setting is still proposed for your Apply. The browser's row now shows its plugin's approval as it stands, and its
   *Manage* opens the plugin's page, the one place it is changed. On an agent that takes no permission rules, the browser and
   scoped checkout reads say they are unavailable until Daoris serves a tool that can hold them.
+- A session started under full access says so: its head wears a *Full access* warning chip, and its *Details* list each pause
+  (permission prompts, intake routing, landing, go-aheads, questions) as it was when the session started. A session started with
+  any pause on wears nothing new.
+- Nothing in the window says it is empty before Daoris knows. While the sessions, quests or usage are still being read, the status
+  bar's count, Overview's quest tiles and an agent's *Usage* show placeholders, not *0 sessions*, *nothing is waiting* or *nothing
+  measured yet*. A read that failed says why, and no longer says an ask or a session is gone. When Daoris reads a list again whole,
+  *What needs you* and the session, quest and ask lists keep what they showed, dimmed, until it lands.
 - A session that goes on in a new part, on another agent, on another account or after it was cut off, is handed everything it
   took: every word you said, once, what each turn did, where the work stands and the last check that failed, not just its last
   words. A handed-over conversation opens with *Daoris's brief of the session it continues*, folded. A session's Parts strip
   says how each part began: carried on, retried or handed over.
+- A named workflow's version saved as a graph lands its work once: it holds one landing, and at most one second opinion and one
+  look. `daoris workflow apply` and `import` refuse one that does not, saying which, and a stored one reads as unreadable with
+  the same words. Your look no longer has to be wired after the second opinion: Daoris already holds its set-up while an agent
+  reads the opinion, so the look can stand beside it, and both still come before the landing.
 - Your limit of sessions at once counts what the driver starts: a quest's session, an ask's intake, a helper, a second opinion and
   a brainstorm's or a meeting's pass. A conversation you hold, an Ask Daoris conversation or a chat, takes no place under it, idle
   or working, so conversations left open between turns no longer hold quests back. Ask Daoris says so when it describes the limit.

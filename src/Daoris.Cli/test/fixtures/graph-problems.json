@@ -292,14 +292,36 @@
           { "id": "d", "kind": "failed", "from": "checks", "to": "landing", "group": { "id": "g", "mode": "anyOf" } }
         ] },
       "problems": [{ "code": "protected-order", "wire": null, "node": "look", "words": "the landing `landing` can start with no look passed, though `look` reaches it: every way to it passes a look (D157 §2.2's order: holds, opinion, look, landing)." }] },
-    { "name": "the opinion after the look",
+    { "name": "the opinion after the look: no order between them (FABRIC-CUTOVER1b), the look still wired into the landing",
       "graph": { "entries": ["look"], "end": "landing",
         "nodes": [
           { "id": "look", "kind": "look", "version": 1, "reach": "observed" }, { "id": "opinion", "kind": "opinion", "version": 1, "reach": "observed" },
           { "id": "landing", "kind": "handed", "version": 1, "reach": "observed" }
         ],
         "wires": [{ "id": "a", "kind": "after", "from": "look", "to": "opinion" }, { "id": "b", "kind": "after", "from": "opinion", "to": "landing" }] },
-      "problems": [{ "code": "protected-order", "wire": null, "node": "opinion", "words": "the opinion `opinion` comes before the look `look` (D157 §2.2's order: holds, opinion, look, landing)." }] },
+      "problems": [{ "code": "protected-wire", "wire": null, "node": "look", "words": "the look `look` is not wired into the landing `landing`: a skip of a gate between them would let an `after` wire pass while `look` is unsettled, so wire `look` into `landing` (D157 §2.2's order: holds, opinion, look, landing)." }] },
+    { "name": "the look beside the opinion, no wire from the opinion into the look, holds: the review gate holds the look's set-up (FABRIC-CUTOVER1b)",
+      "graph": { "entries": ["work"], "end": "landing",
+        "nodes": [
+          { "id": "work", "kind": "claimed", "version": 1, "reach": "observed" }, { "id": "opinion", "kind": "opinion", "version": 1, "reach": "observed" },
+          { "id": "look", "kind": "look", "version": 1, "reach": "observed" }, { "id": "landing", "kind": "handed", "version": 1, "reach": "observed" }
+        ],
+        "wires": [
+          { "id": "a", "kind": "after", "from": "work", "to": "opinion" }, { "id": "b", "kind": "after", "from": "work", "to": "look" },
+          { "id": "c", "kind": "after", "from": "opinion", "to": "landing" }, { "id": "d", "kind": "after", "from": "look", "to": "landing" }
+        ] },
+      "problems": [] },
+    { "name": "the look beside an opinion that reaches no landing is still refused (FABRIC-CUTOVER1b)",
+      "graph": { "entries": ["work"], "end": "landing",
+        "nodes": [
+          { "id": "work", "kind": "claimed", "version": 1, "reach": "observed" }, { "id": "opinion", "kind": "opinion", "version": 1, "reach": "observed" },
+          { "id": "look", "kind": "look", "version": 1, "reach": "observed" }, { "id": "landing", "kind": "handed", "version": 1, "reach": "observed" }
+        ],
+        "wires": [
+          { "id": "a", "kind": "after", "from": "work", "to": "opinion" }, { "id": "b", "kind": "after", "from": "work", "to": "look" },
+          { "id": "c", "kind": "after", "from": "look", "to": "landing" }
+        ] },
+      "problems": [{ "code": "protected-order", "wire": null, "node": "opinion", "words": "the opinion `opinion` comes before the landing `landing` (D157 §2.2's order: holds, opinion, look, landing)." }] },
     { "name": "the opinion after the landing",
       "graph": { "entries": ["landing"], "end": "opinion",
         "nodes": [{ "id": "landing", "kind": "handed", "version": 1, "reach": "observed" }, { "id": "opinion", "kind": "opinion", "version": 1, "reach": "observed" }],

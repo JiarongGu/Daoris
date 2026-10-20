@@ -95,7 +95,7 @@ test('use names a workflow whose newest version is a graph, in words of its own,
   const table = JSON.parse(readFileSync(join(process.cwd(), 'test', 'fixtures', 'workflow-graph-versions.json'), 'utf8')) as { graph: unknown };
   file.versions.push({ version: 2, at: '2026-10-18T09:00:00Z', door: 'terminal', schema: 2, graph: table.graph });
   writeFileSync(workflowFile(fx, 'docs-to-pr'), JSON.stringify(file, null, 2) + '\n');
-  const said = /v2 now: a graph \(schema 2\) of 5 nodes and 5 wires, digest gph-255acb35b9aa16275f47d33dfdda1c50, which this build reads and does not run yet\./;
+  const said = /v2 now: a graph \(schema 2\) of 6 nodes and 7 wires, digest gph-24feb38b5d78090212b1cac9dc8afb57, which this build reads and does not run yet\./;
 
   for (const where of [['--repository', 'web-app'], ['--workspace', 'work']]) {
     const plan = await run(fx, ['use', 'docs-to-pr', ...where, '--plan'], registry('work'));

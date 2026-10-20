@@ -7,7 +7,7 @@ import '../locales/i18n';
 import { PROPOSED } from '../asks/fixtures';
 import { ContextMenus } from '../menus/ContextMenu';
 import { menuActs, rightClick } from '../test/contextMenu';
-import { HELD, HELD_BY_PERSON, OPEN, REOPENED, SITTING, SUBMITTED, TAKEN } from './fixtures';
+import { DONE as DONE_QUEST, HELD, HELD_BY_PERSON, OPEN, REOPENED, SITTING, SUBMITTED, TAKEN } from './fixtures';
 import { QuestList } from './QuestList';
 
 // Quests' list as a molecule (FRAME1d, D118 §2): rows arrive with what each says, and every press goes out.
@@ -26,6 +26,54 @@ const list = (over: Partial<Parameters<typeof QuestList>[0]> = {}) => {
 };
 
 describe("Quests' list", () => {
+  /** QUESTLISTS1: one piece of work is one row, the quest's, named by its ask's short title; only an ask with a wait of its own keeps a row. */
+  it('places an ask that became one quest once, as that quest’s row, and keeps the asks waiting on their own', () => {
+    const became = (ask: typeof PROPOSED, quest: typeof OPEN) => ({ ...PROPOSED, ...ask, state: 'Published' as const, quests: [quest.id] });
+    const forOpen = became({ ...PROPOSED, id: 'a1a1a1a1a1a1', short: 'Streaming budget' }, OPEN);
+    const forTaken = became({ ...PROPOSED, id: 'b2b2b2b2b2b2', short: 'Config names' }, TAKEN);
+    const forDone = { ...became({ ...PROPOSED, id: 'c3c3c3c3c3c3', short: 'Allocator bump' }, DONE_QUEST), state: 'Done' as const };
+    const twoQuests = { ...PROPOSED, id: 'd4d4d4d4d4d4', short: 'Two repositories', state: 'Published' as const, quests: [SITTING.id, HELD.id] };
+    const openAsk = { ...PROPOSED, id: 'e5e5e5e5e5e5', short: 'Still being read', state: 'Open' as const, proposal: [] };
+    const parked = { ...became({ ...PROPOSED, id: 'f6f6f6f6f6f6', short: 'Intake asked you' }, SUBMITTED) };
+    list({
+      closed: true,
+      asks: [
+        { ask: forOpen }, { ask: forTaken }, { ask: forDone }, { ask: twoQuests }, { ask: openAsk }, { ask: PROPOSED },
+        { ask: parked, intake: 'awaiting-person' },
+      ],
+      quests: [OPEN, TAKEN, DONE_QUEST, SITTING, HELD, SUBMITTED].map((quest) => ({ quest })),
+    });
+
+    // The asks group keeps the open ask, the proposed one, the two-quest ask and the parked intake: four.
+    expect(screen.getByText('Asks (4)')).toBeInTheDocument();
+    for (const name of ['Still being read', 'Two repositories', 'Intake asked you']) expect(screen.getAllByText(name)).toHaveLength(1);
+    // The three single-quest asks are their quests' rows, named by the ask's short title, the ask on the route line.
+    for (const [name, ask] of [['Streaming budget', forOpen], ['Config names', forTaken], ['Allocator bump', forDone]] as const) {
+      const row = screen.getByText(name).closest('li')!;
+      expect(screen.getAllByText(name)).toHaveLength(1);
+      expect(within(row).getByText(new RegExp(`ask #${ask.id.slice(0, 6)}`))).toBeInTheDocument();
+      expect(within(row).queryByText('Published')).toBeNull();
+    }
+    expect(screen.queryByText('Expose a streaming budget on the chunk API')).toBeNull();
+  });
+
+  it('opens the ask of a merged row from the row’s menu, since the ask has no row of its own', async () => {
+    const { onChoose } = list({ asks: [{ ask: { ...PROPOSED, state: 'Published', short: 'Streaming budget', quests: [OPEN.id] } }] });
+    render(<ContextMenus doors={{ copy: vi.fn() }} />);
+
+    rightClick(screen.getByRole('button', { name: /Streaming budget/ }));
+    expect(await menuActs()).toEqual(['Open', 'Open the ask', 'Copy quest ID']);
+    await userEvent.click(screen.getByRole('menuitem', { name: 'Open the ask' }));
+    expect(onChoose).toHaveBeenCalledWith(`ask:${PROPOSED.id}`);
+  });
+
+  it('keeps an ask whose one quest this list does not hold, so that no work is lost from it', () => {
+    list({ asks: [{ ask: { ...PROPOSED, state: 'Published', short: 'Elsewhere work', quests: ['not-listed'] } }] });
+
+    expect(screen.getByText('Asks (1)')).toBeInTheDocument();
+    expect(screen.getByText('Elsewhere work')).toBeInTheDocument();
+  });
+
   /** SESSONE2h: the asks the mirrored messages name, in a group of their own after this machine's, each a row that opens its page. */
   it('lists the asks held elsewhere in a group after this machine’s asks, with their unread, and opens one by its item', async () => {
     const { onChoose } = list({

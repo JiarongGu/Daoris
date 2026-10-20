@@ -31,9 +31,10 @@ public static class WorkflowGraphs
 {
     /// <summary>
     /// The decoder's own version: a decoded graph's digest is derived from it, so a changed mapping binds afresh. 2 since FABRIC-GRAPH1h,
-    /// whose wires hold the protected order across a skip; no stored record binds a decoded digest yet (D173's FABRIC-GRAPH1h note).
+    /// whose wires hold the protected order across a skip; no stored record binds a decoded digest yet (D173's FABRIC-GRAPH1h note). 3 since
+    /// FABRIC-CUTOVER1b, whose look is wired beside the opinion (the cutover design §5.1); still no stored record binds one (D190 point 1).
     /// </summary>
-    public const int DecoderVersion = 2;
+    public const int DecoderVersion = 3;
 
     /// <summary>The kind a check decodes to after its plugin: the plugin point <c>work/checks</c>, its slash a dot, which no stage's id holds.</summary>
     public const string ChecksNode = "work.checks";
@@ -92,7 +93,7 @@ public static class WorkflowGraphs
             Wire(wire, step.Id, id);
         }
 
-        string? previous = null;
+        string? previous = null, opinion = null, beforeOpinion = null;
         var gates = new List<string>();
         foreach (var step in steps)
         {
@@ -111,14 +112,21 @@ public static class WorkflowGraphs
             else
             {
                 nodes.Add(Node(step));
-                if (previous is not null) Wire(WireKinds.After, previous, step.Id);
+                // FABRIC-CUTOVER1b (the cutover design §5.1): a look is wired after the step before the opinion, never after the opinion,
+                // since the review gate holds its set-up while an agent reads the opinion.
+                var beside = step.Kind == WorkflowKinds.Look && opinion is not null && previous == opinion;
+                var after = beside ? beforeOpinion : previous;
+                if (after is not null) Wire(WireKinds.After, after, step.Id);
 
                 // FABRIC-GRAPH1h: the protected order (D157 §2.2) held by wires, not by reachability alone. A skip satisfies its `after`
                 // wire (§E2), so the step order alone would let a gate go past an earlier one still unsettled once a step between is
                 // skipped. Each gate (the work, whose node carries the holds; the opinion; the look) is wired into every gate after it.
                 if (Gate(step))
                 {
-                    foreach (var gate in gates.Where(gate => gate != previous)) Wire(WireKinds.After, gate, step.Id);
+                    foreach (var gate in gates.Where(gate => gate != after && !(step.Kind == WorkflowKinds.Look && gate == opinion)))
+                    {
+                        Wire(WireKinds.After, gate, step.Id);
+                    }
                     gates.Add(step.Id);
                 }
             }
@@ -133,6 +141,7 @@ public static class WorkflowGraphs
                     break;
             }
 
+            if (step.Kind == WorkflowKinds.Opinion) (opinion, beforeOpinion) = (step.Id, previous);
             previous = step.Id;
         }
 
