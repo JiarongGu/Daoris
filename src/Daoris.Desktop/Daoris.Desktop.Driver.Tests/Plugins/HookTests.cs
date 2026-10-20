@@ -677,4 +677,44 @@ public sealed class HookTests : IDisposable
         await Task.Delay(200);
         lock (lines) Assert.Contains("words: held — 修复仪表盘 — ünïcode", lines);
     }
+
+    /// <summary>
+    /// PLUGSTDERR1 (§C4): a plugin's stderr is read under <see cref="HookProcess.StderrBytes"/>, as its stdout is under the frame bound. A
+    /// line past it reaches the console clipped and marked, and the line after it is relayed whole.
+    /// </summary>
+    [Fact]
+    public async Task A_stderr_line_past_the_bound_is_clipped_and_the_next_is_relayed()
+    {
+        var folder = DaorisHome.Entry(_home, HomeEntry.Plugins, "acme.loud");
+        Directory.CreateDirectory(folder);
+        File.WriteAllText(Path.Combine(folder, "plugin.json"), """
+            { "id": "acme.loud", "hooks": { "command": ["node", "${plugin}/hooks.mjs"], "points": ["quest/consider"] } }
+            """);
+        File.WriteAllText(Path.Combine(folder, "hooks.mjs"), $$"""
+            import { createInterface } from 'node:readline';
+            const send = (frame) => process.stdout.write(JSON.stringify(frame) + '\n');
+            process.stderr.write('loud: ' + 'x'.repeat({{HookProcess.StderrBytes * 4}}) + '\nloud: after\n');
+            for await (const line of createInterface({ input: process.stdin })) {
+              const frame = JSON.parse(line);
+              if (frame.method === 'initialize') {
+                send({ jsonrpc: '2.0', id: frame.id, result: { protocolVersion: 1, points: frame.params.points } });
+              } else if (frame.method === 'shutdown') {
+                process.exit(0);
+              }
+            }
+            """);
+        var lines = new List<string>();
+        var plugin = PluginCatalog.Load(_home).Plugins.Single();
+
+        await using var process = await HookProcess.StartAsync(plugin, _home, line => { lock (lines) lines.Add(line); }, CancellationToken.None);
+
+        var clipped = "loud: " + new string('x', HookProcess.StderrBytes - "loud: ".Length) + HookProcess.Clipped;
+        for (var waited = 0; waited < 50 && !Has("loud: after"); waited++) await Task.Delay(100);
+        lock (lines) Assert.Equal([clipped, "loud: after"], lines);
+
+        bool Has(string line)
+        {
+            lock (lines) return lines.Contains(line);
+        }
+    }
 }
