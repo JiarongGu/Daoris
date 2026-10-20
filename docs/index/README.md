@@ -61,7 +61,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Web/src/work/frame/frame.tsx` | 40 | 877 |
 | `src/Daoris.Web/src/work/head/SessionHead.test.tsx` | 67 | 1274 |
 | `src/Daoris.Web/src/work/noteLines.test.ts` | 79 | 1161 |
-| `src/Daoris.Web/src/work/rail/SessionRail.test.tsx` | 52 | 1022 |
+| `src/Daoris.Web/src/work/rail/SessionRail.test.tsx` | 54 | 1061 |
 
 ### Driver library (`driver`)
 
