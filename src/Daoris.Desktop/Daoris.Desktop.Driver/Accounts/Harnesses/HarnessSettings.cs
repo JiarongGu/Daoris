@@ -70,6 +70,15 @@ public sealed record HarnessSettings(
     /// </summary>
     public string? Problem { get; init; }
 
+    /// <summary>
+    /// The file as <see cref="Load"/> understood it, written (<see cref="Layout"/>, each settings entry as the file holds it), or null for
+    /// wiring built in memory (KEEPALL1b): what <see cref="Save"/>'s edit is measured from.
+    /// </summary>
+    internal string? Understood { get; init; }
+
+    /// <summary>Whether a file was there at <see cref="Load"/>, for <see cref="JsonKeeping.Save"/>.</summary>
+    internal bool Found { get; init; }
+
     /// <summary>The sections this build reads and writes; anything else is <see cref="Kept"/>. Spelled as the CLI's are.</summary>
     private static readonly HashSet<string> Sections = new(StringComparer.Ordinal)
     {
@@ -101,12 +110,14 @@ public sealed record HarnessSettings(
     /// </summary>
     public static HarnessSettings Load(string path)
     {
-        if (!File.Exists(path)) return new HarnessSettings();
+        var nothing = new HarnessSettings();
+        if (!File.Exists(path)) return nothing with { Understood = nothing.Layout(asRead: true) };
 
         try
         {
             using var document = JsonDocument.Parse(File.ReadAllText(path));
-            if (document.RootElement.ValueKind != JsonValueKind.Object) return new HarnessSettings();
+            // A file that is no object reads as none, and an edit over it is refused at the write, as the CLI refuses it.
+            if (document.RootElement.ValueKind != JsonValueKind.Object) return nothing with { Understood = nothing.Layout(asRead: true), Found = true };
 
             var defaults = ReadMap(document.RootElement, "defaults");
             var workspaces = new Dictionary<string, IReadOnlyDictionary<string, string>>(
@@ -122,7 +133,7 @@ public sealed record HarnessSettings(
                 }
             }
 
-            return new HarnessSettings(
+            var settings = new HarnessSettings(
                 defaults, workspaces,
                 ReadMap(document.RootElement, "versions"),
                 ReadCircles(document.RootElement, "workspaceVersions"))
@@ -134,7 +145,9 @@ public sealed record HarnessSettings(
                 Kept = [.. document.RootElement.EnumerateObject()
                     .Where(property => !Sections.Contains(property.Name))
                     .Select(property => KeyValuePair.Create(property.Name, property.Value.Clone()))],
+                Found = true,
             };
+            return settings with { Understood = settings.Layout(asRead: true) };
         }
         catch (Exception error)
             when (error is JsonException or IOException or UnauthorizedAccessException)
@@ -144,11 +157,17 @@ public sealed record HarnessSettings(
     }
 
     /// <summary>
-    /// Write the wiring back — atomically, beside-then-rename, like every write in this family.
+    /// Write the wiring back — atomically, beside-then-rename, like every write in this family — keeping what a newer build, the
+    /// person or another writer put there: the edit from what was read made onto the file as it stands (KEEPALL1b, D173's note;
+    /// <see cref="JsonKeeping.Save"/>), so a key this build has no field for stays where it is at every level, a change another writer
+    /// made since the read stays, and no edit writes nothing. Each settings entry was understood as the file holds it, so a save writes
+    /// an old or retired name as the new (D165 §6). Wiring built in memory is written whole. The CLI's <c>writeHarnessSettings</c> does
+    /// the same.
     /// </summary>
     /// <exception cref="DriverException">
     /// The file could not be read when these settings were loaded: what they hold is the empty default,
-    /// and writing it would replace every choice the file had. The CLI refuses the same edit.
+    /// and writing it would replace every choice the file had. The CLI refuses the same edit. Or the file there now does not read,
+    /// holds a key twice, or made an object this edit changes no longer one.
     /// </exception>
     public void Save(string path)
     {
@@ -159,71 +178,77 @@ public sealed record HarnessSettings(
                 + "Fix the file or remove it, then make the change again.");
         }
 
+        if (Understood is { } understood) JsonKeeping.Save(path, Found, understood, Layout(asRead: false));
         // LF on every platform, as the CLI's writer writes it: both write this file, the same wiring as the same bytes.
-        JsonFile.Write(path, writer =>
+        else JsonFile.Write(path, writer => Write(writer, asRead: false));
+    }
+
+    /// <summary>The wiring in the writer's layout; <paramref name="asRead"/> writes each settings entry as the file held it.</summary>
+    private string Layout(bool asRead) => JsonFile.Serialize(writer => Write(writer, asRead));
+
+    private void Write(Utf8JsonWriter writer, bool asRead)
+    {
+        writer.WriteStartObject();
+
+        // What this build has no field for goes first, as the CLI's writer puts its `rest` first (TOOL4e).
+        foreach (var (name, value) in Kept)
         {
-            writer.WriteStartObject();
+            writer.WritePropertyName(name);
+            value.WriteTo(writer);
+        }
 
-            // What this build has no field for goes first, as the CLI's writer puts its `rest` first (TOOL4e).
-            foreach (var (name, value) in Kept)
-            {
-                writer.WritePropertyName(name);
-                value.WriteTo(writer);
-            }
+        writer.WriteStartObject("defaults");
+        foreach (var (harness, profile) in Defaults.OrderBy(e => e.Key, StringComparer.Ordinal))
+        {
+            writer.WriteString(harness, profile);
+        }
 
-            writer.WriteStartObject("defaults");
-            foreach (var (harness, profile) in Defaults.OrderBy(e => e.Key, StringComparer.Ordinal))
-            {
-                writer.WriteString(harness, profile);
-            }
+        writer.WriteEndObject();
 
+        WriteCircles(writer, "workspaces", Workspaces);
+
+        // 🔴 The pins go out too, or this write DELETES what `daoris agent pin` put there.
+        // Both artefacts write this one file, and a save that knew only about profiles would
+        // compile, pass every profile test, and silently lose somebody's toolchain (TOOL2).
+        writer.WriteStartObject("versions");
+        foreach (var (harness, version) in Versions.OrderBy(e => e.Key, StringComparer.Ordinal))
+        {
+            writer.WriteString(harness, version);
+        }
+
+        writer.WriteEndObject();
+        WriteCircles(writer, "workspaceVersions", WorkspaceVersions);
+
+        // 🔴 The orders go out too (TOOL4e), or a screen edit DELETES what `daoris agent profile order` wrote, the
+        // way a save that knew only profiles once would have deleted the pins. Written only when set: absent is no
+        // rotation, and a file that never chose an order should not start carrying an empty one.
+        if (Rotation.Any(order => order.Value.Count > 0))
+        {
+            writer.WriteStartObject("rotation");
+            WriteOrders(writer, Rotation);
             writer.WriteEndObject();
+        }
 
-            WriteCircles(writer, "workspaces", Workspaces);
+        // TOOL6a: how each list is used goes out beside it, for the same reason the orders do.
+        WriteUses(writer, "rotationUse", Uses, asRead);
 
-            // 🔴 The pins go out too, or this write DELETES what `daoris agent pin` put there.
-            // Both artefacts write this one file, and a save that knew only about profiles would
-            // compile, pass every profile test, and silently lose somebody's toolchain (TOOL2).
-            writer.WriteStartObject("versions");
-            foreach (var (harness, version) in Versions.OrderBy(e => e.Key, StringComparer.Ordinal))
+        if (WorkspaceRotation.Any(circle => circle.Value.Any(order => order.Value.Count > 0)))
+        {
+            writer.WriteStartObject("workspaceRotation");
+            foreach (var (workspace, orders) in WorkspaceRotation.OrderBy(e => e.Key, StringComparer.Ordinal))
             {
-                writer.WriteString(harness, version);
-            }
-
-            writer.WriteEndObject();
-            WriteCircles(writer, "workspaceVersions", WorkspaceVersions);
-
-            // 🔴 The orders go out too (TOOL4e), or a screen edit DELETES what `daoris agent profile order` wrote, the
-            // way a save that knew only profiles once would have deleted the pins. Written only when set: absent is no
-            // rotation, and a file that never chose an order should not start carrying an empty one.
-            if (Rotation.Any(order => order.Value.Count > 0))
-            {
-                writer.WriteStartObject("rotation");
-                WriteOrders(writer, Rotation);
+                if (!orders.Any(order => order.Value.Count > 0)) continue;
+                writer.WriteStartObject(workspace);
+                WriteOrders(writer, orders);
                 writer.WriteEndObject();
             }
 
-            // TOOL6a: how each list is used goes out beside it, for the same reason the orders do.
-            WriteUses(writer, "rotationUse", Uses);
-
-            if (WorkspaceRotation.Any(circle => circle.Value.Any(order => order.Value.Count > 0)))
-            {
-                writer.WriteStartObject("workspaceRotation");
-                foreach (var (workspace, orders) in WorkspaceRotation.OrderBy(e => e.Key, StringComparer.Ordinal))
-                {
-                    if (!orders.Any(order => order.Value.Count > 0)) continue;
-                    writer.WriteStartObject(workspace);
-                    WriteOrders(writer, orders);
-                    writer.WriteEndObject();
-                }
-
-                writer.WriteEndObject();
-            }
-
-            WriteUseCircles(writer, "workspaceRotationUse", WorkspaceUses);
-
             writer.WriteEndObject();
-        });
+        }
+
+        WriteUseCircles(writer, "workspaceRotationUse", WorkspaceUses, asRead);
+
+        writer.WriteEndObject();
     }
 
     /// <summary>
@@ -758,8 +783,8 @@ public sealed record HarnessSettings(
     // the machine and `workspaceRotationUse` for one workspace, per agent, beside the lists. A twin of the CLI's rotation.ts
     // (readUse, curveProblem, resolveScope, withUse, scopeProblem), which `daoris agent profile use` writes; RotationUseTwinTests
     // and the CLI's rotation-use.test.ts read one table, the CLI's test/fixtures/rotation-use.json, row for row. The rules both keep:
-    //  - Read: an entry is an object, kept whole but for `prefer` and `parallel`, which §16.6 retired: skipped, and gone at the next
-    //    write. Each other field is a value this build knows, or one it does not, which reads as today's default and is said
+    //  - Read: an entry is an object, kept whole; `prefer` and `parallel`, which §16.6 retired, are read as nothing and said as
+    //    nothing, and go at the next write (KEEPALL1b: held as read, so the save's edit takes them out). Each other field is a value this build knows, or one it does not, which reads as today's default and is said
     //    (RotationScope.Unknown); a field this build has no name for is kept and said too, so a newer build's setting outlives
     //    this one's save.
     //  - The old names read on (D165 §6): `early` and `near`, which only an older build writes, are taken out and applied as a
@@ -767,7 +792,8 @@ public sealed record HarnessSettings(
     //  - Resolved as one scope (§2 rule 1): the workspace's, when it names a default or a list of its own for the agent, else the
     //    machine's. A scope's settings are read only with its list; with none it is its default alone.
     //  - Written as chosen: a choice equal to today's default is still written, so a later default never overturns a person's
-    //    choice; absence alone means RotationUse.Default. The old names are never written: a writer writes `switch` and `curve`.
+    //    choice; absence alone means RotationUse.Default. The old names are never written: a writer writes `switch` and `curve`,
+    //    and since a save is measured from each entry as the file held it (KEEPALL1b, D173's note), every save does so.
     //  - HarnessRoster.SelectAsync reads them through ResolveScope (TOOL6b): `use` and `keep` choose a start's account, and the
     //    switch and the curve pass an account whose use is over the curve now (SWITCH1b-ii).
 
@@ -861,7 +887,6 @@ public sealed record HarnessSettings(
         {
             if (entry.Value.ValueKind != JsonValueKind.Object) continue;
             List<KeyValuePair<string, JsonElement>> fields = [.. entry.Value.EnumerateObject()
-                .Where(field => !RotationUse.Retired.Contains(field.Name, StringComparer.Ordinal))
                 .Select(field => KeyValuePair.Create(field.Name, field.Value.Clone()))];
             if (fields.Count > 0) uses[entry.Name] = new UseEntry(fields);
         }
@@ -885,21 +910,21 @@ public sealed record HarnessSettings(
     }
 
     /// <summary>A settings section, written only where an entry is set: agents in order of name.</summary>
-    private static void WriteUses(Utf8JsonWriter writer, string property, IReadOnlyDictionary<string, UseEntry> uses)
+    private static void WriteUses(Utf8JsonWriter writer, string property, IReadOnlyDictionary<string, UseEntry> uses, bool asRead)
     {
-        var written = Written(uses);
+        var written = Written(uses, asRead);
         if (written.Count == 0) return;
         writer.WriteStartObject(property);
-        WriteEntries(writer, written);
+        WriteEntries(writer, written, asRead);
         writer.WriteEndObject();
     }
 
     /// <summary>The workspaces' settings section, written only where one is set: workspaces in order of name.</summary>
     private static void WriteUseCircles(
-        Utf8JsonWriter writer, string property, IReadOnlyDictionary<string, IReadOnlyDictionary<string, UseEntry>> circles)
+        Utf8JsonWriter writer, string property, IReadOnlyDictionary<string, IReadOnlyDictionary<string, UseEntry>> circles, bool asRead)
     {
         var written = circles.OrderBy(e => e.Key, StringComparer.Ordinal)
-            .Select(circle => (Workspace: circle.Key, Uses: Written(circle.Value)))
+            .Select(circle => (Workspace: circle.Key, Uses: Written(circle.Value, asRead)))
             .Where(circle => circle.Uses.Count > 0)
             .ToList();
         if (written.Count == 0) return;
@@ -907,26 +932,34 @@ public sealed record HarnessSettings(
         foreach (var (workspace, uses) in written)
         {
             writer.WriteStartObject(workspace);
-            WriteEntries(writer, uses);
+            WriteEntries(writer, uses, asRead);
             writer.WriteEndObject();
         }
 
         writer.WriteEndObject();
     }
 
-    /// <summary>Each agent's entry as written (<see cref="UseEntry.Written"/>), in order of name, one written as nothing left out.</summary>
-    private static List<(string Agent, UseEntry Entry)> Written(IReadOnlyDictionary<string, UseEntry> uses) =>
+    /// <summary>
+    /// Each agent's entry as written (<see cref="UseEntry.Written"/>), or as the file held it where <paramref name="asRead"/> says, its old
+    /// and retired names included (KEEPALL1b): in order of name, one written as nothing left out.
+    /// </summary>
+    private static List<(string Agent, UseEntry Entry)> Written(IReadOnlyDictionary<string, UseEntry> uses, bool asRead) =>
         [.. uses.OrderBy(e => e.Key, StringComparer.Ordinal)
-            .Select(entry => (Agent: entry.Key, Entry: entry.Value.Written()))
+            .Select(entry => (Agent: entry.Key, Entry: asRead ? entry.Value : entry.Value.Written()))
             .Where(entry => !entry.Entry.IsEmpty)];
 
-    private static void WriteEntries(Utf8JsonWriter writer, List<(string Agent, UseEntry Entry)> uses)
+    private static void WriteEntries(Utf8JsonWriter writer, List<(string Agent, UseEntry Entry)> uses, bool asRead)
     {
         foreach (var (agent, entry) in uses)
         {
-            writer.WriteStartObject(agent);
-            entry.WriteTo(writer);
-            writer.WriteEndObject();
+            writer.WritePropertyName(agent);
+            if (asRead) entry.WriteAsRead(writer);
+            else
+            {
+                writer.WriteStartObject();
+                entry.WriteTo(writer);
+                writer.WriteEndObject();
+            }
         }
     }
 

@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// KEEPALL1 (FIX-LOG 2026-10-17): every home file a door edits keeps what its writer does not own, as <c>driver.json</c>'s writers do
+/// KEEPALL1 and KEEPALL1b (FIX-LOG 2026-10-17): every home file a door edits keeps what its writer does not own, as <c>driver.json</c>'s writers do
 /// (<see cref="DriverConfigKeepsTests"/>). One table both twins read, <c>test/fixtures/home-files-keep.json</c>, row for row with the
 /// CLI's <c>homefileskeep.test.ts</c>: an existing file in the writer's layout with keys neither twin knows at each level, one door's
 /// edit, and the bytes both write.
@@ -90,6 +90,24 @@ public sealed class HomeFilesKeepTests
             case ("plugin-approvals.json", "approval-withdraw"):
                 between();
                 HelpGrants.Withdraw(home, Text("plugin"), Text("server"));
+                return;
+            case ("harnesses.json", var op):
+                var path = Path.Combine(home, file);
+                var wiring = HarnessSettings.Load(path);
+                between();
+                var workspace = edit.TryGetProperty("workspace", out var circle) ? circle.GetString() : null;
+                (op switch
+                {
+                    "none" => wiring,
+                    "harness-default" => workspace is null
+                        ? wiring.WithDefault(Text("agent"), Text("account"))
+                        : wiring.WithWorkspaceDefault(workspace, Text("agent"), Text("account")),
+                    "harness-use" => wiring.WithUse(Text("agent"), new UseChange(Use: Text("use")), workspace),
+                    "harness-pin" => wiring.WithVersion(Text("agent"), Text("version")),
+                    "harness-order" => wiring.WithRotation(
+                        Text("agent"), [.. edit.GetProperty("order").EnumerateArray().Select(name => name.GetString()!)], workspace),
+                    _ => throw new InvalidOperationException($"the table names an edit this test does not make: {op}"),
+                }).Save(path);
                 return;
             default:
                 throw new InvalidOperationException($"the table names an edit this test does not make: {file} {Text("op")}");

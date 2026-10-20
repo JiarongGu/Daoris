@@ -355,7 +355,10 @@ type UseField = (typeof USE_FIELDS)[number];
 export const OLD_FIELDS = ['early', 'near'] as const;
 type OldField = (typeof OLD_FIELDS)[number];
 
-/** The settings §16.6 retired, which nothing released wrote: skipped by the reader, so gone at the next write. */
+/**
+ * The settings §16.6 retired, which nothing released wrote: read as nothing and said as nothing, and gone at the next write, which
+ * is measured from the entry as read (KEEPALL1b).
+ */
 export const RETIRED_FIELDS: readonly string[] = ['prefer', 'parallel'];
 
 /** Each setting's reading (rule 5): its value, or `undefined` where this build does not know the value. */
@@ -454,19 +457,19 @@ export function readUse(entry: UseEntry | undefined): { use: RotationUse; unknow
   for (const name of OLD_FIELDS) {
     if (entry && Object.hasOwn(entry, name) && READ_OLD[name](entry[name]) === undefined) unknown.push(name);
   }
-  for (const name of Object.keys(entry ?? {})) if (!isField(name) && !isOld(name)) unknown.push(name);
+  for (const name of Object.keys(entry ?? {})) if (!isField(name) && !isOld(name) && !RETIRED_FIELDS.includes(name)) unknown.push(name);
   return { use: useOf(chosen), unknown };
 }
 
 /**
- * One agent → settings map, each entry an object kept whole but for the retired settings; anything else, or an entry
- * naming nothing else, is none.
+ * One agent → settings map, each entry an object kept whole, the retired settings too, so a save's edit takes them out (KEEPALL1b);
+ * anything else, or an entry naming nothing, is none.
  */
 export function readUses(value: unknown): Uses {
   if (!isObject(value)) return {};
   return Object.fromEntries(Object.entries(value)
     .filter((entry): entry is [string, UseEntry] => isObject(entry[1]))
-    .map(([agent, entry]) => [agent, Object.fromEntries(Object.entries(entry).filter(([name]) => !RETIRED_FIELDS.includes(name)))] as const)
+    .map(([agent, entry]) => [agent, { ...entry }] as const)
     .filter(([, entry]) => Object.keys(entry).length > 0));
 }
 
@@ -500,6 +503,22 @@ export function writtenUses(uses: Uses): Record<string, UseEntry> {
   return Object.fromEntries(Object.entries(uses)
     .map(([agent, entry]) => [agent, writtenUse(entry)] as const)
     .filter(([, entry]) => Object.keys(entry).length > 0)
+    .sort(([a], [b]) => (a < b ? -1 : 1)));
+}
+
+/**
+ * An agent → settings map as the file held it, for the text a save's edit is measured from (KEEPALL1b): each value as read, the
+ * settings this build knows in their written order, then every other field in the order read, the old and retired names among them,
+ * so an entry the writer would write alike measures as no edit, and its old and retired names as ones the edit takes out. Agents in
+ * order of name, as `writtenUses`; the driver's `UseEntry.WriteAsRead`.
+ */
+export function usesAsRead(uses: Uses): Record<string, UseEntry> {
+  return Object.fromEntries(Object.entries(uses)
+    .filter(([, entry]) => Object.keys(entry).length > 0)
+    .map(([agent, entry]) => [agent, {
+      ...Object.fromEntries(USE_FIELDS.filter((field) => Object.hasOwn(entry, field)).map((field) => [field, entry[field]])),
+      ...Object.fromEntries(Object.entries(entry).filter(([name]) => !isField(name))),
+    }] as const)
     .sort(([a], [b]) => (a < b ? -1 : 1)));
 }
 

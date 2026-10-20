@@ -587,6 +587,10 @@ with the version and date at release.
   every other account's key; that edit is now refused, and the file left as it is.
   A rule or a group of settings another one removed meanwhile does not come back with an unrelated edit, one it turned into
   something else refuses the edit by name, and the first save where there was no `driver.json` keeps one written meanwhile.
+- And for `harnesses.json`, which holds each agent's accounts, pins, lists and how each list is used: an edit from the Agents
+  page, Ask Daoris or `daoris agent` changes only what it edits, a setting you added by hand stays where you wrote it at any
+  level, a change made by another of them meanwhile is kept, and a file saved with no change keeps its bytes. A save still writes
+  an old `early` or `near` as `switch` and `curve`, as before.
 - Each piece of work says where it has got to: a session's foot shows its *End* (结束), *Result* (成果), *Clean-up* (清理) and
   *Recovery* (找回); *What needs you* lists work whose clean-up waits on you; *Branches* gives each tidied branch a line; and
   Ask Daoris can answer where your work has got to.

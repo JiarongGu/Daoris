@@ -18596,3 +18596,13 @@ confirmed in the open window.
 > - [ ] **SYNCMERGE1a3 — the service's refusal of a done, decline or set-up on a lost step names the two choices** (service; D178 point 7). Proof: `QuestShareTests` on the refusal's words.
 
 **Outcome** 2026-10-21: the respond door's done and decline, the person's done and a set-up refused on a take this machine lost (`QuestExchange.LostStep`) follow the lost take's words with *Drop mine* and *Bring mine forward* and their terminal verbs (`QuestExchange.Choices`), saying until when the bring-forward waits where it cannot stand yet: the source submitted again, or the step open again. A wait, a `ready`, a bind and the remote's push refusal are unchanged. Proof: `QuestShareTests`' new theory (the step rebound and still withdrawn) and the WAITCLAIM2 case (another machine holding it). On Opus. Detail: D178's SYNCMERGE1a3 note.
+
+## KEEPALL1b — `harnesses.json` keeps what its writers do not own (2026-10-21, D173, D165)
+
+> - [ ] **KEEPALL1b — `harnesses.json` keeps what its writers do not own** (driver, cli; after a decision on D165 §6's rewrites). Its writers rebuild every section and never re-read the file. Proof: `harnesses.json` rows in `home-files-keep.json`, with the rotation twins' file rows re-decided in both twins.
+
+**Outcome** 2026-10-21: built. The decision it waited on is D173's KEEPALL1b note: D165 §6's rewrites stay the writer's, as an
+edit, since each settings entry is understood as the file holds it. `HarnessSettings.Save` and `writeHarnessSettings` write
+through `JsonKeeping.Save` and `writeKeeping`; wiring built in memory is written whole. Proof: 11 `harnesses.json` rows in
+`home-files-keep.json`; the rotation twins' file and removal rows, two `rotation-use.json` `write` rows and the account-join rows
+re-decided in both twins. Root cause and verification: the fix log's KEEPALL1b entry.
