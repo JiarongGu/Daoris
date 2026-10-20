@@ -33,6 +33,10 @@ with the version and date at release.
   in *What needs you*, which the badge counts, with *Go on with this answer* and *Not now*. Going on counts as your word, so the
   next two answers go on alone again; *Not now* keeps the answer, which then goes on only with your own words. An answer taken
   while the agent is working, and your own words or Daoris's, never count.
+- `daoris profile use` and `daoris agent list` say the next start's fourth step as the driver takes it: within a week's last
+  day, the account whose unused room under its curve would lapse the most per hour to its reset. An agent whose sessions do
+  not say their use no longer lists that step, and the note shown before any account has said its use no longer claims a
+  reset learned from a limit ranks anything.
 - The desktop's machine log keeps every line when a second launch writes beside the running Daoris, where before their lines
   could overwrite each other's in the day's file. An error that ends the desktop's application is written there before the log closes.
 - Settings → Driver lists the plugins installed here under *Installed plugins*: whether each is on, whether each of its servers is

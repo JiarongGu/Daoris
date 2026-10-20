@@ -209,14 +209,14 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 
 | File | KB | Lines |
 |---|---|---|
-| `src/Daoris.Cli/src/agents/toolchain.ts` | 163 | 3111 |
+| `src/Daoris.Cli/src/agents/toolchain.ts` | 164 | 3115 |
 | `src/Daoris.Cli/src/doctrine/materialize.ts` | 47 | 935 |
 | `src/Daoris.Cli/src/driver/driverconfig.ts` | 163 | 2883 |
 | `src/Daoris.Cli/src/plugins/plugins.ts` | 82 | 1598 |
 | `src/Daoris.Cli/src/service/service.ts` | 41 | 862 |
 | `src/Daoris.Cli/src/workflows/namedworkflows.ts` | 49 | 956 |
 | `src/Daoris.Cli/src/workflows/workflowdoor.ts` | 61 | 1056 |
-| `src/Daoris.Cli/test/agents/toolchain.test.ts` | 110 | 2082 |
+| `src/Daoris.Cli/test/agents/toolchain.test.ts` | 110 | 2083 |
 | `src/Daoris.Cli/test/desktop-tool.test.ts` | 46 | 878 |
 | `src/Daoris.Cli/test/dogfood.test.ts` | 49 | 852 |
 | `src/Daoris.Cli/test/driver/driverconfig.test.ts` | 160 | 2923 |
