@@ -127,6 +127,8 @@ public static class OpinionToPerson
         NotFound => "there is no session of this machine's by its id",
         Recheck => "a recheck's findings go to the person, never back to the working session by themselves",
         Conversation => "the work was a conversation's, which another agent's findings do not reach by themselves",
+        // COWORK1e: the person's *Not now* to findings the answers-alone bound held for them.
+        GoOnMarks.NotNow => "you kept them rather than let a third answer in a row go on with nobody between",
         // A reason whose line names an adapter is said by its code here: the session's own note says it whole.
         ContinueWhy.Adapter or ContinueWhy.Unable => $"its session could not go on ({code})",
         _ => Fixed(code),

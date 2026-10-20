@@ -140,6 +140,28 @@ public sealed class OpinionDeliveryTests : IDisposable
         Assert.Equal(ContinueWhy.Elsewhere, new OpinionDeliveries(_home).Read("op1").Person);
     }
 
+    /// <summary>
+    /// COWORK1e (the message-urgency design §8.3): findings the answers-alone bound holds wait for the person's choice, still handed to
+    /// their session; once the person says *Not now* they go to the person, unanswered, as findings nobody takes do.
+    /// </summary>
+    [Fact]
+    public async Task Findings_held_by_the_answers_alone_bound_wait_until_the_person_keeps_them()
+    {
+        var host = new OpinionStandIn().Session("s1", "completed").Opinion("op1", "s1", weights: ["must"]);
+        await Deliver(host);
+        var word = host.Handed("op1")!["word"]!.GetValue<string>();
+        new GoOnMarks(_home).Mark("s1", [word], GoOnMarks.AnswersAlone, DateTimeOffset.UtcNow, agent: "codex-acp");
+
+        Assert.NotEqual(OpinionDeliveryStates.ToPerson, (await Deliver(host)).State);
+        Assert.Null(new OpinionDeliveries(_home).Read("op1").Person);
+
+        new GoOnMarks(_home).Mark("s1", [word], GoOnMarks.NotNow, DateTimeOffset.UtcNow, agent: "codex-acp");
+        var kept = await Deliver(host);
+
+        Assert.Equal((OpinionDeliveryStates.ToPerson, GoOnMarks.NotNow), (kept.State, kept.Why));
+        Assert.Contains("you kept them rather than let a third answer in a row go on with nobody between", kept.Line);
+    }
+
     // ——— Failure and nothing raised (design §6.1, §8.4, §10).
 
     /// <summary>
