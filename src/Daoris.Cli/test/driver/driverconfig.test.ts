@@ -15,6 +15,7 @@ import {
 } from '../../src/driver/opinions.ts';
 import { applyCommitEdit, commitFor, commitListed, commitRuleOf } from '../../src/driver/commits.ts';
 import { applyHelperEdit, helperFor, helperListed, helperRuleOf } from '../../src/driver/helpers.ts';
+import { applyHandOverEdit, handOverFor, handOverRuleOf } from '../../src/driver/handover.ts';
 import { MANIFEST, pluginsRoot, readPlugins } from '../../src/plugins/plugins.ts';
 import {
   applyWorkflowEdit, keptVersions, resolveWorkflow, workflowChoiceOf, type WorkflowChoiceEdit, type WorkflowTaskChoice,
@@ -819,7 +820,7 @@ test('an unknown verb names the ones that exist', () => {
 
   assert.match(error.message, /unknown driver verb 'frobnicate'/);
   assert.match(
-    error.message, /list, drive, undrive, hold, resume, trees, line, landing, across, standing, language, review, opinion, helpers, brainstorms, commits, workflow, notify, strikes, retry, timeout, cooloff, cap, adapter, intake, helper/);
+    error.message, /list, drive, undrive, hold, resume, trees, line, landing, across, standing, language, review, opinion, helpers, handover, brainstorms, commits, workflow, notify, strikes, retry, timeout, cooloff, cap, adapter, intake, helper/);
   fx.cleanup();
 });
 
@@ -2455,6 +2456,89 @@ test('helpers declares a repository\'s rule, keeps what it does not name, says i
   fx.cleanup();
 });
 
+/**
+ * The hand-over rule, `handOver` and `workspaceHandOver` (MIXAGENT1c, D163 point 3, the mixed agents design §5).
+ * 🔴 A TWIN with the driver's `HandOverRules`: both hold ONE table, the driver suite's `fixtures/hand-over-rules.json`, cell for cell —
+ * the reading and its precedence, every refusal in the same words and the edits both doors make. The driver's `HandOverRulesTests`
+ * reads the same file.
+ */
+const HAND_OVER_TABLE = JSON.parse(readFileSync(join(dirname(dirname(fileURLToPath(import.meta.url))), '..', '..', 'Daoris.Desktop',
+  'Daoris.Desktop.Driver.Tests', 'fixtures', 'hand-over-rules.json'), 'utf8')) as {
+  read: [name: string, file: string, repository: string, workspace: string | null, source: string, rule: string][];
+  problems: [name: string, value: string, problem: string | null][];
+  edits: [name: string, file: string, edit: string, after: string | null, refusal: string | null][];
+};
+
+test('a hand-over rule resolves as the driver resolves it, and its first problem is the driver\'s (the shared table)', () => {
+  const fx = makeFixture('driver-handover-read');
+  assert.ok(HAND_OVER_TABLE.read.length > 0, 'the table holds read rows');
+  for (const [name, file, repository, workspace, source, rule] of HAND_OVER_TABLE.read) {
+    writeFileSync(at(fx), file, 'utf8');
+    const read = handOverFor(readDriverChoices(at(fx)), repository, workspace);
+    assert.equal(read.source, source, name);
+    assert.deepEqual(read.rule, JSON.parse(rule), `${name}: the rule`);
+  }
+  for (const [name, value, problem] of HAND_OVER_TABLE.problems) {
+    assert.equal(handOverRuleOf(JSON.parse(value)).problem, problem, name);
+  }
+  fx.cleanup();
+});
+
+test('a hand-over edit writes what the driver writes, or refuses in its words (the shared table)', () => {
+  const fx = makeFixture('driver-handover-edits');
+  for (const [name, file, edit, after, refusal] of HAND_OVER_TABLE.edits) {
+    writeFileSync(at(fx), file, 'utf8');
+    const choices = readDriverChoices(at(fx));
+    if (refusal !== null) {
+      assert.equal(captureError(() => applyHandOverEdit(choices, JSON.parse(edit))).message, refusal, name);
+      continue;
+    }
+
+    writeDriverChoices(at(fx), { ...choices, ...applyHandOverEdit(choices, JSON.parse(edit)) });
+    const written = JSON.parse(readFileSync(at(fx), 'utf8'));
+    const maps = Object.fromEntries(['handOver', 'workspaceHandOver'].filter((key) => key in written).map((key) => [key, written[key]]));
+    assert.deepEqual(maps, JSON.parse(after!), name);
+  }
+  fx.cleanup();
+});
+
+test('handover declares a repository\'s rule, says what it does, lists it and clears it', () => {
+  const fx = makeFixture('driver-handover');
+  assert.match(run(['list'], at(fx)).out, /hand-over\s+none set/);
+
+  const said = run(['handover', 'web-app', '--mode', 'on'], at(fx));
+  assert.equal(said.code, 0);
+  assert.deepEqual(JSON.parse(readFileSync(at(fx), 'utf8')).handOver, { 'web-app': { mode: 'on' } });
+  assert.match(said.out, /hand-over for `web-app`: on\./);
+  assert.match(said.out, /next agent in your order/);
+  assert.match(run(['list'], at(fx)).out, /hand-over\s+web-app\s+on/);
+
+  const workspace = run(['handover', '--workspace', 'work', '--mode', 'off'], at(fx));
+  assert.match(workspace.out, /hand-over for repositories in the workspace `work` that set none of their own: off\./);
+  assert.match(workspace.out, /refused/);
+
+  const cleared = run(['handover', 'web-app', '--clear'], at(fx));
+  assert.match(cleared.out, /`web-app` takes its workspace's hand-over rule again/);
+  assert.equal('handOver' in JSON.parse(readFileSync(at(fx), 'utf8')), false);
+  assert.match(captureError(() => run(['handover', 'web-app'], at(fx))).message, /`driver handover` needs/);
+  assert.match(captureError(() => run(['handover', 'web-app', '--mode', 'always'], at(fx))).message, /`mode` is `ask`, `on` or `off`/);
+  assert.match(captureError(() => run(['handover', 'web-app', '--agents', 'dsh'], at(fx))).message, /is not a flag `driver handover` takes/);
+  fx.cleanup();
+});
+
+test('a driver.json keeps a hand-over rule the CLI did not write, and writes none where none is set', () => {
+  const fx = makeFixture('driver-handover-kept');
+  writeFileSync(at(fx), JSON.stringify({ cap: 3, handOver: { 'web-app': { mode: 'on' } } }), 'utf8');
+  const choices = readDriverChoices(at(fx));
+  writeDriverChoices(at(fx), { ...choices, cap: 4 });
+  assert.deepEqual(JSON.parse(readFileSync(at(fx), 'utf8')).handOver, { 'web-app': { mode: 'on' } });
+  writeFileSync(at(fx), '{}', 'utf8');
+  writeDriverChoices(at(fx), readDriverChoices(at(fx)));
+  assert.equal('handOver' in JSON.parse(readFileSync(at(fx), 'utf8')), false);
+  assert.equal('workspaceHandOver' in JSON.parse(readFileSync(at(fx), 'utf8')), false);
+  fx.cleanup();
+});
+
 test('a driver.json keeps a helpers rule the CLI did not write, and writes none where none is set', () => {
   const fx = makeFixture('driver-helpers-kept');
   writeFileSync(at(fx), JSON.stringify({ cap: 3, helpers: { 'web-app': { mode: 'on', agents: ['dsh'] } } }), 'utf8');
@@ -2641,6 +2725,7 @@ const SENT: readonly (readonly [argv: string[], route: string, payload: Record<s
   [['opinion', 'engine', '--reviewers', 'codex-acp', '--required'], 'SET_OPINION',
     { repository: 'engine', set: { reviewers: ['codex-acp'], required: true } }],
   [['helpers', 'engine', '--mode', 'on'], 'SET_HELPERS', { repository: 'engine', set: { mode: 'on' } }],
+  [['handover', 'engine', '--mode', 'off'], 'SET_HAND_OVER', { repository: 'engine', set: { mode: 'off' } }],
   [['commits', '--workspace', 'aurora', '--mode', 'ask'], 'SET_COMMITS', { workspace: 'aurora', set: { mode: 'ask' } }],
 ];
 

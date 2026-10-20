@@ -1,0 +1,37 @@
+{
+  "about": "The hand-over rule in driver.json, `handOver` and `workspaceHandOver` (MIXAGENT1c, D163 point 3, the mixed agents design section 5): the table both twins hold, the CLI's handover.ts (through driverconfig.ts) and the driver's HandOverRules. `read`: a file's text, a repository and its workspace (null is none, read as the default one), and what resolves: the source (`repository`, `workspace`, or `default` for nothing set) and the rule as kept, as JSON text. `problems`: what an entry holds, as JSON text, and the first problem said, null for none. `edits`: a file's text, an edit as JSON text, the two maps the file holds after it (as JSON text) or the refusal in words.",
+  "read": [
+    ["nothing set is the default", "{}", "web-app", "work", "default", "{\"mode\":\"ask\"}"],
+    ["a repository's rule is its own", "{\"handOver\":{\"web-app\":{\"mode\":\"on\"}}}", "web-app", "work", "repository", "{\"mode\":\"on\"}"],
+    ["a workspace's rule reaches a repository that sets none", "{\"workspaceHandOver\":{\"work\":{\"mode\":\"off\"}}}", "notes-site", "work", "workspace", "{\"mode\":\"off\"}"],
+    ["a repository's rule replaces its workspace's", "{\"handOver\":{\"web-app\":{\"mode\":\"ask\"}},\"workspaceHandOver\":{\"work\":{\"mode\":\"on\"}}}", "web-app", "work", "repository", "{\"mode\":\"ask\"}"],
+    ["a repository in no workspace is in default", "{\"workspaceHandOver\":{\"default\":{\"mode\":\"on\"}}}", "web-app", null, "workspace", "{\"mode\":\"on\"}"],
+    ["names match in any case", "{\"handOver\":{\"Web-App\":{\"mode\":\"off\"}}}", "web-app", "work", "repository", "{\"mode\":\"off\"}"],
+    ["a rule with a problem is not read", "{\"handOver\":{\"web-app\":{\"mode\":\"sometimes\"}}}", "web-app", "work", "default", "{\"mode\":\"ask\"}"],
+    ["a field it has no word for is no problem", "{\"handOver\":{\"web-app\":{\"mode\":\"on\",\"later\":1}}}", "web-app", "work", "repository", "{\"mode\":\"on\"}"]
+  ],
+  "problems": [
+    ["an empty rule is ask", "{}", null],
+    ["on", "{\"mode\":\"on\"}", null],
+    ["off", "{\"mode\":\"off\"}", null],
+    ["a null mode is ask", "{\"mode\":null}", null],
+    ["false is no rule here", "false", "a hand-over rule is an object with its `mode`."],
+    ["a word alone is no rule", "\"on\"", "a hand-over rule is an object with its `mode`."],
+    ["a mode not named", "{\"mode\":\"always\"}", "`mode` is `ask`, `on` or `off`: whether an agent's ask to hand its session over waits for your yes, is taken when its turn ends, or is refused."],
+    ["a mode that is no word", "{\"mode\":true}", "`mode` is `ask`, `on` or `off`: whether an agent's ask to hand its session over waits for your yes, is taken when its turn ends, or is refused."]
+  ],
+  "edits": [
+    ["a repository's first rule", "{}", "{\"repository\":\"web-app\",\"set\":{\"mode\":\"on\"}}", "{\"handOver\":{\"web-app\":{\"mode\":\"on\"}}}", null],
+    ["a workspace's first rule", "{}", "{\"workspace\":\"work\",\"set\":{\"mode\":\"off\"}}", "{\"workspaceHandOver\":{\"work\":{\"mode\":\"off\"}}}", null],
+    ["a set keeps the spelling first written", "{\"handOver\":{\"web-app\":{\"mode\":\"on\"}}}", "{\"repository\":\"Web-App\",\"set\":{\"mode\":\"off\"}}", "{\"handOver\":{\"web-app\":{\"mode\":\"off\"}}}", null],
+    ["clear takes the rule away", "{\"handOver\":{\"web-app\":{\"mode\":\"on\"}}}", "{\"repository\":\"web-app\",\"clear\":true}", "{}", null],
+    ["no scope", "{}", "{\"set\":{\"mode\":\"on\"}}", null, "a hand-over rule is set for a repository or a workspace — name exactly one."],
+    ["both scopes", "{}", "{\"repository\":\"web-app\",\"workspace\":\"work\",\"set\":{\"mode\":\"on\"}}", null, "a hand-over rule is set for a repository or a workspace — name exactly one."],
+    ["no change", "{}", "{\"repository\":\"web-app\"}", null, "one change at a time: set its mode, or clear."],
+    ["a set that names nothing", "{}", "{\"repository\":\"web-app\",\"set\":{}}", null, "one change at a time: set its mode, or clear."],
+    ["a set and a clear", "{}", "{\"repository\":\"web-app\",\"set\":{\"mode\":\"on\"},\"clear\":true}", null, "one change at a time: set its mode, or clear."],
+    ["a mode not named", "{}", "{\"repository\":\"web-app\",\"set\":{\"mode\":\"always\"}}", null, "`mode` is `ask`, `on` or `off`: whether an agent's ask to hand its session over waits for your yes, is taken when its turn ends, or is refused."],
+    ["a mode that is no word", "{}", "{\"repository\":\"web-app\",\"set\":{\"mode\":1}}", null, "`mode` is `ask`, `on` or `off`: whether an agent's ask to hand its session over waits for your yes, is taken when its turn ends, or is refused."],
+    ["a null mode is no mode", "{}", "{\"repository\":\"web-app\",\"set\":{\"mode\":null}}", null, "`mode` is `ask`, `on` or `off`: whether an agent's ask to hand its session over waits for your yes, is taken when its turn ends, or is refused."]
+  ]
+}

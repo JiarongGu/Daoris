@@ -81,6 +81,7 @@ export const DECLARED: Readonly<Record<string, { scopes: readonly string[]; sess
   SET_OPINION: { scopes: ['driver'] },
   SET_COMMITS: { scopes: ['driver'] },
   SET_HELPERS: { scopes: ['driver'] },
+  SET_HAND_OVER: { scopes: ['driver'] },
   SET_ACCESS: { scopes: ['driver'] },
   SET_READ_ACROSS: { scopes: ['driver'] },
   SET_WRITE_ACROSS: { scopes: ['driver'] },
