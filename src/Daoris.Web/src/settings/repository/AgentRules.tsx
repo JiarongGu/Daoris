@@ -1,7 +1,7 @@
 import { type ReactNode, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
-  Button, Card, CheckField, Icon, Inline, PathText, Pill, Prose, SectionTitle, SelectField, SettingList, SettingRow,
+  Button, Card, CheckField, FormGrid, FormRow, Icon, Inline, PathText, Pill, Prose, SectionTitle, SelectField, SettingList, SettingRow,
 } from '../../design/ui';
 import { OPEN_STATES, proposalAuthor, proposalChange } from './proposals';
 
@@ -309,23 +309,26 @@ export function AgentRules({
       ) : (
         <div className="mt-3 border-t border-line pt-3">
           <SectionTitle>{t('settings.rules.addTitle')}</SectionTitle>
-          {/* Sized to what each field holds: a list is one word, a rule is a line, a scope a name. */}
-          <div className="mt-2 grid max-w-[48rem] gap-2 md:grid-cols-[7rem_minmax(0,1fr)_14rem]">
-            <SelectField
-              value={list}
-              onChange={(value) => setList(value as RuleListName)}
-              ariaLabel={t('settings.rules.listLabel')}
-              options={LISTS.map((name) => ({ value: name, label: t(`settings.rules.list.${name}`) }))}
-            />
-            <input
-              value={rule}
-              aria-label={t('settings.rules.ruleLabel')}
-              placeholder="Bash(npm run test:*)"
-              onChange={(event) => setRule(event.target.value)}
-              className="rounded-control border border-line-strong bg-raised px-2.5 py-1.5 font-mono text-body text-ink"
-            />
-            <SelectField value={where} onChange={setWhere} ariaLabel={t('settings.rules.scopeLabel')} options={places} />
-          </div>
+          {/* Sized to what each field holds, by the form's own width (R1, UIFIT1d): a list is one word, a rule is a line, a
+              scope a name. */}
+          <FormGrid columns={['short', 'long', 'name']} className="mt-2">
+            <FormRow>
+              <SelectField
+                value={list}
+                onChange={(value) => setList(value as RuleListName)}
+                ariaLabel={t('settings.rules.listLabel')}
+                options={LISTS.map((name) => ({ value: name, label: t(`settings.rules.list.${name}`) }))}
+              />
+              <input
+                value={rule}
+                aria-label={t('settings.rules.ruleLabel')}
+                placeholder="Bash(npm run test:*)"
+                onChange={(event) => setRule(event.target.value)}
+                className="min-w-0 rounded-control border border-line-strong bg-raised px-2.5 py-1.5 font-mono text-body text-ink"
+              />
+              <SelectField value={where} onChange={setWhere} ariaLabel={t('settings.rules.scopeLabel')} options={places} />
+            </FormRow>
+          </FormGrid>
           <Prose className="mt-2 text-small">{t('settings.rules.addBody')}</Prose>
           <div className="mt-3 flex gap-2">
             <Button disabled={busy || !rule.trim()} onClick={add}>{t('settings.rules.add')}</Button>

@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import {
-  Button, Card, CardStack, CheckField, Chip, CodeText, Dot, Drawer, EmptyState, Menu, MetaLine, MonoWell, PathText, Pill,
-  SettingList, SettingRow, SkeletonRows, Tile, Toasts,
+  Button, Card, CardStack, CheckField, Chip, CodeText, Dot, Drawer, EmptyState, FormField, FormGrid, FormRow, Icon, Menu, MetaLine,
+  MonoWell, PathText, Pill, SettingList, SettingRow, SkeletonRows, Tile, Toasts,
 } from './ui';
 import { InTheme } from '../plugins/storyIcons';
 import { storyWidths } from './storyWidths';
@@ -179,6 +179,76 @@ export const SettingRowsChineseHalf: StoryObj = { render: () => <SettingRowsCard
 
 /** In 中文 at the floor. */
 export const SettingRowsChineseNarrow: StoryObj = { render: () => <SettingRowsCards zh />, decorators: [storyWidths.narrow] };
+
+/**
+ * A form laid by its own width (the UI/UX design R1, §4.2; UIFIT1d): one field, three fields, and a list of rows with its
+ * head row, each field by what it holds and nothing capped below the pane. Below the form's floor each row stacks, the
+ * head row goes and each field shows its own name. At the frame's three widths; `measured/settings.spec.ts` reads them.
+ */
+const field = (label: string, mono = false) => (
+  <input aria-label={label} defaultValue="" className={`min-w-0 rounded-control border border-line-strong bg-raised px-2.5 py-1.5 text-body text-ink ${mono ? 'font-mono' : ''}`} />
+);
+const GATES = [
+  { name: 'web', run: 'npm --prefix web test -- --run', cwd: 'web' },
+  { name: 'driver', run: 'dotnet test Driver.Tests --no-build', cwd: '' },
+];
+
+function FormGridsCards() {
+  return (
+    <CardStack>
+      <Card>
+        <SettingList>
+          <SettingRow label="Branch pattern" hint="One field: a pattern, 20rem.">
+            <FormGrid columns={['pattern']}>
+              <FormRow><FormField label="Pattern">{field('pattern', true)}</FormField></FormRow>
+            </FormGrid>
+          </SettingRow>
+        </SettingList>
+      </Card>
+      <Card>
+        <p className="m-0 mb-2 text-small text-ink-soft">Three fields: an address takes the rest, a title 16rem, the act after them.</p>
+        <FormGrid columns={['long', 'name', 'acts']}>
+          <FormRow>
+            <FormField label="Address">{field('address', true)}</FormField>
+            <FormField label="Title">{field('title')}</FormField>
+            <Button variant="primary">Add</Button>
+          </FormRow>
+        </FormGrid>
+      </Card>
+      <Card>
+        <p className="m-0 mb-2 text-small text-ink-soft">A list of rows: the heavy gates, their columns aligned, stacked below 40rem with each field named.</p>
+        <FormGrid columns={['short', 'long', 'short', 'acts']} floor="40rem">
+          <FormRow head>
+            <span className="text-meta text-ink-faint">Name</span>
+            <span className="text-meta text-ink-faint">Command</span>
+            <span className="text-meta text-ink-faint">Folder</span>
+            <span />
+          </FormRow>
+          {GATES.map((gate, at) => (
+            <FormRow key={gate.name}>
+              <FormField label="Name" when="stacked"><input aria-label={`Name of gate ${at + 1}`} defaultValue={gate.name} className="w-full min-w-0 rounded-control border border-line-strong bg-raised px-2.5 py-1 font-mono text-small text-ink" /></FormField>
+              <FormField label="Command" when="stacked"><input aria-label={`Command of gate ${at + 1}`} defaultValue={gate.run} className="w-full min-w-0 rounded-control border border-line-strong bg-raised px-2.5 py-1 font-mono text-small text-ink" /></FormField>
+              <FormField label="Folder" when="stacked"><input aria-label={`Folder of gate ${at + 1}`} defaultValue={gate.cwd} placeholder="the checkout" className="w-full min-w-0 rounded-control border border-line-strong bg-raised px-2.5 py-1 font-mono text-small text-ink placeholder:italic placeholder:text-ink-faint" /></FormField>
+              <span className="flex items-center">
+                <Button variant="ghost" aria-label={`Move gate ${at + 1} up`}><Icon name="chevronUp" size={12} /></Button>
+                <Button variant="ghost" aria-label={`Move gate ${at + 1} down`}><Icon name="chevronDown" size={12} /></Button>
+                <Button variant="ghost" aria-label={`Remove gate ${at + 1}`}><Icon name="x" size={12} /></Button>
+              </span>
+            </FormRow>
+          ))}
+        </FormGrid>
+      </Card>
+    </CardStack>
+  );
+}
+
+export const FormGrids: StoryObj = { render: () => <FormGridsCards />, decorators: [storyWidths.wide] };
+
+/** At the half width, 630 px: the one- and three-field forms keep their columns; the gates stack, since their value column is under 40rem. */
+export const FormGridsHalf: StoryObj = { render: () => <FormGridsCards />, decorators: [storyWidths.half] };
+
+/** At the 400 px floor: every row stacked, each field named. */
+export const FormGridsNarrow: StoryObj = { render: () => <FormGridsCards />, decorators: [storyWidths.narrow] };
 
 /**
  * A code span breaks only between its words (LOOK5): the installed window broke a setting's terminal twin inside

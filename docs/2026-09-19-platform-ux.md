@@ -267,7 +267,24 @@ controls are in the frame design's §3.
 **Forms and settings.**
 
 - **A form is sized to what it holds**, never to the column it sits in: three equal thirds of a card
-  gave a 570px box to the word "default". A completion list is sized to its rows (U64).
+  gave a 570px box to the word "default". A completion list is sized to its rows (U64). **And to its content up to the
+  pane, laid by its own width** (R1 of the UI/UX design, D185; UIFIT1d, 2026-10-20): each field by what it holds, a
+  number 4.5rem, a short name 8rem, a name 16rem, a branch pattern 20rem, an address, a command or a folder the rest of
+  the form's width (`FormGrid`'s `FIELD_WIDTHS`), and nothing caps the form below the pane: the 40rem and 48rem caps
+  settings' forms wore left half of a wide pane to a form that wanted it. A form of rows (the heavy gates) is one grid,
+  each row a subgrid of it, so its columns stay aligned while the form holds them, and below the form's floor, by a
+  container query of its own, each row stacks under its own field names and the head row goes; a fixed column yields to
+  its container. Removing a cap is not the rule. **Check:** `tokens.test.ts` fails on a `max-w-[…rem]` on a form or a
+  grid of fields, but the start prompt's column (D141 §4), and `measured/settings.spec.ts` reads a row's fields on one
+  line while the form holds them and under each other below its floor.
+- **A region lays out by its own width, never the viewport's** (the frame model §3b, D118; R7 of the UI/UX design;
+  UIFIT1d): no `sm:`, `md:`, `max-sm:`, `min-[…]:` or their kin inside a region, which is a container query on the region
+  or the component (`@max-[32rem]:`, `@max-3xl/main:`), since the side bar and the list narrow a region without the window
+  changing: a form at 630 px of pane kept its three columns because the window was 1546. What is placed against the
+  window keeps its viewport variants, by its responsibility, not its file: the strip's toggles, the status bar's items,
+  the toast viewport beside a drawer, the dock, and the main area's own gutters, which the main area, being the container
+  itself, cannot query. **Check:** `tokens.test.ts` fails on a viewport variant anywhere but the window's parts, which its
+  allow-list names by component, each with its reason, and on an entry that no longer carries one.
 - **The platform draws its own controls**: no native select, checkbox or radio outside `ui.tsx`
   (`tokens.test.ts`, U5); no native search clear, which WebView2 paints in the system's accent; and a
   scrollbar that follows the theme, through `color-scheme: light dark` and `--ink-faint`. **The

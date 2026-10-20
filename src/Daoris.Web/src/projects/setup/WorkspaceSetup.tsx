@@ -10,7 +10,7 @@ import { LineField } from '../../settings/repository/Lines';
 import { type OpinionEdit, OpinionField, type OpinionRule, opinionRowSays, opinionSummary } from '../../settings/repository/Opinions';
 import { type ReviewEdit, ReviewField, type ReviewRule, reviewRowSays, reviewSummary } from '../../settings/repository/Reviews';
 import { shellWord } from '../../lib/shellWord';
-import { Button, Icon, Inline, PathText, Prose, Segmented, SettingRow, Tip } from '../../design/ui';
+import { Button, FormField, FormGrid, FormRow, Icon, Inline, PathText, Prose, Segmented, SettingRow, Tip } from '../../design/ui';
 import { RepositoryRules, type RuleLists } from './RepositoryRules';
 import type { AccessSetup } from './RepositorySetup';
 import { Inheritable, landingRowSays, landingSays, SetupSection } from './SetupParts';
@@ -460,28 +460,28 @@ function Wiring({ workspace, wiring, busy, startOpen }: {
             if (url.trim() && key.trim()) wiring.onWire(url.trim(), key.trim(), close);
           }}
         >
-          {/* Sized to what each holds: an address is long, a key is shorter. */}
-          <div className="grid max-w-[40rem] gap-2 md:grid-cols-[minmax(0,1fr)_12rem]">
-            <label className="grid gap-1 text-small text-ink-faint">
-              {t('settings.wiring.url')}
-              <input
-                value={url}
-                onChange={(event) => setUrl(event.target.value)}
-                placeholder="https://…"
-                className="rounded-control border border-line-strong bg-raised px-2.5 py-1.5 font-mono text-body text-ink"
-              />
-            </label>
-            <label className="grid gap-1 text-small text-ink-faint">
-              {t('settings.wiring.key')}
-              <input
-                value={key}
-                type="password"
-                onChange={(event) => setKey(event.target.value)}
-                placeholder="dk_…"
-                className="rounded-control border border-line-strong bg-raised px-2.5 py-1.5 font-mono text-body text-ink"
-              />
-            </label>
-          </div>
+          {/* Sized to what each holds, by the form's own width (R1, UIFIT1d): an address is long, a key is shorter. */}
+          <FormGrid columns={['long', 'name']}>
+            <FormRow>
+              <FormField label={t('settings.wiring.url')}>
+                <input
+                  value={url}
+                  onChange={(event) => setUrl(event.target.value)}
+                  placeholder="https://…"
+                  className="rounded-control border border-line-strong bg-raised px-2.5 py-1.5 font-mono text-body text-ink"
+                />
+              </FormField>
+              <FormField label={t('settings.wiring.key')}>
+                <input
+                  value={key}
+                  type="password"
+                  onChange={(event) => setKey(event.target.value)}
+                  placeholder="dk_…"
+                  className="rounded-control border border-line-strong bg-raised px-2.5 py-1.5 font-mono text-body text-ink"
+                />
+              </FormField>
+            </FormRow>
+          </FormGrid>
           <Prose className="m-0 text-small">{t('settings.wiring.keyBody')}</Prose>
           <div className="flex gap-2">
             <Button type="submit" variant="primary" disabled={!url.trim() || !key.trim() || busy}>{t('settings.wiring.add')}</Button>

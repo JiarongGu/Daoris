@@ -4,7 +4,8 @@ import {
   useAddFavorite, useBrowserSettings, useRemoveFavorite, useSetBrowser, useSetExtensions, useSetLinks,
 } from '../bridge/shell';
 import {
-  Button, Card, failure, Icon, type Notify, PathText, Prose, SectionTitle, Segmented, SettingList, SettingRow, useErrorNotify,
+  Button, Card, failure, FormField, FormGrid, FormRow, Icon, type Notify, PathText, Prose, SectionTitle, Segmented, SettingList,
+  SettingRow, useErrorNotify,
 } from '../design/ui';
 import type { BrowserDriver } from '../work/strip/browserDrivers';
 
@@ -180,32 +181,32 @@ export function BrowserDomain({ notify, drivers, onAttend }: {
           </ul>
         )}
         {/* The rule runs the card's width, as the list's rows do; the fields are sized to what they
-            hold, an address long and a title short. */}
+            hold, an address long and a title short, by the form's own width (R1, UIFIT1d). */}
         <div className="mt-3 border-t border-line pt-3">
-        <div className="grid max-w-[48rem] items-end gap-2 md:grid-cols-[minmax(0,1fr)_12rem_auto]">
-          <label className="grid gap-1 text-small text-ink-faint">
-            {t('settings.browser.favorites.address')}
+        <FormGrid columns={['long', 'name', 'acts']}>
+        <FormRow>
+          <FormField label={t('settings.browser.favorites.address')}>
             <input
               value={address}
               onChange={(event) => setAddress(event.target.value)}
               placeholder="https://…"
               className="rounded-control border border-line-strong bg-raised px-2.5 py-1.5 font-mono text-body text-ink"
             />
-          </label>
-          <label className="grid gap-1 text-small text-ink-faint">
-            {t('settings.browser.favorites.titleField')}
+          </FormField>
+          <FormField label={t('settings.browser.favorites.titleField')}>
             <input
               value={title}
               onChange={(event) => setTitle(event.target.value)}
               placeholder={t('settings.browser.favorites.titlePlaceholder')}
               className="rounded-control border border-line-strong bg-raised px-2.5 py-1.5 text-body text-ink"
             />
-          </label>
+          </FormField>
           <Button variant="primary" disabled={!address.trim() || add.isPending} onClick={keep}>
             <Icon name="plus" size={13} />
             {t('settings.browser.favorites.add')}
           </Button>
-        </div>
+        </FormRow>
+        </FormGrid>
         </div>
       </Card>
 

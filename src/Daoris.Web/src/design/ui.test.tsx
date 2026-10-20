@@ -6,9 +6,9 @@ import type { SessionState } from '../data/api';
 import i18n from '../locales/i18n';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import {
-  Button, Card, CardStack, CodeText, CountBadge, Dot, Drawer, EmptyState, Inline, Menu, MetaLine, MonoWell, PathText, Pill,
-  QuickPanel, Segmented, SelectField, SESSION_ACTIVE, SESSION_DOT, SESSION_TONE, SETTING_TRACK, SettingList, SettingRow, shownKey,
-  type ShownState, shownState, StripMark, Tile, Tip, Toasts, WaitingCard,
+  Button, Card, CardStack, CodeText, CountBadge, Dot, Drawer, EmptyState, FIELD_WIDTHS, FormField, FormGrid, FormRow, Inline, Menu,
+  MetaLine, MonoWell, PathText, Pill, QuickPanel, Segmented, SelectField, SESSION_ACTIVE, SESSION_DOT, SESSION_TONE, SETTING_TRACK,
+  SettingList, SettingRow, shownKey, type ShownState, shownState, StripMark, Tile, Tip, Toasts, WaitingCard,
 } from './ui';
 import { code } from '../test/code';
 import { CommandPalette } from '../work/strip/CommandPalette';
@@ -283,6 +283,77 @@ describe('a setting list', () => {
     const [first, second] = [...container.querySelectorAll('[data-setting-row]')];
     expect(first!.getAttribute('class')).toContain('first:border-t-0');
     expect(second!.getAttribute('class')).toContain('border-t');
+  });
+});
+
+/**
+ * R1 (the UI/UX design, UIFIT1d): a form is sized to its content up to the pane, laid by its own width. `FormGrid` is the
+ * one grid, its columns by what each field holds, each `FormRow` a subgrid of it; below the form's floor, by a container
+ * query of its own, each row stacks, the head row goes and each field shows its own label. jsdom lays nothing out, so the
+ * structure is held here.
+ */
+describe('a form grid', () => {
+  const form = (floor?: '24rem' | '32rem' | '40rem') => (
+    <FormGrid columns={['short', 'long', 'short', 'acts']} floor={floor}>
+      <FormRow head>
+        <span>Name</span><span>Command</span><span>Folder</span><span />
+      </FormRow>
+      <FormRow>
+        <FormField label="Name" when="stacked"><input aria-label="name of gate 1" /></FormField>
+        <FormField label="Command" when="stacked"><input aria-label="command of gate 1" /></FormField>
+        <FormField label="Folder" when="stacked"><input aria-label="folder of gate 1" /></FormField>
+        <button type="button">Remove</button>
+      </FormRow>
+    </FormGrid>
+  );
+
+  it('lays its fields by kind in one grid, its own container, each row a subgrid of it', () => {
+    const { container } = render(form());
+    const grid = container.querySelector('[data-form-grid]')!;
+    expect(grid.getAttribute('class')).toContain('@container');
+    const columns = grid.firstElementChild!;
+    expect(columns.getAttribute('class')).toContain('grid-cols-(--form-columns)');
+    expect(columns.getAttribute('style')).toContain('--form-columns: minmax(0,8rem) minmax(0,1fr) minmax(0,8rem) auto');
+    for (const row of columns.querySelectorAll('[data-form-row]')) {
+      expect(row.parentElement).toBe(columns);
+      expect(row.getAttribute('class')).toContain('grid-cols-subgrid');
+      expect(row.getAttribute('class')).toContain('col-span-full');
+    }
+  });
+
+  it('sizes a field by what it holds: a number, a short name, a name, a pattern, the rest, the acts', () => {
+    expect(FIELD_WIDTHS).toEqual({
+      number: 'minmax(0,4.5rem)', short: 'minmax(0,8rem)', name: 'minmax(0,16rem)', pattern: 'minmax(0,20rem)', long: 'minmax(0,1fr)', acts: 'auto',
+    });
+  });
+
+  it("stacks each row below the form's floor, by a container query of its own: the head row goes, each field's label shows", () => {
+    const { container } = render(form('40rem'));
+    const columns = container.querySelector('[data-form-grid]')!.firstElementChild!;
+    expect(columns.getAttribute('class')).toContain('@max-[40rem]:grid-cols-1');
+    const [head, row] = [...columns.querySelectorAll('[data-form-row]')];
+    expect(head!.getAttribute('class')).toContain('@max-[40rem]:hidden');
+    expect(row!.getAttribute('class')).toContain('@max-[40rem]:col-span-1');
+    expect(row!.getAttribute('class')).toContain('@max-[40rem]:grid-cols-1');
+    // A field's own label is for the stacked form, where the head row is gone; the field keeps its accessible name.
+    const label = screen.getByLabelText('name of gate 1').closest('label')!;
+    expect(label.querySelector('span')!.textContent).toBe('Name');
+    expect(label.querySelector('span')!.getAttribute('class')).toContain('hidden @max-[40rem]:block');
+  });
+
+  it('stacks below 32rem unless told another floor, and shows a label asked for always', () => {
+    const { container } = render(
+      <FormGrid columns={['long', 'name']}>
+        <FormRow>
+          <FormField label="Address"><input aria-label="address" /></FormField>
+          <FormField label="Title"><input aria-label="title" /></FormField>
+        </FormRow>
+      </FormGrid>,
+    );
+    expect(container.querySelector('[data-form-grid]')!.firstElementChild!.getAttribute('class')).toContain('@max-[32rem]:grid-cols-1');
+    const label = screen.getByLabelText('address').closest('label')!.querySelector('span')!;
+    expect(label.textContent).toBe('Address');
+    expect(label.getAttribute('class')).not.toContain('hidden');
   });
 });
 

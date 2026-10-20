@@ -1,6 +1,6 @@
 import {
-  type ButtonHTMLAttributes, type ComponentProps, createContext, Fragment, type ReactNode, useCallback, useContext, useEffect,
-  useLayoutEffect, useRef, useState, useSyncExternalStore,
+  type ButtonHTMLAttributes, type ComponentProps, createContext, type CSSProperties, Fragment, type ReactNode, useCallback, useContext,
+  useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore,
 } from 'react';
 import * as Dialog from '@radix-ui/react-dialog';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
@@ -1550,6 +1550,91 @@ export function SettingRow({ label, hint, why, control, children }: {
         {cells}
       </div>
     </div>
+  );
+}
+
+/* ---------------------------------------------------------------- forms */
+
+/**
+ * What a field holds, and the column it takes for it (the UI/UX design R1, UIFIT1d): a number 4.5rem, a short name 8rem,
+ * a name 16rem, a branch pattern 20rem, and an address, a command or a folder the rest of the form's width; `acts` the
+ * row's own presses. A fixed one is a `minmax`, so it yields to its container rather than overflow it.
+ */
+export type FieldKind = 'number' | 'short' | 'name' | 'pattern' | 'long' | 'acts';
+export const FIELD_WIDTHS: Record<FieldKind, string> = {
+  number: 'minmax(0,4.5rem)',
+  short: 'minmax(0,8rem)',
+  name: 'minmax(0,16rem)',
+  pattern: 'minmax(0,20rem)',
+  long: 'minmax(0,1fr)',
+  acts: 'auto',
+};
+
+/**
+ * The width of the form's own container below which its rows stack, each spelled whole so Tailwind sees the classes: a
+ * form of two fields at 32rem, the heavy gates' four columns at 40rem.
+ */
+export type FormFloor = '24rem' | '32rem' | '40rem';
+const STACKS: Record<FormFloor, { grid: string; row: string; head: string; label: string }> = {
+  '24rem': { grid: '@max-[24rem]:grid-cols-1', row: '@max-[24rem]:col-span-1 @max-[24rem]:grid-cols-1', head: '@max-[24rem]:hidden', label: 'hidden @max-[24rem]:block' },
+  '32rem': { grid: '@max-[32rem]:grid-cols-1', row: '@max-[32rem]:col-span-1 @max-[32rem]:grid-cols-1', head: '@max-[32rem]:hidden', label: 'hidden @max-[32rem]:block' },
+  '40rem': { grid: '@max-[40rem]:grid-cols-1', row: '@max-[40rem]:col-span-1 @max-[40rem]:grid-cols-1', head: '@max-[40rem]:hidden', label: 'hidden @max-[40rem]:block' },
+};
+const FormFloorContext = createContext<FormFloor>('32rem');
+
+/**
+ * A form laid by its own width (the UI/UX design R1, §4.2; UIFIT1d): sized to its content up to the pane, never capped
+ * below it, and never laid out by the window's width. It is the one grid, its columns by what each field holds
+ * (`FIELD_WIDTHS`), and each `FormRow` a subgrid of it, so a form of rows (the heavy gates) keeps its columns aligned
+ * while its container holds them; below the form's floor, by a container query of its own, each row stacks, a `head`
+ * row goes and each `FormField` asked to show its label only then does. The 40rem and 48rem caps the settings forms
+ * wore, and the `md:` columns that read the window, are what this replaces: a form at 630 px of pane kept its three
+ * columns because the window was 1546, and a capped form left half a wide pane empty.
+ */
+export function FormGrid({ columns, floor = '32rem', className, children }: {
+  columns: readonly FieldKind[]; floor?: FormFloor; className?: string; children: ReactNode;
+}) {
+  return (
+    <FormFloorContext.Provider value={floor}>
+      <div data-form-grid="" data-form-floor={floor} className={cn('@container min-w-0', className)}>
+        <div
+          className={cn('grid grid-cols-(--form-columns) items-end gap-x-2 gap-y-2', STACKS[floor].grid)}
+          style={{ '--form-columns': columns.map((kind) => FIELD_WIDTHS[kind]).join(' ') } as CSSProperties}
+        >
+          {children}
+        </div>
+      </div>
+    </FormFloorContext.Provider>
+  );
+}
+
+/** One row of a `FormGrid`: its fields in the grid's columns, stacked below the floor; a `head` row is the columns' names, gone then. */
+export function FormRow({ head = false, className, children }: { head?: boolean; className?: string; children: ReactNode }) {
+  const floor = useContext(FormFloorContext);
+  return (
+    <div
+      data-form-row=""
+      data-form-head={head || undefined}
+      className={cn('col-span-full grid grid-cols-subgrid items-end gap-y-1', STACKS[floor].row, head && STACKS[floor].head, className)}
+    >
+      {children}
+    </div>
+  );
+}
+
+/**
+ * A field with its name over it: shown always, or only when its row is stacked (`when="stacked"`), where the head row
+ * that named the column is gone. The control keeps its own accessible name either way.
+ */
+export function FormField({ label, when = 'always', className, children }: {
+  label: ReactNode; when?: 'always' | 'stacked'; className?: string; children: ReactNode;
+}) {
+  const floor = useContext(FormFloorContext);
+  return (
+    <label className={cn('grid min-w-0 gap-1', className)}>
+      <span className={cn('text-small text-ink-faint', when === 'stacked' && STACKS[floor].label)}>{label}</span>
+      {children}
+    </label>
   );
 }
 

@@ -101,3 +101,51 @@ for (const [story, width] of Object.entries(TABLE)) {
     console.log(`[measured] ${story} (${measured.width}px): ${said.join(' | ')}`);
   });
 }
+
+// A form laid by its own width (R1, UIFIT1d; §9's trap: the caps deleted and called responsive): each `FormGrid`'s rows
+// keep their columns while the form holds them, the fields of a row on one line, and stack below the form's floor, each
+// field under the one before, the head row gone.
+const FORMS: Record<string, 'wide' | 'half' | 'narrow'> = { 'ui/FormGrids': 'wide', 'ui/FormGridsHalf': 'half', 'ui/FormGridsNarrow': 'narrow' };
+
+type FormMeasure = { floor: number; width: number; rows: { head: boolean; shown: boolean; cells: { x: number; y: number; w: number; h: number }[] }[] };
+
+function measureForms(): FormMeasure[] {
+  const boxOf = (element: Element) => {
+    const rect = element.getBoundingClientRect();
+    return { x: rect.left, y: rect.top, w: rect.width, h: rect.height };
+  };
+  return [...document.querySelectorAll<HTMLElement>('[data-form-grid]')].map((grid) => ({
+    floor: Number.parseFloat(grid.dataset.formFloor ?? '0') * 16,
+    width: boxOf(grid).w,
+    rows: [...grid.querySelectorAll<HTMLElement>('[data-form-row]')].map((row) => ({
+      head: row.dataset.formHead === 'true',
+      shown: getComputedStyle(row).display !== 'none',
+      cells: [...row.children].map(boxOf),
+    })),
+  }));
+}
+
+for (const [story, width] of Object.entries(FORMS)) {
+  test(`${story} at ${width}: a form keeps its columns while it holds them and stacks below its floor`, async ({ page }) => {
+    await open(page, story);
+    const forms = await page.evaluate(measureForms);
+    expect(forms.length, 'forms were found').toBeGreaterThan(0);
+    for (const form of forms) {
+      const stacked = form.width < form.floor;
+      const at = `${story}, the form ${Math.round(form.width)} px wide (floor ${form.floor})`;
+      for (const row of form.rows) {
+        if (row.head) {
+          expect(row.shown, `${at}: the head row is ${stacked ? 'gone' : 'shown'}`).toBe(!stacked);
+          continue;
+        }
+        const cells = row.cells.filter((cell) => cell.w > 0);
+        for (let index = 1; index < cells.length; index += 1) {
+          const [before, cell] = [cells[index - 1]!, cells[index]!];
+          if (stacked) expect(cell.y >= before.y + before.h - 1, `${at}: field ${index} sits under field ${index - 1}`).toBe(true);
+          else expect(cell.x >= before.x + before.w && near(cell.y + cell.h, before.y + before.h, 2), `${at}: field ${index} sits beside field ${index - 1}, on its line`).toBe(true);
+        }
+      }
+    }
+    console.log(`[measured] ${story}: ${forms.map((form) => `${Math.round(form.width)}px/${form.floor} ${form.width < form.floor ? 'stacked' : 'columns'}`).join(' | ')}`);
+  });
+}
