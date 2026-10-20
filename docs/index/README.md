@@ -24,7 +24,7 @@ Listed first, because nothing below restates their rows: open one of these for w
 | `decisions.md` | each decision's title with its entry's lines, then each dated note with its lines |
 | `outlines/<path>.md` | the declarations or headings of a file over 40 KB, each with its line range |
 
-## Files over 40 KB (199)
+## Files over 40 KB (200)
 
 Each has its outline at `outlines/<its path>.md`: open the outline, then read the range you need, not the file.
 
@@ -206,19 +206,19 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Cli/test/tools/tools.test.ts` | 44 | 752 |
 | `src/Daoris.Cli/test/usage-report.test.ts` | 71 | 1227 |
 | `src/Daoris.Cli/tool-test/desktop-publish.test.ts` | 72 | 1255 |
-| `src/Daoris.Cli/tool-test/merge-branch.test.ts` | 328 | 5055 |
+| `src/Daoris.Cli/tool-test/merge-branch.test.ts` | 329 | 5075 |
 | `src/Daoris.Cli/tool-test/setup-kit.test.ts` | 52 | 956 |
 
 ### Tools (`tools`)
 
 | File | KB | Lines |
 |---|---|---|
-| `tools/deployment-rehearsal.mjs` | 102 | 1770 |
+| `tools/deployment-rehearsal.mjs` | 103 | 1771 |
 | `tools/desktop-publish.mjs` | 74 | 1295 |
 | `tools/desktop.mjs` | 53 | 1082 |
 | `tools/family-rehearsal.mjs` | 349 | 6105 |
 | `tools/knowledge-bench.mjs` | 46 | 900 |
-| `tools/merge-branch.mjs` | 233 | 4118 |
+| `tools/merge-branch.mjs` | 234 | 4125 |
 | `tools/orient-index.mjs` | 66 | 1425 |
 | `tools/rehearsal-kit.mjs` | 46 | 893 |
 | `tools/usage-report.mjs` | 58 | 1256 |
@@ -258,6 +258,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `docs/2026-10-20-fabric-cutover-design.md` | 52 | 527 |
 | `docs/2026-10-20-flowchart-design.md` | 60 | 698 |
 | `docs/2026-10-20-message-urgency-design.md` | 67 | 661 |
+| `docs/2026-10-20-session-context-design.md` | 45 | 478 |
 | `docs/2026-10-20-ui-ux-design.md` | 106 | 1115 |
 | `docs/DAORIS_UNIFIED_COLLABORATION_ARCHITECTURE_AND_PLAN_2026-10-16.md` | 164 | 5380 |
 | `src/Daoris.Desktop/README.md` | 119 | 628 |
