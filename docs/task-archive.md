@@ -18401,3 +18401,9 @@ in zh. The sessions page's held words (`WordsHold`) still carry the driver's sen
 > - [ ] **CURVETERM2 — a curve's refusals say row, not point** (web/driver/cli). `errors.ACCOUNT_USE_CURVE_*` and the page's `usageCurves` refusal (第 N 个点) still say *point* for a curve's row, shared with the CLI door's sentences: align all three twins to *row* (行). D165's SWITCH1d-c note; CURVETERM1. Proof: the twins' refusal tables in the new word, en and zh.
 
 **Outcome** 2026-10-21: the driver's `UseCurve.ProblemOf`, the CLI's `curveProblem` and the page's `errors.ACCOUNT_USE_CURVE_*` say *row* (第 N 行, 有 N 行, 逐行上升) where they said *point*, in en and zh; the rule names and parameters on the wire (`context=point`, `{{point}}`) are unchanged. Proof: `rotation-use.json`'s `refusal` rows, read by `RotationUseTwinTests`, `rotation-use.test.ts` and `usageCurves.test.ts`, in the new word. On Opus.
+
+## STOREBOUND1 — the compatible-build boundary written down (2026-10-21, D173)
+
+> - [ ] **STOREBOUND1 — the compatible-build boundary written down** (knowledge). Twice, keeping stored rows safe from already-shipped builds needed a shape those builds cannot see (a new table) rather than a mark they do not read: write it beside "a stored shape is never changed in place". Proof: the document is indexed in `.claude/INDEX.md` and names CLOSE1o and CLOSE1w.
+
+**Outcome** 2026-10-21: `.claude/knowledge/compatible-builds.md`, local since its cases are this repository's, and its row in `.claude/INDEX.md` by `daoris sync`. It walks FABRIC-CLOSE1o's nullable columns, which an older build kept reading and writing around, to FABRIC-CLOSE1w's `quest_owned_take_binds`, which no older build knows. It names when nullable columns are enough, and says CLOSETAKE1's `quest_store_version` guards only the builds from the stamp on. The branch-worker's "a stored shape is never changed in place" now points to it. No code changed.
