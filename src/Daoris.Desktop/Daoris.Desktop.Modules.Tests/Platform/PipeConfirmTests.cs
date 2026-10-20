@@ -59,7 +59,7 @@ public sealed class PipeConfirmTests : Bridge
         var id = await client.SendAsync(DriverModule.Name, Land, new { id = "s1a2b3c4", follow = true });
 
         // The terminal is told it waits, by the instance, naming its request and when the wait ends.
-        var told = await client.NotificationAsync(TimeSpan.FromSeconds(10));
+        var told = await client.NotificationAsync(Poll.Patience);
         Assert.NotNull(told);
         var waits = Assert.Single(told.Value.GetProperty("payload").EnumerateArray());
         Assert.Equal(InstancePipe.Module, waits.GetProperty("module").GetString());
@@ -119,7 +119,7 @@ public sealed class PipeConfirmTests : Bridge
         await client.HelloAsync(HomeId);
 
         var id = await client.SendAsync(DriverModule.Name, "SESSION_ARCHIVE", new { ids = new[] { "s1a2b3c4" }, archived = true });
-        await client.NotificationAsync(TimeSpan.FromSeconds(10));
+        await client.NotificationAsync(Poll.Patience);
         var shown = Assert.Single(pipe.Confirmations.Now().Waiting);
 
         Assert.True(pipe.Confirmations.Answer(shown.Id, confirm: false));
@@ -235,7 +235,7 @@ public sealed class PipeConfirmTests : Bridge
         Assert.Equal(InstancePipe.Stopping, Code(await client.AnswerAsync(id)));
         Assert.Empty(pipe.Confirmations.Now().Waiting);
         Assert.False(pipe.Confirmations.Answer(shown.Id, confirm: true));
-        Assert.True(pipe.Drain(TimeSpan.FromSeconds(5)));
+        Assert.True(pipe.Drain(Poll.Patience));
         Assert.Equal(0, driver.Ran);
     }
 
@@ -314,7 +314,7 @@ public sealed class PipeConfirmTests : Bridge
 
     private static async Task UntilAsync(Func<bool> condition)
     {
-        var patience = DateTime.UtcNow + TimeSpan.FromSeconds(15);
+        var patience = DateTime.UtcNow + Poll.Patience;
         while (!condition())
         {
             Assert.True(DateTime.UtcNow < patience, "the condition never held");

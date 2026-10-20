@@ -49,7 +49,7 @@ public sealed class FirstWindowTests : IDisposable
         using var stop = new CancellationTokenSource();
 
         await log.Observe(
-            cdp.FirstWindowAsync(background: true, TimeSpan.FromSeconds(10), stop.Token),
+            cdp.FirstWindowAsync(background: true, Poll.Patience, stop.Token),
             EngineBrowser.FirstWindowPlace, stop.Cancel);
 
         Assert.True(engine.Upgraded, "the stand-in engine never took a socket");

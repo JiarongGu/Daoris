@@ -295,7 +295,7 @@ public sealed class DriverModuleToolsTests : DriverModuleBridge
         var module = Module();
 
         Assert.True((await AnswerAsync(module, "TOOLS_DOWNLOAD", new { tool = "gh", version = "99.1.0" })).GetProperty("started").GetBoolean());
-        await host.Stalled.Task.WaitAsync(TimeSpan.FromSeconds(10));
+        await host.Stalled.Task.WaitAsync(Poll.Patience);
 
         var running = Tool(await AnswerAsync(module, "TOOLS_LIST"), "gh").GetProperty("running");
         Assert.Equal("download", running.GetProperty("action").GetString());

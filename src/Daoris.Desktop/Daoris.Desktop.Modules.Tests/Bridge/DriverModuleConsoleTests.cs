@@ -117,11 +117,11 @@ public sealed class DriverModuleConsoleTests : DriverModuleBridge
                 Payload = JsonSerializer.Deserialize<JsonElement>(JsonSerializer.Serialize(new { id = "s1", key = "s1/task/t1" })),
             },
             page.Token);
-        var token = await handed.Task.WaitAsync(TimeSpan.FromSeconds(30));
+        var token = await handed.Task.WaitAsync(Poll.Patience);
         Assert.True(token.CanBeCanceled, "the agent's stop was asked on no token: nothing but its answer could end it");
 
         await page.CancelAsync();
-        await Record.ExceptionAsync(() => answer.WaitAsync(TimeSpan.FromSeconds(30)));
+        await Record.ExceptionAsync(() => answer.WaitAsync(Poll.Patience));
         Assert.True(answer.IsCompleted, "the route still waits on a session that never answers");
         Assert.True(token.IsCancellationRequested);
     }

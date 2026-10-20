@@ -96,7 +96,7 @@ public sealed class OffTheWindowTests
     /// <summary>The window's thread takes up what was posted to it until <paramref name="done"/> is.</summary>
     private static async Task PumpUntil(WindowContext window, Task done)
     {
-        var until = DateTime.UtcNow + TimeSpan.FromSeconds(10);
+        var until = DateTime.UtcNow + Poll.Patience;
         while (!done.IsCompleted && DateTime.UtcNow < until)
         {
             window.Pump();
@@ -119,7 +119,7 @@ public sealed class OffTheWindowTests
         // Its synchronous part ran on the dispatching thread, where the stall watch times and names it.
         Assert.Equal(Environment.CurrentManagedThreadId, route.StartedOn);
         // And it went on with nothing taken up by the window's thread.
-        var wentOnIn = await route.WentOnIn.Task.WaitAsync(TimeSpan.FromSeconds(10));
+        var wentOnIn = await route.WentOnIn.Task.WaitAsync(Poll.Patience);
         Assert.NotSame(window, wentOnIn);
 
         await PumpUntil(window, answer);
