@@ -1,24 +1,12 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// What a session last said, read from its record and its transcript: what a parked session said to the person, and what a
-/// carry-on or a hand-over is handed of the session it goes on from. A session's own, read by the loop and a conversation's
-/// hand-over alike, so not the loop's (LOOPOUT1).
+/// What a session last said, read from its record and its transcript: what a parked session said to the person. A session's own,
+/// read by the loop and a conversation alike, so not the loop's (LOOPOUT1). What a carry-on or a hand-over is handed of the session
+/// it goes on from is Daoris's brief of its line since SESSCTX1b (<see cref="ContextBriefs"/>).
 /// </summary>
 internal static class SessionLastWords
 {
-    /// <summary>
-    /// What a carry-on is handed of the session it carries on (TOOL4f, D125 §3.5), from Daoris's own record of it (D76):
-    /// its plan as the record last kept it, and its last words, bounded as a parked session's are. Never a path: a
-    /// machine path lands in whatever a session commits.
-    /// </summary>
-    internal static (IReadOnlyList<PlanEntry> Plan, string? Words) CarriedFrom(SessionEvents events, string home, string session)
-    {
-        // An id that is not one names no record, and never a path under the home.
-        if (!SessionEventText.IsId(session)) return ([], null);
-        return (events.LastPlan(session), ParkedWords(events, session, DaorisHome.Entry(home, HomeEntry.Sessions, $"{session}.log")));
-    }
-
     /// <summary>How much of a parked session's words its card keeps, from the end, where a question list sits (FG5).</summary>
     internal const int LastWordsLimit = 4000;
 

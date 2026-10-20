@@ -50,29 +50,32 @@ internal static class ContextBriefs
     /// The outgoing agent's own note (the design §3.1 item 6), as its claim: the seam MIXAGENT1c's <c>handover_propose</c> and SESSCTX1c's
     /// closing note hand in. Null where none was written.
     /// </param>
+    /// <param name="tree">The tree the new part works in, read now; null for the one the part moved from ran in.</param>
     internal static async Task<ComposedBrief> ComposeAsync(
         ServiceClient service, SessionEvents events, string home, string session, string why, bool conversation, string? note = null,
-        DriverConfig? config = null, CancellationToken ct = default)
+        DriverConfig? config = null, string? tree = null, CancellationToken ct = default)
     {
-        var json = await service.SessionRecordsJsonAsync(ct).ConfigureAwait(false);
+        // Records that could not be read leave a line of the one part moved from: its own words, never nothing.
+        var json = await RecordsAsync(service, ct).ConfigureAwait(false);
         var records = ServiceClient.ReadRecords(json);
         var line = LineOf(records, session);
         var parts = line.Count == 0
-            ? [new BriefPart(session, null, Events(events, session)) { Kept = Kept(home, session) }]
-            : line.Select((part, at) => new BriefPart(part.Session, part.Record.Adapter, Events(events, part.Session))
+            ? [new BriefPart(session, null, Events(events, home, session)) { Kept = Kept(home, session) }]
+            : line.Select((part, at) => new BriefPart(part.Session, part.Record.Adapter, Events(events, home, part.Session))
             {
                 Why = at == 0 ? null : part.Why,
                 Kept = Kept(home, part.Session),
             }).ToList();
 
         var last = line.Count > 0 ? line[^1].Record : null;
-        var tree = last?.Tree is { Length: > 0 } held && Directory.Exists(held) ? held : null;
+        var named = tree ?? last?.Tree;
+        var standing = named is { Length: > 0 } && Directory.Exists(named) ? named : null;
         return ContextBrief.Compose(new BriefLine(why, parts)
         {
             Conversation = conversation,
-            Tree = last?.Tree,
-            State = tree is null ? null : await TreeAsync(tree, line[0].Record.BaseCommit, ct).ConfigureAwait(false),
-            Gates = Gates(tree, last?.Repository, config ?? Config(home)),
+            Tree = named,
+            State = standing is null ? null : await TreeAsync(standing, line.Count > 0 ? line[0].Record.BaseCommit : null, ct).ConfigureAwait(false),
+            Gates = Gates(standing, last?.Repository, config ?? Config(home)),
             Note = note,
             Others = Others(json, line),
             Open = Open(home, line),
@@ -80,32 +83,47 @@ internal static class ContextBriefs
     }
 
     /// <summary>The ids of the parts a new part's line continues, for the reads its rules allow (design §3.1 item 5); none read, none.</summary>
-    internal static async Task<IReadOnlyList<string>> LineIdsAsync(ServiceClient service, string session, CancellationToken ct)
+    internal static async Task<IReadOnlyList<string>> LineIdsAsync(ServiceClient service, string session, CancellationToken ct) =>
+        [.. LineOf(ServiceClient.ReadRecords(await RecordsAsync(service, ct).ConfigureAwait(false)), session).Select(part => part.Session)];
+
+    /// <summary>The service's records, closed ones included; an answer that could not be had or read is none.</summary>
+    private static async Task<string> RecordsAsync(ServiceClient service, CancellationToken ct)
     {
         try
         {
-            var records = ServiceClient.ReadRecords(await service.SessionRecordsJsonAsync(ct).ConfigureAwait(false));
-            return [.. LineOf(records, session).Select(part => part.Session)];
+            var json = await service.SessionRecordsJsonAsync(ct).ConfigureAwait(false);
+            using var document = System.Text.Json.JsonDocument.Parse(json);
+            return json;
         }
-        catch (Exception error) when (error is HttpRequestException or DriverException or System.Text.Json.JsonException
+        catch (Exception error) when (error is HttpRequestException or DriverException or System.Text.Json.JsonException or InvalidOperationException
                                           || (error is OperationCanceledException && !ct.IsCancellationRequested))
         {
-            return [];
+            return "[]";
         }
     }
 
-    /// <summary>A part's events, oldest first, as its record keeps them; none for an id that names no file here, or one that does not read.</summary>
-    private static IReadOnlyList<SessionEvent> Events(SessionEvents events, string session)
+    /// <summary>
+    /// A part's events, oldest first, as its record keeps them; none for an id that names no file here, or one that does not read.
+    /// A record that kept none of the agent's words has its transcript's last plain lines as its last message, as a parked session's
+    /// card reads them (<see cref="SessionLastWords.ParkedWords"/>), so a carry-on keeps the last words it was handed before the brief.
+    /// </summary>
+    private static IReadOnlyList<SessionEvent> Events(SessionEvents events, string home, string session)
     {
         if (!SessionEventText.IsLocalId(session)) return [];
+        IReadOnlyList<SessionEvent> kept;
         try
         {
-            return events.After(session, 0).Events;
+            kept = events.After(session, 0).Events;
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException or DriverException)
         {
-            return [];
+            kept = [];
         }
+
+        if (kept.Any(e => e.Kind == SessionEventKind.Message)) return kept;
+        return SessionLastWords.LastWords(DaorisHome.Entry(home, HomeEntry.Sessions, $"{session}.log")) is { } words
+            ? [.. kept, new SessionEvent { Kind = SessionEventKind.Message, Text = words }]
+            : kept;
     }
 
     /// <summary>Where a part's kept attachments lie, where it keeps any (<see cref="ChatFiles.Folder"/>).</summary>

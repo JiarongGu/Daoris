@@ -69,6 +69,11 @@ export type SessionEvent = {
    */
   channel?: string | null;
   /**
+   * For `user`: on the brief a new part is handed as its first prompt (SESSCTX1b, the session-context design §3.4), the session it
+   * continues. Its origin is `target` and it carries its account, as an instruction does. Absent on every other.
+   */
+  continues?: string | null;
+  /**
    * For the person's words to a working driven session (STEER1, D136): when they reach it, `next-step` or `turn-end`, on
    * the event that shows them the moment they are said. The same words come again, under the same `id` and without
    * this, where the session took them. `resume` (MSG1d, D137 §3.1) is words to a session that parked or ended, which
@@ -294,6 +299,8 @@ export type Ask = {
   from?: 'daoris';
   /** The ask's channel message these words carry, by its id (SESSCTX1b): another session's claim where the origin is `target`. */
   channel?: string;
+  /** For Daoris's brief of the line a new part continues (SESSCTX1b): the session it continues. A target, with its account. */
+  continues?: string;
   /**
    * What the door observed of these words (COWORK1c, the message-urgency design §7, §8.2), each moment only where it was: `sent` when
    * the write to the harness returned, `taken` the ask's own moment, `answered` when the turn that took them ended so. Absent on
@@ -426,6 +433,7 @@ export function toTurns(
     ...(event.files?.length ? { files: event.files } : {}),
     // A channel's message by its own mark (SESSCTX1b), never by Daoris's words around it.
     ...(event.channel ? { channel: event.channel } : {}),
+    ...(event.origin === 'target' && event.continues ? { continues: event.continues } : {}),
     // What a target was composed of (CONTEXT1), or null where its record keeps none: said missing, never left out. Another
     // agent's findings are no composed target (XAGENT1g): they name the opinion they are from instead. Nor are Daoris's own words
     // (COWORK1b), named by their mark, never their sentence.

@@ -1881,10 +1881,15 @@ public sealed class Driver(
             // What it may read and write outside its tree (D107): the rules it is handed, and the sentence
             // every harness's instruction carries.
             var across = AcrossRules.Reach(config, registry, quest.To, start.Workspace);
-            // What the cut-off session left in Daoris's own record (TOOL4f, D125 §3.5): its last plan and its last words,
-            // which every carry-on is handed, since a cut-off for any reason loses the same thread. And whether it ran on
+            // What the cut-off session's line left in Daoris's own record (TOOL4f, D125 §3.5, as SESSCTX1b widens it, D189 point 4):
+            // Daoris's brief of the whole line, every word it took and each turn's outcome, the tree read in the tree this start
+            // works in, which every carry-on is handed, since a cut-off for any reason loses the same thread. And whether it ran on
             // another account that is now cooling, which only a limit makes so.
-            var (lastPlan, lastWords) = prior is null ? ([], null) : SessionLastWords.CarriedFrom(Context.Events, home, prior.Session);
+            var brief = prior is null
+                ? null
+                : await ContextBriefs.ComposeAsync(
+                    service, Context.Events, home, prior.Session, continues?.Why ?? HandOverWhy.CarryOn, conversation: false, config: config,
+                    tree: workTree, ct: ct).ConfigureAwait(false);
             var elsewhere = prior is not null && OnAnotherAccount(prior, selection.Profile);
             // The person's words on the ask the quest was asked by (DRIFT1b, D133 §2), read for this start whatever kind it is;
             // their standing answer for its repository (KNOWUSE1b), and the work's session language (LANG1c), from this
@@ -1965,8 +1970,7 @@ public sealed class Driver(
                 // The quest was handed over from that session (MIXAGENT1a-ii): told so, with the agent it ran on.
                 BroughtForward = carryingOn && quest.Status != "Open" && start.BroughtForward is not null,
                 HandedOver = carryingOn && handedFrom ? start.Resumes!.Adapter ?? "another agent" : null,
-                LastPlan = lastPlan,
-                LastWords = lastWords,
+                Brief = brief,
                 // Another agent's accounts are not this agent's: a hand-over says no account was cooling for it to be told of.
                 AccountChanged = elsewhere && !handedFrom && prior!.Limit && Context.Harnesses.CoolingOf(agent, prior.Profile) is not null,
                 // A set-up step is told its environment as the rule declares it now (REVIEWENV1c, design §2.2), and its account
@@ -2007,8 +2011,10 @@ public sealed class Driver(
 
             // What this session may do (PERM1, D72): the rules composed for its circle and repository,
             // handed over as the harness's own settings tier.
+            // SESSCTX1b: a carry-on reads the kept folders of its line's parts, whose files its brief names (the design §3.1 item 5).
             var rules = HandRules(
-                adapter, info, sessionId, start.Workspace, quest.To, workTree, target.AttachmentsDirectory, across: across, plugins: skillPlugins);
+                adapter, info, sessionId, start.Workspace, quest.To, workTree, target.AttachmentsDirectory, across: across, plugins: skillPlugins,
+                continued: brief?.Kept);
 
             Context.Runs.Live[quest.Id] = sessionId;
             using var live = new Disposer(() => Context.Runs.Live.TryRemove(quest.Id, out var _));
@@ -2286,22 +2292,29 @@ public sealed class Driver(
     /// A brainstorm's pass (BRAINSTORM1a2, D176 points 1 and 2): its one result tool, and the composition laid under the
     /// <c>brainstorm</c> posture (<see cref="BrainstormPermissions.Shape"/>), its room the <paramref name="tree"/>; null for any other session.
     /// </param>
+    /// <param name="continued">
+    /// The kept folders of the parts a carry-on's line continues (SESSCTX1b, the session-context design §3.1 item 5): its brief names
+    /// their files, so it may read exactly those folders too. None for every other start.
+    /// </param>
     internal (string? File, object? Meta, HandedSection Handed) HandRules(
         ISessionAdapter adapter, ProcessStartInfo info, string sessionId, string? workspace, string? repository,
         string tree, string? kept, IReadOnlyList<string>? job = null, AcrossReach? across = null, string? said = null,
-        bool opinion = false, bool helper = false, IReadOnlyList<string>? plugins = null, string? brainstorm = null)
+        bool opinion = false, bool helper = false, IReadOnlyList<string>? plugins = null, string? brainstorm = null,
+        IReadOnlyList<string>? continued = null)
     {
         // A harness a Claude Code rule means nothing to is handed nothing, and no file is written.
         if (!adapter.TakesSettings) return (null, null, RulesHanded(takes: false, PermissionFile.Empty, RuleLists.Empty, workspace, repository));
 
         var rules = PermissionRules.Load(home);
         var composed = PermissionRules.Compose(rules, workspace, repository);
-        foreach (var folder in new[] { kept, said }.OfType<string>().Where(folder => folder.Length > 0))
+        var folders = new[] { kept, said }.Concat(continued ?? []).OfType<string>().Where(folder => folder.Length > 0)
+            .Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+        foreach (var folder in folders)
         {
             composed = composed with { Allow = [.. composed.Allow, PermissionRules.ReadRule(folder)] };
         }
 
-        if (across is not null) composed = composed.Joined(AcrossRules.Rules(across, [tree, kept ?? "", said ?? ""]));
+        if (across is not null) composed = composed.Joined(AcrossRules.Rules(across, [tree, kept ?? "", said ?? "", .. folders]));
 
         // 🔴 What the session's job needs, beside the person's rules (FG5): an intake's room names its tools
         // in its own settings file, and over the protocol door only what is handed at spawn counts. The

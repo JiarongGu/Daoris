@@ -129,6 +129,8 @@ internal static class InstructionAccounting
             HandedSections.Closing => Own("the closing note's two lists, each item naming its source"),
             HandedSections.Proposing => Own("proposing a rule"),
             HandedSections.SetUp => SetUp(target, chars, size),
+            HandedSections.BriefOpening or HandedSections.BriefWords or HandedSections.BriefTurns or HandedSections.BriefState
+                or HandedSections.BriefNote or HandedSections.BriefParts or HandedSections.BriefLeft => BriefSection(name, target, chars),
             HandedSections.Boundary => target.WritesAcross.Count == 0
                 ? Own("the boundary")
                 : new HandedSection(
@@ -391,6 +393,10 @@ internal static class InstructionAccounting
 
     private static string ChannelFact(SessionTarget target) => ChannelShown(target) is { } shown ? $", and {shown}" : "";
 
+    /// <summary>
+    /// What the session before left (D80): its record's end and why it went on, then, since SESSCTX1b, Daoris's brief of its line,
+    /// whose own sections are counted beside this one (<see cref="BriefSection"/>); with no brief, what the tree holds uncommitted.
+    /// </summary>
     private static HandedSection CarryOn(SessionTarget target, int chars, string size)
     {
         var facts = new List<string> { "its record's end" };
@@ -398,10 +404,8 @@ internal static class InstructionAccounting
         else if (target.HandedOver is not null) facts.Add("that it was handed over from another agent");
         else if (target.Released) facts.Add("that the person released it");
         else if (target.BroughtForward) facts.Add("that the person brought its work forward");
-        facts.Add(target.InFlight.Count == 0 ? "nothing uncommitted" : Plural(target.InFlight.Count, "uncommitted change"));
-        var plan = target.LastPlan.Count;
-        if (plan > 0) facts.Add($"its plan of {Plural(plan, "step")}");
-        if (target.LastWords is { Length: > 0 }) facts.Add("its last words");
+        if (target.Brief is null) facts.Add(target.InFlight.Count == 0 ? "nothing uncommitted" : Plural(target.InFlight.Count, "uncommitted change"));
+        else facts.Add("Daoris's brief of its line, counted in its own sections");
         if (target.AccountChanged) facts.Add("that it ran on another account");
         if (ChannelShown(target) is { } channel) facts.Add(channel);
 
@@ -409,22 +413,14 @@ internal static class InstructionAccounting
             HandedSections.CarryOn, HandedSources.Record, $"what the session before left: {size}: {Joined(facts)}")
         {
             Chars = chars,
-            Shown = plan > 0 ? Math.Min(plan, TargetPrompt.PlanLimit) : null,
-            Of = plan > 0 ? plan : null,
-            Cuts = plan <= TargetPrompt.PlanLimit
-                ? null
-                :
-                [
-                    new HandedCut(
-                        HandedCuts.PlanBound,
-                        $"{Plural(plan - TargetPrompt.PlanLimit, "plan step")} left out past its bound of {TargetPrompt.PlanLimit}")
-                    {
-                        Count = plan - TargetPrompt.PlanLimit,
-                        Limit = TargetPrompt.PlanLimit,
-                    },
-                ],
         };
     }
+
+    /// <summary>A section of a carry-on's brief (SESSCTX1b, the session-context design §3.4), as the brief accounted it, at its size here.</summary>
+    private static HandedSection BriefSection(string name, SessionTarget target, int chars) =>
+        target.Brief?.Sections.FirstOrDefault(section => section.Name == name) is { } section
+            ? section with { Chars = chars }
+            : new HandedSection(name, HandedSources.Record, $"{name}: {N(chars)} characters") { Chars = chars };
 
     /// <summary>
     /// The landing section's sentence (PROCESS1d-i): where the work goes, where a plan was handed, and the commit rule it was told,

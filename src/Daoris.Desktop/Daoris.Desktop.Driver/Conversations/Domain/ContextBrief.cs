@@ -65,6 +65,12 @@ public sealed record ComposedBrief(IReadOnlyList<BriefPiece> Pieces, IReadOnlyLi
     /// <summary>The session it continues: the part moved from, the last of its line.</summary>
     public string? Continues { get; init; }
 
+    /// <summary>
+    /// Where the line's parts keep the files the person attached, which the brief names: the new part's rules read exactly these
+    /// folders (the design §3.1 item 5).
+    /// </summary>
+    public IReadOnlyList<string> Kept { get; init; } = [];
+
     /// <summary>Its CONTEXT1 account (D143 point 1): its sections sum to its length, by construction.</summary>
     public InstructionAccount Account => new(Text.Length, Sections);
 }
@@ -749,7 +755,11 @@ public static class ContextBrief
             } with { Chars = chars[name] };
         }
 
-        return new ComposedBrief(pieces, [.. order.Select(Section)]) { Continues = last?.Session };
+        return new ComposedBrief(pieces, [.. order.Select(Section)])
+        {
+            Continues = last?.Session,
+            Kept = [.. line.Parts.Select(part => part.Kept).OfType<string>().Distinct(StringComparer.OrdinalIgnoreCase)],
+        };
     }
 
     private static IReadOnlyList<HandedCut>? Cuts(params HandedCut?[] cuts) => cuts.OfType<HandedCut>().ToList() is { Count: > 0 } kept ? kept : null;

@@ -86,6 +86,44 @@ public sealed class TargetPromptGoldenTests
     };
 
     /// <summary>
+    /// SESSCTX1b (D189 point 4, the session-context design §3.4): a carry-on handed Daoris's brief of its line in place of the last plan
+    /// and words, the brief's sections counted on their own within the account: two parts, the person's word to the first, a plan, a
+    /// failed check by a declared gate, and the tree as read.
+    /// </summary>
+    internal static readonly SessionTarget CarryOnBrief = CarryOn with
+    {
+        PersonSaid = null,
+        CutOff = "the agent's turn failed with the quest still taken.",
+        Brief = ContextBrief.Compose(new BriefLine(
+            HandOverWhy.CarryOn,
+            [
+                new BriefPart("s1a2b3c4", "claude-code",
+                [
+                    new SessionEvent { Kind = SessionEventKind.User, Origin = "target", Text = "You are the agent for `reports`…", Account = new InstructionAccount(30, []) },
+                    new SessionEvent { Kind = SessionEventKind.Message, Text = "I read the report module." },
+                    new SessionEvent { Kind = SessionEventKind.Turn, StopReason = "end_turn" },
+                    new SessionEvent { Kind = SessionEventKind.User, Origin = "person", Id = "w1", Text = "Use the common-report module." },
+                    new SessionEvent { Kind = SessionEventKind.Plan, Entries = [new("Move the totals", "completed"), new("Add the note column", "in_progress")] },
+                    new SessionEvent
+                    {
+                        Kind = SessionEventKind.Tool, Id = "t1", Title = "Edit src/report.ts", ToolKind = "edit", Status = "completed",
+                        Locations = ["C:/work/reports/src/report.ts"],
+                    },
+                    new SessionEvent
+                    {
+                        Kind = SessionEventKind.Tool, Id = "t2", Title = "npm test", ToolKind = "execute", Status = "failed",
+                        Input = """{"command":"npm test"}""", Output = "FAIL src/report.test.ts\n  the note column is empty",
+                    },
+                ]),
+            ])
+        {
+            Tree = "C:/work/reports",
+            State = new BriefTree("4f2a9c1 Move the totals", [" M src/report.ts"], ["4f2a9c1 Move the totals"]),
+            Gates = [new HeavyGate("unit", "npm test", null, false)],
+        }),
+    };
+
+    /// <summary>
     /// A set-up step (REVIEWENV1c, design §2.2): a chain's step that shows the work of the step before, which its tree grew from,
     /// in a local environment for the person's review, by the procedure the rule names.
     /// </summary>
@@ -185,6 +223,7 @@ public sealed class TargetPromptGoldenTests
         "bare" => Bare,
         "full" => Full,
         "carry-on" => CarryOn,
+        "carry-on-brief" => CarryOnBrief,
         "set-up" => SetUpStep,
         "own-tree" => OwnTree,
         "part" => Part,
@@ -230,6 +269,7 @@ public sealed class TargetPromptGoldenTests
     [InlineData("channel")]
     [InlineData("ready")]
     [InlineData("heavy")]
+    [InlineData("carry-on-brief")]
     public void The_quests_instruction_is_its_golden_text(string which)
     {
         // GOLDEN1's switch: DAORIS_GOLDEN_WRITE=1 writes the golden from the render, and without it a difference fails.
@@ -275,6 +315,7 @@ public sealed class TargetPromptGoldenTests
     [InlineData("channel")]
     [InlineData("ready")]
     [InlineData("heavy")]
+    [InlineData("carry-on-brief")]
     public void The_account_beside_it_is_its_golden(string which)
     {
         var account = TargetPrompt.Composed(Of(which)).Account;

@@ -391,7 +391,9 @@ function AskView({ ask }: { ask: Ask }) {
       <div className="flex items-center justify-between gap-2">
         <span className="text-meta text-ink-faint">
           {findings ? t('work.conversation.opinion') : daoris ? t('work.conversation.daoris') : claim ? t('work.conversation.claim')
-            : target ? t('work.conversation.target') : t('work.conversation.you')}
+            // SESSCTX1b: a new part's first prompt is Daoris's brief of the line it continues, folded as a target is.
+            : target && ask.continues ? t('work.conversation.brief')
+              : target ? t('work.conversation.target') : t('work.conversation.you')}
         </span>
         {target && (
           <button
