@@ -164,6 +164,9 @@ builder.Services
     // Every call's lineage, as its harness wrote it in `_meta`, written for the driver to bind a native child to the session's
     // part (FABRIC-C1a, D173): a child calls with this process's session, so the environment cannot tell it apart.
     .RecordCallLineage(LineageFile.FromEnvironment())
+    // Every answer ends with what waits for the session on its ask's channel, once per new message (COWORK1d, D188's note): the pull
+    // an agent meets at its next call, whatever its door.
+    .TellWhatWaits(new WaitingLine(composed.Channel, intake).NextAsync)
     // Every class of tools, from the one list the tests read too (PART10a).
     .WithKnowledgeTools();
 

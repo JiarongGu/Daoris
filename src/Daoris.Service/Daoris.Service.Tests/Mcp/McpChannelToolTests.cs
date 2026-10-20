@@ -125,6 +125,34 @@ public sealed class McpChannelToolTests : IAsyncLifetime
         Assert.Contains("checker: waiting", read);
     }
 
+    /// <summary>
+    /// 🔴 COWORK1d (the message-urgency design §4.2, D188's note): the line every answer ends with names what waits for the session's
+    /// entry, how many and how many urgent, once per new message; nothing once the agent read them, and nothing for a session on no ask.
+    /// </summary>
+    [Fact]
+    public async Task What_waits_is_said_once_per_new_message_and_not_once_read()
+    {
+        var (ask, session) = await RunningAsync();
+        var chat = (await _ledger.OpenChatAsync("reports", "stub", Now, tree: Path.Combine(_root, "chat"))).Session!;
+        var line = new WaitingLine(_channel, new IntakeScope(null, session.Id));
+
+        Assert.Null(await line.NextAsync(default));
+        await _channel.PostAsPersonAsync(ask.Id, "use the older bridge", null, null, DateTimeOffset.UtcNow.AddMinutes(-2));
+        var first = await line.NextAsync(default);
+        Assert.Contains($"1 message waits for you on ask `#{ask.Id}`'s channel, 1 of them urgent", first);
+        Assert.Contains("channel_read", first);
+        Assert.Null(await line.NextAsync(default));
+
+        await _channel.PostAsPersonAsync(ask.Id, "and log the port", null, null, DateTimeOffset.UtcNow.AddMinutes(-1), urgent: false);
+        Assert.Contains("2 messages wait for you", await line.NextAsync(default));
+
+        await As(_channel, session.Id).ReadAsync();
+        await _channel.PostAsPersonAsync(ask.Id, "one more", null, null, DateTimeOffset.UtcNow, urgent: false);
+        Assert.Contains("1 message waits for you", await line.NextAsync(default));
+        Assert.Null(await new WaitingLine(_channel, new IntakeScope(null, chat.Id)).NextAsync(default));
+        Assert.Null(await new WaitingLine(null, new IntakeScope(null, session.Id)).NextAsync(default));
+    }
+
     /// <summary>🔴 Each refusal is said in a sentence the agent reads, and nothing is kept.</summary>
     [Fact]
     public async Task Each_refusal_is_a_sentence_and_nothing_is_kept()
