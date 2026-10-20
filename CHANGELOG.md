@@ -5,6 +5,11 @@ with the version and date at release.
 
 ## Unreleased
 
+- Signing an account in says where it is and for how long: *Starting*, *Waiting on your browser*, *Checking who signed in*
+  and *Joining the lists*, each with its time, the one now counting. Codex's device code shows under the browser's step with
+  when it expires, and the link and the code are there again when you come back to the page mid-sign-in. A sign-in that ends
+  without signing anyone in says why in its own panel, with *Try again* and *Close*; one you cancel closes saying nothing. Under
+  a row of *What needs you* the sign-in shows its step now alone.
 - Settings, This Daoris and a repository's or a workspace's Setup use the pane. A setting's value sits beside its words, on one
   label column a card shares, so a card's values form one column the eye runs down rather than sitting at the pane's far edge;
   a row's acts follow its value, and a notice sits under the value it is about. Below about 512 px of card each value sits under
