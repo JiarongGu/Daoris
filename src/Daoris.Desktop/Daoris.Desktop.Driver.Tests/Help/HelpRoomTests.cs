@@ -78,6 +78,35 @@ public sealed class HelpRoomTests : IDisposable
     }
 
     /// <summary>
+    /// HELPMODE1c3 (D183's note): where the person granted chosen settings, the room written at the start names each one's tool, that
+    /// it changes the setting with no Apply, and that every other setting is still proposed; housekeeping granted beside them is no
+    /// longer the one change it makes itself. Nothing granted, and the room says nothing new.
+    /// </summary>
+    [Fact]
+    public void The_room_says_the_settings_the_person_granted_at_its_start()
+    {
+        var plain = File.ReadAllText(Path.Combine(HelpRoom.Prepare(_home, Machine), "AGENTS.md"));
+        Assert.DoesNotContain("`settings_", plain);
+
+        File.WriteAllText(ConfiguredAccess.PathOf(_home), """{ "settings": ["notify", "language"] }""");
+        var granted = File.ReadAllText(Path.Combine(HelpRoom.Prepare(_home, Machine), "AGENTS.md"));
+
+        Assert.Contains("`settings_notify`", granted);
+        Assert.Contains("`settings_language`", granted);
+        Assert.DoesNotContain("`settings_cap`", granted);
+        Assert.Contains("no Apply", granted);
+        Assert.Contains("`setting_propose`", granted);
+        Assert.DoesNotContain("housekeeping_", granted);
+        Assert.Equal(HelpRoom.Render(Machine with { Settings = [ConfiguredAccess.Notify, ConfiguredAccess.Language] }), granted);
+
+        File.WriteAllText(ConfiguredAccess.PathOf(_home), """{ "housekeeping": ["inspect"], "settings": ["cap"] }""");
+        var both = File.ReadAllText(Path.Combine(HelpRoom.Prepare(_home, Machine), "AGENTS.md"));
+        Assert.Contains("`housekeeping_inspect`", both);
+        Assert.Contains("`settings_cap`", both);
+        Assert.DoesNotContain("the one change you make yourself", both);
+    }
+
+    /// <summary>
     /// HELPSTUCK1: a folder beside an agent's accounts that is no account is said in the room, so the helper can answer the
     /// person who misses it: one holding a sign-in with the way to keep it, renamed to an account's name.
     /// </summary>

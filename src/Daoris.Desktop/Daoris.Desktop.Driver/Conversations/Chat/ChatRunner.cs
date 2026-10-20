@@ -685,15 +685,17 @@ public sealed class ChatRunner : IDisposable
     internal static ChatPlace HelpPlaceIn(string home, string room, IReadOnlyList<HelpRead> reads, string? workspace = null)
     {
         var circle = HelpCircle.Of(home, room, workspace);
-        // HELPMODE1c2a (D183's note): the housekeeping the person chose, read once for this start, so its allow-list and its receipt
-        // say the same; each tool's call is judged again by the record then (HelpHousekeeping).
-        var housekeeping = ConfiguredAccess.Read(home).Housekeeping;
+        // HELPMODE1c2a (D183's note): the housekeeping the person chose, and since HELPMODE1c3 the settings, read once for this start,
+        // so its allow-list and its receipt say the same; each tool's call is judged again by the record then (HelpHousekeeping,
+        // HelpSettings).
+        var access = ConfiguredAccess.Read(home);
+        var housekeeping = access.Housekeeping;
         return new(
             HelpRoom.Repository, room,
             (file, id) =>
             {
                 var grants = HelpGrants.Read(home, PluginCatalog.Load(home, AdapterSet.Built().Names));
-                return HelpRoom.Rules(file, ChatFiles.Folder(home, id), reads, grants.Allow, grants.Ask, circle, housekeeping);
+                return HelpRoom.Rules(file, ChatFiles.Folder(home, id), reads, grants.Allow, grants.Ask, circle, housekeeping, access.Settings);
             },
             Plugins: true, ConnectorOnPipe: true, Posture: HelpRoom.Posture, ToolsUpFront: true)
         {
@@ -703,6 +705,7 @@ public sealed class ChatRunner : IDisposable
             Circle = circle,
             Reads = reads,
             Housekeeping = housekeeping,
+            Settings = access.Settings,
         };
     }
 
@@ -763,11 +766,11 @@ public sealed class ChatRunner : IDisposable
     /// </remarks>
     public void HelpAccessChosen(string mode)
     {
-        var housekeeping = ConfiguredAccess.Read(_home).Housekeeping;
+        var access = ConfiguredAccess.Read(_home);
         foreach (var (sessionId, running) in _context.HelpModes)
         {
             if (_context.HelpEnding.TryGetValue(sessionId, out var due) && !due) continue;
-            if (HelpSwap.Changed(running, Handed(sessionId), mode, housekeeping) is not { } changed)
+            if (HelpSwap.Changed(running, Handed(sessionId), mode, access) is not { } changed)
             {
                 // Chosen back to what it runs under: an end due at its turn's end is withdrawn.
                 _context.HelpEnding.TryRemove(new KeyValuePair<string, bool>(sessionId, true));
@@ -789,23 +792,24 @@ public sealed class ChatRunner : IDisposable
     /// <param name="mode">The mode chosen now; the configured access is read from the home's record.</param>
     public IReadOnlyList<string> HelpSwapping(string mode)
     {
-        var housekeeping = ConfiguredAccess.Read(_home).Housekeeping;
+        var access = ConfiguredAccess.Read(_home);
         return [.. _context.HelpModes
-            .Where(each => HelpSwap.Changed(each.Value, Handed(each.Key), mode, housekeeping) is not null)
+            .Where(each => HelpSwap.Changed(each.Value, Handed(each.Key), mode, access) is not null)
             .Select(each => each.Key)
             .Order(StringComparer.Ordinal)];
     }
 
     /// <summary>
-    /// Whether an Ask Daoris conversation running here was handed another choice of housekeeping than <paramref name="chosen"/>
-    /// (ACCESSSWAP1): the grant's <i>pending</i> mark, from the change until that conversation's agent has ended.
+    /// Whether an Ask Daoris conversation running here was handed another choice of <paramref name="grant"/> than
+    /// <paramref name="chosen"/> holds (ACCESSSWAP1; HELPMODE1c3 for the chosen settings): the grant's <i>pending</i> mark, from the
+    /// change until that conversation's agent has ended.
     /// </summary>
-    public bool HousekeepingPending(IReadOnlyList<string> chosen) =>
-        _context.HelpModes.Keys.Any(sessionId => !Handed(sessionId).SequenceEqual(chosen, StringComparer.Ordinal));
+    public bool GrantPending(string grant, ConfiguredAccess chosen) =>
+        _context.HelpModes.Keys.Any(sessionId => !Handed(sessionId).Of(grant).SequenceEqual(chosen.Of(grant), StringComparer.Ordinal));
 
-    /// <summary>The housekeeping a running Ask Daoris conversation's start was handed; none where it kept none.</summary>
-    private IReadOnlyList<string> Handed(string sessionId) =>
-        _context.HousekeepingHanded.TryGetValue(sessionId, out var handed) ? handed : [];
+    /// <summary>The configured access a running Ask Daoris conversation's start was handed; none where it kept none.</summary>
+    private ConfiguredAccess Handed(string sessionId) =>
+        _context.AccessHanded.TryGetValue(sessionId, out var handed) ? handed : ConfiguredAccess.None;
 
     /// <summary>
     /// Where a conversation's turns stand (ACCESSSWAP1, after HELPMODE1a5): one whose access changed is ended once nothing runs or
@@ -826,7 +830,7 @@ public sealed class ChatRunner : IDisposable
     private void ForgetAccess(string sessionId)
     {
         _context.HelpModes.TryRemove(sessionId, out _);
-        _context.HousekeepingHanded.TryRemove(sessionId, out _);
+        _context.AccessHanded.TryRemove(sessionId, out _);
         _context.HelpEnding.TryRemove(sessionId, out _);
     }
 
@@ -923,6 +927,9 @@ public sealed class ChatRunner : IDisposable
         /// composed, in either mode; none for a repository's conversation. Its receipt keeps them, which each call is judged by.
         /// </summary>
         public IReadOnlyList<string> Housekeeping { get; init; } = [];
+
+        /// <summary>The chosen settings its start was handed (HELPMODE1c3), as <see cref="Housekeeping"/> is.</summary>
+        public IReadOnlyList<string> Settings { get; init; } = [];
     }
 
     /// <summary>
@@ -1111,6 +1118,7 @@ public sealed class ChatRunner : IDisposable
                     ServersHanded = !pipe || (servers is not null && HelpWired.Names(info, servers)),
                     Withheld = browserNotice,
                     Housekeeping = place.Housekeeping,
+                    Settings = place.Settings,
                 });
             }
 
@@ -1149,10 +1157,11 @@ public sealed class ChatRunner : IDisposable
         // One at a time in each workspace (ASKHIST1, ASKSCOPE1a): going back to an earlier conversation of its workspace sets this one
         // aside first, and one of another workspace's leaves it be.
         if (string.Equals(place.Name, HelpRoom.Repository, StringComparison.Ordinal)) _context.Rooms[sessionId] = RemoteTarget.Workspace(place.Workspace);
-        // The access it got, its mode and its housekeeping, which a change of the person's is compared with while it runs (ACCESSSWAP1).
+        // The access it got, its mode and its configured access, which a change of the person's is compared with while it runs
+        // (ACCESSSWAP1).
         if (helpMode is not null)
         {
-            _context.HousekeepingHanded[sessionId] = place.Housekeeping;
+            _context.AccessHanded[sessionId] = new ConfiguredAccess(place.Housekeeping) { Settings = place.Settings };
             _context.HelpModes[sessionId] = helpMode;
         }
 

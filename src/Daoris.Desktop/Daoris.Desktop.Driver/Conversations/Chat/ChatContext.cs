@@ -72,10 +72,11 @@ internal sealed class ChatContext(
     public ConcurrentDictionary<string, string> HelpModes { get; } = new(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>
-    /// The housekeeping operations each of Ask Daoris's running conversations was handed at its start (HELPMODE1c2a), by session: what
-    /// a change of the grant is compared with (ACCESSSWAP1), as its receipt keeps them.
+    /// The configured access each of Ask Daoris's running conversations was handed at its start, by session: its housekeeping
+    /// (HELPMODE1c2a) and its chosen settings (HELPMODE1c3), what a change of a grant is compared with (ACCESSSWAP1), as its receipt
+    /// keeps them.
     /// </summary>
-    public ConcurrentDictionary<string, IReadOnlyList<string>> HousekeepingHanded { get; } = new(StringComparer.OrdinalIgnoreCase);
+    public ConcurrentDictionary<string, ConfiguredAccess> AccessHanded { get; } = new(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>
     /// The Ask Daoris conversations whose access the person changed while they ran (ACCESSSWAP1, after HELPMODE1a5): <c>true</c> while
