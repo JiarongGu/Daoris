@@ -5,6 +5,11 @@ with the version and date at release.
 
 ## Unreleased
 
+- A conversation whose agent has lost it goes on by itself in a new conversation in the same folder, handed Daoris's record of it
+  and then your words, and says so on both. A conversation its agent could still go on with never moves without you: your words
+  wait, and beside *Start a conversation with these words* there is *Go on with Daoris's brief*, which goes on in a new part of the
+  same session with that record. The same holds for a session whose quest has closed and for Ask Daoris's conversations. Handing a
+  conversation over yourself first asks its agent for a short closing note, which the new conversation is given.
 - A repository's Setup says which checks its driven sessions run, beside its heavy gates, and `daoris-driver checks` sets
   the same choice from a terminal. *Light* has sessions run the gates the repository does not mark heavy and the checks their
   change reaches, filtered; its heavy gates are left out of every session. Each session is told so when it starts,
