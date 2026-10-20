@@ -97,8 +97,9 @@ public static class HandOverBy
 /// <summary>
 /// The session a new one continues, why (<see cref="HandOverWhy"/>) and who asked (<see cref="HandOverBy"/>): its record's
 /// <c>from</c> link (MIXAGENT1a-iii, D163 point 4), named at the open by the driver, the half that knows. A conversation handed
-/// over, a quest's session carried on after a hand-over, and one carried on onto another account after a limit say it; a
-/// conversation's own going-on continues its own record and says none.
+/// over, a quest's session carried on after a hand-over, and one carried on onto another account after a limit say it; since
+/// SESSCTX1b every carry-on and fallback says it too (<see cref="HandOverWhy.CarryOn"/>, <see cref="HandOverWhy.Retry"/>), so a
+/// brief follows the line. A conversation's own going-on continues its own record and says none.
 /// </summary>
 public sealed record ContinuedFrom(string Session, string Why, string By);
 
@@ -115,60 +116,8 @@ public sealed record HandOverRequest(string Agent, string? Account, string Why, 
 /// <param name="Message">The sentence, in the terminal's words; the screen words <see cref="Why"/> itself.</param>
 public sealed record HandOverAnswer(bool Kept, string? Why, string Message);
 
-/// <summary>
-/// What the new conversation's agent is told first when a conversation is handed to it (MIXAGENT1a-i, D163 §3): Daoris's own
-/// record of the old one, never its harness conversation, which another agent cannot read. A pure function of what was kept.
-/// </summary>
-public static class HandOverBriefing
-{
-    /// <summary>How much of the request or of the last words is kept, as a parked session's words are (<see cref="SessionLastWords.LastWordsLimit"/>).</summary>
-    internal const int WordsLimit = 4000;
-
-    /// <summary>The most plan steps or uncommitted paths named: a to-do list, not a log.</summary>
-    internal const int ListLimit = 50;
-
-    /// <summary>The briefing, in Daoris's one English; each part is left out where there is none.</summary>
-    /// <param name="agent">The agent the conversation ran on.</param>
-    /// <param name="request">The request as the person first wrote it, or null.</param>
-    /// <param name="lastWords">The agent's last words, or null.</param>
-    /// <param name="uncommitted">What the tree holds uncommitted, by relative path.</param>
-    public static string Compose(
-        string agent, string session, string why, string? request, IReadOnlyList<PlanEntry> plan, string? lastWords,
-        IReadOnlyList<string> uncommitted)
-    {
-        var parts = new List<string>
-        {
-            $"You continue the {agent} conversation `{session}`, handed over because {HandOverWhy.Briefed(why)}. "
-            + "None of its own context carries over to you: this is what Daoris kept of it.",
-        };
-
-        if (request?.Trim() is { Length: > 0 } asked)
-        {
-            parts.Add("The person first wrote:\n\n" + TextBounds.Quote(TextBounds.Clip(asked, WordsLimit), bareBlank: false));
-        }
-
-        if (plan.Count > 0)
-        {
-            var steps = plan.Take(ListLimit)
-                .Select(step => $"    - {(step.Status is { Length: > 0 } status ? $"[{status}] " : "")}{TextBounds.OneLine(step.Content, trim: false)}");
-            parts.Add("Its plan, as its record last kept it:\n\n" + string.Join("\n", steps) + More(plan.Count));
-        }
-
-        if (lastWords?.Trim() is { Length: > 0 } said)
-        {
-            parts.Add("Its last words were:\n\n" + TextBounds.Quote(TextBounds.ClipStart(said, WordsLimit), bareBlank: false));
-        }
-
-        if (uncommitted.Count > 0)
-        {
-            parts.Add("Uncommitted in this tree:\n\n" + string.Join("\n", uncommitted.Take(ListLimit).Select(path => $"    - {path}")) + More(uncommitted.Count));
-        }
-
-        return string.Join("\n\n", parts);
-    }
-
-    private static string More(int count) => count > ListLimit ? $"\n    … and {count - ListLimit} more" : "";
-}
+// SESSCTX1b (D189 point 4): the briefing a hand-over composed here is replaced by ContextBrief.Compose, Daoris's brief of the whole
+// line, which a hand-over, an account move, a carry-on and a fallback are all handed; the outgoing agent's note is its `note` seam.
 
 /// <summary>The two lines a hand-over writes into conversations' records (MIXAGENT1a-i), each by its code with facts only.</summary>
 public static class HandOverNotes

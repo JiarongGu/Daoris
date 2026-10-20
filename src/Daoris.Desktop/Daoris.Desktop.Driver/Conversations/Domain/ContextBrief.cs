@@ -62,6 +62,9 @@ public sealed record ComposedBrief(IReadOnlyList<BriefPiece> Pieces, IReadOnlyLi
     /// <summary>The brief whole.</summary>
     public string Text => string.Concat(Pieces.Select(piece => piece.Text));
 
+    /// <summary>The session it continues: the part moved from, the last of its line.</summary>
+    public string? Continues { get; init; }
+
     /// <summary>Its CONTEXT1 account (D143 point 1): its sections sum to its length, by construction.</summary>
     public InstructionAccount Account => new(Text.Length, Sections);
 }
@@ -746,7 +749,7 @@ public static class ContextBrief
             } with { Chars = chars[name] };
         }
 
-        return new ComposedBrief(pieces, [.. order.Select(Section)]);
+        return new ComposedBrief(pieces, [.. order.Select(Section)]) { Continues = last?.Session };
     }
 
     private static IReadOnlyList<HandedCut>? Cuts(params HandedCut?[] cuts) => cuts.OfType<HandedCut>().ToList() is { Count: > 0 } kept ? kept : null;

@@ -457,12 +457,15 @@ public sealed class ChatRunner : IDisposable
         // conversation is briefed with Daoris's record.
         if (opened is not null) _toldProcess[sessionId] = await ProcessToldAsync(opened.Path, sessionId, config, known, opened.Dependencies, ct).ConfigureAwait(false);
 
+        // SESSCTX1b: a conversation that continues another reads the kept folders of its line's parts, whose files its brief names.
+        var continued = from is null ? [] : await ContextBriefs.LineIdsAsync(_service, from.Session, ct).ConfigureAwait(false);
+
         ChatStart? started = null;
         try
         {
             return started = await RunAsync(
                 sessionId, message, resolved, selection, config,
-                RepositoryPlace(config, snapshot.Repositories, known, repository, workTree),
+                RepositoryPlace(config, snapshot.Repositories, known, repository, workTree, continued),
                 onEnded, ct).ConfigureAwait(false);
         }
         finally
@@ -477,13 +480,16 @@ public sealed class ChatRunner : IDisposable
     /// driven session in this repository would, the plugins' servers, and its conversation kept for it to go on (MSG1c).
     /// </summary>
     /// <param name="repository">The repository as the conversation names it, which its rules are composed for.</param>
+    /// <param name="continued">The parts its line continues, by id (SESSCTX1b): their kept folders are read as its own.</param>
     internal ChatPlace RepositoryPlace(
-        DriverConfig config, IReadOnlyList<RepoView> registry, RepoView known, string repository, string workTree)
+        DriverConfig config, IReadOnlyList<RepoView> registry, RepoView known, string repository, string workTree,
+        IReadOnlyList<string>? continued = null)
     {
         var across = AcrossRules.Reach(config, registry, known.Repository, known.Workspace);
+        IReadOnlyList<string> kept = [.. (continued ?? []).Where(SessionEventText.IsLocalId).Select(part => ChatFiles.Folder(_home, part))];
         return new ChatPlace(
             known.Repository, workTree,
-            (file, id) => RulesFor(file, known.Workspace, repository, workTree, ChatFiles.Folder(_home, id), across),
+            (file, id) => RulesFor(file, known.Workspace, repository, workTree, ChatFiles.Folder(_home, id), across, kept),
             Plugins: true, ConnectorOnPipe: false, Posture: null, ToolsUpFront: false)
         {
             Also = [.. across.Writes.Select(target => target.Path)],
@@ -497,12 +503,18 @@ public sealed class ChatRunner : IDisposable
     /// outside the tree, for this conversation alone, and the agent reads it where it lies (CONV4c): a read of
     /// exactly that folder, INT4j's rule — every other read there would be asked, and every ask is refused (D52).
     /// </summary>
+    /// <param name="continued">
+    /// The kept folders of the parts its line continues (SESSCTX1b, the session-context design §3.1 item 5): a new part is handed their
+    /// files by name and where they lie, so it may read exactly those folders too, as its own. None for a conversation that continues none.
+    /// </param>
     internal static RuleLists RulesFor(
-        PermissionFile file, string? workspace, string repository, string tree, string kept, AcrossReach across)
+        PermissionFile file, string? workspace, string repository, string tree, string kept, AcrossReach across,
+        IReadOnlyList<string>? continued = null)
     {
         var composed = PermissionRules.Compose(file, workspace, repository);
-        return (composed with { Allow = [.. composed.Allow, PermissionRules.ReadRule(kept)] })
-            .Joined(AcrossRules.Rules(across, [tree, kept]));
+        IReadOnlyList<string> folders = [kept, .. (continued ?? []).Where(folder => !string.Equals(folder, kept, StringComparison.OrdinalIgnoreCase))];
+        return (composed with { Allow = [.. composed.Allow, .. folders.Select(PermissionRules.ReadRule)] })
+            .Joined(AcrossRules.Rules(across, [tree, .. folders]));
     }
 
     /// <summary>
@@ -1632,6 +1644,16 @@ public sealed class ChatRunner : IDisposable
         if (message.TakenOver is { } taken)
         {
             yield return new SessionEvent { Kind = SessionEventKind.Note, Text = taken.Note, Parts = taken.Parts };
+            // SESSCTX1b (the session-context design §3.4): the brief is the conversation's first prompt, Daoris's, with its account and
+            // the session it continues, as an instruction is kept. Never a message of the person's, nor the browser's line.
+            if (message.Brief is { } brief)
+            {
+                yield return new SessionEvent
+                {
+                    Kind = SessionEventKind.User, Origin = "target", Text = brief.Text, Account = brief.Account, Continues = brief.Continues,
+                };
+            }
+
             yield break;
         }
 

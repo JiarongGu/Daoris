@@ -206,6 +206,14 @@ public sealed record SessionEvent
     public string? Channel { get; init; }
 
     /// <summary>
+    /// For <see cref="SessionEventKind.User"/>: on the brief a new part is handed as its first prompt (SESSCTX1b, the session-context
+    /// design §3.4), the session it continues. Its <see cref="Origin"/> is <c>target</c> and it carries its <see cref="Account"/>, so
+    /// it reads as an instruction does; no person said it, so it never names the conversation (<see cref="SessionEvents.Openings"/>).
+    /// Null on every other event.
+    /// </summary>
+    public string? Continues { get; init; }
+
+    /// <summary>
     /// For the person's words to a driven session, on the event that shows them the moment they are said (STEER1, D136):
     /// when they reach it, <c>next-step</c> or <c>turn-end</c>, or <c>now</c> where the person's *Send now* steered them into
     /// the running turn (STEER2a). The words where the session took them come again without it, under the same

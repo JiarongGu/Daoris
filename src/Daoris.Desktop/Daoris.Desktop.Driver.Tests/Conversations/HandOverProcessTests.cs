@@ -111,7 +111,8 @@ public sealed class HandOverProcessTests : IDisposable
         var opening = record.First(e => CodeOf(e) == "chat.taken-over").Parts![0];
         Assert.Equal(("acp-stub", old, "press"), (opening.Value("agent"), opening.Value("session"), opening.Value("why")));
         await Poll.Until(
-            () => StubFile.Text(DaorisHome.Entry(_home, HomeEntry.Sessions,$"{next}.log")).Contains($"heard: You continue the acp-stub conversation `{old}`"),
+            // SESSCTX1b: Daoris's brief of the line, the new conversation's first prompt.
+            () => StubFile.Text(DaorisHome.Entry(_home, HomeEntry.Sessions,$"{next}.log")).Contains($"heard: You continue session `{old}`, which ran on acp-stub"),
             () => Seen(ledger, events, next));
         Assert.Contains("Make the port configurable.", StubFile.Text(DaorisHome.Entry(_home, HomeEntry.Sessions,$"{next}.log")));
         Assert.Equal("chat.handed-over", events.After(old, 0).Events.Select(CodeOf).Last(code => code is not null));

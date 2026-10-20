@@ -141,50 +141,6 @@ public sealed class HandOverTests : IDisposable
         Assert.Null(new HandOverBox(_home).Read("../escape"));
     }
 
-    // ——— The briefing, a pure function.
-
-    /// <summary>
-    /// 🔴 What the new conversation's agent is told first, in Daoris's one English: whose conversation it continues and why, the
-    /// request as the person first wrote it, its last plan and words, and what is uncommitted: nothing of the old context.
-    /// </summary>
-    [Fact]
-    public void The_briefing_names_the_conversation_why_the_request_the_plan_the_words_and_the_uncommitted()
-    {
-        var briefing = HandOverBriefing.Compose(
-            "claude-code", "c0nv0001", HandOverWhy.Limit, "Make the port configurable.",
-            [new PlanEntry("Read the config", "completed"), new PlanEntry("Write the flag", "pending")],
-            "I read the config and began the flag.", ["src/Port.cs", "README.md"]);
-
-        Assert.Equal(
-            "You continue the claude-code conversation `c0nv0001`, handed over because the account it ran on reached its limit. "
-            + "None of its own context carries over to you: this is what Daoris kept of it.\n\n"
-            + "The person first wrote:\n\n> Make the port configurable.\n\n"
-            + "Its plan, as its record last kept it:\n\n    - [completed] Read the config\n    - [pending] Write the flag\n\n"
-            + "Its last words were:\n\n> I read the config and began the flag.\n\n"
-            + "Uncommitted in this tree:\n\n    - src/Port.cs\n    - README.md",
-            briefing);
-    }
-
-    [Fact]
-    public void The_briefing_leaves_out_what_there_is_none_of_and_bounds_what_is_long()
-    {
-        var plain = HandOverBriefing.Compose("codex-acp", "c0nv0001", HandOverWhy.Press, null, [], null, []);
-        Assert.Equal(
-            "You continue the codex-acp conversation `c0nv0001`, handed over because the person asked for it. "
-            + "None of its own context carries over to you: this is what Daoris kept of it.",
-            plain);
-
-        var long_ = HandOverBriefing.Compose(
-            "codex-acp", "c0nv0001", HandOverWhy.Near, new string('a', 9000), [], new string('b', 9000),
-            [.. Enumerable.Range(0, 80).Select(each => $"f{each}.cs")]);
-        Assert.Contains("the account it ran on was near its limit", long_);
-        Assert.DoesNotContain(new string('a', 4001), long_);
-        Assert.DoesNotContain(new string('b', 4001), long_);
-        Assert.Contains("    - f49.cs", long_);
-        Assert.DoesNotContain("f50.cs", long_);
-        Assert.Contains("… and 30 more", long_);
-    }
-
     // ——— Taking the box (D163 §3): end the old conversation, start the new in its tree, brief it, say where it went.
 
     private SessionEvents Events => new(DaorisHome.Entry(_home, HomeEntry.Sessions));
@@ -232,14 +188,21 @@ public sealed class HandOverTests : IDisposable
 
     /// <summary>
     /// 🔴 The old conversation ends first (its tree is held by one session at a time), the new starts in the same tree on the named
-    /// agent and account, and is told Daoris's briefing, never the person's words; both records say where it went and where it
-    /// came from, by code, and the box is gone.
+    /// agent and account, and is told Daoris's brief of its line (SESSCTX1b, <see cref="ContextBrief"/>), never the person's words;
+    /// both records say where it went and where it came from, by code, and the box is gone. The brief keeps every word the session
+    /// took, where the briefing it replaced kept the request and the last words alone, and its record is the new conversation's first
+    /// prompt with its account (the design §3.4).
     /// </summary>
     [Fact]
     public async Task Taking_the_box_ends_the_old_starts_the_new_in_its_tree_and_briefs_it()
     {
         var events = Events;
         events.Append("c0nv0001", new SessionEvent { Kind = SessionEventKind.User, Origin = "person", Text = "Make the port configurable.\nAnd log it." });
+        events.Append("c0nv0001", new SessionEvent { Kind = SessionEventKind.Message, Text = "Reading the config." });
+        events.Append("c0nv0001", new SessionEvent { Kind = SessionEventKind.Turn, StopReason = "end_turn" });
+        events.Append("c0nv0001", new SessionEvent { Kind = SessionEventKind.User, Origin = "person", Text = "Default it to 5177." });
+        events.Append("c0nv0001", new SessionEvent { Kind = SessionEventKind.Message, Text = "Defaulted." });
+        events.Append("c0nv0001", new SessionEvent { Kind = SessionEventKind.Turn, StopReason = "end_turn" });
         var taken = new Taken();
 
         var handed = await TakeAsync(new Room([Chat("c0nv0001")]), taken, Ask());
@@ -251,14 +214,39 @@ public sealed class HandOverTests : IDisposable
         Assert.Equal("conversation `n3w00001` goes on from `c0nv0001` with codex-acp.", handed.Message);
         var message = taken.Said!;
         Assert.Equal("", message.Text);
-        Assert.StartsWith("You continue the claude-code conversation `c0nv0001`, handed over because the account it ran on reached its limit.", message.Briefing);
-        Assert.Contains("> Make the port configurable.\n> And log it.", message.Briefing);
+        var brief = message.Brief!;
+        Assert.StartsWith("You continue session `c0nv0001`, which ran on claude-code; it moved because the account it ran on reached its limit.", brief.Text);
+        Assert.Contains("> Make the port configurable.\n> And log it.", brief.Text);
+        Assert.Contains("> Default it to 5177.", brief.Text);
+        Assert.StartsWith(brief.Text, message.Prompt);
+        // Kept as the new conversation's first prompt, Daoris's, with its account and the session it continues: never the person's.
+        var recorded = ChatRunner.Recorded(message).ToList();
+        Assert.Equal(["chat.taken-over"], NoteAssert.Codes(recorded[0].Parts!));
+        var first = Assert.Single(recorded, e => e.Kind == SessionEventKind.User);
+        Assert.Equal(("target", brief.Text, "c0nv0001"), (first.Origin, first.Text, first.Continues));
+        Assert.Equal(brief.Text.Length, first.Account!.Chars);
         Assert.Equal(["chat.taken-over"], NoteAssert.Codes(message.TakenOver!.Parts));
         Assert.Equal(("claude-code", "c0nv0001", "limit"), (message.TakenOver.Parts[0].Value("agent"), message.TakenOver.Parts[0].Value("session"), message.TakenOver.Parts[0].Value("why")));
         var old = Assert.Single(events.Page("c0nv0001", limit: SessionEventText.MaxPage).Events, e => e.Kind == SessionEventKind.Note);
         Assert.Equal(["chat.handed-over"], NoteAssert.Codes(old.Parts!));
         Assert.Equal(("codex-acp", "n3w00001"), (old.Parts![0].Value("agent"), old.Parts[0].Value("session")));
         Assert.Null(new HandOverBox(_home).Read("c0nv0001"));
+    }
+
+    /// <summary>
+    /// SESSCTX1b: the brief is the new conversation's first prompt, but no person said it, so a conversation handed over is still
+    /// named by the first words the person said to it (RAIL1), and its first ask is theirs.
+    /// </summary>
+    [Fact]
+    public void A_handed_over_conversation_is_named_by_the_person_s_first_words_after_its_brief()
+    {
+        var events = Events;
+        events.Append("n3w00001", new SessionEvent { Kind = SessionEventKind.Note, Text = "The conversation went on from claude-code conversation c0nv0001." });
+        events.Append("n3w00001", new SessionEvent { Kind = SessionEventKind.User, Origin = "target", Text = "You continue session `c0nv0001`…", Continues = "c0nv0001" });
+        events.Append("n3w00001", new SessionEvent { Kind = SessionEventKind.User, Origin = "person", Text = "Now the docs.\nAll of them." });
+
+        Assert.Equal("Now the docs.", events.Openings(["n3w00001"])["n3w00001"]);
+        Assert.Equal("Now the docs.\nAll of them.", events.FirstAsked("n3w00001"));
     }
 
     /// <summary>
@@ -300,8 +288,8 @@ public sealed class HandOverTests : IDisposable
         Assert.Equal(new ContinuedFrom("c0nv0001", HandOverWhy.Curve, HandOverBy.Daoris), taken.From);
         Assert.True(handed.Kept, handed.Message);
         Assert.StartsWith(
-            "You continue the claude-code conversation `c0nv0001`, handed over because the account it ran on was over the usage curve",
-            taken.Said!.Briefing);
+            "You continue session `c0nv0001`, which ran on claude-code; it moved because the account it ran on was over the usage curve",
+            taken.Said!.Brief!.Text);
         var came = taken.Said.TakenOver!;
         Assert.Equal(["chat.moved-from"], NoteAssert.Codes(came.Parts));
         Assert.Equal(
@@ -374,17 +362,25 @@ public sealed class HandOverTests : IDisposable
         Assert.Null(events.FirstAsked("nothing0"));
     }
 
-    /// <summary>A conversation handed over opens with one note in the record, never a message of the person's and never the browser's line.</summary>
+    /// <summary>
+    /// A conversation handed over opens with one note in the record, never a message of the person's and never the browser's line;
+    /// SESSCTX1b keeps Daoris's brief after it as the first prompt, Daoris's, with its account (the design §3.4).
+    /// </summary>
     [Fact]
     public void A_handed_over_conversation_records_its_note_in_place_of_a_person_s_message()
     {
-        var message = new ChatMessage("", []) { Briefing = "You continue…", TakenOver = HandOverNotes.TakenOver("claude-code", "c0nv0001", HandOverWhy.Near) };
+        var opening = HandOverNotes.TakenOver("claude-code", "c0nv0001", HandOverWhy.Near);
+        var message = new ChatMessage("", []) { Briefing = "The browser…", TakenOver = opening };
 
-        var recorded = ChatRunner.Recorded(message).ToList();
-
-        var only = Assert.Single(recorded);
+        var only = Assert.Single(ChatRunner.Recorded(message));
         Assert.Equal((SessionEventKind.Note, "chat.taken-over"), (only.Kind, only.Parts![0].Code));
         Assert.Equal([SessionEventKind.User], ChatRunner.Recorded(new ChatMessage("hello", [])).Select(e => e.Kind));
+
+        var brief = ContextBrief.Compose(new BriefLine(HandOverWhy.Near, [new BriefPart("c0nv0001", "claude-code", [])]));
+        var recorded = ChatRunner.Recorded(message with { Brief = brief }).ToList();
+        Assert.Equal([SessionEventKind.Note, SessionEventKind.User], recorded.Select(e => e.Kind));
+        Assert.Equal(("target", brief.Text, "c0nv0001"), (recorded[1].Origin, recorded[1].Text, recorded[1].Continues));
+        Assert.DoesNotContain("The browser", recorded[1].Text);
     }
 
     // ——— The terminal's door (D50): `daoris-driver sessions hand-over <id> --agent <adapter> [--account <name>]`.
