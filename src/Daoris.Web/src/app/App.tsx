@@ -887,8 +887,9 @@ export function App() {
     // A tool call a session holds for the person's answer opens that session, whose head and foot carry its presses with its other
     // waits (AUTONOMY1b3c). A shell's alone: the holds are this machine's driver's.
     ...(attached ? { permission: (item: Attention) => { if (item.session) open('sessions', item.session); } } : {}),
-    // A unit whose clean-up is blocked opens the session whose foot says what waits and why (FABRIC-MILESTONE1b). A shell's alone.
-    ...(attached ? { work: (item: Attention) => { if (item.session) open('sessions', item.session); } } : {}),
+    // A unit only the clean-up's press settles (OVERVIEWNOISE1b) opens the workspace's Branches, where the session branches' list and
+    // its presses are; a held attempt's presses are on its row. A shell's alone.
+    ...(attached ? { work: (item: Attention) => { if (!item.held) open('projects', null, { workspaceTab: 'branches' }); } } : {}),
     // An account's row opens its agent's page at its accounts (UX6d, D150 §6.2), where every account's act is. A shell's alone.
     ...(attached ? {
       'account-wait': (item: Attention) => open('agents', item.account?.agent ?? null, { agentPart: 'accounts' }),

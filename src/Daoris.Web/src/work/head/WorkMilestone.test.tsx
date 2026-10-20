@@ -119,6 +119,39 @@ describe('the milestone on the work’s foot', () => {
     expect(region).toHaveTextContent('结束');
   });
 
+  // OVERVIEWNOISE1b: a blocked entry is said by its code in the reader's language, its reason once, and a tree by its folder's name.
+  it('says a blocked entry by its code in each language, its reason once, and a tree by its folder', async () => {
+    const blocked = unit({
+      cleanup: {
+        state: 'pending',
+        waits: [
+          entry({
+            kind: 'session-branch', resource: 'daoris/s-1', disposition: 'blocked', code: 'kept', facts: { why: 'nested', at: '2026-10-20T09:00:00Z' },
+            detail: 'the look’s tidy kept it at 2026-10-20 09:00 UTC, since its tree holds another repository at docs/inner',
+          }),
+          entry({
+            kind: 'tree', resource: 'X:/daoris/trees/default/engine/s-1', disposition: 'blocked', code: 'unfollowed', facts: { branch: 'daoris/s-1' },
+            detail: 'its session recorded it, but no branch record follows `daoris/s-1`',
+          }),
+        ],
+        gone: [],
+      },
+    });
+    const { unmount } = render(<WorkMilestone defaultOpen unit={blocked} />);
+    const region = screen.getByRole('region', { name: 'Where this work stands' });
+    expect(region).toHaveTextContent('Blocked: session branch daoris/s-1, the look kept it, since its tree holds another repository');
+    expect(region).toHaveTextContent('Blocked: tree s-1, its session recorded it, but no branch record follows daoris/s-1');
+    expect(region).not.toHaveTextContent('X:/daoris');
+    expect(region.textContent?.match(/another repository/g)).toHaveLength(1);
+    unmount();
+
+    await i18n.changeLanguage('zh');
+    render(<WorkMilestone defaultOpen unit={blocked} />);
+    const zh = screen.getByRole('region', { name: i18n.t('work.milestone.title') });
+    expect(zh).toHaveTextContent('受阻：会话分支 daoris/s-1，查看时把它留下了，因为它的工作树里含有另一个仓库');
+    expect(zh).not.toHaveTextContent('another repository');
+  });
+
   it('is one line for a branch row: the end, the clean-up and what is kept', () => {
     render(<MilestoneLine unit={unit({ recovery: [entry({ kind: 'moved-aside', until: '2026-10-24T09:00:00Z', disposition: 'retained', role: 'recovery' })] })} />);
     const line = screen.getByText(/Ended/);
@@ -129,11 +162,19 @@ describe('the milestone on the work’s foot', () => {
 });
 
 describe('what of a unit waits on the person', () => {
-  it('is the blocked entries of its clean-up and nothing a cycle waits on by itself', () => {
-    const blocked = entry({ kind: 'tree', disposition: 'blocked' });
-    expect(waitsOnPerson(unit({ cleanup: { state: 'pending', waits: [blocked, entry({ disposition: 'pending' })], gone: [] } }))).toEqual([blocked]);
-    expect(waitsOnPerson(unit({ cleanup: { state: 'pending', waits: [entry({ disposition: 'pending' })], gone: [] } }))).toEqual([]);
+  // OVERVIEWNOISE1b, as `NeedsAPerson` judges it: only what the person's press settles; a guard the look keeps a branch by is not theirs.
+  it('is what only the clean-up’s press settles, and never a guard or a wait that ends by itself', () => {
+    const unfollowed = entry({ kind: 'tree', disposition: 'blocked', code: 'unfollowed', facts: { branch: 'daoris/s-1' } });
+    const kept = entry({ disposition: 'blocked', code: 'kept', facts: { why: 'nested' } });
+    const pending = entry({ disposition: 'pending' });
+    expect(waitsOnPerson(unit({ cleanup: { state: 'pending', waits: [unfollowed, kept, pending], gone: [] } }))).toEqual([unfollowed]);
+    expect(waitsOnPerson(unit({ cleanup: { state: 'pending', waits: [kept, entry({ kind: 'tree', disposition: 'blocked' })], gone: [] } }))).toEqual([]);
+    expect(waitsOnPerson(unit({ cleanup: { state: 'pending', waits: [pending], gone: [] } }))).toEqual([]);
     expect(waitsOnPerson(unit())).toEqual([]);
+    // An owner nothing records: every entry blocked, else the unit by its first.
+    const unknown = { state: 'unknown', said: 'no record names its unit' };
+    expect(waitsOnPerson(unit({ end: unknown, cleanup: { state: 'pending', waits: [kept, pending], gone: [] } }))).toEqual([kept]);
+    expect(waitsOnPerson(unit({ end: unknown, cleanup: { state: 'pending', waits: [], gone: [] }, entries: [pending] }))).toEqual([pending]);
   });
 
   it('finds the unit a branch belongs to by its repository and either of its branches', () => {
@@ -376,7 +417,8 @@ describe('where a piece of work stands: four facts, folded to their line', () =>
     // A clean-up that only waits, and nothing held, say neither.
     render(<MilestoneLine unit={unit({ cleanup: pending(waiting) })} />);
     expect(screen.getByText(/clean-up pending/)).not.toHaveTextContent(/blocked|held/);
-    expect(waitsOnPerson(stuck)).toEqual([blocked]);
+    // OVERVIEWNOISE1b: a guard's block is said here, on the work's own line, and is no row of *What needs you*.
+    expect(waitsOnPerson(stuck)).toEqual([]);
   });
 
   it('says blocked and held on the line of a branch row, in English and in 中文', async () => {

@@ -2,6 +2,7 @@
 // its cleanup (pending, with what waits and why, or completed, with what went) and the recovery retained and until when. The
 // driver derives it at each read from the records it keeps (`WORK_STATE`, `daoris-driver work state`); the page stores nothing.
 import type { TFunction } from 'i18next';
+import { treeName } from '../identity';
 
 /** One thing a unit owns, with the role it has and what became of it (the inventory's entry). */
 export type MilestoneEntry = {
@@ -22,6 +23,10 @@ export type MilestoneEntry = {
   repository?: string | null;
   /** The commit a recovery ref names (RECOVERYDROP1), which a delete is verified against; a shell older than it answers none. */
   commit?: string | null;
+  /** Why a blocked entry is blocked (OVERVIEWNOISE1b), which the page words (`entryDetail`); a shell older than it answers none. */
+  code?: string | null;
+  /** The values its code is worded with, by name. */
+  facts?: Record<string, string> | null;
 };
 
 /** The recovery refs of one repository a press of the delete names, each with the commit the page showed (RECOVERYDROP1). */
@@ -138,21 +143,46 @@ export function heldSentence(t: TFunction, held: HeldAttempt): string {
 /** The kinds of thing a unit owns that have a word of the page's; a `line` or an `end` is its resource's own name. */
 const KINDS = ['tree', 'session-branch', 'landing-branch', 'moved-aside', 'recovery-ref', 'auto-landing', 'history'] as const;
 
-/** An entry by what it is: its kind in the reader's language, where the page has a word, and its name. */
-export function entryName(t: TFunction, entry: MilestoneEntry): string {
+/**
+ * An entry by what it is: its kind in the reader's language, where the page has a word, and its name. A tree is named by its folder,
+ * as the rail names it (OVERVIEWNOISE1b): its path is this machine's, and the rail and the band have no room for it (D51 §9).
+ */
+export function entryName(t: TFunction, entry: Pick<MilestoneEntry, 'kind' | 'resource'>): string {
   const kind = KINDS.find((one) => one === entry.kind);
-  return [kind ? t(`work.milestone.kind.${kind}`) : null, entry.resource].filter(Boolean).join(' ');
+  const name = entry.kind === 'tree' ? treeName(entry.resource) ?? entry.resource : entry.resource;
+  return [kind ? t(`work.milestone.kind.${kind}`) : null, name].filter(Boolean).join(' ');
+}
+
+/** The codes of a blocked entry the page has words for (OVERVIEWNOISE1b); any other is said by its detail, as recorded. */
+const CODES = ['unfollowed', 'unread', 'unknown-folder', 'unknown-unread', 'unknown-branch', 'unrecorded'] as const;
+
+/** The guards the look's tidy keeps a branch by that the page has words for (FABRIC-END4a's `kept`, by its `why`). */
+const KEPT = ['in-use', 'dirty', 'busy', 'hidden', 'nested', 'linked', 'refused', 'unread', 'starting', 'sessions'] as const;
+
+/**
+ * Why an entry waits or is blocked, in the reader's language (OVERVIEWNOISE1b): a code the page has words for, worded with its facts
+ * and its reason said once; any other entry, and a code or a guard the page has no words for, by the driver's sentence as recorded.
+ */
+export function entryDetail(t: TFunction, entry: Pick<MilestoneEntry, 'detail' | 'code' | 'facts'>): string {
+  const facts = entry.facts ?? {};
+  if (entry.code === 'kept') {
+    const why = KEPT.find((one) => one === facts.why);
+    return why ? t(`work.milestone.code.kept.${why}`) : entry.detail;
+  }
+  const code = CODES.find((one) => one === entry.code);
+  return code ? t(`work.milestone.code.${code}`, { branch: facts.branch ?? '' }) : entry.detail;
 }
 
 /**
- * What of a unit waits on the person (design §D0, *What needs you* only where something waits on them): the entries its cleanup
- * is blocked on, and, where no record names its owner, the unit itself. A wait that is pending (the cycle's own, a guard's) is
- * not the person's: it ends by itself.
+ * What of a unit waits on the person (design §D0; OVERVIEWNOISE1b, *What needs you* only where they have an act), as .NET's
+ * `NeedsAPerson` judges it: where no record names its owner, the entries its cleanup is blocked on, else the unit itself; where its
+ * owner is known, the trees its session recorded and no branch record follows, which only the clean-up's press takes. A guard the
+ * look keeps a branch by is said on the work's foot, and a wait that is pending ends by itself: neither is the person's.
  */
 export function waitsOnPerson(unit: MilestoneUnit): MilestoneEntry[] {
   const blocked = unit.cleanup.waits.filter((entry) => entry.disposition === 'blocked');
-  if (blocked.length > 0 || unit.end.state !== 'unknown') return blocked;
-  return unit.entries.slice(0, 1);
+  if (unit.end.state !== 'unknown') return blocked.filter((entry) => entry.code === 'unfollowed');
+  return blocked.length > 0 ? blocked : unit.entries.slice(0, 1);
 }
 
 /** The units whose branch, session or id is `name`: the milestone a branch row says (a session branch or a landing branch). */

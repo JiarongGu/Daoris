@@ -8,7 +8,7 @@ import type { SessionGrouping } from '../groups';
 import { askName, questName, sessionTitle } from '../identity';
 import type { Attention, AttentionKind } from './AttentionRow';
 import { accountRowWorded, type PushedAccountFacts } from './accountWords';
-import { CLOSE_SENDER, entryName, type HeldAttempt, heldWhy, heldWords, type MilestoneEntry } from '../head/milestone';
+import { CLOSE_SENDER, entryDetail, entryName, type HeldAttempt, heldWhy, heldWords, type MilestoneEntry } from '../head/milestone';
 import { type OpinionWait, opinionState } from '../gates/opinion';
 import { PERMISSION_BOUND_MINUTES, type PermissionWait } from '../waits/PermissionAsks';
 import { opinionSays } from '../gates/OpinionGate';
@@ -54,8 +54,9 @@ export const ATTENTION_GROUP: Readonly<Record<AttentionKind, AttentionGroup>> = 
   // An agent's ask for a helper that waits on the person's yes (MIXAGENT2c, D163 point 3): the session that asked goes on
   // meanwhile, as one that proposed a rule does, so it holds nothing up.
   helper: 'word',
-  // A unit whose clean-up is blocked on something only the person can settle, or whose owner nothing records (FABRIC-MILESTONE1b,
-  // the fabric events design §D0): nothing running is held by it, and nothing of it is removed until they look.
+  // A unit only the person's press settles (FABRIC-MILESTONE1b, the fabric events design §D0; OVERVIEWNOISE1b): one whose owner
+  // nothing records, or a tree its session recorded that no branch record follows. Nothing running is held by it, and nothing of it
+  // is removed until they press. A guard the look keeps a branch by is said on its session's page, never here.
   work: 'word',
   unanswerable: 'word',
   review: 'ready',
@@ -214,8 +215,8 @@ export function attentionOffers(item: Attention): AttentionOffer[] {
     // work lands by itself, or none could be had and the rule requires one), and a pass asked again; the rest are its session's.
     case 'opinion': return opinionOffers(item);
     // A plugin step's attempt held for the person (FABRIC-PERFORM1g, §D6): their three words, until one is recorded and the driver's next
-    // look applies it; a held close (FABRIC-CLOSE1q) its own, as the driver offers them. A unit's blocked clean-up has its session's page
-    // for its door, and no act.
+    // look applies it; a held close (FABRIC-CLOSE1q) its own, as the driver offers them. A unit only the clean-up's press settles has
+    // that list, on its workspace's Branches, for its door (OVERVIEWNOISE1b), and no act of its own here.
     case 'work': return item.held && !item.held.resolution ? plain(...heldActs(item.held)) : [];
     case 'account-wait':
     case 'signed-out': return accountOffers(item);
@@ -284,8 +285,11 @@ export type PushedAttention = {
   /** A title that is a value: a helper's question's first line, a unit's branch. */
   title?: string;
   permission?: PermissionWait;
-  /** A unit's blocked clean-up: whether its owner is unknown, and the entries it is blocked on. */
-  blocked?: { unknown: boolean; entries: Pick<MilestoneEntry, 'kind' | 'resource' | 'detail'>[] };
+  /**
+   * A unit only the person's press settles (OVERVIEWNOISE1b): whether its owner is unknown, and the entries it is blocked on, each with
+   * the code the page words it by and its facts, where the driver gave one.
+   */
+  blocked?: { unknown: boolean; entries: Pick<MilestoneEntry, 'kind' | 'resource' | 'detail' | 'code' | 'facts'>[] };
   held?: HeldAttempt;
   /** A start waiting on accounts that holds an intake, or quests in several repositories: `where` is its workspace. */
   wholeWorkspace?: boolean;
@@ -481,19 +485,23 @@ export function attentionWorded(row: PushedAttention, names: AttentionNames = {}
         session: row.session ?? null,
         ...(row.permission ? { permission: row.permission } : {}),
       };
-    case 'work':
-      return row.held ? heldWorded(row, row.held) : {
+    case 'work': {
+      if (row.held) return heldWorded(row, row.held);
+      const entries = row.blocked?.entries ?? [];
+      // OVERVIEWNOISE1b: named by the session that recorded its tree, as Sessions names it, else its branch or its tree's folder; each
+      // entry worded by its code in the reader's language, the reason said once. An unknown owner says so first only where an entry
+      // carries no code (a shell before them), whose own sentence then follows as recorded (FABRIC-UNKNOWN1).
+      const recorder = sessionOf(row.session);
+      return {
         ...base,
-        title: row.title ?? row.id,
-        // An unknown owner says so, then each blocked entry's own reason (FABRIC-UNKNOWN1: which press removes it).
+        title: recorder ? named(row.session) : row.title ?? row.id,
         detail: [
-          ...(row.blocked?.unknown ? [i18n.t('work.milestone.wait.owner')] : []),
-          ...(row.blocked?.entries ?? []).map((entry) => i18n.t('work.milestone.cleanup.blocked', {
-            what: entryName(i18n.t, entry as MilestoneEntry), detail: entry.detail,
-          })),
+          ...(row.blocked?.unknown && !entries.some((entry) => entry.code) ? [i18n.t('work.milestone.wait.owner')] : []),
+          ...entries.map((entry) => i18n.t('work.milestone.cleanup.blocked', { what: entryName(i18n.t, entry), detail: entryDetail(i18n.t, entry) })),
         ].join(' '),
         session: row.session ?? null,
       };
+    }
     case 'account-wait':
     case 'signed-out':
       return accountRowWorded(row, names, now);
