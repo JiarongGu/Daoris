@@ -637,6 +637,14 @@ test('every child the toolchain starts is started in one place, with the tools�
   const body = source.slice(start, calls[0]!.index!).replace(/\/\/[^\n]*/g, '');
   assert.match(body, /\bhandTools\(/, 'startChild hands the child the tools’ environment');
   assert.match(source, /import \{[^}]*\bhandTools\b[^}]*\} from '(?:\.\.?\/)+(?:[\w-]+\/)*tools\.ts';/);
+
+  // The one exception (PUSH1f2a, D194 point 1): Daoris's driver program is started with the terminal's environment exactly, since it
+  // hands its own children the tools and its `agent install` finds the machine's npm on the PATH it inherited. Only the seam asks it.
+  const exact = [...source.matchAll(/\bexact: true\b/g)];
+  assert.equal(exact.length, 1, `${SPAWNS} asks startChild for an exact environment ${exact.length} times — only runDriverProgram may`);
+  const seam = source.indexOf('export function runDriverProgram(');
+  const after = source.indexOf('\n}\n', seam);
+  assert.ok(seam > 0 && exact[0]!.index! > seam && exact[0]!.index! < after, 'the exact environment is asked inside runDriverProgram alone');
 });
 
 test('only the service client may touch the network', () => {
@@ -823,8 +831,9 @@ test('driver retry and review read the service only through the readers the disp
   const row = readText(join(cliRoot, 'src', 'cli', 'driver.ts'));
   assert.match(row, /import \{ instanceDoor, registryCheckouts, sessionRecords \} from '\.\.\/(?:[\w-]+\/)*service\.ts';/);
   // WORKFLOW1d hands the `workflow` verbs in after them, which read the registry through the same reader; RPC1f the door a change
-  // goes through last, the running Daoris's pipe reached through the same module.
-  assert.match(row, /run: \(args\) => commandDriver\(args, \(\) => sessionRecords\(\), \(\) => registryCheckouts\(\), \(each, context\) => commandWorkflow\(each, context\),\s+process\.env\[PATH_VARIABLE\] \? ALONE : instanceDoor\(/);
+  // goes through last, the running Daoris's pipe reached through the same module. PUSH1f2a hands the standing choices, `retry` and
+  // `review` among them, to Daoris's driver program first, which reads the service itself; the rest stay commandDriver's until PUSH1f2b.
+  assert.match(row, /run: \(args\) => handed\(args\.argv\)\s+\? \(args\.driverProgram \?\? \(\(family, words\) => runDriverProgram\(family, words\)\)\)\('driver', args\.argv\)\s+: commandDriver\(args, \(\) => sessionRecords\(\), \(\) => registryCheckouts\(\), \(each, context\) => commandWorkflow\(each, context\),\s+process\.env\[PATH_VARIABLE\] \? ALONE : instanceDoor\(/);
 });
 
 /**

@@ -5,7 +5,7 @@
 import type { ExitCode } from './errors.ts';
 
 /**
- * Everything a command is handed. The dispatcher passes all four; each command's own signature narrows
+ * Everything a command is handed. The dispatcher passes all five; each command's own signature narrows
  * to what it reads, which is documentation that cannot go stale.
  */
 export interface CommandArgs {
@@ -13,6 +13,11 @@ export interface CommandArgs {
   argv: string[];
   write: (line: string) => void;
   packageRoot: string;
+  /**
+   * Daoris's driver program, which runs a management family's verbs (PUSH1f2a, D194 point 1): handed in by the dispatcher, as a family
+   * is handed its door, so the dispatcher's test hands a stand-in. Absent, a family that hands a verb on uses the real one.
+   */
+  driverProgram?: (family: string, words: readonly string[]) => ExitCode;
 }
 
 /**

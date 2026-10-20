@@ -180,7 +180,7 @@ export function installEnvironment(cdpPort) {
   return { ...debugEnvironment(cdpPort), ASPNETCORE_ENVIRONMENT: 'Production' };
 }
 
-export function scratchEnvironment({ home, family, serviceUrl, httpHost, mcpHost, cdpPort }) {
+export function scratchEnvironment({ home, family, serviceUrl, httpHost, mcpHost, cdpPort, driverProgram }) {
   return {
     DAORIS_SERVICE_URL: serviceUrl,
     // The other half of the port, and it is not optional. The shell PROBES `DAORIS_SERVICE_URL` and
@@ -199,6 +199,9 @@ export function scratchEnvironment({ home, family, serviceUrl, httpHost, mcpHost
     // reason the HTTP one is: the locator prefers an INSTALLED binary, so a scratch run would hand
     // the session the real machine every time this one is behind it.
     DAORIS_MCP_HOST: mcpHost,
+    // The driver's program a `daoris driver …` typed in this run's terminal is handed to (PUSH1f2a, D194 point 1): this checkout's
+    // build, never one the parent shell named; with none built, none, and the CLI says where the program is.
+    DAORIS_DRIVER_PROGRAM: driverProgram ?? '',
     // Nothing in this repository reads these: the debug port is the runtime's and the loader's, which
     // is the point — the shipped app gains no debug surface, and a window nobody started this way has
     // nothing to attach to. Loopback only, on a port picked for this run.
@@ -371,6 +374,7 @@ export function closedPortReport({ port, waitedMs, gone, pid, engineLog, home })
 const DESKTOP_PROJECT = join(repoRoot, 'src', 'Daoris.Desktop', 'Daoris.Desktop.App');
 const HTTP_PROJECT = join(repoRoot, 'src', 'Daoris.Service', 'Daoris.Service.Http');
 const MCP_PROJECT = join(repoRoot, 'src', 'Daoris.Service', 'Daoris.Service.Mcp');
+const DRIVER_HOST_PROJECT = join(repoRoot, 'src', 'Daoris.Desktop', 'Daoris.Desktop.Driver.Host');
 const WEB = join(repoRoot, 'src', 'Daoris.Web');
 const RUN_FILE = join(scratchRoot, 'run.json');
 const SHOTS = join(scratchRoot, 'screenshots');
@@ -683,6 +687,8 @@ async function build(args) {
   // Daoris's browser is this same application started with the browser's argument (CHR8, D99), so
   // there is no second project to build.
   run('dotnet', ['build', DESKTOP_PROJECT, '-c', configuration]);
+  // The driver's program a scratch run's `daoris driver …` is handed to (PUSH1f2a): its apphost, named by the run's environment.
+  run('dotnet', ['build', DRIVER_HOST_PROJECT, '-c', configuration]);
   console.log('\nbuilt — `node tools/desktop.mjs run` to look at it.');
 }
 
@@ -756,9 +762,11 @@ async function start(command, args) {
     if (!httpHost) fail('the service host is not built — `node tools/desktop.mjs build`.');
     // Optional: a run without it drives, and a session simply has no connector (ACP4).
     const mcpHost = assemblyExe(MCP_PROJECT) ?? '';
+    // Optional too: a run without it is the window, and its terminal's `daoris driver …` says where the program is.
+    const driverProgram = assemblyExe(DRIVER_HOST_PROJECT) ?? '';
 
     serviceUrl = `http://127.0.0.1:${await freePort(5188)}`;
-    environment = scratchEnvironment({ home, family, serviceUrl, httpHost, mcpHost, cdpPort });
+    environment = scratchEnvironment({ home, family, serviceUrl, httpHost, mcpHost, cdpPort, driverProgram });
     // Its own root, the same folder as the home, so the engine's profile, the window geometry and the runtime's
     // single-instance scope all belong to this run — a scratch shell and a real one never contend for either.
     extra.push('--app-root', appRoot);

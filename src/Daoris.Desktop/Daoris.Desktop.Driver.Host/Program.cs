@@ -168,6 +168,11 @@ using Daoris.Driver;
 //                 whose answer comes back to that session as its next turn, marked as the helper's. A helper, a reviewer and an
 //                 intake are refused, exit 1.
 //
+//   driver [list | <choice> …]
+//                 this machine's standing choices (PUSH1f2a, D194): the words `daoris driver …` hands this program, each change
+//                 the running Daoris's route, confirmed in its window, where one runs on this home, else written here under the
+//                 home's lease, refused from a session's terminal (exit 1); a file DAORIS_DRIVER_CONFIG names is written alone.
+//
 //   trees [list | remove <path|session|branch> [--repository <name>] [--force] | clean [--workspace <name>] [--yes]
 //         | land <session> [--plan] [--branch <name>] | hand <session|branch> [...]
 //         | sync [--repository <name>] [--workspace <name>] [--all] [--yes]]
@@ -301,7 +306,7 @@ DaorisHome.Adopt(AppContext.BaseDirectory);
 // waits up to thirty seconds and is then refused, exit 1, naming which. A home named nowhere takes none: the verb refuses as
 // it always did. The lease is let go as the verb ends.
 HomeLease? verbLease = null;
-if (VerbLeases.Holds(args) && DaorisHome.Resolve() is { } leaseHome)
+if (VerbLeases.HoldsHere(args, Environment.GetEnvironmentVariable) && DaorisHome.Resolve() is { } leaseHome)
 {
     try
     {
@@ -549,6 +554,20 @@ try
     if (args is ["access", .. var accessArgs])
     {
         return await Daoris.Driver.Host.AccessConsole.RunAsync(accessArgs);
+    }
+
+    // The CLI's management families, handed to this program (PUSH1f2a, D194 point 1): `daoris driver …` runs `daoris-driver driver …`
+    // with the same words; `agent`, `plugin` and `tool` join here as their rows build them (PUSH1f2c-f). One Ctrl+C handler for the
+    // families, registered here and not where `closing` is made, so a verb routed above keeps the runtime's own Ctrl+C: it keeps the
+    // process and cancels `closing`, whose token each family command is handed, so a wait stops and is said, never a torn write.
+    if (args is ["driver", .. var choicesArgs])
+    {
+        Console.CancelKeyPress += (_, press) =>
+        {
+            press.Cancel = true;
+            closing.Cancel();
+        };
+        return await Daoris.Driver.Host.DriverChoicesConsole.RunAsync(choicesArgs, closing.Token);
     }
 
     // This machine's heavy gates for a repository whose own daoris.gates.json marks none (HEAVYRUN1b2a, D180's HEAVYRUN1b2a note,

@@ -18536,3 +18536,12 @@ in zh. The sessions page's held words (`WordsHold`) still carry the driver's sen
 > - [ ] **ENVSEAM1 — the driver handed an environment, so three Process classes leave `Alone`** (driver; D63's environment seam, CONFIGSEAM1; PROCPAR1's FIX-LOG entry). `ConfigSeamLandingTests`, `BrainstormProcessTests` and `ToolsChildProcessTests` run alone only because the product reads `DAORIS_DRIVER_CONFIG`, `DAORIS_HOME` and `DAORIS_MCP_HOST` from the process (`DriverConfig.ResolvePath`, `SessionTrees`, the connector lookup, `StubAdapter.Prepare`). Proof: those classes leave `Alone` with `CategoryTests` green.
 
 **Outcome** 2026-10-21: built. `SessionTrees` takes an environment (`TreeContext.Variable`, read by `Config()`); the driver has `Variable` (its connector's host, home and store through a new `KnowledgeConnector.Offer` over it, the remotes, and the home its `Prepare` hands a start); `SessionTarget.Home` names the home a start's tools are read from, the process's `DAORIS_HOME` where none is handed. Each defaults to the process's, so production reads as before. `ConfigSeamLandingTests` and `BrainstormProcessTests` left `Alone`, and `ToolsChildProcessTests` left `ProcessPath`, which held it for its `DAORIS_HOME` alone: each hands its environment and sets nothing of the process's. Proof: the three classes (7 tests), `CategoryTests`, `ConfigSeamTests`, `ToolsChildrenTests`, `KnowledgeConnector(Start)Tests`, `AdapterTests` and `EveryChildIsHandedTheToolsTests` green, 121 tests filtered; `SystemWiringTests` (28). `BrainstormProcessTests`' five-second pass, which its remarks said would keep it alone anyway, now runs beside the rest: the parent's Process half is its first loaded run. On Opus.
+
+## PUSH1f2a — the seam, proved by the driver's standing choices (2026-10-21, D194)
+
+> - [ ] **PUSH1f2a — the seam, proved by the driver's standing choices** (cli, driver, modules, tools; first; D194, the alone-path design §5). Read its row in §5 and the sections it names; build it end to end (D187), the family's TypeScript leaving as §4 says. Proof: as §5 names it.
+
+**Outcome** 2026-10-21: `daoris driver`'s standing choices run `daoris-driver driver`, the running Daoris's client or the library's
+own operations alone, refused from a session's terminal; today's text kept by a 143-case table. The decisions and the measured
+start are D194's PUSH1f2a note. The handed verbs' TypeScript leaves in PUSH1f2b. Unproven until the install: `daoris driver drive`
+confirmed in the open window.

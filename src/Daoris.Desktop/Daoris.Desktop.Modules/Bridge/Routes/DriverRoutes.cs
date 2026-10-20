@@ -381,35 +381,11 @@ public sealed class DriverRoutes(DriverContext context)
         var considered = _loop.Look.Latest
             ?? await SessionGroups.VerdictsAsync(_loop.Service ?? throw NotReady(), config, _context.Door(config), lastLook: null, cancellationToken)
                 .ConfigureAwait(false);
-        var verdict = considered.FirstOrDefault(c => string.Equals(c.Quest.Id, quest, StringComparison.OrdinalIgnoreCase));
-
-        switch (verdict)
-        {
-            case { Verdict: StartVerdict.Exhausted } exhausted:
-                // Marked where it stands rather than erased, so the records still read true and the next `strikes`
-                // failures park it again. At its failures, not the limit (RETRY1b): a quest parked a second time has
-                // more failures than the limit, and a mark at the limit left it parked. A verdict carrying no count is
-                // marked at the least count the planner parks at.
-                _context.Change(config => config.WithForgiven(quest, exhausted.Failures ?? config.ForgivenAt(quest) + config.Strikes));
-                return State(_loop, new { Quest = quest, Did = "marked", Session = (string?)null });
-            case { Verdict: StartVerdict.Stopped, HeldBy: { } stop }:
-                // Released from that stop, and no mark: a stop is not a strike (D58). A later stop holds it again.
-                _context.Change(config => config.WithReleased(quest, stop.Session));
-                return State(_loop, new { Quest = quest, Did = "released", Session = (string?)stop.Session });
-            case { Verdict: StartVerdict.Paused, PausedBy: { } pause }:
-                // A pause is the reason before a stop and the strikes (PAUSE1b, D132 §6.1): Resume moves it, and nothing is written.
-                throw pause.Scope == WorkScope.Ask
-                    ? Refusals.Because(
-                        Refusals.QuestPaused, $"#{quest} is paused with ask #{pause.Id}; Resume carries it on.", ("id", quest), ("pause", pause.Id))
-                    : Refusals.Because(
-                        Refusals.QuestPaused, $"#{quest} is paused on its own; Resume carries it on.", ("id", quest), ("pause", pause.Id),
-                        ("context", "quest"));
-            default:
-                throw Refusals.Because(
-                    Refusals.QuestNotHeld,
-                    $"#{quest} is neither parked nor held by your stop on this machine, so there is nothing to try again.",
-                    ("id", quest));
-        }
+        // PUSH1f2a: the verdict's switch is the library's operation, which `daoris-driver driver retry` acting alone calls too; a
+        // pause or a quest neither parked nor held is its coded refusal (ChoiceCodes), raised here by the module's one mapping.
+        var decision = StandingChoices.Retry(quest, considered);
+        _context.Change(decision.Change);
+        return State(_loop, new { Quest = quest, decision.Did, decision.Session });
     }
 
     /// <summary>
