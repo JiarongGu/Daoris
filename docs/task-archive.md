@@ -18612,3 +18612,12 @@ re-decided in both twins. Root cause and verification: the fix log's KEEPALL1b e
 > - [ ] **LANDGIT1c — one spelling per ref fact** (driver; after LANDGIT1). `refs/heads/main` and `refs/heads/main^{commit}` are two commands, and the dirty check's `status` is read twice. Proof: the count test with no allowance for `status`.
 
 **Outcome** 2026-10-21: every read of a branch's or the head's commit is `<ref>^{commit}` (the line guess, `ComparableAsync`, the look's tree read, a waited landing's head); the landing's judgement hands its `status` count to the dirty check, and the look's automatic landing hands its own to the landing, read again after a wait. `LandGitCountTests` judges `status` as asked once until a write and refuses a ref read under two spellings; ceilings 53, 50 and 42 (from 55, 51, 43). On Opus: about 90 tool calls. Detail: D173's LANDGIT1c note.
+
+## CARRY3 — a take's own time, not the quest's `updated`, judges "taken here after the session ended" (2026-10-21, D80)
+
+> - [ ] **CARRY3 — a take's own time, not the quest's `updated`, judges "taken here after the session ended"** (driver, maybe service; after CARRY2b). `Planner.TakenElsewhere` (~1127) reads a taken quest's `updated` as the take's time, but a submission, an evidence read, a reopen and a rebound move it too, so after a go-on a carry-on over a take no session marked reads as taken by work outside Daoris (FABRIC-CLOSE1c13 found it; its `StandInLedger.Rebound(…, moved: true)`). Proof: CLOSE1c2's look test with the rebound moving `updated` still carries q3 on.
+
+**Outcome** 2026-10-21: built. The claim's answer says `taken`, when the take the quest stands taken by was made; the driver
+judges a take made here after a session ended by it (`Planner.TakenAt`), in the planner and the hand-over alike, and by
+`updated` only from a host before the field. CLOSE1c2's look test now moves `updated` at the go-on and still carries q3 on.
+On Opus: about 60 tool calls. Detail: D80's CARRY3 note.

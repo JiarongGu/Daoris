@@ -371,9 +371,9 @@ internal sealed class StandInLedger : HttpMessageHandler
     /// its submission and what was judged of it, is cleared (FABRIC-CLOSE1c10).
     /// </summary>
     /// <param name="moved">
-    /// Whether the quest's <c>updated</c> moves to the go-on, as the service's does (FABRIC-CLOSE1c13 reads it). Off by default: a look
-    /// judges an unmarked take by it as the take's time (CARRY2b), which a go-on moving it reads as taken after its session ended, a gap
-    /// handed back as a row, and the tests before this one model an unmarked take.
+    /// Whether the quest's <c>updated</c> moves to the go-on, as the service's does (FABRIC-CLOSE1c13 reads it). Off by default, as the
+    /// tests before it model it. A look judges an unmarked take by <c>updated</c> only where the claim says no take time
+    /// (<see cref="TakenAt"/>, CARRY3), as a host before it.
     /// </param>
     public void Rebound(string id, string machine, long sequence, bool moved = false)
     {
@@ -436,6 +436,15 @@ internal sealed class StandInLedger : HttpMessageHandler
     public void Move(string id, string status)
     {
         lock (_gate) _quests.Single(q => q["id"]!.GetValue<string>() == id)["status"] = status;
+    }
+
+    // When each quest's take was made, as the claim's answer says it (CARRY3); a quest absent answers none, as a host before it.
+    private readonly Dictionary<string, DateTimeOffset> _takenAt = new(StringComparer.Ordinal);
+
+    /// <summary>The claim on <paramref name="id"/> says its take was made at <paramref name="at"/> (CARRY3).</summary>
+    public void TakenAt(string id, DateTimeOffset at)
+    {
+        lock (_gate) _takenAt[id] = at;
     }
 
     /// <summary>
@@ -886,6 +895,7 @@ internal sealed class StandInLedger : HttpMessageHandler
                     var quest = path["/api/quests/".Length..^"/claim".Length];
                     _claims[quest] = _claims.GetValueOrDefault(quest) + 1;
                     var claim = new JsonObject { ["claim"] = _claim, ["why"] = _claimWhy };
+                    if (_takenAt.TryGetValue(quest, out var takenAt)) claim["taken"] = takenAt.ToString("O");
                     // SYNCMERGE1b0: written only where set, as the service answers it.
                     if (_claimForward is { } forward)
                     {

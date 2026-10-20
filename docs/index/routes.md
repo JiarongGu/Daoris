@@ -320,8 +320,8 @@ Mapped in `src/Daoris.Service/Daoris.Service.Http/Program.cs`.
 | GET /api/registry | `Program.cs:2042` |
 | POST /api/registry | `Program.cs:1885` |
 | POST /api/registry/import | `Program.cs:2010` |
-| GET /api/registry/retired | `Program.cs:2317` |
-| DELETE /api/registry/retired/{repository} | `Program.cs:2323` |
+| GET /api/registry/retired | `Program.cs:2321` |
+| DELETE /api/registry/retired/{repository} | `Program.cs:2327` |
 | DELETE /api/registry/{repository} | `Program.cs:1958` |
 | POST /api/registry/{repository}/workspace | `Program.cs:1983` |
 | GET /api/repositories | `Program.cs:466` |

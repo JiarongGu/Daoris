@@ -21,6 +21,9 @@ with the version and date at release.
 - Several sessions starting at once no longer leave one without its quest tools: a session's connector waits while another
   host is using Daoris's database, where it could exit at its start with *database is locked*. Posting on an ask's channel and
   registering a repository wait the same way.
+- A quest's session that was cut off is carried on after you go on with its step, or after it submitted its work, instead of
+  sitting as "taken here after the session ended, by a chat or by work outside Daoris": Daoris now judges that by when the quest
+  was taken, not by when it last changed.
 - `daoris driver` hands its standing choices to Daoris's own driver program, as `daoris-driver driver` with the same words: the
   one your install carries, or the build `DAORIS_DRIVER_PROGRAM` names. A `daoris` with neither, such as a checkout's, says so and
   does nothing. What each choice says is as before; a refusal is said on the error stream, and a refusal the window's route would

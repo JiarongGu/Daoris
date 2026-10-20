@@ -146,7 +146,7 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
         var closed = lastRun.Any(run => run.Value.WordsWaiting && !open.Contains(run.Key, StringComparer.OrdinalIgnoreCase))
             ? ReadClosed(await GetAsync("/api/quests?includeClosed=true", ct).ConfigureAwait(false), lastRun, open)
             : [];
-        var (claims, whys, forwards) = await CarryOnClaimsAsync(quests, lastRun, stoodDown, ct).ConfigureAwait(false);
+        var (claims, whys, forwards, taken) = await CarryOnClaimsAsync(quests, lastRun, stoodDown, ct).ConfigureAwait(false);
         return new Snapshot(quests, repositories, active, ReadStrikes(records))
         {
             LastRun = lastRun,
@@ -156,7 +156,7 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
             Started = ReadStarted(records, active),
             Closed = closed,
             // Whose the take is on each taken quest a look would carry on (CARRY2b), the claim asked of the host for those alone.
-            Takes = ReadTakes(records, claims, whys, forwards),
+            Takes = ReadTakes(records, claims, whys, forwards, taken),
             // Each record's entry, which a quest's publisher names its line by (SESSONE1d).
             Entries = ReadEntries(records),
         };
@@ -171,13 +171,14 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
     /// where one made the take, which carries that record on.
     /// </summary>
     private async Task<(IReadOnlyDictionary<string, string> Claims, IReadOnlyDictionary<string, string?> Whys,
-        IReadOnlyDictionary<string, ForwardTake?> Forwards)> CarryOnClaimsAsync(
+        IReadOnlyDictionary<string, ForwardTake?> Forwards, IReadOnlyDictionary<string, DateTimeOffset?> Taken)> CarryOnClaimsAsync(
         IReadOnlyList<QuestView> quests, IReadOnlyDictionary<string, PriorSession> lastRun, IReadOnlyDictionary<string, PriorSession> stoodDown,
         CancellationToken ct)
     {
         var claims = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         var whys = new Dictionary<string, string?>(StringComparer.OrdinalIgnoreCase);
         var forwards = new Dictionary<string, ForwardTake?>(StringComparer.OrdinalIgnoreCase);
+        var taken = new Dictionary<string, DateTimeOffset?>(StringComparer.OrdinalIgnoreCase);
         var asked = quests
             .Where(quest => quest is { Status: "Taken", Awaits: null or "", HeldByReopen: false }
                             && ((lastRun.TryGetValue(quest.Id, out var last) && Planner.CarriesOn(last)) || (stoodDown.ContainsKey(quest.Id) && HeldHere(quest))))
@@ -191,12 +192,13 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
             {
                 try
                 {
-                    var (claim, why, forward) = await ClaimTakeAsync(quest.Id, token).ConfigureAwait(false);
+                    var (claim, why, forward, at) = await ClaimTakeAsync(quest.Id, token).ConfigureAwait(false);
                     lock (claims)
                     {
                         claims[quest.Id] = claim;
                         whys[quest.Id] = why;
                         forwards[quest.Id] = forward;
+                        taken[quest.Id] = at;
                     }
                 }
                 catch (Exception error) when (error is DriverException or HttpRequestException or JsonException
@@ -207,7 +209,7 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
                 }
             }).ConfigureAwait(false);
 
-        return (claims, whys, forwards);
+        return (claims, whys, forwards, taken);
     }
 
     /// <summary>
@@ -584,18 +586,19 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
     /// </summary>
     public async Task<(string Claim, string? Why)> ClaimStandingAsync(string id, CancellationToken ct = default)
     {
-        var (claim, why, _) = await ClaimTakeAsync(id, ct).ConfigureAwait(false);
+        var (claim, why, _, _) = await ClaimTakeAsync(id, ct).ConfigureAwait(false);
         return (claim, why);
     }
 
     /// <summary>
     /// <see cref="ClaimStandingAsync"/>, with the person's bring-forward the take was made by where the host names one (SYNCMERGE1b0 point
-    /// 3): what a look carries a stood-down session on by (SYNCMERGE1b). Null from a host before it, and for any other take.
+    /// 3): what a look carries a stood-down session on by (SYNCMERGE1b). Null from a host before it, and for any other take. And when the
+    /// take was made (CARRY3), null from a host before it.
     /// </summary>
-    public async Task<(string Claim, string? Why, ForwardTake? Forward)> ClaimTakeAsync(string id, CancellationToken ct = default)
+    public async Task<(string Claim, string? Why, ForwardTake? Forward, DateTimeOffset? Taken)> ClaimTakeAsync(string id, CancellationToken ct = default)
     {
         var json = await GetAsync($"/api/quests/{Uri.EscapeDataString(id)}/claim", ct).ConfigureAwait(false);
-        return (RemoteSyncPayloads.Claim(json), RemoteSyncPayloads.ClaimWhy(json), RemoteSyncPayloads.Forward(json));
+        return (RemoteSyncPayloads.Claim(json), RemoteSyncPayloads.ClaimWhy(json), RemoteSyncPayloads.Forward(json), RemoteSyncPayloads.ClaimTaken(json));
     }
 
     /// <summary>Ask the ledger to queue a session. A refusal is an answer, not an exception.</summary>
@@ -2059,9 +2062,10 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
     /// <param name="claims">This machine's claim on each quest read, by quest id (<see cref="ClaimAsync"/>).</param>
     /// <param name="whys">Why a lost claim lost, by quest id (<see cref="ClaimStandingAsync"/>), where the host said.</param>
     /// <param name="forwards">The bring-forward each take was made by, by quest id (<see cref="ClaimTakeAsync"/>), where the host named one.</param>
+    /// <param name="taken">When each take was made, by quest id (<see cref="ClaimTakeAsync"/>, CARRY3), where the host said.</param>
     internal static IReadOnlyDictionary<string, QuestTake> ReadTakes(
         string json, IReadOnlyDictionary<string, string> claims, IReadOnlyDictionary<string, string?>? whys = null,
-        IReadOnlyDictionary<string, ForwardTake?>? forwards = null)
+        IReadOnlyDictionary<string, ForwardTake?>? forwards = null, IReadOnlyDictionary<string, DateTimeOffset?>? taken = null)
     {
         var took = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         var teammates = new Dictionary<string, (string Id, DateTimeOffset At)>(StringComparer.OrdinalIgnoreCase);
@@ -2086,7 +2090,7 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
             pair => pair.Key,
             pair => new QuestTake(pair.Value, took.Contains(pair.Key), teammates.TryGetValue(pair.Key, out var teammate) ? teammate.Id : null,
                 whys is not null && whys.TryGetValue(pair.Key, out var why) ? why : null,
-                forwards?.GetValueOrDefault(pair.Key)),
+                forwards?.GetValueOrDefault(pair.Key), taken?.GetValueOrDefault(pair.Key)),
             StringComparer.OrdinalIgnoreCase);
     }
 

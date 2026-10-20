@@ -436,6 +436,13 @@ public static class RemoteSyncPayloads
         return document.RootElement.ValueKind == JsonValueKind.Object ? Text(document.RootElement, "why") : null;
     }
 
+    /// <summary>When the take the quest stands taken by was made, as its host answered beside the claim (CARRY3), or null where it said none.</summary>
+    public static DateTimeOffset? ClaimTaken(string claimJson)
+    {
+        using var document = JsonDocument.Parse(claimJson);
+        return document.RootElement.ValueKind == JsonValueKind.Object ? Moments.Read(Text(document.RootElement, "taken")) : null;
+    }
+
     /// <summary>
     /// The person's bring-forward the claim's take was made by, as its host answered beside the claim (SYNCMERGE1b0 point 3): whole, or
     /// null where it said none (a host before the field) or one missing a field.
