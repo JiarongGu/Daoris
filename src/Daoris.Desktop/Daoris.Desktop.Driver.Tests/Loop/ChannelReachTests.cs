@@ -53,7 +53,7 @@ public sealed class ChannelReachTests
 
         public List<(string Session, string State, string Message)> Acknowledged { get; } = [];
 
-        public List<(string Session, string Text, string Channel)> Said { get; } = [];
+        public List<(string Session, string Text, string Channel, string? From)> Said { get; } = [];
 
         public string? Refuse { get; init; }
 
@@ -95,9 +95,9 @@ public sealed class ChannelReachTests
             return Task.FromResult<IReadOnlyList<string>>(changed);
         }
 
-        public Task<SayAnswer> SayAsync(string session, string text, string channel, CancellationToken ct)
+        public Task<SayAnswer> SayAsync(string session, string text, string channel, string? from, CancellationToken ct)
         {
-            Said.Add((session, text, channel));
+            Said.Add((session, text, channel, from));
             return Task.FromResult(Refuse is null ? new SayAnswer(true, "kept") : new SayAnswer(false, "refused") { Refusal = Refuse });
         }
 
@@ -405,7 +405,7 @@ public sealed class ChannelReachTests
         await reach.LookAsync(doors, [Ended()], CancellationToken.None);
 
         // SESSONE2e: the message's id goes with the words, so the service keeps no second ask word for them.
-        Assert.Equal([("s1", "Also log the port.", "p1")], doors.Said);
+        Assert.Equal([("s1", "Also log the port.", "p1", (string?)null)], doors.Said);
         Assert.Equal([ChannelAcks.Sent], doors.States("p1"));
         Assert.Contains(lines, line => line.Contains("`p1`", StringComparison.Ordinal) && line.Contains("session s1", StringComparison.Ordinal));
     }
@@ -458,6 +458,58 @@ public sealed class ChannelReachTests
         Assert.All(left, message => Assert.Equal(ChannelAcks.Partly, doors.Acks[message.Id!].State));
         Assert.Equal(ChannelAcks.Partly, doors.Acks["long"].State);
         Assert.All(shown.Where(message => message.Id != "long"), message => Assert.Equal((ChannelAcks.Taken, "s3"), doors.Acks[message.Id!]));
+    }
+
+    // ——— The person's *Send to its session* (the design §4.2, §8.4).
+
+    private static PriorSession Part(string session, string state, int minute, string entry = Key) =>
+        new(session, null, state) { Entry = entry, Created = At.AddMinutes(minute), Quest = "q" + session };
+
+    /// <summary>
+    /// 🔴 A claim held for a running part's turn's end, which would only ride, is passed on by the person's press: it now makes a turn of
+    /// its own (the person is between), marked as passed on by them, and still the agent's claim, never the person's words.
+    /// </summary>
+    [Fact]
+    public async Task The_person_passes_a_held_claim_on_and_it_goes_next_as_the_agents_claim()
+    {
+        var doors = new Doors(Message("m1", 1, "The export endpoint is /v3/report.", session: "s9", urgent: false));
+        var processes = new SessionProcesses();
+        var inbox = processes.OpenInbox("s1");
+        inbox.Attach(interrupt: null);
+        await new ChannelReach().LookAsync(doors, [Running(inbox)], CancellationToken.None);
+        Assert.False(inbox.Holds);
+
+        var forwarded = await ChannelReach.ForwardAsync(doors, [Part("s1", "working", 1)], processes, Ask, "console-ui", "m1", CancellationToken.None);
+
+        Assert.Equal((true, "s1"), (forwarded.Sent, forwarded.Session));
+        Assert.True(inbox.Holds);
+        var next = AtTurnEnd(inbox)!;
+        Assert.Equal("m1", next.Channel!.Id);
+        Assert.Equal("target", ChatMessage.Words(next).Origin);
+    }
+
+    /// <summary>
+    /// A message no part took, passed on to its entry's newest part here that has ended: kept on that part's record by the say door as
+    /// the agent's claim passed on by the person (<c>from: agent</c>, with its channel id), which may reopen it; the entry acknowledges it
+    /// sent. With no part of the entry here, or a message the channel no longer holds, nothing is sent and the answer says why.
+    /// </summary>
+    [Fact]
+    public async Task A_claim_passed_on_to_an_ended_part_is_kept_on_its_record_as_the_agents()
+    {
+        var doors = new Doors(Message("m1", 1, "The export endpoint is /v3/report.", session: "s9", urgent: false));
+        var records = new[] { Part("s1", "completed", 1), Part("s2", "completed", 5) };
+
+        var forwarded = await ChannelReach.ForwardAsync(doors, records, new SessionProcesses(), Ask, "console-ui", "m1", CancellationToken.None);
+
+        Assert.Equal((true, "s2"), (forwarded.Sent, forwarded.Session));
+        var (session, text, channel, from) = Assert.Single(doors.Said);
+        Assert.Equal(("s2", "m1", "agent"), (session, channel, from));
+        Assert.StartsWith("Another session says, on the ask's channel", text);
+        Assert.Contains("The person passed this on to you.", text);
+        Assert.Equal([ChannelAcks.Sent], doors.States("m1"));
+
+        Assert.Equal("no-part", (await ChannelReach.ForwardAsync(doors, records, new SessionProcesses(), Ask, "reports", "m1", CancellationToken.None)).Code);
+        Assert.Equal("gone", (await ChannelReach.ForwardAsync(doors, records, new SessionProcesses(), Ask, "console-ui", "m9", CancellationToken.None)).Code);
     }
 
     // ——— Which parts a look reads.

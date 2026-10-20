@@ -1,9 +1,16 @@
 namespace Daoris.Driver;
 
-/// <summary>One item of an ask's channel as the page reads it (SESSONE2c): a message's words, or one of Daoris's coded lines.</summary>
+/// <summary>
+/// One item of an ask's channel as the page reads it (SESSONE2c): a message's words, or one of Daoris's coded lines. COWORK1d: a message's
+/// level (null for one from before) and what it reached in each repository it addresses.
+/// </summary>
 public sealed record ChannelItemAnswer(
     string Kind, DateTimeOffset At, string? Id, bool Person, string? Session, string? Repository, string? Agent, string? Entry, string? To,
-    string? Re, bool Question, bool Open, string? Text, string? Code, string? Quest, string? Name, string? From);
+    string? Re, bool Question, bool Open, string? Text, string? Code, string? Quest, string? Name, string? From, bool? Urgent = null,
+    IReadOnlyList<ChannelReceiptView>? Receipts = null);
+
+/// <summary>The person's <i>Send to its session</i> (COWORK1d): sent, to which session, or the code that says why not.</summary>
+public sealed record ChannelForwardAnswer(bool Sent, string? Code, string? Session);
 
 /// <summary>An ask's channel as the person reads it: its items in time order, how many are past their mark, and the mark.</summary>
 public sealed record ChannelAnswer(string Ask, string Entry, IReadOnlyList<ChannelItemAnswer> Items, int Unread, DateTimeOffset? Mark);
@@ -38,7 +45,10 @@ public static class ChannelAnswers
     public static ChannelPostAnswer Posted(ChannelPosted posted) =>
         new(posted.Ok, posted.Code, posted.Message is { } message ? Item(message) : null);
 
+    /// <summary>The person's <i>Send to its session</i> as the page reads it.</summary>
+    public static ChannelForwardAnswer Forwarded(ChannelForwarded forwarded) => new(forwarded.Sent, forwarded.Code, forwarded.Session);
+
     private static ChannelItemAnswer Item(ChannelItemView item) => new(
         item.Kind, item.At, item.Id, item.Person, item.Session, item.Repository, item.Agent, item.Entry, item.To, item.Re,
-        item.Question, item.Open, item.Text, item.Code, item.Quest, item.Name, item.From);
+        item.Question, item.Open, item.Text, item.Code, item.Quest, item.Name, item.From, item.Urgent, item.Receipts);
 }

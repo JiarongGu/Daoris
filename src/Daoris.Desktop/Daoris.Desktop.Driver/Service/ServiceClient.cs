@@ -2098,6 +2098,13 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
     public async Task<IReadOnlyList<string>> WaitingTreesAsync(CancellationToken ct = default) =>
         WaitingTrees(await GetAsync(SessionRecords.Door, ct).ConfigureAwait(false));
 
+    /// <summary>
+    /// This machine's records, open and closed, by id (<see cref="ReadRecords"/>): what the person's <i>Send to its session</i> finds a
+    /// line of work's newest part here among (COWORK1d). A teammate's is none here.
+    /// </summary>
+    public async Task<IReadOnlyCollection<PriorSession>> RecordsAsync(CancellationToken ct = default) =>
+        [.. ReadRecords(await GetAsync(SessionRecords.Door, ct).ConfigureAwait(false)).Values];
+
     /// <summary><see cref="WaitingTreesAsync"/>'s trees among the answer's records; a teammate's is none here.</summary>
     internal static IReadOnlyList<string> WaitingTrees(string json)
     {

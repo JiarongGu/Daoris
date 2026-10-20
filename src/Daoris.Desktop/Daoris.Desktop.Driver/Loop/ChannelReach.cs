@@ -22,7 +22,10 @@ public interface IChannelDoors
 
     /// <summary>The say door (MSG1a): the person's words kept on a parked or ended record of this machine's, for it to go on with.</summary>
     /// <param name="channel">The channel message's id (SESSONE2e): the ask holds the words as `channel`, so the door keeps no second word.</param>
-    Task<SayAnswer> SayAsync(string session, string text, string channel, CancellationToken ct);
+    /// <param name="from">
+    /// Their author where not the person (COWORK1d): <c>agent</c> for another agent's claim the person passed on, never their words.
+    /// </param>
+    Task<SayAnswer> SayAsync(string session, string text, string channel, string? from, CancellationToken ct);
 }
 
 /// <summary>The channel's doors through the loop's service: <c>GET /api/asks/{id}/channel</c>, <c>POST …/channel/ack</c> and the say door.</summary>
@@ -34,9 +37,16 @@ public sealed class ServiceChannelDoors(ServiceClient service) : IChannelDoors
         string ask, string entry, string session, string state, IReadOnlyList<string> messages, CancellationToken ct) =>
         service.ChannelAckAsync(ask, entry, session, state, messages, ct);
 
-    public Task<SayAnswer> SayAsync(string session, string text, string channel, CancellationToken ct) =>
-        service.SayAsync(session, text, null, ct, channel);
+    public Task<SayAnswer> SayAsync(string session, string text, string channel, string? from, CancellationToken ct) =>
+        service.SayAsync(session, text, null, ct, channel, from: from);
 }
+
+/// <summary>
+/// What the person's <i>Send to its session</i> did (COWORK1d, the message-urgency design §4.2, §8.4): sent, to which part, or why not by
+/// a code the page words: <c>no-part</c> (no part of that line of work on this machine), <c>gone</c> (the channel no longer holds it),
+/// <c>held</c> (another part of the entry holds it now), or the say door's own refusal.
+/// </summary>
+public sealed record ChannelForwarded(bool Sent, string? Code, string? Session);
 
 /// <summary>
 /// A line of work on an ask as one look finds it (SESSONE2b): its entry, a part of it here, and that part's inbox where this loop runs
@@ -237,7 +247,7 @@ public sealed class ChannelReach
         // Only the person's words reopen a part, and only those addressed to its repository (design §2.3's third row).
         if (!message.Person || message.To is null) return;
 
-        var said = await doors.SayAsync(part.Session, message.Text!, id, ct).ConfigureAwait(false);
+        var said = await doors.SayAsync(part.Session, message.Text!, id, null, ct).ConfigureAwait(false);
         if (said.Kept)
         {
             // Kept on the part's own record, whose queue carries it from here (COWORK1c): sent, as far as the channel goes.
@@ -251,6 +261,59 @@ public sealed class ChannelReach
         lines.Add(said.Kept
             ? $"channel  the person's message `{id}` on ask #{part.Entry.Ask} was kept on session {part.Session}'s record, which goes on with it"
             : $"channel  the person's message `{id}` on ask #{part.Entry.Ask} waits for `{part.Entry.Repository}`'s next part: {said.Message}");
+    }
+
+    /// <summary>
+    /// The person's <i>Send to its session</i> (COWORK1d, the message-urgency design §4.2, §8.4): a message of the ask's channel, sent to
+    /// the newest part here of <paramref name="repository"/>'s line of work on the ask. Because the person pressed, it may make a turn
+    /// happen: to a running part it goes at the next step where the door takes words then, else as its turn's end's own prompt, a claim
+    /// held only to ride going now as one; to a parked or ended part it is kept on its record by the say door, which may reopen it.
+    /// Another agent's message stays that agent's claim, marked as passed on by the person (<c>from: agent</c>), never their words.
+    /// </summary>
+    public static async Task<ChannelForwarded> ForwardAsync(
+        IChannelDoors doors, IReadOnlyCollection<PriorSession> records, SessionProcesses processes, string ask, string repository,
+        string messageId, CancellationToken ct)
+    {
+        if (ChannelEntry.Of($"{ChannelEntry.AskOrigin}{ask.TrimStart('#')}/{repository}") is not { } entry
+            || records.Where(part => !part.Teammate && string.Equals(part.Entry, entry.Key, StringComparison.OrdinalIgnoreCase))
+                .OrderByDescending(part => part.Created ?? DateTimeOffset.MinValue).FirstOrDefault() is not { } newest)
+        {
+            return new ChannelForwarded(false, "no-part", null);
+        }
+
+        if (await doors.ReadAsync(entry.Ask, entry.Key, ct).ConfigureAwait(false) is not { } read
+            || read.Items.FirstOrDefault(item => item.IsMessage && item.Id == messageId) is not { } message)
+        {
+            return new ChannelForwarded(false, "gone", newest.Session);
+        }
+
+        var part = new ChannelPart(entry, newest.Session, processes.InboxOf(newest.Session));
+        var text = message.Person ? message.Text! : ChannelText.Claim(message, passedOn: true);
+        if (part.Inbox is { } inbox)
+        {
+            // A claim this part holds only to ride goes now as a turn of its own: the person is between.
+            if (inbox.PassOn(messageId)) return new ChannelForwarded(true, null, part.Session);
+
+            var claimed = await doors.AcknowledgeAsync(entry.Ask, entry.Key, part.Session, ChannelAcks.Taking, [messageId], ct).ConfigureAwait(false);
+            if (!claimed.Contains(messageId, StringComparer.Ordinal) && message.AckSession != part.Session)
+            {
+                return new ChannelForwarded(false, "held", part.Session);
+            }
+
+            var acknowledge = Acknowledger(doors, part, messageId);
+            var held = inbox.Hold(new ChatMessage(text, [])
+            {
+                Channel = message, Level = MessageLevel.Urgent, Acknowledge = acknowledge, Went = () => acknowledge(ChannelAcks.Sent),
+            });
+            if (held) return new ChannelForwarded(true, null, part.Session);
+            await doors.AcknowledgeAsync(entry.Ask, entry.Key, part.Session, ChannelAcks.Released, [messageId], ct).ConfigureAwait(false);
+        }
+
+        var said = await doors.SayAsync(part.Session, text, messageId, message.Person ? null : ChannelFrom.Agent, ct).ConfigureAwait(false);
+        if (!said.Kept) return new ChannelForwarded(false, said.Refusal ?? "refused", part.Session);
+
+        await doors.AcknowledgeAsync(entry.Ask, entry.Key, part.Session, ChannelAcks.Sent, [messageId], ct).ConfigureAwait(false);
+        return new ChannelForwarded(true, null, part.Session);
     }
 
     /// <summary>

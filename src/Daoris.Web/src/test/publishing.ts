@@ -98,6 +98,8 @@ export const DECLARED: Readonly<Record<string, { scopes: readonly string[]; sess
   SET_AGENT_SETTINGS: { scopes: ['harnesses'] },
   CHANNEL_POST: { scopes: ['asks'] },
   CHANNEL_MARK: { scopes: ['asks'] },
+  // COWORK1d: the person's *Send to its session*, whose receipts the ask's channel shows.
+  CHANNEL_FORWARD: { scopes: ['asks'] },
   REGISTRY_REFRESH: { scopes: ['registry'] },
   // A set-up's press (LAYOUT8): one ask and its quest, and the repository's rule.
   SETUP_PRESS: { scopes: ['quests', 'asks', 'rules'] },

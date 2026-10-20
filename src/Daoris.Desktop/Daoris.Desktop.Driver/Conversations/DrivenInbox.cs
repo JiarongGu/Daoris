@@ -649,6 +649,29 @@ public sealed class DrivenInbox(Action<ChatQueue> changed)
     }
 
     /// <summary>
+    /// The person passed on a claim this inbox holds only to ride (COWORK1d, the design §4.2): by its channel id, it now makes a turn of
+    /// its own, at the next step where the door takes words then and its first prompt flowed, else as the turn's end's own prompt.
+    /// False where no such claim is held.
+    /// </summary>
+    public bool PassOn(string channel)
+    {
+        lock (_gate)
+        {
+            var at = _closed ? -1 : _held.FindIndex(word => word.Rides && word.Channel?.Id == channel);
+            if (at < 0) return false;
+
+            var held = _held[at];
+            var passed = held with
+            {
+                Rides = false, Level = MessageLevel.Urgent, Text = held.Channel is { IsMessage: true } message ? ChannelText.Claim(message, passedOn: true) : held.Text,
+            };
+            _held.RemoveAt(at);
+            HoldHere(passed);
+            return true;
+        }
+    }
+
+    /// <summary>
     /// The claims held to ride that the agent read itself with <c>channel_read</c> (COWORK1d), by their channel ids: let go, never
     /// handed a second time. Words that make a turn are never dropped here.
     /// </summary>

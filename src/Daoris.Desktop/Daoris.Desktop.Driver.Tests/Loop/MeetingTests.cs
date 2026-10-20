@@ -514,7 +514,7 @@ public sealed class MeetingTests : IDisposable
             return Task.FromResult(messages);
         }
 
-        public Task<SayAnswer> SayAsync(string session, string text, string channel, CancellationToken ct)
+        public Task<SayAnswer> SayAsync(string session, string text, string channel, string? from, CancellationToken ct)
         {
             lock (Asked) Asked.Add($"{session} say");
             return Task.FromResult(new SayAnswer(false, "refused"));
