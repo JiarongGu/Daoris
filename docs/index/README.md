@@ -213,7 +213,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 
 | File | KB | Lines |
 |---|---|---|
-| `tools/deployment-rehearsal.mjs` | 102 | 1770 |
+| `tools/deployment-rehearsal.mjs` | 103 | 1771 |
 | `tools/desktop-publish.mjs` | 74 | 1295 |
 | `tools/desktop.mjs` | 53 | 1082 |
 | `tools/family-rehearsal.mjs` | 349 | 6105 |
