@@ -33,6 +33,8 @@ public sealed class PersonDoorTableTests
         ("GET", "/api/quests", Open),
         ("GET", "/api/quests/{id}/attachments/{sha256}", Open),
         ("GET", "/api/quests/{id}/claim", Open),
+        // A quest's moves (FLOWCHART1a2): a read by allow-list, on both hosts.
+        ("GET", "/api/quests/{id}/moves", Open),
         ("GET", "/api/asks", Open),
         ("GET", "/api/asks/{id}", Open),
         ("GET", "/api/asks/{id}/channel", Open),
@@ -149,8 +151,9 @@ public sealed class PersonDoorTableTests
         // posts (FABRIC-CLOSE1a), and its question of what became of a close (FABRIC-CLOSE1u), and the person's reopen of a sealed
         // submission and their word to go on with the step it held (FABRIC-CLOSE1c), and a brainstorm's two reads and the person's
         // three presses: its question, its send and its clear (BRAINSTORM1a3), and the person's bring-forward of a lost take (SYNCMERGE1a),
-        // and the mode an Ask Daoris conversation going on runs under, the driver's (HELPMODE1a2), and the setup a resumed driven record now runs under (AUTONOMY1b2).
-        Assert.Equal(27, Routes.Count(route => route.Class == Open));
+        // and the mode an Ask Daoris conversation going on runs under, the driver's (HELPMODE1a2), and the setup a resumed driven record now runs under (AUTONOMY1b2),
+        // and a quest's moves, a read (FLOWCHART1a2).
+        Assert.Equal(28, Routes.Count(route => route.Class == Open));
         Assert.Equal(4, Routes.Count(route => route.Class == Agent));
         Assert.Equal(21, Routes.Count(route => route.Class == Driver));
         Assert.Equal(31, Routes.Count(route => route.Class == Person));

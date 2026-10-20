@@ -5,6 +5,19 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-20 — The deployment rehearsal read the shell's running record before the shell wrote it (HOMEFIX3)
+
+- **Symptom:** the full set on 32889e2a4 failed the deployment rehearsal's "the install keeps its own state in its own folders
+  (data/ and D172's)": the install held `app, Daoris.exe, INSTALLED.md, profiles, run` and no running record, while the window
+  was up and every later check of the deployed shell (its host reached, a quest driven, a session spawned) passed.
+- **Root cause:** HOMEFIX1 changed the check from `data/` existing to the running record existing at the table's `running`
+  entry, and asked it once, right after the window came up. The shell writes that record when its loop serves its host and
+  pipe (`DriverLoop.cs:543`, `RunningAddress.Write`), which may follow the window; `data/` had existed earlier, so the old check
+  never met the race. The `run/` the failure listed was made by the check's own `homeEntry`, which makes a category's folder
+  where it answers the new place.
+- **Fix:** the check waits up to 30 s for the record, asking the table each second, and says where it looked.
+- **Verification:** the next full set's deployment rehearsal; `node --check` here.
+
 ## 2026-10-20 — An orphaned-session test failed on its stand-in's teardown, not its assertion (FLAKE1)
 
 - **Symptom:** the full set on 32889e2a4 failed

@@ -552,6 +552,12 @@ app.MapGet("/api/quests", async (
         q, s.Files, MachineLocal(http), deletable.Contains(q.Id), takes.GetValueOrDefault(q.Id), HereFor(s, http)));
 });
 
+// One quest's moves, read from its history in the order it replays (FLOWCHART1a2; D186, the flowchart design §2.1): on both hosts,
+// since quests are service-visible (D47 §4), each move by allow-list, so no payload, note or path leaves. An id with no history has
+// no moves, so a client tells this door's answer from an older host's 404.
+app.MapGet("/api/quests/{id}/moves", async (ComposedService s, string id, CancellationToken ct) =>
+    Results.Ok(QuestMovesResponse.Of(id.TrimStart('#'), QuestMoves.Read(await s.Quests.HistoryAsync(id.TrimStart('#'), ct)))));
+
 // Publish and respond go through the same exchange the MCP host uses, so the two doors cannot drift
 // on who may be addressed or what declining requires. This pair is what makes a REMOTE deployment a
 // transfer of work rather than a read-only mirror — and it needs no model at all (D24).
