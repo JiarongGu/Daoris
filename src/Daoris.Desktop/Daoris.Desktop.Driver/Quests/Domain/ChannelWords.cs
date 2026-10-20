@@ -61,8 +61,48 @@ public sealed record ChannelItemView(string Kind, DateTimeOffset At)
     /// <summary>A line's asker: a repository, or <c>ask #id</c>.</summary>
     public string? From { get; init; }
 
+    /// <summary>
+    /// A message's level (COWORK1d, D188 point 2): true urgent, false ordinary; null on one from before, which keeps its old reach,
+    /// the next step where the door takes words then. Null never means ordinary.
+    /// </summary>
+    public bool? Urgent { get; init; }
+
+    /// <summary>
+    /// The reading entry's acknowledgment of a message by its id (COWORK1d, the design §6; <see cref="ChannelAcks"/>), or null where it
+    /// holds none: what decides whether a part of the entry is handed it.
+    /// </summary>
+    public string? Ack { get; init; }
+
+    /// <summary>The part's session that wrote <see cref="Ack"/>, where one did.</summary>
+    public string? AckSession { get; init; }
+
     /// <summary>A message with words: what reaches a session. A line, or a message the wire answered without words, is not.</summary>
     public bool IsMessage => Kind == Message && Id is { Length: > 0 } && Text is { Length: > 0 };
+}
+
+/// <summary>
+/// An entry's acknowledgments of a channel message (COWORK1d, D188 point 6; the message-urgency design §6), as the service's
+/// <c>ChannelAcks</c> spells them: a twin, since the driver and the service share no code.
+/// </summary>
+public static class ChannelAcks
+{
+    /// <summary>A part claimed it: one part of an entry takes a message.</summary>
+    public const string Taking = "taking";
+
+    /// <summary>Written to the part's harness, or kept on its record's own queue.</summary>
+    public const string Sent = "sent";
+
+    /// <summary>The door said the part took it, or a start's packet carried it whole once the part works.</summary>
+    public const string Taken = "taken";
+
+    /// <summary>The agent's own <c>channel_read</c> returned it whole.</summary>
+    public const string Read = "read";
+
+    /// <summary>A start's packet cut it, or left it among the older ones: a new part is handed it again.</summary>
+    public const string Partly = "partly";
+
+    /// <summary>A part let its claim go unsent: its run ended with nothing else to say.</summary>
+    public const string Released = "released";
 }
 
 /// <summary>An ask's channel as one entry reads it (SESSONE2a's <c>GET /api/asks/{id}/channel?entry=</c>), which moves no mark.</summary>
@@ -74,13 +114,17 @@ public sealed record ChannelItemView(string Kind, DateTimeOffset At)
 public sealed record ChannelView(string Ask, string Entry, IReadOnlyList<ChannelItemView> Items, int Unread, DateTimeOffset? Mark)
 {
     /// <summary>
-    /// The messages for this entry past its mark, oldest first (design §2.3): addressed to its repository or to everyone, and
-    /// posted by no part of its own. A line is never one: the quests reach a session through their own doors.
+    /// The messages for this entry that a part of it (<paramref name="session"/>) is to be handed, oldest first (design §2.3):
+    /// addressed to its repository or to everyone, posted by no part of its own, and acknowledged by the entry not at all, or only
+    /// handed partly to another part (COWORK1d, the message-urgency design §6). By identity, never by moment: a message mirrored
+    /// late, or at the mark's very moment, is handed all the same. A line is never one: the quests reach a session through their
+    /// own doors.
     /// </summary>
-    public IReadOnlyList<ChannelItemView> ForEntry() =>
+    public IReadOnlyList<ChannelItemView> ForEntry(string? session = null) =>
         ChannelEntry.Of(Entry) is not { } key
             ? []
-            : [.. Items.Where(item => item.IsMessage && (Mark is null || item.At > Mark) && ChannelEntry.IsFor(item, key))];
+            : [.. Items.Where(item => item.IsMessage && ChannelEntry.IsFor(item, key)
+                && (item.Ack is null || (item.Ack == ChannelAcks.Partly && !string.Equals(item.AckSession, session, StringComparison.Ordinal))))];
 
     /// <summary>The newest moment the read holds, of a message or a line; null for an empty channel.</summary>
     public DateTimeOffset? Newest => Items.Count == 0 ? null : Items.Max(item => item.At);
@@ -126,6 +170,11 @@ public sealed record ChannelView(string Ask, string Entry, IReadOnlyList<Channel
                 Quest = Json.Text(item, "quest"),
                 Name = Json.Text(item, "name"),
                 From = Json.Text(item, "from"),
+                Urgent = item.TryGetProperty("urgent", out var urgent)
+                    ? urgent.ValueKind switch { JsonValueKind.True => true, JsonValueKind.False => false, _ => null }
+                    : null,
+                Ack = Json.Text(item, "ack"),
+                AckSession = Json.Text(item, "ackSession"),
             };
 
     private static bool Flag(JsonElement element, string name) =>
@@ -186,13 +235,13 @@ public sealed record ChannelEntry(string Key, string Ask, string Repository)
 
 /// <summary>
 /// What a part of an entry is handed from the ask's channel when it starts (SESSONE2b, design §2.3): the messages for its entry
-/// since the entry last read it, the newest within the bounds, and the moment its mark moves to once the part has started.
+/// it has not acknowledged (COWORK1d), the newest within the bounds, each acknowledged once the part has started.
 /// </summary>
 /// <param name="Ask">The ask the channel is.</param>
-/// <param name="Entry">The entry's key, whose mark moves.</param>
-/// <param name="Messages">The messages for the entry past its mark, oldest first; bounded where they are written.</param>
-/// <param name="Through">The newest item read, a line included: the mark moves to it, so a later arrival is not passed.</param>
-public sealed record ChannelHeld(string Ask, string Entry, IReadOnlyList<ChannelItemView> Messages, DateTimeOffset? Through);
+/// <param name="Entry">The entry's key, whose acknowledgments are written.</param>
+/// <param name="Messages">The messages for the entry it has not had, oldest first; bounded where they are written.</param>
+/// <param name="Session">The starting part's session, which writes the acknowledgments.</param>
+public sealed record ChannelHeld(string Ask, string Entry, IReadOnlyList<ChannelItemView> Messages, string? Session);
 
 /// <summary>
 /// How the ask's channel is written to a session (SESSONE2b, D167 point 7, design §2.3): the person's messages as their own

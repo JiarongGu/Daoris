@@ -43,6 +43,9 @@ public sealed class DrivenInbox(Action<ChatQueue> changed)
     private Task _stopping = Task.CompletedTask;
     private bool _closed;
     private bool _flowing;
+    // COWORK1d (the message-urgency design §2.3): the answer to the last prompt open was read, so the turn is over and a claim written
+    // now would start one of its own. A prompt sent again opens it.
+    private bool _quiet;
     private int _said;
     private DrivenReach? _reach;
     private Func<Task>? _interrupt;
@@ -85,7 +88,33 @@ public sealed class DrivenInbox(Action<ChatQueue> changed)
     {
         get
         {
-            lock (_gate) return !_closed && _held.Count > 0;
+            // COWORK1d: a claim that only rides makes no turn, so it is no reason to go on.
+            lock (_gate) return !_closed && Turns();
+        }
+    }
+
+    /// <summary>
+    /// Whether another agent's claim may be held now (COWORK1d, the message-urgency design §2.3, trap 3): the door is known, the inbox
+    /// open, and the answer to its last open prompt not yet read. Once that answer is read the turn is over, and a claim written as a
+    /// prompt would start one of its own; it waits for the entry's next part, or the agent's own read.
+    /// </summary>
+    public bool TakesClaims
+    {
+        get
+        {
+            lock (_gate) return !_closed && _reach is not null && !_quiet;
+        }
+    }
+
+    /// <summary>
+    /// The answer to the last prompt open on the wire was read (COWORK1d, the design §2.3): told on the reader's thread before the run
+    /// judges its next step, so a claim arriving from here on is refused (<see cref="TakesClaims"/>). A prompt sent again opens it.
+    /// </summary>
+    public void LastAnswered()
+    {
+        lock (_gate)
+        {
+            if (!_closed) _quiet = true;
         }
     }
 
@@ -181,9 +210,16 @@ public sealed class DrivenInbox(Action<ChatQueue> changed)
         lock (_gate)
         {
             _flowing = true;
+            _quiet = false;
             if (_closed || _reach != DrivenReach.NextStep) return;
 
-            foreach (var message in _held.Where(GoesAtNextStep).ToList()) Send(message);
+            foreach (var message in _held.Where(GoesAtNextStep).ToList())
+            {
+                // A claim held until the first prompt flowed was never told: it is, as it goes.
+                if (message.Rides) Tell(message, DrivenReach.NextStep);
+                Send(message);
+            }
+
             _held.RemoveAll(GoesAtNextStep);
             Publish();
         }
@@ -285,7 +321,7 @@ public sealed class DrivenInbox(Action<ChatQueue> changed)
     }
 
     /// <summary>Where a word of the person's is held, by its id; -1 once closed. Daoris's own words are no word of theirs to edit (COWORK1b).</summary>
-    private int HeldAt(string id) => _closed ? -1 : _held.FindIndex(message => message.Id == id && message.Daoris is null);
+    private int HeldAt(string id) => _closed ? -1 : _held.FindIndex(message => message.Id == id && message.Daoris is null && !IsClaim(message));
 
     /// <summary>
     /// The held word at <paramref name="at"/> taken back, reworded under <paramref name="newId"/>, or at a new level. A kept word
@@ -565,15 +601,43 @@ public sealed class DrivenInbox(Action<ChatQueue> changed)
     }
 
     /// <summary>
-    /// Take another agent's words only where they reach the running turn (SESSONE2b, D155): on the door that takes words during
-    /// a turn (STEER1), as <see cref="Hold"/> takes them. False on a door that holds words for the turn's end, where they would be
-    /// prompted after it and extend the run, before the door is known, and once the session has stopped taking any.
+    /// Take another agent's claim at its level (SESSONE2b, D155; COWORK1d, D188 point 4, the message-urgency design §2.3, §3.1, §4.2):
+    /// urgent, at the next step where the door takes words then, told and sent as <see cref="Hold"/> sends; ordinary, and any claim on a
+    /// door that takes words only at its turn's end, held only to ride (<see cref="ChatMessage.Rides"/>): it goes beside a word that
+    /// makes a turn anyway, and alone at the turn's end it makes none and is let go. False before the door is known, once the session
+    /// stopped taking any, and once the answer to its last open prompt is read (<see cref="TakesClaims"/>).
     /// </summary>
-    public bool HoldDuringTurn(ChatMessage message)
+    public bool HoldClaim(ChatMessage message)
     {
         lock (_gate)
         {
-            return !_closed && _reach == DrivenReach.NextStep && Hold(message);
+            if (_closed || _reach is null || _quiet) return false;
+            var said = message with { Id = $"said-{++_said}" };
+            if (said.Level != MessageLevel.Ordinary && _reach == DrivenReach.NextStep && _flowing)
+            {
+                Tell(said, DrivenReach.NextStep);
+                Send(said);
+            }
+            else
+            {
+                // 🔴 Never told while it only rides: the record shows it once it goes. Urgent on a turn-end door earns nothing sooner.
+                _held.Add(said with { Rides = true, Level = _reach == DrivenReach.NextStep ? said.Level : MessageLevel.Ordinary });
+            }
+
+            Publish();
+            return true;
+        }
+    }
+
+    /// <summary>
+    /// The claims held to ride that the agent read itself with <c>channel_read</c> (COWORK1d), by their channel ids: let go, never
+    /// handed a second time. Words that make a turn are never dropped here.
+    /// </summary>
+    public void DropClaims(IReadOnlySet<string> channels)
+    {
+        lock (_gate)
+        {
+            if (_held.RemoveAll(word => word.Rides && word.Channel?.Id is { } id && channels.Contains(id)) > 0) Publish();
         }
     }
 
@@ -585,6 +649,7 @@ public sealed class DrivenInbox(Action<ChatQueue> changed)
     {
         Action? closing = null;
         DrivenNext? next = null;
+        List<ChatMessage> released = [];
         // One step under the gate: a word sent between "nothing on its way" and "closed" would be answered to nobody.
         lock (_gate)
         {
@@ -597,17 +662,20 @@ public sealed class DrivenInbox(Action<ChatQueue> changed)
             {
                 next = new DrivenNext(null, answer);
             }
-            else if (_held.Count > 0 && !_stopping.IsCompleted)
+            else if (Turns() && !_stopping.IsCompleted)
             {
                 // 🔴 The stop decided for the turn that ended is on its way: the held word's own turn goes after it (STEER2a).
                 next = new DrivenNext(null, null) { Waits = _stopping };
             }
-            else if (_held.Count > 0)
+            else if (Turns())
             {
+                // COWORK1d: the claims held to ride go with what the run sends anyway, each in the order said.
+                Ride();
                 // COWORK1c: its door marks its attempt before the wire and tells it went once written, when it leaves the record.
                 next = new DrivenNext(Dispatched(_held[0]), null);
                 _held.RemoveAt(0);
                 _turn++;
+                _quiet = false;
             }
             else if (_keepsOnTheirWay > 0)
             {
@@ -623,6 +691,8 @@ public sealed class DrivenInbox(Action<ChatQueue> changed)
             }
             else
             {
+                // 🔴 COWORK1d (trap 3): claims alone make no turn, so the run ends and each is let go for the entry's next part.
+                released = LetGo();
                 _closed = true;
                 closing = _closing;
             }
@@ -631,6 +701,7 @@ public sealed class DrivenInbox(Action<ChatQueue> changed)
         }
 
         closing?.Invoke();
+        Released(released);
         return next;
     }
 
@@ -642,11 +713,13 @@ public sealed class DrivenInbox(Action<ChatQueue> changed)
     {
         Action? closing = null;
         ChatMessage? next;
+        List<ChatMessage> released = [];
         lock (_gate)
         {
             if (_closed) return null;
-            if (_held.Count > 0)
+            if (Turns())
             {
+                Ride();
                 next = _held[0];
                 _held.RemoveAt(0);
                 _turn++;
@@ -659,6 +732,7 @@ public sealed class DrivenInbox(Action<ChatQueue> changed)
             else
             {
                 next = null;
+                released = LetGo();
                 _closed = true;
                 closing = _closing;
             }
@@ -667,6 +741,7 @@ public sealed class DrivenInbox(Action<ChatQueue> changed)
         }
 
         closing?.Invoke();
+        Released(released);
         return next;
     }
 
@@ -677,16 +752,24 @@ public sealed class DrivenInbox(Action<ChatQueue> changed)
     public IReadOnlyList<ChatMessage> TakeAllOrClose()
     {
         Action? closing = null;
-        List<ChatMessage> taken;
+        List<ChatMessage> taken = [];
+        List<ChatMessage> released = [];
         lock (_gate)
         {
             if (_closed) return [];
-            // COWORK1c: the resumed run marks their attempts before it starts and tells each went once it has, when they leave the record.
-            taken = [.. _held.Select(Dispatched)];
-            _held.Clear();
-            if (taken.Count > 0) _turn++;
+            // COWORK1d: claims held to ride go only beside a word that makes the resumed run anyway.
+            if (Turns())
+            {
+                Ride();
+                // COWORK1c: the resumed run marks their attempts before it starts and tells each went once it has, when they leave the record.
+                taken = [.. _held.Select(Dispatched)];
+                _held.Clear();
+                _turn++;
+            }
+
             if (taken.Count == 0 && _sent.Count == 0 && _steered.Count == 0)
             {
+                released = LetGo();
                 _closed = true;
                 closing = _closing;
             }
@@ -695,6 +778,7 @@ public sealed class DrivenInbox(Action<ChatQueue> changed)
         }
 
         closing?.Invoke();
+        Released(released);
         return taken;
     }
 
@@ -714,10 +798,13 @@ public sealed class DrivenInbox(Action<ChatQueue> changed)
         Action? closing;
         List<ChatMessage> left;
         List<ChatMessage> stays = [];
+        List<ChatMessage> released;
         Action<IReadOnlyList<ChatMessage>>? told = null;
         lock (_gate)
         {
             if (_closed) return [];
+            // COWORK1d: another agent's claim never comes back as the person's words never reached: it is let go for the entry's next part.
+            released = LetGo();
             left = [.. _held];
             _held.Clear();
             _sent.Clear();
@@ -742,6 +829,7 @@ public sealed class DrivenInbox(Action<ChatQueue> changed)
         }
 
         closing?.Invoke();
+        Released(released);
         if (stays.Count > 0)
         {
             try
@@ -838,7 +926,8 @@ public sealed class DrivenInbox(Action<ChatQueue> changed)
         Stop? stop;
         lock (_gate)
         {
-            if (_closed || _held.Count == 0 || _interrupt is null || _reach == DrivenReach.NextStep) return TurnStop.Nothing;
+            // COWORK1d: claims that only ride are no reason to stop a turn.
+            if (_closed || !Turns() || _interrupt is null || _reach == DrivenReach.NextStep) return TurnStop.Nothing;
             stop = StopThisTurn();
         }
 
@@ -880,8 +969,57 @@ public sealed class DrivenInbox(Action<ChatQueue> changed)
         }
     }
 
-    /// <summary>Where it stands for the page: the person's words held, never Daoris's own (COWORK1b), which the record shows as Daoris's.</summary>
-    private ChatQueue Now() => _closed ? ChatQueue.Idle : new ChatQueue(Taking: true, [.. _held.Where(message => message.Daoris is null)]);
+    /// <summary>
+    /// Where it stands for the page: the person's words held, never Daoris's own (COWORK1b), which the record shows as Daoris's, nor
+    /// another agent's claim (COWORK1d), which is never the person's.
+    /// </summary>
+    private ChatQueue Now() => _closed
+        ? ChatQueue.Idle
+        : new ChatQueue(Taking: true, [.. _held.Where(message => message.Daoris is null && !IsClaim(message))]);
+
+    /// <summary>Another agent's claim on the ask's channel, as this inbox carries it (COWORK1d).</summary>
+    private static bool IsClaim(ChatMessage message) => message.Channel is { Person: false };
+
+    /// <summary>Whether a word held makes a turn of its own: any but a claim held only to ride (COWORK1d). Called under the gate.</summary>
+    private bool Turns() => _held.Any(word => !word.Rides);
+
+    /// <summary>
+    /// The claims held to ride go with what the run sends anyway (COWORK1d, the design §4.2): each in its place, told now as reaching at
+    /// the turn's end, a rider no longer. Called under the gate, once a word that makes a turn is taken.
+    /// </summary>
+    private void Ride()
+    {
+        for (var at = 0; at < _held.Count; at++)
+        {
+            if (!_held[at].Rides) continue;
+            _held[at] = _held[at] with { Rides = false, Level = MessageLevel.Ordinary };
+            Tell(_held[at], DrivenReach.TurnEnd);
+        }
+    }
+
+    /// <summary>The claims held to ride, out of the inbox: nothing took them. Called under the gate.</summary>
+    private List<ChatMessage> LetGo()
+    {
+        List<ChatMessage> riders = [.. _held.Where(word => word.Rides || IsClaim(word))];
+        _held.RemoveAll(word => word.Rides || IsClaim(word));
+        return riders;
+    }
+
+    /// <summary>Each claim let go told so (COWORK1d): its entry's next part is handed it. Called outside the gate; a listener's failure is its own.</summary>
+    private static void Released(IReadOnlyList<ChatMessage> claims)
+    {
+        foreach (var claim in claims)
+        {
+            try
+            {
+                claim.Acknowledge?.Invoke(ChannelAcks.Released);
+            }
+            catch (Exception error) when (error is not OperationCanceledException)
+            {
+                // The claim waits on the channel either way, for the entry's next part or the agent's own read.
+            }
+        }
+    }
 
     /// <summary>
     /// When a word reaches the session on the door known, by its level (COWORK1a, the design §3.0): an ordinary word at the turn's
@@ -911,6 +1049,8 @@ public sealed class DrivenInbox(Action<ChatQueue> changed)
         // Observed here as well as by the run, which may have ended before it reads this one.
         _ = answer.ContinueWith(static sent => sent.Exception, TaskScheduler.Default);
         _sent.Enqueue(answer);
+        // COWORK1d: a prompt is open again, so the turn goes on and may take a claim.
+        _quiet = false;
         // COWORK1b: Daoris's word at the next step went now, as the look that held it judged it.
         DaorisWords.Delivered(message);
     }
@@ -930,6 +1070,7 @@ public sealed class DrivenInbox(Action<ChatQueue> changed)
 
         _ = answer.ContinueWith(static steered => steered.Exception, TaskScheduler.Default);
         _steered.Enqueue(answer);
+        _quiet = false;
     }
 
     /// <summary>A word as this inbox hands it to its door (COWORK1c): a kept one to be attempted before the wire and taken off once written.</summary>

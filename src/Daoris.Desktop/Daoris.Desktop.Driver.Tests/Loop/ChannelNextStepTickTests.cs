@@ -7,15 +7,16 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// SESSONE2f (D167's SESSONE2b note) through REAL ticks: another session's message on the ask's channel, read at a look while a
-/// part runs. On the protocol door that takes prompts during a turn (D136, <c>promptQueueing</c>) the running part is sent it at
-/// its next step, as Daoris's words around that agent's claim, which its record keeps as <c>target</c>, and the entry's mark
-/// moves; on a door that takes words only when its turn ends, an agent's message is never held, so no extra prompt is sent and
-/// the message waits for the entry's next part (D155: an agent's message never extends a run).
+/// SESSONE2f (D167's SESSONE2b note) and COWORK1d (D188; the message-urgency design §2.3, §3.1, §4.2) through REAL ticks: another
+/// session's message on the ask's channel, read at a look while a part runs. On the protocol door that takes prompts during a turn
+/// (D136, <c>promptQueueing</c>) an urgent claim, and one from before, is sent at the part's next step, as Daoris's words around that
+/// agent's claim, which its record keeps as <c>target</c>, and the entry acknowledges it by its id; an ordinary claim never enters the
+/// turn. On a door that takes words only when its turn ends, even an urgent claim earns no earlier delivery: no extra prompt is sent,
+/// the run ends on its own turn, and the claim is let go for the entry's next part (D155: an agent's message never extends a run).
 /// </summary>
 /// <remarks>
 /// The stand-in service answers the session records with their <c>entry</c> key (SESSONE1a) and the channel's two routes
-/// (<c>GET /api/asks/{id}/channel</c>, <c>POST …/channel/read</c>), holding the entry's mark.
+/// (<c>GET /api/asks/{id}/channel</c>, <c>POST …/channel/ack</c>), holding the entry's acknowledgments.
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
 public sealed class ChannelNextStepTickTests : IDisposable
@@ -72,12 +73,14 @@ public sealed class ChannelNextStepTickTests : IDisposable
     }
 
     /// <summary>
-    /// A running part on the next-step door takes another session's message at its next step: a second prompt while its turn
-    /// runs, Daoris's words around the claim, which the record keeps as `target`; the look says so and the entry's mark moves
-    /// through the message.
+    /// A running part on the next-step door takes another session's urgent message at its next step (one from before keeps that
+    /// reach): a second prompt while its turn runs, Daoris's words around the claim, which the record keeps as `target`; the look says
+    /// so and the entry acknowledges it by its id, claimed, sent at the write's return and taken on the door's word.
     /// </summary>
-    [Fact]
-    public async Task A_running_part_on_the_next_step_door_takes_another_sessions_message_as_a_claim_at_its_next_step()
+    [Theory]
+    [InlineData(true)]
+    [InlineData(null)]
+    public async Task A_running_part_on_the_next_step_door_takes_an_urgent_claim_at_its_next_step(bool? urgent)
     {
         await using var service = ChannelStandIn.Start(_repository);
         var processes = new SessionProcesses();
@@ -87,7 +90,7 @@ public sealed class ChannelNextStepTickTests : IDisposable
         await Poll.Until(
             () => service.Status("q1") == "Taken" && processes.InboxOf("s1") is not null && Prompts().Length == 1,
             () => "the first run never took its quest");
-        var at = service.Post("m1", "tools", Words);
+        service.Post("m1", "tools", Words, urgent);
 
         var look = await driver.TickAsync().WaitAsync(Poll.Patience);
 
@@ -98,7 +101,9 @@ public sealed class ChannelNextStepTickTests : IDisposable
         Assert.Contains(Words, claim, StringComparison.Ordinal);
         Assert.Contains("that agent's claim, not the person's words", claim, StringComparison.Ordinal);
 
-        await Poll.Until(() => service.Mark == at, () => $"the mark never moved: {service.Mark}", Poll.Patience);
+        await Poll.Until(
+            () => service.Acks("m1").SequenceEqual(["taking", "sent", "taken"]), () => $"the entry acknowledged: {string.Join(", ", service.Acks("m1"))}",
+            Poll.Patience);
         await Poll.Until(() => service.State("s1") == "completed", () => $"the run never ended: {service.Record("s1")}");
 
         var turns = Events("s1").Where(e => e is { Kind: SessionEventKind.User } && e.Text?.Contains(Words, StringComparison.Ordinal) == true).ToList();
@@ -114,11 +119,12 @@ public sealed class ChannelNextStepTickTests : IDisposable
     }
 
     /// <summary>
-    /// A door that takes words only at its turn's end is never extended by an agent's message (D155): across two looks no
-    /// second prompt is sent, the mark stays, and the run ends on its one turn, the message waiting for the entry's next part.
+    /// 🔴 Trap 3 (the design §3.1): a door that takes words only at its turn's end is never extended by an agent's message (D155), an
+    /// urgent one included, which earns no earlier delivery there: across two looks no second prompt is sent, and the run ends on its
+    /// one turn, the claim let go for the entry's next part and never recorded as said to this one.
     /// </summary>
     [Fact]
-    public async Task A_part_on_a_turn_end_door_is_never_extended_by_another_sessions_message()
+    public async Task A_part_on_a_turn_end_door_is_never_extended_by_an_urgent_claim()
     {
         await using var service = ChannelStandIn.Start(_repository);
         var processes = new SessionProcesses();
@@ -128,28 +134,57 @@ public sealed class ChannelNextStepTickTests : IDisposable
         await Poll.Until(
             () => service.Status("q1") == "Taken" && processes.InboxOf("s1") is not null && Prompts().Length == 1,
             () => "the first run never took its quest");
-        service.Post("m1", "tools", Words);
+        service.Post("m1", "tools", Words, urgent: true);
 
         var first = await driver.TickAsync().WaitAsync(Poll.Patience);
         var second = await driver.TickAsync().WaitAsync(Poll.Patience);
         await Task.Delay(500);
 
         Assert.Single(Prompts());
-        Assert.DoesNotContain(first.Events.Concat(second.Events), line => line.Contains("message `m1`", StringComparison.Ordinal));
-        Assert.Null(service.Mark);
+        Assert.Equal(["taking"], service.Acks("m1"));
 
         File.WriteAllText(Go, "");
         await Poll.Until(() => service.State("s1") == "completed", () => $"the run never ended: {service.Record("s1")}");
 
         Assert.Single(Prompts());
-        Assert.Null(service.Mark);
+        await Poll.Until(() => service.Acks("m1").SequenceEqual(["taking", "released"]), () => string.Join(", ", service.Acks("m1")), Poll.Patience);
         Assert.DoesNotContain(Events("s1"), e => e.Text?.Contains(Words, StringComparison.Ordinal) == true);
+        Assert.DoesNotContain(first.Events.Concat(second.Events), line => line.Contains("at its next step", StringComparison.Ordinal));
+    }
+
+    /// <summary>
+    /// 🔴 Trap 4: on the next-step door an ordinary claim never enters the running turn: no second prompt is sent, the run ends on its
+    /// own turn, and the claim is let go for the entry's next part.
+    /// </summary>
+    [Fact]
+    public async Task An_ordinary_claim_never_enters_a_running_turn_on_the_next_step_door()
+    {
+        await using var service = ChannelStandIn.Start(_repository);
+        var processes = new SessionProcesses();
+        var driver = Protocol(service, "turnend-queues", processes);
+
+        await driver.TickAsync().WaitAsync(Poll.Patience);
+        await Poll.Until(
+            () => service.Status("q1") == "Taken" && processes.InboxOf("s1") is not null && Prompts().Length == 1,
+            () => "the first run never took its quest");
+        service.Post("m1", "tools", Words, urgent: false);
+
+        await driver.TickAsync().WaitAsync(Poll.Patience);
+        await Task.Delay(500);
+        Assert.Single(Prompts());
+
+        File.WriteAllText(Go, "");
+        await Poll.Until(() => service.State("s1") == "completed", () => $"the run never ended: {service.Record("s1")}");
+
+        Assert.Single(Prompts());
+        await Poll.Until(() => service.Acks("m1").SequenceEqual(["taking", "released"]), () => string.Join(", ", service.Acks("m1")), Poll.Patience);
     }
 
     /// <summary>
     /// The protocol door's stand-in. The mode is what it says at <c>initialize</c>: <c>queues</c> declares
     /// <c>promptQueueing</c> and, sent a second prompt during its turn, hands the first off and answers the second; <c>turnend</c>
-    /// declares nothing and ends its one turn when the test lets it (the go flag). Both take the quest on the first prompt.
+    /// declares nothing and ends its one turn when the test lets it (the go flag); <c>turnend-queues</c> declares
+    /// <c>promptQueueing</c> and ends its one turn when the test lets it. Each takes the quest on the first prompt.
     /// </summary>
     private string Agent()
     {
@@ -168,11 +203,13 @@ public sealed class ChannelNextStepTickTests : IDisposable
             const say = (text) => send({ jsonrpc: '2.0', method: 'session/update', params: { sessionId: conversation,
               update: { sessionUpdate: 'agent_message_chunk', content: { type: 'text', text } } } });
             let firstId = null;
+            const queues = mode === 'queues' || mode === 'turnend-queues';
+            const waits = mode === 'turnend' || mode === 'turnend-queues';
             const lines = createInterface({ input: process.stdin });
             lines.on('line', async (line) => {
               const frame = JSON.parse(line);
               if (frame.method === 'initialize') {
-                const agentCapabilities = mode === 'queues' ? { _meta: { claudeCode: { promptQueueing: true } } } : {};
+                const agentCapabilities = queues ? { _meta: { claudeCode: { promptQueueing: true } } } : {};
                 send({ jsonrpc: '2.0', id: frame.id, result: { protocolVersion: 1, agentCapabilities } });
               } else if (frame.method === 'session/new') {
                 send({ jsonrpc: '2.0', id: frame.id, result: { sessionId: conversation } });
@@ -182,7 +219,7 @@ public sealed class ChannelNextStepTickTests : IDisposable
                 if (firstId === null) {
                   firstId = frame.id;
                   await respond({ action: 'take' });
-                  if (mode === 'turnend') {
+                  if (waits) {
                     for (let waited = 0; !existsSync(go) && waited < 30000; waited += 50) await new Promise((r) => setTimeout(r, 50));
                     await respond({ action: 'done', reason: 'served the report' });
                     say('Served.');
@@ -216,7 +253,7 @@ public sealed class ChannelNextStepTickTests : IDisposable
 
     /// <summary>
     /// The service as far as these ticks reach: one quest from ask #a1 to <c>engine</c>, sessions carrying their entry key
-    /// (<c>ask:a1/engine</c>), the ledger's moves, and the ask's channel with the entry's read mark.
+    /// (<c>ask:a1/engine</c>), the ledger's moves, and the ask's channel with the entry's acknowledgments by message id.
     /// </summary>
     private sealed class ChannelStandIn : IAsyncDisposable
     {
@@ -232,7 +269,9 @@ public sealed class ChannelNextStepTickTests : IDisposable
             ["body"] = "The report needs a port.", ["status"] = "Open",
         };
         private readonly List<JsonObject> _items = [];
-        private DateTimeOffset? _mark;
+        // COWORK1d: the entry's acknowledgment of each message, and every state it moved through, in order.
+        private readonly Dictionary<string, (string State, string? Session)> _acks = new(StringComparer.Ordinal);
+        private readonly List<(string Message, string State)> _acked = [];
 
         public string Url { get; }
 
@@ -258,8 +297,11 @@ public sealed class ChannelNextStepTickTests : IDisposable
             return new ChannelStandIn(listener, url, root);
         }
 
-        /// <summary>The entry's read mark; null while it never read.</summary>
-        public DateTimeOffset? Mark { get { lock (_sessions) return _mark; } }
+        /// <summary>Each state the entry's acknowledgment of a message moved through, in order.</summary>
+        public IReadOnlyList<string> Acks(string message)
+        {
+            lock (_sessions) return [.. _acked.Where(ack => ack.Message == message).Select(ack => ack.State)];
+        }
 
         public string State(string id)
         {
@@ -276,18 +318,23 @@ public sealed class ChannelNextStepTickTests : IDisposable
             lock (_sessions) return _quest["status"]!.GetValue<string>();
         }
 
-        /// <summary>Another session's message, from <paramref name="repository"/>, to <c>engine</c>: the moment it was posted.</summary>
-        public DateTimeOffset Post(string id, string repository, string text)
+        /// <summary>
+        /// Another session's message, from <paramref name="repository"/>, to <c>engine</c>, at its level (none for one from before):
+        /// the moment it was posted.
+        /// </summary>
+        public DateTimeOffset Post(string id, string repository, string text, bool? urgent = null)
         {
             var at = DateTimeOffset.UtcNow.AddMinutes(-1);
             lock (_sessions)
             {
-                _items.Add(new JsonObject
+                var item = new JsonObject
                 {
                     ["kind"] = "message", ["id"] = id, ["person"] = false, ["session"] = "other-1", ["repository"] = repository,
                     ["agent"] = "acp-stub", ["entry"] = $"ask:a1/{repository}", ["to"] = "engine", ["text"] = text,
                     ["at"] = at.ToString("O"),
-                });
+                };
+                if (urgent is { } level) item["urgent"] = level;
+                _items.Add(item);
             }
 
             return at;
@@ -393,16 +440,43 @@ public sealed class ChannelNextStepTickTests : IDisposable
                         return (200, new JsonObject
                         {
                             ["ask"] = "a1", ["entry"] = request.QueryString["entry"],
-                            ["items"] = new JsonArray([.. _items.Select(item => item.DeepClone())]),
-                            ["unread"] = _items.Count(item => _mark is null || DateTimeOffset.Parse(item["at"]!.GetValue<string>()) > _mark),
-                            ["mark"] = _mark?.ToString("O"),
+                            ["items"] = new JsonArray([.. _items.Select(item =>
+                            {
+                                var answered = item.DeepClone().AsObject();
+                                if (_acks.TryGetValue(item["id"]!.GetValue<string>(), out var ack))
+                                {
+                                    answered["ack"] = ack.State;
+                                    answered["ackSession"] = ack.Session;
+                                }
+
+                                return answered;
+                            })]),
+                            ["unread"] = _items.Count,
                         }.ToJsonString());
 
-                    case ("POST", "/api/asks/a1/channel/read"):
+                    case ("POST", "/api/asks/a1/channel/ack"):
                     {
-                        var through = DateTimeOffset.Parse(Body()["through"]!.GetValue<string>());
-                        if (_mark is null || through > _mark) _mark = through;
-                        return (200, new JsonObject { ["mark"] = _mark?.ToString("O") }.ToJsonString());
+                        // As the service's one statement: a claim only where none is held, a let-go only of one's own claim.
+                        var body = Body();
+                        var (state, session) = (body["state"]!.GetValue<string>(), body["session"]?.GetValue<string>());
+                        var changed = new JsonArray();
+                        foreach (var id in body["messages"]!.AsArray().Select(m => m!.GetValue<string>()))
+                        {
+                            var held = _acks.TryGetValue(id, out var ack) ? ack : default;
+                            var moves = state switch
+                            {
+                                "taking" => held.State is null,
+                                "released" => held.State == "taking" && held.Session == session,
+                                _ => true,
+                            };
+                            if (!moves) continue;
+                            if (state == "released") _acks.Remove(id);
+                            else _acks[id] = (state, session);
+                            _acked.Add((id, state));
+                            changed.Add(id);
+                        }
+
+                        return (200, new JsonObject { ["acknowledged"] = changed }.ToJsonString());
                     }
 
                     default:

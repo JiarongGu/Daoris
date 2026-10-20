@@ -924,7 +924,15 @@ public sealed class ChannelDesk(
         var repositories = await RepositoriesAsync(ask, ct).ConfigureAwait(false);
         var open = (await QuestsOfAsync(ask, ct).ConfigureAwait(false)).Any(q => q.Status is QuestStatus.Open or QuestStatus.Taken);
         var here = open ? new HashSet<string>(StringComparer.OrdinalIgnoreCase) : await EntriesHereAsync(ask, ct).ConfigureAwait(false);
-        var acks = (await store.AcksOfAsync(ask.Id, ct).ConfigureAwait(false))
+        var rows = await store.AcksOfAsync(ask.Id, ct).ConfigureAwait(false);
+        // A claim whose part no longer runs holds nothing: the message waits for the entry's next part (the design §6).
+        var stale = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var holder in rows.Where(row => row.Ack.State == ChannelAcks.Taking).Select(row => row.Ack.Session).OfType<string>().Distinct())
+        {
+            if (await StaleAsync(holder, ct).ConfigureAwait(false)) stale.Add(holder);
+        }
+
+        var acks = rows.Where(row => !(row.Ack.State == ChannelAcks.Taking && row.Ack.Session is { } holder && stale.Contains(holder)))
             .ToDictionary(row => (row.Entry.ToLowerInvariant(), row.Message), row => row.Ack);
 
         foreach (var message in messages)
@@ -971,10 +979,26 @@ public sealed class ChannelDesk(
 
         var read = new ChannelRead(
             [.. messages.Where(m => from is null || m.At > from)], [.. lines.Where(l => from is null || l.At > from)], unread, mark);
-        // COWORK1d: the person reads what each message reached; an entry reads what it acknowledged, by message id.
+        // COWORK1d: the person reads what each message reached; an entry reads what it acknowledged, by message id, a claim whose part
+        // no longer runs read as none, so the entry's next part is handed it.
         return entry == PersonEntry
             ? read with { Receipts = await ReceiptsAsync(ask, messages, ct).ConfigureAwait(false) }
-            : read with { Acknowledged = await AcknowledgedAsync(ask.Id, entry, ct).ConfigureAwait(false) };
+            : read with { Acknowledged = await LiveAsync(await AcknowledgedAsync(ask.Id, entry, ct).ConfigureAwait(false), ct).ConfigureAwait(false) };
+    }
+
+    /// <summary>The acknowledgments with each claim whose holder no longer runs left out (the design §6: a restart's claim is the next part's).</summary>
+    private async Task<IReadOnlyDictionary<string, ChannelAck>> LiveAsync(IReadOnlyDictionary<string, ChannelAck> acknowledged, CancellationToken ct)
+    {
+        var stale = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var holder in acknowledged.Values.Where(ack => ack.State == ChannelAcks.Taking).Select(ack => ack.Session).OfType<string>().Distinct())
+        {
+            if (await StaleAsync(holder, ct).ConfigureAwait(false)) stale.Add(holder);
+        }
+
+        return stale.Count == 0
+            ? acknowledged
+            : acknowledged.Where(pair => !(pair.Value.State == ChannelAcks.Taking && pair.Value.Session is { } holder && stale.Contains(holder)))
+                .ToDictionary(pair => pair.Key, pair => pair.Value, StringComparer.Ordinal);
     }
 
     /// <summary>An entry's acknowledgments on an ask's channel, by message id.</summary>

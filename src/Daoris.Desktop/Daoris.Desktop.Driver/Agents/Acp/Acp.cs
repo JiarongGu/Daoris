@@ -369,6 +369,12 @@ public sealed class AcpSession(
     private Action<ChatMessage>? _asked;
 
     /// <summary>
+    /// A driven run's inbox (COWORK1d, the message-urgency design §2.3): told on the reader's thread the moment the answer to the last
+    /// prompt open is read, so it refuses another agent's claim from then on, before the run judges its next step.
+    /// </summary>
+    private DrivenInbox? _inbox;
+
+    /// <summary>
     /// One prompt on the wire: the person's words, or null for the driver's own — and whether the session has taken them.
     /// </summary>
     private sealed class OpenPrompt(ChatMessage? words)
@@ -562,6 +568,7 @@ public sealed class AcpSession(
         Func<CancellationToken, Task<bool>>? waitsOnBackground = null, Func<Task>? attempting = null)
     {
         _asked = asked;
+        _inbox = inbox;
         try
         {
             if (resume is null) await OpenAsync(cwd, ct, servers).ConfigureAwait(false);
@@ -1310,9 +1317,11 @@ public sealed class AcpSession(
         }
 
         ChatMessage? taken = null;
+        bool last;
         lock (_promptsGate)
         {
             _prompts.Remove(open);
+            last = _prompts.Count == 0;
             // 🔴 USERSHOWN1: an error hands the turn to nothing. The install's record kept a word as taken at the instant its
             // door failed (ECONNRESET), the agent never having read it. The word is taken once the agent does something for
             // it (TakeLate, a conversation's door going on after the error), or is handed back as never reached.
@@ -1326,6 +1335,10 @@ public sealed class AcpSession(
         }
 
         if (taken is not null) Asked(taken);
+
+        // 🔴 COWORK1d (trap 3, the design §2.3): the last open prompt is answered, so the turn is over; a claim written from here on would
+        // start a turn of its own, so the inbox refuses claims before the run judges its next step.
+        if (last) _inbox?.LastAnswered();
 
         // A prompt fewer is open: the wait for a woken turn reads again whether its quiet may run (BGWAIT2).
         _wake.Stir();

@@ -937,26 +937,36 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
     }
 
     /// <summary>
-    /// Move an entry's read mark on an ask's channel to <paramref name="through"/> (SESSONE2a's <c>POST …/channel/read</c>): what
-    /// reached a running part, or what a starting part was handed (SESSONE2b). A mark never moves back; a host without the door, or
-    /// without the ask, moves none, and the next read hands the same messages again.
+    /// An entry's acknowledgment of messages on an ask's channel by their ids (COWORK1d's <c>POST …/channel/ack</c>; the message-urgency
+    /// design §6): a part's claim (<c>taking</c>), one part's only, its letting go (<c>released</c>), a start's packet (<c>taken</c>,
+    /// <c>partly</c>), the write (<c>sent</c>) and the door's word (<c>taken</c>). Answers the ids it changed: for a claim, those this
+    /// part won. A host without the door, or without the ask, changes none, so nothing is claimed and the messages wait on the channel
+    /// for the agent's own read.
     /// </summary>
-    /// <exception cref="DriverException">The host refused the move.</exception>
-    public async Task ChannelReadAsync(string ask, string entry, DateTimeOffset through, CancellationToken ct = default)
+    /// <exception cref="DriverException">The host refused the acknowledgment.</exception>
+    public async Task<IReadOnlyList<string>> ChannelAckAsync(
+        string ask, string entry, string session, string state, IReadOnlyList<string> messages, CancellationToken ct = default)
     {
         var body = WriteJson(writer =>
         {
             writer.WriteStartObject();
             writer.WriteString("entry", entry);
-            writer.WriteString("through", Moments.Write(through));
+            writer.WriteString("session", session);
+            writer.WriteString("state", state);
+            writer.WriteStartArray("messages");
+            foreach (var message in messages) writer.WriteStringValue(message);
+            writer.WriteEndArray();
             writer.WriteEndObject();
         });
-        var (ok, status, payload, _) = await PostJsonAsync(
-            $"/api/asks/{Uri.EscapeDataString(ask.TrimStart('#'))}/channel/read", body, ct).ConfigureAwait(false);
-        if (!ok && status != (int)System.Net.HttpStatusCode.NotFound)
-        {
-            throw new DriverException($"the service would not move `{entry}`'s mark on ask `#{ask}`'s channel: {payload}");
-        }
+        var (ok, status, payload, root) = await PostJsonAsync(
+            $"/api/asks/{Uri.EscapeDataString(ask.TrimStart('#'))}/channel/ack", body, ct).ConfigureAwait(false);
+        if (status == (int)System.Net.HttpStatusCode.NotFound) return [];
+        if (!ok) throw new DriverException($"the service would not keep `{entry}`'s {state} of ask `#{ask}`'s channel: {payload}");
+
+        return root is { ValueKind: JsonValueKind.Object } answered
+               && answered.TryGetProperty("acknowledged", out var changed) && changed.ValueKind == JsonValueKind.Array
+            ? [.. changed.EnumerateArray().Where(id => id.ValueKind == JsonValueKind.String).Select(id => id.GetString()!)]
+            : [];
     }
 
     /// <summary>

@@ -118,6 +118,19 @@ public sealed record ChatMessage(string Text, IReadOnlyList<KeptFile> Files)
     public ChannelItemView? Channel { get; init; }
 
     /// <summary>
+    /// Another agent's claim held only to ride a prompt the run sends anyway (COWORK1d, D188 point 4; the message-urgency design §4.2):
+    /// an ordinary claim, or any claim on a door that takes words only at its turn's end. Alone at a turn's end it makes no turn and is
+    /// let go for the entry's next part; beside a word that makes one, it goes with it, in the order said. Never listed as the person's.
+    /// </summary>
+    internal bool Rides { get; init; }
+
+    /// <summary>
+    /// Tells the entry the channel message these words carry (COWORK1d, the design §6) reached a state: <c>sent</c> once written,
+    /// <c>taken</c> on the door's word, <c>released</c> when a part let its claim go unsent. Null for every other message. Never faults.
+    /// </summary>
+    internal Action<string>? Acknowledge { get; init; }
+
+    /// <summary>
     /// Daoris's own words to a running session (COWORK1b, D188): a reopen told, a step's go-on, at urgent. The record keeps them as
     /// Daoris's, never the person's (<see cref="Words"/>); the page's queue never lists them, and the run judges them again by their
     /// key where they leave a hold for the wire (<see cref="DaorisWords.GoesAsync"/>). Null for every other message.

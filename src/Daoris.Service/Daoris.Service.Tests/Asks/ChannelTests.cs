@@ -262,6 +262,26 @@ public sealed class ChannelTests : IAsyncLifetime
         Assert.Equal((ChannelAcks.Taken, "next1"), (read.Acknowledged[id].State, read.Acknowledged[id].Session));
     }
 
+    /// <summary>
+    /// 🔴 The design §6: a claim left by a part that no longer runs (a restart cut it off) reads to its entry as none and to the person
+    /// as waiting, so the entry's next part is handed it and claims it.
+    /// </summary>
+    [Fact]
+    public async Task A_claim_whose_part_no_longer_runs_reads_as_none_and_goes_to_the_next_part()
+    {
+        var (ask, _, session) = await AskedAsync();
+        var entry = $"ask:{ask.Id}/reports";
+        var id = (await _channel.PostAsPersonAsync(ask.Id, "use the older bridge", "reports", null, Now.AddMinutes(1))).Message!.Id;
+        await _channel.AcknowledgeAsync(ask.Id, entry, session.Id, ChannelAcks.Taking, [id], Now.AddMinutes(2));
+        Assert.Equal(ChannelAcks.Taking, (await _channel.ReadAsync(ask.Id, entry, null, false))!.Acknowledged[id].State);
+
+        await _ledger.AdvanceAsync(session.Id, "failed", null, null, null, Now.AddMinutes(3));
+
+        Assert.False((await _channel.ReadAsync(ask.Id, entry, null, false))!.Acknowledged.ContainsKey(id));
+        Assert.Equal(ChannelReceipts.Waiting, Assert.Single((await _channel.ReadAsync(ask.Id, ChannelDesk.PersonEntry, null, false))!.Receipts[id]).State);
+        Assert.Equal([id], await _channel.AcknowledgeAsync(ask.Id, entry, "next1", ChannelAcks.Taking, [id], Now.AddMinutes(4)));
+    }
+
     /// <summary>The entry's mark, kept for display, moves to before the oldest message for it that it has not acknowledged.</summary>
     [Fact]
     public async Task The_entrys_mark_stays_before_the_oldest_message_it_has_not_acknowledged()
