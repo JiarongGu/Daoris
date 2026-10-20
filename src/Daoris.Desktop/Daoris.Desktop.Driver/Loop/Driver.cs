@@ -3000,7 +3000,7 @@ public sealed class Driver(
         // 🔴 SESSCTX1c (D189's amendment, the session-context design §2): a native resume whose harness ended on a failed exit before it
         // named its conversation proves nothing of its loss, so it is tried once more as the same resume, the same conversation, account
         // and access, before its conclusion reads a second such end as `exited`. Never after a stop.
-        if (structured is not null && resume is { Named: false, Refused: null } && exitCode is int early && early != 0
+        if (structured is not null && resume is { Named: false, Refused: null, Retried: false } && exitCode is int early && early != 0
             && !Context.Processes.WasStopRequested(sessionId))
         {
             (exitCode, used) = await GoOns.AgainAsync(

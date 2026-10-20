@@ -433,30 +433,129 @@ public sealed class SessionMessagesTickTests : IDisposable
     }
 
     /// <summary>
-    /// SAIDBACK1e: a record moved to working before its run's spawn goes back as it ended where the spawn fails, its words waiting
-    /// on it as said, never `failed` with them. Its quest closed, nothing carries them on, so they wait marked, as words a resume
-    /// the agent refused leave there, until more are said.
+    /// 🔴 SESSCTX1c (D189's amendment, the session-context design §2): a resumed run whose process could not start is a start failure,
+    /// never a move. The record the move to working took up ends <c>failed</c> with the spawn's words, as a first start's failed spawn
+    /// does, so the strikes count it; its words wait on it to go again, said beside them; no new session opens and nothing is handed
+    /// on. Failing again at the next look, its words failed twice running and wait for the person, marked, as a failed turn's do.
     /// </summary>
     [Fact]
-    public async Task Words_whose_run_could_not_be_spawned_wait_on_the_record_as_it_ended()
+    public async Task A_resumed_run_that_could_not_start_fails_as_a_start_and_its_words_wait_on_it()
     {
         await using var service = SaidStandIn.Start(_repository);
         await Protocol(service, "resumes").RunOnceAsync().WaitAsync(Poll.Patience);
         Assert.Equal("w1", await service.SayAsync("s1", "Also log the port."));
-        var ended = (service.State("s1"), service.Note("s1"));
         var notAProgram = Path.Combine(_home, "not-a-program.txt");
         File.WriteAllText(notAProgram, "not a program");
 
         var look = await Protocol(service, "resumes", command: [notAProgram]).RunOnceAsync().WaitAsync(Poll.Patience);
 
         var seen = $"look: {string.Join(" | ", look.Events)}\nafter: {service.Record("s1")}";
-        Assert.True(service.MovesAfterWords("s1").SequenceEqual(["working", "completed"]), seen);
-        Assert.True((service.State("s1"), service.Note("s1")) == ended, seen);
+        Assert.True(service.SessionCount == 1, seen);
+        Assert.True(service.MovesAfterWords("s1").SequenceEqual(["working", "failed"]), seen);
+        Assert.EndsWith("Your words wait to go again at the next look.", service.Note("s1"));
         Assert.True(service.Said("s1").SequenceEqual(["w1"]), seen);
         Assert.Empty(service.Taken);
-        Assert.Contains(Events("s1"), e => e.Words is ["w1"] && e.Why == ContinueWhy.Refused);
+        Assert.Contains(Events("s1"), e => e.Words is ["w1"] && e.Parts?.Any(part => part.Code == NoteCodes.EndedWordsWait.Code) == true);
+        Assert.DoesNotContain(Events("s1"), e => e.Why is not null);
+        Assert.Null(new GoOnMarks(_home).Read("s1"));
+        Assert.Contains(look.Events, line => line.StartsWith("failed  session s1", StringComparison.Ordinal));
+
+        await Protocol(service, "resumes", command: [notAProgram]).RunOnceAsync().WaitAsync(Poll.Patience);
+
+        seen = $"after: {service.Record("s1")}";
+        Assert.True(service.SessionCount == 1, seen);
+        Assert.EndsWith("Your words failed twice and wait for you: they go again with the next words you say.", service.Note("s1"));
+        Assert.Equal(GoOnMarks.FailedTwice, new GoOnMarks(_home).Read("s1")!.Why);
         Assert.Single(Heard(), line => line["method"]!.GetValue<string>() == "session/new");
         Assert.DoesNotContain(Heard(), line => line["method"]!.GetValue<string>() == "session/resume");
+    }
+
+    /// <summary>
+    /// 🔴 SESSCTX1c (D189's amendment): a driven record whose resume another client of its agent refuses (<c>elsewhere</c>) waits for
+    /// the person, even with its quest taken, since a second writer in its tree could redo its work: no new session opens, its words
+    /// stay waiting and marked, its note says why, and no later look carries its quest on meanwhile. A word said since tries it again.
+    /// </summary>
+    [Fact]
+    public async Task A_taken_quests_record_whose_conversation_another_client_holds_waits_for_the_person()
+    {
+        await using var service = SaidStandIn.Start(_repository);
+        await FailedFirstRunAsync(service);
+        Assert.Equal("w1", await service.SayAsync("s1", "Also log the port."));
+
+        var look = await Protocol(service, "elsewhere").RunOnceAsync().WaitAsync(Poll.Patience);
+
+        var seen = $"look: {string.Join(" | ", look.Events)}\nafter: {service.Record("s1")}";
+        Assert.True(service.SessionCount == 1, seen);
+        Assert.True((service.State("s1"), service.Status("q1")) == ("failed", "Taken"), seen);
+        Assert.EndsWith("It cannot go on in this session, because its conversation is open in another client of its agent.", service.Note("s1"));
+        Assert.Equal(["w1"], service.Said("s1"));
+        Assert.Equal(ContinueWhy.Elsewhere, new GoOnMarks(_home).Read("s1")!.Why);
+        Assert.Contains(Events("s1"), e => e.Words is ["w1"] && e.Why == ContinueWhy.Elsewhere);
+
+        var next = await Protocol(service, "elsewhere").RunOnceAsync().WaitAsync(Poll.Patience);
+        Assert.True(service.SessionCount == 1, $"look: {string.Join(" | ", next.Events)}\nafter: {service.Record("s1")}");
+        Assert.Single(Heard(), line => line["method"]!.GetValue<string>() == "session/resume");
+
+        await service.SayAsync("s1", "Try again now.");
+        await Protocol(service, "elsewhere").RunOnceAsync().WaitAsync(Poll.Patience);
+        Assert.Equal(2, Heard().Count(line => line["method"]!.GetValue<string>() == "session/resume"));
+    }
+
+    /// <summary>
+    /// 🔴 SESSCTX1c (D189's amendment, the session-context design §2): the native door's harness that ends on a failed exit before it
+    /// names its conversation proves nothing of its loss, so the same resume is tried once more; where that one opens it, the words
+    /// go on in the same record and its own conversation. Where it ends the same way again, the reason is <c>exited</c>, never
+    /// <c>gone</c>, and a closed quest's session waits with its words marked by it.
+    /// </summary>
+    [Theory]
+    [InlineData(1)]
+    [InlineData(2)]
+    public async Task A_native_resume_that_ends_before_naming_its_conversation_is_tried_once_more(int exits)
+    {
+        var profile = DaorisHome.Entry(_home, HomeEntry.AgentHomes, "claude-code", "work");
+        Directory.CreateDirectory(profile);
+        File.WriteAllText(DaorisHome.Entry(_home, HomeEntry.Harnesses), """{"defaults":{"claude-code":"work"}}""");
+        var go = Path.Combine(_home, "go.flag");
+        File.WriteAllText(go, "");
+        await using var service = SaidStandIn.Start(_repository);
+        var adapters = AdapterSet.Built();
+        var config = DriverConfig.Empty with
+        {
+            Drivable = ["engine"],
+            Trees = ["engine"],
+            Adapter = "claude-code",
+            TimeoutMinutes = 1,
+            Commands = new Dictionary<string, IReadOnlyList<string>> { ["claude-code"] = ["node", NativeHarness(), Log, Path.Combine(_home, "taken.flag"), go] },
+        };
+        Daoris.Driver.Driver Native() => new(
+            new ServiceClient(service.Url, null), config, adapters, _home, processes: new SessionProcesses(),
+            harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)));
+        await Native().RunOnceAsync().WaitAsync(Poll.Patience);
+        Assert.Equal(("completed", "Done"), (service.State("s1"), service.Status("q1")));
+        Assert.Equal("w1", await service.SayAsync("s1", "Also log the port."));
+        File.WriteAllText(Path.Combine(_home, "exits.count"), exits.ToString(System.Globalization.CultureInfo.InvariantCulture));
+
+        var look = await Native().RunOnceAsync().WaitAsync(Poll.Patience);
+
+        var runs = Heard();
+        var seen = $"look: {string.Join(" | ", look.Events)}\nafter: {service.Record("s1")}\nruns: {string.Join(" | ", runs.Select(run => run.ToJsonString()))}";
+        Assert.True(service.SessionCount == 1, seen);
+        Assert.True(runs.Count(run => run["resume"]?.GetValue<string>() == "native-1") == 2, seen);
+        Assert.True(runs.Count(run => run["exited"] is not null) == exits, seen);
+        if (exits == 1)
+        {
+            Assert.True(service.State("s1") == "completed" && service.Said("s1").Count == 0, seen);
+            Assert.Equal([("s1", "w1", (string?)null)], service.Taken);
+            Assert.StartsWith("Also log the port.", runs[^1]["prompt"]!.GetValue<string>(), StringComparison.Ordinal);
+        }
+        else
+        {
+            Assert.True(service.State("s1") == "completed", seen);
+            Assert.EndsWith("It cannot go on in this session, because its agent ended before it reopened its conversation.", service.Note("s1"));
+            Assert.Equal(["w1"], service.Said("s1"));
+            Assert.Equal(ContinueWhy.Exited, new GoOnMarks(_home).Read("s1")!.Why);
+            Assert.DoesNotContain(Events("s1"), e => e.Why == ContinueWhy.Gone);
+        }
     }
 
     /// <summary>
@@ -485,7 +584,8 @@ public sealed class SessionMessagesTickTests : IDisposable
         Assert.Equal("w2", await service.SayAsync("s1", "And use 9090."));
         service.TakeBackAtMoveBack("s1", "w1");
 
-        var look = await Protocol(service, "elsewhere").RunOnceAsync().WaitAsync(Poll.Patience);
+        // A refusal on the wire carries a driven record on (SESSCTX1c); another client holding it would hold it instead.
+        var look = await Protocol(service, "refuses").RunOnceAsync().WaitAsync(Poll.Patience);
 
         var seen = $"look: {string.Join(" | ", look.Events)}\nafter: {service.Record("s1")}\ntaken: {string.Join(" | ", service.Taken)}";
         Assert.True(service.SessionCount == 2, seen);
@@ -507,7 +607,7 @@ public sealed class SessionMessagesTickTests : IDisposable
         var branches = Branches();
         var folders = TreeFolders();
 
-        var look = await Protocol(service, "elsewhere").RunOnceAsync().WaitAsync(Poll.Patience);
+        var look = await Protocol(service, "refuses").RunOnceAsync().WaitAsync(Poll.Patience);
 
         var seen = $"look: {string.Join(" | ", look.Events)}\nafter: {service.Record("s1")}\nbranches: {string.Join(",", Branches())}";
         Assert.True(service.SessionCount == 1, seen);
@@ -520,7 +620,8 @@ public sealed class SessionMessagesTickTests : IDisposable
     /// <summary>
     /// The protocol door's stand-in: it names its conversation <c>conv-&lt;session&gt;</c>, and on its first prompt takes and
     /// closes the quest. The mode is how it resumes: <c>resumes</c> honours <c>session/resume</c>, and a resumed prompt is
-    /// logged with its blocks; <c>elsewhere</c> refuses it as <c>codex-acp</c> does a thread another client holds.
+    /// logged with its blocks; <c>elsewhere</c> refuses it as <c>codex-acp</c> does a thread another client holds; <c>refuses</c>
+    /// refuses it otherwise, on the wire, proving no loss.
     /// </summary>
     private string Agent()
     {
@@ -555,6 +656,9 @@ public sealed class SessionMessagesTickTests : IDisposable
                 if (mode === 'elsewhere') {
                   send({ jsonrpc: '2.0', id: frame.id, error: { code: -32600,
                     message: 'This Codex session is in use by another Codex client.', data: { reason: 'thread_active_writer' } } });
+                } else if (mode === 'refuses') {
+                  // SESSCTX1c: a refusal on the wire that proves no loss and names no other client.
+                  send({ jsonrpc: '2.0', id: frame.id, error: { code: -32603, message: 'Internal error: the thread could not be loaded' } });
                 } else {
                   conversation = frame.params.sessionId;
                   resumed = true;
@@ -608,7 +712,7 @@ public sealed class SessionMessagesTickTests : IDisposable
     {
         var script = Path.Combine(_home, "claude.mjs");
         File.WriteAllText(script, """
-            import { appendFileSync, existsSync, writeFileSync } from 'node:fs';
+            import { appendFileSync, existsSync, readFileSync, writeFileSync } from 'node:fs';
             const [log, taken, go, ...argv] = process.argv.slice(2);
             if (argv.includes('--version')) { console.log('2.1.0 (Claude Code)'); process.exit(0); }
             if (argv[0] === 'auth' && argv[1] === 'status') { console.log('{"loggedIn": true}'); process.exit(0); }
@@ -619,16 +723,25 @@ public sealed class SessionMessagesTickTests : IDisposable
             const line = (frame) => process.stdout.write(JSON.stringify(frame) + '\n');
             const respond = (body) => fetch(`${url}/api/quests/q1/respond`, {
               method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
-            appendFileSync(log, JSON.stringify({ resume, prompt: resume ? prompt : null }) + '\n');
-            line({ type: 'system', subtype: 'init', session_id: resume ?? 'native-1', cwd: process.cwd(), tools: [], model: 'stub' });
-            if (!resume) {
-              await respond({ action: 'take' });
-              writeFileSync(taken, '');
-              for (let waited = 0; !existsSync(go) && waited < 30000; waited += 50) await new Promise((r) => setTimeout(r, 50));
-              await respond({ action: 'done', reason: 'served the report' });
+            // SESSCTX1c: while `exits.count` beside the log says so, a resume ends on a failed exit before it names its conversation.
+            const exits = log.replace(/agent\.log$/, 'exits.count');
+            const left = resume && existsSync(exits) ? Number(readFileSync(exits, 'utf8')) : 0;
+            if (left > 0) {
+              writeFileSync(exits, String(left - 1));
+              appendFileSync(log, JSON.stringify({ resume, prompt, exited: true }) + '\n');
+              process.exitCode = 1;
+            } else {
+              appendFileSync(log, JSON.stringify({ resume, prompt: resume ? prompt : null }) + '\n');
+              line({ type: 'system', subtype: 'init', session_id: resume ?? 'native-1', cwd: process.cwd(), tools: [], model: 'stub' });
+              if (!resume) {
+                await respond({ action: 'take' });
+                writeFileSync(taken, '');
+                for (let waited = 0; !existsSync(go) && waited < 30000; waited += 50) await new Promise((r) => setTimeout(r, 50));
+                await respond({ action: 'done', reason: 'served the report' });
+              }
+              line({ type: 'assistant', message: { role: 'assistant', content: [{ type: 'text', text: resume ? 'Logged the port.' : 'Served.' }] } });
+              line({ type: 'result', subtype: 'success', is_error: false, result: 'ok' });
             }
-            line({ type: 'assistant', message: { role: 'assistant', content: [{ type: 'text', text: resume ? 'Logged the port.' : 'Served.' }] } });
-            line({ type: 'result', subtype: 'success', is_error: false, result: 'ok' });
             """);
         return script;
     }
@@ -904,6 +1017,8 @@ public sealed class SessionMessagesTickTests : IDisposable
                         else if (note is not null)
                         {
                             session["note"] = note;
+                            // Its lines by code, as the service keeps them beside the note (LANG1a): what a second failed start reads.
+                            session["noteParts"] = body["noteParts"]?.DeepClone();
                         }
 
                         session["state"] = to;

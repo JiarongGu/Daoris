@@ -1002,6 +1002,8 @@ public sealed class ChatRunner : IDisposable
         var workTree = place.Tree;
         var transcript = DaorisHome.Entry(_home, HomeEntry.Sessions, $"{sessionId}.log");
         Directory.CreateDirectory(Path.GetDirectoryName(transcript)!);
+        // The place as asked, before its mode is applied below: what the one retry of a native go-on runs in again (SESSCTX1c).
+        var asked = place;
 
         Process process;
         string? rules = null;
@@ -1278,8 +1280,28 @@ public sealed class ChatRunner : IDisposable
             _ => _context.Watching.TryRemove(new KeyValuePair<string, Task>(sessionId, watch)), TaskScheduler.Default);
         // Its process is tracked now (the watch's first statements): the words it goes on with may reach it.
         tracked?.TrySetResult(true);
+        // 🔴 SESSCTX1c (D189's amendment): a native go-on whose harness ended before naming its conversation is tried once more as the
+        // same resume, its record still working, once its watch let its process, its files and its turns go; never while closing.
+        if (goOn is not null)
+        {
+            _ = AgainAsync(watch, () => RunAsync(
+                sessionId, message, resolved, selection, config, asked, onEnded, CancellationToken.None, new GoingOn(goOn.Record, goOn.Ask)));
+        }
 
         return new(sessionId, message);
+    }
+
+    /// <summary>The one retry of a native go-on (SESSCTX1c), where its watch asked for it and the runner is not closing.</summary>
+    private async Task AgainAsync(Task<bool> watch, Func<Task<ChatStart>> again)
+    {
+        try
+        {
+            if (await watch.ConfigureAwait(false) && !_context.Closing) await again().ConfigureAwait(false);
+        }
+        catch (Exception)
+        {
+            // Its own run concludes the record whatever fails there; a watch that threw has said its own failure.
+        }
     }
 
     /// <summary>
@@ -1856,7 +1878,11 @@ public sealed class ChatRunner : IDisposable
     /// <param name="drivesBrowser">Whether it was handed a server that drives Daoris's browser (BRW8), kept beside its process.</param>
     /// <param name="said">Told what its door says about its account's windows (TOOL6c), on either structured door.</param>
     /// <param name="watched">Its adapter, whether its conversation is kept, and the ended chat it goes on with (MSG1c).</param>
-    private async Task WatchAsync(
+    /// <returns>
+    /// Whether the chat it goes on with is to be tried once more as the same resume (SESSCTX1c): its native harness ended on a failed
+    /// exit before it named its conversation, the first time. The record is left working, and nothing is concluded.
+    /// </returns>
+    private async Task<bool> WatchAsync(
         string sessionId, Process process, string transcript, Func<string, string, Task>? onEnded,
         Action<AcpUsage>? measured, string? rules, IStreamMapper? mapper, ProtocolChat? chat, NativeChat? native,
         string? servers, bool drivesBrowser, Action<JsonElement>? said, Watched watched)
@@ -1921,18 +1947,26 @@ public sealed class ChatRunner : IDisposable
             await process.WaitForExitAsync().ConfigureAwait(false);
             await capture.ConfigureAwait(false);
 
-            // 🔴 The native door's harness ended on a failed exit before naming its conversation: it never opened it, which
-            // is how one it no longer has ends there (MSG1b's rule). Read from the structure, never from its words.
+            // 🔴 The native door's harness ended on a failed exit before naming its conversation: it never opened it, which a
+            // crash, a failed sign-in or a flag it rejected ends the same way, so it proves nothing of its loss (SESSCTX1c, D189's
+            // amendment). The same resume is tried once more, once this watch has let its process go; a second such end is
+            // `exited`, never `gone`. Read from the structure, never from its words.
             if (goOn is { Ask.Refused: null } && mapper is not null && chat is null && !goOn.Ask.Named
                 && process.ExitCode != 0 && !_processes.WasStopRequested(sessionId))
             {
-                goOn.Ask.Refused = ContinueWhy.Of(ContinueWhy.Gone);
+                if (!goOn.Ask.Retried)
+                {
+                    goOn.Ask.Again();
+                    return true;
+                }
+
+                goOn.Ask.Refused = ContinueWhy.Of(ContinueWhy.Exited);
             }
 
             if (goOn?.Ask.Refused is { } refused)
             {
                 await _goOn.WentBackAsync(sessionId, goOn, refused, watched.Adapter, onEnded).ConfigureAwait(false);
-                return;
+                return false;
             }
 
             // What it consumed, where its door reported it — measured before the record moves, so a page
@@ -1953,6 +1987,7 @@ public sealed class ChatRunner : IDisposable
             var note = _processes.StopReason(sessionId)
                 ?? EndedNote(stopped, notKept: watched.Keeps && _context.Conversations.Read(sessionId) is null);
             await Conclude(sessionId, stopped ? "stopped" : "completed", note, onEnded).ConfigureAwait(false);
+            return false;
         }
         catch (Exception error)
         {
@@ -1965,10 +2000,11 @@ public sealed class ChatRunner : IDisposable
             if (goOn?.Ask.Refused is { } refused)
             {
                 await _goOn.WentBackAsync(sessionId, goOn, refused, watched.Adapter, onEnded).ConfigureAwait(false);
-                return;
+                return false;
             }
 
             await Conclude(sessionId, "failed", Observation.Failure(error.Message), onEnded).ConfigureAwait(false);
+            return false;
         }
         finally
         {
@@ -2474,8 +2510,12 @@ public sealed class ChatRunner : IDisposable
                     {
                         // The words an ended chat goes on with (MSG1c, D137 §2.2): the driver's first line, then each word under
                         // the id its record gave it, then all of them as one message, joined by a blank line, each with where
-                        // its files are kept (MSG1d3).
-                        foreach (var opening in goOn.Opening()) record(opening);
+                        // its files are kept (MSG1d3). SESSCTX1c: said once, though a resume tried once more takes them again.
+                        if (!goOn.Spoken)
+                        {
+                            foreach (var opening in goOn.Opening()) record(opening);
+                        }
+
                         line = adapter.FrameMessage(goOn.Prompt);
                     }
                     else
@@ -2488,9 +2528,14 @@ public sealed class ChatRunner : IDisposable
 
                     if (!processes.Send(sessionId, line))
                     {
-                        // Nothing is listening: the process is going, and its watch concludes the record.
-                        var gone = WordsNotes.NotSent();
-                        record(new SessionEvent { Kind = SessionEventKind.Note, Text = gone.Note, Parts = gone.Parts });
+                        // Nothing is listening: the process is going, and its watch concludes the record. SESSCTX1c: the words a
+                        // conversation goes on with are said by its watch, which tries the same resume once more or says why it could not.
+                        if (message.GoesOn is null)
+                        {
+                            var gone = WordsNotes.NotSent();
+                            record(new SessionEvent { Kind = SessionEventKind.Note, Text = gone.Note, Parts = gone.Parts });
+                        }
+
                         Gone();
                         return Task.CompletedTask;
                     }

@@ -931,6 +931,7 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
         HarnessWords own, CancellationToken ct)
     {
         _context.Output?.Append(sessionId, "— its harness ended before it reopened its conversation, so the same resume is tried once more.");
+        resume.Again();
         var process = await ProcessStarts.Shared.StartAsync(info, StartClass.Person, ct).ConfigureAwait(false)
             ?? throw new DriverException($"the {adapter.Name} adapter's process did not start");
         keep.Add(process);
