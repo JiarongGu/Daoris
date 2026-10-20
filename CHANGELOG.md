@@ -5,6 +5,9 @@ with the version and date at release.
 
 ## Unreleased
 
+- A session started under full access says so: its head wears a *Full access* warning chip, and its *Details* list each pause
+  (permission prompts, intake routing, landing, go-aheads, questions) as it was when the session started. A session started with
+  any pause on wears nothing new.
 - A session that goes on in a new part, on another agent, on another account or after it was cut off, is handed everything it
   took: every word you said, once, what each turn did, where the work stands and the last check that failed, not just its last
   words. A handed-over conversation opens with *Daoris's brief of the session it continues*, folded. A session's Parts strip
