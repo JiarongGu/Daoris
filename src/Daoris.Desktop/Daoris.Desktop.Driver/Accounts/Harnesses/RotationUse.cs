@@ -361,7 +361,7 @@ public sealed record UseCurve
     {
         if (raw.ValueKind != JsonValueKind.Object)
         {
-            return new CurveProblem("shape", "A curve is an object of windows, `session` or `weekly`, each a list of points [elapsed, used].");
+            return new CurveProblem("shape", "A curve is an object of windows, `session` or `weekly`, each a list of rows [elapsed, used].");
         }
 
         foreach (var window in raw.EnumerateObject())
@@ -374,13 +374,13 @@ public sealed record UseCurve
 
             if (window.Value.ValueKind != JsonValueKind.Array)
             {
-                return new CurveProblem("list", $"`{name}` is not a list of points [elapsed, used].", name);
+                return new CurveProblem("list", $"`{name}` is not a list of rows [elapsed, used].", name);
             }
 
             var count = window.Value.GetArrayLength();
             if (count is < 1 or > MostPoints)
             {
-                return new CurveProblem("count", $"`{name}` has {count} points — a window's curve has one to twelve.", name, Count: count);
+                return new CurveProblem("count", $"`{name}` has {count} rows — a window's curve has one to twelve.", name, Count: count);
             }
 
             (double Elapsed, double Used)? before = null;
@@ -390,29 +390,29 @@ public sealed record UseCurve
                 at++;
                 if (PointOf(point) is not { } read)
                 {
-                    return new CurveProblem("point", $"`{name}`'s point {at} is not two whole numbers [elapsed, used].", name, at);
+                    return new CurveProblem("point", $"`{name}`'s row {at} is not two whole numbers [elapsed, used].", name, at);
                 }
 
                 var (elapsed, used) = read;
                 if (elapsed is < 0 or > 100)
                 {
                     return new CurveProblem(
-                        "elapsed", $"`{name}`'s point {at} is at {Said(elapsed)}% of the window's time — elapsed is from 0 to 100.",
+                        "elapsed", $"`{name}`'s row {at} is at {Said(elapsed)}% of the window's time — elapsed is from 0 to 100.",
                         name, at, Said(elapsed));
                 }
 
                 if (used is < 0 or > 100)
                 {
                     return new CurveProblem(
-                        "used", $"`{name}`'s point {at} has used {Said(used)}% — used is from 0 to 100.", name, at, Said(used));
+                        "used", $"`{name}`'s row {at} has used {Said(used)}% — used is from 0 to 100.", name, at, Said(used));
                 }
 
                 if (before is { } earlier && elapsed <= earlier.Elapsed)
                 {
                     return new CurveProblem(
                         "rising",
-                        $"`{name}`'s point {at} is at {Said(elapsed)}% of the window's time, not after point {at - 1}'s "
-                        + $"{Said(earlier.Elapsed)}% — elapsed rises from point to point.",
+                        $"`{name}`'s row {at} is at {Said(elapsed)}% of the window's time, not after row {at - 1}'s "
+                        + $"{Said(earlier.Elapsed)}% — elapsed rises from row to row.",
                         name, at, Said(elapsed), Said(earlier.Elapsed));
                 }
 
@@ -420,7 +420,7 @@ public sealed record UseCurve
                 {
                     return new CurveProblem(
                         "falling",
-                        $"`{name}`'s point {at} has used {Said(used)}%, less than point {at - 1}'s {Said(had.Used)}% — used never falls.",
+                        $"`{name}`'s row {at} has used {Said(used)}%, less than row {at - 1}'s {Said(had.Used)}% — used never falls.",
                         name, at, Said(used), Said(had.Used));
                 }
 

@@ -386,30 +386,30 @@ function isOld(name: string): name is OldField {
  * its shape, elapsed from 0 to 100, used from 0 to 100, elapsed rising, used never falling.
  */
 export function curveProblem(curve: unknown): string | null {
-  if (!isObject(curve)) return 'A curve is an object of windows, `session` or `weekly`, each a list of points [elapsed, used].';
+  if (!isObject(curve)) return 'A curve is an object of windows, `session` or `weekly`, each a list of rows [elapsed, used].';
   for (const [window, points] of Object.entries(curve)) {
     if (!(CURVE_WINDOWS as readonly string[]).includes(window)) {
       return `\`${window}\` is not a window — a curve's windows are \`session\` and \`weekly\`.`;
     }
-    if (!Array.isArray(points)) return `\`${window}\` is not a list of points [elapsed, used].`;
+    if (!Array.isArray(points)) return `\`${window}\` is not a list of rows [elapsed, used].`;
     if (points.length < 1 || points.length > CURVE_MOST_POINTS) {
-      return `\`${window}\` has ${points.length} points — a window's curve has one to twelve.`;
+      return `\`${window}\` has ${points.length} rows — a window's curve has one to twelve.`;
     }
     let before: CurvePoint | null = null;
     for (const [index, point] of points.entries()) {
       const at = index + 1;
       if (!Array.isArray(point) || point.length !== 2 || !point.every((n) => typeof n === 'number' && Number.isInteger(n))) {
-        return `\`${window}\`'s point ${at} is not two whole numbers [elapsed, used].`;
+        return `\`${window}\`'s row ${at} is not two whole numbers [elapsed, used].`;
       }
       const [elapsed, used] = point as CurvePoint;
-      if (elapsed < 0 || elapsed > 100) return `\`${window}\`'s point ${at} is at ${elapsed}% of the window's time — elapsed is from 0 to 100.`;
-      if (used < 0 || used > 100) return `\`${window}\`'s point ${at} has used ${used}% — used is from 0 to 100.`;
+      if (elapsed < 0 || elapsed > 100) return `\`${window}\`'s row ${at} is at ${elapsed}% of the window's time — elapsed is from 0 to 100.`;
+      if (used < 0 || used > 100) return `\`${window}\`'s row ${at} has used ${used}% — used is from 0 to 100.`;
       if (before !== null && elapsed <= before[0]) {
-        return `\`${window}\`'s point ${at} is at ${elapsed}% of the window's time, not after point ${at - 1}'s ${before[0]}% — `
-          + 'elapsed rises from point to point.';
+        return `\`${window}\`'s row ${at} is at ${elapsed}% of the window's time, not after row ${at - 1}'s ${before[0]}% — `
+          + 'elapsed rises from row to row.';
       }
       if (before !== null && used < before[1]) {
-        return `\`${window}\`'s point ${at} has used ${used}%, less than point ${at - 1}'s ${before[1]}% — used never falls.`;
+        return `\`${window}\`'s row ${at} has used ${used}%, less than row ${at - 1}'s ${before[1]}% — used never falls.`;
       }
       before = [elapsed, used];
     }

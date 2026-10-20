@@ -384,8 +384,8 @@ test('`profile use` refuses what is not a setting, naming what is', () => {
   assert.match(refused('--curve', 'weekly=0:30', '--no-curve'), /`--curve` and `--no-curve` together/);
   // The curve's own rules say what the driver's say, word for word (the shared table's refusal rows).
   assert.match(refused('--curve', 'monthly=0:50'), /^`monthly` is not a window — a curve's windows are `session` and `weekly`\. /);
-  assert.match(refused('--curve', 'weekly=0:30,50:20'), /^`weekly`'s point 2 has used 20%, less than point 1's 30% — used never falls\. /);
-  assert.match(refused('--curve', 'session=0:150'), /^`session`'s point 1 has used 150% — used is from 0 to 100\. .*`--curve weekly=0:30,50:70,100:100`/);
+  assert.match(refused('--curve', 'weekly=0:30,50:20'), /^`weekly`'s row 2 has used 20%, less than row 1's 30% — used never falls\. /);
+  assert.match(refused('--curve', 'session=0:150'), /^`session`'s row 1 has used 150% — used is from 0 to 100\. .*`--curve weekly=0:30,50:70,100:100`/);
   // §16.6 retired *start on* and *sessions at once*: their flags are refused like any flag this door does not take.
   assert.match(refused('--prefer', 'left'), /`--prefer` is not a flag of `agent profile use` — it takes \[goal\|order\]/);
   assert.match(refused('--parallel', 'on'), /`--parallel` is not a flag of `agent profile use`/);
