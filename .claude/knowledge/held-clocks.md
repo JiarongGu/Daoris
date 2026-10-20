@@ -51,6 +51,12 @@ product being flaky. A wider window only moves the load at which it fails, and m
   out never ends, rather than timing the call with a `Stopwatch`. Where the bound is the code's constant, read it on a handed clock
   and move it (`HookPeer`'s and `HookProcess`'s grace, the driver tests' `Plugins/MovedClock.cs`, whose `Timed` says the code is
   waiting on it); where the claim is two constants, compare the constants.
+- **A wait the code holds is a wait on its clock** (TESTCLOCK3): the change stream reads a wait's bound on a handed `TimeProvider`,
+  and a test hands it one that stands still (`MovedClock` in the service tests, the HTTP tests' `MovableClock` through a host's
+  services). A wait that never ends by itself makes "at once" and "woken" mean an answer at all. To end it, move the clock past it.
+  Where the code waits on something it holds (a semaphore, a judge), the test holds that thing (`ChangeStream.HoldSamplerAsync`), or
+  hands a judge that never answers with no bound. A real process's clock cannot be handed: judge against the code's own bound (the
+  wait's 30 s, counted from the ask), never a few seconds of the test's.
 - **A negative wait is a signal** (TESTCLOCK2): "the edit has not finished within 400 ms" passes when a loaded edit has not begun.
   Wait instead for the code to say it is waiting (`RecordLock.Waiting`), then assert it has not finished.
 - **A bound that elapses only on failure is not a window: it reads `Poll.Patience`.** A test waiting on a signal (an answer, a
