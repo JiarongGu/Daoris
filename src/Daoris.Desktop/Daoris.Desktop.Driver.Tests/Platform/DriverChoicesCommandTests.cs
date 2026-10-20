@@ -81,6 +81,39 @@ public sealed class DriverChoicesCommandTests : IDisposable
         Assert.Equal(["engine"], DriverConfig.Load(Config).Drivable);
     }
 
+    /// <summary>
+    /// *Try again* alone judges from the planner's verdict over the service's snapshot (D194's PUSH1f2a note): where the service cannot
+    /// be read, nothing is guessed and nothing is written, and the words say how to give the count, as the CLI's did.
+    /// </summary>
+    [Fact]
+    public async Task A_retry_that_cannot_read_the_verdicts_writes_nothing_and_says_how_to_give_the_count()
+    {
+        var world = World() with { Verdicts = (_, _) => throw new HttpRequestException("No connection could be made") };
+
+        var exit = await DriverChoicesCommand.RunAsync(["retry", "q7"], world, CancellationToken.None);
+
+        Assert.Equal(2, exit);
+        Assert.StartsWith("daoris: cannot count the failures of `#q7`: this machine's session records could not be read — No connection could be made.",
+            _error.ToString(), StringComparison.Ordinal);
+        Assert.Contains("`daoris driver retry q7 --at <n>`", _error.ToString(), StringComparison.Ordinal);
+        Assert.False(File.Exists(Config));
+    }
+
+    /// <summary>A quest the verdicts neither parked nor held is refused alone as the window refuses it, in the catalogue's code.</summary>
+    [Fact]
+    public async Task A_retry_of_a_quest_neither_parked_nor_held_is_refused_alone_in_its_code()
+    {
+        var quest = new QuestView("q7", "game", "engine", "A title", "A body.", "Open");
+        var world = World() with { Verdicts = (_, _) => Task.FromResult<IReadOnlyList<Consideration>>([new Consideration(quest, StartVerdict.Start, "it may start")]) };
+
+        var exit = await DriverChoicesCommand.RunAsync(["retry", "q7"], world, CancellationToken.None);
+
+        Assert.Equal(2, exit);
+        Assert.Equal("daoris: #q7 is neither parked nor held by your stop on this machine, so there is nothing to try again. (QUEST_NOT_HELD)",
+            _error.ToString().TrimEnd());
+        Assert.False(File.Exists(Config));
+    }
+
     [Theory]
     [InlineData("workflow list")]
     [InlineData("work-cycle engine quest cycle.json")]

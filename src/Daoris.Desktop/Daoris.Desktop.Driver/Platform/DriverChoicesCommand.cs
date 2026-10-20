@@ -879,7 +879,7 @@ public static class DriverChoicesCommand
                 verdicts = await world.Verdicts(DriverConfig.Load(path), ct).ConfigureAwait(false);
             }
             catch (Exception unread) when (unread is HttpRequestException or TaskCanceledException or DriverException or InvalidOperationException
-                                               && unread is not DriverConfigUnreadableException)
+                                               && unread is not DriverConfigUnreadableException && !ct.IsCancellationRequested)
             {
                 var mark = before.ForgivenAt(quest);
                 throw new ChoiceWords($"cannot count the failures of `#{quest}`: this machine's session records could not be read — "
