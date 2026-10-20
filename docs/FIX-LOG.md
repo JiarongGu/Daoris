@@ -5,6 +5,34 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-20 — Three tests still built the home's old places after the home move, and two plugin-kit tests met the load (HOMEFIX1)
+
+- **Symptom:** the full set on c932f5024 (HOMELAYOUT3's merge) failed five tests its branch could not run.
+  `HelperProcessTests.A_helper_started_on_a_stub_agent_answers_through_its_tool_and_the_answer_reaches_the_asker_marked` threw
+  `HomeEntryTwiceException` (`helpers is in two places, <tmp>\data\helpers and <tmp>\helpers`).
+  `SessionRequestTickTests.A_terminals_stop_is_taken_by_the_loop_that_runs_the_session_and_its_quest_is_held` read *nothing on this
+  machine runs it* where the loop's take was expected. The modules' `UpdateWatchTests.The_updaters_own_request_wakes_nothing` timed
+  out (`a terminal's request was not heard`). `PluginKitTests`' `initialize` row of `Try_and_the_wire_test_give_every_answer_the_same_verdict`
+  and `A_line_on_stdout_that_is_not_a_frame_fails_the_stdout_check_and_nothing_else` failed their kit's wire test. Red first here:
+  the first three, as the log says. The plugin-kit two were green alone in the gate's own rerun.
+- **Root cause:** three fixtures named a home place their product readers no longer use once 8a3359b20 switched the table's new places
+  on. Before it, every new place was the old one. (1) The helper pass's stub agent joined `helpers/` by hand inside its script, which
+  is JavaScript in a C# string that the census does not read. The test's ask, made at the entry, was at `data/helpers`, so the stub's
+  answer put the entry in both places. The service's `HelperBox` and the driver's `HelperFiles` both ask the table. (2) The request
+  tick handed its loop's `SessionProcesses` the `sessions` entry (`data/sessions`), where the driver host, the desktop's `DriverLoop`
+  and the stop verb all keep and read markers at `session-pids` (`run/sessions`). The verb found no marker and took the session for
+  nobody's. (3) The update watch's install had `app/`, `update/` and `data/` but no `INSTALLED.md`. Under D172 point 2 its `data/`
+  is a root of its own, so the request was placed in `data/data/update.json` and the watch opened that folder, while the test raised
+  its change in `data/`. Every other install fixture in `Update/` writes the mark. No product reader was missed. The plugin-kit
+  pair is FLAKE1's load and not the move. The kit, its wire-test template, `PluginTrials` and `PluginKitTests` are unchanged across
+  the merge (`git diff --stat 370bdfcf3 c932f5024` names only `HelpGrants.cs` in `Plugins/`). Under load the wire test's two-second
+  grace after `shutdown` ran out, and the noisy row's test checks that grace before its noise message. The 2026-10-16 PROC1g entry
+  records the same grace failing under load.
+- **Fix:** the stub agent reads and writes at `DaorisHome.Entry(home, HomeEntry.Helpers)`. The request tick's loop keeps its markers at
+  `HomeEntry.SessionPids`. The update watch's install writes `InstallHome.Marker`. The tests changed only their fixtures.
+- **Verification:** `HelperProcessTests` and `SessionRequestTickTests` (5 tests) with `process.runsettings`, and `UpdateWatchTests`
+  (3), filtered, green. Each was red first in the same way as the gate's log.
+
 ## 2026-10-20 — Ask Daoris's conversations were listed among the chat sessions (ASKRAIL1)
 
 - **Symptom:** the Sessions rail drew an *Ask Daoris* group beside the repositories' (and its rows by state, its name search and the
