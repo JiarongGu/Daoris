@@ -5,6 +5,9 @@ with the version and date at release.
 
 ## Unreleased
 
+- The desktop window no longer starts out looking like a browser while Daoris's driver is still coming up. Sessions, the
+  machine's Settings and the place you last had open stay where they are, and the status bar says the driver is *Starting*,
+  where before the window moved to Overview, hid them and said Settings was a browser's.
 - A session that goes on from another (a hand-over, a move onto another account, a carry-on, a fallback) can read what its
   brief left out: Daoris's connector gains `line_read`, which pages the earlier parts' words, messages, tool calls, plans and notes
   from this machine's records, a bounded page at a time, and the brief's note of what it left out names it. It changes nothing,
