@@ -1,3 +1,4 @@
+using System.Text.Json;
 using System.Text.Json.Nodes;
 using Daoris.Driver;
 
@@ -236,18 +237,43 @@ public sealed class SessionChecksHandTests : IDisposable
         SessionChecks.LetGo(kept);
     }
 
-    /// <summary>The run's checks: under Current the repository's rule; a named workflow's run its version's, which none carries yet.</summary>
+    /// <summary>
+    /// The run's checks: under Current the repository's rule; a named workflow's run its version's <c>work</c> step's (FABRIC-PIPELINE1b2),
+    /// never Current's rule, today's where it names none or its version was not read.
+    /// </summary>
     [Fact]
-    public void A_run_takes_the_repository_s_rule_under_current_and_today_s_under_a_named_workflow()
+    public void A_run_takes_the_repository_s_rule_under_current_and_its_version_s_under_a_named_workflow()
     {
         var config = DriverConfig.Empty.WithSessionChecks("engine", SessionChecks.Light);
         var current = WorkflowProcess.Current(config, "engine", null);
         var named = current with { Binding = new WorkflowRunBinding("q1", "engine", "default", "docs", "repository", DateTimeOffset.UnixEpoch) { Version = 1 } };
+        static IReadOnlyList<NamedStep> Steps(string work) =>
+            WorkflowNamed.ReadSteps(JsonDocument.Parse($$"""[{{work}},{"id":"landing","kind":"landing","form":"merge","accept":"you"}]""").RootElement, 1).Steps!;
 
         Assert.Equal(SessionChecks.Light, SessionChecks.Of(config, "engine", null));
         Assert.Equal(SessionChecks.Light, SessionChecks.Of(config, "engine", current));
         Assert.Null(SessionChecks.Of(config, "engine", named));
+        Assert.Null(SessionChecks.Of(config, "engine", named with { Steps = Steps("""{"id":"work","kind":"work"}""") }));
+        Assert.Equal(SessionChecks.HeavyAtEnd, SessionChecks.Of(config, "engine",
+            named with { Steps = Steps("""{"id":"work","kind":"work","checks":"heavy-at-end"}""") }));
+        Assert.Equal(SessionChecks.Light, SessionChecks.Of(DriverConfig.Empty, "engine",
+            named with { Steps = Steps("""{"id":"work","kind":"work","checks":"light"}""") }));
         Assert.Null(SessionChecks.Of(config, "shop", current));
+    }
+
+    /// <summary>A start reads its run's process for its checks where the repository sets a rule, or a run here is bound to a named workflow.</summary>
+    [Fact]
+    public void A_start_asks_for_its_run_s_checks_where_a_rule_or_a_named_binding_could_set_them()
+    {
+        var config = DriverConfig.Empty.WithSessionChecks("engine", SessionChecks.Light);
+
+        Assert.True(SessionChecks.Asks(Home, config, "engine"));
+        Assert.False(SessionChecks.Asks(Home, config, "shop"));
+
+        WorkflowPorts.Runs(Home).Bind(new WorkflowRunBinding("q1", "shop", "default", "docs", "repository", DateTimeOffset.UnixEpoch) { Version = 1 });
+
+        Assert.True(SessionChecks.Asks(Home, config, "shop"));
+        Assert.False(SessionChecks.Asks(Home, DriverConfig.Empty, "mill"));
     }
 
     private static SessionTarget Target(string root) => new(

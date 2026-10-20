@@ -37,6 +37,11 @@ export interface KindField {
   choices?: readonly string[];
   required: boolean;
   default: string | boolean | null;
+  /**
+   * Written into a version's canonical text only where set (FABRIC-PIPELINE1b2): a field a kind gained after versions were saved, so
+   * every version naming none keeps the text, and the digest, it was bound by. Its default is null.
+   */
+  whereSet?: true;
 }
 
 /** One kind of step: how much of it this build runs, the limit it is said with, and its fields. */
@@ -55,7 +60,8 @@ const FAILED: KindField = { name: 'failed', type: 'choice', choices: ['wait', 's
  * since XAGENT1f's gate reads its rule, with Current's limit for it.
  */
 export const WORKFLOW_KINDS: readonly KindRow[] = [
-  { kind: 'work', runtime: 'built', limit: null, fields: [] },
+  // The checks its sessions run (FABRIC-PIPELINE1b2, D192 point 4, the driver's `SessionChecks`); absent is today's.
+  { kind: 'work', runtime: 'built', limit: null, fields: [{ name: 'checks', type: 'choice', choices: ['light', 'heavy-at-end'], required: false, default: null, whereSet: true }] },
   {
     kind: 'opinion', runtime: 'partial', limit: 'opinion-partial', fields: [
       { name: 'reviewers', type: 'names', required: false, default: null },
@@ -593,14 +599,15 @@ function orderProblem(steps: readonly NamedStep[], v: string): string | null {
 /**
  * The text a version's digest is of, built by hand so both runtimes write the same bytes (the driver's
  * `WorkflowNamed.Canonical`): `workflow`, then each step's line, its quoted id and its kind, each followed by every field its
- * kind takes, a line each in order, absence written as its default. Text is quoted, with `\`, `"` and each control character
+ * kind takes, a line each in order, absence written as its default, except a field written only where set (`whereSet`), which
+ * absence leaves out. Text is quoted, with `\`, `"` and each control character
  * escaped; none is `-`; a list is its quoted items between brackets; a group's members follow it, a step deeper.
  */
 export function versionCanonical(steps: readonly NamedStep[]): string {
   const lines = ['workflow'];
   const write = (step: NamedStep, indent: string): void => {
     lines.push(`${indent}step ${quoted(step.id)} ${step.kind}`);
-    for (const [name, value] of step.fields) {
+    for (const [name, value] of writtenFields(step)) {
       if (Array.isArray(value) && value.length > 0 && typeof value[0] !== 'string') {
         lines.push(`${indent}  ${name}:`);
         for (const member of value as NamedStep[]) write(member, `${indent}    `);
@@ -611,6 +618,15 @@ export function versionCanonical(steps: readonly NamedStep[]): string {
   };
   for (const step of steps) write(step, '');
   return lines.join('\n');
+}
+
+/**
+ * The fields a step's version's identity is of, the canonical text's and a decoded graph's options — the driver's `NamedStep.Written`:
+ * every field, but one written only where set (`whereSet`) and absent (FABRIC-PIPELINE1b2).
+ */
+export function writtenFields(step: NamedStep): [string, StepValue][] {
+  const row = kindOf(step.kind);
+  return step.fields.filter(([name, value]) => value !== null || row?.fields.find((each) => each.name === name)?.whereSet !== true);
 }
 
 /** A version's digest: the first 12 hex characters of the SHA-256 of `versionCanonical`'s text. */

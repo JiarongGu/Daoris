@@ -7,6 +7,7 @@ import { DaorisError } from '../../src/platform/errors.ts';
 import { HOME_SENTENCE, homeEntry, homePlaces } from '../../src/platform/home.ts';
 import type { CheckoutsReader } from '../../src/driver/reviews.ts';
 import { WHAT_CHOOSES, commandWorkflow } from '../../src/workflows/workflowdoor.ts';
+import { readSteps } from '../../src/workflows/namedworkflows.ts';
 import { makeFixture, type Fixture } from '../_fixture.ts';
 
 /**
@@ -138,6 +139,22 @@ test('new from Current copies a repository\'s rules as Current draws them, and t
     { id: 'landing', kind: 'landing', form: 'branch', accept: 'automatic', pattern: 'work/{quest}-{slug}', plugin: 'none' },
   ]);
   assert.match(out, /\+ look: you look at it running before it lands\./);
+  fx.cleanup();
+});
+
+test('new from a light Current keeps its sessions\' checks on the work, and the version reads them back (FABRIC-PIPELINE1b2)', async () => {
+  const fx = makeFixture('workflowdoor-current-light');
+  writeFileSync(fx.entry('driver'), JSON.stringify({ sessionChecks: { 'web-app': 'light' } }));
+  const checkouts: CheckoutsReader = async () => ({ checkouts: [{ repository: 'web-app', workspace: 'work', root: null }] });
+
+  const { code } = await run(fx, ['new', 'web-app-light', '--from', 'current:web-app'], checkouts);
+
+  assert.equal(code, 0);
+  const steps = saved(fx, 'web-app-light').versions[0]!.steps;
+  assert.deepEqual(steps[0], { id: 'work', kind: 'work', checks: 'light' });
+  const { steps: read, problem } = readSteps(steps, 1);
+  assert.equal(problem, null);
+  assert.equal(read![0]!.fields.find(([name]) => name === 'checks')?.[1], 'light');
   fx.cleanup();
 });
 

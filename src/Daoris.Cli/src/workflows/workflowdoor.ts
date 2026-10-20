@@ -933,9 +933,12 @@ function stepSaid(step: NamedStep): string[] {
     landing: field(step, 'accept') === 'you' ? 'You · your press: Accept' : 'Automatic · Daoris',
     'pull-request': 'You · your press: Merge', 'go-ahead': 'You · your answer',
   }[step.kind] ?? 'Automatic';
-  const set = step.fields.map(([name, value]) => `${name} ${rendered(value)}`).join('; ');
+  const row = kindOf(step.kind)!;
+  // A field written only where set (FABRIC-PIPELINE1b2) is said only where set: absent, it is today's, never "as declared".
+  const set = step.fields.filter(([name, value]) => value !== null || row.fields.find((each) => each.name === name)?.whereSet !== true)
+    .map(([name, value]) => `${name} ${rendered(value)}`).join('; ');
   const lines = [`  ${step.id} · ${step.kind} — ${part}.${set === '' ? '' : ` ${set}.`}`];
-  const limit = kindOf(step.kind)!.limit;
+  const limit = row.limit;
   if (limit !== null) lines.push(`      ${WORKFLOW_LIMITS[limit]}`);
   return lines;
 }
@@ -943,7 +946,9 @@ function stepSaid(step: NamedStep): string[] {
 /**
  * Current copied into steps (design §2.7's *Save as a workflow…*), each as Current draws it so the two read the same: the
  * opinion with its reviewers and switches, the look in its environment, the landing with its form, its press, and on a branch
- * its pattern and plugin, `none` where it names none. The standing answer and the landing's `tidy` stay declarations (§2.3).
+ * its pattern and plugin, `none` where it names none; the work with its sessions' checks where the repository sets them
+ * (FABRIC-PIPELINE1b2), so a light repository's workflow keeps its rule. The standing answer and the landing's `tidy` stay
+ * declarations (§2.3).
  */
 export function stepsOfCurrent(current: CurrentWorkflow): SavedStep[] {
   return current.steps.map((step): SavedStep => {
@@ -951,6 +956,8 @@ export function stepsOfCurrent(current: CurrentWorkflow): SavedStep[] {
     switch (step.kind) {
       case 'opinion':
         return { id: 'opinion', kind: 'opinion', reviewers: s['reviewers'], required: s['required'], steps: (s['on'] as string[]).includes('steps'), recheck: s['recheck'] };
+      case 'work':
+        return typeof s['checks'] === 'string' ? { id: 'work', kind: 'work', checks: s['checks'] } : { id: 'work', kind: 'work' };
       case 'look':
         return { id: 'look', kind: 'look', environment: s['environment'] };
       case 'landing':

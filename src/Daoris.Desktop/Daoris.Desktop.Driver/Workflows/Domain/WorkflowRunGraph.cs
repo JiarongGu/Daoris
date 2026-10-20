@@ -43,7 +43,12 @@ internal static class WorkflowRunGraph
             };
             IReadOnlyList<WorkflowSetting> settings = named.Kind switch
             {
-                WorkflowKinds.Work => current.Steps.First(step => step.Kind == WorkflowKinds.Work).Settings,
+                // The standing answer stays a declaration; the checks are the version's, never Current's rule (FABRIC-PIPELINE1b2).
+                WorkflowKinds.Work =>
+                [
+                    .. current.Steps.First(step => step.Kind == WorkflowKinds.Work).Settings.Where(setting => setting.Name != "checks"),
+                    .. named.Field("checks") is string checks ? [new WorkflowSetting("checks", checks)] : Array.Empty<WorkflowSetting>(),
+                ],
                 WorkflowKinds.Look => [new("environment", process.Look?.Environment)],
                 WorkflowKinds.Landing => [new("form", process.Landing.Rule.Form),
                     new("accept", automatic ? "automatic" : "you"), new("pattern", process.Landing.Rule.Pattern),

@@ -175,7 +175,7 @@ public static class WorkflowGraphs
             : step.Kind == WorkflowKinds.Stage ? NodeReach.Performed : NodeReach.Observed;
         return new NodeDeclaration(step.Id, kind, 1, reach)
         {
-            Options = step.Fields.Where(field => field.Value is not IReadOnlyList<NamedStep>).ToDictionary(field => field.Name, field => OptionText(field.Value)),
+            Options = step.Written.Where(field => field.Value is not IReadOnlyList<NamedStep>).ToDictionary(field => field.Name, field => OptionText(field.Value)),
         };
     }
 

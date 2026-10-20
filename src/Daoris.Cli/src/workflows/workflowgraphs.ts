@@ -12,7 +12,7 @@
  */
 import { createHash } from 'node:crypto';
 import type { GraphForm } from './graphversions.ts';
-import { field, members, quoted, versionDigest, type NamedStep, type NamedVersion, type StepValue } from './namedworkflows.ts';
+import { field, members, quoted, versionDigest, writtenFields, type NamedStep, type NamedVersion, type StepValue } from './namedworkflows.ts';
 
 /**
  * The decoder's own version — the driver's `WorkflowGraphs.DecoderVersion`: a decoded graph's digest is derived from it. 2 since
@@ -61,7 +61,7 @@ function nodeOf(step: NamedStep): GraphNode {
   const kind = step.kind === 'check' ? `${plugin}/${CHECKS_NODE}` : step.kind === 'stage' ? `${plugin}/${field(step, 'stage') as string}` : NODE_KIND[step.kind];
   if (kind === undefined) throw new Error(`\`${step.kind}\` is no kind of step.`);
   const reach = REACH[kind] ?? (step.kind === 'stage' ? 'performed' : 'observed');
-  const options = Object.fromEntries(step.fields
+  const options = Object.fromEntries(writtenFields(step)
     .filter(([name]) => !(step.kind === 'all' && name === 'steps'))
     .map(([name, value]) => [name, value as StepOption] as const)
     .sort(([a], [b]) => ordinal(a, b)));

@@ -26,7 +26,11 @@ public static class WorkflowFieldTypes
 
 /// <summary>One field a kind takes, in the order a version reads it: its shape, whether it must be named, and what absence reads as.</summary>
 /// <param name="Default">Text, a switch, or null: what an absent field reads as.</param>
-public sealed record WorkflowKindField(string Name, string Type, IReadOnlyList<string>? Choices, bool Required, object? Default);
+/// <param name="WhereSet">
+/// Written into a version's canonical text only where it is set (FABRIC-PIPELINE1b2): a field a kind gained after versions were saved,
+/// so every version that names none keeps the text, and the digest, it was bound by. Its default is null.
+/// </param>
+public sealed record WorkflowKindField(string Name, string Type, IReadOnlyList<string>? Choices, bool Required, object? Default, bool WhereSet = false);
 
 /// <summary>One kind of step: how much of it this build runs, the limit it is said with (a <see cref="WorkflowLimits"/> code), and its fields.</summary>
 /// <param name="Runtime">One of <see cref="WorkflowRuntime"/>'s, or <see cref="WorkflowKindTable.None"/>: never offered.</param>
@@ -52,7 +56,9 @@ public static class WorkflowKindTable
 
     public static IReadOnlyList<WorkflowKindRow> Table { get; } =
     [
-        new(WorkflowKinds.Work, WorkflowRuntime.Built, null, []),
+        // The checks its sessions run (FABRIC-PIPELINE1b2, D192 point 4, SessionChecks); absent is today's.
+        new(WorkflowKinds.Work, WorkflowRuntime.Built, null,
+            [new("checks", WorkflowFieldTypes.Choice, [SessionChecks.Light, SessionChecks.HeavyAtEnd], false, null, WhereSet: true)]),
         new(WorkflowKinds.Opinion, WorkflowRuntime.Partial, WorkflowLimits.OpinionPartial,
         [
             new("reviewers", WorkflowFieldTypes.Names, null, false, null),
@@ -104,6 +110,14 @@ public sealed record NamedStep(string Id, string Kind, IReadOnlyList<WorkflowSet
 {
     /// <summary>A field's value as the step reads it.</summary>
     public object? Field(string name) => Fields.FirstOrDefault(each => each.Name == name)?.Value;
+
+    /// <summary>
+    /// The fields its version's identity is of, the canonical text's and a decoded graph's options: every field, but one written only
+    /// where set (<see cref="WorkflowKindField.WhereSet"/>) and absent (FABRIC-PIPELINE1b2).
+    /// </summary>
+    public IEnumerable<WorkflowSetting> Written => WorkflowKindTable.Of(Kind) is { } row
+        ? Fields.Where(each => each.Value is not null || row.Fields.FirstOrDefault(declared => declared.Name == each.Name) is not { WhereSet: true })
+        : Fields;
 
     /// <summary>A group's members, or none.</summary>
     public IReadOnlyList<NamedStep> Members => Kind == WorkflowKinds.All && Field("steps") is IReadOnlyList<NamedStep> members ? members : [];
@@ -609,7 +623,8 @@ public static class WorkflowNamed
     /// <summary>
     /// The text a version's digest is of, built by hand so both runtimes write the same bytes — the CLI's
     /// <c>versionCanonical</c>, byte for byte: <c>workflow</c>, then each step's line, its quoted id and its kind, each followed
-    /// by every field its kind takes, a line each in order, absence written as its default; a group's members follow it, a step deeper.
+    /// by every field its kind takes, a line each in order, absence written as its default, except a field written only where set
+    /// (<see cref="WorkflowKindField.WhereSet"/>), which absence leaves out; a group's members follow it, a step deeper.
     /// </summary>
     public static string Canonical(IReadOnlyList<NamedStep> steps)
     {
@@ -617,7 +632,7 @@ public static class WorkflowNamed
         void Write(NamedStep step, string indent)
         {
             lines.Add($"{indent}step {WorkflowCurrent.Quoted(step.Id)} {step.Kind}");
-            foreach (var each in step.Fields)
+            foreach (var each in step.Written)
             {
                 if (each.Value is IReadOnlyList<NamedStep> members)
                 {
