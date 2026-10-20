@@ -44,8 +44,8 @@
  *    long-lived build server carried a broken environment into a publish, so that rehearsal started after
  *    `dotnet build-server shutdown`; since REHLANE2b its builds keep servers of their own, and no gate has a step before it.
  *    GATESLIM1: by default a merge runs the blocking checks alone (`BLOCKING`: the universal gates, the code map and the
- *    orientation index's check), and each typecheck one of its paths reaches (`TYPECHECKS`, MERGETSC1: the web's
- *    `tsc --noEmit` where the page's sources change); every other gate it reaches is listed and skipped, "in the CI beside" (`--full --beside`).
+ *    orientation index's check), and each path check one of its paths reaches (`PATH_CHECKS`: MERGETSC1's web
+ *    `tsc --noEmit` and MERGEWEBRULES1's design and structure tests, where the page's sources change); every other gate it reaches is listed and skipped, "in the CI beside" (`--full --beside`).
  *    `--gated` runs what follows: of the plan, the baseline (`BASELINE`: the blocking checks and the CLI's `verify`, at every
  *    merge) and each gate a path the merge changes can reach (`REACH`). A path no rule
  *    places reaches every gate, and so does a gate the table never names. A long gate (`isLongGate`) is
@@ -339,7 +339,7 @@ import {
 import { constants as osConstants, setPriority as osSetPriority } from 'node:os';
 import { basename, dirname, join, relative, resolve } from 'node:path';
 import { fenced, gluedLabels, records } from './doc-duplicates.mjs';
-import { isMain, renameHeld, stagedTree, writeAtomic } from './fsx.mjs';
+import { isMain, renameHeld, spawnGit, stagedTree, writeAtomic } from './fsx.mjs';
 import { endOrphans, endStranded } from './processes.mjs';
 
 export const MAIN = 'main';
@@ -694,7 +694,7 @@ export const slug = (name) => name.replace(/[^A-Za-z0-9._-]+/g, '-').replace(/^-
 
 /**
  * What kind of gate a command is, which orders it and never drops it: a devkit `dotnet run` and a tool's
- * `--check` (the orientation index, ORIENT1a) and `npm run typecheck*` (MERGETSC1) are checks, `npm run rehearse*` and
+ * `--check` (the orientation index, ORIENT1a), `npm run typecheck*` (MERGETSC1) and `npm run check:*` (MERGEWEBRULES1) are checks, `npm run rehearse*` and
  * `npm run test:*` are rehearsals, and anything else is a suite. A command run through `tools/as-merged.mjs` (GATE1) is the kind of
  * what it runs: the universal gates read history as the merge would commit it, and are still the devkit's check.
  */
@@ -702,7 +702,7 @@ export function gateKind(run) {
   const command = run.trim().replace(/^node tools\/as-merged\.mjs\s+/, '');
   if (/^dotnet run\b/.test(command) || /^node tools\/\S+\.mjs --check$/.test(command)) return 'check';
   const script = /^npm run (\S+)$/.exec(command)?.[1];
-  if (script && /^typecheck\b/.test(script)) return 'check';
+  if (script && /^(typecheck\b|check:)/.test(script)) return 'check';
   if (script && /^(rehearse|test:)/.test(script)) return 'rehearsal';
   return 'suite';
 }
@@ -789,26 +789,35 @@ export const BASELINE = Object.freeze(['universal', 'code-map', 'orient-index', 
 export const BLOCKING = Object.freeze(['universal', 'code-map', 'orient-index']);
 
 /**
- * MERGETSC1: the typechecks a merge blocks on when one of its paths reaches what they read, beside `BLOCKING`. Two sides
+ * MERGETSC1: the light checks a merge blocks on when one of its paths reaches what they read, beside `BLOCKING`. Two sides
  * that each typecheck may not together (RAILLINE1's stories named a helper STORYGAP1 had renamed, 2026-10-21), and the CI
  * beside found it hours after the commit; the web's `tsc --noEmit` takes about a minute. Each is reached by its own
  * `paths`, and by a path the lane table's every-gate rule places (the gates, the scripts, the lanes), never by the rest of
  * the table: a path no rule of `REACH` places reaches every other gate, and a typecheck stays a minute of the merges that
  * change what it reads. `--gated` runs it where reached, `--full` always.
+ *
+ * MERGEWEBRULES1: the web's design and structure tests are a second such check, reached the same way. HEAVYSLOT1 and
+ * ACCESSASK1's stories each broke `design/tokens.test.ts` (a line's measure, a native control), which only the CI beside's
+ * `web-unit` ran, hours after their merges; the two files run in a minute or two, most of it jsdom starting.
  */
-export const TYPECHECKS = Object.freeze([
+export const PATH_CHECKS = Object.freeze([
   {
     gate: 'web-types',
     paths: ['src/Daoris.Web/src/**', 'src/Daoris.Web/tsconfig.json', 'src/Daoris.Web/vite.config.ts', 'src/Daoris.Web/package.json', 'src/Daoris.Web/package-lock.json'],
     why: "the web's typecheck: the page's sources, what configures its compiler, or what changes how every gate runs (MERGETSC1)",
   },
+  {
+    gate: 'web-rules',
+    paths: ['src/Daoris.Web/src/**', 'src/Daoris.Web/vite.config.ts', 'src/Daoris.Web/package.json', 'src/Daoris.Web/package-lock.json'],
+    why: "the web's design and structure checks: the page's sources, what configures its tests, or what changes how every gate runs (MERGEWEBRULES1)",
+  },
 ]);
 
-const typecheckOf = (gate, typechecks = TYPECHECKS) => typechecks.find((check) => check.gate === gate) ?? null;
+const pathCheckOf = (gate, pathChecks = PATH_CHECKS) => pathChecks.find((check) => check.gate === gate) ?? null;
 
-/** Of `paths`, the ones that reach a typecheck (MERGETSC1): its own, and those the lane table sends to every gate. */
-const typecheckPaths = (typecheck, paths, reach, lanes) => {
-  const own = laneMatcher(typecheck.paths);
+/** Of `paths`, the ones that reach a path check (MERGETSC1): its own, and those the lane table sends to every gate. */
+const pathCheckPaths = (check, paths, reach, lanes) => {
+  const own = laneMatcher(check.paths);
   return paths.filter((path) => own(path) || ruleFor(path, reach, lanes)?.gates === '*');
 };
 
@@ -835,9 +844,12 @@ const DRIVER_READERS = [...DESKTOP_SUITES, 'rehearse-family', 'deployment'];
  */
 export const REACH = Object.freeze([
   {
-    paths: ['daoris.gates.json', 'daoris.lanes.json', 'package.json', 'package-lock.json', '.gitattributes', '.gitignore', 'tools/fsx.mjs'],
+    paths: [
+      'daoris.gates.json', 'daoris.lanes.json', 'package.json', 'package-lock.json', '.gitattributes', '.gitignore', 'tools/fsx.mjs',
+      'src/Daoris.Cli/src/tools/gitforwindows.ts',
+    ],
     gates: '*',
-    why: 'it changes how every gate runs or reaches a path: the gates, lanes, scripts, line endings, what is tracked, or the file helpers every rehearsal imports',
+    why: 'it changes how every gate runs or reaches a path: the gates, lanes, scripts, line endings, what is tracked, or the file helpers every rehearsal imports and the git they start (GITSTART4)',
   },
   // GATESLIM1: the tests of the tools only the parent runs (the merge tool, the install's publisher, the family rehearsal's kit) are
   // the tool-tests gate, no longer part of verify. These rules come first and keep what each path reached before.
@@ -986,6 +998,8 @@ export const REACH = Object.freeze([
       'GoOnNew.cs', 'SessionSay.cs', 'Continuation.cs', 'ChatRunner.StartFrom.cs',
       // MIXAGENT1b-i: the say twin holds the hand-over's refusal table to its codes.
       'HandOver.cs',
+      // SESSCTX1c part B: the say twin holds *Go on with Daoris's brief*'s refusal table to its codes.
+      'BriefedMove.cs',
       // FLOWCHART1b: the parts flow's twin holds its words to `PartBegan`.
       'SessionEntries.cs',
       // FLOWCHART1c: the landing flow's twin holds its codes to these.
@@ -1251,7 +1265,7 @@ const namedGates = (reach) => new Set(reach.flatMap((rule) => (rule.gates === '*
  * set before staging; `full` runs every gate. `reached` is the lane table's answer, run or not, which is what
  * its tests hold to the code. `unplaced` is the paths no rule placed.
  */
-export function selectGates(plan, changed, { lanes = [], full = false, gated = false, reach = REACH, typechecks = TYPECHECKS } = {}) {
+export function selectGates(plan, changed, { lanes = [], full = false, gated = false, reach = REACH, pathChecks = PATH_CHECKS } = {}) {
   const names = new Set(plan.map((gate) => gate.name));
   const named = namedGates(reach);
   const reachedBy = new Map();
@@ -1277,13 +1291,13 @@ export function selectGates(plan, changed, { lanes = [], full = false, gated = f
   };
   const gates = plan.map((gate) => {
     if (BLOCKING.includes(gate.name) || (gated && BASELINE.includes(gate.name))) return { gate, run: true, reached: true, why: 'runs at every merge' };
-    const typecheck = typecheckOf(gate.name, typechecks);
-    if (typecheck) {
-      // MERGETSC1: a typecheck blocks the merges whose paths reach what it reads, and only those.
-      const by = typecheckPaths(typecheck, changed, reach, lanes);
+    const check = pathCheckOf(gate.name, pathChecks);
+    if (check) {
+      // MERGETSC1, MERGEWEBRULES1: a path check blocks the merges whose paths reach what it reads, and only those.
+      const by = pathCheckPaths(check, changed, reach, lanes);
       if (full) return { gate, run: true, reached: by.length > 0, why: '--full runs every gate' };
       if (by.length === 0) return { gate, run: false, reached: false, why: gated ? 'no changed path reaches it' : 'in the CI beside' };
-      return { gate, run: true, reached: true, why: `blocks the merge: ${andMore(by)} (${typecheck.why})` };
+      return { gate, run: true, reached: true, why: `blocks the merge: ${andMore(by)} (${check.why})` };
     }
     const { reached, why } = BASELINE.includes(gate.name) ? { reached: true, why: 'the baseline' } : reachOf(gate);
     if (full) return { gate, run: true, reached, why: '--full runs every gate' };
@@ -1302,9 +1316,9 @@ export function selectGates(plan, changed, { lanes = [], full = false, gated = f
  * its rule names. A verdict stays good until one of these changes, so the stage and `--rerun` ask this of the paths
  * changed since it was given. The test of the table checks that it and `selectGates` agree on every case.
  */
-export function pathsReaching(gate, paths, { lanes = [], reach = REACH, typechecks = TYPECHECKS } = {}) {
-  const typecheck = typecheckOf(gate, typechecks);
-  if (typecheck) return typecheckPaths(typecheck, paths, reach, lanes);
+export function pathsReaching(gate, paths, { lanes = [], reach = REACH, pathChecks = PATH_CHECKS } = {}) {
+  const check = pathCheckOf(gate, pathChecks);
+  if (check) return pathCheckPaths(check, paths, reach, lanes);
   if (BASELINE.includes(gate) || !namedGates(reach).has(gate)) return [...paths];
   return paths.filter((path) => {
     const rule = ruleFor(path, reach, lanes);
@@ -1899,7 +1913,7 @@ export function classify(paths, { lanes = [], union = [], laneless = [] } = {}) 
 // Git
 
 function git(cwd, args, { allowFail = false, env } = {}) {
-  const result = spawnSync('git', args, { cwd, encoding: 'utf8', maxBuffer: 256 * 1024 * 1024, ...(env ? { env: { ...process.env, ...env } } : {}) });
+  const result = spawnGit(args, { cwd, encoding: 'utf8', maxBuffer: 256 * 1024 * 1024, ...(env ? { env: { ...process.env, ...env } } : {}) });
   if (result.error) throw new Refusal(`git could not start: ${result.error.message}`);
   if (result.status !== 0 && !allowFail) {
     throw new Refusal(`git ${args.join(' ')} failed: ${(result.stderr || result.stdout).trim()}`);

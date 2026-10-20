@@ -5,6 +5,20 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-21 — Approving or withdrawing a plugin for Ask Daoris deleted what its writer did not know (KEEPALL1d)
+
+- **Symptom:** named by KEEPALL1's audit (D173's KEEPALL1 note). Approving a plugin's server for Ask Daoris, or withdrawing an
+  approval, on the plugin's page or with `daoris-driver plugins approve|withdraw`, rewrote `plugin-approvals.json` as
+  `{ "help": [...] }`: every other top-level key and every row's own unknown key went, line endings became LF, and a server
+  approved again moved to the end.
+- **Root cause:** `HelpGrants.Write` built the file from the approvals its reader parsed (plugin, server, allow, writes), as the
+  writers KEEPALL1 fixed had.
+- **Fix:** D173's KEEPALL1d note. `HelpGrants.Save` writes through `JsonKeeping.Save`; each approval keeps its row as read, written
+  as it was where untouched and changed in place with its own keys where approved again.
+- **Verification:** six driver-only `approvals:` rows in `home-files-keep.json` through `HomeFilesKeepTests`, with
+  `HelpGrantsTests`, `PluginsCommandTests`, `HelpPluginApprovalProposalsTests`, `DriverModuleHelpGrantTests` and
+  `HelpPluginApprovalDoorTests` green; the CLI's `homefileskeep.test.ts` skips the six and passes its sixteen.
+
 ## 2026-10-21 — The full set's run on d263cd0 failed three gates that its merges never ran
 
 - **Symptom:** the full set on d263cd0 failed `web-unit`, `cli` and `deployment`. The web design checks found
@@ -4698,6 +4712,13 @@ process costs a class.
 
 *`MaxParallelThreads` 6 and 8* on the same four classes after: 514 s at 59% and 383 s at 64%. Four classes cannot run
 more than four at once, so these are two more runs of one setting, and the knee is unmeasured. The setting stays at four.
+
+*The CLI's and tools' git (GITSTART4, 2026-10-21).* From PowerShell, where `PATH` finds `C:\Program Files\Git\cmd\git.exe`,
+`spawnGit` starts `mingw64\bin\git.exe`. One node process with other worktrees' work beside it, 40 starts each way
+interleaved (through the launcher, then past it): `git --version` median 1,001 ms against 723 (mean 1,238
+against 882), and the `ls-files` that `repositoryFiles` runs median 1,042 against 761 (mean 1,277 against 852), about 28%
+saved a start. A `!` alias started through `spawnGit` ran in `sh` and saw `MSYSTEM=MINGW64`. `npm run verify` itself was
+not timed: on this machine the full step set runs past a session's bound, so the starts it is made of were timed instead.
 
 **A repository copied from a seed (PROC1h, 2026-10-18).** `LandedFixture.RepositoryAsync` and `RepositoryWithOriginAsync` (284 and 73
 calls of `"engine"` in the driver's tests, the shape every other name follows) made each test's repositories with `init`, two

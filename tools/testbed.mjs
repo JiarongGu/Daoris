@@ -21,11 +21,12 @@
  * `sensitive-info` forbids, and a default would be one. It is also the guard that matters here: this
  * script creates and deletes whole directories, and a wrong default would do that somewhere real.
  */
-import { execFileSync, execSync } from 'node:child_process';
+import { execSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, isAbsolute, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { OWN } from './desktop-publish.mjs';
+import { execGit } from './fsx.mjs';
 // Every home place is asked of D172's table (HOMELAYOUT2b), never joined here.
 import { homeEntry } from '../src/Daoris.Cli/src/platform/home.ts';
 
@@ -120,7 +121,7 @@ function claimRoot() {
 
 const run = (command, cwd) => execSync(command, { cwd, env, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
 const daoris = (args, cwd) => run(`node "${cli}" ${args}`, cwd);
-const git = (where, args) => execFileSync('git', args, { cwd: where, encoding: 'utf8' });
+const git = (where, args) => execGit(args, { cwd: where, encoding: 'utf8' });
 
 /** The files this script writes wholesale on every run, as `git status` spells them. */
 const WRITTEN = new Set(['.mcp.json', '.claude/settings.json', 'daoris.json']);

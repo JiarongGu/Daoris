@@ -23,10 +23,9 @@
  * `--plan` prints the plan and changes nothing. Exit 0 clean, 1 a policy failure (a bad move, a count that differs, an
  * import that does not resolve after), 2 a tool error (usage, unreadable input, git failing).
  */
-import { spawnSync } from 'node:child_process';
 import { mkdirSync, readFileSync } from 'node:fs';
 import { dirname, join, posix } from 'node:path';
-import { isMain, repositoryFiles, writeAtomic } from './fsx.mjs';
+import { isMain, repositoryFiles, spawnGit, writeAtomic } from './fsx.mjs';
 
 const SOURCE = /\.(?:[cm]?[jt]s|[jt]sx)$/;
 const EXTENSIONS = ['.ts', '.tsx', '.mts', '.cts', '.js', '.mjs', '.cjs', '.jsx', '.json', '.css'];
@@ -168,7 +167,7 @@ export function describe(plan) {
 }
 
 function git(root, args, env) {
-  const run = spawnSync('git', args, { cwd: root, encoding: 'utf8', windowsHide: true, env });
+  const run = spawnGit(args, { cwd: root, encoding: 'utf8', windowsHide: true, env });
   if (run.status !== 0) throw new Error(`git ${args.join(' ')} failed: ${(run.stderr || run.error?.message || '').trim()}`);
 }
 

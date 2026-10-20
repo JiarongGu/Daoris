@@ -40,7 +40,7 @@
 import { spawnSync } from 'node:child_process';
 import { copyFileSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
-import { isMain, stagedTree } from './fsx.mjs';
+import { isMain, spawnGit, stagedTree } from './fsx.mjs';
 
 export const USAGE = 'usage: node tools/as-merged.mjs <command> [<argument>…]';
 
@@ -59,7 +59,7 @@ const IDENTITY = {
 };
 
 function git(cwd, args, env) {
-  const result = spawnSync('git', args, { cwd, encoding: 'utf8', windowsHide: true, ...(env ? { env: { ...process.env, ...env } } : {}) });
+  const result = spawnGit(args, { cwd, encoding: 'utf8', windowsHide: true, ...(env ? { env: { ...process.env, ...env } } : {}) });
   if (result.error) throw new AsMergedError(`git could not start: ${result.error.message}`);
   if (result.status !== 0) throw new AsMergedError(`git ${args.join(' ')} failed: ${(result.stderr || result.stdout).trim()}`);
   return result.stdout.trim();
@@ -98,7 +98,7 @@ function sweep(gitDir) {
  * paths or git cannot build the commit. The caller removes `folder` when the command ends.
  */
 export function prepare(cwd) {
-  const located = spawnSync('git', ['rev-parse', '--show-toplevel', '--absolute-git-dir'], { cwd, encoding: 'utf8', windowsHide: true });
+  const located = spawnGit(['rev-parse', '--show-toplevel', '--absolute-git-dir'], { cwd, encoding: 'utf8', windowsHide: true });
   if (located.error || located.status !== 0) return null;
   const [top, gitDir] = lines(located.stdout);
   const heads = mergeHeads(gitDir);

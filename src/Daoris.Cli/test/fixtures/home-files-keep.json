@@ -1,5 +1,5 @@
 {
-  "about": "KEEPALL1 (D173's KEEPALL1 note; FIX-LOG 2026-10-17): every home file a door edits keeps what its writer does not own, as driver.json's writers do (driver-config-keeps.json). Read row for row by the CLI's homefileskeep.test.ts and the driver's HomeFilesKeepTests. `files` holds each file as it stands before the read, in the writer's layout, its lines joined by LF with one final LF, with keys neither twin knows at each level and numbers JavaScript cannot hold or would write shorter. A row names its `file` and one door's `edit` (`op` and its fields); `changes` turn that file into what both twins write, each `from` found exactly once (its lines joined by LF) and replaced by `to`. A row's `start` is made to the file before the read; `between` is another writer's change, made after this writer read the file and before it writes, which the write keeps (only for a writer whose read and write are two calls); a row whose file `crlf` is true has its lines joined by CRLF, and so is what both write; a row `refused` writes nothing, its refusal naming what it says, the file left as `start` or `between` made it (and `changes` say so).",
+  "about": "KEEPALL1 (D173's KEEPALL1 note; FIX-LOG 2026-10-17): every home file a door edits keeps what its writer does not own, as driver.json's writers do (driver-config-keeps.json). Read row for row by the CLI's homefileskeep.test.ts and the driver's HomeFilesKeepTests. `files` holds each file as it stands before the read, in the writer's layout, its lines joined by LF with one final LF, with keys neither twin knows at each level and numbers JavaScript cannot hold or would write shorter. A row names its `file` and one door's `edit` (`op` and its fields); `changes` turn that file into what both twins write, each `from` found exactly once (its lines joined by LF) and replaced by `to`. A row's `start` is made to the file before the read; `between` is another writer's change, made after this writer read the file and before it writes, which the write keeps (only for a writer whose read and write are two calls); a row whose file `crlf` is true has its lines joined by CRLF, and so is what both write; a row `refused` writes nothing, its refusal naming what it says, the file left as `start` or `between` made it (and `changes` say so). A row `only` names the one twin with a writer for its file (`plugin-approvals.json` is the driver's alone, KEEPALL1d), and the other skips it.",
   "files": {
     "plugins.json": [
       "{",
@@ -64,9 +64,95 @@
       "  },",
       "  \"ratio\": 1.50",
       "}"
+    ],
+    "plugin-approvals.json": [
+      "{",
+      "  \"later\": {",
+      "    \"kept\": true,",
+      "    \"big\": 9007199254740993",
+      "  },",
+      "  \"help\": [",
+      "    {",
+      "      \"plugin\": \"acme.tickets\",",
+      "      \"server\": \"tickets\",",
+      "      \"allow\": [",
+      "        \"search\"",
+      "      ],",
+      "      \"note\": \"hand-written\",",
+      "      \"writes\": []",
+      "    },",
+      "    {",
+      "      \"plugin\": \"acme.docs\",",
+      "      \"server\": \"docs\",",
+      "      \"allow\": [",
+      "        \"read\"",
+      "      ],",
+      "      \"writes\": [],",
+      "      \"since\": 1.50",
+      "    }",
+      "  ],",
+      "  \"ratio\": 1.50",
+      "}"
     ]
   },
   "rows": [
+    {
+      "name": "approvals: a server approved again changes its row where it stands, the row's own unknown key and the file's kept as written",
+      "file": "plugin-approvals.json",
+      "only": "driver",
+      "edit": { "op": "approval-approve", "plugin": "acme.tickets", "server": "tickets", "allow": ["search", "get_issue"], "writes": ["create_issue"] },
+      "changes": [
+        { "from": ["        \"search\"", "      ],", "      \"note\": \"hand-written\",", "      \"writes\": []"], "to": ["        \"search\",", "        \"get_issue\"", "      ],", "      \"note\": \"hand-written\",", "      \"writes\": [", "        \"create_issue\"", "      ]"] }
+      ]
+    },
+    {
+      "name": "approvals: a server approved for the first time goes last, every other row as written",
+      "file": "plugin-approvals.json",
+      "only": "driver",
+      "edit": { "op": "approval-approve", "plugin": "acme.wiki", "server": "wiki", "allow": ["page"], "writes": [] },
+      "changes": [
+        { "from": ["      \"since\": 1.50", "    }"], "to": ["      \"since\": 1.50", "    },", "    {", "      \"plugin\": \"acme.wiki\",", "      \"server\": \"wiki\",", "      \"allow\": [", "        \"page\"", "      ],", "      \"writes\": []", "    }"] }
+      ]
+    },
+    {
+      "name": "approvals: an approval withdrawn takes its row alone, another row's unknown key and the file's kept",
+      "file": "plugin-approvals.json",
+      "only": "driver",
+      "edit": { "op": "approval-withdraw", "plugin": "acme.docs", "server": "docs" },
+      "changes": [
+        { "from": ["    },", "    {", "      \"plugin\": \"acme.docs\",", "      \"server\": \"docs\",", "      \"allow\": [", "        \"read\"", "      ],", "      \"writes\": [],", "      \"since\": 1.50", "    }"], "to": ["    }"] }
+      ]
+    },
+    {
+      "name": "approvals: an approval never made withdrawn writes the same bytes",
+      "file": "plugin-approvals.json",
+      "only": "driver",
+      "edit": { "op": "approval-withdraw", "plugin": "acme.none", "server": "none" },
+      "changes": []
+    },
+    {
+      "name": "approvals: a file in CRLF stays in CRLF",
+      "file": "plugin-approvals.json",
+      "only": "driver",
+      "crlf": true,
+      "edit": { "op": "approval-withdraw", "plugin": "acme.docs", "server": "docs" },
+      "changes": [
+        { "from": ["    },", "    {", "      \"plugin\": \"acme.docs\",", "      \"server\": \"docs\",", "      \"allow\": [", "        \"read\"", "      ],", "      \"writes\": [],", "      \"since\": 1.50", "    }"], "to": ["    }"] }
+      ]
+    },
+    {
+      "name": "approvals: a key written twice in a row refuses the edit, naming it",
+      "file": "plugin-approvals.json",
+      "only": "driver",
+      "start": [
+        { "from": ["      \"note\": \"hand-written\","], "to": ["      \"note\": \"hand-written\",", "      \"note\": \"again\","] }
+      ],
+      "edit": { "op": "approval-withdraw", "plugin": "acme.docs", "server": "docs" },
+      "refused": "the key `note` twice",
+      "changes": [
+        { "from": ["      \"note\": \"hand-written\","], "to": ["      \"note\": \"hand-written\",", "      \"note\": \"again\","] }
+      ]
+    },
     {
       "name": "keys: an account's key replaced changes that key alone, an agent's own unknown key and the file's kept as written",
       "file": "keys.json",

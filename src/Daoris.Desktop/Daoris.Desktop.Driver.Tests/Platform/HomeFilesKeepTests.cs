@@ -76,6 +76,21 @@ public sealed class HomeFilesKeepTests
                 between();
                 HarnessKeys.Add(home, Text("agent"), Text("key"));
                 return;
+            case ("plugin-approvals.json", "approval-approve"):
+                between();
+                // The plugin declares the server for Ask Daoris with the tools the edit names, and the person approves them whole.
+                var folder = DaorisHome.Entry(home, HomeEntry.Plugins, Text("plugin"));
+                Directory.CreateDirectory(folder);
+                File.WriteAllText(Path.Combine(folder, PluginCatalog.ManifestName), $$"""
+                    { "id": "{{Text("plugin")}}", "servers": [ { "name": "{{Text("server")}}", "command": ["{{Text("server")}}"], "to": ["help"],
+                      "allow": {{edit.GetProperty("allow").GetRawText()}}, "writes": {{edit.GetProperty("writes").GetRawText()}} } ] }
+                    """);
+                HelpGrants.Approve(home, PluginCatalog.Load(home), Text("plugin"), Text("server"), readsOnly: false);
+                return;
+            case ("plugin-approvals.json", "approval-withdraw"):
+                between();
+                HelpGrants.Withdraw(home, Text("plugin"), Text("server"));
+                return;
             default:
                 throw new InvalidOperationException($"the table names an edit this test does not make: {file} {Text("op")}");
         }
@@ -112,6 +127,8 @@ public sealed class HomeFilesKeepTests
         var rows = new TheoryData<string, string, string, string, string?, string?, string>();
         foreach (var row in Table.RootElement.GetProperty("rows").EnumerateArray())
         {
+            // A row another twin alone writes is that twin's.
+            if (row.TryGetProperty("only", out var only) && only.GetString() != "driver") continue;
             var file = row.GetProperty("file").GetString()!;
             var crlf = row.TryGetProperty("crlf", out var ends) && ends.GetBoolean();
             var start = Changed(file, row.TryGetProperty("start", out var first) ? first : null, crlf);

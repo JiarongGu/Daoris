@@ -10,6 +10,7 @@ import { copyFileSync, existsSync, mkdirSync, realpathSync, statSync, writeFileS
 import { basename, dirname, join, resolve, sep } from 'node:path';
 import { setTimeout as sleep } from 'node:timers/promises';
 import { portIsFree } from './cdp.mjs';
+import { spawnGit } from './fsx.mjs';
 import { endOrphans } from './processes.mjs';
 
 /**
@@ -376,7 +377,7 @@ export function gitRefusal(command, cwd, { within } = {}) {
   if (GIT_MAKES.has(words[at])) return null;
   if (!existsSync(cwd)) return `refused: ${verb} in ${cwd}, where there is no such folder. REHEARSEGIT1`;
 
-  const asked = (args) => spawnSync('git', args, { cwd, encoding: 'utf8', windowsHide: true });
+  const asked = (args) => spawnGit(args, { cwd, encoding: 'utf8', windowsHide: true });
   const top = asked(['rev-parse', '--show-toplevel']);
   const toplevel = top.status === 0 ? top.stdout.trim() : '';
   if (toplevel && realFolder(toplevel) === realFolder(cwd)) return null;

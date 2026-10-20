@@ -225,6 +225,10 @@ test('the merge tool, gating a merge it has not committed, fails the check run t
   write('src/a.txt', 'one\n');
   write('docs-check.mjs', readFileSync(CHECK, 'utf8'));
   for (const file of ['as-merged.mjs', 'fsx.mjs']) write(`tools/${file}`, readFileSync(join(here, file), 'utf8'));
+  // What `fsx.mjs` starts git through (GITSTART4), at the paths it imports them from.
+  for (const file of ['tools/gitforwindows.ts', 'platform/fsx.ts', 'platform/errors.ts']) {
+    write(`src/Daoris.Cli/src/${file}`, readFileSync(join(root, 'src', 'Daoris.Cli', 'src', file), 'utf8'));
+  }
   // The same check twice: as the declared gates ran it before GATE1, and through this tool.
   write('daoris.gates.json', `${JSON.stringify({
     gates: [{ name: 'bare', run: 'node docs-check.mjs' }, { name: 'universal', run: 'node tools/as-merged.mjs node docs-check.mjs' }],

@@ -27,11 +27,11 @@
  * The scratch repository sits under this checkout, so Claude Code reads this checkout's `CLAUDE.md` as a driven session
  * in a repository would; `--setting-sources local` keeps the user tier out, as the audit's runs did.
  */
-import { execFileSync, spawn, spawnSync } from 'node:child_process';
+import { spawn, spawnSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { isMain } from '../fsx.mjs';
+import { execGit, isMain } from '../fsx.mjs';
 // Every home place is asked of D172's table (HOMELAYOUT2b), never joined here.
 import { homeEntry } from '../../src/Daoris.Cli/src/platform/home.ts';
 import { receipt, receiptText } from './receipt.mjs';
@@ -217,7 +217,7 @@ export function codexLaunch({ files, run, text, model, effort, node = process.ex
 /** The scratch repository: a folder with one empty commit, made fresh. */
 function scratchRepository(repo, env) {
   mkdirSync(repo, { recursive: true });
-  const git = (...args) => execFileSync('git', args, { cwd: repo, env, stdio: 'ignore', windowsHide: true });
+  const git = (...args) => execGit(args, { cwd: repo, env, stdio: 'ignore', windowsHide: true });
   git('init', '-q');
   git('-c', 'user.name=probe', '-c', 'user.email=probe@example.invalid', 'commit', '-q', '--allow-empty', '-m', 'probe');
 }

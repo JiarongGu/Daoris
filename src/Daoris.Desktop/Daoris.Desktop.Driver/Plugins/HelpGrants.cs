@@ -1,5 +1,4 @@
 using System.Text.Json;
-using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
 
 namespace Daoris.Driver;
@@ -20,7 +19,7 @@ namespace Daoris.Driver;
 ///
 /// <para><b>Machine-local and the driver's alone</b>: <c>&lt;home&gt;/plugin-approvals.json</c>, written by the page's press and
 /// <c>daoris-driver plugins approve|withdraw</c>, read at each spawn of Ask Daoris. A file that does not read approves nothing,
-/// the safe direction, and is never written over.</para>
+/// the safe direction, and is never written over; an edit keeps every key it does not own (KEEPALL1d).</para>
 /// </remarks>
 public static class HelpGrants
 {
@@ -112,13 +111,19 @@ public static class HelpGrants
                 + (declared.Writes.Count > 0 ? string.Join(", ", declared.Writes.Select(tool => $"`{tool}`")) : "none of its tools") + ".");
         }
 
-        var approvals = Approvals(home) ?? (File.Exists(PathIn(home))
+        var found = File.Exists(PathIn(home));
+        var approvals = Approvals(home) ?? (found
             ? throw new DriverException($"`{FileName}` under the home could not be read, so nothing was approved over it.")
             : []);
         // The declared order, whatever order the person accepted them in, so the file reads as the manifest does.
         var accepted = writes is null ? declared.Writes : [.. declared.Writes.Where(tool => writes.Contains(tool, StringComparer.Ordinal))];
-        var approval = new HelpApproval(entry.Manifest.Id, declared.Name, declared.Allow, accepted);
-        Write(home, [.. approvals.Where(each => !Same(each, approval.Plugin, approval.Server)), approval]);
+        // An approval on file is changed where it stands, its own unknown keys kept; a new one goes last.
+        var existing = approvals.FirstOrDefault(each => Same(each, entry.Manifest.Id, declared.Name));
+        var approval = new HelpApproval(entry.Manifest.Id, declared.Name, declared.Allow, accepted, existing?.Row) { Edited = true };
+        Save(home, found, approvals, existing is null
+            ? [.. approvals, approval]
+            : [.. approvals.Where(each => !Same(each, approval.Plugin, approval.Server) || ReferenceEquals(each, existing))
+                .Select(each => ReferenceEquals(each, existing) ? approval : each)]);
         return new HelpGrant(approval.Plugin, declared, Approved, null) { Accepted = approval.Writes };
     }
 
@@ -129,7 +134,7 @@ public static class HelpGrants
         if (!File.Exists(PathIn(home))) return;
         var approvals = Approvals(home)
             ?? throw new DriverException($"`{FileName}` under the home could not be read, so nothing was withdrawn from it.");
-        Write(home, [.. approvals.Where(each => !Same(each, plugin, server))]);
+        Save(home, found: true, approvals, [.. approvals.Where(each => !Same(each, plugin, server))]);
     }
 
     /// <summary>The contributing plugin and its server declared for Ask Daoris, as an approval and Ask Daoris's proposal name them.</summary>
@@ -166,7 +171,7 @@ public static class HelpGrants
                     return null;
                 }
 
-                approvals.Add(new HelpApproval(plugin.GetString()!, server.GetString()!, Names(row, "allow"), Names(row, "writes")));
+                approvals.Add(new HelpApproval(plugin.GetString()!, server.GetString()!, Names(row, "allow"), Names(row, "writes"), row.Clone()));
             }
 
             return approvals;
@@ -182,24 +187,70 @@ public static class HelpGrants
             ? [.. names.EnumerateArray().Where(name => name.ValueKind == JsonValueKind.String).Select(name => name.GetString()!)]
             : [];
 
-    private static void Write(string home, IReadOnlyList<HelpApproval> approvals)
+    /// <summary>
+    /// The edit from the approvals read to <paramref name="approvals"/> made onto the file as it stands (KEEPALL1d,
+    /// <see cref="JsonKeeping.Save"/>), so a key this build has no field for stays as written, at the top and in a row: a row the edit
+    /// did not touch is written as the file had it, and one it changed keeps its own unknown keys. Rebuilt from the approvals alone, it
+    /// deleted every other key the file held. <paramref name="found"/> says a file was there at the read. The rows are one array, so
+    /// another writer's row landing between this read and the write is not kept; the read and the write are one call.
+    /// </summary>
+    private static void Save(string home, bool found, IReadOnlyList<HelpApproval> read, IReadOnlyList<HelpApproval> approvals) =>
+        JsonKeeping.Save(PathIn(home), found, Written(read), Written(approvals));
+
+    /// <summary>The approvals' own shape: <c>help</c>, a row each.</summary>
+    private static string Written(IReadOnlyList<HelpApproval> approvals) => JsonFile.Serialize(writer =>
     {
-        // The home and the folder the approvals are in (`data/` since HOMELAYOUT3), which a new home has not made yet.
-        Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(PathIn(home)))!);
-        JsonFile.Write(PathIn(home), new JsonObject
+        writer.WriteStartObject();
+        writer.WriteStartArray("help");
+        foreach (var approval in approvals) Write(writer, approval);
+        writer.WriteEndArray();
+        writer.WriteEndObject();
+    });
+
+    /// <summary>One row: as the file had it where unchanged; else its own keys in its order, the approval's four set and any missing added.</summary>
+    private static void Write(Utf8JsonWriter writer, HelpApproval approval)
+    {
+        if (approval.Row is { } row && !approval.Edited)
         {
-            ["help"] = new JsonArray([.. approvals.Select(approval => (JsonNode)new JsonObject
+            row.WriteTo(writer);
+            return;
+        }
+
+        void Field(string name)
+        {
+            if (name == "plugin") writer.WriteString(name, approval.Plugin);
+            else if (name == "server") writer.WriteString(name, approval.Server);
+            else
             {
-                ["plugin"] = approval.Plugin,
-                ["server"] = approval.Server,
-                ["allow"] = new JsonArray([.. approval.Allow.Select(tool => (JsonNode)tool)]),
-                ["writes"] = new JsonArray([.. approval.Writes.Select(tool => (JsonNode)tool)]),
-            })]),
-        });
+                writer.WriteStartArray(name);
+                foreach (var tool in name == "allow" ? approval.Allow : approval.Writes) writer.WriteStringValue(tool);
+                writer.WriteEndArray();
+            }
+        }
+
+        string[] own = ["plugin", "server", "allow", "writes"];
+        writer.WriteStartObject();
+        if (approval.Row is { } kept)
+        {
+            foreach (var property in kept.EnumerateObject())
+            {
+                if (own.Contains(property.Name)) Field(property.Name);
+                else property.WriteTo(writer);
+            }
+        }
+
+        foreach (var name in own.Where(name => approval.Row?.TryGetProperty(name, out _) != true)) Field(name);
+        writer.WriteEndObject();
     }
 
-    /// <summary>One approval as the file keeps it: the plugin, its server, and the exact reads and accepted writes approved.</summary>
-    private sealed record HelpApproval(string Plugin, string Server, IReadOnlyList<string> Allow, IReadOnlyList<string> Writes);
+    /// <summary>
+    /// One approval as the file keeps it: the plugin, its server, and the exact reads and accepted writes approved; <see cref="Row"/>
+    /// is the row as the file held it, null for a new one, and <see cref="Edited"/> whether this edit changed it.
+    /// </summary>
+    private sealed record HelpApproval(string Plugin, string Server, IReadOnlyList<string> Allow, IReadOnlyList<string> Writes, JsonElement? Row = null)
+    {
+        public bool Edited { get; init; }
+    }
 }
 
 /// <summary>A plugin's server declared for Ask Daoris, with the person's approval as it stands (<see cref="HelpGrants"/>).</summary>
