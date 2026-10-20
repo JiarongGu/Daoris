@@ -334,7 +334,8 @@ export type DriverPresence = 'running' | 'starting' | 'stopped' | 'absent';
  * **It gained the recall tier and the index count when the sidebar was retired** (D56). Both are
  * ambient state and neither was ever anything else; the tier in particular must be *stated on every
  * screen* (D24), which a bar present on every screen by construction serves better than a sidebar
- * foot ever did. The tier's sentence stays the service's own, verbatim, in its tooltip.
+ * foot ever did. The tier is said by its value in the page's language, and what it means in its tip (OVERVIEWNOISE1c):
+ * the service's label and note were English on a Chinese page, and the page never read a word of them but the flag.
  */
 export function StatusBar({
   driver, sessions, workspace, remote, sync, tier, indexed, scope, setup,
@@ -355,8 +356,8 @@ export function StatusBar({
    * "wired" is exactly what it elaborates. Absent leaves the plain remote item.
    */
   sync?: ReactNode;
-  /** What answered — D24's tier, with the service's own note. Absent until the service says. */
-  tier?: { label: string; note: string; semantic: boolean };
+  /** What answered — D24's tier, by whether meaning answers beside the words. Absent until the service says. */
+  tier?: { semantic: boolean };
   /** What the index holds, already worded by the caller. */
   indexed?: string;
   /** The scope as a control, where the deployment holds more than one circle (WSP5). */
@@ -468,14 +469,18 @@ export function StatusBar({
             <span className="tabular-nums">{indexed}</span>
           </StatusItem>
         )}
-        {/* The tier's sentence stays the service's own, verbatim (D24), in the tip. It was text
+        {/* The tier by its value, and what it means in the tip, in the page's language (OVERVIEWNOISE1c). It was text
             alone while there was nothing to go to; since AGT6 it leads where the tier is explained
             and how to change it is said — Daoris's own AI, on Settings — by the bar's own rule that
             an item goes where its fact is set. */}
         {tier && (
-          <StatusItem onPress={onTier} tip={tier.note} label={t('work.status.tierLabel')}>
+          <StatusItem
+            onPress={onTier}
+            tip={t(tier.semantic ? 'work.status.tierSemanticTip' : 'work.status.tierLexicalTip')}
+            label={t('work.status.tierLabel')}
+          >
             <span className={cn('font-mono', tier.semantic ? 'text-accent' : 'text-warn')}>
-              {tier.label}
+              {t(tier.semantic ? 'work.status.tierSemantic' : 'work.status.tierLexical')}
             </span>
           </StatusItem>
         )}

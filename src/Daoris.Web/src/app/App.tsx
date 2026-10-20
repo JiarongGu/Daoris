@@ -1259,9 +1259,8 @@ export function App() {
         // Where the setup is done (SETUP1b): absent in a browser, and once the required steps are.
         setup={setupCount}
         onSetup={() => openSettings('start')}
-        tier={status.data
-          ? { label: status.data.tier, note: status.data.note ?? '', semantic: status.data.semantic }
-          : undefined}
+        // The tier by its value (OVERVIEWNOISE1c): the bar words it, and its note, in the page's language.
+        tier={status.data ? { semantic: status.data.semantic } : undefined}
         indexed={indexed > 0
           ? t('sidebar.count', {
             entries: figure(indexed),
