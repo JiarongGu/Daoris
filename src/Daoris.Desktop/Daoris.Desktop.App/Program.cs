@@ -30,6 +30,13 @@ internal static class Program
     [STAThread]
     private static void Main(string[] args)
     {
+        // Out of `app/` before anything is started (APPCWD1, D139 §5): every child that names no working folder inherits this
+        // process's, and one standing in `app/` holds the swap's move of it for as long as it lives.
+        if (InstallHome.WorkingFolder(AppContext.BaseDirectory, Environment.CurrentDirectory) is { } stand)
+        {
+            Environment.CurrentDirectory = stand;
+        }
+
         // Daoris's browser is this executable started with the browser's argument (CHR8, D99), decided
         // before anything else: the kit starts Chromium as the app is composed, a process runs one
         // Chromium, and the browser is not the window, its home or its log.
@@ -335,6 +342,8 @@ internal static class Program
         using var app = builder.Build();
         // And each choice the page sets from here, for the next start.
         using var keeping = KeptScheme.Keep(app.Services.GetRequiredService<IColorScheme>(), keptScheme, log);
-        app.Run();
+        // An exception leaving the application is written while the log is open (MACHINELOGAPPEND1, HOSTSTART2's finding for
+        // the desktop): the `using` above closes it as the exception leaves `Main`, which dropped the unhandled line.
+        log.RunWatched(() => app.Run());
     }
 }

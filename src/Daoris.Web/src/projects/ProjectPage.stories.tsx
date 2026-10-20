@@ -541,6 +541,42 @@ export const SetupHeavyGatesCannotTell: Story = {
   },
 };
 
+/**
+ * Setup's *Sessions' checks* set to light (FABRIC-PIPELINE1b): its light gates and its heavy gates by name, that an agent taking no rules
+ * is told them and refused `run-heavy` rather than refused in its shell, and that nothing runs them after a landing yet.
+ */
+export const SetupSessionChecksLight: Story = {
+  args: {
+    start: 'setup',
+    setup: {
+      ...SETUP_DEFAULTS,
+      heavy: {
+        gates: [],
+        marks: { marks: true, names: ['driver', 'web'], light: ['universal', 'code-map', 'orient-index'] },
+        onSave: (_gates, answered) => answered.done(),
+        checks: { set: 'light', onChange: (_checks, answered) => answered.done() },
+      },
+    },
+  },
+};
+
+/** Setup's *Sessions' checks* set to light where the repository marks no heavy gate: its sessions may run every gate; in 中文. */
+export const SetupSessionChecksNoneHeavyChinese: Story = {
+  args: {
+    start: 'setup',
+    setup: {
+      ...opened('heavy'),
+      heavy: {
+        gates: [],
+        marks: { marks: false, names: [], light: ['universal'] },
+        onSave: (_gates, answered) => answered.done(),
+        checks: { set: 'light', onChange: (_checks, answered) => answered.done() },
+      },
+    },
+  },
+  decorators: [chinese],
+};
+
 /** Setup's *Heavy gates* where none is set, folded to its line and offering *Add heavy gates* once opened; narrow, in 中文. */
 export const SetupHeavyGatesNoneChinese: Story = {
   args: { start: 'setup', setup: { ...opened('heavy'), heavy: { gates: [], onSave: (_gates, answered) => answered.done() } } },

@@ -392,7 +392,8 @@ internal sealed class DriverHelpers(LoopContext context, Driver driver)
         if (conversation && word is not null)
         {
             _context.Events.Keep(
-                ask.Asker, new SessionEvent { Kind = SessionEventKind.User, Origin = "target", Id = word, Text = composed, Reaches = "resume" },
+                ask.Asker,
+                new SessionEvent { Kind = SessionEventKind.User, Origin = "target", Helper = state.Helper, Id = word, Text = composed, Reaches = "resume" },
                 say: null);
         }
 

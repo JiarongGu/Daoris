@@ -5,9 +5,10 @@ import { useHarnessRun, WithHarnessRuns } from '../../agents/harnessRuns';
 import { useAcceptQuest, useAnswerGoAhead, useAsks, usePublishAsk, useQuests, useSessions } from '../../data/queries';
 import {
   retryNotice, useApproveHelper, useAttention, useDeclineHelper, useHarnessAction, useHarnesses, useNudge, useRefreshHarnesses,
-  useResolveHeld, useRetryQuest, useTrustFolder, useAnswerPermission,
+  useResolveHeld, useRetryQuest, useTrustFolder, useAnswerPermission, useAnswerAlone,
 } from '../../bridge/shell';
 import { permissionSaid } from '../waits/PermissionAsks';
+import { answerAloneSaid } from '../waits/AnswerAlone';
 import { useSay } from '../../bridge/sessions/conversation';
 import { SignIn } from '../../agents/SignIn';
 import { byTool } from '../../agents/tools';
@@ -96,6 +97,7 @@ function Band({ doors, notify, onSessions, onRun }: {
   const approveHelper = useApproveHelper();
   const declineHelper = useDeclineHelper();
   const answerPermission = useAnswerPermission();
+  const answerAlone = useAnswerAlone();
   const resolveHeld = useResolveHeld();
 
   const publish = usePublishAsk();
@@ -266,6 +268,16 @@ function Band({ doors, notify, onSessions, onRun }: {
       run(item, () => answerPermission.mutateAsync({ session: held.session, request: held.request, option }), (answer) => {
         if (answer.answered) notify(t(allows ? 'work.wait.permission.answered.allow' : 'work.wait.permission.answered.refuse'));
         else notify(permissionSaid(t, answer.why, answer.message), 'error');
+      });
+    },
+    // A third answer alone held for the person let go on or kept, as its session's page answers it (COWORK1e, §8.3): its answer said
+    // in the page's words, a refusal by its code in the error's tone.
+    answerAlone: (item, goOn) => {
+      const session = item.answer?.session ?? item.session;
+      if (!session) return;
+      run(item, () => answerAlone.mutateAsync({ session, goOn }), (answer) => {
+        if (answer.answered) notify(t(goOn ? 'work.wait.answer.wentOn' : 'work.wait.answer.kept'));
+        else notify(answerAloneSaid(t, answer.why, answer.message), 'error');
       });
     },
     // The agent's own sign-in through its account-owning door, as its page starts it (SIGNIN1): its end is said wherever the

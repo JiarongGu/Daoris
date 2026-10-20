@@ -17,7 +17,7 @@ namespace Daoris.Driver;
 internal static class GoOnFiles
 {
     /// <summary>A mark written to <paramref name="path"/>, its folder made where it is not.</summary>
-    public static void WriteMark(string path, IReadOnlyList<string> said, string why, DateTimeOffset at)
+    public static void WriteMark(string path, IReadOnlyList<string> said, string why, DateTimeOffset at, string? agent = null)
     {
         // LF on every platform, as every file under the home is written (JsonFile).
         JsonFile.Write(path, writer =>
@@ -28,6 +28,8 @@ internal static class GoOnFiles
             writer.WriteEndArray();
             writer.WriteString("why", why);
             writer.WriteString("at", Moments.Write(at));
+            // COWORK1e: the agent an answers-alone mark was held for, added beside the rest; a mark from before has none.
+            if (agent is { Length: > 0 }) writer.WriteString("agent", agent);
             writer.WriteEndObject();
         });
     }
@@ -49,7 +51,10 @@ internal static class GoOnFiles
 
             var at = Moments.Read(root, "at") ?? DateTimeOffset.MinValue;
             return new GoOnMark(
-                [.. said.EnumerateArray().Where(id => id.ValueKind == JsonValueKind.String).Select(id => id.GetString()!)], code, at);
+                [.. said.EnumerateArray().Where(id => id.ValueKind == JsonValueKind.String).Select(id => id.GetString()!)], code, at)
+            {
+                Agent = Json.Text(root, "agent") is { Length: > 0 } agent ? agent : null,
+            };
         }
         catch (Exception error) when (error is JsonException or IOException or UnauthorizedAccessException)
         {

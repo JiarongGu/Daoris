@@ -11,6 +11,7 @@ import { GROUP_ORDER, type SessionGroupName, type SessionGrouping } from '../../
 import type { HelperAskRow, HelperWait } from '../../work/waits/HelperAsks';
 import type { HandOverAskRow } from '../../work/waits/HandOverAgentAsk';
 import type { PermissionAnswered, PermissionChoice, PermissionWait } from '../../work/waits/PermissionAsks';
+import type { AnswerAloneAnswered, AnswerWait } from '../../work/waits/AnswerAlone';
 import type { NewSessionAnswer } from '../../work/say';
 import type { SessionWhere } from '../../work/rail/SessionRow';
 import { call } from '../call';
@@ -683,6 +684,7 @@ const readPermissionWaits = (rows: unknown): PermissionWait[] => {
       kind: word(row.kind),
       choices: Array.isArray(row.choices) ? row.choices.map(readChoice).filter((choice): choice is PermissionChoice => choice !== null) : [],
       since: typeof row.since === 'string' ? row.since : '',
+      until: word(row.until),
     }));
 };
 
@@ -728,6 +730,55 @@ export const useAnswerPermission = () => {
       return { answered: said?.answered === true, why: word(said?.why), message: typeof said?.message === 'string' ? said.message : '' };
     },
     onSettled: () => client.invalidateQueries({ queryKey: PERMISSION_WAITS_KEY }),
+  });
+};
+
+/** The answers-alone waits' key (COWORK1e): under the sessions', so a tick and the person's answer (its publication) ask them again. */
+export const ANSWER_WAITS_KEY = ['sessions', 'answerWaits'] as const;
+
+/** The rows of `ANSWER_WAITS`, read field by field: one naming no session has nothing to answer, and is left out. */
+const readAnswerWaits = (rows: unknown): AnswerWait[] => {
+  if (!Array.isArray(rows)) return [];
+  return rows.filter((row): row is Record<string, unknown> => Boolean(row) && typeof row === 'object')
+    .filter((row) => word(row.session) !== null)
+    .map((row) => ({
+      session: row.session as string,
+      agent: word(row.agent),
+      words: Array.isArray(row.words) ? row.words.filter((id): id is string => typeof id === 'string') : [],
+      since: typeof row.since === 'string' ? row.since : '',
+    }));
+};
+
+/**
+ * What the answers-alone bound holds for the person across this machine's sessions (COWORK1e, D188 point 4; the message-urgency design
+ * §8.3): each session whose answers would take its line on a third time in a row with nobody between, the agent that answered, the
+ * answers' ids and since when, oldest first, read off this machine's own marks, so shell-only. Under the sessions' key, so every tick
+ * asks it again, and the driver's look that holds one is a tick.
+ */
+export const useAnswerWaits = () => {
+  const { isAvailable } = useShenora();
+  return useQuery({
+    queryKey: ANSWER_WAITS_KEY,
+    queryFn: async () => readAnswerWaits((await call<{ waits?: unknown } | null>('ANSWER_WAITS'))?.waits),
+    enabled: isAvailable,
+  });
+};
+
+/**
+ * The person's answer to a third answer alone held for them (COWORK1e; §8.3): *Go on with this answer* (`goOn`), their word, which lets
+ * the answer go on, or *Not now*, which keeps it for them. A refusal is the answer, by its code (`unheld`). The sessions and the driver
+ * are asked again by the state hub (D169); the waits are asked again here too, so the wait goes with the answer.
+ */
+export const useAnswerAlone = () => {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: async (answer: { session: string; goOn: boolean }): Promise<AnswerAloneAnswered> => {
+      const said = await call<{ answered?: unknown; why?: unknown; message?: unknown } | null>('SESSION_ANSWER_ALONE', {
+        session: answer.session, goOn: answer.goOn,
+      });
+      return { answered: said?.answered === true, why: word(said?.why), message: typeof said?.message === 'string' ? said.message : '' };
+    },
+    onSettled: () => client.invalidateQueries({ queryKey: ANSWER_WAITS_KEY }),
   });
 };
 

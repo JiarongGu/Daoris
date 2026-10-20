@@ -8,7 +8,7 @@ namespace Daoris.Desktop.Modules.Tests;
 /// </summary>
 public sealed class RouteFlightsTests
 {
-    private static readonly TimeSpan Patience = TimeSpan.FromSeconds(30);
+    private static readonly TimeSpan Patience = Poll.Patience;
 
     [Fact]
     public async Task Joins_while_one_is_under_way_share_its_one_ask_and_the_next_after_it_asks_again()

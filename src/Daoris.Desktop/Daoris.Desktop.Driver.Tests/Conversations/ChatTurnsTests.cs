@@ -410,6 +410,57 @@ public sealed class ChatTurnsTests
     }
 
     /// <summary>
+    /// 🔴 COWORK1e (D188 point 4; the message-urgency design §2.3, trap 11), a conversation's turn pump: the turns judge each helper's
+    /// answer as its turn comes, once every turn before it was recorded, so two answers queued at once under separate asks never both
+    /// pass as the second. The one the bound holds never reaches the door and leaves the queue; the person's word after it still goes.
+    /// </summary>
+    [Fact]
+    public async Task Two_answers_queued_at_once_never_both_pass_as_the_second()
+    {
+        var door = new Door();
+        var turns = door.Turns();
+        var line = new List<SessionEvent>();
+        // The record as the door keeps it: each turn's prompt as it reaches the door, the agent acting on it, and its end where the test ends it.
+        door.OnTake = message =>
+        {
+            lock (line) line.AddRange([.. ChatRunner.Recorded(message), new SessionEvent { Kind = SessionEventKind.Message, Text = "On it." }]);
+        };
+        var judged = new List<string>();
+        turns.Bounds(message =>
+        {
+            lock (line)
+            {
+                judged.Add(message.Id!);
+                return Task.FromResult(AnswersAlone.Holds([message.Helped!], [.. line]));
+            }
+        });
+        void Ends(int turn)
+        {
+            lock (line) line.Add(new SessionEvent { Kind = SessionEventKind.Turn, StopReason = "end_turn" });
+            door.EndTurn(turn);
+        }
+
+        ChatMessage Answer(string id) =>
+            new($"Answer {id}.", []) { Helped = new SaidWordView(id, $"Answer {id}.", DateTimeOffset.UtcNow, [], true) { Helper = $"h-{id}" }, Id = id };
+
+        turns.Take(Answer("a1"));
+        await Poll.Until(() => door.Took.Count == 1, () => "the first answer never reached the door");
+        Assert.Equal(TurnReach.TurnEnd, turns.Take(Answer("a2")));
+        Assert.Equal(TurnReach.TurnEnd, turns.Take(Answer("a3")));
+
+        Ends(0);
+        await Poll.Until(() => door.Took.Count == 2, () => "the second answer never went as its own turn");
+        Ends(1);
+        await Poll.Until(() => { lock (line) return judged.Count == 3; }, () => "the third answer was never judged");
+        turns.Take(new ChatMessage("Go on with what you have.", []));
+        await Poll.Until(() => door.Took.Count == 3, () => "the person's word never went");
+
+        Assert.Equal(["Answer a1.", "Answer a2.", "Go on with what you have."], door.Took);
+        Assert.Equal(["a1", "a2", "a3"], judged);
+        Assert.Empty(turns.State.Queued);
+    }
+
+    /// <summary>
     /// 🔴 STEER2a (D136 point 4, evidence §3): on a next-step door whose agent cannot steer, the driver never stops a turn while a
     /// word is on its way. The press goes at the next step, behind the word on its way, and past a helper's answer waiting as its
     /// own turn, which is ordinary (COWORK1a, the design §2.1: urgency is when, not order). Either way <c>now: false</c>,

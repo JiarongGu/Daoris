@@ -16,13 +16,14 @@ import { hasNote, type NoteRecord } from '../noteLines';
 import { type OpinionWait, opinionState } from '../gates/opinion';
 import { unsettledWords } from '../gates/OpinionGate';
 import type { PermissionWait } from '../waits/PermissionAsks';
+import type { AnswerWait } from '../waits/AnswerAlone';
 import { TrustAsk } from '../waits/TrustAsk';
 
 /** The kinds of thing *What needs you* lists (design §6.2), each in one of its three groups (`ATTENTION_GROUP`). */
 export type AttentionKind =
   | 'parked' | 'parked-quest' | 'go-ahead' | 'trust' | 'account-wait' | 'signed-out'
   | 'proposal' | 'intake' | 'departure' | 'set-up' | 'rule' | 'unanswerable'
-  | 'review' | 'opinion' | 'helper' | 'work' | 'permission';
+  | 'review' | 'opinion' | 'helper' | 'work' | 'permission' | 'answer';
 
 /**
  * One thing that is waiting on a person, as Overview's band shows it.
@@ -81,6 +82,11 @@ export type Attention = {
    * offered. Its `session` is the session that holds it, whose page its door opens.
    */
   permission?: PermissionWait;
+  /**
+   * An `answer` row's third answer alone held for the person (COWORK1e, D188 point 4): what its two presses answer. Its `session` is the
+   * session whose line it would take on, whose page its door opens.
+   */
+  answer?: AnswerWait;
   /** A `rule` row's proposal (PERM2), whole: what its *Allow* answers and the session it tells (PROPOSEHERE1c). */
   proposal?: RuleProposal;
   /** A `proposal`'s receivers, as its declarations named them: what *Publish to …* publishes to, in one press. */
@@ -160,6 +166,8 @@ export type AttentionActs = {
   held?: (item: Attention, resolution: HeldResolution) => void;
   /** A tool call held for the person answered with the option they pressed, by its agent's id (AUTONOMY1b3c). */
   permission?: (item: Attention, option: string) => void;
+  /** A third answer alone held for the person let go on (`goOn`) or kept (COWORK1e): its session's page's own presses. */
+  answerAlone?: (item: Attention, goOn: boolean) => void;
 };
 
 /** Which handler each act needs. */
@@ -187,6 +195,8 @@ const HANDLER: Record<AttentionActId, keyof AttentionActs> = {
   'allow-once': 'permission',
   'refuse-once': 'permission',
   'refuse-always': 'permission',
+  'go-on-answer': 'answerAlone',
+  'keep-answer': 'answerAlone',
   happened: 'held',
   'did-not': 'held',
   'stop-step': 'held',
@@ -287,6 +297,7 @@ export function AttentionRow({ item, onOpen, onRun, acts = {}, busy = false, ope
     else if (act === 'show-again') acts.showAgain?.(item);
     else if (act === 'opinion-again') acts.opinionAgain?.(item);
     else if (act === 'let-ask' || act === 'not-now') acts.helper?.(item, act === 'let-ask');
+    else if (act === 'go-on-answer' || act === 'keep-answer') acts.answerAlone?.(item, act === 'go-on-answer');
     else if (act === 'happened' || act === 'did-not') acts.held?.(item, act);
     else if (act === 'stop-step' || act === 'stop-close') acts.held?.(item, 'stop');
     else if (act === 'record-close') acts.held?.(item, 'record');
@@ -326,6 +337,9 @@ export function AttentionRow({ item, onOpen, onRun, acts = {}, busy = false, ope
       case 'allow-once': return t('work.attention.act.allowOnce');
       case 'refuse-once': return t('work.attention.act.refuseOnce');
       case 'refuse-always': return t('work.attention.act.refuseAlways');
+      // COWORK1e: the session's page's own words for a third answer alone (§8.5).
+      case 'go-on-answer': return t('work.wait.goOnAnswer');
+      case 'keep-answer': return t('work.wait.answer.notNow');
       // FABRIC-PERFORM1g: each says what it does, as `daoris-driver work held` names it.
       case 'happened': return t('work.milestone.held.act.happened');
       case 'did-not': return t('work.milestone.held.act.did-not');

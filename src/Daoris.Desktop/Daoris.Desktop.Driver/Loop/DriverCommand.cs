@@ -43,9 +43,10 @@ public static class DriverCommand
               ask at a workspace, or turn an ask into a quest, close it, or delete one made by mistake; answer a
               go-ahead a session asked on it, which every session on the ask is handed from then on, and which
               sends a parked session on once none of its go-aheads waits.
-          ask channel <id> [--to <repository>] [--re <message>] ["…"]
-              read an ask's channel, where its sessions and you talk, and mark it read; or with words post them as
-              yours, to everyone on the ask or one of its repositories, which each session reads.
+          ask channel <id> [--to <repository>] [--re <message>] [--ordinary] ["…"]
+              read an ask's channel, where its sessions and you talk, with each message's level where it is urgent
+              and what it reached, and mark it read; or with words post them as yours, to everyone on the ask or
+              one of its repositories, which each session reads at its next step, or with --ordinary when its turn ends.
           ask --pause <id>  ·  ask --resume <id>  ·  quest pause <id>  ·  quest resume <id>
               stop what of an ask's work, or a quest's, runs on this machine and start nothing of it until
               you resume it, which carries it on where it stood.
@@ -221,6 +222,10 @@ public static class DriverCommand
               what run-heavy runs there, and what its sessions are told to run once, at their end. Kept here, never in
               the repository; a command may bound its own workers (npm test -- --maxWorkers=2). Alone, lists each
               repository's; with a repository alone, says its gates.
+          checks [<repository> [light | heavy-at-end | --clear]]
+              which checks a repository's sessions run under Current: light, the gates its daoris.gates.json does not
+              mark heavy and the checks a change reaches, its heavy gates refused to them and left to the verification;
+              heavy-at-end, those gates once, at a session's end; none, as they did. Alone, lists each repository's.
           trace <commit|session|quest>  ·  trace commit|session|quest <id>
               one read back to the ask: the person's words and go-aheads, the quest's requirements and answers, each
               session's agent, account, instruction, rules and landing, each from the store that keeps it. Reads only.

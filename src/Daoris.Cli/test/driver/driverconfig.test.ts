@@ -964,6 +964,46 @@ test('heavy gates are read as the driver reads them (the shared table), kept by 
   fx.cleanup();
 });
 
+/**
+ * FABRIC-PIPELINE1b (D192 point 4; the pipeline design §3.1): which checks a repository's sessions run under Current is the driver's
+ * `sessionChecks`, set by `daoris-driver checks` and Setup. 🔴 A TWIN with the driver's `SessionChecks`: both hold ONE table, the driver
+ * suite's `fixtures/session-checks.json`, cell for cell, and write the map in the driver's shape and place (the keeps table's
+ * `session-checks` row).
+ */
+const CHECKS_TABLE = JSON.parse(readFileSync(join(dirname(dirname(fileURLToPath(import.meta.url))), '..', '..', 'Daoris.Desktop',
+  'Daoris.Desktop.Driver.Tests', 'fixtures', 'session-checks.json'), 'utf8')) as {
+  read: { name: string; sessionChecks: unknown; read: Record<string, string> }[];
+};
+
+test('sessions\' checks are read as the driver reads them (the shared table), kept by every other edit, and written in its shape', () => {
+  const fx = makeFixture('driver-session-checks');
+  assert.ok(CHECKS_TABLE.read.length > 0, 'the table holds read rows');
+  for (const row of CHECKS_TABLE.read) {
+    writeFileSync(at(fx), `${JSON.stringify({ sessionChecks: row.sessionChecks })}\n`, 'utf8');
+    const read = readDriverChoices(at(fx)).sessionChecks;
+    assert.deepEqual(read, row.read, row.name);
+    assert.deepEqual(Object.keys(read), Object.keys(row.read), `${row.name}: in the file's order`);
+  }
+
+  const file = { sessionChecks: { engine: 'light', shop: 'a newer build\'s choice' } };
+  writeFileSync(at(fx), `${JSON.stringify(file, null, 2)}\n`);
+  run(['notify', 'off'], at(fx));
+  assert.deepEqual(JSON.parse(readFileSync(at(fx), 'utf8')).sessionChecks, file.sessionChecks);
+
+  writeFileSync(at(fx), '{}\n');
+  const { source: _read, ...built } = readDriverChoices(at(fx));
+  writeDriverChoices(at(fx), {
+    ...built, heavyGates: { engine: [{ name: 'build', run: 'dotnet build' }] }, sessionChecks: { shop: 'heavy-at-end', engine: 'light' },
+  });
+  const written = readFileSync(at(fx), 'utf8');
+  assert.match(written, /"sessionChecks": \{\n {4}"engine": "light",\n {4}"shop": "heavy-at-end"\n {2}\}/);
+  const keys = Object.keys(JSON.parse(written));
+  assert.equal(keys.indexOf('sessionChecks'), keys.indexOf('heavyGates') + 1);
+  writeDriverChoices(at(fx), { ...built, sessionChecks: {} });
+  assert.equal('sessionChecks' in JSON.parse(readFileSync(at(fx), 'utf8')), false);
+  fx.cleanup();
+});
+
 test('intake needs a harness or off, and says so', () => {
   const fx = makeFixture('driver-intake-arg');
   assert.match(captureError(() => run(['intake'], at(fx))).message, /<adapter>\|off/);

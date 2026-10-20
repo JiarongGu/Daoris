@@ -12,6 +12,27 @@ with the version and date at release.
   --landed`, which shows the `daoris.gates.json` at the line's tip and accepts it. An edit of that file asks you again, with
   *Accept the gates* on the Workflow tab. This version keeps the route and does not run the checks yet. A run's Workflow view
   says which route chose its workflow, and `daoris driver workflow show` prints the routes before the steps.
+- A repository's Setup says which checks its driven sessions run, beside its heavy gates, and `daoris-driver checks` sets
+  the same choice from a terminal. *Light* has sessions run the gates the repository does not mark heavy and the checks their
+  change reaches, filtered; its heavy gates are left out of every session. Each session is told so when it starts,
+  `daoris-driver run-heavy` refuses its tree, and on Claude Code each heavy gate's declared command is refused too; an agent
+  that takes no rules from Daoris is told them instead. *Heavy at end* has sessions run them once, at their end. Nothing set
+  runs as before.
+- `daoris-driver ask channel` shows which messages are urgent and, under each message you posted, how far it got in each
+  repository it went to: waiting, held, sent, taken, read, partly handed, answered or never reached, as the ask page shows it.
+  Your post is still urgent by default. `--ordinary` posts it for each session to read when its turn ends instead.
+- Agents no longer go on answering each other with nobody between. A piece of work goes on by another agent's answers alone (a
+  helper's answer, a second opinion's findings) at most twice in a row; the third waits for you, in the session's head and foot and
+  in *What needs you*, which the badge counts, with *Go on with this answer* and *Not now*. Going on counts as your word, so the
+  next two answers go on alone again; *Not now* keeps the answer, which then goes on only with your own words. An answer taken
+  while the agent is working, and your own words or Daoris's, never count.
+- The desktop's machine log keeps every line when a second launch writes beside the running Daoris, where before their lines
+  could overwrite each other's in the day's file. An error that ends the desktop's application is written there before the log closes.
+- Settings → Driver lists the plugins installed here under *Installed plugins*: whether each is on, whether each of its servers is
+  approved for Ask Daoris and which writes you accepted, and *Open*, which takes you to the plugin's page, where you change them.
+
+- A usage curve that breaks a rule is refused naming its row, as the curve's editor shows it (*`weekly`'s row 2 has used
+  20%…*, 第 2 行), on the Accounts screen, in `profile use --curve` and in Ask Daoris, where it said *point*.
 - A driven session whose own conversation cannot be resumed moves to a new session by itself only where waiting would not help.
   A refusal from its agent still carries it on, handed what Daoris kept of it, but a conversation open in another client of its
   agent now waits for you until you say more. Claude Code ending before it reopens a conversation is tried once more first, in a
@@ -252,8 +273,9 @@ with the version and date at release.
 - Under a repository's asking permission prompts, a tool call its rules do not allow now waits for your answer instead of
   being refused: the session's page and *What needs you* show the call as the agent named it, how long it has waited and
   that it is refused after 15 minutes, with *Allow once* and *Refuse* as the agent offers them. Allowing lets that call
-  alone run; the window's badge counts the wait. An agent not run over its protocol still refuses it, and says so. The
-  session's row in the list and its head say the call waits for your answer, and for how long, rather than that it runs.
+  alone run; the window's badge counts the wait. *In the conversation* on the waiting call leads to that call in the
+  session's conversation, so you can read what it asks in context. An agent not run over its protocol still refuses it,
+  and says so. The session's row in the list and its head say the call waits for your answer, and for how long, rather than that it runs.
 - The window minimizes, maximizes and restores with Windows' own animations, Win+Up and Snap maximize it, and a window
   minimized while maximized comes back maximized from the tray, a notification or a later launch (the UI kit, Shenora
   0.22).

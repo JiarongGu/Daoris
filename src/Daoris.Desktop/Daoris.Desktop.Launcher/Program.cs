@@ -186,11 +186,12 @@ public static class Launcher
         // Through the shell (UPDATE1): a start that does not go through it hands the application every inheritable handle
         // this launcher holds, which it inherited from the application that asked for the update, so the new one found the
         // engine's DevTools port held by the builds before it. The shell's start inherits none and still hands the
-        // environment.
+        // environment. In the install's root, never `app/` (APPCWD1): what the application starts naming no working folder
+        // inherits it, and one standing in `app/` holds the swap's move of it.
         var start = new ProcessStartInfo(shell)
         {
             UseShellExecute = true,
-            WorkingDirectory = Path.GetDirectoryName(shell)!,
+            WorkingDirectory = Path.GetDirectoryName(Path.GetDirectoryName(shell)!)!,
         };
         foreach (var argument in arguments) start.ArgumentList.Add(argument);
 

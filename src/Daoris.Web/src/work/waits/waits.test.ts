@@ -6,6 +6,7 @@ import type { HelperAskRow } from './HelperAsks';
 import type { HandOverAskRow } from './HandOverAgentAsk';
 import { GATES } from '../gates/opinionFixtures';
 import type { PermissionWait } from './PermissionAsks';
+import type { AnswerWait } from './AnswerAlone';
 import { conversationOffer, landingStands, rulesAsked, waitsOf } from './waits';
 
 // WAITFOOT1b (D168 point 2): which waits on the person stand, one rule the foot's strip and the head's work read, so the two
@@ -168,7 +169,7 @@ describe('the waits on the person', () => {
   // AUTONOMY1b3c (D184 point 3): a tool call the session holds for the person's answer under asking is one of its waits, the first
   // after a park's, since its turn stands still until they answer.
   const held = (request: string, over: Partial<PermissionWait> = {}): PermissionWait => ({
-    session: 's1a2b3c4', request, call: null, title: 'npm test', kind: 'execute', since: '2026-10-20T09:00:00Z',
+    session: 's1a2b3c4', request, call: null, title: 'npm test', kind: 'execute', since: '2026-10-20T09:00:00Z', until: '2026-10-20T09:15:00Z',
     choices: [{ id: 'allow', name: 'Allow', kind: 'allow_once' }, { id: 'reject', name: 'Reject', kind: 'reject_once' }], ...over,
   });
 
@@ -185,6 +186,25 @@ describe('the waits on the person', () => {
     expect(waitsOf({
       session: session({ state: 'working' }), rules, helpers: { asks: [ask('a1')], onApprove: press }, permissions: { waits: [held('7')], onAnswer: press },
     })).toEqual([{ kind: 'permission', request: '7' }, { kind: 'rule', id: 'r1' }, { kind: 'helper', id: 'a1' }]);
+  });
+
+  // COWORK1e (D188 point 4; the message-urgency design §8.3): a third answer in a row with nobody between, which the bound holds for
+  // the person, is one of its waits whatever its state: its line stands still until they answer, so it comes after a held call.
+  const alone = (session: string): AnswerWait => ({ session, agent: 'codex-acp', words: ['w3'], since: '2026-10-21T09:00:00Z' });
+
+  it('names the answer the bound holds for this session, none of another, and none where nothing can answer it', () => {
+    expect(waitsOf({ session: session({ state: 'completed' }), answers: { waits: [alone('o7h3r000'), alone('s1a2b3c4')], onAnswer: press } }))
+      .toEqual([{ kind: 'answerAlone' }]);
+    expect(waitsOf({ session: session({ state: 'working' }), answers: { waits: [alone('o7h3r000')], onAnswer: press } })).toEqual([]);
+    expect(waitsOf({ session: session(), answers: { waits: [alone('s1a2b3c4')] } })).toEqual([]);
+  });
+
+  it('stands after a held tool call and before the rules', () => {
+    const rules = { proposals: [proposal('r1', 'waiting')], onAnswer: press };
+    expect(waitsOf({
+      session: session({ state: 'working' }), rules, answers: { waits: [alone('s1a2b3c4')], onAnswer: press },
+      permissions: { waits: [held('7')], onAnswer: press },
+    })).toEqual([{ kind: 'permission', request: '7' }, { kind: 'answerAlone' }, { kind: 'rule', id: 'r1' }]);
   });
 });
 

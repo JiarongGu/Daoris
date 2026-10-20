@@ -6,6 +6,7 @@ import type { RuleListName } from '../../settings/repository/AgentRules';
 import { COMMIT_DEFAULT, type CommitEdit, CommitField, commitRowSays, commitSummary, type RepositoryCommits } from '../../settings/repository/Commits';
 import { type HeavyGate, HeavyGates, type HeavyMarks, heavySummary } from '../../settings/repository/HeavyGates';
 import { LandedRoute, type LandedSetup, landedSummary } from '../../settings/repository/LandedRoute';
+import { SessionChecksRow, sessionChecksSummary, type SessionChecksValue } from '../../settings/repository/SessionChecks';
 import { HELPER_DEFAULT, type HelperEdit, HelperField, helperRowSays, helperSummary, type RepositoryHelpers } from '../../settings/repository/Helpers';
 import {
   HAND_OVER_DEFAULT, type HandOverEdit, HandOverField, handOverRowSays, handOverSummary, type RepositoryHandOver,
@@ -39,6 +40,15 @@ export type HeavySetup = {
   /** Whether its own file wins, as the driver read it (HEAVYRUN1b2c); none until it has answered. */
   marks?: HeavyMarks | null;
   onSave: (gates: HeavyGate[] | null, answered: Answered) => void;
+  /**
+   * Which checks its sessions run (FABRIC-PIPELINE1b, D192 point 4), its row beside the gates, and the press that sets it; absent on a
+   * shell older than it, and the row is not drawn.
+   */
+  checks?: {
+    /** The rule set for it; null where none is, which is today's. */
+    set: SessionChecksValue | null;
+    onChange: (checks: SessionChecksValue | null, answered: Answered) => void;
+  } | null;
 };
 
 /**
@@ -285,8 +295,8 @@ export function RepositorySetup({ repository, driving, work, access, heavy, land
     driving: false,
     work: lineOwn || landingOwn || commitsOwn || reviewOwn || opinionOwn || landedOwn,
     access: accessOwn,
-    // This machine's heavy gates are set for this repository alone, so a list set is its own.
-    heavy: (heavy?.gates.length ?? 0) > 0,
+    // This machine's heavy gates are set for this repository alone, so a list set is its own; and so are its sessions' checks.
+    heavy: (heavy?.gates.length ?? 0) > 0 || Boolean(heavy?.checks?.set),
     sessions: languageOwn || helpersOwn || handOverOwn || standing !== null,
     reach: readOwn || writesTo.length > 0 || ruleCount > 0,
   };
@@ -458,10 +468,29 @@ export function RepositorySetup({ repository, driving, work, access, heavy, land
     });
   }
   if (heavy) {
+    // FABRIC-PIPELINE1b: its sessions' checks first where one is set, then the gates; the heavy gates named are those its own file
+    // marks where it marks some, else this machine's list, as `run-heavy` resolves them.
+    const checksSaid = heavy.checks ? sessionChecksSummary(t, heavy.checks.set) : null;
+    const heavyNames = heavy.marks?.marks === true ? heavy.marks.names : heavy.gates.map((gate) => gate.name);
     sections.push({
       id: 'heavy',
-      summary: heavySummary(t, heavy.gates, heavy.marks),
-      body: <HeavyGates repository={repository} gates={heavy.gates} marks={heavy.marks} busy={busy} onSave={heavy.onSave} />,
+      summary: [...(checksSaid ? [checksSaid] : []), heavySummary(t, heavy.gates, heavy.marks)].join(JOIN),
+      body: (
+        <>
+          {heavy.checks && (
+            <SessionChecksRow
+              repository={repository}
+              checks={heavy.checks.set}
+              light={heavy.marks?.light ?? null}
+              heavy={heavyNames}
+              known={typeof heavy.marks?.marks === 'boolean'}
+              busy={busy}
+              onChange={heavy.checks.onChange}
+            />
+          )}
+          <HeavyGates repository={repository} gates={heavy.gates} marks={heavy.marks} busy={busy} onSave={heavy.onSave} />
+        </>
+      ),
     });
   }
   if (sessions && sessionsParts && sessionsParts.length > 0) {

@@ -245,8 +245,8 @@ public sealed class CheckoutFreshnessTests : IDisposable
 
     private static async Task Heard(CheckoutFreshness freshness)
     {
-        for (var waited = 0; waited < 100 && !freshness.IsStale; waited++) await Task.Delay(100);
-        Assert.True(freshness.IsStale, "a file moved under a watched folder and nothing was marked within ten seconds");
+        for (var waited = 0; waited < Poll.Patience.TotalMilliseconds / 100 && !freshness.IsStale; waited++) await Task.Delay(100);
+        Assert.True(freshness.IsStale, $"a file moved under a watched folder and nothing was marked within {Poll.Patience}");
     }
 
     private sealed class SteppedTime(DateTimeOffset start) : TimeProvider

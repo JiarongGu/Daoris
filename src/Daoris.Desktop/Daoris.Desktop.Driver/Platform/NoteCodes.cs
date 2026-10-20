@@ -570,6 +570,13 @@ public static class NoteCodes
     public static readonly NoteCode HelperRefusedBy = new("helper.refused-by", ["agent", "why"]) { Why = Helper };
     public static readonly NoteCode HelperHelping = new("helper.helping", ["session"]);
 
+    // ——— The answers-alone bound (COWORK1e, D188 point 4; the message-urgency design §2.3, §8.3): a third answer in a row with nobody
+    // between held for the person, by the agent that answered; their *Go on with this answer*, which counts as their word; their *Not
+    // now*, which keeps the answer for them. Facts only: the agent by its adapter.
+    public static readonly NoteCode AnswersHeld = new("answers.held", ["agent"]);
+    public static readonly NoteCode AnswersPassed = new("answers.passed", []);
+    public static readonly NoteCode AnswersKept = new("answers.kept", []);
+
     // ——— A conversation handed to another agent (MIXAGENT1a-i, D163 §3): the old one's end says which agent and which
     // conversation it went to, the new one's first line where it came from and why. Facts only: never an account's name or a path.
     public static readonly NoteCode ChatHandedOver = new("chat.handed-over", ["agent", "session"]);

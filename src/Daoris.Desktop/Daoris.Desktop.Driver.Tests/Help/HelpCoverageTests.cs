@@ -90,6 +90,14 @@ public sealed partial class HelpCoverageTests
         + "the person's press.";
 
     /// <summary>
+    /// *Sessions' checks* on a repository's Setup (FABRIC-PIPELINE1b, D192 point 4): which checks its sessions run, the twin of
+    /// <c>daoris-driver checks</c>.
+    /// </summary>
+    private const string ChecksOfSessions =
+        "which checks a repository's sessions run is the person's standing choice, and light lowers their part by leaving the heavy gates "
+        + "to a verification (D192): no proposal names `SET_SESSION_CHECKS`, so a helper never chooses what a session may run.";
+
+    /// <summary>
     /// ACCT2's <c>daoris agent profile rename</c> and the route's <c>profile-rename</c>: exempt, since an account's name is the
     /// person's own word. The agent's page presses it (UX7b), and this is its control's row.
     /// </summary>
@@ -624,6 +632,12 @@ public sealed partial class HelpCoverageTests
             "it answers a tool call a session holds for the person under its repository's asking permission prompts, with a choice "
             + "its agent offered, for that one call (D184's AUTONOMY1b3a note): a live request is the person's own press, never a "
             + "proposal, and what an agent may do at all is the person's rules and access setup, doors of their own.")),
+        // COWORK1e (D188 point 4; the message-urgency design §8.3): the person's word on a third answer in a row with nobody between, on
+        // the session's page and What needs you.
+        ("work", "useAnswerAlone", null, new Exempt(
+            "it answers a third answer in a row with nobody between, which the answers-alone bound holds for the person (D188 point 4): "
+            + "*Go on with this answer* is their word on that one answer and *Not now* keeps it for them, given where it waits; the bound "
+            + "itself is fixed, so Ask Daoris proposes no single answer.")),
         // SESSONE2c (D167 points 6 to 8): the ask's channel, posted to from the ask's page and a session's panel, and its mark.
         ("asks", "usePostChannel", null, ChannelPostDoor),
         ("work", "usePostChannel", null, ChannelPostDoor),
@@ -817,7 +831,10 @@ public sealed partial class HelpCoverageTests
         ("projects", "useSetAccess", null, new Exempt(SessionAccess)),
         // HEAVYRUN1b2b: *Heavy gates*, on a repository's Setup.
         ("projects", "useSetHeavyGates", null, new Exempt(HeavyGates)),
+        // FABRIC-PIPELINE1a: the landed route, on a repository's Setup and its Workflow tab.
         ("projects", "useSetLanded", null, new Exempt(LandedRoute)),
+        // FABRIC-PIPELINE1b: *Sessions' checks*, beside the heavy gates on a repository's Setup.
+        ("projects", "useSetSessionChecks", null, new Exempt(ChecksOfSessions)),
         ("projects", "useSetStanding", null, new Door("setting", "standing")),
         ("projects", "useSetReadAcross", null, new Door("setting", "across")),
         ("projects", "useSetWriteAcross", null, new Door("setting", "across")),

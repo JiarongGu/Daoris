@@ -184,7 +184,7 @@ public sealed class PipeCensus
         var table = new Dictionary<string, PipeRule>(StringComparer.Ordinal);
         Add(PipeClass.Open,
             // Reads (D156 §3's reads stay open): they change nothing and declare nothing (D169 point 2).
-            "ACCOUNTS", "ACROSS", "ASKS_ELSEWHERE", "ASK_LANDING", "CHANNEL_READ", "CHECKOUT_BRANCH", "ENTRY_LANDING",
+            "ACCOUNTS", "ACROSS", "ANSWER_WAITS", "ASKS_ELSEWHERE", "ASK_LANDING", "CHANNEL_READ", "CHECKOUT_BRANCH", "ENTRY_LANDING",
             "GIT_BLAME", "GIT_BRANCHES", "GIT_COMMIT", "GIT_COMPARE", "GIT_GRAPH", "GIT_HISTORY", "HANDOFF_PLAN", "HARNESSES",
             "HELPER_WAITS", "HELP_CONVERSATIONS", "HELP_PROPOSALS", "HELP_WIRED", "HEAVY_MARKS", "HEAVY_SLOT", "HISTORY_PLAN", "LANDING", "LINES", "OPINION_GATE",
             "OPINION_WAITS", "PERMISSION_WAITS", "PLUGIN", "PLUGINS", "PLUGIN_ACTIVITY", "PLUGIN_READ", "RULES", "SESSION_DIFF", "SESSION_FILE",
@@ -209,6 +209,8 @@ public sealed class PipeCensus
             "SESSION_GO_AHEAD", "RESOLVE_SESSION", "SESSION_HELPER_APPROVE", "SESSION_HELPER_DECLINE", "SESSION_HELPER_ASK", "SESSION_PERMISSION_ANSWER",
             // MIXAGENT1c: the yes and the no to a session's agent's own ask to hand it over.
             "SESSION_HAND_OVER_APPROVE", "SESSION_HAND_OVER_DECLINE",
+            // COWORK1e: the person's word on a third answer alone held for them, which only they may let go on.
+            "SESSION_ANSWER_ALONE",
             "RETRY_QUEST", "HELP_APPLY",
             // The person's words, and a conversation begun or carried on with them.
             "SESSION_INPUT", "SESSION_QUEUE_EDIT", "CHANNEL_POST", "CHANNEL_FORWARD", "START_CHAT", "START_HELP", "HELP_START_FROM",
@@ -220,8 +222,10 @@ public sealed class PipeCensus
             // FABRIC-PIPELINE1a: the landed route and the gates it runs unasked, accepted by their blob (D156).
             "WORKFLOW_LANDED",
             // HEAVYRUN1b2b: the commands this machine runs for a repository's heavy gates, which the person writes.
-            "SET_HEAVY_GATES","SET_HOLD", "SET_INTAKE", "SET_LANDING", "SET_LANGUAGE", "SET_LINE", "SET_NOTIFY", "SET_OPINION", "SET_READ_ACROSS",
-            "SET_REVIEW", "SET_SESSION_OPTION", "SET_STANDING", "SET_STRIKES", "SET_TREES", "SET_WRITE_ACROSS", "TRUST_FOLDER",
+            "SET_HEAVY_GATES", "SET_HOLD", "SET_INTAKE", "SET_LANDING", "SET_LANGUAGE", "SET_LINE", "SET_NOTIFY", "SET_OPINION", "SET_READ_ACROSS",
+            "SET_REVIEW", "SET_SESSION_OPTION",
+            // FABRIC-PIPELINE1b: which checks a repository's sessions run, the person's standing choice; light lowers their part.
+            "SET_SESSION_CHECKS", "SET_STANDING", "SET_STRIKES", "SET_TREES", "SET_WRITE_ACROSS", "TRUST_FOLDER",
             "RULE_ACTION", "RULE_PROPOSAL", "ACCOUNT_USE", "HARNESS_ACTION",
             // Code that runs in the driver, and the programs it runs with.
             "PLUGIN_ACTION", "PLUGIN_ADD", "PLUGIN_INSTALL", "PLUGIN_NEW", "PLUGIN_TRY",

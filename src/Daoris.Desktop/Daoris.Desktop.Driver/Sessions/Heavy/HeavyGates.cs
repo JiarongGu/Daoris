@@ -25,7 +25,11 @@ public sealed record HeavyDeclared(IReadOnlyList<HeavyGate> Gates, string? Repos
 /// <param name="Marks">True where it marks some; false where it marks none or there is no file; null where it cannot be told.</param>
 /// <param name="Names">The heavy gates' names, in order, where it marks some.</param>
 /// <param name="Refusal">Why it cannot be told; null otherwise.</param>
-public sealed record HeavyMarks(bool? Marks, IReadOnlyList<string> Names, string? Refusal);
+public sealed record HeavyMarks(bool? Marks, IReadOnlyList<string> Names, string? Refusal)
+{
+    /// <summary>The gates it declares and does not mark heavy, in order (FABRIC-PIPELINE1b): a light pipeline's sessions run these.</summary>
+    public IReadOnlyList<string> Light { get; init; } = [];
+}
 
 /// <summary>
 /// Which gates a repository's heavy run runs (HEAVYRUN1a, D180's HEAVYRUN1 note): those its <c>daoris.gates.json</c> marks
@@ -124,8 +128,9 @@ public static class HeavyGates
         if (!File.Exists(Path.Combine(checkout, FileName))) return new HeavyMarks(false, [], null);
         try
         {
-            var names = Read(checkout).Where(gate => gate.Heavy).Select(gate => gate.Name).ToList();
-            return new HeavyMarks(names.Count > 0, names, null);
+            var gates = Read(checkout);
+            var names = gates.Where(gate => gate.Heavy).Select(gate => gate.Name).ToList();
+            return new HeavyMarks(names.Count > 0, names, null) { Light = [.. gates.Where(gate => !gate.Heavy).Select(gate => gate.Name)] };
         }
         catch (DriverException error)
         {

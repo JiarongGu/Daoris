@@ -483,7 +483,7 @@ public sealed class DriverModuleSessionsTests : DriverModuleBridge
         var confirmed = await AnswerAsync(module, "PERSON_CONFIRM", new { id = shown.Id, confirm = true });
         Assert.True(confirmed.GetProperty("answered").GetBoolean());
 
-        Assert.Equal(0, await verb.WaitAsync(TimeSpan.FromMinutes(1)));
+        Assert.Equal(0, await verb.WaitAsync(Poll.Patience));
         Assert.Equal("sessions: archived done1." + Environment.NewLine, output.ToString());
         Assert.Equal("sessions: waiting for you to confirm this in Daoris's window…" + Environment.NewLine, error.ToString());
         Assert.Contains("done1", new SessionArchive(Home).Marks().Keys);
@@ -538,7 +538,7 @@ public sealed class DriverModuleSessionsTests : DriverModuleBridge
 
             await AnswerAsync(module, "PERSON_CONFIRM", new { id = shown.Id, confirm = true });
 
-            var exit = await run.WaitAsync(TimeSpan.FromMinutes(1));
+            var exit = await run.WaitAsync(Poll.Patience);
             if (expected is not null)
             {
                 Assert.Equal(1, exit);

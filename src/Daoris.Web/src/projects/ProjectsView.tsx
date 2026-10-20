@@ -22,9 +22,10 @@ import { type HandOverEdit, handOverToast } from '../settings/repository/HandOve
 import type { LandingRule } from '../settings/repository/Landings';
 import { type OpinionEdit, opinionToast } from '../settings/repository/Opinions';
 import { type ReviewEdit, reviewToast } from '../settings/repository/Reviews';
+import { sessionChecksToast, type SessionChecksValue } from '../settings/repository/SessionChecks';
 import {
   useAcross, useDriver, useHarnesses, useLines, usePlugins, useRuleAction, useRules, useSetAccess, useSetCommits, useHeavyMarks, useHeavySlot, useSetDrivable, useSetHeavyGates, useSetHelpers,
-  useSetHandOver, useSetHold, useSetLanding, useSetLanguage, useSetLine, useSetOpinion, useSetReadAcross, useSetReview, useSetStanding, useSetTrees,
+  useSetHandOver, useSetHold, useSetLanding, useSetLanguage, useSetLine, useSetOpinion, useSetReadAcross, useSetReview, useSetSessionChecks, useSetStanding, useSetTrees,
   useSetupPlan, useSetupPress, useSetWriteAcross, useSweepPlan, useWorkflowCurrent, useSetLanded,
 } from '../bridge/shell';
 import type { SetUpForAgentsProps } from './setup/SetUpForAgents';
@@ -152,6 +153,7 @@ export function useProjectsView({
   const setHandOver = useSetHandOver();
   const setAccess = useSetAccess();
   const setHeavy = useSetHeavyGates();
+  const setChecks = useSetSessionChecks();
   const setRead = useSetReadAcross();
   const setWrite = useSetWriteAcross();
   const ruleAction = useRuleAction();
@@ -438,6 +440,18 @@ export function useProjectsView({
         },
         onError: (error) => answered.refused(sentence(error)),
       }),
+      // Which checks its sessions run (FABRIC-PIPELINE1b), matched without case as the driver keys them; a shell older than it answers
+      // none, and no row is drawn. A press goes out at once, and a refusal is said in the row.
+      checks: Array.isArray(driver.data.sessionChecks) ? {
+        set: (driver.data.sessionChecks.find((row) => same(row.repository))?.checks as SessionChecksValue | undefined) ?? null,
+        onChange: (checks, answered) => setChecks.mutate({ repository, checks }, {
+          onSuccess: () => {
+            notify(sessionChecksToast(t, repository, checks));
+            answered.done();
+          },
+          onError: (error) => answered.refused(sentence(error)),
+        }),
+      } : null,
     } : null;
 
     // Its standing answer (KNOWUSE1b), matched without case as the driver matches it; a shell older than it answers no

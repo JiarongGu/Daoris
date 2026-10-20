@@ -42,14 +42,14 @@ public sealed class ChangeStreamHostTests(KeyedHost host) : IClassFixture<KeyedH
     public async Task An_agent_s_publish_wakes_a_held_wait()
     {
         var (since, _) = Read(await host.GetAsync(ChangeStream.Route));
-        var waiting = host.GetAsync($"{ChangeStream.Route}?since={since}&wait=10");
+        var waiting = host.GetAsync($"{ChangeStream.Route}?since={since}&wait=30");
         await Task.Delay(200);
         Assert.False(waiting.IsCompleted, "a current cursor was answered before anything moved");
 
         var clock = Stopwatch.StartNew();
         var published = await host.PostAsync("/api/quests", new { from = "Asker", to = "Keeper", title = "Wake the driver", body = "why" });
         Assert.Equal(200, published.Status);
-        var (next, moved) = Read(await waiting.WaitAsync(TimeSpan.FromSeconds(10)));
+        var (next, moved) = Read(await waiting.WaitAsync(Poll.Patience));
 
         Assert.True(clock.Elapsed < TimeSpan.FromSeconds(5), $"{clock.Elapsed}");
         Assert.Equal([ChangeFamilies.Quests], moved);

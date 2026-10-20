@@ -346,7 +346,7 @@ public sealed partial class GroupsStateSliceTests : DriverModuleBridge
         Assert.Equal(wakes, wake is not null && (wake.When is null || wake.When(told)));
     }
 
-    private static readonly TimeSpan Within = TimeSpan.FromSeconds(10);
+    private static readonly TimeSpan Within = Poll.Patience;
 
     /// <summary>Whether a field, as <c>shape.field</c>, is pushed, or the pull's alone, itself or as part of a field the pull keeps.</summary>
     private static bool Classed(string field)

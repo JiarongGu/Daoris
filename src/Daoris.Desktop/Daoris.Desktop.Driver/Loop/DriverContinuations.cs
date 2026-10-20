@@ -282,9 +282,19 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
             // HELPPLUG1b (D170 point 4): the skills plugins hand sessions, as its first run was handed them, gone with this run.
             var (skills, skillPlugins) = SpawnSkills.Hand(adapter, info, home, sessionId, _context.Catalog, PluginServerTo.Sessions);
             using var skilled = new Disposer(() => SpawnSkills.Remove(skills));
+            // FABRIC-PIPELINE1b (D192 point 5): it goes on under the checks its repository sets now, as it goes on under the prompts
+            // standing now: their deny rules handed again where its agent takes Daoris's rules, and kept by its id for `run-heavy` while
+            // this run lasts. Its instruction is not handed again, so its words are its first start's.
+            var checks = SessionChecks.For(config, quest.To) is null
+                ? null
+                : SessionChecks.Of(config, quest.To, await WorkflowProcesses.ReadAsync(
+                    home, config, new ServiceReviewWorld(service), quest.Id, quest.To, start.Workspace, ct).ConfigureAwait(false));
+            var checksKept = SessionChecks.Hold(home, sessionId, checks);
+            using var checksHeld = new Disposer(() => SessionChecks.LetGo(checksKept));
             var rules = _driver.HandRules(
                 adapter, info, sessionId, start.Workspace, quest.To, workTree, target.AttachmentsDirectory, across: across,
-                said: SaidFilesFolder(home, sessionId, resume), job: findings ? AnswersFindings : null, plugins: skillPlugins);
+                said: SaidFilesFolder(home, sessionId, resume), job: findings ? AnswersFindings : null, plugins: skillPlugins,
+                heavy: HeavyTold.Hand(workTree, home, quest.To, checks, adapter.TakesSettings));
 
             onOpened();
             var openedAt = DateTimeOffset.UtcNow;

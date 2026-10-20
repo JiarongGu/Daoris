@@ -27,6 +27,7 @@ import { HelperAsks, type HelperWaits, openAsks, waitsOnWord } from '../waits/He
 import { hasNote, noteBlocks, noteLines } from '../noteLines';
 import { processCommitsSays, processLandingSays, type SessionProcess } from './process';
 import { heldFor, PermissionAsks, type PermissionWaits } from '../waits/PermissionAsks';
+import { AnswerAlone, answerFor, type AnswerWaits } from '../waits/AnswerAlone';
 import { ProposedRules, type RuleAsk, type RuleWaits } from '../waits/ProposedRules';
 import { movedAt } from '../rail/rail';
 import { RunningIntake } from './RunningIntake';
@@ -101,8 +102,13 @@ export function SessionHead({
   session, quest, opening, taking, lastTurn, resolving = false, onResolve, onAnswerAsk,
   onAnswerSession, branch, ownBranch, onReview, onDiscardBranch, discardingBranch = false, headed = false, goAheads = [], onGoAhead,
   ownSignIn = false, nameOf, lands, landing, planning, onLand, onSayRebase, onName, discards, onDiscardTree, review, behind, opinion, onOpenQuest,
-  continues, helps, onOpenSession, heavy, process, workAsk, workBusy = false, toEvent, rules, ruleAsk, seek, helpers, permissions,
+  continues, helps, onOpenSession, heavy, process, workAsk, workBusy = false, toEvent, rules, ruleAsk, seek, helpers, permissions, answers,
 }: {
+  /**
+   * The answers the answers-alone bound holds for the person (COWORK1e, D188 point 4; the message-urgency design §8.3), the frame's,
+   * handed to the foot's strip alike: every one the shell read, its own drawn, the agents' names, the answer's door and its pending.
+   */
+  answers?: AnswerWaits | null;
   /**
    * The helpers it asked for (MIXAGENT2b, D163), the frame's: its asks as the driver's look left them, the agents' names, the
    * person's yes and a door to each helper. Absent, a browser or a teammate's record, none is drawn.
@@ -282,6 +288,7 @@ export function SessionHead({
   const noted = hasNote({ note: session.note, parts: session.noteParts });
   const proposed = rulesAsked(rules?.proposals, session.id);
   const held = heldFor(permissions?.waits ?? [], session.id);
+  const alone = answerFor(answers?.waits ?? [], session.id);
   const own = useRef<HTMLElement>(null);
   const { sought, letGo } = useSought(own, seek);
 
@@ -346,7 +353,31 @@ export function SessionHead({
           className="grid gap-1"
         >
           <h3 id={`permissions-${session.id}`} className="m-0 text-small font-semibold">{t('work.wait.permission.title')}</h3>
-          <PermissionAsks waits={held} onAnswer={permissions?.onAnswer} busy={permissions?.busy} lead={t('work.wait.permission.lead')} />
+          <PermissionAsks
+            waits={held}
+            onAnswer={permissions?.onAnswer}
+            busy={permissions?.busy}
+            lead={t('work.wait.permission.lead')}
+            inConversation={toEvent?.permissions}
+            marked={sought?.startsWith('permission:') ? sought.slice('permission:'.length) : undefined}
+          />
+        </section>
+      )}
+      {/* A third answer in a row with nobody between, which the answers-alone bound holds for the person (COWORK1e, §8.3): its line
+          stands still until they answer. A wait's section where it can be answered here, so the strip stands aside for it too. */}
+      {alone && (
+        <section
+          aria-labelledby={`answer-alone-${session.id}`}
+          data-wait-section={answers?.onAnswer ? '' : undefined}
+          className="grid gap-1"
+        >
+          <h3 id={`answer-alone-${session.id}`} className="m-0 text-small font-semibold">{t('work.wait.answer.title')}</h3>
+          <AnswerAlone
+            wait={alone}
+            nameOf={answers?.nameOf}
+            onAnswer={answers?.onAnswer}
+            busy={answers?.busy}
+          />
         </section>
       )}
       {proposed.length > 0 && (

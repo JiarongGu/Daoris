@@ -15,9 +15,11 @@ import {
   useDiscardSessionTree, useDriver, useOpinionGate, useWorkflowRun, useRules, useSessionEvents, stoppedWaiting, useUnderWay,
   useEntryLanding, useLandEntry, useSessionHelpers, useUnderWaySubject, useSessionProcess, useWorkState, usePushedCalls, withCall,
   useAnswerPermission, usePermissionWaits, useSessionHandOverAsk, useApproveHandOver, useDeclineHandOver, type HandOverWord,
+  useAnswerWaits, useAnswerAlone,
 } from '../bridge/shell';
 import { handOverRefused, type HandOverAskWait } from './waits/HandOverAgentAsk';
 import { permissionSaid, type PermissionWaits } from './waits/PermissionAsks';
+import { answerAloneSaid, type AnswerWaits } from './waits/AnswerAlone';
 import { type Sent, useSending, useSettled } from './conversation/sending';
 import { WorkflowRunView } from '../workflow/WorkflowRunView';
 import { opinionAsked, opinionHolds } from './gates/opinion';
@@ -1411,6 +1413,27 @@ export function WorkFrame({
     }),
     busy: answerPermission.isPending,
   } : null;
+  // The answers the answers-alone bound holds for the person (COWORK1e, D188 point 4; the message-urgency design §8.3): read off this
+  // machine's marks under the sessions' key, and the answer's one owner, so the head and the foot press the same. Its answer said where
+  // the press was made; a refusal in the catalogue's words.
+  const answerWaits = useAnswerWaits();
+  const answerAlone = useAnswerAlone();
+  const heldAnswers: AnswerWaits | null = attended && here && answerWaits.data ? {
+    waits: answerWaits.data,
+    nameOf: (agent: string) => agentRoster.names?.[agent] ?? agent,
+    onAnswer: (wait, goOn, answered) => answerAlone.mutate({ session: wait.session, goOn }, {
+      onSuccess: (answer) => {
+        if (!answer.answered) {
+          answered.refused(answerAloneSaid(t, answer.why, answer.message));
+          return;
+        }
+        notify(t(goOn ? 'work.wait.answer.wentOn' : 'work.wait.answer.kept'));
+        answered.done();
+      },
+      onError: (error) => answered.refused(sentence(error)),
+    }),
+    busy: answerAlone.isPending,
+  } : null;
 
   // The menu bar's verbs that are this frame's (UX7a, D152 §3.2): the attended session's answer, the views of the regions,
   // a new terminal where the attended session works, and *Archive what ended…*'s first press. Each from an effect, since
@@ -1569,6 +1592,8 @@ export function WorkFrame({
     handOver: handOverWait,
     // The tool calls it holds for the person's answer (AUTONOMY1b3c): one of its waits, at the head and at the foot alike.
     permissions: heldPermissions,
+    // A third answer alone the bound holds for the person (COWORK1e): one of its waits, at the head and at the foot alike.
+    answers: heldAnswers,
     // Its review, wherever the review stands (SESS2 H4): the move beside unlanded work.
     onReview: () => openView('review'),
     // LAND4: commits its tree holds, offered to land beside what it left; the press is the review's Accept, its sentence said
@@ -2131,6 +2156,7 @@ export function WorkFrame({
                     waits: standing, goAheads: waits.goAheads, opinion: opinionAsked(waits.landing)?.opinion ?? null,
                     proposals: rulesAsked(waits.rules?.proposals, attended.id),
                     helpers: waits.helpers?.asks,
+                    permissions: waits.permissions?.waits,
                   } : undefined}
                   onAnchors={(session, state) => setAnchored({ session, ...state })}
                   onToWait={(wait) => {

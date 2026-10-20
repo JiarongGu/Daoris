@@ -313,7 +313,7 @@ describe('work to review, worded', () => {
 describe('the groups', () => {
   it('puts each kind in its group', () => {
     expect(ATTENTION_GROUP).toEqual({
-      parked: 'holding', 'parked-quest': 'holding', 'go-ahead': 'holding', permission: 'holding', trust: 'holding',
+      parked: 'holding', 'parked-quest': 'holding', 'go-ahead': 'holding', permission: 'holding', answer: 'holding', trust: 'holding',
       'account-wait': 'holding', 'signed-out': 'holding',
       proposal: 'word', intake: 'word', departure: 'word', 'set-up': 'word', opinion: 'word', rule: 'word', helper: 'word',
       unanswerable: 'word', review: 'ready', work: 'word',
@@ -423,14 +423,35 @@ describe('the groups', () => {
     expect(attentionActs(asked)).toEqual(['let-ask', 'not-now']);
   });
 
+  /**
+   * COWORK1e (D188 point 4; the message-urgency design §8.3): a third answer in a row with nobody between holds its session's work,
+   * named as Sessions names the session, said by the agent that answered, with *Go on with this answer* and *Not now*; after a held call.
+   */
+  it('words a third answer alone held for the person, with its two acts', () => {
+    const answer = { session: 'c0nv0001', agent: 'codex-acp', words: ['w3'], since: '2026-09-21T09:30:00Z' };
+    const rows = attentionOf(attentionInOrder([
+      row('answer', 'c0nv0001', answer.since, { where: 'engine', session: 'c0nv0001', answer }),
+      row('answer', 'g0n3', answer.since, { where: '', session: 'g0n3', answer: { ...answer, session: 'g0n3', agent: null } }),
+    ]), { sessions: [session({ id: 'c0nv0001', quest: '7a82cc' })], quests: [quest()] });
+
+    expect(rows[0]).toMatchObject({
+      kind: 'answer', title: 'Expose a streaming budget on the chunk API', where: 'engine', session: 'c0nv0001',
+      detail: 'codex-acp’s answer would take this work on a third time with nobody between. It waits for you.',
+    });
+    expect(rows[1]).toMatchObject({ title: '#g0n3', detail: 'Another agent’s answer would take this work on a third time with nobody between. It waits for you.' });
+    expect(rows.map(attentionActs)).toEqual([['go-on-answer', 'keep-answer'], ['go-on-answer', 'keep-answer']]);
+    expect(keyed([row('answer', 'a1', '2026-09-21T09:00:00Z'), row('permission', 'p1', '2026-09-21T09:00:00Z')])).toEqual(['permission:p1', 'answer:a1']);
+  });
+
   /** AUTONOMY1b3c (D184 point 3): a tool call a session holds for the person, a press per choice its agent offered. */
   it('words a tool call a session holds for the person, with a press per offered choice', () => {
     const held = {
       session: 'c0nv0001', request: '900', call: 'tc-1', title: 'npm test', kind: 'execute', since: '2026-09-21T09:30:00Z',
+      until: '2026-09-21T09:45:00Z',
       choices: [{ id: 'allow', name: 'Allow', kind: 'allow_once' }, { id: 'reject', name: 'Reject', kind: 'reject_once' }],
     };
     const untitled = {
-      session: 'g0n3', request: '7', call: null, title: null, kind: 'edit', since: '2026-09-21T09:10:00Z',
+      session: 'g0n3', request: '7', call: null, title: null, kind: 'edit', since: '2026-09-21T09:10:00Z', until: null,
       choices: [{ id: 'no', name: 'Reject', kind: 'reject_once' }, { id: 'later', name: 'Later', kind: 'snooze' }],
     };
     const rows = attentionOf(attentionInOrder([
@@ -445,7 +466,12 @@ describe('the groups', () => {
         + 'answers within 15 minutes.',
     });
     expect(rows[0]).toMatchObject({ title: 'An untitled tool call', where: '' });
-    expect(rows[0]!.detail).toMatch(/^#g0n3 waits on your answer/);
+    // PERMUNTIL1: the bound is the route's for each request; where a host said none, none is said.
+    expect(rows[0]!.detail).toBe('#g0n3 waits on your answer before this tool call runs; it is refused if nobody answers in time.');
+    const sooner = attentionOf([row('permission', 'c0nv0001#900', held.since, {
+      where: 'engine', session: 'c0nv0001', permission: { ...held, until: '2026-09-21T09:40:00Z' },
+    })], { sessions: [session({ id: 'c0nv0001', quest: '7a82cc' })], quests: [quest()] });
+    expect(sooner[0]!.detail).toMatch(/within 10 minutes\.$/);
     expect(rows.map(attentionActs)).toEqual([['refuse-once'], ['allow-once', 'refuse-once']]);
     expect(attentionOffers(rows[1]!)).toEqual([{ act: 'allow-once', option: 'allow' }, { act: 'refuse-once', option: 'reject' }]);
     expect(ASKS_ONCE.has('allow-once')).toBe(false);

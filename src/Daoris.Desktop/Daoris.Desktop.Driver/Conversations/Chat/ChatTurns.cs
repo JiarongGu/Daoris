@@ -104,6 +104,38 @@ internal sealed class ChatTurns(
         lock (_gate) _door ??= door;
     }
 
+    // COWORK1e (D188 point 4; the message-urgency design §2.3): the answers-alone bound's judge, named by whoever says a helper's answer.
+    private Func<ChatMessage, Task<bool>>? _alone;
+
+    /// <summary>
+    /// The answers-alone bound's judge of a helper's answer as its turn comes (COWORK1e): true where the bound holds it for the person,
+    /// and the answer then goes no further, kept on its record. Named by whoever says a helper's answer, as <see cref="Keeps"/> names the
+    /// door; the first named stays.
+    /// </summary>
+    internal void Bounds(Func<ChatMessage, Task<bool>> alone)
+    {
+        lock (_gate) _alone ??= alone;
+    }
+
+    /// <summary>
+    /// Whether the bound holds this helper's answer (COWORK1e). A judge that cannot judge holds nothing, as a line whose events do not
+    /// read counts nothing (the steward's choice 2).
+    /// </summary>
+    private async Task<bool> HeldAloneAsync(ChatMessage message)
+    {
+        Func<ChatMessage, Task<bool>>? alone;
+        lock (_gate) alone = _alone;
+        if (message.Helped is null || alone is null) return false;
+        try
+        {
+            return await alone(message).ConfigureAwait(false);
+        }
+        catch (Exception)
+        {
+            return false;
+        }
+    }
+
     /// <summary>The take-offs on their way (COWORK1c), in order: what completes once every kept word that left so far is off the record. Never faults.</summary>
     public Task TakingOff
     {
@@ -731,6 +763,20 @@ internal sealed class ChatTurns(
             Task stopping;
             lock (_gate) stopping = _stopping;
             await stopping.ConfigureAwait(false);
+
+            // 🔴 COWORK1e (D188 point 4; the message-urgency design §2.3): the conversation's one dispatcher judges a helper's answer as its
+            // turn comes, once every turn before it was recorded, so two answers queued at once under separate asks never both pass as the
+            // second. One the bound holds goes no further: it stays on its record, marked for the person, and the queue goes on.
+            if (await HeldAloneAsync(message).ConfigureAwait(false))
+            {
+                lock (_gate)
+                {
+                    if (ReferenceEquals(_holding, message)) _holding = null;
+                    Publish();
+                }
+
+                continue;
+            }
 
             var readying = ready();
             if (!readying.IsCompleted)

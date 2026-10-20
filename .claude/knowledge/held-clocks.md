@@ -53,6 +53,10 @@ product being flaky. A wider window only moves the load at which it fails, and m
   waiting on it); where the claim is two constants, compare the constants.
 - **A negative wait is a signal** (TESTCLOCK2): "the edit has not finished within 400 ms" passes when a loaded edit has not begun.
   Wait instead for the code to say it is waiting (`RecordLock.Waiting`), then assert it has not finished.
+- **A bound that elapses only on failure is not a window: it reads `Poll.Patience`.** A test waiting on a signal (an answer, a
+  fact, an exit) bounds it by its project's two-minute `Poll.Patience` (driver, modules, service and HTTP tests each have one;
+  TESTPATIENCE1, TESTCLOCK1), never a few seconds of its own. A window in which nothing should happen, and an elapsed bound that
+  states the claim, are not such bounds.
 - **Not a fix:** a wider window, a sleep before the assertion, or a retry. A retry (`Held_words_name_what_holds_them`,
   TESTWAIT5) is a stopgap that makes a cause visible until it is named, and stays a backlog row until it is dropped.
 - **Prove it the way FLAKE5 did:** red with the late loop on the machine's clock, green with the held one, and the class

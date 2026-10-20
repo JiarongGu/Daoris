@@ -177,6 +177,17 @@ public static class HeavyRun
             throw new DriverException($"{world.Directory} is in no git checkout: `run-heavy` runs a checkout's own gates, from inside it.");
         }
 
+        // FABRIC-PIPELINE1b (the pipeline design §3.2's second layer): a tree a session holds under a light pipeline is refused at once,
+        // before any gate is read or the slot is asked: its heavy gates are the verification's. The session is read from git's own lock on
+        // the tree, never from a variable it could leave out; a run from a checkout no session holds is the person's, and runs as today.
+        if (SessionLocks.HolderOf(checkout) is { } heldBy && SessionChecks.Held(world.Home, heldBy) == SessionChecks.Light)
+        {
+            output.WriteLine(
+                $"run-heavy: this tree is session `{heldBy}`'s, and its development pipeline is light: the repository's heavy gates run in its "
+                + "verification after the work lands, never in a session's tree. Run the checks your change reaches, filtered, instead.");
+            return 1;
+        }
+
         var repository = HeavySlot.RepositoryOf(checkout) ?? Path.GetFileName(checkout);
 
         // HEAVYRUN1b2a: where its own file marks none, this machine's mapping, under the repository its session is handed, which is

@@ -2,19 +2,22 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import i18n from '../../locales/i18n';
-import { heldFor, permissionSaid, PermissionAsks, type PermissionWait } from './PermissionAsks';
+import { boundMinutes, heldFor, permissionSaid, PermissionAsks, type PermissionWait } from './PermissionAsks';
 
 // AUTONOMY1b3c (D184 point 3 and its AUTONOMY1b3a note): a tool's permission request a session holds for the person under asking,
 // answered where they talk to it, as the console asks its person. One press per choice the agent offered, by its own name: this
 // call's allow and a refusal, never an allow nobody offered. A molecule: the frame holds the answer and its pending.
 
-// Held three minutes before the tests run; a few seconds' run still reads three.
-const SINCE = new Date(Date.now() - 3 * 60_000 - 10_000).toISOString();
+// Held three minutes before the tests run; a few seconds' run still reads three. Its bound is the driver's answer for it, `until`
+// (PERMUNTIL1), so the card says the route's minutes: 15 from its start, as the driver's `HeldPermissions.Bound` is.
+const HELD = Date.now() - 3 * 60_000 - 10_000;
+const SINCE = new Date(HELD).toISOString();
+const UNTIL = new Date(HELD + 15 * 60_000).toISOString();
 
 const wait = (over: Partial<PermissionWait> = {}): PermissionWait => ({
   session: 's1a2b3c4', request: '900', call: 'tc-1', title: 'npm test --workspace engine', kind: 'execute',
   choices: [{ id: 'allow', name: 'Allow', kind: 'allow_once' }, { id: 'reject', name: 'Reject', kind: 'reject_once' }],
-  since: SINCE, ...over,
+  since: SINCE, until: UNTIL, ...over,
 });
 
 const answered = { done: expect.any(Function), refused: expect.any(Function) };
@@ -30,6 +33,20 @@ describe('a permission a session holds for the person', () => {
     expect(item).toHaveTextContent('waiting 3m');
     expect(item).toHaveTextContent('refused if nobody answers within 15 minutes');
     expect(within(item).getAllByRole('button').map((button) => button.textContent)).toEqual(['Allow once', 'Refuse']);
+  });
+
+  it('says the bound the driver answered for the request, and none where it said none (PERMUNTIL1)', () => {
+    render(<PermissionAsks waits={[
+      wait({ request: '1', until: new Date(HELD + 7 * 60_000).toISOString() }),
+      wait({ request: '2', until: null }),
+    ]} />);
+    const [answered, unsaid] = screen.getAllByRole('listitem');
+    expect(answered).toHaveTextContent('waiting 3m · refused if nobody answers within 7 minutes');
+    expect(unsaid).toHaveTextContent('waiting 3m');
+    expect(unsaid).not.toHaveTextContent('refused');
+    expect(boundMinutes({ since: SINCE, until: UNTIL })).toBe(15);
+    expect(boundMinutes({ since: SINCE, until: 'later' })).toBeNull();
+    expect(boundMinutes({ since: UNTIL, until: SINCE })).toBeNull();
   });
 
   it('answers with the option the person pressed, by the agent’s id for it', async () => {
@@ -77,6 +94,25 @@ describe('a permission a session holds for the person', () => {
     expect(screen.queryByRole('button')).toBeNull();
   });
 
+  it('leads to its call in the conversation where the conversation found it, and is outlined where a press led to it (PERMANCHOR1)', async () => {
+    const toCall = vi.fn();
+    render(
+      <PermissionAsks
+        waits={[wait(), wait({ request: '901', call: 'tc-2', title: 'git push' })]}
+        onAnswer={vi.fn()}
+        inConversation={{ 900: toCall }}
+        marked="901"
+      />,
+    );
+    const [found, unfound] = screen.getAllByRole('listitem');
+    await userEvent.click(within(found!).getByRole('button', { name: 'In the conversation' }));
+    expect(toCall).toHaveBeenCalledTimes(1);
+    // One the conversation did not find offers no way there.
+    expect(within(unfound!).queryByRole('button', { name: 'In the conversation' })).toBeNull();
+    expect(unfound!.className).toContain('outline-accent');
+    expect(found!.className).not.toContain('outline-accent');
+  });
+
   it('draws the session’s own, and says each refusal of an answer by its code, or in the driver’s words', () => {
     expect(heldFor([wait(), wait({ session: 'o7h3r000', request: '1' })], 's1a2b3c4').map((one) => one.request)).toEqual(['900']);
     const t = i18n.getFixedT('en');
@@ -92,12 +128,16 @@ describe('a permission a session holds for the person', () => {
         <PermissionAsks
           waits={[wait({ choices: [...wait().choices, { id: 'never', name: 'Reject always', kind: 'reject_always' }] })]}
           onAnswer={vi.fn()}
+          inConversation={{ 900: vi.fn() }}
         />,
       );
       const item = screen.getByRole('listitem');
-      expect(within(item).getAllByRole('button').map((button) => button.textContent)).toEqual(['允许这一次', '拒绝', '始终拒绝']);
+      expect(within(item).getAllByRole('button').map((button) => button.textContent)).toEqual(['在对话中查看', '允许这一次', '拒绝', '始终拒绝']);
       expect(item).toHaveTextContent('execute 类工具调用');
       expect(item).toHaveTextContent('15 分钟内无人答复则拒绝');
+      cleanup();
+      render(<PermissionAsks waits={[wait({ until: null })]} />);
+      expect(screen.getByRole('listitem')).toHaveTextContent('已等待 3 分钟');
       expect(permissionSaid(i18n.getFixedT('zh'), 'unheld', 'x')).toBe('它已不在等待：已先被答复或释放。未作答。');
     } finally {
       await i18n.changeLanguage('en');

@@ -215,6 +215,7 @@ describe('the permissions held for the person', () => {
 
   const held = {
     session: 'd1', request: '900', call: 'tc-1', title: 'npm test', kind: 'execute', since: '2026-10-20T09:00:00Z',
+    until: '2026-10-20T09:15:00Z',
     choices: [{ id: 'yes', name: 'Allow', kind: 'allow_once' }, { id: 'no', name: 'Reject', kind: 'reject_once' }],
   };
 
@@ -233,7 +234,8 @@ describe('the permissions held for the person', () => {
 
     await waitFor(() => expect(result.current.data).toEqual([
       held,
-      { session: 'd2', request: '7', call: null, title: null, kind: null, since: '2026-10-20T09:01:00Z', choices: [{ id: 'x', name: 'Allow', kind: 'allow_once' }] },
+      // PERMUNTIL1: a host that says no `until` is read as none, and the card says no bound for it.
+      { session: 'd2', request: '7', call: null, title: null, kind: null, since: '2026-10-20T09:01:00Z', until: null, choices: [{ id: 'x', name: 'Allow', kind: 'allow_once' }] },
     ]));
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'PERMISSION_WAITS', {});
   });

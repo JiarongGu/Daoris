@@ -11,7 +11,7 @@ import { PermissionAsks, type PermissionWait } from './PermissionAsks';
 const minutesAgo = (minutes: number) => new Date(Date.now() - minutes * 60_000).toISOString();
 
 const held = (over: Partial<PermissionWait> & Pick<PermissionWait, 'request'>): PermissionWait => ({
-  session: 's1a2b3c4', call: null, title: null, kind: null, since: minutesAgo(2),
+  session: 's1a2b3c4', call: null, title: null, kind: null, since: minutesAgo(2), until: minutesAgo(-13),
   choices: [{ id: 'allow', name: 'Allow', kind: 'allow_once' }, { id: 'reject', name: 'Reject', kind: 'reject_once' }],
   ...over,
 });

@@ -5,7 +5,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
   DRIVER_SETS, landingEdited, readDriverChoices, withTarget, writeDriverChoices, type AccessSetting, type DriverChoices, type HelpMode,
-  type MappedHeavyGate, type LandingRule,
+  type MappedHeavyGate, type LandingRule, type SessionChecks,
 } from '../../src/driver/driverconfig.ts';
 import { applyHandOverEdit } from '../../src/driver/handover.ts';
 import { sameName } from '../../src/platform/casefold.ts';
@@ -19,7 +19,7 @@ import { makeFixture } from '../_fixture.ts';
 
 type Edit = {
   op: string; repository?: string; workspace?: string; on?: boolean; rule?: LandingRule; branch?: string; adapter?: string; kind?: string;
-  mode?: HelpMode; setting?: AccessSetting; gates?: MappedHeavyGate[] | null; to?: string;
+  mode?: HelpMode; setting?: AccessSetting; gates?: MappedHeavyGate[] | null; to?: string; checks?: SessionChecks | null;
 };
 type Change = { from: string[]; to: string[] };
 type Row = { name: string; edit: Edit; changes: Change[]; between?: Change[]; crlf?: boolean; refused?: string; missing?: boolean };
@@ -66,6 +66,11 @@ function applied(choices: DriverChoices, edit: Edit): DriverChoices {
     case 'heavy': {
       const { [edit.repository!]: _gone, ...others } = choices.heavyGates;
       return { ...choices, heavyGates: edit.gates ? { ...choices.heavyGates, [edit.repository!]: edit.gates } : others };
+    }
+    // FABRIC-PIPELINE1b: a repository's sessions' checks as `daoris-driver checks` leaves them, which only the driver edits.
+    case 'session-checks': {
+      const { [edit.repository!]: _gone, ...others } = choices.sessionChecks;
+      return { ...choices, sessionChecks: edit.checks ? { ...choices.sessionChecks, [edit.repository!]: edit.checks } : others };
     }
     // MIXAGENT1c: a repository's hand-over rule as `daoris driver handover` sets it, through the twin's edit.
     case 'hand-over': return { ...choices, ...applyHandOverEdit(choices, { repository: edit.repository!, set: { mode: edit.mode as string } }) };

@@ -38,10 +38,10 @@ public sealed class ChangeStreamProcessTests : IDisposable
     public async Task A_write_from_another_process_wakes_the_wait()
     {
         using var host = await RealHost.StartAsync(_scratch, new Dictionary<string, string?> { [InputEndStop.Variable] = "1" });
-        using var http = new HttpClient { Timeout = TimeSpan.FromSeconds(40) };
+        using var http = new HttpClient { Timeout = Poll.Patience };
 
         var since = Since(await http.GetStringAsync($"{host.Url}{ChangeStream.Route}"));
-        var waiting = http.GetStringAsync($"{host.Url}{ChangeStream.Route}?since={since}&wait=15");
+        var waiting = http.GetStringAsync($"{host.Url}{ChangeStream.Route}?since={since}&wait=30");
         await Task.Delay(300);
         Assert.False(waiting.IsCompleted, "a current cursor was answered before anything moved");
 
@@ -54,7 +54,7 @@ public sealed class ChangeStreamProcessTests : IDisposable
             await sessions.CreateAsync(null, "Keeper", "stub", DateTimeOffset.UtcNow, kind: SessionKind.Chat);
         }
 
-        var answer = JsonDocument.Parse(await waiting.WaitAsync(TimeSpan.FromSeconds(15))).RootElement;
+        var answer = JsonDocument.Parse(await waiting.WaitAsync(Poll.Patience)).RootElement;
         Assert.True(clock.Elapsed < TimeSpan.FromSeconds(5), $"{clock.Elapsed}");
         Assert.Equal(
             [ChangeFamilies.Sessions],
@@ -64,7 +64,7 @@ public sealed class ChangeStreamProcessTests : IDisposable
         var held = http.GetStringAsync($"{host.Url}{ChangeStream.Route}?since={Since(answer.GetRawText())}&wait=30");
         await Task.Delay(300);
         clock.Restart();
-        Assert.Null(host.StopByInput(TimeSpan.FromSeconds(15)));
+        Assert.Null(host.StopByInput(Poll.Patience));
         Assert.True(clock.Elapsed < TimeSpan.FromSeconds(10), $"the stop took {clock.Elapsed}");
         var stopped = JsonDocument.Parse(await held.WaitAsync(TimeSpan.FromSeconds(5))).RootElement;
         Assert.Empty(stopped.GetProperty("moved").EnumerateArray());
@@ -78,10 +78,10 @@ public sealed class ChangeStreamProcessTests : IDisposable
     public async Task An_ask_written_from_another_process_wakes_the_wait()
     {
         using var host = await RealHost.StartAsync(_scratch, new Dictionary<string, string?> { [InputEndStop.Variable] = "1" });
-        using var http = new HttpClient { Timeout = TimeSpan.FromSeconds(40) };
+        using var http = new HttpClient { Timeout = Poll.Patience };
 
         var since = Since(await http.GetStringAsync($"{host.Url}{ChangeStream.Route}"));
-        var waiting = http.GetStringAsync($"{host.Url}{ChangeStream.Route}?since={since}&wait=15");
+        var waiting = http.GetStringAsync($"{host.Url}{ChangeStream.Route}?since={since}&wait=30");
         await Task.Delay(300);
         Assert.False(waiting.IsCompleted, "a current cursor was answered before anything moved");
 
@@ -94,12 +94,12 @@ public sealed class ChangeStreamProcessTests : IDisposable
             await asks.SaveAsync(new Ask("a5c0de", Workspaces.Default, "Make the bridge faster", AskState.Open, "declarations", now, now));
         }
 
-        var answer = JsonDocument.Parse(await waiting.WaitAsync(TimeSpan.FromSeconds(15))).RootElement;
+        var answer = JsonDocument.Parse(await waiting.WaitAsync(Poll.Patience)).RootElement;
         Assert.True(clock.Elapsed < TimeSpan.FromSeconds(5), $"{clock.Elapsed}");
         Assert.Equal(
             [ChangeFamilies.Asks],
             answer.GetProperty("moved").EnumerateArray().Select(family => family.GetString()!).ToArray());
-        Assert.Null(host.StopByInput(TimeSpan.FromSeconds(15)));
+        Assert.Null(host.StopByInput(Poll.Patience));
     }
 
     private static string Since(string body) => JsonDocument.Parse(body).RootElement.GetProperty("since").GetString()!;

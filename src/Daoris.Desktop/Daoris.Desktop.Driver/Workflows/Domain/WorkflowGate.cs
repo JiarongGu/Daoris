@@ -265,6 +265,14 @@ public static class Involvement
             lowered.Add($"it removes the go-ahead \"{goAhead.Field("act")}\"");
         }
 
+        // FABRIC-PIPELINE1b (the pipeline design §1.3's fourth row): light leaves the heavy gates to a verification, and no route runs one
+        // in this build (FABRIC-PIPELINE1a's `landed` route is its row), so light lowers from anything else.
+        if ((string?)Of(chosen, WorkflowKinds.Work)?.Field("checks") == SessionChecks.Light
+            && (string?)Of(otherwise, WorkflowKinds.Work)?.Field("checks") != SessionChecks.Light)
+        {
+            lowered.Add("its sessions leave the heavy gates to a verification nothing here runs");
+        }
+
         var started = All(chosen).Where(step => step.Kind == WorkflowKinds.Stage && (string?)step.Field("start") == "automatic")
             .Select(step => (string?)step.Field("stage")).ToHashSet(StringComparer.Ordinal);
         foreach (var stage in All(otherwise).Where(step => step.Kind == WorkflowKinds.Stage && (string?)step.Field("start") == "you"
@@ -294,6 +302,8 @@ public static class Involvement
                     new("steps", (Setting("on") as IEnumerable<string>)?.Contains(OpinionRules.Steps) == true), new("recheck", Setting("recheck")),
                 ],
                 WorkflowKinds.Look => [new("environment", Setting("environment"))],
+                // The checks its sessions run, where its repository sets them (FABRIC-PIPELINE1b), which the lowering table reads.
+                WorkflowKinds.Work => Setting("checks") is string checks ? [new("checks", checks)] : [],
                 WorkflowKinds.Landing =>
                 [
                     new("form", Setting("form")), new("accept", Setting("accept")), new("pattern", Setting("pattern")),

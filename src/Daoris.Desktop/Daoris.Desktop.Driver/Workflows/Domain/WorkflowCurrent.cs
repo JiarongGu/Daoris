@@ -169,11 +169,15 @@ public static class WorkflowCurrent
             .Where(plugin => plugin.Points.Contains(HookPoints.QuestConsider, StringComparer.Ordinal))
             .Select(plugin => plugin.Id)
             .ToList();
+        // The checks its sessions run, where the repository sets them (FABRIC-PIPELINE1b, D192 point 4: Current draws the rules), after
+        // the standing answer; never where it sets none, so Current's version is what it was for every repository that sets none.
+        IReadOnlyList<WorkflowSetting> work = repository is not null && SessionChecks.For(read, named) is { } checks
+            ? [new("standing", read.StandingFor(named)?.Says), new("checks", checks)]
+            : [new("standing", read.StandingFor(named)?.Says)];
         var steps = new List<WorkflowStep>
         {
             new(WorkflowKinds.Work, WorkflowKinds.Work, WorkflowParticipation.Agent, WorkflowExecutor.Agent, null,
-                new WorkflowSource(null, LandingSource.Default), [new("standing", read.StandingFor(named)?.Says)],
-                WorkflowRuntime.Built, null),
+                new WorkflowSource(null, LandingSource.Default), work, WorkflowRuntime.Built, null),
         };
 
         if (OpinionRules.Resolve(read, named, workspace) is { Rule.IsNone: false } opinion)

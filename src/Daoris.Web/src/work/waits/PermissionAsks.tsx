@@ -6,7 +6,7 @@ import { cn } from '../../lib/cn';
 import { elapsed } from '../../locales/format';
 import { type Answered, Refused } from '../InlineConfirm';
 import { useNow } from '../useNow';
-import { SOUGHT } from './WaitAnchor';
+import { InConversation, SOUGHT } from './WaitAnchor';
 
 /**
  * One option an agent offered on a permission request it holds for the person (AUTONOMY1b3a, D184 point 3), as `PERMISSION_WAITS`
@@ -18,7 +18,8 @@ export type PermissionChoice = { id: string; name: string; kind: string };
 /**
  * A tool's permission request a driven session holds for the person under its repository's asking permission prompts (AUTONOMY1b3a,
  * D184 point 3), as `PERMISSION_WAITS` answers it: the session, the request's id on the agent's wire, the call it asks for and its
- * title and kind as the agent wrote them (null where it gave none), what the person may choose, and when it was held.
+ * title and kind as the agent wrote them (null where it gave none), what the person may choose, when it was held, and when the
+ * driver's bound releases it (PERMUNTIL1; null from a host that does not say).
  */
 export type PermissionWait = {
   session: string;
@@ -28,6 +29,7 @@ export type PermissionWait = {
   kind: string | null;
   choices: PermissionChoice[];
   since: string;
+  until: string | null;
 };
 
 /** The person's answer as the driver took it (`SESSION_PERMISSION_ANSWER`): whether it stands, and where not, its code and sentence. */
@@ -49,10 +51,14 @@ export type PermissionWaits = {
 };
 
 /**
- * How long a held request waits before the driver refuses it, in minutes: `HeldPermissions.Bound`, which `PERMISSION_WAITS` does not
- * answer, so the page says the driver's constant (AUTONOMY1b3a: half the session's default 30-minute run).
+ * How long a held request waits before the driver refuses it, in whole minutes, from what `PERMISSION_WAITS` answered for it: its
+ * `until` less its `since` (PERMUNTIL1), so the page keeps no copy of the driver's bound. Null where either is not a moment, or they
+ * say no wait: a host that does not say, whose card says how long it waited and no bound.
  */
-export const PERMISSION_BOUND_MINUTES = 15;
+export const boundMinutes = (wait: Pick<PermissionWait, 'since' | 'until'>): number | null => {
+  const span = wait.until ? Date.parse(wait.until) - Date.parse(wait.since) : Number.NaN;
+  return Number.isFinite(span) && span > 0 ? Math.round(span / 60_000) : null;
+};
 
 /** The requests one session holds, in the order the driver listed them (oldest first). */
 export const heldFor = (waits: readonly PermissionWait[], session: string) => waits.filter((wait) => wait.session === session);
@@ -79,7 +85,7 @@ export const permissionSaid = (t: TFunction, why: string | null, message: string
  * **A tool call its session holds for the person's answer** (AUTONOMY1b3c; D184 point 3 and its AUTONOMY1b3a note): under a
  * repository's asking permission prompts, a call its rules do not allow by themselves waits here, as the console asks its person,
  * with the call as the agent named it (content, shown as written), its kind, how long it has waited and the bound at which the
- * driver refuses it, and one press per choice the agent offered, named for what it does: *Allow once* lets this call alone run,
+ * driver refuses it, as the driver answered it (`boundMinutes`), and one press per choice the agent offered, named for what it does: *Allow once* lets this call alone run,
  * and a refusal refuses it. Never an allow the agent did not offer, and never a standing one, which is a rule's to give (D74).
  *
  * @remarks
@@ -90,12 +96,14 @@ export const permissionSaid = (t: TFunction, why: string | null, message: string
  * `onAnswer` no press is drawn: a browser or a teammate's record still says what waits. Each waits in place, and a refusal of the
  * answer is said beside it (UXFIX2b3b).
  */
-export function PermissionAsks({ waits, onAnswer, busy = false, lead, marked }: {
+export function PermissionAsks({ waits, onAnswer, busy = false, lead, inConversation, marked }: {
   waits: readonly PermissionWait[];
   onAnswer?: PermissionAnswer;
   busy?: boolean;
   /** The line above the list, where it stands: absent, none. */
   lead?: string;
+  /** The way to each held call in the conversation, by its request's id, where the conversation found it (PERMANCHOR1). */
+  inConversation?: Readonly<Record<string, () => void>>;
   /** The request a press led to, outlined, by its id. */
   marked?: string;
 }) {
@@ -106,17 +114,21 @@ export function PermissionAsks({ waits, onAnswer, busy = false, lead, marked }: 
       {lead && <p className="m-0 mb-2 text-small text-ink-soft">{lead}</p>}
       <ul className="m-0 grid list-none gap-2 p-0">
         {waits.map((wait) => (
-          <PermissionAsk key={`${wait.session}#${wait.request}`} wait={wait} onAnswer={onAnswer} busy={busy} marked={marked === wait.request} />
+          <PermissionAsk
+            key={`${wait.session}#${wait.request}`} wait={wait} onAnswer={onAnswer} busy={busy}
+            onConversation={inConversation?.[wait.request]} marked={marked === wait.request}
+          />
         ))}
       </ul>
     </>
   );
 }
 
-function PermissionAsk({ wait, onAnswer, busy, marked }: {
+function PermissionAsk({ wait, onAnswer, busy, onConversation, marked }: {
   wait: PermissionWait;
   onAnswer?: PermissionAnswer;
   busy: boolean;
+  onConversation?: () => void;
   marked: boolean;
 }) {
   const { t } = useTranslation();
@@ -144,6 +156,7 @@ function PermissionAsk({ wait, onAnswer, busy, marked }: {
     });
   };
   const untitled = wait.kind ? t('work.wait.permission.untitledKind', { kind: wait.kind }) : t('work.wait.permission.untitled');
+  const minutes = boundMinutes(wait);
 
   return (
     <li
@@ -151,15 +164,21 @@ function PermissionAsk({ wait, onAnswer, busy, marked }: {
       data-permission={wait.request}
       className={cn('grid gap-1 rounded-control border border-line bg-raised px-3 py-2', marked ? SOUGHT : 'outline-none')}
     >
-      {/* The call as the agent named it (content, shown as written); its kind where it named one. */}
-      <p className="m-0 min-w-0 break-words text-body font-semibold">
-        {wait.title ? <CodeText text={wait.title} /> : <Inline text={untitled} />}
+      {/* The call as the agent named it (content, shown as written); its kind where it named one. *In the conversation* leads to
+          the call itself, where what it asks is read in context (PERMANCHOR1). */}
+      <p className="m-0 flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-1">
+        <span className="min-w-0 break-words text-body font-semibold">
+          {wait.title ? <CodeText text={wait.title} /> : <Inline text={untitled} />}
+        </span>
+        {onConversation && <span className="ml-auto"><InConversation onPress={onConversation} /></span>}
       </p>
       {wait.title && wait.kind && (
         <p className="m-0 text-small text-ink-soft"><Inline text={t('work.wait.permission.kind', { kind: wait.kind })} /></p>
       )}
       <p className="m-0 font-mono text-meta text-ink-faint">
-        {t('work.wait.permission.waited', { span: elapsed(wait.since), minutes: PERMISSION_BOUND_MINUTES })}
+        {minutes === null
+          ? t('work.wait.permission.waitedUnbounded', { span: elapsed(wait.since) })
+          : t('work.wait.permission.waited', { span: elapsed(wait.since), minutes })}
       </p>
       {onAnswer && wait.choices.length > 0 && (
         <div className="mt-1 flex flex-wrap items-center gap-2">
