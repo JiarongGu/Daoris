@@ -8,16 +8,6 @@ using Microsoft.AspNetCore.Http;
 
 namespace Daoris.Service.Http.Tests;
 
-/// <summary>A clock a test moves, so two minutes pass without waiting them (PERSONDOOR1b).</summary>
-public sealed class MovableClock : TimeProvider
-{
-    public DateTimeOffset Now { get; private set; } = new(2026, 10, 9, 12, 0, 0, TimeSpan.Zero);
-
-    public void Move(TimeSpan by) => Now += by;
-
-    public override DateTimeOffset GetUtcNow() => Now;
-}
-
 /// <summary>
 /// PERSONDOOR1b (D156 point 4; the person-door design §4.2): a terminal's keyless call to a person's or the driver's door
 /// is refused, and the client asks the window: <c>POST /api/confirmations</c> with the exact request and its secret's

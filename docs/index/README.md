@@ -189,10 +189,10 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Service/Daoris.Service.Core/Quests/Quests.cs` | 256 | 4363 |
 | `src/Daoris.Service/Daoris.Service.Core/Sessions/SessionLedger.cs` | 97 | 1770 |
 | `src/Daoris.Service/Daoris.Service.Core/Sessions/Sessions.cs` | 94 | 1592 |
-| `src/Daoris.Service/Daoris.Service.Http.Tests/ConfirmationTests.cs` | 52 | 913 |
+| `src/Daoris.Service/Daoris.Service.Http.Tests/ConfirmationTests.cs` | 51 | 903 |
 | `src/Daoris.Service/Daoris.Service.Http.Tests/LocalHostTests.cs` | 155 | 2558 |
 | `src/Daoris.Service/Daoris.Service.Http/ApiContracts.cs` | 69 | 802 |
-| `src/Daoris.Service/Daoris.Service.Http/Program.cs` | 163 | 2747 |
+| `src/Daoris.Service/Daoris.Service.Http/Program.cs` | 163 | 2749 |
 | `src/Daoris.Service/Daoris.Service.Tests/Asks/HistoryDeskTests.cs` | 46 | 864 |
 | `src/Daoris.Service/Daoris.Service.Tests/Knowledge/IndexEntriesTests.cs` | 50 | 983 |
 | `src/Daoris.Service/Daoris.Service.Tests/Mcp/McpToolsTests.cs` | 51 | 870 |

@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using Daoris.Knowledge;
 using Microsoft.Data.Sqlite;
 
@@ -14,10 +13,14 @@ public sealed class ChangeStreamTests : IAsyncLifetime
     private static readonly DateTimeOffset Now = DateTimeOffset.Parse("2026-10-17T09:00:00Z");
 
     /// <summary>
-    /// Long enough that a wait that answers before it was woken, never at its end: the longest the stream holds one, since a
-    /// loaded run's wake can come late (TESTCLOCK1). A test waiting on the answer waits <see cref="Poll.Patience"/>.
+    /// The longest the stream holds a wait. Its bound is read on <see cref="_clock"/>, which stands still, so a wait of it never ends
+    /// by itself: an answer to one came at once or was woken, never at its end, however late the load made it (TESTCLOCK3). A test
+    /// waiting on the answer waits <see cref="Poll.Patience"/>.
     /// </summary>
     private static readonly TimeSpan Long = ChangeStream.LongestWait;
+
+    /// <summary>The clock the stream's waits are bounded on, moved only by a test that means a wait to end.</summary>
+    private readonly MovedClock _clock = new();
 
     private readonly string _file = Path.Combine(
         Path.GetTempPath(), "daoris-changes-" + Guid.NewGuid().ToString("N")[..8] + ".db");
@@ -50,17 +53,17 @@ public sealed class ChangeStreamTests : IAsyncLifetime
     }
 
     private Task<ChangeStream> Open(TimeSpan? identityPace = null) =>
-        ChangeStream.OpenAsync(_file, pace: TimeSpan.FromMilliseconds(20), identityPace: identityPace, reopenAfter: TimeSpan.FromMilliseconds(20));
+        ChangeStream.OpenAsync(
+            _file, pace: TimeSpan.FromMilliseconds(20), identityPace: identityPace, reopenAfter: TimeSpan.FromMilliseconds(20), clock: _clock);
 
     private async Task<string> Bootstrap() => (await _stream.WaitAsync(null, TimeSpan.Zero)).Since;
 
+    /// <summary>At once: its wait's clock stands still, so a bootstrap held for its wait would never be answered.</summary>
     [Fact]
     public async Task A_bootstrap_answers_every_family_at_once_with_the_current_cursor()
     {
-        var clock = Stopwatch.StartNew();
-        var answer = await _stream.WaitAsync(null, Long);
+        var answer = await _stream.WaitAsync(null, Long).WaitAsync(Poll.Patience);
 
-        Assert.True(clock.Elapsed < TimeSpan.FromSeconds(2), $"{clock.Elapsed}");
         Assert.Equal(ChangeFamilies.All, answer.Moved);
         Assert.Equal(_stream.Cursor, answer.Since);
         Assert.Matches(@"^[0-9a-f]+\.0$", answer.Since);
@@ -101,19 +104,28 @@ public sealed class ChangeStreamTests : IAsyncLifetime
         Assert.Equal(current, answer.Since);
     }
 
+    /// <summary>Held until its clock passes its wait, then answered nothing.</summary>
     [Fact]
     public async Task A_current_cursor_with_nothing_moved_answers_nothing_at_its_wait()
     {
         var current = await Bootstrap();
-        var clock = Stopwatch.StartNew();
-        var answer = await _stream.WaitAsync(current, TimeSpan.FromMilliseconds(400));
+        var wait = TimeSpan.FromMilliseconds(400);
+        var waiting = _stream.WaitAsync(current, wait);
+
+        await _clock.Timed.WaitAsync(Poll.Patience);
+        _clock.Advance(wait - TimeSpan.FromMilliseconds(1));
+        Assert.False(waiting.IsCompleted, "answered before its wait had passed");
+        _clock.Advance(TimeSpan.FromMilliseconds(1));
+        var answer = await waiting.WaitAsync(Poll.Patience);
 
         Assert.Empty(answer.Moved);
         Assert.Equal(current, answer.Since);
-        Assert.True(clock.Elapsed >= TimeSpan.FromMilliseconds(350), $"{clock.Elapsed}");
     }
 
-    /// <summary>A write from another connection wakes the wait, which names its family alone, and the cursor moves on.</summary>
+    /// <summary>
+    /// A write from another connection wakes the wait, which names its family alone, and the cursor moves on. Woken, not answered at
+    /// its end: its clock stands still.
+    /// </summary>
     [Fact]
     public async Task A_second_connection_s_write_wakes_the_wait()
     {
@@ -122,16 +134,14 @@ public sealed class ChangeStreamTests : IAsyncLifetime
         await Task.Delay(100);
         Assert.False(waiting.IsCompleted);
 
-        var clock = Stopwatch.StartNew();
         await _sessions.CreateAsync(null, "Owner", "stub", Now, kind: SessionKind.Chat);
         var answer = await waiting.WaitAsync(Poll.Patience);
 
-        Assert.True(clock.Elapsed < TimeSpan.FromSeconds(3), $"{clock.Elapsed}");
         Assert.Equal([ChangeFamilies.Sessions], answer.Moved);
         Assert.NotEqual(since, answer.Since);
 
         // Asked again from where it answered, nothing has moved since.
-        Assert.Empty((await _stream.WaitAsync(answer.Since, TimeSpan.FromMilliseconds(100))).Moved);
+        Assert.Empty((await _stream.WaitAsync(answer.Since, TimeSpan.Zero)).Moved);
     }
 
     /// <summary>A quest published (an agent's, through the connector's own process) moves the quests family alone.</summary>
@@ -439,10 +449,8 @@ public sealed class ChangeStreamTests : IAsyncLifetime
         await _sessions.CreateAsync(null, "Owner", "stub", Now, kind: SessionKind.Chat);
         await _quests.PublishAsync("Asker", "Owner", "Do the work", "why", Now);
 
-        var clock = Stopwatch.StartNew();
-        var answer = await _stream.WaitAsync(since, Long);
+        var answer = await _stream.WaitAsync(since, Long).WaitAsync(Poll.Patience);
 
-        Assert.True(clock.Elapsed < TimeSpan.FromSeconds(3), $"{clock.Elapsed}");
         Assert.Equal([ChangeFamilies.Sessions, ChangeFamilies.Quests], answer.Moved);
     }
 
@@ -507,9 +515,8 @@ public sealed class ChangeStreamTests : IAsyncLifetime
         await Task.Delay(100);
         Assert.All(held, wait => Assert.False(wait.IsCompleted));
 
-        var clock = Stopwatch.StartNew();
-        var ninth = await _stream.WaitAsync(since, Long);
-        Assert.True(clock.Elapsed < TimeSpan.FromSeconds(2), $"{clock.Elapsed}");
+        // Its clock stands still and nothing moves: a ninth held as the eight are would never be answered.
+        var ninth = await _stream.WaitAsync(since, Long).WaitAsync(Poll.Patience);
         Assert.Empty(ninth.Moved);
         Assert.Equal(since, ninth.Since);
 
@@ -602,7 +609,9 @@ public sealed class ChangeStreamTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// Review of FABRIC-EVENT3b: a wait refused a slot is answered at once, never queued behind a sample a writer's lock holds.
+    /// Review of FABRIC-EVENT3b: a wait refused a slot is answered at once, never queued behind a sample a writer's lock holds. Here
+    /// the sample is held for as long as the test likes (TESTCLOCK3), where a writer's lock held it for the observer's two seconds,
+    /// so a ninth that queued behind it is never answered rather than answered late.
     /// </summary>
     [Fact]
     public async Task A_ninth_wait_never_queues_behind_the_sampler()
@@ -611,20 +620,11 @@ public sealed class ChangeStreamTests : IAsyncLifetime
         var held = Enumerable.Range(0, ChangeStream.MostWaits).Select(_ => _stream.WaitAsync(since, Long)).ToList();
         await Task.Delay(100);
 
-        // A writer holds the file: every read the sampler makes waits for it, up to its own timeout.
-        await Execute("BEGIN EXCLUSIVE;");
-        try
+        using (await _stream.HoldSamplerAsync().WaitAsync(Poll.Patience))
         {
-            await Task.Delay(100);
-            var clock = Stopwatch.StartNew();
-            var ninth = await _stream.WaitAsync(since, Long);
+            var ninth = await _stream.WaitAsync(since, Long).WaitAsync(Poll.Patience);
 
-            Assert.True(clock.Elapsed < TimeSpan.FromMilliseconds(500), $"{clock.Elapsed}");
             Assert.Empty(ninth.Moved);
-        }
-        finally
-        {
-            await Execute("ROLLBACK;");
         }
 
         await _sessions.CreateAsync(null, "Owner", "stub", Now, kind: SessionKind.Chat);
