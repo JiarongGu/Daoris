@@ -313,7 +313,7 @@ describe("The taskbar's count", () => {
    */
   it('counts a tool call a session holds for the person, as the band lists it', async () => {
     const permission = {
-      session: 'c4a7c4a7', request: '900', call: null, title: 'npm test', kind: 'execute', since: '2026-10-01T11:00:00Z',
+      session: 'c4a7c4a7', request: '900', call: null, title: 'npm test', kind: 'execute', since: '2026-10-01T11:00:00Z', until: '2026-10-01T11:15:00Z',
       choices: [{ id: 'allow', name: 'Allow', kind: 'allow_once' }],
     };
     start([...PARKS, { kind: 'permission', id: 'c4a7c4a7#900', since: permission.since, where: 'engine', session: 'c4a7c4a7', permission }]);

@@ -255,7 +255,7 @@ describe('the strip of what waits on the person, at the foot', () => {
   // AUTONOMY1b3c (D184 point 3): a tool call the session holds for the person's answer under asking, with the head's own press per
   // choice the agent offered, and none another session holds.
   const HELD: PermissionWait = {
-    session: 's1a2b3c4', request: '900', call: 'tc-1', title: 'npm test', kind: 'execute', since: '2026-09-21T11:00:00Z',
+    session: 's1a2b3c4', request: '900', call: 'tc-1', title: 'npm test', kind: 'execute', since: '2026-09-21T11:00:00Z', until: '2026-09-21T11:15:00Z',
     choices: [{ id: 'allow', name: 'Allow', kind: 'allow_once' }, { id: 'reject', name: 'Reject', kind: 'reject_once' }],
   };
 

@@ -222,7 +222,7 @@ describe('What needs you on a machine', () => {
   it('lists a tool call held for the person, answers it with the choice pressed and says a refused answer in its words', async () => {
     const notify = vi.fn();
     const permission = {
-      session: 'c0nv0001', request: '900', call: null, title: 'npm test', kind: 'execute', since: '2026-10-01T09:00:00Z',
+      session: 'c0nv0001', request: '900', call: null, title: 'npm test', kind: 'execute', since: '2026-10-01T09:00:00Z', until: '2026-10-01T09:15:00Z',
       choices: [{ id: 'allow', name: 'Allow', kind: 'allow_once' }, { id: 'reject', name: 'Reject', kind: 'reject_once' }],
     };
     start([row('permission', 'c0nv0001#900', permission.since, { where: '', session: 'c0nv0001', permission })], { notify, doors: { permission: vi.fn() } });

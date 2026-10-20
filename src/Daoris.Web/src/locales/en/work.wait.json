@@ -38,6 +38,7 @@
   "work.wait.permission.untitled": "An untitled tool call",
   "work.wait.permission.untitledKind": "An untitled `{{kind}}` tool call",
   "work.wait.permission.waited": "waiting {{span}} · refused if nobody answers within {{minutes}} minutes",
+  "work.wait.permission.waitedUnbounded": "waiting {{span}}",
   "work.wait.permission.answered.allow": "Allowed once: the call goes on.",
   "work.wait.permission.answered.refuse": "Refused: the agent is told, and goes on without it.",
   "work.wait.permission.refused.unheld": "It no longer waits: it was answered or released first. Nothing was answered.",

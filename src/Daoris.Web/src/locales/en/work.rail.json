@@ -52,7 +52,7 @@
   "work.rail.callingTip": "The tool call its agent is inside, and how long it has run, as the driver last said.",
   "work.rail.callWaits": "waiting for your answer to {{title}} for {{elapsed}}",
   "work.rail.callWaitsUnnamed": "waiting for your answer to a tool call for {{elapsed}}",
-  "work.rail.callWaitsTip": "Its agent asked to make this tool call, which its rules do not allow by themselves, and the session stands still until you answer it on its page or in What needs you. It is refused if nobody answers within {{minutes}} minutes.",
+  "work.rail.callWaitsTip": "Its agent asked to make this tool call, which its rules do not allow by themselves, and the session stands still until you answer it on its page or in What needs you, where its card says when it is refused if nobody answers.",
   "work.rail.empty.headline": "Nothing is running",
   "work.rail.empty.body": "Sessions appear here as the driver takes quests and as you open conversations, listed by what each one needs from you.",
   "work.rail.ended": "Ended",
