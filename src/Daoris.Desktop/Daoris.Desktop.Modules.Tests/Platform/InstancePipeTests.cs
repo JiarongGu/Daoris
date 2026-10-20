@@ -1,3 +1,7 @@
+using System.IO.Pipes;
+using System.Runtime.Versioning;
+using System.Security.AccessControl;
+using System.Security.Principal;
 using System.Text.Json;
 using Daoris.Driver;
 using Microsoft.Extensions.DependencyInjection;
@@ -490,6 +494,47 @@ public sealed class InstancePipeTests : Bridge
 
         Assert.Contains(Lines(), line => line.GetProperty("event").GetString() == "pipe.refused"
             && line.GetProperty("data").GetProperty("why").GetString() == "held");
+    }
+
+    /// <summary>
+    /// The pipe is this user's at either elevation (PIPEOWNER1, §4.1): owned by the user's SID, where an elevated token would make
+    /// its objects the Administrators group's, granting that SID and denying the network. So a terminal that is not elevated
+    /// reaches a Daoris that is: the driver's client takes a pipe its user owns.
+    /// </summary>
+    /// <remarks>
+    /// The served pipe's owner differs from the user's only where the run's token's default owner does (elevated, in a shell that
+    /// keeps the Administrators group as it; Git Bash sets the user's), so the descriptor <see cref="InstancePipe.Security"/> builds
+    /// is held to the same rules in every run.
+    /// </remarks>
+    [Fact]
+    public async Task The_pipe_is_owned_by_this_users_SID_at_either_elevation_granting_it_and_denying_the_network()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        using var self = WindowsIdentity.GetCurrent();
+        var user = self.User!;
+        var network = new SecurityIdentifier(WellKnownSidType.NetworkSid, null);
+        using var log = new MachineLog(Home, "desktop");
+        var (dispatcher, _, services) = Compose(log);
+        using var __ = services;
+        using var pipe = Pipe(dispatcher, log);
+        var name = pipe.Serve()!;
+
+        // Read as a terminal reads it once connected past the ACL: the owner and the rules of the pipe served.
+        await using var terminal = new NamedPipeClientStream(".", name, PipeDirection.InOut, PipeOptions.Asynchronous);
+        await terminal.ConnectAsync(Poll.Patience, CancellationToken.None);
+        HeldToThisUser(terminal.GetAccessControl(), user, network);
+        HeldToThisUser(InstancePipe.Security(), user, network);
+    }
+
+    [SupportedOSPlatform("windows")]
+    private static void HeldToThisUser(PipeSecurity security, SecurityIdentifier user, SecurityIdentifier network)
+    {
+        Assert.Equal(user, security.GetOwner(typeof(SecurityIdentifier)));
+        var rules = security.GetAccessRules(includeExplicit: true, includeInherited: false, typeof(SecurityIdentifier))
+            .Cast<PipeAccessRule>().ToList();
+        Assert.Contains(rules, rule => rule.IdentityReference == user && rule.AccessControlType == AccessControlType.Allow
+            && rule.PipeAccessRights == PipeAccessRights.FullControl);
+        Assert.Contains(rules, rule => rule.IdentityReference == network && rule.AccessControlType == AccessControlType.Deny);
     }
 
     private static string? Code(JsonElement answer) =>

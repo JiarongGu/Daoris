@@ -53,9 +53,10 @@ public sealed class PipeLimits
 /// the same answer, under way in every window and heard by every window as it happens.
 /// </summary>
 /// <remarks>
-/// <para><b>The pipe</b> (§4.1): <see cref="PipeName"/>'s name, this Windows user's alone (an ACL granting the current user's SID and
-/// denying the network's), made as the first instance of its name, so where the name is already held this instance serves none and
-/// says so (<c>pipe.refused</c>) rather than share it. Windows only: elsewhere nothing is served (§11).</para>
+/// <para><b>The pipe</b> (§4.1): <see cref="PipeName"/>'s name, this Windows user's alone (owned by the current user's SID at either
+/// elevation, PIPEOWNER1, and an ACL granting that SID and denying the network's: <see cref="Security"/>), made as the first
+/// instance of its name, so where the name is already held this instance serves none and says so (<c>pipe.refused</c>) rather
+/// than share it. Windows only: elsewhere nothing is served (§11).</para>
 ///
 /// <para><b>The wire</b> (§6): UTF-8 lines of JSON. The hello first (<c>DAORIS.PIPE</c> <c>HELLO</c>), answered with this home's id,
 /// the build and the process, or refused <see cref="WrongProtocol"/>, <see cref="WrongHome"/> or <see cref="Stopping"/>; anything
@@ -338,22 +339,31 @@ public sealed class InstancePipe : IDisposable
         _lifetime.Dispose();
     }
 
+    /// <summary>
+    /// The pipe's security (§4.1): this user's alone, and nobody's from another machine. Owned by the user's SID (PIPEOWNER1), not
+    /// left to the token's default owner, which for an elevated Daoris is the Administrators group: a terminal of the same user
+    /// that is not elevated refused a pipe owned so, so the pipe is this user's at either elevation.
+    /// </summary>
     [SupportedOSPlatform("windows")]
-    private static NamedPipeServerStream Create(string name, int connections, bool first)
+    public static PipeSecurity Security()
     {
-        // This user's alone, and nobody's from another machine (§4.1).
         var security = new PipeSecurity();
         using (var identity = WindowsIdentity.GetCurrent())
         {
+            security.SetOwner(identity.User!);
             security.AddAccessRule(new PipeAccessRule(identity.User!, PipeAccessRights.FullControl, AccessControlType.Allow));
         }
 
         security.AddAccessRule(new PipeAccessRule(
             new SecurityIdentifier(WellKnownSidType.NetworkSid, null), PipeAccessRights.FullControl, AccessControlType.Deny));
-        return NamedPipeServerStreamAcl.Create(
-            name, PipeDirection.InOut, connections, PipeTransmissionMode.Byte,
-            PipeOptions.Asynchronous | (first ? PipeOptions.FirstPipeInstance : PipeOptions.None), 0, 0, security);
+        return security;
     }
+
+    [SupportedOSPlatform("windows")]
+    private static NamedPipeServerStream Create(string name, int connections, bool first) =>
+        NamedPipeServerStreamAcl.Create(
+            name, PipeDirection.InOut, connections, PipeTransmissionMode.Byte,
+            PipeOptions.Asynchronous | (first ? PipeOptions.FirstPipeInstance : PipeOptions.None), 0, 0, Security());
 
     private async Task AcceptAsync(NamedPipeServerStream first)
     {

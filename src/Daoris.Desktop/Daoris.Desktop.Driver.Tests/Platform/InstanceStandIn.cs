@@ -1,4 +1,7 @@
 using System.IO.Pipes;
+using System.Runtime.Versioning;
+using System.Security.AccessControl;
+using System.Security.Principal;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
@@ -35,14 +38,24 @@ internal sealed class InstanceStandIn : IAsyncDisposable
     private readonly Task _serving;
     private int _connections;
 
-    public InstanceStandIn(string name, string homeId)
+    /// <param name="name">The pipe's name.</param>
+    /// <param name="homeId">The home it answers as.</param>
+    /// <param name="refusing">
+    /// Served with an ACL that refuses this user (PIPEOWNER1), as another account's pipe refuses a terminal: the connect is
+    /// refused before any line crosses. Made with the first instance, so a constructor's, not a setting's.
+    /// </param>
+    public InstanceStandIn(string name, string homeId, bool refusing = false)
     {
         Name = name;
         HomeId = homeId;
+        Refusing = refusing;
         _serving = ServeAsync();
     }
 
     public string Name { get; }
+
+    /// <summary>Whether its pipe's ACL refuses this user.</summary>
+    public bool Refusing { get; }
 
     /// <summary>The home it answers as.</summary>
     public string HomeId { get; set; }
@@ -97,9 +110,13 @@ internal sealed class InstanceStandIn : IAsyncDisposable
     {
         while (!_stop.IsCancellationRequested)
         {
-            var server = new NamedPipeServerStream(
-                Name, PipeDirection.InOut, NamedPipeServerStream.MaxAllowedServerInstances, PipeTransmissionMode.Byte,
-                PipeOptions.Asynchronous | PipeOptions.CurrentUserOnly);
+            var server = Refusing && OperatingSystem.IsWindows()
+                ? NamedPipeServerStreamAcl.Create(
+                    Name, PipeDirection.InOut, NamedPipeServerStream.MaxAllowedServerInstances, PipeTransmissionMode.Byte,
+                    PipeOptions.Asynchronous, 0, 0, RefusingThisUser())
+                : new NamedPipeServerStream(
+                    Name, PipeDirection.InOut, NamedPipeServerStream.MaxAllowedServerInstances, PipeTransmissionMode.Byte,
+                    PipeOptions.Asynchronous | PipeOptions.CurrentUserOnly);
             try
             {
                 await server.WaitForConnectionAsync(_stop.Token);
@@ -114,6 +131,17 @@ internal sealed class InstanceStandIn : IAsyncDisposable
             lock (_open) _open.Add(server);
             _ = ConverseAsync(server);
         }
+    }
+
+    /// <summary>An ACL that lets this user read and write nothing, as a pipe another account serves.</summary>
+    [SupportedOSPlatform("windows")]
+    private static PipeSecurity RefusingThisUser()
+    {
+        using var self = WindowsIdentity.GetCurrent();
+        var security = new PipeSecurity();
+        security.AddAccessRule(new PipeAccessRule(self.User!, PipeAccessRights.ReadWrite, AccessControlType.Deny));
+        security.AddAccessRule(new PipeAccessRule(self.User!, PipeAccessRights.FullControl, AccessControlType.Allow));
+        return security;
     }
 
     private async Task ConverseAsync(NamedPipeServerStream server)
