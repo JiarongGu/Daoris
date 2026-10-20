@@ -114,8 +114,9 @@ public static class WorkingTree
 
         foreach (var candidate in new[] { "main", "master" })
         {
+            // Spelled as every read of a branch's commit is (LANDGIT1c), so one ref is one command wherever it is asked.
             var (exists, _, _) = await GitAsync(
-                root, ["rev-parse", "--verify", "--quiet", $"refs/heads/{candidate}"], ct).ConfigureAwait(false);
+                root, ["rev-parse", "--verify", "--quiet", $"refs/heads/{candidate}^{{commit}}"], ct).ConfigureAwait(false);
             if (exists == 0) return candidate;
         }
 

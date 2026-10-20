@@ -24,7 +24,8 @@ internal static class TreeGit
                 continue;
             }
 
-            var (code, _, _) = await WorkingTree.GitAsync(root, ["rev-parse", "--verify", "--quiet", reference], ct).ConfigureAwait(false);
+            // LANDGIT1c: spelled as the reads of its commit are, so one ref fact is one command.
+            var (code, _, _) = await WorkingTree.GitAsync(root, ["rev-parse", "--verify", "--quiet", reference + "^{commit}"], ct).ConfigureAwait(false);
             if (code == 0) return reference;
         }
 
