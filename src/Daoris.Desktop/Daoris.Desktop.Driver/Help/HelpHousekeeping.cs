@@ -11,7 +11,8 @@ namespace Daoris.Driver;
 /// <remarks>
 /// <para><b>Judged at every call, whatever the agent</b> (the design's traps): the record named is an Ask Daoris conversation's;
 /// the operation is chosen in <see cref="ConfiguredAccess"/> now, so a revoke refuses the next call, and was handed at this start
-/// (its newest receipt, <see cref="HelpWired"/>), so a grant chosen since takes the next start as its room and allow-list do; the
+/// (its newest receipt, <see cref="HelpWired"/>), so a grant chosen since takes the next start as its room and allow-list do, which
+/// the conversation's next turn now is (ACCESSSWAP1, <see cref="ChatRunner.HelpAccessChosen"/>); the
 /// repository is registered in the conversation's workspace, read from its record (<see cref="HelpCircle.OfRecord"/>), and has a
 /// checkout here. Targets are a repository and branch names, never a path.</para>
 ///

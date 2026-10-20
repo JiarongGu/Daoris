@@ -100,7 +100,7 @@ const facts = (over: Partial<PushedAccountFacts> = {}): PushedAccountFacts => ({
 });
 /** The intake for an ask, held behind `account-2`'s cool-off, having passed `account-1` signed out. */
 const waitRow = (over: Partial<PushedAttention> = {}) => row('account-wait', 'wait:claude-code/account-2', READ, {
-  where: 'default', circle: true, holding: { quests: [], asks: ['a1'] }, account: facts(), ...over,
+  where: 'default', wholeWorkspace: true, holding: { quests: [], asks: ['a1'] }, account: facts(), ...over,
 });
 
 function respond(url: string): Response {

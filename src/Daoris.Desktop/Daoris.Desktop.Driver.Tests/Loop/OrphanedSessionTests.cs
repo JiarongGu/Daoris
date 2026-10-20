@@ -356,6 +356,9 @@ public sealed class OrphanedSessionTests : IDisposable
 
         public string? Note(string id) => Field(id, "note");
 
+        /// <summary>The Ask Daoris mode its record keeps, where a conversation went on under another (HELPMODE1a2).</summary>
+        public string? HelpMode(string id) => Field(id, "helpMode");
+
         /// <summary>Whether its record says a stop was not the person's (D104).</summary>
         public bool Interrupted(string id)
         {
@@ -469,6 +472,15 @@ public sealed class OrphanedSessionTests : IDisposable
                         return (200, new JsonObject { ["session"] = session.DeepClone(), ["message"] = "moved" }.ToJsonString());
                     }
 
+                    // HELPMODE1a2: the mode an Ask Daoris conversation going on runs under, on its record (ACCESSSWAP1's resume).
+                    case ("POST", _) when path.StartsWith("/api/sessions/", StringComparison.Ordinal) && path.EndsWith("/help-mode", StringComparison.Ordinal):
+                    {
+                        var id = Uri.UnescapeDataString(path["/api/sessions/".Length..^"/help-mode".Length]);
+                        var session = _sessions.Single(s => s["id"]!.GetValue<string>() == id);
+                        session["helpMode"] = Body()["mode"]!.GetValue<string>();
+                        return (200, new JsonObject { ["session"] = session.DeepClone(), ["message"] = "kept" }.ToJsonString());
+                    }
+
                     default:
                         return (404, $$"""{"error":"the stand-in has no {{request.HttpMethod}} {{path}}"}""");
                 }
@@ -479,7 +491,9 @@ public sealed class OrphanedSessionTests : IDisposable
         {
             _listener.Stop();
             _listener.Close();
-            try { await _serving; } catch (ObjectDisposedException) { }
+            // A request the stop cut short throws from its write or its close: that belongs to the stop, not to the test (FLAKE1).
+            try { await _serving; }
+            catch (Exception error) when (error is HttpListenerException or ObjectDisposedException or InvalidOperationException) { }
         }
     }
 }

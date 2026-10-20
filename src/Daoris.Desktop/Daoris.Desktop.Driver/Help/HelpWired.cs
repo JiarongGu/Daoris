@@ -73,7 +73,8 @@ public sealed record HelpReceipt
 
     /// <summary>
     /// The housekeeping operations its start was handed (HELPMODE1c2a, <see cref="ConfiguredAccess"/>), whatever its agent: each tool's
-    /// call is judged by these and by the record at the call, so a grant chosen since takes the next start. None for a start before.
+    /// call is judged by these and by the record at the call, so a grant chosen since takes the next start, at the conversation's next
+    /// turn (ACCESSSWAP1). None for a start before.
     /// </summary>
     public IReadOnlyList<string> Housekeeping { get; init; } = [];
 }

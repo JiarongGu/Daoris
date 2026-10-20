@@ -313,6 +313,54 @@ public sealed class HelpWiredTests : IDisposable
         Assert.Equal(HelpWired.Answer("help0004", [was]).GetRawText(), HelpWired.Answer("help0004", [receipts[1]]).GetRawText());
     }
 
+    /// <summary>
+    /// ACCESSSWAP1 (D183 point 2): a conversation whose access changed while it ran resumes at its next words under the access chosen,
+    /// and the resumed start's receipt names it: the mode widened and the housekeeping granted since, beside the first start's restricted
+    /// receipt with none; its record keeps the new mode, and the spawn resumes its own harness conversation (D131).
+    /// </summary>
+    [Fact]
+    public async Task A_conversation_resumed_after_its_access_changed_records_the_new_access()
+    {
+        await using var service = StandInService.Start(_home);
+        await StartAsync(service, "help0008", "claude-code", HelpModes.Restricted);
+        ConfiguredAccess.Choose(_home, ConfiguredAccess.HousekeepingGrant, ConfiguredAccess.CleanUp, chosen: true);
+
+        var adapters = AdapterSet.Built();
+        using var client = new ServiceClient(service.Url, null);
+        using var runner = new ChatRunner(
+            client, adapters, _home, new SessionProcesses(DaorisHome.Entry(_home, HomeEntry.Sessions)),
+            events: new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions)),
+            harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)));
+        var config = DriverConfig.Empty with
+        {
+            Commands = new Dictionary<string, IReadOnlyList<string>> { ["claude-code"] = ["node", "never-started.mjs"] },
+            HelpMode = HelpModes.Full,
+        };
+        var goOn = new GoingOn(
+            new PriorSession("help0008", HelpRoom.PathOf(_home), "working", Repository: HelpRoom.Repository) { HelpMode = HelpModes.Restricted },
+            new ResumeAsk("conv-help0008", [], "and now?"));
+        ProcessStartInfo? resumed = null;
+        using (ProcessStarts.Within(info =>
+               {
+                   resumed = info;
+                   return null;
+               }))
+        {
+            await runner.RunAsync(
+                "help0008", "and now?", adapters.Resolve("claude-code"), new HarnessSelection(Refusal: null, Profile: "work", Version: "2.1.299"),
+                config, runner.HelpPlace(HelpRoom.PathOf(_home), []), null, CancellationToken.None, goOn).WaitAsync(Within);
+        }
+
+        var receipts = new HelpWired(_home).Read("help0008");
+        Assert.Equal([HelpWired.GoingOn, HelpWired.New], receipts.Select(receipt => receipt.Start));
+        Assert.Equal([HelpModes.Full, HelpModes.Restricted], receipts.Select(receipt => receipt.Mode));
+        Assert.Equal([ConfiguredAccess.CleanUp], receipts[0].Housekeeping);
+        Assert.Empty(receipts[1].Housekeeping);
+        Assert.Equal("bypassPermissions", receipts[0].PermissionMode);
+        Assert.Equal(HelpModes.Full, service.HelpMode("help0008"));
+        Assert.Contains("--resume", resumed!.ArgumentList);
+    }
+
     /// <summary>A delete takes the receipts with the conversation's other files, named as Ask Daoris's own (<see cref="SessionHomeFiles"/>).</summary>
     [Fact]
     public void A_delete_removes_the_receipt_file()

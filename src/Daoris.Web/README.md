@@ -55,7 +55,9 @@ ran in, read-only: Daoris removes none of them yet, and the card says a person c
 *AI features* (`AiDomain.tsx`) draws Ask Daoris's *Configured access* (`help/access/ConfiguredAccess.tsx`) under its access row
 while restricted: each grant the driver serves comes from `STATE`'s `helpGrants`, with the operations it acts on (`built`), and is
 pressed over `SET_HELP_GRANT` one operation at a time; an operation not built is drawn disabled, and a grant the driver does not
-serve yet is drawn from `help/access/grants.ts` alone and sends nothing (HELPMODE1c2b: housekeeping is served).
+serve yet is drawn from `help/access/grants.ts` alone and sends nothing (HELPMODE1c2b: housekeeping is served). A grant's *next turn*
+mark is the driver's `pending`, while a conversation running was handed another choice; the panel keeps a conversation the driver
+names in `helpSwapping` in view as it ends, so the next words resume it under the new access (ACCESSSWAP1).
 
 **An account is named by one rule, wherever it is said** (`src/agents/agents.ts`, D125's ACCTNAME1 and ACCOUNTID1b notes):
 `accountName` leads a row, `accountWho` sits beside it, and `accountLabel` is the one line a chip, a pill, a note or the
