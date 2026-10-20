@@ -149,9 +149,9 @@ describe('the landing, the branch\'s and never one session\'s (§2.7 node 2, §1
     ]);
     expect(advances.map((node) => node.stack?.key)).toEqual(['advance:s3', 'advance:s4', 'advance:s4', 'advance:s4']);
     const chain = ['landed', ...advances.map((node) => node.id)];
-    for (let index = 1; index < chain.length; index += 1) {
-      expect(life.edges.find((edge) => edge.from === chain[index - 1] && edge.to === chain[index])?.says).toMatch(/^moved on by session s[34], accepted/);
-    }
+    expect(chain.slice(1).map((id, index) => life.edges.find((edge) => edge.from === chain[index] && edge.to === id)?.says)).toEqual([
+      'accepted by you', 'accepted automatically', 'accepted automatically', 'accepted automatically',
+    ]);
     expect(life.lines['advance:0']).toEqual(expect.arrayContaining(['unit u-s3', '#q7']));
   });
 
@@ -179,9 +179,9 @@ describe('the push and the pull request, as the record keeps them (trap 19)', ()
   const life = landingFlow(t, { name: SHARED_BRANCH.branch, branch: SHARED_BRANCH, due: SHARED_DUE, units: SHARED_UNITS });
 
   it('draws the push as a fact with no time, hung from the landing and not after its advances', () => {
-    expect(life.nodes.find((node) => node.id === 'pushed')?.title).toBe('Pushed by github');
+    expect(life.nodes.find((node) => node.id === 'pushed')?.title).toBe('Pushed');
     expect(life.lines.pushed).toEqual(['Its record keeps that it was pushed, not when.']);
-    expect(life.edges.filter((edge) => edge.to === 'pushed').map((edge) => edge.from)).toEqual(['landed']);
+    expect(life.edges.filter((edge) => edge.to === 'pushed').map((edge) => [edge.from, edge.says])).toEqual([['landed', 'pushed by github']]);
   });
 
   it('draws the pull request\'s latest answer as one snapshot, and no edge between the push and it', () => {
@@ -202,7 +202,8 @@ describe('the push and the pull request, as the record keeps them (trap 19)', ()
 
   it('draws no pull request where none is kept, and a handed branch as not pushed', () => {
     const drawn = landingFlow(t, { name: OLDER_BRANCH.branch, branch: OLDER_BRANCH });
-    expect(drawn.nodes.find((node) => node.id === 'pushed')?.title).toBe('Handed to github, not pushed');
+    expect(drawn.nodes.find((node) => node.id === 'pushed')?.title).toBe('Not pushed');
+    expect(drawn.edges.find((edge) => edge.to === 'pushed')?.says).toBe('handed to github, which did not push it');
     expect(drawn.nodes.some((node) => node.id === 'pull-request')).toBe(false);
   });
 });
@@ -214,7 +215,7 @@ describe('the end, the clean-up and the recovery, the units\' it carries (§2.7 
     expect(life.lines.end).toHaveLength(3);
     expect(life.lines.end![0]).toMatch(/^u-s2: Reached: its pull request completed and its merge commit is on main/);
     expect(life.edges.find((edge) => edge.to === 'end')).toMatchObject({ from: 'pull-request', says: 'merged on the platform' });
-    expect(life.nodes.find((node) => node.id === 'cleanup')?.title).toBe('Clean-up: completed');
+    expect(life.nodes.find((node) => node.id === 'cleanup')).toMatchObject({ title: 'Clean-up', state: { word: 'completed', tone: 'done' } });
     expect(life.edges.find((edge) => edge.to === 'cleanup')?.says).toBe('removed by the clean-up');
     expect(life.lines.cleanup).toContain('Removed: tree engine-s2, its work is on the line');
     expect(life.lines.recovery!.some((line) => line.startsWith('recovery ref refs/daoris/recovery/s2, kept until'))).toBe(true);
@@ -224,10 +225,17 @@ describe('the end, the clean-up and the recovery, the units\' it carries (§2.7 
     const life = landingFlow(t, { name: WAITING_BRANCH.branch, branch: WAITING_BRANCH, due: WAITING_DUE, units: WAITING_UNITS });
     expect(life.nodes.find((node) => node.id === 'end')?.reached).toBe(false);
     expect(life.edges.find((edge) => edge.to === 'end')).toMatchObject({ from: 'landed', style: 'conditional' });
-    expect(life.nodes.find((node) => node.id === 'cleanup')?.title).toBe('Clean-up: pending');
+    expect(life.nodes.find((node) => node.id === 'cleanup')).toMatchObject({ title: 'Clean-up', state: { word: 'pending', tone: 'neutral' } });
     expect(life.lines.cleanup).toContain('Waits: session branch daoris/s5, its pull request is open');
     expect(life.edges.find((edge) => edge.to === 'cleanup')).toMatchObject({ style: 'conditional', says: 'the clean-up waits' });
     expect(life.nodes.some((node) => node.id === 'recovery')).toBe(false);
+  });
+
+  it('says a clean-up blocked on the person in open\'s hue, as every wait on them is (trap 8)', () => {
+    const blocked = [{ ...WAITING_UNITS[0]!, cleanup: { ...WAITING_UNITS[0]!.cleanup, waits: [{ ...WAITING_UNITS[0]!.cleanup.waits[0]!, disposition: 'blocked' }] } }];
+    const life = landingFlow(t, { name: WAITING_BRANCH.branch, branch: WAITING_BRANCH, units: blocked });
+    expect(life.nodes.find((node) => node.id === 'cleanup')?.state).toEqual({ word: 'blocked', tone: 'open' });
+    expect(life.lines.cleanup).toContain('Blocked: session branch daoris/s5, its pull request is open');
   });
 
   it('draws none of them where the units were not read', () => {
@@ -241,7 +249,8 @@ describe('in 中文', () => {
     await i18n.changeLanguage('zh');
     const life = landingFlow(t, { name: SHARED_BRANCH.branch, branch: SHARED_BRANCH, due: SHARED_DUE, units: SHARED_UNITS });
     expect(life.label).toBe(zh['landing.label']!.replace('{{branch}}', SHARED_BRANCH.branch));
-    expect(life.nodes.find((node) => node.id === 'pushed')?.title).toBe(zh['landing.pushed.title']!.replace('{{plugin}}', 'github'));
+    expect(life.nodes.find((node) => node.id === 'pushed')?.title).toBe(zh['landing.pushed.title']);
+    expect(life.edges.find((edge) => edge.to === 'pushed')?.says).toBe(zh['landing.edge.pushed']!.replace('{{plugin}}', 'github'));
     expect(life.nodes.find((node) => node.id === 'try:1')?.title).toBe(zh['work.trace.try.held']);
   });
 });

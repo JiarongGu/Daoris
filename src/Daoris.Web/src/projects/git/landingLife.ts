@@ -158,13 +158,14 @@ export function landingFlow(t: Translate, read: LandingOf, at: (iso: string) => 
         ...(advance.quest ? [`#${advance.quest}`] : []),
         ...reviewLines(t, advance),
       ];
-      edge(tip!, id, t('landing.edge.advanced', { session: advance.session, accepted: accepted(t, advance.acceptedBy, null) }), t('landing.label.advanced'));
+      // The node names its session; the edge says who accepted the done that moved it, so a foot never says the title twice.
+      edge(tip!, id, accepted(t, advance.acceptedBy, null), t('landing.label.advanced'));
       tip = id;
     });
 
     // 3. Pushed, a fact with no time; and the pull request, a snapshot: each from the landing, and nothing between them.
     if (branch.plugin) {
-      nodes.push({ id: 'pushed', title: t(branch.pushed ? 'landing.pushed.title' : 'landing.handed.title', { plugin: branch.plugin }) });
+      nodes.push({ id: 'pushed', title: t(branch.pushed ? 'landing.pushed.title' : 'landing.handed.title') });
       lines.pushed = branch.pushed ? [t('landing.pushed.noTime')] : [];
       edge('landed', 'pushed', t(branch.pushed ? 'landing.edge.pushed' : 'landing.edge.handed', { plugin: branch.plugin }),
         t(branch.pushed ? 'landing.label.pushed' : 'landing.label.handed'));
@@ -217,7 +218,12 @@ export function landingFlow(t: Translate, read: LandingOf, at: (iso: string) => 
     const completed = units.every((unit) => unit.cleanup.state === 'completed');
     const waits = unique(units.flatMap((unit) => unit.cleanup.waits));
     const gone = unique(units.flatMap((unit) => unit.cleanup.gone));
-    nodes.push({ id: 'cleanup', title: t(completed ? 'landing.cleanup.completed' : 'landing.cleanup.pending'), reached: completed });
+    // Blocked waits on the person, and wears open's hue as the run's own waits do; pending ends by itself (`waitsOnPerson`).
+    const cleanup = completed ? 'completed' : waits.some((each) => each.disposition === 'blocked') ? 'blocked' : 'pending';
+    nodes.push({
+      id: 'cleanup', title: t('work.milestone.cleanup.label'), reached: completed,
+      state: { word: t(`landing.cleanup.state.${cleanup}`), tone: runTone(cleanup === 'completed' ? 'done' : cleanup === 'blocked' ? 'waiting-on-you' : 'not-known') },
+    });
     lines.cleanup = [
       ...waits.map((each) => t(each.disposition === 'blocked' ? 'work.milestone.cleanup.blocked' : 'work.milestone.cleanup.waits', { what: entryName(t, each), detail: each.detail })),
       ...gone.map((each) => t('landing.cleanup.gone', { what: entryName(t, each), detail: each.detail })),
