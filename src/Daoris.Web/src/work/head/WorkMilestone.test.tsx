@@ -356,6 +356,9 @@ describe('where a piece of work stands: four facts, folded to their line', () =>
     const { rerender } = render(<WorkMilestone defaultOpen unit={unit({ held: [attempt] })} />);
     expect(markOf('Held for you')).toHaveClass('bg-st-declined');
     expect(screen.getByText('Held for you').parentElement).toHaveTextContent('deploy, attempt 2');
+    // Under the four facts, which stay together: the end, the result, the clean-up and the recovery.
+    const labels = [...screen.getByRole('region').querySelectorAll('dt')].map((term) => term.textContent);
+    expect(labels).toEqual(['End', 'Result', 'Clean-up', 'Recovery', 'Held for you']);
     rerender(<WorkMilestone defaultOpen unit={unit({ held: [{ ...attempt, resolution: 'did-not' }] })} />);
     expect(markOf('Held for you')).toHaveClass('bg-ink-soft');
   });

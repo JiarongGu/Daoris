@@ -148,14 +148,6 @@ function Facts({ id, unit }: { id: string; unit: MilestoneUnit }) {
             </>
           )}
       </Row>
-      {/* FABRIC-PERFORM1g: a plugin step's attempt held for the person, its node's place here; their word is What needs you's. */}
-      {(unit.held?.length ?? 0) > 0 && (
-        <Row label={t('work.milestone.held.label')} tone={unworded ? 'failed' : 'waits'}>
-          {unit.held!.map((held) => (
-            <span key={`${held.node}-${held.attempt}`} className={held.resolution ? undefined : 'text-ink-danger'}>{heldSentence(t, held)}</span>
-          ))}
-        </Row>
-      )}
       {/* Nothing kept wears no mark: a clean-up completed with nothing kept for recovery is ordinary, no recovery done (R4). */}
       <Row label={t('work.milestone.recovery.label')} tone={unit.recovery.length === 0 ? undefined : 'done'}>
         {unit.recovery.length === 0
@@ -168,6 +160,15 @@ function Facts({ id, unit }: { id: string; unit: MilestoneUnit }) {
             </span>
           ))}
       </Row>
+      {/* FABRIC-PERFORM1g: a plugin step's attempt held for the person, its node's place here, under the four facts it is no part of;
+          their word is What needs you's. */}
+      {(unit.held?.length ?? 0) > 0 && (
+        <Row label={t('work.milestone.held.label')} tone={unworded ? 'failed' : 'waits'}>
+          {unit.held!.map((held) => (
+            <span key={`${held.node}-${held.attempt}`} className={held.resolution ? undefined : 'text-ink-danger'}>{heldSentence(t, held)}</span>
+          ))}
+        </Row>
+      )}
     </dl>
   );
 }

@@ -5,6 +5,11 @@ with the version and date at release.
 
 ## Unreleased
 
+- Where a piece of work stands reads in one line on a session's record, folded: *Ended · clean-up pending · recovery kept
+  until 10 Nov*, which says *blocked* and *held for you* when something waits on you, and opens in place to four facts, the end,
+  the result, the clean-up and the recovery, each marked by its own colour: reached and kept in green, a clean-up that waits in
+  grey, a blocked entry in red, and a recovery with nothing kept with no mark. A plugin step's attempt held for you stays its
+  own row under them. A tidied branch's row says *blocked* and *held for you* in the same line.
 - A session's Timeline draws its states as a flowchart, the one it is in lit and going on drawn as a guarded move; a session page draws its parts as a flowchart in the parts strip's place, the strip its list, and Accept's plan as a dashed node of where they would land.
 - Signing an account in says where it is and for how long: *Starting*, *Waiting on your browser*, *Checking who signed in*
   and *Joining the lists*, each with its time, the one now counting. Codex's device code shows under the browser's step with
