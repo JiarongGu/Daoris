@@ -2011,6 +2011,19 @@ public sealed class Driver(
                 RemoteTarget.Effective(Environment.GetEnvironmentVariable, home).ContainsKey(RemoteTarget.Workspace(start.Workspace)), home, ct,
                 session: sessionId)
                 .ConfigureAwait(false);
+            // The process its work follows (WORKFLOW1f): read for the landing a session in a tree of its own is told, and for the checks its
+            // run takes wherever its repository sets them, since a named workflow's run takes its version's, never Current's rule.
+            var process = Context.Trees.Holds(workTree) || SessionChecks.For(config, quest.To) is not null
+                ? await WorkflowProcesses.ReadAsync(home, config, new ServiceReviewWorld(service), quest.Id, quest.To, start.Workspace, ct)
+                    .ConfigureAwait(false)
+                : null;
+            // FABRIC-PIPELINE1b (D192 point 5): what its run's checks tell and hand it, its words composed from the declaration, its deny
+            // rules where its agent takes Daoris's rules; and those checks kept by its id for `run-heavy`, which reads them by the session
+            // its tree's lock names, let go as its run ends.
+            var checks = SessionChecks.Of(config, quest.To, process);
+            var heavy = HeavyTold.Hand(workTree, home, quest.To, checks, adapter.TakesSettings);
+            var checksKept = SessionChecks.Hold(home, sessionId, checks);
+            using var checksHeld = new Disposer(() => SessionChecks.LetGo(checksKept));
             var target = WithAccess(WithLanguage(WithStanding(
                 await WithAskWordsAsync(SessionTarget.ForQuest(quest, workTree, service.BaseUrl), service, ct).ConfigureAwait(false),
                 config), config, start.Workspace), access) with
@@ -2040,7 +2053,9 @@ public sealed class Driver(
                 Dependencies = opened?.Dependencies,
                 // Its repository's heavy gates, once at its end through `run-heavy`, where its PATH finds the verb (HEAVYRUN1b1). Looked up
                 // under the quest's repository, the name DAORIS_REPOSITORY hands `run-heavy`, not the checkout's folder (HEAVYRUN1b2a2).
-                Heavy = HeavyTold.For(workTree, home, quest.To),
+                // Under its run's checks, the words composed from them (FABRIC-PIPELINE1b): `light`'s light gates, and its heavy gates as
+                // the verification's.
+                Heavy = heavy.Words,
                 GrewFrom = opened?.GrewFrom,
                 // The parts before it on its session's line, and how its tree stands to theirs (SESSONE1d).
                 Parts = start.Entry is { } entry ? await PartsAsync(entry, joinedIn, entryTree, opened, quest.To, ct).ConfigureAwait(false) : null,
@@ -2053,8 +2068,7 @@ public sealed class Driver(
                 LandsOn = Context.Trees.Holds(workTree)
                     ? await Context.Trees.PlanAsync(
                         workTree, await LandsAsAsync(sessionId, quest, id => service.FindQuestAsync(id, ct), ct).ConfigureAwait(false), ct,
-                        await WorkflowProcesses.ReadAsync(home, config, new ServiceReviewWorld(service), quest.Id, quest.To, start.Workspace, ct)
-                            .ConfigureAwait(false))
+                        process!)
                         .ConfigureAwait(false)
                     : null,
                 // How it commits (PROCESS1d-i, D164's amendment point 4): the rule standing for its repository, told with the landing
@@ -2114,7 +2128,7 @@ public sealed class Driver(
             // SESSCTX1b: a carry-on reads the kept folders of its line's parts, whose files its brief names (the design §3.1 item 5).
             var rules = HandRules(
                 adapter, info, sessionId, start.Workspace, quest.To, workTree, target.AttachmentsDirectory, across: across, plugins: skillPlugins,
-                continued: brief?.Kept);
+                continued: brief?.Kept, heavy: heavy);
 
             Context.Runs.Live[quest.Id] = sessionId;
             using var live = new Disposer(() => Context.Runs.Live.TryRemove(quest.Id, out var _));
@@ -2410,11 +2424,16 @@ public sealed class Driver(
     /// The kept folders of the parts a carry-on's line continues (SESSCTX1b, the session-context design §3.1 item 5): its brief names
     /// their files, so it may read exactly those folders too. None for every other start.
     /// </param>
+    /// <param name="heavy">
+    /// What its run's checks hand it (FABRIC-PIPELINE1b, <see cref="HeavyTold.Hand"/>): under <c>light</c>, each heavy gate's declared
+    /// command denied exactly beside the person's rules, and auto mode's classifier told the heavy gates are the verification's. None for
+    /// a session that works on no quest's repository, and nothing where the harness takes no rules.
+    /// </param>
     internal (string? File, object? Meta, HandedSection Handed) HandRules(
         ISessionAdapter adapter, ProcessStartInfo info, string sessionId, string? workspace, string? repository,
         string tree, string? kept, IReadOnlyList<string>? job = null, AcrossReach? across = null, string? said = null,
         bool opinion = false, bool helper = false, IReadOnlyList<string>? plugins = null, string? brainstorm = null,
-        IReadOnlyList<string>? continued = null)
+        IReadOnlyList<string>? continued = null, HeavyHanded? heavy = null)
     {
         // A harness a Claude Code rule means nothing to is handed nothing, and no file is written.
         if (!adapter.TakesSettings) return (null, null, RulesHanded(takes: false, PermissionFile.Empty, RuleLists.Empty, workspace, repository));
@@ -2444,11 +2463,16 @@ public sealed class Driver(
         // A brainstorm's pass (BRAINSTORM1a2) reads its room and gives its one answer: the `brainstorm` posture, never the reviewer's.
         if (brainstorm is not null) composed = BrainstormPermissions.Shape(composed, tree, brainstorm);
 
+        // FABRIC-PIPELINE1b (the pipeline design §3.2's third layer): under a light pipeline each heavy gate's declared command, exactly,
+        // beside `no-push`, and the classifier told; a deny the person wrote still stands beside them.
+        if (heavy is { Deny.Count: > 0 }) composed = composed with { Deny = [.. composed.Deny.Union(heavy.Deny, StringComparer.Ordinal)] };
+        IReadOnlyList<string> heavyTold = heavy?.HardDeny is { } sentence ? [sentence] : [];
+
         var file = SpawnSettings.Write(
             home, sessionId, composed,
             brainstorm is not null ? [.. PermissionRules.HardDeny(rules), BrainstormPermissions.HardDeny]
             : helper ? [.. PermissionRules.HardDeny(rules), OpinionPermissions.HelperHardDeny]
-            : opinion ? [.. PermissionRules.HardDeny(rules), OpinionPermissions.HardDeny] : PermissionRules.HardDeny(rules),
+            : opinion ? [.. PermissionRules.HardDeny(rules), OpinionPermissions.HardDeny] : [.. PermissionRules.HardDeny(rules), .. heavyTold],
             PermissionRules.GuardsTree(rules) ? TreeGuard.For(home, tree, across?.Writes.Select(target => target.Path)) : null,
             // Which agent made each call, and each subagent's start and stop (FABRIC-C1a): the part's children bound by its lineage.
             ChildLineage.HookFor(home, sessionId));

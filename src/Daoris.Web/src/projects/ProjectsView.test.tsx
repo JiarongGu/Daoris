@@ -577,6 +577,31 @@ describe("a repository's Setup on its page (UX6f)", () => {
     await vi.waitFor(() => expect(notify).toHaveBeenCalledWith("engine's heavy gates on this machine are cleared."));
   });
 
+  /**
+   * FABRIC-PIPELINE1b (D192 point 4): which checks its sessions run, read off the driver's state by its name in any case, said beside the
+   * heavy gates with its light gates and its heavy ones as the driver read its file, and sent on DAORIS.DRIVER over the key
+   * `daoris-driver checks` edits.
+   */
+  it("sets its sessions' checks on DAORIS.DRIVER and says what light leaves to the verification", async () => {
+    invoke.mockImplementation(async (_module: string, type: string) => {
+      if (type === 'HEAVY_MARKS') return { repository: 'engine', marks: true, names: ['driver', 'web'], light: ['universal'] };
+      return { ...DRIVER_STATE, drivable: ['engine'], heavyGates: [], sessionChecks: [{ repository: 'Engine', checks: 'light' }] };
+    });
+    const notify = vi.fn();
+    show(<ProjectsView notify={notify} />);
+    await chooseRepository('engine');
+    await openSetup('Heavy gates');
+    const heavy = within(repositoryMain()).getByRole('region', { name: 'Heavy gates' });
+
+    expect(within(heavy).getByRole('radio', { name: 'Light' })).toBeChecked();
+    await vi.waitFor(() => expect(heavy).toHaveTextContent('Light gates: universal. Heavy gates: driver, web.'));
+    expect(heavy).toHaveTextContent('run-heavy refuses its tree, never its shell');
+
+    await userEvent.click(within(heavy).getByRole('radio', { name: 'Heavy at end' }));
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SET_SESSION_CHECKS', { payload: { repository: 'engine', checks: 'heavy-at-end' } });
+    await vi.waitFor(() => expect(notify).toHaveBeenCalledWith('engine’s sessions now run its heavy gates once, at their end.'));
+  });
+
   it('draws no heavy gates on a shell older than them', async () => {
     invoke.mockImplementation(async () => ({ ...DRIVER_STATE, drivable: ['engine'] }));
     show(<ProjectsView notify={() => {}} />);

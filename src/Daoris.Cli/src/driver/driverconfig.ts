@@ -220,8 +220,20 @@ export interface DriverChoices {
    * editor reads it as the driver does and keeps it, one table holding both (`fixtures/heavy-gates.json`).
    */
   heavyGates: Record<string, MappedHeavyGate[]>;
+  /**
+   * Which checks each repository's sessions run under Current (FABRIC-PIPELINE1b, D192 point 4; the pipeline design §3.1): `light` (the
+   * gates the repository does not mark heavy and the checks a change reaches, the heavy gates left to the verification and refused to
+   * them) or `heavy-at-end` (the heavy gates once, at a session's end); absent is today's. Only the driver edits and reads it for a start
+   * (`SessionChecks`, `daoris-driver checks`); this editor reads it as the driver does and keeps it, one table holding both
+   * (`fixtures/session-checks.json`).
+   */
+  sessionChecks: Record<string, SessionChecks>;
   rest: Record<string, unknown>;
 }
+
+/** What a repository's sessions run of its checks (FABRIC-PIPELINE1b): the driver's `SessionChecks.Choices`, a deliberate copy. */
+export type SessionChecks = 'light' | 'heavy-at-end';
+const SESSION_CHECKS: readonly SessionChecks[] = ['light', 'heavy-at-end'];
 
 /** One level's session access setup as the driver's file keeps it (AUTONOMY1a): `full`, or the pauses it names, each with its value. */
 export type AccessSetting = 'full' | Record<string, string>;
@@ -326,7 +338,7 @@ const EMPTY: DriverChoices = {
   brainstorms: null, workspaceBrainstorms: {},
   commits: {}, workspaceCommits: {},
   workflows: {}, workspaceWorkflows: {},
-  access: {}, workspaceAccess: {}, machineAccess: null, heavyGates: {},
+  access: {}, workspaceAccess: {}, machineAccess: null, heavyGates: {}, sessionChecks: {},
   rest: {},
 };
 
@@ -642,7 +654,8 @@ function choicesOf(parsed: Record<string, unknown> | null): DriverChoices {
       workspaceLanguages: {}, reviews: {}, workspaceReviews: {}, opinions: {}, workspaceOpinions: {}, helpers: {}, workspaceHelpers: {},
       handOver: {}, workspaceHandOver: {}, brainstorms: null, workspaceBrainstorms: {},
   commits: {}, workspaceCommits: {},
-      workflows: {}, workspaceWorkflows: {}, access: {}, workspaceAccess: {}, machineAccess: null, heavyGates: {}, rest: {},
+      workflows: {}, workspaceWorkflows: {}, access: {}, workspaceAccess: {}, machineAccess: null, heavyGates: {}, sessionChecks: {},
+      rest: {},
     };
   }
 
@@ -651,6 +664,7 @@ function choicesOf(parsed: Record<string, unknown> | null): DriverChoices {
     cooloff, lines, workspaceLines, landings, workspaceLandings, workCycles, workspaceWorkCycles, readAcross, workspaceReadAcross, writeAcross, standing,
     languages, workspaceLanguages, reviews, workspaceReviews, opinions, workspaceOpinions, helpers, workspaceHelpers, handOver,
     workspaceHandOver, brainstorms, workspaceBrainstorms, commits, workspaceCommits, workflows, workspaceWorkflows, access, workspaceAccess, machineAccess, heavyGates,
+    sessionChecks,
     ...rest
   } = parsed;
   return {
@@ -735,8 +749,27 @@ function choicesOf(parsed: Record<string, unknown> | null): DriverChoices {
     machineAccess: accessOf(machineAccess),
     // As the driver reads it (HEAVYRUN1b2a): a list with a gate that does not read is not read, whole.
     heavyGates: heavyGatesMap(heavyGates),
+    // As the driver reads it (FABRIC-PIPELINE1b): a value that is no choice is not read, and shadows none.
+    sessionChecks: sessionChecksMap(sessionChecks),
     rest,
   };
+}
+
+/**
+ * Each repository's sessions' checks as the driver's `SessionChecks.Map` reads them (FABRIC-PIPELINE1b): each name trimmed, a blank one
+ * passed over; each value text, trimmed and matched in any case against the choices, kept in the choice's spelling, any other not read;
+ * a name written twice in any case read where first readable.
+ */
+function sessionChecksMap(value: unknown): Record<string, SessionChecks> {
+  const map: Record<string, SessionChecks> = {};
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) return map;
+  for (const [name, said] of Object.entries(value)) {
+    const named = name.trim();
+    if (named.length === 0 || typeof said !== 'string' || findName(Object.keys(map), named) !== null) continue;
+    const choice = SESSION_CHECKS.find((each) => each === said.trim().toLowerCase());
+    if (choice !== undefined) map[named] = choice;
+  }
+  return map;
 }
 
 /**
@@ -962,6 +995,8 @@ function choicesWritten(choices: DriverChoices): Record<string, unknown> {
     ...(choices.machineAccess !== null ? { machineAccess: accessWritten(choices.machineAccess) } : {}),
     // Written only when set (HEAVYRUN1b2a), as the driver writes it: absent is a repository's own heavy gates alone.
     ...(Object.keys(choices.heavyGates).length > 0 ? { heavyGates: ordered(heavyLists(choices.heavyGates)) } : {}),
+    // Written only when set (FABRIC-PIPELINE1b), as the driver writes it: absent is today's, a session running as it did.
+    ...(Object.keys(choices.sessionChecks).length > 0 ? { sessionChecks: ordered(choices.sessionChecks) } : {}),
     // Written only when set (D107): absent is reading on and no relationship.
     ...(Object.keys(choices.readAcross).length > 0 ? { readAcross: ordered(choices.readAcross) } : {}),
     ...(Object.keys(choices.workspaceReadAcross).length > 0 ? { workspaceReadAcross: ordered(choices.workspaceReadAcross) } : {}),

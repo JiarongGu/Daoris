@@ -1,0 +1,22 @@
+{
+  "settings.checks.label": "Sessions' checks",
+  "settings.checks.why": "What a driven session here may run of the repository's checks. Light keeps whole suites out of its sessions, so a session ends when its work does, not at its timeout.",
+  "settings.checks.twin": "`daoris-driver checks {{repository}} light|heavy-at-end|--clear`",
+  "settings.checks.mode": "Sessions' checks in {{name}}",
+  "settings.checks.value.today": "As before",
+  "settings.checks.value.light": "Light",
+  "settings.checks.value.heavy-at-end": "Heavy at end",
+  "settings.checks.says.today": "Its sessions run their checks as they did: where it has heavy gates, each runs them once, at its end, through `run-heavy`.",
+  "settings.checks.says.light": "Its sessions run its light gates and the checks their change reaches, filtered: a test class, a test file, a census. Its heavy gates run in its verification, never in a session.",
+  "settings.checks.says.heavy-at-end": "Its sessions run the checks their change reaches while they work, and its heavy gates once, at their end, through `run-heavy`.",
+  "settings.checks.gates": "Light gates: {{light}}. Heavy gates: {{heavy}}.",
+  "settings.checks.gatesNoLight": "Light gates: none declared. Heavy gates: {{heavy}}.",
+  "settings.checks.noneHeavy": "{{repository}} marks no heavy gate, so its sessions may run every gate.",
+  "settings.checks.harness": "Where a session's agent takes Daoris's rules, the agent refuses each heavy gate's command too; an agent that takes none is told the heavy gates, and run-heavy refuses its tree, never its shell.",
+  "settings.checks.unverified": "Daoris does not run the heavy gates after a landing yet: until a verification does, they run only where you run them.",
+  "settings.checks.summary.light": "light checks",
+  "settings.checks.summary.heavy-at-end": "heavy gates at the end",
+  "settings.checks.saved.light": "{{name}}’s sessions now run light checks: its heavy gates are left to its verification.",
+  "settings.checks.saved.heavy-at-end": "{{name}}’s sessions now run its heavy gates once, at their end.",
+  "settings.checks.cleared": "{{name}}’s sessions run their checks as they did."
+}

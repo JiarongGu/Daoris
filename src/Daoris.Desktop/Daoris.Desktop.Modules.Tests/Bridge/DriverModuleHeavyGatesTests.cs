@@ -144,9 +144,12 @@ public sealed class DriverModuleHeavyGatesTests : DriverModuleBridge
         var marks = await AnswerAsync(module, "HEAVY_MARKS", new { repository = "marks" });
         Assert.True(marks.GetProperty("marks").GetBoolean());
         Assert.Equal(["web"], marks.GetProperty("names").EnumerateArray().Select(name => name.GetString()));
+        // FABRIC-PIPELINE1b: and the gates it declares and does not mark heavy, its light gates, which Setup's sessions' checks name.
+        Assert.Equal(["build"], marks.GetProperty("light").EnumerateArray().Select(name => name.GetString()));
 
         var none = await AnswerAsync(module, "HEAVY_MARKS", new { repository = "NONE" });
         Assert.False(none.GetProperty("marks").GetBoolean());
+        Assert.Equal(["build"], none.GetProperty("light").EnumerateArray().Select(name => name.GetString()));
 
         var noFile = await AnswerAsync(module, "HEAVY_MARKS", new { repository = "nofile" });
         Assert.False(noFile.GetProperty("marks").GetBoolean());

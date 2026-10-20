@@ -117,6 +117,9 @@
     "      }",
     "    ]",
     "  },",
+    "  \"sessionChecks\": {",
+    "    \"engine\": \"heavy-at-end\"",
+    "  },",
     "  \"readAcross\": {",
     "    \"shop-api\": false",
     "  },",
@@ -269,8 +272,8 @@
       "edit": { "op": "heavy", "repository": "shop-api", "gates": [{ "name": "build", "run": "npm run build" }] },
       "changes": [
         {
-          "from": ["    ]", "  },", "  \"readAcross\": {"],
-          "to": ["    ],", "    \"shop-api\": [", "      {", "        \"name\": \"build\",", "        \"run\": \"npm run build\"", "      }", "    ]", "  },", "  \"readAcross\": {"]
+          "from": ["    ]", "  },", "  \"sessionChecks\": {"],
+          "to": ["    ],", "    \"shop-api\": [", "      {", "        \"name\": \"build\",", "        \"run\": \"npm run build\"", "      }", "    ]", "  },", "  \"sessionChecks\": {"]
         }
       ]
     },
@@ -293,6 +296,20 @@
           ],
           "to": ["    \"later\": \"a pause a newer build knows\"", "  },"]
         }
+      ]
+    },
+    {
+      "name": "a repository's sessions' checks set beside another's (FABRIC-PIPELINE1b): its rule after the one before it",
+      "edit": { "op": "session-checks", "repository": "shop-api", "checks": "light" },
+      "changes": [
+        { "from": ["    \"engine\": \"heavy-at-end\""], "to": ["    \"engine\": \"heavy-at-end\",", "    \"shop-api\": \"light\""] }
+      ]
+    },
+    {
+      "name": "the last repository's sessions' checks cleared (FABRIC-PIPELINE1b): the key goes, since neither twin writes an empty map",
+      "edit": { "op": "session-checks", "repository": "engine", "checks": null },
+      "changes": [
+        { "from": ["  \"sessionChecks\": {", "    \"engine\": \"heavy-at-end\"", "  },", "  \"readAcross\": {"], "to": ["  \"readAcross\": {"] }
       ]
     },
     {

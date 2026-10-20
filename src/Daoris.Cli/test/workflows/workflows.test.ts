@@ -154,6 +154,21 @@ test('workflow show --repository finds its workspace in the registry, and reads 
   fx.cleanup();
 });
 
+// FABRIC-PIPELINE1b: a repository's sessions' checks, drawn under its work where it sets them, and nowhere where it sets none.
+test('workflow show says the checks a repository\'s sessions run, where it sets them', async () => {
+  const fx = makeFixture('workflow-show-checks');
+  writeFileSync(at(fx), JSON.stringify({ sessionChecks: { 'web-app': 'light', shop: 'heavy-at-end' } }), 'utf8');
+  const registry = checkoutsOf([{ repository: 'web-app', workspace: 'work', root: null }, { repository: 'shop', workspace: 'work', root: null }]);
+
+  const light = (await show(['workflow', 'show', '--repository', 'web-app'], at(fx), registry)).out;
+  assert.match(light, /\n {6}Its sessions' checks: light: the gates it does not mark heavy and the checks a change reaches; its heavy gates are its verification's, refused to them\./);
+  const atEnd = (await show(['workflow', 'show', '--repository', 'shop'], at(fx), registry)).out;
+  assert.match(atEnd, /\n {6}Its sessions' checks: heavy-at-end: its heavy gates once, at a session's end, through `run-heavy`\./);
+  const none = (await show(['workflow', 'show', '--workspace', 'work'], at(fx), registry)).out;
+  assert.doesNotMatch(none, /Its sessions' checks/);
+  fx.cleanup();
+});
+
 test('a repository the registry does not hold is read as in no workspace, and said so', async () => {
   const fx = makeFixture('workflow-show-unregistered');
   writeFileSync(at(fx), JSON.stringify(RULES), 'utf8');

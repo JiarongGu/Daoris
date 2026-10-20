@@ -503,6 +503,7 @@ public sealed partial class StatePublisherTests : DriverModuleBridge
     [InlineData("SET_TREES", "driver", null)]
     [InlineData("SET_STANDING", "driver", null)]
     [InlineData("SET_HEAVY_GATES", "driver", null)]
+    [InlineData("SET_SESSION_CHECKS", "driver", null)]
     // HEAVYSLOT1: who holds a repository's heavy-run slot and who waits, a read.
     [InlineData("HEAVY_SLOT", "", null)]
     [InlineData("SET_NOTIFY", "driver", null)]

@@ -64,6 +64,8 @@ public static class VerbLeases
             "access" => AccessCommand.Read([.. args.Skip(1)], out _)?.Edit is not null,
             // `heavy` naming no change lists or says the gates; a set or a clear writes the driver's file (HEAVYRUN1b2a).
             "heavy" => HeavyMappingCommand.Read([.. args.Skip(1)], out _)?.Changes == true,
+            // `checks` naming no change lists or says the rule; a set or a clear writes the driver's file (FABRIC-PIPELINE1b).
+            "checks" => SessionChecksCommand.Read([.. args.Skip(1)], out _)?.Changes == true,
             "opinion" => next is "ask" or "stop" or "anyway" or "myself",
             "update" => args.Skip(1).Any(arg => arg is "--when-idle" or "--now" or "--cancel"),
             _ => true,

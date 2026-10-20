@@ -368,6 +368,32 @@
         {"id": "landing", "kind": "landing", "participation": "automatic", "executor": "daoris", "press": null, "source": {"rule": "landing", "level": "workspace"}, "settings": {"form": "branch", "accept": "automatic", "pattern": "work/{quest}", "plugin": null, "tidy": false}, "runtime": "built", "limit": null}
       ],
       "version": "ac9889410ac2"
+    },
+    {
+      "name": "FABRIC-PIPELINE1b: a repository's sessions' checks ride the work after its standing answer, its name matched in any case",
+      "config": {"sessionChecks": {"Web-App": "light"}, "standing": {"web-app": {"says": "ok"}}},
+      "repository": "web-app",
+      "workspace": "work",
+      "plugins": [],
+      "startHolds": [],
+      "steps": [
+        {"id": "work", "kind": "work", "participation": "agent", "executor": "agent", "press": null, "source": {"rule": null, "level": "default"}, "settings": {"standing": "ok", "checks": "light"}, "runtime": "built", "limit": null},
+        {"id": "landing", "kind": "landing", "participation": "you", "executor": "daoris", "press": "accept", "source": {"rule": "landing", "level": "default"}, "settings": {"form": "merge", "accept": "you", "pattern": null, "plugin": null, "tidy": false}, "runtime": "built", "limit": null}
+      ],
+      "version": "3f4bc3359e30"
+    },
+    {
+      "name": "FABRIC-PIPELINE1b: the workspace's Current draws no repository's sessions' checks",
+      "config": {"sessionChecks": {"web-app": "heavy-at-end"}},
+      "repository": null,
+      "workspace": "work",
+      "plugins": [],
+      "startHolds": [],
+      "steps": [
+        {"id": "work", "kind": "work", "participation": "agent", "executor": "agent", "press": null, "source": {"rule": null, "level": "default"}, "settings": {"standing": null}, "runtime": "built", "limit": null},
+        {"id": "landing", "kind": "landing", "participation": "you", "executor": "daoris", "press": "accept", "source": {"rule": "landing", "level": "default"}, "settings": {"form": "merge", "accept": "you", "pattern": null, "plugin": null, "tidy": false}, "runtime": "built", "limit": null}
+      ],
+      "version": "06e90f358edc"
     }
   ],
   "limits": [

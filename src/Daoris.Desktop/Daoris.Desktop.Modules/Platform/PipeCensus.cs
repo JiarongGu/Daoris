@@ -221,7 +221,9 @@ public sealed class PipeCensus
             "SET_HELP_GRANT",
             // HEAVYRUN1b2b: the commands this machine runs for a repository's heavy gates, which the person writes.
             "SET_HEAVY_GATES", "SET_HOLD", "SET_INTAKE", "SET_LANDING", "SET_LANGUAGE", "SET_LINE", "SET_NOTIFY", "SET_OPINION", "SET_READ_ACROSS",
-            "SET_REVIEW", "SET_SESSION_OPTION", "SET_STANDING", "SET_STRIKES", "SET_TREES", "SET_WRITE_ACROSS", "TRUST_FOLDER",
+            "SET_REVIEW", "SET_SESSION_OPTION",
+            // FABRIC-PIPELINE1b: which checks a repository's sessions run, the person's standing choice; light lowers their part.
+            "SET_SESSION_CHECKS", "SET_STANDING", "SET_STRIKES", "SET_TREES", "SET_WRITE_ACROSS", "TRUST_FOLDER",
             "RULE_ACTION", "RULE_PROPOSAL", "ACCOUNT_USE", "HARNESS_ACTION",
             // Code that runs in the driver, and the programs it runs with.
             "PLUGIN_ACTION", "PLUGIN_ADD", "PLUGIN_INSTALL", "PLUGIN_NEW", "PLUGIN_TRY",
