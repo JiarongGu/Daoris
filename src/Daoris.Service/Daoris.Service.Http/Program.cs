@@ -2301,15 +2301,19 @@ else
     });
 
     app.MapGet("/api/quests/{id}/claim", async (ComposedService s, string id, CancellationToken ct) =>
-        Results.Ok(new QuestClaimResponse(
+    {
+        var takes = await s.Quests.ReadTakesAsync(id.TrimStart('#'), ct);
+        return Results.Ok(new QuestClaimResponse(
             id.TrimStart('#'), (await s.Quests.ClaimAsync(id.TrimStart('#'), ct)).ToString().ToLowerInvariant(),
             // FABRIC-CLOSE1c18: a take lost to the person's reopen, which the driver's stop says as that.
             await s.Quests.LostToTheReopenAsync(id.TrimStart('#'), ct) ? "source-reopened" : null,
             // SYNCMERGE1b0: the take it holds the quest by, where the person's bring-forward made it, which the driver carries a
             // stood-down session on over (SYNCMERGE1b).
-            (await s.Quests.ReadTakesAsync(id.TrimStart('#'), ct)).BroughtForwardBy(s.Quests.Machine) is { } forward
-                ? ToForward(forward)
-                : null)));
+            takes.BroughtForwardBy(s.Quests.Machine) is { } forward ? ToForward(forward) : null,
+            // CARRY3: when the take it stands taken by was made, which a submission, a reopen or a go-on never moves as they move
+            // `updated`: what the driver judges a take made here after a session ended by.
+            takes.Take?.At));
+    });
 
     // The retires this machine's checkouts owe a circle (SYNC5b): what the driver's pass carries to
     // that circle's deployment, then clears. The store writes them as the row leaves, so no door that

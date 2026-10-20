@@ -105,6 +105,33 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
         Assert.True(!toATake.TryGetProperty("why", out var why) || why.ValueKind == JsonValueKind.Null);
     }
 
+    /// <summary>
+    /// CARRY3: the claim's answer says when the take the quest stands taken by was made, which a later move of the quest's own (here a
+    /// wait) does not move as it moves <c>updated</c>; an open quest is answered no time.
+    /// </summary>
+    [Fact]
+    public async Task The_claim_answers_when_its_take_was_made_not_when_the_quest_last_moved()
+    {
+        var now = DateTimeOffset.Parse("2026-10-20T12:00:00Z");
+        var machine = host.Composed.Quests.Machine;
+        const string waits = "ca77a3000001", open = "ca77a3000002";
+        Quest Asked(string id) => new(id, "Asker", "Keeper", "Work taken, then waiting", "why", QuestStatus.Open, null, now, now, "claimed");
+
+        await host.Composed.Quests.IntegrateAsync("claimed",
+        [
+            new QuestOperation(waits, QuestOperationKind.Published, "m2", 20, now, Published: Asked(waits), Number: 1),
+            new QuestOperation(waits, QuestOperationKind.Taken, machine, 910001, now.AddHours(1), Number: 2),
+            new QuestOperation(waits, QuestOperationKind.Waited, machine, 910002, now.AddHours(3), open, Number: 3),
+            new QuestOperation(open, QuestOperationKind.Published, "m2", 21, now, Published: Asked(open), Number: 4),
+        ], 4);
+
+        var claim = (await host.GetAsync($"/api/quests/{waits}/claim")).Json;
+        Assert.Equal(("held", now.AddHours(1)), (claim.GetProperty("claim").GetString(), claim.GetProperty("taken").GetDateTimeOffset()));
+        Assert.Equal(now.AddHours(3), (await QuestRowAsync(waits)).GetProperty("updated").GetDateTimeOffset());
+        var none = (await host.GetAsync($"/api/quests/{open}/claim")).Json;
+        Assert.True(!none.TryGetProperty("taken", out var taken) || taken.ValueKind == JsonValueKind.Null);
+    }
+
     /// <summary>What a move of <c>GET /api/quests/{id}/moves</c> may answer (FLOWCHART1a2; the flowchart design §2.1, trap 13), and nothing else.</summary>
     private static readonly string[] MoveFields =
         ["kind", "at", "machine", "sequence", "number", "applied", "from", "hold", "attempted", "dismisses", "waitsOn", "session", "evidence", "setUp", "verdict"];
