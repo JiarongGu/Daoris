@@ -5,6 +5,21 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-20 — A start carried the quest and the record of the session its driver ran in (ENVLEAK1)
+
+- **Symptom:** run from a session Daoris drives, three `AdapterTests` (a chat carries no quest, no target, no record unless
+  named) failed, and the Process classes that read what a stub child saw (`IntakeTests`, `HelperProcessTests`,
+  `ReviewTreeTests`, `BrainstormProcessTests`) would have too; all passed with the session's variables unset.
+- **Root cause:** `Spawning.Shell` began each start from the driver's own environment, as `ProcessStartInfo` does, and set
+  only its own role's variables. A driver whose process carried `DAORIS_QUEST_ID`, `DAORIS_TARGET` or `DAORIS_SESSION_ID`
+  (a test run, a rehearsal or a development host inside a driven session) handed them to every chat, intake, helper and
+  brainstorm pass, which by their contract carry none.
+- **Fix:** `Spawning.Unrole` drops every role variable (`Spawning.Roles`: the quest's, the target, the ask, the record, the
+  brainstorm's, the repository and the service) before a start sets its own; `DAORIS_HOME`, the PATH and the rest still pass.
+  The wiring census's set-aside list gains `DAORIS_MEASURED_PORT` (c01fd2a25 named it), which held the gate red.
+- **Verification:** the `driver` gate inside a driven session with those variables set, 11122 passed; those Process classes
+  with `HeavyRunProcessTests`, 64 passed; `A_start_drops_the_roles_it_inherits_and_keeps_the_rest` holds the list.
+
 ## 2026-10-20 — A driver test listened on every interface, so each new tree raised a firewall prompt (FIREWALL1)
 
 - **Symptom:** Windows Defender Firewall asked about `testhost.exe` for every new agent worktree, gate tree and driven session's
