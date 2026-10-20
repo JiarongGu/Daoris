@@ -338,5 +338,12 @@
   "projects.recoveries.dropMeanIt": "Delete them",
   "projects.recoveries.deleted": "Deleted {{count}} recovery ref.",
   "projects.recoveries.deleted_other": "Deleted {{count}} recovery refs.",
-  "projects.recoveries.kept": "Kept {{ref}}: {{why}}"
+  "projects.recoveries.kept": "Kept {{ref}}: {{why}}",
+  "projects.heavy.slot": "Heavy run",
+  "projects.heavy.none": "No heavy run now",
+  "projects.heavy.at": "{{n}} of {{total}} · {{gate}} · {{time}}",
+  "projects.heavy.waits": "{{count}} waits: {{sessions}}",
+  "projects.heavy.waits_other": "{{count}} wait: {{sessions}}",
+  "projects.heavy.terminal": "a run from a terminal",
+  "projects.heavy.tip": "Who holds this repository's heavy-run slot, at which gate, and who waits behind it. In a terminal, from its checkout: daoris-driver run-heavy --look"
 }

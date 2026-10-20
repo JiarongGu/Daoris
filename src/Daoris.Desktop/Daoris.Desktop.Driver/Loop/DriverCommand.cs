@@ -211,10 +211,11 @@ public static class DriverCommand
               bring forward one side of two machines' work on a quest, as its conflict names it.
           logs [--since <30m|2h|3d>] [--source <name>] [--event <name>] [--level <warn|error>] [--json]
               the machine log, every source merged by time.
-          run-heavy [--gate <name>]
+          run-heavy [--gate <name> | --look]
               run this checkout's heavy gates, those its daoris.gates.json marks "heavy": true, one after another, or the
               one named, holding its repository's one heavy-run slot: a run from any tree of it waits, saying behind whom and
               how long. What a gate starts is ended before the slot is let go. 0 passed · 1 a gate failed · 2 could not run.
+              --look runs nothing: who holds the slot, at which gate and for how long, and who waits.
           heavy [<repository> [<name>=<command> [--cwd <folder>]… | --clear]]
               this machine's heavy gates for a repository whose own daoris.gates.json marks none, in the order they run:
               what run-heavy runs there, and what its sessions are told to run once, at their end. Kept here, never in

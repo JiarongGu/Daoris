@@ -8,6 +8,7 @@ import {
   sessionsByState, stripSessions,
 } from '../groups';
 import { type EntryFacts, entryOfSession, type SessionEntry, sessionsByAsk } from '../entries';
+import type { HeavyPart } from '../heavySlot';
 import { isHelp, isIntake, sessionTitle } from '../identity';
 import { type Answered, InlineConfirm } from '../InlineConfirm';
 import { groupHeading, ListGroup } from '../frame/ListPane';
@@ -39,6 +40,10 @@ export type SessionRowFacts = {
   name?: string | null;
   /** The entry this row stands for (SESSONE1c): how many parts it holds, and all their ids, so any part attended marks the row. */
   entry?: EntryFacts | null;
+  /** Its part in its repository's heavy-run slot (HEAVYSLOT1), where it holds it or waits for it. */
+  heavy?: HeavyPart | null;
+  /** The title of the session its wait is behind, where the rail holds it (HEAVYSLOT1); absent, its id. */
+  heavyBehind?: string | null;
 };
 
 /** A repository group's facts by repository (`RepositoryGroup`): what the driver and the registry answer of it. */

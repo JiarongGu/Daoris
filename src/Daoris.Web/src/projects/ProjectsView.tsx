@@ -11,7 +11,8 @@ import { RepositoryBranch, RepositoryBranches, RepositoryHistory } from './git/R
 import type { Driving, RepositorySetupProps } from './setup/RepositorySetup';
 import type { ProjectTab, WorkspaceSection, WorkspaceTab } from './tabs';
 import { WorkspaceView } from './workspace/WorkspaceView';
-import { useRegistry, useRepositories } from '../data/queries';
+import { useQuests, useRegistry, useRepositories, useSessions } from '../data/queries';
+import { sessionTitle } from '../work/identity';
 import { useScope } from '../data/scope';
 import { type AccessEdit, accessToast, isFull, resolveAccess } from '../settings/repository/Access';
 import { type CommitEdit, commitToast } from '../settings/repository/Commits';
@@ -22,7 +23,7 @@ import type { LandingRule } from '../settings/repository/Landings';
 import { type OpinionEdit, opinionToast } from '../settings/repository/Opinions';
 import { type ReviewEdit, reviewToast } from '../settings/repository/Reviews';
 import {
-  useAcross, useDriver, useHarnesses, useLines, usePlugins, useRuleAction, useRules, useSetAccess, useSetCommits, useHeavyMarks, useSetDrivable, useSetHeavyGates, useSetHelpers,
+  useAcross, useDriver, useHarnesses, useLines, usePlugins, useRuleAction, useRules, useSetAccess, useSetCommits, useHeavyMarks, useHeavySlot, useSetDrivable, useSetHeavyGates, useSetHelpers,
   useSetHandOver, useSetHold, useSetLanding, useSetLanguage, useSetLine, useSetOpinion, useSetReadAcross, useSetReview, useSetStanding, useSetTrees,
   useSetupPlan, useSetupPress, useSetWriteAcross, useSweepPlan, useWorkflowCurrent,
 } from '../bridge/shell';
@@ -193,6 +194,17 @@ export function useProjectsView({
   // Whether its own daoris.gates.json marks heavy gates, so wins over this machine's list (HEAVYRUN1b2c): the driver's reading, asked
   // for the chosen repository only while its Setup shows.
   const heavyMarks = useHeavyMarks(chosenRepository ?? '', { enabled: setupShown });
+  // Who holds its heavy-run slot and who waits (HEAVYSLOT1), for its Details' row, asked while its Details shows; the sessions and
+  // quests that name them are the rail's own reads, asked only while someone holds or waits.
+  const detailsShown = active && driver.data !== undefined && tab === 'details' && chosenRepository !== null;
+  const heavySlot = useHeavySlot(chosenRepository ?? '', { enabled: detailsShown });
+  const heavyBusy = Boolean(heavySlot.data && (heavySlot.data.holder || heavySlot.data.waiters.length > 0));
+  const heavySessions = useSessions(null, true, heavyBusy);
+  const heavyQuests = useQuests(null, true, heavyBusy);
+  const heavyTitleOf = (id: string) => {
+    const session = (heavySessions.data ?? []).find((row) => row.id === id);
+    return session ? sessionTitle(session, session.quest ? (heavyQuests.data ?? []).find((row) => row.id === session.quest) : null) : id;
+  };
   const catalog = usePlugins({ enabled: setupShown });
   const landers = (catalog.data?.plugins ?? [])
     .filter((plugin) => plugin.enabled && !plugin.problem && plugin.points.includes('work/land'))
@@ -623,6 +635,9 @@ export function useProjectsView({
           counts={indexed(shown.repository)}
           line={lineOf(shown.repository)}
           unlanded={unlandedIn(shown.repository)}
+          heavy={heavySlot.data && heavySlot.data.repository === shown.repository
+            ? { slot: heavySlot.data, titleOf: heavyTitleOf, onOpen: onAttend }
+            : null}
           here={attached ? Boolean(shown.root) : undefined}
           drivable={driver.data ? named(driver.data.drivable, shown.repository) : undefined}
           held={driver.data ? named(driver.data.holds, shown.repository) : undefined}

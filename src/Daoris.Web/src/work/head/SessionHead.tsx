@@ -101,7 +101,7 @@ export function SessionHead({
   session, quest, opening, taking, lastTurn, resolving = false, onResolve, onAnswerAsk,
   onAnswerSession, branch, ownBranch, onReview, onDiscardBranch, discardingBranch = false, headed = false, goAheads = [], onGoAhead,
   ownSignIn = false, nameOf, lands, landing, planning, onLand, onSayRebase, onName, discards, onDiscardTree, review, behind, opinion, onOpenQuest,
-  continues, helps, onOpenSession, process, workAsk, workBusy = false, toEvent, rules, ruleAsk, seek, helpers, permissions,
+  continues, helps, onOpenSession, heavy, process, workAsk, workBusy = false, toEvent, rules, ruleAsk, seek, helpers, permissions,
 }: {
   /**
    * The helpers it asked for (MIXAGENT2b, D163), the frame's: its asks as the driver's look left them, the agents' names, the
@@ -152,6 +152,11 @@ export function SessionHead({
   helps?: HeadLink | null;
   /** Attend one of those sessions (MIXAGENT3a-i): the door beside its title in *Details*. Absent, the title has no door. */
   onOpenSession?: (session: Session) => void;
+  /**
+   * *Details*' *Heavy gates* (HEAVYSLOT1, the UI/UX design §3.5): its heavy run's gates as phases, or whom it waits behind, a door
+   * (`heavyRow`). Absent where it holds and waits for no slot.
+   */
+  heavy?: DetailRow | null;
   /**
    * The process its own tree runs under (PROCESS1e, D164's amendment point 3): how its work is committed and how it lands, each
    * with where it was set, *Details*' rows. Absent or null where it was told none (no tree of its own here) or nothing answered.
@@ -441,6 +446,8 @@ export function SessionHead({
           // Whom it continues and whom it helps (MIXAGENT3a-i), the record's own links, each a door where the frame holds it.
           linkRow(t, t('work.head.continues'), session.from, continues, onOpenSession),
           linkRow(t, t('work.head.helping'), session.serves, helps, onOpenSession),
+          // Its heavy run (HEAVYSLOT1): the head's line opens to its gates here, or its wait with the holder a door.
+          ...(heavy ? [heavy] : []),
           // The process its own tree runs under and where each rule was set (PROCESS1e, D164's amendment point 3), in Setup's words.
           { label: t('work.head.commits'), value: process ? <Inline text={processCommitsSays(t, process)} /> : null },
           { label: t('work.head.landing'), value: process ? <Inline text={processLandingSays(t, process)} /> : null },

@@ -1,5 +1,5 @@
 import { useCallback } from 'react';
-import { type QueryClient, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { type QueryClient, useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useShenora, useShenoraEvent } from '@shenora/react';
 import type { SyncStanding } from '../data/api';
 import { keys, SYNC_SLICE } from '../data/queries';
@@ -14,6 +14,7 @@ import type { LanguageOption } from '../settings/repository/Languages';
 import type { OpinionRule } from '../settings/repository/Opinions';
 import type { ReviewLook, ReviewRule } from '../settings/repository/Reviews';
 import type { ReviewShown } from '../work/gates/ReviewChip';
+import { type HeavySlot, readHeavySlot } from '../work/heavySlot';
 import { call, refusedNotReady } from './call';
 import { notPushed, pushedOf, readPushed, type SliceSpec, usePushedLive } from './state/slices';
 
@@ -529,4 +530,37 @@ export const useHeavyMarks = (repository: string, { enabled = true }: { enabled?
     queryFn: () => call<HeavyMarks & { repository: string }>('HEAVY_MARKS', { repository }),
     enabled: isAvailable && enabled && repository !== '',
   });
+};
+
+/**
+ * How soon a repository's heavy-run slot is asked again (HEAVYSLOT1): every 5 s while a run holds it or waits for it, so a gate's
+ * change and a wait's end are seen within seconds; every 30 s while it is free, since nothing wakes the page when a run starts.
+ */
+export const heavySlotAgainIn = (slot: HeavySlot | null | undefined): number =>
+  slot && (slot.holder || slot.waiters.length > 0) ? 5_000 : 30_000;
+
+const heavySlotQuery = (repository: string, enabled: boolean) => ({
+  queryKey: keys.heavySlot(repository),
+  queryFn: async () => readHeavySlot(await call<unknown>('HEAVY_SLOT', { repository })),
+  enabled: enabled && repository !== '',
+  // A shell older than the route answers none, which reads as no heavy run, asked again at the free slot's pace.
+  retry: false,
+  refetchInterval: (query: { state: { data?: HeavySlot | null } }) => heavySlotAgainIn(query.state.data),
+});
+
+/**
+ * Who holds a repository's heavy-run slot, at which gate, and who waits (HEAVYSLOT1, the UI/UX design §3.5): the driver's reading of
+ * the records the runs keep beside the slot (`HEAVY_SLOT`), each only while its process runs, never a run's output. A read.
+ */
+export const useHeavySlot = (repository: string, { enabled = true }: { enabled?: boolean } = {}) => {
+  const { isAvailable } = useShenora();
+  return useQuery(heavySlotQuery(repository, isAvailable && enabled));
+};
+
+/** The slots of several repositories at once, by name, for the rail and a session's head: none where a slot is not read yet. */
+export const useHeavySlots = (repositories: readonly string[]): ReadonlyMap<string, HeavySlot | null> => {
+  const { isAvailable } = useShenora();
+  const named = [...new Set(repositories.filter((name) => name !== ''))].sort();
+  const answers = useQueries({ queries: named.map((repository) => heavySlotQuery(repository, isAvailable)) });
+  return new Map(named.map((repository, at) => [repository, answers[at]?.data ?? null]));
 };

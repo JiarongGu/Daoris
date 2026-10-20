@@ -53,6 +53,10 @@ with the version and date at release.
   asks once, waits for the driver with *Waiting…*, and says a refusal inside the ask so you can press again; a switch back is said
   under its chip. A refused change to a session pause is said under that row on Setup and in Settings → Driver, with its choice
   still open, and an ask's review choice or *Apply* says its refusal beside the press, keeping what you typed.
+- A heavy run is seen running and waiting. A session running its repository's heavy gates says which gate of how many and for
+  how long, on its rail line and its head, and its *Details* lists the gates; a session waiting for another's heavy run says
+  whom it waits behind, a link to that session, in a neutral colour, never in *What needs you*. A repository's *Details* has a
+  *Heavy run* row naming who holds it and who waits, and `daoris-driver run-heavy --look` says the same in a terminal.
 - The Quests list shows one row for one piece of work: an ask that became a single quest is that quest's row, named by the
   ask's short title with the ask on its second line (its page opens from the row's right-click menu), and the Asks group
   keeps only asks still waiting on something of their own. A published ask no longer wears the finished colour.

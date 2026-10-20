@@ -42,6 +42,11 @@ export type SessionFactsOf = {
    * open. Said only where the reader's `grouping` carries no call of its own (RAILLINE1).
    */
   calling?: { title: string; since: string } | null;
+  /**
+   * Its heavy run's line (HEAVYSLOT1, the UI/UX design §3.5): the gate it runs, the gate it failed at, or whom it waits behind, as
+   * the rail's line says it (`heavyLine`), in place of the call, which is that run. Absent where it holds and waits for no slot.
+   */
+  heavy?: string | null;
 };
 
 /**
@@ -132,9 +137,11 @@ function factsOf(t: TFunction, of: SessionFactsOf, whole: boolean): string[] {
     if (of.waitingSince && session.state === 'working') facts.push(t('work.facts.firstAnswer', { time: moment(of.waitingSince) }));
     // WAITSAY1: a call that runs for minutes is what the session waits on; said with how long, and only while it is working.
     // RAILLINE1: the call the row says, the driver's (pushed since WAITSAY1c2, so it moves live), which also marks a call held for
-    // the person's answer (AUTONOMY1b3b); the record read here only where no reader answered.
+    // the person's answer (AUTONOMY1b3b); the record read here only where no reader answered. HEAVYSLOT1: a heavy run held or
+    // waited for is the call, said by its gate or whom it waits behind; a held permission still first.
     const calling = headCall(of);
-    if (calling && session.state === 'working') facts.push(callFact(t, calling, whole));
+    if (of.heavy && !calling?.waiting) facts.push(of.heavy);
+    else if (calling && session.state === 'working') facts.push(callFact(t, calling, whole));
     return facts.filter((fact): fact is string => Boolean(fact));
   }
 

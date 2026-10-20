@@ -22,6 +22,7 @@ import type { DiscardOffer, LandOffer } from './groups';
 import { PartsFold } from './head/PartsFold';
 import type { PartFacts } from './head/PartsStrip';
 import type { SessionProcess } from './head/process';
+import type { DetailRow } from './head/DetailsFold';
 import type { Relations } from './head/relations';
 import type { LineBehind } from './review/diff';
 import type { HelperWaits } from './waits/HelperAsks';
@@ -65,7 +66,7 @@ export function AttendedSession({
   session, quest, opening, taking, lastTurn, resolving, onResolve, onAnswerAsk, onAnswerSession,
   chain = [], onSession, onQuest, onReview, relations, timeline = 'dock', branch, ownBranch, onDiscardBranch, discardingBranch,
   headed = false, goAheads, onGoAhead, trace, ownSignIn = false, nameOf, lands, landing, planning, onLand, onSayRebase, onName, discards, onDiscardTree, review, behind,
-  opinion, continues, helps, process, parts, entryAccept, channel, workAsk, workBusy, toEvent, rules, ruleAsk, seek, helpers, permissions,
+  opinion, continues, helps, heavy, process, parts, entryAccept, channel, workAsk, workBusy, toEvent, rules, ruleAsk, seek, helpers, permissions,
   milestone, onOpenBranch,
 }: {
   /** Passed straight through to the head: the process its own tree runs under, *Details*' rows (PROCESS1e). */
@@ -108,6 +109,8 @@ export function AttendedSession({
    */
   continues?: HeadLink | null;
   helps?: HeadLink | null;
+  /** Passed straight through to the head: *Details*' *Heavy gates* (HEAVYSLOT1), where it holds or waits for its repository's slot. */
+  heavy?: DetailRow | null;
   /** Passed straight through to the head: what its own tree offers to land, as the driver's reader said it (LAND4). */
   lands?: LandOffer | null;
   /** And the review's gate where it holds that work (REVIEWENV1g): the set-up step, its tab and the verdict's presses. */
@@ -248,6 +251,7 @@ export function AttendedSession({
         onOpenQuest={onQuest}
         continues={continues}
         helps={helps}
+        heavy={heavy}
         process={process}
         onOpenSession={onSession}
         goAheads={goAheads}
