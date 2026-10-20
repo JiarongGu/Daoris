@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
@@ -20,6 +20,7 @@ import {
   applyWorkflowEdit, keptVersions, resolveWorkflow, workflowChoiceOf, type WorkflowChoiceEdit, type WorkflowTaskChoice,
 } from '../../src/workflows/workflowchoice.ts';
 import type { RecordsReader } from '../../src/driver/strikes.ts';
+import type { VerbPress } from '../../src/platform/door.ts';
 import { homeEntry } from '../../src/platform/home.ts';
 import { driverRows as csharpRows, driverTestFile } from '../_csharp.ts';
 import { makeFixture, captureError } from '../_fixture.ts';
@@ -2574,4 +2575,212 @@ test('the usage names the drive-time verbs as daoris-driver, in the install’s 
   const usage = command.usage.join('\n').replace(/\s+/g, ' ');
   assert.match(usage, /trees list\|clean\|land, sessions archive\|take-back, history clear and update are `daoris-driver`/);
   assert.match(usage, /app\/bin\//);
+});
+
+/**
+ * RPC1f (D171 point 3, the terminal RPC design §7.2, §7.3 and §9): each verb hands its door the route a window presses for the same
+ * choice, with the payload the window's press sends, and its alone path. A door that answers as the running Daoris would (here, a
+ * test's) has the verb say the route's answer in its own words, the alone path's text case for case, and the verb writes nothing
+ * itself: the instance's own handler judges, writes and publishes it.
+ */
+async function sent(
+  argv: string[], path: string, answer: unknown = {}, handed: { records?: RecordsReader; checkouts?: CheckoutsReader } = {},
+): Promise<{ code: number; out: string; press: VerbPress | null }> {
+  const saved = process.env.DAORIS_DRIVER_CONFIG;
+  process.env.DAORIS_DRIVER_CONFIG = path;
+  const lines: string[] = [];
+  let press: VerbPress | null = null;
+  try {
+    const code = await commandDriver(
+      { root: process.cwd(), argv, write: (line) => lines.push(line), packageRoot: process.cwd() },
+      handed.records, handed.checkouts, undefined,
+      (given) => {
+        press = given;
+        return given.route ? given.words(answer) : given.alone();
+      });
+    return { code, out: lines.join('\n'), press };
+  } finally {
+    if (saved === undefined) delete process.env.DAORIS_DRIVER_CONFIG;
+    else process.env.DAORIS_DRIVER_CONFIG = saved;
+  }
+}
+
+/** Each verb a route takes, with the route and the payload a window's press sends (DriverRoutes, LinesRoutes, AcrossRoutes). */
+const SENT: readonly (readonly [argv: string[], route: string, payload: Record<string, unknown>])[] = [
+  [['drive', 'engine'], 'SET_DRIVABLE', { repository: 'engine', drivable: true }],
+  [['undrive', 'engine'], 'SET_DRIVABLE', { repository: 'engine', drivable: false }],
+  [['hold', 'engine'], 'SET_HOLD', { repository: 'engine', held: true }],
+  [['resume', 'engine'], 'SET_HOLD', { repository: 'engine', held: false }],
+  [['trees', 'engine', 'on'], 'SET_TREES', { repository: 'engine', ownTree: true }],
+  [['trees', 'engine', 'off'], 'SET_TREES', { repository: 'engine', ownTree: false }],
+  [['notify', 'off'], 'SET_NOTIFY', { notify: false }],
+  [['strikes', '0'], 'SET_STRIKES', { strikes: 0 }],
+  [['cooloff', '90'], 'SET_COOLOFF', { minutes: 90 }],
+  [['intake', 'off'], 'SET_INTAKE', { adapter: null }],
+  [['intake', 'claude-code-acp'], 'SET_INTAKE', { adapter: 'claude-code-acp' }],
+  [['helper', 'off'], 'SET_HELPER', { adapter: null }],
+  [['helper', 'codex-acp'], 'SET_HELPER', { adapter: 'codex-acp' }],
+  [['line', 'engine', 'develop'], 'SET_LINE', { repository: 'engine', branch: 'develop' }],
+  [['line', '--workspace', 'aurora', '--clear'], 'SET_LINE', { workspace: 'aurora', branch: null }],
+  [['language', 'engine', 'zh'], 'SET_LANGUAGE', { repository: 'engine', language: 'zh' }],
+  [['language', '--workspace', 'aurora', '--clear'], 'SET_LANGUAGE', { workspace: 'aurora', language: null }],
+  // A rule is replaced whole, as the verb replaces it: the key and the squash are named, so the route keeps neither from before.
+  [['landing', 'engine', 'merge'], 'SET_LANDING',
+    { repository: 'engine', form: 'merge', tidy: false, autoAccept: false, key: null, squash: false }],
+  [['landing', '--workspace', 'aurora', 'branch', 'feature/{quest}-{slug}', '--tidy', '--squash'], 'SET_LANDING',
+    { workspace: 'aurora', form: 'branch', pattern: 'feature/{quest}-{slug}', tidy: true, autoAccept: false, key: null, squash: true }],
+  [['landing', 'engine', '--clear'], 'SET_LANDING', { repository: 'engine' }],
+  [['across', 'engine', 'read', 'off'], 'SET_READ_ACROSS', { repository: 'engine', read: false }],
+  [['across', '--workspace', 'aurora', 'read', '--clear'], 'SET_READ_ACROSS', { workspace: 'aurora', read: null }],
+  [['across', 'plugins', 'write-to', 'engine'], 'SET_WRITE_ACROSS', { repository: 'plugins', to: 'engine', allow: true }],
+  [['across', 'plugins', 'write-to', 'engine', '--clear'], 'SET_WRITE_ACROSS', { repository: 'plugins', to: 'engine', allow: false }],
+  [['standing', 'engine', 'dev', 'writes', 'allowed'], 'SET_STANDING', { repository: 'engine', says: 'dev writes allowed' }],
+  [['standing', 'engine', '--clear'], 'SET_STANDING', { repository: 'engine', says: null }],
+  [['review', 'engine', 'none'], 'SET_REVIEW', { repository: 'engine', none: true }],
+  [['review', 'engine', '--clear'], 'SET_REVIEW', { repository: 'engine', clear: true }],
+  [['opinion', 'engine', '--reviewers', 'codex-acp', '--required'], 'SET_OPINION',
+    { repository: 'engine', set: { reviewers: ['codex-acp'], required: true } }],
+  [['helpers', 'engine', '--mode', 'on'], 'SET_HELPERS', { repository: 'engine', set: { mode: 'on' } }],
+  [['commits', '--workspace', 'aurora', '--mode', 'ask'], 'SET_COMMITS', { workspace: 'aurora', set: { mode: 'ask' } }],
+];
+
+test('each verb a route takes sends it while Daoris runs, writes nothing itself, and says what its alone path says', async () => {
+  for (const [argv, route, payload] of SENT) {
+    const fx = makeFixture('driver-door-sent');
+    try {
+      const client = await sent(argv, at(fx));
+      const { press } = client;
+      assert.ok(press, `${argv.join(' ')} handed its door nothing`);
+      assert.deepEqual(
+        [press.what, press.route, press.payload],
+        [`driver ${argv[0]}`, { module: 'DAORIS.DRIVER', route, class: 'person' }, payload],
+        argv.join(' '));
+      assert.equal(client.code, 0, argv.join(' '));
+      assert.equal(existsSync(at(fx)), false, `${argv.join(' ')} wrote the file itself`);
+
+      const alone = run(argv, at(fx));
+      assert.equal(alone.code, 0, argv.join(' '));
+      assert.equal(client.out, alone.out, argv.join(' '));
+    } finally {
+      fx.cleanup();
+    }
+  }
+});
+
+test('a verb no route takes acts alone through its door, and a read never asks it', async () => {
+  for (const argv of [
+    ['cap', '3'], ['timeout', '120'], ['adapter', 'claude-code-acp'], ['retry', '42', '--at', '2'], ['retry', '42', '--session', 's1'],
+    ['landing', 'engine', 'merge', '--no-cycle'], ['work-cycle', 'engine', 'quest', '--clear'], ['brainstorms', '--mode', 'off'],
+  ]) {
+    const fx = makeFixture('driver-door-alone');
+    try {
+      const { code, press } = await sent(argv, at(fx));
+      assert.equal(code, 0, argv.join(' '));
+      assert.deepEqual([press?.what, press?.route], [`driver ${argv[0]}`, null], argv.join(' '));
+      assert.ok(existsSync(at(fx)), `${argv.join(' ')} wrote nothing alone`);
+    } finally {
+      fx.cleanup();
+    }
+  }
+
+  for (const argv of [['list'], ['brainstorms']]) {
+    const fx = makeFixture('driver-door-read');
+    try {
+      assert.equal((await sent(argv, at(fx))).press, null, `${argv.join(' ')} is a read, and holds nothing`);
+    } finally {
+      fx.cleanup();
+    }
+  }
+});
+
+/**
+ * `retry <quest>` is the quest's *Try again* while Daoris runs (RETRY_QUEST): the instance reads its planner's verdict and marks the
+ * quest at the failures it counts, or releases the stop that holds it, and the verb says which in the words its alone path says.
+ */
+test('retry sends RETRY_QUEST and says the mark or the release the instance made, in its own words', async () => {
+  const fx = makeFixture('driver-door-retry');
+  try {
+    const unread: RecordsReader = async () => { throw new Error('the records are the instance\'s to read'); };
+    const marked = await sent(['retry', '#42'], at(fx), { retried: { quest: '42', did: 'marked', session: null }, forgiven: { 42: 6 }, strikes: 3 },
+      { records: unread });
+    assert.deepEqual([marked.press?.route?.route, marked.press?.payload], ['RETRY_QUEST', { quest: '42' }]);
+    assert.equal(marked.code, 0);
+    assert.equal(existsSync(at(fx)), false);
+    // The alone path's words, counted from this machine's records as the instance counted them.
+    const alone = await retried(['retry', '#42'], at(fx), async () => ({
+      records: ['s1', 's2', 's3', 's4', 's5', 's6'].map((id) => ({ id, quest: '42', repository: 'Game', state: 'failed' })),
+    }));
+    assert.equal(marked.out.replace('no more', '3 more'), alone.out.replace('no more', '3 more'));
+    assert.match(marked.out, /Counting from 6 failure\(s\), as this machine's records count them/);
+    assert.match(marked.out, /and 3 more failure\(s\) will park it again/);
+
+    const released = await sent(['retry', '42'], at(fx), { retried: { quest: '42', did: 'released', session: 's9' }, forgiven: {}, strikes: 3 });
+    assert.equal(released.code, 0);
+    assert.equal(released.out, run(['retry', '42', '--session', 's9'], at(fx)).out);
+  } finally {
+    fx.cleanup();
+  }
+});
+
+/** A review environment put: the instance looks for its procedure in the registry's checkouts, and the verb says what it found. */
+test('review sends SET_REVIEW and says what the instance found of the procedure, in its alone path\'s words', async () => {
+  const unasked: CheckoutsReader = async () => { throw new Error('the checkouts are the instance\'s to look in'); };
+  const argv = ['review', 'storefront', 'dev', '--kind', 'local', '--procedure', 'README.md', '--address', 'http://localhost:4200'];
+  for (const [reviewed, checkouts] of [
+    [{ lacking: [], unchecked: true }, checkoutsOf([])],
+    [{ lacking: [], unchecked: false }, null],
+  ] as const) {
+    const fx = makeFixture('driver-door-review');
+    try {
+      const client = await sent(argv, at(fx), { reviewed }, { checkouts: unasked });
+      // As the wire carries it: a part the person did not give is absent.
+      assert.deepEqual(JSON.parse(JSON.stringify(client.press?.payload)),
+        { repository: 'storefront', put: { name: 'dev', kind: 'local', procedure: 'README.md', address: 'http://localhost:4200' } });
+      assert.equal(client.code, 0);
+      assert.equal(existsSync(at(fx)), false);
+      if (checkouts) {
+        assert.equal(client.out, (await runReview(argv, at(fx), checkouts)).out);
+      } else {
+        fx.write('checkout/README.md', '# set up\n');
+        const found = await runReview(argv, at(fx), checkoutsOf([{ repository: 'storefront', workspace: 'default', root: join(fx.root, 'checkout') }]));
+        assert.equal(client.out, found.out);
+      }
+    } finally {
+      fx.cleanup();
+    }
+  }
+
+  const fx = makeFixture('driver-door-review-workspace');
+  try {
+    const lacking = await sent(['review', '--workspace', 'shop', 'dev', '--kind', 'local', '--procedure', 'README.md', '--address',
+      'http://localhost:4200'], at(fx),
+      { reviewed: { lacking: ['storefront'], unchecked: false } }, { checkouts: unasked });
+    assert.match(lacking.out, /`storefront` holds no `README\.md` here: its set-up steps sit until it does\./);
+  } finally {
+    fx.cleanup();
+  }
+});
+
+test('a workflow verb that writes acts alone through the door, and one that reads does not ask it', async () => {
+  for (const [sub, writes] of [['use', true], ['new', true], ['edit', true], ['apply', true], ['import', true], ['kind', true],
+    ['list', false], ['show', false], ['export', false]] as const) {
+    const fx = makeFixture('driver-door-workflow');
+    const saved = process.env.DAORIS_DRIVER_CONFIG;
+    process.env.DAORIS_DRIVER_CONFIG = at(fx);
+    try {
+      let press: VerbPress | null = null;
+      let ran = 0;
+      const code = await commandDriver(
+        { root: process.cwd(), argv: ['workflow', sub], write: () => {}, packageRoot: process.cwd() }, undefined, undefined,
+        () => { ran += 1; return 0; },
+        (given) => { press = given; return given.alone(); });
+      assert.equal(code, 0);
+      assert.equal(ran, 1, sub);
+      assert.deepEqual(press === null ? null : [(press as VerbPress).what, (press as VerbPress).route], writes ? ['driver workflow', null] : null, sub);
+    } finally {
+      if (saved === undefined) delete process.env.DAORIS_DRIVER_CONFIG;
+      else process.env.DAORIS_DRIVER_CONFIG = saved;
+      fx.cleanup();
+    }
+  }
 });
