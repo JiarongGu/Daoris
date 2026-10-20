@@ -5,6 +5,11 @@ with the version and date at release.
 
 ## Unreleased
 
+- Where a piece of work stands reads in one line on a session's record, folded: *Ended · clean-up pending · recovery kept
+  until 10 Nov*, which says *blocked* and *held for you* when something waits on you, and opens in place to four facts, the end,
+  the result, the clean-up and the recovery, each marked by its own colour: reached and kept in green, a clean-up that waits in
+  grey, a blocked entry in red, and a recovery with nothing kept with no mark. A plugin step's attempt held for you stays its
+  own row under them. A tidied branch's row says *blocked* and *held for you* in the same line.
 - What you say to a session or a conversation while it works is kept on its record before it waits, so a restart of Daoris never
   loses it: once Daoris is back, the same session goes on with your words in the order you said them. A word Daoris had already
   written to the agent when it went away may have reached it, so it is never sent again: its place says *It may have read this; its
