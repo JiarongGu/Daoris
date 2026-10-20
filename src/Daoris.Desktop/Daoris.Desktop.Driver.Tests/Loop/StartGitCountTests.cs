@@ -95,7 +95,9 @@ public sealed class StartGitCountTests : IDisposable
     // (the line is guessed once, its guess is not checked again, and a fresh tree's `merge-base` and `log` against itself are not asked).
     // 12 since TREEDEPS1 (D51): a fresh tree lists the checkout's lockfiles once (`git ls-files … package-lock.json …`) to copy
     // its dependencies, one start that saves the session a whole `npm ci`.
-    private const int Ceiling = 12;
+    // 14 since TREELOCK1 (D51's note): the session locks its tree in its own name once its record is open, reading the tree's lock
+    // (`git worktree list --porcelain`) and taking it (`git worktree lock --reason daoris session …`), so no merge tool prunes it.
+    private const int Ceiling = 14;
 
     private void Git(params string[] arguments)
     {

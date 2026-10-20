@@ -5,6 +5,22 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-20 — The full set's driver Process half failed a race's control and a start's git ceiling (TREELOCK1, FLAKE1)
+
+- **Symptom:** the full set on 50634f5 failed two `Process` tests, each again when re-run alone: `ProbeRaceTests`' control (two
+  status questions at once on an expired account sign it out) found the account still signed in, and `StartGitCountTests` counted
+  14 git starts before a session spawned, over its ceiling of 12.
+- **Root cause:** the control's stand-in agent waited a fixed 1.5 s after reading the credentials before spending the refresh
+  token, so it raced only when both questions had read within that window; on the loaded machine the second node start came
+  after the first had already rotated the tokens, and the second read fresh ones. The loser also signed out after a fixed 100 ms,
+  which could land before the winner's write. The ceiling was not raised when TREELOCK1, built by a session of the owner's install,
+  added a session's own lock at a start: it reads the tree's lock (`git worktree list --porcelain`) and takes it
+  (`git worktree lock`), two starts; the session's run had been told to run filtered classes, and this one was not among them.
+- **Fix:** the control's two questions meet (a `meet` file beside the script): each records its read and waits for the other's
+  before spending, and the loser signs out once the winner's tokens have landed. The other cases leave the file out and keep the
+  fixed wait. The ceiling is 14, its comment naming TREELOCK1's two starts.
+- **Verification:** `ProbeRaceTests` and `StartGitCountTests`, 8 passed, alone and with the CI's load beside.
+
 ## 2026-10-20 — Idle conversations held the driver's cap, so quests started two at a time (CAPCOUNT1)
 
 - **Symptom:** on the install two Ask Daoris conversations resting between turns held two of the cap's four slots for hours, and
