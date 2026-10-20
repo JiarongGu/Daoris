@@ -933,7 +933,9 @@ function stepSaid(step: NamedStep): string[] {
     landing: field(step, 'accept') === 'you' ? 'You · your press: Accept' : 'Automatic · Daoris',
     'pull-request': 'You · your press: Merge', 'go-ahead': 'You · your answer',
   }[step.kind] ?? 'Automatic';
-  const set = step.fields.map(([name, value]) => `${name} ${rendered(value)}`).join('; ');
+  // A field written only where set (FABRIC-PIPELINE1b2) is said only where set, as its version holds it.
+  const set = step.fields.filter(([name, value]) => value !== null || kindOf(step.kind)!.fields.find((each) => each.name === name)?.whereSet !== true)
+    .map(([name, value]) => `${name} ${rendered(value)}`).join('; ');
   const lines = [`  ${step.id} · ${step.kind} — ${part}.${set === '' ? '' : ` ${set}.`}`];
   const limit = kindOf(step.kind)!.limit;
   if (limit !== null) lines.push(`      ${WORKFLOW_LIMITS[limit]}`);
@@ -957,6 +959,9 @@ export function stepsOfCurrent(current: CurrentWorkflow): SavedStep[] {
         return s['form'] === 'merge'
           ? { id: 'landing', kind: 'landing', form: 'merge', accept: 'you' }
           : { id: 'landing', kind: 'landing', form: 'branch', accept: s['accept'], pattern: s['pattern'], plugin: s['plugin'] ?? 'none' };
+      case 'work':
+        // The checks its sessions run, where the repository sets them (FABRIC-PIPELINE1b2), so a light repository's stay light.
+        return s['checks'] === undefined ? { id: 'work', kind: 'work' } : { id: 'work', kind: 'work', checks: s['checks'] };
       default:
         return { id: step.kind, kind: step.kind };
     }

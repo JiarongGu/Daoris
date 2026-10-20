@@ -173,9 +173,14 @@ public static class WorkflowGraphs
         };
         var reach = NodeAuthorities.BuiltIn.TryGetValue(kind, out var builtIn) ? builtIn.Reach
             : step.Kind == WorkflowKinds.Stage ? NodeReach.Performed : NodeReach.Observed;
+        // A field written only where set (FABRIC-PIPELINE1b2) is no option where it is none, so a version saved before it decodes as it did.
+        var row = WorkflowKindTable.Of(step.Kind);
         return new NodeDeclaration(step.Id, kind, 1, reach)
         {
-            Options = step.Fields.Where(field => field.Value is not IReadOnlyList<NamedStep>).ToDictionary(field => field.Name, field => OptionText(field.Value)),
+            Options = step.Fields
+                .Where(field => field.Value is not IReadOnlyList<NamedStep>)
+                .Where(field => field.Value is not null || row?.Fields.FirstOrDefault(each => each.Name == field.Name) is not { WhereSet: true })
+                .ToDictionary(field => field.Name, field => OptionText(field.Value)),
         };
     }
 

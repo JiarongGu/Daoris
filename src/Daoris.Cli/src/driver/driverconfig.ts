@@ -233,7 +233,7 @@ export interface DriverChoices {
 
 /** What a repository's sessions run of its checks (FABRIC-PIPELINE1b): the driver's `SessionChecks.Choices`, a deliberate copy. */
 export type SessionChecks = 'light' | 'heavy-at-end';
-const SESSION_CHECKS: readonly SessionChecks[] = ['light', 'heavy-at-end'];
+export const SESSION_CHECKS: readonly SessionChecks[] = ['light', 'heavy-at-end'];
 
 /** One level's session access setup as the driver's file keeps it (AUTONOMY1a): `full`, or the pauses it names, each with its value. */
 export type AccessSetting = 'full' | Record<string, string>;

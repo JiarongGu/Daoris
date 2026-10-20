@@ -236,17 +236,24 @@ public sealed class SessionChecksHandTests : IDisposable
         SessionChecks.LetGo(kept);
     }
 
-    /// <summary>The run's checks: under Current the repository's rule; a named workflow's run its version's, which none carries yet.</summary>
+    /// <summary>
+    /// The run's checks: under Current the repository's rule; a named workflow's run its bound version's <c>work</c> step's
+    /// (FABRIC-PIPELINE1b2), never the rule, so a version that sets none is today's and one that sets them holds where the rule is none.
+    /// </summary>
     [Fact]
-    public void A_run_takes_the_repository_s_rule_under_current_and_today_s_under_a_named_workflow()
+    public void A_run_takes_the_repository_s_rule_under_current_and_its_version_s_under_a_named_workflow()
     {
         var config = DriverConfig.Empty.WithSessionChecks("engine", SessionChecks.Light);
         var current = WorkflowProcess.Current(config, "engine", null);
         var named = current with { Binding = new WorkflowRunBinding("q1", "engine", "default", "docs", "repository", DateTimeOffset.UnixEpoch) { Version = 1 } };
+        NamedStep Work(string? checks) => new("work", WorkflowKinds.Work, [new("checks", checks)]);
 
         Assert.Equal(SessionChecks.Light, SessionChecks.Of(config, "engine", null));
         Assert.Equal(SessionChecks.Light, SessionChecks.Of(config, "engine", current));
         Assert.Null(SessionChecks.Of(config, "engine", named));
+        Assert.Null(SessionChecks.Of(config, "engine", named with { Steps = [Work(null)] }));
+        Assert.Equal(SessionChecks.HeavyAtEnd, SessionChecks.Of(config, "engine", named with { Steps = [Work(SessionChecks.HeavyAtEnd)] }));
+        Assert.Equal(SessionChecks.Light, SessionChecks.Of(DriverConfig.Empty, "engine", named with { Steps = [Work(SessionChecks.Light)] }));
         Assert.Null(SessionChecks.Of(config, "shop", current));
     }
 
