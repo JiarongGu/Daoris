@@ -80,6 +80,36 @@ public sealed class NodeRecordFilesTests : IDisposable
         Assert.DoesNotContain("q-17", Path.GetFileName(NodeRecordFiles.PathOf(_home, Unit)), StringComparison.Ordinal);
     }
 
+    /// <summary>
+    /// FABRIC-CUTOVER1a (the cutover design §2.1): an acceptance's subject is kept beside its unit, so a run's binding and reach read back with
+    /// their ids; a record written before names none, and reads as it was, each acceptance observing its unit with its id unchanged.
+    /// </summary>
+    [Fact]
+    public void A_subject_is_kept_beside_its_unit_and_a_record_written_before_reads_unchanged()
+    {
+        var before = Full();
+        var json = NodeRecordFiles.ToJson(before);
+        Assert.DoesNotContain("\"subject\"", json, StringComparison.Ordinal);
+        var old = NodeRecordFiles.Parse(json)!.Statuses["deploy"];
+        Assert.Equal(((string?)null, (string?)null, Unit), (old.Binding!.Subject, old.Acceptance!.Subject, old.Binding.Observes));
+        Assert.Equal((before.Statuses["deploy"].Binding!.Id, before.Statuses["deploy"].Acceptance!.Id), (old.Binding.Id, old.Acceptance.Id));
+
+        var status = before.Statuses["deploy"];
+        var subjected = status with
+        {
+            Binding = status.Binding! with { Subject = "unit-b1" },
+            Acceptance = status.Acceptance! with { Subject = "unit-b1" },
+        };
+        var files = Files();
+        files.Write(before with { Statuses = new Dictionary<string, NodeStatus>(before.Statuses) { ["deploy"] = subjected } });
+
+        var read = Files().Read(Unit)!.Statuses["deploy"];
+        Assert.Equal(("unit-b1", "unit-b1"), (read.Binding!.Subject, read.Acceptance!.Subject));
+        Assert.Equal((subjected.Binding.Id, subjected.Acceptance.Id), (read.Binding.Id, read.Acceptance.Id));
+        Assert.True(subjected.Acceptance.SameResult(read.Acceptance));
+        Assert.NotEqual(status.Binding.Id, read.Binding.Id);
+    }
+
     [Fact]
     public void A_unit_with_no_record_reads_empty_and_a_file_that_does_not_read_is_never_taken_for_empty()
     {

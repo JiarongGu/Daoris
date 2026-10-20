@@ -11,6 +11,12 @@ public static class WorkUnitKind
 
     /// <summary>An ask, the quests' space: <see cref="AskUnits"/>, over the service's ask records.</summary>
     public const string Ask = "ask";
+
+    /// <summary>
+    /// A run bound to a graph version, as the subject of its own nodes (FABRIC-CUTOVER1a; the cutover design §2.2): its go-ahead, task, wait,
+    /// stop and join observe the run itself. Projected for the evaluation alone, with no revision; the inventory never lists one.
+    /// </summary>
+    public const string Run = "run";
 }
 
 /// <summary>Whether a unit is still owed anything (§D3): <see cref="Retired"/> only once its end is over and every entry is terminal.</summary>

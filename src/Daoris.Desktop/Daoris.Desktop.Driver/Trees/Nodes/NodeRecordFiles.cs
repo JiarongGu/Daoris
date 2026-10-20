@@ -236,6 +236,8 @@ public sealed class NodeRecordFiles(string home, Func<bool>? holdsLease = null)
     {
         writer.WriteStartObject();
         writer.WriteString("unit", acceptance.Unit);
+        // FABRIC-CUTOVER1a: written only where set, so a record of nodes observing their own unit is written as before.
+        if (acceptance.Subject is { } subject) writer.WriteString("subject", subject);
         if (acceptance.SubjectRevision is { } revision) writer.WriteString("revision", revision);
         writer.WriteString("graph", acceptance.GraphDigest);
         writer.WriteString("node", acceptance.Node);
@@ -513,6 +515,8 @@ public sealed class NodeRecordFiles(string home, Func<bool>? holdsLease = null)
         if (element.TryGetProperty("evidence", out var evidenced) && (evidence = ReadPort(evidenced)) is null) return null;
         return new NodeAcceptance(unit, Text(element, "revision"), graph, node, version, attempt)
         {
+            // FABRIC-CUTOVER1a: absent on every acceptance written before, which reads as its unit.
+            Subject = Text(element, "subject"),
             Inputs = inputs,
             PrerequisiteReceipts = receipts,
             Evidence = evidence,

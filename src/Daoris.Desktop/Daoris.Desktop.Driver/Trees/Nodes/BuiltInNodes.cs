@@ -85,7 +85,8 @@ public static class BuiltInNodes
     /// What <paramref name="unit"/>'s records say of <paramref name="node"/> on the binding Daoris evaluated for its attempt (FABRIC-NODE1c):
     /// a reach's acceptance carries that binding's graph, attempt, inputs and prerequisite receipts, so invalidating anything it rests on
     /// reaches it. Its revision is the commit its evidence names; where that is not the binding's, the one table refuses the reach as
-    /// another binding's. A binding of another unit, node or version is no observation (<see cref="NodeRefusal.NotBound"/>).
+    /// another binding's. A binding of another unit, node or version is no observation (<see cref="NodeRefusal.NotBound"/>): the unit it
+    /// observes, its subject on a run's record (FABRIC-CUTOVER1a), never the record's own.
     /// </summary>
     public static NodeObservation Observe(WorkUnit unit, NodeDeclaration node, NodeAcceptance binding, NodeGitReads? git = null)
     {
@@ -102,15 +103,15 @@ public static class BuiltInNodes
         }
 
         if (!Observed.Contains(node.Kind)) return Seen(null, "this kind is not observed from records") with { Refused = NodeRefusal.NotObserved };
-        if (binding.Unit != unit.Id || binding.Node != node.Id || binding.NodeVersion != node.Version)
+        if (binding.Observes != unit.Id || binding.Node != node.Id || binding.NodeVersion != node.Version)
         {
-            return Seen(null, "its binding names another unit, node or version") with { Refused = NodeRefusal.NotBound };
+            return Seen(null, "its binding names another subject, node or version") with { Refused = NodeRefusal.NotBound };
         }
 
         var wants = node.Kind == NodeKinds.Claimed ? WorkUnitKind.Quest : WorkUnitKind.Branch;
         if (unit.Kind != wants) return Seen(null, $"it observes a {wants} unit, and this is a {unit.Kind}") with { Refused = NodeRefusal.NotThisUnit };
 
-        if (node.Kind == NodeKinds.Claimed) return Claimed(unit, Seen, Reached);
+        if (node.Kind == NodeKinds.Claimed) return Claimed(unit, binding.Subject is not null, Seen, Reached);
         if (!unit.OwnerKnown) return Seen(NodeStates.Unknown, "no record names its unit, so nothing of it is said");
 
         var landing = LandingOf(unit);
@@ -187,10 +188,19 @@ public static class BuiltInNodes
             ? (source, landing.Tip)
             : null;
 
+    /// <summary>
+    /// The quest's done, by the ledger. On a run's subject (<paramref name="onRun"/>: a binding naming its subject, which only a run's record
+    /// does) it waits for the chain's last step here (FABRIC-CUTOVER1a; the cutover design §2.2): a done whose steps name a work step still to
+    /// come in its repository is pending, as the close and the opinion's gate read a chain, since a reach there would lapse at the next quest and
+    /// run again all that rests on it. A look's set-up step is the review's, never a step of the work.
+    /// </summary>
     private static NodeObservation Claimed(
-        WorkUnit unit, Func<string?, string, NodeObservation> seen, Func<string, string?, string, string, string, NodeObservation> reached) =>
+        WorkUnit unit, bool onRun, Func<string?, string, NodeObservation> seen, Func<string, string?, string, string, string, NodeObservation> reached) =>
         unit.Records.Quest?.Status switch
         {
+            "Done" when onRun && unit.Records.Quest.Then.Any(step => step.SetUpIn is null
+                && string.Equals(step.To, unit.Records.Quest.To, StringComparison.OrdinalIgnoreCase)) =>
+                seen(null, $"its done is in, and its chain has a step in `{unit.Records.Quest.To}` still to come: the run's work is claimed at its last"),
             "Done" => reached(NodeSource.Ledger, unit.Subject.Revision, WorkRecord.Quests, unit.Records.Quest.Id,
                 unit.Records.Quest.Held ? "its done is in, and held for the person's yes or its evidence" : "its done is in"),
             "Open" or "Taken" or "Declined" => seen(null, unit.End.Said),

@@ -124,4 +124,26 @@ public sealed class WorkBeliefTests
         Assert.Equal("release", WorkBelief.Unresolved(new NodeRecord("unit-a"), Taking(output)));
         Assert.Equal("release", WorkBelief.Unresolved(Holding(reached), Taking(output) with { SubjectRevision = Newer }));
     }
+
+    /// <summary>
+    /// FABRIC-CUTOVER1a (the cutover design §2.2): an input across subjects is judged on its producer's own. A run's quest-side producer and
+    /// its branch-side consumer bind two revisions by design, a quest's moment and a branch's tip, so the check that the two are one applies
+    /// between nodes on one subject alone; a producer no longer reached is stale on any subject.
+    /// </summary>
+    [Fact]
+    public void An_input_across_subjects_is_judged_on_its_producers_own()
+    {
+        var produced = new NodeAcceptance("run:r", "2026-10-17T09:00:00.000Z", "graph-1", "claimed", 1, 1) { Subject = "quest:q1" };
+        var evidence = new NodePort("daoris/claimed@1", "quests#q1", produced.SubjectRevision, produced.Id);
+        var reached = new NodeStatus("run:r", "claimed", NodeStates.Reached) { Attempt = 1, Acceptance = produced with { Evidence = evidence } };
+        NodeRecord Holding(NodeStatus status) => new("run:r") { Statuses = new Dictionary<string, NodeStatus> { ["claimed"] = status } };
+        var taking = new NodeAcceptance("run:r", Tip, "graph-1", "deploy", 1, 1)
+        {
+            Subject = "unit-b1", Inputs = new Dictionary<string, NodePort> { ["claim"] = evidence },
+        };
+
+        Assert.Null(WorkBelief.Unresolved(Holding(reached), taking));
+        Assert.Equal("claim", WorkBelief.Unresolved(Holding(reached), taking with { Subject = "quest:q1" }));
+        Assert.Equal("claim", WorkBelief.Unresolved(Holding(reached with { State = NodeStates.Invalidated }), taking));
+    }
 }

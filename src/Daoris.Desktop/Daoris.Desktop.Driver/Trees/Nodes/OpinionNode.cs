@@ -40,9 +40,10 @@ public static class OpinionNode
         NodeObservation Skipped(string said) => Seen(NodeStates.Skipped, said) with { Source = NodeSource.Opinion };
 
         if (node.Kind != NodeKinds.Opinion) return Seen(null, "this kind is not an opinion") with { Refused = NodeRefusal.NotObserved };
-        if (binding.Unit != unit.Id || binding.Node != node.Id || binding.NodeVersion != node.Version)
+        // FABRIC-CUTOVER1a: the unit its binding observes, a run's branch on the run's record, never the record's own unit.
+        if (binding.Observes != unit.Id || binding.Node != node.Id || binding.NodeVersion != node.Version)
         {
-            return Seen(null, "its binding names another unit, node or version") with { Refused = NodeRefusal.NotBound };
+            return Seen(null, "its binding names another subject, node or version") with { Refused = NodeRefusal.NotBound };
         }
 
         var landed = binding.SubjectRevision is { } bound
