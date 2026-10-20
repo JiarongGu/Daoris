@@ -616,6 +616,24 @@ public sealed record SessionView(
     /// start hands the running conversation of its own workspace by (ASKSCOPE1a).
     /// </summary>
     public string Workspace { get; init; } = RemoteTarget.DefaultWorkspace;
+
+    /// <summary>
+    /// The record's kind as the service answers it, <c>driven</c> or <c>chat</c> (D49 §3); <c>driven</c> where a host answers none,
+    /// as every reader of the records takes it. What <see cref="ActiveSessions.HoldsSlot"/> tells the person's conversations from.
+    /// </summary>
+    public string Kind { get; init; } = ActiveSessions.DrivenKind;
+
+    /// <summary>
+    /// The second opinion it reads another session's work for, or null for every other session (XAGENT1c): a reviewer the driver
+    /// starts, whose record is a chat that serves no quest. Answered on loopback alone.
+    /// </summary>
+    public string? Opinion { get; init; }
+
+    /// <summary>
+    /// The session it answers, or null for every other session (MIXAGENT2a-i): a helper the driver starts, whose record is a chat that
+    /// serves no quest. Answered on loopback alone.
+    /// </summary>
+    public string? Serves { get; init; }
 }
 
 /// <summary>
@@ -639,6 +657,37 @@ public sealed record StartReservation(string? Quest, string? Ask, string Reposit
 
 public static class ActiveSessions
 {
+    /// <summary>A record's kind where a person's quest is planned into a session (D49 §3): what a host that answers none is read as.</summary>
+    public const string DrivenKind = "driven";
+
+    /// <summary>A record's kind where a person opened a conversation, and the kind the driver's own intakes, helpers and reviewers keep (D65, D155, D163).</summary>
+    public const string ChatKind = "chat";
+
+    /// <summary>
+    /// Whether an active session takes a place under the machine's cap (CAPCOUNT1, D130's note): what the driver starts does, a
+    /// conversation the person holds does not. The one place the cap's count is told, so every site that spends a slot (the planner's
+    /// starts, a look's intakes, helpers, brainstorms and meetings) counts the same records.
+    /// </summary>
+    /// <remarks>
+    /// <para>The driver's own are a driven quest's session and the three conversations it opens for itself: an intake
+    /// (<see cref="SessionView.Ask"/>), a helper (<see cref="SessionView.Serves"/>) and a reviewer (<see cref="SessionView.Opinion"/>),
+    /// each a chat at the service, serving no quest, and each told by the mark the driver's own start gave it. A conversation the person
+    /// holds is a chat none of those marks names, or a record in Ask Daoris's place (<see cref="HelpRoom.Repository"/>) the same way,
+    /// whatever the kind its host answers. Told by the record's kind, place and marks, never by its words.</para>
+    /// <para>It spends nothing idle and is the person's to open, so a person's two conversations resting between turns held half a cap
+    /// of four for hours (2026-10-20). The list keeps them: a busy tree and a repository's holder read every active session, and so do the
+    /// reads that need the whole list (<see cref="Snapshot.Active"/>).</para>
+    /// </remarks>
+    public static bool HoldsSlot(SessionView session)
+    {
+        if (session is { Ask.Length: > 0 } or { Serves.Length: > 0 } or { Opinion.Length: > 0 }) return true;
+        if (string.Equals(session.Repository, HelpRoom.Repository, StringComparison.Ordinal)) return false;
+        return !string.Equals(session.Kind, ChatKind, StringComparison.Ordinal);
+    }
+
+    /// <summary>How many of the sessions take a place under the cap (<see cref="HoldsSlot"/>).</summary>
+    public static int Held(IEnumerable<SessionView> sessions) => sessions.Count(HoldsSlot);
+
     /// <summary>
     /// Which sessions are active and where each stands, as one string — equal when the same ones stand
     /// in the same states, whatever the order. The shell forwards a tick to the page when this changes
@@ -667,6 +716,13 @@ public sealed record Snapshot(
 {
     public IReadOnlyDictionary<string, int> Strikes { get; init; } =
         Strikes ?? new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// How many active sessions take a place under the machine's cap (CAPCOUNT1, <see cref="ActiveSessions.HoldsSlot"/>): the ones the
+    /// driver started, never a conversation the person holds. Every site that spends a slot reads this, never the list's length, which
+    /// is every active session and is read as that for a busy tree and a repository's holder.
+    /// </summary>
+    public int SlotsHeld => ActiveSessions.Held(Active);
 
     /// <summary>
     /// The session THIS machine last ran on each quest, by quest id — derived from the same records as
@@ -1011,7 +1067,8 @@ public static class Planner
         // PARALLEL1b: a start of this machine's still opening takes its place as a live session does, counted once where its record
         // has opened since and an active session already stands for its quest.
         var opening = Opening(snapshot);
-        var slots = config.Cap - snapshot.Active.Count - opening.Count;
+        // CAPCOUNT1: the cap counts what the driver started, never a conversation the person holds; the list above keeps them for the busy read.
+        var slots = config.Cap - snapshot.SlotsHeld - opening.Count;
 
         // The service already orders open-oldest-first; keeping its order is what makes "oldest starts
         // first" one implementation rather than two that drift. 🔴 But a record the person wrote to goes first (MSG1b, D137

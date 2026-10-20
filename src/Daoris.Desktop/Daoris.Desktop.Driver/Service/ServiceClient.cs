@@ -1892,6 +1892,11 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
                 Answer = Text(session, "answer") is { Length: > 0 } answer ? answer : null,
                 // Its workspace (ASKSCOPE1a), as SessionRecords reads it: none from a host from before is `default`.
                 Workspace = RemoteTarget.Workspace(Text(session, "workspace")),
+                // What the cap counts by (CAPCOUNT1): its kind, and the mark of each conversation the driver opens for itself, an
+                // intake's ask above, a helper's serves and a reviewer's opinion. A conversation the person holds has none of them.
+                Kind = Text(session, "kind") ?? ActiveSessions.DrivenKind,
+                Opinion = Text(session, "opinion") is { Length: > 0 } opinion ? opinion : null,
+                Serves = Text(session, "serves") is { Length: > 0 } serves ? serves : null,
             });
         }
 

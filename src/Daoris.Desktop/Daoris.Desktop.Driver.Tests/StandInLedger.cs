@@ -506,16 +506,26 @@ internal sealed class StandInLedger : HttpMessageHandler
     /// A session of this machine's in <paramref name="tree"/> with no quest (AUTOTIDY1): a conversation, as the ledger keeps one,
     /// which the active list answers while it is working, and the whole list once it ended.
     /// </summary>
-    public void Working(string session, string repository, string tree, string state = "working")
+    /// <param name="ask">The ask it answers, where it is an intake (CAPCOUNT1): kept on the record as the ledger keeps it.</param>
+    /// <param name="serves">The session it answers, where it is a helper (CAPCOUNT1).</param>
+    /// <param name="opinion">The second opinion it reads for, where it is a reviewer (CAPCOUNT1).</param>
+    public void Working(
+        string session, string repository, string tree, string state = "working", string? ask = null, string? serves = null,
+        string? opinion = null)
     {
         lock (_gate)
         {
             _clock = _clock.AddSeconds(1);
-            _sessions.Add(new JsonObject
+            var record = new JsonObject
             {
                 ["id"] = session, ["repository"] = repository, ["state"] = state, ["kind"] = "chat", ["adapter"] = "stub",
                 ["tree"] = tree, ["created"] = _clock.ToString("O"),
-            });
+            };
+            // The marks the driver's own conversations carry, each only where it has one, as the ledger answers them on loopback.
+            if (ask is not null) record["ask"] = ask;
+            if (serves is not null) record["serves"] = serves;
+            if (opinion is not null) record["opinion"] = opinion;
+            _sessions.Add(record);
         }
     }
 
