@@ -56,6 +56,23 @@ internal sealed class StandInSaid : ISaidDoor
         return new SayAnswer(true, "kept") { Word = kept };
     }
 
+    /// <summary>Every id marked attempted, in the order the marks arrived (COWORK1c).</summary>
+    public List<string> Attempted { get; } = [];
+
+    public Task<bool> AttemptAsync(IReadOnlyList<string> ids, CancellationToken ct)
+    {
+        lock (_gate)
+        {
+            Attempted.AddRange(ids);
+            for (var at = 0; at < Said.Count; at++)
+            {
+                if (ids.Contains(Said[at].Id!) && Said[at].Attempt is null) Said[at] = Said[at] with { Attempt = DateTimeOffset.UnixEpoch };
+            }
+        }
+
+        return Task.FromResult(true);
+    }
+
     public async Task<bool> TakeOffAsync(IReadOnlyList<string> ids, CancellationToken ct)
     {
         if (TakingOff is { } taking) await taking(ids).ConfigureAwait(false);

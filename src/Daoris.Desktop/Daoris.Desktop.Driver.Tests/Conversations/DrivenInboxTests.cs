@@ -684,7 +684,11 @@ public sealed class DrivenInboxTests
         Assert.Equal([("w1", DrivenReach.TurnEnd)], told);
         Assert.Equal(["w1"], inbox.State.Queued.Select(message => message.Id));
 
-        Assert.Equal("w1", inbox.NextOrClose()?.Held?.Id);
+        var held = inbox.NextOrClose()!.Held!;
+        Assert.Equal("w1", held.Id);
+        // Its door writes it: attempted first, and off the record once written.
+        await held.Attempting!();
+        held.Went!();
         var waits = inbox.NextOrClose();
         Assert.NotNull(waits?.Waits);
         Assert.False(waits!.Waits!.IsCompleted);
@@ -694,6 +698,36 @@ public sealed class DrivenInboxTests
         Assert.Null(inbox.NextOrClose());
         Assert.Equal(["w1"], record.TakenOff);
         Assert.Empty(record.Said);
+    }
+
+    /// <summary>
+    /// COWORK1c (the design §6): a kept word leaves the inbox for its door to be attempted and taken off, never taken off as it is
+    /// handed out: the door marks its attempt on the record before it writes it, and once written it leaves the record. One the door
+    /// never wrote, nor attempted, stays there.
+    /// </summary>
+    [Fact]
+    public async Task A_kept_word_is_attempted_by_its_door_before_the_wire_and_leaves_the_record_once_written()
+    {
+        var record = new StandInSaid();
+        var inbox = new DrivenInbox(_ => { });
+        inbox.Attach(interrupt: null);
+        await inbox.KeepAsync(record, Said("first"), default);
+        await inbox.KeepAsync(record, Said("second"), default);
+
+        var first = inbox.NextOrClose()!.Held!;
+        await inbox.TakingOff;
+        Assert.Empty(record.Attempted);
+        Assert.Empty(record.TakenOff);
+
+        await first.Attempting!();
+        Assert.Equal(["w1"], record.Attempted);
+        Assert.NotNull(record.Said.Single(word => word.Id == "w1").Attempt);
+        first.Went!();
+        await inbox.TakingOff;
+
+        Assert.Equal(["w1"], record.TakenOff);
+        Assert.Equal(["w2"], record.Ids);
+        Assert.Null(record.Said.Single().Attempt);
     }
 
     /// <summary>
@@ -709,10 +743,13 @@ public sealed class DrivenInboxTests
         record.Answering = word => word.Text == "first" ? first.Task : Task.CompletedTask;
         var sent = new List<string?>();
         var inbox = new DrivenInbox(_ => { });
-        inbox.Attach(interrupt: null, deliver: message =>
+        // The door as the protocol door is: the attempt marked before the write, the word off the record once written.
+        inbox.Attach(interrupt: null, deliver: async message =>
         {
-            sent.Add(message.Id);
-            return Task.FromResult("end_turn");
+            await message.Attempting!();
+            lock (sent) sent.Add(message.Id);
+            message.Went!();
+            return "end_turn";
         });
         inbox.Flow();
 
@@ -724,6 +761,7 @@ public sealed class DrivenInboxTests
         while (inbox.NextOrClose() is { } next) await (next.Waits ?? next.Answer ?? Task.CompletedTask);
 
         Assert.Equal(["w1", "w2"], sent);
+        Assert.Equal(["w1", "w2"], record.Attempted);
         Assert.Equal(["w1", "w2"], record.TakenOff);
         Assert.Empty(record.Said);
     }
@@ -747,7 +785,9 @@ public sealed class DrivenInboxTests
         answer.SetResult();
         await next!.Waits!;
         Assert.Equal(InboxKeep.Held, (await keeping).Outcome);
-        Assert.Equal("and the readme", inbox.NextOrClose()?.Held?.Text);
+        var held = inbox.NextOrClose()!.Held!;
+        Assert.Equal("and the readme", held.Text);
+        held.Went!();
 
         while (inbox.NextOrClose() is { } more) await (more.Waits ?? Task.CompletedTask);
         var late = await inbox.KeepAsync(record, Said("too late"), default);

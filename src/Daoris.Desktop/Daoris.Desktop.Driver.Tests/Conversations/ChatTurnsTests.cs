@@ -51,11 +51,15 @@ public sealed class ChatTurnsTests
         /// <summary>The steer's answer, which the turn waits for as it waits for a word at its next step.</summary>
         public TaskCompletionSource Now { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
+        /// <summary>Told each turn as it reaches the door, before it is on the wire (COWORK1c).</summary>
+        public Action<ChatMessage>? OnTake { get; set; }
+
         public ChatTurns Turns(bool steers = true) => new(
             ready: () => Task.FromResult(true),
             take: (message, sent) =>
             {
                 var ended = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+                OnTake?.Invoke(message);
                 lock (_gate)
                 {
                     Took.Add(message.Text);
@@ -86,7 +90,7 @@ public sealed class ChatTurnsTests
                         SteeredIds.Add(message.Id);
                     }
 
-                    return Step.Task;
+                    return Written(message, Step.Task);
                 }
                 : null,
             steerNow: steers
@@ -94,10 +98,21 @@ public sealed class ChatTurnsTests
                 {
                     if (!SteersNow) return null;
                     lock (_gate) SteeredNow.Add(message.Text);
-                    return Now.Task;
+                    return Written(message, Now.Task);
                 }
                 : null,
             nextStep: steers ? () => TakesWordsMidTurn : null);
+
+        /// <summary>
+        /// A word handed to the turn on the wire, as the protocol door handles one (COWORK1c): its attempt marked before the write, and
+        /// off the record once written; then the agent's answer.
+        /// </summary>
+        private static async Task Written(ChatMessage message, Task answered)
+        {
+            if (message.Attempting is { } attempting) await attempting();
+            message.Went?.Invoke();
+            await answered;
+        }
 
         public void EndTurn(int at)
         {
@@ -817,7 +832,37 @@ public sealed class ChatTurnsTests
 
         Assert.Equal((TurnReach.NextStep, "w1"), (kept!.Reach, kept.Word));
         Assert.Equal(["w1"], door.SteeredIds);
+        Assert.Equal(["w1"], record.Attempted);
         Assert.Equal(["w1"], record.TakenOff);
+    }
+
+    /// <summary>
+    /// COWORK1c (the design §6): a kept word waiting as a turn of its own is marked attempted on the record before its turn reaches the
+    /// door, and leaves the record once its turn is on the wire; a word that never reached the door is never marked.
+    /// </summary>
+    [Fact]
+    public async Task A_kept_word_is_attempted_before_its_turn_reaches_the_door()
+    {
+        var door = new Door { TakesWordsMidTurn = false };
+        var record = new Daoris.Driver.Tests.StandInSaid();
+        var attemptedAtTake = new List<bool>();
+        door.OnTake = message => attemptedAtTake.Add(message.Id is { } id && record.Attempted.Contains(id));
+        var turns = door.Turns();
+        turns.Take(new ChatMessage("read the five files", []));
+        await Poll.Until(() => door.Took.Count == 1, () => "the first turn never reached the door");
+
+        await turns.KeepAsync(record, new ChatMessage("first", []), default);
+        await turns.KeepAsync(record, new ChatMessage("second", []), default);
+        Assert.Empty(record.Attempted);
+
+        door.EndTurn(0);
+        await Poll.Until(() => door.Took.Count == 2, () => "the first kept word never became its turn");
+        await turns.TakingOff;
+
+        Assert.Equal([false, true], attemptedAtTake);
+        Assert.Equal(["w1"], record.Attempted);
+        Assert.Equal(["w1"], record.TakenOff);
+        Assert.Equal(["w2"], record.Ids);
     }
 
     /// <summary>

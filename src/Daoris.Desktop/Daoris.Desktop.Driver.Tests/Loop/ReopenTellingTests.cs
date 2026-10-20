@@ -264,6 +264,9 @@ public sealed class ReopenTellingTests : IDisposable
         var held = inbox.NextOrClose()!.Held!;
         Assert.Equal("w1", held.Id);
         Assert.True(await DaorisWords.GoesAsync(held, _closing.Token));
+        // Its door writes it, as the protocol door does: attempted first, off the record once written.
+        await held.Attempting!();
+        held.Went!();
         await inbox.TakingOff;
 
         Assert.Equal(["w1"], doors.Running.TakenOff);

@@ -558,7 +558,7 @@ public sealed class DrivenInbox(Action<ChatQueue> changed)
         {
             if (_closed) return false;
             // Off the record once steered (COWORK1c): held again in this process alone.
-            _held.Insert(0, message with { Kept = false });
+            _held.Insert(0, message with { Kept = false, Attempting = null, Went = null });
             Publish();
             return true;
         }
@@ -604,11 +604,10 @@ public sealed class DrivenInbox(Action<ChatQueue> changed)
             }
             else if (_held.Count > 0)
             {
-                next = new DrivenNext(_held[0], null);
+                // COWORK1c: its door marks its attempt before the wire and tells it went once written, when it leaves the record.
+                next = new DrivenNext(Dispatched(_held[0]), null);
                 _held.RemoveAt(0);
                 _turn++;
-                // COWORK1c: on its way to the wire, so off the record by its id.
-                TakeOff([next.Held!]);
             }
             else if (_keepsOnTheirWay > 0)
             {
@@ -682,11 +681,10 @@ public sealed class DrivenInbox(Action<ChatQueue> changed)
         lock (_gate)
         {
             if (_closed) return [];
-            taken = [.. _held];
+            // COWORK1c: the resumed run marks their attempts before it starts and tells each went once it has, when they leave the record.
+            taken = [.. _held.Select(Dispatched)];
             _held.Clear();
             if (taken.Count > 0) _turn++;
-            // COWORK1c: the resumed run carries them, so off the record by their ids.
-            TakeOff(taken);
             if (taken.Count == 0 && _sent.Count == 0 && _steered.Count == 0)
             {
                 _closed = true;
@@ -902,7 +900,8 @@ public sealed class DrivenInbox(Action<ChatQueue> changed)
         Task<string> answer;
         try
         {
-            answer = _deliver!(message);
+            // COWORK1c: its door marks its attempt before the wire and tells it went once written, when it leaves the record.
+            answer = _deliver!(Dispatched(message));
         }
         catch (Exception error) when (error is not OperationCanceledException)
         {
@@ -912,8 +911,6 @@ public sealed class DrivenInbox(Action<ChatQueue> changed)
         // Observed here as well as by the run, which may have ended before it reads this one.
         _ = answer.ContinueWith(static sent => sent.Exception, TaskScheduler.Default);
         _sent.Enqueue(answer);
-        // COWORK1c: handed to the wire, so off the record by its id.
-        TakeOff([message]);
         // COWORK1b: Daoris's word at the next step went now, as the look that held it judged it.
         DaorisWords.Delivered(message);
     }
@@ -924,7 +921,7 @@ public sealed class DrivenInbox(Action<ChatQueue> changed)
         Task<string> answer;
         try
         {
-            answer = steer(message);
+            answer = steer(Dispatched(message));
         }
         catch (Exception error) when (error is not OperationCanceledException)
         {
@@ -933,8 +930,14 @@ public sealed class DrivenInbox(Action<ChatQueue> changed)
 
         _ = answer.ContinueWith(static steered => steered.Exception, TaskScheduler.Default);
         _steered.Enqueue(answer);
-        TakeOff([message]);
     }
+
+    /// <summary>A word as this inbox hands it to its door (COWORK1c): a kept one to be attempted before the wire and taken off once written.</summary>
+    private ChatMessage Dispatched(ChatMessage message) =>
+        SaidDoor.Dispatched(message, _door, word =>
+        {
+            lock (_gate) TakeOff([word]);
+        });
 
     /// <summary>Tell the record what was said. Called under the gate, so told in order; a listener's failure is its own.</summary>
     private void Tell(ChatMessage message, DrivenReach reach)

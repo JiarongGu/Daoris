@@ -518,6 +518,31 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
     }
 
     /// <summary>
+    /// Mark these waiting words attempted on this machine's record, before the wire (COWORK1c's attempt door, the message-urgency
+    /// design §6): the first moment kept, so a shell that comes up again never sends one twice. Whether they were marked is an answer,
+    /// never an exception: a host without the door (one older than COWORK1c) is false with a sentence saying so.
+    /// </summary>
+    public async Task<(bool Ok, string Message)> AttemptAsync(string id, IReadOnlyList<string> said, CancellationToken ct = default)
+    {
+        var body = WriteJson(writer =>
+        {
+            writer.WriteStartObject();
+            writer.WriteStartArray("said");
+            foreach (var word in said) writer.WriteStringValue(word);
+            writer.WriteEndArray();
+            writer.WriteEndObject();
+        });
+        var (ok, status, payload, root) = await PostJsonAsync($"/api/sessions/{Uri.EscapeDataString(id)}/attempt", body, ct)
+            .ConfigureAwait(false);
+        if (root is not { } answered)
+        {
+            return (false, $"the service at {_base} has no door for a word's attempt ({status}) — is it older than this driver?");
+        }
+
+        return ok ? (true, Text(answered, "message") ?? "") : (false, Text(answered, "error") ?? payload);
+    }
+
+    /// <summary>
     /// Take the person's words off a record once a session took them (MSG1a's door, MSG1b): by their ids, so a word said
     /// after the driver read the record stays for the next run; <paramref name="by"/> names the new session a fallback
     /// handed them to. The service keeps each word said after the record ended on its ask as <c>reopened</c>. Whether they

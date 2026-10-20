@@ -52,6 +52,19 @@ public sealed record ChatMessage(string Text, IReadOnlyList<KeptFile> Files)
     internal bool Kept { get; init; }
 
     /// <summary>
+    /// Marks this kept word attempted on its record (COWORK1c, the message-urgency design §6), set by its dispatcher as it hands the word
+    /// to a door: the door awaits it before it writes the word, so a shell that comes up again never sends it twice. Null for a word
+    /// kept nowhere, which needs none. Never faults.
+    /// </summary>
+    internal Func<Task>? Attempting { get; init; }
+
+    /// <summary>
+    /// Told once the door wrote this kept word to the wire, or settled it without the wire (a word of Daoris's dropped): its dispatcher
+    /// takes it off the record by its id, after every take-off before it (COWORK1c). Null for a word kept nowhere.
+    /// </summary>
+    internal Action? Went { get; init; }
+
+    /// <summary>
     /// The person's words a conversation goes on with (MSG1c, D137 §2.2), kept on its record while it had ended: its first
     /// turn, each word its own block on the protocol door and said again under its id as the door takes it. The record
     /// already shows them waiting, so the queue a page is told never lists them. Null for every other message.

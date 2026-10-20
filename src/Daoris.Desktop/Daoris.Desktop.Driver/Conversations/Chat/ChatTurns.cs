@@ -359,18 +359,16 @@ internal sealed class ChatTurns(
         // Without the queue's id, as a turn is sent (QUEUEEDIT1a): the door gives a word handed to the turn its own.
         var stamped = word.Id is { } queued && _stamped.Remove(queued) ? queued : null;
         var handed = stamped is null ? word : word with { Id = null };
-        if (word.Level == MessageLevel.Now && steerNow?.Invoke(handed) is { } steered)
+        if (word.Level == MessageLevel.Now && steerNow?.Invoke(Dispatched(handed)) is { } steered)
         {
             _steered.Add(steered);
-            TakeOff([handed]);
             return true;
         }
 
-        if (!UrgentWaiting(before: at) && steer?.Invoke(handed) is { } stepped)
+        if (!UrgentWaiting(before: at) && steer?.Invoke(Dispatched(handed)) is { } stepped)
         {
             _steered.Add(stepped);
             _onTheirWay.Add(stepped);
-            TakeOff([handed]);
             return true;
         }
 
@@ -431,12 +429,12 @@ internal sealed class ChatTurns(
             // ahead of an urgent word still waiting, which would make the agent read them out of the order said. An ordinary word
             // never enters a turn in flight, and an urgent one goes past it, since its sender chose sooner (COWORK1a, the design
             // §2.1). A helper's answer is a turn of its own, never handed to the running one (MIXAGENT2a-iii).
+            // COWORK1c: a kept word goes to the door to be attempted before the wire and taken off the record once written.
             if (steer is not null && message.Helped is null && message.Level != MessageLevel.Ordinary && _inFlight && _sent
-                && !_stopped && !_stopPending && _holding is null && !UrgentWaiting() && steer(message) is { } answered)
+                && !_stopped && !_stopPending && _holding is null && !UrgentWaiting() && steer(Dispatched(message)) is { } answered)
             {
                 _steered.Add(answered);
                 _onTheirWay.Add(answered);
-                TakeOff([message]);
                 return TurnReach.NextStep;
             }
 
@@ -468,7 +466,8 @@ internal sealed class ChatTurns(
         lock (_gate)
         {
             if (_finishing || _gone) return false;
-            _waiting.Insert(0, message);
+            // Off the record once steered (COWORK1c): waiting again in this process alone.
+            _waiting.Insert(0, message with { Kept = false, Attempting = null, Went = null });
             start = !_pumping;
             if (start)
             {
@@ -512,19 +511,17 @@ internal sealed class ChatTurns(
                 var running = _sent && !_stopped && !_stopPending;
                 // 🔴 Steered past whatever is ahead (the owner's case): the steer cuts the step in flight, not the prompt a word on
                 // its way is queued as, which is still taken at its next step; what waits keeps its place. The person chose now.
-                if (running && steerNow?.Invoke(message) is { } steered)
+                if (running && steerNow?.Invoke(Dispatched(message)) is { } steered)
                 {
                     _steered.Add(steered);
-                    TakeOff([message]);
                     return Task.FromResult<SentNow?>(new SentNow(SendNowWhy.Spelled(TurnReach.Steered), Now: true, Why: null));
                 }
 
                 // At its next step, behind any word on its way, as a word said then goes; never ahead of an urgent one still waiting.
-                if (running && _holding is null && !UrgentWaiting() && steer?.Invoke(message) is { } stepped)
+                if (running && _holding is null && !UrgentWaiting() && steer?.Invoke(Dispatched(message)) is { } stepped)
                 {
                     _steered.Add(stepped);
                     _onTheirWay.Add(stepped);
-                    TakeOff([message]);
                     return Task.FromResult<SentNow?>(new SentNow(
                         SendNowWhy.Spelled(TurnReach.NextStep), Now: false, onTheirWay ? SendNowWhy.Behind : SendNowWhy.NoInterrupt));
                 }
@@ -778,6 +775,8 @@ internal sealed class ChatTurns(
 
             try
             {
+                // COWORK1c: a kept word's attempt is marked on its record before its turn is on the wire.
+                if (Dispatched(message).Attempting is { } attempting) await attempting().ConfigureAwait(false);
                 await take(message, () =>
                 {
                     Sent();
@@ -873,6 +872,13 @@ internal sealed class ChatTurns(
             // A listener's failure is its own; the queue has moved either way.
         }
     }
+
+    /// <summary>A word as these turns hand it to the door at its next step (COWORK1c): a kept one to be attempted before the wire and taken off once written.</summary>
+    private ChatMessage Dispatched(ChatMessage message) =>
+        SaidDoor.Dispatched(message, _door, word =>
+        {
+            lock (_gate) TakeOff([word]);
+        });
 
     /// <summary>
     /// Kept words on their way to the wire, handed back to the person or taken back (COWORK1c): off the record by their ids, after

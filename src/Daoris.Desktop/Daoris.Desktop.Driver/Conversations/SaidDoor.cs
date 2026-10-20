@@ -14,6 +14,11 @@ public interface ISaidDoor
 
     /// <summary>Take these words off the record by their ids: the session took them, or the person took them back. False where it did not.</summary>
     Task<bool> TakeOffAsync(IReadOnlyList<string> ids, CancellationToken ct);
+
+    /// <summary>
+    /// Mark these words attempted on the record, before the wire (COWORK1c, the design §6): the first moment kept. False where it did not.
+    /// </summary>
+    Task<bool> AttemptAsync(IReadOnlyList<string> ids, CancellationToken ct);
 }
 
 /// <summary>
@@ -31,6 +36,35 @@ public sealed class SaidDoor(ServiceClient service, string session) : ISaidDoor
 
     public async Task<bool> TakeOffAsync(IReadOnlyList<string> ids, CancellationToken ct) =>
         (await service.TakenAsync(session, ids, by: null, ct).ConfigureAwait(false)).Ok;
+
+    public async Task<bool> AttemptAsync(IReadOnlyList<string> ids, CancellationToken ct) =>
+        (await service.AttemptAsync(session, ids, ct).ConfigureAwait(false)).Ok;
+
+    /// <summary>
+    /// A kept word as its dispatcher hands it to a door (COWORK1c): marked attempted through <paramref name="door"/> before the wire,
+    /// and told <paramref name="went"/> once written. A word kept nowhere, or with no door yet, is handed as it is.
+    /// </summary>
+    internal static ChatMessage Dispatched(ChatMessage word, ISaidDoor? door, Action<ChatMessage> went)
+    {
+        if (!word.Kept || word.Id is not { } id || door is null) return word;
+        return word with
+        {
+            Attempting = async () =>
+            {
+                try
+                {
+                    await door.AttemptAsync([id], CancellationToken.None).ConfigureAwait(false);
+                }
+                catch (Exception error) when (error is HttpRequestException or DriverException or OperationCanceledException
+                                                  or ObjectDisposedException or System.Text.Json.JsonException)
+                {
+                    // Unmarked, the word still goes: a shell cut off before its take-off may send it again, the rare cost of a record
+                    // that did not answer, against a word never sent.
+                }
+            },
+            Went = () => went(word),
+        };
+    }
 }
 
 /// <summary>What keeping a word for a running session's run did (COWORK1c).</summary>
