@@ -210,7 +210,7 @@ export type InstanceFound =
   | 'answers'
   /** The instance lives and its pipe did not answer, or it names none: a press is refused, never done alone. */
   | 'silent'
-  /** The hello was refused (`protocol`, `home`, `stopping`): a press is refused, saying which. */
+  /** The hello was refused (`protocol`, `home`, `stopping`), or the pipe refused this terminal (PIPEOWNER1): a press is refused, saying which. */
   | 'refused';
 
 /** What a verb found, with the sentence that says it. */
@@ -243,9 +243,26 @@ export interface InstanceWorld {
   readonly wait?: number;
   /** How long a verb acting alone waits on another act's lease before it is refused, in milliseconds (§5: thirty seconds). */
   readonly leaseWait?: number;
+  /** How the pipe is opened; `net.connect` where absent. A test's hands the refusal of a pipe's ACL, which Node cannot serve. */
+  readonly connect?: (path: string) => Socket;
 }
 
 type Envelope = Record<string, unknown>;
+
+/**
+ * What a pipe that refused this terminal is said as (PIPEOWNER1), never as a pipe that did not answer: the driver's
+ * `InstanceDoor.NotThisUsers`, word for word (`twins.md`).
+ */
+const NOT_THIS_USERS = 'Its pipe belongs to another Windows account or elevation.';
+
+/** The codes Node's connect says a pipe's ACL refused it by: Windows' access denied, which libuv says as `EPERM`. */
+const REFUSED_CODES: ReadonlySet<string> = new Set(['EPERM', 'EACCES']);
+
+/** A connect to the pipe: the client where it connected; else whether the pipe refused this terminal, or nothing took it in time. */
+interface PipeConnect {
+  readonly client: PipeClient | null;
+  readonly refused: boolean;
+}
 
 /** Where Windows serves a pipe of this name; the CLI opens it as the driver's `NamedPipeClientStream` does, by name on this machine. */
 const pipePath = (name: string): string => `\\\\.\\pipe\\${name}`;
@@ -286,21 +303,24 @@ class PipeClient {
     socket.on('error', end);
   }
 
-  /** The connection to `pipe`, or null where it does not take one within `within` milliseconds. */
-  static connect(pipe: string, within: number): Promise<PipeClient | null> {
+  /**
+   * The connection to `pipe`; or none, `refused` where the pipe's ACL refused this terminal (PIPEOWNER1: Node reads no owner, so the
+   * driver's refusal of an owner it does not take has no twin here), else where it did not take one within `within` milliseconds.
+   */
+  static connect(pipe: string, within: number, open: (path: string) => Socket = connect): Promise<PipeConnect> {
     return new Promise((resolve) => {
-      const socket = connect(pipePath(pipe));
-      const failed = (): void => {
+      const socket = open(pipePath(pipe));
+      const failed = (error?: NodeJS.ErrnoException): void => {
         clearTimeout(timer);
         socket.destroy();
-        resolve(null);
+        resolve({ client: null, refused: REFUSED_CODES.has(error?.code ?? '') });
       };
       const timer = setTimeout(failed, within);
       socket.once('error', failed);
       socket.once('connect', () => {
         clearTimeout(timer);
         socket.removeListener('error', failed);
-        resolve(new PipeClient(pipe, socket));
+        resolve({ client: new PipeClient(pipe, socket), refused: false });
       });
     });
   }
@@ -398,7 +418,10 @@ export async function findInstance(world: InstanceWorld): Promise<InstanceLook> 
 async function find(world: InstanceWorld): Promise<Look> {
   const mine = world.home ? homeId(world.home) : null;
   const named = (world.env ?? process.env)[INSTANCE_VARIABLE]?.trim();
-  if (named) return hello(named, mine, world, `the Daoris ${INSTANCE_VARIABLE} names (${named}) did not answer; nothing was done.`);
+  if (named) {
+    return hello(named, mine, world, `the Daoris ${INSTANCE_VARIABLE} names (${named}) did not answer; nothing was done.`,
+      `the Daoris ${INSTANCE_VARIABLE} names (${named}) refused this terminal; nothing was done.`);
+  }
 
   const install = world.install === undefined ? THIS_INSTALL : world.install;
   if (!install || !world.home) return { found: 'none', why: 'a workspace build reads no address file.', client: null };
@@ -426,7 +449,8 @@ async function find(world: InstanceWorld): Promise<Look> {
     };
   }
 
-  return hello(entry.pipe, mine, world, running);
+  return hello(entry.pipe, mine, world, running,
+    `Daoris is running on this home (\`Daoris.exe\`, pid ${entry.pid}) and refused this terminal; nothing was done.`);
 }
 
 /** The home id a Daoris host's status door names, asked with redirects off; null where it does not answer as one, or names none. */
@@ -442,10 +466,11 @@ async function statusHome(url: string, get: Get): Promise<string | null> {
 }
 
 /** The pipe connected and its hello said, or why not. */
-async function hello(pipe: string, mine: string | null, world: InstanceWorld, silent: string): Promise<Look> {
+async function hello(pipe: string, mine: string | null, world: InstanceWorld, silent: string, refused: string): Promise<Look> {
   const within = world.answer ?? ANSWER_MS;
   const seconds = `${Number((within / 1000).toFixed(1))} seconds`;
-  const client = await PipeClient.connect(pipe, within);
+  const { client, refused: turnedAway } = await PipeClient.connect(pipe, within, world.connect);
+  if (turnedAway) return { found: 'refused', why: `${refused} ${NOT_THIS_USERS}`, client: null };
   if (!client) return { found: 'silent', why: `${silent} Its pipe did not answer within ${seconds}.`, client: null };
 
   const answer = await client.hello(mine, within);
@@ -565,7 +590,7 @@ async function underLease(world: InstanceWorld, press: VerbPress): Promise<ExitC
 /** `RESULT` for a press whose answer was lost, asked on a new connection to the pipe the verb found; null where none came. */
 async function resultOf(pipe: string, id: string, key: string, world: InstanceWorld): Promise<Envelope | null> {
   const within = world.answer ?? ANSWER_MS;
-  const again = await PipeClient.connect(pipe, within);
+  const { client: again } = await PipeClient.connect(pipe, within, world.connect);
   if (!again) return null;
   try {
     const said = await again.hello(world.home ? homeId(world.home) : null, within);

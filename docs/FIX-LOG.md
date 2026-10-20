@@ -5,6 +5,45 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-21 — A turn that ended just after its background command did parked on the person (BGWAIT3)
+
+- **Symptom:** a driven session on the install backgrounded a test class, wrote that it would close its quest when the tests
+  finished, and ended its turn. The page said 等你处理, and nothing woke it.
+- **Root cause:** the command ended about three seconds before the turn did, after the agent's last step, so the harness had not
+  handed the agent the ending (its last words said the command still ran). The wire said the task ended, and BGWAIT1 waits only
+  on work still running at the turn's end, so the session closed and parked five seconds later, before the harness's wake for
+  that ending could come. The task frames had arrived: the record keeps none of them, so their absence there proved nothing.
+- **Fix:** `AcpWake.Unseen` names an ending read after the agent's last step, after the last woken turn began and after Daoris's
+  last go-on; a turn that ends on one waits for the woken turn, or sends the go-on after the quiet, where the quest would park.
+  Every protocol-door session asks for `asyncTasks`, so the headless loop gets the frames too. D83's BGWAIT3 note.
+- **Verification:** `AcpBackgroundTests`' install case (0.84.0's frames: the spawn at the call's result, the ending after the
+  last step), the go-on told once and the quest that does not wait failed before the fix; the reshaped real-question case
+  stays green. `AcpTests`' capabilities and task-frame cases failed before it.
+
+## 2026-10-21 — A knowledge host exited at start with "database is locked" when sessions started together (QUESTOPENLOCK1)
+
+- **Symptom:** on the install, eight driven sessions started within a minute, each with its own knowledge host over the one
+  `knowledge.db`. Two hosts exited at start with `SqliteException: SQLite Error 5: 'database is locked'`, thrown from
+  `SqliteDataRecord.Dispose` under `SqliteCommand.ExecuteScalar` at `QuestStore.EnsureSchemaAsync`'s version stamp. A session whose
+  connector did not start had no quest tools: it committed its row but could neither take nor close its quest, and was recorded
+  failed.
+- **Root cause:** Microsoft.Data.Sqlite sets no SQLite busy handler; it waits out a busy lock (every 150 ms, up to the command
+  timeout, 30 s here) only around a statement's first step. A write with a `RETURNING` clause, run on its own, writes at that first
+  step and returns its first row; its autocommit commit runs when the reader ends (`sqlite3_reset` in the record's dispose), which
+  is not retried. The file keeps a rollback journal (no `journal_mode` is set; `delete`), so that commit needs an exclusive lock,
+  and any other host's read under way answers it busy at once; SQLite then rolls the write back. The stamp is such a write at every
+  open, added by CLOSETAKE1/QUESTSTOREVER1 (660d4b545). Two other writes were the same: a channel post's `RETURNING urgent`
+  (COWORK1d, ec0d27c60) and a registration's `RETURNING workspace, default_branch, lanes` (older).
+- **Fix:** each runs in the connection gate's write transaction (`BEGIN IMMEDIATE`), whose `BEGIN` and `COMMIT` are first steps the
+  driver waits on: `QuestStore.EnsureSchemaAsync`'s stamp, `ChannelStore.KeepAsync` and `RegistrationStore.UpsertAsync`. The four
+  quest-log and take-bind writes already ran in the caller's transaction. A source scan in `ConnectionGateTests` refuses a
+  `RETURNING` write whose member neither takes nor opens a transaction. D173's QUESTOPENLOCK1 note.
+- **Verification:** `ReturningLockTests`: another host holds a read for half a second while the quest store opens (once, and on four
+  connections at once), a channel post and a registration are written; each waits and is kept. Red before the fix with the
+  install's own stack (four of six; the driver pin and the publish guard green), green after. The scan named exactly the three
+  sites on the old stores. `QuestStoreTests`, `ChannelTests`, `RegistrationStoreTests`, `QuestTakeBindTests`, `QuestLogTests` and the
+  other classes over these stores green, with the HTTP host's channel and registry classes.
+
 ## 2026-10-21 — Approving or withdrawing a plugin for Ask Daoris deleted what its writer did not know (KEEPALL1d)
 
 - **Symptom:** named by KEEPALL1's audit (D173's KEEPALL1 note). Approving a plugin's server for Ask Daoris, or withdrawing an
@@ -18,6 +57,25 @@ repository.
 - **Verification:** six driver-only `approvals:` rows in `home-files-keep.json` through `HomeFilesKeepTests`, with
   `HelpGrantsTests`, `PluginsCommandTests`, `HelpPluginApprovalProposalsTests`, `DriverModuleHelpGrantTests` and
   `HelpPluginApprovalDoorTests` green; the CLI's `homefileskeep.test.ts` skips the six and passes its sixteen.
+
+## 2026-10-21 — A terminal that was not elevated could not press into an elevated Daoris (PIPEOWNER1)
+
+- **Symptom:** on the install, which runs elevated, `daoris-driver sessions say` from a terminal that was not elevated was
+  refused at once, saying the running Daoris's pipe *did not answer within 5 seconds*. Its reads went alone without a word.
+- **Root cause:** the pipe's descriptor named no owner, so it took the creating token's default owner, which for an elevated
+  token is the Administrators group. The client opened with `PipeOptions.CurrentUserOnly`, which compares the pipe's owner with the
+  caller's token's default owner, the user's SID when not elevated, and refused it (`UnauthorizedAccessException`, about 50 ms);
+  the ACL let the same process in, in 1 ms. `ConnectAsync` returned null for that refusal as for a timeout, so it was said as
+  silence.
+- **Fix:** `InstancePipe.Security` owns the pipe by the user's SID. The driver's client reads the owner itself, taking the user's
+  SID or its token's default owner: with the server's change alone, `CurrentUserOnly` refused every elevated client instead (the
+  modules' pipe tests did so under elevated PowerShell). A refused connect (an ACL that refuses the user, or an owner not taken)
+  is `InstanceFound.Refused`, *… refused this terminal; nothing was done. Its pipe belongs to another Windows account or
+  elevation.* The CLI's client reads no owner; its connect the ACL refuses (`EPERM`) is said in the same words.
+- **Verification:** `InstancePipeTests`' owner row failed under elevated PowerShell (owner `S-1-5-32-544`), then passed;
+  `InstanceDoorTests`' three refused rows failed (two said *did not answer*, one pressed), then passed; `instance.test.ts`'s two
+  failed the same way, then passed. `InstancePipeTests` and `PipeCensusTests` (77) and `InstanceDoorTests` (39) under both
+  elevated PowerShell and Git Bash, the instance-path classes (109), `instance.test.ts` (29).
 
 ## 2026-10-21 — The full set's run on d263cd0 failed three gates that its merges never ran
 

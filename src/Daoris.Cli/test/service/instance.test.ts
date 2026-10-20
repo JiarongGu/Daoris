@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
+import { Socket } from 'node:net';
 import { dirname, join } from 'node:path';
 import { findInstance, INSTANCE_VARIABLE, instanceDoor, pressInstance, type InstanceWorld } from '../../src/service/service.ts';
 import type { InstanceRoute } from '../../src/platform/door.ts';
@@ -318,6 +319,38 @@ test('an instance naming no pipe refuses the press, and nothing is done alone', 
     await done(h);
   }
 });
+
+/** A connect the pipe's ACL refuses, as Node meets one another account serves: `EPERM`, before any line crosses. */
+const refusing = (path: string): Socket => {
+  const socket = new Socket();
+  setImmediate(() => socket.destroy(Object.assign(new Error(`connect EPERM ${path}`), { code: 'EPERM' })));
+  return socket;
+};
+
+/**
+ * A pipe that refuses this terminal (PIPEOWNER1; the driver's `A_pipe_another_account_or_elevation_holds_…` rows) refuses the press
+ * saying so, at once and never as a pipe that did not answer, exit 2, nothing done alone. Node is refused by the pipe's ACL alone (it
+ * reads no owner, so the driver's owner row has no twin here); the world's `connect` hands that refusal, since Node cannot serve a pipe
+ * with an ACL.
+ */
+for (const how of ['address', 'variable'] as const) {
+  test(`a pipe another account or elevation holds refuses the press saying so (${how}), and nothing is done alone`, WINDOWS, async () => {
+    const h = installed(`instance-refused-${how}`);
+    try {
+      leave(h);
+      const named = how === 'variable' ? { env: { [INSTANCE_VARIABLE]: h.pipe } } : {};
+      const { code, error } = await press(h, world(h, { connect: refusing, ...named }));
+      assert.equal(code, 2);
+      assert.equal(h.alone, 0);
+      const who = how === 'variable'
+        ? `the Daoris ${INSTANCE_VARIABLE} names (${h.pipe})`
+        : `Daoris is running on this home (\`Daoris.exe\`, pid ${process.pid}) and`;
+      assert.equal(error, `${who} refused this terminal; nothing was done. Its pipe belongs to another Windows account or elevation.`);
+    } finally {
+      await done(h);
+    }
+  });
+}
 
 for (const [code, why, said] of [
   ['protocol', 'close', "another version of the terminal's pipe"],

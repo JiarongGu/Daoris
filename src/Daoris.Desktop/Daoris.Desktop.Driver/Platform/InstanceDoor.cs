@@ -17,7 +17,10 @@ public enum InstanceFound
     /// <summary>The instance lives and its pipe did not answer, or it names none: a press is refused, never done alone.</summary>
     Silent,
 
-    /// <summary>The hello was refused (<c>protocol</c>, <c>home</c>, <c>stopping</c>): a press is refused, saying which.</summary>
+    /// <summary>
+    /// The hello was refused (<c>protocol</c>, <c>home</c>, <c>stopping</c>), or the pipe refused this terminal as another account's
+    /// or elevation's (PIPEOWNER1): a press is refused, saying which.
+    /// </summary>
     Refused,
 }
 
@@ -53,6 +56,12 @@ public sealed class InstanceWorld
 
     /// <summary>How long a press is waited on before its answer is asked for by <c>RESULT</c>.</summary>
     public TimeSpan Wait { get; init; } = TimeSpan.FromMinutes(30);
+
+    /// <summary>
+    /// The SIDs whose pipe this terminal takes as its user's: <see cref="InstanceClient.ThisUser"/>'s where null (PIPEOWNER1), or a
+    /// test's, which needs no second elevation to meet a pipe it does not take.
+    /// </summary>
+    public IReadOnlySet<string>? Owners { get; init; }
 }
 
 /// <summary>
@@ -81,7 +90,8 @@ public static class InstanceDoor
         if (world.Environment(Variable) is { Length: > 0 } named)
         {
             var silent = $"the Daoris {Variable} names ({named}) did not answer; nothing was done.";
-            return await HelloAsync(named, mine, world, silent, server: null, ct).ConfigureAwait(false);
+            var turnedAway = $"the Daoris {Variable} names ({named}) refused this terminal; nothing was done.";
+            return await HelloAsync(named, mine, world, silent, turnedAway, server: null, ct).ConfigureAwait(false);
         }
 
         if (DaorisHome.InstallOf(world.BaseDirectory) is null || world.Home is null)
@@ -113,16 +123,21 @@ public static class InstanceDoor
                 + "could not serve it, which its machine log says.");
         }
 
-        return await HelloAsync(pipe, mine, world, running, server: entry.Pid, ct).ConfigureAwait(false);
+        var refused = $"Daoris is running on this home (`Daoris.exe`, pid {entry.Pid}) and refused this terminal; nothing was done.";
+        return await HelloAsync(pipe, mine, world, running, refused, server: entry.Pid, ct).ConfigureAwait(false);
     }
+
+    /// <summary>What a pipe that refused this terminal is said as (PIPEOWNER1): never a pipe that did not answer.</summary>
+    internal const string NotThisUsers = "Its pipe belongs to another Windows account or elevation.";
 
     /// <summary>The pipe connected and its hello said, or why not.</summary>
     private static async Task<InstanceLook> HelloAsync(
-        string pipe, string? mine, InstanceWorld world, string silent, int? server, CancellationToken ct)
+        string pipe, string? mine, InstanceWorld world, string silent, string refused, int? server, CancellationToken ct)
     {
         var within = $"{world.Answer.TotalSeconds:0.#} seconds";
-        var client = await InstanceClient.ConnectAsync(pipe, world.Answer, ct).ConfigureAwait(false);
-        if (client is null) return new(InstanceFound.Silent, $"{silent} Its pipe did not answer within {within}.");
+        var connect = await InstanceClient.ConnectAsync(pipe, world.Answer, world.Owners, ct).ConfigureAwait(false);
+        if (connect.Refused) return new(InstanceFound.Refused, $"{refused} {NotThisUsers}");
+        if (connect.Client is not { } client) return new(InstanceFound.Silent, $"{silent} Its pipe did not answer within {within}.");
         if (server is { } expected && client.Server is { } serving && serving != expected)
         {
             await client.DisposeAsync().ConfigureAwait(false);
@@ -359,7 +374,8 @@ public static class InstanceDoor
     /// <summary><c>RESULT</c> for a press whose answer was lost, asked on a new connection to the pipe the verb found.</summary>
     private static async Task<JsonElement?> ResultAsync(InstanceLook client, string id, string key, InstanceWorld world, CancellationToken ct)
     {
-        await using var again = await InstanceClient.ConnectAsync(client.Client!.Pipe, world.Answer, ct).ConfigureAwait(false);
+        var connect = await InstanceClient.ConnectAsync(client.Client!.Pipe, world.Answer, world.Owners, ct).ConfigureAwait(false);
+        await using var again = connect.Client;
         if (again is null) return null;
         var mine = world.Home is { } home ? HomeIdentity.Read(home) : null;
         if (await again.HelloAsync(mine, world.Answer, ct).ConfigureAwait(false) is not { } hello || !Succeeded(hello)) return null;

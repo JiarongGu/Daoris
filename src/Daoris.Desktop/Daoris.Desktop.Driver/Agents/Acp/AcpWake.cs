@@ -44,6 +44,13 @@ internal sealed class AcpWake
     private long _ending;
     private long _began;
     private long _woke;
+
+    // BGWAIT3: the agent's own last step, and the last update Daoris's go-on said everything up to.
+    private long _step;
+    private long _told;
+
+    // BGWAIT3: where each piece of work's last ending was read, by the task's id.
+    private readonly Dictionary<string, long> _endings = new(StringComparer.Ordinal);
     private TaskCompletionSource _changed = NewSignal();
 
     /// <summary>
@@ -55,22 +62,43 @@ internal sealed class AcpWake
         lock (_gate)
         {
             _read++;
-            switch (AcpSession.Kind(update))
+            var kind = AcpSession.Kind(update);
+            if (kind is "tool_call" or "tool_call_update" && !OfSubagent(update)) _step = _read;
+            switch (kind)
             {
                 case "async_task_state_update" when Json.Text(update, "state") is { } state and not ("running" or "paused"):
                     _ending = _read;
+                    if (Json.Text(update, "asyncTaskId") is { Length: > 0 } id) _endings[id] = _read;
                     break;
                 case "usage_update" when Woken(update):
                     // The turn running now ended, where one runs; said again, or with none running, it ends nothing.
                     if (_began > 0) (_woke, _began) = (_began, 0);
                     break;
-                case { } kind when _began == 0 && !prompted && Turns(kind):
+                case { } said when _began == 0 && !prompted && Turns(said):
                     _began = _read;
                     break;
             }
         }
 
         Stir();
+    }
+
+    /// <summary>
+    /// The work whose ending its agent was never handed (BGWAIT3), by the tasks' ids: each ending read after the agent's last step,
+    /// after the last turn its harness woke, and after Daoris's last go-on. Claude Code hands the agent an ending at its next step
+    /// in the turn, or wakes it with the ending once the turn is over; one said after the turn's last step reaches it only by that
+    /// wake, so a turn that ends then is owed one, whatever the agent last said of the work.
+    /// </summary>
+    public IReadOnlyList<string> Unseen
+    {
+        get
+        {
+            lock (_gate)
+            {
+                var seen = Math.Max(_step, Math.Max(_woke, _told));
+                return [.. _endings.Where(ending => ending.Value > seen).Select(ending => ending.Key)];
+            }
+        }
     }
 
     /// <summary>Something besides an update changed what the wait reads: a prompt was answered.</summary>
@@ -88,7 +116,8 @@ internal sealed class AcpWake
 
     /// <summary>
     /// After the session's background work ended: true once a turn its harness woke after the work's last ending has said its
-    /// end; false once <paramref name="quiet"/> has passed with no turn running and no prompt open, so none began; null where
+    /// end; false once <paramref name="quiet"/> has passed with no turn running and no prompt open, so none began, and every ending
+    /// read so far counts as told by the go-on the caller then sends (BGWAIT3); null where
     /// <paramref name="ended"/> completes first, the agent's stream over. A woken turn that never says its end is waited for
     /// until the stream ends or <paramref name="ct"/> is cancelled.
     /// </summary>
@@ -119,7 +148,19 @@ internal sealed class AcpWake
             await bounded.CancelAsync().ConfigureAwait(false);
             ct.ThrowIfCancellationRequested();
 
-            if (first == silence && !changed.IsCompleted && !prompted()) return false;
+            if (first == silence && !prompted())
+            {
+                lock (_gate)
+                {
+                    // Nothing was read through the quiet: the go-on the caller sends tells the agent everything read so far
+                    // (BGWAIT3), so no ending it names is owed a wake again.
+                    if (_changed.Task == changed)
+                    {
+                        _told = _read;
+                        return false;
+                    }
+                }
+            }
         }
     }
 
@@ -152,6 +193,16 @@ internal sealed class AcpWake
         update.TryGetProperty("_meta", out var meta) && meta.ValueKind == JsonValueKind.Object
         && meta.TryGetProperty("_claude/origin", out var origin) && origin.ValueKind == JsonValueKind.Object
         && Json.Text(origin, "kind") is { } kind && Autonomous.Contains(kind);
+
+    /// <summary>
+    /// Whether a call is a subagent's, stamped with the call that spawned it (<c>_meta.claudeCode.parentToolUseId</c>,
+    /// docs/2026-09-28-console2-streams-evidence.md): where streams are not kept, a subagent's calls arrive on the session's own
+    /// id, and a step of the subagent's hands the session's agent nothing.
+    /// </summary>
+    private static bool OfSubagent(JsonElement update) =>
+        update.TryGetProperty("_meta", out var meta) && meta.ValueKind == JsonValueKind.Object
+        && meta.TryGetProperty("claudeCode", out var claude) && claude.ValueKind == JsonValueKind.Object
+        && Json.Text(claude, "parentToolUseId") is { Length: > 0 };
 
     /// <summary>What a turn says while it runs: the agent's words and thinking, its calls and its plan.</summary>
     private static bool Turns(string kind) =>

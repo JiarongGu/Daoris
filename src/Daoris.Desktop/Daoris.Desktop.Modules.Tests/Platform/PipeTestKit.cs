@@ -114,10 +114,15 @@ internal sealed class PipeClient : IAsyncDisposable
         _reader = new StreamReader(stream, Utf8);
     }
 
+    /// <summary>
+    /// Connected as the driver's client connects (PIPEOWNER1): past the ACL, then the pipe's owner held to this user's SIDs, never
+    /// <see cref="PipeOptions.CurrentUserOnly"/>, which an elevated run refuses the user's own pipe by.
+    /// </summary>
     public static async Task<PipeClient> ConnectAsync(string name)
     {
-        var stream = new NamedPipeClientStream(".", name, PipeDirection.InOut, PipeOptions.Asynchronous | PipeOptions.CurrentUserOnly);
+        var stream = new NamedPipeClientStream(".", name, PipeDirection.InOut, PipeOptions.Asynchronous);
         await stream.ConnectAsync(5000);
+        if (OperatingSystem.IsWindows()) Assert.True(Daoris.Driver.InstanceClient.OwnedBy(stream, Daoris.Driver.InstanceClient.ThisUser()));
         return new PipeClient(stream);
     }
 

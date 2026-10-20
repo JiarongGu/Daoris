@@ -11,6 +11,16 @@ with the version and date at release.
   stops the first. Where the ports Codex waits on for the browser (1455, else 1457) are both held, by another program or by a range
   Windows reserves, the sign-in says so before it starts and offers the device code; a sign-in Codex refuses shows Codex's own
   line, with the other way offered, in English and 中文.
+- A driven session whose background command ends just before its turn does, before its agent was told, is no longer shown as
+  waiting for you (等你处理): it stays working until its agent is woken with the ending, or Daoris tells it after a minute's
+  quiet, and goes on with its quest. A session that `daoris-driver drive` starts from a terminal now waits on its own background
+  work as the app's sessions do.
+- A terminal that is not run as administrator can now press into a Daoris that is, such as `daoris-driver sessions say`. Where
+  the running Daoris's pipe does refuse a terminal, it says so (*Its pipe belongs to another Windows account or elevation.*)
+  rather than that the pipe did not answer within 5 seconds.
+- Several sessions starting at once no longer leave one without its quest tools: a session's connector waits while another
+  host is using Daoris's database, where it could exit at its start with *database is locked*. Posting on an ask's channel and
+  registering a repository wait the same way.
 - `daoris driver` hands its standing choices to Daoris's own driver program, as `daoris-driver driver` with the same words: the
   one your install carries, or the build `DAORIS_DRIVER_PROGRAM` names. A `daoris` with neither, such as a checkout's, says so and
   does nothing. What each choice says is as before; a refusal is said on the error stream, and a refusal the window's route would
@@ -470,7 +480,8 @@ with the version and date at release.
   says how it ended. A step the reopen holds names its go-on and abandon the same way, and says that abandoning declines it for
   every machine. Once brought forward, confirmed or offline, the stopped session is carried on at Daoris's next look in the tree
   it worked in, brought up to date first with the work its step grows from, and only once: if that session stops too, the same
-  press does not carry it on again, and a bring-forward that lost again carries nothing on.
+  press does not carry it on again, and a bring-forward that lost again carries nothing on. A done, a decline or a set-up refused
+  on such a step names these two choices too, and says when *Bring mine forward* stands where it does not yet.
 
 - Beside the readings, Daoris keeps every turn's tokens in `usage-history/`: input, output and cache as the agent reported them,
   the account the session ran as, and the model they were spent on where the agent said it, with a helper model's share kept

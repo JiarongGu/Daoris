@@ -188,6 +188,16 @@ public sealed class QuestShareTests : IAsyncLifetime
         }
 
         Assert.Contains($"`#{question.Id}` stays a quest of its own", waited.Message);
+        // SYNCMERGE1a3: a done or a decline may be the person's, so it names their choices, and while another machine holds the step,
+        // why *Bring mine forward* waits; a wait is only a session's, and names none.
+        foreach (var answer in new[] { closed, declined })
+        {
+            Assert.Contains("*Drop mine* dismisses it", answer.Message);
+            Assert.Contains("*Bring mine forward* takes the step afresh", answer.Message);
+            Assert.Contains("once the step is open again: another machine holds it now", answer.Message);
+        }
+
+        Assert.DoesNotContain("*Drop mine*", waited.Message);
         foreach (var store in new[] { _quests, remote })
         {
             var held = (await store.FindAsync(quest.Id))!;
@@ -366,9 +376,9 @@ public sealed class QuestShareTests : IAsyncLifetime
     /// <summary>
     /// This machine's take of a chain's step lost to the other machine's reopen of the step's source (the remote's own store stands in for
     /// that machine), said so by the take's answer; that machine's next submission has rebound the step since, open again with this
-    /// machine's take kept on it as a conflict.
+    /// machine's take kept on it as a conflict. Not <paramref name="rebound"/>, the step stays withdrawn by the reopen.
     /// </summary>
-    private async Task<(QuestStore Remote, Quest Step, QuestOperationRef Conflict)> LostToTheReopenThenReboundAsync()
+    private async Task<(QuestStore Remote, Quest Step, QuestOperationRef Conflict)> LostToTheReopenThenReboundAsync(bool rebound = true)
     {
         var remote = await RemoteStoreAsync();
         var exchange = Exchange(new StoreRemote(remote));
@@ -388,7 +398,7 @@ public sealed class QuestShareTests : IAsyncLifetime
         Assert.Equal(QuestRespondRefusal.AlreadyTaken, took.Refusal);
         Assert.True(await _quests.LostToTheReopenAsync(step.Id));
         var lost = Assert.Single((await _quests.FindAsync(step.Id))!.Conflicts);
-        Assert.True((await remote.SubmitAsync(quest.Id, "Built again.", [], Now.AddHours(4))).Moved);
+        if (rebound) Assert.True((await remote.SubmitAsync(quest.Id, "Built again.", [], Now.AddHours(4))).Moved);
         await QuestSync.RunAsync(_quests, _service, new StoreRemote(remote), Workspaces.Default);
         Assert.Equal(QuestStatus.Open, (await _quests.FindAsync(step.Id))!.Status);
         return (remote, step, new QuestOperationRef(lost.Machine, lost.Sequence));
@@ -466,6 +476,40 @@ public sealed class QuestShareTests : IAsyncLifetime
         Assert.Contains("stays unresolved", brought.Message);
         Assert.Equal(QuestClaim.Unconfirmed, await _quests.ClaimAsync(step.Id));
         Assert.Equal(2, (await _quests.PendingAsync(Workspaces.Default, _ => true)).Count);
+    }
+
+    /// <summary>
+    /// 🔴 SYNCMERGE1a3 (D178 point 7): the person's done and a decline on a step this machine's take lost stay refused, and the refusal
+    /// names the two choices that stand for the conflict: on a step open again on new work, both as they are; on a step the reopen still
+    /// withdraws, *Bring mine forward* once its source is submitted again. Nothing moves.
+    /// </summary>
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task A_done_or_decline_on_a_lost_step_is_refused_naming_the_two_choices(bool rebound)
+    {
+        var (_, step, _) = await LostToTheReopenThenReboundAsync(rebound);
+        var exchange = Exchange();
+
+        var done = await exchange.PersonDoneAsync(step.Id, "Finished it here.", Now.AddHours(5));
+        var declined = await exchange.RespondAsync(step.Id, "decline", "Not wanted.", Now.AddHours(5));
+
+        foreach (var (answer, what) in new[] { (done, "so this done is not this machine's"), (declined, "so this decline is not this machine's") })
+        {
+            Assert.Equal(QuestRespondRefusal.AlreadyTaken, answer.Refusal);
+            Assert.Null(answer.Quest);
+            Assert.StartsWith($"Quest `#{step.Id}` moved under this machine's take: the person's reopen", answer.Message);
+            Assert.Contains(what, answer.Message);
+            Assert.Contains(
+                " The person chooses how its conflict ends: *Drop mine* dismisses it and leaves this machine's work where it is, or *Bring "
+                + "mine forward* takes the step afresh and goes on with that work in its kept tree"
+                + (rebound ? "" : ", once the work the step grows from is submitted again")
+                + " (on the quest's page, or `daoris-driver sync dismiss` and `sync forward`).",
+                answer.Message);
+        }
+
+        Assert.Equal(QuestStatus.Open, (await _quests.FindAsync(step.Id))!.Status);
+        Assert.Empty(await _quests.PendingAsync(Workspaces.Default, _ => true));
     }
 
     /// <summary>SYNCMERGE1a: each refusal is said in words that name why the press is not offered, and nothing moves.</summary>
