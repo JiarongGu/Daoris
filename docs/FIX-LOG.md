@@ -5,6 +5,20 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-20 — `orient-report`'s home tests failed in a driven session's tree (ORIENTTREE1)
+
+- **Symptom:** in a session's tree, `orient-report.test.ts` "a home is read for its driven sessions…" (the tree's declared
+  `docs/where/` not read) and "the home's report says what it read…" (the first edit a fixture tree's `local/` note, paths said from the session's own tree) failed,
+  with every `DAORIS_*` variable set or unset; on the main checkout both passed.
+- **Root cause:** the tree's place, not the environment. `placeOf` knew a home's trees only at their old place,
+  `<home>/trees/`, and the fixture's home makes them at the new one, `work/trees/` (D172); so every path fell to the
+  minted-name fallback, whose regex took the leftmost `trees/<a>/<b>/s-<hex>`. Under a home's `trees/` that is the driven
+  session's own tree, which holds the fixture, so every call was placed there.
+- **Fix:** `placeOf` asks the home table for both places of `trees` (`homePlaces`), and the minted fallback takes the
+  innermost name.
+- **Verification:** both tests, and placement asserts for the new place and a home nested in a session's tree, green from a
+  tree under a home's `trees/`; the home and one-word censuses.
+
 ## 2026-10-20 — Two fast tests timed by the wall clock failed under a loaded machine (FLAKE1)
 
 - **Symptom:** the full set on 9717f8d failed `StagedBuildTests.A_file_held_in_app_for_a_moment_does_not_roll_the_swap_back`
