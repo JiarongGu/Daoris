@@ -36,6 +36,20 @@ public sealed class RefusalLogTests : Bridge
             throw new OperationCanceledException();
     }
 
+    /// <summary>
+    /// The driver's bridge as far as a refusal reaches: every request refused in the driver's words, which name a person, as a
+    /// sign-in's refusal can (SIGNIN1).
+    /// </summary>
+    private sealed class Refusing : ModuleBase
+    {
+        public override string ModuleName => "DAORIS.DRIVER";
+
+        protected override Task<object?> RouteMessageAsync(IpcRequest request, IModuleContext context, CancellationToken cancellationToken) =>
+            throw Refusals.Because(
+                Refusals.DriverRefused, "`person@example.invalid` already names `acct-0000000a`, so nothing was signed in.",
+                ("message", "`person@example.invalid` already names `acct-0000000a`"));
+    }
+
     private (IMessageDispatcher Dispatcher, ServiceProvider Services) Compose(MachineLog log)
     {
         var services = new ServiceCollection();
@@ -44,6 +58,7 @@ public sealed class RefusalLogTests : Bridge
         services.AddSingleton(new PlatformAddress("http://localhost:5177"));
         services.AddIpcModule<WindowsModule>();
         services.AddIpcModule<Cancelled>();
+        services.AddIpcModule<Refusing>();
         services.UseMessageDispatcher((_, dispatcher) => dispatcher.Use(RefusalLog.Middleware(log)));
         var provider = services.BuildServiceProvider();
         return (provider.GetRequiredService<IMessageDispatcher>(), provider);
@@ -117,6 +132,36 @@ public sealed class RefusalLogTests : Bridge
         Assert.Equal(
             """{"code":"NO_HANDLER","request":"DAORIS.NOWHERE.STATE"}""",
             lines[1].GetProperty("data").GetRawText());
+    }
+
+    /// <summary>
+    /// SIGNIN1: a refused harness action says which action on which agent, each a word of a fixed list read from the request, so
+    /// a refused sign-in is told from a refused install. Never the payload's other fields (a name, a key, a code the person
+    /// pasted) nor the driver's sentence, and a word outside the list is <c>other</c>.
+    /// </summary>
+    [Fact]
+    public async Task A_refused_harness_action_names_its_action_and_agent_and_nothing_else_of_the_request()
+    {
+        using var log = new MachineLog(Home, "desktop");
+        var (dispatcher, services) = Compose(log);
+        using var _ = services;
+
+        await Dispatch(dispatcher, "DAORIS.DRIVER", "HARNESS_ACTION", new { harness = "codex-acp", action = "login-new", name = "person@example.invalid" });
+        await Dispatch(dispatcher, "DAORIS.DRIVER", "HARNESS_ACTION", new { harness = "claude-code", action = "key-add", key = "sk-ant-secret-0000" });
+        await Dispatch(dispatcher, "DAORIS.DRIVER", "HARNESS_INPUT", new { harness = "claude-code", action = "login", text = "PASTED-CODE-1234" });
+        await Dispatch(dispatcher, "DAORIS.DRIVER", "HARNESS_CANCEL", new { harness = "X:/daoris/agent", action = "person@example.invalid" });
+        await Dispatch(dispatcher, "DAORIS.DRIVER", "START_CHAT", new { action = "login" });
+
+        var lines = Lines();
+        Assert.Equal(
+            [
+                """{"code":"DRIVER_REFUSED","request":"DAORIS.DRIVER.HARNESS_ACTION","action":"login-new","harness":"codex-acp"}""",
+                """{"code":"DRIVER_REFUSED","request":"DAORIS.DRIVER.HARNESS_ACTION","action":"key-add","harness":"claude-code"}""",
+                """{"code":"DRIVER_REFUSED","request":"DAORIS.DRIVER.HARNESS_INPUT","action":"login","harness":"claude-code"}""",
+                """{"code":"DRIVER_REFUSED","request":"DAORIS.DRIVER.HARNESS_CANCEL","action":"other","harness":"other"}""",
+                """{"code":"DRIVER_REFUSED","request":"DAORIS.DRIVER.START_CHAT"}""",
+            ],
+            lines.Select(line => line.GetProperty("data").GetRawText()));
     }
 
     [Fact]

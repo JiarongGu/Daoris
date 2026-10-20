@@ -6,6 +6,11 @@ with the version and date at release.
 ## Unreleased
 
 - A session's Timeline draws its states as a flowchart, the one it is in lit and going on drawn as a guarded move; a session page draws its parts as a flowchart in the parts strip's place, the strip its list, and Accept's plan as a dashed node of where they would land.
+- Signing an account in says where it is and for how long: *Starting*, *Waiting on your browser*, *Checking who signed in*
+  and *Joining the lists*, each with its time, the one now counting. Codex's device code shows under the browser's step with
+  when it expires, and the link and the code are there again when you come back to the page mid-sign-in. A sign-in that ends
+  without signing anyone in says why in its own panel, with *Try again* and *Close*; one you cancel closes saying nothing. Under
+  a row of *What needs you* the sign-in shows its step now alone.
 - A change of a repository's permission prompts reaches a driven session already running there at its next turn, whether made on
   its Setup tab or with `daoris-driver access`. Where you have said something to the session for its next turn, its run ends as the
   turn ends, never mid-turn, your words wait on it, and at the next look it goes on in the same conversation under the new setup,

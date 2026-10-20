@@ -699,7 +699,11 @@ describe('the Agents place', () => {
     }));
   });
 
-  it('a sign-in that kept nothing says so', async () => {
+  /**
+   * A sign-in that kept nothing says so in its own panel (SIGNIN1, the UI/UX design §3.2's *Failed at a phase*), with *Try
+   * again* and *Close*, where it was a toast and the panel closed.
+   */
+  it('a sign-in that kept nothing says so in its panel, which stays until it is closed', async () => {
     invoke.mockImplementation(async (_module: string, type: string) => {
       if (type === 'HARNESS_ACTION') return { harness: 'claude-code', action: 'login-new', started: true };
       return type === 'HARNESSES' ? ROSTER : WIRING;
@@ -716,7 +720,44 @@ describe('the Agents place', () => {
       });
     });
 
-    expect(notify).toHaveBeenCalledWith('Nobody was signed in, so nothing was kept.', 'error');
+    expect((await screen.findByRole('alert')).textContent).toBe('Nobody was signed in, so nothing was kept.');
+    expect(notify).not.toHaveBeenCalled();
+    expect(screen.getByRole('button', { name: 'Try again' })).toBeTruthy();
+    await userEvent.click(screen.getByRole('button', { name: 'Close' }));
+    expect(screen.queryByText('Signing in to another claude-code account')).toBeNull();
+  });
+
+  /**
+   * SIGNIN1: a sign-in the tool failed stays on its row with the sentence and *Try again*; one the person cancelled closes
+   * and says nothing, since they pressed it (the driver's end news says `cancelled`).
+   */
+  it('a failed sign-in stays on its row with its sentence, and a cancelled one closes saying nothing', async () => {
+    invoke.mockImplementation(async (_module: string, type: string) => {
+      if (type === 'HARNESS_ACTION') return { harness: 'claude-code', action: 'login', started: true };
+      return type === 'HARNESSES' ? ROSTER : WIRING;
+    });
+    const notify = vi.fn();
+    place(notify);
+    const signIn = async () => {
+      const work = await screen.findByRole('listitem', { name: 'work' });
+      await userEvent.click(within(work).getByRole('button', { name: 'Sign in to work' }));
+      expect(await screen.findByText('Signing in to work')).toBeTruthy();
+    };
+    const end = (news: Record<string, unknown>) => act(async () => {
+      eventHandlers.get('DAORIS.HARNESS_ENDED')!({ harness: 'claude-code', action: 'login', profile: 'work', problem: null, ...news });
+    });
+
+    await signIn();
+    await end({ exitCode: 1 });
+    expect((await screen.findByRole('alert')).textContent).toBe('Sign-in did not finish (the tool exited 1). Its output says why.');
+    expect(screen.getByText('Signing in to work')).toBeTruthy();
+    expect(notify).not.toHaveBeenCalled();
+
+    await userEvent.click(screen.getByRole('button', { name: 'Try again' }));
+    await waitFor(() => expect(screen.queryByRole('alert')).toBeNull());
+    await end({ exitCode: 1, cancelled: true });
+    await waitFor(() => expect(screen.queryByText('Signing in to work')).toBeNull());
+    expect(notify).not.toHaveBeenCalled();
   });
 
   /**

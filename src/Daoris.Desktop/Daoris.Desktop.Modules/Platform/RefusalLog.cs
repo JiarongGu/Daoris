@@ -1,3 +1,5 @@
+using System.Text.Json;
+using System.Text.RegularExpressions;
 using Daoris.Driver;
 using Shenora.Core.Ipc;
 
@@ -15,7 +17,8 @@ namespace Daoris.Desktop;
 ///
 /// <para><b>The code and the request, and nothing more.</b> A refusal's parameters and fallback message
 /// name what the person asked about (a folder, a quest, a window's name), and <c>DRIVER_REFUSED</c>
-/// carries the driver's whole sentence (REFUSE1); the catalogue code says which refusal it was.</para>
+/// carries the driver's whole sentence (REFUSE1); the catalogue code says which refusal it was. A harness
+/// action's says which action on which agent beside them (SIGNIN1), each a word of a fixed list.</para>
 ///
 /// <para><b>Two levels.</b> A Daoris refusal (<see cref="Refusals"/>) is a decision the person met, and
 /// is <c>info</c>. The kit's own codes (an exception a module did not expect, a type or a module this shell
@@ -42,12 +45,29 @@ public static class RefusalLog
         var code = response is null ? IpcErrorCodes.NoHandler : response.Success ? null : response.Error?.Code;
         if (code is null || code == IpcErrorCodes.OperationCancelled) return;
 
+        List<(string, object?)> said = [("code", code), ("request", $"{request.Module}.{request.Type}")];
+        // A harness action's refusal says which action on which agent (SIGNIN1), so a refused sign-in is told from a refused
+        // install: each a word of a fixed list read from the request, never its other fields (a name, a key, a pasted code).
+        if (request.Module == "DAORIS.DRIVER" && request.Type is "HARNESS_ACTION" or "HARNESS_INPUT" or "HARNESS_CANCEL")
+        {
+            said.Add(("action", Word(request, "action", word => AgentActions.Words.Contains(word, StringComparer.Ordinal))));
+            said.Add(("harness", Word(request, "harness", Agent.IsMatch)));
+        }
+
         // A request that came over the pipe is said as the terminal's (RPC1a, the terminal RPC design §8); the page's own stay unmarked.
-        (string, object?)[] said = PipeDoor.Now is { } door
-            ? [("code", code), ("request", $"{request.Module}.{request.Type}"), ("door", door)]
-            : [("code", code), ("request", $"{request.Module}.{request.Type}")];
+        if (PipeDoor.Now is { } door) said.Add(("door", door));
         log.Write(Ours.Contains(code) ? "info" : "warn", "refused", said);
     }
+
+    /// <summary>What an agent's id may be in a line: an identifier, never a phrase or a path.</summary>
+    private static readonly Regex Agent = new("^[a-z0-9][a-z0-9.-]{0,63}$", RegexOptions.CultureInvariant);
+
+    /// <summary>A payload's field as a word of its list, <c>other</c> for any other text, and null where it is absent.</summary>
+    private static string? Word(IpcRequest request, string field, Func<string, bool> listed) =>
+        request.Payload is { ValueKind: JsonValueKind.Object } payload
+            && payload.TryGetProperty(field, out var value) && value.ValueKind == JsonValueKind.String
+            ? listed(value.GetString()!) ? value.GetString() : "other"
+            : null;
 }
 
 /// <summary>

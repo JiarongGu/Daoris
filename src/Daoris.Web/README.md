@@ -64,6 +64,15 @@ names in `helpSwapping` in view as it ends, so the next words resume it under th
 roster's namer (`settings/accounts/namer.ts`, so a session's header) says. Where two of an agent's sign-ins share an email, each
 says what tells it apart, after the email and once. A surface that names an account goes through these, never its own.
 
+**A step that waits says its phase and how long** (the UI/UX design R2, SIGNIN1): `src/design/phases.tsx`'s `PhaseList`
+draws a process's phases, each named by its words and its state in words, the done ones with the time each took, the one
+now with its time stepping by its own clock (`Elapsed`, seconds in the first minute and minutes after) and what it says, a
+failed one with its sentence; standing open on its own surface, or as the line alone in a row. A sign-in's phases are the
+driver's, lines of its relay read by `phaseOf` (`bridge/sessions/console.ts`), and `agents/SignInSteps.tsx` draws them
+under `SignIn`, the link, the code and the ask read from the tool's lines by their shape; a host that writes none draws the
+steps as before, with the time since the press. A sign-in that ends without signing in says so in its panel with *Try
+again* and *Close*, and one the person cancelled closes saying nothing.
+
 **The design language is written down** — `docs/2026-09-19-platform-ux.md` (D41): the console shell
 (an activity bar, page headers, one primary action per view), the token system, the drawer as the single
 detail-and-form surface alongside the frame's list and main panes (D118), toasts carrying the service's sentences verbatim, and a status palette that

@@ -608,9 +608,9 @@ public static class HarnessActions
         }
     }
 
-    // OSC (a hyperlink, a title), then CSI (colour, cursor), then any other two-byte escape.
+    // OSC (a hyperlink, a title), then CSI (colour, cursor), then any other two-byte escape; then any control byte left but a tab.
     private static readonly Regex Escapes = new(
-        @"\x1b\][^\x07\x1b]*(?:\x07|\x1b\\)|\x1b\[[0-9;?]*[ -/]*[@-~]|\x1b[@-Z\\-_]",
+        @"\x1b\][^\x07\x1b]*(?:\x07|\x1b\\)|\x1b\[[0-9;?]*[ -/]*[@-~]|\x1b[@-Z\\-_]|[\x00-\x08\x0a-\x1f\x7f]",
         RegexOptions.Compiled);
 
     /// <summary>
@@ -619,5 +619,9 @@ public static class HarnessActions
     /// again as its own label — which a console well renders as the URL twice around a scatter of
     /// brackets and semicolons. The label is kept; the wrapping goes, and colours with it.
     /// </summary>
+    /// <remarks>
+    /// No other control byte is the tool's words either, and one is the driver's own (SIGNIN1): a sign-in's phase is a relayed
+    /// line that begins with the record separator, so a tool's line keeps none and cannot be read as a phase.
+    /// </remarks>
     internal static string Clean(string text) => Escapes.Replace(text, "");
 }

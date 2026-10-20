@@ -21,6 +21,25 @@ import { call } from '../call';
  * for what is missing rather than by rendering a hole nobody can see.
  */
 export type ConsoleLine = { sequence: number; text: string };
+
+/** A phase a process wrote into its relay with its start (SIGNIN1, the UI/UX design R2): which step, and when it began. */
+export type PhaseMark = { phase: string; at: number };
+
+/**
+ * A relayed line read as a phase: the driver writes a sign-in's phases into the same relay as its tool's output, each a line
+ * that begins with the record separator, then `{phase, at}`; a tool's own line never begins so, since the driver strips its
+ * control bytes. Null for any other line, so an older host's lines all read as the tool's.
+ */
+export function phaseOf(text: string): PhaseMark | null {
+  if (!text.startsWith('\u001e')) return null;
+  try {
+    const read = JSON.parse(text.slice(1)) as { phase?: unknown; at?: unknown };
+    const at = typeof read.at === 'string' ? Date.parse(read.at) : Number.NaN;
+    return typeof read.phase === 'string' && Number.isFinite(at) ? { phase: read.phase, at } : null;
+  } catch {
+    return null;
+  }
+}
 export type SessionTail = {
   session: string;
   lines: ConsoleLine[];

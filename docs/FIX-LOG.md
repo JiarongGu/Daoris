@@ -5,6 +5,23 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-20 — A sign-in panel mounted after Codex printed its code never showed the code (SIGNIN1)
+
+- **Symptom:** found with a faithful stand-in, not yet on the window: a Codex sign-in, whose tool prints its link and its device
+  code in one write and then nothing until the code is entered, leaves a panel mounted after that write (the sign-in's page
+  left and opened again, or its other place opened) on *Waiting for the tool to open the page…* for ever, so the code the tool
+  waits on is never shown there. Codex's sign-in was reported not finishing on the install; whether this is why is not measured.
+- **Root cause:** a harness action's relay (`AgentActions.Relay`) sent each line as `SESSION_OUTPUT` and kept none, and a panel
+  catches up by `TAIL_SESSION`, which read only the sessions' buffers (`SessionOutput`), where `<harness>:<action>` has none: a
+  late panel's tail was empty, and a tool that prints once has nothing later to show. Claude Code's flow hid it, since its
+  browser opens by itself and the person needs no line from the panel. The stand-ins hid it too: Codex's printed only
+  *Successfully logged in* and exited at once.
+- **Fix:** `AgentActions` keeps each action's latest run's lines, bounded as a session's are, its numbers going on across runs,
+  and `ConsoleRoutes`' `TAIL_SESSION` answers them for a key no session holds. Codex's stand-ins now print as 0.160.0 did and
+  wait, reading no input, until the code is entered.
+- **Verification:** `SignInPhasesTests` (modules, `Process`): with the faithful stand-in waiting, `TAIL_SESSION` for
+  `codex-acp:login-new` answers the code line and the phases so far, and the sign-in keeps its account once the code is entered;
+  `CodexAccountProcessTests` (driver) the same through `HarnessActions.LoginAsync`.
 ## 2026-10-20 — The merge tool's prune took a running Daoris session's tree (DOGFOOD1)
 
 - **Symptom:** the first session the owner's install drove on this repository (HEAVYRUN1a3, DOGFOOD1) stopped mid-work and

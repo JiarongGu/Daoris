@@ -316,13 +316,18 @@ function Band({ doors, notify, onSessions, onRun }: {
   const signingNewRow = harnessRun.signingInNew
     ? waiting.find((item) => item.account?.noAccount && item.account.harness === harnessRun.signingInNew)
     : undefined;
+  // A row of What needs you says the sign-in's line alone, its phase now with what it says (SIGNIN1, the UI/UX design §3.2).
+  const ends = {
+    refused: harnessRun.refusal, failed: harnessRun.failure?.sentence, failedAt: harnessRun.failure?.at,
+    pressedAt: harnessRun.pressedAt, onRetry: harnessRun.retry, onClose: harnessRun.dismiss, shown: 'line' as const,
+  };
   const below = (item: Attention) => {
     if (signingNewRow && item.id === signingNewRow.id && item.kind === signingNewRow.kind) {
-      return <SignIn id={`${signingNewRow.account!.harness}:login-new`} harness={signingNewRow.account!.harness!} action="login-new" tool={signingNewRow.account!.product} refused={harnessRun.refusal} onRetry={harnessRun.retry} onClose={harnessRun.dismiss} />;
+      return <SignIn id={`${signingNewRow.account!.harness}:login-new`} harness={signingNewRow.account!.harness!} action="login-new" tool={signingNewRow.account!.product} {...ends} />;
     }
     if (!signing || !signingRow || item.id !== signingRow.id || item.kind !== signingRow.kind) return null;
     const label = item.account?.named.find((one) => one.id === signing.account)?.label ?? signing.account;
-    return <SignIn id={harnessRun.running!} harness={signing.harness} profile={label} refused={harnessRun.refusal} onRetry={harnessRun.retry} onClose={harnessRun.dismiss} />;
+    return <SignIn id={harnessRun.running!} harness={signing.harness} profile={label} tool={item.account?.product} {...ends} />;
   };
 
   // Each row whose step waits on the person opens its run there (WORKFLOW1c): the session it names, else its quest's newest here.
