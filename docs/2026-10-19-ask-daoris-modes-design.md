@@ -93,6 +93,9 @@ only, and leads to the plugin's tab to change it; it never draws a second set of
 *Plugins* section listing each installed plugin's settings and leading to its tab, at a lower priority (PLUGSET1).
 Housekeeping, the checkouts and the chosen settings are Daoris's own and stay set here.
 
+*Built 2026-10-20 (HELPMODE1c3):* the chosen settings as five typed tools, and the browser's row read only with its door to the
+plugin's tab; the writer, the outcome record and what stays unbuilt are D183's note of that day.
+
 ## 5. The screen (HELPMODE1b)
 
 The picker sits beside the composer, the docked panel included. History keeps its own head. The text is translated, the
