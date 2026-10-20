@@ -5,6 +5,9 @@ with the version and date at release.
 
 ## Unreleased
 
+- A review's *Accept* or hand button that waits for another landing or push of the same work names the session it waits behind
+  (*Waiting behind 0fda18aa…*, 排在 0fda18aa 之后…), and `daoris-driver trees land` and `trees hand` name that session and its
+  branch. A landing that does not say who it is, from an older Daoris, is still said only as *Waiting its turn…*.
 - A repository's Setup says which checks its driven sessions run, beside its heavy gates, and `daoris-driver checks` sets
   the same choice from a terminal. *Light* has sessions run the gates the repository does not mark heavy and the checks their
   change reaches, filtered; its heavy gates are left out of every session. Each session is told so when it starts,
