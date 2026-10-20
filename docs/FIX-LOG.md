@@ -5,6 +5,18 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-20 — Three census checks the merged branches' own runs never reached (FLOWCHART1c, MIXAGENT1c, the measured port)
+
+- **Symptom:** the full set on 50634f537 failed `tool-tests` (the SESSDEL1c page-reads scan: a vitest read the driver's folder),
+  `cli` (`cli-usage.test.ts`: the driver's unknown-verb refusal named `handover`, its fixture did not) and `driver`
+  (`SystemWiringTests`: `DAORIS_MEASURED_PORT` neither shown nor set aside).
+- **Root cause:** FLOWCHART1c's `landingLife.test.ts` walked the driver's folder for four sources, as FLOWCHART1b's parts test had;
+  MIXAGENT1c added the `handover` verb without the shared refusals fixture; and the measured config's port variable (the fix of
+  the same day) is read by a source the wiring census scans. Each branch ran its own tests, not the census that would see it.
+- **Fix:** the landing test reads each source through `driverSource` and MOD9e's row names `LandedCleanups.cs`, `EndJudgement.cs`
+  and `PullRequestStates.cs`; the fixture lists `handover`; `WiringVariables.SetAside` names the port's variable with its reason.
+- **Verification:** `landingLife.test.ts` 24, the SESSDEL1c scan, `cli-usage.test.ts` 3 and `SystemWiringTests` 28, all passing.
+
 ## 2026-10-20 — A driver test listened on every interface, so each new tree raised a firewall prompt (FIREWALL1)
 
 - **Symptom:** Windows Defender Firewall asked about `testhost.exe` for every new agent worktree, gate tree and driven session's
