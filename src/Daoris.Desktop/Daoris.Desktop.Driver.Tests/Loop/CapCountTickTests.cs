@@ -20,7 +20,7 @@ public sealed class CapCountTickTests : IDisposable
     public CapCountTickTests()
     {
         Directory.CreateDirectory(_home);
-        _ledger.Register("engine", Path.Combine(_home, "engine")).Register("tools", Path.Combine(_home, "tools"));
+        _ledger.Register("engine", Path.Combine(_home, "engine")).Register("tools", Path.Combine(_home, "tools-checkout"));
     }
 
     public void Dispose()

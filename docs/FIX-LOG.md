@@ -5,6 +5,21 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-20 — Idle conversations held the driver's cap, so quests started two at a time (CAPCOUNT1)
+
+- **Symptom:** on the install two Ask Daoris conversations resting between turns held two of the cap's four slots for hours, and
+  driven quests started two at a time.
+- **Root cause:** every site that spent a slot took the cap less `snapshot.Active.Count`, and `Active` is every active session the
+  service lists, a person's conversations among them (`SessionLedger.HelpRepository`'s records and any chat). The list is right for
+  a busy tree and a repository's holder; it was never the count of what the driver starts. The kind alone could not separate them
+  either, since an intake, a helper and a reviewer are chats at the service too.
+- **Fix:** `ActiveSessions.HoldsSlot` tells the driver's own by the record's kind, place and its `ask`, `serves` and `opinion`
+  marks, and `Snapshot.SlotsHeld` is the one count the planner's starts and a look's intakes, helpers, brainstorms and meetings read
+  (D130's note). `Active` is unchanged. The help room's machine line says what the cap counts.
+- **Verification:** `CapCountTests` (two idle Ask Daoris records at a cap of four start four quests; the table of record kinds;
+  `/api/sessions` read for the marks), `CapCountTickTests` over the stand-in service, and one test per site in `HelperLookTests`,
+  `BrainstormBoundsTests` and `MeetingTests`. Each site's test failed with the count made over every record and passed with it.
+
 ## 2026-10-20 — Three census checks the merged branches' own runs never reached (FLOWCHART1c, MIXAGENT1c, the measured port)
 
 - **Symptom:** the full set on 50634f537 failed `tool-tests` (the SESSDEL1c page-reads scan: a vitest read the driver's folder),
