@@ -166,9 +166,13 @@ public static class HelpRoom
     {
         var room = PathOf(home, machine.Workspace);
         Directory.CreateDirectory(Path.Combine(room, ".claude"));
-        // HELPMODE1c2a: the housekeeping granted, and HELPMODE1c3's chosen settings, as the record holds them as this start writes its room.
+        // HELPMODE1c2a: the housekeeping granted, HELPMODE1c3's chosen settings and HELPMODE1c4's checkouts turned off, as the record
+        // holds them as this start writes its room.
         var access = ConfiguredAccess.Read(home);
-        AtomicFile.WriteText(Path.Combine(room, "AGENTS.md"), Render(machine with { Housekeeping = access.Housekeeping, Settings = access.Settings }));
+        AtomicFile.WriteText(Path.Combine(room, "AGENTS.md"), Render(machine with
+        {
+            Housekeeping = access.Housekeeping, Settings = access.Settings, CheckoutsOff = access.CheckoutsOff,
+        }));
         // Two harnesses read AGENTS.md; Claude Code reads CLAUDE.md — the canon's own shape (D59).
         AtomicFile.WriteText(Path.Combine(room, "CLAUDE.md"), "@AGENTS.md\n");
         AtomicFile.WriteText(Path.Combine(room, ".claude", "settings.json"), Settings());
@@ -212,8 +216,9 @@ public static class HelpRoom
     /// and every deny the person wrote, which still wins.
     /// </summary>
     /// <param name="reads">
-    /// The checkouts reading across lets it read (D107): each a read and two read-only git commands by exact
-    /// prefix, and nothing that writes. Anything else is asked in its mode, and refused (D52).
+    /// The checkouts it may read (D107, the readable ones the person left on): with any, the connector's <c>checkout_read</c>, whose
+    /// every call the driver judges (HELPMODE1c4, <see cref="HelpCheckouts"/>). Never a <c>Read</c> rule or a git prefix on a checkout,
+    /// which held no agent that takes no rules; anything else is asked in its mode, and refused (D52).
     /// </param>
     /// <param name="plugins">
     /// The tools of the servers plugins hand it that it may call, as the person approved them (HELPPLUG1a, D170 point 3 and its
@@ -245,7 +250,7 @@ public static class HelpRoom
                 .. (housekeeping ?? []).Select(operation => $"mcp__{KnowledgeConnector.ServerName}__{ConfiguredAccess.ToolOf(operation)}"),
                 .. (settings ?? []).Select(setting => $"mcp__{KnowledgeConnector.ServerName}__{ConfiguredAccess.SettingToolOf(setting)}"),
                 PermissionRules.ReadRule(kept),
-                .. (reads ?? []).SelectMany(read => AcrossRules.ReadOnlyRules(new AcrossCheckout(read.Name, read.Path))),
+                .. reads is { Count: > 0 } ? [$"mcp__{KnowledgeConnector.ServerName}__{HelpCheckouts.Tool}"] : Array.Empty<string>(),
                 .. plugins ?? [],
             ],
             [.. asked ?? []],
@@ -355,6 +360,12 @@ public sealed record HelpMachine
     /// <see cref="Housekeeping"/> is; none where none is chosen.
     /// </summary>
     public IReadOnlyList<string> Settings { get; init; } = [];
+
+    /// <summary>
+    /// The checkouts the person turned off for it (HELPMODE1c4, <see cref="ConfiguredAccess.CheckoutsOff"/>), read as
+    /// <see cref="Housekeeping"/> is: the room lists the readable ones less these, and names these apart.
+    /// </summary>
+    public IReadOnlyList<string> CheckoutsOff { get; init; } = [];
 
     // The room's scope (ASKSCOPE1b).
 

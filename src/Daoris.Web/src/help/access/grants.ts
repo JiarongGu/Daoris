@@ -2,7 +2,7 @@ import type { HelpGrantAgent, HelpGrantChoice, HelpGrantId, HelpGrantState } fro
 
 // Restricted mode's configured access as the modes design's §4.1 reads it from the code (HELPMODE1c1, D183 point 1): each
 // grant's operations, how each is chosen, its default, and where an agent cannot be held to it. `ConfiguredAccess` draws from
-// it; HELPMODE1c2 and 1c3 build the grants it names, and the driver then answers what is held.
+// it; HELPMODE1c2, 1c3 and 1c4 build the grants it names, and the driver then answers what is held.
 
 /** One grant of the table. */
 export type GrantSpec = {
@@ -12,10 +12,15 @@ export type GrantSpec = {
   /** What it starts as: off, waiting for approval (the browser), or on, inherited (the checkouts). */
   byDefault: 'off' | 'approval' | 'inherited';
   /**
-   * Held only by an agent that takes Claude's permission rules: the browser's chosen writes are exact MCP rules, and the
-   * checkouts' reads are `Read` and two git prefixes. On another agent it is unavailable until Daoris mediates the tools.
+   * Held only by an agent that takes Claude's permission rules: the browser's chosen writes are exact MCP rules. On another agent it
+   * is unavailable until Daoris mediates the tools. The checkouts no longer are (HELPMODE1c4): Daoris serves their read and judges it.
    */
   needsRules: boolean;
+  /**
+   * Its operations are the driver's to name, as `built` (HELPMODE1c4): the checkouts, one box a readable checkout by its repository's
+   * name as written, never translated; none where the driver serves none.
+   */
+  served?: boolean;
   /** Not built yet: nothing to choose (the confined shell). */
   later: boolean;
   /**
@@ -36,8 +41,12 @@ export const GRANTS: readonly GrantSpec[] = [
   // D170's server approval takes its reads together and each write on its own, on the plugin's page (HELPPLUG1c): nothing is
   // chosen here. No page code, ever.
   { id: 'browser', operations: [], byDefault: 'approval', needsRules: true, later: false, onPlugin: true, door: 'manage' },
-  // Read files, `git status` and `git branch --list`, as one group: the workspace's checkouts within D107's readable set.
-  { id: 'checkouts', operations: ['read'], byDefault: 'inherited', needsRules: true, later: false, onPlugin: false, door: 'manage' },
+  // The workspace's checkouts within D107's readable set, each on until turned off here, read through one tool Daoris judges at each
+  // call, so held on every agent (HELPMODE1c4): a file, a folder, `git status` and `git branch --list`.
+  {
+    id: 'checkouts', operations: [], byDefault: 'inherited', needsRules: false, served: true, later: false, onPlugin: false,
+    door: 'manage',
+  },
   // The five ordinary settings, each through the existing validation and writer (HELPMODE1c3).
   {
     id: 'settings', operations: ['notify', 'language', 'timeout', 'cap', 'cooloff'],

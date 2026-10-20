@@ -17,19 +17,22 @@ const CODEX: HelpGrantAgent = { name: 'Codex', rules: false };
 const CHOSEN: HelpGrantChoice[] = [
   { id: 'housekeeping', chosen: ['inspect', 'clean-up'] },
   { id: 'browser', chosen: ['reads', 'click', 'type'] },
-  { id: 'checkouts', chosen: ['read'] },
+  { id: 'checkouts', chosen: ['engine'] },
   { id: 'settings', chosen: [] },
 ];
 
+/** HELPMODE1c4: the checkouts the driver serves, each by its repository's name; `game` turned off. */
+const SERVED = { checkouts: ['engine', 'game'] };
+
 const ALL: HelpGrantId[] = ['housekeeping', 'browser', 'checkouts', 'settings', 'shell'];
 
-function show({ agent = CLAUDE, grants = CHOSEN, opened, onChoose = vi.fn(), onManage = vi.fn() }: {
-  agent?: HelpGrantAgent; grants?: HelpGrantChoice[]; opened?: HelpGrantId[]; onChoose?: () => void;
-  onManage?: (grant: HelpGrantId, plugin: string | null) => void;
+function show({ agent = CLAUDE, grants = CHOSEN, opened, built = SERVED, onChoose = vi.fn(), onManage = vi.fn() }: {
+  agent?: HelpGrantAgent; grants?: HelpGrantChoice[]; opened?: HelpGrantId[]; built?: Partial<Record<HelpGrantId, readonly string[]>>;
+  onChoose?: () => void; onManage?: (grant: HelpGrantId, plugin: string | null) => void;
 } = {}) {
   return render(
     <Tooltip.Provider>
-      <ConfiguredAccess agent={agent} grants={grants} opened={opened} onChoose={onChoose} onManage={onManage} />
+      <ConfiguredAccess agent={agent} grants={grants} opened={opened} built={built} onChoose={onChoose} onManage={onManage} />
     </Tooltip.Provider>,
   );
 }
@@ -37,7 +40,7 @@ function show({ agent = CLAUDE, grants = CHOSEN, opened, onChoose = vi.fn(), onM
 /** A grant's row, found by its name. */
 const row = (id: HelpGrantId) => screen.getByRole('listitem', { name: i18n.t(`help.grants.name.${id}`) });
 const box = (id: HelpGrantId, operation: string) =>
-  within(row(id)).getByRole('checkbox', { name: i18n.t(`help.grants.op.${id}.${operation}`) });
+  within(row(id)).getByRole('checkbox', { name: id === 'checkouts' ? operation : i18n.t(`help.grants.op.${id}.${operation}`) });
 
 describe.each(['en', 'zh'])('configured access in %s', (language) => {
   afterEach(async () => {
@@ -128,11 +131,19 @@ describe.each(['en', 'zh'])('configured access in %s', (language) => {
     expect(within(row('browser')).queryByText(i18n.t('help.grants.state.needs-approval'))).toBeNull();
   });
 
-  it('reads the checkouts as one group, and lists the five ordinary settings with what stays out', async () => {
+  // HELPMODE1c4: the checkouts the driver serves, one box each by its repository's name as written, those not turned off checked; a
+  // press hands the repository up. With none served, it says why and draws no box.
+  it('draws a box for each checkout the driver serves, by its repository’s name, and lists the five ordinary settings', async () => {
     await i18n.changeLanguage(language);
-    show({ opened: ['checkouts', 'settings'] });
+    const onChoose = vi.fn();
+    show({ opened: ['checkouts', 'settings'], onChoose });
 
-    expect(within(row('checkouts')).getAllByRole('checkbox')).toEqual([box('checkouts', 'read')]);
+    expect(within(row('checkouts')).getAllByRole('checkbox')).toEqual([box('checkouts', 'engine'), box('checkouts', 'game')]);
+    expect(box('checkouts', 'engine')).toBeChecked();
+    expect(box('checkouts', 'game')).not.toBeChecked();
+    expect(within(row('checkouts')).getByText(i18n.t('help.grants.state.on'))).toBeInTheDocument();
+    await userEvent.click(box('checkouts', 'game'));
+    expect(onChoose).toHaveBeenCalledWith('checkouts', 'game', true);
     // Its git commands are code, never shown as backticks.
     expect(row('checkouts').querySelectorAll('code').length).toBeGreaterThan(0);
     expect(row('checkouts').textContent).not.toContain('`');
@@ -140,6 +151,15 @@ describe.each(['en', 'zh'])('configured access in %s', (language) => {
       ['notify', 'language', 'timeout', 'cap', 'cooloff'].map((setting) => box('settings', setting)),
     );
     expect(within(row('settings')).getByText(i18n.t('help.grants.never.settings'))).toBeInTheDocument();
+  });
+
+  it('says no checkout here may be read where the driver serves none, with no box', async () => {
+    await i18n.changeLanguage(language);
+    show({ grants: [{ id: 'checkouts', chosen: [] }], built: { checkouts: [] }, opened: ['checkouts'] });
+
+    expect(within(row('checkouts')).queryAllByRole('checkbox')).toEqual([]);
+    expect(within(row('checkouts')).getByText(i18n.t('help.grants.none.checkouts'))).toBeInTheDocument();
+    expect(within(row('checkouts')).getByText(i18n.t('help.grants.state.off'))).toBeInTheDocument();
   });
 
   it('offers the confined shell no door and no box', async () => {
@@ -150,23 +170,19 @@ describe.each(['en', 'zh'])('configured access in %s', (language) => {
     expect(within(row('shell')).queryAllByRole('checkbox')).toEqual([]);
   });
 
-  it('says on Codex that the browser and the checkouts’ scoped reads are unavailable until mediated, with why, their boxes disabled', async () => {
+  it('says on Codex that the browser is unavailable until mediated, with why, and holds the rest Daoris serves', async () => {
     await i18n.changeLanguage(language);
     show({ agent: CODEX, opened: ALL });
 
-    for (const id of ['browser', 'checkouts'] as const) {
-      expect(within(row(id)).getByText(i18n.t('help.grants.state.unavailable'))).toBeInTheDocument();
-      expect(within(row(id)).queryByText(i18n.t('help.grants.state.on'))).toBeNull();
-    }
-    for (const each of within(row('checkouts')).getAllByRole('checkbox')) {
-      expect(each).toBeDisabled();
-      // Its sentence reads as disabled too, not only its box.
-      expect(each.closest('label')!.className).toContain('cursor-not-allowed');
-    }
+    expect(within(row('browser')).getByText(i18n.t('help.grants.state.unavailable'))).toBeInTheDocument();
+    expect(within(row('browser')).queryByText(i18n.t('help.grants.state.on'))).toBeNull();
     expect(within(row('browser')).getByText(i18n.t('help.grants.why.browser', { agent: 'Codex' }))).toBeInTheDocument();
-    expect(within(row('checkouts')).getByText(i18n.t('help.grants.why.checkouts', { agent: 'Codex' }))).toBeInTheDocument();
 
-    // Daoris holds its typed tools itself, so they hold on Codex too: housekeeping, and the chosen settings.
+    // Daoris holds its typed tools itself, so they hold on Codex too: housekeeping, the chosen settings, and since HELPMODE1c4 the
+    // checkouts' read, which no longer waits on a rule Codex does not take.
+    expect(within(row('checkouts')).getByText(i18n.t('help.grants.state.on'))).toBeInTheDocument();
+    expect(within(row('checkouts')).queryByText(i18n.t('help.grants.state.unavailable'))).toBeNull();
+    for (const each of within(row('checkouts')).getAllByRole('checkbox')) expect(each).not.toBeDisabled();
     expect(within(row('housekeeping')).getByText(i18n.t('help.grants.state.on'))).toBeInTheDocument();
     expect(box('housekeeping', 'drop-recovery')).not.toBeDisabled();
     expect(box('settings', 'notify')).not.toBeDisabled();

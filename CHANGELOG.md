@@ -10,6 +10,10 @@ with the version and date at release.
   wait, and beside *Start a conversation with these words* there is *Go on with Daoris's brief*, which goes on in a new part of the
   same session with that record. The same holds for a session whose quest has closed and for Ask Daoris's conversations. Handing a
   conversation over yourself first asks its agent for a short closing note, which the new conversation is given.
+- Ask Daoris in restricted mode reads your checkouts through one tool Daoris checks at every read, on Codex as on Claude Code: a
+  file (up to 200 KB, saying when it is cut), a folder's entries, `git status` and `git branch --list`, never outside the
+  checkout and never what git ignores. Each checkout its repository lets agents outside read is on by default; turn one off under
+  Settings → AI features → *Configured access* → *Reading checkouts*, and the next read of it is refused.
 - A plugin's line on stderr longer than 8 KB is shown under `plugin:<id>` clipped to its start and ending ` …`, and the lines
   after it as before, so a plugin that writes without a line end can no longer grow Daoris's memory.
 - An agent's page in Agents says what would lapse where its next start goes to an account for its week's last day: *its

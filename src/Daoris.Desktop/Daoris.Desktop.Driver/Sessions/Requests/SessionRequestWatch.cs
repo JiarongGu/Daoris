@@ -118,6 +118,13 @@ public sealed class SessionRequestWatch : IAsyncDisposable
     public Func<SessionRequest, CancellationToken, Task<SettingAnswer>>? Set { get; init; }
 
     /// <summary>
+    /// A loop's half of Ask Daoris's checkout reads (HELPMODE1c4, D183's note): what it does with a read of a checkout for a conversation
+    /// its registry runs, answered beside the request with what was read. A loop on a registry has <see cref="HelpCheckouts"/>'s by
+    /// default, which judges each call; null takes none.
+    /// </summary>
+    public Func<SessionRequest, CancellationToken, Task<CheckoutAnswer>>? Checkout { get; init; }
+
+    /// <summary>
     /// What a loop does with a press a terminal told (STATEHUB1e, D169 point 8): the shell's publishes it to its windows as the
     /// window's press of that route is published. Null takes none: a headless loop has no window, so it leaves each for a loop that
     /// hears them, and drops only what nobody took in time (<see cref="PressesTold"/>).
@@ -145,6 +152,7 @@ public sealed class SessionRequestWatch : IAsyncDisposable
         TakeBack = words.TakeBackAsync;
         Housekeep = new HelpHousekeeping(home, service).AnswerAsync;
         Set = new HelpSettings(home, service).AnswerAsync;
+        Checkout = new HelpCheckouts(home, service).AnswerAsync;
         // FABRIC-EVENT2c: made before the watch starts, so its watcher opens at once and the first request after an install is
         // heard, not found at the listing. Both loops (the desktop's and the headless host's) build their watch here.
         Directory.CreateDirectory(_requests.Folder);
@@ -305,6 +313,8 @@ public sealed class SessionRequestWatch : IAsyncDisposable
         SessionMove.Housekeep => Housekeep is not null && _runsHere(pending.Session),
         // HELPMODE1c3: the same for a chosen setting.
         SessionMove.Set => Set is not null && _runsHere(pending.Session),
+        // HELPMODE1c4: and for a checkout read.
+        SessionMove.Read => Checkout is not null && _runsHere(pending.Session),
         _ => _runsHere(pending.Session) && (!Resolves(pending) || _service() is not null),
     };
 
@@ -324,6 +334,7 @@ public sealed class SessionRequestWatch : IAsyncDisposable
         if (pending.Move == SessionMove.TakeBack) return await SayAsync(pending, TakeBack, ct).ConfigureAwait(false);
         if (pending.Move == SessionMove.Housekeep) return await HousekeepAsync(pending, ct).ConfigureAwait(false);
         if (pending.Move == SessionMove.Set) return await SetAsync(pending, ct).ConfigureAwait(false);
+        if (pending.Move == SessionMove.Read) return await ReadCheckoutAsync(pending, ct).ConfigureAwait(false);
         if (!_runsHere(pending.Session)) return null;
 
         var resolves = Resolves(pending);
@@ -488,6 +499,40 @@ public sealed class SessionRequestWatch : IAsyncDisposable
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {
             // Unwritten: the tool waits out its time and says the change may still be under way.
+        }
+
+        return request;
+    }
+
+    /// <summary>
+    /// A checkout read (HELPMODE1c4), taken where this loop runs its conversation and handed to <see cref="Checkout"/>, as a setting
+    /// request is; what was read, or why not, is written beside it, a failure included, so the tool is never left to wait out its time.
+    /// Null where it is not this loop's, or another loop took it.
+    /// </summary>
+    private async Task<SessionRequest?> ReadCheckoutAsync(SessionRequest pending, CancellationToken ct)
+    {
+        if (Checkout is not { } read || !_runsHere(pending.Session)) return null;
+        if (_requests.Take(pending) is not { } request) return null;
+
+        CheckoutAnswer answer;
+        try
+        {
+            answer = await read(request, ct).ConfigureAwait(false);
+        }
+        catch (Exception error) when (
+            error is DriverException or HttpRequestException or System.Text.Json.JsonException or IOException or UnauthorizedAccessException
+            || (error is TaskCanceledException && !ct.IsCancellationRequested))
+        {
+            answer = CheckoutAnswer.Refusal(request.Operation ?? "", CheckoutAnswer.Failed, $"Daoris could not read it ({error.Message.TrimEnd('.')}).");
+        }
+
+        try
+        {
+            _requests.Answer(request, answer);
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+        {
+            // Unwritten: the tool waits out its time and says it may still be under way.
         }
 
         return request;

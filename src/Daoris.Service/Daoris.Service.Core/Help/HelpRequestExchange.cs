@@ -4,10 +4,10 @@ using System.Text.Json;
 namespace Daoris.Knowledge;
 
 /// <summary>
-/// The exchange each of Ask Daoris's granted tools makes with the driver (HELPMODE1c2a, HELPMODE1c3; D183's notes): a keyed request
-/// written under the home's session requests (<see cref="HomeEntry.Requests"/>) for the conversation's own session, the take waited
-/// for, a request nobody took withdrawn, then the answer beside it waited for and read once. <see cref="HousekeepingBox"/> and
-/// <see cref="SettingsBox"/> each write their own request and say their own words around it.
+/// The exchange each of Ask Daoris's granted tools makes with the driver (HELPMODE1c2a, HELPMODE1c3, HELPMODE1c4; D183's notes): a keyed
+/// request written under the home's session requests (<see cref="HomeEntry.Requests"/>) for the conversation's own session, the take
+/// waited for, a request nobody took withdrawn, then the answer beside it waited for and read once. <see cref="HousekeepingBox"/>,
+/// <see cref="SettingsBox"/> and <see cref="CheckoutBox"/> each write their own request and say their own words around it.
 /// </summary>
 /// <remarks>
 /// <b>A twin, the file the contract</b> (<c>.claude/knowledge/twins.md</c>): the driver's <c>SessionRequests</c> takes the request by
@@ -53,15 +53,23 @@ internal static class HelpRequestExchange
     }
 
     /// <summary>The <c>said</c> of an answer, or null where it does not read as one.</summary>
-    internal static string? Said(string text)
+    internal static string? Said(string text) => Field(text, "said");
+
+    /// <summary>
+    /// The <c>text</c> of an answer: what a checkout read read (HELPMODE1c4), beside its <c>said</c>; null where it carries none, as every
+    /// other tool's answer does.
+    /// </summary>
+    internal static string? Text(string text) => Field(text, "text");
+
+    private static string? Field(string text, string name)
     {
         try
         {
             using var document = JsonDocument.Parse(text);
             if (document.RootElement.ValueKind == JsonValueKind.Object
-                && document.RootElement.TryGetProperty("said", out var said) && said.ValueKind == JsonValueKind.String)
+                && document.RootElement.TryGetProperty(name, out var field) && field.ValueKind == JsonValueKind.String)
             {
-                return said.GetString()!;
+                return field.GetString()!;
             }
         }
         catch (JsonException)

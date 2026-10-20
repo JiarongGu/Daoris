@@ -24,7 +24,7 @@ Listed first, because nothing below restates their rows: open one of these for w
 | `decisions.md` | each decision's title with its entry's lines, then each dated note with its lines |
 | `outlines/<path>.md` | the declarations or headings of a file over 40 KB, each with its line range |
 
-## Files over 40 KB (222)
+## Files over 40 KB (223)
 
 Each has its outline at `outlines/<its path>.md`: open the outline, then read the range you need, not the file.
 
@@ -91,8 +91,8 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Help/Proposals/HelpSettingProposalsTests.cs` | 53 | 784 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Help/golden/help-room/empty.md` | 48 | 356 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Help/golden/help-room/full-access.md` | 52 | 398 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Help/golden/help-room/full.md` | 54 | 422 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Help/golden/help-room/scoped.md` | 51 | 412 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Help/golden/help-room/full.md` | 54 | 425 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Help/golden/help-room/scoped.md` | 52 | 415 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Help/golden/help-room/sparse.md` | 48 | 355 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Loop/DriverCommandTests.cs` | 44 | 685 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Loop/SessionMessagesTickTests.cs` | 66 | 1153 |
@@ -124,7 +124,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/Acp/Acp.cs` | 139 | 2759 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/Adapters/Adapters.cs` | 135 | 2341 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Conversations/Chat/ChatGoOn.cs` | 40 | 750 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/Conversations/Chat/ChatRunner.cs` | 149 | 2673 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/Conversations/Chat/ChatRunner.cs` | 150 | 2680 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Conversations/Chat/ChatTurns.cs` | 45 | 1004 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Conversations/Domain/ContextBrief.cs` | 44 | 861 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Conversations/DrivenInbox.cs` | 50 | 1150 |
@@ -172,6 +172,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/Platform/InstancePipeTests.cs` | 40 | 768 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/Platform/StatePublisherTests.cs` | 41 | 795 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules/Bridge/Routes/AgentsRoutes.cs` | 45 | 793 |
+| `src/Daoris.Desktop/Daoris.Desktop.Modules/Bridge/Routes/DriverRoutes.cs` | 41 | 642 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules/Bridge/Routes/HelpRoutes.cs` | 76 | 1290 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules/Bridge/Routes/LinesRoutes.cs` | 61 | 1001 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules/Bridge/Routes/SessionsRoutes.cs` | 52 | 841 |
@@ -206,7 +207,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Service/Daoris.Service.Tests/Remote/QuestSyncTests.cs` | 107 | 2111 |
 | `src/Daoris.Service/Daoris.Service.Tests/Sessions/SessionLedgerTests.cs` | 99 | 1919 |
 | `src/Daoris.Service/Daoris.Service.Tests/Sessions/SessionStoreTests.cs` | 41 | 821 |
-| `src/Daoris.Service/README.md` | 104 | 798 |
+| `src/Daoris.Service/README.md` | 105 | 799 |
 
 ### CLI (`cli`)
 
@@ -247,7 +248,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 
 | File | KB | Lines |
 |---|---|---|
-| `.claude/knowledge/twins.md` | 118 | 185 |
+| `.claude/knowledge/twins.md` | 119 | 186 |
 | `docs/2026-09-19-platform-ux.md` | 70 | 730 |
 | `docs/2026-09-21-dsh-evaluation.md` | 43 | 483 |
 | `docs/2026-09-21-working-surface-components.md` | 54 | 354 |

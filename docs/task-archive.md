@@ -18472,6 +18472,11 @@ in zh. The sessions page's held words (`WordsHold`) still carry the driver's sen
 
 **Outcome** 2026-10-21: built. A hold stamps its file's time when taken and let go; `LandingHolds.Sweep` removes a file no door has held for longer than `Wait`, reading its time again under its own handle, and keeps one held or let go within the bound; a taken hold sweeps its home at most once per `Wait` in a process. Proof: three tests in `LandingHoldsTests`. Detail: D173's LANDHOLDSWEEP1 note.
 
+## HELPMODE1c4 — the scoped checkouts grant (2026-10-21, D183)
+
+> - [ ] **HELPMODE1c4 — the scoped checkouts grant built on Claude** (driver, service, web-shell; the modes design's §4.1; after HELPMODE1c3). Restricted mode's *checkouts* grant is still drawn as the design's mock on Claude (on Codex it says unavailable until a scoped read tool exists): build it as HELPMODE1c3 built chosen settings, a typed tool reading only the checkouts chosen, judged by the driver at each call against the grant handed at the start. Proof: the grant's refusal off and its read on, a checkout not chosen refused; the page's row chosen in en and zh.
+
+**Outcome** 2026-10-21: built for Claude and Codex alike. Ask Daoris reads its checkouts through one connector tool, `checkout_read` (a file, a folder, `status`, `branches`), which the driver's `HelpCheckouts` judges at every call, in place of the `Read` and git rules a restricted start handed Claude; the checkouts are on by default from D107's readable set, each turned off on its own in *Configured access*. Detail: D183's HELPMODE1c4 note.
 ## GITSTART6 — the remaining tests' git past the launcher (2026-10-21, D121)
 
 > - [ ] **GITSTART6 — the remaining tests' git past the launcher** (driver, modules tests). `DriverModuleGitTests`, `DriverModuleWorkflowRunTests`, `TreeSyncReplayTests`' holder and two `--version` checks. Proof: those classes once each.

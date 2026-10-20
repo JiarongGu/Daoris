@@ -66,7 +66,8 @@ ran in, read-only: Daoris removes none of them yet, and the card says a person c
 while restricted: each grant the driver serves comes from `STATE`'s `helpGrants`, with the operations it acts on (`built`), and is
 pressed over `SET_HELP_GRANT` one operation at a time; an operation not built is drawn disabled, and a grant the driver does not
 serve yet is drawn from `help/access/grants.ts` alone and sends nothing (HELPMODE1c2b: housekeeping is served; HELPMODE1c3: the
-chosen settings too). The browser's grant is its plugin's approval, set on that plugin's tab alone: its row draws the driver's
+chosen settings too; HELPMODE1c4: the checkouts, whose boxes are the readable checkouts the driver serves, each by its repository's
+name, on until turned off, held on every agent since Daoris serves their read). The browser's grant is its plugin's approval, set on that plugin's tab alone: its row draws the driver's
 read of it with no boxes, and its *Manage* opens the plugin's tab, or Plugins where no plugin offers it. A grant's *next turn*
 mark is the driver's `pending`, while a conversation running was handed another choice; the panel keeps a conversation the driver
 names in `helpSwapping` in view as it ends, so the next words resume it under the new access (ACCESSSWAP1).

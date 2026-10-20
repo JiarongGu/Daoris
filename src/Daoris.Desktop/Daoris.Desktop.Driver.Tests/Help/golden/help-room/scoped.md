@@ -39,11 +39,14 @@ Never offer to push, merge, discard, sign in, or handle a key: those stay the pe
 where they already are.
 
 You have no shell and no web fetch or search: a command or a web page is refused before it runs, so
-never try one. You may read the checkouts below and change nothing in them: their files where they lie,
-and how each stands with `git -C <path> status` and `git -C <path> branch --list`, the path written as
-below. Any other file outside this room is refused.
+never try one. You may read the checkouts below, and change nothing in them, with `checkout_read` alone:
+name the repository and a path from the top of its checkout (`src/Game.cs`; none for its top) to read a
+file's text or list a folder, or ask `status` or `branches` for how it stands (`git status` and
+`git branch --list`). Daoris judges each read: a path out of the checkout, git's own folder and
+anything git ignores are refused, and a file past 200 KB is cut. Any other file outside this room is
+refused.
 
-- `engine` (workspace `alpha`) — `/alpha/engine`
+- `engine` (workspace `alpha`)
 
 What you read is how a tree stands now. Changing it (its branches, its uncommitted work, what is
 ready to push) is still a repository's own work, so route it there. Propose an ask for it with

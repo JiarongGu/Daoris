@@ -233,7 +233,7 @@
   "help.grants.name.shell": "A confined shell",
   "help.grants.reach.housekeeping": "Daoris’s own work: only the trees, branches and recovery material its cleanup judges permit. No command and no path.",
   "help.grants.reach.browser": "Daoris’s browser connection, signed-in pages included.",
-  "help.grants.reach.checkouts": "The workspace’s checkouts, as far as each repository lets agents outside it read.",
+  "help.grants.reach.checkouts": "The workspace’s checkouts, as far as each repository lets agents outside it read, through one read Daoris judges each time.",
   "help.grants.reach.settings": "Only the settings you choose, through the same checks and writer as Settings, each change recorded.",
   "help.grants.reach.shell": "Running commands, only inside an enforced file-system and process boundary around chosen Daoris trees, away from accounts and your home’s sensitive data.",
   "help.grants.default.off": "Off by default.",
@@ -250,7 +250,6 @@
   "help.grants.pendingWhy": "A conversation running now started with another choice: it ends as its turn ends, and its next turn takes this one. What it has shows what it was handed.",
   "help.grants.why.changed": "Its plugin’s update changed it since you approved it: Ask Daoris is handed nothing of it until you approve it again.",
   "help.grants.why.browser": "{{agent}} takes the browser’s server whole or not at all, so its approved reads and chosen writes are unavailable here until Daoris serves a mediated browser tool.",
-  "help.grants.why.checkouts": "{{agent}} takes no permission rules, so reads limited to these checkouts are unavailable here until Daoris serves a scoped read tool.",
   "help.grants.why.shell": "Only with an enforced boundary: a working folder, a `cd` or an instruction is not confinement.",
   "help.grants.signedIn": "Signed-in pages may be affected: it acts as you on the sites you are signed in to in Daoris’s browser.",
   "help.grants.onPlugin": "Its reads and writes are approved on its plugin’s page, the one place they are changed; Manage opens it.",
@@ -263,7 +262,6 @@
   "help.grants.op.housekeeping.clean-up": "Clean up trees and branches",
   "help.grants.op.housekeeping.discard-branch": "Discard a session branch by name",
   "help.grants.op.housekeeping.drop-recovery": "Delete recovery refs nothing holds",
-  "help.grants.op.checkouts.read": "Read files, status and branches",
   "help.grants.op.settings.notify": "Notify when a session parks",
   "help.grants.op.settings.language": "A session’s language",
   "help.grants.op.settings.timeout": "How long one session may run",
@@ -271,6 +269,7 @@
   "help.grants.op.settings.cooloff": "Cool-off when no time is named",
   "help.grants.never.housekeeping": "Each target by its recorded identity and owner, judged again before it acts; a running or waiting session keeps its own branch, and nothing is forced.",
   "help.grants.never.browser": "Running code in a page is never granted.",
-  "help.grants.never.checkouts": "Files, `git status` and `git branch --list`; never `git log`, `diff` or `show`, whose output options can write files.",
+  "help.grants.none.checkouts": "No checkout here lets agents outside it read, so there is none to choose. A repository turns it on under its page → Setup → Reach.",
+  "help.grants.never.checkouts": "A file’s text, a folder’s entries, `git status` and `git branch --list`, by a path inside the checkout; never what git ignores, git’s own folder, or `git log`, `diff` or `show`, whose output options can write files.",
   "help.grants.never.settings": "The access mode, these grants, accounts, plugin approval, reading across, standing answers, review, second opinions, helpers, commits, landing, driving and the safeguards stay out."
 }

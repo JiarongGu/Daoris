@@ -63,6 +63,8 @@ public static class KnowledgeServer
         typeof(HousekeepingTools),
         // And its chosen settings (HELPMODE1c3): the same kind of request, each setting refused unless the person granted it.
         typeof(ChosenSettingsTools),
+        // And its reading of the checkouts (HELPMODE1c4): one read the driver judges at every call, for every agent.
+        typeof(CheckoutTools),
     ];
 
     /// <summary>

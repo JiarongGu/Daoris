@@ -83,7 +83,7 @@ public sealed class HelpChosenSettingsTests : IDisposable
         using var file = JsonDocument.Parse(File.ReadAllText(ConfiguredAccess.PathOf(_home)));
         Assert.Equal(["language", "cooloff"], file.RootElement.GetProperty("settings").EnumerateArray().Select(each => each.GetString()));
         Assert.Contains("`mode`", Assert.Throws<DriverException>(() => ConfiguredAccess.Choose(_home, "settings", "mode", true)).Message);
-        Assert.Contains("not built", Assert.Throws<DriverException>(() => ConfiguredAccess.Choose(_home, "checkouts", "read", true)).Message);
+        Assert.Contains("not built", Assert.Throws<DriverException>(() => ConfiguredAccess.Choose(_home, "shell", "run", true)).Message);
     }
 
     /// <summary>
