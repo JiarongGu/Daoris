@@ -38,6 +38,7 @@ const CONNECTOR = [
   'mcp__daoris-knowledge__channel_post',
   'mcp__daoris-knowledge__channel_read',
   'mcp__daoris-knowledge__handover_propose',
+  'mcp__daoris-knowledge__line_read',
 ];
 
 function run(argv: string[], home: string): { code: number; out: string } {
@@ -162,8 +163,9 @@ test('the opinion tools reach a session by default: saying an opinion, and answe
   const fx = makeFixture('permissions-opinion-tools');
   try {
     const { allow } = composeRules(readPermissions(at(fx.root)), 'default', 'engine');
-    // MIXAGENT2a-i: and the helper's two, each a file under the home; MIXAGENT1c: and the ask to hand over, a file the person's rule settles.
-    for (const tool of ['opinion_give', 'opinion_answer', 'helper_ask', 'helper_answer', 'handover_propose']) {
+    // MIXAGENT2a-i: and the helper's two, each a file under the home; MIXAGENT1c: and the ask to hand over, a file the person's rule settles;
+    // SESSCTX1f: and the reading of the session's own line, which changes nothing.
+    for (const tool of ['opinion_give', 'opinion_answer', 'helper_ask', 'helper_answer', 'handover_propose', 'line_read']) {
       assert.ok(allow.includes(`mcp__daoris-knowledge__${tool}`), `\`${tool}\` is not allowed: ${allow.join(', ')}`);
     }
   } finally {

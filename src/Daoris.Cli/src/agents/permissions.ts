@@ -80,12 +80,14 @@ export interface PermissionFile {
  * only, a helper and a reviewer refused: a message is that agent's claim and asks nothing of anyone, so work stays a quest.
  * `handover_propose` (MIXAGENT1c, D163 point 3) writes one file under the home and nothing else: an ask to go on with another
  * agent, its note the agent's claim, which the person's `handOver` rule settles; a helper and a reviewer are denied it.
+ * `line_read` (SESSCTX1f, D189's note) changes nothing: it reads the event files of the session's own line on this machine, what
+ * its brief's bound left out, and the service refuses every other record; a helper and a reviewer are denied it.
  */
 const CONNECTOR_TOOLS = [
   'registry', 'knowledge_search', 'knowledge_get', 'knowledge_repositories',
   'knowledge_convergence', 'quest_list', 'quest_respond', 'quest_publish', 'permission_propose', 'go_ahead_ask',
   'review_serve', 'review_ready', 'opinion_give', 'opinion_answer', 'helper_ask', 'helper_answer', 'channel_post', 'channel_read',
-  'handover_propose',
+  'handover_propose', 'line_read',
 ];
 
 /** What Daoris ships. 🔴 The driver's `PermissionRules` (`Permissions.cs`) holds the same table, and a test reads this one. */

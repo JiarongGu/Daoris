@@ -665,9 +665,11 @@ public static class ContextBrief
         if (clips > 0) left.Add($"part of {clips} {(clips == 1 ? "item" : "items")} each clipped at its own bound");
         if (left.Count > 0)
         {
+            // The connector's `line_read` reads what was left out (SESSCTX1f, the design §3.5), so the gap is one call away, not a guess.
             pieces.Add(new(
                 HandedSections.BriefLeft,
-                $"\n\nLeft out to keep this brief bounded: {InstructionAccounting.Joined(left)}. Daoris's record of this line holds every one of them."));
+                $"\n\nLeft out to keep this brief bounded: {InstructionAccounting.Joined(left)}. Daoris's record of this line holds every one of them, "
+                + "and `line_read` on Daoris's connector reads it a page at a time."));
         }
 
         return pieces;

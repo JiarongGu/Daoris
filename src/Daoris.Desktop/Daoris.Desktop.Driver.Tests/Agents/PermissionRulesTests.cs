@@ -50,6 +50,7 @@ public sealed class PermissionRulesTests : IDisposable
         "mcp__daoris-knowledge__channel_post",
         "mcp__daoris-knowledge__channel_read",
         "mcp__daoris-knowledge__handover_propose",
+        "mcp__daoris-knowledge__line_read",
     ];
 
     /// <summary>What the `commit` default allows (PERM4), a rename among it (UNBLOCK4, D122 §3.6).</summary>
@@ -184,6 +185,8 @@ public sealed class PermissionRulesTests : IDisposable
     // SESSONE2b (D167 point 7): a session on an ask posts to and reads its channel; the service answers each for its own ask only.
     [InlineData("channel_post")]
     [InlineData("channel_read")]
+    // SESSCTX1f: a session reads its own line's record, read-only, on this machine; the service refuses every other record.
+    [InlineData("line_read")]
     public void The_opinion_tools_reach_a_session_by_default(string tool)
     {
         var rules = PermissionRules.Compose(PermissionRules.Load(_home), "default", "engine");

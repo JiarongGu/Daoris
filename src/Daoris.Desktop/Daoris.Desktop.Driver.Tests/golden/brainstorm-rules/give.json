@@ -34,6 +34,7 @@
     "mcp__daoris-knowledge__knowledge_refresh",
     "mcp__daoris-knowledge__knowledge_repositories",
     "mcp__daoris-knowledge__knowledge_search",
+    "mcp__daoris-knowledge__line_read",
     "mcp__daoris-knowledge__opinion_answer",
     "mcp__daoris-knowledge__opinion_give",
     "mcp__daoris-knowledge__pause_propose",
