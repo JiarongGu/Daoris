@@ -5,6 +5,8 @@ import { defineConfig } from '@playwright/test';
 // with Vite, the shipped tokens and catalogues, on a port of its own, and needs no host: `npm run e2e:measured`.
 export default defineConfig({
   testDir: './measured',
+  // Vite's first compile is paid once here, not by the first story of each spec (`measured/warm.ts`).
+  globalSetup: './measured/warm.ts',
   timeout: 60_000,
   fullyParallel: false,
   use: {

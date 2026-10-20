@@ -5,6 +5,18 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-20 — The measured check's first story timed out on Vite's cold compile, and a window's test met the states flow's word (FLOWCHART1e, FLOWCHART1b)
+
+- **Symptom:** the full set on 3aeb4b81a failed `web-measured` (2 of 58: the first story of each spec, `page.goto` past the
+  test's 60 s) and `web-unit` (`DetachedSession.test.tsx`'s "heads a chat … idle": *Found multiple elements with the text:
+  idle*). FLOWCHART1e's session saw the first once, on one story in three runs.
+- **Root cause:** Vite compiles the page's modules on their first request; on the loaded machine the CI beside runs on, that
+  first compile took past a test's minute, paid by whichever story each worker opened first. And FLOWCHART1b's states flow in the
+  Timeline view says the session's shown word again below the head, so a whole-window query for the head's word met two.
+- **Fix:** `measured/warm.ts`, the measured config's global setup, loads one story with a bound of its own before any check;
+  the window's test asks the record's head (`header[data-record-head]`) for the word.
+- **Verification:** `npm --prefix src/Daoris.Web run e2e:measured` 58 passed; `DetachedSession.test.tsx` 7 passed.
+
 ## 2026-10-20 — A page test walked the driver's whole folder, so no driver change reached its gate (FLOWCHART1b)
 
 - **Symptom:** the full set on 3aeb4b81a failed `tool-tests`' SESSDEL1c scan, "every file outside the page a page's vitest reads
