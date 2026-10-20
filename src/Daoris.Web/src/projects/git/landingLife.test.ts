@@ -1,8 +1,7 @@
-import { readdirSync, readFileSync } from 'node:fs';
-import { join } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 import i18n from '../../locales/i18n';
 import { en, zh } from '../../locales';
+import { driverSource } from '../../test/driverSource';
 import {
   END_BY, landingFlow, landingOf, PULL_REQUEST_STATES, REMOVED_AS, TRY_CODES,
 } from './landingLife';
@@ -17,15 +16,8 @@ import {
 // and the recovery are the units' the branch carries. The codes are page constants, held to the driver's source here.
 
 const t = i18n.t.bind(i18n);
-const root = join(process.cwd(), '..', '..');
-const driver = 'src/Daoris.Desktop/Daoris.Desktop.Driver';
-const files = readdirSync(join(root, ...driver.split('/')), { recursive: true, encoding: 'utf8' })
-  .filter((path) => !/[\\/](bin|obj)[\\/]/.test(path));
-const only = (name: string) => {
-  const found = files.filter((path) => path.split(/[\\/]/).at(-1) === name);
-  if (found.length !== 1) throw new Error(`${name} is expected once under ${driver}, found ${found.length}`);
-  return readFileSync(join(root, ...driver.split('/'), found[0]!), 'utf8');
-};
+// Each driver source is read by its name through `driverSource`, so the merge tool's page-reads scan sees the files and MOD9e's
+// row sends a change to them to this gate.
 
 /** A static class's body, from its declaration to the next type's. */
 const classBody = (text: string, name: string) => {
@@ -47,8 +39,8 @@ function constants(text: string, name: string, others: Record<string, Record<str
   return found;
 }
 
-const autoLanding = only('AutoLanding.cs');
-const cleanups = only('LandedCleanups.cs');
+const autoLanding = driverSource('AutoLanding.cs');
+const cleanups = driverSource('LandedCleanups.cs');
 const landedKind = constants(cleanups, 'LandedKind');
 
 afterEach(async () => { await i18n.changeLanguage('en'); });
@@ -57,7 +49,7 @@ describe('the codes the landing is drawn by, held to the driver (trap 11)', () =
   it('reads each class the page copies: a scan that matched nothing would pass on a moved file', () => {
     expect(Object.keys(constants(autoLanding, 'AutoLandingCode')).length).toBeGreaterThan(15);
     expect(Object.keys(landedKind).length).toBeGreaterThan(5);
-    expect(Object.keys(constants(only('EndJudgement.cs'), 'EndBy', { LandedKind: landedKind })).length).toBeGreaterThan(5);
+    expect(Object.keys(constants(driverSource('EndJudgement.cs'), 'EndBy', { LandedKind: landedKind })).length).toBeGreaterThan(5);
   });
 
   it('knows every try code `AutoLandingCode` declares, and no other', () => {
@@ -65,9 +57,9 @@ describe('the codes the landing is drawn by, held to the driver (trap 11)', () =
   });
 
   it('knows every proof an end rests on (`EndBy`), and the pull request\'s states (`PullRequestStates.All`)', () => {
-    expect([...END_BY].sort()).toEqual(Object.values(constants(only('EndJudgement.cs'), 'EndBy', { LandedKind: landedKind })).sort());
-    const states = constants(only('PullRequestStates.cs'), 'PullRequestStates');
-    const all = /All\s*=\s*\[([^\]]*)\]/.exec(classBody(only('PullRequestStates.cs'), 'PullRequestStates'))?.[1] ?? '';
+    expect([...END_BY].sort()).toEqual(Object.values(constants(driverSource('EndJudgement.cs'), 'EndBy', { LandedKind: landedKind })).sort());
+    const states = constants(driverSource('PullRequestStates.cs'), 'PullRequestStates');
+    const all = /All\s*=\s*\[([^\]]*)\]/.exec(classBody(driverSource('PullRequestStates.cs'), 'PullRequestStates'))?.[1] ?? '';
     expect([...PULL_REQUEST_STATES]).toEqual(all.split(',').map((member) => states[member.trim()]));
   });
 
