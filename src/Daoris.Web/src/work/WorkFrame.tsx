@@ -178,6 +178,7 @@ function SentSettler({ sending, giveBack }: { sending: ReturnType<typeof useSend
 export function WorkFrame({
   selected, onSelect, notify, onSendBack, onAnswerAsk, onOpenQuest, intent, onIntentTaken, ask, askFocus = 0, closings, placements,
   lists, layout: viewLayout, onOpenSessions, terminal = false, onListMode, group = null, onGroupBrought, compose = null, onMakeTask,
+  onOpenBranch,
 }: {
   /**
    * What each view's list remembers (D118 §3f), held by the application so the list's doors reach it from
@@ -215,6 +216,11 @@ export function WorkFrame({
    * record is the application's to open, as an ask's is.
    */
   onOpenQuest?: (quest: string) => void;
+  /**
+   * Open a landed branch's page in Repositories, with how it landed (FLOWCHART1c): the work's milestone and a run's landing step
+   * name the branch. The page is the application's to open, as a quest's is.
+   */
+  onOpenBranch?: (repository: string, branch: string) => void;
   /**
    * The attended session, held by the application — because a door into Work from somewhere else
    * (a quest's record) has to be able to say WHICH session, and a selection this frame kept to
@@ -1154,6 +1160,7 @@ export function WorkFrame({
                 ...(onOpenQuest ? { quest: onOpenQuest } : {}),
                 ...(onAnswerAsk ? { ask: onAnswerAsk } : {}),
                 review: (id) => { doors.review?.(id); if (elsewhere) onOpenSessions?.(); },
+                ...(onOpenBranch ? { branch: onOpenBranch } : {}),
               }}
               controls={lookControl || opinionControl ? controls : undefined}
             />
@@ -2007,6 +2014,7 @@ export function WorkFrame({
               : undefined}
             discardingBranch={discardBranch.isPending}
             milestone={milestone}
+            onOpenBranch={onOpenBranch}
             trace={attended && trace.available ? {
               open: tracing === attended.id,
               onToggle: () => setTracing(tracing === attended.id ? null : attended.id),

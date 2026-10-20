@@ -139,6 +139,18 @@ describe("the session's Workflow view", () => {
     expect(screen.getByText('Workflow: landed; pull request open')).toBeInTheDocument();
   });
 
+  // FLOWCHART1c: a landing that made a branch opens that branch's page, with how it landed; one into the line keeps no branch to open.
+  it("opens a landed branch's page from its landing step, and nothing from a landing into the line", async () => {
+    const branch = vi.fn();
+    const { unmount } = render(<WorkflowRunView answer={answerOf(PULL_REQUEST_OPEN)} doors={{ branch }} />);
+    await userEvent.click(within(row('landing')).getByRole('button', { name: 'How work/q1-fix-the-header landed' }));
+    expect(branch).toHaveBeenCalledWith('engine', 'work/q1-fix-the-header');
+    unmount();
+
+    render(<WorkflowRunView answer={answerOf(LANDED)} doors={{ branch }} />);
+    expect(within(row('landing')).queryByRole('button')).toBeNull();
+  });
+
   it("draws the owner's control under the step the run stands at, and nowhere else", () => {
     render(<WorkflowRunView answer={answerOf(IN_REVIEW)} controls={{ look: <button type="button">Reviewed</button>, work: <button type="button">Never</button> }} />);
 

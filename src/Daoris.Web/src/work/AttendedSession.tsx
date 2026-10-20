@@ -66,7 +66,7 @@ export function AttendedSession({
   chain = [], onSession, onQuest, onReview, relations, timeline = 'dock', branch, ownBranch, onDiscardBranch, discardingBranch,
   headed = false, goAheads, onGoAhead, trace, ownSignIn = false, nameOf, lands, landing, planning, onLand, onSayRebase, onName, discards, onDiscardTree, review, behind,
   opinion, continues, helps, process, parts, entryAccept, channel, workAsk, workBusy, toEvent, rules, ruleAsk, seek, helpers, permissions,
-  milestone,
+  milestone, onOpenBranch,
 }: {
   /** Passed straight through to the head: the process its own tree runs under, *Details*' rows (PROCESS1e). */
   process?: SessionProcess | null;
@@ -147,6 +147,11 @@ export function AttendedSession({
    * kept, the clean-up and the recovery. Absent where the driver names no unit for it: a browser, a teammate's, or an older shell.
    */
   milestone?: MilestoneUnit | null;
+  /**
+   * How its work's landing branch landed (FLOWCHART1c): the milestone's door to that branch's page in Repositories, named by the
+   * branch the unit's landing made. Absent where nothing opens a page there.
+   */
+  onOpenBranch?: (repository: string, branch: string) => void;
   /** The go-aheads it asked on its quest's ask, shown in the head while it is parked (KNOWUSE1a2). */
   goAheads?: GoAhead[];
   /** Passed straight through to the head: one of them answered, the park with it once none is open (KNOWUSE1a2, GOAHEAD2b). */
@@ -289,6 +294,8 @@ export function AttendedSession({
       {channel && <ChannelPanel {...channel} />}
       {/* Where its work stands (FABRIC-MILESTONE1b): the end, the result, the clean-up and the recovery, read from the driver. */}
       {milestone && <WorkMilestone unit={milestone} />}
+      {/* Its door to how the branch its landing made landed (FLOWCHART1c), a line beside the milestone and none of its own. */}
+      {milestone && onOpenBranch && <LandedBranchDoor unit={milestone} onOpen={onOpenBranch} />}
       {/* Folded, a line above the conversation: nothing is read until the person opens it (TRACE1b). */}
       {trace && <HowItCameToBe kind="session" id={session.id} {...trace} nameOf={nameOf} />}
       {/* The timeline lives in the right dock since SURF6 gave the dock its second occupant. It stayed
@@ -303,5 +310,23 @@ export function AttendedSession({
         />
       )}
     </article>
+  );
+}
+
+/**
+ * The milestone's door to how its landing branch landed (FLOWCHART1c): the branch the unit's landing made, as its result or its
+ * entries name it, opened on its repository's page. A landing branch is the branch's whole story, so it is named by the branch and
+ * never by the unit's session, which is any one of its executors. Nothing where the unit names no landing branch.
+ */
+function LandedBranchDoor({ unit, onOpen }: { unit: MilestoneUnit; onOpen: (repository: string, branch: string) => void }) {
+  const { t } = useTranslation();
+  const branch = [...unit.result, ...unit.entries].find((entry) => entry.kind === 'landing-branch')?.resource;
+  if (!branch) return null;
+  return (
+    <div className="flex justify-start">
+      <Button variant="ghost" className="min-h-0 px-1.5 py-0.5 text-small" onClick={() => onOpen(unit.repository, branch)}>
+        {t('landing.door', { branch })}
+      </Button>
+    </div>
   );
 }
