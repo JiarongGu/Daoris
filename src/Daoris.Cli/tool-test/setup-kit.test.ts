@@ -638,7 +638,9 @@ test('the stub\'s ordinary quest turn ends with exit 0 once its input closes, af
 });
 
 type Said = { id: number; method: string; params: object };
-type Heard = { id?: number; result?: { stopReason?: string; sessionId?: string; agentCapabilities?: unknown } };
+type Heard = {
+  id?: number; result?: { stopReason?: string; sessionId?: string; agentCapabilities?: unknown }; error?: { message?: string };
+};
 
 /**
  * One process of the stub, spoken to as the driver speaks to one: the frames sent in order, a permission it asks for
@@ -750,6 +752,78 @@ test('the stub resumes the conversation it is asked to, and the person\'s answer
     assert.equal(git(tree, 'rev-parse', 'HEAD~1').trim(), born);
     assert.equal(git(tree, 'status', '--porcelain'), '');
     assert.equal(resumed.code, 0, `end of input is the ending, after the quest's fetches too (STUB1)\n${resumed.stderr}`);
+  } finally {
+    await door.close();
+    fx.cleanup();
+  }
+});
+
+/** The frames of a first turn on a quest that asks the person first: its work is one fetch, the take (ANSWER1b). */
+const ASKING_FRAMES = (cwd: string): Said[] => [
+  { id: 1, method: 'initialize', params: { protocolVersion: 1 } },
+  { id: 2, method: 'session/new', params: { cwd, mcpServers: [] } },
+  { id: 3, method: 'session/prompt', params: { sessionId: 'acp-session-1', prompt: [{ type: 'text', text: 'You are carrying on quest quest-port.' }] } },
+];
+
+/**
+ * FLAKE4: ANSWER1b's stub once answered its prompt with `turn failed: fetch failed` under load, and Node's fetch says
+ * nothing more, so what refused it was lost. A turn whose fetch fails now says the door, the move and the cause beneath
+ * it: here a door that has closed, refused by the system with its code and the address.
+ */
+test('a stub whose fetch to its quest door fails answers its prompt with the door, the move and what refused it (FLAKE4)', async () => {
+  const fx = makeFixture('setup-kit-stub-refused');
+  const tree = join(fx.root, 'atlas');
+  mkdirSync(tree, { recursive: true });
+  const door = await questDoor();
+  await door.close();
+  const port = new URL(door.url).port;
+  try {
+    const refused = await speak({
+      cwd: tree, frames: ASKING_FRAMES(tree),
+      env: { ...unroled(), DAORIS_SERVICE_URL: door.url, DAORIS_QUEST_ID: 'quest-port', DAORIS_QUEST_TITLE: 'Ask the person first: which port?' },
+    });
+
+    const said = `the quest door at http://127.0.0.1:${port} did not answer take: fetch failed: connect ECONNREFUSED 127.0.0.1:${port}`;
+    assert.equal(refused.answers.get(3)?.error?.message, said, refused.stderr);
+    assert.match(refused.stderr, new RegExp(`^acp-agent: turn failed: ${said.replaceAll('.', '\\.')}$`, 'm'));
+    assert.equal(refused.code, 0, refused.stderr);
+  } finally {
+    fx.cleanup();
+  }
+});
+
+/** How the stub's fetch is held under load (FLAKE4): this many turns at once, this many times, against one door. */
+const LOADED = { wide: 12, rounds: 3 };
+
+/**
+ * FLAKE4: the fetch held in a loaded loop. ANSWER1b's first turn is one fetch to the door, so many of them at once, round
+ * after round, are the load itself: every turn takes its quest and ends its turn, and the door hears every take. A turn
+ * that fails says why (the row above). Its start has STUB3's 60 s, since starting a dozen processes at once is the
+ * machine's load, not a stub's silence.
+ */
+test('the stub\'s fetch to its quest door holds with a dozen turns at once, round after round (FLAKE4)', { timeout: 300_000 }, async () => {
+  const fx = makeFixture('setup-kit-stub-loaded');
+  const door = await questDoor();
+  try {
+    for (let round = 1; round <= LOADED.rounds; round++) {
+      const turns = await Promise.all(Array.from({ length: LOADED.wide }, (_, at) => {
+        const quest = `quest-${round}-${at + 1}`;
+        const tree = join(fx.root, quest, 'atlas');
+        mkdirSync(tree, { recursive: true });
+        return speak({
+          cwd: tree, frames: ASKING_FRAMES(tree), start: 60_000,
+          env: { ...unroled(), DAORIS_SERVICE_URL: door.url, DAORIS_QUEST_ID: quest, DAORIS_QUEST_TITLE: 'Ask the person first: which port?' },
+        }).then((turn) => ({ quest, turn }));
+      }));
+      for (const { quest, turn } of turns) {
+        assert.equal(turn.answers.get(3)?.result?.stopReason, 'end_turn', `${quest}: ${JSON.stringify(turn.answers.get(3))}\n${turn.stderr}`);
+        assert.equal(turn.code, 0, `${quest}\n${turn.stderr}`);
+      }
+    }
+    const taken = door.moves.filter((move) => move.action === 'take').map((move) => move.quest).sort();
+    const asked = Array.from({ length: LOADED.rounds }, (_, round) =>
+      Array.from({ length: LOADED.wide }, (__, at) => `quest-${round + 1}-${at + 1}`)).flat().sort();
+    assert.deepEqual(taken, asked);
   } finally {
     await door.close();
     fx.cleanup();

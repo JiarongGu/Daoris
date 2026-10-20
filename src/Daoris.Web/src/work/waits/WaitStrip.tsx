@@ -227,6 +227,8 @@ export function WaitStrip({ answerBelow = false, workAsk, ruleAsk, onTop, seek, 
                   onAnswer={props.permissions.onAnswer}
                   busy={props.permissions.busy}
                   lead={t('work.wait.permission.lead')}
+                  inConversation={toEvent?.permissions}
+                  marked={sought?.startsWith('permission:') ? sought.slice('permission:'.length) : undefined}
                 />
               </div>
             )}

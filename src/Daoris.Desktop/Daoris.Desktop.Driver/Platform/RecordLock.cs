@@ -24,6 +24,12 @@ internal sealed class RecordLock : IDisposable
 
     private static readonly TimeSpan Poll = TimeSpan.FromMilliseconds(15);
 
+    /// <summary>
+    /// Said with the lock's path each time a writer finds it held and waits (TESTCLOCK2): a test holding the lock knows its edit is
+    /// waiting on it, rather than guessing from a few hundred milliseconds of the machine's clock.
+    /// </summary>
+    internal static event Action<string>? Waiting;
+
     private readonly FileStream _file;
 
     private RecordLock(FileStream file) => _file = file;
@@ -52,6 +58,7 @@ internal sealed class RecordLock : IDisposable
                         error);
                 }
 
+                Waiting?.Invoke(path);
                 Thread.Sleep(Poll);
             }
         }

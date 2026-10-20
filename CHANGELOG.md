@@ -10,6 +10,8 @@ with the version and date at release.
   in *What needs you*, which the badge counts, with *Go on with this answer* and *Not now*. Going on counts as your word, so the
   next two answers go on alone again; *Not now* keeps the answer, which then goes on only with your own words. An answer taken
   while the agent is working, and your own words or Daoris's, never count.
+- The desktop's machine log keeps every line when a second launch writes beside the running Daoris, where before their lines
+  could overwrite each other's in the day's file. An error that ends the desktop's application is written there before the log closes.
 - A driven session whose own conversation cannot be resumed moves to a new session by itself only where waiting would not help.
   A refusal from its agent still carries it on, handed what Daoris kept of it, but a conversation open in another client of its
   agent now waits for you until you say more. Claude Code ending before it reopens a conversation is tried once more first, in a
@@ -250,8 +252,9 @@ with the version and date at release.
 - Under a repository's asking permission prompts, a tool call its rules do not allow now waits for your answer instead of
   being refused: the session's page and *What needs you* show the call as the agent named it, how long it has waited and
   that it is refused after 15 minutes, with *Allow once* and *Refuse* as the agent offers them. Allowing lets that call
-  alone run; the window's badge counts the wait. An agent not run over its protocol still refuses it, and says so. The
-  session's row in the list and its head say the call waits for your answer, and for how long, rather than that it runs.
+  alone run; the window's badge counts the wait. *In the conversation* on the waiting call leads to that call in the
+  session's conversation, so you can read what it asks in context. An agent not run over its protocol still refuses it,
+  and says so. The session's row in the list and its head say the call waits for your answer, and for how long, rather than that it runs.
 - The window minimizes, maximizes and restores with Windows' own animations, Win+Up and Snap maximize it, and a window
   minimized while maximized comes back maximized from the tray, a notification or a later launch (the UI kit, Shenora
   0.22).

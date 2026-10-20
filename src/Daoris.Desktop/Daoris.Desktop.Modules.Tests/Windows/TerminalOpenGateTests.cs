@@ -60,7 +60,7 @@ public sealed class TerminalOpenGateTests : Bridge
             var onCaller = t_calling;
             Begun.Set();
             // Bounded, so a start made on the caller's thread fails its test rather than holding it.
-            Held?.Wait(TimeSpan.FromSeconds(10));
+            Held?.Wait(Poll.Patience);
             if (Refuse is not null) throw Refuse;
             var terminal = new Terminal();
             lock (_started) _started.Add((terminal, onCaller));
@@ -119,7 +119,7 @@ public sealed class TerminalOpenGateTests : Bridge
         var module = new TerminalModule(Bus, terminals);
 
         var opening = Calling(() => AskAsync(module, "OPEN"));
-        Assert.True(terminals.Begun.Wait(TimeSpan.FromSeconds(10)), "the start never began");
+        Assert.True(terminals.Begun.Wait(Poll.Patience), "the start never began");
         module.Dispose();
         held.Set();
         await opening;

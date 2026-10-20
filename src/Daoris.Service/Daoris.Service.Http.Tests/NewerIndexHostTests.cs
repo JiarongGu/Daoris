@@ -186,7 +186,7 @@ public sealed class NewerIndexHostTests : IDisposable
         using var process = Process.Start(start)!;
         var said = process.StandardError.ReadToEndAsync();
         var printed = process.StandardOutput.ReadToEndAsync();
-        if (!process.WaitForExit(60_000))
+        if (!process.WaitForExit(Poll.Patience))
         {
             process.Kill(entireProcessTree: true);
             process.WaitForExit(5_000);

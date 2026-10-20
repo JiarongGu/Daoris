@@ -31,7 +31,7 @@ public sealed class DriverModuleHelpStartTests : DriverModuleBridge
         loop.DescribeHelp = _ => reading.Task;
         var room = Path.Combine(HelpRoom.PathOf(loop.Home), "AGENTS.md");
 
-        var answer = await AnswerAsync(module, "START_HELP").WaitAsync(TimeSpan.FromSeconds(10));
+        var answer = await AnswerAsync(module, "START_HELP").WaitAsync(Poll.Patience);
 
         Assert.Equal("h1", answer.GetProperty("sessionId").GetString());
         Assert.False(answer.GetProperty("running").GetBoolean());
@@ -40,7 +40,7 @@ public sealed class DriverModuleHelpStartTests : DriverModuleBridge
         Assert.False(File.Exists(room));
 
         // A second press while it starts (the panel's opening ahead, then the send's own) is handed it, never a second.
-        var again = await AnswerAsync(module, "START_HELP").WaitAsync(TimeSpan.FromSeconds(10));
+        var again = await AnswerAsync(module, "START_HELP").WaitAsync(Poll.Patience);
         Assert.Equal("h1", again.GetProperty("sessionId").GetString());
         Assert.True(again.GetProperty("starting").GetBoolean());
         Assert.Equal(1, service.Opened);
@@ -79,7 +79,7 @@ public sealed class DriverModuleHelpStartTests : DriverModuleBridge
         loop.DescribeHelp = _ => reading.Task;
         var room = Path.Combine(HelpRoom.PathOf(loop.Home), "AGENTS.md");
 
-        var answer = await AnswerAsync(module, "HELP_START_FROM", new { id = "h1" }).WaitAsync(TimeSpan.FromSeconds(10));
+        var answer = await AnswerAsync(module, "HELP_START_FROM", new { id = "h1" }).WaitAsync(Poll.Patience);
 
         Assert.Equal("h2", answer.GetProperty("sessionId").GetString());
         Assert.Equal("h1", answer.GetProperty("from").GetString());
@@ -111,10 +111,10 @@ public sealed class DriverModuleHelpStartTests : DriverModuleBridge
         var reading = new TaskCompletionSource<HelpMachine?>(TaskCreationOptions.RunContinuationsAsynchronously);
         loop.DescribeHelp = _ => reading.Task;
 
-        var alpha = await AnswerAsync(module, "START_HELP", new { workspace = "alpha" }).WaitAsync(TimeSpan.FromSeconds(10));
-        var beta = await AnswerAsync(module, "START_HELP", new { workspace = "beta" }).WaitAsync(TimeSpan.FromSeconds(10));
-        var again = await AnswerAsync(module, "START_HELP", new { workspace = "Alpha" }).WaitAsync(TimeSpan.FromSeconds(10));
-        var unnamed = await AnswerAsync(module, "START_HELP").WaitAsync(TimeSpan.FromSeconds(10));
+        var alpha = await AnswerAsync(module, "START_HELP", new { workspace = "alpha" }).WaitAsync(Poll.Patience);
+        var beta = await AnswerAsync(module, "START_HELP", new { workspace = "beta" }).WaitAsync(Poll.Patience);
+        var again = await AnswerAsync(module, "START_HELP", new { workspace = "Alpha" }).WaitAsync(Poll.Patience);
+        var unnamed = await AnswerAsync(module, "START_HELP").WaitAsync(Poll.Patience);
 
         Assert.Equal(("h1", "alpha"), (alpha.GetProperty("sessionId").GetString(), alpha.GetProperty("workspace").GetString()));
         Assert.Equal(("h2", "beta"), (beta.GetProperty("sessionId").GetString(), beta.GetProperty("workspace").GetString()));
@@ -173,7 +173,7 @@ public sealed class DriverModuleHelpStartTests : DriverModuleBridge
         var reading = new TaskCompletionSource<HelpMachine?>(TaskCreationOptions.RunContinuationsAsynchronously);
         loop.DescribeHelp = _ => reading.Task;
 
-        var answer = await AnswerAsync(module, "HELP_START_FROM", new { id = "h1", workspace = "alpha" }).WaitAsync(TimeSpan.FromSeconds(10));
+        var answer = await AnswerAsync(module, "HELP_START_FROM", new { id = "h1", workspace = "alpha" }).WaitAsync(Poll.Patience);
 
         Assert.Equal(("h2", "alpha"), (answer.GetProperty("sessionId").GetString(), answer.GetProperty("workspace").GetString()));
         Assert.Equal("alpha", service.Workspace("h2"));
@@ -190,7 +190,7 @@ public sealed class DriverModuleHelpStartTests : DriverModuleBridge
         var (loop, module, service) = await UpAsync();
         loop.DescribeHelp = _ => Task.FromException<HelpMachine?>(new DriverException("the service did not answer"));
 
-        var answer = await AnswerAsync(module, "START_HELP").WaitAsync(TimeSpan.FromSeconds(10));
+        var answer = await AnswerAsync(module, "START_HELP").WaitAsync(Poll.Patience);
 
         Assert.Equal("h1", answer.GetProperty("sessionId").GetString());
         await UntilAsync(() => Raised.Any(m => m.Type == "SESSION_ENDED"));
@@ -218,7 +218,7 @@ public sealed class DriverModuleHelpStartTests : DriverModuleBridge
             ? new TaskCompletionSource<object?>().Task
             : Task.FromResult<object?>(new HelpLineGuess("main")));
         using (ProcessStarts.Within(_ => null)) loop.Facts.Start();
-        await loop.Facts.FirstAsync(HelpFacts.Lines, "engine", CancellationToken.None).WaitAsync(TimeSpan.FromSeconds(20));
+        await loop.Facts.FirstAsync(HelpFacts.Lines, "engine", CancellationToken.None).WaitAsync(Poll.Patience);
         var gits = 0;
         var took = Stopwatch.StartNew();
 
@@ -228,7 +228,7 @@ public sealed class DriverModuleHelpStartTests : DriverModuleBridge
                    return null;
                }))
         {
-            var answer = await AnswerAsync(module, "START_HELP").WaitAsync(TimeSpan.FromSeconds(10));
+            var answer = await AnswerAsync(module, "START_HELP").WaitAsync(Poll.Patience);
             Assert.Equal("h1", answer.GetProperty("sessionId").GetString());
             await UntilAsync(() => Raised.Any(m => m.Type == "SESSION_ENDED"));
         }
@@ -273,9 +273,9 @@ public sealed class DriverModuleHelpStartTests : DriverModuleBridge
             loop.Facts.Start();
         }
 
-        await loop.Facts.FirstAsync(HelpFacts.Sessions, HelpFacts.Whole, CancellationToken.None).WaitAsync(TimeSpan.FromSeconds(20));
-        await loop.Facts.FirstAsync(HelpFacts.Trees, HelpFacts.NoCheckout, CancellationToken.None).WaitAsync(TimeSpan.FromSeconds(20));
-        var read = await loop.DescribeHelp!(CancellationToken.None).WaitAsync(TimeSpan.FromSeconds(20));
+        await loop.Facts.FirstAsync(HelpFacts.Sessions, HelpFacts.Whole, CancellationToken.None).WaitAsync(Poll.Patience);
+        await loop.Facts.FirstAsync(HelpFacts.Trees, HelpFacts.NoCheckout, CancellationToken.None).WaitAsync(Poll.Patience);
+        var read = await loop.DescribeHelp!(CancellationToken.None).WaitAsync(Poll.Patience);
 
         Assert.Contains(read!.Sessions!.Listed, each => each.Id == ended.Id);
         // The kept look's trees are none of the room's: its part judged the tree gone, so nothing waits to review.
@@ -286,7 +286,7 @@ public sealed class DriverModuleHelpStartTests : DriverModuleBridge
             && line.Contains("\"trees\":1") && !line.Contains("recordsMs"));
 
         loop.SessionsLooked.Keep(look, DateTimeOffset.UtcNow - HelpRoomLookLog.Recent - TimeSpan.FromSeconds(1));
-        await loop.Facts.JudgedAsync(HelpFacts.Sessions, HelpFacts.Whole, CancellationToken.None).WaitAsync(TimeSpan.FromSeconds(20));
+        await loop.Facts.JudgedAsync(HelpFacts.Sessions, HelpFacts.Whole, CancellationToken.None).WaitAsync(Poll.Patience);
         var fresh = await loop.DescribeHelp!(CancellationToken.None);
 
         Assert.DoesNotContain(fresh!.Sessions!.Listed, each => each.Id == ended.Id);
@@ -297,7 +297,7 @@ public sealed class DriverModuleHelpStartTests : DriverModuleBridge
         Assert.DoesNotContain(LogLines(Home), line => line.Contains("\"kept\":true") && line.Contains("Ms\":") && line.Contains("recordsMs"));
         Assert.NotNull(loop.SessionsLooked.Within(HelpRoomLookLog.Recent, DateTimeOffset.UtcNow));
         // The look's verdicts are a fresh plan's here, no loop having looked: it, the parts and the rest of the facts start no git.
-        await loop.Facts.JudgedAsync(HelpFacts.Trees, HelpFacts.NoCheckout, CancellationToken.None).WaitAsync(TimeSpan.FromSeconds(20));
+        await loop.Facts.JudgedAsync(HelpFacts.Trees, HelpFacts.NoCheckout, CancellationToken.None).WaitAsync(Poll.Patience);
         Assert.Equal(0, Volatile.Read(ref gits));
     }
 

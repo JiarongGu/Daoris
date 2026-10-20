@@ -353,7 +353,14 @@ export function SessionHead({
           className="grid gap-1"
         >
           <h3 id={`permissions-${session.id}`} className="m-0 text-small font-semibold">{t('work.wait.permission.title')}</h3>
-          <PermissionAsks waits={held} onAnswer={permissions?.onAnswer} busy={permissions?.busy} lead={t('work.wait.permission.lead')} />
+          <PermissionAsks
+            waits={held}
+            onAnswer={permissions?.onAnswer}
+            busy={permissions?.busy}
+            lead={t('work.wait.permission.lead')}
+            inConversation={toEvent?.permissions}
+            marked={sought?.startsWith('permission:') ? sought.slice('permission:'.length) : undefined}
+          />
         </section>
       )}
       {/* A third answer in a row with nobody between, which the answers-alone bound holds for the person (COWORK1e, §8.3): its line

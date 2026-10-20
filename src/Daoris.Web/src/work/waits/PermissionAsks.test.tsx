@@ -77,6 +77,25 @@ describe('a permission a session holds for the person', () => {
     expect(screen.queryByRole('button')).toBeNull();
   });
 
+  it('leads to its call in the conversation where the conversation found it, and is outlined where a press led to it (PERMANCHOR1)', async () => {
+    const toCall = vi.fn();
+    render(
+      <PermissionAsks
+        waits={[wait(), wait({ request: '901', call: 'tc-2', title: 'git push' })]}
+        onAnswer={vi.fn()}
+        inConversation={{ 900: toCall }}
+        marked="901"
+      />,
+    );
+    const [found, unfound] = screen.getAllByRole('listitem');
+    await userEvent.click(within(found!).getByRole('button', { name: 'In the conversation' }));
+    expect(toCall).toHaveBeenCalledTimes(1);
+    // One the conversation did not find offers no way there.
+    expect(within(unfound!).queryByRole('button', { name: 'In the conversation' })).toBeNull();
+    expect(unfound!.className).toContain('outline-accent');
+    expect(found!.className).not.toContain('outline-accent');
+  });
+
   it('draws the session’s own, and says each refusal of an answer by its code, or in the driver’s words', () => {
     expect(heldFor([wait(), wait({ session: 'o7h3r000', request: '1' })], 's1a2b3c4').map((one) => one.request)).toEqual(['900']);
     const t = i18n.getFixedT('en');
@@ -92,10 +111,11 @@ describe('a permission a session holds for the person', () => {
         <PermissionAsks
           waits={[wait({ choices: [...wait().choices, { id: 'never', name: 'Reject always', kind: 'reject_always' }] })]}
           onAnswer={vi.fn()}
+          inConversation={{ 900: vi.fn() }}
         />,
       );
       const item = screen.getByRole('listitem');
-      expect(within(item).getAllByRole('button').map((button) => button.textContent)).toEqual(['允许这一次', '拒绝', '始终拒绝']);
+      expect(within(item).getAllByRole('button').map((button) => button.textContent)).toEqual(['在对话中查看', '允许这一次', '拒绝', '始终拒绝']);
       expect(item).toHaveTextContent('execute 类工具调用');
       expect(item).toHaveTextContent('15 分钟内无人答复则拒绝');
       expect(permissionSaid(i18n.getFixedT('zh'), 'unheld', 'x')).toBe('它已不在等待：已先被答复或释放。未作答。');

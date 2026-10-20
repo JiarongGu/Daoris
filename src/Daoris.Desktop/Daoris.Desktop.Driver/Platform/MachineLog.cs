@@ -18,6 +18,11 @@ namespace Daoris.Driver;
 /// <para><b>Appended, not written whole.</b> A log grows a line at a time, as a session transcript does;
 /// the atomic write-beside-and-rename is for files that are replaced.</para>
 ///
+/// <para><b>Each line at the file's end</b> (MACHINELOGAPPEND1): a handle opened to append on Windows writes at
+/// its own position, so two processes of one source on one day's file (a later launch beside the running
+/// desktop) overwrote each other's lines. Each line is written at the end the file has now, under a mutex
+/// named for the file that every writer of it takes; a writer that cannot open it still writes at the end.</para>
+///
 /// <para><b>Never a reason to fail.</b> No home is no log; a write that fails is dropped. The log is
 /// evidence of what happened, and a process that stopped because its evidence could not be written
 /// would be the worse outcome.</para>
@@ -34,6 +39,9 @@ public sealed class MachineLog : IDisposable
     /// <summary>Where a file stops growing: a loop that logs without end cannot fill a disk.</summary>
     public const long CapBytes = 20L * 1024 * 1024;
 
+    /// <summary>How long a line waits for another writer of its file; past it, it is written at the end regardless.</summary>
+    private static readonly TimeSpan TurnWait = TimeSpan.FromSeconds(1);
+
     private static readonly JsonWriterOptions Options = new()
     {
         // Readable in a text editor, 中文 included: the file is read by people as well as by the report.
@@ -47,6 +55,8 @@ public sealed class MachineLog : IDisposable
     private readonly long _cap;
     private readonly object _gate = new();
     private FileStream? _file;
+    private Mutex? _turn;
+    private Exception? _ended;
     private string? _day;
     private bool _full;
     private bool _disposed;
@@ -106,14 +116,24 @@ public sealed class MachineLog : IDisposable
                 if (_disposed) return;
                 var file = FileFor(now);
                 if (file is null || _full) return;
-                if (file.Length + line.Length > _cap)
+                var held = TakeTurn();
+                try
                 {
-                    _full = true;
-                    Append(file, Line(now, "warn", "log.full", [("capBytes", _cap)]));
-                    return;
-                }
+                    // The end the file has now, which another process's line may have moved since this handle's last.
+                    file.Seek(0, SeekOrigin.End);
+                    if (file.Length + line.Length > _cap)
+                    {
+                        _full = true;
+                        line = Line(now, "warn", "log.full", [("capBytes", _cap)]);
+                    }
 
-                Append(file, line);
+                    file.Write(line);
+                    file.Flush();
+                }
+                finally
+                {
+                    if (held) _turn!.ReleaseMutex();
+                }
             }
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
@@ -161,9 +181,35 @@ public sealed class MachineLog : IDisposable
     /// </summary>
     public void WatchUnhandled()
     {
-        AppDomain.CurrentDomain.UnhandledException += (_, e) =>
-            Failed("unhandled", e.ExceptionObject as Exception, e.IsTerminating);
+        AppDomain.CurrentDomain.UnhandledException += (_, e) => Unhandled(e.ExceptionObject as Exception, e.IsTerminating);
         TaskScheduler.UnobservedTaskException += (_, e) => Failed("an unobserved task", e.Exception, false);
+    }
+
+    /// <summary>
+    /// Run a synchronous entry point's body (the desktop's <c>app.Run()</c>, MACHINELOGAPPEND1), writing the exception that
+    /// leaves it while this log is still open, and letting it go on as it was: the <c>using</c> that holds this log may close
+    /// it before the runtime raises that exception as unhandled, and the line was dropped.
+    /// </summary>
+    /// <remarks>Written once: <see cref="WatchUnhandled"/>'s handler, if it is reached with this log still open, skips it.</remarks>
+    public void RunWatched(Action body)
+    {
+        try
+        {
+            body();
+        }
+        catch (Exception error)
+        {
+            Failed("unhandled", error, terminating: true);
+            Volatile.Write(ref _ended, error);
+            throw;
+        }
+    }
+
+    /// <summary>An exception nothing caught, written unless <see cref="RunWatched"/> already wrote it.</summary>
+    internal void Unhandled(Exception? error, bool terminating)
+    {
+        if (error is not null && ReferenceEquals(error, Volatile.Read(ref _ended))) return;
+        Failed("unhandled", error, terminating);
     }
 
     /// <summary>
@@ -233,6 +279,8 @@ public sealed class MachineLog : IDisposable
             _disposed = true;
             _file?.Dispose();
             _file = null;
+            _turn?.Dispose();
+            _turn = null;
         }
     }
 
@@ -243,20 +291,48 @@ public sealed class MachineLog : IDisposable
 
         _file?.Dispose();
         _file = null;
+        _turn?.Dispose();
+        _turn = null;
         _day = day;
         Directory.CreateDirectory(_folder!);
+        var path = Path.Combine(_folder!, $"{day}.{_source}.jsonl");
         // Shared for reading and deleting: a person tails it, and a prune elsewhere may remove an old one.
-        _file = new FileStream(
-            Path.Combine(_folder!, $"{day}.{_source}.jsonl"),
-            FileMode.Append, FileAccess.Write, FileShare.ReadWrite | FileShare.Delete);
+        _file = new FileStream(path, FileMode.Append, FileAccess.Write, FileShare.ReadWrite | FileShare.Delete);
+        _turn = TurnFor(path);
         _full = _file.Length >= _cap;
         return _file;
     }
 
-    private static void Append(FileStream file, byte[] line)
+    /// <summary>
+    /// The mutex every writer of <paramref name="path"/> shares, named for the file in the session's namespace; null where
+    /// it cannot be opened (another token's), and the line is written at the end without it.
+    /// </summary>
+    private static Mutex? TurnFor(string path)
     {
-        file.Write(line);
-        file.Flush();
+        var key = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(
+            System.Text.Encoding.UTF8.GetBytes(Path.GetFullPath(path).ToUpperInvariant())))[..32];
+        try
+        {
+            return new Mutex(false, $@"Local\Daoris.MachineLog.{key}");
+        }
+        catch (Exception error) when (error is UnauthorizedAccessException or IOException or WaitHandleCannotBeOpenedException)
+        {
+            return null;
+        }
+    }
+
+    /// <summary>Whether this thread holds the file's mutex: a writer gone without releasing it hands it on.</summary>
+    private bool TakeTurn()
+    {
+        if (_turn is null) return false;
+        try
+        {
+            return _turn.WaitOne(TurnWait);
+        }
+        catch (AbandonedMutexException)
+        {
+            return true;
+        }
     }
 
     private byte[] Line(DateTimeOffset now, string level, string @event, IReadOnlyList<(string Key, object? Value)> data)

@@ -2156,6 +2156,7 @@ export function WorkFrame({
                     waits: standing, goAheads: waits.goAheads, opinion: opinionAsked(waits.landing)?.opinion ?? null,
                     proposals: rulesAsked(waits.rules?.proposals, attended.id),
                     helpers: waits.helpers?.asks,
+                    permissions: waits.permissions?.waits,
                   } : undefined}
                   onAnchors={(session, state) => setAnchored({ session, ...state })}
                   onToWait={(wait) => {

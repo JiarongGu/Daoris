@@ -22,9 +22,10 @@ public sealed class McpChosenSettingsToolTests : McpToolsFixture
     private string Requests => DaorisHome.Entry(Home, HomeEntry.Requests);
 
     // Generous by default, as the housekeeping tool's test is: its stand-in loop runs on the pool, which load can starve.
-    private SettingsBox Box(double take = 60, double answer = 60) => new(Home)
+    private SettingsBox Box(double? take = null, double? answer = null) => new(Home)
     {
-        TakeWithin = TimeSpan.FromSeconds(take), AnswerWithin = TimeSpan.FromSeconds(answer), Poll = TimeSpan.FromMilliseconds(10),
+        TakeWithin = take is { } t ? TimeSpan.FromSeconds(t) : Poll.Patience, AnswerWithin = answer is { } a ? TimeSpan.FromSeconds(a) : Poll.Patience,
+        Poll = TimeSpan.FromMilliseconds(10),
     };
 
     /// <summary>The connector a conversation is handed: its session named, a ledger to read its record, the box under the rules home.</summary>
@@ -46,7 +47,7 @@ public sealed class McpChosenSettingsToolTests : McpToolsFixture
     /// </summary>
     private Task<JsonElement> LoopAsync(string answer) => Task.Run(async () =>
     {
-        for (var tries = 0; tries < 6000; tries++)
+        for (var tries = 0; tries < Poll.Patience.TotalMilliseconds / 10; tries++)
         {
             var found = Directory.Exists(Requests)
                 ? Directory.GetFiles(Requests, "*.json").FirstOrDefault(path => !path.EndsWith(".answer.json", StringComparison.Ordinal))

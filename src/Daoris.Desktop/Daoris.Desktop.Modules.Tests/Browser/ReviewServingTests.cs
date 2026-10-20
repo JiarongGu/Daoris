@@ -253,12 +253,12 @@ public sealed class ReviewServingTests : IDisposable
     [InlineData("blob.bin", "application/octet-stream")]
     public void A_file_is_answered_with_its_type(string name, string type) => Assert.Equal(type, ReviewRequests.TypeOf(name));
 
-    /// <summary>Wait until <paramref name="condition"/> holds, the socket's own pace, or fail after ten seconds.</summary>
+    /// <summary>Wait until <paramref name="condition"/> holds, the socket's own pace, or fail after <see cref="Poll.Patience"/>.</summary>
     private static async Task Until(Func<bool> condition)
     {
         for (var waited = 0; !condition(); waited += 25)
         {
-            if (waited > 10_000) throw new TimeoutException("the condition never held");
+            if (waited > Poll.Patience.TotalMilliseconds) throw new TimeoutException("the condition never held");
             await Task.Delay(25);
         }
     }

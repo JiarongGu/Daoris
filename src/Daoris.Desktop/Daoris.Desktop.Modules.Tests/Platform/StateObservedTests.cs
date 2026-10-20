@@ -112,7 +112,7 @@ public sealed class StateObservedTests : DriverModuleBridge
         var route = new Moving();
 
         // The plugin never answers while the press is asked: an answer that waited on it would never come.
-        var answer = await Dispatch(Compose(route), route.ModuleName, "MOVE", new { id = "s1a2b3c4" }).WaitAsync(TimeSpan.FromSeconds(5));
+        var answer = await Dispatch(Compose(route), route.ModuleName, "MOVE", new { id = "s1a2b3c4" }).WaitAsync(Poll.Patience);
 
         Assert.True(answer.Success);
         Assert.Equal(alone, JsonSerializer.Serialize(answer.Data, Wire));
@@ -135,8 +135,8 @@ public sealed class StateObservedTests : DriverModuleBridge
         var route = new Moving();
         var dispatcher = Compose(route);
 
-        var first = await Dispatch(dispatcher, route.ModuleName, "MOVE", new { id = "s1a2b3c4" }).WaitAsync(TimeSpan.FromSeconds(5));
-        var second = await Dispatch(dispatcher, route.ModuleName, "MOVE", new { id = "s5e6f7a8" }).WaitAsync(TimeSpan.FromSeconds(5));
+        var first = await Dispatch(dispatcher, route.ModuleName, "MOVE", new { id = "s1a2b3c4" }).WaitAsync(Poll.Patience);
+        var second = await Dispatch(dispatcher, route.ModuleName, "MOVE", new { id = "s5e6f7a8" }).WaitAsync(Poll.Patience);
 
         Assert.True(first.Success);
         Assert.True(second.Success);

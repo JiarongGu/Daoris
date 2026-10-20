@@ -5,6 +5,21 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-21 — Two machine logs on one day's file overwrote each other's lines (MACHINELOGAPPEND1, ONEINSTANCE2)
+
+- **Symptom:** ONEINSTANCE2 measured that of two `MachineLog`s on one file, the second's line was gone after the first's next,
+  so a later desktop launch's line (the guard's warning as it exits) could be overwritten by the running instance's next.
+- **Root cause:** `FileMode.Append` on Windows seeks to the end once, at the open, and the handle then writes at its own
+  position; it is not an append-only handle. A second writer's lines sat where the first's next went.
+- **Fix:** each line seeks to the file's end before it is written, under a mutex named for the file (`Local\Daoris.MachineLog.`
+  and a hash of its full path) that every writer of it takes, so the seek and the write are one step across processes; a
+  wait of a second at most, a mutex left by a dead writer taken on, and a writer that cannot open it still writing at the end.
+  And the desktop's `app.Run()` runs through `MachineLog.RunWatched`, which writes the exception leaving it while the log is
+  open (the `using` closes it as the exception leaves `Main`) and rethrows it; the unhandled handler skips that one.
+- **Verification:** `MachineLogTests` (driver), 22, with two logs on one file in turn and from many threads at once keeping
+  all their lines, the watched body's exception written once, and the desktop's `Program` running it so; the desktop app built.
+  The service's twin keeps the old write (MACHINELOGAPPEND2).
+
 ## 2026-10-21 — A connector test's stand-in loop ended on a request a scanner held, and its tool waited a minute (FLAKE1)
 
 - **Symptom:** the full set on 195e6f9 failed `McpChosenSettingsToolTests.Each_tool_writes_its_value_as_the_door_spells_it`
@@ -16,6 +31,51 @@ repository.
   only made it slower.
 - **Fix:** both connector tests' stand-in loops try a refused read or delete again at the next turn, never ending on it.
 - **Verification:** both classes, 9; the full set beside.
+
+## 2026-10-21 — Seven driver tests timed their claim on the machine's clock, which a bigger bound would weaken (TESTCLOCK2, TESTCLOCK1)
+
+- **Symptom:** TESTPATIENCE1 left the elapsed bounds that state a claim as they were: each compared a `Stopwatch` with a few seconds
+  (or a 400 ms negative wait), so a loaded machine could fail it, and widening it would let the defect it guards pass.
+- **Root cause:** the claim ("at once", "within its grace", "inside the door's ten seconds", "the edit waited") was measured as the
+  machine's time, not as what the code waited on.
+- **Fix:** each states its claim on a held clock or a signal. `HookPeer` and `HookProcess` read a shutdown's grace on a handed
+  `TimeProvider` (the machine's by default), and `WorkPeerTests`' stuck write and `WorkProcessTests`' deaf plugin move a `MovedClock`
+  (the driver tests' copy of the modules' RPC1c clock, `Plugins/MovedClock.cs`) to the grace and see the disposal end there.
+  `WorkPeerTests`' too-long answers have no patience to wait out (`Timeout.InfiniteTimeSpan`), and `SessionsSayCommandTests`' unanswered
+  say has an hour's bound, so a call that waited it out never ends inside `Poll.Patience`; `PluginKitTests`' wire test has a ten-minute
+  grace past its run's 90 s limit, and a run past the limit is now ended. `SessionRequestChangeTests` holds the listing's period
+  against `SessionsWorld.DefaultWait`, both the code's own. `HeldFactsTests`' holder writes once the edit has found the lock held
+  (`RecordLock.Waiting`, the lock's path), where a loaded edit not yet begun passed its 400 ms without waiting at all.
+- **Verification:** the six classes, 219 tests, green once alone and three times at once (about 3 m 10 s each).
+
+## 2026-10-21 — The modules' and the service's signal waits were 2-60 seconds, the bound the driver's had lost to load (TESTCLOCK1)
+
+- **Symptom:** four fast-half tests failed on time alone beside loaded merges on 2026-10-18 (TESTWAIT5-7 and a
+  `SessionsOutliveTheirLookTests` case); the driver half was swept on 2026-10-19 (TESTWAIT7, TESTWAIT8, TESTPATIENCE1-2), and the
+  modules' fast half and the service's two test projects still carried the same shape.
+- **Root cause:** as TESTPATIENCE1's: a bound on a signal that arrives in milliseconds, which elapses only on failure, short enough
+  for a starved thread to reach it.
+- **Fix:** each project has `Poll.Patience` (two minutes, the driver tests' constant), and these read it. Modules: the hand-written
+  poll helpers (`DriverModuleBridge.UntilAsync` and the copies in `DriverLoopAddressTests`, `InstancePipeTests`, `PipeConfirmTests`,
+  `StateSlicesTests`, `LaterLaunchTests`, 15 s; `ReviewServingTests.Until` 10 s, `UpdateWatchTests.Until` 30 s,
+  `OffTheWindowTests.PumpUntil` and `DriverModuleOneFlightTests.AskedAsync` 10 s); the `Patience` of `DriverModuleOneFlightTests` and
+  `RouteFlightsTests` (30 s) and the `Within` of the Groups, Lines, Sweep and Work slice tests (10-20 s); `WaitAsync` on an answer or
+  a fact in `DriverModuleHelpStartTests` (16), `DriverModuleConsoleTests`, `DriverModuleToolsTests`, `DriverLoopAddressTests`,
+  `LastLinesTests`, `InstancePipeTests`, `OffTheWindowTests`, `SplashLiftTests`, `StateObservedTests`,
+  `DriverModuleSessionPermissionsTests` (5 s), `DriverModuleSessionsTests`, `StandInChromium` and `PipeTestKit`'s line reads; the
+  pipes' notifications and drains, `InstancePipeTests`' result poll (200 tries), `LaterLaunchTests`' hand-over, `TerminalOpenGateTests`'
+  hold and `FirstWindowTests`' socket wait. Service: `ChangeStreamTests`' answers and sampler deadlines (its stream waits are now the
+  stream's own longest, 30 s, where they were 10 s), `CheckoutFreshnessTests.Heard` (10 s), `NewerIndexTests`' open and the connector's
+  log and error polls, `ConnectorStartFailureTests`' exit, the three MCP filters' line reads, and the settings and housekeeping boxes'
+  defaults and stand-in loops (60 s, FLAKE1's). HTTP: `RealHost`'s start polls and status client (2 s), `ChangeStreamHostTests` and
+  `ChangeStreamProcessTests`' answers (their held waits 30 s), `InputEndStopTests`' watches, every `StopByInput` and exit wait that
+  expects a stop, the client timeouts in `ConfirmationTests` and `PersonDoorHostTests`, and `PersonKeyTests`' reads.
+  Left as they were: the windows in which nothing should happen (a `Task.Delay` before an `Assert.Empty`, `False` or equal count,
+  which load only lengthens), waits a test means to elapse (`PersonKeyTests`' 300 ms, `FirstWindowTests`' 0.3 s port, the not-asked
+  host's 2 s stop, a 400 ms stream wait), clean-up retries, and the elapsed bounds that state a claim (TESTCLOCK3). No assertion
+  changed.
+- **Verification:** the touched classes, filtered, three times each: modules 298 passed each (23-26 s), `Daoris.Service.Tests` 83
+  (1 m 8-12 s), `Daoris.Service.Http.Tests` 95 (1 m 9-18 s). Run on a quiet machine, not beside load, and not the whole halves.
 
 ## 2026-10-21 — Two branches built on main at once met only at the merge: a story on the old width helper (RAILLINE1, STORYGAP1)
 
@@ -2704,6 +2764,12 @@ repository.
 - **The trap:** the load beside the runs (a scratch spinner on every core) froze the owner's installed window, and the parent
   stopped it. Reproduce a flake with plain repeated runs of its one class, never with a load generator.
 - **Commit:** `e8498d33`.
+- **Followed (REALHOSTPORT1, 2026-10-21):** `RealHost.StartAsync` took its host as up once anything answered at its port, so a
+  port taken between `FreePort` and the bind could pass another host off as this one. `RealHost.Launch` now mints the host's
+  home id under its scratch before it starts, and a start takes the host as up only when `/api/status` names that home; an
+  answer naming another is said in the exit's or the timeout's message.
+  `StartFailureTests.A_host_whose_port_another_host_answers_is_not_taken_for_up` holds it (a stand-in answering a status over
+  another home holds the port).
 
 ## 2026-10-15 — A service test's SQLite connection was disposed just after it opened, by another class's pool clearing (FLAKE3)
 
@@ -4238,6 +4304,16 @@ building beside it: four of `setup-kit.test.ts`'s stub cases (the set-up quest a
 ANSWER1b) answered `session/prompt` with `fetch failed`, the stub's request to its stand-in quest door. The file passed
 31/31 alone, and `--rerun cli` on the open merge passed. Four cases of one file at once point at the stand-in door
 itself, not at each stub.
+*Looked into 2026-10-21 (FLAKE4), the cause not found:* each of those cases has a door of its own, so four at once
+point rather at the machine at that moment than at one door. Probed on Node 24.19 (undici 7.29): a stub's loop held
+12 s after its fetch starts, and the door's own loop held 12 s, each still answered; a second fetch from one process
+held 4.9 to 6 s past the door's 5 s keep-alive answered every time, undici noticing the close before reusing the
+socket; 96 real stub turns, 24 at once with every core busy, all took their quest; only a closed door refused
+(`ECONNREFUSED`). undici's 10 s connect timeout is ruled out too: ANSWER1b's error came inside the row's 10 s bound.
+The stub said only `fetch failed`, so the cause was lost each time. *Changed:* its `respond()` now says the door,
+the move and every cause beneath the error, and a failed turn answers that whole (`tools/rehearsal-kit.mjs`); a closed
+door's row and a loaded loop's (twelve turns at once, three rounds) hold it in `setup-kit.test.ts`. The next sighting
+carries its cause; FLAKE4b reads it.
 A page test, at UXTOAST1's merge, 2026-10-11 (a `ui.tsx` change), with a branch-worker building beside it: the web
 gate's `PluginsView.test.tsx` *keeps a trial's report on the page across a change of view* timed out at its 20 s, the
 file taking 58 s; alone the file passed 22/22 in 9 s. The first jsdom sighting: the page's suites are not real-process,

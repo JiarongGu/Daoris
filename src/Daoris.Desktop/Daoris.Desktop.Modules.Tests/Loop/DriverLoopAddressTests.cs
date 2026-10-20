@@ -91,7 +91,7 @@ public sealed class DriverLoopAddressTests : Bridge
         await using var client = await PipeClient.ConnectAsync(name);
         await client.HelloAsync(id);
         var pressed = await client.SendAsync("TEST.PRESS", "MOVE");
-        await press.Started.Task.WaitAsync(TimeSpan.FromSeconds(10));
+        await press.Started.Task.WaitAsync(Poll.Patience);
 
         var stopped = Task.Run(loop.Stop);
         await UntilAsync(() => pipe.IsStopping);
@@ -106,7 +106,7 @@ public sealed class DriverLoopAddressTests : Bridge
 
         press.Let.SetResult();
         Assert.True((await client.AnswerAsync(pressed)).GetProperty("success").GetBoolean());
-        await stopped.WaitAsync(TimeSpan.FromSeconds(30));
+        await stopped.WaitAsync(Poll.Patience);
         Assert.False(File.Exists(RunningAddress.PathIn(Home)));
     }
 
@@ -135,7 +135,7 @@ public sealed class DriverLoopAddressTests : Bridge
         await using var client = await PipeClient.ConnectAsync(name);
         await client.HelloAsync(HomeId());
         await client.SendAsync("TEST.PRESS", "MOVE");
-        await press.Started.Task.WaitAsync(TimeSpan.FromSeconds(10));
+        await press.Started.Task.WaitAsync(Poll.Patience);
 
         loop.Stop();
 
@@ -198,7 +198,7 @@ public sealed class DriverLoopAddressTests : Bridge
 
     private static async Task UntilAsync(Func<bool> condition)
     {
-        var patience = DateTime.UtcNow + TimeSpan.FromSeconds(15);
+        var patience = DateTime.UtcNow + Poll.Patience;
         while (!condition())
         {
             Assert.True(DateTime.UtcNow < patience, "the condition never held");

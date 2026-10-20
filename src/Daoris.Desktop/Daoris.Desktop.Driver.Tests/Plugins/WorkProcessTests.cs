@@ -197,7 +197,8 @@ public sealed class WorkProcessTests : IDisposable
 
     /// <summary>
     /// FABRIC-PERFORM1a, round 2: a plugin that stops reading its stdin is ended within its grace. Its pipe full, a call's write held the wire,
-    /// and the disposal's `shutdown` waited on it with no bound: the process outlived the lease and the loop that owned it.
+    /// and the disposal's `shutdown` waited on it with no bound: the process outlived the lease and the loop that owned it. TESTCLOCK2: the
+    /// grace is read on a clock the test moves, so the disposal waits until its grace and ends at it, where the machine's clock timed it.
     /// </summary>
     [Fact]
     public async Task A_plugin_that_stops_reading_is_ended_within_its_grace()
@@ -219,17 +220,20 @@ public sealed class WorkProcessTests : IDisposable
             setTimeout(() => process.exit(0), 90000);
             """);
 
-        var channel = await HookChannels.StartAsync(plugin, _home, _ => { }, CancellationToken.None, TimeSpan.FromSeconds(60));
+        var grace = new MovedClock();
+        var channel = await HookChannels.StartAsync(plugin, _home, _ => { }, CancellationToken.None, TimeSpan.FromSeconds(60), grace);
         var pid = int.Parse(File.ReadAllText(Path.Combine(plugin.Data, "pid")), System.Globalization.CultureInfo.InvariantCulture);
         var units = Enumerable.Range(0, 5000).Select(n => Unit($"quest/{n}")).ToList();
         var stuck = channel.WatchAsync(new WorkWatchFrame(1, true, units), CancellationToken.None);
         await Task.Delay(500);
         Assert.False(stuck.IsCompleted);
 
-        var clock = System.Diagnostics.Stopwatch.StartNew();
-        await channel.DisposeAsync().AsTask().WaitAsync(Poll.Patience);
+        var disposing = channel.DisposeAsync().AsTask();
+        await grace.Timed.WaitAsync(Poll.Patience);
+        Assert.False(disposing.IsCompleted);
+        grace.Advance(HookProcess.Grace);
 
-        Assert.True(clock.Elapsed < HookProcess.Grace + TimeSpan.FromSeconds(5), $"the disposal took {clock.Elapsed.TotalSeconds:0.#}s");
+        await disposing.WaitAsync(Poll.Patience);
         for (var wait = 0; wait < 50 && Running(pid); wait++) await Task.Delay(100);
         Assert.False(Running(pid));
     }

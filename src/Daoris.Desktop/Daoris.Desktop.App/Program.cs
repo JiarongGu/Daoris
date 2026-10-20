@@ -335,6 +335,8 @@ internal static class Program
         using var app = builder.Build();
         // And each choice the page sets from here, for the next start.
         using var keeping = KeptScheme.Keep(app.Services.GetRequiredService<IColorScheme>(), keptScheme, log);
-        app.Run();
+        // An exception leaving the application is written while the log is open (MACHINELOGAPPEND1, HOSTSTART2's finding for
+        // the desktop): the `using` above closes it as the exception leaves `Main`, which dropped the unhandled line.
+        log.RunWatched(() => app.Run());
     }
 }

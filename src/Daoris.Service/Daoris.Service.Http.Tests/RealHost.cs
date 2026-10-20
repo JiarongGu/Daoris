@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Net;
 using System.Net.Sockets;
+using System.Text.Json;
 using Daoris.Knowledge;
 using Daoris.Knowledge.Http;
 
@@ -24,10 +25,18 @@ public sealed class RealHost(Process process, string url, string scratch) : IDis
 
     private static string HomeOf(string scratch) => Path.Combine(scratch, "home");
 
+    /// <summary>The id of the home this host was started over, minted before it starts: what it answers at its status.</summary>
+    public string HomeId => HomeIdentity.Read(Home, out _)!;
+
     /// <summary>
-    /// Start the host and wait until it answers. <paramref name="starter"/> writes on its input first, as the shell writes
-    /// the person key before the host can answer anyone (PERSONDOOR1a).
+    /// Start the host and wait until it answers as itself. <paramref name="starter"/> writes on its input first, as the shell
+    /// writes the person key before the host can answer anyone (PERSONDOOR1a).
     /// </summary>
+    /// <remarks>
+    /// REALHOSTPORT1: the port is free when it is drawn, not when the host binds it, so whatever answers there may be another
+    /// host that took it between. Only an answer naming this host's own home, minted under its scratch before it started, is
+    /// taken for it; an answer naming another is said if the host then exits or never answers.
+    /// </remarks>
     public static async Task<RealHost> StartAsync(
         string scratch, IReadOnlyDictionary<string, string?> environment, Action<StreamWriter>? starter = null)
     {
@@ -38,22 +47,29 @@ public sealed class RealHost(Process process, string url, string scratch) : IDis
             host.Process.StandardInput.Flush();
         }
 
-        for (var attempt = 0; attempt < 150; attempt++)
+        var own = host.HomeId;
+        string? other = null;
+        for (var attempt = 0; attempt < Poll.Patience.TotalMilliseconds / 200; attempt++)
         {
-            if (await AnswersAsync(host.Url)) return host;
+            var home = await HomeAnsweredAsync(host.Url);
+            if (home == own) return host;
+            if (home is not null) other = home;
             if (host.Process.HasExited)
             {
                 var exit = host.Process.ExitCode;
                 host.Dispose();
-                throw new InvalidOperationException($"the host exited ({exit}) before it answered");
+                throw new InvalidOperationException($"the host exited ({exit}) before it answered{Elsewhere(other)}");
             }
 
             await Task.Delay(200);
         }
 
         host.Dispose();
-        throw new TimeoutException($"the host never answered at {host.Url}");
+        throw new TimeoutException($"the host never answered at {host.Url}{Elsewhere(other)}");
     }
+
+    private static string Elsewhere(string? other) =>
+        other is null ? "" : $"; another host answered at its port, over home {(other.Length == 0 ? "(none)" : other)}";
 
     /// <summary>
     /// Start the host and return at once, without waiting for it to answer: for a host that is not to answer (HOSTSTART1).
@@ -64,7 +80,10 @@ public sealed class RealHost(Process process, string url, string scratch) : IDis
         var repositories = Path.Combine(scratch, "repositories");
         Directory.CreateDirectory(HomeOf(scratch));
         Directory.CreateDirectory(repositories);
-        var url = $"http://127.0.0.1:{FreePort()}";
+        // Minted here, before the host starts, so its status names a home only this host was started over (REALHOSTPORT1).
+        if (HomeIdentity.Ensure(HomeOf(scratch), out var unread) is null) throw new InvalidOperationException(unread);
+        // An address the test names is the host's; otherwise a port free as it is drawn.
+        var url = environment.GetValueOrDefault("ASPNETCORE_URLS") ?? $"http://127.0.0.1:{FreePort()}";
 
         var start = new ProcessStartInfo("dotnet")
         {
@@ -184,17 +203,32 @@ public sealed class RealHost(Process process, string url, string scratch) : IDis
             .ToList();
     }
 
-    public static async Task<bool> AnswersAsync(string url)
+    public static async Task<bool> AnswersAsync(string url) => await HomeAnsweredAsync(url) is not null;
+
+    /// <summary>
+    /// The home a host at <paramref name="url"/> names in its status: null where nothing answers it, empty where an answer
+    /// names none.
+    /// </summary>
+    private static async Task<string?> HomeAnsweredAsync(string url)
     {
-        using var client = new HttpClient { Timeout = TimeSpan.FromSeconds(2) };
+        using var client = new HttpClient { Timeout = Poll.Patience };
         try
         {
             using var response = await client.GetAsync($"{url}/api/status");
-            return response.StatusCode == HttpStatusCode.OK;
+            if (response.StatusCode != HttpStatusCode.OK) return null;
+            using var status = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+            return status.RootElement.ValueKind == JsonValueKind.Object
+                && status.RootElement.TryGetProperty("home", out var home) && home.ValueKind == JsonValueKind.String
+                ? home.GetString()!
+                : "";
         }
         catch (Exception error) when (error is HttpRequestException or TaskCanceledException)
         {
-            return false;
+            return null;
+        }
+        catch (JsonException)
+        {
+            return "";
         }
     }
 
