@@ -906,7 +906,7 @@ test('the plan is the declared gates plus the rehearsals only the workflow runs,
   assert.ok(plan.every((gate) => !('before' in gate)));
 });
 
-test("this repository's plan runs every declared gate once, fast first, and the rehearsals and the web gate's two halves last", () => {
+test("this repository's plan runs every declared gate once, fast first, and the rehearsals and the web gates last", () => {
   const declared = (JSON.parse(readFileSync(join(repoRoot, 'daoris.gates.json'), 'utf8')) as { gates: { run: string }[] }).gates;
   const plan = tool.readPlan(repoRoot);
 
@@ -921,7 +921,7 @@ test("this repository's plan runs every declared gate once, fast first, and the 
     if (i > 0) assert.ok(rank.indexOf(gate.kind) >= rank.indexOf(plan[i - 1]!.kind), `${gate.name} runs before a faster kind`);
   });
   assert.deepEqual(plan.filter((gate) => gate.kind === 'rehearsal').map((gate) => gate.run),
-    ['npm run rehearse', 'npm run rehearse:family', 'npm run test:web:e2e', 'npm run test:web:unit', 'npm run rehearse:deploy']);
+    ['npm run rehearse', 'npm run rehearse:family', 'npm run test:web:e2e', 'npm run test:web:unit', 'npm run test:web:measured', 'npm run rehearse:deploy']);
   assert.ok(!('before' in plan.at(-1)!));
 });
 
@@ -990,6 +990,12 @@ test('a merge runs the baseline and what each changed path can reach, but the lo
     ["the driver's tests", ['src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/LandingTests.cs'], [...BASE, 'driver', 'driver-process', 'driver-process-git']],
     // GATE6: a browser test is the web gate's alone; no .NET suite reads it (the test below holds that).
     ['a browser test', ['src/Daoris.Web/e2e/platform.spec.ts'], [...BASE, 'web']],
+    // FLOWCHART1e: what the measured-box check draws reaches its gate beside the web shell's; its own specs and config reach it alone.
+    ...['flowLayout.ts', 'Flow.tsx', 'Flow.stories.tsx', 'flowFrames.tsx', 'ui.tsx', 'ui.stories.tsx', 'storyWidths.tsx'].map((name): [string, string[], string[]] =>
+      [`${name}, which the measured-box check draws`, [`src/Daoris.Web/src/design/${name}`], [...BASE, 'service', 'driver', 'modules', 'web', 'web-unit', 'web-measured']]),
+    ["the measured-box check's spec", ['src/Daoris.Web/measured/flow.spec.ts'], [...BASE, 'web-measured']],
+    ["the measured-box check's config", ['src/Daoris.Web/playwright.measured.config.ts'], [...BASE, 'web-measured']],
+    ['a design file it does not draw', ['src/Daoris.Web/src/design/theme.ts'], [...BASE, 'service', 'driver', 'modules', 'web', 'web-unit']],
     // MOD9c: the driver's console and occasion scans read every C# source of the modules and the app, from its source root.
     ['the modules', ['src/Daoris.Desktop/Daoris.Desktop.Modules/Bridge/DriverModule.cs'], [...BASE, 'driver', 'modules', 'modules-process', 'deployment']],
     ["the modules' loop", ['src/Daoris.Desktop/Daoris.Desktop.Modules/Loop/DriverLoop.cs'], [...BASE, 'driver', 'modules', 'modules-process', 'deployment']],
@@ -1087,6 +1093,15 @@ test('a merge runs the baseline and what each changed path can reach, but the lo
   // Lanes add up: a branch crossing two runs what either reaches.
   assert.deepEqual(runs(['docs/x.md', 'tools/release-rehearsal.mjs', 'src/Daoris.Desktop/Daoris.Desktop.App/Program.cs']),
     [...BASE, 'service', 'driver', 'modules', 'rehearse']);
+
+  // FLOWCHART1e's proof: a merge touching the flowchart's layout lists the measured-box check, saying what reached it, and
+  // --gated runs it.
+  const flowLayout = ['src/Daoris.Web/src/design/flowLayout.ts'];
+  const measured = selected(flowLayout, false, false).find((entry) => entry.gate.name === 'web-measured')!;
+  assert.equal(measured.reached, true);
+  assert.match(measured.why, /^in the CI beside; src\/Daoris\.Web\/src\/design\/flowLayout\.ts/);
+  assert.ok(runs(flowLayout).includes('web-measured'));
+  assert.equal(runs(['src/Daoris.Web/src/App.tsx']).includes('web-measured'), false, 'a page change it does not draw');
 
   // GATESLIM1's proof: a branch that changes no tool the parent alone runs skips the tool-tests gate; --full runs it, as a light suite.
   assert.equal(runs(['src/Daoris.Service/Daoris.Service.Core/Asks.cs']).includes('tool-tests'), false);
@@ -2248,7 +2263,7 @@ test("this repository's Process lane is the real-process halves and the rehearsa
   assert.deepEqual(repoPlan.filter((gate) => tool.isProcessLane(gate)).map((gate) => gate.name),
     ['driver-process', 'driver-process-git', 'modules-process', 'rehearse', 'rehearse-family', 'deployment']);
   assert.deepEqual(repoPlan.filter((gate) => !tool.isProcessLane(gate)).map((gate) => gate.name),
-    ['universal', 'code-map', 'orient-index', 'cli', 'tool-tests', 'service', 'devkit', 'driver', 'modules', 'web', 'web-unit']);
+    ['universal', 'code-map', 'orient-index', 'cli', 'tool-tests', 'service', 'devkit', 'driver', 'modules', 'web', 'web-unit', 'web-measured']);
   // By what each runs, as the long gates are: a renamed gate, a new Process half or a new rehearsal is still one.
   assert.equal(tool.isProcessLane({ name: 'renamed', run: 'dotnet test x --settings src/Daoris.Desktop/git.process.runsettings' }), true);
   assert.equal(tool.isProcessLane({ name: 'renamed', run: 'npm run rehearse:anything' }), true);
@@ -2299,16 +2314,16 @@ test("what a light gate's script builds behind its name is never a component the
 test("this repository's light lane runs the desktop suites' fast halves first, and the Process lane waits for what it shares", () => {
   const schedule = tool.laneSchedule(repoPlan);
   assert.deepEqual(schedule.light.map((gate) => gate.name),
-    ['driver', 'modules', 'universal', 'code-map', 'orient-index', 'cli', 'tool-tests', 'service', 'devkit', 'web', 'web-unit']);
+    ['driver', 'modules', 'universal', 'code-map', 'orient-index', 'cli', 'tool-tests', 'service', 'devkit', 'web', 'web-unit', 'web-measured']);
   // REHLANE1, REHLANE2, REHLANE2b: the release, family and deployment rehearsals right after the git half, which they run
   // beside, one after the other.
   assert.deepEqual(schedule.process.map((gate) => gate.name),
     ['driver-process', 'driver-process-git', 'rehearse', 'rehearse-family', 'deployment', 'modules-process']);
   for (const name of ['driver-process', 'driver-process-git', 'modules-process']) {
     // GATEORDER1: and for the heavy light gates (the CLI, service, devkit and web suites), so no Process half runs under their load.
-    assert.deepEqual(schedule.waits[name], { after: ['driver', 'modules', 'cli', 'service', 'devkit', 'web', 'web-unit'], component: 'src/Daoris.Desktop' }, name);
+    assert.deepEqual(schedule.waits[name], { after: ['driver', 'modules', 'cli', 'service', 'devkit', 'web', 'web-unit', 'web-measured'], component: 'src/Daoris.Desktop' }, name);
   }
-  assert.deepEqual(repoPlan.filter((gate) => tool.isHeavyGate(gate)).map((gate) => gate.name), ['cli', 'service', 'devkit', 'driver', 'modules', 'web', 'web-unit']);
+  assert.deepEqual(repoPlan.filter((gate) => tool.isHeavyGate(gate)).map((gate) => gate.name), ['cli', 'service', 'devkit', 'driver', 'modules', 'web', 'web-unit', 'web-measured']);
   assert.equal(tool.isHeavyGate({ name: 'x', run: 'node tools/orient-index.mjs --check' }), false);
   // A rehearsal builds what its command does not name. REHLANE2: and the release and deployment rehearsals' packs stage the
   // CLI's dist/, which the bin the cli gate's `daoris check` runs prefers.
@@ -2504,10 +2519,12 @@ test("this repository's light gates run three at once, never two that build one 
   assert.deepEqual(schedule.components['orient-index'], []);
   // WEBSPLIT1: the web gate's unit run builds none, so it runs beside any.
   assert.deepEqual(schedule.components['web-unit'], []);
+  // FLOWCHART1e: nor does the measured-box check, which serves the page's source with Vite.
+  assert.deepEqual(schedule.components['web-measured'], []);
   // GATELANES1's light order and GATEORDER1's waits hold.
   assert.deepEqual(schedule.light.map((gate) => gate.name),
-    ['driver', 'modules', 'universal', 'code-map', 'orient-index', 'cli', 'tool-tests', 'service', 'devkit', 'web', 'web-unit']);
-  assert.deepEqual(schedule.waits['driver-process']!.after, ['driver', 'modules', 'cli', 'service', 'devkit', 'web', 'web-unit']);
+    ['driver', 'modules', 'universal', 'code-map', 'orient-index', 'cli', 'tool-tests', 'service', 'devkit', 'web', 'web-unit', 'web-measured']);
+  assert.deepEqual(schedule.waits['driver-process']!.after, ['driver', 'modules', 'cli', 'service', 'devkit', 'web', 'web-unit', 'web-measured']);
   // GATEBUILD1: each Process half reuses the build of its own test project's fast half.
   assert.deepEqual(schedule.reuses, { 'driver-process': 'driver', 'driver-process-git': 'driver', 'modules-process': 'modules' });
 });
