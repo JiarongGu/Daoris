@@ -710,14 +710,17 @@ public sealed partial class HelpCoverageTests
         ("ai", "useSetHelpMode", null, new Exempt(
             "Ask Daoris's access mode is the person's choice alone, never made for them (D183 point 2): no proposal names it, so "
             + "a helper can never widen its own access, nor narrow the person's choice.")),
-        // HELPMODE1c2b: restricted mode's configured access, each housekeeping operation chosen under Ask Daoris's access.
+        // HELPMODE1c2b: restricted mode's configured access, each housekeeping operation, and since HELPMODE1c3 each chosen setting,
+        // chosen under Ask Daoris's access.
         ("ai", "useSetHelpGrant", null, new Exempt(
             "What Ask Daoris's own tools may do is the person's grant alone (D183's HELPMODE1c2a note): no proposal names it, so a "
-            + "helper can never grant itself housekeeping, nor take back what the person granted.")),
+            + "helper can never grant itself housekeeping or a setting, nor take back what the person granted.")),
 
         ("driver", "useSetNotify", null, new Door("setting", "notify")),
         ("driver", "useSetStrikes", null, new Door("setting", "strikes")),
         ("driver", "useSetCoolOff", null, new Door("setting", "cooloff")),
+        // CAPSET1: the cap of sessions Daoris starts at once, set from the card as `setting cap` already proposes it.
+        ("driver", "useSetCap", null, new Door("setting", "cap")),
         // AUTONOMY1d: this machine's sessions' access, the level under every workspace's and repository's.
         ("driver", "useSetAccess", null, new Exempt(SessionAccess)),
         // UPDATE1e: the install's update, *Update when idle*, *Update now* and *Not now*, read once the hooks exported as

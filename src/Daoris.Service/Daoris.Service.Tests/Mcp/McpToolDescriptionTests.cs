@@ -299,6 +299,27 @@ public sealed partial class McpToolDescriptionTests
         Assert.DoesNotContain(ToolNames(), name => name.Contains("recovery") || name.Contains("force"));
     }
 
+    /// <summary>
+    /// HELPMODE1c3 (the Ask Daoris modes design §4.1): the chosen settings' tools are Ask Daoris's alone and act only as the person
+    /// granted each setting; each changes it with no Apply, through the checks and writer Settings uses, and the change is recorded.
+    /// The five ordinary settings and nothing else: never the mode, a grant, an account or a safeguard.
+    /// </summary>
+    [Fact]
+    public void The_chosen_settings_tools_say_whose_they_are_and_that_each_change_is_recorded()
+    {
+        var tools = ToolNames().Where(name => name.StartsWith("settings_", StringComparison.Ordinal)).Order(StringComparer.Ordinal).ToList();
+        string Said(string tool) => string.Join(" ", Descriptions().Where(d => d.Tool == tool).Select(d => d.Text));
+
+        Assert.Equal(["settings_cap", "settings_cooloff", "settings_language", "settings_notify", "settings_timeout"], tools);
+        Assert.All(tools, tool => Assert.Contains("Ask Daoris only", Said(tool)));
+        Assert.All(tools, tool => Assert.Contains("granted", Said(tool)));
+        Assert.All(tools, tool => Assert.Contains("no Apply", Said(tool)));
+        Assert.All(tools, tool => Assert.Contains("recorded", Said(tool)));
+        Assert.Contains("repository or a workspace", Said("settings_language"));
+        Assert.DoesNotContain(ToolNames(), name => name.StartsWith("settings_", StringComparison.Ordinal)
+            && (name.Contains("mode") || name.Contains("grant") || name.Contains("account")));
+    }
+
     // Not after `#`: an entry id's example (`…/DECISIONS.md#D12`) is an anchor in the reader's own
     // repository, not a citation of this one's.
     [GeneratedRegex(@"(?<![#\w])D\d{1,3}\b")]

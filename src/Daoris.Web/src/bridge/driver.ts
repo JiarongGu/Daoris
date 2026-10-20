@@ -59,6 +59,8 @@ export type DriverState = {
    * Absent on a shell older than it, and the setting is then not offered.
    */
   coolOff?: number;
+  /** How many sessions Daoris starts at once on this machine (CAPSET1); absent on a shell older than the setting's route. */
+  cap?: number;
   /** Quests the person restarted, by id, and the failure count each was restarted at. */
   forgiven: Record<string, number>;
   /**
@@ -77,11 +79,13 @@ export type DriverState = {
   helpMode?: string;
   /**
    * Restricted mode's configured access as this machine chose it (HELPMODE1c2b): each grant the driver serves, by its id, with the
-   * operations chosen and those it acts on (`built`); housekeeping's today. What each start of Ask Daoris and every call of its
-   * tools read; `pending` while a conversation running here was handed another choice, which its next turn takes (ACCESSSWAP1).
-   * Absent on a shell older than it, which draws no configured access.
+   * operations chosen and those it acts on (`built`); housekeeping's, and the chosen settings' (HELPMODE1c3). What each start of Ask
+   * Daoris and every call of its tools read; `pending` while a conversation running here was handed another choice, which its next
+   * turn takes (ACCESSSWAP1). And the browser's, read only from its plugin's approval: no `built`, `changed` since approval, and
+   * the `plugin` whose tab changes it, absent where none here offers it. Absent on a shell older than it, which draws no configured
+   * access.
    */
-  helpGrants?: { id: string; chosen: string[]; built?: string[]; pending?: boolean }[];
+  helpGrants?: { id: string; chosen: string[]; built?: string[]; pending?: boolean; changed?: boolean; plugin?: string | null }[];
   /**
    * The Ask Daoris conversations running under another access than the one chosen (ACCESSSWAP1, D183 point 2): each ends at its
    * turn's end, and its next words resume it under the access chosen, so the panel keeps it in view as it ends. Absent on an older
@@ -384,6 +388,9 @@ export const useSetStrikes = () => useDriverChange<{ strikes: number }>('SET_STR
  * `cooloff` `daoris driver cooloff <minutes>` edits; less than one is the driver's refusal.
  */
 export const useSetCoolOff = () => useDriverChange<{ minutes: number }>('SET_COOLOFF');
+
+/** How many sessions Daoris starts at once (CAPSET1): the same `cap` `daoris driver cap <n>` edits; less than one is refused. */
+export const useSetCap = () => useDriverChange<{ cap: number }>('SET_CAP');
 
 /**
  * *Try again* (RETRY1; SESSUX1b, D126 §3.4): let a parked quest run again, counting from where it stands, or release one

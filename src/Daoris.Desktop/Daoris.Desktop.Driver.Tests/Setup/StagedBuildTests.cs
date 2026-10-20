@@ -422,21 +422,30 @@ public sealed class StagedBuildTests : IDisposable
         if (!OperatingSystem.IsWindows()) return;
         Stage();
 
+        // Let go by the swap's own clock, as the longer hold below is: a thread-pool task's delay was starved past the whole wait
+        // on a loaded machine, and the swap rolled back (the full set on 9717f8d).
         var held = new FileStream(Path.Combine(_install, "app", "Daoris.Desktop.App.dll"), FileMode.Open, FileAccess.Read, FileShare.None);
-        var letGo = Task.Run(async () =>
+        var now = Start;
+        SwapOutcome outcome;
+        try
         {
-            await Task.Delay(300);
+            outcome = new InstallSwap(_install, start: _ =>
+            {
+                Assert.True(StagedBuild.Confirm(_install, 4242));
+                return 4242;
+            }, alive: _ => true, clock: () => now, sleep: span =>
+            {
+                now += span;
+                if (now - Start >= TimeSpan.FromMilliseconds(300)) held.Dispose();
+            })
+            {
+                HeldWithin = TimeSpan.FromSeconds(10), HeldWait = TimeSpan.FromMilliseconds(50),
+            }.Run([]);
+        }
+        finally
+        {
             held.Dispose();
-        });
-        var outcome = new InstallSwap(_install, start: _ =>
-        {
-            Assert.True(StagedBuild.Confirm(_install, 4242));
-            return 4242;
-        }, alive: _ => true)
-        {
-            HeldWithin = TimeSpan.FromSeconds(10), HeldWait = TimeSpan.FromMilliseconds(50),
-        }.Run([]);
-        letGo.Wait();
+        }
 
         Assert.Equal(SwapPhase.Installed, outcome.Phase);
         Assert.Equal("new library", Read("app/Daoris.Desktop.App.dll"));

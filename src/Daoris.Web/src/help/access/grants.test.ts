@@ -16,10 +16,17 @@ describe('the grants', () => {
   it('are the table’s five, in its order, each operation chosen on its own and the checkouts’ reads one group', () => {
     expect(GRANTS.map((grant) => grant.id)).toEqual(['housekeeping', 'browser', 'checkouts', 'settings', 'shell']);
     expect(spec('housekeeping').operations).toEqual(['inspect', 'clean-up', 'discard-branch', 'drop-recovery']);
-    expect(spec('browser').operations).toEqual(['reads', 'click', 'type', 'press', 'fill', 'select', 'check', 'drag', 'upload', 'dialog']);
     expect(spec('checkouts').operations).toEqual(['read']);
     expect(spec('settings').operations).toEqual(['notify', 'language', 'timeout', 'cap', 'cooloff']);
     expect(spec('shell').operations).toEqual([]);
+  });
+
+  // HELPMODE1c3 (the modes design §4.1's decided note): a grant that configures a plugin is set on that plugin's own tab, so the
+  // browser offers nothing to choose here; the others are Daoris's own and stay set here.
+  it('set the browser on its plugin’s tab alone, with nothing chosen here', () => {
+    expect(GRANTS.filter((grant) => grant.onPlugin).map((grant) => grant.id)).toEqual(['browser']);
+    expect(spec('browser').operations).toEqual([]);
+    expect(spec('browser').door).toBe('manage');
   });
 
   it('start off, the browser waiting for approval and the checkouts on, inherited', () => {

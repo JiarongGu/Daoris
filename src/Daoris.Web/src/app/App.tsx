@@ -438,7 +438,8 @@ export function App() {
   const presence: DriverPresence = driver.data
     ? (driver.data.ready === false ? 'starting' : 'running')
     : driver.isError ? 'stopped' : 'absent';
-  const liveSessions = (running.data ?? []).filter((s) => SESSION_ACTIVE.has(s.state)).length;
+  // Not answered yet is no count, never a zero (PUSHUX1).
+  const liveSessions = running.data === undefined ? null : running.data.filter((s) => SESSION_ACTIVE.has(s.state)).length;
   // Overview's badge, the band's own rows as .NET judged them (PUSH1d4) — two answers to "how many need me" would disagree the
   // first time either was edited. Sessions' badge is its own sessions only (U20): those parked asking and the quests parked on
   // their failed sessions, judged beside the rows. Nothing before the first judgement, which is no count yet.

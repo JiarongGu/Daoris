@@ -23,12 +23,13 @@ const CHOSEN: HelpGrantChoice[] = [
 
 const ALL: HelpGrantId[] = ['housekeeping', 'browser', 'checkouts', 'settings', 'shell'];
 
-function show({ agent = CLAUDE, grants = CHOSEN, opened, onChoose = vi.fn() }: {
+function show({ agent = CLAUDE, grants = CHOSEN, opened, onChoose = vi.fn(), onManage = vi.fn() }: {
   agent?: HelpGrantAgent; grants?: HelpGrantChoice[]; opened?: HelpGrantId[]; onChoose?: () => void;
+  onManage?: (grant: HelpGrantId, plugin: string | null) => void;
 } = {}) {
   return render(
     <Tooltip.Provider>
-      <ConfiguredAccess agent={agent} grants={grants} opened={opened} onChoose={onChoose} />
+      <ConfiguredAccess agent={agent} grants={grants} opened={opened} onChoose={onChoose} onManage={onManage} />
     </Tooltip.Provider>,
   );
 }
@@ -88,17 +89,34 @@ describe.each(['en', 'zh'])('configured access in %s', (language) => {
     expect(onChoose).toHaveBeenCalledWith('housekeeping', 'inspect', false);
   });
 
-  it('asks approval of the browser’s reads together and of each write on its own, saying signed-in pages may be affected', async () => {
+  // HELPMODE1c3 (the modes design §4.1's decided note): the browser's grant is its plugin's approval, made on that plugin's tab, the
+  // one place its record is changed; this row shows that record's state read only and leads there, with no second set of boxes.
+  it('draws the browser read only from its plugin’s approval, its door leading to the plugin’s tab, with no boxes', async () => {
     await i18n.changeLanguage(language);
-    show({ grants: [{ id: 'browser', chosen: [] }], opened: ['browser'] });
+    const onManage = vi.fn();
+    show({ grants: [{ id: 'browser', chosen: [], plugin: 'in-app-browser' }], opened: ['browser'], onManage });
 
     expect(within(row('browser')).getByText(i18n.t('help.grants.state.needs-approval'))).toBeInTheDocument();
     expect(within(row('browser')).getByText(i18n.t('help.grants.signedIn'))).toBeInTheDocument();
     expect(within(row('browser')).getByText(i18n.t('help.grants.never.browser'))).toBeInTheDocument();
-    expect(within(row('browser')).getAllByRole('checkbox')).toHaveLength(10);
-    for (const write of ['click', 'type', 'press', 'fill', 'select', 'check', 'drag', 'upload', 'dialog']) {
-      expect(box('browser', write)).not.toBeDisabled();
-    }
+    expect(within(row('browser')).getByText(i18n.t('help.grants.onPlugin'))).toBeInTheDocument();
+    expect(within(row('browser')).queryAllByRole('checkbox')).toEqual([]);
+
+    const door = within(row('browser')).getByRole('button', { name: (name) => name.startsWith(i18n.t('help.grants.door.manage')) });
+    expect(door).not.toHaveAttribute('aria-expanded');
+    await userEvent.click(door);
+    expect(onManage).toHaveBeenCalledWith('browser', 'in-app-browser');
+    expect(within(row('browser')).queryAllByRole('checkbox')).toEqual([]);
+  });
+
+  it('says where no plugin here offers Ask Daoris the browser, its door leading to Plugins', async () => {
+    await i18n.changeLanguage(language);
+    const onManage = vi.fn();
+    show({ grants: [{ id: 'browser', chosen: [] }], onManage });
+
+    expect(within(row('browser')).getByText(i18n.t('help.grants.noPlugin'))).toBeInTheDocument();
+    await userEvent.click(within(row('browser')).getByRole('button', { name: (name) => name.startsWith(i18n.t('help.grants.door.manage')) }));
+    expect(onManage).toHaveBeenCalledWith('browser', null);
   });
 
   it('says a browser changed since it was approved apart from one never approved', async () => {
@@ -132,25 +150,26 @@ describe.each(['en', 'zh'])('configured access in %s', (language) => {
     expect(within(row('shell')).queryAllByRole('checkbox')).toEqual([]);
   });
 
-  it('says on Codex that the browser’s writes and the checkouts’ scoped reads cannot be held, with why, their boxes disabled', async () => {
+  it('says on Codex that the browser and the checkouts’ scoped reads are unavailable until mediated, with why, their boxes disabled', async () => {
     await i18n.changeLanguage(language);
     show({ agent: CODEX, opened: ALL });
 
     for (const id of ['browser', 'checkouts'] as const) {
       expect(within(row(id)).getByText(i18n.t('help.grants.state.unavailable'))).toBeInTheDocument();
       expect(within(row(id)).queryByText(i18n.t('help.grants.state.on'))).toBeNull();
-      for (const each of within(row(id)).getAllByRole('checkbox')) {
-        expect(each).toBeDisabled();
-        // Its sentence reads as disabled too, not only its box.
-        expect(each.closest('label')!.className).toContain('cursor-not-allowed');
-      }
+    }
+    for (const each of within(row('checkouts')).getAllByRole('checkbox')) {
+      expect(each).toBeDisabled();
+      // Its sentence reads as disabled too, not only its box.
+      expect(each.closest('label')!.className).toContain('cursor-not-allowed');
     }
     expect(within(row('browser')).getByText(i18n.t('help.grants.why.browser', { agent: 'Codex' }))).toBeInTheDocument();
     expect(within(row('checkouts')).getByText(i18n.t('help.grants.why.checkouts', { agent: 'Codex' }))).toBeInTheDocument();
 
-    // Daoris holds its typed tools itself, so they hold on Codex too.
+    // Daoris holds its typed tools itself, so they hold on Codex too: housekeeping, and the chosen settings.
     expect(within(row('housekeeping')).getByText(i18n.t('help.grants.state.on'))).toBeInTheDocument();
     expect(box('housekeeping', 'drop-recovery')).not.toBeDisabled();
+    expect(box('settings', 'notify')).not.toBeDisabled();
   });
 
   it('holds both on Claude, saying no grant unavailable', async () => {

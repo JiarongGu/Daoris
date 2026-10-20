@@ -24,6 +24,8 @@
   "quests.card.files": "{{count}} 个文件",
   "quests.card.files_other": "{{count}} 个文件",
   "quests.card.follows": "承接 #{{id}}",
+  "quests.card.fromAsk": "需求 #{{id}}",
+  "quests.card.fromAskHint": "这个委托来自的需求。",
   "quests.card.lanes": "泳道 {{lanes}}",
   "quests.card.lanes_other": "泳道 {{lanes}}",
   "quests.card.lanesHint": "它委托的是 {{repository}} 的这些泳道：交给这些泳道的会话去做，而不是整个仓库。",

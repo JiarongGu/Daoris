@@ -107,8 +107,15 @@ export const RestrictedWithConfiguredAccess: Story = {
     access: { mode: 'restricted', confirming: false, adds: [], onPick: () => {}, onEnable: () => {}, onCancel: () => {} },
     grants: {
       agent: { name: 'Claude Code', rules: true },
-      grants: [{ id: 'housekeeping', chosen: ['inspect'] }, { id: 'checkouts', chosen: ['read'] }],
+      grants: [
+        { id: 'housekeeping', chosen: ['inspect'] },
+        { id: 'browser', chosen: [], plugin: 'in-app-browser' },
+        { id: 'checkouts', chosen: ['read'] },
+        { id: 'settings', chosen: ['notify'] },
+      ],
+      built: { housekeeping: ['inspect', 'clean-up', 'discard-branch'], settings: ['notify', 'language', 'timeout', 'cap', 'cooloff'] },
       onChoose: () => {},
+      onManage: () => {},
     },
   },
 };

@@ -15,18 +15,16 @@ const TONE: Record<HelpGrantState, 'neutral' | 'open' | 'done'> = {
   off: 'neutral', on: 'done', 'needs-approval': 'open', changed: 'open', unavailable: 'neutral', later: 'neutral',
 };
 
-/** The browser's writes, chosen each on its own after its reads (§4.1). */
-const READS = 'reads';
-
 /**
  * Ask Daoris's configured access in restricted mode: the five grants of §4.1 in its order. Each says what it reaches in a
  * sentence, its default and its state, and opens its operations from its door (*Choose operations*, *Manage*, *Choose
- * settings*): each a box of its own where the table chooses them apart, one box for a group. A grant this agent cannot be
- * held to says *unavailable on this agent* and why, its boxes disabled, whatever is chosen; the browser says signed-in
- * pages may be affected; and a choice a conversation running did not start with is marked as taking its next turn (ACCESSSWAP1),
- * since *What it has* keeps what the start was handed (§4.1's traps).
+ * settings*): each a box of its own where the table chooses them apart, one box for a group. A grant set on a plugin's own tab,
+ * the browser's, is drawn read only from that record and its *Manage* leads to the tab, never a second set of boxes (HELPMODE1c3).
+ * A grant this agent cannot be held to says *unavailable on this agent* and why, its boxes disabled, whatever is chosen; the
+ * browser says signed-in pages may be affected; and a choice a conversation running did not start with is marked as taking its
+ * next turn (ACCESSSWAP1), since *What it has* keeps what the start was handed (§4.1's traps).
  */
-export function ConfiguredAccess({ agent, grants, opened = [], busy = false, built, onChoose }: {
+export function ConfiguredAccess({ agent, grants, opened = [], busy = false, built, onChoose, onManage }: {
   /** The agent Ask Daoris runs on: whether it takes permission rules decides what it can be held to. */
   agent: HelpGrantAgent;
   /** What this machine has chosen; a grant not named has nothing chosen. */
@@ -40,6 +38,8 @@ export function ConfiguredAccess({ agent, grants, opened = [], busy = false, bui
    */
   built?: Partial<Record<HelpGrantId, readonly string[]>>;
   onChoose: (grant: HelpGrantId, operation: string, chosen: boolean) => void;
+  /** A grant set on a plugin's own tab, its door pressed: the plugin whose tab it is, or none where no plugin here offers it. */
+  onManage?: (grant: HelpGrantId, plugin: string | null) => void;
 }) {
   const { t } = useTranslation();
   const title = useId();
@@ -59,6 +59,7 @@ export function ConfiguredAccess({ agent, grants, opened = [], busy = false, bui
             busy={busy}
             built={built?.[spec.id]}
             onChoose={onChoose}
+            onManage={onManage}
           />
         ))}
       </ul>
@@ -66,11 +67,15 @@ export function ConfiguredAccess({ agent, grants, opened = [], busy = false, bui
   );
 }
 
-/** One grant's row: its name, state and door; its reach and default; why it is unavailable; and, opened, its operations. */
-function Grant({ spec, choice, agent, open: openAtFirst, busy, built, onChoose }: {
+/**
+ * One grant's row: its name, state and door; its reach and default; why it is unavailable; and, opened, its operations. One set on
+ * a plugin's own tab has no operations here: its door leads to that tab, and its row says so.
+ */
+function Grant({ spec, choice, agent, open: openAtFirst, busy, built, onChoose, onManage }: {
   spec: GrantSpec; choice: HelpGrantChoice | undefined; agent: HelpGrantAgent; open: boolean; busy: boolean;
   built: readonly string[] | undefined;
   onChoose: (grant: HelpGrantId, operation: string, chosen: boolean) => void;
+  onManage?: (grant: HelpGrantId, plugin: string | null) => void;
 }) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(openAtFirst);
@@ -112,7 +117,19 @@ function Grant({ spec, choice, agent, open: openAtFirst, busy, built, onChoose }
         <span className="text-body font-medium text-ink">{name}</span>
         <Pill tone={TONE[state]}>{t(`help.grants.state.${state}`)}</Pill>
         {choice?.pending && <Pill title={t('help.grants.pendingWhy')}>{t('help.grants.pending')}</Pill>}
-        {spec.door && (
+        {spec.door && spec.onPlugin && onManage && (
+          // HELPMODE1c3: its record is the plugin's, changed on that plugin's tab alone, so the door goes there and opens nothing here.
+          <Button
+            variant="ghost"
+            className="ml-auto text-small text-accent"
+            aria-label={t('help.grants.doorFor', { door: t(`help.grants.door.${spec.door}`), grant: name })}
+            onClick={() => onManage(spec.id, choice?.plugin ?? null)}
+          >
+            {t(`help.grants.door.${spec.door}`)}
+            <Icon name="chevronRight" size={12} />
+          </Button>
+        )}
+        {spec.door && !spec.onPlugin && (
           <Button
             variant="ghost"
             className="ml-auto text-small text-accent"
@@ -137,19 +154,15 @@ function Grant({ spec, choice, agent, open: openAtFirst, busy, built, onChoose }
       {spec.id === 'browser' && (
         <p className="m-0 border-l-[3px] border-warn pl-2.5 text-small text-ink">{t('help.grants.signedIn')}</p>
       )}
+      {spec.onPlugin && (
+        <>
+          <p className="m-0 text-small text-ink-soft">{t(choice?.plugin ? 'help.grants.onPlugin' : 'help.grants.noPlugin')}</p>
+          <p className="m-0 text-meta text-ink-faint"><Inline text={t(`help.grants.never.${spec.id}`)} /></p>
+        </>
+      )}
       {open && spec.operations.length > 0 && (
         <div id={panel} className="mt-1 grid min-w-0 gap-1.5 rounded-control border border-line bg-raised px-3 py-2">
-          {spec.id === 'browser' ? (
-            <>
-              {box(READS)}
-              <p className="m-0 text-small text-ink-soft">{t('help.grants.writes')}</p>
-              <div className="flex min-w-0 flex-wrap gap-x-4 gap-y-1.5">
-                {spec.operations.filter((operation) => operation !== READS).map(box)}
-              </div>
-            </>
-          ) : (
-            <div className="grid min-w-0 gap-1.5">{spec.operations.map(box)}</div>
-          )}
+          <div className="grid min-w-0 gap-1.5">{spec.operations.map(box)}</div>
           <p className="m-0 text-meta text-ink-faint"><Inline text={t(`help.grants.never.${spec.id}`)} /></p>
         </div>
       )}

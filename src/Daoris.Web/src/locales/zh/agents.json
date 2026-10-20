@@ -139,5 +139,6 @@
   "agents.settings.summary.set_other": "{{count}} 个账户有自己的设置",
   "agents.usage.summary": "已测量 {{count}} 个会话",
   "agents.usage.summary_other": "已测量 {{count}} 个会话",
-  "agents.usage.none": "尚未测量"
+  "agents.usage.none": "尚未测量",
+  "agents.usage.reading": "正在读取各账户的用量…"
 }

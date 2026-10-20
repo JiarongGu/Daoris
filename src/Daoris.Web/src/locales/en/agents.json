@@ -139,5 +139,6 @@
   "agents.settings.summary.set_other": "{{count}} accounts set their own",
   "agents.usage.summary": "{{count}} session measured",
   "agents.usage.summary_other": "{{count}} sessions measured",
-  "agents.usage.none": "nothing measured yet"
+  "agents.usage.none": "nothing measured yet",
+  "agents.usage.reading": "reading what each account carried…"
 }

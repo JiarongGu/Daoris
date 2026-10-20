@@ -22,6 +22,7 @@ const FACTS: DriverFacts = {
   notify: true,
   strikes: 3,
   coolOff: 60,
+  cap: 2,
   machineAccess: { full: false, pauses: [{ pause: 'goAheads', value: 'never' }] },
   update: UPDATE,
 };
@@ -32,7 +33,7 @@ const meta: Meta<typeof DriverCards> = {
   args: {
     facts: FACTS,
     busy: { access: false, update: false },
-    onGo: nothing, onNotify: nothing, onStrikes: nothing, onCoolOff: nothing, onAccess: nothing, onSayUpdate: nothing,
+    onGo: nothing, onNotify: nothing, onStrikes: nothing, onCoolOff: nothing, onCap: nothing, onAccess: nothing, onSayUpdate: nothing,
   },
   decorators: [storyWidths.wide],
 };

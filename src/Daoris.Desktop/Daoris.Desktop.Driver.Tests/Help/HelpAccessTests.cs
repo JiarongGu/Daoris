@@ -162,16 +162,24 @@ public sealed class HelpAccessTests : IDisposable
     /// ACCESSSWAP1 (D183 point 2, replacing HELPMODE1a2's next start): a change under a running conversation is said as what changed,
     /// its mode and its housekeeping grant each, and when it applies: its agent ends at its turn's end, never mid-turn, or now where it
     /// is idle, and its next words resume the same conversation under the new access. Under the access chosen there is nothing to say.
+    /// HELPMODE1c3: the chosen settings are compared and said the same way.
     /// </summary>
     [Fact]
     public void A_change_while_a_conversation_runs_says_what_changed_and_that_its_next_turn_takes_it()
     {
-        var widened = HelpSwap.Changed(HelpModes.Restricted, [], HelpModes.Full, [ConfiguredAccess.Inspect, ConfiguredAccess.CleanUp]);
+        static ConfiguredAccess Of(string[] housekeeping, params string[] settings) => new(housekeeping) { Settings = settings };
+        var none = ConfiguredAccess.None;
+        var widened = HelpSwap.Changed(HelpModes.Restricted, none, HelpModes.Full, Of([ConfiguredAccess.Inspect, ConfiguredAccess.CleanUp]));
 
         Assert.Equal("its mode is now full access, and its housekeeping grants `inspect`, `clean-up` now", widened);
-        Assert.Equal("its mode is now restricted", HelpSwap.Changed(HelpModes.Full, [], HelpModes.Restricted, []));
-        Assert.Equal("its housekeeping grants nothing now", HelpSwap.Changed(HelpModes.Restricted, [ConfiguredAccess.Inspect], "RESTRICTED", []));
-        Assert.Null(HelpSwap.Changed(HelpModes.Full, [ConfiguredAccess.Inspect], HelpModes.Full, [ConfiguredAccess.Inspect]));
+        Assert.Equal("its mode is now restricted", HelpSwap.Changed(HelpModes.Full, none, HelpModes.Restricted, none));
+        Assert.Equal("its housekeeping grants nothing now", HelpSwap.Changed(HelpModes.Restricted, Of([ConfiguredAccess.Inspect]), "RESTRICTED", none));
+        Assert.Null(HelpSwap.Changed(HelpModes.Full, Of([ConfiguredAccess.Inspect]), HelpModes.Full, Of([ConfiguredAccess.Inspect])));
+        Assert.Equal("its chosen settings are `notify`, `cap` now",
+            HelpSwap.Changed(HelpModes.Restricted, Of([ConfiguredAccess.Inspect]), HelpModes.Restricted,
+                Of([ConfiguredAccess.Inspect], ConfiguredAccess.Notify, ConfiguredAccess.Cap)));
+        Assert.Equal("its chosen settings are none now", HelpSwap.Changed(HelpModes.Restricted, Of([], ConfiguredAccess.Cap), HelpModes.Restricted, none));
+        Assert.Null(HelpSwap.Changed(HelpModes.Restricted, Of([], ConfiguredAccess.Cap), HelpModes.Restricted, Of([], ConfiguredAccess.Cap)));
 
         var turning = HelpSwap.Said(widened!, idle: false);
         Assert.StartsWith("— Ask Daoris's access changed under this conversation: its mode is now full access", turning);

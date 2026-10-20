@@ -444,6 +444,15 @@ public sealed record DriverConfig(
     public DriverConfig WithCoolOff(int? minutes) =>
         minutes is < 1 ? throw new DriverException(CoolOffRefusal) : this with { CoolOffMinutes = minutes };
 
+    /// <summary>The refusal both doors say for a cap under one.</summary>
+    public const string CapRefusal =
+        "the cap is a whole number of sessions, at least 1 — a cap of zero would start no session at all.";
+
+    /// <summary>Set how many sessions Daoris starts at once on this machine (CAPSET1, D130's CAPCOUNT1 note).</summary>
+    /// <exception cref="DriverException">Less than one: no session would ever start.</exception>
+    public DriverConfig WithCap(int cap) =>
+        cap < 1 ? throw new DriverException(CapRefusal) : this with { Cap = cap };
+
     /// <summary>Which harness Ask Daoris runs on here, or null for none.</summary>
     public DriverConfig WithHelper(string? adapter) =>
         this with { HelperAdapter = string.IsNullOrWhiteSpace(adapter) ? null : adapter.Trim() };

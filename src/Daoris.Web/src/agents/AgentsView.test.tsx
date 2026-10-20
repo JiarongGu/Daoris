@@ -1568,6 +1568,19 @@ describe('the Agents place', () => {
     expect(screen.queryByText(/context$/)).toBeNull();
   });
 
+  /** PUSHUX1: usage not answered yet is read as reading, never as nothing measured. */
+  it('says usage is being read, never nothing measured, before it is answered', async () => {
+    invoke.mockImplementation(async (_module: string, type: string) => {
+      if (type === 'HARNESSES') return ROSTER;
+      if (type === 'USAGE') return new Promise(() => {});
+      return WIRING;
+    });
+    place();
+
+    expect(await screen.findByText('reading what each account carried…')).toBeTruthy();
+    expect(screen.queryByText('nothing measured yet')).toBeNull();
+  });
+
   /**
    * UX5 U72 and D150 §2.4: the Agents menu's *Usage* opens the agent's page at its usage, open and in view once it is
    * drawn, and says it has, so a later visit opens at the top again.

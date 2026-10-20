@@ -5,6 +5,19 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-20 — Two fast tests timed by the wall clock failed under a loaded machine (FLAKE1)
+
+- **Symptom:** the full set on 9717f8d failed `StagedBuildTests.A_file_held_in_app_for_a_moment_does_not_roll_the_swap_back`
+  (the swap rolled back) and the rehearsal kit's "a command its timeout ends is ended with what it started" (the command never
+  said its id within its timeout), with six of the install's sessions, three builders and the CI's own gates on the machine.
+- **Root cause:** each gave the machine's clock a job the load could outlast. The swap test let go of its hold from a thread-pool
+  task's 300 ms delay while the swap waited up to ten seconds on the test's own thread, and the pool was starved past the wait;
+  the kit's test gave a fresh node five seconds to start and write its id, and a node start took longer.
+- **Fix:** the swap test lets go by the swap's own clock (its `clock` and `sleep` seams), as the longer hold's test beside it
+  already did, so it no longer reads the wall clock; the kit's test runs the command again with thirty seconds where the first
+  five saw no id, and only then says nothing was asked.
+- **Verification:** both, alone and with the CI beside.
+
 ## 2026-10-20 — The full set's driver Process half failed a race's control and a start's git ceiling (TREELOCK1, FLAKE1)
 
 - **Symptom:** the full set on 50634f5 failed two `Process` tests, each again when re-run alone: `ProbeRaceTests`' control (two
@@ -47,6 +60,20 @@ repository.
 - **Fix:** the landing test reads each source through `driverSource` and MOD9e's row names `LandedCleanups.cs`, `EndJudgement.cs`
   and `PullRequestStates.cs`; the fixture lists `handover`; `WiringVariables.SetAside` names the port's variable with its reason.
 - **Verification:** `landingLife.test.ts` 24, the SESSDEL1c scan, `cli-usage.test.ts` 3 and `SystemWiringTests` 28, all passing.
+## 2026-10-20 — A start carried the quest and the record of the session its driver ran in (ENVLEAK1)
+
+- **Symptom:** run from a session Daoris drives, three `AdapterTests` (a chat carries no quest, no target, no record unless
+  named) failed, and the Process classes that read what a stub child saw (`IntakeTests`, `HelperProcessTests`,
+  `ReviewTreeTests`, `BrainstormProcessTests`) would have too; all passed with the session's variables unset.
+- **Root cause:** `Spawning.Shell` began each start from the driver's own environment, as `ProcessStartInfo` does, and set
+  only its own role's variables. A driver whose process carried `DAORIS_QUEST_ID`, `DAORIS_TARGET` or `DAORIS_SESSION_ID`
+  (a test run, a rehearsal or a development host inside a driven session) handed them to every chat, intake, helper and
+  brainstorm pass, which by their contract carry none.
+- **Fix:** `Spawning.Unrole` drops every role variable (`Spawning.Roles`: the quest's, the target, the ask, the record, the
+  brainstorm's, the repository and the service) before a start sets its own; `DAORIS_HOME`, the PATH and the rest still pass.
+  The wiring census's set-aside list gains `DAORIS_MEASURED_PORT` (c01fd2a25 named it), which held the gate red.
+- **Verification:** the `driver` gate inside a driven session with those variables set, 11122 passed; those Process classes
+  with `HeavyRunProcessTests`, 64 passed; `A_start_drops_the_roles_it_inherits_and_keeps_the_rest` holds the list.
 
 ## 2026-10-20 — A driver test listened on every interface, so each new tree raised a firewall prompt (FIREWALL1)
 

@@ -4,7 +4,8 @@ import { useQuests, useSessions } from '../../data/queries';
 import { namer } from '../../settings/accounts/namer';
 import { useChatTurns, useHarnesses, useSessionOpenings, useSessionProcess, useSessionStreams } from '../../bridge/shell';
 import { frameShortcut } from '../../menus/shortcuts';
-import { EmptyState, type Notify, SESSION_ACTIVE, SkeletonRows, useErrorNotify } from '../../design/ui';
+import { EmptyState, Inline, type Notify, Prose, SESSION_ACTIVE, SkeletonRows, useErrorNotify } from '../../design/ui';
+import { sentence } from '../../locales/format';
 import { SessionConsole } from './SessionConsole';
 import { AttendedSession } from '../AttendedSession';
 import { useDetachedPanel } from '../frame/closings';
@@ -88,6 +89,11 @@ export function DetachedSession({ id, notify }: { id: string; notify: Notify }) 
 
   if (sessions.isPending) {
     return <div className="p-4"><SkeletonRows rows={4} /></div>;
+  }
+
+  // A read that failed is not a session gone (PUSHUX1): its sentence, never the gone state.
+  if (sessions.data === undefined) {
+    return <div className="p-4"><Prose><Inline text={sentence(sessions.error)} /></Prose></div>;
   }
 
   if (!session) {

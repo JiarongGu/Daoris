@@ -724,6 +724,90 @@ public sealed class QuestCloseTests : IDisposable
     }
 
     /// <summary>
+    /// FABRIC-CLOSE1k (D190, design §8): a quest closing through a kept graph the choices no longer hold is said once a pass, naming what that
+    /// graph runs which the choices' graph does not and what it leaves out, and closed by the graph it was bound to; once Done, nothing is said.
+    /// </summary>
+    [Fact]
+    public async Task A_quest_closing_through_a_kept_graph_the_choices_edited_is_said_once_a_pass_and_closed_by_its_graph()
+    {
+        var digest = Digest(Deployed);
+        _steps = [DeployStep];
+        Quest(Taken("q7", digest, Ready41) with { Updated = _now });
+        var plugins = new Deploys();
+        var runtime = Runtime(plugins);
+        var before = await runtime.PassAsync(Look(Deployed), CancellationToken.None);
+        Assert.DoesNotContain(before.Said, line => line.Contains("closes through", StringComparison.Ordinal));
+
+        // Setup puts a task where the deploy was: the quest's graph runs the deploy, which the choices' graph does not, and not the task.
+        foreach (var _ in new[] { 1, 2 })
+        {
+            var pass = await runtime.PassAsync(Look(Reviewed), CancellationToken.None);
+            var said = Assert.Single(pass.Said, line => line.Contains("closes through", StringComparison.Ordinal));
+            Assert.Equal(
+                $"work  quest:q7: #q7 closes through `{digest}`, the graph it was bound to at its take, kept here: the choices hold "
+                + $"`{Digest(Reviewed)}` now; it runs `deploy`, which the choices' graph does not, and none of `qa`, which it does.", said);
+        }
+
+        // Its closure graph removed from the choices: said so, naming every node it runs.
+        var removed = await runtime.PassAsync(Look("{}"), CancellationToken.None);
+        Assert.Contains(removed.Said, line => line.EndsWith("the choices hold no closure graph for it now, and it runs `deploy`, `close`.", StringComparison.Ordinal));
+
+        // The deploy it was bound to, sent at the first pass, reached; then the close, by that graph.
+        Assert.Empty(_door.Sent);
+        plugins.Heard.Enqueue(Reached(Assert.Single(plugins.Sent)));
+        await runtime.PassAsync(Look(Reviewed), CancellationToken.None);
+        Assert.Equal(NodeStates.Reached, Record().Statuses["deploy"].State);
+        Assert.Equal(NodeStates.Reached, Record().Statuses["close"].State);
+        Assert.Equal([new QuestCloseItem("q7", "desk", 41)], Assert.Single(_door.Sent).Quests);
+        Assert.False(Record().Statuses.ContainsKey("qa"));
+
+        Quest(Taken("q7", digest, Ready41) with { Updated = _now, Status = "Done" });
+        var done = await runtime.PassAsync(Look(Reviewed), CancellationToken.None);
+        Assert.DoesNotContain(done.Said, line => line.Contains("closes through", StringComparison.Ordinal));
+    }
+
+    /// <summary>FABRIC-CLOSE1k: a node the choices declare otherwise since is named as bound; the choices' own graph says nothing.</summary>
+    [Fact]
+    public async Task A_node_declared_otherwise_since_is_named_as_bound_and_the_choices_own_graph_says_nothing()
+    {
+        var digest = Digest(Deployed);
+        Quest(Taken("q7", digest));
+        var runtime = Runtime();
+        var same = await runtime.PassAsync(Look(Deployed), CancellationToken.None);
+        Assert.DoesNotContain(same.Said, line => line.Contains("closes through", StringComparison.Ordinal));
+
+        var timed = Deployed.Replace("\"acme.deploy/deploy\", \"version\": 1, \"reach\": \"performed\" }",
+            "\"acme.deploy/deploy\", \"version\": 1, \"reach\": \"performed\", \"timeoutSeconds\": 60 }", StringComparison.Ordinal);
+        Assert.NotEqual(digest, Digest(timed));
+        var pass = await runtime.PassAsync(Look(timed), CancellationToken.None);
+        Assert.EndsWith("it runs `deploy` as it was bound, which the choices' graph does not.",
+            Assert.Single(pass.Said, line => line.Contains("closes through", StringComparison.Ordinal)), StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// FABRIC-CLOSE1k: a bound quest whose graph is kept nowhere here and is not the choices' is said once a pass, its close waiting: nothing
+    /// is sent, and Current's graph never closes it.
+    /// </summary>
+    [Fact]
+    public async Task A_bound_quest_whose_graph_is_kept_nowhere_here_is_said_once_a_pass_and_its_close_waits()
+    {
+        var digest = Digest(Closing);
+        Quest(Taken("q7", digest, Ready41));
+        Quest(Taken("q8", Digest(Reviewed), Ready41));
+        var runtime = Runtime();
+        foreach (var _ in new[] { 1, 2 })
+        {
+            var pass = await runtime.PassAsync(Look(Closing), CancellationToken.None);
+            var said = Assert.Single(pass.Said, line => line.Contains("kept nowhere here", StringComparison.Ordinal));
+            Assert.Equal(
+                $"work  quest:q8: #q8 is bound to the closure graph `{Digest(Reviewed)}`, which is kept nowhere here and is not the choices' graph, "
+                + "so nothing here closes it: its close waits, and its done is yours to give.", said);
+        }
+
+        Assert.Equal("q7", Assert.Single(_door.Sent).Quest);
+    }
+
+    /// <summary>
     /// FABRIC-CLOSE1l, the review's finding 6: an unanswered close is reconciled whether or not a closure graph still arms the runtime;
     /// FABRIC-CLOSE1u: by asking its door what became of its key, never by sending it again.
     /// </summary>
@@ -1279,7 +1363,11 @@ public sealed class QuestCloseTests : IDisposable
 
         Assert.Empty(_door.Sent);
         Assert.False(Directory.Exists(NodeRecordFiles.FolderOf(_home)));
-        Assert.Empty(pass.Said.Concat(done.Said));
+        Assert.Empty(done.Said);
+
+        // FABRIC-CLOSE1k: a quest bound to a graph kept nowhere here is said so while it is open, and nothing more.
+        if (closure is null) Assert.Empty(pass.Said);
+        else Assert.Contains("is bound to the closure graph `gph-another`, which is kept nowhere here", Assert.Single(pass.Said), StringComparison.Ordinal);
     }
 
     /// <summary>

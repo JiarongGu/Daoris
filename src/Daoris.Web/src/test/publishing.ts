@@ -53,11 +53,12 @@ export const DECLARED: Readonly<Record<string, { scopes: readonly string[]; sess
   SESSION_HELPER_ASK: { scopes: ['sessions', 'driver'], session: 'id' },
   SESSION_HELPER_APPROVE: { scopes: ['sessions', 'driver'], session: 'session' },
   SESSION_HELPER_DECLINE: { scopes: ['sessions', 'driver'], session: 'session' },
-  // The plugins' presses (STATEHUB1d), which the Plugins view's tests publish.
-  PLUGIN_ACTION: { scopes: ['plugins', 'harnesses'] },
-  PLUGIN_UPDATE: { scopes: ['plugins', 'harnesses'] },
-  PLUGIN_INSTALL: { scopes: ['plugins', 'harnesses'] },
-  PLUGIN_ADD: { scopes: ['plugins', 'harnesses'] },
+  // The plugins' presses (STATEHUB1d), which the Plugins view's tests publish; and since HELPMODE1c3 the driver's, whose
+  // helpGrants draws Ask Daoris's browser grant from the plugin's approval.
+  PLUGIN_ACTION: { scopes: ['driver', 'plugins', 'harnesses'] },
+  PLUGIN_UPDATE: { scopes: ['driver', 'plugins', 'harnesses'] },
+  PLUGIN_INSTALL: { scopes: ['driver', 'plugins', 'harnesses'] },
+  PLUGIN_ADD: { scopes: ['driver', 'plugins', 'harnesses'] },
   // The remaining presses (STATEHUB1h): the standing choices, a go-ahead, a turn stopped and a word taken back, and what the
   // accounts, agents, asks, across, registry, tools and help domains press.
   SET_DRIVABLE: { scopes: ['driver'] },
@@ -68,6 +69,7 @@ export const DECLARED: Readonly<Record<string, { scopes: readonly string[]; sess
   SET_NOTIFY: { scopes: ['driver'] },
   SET_STRIKES: { scopes: ['driver'] },
   SET_COOLOFF: { scopes: ['driver'] },
+  SET_CAP: { scopes: ['driver'] },
   SET_INTAKE: { scopes: ['driver', 'harnesses'] },
   SET_HELPER: { scopes: ['driver'] },
   SET_HELP_MODE: { scopes: ['driver'] },

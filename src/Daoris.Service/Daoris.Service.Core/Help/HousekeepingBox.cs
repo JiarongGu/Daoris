@@ -1,6 +1,4 @@
 using System.Globalization;
-using System.Text;
-using System.Text.Json;
 using System.Text.RegularExpressions;
 
 namespace Daoris.Knowledge;
@@ -22,7 +20,8 @@ namespace Daoris.Knowledge;
 /// driver's <c>SessionRequests</c> (<c>session</c>, <c>move</c>, <c>at</c>, <c>by</c>, <c>key</c>, <c>operation</c>,
 /// <c>repository</c>, <c>branches</c>; and <c>operation</c>, <c>done</c>, <c>code</c>, <c>said</c>), each side's test holding
 /// the same names. So is the withdrawal of a request nobody took (the driver's REQTAKE2): renamed aside, then removed only once
-/// nothing holds it, so of a withdrawal and a take only one wins.</para>
+/// nothing holds it, so of a withdrawal and a take only one wins. The exchange is <see cref="HelpRequestExchange"/>'s, shared with
+/// the chosen settings' box since HELPMODE1c3.</para>
 /// </remarks>
 /// <param name="home">The home the requests go under, or null when there is none: every call is then refused.</param>
 public sealed partial class HousekeepingBox(string? home)
@@ -44,8 +43,6 @@ public sealed partial class HousekeepingBox(string? home)
 
     /// <summary>The most branches one clean-up names: a look lists every one, and a press takes those listed.</summary>
     public const int MostBranches = 100;
-
-    private const string AnswerSuffix = ".answer.json";
 
     private const string NoSession =
         "This connector speaks for no session the driver started here, so there is no Ask Daoris conversation to do housekeeping "
@@ -94,29 +91,19 @@ public sealed partial class HousekeepingBox(string? home)
         if (Unfit(operation, target, names) is { } unfit) return $"{unfit} Nothing was done.";
         if (Home is null) return $"{Capital(DaorisHome.Sentence)} Nothing was done.";
 
-        var key = Guid.NewGuid().ToString("N")[..12];
-        var request = DaorisHome.Entry(Home, HomeEntry.Requests, $"{asker.Id}.{key}.json");
-        var answer = DaorisHome.Entry(Home, HomeEntry.Requests, $"{asker.Id}.{key}{AnswerSuffix}");
-        Directory.CreateDirectory(Path.GetDirectoryName(request)!);
-        AtomicFile.WriteText(request, Request(asker.Id, key, operation, target, operation == Inspect ? [] : names, at));
-
-        try
+        var (ending, text) = await HelpRequestExchange.ExchangeAsync(
+            Home, asker.Id, key => Request(asker.Id, key, operation, target, operation == Inspect ? [] : names, at),
+            TakeWithin, AnswerWithin, Poll, ct).ConfigureAwait(false);
+        return ending switch
         {
-            if (!await TakenAsync(request, ct).ConfigureAwait(false) && Withdraw(request))
-            {
-                return $"No Daoris on this machine took it within {Seconds(TakeWithin)} seconds: the loop that runs this conversation "
-                       + "did not answer. Nothing was done.";
-            }
-        }
-        catch (OperationCanceledException)
-        {
-            Withdraw(request);
-            throw;
-        }
-
-        return await AnswerAsync(answer, ct).ConfigureAwait(false)
-               ?? $"Daoris took it and did not answer within {Seconds(AnswerWithin)} seconds, so it may still be under way. Look with "
-               + "`housekeeping_inspect` before you ask for it again.";
+            HelpRequestExchange.Ending.Untaken =>
+                $"No Daoris on this machine took it within {Seconds(TakeWithin)} seconds: the loop that runs this conversation "
+                + "did not answer. Nothing was done.",
+            HelpRequestExchange.Ending.Unanswered =>
+                $"Daoris took it and did not answer within {Seconds(AnswerWithin)} seconds, so it may still be under way. Look with "
+                + "`housekeeping_inspect` before you ask for it again.",
+            _ => Said(text!),
+        };
     }
 
     /// <summary>What the operation needs and the call does not name, or null where it names it.</summary>
@@ -139,166 +126,22 @@ public sealed partial class HousekeepingBox(string? home)
         };
     }
 
-    /// <summary>Whether a loop took the request (its name is gone) before <see cref="TakeWithin"/>.</summary>
-    private async Task<bool> TakenAsync(string request, CancellationToken ct)
-    {
-        var until = DateTimeOffset.UtcNow + TakeWithin;
-        while (File.Exists(request))
-        {
-            if (DateTimeOffset.UtcNow >= until) return false;
-            await Task.Delay(Poll, ct).ConfigureAwait(false);
-        }
-
-        return true;
-    }
-
-    /// <summary>The loop's answer's words, read once and removed; null where none came within <see cref="AnswerWithin"/>.</summary>
-    private async Task<string?> AnswerAsync(string path, CancellationToken ct)
-    {
-        var until = DateTimeOffset.UtcNow + AnswerWithin;
-        while (true)
-        {
-            if (Read(path) is { } text)
-            {
-                for (var attempt = 0; attempt < 10 && !Remove(path); attempt++) await Task.Delay(10, ct).ConfigureAwait(false);
-                return Said(text);
-            }
-
-            if (DateTimeOffset.UtcNow >= until) return null;
-            await Task.Delay(Poll, ct).ConfigureAwait(false);
-        }
-    }
-
     /// <summary>The words an answer says, or a sentence saying it did not read as one.</summary>
-    internal static string Said(string text)
-    {
-        try
-        {
-            using var document = JsonDocument.Parse(text);
-            if (document.RootElement.ValueKind == JsonValueKind.Object
-                && document.RootElement.TryGetProperty("said", out var said) && said.ValueKind == JsonValueKind.String)
-            {
-                return said.GetString()!;
-            }
-        }
-        catch (JsonException)
-        {
-        }
-
-        return "Daoris answered in a shape this connector does not read, so what was done cannot be said here. Look with "
-               + "`housekeeping_inspect`.";
-    }
-
-    private static string? Read(string path)
-    {
-        try
-        {
-            return File.Exists(path) ? File.ReadAllText(path) : null;
-        }
-        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
-        {
-            // Held a moment by its writer's rename: read at the next look.
-            return null;
-        }
-    }
-
-    private static bool Remove(string path)
-    {
-        try
-        {
-            File.Delete(path);
-            return true;
-        }
-        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
-        {
-            return false;
-        }
-    }
-
-    /// <summary>
-    /// Withdraw a request nobody took (the driver's REQTAKE2, this side of the twin): renamed aside as a take renames it, then
-    /// opened alone and removed as it closes, which waits out a take's rename begun a moment before. False where a take won, when
-    /// the loop has it and the answer is waited for.
-    /// </summary>
-    private static bool Withdraw(string path)
-    {
-        var withdrawing = $"{path}.{Guid.NewGuid().ToString("N")[..8]}.withdrawing";
-        for (var attempt = 0; ; attempt++)
-        {
-            try
-            {
-                File.Move(path, withdrawing);
-                break;
-            }
-            catch (Exception error) when (error is FileNotFoundException or DirectoryNotFoundException)
-            {
-                return false;
-            }
-            catch (Exception error) when (attempt < 20 && error is IOException or UnauthorizedAccessException)
-            {
-                Thread.Sleep(10);
-            }
-            catch (Exception error) when (error is IOException or UnauthorizedAccessException)
-            {
-                return false;
-            }
-        }
-
-        for (var attempt = 1; ; attempt++)
-        {
-            try
-            {
-                using (new FileStream(withdrawing, FileMode.Open, FileAccess.Read, FileShare.None, 1, FileOptions.DeleteOnClose))
-                {
-                    return true;
-                }
-            }
-            catch (Exception error) when (error is FileNotFoundException or DirectoryNotFoundException)
-            {
-                return false;
-            }
-            catch (Exception error) when (attempt < 100 && error is IOException or UnauthorizedAccessException)
-            {
-                Thread.Sleep(10);
-            }
-            catch (Exception error) when (error is IOException or UnauthorizedAccessException)
-            {
-                // Held past every try: put back for a loop to take, and so not withdrawn.
-                try
-                {
-                    File.Move(withdrawing, path);
-                }
-                catch (Exception again) when (again is IOException or UnauthorizedAccessException)
-                {
-                }
-
-                return false;
-            }
-        }
-    }
+    internal static string Said(string text) =>
+        HelpRequestExchange.Said(text)
+        ?? "Daoris answered in a shape this connector does not read, so what was done cannot be said here. Look with "
+        + "`housekeeping_inspect`.";
 
     // Hand-rolled, in the twin's order, for the reason every store here is: nothing may stop working under AOT.
-    private static string Request(string session, string key, string operation, string? repository, IReadOnlyList<string> branches, DateTimeOffset at)
-    {
-        using var stream = new MemoryStream();
-        using (var writer = new Utf8JsonWriter(stream, new JsonWriterOptions { Indented = true }))
+    private static string Request(string session, string key, string operation, string? repository, IReadOnlyList<string> branches, DateTimeOffset at) =>
+        HelpRequestExchange.Request(session, Move, By, key, at, writer =>
         {
-            writer.WriteStartObject();
-            writer.WriteString("session", session);
-            writer.WriteString("move", Move);
-            writer.WriteString("at", Moments.Write(at));
-            writer.WriteString("by", By);
-            writer.WriteString("key", key);
             writer.WriteString("operation", operation);
             if (repository is not null) writer.WriteString("repository", repository);
             writer.WriteStartArray("branches");
             foreach (var branch in branches) writer.WriteStringValue(branch);
             writer.WriteEndArray();
-            writer.WriteEndObject();
-        }
-
-        return Encoding.UTF8.GetString(stream.ToArray()).Replace("\r\n", "\n") + "\n";
-    }
+        });
 
     private static string Seconds(TimeSpan span) => Math.Round(span.TotalSeconds).ToString(CultureInfo.InvariantCulture);
 

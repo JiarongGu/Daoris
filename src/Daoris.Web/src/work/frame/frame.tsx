@@ -330,7 +330,8 @@ export function StatusBar({
   onDriver, onSessions, onRemote, onIndex, onTier, onSetup,
 }: {
   driver: DriverPresence;
-  sessions: number;
+  /** How many sessions run, or null while the sessions are not answered yet: no number, never a zero (PUSHUX1). */
+  sessions: number | null;
   /**
    * The scope in words (D75 §3): the chosen workspace, the one there is, every one among several, or
    * none yet. Null only while the registry has not answered.
@@ -399,7 +400,9 @@ export function StatusBar({
         label={t('work.status.sessionsLabel')}
       >
         <Icon name="frameWork" size={12} />
-        <span className="tabular-nums text-ink">{t('work.status.sessions', { count: sessions })}</span>
+        {sessions === null
+          ? <i aria-hidden className="block h-2.5 w-14 rounded-[3px] bg-accent-soft opacity-55" />
+          : <span className="tabular-nums text-ink">{t('work.status.sessions', { count: sessions })}</span>}
       </StatusItem>
 
       {/* 🔴 The scope, and it is a CONTROL here. It had a dropdown in the app strip AND a read-only copy here,

@@ -77,6 +77,12 @@ public sealed record HelpReceipt
     /// turn (ACCESSSWAP1). None for a start before.
     /// </summary>
     public IReadOnlyList<string> Housekeeping { get; init; } = [];
+
+    /// <summary>
+    /// The chosen settings its start was handed (HELPMODE1c3, <see cref="ConfiguredAccess.Settings"/>), whatever its agent, judged by
+    /// as housekeeping's are (<see cref="HelpSettings"/>). None for a start before.
+    /// </summary>
+    public IReadOnlyList<string> Settings { get; init; } = [];
 }
 
 /// <summary>A plugin's skill composed for the start (HELPPLUG1b): <c>plugin:skill</c>, its <see cref="HelpWired"/> state and why.</summary>
@@ -141,6 +147,9 @@ public sealed record HelpHanded(string Mode, bool GoesOn, string Harness, Sessio
 
     /// <summary>The housekeeping operations the place was composed with (HELPMODE1c2a).</summary>
     public IReadOnlyList<string> Housekeeping { get; init; } = [];
+
+    /// <summary>The chosen settings the place was composed with (HELPMODE1c3).</summary>
+    public IReadOnlyList<string> Settings { get; init; } = [];
 }
 
 /// <summary>
@@ -347,6 +356,7 @@ public sealed class HelpWired(string home)
             Checkouts = rules is null ? [] : handed.Reads,
             Lacks = full ? [] : Lacking(servers, catalog),
             Housekeeping = handed.Housekeeping,
+            Settings = handed.Settings,
         };
     }
 
@@ -530,6 +540,7 @@ public sealed class HelpWired(string home)
 
         writer.WriteEndArray();
         Strings(writer, "housekeeping", receipt.Housekeeping);
+        Strings(writer, "settings", receipt.Settings);
         writer.WriteEndObject();
     }
 
@@ -587,6 +598,8 @@ public sealed class HelpWired(string home)
                     Json.NonEmpty(lack, "plugin")))],
             // A start before HELPMODE1c2a was handed none.
             Housekeeping = Json.Strings(element, "housekeeping"),
+            // And before HELPMODE1c3, no settings.
+            Settings = Json.Strings(element, "settings"),
         };
     }
 }

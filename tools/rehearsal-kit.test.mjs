@@ -745,7 +745,13 @@ test('a command its timeout ends is ended with what it started, never only the s
   const said = join(at, 'pid');
   let pid = 0;
   try {
-    const ran = capture(`node "${waiter}" "${said}"`, at, { timeout: 5_000 });
+    // Five seconds first; a loaded machine can take longer than that to start node at all (the full set on 9717f8d), so a
+    // command that never said its id is run once more with longer, and only then is nothing asked.
+    let ran;
+    for (const timeout of [5_000, 30_000]) {
+      ran = capture(`node "${waiter}" "${said}"`, at, { timeout });
+      if (existsSync(said)) break;
+    }
     if (existsSync(said)) pid = Number(readFileSync(said, 'utf8'));
     assert.match(ran.out, /\[killed: exceeded the timeout\]/);
     assert.equal(ran.code, -1, ran.out);

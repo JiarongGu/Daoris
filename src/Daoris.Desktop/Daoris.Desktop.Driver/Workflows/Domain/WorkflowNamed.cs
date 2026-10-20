@@ -228,14 +228,36 @@ public static class WorkflowNamed
                 }
 
                 var (graph, problems) = NodeGraphs.Read(graphJson.GetRawText());
-                return graph is null
-                    ? Unread($"v{number}: its graph does not hold: {problems[0].Words}")
+                if (graph is null) return Unread($"v{number}: its graph does not hold: {problems[0].Words}");
+                return OneLandingProblem(graph, number) is { } landing
+                    ? Unread(landing)
                     : new NamedVersion(number, at, door, null, null, NodeGraphs.Digest(graph), graph);
             }
         }
 
         var (steps, problem) = ReadSteps(hasSteps ? raw : null, number, prior);
         return steps is null ? Unread(problem!) : new NamedVersion(number, at, door, steps, null, Digest(steps));
+    }
+
+    /// <summary>
+    /// Why a named version's graph is not one landing, or null (FABRIC-CUTOVER1b; D190 point 4, the cutover design §4): it holds one
+    /// <c>handed</c>, and at most one <c>opinion</c> and one <c>look</c>, since the process it is read as holds one of each. Judged after
+    /// the graph holds, in that order, so a save is refused and a stored version is kept as written and read as unreadable. A TWIN with
+    /// the CLI's <c>oneLandingProblem</c> (<c>namedworkflows.ts</c>), on <c>workflow-graph-versions.json</c>.
+    /// </summary>
+    private static string? OneLandingProblem(NodeGraph graph, int number)
+    {
+        string Named(string kind) => string.Join(" and ", graph.Nodes.Where(node => node.Kind == kind).Select(node => $"`{node.Id}`"));
+        var landings = graph.Nodes.Count(node => node.Kind == NodeKinds.Handed);
+        if (landings == 0) return $"v{number}: its graph holds no landing (`{NodeKinds.Handed}`), and a named workflow's graph lands its work once.";
+        if (landings > 1) return $"v{number}: its graph holds {landings} landings, {Named(NodeKinds.Handed)}, and a named workflow's graph lands its work once.";
+        foreach (var (kind, what) in new[] { (NodeKinds.Opinion, "opinions"), (NodeKinds.Look, "looks") })
+        {
+            var count = graph.Nodes.Count(node => node.Kind == kind);
+            if (count > 1) return $"v{number}: its graph holds {count} {what}, {Named(kind)}, and a named workflow's graph holds at most one.";
+        }
+
+        return null;
     }
 
     /// <summary>The schema of a version that is a graph (FABRIC-GRAPH1b); a version of steps is schema 1, named or not.</summary>

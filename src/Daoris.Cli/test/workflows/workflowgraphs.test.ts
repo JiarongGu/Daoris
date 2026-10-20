@@ -71,6 +71,7 @@ test('workflow-graphs: the shape reads a kind this build does not run, which the
 test('workflow-graphs: the protected order wires each gate into every gate after it, a go-ahead none, and nothing after the landing', () => {
   // FABRIC-GRAPH1h: a skip satisfies its `after` wire, so the step order alone lets the landing past an unsettled gate once a step
   // between is skipped; the work (its node carries the holds), the opinion and the look are wired into every gate after them, once.
+  // FABRIC-CUTOVER1b: the look beside the opinion, after the step before it, which the review gate holds while an agent reads.
   const { steps, problem } = readShape([
     { id: 'work', kind: 'work' }, { id: 'ask', kind: 'go-ahead', act: 'Ship', on: 'the line' }, { id: 'second', kind: 'opinion' },
     { id: 'see', kind: 'look' }, { id: 'land', kind: 'landing', form: 'branch', accept: 'you', plugin: 'acme.ci' }, { id: 'pr', kind: 'pull-request' },
@@ -79,7 +80,7 @@ test('workflow-graphs: the protected order wires each gate into every gate after
   assert.equal(problem, null);
   const graph = workflowGraph(steps!);
   assert.deepEqual(graph.wires.filter((each) => each.kind === 'after').map((each) => each.id), [
-    'work>ask', 'ask>second', 'work>second', 'second>see', 'work>see', 'see>land', 'work>land', 'second>land', 'land>pr', 'pr>lint',
+    'work>ask', 'ask>second', 'work>second', 'ask>see', 'work>see', 'see>land', 'work>land', 'second>land', 'land>pr', 'pr>lint',
   ]);
   assert.equal(new Set(graph.wires.map((each) => each.id)).size, graph.wires.length);
 });

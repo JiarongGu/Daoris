@@ -135,6 +135,15 @@ class Pushed {
     return this.slices.get(name)?.asking ?? null;
   }
 
+  /**
+   * Whether a live slice is being read again whole (a missed push, another epoch, a delta off its base): a state of its own, in which
+   * what is held is the last render, never a first load (PUSHUX1, the UI/UX design §3.8).
+   */
+  resyncing(name: string): boolean {
+    const slice = this.slices.get(name);
+    return slice?.mode === 'live' && slice.asking !== null;
+  }
+
   /** The pushed entry's data from memory, or undefined where the slice is not live or a partition it needs is not judged yet. */
   data(name: string): unknown {
     const slice = this.slices.get(name);
@@ -206,6 +215,8 @@ class Pushed {
       slice.asking = null;
       this.told();
     });
+    // A live slice read again is resyncing from now, which its readers draw (`usePushedResyncing`).
+    if (slice.mode === 'live') this.told();
     return slice.asking;
   }
 
@@ -312,6 +323,15 @@ export function mergeKeyed(held: unknown, delta: unknown, removed: readonly stri
 export function usePushedLive(name: string): boolean {
   const store = pushedOf(useQueryClient());
   return useSyncExternalStore(store.subscribe, () => store.live(name), () => false);
+}
+
+/**
+ * Whether `name` is live in this window and being read again whole: its readers hold the last render at reduced opacity until the
+ * snapshot lands, never a first load's skeleton (PUSHUX1, the UI/UX design §3.8). A query's own fetching is not this.
+ */
+export function usePushedResyncing(name: string): boolean {
+  const store = pushedOf(useQueryClient());
+  return useSyncExternalStore(store.subscribe, () => store.resyncing(name), () => false);
 }
 
 /**

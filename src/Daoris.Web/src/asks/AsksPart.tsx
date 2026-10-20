@@ -362,12 +362,15 @@ export function useAsksPart({
       : teammate
         // A teammate's ask has no record here (SESSONE2h): its page is its channel, read-only.
         ? <TeammateAskPage key={teammate.id} ask={teammate} channel={channel.channel} />
-        : (
-          <QuestsMainNotice
-            state={(every.data === undefined && !every.error) || (elsewhere.loading && every.data !== undefined) ? 'loading' : 'gone'}
-            gone="ask"
-          />
-        );
+        // A read that failed is not an ask gone (PUSHUX1): said in its words, as a quest's is.
+        : every.data === undefined && every.error
+          ? <QuestsMainNotice state="unanswered" sentence={sentence(every.error)} />
+          : (
+            <QuestsMainNotice
+              state={every.data === undefined || elsewhere.loading ? 'loading' : 'gone'}
+              gone="ask"
+            />
+          );
 
   return {
     teammates,

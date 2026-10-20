@@ -102,6 +102,7 @@ nested. A reader skips a line it cannot parse and a field it does not know.
 | `view.opened`, `command.run`, `panel.moved` | desktop, from the page | the view, the command, the region | what is used, and what never is |
 | `message.sent` | desktop, from the page | session, kind, length, files | how the conversations are used |
 | `proposal.settled` | desktop, from the page | applied | whether Ask Daoris's proposals help |
+| `help.setting` | desktop, driver | session, setting, value, repository, workspace, done, code | each change Ask Daoris's chosen-settings tools asked for (HELPMODE1c3, D183's note): the setting, the value as its door spells it, a language's repository or workspace, whether it was changed, and the refusal's code (`not-granted`, `not-handed`, `outside`, `refused`, `failed`, …), never the answer's words. The grant's outcome record, since no Apply records it |
 | `page.error` | desktop, from the page | where, message | a render or request failure the page caught |
 | `request.failed` | host | method, route, status, ms | a request that failed, or took over two seconds |
 | `origin.refused` (warn) | host | method, route, by, site | a write a web page sent that this host does not allow, refused 403 before its route ran (ORIGIN1): by the route's pattern, `by` the header that refused it (`origin` or `site`), and `site` the browser's own word for it where it said one; never the page's address, another header or the body |

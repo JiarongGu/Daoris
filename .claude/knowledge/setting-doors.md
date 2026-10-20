@@ -94,3 +94,12 @@ folder holds one file per kind and nothing else (`Every_kind_is_a_class_in_a_fil
 its kind's file; the fields it reads join `HelpProposal` and `HelpPlan` under the kind's comment, its card data
 `HELP_PROPOSALS`' `CardBody`, its doors `IHelp<Kind>Doors`, `ScreenDoors` and `HelpStandInDoors`; and a page control the
 door now answers for turns its `HelpCoverageTests` row from `Exempt` into a `Door`.
+
+## A door granted without Apply
+
+A door the person may grant under Ask Daoris's configured access (HELPMODE1c3, D183's note) keeps its proposal, and gains a
+typed tool judged by the same plan: the driver's `ConfiguredAccess.SettingsBuilt` and `HelpRoomMayDo.SettingSaid`, the service's
+`SettingsBox.Settings` and a method on `ChosenSettingsTools` (`settings_<door>`), its name in `McpToolRegistrationTests`' list,
+`McpToolDescriptionTests`' settings row, `BrainstormPermissions.ConnectorTools` and both `golden/brainstorm-rules` files; and on
+the page, `grants.ts`' settings operations with `help.grants.op.settings.<door>` in both catalogues. `HelpSettings` judges it
+through the kind's own `Plan`, so a door whose plan needs facts beyond the registry and its workspaces says so there first.

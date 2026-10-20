@@ -33,18 +33,18 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | File | KB | Lines |
 |---|---|---|
 | `src/Daoris.Web/e2e/platform.spec.ts` | 56 | 964 |
-| `src/Daoris.Web/src/agents/AgentPage.tsx` | 53 | 981 |
-| `src/Daoris.Web/src/agents/AgentsView.test.tsx` | 120 | 2276 |
+| `src/Daoris.Web/src/agents/AgentPage.tsx` | 54 | 982 |
+| `src/Daoris.Web/src/agents/AgentsView.test.tsx` | 120 | 2289 |
 | `src/Daoris.Web/src/agents/agents.test.ts` | 47 | 804 |
 | `src/Daoris.Web/src/app/App.test.tsx` | 45 | 866 |
-| `src/Daoris.Web/src/app/App.tsx` | 74 | 1327 |
-| `src/Daoris.Web/src/app/pushedState.test.tsx` | 57 | 1218 |
+| `src/Daoris.Web/src/app/App.tsx` | 74 | 1328 |
+| `src/Daoris.Web/src/app/pushedState.test.tsx` | 60 | 1285 |
 | `src/Daoris.Web/src/bridge/sessions/sessions.ts` | 41 | 790 |
 | `src/Daoris.Web/src/data/api.ts` | 51 | 847 |
 | `src/Daoris.Web/src/data/queries.ts` | 47 | 890 |
 | `src/Daoris.Web/src/design/tokens.test.ts` | 48 | 856 |
 | `src/Daoris.Web/src/design/ui.test.tsx` | 58 | 1167 |
-| `src/Daoris.Web/src/design/ui.tsx` | 87 | 1840 |
+| `src/Daoris.Web/src/design/ui.tsx` | 87 | 1850 |
 | `src/Daoris.Web/src/help/AskConversation.tsx` | 53 | 987 |
 | `src/Daoris.Web/src/help/AskDaoris.test.tsx` | 85 | 1716 |
 | `src/Daoris.Web/src/menus/commands.ts` | 40 | 793 |
@@ -56,13 +56,13 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Web/src/work/WorkFrame.conversation.test.tsx` | 60 | 1168 |
 | `src/Daoris.Web/src/work/WorkFrame.landed.test.tsx` | 104 | 1815 |
 | `src/Daoris.Web/src/work/WorkFrame.test.tsx` | 81 | 1536 |
-| `src/Daoris.Web/src/work/WorkFrame.tsx` | 130 | 2309 |
+| `src/Daoris.Web/src/work/WorkFrame.tsx` | 131 | 2312 |
 | `src/Daoris.Web/src/work/WorkFrame.words.test.tsx` | 46 | 851 |
 | `src/Daoris.Web/src/work/conversation/ConversationView.test.tsx` | 70 | 1306 |
 | `src/Daoris.Web/src/work/conversation/ConversationView.tsx` | 41 | 834 |
 | `src/Daoris.Web/src/work/conversation/conversation.test.ts` | 62 | 1173 |
 | `src/Daoris.Web/src/work/conversation/conversation.ts` | 43 | 847 |
-| `src/Daoris.Web/src/work/frame/frame.tsx` | 40 | 877 |
+| `src/Daoris.Web/src/work/frame/frame.tsx` | 41 | 880 |
 | `src/Daoris.Web/src/work/head/SessionHead.test.tsx` | 67 | 1274 |
 | `src/Daoris.Web/src/work/noteLines.test.ts` | 79 | 1161 |
 | `src/Daoris.Web/src/work/noteLines.ts` | 42 | 756 |
@@ -83,7 +83,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Conversations/ChatGoOnTests.cs` | 50 | 950 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Conversations/ChatTurnsTests.cs` | 46 | 946 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Conversations/DrivenInboxTests.cs` | 44 | 966 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Help/HelpCoverageTests.cs` | 120 | 1910 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Help/HelpCoverageTests.cs` | 121 | 1913 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Help/HelpFactsTests.cs` | 61 | 1153 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Help/Proposals/HelpSettingProposalsTests.cs` | 53 | 784 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Help/golden/help-room/empty.md` | 48 | 356 |
@@ -108,7 +108,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Trees/LandingTests.cs` | 46 | 816 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Trees/NodeLifecycleTests.cs` | 59 | 913 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Trees/NodeRuntimeTests.cs` | 41 | 793 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Trees/QuestCloseTests.cs` | 80 | 1441 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Trees/QuestCloseTests.cs` | 85 | 1529 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Trees/SessionGroupsTests.cs` | 74 | 1272 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Trees/WireEvaluationTests.cs` | 53 | 1028 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Workflows/WorkflowRunTests.cs` | 54 | 826 |
@@ -118,8 +118,8 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Accounts/Rotation/AccountRotation.cs` | 73 | 1189 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Accounts/Usage/UsageHistory.cs` | 47 | 925 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/Acp/Acp.cs` | 135 | 2678 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/Adapters/Adapters.cs` | 133 | 2311 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/Conversations/Chat/ChatRunner.cs` | 143 | 2567 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/Adapters/Adapters.cs` | 135 | 2334 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/Conversations/Chat/ChatRunner.cs` | 143 | 2576 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Conversations/Chat/ChatTurns.cs` | 43 | 936 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Conversations/Domain/ContextBrief.cs` | 43 | 852 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Conversations/DrivenInbox.cs` | 50 | 1150 |
@@ -128,7 +128,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Loop/Driver.cs` | 219 | 3519 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Loop/DriverContinuations.cs` | 58 | 934 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Loop/DriverWatch.cs` | 55 | 943 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/Platform/DriverConfig.cs` | 88 | 1505 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/Platform/DriverConfig.cs` | 89 | 1514 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Platform/NoteCodes.cs` | 76 | 1209 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Platform/SystemWiring.cs` | 50 | 1072 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Plugins/Hooks.cs` | 59 | 1165 |
@@ -143,8 +143,8 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/LandedBranches.cs` | 56 | 989 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/Landing/AutoLander.cs` | 51 | 761 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/Landing/Landing.cs` | 60 | 1057 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/Nodes/NodeGraphs.cs` | 50 | 867 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/Nodes/NodeRuntime.cs` | 69 | 1071 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/Nodes/NodeGraphs.cs` | 50 | 871 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/Nodes/NodeRuntime.cs` | 73 | 1133 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/Nodes/QuestCloser.cs` | 60 | 946 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/Nodes/WireEvaluation.cs` | 45 | 717 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/Nodes/WorkPerformer.cs` | 53 | 888 |
@@ -159,7 +159,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 
 | File | KB | Lines |
 |---|---|---|
-| `src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/Bridge/DriverModuleAccountsTests.cs` | 61 | 1064 |
+| `src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/Bridge/DriverModuleAccountsTests.cs` | 62 | 1078 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/Bridge/DriverModuleConversationTests.cs` | 52 | 953 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/Bridge/DriverModuleSessionsTests.cs` | 69 | 1162 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/Loop/AttentionStateSliceTests.cs` | 59 | 1090 |
@@ -199,7 +199,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Service/Daoris.Service.Tests/Remote/QuestSyncTests.cs` | 107 | 2111 |
 | `src/Daoris.Service/Daoris.Service.Tests/Sessions/SessionLedgerTests.cs` | 99 | 1919 |
 | `src/Daoris.Service/Daoris.Service.Tests/Sessions/SessionStoreTests.cs` | 41 | 821 |
-| `src/Daoris.Service/README.md` | 102 | 789 |
+| `src/Daoris.Service/README.md` | 102 | 790 |
 
 ### CLI (`cli`)
 
@@ -210,12 +210,12 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Cli/src/driver/driverconfig.ts` | 160 | 2848 |
 | `src/Daoris.Cli/src/plugins/plugins.ts` | 82 | 1598 |
 | `src/Daoris.Cli/src/service/service.ts` | 41 | 862 |
-| `src/Daoris.Cli/src/workflows/namedworkflows.ts` | 44 | 882 |
+| `src/Daoris.Cli/src/workflows/namedworkflows.ts` | 46 | 902 |
 | `src/Daoris.Cli/src/workflows/workflowdoor.ts` | 50 | 897 |
 | `src/Daoris.Cli/test/agents/toolchain.test.ts` | 110 | 2082 |
 | `src/Daoris.Cli/test/desktop-tool.test.ts` | 46 | 878 |
 | `src/Daoris.Cli/test/dogfood.test.ts` | 49 | 852 |
-| `src/Daoris.Cli/test/driver/driverconfig.test.ts` | 157 | 2871 |
+| `src/Daoris.Cli/test/driver/driverconfig.test.ts` | 157 | 2872 |
 | `src/Daoris.Cli/test/tools/tools.test.ts` | 44 | 752 |
 | `src/Daoris.Cli/test/usage-report.test.ts` | 75 | 1281 |
 | `src/Daoris.Cli/tool-test/desktop-publish.test.ts` | 72 | 1255 |
@@ -240,13 +240,13 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 
 | File | KB | Lines |
 |---|---|---|
-| `.claude/knowledge/twins.md` | 112 | 182 |
+| `.claude/knowledge/twins.md` | 113 | 182 |
 | `docs/2026-09-19-platform-ux.md` | 69 | 720 |
 | `docs/2026-09-21-dsh-evaluation.md` | 43 | 483 |
 | `docs/2026-09-21-working-surface-components.md` | 54 | 354 |
 | `docs/2026-09-25-rev3-review.md` | 51 | 407 |
 | `docs/2026-09-26-ux5-screen-audit.md` | 46 | 141 |
-| `docs/2026-09-30-machine-log-design.md` | 61 | 516 |
+| `docs/2026-09-30-machine-log-design.md` | 61 | 517 |
 | `docs/2026-10-01-account-rotation-design.md` | 52 | 613 |
 | `docs/2026-10-01-agent-layout-design.md` | 59 | 790 |
 | `docs/2026-10-01-development-documents-design.md` | 62 | 825 |
@@ -274,4 +274,4 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `docs/2026-10-20-session-context-design.md` | 45 | 478 |
 | `docs/2026-10-20-ui-ux-design.md` | 106 | 1115 |
 | `docs/DAORIS_UNIFIED_COLLABORATION_ARCHITECTURE_AND_PLAN_2026-10-16.md` | 164 | 5380 |
-| `src/Daoris.Desktop/README.md` | 124 | 656 |
+| `src/Daoris.Desktop/README.md` | 125 | 658 |

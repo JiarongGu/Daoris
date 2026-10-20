@@ -5,6 +5,7 @@
   "contextMenu.act.search": "Search Daoris for it",
   "contextMenu.act.ask": "Ask Daoris about it",
   "contextMenu.act.open": "Open",
+  "contextMenu.act.openAsk": "Open the ask",
   "contextMenu.act.openInBrowser": "Open in Daoris's browser",
   "contextMenu.act.copyLink": "Copy link",
   "contextMenu.act.copyQuest": "Copy quest ID",

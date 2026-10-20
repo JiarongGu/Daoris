@@ -75,6 +75,37 @@ public sealed class HelpGrantsTests : IDisposable
         Assert.DoesNotContain("mcp__tickets__close_issue", widened.Allow);
     }
 
+    /// <summary>
+    /// HELPMODE1c3 (the modes design §4.1's decided note): *Configured access* draws the browser's grant from this record, read only.
+    /// Its grant is the server that attaches to Daoris's own browser, as the plugin declares it for Ask Daoris: none where no plugin
+    /// here does, waiting until approved, and changed since where an update widened it after the approval.
+    /// </summary>
+    [Fact]
+    public void The_browsers_grant_is_the_server_that_attaches_to_daoris_browser()
+    {
+        Assert.Null(HelpGrants.Read(_home, Tickets()).Browser);
+
+        var folder = DaorisHome.Entry(_home, HomeEntry.Plugins, "in-app-browser");
+        Directory.CreateDirectory(folder);
+        void Declare(string allow) => File.WriteAllText(Path.Combine(folder, PluginCatalog.ManifestName), $$"""
+            { "id": "in-app-browser", "servers": [
+                { "name": "browser", "command": ["node", "server.js", "--cdp", "${browser}"], "to": ["sessions", "help"],
+                  "allow": {{allow}}, "writes": ["browser_click"] } ] }
+            """);
+        Declare("""["browser_snapshot"]""");
+
+        var waiting = HelpGrants.Read(_home, PluginCatalog.Load(_home)).Browser;
+        Assert.Equal(("in-app-browser", HelpGrants.Waits, false), (waiting!.Plugin, waiting.State, waiting.Changed));
+
+        HelpGrants.Approve(_home, PluginCatalog.Load(_home), "in-app-browser", "browser", readsOnly: false);
+        var approved = HelpGrants.Read(_home, PluginCatalog.Load(_home)).Browser!;
+        Assert.Equal(HelpGrants.Approved, approved.State);
+        Assert.Equal(["browser_click"], approved.Accepted);
+
+        Declare("""["browser_snapshot", "browser_tabs"]""");
+        Assert.True(HelpGrants.Read(_home, PluginCatalog.Load(_home)).Browser!.Changed);
+    }
+
     [Fact]
     public void An_update_that_adds_or_widens_a_tool_asks_again_and_hands_nothing_until_approved()
     {
