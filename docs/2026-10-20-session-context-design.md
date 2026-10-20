@@ -8,7 +8,7 @@ mixed-agents design §1, §2 and §6, with its MIXAGENT1a-i, 1a-ii, 1a-iii and 2
 §1.3, §1.5 and §5; D183 points 2-4 and its HELPMODE1a2, 1a4, 1a5, HELPWIRED1, HELPMODE1c2a and ACCESSSWAP1 notes; D184 and its
 AUTONOMY1b and 1c notes; D188 points 1, 5 and 6; D191; D125 point 4; D165 point 3; D143; D160's rejected compaction; D24; the
 session economy design §1.6-§1.7; the subagent load evidence §2-§3; `session-record-fields.md`, `model-decoupling.md` and
-`claims-need-checks.md`. Every file reference was read again at `2744a2796` as the design was settled (first at
+`claims-need-checks.md`. Every file reference was read again at `d0e51b54b` as the design was settled (first at
 `4e12716b9`). A statement about what a harness does says where it comes from: **read** (from the maker's package or source,
 read by an earlier design, or from Daoris's code that speaks to the harness), **recorded** (from this repository's own
 measured records), or **not measured**. This design ran no turn.
@@ -18,8 +18,8 @@ measured records), or **not measured**. This design ran no turn.
 The owner set the direction on 2026-10-20: Daoris manages a session's context, so that a conversation can change its
 permissions, and even its agent, mid-session; holding the context is also what later work builds on. ACCESSSWAP1 took the
 first step for Ask Daoris, merged the same day (D183's ACCESSSWAP1 note): an access change ends the agent's process at its
-turn's end, and the same conversation resumes under the new access at its next turn. A driven session's access change still
-waits for its next start until ACCESSSWAP1b. This design decides the rest.
+turn's end, and the same conversation resumes under the new access at its next turn. ACCESSSWAP1b did the same for a driven
+session's permission prompts, on both doors (D183's ACCESSSWAP1b note). This design decides the rest.
 
 **Where a conversation's context lives.**
 
@@ -33,15 +33,15 @@ waits for its next start until ACCESSSWAP1b. This design decides the rest.
 
 | The change | Today | What the agent knows after |
 |---|---|---|
-| Access, the same agent and account | the same conversation resumed under the new access: Ask Daoris's at its next turn (ACCESSSWAP1), a driven session's at its next start (D183 point 3, D184's AUTONOMY1b note) until ACCESSSWAP1b | its own conversation |
+| Access, the same agent and account | the same conversation resumed under the new access at its next turn: Ask Daoris's (ACCESSSWAP1) and a driven session's (ACCESSSWAP1b, D184's AUTONOMY1b note) | its own conversation |
 | Another account of the same agent: D165's move, a pick, a rotation after a limit | a new part: a carry-on or a hand-over (D125 point 4, D165 point 3) | the request as first written, the last plan, the last words, what is uncommitted |
 | Another agent (D163) | a new part: the hand-over | the same four facts, with *None of its own context carries over to you* (`HandOverRecords.cs:111-112`) |
 | Its resume refused: `unkept`, `unable`, `offered`, `gone`, `refused`, `elsewhere` | a driven record: a carry-on handed the four facts; a conversation or a closed quest's session: the words wait, marked, and *Start a conversation with these words* is the person's press (`ChatGoOn.cs:60-62`) | the four facts, or nothing |
 
-Two of those codes say more than one thing today. `gone` is the protocol door's `resource_not_found` (`Acp.cs:2364-2370`), and
+Two of those codes say more than one thing today. `gone` is the protocol door's `resource_not_found` (`Acp.cs:2390-2396`), and
 also the native door's harness ending on a failed exit before it named its conversation (`ChatRunner.cs:1840-1846`,
 `DriverContinuations.cs:427-432`), which a crash, a failed sign-in or a flag the harness rejects ends the same way.
-`refused` is the agent's own refusal on the wire (`Acp.cs:2369`), an adapter no longer installed (`ChatGoOn.cs:283-301`,
+`refused` is the agent's own refusal on the wire (`Acp.cs:2395`), an adapter no longer installed (`ChatGoOn.cs:283-301`,
 `DriverContinuations.cs:113`, `:124-126`), and a resumed run that could not start (`DriverContinuations.cs:294-299`,
 `:346-352`).
 
@@ -65,10 +65,11 @@ still sees one session, with a part for each conversation in its *Parts* strip.
 
 The conversation resumes where its record has the same agent and account, its tree stands, its id was kept, and the door
 can resume (D131 point 2, `Continuation.cs:169-201`). The access is not among the conditions: the protocol door asks for the
-posture on every resume (read: `Acp.cs:2381-2382`), and the native door names `--permission-mode` on every run (read:
+posture on every resume (read: `Acp.cs:2407-2408`), and the native door names `--permission-mode` on every run (read:
 `Adapters.cs:1987-1995`, `:2045-2046`). Asking is not having: a posture the agent does not offer is refused where it is
-required, as full access is, and left as it was where it is not (read: `Acp.cs:1894-1918`), and neither door's resume under
-another access has run here (§12). §2.1 says what a resumed start keeps of it.
+required, as full access is, and left as it was where it is not (read: `Acp.cs:1920-1944`), and neither door's resume under
+another access has run here against a real harness (ACCESSSWAP1b's proof ran the stub, D183's note; §12). §2.1 says what a
+resumed start keeps of it.
 
 Where the agent or the account changed, the conversation cannot go with it. Where neither changed, the resume is tried, and
 what its refusal proves decides:
@@ -78,7 +79,7 @@ what its refusal proves decides:
 | Access | yes, where the rest holds (ACCESSSWAP1; ACCESSSWAP1b for a driven session) | the same part, under the new access asked for (§2.1) |
 | Account | no: the conversation is in the other account's home (D131 point 2) | a new part, `from` with the move's why |
 | Agent | no | a new part, `from` with the move's why |
-| Its loss proven: the protocol door's `resource_not_found` (`gone`), `unkept`, `unable`, `offered` | no | a new part by itself, handed the brief: `from` why `resume` for a conversation, a closed quest's session or an access change; `retry` for a driven record's fallback (D131 point 3) |
+| Its loss proven: the protocol door's `resource_not_found` (`gone`), `unkept`, `unable`, `offered` | no | a new part by itself, handed the brief: `from` why `resume` for a conversation or a closed quest's session, its access changed or not; `retry` for a driven record's fallback (D131 point 3), whatever moved it |
 | The native door's harness ended on a failed exit before it named its conversation (`gone` today) | tried once more, as a resume | where that ends the same way, held for the person, said why, the brief ready |
 | The agent refused it on the wire (`refused`), or another client holds it (`elsewhere`) | no | held for the person, said why, the brief ready |
 | The adapter it ran on is no longer installed (`refused` today) | no | held for the person with the hand-over's offer: they choose the agent |
@@ -95,7 +96,7 @@ what its refusal proves decides:
   the same way it waits for the person. SESSCTX1c gives it a code of its own, or a detail on `gone` as `account` carries one
   (`ContinueWhy.AccountHeld`, `Continuation.cs:122-130`); either way a note already written `gone` reads as it did.
 - **`elsewhere` is Codex's alone.** It is `codex-acp`'s `thread_active_writer`, read from the refusal's structured data
-  (`Continuation.cs:73-77`, `Acp.cs:2364-2370`): another client holds the conversation, so its context is not lost and a
+  (`Continuation.cs:73-77`, `Acp.cs:2390-2396`): another client holds the conversation, so its context is not lost and a
   second writer in the same tree could redo its work. On Claude a second writer is not detected, so no resume there is held
   for it.
 - **Held for the person** means the words wait on the record, marked, the record says why, and the brief is ready if the
@@ -126,7 +127,7 @@ what its refusal proves decides:
 A resumed start keeps the access it asked for, and the mode the agent reports as current where the protocol reports one:
 `currentModeId` on the resume's answer, or a `current_mode_update` after it. Where none is reported, it says the mode is not
 confirmed. Today neither is kept: `SetPostureAsync` reads `currentModeId` only to skip asking for a mode already current and
-discards `session/set_mode`'s answer (read: `Acp.cs:1920-1928`), a `current_mode_update` is dropped (`:2108`), and the
+discards `session/set_mode`'s answer (read: `Acp.cs:1946-1954`), a `current_mode_update` is dropped (`:2134`), and the
 receipt keeps what was asked (D183's HELPWIRED1 note). The native door reports no mode; whether its `--permission-mode` holds
 on a `--resume` is SESSCTX1a's to measure, and until it is, a native resumed start says its mode is not confirmed. So an
 access change that did not take is said, never assumed.
@@ -139,7 +140,8 @@ access change that did not take is said, never assumed.
   press, a change of agent), it is asked at its turn's end for one closing note, at most 4,000 characters, kept as its claim
   and carried as §3.1 item 6. A move never waits more than that one turn; a note not written in it is said absent.
 - **An access change whose resume is refused asks none.** The refusal is met only at the resume, after the part already
-  ended at its turn's end (D183's ACCESSSWAP1 note), so no turn is left to ask, and a lost conversation cannot be asked at all.
+  ended at its turn's end (D183's ACCESSSWAP1 and ACCESSSWAP1b notes), so no turn is left to ask, and a lost conversation
+  cannot be asked at all.
 - **A quest's session stopped for a move asks none.** Its turn is its quest (D163's MIXAGENT1a-ii note), so it has no
   turn's end to ask at; its outcome is its tool lines (§3.1 item 4).
 
@@ -150,7 +152,7 @@ access change that did not take is said, never assumed.
 A pure function, `ContextBrief.Compose`, which replaces `HandOverBriefing.Compose` (`HandOverRecords.cs:92-138`), composes it
 from the records of the line the new part continues: the part it moves from and the parts it continued, one chain back,
 never the entry's other parts running beside it. Today `from` links only a hand-over and a move onto another account (read:
-`Driver.ContinuesFrom`, `Driver.cs:3301-3323`); a carry-on on the same account and a driven fallback write none. So SESSCTX1b
+`Driver.ContinuesFrom`, `Driver.cs:3371-3393`); a carry-on on the same account and a driven fallback write none. So SESSCTX1b
 first gives every continuation its link to the part it continued, with a why of its own (§7), and the brief follows that
 chain. No model writes any of it.
 
@@ -316,10 +318,10 @@ writes as its door reports them, and *not measured* where the door says none (TO
   record continues another by, which no hand-over's box takes, as `curve` was before SWITCH1c: the box's check
   (`HandOverWhy.Known`, `HandOverRecords.cs:47-48`, read at `HandOverFiles.cs:46` and `:88`) stays on the five. The twins
   move in one branch, in both lanes: the driver's `HandOverWhy` with its `Briefed` and `Noted` English
-  (`HandOverRecords.cs:4-49`) and `NoteCodes.Handed` (`NoteCodes.cs:505-512`), held by `NoteCodesTests` (`:388-398`, which
+  (`HandOverRecords.cs:4-49`) and `NoteCodes.Handed` (`NoteCodes.cs:510-517`), held by `NoteCodesTests` (`:388-398`, which
   lists the whys exactly and holds each to the box's check, so it splits with it); the page's `HANDED_REASONS`
-  (`noteLines.ts:363-374`), held to the driver's by `locales/note.test.ts`, and `note.handed.why.*` in both catalogues
-  (`locales/{en,zh}/note.json:184-188`).
+  (`noteLines.ts:366-377`), held to the driver's by `locales/note.test.ts`, and `note.handed.why.*` in both catalogues
+  (`locales/{en,zh}/note.json:186-190`).
 - **The *Parts* strip says how a part began by its why.** Its reader takes any `from` as a hand-over
   (`Trees/SessionEntries.cs:128`) and reads a part without one by the prior record's state (`:129-138`), so a link on every
   continuation would show every carry-on as handed over. It moves with the whys: the five a hand-over's, `carry-on` as
@@ -395,15 +397,15 @@ findings (§14), and none is open: which refusals move a session by itself (§2)
 ## 11. Build rows
 
 Order: SESSCTX1a first, since the cost and the resume-first rule lean on what is not measured; SESSCTX1b beside it, being
-pure but for the links it writes; SESSCTX1f right after SESSCTX1b; SESSCTX1c after SESSCTX1b and ACCESSSWAP1b, which carries
-the driven door's access change; SESSCTX1d after SESSCTX1c; SESSCTX1e after SESSCTX1a and SESSCTX1c.
+pure but for the links it writes; SESSCTX1f right after SESSCTX1b; SESSCTX1c after SESSCTX1b, the driven door's access
+change being ACCESSSWAP1b's, already merged; SESSCTX1d after SESSCTX1c; SESSCTX1e after SESSCTX1a and SESSCTX1c.
 
 | Row | Lanes | After | What |
 |---|---|---|---|
 | SESSCTX1a | the parent, on this machine's accounts | first | the measurements of §12, one turn each, into an evidence document |
 | SESSCTX1b | driver, web-shell | beside 1a | the `from` link on every continuation with its three whys and their twins, the *Parts* strip by the why, a channel message's mark, the line's kept folders readable, and `ContextBrief.Compose` over a line's records, with its bound and its account, handed by the hand-over and every carry-on in place of the four facts (§3.4's two shapes) |
 | SESSCTX1f | service, driver | 1b | the line's history as a read-only connector tool, its event reader twinned with the driver's (§3.5) |
-| SESSCTX1c | driver, web-shell | 1b, ACCESSSWAP1b | the refusals judged as §2 says (a proven loss goes on by itself, `from` why `resume`; the native door's failed exit split from `gone` and tried once more; the rest held for the person), the closing note (§2.2), the mode a resumed start reports (§2.1), the coded lines and `session.moved` |
+| SESSCTX1c | driver, web-shell | 1b (ACCESSSWAP1b merged) | the refusals judged as §2 says (a proven loss goes on by itself, `from` why `resume`; the native door's failed exit split from `gone` and tried once more; the rest held for the person), the closing note (§2.2), the mode a resumed start reports (§2.1), the coded lines and `session.moved` |
 | SESSCTX1d | modules, web-shell | 1c | the *Parts* strip's line for a move, the head's leading agent, each part's cost, in both languages |
 | SESSCTX1e | driver, modules, web-shell | 1a, 1c | *Go on fresh*: the person's press and `daoris-driver sessions fresh <id>`, Ask Daoris's exemption as the person's own |
 
@@ -431,7 +433,7 @@ the driven door's access change; SESSCTX1d after SESSCTX1c; SESSCTX1e after SESS
 
 ## 13. What this document's gate does not cover
 
-Documents only; nothing is built. Its statements about today were read from the code at `2744a2796`. Its statements about
+Documents only; nothing is built. Its statements about today were read from the code at `d0e51b54b`. Its statements about
 the harnesses were read from earlier designs that read the makers' packages and source (the session messages design §1, the
 limit-signals evidence §3), or from Daoris's code; none was measured by this design, and §12 lists what must be.
 `verify` checks this document's links and D189's place and shape, and none of their words.
@@ -446,30 +448,31 @@ Codex had held for the person (C7, F2, F3).
 
 | # | Finding | Checked | Verdict, and where it was taken |
 |---|---|---|---|
-| C1 | The brief followed `from`, which a carry-on on the same account never writes, so an earlier part's words could be lost | `Driver.cs:3301-3323` | taken: §3.1, SESSCTX1b gives every continuation its link first; the brief follows that chain, never parallel parts |
+| C1 | The brief followed `from`, which a carry-on on the same account never writes, so an earlier part's words could be lost | `Driver.cs:3371-3393` | taken: §3.1, SESSCTX1b gives every continuation its link first; the brief follows that chain, never parallel parts |
 | C2 | "Every word taken" repeats a word told twice and revives one taken back | `SessionEvents.cs:60-64`, `:182-196` | taken: §3.1 item 3, one word per id, its latest event; withdrawn left out; answered words as past exchanges; waiting words after the brief |
-| C3 | A resume asks for a posture; an optional one not offered is left as it was | `Acp.cs:1894-1918` | taken: §2 and §2.1, a resumed start says what it asked and what was confirmed; §12 measures both, `session/resume` and `session/load` apart |
+| C3 | A resume asks for a posture; an optional one not offered is left as it was | `Acp.cs:1920-1944` | taken: §2 and §2.1, a resumed start says what it asked and what was confirmed; §12 measures both, `session/resume` and `session/load` apart |
 | C4 | "Cheaper on every later request" and "exact memory" outran the evidence: H is a high-water, and a harness's compaction keeps what it keeps | `AccountRotation.cs:662-678`; D137 | taken: §5, no way on is claimed cheaper; resume first for continuity; §12 measures later requests |
 | C5 | The bound's allocation left sections without caps and no room for the omission notice | the design's §3.2 | taken: §3.2, per-section caps, per-item clipping, the notice's room, the bound provisional and counted in both languages |
 | C6 | The brief carried activity more than actionable state; the plan's age was unsaid; the 2,000-character claim was wrong for text content | `SessionEvents.cs:358-362`, `:423-435`; `LastPlan` | taken: §3.1 items 4-5, the last check, open questions, the plan's turn; §3.3 and §9 corrected |
-| C7 | `elsewhere` is contention, not loss; a bare `refused` does not prove loss | `Acp.cs:2364-2370` | taken: §2, those wait for the person, the brief ready |
+| C7 | `elsewhere` is contention, not loss; a bare `refused` does not prove loss | `Acp.cs:2390-2396` | taken: §2, those wait for the person, the brief ready |
 | C8 | An optional note in a running turn is worth carrying; the pull tool should come with the brief | the design's §3.1, §3.5, §9 | taken: §3.1 item 6; the tool built right after the brief (F13) |
-| F1 | A `from` on every continuation breaks the *Parts* strip, which reads any `from` as a hand-over; the whys are twinned and a box refuses an unknown one | `Trees/SessionEntries.cs:128`; `HandOverFiles.cs:46`, `:88`; `NoteCodesTests.cs:395`; `locales/{en,zh}/note.json:184-188` | taken: §7, `resume`, `carry-on` and `retry` added in both lanes in one branch, the strip read by the why, the twins named; SESSCTX1b |
-| F2 | The native door's `gone` is any failed exit before the conversation was named, not a proven loss; only the protocol door's `resource_not_found` proves it | `ChatRunner.cs:1840-1846`; `DriverContinuations.cs:427-432`; `Acp.cs:2367` | taken: §2, only a proven loss (`resource_not_found`, `unkept`, `unable`, `offered`) moves a session by itself; the native failed exit tried once more, then held, and split from `gone` in SESSCTX1c |
-| F3 | `refused` is three things: a wire refusal, an adapter no longer installed, a run that could not start | `Acp.cs:2369`; `ChatGoOn.cs:298-299`; `DriverContinuations.cs:125`, `:298`, `:348` | taken: §2, a wire refusal and `elsewhere` held, the brief ready; an adapter gone held with the hand-over's offer; a run that could not start a start failure; `elsewhere` Codex's alone |
+| F1 | A `from` on every continuation breaks the *Parts* strip, which reads any `from` as a hand-over; the whys are twinned and a box refuses an unknown one | `Trees/SessionEntries.cs:128`; `HandOverFiles.cs:46`, `:88`; `NoteCodesTests.cs:395`; `locales/{en,zh}/note.json:186-190` | taken: §7, `resume`, `carry-on` and `retry` added in both lanes in one branch, the strip read by the why, the twins named; SESSCTX1b |
+| F2 | The native door's `gone` is any failed exit before the conversation was named, not a proven loss; only the protocol door's `resource_not_found` proves it | `ChatRunner.cs:1840-1846`; `DriverContinuations.cs:427-432`; `Acp.cs:2393` | taken: §2, only a proven loss (`resource_not_found`, `unkept`, `unable`, `offered`) moves a session by itself; the native failed exit tried once more, then held, and split from `gone` in SESSCTX1c |
+| F3 | `refused` is three things: a wire refusal, an adapter no longer installed, a run that could not start | `Acp.cs:2395`; `ChatGoOn.cs:298-299`; `DriverContinuations.cs:125`, `:298`, `:348` | taken: §2, a wire refusal and `elsewhere` held, the brief ready; an adapter gone held with the hand-over's offer; a run that could not start a start failure; `elsewhere` Codex's alone |
 | F4 | The brief's channel claims have no field: the page tells one by a prefix of Daoris's English | `ConversationView.tsx:371`; `channel.ts:40` | taken: §3.1 item 3 and §7, its own mark on the `user` event, with the page's twin; SESSCTX1b |
 | F5 | A new part cannot read the attachments the brief names: a conversation's rules allow its own kept folder alone | `ChatRunner.cs:494-506`; D52 | taken: §3.1 item 5, a new part's rules read the line's kept folders |
 | F6 | A part's end commit is not recorded, and nothing classes a tool call as a check | `TracedRecords.cs:42`; `Trace.Words.cs:342` | taken: §3.1 items 4-5, the tree's head read at compose time, a check by a declared gate, the last failed check's kept output; §3.3 |
 | F7 | A driven carry-on's facts are a section of its composed instruction, not a first event; the briefing has one caller | `HandOver.cs:240`; `InstructionAccount.cs:17-19` | taken: §3.4, a section accounted within the instruction for a driven part, the first prompt's event for a conversation |
-| F8 | ACCESSSWAP1 covers Ask Daoris alone; a driven session's access change is ACCESSSWAP1b, open | D183's ACCESSSWAP1 note | taken: §11, SESSCTX1c after ACCESSSWAP1b |
+| F8 | ACCESSSWAP1 covers Ask Daoris alone; a driven session's access change is ACCESSSWAP1b, open | D183's ACCESSSWAP1 note | taken: §11, SESSCTX1c after ACCESSSWAP1b, which merged while the design was settled (D183's ACCESSSWAP1b note) |
 | F9 | The outgoing agent's note rests on MIXAGENT1c, whose tool does not exist | `handover_propose` found nowhere under `src/` | taken: §3.1 item 6, the closing note carries it until the tool exists |
 | F10 | A driven part stopped for a move has no last message for its interrupted turn | D163's MIXAGENT1a-ii note | taken: §3.1 item 4 and §2.2, its outcome is its tool lines |
 | F11 | The caps left at most 4,000 characters for every turn's outcome, filled last | the design's §3.2 | taken: §3.2 re-cut, the outcomes at least 12,000; a Han character counted as three until measured |
-| F12 | "The posture the agent answered" is read nowhere: `currentModeId` only skips an identical call, `set_mode`'s answer is discarded, the receipt keeps what was asked | `Acp.cs:1920-1928`, `:2108`; D183's HELPWIRED1 note | taken: §2.1, the mode the agent reports where it reports one, else not confirmed; §12; D189 point 2's caveat |
+| F12 | "The posture the agent answered" is read nowhere: `currentModeId` only skips an identical call, `set_mode`'s answer is discarded, the receipt keeps what was asked | `Acp.cs:1946-1954`, `:2134`; D183's HELPWIRED1 note | taken: §2.1, the mode the agent reports where it reports one, else not confirmed; §12; D189 point 2's caveat |
 | F13 | The open choices: refusals (F2-F3), the closing turn, the history tool | the design's §9-§10 | taken: §2.2, a closing note where the account has room, none where it forces the move, with one case narrowed below; §3.5, SESSCTX1f right after SESSCTX1b |
 | F14 | The fork's rejection reason, two conversations, was weak | the design's §9 | taken: §9, a fork gains nothing a resume does not where a resume holds |
 | F15 | §0 said ACCESSSWAP1 was in flight; it merged | D183's ACCESSSWAP1 note | taken: §0 |
 
 **One decision narrowed on the code.** The steward's choice on the closing note named an access change whose resume is
-refused among the moves where the account has room. That refusal is met only at the resume, after ACCESSSWAP1 already ended
-the part at its turn's end, and a lost conversation cannot be asked; so §2.2 asks none there, and says why.
+refused among the moves where the account has room. That refusal is met only at the resume, after ACCESSSWAP1 or
+ACCESSSWAP1b already ended the part at its turn's end, and a lost conversation cannot be asked; so §2.2 asks none there, and
+says why.

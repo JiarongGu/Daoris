@@ -257,7 +257,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `docs/2026-10-16-fabric-events-design.md` | 175 | 2131 |
 | `docs/2026-10-20-flowchart-design.md` | 60 | 698 |
 | `docs/2026-10-20-message-urgency-design.md` | 67 | 661 |
-| `docs/2026-10-20-session-context-design.md` | 45 | 475 |
+| `docs/2026-10-20-session-context-design.md` | 45 | 478 |
 | `docs/2026-10-20-ui-ux-design.md` | 106 | 1115 |
 | `docs/DAORIS_UNIFIED_COLLABORATION_ARCHITECTURE_AND_PLAN_2026-10-16.md` | 164 | 5380 |
 | `src/Daoris.Desktop/README.md` | 119 | 628 |
