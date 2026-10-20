@@ -59,7 +59,7 @@ public static class AttentionStateSlice
         [
             "kind", "id", "since", "workspace", "where", "note", "detail", "publishTo", "choices", "ask", "number", "goAhead", "session",
             "departed", "setUp", "local", "environment", "shows", "opinion", "placed", "sitting", "trust", "quest", "proposal", "title",
-            "permission", "blocked", "held", "circle", "holding", "read", "runs", "account",
+            "permission", "blocked", "held", "wholeWorkspace", "holding", "read", "runs", "account",
         ],
         ["waiting"] = ["kind", "workspace"],
         ["note"] = ["note", "parts"],
