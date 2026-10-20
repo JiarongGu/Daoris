@@ -20,7 +20,9 @@ type Edit = {
   agent?: string; account?: string; key?: string;
 };
 type Change = { from: string[]; to: string[] };
-type Row = { name: string; file: string; edit: Edit; changes: Change[]; start?: Change[]; between?: Change[]; crlf?: boolean; refused?: string };
+type Row = {
+  name: string; file: string; edit: Edit; changes: Change[]; start?: Change[]; between?: Change[]; crlf?: boolean; refused?: string; only?: 'cli' | 'driver';
+};
 
 const here = dirname(fileURLToPath(import.meta.url));
 const TABLE = JSON.parse(readFileSync(join(here, 'fixtures', 'home-files-keep.json'), 'utf8')) as { files: Record<string, string[]>; rows: Row[] };
@@ -77,7 +79,9 @@ function applied(home: string, row: Row, between: () => void): void {
 
 // A test a row, so each row passes or fails on its own.
 TABLE.rows.forEach((row, index) => {
-  test(`homefileskeep: the shared table writes the bytes the driver writes: ${row.name}`, () => {
+  // A row the driver alone writes (`plugin-approvals.json`, KEEPALL1d) has no writer here.
+  const skip = row.only !== undefined && row.only !== 'cli' ? `the ${row.only}'s alone` : false;
+  test(`homefileskeep: the shared table writes the bytes the driver writes: ${row.name}`, { skip }, () => {
     const fx = makeFixture(`home-files-keep-${index}`);
     fx.write(row.file, changed(row.file, row.start, row.crlf));
     const write = () => applied(fx.root, row, () => {
