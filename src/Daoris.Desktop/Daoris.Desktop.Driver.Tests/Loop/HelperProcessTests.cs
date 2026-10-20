@@ -191,10 +191,14 @@ public sealed class HelperProcessTests : IDisposable
     /// The stub helper: a harness with real mechanics and no model. It says what it saw (including the state file it was started
     /// under), then either answers through the file <c>helper_answer</c> writes or ends having said words only.
     /// </summary>
+    /// <remarks>
+    /// Its files are where the home's table puts the helpers entry, as the service's <c>HelperBox</c> finds them for the real tool
+    /// (HOMEFIX1): a stub that joined the old place wrote its answer beside the ask, in both places, and the driver refused it.
+    /// </remarks>
     private string Agent(bool answers)
     {
         var script = Path.Combine(_home, "helper-agent.mjs");
-        var home = _home.Replace("\\", "/");
+        var helpers = DaorisHome.Entry(_home, HomeEntry.Helpers).Replace("\\", "/");
         File.WriteAllText(script, $$"""
             import { writeFileSync, readFileSync, mkdirSync } from 'node:fs';
             import { dirname, join } from 'node:path';
@@ -202,9 +206,9 @@ public sealed class HelperProcessTests : IDisposable
             if (process.argv.includes('--version')) { console.log('stub-harness 1.0.0'); process.exit(0); }
             if (process.argv.includes('--login-state')) { console.log('logged-in'); process.exit(0); }
 
-            const home = '{{home}}';
+            const helpers = '{{helpers}}';
             let state = null;
-            try { state = readFileSync(join(home, 'helpers', '{{AskId}}.state.json'), 'utf8'); } catch {}
+            try { state = readFileSync(join(helpers, '{{AskId}}.state.json'), 'utf8'); } catch {}
             writeFileSync(join(dirname(fileURLToPath(import.meta.url)), 'saw.json'), JSON.stringify({
               cwd: process.cwd(),
               session: process.env.DAORIS_SESSION_ID ?? null,
@@ -214,8 +218,8 @@ public sealed class HelperProcessTests : IDisposable
             }));
 
             if ({{(answers ? "true" : "false")}}) {
-              mkdirSync(join(home, 'helpers'), { recursive: true });
-              writeFileSync(join(home, 'helpers', '{{AskId}}.answer.json'), JSON.stringify({
+              mkdirSync(helpers, { recursive: true });
+              writeFileSync(join(helpers, '{{AskId}}.answer.json'), JSON.stringify({
                 id: '{{AskId}}', helper: process.env.DAORIS_SESSION_ID, answer: 'The window is exclusive at report.md:1.', at: new Date().toISOString(),
               }));
               console.log('stub: answered through its tool');
