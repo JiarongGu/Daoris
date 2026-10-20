@@ -44,6 +44,8 @@
   "work.milestone.line.cleanupPending": "clean-up pending",
   "work.milestone.line.recoveryUntil": "recovery kept until {{when}}",
   "work.milestone.line.recovery": "recovery kept",
+  "work.milestone.line.blocked": "blocked",
+  "work.milestone.line.held": "held for you",
   "work.milestone.wait.title": "{{unit}}: its clean-up is blocked",
   "work.milestone.wait.owner": "Nothing records whose work this is, so nothing of it is cleaned up.",
   "work.milestone.held.label": "Held for you",

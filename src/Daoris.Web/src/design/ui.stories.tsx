@@ -284,8 +284,8 @@ export const CodeSpans: StoryObj = {
 };
 
 /**
- * The four meanings a liveness mark carries, each wearing its word. There is no story here for a dot
- * without a label, because the component cannot render one — which is the point (D41 §6).
+ * The meanings a liveness mark carries, each wearing its word; `done` and `waits` are a fact's marks (MILESTONEUX1). There is
+ * no story here for a dot without a label, because the component cannot render one — which is the point (D41 §6).
  */
 export const Dots: StoryObj = {
   render: () => (
@@ -294,6 +294,8 @@ export const Dots: StoryObj = {
       <Dot tone="parked" label="awaiting person" />
       <Dot tone="ended" label="completed" />
       <Dot tone="idle" label="queued" />
+      <Dot tone="done" label="reached" />
+      <Dot tone="waits" label="pending" />
     </div>
   ),
 };

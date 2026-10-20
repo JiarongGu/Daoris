@@ -545,7 +545,13 @@ describe('a session’s page header and its acts', () => {
       : DRIVER_STATE));
     show('s1a2b3c4');
 
+    // Folded to its line, which already says what waits on the person; the facts open in place (MILESTONEUX1).
     const foot = await screen.findByRole('region', { name: 'Where this work stands' });
+    const fold = within(foot).getByRole('button', { name: /Where this work stands/ });
+    expect(fold).toHaveAttribute('aria-expanded', 'false');
+    expect(fold).toHaveTextContent('Ended · clean-up pending · blocked · recovery kept until');
+    expect(foot).not.toHaveTextContent('Reached:');
+    fireEvent.click(fold);
     expect(foot).toHaveTextContent('Reached: every commit of it is on main');
     expect(foot).toHaveTextContent('Kept: main');
     expect(foot).toHaveTextContent('Blocked: tree s1a2b3c4, a session still holds this tree');

@@ -287,8 +287,9 @@ export function AttendedSession({
       {relations && <SessionRelations relations={relations} onQuest={onQuest} onSession={onSession} />}
       {/* Its ask's channel kept to this line of work, folded to a line (SESSONE2c, D167 points 6 to 8). */}
       {channel && <ChannelPanel {...channel} />}
-      {/* Where its work stands (FABRIC-MILESTONE1b): the end, the result, the clean-up and the recovery, read from the driver. */}
-      {milestone && <WorkMilestone unit={milestone} />}
+      {/* Where its work stands (FABRIC-MILESTONE1b): the end, the result, the clean-up and the recovery, read from the driver, folded
+          to its line, opened in place (MILESTONEUX1); keyed by the record so another one starts folded. */}
+      {milestone && <WorkMilestone key={session.id} unit={milestone} />}
       {/* Folded, a line above the conversation: nothing is read until the person opens it (TRACE1b). */}
       {trace && <HowItCameToBe kind="session" id={session.id} {...trace} nameOf={nameOf} />}
       {/* The timeline lives in the right dock since SURF6 gave the dock its second occupant. It stayed
