@@ -1000,7 +1000,7 @@ check(
 );
 check(
   '…and the host keeps the file under ITS home, by the quest and the content',
-  Boolean(brief?.path) && brief.path.startsWith(join(scratch, 'home', 'quests', drivenId, 'attachments'))
+  Boolean(brief?.path) && brief.path.startsWith(join(homeEntry(join(scratch, 'home'), 'quest-files', drivenId), 'attachments'))
     && existsSync(brief.path) && readFileSync(brief.path, 'utf8') === BRIEF,
   JSON.stringify(brief),
 );
