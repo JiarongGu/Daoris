@@ -110,7 +110,7 @@ const everyAct = (): Required<AttentionActs> => ({
   publish: vi.fn(), retry: vi.fn(), answer: vi.fn(), trust: vi.fn(),
   acceptDeparture: vi.fn(), acceptRule: vi.fn(), declineRule: vi.fn(),
   signIn: vi.fn(), signInNew: vi.fn(), read: vi.fn(), letRun: vi.fn(), reviewed: vi.fn(), notYet: vi.fn(), showAgain: vi.fn(),
-  opinionAgain: vi.fn(), opinionAnyway: vi.fn(), helper: vi.fn(), held: vi.fn(), permission: vi.fn(),
+  opinionAgain: vi.fn(), opinionAnyway: vi.fn(), helper: vi.fn(), held: vi.fn(), permission: vi.fn(), answerAlone: vi.fn(),
 });
 
 describe('a row in what needs you', () => {
@@ -432,7 +432,7 @@ describe('settling one where it stands', () => {
       id: 'c0nv0001#900', kind: 'permission', title: 'npm test', where: 'engine', since: '2026-09-21T11:00:00Z', session: 'c0nv0001',
       detail: 'Fix the loader waits on your answer before this tool call runs; it is refused if nobody answers within 15 minutes.',
       permission: {
-        session: 'c0nv0001', request: '900', call: null, title: 'npm test', kind: 'execute', since: '2026-09-21T11:00:00Z',
+        session: 'c0nv0001', request: '900', call: null, title: 'npm test', kind: 'execute', since: '2026-09-21T11:00:00Z', until: '2026-09-21T11:15:00Z',
         choices: [{ id: 'allow', name: 'Allow', kind: 'allow_once' }, { id: 'never', name: 'Reject always', kind: 'reject_always' }],
       },
     };

@@ -313,12 +313,26 @@ describe("The taskbar's count", () => {
    */
   it('counts a tool call a session holds for the person, as the band lists it', async () => {
     const permission = {
-      session: 'c4a7c4a7', request: '900', call: null, title: 'npm test', kind: 'execute', since: '2026-10-01T11:00:00Z',
+      session: 'c4a7c4a7', request: '900', call: null, title: 'npm test', kind: 'execute', since: '2026-10-01T11:00:00Z', until: '2026-10-01T11:15:00Z',
       choices: [{ id: 'allow', name: 'Allow', kind: 'allow_once' }],
     };
     start([...PARKS, { kind: 'permission', id: 'c4a7c4a7#900', since: permission.since, where: 'engine', session: 'c4a7c4a7', permission }]);
 
     // The two parks, and the held call.
+    await waitFor(() => expect(within(overviewButton()).getByText('3')).toBeInTheDocument());
+    await waitFor(() => expect(badges().at(-1)).toEqual(
+      ['DAORIS.WINDOWS', 'SET_BADGE', { payload: { count: 3, description: '3 waiting on you', order: expect.any(Number) } }]));
+  });
+
+  /**
+   * COWORK1e (D188 point 4; the message-urgency design §8.3): a third answer alone held for the person stands its line still until they
+   * answer, so the badge counts it as the band lists it.
+   */
+  it('counts a third answer alone held for the person, as the band lists it', async () => {
+    const answer = { session: 'c4a7c4a7', agent: 'codex-acp', words: ['w3'], since: '2026-10-01T11:00:00Z' };
+    start([...PARKS, { kind: 'answer', id: 'c4a7c4a7', since: answer.since, where: 'engine', session: 'c4a7c4a7', answer }]);
+
+    // The two parks, and the answer held.
     await waitFor(() => expect(within(overviewButton()).getByText('3')).toBeInTheDocument());
     await waitFor(() => expect(badges().at(-1)).toEqual(
       ['DAORIS.WINDOWS', 'SET_BADGE', { payload: { count: 3, description: '3 waiting on you', order: expect.any(Number) } }]));

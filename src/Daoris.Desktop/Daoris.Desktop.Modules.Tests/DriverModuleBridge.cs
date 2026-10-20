@@ -34,7 +34,7 @@ public abstract class DriverModuleBridge : Bridge
 
     protected static async Task UntilAsync(Func<bool> condition)
     {
-        var patience = DateTime.UtcNow + TimeSpan.FromSeconds(15);
+        var patience = DateTime.UtcNow + Poll.Patience;
         while (!condition())
         {
             Assert.True(DateTime.UtcNow < patience, "the condition never held");

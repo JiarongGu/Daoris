@@ -160,7 +160,7 @@ internal sealed class PipeClient : IAsyncDisposable
     {
         try
         {
-            return await _reader.ReadLineAsync().WaitAsync(TimeSpan.FromSeconds(15));
+            return await _reader.ReadLineAsync().WaitAsync(Poll.Patience);
         }
         catch (IOException)
         {
@@ -187,7 +187,7 @@ internal sealed class PipeClient : IAsyncDisposable
     {
         try
         {
-            var line = await _reader.ReadLineAsync().WaitAsync(TimeSpan.FromSeconds(15));
+            var line = await _reader.ReadLineAsync().WaitAsync(Poll.Patience);
             return line is null ? null : JsonDocument.Parse(line).RootElement.Clone();
         }
         catch (IOException)

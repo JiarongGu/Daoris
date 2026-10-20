@@ -105,7 +105,7 @@ public sealed class PersonKeyTests
     {
         var input = new StringReader(Counting + "\nwhat follows is the stop's to watch\n");
 
-        var (key, refusal) = PersonKey.FromInput(ServiceMode.Local, "1", () => input, TimeSpan.FromSeconds(5));
+        var (key, refusal) = PersonKey.FromInput(ServiceMode.Local, "1", () => input, Poll.Patience);
 
         Assert.Null(refusal);
         Assert.True(key!.Matches(Counting));
@@ -123,7 +123,7 @@ public sealed class PersonKeyTests
     [InlineData("AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh\n")]
     public void Asked_a_line_that_is_no_key_refuses_the_start(string written)
     {
-        var (key, refusal) = PersonKey.FromInput(ServiceMode.Local, "1", () => new StringReader(written), TimeSpan.FromSeconds(5));
+        var (key, refusal) = PersonKey.FromInput(ServiceMode.Local, "1", () => new StringReader(written), Poll.Patience);
 
         Assert.Null(key);
         Assert.Contains("the first line of standard input is not a person key", refusal);

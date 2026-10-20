@@ -103,6 +103,77 @@ public sealed class ChannelCommandTests
         Assert.Contains("Posted to ask #a1's channel, for db.", output.ToString());
     }
 
+    /// <summary>
+    /// 🔴 COWORK1e (D188 point 2; the message-urgency design §8.6): the person's post is urgent unless <c>--ordinary</c> asked it to
+    /// wait for each turn's end; <c>--urgent</c> says the default aloud; the two together, or a level with no words, is a problem.
+    /// </summary>
+    [Fact]
+    public void A_post_is_urgent_unless_asked_ordinary()
+    {
+        Assert.False(ChannelCommand.Read(["a1", "hello"], out _)!.Ordinary);
+        Assert.Equal(new ChannelAsk("a1", "db", null, "when you can", Ordinary: true), ChannelCommand.Read(["a1", "--ordinary", "--to", "db", "when", "you", "can"], out _));
+        Assert.Equal(new ChannelAsk("a1", null, null, "now please"), ChannelCommand.Read(["a1", "--urgent", "now", "please"], out _));
+
+        Assert.Null(ChannelCommand.Read(["a1", "--ordinary", "--urgent", "hello"], out var both));
+        Assert.Contains("two levels", both);
+        Assert.Null(ChannelCommand.Read(["a1", "--ordinary"], out var noWords));
+        Assert.Contains("words", noWords);
+    }
+
+    /// <summary>
+    /// 🔴 COWORK1e: the post carries its level to the person's door, <c>urgent</c> false for <c>--ordinary</c> and true by default, and
+    /// says the level the service kept; a host from before that keeps none is told nothing of it.
+    /// </summary>
+    [Theory]
+    [InlineData(true, "false", ""","urgent":false""", "for everyone, ordinary: each session it reaches reads it when its turn ends.")]
+    [InlineData(false, "true", ""","urgent":true""", "for everyone, urgent: each session it reaches reads it at its next step.")]
+    [InlineData(false, "true", "", "Posted to ask #a1's channel, for everyone.")]
+    public async Task A_post_carries_its_level_and_says_the_one_kept(bool ordinary, string sent, string kept, string said)
+    {
+        var standIn = new StandIn(_ => (HttpStatusCode.OK,
+            $$$"""{"message":{"kind":"message","at":"2026-10-14T09:06:00Z","id":"m3","person":true,"text":"hello"{{{kept}}}}}"""));
+        using var service = new ServiceClient("http://stand-in", null, new HttpClient(standIn));
+        var output = new StringWriter();
+
+        Assert.Equal(0, await ChannelCommand.RunAsync(new ChannelAsk("a1", null, null, "hello", ordinary), service, output));
+
+        Assert.Contains($"\"urgent\":{sent}", standIn.Bodies[0]);
+        Assert.Contains(said, output.ToString());
+    }
+
+    /// <summary>
+    /// 🔴 COWORK1e (the design §8.4): a read names an urgent message's level, never an ordinary one's or one's from before, and under
+    /// each message says what it reached in each repository it addresses, worded as the page's receipts; a line carries none.
+    /// </summary>
+    [Fact]
+    public async Task Reading_names_the_urgent_level_and_what_each_message_reached()
+    {
+        const string channel = """
+            {"ask":"a1","entry":"person","items":[
+             {"kind":"line","at":"2026-10-14T09:00:00Z","code":"published","quest":"q1","name":"Read the figure","from":"ask #a1","to":"db"},
+             {"kind":"message","at":"2026-10-14T09:02:00Z","id":"m1","person":true,"urgent":true,"text":"Stop: the column moved.",
+              "receipts":[{"repository":"db","state":"taken"},{"repository":"web","state":"waiting"},{"repository":"api","state":"not-reached"}]},
+             {"kind":"message","at":"2026-10-14T09:03:00Z","id":"m2","person":true,"to":"db","urgent":false,"text":"When you can.",
+              "receipts":[{"repository":"db","state":"partly"}]},
+             {"kind":"message","at":"2026-10-14T09:04:00Z","id":"m3","person":true,"text":"From before."}],
+             "unread":0}
+            """;
+        var standIn = new StandIn(_ => (HttpStatusCode.OK, channel));
+        using var service = new ServiceClient("http://stand-in", null, new HttpClient(standIn));
+        var output = new StringWriter();
+
+        Assert.Equal(0, await ChannelCommand.RunAsync(new ChannelAsk("a1", null, null, null), service, output));
+
+        var lines = output.ToString().Split(Environment.NewLine);
+        Assert.Contains("You → everyone (urgent): Stop: the column moved.", lines[2]);
+        Assert.Equal("      What it reached: taken by db; waiting for web; it never reached api's session: the ask's work ended first.", lines[3]);
+        Assert.Contains("You → db: When you can.", lines[4]);
+        Assert.Equal("      What it reached: partly handed to db.", lines[5]);
+        Assert.Contains("You → everyone: From before.", lines[6]);
+        Assert.Equal(8, lines.Length);
+        Assert.Null(ChannelCommand.Reached(new ChannelItemView(ChannelItemView.Line, DateTimeOffset.UnixEpoch)));
+    }
+
     /// <summary>Each refusal is a code the service answers, said in a sentence, exit 1; a post to everyone says so.</summary>
     [Theory]
     [InlineData("empty", "words are empty")]
@@ -185,7 +256,7 @@ public sealed class ChannelCommandTests
     [Fact]
     public void The_usage_spells_the_verb()
     {
-        Assert.Contains("ask channel <id> [--to <repository>] [--re <message>] [\"…\"]", DriverCommand.Usage);
+        Assert.Contains("ask channel <id> [--to <repository>] [--re <message>] [--ordinary] [\"…\"]", DriverCommand.Usage);
         Assert.Contains("ask channel <id>", ChannelCommand.Usage);
     }
 

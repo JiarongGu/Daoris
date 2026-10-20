@@ -102,7 +102,7 @@ describe('a curve’s rules, as the door refuses them', () => {
   it('says it in 中文, with the window and the numbers', async () => {
     await i18n.changeLanguage('zh');
     expect(sentence({ code: 'ACCOUNT_USE_CURVE', parameters: DOOR[0]![1] }))
-      .toBe('`weekly` 的第 3 个点已用 60%，少于第 2 个点的 70%——已用量不会下降。');
+      .toBe('`weekly` 的第 3 行已用 60%，少于第 2 行的 70%——已用量不会下降。');
   });
 
   it('says a rule this page has no form for by the terminal’s own sentence', () => {

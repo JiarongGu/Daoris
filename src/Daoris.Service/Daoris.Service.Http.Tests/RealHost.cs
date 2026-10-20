@@ -49,7 +49,7 @@ public sealed class RealHost(Process process, string url, string scratch) : IDis
 
         var own = host.HomeId;
         string? other = null;
-        for (var attempt = 0; attempt < 150; attempt++)
+        for (var attempt = 0; attempt < Poll.Patience.TotalMilliseconds / 200; attempt++)
         {
             var home = await HomeAnsweredAsync(host.Url);
             if (home == own) return host;
@@ -211,7 +211,7 @@ public sealed class RealHost(Process process, string url, string scratch) : IDis
     /// </summary>
     private static async Task<string?> HomeAnsweredAsync(string url)
     {
-        using var client = new HttpClient { Timeout = TimeSpan.FromSeconds(2) };
+        using var client = new HttpClient { Timeout = Poll.Patience };
         try
         {
             using var response = await client.GetAsync($"{url}/api/status");

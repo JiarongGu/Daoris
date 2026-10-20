@@ -444,7 +444,8 @@ describe("a row as the list's reader places it", () => {
 
   /**
    * AUTONOMY1b3b: a call whose permission request is held for the person says it waits for their answer, timed from the hold, and
-   * its tip says where to answer it and its bound; never that it runs, and never in the words a parked intake's region reads.
+   * its tip says where to answer it and that its card says the bound (PERMUNTIL1: the mark carries none, and the page keeps no copy);
+   * never that it runs, and never in the words a parked intake's region reads.
    */
   it('says a call held for the person waits for their answer, and for how long', () => {
     const calling = { title: 'git push', since: '2026-09-21T11:57:00Z', waiting: true };
@@ -452,7 +453,8 @@ describe("a row as the list's reader places it", () => {
     expect(screen.getByText(/^engine · waiting for your answer to git push for 3m · driven · /)).toBeInTheDocument();
     expect(screen.queryByText(/running/)).toBeNull();
     expect(screen.queryByText(/waiting on you/i)).toBeNull();
-    expect(screen.getByTitle(/answer it on its page or in What needs you.*15 minutes/)).toBeInTheDocument();
+    expect(screen.getByTitle(/answer it on its page or in What needs you, where its card says when it is refused/)).toBeInTheDocument();
+    expect(screen.queryByTitle(/minutes/)).toBeNull();
 
     // A request the agent named nothing for still waits on the person.
     rerender(<SessionRow session={session()} grouping={placed({ group: 'working', shown: 'working', calling: { ...calling, title: '' } })} />);
@@ -510,7 +512,7 @@ describe("a row as the list's reader places it", () => {
       // AUTONOMY1b3b: a call held for the person's answer.
       render(<SessionRow session={session()} grouping={placed({ group: 'working', shown: 'working', calling: { title: 'git push', since: '2026-09-21T11:57:00Z', waiting: true } })} />);
       expect(screen.getByText(/git push 等你答复，已 3 分钟/)).toBeInTheDocument();
-      expect(screen.getByTitle(/“等你处理”.*15 分钟/)).toBeInTheDocument();
+      expect(screen.getByTitle(/“等你处理”.*它的卡片会说明无人答复时何时拒绝它/)).toBeInTheDocument();
     } finally {
       await i18n.changeLanguage('en');
     }

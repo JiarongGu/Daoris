@@ -154,6 +154,12 @@ public sealed class ChatRunner : IDisposable
         _goOn.GoOnAsync(sessionId, config, onEnded, ct);
 
     /// <summary>
+    /// The person let an answer the answers-alone bound held go on (COWORK1e, <see cref="ChatGoOn.AnswerGoesOn"/>): said as an open
+    /// conversation's next turn, or gone on with where it ended.
+    /// </summary>
+    public void AnswerGoesOn(string sessionId) => _goOn.AnswerGoesOn(sessionId);
+
+    /// <summary>
     /// A conversation this runner took up by itself ended (MSG1c2): the session and the state its record took, as a start's
     /// <c>onEnded</c> is told. No route started it, so the shell announces it as the page's <c>SESSION_ENDED</c>.
     /// </summary>
@@ -1692,7 +1698,8 @@ public sealed class ChatRunner : IDisposable
         {
             // Daoris's words around another agent's claim (MIXAGENT2a-iii), under the id the record gave them so they pair with the
             // event that showed them waiting; never the person's, so no preface and no browser line ride beside them.
-            yield return new SessionEvent { Kind = SessionEventKind.User, Origin = "target", Id = helped.Id, Text = message.Text };
+            // COWORK1e: marked as that helper's, so the answers-alone bound counts the turn it prompts.
+            yield return new SessionEvent { Kind = SessionEventKind.User, Origin = "target", Helper = helped.Helper, Id = helped.Id, Text = message.Text };
             yield break;
         }
 

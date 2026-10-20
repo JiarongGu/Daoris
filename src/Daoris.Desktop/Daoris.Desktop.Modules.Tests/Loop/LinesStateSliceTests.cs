@@ -17,7 +17,7 @@ namespace Daoris.Desktop.Modules.Tests;
 /// </remarks>
 public sealed class LinesStateSliceTests : DriverModuleBridge
 {
-    private static readonly TimeSpan Within = TimeSpan.FromSeconds(20);
+    private static readonly TimeSpan Within = Poll.Patience;
 
     /// <summary>What the page is handed, as <see cref="Bridge"/>'s answers are read: camelCase, nulls written.</summary>
     private static readonly JsonSerializerOptions Page = new() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };

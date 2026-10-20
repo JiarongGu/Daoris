@@ -255,7 +255,7 @@ describe('the strip of what waits on the person, at the foot', () => {
   // AUTONOMY1b3c (D184 point 3): a tool call the session holds for the person's answer under asking, with the head's own press per
   // choice the agent offered, and none another session holds.
   const HELD: PermissionWait = {
-    session: 's1a2b3c4', request: '900', call: 'tc-1', title: 'npm test', kind: 'execute', since: '2026-09-21T11:00:00Z',
+    session: 's1a2b3c4', request: '900', call: 'tc-1', title: 'npm test', kind: 'execute', since: '2026-09-21T11:00:00Z', until: '2026-09-21T11:15:00Z',
     choices: [{ id: 'allow', name: 'Allow', kind: 'allow_once' }, { id: 'reject', name: 'Reject', kind: 'reject_once' }],
   };
 
@@ -284,6 +284,28 @@ describe('the strip of what waits on the person, at the foot', () => {
 
     const { container } = render(<WaitStrip session={session({ state: 'working' })} permissions={{ waits: [HELD] }} onTop={vi.fn()} />);
     expect(container).toBeEmptyDOMElement();
+  });
+
+  // COWORK1e (D188 point 4; the message-urgency design §8.3): a third answer in a row with nobody between, held for the person, with
+  // the head's own *Go on with this answer* and *Not now*, and none another session's line holds.
+  const ALONE = { session: 's1a2b3c4', agent: 'codex-acp', words: ['w3'], since: '2026-10-21T09:00:00Z' };
+
+  it('answers a third answer alone held for the person, and folds naming it', async () => {
+    const onAnswer = vi.fn();
+    render(
+      <WaitStrip
+        session={session()}
+        answers={{ waits: [{ ...ALONE, session: 'o7h3r000' }, ALONE], onAnswer, nameOf: () => 'Codex' }}
+        helpers={helpers()}
+        onTop={vi.fn()}
+      />,
+    );
+
+    expect(within(strip()).getByText('Codex’s answer would take this work on a third time with nobody between.')).toBeInTheDocument();
+    await userEvent.click(within(strip()).getByRole('button', { name: 'Go on with this answer' }));
+    expect(onAnswer).toHaveBeenCalledWith(ALONE, true, { done: expect.any(Function), refused: expect.any(Function) });
+    await userEvent.click(within(strip()).getByRole('button', { name: 'Fold' }));
+    expect(strip()).toHaveTextContent('an answer to let go on · a helper it asked for');
   });
 
   /**

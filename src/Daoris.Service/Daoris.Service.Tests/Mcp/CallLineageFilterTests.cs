@@ -92,7 +92,7 @@ public sealed class CallLineageFilterTests : IDisposable
             async Task<JsonNode> Send(JsonObject message)
             {
                 await toServer.Writer.WriteAsync(Encoding.UTF8.GetBytes(message.ToJsonString() + "\n"));
-                var line = await reader.ReadLineAsync().WaitAsync(TimeSpan.FromSeconds(10));
+                var line = await reader.ReadLineAsync().WaitAsync(Poll.Patience);
                 return JsonNode.Parse(line!)!;
             }
 

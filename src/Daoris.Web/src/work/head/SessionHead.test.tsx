@@ -1249,7 +1249,7 @@ describe('the rules a session proposed', () => {
 /** AUTONOMY1b3c (D184 point 3): a tool call it holds for the person's answer stands in its head, a wait's section, with its presses. */
 describe('the tool calls a session holds for the person', () => {
   const HELD = {
-    session: 's1a2b3c4', request: '900', call: 'tc-1', title: 'npm test', kind: 'execute', since: '2026-09-21T11:58:00Z',
+    session: 's1a2b3c4', request: '900', call: 'tc-1', title: 'npm test', kind: 'execute', since: '2026-09-21T11:58:00Z', until: '2026-09-21T12:13:00Z',
     choices: [{ id: 'allow', name: 'Allow', kind: 'allow_once' }, { id: 'reject', name: 'Reject', kind: 'reject_once' }],
   };
 

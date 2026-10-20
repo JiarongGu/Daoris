@@ -121,6 +121,28 @@ public static class InstallHome
     }
 
     /// <summary>
+    /// The folder a shell running from an install's <c>app/</c> stands in instead (APPCWD1, D139 §5): the install's root, while
+    /// it stands in <c>app/</c> or below it, as the launcher started it. Null otherwise — a workspace build, or a start given a
+    /// working folder elsewhere — which is left as it was.
+    /// </summary>
+    /// <remarks>
+    /// Every child started without a working folder of its own inherits the shell's, and on Windows a process's working folder
+    /// keeps the folders above it from being renamed while it lives: a browser, a harness or a tool started from <c>app/</c>,
+    /// running from somewhere else, held the swap's move of <c>app/</c> and was not among what the launcher waits for.
+    /// </remarks>
+    public static string? WorkingFolder(string baseDirectory, string current)
+    {
+        var root = RootOf(baseDirectory);
+        var app = Path.TrimEndingDirectorySeparator(Path.GetFullPath(baseDirectory));
+        if (string.Equals(root, app, StringComparison.OrdinalIgnoreCase)) return null;
+        var here = Path.TrimEndingDirectorySeparator(Path.GetFullPath(current));
+        return string.Equals(here, app, StringComparison.OrdinalIgnoreCase)
+            || here.StartsWith(app + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase)
+                ? root
+                : null;
+    }
+
+    /// <summary>
     /// Establish the home for an install, or answer null when this is not one, when the environment
     /// already names this install's own home, or when it names a home for this start alone — which is
     /// respected whole. A home the environment only inherited from the account, naming another folder,

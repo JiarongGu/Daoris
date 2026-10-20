@@ -263,6 +263,11 @@ export const NOTE_CODES: Readonly<Record<string, NoteCode>> = {
   'helper.refused': { values: ['why'], why: 'helper' },
   'helper.refused-by': { values: ['agent', 'why'], why: 'helper' },
   'helper.helping': { values: ['session'] },
+  // The answers-alone bound (COWORK1e, D188 point 4): a third answer in a row with nobody between held for the person, by the agent that
+  // answered; their *Go on with this answer*, which counts as their word; their *Not now*.
+  'answers.held': { values: ['agent'] },
+  'answers.passed': { values: [] },
+  'answers.kept': { values: [] },
   // An agent's ask to hand its session over (MIXAGENT1c): waiting on the person with the agent it would go on with, going with it at
   // the turn's end, or refused and why.
   'handover.asked': { values: ['agent'] },

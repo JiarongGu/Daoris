@@ -109,7 +109,7 @@ public sealed class ConnectorStartFailureTests : IDisposable
         process.StandardInput.Close();
         var printed = process.StandardOutput.ReadToEndAsync();
         var said = process.StandardError.ReadToEndAsync();
-        using var bound = new CancellationTokenSource(TimeSpan.FromSeconds(60));
+        using var bound = new CancellationTokenSource(Poll.Patience);
         try
         {
             await process.WaitForExitAsync(bound.Token);

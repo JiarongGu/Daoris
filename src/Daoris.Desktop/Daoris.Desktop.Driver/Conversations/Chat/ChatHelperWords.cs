@@ -24,7 +24,9 @@ internal sealed class ChatHelperWords(ChatContext context)
         record ??= await context.ReadAgainAsync(sessionId, CancellationToken.None).ConfigureAwait(false);
         if (record is not { Kind: "chat" } || record.Teammate) return;
 
-        foreach (var word in record.Waiting.Where(word => word.Helper is not null && word.Id is not null))
+        // COWORK1e: an answer the answers-alone bound holds for the person, or that they kept, is said only once they let it go on.
+        var mark = context.Marks.Read(sessionId);
+        foreach (var word in record.Waiting.Where(word => word.Helper is not null && word.Id is not null && !Kept(mark, word)))
         {
             if (context.Closing || !context.Holds(sessionId)) return;
             if (!_helperSaying.TryAdd(word.Id!, 0)) continue;
@@ -64,6 +66,9 @@ internal sealed class ChatHelperWords(ChatContext context)
         if (context.Turned.TryGetValue(sessionId, out var chat))
         {
             chat.Turns.Keeps(new SaidDoor(context.Service, sessionId));
+            // 🔴 COWORK1e (D188 point 4; the message-urgency design §2.3): the turns judge each answer as its turn comes, against its line
+            // as the turns before it left it, so two answers said at once never both pass as the second.
+            chat.Turns.Bounds(answer => HeldAloneAsync(sessionId, answer));
             return chat.Turns.Take(message) is not null;
         }
 
@@ -72,6 +77,28 @@ internal sealed class ChatHelperWords(ChatContext context)
         if (!context.Processes.Send(sessionId, adapter.FrameMessage(message.Prompt))) return false;
         foreach (var recorded in ChatRunner.Recorded(message)) context.Record(sessionId, recorded);
         await TakeOffAsync(sessionId, word.Id!).ConfigureAwait(false);
+        return true;
+    }
+
+    /// <summary>Whether a word is among those the answers-alone bound holds for the person, or they kept (COWORK1e).</summary>
+    private static bool Kept(GoOnMark? mark, SaidWordView word) =>
+        mark is { Why: GoOnMarks.AnswersAlone or GoOnMarks.NotNow } && mark.Said.Contains(word.Id!, StringComparer.Ordinal);
+
+    /// <summary>
+    /// The answers-alone bound on an open conversation's turn (COWORK1e): its record and its line read now, as the turns before this one
+    /// left them. Held, the answer is marked for the person (<see cref="AnswersAloneHold"/>), and said again only once they let it go on.
+    /// </summary>
+    private async Task<bool> HeldAloneAsync(string sessionId, ChatMessage answer)
+    {
+        if (answer.Helped is not { } word) return false;
+        var json = await context.Service.SessionRecordsJsonAsync(CancellationToken.None).ConfigureAwait(false);
+        if (ServiceClient.ReadRecord(json, sessionId) is not { } record) return false;
+        if (!new AnswersAloneHold(context.Events, context.Marks).Holds(record, ServiceClient.ReadRecords(json), DateTimeOffset.UtcNow, [word]))
+        {
+            return false;
+        }
+
+        if (word.Id is { } id) _helperSaying.TryRemove(id, out _);
         return true;
     }
 

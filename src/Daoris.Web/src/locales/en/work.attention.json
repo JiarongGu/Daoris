@@ -83,6 +83,10 @@
   "work.attention.work": "clean-up is blocked",
   "work.attention.permission": "an agent asks permission",
   "work.attention.permissionWhy": "{{session}} waits on your answer before this tool call runs; it is refused if nobody answers within {{minutes}} minutes.",
+  "work.attention.permissionWhyUnbounded": "{{session}} waits on your answer before this tool call runs; it is refused if nobody answers in time.",
+  "work.attention.answer": "an answer waits",
+  "work.attention.answerWhy": "{{agent}}’s answer would take this work on a third time with nobody between. It waits for you.",
+  "work.attention.answerWhySomeone": "Another agent’s answer would take this work on a third time with nobody between. It waits for you.",
   "work.attention.act.allowOnce": "Allow once",
   "work.attention.act.refuseOnce": "Refuse",
   "work.attention.act.refuseAlways": "Always refuse"

@@ -526,6 +526,65 @@ public sealed class InstallHomeTests : IDisposable
         Assert.Null(Establish(bare));
     }
 
+    /// <summary>
+    /// APPCWD1 (D139 §5): a shell standing in its install's <c>app/</c>, or below it, stands in the install's root instead, so a
+    /// child that names no working folder does not hold <c>app/</c>; a working folder elsewhere is left as it was.
+    /// </summary>
+    [Fact]
+    public void A_shell_standing_in_the_install_s_app_folder_stands_in_the_install_s_root()
+    {
+        var install = Install();
+        var app = Path.Combine(install, "app");
+        Directory.CreateDirectory(Path.Combine(app, "host"));
+
+        Assert.Equal(install, InstallHome.WorkingFolder(app, app));
+        Assert.Equal(install, InstallHome.WorkingFolder(app + Path.DirectorySeparatorChar, app.ToUpperInvariant()));
+        Assert.Equal(install, InstallHome.WorkingFolder(app, Path.Combine(app, "host")));
+        Assert.Null(InstallHome.WorkingFolder(app, install));
+        Assert.Null(InstallHome.WorkingFolder(app, _root));
+        Assert.Null(InstallHome.WorkingFolder(app, app + "-other"));
+    }
+
+    /// <summary>APPCWD1: a workspace build, an install's root or an unmarked <c>app</c>, is no install's <c>app/</c>, and is left where it stands.</summary>
+    [Fact]
+    public void A_shell_outside_an_install_s_app_folder_is_left_where_it_stands()
+    {
+        var install = Install();
+        var bare = Path.Combine(_root, "bare", "app");
+        Directory.CreateDirectory(bare);
+
+        Assert.Null(InstallHome.WorkingFolder(install, install));
+        Assert.Null(InstallHome.WorkingFolder(bare, bare));
+    }
+
+    /// <summary>
+    /// APPCWD1, held on the sources because nothing else can hold them: the application moves out of <c>app/</c> before it starts
+    /// anything, and the launcher starts it in the install's root.
+    /// </summary>
+    [Fact]
+    public void The_application_leaves_app_before_it_starts_anything_and_the_launcher_starts_it_outside_it()
+    {
+        var desktop = Path.Combine(RepositoryRoot(), "src", "Daoris.Desktop");
+        var program = File.ReadAllText(Path.Combine(desktop, "Daoris.Desktop.App", "Program.cs"));
+        var main = program[program.IndexOf("static void Main(", StringComparison.Ordinal)..];
+        var moved = main.IndexOf("InstallHome.WorkingFolder(AppContext.BaseDirectory, Environment.CurrentDirectory)", StringComparison.Ordinal);
+        Assert.True(moved > 0, "Main does not leave app/");
+        foreach (var later in new[] { "BrowserProcess.Run(", "InstallHome.Establish(", "CreateBuilder(" })
+        {
+            Assert.True(main.IndexOf(later, StringComparison.Ordinal) > moved, $"`{later}` runs before Main has left app/");
+        }
+
+        var launcher = File.ReadAllText(Path.Combine(desktop, "Daoris.Desktop.Launcher", "Program.cs"));
+        Assert.Contains("WorkingDirectory = Path.GetDirectoryName(Path.GetDirectoryName(shell)!)!,", launcher);
+    }
+
+    private static string RepositoryRoot()
+    {
+        var at = new DirectoryInfo(AppContext.BaseDirectory);
+        while (at is not null && !File.Exists(Path.Combine(at.FullName, "daoris.json"))) at = at.Parent;
+        return at?.FullName ?? throw new InvalidOperationException("no workspace root above the test binary");
+    }
+
     /// <summary>The engine's profile is written before Daoris has any state, and does not stop a legacy move.</summary>
     [Fact]
     public void The_engine_s_own_profile_is_not_state()

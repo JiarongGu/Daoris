@@ -145,7 +145,7 @@ public sealed class StartFailureTests : IDisposable
     /// </summary>
     private static JsonElement Failed(RealHost host)
     {
-        Assert.True(host.Process.WaitForExit(60_000), "the host did not exit");
+        Assert.True(host.Process.WaitForExit(Poll.Patience), "the host did not exit");
         Assert.NotEqual(0, host.Process.ExitCode);
 
         var errors = host.LogLines()

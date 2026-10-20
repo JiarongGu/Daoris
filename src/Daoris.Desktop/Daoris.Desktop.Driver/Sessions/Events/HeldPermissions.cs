@@ -36,6 +36,12 @@ public sealed record HeldPermission(
 {
     /// <summary>The call's kind as the wire names it (<c>execute</c>, <c>edit</c>, …), or null.</summary>
     public string? Kind { get; init; }
+
+    /// <summary>
+    /// When nobody's answer releases it, by this machine's clock: its door's bound from <see cref="Since"/> (PERMUNTIL1), so the page
+    /// says the driver's bound rather than a copy of it.
+    /// </summary>
+    public DateTimeOffset Until { get; init; }
 }
 
 /// <summary>Why a hold ended: one of <see cref="PermissionWhy"/>'s.</summary>
@@ -170,9 +176,11 @@ public sealed class HeldPermissions
     internal Task<PermissionEnd>? Hold(
         PermissionHolds door, string request, string? call, string? title, IReadOnlyList<PermissionChoice> offered, string? kind)
     {
-        var seen = new HeldPermission(door.Session, request, call, title, [.. offered.Where(choice => choice.Choosable)], DateTimeOffset.UtcNow)
+        var since = DateTimeOffset.UtcNow;
+        var seen = new HeldPermission(door.Session, request, call, title, [.. offered.Where(choice => choice.Choosable)], since)
         {
             Kind = kind,
+            Until = since + door.Bound,
         };
         var hold = new Entry(door, seen, offered, new Timer(_ => End(door.Session, request, new PermissionEnd(null, PermissionWhy.Bound))));
         lock (_gate)

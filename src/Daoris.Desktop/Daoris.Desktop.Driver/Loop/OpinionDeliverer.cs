@@ -94,7 +94,9 @@ internal sealed class OpinionDeliverer(LoopContext context, DriverOpinions opini
         // Handed: its record has the words, or its turn on them runs, until the turn ends and its answers are read.
         var record = await Service.RecordAsync(view.HandedTo, ct).ConfigureAwait(false);
         if (record is null) return ToPersonKept(view, named, OpinionToPerson.NotFound);
-        if (view.HandedWord is { } word && new GoOnMarks(_context.Home).Read(record.Session) is { } mark && mark.Said.Contains(word, StringComparer.Ordinal))
+        // COWORK1e: findings the answers-alone bound holds wait for the person's choice, still handed; kept (*Not now*), they are theirs.
+        if (view.HandedWord is { } word && new GoOnMarks(_context.Home).Read(record.Session) is { } mark && mark.Why != GoOnMarks.AnswersAlone
+            && mark.Said.Contains(word, StringComparer.Ordinal))
         {
             // Marked as words its session could not go on with (design §6.7): the look that marked them said why.
             return ToPersonKept(view, named, mark.Why);

@@ -18,7 +18,7 @@ namespace Daoris.Desktop.Modules.Tests;
 /// </remarks>
 public sealed class WorkStateSliceTests : DriverModuleBridge
 {
-    private static readonly TimeSpan Within = TimeSpan.FromSeconds(20);
+    private static readonly TimeSpan Within = Poll.Patience;
 
     private static readonly DateTimeOffset At = new(2026, 10, 20, 9, 0, 0, TimeSpan.Zero);
 

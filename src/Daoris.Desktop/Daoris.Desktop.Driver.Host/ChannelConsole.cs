@@ -2,7 +2,7 @@ namespace Daoris.Driver.Host;
 
 /// <summary>
 /// An ask's channel from a terminal (SESSONE2c, D167, D50): <c>daoris-driver ask channel &lt;id&gt; [--to &lt;repository&gt;] [--re
-/// &lt;message&gt;] ["…"]</c>. The words and the doors are the library's (<see cref="ChannelCommand"/>); this wires the local host's
+/// &lt;message&gt;] [--ordinary] ["…"]</c>. The words and the doors are the library's (<see cref="ChannelCommand"/>); this wires the local host's
 /// service and the exit codes. The ask page's <i>Channel</i> is the other door.
 /// </summary>
 internal static class ChannelConsole

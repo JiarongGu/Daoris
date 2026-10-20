@@ -96,6 +96,9 @@ Housekeeping, the checkouts and the chosen settings are Daoris's own and stay se
 *Built 2026-10-20 (HELPMODE1c3):* the chosen settings as five typed tools, and the browser's row read only with its door to the
 plugin's tab; the writer, the outcome record and what stays unbuilt are D183's note of that day.
 
+*Built 2026-10-21 (PLUGSET1):* Settings' *Plugins* section as a read-only section of Settings → Driver, *Installed plugins*, each
+plugin's switch and approvals with its door to the plugin's tab; why a section and not a domain is D183's note of that day.
+
 ## 5. The screen (HELPMODE1b)
 
 The picker sits beside the composer, the docked panel included. History keeps its own head. The text is translated, the

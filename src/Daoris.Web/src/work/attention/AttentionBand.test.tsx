@@ -120,6 +120,11 @@ function start(rows: PushedAttention[], props: {
         ? { answered: true, why: null, message: 'Answered `Allow`.' }
         : { answered: false, why: 'unheld', message: 'Nothing was answered.' };
     }
+    if (type === 'SESSION_ANSWER_ALONE') {
+      return request?.payload?.goOn === true
+        ? { answered: true, why: null, message: 'It goes on.' }
+        : { answered: false, why: 'unheld', message: 'Nothing was answered.' };
+    }
     if (type === 'SESSION_HELPER_APPROVE') return { approved: true, why: null, message: 'yes' };
     if (type === 'SESSION_HELPER_DECLINE') return { declined: false, why: 'approved', message: 'x' };
     if (type === 'ASK_OPINION') return { session: request?.payload?.id, done: true, message: 'A second opinion is asked.' };
@@ -222,7 +227,7 @@ describe('What needs you on a machine', () => {
   it('lists a tool call held for the person, answers it with the choice pressed and says a refused answer in its words', async () => {
     const notify = vi.fn();
     const permission = {
-      session: 'c0nv0001', request: '900', call: null, title: 'npm test', kind: 'execute', since: '2026-10-01T09:00:00Z',
+      session: 'c0nv0001', request: '900', call: null, title: 'npm test', kind: 'execute', since: '2026-10-01T09:00:00Z', until: '2026-10-01T09:15:00Z',
       choices: [{ id: 'allow', name: 'Allow', kind: 'allow_once' }, { id: 'reject', name: 'Reject', kind: 'reject_once' }],
     };
     start([row('permission', 'c0nv0001#900', permission.since, { where: '', session: 'c0nv0001', permission })], { notify, doors: { permission: vi.fn() } });
@@ -239,6 +244,29 @@ describe('What needs you on a machine', () => {
     await waitFor(() => expect(invoke).toHaveBeenCalledWith(
       'DAORIS.DRIVER', 'SESSION_PERMISSION_ANSWER', { payload: { session: 'c0nv0001', request: '900', option: 'reject' } }));
     await waitFor(() => expect(notify).toHaveBeenCalledWith('It no longer waits: it was answered or released first. Nothing was answered.', 'error'));
+  });
+
+  /**
+   * COWORK1e (D188 point 4; the message-urgency design §8.3): a third answer in a row with nobody between holds its session's work for
+   * the person, with *Go on with this answer* and *Not now*, the session's page's own, each sending the session and the choice; its
+   * answer said in the page's words, a refusal by its code.
+   */
+  it('lists a third answer alone held for the person, lets it go on or keeps it, and says a refused answer in its words', async () => {
+    const notify = vi.fn();
+    const answer = { session: 'c0nv0001', agent: 'codex-acp', words: ['w3'], since: '2026-10-01T09:00:00Z' };
+    start([row('answer', 'c0nv0001', answer.since, { where: 'engine', session: 'c0nv0001', answer })], { notify, doors: { answer: vi.fn() } });
+
+    const holding = await screen.findByRole('group', { name: 'Holding work' });
+    const item = within(holding).getAllByRole('listitem')[0]!;
+    expect(within(item).getByText('an answer waits')).toBeInTheDocument();
+    expect(item).toHaveTextContent('codex-acp’s answer would take');
+    await userEvent.click(within(item).getByRole('button', { name: 'Go on with this answer' }));
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_ANSWER_ALONE', { payload: { session: 'c0nv0001', goOn: true } }));
+    await waitFor(() => expect(notify).toHaveBeenCalledWith('It goes on with this answer, as your word.'));
+
+    await userEvent.click(within(item).getByRole('button', { name: 'Not now' }));
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_ANSWER_ALONE', { payload: { session: 'c0nv0001', goOn: false } }));
+    await waitFor(() => expect(notify).toHaveBeenCalledWith('It no longer waits: it was answered, or its words went on. Nothing was answered.', 'error'));
   });
 
   /**

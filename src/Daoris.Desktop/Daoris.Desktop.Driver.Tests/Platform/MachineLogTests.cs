@@ -305,6 +305,78 @@ public sealed class MachineLogTests : IDisposable
         Assert.Empty(Lines("2026-09-30.desktop.jsonl"));
     }
 
+    /// <summary>
+    /// MACHINELOGAPPEND1: two writers of one source on one day's file — a later launch beside the running desktop — each
+    /// write at the file's end. Before, each wrote at its own handle's position, and the second's line was gone after the
+    /// first's next (ONEINSTANCE2's measurement, D171).
+    /// </summary>
+    [Fact]
+    public void Two_logs_on_one_file_keep_each_others_lines()
+    {
+        using var running = Log();
+        using var later = Log();
+
+        running.Info("app.started");
+        later.Warn("log", ("category", "the guard"));
+        running.Info("view.opened", ("view", "sessions"));
+        later.Info("app.stopped");
+
+        var lines = Lines("2026-09-30.desktop.jsonl");
+        Assert.Equal(4, lines.Length);
+        Assert.Contains("\"event\":\"app.started\"", lines[0]);
+        Assert.Contains("\"event\":\"log\"", lines[1]);
+        Assert.Contains("\"event\":\"view.opened\"", lines[2]);
+        Assert.Contains("\"event\":\"app.stopped\"", lines[3]);
+    }
+
+    /// <summary>The two writing at once from many threads: every line of each lands, whole.</summary>
+    [Fact]
+    public void Two_logs_writing_at_once_land_every_line_whole()
+    {
+        using (var running = Log())
+        using (var later = Log())
+        {
+            Parallel.For(0, 400, i => (i % 2 == 0 ? running : later).Info("turn.ended", ("session", $"s{i}"), ("turnMs", i)));
+        }
+
+        var lines = Lines("2026-09-30.desktop.jsonl");
+        Assert.Equal(400, lines.Length);
+        Assert.All(lines, line => System.Text.Json.JsonDocument.Parse(line).Dispose());
+        Assert.Equal(400, lines.Distinct(StringComparer.Ordinal).Count());
+    }
+
+    /// <summary>
+    /// The desktop's entry point: the exception leaving <c>app.Run()</c> is written while the log is open, goes on as it was,
+    /// and is not written again by the unhandled handler; another exception still is.
+    /// </summary>
+    [Fact]
+    public void An_exception_leaving_a_watched_body_is_written_once_and_goes_on()
+    {
+        using var log = Log();
+        var thrown = new InvalidOperationException("the window's loop ended");
+
+        var caught = Assert.Throws<InvalidOperationException>(() => log.RunWatched(() => throw thrown));
+        log.Unhandled(caught, terminating: true);
+        log.Unhandled(new IOException("another"), terminating: true);
+
+        Assert.Same(thrown, caught);
+        var lines = Lines("2026-09-30.desktop.jsonl");
+        Assert.Equal(2, lines.Length);
+        Assert.Contains("\"where\":\"unhandled\",\"type\":\"System.InvalidOperationException\",\"message\":\"the window's loop ended\"", lines[0]);
+        Assert.Contains("\"terminating\":true", lines[0]);
+        Assert.Contains("\"type\":\"System.IO.IOException\"", lines[1]);
+    }
+
+    /// <summary>The desktop runs its application through that watch.</summary>
+    [Fact]
+    public void The_desktop_runs_its_application_watched()
+    {
+        var program = File.ReadAllText(SourceFiles.Find("Daoris.Desktop.App", "Program.cs"));
+
+        Assert.Contains("log.RunWatched(() => app.Run());", program);
+        Assert.DoesNotContain("\n        app.Run();", program.ReplaceLineEndings("\n"));
+    }
+
     /// <summary>A reader opens the file while it is being written — as a person tailing it would.</summary>
     [Fact]
     public void The_file_can_be_read_while_it_is_written()

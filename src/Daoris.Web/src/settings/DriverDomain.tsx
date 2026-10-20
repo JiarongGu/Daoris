@@ -21,7 +21,8 @@ import type { SettingsDomainProps } from './domains';
  *
  * **Where plugins are looked for** is a fact of the home, so it is a row under it since UX6j (D150 §2.3; the plugins
  * design §5), read-only, with the door to the Plugins place: Settings → Plugins retired there, since nothing about a
- * plugin is set here.
+ * plugin is set here. Its Plugins section (PLUGSET1) lists each installed plugin with what it holds set, each a door to its
+ * page, where that is changed.
  *
  * The cards are `DriverCards`, a molecule over the shell's facts, so a story draws the domain at the frame's widths (R6);
  * this holds the hooks and says each change's toast (`presentational.test.ts`).
@@ -31,7 +32,7 @@ export function DriverDomain({ notify, onGo }: Pick<SettingsDomainProps, 'notify
   // Whether this machine interrupts the person (SURF5b) — the same `driver.json` field
   // `daoris driver notify on|off` edits, which is what makes this a door rather than the door.
   const driver = useDriver();
-  // The catalogue the Plugins place reads, asked for its folder alone. An older shell names none, and the row is absent.
+  // The catalogue the Plugins place reads, for its folder and its plugins' settings. An older shell names none, and the row is absent.
   const plugins = usePlugins();
   const pluginsFolder = typeof plugins.data?.folder === 'string' ? plugins.data.folder : null;
   // Whether this shell answers This Daoris's read (WIRING1c): by its schema, so an older shell's refusal and a stranger's
@@ -58,6 +59,7 @@ export function DriverDomain({ notify, onGo }: Pick<SettingsDomainProps, 'notify
         hostNotice: driver.data?.hostNotice,
         placeAnswers,
         pluginsFolder,
+        plugins: plugins.data?.plugins ?? null,
         notify: driver.data?.notify ?? true,
         strikes: driver.data?.strikes ?? 3,
         coolOff: driver.data?.coolOff,

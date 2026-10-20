@@ -35,15 +35,31 @@ public sealed class GoOnMarks(string home)
     /// </summary>
     public const string FailedTwice = "failed-twice";
 
+    /// <summary>
+    /// The mark's code for answers the answers-alone bound holds for the person (COWORK1e, D188 point 4; the message-urgency design §2.3,
+    /// §8.3): going on with them would take their line on by answers alone a third time with nobody between (the bound's count,
+    /// <see cref="AnswersAloneHold"/>).
+    /// A wait the person answers, *Go on with this answer* or *Not now*; written with the agent that answered. No reason
+    /// <see cref="ContinueWhy"/> names.
+    /// </summary>
+    public const string AnswersAlone = "answers-alone";
+
+    /// <summary>
+    /// The mark's code for answers the person kept with *Not now* (COWORK1e, §8.3): theirs, as an answer nobody takes is handed, so they go
+    /// on only beside a word of the person's, which is tried unmarked. Findings among them go to the person.
+    /// </summary>
+    public const string NotNow = "not-now";
+
     /// <summary><see cref="Mark(string, IEnumerable{string}, ContinueReason, DateTimeOffset)"/> by a code of its own.</summary>
-    public void Mark(string session, IEnumerable<string> said, string code, DateTimeOffset at)
+    /// <param name="agent">The agent whose answer an answers-alone mark holds (COWORK1e); null for every other mark.</param>
+    public void Mark(string session, IEnumerable<string> said, string code, DateTimeOffset at, string? agent = null)
     {
         var ids = said.Where(id => !string.IsNullOrWhiteSpace(id)).Distinct(StringComparer.Ordinal).ToList();
         if (!SessionEventText.IsLocalId(session) || ids.Count == 0) return;
 
         try
         {
-            GoOnFiles.WriteMark(PathOf(session), ids, code, at);
+            GoOnFiles.WriteMark(PathOf(session), ids, code, at, agent);
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {
@@ -59,6 +75,35 @@ public sealed class GoOnMarks(string home)
     {
         // A mark left behind judges only the words it names; a word said since is tried again all the same.
         if (SessionEventText.IsLocalId(session)) GoOnFiles.Delete(PathOf(session));
+    }
+
+    /// <summary>
+    /// Every mark this home keeps, by session, in no order (COWORK1e): what the person's answers-alone waits are listed from, a read of the
+    /// sessions folder's marks alone. One that does not read, and a folder not made yet, list nothing.
+    /// </summary>
+    public IReadOnlyList<SessionMark> All()
+    {
+        var folder = DaorisHome.Entry(home, HomeEntry.Sessions);
+        IEnumerable<string> files;
+        try
+        {
+            if (!Directory.Exists(folder)) return [];
+            files = Directory.EnumerateFiles(folder, "*" + Suffix).ToList();
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+        {
+            return [];
+        }
+
+        var marks = new List<SessionMark>();
+        foreach (var file in files)
+        {
+            var name = Path.GetFileName(file);
+            var session = name[..^Suffix.Length];
+            if (SessionEventText.IsLocalId(session) && GoOnFiles.ReadMark(file) is { } mark) marks.Add(new SessionMark(session, mark));
+        }
+
+        return marks;
     }
 
     /// <summary>The marks a look plans by: one per record the person's words wait on that has one, by session.</summary>

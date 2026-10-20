@@ -27,12 +27,13 @@ const ACTS: Required<AttentionActs> = {
   publish: () => {}, retry: () => {}, answer: () => {}, trust: () => {}, acceptDeparture: () => {}, acceptRule: () => {},
   declineRule: () => {}, signIn: () => {}, signInNew: () => {}, read: () => {}, letRun: () => {}, reviewed: () => {}, notYet: () => {},
   showAgain: () => {}, opinionAgain: () => {}, opinionAnyway: () => {}, helper: () => {}, held: () => {}, permission: () => {},
+  answerAlone: () => {},
 };
 /** Every door, as a shell's Overview hands them. */
 const DOORS: AttentionDoors = {
   parked: () => {}, 'parked-quest': () => {}, 'go-ahead': () => {}, trust: () => {}, proposal: () => {}, intake: () => {},
   departure: () => {}, rule: () => {}, unanswerable: () => {}, review: () => {}, 'account-wait': () => {}, 'signed-out': () => {},
-  'set-up': () => {}, opinion: () => {}, helper: () => {},
+  'set-up': () => {}, opinion: () => {}, helper: () => {}, answer: () => {},
 };
 
 /** A reset tomorrow early, and a reading at this morning's clock: what the account rows say their times from. */

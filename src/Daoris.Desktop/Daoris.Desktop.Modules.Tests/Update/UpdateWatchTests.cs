@@ -61,7 +61,7 @@ public sealed class UpdateWatchTests : IDisposable
     {
         for (var waited = 0; !condition(); waited += 50)
         {
-            if (waited > 30_000) throw new TimeoutException(seen);
+            if (waited > Poll.Patience.TotalMilliseconds) throw new TimeoutException(seen);
             await Task.Delay(50);
         }
     }

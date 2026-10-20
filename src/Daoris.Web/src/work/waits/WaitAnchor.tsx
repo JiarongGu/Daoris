@@ -16,7 +16,7 @@ export function leftFor(event: FocusEvent<HTMLElement>): boolean {
   return !event.currentTarget.contains(event.relatedTarget as Node | null);
 }
 
-/** A wait's line inside `box`: a go-ahead's and a rule's by their own, the question's and the work's by their place. */
+/** A wait's line inside `box`: a go-ahead's, a rule's, a helper's and a held call's by their own, the question's and the work's by their place. */
 function lineOf(box: HTMLElement | null, wait: AnchorWait): HTMLElement | null | undefined {
   // A proposal's id is the driver's, found by its value rather than spelled into a selector.
   if (wait.startsWith('rule:')) {
@@ -26,6 +26,10 @@ function lineOf(box: HTMLElement | null, wait: AnchorWait): HTMLElement | null |
   if (wait.startsWith('helper:')) {
     const id = wait.slice('helper:'.length);
     return [...(box?.querySelectorAll<HTMLElement>('[data-helper]') ?? [])].find((each) => each.dataset.helper === id);
+  }
+  if (wait.startsWith('permission:')) {
+    const id = wait.slice('permission:'.length);
+    return [...(box?.querySelectorAll<HTMLElement>('[data-permission]') ?? [])].find((each) => each.dataset.permission === id);
   }
   return box?.querySelector<HTMLElement>(wait.startsWith('goAhead:')
     ? `[data-go-ahead="${wait.slice('goAhead:'.length)}"]`

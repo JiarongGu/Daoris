@@ -607,6 +607,12 @@ public sealed class Driver(
         var snapshot = await Stages.TimeAsync("snapshot", () => service.SnapshotAsync(ct)).ConfigureAwait(false);
         // The quests of every paused work, read again at each look (PAUSE1b, design §2.3): the planner holds each.
         snapshot = await Stages.TimeAsync("paused", () => PausedWork.LookAsync(service, config, snapshot, ct)).ConfigureAwait(false);
+        // 🔴 COWORK1e (D188 point 4; the message-urgency design §2.3): answers that would take their line on alone a third time in a row
+        // with nobody between are marked for the person first, so the planner leaves them waiting. A record needs its line read only where
+        // answers alone wait on it.
+        var lookedAt = snapshot;
+        await Stages.TimeAsync("alone", () => new AnswersAloneHold(Context.Events, Context.Marks)
+            .LookAsync(service, lookedAt.LastRun.Values.Concat(lookedAt.NamedByReopen.Values), DateTimeOffset.UtcNow, ct)).ConfigureAwait(false);
         // The words a record could not go on with, read again at each look (MSG1b): the planner leaves them waiting. The session a
         // reopen names is one the planner goes on with too (FABRIC-CLOSE1c9).
         snapshot = snapshot with { Unable = Context.Marks.For(snapshot.LastRun.Values.Concat(snapshot.NamedByReopen.Values)) };
