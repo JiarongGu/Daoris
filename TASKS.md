@@ -358,6 +358,8 @@ EVID1a → b → c; corresponding EVID1 precedes EVID2; EVID1d also needs DEV5/7
 Contracts: session-management (D126 §9), session-messages (D137), answer-continues (D131),
 pause-and-clean-up (D132), D133/D136. Installed canaries follow completed build rows.
 
+- [ ] **RETRYWORK1 — a failed session's committed work is carried on, never built again from nothing** (driver; found 2026-10-21 watching the install; D46 §4). Two sessions built their rows, committed them, and failed only because their connector could not start (QUESTOPENLOCK1), so they could not take or close their quests. Each quest was then retried in a new session with a new tree, which built the same row again from the start: MERGEWEBRULES1 and FABRIC-PIPELINE1b2 were each built twice, about twice the tokens. One retry even read the earlier tree as an earlier run and rebuilt anyway. Wanted: where a failed session's tree holds commits beyond its start, the retry carries on in that tree, told what its predecessor committed and said, as *Try again* carries a stopped take on (StopHold). Where a person must judge it, the session waits in review with its work rather than being retried blind. Proof: a `Process` case where a session commits and then fails on a closed quest door, and its retry starts in the same tree with the predecessor's commits and words in its brief; the retry's note says so.
+
 Found driving the installed home clean on 2026-10-15 (the owner: *"please drive daoris and please also clean up all unfinished task/session in this local daoris so we can start the next round of tasks; currently we find a lot of issues because this design is for as automated as possible"*):
 
 
