@@ -18460,3 +18460,9 @@ in zh. The sessions page's held words (`WordsHold`) still carry the driver's sen
 > - [ ] **LANDHOLDSWEEP1 — the landing locks swept** (driver; D173's LANDRACE1/LANDPIN2 note, *Left*). `locks/landings/` keeps one small file per tree landed and per branch pushed, and nothing removes them. Proof: a sweep removes a file no door has held for longer than `LandingHolds.Wait`, and keeps one held or held recently.
 
 **Outcome** 2026-10-21: built. A hold stamps its file's time when taken and let go; `LandingHolds.Sweep` removes a file no door has held for longer than `Wait`, reading its time again under its own handle, and keeps one held or let go within the bound; a taken hold sweeps its home at most once per `Wait` in a process. Proof: three tests in `LandingHoldsTests`. Detail: D173's LANDHOLDSWEEP1 note.
+
+## KNOW-REFTX1 — a knowledge note on removals that rest on other refs (2026-10-21, D173)
+
+> - [ ] **KNOW-REFTX1 — a knowledge note on removals that rest on other refs** (knowledge). A ref removal whose proof reads other refs goes as one `update-ref --stdin` transaction with `verify` lines for exactly what the proof rested on, never delete-then-look-again; a holder is a branch of the person's before a session branch. Proof: the note, indexed.
+
+**Outcome** 2026-10-21: `.claude/knowledge/ref-removal-transactions.md`, indexed in `.claude/INDEX.md` by `daoris sync`: the removal, a `verify` for each ref and commit the proof returned and nothing found afterwards, rests carried down a chain, a holder by ancestry chosen as the line's form, then a branch of the person's, then a session branch, and what no ref says (a late checkout) kept as its own check. Written from D173's FABRIC-END4a review notes and `ContentHolds`. On Opus, by a session of the owner's install.
