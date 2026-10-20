@@ -49,6 +49,10 @@ with the version and date at release.
   the next turn, or at the next step where the agent asked for it urgently. On the ask's channel and a session's panel, each message
   says what it reached in each repository: waiting, held, taken, read, answered, or never reached once the ask's work ended, and
   *Send to its session* sends one on.
+- A change Daoris could not make is said where you pressed it, no longer in a corner toast. Turning Ask Daoris's full access on
+  asks once, waits for the driver with *Waiting…*, and says a refusal inside the ask so you can press again; a switch back is said
+  under its chip. A refused change to a session pause is said under that row on Setup and in Settings → Driver, with its choice
+  still open, and an ask's review choice or *Apply* says its refusal beside the press, keeping what you typed.
 - The Quests list shows one row for one piece of work: an ask that became a single quest is that quest's row, named by the
   ask's short title with the ask on its second line (its page opens from the row's right-click menu), and the Asks group
   keeps only asks still waiting on something of their own. A published ask no longer wears the finished colour.

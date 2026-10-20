@@ -45,10 +45,10 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Web/src/design/tokens.test.ts` | 48 | 856 |
 | `src/Daoris.Web/src/design/ui.test.tsx` | 58 | 1167 |
 | `src/Daoris.Web/src/design/ui.tsx` | 87 | 1850 |
-| `src/Daoris.Web/src/help/AskConversation.tsx` | 53 | 987 |
-| `src/Daoris.Web/src/help/AskDaoris.test.tsx` | 85 | 1716 |
+| `src/Daoris.Web/src/help/AskConversation.tsx` | 54 | 991 |
+| `src/Daoris.Web/src/help/AskDaoris.test.tsx` | 86 | 1749 |
 | `src/Daoris.Web/src/menus/commands.ts` | 40 | 793 |
-| `src/Daoris.Web/src/projects/ProjectsView.test.tsx` | 97 | 1715 |
+| `src/Daoris.Web/src/projects/ProjectsView.test.tsx` | 99 | 1751 |
 | `src/Daoris.Web/src/projects/ProjectsView.tsx` | 40 | 715 |
 | `src/Daoris.Web/src/projects/setup/RepositorySetup.test.tsx` | 42 | 742 |
 | `src/Daoris.Web/src/quests/QuestPage.tsx` | 56 | 1028 |
@@ -242,7 +242,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | File | KB | Lines |
 |---|---|---|
 | `.claude/knowledge/twins.md` | 114 | 183 |
-| `docs/2026-09-19-platform-ux.md` | 69 | 723 |
+| `docs/2026-09-19-platform-ux.md` | 70 | 730 |
 | `docs/2026-09-21-dsh-evaluation.md` | 43 | 483 |
 | `docs/2026-09-21-working-surface-components.md` | 54 | 354 |
 | `docs/2026-09-25-rev3-review.md` | 51 | 407 |

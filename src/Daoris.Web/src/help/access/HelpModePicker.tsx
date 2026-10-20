@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { HelpMode } from './wired';
-import { Button, Icon, Menu, Prose } from '../../design/ui';
+import { Icon, Menu, Prose } from '../../design/ui';
 import { cn } from '../../lib/cn';
+import { type Answered, InlineConfirm } from '../../work/InlineConfirm';
 import { chipOf } from './modes';
 
 // Ask Daoris's access, chosen from its chip (HELPMODE1b, D183 point 2; the modes design §1, §5): beside the panel's composer, and in
@@ -13,27 +14,37 @@ import { chipOf } from './modes';
 const MODES: readonly HelpMode[] = ['restricted', 'full'];
 
 /**
- * The rule of a pick (design §5): restricted is set at once; full access asks once, inline, and is set only by its own press. A
- * pick of the mode already chosen does nothing.
+ * The rule of a pick (design §5; ACCESSASK1, the UI/UX design §3.4): restricted is set at once; full access asks once, inline, and
+ * is set only by its own press, the ask staying open until the driver answers (`InlineConfirm` closes it on `done` and says a
+ * refusal inside it). A switch back refused is held as `refusal`, which its holder says under the chip (R3). A pick of the mode
+ * already chosen does nothing.
  */
-export function useModeChoice(selected: HelpMode, onChoose: (mode: HelpMode) => void) {
+export function useModeChoice(selected: HelpMode, onChoose: (mode: HelpMode, answered: Answered) => void) {
   const [confirming, setConfirming] = useState(false);
+  const [refusal, setRefusal] = useState<string | null>(null);
+  // An answer to a switch the person has since picked past is no longer theirs to read.
+  const turn = useRef(0);
   return {
     confirming,
+    refusal,
     pick: (mode: HelpMode) => {
+      const mine = ++turn.current;
+      setRefusal(null);
       if (mode === selected) {
         setConfirming(false);
       } else if (mode === 'full') {
         setConfirming(true);
       } else {
         setConfirming(false);
-        onChoose(mode);
+        onChoose(mode, {
+          done: () => {},
+          refused: (sentence) => {
+            if (mine === turn.current) setRefusal(sentence);
+          },
+        });
       }
     },
-    enable: () => {
-      setConfirming(false);
-      onChoose('full');
-    },
+    enable: (answered: Answered) => onChoose('full', answered),
     cancel: () => setConfirming(false),
   };
 }
@@ -127,53 +138,52 @@ export function HelpModeChip({ selected, running = null, busy = false, open, onP
 }
 
 /**
- * Full access asked once (design §5): the design's sentence, the servers it would add that restricted mode withholds, and when it
- * takes effect, with *Enable full access* and *Never mind*. It takes the focus as it opens, so the keyboard reads it first.
+ * Full access asked once (design §5; ACCESSASK1, the UI/UX design §3.4): the design's sentence, the servers it would add that
+ * restricted mode withholds, and when it takes effect, with *Enable full access* and *Never mind*. It is the one inline ask,
+ * `InlineConfirm`, in its warning tone: the sentence takes the focus as it opens, Escape and *Never mind* give it back to the
+ * chip, and the press keeps it open and waiting until the driver answers, a refusal said inside it.
  */
-export function FullAccessConfirm({ adds, busy = false, onEnable, onCancel }: {
+export function FullAccessAsk({ adds, busy = false, onEnable, onClose }: {
   /** The servers full access would add, by name; null while they are being read. */
   adds?: readonly string[] | null;
+  /** Another change on its way: both presses wait for it. */
   busy?: boolean;
-  onEnable: () => void;
-  onCancel: () => void;
+  /** The press, and how to tell the ask how it ended: `useModeChoice`'s `enable`. */
+  onEnable: (answered: Answered) => void;
+  /** Put down, by *Never mind*, Escape or the change landing: `useModeChoice`'s `cancel`. */
+  onClose: () => void;
 }) {
   const { t } = useTranslation();
-  const box = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    box.current?.focus();
-  }, []);
-
   return (
-    <div
-      ref={box}
-      role="group"
-      tabIndex={-1}
-      aria-label={t('help.mode.confirm.label')}
-      className="grid min-w-0 gap-1.5 border-l-[3px] border-warn bg-raised px-3 py-2 focus:outline-none"
-    >
-      <Prose className="m-0 text-small text-ink">{t('help.mode.confirm.says')}</Prose>
-      {adds === null || adds === undefined ? (
-        <p className="m-0 text-small text-ink-faint">{t('help.mode.confirm.addsReading')}</p>
-      ) : adds.length === 0 ? (
-        <p className="m-0 text-small text-ink-soft">{t('help.mode.confirm.addsNone')}</p>
-      ) : (
-        <div className="grid gap-1">
-          <p className="m-0 text-small text-ink-soft">{t('help.mode.confirm.adds')}</p>
-          <ul className="m-0 flex list-none flex-wrap gap-1.5 p-0">
-            {adds.map((name) => (
-              <li key={name}><code className="text-meta">{name}</code></li>
-            ))}
-          </ul>
-        </div>
+    <InlineConfirm
+      tone="warn"
+      block
+      label={t('help.mode.confirm.label')}
+      meanIt={t('help.mode.confirm.enable')}
+      busy={busy}
+      onConfirm={onEnable}
+      onClose={onClose}
+      className="min-w-0"
+      says={(
+        <>
+          <Prose className="m-0 text-small text-ink">{t('help.mode.confirm.says')}</Prose>
+          {adds === null || adds === undefined ? (
+            <p className="m-0 text-small text-ink-faint">{t('help.mode.confirm.addsReading')}</p>
+          ) : adds.length === 0 ? (
+            <p className="m-0 text-small text-ink-soft">{t('help.mode.confirm.addsNone')}</p>
+          ) : (
+            <div className="grid gap-1">
+              <p className="m-0 text-small text-ink-soft">{t('help.mode.confirm.adds')}</p>
+              <ul className="m-0 flex list-none flex-wrap gap-1.5 p-0">
+                {adds.map((name) => (
+                  <li key={name}><code className="text-meta">{name}</code></li>
+                ))}
+              </ul>
+            </div>
+          )}
+          <p className="m-0 text-small text-ink-soft">{t('help.mode.confirm.when')}</p>
+        </>
       )}
-      <p className="m-0 text-small text-ink-soft">{t('help.mode.confirm.when')}</p>
-      <div className="flex flex-wrap gap-2">
-        <Button className="border-warn" disabled={busy} onClick={onEnable}>
-          <Icon name="conflict" size={13} className="text-warn" />
-          {t('help.mode.confirm.enable')}
-        </Button>
-        <Button variant="ghost" disabled={busy} onClick={onCancel}>{t('common.cancel')}</Button>
-      </div>
-    </div>
+    />
   );
 }

@@ -184,7 +184,14 @@ controls are in the frame design's §3.
   since a reader may hold a busy element's words back until the wait is over; the move keeps its name. **Closed either way, the focus goes to the press drawn again**, and where none is (a delete took its
   record, or nothing more is offered) to the nearest section or list that held it, never the page's body. A refusal
   shrinks with its column and breaks anywhere, since a long id or a raw error otherwise widens it past the main area's
-  400 px floor.
+  400 px floor. **Its move wears the hue of what it causes**: danger's for a destructive edit; the primary's for an
+  outward act that destroys nothing (a landing); the warning's for a choice that loosens what runs unasked (full access),
+  its line down the ask's edge and its icon on the move, never red, since full access is a choice and not an outcome
+  (the UI/UX design §3.4, ACCESSASK1).
+- **A refusal is said where its press was made** (the UI/UX design R3, ACCESSASK1): whole, in the driver's or the
+  service's sentence, a setting's change under its row's editor, a mode switch under its chip, a confirmation's inside
+  it, a proposal's *Apply* under its proposal, a list's under its *Save*. The editor stays open with what the person
+  typed, and the press is offered again. A cancel the person pressed is never said back.
 - **Pills** carry state: status text on its soft field with its hue — label always present. Each word is its hue's
   ink on that hue's field, and declined's is the danger ink (UXFIX5, UXFIX5c).
 - **Chips** carry declarations (owns/accepts/packs): quiet line-bordered tokens; `accent` variant for
@@ -206,8 +213,8 @@ controls are in the frame design's §3.
   after. The title bar stays live while an overlay is up, as VS Code's does during quick-open.
   `tokens.test.ts` holds the rule for every overlay, so the next one cannot inherit `inset-0`.
 - **Toast** (bottom-right, overlay surface, auto-dismiss with close) carries an action's outcome and
-  an error that has no form to stand in — the service's sentence verbatim, because the refusal text is
-  the contract. Nothing shifts the layout to speak. **Beside an open drawer, never over it** (UXTOAST1, D41
+  an error that has no place to stand in — the place has gone, or the act was started by a door that drew nothing (a
+  menu item, a key, the palette) — the service's sentence verbatim, because the refusal text is the contract. Nothing shifts the layout to speak. **Beside an open drawer, never over it** (UXTOAST1, D41
   amended 2026-10-11): the drawer holds the corner whole, and a toast there lay over an ask's presses at its foot, so
   while one is open the toasts stand at its left edge, over the scrim, the corner's gap from it; narrower than 56rem,
   where none fits beside it, they keep the corner. They take their own presses, so a press on one never reaches the

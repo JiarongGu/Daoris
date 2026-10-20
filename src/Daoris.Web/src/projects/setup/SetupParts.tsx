@@ -3,6 +3,7 @@ import { type ReactNode, useEffect, useId, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { LandingRule } from '../../settings/repository/Landings';
 import { Button, Icon, Inline, SettingList, SettingRow } from '../../design/ui';
+import { Refused } from '../../work/InlineConfirm';
 
 // The parts a Setup tab is made of (UX6f, UX6g; D150 §1 rule 4, §4.2, §4.3): a section that folds to the line naming its
 // values, and a value that is the thing's own or stands from above. A repository's Setup and a workspace's share them, so
@@ -92,9 +93,10 @@ export function SetupSection({ title, summary, startsOpen, children }: {
  * A value that is the thing's own or stands from above (§4.2): what it is and what said so, beneath its name; and at the
  * right, its control with *Clear* where it is its own, or *Set for this …* (`setHere`), which opens the control in place
  * with *Never mind* beside it. A `wide` control, the landing rule's several parts, is laid out beneath the row's words at
- * the row's width, keeping only *Clear* or *Never mind* at the right.
+ * the row's width, keeping only *Clear* or *Never mind* at the right. A change the driver refused is said under the row, whole,
+ * with the editor still open (`refusal`; the UI/UX design R3), as `HeavyGates` says one under its *Save*.
  */
-export function Inheritable({ label, twin, why, says, own, busy, wide = false, setHere, onClear, editor, children }: {
+export function Inheritable({ label, twin, why, says, own, busy, wide = false, setHere, onClear, editor, refusal = null, children }: {
   label: string;
   twin: string;
   why?: string;
@@ -106,6 +108,8 @@ export function Inheritable({ label, twin, why, says, own, busy, wide = false, s
   setHere: string;
   onClear: () => void;
   editor: () => ReactNode;
+  /** The driver's sentence for a change refused here, said under the row until the next press. */
+  refusal?: string | null;
   children?: ReactNode;
 }) {
   const { t } = useTranslation();
@@ -125,6 +129,7 @@ export function Inheritable({ label, twin, why, says, own, busy, wide = false, s
     <SettingRow label={label} hint={twin} why={why} control={control}>
       <p className="m-0 text-small text-ink-soft">{typeof says === 'string' ? <Inline text={says} /> : says}</p>
       {open && wide && <div className="mt-2">{editor()}</div>}
+      {refusal && <Refused className="mt-2" sentence={refusal} />}
       {children}
     </SettingRow>
   );
