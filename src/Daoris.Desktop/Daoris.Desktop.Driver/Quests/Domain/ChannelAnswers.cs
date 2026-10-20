@@ -1,6 +1,14 @@
 namespace Daoris.Driver;
 
 /// <summary>
+/// What the person's <i>Send to its session</i> did (COWORK1d, the message-urgency design §4.2, §8.4): sent, to which part, or why not by
+/// a code the page words: <c>no-part</c> (no part of that line of work on this machine), <c>gone</c> (the channel no longer holds it),
+/// <c>held</c> (another part of the entry holds it now), or the say door's own refusal. Declared here, beside the answer the page reads,
+/// since the loop's <c>ChannelReach</c> makes it and no module may name the loop (the code-structure design §5).
+/// </summary>
+public sealed record ChannelForwarded(bool Sent, string? Code, string? Session);
+
+/// <summary>
 /// One item of an ask's channel as the page reads it (SESSONE2c): a message's words, or one of Daoris's coded lines. COWORK1d: a message's
 /// level (null for one from before) and what it reached in each repository it addresses.
 /// </summary>

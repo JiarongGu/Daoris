@@ -42,13 +42,6 @@ public sealed class ServiceChannelDoors(ServiceClient service) : IChannelDoors
 }
 
 /// <summary>
-/// What the person's <i>Send to its session</i> did (COWORK1d, the message-urgency design §4.2, §8.4): sent, to which part, or why not by
-/// a code the page words: <c>no-part</c> (no part of that line of work on this machine), <c>gone</c> (the channel no longer holds it),
-/// <c>held</c> (another part of the entry holds it now), or the say door's own refusal.
-/// </summary>
-public sealed record ChannelForwarded(bool Sent, string? Code, string? Session);
-
-/// <summary>
 /// A line of work on an ask as one look finds it (SESSONE2b): its entry, a part of it here, and that part's inbox where this loop runs
 /// it and its door takes words (SESS3); none where the part is parked or ended.
 /// </summary>

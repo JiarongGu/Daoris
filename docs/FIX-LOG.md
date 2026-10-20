@@ -5,6 +5,18 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-21 — The full set on 90466f4: a domain record named the loop, and two connector tests gave a starved pool five seconds (COWORK1d, FLAKE1)
+
+- **Symptom:** the driver's `StructureTests` refused `Quests/Domain/ChannelAnswers.cs:49` for naming `ChannelForwarded`, declared in
+  `Loop/ChannelReach.cs`; the service's `McpHousekeepingToolTests` answered "No Daoris on this machine took it within 5 seconds".
+- **Root cause:** COWORK1d declared the forward's result beside the loop that makes it, and the page's answer in the domain read it,
+  so a module named the composition root; its builder ran its own classes filtered, never the structure test. The two connector
+  tests' stand-in loop runs on the thread pool, and the box's default take of five seconds was shorter than the pool's start
+  under the machine's load (HELPMODE1c3's builder had seen the same once in `McpChosenSettingsToolTests`).
+- **Fix:** `ChannelForwarded` is declared in the domain beside the answer that reads it; both tests' boxes wait sixty seconds by
+  default, their stand-in polling as long, and the two cases that test a wait running out keep their own short ones.
+- **Verification:** `StructureTests` and `ChannelReachTests`, 31; both connector test classes, 9.
+
 ## 2026-10-21 — The full set on 824886d: an end-to-end test held the old asks group, and a test home's delete met a held log (QUESTLISTS1, FLAKE1)
 
 - **Symptom:** the `web` gate failed the end-to-end INT4c case (with closed work included, no *Asks* group came back), and on
