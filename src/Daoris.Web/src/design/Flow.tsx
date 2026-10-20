@@ -184,6 +184,7 @@ export function Flow({ label, nodes, edges, entries, end, className }: FlowProps
   const track = useMemo(() => trackFor(layout, placement, width), [layout, placement, width]);
 
   // The edges, drawn from the measured boxes, again on each resize of the drawing or of a node; nothing drawn moves a box.
+  // The resizes of one frame are drawn once, on the next (trap 14), and a geometry that came out the same is not drawn.
   const [ink, setInk] = useState<Ink | null>(null);
   useLayoutEffect(() => {
     const element = drawing.current;
@@ -196,11 +197,20 @@ export function Flow({ label, nodes, edges, entries, end, className }: FlowProps
         return { ...next, drawn: (was?.drawn ?? 0) + 1 };
       });
     };
+    let pending = 0;
+    const later = () => {
+      if (typeof requestAnimationFrame !== 'function') { draw(); return; }
+      cancelAnimationFrame(pending);
+      pending = requestAnimationFrame(draw);
+    };
     draw();
-    const observer = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(() => draw()) : null;
+    const observer = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(later) : null;
     observer?.observe(element);
     element.querySelectorAll('[data-flow-node]').forEach((node) => observer?.observe(node));
-    return () => observer?.disconnect();
+    return () => {
+      if (typeof cancelAnimationFrame === 'function') cancelAnimationFrame(pending);
+      observer?.disconnect();
+    };
   }, [layout, placement, track]);
 
   const nodeProps = (id: string): NodeProps => ({

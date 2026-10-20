@@ -87,9 +87,9 @@ export const DenseChineseDark: Story = dense.chineseDark;
 /**
  * Unequal boxes in both languages: a fork of three and its join, a title long in 中文 beside short English ones and the
  * other way about, so the rank's boxes differ in height and the edges are drawn from the boxes as they fell. Left to
- * right at 1200 px, top to bottom at 600.
+ * right at 1200 px, and top to bottom at 570, between what top to bottom needs (568) and left to right (576).
  */
-const unequal = looks(UNEQUAL, [...FLOW_WIDTHS, 600]);
+const unequal = looks(UNEQUAL, [...FLOW_WIDTHS, 570]);
 export const Unequal: Story = unequal.light;
 export const UnequalDark: Story = unequal.dark;
 export const UnequalChinese: Story = unequal.chinese;
