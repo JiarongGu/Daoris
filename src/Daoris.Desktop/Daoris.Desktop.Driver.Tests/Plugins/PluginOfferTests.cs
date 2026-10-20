@@ -18,7 +18,11 @@ public sealed class PluginOfferTests : IDisposable
 
     private static IReadOnlyCollection<string> Reserved => AdapterSet.Built().Names;
 
-    public PluginOfferTests() => Directory.CreateDirectory(Home);
+    public PluginOfferTests()
+    {
+        Directory.CreateDirectory(Home);
+        File.WriteAllText(Path.Combine(_root, DaorisHome.InstallMarker), "# Daoris — installed desktop\n");
+    }
 
     public void Dispose()
     {
@@ -63,6 +67,14 @@ public sealed class PluginOfferTests : IDisposable
         Assert.Equal(["app", "plugin-offers"], PluginOffers.Layout);
         Assert.Empty(PluginOffers.Load(Offers, Home, Reserved));
         Assert.Empty(PluginOffers.Load(null, Home, Reserved));
+    }
+
+    /// <summary>HOMELAYOUT4: a development run's root is its own Daoris folder, so its offers are its <c>app/plugin-offers/</c>.</summary>
+    [Fact]
+    public void A_dev_runs_offers_are_its_roots_own_app_plugin_offers()
+    {
+        var scratch = Path.Combine(_root, "scratch");
+        Assert.Equal(Path.Combine([scratch, .. PluginOffers.Layout]), PluginOffers.BesideHome(scratch));
     }
 
     /// <summary>The README's requirement lines: the CLI's <c>what an offer needs…</c>, row for row.</summary>

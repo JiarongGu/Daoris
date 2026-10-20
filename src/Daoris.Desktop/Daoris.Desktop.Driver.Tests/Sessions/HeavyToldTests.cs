@@ -18,7 +18,11 @@ public sealed class HeavyToldTests : IDisposable
 
     private readonly HeavyFixture _fixture = new("heavy-told");
 
-    public HeavyToldTests() => Directory.CreateDirectory(Home);
+    public HeavyToldTests()
+    {
+        Directory.CreateDirectory(Home);
+        File.WriteAllText(Path.Combine(Install, DaorisHome.InstallMarker), "# Daoris — installed desktop\n");
+    }
 
     public void Dispose() => _fixture.Dispose();
 

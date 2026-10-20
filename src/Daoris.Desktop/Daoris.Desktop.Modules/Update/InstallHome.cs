@@ -245,6 +245,27 @@ public static class InstallHome
         File.Exists(Path.Combine(root, Marker)) ? DaorisHome.Entry(root, HomeEntry.Window) : null;
 
     /// <summary>
+    /// The window's memory for a run whose one root was named with <c>--app-root</c> (HOMELAYOUT4, the design §6.1): a
+    /// development run's scratch Daoris folder, which is no install and is its own home, so the same entry as an install's.
+    /// </summary>
+    public static string WindowMemoryOfRun(string root) => DaorisHome.Entry(root, HomeEntry.Window);
+
+    /// <summary>The folder a <c>--app-root</c> argument names (<c>--app-root &lt;folder&gt;</c> or <c>--app-root=&lt;folder&gt;</c>), whole; null when none is given.</summary>
+    public static string? AppRootOf(IReadOnlyList<string> args)
+    {
+        const string name = "--app-root";
+        for (var at = 0; at < args.Count; at++)
+        {
+            string? value = null;
+            if (args[at] == name) value = at + 1 < args.Count ? args[at + 1] : null;
+            else if (args[at].StartsWith(name + "=", StringComparison.Ordinal)) value = args[at][(name.Length + 1)..];
+            if (!string.IsNullOrWhiteSpace(value)) return Path.GetFullPath(value);
+        }
+
+        return null;
+    }
+
+    /// <summary>
     /// How <paramref name="home"/>, the home this process runs on once established, stands to <paramref name="account"/>,
     /// the account's variable as it now stands (LEFT2) — a <see cref="HomeAccount"/> value.
     /// </summary>

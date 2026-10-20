@@ -83,6 +83,9 @@ internal static class Program
         var inInstallApp = !string.Equals(
             installRoot, Path.TrimEndingDirectorySeparator(AppContext.BaseDirectory), StringComparison.OrdinalIgnoreCase);
         var kitRoot = inInstallApp ? AppRootArgument.Resolve(args, installRoot) : null;
+        // A development run is told its one root (`npm run desktop -- run`, HOMELAYOUT4): the scratch Daoris folder that is also
+        // its home, so its window's memory is that folder's `profiles/window/` as an install's is, not the kit's own `data/`.
+        var devRoot = kitRoot is null ? InstallHome.AppRootOf(args) : null;
 
         var builder = ShenoraApplication.CreateBuilder(new ShenoraApplicationOptions
         {
@@ -90,7 +93,9 @@ internal static class Program
             ApplicationName = "Daoris",
             Paths = kitRoot is not null
                 ? new ShenoraPathsOptions { ExplicitRoot = kitRoot, DataDirectory = InstallHome.WindowMemory(kitRoot) }
-                : new ShenoraPathsOptions(),
+                : devRoot is not null
+                    ? new ShenoraPathsOptions { ExplicitRoot = devRoot, DataDirectory = InstallHome.WindowMemoryOfRun(devRoot) }
+                    : new ShenoraPathsOptions(),
         });
 
         // The engine every window renders on (D92, CHR2): the Chromium the install ships. The pages are

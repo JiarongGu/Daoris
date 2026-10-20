@@ -279,6 +279,33 @@ public sealed class InstallHomeTests : IDisposable
     }
 
     /// <summary>
+    /// A development run's window memory (HOMELAYOUT4, the design §6.1): the run is told its one root with <c>--app-root</c>, a
+    /// folder that is no install, and its window's memory is that root's <c>profiles/window/</c> all the same, never the kit's
+    /// own <c>data/</c> beneath it.
+    /// </summary>
+    [Theory]
+    [InlineData("--app-root", "X:/daoris/scratch")]
+    [InlineData("--app-root=X:/daoris/scratch", null)]
+    public void A_dev_runs_root_is_the_one_its_argument_names(string first, string? second)
+    {
+        string[] args = second is null ? ["--other", first] : ["--other", first, second];
+        Assert.Equal(Path.GetFullPath("X:/daoris/scratch"), InstallHome.AppRootOf(args));
+        Assert.Null(InstallHome.AppRootOf(["--other"]));
+        Assert.Null(InstallHome.AppRootOf(["--app-root"]));
+    }
+
+    [Fact]
+    public void A_dev_runs_window_memory_is_its_roots_window_entry()
+    {
+        var root = Path.Combine(_root, "scratch");
+        Directory.CreateDirectory(root);
+        Assert.Equal(Path.Combine(root, "profiles", "window"), InstallHome.WindowMemoryOfRun(root));
+
+        Lay(root, "chromium/Default/Preferences");
+        Assert.Equal(root, InstallHome.WindowMemoryOfRun(root));
+    }
+
+    /// <summary>
     /// An entry whose new place is there too is not moved: both places hold it, which its readers refuse naming both (D172 point
     /// 5), and the notice says so; an empty folder at the new place is no entry, and the move takes its place.
     /// </summary>
