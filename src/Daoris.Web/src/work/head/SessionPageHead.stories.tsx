@@ -443,7 +443,7 @@ function RunningALongCallHead(args: ComponentProps<typeof SessionPageHead>) {
 export const RunningALongCallAt400: Story = {
   args: { title: 'Continue the production half' },
   render: (args) => <RunningALongCallHead {...args} />,
-  decorators: [(Story) => <div className="flex h-[30rem] w-[25rem] max-w-full border border-line bg-page"><Story /></div>],
+  decorators: [sessionWidths.narrow],
 };
 
 /** The same in 中文. */
