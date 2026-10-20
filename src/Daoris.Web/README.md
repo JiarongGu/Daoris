@@ -223,6 +223,7 @@ npm --prefix src/Daoris.Web run dev                             # http://localho
 npm run test:web
 npm --prefix src/Daoris.Web run test:watch                      # the inner loop, on save
 npm --prefix src/Daoris.Web run e2e:ui                          # the outer loop, watch-and-poke mode
+npm --prefix src/Daoris.Web run e2e:measured                    # the flowchart's stories in Chromium, every box measured (D186)
 
 # the design tool
 npm --prefix src/Daoris.Web run storybook

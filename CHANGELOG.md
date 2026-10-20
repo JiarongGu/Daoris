@@ -5,6 +5,11 @@ with the version and date at release.
 
 ## Unreleased
 
+- A quest's page draws its statuses as a flowchart, folded under *Flowchart* after the chain until you open it: open,
+  taken, done and declined, the one it stands at lit, and under each the moves out of it and what makes each. It is drawn
+  left to right on a wide page, top to bottom on a narrower one, and as a list at the side bar's width; *Show as list* gives
+  the list at any width and is remembered. The arrow keys move between the statuses and follow a move, and a screen reader
+  hears each status with every move into and out of it.
 - Done work and its pull requests move on sooner:
   - Focusing another main window asks about an open pull request as focusing the first one does.
   - A pull request whose line you fetched within a minute of its last check is asked about at the next chance after that minute,
