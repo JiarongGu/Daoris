@@ -1,5 +1,5 @@
 {
-  "about": "KEEPALL1 (D173's KEEPALL1 note; FIX-LOG 2026-10-17): every home file a door edits keeps what its writer does not own, as driver.json's writers do (driver-config-keeps.json). Read row for row by the CLI's homefileskeep.test.ts and the driver's HomeFilesKeepTests. `files` holds each file as it stands before the read, in the writer's layout, its lines joined by LF with one final LF, with keys neither twin knows at each level and numbers JavaScript cannot hold or would write shorter. A row names its `file` and one door's `edit` (`op` and its fields); `changes` turn that file into what both twins write, each `from` found exactly once (its lines joined by LF) and replaced by `to`. A row's `start` is made to the file before the read; `between` is another writer's change, made after this writer read the file and before it writes, which the write keeps (only for a writer whose read and write are two calls); a row whose file `crlf` is true has its lines joined by CRLF, and so is what both write; a row `refused` writes nothing, its refusal naming what it says, the file left as `start` or `between` made it (and `changes` say so).",
+  "about": "KEEPALL1 and KEEPALL1b (D173's KEEPALL1 and KEEPALL1b notes; FIX-LOG 2026-10-17): every home file a door edits keeps what its writer does not own, as driver.json's writers do (driver-config-keeps.json). Read row for row by the CLI's homefileskeep.test.ts and the driver's HomeFilesKeepTests. `files` holds each file as it stands before the read, in the writer's layout, its lines joined by LF with one final LF, with keys neither twin knows at each level and numbers JavaScript cannot hold or would write shorter. A row names its `file` and one door's `edit` (`op` and its fields); `changes` turn that file into what both twins write, each `from` found exactly once (its lines joined by LF) and replaced by `to`. A row's `start` is made to the file before the read; `between` is another writer's change, made after this writer read the file and before it writes, which the write keeps (only for a writer whose read and write are two calls); a row whose file `crlf` is true has its lines joined by CRLF, and so is what both write; a row `refused` writes nothing, its refusal naming what it says, the file left as `start` or `between` made it (and `changes` say so).",
   "files": {
     "plugins.json": [
       "{",
@@ -64,9 +64,149 @@
       "  },",
       "  \"ratio\": 1.50",
       "}"
+    ],
+    "harnesses.json": [
+      "{",
+      "  \"later\": {",
+      "    \"kept\": true,",
+      "    \"big\": 9007199254740993",
+      "  },",
+      "  \"defaults\": {",
+      "    \"claude-code\": \"account-1\",",
+      "    \"note\": 7",
+      "  },",
+      "  \"workspaces\": {",
+      "    \"work\": {",
+      "      \"claude-code\": \"account-2\",",
+      "      \"since\": 9007199254740993",
+      "    }",
+      "  },",
+      "  \"versions\": {",
+      "    \"claude-code\": \"2.1.0\"",
+      "  },",
+      "  \"workspaceVersions\": {},",
+      "  \"rotation\": {",
+      "    \"claude-code\": [",
+      "      \"account-1\",",
+      "      \"account-2\"",
+      "    ]",
+      "  },",
+      "  \"rotationUse\": {",
+      "    \"claude-code\": {",
+      "      \"use\": \"order\",",
+      "      \"switch\": \"off\",",
+      "      \"spread\": {",
+      "        \"weekly\": true",
+      "      }",
+      "    }",
+      "  },",
+      "  \"ratio\": 1.50",
+      "}"
     ]
   },
   "rows": [
+    {
+      "name": "harnesses: read and written with no edit, the same bytes",
+      "file": "harnesses.json",
+      "edit": { "op": "none" },
+      "changes": []
+    },
+    {
+      "name": "harnesses: a default set changes that key alone, the section's own unknown key and the file's kept as written",
+      "file": "harnesses.json",
+      "edit": { "op": "harness-default", "agent": "codex", "account": "account-3" },
+      "changes": [
+        { "from": ["    \"claude-code\": \"account-1\","], "to": ["    \"claude-code\": \"account-1\",", "    \"codex\": \"account-3\","] }
+      ]
+    },
+    {
+      "name": "harnesses: a workspace's default set keeps the workspace's own unknown key",
+      "file": "harnesses.json",
+      "edit": { "op": "harness-default", "agent": "codex", "account": "account-4", "workspace": "work" },
+      "changes": [
+        { "from": ["      \"claude-code\": \"account-2\","], "to": ["      \"claude-code\": \"account-2\",", "      \"codex\": \"account-4\","] }
+      ]
+    },
+    {
+      "name": "harnesses: a setting changed changes that setting alone, the entry's unknown setting kept where it is",
+      "file": "harnesses.json",
+      "edit": { "op": "harness-use", "agent": "claude-code", "use": "goal" },
+      "changes": [
+        { "from": ["      \"use\": \"order\","], "to": ["      \"use\": \"goal\","] }
+      ]
+    },
+    {
+      "name": "harnesses: an old name in an entry no edit touched is written as the new at a save (D165 §6)",
+      "file": "harnesses.json",
+      "start": [
+        { "from": ["      \"switch\": \"off\","], "to": ["      \"early\": false,"] }
+      ],
+      "edit": { "op": "harness-default", "agent": "codex", "account": "account-3" },
+      "changes": [
+        { "from": ["    \"claude-code\": \"account-1\","], "to": ["    \"claude-code\": \"account-1\",", "    \"codex\": \"account-3\","] }
+      ]
+    },
+    {
+      "name": "harnesses: a pin set goes after the one before it",
+      "file": "harnesses.json",
+      "edit": { "op": "harness-pin", "agent": "codex", "version": "0.50.0" },
+      "changes": [
+        { "from": ["    \"claude-code\": \"2.1.0\""], "to": ["    \"claude-code\": \"2.1.0\",", "    \"codex\": \"0.50.0\""] }
+      ]
+    },
+    {
+      "name": "harnesses: an order set goes after the one before it",
+      "file": "harnesses.json",
+      "edit": { "op": "harness-order", "agent": "codex", "order": ["account-1"] },
+      "changes": [
+        { "from": ["      \"account-2\"", "    ]"], "to": ["      \"account-2\"", "    ],", "    \"codex\": [", "      \"account-1\"", "    ]"] }
+      ]
+    },
+    {
+      "name": "harnesses: a file in CRLF stays in CRLF",
+      "file": "harnesses.json",
+      "crlf": true,
+      "edit": { "op": "harness-default", "agent": "codex", "account": "account-3" },
+      "changes": [
+        { "from": ["    \"claude-code\": \"account-1\","], "to": ["    \"claude-code\": \"account-1\",", "    \"codex\": \"account-3\","] }
+      ]
+    },
+    {
+      "name": "harnesses: another writer's change between the read and the write stays",
+      "file": "harnesses.json",
+      "between": [
+        { "from": ["    \"kept\": true,"], "to": ["    \"kept\": false,"] }
+      ],
+      "edit": { "op": "harness-default", "agent": "codex", "account": "account-3" },
+      "changes": [
+        { "from": ["    \"kept\": true,"], "to": ["    \"kept\": false,"] },
+        { "from": ["    \"claude-code\": \"account-1\","], "to": ["    \"claude-code\": \"account-1\",", "    \"codex\": \"account-3\","] }
+      ]
+    },
+    {
+      "name": "harnesses: the workspaces another writer made a string since refuse a workspace's edit, naming them",
+      "file": "harnesses.json",
+      "between": [
+        { "from": ["  \"workspaces\": {", "    \"work\": {", "      \"claude-code\": \"account-2\",", "      \"since\": 9007199254740993", "    }", "  },"], "to": ["  \"workspaces\": \"none\","] }
+      ],
+      "edit": { "op": "harness-default", "agent": "codex", "account": "account-4", "workspace": "work" },
+      "refused": "`workspaces` is no longer an object",
+      "changes": [
+        { "from": ["  \"workspaces\": {", "    \"work\": {", "      \"claude-code\": \"account-2\",", "      \"since\": 9007199254740993", "    }", "  },"], "to": ["  \"workspaces\": \"none\","] }
+      ]
+    },
+    {
+      "name": "harnesses: a key written twice in one object refuses the edit, naming it",
+      "file": "harnesses.json",
+      "start": [
+        { "from": ["    \"note\": 7"], "to": ["    \"note\": 7,", "    \"note\": 8"] }
+      ],
+      "edit": { "op": "harness-default", "agent": "codex", "account": "account-3" },
+      "refused": "holds the key `note` twice",
+      "changes": [
+        { "from": ["    \"note\": 7"], "to": ["    \"note\": 7,", "    \"note\": 8"] }
+      ]
+    },
     {
       "name": "keys: an account's key replaced changes that key alone, an agent's own unknown key and the file's kept as written",
       "file": "keys.json",

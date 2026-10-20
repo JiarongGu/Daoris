@@ -4,20 +4,21 @@ import { mkdirSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { addRule, readPermissions, removeRule, switchDefault, writePermissions, type PermissionFile } from '../src/agents/permissions.ts';
-import { addKeyAccount, profileHome, replaceKeyAccount } from '../src/agents/toolchain.ts';
+import { withRotation, withUse } from '../src/accounts/rotation.ts';
+import { addKeyAccount, profileHome, readHarnessSettings, replaceKeyAccount, withDefault, writeHarnessSettings } from '../src/agents/toolchain.ts';
 import { homeEntry } from '../src/platform/home.ts';
 import { disablePlugin, enablePlugin } from '../src/plugins/plugins.ts';
 import { makeFixture } from './_fixture.ts';
 
 /**
- * KEEPALL1 (FIX-LOG 2026-10-17): every home file a door edits keeps what its writer does not own, as `driver.json`'s writers do
+ * KEEPALL1 and KEEPALL1b (FIX-LOG 2026-10-17): every home file a door edits keeps what its writer does not own, as `driver.json`'s writers do
  * (`driver/configkeeps.test.ts`). One table both twins read, `fixtures/home-files-keep.json`, row for row with the driver's
  * `HomeFilesKeepTests`.
  */
 
 type Edit = {
   op: string; id?: string; scope?: 'machine' | 'workspace' | 'repository'; name?: string; list?: 'allow' | 'ask' | 'deny'; rule?: string; on?: boolean;
-  agent?: string; account?: string; key?: string;
+  agent?: string; account?: string; key?: string; workspace?: string; use?: string; version?: string; order?: string[];
 };
 type Change = { from: string[]; to: string[] };
 type Row = { name: string; file: string; edit: Edit; changes: Change[]; start?: Change[]; between?: Change[]; crlf?: boolean; refused?: string };
@@ -70,6 +71,21 @@ function applied(home: string, row: Row, between: () => void): void {
       replaceKeyAccount(home, edit.agent!, edit.account!, edit.key!, () => {});
     } else if (edit.op === 'key-add') addKeyAccount(home, edit.agent!, edit.key!, () => {});
     else throw new Error(`the table names an edit this test does not make: ${edit.op}`);
+    return;
+  }
+  if (row.file === 'harnesses.json') {
+    const path = join(home, 'harnesses.json');
+    const read = readHarnessSettings(path);
+    between();
+    const workspace = edit.workspace ?? null;
+    const edited = edit.op === 'none' ? read
+      : edit.op === 'harness-default' ? withDefault(read, edit.agent!, edit.account!, workspace)
+        : edit.op === 'harness-use' ? withUse(read, edit.agent!, { use: edit.use as 'goal' }, workspace)
+          // As `daoris agent pin` sets a machine's pin.
+          : edit.op === 'harness-pin' ? { ...read, versions: { ...read.versions, [edit.agent!]: edit.version! } }
+            : edit.op === 'harness-order' ? withRotation(read, edit.agent!, edit.order!, workspace)
+              : assert.fail(`the table names an edit this test does not make: ${edit.op}`);
+    writeHarnessSettings(path, edited);
     return;
   }
   throw new Error(`the table names a file this test does not edit: ${row.file}`);
