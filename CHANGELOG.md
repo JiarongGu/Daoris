@@ -5,6 +5,13 @@ with the version and date at release.
 
 ## Unreleased
 
+- `daoris driver` hands its standing choices to Daoris's own driver program, as `daoris-driver driver` with the same words: the
+  one your install carries, or the build `DAORIS_DRIVER_PROGRAM` names. A `daoris` with neither, such as a checkout's, says so and
+  does nothing. What each choice says is as before; a refusal is said on the error stream, and a refusal the window's route would
+  make carries its code here too. `daoris driver retry <quest>` with Daoris closed now judges the quest as the window's *Try again*
+  does, and refuses one that is neither parked nor held by your stop. From a terminal Daoris started for a session, a change no
+  window confirms is refused: it is yours to make in the window or your own terminal. The window's terminal no longer passes a
+  session's marker to the shells it opens.
 - A repository's Setup says which checks its driven sessions run, beside its heavy gates, and `daoris-driver checks` sets
   the same choice from a terminal. *Light* has sessions run the gates the repository does not mark heavy and the checks their
   change reaches, filtered; its heavy gates are left out of every session. Each session is told so when it starts,

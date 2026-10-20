@@ -18430,3 +18430,14 @@ in zh. The sessions page's held words (`WordsHold`) still carry the driver's sen
 > - [ ] **PUSH1f2 — a CLI verb acting alone runs the .NET implementation** (cli, modules; D182 point 6, D171's PUSH1f note). With no instance running, `daoris driver`, `agent`, `plugin` and `tool` still make their edits with their own TypeScript editors, held to the driver's by the twins' tables; D182 point 6 asks for the same .NET implementation under the home lease, never a TypeScript one. Proof: a verb's write and its refusals identical with and without an instance, from one implementation; the twins' tables for those editors retired.
 
 **Outcome** 2026-10-21: designed and accepted as D194 (`docs/2026-10-21-alone-path-design.md`) after three rounds (Codex's read, twenty findings; Fable's of §1.1 and §1.4, eleven), every finding taken. The CLI hands `daoris driver|agent|plugin|tool` to the driver's own program, as the running Daoris's client or alone under the lease; each change is one typed operation in the driver library with the routes kept; long verbs stage under their process's name and publish under the keep lock and the lease, waiting for it; the agent's own commands get the console at a terminal. The build rows are PUSH1f2a-f. On Opus, read by Codex and Fable.
+
+## PUSH1f2a — the seam, proved by the driver's standing choices (2026-10-21, D194)
+
+> - [ ] **PUSH1f2a — the seam, proved by the driver's standing choices** (cli, driver, modules, tools; first; D194, the alone-path design §5). Read its row in §5 and the sections it names; build it end to end (D187), the family's TypeScript leaving as §4 says. Proof: as §5 names it.
+
+**Outcome** 2026-10-21: `daoris driver`'s `list` and every standing choice run `daoris-driver driver` through the CLI's one spawn site
+with the terminal's environment exactly, the host's `DriverChoicesCommand` the running Daoris's client or the library's own operations
+alone (`StandingChoices`, which the routes call too), refused from a session's terminal; today's text kept by a table of 143 cases,
+two changed with reasons. What the building decided, and the start's measured cost, are D194's PUSH1f2a note; the commits are the
+detail. The handed verbs' TypeScript leaves with `driverconfig.ts` in PUSH1f2b. Unproven until the install: a `daoris driver drive`
+with the window open, confirmed there and shown at once.
