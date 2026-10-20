@@ -5,6 +5,10 @@ with the version and date at release.
 
 ## Unreleased
 
+- *What needs you* is judged once by Daoris for every window, which then shows it as it moves: no window works it out from its own
+  lists, and its count on Overview, on Sessions and on the taskbar button is the same judgement as the band's. Until Daoris has
+  judged it, the band shows placeholder rows rather than *Nothing needs you*. A plain browser lists nothing there and says *What needs
+  you* is the app's to show. Ask Daoris's conversations are no row of it and no count of the Sessions badge.
 - Done work and its pull requests move on sooner:
   - Focusing another main window asks about an open pull request as focusing the first one does.
   - A pull request whose line you fetched within a minute of its last check is asked about at the next chance after that minute,

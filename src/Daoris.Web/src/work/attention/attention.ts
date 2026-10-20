@@ -302,9 +302,9 @@ export type PushedAttention = {
 export type AttentionPushed = { rows: PushedAttention[]; sessions: { key: string; workspace?: string | null }[] };
 
 /**
- * Each kind's place among the kinds of its group when two waited as long (design §6.2's order of kinds), as the judge listed them
- * before it moved to .NET: the accounts', parks, parked quests, go-aheads, held calls and folders; then asks, departures, set-ups,
- * second opinions, widenings, helpers, a unit's blocked clean-up, a held attempt and quests nobody can take; then review.
+ * Each kind's place among the kinds of its group when two waited as long (design §6.2's order of kinds): the accounts', parks,
+ * parked quests, go-aheads, held calls and folders; then asks, departures, set-ups, second opinions, widenings, helpers, a unit's
+ * blocked clean-up, a held attempt and quests nobody can take; then review.
  */
 const KIND_ORDER: readonly AttentionKind[] = [
   'account-wait', 'signed-out', 'parked', 'parked-quest', 'go-ahead', 'permission', 'trust',

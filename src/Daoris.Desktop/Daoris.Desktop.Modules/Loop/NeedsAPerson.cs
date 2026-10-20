@@ -4,8 +4,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop;
 
 /// <summary>
-/// What <i>What needs you</i> is judged from (PUSH1d4, D182 point 6): each input as the page held it before the judge moved here, in the
-/// page's shapes, so the judge and its tests read the records the other slices and the routes already write.
+/// What <i>What needs you</i> is judged from (PUSH1d4, D182 point 6): each input in the page's shapes, as the other slices and the routes
+/// already write them, so the judge and its tests read one shape.
 /// </summary>
 /// <remarks>Every list defaults to empty: an input that holds nothing judges no row, as the page's defaults did.</remarks>
 public sealed record AttentionFacts
@@ -60,9 +60,9 @@ public sealed record AttentionFacts
 }
 
 /// <summary>
-/// Who needs the person (PUSH1d4, D182 point 6): the judge the page ran as <c>needsAPerson</c> and <c>waitingInSessions</c>, now .NET's
-/// once for every window. Each row carries its kind, its id, since when it has waited and the values it is worded from; what it is
-/// called, its sentences and the order the band draws stay the page's (D182's PUSH1d4 note).
+/// Who needs the person (PUSH1d4, D182 point 6): <i>What needs you</i>'s rows and what the Sessions badge counts, judged once for every
+/// window. Each row carries its kind, its id, since when it has waited and the values it is worded from; what it is called, its
+/// sentences and the order the band draws are the page's (D182's PUSH1d4 note).
 /// </summary>
 /// <remarks>
 /// <para><b>No row starts anything to find out</b> (design §6.3): every input is a record a slice already holds or the look already

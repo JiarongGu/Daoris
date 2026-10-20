@@ -736,7 +736,7 @@ describe("the driver's state, pushed (PUSH1a)", () => {
 
   /**
    * A host older than the calls' push has no mark to wake the page: the working session's own page keeps asking every few seconds.
-   * (The window's badge no longer asks at all: who needs the person is pushed, PUSH1d4.)
+   * The window's badge asks nothing: who needs the person is pushed (PUSH1d4).
    */
   it('keeps asking the held permissions every few seconds on a host that pushes no calls', async () => {
     host(false);
@@ -1195,8 +1195,8 @@ describe("the driver's state, pushed (PUSH1a)", () => {
     });
 
     expect(since(before, asked())['DAORIS.DRIVER.STATE']).toBe(1);
-    // And the lines with it: an older host's page pulls them at the tick, as before. (The work's pull is no longer Overview's: its
-    // badge and its band read who needs the person pushed, PUSH1d4; the PUSH1c2b cases hold the work's own pull.)
+    // And the lines with it: an older host's page pulls them at the tick, as before. Overview reads no work: its badge and its band
+    // read who needs the person pushed (PUSH1d4); the PUSH1c2b cases hold the work's own pull.
     expect(since(before, asked())['DAORIS.DRIVER.LINES']).toBe(1);
     // And the clean-up's list (PUSH1c4b).
     expect(since(before, asked())['DAORIS.DRIVER.SWEEP_PLAN']).toBe(1);

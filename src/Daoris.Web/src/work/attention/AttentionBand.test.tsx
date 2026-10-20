@@ -474,7 +474,6 @@ describe('What needs you on a machine', () => {
 /**
  * UX6c (design §6): the band settles from its rows what one press can, each on its record's own route at the service, its
  * sentence said back. Two asks sat proposed on the install until someone pressed through to publish them; now the row publishes.
- * (These were Overview's cases in a browser, which since PUSH1d4 lists no row: who needs the person is the app's to judge.)
  */
 describe('What needs you settles what one press can', () => {
   /** An ask the declarations proposed and nobody has published (INT4a), and a done held for the person's yes (DRIFT1d2). */

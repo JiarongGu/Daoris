@@ -4,10 +4,9 @@ namespace Daoris.Desktop;
 
 /// <summary>
 /// <i>What needs you</i>'s accounts (UX6d, D150 §6.2–§6.3; TOOL4m's row), judged in .NET (PUSH1d4, D182 point 6): a start waiting for
-/// accounts, and a signed-out account a list or a default holds that no waiting start names. The page's <c>accountAttention</c>, with
-/// the states of the Agents place it read (<c>accountState</c>, <c>heldBy</c>, <c>runsFor</c>, <c>joinChoices</c>), each over the
-/// shapes the page held: the roster's doors as <c>HARNESSES</c> answers them, each agent's accounts as <c>ACCOUNTS</c> answers them and
-/// the look's waits as the tick hands them.
+/// accounts, and a signed-out account a list or a default holds that no waiting start names, with the states of the Agents place the
+/// rows read (<c>accountState</c>, <c>heldBy</c>, <c>runsFor</c>, <c>joinChoices</c> on the page), each over the roster's doors as
+/// <c>HARNESSES</c> answers them, each agent's accounts as <c>ACCOUNTS</c> answers them and the look's waits as the tick hands them.
 /// </summary>
 /// <remarks>
 /// <para>🔴 <b>No row starts a process to find out</b> (§6.3, D150 point 5): the waits are the look's own, an account's state the
