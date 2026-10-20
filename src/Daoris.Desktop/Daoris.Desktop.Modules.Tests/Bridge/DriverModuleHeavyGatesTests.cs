@@ -161,6 +161,77 @@ public sealed class DriverModuleHeavyGatesTests : DriverModuleBridge
         Assert.NotNull(absent.GetProperty("refusal").GetString());
     }
 
+    /// <summary>
+    /// HEAVYSLOT1 (the UI/UX design §3.5): <c>HEAVY_SLOT</c> answers who holds the repository's slot, at which gate, and who waits, from
+    /// the records beside it, a run's process read live: a holder whose process runs, with its gate; a waiter with no session (a run from
+    /// a terminal) answered with none; a waiter whose process is gone left out. A repository with no checkout here is refused in words.
+    /// </summary>
+    [Fact]
+    public async Task Heavy_slot_answers_the_holder_at_its_gate_and_the_live_waiters()
+    {
+        var checkout = Path.Combine(Home, "engine");
+        Directory.CreateDirectory(Path.Combine(checkout, ".git"));
+        var key = HeavySlot.KeyOf(checkout)!;
+        var self = System.Diagnostics.Process.GetCurrentProcess();
+        var started = self.StartTime.ToUniversalTime().Ticks;
+        var since = DateTimeOffset.Parse("2026-10-20T09:00:00Z");
+        using var slot = HeavySlot.TryTake(Home, key)!;
+        slot.Keep(new HeavyHolder(self.Id, started, checkout, ["build", "web"], since, "s-12", null)
+        {
+            Now = new HeavyGateNow("web", 1, since + TimeSpan.FromMinutes(4)),
+        });
+        var waits = HeavySlot.WaitersOf(Home, key);
+        Directory.CreateDirectory(waits);
+        // As a waiting run writes them: one from a terminal whose process runs (another process here, since this one is the holder,
+        // and a holder's own process is never its waiter), and one whose process is gone (a start that is not its own).
+        var (other, otherStarted) = AnotherProcess(self.Id);
+        string Waiter(long start, string at, string? session) => JsonSerializer.Serialize(new { pid = other, started = start, checkout, since = at, session });
+        File.WriteAllText(Path.Combine(waits, "a.json"), Waiter(otherStarted, "2026-10-20T09:05:00Z", null));
+        File.WriteAllText(Path.Combine(waits, "b.json"), Waiter(otherStarted + 1, "2026-10-20T09:00:00Z", "s-gone"));
+
+        var body = $$"""[{"repository":"engine","workspace":"w","adopted":true,"root":{{JsonSerializer.Serialize(checkout)}}}]""";
+        var loop = Loop();
+        var module = new DriverModule(Bus, loop);
+        await loop.ComeUpAsync(new ServiceClient("http://stand-in", null, new HttpClient(new RegistryStandIn(body))));
+
+        var answer = await AnswerAsync(module, "HEAVY_SLOT", new { repository = "engine" });
+        var holder = answer.GetProperty("holder");
+        Assert.Equal("s-12", holder.GetProperty("session").GetString());
+        Assert.Equal(["build", "web"], holder.GetProperty("gates").EnumerateArray().Select(gate => gate.GetString()));
+        Assert.Equal("web", holder.GetProperty("now").GetProperty("gate").GetString());
+        Assert.Equal(1, holder.GetProperty("now").GetProperty("at").GetInt32());
+        Assert.Equal(since + TimeSpan.FromMinutes(4), holder.GetProperty("now").GetProperty("since").GetDateTimeOffset());
+        var waiter = Assert.Single(answer.GetProperty("waiters").EnumerateArray());
+        Assert.True(!waiter.TryGetProperty("session", out var session) || session.ValueKind == JsonValueKind.Null);
+        Assert.Equal(since + TimeSpan.FromMinutes(5), waiter.GetProperty("since").GetDateTimeOffset());
+
+        var absent = await AnswerAsync(module, "HEAVY_SLOT", new { repository = "ghost" });
+        Assert.True(!absent.TryGetProperty("holder", out var none) || none.ValueKind == JsonValueKind.Null);
+        Assert.NotNull(absent.GetProperty("refusal").GetString());
+    }
+
+    /// <summary>A running process other than <paramref name="self"/> whose start this user can read: its id and its start in UTC ticks.</summary>
+    private static (int Pid, long Started) AnotherProcess(int self)
+    {
+        foreach (var process in System.Diagnostics.Process.GetProcesses())
+        {
+            using (process)
+            {
+                if (process.Id == self) continue;
+                try
+                {
+                    return (process.Id, process.StartTime.ToUniversalTime().Ticks);
+                }
+                catch (Exception error) when (error is System.ComponentModel.Win32Exception or InvalidOperationException or NotSupportedException)
+                {
+                    // Another user's or one gone already: the next.
+                }
+            }
+        }
+
+        throw new InvalidOperationException("no other process here has a start this user can read");
+    }
+
     private sealed class RegistryStandIn(string registry) : HttpMessageHandler
     {
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct) =>

@@ -39,6 +39,11 @@ export type SessionFactsOf = {
   waitingSince?: string | null;
   /** The call its agent is inside, and since when (`runningCall`, WAITSAY1); absent where none is open. */
   calling?: { title: string; since: string } | null;
+  /**
+   * Its heavy run's line (HEAVYSLOT1, the UI/UX design §3.5): the gate it runs, the gate it failed at, or whom it waits behind, as
+   * the rail's line says it (`heavyLine`), in place of the call, which is that run. Absent where it holds and waits for no slot.
+   */
+  heavy?: string | null;
 };
 
 /**
@@ -111,7 +116,9 @@ export function sessionFacts(t: TFunction, of: SessionFactsOf): string[] {
     // AUTONOMY1b3b: a call the driver marks held for the person's answer is said as one first, since the record shows no hold.
     const heard = grouping?.calling;
     const calling = heard?.waiting ? heard : of.calling ?? heard;
-    if (calling && session.state === 'working') facts.push(callFact(t, calling));
+    // HEAVYSLOT1: a heavy run held or waited for is the call, said by its gate or whom it waits behind; a held permission still first.
+    if (of.heavy && !heard?.waiting) facts.push(of.heavy);
+    else if (calling && session.state === 'working') facts.push(callFact(t, calling));
     return facts.filter((fact): fact is string => Boolean(fact));
   }
 

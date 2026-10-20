@@ -129,6 +129,57 @@ public sealed class DriverRoutes(DriverContext context)
     }
 
     /// <summary>
+    /// Who holds a repository's heavy-run slot, at which gate, and who waits (HEAVYSLOT1, the UI/UX design §3.5):
+    /// <c>{ repository, holder?, waiters, refusal? }</c>, the holder <c>{ session?, gates, since, now?: { gate, at, since }, failed?: { gate,
+    /// exit } }</c> and each waiter <c>{ session?, since }</c>, the longest waiting first; a run with no <c>session</c> is one from a
+    /// terminal. Read from the records the runs keep beside the slot (<see cref="HeavySlot.Look"/>), each only where its process still
+    /// runs, never from a run's output; the slot keyed by the checkout the registry holds, as <c>HEAVY_MARKS</c> picks it, and
+    /// <c>refusal</c> where there is none here or git's files do not say its repository. A read: it declares nothing.
+    /// </summary>
+    [DriverRoute("HEAVY_SLOT")]
+    private async Task<object?> HeavySlotAsync(IpcRequest request, CancellationToken cancellationToken)
+    {
+        var repository = (Optional(request, "repository") ?? "").Trim();
+        var service = _loop.Service ?? throw NotReady();
+        var registry = await service.RegistryAsync(cancellationToken);
+        // Files and processes, off the window's thread (UIFREEZE1).
+        return await Task.Run(() => HeavySlotOf(_loop.Home, repository, LinesRoutes.Checkouts(registry, repository, null).Select(row => row.Root)), cancellationToken);
+    }
+
+    /// <summary>The slot of the first of <paramref name="roots"/> on this disk, as <c>HEAVY_SLOT</c> answers it.</summary>
+    internal static object HeavySlotOf(string home, string repository, IEnumerable<string> roots, Func<int, long, bool>? alive = null)
+    {
+        var root = roots.FirstOrDefault(Directory.Exists);
+        if (root is null)
+        {
+            return new { repository, waiters = Array.Empty<object>(), refusal = $"`{repository}` has no checkout on this machine to read." };
+        }
+
+        if (HeavySlot.KeyOf(root) is not { } key)
+        {
+            return new { repository, waiters = Array.Empty<object>(), refusal = $"git's files in `{repository}`'s checkout do not say which repository it is." };
+        }
+
+        var look = HeavySlot.Look(home, key, alive);
+        var holder = look.Holder is { } held
+            ? new
+            {
+                session = held.Session,
+                gates = held.Gates,
+                since = held.Since,
+                now = held.Now is { } now ? new { gate = now.Gate, at = now.At, since = now.Since } : null,
+                failed = held.Failed is { } failed ? new { gate = failed.Gate, exit = failed.Exit } : null,
+            }
+            : null;
+        return new
+        {
+            repository,
+            holder,
+            waiters = look.Waiters.Select(waiter => new { session = waiter.Session, since = waiter.Since }).ToArray(),
+        };
+    }
+
+    /// <summary>
     /// The list as the page sends it: null where it sends none or null; each gate's name, command and folder as written, a field that is
     /// no text read as none, so the mapping's own rule says what is missing.
     /// </summary>

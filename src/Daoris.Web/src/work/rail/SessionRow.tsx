@@ -12,6 +12,8 @@ import { ListRowDoor } from '../frame/ListPane';
 import { PERMISSION_BOUND_MINUTES } from '../waits/PermissionAsks';
 import { movedAt } from './rail';
 import { useNow } from '../useNow';
+import type { HeavyPart } from '../heavySlot';
+import { heavyLine } from '../HeavySlotLine';
 
 /**
  * One session in the rail — the working surface's smallest unit of attention (design §3).
@@ -84,8 +86,15 @@ function callLine(t: TFunction, calling: NonNullable<SessionGrouping['calling']>
 
 export function SessionRow({
   session, quest, opening, root, where, reads, continues, helps, taking, lastTurn, grouping, place, archived = false,
-  selected = false, onSelect, acts = [], onAct, name, parts,
+  selected = false, onSelect, acts = [], onAct, name, parts, heavy, heavyBehind,
 }: {
+  /**
+   * Its part in its repository's heavy-run slot (HEAVYSLOT1, the UI/UX design §3.5): the gate it runs, the gate it failed at, or the
+   * run it waits behind, said in place of the call it is inside, since that call is the heavy run. Absent, nothing is claimed.
+   */
+  heavy?: HeavyPart | null;
+  /** The title of the session its wait is behind, where the rail holds it; absent, that session's id. */
+  heavyBehind?: string | null;
   session: Session;
   /**
    * The entry's name where it is not this record's own (SESSONE1c, D167): the ask's, for a line of work an ask began. Absent,
@@ -165,9 +174,11 @@ export function SessionRow({
   const placed = placedFact(grouping, shown);
   // WAITSAY1b: the rail holds no session's events, so the call its agent is inside is the reader's, as the driver heard it,
   // timed from its start whenever this window opened; said only while it works, never of a chat between turns.
-  const calling = shown === 'working' ? grouping?.calling : null;
+  // HEAVYSLOT1: a heavy run it holds or waits for is said in place of its call, read from the slot's records, never its output.
+  const heavyPart = running ? heavy ?? null : null;
+  const calling = shown === 'working' && !heavyPart ? grouping?.calling : null;
   // WAITSAY1c2: a pushed call moves no tick, so its elapsed time steps by its own clock while it is said.
-  useNow(calling ? 15_000 : null);
+  useNow(calling || heavyPart ? 15_000 : null);
 
   // One line of secondary facts, each absent when it has nothing to say — `MetaLine`'s rule, and
   // what keeps a rail of a dozen rows readable at 18rem. What the two absences MEAN is on the
@@ -179,6 +190,7 @@ export function SessionRow({
     parts && parts > 1 ? t('work.rail.parts', { count: parts }) : null,
     placed ? t(placed.line, placed.values) : null,
     calling ? callLine(t, calling) : null,
+    heavyPart ? heavyLine(t, heavyPart, (id) => heavyBehind || id) : null,
     // An intake is a chat only by the way it was opened (INT4b); it says what it is (INT4g). So is a second opinion's reviewer,
     // marked as one (XAGENT1g, the second-agent design §9).
     t(isIntake(session) ? 'work.intake.kind' : isOpinion(session) ? 'opinion.session.kind'
@@ -199,6 +211,7 @@ export function SessionRow({
     archived ? t('work.rail.archivedTip') : null,
     placed ? t(placed.tip) : null,
     calling ? t(calling.waiting ? 'work.rail.callWaitsTip' : 'work.rail.callingTip', { minutes: PERMISSION_BOUND_MINUTES }) : null,
+    heavyPart?.kind === 'waiting' ? t('work.heavy.waitingTip') : null,
     landed ? t(landed.state === 'gone' ? 'work.rail.landedGoneTip' : 'work.rail.landedTip') : null,
     tree ? t('work.rail.treeTip') : null,
     origin ? t('work.rail.onTip') : null,

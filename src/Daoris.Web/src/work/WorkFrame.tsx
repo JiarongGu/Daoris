@@ -56,6 +56,9 @@ import { AttendedSession, noteIsInTheHead } from './AttendedSession';
 import { type AnchorState, SessionConversation } from './conversation/SessionConversation';
 import type { Level, RunningCall, Usage } from './conversation/conversation';
 import { useNow } from './useNow';
+import { useHeavySlot } from '../bridge/driver';
+import { heavyPartOf } from './heavySlot';
+import { heavyLine, heavyRow } from './HeavySlotLine';
 import { isHelper, isIntake, isOpinion, linkedSessions, ownTree, sessionOrigin, sessionTitle } from './identity';
 import { doorLabel } from '../agents/tools';
 import type { QuestClose, Resolution } from './waits/AwaitingPerson';
@@ -1439,7 +1442,16 @@ export function WorkFrame({
   const pushedCalls = usePushedCalls();
   const pulled = attended ? (groups.data ?? []).find((row) => row.session === attended.id) ?? null : null;
   const grouping = withCall(pulled, pushedCalls) ?? null;
-  useNow(grouping?.calling ? 15_000 : null);
+  // HEAVYSLOT1 (the UI/UX design §3.5): its part in its repository's heavy-run slot, for the head's line and *Details*' gates, the
+  // holder it waits behind named by its title and a door to it. Asked only while it runs.
+  const attendedRuns = Boolean(attended && SESSION_ACTIVE.has(attended.state));
+  const heavySlot = useHeavySlot(attended?.repository ?? '', { enabled: attendedRuns });
+  const heavyTitleOf = (id: string) => {
+    const other = (sessions.data ?? []).find((row) => row.id === id);
+    return other ? sessionTitle(other, other.quest ? (quests.data ?? []).find((row) => row.id === other.quest) : null, openings[other.id]) : id;
+  };
+  const heavyPart = attended && attendedRuns ? heavyPartOf(heavySlot.data, attended.id) : null;
+  useNow(grouping?.calling || heavyPart ? 15_000 : null);
   // What its own tree offers to land, whatever its ending (LAND4), as the driver's reader said it, and where accepting would
   // put it: the review's own plan, asked only where there is something to land, under the review's key.
   const driverOffers = attended && here && grouping?.lands ? grouping.lands : null;
@@ -1730,6 +1742,7 @@ export function WorkFrame({
         helping: helps?.title,
         waitingSince: waiting?.session === attended.id ? waiting.since : undefined,
         calling: waiting?.session === attended.id ? waiting.calling : undefined,
+        heavy: heavyPart ? heavyLine(t, heavyPart, heavyTitleOf) : null,
       })}
       acts={headActs}
       primary={headPrimary}
@@ -2046,6 +2059,7 @@ export function WorkFrame({
             relations={attended ? relationsOf(attended, quest, quests.data ?? [], sessions.data ?? []) : undefined}
             continues={continues}
             helps={helps}
+            heavy={attended && heavyPart ? heavyRow(t, heavySlot.data, attended.id, heavyTitleOf, attend) : null}
             process={told.data?.process ?? null}
             onSession={(session) => attend(session.id)}
             onQuest={onOpenQuest ? (row) => onOpenQuest(row.id) : undefined}

@@ -305,5 +305,11 @@
   "work.access.details": "访问权限",
   "work.access.asStarted": "{{pause}}：{{value}}",
   "work.access.notRecorded": "未记录",
-  "work.access.questions": "同 Claude Code 一样"
+  "work.access.questions": "同 Claude Code 一样",
+  "work.heavy.label": "重型检查",
+  "work.heavy.running": "重型检查 · 第 {{n}} 项，共 {{total}} 项 · {{gate}} · {{time}}",
+  "work.heavy.waiting": "等待重型检查 · 排在 {{session}} 之后 · {{time}}",
+  "work.heavy.failed": "重型检查在 {{gate}} 失败",
+  "work.heavy.exit": "{{gate}} 失败，退出码 {{exit}}。",
+  "work.heavy.waitingTip": "这个仓库的重型检查一次只运行一个：这个会话在另一次运行之后排队，等的不是你。"
 }

@@ -305,5 +305,11 @@
   "work.access.details": "Access",
   "work.access.asStarted": "{{pause}}: {{value}}",
   "work.access.notRecorded": "Not recorded",
-  "work.access.questions": "As Claude Code asks"
+  "work.access.questions": "As Claude Code asks",
+  "work.heavy.label": "Heavy gates",
+  "work.heavy.running": "heavy gates · {{n}} of {{total}} · {{gate}} · {{time}}",
+  "work.heavy.waiting": "waiting for the heavy run · behind {{session}} · {{time}}",
+  "work.heavy.failed": "heavy gates failed at {{gate}}",
+  "work.heavy.exit": "{{gate}} failed with exit {{exit}}.",
+  "work.heavy.waitingTip": "This repository's heavy gates run one run at a time: this session waits its turn behind another run, not on you."
 }

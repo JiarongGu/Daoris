@@ -10,6 +10,8 @@ import { RepositoryMarks } from './ProjectList';
 import { RepositorySetup, type RepositorySetupProps, type SetupSectionId } from './setup/RepositorySetup';
 import { SetUpForAgents, type SetUpForAgentsProps } from './setup/SetUpForAgents';
 import type { ProjectTab } from './tabs';
+import type { HeavySlot } from '../work/heavySlot';
+import { HeavySlotRow } from '../work/HeavySlotLine';
 
 export type { Driving } from './setup/RepositorySetup';
 
@@ -51,8 +53,13 @@ function Fact({ label, children }: { label: string; children: ReactNode }) {
  */
 export function ProjectPage({
   registration, counts, line, unlanded = 0, here, drivable, held, setup, setUp, workflow, branches, history, tab = 'details', onTab,
-  onManage, onOpenCode,
+  onManage, onOpenCode, heavy,
 }: {
+  /**
+   * Its heavy-run slot (HEAVYSLOT1): who holds it at which gate and who waits, each session named by `titleOf` and opened by `onOpen`.
+   * A shell's, once the driver answered; absent, no row.
+   */
+  heavy?: { slot: HeavySlot; titleOf: (session: string) => string; onOpen?: (session: string) => void } | null;
   registration: Registration;
   /** What the index holds of it: absent where it holds nothing. */
   counts?: Repository;
@@ -197,6 +204,14 @@ export function ProjectPage({
         {unlanded > 0 && (
           <Fact label={t('projects.unlandedLabel')}>
             <span className="text-small text-warn">{t('projects.unlanded', { count: unlanded })}</span>
+          </Fact>
+        )}
+        {heavy && (
+          /* Who holds its heavy-run slot and at which gate, and who waits, each a door (HEAVYSLOT1, the UI/UX design §3.5): the
+             driver's reading of the slot's records; its ⓘ names the terminal's twin. */
+          <Fact label={t('projects.heavy.slot')}>
+            <HeavySlotRow slot={heavy.slot} titleOf={heavy.titleOf} onOpen={heavy.onOpen} />
+            <WhyGlyph why={t('projects.heavy.tip')} />
           </Fact>
         )}
       </dl>

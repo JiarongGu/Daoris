@@ -24,6 +24,8 @@ import { ArchiveEndedAsk, type RepositoryFacts, SessionList, type SessionRowFact
 import { askName, isHelp, isIntake, isOpinion, linkedSessions, ownTree, sessionTitle } from '../identity';
 import { byName, marked, readable } from './railSearch';
 import { type SessionDoors, useSessionActs } from '../sessionActs';
+import { useHeavySlots } from '../../bridge/driver';
+import { heavyPartOf } from '../heavySlot';
 
 /**
  * The rail: Sessions' list, by state or by repository (SESSUX1c, D126 §4), and its search (RAIL1).
@@ -203,6 +205,15 @@ export function SessionRail({
     if (session.serves) serving[session.id] = session.serves;
   }
 
+  // HEAVYSLOT1: each running session's part in its repository's heavy-run slot, and whom its wait is behind by title, from the
+  // driver's reading of the slot's records; asked only for the repositories a running session is in.
+  const heavySlots = useHeavySlots((sessions.data ?? []).filter((session) => SESSION_ACTIVE.has(session.state)).map((session) => session.repository));
+  const heavyOf = (session: Session) => {
+    const heavy = heavyPartOf(heavySlots.get(session.repository), session.id);
+    const behind = heavy?.kind === 'waiting' && heavy.behind ? byId.get(heavy.behind) : undefined;
+    return { heavy, heavyBehind: behind ? titleOf(behind) : null };
+  };
+
   // What a search may find: everything the list holds, or only what is running where the rail is live.
   const pool = live ? (sessions.data ?? []).filter((session) => SESSION_ACTIVE.has(session.state)) : (sessions.data ?? []);
   // Each row the list holds, with what it is drawn from besides its record.
@@ -223,6 +234,7 @@ export function SessionRail({
     reads: reads[session.id],
     continues: continues[session.id],
     helps: helps[session.id],
+    ...heavyOf(session),
   }));
   // The call each session is making, from the shell's push where it is live (WAITSAY1c2): laid over the pull's `calling`.
   const calls = usePushedCalls();
@@ -345,6 +357,7 @@ export function SessionRail({
       reads={reads[session.id]}
       continues={continues[session.id]}
       helps={helps[session.id]}
+      {...heavyOf(session)}
       grouping={live ? null : placed.get(session.id)}
       // A search finds archived sessions too, marked, since it is how one is found without the tick (D126 §4.5).
       archived={!live && Boolean(placed.get(session.id)?.archived)}
