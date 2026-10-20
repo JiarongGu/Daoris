@@ -256,10 +256,10 @@ public sealed class EntriesRoutes(DriverContext context)
         foreach (var entry in entries)
         {
             var (plan, held) = await Accepts(service).PlanAsync(entry, rows, cancellationToken).ConfigureAwait(false);
-            lines.AddRange(TreesWords.EntryPlanned(entry, plan, held));
+            lines.AddRange(TreesPlanWords.EntryPlanned(entry, plan, held));
         }
 
-        return new { Said = TreesWords.EntryPlan(lines).ToWire() };
+        return new { Said = TreesPlanWords.EntryPlan(lines).ToWire() };
     }
 
     /// <summary>The press on one entry, which the terminal's lands too (<see cref="EntryAccepts.LandAsync"/>, ACCEPTALL1e).</summary>

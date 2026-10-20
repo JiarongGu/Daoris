@@ -1126,7 +1126,11 @@ if (!done.ok) throw new Error(done.text);
   // INSTALLED.md tells whoever opens the folder that `data/` is this install's own state. Nothing
   // read it back until now, and a deployed shell writing its WebView2 profile somewhere else is a
   // folder that cannot be deleted to uninstall.
-  check(`the install keeps its own state in ${HOME}/`, existsSync(join(install, HOME)),
+  // HOMELAYOUT3: the home is still `${HOME}/`, but its places now sit in category folders beside it (D172), so a running
+  // shell's state is asked of the table: its address under `run/`, inside the install.
+  check(`the install keeps its own state in its own folders (${HOME}/ and D172's)`,
+    existsSync(homeEntry(join(install, HOME), 'running'))
+      && resolve(homeEntry(join(install, HOME), 'running')).toLowerCase().startsWith(resolve(install).toLowerCase()),
     readdirSync(install).join(', '));
   // The application runs from `app/` and the home is still the install's (D93), never one beside it.
   check(`…at the install’s root, not beside the application in ${SHELL_HOME.join('/')}/`,

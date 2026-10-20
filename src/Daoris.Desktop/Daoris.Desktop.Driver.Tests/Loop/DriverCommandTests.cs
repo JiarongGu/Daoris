@@ -101,9 +101,9 @@ public sealed class DriverCommandTests
         Assert.Contains("| sync [--repository <name>] [--workspace <name>] [--all] [--yes]]", program);
         // WSR7: what was not fetched is said once, first, on the list and on the press alike: the list's here, the press's in the
         // words the route answers too (RPC1b3, `TreesWords.Sync`).
-        // RPCOPEN1: the list's words are the library's too (`TreesWords.SyncPlan`), which the route answers, so each says it once there.
+        // RPCOPEN1: the list's words are the library's too (`TreesPlanWords.SyncPlan`), which the route answers, so each says it once there.
         Assert.DoesNotContain("SyncWords.NotFetched(", program);
-        Assert.Contains("TreesWords.SyncPlan(plan, ask,", program);
+        Assert.Contains("TreesPlanWords.SyncPlan(plan, ask,", program);
         Assert.Contains("TreesWords.Sync(done", program);
         Assert.Contains("SyncWords.NotFetched(", File.ReadAllText(Path.Combine(SourceRoot(), "Daoris.Desktop.Driver", "Trees", "TreesWords.cs")));
         Assert.Equal(1, File.ReadAllText(Path.Combine(SourceRoot(), "Daoris.Desktop.Driver", "Trees", "TreesPlanWords.cs")).Split("SyncWords.NotFetched(").Length - 1);
@@ -131,10 +131,10 @@ public sealed class DriverCommandTests
         Assert.Contains("asking.CleanPlanAsync(repositories, inUse)", console);
         Assert.Contains("trees.CleanAsync(repositories, inUse)", console);
         Assert.Contains("trees.SyncAsync(repositories, inUse, only: null, fetch: true,", console);
-        // The press each list suggests is the library's words' (`TreesWords.CleanPlan` and `SyncPlan`, which the routes answer too).
+        // The press each list suggests is the library's words' (`TreesPlanWords.CleanPlan` and `SyncPlan`, which the routes answer too).
         Assert.Equal(0, Count("TreesCommand.Press(ask)"));
         Assert.Equal(2, File.ReadAllText(Path.Combine(SourceRoot(), "Daoris.Desktop.Driver", "Trees", "TreesPlanWords.cs")).Split("TreesCommand.Press(ask)").Length - 1);
-        Assert.Contains("TreesWords.CleanPlan(plan, records, ask)", console);
+        Assert.Contains("TreesPlanWords.CleanPlan(plan, records, ask)", console);
         // No look reads the registry's checkouts itself any more: the one rule is the library's.
         Assert.DoesNotContain("args.Contains(\"--yes\")", console);
         Assert.DoesNotContain(".Where(row => !string.IsNullOrWhiteSpace(row.Root))", console);
@@ -166,8 +166,8 @@ public sealed class DriverCommandTests
     {
         var program = File.ReadAllText(Path.Combine(SourceRoot(), "Daoris.Desktop.Driver.Host", "TreesConsole.cs"));
 
-        // RPCOPEN1: the plan's lines are the library's (`TreesWords.LandPlanAsync`), which the route answers as `said` too.
-        Assert.Contains("TreesWords.LandPlanAsync(landing, home, session, tree, plan, gate, before, [])", program);
+        // RPCOPEN1: the plan's lines are the library's (`TreesPlanWords.LandPlanAsync`), which the route answers as `said` too.
+        Assert.Contains("TreesPlanWords.LandPlanAsync(landing, home, session, tree, plan, gate, before, [])", program);
         Assert.Contains(
             "if (await landing.DiscardOfferAsync(tree, ct).ConfigureAwait(false) is { } carried) said.Add($\"trees: {carried.NotLanded}\");",
             File.ReadAllText(Path.Combine(SourceRoot(), "Daoris.Desktop.Driver", "Trees", "TreesPlanWords.cs")));
