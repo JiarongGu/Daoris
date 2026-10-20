@@ -5,6 +5,30 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-21 — A knowledge host exited at start with "database is locked" when sessions started together (QUESTOPENLOCK1)
+
+- **Symptom:** on the install, eight driven sessions started within a minute, each with its own knowledge host over the one
+  `knowledge.db`. Two hosts exited at start with `SqliteException: SQLite Error 5: 'database is locked'`, thrown from
+  `SqliteDataRecord.Dispose` under `SqliteCommand.ExecuteScalar` at `QuestStore.EnsureSchemaAsync`'s version stamp. A session whose
+  connector did not start had no quest tools: it committed its row but could neither take nor close its quest, and was recorded
+  failed.
+- **Root cause:** Microsoft.Data.Sqlite sets no SQLite busy handler; it waits out a busy lock (every 150 ms, up to the command
+  timeout, 30 s here) only around a statement's first step. A write with a `RETURNING` clause, run on its own, writes at that first
+  step and returns its first row; its autocommit commit runs when the reader ends (`sqlite3_reset` in the record's dispose), which
+  is not retried. The file keeps a rollback journal (no `journal_mode` is set; `delete`), so that commit needs an exclusive lock,
+  and any other host's read under way answers it busy at once; SQLite then rolls the write back. The stamp is such a write at every
+  open, added by CLOSETAKE1/QUESTSTOREVER1 (660d4b545). Two other writes were the same: a channel post's `RETURNING urgent`
+  (COWORK1d, ec0d27c60) and a registration's `RETURNING workspace, default_branch, lanes` (older).
+- **Fix:** each runs in the connection gate's write transaction (`BEGIN IMMEDIATE`), whose `BEGIN` and `COMMIT` are first steps the
+  driver waits on: `QuestStore.EnsureSchemaAsync`'s stamp, `ChannelStore.KeepAsync` and `RegistrationStore.UpsertAsync`. The four
+  quest-log and take-bind writes already ran in the caller's transaction. A source scan in `ConnectionGateTests` refuses a
+  `RETURNING` write whose member neither takes nor opens a transaction. D173's QUESTOPENLOCK1 note.
+- **Verification:** `ReturningLockTests`: another host holds a read for half a second while the quest store opens (once, and on four
+  connections at once), a channel post and a registration are written; each waits and is kept. Red before the fix with the
+  install's own stack (four of six; the driver pin and the publish guard green), green after. The scan named exactly the three
+  sites on the old stores. `QuestStoreTests`, `ChannelTests`, `RegistrationStoreTests`, `QuestTakeBindTests`, `QuestLogTests` and the
+  other classes over these stores green, with the HTTP host's channel and registry classes.
+
 ## 2026-10-21 — Approving or withdrawing a plugin for Ask Daoris deleted what its writer did not know (KEEPALL1d)
 
 - **Symptom:** named by KEEPALL1's audit (D173's KEEPALL1 note). Approving a plugin's server for Ask Daoris, or withdrawing an

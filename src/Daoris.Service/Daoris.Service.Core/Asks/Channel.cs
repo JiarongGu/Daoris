@@ -467,8 +467,7 @@ public sealed class ChannelStore
     /// </summary>
     /// <returns>The message as kept, its <see cref="ChannelMessage.Urgent"/> as the statement decided; null when the cap refused it.</returns>
     /// <remarks>
-    /// One write transaction, taken at once (QUESTOPENLOCK1): on its own, the statement's commit came at its reader's end, which the
-    /// driver never retries, so a post while another host read failed with "database is locked".
+    /// A write transaction of its own, as every <c>RETURNING</c> write is (QUESTOPENLOCK1, ConnectionGate.InTransactionAsync says why).
     /// </remarks>
     public Task<ChannelMessage?> KeepAsync(
         ChannelMessage message, int perPart, CancellationToken ct = default, int urgentPerPart = ChannelBounds.UrgentPerPart) =>

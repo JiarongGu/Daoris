@@ -98,6 +98,7 @@ public sealed class ReturningLockTests : IDisposable
         await using var mine = await SqliteKnowledgeStore.OpenAsync(Database);
         await QuestStore.OpenAsync(mine.Connection);
         await using var theirs = await HostAsync();
+        Assert.Equal("delete", Scalar(theirs, "PRAGMA journal_mode"));
         using var reading = Reading(theirs, "SELECT version FROM quest_store_version");
 
         var opening = Task.Run(() => QuestStore.OpenAsync(mine.Connection));

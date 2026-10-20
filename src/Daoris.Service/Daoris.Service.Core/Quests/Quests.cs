@@ -915,9 +915,7 @@ public sealed class QuestStore
         // 🔴 A store a newer build stamped keeps its stamp and refuses what this build cannot write into it (a take's bind: the next
         // change to that contract would hide its rows in a new table, as FABRIC-CLOSE1w's did); it never refuses to open, since the
         // quests and their history are read and moved as before.
-        // QUESTOPENLOCK1: in a write transaction of its own, taken at once. On its own, a RETURNING write commits when its reader
-        // ends, which the driver never retries, so another host's read at that moment failed this open with "database is locked";
-        // here the lock is taken by BEGIN IMMEDIATE and the COMMIT, both waited on while another host holds the file.
+        // In a write transaction of its own, as every RETURNING write is (QUESTOPENLOCK1, ConnectionGate.InTransactionAsync says why).
         NewerVersion = await InTransactionAsync(async (transaction, inside) =>
         {
             await using var stamp = _db.Command();

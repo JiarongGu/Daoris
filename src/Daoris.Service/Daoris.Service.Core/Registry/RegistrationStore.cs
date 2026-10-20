@@ -202,8 +202,8 @@ public sealed class RegistrationStore
     /// there is one, the existing row wins when there is not, and `default` closes it: exactly the
     /// COALESCE below, decided here in one statement rather than as a read-modify-write two callers
     /// would race on.
-    /// <para>One write transaction, taken at once (QUESTOPENLOCK1): on its own, the statement's commit came at its reader's end, which
-    /// the driver never retries, so a registration while another host read failed with "database is locked".</para>
+    /// <para>A write transaction of its own, as every <c>RETURNING</c> write is (QUESTOPENLOCK1, ConnectionGate.InTransactionAsync says
+    /// why).</para>
     /// </remarks>
     /// <returns>The row as it now stands, so the caller never has to guess which workspace took.</returns>
     public Task<Registration> UpsertAsync(

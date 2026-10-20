@@ -18557,3 +18557,9 @@ confirmed in the open window.
 > - [ ] **KEEPALL1d — `plugin-approvals.json` keeps what its writer does not own** (driver). `HelpGrants.Write` rebuilds it, dropping unknown keys. Proof: a row in `home-files-keep.json` with unknown keys at the top and in a row.
 
 **Outcome** 2026-10-21: built. `HelpGrants` writes through `JsonKeeping.Save`: the top level's other keys and a row's own unknown keys stay as written, an untouched row is written as the file had it, a server approved again is changed where it stands, CRLF is kept, a key twice is refused, and a withdrawal of nothing writes nothing. Proof: six driver-only `approvals:` rows in `home-files-keep.json` (`only: driver`, which the CLI's twin skips) through `HomeFilesKeepTests`. On Opus: about 40 tool calls. Detail: D173's KEEPALL1d note; FIX-LOG 2026-10-21.
+
+## QUESTOPENLOCK1 — a knowledge host's open waits for another host instead of exiting (2026-10-21, D173)
+
+> - [ ] **QUESTOPENLOCK1 — a knowledge host's open waits for another host instead of exiting** (service; defect, never a backlog row). On the install, two of eight connectors started together exited at `QuestStore.EnsureSchemaAsync`'s version stamp with *database is locked*, and their sessions had no quest tools. Proof: a `RETURNING` write while another host holds the lock its commit needs waits and is kept, and `QuestStore.OpenAsync` from several connections at once under that lock opens.
+
+**Outcome** 2026-10-21: fixed. A `RETURNING` write on its own committed at its reader's end, where the driver never waits; the stamp, a channel post and a registration now run in the gate's `BEGIN IMMEDIATE`, as the quest log's four did. A source scan refuses the next. Proof: `ReturningLockTests`. Detail: D173's QUESTOPENLOCK1 note; FIX-LOG 2026-10-21.
