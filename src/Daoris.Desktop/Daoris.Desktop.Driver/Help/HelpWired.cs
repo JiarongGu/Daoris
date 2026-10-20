@@ -130,7 +130,7 @@ public sealed record HelpHanded(string Mode, bool GoesOn, string Harness, Sessio
     /// <summary>Whether the settings file carried the tree guard.</summary>
     public bool Guarded { get; init; }
 
-    /// <summary>The checkouts the place's rules let it read (D107).</summary>
+    /// <summary>The checkouts the place hands <c>checkout_read</c> (D107, HELPMODE1c4).</summary>
     public IReadOnlyList<HelpRead> Reads { get; init; } = [];
 
     /// <summary>The plugin folders composed for its skills (<see cref="SpawnSkills"/>).</summary>
