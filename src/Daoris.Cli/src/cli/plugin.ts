@@ -1,5 +1,7 @@
 import type { CliCommand } from '../platform/types.ts';
+import { daorisHome } from '../platform/home.ts';
 import { commandPlugin } from '../plugins/plugins.ts';
+import { instanceDoor } from '../service/service.ts';
 
 export const command: CliCommand = {
   name: 'plugin',
@@ -20,5 +22,7 @@ export const command: CliCommand = {
     '                                                   `daoris-driver plugins new|try`,',
     '                                                   which starts plugins as the driver does',
   ],
-  run: commandPlugin,
+  // RPC1f: a change is the Plugins place's route while Daoris runs on this home, through the one module that reaches its pipe,
+  // and this verb's own act under the home's lease when none does.
+  run: (args) => commandPlugin(args, instanceDoor({ home: daorisHome(), write: args.write })),
 };

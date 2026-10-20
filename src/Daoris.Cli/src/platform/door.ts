@@ -88,6 +88,49 @@ export const DRIVER_VERBS: readonly (readonly [verb: string, route: InstanceRout
   ['driver workflow new|edit|apply|import|use|kind', null, 'alone: no route writes a named workflow or chooses one'],
 ];
 
+/**
+ * The routes `daoris plugin` sends while Daoris runs (the Plugins place's presses): code that runs in the driver, so each is the
+ * person's. `PLUGIN_UPDATE` is classed by its payload, and is the person's with `apply: true`, the only form a verb sends.
+ */
+export const PLUGIN_ROUTES = {
+  add: person('PLUGIN_ADD'),
+  install: person('PLUGIN_INSTALL'),
+  update: person('PLUGIN_UPDATE'),
+  action: person('PLUGIN_ACTION'),
+} as const satisfies Record<string, InstanceRoute>;
+
+/** Each `daoris plugin` verb that changes the home: its route, or null with the reason it acts alone. */
+export const PLUGIN_VERBS: readonly (readonly [verb: string, route: InstanceRoute | null, reason: string])[] = [
+  ['plugin add <folder>', PLUGIN_ROUTES.add, 'the Plugins place\'s install from a folder, for a plugin not installed here'],
+  ['plugin add --offer <id>', PLUGIN_ROUTES.install, 'the Install beside one of the install\'s offers, for one not installed here'],
+  ['plugin update <id> --yes', PLUGIN_ROUTES.update, 'the update\'s press, sent with `apply: true`; the plan without --yes is read here'],
+  ['plugin remove|enable|disable <id>', PLUGIN_ROUTES.action, 'the row\'s switch, and its remove, which stops the plugin\'s process before the folder goes'],
+  ['plugin add … (installed already)', null, 'alone: PLUGIN_ADD and PLUGIN_INSTALL add and never replace; a replace is the terminal\'s'],
+];
+
+const open = (route: string): InstanceRoute => ({ module: DRIVER_MODULE, route, class: 'open' });
+
+/** The routes `daoris tool` sends while Daoris runs (the Tools place's presses). `TOOLS_LOOK` is the driver's own look, so open. */
+export const TOOL_ROUTES = {
+  use: person('TOOLS_USE'),
+  delete: person('TOOLS_DELETE'),
+  location: person('TOOLS_LOCATION'),
+  look: open('TOOLS_LOOK'),
+} as const satisfies Record<string, InstanceRoute>;
+
+/** Each `daoris tool` verb that changes the home: its route, or null with the reason it acts alone. */
+export const TOOL_VERBS: readonly (readonly [verb: string, route: InstanceRoute | null, reason: string])[] = [
+  ['tool use <tool> system', TOOL_ROUTES.use, 'the Tools place\'s way chosen'],
+  ['tool use <tool> file <path>', TOOL_ROUTES.use, 'the Tools place\'s way chosen; the instance runs the file for its version before it writes it'],
+  ['tool delete <tool> <version>', TOOL_ROUTES.delete, 'a downloaded version removed'],
+  ['tool locations add|remove <address>', TOOL_ROUTES.location, 'a resource location added or removed'],
+  ['tool look', TOOL_ROUTES.look, 'the look for updates, whose copies the instance keeps'],
+  ['tool use <tool> managed [<version>]', null,
+    'alone: TOOLS_USE answers once the driver\'s download starts, and its end is an event the pipe forwards only to a subscription (RPC1g)'],
+  ['tool download <tool> [<version>]', null, 'alone: TOOLS_DOWNLOAD answers once the download starts, and its end is an event (RPC1g)'],
+  ['tool update <tool>', null, 'alone: no route moves a tool to the newest the lists name, and a managed use\'s end is an event (RPC1g)'],
+];
+
 /** What a verb hands its door: the route and payload it sends where Daoris runs, and what it does where none does. */
 export interface VerbPress {
   /** The verb as a lease names it (`driver drive`), never its arguments. */
