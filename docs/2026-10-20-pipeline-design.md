@@ -10,7 +10,8 @@ Read for it: D173's direction note of 2026-10-20 (FABRIC-PIPELINE1); D157 and th
 cutover design §2, §3, §8 and §10; D180 and its notes (the CI beside, CIPRIO1 to CIPRIO1e, the HEAVYRUN1 notes, FAMILYFAIL1b to
 1d); D115's GATEWT1 and GATESLIM1 notes and `docs/development.md`'s *Integrate and record*; HEAVYRUN1a's archive entry; D83's
 BGWAIT and DONEEND1 notes; D188; D154 and the review environment design §2.3; the verification lanes design (FABRIC-VERIFY1);
-the UI/UX design §3.5 (D185); `.claude/knowledge/development-documents.md`'s *What may run unasked is a declaration*. Every
+the UI/UX design §3.5 (D185); D193's parts 7 and 8 (the fabric and verification, as the company's picture states them);
+`.claude/knowledge/development-documents.md`'s *What may run unasked is a declaration*. Every
 statement about today was read from the code at `300626e52` and names its file and line; none was run.
 
 ## 0. The case, and what the design rests on
@@ -56,17 +57,20 @@ repository keeps development apart from a verification that works like CI.
 
 | What arrives | Routed by | Read from |
 |---|---|---|
-| A chain's work (its quests in this repository) | D157 §4.1's order, unchanged: the person's choice for the task, the repository's for the task's kind, its default, the workspace's for the kind, its default, Current | the ask's `workflowChoices`, `driver.json`'s choices (`WorkflowSelection.cs:325-343`) |
+| A chain's work (its quests in this repository) | D157 §4.1's order, unchanged: the person's choice for the task, the repository's for the task's kind, its default, the workspace's for the kind, its default, Current; then the kind's declared paths against the paths the work changed | the ask's `workflowChoices`, `driver.json`'s choices (`WorkflowSelection.cs:325-343`); git, for the paths |
 | Landed work (the repository's line moved past the newest tip that has a verdict) | the repository's `landed` route (§1.2), else none | git's ref of the line, read in the pass |
 | A person's ask to verify a branch or a commit | the same `landed` route, as a run of its own | the person's press or verb (§4.3) |
 | A fix Daoris asks for after a failed verification | the kind the verification pipeline names for it (§4.5), routed as any task of that kind | the ask's choice, set by Daoris from the person's version |
 
 - **The kind is the person's.** It is set by the person, or applied from the intake's proposal by the person's press (WORKFLOW1i-a). An
   agent sets one only on the person's quoted words where `Involvement.Lowers` finds nothing lowered (D157 point 10).
-- **Paths never route.** The route is chosen at the bind, before the work changed anything. A kind's declared paths hold the run at
-  its gate where the kind's pipeline lowers the person's part, as today (`WorkflowGate.cs:315`), and are drawn on the route. A kind
-  inferred from the changed paths stays rejected (D157). Landed work is routed whole and never split by its paths: which gates a
-  batch reaches is the check's (§4.7).
+- **Paths route through the person.** A chain's route is chosen at the bind, before the work changed anything, so its kind's
+  declared paths are the start node's second reading, made from git before the work's first gate: inside them the route stands;
+  outside them, where the kind's pipeline lowers the person's part, the run holds with the routes the person may take instead
+  (*Follow `<the other pipeline>`*, *Keep `<this one>`*, *Choose…*: the workflow design §4.4, `WorkflowGate.cs:315`), and where it
+  lowers nothing the paths are reported. Nothing switches by itself, and a kind inferred from the changed paths stays rejected
+  (D157). The paths are drawn on their route. Landed work is routed whole and never split by its paths: which gates a batch
+  reaches is the check's (§4.7).
 - **Never a model's judgement.** No route reads a conversation, an agent's words or a model's reading (D24, D54). The no-model
   tier routes everything (D157 point 14).
 
@@ -254,7 +258,8 @@ and no place in the cap.
   the tip, and its **base**: the newest tip on the line with a verdict, passed or failed. Its batch is the commits from base to tip,
   and the landings that carried them.
 - **Batching.** One run per line at a time. When the line's tip moves past base and none runs, a run binds the newest tip, so every
-  landing since base is in it; landings that arrive while it runs are the next batch's.
+  landing since base is in it; landings that arrive while it runs are the next batch's. So every landing on the line comes under a
+  verdict: its batch's, or, after a supersede, a later batch's that holds it (D193 part 8: every landing has a verdict).
 - **Superseding.** A run of the line whose line has moved on is superseded within one look: Daoris ends its job (every process its
   gates started, by the job, never by image name, as CIPRIO1c ends its step trees), records the run `superseded` (never passed,
   never failed), and binds the next at the newest tip. It is an act on Daoris's own attempt, which no plugin's performed node has. A
