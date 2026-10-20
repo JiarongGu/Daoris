@@ -179,7 +179,10 @@ public sealed record RecoveryRef(string Repository, string Ref)
     /// <summary>The commit it keeps, where the read named one.</summary>
     public string? Commit { get; init; }
 
-    /// <summary>That commit's date (<c>committerdate</c>): git keeps no date for a ref, which is made at or after it (CLEANUP1).</summary>
+    /// <summary>
+    /// When the ref was made, its reflog's first entry (RECOVERYDATE1); for a ref with no reflog, its commit's date (<c>committerdate</c>,
+    /// CLEANUP1), at or before it was made. Null where neither was read.
+    /// </summary>
     public DateTimeOffset? Dated { get; init; }
 
     /// <summary>

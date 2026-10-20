@@ -18490,3 +18490,9 @@ in zh. The sessions page's held words (`WordsHold`) still carry the driver's sen
 > - [ ] **FABRIC-MILESTONEDOOR1 — a work row with no session opens Branches** (web-shell; after MILESTONE1b). A `work` row for a unit known only by a branch or a landing has no door: open the workspace's Branches. Proof: an attention test pressing the row.
 
 **Outcome** 2026-10-21: the door itself landed with OVERVIEWNOISE1b, whose `work` door in `App.tsx` opens the workspace's Branches for every row that is not a held attempt. This row adds its proof: `sessionsBadge.test.tsx` presses a unit's row known only by its branch, its owner unrecorded, and Projects opens on Branches, the tab remembered; seen failing with the door pointed at Details. Not looked at on the window. On Opus: about 30 tool calls.
+
+## RECOVERYDATE1 — a recovery ref's own date (2026-10-21, D102)
+
+> - [ ] **RECOVERYDATE1 — a recovery ref's own date** (driver; after CLEANUP1; D102). Write the ref with `--create-reflog` so retention counts from when it was made, not its commit's date. Proof: a ref made today for a 40-day-old held commit kept until 30 days after it was made.
+
+**Outcome** 2026-10-21: `ContentHolds.KeepDiscardedAsync` writes every recovery ref with `--create-reflog`, and `RecoveryRetention` dates a ref by its oldest reflog entry (one `log --walk-reflogs` beside the listing), a ref with no reflog keeping its commit's date. Proof: `CleanupGitTests.A_recovery_ref_made_today_for_an_old_held_commit_is_kept_30_days_from_when_it_was_made`, both makes, kept today and gone 31 days on. On Opus, by a driven session. Detail: D102's RECOVERYDATE1 note.

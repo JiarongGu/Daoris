@@ -35,6 +35,9 @@ with the version and date at release.
   could overwrite each other's in the day's file. An error that ends the desktop's application is written there before the log closes.
 - Settings → Driver lists the plugins installed here under *Installed plugins*: whether each is on, whether each of its servers is
   approved for Ask Daoris and which writes you accepted, and *Open*, which takes you to the plugin's page, where you change them.
+- A recovery ref a branch or a tag of yours holds is now kept for 30 days from when Daoris made it, where before they counted from
+  its commit's date, so one made for older work could go at the next tidy. Recovery refs made before this version still count
+  from their commit's date.
 
 - A usage curve that breaks a rule is refused naming its row, as the curve's editor shows it (*`weekly`'s row 2 has used
   20%…*, 第 2 行), on the Accounts screen, in `profile use --curve` and in Ask Daoris, where it said *point*.
