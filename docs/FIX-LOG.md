@@ -5,6 +5,18 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-21 — The Node tests' stub children inherited a driven session's variables (ENVLEAK2)
+
+- **Symptom:** ENVLEAK1's survey found the rehearsal kit's, the setup kit's and the deployment rehearsal's stub tests would fail
+  in a brainstorm pass's session: they pass in a quest's.
+- **Root cause:** each stub child started from `{ ...process.env }` and set or deleted the quest's id alone, so an inherited
+  `DAORIS_BRAINSTORM_TURN` turned the protocol stub to its brainstorm branch (`tools/rehearsal-kit.mjs`, `work`), and an
+  inherited quest id or title could choose another branch for a test that set none.
+- **Fix:** `unroled()` (`src/Daoris.Cli/test/_fixture.ts`) and the rehearsal kit's `stubTurn` start a child from the
+  environment without any `DAORIS_*` variable; the test then sets the ones it means, as the driver's `Spawning.Unrole` does.
+- **Verification:** with `DAORIS_BRAINSTORM_TURN`, `DAORIS_QUEST_ID` and `DAORIS_SESSION_ID` set, the rehearsal kit's stub
+  tests 6, the setup kit's stub, set-up and FLAKE2 tests 10, and the deployment rehearsal's protocol-stub tests 2, all passing.
+
 ## 2026-10-20 — Two fast tests timed by the wall clock failed under a loaded machine (FLAKE1)
 
 - **Symptom:** the full set on 9717f8d failed `StagedBuildTests.A_file_held_in_app_for_a_moment_does_not_roll_the_swap_back`
