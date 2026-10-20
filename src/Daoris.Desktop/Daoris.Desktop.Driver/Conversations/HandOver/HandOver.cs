@@ -235,11 +235,11 @@ public static class HandOverTake
             if (refused is not null) return new HandedOver(null, false, refused.Why, refused.Message);
 
             var from = prior!.Adapter ?? "its agent";
-            var uncommitted = await ConversationTrees.UncommittedAsync(prior.Tree!, HandOverBriefing.ListLimit, ct).ConfigureAwait(false);
-            var (plan, words) = SessionLastWords.CarriedFrom(events, home, id);
             // MIXAGENT1c: where its agent asked to hand over, its own note, told after Daoris's record as that agent's claim.
             var note = ask.AskedBy == HandOverBy.Agent ? new HandOverAskFiles(home).Ask(id)?.Note : null;
-            var briefing = HandOverBriefing.Compose(from, id, ask.Why, events.FirstAsked(id), plan, words, uncommitted, note);
+            // SESSCTX1b: Daoris's brief of the whole line (ContextBrief), in place of the request, the last plan and words and what
+            // is uncommitted, the note its own section (the design §3.1 item 6).
+            var brief = await ContextBriefs.ComposeAsync(service, events, home, id, ask.Why, conversation: true, note: note, ct: ct).ConfigureAwait(false);
 
             await end(id).ConfigureAwait(false);
 
@@ -258,7 +258,7 @@ public static class HandOverTake
                 ? account
                 : null;
             var opening = left is null ? HandOverNotes.TakenOver(from, id, ask.Why) : HandOverNotes.MovedFrom(left, moved!);
-            var taken = await say(to, new ChatMessage("", []) { Briefing = briefing, TakenOver = opening }).ConfigureAwait(false);
+            var taken = await say(to, new ChatMessage("", []) { Brief = brief, TakenOver = opening }).ConfigureAwait(false);
 
             // Where it went, where the person wrote it: the old conversation's last line, after its own end.
             var went = left is null ? HandOverNotes.HandedOver(ask.Agent, to) : HandOverNotes.Moved(left, moved!);

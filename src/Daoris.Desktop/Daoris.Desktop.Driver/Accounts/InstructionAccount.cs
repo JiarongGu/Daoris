@@ -158,6 +158,30 @@ public static class HandedSections
 
     /// <summary>An intake's instruction, whose parts are not counted apart.</summary>
     public const string Intake = "intake";
+
+    // ——— The brief a new part is handed of its line (SESSCTX1b, D189 point 4; the session-context design §3.2, §3.4): a
+    // conversation's first prompt, or a section of a driven carry-on's instruction, counted by its own sections.
+
+    /// <summary>The brief's opening: the session it continues, its agent, why it moved, and the request as first written.</summary>
+    public const string BriefOpening = "brief-opening";
+
+    /// <summary>The words the session took, each marked by who said it.</summary>
+    public const string BriefWords = "brief-words";
+
+    /// <summary>Each turn's outcome: its last message and what it did.</summary>
+    public const string BriefTurns = "brief-turns";
+
+    /// <summary>The work's state as the brief was composed: the tree, the plan, the last checks, what is still asked.</summary>
+    public const string BriefState = "brief-state";
+
+    /// <summary>The outgoing agent's own note, as its claim.</summary>
+    public const string BriefNote = "brief-note";
+
+    /// <summary>The session's other parts, beside its line.</summary>
+    public const string BriefParts = "brief-parts";
+
+    /// <summary>What the brief's bound left out, by count.</summary>
+    public const string BriefLeft = "brief-left";
 }
 
 /// <summary>Where a section came from (CONTEXT1): <c>work.handed.source.*</c>.</summary>
@@ -261,6 +285,21 @@ public static class HandedCuts
     /// <summary>This machine's rules file could not be read, so only the defaults were handed.</summary>
     public const string RulesUnread = "rules-unread";
 
+    /// <summary>A brief's words past the bound on them, the oldest after the request first (SESSCTX1b).</summary>
+    public const string BriefWordsOlder = "brief-words-older";
+
+    /// <summary>A brief's turns' outcomes past what its bound leaves them, the oldest first (SESSCTX1b).</summary>
+    public const string BriefTurnsOlder = "brief-turns-older";
+
+    /// <summary>A brief's items each clipped at its own bound (SESSCTX1b): a word, a message, the request, a plan step, an output.</summary>
+    public const string BriefClipped = "brief-clipped";
+
+    /// <summary>Entries of a brief's lists left out past their bound (SESSCTX1b): what is uncommitted, the commits.</summary>
+    public const string BriefList = "brief-list";
+
+    /// <summary>The session's other parts past the bound on them (SESSCTX1b).</summary>
+    public const string BriefPartsBound = "brief-parts-bound";
+
     /// <summary>The values each cut's entry says, by name: <c>n</c> and <c>limit</c> numbers, <c>from</c> and <c>to</c> moments.</summary>
     public static IReadOnlyDictionary<string, IReadOnlyList<string>> Values { get; } = new Dictionary<string, IReadOnlyList<string>>
     {
@@ -276,5 +315,10 @@ public static class HandedCuts
         [IndexesBound] = ["n", "limit"],
         [FilesElsewhere] = ["n"],
         [RulesUnread] = [],
+        [BriefWordsOlder] = ["n", "limit"],
+        [BriefTurnsOlder] = ["n", "limit"],
+        [BriefClipped] = ["n"],
+        [BriefList] = ["n"],
+        [BriefPartsBound] = ["n", "limit"],
     };
 }

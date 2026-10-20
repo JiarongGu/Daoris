@@ -127,7 +127,7 @@ public sealed class CurveMoveProcessTests : IDisposable
         var went = events.After(old, 0).Events.Select(Coded).OfType<NotePart>().Last();
         Assert.Equal(("chat.moved", "account-2", "account-1"), (went.Code, went.Value("to"), went.Value("from")));
         await Poll.Until(
-            () => StubFile.Text(Heard).Contains($"You continue the acp-stub conversation `{old}`"), () => Seen(ledger, events, next.Session));
+            () => StubFile.Text(Heard).Contains($"You continue session `{old}`, which ran on acp-stub"), () => Seen(ledger, events, next.Session));
 
         // Ten minutes after that move, its new account over the curve and the old one with room, a turn's end holds it there.
         Said("account-2", 0.75, secondsAgo: 20);

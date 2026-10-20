@@ -154,7 +154,8 @@ public sealed class SessionEvents(string directory)
             var path = Path.Combine(directory, $"{id}.events.jsonl");
             // Only as far as its first prompt, which is usually the file's first line, and only where the person said it. Words
             // shown waiting are no prompt, and a driven session the person wrote to later was still opened by its target (MSG1d).
-            var asked = Lines(path).FirstOrDefault(e => e.Kind == SessionEventKind.User && e.Reaches is null);
+            // A handed-over conversation's brief (SESSCTX1b) is no one's words: it is named by what the person said after it.
+            var asked = Lines(path).FirstOrDefault(Asked);
             if (asked?.Origin != "person" || asked.Text is not { } text) continue;
 
             var first = text.Split('\n', 2)[0].Trim();
@@ -172,9 +173,12 @@ public sealed class SessionEvents(string directory)
     public string? FirstAsked(string sessionId)
     {
         if (!SessionEventText.IsId(sessionId)) return null;
-        var asked = Lines(Path.Combine(directory, $"{sessionId}.events.jsonl")).FirstOrDefault(e => e.Kind == SessionEventKind.User && e.Reaches is null);
+        var asked = Lines(Path.Combine(directory, $"{sessionId}.events.jsonl")).FirstOrDefault(Asked);
         return asked?.Origin == "person" ? asked.Text : null;
     }
+
+    /// <summary>A session's ask: words it took, never words shown waiting, nor the brief a new part was handed (SESSCTX1b).</summary>
+    private static bool Asked(SessionEvent e) => e.Kind == SessionEventKind.User && e.Reaches is null && e.Continues is null;
 
     /// <summary>
     /// The door the first of these words was said at (MSG1d, D137 §3.3), read from the event that showed it waiting: what the

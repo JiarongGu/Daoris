@@ -117,6 +117,21 @@ public sealed class SessionsCommandTests : IDisposable
         Assert.False(string.IsNullOrWhiteSpace(problem));
     }
 
+    /// <summary>
+    /// SESSCTX1b: the terminal says how a part began in its own words, as the page does, a part moved on from one whose own
+    /// conversation was lost among them, and a word this build does not know as a start.
+    /// </summary>
+    [Theory]
+    [InlineData(PartBegan.Retried, "retried after s1")]
+    [InlineData(PartBegan.CarriedOn, "carried on after s1")]
+    [InlineData(PartBegan.HandedOver, "handed over from s1")]
+    [InlineData(PartBegan.Moved, "moved on from s1: its own conversation was lost")]
+    [InlineData("later-word", "opened")]
+    public void The_terminal_says_how_a_part_began(string began, string said)
+    {
+        Assert.Equal(said, SessionsCommand.Began(new EntryPart("s2", null, "working", SessionGroup.Working, began) { After = "s1" }));
+    }
+
     // ——— MSG1f3 (D50, D137 §2.2): *Start a conversation with these words* at a terminal.
 
     [Fact]

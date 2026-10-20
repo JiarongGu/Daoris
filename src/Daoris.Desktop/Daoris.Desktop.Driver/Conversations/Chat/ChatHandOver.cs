@@ -207,7 +207,11 @@ internal sealed class ChatHandOver(ChatContext context, ChatRunner runner)
     {
         if (!_context.Turned.ContainsKey(sessionId) && !_context.Talking.ContainsKey(sessionId)) return false;
 
-        if (_context.Browsers.TryRemove(sessionId, out var browser)) message = message with { Briefing = $"{message.Briefing}\n\n{browser}" };
+        // The browser's line after Daoris's brief (SESSCTX1b keeps the brief a field of its own, so the line is the briefing's alone).
+        if (_context.Browsers.TryRemove(sessionId, out var browser))
+        {
+            message = message with { Briefing = message.Briefing is { Length: > 0 } told ? $"{told}\n\n{browser}" : browser };
+        }
         if (_context.Turned.TryGetValue(sessionId, out var chat)) return chat.Turns.Take(message) is not null;
 
         // A text door has no turns to record it as they are sent: the note is kept here, with what is sent, so no path says nothing.

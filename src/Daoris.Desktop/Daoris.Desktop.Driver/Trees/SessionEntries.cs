@@ -18,6 +18,12 @@ public static class PartBegan
     /// <summary>A record that continues another by D163's <c>from</c>: another agent or account, or a conversation started from words.</summary>
     public const string HandedOver = "handed-over";
 
+    /// <summary>
+    /// A record that went on from one whose own conversation was proven lost (SESSCTX1b, <see cref="HandOverWhy.Resume"/>; the
+    /// session-context design §7): a move of its own, never a hand-over.
+    /// </summary>
+    public const string Moved = "moved";
+
     /// <summary>A quest another session published, to this repository: a sibling's request.</summary>
     public const string Asked = "asked";
 }
@@ -65,7 +71,8 @@ public static class SessionEntries
     /// ended with nothing published, stays, since only the person moves its ask on. The rows (<see cref="SessionGroups.Read"/>) keep it.</para>
     ///
     /// <para><b>How a part began</b> is read from the record's own <c>from</c> and its quest's chain, in this order: a record
-    /// that continues another is handed over; a quest an earlier part served is retried (its last part failed), carried on
+    /// that continues another began by its link's why (SESSCTX1b: a hand-over's five, carried on, retried or moved, <see cref="ByLink"/>);
+    /// a quest an earlier part served is retried (its last part failed), carried on
     /// (it was cut off) or resumed; a quest another session published is asked of this repository; a chain's step is carried
     /// on; otherwise the part opened.</para>
     /// </remarks>
@@ -125,7 +132,9 @@ public static class SessionEntries
             var part = new EntryPart(record.Id, record.Quest, rows[at].Shown, rows[at].Group, PartBegan.Opened);
             parts.Add(record switch
             {
-                { From: { } from } => part with { Began = PartBegan.HandedOver, After = from },
+                // SESSCTX1b: every continuation names its link, so the link's why says how the part began; a why this build has no
+                // word for, and a record from before with none, read as a hand-over, as every link once did.
+                { From: { } from } => part with { Began = ByLink(record.FromWhy), After = from },
                 _ when prior is not null => part with
                 {
                     Began = prior.State switch
@@ -144,4 +153,13 @@ public static class SessionEntries
 
         return parts;
     }
+
+    /// <summary>How a part with a <c>from</c> link began, by the link's why (SESSCTX1b, the session-context design §7).</summary>
+    internal static string ByLink(string? why) => why switch
+    {
+        HandOverWhy.CarryOn => PartBegan.CarriedOn,
+        HandOverWhy.Retry => PartBegan.Retried,
+        HandOverWhy.Resume => PartBegan.Moved,
+        _ => PartBegan.HandedOver,
+    };
 }

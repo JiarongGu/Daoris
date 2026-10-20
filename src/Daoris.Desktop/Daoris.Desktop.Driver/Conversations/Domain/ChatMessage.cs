@@ -79,6 +79,13 @@ public sealed record ChatMessage(string Text, IReadOnlyList<KeptFile> Files)
     public string? Briefing { get; init; }
 
     /// <summary>
+    /// Daoris's brief of the line a handed-over conversation continues (SESSCTX1b, <see cref="ContextBrief"/>), handed first, ahead of
+    /// what <see cref="Briefing"/> tells; the record keeps it as the conversation's first prompt with its account (the design §3.4).
+    /// Null for every other message.
+    /// </summary>
+    internal ComposedBrief? Brief { get; init; }
+
+    /// <summary>
     /// The repository's process a conversation in a tree of its own is told with its first message (PROCESS1d-ii, D164's amendment
     /// point 4), after the browser's line: a field of its own, so the record keeps it as its own note, never under the browser's.
     /// Null for every other message.
@@ -130,9 +137,9 @@ public sealed record ChatMessage(string Text, IReadOnlyList<KeptFile> Files)
     /// </summary>
     internal bool Said { get; init; }
 
-    /// <summary>What the agent is handed: the briefing, the process, the preface, then the person's words, each after a blank line.</summary>
+    /// <summary>What the agent is handed: the brief, the briefing, the process, the preface, then the person's words, each after a blank line.</summary>
     public string Prompt => string.Join(
-        "\n\n", new[] { Briefing, Process?.Words, Preface }.Where(part => !string.IsNullOrEmpty(part)).Append(Text));
+        "\n\n", new[] { Brief?.Text, Briefing, Process?.Words, Preface }.Where(part => !string.IsNullOrEmpty(part)).Append(Text));
 
     /// <summary>A preface as a message carries it: trimmed, bounded, and null when there is none.</summary>
     public static string? Bound(string? preface) =>
@@ -150,6 +157,8 @@ public sealed record ChatMessage(string Text, IReadOnlyList<KeptFile> Files)
         Kind = SessionEventKind.User,
         Origin = message.Channel is { Person: false } || message.Daoris is not null ? "target" : "person",
         From = message.Daoris is not null ? DaorisWords.From : null,
+        // SESSCTX1b: the channel's message these words carry, marked by its id, so a reader never tells it by Daoris's English.
+        Channel = message.Channel?.Id is { Length: > 0 } channel ? channel : null,
         Id = message.Id,
         Text = message.Text,
         Files = message.Files.Count > 0 ? [.. message.Files.Select(kept => kept.Name)] : null,

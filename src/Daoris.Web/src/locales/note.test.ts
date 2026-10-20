@@ -189,11 +189,12 @@ describe('the page’s map of a note’s codes, held to both writers', () => {
 
   /**
    * MIXAGENT1a-i: why a conversation was handed to another agent is a reason of its own family, held key for key; SWITCH1c-i adds
-   * `curve`, Daoris's move by the usage curve.
+   * `curve`, Daoris's move by the usage curve; SESSCTX1b adds `resume`, `carry-on` and `retry`, the reasons every other
+   * continuation names its link by.
    */
   it('words every reason a conversation was handed to another agent', () => {
     const handed = reasons('Handed');
-    expect(handed.length).toBe(5);
+    expect(handed.length).toBe(8);
     const page = Object.values(HANDED_REASONS).map(({ key, values }) => ({ key, values: [...values] }));
     const byKey = (a: { key: string }, b: { key: string }) => a.key.localeCompare(b.key);
     expect(page.sort(byKey)).toEqual([...handed].sort(byKey));

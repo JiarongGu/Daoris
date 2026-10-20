@@ -248,19 +248,31 @@ public sealed class InstructionAccountTests
         Assert.Equal((3, TargetPrompt.IndexLimit), (Cut(section, "indexes-bound").Count, Cut(section, "indexes-bound").Limit));
     }
 
+    /// <summary>
+    /// SESSCTX1b (the session-context design §3.4): a carry-on's brief is a part of its instruction, counted by the brief's own
+    /// sections within its account, so the sizes still add up; its plan past its bound is counted there.
+    /// </summary>
     [Fact]
-    public void A_carry_ons_plan_past_its_bound_is_counted()
+    public void A_carry_ons_brief_is_counted_by_its_own_sections_and_its_plan_past_its_bound_is_counted()
     {
-        var target = TargetPromptGoldenTests.CarryOn with
+        var plan = new SessionEvent
         {
-            LastPlan = [.. Enumerable.Range(1, TargetPrompt.PlanLimit + 7).Select(n => new PlanEntry($"step {n}", "pending"))],
-            LastWords = "I stopped at the menu entries.",
+            Kind = SessionEventKind.Plan,
+            Entries = [.. Enumerable.Range(1, ContextBrief.ListLimit + 7).Select(n => new PlanEntry($"step {n}", "pending"))],
         };
+        var brief = ContextBrief.Compose(new BriefLine(HandOverWhy.CarryOn,
+        [
+            new BriefPart("s1", "claude-code", [new SessionEvent { Kind = SessionEventKind.User, Origin = "target", Text = "the quest" }, plan,
+                new SessionEvent { Kind = SessionEventKind.Message, Text = "I stopped at the menu entries." }]),
+        ]));
+        var composed = TargetPrompt.Composed(TargetPromptGoldenTests.CarryOn with { Brief = brief });
 
-        var section = Section(TargetPrompt.Composed(target).Account, "carry-on");
-
-        Assert.Equal((TargetPrompt.PlanLimit, TargetPrompt.PlanLimit + 7), (section.Shown, section.Of));
-        Assert.Equal((7, TargetPrompt.PlanLimit), (Cut(section, "plan-bound").Count, Cut(section, "plan-bound").Limit));
+        Assert.Equal(composed.Text.Length, composed.Account.Sections.Sum(section => section.Chars ?? 0));
+        Assert.Contains("Daoris's brief of its line", Section(composed.Account, "carry-on").Said);
+        var state = Section(composed.Account, "brief-state");
+        Assert.Equal((7, ContextBrief.ListLimit), (Cut(state, "plan-bound").Count, Cut(state, "plan-bound").Limit));
+        Assert.Equal(("record", "s1"), (Section(composed.Account, "brief-opening").Source, Section(composed.Account, "brief-opening").From));
+        Assert.Contains("> I stopped at the menu entries.", composed.Text);
     }
 
     /// <summary>The rules are handed beside the instruction: after the sections handed, before the ones that were not.</summary>

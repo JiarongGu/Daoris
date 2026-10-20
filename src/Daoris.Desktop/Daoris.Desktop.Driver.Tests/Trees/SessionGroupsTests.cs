@@ -23,11 +23,12 @@ public sealed class SessionGroupsTests
     private static JsonObject Record(
         string id, string state, string? quest = null, string? tree = null, int at = 0, string repository = "engine",
         string kind = "driven", bool interrupted = false, string? ask = null, int? updated = null, string? answer = null,
-        bool deletable = false, string[]? said = null, string? entry = null, string? from = null) => new()
+        bool deletable = false, string[]? said = null, string? entry = null, string? from = null, string? fromWhy = null) => new()
         {
-            // SESSONE1b: the line of work the service answers, and the session a hand-over continues.
+            // SESSONE1b: the line of work the service answers, and the session a hand-over continues, and why (SESSCTX1b).
             ["entry"] = entry,
             ["from"] = from,
+            ["fromWhy"] = fromWhy,
             // The person's words waiting on it (MSG1a), each by its id, as the service answers this machine.
             ["said"] = new JsonArray([.. (said ?? []).Select(word => (JsonNode)new JsonObject
             {
@@ -1203,6 +1204,36 @@ public sealed class SessionGroupsTests
         Assert.Equal(
             [(PartBegan.Opened, null), (PartBegan.CarriedOn, "c0d00001"), (PartBegan.HandedOver, "c0d00002"), (PartBegan.CarriedOn, null)],
             parts.Select(part => (part.Began, part.After)));
+    }
+
+    /// <summary>
+    /// 🔴 SESSCTX1b (the session-context design §7): every continuation names its link, so a part says how it began by its link's why,
+    /// never every link as a hand-over. The five a hand-over is asked for are handed over; `carry-on` carried on; `retry` retried;
+    /// `resume` a move of its own; a why this build has no word for, and a record from before with none, as before.
+    /// </summary>
+    [Theory]
+    [InlineData("press", PartBegan.HandedOver)]
+    [InlineData("near", PartBegan.HandedOver)]
+    [InlineData("limit", PartBegan.HandedOver)]
+    [InlineData("agent", PartBegan.HandedOver)]
+    [InlineData("curve", PartBegan.HandedOver)]
+    [InlineData("carry-on", PartBegan.CarriedOn)]
+    [InlineData("retry", PartBegan.Retried)]
+    [InlineData("resume", PartBegan.Moved)]
+    [InlineData("moved-on", PartBegan.HandedOver)]
+    [InlineData(null, PartBegan.HandedOver)]
+    public void A_part_with_a_link_began_by_its_why(string? why, string began)
+    {
+        var look = Look(
+            [
+                Record("c0d00001", "completed", "q1", entry: "quest:q1/engine", at: 0),
+                Record("c0d00002", "working", "q1", entry: "quest:q1/engine", at: 10, from: "c0d00001", fromWhy: why),
+            ],
+            quests: [AskQuest("q1", "game", "engine")]);
+
+        var parts = Assert.Single(SessionGroups.ReadEntries(look)).Parts;
+
+        Assert.Equal([(PartBegan.Opened, null), (began, "c0d00001")], parts.Select(part => (part.Began, part.After)));
     }
 
     /// <summary>A record with no key (a host from before) is its own line of work; the entry's place is read from the part alone.</summary>

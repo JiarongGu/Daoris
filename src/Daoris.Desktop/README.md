@@ -229,6 +229,17 @@ turns, the chat files, the start requests), `GoOn/` (going on: marks, files, the
 conversations, the continuation judge, the say, and the words a failed run left, kept to go again, `WordsLeft`), `HandOver/` and `Helpers/`; `ConversationTrees`, `DrivenInbox` and
 `TranscriptFile` stay at the top, named by several scopes.
 
+A session that goes on in a new part is handed Daoris's brief of its line (SESSCTX1b, D189 point 4; the session-context
+design §3), composed with no model by `ContextBrief.Compose` in `Conversations/Domain/` from what `Sessions/Events/ContextBriefs`
+reads: the line one chain back by each record's `from` (every continuation writes one, `carry-on` and `retry` beside a hand-over's
+five reasons, and `resume` for SESSCTX1c; no box takes those three), each part's events, the tree as it stands, the declared gates
+and the entry's other parts. It carries every word the session took once by its id (a word taken back left out, a channel's
+message by its event's own `channel` mark, another agent's findings by `opinion`, each as that agent's claim), each turn's last
+message and what it did, the plan with its turn, the last check each part ran by a declared gate and the last failed one's kept
+output, under a 40,000 bound with a Han character weighing three, every cut said and accounted in its `brief-*` sections. A
+hand-over's new conversation keeps it as its first prompt (`origin: target`, its account, `continues`), never read as its
+opening; a driven carry-on carries it as part of its instruction, accounted within it. The new part reads its line's kept folders.
+
 ## What the page can ask this machine
 
 | Module | What it carries |

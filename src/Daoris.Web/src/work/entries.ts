@@ -7,7 +7,7 @@ import type { SessionGroupName } from './groups';
 // their own. Pure, so every list a person could have is an argument.
 
 /** How a part began, as the driver's reader says it (D167, SESSONE1b). A word a newer host adds is read as `opened`. */
-export type PartBegan = 'opened' | 'retried' | 'resumed' | 'carried-on' | 'handed-over' | 'asked';
+export type PartBegan = 'opened' | 'retried' | 'resumed' | 'carried-on' | 'handed-over' | 'moved' | 'asked';
 
 /** One record of an entry, as `SESSION_GROUPS` answers it: oldest first within its entry. */
 export type EntryPart = {

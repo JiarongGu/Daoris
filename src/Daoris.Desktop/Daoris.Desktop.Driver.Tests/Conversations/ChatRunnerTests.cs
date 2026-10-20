@@ -47,6 +47,27 @@ public sealed class ChatRunnerTests : IDisposable
         Assert.DoesNotContain(rules.Deny, rule => rule.Contains("/work/engine", StringComparison.Ordinal));
     }
 
+    /// <summary>
+    /// 🔴 SESSCTX1b (the session-context design §3.1 item 5, Fable's F5): a new part is handed the files its line's parts kept, by
+    /// name and where they lie, so its rules also allow a read of exactly those kept folders, as its own (D52 refuses every other ask).
+    /// </summary>
+    [Fact]
+    public void A_new_part_s_rules_read_the_kept_folders_of_the_parts_its_line_continues()
+    {
+        var across = new AcrossReach([new("game", "/work/game")], [], [new("personal", "/srv/personal")]);
+
+        var rules = ChatRunner.RulesFor(
+            PermissionFile.Empty, "default", "engine", "/work/engine", "/data/chats/s3", across, continued: ["/data/chats/s1", "/data/chats/s2"]);
+
+        Assert.Contains(PermissionRules.ReadRule("/data/chats/s3"), rules.Allow);
+        Assert.Contains(PermissionRules.ReadRule("/data/chats/s1"), rules.Allow);
+        Assert.Contains(PermissionRules.ReadRule("/data/chats/s2"), rules.Allow);
+        Assert.DoesNotContain(rules.Deny, rule => rule.Contains("/data/chats", StringComparison.Ordinal));
+        Assert.Equal(
+            ChatRunner.RulesFor(PermissionFile.Empty, "default", "engine", "/work/engine", "/data/chats/s3", across).Allow.Count + 2,
+            rules.Allow.Count);
+    }
+
     [Fact]
     public async Task A_harness_declared_after_the_runner_was_built_is_found_through_the_roster_s_live_set()
     {

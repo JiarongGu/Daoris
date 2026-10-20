@@ -40,6 +40,13 @@
   "work.handed.section.boundary": "边界",
   "work.handed.section.rules": "权限规则",
   "work.handed.section.intake": "受理的指令",
+  "work.handed.section.brief-opening": "接续的是什么，以及最初的请求",
+  "work.handed.section.brief-words": "会话收到的话",
+  "work.handed.section.brief-turns": "每一轮的回答和所做的事",
+  "work.handed.section.brief-state": "工作的现状",
+  "work.handed.section.brief-note": "交出方智能体的说明",
+  "work.handed.section.brief-parts": "会话的其他各段",
+  "work.handed.section.brief-left": "简报略去的内容",
   "work.handed.source.quest": "服务给出的委托",
   "work.handed.source.ask": "需求的记录",
   "work.handed.source.repository": "本机为其仓库设定",
@@ -67,5 +74,10 @@
   "work.handed.cut.plan-bound": "超出 {{limit}} 步的上限，略去计划中的 {{n}} 步",
   "work.handed.cut.indexes-bound": "超出点名的 {{limit}} 个，另有 {{n}} 个只计数、未点名",
   "work.handed.cut.files-elsewhere": "{{n}} 个不在本机，只写了名称、没有路径",
-  "work.handed.cut.rules-unread": "本机的规则文件无法读取，所以只交付了默认规则"
+  "work.handed.cut.rules-unread": "本机的规则文件无法读取，所以只交付了默认规则",
+  "work.handed.cut.brief-words-older": "超出 {{limit}} 个字符的上限，略去较早的 {{n}} 条；会话的记录保留了每一条",
+  "work.handed.cut.brief-turns-older": "超出简报 {{limit}} 个字符上限所留的空间，略去较早的 {{n}} 轮",
+  "work.handed.cut.brief-clipped": "{{n}} 项各自超过自己的上限，已在原处注明截断",
+  "work.handed.cut.brief-list": "超出列表的上限，略去 {{n}} 条",
+  "work.handed.cut.brief-parts-bound": "超出 {{limit}} 个字符的上限，略去 {{n}} 段"
 }

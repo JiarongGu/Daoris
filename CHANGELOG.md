@@ -5,6 +5,10 @@ with the version and date at release.
 
 ## Unreleased
 
+- A session that goes on in a new part, on another agent, on another account or after it was cut off, is handed everything it
+  took: every word you said, once, what each turn did, where the work stands and the last check that failed, not just its last
+  words. A handed-over conversation opens with *Daoris's brief of the session it continues*, folded. A session's Parts strip
+  says how each part began: carried on, retried or handed over.
 - Your limit of sessions at once counts what the driver starts: a quest's session, an ask's intake, a helper, a second opinion and
   a brainstorm's or a meeting's pass. A conversation you hold, an Ask Daoris conversation or a chat, takes no place under it, idle
   or working, so conversations left open between turns no longer hold quests back. Ask Daoris says so when it describes the limit.
