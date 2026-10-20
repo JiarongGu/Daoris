@@ -136,6 +136,78 @@ public sealed class DriverModuleSystemTests : DriverModuleBridge
         Assert.Equal(2, Raised.Count(m => m.Type == StatePublisher.Type));
     }
 
+    /// <summary>
+    /// PROVED1 (the this-Daoris design §3.2): a host this window started and handed the person key proves it holds it on the
+    /// readiness probe, and the window's answer says <c>proved: true</c>; one that answers no proof says <c>false</c>. The
+    /// key itself is in no answer.
+    /// </summary>
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task A_started_host_that_proves_the_person_key_is_said_proved(bool proves)
+    {
+        var key = System.Buffers.Text.Base64Url.EncodeToString(System.Security.Cryptography.RandomNumberGenerator.GetBytes(32));
+        var (url, location) = KeyedStandIn(proves);
+        using var supervisor = new HostSupervisor(url, () => location) { PersonKey = key, StopWithin = TimeSpan.FromSeconds(20) };
+
+        Assert.True(await supervisor.EnsureAsync(), supervisor.Trouble);
+        var module = new DriverModule(Bus, new DriverLoop(Bus, supervisor, url)) { WiringWorlds = WiredModule(new WiringSizes()).WiringWorlds };
+        var response = await AskAsync(module, "SYSTEM_WIRING");
+        var service = (await AnswerAsync(module, "SYSTEM_WIRING")).GetProperty("service");
+
+        Assert.Equal(proves, supervisor.Proved);
+        Assert.Equal("hosted", service.GetProperty("held").GetString());
+        Assert.Equal(proves, service.GetProperty("proved").GetBoolean());
+        Assert.DoesNotContain(key, JsonSerializer.Serialize(response), StringComparison.Ordinal);
+        Assert.Equal(HostStop.Exited, supervisor.Stop());
+    }
+
+    /// <summary>
+    /// A stand-in for the HTTP host as PERSONDOOR1a reads its key: asked by the variable, it reads the key on its input's
+    /// first line before it listens, answers <c>proof</c> for a <c>prove</c> nonce where <paramref name="proves"/>, and stops
+    /// when its input ends.
+    /// </summary>
+    private (string Url, HostLocation Location) KeyedStandIn(bool proves)
+    {
+        var folder = Path.Combine(Home, "stand-in-" + Guid.NewGuid().ToString("N")[..6]);
+        Directory.CreateDirectory(folder);
+        var probe = new System.Net.Sockets.TcpListener(System.Net.IPAddress.Loopback, 0);
+        probe.Start();
+        var port = ((System.Net.IPEndPoint)probe.LocalEndpoint).Port;
+        probe.Stop();
+        File.WriteAllText(Path.Combine(folder, "host.mjs"), $$"""
+            import { createServer } from 'node:http';
+            import { createHmac } from 'node:crypto';
+            import { createInterface } from 'node:readline';
+            const lines = createInterface({ input: process.stdin });
+            lines.on('close', () => process.exit(0));
+            const asked = process.env.{{HostSupervisor.PersonKeyOnInput}} === '1';
+            const serve = (key) => createServer((request, response) => {
+              const nonce = new URL(request.url, 'http://stand-in').searchParams.get('prove');
+              const status = { semantic: false, tier: 'lexical only', note: null };
+              if ({{(proves ? "true" : "false")}} && key && nonce) status.proof = createHmac('sha256', key).update(nonce, 'utf8').digest('base64url');
+              response.writeHead(200, { 'content-type': 'application/json' });
+              response.end(JSON.stringify(status));
+            }).listen({{port}}, '127.0.0.1');
+            if (asked) lines.once('line', (line) => serve(Buffer.from(line.trim(), 'base64url')));
+            else serve(null);
+            """);
+        string executable;
+        if (OperatingSystem.IsWindows())
+        {
+            executable = Path.Combine(folder, "host.cmd");
+            File.WriteAllText(executable, "@echo off\r\nnode \"%~dp0host.mjs\"\r\n");
+        }
+        else
+        {
+            executable = Path.Combine(folder, "host");
+            File.WriteAllText(executable, "#!/bin/sh\nexec node \"$(dirname \"$0\")/host.mjs\"\n");
+            File.SetUnixFileMode(executable, UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute);
+        }
+
+        return ($"http://127.0.0.1:{port}", new HostLocation(executable, folder));
+    }
+
     [Fact]
     public async Task No_key_is_in_the_windows_answer()
     {

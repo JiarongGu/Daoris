@@ -95,6 +95,7 @@ public sealed class DriverContext(IEventBus events, DriverLoop loop, OpenFolder?
                 HostNotice = loop.HostNotice,
                 ServiceUrl = loop.ServiceUrl,
                 Status = loop.Host.Last,
+                Proved = loop.Host.Proved,
                 Kit = SystemWiring.VersionOf(typeof(Shenora.Core.Ipc.IpcRequest).Assembly),
                 Program = SystemWiring.VersionOf(System.Reflection.Assembly.GetEntryAssembly()),
                 Looked = loop.Look.At,

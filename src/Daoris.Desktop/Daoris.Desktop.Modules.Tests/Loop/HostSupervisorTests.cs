@@ -35,6 +35,36 @@ public sealed class HostSupervisorNoHostTests
         Assert.True(scripts.TryGetProperty("publish:desktop", out _), "no publish:desktop script");
         Assert.True(scripts.TryGetProperty("publish:service", out _), "no publish:service script");
     }
+
+    /// <summary>
+    /// PROVED1: the proof the supervisor checks is the host's twin (<c>PersonKey.Prove</c>), held to the vectors
+    /// <c>PersonKeyTests</c> holds, which were made outside .NET; a text that is no key proves nothing.
+    /// </summary>
+    [Theory]
+    [InlineData("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA", "daoris-prove", "MGRkjOR5VZ2oQWQ11ToICsIzQjg_1oDAH-ok_0Lm3A0")]
+    [InlineData("AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8", "a nonce, 一个", "gQMDWolsIQRnw-_d19k3A1c9E6ey2aP9-8RL_n_pJ50")]
+    [InlineData("not a key", "daoris-prove", null)]
+    public void The_proof_it_checks_is_the_host_s_hmac_of_the_nonce_under_the_key(string key, string nonce, string? proof) =>
+        Assert.Equal(proof, HostSupervisor.ProofOf(key, nonce));
+
+    /// <summary>
+    /// The host is asked for its key by the variable alone, the host's own spelling (<c>PersonKey.InputVariable</c>); the key
+    /// travels on the input, never in the environment every child is copied (the person-door design §2.1).
+    /// </summary>
+    [Fact]
+    public void A_host_handed_a_key_is_asked_for_it_by_the_variable_and_the_environment_never_holds_the_key()
+    {
+        var location = new HostLocation(Path.Combine(AppContext.BaseDirectory, "host"), AppContext.BaseDirectory);
+
+        var asked = HostSupervisor.StartInfo(location, asksKey: true);
+        var not = HostSupervisor.StartInfo(location);
+
+        Assert.Equal("DAORIS_PERSON_KEY_ON_INPUT", HostSupervisor.PersonKeyOnInput);
+        Assert.Equal("1", asked.Environment[HostSupervisor.PersonKeyOnInput]);
+        Assert.False(not.Environment.ContainsKey(HostSupervisor.PersonKeyOnInput));
+        Assert.True(asked.RedirectStandardInput);
+        Assert.Null(new HostSupervisor("http://localhost:0").Proved);
+    }
 }
 
 /// <summary>

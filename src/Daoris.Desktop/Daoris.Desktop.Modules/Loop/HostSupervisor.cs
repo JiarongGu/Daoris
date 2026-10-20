@@ -1,4 +1,8 @@
+using System.Buffers.Text;
 using System.Diagnostics;
+using System.Security.Cryptography;
+using System.Text;
+using System.Text.Json;
 using System.Text.RegularExpressions;
 using Daoris.Driver;
 
@@ -66,10 +70,32 @@ public sealed partial class HostSupervisor(string serviceUrl, Func<HostLocation?
     /// </summary>
     public ServiceProbe? Last { get; private set; }
 
+    /// <summary>
+    /// The variable that asks the host this supervisor starts to read its person key from the first line of its standard
+    /// input (PERSONDOOR1a), set to <c>1</c>. A twin of the host's <c>PersonKey.InputVariable</c>, duplicated on purpose since
+    /// the artefacts share no code; each side's tests hold the same spelling.
+    /// </summary>
+    public const string PersonKeyOnInput = "DAORIS_PERSON_KEY_ON_INPUT";
+
+    /// <summary>
+    /// The person key handed to the host this supervisor starts (the person-door design §2.1): 32 bytes in base64url
+    /// without padding, written on the first line of its input and never anywhere else. Null hands none, and the host keeps
+    /// today's trust. Minting one for each start is PERSONDOOR1g's; an adopted host is handed nothing (§2.3).
+    /// </summary>
+    public string? PersonKey { get; init; }
+
+    /// <summary>
+    /// Whether the host this supervisor started proved it holds <see cref="PersonKey"/> (PROVED1, the this-Daoris design §3.2):
+    /// its readiness probe asks <c>/api/status?prove=</c> a fresh nonce and checks the answer's <c>proof</c>. Null where nothing
+    /// was asked: no key was handed, or the host was adopted.
+    /// </summary>
+    public bool? Proved { get; private set; }
+
     /// <summary>True when the host answers — found running, or started here and now answering.</summary>
     public async Task<bool> EnsureAsync(CancellationToken ct = default)
     {
-        var found = await ProbeAsync(ct).ConfigureAwait(false);
+        Proved = null;
+        var found = await ProbeAsync(null, ct).ConfigureAwait(false);
 
         // 🔴 HOSTID1: an answer is adopted only when it is a Daoris host's. Something else on the port —
         // another program that happened to take it — is not this machine's host: its answers would be
@@ -113,9 +139,11 @@ public sealed partial class HostSupervisor(string serviceUrl, Func<HostLocation?
         try
         {
             // Through the start gate (PROCSTART2), as every start of the desktop's is.
-            _owned = await ProcessStarts.Shared.StartAsync(StartInfo(location), CancellationToken.None).ConfigureAwait(false);
+            _owned = await ProcessStarts.Shared.StartAsync(
+                StartInfo(location, asksKey: PersonKey is not null), CancellationToken.None).ConfigureAwait(false);
             // HOSTSTART1: read from the start, so a host that prints more than a pipe holds never waits on it.
             if (_owned is not null) _said = LastLines.Drain(_owned.StandardError);
+            if (_owned is not null && PersonKey is not null) HandKey(_owned, PersonKey);
         }
         catch (Exception error) when (error is System.ComponentModel.Win32Exception or InvalidOperationException)
         {
@@ -126,9 +154,12 @@ public sealed partial class HostSupervisor(string serviceUrl, Func<HostLocation?
             return false;
         }
 
+        // A nonce for this start's proof (design §2.3), asked on every readiness probe, so the answer that makes the host
+        // ready is the one that says whether it holds the key.
+        var nonce = PersonKey is null ? null : Base64Url.EncodeToString(RandomNumberGenerator.GetBytes(16));
         for (var attempt = 0; attempt < 100; attempt += 1)
         {
-            if (await ProbeAsync(ct).ConfigureAwait(false) == Answer.Daoris)
+            if (await ProbeAsync(nonce, ct).ConfigureAwait(false) == Answer.Daoris)
             {
                 Held = WindowWiring.Hosted;
                 return true;
@@ -193,7 +224,9 @@ public sealed partial class HostSupervisor(string serviceUrl, Func<HostLocation?
     /// is left alone. The working directory is the location's, not the binary's — a dev host must run from
     /// its project so the platform bundle in its wwwroot is what gets served (see HostLocation).
     /// </summary>
-    public static ProcessStartInfo StartInfo(HostLocation location)
+    /// <param name="location">Where the host is.</param>
+    /// <param name="asksKey">Whether the host is asked to read its person key on its input's first line (<see cref="PersonKeyOnInput"/>).</param>
+    public static ProcessStartInfo StartInfo(HostLocation location, bool asksKey = false)
     {
         // Not the tools' environment (TOOLS5): the host is Daoris's own program, found by its own locator (D60, D93),
         // and it starts no process (D121 §1.1); the knowledge feed's git is the checkout's driver's.
@@ -213,7 +246,62 @@ public sealed partial class HostSupervisor(string serviceUrl, Func<HostLocation?
             StandardErrorEncoding = new System.Text.UTF8Encoding(encoderShouldEmitUTF8Identifier: false),
         };
         start.Environment[StopOnInputEnd] = "1";
+        // Only the ask is in the environment, never the key: an environment is copied into every child (design §2.1).
+        if (asksKey) start.Environment[PersonKeyOnInput] = "1";
         return start;
+    }
+
+    /// <summary>The key written as the input's first line; a host gone already says so as it exits, which the loop reads.</summary>
+    private static void HandKey(Process host, string key)
+    {
+        try
+        {
+            host.StandardInput.WriteLine(key);
+            host.StandardInput.Flush();
+        }
+        catch (IOException)
+        {
+            // The pipe broke: the host has exited, and the readiness loop below says why.
+        }
+    }
+
+    /// <summary>
+    /// The proof of possession of <paramref name="key"/> for <paramref name="nonce"/> (the person-door design §2.3): HMAC-SHA-256
+    /// under the key's 32 bytes, of the nonce's UTF-8, in base64url without padding. A twin of the host's <c>PersonKey.Prove</c>,
+    /// held to the same vectors; null for a key that is not one.
+    /// </summary>
+    public static string? ProofOf(string key, string nonce)
+    {
+        byte[] secret;
+        try
+        {
+            secret = Base64Url.DecodeFromChars(key.Trim());
+        }
+        catch (FormatException)
+        {
+            return null;
+        }
+
+        return secret.Length == 32 ? Base64Url.EncodeToString(HMACSHA256.HashData(secret, Encoding.UTF8.GetBytes(nonce))) : null;
+    }
+
+    /// <summary>Whether a status body's <c>proof</c> is this key's for <paramref name="nonce"/>, compared in constant time.</summary>
+    private bool Proves(string body, string nonce)
+    {
+        if (PersonKey is null || ProofOf(PersonKey, nonce) is not { } expected) return false;
+        try
+        {
+            using var status = JsonDocument.Parse(body);
+            return status.RootElement.ValueKind == JsonValueKind.Object
+                && status.RootElement.TryGetProperty("proof", out var proof)
+                && proof.ValueKind == JsonValueKind.String
+                && CryptographicOperations.FixedTimeEquals(
+                    Encoding.UTF8.GetBytes(proof.GetString()!), Encoding.UTF8.GetBytes(expected));
+        }
+        catch (JsonException)
+        {
+            return false;
+        }
     }
 
     /// <summary>
@@ -265,12 +353,15 @@ public sealed partial class HostSupervisor(string serviceUrl, Func<HostLocation?
     /// has, so that is what tells one from another program on the port. Nothing more is claimed: two
     /// Daoris hosts are told apart by the page each serves (<see cref="Notice"/>), never by this.
     /// </summary>
-    private async Task<Answer> ProbeAsync(CancellationToken ct)
+    /// <param name="nonce">The proof asked of a host this supervisor started and handed a key (PROVED1); null asks none.</param>
+    /// <param name="ct">The loop's stop.</param>
+    private async Task<Answer> ProbeAsync(string? nonce, CancellationToken ct)
     {
         var asked = DateTimeOffset.UtcNow;
+        var prove = nonce is null ? string.Empty : $"?prove={Uri.EscapeDataString(nonce)}";
         try
         {
-            using var response = await _probe.GetAsync($"{serviceUrl.TrimEnd('/')}/api/status", ct)
+            using var response = await _probe.GetAsync($"{serviceUrl.TrimEnd('/')}/api/status{prove}", ct)
                 .ConfigureAwait(false);
             if (!response.IsSuccessStatusCode)
             {
@@ -281,7 +372,9 @@ public sealed partial class HostSupervisor(string serviceUrl, Func<HostLocation?
             var body = await response.Content.ReadAsStringAsync(ct).ConfigureAwait(false);
             // What it said, its tier and version, kept for This Daoris (WIRING1b), read by the same rule as a Daoris host's.
             Last = ServiceProbe.Of(body, asked);
-            return IsDaorisStatus(body) ? Answer.Daoris : Answer.Foreign;
+            if (!IsDaorisStatus(body)) return Answer.Foreign;
+            if (nonce is not null) Proved = Proves(body, nonce);
+            return Answer.Daoris;
         }
         catch (Exception error) when (error is HttpRequestException or TaskCanceledException)
         {
