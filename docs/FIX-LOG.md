@@ -5,6 +5,18 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-21 — A connector test's stand-in loop ended on a request a scanner held, and its tool waited a minute (FLAKE1)
+
+- **Symptom:** the full set on 195e6f9 failed `McpChosenSettingsToolTests.Each_tool_writes_its_value_as_the_door_spells_it`
+  after a minute: "No Daoris on this machine took it", though the tests' boxes had waited sixty seconds since 90466f4's fix.
+- **Root cause:** not the wait. The exchange writes its request atomically and checks for its take before its clock, so the
+  request sat untaken for the whole minute because the stand-in loop had ended: it read and deleted a request the moment it
+  appeared, and a file just renamed into place can be held for a moment by a scanner on this machine (DEVDRIVE1), so the read
+  or the delete threw and the loop's task faulted. 90466f4's entry read the same failure as a starved pool; the longer wait
+  only made it slower.
+- **Fix:** both connector tests' stand-in loops try a refused read or delete again at the next turn, never ending on it.
+- **Verification:** both classes, 9; the full set beside.
+
 ## 2026-10-21 — Two branches built on main at once met only at the merge: a story on the old width helper (RAILLINE1, STORYGAP1)
 
 - **Symptom:** merging RAILLINE1 after STORYGAP1, the page head's stories named `at`, a helper STORYGAP1 had replaced with

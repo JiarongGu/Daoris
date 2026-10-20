@@ -53,8 +53,20 @@ public sealed class McpChosenSettingsToolTests : McpToolsFixture
                 : null;
             if (found is not null)
             {
-                var text = File.ReadAllText(found);
-                File.Delete(found);
+                // A request just renamed into place can be held for a moment by a scanner on this machine: a read or a delete
+                // refused is tried again at the next turn, never the loop's end (the full set on 195e6f9 waited a minute on it).
+                string text;
+                try
+                {
+                    text = File.ReadAllText(found);
+                    File.Delete(found);
+                }
+                catch (Exception busy) when (busy is IOException or UnauthorizedAccessException)
+                {
+                    await Task.Delay(10);
+                    continue;
+                }
+
                 File.WriteAllText(found[..^".json".Length] + ".answer.json", answer);
                 using var document = JsonDocument.Parse(text);
                 return document.RootElement.Clone();
