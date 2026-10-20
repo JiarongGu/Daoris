@@ -18606,3 +18606,9 @@ edit, since each settings entry is understood as the file holds it. `HarnessSett
 through `JsonKeeping.Save` and `writeKeeping`; wiring built in memory is written whole. Proof: 11 `harnesses.json` rows in
 `home-files-keep.json`; the rotation twins' file and removal rows, two `rotation-use.json` `write` rows and the account-join rows
 re-decided in both twins. Root cause and verification: the fix log's KEEPALL1b entry.
+
+## LANDGIT1c — one spelling per ref fact (2026-10-21, D173)
+
+> - [ ] **LANDGIT1c — one spelling per ref fact** (driver; after LANDGIT1). `refs/heads/main` and `refs/heads/main^{commit}` are two commands, and the dirty check's `status` is read twice. Proof: the count test with no allowance for `status`.
+
+**Outcome** 2026-10-21: every read of a branch's or the head's commit is `<ref>^{commit}` (the line guess, `ComparableAsync`, the look's tree read, a waited landing's head); the landing's judgement hands its `status` count to the dirty check, and the look's automatic landing hands its own to the landing, read again after a wait. `LandGitCountTests` judges `status` as asked once until a write and refuses a ref read under two spellings; ceilings 53, 50 and 42 (from 55, 51, 43). On Opus: about 90 tool calls. Detail: D173's LANDGIT1c note.

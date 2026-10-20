@@ -29,14 +29,15 @@ internal sealed class TreeWorkReads(TreeContext context, TreeSquashes squashes, 
     /// <para><b>One commit judged</b> (SQUASHTIDY1c): the tree's commit is read once, and the count and the content proof are
     /// both asked of that id, so a commit made meanwhile is never half of what was judged.</para>
     /// </remarks>
-    internal async Task<TreeWork?> WorkAsync(string tree, CancellationToken ct = default)
+    /// <param name="uncommitted">
+    /// The tree's uncommitted paths as its door read them a moment before (LANDGIT1c: the look's automatic landing reads them where it
+    /// judges the entry), so `status` is not asked again; null asks git.
+    /// </param>
+    internal async Task<TreeWork?> WorkAsync(string tree, CancellationToken ct = default, int? uncommitted = null)
     {
         if (!HeldHere(tree) || TreeFolders.TreeGone(tree) || !await WorkingTree.IsTopLevelAsync(tree, ct).ConfigureAwait(false)) return null;
 
-        var (code, porcelain, _) = await WorkingTree.GitAsync(tree, ["status", "--porcelain"], ct).ConfigureAwait(false);
-        int? uncommitted = code != 0
-            ? null
-            : porcelain.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).Length;
+        uncommitted ??= await UncommittedOfAsync(tree, ct).ConfigureAwait(false);
         var (tipCode, tipOut, _) = await WorkingTree.GitAsync(tree, ["rev-parse", "--verify", "--quiet", "HEAD^{commit}"], ct)
             .ConfigureAwait(false);
         var judged = tipCode == 0 ? tipOut.Trim() : null;
@@ -65,7 +66,12 @@ internal sealed class TreeWorkReads(TreeContext context, TreeSquashes squashes, 
     internal async Task<int?> UncommittedAsync(string tree, CancellationToken ct = default)
     {
         if (!HeldHere(tree) || TreeFolders.TreeGone(tree) || !await WorkingTree.IsTopLevelAsync(tree, ct).ConfigureAwait(false)) return null;
+        return await UncommittedOfAsync(tree, ct).ConfigureAwait(false);
+    }
 
+    /// <summary>One <c>git status</c> of the tree, counted: null where git cannot say.</summary>
+    private static async Task<int?> UncommittedOfAsync(string tree, CancellationToken ct)
+    {
         var (code, porcelain, _) = await WorkingTree.GitAsync(tree, ["status", "--porcelain"], ct).ConfigureAwait(false);
         return code != 0
             ? null
