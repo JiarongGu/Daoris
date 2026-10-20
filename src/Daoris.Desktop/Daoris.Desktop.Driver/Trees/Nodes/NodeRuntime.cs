@@ -396,6 +396,7 @@ public sealed class NodeRuntime(
             // FABRIC-CLOSE1q2: a word on a close is judged on the quests as they stand, so a pass applying one reads them afresh.
             var fresh = look.Whole || _governed is null || !string.Equals(choices, _choices, StringComparison.Ordinal) || _closer?.Worded() == true;
             _readThisPass = fresh;
+            var bindings = new List<string>();
             if (fresh)
             {
                 var read = await look.Units(ct).ConfigureAwait(false);
@@ -405,7 +406,11 @@ public sealed class NodeRuntime(
                 _quests = Quests(read);
                 LastQuests = _quests;
                 QuestReads.Keep(home, _quests); // FABRIC-CLOSE1q5: the terminal's `work held` judges on it; the lease is held here.
-                if (_closer is not null) Keep(look.Config, _governed.Values);
+                if (_closer is not null)
+                {
+                    Keep(look.Config, _governed.Values);
+                    bindings.AddRange(Bindings(look.Config, read, _governed));
+                }
             }
 
             var governed = _governed!;
@@ -441,7 +446,7 @@ public sealed class NodeRuntime(
             done.AddRange(await _performer.ReconcileAsync(Declared, sends, ct).ConfigureAwait(false));
             done.AddRange(_performer.Due(Declared));
 
-            var said = new List<string>();
+            var said = new List<string>(bindings);
 
             // FABRIC-CLOSE1b, §E5 step 4: a close whose answer was lost is reconciled before anything new starts; FABRIC-CLOSE1u: by asking its
             // door what became of its key, never by sending it again blind, so one never delivered is judged again on what is there now.
@@ -797,6 +802,63 @@ public sealed class NodeRuntime(
             var home = NodeGraphHomes.Work(config, each.Unit.Owner.Repository ?? "", each.Unit.Owner.Workspace, WorkUnitKind.Quest);
             if (home.Graph is { } graph && home.Cycle is { } json && NodeGraphs.Digest(graph) == each.GraphDigest) ClosureGraphs.Keep(records.Home, each.GraphDigest, json);
         }
+    }
+
+    /// <summary>
+    /// What a fresh read says of the open quests bound to a closure graph the choices no longer hold (FABRIC-CLOSE1k; D190, design §8), one
+    /// line each, so once a pass: one closed through the graph this home keeps for it, naming the nodes that graph runs which the choices'
+    /// graph does not, and those the choices' graph runs which it does not; one whose graph is kept nowhere here, so nothing here closes it
+    /// and its close waits. A quest bound to the choices' own graph, or Done, says nothing.
+    /// </summary>
+    public static IReadOnlyList<string> Bindings(DriverConfig config, NodeUnitsRead read, IReadOnlyDictionary<string, GovernedUnit> governed)
+    {
+        var lines = new List<string>();
+        foreach (var unit in read.Units.Where(unit => unit.Kind == WorkUnitKind.Quest).OrderBy(unit => unit.Id, StringComparer.Ordinal))
+        {
+            if (unit.Records.Quest is not { Closure: { Length: > 0 } bound, Status: not "Done" } quest) continue;
+            var choices = NodeGraphHomes.Work(config, unit.Owner.Repository ?? "", unit.Owner.Workspace, WorkUnitKind.Quest).Graph;
+            var held = QuestClosing.Holds(choices) ? choices : null;
+            if (governed.GetValueOrDefault(unit.Id) is not { Closes: true } own)
+            {
+                lines.Add($"work  {unit.Id}: #{quest.Id} is bound to the closure graph `{bound}`, which is kept nowhere here and is not the "
+                          + "choices' graph, so nothing here closes it: its close waits, and its done is yours to give.");
+                continue;
+            }
+
+            var head = $"work  {unit.Id}: #{quest.Id} closes through `{own.GraphDigest}`, the graph it was bound to at its take, kept here: ";
+            if (held is null)
+            {
+                lines.Add(head + $"the choices hold no closure graph for it now, and it runs {string.Join(", ", own.Graph.Nodes.Select(node => $"`{node.Id}`"))}.");
+                continue;
+            }
+
+            if (NodeGraphs.Digest(held) == own.GraphDigest) continue;
+
+            // A node is the choices' where they declare it alike (its declaration's own digest), so an edited option names it as bound.
+            // Keyed as Govern keys its declarations, the last of an id standing, so a graph never makes the saying throw.
+            static Dictionary<string, string> Declared(NodeGraph graph)
+            {
+                var each = new Dictionary<string, string>(StringComparer.Ordinal);
+                foreach (var node in graph.Nodes) each[node.Id] = NodeGraphs.Digest(new NodeGraph([node], [], [], node.Id));
+                return each;
+            }
+
+            var theirs = Declared(held);
+            var ours = Declared(own.Graph);
+            var runs = own.Graph.Nodes.Where(node => theirs.GetValueOrDefault(node.Id) != ours[node.Id])
+                .Select(node => theirs.ContainsKey(node.Id) ? $"`{node.Id}` as it was bound" : $"`{node.Id}`").ToList();
+            var misses = held.Nodes.Where(node => !ours.ContainsKey(node.Id)).Select(node => $"`{node.Id}`").ToList();
+            var differs = (runs.Count, misses.Count) switch
+            {
+                (0, 0) => "the same nodes, wired otherwise",
+                (_, 0) => $"it runs {string.Join(", ", runs)}, which the choices' graph does not",
+                (0, _) => $"it runs none of {string.Join(", ", misses)}, which the choices' graph does",
+                _ => $"it runs {string.Join(", ", runs)}, which the choices' graph does not, and none of {string.Join(", ", misses)}, which it does",
+            };
+            lines.Add(head + $"the choices hold `{NodeGraphs.Digest(held)}` now; {differs}.");
+        }
+
+        return lines;
     }
 
     /// <summary>How long a graph kept stays before the pass may drop it unbound: the take binds it within seconds of its keeping.</summary>
