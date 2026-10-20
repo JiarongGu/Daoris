@@ -644,6 +644,13 @@ with `Daoris.Desktop.Driver.Tests/Help/golden/help-room/`. After a deliberate ch
 `empty.md`, `full.md`, `sparse.md` and `settings.json` from the render and passes. Unset, as in every gate, the
 test compares. Never hand-edit a golden.
 
+**Regenerating a quest's instruction goldens (GOLDENWRITE1, 2026-10-21).** `TargetPromptGoldenTests` takes the same
+switch for `Daoris.Desktop.Driver.Tests/golden/target-prompt/`: after rewording `TargetPrompt`, run
+`DAORIS_GOLDEN_WRITE=1 dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests --filter "FullyQualifiedName~TargetPromptGoldenTests"`
+and it writes every case's `<case>.md` from `TargetPrompt.Compose` and its `<case>.account.json`, the sections' sizes,
+from `TargetPrompt.Composed`, so no size is counted by hand. Read `git diff` on that folder, then run it unset. The handed
+tests that read these goldens (`SessionLanguageHandedTests`) compare with what it wrote.
+
 ## The loop it exists to run (D45)
 
 A target becomes a quest → the driver starts (or wakes) the owning repository's agent session with that
