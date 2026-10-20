@@ -5,6 +5,8 @@ with the version and date at release.
 
 ## Unreleased
 
+- A piece of work you asked for has one name. A session's page heads it with the ask's short title, as its row in Sessions does,
+  and a quest an ask becomes takes the ask's short title where none other was given, instead of the ask's words cut short.
 - A session waiting on its own background work, such as a long test run, now ends within about a minute once its quest closes,
   is declined or asks another repository, instead of working on until the session timeout. It is recorded completed where its
   quest reached done, its conversation says the work still running ended with it, and that work ends with its process.
