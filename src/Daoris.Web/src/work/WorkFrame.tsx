@@ -56,7 +56,7 @@ import { AttendedSession, noteIsInTheHead } from './AttendedSession';
 import { type AnchorState, SessionConversation } from './conversation/SessionConversation';
 import type { Level, RunningCall, Usage } from './conversation/conversation';
 import { useNow } from './useNow';
-import { isHelper, isIntake, isOpinion, linkedSessions, ownTree, sessionOrigin, sessionTitle } from './identity';
+import { askName, isHelper, isIntake, isOpinion, linkedSessions, ownTree, sessionOrigin, sessionTitle } from './identity';
 import { doorLabel } from '../agents/tools';
 import type { QuestClose, Resolution } from './waits/AwaitingPerson';
 import { Composer } from './conversation/Composer';
@@ -66,7 +66,7 @@ import { dockOpensOn, type DockTab, followed, NothingFollowed, RightDock } from 
 import { SessionTimeline } from './head/SessionTimeline';
 import { SessionRail } from './rail/SessionRail';
 import { type ActFacts, actMenu, headerActs, offeredActs, primaryAct, stopAsk } from './acts';
-import { askOfEntry, entryOfSession, isIntakeEntry } from './entries';
+import { askOfEntry, entryOfSession, isIntakeEntry, nameOfEntry } from './entries';
 import { useChannel, useForwardChannel, usePostChannel } from '../bridge/shell';
 import { keptSessionFilters, sessionFilters, shownOf } from './groups';
 import { sessionFacts } from './head/headFacts';
@@ -480,6 +480,8 @@ export function WorkFrame({
   // else here.
   const parkAsk = attended?.state === 'awaiting-person' && !intake ? askOf(quest) : null;
   const asks = useAsks(false, parkAsk !== null);
+  // The ask its entry came from, for the head's name: the rail's read, so it costs nothing it does not already ask.
+  const entryAsks = useAsks(true, channelAsk !== null);
   const goAheads = attended && parkAsk ? goAheadsAsked(asks.data, parkAsk, attended.id) : [];
   const parkGoAhead = useParkGoAhead();
   const talking = Boolean(attended && conversation && here && !oneTurn);
@@ -1690,7 +1692,13 @@ export function WorkFrame({
     actions.work.pause(pausing.target, undefined, () => setPauseAsking(null));
   }, [pausing, pauseQuiet, actions.work]);
   useEffect(() => { if (!pausing) pausedQuietly.current = null; }, [pausing]);
-  const attendedTitle = attended ? sessionTitle(attended, quest, openings[attended.id]) : '';
+  // Named as its row is (TITLEONE1): the entry's name, its ask's, where an ask began it, read under the rail's own key; otherwise
+  // the record's own.
+  const entryAsk = channelAsk ? (entryAsks.data ?? []).find((ask) => ask.id === channelAsk) : undefined;
+  const attendedTitle = attended
+    ? nameOfEntry(attendedEntry ?? undefined, entryAsk ? { [entryAsk.id]: askName(entryAsk) } : {})
+      ?? sessionTitle(attended, quest, openings[attended.id])
+    : '';
   // Whom it continues and whom a helper helps (MIXAGENT3a-i): the record's own links, joined to the sessions the frame holds, for
   // the head's facts and its *Details*. One the frame does not hold is said by its id, and its agent is not guessed.
   const linked = attended
