@@ -139,7 +139,7 @@ with the pipelines it routes to (§1.3), and each pipeline is versioned and boun
   | Change | Why it lowers |
   |---|---|
   | The `landed` route removed, set to `current`, or pointed at a workflow whose checks run fewer of the declaration's gates | landed work goes unverified, or less verified |
-  | A verification pipeline's version that drops a `check`, narrows a check's `gates` (from `heavy` to names, or by a name), or removes the `data` wire a stage takes its verdict by (§4.6) | the same, inside the route |
+  | A verification pipeline's version that drops a `check`, narrows a check's `gates` (from `heavy` to names, or by a name), or removes the wire a stage waits on a check by (§4.6) | the same, inside the route |
   | A check's `failed` moved off `wait`, to `ask` or `stop` | `ask` starts work with no press of the person's; `stop` ends the run with no row on *What needs you* |
   | A development pipeline's `checks` set to `light` where no `landed` route runs the heavy gates it gives away | the heavy gates then run nowhere |
 
@@ -285,7 +285,7 @@ the cap.
   place of a plugin node's 15 minutes (`WorkPerformer.cs:126`), since a full set outlasts that. The executor owns it, counted from
   its slots held (§4.2).
 - **Its output** `verdict`: the commit it judged, each gate's name and verdict, and the declaration's blob it ran under. A stage
-  after it takes it by a `data` wire (§4.6).
+  after it may take it by a `data` wire (§4.6).
 - **Its authority** (§E2's table): performed, reached and failed by `gates`; reached when every gate it names passed at its
   subject's commit; failed when one failed, naming it with its exit; `unknown` for anything else (no tree, no declaration, a
   declaration not accepted, a runner's result that does not read, names another commit or leaves out a gate, past its bound), never
@@ -527,13 +527,14 @@ awaits each (`NodeRuntime.cs:388`, `:560`), and a full set runs for an hour.
 
 ### 4.6 A stage or a publish requires the verdict
 
-- **In the graph.** A stage (a plugin's `work/stage` node, FABRIC-PERFORM1l) after a check takes the check's `verdict` by a `data` wire,
-  never by `after` alone: `after` is satisfied by a skipped source (`NodeWires.cs:9`, `WireEvaluation.cs:634`), and `data` only by a
-  reached one (`NodeWires.cs:13-14`). A verification pipeline's readers refuse a `work/stage` with a check before it and no `data`
-  wire from it; a check is never skipped (§4.1), so the workflow design §3.7's refusal of *Go on anyway…* for a check a production
-  stage depends on holds by its kind. At the stage's dispatch, where its inputs are resolved again (`WorkPerformer.cs:258-259`), the
-  verdict reader (§4.4) is asked for that exact commit: the check reached at the run's tip under the declaration the route accepts
-  now, else the stage is not started and says why. Production stays the person's press (D157 point 9).
+- **In the graph.** A stage (a plugin's `work/stage` node, FABRIC-PERFORM1l) after a check waits on it by any wire. `after` is
+  satisfied by a source reached or skipped (`NodeWires.cs:9`, `WireEvaluation.cs:634`), and a check is never skipped (§4.1), so from
+  a check `after` holds only on its reach, as `data` does (`NodeWires.cs:13-14`), and a stop satisfies neither (D190 point 6). A
+  `data` wire also hands the stage the verdict. So the workflow design §3.7's refusal of *Go on anyway…* for a check a production
+  stage depends on holds by the check's kind, and no rule on the stage's wire is needed. At the stage's dispatch, where its inputs are
+  resolved again (`WorkPerformer.cs:258-259`), the verdict reader (§4.4) is asked for that exact commit: the check reached at the run's
+  tip under the declaration the route accepts now, else the stage is not started and says why. Production stays the person's press
+  (D157 point 9).
 - **Outside it.** The install's stage, `publish:desktop --stage --from-gated <commit>` (`desktop-publish.mjs:1012-1028`), keeps
   requiring the full set's verdict of that commit from the merge tool's store, which this repository's runner writes when the
   install's verification runs it (§5). Today it checks the gate tree's commit and lock, then builds from the tree holding neither
@@ -566,16 +567,22 @@ verification pipeline is the line's lane, at a batch. Neither design waits for t
 | `web-types` | light: a session's, and the merge's blocking set where the page's sources change | about a minute; two sides that each typecheck may not together (MERGETSC1, D180's note) |
 | `cli`, `tool-tests`, `service`, `devkit`, `driver`, `modules`, `driver-process`, `driver-process-git`, `modules-process`, `web`, `web-unit`, `web-measured`, `deployment` | `"heavy": true` | minutes to an hour each; the CI beside's (D180 point 2) |
 | `rehearse` (`npm run rehearse`), `rehearse-family` (`npm run rehearse:family`) | declared, `"heavy": true` | the release and family rehearsals, which the merge tool runs today from the release workflow's steps the declaration lacks (`merge-branch.mjs:708-741`, `release.yml:297`, `:302`); declared, a session's deny rules name them and the acceptance covers them. Under the names the tool already gives them, so its reach table (`merge-branch.mjs:792-848`) is unchanged |
-| `verification` (top-level) | `node tools/merge-branch.mjs --full --beside` | the merge tool already runs the full set in its lanes, in its gate tree, writes the verdict the stage reads, and keeps its logs |
+| `verification` (top-level) | `{ "run": "node tools/merge-branch.mjs --full --beside --daoris-verify", "result": true }` | the merge tool already runs the full set in its lanes, in its gate tree, writes the verdict the stage reads, and keeps its logs |
 
 - **What a session runs here.** The three light gates; its own test classes and files, filtered; and the censuses its change reaches
   (`docs/development.md:92-104`), as the branch-worker's brief already asks of a builder.
 - **HEAVYRUN1c's reason** (marking would have had each session run about thirty minutes of suites at its end) no longer holds under
   `light`, so the marks land with this repository's pipeline, never before it.
 - **The runner and the tip.** `--full --beside` given a commit already gates it and is never superseded by main's moves
-  (`merge-branch.mjs:4061-4087`). As the declared runner it reads `DAORIS_VERIFY_COMMIT` as that commit where none is named, runs the
-  declaration's gates alone (naming a release workflow step the declaration lacks as not run), and writes `DAORIS_VERIFY_RESULT` from
-  its own verdicts, `busy` where its lock is held (§4.2). Daoris supersedes it, never the tool itself.
+  (`merge-branch.mjs:4162-4167`). Its new flag `--daoris-verify` alone makes it the declared runner: it reads `DAORIS_VERIFY_COMMIT` as
+  that commit and refuses where the variable is missing, so the variable left in a person's shell never retargets their own
+  `--full --beside`. Under the flag it runs the declaration's gates alone, reports each under the name the declaration writes, where
+  its plan slugs names and numbers a second of one name (`merge-branch.mjs:733-735`), and reports none of the release workflow's steps
+  it adds today (`:724-727`), which the table above declares; it writes `DAORIS_VERIFY_RESULT` from its own verdicts, the full commit where it
+  names folders by seven characters (`:4145`), and each log's path as it stays once kept in the main checkout (`keepGateLogs`,
+  `:3965-3970`), not in the gate tree its next run clears. Busy, it writes the result before it refuses, where today its lock's
+  refusal is exit 2 with nothing written (`:3776`, `:581-587`). Nothing ends it before its verdict but its bound or the person's stop
+  (§4.2).
 - **The stage.** `publish:desktop --from-gated` holds the gate tree's lock through its build (§4.6).
 - **`docs/development.md`'s *Choose the checks*** (`:51-53`, *the complete reached set before recording completion*) is a builder's
   rule under the merge tool; a driven session's is its pipeline's, and the guide says so.
@@ -586,7 +593,7 @@ verification pipeline is the line's lane, at a batch. Neither design waits for t
   the landing as the install holds them now (a branch `quest/{slug}-{quest}`, never pushed and never merged by the install;
   DOGFOOD1).
 - **`daoris-verification`**, marked `pipeline: verification`, the `landed` route on `main`: one `check` with `gates: heavy` (so the
-  `verification` runner), `failed: wait` until the owner chooses `ask`, `ask: fix`, `settle: 60`.
+  `verification` runner), `failed: wait` until the owner chooses `ask`, `ask: fix`.
 - **The kind `fix`**, declared by the workspace (*Fix a failed verification*), mapped to `daoris-development`.
 
 ### 5.3 What the install then does differently with its six sessions
@@ -596,12 +603,12 @@ verification pipeline is the line's lane, at a batch. Neither design waits for t
 - A session that reaches done ends as its last turn does, with no suite in its background, so its place in the cap goes to the next
   quest rather than to a timeout (D83's remaining case, a woken turn that never says its end, aside).
 - The parent stops running the full set beside by hand. Its merges move `main`; the install's verification sees the line move,
-  binds one run at the newest tip (the whole batch), runs it below normal beside the six sessions, and supersedes it while a newer
-  merge lands within the hour.
+  binds one run at the newest tip (the whole batch), runs it to its verdict below normal beside the six sessions, and binds the next
+  at the newest tip once it settles, every merge landed meanwhile in that batch.
 - A failure is on *What needs you*; *Ask for a fix…* publishes a `fix` ask with the gate's log, which a driven session takes.
 - The stage is unchanged but for its lock: `--from-gated` still requires the full verdict of the commit it publishes.
 - Owed, measured on the install: a day's sessions ended by the timeout before and after, the verification's wall beside six
-  sessions, and how often a run was superseded.
+  sessions, and how many landings a batch held, and how long the newest tip waited for its verdict.
 
 ## 6. Rejected
 
@@ -619,16 +626,36 @@ verification pipeline is the line's lane, at a batch. Neither design waits for t
 - **Daoris ending a session's long call**: a turn is the agent's (DONEEND1); the person's stop stays.
 - **A bound of a session's own on its background work**: BGWAIT1's rejection stands; its reason is removed instead (§3.4).
 - **Daoris's own CI engine**, lanes and order of its own (D157's rejection stands): a repository with lanes declares its runner.
-- **Running a landed edit of the declaration unasked**: the person accepts the declaration by digest (§4.2).
+- **Running a landed edit of the declaration unasked**: the person accepts the declaration by its blob (§4.2).
+- **A digest of the declaration's keys, made canonical**: a canonical form computed alike in two twins, and a key it leaves out
+  that later decides what runs would go unasked; git's blob id costs a re-acceptance on an edit that changes nothing that runs, and
+  its diff is git's (§4.2).
 - **An install of Daoris's own in the verification tree**: a command derived from a lockfile that nobody accepted (§4.2).
 - **The check awaited inside the pass, or performed beside the performer as `quest.close` is**: the pass holds its semaphore through
   each start, and a check runs for an hour (§4.2).
 - **A `timeoutMinutes` option beside the node's `timeoutSeconds`**: two bounds on one attempt (§4.1).
-- **A machine-wide verification slot outside every home**: a test's scratch home would wait on the install's run; a repository's
-  runner's own lock holds two homes' runs of it apart (§4.2).
+- **The check's answer heard as a plugin's completion**: the hearing believes a frame only from a plugin's current process
+  (`WorkBelief.cs:27-36`), so it would need a carve-out for Daoris's own; the reconcile already reads an answer back, and a restart
+  reads the same folder (§4.2).
+- **The performer asking a check's attempt at its deadline**: each ask past it re-arms a whole bound and records the node unknown and
+  active again, while the executor that owns the bound runs in the same process (§4.2).
+- **A busy runner as the performer's transient failure**: a failed check reads as a verdict on the line (§4.2).
+- **A check a person may skip, or one a declaration makes unskippable**: a built-in's declaration may not forbid a skip, and a skipped
+  check would read as a verdict a stage and the line rest on (§4.1).
+- **A machine-wide verification slot outside every home**: a test's scratch home would wait on the install's run; D180's one run at a
+  time is narrowed to one per home and said, and a repository's runner's own lock holds two homes' runs of it apart (§4.2).
+- **A session's `run-heavy` waiting behind a verification run**: it waits with no bound, and a verification outlasts the session's
+  timeout (§4.2).
 - **A record of the line's own beside its runs**: a second writer of what the runs already say (§4.3).
-- **Superseding on every move with no bound**: a fast line would never get a verdict (§4.3).
-- **A stage after a check by `after` alone**: a skipped check satisfies it (§4.6).
+- **Landed runs beside the chains' runs**: the history clear removes them and `AnyNamed` holds a Current repository's gates by them
+  (§4.3).
+- **Superseding a run in flight, with a bound or without**: the lifecycle has no state for it and Daoris no move to it, and it brings
+  the end of a job in flight and the rules for a late result; each run running to its verdict costs one run's wall at most (§4.3).
+- **Replacing a run that waits for its slots**: the replaced run would need an end Daoris writes for a run none of whose nodes moved;
+  a run binds only when none on its line is unsettled, so at most one waits, and its batch is verified as bound (§4.3).
+- **An unknown that lets the next run bind by itself**: a cause that stays would run the full set at every look (§4.3).
+- **A key of the client's on the service's asks**: a change to the service's protocol where a look at the asks Daoris wrote answers
+  the same question (§4.5).
 - **Building each stage from a checkout pinned for it**: a checkout and an install per stage, and a tree the full set never built
   (§4.6).
 - **A fix ask published with no say-so of the person's by default**: it starts work on the owner's accounts; `ask` is the person's
@@ -644,23 +671,25 @@ that lets its change be set, never later.
 
 | Row | What a person sees | After |
 |---|---|---|
-| FABRIC-PIPELINE1a | the start node and its routes: `landed` set, its declaration accepted by digest and drawn; a verification pipeline marked and judged in both readers, its `check` declared and not yet run; a run's view says which route chose it; the lowering rows for routes and verification pipelines | — |
+| FABRIC-PIPELINE1a | the start node and its routes: `landed` set, resolved on its own and its declaration accepted by its blob and drawn; a verification pipeline marked at its creation and judged in both readers, its `check` declared, never skippable, and not yet run; a run's view says which route chose it; the lowering rows for routes and verification pipelines | — |
 | FABRIC-PIPELINE1b | a development pipeline's light checks: the rule and the option, the start's words from the graph, `run-heavy` refused from a held tree, the deny rules and the classifier's sentence where the harness takes rules and the saying where it does not, Setup's row, and the `light` lowering row | — (a graph version's option read at the bind after CUTOVER1g) |
 | FABRIC-PIPELINE1c | a long call said: Daoris's urgent word past `callMinutes`, on the conversation and the rail | 1b |
-| FABRIC-PIPELINE1d | the `check` performed, and a person's verification of a commit or a branch: the executor off the pass, the slots, the runner's contract, the tree and its dependencies, the job, priority and bound, the verdict recorded and shown | 1a; CUTOVER1d (performed nodes started, itself after CUTOVER1c, 1e and 1f: the runtime governing a run, the run's view, the person's skip and stop) |
-| FABRIC-PIPELINE1e | landed work verified by itself: a run per batch and its base, superseded within `settle`, the line read from its runs, restart and drain, the failure on *What needs you* | 1d |
-| FABRIC-PIPELINE1f | a failure becomes work: *Ask for a fix…*, `failed: ask` as the person's say-so, one ask per gate under its key, the log attached, the kind routed | 1e |
+| FABRIC-PIPELINE1d | the `check` performed, and a person's verification of a commit or a branch: the executor off the pass and answering through the reconcile, its slots and queue, the runner's contract, the tree and its dependencies, the job, priority and bound, the person's stop, a restart sending it again, a session's `run-heavy` never waiting behind it, the verdict recorded and shown | 1a; CUTOVER1d (performed nodes started, itself after CUTOVER1c, 1e and 1f: the runtime governing a run, the run's view, the person's skip and stop) |
+| FABRIC-PIPELINE1e | landed work verified by itself: a run per batch and its base in a folder of its own, each run to its verdict, an unknown held for the person, the line read from its runs, the history clear, the failure on *What needs you* | 1d |
+| FABRIC-PIPELINE1f | a failure becomes work: *Ask for a fix…*, `failed: ask` as the person's say-so, one ask per gate found by a look first, the log attached, the kind routed | 1e |
 | FABRIC-PIPELINE1g | this repository on the install: the rehearsals declared and the suites marked, the merge tool as the declared runner, the stage holding the gate tree's lock, the guide's words, the install's two pipelines set by the owner's press | 1b, 1e |
-| FABRIC-PIPELINE1h | a stage after the check by its verdict's `data` wire, its dispatch reading the exact commit, and the verdict reader any publisher asks | 1e, PERFORM1l |
+| FABRIC-PIPELINE1h | a stage after the check, its dispatch reading the exact commit's verdict, and the verdict reader any publisher asks | 1e, PERFORM1l |
 | FABRIC-PIPELINE1i | Ask Daoris proposes routes and verification pipelines: a `use` with a route and no version, and a graph version beside `steps` | 1a |
 | FABRIC-PIPELINE1j | the gates a batch reaches by its paths, every owed gate with them, the whole set before a stage (CI1's reach for any repository) | 1e |
 
 - **1a** (driver, cli, web). Proof: both twins' rows on `workflow-selection.json` (`landed` stored and read; refused naming a
-  development pipeline; a kind or a default refused naming a verification one) and on `workflow-graph-versions.json` (a verification
-  pipeline with no `check`, with a `handed`, with a `claimed`; a development pipeline with no landing still refused); the digest
-  changing with a gate's `heavy` mark, a command, a folder and a gate added, and not with a key's order; `Involvement`'s tests for the
-  route and verification rows, an agent's choice of each kept as a proposal; the tab's test and stories in both languages;
-  `workflow show`'s golden.
+  development pipeline; a kind or a default refused naming a verification one; a repository naming only `landed` following its
+  workspace's development routes, and its `landed` the workspace's where it names none) and on `workflow-graph-versions.json`, the
+  mark a column (a verification pipeline with no `check`, with a `handed`, with a `claimed`; a development pipeline with no landing
+  still refused); a new workflow's first save writing its mark and a later save keeping it; the route's blob read from the tip and
+  `none` with no declaration; a `check` declared `skippable: false` refused as a built-in's is, and a person's skip of one refused by
+  its kind; `Involvement`'s tests for the route and verification rows, an agent's choice of each kept as a proposal; the tab's test
+  and stories in both languages; `workflow show`'s golden.
 - **1b** (driver, modules, web, cli). `sessionChecks` on both twins with its keeps rows; `checks` on `claimed` and on schema 1's `work`
   read by both twins; the start's words; `run-heavy`'s refusal; `SpawnSettings`' deny rules and sentence. Proof: a driven start's
   instruction golden under `light`; `run-heavy` from a held tree exits 1 with its sentence, from an unheld checkout runs; the spawned
@@ -668,41 +697,50 @@ that lets its change be set, never later.
   file and its words and Setup's row say the heavy gates are said, not refused; a repository marking none says so on Setup.
 - **1c** (driver, web). Proof: a stand-in session whose call outlasts the bound is told once at urgent level, and never ended.
 - **1d** (driver, modules, web, cli). Proof, a `Process` class on a scratch repository with stand-in gates: the passes go on while a
-  check's gate runs a minute; two verifications never overlap with each other or with a `run-heavy`; a run whose repository's slot a
-  `run-heavy` holds keeps another repository's run from nothing; a failing gate's verdict, exit and log on the run's record; a runner's
-  result read gate by gate, an opaque runner as one check, `busy` retried; a changed declaration held `unknown` until accepted; a run
-  past its `timeoutSeconds` ended `unknown`, its job empty before either slot goes; a driver ended mid-run reconciled `unknown` at its
-  restart, and a job its name finds ended.
-- **1e** (driver, web). Proof: two landings batched into one run; a third superseding it within one look, its job ended, its late
-  result kept as its own run's evidence and the line's verdict its successor's; a run past `settle` running to its verdict; a line's
-  first run with no base and its age from its bind; a driver killed mid-run leaving `unknown` and the next look binding the newest tip.
+  check's gate runs a minute; the check's outcome reaching the record through the reconcile, under the `gates` source, with no
+  completion heard; two verifications never overlap with each other or with a `run-heavy`, and wait in the order sent; a run whose
+  repository's slot a `run-heavy` holds keeps another repository's run from nothing; a session's `run-heavy` behind a verification
+  exits 1 with its sentence, and a person's waits; a failing gate's verdict, exit and log on the run's record; a runner's result read
+  gate by gate, an empty `gates`, a missing gate, an undeclared name, another commit, another schema and a missing file each
+  `unknown`; an opaque runner as one check and its exit 75 busy; `busy` waited out with the slots let go, then `unknown`; a changed
+  declaration held `unknown` until accepted; a run past its `timeoutSeconds` ended `unknown` and held, its job empty before either slot
+  goes, and never asked at the performer's deadline; the person's stop ending the job; a driver ended mid-run sending the same attempt
+  again at its restart, under its key, and a job its name finds ended; the job's first process below normal and a `clock` gate at
+  normal.
+- **1e** (driver, web). Proof: two landings batched into one run; a third landing while it runs binding nothing until it settles,
+  then a run at the newest tip; a run waiting for its slots verifying its bound tip; a line's first run with no base; an `unknown`
+  holding the line, *Run again* a new attempt and *Not now* the next run's batch taking it in; landed runs read from their own folder,
+  the history clear and `AnyNamed` passing over them, and a version a landed run binds kept past twenty; the clear keeping the newest
+  run with a verdict.
 - **1f** (driver, service, web). Proof: *Ask for a fix…* publishes one ask with the log as its file and the kind as its choice; a
-  second failure of that gate adds to it; `failed: ask` publishes with no press only where the person set it; a superseded run's late
-  failure publishes nothing, and a restart between the key and the send publishes once.
-- **1g** (records, tools, driver). Proof: the merge tool's tests (the commit read from `DAORIS_VERIFY_COMMIT`, the result written gate
-  by gate, `busy` on a held lock, a release workflow step the declaration lacks named and not run); `desktop-publish`'s test (a full set
-  started during a stage refused by the lock); on the install, a merge batch verified by the install, its wall beside the sessions,
-  and a day of DOGFOOD1 sessions with none ended by the timeout for a whole suite.
-- **1h** (driver, plugins). Proof: a stage after a skipped check never starts; a stage wired after a check by `after` alone refused at
-  the save; a stage whose route's digest changed after its check is not started at dispatch.
+  second failure of that gate adds to its channel; `failed: ask` publishes with no press only where the person set it; a restart
+  between the send and its answer publishes once, the look finding the ask made.
+- **1g** (records, tools, driver). Proof: the merge tool's tests (under `--daoris-verify` alone, the commit read from
+  `DAORIS_VERIFY_COMMIT` and refused without it; the result written gate by gate under the declaration's names, with the full commit
+  and each kept log's path; `busy` written on a held lock before the refusal; no release workflow step reported); `desktop-publish`'s
+  test (a full set started during a stage refused by the lock); on the install, a merge batch verified by the install, its wall beside
+  the sessions, and a day of DOGFOOD1 sessions with none ended by the timeout for a whole suite.
+- **1h** (driver, plugins). Proof: a stage after a failed check, or one the person stopped, never starts, whichever wire it waits by;
+  a stage whose route's declaration changed after its check is not started at dispatch.
 - **1i** (driver, web). Proof: a route proposed with no version applies at the person's press; a verification graph proposed is
   judged by the mark; an agent's lowering is kept as a proposal.
 - **1j**: its proofs as its row says once filed, a gate failed in one batch and unreached by the next still run there among them.
 
 ## 8. What this document's gate does not cover
 
-Documents only; nothing is built. The statements about today were read from the code at `300626e52` and again at `3307f911f`, and
-none was run. No test shows a deny rule written from a declared command refusing it on both doors, a check's job running while the
-passes go on, a verification run's job ended within one look of the line moving, two homes' runs of one repository held apart by its
-runner's lock, a stage holding the gate tree's lock against a run, the merge tool reading a handed commit, or the cost of the line's
-ref read per look on a home with routes; 1b, 1d, 1e and 1g prove them. The 20-minute call bound, the check's 7200-second default,
-the 60-minute settle, `busy`'s six retries ten minutes apart and the 256 KiB log are judgements, each a default the person may set,
-to be measured on the install (§5.3).
+Documents only; nothing is built. The statements about today were read from the code at `300626e52`, again at `3307f911f` and a
+third time at `ff01a5881`, and none was run. No test shows a deny rule written from a declared command refusing it on both doors, a
+check's job running while the passes go on, a check's outcome applied through the reconcile alone, an attempt sent again after a
+restart re-running the same tip, two homes' runs of one repository held apart by its runner's lock, a stage holding the gate tree's
+lock against a run, the merge tool reading a handed commit, or the cost of the line's ref read per look on a home with routes; 1b,
+1d, 1e and 1g prove them. That a priority limit on a job would hold a raised process below normal is read from Fable's finding and
+Windows' documented job limits, not run. The 20-minute call bound, the check's 7200-second default, `busy`'s six tries ten minutes
+apart and the 256 KiB log are judgements, each a default the person may set, to be measured on the install (§5.3).
 
 ## 9. The reads
 
 **Codex, 2026-10-21, on `60df3f6dd`.** Every finding was checked against the code at `3307f911f` before it was taken (D160's step 9).
-All hold and are taken; none is dropped. Fable has not read yet (below).
+All hold and are taken; none is dropped. Fable read the revision after it (the next table).
 
 | # | Finding | Checked at | Verdict | Taken in |
 |---|---|---|---|---|
@@ -730,17 +768,75 @@ All hold and are taken; none is dropped. Fable has not read yet (below).
 | 22 | Simpler: the runner owns its checkout, Daoris's tree only the direct-gate fallback | `merge-branch.mjs:4055-4112` | taken | §4.2 |
 | 23 | Simpler: one shared asynchronous executor from `run-heavy`'s and a small durable batch supervisor, the choice table the drawn start | `HeavyRun.cs:196-297`, `merge-branch.mjs:4055` | taken: the executor is `run-heavy`'s made asynchronous; the supervisor keeps no record of its own and reads the line from its runs | §4.2, §4.3 |
 
-**The choices this round made**, where two shapes remained: the mark on the workflow file, not per version and not read from the
-graph (§2.1); a stage's verdict by a `data` wire and a read at its dispatch, rather than a wire kind of its own, since `data` already
-refuses a skipped source (§4.6); the stage holding the gate tree's lock rather than a checkout pinned per stage (§4.6); a slot per
-home rather than one outside every home (§4.2); a runner's result optional, an opaque runner one check, so any script serves
-(§4.2); the executor inside the driver on its own task, its job ending with the driver, rather than a child process with an ownership
-protocol of its own (§4.2); the line read from its runs rather than kept in a record of its own (§4.3); the declaration digested
-whole rather than a runner's resolved plan, which a runner would have to print before it runs (§4.2); and, on a harness that takes
-no rules, the heavy gates said rather than the harness refused (§3.2).
+**The choices the second round made**, where two shapes remained: the mark on the workflow file, not per version and not read from
+the graph (§2.1); a stage's verdict by a `data` wire and a read at its dispatch, rather than a wire kind of its own, since `data`
+already refuses a skipped source (§4.6; the third round drops the wire's rule, row 52); the stage holding the gate tree's lock
+rather than a checkout pinned per stage (§4.6); a slot per home rather than one outside every home (§4.2); a runner's result
+optional, an opaque runner one check, so any script serves (§4.2); the executor inside the driver on its own task, its job ending
+with the driver, rather than a child process with an ownership protocol of its own (§4.2); the line read from its runs rather than
+kept in a record of its own (§4.3); the declaration digested whole rather than a runner's resolved plan, which a runner would have to
+print before it runs (§4.2; the third round takes its blob, row 51); and, on a harness that takes no rules, the heavy gates said
+rather than the harness refused (§3.2). After that round the design still changed a foundation, so Fable's read of §2 to §4 was
+owed.
 
-**Whether it still changes a foundation.** Yes, though less widely than its first reading: the check now runs through the performer's
-existing attempt, answer and reconcile, its executor is `run-heavy`'s, and the line keeps no record of its own. What remains is a
-workflow that lands nothing, amending D190's one-landing rule; a node Daoris performs itself whose job outlives the pass; a run on a
-repository's line; a slot per home; and a result contract with a repository's runner. These are the graph's data model, concurrency
-and a protocol between processes in D191's amendment's sense, so Fable's read of §2 to §4 is owed; the steward decides.
+**Fable, 2026-10-21, on `04112c560`, reading §2 to §4.** Every finding was checked against the code at `ff01a5881` before it was
+taken (D160's step 9). All five blocking findings and all nineteen others hold, two in part (rows 24 and 38, whose exemplar or
+premise is corrected); none is dropped. The five simpler shapes are taken, the first made smaller. Rows 53 to 57 are the steward's
+own, found while checking.
+
+| # | Finding | Checked at | Verdict | Taken in |
+|---|---|---|---|---|
+| 24 | (B) A built-in `check` cannot carry `skippable: false` or a `perform`, and the reconcile needs `node.Perform.Reconcile`: never skippable by its kind, its `perform` given as Daoris gives `quest.close`'s | `NodeContract.cs:476`, `:480-482`, `:409-413`, `WorkPerformer.cs:600` | holds; its exemplar does not: `quest.close` is performed by its own closer beside the performer and carries no `perform` (`QuestCloser.cs:298-310`, `:496`), while the runtime gives a plugin's node its step's (`NodeRuntime.cs:297-303`), the shape taken | §4.1 |
+| 25 | (B) A landed run's state lives in bindings the history clear removes, and `AnyNamed` turns true once one is bound, holding a Current repository's gate reads where the service does not answer: a folder of its own | `HistoryHome.cs:158-167`, `WorkflowRunFiles.cs:60-83`, `WorkflowProcesses.cs:97-99` | holds | §4.3: `<home>/workflows/lines/` |
+| 26 | (N) The `pipeline` mark has no path into the version readers, and a new file is written as `{ id, name, versions }`: say where it is set, how it reaches both readers and the fixture, and whether it may change | `WorkflowNamed.cs:201`, `:232`, `:649-652`; `namedworkflows.ts:253`, `:878` | holds | §2.1: set at creation, threaded into both readers, a column of the fixture, kept by every later save |
+| 27 | (N) A repository naming only `landed` loses its workspace's development mapping | `WorkflowSelection.cs:334-338` | holds for this build; an older build passes over an entry naming nothing (`:261`) and follows the workspace | §1.2: `landed` resolves on its own |
+| 28 | (N) A landed run's id must pass `IsRunId` and stay unique under *Run again*; the run unit has no revision and the evaluation needs one: say which unit the check observes | `WorkflowRunBindings.cs:42`, `WorkUnit.cs:16-19`, `WireEvaluation.cs:349-354` | holds | §4.3: `v-` and sixteen hex digits; every node observes `run:<run>` at its bound tip |
+| 29 | (N) `settle` is an act on the run held in a node's option: put it on the route or the workflow file | the second reading's §4.1 | holds; moot once nothing is superseded | removed (row 48) |
+| 30 | (B) There is no `superseded` to write, Daoris cannot write `stopped`, its own `invalidated` would start the check again at the same tip, and the record holds no run's end | `NodeContract.cs:113`, `NodeLifecycle.cs:283`, `:286`, `:400-401`, `NodeRecord.cs:160-191` | holds; the run's end is CUTOVER1c's to build (the cutover design §3, §11), not CUTOVER1h's as the finding names it | §4.3: each run to its verdict; its end by the cutover design §3's rule |
+| 31 | (B) An `unknown` run is bound again and again at the same tip, up to 7200 s each, since the base moves only on a verdict | the second reading's §4.3 | holds | §4.3: an unknown holds the line for the person |
+| 32 | (N) A start that never ran should answer `not-started`, sent again under its key, never held | `WorkPerformer.cs:649-651`, `:662-664` | holds, and a check cut off before its result is one that never ran | §4.2: the restart's answer |
+| 33 | (N) Two homes on one machine each run a full set for a repository with no runner: narrow D180's one CI run at a time, or key the slot by machine | `D180.md:68-69`, `HeavySlot.cs:115-118`, `:131` | holds: the heavy slot's key names the repository on the machine, but its lock file is the home's | §4.2: narrowed to one per home and said; §6 |
+| 34 | (N) A session's `run-heavy` waits behind a 7200 s verification with no bound, inside a 90-minute timeout | `HeavySlot.cs:171-206`, `HeavyRun.cs:223` | holds | §3.2, §4.2: it never waits behind one |
+| 35 | (N) *Heard as a plugin's is* is not reuse as is: the hearing refuses a sender that is not the attempt's plugin, and the start reads the plugin from the kind's slash | `WorkBelief.cs:27-36`, `WorkPerformer.cs:264` | holds | §4.2: the answer through the reconcile alone; the attempt names the executor |
+| 36 | (N) The deadline's reconcile records the node unknown and active again and puts the next ask a whole bound later | `WorkPerformer.cs:590-593`, `:657-661` | holds | §4.2: never asked at its deadline while the executor runs |
+| 37 | (N) A priority limit on the job would hold the clock-bound lane's raise below normal: lower the first process's class, as CIPRIO1 does | `merge-branch.mjs:3993-4008`, `:4025-4040` | holds, read from Windows' job limits and not run | §4.2 |
+| 38 | (N) The verification tree is a stray to the tidy, and the slot's holder record needs the run | `BranchTidying.cs:92-108`, `HeavySlot.cs:19-20` | holds in part: the tidy keeps a tree git lists and moves aside only a folder with none, or a cut-off opening (`TreeStrays.cs:48-57`); but the design named no holder for its tree, and `HeavyHolder` has no field for the run | §4.2: held as a replay's tree is (`PassLeftovers.cs:14-18`); `HeavyHolder` gains `run` |
+| 39 | (N) *Publishes once* across a restart: an ask is sent with no key of the client's | `ServiceClient.cs:698-704` | holds | §4.5: a look at the asks Daoris wrote, first |
+| 40 | (B) The gates a runner reports are never held to those accepted, so an empty `gates` reads as reached | the second reading's §4.1, §4.2 | holds | §4.2: every gate the check names must be there; an undeclared name is `unknown` |
+| 41 | (N) `outcome` and the gates' verdicts can disagree: judge by the gates, each verdict defined | the second reading's §4.2 | holds | §4.2: `outcome` removed, five verdicts defined |
+| 42 | (N) The merge tool slugs and numbers names and adds the release workflow's steps: the declaration's names, verbatim | `merge-branch.mjs:724-727`, `:733-735` | holds | §4.2, §5.1 |
+| 43 | (N) `commit` is the full id, compared exactly; the tool names folders by seven characters | `merge-branch.mjs:4145` | holds | §4.2, §5.1 |
+| 44 | (N) A missing file reads the same for an opaque runner and a broken one | the second reading's §4.2 | holds | §4.2: `"result": true` declares a runner that answers by file |
+| 45 | (N) `busy` is exit 2 today with nothing written; reserve an exit for an opaque runner's | `merge-branch.mjs:581-587`, `:3776`, `:4146` | holds | §4.2: written before the refusal; 75 for an opaque runner; waited out by the executor |
+| 46 | (N) Another `schema` is `unknown`, named; a log's path absolute and final, since the tool copies its logs out of the tree | `merge-branch.mjs:3965-3970` | holds | §4.2, §5.1 |
+| 47 | (N) `DAORIS_VERIFY_COMMIT` left in a person's or a session's shell retargets `--full --beside` | the second reading's §5.1 | holds | §4.2, §5.1: read only under `--daoris-verify`; set on the job alone |
+| 48 | Simpler: supersede only before the job starts; a run whose job began runs to its verdict | `NodeContract.cs:113`, `NodeLifecycle.cs:283`, `:286` | taken, and made smaller: no run is replaced before its start either, since a replaced run would need an end Daoris writes for a run none of whose nodes moved, and at most one run per line waits | §4.3; `settle`, the end of a job in flight and the late-result rules gone |
+| 49 | Simpler: answer through the reconcile, not the hearing | `NodeRuntime.cs:456`, `WorkPerformer.cs:643-644` | taken; the executor tells the performer, in the same process, rather than writing the attempt's ask time, so the record's edits stay the performer's | §4.2 |
+| 50 | Simpler: landed runs in a folder of their own | as row 25 | taken, as one folder: a run's file names its repository | §4.3 |
+| 51 | Simpler: the declaration's blob at the tip as its digest | the second reading's §4.2 | taken: no canonical form for two twins to agree on, and git shows the change; an edit that changes nothing that runs asks again | §1.2, §4.2 |
+| 52 | Simpler: the check never skippable by its kind, *Run again* and *Not now* the person's doors, `settle` on the route | `NodeContract.cs:409-413` | taken; `settle` went with row 48, and with the skip went the rule that a stage takes a check's verdict by `data`, since `after` from a check that cannot be skipped holds only on its reach | §4.1, §4.6, §1.3 |
+| 53 | The performer applies an outcome under its plugin's source, which the one table refuses for a kind reached by another | `WorkPerformer.cs:703`, `:710`, `NodeLifecycle.cs:357`, `:372` | the steward's, checking row 35 | §4.1 |
+| 54 | A reconcile's `done` carrying unknown leaves the attempt unknown, asked again at every pass | `WorkPerformer.cs:714-722`, `:568-574` | the steward's, checking row 31 | §4.2: an unknown verdict answered `unknown`, held |
+| 55 | The versions a kept run names are read from `runs/` alone, so a version a landed run binds could be pruned under it; arming lists `runs/` alone | `WorkflowRunFiles.cs:85-105`, the cutover design §3 | the steward's, checking row 25 | §4.3 |
+| 56 | *Happened* and *did not* on a held attempt are a plugin node's alone, so a held check's doors are a new attempt and a stop | `NodeContract.cs:396`, `NodeLifecycle.cs:340` | the steward's, checking row 31 | §4.1, §4.3 |
+| 57 | D180's proposed note held its first wording twice, a copy the second round left | `D180.md:382-386` | the steward's, in the records | D180's note |
+
+**The choices this round made**, where two shapes remained: no run superseded at all, not even one waiting for its slots (rows 30,
+48); an unknown holding the line for the person rather than settling its batch (row 31); the answer told to the performer in the
+same process rather than written as the attempt's ask time (row 49); one folder of landed runs rather than one per repository (row
+50); the declaration's blob rather than a canonical digest, at the price of accepting again an edit that changes nothing that runs
+(row 51); D180's one run at a time narrowed to one per home and said, rather than a slot keyed by machine, which round two rejected
+for a test's scratch home (row 33); a session's `run-heavy` refusing to wait behind a verification, rather than the verification
+giving up the repository's slot, which would let a session's full set and a verification run at once (row 34); busy waited out by
+the executor rather than the performer's retry, whose failure reads as a verdict (row 45); and the stage's wire left free (row 52).
+
+**Whether it still changes a foundation, and what is left.** The third round removed mechanisms and changed none of the model the
+reads tested: a route that only selects, a pipeline marked on its file, a check performed through the performer's attempt and
+reconcile by `run-heavy`'s executor, a run on the line read from its runs, a slot per home and a result contract. What remains of the
+foundation is what the two reads already tested. So, as D190's third round was, the design is ready for the steward to accept once
+each change above is verified as taken, with no further pair of reads. Nothing in it is the owner's under D191 point 3: it changes no
+direction, spends no account beyond the development's own runs, signs nothing in, publishes nothing and loses no data. One amendment
+touches a rule written under the owner's direction, D180's budget note: its point 2's run *stopped rather than finished* when a newer
+tip supersedes it becomes, for the verification pipeline, a batch run to its verdict with the next batch taking what landed, and its
+one run at a time becomes one per home. Each keeps the note's purpose (a CI run is a guest that never blocks the work), so it is the
+steward's to settle, and the owner may reopen it (D191 point 3).
