@@ -1,4 +1,5 @@
 import { Fragment } from 'react';
+import type { TFunction } from 'i18next';
 import { useTranslation } from 'react-i18next';
 import type { Quest } from '../data/api';
 import { Button } from '../design/ui';
@@ -21,6 +22,10 @@ const WORD: Record<Quest['status'], string> = {
  * again, and to every session of a quest its tool and version again. The head already says this
  * quest's title and state, so here it is *this quest*; a quest's sessions are the strip's, a press away.
  *
+ * **One line, whatever the width** (HEADFIT1b, D185): the stops truncate with an ellipsis, whole in their tip, and *Show how it
+ * ran* keeps its place at the line's end. Wrapped, the press took a row of its own at the main area's floor, 22 px of a record
+ * head's 200.
+ *
  * A molecule: the chain arrives built, and a press goes out.
  */
 export function ChainLine({ chain, onQuest, onExpand }: {
@@ -31,18 +36,31 @@ export function ChainLine({ chain, onQuest, onExpand }: {
 }) {
   const { t } = useTranslation();
 
+  const whole = [t('chain.title'), chain.map((step) => stepText(step, t)).join(' › ')].join(' ');
   return (
-    <nav aria-label={t('chain.title')} className="flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-1 text-small">
-      <span className="shrink-0 text-meta text-ink-faint">{t('chain.title')}</span>
-      {chain.map((step, index) => (
-        <Fragment key={step.kind === 'quest' ? step.quest.id : `${step.kind}-${index}`}>
-          {index > 0 && <span aria-hidden className="text-ink-faint">›</span>}
-          <Stop step={step} onQuest={onQuest} />
-        </Fragment>
-      ))}
-      <Button variant="ghost" className="px-1.5 py-0 text-small" onClick={onExpand}>{t('chain.show')}</Button>
+    <nav aria-label={t('chain.title')} className="flex min-w-0 items-center gap-x-1.5 text-small">
+      <span className="min-w-0 flex-1 truncate" title={whole}>
+        <span className="text-meta text-ink-faint">{t('chain.title')}</span>
+        {chain.map((step, index) => (
+          <Fragment key={step.kind === 'quest' ? step.quest.id : `${step.kind}-${index}`}>
+            {index > 0 && <span aria-hidden className="ml-1.5 text-ink-faint">›</span>}
+            <span className="ml-1.5"><Stop step={step} onQuest={onQuest} /></span>
+          </Fragment>
+        ))}
+      </span>
+      <Button variant="ghost" className="shrink-0 px-1.5 py-0 text-small" onClick={onExpand}>{t('chain.show')}</Button>
     </nav>
   );
+}
+
+/** A stop in words, as the line's tip says it whole. */
+function stepText(step: ChainStep, t: TFunction): string {
+  if (step.kind === 'ask') return t('chain.ask', { id: step.id });
+  if (step.kind === 'unseen') return `#${step.id}`;
+  if (step.kind === 'pending') return t('chain.next', { to: step.step.to });
+  const status = t(`status.${shownStatus(step.quest)}`);
+  const held = step.quest.hold === 'source-reopened' ? ` ${t('quests.card.reopened')}` : '';
+  return `${step.current ? t('chain.current') : questName(step.quest)} ${status}${held}`;
 }
 
 function Stop({ step, onQuest }: { step: ChainStep; onQuest?: (quest: Quest) => void }) {
@@ -51,7 +69,7 @@ function Stop({ step, onQuest }: { step: ChainStep; onQuest?: (quest: Quest) => 
   if (step.kind === 'ask') return <span className="font-mono text-meta text-ink-soft">{t('chain.ask', { id: step.id })}</span>;
   if (step.kind === 'unseen') return <span className="font-mono text-meta text-ink-faint">#{step.id}</span>;
   if (step.kind === 'pending') {
-    return <span className="max-w-64 truncate text-ink-faint" title={step.step.title}>{t('chain.next', { to: step.step.to })}</span>;
+    return <span className="inline-block max-w-64 truncate align-bottom text-ink-faint" title={step.step.title}>{t('chain.next', { to: step.step.to })}</span>;
   }
 
   const { quest, current } = step;
@@ -59,27 +77,27 @@ function Stop({ step, onQuest }: { step: ChainStep; onQuest?: (quest: Quest) => 
   // its source reopened says so after its status.
   const status = (
     <>
-      <span className={cn('shrink-0 text-meta', WORD[quest.status])}>{t(`status.${shownStatus(quest)}`)}</span>
-      {quest.hold === 'source-reopened' && <span className="shrink-0 text-meta text-ink-open">{t('quests.card.reopened')}</span>}
+      <span className={cn('ml-1.5 text-meta', WORD[quest.status])}>{t(`status.${shownStatus(quest)}`)}</span>
+      {quest.hold === 'source-reopened' && <span className="ml-1.5 text-meta text-ink-open">{t('quests.card.reopened')}</span>}
     </>
   );
   if (current) {
-    return <span className="inline-flex items-baseline gap-1.5"><span className="font-semibold text-ink">{t('chain.current')}</span>{status}</span>;
+    return <span><span className="font-semibold text-ink">{t('chain.current')}</span>{status}</span>;
   }
   return (
-    <span className="inline-flex min-w-0 items-baseline gap-1.5">
+    <span>
       {onQuest
         ? (
           <button
             type="button"
             onClick={() => onQuest(quest)}
             title={quest.title}
-            className="max-w-64 cursor-pointer truncate border-0 bg-transparent p-0 text-left text-small text-ink underline decoration-line-strong underline-offset-2 hover:text-accent hover:decoration-accent"
+            className="inline-block max-w-64 cursor-pointer truncate border-0 align-bottom bg-transparent p-0 text-left text-small text-ink underline decoration-line-strong underline-offset-2 hover:text-accent hover:decoration-accent"
           >
             {questName(quest)}
           </button>
         )
-        : <span className="max-w-64 truncate text-ink" title={quest.title}>{questName(quest)}</span>}
+        : <span className="inline-block max-w-64 truncate align-bottom text-ink" title={quest.title}>{questName(quest)}</span>}
       {status}
     </span>
   );

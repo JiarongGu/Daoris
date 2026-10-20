@@ -1,7 +1,8 @@
 import { type ReactNode, useLayoutEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Session } from '../../data/api';
-import { Button, Icon, Inline, Menu, Pill, SESSION_TONE, type ShownState, shownKey } from '../../design/ui';
+import { Button, Icon, Inline, Menu, Pill, SESSION_TONE, type ShownState, shownKey, Tip } from '../../design/ui';
+import { useWidth } from '../../design/useWidth';
 import { ACT_LOOK, actMenu, headerActs, type SessionActId } from '../acts';
 import { type Answered, InlineConfirm } from '../InlineConfirm';
 import { PageHead } from '../frame/ViewMain';
@@ -23,10 +24,10 @@ import { PageHead } from '../frame/ViewMain';
  *   then ⋯ with the rest in §3.1's order. *Answer…* is not here: the card under the header keeps the answer.
  * - **What asks under it** (the stop's ask, §3.3; the delete's, §5.4; the hand-over's, MIXAGENT1b-i) is pinned with it, since the ask is about the acts
  *   beside it.
- * - **It is `PageHead`'s** (HEAD2c, D162; the entry-and-heads design §2): the title takes one line and the acts hold still,
- *   a column of their own above 640 px of the main area and a right-aligned row under the facts at or below it, by the
- *   main area's width, never the window's. *Stop…* stays; it never folds. The quest's whole title is not repeated under the
- *   head: it is a row of the record's *Details*.
+ * - **It is `PageHead`'s** (HEAD2c, D162; the entry-and-heads design §2): the title takes one line, cut with an ellipsis and
+ *   whole in its tip and in the record's *Details*, and the acts hold still beside it at every width (HEADFIT1b, D185: a row
+ *   of their own at the narrow width cost 38 px of the record head's 200). At 640 px of the main area or less, by its width
+ *   and never the window's, *Stop…* is its square, its words its accessible name and its tip: still one press, never in the ⋯.
  *
  * **It says how tall it is** to the main area it is pinned in (`--session-head`), so the long run's toolbar (SESS1 S9)
  * pins beneath it rather than under it.
@@ -56,6 +57,9 @@ export function SessionPageHead({ session, title, shown, facts = [], acts, prima
 }) {
   const { t } = useTranslation();
   const own = useRef<HTMLDivElement>(null);
+  // The head spans the main area (its gutters undone), so its width is the main area's; unmeasured, the words are drawn.
+  const width = useWidth(own);
+  const narrow = width !== undefined && width <= 640;
   const offered = onAct ? acts : [];
   // The one split the page's right-click offers whole (CTX1), so the header and the menu never disagree.
   const { lead, stop, rest } = headerActs(offered, primary);
@@ -87,6 +91,8 @@ export function SessionPageHead({ session, title, shown, facts = [], acts, prima
       <PageHead
         title={title}
         clamp={1}
+        wholeElsewhere
+        actsBeside
         lead={<Pill tone={SESSION_TONE[shown]}>{t(shownKey(shown))}</Pill>}
         facts={facts}
         // One group names the buttons together, the ⋯ with them (its name is how the page's tests and readers find them), so
@@ -97,9 +103,18 @@ export function SessionPageHead({ session, title, shown, facts = [], acts, prima
             {lead && (
               <Button variant="primary" disabled={busy} onClick={() => onAct?.(lead)}>{t(ACT_LOOK[lead].label)}</Button>
             )}
-            {stop && (
-              <Button variant="danger" disabled={busy} onClick={() => onAct?.('stop')}>{t(ACT_LOOK.stop.label)}</Button>
-            )}
+            {stop && (narrow
+              ? (
+                <Tip content={t(ACT_LOOK.stop.label)}>
+                  <Button
+                    variant="danger" disabled={busy} aria-label={t(ACT_LOOK.stop.label)} onClick={() => onAct?.('stop')}
+                    className="h-[1.9rem] w-[1.9rem] justify-center px-0"
+                  >
+                    <Icon name={ACT_LOOK.stop.icon} size={15} />
+                  </Button>
+                </Tip>
+              )
+              : <Button variant="danger" disabled={busy} onClick={() => onAct?.('stop')}>{t(ACT_LOOK.stop.label)}</Button>)}
             {rest.length > 0 && (
               <Menu.Root>
                 <Menu.Trigger asChild>

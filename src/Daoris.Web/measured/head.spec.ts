@@ -40,16 +40,17 @@ const FOLDS = [
 /**
  * Each story, by its book and name: the main-area width it is drawn at, its language, and the head's height today with the
  * margin a font's rounding needs. A change that draws the head taller fails; one that draws it shorter lowers its ceiling.
- * Measured 2026-10-20, HEADFIT1b: 307, 365 and 404 px in English, 307, 348 and 387 in 中文, with the head's blocks 8 px apart
- * (375, 433, 472, 375, 416 and 455 at 16 px, HEADFIT1; 806, 916, 995, 806, 881 and 1030 before the parts and the relations folded).
+ * Measured 2026-10-20, HEADFIT1b: 307, 324 and 342 px in English, 307, 307 and 324 in 中文, the head's blocks 8 px apart, the page
+ * head's acts beside its title and the chain one line (375, 433, 472, 375, 416 and 455 before, HEADFIT1; 806, 916, 995, 806, 881
+ * and 1030 before the parts and the relations folded).
  */
 const TABLE: Record<string, { width: keyof typeof WIDTH_PX; language: keyof typeof MILESTONE; ceiling: number }> = {
   'head/Wide': { width: 'wide', language: 'en', ceiling: 317 },
-  'head/Half': { width: 'half', language: 'en', ceiling: 375 },
-  'head/Narrow': { width: 'narrow', language: 'en', ceiling: 414 },
+  'head/Half': { width: 'half', language: 'en', ceiling: 334 },
+  'head/Narrow': { width: 'narrow', language: 'en', ceiling: 352 },
   'head/ChineseWide': { width: 'wide', language: 'zh', ceiling: 317 },
-  'head/ChineseHalf': { width: 'half', language: 'zh', ceiling: 358 },
-  'head/ChineseNarrow': { width: 'narrow', language: 'zh', ceiling: 397 },
+  'head/ChineseHalf': { width: 'half', language: 'zh', ceiling: 317 },
+  'head/ChineseNarrow': { width: 'narrow', language: 'zh', ceiling: 334 },
 };
 
 /** The page measured again until the head holds still, since a flowchart chooses its placement after it is drawn. */
@@ -75,40 +76,55 @@ async function open(page: Page, story: string): Promise<RecordHeadMeasure> {
 const said = (measured: RecordHeadMeasure) => measured.blocks.map((block) => `${Math.round(block.height)} px ${block.name}`).join('; ');
 
 /**
- * The typical record's stories (HEADFIT1b): the width, the language, and the head's height today with a font's margin where it
- * is still over the budget (`over`), which only falls. Measured 2026-10-20 with the head's blocks 8 px apart: 167 px at the wide
- * width in either language; 208 at half and 229 at the floor in English, 208 and 208 in 中文. Under 640 px of the main area the
- * page head's acts take a row of their own (111 px against 70), and at the English floor the chain's *Show how it ran* wraps to
- * a row of its own (52 px against 30): blocks, which HEADFIT1b moves none of, so the budget there stays an expected failure.
+ * The typical record's stories (HEADFIT1b): the width and the language, and the name *Stop…* and the chain's press carry there.
+ * Measured 2026-10-20: 167 px at every width in either language, the page head 70 px with its acts beside the title and the
+ * chain's line 30 (208 at half and 229 at the English floor when the acts took a row under the facts and the press wrapped).
  */
-const TYPICAL: Record<string, { width: keyof typeof WIDTH_PX; over?: number }> = {
-  'head/TypicalWide': { width: 'wide' },
-  'head/TypicalHalf': { width: 'half', over: 218 },
-  'head/TypicalNarrow': { width: 'narrow', over: 239 },
-  'head/TypicalChineseWide': { width: 'wide' },
-  'head/TypicalChineseHalf': { width: 'half', over: 218 },
-  'head/TypicalChineseNarrow': { width: 'narrow', over: 218 },
+const TYPICAL: Record<string, { width: keyof typeof WIDTH_PX; language: keyof typeof MILESTONE }> = {
+  'head/TypicalWide': { width: 'wide', language: 'en' },
+  'head/TypicalHalf': { width: 'half', language: 'en' },
+  'head/TypicalNarrow': { width: 'narrow', language: 'en' },
+  'head/TypicalChineseWide': { width: 'wide', language: 'zh' },
+  'head/TypicalChineseHalf': { width: 'half', language: 'zh' },
+  'head/TypicalChineseNarrow': { width: 'narrow', language: 'zh' },
 };
+const STOP = { en: 'Stop…', zh: '停止…' } as const;
+const CHAIN = { en: 'How this work ran', zh: '工作流转' } as const;
+const SHOW_CHAIN = { en: 'Show how it ran', zh: '展开流转详情' } as const;
 
-for (const [story, { width, over }] of Object.entries(TYPICAL)) {
-  test(`${story} at ${width}: a typical record ${over ? 'no taller than today' : `keeps UX7's ${BUDGET} px budget`}`, async ({ page }) => {
+for (const [story, { width, language }] of Object.entries(TYPICAL)) {
+  test(`${story} at ${width}: a typical record keeps UX7's ${BUDGET} px budget, its acts beside its title and its chain one line`, async ({ page }) => {
     const measured = await open(page, story);
     expect(measured.width, `the main area is ${WIDTH_PX[width]} px, not ${measured.width}`).toBe(WIDTH_PX[width]);
     // The page head, the head's own line, the chain's line and the trace's: one that lost a block would keep the budget by losing
     // what it measures.
     expect(measured.blocks.length, `the blocks: ${said(measured)}`).toBe(4);
     console.log(`[measured] ${story} (${measured.width}px): the conversation ${measured.down} px down, budget ${BUDGET}; ${said(measured)}`);
-    expect(measured.down, `the conversation starts ${measured.down} px down at ${width}, over ${over ?? BUDGET}: ${said(measured)}`).toBeLessThanOrEqual(over ?? BUDGET);
-  });
+    expect(measured.down, `the conversation starts ${measured.down} px down at ${width}, over ${BUDGET}: ${said(measured)}`).toBeLessThanOrEqual(BUDGET);
 
-  if (over) {
-    test(`${story} at ${width}: UX7's ${BUDGET} px budget, kept by no typical record at this width yet`, async ({ page }) => {
-      // A typical record that fits turns this red ("expected to fail"): remove the mark and the story's `over`.
-      test.fail(true, `the page head's acts row, and at the English floor the chain's wrapped press, are blocks HEADFIT1b moves none of`);
-      const measured = await open(page, story);
-      expect(measured.down, `the conversation starts ${measured.down} px down at ${width}, over ${BUDGET}: ${said(measured)}`).toBeLessThanOrEqual(BUDGET);
-    });
-  }
+    // *Stop…* on the title's row at every width, one press by its name, never in the ⋯: its words above 640 px, its square at or
+    // below, the words its tip.
+    const title = await page.locator('[data-record-frame] h1').boundingBox();
+    const stop = page.getByRole('button', { name: STOP[language], exact: true });
+    await expect(stop).toBeVisible();
+    const box = (await stop.boundingBox())!;
+    expect(box.y, "Stop… sits on the title's row").toBeLessThan(title!.y + title!.height);
+    if (width === 'wide') await expect(stop).toHaveText(STOP[language]);
+    else {
+      await expect(stop).toHaveText('');
+      await stop.hover();
+      await expect(page.getByRole('tooltip')).toHaveText(STOP[language]);
+    }
+    // The title one line, cut with an ellipsis and whole in its tip; no *Show all* under it.
+    await expect(page.locator('[data-record-frame] h1')).toHaveAttribute('title', /Read the export table from the app/);
+
+    // The chain's line is one line, its press at its end.
+    const chain = page.getByRole('navigation', { name: CHAIN[language] });
+    const line = (await chain.boundingBox())!;
+    const show = (await chain.getByRole('button', { name: SHOW_CHAIN[language] }).boundingBox())!;
+    expect(show.y, "the press is on the chain's one line").toBeLessThan(line.y + 8);
+    expect(show.x + show.width, 'at its end').toBeCloseTo(line.x + line.width, 0);
+  });
 }
 
 for (const [story, { width, language, ceiling }] of Object.entries(TABLE)) {

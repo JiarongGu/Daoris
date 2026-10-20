@@ -267,9 +267,10 @@ what remains.
 The budget binds a typical record (HEADFIT1b): the page head, the record's head and *Details*, the chain's line and the trace's line,
 drawn as the `Typical*` stories beside the every-block ones. The record's blocks are 8 px apart, and so are the pinned page head and
 the conversation from them (`SessionPageHead`'s margin, `AttendedSession`'s grid, the conversation's top in `WorkFrame` and
-`DetachedSession`, and the stories' stand-in): one rhythm, which the measured check holds. The typical record keeps 200 px at the wide
-width; below 640 px the page head's acts row, and at the English floor the chain's wrapped press, keep it over, so those stories are
-ratchets with an expected failure; D185's HEADFIT1b note has the heights.
+`DetachedSession`, and the stories' stand-in): one rhythm, which the measured check holds. Two blocks hold one line at every width:
+the session's page head keeps its acts beside its title (`PageHead`'s `actsBeside`; at 640 px of the main area or less *Stop…* is
+its square, named and tipped by its words), and `ChainLine` truncates its stops, whole in their tip, before it wraps its press. The
+typical record keeps 200 px at every width, unmarked; the every-block head is a ratchet. D185's HEADFIT1b notes have the heights.
 
 ## Running it
 

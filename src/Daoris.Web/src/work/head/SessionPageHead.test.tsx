@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { act, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import * as Tooltip from '@radix-ui/react-tooltip';
 import i18n from '../../locales/i18n';
 import type { Session } from '../../data/api';
 import { code } from '../../test/code';
@@ -15,11 +16,14 @@ const session = (over: Partial<Session> = {}): Session => ({
   created: '2026-10-02T09:00:00Z', updated: '2026-10-02T09:30:00Z', ...over,
 });
 
+// In the window's tooltip provider, as the frame draws it: the narrow *Stop…* carries its words as a tip.
 const head = (props: Partial<Parameters<typeof SessionPageHead>[0]> = {}) => render(
-  <SessionPageHead
-    session={session()} title="Expose a streaming budget on the chunk API" shown="working"
-    acts={['stop', 'review', 'openFolder', 'terminal', 'detach', 'copy']} onAct={() => {}} {...props}
-  />,
+  <Tooltip.Provider>
+    <SessionPageHead
+      session={session()} title="Expose a streaming budget on the chunk API" shown="working"
+      acts={['stop', 'review', 'openFolder', 'terminal', 'detach', 'copy']} onAct={() => {}} {...props}
+    />
+  </Tooltip.Provider>,
 );
 
 describe('a session’s page header', () => {
@@ -89,16 +93,42 @@ describe('a session’s page header', () => {
     expect(within(screen.getByRole('banner')).queryAllByRole('button')).toHaveLength(0);
   });
 
-  /** It is pinned: the page scrolls under it, and below 560 px its acts take their own line (§3.2). */
-  it('is pinned at the top of the main area, and its acts are PageHead’s: a column of their own above 640 px (HEAD2c)', () => {
+  /** It is pinned: the page scrolls under it, and its acts hold still beside its title at every width (HEADFIT1b, D185). */
+  it('is pinned at the top of the main area, and its acts are a column of their own beside the title at every width', () => {
     head();
     const header = screen.getByRole('banner');
     expect(header.closest('.sticky')).not.toBeNull();
-    expect(header.className).toContain('@[40rem]/main:grid-cols-[minmax(0,1fr)_auto]');
+    expect(header.className).toContain('grid-cols-[minmax(0,1fr)_auto]');
+    expect(header.className).not.toContain('@[40rem]/main:grid-cols');
     const acts = within(header).getByRole('group', { name: 'Session actions' });
     expect(within(acts).getByRole('button', { name: 'Stop…' })).toBeInTheDocument();
     // *Stop…* stays: it is not the fold's, which PageHead hides at the narrow width.
     expect(acts.closest('.hidden')).toBeNull();
+  });
+
+  /**
+   * HEADFIT1b (D185): at 640 px of the main area or less *Stop…* is its square, its words its name and its tip, still one press
+   * and never in the ⋯. The browser's layout is the measured check's (`measured/head.spec.ts`); here the width is handed in.
+   */
+  it('draws Stop… as its square at the narrow width, named by its words, one press, never in the ⋯', async () => {
+    const measure = vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue({ width: 400 } as DOMRect);
+    try {
+      const act = vi.fn();
+      head({ onAct: act });
+      const header = screen.getByRole('banner');
+      const stop = within(header).getByRole('button', { name: 'Stop…' });
+      expect(stop.textContent).toBe('');
+      expect(within(header).getAllByRole('button').map((button) => button.getAttribute('aria-label'))).toEqual(['Stop…', 'More actions']);
+      await userEvent.click(stop);
+      expect(act).toHaveBeenCalledWith('stop');
+
+      const user = userEvent.setup();
+      within(header).getByRole('button', { name: 'More actions' }).focus();
+      await user.keyboard('{Enter}');
+      expect(screen.getAllByRole('menuitem').map((item) => item.textContent)).not.toContain('Stop…');
+    } finally {
+      measure.mockRestore();
+    }
   });
 
   it('holds what asks under it, pinned with it', () => {
