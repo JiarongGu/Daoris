@@ -317,11 +317,14 @@ async function standInService() {
 
 /**
  * One process of the stub, as the driver runs one: `initialize`, then `opening` (a new session or a resumed one), then one prompt;
- * its input closed once the prompt is answered. The answer, and what it said on stderr.
+ * its input closed once the prompt is answered. The answer, and what it said on stderr. The child carries only the
+ * `DAORIS_*` variables the test sets: one inherited from a driven session (a brainstorm's turn) turns the stub's branch
+ * (ENVLEAK2).
  */
 function stubTurn(stub, { cwd, env, opening, words }) {
   return new Promise((resolve, reject) => {
-    const child = spawn(process.execPath, [stub], { cwd, env: { ...process.env, ...env }, stdio: ['pipe', 'pipe', 'pipe'] });
+    const ambient = Object.fromEntries(Object.entries(process.env).filter(([name]) => !name.toUpperCase().startsWith('DAORIS_')));
+    const child = spawn(process.execPath, [stub], { cwd, env: { ...ambient, ...env }, stdio: ['pipe', 'pipe', 'pipe'] });
     let buffered = '';
     let said = '';
     let answer = null;

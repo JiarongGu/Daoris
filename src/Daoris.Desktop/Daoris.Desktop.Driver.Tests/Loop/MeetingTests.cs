@@ -499,6 +499,73 @@ public sealed class MeetingTests : IDisposable
         Assert.Contains("The window is exclusive of its end.", script.Rooms["r1-a1"], StringComparison.Ordinal);
     }
 
+    /// <summary>The channel's doors standing in for trap 16: one message on an ask's channel, and every acknowledgment asked.</summary>
+    private sealed class ChannelDoors(ChannelItemView message) : IChannelDoors
+    {
+        public List<string> Asked { get; } = [];
+
+        public Task<ChannelView?> ReadAsync(string ask, string entry, CancellationToken ct) =>
+            Task.FromResult<ChannelView?>(new ChannelView(ask, entry, [message], 1, null));
+
+        public Task<IReadOnlyList<string>> AcknowledgeAsync(
+            string ask, string entry, string session, string state, IReadOnlyList<string> messages, CancellationToken ct)
+        {
+            lock (Asked) Asked.Add($"{session} {state}");
+            return Task.FromResult(messages);
+        }
+
+        public Task<SayAnswer> SayAsync(string session, string text, string channel, string? from, CancellationToken ct)
+        {
+            lock (Asked) Asked.Add($"{session} say");
+            return Task.FromResult(new SayAnswer(false, "refused"));
+        }
+    }
+
+    /// <summary>
+    /// 🔴 COWORK1d (trap 16; the message-urgency design §5): no level pierces a round. An urgent message on an ask's channel posted while
+    /// a meeting's turn runs reaches no turn of it: the channel reaches a working agent only through its inbox, and a meeting's turn
+    /// holds none, so the look finds no part to hand it to, and the turn's room and its round's packet hold nothing of it.
+    /// </summary>
+    [Fact]
+    public async Task An_urgent_channel_message_posted_during_a_round_reaches_no_turn_of_it()
+    {
+        const string Urgent = "Stop: the window is wrong.";
+        var (driver, script) = Start(Second);
+        var id = await SentAsync(driver);
+        var running = new TaskCompletionSource();
+        var release = new TaskCompletionSource();
+        script.Answers["r1-a1"] = Say("Turn one: make the window inclusive.");
+        script.Answers["r1-a2"] = Say("Turn two: agreed.");
+        script.Behaviours["r1-a1"] = async (turn, ct) =>
+        {
+            running.TrySetResult();
+            await release.Task.WaitAsync(ct);
+            return script.Answer(turn);
+        };
+        var round = LookAsync(driver);
+        await running.Task.WaitAsync(TimeSpan.FromSeconds(10));
+
+        var doors = new ChannelDoors(new ChannelItemView(ChannelItemView.Message, At)
+        {
+            Id = "u1", Session = "s9", Repository = "api", Agent = "stub", Entry = "ask:a1/api", Text = Urgent, Urgent = true,
+        });
+        var working = new Snapshot([new QuestView("q1", "ask #a1", "reports", "Report", "", "Taken")], [], [])
+        {
+            LastRun = new Dictionary<string, PriorSession>
+            {
+                ["q1"] = new("t1", "q1", "working") { Entry = "ask:a1/reports", Created = At },
+            },
+        };
+        var lines = await new ChannelReach().LookAsync(doors, ChannelReach.Parts(working, driver.Context.Processes), CancellationToken.None);
+        release.SetResult();
+        await round;
+
+        Assert.Empty(lines);
+        Assert.Empty(doors.Asked);
+        Assert.All(script.Rooms.Values, room => Assert.DoesNotContain(Urgent, room, StringComparison.Ordinal));
+        Assert.DoesNotContain(Urgent, System.Text.Encoding.UTF8.GetString(Files.PacketBytes(id, 1)!), StringComparison.Ordinal);
+    }
+
     /// <summary>
     /// 🔴 A meeting is no brainstorm, and a brainstorm no meeting: the brainstorm's look freezes none of a meeting's and lists none,
     /// and the meetings' look takes no brainstorm.

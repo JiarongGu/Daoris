@@ -30,7 +30,7 @@ public sealed record ChatMessage(string Text, IReadOnlyList<KeptFile> Files)
     /// The level the record keeps beside the person's words while they wait (COWORK1a): spelled for the person's own, null for
     /// another session's claim, whose level its own row carries (COWORK1d), so nothing reads a claim's default as one stated.
     /// </summary>
-    internal string? LevelSaid => Channel is { Person: false } ? null : MessageLevels.Spelled(Level);
+    internal string? LevelSaid => Channel is { Person: false } || Helped is not null ? null : MessageLevels.Spelled(Level);
 
     /// <summary>
     /// The words' id in a driven session's record (STEER1, D136), stamped by its inbox: it pairs the words shown at once,
@@ -118,6 +118,19 @@ public sealed record ChatMessage(string Text, IReadOnlyList<KeptFile> Files)
     public ChannelItemView? Channel { get; init; }
 
     /// <summary>
+    /// Another agent's claim held only to ride a prompt the run sends anyway (COWORK1d, D188 point 4; the message-urgency design §4.2):
+    /// an ordinary claim, or any claim on a door that takes words only at its turn's end. Alone at a turn's end it makes no turn and is
+    /// let go for the entry's next part; beside a word that makes one, it goes with it, in the order said. Never listed as the person's.
+    /// </summary>
+    internal bool Rides { get; init; }
+
+    /// <summary>
+    /// Tells the entry the channel message these words carry (COWORK1d, the design §6) reached a state: <c>sent</c> once written,
+    /// <c>taken</c> on the door's word, <c>released</c> when a part let its claim go unsent. Null for every other message. Never faults.
+    /// </summary>
+    internal Action<string>? Acknowledge { get; init; }
+
+    /// <summary>
     /// Daoris's own words to a running session (COWORK1b, D188): a reopen told, a step's go-on, at urgent. The record keeps them as
     /// Daoris's, never the person's (<see cref="Words"/>); the page's queue never lists them, and the run judges them again by their
     /// key where they leave a hold for the wire (<see cref="DaorisWords.GoesAsync"/>). Null for every other message.
@@ -155,7 +168,8 @@ public sealed record ChatMessage(string Text, IReadOnlyList<KeptFile> Files)
     internal static SessionEvent Words(ChatMessage message) => new()
     {
         Kind = SessionEventKind.User,
-        Origin = message.Channel is { Person: false } || message.Daoris is not null ? "target" : "person",
+        // COWORK1d: a helper's answer taken at a step of a turn is Daoris's words around that helper's claim too.
+        Origin = message.Channel is { Person: false } || message.Daoris is not null || message.Helped is not null ? "target" : "person",
         From = message.Daoris is not null ? DaorisWords.From : null,
         // SESSCTX1b: the channel's message these words carry, marked by its id, so a reader never tells it by Daoris's English.
         Channel = message.Channel?.Id is { Length: > 0 } channel ? channel : null,

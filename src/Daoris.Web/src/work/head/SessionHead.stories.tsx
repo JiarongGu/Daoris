@@ -2,13 +2,15 @@ import type { Decorator, Meta, StoryObj } from '@storybook/react-vite';
 import type { GoAhead, Quest, Session } from '../../data/api';
 import { InTheme } from '../../plugins/storyIcons';
 import { chinese } from '../../design/storyLanguage';
+import { sessionWidths } from '../../design/storyWidths';
 import { STEP_REVIEWED, STEP_SETTING_UP, STEP_SHOWN } from '../gates/reviewFixtures';
 import { SessionHead } from './SessionHead';
 
-const dark: Decorator = (Story) => <InTheme theme="dark"><div className="max-w-3xl bg-page p-4"><Story /></div></InTheme>;
+const dark: Decorator = (Story) => <InTheme theme="dark"><Story /></InTheme>;
 
 // The record in every shape it really arrives in: driven, a conversation, parked with its analysis,
-// ended, and read over a remote where the machine-local half is deliberately absent.
+// ended, and read over a remote where the machine-local half is deliberately absent. Drawn in a session's page at the
+// frame's widths (the UI/UX design R6), with the session's gutters.
 
 const at = (minutesAgo: number) => new Date(Date.now() - minutesAgo * 60_000).toISOString();
 
@@ -41,7 +43,7 @@ const meta: Meta<typeof SessionHead> = {
   title: 'Work/SessionHead',
   component: SessionHead,
   args: { session: SESSION, quest: QUEST },
-  decorators: [(Story) => <div className="max-w-3xl"><Story /></div>],
+  decorators: [sessionWidths.wide],
 };
 export default meta;
 
@@ -49,6 +51,12 @@ type Story = StoryObj<typeof SessionHead>;
 
 /** Driven work in its own tree, running as a named account. */
 export const Driven: Story = {};
+
+/** The same at half the window. */
+export const DrivenHalf: Story = { decorators: [sessionWidths.half] };
+
+/** The same at the main area's 400 px floor. */
+export const DrivenNarrow: Story = { decorators: [sessionWidths.narrow] };
 
 /** The kind's workflow asks less of the person and its paths were exceeded; the terminal's Keep is the available door. */
 export const WorkflowPathsHeld: Story = { args: {
@@ -389,7 +397,7 @@ export const SquashMergedItsTreeStays: Story = {
 };
 
 /**
- * UXFIX4b: the same with a long branch name, at the main area's 400 px floor less a page's gutters. The name is whole,
+ * UXFIX4b: the same with a long branch name, at the main area's 400 px floor, in the session's gutters. The name is whole,
  * wrapping after its separators on the line's own row, where it was cut to one line with nothing to read the rest by.
  */
 export const FailedItsLongBranchLeftAtTheFloor: Story = {
@@ -397,7 +405,7 @@ export const FailedItsLongBranchLeftAtTheFloor: Story = {
     ...FailedItsBranchLeft.args,
     branch: { ...FailedItsBranchLeft.args!.branch!, branch: 'daoris/s-5a6b7c8d-a-chain-step-that-carries-a-long-slug-past-the-head' },
   },
-  decorators: [(Story) => <div className="w-[352px]"><Story /></div>],
+  decorators: [sessionWidths.narrow],
 };
 
 /**

@@ -1,6 +1,11 @@
-import type { Meta, StoryObj } from '@storybook/react-vite';
+import type { Decorator, Meta, StoryObj } from '@storybook/react-vite';
 import { Button, Card, Icon, PageHeader } from '../../design/ui';
+import { chinese } from '../../design/storyLanguage';
+import { storyWidths } from '../../design/storyWidths';
+import { InTheme } from '../../plugins/storyIcons';
 import { PageHead, ViewMain } from './ViewMain';
+
+const dark: Decorator = (Story) => <InTheme theme="dark"><Story /></InTheme>;
 
 // A view's main area (D118 §3b, §5) in each of its four states, and as a container its page lays out by:
 // the two cards below sit side by side only where the main area itself is wide, whatever the window is.
@@ -53,12 +58,14 @@ export const Loading: Story = { args: { state: 'loading', header: undefined } };
 /** The chosen item has gone: retired, deleted, or no longer on this machine. */
 export const Gone: Story = { args: { state: 'gone', header: undefined } };
 
-/** Narrowed by a side bar at a wide window: the split follows the main area, so the cards stack. */
-export const Narrowed: Story = {
-  decorators: [(Story) => (
-    <div className="flex w-[36rem] max-w-full"><Story /></div>
-  )],
-};
+/** Narrowed by a side bar at a wide window, to the main area's 400 px floor: the split follows the main area, so the cards stack. */
+export const Narrowed: Story = { decorators: [storyWidths.narrow] };
+
+/** The chosen item in 中文: the chrome's words; the header and the cards are content. */
+export const ChosenChinese: Story = { decorators: [chinese] };
+
+/** The chosen item in dark. */
+export const ChosenDark: Story = { decorators: [dark] };
 
 /** A view with no list: the view's own header, as Overview has. */
 export const ViewPage: Story = {
@@ -67,24 +74,24 @@ export const ViewPage: Story = {
 
 const LONG = 'Make the world-streaming budget a per-frame cap read from the level file, and report each frame that went over it to the engine\'s log';
 
-function HeadAt({ width }: { width: string }) {
-  return (
-    <div className="@container/main max-w-full bg-page p-4" style={{ width }}>
-      <PageHead
-        title={LONG}
-        facts={['to engine', 'from ask #f6d947', 'filed 4h ago']}
-        acts={<><Button variant="primary">Take</Button><Button>Hand back</Button></>}
-        more={<Button aria-label="More">⋯</Button>}
-      />
-    </div>
-  );
-}
+/** A long head, drawn in the main area at the helper's widths (the UI/UX design R6, STORYGAP1). */
+const head = () => (
+  <PageHead
+    title={LONG}
+    facts={['to engine', 'from ask #f6d947', 'filed 4h ago']}
+    acts={<><Button variant="primary">Take</Button><Button>Hand back</Button></>}
+    more={<Button aria-label="More">⋯</Button>}
+  />
+);
 
 /** HEAD2a (D162 §3): a long title wraps under itself and the acts hold still beside its first line (1546 px, the main area wide). */
-export const HeadHoldsStill: Story = { render: () => <HeadAt width="1200px" />, parameters: { layout: 'fullscreen' } };
+export const HeadHoldsStill: Story = { render: head, decorators: [storyWidths.wide], parameters: { layout: 'fullscreen' } };
 
-/** HEAD2a: at 680 px of window (about 596 of main area) the acts take their own right-aligned row under the facts. */
-export const HeadHoldsStillNarrow: Story = { render: () => <HeadAt width="596px" />, parameters: { layout: 'fullscreen' } };
+/** HEAD2a: at a 680 px window (the main area at its half width) the acts take their own right-aligned row under the facts. */
+export const HeadHoldsStillNarrow: Story = { render: head, decorators: [storyWidths.half], parameters: { layout: 'fullscreen' } };
+
+/** HEAD2a at the main area's 400 px floor: the title wraps under itself, the acts in their row under the facts. */
+export const HeadAtTheFloor: Story = { render: head, decorators: [storyWidths.narrow], parameters: { layout: 'fullscreen' } };
 
 /** Sessions' main area: the tighter gutters its conversation keeps, and a column that follows its tail. */
 export const SessionGutters: Story = { args: { gutters: 'session', header: undefined } };

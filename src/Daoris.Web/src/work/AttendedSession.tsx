@@ -228,7 +228,7 @@ export function AttendedSession({
   return (
     // 🔴 The centre's width, whatever it is (UX5 U16, the owner): a 768px measure here left the record
     // at half a maximized window. The pill stays beside its title in the head instead.
-    <article className="grid w-full content-start gap-4">
+    <article className="grid w-full content-start gap-2">
       <SessionHead
         session={session}
         quest={quest}

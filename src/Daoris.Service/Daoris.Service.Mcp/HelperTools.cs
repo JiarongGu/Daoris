@@ -21,17 +21,22 @@ public sealed class HelperTools(IntakeScope? intake = null, SessionLedger? ledge
         + "and cannot ask anyone itself. Daoris takes the ask at its next look and the person's rule for helpers decides whether "
         + "it starts at once, waits for their yes, or is refused. Its answer, or the reason there is none, comes back to you as your "
         + "next turn, marked as another agent's claim: check it before you rely on it. Say in your last message what you asked, "
-        + "then end your turn.")]
+        + "then end your turn. Asked urgent, the answer reaches you at your next step while you work, where your door takes words "
+        + "then, so you may go on working.")]
     public async Task<string> AskHelperAsync(
         [Description("The question, with what the helper should read, in at most 4000 characters.")] string? question,
         [Description("Optional: the agent to ask, as Settings lists it. Left out, Daoris chooses another maker's first.")]
         string? agent = null,
+        [Description(
+            "Optional: true when you go on working and want the answer at your next step, where your door takes words then. Left out, "
+            + "the answer comes as your next turn.")]
+        bool? urgent = null,
         CancellationToken ct = default)
     {
         var box = helpers ?? HelperBox.FromEnvironment();
         var session = intake?.Session;
         var record = ledger is not null && session is not null ? await ledger.FindAsync(session, ct).ConfigureAwait(false) : null;
-        return box.Ask(record, session, question, agent, DateTimeOffset.UtcNow).Message;
+        return box.Ask(record, session, question, agent, DateTimeOffset.UtcNow, urgent == true).Message;
     }
 
     [McpServerTool(Name = "helper_answer")]

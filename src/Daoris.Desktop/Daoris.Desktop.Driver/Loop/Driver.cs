@@ -1976,7 +1976,7 @@ public sealed class Driver(
             // What waited on the ask's channel for this part's line of work (SESSONE2b, D167 point 7): read for its instruction, never
             // holding the start, and its entry's mark moved once the record works, not before, so a start that fails hands it on.
             var channelDoors = new ServiceChannelDoors(service);
-            var channelHeld = start.Channel is { } line ? await ChannelReach.HandAsync(channelDoors, line, ct).ConfigureAwait(false) : null;
+            var channelHeld = start.Channel is { } line ? await ChannelReach.HandAsync(channelDoors, line, sessionId, ct).ConfigureAwait(false) : null;
             // FABRIC-CLOSE1l (CLOSE1f, CLOSE1g; the fabric events design §E5): a quest whose work cycle holds `quest.close` names its graph for
             // the take as its first session opens, so the take binds it in its own write, and a bound quest's session says `ready`, never
             // `done`. A circle synced through a remote, by the map sync reads, is never bound. No closure graph: nothing asked, nothing said.
@@ -2108,7 +2108,7 @@ public sealed class Driver(
                 // A native run holds what the person says while it works, and goes on with it in its own conversation (MSG1b).
                 goOn: GoOns.GoOnWith(adapter, target, selection, rules.File, handed),
                 stopMade: stop => stoppedFirst = stop,
-                // The part works: what it was handed from the ask's channel is read, so its entry's mark moves (SESSONE2b).
+                // The part works: what it was handed from the ask's channel is acknowledged by its id (SESSONE2b, COWORK1d).
                 working: channelHeld is null ? null : () => _ = ChannelReach.HandedAsync(channelDoors, channelHeld, CancellationToken.None),
                 // BGWAIT1: a turn that ends on the session's own background work, holding its quest as a park would, is not
                 // a question. Read from the quest as the conclusion reads it, by the conclusion's own rule.
@@ -2772,13 +2772,15 @@ public sealed class Driver(
     {
         if (resumed && planned.Status is not ("Open" or "Taken")) return null;
 
+        // DONEEND1: read again at every look while the session waits. A take once read stays this session's (its record keeps it), so
+        // the sessions are read only until it is.
+        var took = false;
         return async token =>
         {
             var now = await service.FindQuestAsync(planned.Id, token).ConfigureAwait(false);
             var status = now?.Status ?? "Open";
-            return Observation.Parks(
-                status, planned.Awaits, now?.Awaits, resumed,
-                took: !resumed && status == "Taken" && await service.TookAsync(sessionId, token).ConfigureAwait(false));
+            took = took || (!resumed && status == "Taken" && await service.TookAsync(sessionId, token).ConfigureAwait(false));
+            return Observation.Parks(status, planned.Awaits, now?.Awaits, resumed, took: took && status == "Taken");
         };
     }
 
@@ -2968,6 +2970,9 @@ public sealed class Driver(
         // What it consumed, where the door reported it (TOOL3/D57 §4). A pipe with only text reports
         // nothing, and a surface then says "not measured" rather than zero.
         var (outcome, turnFailed, acpLeft) = acp is not null ? await acp.ConfigureAwait(false) : (null, null, []);
+        // DONEEND1: an agent the run ended because it lingered after its session had ended exited as its session did, cleanly: on this
+        // door the agent exits 0 once its stdin closes whatever happened, and the kill was Daoris's own, never the agent's end.
+        if (ending?.EndedLingering == true && exitCode is not null) exitCode = 0;
         List<ChatMessage> left = [.. acpLeft];
         var used = acp is not null ? outcome?.Usage
             : structured is not null ? await structured.ConfigureAwait(false)
@@ -3308,6 +3313,7 @@ public sealed class Driver(
                 Unoffered = unoffered,
                 Permissions = HeldPermissions.Of(Context.Events).For(sessionId), // AUTONOMY1b3a: held only under asking's mark
                 SetupChanged = setupChanged,
+                BackgroundLook = BackgroundLook, // DONEEND1: its quest read again while it waits on its own background work
             };
             ending?.Open(session);
             // What it says about its account's windows, kept as it says it (TOOL6c).
@@ -3317,9 +3323,15 @@ public sealed class Driver(
             // the page shows them waiting in the turn they were said in, rather than nothing until they are handed over.
             inbox?.OnSaid((message, reach) =>
             {
-                // Another session's message on the ask's channel is that agent's claim, never the person's (SESSONE2b).
+                // Another session's message on the ask's channel is that agent's claim, never the person's (SESSONE2b); at its next step
+                // where urgent, and beside words the session is told anyway when its turn ends otherwise (COWORK1d).
                 Line(message.Channel is { Person: false } claim
-                    ? $"— another session's message `{claim.Id}` on the ask's channel, which reaches the session at its next step"
+                    ? reach == DrivenReach.NextStep
+                        ? $"— another session's message `{claim.Id}` on the ask's channel, which reaches the session at its next step"
+                        : $"— another session's message `{claim.Id}` on the ask's channel, which goes beside what the session is told when its turn ends"
+                    // COWORK1d: an urgent ask's helper answer, the helper's claim, never the person's.
+                    : message.Helped is { Helper: var helper }
+                        ? $"— helper `{helper}`'s answer, which reaches the session {(reach == DrivenReach.NextStep ? "at its next step" : "when its turn ends")}"
                     : reach switch
                     {
                         DrivenReach.NextStep => $"— the person added, which reaches the session at its next step: {message.Text}",
@@ -3345,8 +3357,12 @@ public sealed class Driver(
                     {
                         Line(message.Channel is { Person: false } claim
                             ? $"— the session took another session's message `{claim.Id}` on the ask's channel"
-                            : $"— the session took what the person added: {message.Text}");
+                            : message.Helped is { Helper: var helper }
+                                ? $"— the session took helper `{helper}`'s answer"
+                                : $"— the session took what the person added: {message.Text}");
                         Event(ChatMessage.Words(message));
+                        // COWORK1d: a channel message's entry acknowledges it taken, on the door's word.
+                        message.Acknowledge?.Invoke(ChannelAcks.Taken);
                     },
                     resume: resume?.Conversation,
                     // Each of the person's words its own block (MSG1b, D137 §2.2), and taken once the prompt is on the wire.
@@ -3407,7 +3423,49 @@ public sealed class Driver(
                 // Already gone: the agent exited first, which is the ending this was asking for.
             }
 
+            // 🔴 DONEEND1: an agent whose session ended while its own background work ran (a test run its quest no longer waited on)
+            // may never exit, that work holding it, and the run would then wait for the timeout. Given a bound, its tree is ended
+            // here, the work with it, before the stderr it may hold is waited for.
+            if (session?.LeftRunning is { Count: > 0 } work && await EndedLingeringAsync(process, LingerBound, ending).ConfigureAwait(false))
+            {
+                Line($"— its agent had not exited {LingerBound.TotalSeconds:0} s after its session ended, its own background work still "
+                     + $"running ({string.Join(", ", work.Select(name => $"`{name}`"))}): Daoris ended its process tree.");
+            }
+
             await errors.ConfigureAwait(false);
+        }
+    }
+
+    /// <summary>
+    /// How long an agent whose session ended with its own background work still running is given to exit once its stdin closed,
+    /// before its tree is ended (DONEEND1). Its session has said all it will; the work is what can hold it.
+    /// </summary>
+    internal static readonly TimeSpan LingerBound = TimeSpan.FromSeconds(10);
+
+    /// <summary>
+    /// How often a driven session that waits on its own background work reads its quest again (DONEEND1, D83's note): every fourth
+    /// tick of the driver's own, a minute at its default. Each look reads what a tick reads (the board, and the sessions until this
+    /// session's take is read), so a waiting session costs a quarter of a tick, and its run ends within a minute of its quest's close.
+    /// </summary>
+    internal TimeSpan BackgroundLook => TimeSpan.FromSeconds(4 * Math.Max(1, config.PollSeconds));
+
+    /// <summary>
+    /// Wait up to <paramref name="bound"/> for an agent to exit; past it, end its process tree, saying so to the run first (DONEEND1).
+    /// True where its tree was ended here.
+    /// </summary>
+    internal static async Task<bool> EndedLingeringAsync(Process process, TimeSpan bound, AcpEnding? ending)
+    {
+        using var within = new CancellationTokenSource(bound);
+        try
+        {
+            await process.WaitForExitAsync(within.Token).ConfigureAwait(false);
+            return false;
+        }
+        catch (OperationCanceledException)
+        {
+            ending?.Lingering();
+            SessionProcesses.EndIfRunning(process);
+            return true;
         }
     }
 

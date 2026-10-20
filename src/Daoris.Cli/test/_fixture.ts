@@ -83,3 +83,13 @@ export function makeFixture(name: string): Fixture {
     cleanup: () => rmSync(root, { recursive: true, force: true, maxRetries: 20, retryDelay: 250 }),
   };
 }
+
+/**
+ * This process's environment without a `DAORIS_*` variable, for a stub child to start from: run inside a session Daoris
+ * drives, the test inherits that session's quest, record or brainstorm turn, and an inherited `DAORIS_BRAINSTORM_TURN`
+ * turns the protocol stub to its brainstorm branch (ENVLEAK2). The child carries only what its test sets, as the driver's
+ * `Spawning.Unrole` hands a start only its own role (ENVLEAK1).
+ */
+export function unroled(): Record<string, string | undefined> {
+  return Object.fromEntries(Object.entries(process.env).filter(([name]) => !name.toUpperCase().startsWith('DAORIS_')));
+}

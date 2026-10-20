@@ -12,7 +12,7 @@ import { useScope } from '../data/scope';
 import { namer } from '../settings/accounts/namer';
 import { askLines } from '../work/entries';
 import {
-  useChannel, useChannelUnreads, useElsewhereAsks, useMarkChannel, usePostChannel,
+  useChannel, useChannelUnreads, useElsewhereAsks, useForwardChannel, useMarkChannel, usePostChannel,
 } from '../bridge/shell';
 import type { ElsewhereAsk } from '../work/channel';
 import { TeammateAskPage } from './TeammateAskPage';
@@ -149,6 +149,7 @@ export function useAsksPart({
   const unreads = useChannelUnreads((asks.data ?? []).filter((item) => !askEnded(item)).map((item) => item.id), { enabled: active });
   const postChannel = usePostChannel();
   const markChannel = useMarkChannel();
+  const forwardChannel = useForwardChannel();
   // The asks other machines hold, which the sync mirrored the channel of (SESSONE2h): scoped like every cross-repository read, and
   // none where no driver answers one (a browser). The chosen one, when this machine holds no such ask, is shown as its channel.
   const elsewhere = useElsewhereAsks({ enabled: active });
@@ -309,6 +310,11 @@ export function useAsksPart({
           onError: (error) => answered.refused(sentence(error)),
         }),
         onRead: (through: string) => markChannel.mutate({ ask: item.id, through }),
+        // COWORK1d: *Send to its session*, the person's own press; a refusal is the shell's code, said under the receipt.
+        onForward: (message: string, repository: string, answered: ChannelAnswered) => forwardChannel.mutate({ ask: item.id, message, repository }, {
+          onSuccess: (forwarded) => (forwarded.sent ? answered.done() : answered.refused(forwarded.code ?? 'other')),
+          onError: (error) => answered.refused(sentence(error)),
+        }),
       }
     : undefined);
 

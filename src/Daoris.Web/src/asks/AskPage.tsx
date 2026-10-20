@@ -9,7 +9,7 @@ import { Button, Icon, type IconName, Inline, Menu, Pill, Prose, SelectField, SE
 import { ClearAsk } from '../work/history/ClearAsk';
 import type { AskLine } from '../work/entries';
 import { AskLines } from './AskLines';
-import { type ChannelAnswered, ChannelSection } from './ChannelSection';
+import { type ChannelAnswered, type ChannelForward, ChannelSection } from './ChannelSection';
 import type { Channel, ChannelPost } from '../work/channel';
 import { clearOffered, type HistoryDoor } from '../work/history/history';
 import { type Answered, InlineConfirm } from '../work/InlineConfirm';
@@ -110,6 +110,8 @@ export function AskPage({
     channel: Channel | null;
     onPost: (post: ChannelPost, answered: ChannelAnswered) => void;
     onRead: (through: string) => void;
+    /** *Send to its session* (COWORK1d): a message sent on to a repository's session here, the person's own press. */
+    onForward?: ChannelForward;
   };
   /**
    * Its sessions by entry (SESSONE1c, D167 point 5): the lines of work it began, one per repository, from the driver's reader
@@ -529,6 +531,7 @@ export function AskPage({
             repositories={lines.map((line) => line.repository)}
             onPost={channel.onPost}
             onRead={channel.onRead}
+            onForward={channel.onForward}
             onOpenQuest={onOpenQuest}
           />
           <p className="m-0 mt-2 text-small text-ink-faint"><Inline text={t('asks.channel.twin', { id: ask.id })} /></p>

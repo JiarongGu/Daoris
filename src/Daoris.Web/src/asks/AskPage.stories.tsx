@@ -1,6 +1,7 @@
 import type { Decorator, Meta, StoryObj } from '@storybook/react-vite';
 import { InTheme } from '../plugins/storyIcons';
 import { chinese } from '../design/storyLanguage';
+import { storyWidths } from '../design/storyWidths';
 import { ASK_PLAN } from '../work/history/historyFixtures';
 import type { WorkDoor } from '../work/pausing/pausing';
 import {
@@ -27,12 +28,9 @@ const meta: Meta<typeof AskPage> = {
     ask: PROPOSED, receivers: ['engine', 'game', 'lantern'], questTitles: TITLES,
     onPublish: nothing, onClose: nothing, onDelete: nothing, onOpenQuest: nothing,
   },
-  // The main area's height, and a width between the side bar's two states.
-  decorators: [(Story) => (
-    <div className="flex h-[40rem] w-[46rem] max-w-full border border-line bg-page">
-      <Story />
-    </div>
-  )],
+  // The main area's height, inside the main area at its half width (the UI/UX design R6, STORYGAP1); a story's own width
+  // is drawn instead of it.
+  decorators: [(Story) => <div className="flex h-[40rem] border border-line bg-page"><Story /></div>, storyWidths.half],
 };
 export default meta;
 
@@ -104,26 +102,27 @@ export const Closed: Story = { args: { ask: CLOSED } };
 export const UnknownTier: Story = { args: { ask: UNKNOWN_TIER } };
 /** A long CJK sentence, which the title wraps. */
 export const LongCjk: Story = { args: { ask: LONG_CJK } };
-/** The main area at a width: 1180 px beside a 1546 px window's side bar and list, 600 px at a 680 px window (HEAD2d). */
-const at = (width: number, theme?: 'dark'): Decorator => (Story) => {
-  const frame = <div className="flex h-[40rem] max-w-full border border-line bg-page" style={{ width }}><Story /></div>;
-  return theme ? <InTheme theme={theme}>{frame}</InTheme> : frame;
-};
+// The main area at the frame's widths (HEAD2d; the UI/UX design R6): wide beside a 1546 px window's side bar and list,
+// half at a 680 px window, and narrow the main area's 400 px floor.
+// A flex item of the main area's height frame, with no padding of its own, so the page's scroll box stays bounded.
+const dark: Decorator = (Story) => <InTheme theme="dark" className="flex min-h-0 min-w-0 flex-1 p-0"><Story /></InTheme>;
 /**
  * A request of a thousand characters with no line break, as the install's longest are (HEAD2d, D162 §4): the state leads, the
  * title keeps two lines, one line of facts follows, and *View full request* reads it whole in the body. At a 1546 px window.
  */
-export const LongRequest: Story = { args: { ask: LONG_ASK }, decorators: [at(1180)] };
+export const LongRequest: Story = { args: { ask: LONG_ASK }, decorators: [storyWidths.wide] };
 /** The same at a 680 px window: its acts take a row under the facts. */
-export const LongRequestNarrow: Story = { args: { ask: LONG_ASK }, decorators: [at(600)] };
+export const LongRequestNarrow: Story = { args: { ask: LONG_ASK }, decorators: [storyWidths.half] };
+/** The same at the main area's 400 px floor. */
+export const LongRequestAtTheFloor: Story = { args: { ask: LONG_ASK }, decorators: [storyWidths.narrow] };
 /** The same in dark. */
-export const LongRequestDark: Story = { args: { ask: LONG_ASK }, decorators: [at(1180, 'dark')] };
+export const LongRequestDark: Story = { args: { ask: LONG_ASK }, decorators: [storyWidths.wide, dark] };
 /** The same in 中文. */
-export const LongRequestChinese: Story = { args: { ask: LONG_ASK }, decorators: [chinese, at(1180)] };
+export const LongRequestChinese: Story = { args: { ask: LONG_ASK }, decorators: [chinese, storyWidths.wide] };
 /** The same request with its asker's short title (HEAD2e): the head says it, and the body opens on the whole request. */
-export const ShortTitled: Story = { args: { ask: SHORT_TITLED }, decorators: [at(1180)] };
+export const ShortTitled: Story = { args: { ask: SHORT_TITLED }, decorators: [storyWidths.wide] };
 /** The same in 中文. */
-export const ShortTitledChinese: Story = { args: { ask: SHORT_TITLED }, decorators: [chinese, at(1180)] };
+export const ShortTitledChinese: Story = { args: { ask: SHORT_TITLED }, decorators: [chinese, storyWidths.wide] };
 /** Its intake read it and published it — on the desktop, the session is a door. */
 export const ByIntake: Story = { args: { ask: BY_INTAKE, intake: INTAKE_SESSION, onAttend: nothing } };
 /** The same page in a browser: the session is named, and is not a door. */
@@ -171,7 +170,7 @@ export const WorkInFlight: Story = { args: { ask: WORKING, work: work() } };
 /** Paused here: *paused* beside its state, and *Resume* its loud act. */
 export const WorkPaused: Story = { args: { ask: WORKING, work: work({ plan: PAUSED_ASK }) } };
 /** A long request, paused: *Resume* its loud act, the rest in its ⋯ (HEAD2d). */
-export const LongRequestPaused: Story = { args: { ask: LONG_ASK, work: work({ plan: PAUSED_ASK }) }, decorators: [at(1180)] };
+export const LongRequestPaused: Story = { args: { ask: LONG_ASK, work: work({ plan: PAUSED_ASK }) }, decorators: [storyWidths.wide] };
 /** The plan still on its way: none of the three is offered until it answers. */
 export const WorkReading: Story = { args: { ask: WORKING, work: work({ plan: null }) } };
 /** Abandoned: closed with the reason, when, what went and what stayed, from this machine's record. */

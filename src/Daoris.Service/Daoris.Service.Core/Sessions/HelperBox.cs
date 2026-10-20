@@ -45,7 +45,11 @@ public sealed class HelperBox(string? home)
     /// </summary>
     /// <param name="asker">The record of the session that asks, or null when the connector names none or it is not held.</param>
     /// <param name="named">The session the connector names, said back when no record is held for it.</param>
-    public (string? Id, string Message) Ask(Session? asker, string? named, string? question, string? agent, DateTimeOffset at)
+    /// <param name="urgent">
+    /// The asker's level (COWORK1d, D188 point 2): the answer at its next step, where its door takes words then; kept as `urgent: true`.
+    /// An ordinary ask keeps no field, which reads as today's delivery.
+    /// </param>
+    public (string? Id, string Message) Ask(Session? asker, string? named, string? question, string? agent, DateTimeOffset at, bool urgent = false)
     {
         if (string.IsNullOrWhiteSpace(named)) return (null, $"{NoSession} Nothing was asked.");
         if (asker is not { Origin: null }) return (null, $"No session `{named.Trim()}` of this machine's is held to bring an answer back to. Nothing was asked.");
@@ -71,13 +75,16 @@ public sealed class HelperBox(string? home)
             if (chosen is null) writer.WriteNull("agent");
             else writer.WriteString("agent", chosen);
             writer.WriteString("askedBy", "agent");
+            if (urgent) writer.WriteBoolean("urgent", true);
             writer.WriteString("at", Moments.Write(at));
         });
 
         return (id,
             $"Asked `#{id}`: the driver takes it at its next look. The person's rule for helpers decides whether it starts at once "
             + "or waits for their yes, or is refused; whichever it is, the answer, or the reason there is none, comes back to you "
-            + "as your next turn, marked as another agent's.");
+            + (urgent
+                ? "at your next step while you work, where your door takes words then, and otherwise as your next turn, marked as another agent's."
+                : "as your next turn, marked as another agent's."));
     }
 
     /// <summary>

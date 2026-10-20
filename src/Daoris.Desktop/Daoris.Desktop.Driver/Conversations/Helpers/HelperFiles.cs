@@ -31,7 +31,11 @@ public sealed class HelperFiles(string home)
                 if (Text(element, "asker") is not { Length: > 0 } asker || Text(element, "question") is not { Length: > 0 } question) continue;
                 var by = Text(element, "askedBy") == HelperAsk.ByPerson ? HelperAsk.ByPerson : HelperAsk.ByAgent;
                 var at = Moments.Read(element, "at") ?? File.GetLastWriteTimeUtc(path);
-                asks.Add(new HelperAsk(id, asker, question, Text(element, "agent") is { Length: > 0 } agent ? agent : null, by, at));
+                asks.Add(new HelperAsk(id, asker, question, Text(element, "agent") is { Length: > 0 } agent ? agent : null, by, at)
+                {
+                    // COWORK1d: an ask with no level is ordinary, today's delivery.
+                    Urgent = element.TryGetProperty("urgent", out var urgent) && urgent.ValueKind == JsonValueKind.True,
+                });
             }
         }
 

@@ -137,6 +137,28 @@ public sealed class HelperHostTests(LocalHost host) : IClassFixture<LocalHost>
         Assert.Equal(409, (await host.PostAsync($"/api/helpers/{drivenHelper.Id}/hand", new { text = "x" })).Status);
     }
 
+    /// <summary>
+    /// 🔴 COWORK1d (the message-urgency design §5): an urgent ask's answer reaches its running asker at its next step, so the driver that
+    /// runs it hands it with `running`: kept on the running record's words with its level, for that run's inbox, and still once. Without
+    /// `running` a running asker refuses it, as before.
+    /// </summary>
+    [Fact]
+    public async Task The_hand_door_keeps_an_urgent_answer_on_a_running_asker_where_its_driver_asks()
+    {
+        var sessions = host.Composed.Sessions;
+        var asker = await sessions.CreateAsync(null, "Keeper", "stub", DateTimeOffset.UtcNow, kind: Daoris.Knowledge.SessionKind.Driven, tree: "trees/default/Keeper/s-cdcdcdcd");
+        var helper = await sessions.CreateAsync(null, "Keeper", "codex-acp", DateTimeOffset.UtcNow, kind: Daoris.Knowledge.SessionKind.Chat, serves: asker.Id);
+        await sessions.SetStateAsync(asker.Id, Daoris.Knowledge.SessionState.Working, null, null, null, DateTimeOffset.UtcNow);
+
+        Assert.Equal(409, (await host.PostAsync($"/api/helpers/{helper.Id}/hand", new { text = "Helper says five." })).Status);
+        var handed = await host.PostAsync($"/api/helpers/{helper.Id}/hand", new { text = "Helper says five.", running = true, level = "urgent" });
+
+        Assert.Equal(200, handed.Status);
+        var kept = (await sessions.FindAsync(asker.Id))!;
+        Assert.Equal((helper.Id, "urgent", false), (kept.Said[0].Helper, kept.Said[0].Level, kept.Said[0].Persons));
+        Assert.Equal(409, (await host.PostAsync($"/api/helpers/{helper.Id}/hand", new { text = "Helper says five.", running = true })).Status);
+    }
+
     /// <summary>🔴 A helper takes no words and is never resumed: the say door refuses it by its own word, `helper`.</summary>
     [Fact]
     public async Task The_say_door_refuses_a_helpers_record_as_a_helper()

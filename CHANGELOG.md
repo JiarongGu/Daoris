@@ -9,10 +9,20 @@ with the version and date at release.
   tree that only the session branches list on its workspace's Branches can remove, and its Open goes there. Such a row is
   named by the session that worked in the tree, never by the tree's folder path, and says why once in the page's language.
   A branch the clean-up kept says why in your language on its session's page, and says it will try again only where it will.
+- A session waiting on its own background work, such as a long test run, now ends within about a minute once its quest closes,
+  is declined or asks another repository, instead of working on until the session timeout. It is recorded completed where its
+  quest reached done, its conversation says the work still running ended with it, and that work ends with its process.
 - The Sessions icon counts the sessions Daoris is running for you, and the status bar shows the same number; neither counts
   a conversation you hold yourself, Ask Daoris's included. Something in Sessions waiting on you is a dot in the waiting colour
   beside the count, and hovering the icon says both in words. The window's title keeps to the count *What needs you* shows,
   and the chip beside the browser's button names the browser in Chinese too.
+- Agents on one ask now tell each other things without stopping each other. A message an agent posts on the ask's channel is
+  ordinary unless it says it is urgent: an ordinary one waits for a natural point, beside what the session is told anyway when its
+  turn ends, its next part, or its own read of the channel, and an urgent one reaches a working session at its next step (three of a
+  part's posts at most). Every answer an agent gets from Daoris's tools says when messages wait for it. A helper's answer arrives as
+  the next turn, or at the next step where the agent asked for it urgently. On the ask's channel and a session's panel, each message
+  says what it reached in each repository: waiting, held, taken, read, answered, or never reached once the ask's work ended, and
+  *Send to its session* sends one on.
 - The Quests list shows one row for one piece of work: an ask that became a single quest is that quest's row, named by the
   ask's short title with the ask on its second line (its page opens from the row's right-click menu), and the Asks group
   keeps only asks still waiting on something of their own. A published ask no longer wears the finished colour.
@@ -41,6 +51,11 @@ with the version and date at release.
   look. `daoris workflow apply` and `import` refuse one that does not, saying which, and a stored one reads as unreadable with
   the same words. Your look no longer has to be wired after the second opinion: Daoris already holds its set-up while an agent
   reads the opinion, so the look can stand beside it, and both still come before the landing.
+- A session's page puts its conversation higher: the lines above it, its details, how the work ran, the folded parts, who it
+  worked with, the channel, where the work stands and how it came to be, now sit 8 px apart instead of 16, and so do the page's
+  head above them and the conversation below. On a half-width or narrower window the page's head keeps *Stop…* beside the title
+  as its square button (its name in its tip), and how the work ran stays one line, its stops cut short with the whole line in
+  their tip. A typical session's conversation starts within the top 200 px at every width.
 - Your limit of sessions at once counts what the driver starts: a quest's session, an ask's intake, a helper, a second opinion and
   a brainstorm's or a meeting's pass. A conversation you hold, an Ask Daoris conversation or a chat, takes no place under it, idle
   or working, so conversations left open between turns no longer hold quests back. Ask Daoris says so when it describes the limit.

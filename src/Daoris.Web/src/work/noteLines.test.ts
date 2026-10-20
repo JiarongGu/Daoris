@@ -501,6 +501,15 @@ describe('noteLines', () => {
       expect(noteLines(zh, { parts: [coded('background.work-ended', '…', { work: 'x' })] }, 'zh')[0].kind).toBe('recorded');
     });
 
+    /** DONEEND1: the quest no longer waits on the work, so the session ends and the work still running ends with it. */
+    it('words a wait its quest no longer needs by the work that ends with the session', () => {
+      const over = coded('background.wait-over', '— its quest no longer waits on its background work: …', { works: ['Run the tests'] });
+      expect(noteLines(t, { parts: [over] }, 'en')[0].text)
+        .toBe('Its quest no longer waits on its background work: the session ends, and the work still running ends with it: `Run the tests`.');
+      expect(noteLines(zh, { parts: [over] }, 'zh')[0].text)
+        .toBe('它的委托不再等这些后台工作：会话结束，仍在运行的工作随之结束：`Run the tests`。');
+    });
+
     it('words that a wait could not be read and leaves the program’s words as written', () => {
       const parts = [coded('background.unread', '— its turn ended …:'), words('the agent said no', 'program')];
       expect(noteLines(zh, { parts }, 'zh')).toEqual([

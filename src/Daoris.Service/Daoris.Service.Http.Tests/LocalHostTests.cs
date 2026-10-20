@@ -1995,7 +1995,8 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
 
         var told = await host.PostAsync($"/api/sessions/{id}/say", new { text = "Daoris: the person reopened it.", from = "daoris", key = "reopen/q1/desk/44" });
         var again = await host.PostAsync($"/api/sessions/{id}/say", new { text = "Daoris: the person reopened it.", from = "daoris", key = "reopen/q1/desk/44" });
-        var stranger = await host.PostAsync($"/api/sessions/{id}/say", new { text = "Hello.", from = "agent" });
+        // COWORK1d made `agent` an author this build knows (a claim the person passed on): a stranger is any other word.
+        var stranger = await host.PostAsync($"/api/sessions/{id}/say", new { text = "Hello.", from = "teammate" });
 
         Assert.Equal((200, 200, 400), (told.Status, again.Status, stranger.Status));
         var word = told.Json.GetProperty("said");

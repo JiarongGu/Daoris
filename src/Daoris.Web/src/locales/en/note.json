@@ -215,6 +215,7 @@
   "note.background.state.stopped": "stopped",
   "note.background.state.ended": "ended",
   "note.background.goes-on": "The session goes on.",
+  "note.background.wait-over": "Its quest no longer waits on its background work: the session ends, and the work still running ends with it: {{works}}.",
   "note.door.not-open": "The session could not open:",
   "note.door.turn-not-taken": "This turn could not be taken:",
   "note.door.failed": "The session failed:",

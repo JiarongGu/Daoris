@@ -59,6 +59,21 @@ public sealed class HelperFilesTests : IDisposable
         Assert.Empty(Directory.GetFiles(DaorisHome.Entry(_home, HomeEntry.Helpers), "*.writing"));
     }
 
+    /// <summary>
+    /// 🔴 COWORK1d (the message-urgency design §9): an ask `helper_ask` wrote urgent (the service's suite, <c>HelperBoxShapeTests</c>,
+    /// holds the same text) reads urgent; an ask with no level, every ask from before among them, reads ordinary, today's delivery.
+    /// </summary>
+    [Fact]
+    public void An_urgent_ask_reads_urgent_and_one_with_no_level_reads_ordinary()
+    {
+        Put("u1.ask.json", "{\n  \"id\": \"u1\",\n  \"asker\": \"s1\",\n  \"question\": \"Why?\",\n  \"agent\": null,\n  \"askedBy\": \"agent\",\n  \"urgent\": true,\n  \"at\": \"2026-10-12T10:00:00.0000000\\u002B00:00\"\n}\n");
+        Put("o1.ask.json", "{\n  \"id\": \"o1\",\n  \"asker\": \"s1\",\n  \"question\": \"Where?\",\n  \"agent\": null,\n  \"askedBy\": \"agent\",\n  \"at\": \"2026-10-12T10:01:00.0000000+00:00\"\n}\n");
+
+        var asks = new HelperFiles(_home).Asks();
+
+        Assert.Equal([("u1", true), ("o1", false)], asks.Select(ask => (ask.Id, ask.Urgent)));
+    }
+
     [Fact]
     public void An_answer_is_read_as_helper_answer_writes_it_and_the_persons_ask_is_written_as_helper_ask_does()
     {

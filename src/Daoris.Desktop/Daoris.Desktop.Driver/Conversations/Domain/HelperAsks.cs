@@ -78,6 +78,12 @@ public sealed record HelperAsk(string Id, string Asker, string Question, string?
 {
     public const string ByAgent = "agent";
     public const string ByPerson = "person";
+
+    /// <summary>
+    /// The asker asked for the answer at its next step (COWORK1d, D188 point 2; the message-urgency design §9): where its door takes
+    /// words then, while it works. False for an ask with no level, every ask from before among them: today's delivery.
+    /// </summary>
+    public bool Urgent { get; init; }
 }
 
 /// <summary>

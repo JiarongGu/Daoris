@@ -25,6 +25,62 @@ repository.
   reads its sessions' trees and is judged again as they move), `AttentionStateSliceTests`, and the page's `attention.test.ts`,
   `WorkMilestone.test.tsx` and `AttentionBand.test.tsx` in English and Chinese. Not yet seen on the installed Overview.
 
+## 2026-10-21 — The full set on 824886d: an end-to-end test held the old asks group, and a test home's delete met a held log (QUESTLISTS1, FLAKE1)
+
+- **Symptom:** the `web` gate failed the end-to-end INT4c case (with closed work included, no *Asks* group came back), and on
+  another run a different case of the same file; the `modules` gate failed `PipeConfirmTests` in its teardown, the test home's
+  delete refused because `2026-10-20.jsonl` was in use.
+- **Root cause:** QUESTLISTS1 made an ask that became one quest that quest's row, so a done ask no longer has a group of its own;
+  its builder, held to filtered unit tests, never ran the end-to-end file, whose words still expected the group. The same merge
+  added an `ask #id` tag to the row though a quest an ask published already comes `from` that ask, so the row said it twice. The
+  modules test bridge deleted its home once, while a module's machine log still held its day's file (the run crossed midnight).
+- **Fix:** INT4c now expects the one row, its route naming the ask once, and no asks group; the row's tag is drawn only where the
+  route does not already name the ask (a `QuestList` case holds it); the bridge asks the delete again for two seconds and leaves a
+  scratch folder rather than fail a test that passed.
+- **Verification:** the whole end-to-end file, 24 of 24, on a fresh build; `QuestList.test.tsx` 16; `PipeConfirmTests` 7.
+
+## 2026-10-20 — A session whose quest closed while it waited on its background work worked on until the timeout (DONEEND1)
+
+- **Symptom:** on the install two driven sessions went on working, showing *Stop…* and holding a slot of the cap, after their
+  quests closed done, until the 90-minute timeout killed them (one 14 minutes after its close); the kill left a test's scratch in
+  its tree.
+- **Root cause:** `AcpSession.AfterBackgroundAsync` read the quest once, at the turn's end (`waits(ct)`, BGWAIT1), then blocked in
+  `AcpBackground.EndedAsync` until every piece of background work ended. A quest closed during that wait, by the agent in a turn
+  its harness woke for one piece while a long test run went on, was never read, so only the timeout's kill ended it. Behind it, a
+  run that did end with its work still running closed the agent's stdin and waited on its exit bounded only by the timeout
+  (`Driver.WaitAsync`), so an agent the work held alive would hold the run the same way.
+- **Fix:** the background wait races a look (`QuestMovedAsync`): the same judgement read every `BackgroundLook` (every fourth
+  driver tick), which once the quest no longer parks waits for no turn to run (`AcpWake.IdleAsync`) and ends the session, saying
+  `background.wait-over`. An unread look keeps waiting. The capture gives an agent that leaves work running 10 s to exit, then ends
+  its tree (`Driver.EndedLingeringAsync`), told to `AcpEnding` so the conclusion reads the session's clean end, not the kill's exit.
+- **Verification:** `AcpBackgroundTests`, `BackgroundWaitJudgementTests`, `NoteCodesTests`, `AcpTests` (150 passed), the page's
+  `note.test.ts` and `noteLines.test.ts`; `DoneEndTickTests` (Process) failed at its 90 s bound before the driver's half and
+  passed in 28 s after it, the stand-in's test run ended with its tree.
+## 2026-10-20 — `orient-report`'s home tests failed in a driven session's tree (ORIENTTREE1)
+
+- **Symptom:** in a session's tree, `orient-report.test.ts` "a home is read for its driven sessions…" (the tree's declared
+  `docs/where/` not read) and "the home's report says what it read…" (the first edit a fixture tree's `local/` note, paths said from the session's own tree) failed,
+  with every `DAORIS_*` variable set or unset; on the main checkout both passed.
+- **Root cause:** the tree's place, not the environment. `placeOf` knew a home's trees only at their old place,
+  `<home>/trees/`, and the fixture's home makes them at the new one, `work/trees/` (D172); so every path fell to the
+  minted-name fallback, whose regex took the leftmost `trees/<a>/<b>/s-<hex>`. Under a home's `trees/` that is the driven
+  session's own tree, which holds the fixture, so every call was placed there.
+- **Fix:** `placeOf` asks the home table for both places of `trees` (`homePlaces`), and the minted fallback takes the
+  innermost name.
+- **Verification:** both tests, and placement asserts for the new place and a home nested in a session's tree, green from a
+  tree under a home's `trees/`; the home and one-word censuses.
+## 2026-10-21 — The Node tests' stub children inherited a driven session's variables (ENVLEAK2)
+
+- **Symptom:** ENVLEAK1's survey found the rehearsal kit's, the setup kit's and the deployment rehearsal's stub tests would fail
+  in a brainstorm pass's session: they pass in a quest's.
+- **Root cause:** each stub child started from `{ ...process.env }` and set or deleted the quest's id alone, so an inherited
+  `DAORIS_BRAINSTORM_TURN` turned the protocol stub to its brainstorm branch (`tools/rehearsal-kit.mjs`, `work`), and an
+  inherited quest id or title could choose another branch for a test that set none.
+- **Fix:** `unroled()` (`src/Daoris.Cli/test/_fixture.ts`) and the rehearsal kit's `stubTurn` start a child from the
+  environment without any `DAORIS_*` variable; the test then sets the ones it means, as the driver's `Spawning.Unrole` does.
+- **Verification:** with `DAORIS_BRAINSTORM_TURN`, `DAORIS_QUEST_ID` and `DAORIS_SESSION_ID` set, the rehearsal kit's stub
+  tests 6, the setup kit's stub, set-up and FLAKE2 tests 10, and the deployment rehearsal's protocol-stub tests 2, all passing.
+
 ## 2026-10-20 — Two fast tests timed by the wall clock failed under a loaded machine (FLAKE1)
 
 - **Symptom:** the full set on 9717f8d failed `StagedBuildTests.A_file_held_in_app_for_a_moment_does_not_roll_the_swap_back`
