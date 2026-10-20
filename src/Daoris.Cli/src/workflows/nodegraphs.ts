@@ -507,20 +507,18 @@ export function graphProblems(graph: GraphForm, saved = true): GraphProblem[] {
     }
   }
 
-  // D157 §2.2's protected order: each gate reached before every later gate and every landing starts, through wires a reach satisfies.
+  // D157 §2.2's protected order: each gate reached before every landing starts, through wires a reach satisfies. FABRIC-CUTOVER1b (the
+  // cutover design §5.1): the opinion is not asked to reach a look, whose set-up the review gate holds while an agent reads the opinion.
   const ordered = local.filter((wire) => wire.kind === 'after' || wire.kind === 'trigger' || wire.kind === 'data');
   const landings = [...byId.values()].filter((node) => node.kind === 'handed');
   const looks = [...byId.values()].filter((node) => node.kind === 'look');
   const gates = [...byId.values()].filter((node) => node.kind === 'opinion' || node.kind === 'look');
-  const laterOf = (gate: FormNode): [string, FormNode][] => [
-    ...(gate.kind === 'opinion' ? looks.map((look): [string, FormNode] => ['look', look]) : []),
-    ...landings.map((landing): [string, FormNode] => ['landing', landing]),
-  ];
+  const later = landings.map((landing): [string, FormNode] => ['landing', landing]);
   const unreached = new Set<string>();
   for (const gate of gates) {
     const after = reach([gate.id], ordered, true);
     if (gate.kind === 'look') for (const landing of landings) if (!after.has(landing.id)) unreached.add(landing.id);
-    const early = laterOf(gate).find(([, each]) => !after.has(each.id));
+    const early = later.find(([, each]) => !after.has(each.id));
     if (early !== undefined) say('protected-order', null, gate.id, `the ${gate.kind} \`${gate.id}\` comes before the ${early[0]} \`${early[1].id}\` ${ORDER}.`);
   }
 
@@ -538,7 +536,7 @@ export function graphProblems(graph: GraphForm, saved = true): GraphProblem[] {
   if (!problems.some((problem) => problem.code === 'protected-order')) {
     const wired = (from: string, to: string): boolean => ordered.some((wire) => wire.from!.node === from && wire.to.node === to && wire.group?.mode !== 'anyOf');
     for (const gate of gates) {
-      const next = laterOf(gate).find(([, each]) => !wired(gate.id, each.id));
+      const next = later.find(([, each]) => !wired(gate.id, each.id));
       if (next !== undefined) {
         say('protected-wire', null, gate.id, `the ${gate.kind} \`${gate.id}\` is not wired into the ${next[0]} \`${next[1].id}\`: a skip of a gate between them would let an \`after\` `
           + `wire pass while \`${gate.id}\` is unsettled, so wire \`${gate.id}\` into \`${next[1].id}\` ${ORDER}.`);

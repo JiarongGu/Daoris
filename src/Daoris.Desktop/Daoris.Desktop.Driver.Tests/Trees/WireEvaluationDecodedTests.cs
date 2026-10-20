@@ -405,13 +405,13 @@ public sealed class WireEvaluationDecodedTests
     }
 
     /// <summary>
-    /// The mismatch, recorded and not settled here (the parent's decision; D173's FABRIC-WIRE1g note): a schema-1 run lets the look go on
-    /// beside a disputed opinion, whose Reviewed answers it (<c>WorkflowRunTests</c>, <i>the look goes on beside a dispute, whose Reviewed
-    /// answers it</i>), and schema 1 is unchanged. A decoded version's order (§E7; GRAPH1's choice 5: every opinion reaches every look) holds
-    /// the look until the opinion is reached, so the person's Reviewed could not answer the dispute there. WORKFLOW2b and the cutover settle it.
+    /// The mismatch D173's FABRIC-WIRE1g note recorded, settled (FABRIC-CUTOVER1b; D190 point 5, the cutover design §5.1): a schema-1 run
+    /// lets the look go on beside a disputed opinion, whose Reviewed answers it (<c>WorkflowRunTests</c>, <i>the look goes on beside a
+    /// dispute, whose Reviewed answers it</i>). The decoder (version 3) wires the look after the step before the opinion, never from it, so a
+    /// decoded look is offered beside the dispute too, and the landing still waits on the opinion.
     /// </summary>
     [Fact]
-    public void Mismatch_a_disputed_opinion_holds_a_decoded_look_that_a_schema_1_run_lets_go_on()
+    public void A_disputed_opinion_holds_no_decoded_look_as_a_schema_1_run_holds_none()
     {
         var decoded = WorkflowGraphs.Graph(
         [
@@ -424,7 +424,7 @@ public sealed class WireEvaluationDecodedTests
         g.Evaluate();
         g.Evaluate();
 
-        Assert.Equal((NodeStates.Active, NodeStates.Blocked, NodeStates.Blocked), (g.State("opinion"), g.State("look"), g.State("land")));
+        Assert.Equal((NodeStates.Active, NodeStates.Ready, NodeStates.Blocked), (g.State("opinion"), g.State("look"), g.State("land")));
     }
 
     /// <summary>

@@ -16,9 +16,9 @@ import { field, members, quoted, versionDigest, type NamedStep, type NamedVersio
 
 /**
  * The decoder's own version — the driver's `WorkflowGraphs.DecoderVersion`: a decoded graph's digest is derived from it. 2 since
- * FABRIC-GRAPH1h, whose wires hold the protected order across a skip.
+ * FABRIC-GRAPH1h, whose wires hold the protected order across a skip; 3 since FABRIC-CUTOVER1b, whose look is wired beside the opinion.
  */
-export const DECODER_VERSION = 2;
+export const DECODER_VERSION = 3;
 
 /** The protected order's steps before the landing (D157 §2.2), each wired into every one after it — the driver's `WorkflowGraphs.Gate`. */
 const GATES: ReadonlySet<string> = new Set(['work', 'opinion', 'look', 'landing']);
@@ -86,6 +86,8 @@ export function workflowGraph(steps: readonly NamedStep[]): DecodedGraph {
   };
 
   let previous: string | null = null;
+  let opinion: string | null = null;
+  let beforeOpinion: string | null = null;
   const gates: string[] = [];
   for (const step of steps) {
     if (step.kind === 'all') {
@@ -98,19 +100,24 @@ export function workflowGraph(steps: readonly NamedStep[]): DecodedGraph {
       for (const member of members(step)) wire('after', member.id, step.id);
     } else {
       nodes.push(nodeOf(step));
-      if (previous !== null) wire('after', previous, step.id);
+      // FABRIC-CUTOVER1b (the cutover design §5.1): a look is wired after the step before the opinion, never after the opinion, since the
+      // review gate holds its set-up while an agent reads the opinion — the driver's `Graph`.
+      const beside: boolean = step.kind === 'look' && opinion !== null && previous === opinion;
+      const after: string | null = beside ? beforeOpinion : previous;
+      if (after !== null) wire('after', after, step.id);
 
       // FABRIC-GRAPH1h: the protected order (D157 §2.2) held by wires, not by reachability alone. A skip satisfies its `after` wire
       // (§E2), so the step order alone would let a gate go past an earlier one still unsettled once a step between is skipped. Each
       // gate (the work, whose node carries the holds; the opinion; the look) is wired into every gate after it — the driver's `Gate`.
       if (GATES.has(step.kind)) {
-        for (const gate of gates) if (gate !== previous) wire('after', gate, step.id);
+        for (const gate of gates) if (gate !== after && !(step.kind === 'look' && gate === opinion)) wire('after', gate, step.id);
         gates.push(step.id);
       }
     }
 
     if (step.kind === 'check' || step.kind === 'stage' || step.kind === 'all') outcome(step, 'failed', field(step, 'failed'));
     if (step.kind === 'go-ahead') outcome(step, 'rejected', field(step, 'refused'));
+    if (step.kind === 'opinion') [opinion, beforeOpinion] = [step.id, previous];
     previous = step.id;
   }
 

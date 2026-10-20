@@ -245,8 +245,9 @@ test('apply saves a file\'s steps as the next version; show draws a version, its
 /** A graph as a person writes it, an option holding a number by its own text and an object whose keys are numbers, in their order. */
 const GRAPH = '{ "schemaVersion": 2, "entries": ["qa"], "end": "close", "nodes": [\n'
   + '  { "id": "qa", "kind": "human", "version": 1, "reach": "pressed", "options": { "brief": "Verify the release", "weight": 1.0, "order": { "2": "b", "1": "a" } } },\n'
+  + '  { "id": "landing", "kind": "handed", "version": 1, "reach": "observed" },\n'
   + '  { "id": "close", "kind": "quest.close", "version": 1, "reach": "performed" } ],\n'
-  + '  "wires": [ { "id": "a", "kind": "after", "from": "qa", "to": "close" } ] }';
+  + '  "wires": [ { "id": "a", "kind": "after", "from": "qa", "to": "landing" }, { "id": "b", "kind": "after", "from": "landing", "to": "close" } ] }';
 
 test('apply saves a file\'s graph as the next version, judged whole as the driver judges it, every value\'s text kept (FABRIC-GRAPH1f)', async () => {
   const fx = makeFixture('workflowdoor-graph');
@@ -254,7 +255,7 @@ test('apply saves a file\'s graph as the next version, judged whole as the drive
   fx.write('graph.json', GRAPH);
 
   const plan = await run(fx, ['apply', 'docs', 'graph.json', '--plan']);
-  assert.match(plan.out, /^daoris: `docs` v1 → v2 — Docs: a graph \(schema 2\) of 2 nodes and 1 wire, ending at `close`, digest gph-[0-9a-f]{32}, which this build reads and does not run yet\.\n {2}--plan: nothing was written\./);
+  assert.match(plan.out, /^daoris: `docs` v1 → v2 — Docs: a graph \(schema 2\) of 3 nodes and 2 wires, ending at `close`, digest gph-[0-9a-f]{32}, which this build reads and does not run yet\.\n {2}--plan: nothing was written\./);
   assert.equal(saved(fx, 'docs').versions.length, 1);
 
   const applied = await run(fx, ['apply', 'docs', 'graph.json']);
@@ -279,6 +280,13 @@ test('apply saves a file\'s graph as the next version, judged whole as the drive
   assert.match(loop.message, /^v4: its graph does not hold: nodes `a`, `b`: they wait on each other through `x`, `y`; a graph's wires never come back/);
   assert.equal(kept(fx, 'docs'), before);
 
+  // FABRIC-CUTOVER1b: a graph that holds, with no landing, is no named version's: it lands its work once.
+  fx.write('unlanded.json', JSON.stringify({ entries: ['a'], end: 'a', nodes: [{ id: 'a', kind: 'human', version: 1, reach: 'pressed' }], wires: [] }));
+  const unlanded = await refused(fx, ['apply', 'docs', 'unlanded.json']);
+  assert.equal(unlanded.exitCode, 1);
+  assert.equal(unlanded.message, "v4: its graph holds no landing (`handed`), and a named workflow's graph lands its work once.");
+  assert.equal(kept(fx, 'docs'), before);
+
   // A graph whose digest this build cannot write as the driver does is not saved here: the driver's door saves it.
   fx.write('letters.json', GRAPH.replace('Verify the release', 'Vérifier'));
   const letters = await refused(fx, ['apply', 'docs', 'letters.json']);
@@ -287,7 +295,7 @@ test('apply saves a file\'s graph as the next version, judged whole as the drive
 
   // A version holding a graph is a file's graph to apply too, and export writes the file as read.
   fx.write('version.json', JSON.stringify({ version: 9, at: '2026-10-18T09:00:00Z', door: 'screen', schema: 2, graph: JSON.parse(GRAPH) }));
-  assert.match((await run(fx, ['apply', 'docs', 'version.json', '--plan'])).out, /^daoris: `docs` v3 → v4 — Docs: a graph \(schema 2\) of 2 nodes/);
+  assert.match((await run(fx, ['apply', 'docs', 'version.json', '--plan'])).out, /^daoris: `docs` v3 → v4 — Docs: a graph \(schema 2\) of 3 nodes/);
   assert.equal((await run(fx, ['export', 'docs'])).out, kept(fx, 'docs').slice(0, -1));
   fx.cleanup();
 });
@@ -299,7 +307,7 @@ test('import takes a file whose versions are graphs that hold, and refuses one w
     + `  { "version": 2, "at": "2026-10-18T09:00:00Z", "door": "terminal", "schema": 2, "graph": ${GRAPH} } ] }`);
   const imported = await run(fx, ['import', 'carried.json']);
   assert.equal(imported.code, 0);
-  assert.match(imported.out, /^daoris: `release` — Release, from carried\.json: 2 versions, its newest v2: a graph \(schema 2\) of 2 nodes and 1 wire/);
+  assert.match(imported.out, /^daoris: `release` — Release, from carried\.json: 2 versions, its newest v2: a graph \(schema 2\) of 3 nodes and 2 wires/);
   assert.match(kept(fx, 'release'), /"weight": 1\.0/);
 
   fx.write('broken.json', JSON.stringify({ id: 'broken', name: 'Broken', versions: [steps,

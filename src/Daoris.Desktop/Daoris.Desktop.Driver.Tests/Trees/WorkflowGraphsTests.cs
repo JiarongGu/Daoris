@@ -232,7 +232,8 @@ public sealed class WorkflowGraphsTests : IDisposable
     /// FABRIC-GRAPH1h (D157 §2.2; GRAPH1's choice 5, WORKFLOW2's choice 10): the protected order held by wires, not by reachability alone.
     /// A skip satisfies its <c>after</c> wire (§E2), so a chain alone lets the landing past an unsettled gate once a step between is
     /// skipped. Each gate before the landing (the work, whose node carries the holds; the opinion; the look) is wired into every gate after
-    /// it, once, beside the step order; a go-ahead is no gate, and nothing after the landing gains a wire.
+    /// it, once, beside the step order; a go-ahead is no gate, and nothing after the landing gains a wire. FABRIC-CUTOVER1b (the cutover
+    /// design §5.1): the look is wired beside the opinion, after the step before it, never from the opinion.
     /// </summary>
     [Fact]
     public void The_protected_order_wires_each_gate_into_every_gate_after_it()
@@ -245,7 +246,7 @@ public sealed class WorkflowGraphsTests : IDisposable
         var graph = WorkflowGraphs.Graph(steps);
 
         Assert.Equal(
-            ["work>ask", "ask>second", "work>second", "second>see", "work>see", "see>land", "work>land", "second>land", "land>pr", "pr>lint"],
+            ["work>ask", "ask>second", "work>second", "ask>see", "work>see", "see>land", "work>land", "second>land", "land>pr", "pr>lint"],
             graph.Wires.Where(wire => wire.Kind == WireKinds.After).Select(wire => wire.Id));
         Assert.Equal(graph.Wires.Count, graph.Wires.Select(wire => wire.Id).Distinct(StringComparer.Ordinal).Count());
         Assert.Empty(NodeGraphs.Problems(graph, saved: false));
