@@ -630,6 +630,25 @@ public sealed class DrivenInbox(Action<ChatQueue> changed)
     }
 
     /// <summary>
+    /// A word another producer already kept on the session's record under <see cref="ChatMessage.Id"/> (COWORK1d: an urgent ask's
+    /// helper answer, handed for this run), held as a kept word is: told, sent at the next step at its level or held for the turn's
+    /// end, and taken off the record by its id through <paramref name="door"/> once on the wire. Held once by its id. False once the
+    /// session stopped taking words, and the word stays on the record for its go-on. A solicited answer may make a turn happen, so the
+    /// turn's end refuses it nothing.
+    /// </summary>
+    public bool HoldKept(ChatMessage word, ISaidDoor door)
+    {
+        lock (_gate)
+        {
+            if (_closed || word.Id is not { } id) return false;
+            _door ??= door;
+            if (!_known.Add(id)) return true;
+            HoldHere(word with { Kept = true });
+            return true;
+        }
+    }
+
+    /// <summary>
     /// The claims held to ride that the agent read itself with <c>channel_read</c> (COWORK1d), by their channel ids: let go, never
     /// handed a second time. Words that make a turn are never dropped here.
     /// </summary>
@@ -975,7 +994,7 @@ public sealed class DrivenInbox(Action<ChatQueue> changed)
     /// </summary>
     private ChatQueue Now() => _closed
         ? ChatQueue.Idle
-        : new ChatQueue(Taking: true, [.. _held.Where(message => message.Daoris is null && !IsClaim(message))]);
+        : new ChatQueue(Taking: true, [.. _held.Where(message => message.Daoris is null && message.Helped is null && !IsClaim(message))]);
 
     /// <summary>Another agent's claim on the ask's channel, as this inbox carries it (COWORK1d).</summary>
     private static bool IsClaim(ChatMessage message) => message.Channel is { Person: false };

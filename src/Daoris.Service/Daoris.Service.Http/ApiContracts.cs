@@ -501,7 +501,9 @@ public sealed record OpinionActionResponse(
 // MIXAGENT2a-ii (D163 point 2): the driver's helper session opens its record, and hands the helper's answer to the asker. Every
 // part nullable so one left out is refused by the desk naming which. `text` is Daoris's words around the helper's claim.
 public sealed record HelperOpenRequest(string? Asker, string? Adapter, string? Tree, string? Account = null, string? HarnessVersion = null, string? BaseCommit = null);
-public sealed record HelperHandRequest(string? Text);
+// COWORK1d: `running` true is the driver that runs a working driven asker handing an urgent ask's answer for its run's next step;
+// `level` the ask's, kept beside the word.
+public sealed record HelperHandRequest(string? Text, bool? Running = null, string? Level = null);
 // A helper door's answer: the desk's sentence, the helper's record a pass opened or the asker the answer went to, and the word.
 public sealed record HelperActionResponse(string Message, SessionResponse? Session = null, SaidWordResponse? Said = null);
 // BRAINSTORM1a3 (D176 points 1, 2 and 8): a person's question for a brainstorm, every part nullable so one left out is refused by

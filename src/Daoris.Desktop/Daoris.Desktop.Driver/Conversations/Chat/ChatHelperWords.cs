@@ -56,7 +56,11 @@ internal sealed class ChatHelperWords(ChatContext context)
     /// </remarks>
     private async Task<bool> SayHelperWordAsync(string sessionId, SaidWordView word)
     {
-        var message = new ChatMessage(word.Text, []) { Helped = word, Id = word.Id, Kept = true };
+        // COWORK1d: ordinary unless its ask was urgent, which its word on the record says.
+        var message = new ChatMessage(word.Text, [])
+        {
+            Helped = word, Id = word.Id, Kept = true, Level = word.Level == MessageLevel.Urgent ? MessageLevel.Urgent : MessageLevel.Ordinary,
+        };
         if (context.Turned.TryGetValue(sessionId, out var chat))
         {
             chat.Turns.Keeps(new SaidDoor(context.Service, sessionId));

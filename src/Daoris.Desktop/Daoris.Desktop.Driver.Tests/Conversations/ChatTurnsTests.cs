@@ -553,6 +553,27 @@ public sealed class ChatTurnsTests
     }
 
     /// <summary>
+    /// 🔴 COWORK1d (the message-urgency design §5; D163 point 2 as D188 amends it): a helper's answer to an urgent ask goes at the
+    /// conversation's next step, where its door takes words then, recorded as Daoris's words around the helper's claim; one with no level
+    /// waits for the turn's end as before (above).
+    /// </summary>
+    [Fact]
+    public async Task A_helpers_answer_to_an_urgent_ask_goes_at_the_next_step_as_the_helpers_claim()
+    {
+        var door = new Door();
+        var turns = door.Turns();
+        turns.Take(new ChatMessage("read the five files", []));
+        await Poll.Until(() => door.Took.Count == 1, () => "the first turn never reached the door");
+
+        var helper = new SaidWordView("h1w", "Another agent says five.", DateTimeOffset.UtcNow, [], true) { Helper = "h1", Level = MessageLevel.Urgent };
+        var answer = new ChatMessage(helper.Text, []) { Helped = helper };
+
+        Assert.Equal(TurnReach.NextStep, turns.Take(answer));
+        Assert.Equal(["Another agent says five."], door.Steered);
+        Assert.Equal("target", ChatMessage.Words(answer).Origin);
+    }
+
+    /// <summary>
     /// MIXAGENT2a-iii: a helper's answer is recorded as Daoris's words around another agent's claim, under its record id so it
     /// pairs with the event that showed it waiting, and never as the person's: no preface and no browser line, origin `target`.
     /// </summary>

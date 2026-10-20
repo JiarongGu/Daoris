@@ -60,6 +60,26 @@ public sealed class McpHelperToolTests : McpToolsFixture
     }
 
     /// <summary>
+    /// 🔴 COWORK1d (D188 point 2; the message-urgency design §2.2, §9): `helper_ask`'s `urgent` asks the answer at the asker's next
+    /// step, kept on the ask file as `urgent: true` and said in the answer; an ordinary ask keeps no field, which reads as today's delivery.
+    /// </summary>
+    [Fact]
+    public async Task An_urgent_ask_is_kept_urgent_and_an_ordinary_one_keeps_no_level()
+    {
+        var (tools, _) = await HelperConnectorAsync(async sessions => (await WorkingAsync(sessions)).Id);
+
+        var urgent = await tools.AskHelperAsync("Is the cap read before the loop?", urgent: true);
+        var ordinary = await tools.AskHelperAsync("Where is the cap read?");
+
+        Assert.Contains("at your next step", urgent);
+        Assert.Contains("as your next turn", ordinary);
+        var kept = Directory.GetFiles(Helpers(), "*.ask.json").Select(file => JsonDocument.Parse(File.ReadAllText(file)).RootElement).ToList();
+        var asked = kept.Single(root => root.GetProperty("question").GetString() == "Is the cap read before the loop?");
+        Assert.True(asked.GetProperty("urgent").GetBoolean());
+        Assert.False(kept.Single(root => root.GetProperty("question").GetString() == "Where is the cap read?").TryGetProperty("urgent", out _));
+    }
+
+    /// <summary>
     /// 🔴 What the tool can judge itself is refused in a sentence and writes nothing: no session in its scope, a session nobody
     /// holds, a helper (its record has `serves`), a reviewer, an intake, and a question left blank.
     /// </summary>

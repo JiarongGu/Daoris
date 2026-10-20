@@ -219,16 +219,19 @@ internal sealed class OpinionStandIn : HttpMessageHandler
                     if (asker is null) return Refuse(HttpStatusCode.Conflict, "there is no such session to hand the answer to");
                     if (state == "stood-down") return Refuse(HttpStatusCode.Conflict, "it stood down");
                     if (state == "awaiting-person") return Refuse(HttpStatusCode.Conflict, "it waits on the person's answer");
-                    // An open conversation between turns (MIXAGENT2a-iii) takes it, as the desk lets it.
-                    var open = state == "working" && asker["kind"]?.GetValue<string>() == "chat";
+                    // An open conversation between turns (MIXAGENT2a-iii) takes it, as the desk lets it; and a driven asker working, where
+                    // the driver that runs it asks with `running` (COWORK1d), its answer kept with its level.
+                    var asked = JsonNode.Parse(body!)!;
+                    var open = state == "working" && (asker["kind"]?.GetValue<string>() == "chat" || asked["running"]?.GetValue<bool>() == true);
                     if (Running.Contains(state!) && !open) return Refuse(HttpStatusCode.Conflict, "a helper's answer reaches a running session at its turn's end");
                     if (asker["said"]!.AsArray().Any(each => each!["helper"]?.GetValue<string>() == id)) return Refuse(HttpStatusCode.Conflict, "it goes once");
 
-                    var text = JsonNode.Parse(body!)!["text"]!.GetValue<string>();
+                    var text = asked["text"]!.GetValue<string>();
                     var word = new JsonObject
                     {
                         ["id"] = $"hp-w{++_words}", ["text"] = text, ["at"] = "2026-10-12T10:15:00Z", ["files"] = new JsonArray(), ["reopens"] = true, ["helper"] = id,
                     };
+                    if (asked["level"]?.GetValue<string>() is { } level) word["level"] = level;
                     asker["said"]!.AsArray().Add(word);
                     HelperHands.Add((id, text));
                     return Answer(HttpStatusCode.OK, new JsonObject { ["message"] = "Handed.", ["session"] = asker.DeepClone(), ["said"] = word.DeepClone() });

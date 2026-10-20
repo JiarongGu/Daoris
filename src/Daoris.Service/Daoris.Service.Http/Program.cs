@@ -1591,7 +1591,9 @@ if (mode == ServiceMode.Local)
 
     app.MapPost("/api/helpers/{helper}/hand", async (ComposedService s, HttpContext http, string helper, HelperHandRequest body, CancellationToken ct) =>
         MachineLocal(http)
-            ? await HelperReply(await s.Helpers.HandAsync(helper, body.Text ?? "", DateTimeOffset.UtcNow, ct), s, http)
+            ? await HelperReply(await s.Helpers.HandAsync(
+                helper, body.Text ?? "", DateTimeOffset.UtcNow, ct, running: body.Running == true,
+                level: string.IsNullOrWhiteSpace(body.Level) ? null : body.Level.Trim()), s, http)
             : OffMachineOpinion());
 }
 

@@ -353,7 +353,7 @@ internal sealed class ChatTurns(
     /// </summary>
     private bool IntoTheTurn(ChatMessage word, int at)
     {
-        if (word.Level == MessageLevel.Ordinary || word.Helped is not null || !_inFlight || !_sent || _stopped || _stopPending
+        if (word.Level == MessageLevel.Ordinary || Answer(word) || !_inFlight || !_sent || _stopped || _stopPending
             || _holding is not null) return false;
 
         // Without the queue's id, as a turn is sent (QUEUEEDIT1a): the door gives a word handed to the turn its own.
@@ -382,7 +382,13 @@ internal sealed class ChatTurns(
     /// said before it. Called under the lock.
     /// </summary>
     private bool UrgentWaiting(int? before = null) =>
-        _waiting.Take(before ?? _waiting.Count).Any(message => message.Helped is null && message.Level != MessageLevel.Ordinary);
+        _waiting.Take(before ?? _waiting.Count).Any(message => !Answer(message) && message.Level != MessageLevel.Ordinary);
+
+    /// <summary>
+    /// A helper's answer that waits for the turn's end as a turn of its own (MIXAGENT2a-iii): every one but an urgent ask's, which
+    /// goes at the next step where the door takes words then (COWORK1d, the message-urgency design §5).
+    /// </summary>
+    private static bool Answer(ChatMessage message) => message.Helped is { } helped && helped.Level != MessageLevel.Urgent;
 
     /// <summary>Queue a turn. False once the conversation is finishing, held or gone: nothing more will be heard.</summary>
     public bool Say(ChatMessage message) => Take(message) is not null;
@@ -428,9 +434,9 @@ internal sealed class ChatTurns(
             // At its next step (D137 §2.1): only into a turn already on the wire, never one the person stopped, and never
             // ahead of an urgent word still waiting, which would make the agent read them out of the order said. An ordinary word
             // never enters a turn in flight, and an urgent one goes past it, since its sender chose sooner (COWORK1a, the design
-            // §2.1). A helper's answer is a turn of its own, never handed to the running one (MIXAGENT2a-iii).
-            // COWORK1c: a kept word goes to the door to be attempted before the wire and taken off the record once written.
-            if (steer is not null && message.Helped is null && message.Level != MessageLevel.Ordinary && _inFlight && _sent
+            // §2.1). A helper's answer is a turn of its own, never handed to the running one (MIXAGENT2a-iii), unless its ask was
+            // urgent (COWORK1d). COWORK1c: a kept word goes to the door to be attempted before the wire and taken off the record once written.
+            if (steer is not null && !Answer(message) && message.Level != MessageLevel.Ordinary && _inFlight && _sent
                 && !_stopped && !_stopPending && _holding is null && !UrgentWaiting() && steer(Dispatched(message)) is { } answered)
             {
                 _steered.Add(answered);

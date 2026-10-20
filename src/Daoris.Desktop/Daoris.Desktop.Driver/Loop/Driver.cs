@@ -3323,6 +3323,9 @@ public sealed class Driver(
                     ? reach == DrivenReach.NextStep
                         ? $"— another session's message `{claim.Id}` on the ask's channel, which reaches the session at its next step"
                         : $"— another session's message `{claim.Id}` on the ask's channel, which goes beside what the session is told when its turn ends"
+                    // COWORK1d: an urgent ask's helper answer, the helper's claim, never the person's.
+                    : message.Helped is { Helper: var helper }
+                        ? $"— helper `{helper}`'s answer, which reaches the session {(reach == DrivenReach.NextStep ? "at its next step" : "when its turn ends")}"
                     : reach switch
                     {
                         DrivenReach.NextStep => $"— the person added, which reaches the session at its next step: {message.Text}",
@@ -3348,7 +3351,9 @@ public sealed class Driver(
                     {
                         Line(message.Channel is { Person: false } claim
                             ? $"— the session took another session's message `{claim.Id}` on the ask's channel"
-                            : $"— the session took what the person added: {message.Text}");
+                            : message.Helped is { Helper: var helper }
+                                ? $"— the session took helper `{helper}`'s answer"
+                                : $"— the session took what the person added: {message.Text}");
                         Event(ChatMessage.Words(message));
                         // COWORK1d: a channel message's entry acknowledges it taken, on the door's word.
                         message.Acknowledge?.Invoke(ChannelAcks.Taken);

@@ -355,18 +355,32 @@ internal sealed class DriverHelpers(LoopContext context, Driver driver)
         // Never into a step in flight (D136): a running turn takes another agent's claim at its end, and a park after the person's
         // answer. Said nowhere: each look would say it again, and the next look after the record ended hands it.
         // A conversation open between turns is `working` and takes it (its runner says it as the next turn); one still starting waits.
+        // 🔴 COWORK1d (the message-urgency design §5): an urgent ask's answer reaches a running asker this loop runs at its next step,
+        // where its door takes words then, kept on its record for its run and held in its inbox under the record's id.
         var conversation = record!.Kind == "chat";
         var open = conversation && string.Equals(record.State, "working", StringComparison.OrdinalIgnoreCase);
-        if (!open && (record.Running || record.Parked)) return null;
+        var inbox = ask.Urgent && !conversation && record.Running ? _context.Processes.InboxOf(ask.Asker) : null;
+        var nextStep = inbox?.ReachAt(MessageLevel.Urgent) == DrivenReach.NextStep;
+        if (!open && !nextStep && (record.Running || record.Parked)) return null;
 
         var text = state.LastWords
             ? state.Words ?? ""
             : files.ReadAnswer(ask.Id)?.Answer ?? "";
         var agent = state.Agent ?? "another agent";
         var composed = HelperWords.Compose(agent, state.Helper!, ask.Question, text, state.LastWords);
-        var (handed, message, word) = await service.Helpers.HandAsync(state.Helper!, composed, ct).ConfigureAwait(false);
+        var (handed, message, word) = await service.Helpers
+            .HandAsync(state.Helper!, composed, ct, running: nextStep, level: ask.Urgent ? MessageLevels.Spelled(MessageLevel.Urgent) : null)
+            .ConfigureAwait(false);
         if (!handed) return $"helper  ask `{ask.Id}` is answered, and waits to be handed to session {ask.Asker}: {message}";
 
+        // Held where the run takes it at its next step; one the inbox no longer takes stays on the record, which goes on with it once.
+        var atNextStep = nextStep && word is not null && inbox!.HoldKept(
+            new ChatMessage(composed, [])
+            {
+                Id = word, Level = MessageLevel.Urgent,
+                Helped = new SaidWordView(word, composed, DateTimeOffset.UtcNow, [], true) { Helper = state.Helper, Level = MessageLevel.Urgent },
+            },
+            new SaidDoor(service, ask.Asker));
         files.WriteState(state with { Handed = word ?? "handed" });
         var noted = HelperNotes.Answered(agent, state.Helper!, state.LastWords);
         output?.Append(ask.Asker, $"— {noted.Note}");
@@ -382,7 +396,9 @@ internal sealed class DriverHelpers(LoopContext context, Driver driver)
                 say: null);
         }
 
-        return $"helper  ask `{ask.Id}` answered by {agent}: its answer is session {ask.Asker}'s next turn, marked as the helper's, at the driver's next look.";
+        return atNextStep
+            ? $"helper  ask `{ask.Id}` answered by {agent}: its answer reaches session {ask.Asker} at its next step, marked as the helper's."
+            : $"helper  ask `{ask.Id}` answered by {agent}: its answer is session {ask.Asker}'s next turn, marked as the helper's, at the driver's next look.";
     }
 
     /// <summary>

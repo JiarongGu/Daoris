@@ -30,7 +30,7 @@ public sealed record ChatMessage(string Text, IReadOnlyList<KeptFile> Files)
     /// The level the record keeps beside the person's words while they wait (COWORK1a): spelled for the person's own, null for
     /// another session's claim, whose level its own row carries (COWORK1d), so nothing reads a claim's default as one stated.
     /// </summary>
-    internal string? LevelSaid => Channel is { Person: false } ? null : MessageLevels.Spelled(Level);
+    internal string? LevelSaid => Channel is { Person: false } || Helped is not null ? null : MessageLevels.Spelled(Level);
 
     /// <summary>
     /// The words' id in a driven session's record (STEER1, D136), stamped by its inbox: it pairs the words shown at once,
@@ -168,7 +168,8 @@ public sealed record ChatMessage(string Text, IReadOnlyList<KeptFile> Files)
     internal static SessionEvent Words(ChatMessage message) => new()
     {
         Kind = SessionEventKind.User,
-        Origin = message.Channel is { Person: false } || message.Daoris is not null ? "target" : "person",
+        // COWORK1d: a helper's answer taken at a step of a turn is Daoris's words around that helper's claim too.
+        Origin = message.Channel is { Person: false } || message.Daoris is not null || message.Helped is not null ? "target" : "person",
         From = message.Daoris is not null ? DaorisWords.From : null,
         // SESSCTX1b: the channel's message these words carry, marked by its id, so a reader never tells it by Daoris's English.
         Channel = message.Channel?.Id is { Length: > 0 } channel ? channel : null,
