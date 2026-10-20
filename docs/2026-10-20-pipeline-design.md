@@ -1,7 +1,7 @@
 # Pipelines: a workflow's start node routes each piece of work, and verification is a pipeline of its own (proposed, 2026-10-21)
 
 **Standing:** proposed under D192 (FABRIC-PIPELINE1), for the reads D191 asks. Codex reads it, as it reads every design. The author
-judges that §3.4 and §4 change a foundation in D191's amendment's sense (a run kind on a repository's line beside D190's runs of a
+judges that §4 changes a foundation in D191's amendment's sense (a run kind on a repository's line beside D190's runs of a
 chain, a node Daoris performs itself, and a second slot beside the heavy-run slot), so Fable is asked to read §2 to §4 too; the
 steward decides. Nothing here is built; its rows (§7) build it. Nothing in it waits for the owner (D191 point 3): it publishes
 nothing, spends no account beyond the development's own runs, and loses no data.
@@ -9,7 +9,7 @@ nothing, spends no account beyond the development's own runs, and loses no data.
 Read for it: D173's direction note of 2026-10-20 (FABRIC-PIPELINE1); D157 and the workflow design §3.2-§3.7 and §4; D190 and the
 cutover design §2, §3, §8 and §10; D180 and its notes (the CI beside, CIPRIO1 to CIPRIO1e, the HEAVYRUN1 notes, FAMILYFAIL1b to
 1d); D115's GATEWT1 and GATESLIM1 notes and `docs/development.md`'s *Integrate and record*; HEAVYRUN1a's archive entry; D83's
-BGWAIT and DONEEND1 notes; D188; D154 and the review environment design §3.4; the verification lanes design (FABRIC-VERIFY1);
+BGWAIT and DONEEND1 notes; D188; D154 and the review environment design §2.3; the verification lanes design (FABRIC-VERIFY1);
 the UI/UX design §3.5 (D185); `.claude/knowledge/development-documents.md`'s *What may run unasked is a declaration*. Every
 statement about today was read from the code at `300626e52` and names its file and line; none was run.
 
@@ -78,7 +78,7 @@ with the pipelines it routes to (§1.3), and each pipeline is versioned and boun
 
 - **The shape.** A repository's or a workspace's choice gains `landed`: `{ "workflow": "<id>", "gates": "<digest>" }`, the
   verification pipeline for work that reaches the line, and the digest of the gates the person accepted for it to run unasked
-  (§4.2). `"current"` there is none, today's. A repository that names any route replaces its workspace's whole, `landed` among them
+  (§4.2). A `workflow` of `current` there is no verification, today's, as `current` keeps a workspace's choice away. A repository that names any route replaces its workspace's whole, `landed` among them
   (`WorkflowSelection.cs:93-95`). A choice with no `landed` is today's. Both twins read a choice by its `default` and `kinds` and
   pass over the rest (`WorkflowSelection.cs:183-207`, `workflowchoice.ts:129-151`), so an older build reads no route there; but a
   choice naming only `landed` is one that *names nothing* to both (`WorkflowSelection.cs:25`, `:261`), which the build changes, and
@@ -164,10 +164,11 @@ Four layers, each holding what it can and no more:
    from git's own lock on its tree, whose reason names it (`daoris session <id>`, `SessionLocks.cs:28`; TREELOCK1, D51's note), never
    from a variable it could leave out. A person's `run-heavy` from a checkout
    no session holds runs as today.
-3. **Refused by the harness, exactly.** Each heavy gate's declared command joins the session's deny list, `Bash(<run>)` and
-   `Bash(<run> *)`, beside `no-push` (`Permissions.cs:158-165`), and auto mode's classifier is told one sentence naming the heavy
+3. **Refused by the harness, exactly.** Each heavy gate's declared command joins the session's deny list, `Bash(<run>)`, beside
+   `no-push` (`Permissions.cs:158-165`), and auto mode's classifier is told one sentence naming the heavy
    gates as the verification pipeline's (UNBLOCK4's channel, `Permissions.cs:188-193`, `:523-532`). Only declared commands, exact
-   (development-documents: *exact commands, one per entry*). HEAVYRUN1's rejection of guessing a heavy run from command text
+   (development-documents: *exact commands, one per entry*), and never as a prefix: a gate's command can begin a filtered check
+   `light` allows (`dotnet test src/Daoris.Service` before its `--filter`). HEAVYRUN1's rejection of guessing a heavy run from command text
    stands, so a whole suite spelled another way (a test project with no filter) is not refused by its text.
 4. **Said again while it runs.** A running call or a background task past `callMinutes` is said to the session once, at urgent
    level, as Daoris's own word on a fact that makes the work in flight wrong (D188 point 2): the call's title and time, and that a
@@ -222,7 +223,7 @@ and no place in the cap.
   the first failure ending the sequence, as `run-heavy` runs them (`HeavyRun.cs:37-38`); else this machine's mapping for a repository
   that declares none (HEAVYRUN1b2a), which is the person's already.
 - **The person's acceptance.** D154's review design refuses a command read from the repository's files (review environment design
-  §3.4: *a guess*), and a declaration a session can edit and have obeyed is an agent granting itself permission
+  §2.3: *a guess*), and a declaration a session can edit and have obeyed is an agent granting itself permission
   (development-documents). So the gates run unasked only as the person accepted them: the `landed` route keeps the digest of the
   runner and gates (each name, command and folder) the person accepted when they chose the route (§1.2). A batch whose tip declares
   others is `unknown`, *the gates changed since you accepted them*, with the change shown and *Accept the gates*, the person's door
