@@ -21,7 +21,11 @@ import { questName } from '../work/identity';
  * The repository bars are ONE series in one hue: entries per repository is magnitude, not identity.
  * Values sit beside the marks in ink, never in the mark's color.
  */
-export function OverviewView({ onNavigate, onOpenQuest, doors, notify, onSessions, onRun }: {
+export function OverviewView({ onNavigate, onOpenQuest, doors, notify, onSessions, onRun, onRefresh, refreshing }: {
+  /** The shell's refresh of the index, its notices its own: offered by the empty repositories card (OVERVIEWNOISE1d). */
+  onRefresh?: () => void;
+  /** Whether that refresh is running, so the card's button waits for it. */
+  refreshing?: boolean;
   /** The door into a run whose step a row waits at (WORKFLOW1c): a shell's alone. */
   onRun?: (session: string) => void;
   onNavigate: (tab: 'quests' | 'projects') => void;
@@ -181,6 +185,13 @@ export function OverviewView({ onNavigate, onOpenQuest, doors, notify, onSession
               icon="projects"
               headline={t('overview.repositories.emptyHeadline')}
               body={t('overview.repositories.emptyBody')}
+              // The refresh the body names, started here (OVERVIEWNOISE1d): the state promised one and offered no way to it.
+              action={onRefresh && (
+                <Button onClick={onRefresh} disabled={refreshing}>
+                  <Icon name="refresh" size={14} />
+                  {refreshing ? t('overview.repositories.refreshing') : t('overview.repositories.refresh')}
+                </Button>
+              )}
             />
           )}
           {/* Sized by its own width, not the window's (USE1, looked at): beside the side bar a wide window

@@ -954,6 +954,8 @@ export function App() {
             notify={notify}
             onSessions={attached ? () => open('sessions') : undefined}
             onRun={attached ? openRun : undefined}
+            onRefresh={onRefresh}
+            refreshing={refresh.isPending}
           />
         )}
         {view === 'map' && (

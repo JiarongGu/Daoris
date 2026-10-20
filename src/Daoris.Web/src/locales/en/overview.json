@@ -27,7 +27,9 @@
   "overview.repositories.local": "{{count}} local",
   "overview.repositories.more": "and {{count}} more, in Repositories",
   "overview.repositories.emptyHeadline": "The index holds nothing yet",
-  "overview.repositories.emptyBody": "A registered repository's knowledge appears here after the next refresh.",
+  "overview.repositories.emptyBody": "A registered repository's knowledge appears here once the index has read it.",
+  "overview.repositories.refresh": "Refresh the index",
+  "overview.repositories.refreshing": "Refreshing the index…",
   "overview.repositories.adoptedDot": "adopted — its own declaration and doctrine",
   "overview.repositories.hint": "● adopted — it carries its own declaration and doctrine. The others have not adopted, and one registered with a root here can still be asked a quest. “Local” is the repository's own material — the part no sibling can reach without this index."
 }
