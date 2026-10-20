@@ -124,7 +124,7 @@ public sealed class LaterLaunchTests : IDisposable
 
     private static async Task UntilAsync(Func<bool> condition)
     {
-        var patience = DateTime.UtcNow + TimeSpan.FromSeconds(15);
+        var patience = DateTime.UtcNow + Poll.Patience;
         while (!condition())
         {
             Assert.True(DateTime.UtcNow < patience, "the condition never held");
@@ -147,7 +147,7 @@ public sealed class LaterLaunchTests : IDisposable
             using var later = new SingleInstanceGuard(_name, scope);
             Assert.Equal(SingleInstanceResult.AlreadyRunning, later.TryAcquire());
             Assert.Equal(SingleInstanceResult.AlreadyRunning,
-                later.ActivateOrTakeOver(["--app-root", "D:/install"], TimeSpan.FromSeconds(5)));
+                later.ActivateOrTakeOver(["--app-root", "D:/install"], Poll.Patience));
 
             await UntilAsync(() => Index("window.launched") >= 0);
         }

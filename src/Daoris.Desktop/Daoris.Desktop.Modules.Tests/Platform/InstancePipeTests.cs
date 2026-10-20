@@ -98,7 +98,7 @@ public sealed class InstancePipeTests : Bridge
 
         // Pressed over the pipe: in the loop's list while it runs, as a window's press is (D169's STATEHUB1c2 note).
         var id = await client.SendAsync("TEST.PRESS", "MOVE", new { id = "s1a2b3c4" });
-        await press.Started.Task.WaitAsync(TimeSpan.FromSeconds(10));
+        await press.Started.Task.WaitAsync(Poll.Patience);
         Assert.Equal([new PressUnderWay("MOVE", "s1a2b3c4")], underWay.Now().Presses);
         Assert.Contains(Raised, each => each.Type == StatePublisher.UnderWayType
             && each.Payload is UnderWay { Presses: [{ Route: "MOVE", Session: "s1a2b3c4" }] });
@@ -206,7 +206,7 @@ public sealed class InstancePipeTests : Bridge
         await lost.HelloAsync(HomeId);
         var id = await lost.SendAsync("TEST.PRESS", "MOVE", new { id = "s1a2b3c4" });
         var key = lost.KeyOf(id)!;
-        await press.Started.Task.WaitAsync(TimeSpan.FromSeconds(10));
+        await press.Started.Task.WaitAsync(Poll.Patience);
         await lost.DisposeAsync();
 
         // Asked again from another connection, with the key only its sender holds.
@@ -220,7 +220,7 @@ public sealed class InstancePipeTests : Bridge
         await UntilAsync(() => underWay.Now().Presses.Count == 0);
         // The press leaves the under-way list inside the dispatch, a moment before its answer's line is kept.
         var ended = await again.ResultAsync(id, key);
-        for (var asked = 0; ended.GetProperty("state").GetString() == "running" && asked < 200; asked++)
+        for (var asked = 0; ended.GetProperty("state").GetString() == "running" && asked < Poll.Patience.TotalMilliseconds / 25; asked++)
         {
             await Task.Delay(25);
             ended = await again.ResultAsync(id, key);
@@ -255,7 +255,7 @@ public sealed class InstancePipeTests : Bridge
 
             // Sent again while the first is under way, from another connection: it waits for the one press.
             id = await one.SendAsync("TEST.PRESS", "MOVE", new { id = "s1a2b3c4" });
-            await press.Started.Task.WaitAsync(TimeSpan.FromSeconds(10));
+            await press.Started.Task.WaitAsync(Poll.Patience);
             key = one.KeyOf(id)!;
             await two.SendAsync("TEST.PRESS", "MOVE", new { id = "s1a2b3c4" }, id, key);
             press.Let.SetResult();
@@ -357,7 +357,7 @@ public sealed class InstancePipeTests : Bridge
         Assert.Equal(InstancePipe.Stopping, Code(await before.AnswerAsync(await before.SendAsync("TEST.PRESS", "MOVE", new { id = "s5e6f7a8" }))));
         Assert.Equal("answered", (await before.ResultAsync(id)).GetProperty("state").GetString());
         Assert.Equal(1, press.Ran);
-        Assert.True(pipe.Drain(TimeSpan.FromSeconds(5)));
+        Assert.True(pipe.Drain(Poll.Patience));
     }
 
     [Fact]
@@ -460,7 +460,7 @@ public sealed class InstancePipeTests : Bridge
         await other.HelloAsync(HomeId);
 
         var id = await client.SendAsync("TEST.PRESS", "PROGRESS", new { id = "s1a2b3c4" });
-        var told = await client.NotificationAsync(TimeSpan.FromSeconds(15)) ?? throw new InvalidOperationException("no progress was told");
+        var told = await client.NotificationAsync(Poll.Patience) ?? throw new InvalidOperationException("no progress was told");
         press.Let.SetResult();
         await client.AnswerAsync(id);
 
@@ -570,11 +570,11 @@ public sealed class InstancePipeTests : Bridge
             Type = "MOVE",
             Payload = JsonSerializer.SerializeToElement(new { id = "s1a2b3c4" }),
         }, CancellationToken.None);
-        await window.Started.Task.WaitAsync(TimeSpan.FromSeconds(10));
+        await window.Started.Task.WaitAsync(Poll.Patience);
 
         var id = await client.SendAsync("TEST.PRESS", "MOVE", new { id = "s5e6f7a8" });
         var key = client.KeyOf(id)!;
-        await press.Started.Task.WaitAsync(TimeSpan.FromSeconds(10));
+        await press.Started.Task.WaitAsync(Poll.Patience);
 
         var strangers = await client.SendAsync("SHENORA.REQUESTS", "CANCEL", new { requestId = "window-held" });
         Assert.Equal(InstancePipe.IdTaken, Code(await client.AnswerAsync(strangers)));
@@ -757,7 +757,7 @@ public sealed class InstancePipeTests : Bridge
 
     private static async Task UntilAsync(Func<bool> condition)
     {
-        var patience = DateTime.UtcNow + TimeSpan.FromSeconds(15);
+        var patience = DateTime.UtcNow + Poll.Patience;
         while (!condition())
         {
             Assert.True(DateTime.UtcNow < patience, "the condition never held");

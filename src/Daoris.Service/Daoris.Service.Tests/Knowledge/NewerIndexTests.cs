@@ -229,7 +229,7 @@ public sealed class NewerIndexTests : IDisposable
         await Task.Delay(500);
         await transaction.CommitAsync();
 
-        await using (var opened = await opening.WaitAsync(TimeSpan.FromSeconds(30)))
+        await using (var opened = await opening.WaitAsync(Poll.Patience))
         {
             Assert.NotNull(opened.Refusal);
             Assert.False(opened.Rebuilt);
@@ -327,7 +327,7 @@ public sealed class NewerIndexTests : IDisposable
         try
         {
             IReadOnlyList<string> logged = [];
-            for (var attempt = 0; attempt < 150 && !process.HasExited; attempt++)
+            for (var attempt = 0; attempt < Poll.Patience.TotalMilliseconds / 200 && !process.HasExited; attempt++)
             {
                 logged = McpLogLines(home);
                 if (logged.Any(line => line.Contains("\"event\":\"app.started\"", StringComparison.Ordinal))) break;
@@ -344,7 +344,7 @@ public sealed class NewerIndexTests : IDisposable
 
             // TESTWAIT2: stderr is read asynchronously, so its line is waited for, not assumed with the log's.
             string error = "";
-            for (var attempt = 0; attempt < 150; attempt++)
+            for (var attempt = 0; attempt < Poll.Patience.TotalMilliseconds / 100; attempt++)
             {
                 lock (said) error = said.ToString();
                 if (error.Contains("newer Daoris", StringComparison.Ordinal)) break;

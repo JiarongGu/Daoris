@@ -138,7 +138,7 @@ internal sealed class StandInChromium : IDisposable
                 continue;
             }
 
-            var (method, parameters) = await reply.Task.WaitAsync(TimeSpan.FromSeconds(10));
+            var (method, parameters) = await reply.Task.WaitAsync(Poll.Patience);
             if (method == "Fetch.fulfillRequest")
             {
                 var type = parameters.TryGetProperty("responseHeaders", out var headers)

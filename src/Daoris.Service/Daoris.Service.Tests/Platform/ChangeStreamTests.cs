@@ -13,8 +13,11 @@ public sealed class ChangeStreamTests : IAsyncLifetime
 {
     private static readonly DateTimeOffset Now = DateTimeOffset.Parse("2026-10-17T09:00:00Z");
 
-    /// <summary>Long enough that a wait that answers before it was woken, never at its end.</summary>
-    private static readonly TimeSpan Long = TimeSpan.FromSeconds(10);
+    /// <summary>
+    /// Long enough that a wait that answers before it was woken, never at its end: the longest the stream holds one, since a
+    /// loaded run's wake can come late (TESTCLOCK1). A test waiting on the answer waits <see cref="Poll.Patience"/>.
+    /// </summary>
+    private static readonly TimeSpan Long = ChangeStream.LongestWait;
 
     private readonly string _file = Path.Combine(
         Path.GetTempPath(), "daoris-changes-" + Guid.NewGuid().ToString("N")[..8] + ".db");
@@ -121,7 +124,7 @@ public sealed class ChangeStreamTests : IAsyncLifetime
 
         var clock = Stopwatch.StartNew();
         await _sessions.CreateAsync(null, "Owner", "stub", Now, kind: SessionKind.Chat);
-        var answer = await waiting.WaitAsync(Long);
+        var answer = await waiting.WaitAsync(Poll.Patience);
 
         Assert.True(clock.Elapsed < TimeSpan.FromSeconds(3), $"{clock.Elapsed}");
         Assert.Equal([ChangeFamilies.Sessions], answer.Moved);
@@ -139,7 +142,7 @@ public sealed class ChangeStreamTests : IAsyncLifetime
         var waiting = _stream.WaitAsync(since, Long);
 
         await _quests.PublishAsync("Asker", "Owner", "Do the work", "why", Now);
-        var answer = await waiting.WaitAsync(Long);
+        var answer = await waiting.WaitAsync(Poll.Patience);
 
         Assert.Equal([ChangeFamilies.Quests], answer.Moved);
     }
@@ -163,7 +166,7 @@ public sealed class ChangeStreamTests : IAsyncLifetime
             [new QuestOperation(asked.Id, QuestOperationKind.Taken, "m3", 1, Now.AddMinutes(2), Number: 2)], 2);
 
         Assert.Equal(QuestOperationKind.Conflict, Assert.Single(integrated.Conflicts).Kind);
-        Assert.Equal([ChangeFamilies.Quests], (await waiting.WaitAsync(Long)).Moved);
+        Assert.Equal([ChangeFamilies.Quests], (await waiting.WaitAsync(Poll.Patience)).Moved);
     }
 
     private static readonly Ask Asked =new("a5c0de", Workspaces.Default, "Make the bridge faster", AskState.Open, "declarations", Now, Now);
@@ -209,7 +212,7 @@ public sealed class ChangeStreamTests : IAsyncLifetime
             "deleted" => _asks.DeleteAsync(Asked.Id),
             _ => throw new ArgumentOutOfRangeException(nameof(write), write, null),
         });
-        var answer = await waiting.WaitAsync(Long);
+        var answer = await waiting.WaitAsync(Poll.Patience);
 
         Assert.Equal([ChangeFamilies.Asks], answer.Moved);
     }
@@ -234,7 +237,7 @@ public sealed class ChangeStreamTests : IAsyncLifetime
             Assert.Equal(1, await command.ExecuteNonQueryAsync());
         }
 
-        Assert.Equal([ChangeFamilies.Asks], (await waiting.WaitAsync(Long)).Moved);
+        Assert.Equal([ChangeFamilies.Asks], (await waiting.WaitAsync(Poll.Patience)).Moved);
     }
 
     /// <summary>
@@ -262,11 +265,11 @@ public sealed class ChangeStreamTests : IAsyncLifetime
         Assert.Equal((true, 0), await _asks.DecideGoAheadsAsync<int>(Asked.Id, _ => (null, 0), Now));
         await Execute("CREATE TABLE IF NOT EXISTS scratch (x INTEGER); INSERT INTO scratch VALUES (1);");
 
-        var deadline = DateTime.UtcNow + Long;
+        var deadline = DateTime.UtcNow + Poll.Patience;
         while (_stream.Seen <= seen && DateTime.UtcNow < deadline) await Task.Delay(20);
         var observed = _stream.Seen > seen;
         release.Cancel();
-        var answer = await waiting.WaitAsync(Long);
+        var answer = await waiting.WaitAsync(Poll.Patience);
 
         Assert.True(observed, "no write was seen, so the canary proves nothing");
         Assert.Empty(answer.Moved);
@@ -303,7 +306,7 @@ public sealed class ChangeStreamTests : IAsyncLifetime
             "forgotten" => _channel.ForgetAsync(Asked.Id),
             _ => throw new ArgumentOutOfRangeException(nameof(write), write, null),
         });
-        var answer = await waiting.WaitAsync(Long);
+        var answer = await waiting.WaitAsync(Poll.Patience);
 
         Assert.Equal([ChangeFamilies.Channel], answer.Moved);
     }
@@ -325,7 +328,7 @@ public sealed class ChangeStreamTests : IAsyncLifetime
             Assert.Equal(1, await command.ExecuteNonQueryAsync());
         }
 
-        Assert.Equal([ChangeFamilies.Channel], (await waiting.WaitAsync(Long)).Moved);
+        Assert.Equal([ChangeFamilies.Channel], (await waiting.WaitAsync(Poll.Patience)).Moved);
     }
 
     /// <summary>
@@ -356,11 +359,11 @@ public sealed class ChangeStreamTests : IAsyncLifetime
         Assert.False(await _channel.AddAsync(Message("m3", Asked.Id, session: "s1"), 1));
         await Execute("CREATE TABLE IF NOT EXISTS scratch (x INTEGER); INSERT INTO scratch VALUES (1);");
 
-        var deadline = DateTime.UtcNow + Long;
+        var deadline = DateTime.UtcNow + Poll.Patience;
         while (_stream.Seen <= seen && DateTime.UtcNow < deadline) await Task.Delay(20);
         var observed = _stream.Seen > seen;
         release.Cancel();
-        var answer = await waiting.WaitAsync(Long);
+        var answer = await waiting.WaitAsync(Poll.Patience);
 
         Assert.True(observed, "no write was seen, so the canary proves nothing");
         Assert.Empty(answer.Moved);
@@ -379,7 +382,7 @@ public sealed class ChangeStreamTests : IAsyncLifetime
 
         await _sessions.KeepSaidAsync(session.Id, new SaidWord("w1", "A helper's word.", Now, [], Helper: "desk"));
 
-        Assert.Equal([ChangeFamilies.Words], (await waiting.WaitAsync(Long)).Moved);
+        Assert.Equal([ChangeFamilies.Words], (await waiting.WaitAsync(Poll.Patience)).Moved);
     }
 
     /// <summary>PUSH1d1b: a connector built before the family keeps a word with the bare statement and still moves it.</summary>
@@ -392,7 +395,7 @@ public sealed class ChangeStreamTests : IAsyncLifetime
 
         await Execute($"UPDATE sessions SET said = json_array(json_object('id', 'w1', 'text', 'Hi.', 'at', '2026-10-17T09:00:00Z', 'files', json('[]'))) WHERE id = '{session.Id}'");
 
-        Assert.Equal([ChangeFamilies.Words], (await waiting.WaitAsync(Long)).Moved);
+        Assert.Equal([ChangeFamilies.Words], (await waiting.WaitAsync(Poll.Patience)).Moved);
     }
 
     /// <summary>
@@ -417,11 +420,11 @@ public sealed class ChangeStreamTests : IAsyncLifetime
         await _sessions.AdvanceCursorAsync(Workspaces.Default, pushed: 2, fetched: 7);
         await Execute("CREATE TABLE IF NOT EXISTS scratch (x INTEGER); INSERT INTO scratch VALUES (1);");
 
-        var deadline = DateTime.UtcNow + Long;
+        var deadline = DateTime.UtcNow + Poll.Patience;
         while (_stream.Seen <= seen && DateTime.UtcNow < deadline) await Task.Delay(20);
         var observed = _stream.Seen > seen;
         release.Cancel();
-        var answer = await waiting.WaitAsync(Long);
+        var answer = await waiting.WaitAsync(Poll.Patience);
 
         Assert.True(observed, "no write was seen, so the canary proves nothing");
         Assert.Empty(answer.Moved);
@@ -485,11 +488,11 @@ public sealed class ChangeStreamTests : IAsyncLifetime
             Assert.Equal(pass == 0 ? 1 : 0, channel.Pushed);
         }
 
-        var deadline = DateTime.UtcNow + Long;
+        var deadline = DateTime.UtcNow + Poll.Patience;
         while (_stream.Seen <= seen && DateTime.UtcNow < deadline) await Task.Delay(20);
         var observed = _stream.Seen > seen;
         release.Cancel();
-        var answer = await waiting.WaitAsync(Long);
+        var answer = await waiting.WaitAsync(Poll.Patience);
         Assert.Empty(answer.Moved);
         Assert.Equal(since, answer.Since);
         Assert.True(observed, "the passes' writes were never seen, so the canary proves nothing");
@@ -511,7 +514,7 @@ public sealed class ChangeStreamTests : IAsyncLifetime
         Assert.Equal(since, ninth.Since);
 
         await _sessions.CreateAsync(null, "Owner", "stub", Now, kind: SessionKind.Chat);
-        foreach (var answer in await Task.WhenAll(held).WaitAsync(Long))
+        foreach (var answer in await Task.WhenAll(held).WaitAsync(Poll.Patience))
         {
             Assert.Equal([ChangeFamilies.Sessions], answer.Moved);
         }
@@ -533,7 +536,7 @@ public sealed class ChangeStreamTests : IAsyncLifetime
 
         await Execute("CREATE TABLE session_revision (one INTEGER PRIMARY KEY CHECK (one = 1), revision INTEGER NOT NULL); "
             + "INSERT INTO session_revision VALUES (1, 0);");
-        var answer = await waiting.WaitAsync(Long);
+        var answer = await waiting.WaitAsync(Poll.Patience);
 
         Assert.Equal(ChangeFamilies.All, answer.Moved);
         Assert.NotEqual(since.Split('.')[0], answer.Since.Split('.')[0]);
@@ -555,7 +558,7 @@ public sealed class ChangeStreamTests : IAsyncLifetime
         Assert.False(waiting.IsCompleted);
 
         await Execute("UPDATE store_identity SET id = 'another' WHERE one = 1;");
-        var answer = await waiting.WaitAsync(Long);
+        var answer = await waiting.WaitAsync(Poll.Patience);
 
         Assert.Equal(ChangeFamilies.All, answer.Moved);
         Assert.NotEqual(since.Split('.')[0], answer.Since.Split('.')[0]);
@@ -625,7 +628,7 @@ public sealed class ChangeStreamTests : IAsyncLifetime
         }
 
         await _sessions.CreateAsync(null, "Owner", "stub", Now, kind: SessionKind.Chat);
-        Assert.All(await Task.WhenAll(held).WaitAsync(Long), answer => Assert.Equal([ChangeFamilies.Sessions], answer.Moved));
+        Assert.All(await Task.WhenAll(held).WaitAsync(Poll.Patience), answer => Assert.Equal([ChangeFamilies.Sessions], answer.Moved));
     }
 
     /// <summary>
@@ -664,11 +667,11 @@ public sealed class ChangeStreamTests : IAsyncLifetime
         var waiting = _stream.WaitAsync(since, Long, release.Token);
 
         await Execute("CREATE TABLE IF NOT EXISTS scratch (x INTEGER); INSERT INTO scratch VALUES (1);");
-        var deadline = DateTime.UtcNow + Long;
+        var deadline = DateTime.UtcNow + Poll.Patience;
         while (_stream.Seen <= seen && DateTime.UtcNow < deadline) await Task.Delay(20);
         var observed = _stream.Seen > seen;
         release.Cancel();
-        var answer = await waiting.WaitAsync(Long);
+        var answer = await waiting.WaitAsync(Poll.Patience);
 
         Assert.True(observed);
         Assert.Empty(answer.Moved);

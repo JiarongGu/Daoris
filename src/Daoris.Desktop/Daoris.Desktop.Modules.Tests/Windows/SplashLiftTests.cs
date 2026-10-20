@@ -48,7 +48,7 @@ public sealed class SplashLiftTests : IDisposable
             lift.PageSaid();
         }
 
-        Assert.True(await waiting.WaitAsync(TimeSpan.FromSeconds(30)));
+        Assert.True(await waiting.WaitAsync(Poll.Patience));
         var line = Assert.Single(Lines());
         Assert.Contains("\"level\":\"info\"", line);
         Assert.Contains("\"event\":\"splash.lifted\"", line);
@@ -80,7 +80,7 @@ public sealed class SplashLiftTests : IDisposable
         using var log = new MachineLog(_home, "desktop");
         var lift = new SplashLift();
 
-        Assert.False(await lift.WaitAsync(log, TimeSpan.FromMilliseconds(100)).WaitAsync(TimeSpan.FromSeconds(30)));
+        Assert.False(await lift.WaitAsync(log, TimeSpan.FromMilliseconds(100)).WaitAsync(Poll.Patience));
 
         var line = Assert.Single(Lines());
         Assert.Contains("\"level\":\"warn\"", line);

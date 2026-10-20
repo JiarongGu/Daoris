@@ -11,7 +11,7 @@ public sealed class LastLinesTests
     private static async Task<string?> SaidAsync(string printed)
     {
         var lines = LastLines.Drain(new StringReader(printed));
-        await lines.Ended.WaitAsync(TimeSpan.FromSeconds(10));
+        await lines.Ended.WaitAsync(Poll.Patience);
         return lines.Said;
     }
 

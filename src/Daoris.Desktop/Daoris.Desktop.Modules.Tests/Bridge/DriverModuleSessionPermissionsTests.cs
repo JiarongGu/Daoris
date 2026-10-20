@@ -49,7 +49,7 @@ public sealed class DriverModuleSessionPermissionsTests : DriverModuleBridge
 
         Assert.True(answer.GetProperty("answered").GetBoolean());
         Assert.Equal(JsonValueKind.Null, answer.GetProperty("why").ValueKind);
-        Assert.Equal("yes", (await held.WaitAsync(TimeSpan.FromSeconds(5))).Chosen?.Id);
+        Assert.Equal("yes", (await held.WaitAsync(Poll.Patience)).Chosen?.Id);
         var again = await AnswerAsync(module, "SESSION_PERMISSION_ANSWER", new { session = "d1", request = "900", option = "yes" });
         Assert.Equal((false, "unheld"), (again.GetProperty("answered").GetBoolean(), again.GetProperty("why").GetString()));
     }
@@ -64,7 +64,7 @@ public sealed class DriverModuleSessionPermissionsTests : DriverModuleBridge
         var answer = await AnswerAsync(new DriverModule(Bus, loop), "SESSION_PERMISSION_ANSWER", new { session = "d1", request = "900" });
 
         Assert.True(answer.GetProperty("answered").GetBoolean());
-        Assert.Equal("no", (await held.WaitAsync(TimeSpan.FromSeconds(5))).Chosen?.Id);
+        Assert.Equal("no", (await held.WaitAsync(Poll.Patience)).Chosen?.Id);
     }
 
     /// <summary>

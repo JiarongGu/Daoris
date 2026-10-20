@@ -85,7 +85,7 @@ public sealed class DriverModuleOneFlightTests : DriverModuleBridge
             Assert.Null(DriverModule.Declared(new Shenora.Core.Ipc.IpcRequest { Id = "x", Module = DriverModule.Name, Type = route })));
     }
 
-    private static readonly TimeSpan Patience = TimeSpan.FromSeconds(30);
+    private static readonly TimeSpan Patience = Poll.Patience;
 
     private async Task<DriverModule> ComeUpAsync(HeldService service)
     {
@@ -121,7 +121,7 @@ public sealed class DriverModuleOneFlightTests : DriverModuleBridge
 
         public async Task AskedAsync(int count)
         {
-            var until = DateTime.UtcNow + TimeSpan.FromSeconds(10);
+            var until = DateTime.UtcNow + Poll.Patience;
             while (Asked < count)
             {
                 Assert.True(DateTime.UtcNow < until, $"the registry was read {Asked} time(s), never {count}");
