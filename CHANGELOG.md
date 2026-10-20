@@ -5,6 +5,9 @@ with the version and date at release.
 
 ## Unreleased
 
+- Settings → Driver lists the plugins installed here under *Installed plugins*: whether each is on, whether each of its servers is
+  approved for Ask Daoris and which writes you accepted, and *Open*, which takes you to the plugin's page, where you change them.
+
 - A driven session whose own conversation cannot be resumed moves to a new session by itself only where waiting would not help.
   A refusal from its agent still carries it on, handed what Daoris kept of it, but a conversation open in another client of its
   agent now waits for you until you say more. Claude Code ending before it reopens a conversation is tried once more first, in a
