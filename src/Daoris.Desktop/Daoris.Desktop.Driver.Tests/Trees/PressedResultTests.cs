@@ -154,7 +154,7 @@ public sealed class PressedResultTests
         Assert.Null(await pressed.Judged(treeWaited, default));
         Assert.Equal(underHold, service.Reads - read);
         read = service.Reads;
-        Assert.Null(await pressed.BeforePush(pushWaited, default));
+        Assert.Null(await pressed.BeforePush(null, pushWaited, default));
         Assert.Equal(beforePush, service.Reads - read);
     }
 
@@ -172,7 +172,7 @@ public sealed class PressedResultTests
         service.Quests["q1"] = change == "reopened" ? service.Quests["q1"] with { Submission = null } : Submitted(sequence: 2);
 
         var refused = await pressed.Judged(true, default);
-        var held = await pressed.BeforePush(false, default);
+        var held = await pressed.BeforePush(null, false, default);
 
         Assert.NotNull(refused);
         Assert.False(refused.Landed);
@@ -195,7 +195,56 @@ public sealed class PressedResultTests
         service.Quests["q1"] = service.Quests["q1"] with { Held = true, Hold = EvidenceCodes.Departed };
 
         Assert.Null(await pressed.Judged(true, default));
-        Assert.Null(await pressed.BeforePush(true, default));
+        Assert.Null(await pressed.BeforePush(null, true, default));
+    }
+
+    // ——— the earlier sessions' work a press's push carries (FABRIC-CLOSE1h11)
+
+    /// <summary>
+    /// FABRIC-CLOSE1h11 (D173's CLOSELAND1 note): a press of s2 moves s1's branch on, and its push carries s1's work wherever no push
+    /// carried it yet, so s1's quest is judged too, by the person's rule: its result taken back, or a submission made again since its
+    /// landing, holds the push back, in words naming s1 and its quest; a hold does not. Where the branch was pushed at s1's tip, or the
+    /// record does not say which quest s1 served (a landing from before), nothing more is read.
+    /// </summary>
+    [Theory]
+    [InlineData("standing", null, 1)]
+    [InlineData("held", null, 1)]
+    [InlineData("reopened", "was taken back", 1)]
+    [InlineData("gone", "was taken back", 1)]
+    [InlineData("made-again", "was submitted again", 1)]
+    [InlineData("pushed", null, 0)]
+    [InlineData("unrecorded", null, 0)]
+    public async Task A_press_whose_push_carries_an_earlier_sessions_work_is_judged_on_that_sessions_quest_too(
+        string change, string? why, int reads)
+    {
+        var service = new Service { Quests = { ["q1"] = Submitted() with { Id = "q1" }, ["q2"] = Quest() with { Id = "q2" } } };
+        var pressed = (await new PressQuests(service.ReadAsync).PressedAsync("s2", "q2"))!;
+        var record = Landed("s2") with { Served = "q1", Submission = new QuestSubmissionRef("desk", 1) };
+        service.Quests["q1"] = change switch
+        {
+            "held" => service.Quests["q1"] with { Held = true, Hold = EvidenceCodes.Departed },
+            "reopened" => service.Quests["q1"] with { Submission = null },
+            "made-again" => Submitted(sequence: 2) with { Id = "q1" },
+            _ => service.Quests["q1"],
+        };
+        if (change == "gone") service.Quests.Remove("q1");
+        if (change == "pushed") record = record with { Pushed = true, PushedTip = "c0ffee" };
+        if (change == "unrecorded") record = record with { Served = null, Submission = null };
+        var read = service.Reads;
+
+        var withheld = await pressed.BeforePush(record, false, default);
+
+        Assert.Equal(reads, service.Reads - read);
+        if (why is null)
+        {
+            Assert.Null(withheld);
+            return;
+        }
+
+        Assert.NotNull(withheld);
+        Assert.StartsWith($"Session s1's quest #q1, whose work this push carries, {why} before its plugin was told", withheld);
+        Assert.Contains("its push was not tried", withheld);
+        Assert.Contains("`daoris-driver trees hand s2`", withheld);
     }
 
     // ——— a person's hand-off (FABRIC-CLOSE1h8)
@@ -235,7 +284,7 @@ public sealed class PressedResultTests
         Assert.Equal(quest, handed.Pressed.Pressed.Id);
         Assert.Equal(1, service.Reads);
         service.Quests[quest] = Submitted(sequence: 2) with { Id = quest };
-        Assert.Contains($"`daoris-driver trees hand {session}`", await handed.BeforePush(session, true, default));
+        Assert.Contains($"`daoris-driver trees hand {session}`", await handed.BeforePush(Landed(advancedBy), true, default));
     }
 
     /// <summary>
@@ -255,7 +304,7 @@ public sealed class PressedResultTests
             Landed("s2"), (_, _) => Task.FromResult(status is null ? null : (string?)"q2"), service.ReadAsync);
 
         Assert.Null(handed.Pressed);
-        Assert.Null(await handed.BeforePush("s2", true, default));
+        Assert.Null(await handed.BeforePush(Landed("s2"), true, default));
         Assert.Equal(reads, service.Reads);
     }
 
@@ -289,7 +338,7 @@ public sealed class PressedResultTests
 
         var handed = await PressQuests.HandedAsync(Landed(), SessionQuest, service.ReadAsync);
         service.Quests["q1"] = Submitted(sequence: 2) with { Id = "q1" };
-        var withheld = await handed.BeforePush("s2", false, default);
+        var withheld = await handed.BeforePush(Landed("s2"), false, default);
 
         Assert.Equal(["s1", "s2"], asked);
         Assert.Equal(later is null ? 1 : 2, service.Reads);
@@ -321,7 +370,50 @@ public sealed class PressedResultTests
         var handed = await PressQuests.HandedAsync(
             Landed(), (_, _) => { asked++; return Task.FromResult(status is null ? null : (string?)"q1"); }, service.ReadAsync);
 
-        Assert.Null(await handed.BeforePush("S1", false, default));
+        Assert.Null(await handed.BeforePush(Landed() with { Session = "S1" }, false, default));
         Assert.Equal((1, reads), (asked, service.Reads));
+    }
+
+    /// <summary>
+    /// FABRIC-CLOSE1h13 (D173's CLOSELAND1 note): the record now keeps the submission each advance was accepted on, so a later session whose
+    /// submission was made again since its advance (another <c>ready</c>, at another commit or the same one) holds the hand-off back too,
+    /// by the person's rule, in words naming its hand-off: the work on the branch is what that submission replaced. Standing on the same
+    /// submission it goes on; an advance from before, which keeps none, is judged only on its result being in, as before.
+    /// </summary>
+    [Theory]
+    [InlineData("same", true, null)]
+    [InlineData("made-again", true, "its quest's submission was made again")]
+    [InlineData("elsewhere", true, "its quest's submission was made again")]
+    [InlineData("made-again", false, null)]
+    public async Task A_later_session_whose_submission_was_made_again_since_its_advance_holds_the_hand_off_back(
+        string change, bool kept, string? why)
+    {
+        var service = new Service { Quests = { ["q1"] = Submitted() with { Id = "q1" }, ["q2"] = Submitted() with { Id = "q2" } } };
+        var handed = await PressQuests.HandedAsync(Landed(), (id, _) => Task.FromResult<string?>($"q{id[1..]}"), service.ReadAsync);
+        var advanced = Landed() with
+        {
+            Advances = [new LandedAdvance("c0ffee", "decade", DateTimeOffset.UtcNow, "s2")
+            {
+                Quest = "q2", Submission = kept ? new QuestSubmissionRef("desk", 1) : null,
+            }],
+        };
+        service.Quests["q2"] = change switch
+        {
+            "made-again" => Submitted(sequence: 2) with { Id = "q2" },
+            "elsewhere" => Submitted(machine: "laptop") with { Id = "q2" },
+            _ => service.Quests["q2"],
+        };
+
+        var withheld = await handed.BeforePush(advanced, false, default);
+
+        if (why is null)
+        {
+            Assert.Null(withheld);
+            return;
+        }
+
+        Assert.NotNull(withheld);
+        Assert.StartsWith(char.ToUpperInvariant(why[0]) + why[1..] + " before its plugin was told", withheld);
+        Assert.Contains("`daoris-driver trees hand s2`", withheld);
     }
 }

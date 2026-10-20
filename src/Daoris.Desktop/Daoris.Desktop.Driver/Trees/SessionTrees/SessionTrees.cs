@@ -584,7 +584,7 @@ public sealed class SessionTrees(string home, LandingPlugins? plugins = null) : 
     public Task<TreeLanding> LandAsync(
         string path, LandingSubject subject, CancellationToken ct = default, Func<CancellationToken, Task<IReadOnlySet<string>>>? inUse = null,
         string acceptedBy = AcceptedBy.Person, LandingGate? gate = null, bool joins = false,
-        Func<bool, CancellationToken, Task<TreeLanding?>>? judged = null, Func<bool, CancellationToken, Task<string?>>? beforePush = null) =>
+        Func<bool, CancellationToken, Task<TreeLanding?>>? judged = null, Func<LandedBranch?, bool, CancellationToken, Task<string?>>? beforePush = null) =>
         Lands.LandAsync(path, subject, ct, inUse, acceptedBy, gate, joins, judged: judged, beforePush: beforePush);
 
     /// <inheritdoc cref="EntryLands.JoinAsync"/>
@@ -766,8 +766,9 @@ public sealed class SessionTrees(string home, LandingPlugins? plugins = null) : 
 
     /// <inheritdoc cref="TreeGates.GateAsync"/>
     public Task<LandingGate> GateAsync(
-        string path, string? quest, IOpinionWorld world, string? session = null, CancellationToken ct = default, WorkflowProcess? process = null) =>
-        Gates.GateAsync(path, quest, world, session, ct, process);
+        string path, string? quest, IOpinionWorld world, string? session = null, CancellationToken ct = default, WorkflowProcess? process = null,
+        string? tip = null) =>
+        Gates.GateAsync(path, quest, world, session, ct, process, tip);
 
     /// <inheritdoc cref="TreeGates.ProcessAsync"/>
     public Task<WorkflowProcess> ProcessAsync(
@@ -836,6 +837,6 @@ public sealed class SessionTrees(string home, LandingPlugins? plugins = null) : 
     /// <inheritdoc cref="TreeHandOffs.HandAsync"/>
     public Task<TreeHand> HandAsync(
         string root, LandedBranch entry, string? plugin = null, CancellationToken ct = default,
-        Func<string, bool, CancellationToken, Task<string?>>? beforePush = null) =>
+        Func<LandedBranch?, bool, CancellationToken, Task<string?>>? beforePush = null) =>
         HandOffs.HandAsync(root, entry, plugin, ct, beforePush);
 }

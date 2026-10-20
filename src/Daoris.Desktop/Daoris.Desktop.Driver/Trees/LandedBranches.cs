@@ -179,6 +179,16 @@ public sealed record LandedBranch(
     }
 
     /// <summary>
+    /// The sessions besides <paramref name="session"/> whose work a push of it carries unpushed (FABRIC-CLOSE1h11), each by its newest
+    /// work, in the order they first carried any: what a push is judged on beside the session it pushes for.
+    /// </summary>
+    public IReadOnlyList<LandedWork> UnpushedBesides(string session) =>
+        [.. Unpushed()
+            .Where(work => !string.Equals(work.Session, session, StringComparison.OrdinalIgnoreCase))
+            .GroupBy(work => work.Session, StringComparer.OrdinalIgnoreCase)
+            .Select(group => group.Last())];
+
+    /// <summary>
     /// Its own session's branch work unit as the record says it (FABRIC-UNITLINK1): the first it carries, where every advance names its
     /// own and they account for the rest, in the order each was added. Null where it is not said: an advance from before names none,
     /// another session's advance names that first unit (which the record cannot tell from a landing whose own session had none), or the

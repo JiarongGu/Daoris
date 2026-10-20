@@ -31,8 +31,14 @@ internal sealed class TreeGates(TreeContext context)
     /// The run's process, where the door read it already (WORKFLOW1f: the look's automatic landing reads it for the switch first);
     /// otherwise it is read here, once, for every part.
     /// </param>
+    /// <param name="tip">
+    /// The commit to judge the work at (FABRIC-CLOSE1h16, D173's CLOSELAND1 note): where a landing's push is judged, the one its branch
+    /// was judged and made at (<see cref="LandingGate.Tip"/>), so a commit made on the tree after it, which the push does not carry, holds
+    /// nothing back. Null judges the tree's <c>HEAD</c>, as every door before the landing does.
+    /// </param>
     internal async Task<LandingGate> GateAsync(
-        string path, string? quest, IOpinionWorld world, string? session = null, CancellationToken ct = default, WorkflowProcess? process = null)
+        string path, string? quest, IOpinionWorld world, string? session = null, CancellationToken ct = default, WorkflowProcess? process = null,
+        string? tip = null)
     {
         var full = Path.GetFullPath(path);
         var (workspace, repository) = context.OwnerOf(full);
@@ -40,9 +46,10 @@ internal sealed class TreeGates(TreeContext context)
         // read once and handed to every part, so the look, the opinion and the landing decide by one process.
         var config = context.Config();
         process ??= await ProcessAsync(config, repository, workspace, quest, world, ct).ConfigureAwait(false);
-        var workflow = await WorkflowAsync(full, process, session, ct).ConfigureAwait(false);
-        var review = await ReviewGate.ReadAsync(world, config, full, repository, workspace, quest, ct, process).ConfigureAwait(false);
-        var opinion = await OpinionAsync(full, repository, workspace, quest, session, world, review, OpinionRules.Landing, ct, process).ConfigureAwait(false);
+        var workflow = await WorkflowAsync(full, process, session, ct, tip).ConfigureAwait(false);
+        var review = await ReviewGate.ReadAsync(world, config, full, repository, workspace, quest, ct, process, tip).ConfigureAwait(false);
+        var opinion = await OpinionAsync(full, repository, workspace, quest, session, world, review, OpinionRules.Landing, ct, process, tip)
+            .ConfigureAwait(false);
         return new LandingGate(opinion, review) { Workflow = workflow };
     }
 
@@ -61,7 +68,9 @@ internal sealed class TreeGates(TreeContext context)
     /// a workflow that asks less of the person, the paths the chain changed read from git, from where its work leaves the line to its
     /// tip. Git is asked only there.
     /// </summary>
-    internal async Task<WorkflowGateState> WorkflowAsync(string tree, WorkflowProcess process, string? session, CancellationToken ct = default)
+    /// <param name="tip">The commit to judge at, the branch's where a push is judged (FABRIC-CLOSE1h16); null reads the tree's <c>HEAD</c>.</param>
+    internal async Task<WorkflowGateState> WorkflowAsync(
+        string tree, WorkflowProcess process, string? session, CancellationToken ct = default, string? tip = null)
     {
         KindPathsRead? paths = null;
         if (WorkflowGate.ChecksPaths(process))
@@ -70,17 +79,21 @@ internal sealed class TreeGates(TreeContext context)
             var lowered = steps is null
                 ? [$"what {otherwise} asks of you could not be read here, so it is taken as more"]
                 : Involvement.Lowers(process.Steps, steps);
-            paths = new KindPathsRead(lowered, otherwise, lowered.Count == 0 || process.Binding.Kept is not null ? [] : await ChangedAsync(tree, ct).ConfigureAwait(false));
+            paths = new KindPathsRead(lowered, otherwise, lowered.Count == 0 || process.Binding.Kept is not null ? [] : await ChangedAsync(tree, ct, tip).ConfigureAwait(false));
         }
 
         return WorkflowGate.Judge(process, paths) with { Session = session };
     }
 
-    /// <summary>The paths the work changed, from where it leaves its line to its tree's tip (§4.4); null where git cannot say.</summary>
-    internal async Task<IReadOnlyList<string>?> ChangedAsync(string tree, CancellationToken ct)
+    /// <summary>
+    /// The paths the work changed, from where it leaves its line to its tree's tip (§4.4), or to <paramref name="tip"/> where a push is
+    /// judged (FABRIC-CLOSE1h16); null where git cannot say.
+    /// </summary>
+    internal async Task<IReadOnlyList<string>?> ChangedAsync(string tree, CancellationToken ct, string? tip = null)
     {
-        if (await ForkPointAsync(tree, ct).ConfigureAwait(false) is not { } fork) return null;
-        var (code, names, _) = await WorkingTree.GitAsync(tree, ["diff", "--name-only", "--no-renames", "-z", fork, "HEAD"], ct).ConfigureAwait(false);
+        var at = tip ?? "HEAD";
+        if (await ForkPointAsync(tree, ct, at).ConfigureAwait(false) is not { } fork) return null;
+        var (code, names, _) = await WorkingTree.GitAsync(tree, ["diff", "--name-only", "--no-renames", "-z", fork, at], ct).ConfigureAwait(false);
         return code == 0 ? [.. names.Split('\0', StringSplitOptions.RemoveEmptyEntries)] : null;
     }
 
@@ -94,9 +107,10 @@ internal sealed class TreeGates(TreeContext context)
     /// The run's process (WORKFLOW1f), read once by the door or the look: under a named workflow, its version's opinion step over the
     /// declared reviewers. Null reads the rule live, as before.
     /// </param>
+    /// <param name="at">The commit to judge at, the branch's where a push is judged (FABRIC-CLOSE1h16); null reads the tree's <c>HEAD</c>.</param>
     internal async Task<OpinionGateState> OpinionAsync(
         string tree, string repository, string workspace, string? quest, string? session, IOpinionWorld world, ReviewGateState? review,
-        string occasion, CancellationToken ct = default, WorkflowProcess? process = null)
+        string occasion, CancellationToken ct = default, WorkflowProcess? process = null, string? at = null)
     {
         var rule = process is null ? OpinionRules.Resolve(context.Config(), repository, workspace) : process.Opinion;
         var cannot = process?.OpinionCannot;
@@ -113,7 +127,7 @@ internal sealed class TreeGates(TreeContext context)
             var served = chain.FirstOrDefault(each => string.Equals(each.Id, id, StringComparison.OrdinalIgnoreCase))
                          ?? new QuestView(id, "", repository, "", "", "Done");
             var kept = new OpinionGates(context.Home).Read(OpinionChain(chain, id), repository);
-            var tip = await ReviewGit.HeadAsync(tree, ct).ConfigureAwait(false);
+            var tip = at ?? await ReviewGit.HeadAsync(tree, ct).ConfigureAwait(false);
             facts = facts with
             {
                 Quest = served,
@@ -128,7 +142,7 @@ internal sealed class TreeGates(TreeContext context)
                 each => world.OpinionAsync(each, ct),
                 deliveries.Read,
                 commit => tip is null ? Task.FromResult<bool?>(null) : ReviewGit.HoldsAsync(tree, tip, commit, ct),
-                from => SinceAsync(tree, from, ct))).ConfigureAwait(false);
+                from => SinceAsync(tree, from, ct, at))).ConfigureAwait(false);
         }
         catch (Exception error) when (error is HttpRequestException or DriverException or JsonException or InvalidOperationException
                                           || (error is OperationCanceledException && !ct.IsCancellationRequested))
@@ -143,11 +157,14 @@ internal sealed class TreeGates(TreeContext context)
     /// <summary>The name a chain's gate is kept under: its first quest's id, or the quest's own where no chain was read.</summary>
     internal static string OpinionChain(IReadOnlyList<QuestView> chain, string quest) => chain.Count > 0 ? chain[0].Id : quest.TrimStart('#');
 
-    /// <summary>How many commits <c>HEAD</c> holds that <paramref name="from"/> does not; null where git cannot say.</summary>
-    internal static async Task<int?> SinceAsync(string tree, string from, CancellationToken ct)
+    /// <summary>
+    /// How many commits <c>HEAD</c>, or <paramref name="tip"/> where a push is judged (FABRIC-CLOSE1h16), holds that <paramref name="from"/>
+    /// does not; null where git cannot say.
+    /// </summary>
+    internal static async Task<int?> SinceAsync(string tree, string from, CancellationToken ct, string? tip = null)
     {
         if (!EvidenceCodes.IsObjectId(from) || !Directory.Exists(tree)) return null;
-        var (code, count, _) = await WorkingTree.GitAsync(tree, ["rev-list", "--count", $"{from}..HEAD"], ct).ConfigureAwait(false);
+        var (code, count, _) = await WorkingTree.GitAsync(tree, ["rev-list", "--count", $"{from}..{tip ?? "HEAD"}"], ct).ConfigureAwait(false);
         return code == 0 && int.TryParse(count.Trim(), NumberStyles.None, CultureInfo.InvariantCulture, out var since) ? since : null;
     }
 
@@ -155,7 +172,8 @@ internal sealed class TreeGates(TreeContext context)
     /// Where a tree's work leaves its repository's line (XAGENT1f, design §4): the commit a landing's candidate starts from, so one
     /// opinion reads the chain's whole work there. Null where git cannot name the line or where they meet.
     /// </summary>
-    internal async Task<string?> ForkPointAsync(string tree, CancellationToken ct = default)
+    /// <param name="at">The commit whose work is read, the tree's <c>HEAD</c> unless a push is judged at its branch's (FABRIC-CLOSE1h16).</param>
+    internal async Task<string?> ForkPointAsync(string tree, CancellationToken ct = default, string at = "HEAD")
     {
         var full = Path.GetFullPath(tree);
         if (!Directory.Exists(full)) return null;
@@ -166,7 +184,7 @@ internal sealed class TreeGates(TreeContext context)
         var line = (await context.LineAsync(root, repository, workspace, ct).ConfigureAwait(false)).Branch;
         var against = line is null ? null : await ComparableAsync(root, line, ct).ConfigureAwait(false);
         if (against is null) return null;
-        var (forkCode, fork, _) = await WorkingTree.GitAsync(full, ["merge-base", against, "HEAD"], ct).ConfigureAwait(false);
+        var (forkCode, fork, _) = await WorkingTree.GitAsync(full, ["merge-base", against, at], ct).ConfigureAwait(false);
         return forkCode == 0 && fork.Trim() is { Length: > 0 } found && EvidenceCodes.IsObjectId(found) ? found : null;
     }
 

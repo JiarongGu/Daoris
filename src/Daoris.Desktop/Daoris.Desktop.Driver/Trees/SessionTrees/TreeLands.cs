@@ -334,14 +334,16 @@ internal sealed class TreeLands(
     /// (FABRIC-CLOSE1h3), on the result the press was made on.
     /// </param>
     /// <param name="beforePush">
-    /// The door's judgement once more, just before the rule's plugin is told (FABRIC-CLOSE1h2, D173's note), told whether the push
-    /// waited behind another push of its branch: a sentence it answers holds the push back (<see cref="TreeLanding.Withheld"/>), the
-    /// branch made and recorded and no plugin spoken to; null lets the push begin, past which nothing stops it. Null asks nothing.
+    /// The door's judgement once more, just before the rule's plugin is told (FABRIC-CLOSE1h2, D173's note), told the branch's record as
+    /// it reads under the branch's hold (null where none was recorded), so the work of every session the push carries
+    /// (FABRIC-CLOSE1h11), and whether the push waited behind another push of its branch: a sentence it answers holds the push back
+    /// (<see cref="TreeLanding.Withheld"/>), the branch made and recorded and no plugin spoken to; null lets the push begin, past which
+    /// nothing stops it. Null asks nothing.
     /// </param>
     internal async Task<TreeLanding> LandAsync(
         string path, LandingSubject subject, CancellationToken ct = default, Func<CancellationToken, Task<IReadOnlySet<string>>>? inUse = null,
         string acceptedBy = AcceptedBy.Person, LandingGate? gate = null, bool joins = false, bool fetched = false,
-        Func<bool, CancellationToken, Task<TreeLanding?>>? judged = null, Func<bool, CancellationToken, Task<string?>>? beforePush = null)
+        Func<bool, CancellationToken, Task<TreeLanding?>>? judged = null, Func<LandedBranch?, bool, CancellationToken, Task<string?>>? beforePush = null)
     {
         var repository = context.OwnerOf(Path.GetFullPath(path)).Repository;
         // LANDRACE1 (D145 point 2, D173's FABRIC-END7 note and its review): one landing of one session's tree at a time, whichever door
@@ -417,7 +419,7 @@ internal sealed class TreeLands(
     private async Task<TreeLanding> LandingAsync(
         string path, LandingSubject subject, CancellationToken ct, Func<CancellationToken, Task<IReadOnlySet<string>>>? inUse,
         string acceptedBy, LandingGate? gate, bool joins, bool fetched, LandingHold? hold,
-        Func<bool, CancellationToken, Task<string?>>? beforePush = null)
+        Func<LandedBranch?, bool, CancellationToken, Task<string?>>? beforePush = null)
     {
         // One look (UIFREEZE1, PROC1d-i): the landing and its tidy ask git's guess at the line once.
         using var look = context.OneLook();
@@ -602,10 +604,13 @@ internal sealed class TreeLands(
                 {
                     said = handed;
                 }
-                else if (beforePush is not null && await beforePush(pushing.Waited, ct).ConfigureAwait(false) is { } heldNow)
+                else if (beforePush is not null
+                         && await beforePush(context.Recorded.Of(repository, landed.Branch!), pushing.Waited, ct).ConfigureAwait(false) is { } heldNow)
                 {
                     // FABRIC-CLOSE1h2 (D173's note): the door's judgement once more, just before its plugin is told, past which the push
                     // has begun and nothing stops it. Held here, the branch stays made and recorded, and no plugin is spoken to.
+                    // FABRIC-CLOSE1h11: told the record under the branch's hold, so an advance's push is judged on every session whose
+                    // work it carries unpushed, an earlier session's held back among them, never on the advancing session's alone.
                     withheld = heldNow;
                     said = null;
                 }
