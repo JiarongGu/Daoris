@@ -1009,6 +1009,166 @@ public sealed class AcpBackgroundTests
         Assert.Equal(1, asked);
     }
 
+    /// <summary>How often the DONEEND1 tests' sessions read their quest again while they wait: many times in a breath.</summary>
+    private static readonly TimeSpan Look = TimeSpan.FromMilliseconds(30);
+
+    /// <summary>A session that reads its quest again every <see cref="Look"/> while it waits on its background work (DONEEND1).</summary>
+    private static AcpSession Looking(Agent agent, Record record, TimeSpan wake) =>
+        new(agent.Incoming, agent.Outgoing, _ => { }, onEvent: record.Event, wakeQuiet: wake) { BackgroundLook = Look };
+
+    /// <summary>The agent of the owner's case: its first prompt backgrounds the gates, and any later prompt is never answered.</summary>
+    private static Agent Gates(TaskCompletionSource<int> goOn, Action<Agent>? more = null) => new((frame, self) =>
+    {
+        switch (frame.GetProperty("method").GetString())
+        {
+            case "initialize":
+                return Ok(frame, Queues);
+            case "session/new":
+                return Ok(frame, """{"sessionId":"s-1"}""");
+            case "session/prompt" when self.Prompts.Count == 1:
+                BackgroundsTheGates(self);
+                more?.Invoke(self);
+                return Ok(frame, """{"stopReason":"end_turn"}""");
+            case "session/prompt":
+                return Unanswered(frame, goOn);
+            default:
+                return frame.TryGetProperty("id", out _) ? Ok(frame, "{}") : null;
+        }
+    });
+
+    /// <summary>
+    /// 🔴 DONEEND1 (2026-10-20): a session that waits on its own long test run while its quest closes done went on waiting until the
+    /// timeout killed it, holding a slot and every count, because the quest was read once, at the turn's end. It is read again while
+    /// the session waits, and once it no longer waits on the work (BGWAIT1's own condition, <c>Observation.Parks</c>), the run ends:
+    /// the session closes, the work still running ends with it and is named, and nothing of Daoris's goes on.
+    /// </summary>
+    [Fact]
+    public async Task A_quest_that_closes_while_the_session_waits_ends_the_run_and_its_work_with_it()
+    {
+        var goOn = new TaskCompletionSource<int>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var agent = Gates(goOn);
+        var record = new Record();
+        var closed = 0;
+        var asked = 0;
+        var session = Looking(agent, record, Never);
+
+        var run = session.RunAsync(
+            "D:/fam/Game", "close quest #12", CancellationToken.None,
+            waitsOnBackground: _ =>
+            {
+                Interlocked.Increment(ref asked);
+                return Task.FromResult(Volatile.Read(ref closed) == 0);
+            });
+
+        // The turn ended on the work, and the quest still waits on it: read again and again, the session still waits.
+        await Poll.Until(() => Volatile.Read(ref asked) >= 4, () => string.Join(" | ", record.Lines), Poll.Patience);
+        Assert.False(run.IsCompleted);
+        Assert.DoesNotContain("session/close", agent.Methods);
+
+        // The quest closes done while the work runs: the next look ends the wait, and the run.
+        Volatile.Write(ref closed, 1);
+        var outcome = await EndsWithoutGoOn(run, goOn.Task);
+
+        Assert.Equal("end_turn", outcome.StopReason);
+        Assert.Equal(["initialize", "session/new", "session/prompt", "session/close"], agent.Methods);
+        Assert.Equal(["Run the gates"], session.LeftRunning);
+        Assert.Equal(
+            [
+                $"message:{Waiting}",
+                "turn:end_turn",
+                "note:— its turn ended while its own background work runs: `Run the gates`. The session waits for that work, "
+                + "and goes on when it ends.",
+                "note:— its quest no longer waits on its background work: the session ends, and the work still running ends with "
+                + "it: `Run the gates`.",
+            ],
+            record.Lines);
+    }
+
+    /// <summary>
+    /// DONEEND1: a turn its harness woke for one piece of work, which closes the quest while another piece still runs, is the
+    /// agent's own turn, never cut: the run ends at that turn's said end, the work still running ending with it. The looks end
+    /// with the wait.
+    /// </summary>
+    [Fact]
+    public async Task A_woken_turn_running_as_the_quest_closes_is_never_cut_and_its_end_ends_the_run()
+    {
+        var goOn = new TaskCompletionSource<int>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var agent = Gates(goOn, self => self.Push(Update(
+            """{"sessionUpdate":"async_task_spawned","asyncTaskId":"b2","name":"Build","taskType":"shell","canStop":true}""")));
+        var record = new Record();
+        var closed = 0;
+        var asked = 0;
+        var session = Looking(agent, record, Never);
+
+        var run = session.RunAsync(
+            "D:/fam/Game", "close quest #12", CancellationToken.None,
+            waitsOnBackground: _ =>
+            {
+                Interlocked.Increment(ref asked);
+                return Task.FromResult(Volatile.Read(ref closed) == 0);
+            });
+        await Poll.Until(
+            () => record.Lines.Any(line => line.StartsWith("note:", StringComparison.Ordinal)),
+            () => string.Join(" | ", record.Lines), Poll.Patience);
+
+        // The gates end while the build runs; the harness wakes its agent, which closes its quest in that turn.
+        GatesEnd(agent);
+        agent.Push(Said("The gates passed; the quest is done."));
+        var looked = Volatile.Read(ref asked);
+        Volatile.Write(ref closed, 1);
+        // A look reads it closed; the session then waits on the turn alone, many looks' time.
+        await Poll.Until(() => Volatile.Read(ref asked) > looked, () => string.Join(" | ", record.Lines), Poll.Patience);
+        await Task.Delay(Look * 10);
+        Assert.False(run.IsCompleted);
+        Assert.DoesNotContain("session/close", agent.Methods);
+
+        // The woken turn says its end: the run ends there, the build still running.
+        WokenEnds(agent);
+        await EndsWithoutGoOn(run, goOn.Task);
+
+        Assert.Equal(["initialize", "session/new", "session/prompt", "session/close"], agent.Methods);
+        Assert.Equal(["Build"], session.LeftRunning);
+        Assert.Equal(
+            "note:— its quest no longer waits on its background work: the session ends, and the work still running ends with it: "
+            + "`Build`.",
+            record.Lines[^1]);
+        var after = Volatile.Read(ref asked);
+        await Task.Delay(Look * 10);
+        Assert.Equal(after, Volatile.Read(ref asked));
+    }
+
+    /// <summary>
+    /// DONEEND1: a look that cannot be read says nothing, so the session goes on waiting and looks again; silence is never read
+    /// as the quest's close. The look that reads it closed ends the run.
+    /// </summary>
+    [Fact]
+    public async Task A_look_that_cannot_be_read_keeps_the_session_waiting()
+    {
+        var goOn = new TaskCompletionSource<int>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var agent = Gates(goOn);
+        var record = new Record();
+        var closed = 0;
+        var asked = 0;
+
+        var run = Looking(agent, record, Never).RunAsync(
+            "D:/fam/Game", "close quest #12", CancellationToken.None,
+            waitsOnBackground: _ =>
+            {
+                if (Interlocked.Increment(ref asked) == 1) return Task.FromResult(true);
+                return Volatile.Read(ref closed) == 0
+                    ? Task.FromException<bool>(new HttpRequestException("the service did not answer"))
+                    : Task.FromResult(false);
+            });
+
+        await Poll.Until(() => Volatile.Read(ref asked) >= 5, () => string.Join(" | ", record.Lines), Poll.Patience);
+        Assert.False(run.IsCompleted);
+        Assert.Single(record.Lines, line => line.StartsWith("note:", StringComparison.Ordinal));
+
+        Volatile.Write(ref closed, 1);
+        await EndsWithoutGoOn(run, goOn.Task);
+        Assert.StartsWith("note:— its quest no longer waits on its background work", record.Lines[^1], StringComparison.Ordinal);
+    }
+
     /// <summary>
     /// The wait has an end besides the work's: an agent whose stream ends while the session waits (it exited, or the person's
     /// stop or the timeout killed it) ends the run at once as the door's failure, never as a clean turn a park would read.

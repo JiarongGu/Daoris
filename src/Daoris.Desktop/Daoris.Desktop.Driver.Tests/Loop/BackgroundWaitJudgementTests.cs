@@ -51,6 +51,20 @@ public sealed class BackgroundWaitJudgementTests : IDisposable
         Assert.False(await JudgeAsync(Planned("Taken"), resumed: true));
     }
 
+    /// <summary>
+    /// DONEEND1: the judgement is read again while the session waits, each read the quest as it stands, so a quest that reached done
+    /// meanwhile ends the wait.
+    /// </summary>
+    [Fact]
+    public async Task The_same_judgement_read_again_turns_false_once_the_quest_is_done()
+    {
+        var judge = Daoris.Driver.Driver.WaitsOnBackground(_ledger.Client(), Planned("Taken"), "s1", resumed: true)!;
+
+        Assert.True(await judge(CancellationToken.None));
+        _ledger.Move("q1", "Done");
+        Assert.False(await judge(CancellationToken.None));
+    }
+
     [Fact]
     public async Task A_start_that_did_not_take_its_quest_does_not_wait()
     {

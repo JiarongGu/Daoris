@@ -123,6 +123,30 @@ internal sealed class AcpWake
         }
     }
 
+    /// <summary>
+    /// Completes once no turn runs (DONEEND1): none its harness started is running with its end unsaid, and no prompt is open. What a
+    /// session whose quest no longer waits on its background work waits for before it ends, so a turn is never cut: a woken turn
+    /// whose end is never said holds it, as it holds <see cref="AfterAsync"/>, until the session's own bounds.
+    /// </summary>
+    /// <param name="prompted">Whether a prompt is open now: its answer is that turn's end.</param>
+    public async Task IdleAsync(Func<bool> prompted, CancellationToken ct)
+    {
+        while (true)
+        {
+            // The signal is taken before what it guards is read, so a change between the two wakes the wait rather than being lost.
+            Task changed;
+            bool running;
+            lock (_gate)
+            {
+                changed = _changed.Task;
+                running = _began > 0;
+            }
+
+            if (!running && !prompted()) return;
+            await changed.WaitAsync(ct).ConfigureAwait(false);
+        }
+    }
+
     /// <summary>Whether a <c>usage_update</c> carries an autonomous result's origin: an object whose kind is one of those.</summary>
     private static bool Woken(JsonElement update) =>
         update.TryGetProperty("_meta", out var meta) && meta.ValueKind == JsonValueKind.Object

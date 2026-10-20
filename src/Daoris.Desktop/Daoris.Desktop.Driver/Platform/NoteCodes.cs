@@ -737,6 +737,9 @@ public static class NoteCodes
     public static readonly NoteCode BackgroundWaits = new("background.waits", ["works"]);
     public static readonly NoteCode BackgroundWorkEnded = new("background.work-ended", ["work", "state"]);
     public static readonly NoteCode BackgroundGoesOn = new("background.goes-on", []);
+    // DONEEND1 (D83's note): the quest, read again while the session waits, no longer waits on the work, so the session ends and the
+    // work still running ends with it.
+    public static readonly NoteCode BackgroundWaitOver = new("background.wait-over", ["works"]);
 
     // ——— A conversation's door that failed (CONVNOTE2e, <see cref="DoorNotes"/>): the protocol session that could not open or failed,
     // and a turn that could not be taken, each a lead with a program's message after it (it may hold a path). A resume the agent
@@ -937,6 +940,17 @@ public static class BackgroundNotes
             NoteCodes.BackgroundWaits,
             $"— its turn ended while its own background work runs: {string.Join(", ", works.Select(name => $"`{name}`"))}. "
             + "The session waits for that work, and goes on when it ends.",
+            ("works", works));
+
+    /// <summary>
+    /// The quest no longer waits on the work (DONEEND1): it closed, was declined or asked another repository while the session
+    /// waited, so the session ends, and the work it names, still running, ends with it.
+    /// </summary>
+    public static Noted WaitOver(IReadOnlyList<string> works) =>
+        Noted.Of(
+            NoteCodes.BackgroundWaitOver,
+            "— its quest no longer waits on its background work: the session ends, and the work still running ends with it: "
+            + $"{string.Join(", ", works.Select(name => $"`{name}`"))}.",
             ("works", works));
 
     /// <summary>Each work and the state it ended in, as the English and the prompt to the agent both say them.</summary>

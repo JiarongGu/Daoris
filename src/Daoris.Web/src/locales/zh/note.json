@@ -214,6 +214,7 @@
   "note.background.state.stopped": "已停止",
   "note.background.state.ended": "已结束",
   "note.background.goes-on": "会话继续。",
+  "note.background.wait-over": "它的委托不再等这些后台工作：会话结束，仍在运行的工作随之结束：{{works}}。",
   "note.door.not-open": "会话无法打开：",
   "note.door.turn-not-taken": "这一轮无法进行：",
   "note.door.failed": "会话失败了：",
