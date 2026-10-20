@@ -73,8 +73,9 @@ public sealed class CallsStateSliceTests : DriverModuleBridge
 
         var partition = Written(Pushes().Single().Data);
         Assert.Equal(["s1"], partition.Select(each => each.Key));
-        Assert.Equal(["title", "since", "waiting"], partition["s1"]!.AsObject().Select(each => each.Key));
+        Assert.Equal(["title", "since", "waiting", "told"], partition["s1"]!.AsObject().Select(each => each.Key));
         Assert.False(partition["s1"]!["waiting"]!.GetValue<bool>());
+        Assert.False(partition["s1"]!["told"]!.GetValue<bool>());
         Assert.Equal(("npm test", "2026-10-19T12:01:00+00:00"), (partition["s1"]!["title"]!.GetValue<string>(), partition["s1"]!["since"]!.GetValue<string>()));
         // The pull's twin: the same session's `SESSION_GROUPS` row writes its `calling` alike.
         var row = new SessionGrouping("s1", SessionGroup.Working, ShownState.GoingOn) { Calling = new RunningCall("npm test", T0.AddMinutes(1)) };

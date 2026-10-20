@@ -48,15 +48,15 @@ public static class CallsStateSlice
 
     /// <summary>
     /// One judgement of the calls running now: the one partition, each call under its session as <c>SESSION_GROUPS</c> writes a row's
-    /// <c>calling</c> (<c>{title, since, waiting}</c>, the start as the ISO string the page's clock reads, and whether it waits on the
-    /// person's answer, AUTONOMY1b3b).
+    /// <c>calling</c> (<c>{title, since, waiting, told}</c>, the start as the ISO string the page's clock reads, whether it waits on the
+    /// person's answer, AUTONOMY1b3b, and whether Daoris told the session it ran past its bound, FABRIC-PIPELINE1c).
     /// </summary>
     public static IReadOnlyList<SliceJudged> Judge(IReadOnlyDictionary<string, RunningCall> now)
     {
         var part = new JsonObject();
         foreach (var (session, call) in now.OrderBy(each => each.Key, StringComparer.Ordinal))
         {
-            part[session] = JsonSerializer.SerializeToNode(new { call.Title, call.Since, call.Waiting }, IpcJson.Options);
+            part[session] = JsonSerializer.SerializeToNode(new { call.Title, call.Since, call.Waiting, call.Told }, IpcJson.Options);
         }
 
         return [new SliceJudged(Partition, part)];

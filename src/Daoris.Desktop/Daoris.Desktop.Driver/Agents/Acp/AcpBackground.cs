@@ -20,10 +20,13 @@ namespace Daoris.Driver;
 /// </remarks>
 internal sealed class AcpBackground
 {
-    private sealed class Work(string id, string name)
+    private sealed class Work(string id, string name, DateTimeOffset since)
     {
         public string Id { get; } = id;
         public string Name { get; } = name;
+
+        /// <summary>When this process heard it announced (FABRIC-PIPELINE1c): what a long call's bound is counted from.</summary>
+        public DateTimeOffset Since { get; } = since;
 
         /// <summary>Its last ending, or null while it runs.</summary>
         public string? State { get; set; }
@@ -43,7 +46,8 @@ internal sealed class AcpBackground
                 {
                     // Announced once, whatever the wire repeats.
                     if (_work.Any(work => work.Id == id)) return;
-                    _work.Add(new Work(id, Json.Text(update, "name") is { Length: > 0 } name ? AcpSession.OneLine(name) : id));
+                    _work.Add(new Work(
+                        id, Json.Text(update, "name") is { Length: > 0 } name ? AcpSession.OneLine(name) : id, DateTimeOffset.UtcNow));
                 }
 
                 break;
@@ -81,6 +85,15 @@ internal sealed class AcpBackground
         get
         {
             lock (_gate) return [.. _work.Where(work => work.State is null).Select(work => (work.Id, work.Name))];
+        }
+    }
+
+    /// <summary>The work still running with when each was announced (FABRIC-PIPELINE1c), read at once: what a long call is judged from.</summary>
+    public IReadOnlyList<RunningTask> RunningSince
+    {
+        get
+        {
+            lock (_gate) return [.. _work.Where(work => work.State is null).Select(work => new RunningTask(work.Id, work.Name, work.Since))];
         }
     }
 
