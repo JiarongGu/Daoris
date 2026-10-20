@@ -699,13 +699,15 @@ public static class SessionsCommand
         return output;
     }
 
-    /// <summary>How a part began, in the terminal's words (D167): what it followed or who asked.</summary>
-    private static string Began(EntryPart part) => part.Began switch
+    /// <summary>How a part began, in the terminal's words (D167): what it followed or who asked; a word this build does not know, opened.</summary>
+    internal static string Began(EntryPart part) => part.Began switch
     {
         PartBegan.Retried => $"retried after {part.After}",
         PartBegan.Resumed => $"resumed after {part.After}",
         PartBegan.CarriedOn => part.After is { } after ? $"carried on after {after}" : "carried on",
         PartBegan.HandedOver => $"handed over from {part.After}",
+        // SESSCTX1b: a part moved on from one whose own conversation was lost, as the page's `work.parts.began.moved` says it.
+        PartBegan.Moved => $"moved on from {part.After}: its own conversation was lost",
         PartBegan.Asked => part.AskedBy is { } by ? $"asked by {by}" : "asked by a sibling",
         _ => "opened",
     };
