@@ -5,6 +5,20 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-20 — An orphaned-session test failed on its stand-in's teardown, not its assertion (FLAKE1)
+
+- **Symptom:** the full set on 32889e2a4 failed
+  `OrphanedSessionTests.The_loop_ends_what_the_last_run_left_working_before_its_first_tick` (driver, Process) in 246 ms with
+  `HttpListenerException: An operation was attempted on a nonexistent network connection` from `HttpListenerResponse.Close()` in
+  `StandInService.ServeAsync`; it passed alone.
+- **Root cause:** the class's stand-in service stops its listener in `DisposeAsync` while a request may still be answered. The serve
+  loop treats the stop's exceptions as the stop where it waits for a request, but not where it writes and closes a response, and
+  the dispose awaited the loop catching only `ObjectDisposedException`. The 2026-10-12 entry for
+  `A_torn_driver_json_is_said_and_watched_never_the_end_of_the_loop` named the shape and fixed nothing.
+- **Fix:** the dispose takes the serve loop's three stop exceptions (`HttpListenerException`, `ObjectDisposedException`,
+  `InvalidOperationException`) as the stop's.
+- **Verification:** `OrphanedSessionTests` (Process), 9 passed.
+
 ## 2026-10-20 — The pushed attention rows named a field for the retired word (PUSH1d4)
 
 - **Symptom:** the full set on 32889e2a4 failed the CLI's `no door prints circle for a workspace`: `AccountAttention.cs:82` and
