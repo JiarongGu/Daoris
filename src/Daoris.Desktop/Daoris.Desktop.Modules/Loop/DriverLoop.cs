@@ -763,6 +763,10 @@ public sealed class DriverLoop(
             HandsOver = (session, agent, token) => chat.HandOverAsync(
                 session, agent, null, HandOverWhy.Agent, HandOverBy.Agent, DriverConfig.Load(ConfigPath),
                 onEnded: (ended, state) => Ended(eventBus, ended, state), token),
+            // SESSCTX1c part B: a closed quest's session whose conversation is proven lost goes on as a conversation in its tree, through
+            // this shell's chat runner, handed Daoris's brief and the person's words.
+            GoesOnLost = (session, why, token) => chat.GoOnLostAsync(
+                session, why, DriverConfig.Load(ConfigPath), onEnded: (ended, state) => Ended(eventBus, ended, state), token),
         };
         // FABRIC-END6c: a focus heard before the watch existed is told to it now, once; the watch keeps it until its moments exist.
         _focus.Ready(_watch.Focused);

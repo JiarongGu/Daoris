@@ -56,6 +56,14 @@ internal sealed class LoopContext(
     public Func<string, string, CancellationToken, Task<HandedOver>>? HandsOver { get; set; }
 
     /// <summary>
+    /// How a closed quest's session whose own conversation is proven lost goes on by itself as a conversation in its tree (SESSCTX1c part
+    /// B, D189 point 3; the steward's choice: a closed quest opens no driven record): the shell's chat runner's own move
+    /// (<c>ChatRunner.GoOnLostAsync</c>), handed the brief and the person's words; the shell's loop hands it in. Null where the loop holds
+    /// no runner (the headless host): the session waits for the person, marked, the page's press ready. Set once, before a look.
+    /// </summary>
+    public Func<string, ContinueReason, CancellationToken, Task<StartedFrom>>? GoesOnLost { get; set; }
+
+    /// <summary>
     /// The roster's doors in its order, as a hand-over's order reads them (MIXAGENT1c, <see cref="HandOverOrder"/>), unless a test hands
     /// in a stand-in, since the roster asks each binary its version once a process (MOD8).
     /// </summary>

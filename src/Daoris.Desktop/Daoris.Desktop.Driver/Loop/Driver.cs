@@ -69,6 +69,13 @@ public sealed class Driver(
         init => Context.HandsOver = value;
     }
 
+    /// <summary>How a closed quest's lost session goes on as a conversation through the shell's chat runner (SESSCTX1c part B): <see cref="LoopContext.GoesOnLost"/>.</summary>
+    public Func<string, ContinueReason, CancellationToken, Task<StartedFrom>>? GoesOnLost
+    {
+        get => Context.GoesOnLost;
+        init => Context.GoesOnLost = value;
+    }
+
     /// <summary>The roster's doors a hand-over's order reads, a test's stand-in (MIXAGENT1c): <see cref="LoopContext.HandOverDoors"/>.</summary>
     internal Func<CancellationToken, Task<IReadOnlyList<HandOverDoor>>>? HandOverDoors
     {
@@ -1829,6 +1836,15 @@ public sealed class Driver(
             if (fellBack!.Never || fellBack.Holds || quest.Status is not ("Open" or "Taken"))
             {
                 await fresh.LetGoAsync().ConfigureAwait(false);
+                // 🔴 SESSCTX1c part B (D189 point 3; the steward's choice: a closed quest opens no driven record): a closed quest's session
+                // whose own conversation is proven lost goes on by itself as a conversation in its tree, through the shell's chat runner,
+                // handed the brief and the person's words. Anything else, and a host with no runner, waits for the person as before.
+                if (!fellBack.Never && !fellBack.Holds && fellBack.Lost && Context.GoesOnLost is { } goesOn
+                    && await GoOns.GoesOnLostAsync(goesOn, quest, park, fellBack, ct).ConfigureAwait(false) is { } moved)
+                {
+                    return moved;
+                }
+
                 return GoOns.CannotGoOn(quest, park, fellBack);
             }
 
