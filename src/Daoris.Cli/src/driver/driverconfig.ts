@@ -1133,13 +1133,13 @@ export function commandDriver(
 
     case 'cap': {
       const value = Number(named(argv, 'cap'));
-      if (!Number.isInteger(value) || value < 1) {
+      if (!Number.isInteger(value) || value < 1 || value > 2_147_483_647) {
         throw new DaorisError(
           '`driver cap` needs a whole number of concurrent sessions, at least 1 — e.g. `daoris driver cap 3`.');
       }
 
-      return alone(() => {
-        writeDriverChoices(path, { ...choices, cap: value });
+      // CAPSET1: the window sets it too, so while Daoris runs the same route does (D50).
+      return press(DRIVER_ROUTES.cap, { cap: value }, () => writeDriverChoices(path, { ...choices, cap: value }), () => {
         write(`daoris: this machine runs at most ${value} session(s) at once.`);
         return 0;
       });

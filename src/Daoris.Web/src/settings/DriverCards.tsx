@@ -40,6 +40,8 @@ export type DriverFacts = {
   strikes: number;
   /** Minutes an account cools when its agent names no reset (TOOL4g); absent on a shell older than the field. */
   coolOff?: number | null;
+  /** How many sessions Daoris starts at once here (CAPSET1); absent on a shell older than the route. */
+  cap?: number | null;
   /** This machine's sessions' access (AUTONOMY1d); absent on a shell older than it. */
   machineAccess?: AccessLevel | null;
   /** The install's update (UPDATE1b). */
@@ -52,7 +54,7 @@ export type DriverFacts = {
  * the facts here; a story hands a fixture, so the domain is drawn at the frame's widths (the UI/UX design R6, UIFIT1).
  * A molecule: every state by props, every press out.
  */
-export function DriverCards({ facts, busy, onGo, onNotify, onStrikes, onCoolOff, onAccess, onSayUpdate }: {
+export function DriverCards({ facts, busy, onGo, onNotify, onStrikes, onCoolOff, onCap, onAccess, onSayUpdate }: {
   facts: DriverFacts;
   busy: { access: boolean; update: boolean };
   onGo: (door: StarterDoor) => void;
@@ -61,6 +63,8 @@ export function DriverCards({ facts, busy, onGo, onNotify, onStrikes, onCoolOff,
   onStrikes: (count: number) => void;
   /** A cool-off in minutes the person typed and left: whole, one or more, and not the one held. */
   onCoolOff: (minutes: number) => void;
+  /** A cap the person typed and left: whole, one or more, and not the one held (CAPSET1). */
+  onCap: (cap: number) => void;
   onAccess: (edit: AccessEdit, answered?: Answered) => void;
   onSayUpdate: ComponentProps<typeof UpdateSection>['onSay'];
 }) {
@@ -71,6 +75,8 @@ export function DriverCards({ facts, busy, onGo, onNotify, onStrikes, onCoolOff,
   const [strikes, setStrikes] = useState<string | null>(null);
   // The cool-off's minutes as typed (TOOL4g), held as text for the strikes' reason.
   const [coolOff, setCoolOff] = useState<string | null>(null);
+  // The cap as typed (CAPSET1), held as text for the same reason.
+  const [cap, setCap] = useState<string | null>(null);
 
   return (
     <CardStack>
@@ -214,6 +220,35 @@ export function DriverCards({ facts, busy, onGo, onNotify, onStrikes, onCoolOff,
                   />
                   <span className="text-small text-ink-soft">{t('settings.cooloff.minutes')}</span>
                 </span>
+              )}
+            />
+          )}
+
+          {/* How many sessions Daoris starts at once (CAPSET1, D130's CAPCOUNT1 note): the person's one dial for the machine,
+              never per account. Offered where the shell answers the field, as the cool-off is. */}
+          {typeof facts.cap === 'number' && (
+            <SettingRow
+              label={t('settings.cap.label')}
+              hint={t('settings.cap.terminal')}
+              why={t('settings.cap.body')}
+              control={(
+                <input
+                  type="number"
+                  min={1}
+                  aria-label={t('settings.cap.label')}
+                  value={cap ?? String(facts.cap)}
+                  onChange={(event) => setCap(event.target.value)}
+                  onBlur={() => {
+                    // As the cool-off: passing through is not a write, and under one is the driver's refusal, so a value
+                    // under one, not whole, or the one it holds puts the held value back.
+                    const held = facts.cap ?? 2;
+                    const value = cap === null || cap.trim() === '' ? held : Number(cap);
+                    setCap(null);
+                    if (!Number.isInteger(value) || value < 1 || value === held) return;
+                    onCap(value);
+                  }}
+                  className="w-[4.5rem] rounded-control border border-line-strong bg-raised px-2.5 py-1 text-right text-body text-ink"
+                />
               )}
             />
           )}
