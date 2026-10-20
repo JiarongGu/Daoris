@@ -236,6 +236,14 @@ began are said only where the page holds that part's record. The strip is the fl
 person chose the list (`Flow`'s `rail`), and a press on a node, or Enter on it, shows that part as the strip's button did. The
 measured check (`e2e:measured`) draws both flows' stories in a rendered browser, each frame with a ceiling of crossings.
 
+A session's record folds where its work stands (`work/head/WorkMilestone`, MILESTONEUX1, the UI/UX design §3.7 and R4): the
+milestone's end, result, clean-up and recovery are four independent facts, each marked by `Dot`'s own tone for its value
+(`done` for what is reached or kept, `waits` for what waits on another, the danger hue for a blocked entry, none for a
+recovery with nothing kept), never a sequence and never a `PhaseList`. It is folded to `MilestoneLine`, which also says
+*blocked* and *held for you* so nothing that waits on the person hides behind the fold, and opens in place; the fold is the
+molecule's own state, and the page mounts it under the record's id so another record starts folded. The line is also a
+tidied branch row's.
+
 ## Running it
 
 The HTTP host requires `DAORIS_HOME` or an explicit `DAORIS_KNOWLEDGE_DB`. Use a development

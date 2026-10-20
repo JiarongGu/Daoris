@@ -28,7 +28,7 @@ describe('the milestone on the work’s foot', () => {
   afterEach(async () => { await i18n.changeLanguage('en'); });
 
   it('says the end reached by its proof, the result kept, the clean-up completed with what went, and no recovery', () => {
-    render(<WorkMilestone unit={unit()} />);
+    render(<WorkMilestone defaultOpen unit={unit()} />);
     const region = screen.getByRole('region', { name: 'Where this work stands' });
     expect(within(region).getByText('End')).toBeInTheDocument();
     expect(region).toHaveTextContent('Reached: every commit of it is on main');
@@ -38,7 +38,7 @@ describe('the milestone on the work’s foot', () => {
   });
 
   it('says a clean-up pending with what waits and why, a blocked wait apart from one that waits', () => {
-    render(<WorkMilestone unit={unit({
+    render(<WorkMilestone defaultOpen unit={unit({
       cleanup: {
         state: 'pending',
         waits: [
@@ -55,7 +55,7 @@ describe('the milestone on the work’s foot', () => {
   });
 
   it('says the recovery kept and until when, and a folder or ref kept with no date', () => {
-    render(<WorkMilestone unit={unit({
+    render(<WorkMilestone defaultOpen unit={unit({
       recovery: [
         entry({ kind: 'moved-aside', resource: 's-1-20261017', role: 'recovery', disposition: 'retained', detail: 'set aside', until: '2026-10-24T09:00:00Z' }),
         entry({ kind: 'recovery-ref', resource: 'refs/daoris/discarded/x', role: 'recovery', disposition: 'retained', detail: 'kept' }),
@@ -67,14 +67,14 @@ describe('the milestone on the work’s foot', () => {
   });
 
   it('says an end not reached in the driver’s sentence, and an unknown owner as one', () => {
-    const { rerender } = render(<WorkMilestone unit={unit({
+    const { rerender } = render(<WorkMilestone defaultOpen unit={unit({
       end: { state: 'not-ended', said: 'nothing was handed on and the line does not hold it' }, result: [],
       cleanup: { state: 'pending', waits: [], gone: [] },
     })} />);
     const region = screen.getByRole('region', { name: 'Where this work stands' });
     expect(region).toHaveTextContent('Not reached: nothing was handed on and the line does not hold it');
     expect(region).toHaveTextContent('None kept yet');
-    rerender(<WorkMilestone unit={unit({ end: { state: 'unknown', said: 'no record names its unit, so its end is not said' } })} />);
+    rerender(<WorkMilestone defaultOpen unit={unit({ end: { state: 'unknown', said: 'no record names its unit, so its end is not said' } })} />);
     expect(region).toHaveTextContent('Unknown: no record names its unit');
   });
 
@@ -84,7 +84,7 @@ describe('the milestone on the work’s foot', () => {
       end: { state: 'dropped', said: '`feature/x` was removed outside Daoris, and git said it is missing' }, result: [],
       cleanup: { state: 'completed', waits: [], gone: [entry({ kind: 'landing-branch', resource: 'feature/x', disposition: 'removed' })] },
     });
-    const { unmount } = render(<WorkMilestone unit={dropped} />);
+    const { unmount } = render(<WorkMilestone defaultOpen unit={dropped} />);
     const region = screen.getByRole('region', { name: 'Where this work stands' });
     expect(region).toHaveTextContent('Over without its result: `feature/x` was removed outside Daoris');
     expect(region).not.toHaveTextContent('Not reached');
@@ -99,7 +99,7 @@ describe('the milestone on the work’s foot', () => {
   // FABRIC-END2d: a landing ended inside another landing is said by the page's words for its code, in both languages.
   it('says an end inside another landing in the page’s words, never the driver’s sentence', async () => {
     const inside = unit({ end: { state: 'ended', by: 'inside', on: 'feature/q2-more', said: 'it is inside `feature/q2-more`, whose work is on the line' } });
-    render(<WorkMilestone unit={inside} />);
+    render(<WorkMilestone defaultOpen unit={inside} />);
     const region = screen.getByRole('region', { name: 'Where this work stands' });
     expect(region).toHaveTextContent('Reached: it is inside feature/q2-more, whose work is on the line');
     await i18n.changeLanguage('zh');
@@ -108,7 +108,7 @@ describe('the milestone on the work’s foot', () => {
 
   it('is said in Chinese by the same facts', async () => {
     await i18n.changeLanguage('zh');
-    render(<WorkMilestone unit={unit({
+    render(<WorkMilestone defaultOpen unit={unit({
       cleanup: { state: 'pending', waits: [entry({ kind: 'tree', resource: 's-1', disposition: 'blocked', detail: 'a session still holds this tree' })], gone: [] },
       recovery: [entry({ kind: 'moved-aside', resource: 's-1-x', role: 'recovery', disposition: 'retained', detail: 'set aside', until: '2026-10-24T09:00:00Z' })],
     })} />);
@@ -218,25 +218,25 @@ describe('an attempt held for the person', () => {
   });
 
   it('says a held close on the work’s foot in English and in 中文', async () => {
-    const { unmount } = render(<WorkMilestone unit={unit({ held: [heldClose({ why: 'not-close-word' })] })} />);
+    const { unmount } = render(<WorkMilestone defaultOpen unit={unit({ held: [heldClose({ why: 'not-close-word' })] })} />);
     expect(screen.getByRole('region', { name: 'Where this work stands' }))
       .toHaveTextContent("close, attempt 1: Your word could not be taken: only the close's own answer says whether the quest closed. It waits for your word.");
     unmount();
 
     await i18n.changeLanguage('zh');
-    render(<WorkMilestone unit={unit({ held: [heldClose({ outcome: 'failed' })] })} />);
+    render(<WorkMilestone defaultOpen unit={unit({ held: [heldClose({ outcome: 'failed' })] })} />);
     expect(screen.getByRole('region', { name: '这项工作进展到哪里' }))
       .toHaveTextContent('close，第 1 次尝试：委托的关闭被拒绝了，但 Daoris 没能把这一结果记到这项工作上（no-acceptance）。它在等你的答复。');
   });
 
   it('says a word taken back on a close whose submission was reopened or replaced, in English and in 中文 (FABRIC-CLOSE1q2)', async () => {
-    const { unmount } = render(<WorkMilestone unit={unit({ held: [heldClose({ why: 'submission-moved' })] })} />);
+    const { unmount } = render(<WorkMilestone defaultOpen unit={unit({ held: [heldClose({ why: 'submission-moved' })] })} />);
     expect(screen.getByRole('region', { name: 'Where this work stands' })).toHaveTextContent(
       'close, attempt 1: The submission this close names was reopened or replaced since, so the work now is not this close\'s to record or stop; it can be sent again.');
     unmount();
 
     await i18n.changeLanguage('zh');
-    render(<WorkMilestone unit={unit({ held: [heldClose({ why: 'submission-moved' })] })} />);
+    render(<WorkMilestone defaultOpen unit={unit({ held: [heldClose({ why: 'submission-moved' })] })} />);
     expect(screen.getByRole('region', { name: '这项工作进展到哪里' }))
       .toHaveTextContent('close，第 1 次尝试：这次关闭针对的交付此后已被重新打开或替换，现在的工作不能由这次关闭来记录或停止，只能再发送一次。');
   });
@@ -253,21 +253,140 @@ describe('an attempt held for the person', () => {
   });
 
   it('takes its node’s place on the work’s foot, in English and in 中文', async () => {
-    const { unmount } = render(<WorkMilestone unit={unit({ held: [heldAttempt({ why: 'no-reconcile' })] })} />);
+    const { unmount } = render(<WorkMilestone defaultOpen unit={unit({ held: [heldAttempt({ why: 'no-reconcile' })] })} />);
     const region = screen.getByRole('region', { name: 'Where this work stands' });
     expect(within(region).getByText('Held for you')).toBeInTheDocument();
     expect(region).toHaveTextContent('deploy, attempt 2: Its step declares no way to ask what became of it. It waits for your word.');
     unmount();
 
     await i18n.changeLanguage('zh');
-    render(<WorkMilestone unit={unit({ held: [heldAttempt({ why: 'acme-refused' })] })} />);
+    render(<WorkMilestone defaultOpen unit={unit({ held: [heldAttempt({ why: 'acme-refused' })] })} />);
     const zh = screen.getByRole('region', { name: '这项工作进展到哪里' });
     expect(within(zh).getByText('等你定夺')).toBeInTheDocument();
     expect(zh).toHaveTextContent('deploy，第 2 次尝试：它的插件的答复与它所针对的工作不符（acme-refused）。它在等你的答复。');
   });
 
   it('shows nothing held where the driver lists none, as on an install no plugin step governs', () => {
-    render(<WorkMilestone unit={unit({ held: [] })} />);
+    render(<WorkMilestone defaultOpen unit={unit({ held: [] })} />);
     expect(screen.queryByText('Held for you')).not.toBeInTheDocument();
+  });
+});
+
+// MILESTONEUX1 (the UI/UX design §3.7 and R4): where a piece of work stands is four independent facts, each marked by `Dot`'s
+// tone and never as a sequence, folded to `MilestoneLine` behind a disclosure and opened in place; the line says *blocked* and
+// *held* so nothing that waits on the person hides behind the fold.
+describe('where a piece of work stands: four facts, folded to their line', () => {
+  afterEach(async () => { await i18n.changeLanguage('en'); });
+
+  const blocked = entry({ kind: 'tree', resource: 's-1', disposition: 'blocked', detail: 'a session still holds this tree' });
+  const waiting = entry({ kind: 'end', resource: 'the end', disposition: 'pending', detail: 'the cycle waits' });
+  const kept = entry({ kind: 'moved-aside', resource: 's-1-x', role: 'recovery', disposition: 'retained', detail: 'set aside', until: '2026-10-24T09:00:00Z' });
+  const pending = (...waits: MilestoneEntry[]): MilestoneUnit['cleanup'] => ({ state: 'pending', waits, gone: [] });
+  /** A fact's mark: the decorative dot beside its words, or null where it wears none. */
+  const markOf = (label: string) => screen.getByText(label).parentElement!.querySelector('[aria-hidden="true"]');
+
+  it('is folded to its line behind a disclosure, and the facts open in place', async () => {
+    render(<WorkMilestone unit={unit({ recovery: [kept] })} />);
+    const region = screen.getByRole('region', { name: 'Where this work stands' });
+    const fold = within(region).getByRole('button', { name: /Where this work stands/ });
+    expect(fold).toHaveAttribute('aria-expanded', 'false');
+    expect(fold).toHaveTextContent('Ended · clean-up completed · recovery kept until');
+    expect(within(region).queryByText('End')).toBeNull();
+    expect(region).not.toHaveTextContent('Reached:');
+
+    await userEvent.click(fold);
+    expect(fold).toHaveAttribute('aria-expanded', 'true');
+    expect(region.querySelector('dl')).not.toBeNull();
+    expect(fold).toHaveAttribute('aria-controls', region.querySelector('dl')!.id);
+    expect(region).toHaveTextContent('Reached: every commit of it is on main');
+    // The line stays the disclosure's head, folded or open, and the press folds it again.
+    expect(fold).toHaveTextContent('Ended · clean-up completed');
+    await userEvent.click(fold);
+    expect(fold).toHaveAttribute('aria-expanded', 'false');
+    expect(within(region).queryByText('End')).toBeNull();
+  });
+
+  it('marks an end reached, a result kept, a clean-up completed and a recovery kept each in done’s hue, and a recovery with nothing kept not at all', () => {
+    const { rerender } = render(<WorkMilestone defaultOpen unit={unit({ recovery: [kept] })} />);
+    for (const label of ['End', 'Result', 'Clean-up', 'Recovery']) expect(markOf(label), label).toHaveClass('bg-st-done');
+
+    // A clean-up completed with nothing kept for recovery is ordinary: no fact is done because another is (R4).
+    rerender(<WorkMilestone defaultOpen unit={unit()} />);
+    expect(markOf('Clean-up')).toHaveClass('bg-st-done');
+    expect(screen.getByText('Recovery').parentElement).toHaveTextContent('Nothing kept for recovery');
+    expect(markOf('Recovery')).toBeNull();
+  });
+
+  it('marks what waits neutral and what is blocked in the danger hue, each fact by its own value', () => {
+    const { rerender } = render(<WorkMilestone defaultOpen unit={unit({
+      end: { state: 'not-ended', said: 'nothing was handed on and the line does not hold it' }, result: [], cleanup: pending(waiting),
+    })} />);
+    expect(markOf('End')).toHaveClass('bg-ink-soft');
+    expect(markOf('Result')).toHaveClass('bg-line');
+    expect(markOf('Clean-up')).toHaveClass('bg-ink-soft');
+    expect(markOf('Recovery')).toBeNull();
+
+    rerender(<WorkMilestone defaultOpen unit={unit({ cleanup: pending(blocked, waiting) })} />);
+    expect(markOf('Clean-up')).toHaveClass('bg-st-declined');
+    expect(markOf('End')).toHaveClass('bg-st-done');
+  });
+
+  it('keeps an unknown end, a dropped one and a handed one each in its own word and mark, never reached', () => {
+    const marks = (end: MilestoneUnit['end']) => {
+      const { unmount } = render(<WorkMilestone defaultOpen unit={unit({ end })} />);
+      const row = screen.getByText('End').parentElement!;
+      const shown = { mark: row.querySelector('[aria-hidden="true"]')!.className, text: row.textContent ?? '' };
+      unmount();
+      return shown;
+    };
+    const unknown = marks({ state: 'unknown', said: 'no record names its unit' });
+    const dropped = marks({ state: 'dropped', said: '`feature/x` was removed outside Daoris' });
+    const handed = marks({ state: 'handed', said: 'it went to another session' });
+    expect(unknown.text).toContain('Unknown: no record names its unit');
+    expect(unknown.mark).toContain('bg-line');
+    expect(dropped.text).toContain('Over without its result');
+    expect(dropped.mark).toContain('bg-ink-faint');
+    expect(handed.text).toContain('Not reached: its work was handed off');
+    expect(handed.mark).toContain('bg-ink-soft');
+    for (const one of [unknown, dropped, handed]) expect(one.mark).not.toContain('bg-st-done');
+  });
+
+  it('keeps a held attempt as its own row under the facts, its mark the danger hue until the person has worded it', () => {
+    const attempt = { unit: 'u1', node: 'deploy', attempt: 2, plugin: 'acme.deploy', step: 'acme.deploy/deploy', nodeState: 'unknown', why: 'unknown', at: '2026-10-17T09:00:00Z', said: 'asked' };
+    const { rerender } = render(<WorkMilestone defaultOpen unit={unit({ held: [attempt] })} />);
+    expect(markOf('Held for you')).toHaveClass('bg-st-declined');
+    expect(screen.getByText('Held for you').parentElement).toHaveTextContent('deploy, attempt 2');
+    rerender(<WorkMilestone defaultOpen unit={unit({ held: [{ ...attempt, resolution: 'did-not' }] })} />);
+    expect(markOf('Held for you')).toHaveClass('bg-ink-soft');
+  });
+
+  it('says blocked and held on its line, so nothing that waits on the person hides behind the fold', async () => {
+    const attempt = { unit: 'u1', node: 'deploy', attempt: 2, plugin: 'acme.deploy', step: 'acme.deploy/deploy', nodeState: 'unknown', why: 'unknown', at: '2026-10-17T09:00:00Z', said: 'asked' };
+    const stuck = unit({ cleanup: pending(blocked, waiting), held: [attempt] });
+    const { unmount } = render(<WorkMilestone unit={stuck} />);
+    const fold = screen.getByRole('button', { name: /Where this work stands/ });
+    expect(fold).toHaveAttribute('aria-expanded', 'false');
+    expect(fold).toHaveTextContent('Ended · clean-up pending · blocked · held for you');
+    expect(within(fold).getByText('blocked')).toHaveClass('text-ink-danger');
+    expect(within(fold).getByText('held for you')).toHaveClass('text-ink-danger');
+    unmount();
+    // A clean-up that only waits, and nothing held, say neither.
+    render(<MilestoneLine unit={unit({ cleanup: pending(waiting) })} />);
+    expect(screen.getByText(/clean-up pending/)).not.toHaveTextContent(/blocked|held/);
+    expect(waitsOnPerson(stuck)).toEqual([blocked]);
+  });
+
+  it('says blocked and held on the line of a branch row, in English and in 中文', async () => {
+    const attempt = { unit: 'u1', node: 'deploy', attempt: 2, plugin: 'acme.deploy', step: 'acme.deploy/deploy', nodeState: 'unknown', why: 'unknown', at: '2026-10-17T09:00:00Z', said: 'asked' };
+    const stuck = unit({ cleanup: pending(blocked), held: [attempt] });
+    const { unmount } = render(<MilestoneLine unit={stuck} />);
+    expect(screen.getByText(/Ended/)).toHaveTextContent('Ended · clean-up pending · blocked · held for you');
+    unmount();
+
+    await i18n.changeLanguage('zh');
+    expect(i18n.t('work.milestone.line.blocked')).toBe('受阻');
+    expect(i18n.t('work.milestone.line.held')).toBe('等你处理');
+    render(<MilestoneLine unit={stuck} />);
+    expect(screen.getByText(/已结束/)).toHaveTextContent('已结束 · 清理未完成 · 受阻 · 等你处理');
   });
 });
