@@ -35,20 +35,44 @@ public sealed class HelpRoomMayDoTests
     }
 
     /// <summary>
-    /// D107: with reading across on, the room names each checkout it may read, by name, workspace and path,
-    /// and how — the files where they lie, and two read-only git commands — and that it changes nothing there.
+    /// D107, as HELPMODE1c4 serves it: with reading across on, the room names each checkout it may read, by name and workspace and
+    /// never a path, and how: <c>checkout_read</c> alone, a repository and a path from its top, a file or a folder, <c>status</c> and
+    /// <c>branches</c>, each read judged by Daoris; and that it changes nothing there. No <c>git -C</c>, which it has no rule for.
     /// </summary>
     [Fact]
-    public void With_reading_on_the_room_says_which_checkouts_it_may_read_where_and_how()
+    public void With_reading_on_the_room_says_which_checkouts_it_may_read_and_how()
     {
         var agents = HelpRoom.Render(HelpRoomFixture.Machine);
 
-        Assert.Contains("You may read the checkouts below and change nothing in them", agents);
-        Assert.Contains("- `console-ui` (workspace `work`) — `/work/console-ui`", agents);
-        Assert.Contains("- `reports-db` (workspace `work`) — `\"/work/reports db\"`", agents);
-        Assert.Contains("`git -C <path> status`", agents);
-        Assert.Contains("`git -C <path> branch --list`", agents);
+        Assert.Contains("You may read the checkouts below, and change nothing in them, with `checkout_read` alone", agents);
+        Assert.Contains("- `console-ui` (workspace `work`)\n", agents);
+        Assert.Contains("- `reports-db` (workspace `work`)\n", agents);
+        Assert.Contains("`status`", agents);
+        Assert.Contains("`branches`", agents);
+        Assert.Contains("anything git ignores", agents);
+        Assert.DoesNotContain("/work/console-ui", agents);
+        Assert.DoesNotContain("git -C", agents);
         Assert.DoesNotContain("you read no checkout", agents);
+    }
+
+    /// <summary>
+    /// HELPMODE1c4: a checkout the person turned off under configured access is not listed, and is named apart with where it is turned
+    /// on; every one turned off reads as none to read, said so, never as reading switched off by the repositories.
+    /// </summary>
+    [Fact]
+    public void A_checkout_turned_off_is_named_apart_and_every_one_off_reads_as_none()
+    {
+        var some = HelpRoom.Render(HelpRoomFixture.Machine with { CheckoutsOff = ["reports-db"] });
+
+        Assert.Contains("- `console-ui` (workspace `work`)\n", some);
+        Assert.DoesNotContain("- `reports-db`", some);
+        Assert.Contains("The person turned reading off for you in `reports-db` under Ask Daoris's configured access", some);
+
+        var none = HelpRoom.Render(HelpRoomFixture.Machine with { CheckoutsOff = ["console-ui", "Reports-DB"] });
+        Assert.Contains("you read no checkout", none);
+        Assert.Contains("turned reading off for you in every checkout here", none);
+        Assert.Contains("Settings → AI features", none);
+        Assert.DoesNotContain("Reading the checkouts here is switched off", none);
     }
 
     /// <summary>

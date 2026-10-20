@@ -65,7 +65,10 @@ public sealed record HelpReceipt
     /// <summary>Whether the tree guard (PERM3) was handed with its rules: restricted's, never full access's (D183's HELPMODE1a1 note).</summary>
     public bool Guarded { get; init; }
 
-    /// <summary>The checkouts reading across lets it read (D107), as its rules grant them; none where no rules were handed.</summary>
+    /// <summary>
+    /// The checkouts its start handed <c>checkout_read</c> (D107, HELPMODE1c4): the readable ones the person left on, whatever its agent,
+    /// which each read is judged by; none in full access. A start before HELPMODE1c4 kept here those its rules granted.
+    /// </summary>
     public IReadOnlyList<HelpRead> Checkouts { get; init; } = [];
 
     /// <summary>In restricted mode, what it lacks, each with the door that grants it (D183 point 4); none in full access.</summary>
@@ -353,7 +356,8 @@ public sealed class HelpWired(string home)
             Servers = servers,
             Rules = rules,
             Guarded = rules is not null && handed.Guarded,
-            Checkouts = rules is null ? [] : handed.Reads,
+            // HELPMODE1c4: the checkouts `checkout_read` may read, whatever its agent, since Daoris judges each read, not a rule.
+            Checkouts = handed.Reads,
             Lacks = full ? [] : Lacking(servers, catalog),
             Housekeeping = handed.Housekeeping,
             Settings = handed.Settings,
