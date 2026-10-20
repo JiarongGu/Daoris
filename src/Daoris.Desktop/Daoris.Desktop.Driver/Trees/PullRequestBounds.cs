@@ -38,6 +38,9 @@ public static class PullRequestMinute
     public static bool Within(string home, LandedBranch entry, DateTimeOffset now) =>
         Taken.TryGetValue(Key(home, entry), out var was) && now - was < PullRequestAsking.Fresh;
 
+    /// <summary>When the entry's minute was last taken in this process, or null where it never was (FABRIC-END6b reads a move asked about by it).</summary>
+    public static DateTimeOffset? TakenAt(string home, LandedBranch entry) => Taken.TryGetValue(Key(home, entry), out var was) ? was : null;
+
     /// <summary>The entry was asked at <paramref name="at"/>, its own request's time: kept where it is the later.</summary>
     public static void Asked(string home, LandedBranch entry, DateTimeOffset at) =>
         Taken.AddOrUpdate(Key(home, entry), at, (_, was) => was > at ? was : at);

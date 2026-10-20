@@ -96,6 +96,42 @@ public sealed class AutoLandingWakesTests : IDisposable
         Assert.True(released.Count > 0 && committed.Count > 0, report);
     }
 
+    /// <summary>
+    /// FABRIC-END7b: a held done whose hold is released while a live session holds its tree (the person's words went on with it) is left
+    /// by the quests family's wake, and lands at that session's end, the ledger's <c>sessions</c>, with no whole look. A session's end
+    /// before the release, the session still live, starts no git.
+    /// </summary>
+    [Fact]
+    public async Task A_hold_released_under_a_live_session_lands_at_that_session_s_end_with_no_whole_look()
+    {
+        var root = await RepositoryAsync("engine");
+        Rule(new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}", AutoAccept: true));
+        await DoneSessionAsync(root, "s1", "q1", held: true);
+
+        // The whole look keeps the hold once.
+        var (_, first) = await CountedAsync(() => LookAsync(woke: null));
+        Assert.Single(first);
+
+        // The person's words go on with the session in its tree: its record is live again. The hold is released meanwhile, and the
+        // quests family's wake leaves the entry for the live session, landing nothing.
+        _world.Records[0] = _world.Records[0] with { State = "working" };
+        _world.Quests["q1"] = _world.Quests["q1"] with { Held = false };
+        var (_, released) = await CountedAsync(() => LookAsync([new(ChangeTopics.Ledger, "quests")]));
+        Assert.Empty(released);
+        Assert.False(await BranchAsync(root, "feature/q1-fix-the-gap"));
+
+        // Another session's record moving while this one still runs: looked at, left again, no git.
+        var (live, _) = await CountedAsync(() => LookAsync([new(ChangeTopics.Ledger, "sessions")]));
+        Assert.Empty(live);
+
+        // The session ends: its end lands the entry, with no whole look.
+        _world.Records[0] = _world.Records[0] with { State = "completed" };
+        var (ended, landed) = await CountedAsync(() => LookAsync([new(ChangeTopics.Ledger, "sessions")]));
+        Assert.StartsWith("landing  session s1", Assert.Single(landed));
+        Assert.True(await BranchAsync(root, "feature/q1-fix-the-gap"));
+        Assert.NotEmpty(ended);
+    }
+
     // ——— counting, the world and the fixtures
 
     /// <summary>Each git start the act makes through the gate, as <c>git &lt;arguments&gt; @ &lt;folder&gt;</c>.</summary>

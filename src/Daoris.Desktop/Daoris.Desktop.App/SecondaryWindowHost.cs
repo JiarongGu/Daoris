@@ -32,7 +32,10 @@ public sealed class SecondaryWindowHost(
     // Each window's showing and closing, by its name, so the last main window ends the application (MAINWINDOWS2).
     MainWindows? mains = null,
     // The taskbar's count, worn by each other main window while the first is put away (MAINWINDOWS2b).
-    WaitingCount? waiting = null) : ISecondaryWindows, IDisposable
+    WaitingCount? waiting = null,
+    // The loop each other main window's focus is told to, as the first one's is (FABRIC-END6a, §A4.3): a moment to ask about an open pull
+    // request, bounded by D148's minute in the driver. The container hands it, as it hands the first window its own.
+    DriverLoop? focused = null) : ISecondaryWindows, IDisposable
 {
     private bool _hooked;
 
@@ -112,6 +115,9 @@ public sealed class SecondaryWindowHost(
                     name, address, engine, log ?? Microsoft.Extensions.Logging.Abstractions.NullLogger<ChromiumView>.Instance,
                     () => KeptScheme.StartsDark(colorScheme.Scheme, MainForm.OperatingSystemPrefersDark));
                 lock (_forms) _forms[name] = form;
+                // FABRIC-END6a: another main window's focus is the person looking at the platform, as the first one's is; a utility
+                // window's (the monitor, a detached session) is not. A hint that returns at once, so this window's thread waits on nothing.
+                if (focused is not null && SecondaryWindow.IsMain(name)) form.Activated += (_, _) => focused.Focused();
                 // Counted once it is on the screen, since only a window that loaded is ever told closed: one whose making
                 // failed would otherwise keep a put-away first main window hidden with nothing else open (MAINWINDOWS2).
                 form.Load += (_, _) =>

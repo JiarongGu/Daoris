@@ -249,6 +249,41 @@ public sealed class CleanupLeftoversTests : IDisposable
         Assert.Empty(WorkInventory.Derive(after));
     }
 
+    /// <summary>
+    /// FABRIC-UNKNOWN1b: a registered repository that no record and no tree names is read too, one listing of its checkout, so an
+    /// unrecorded <c>daoris/*</c> branch there can be seen. A part reads only the repositories it holds, and a registered repository whose
+    /// checkout is not on this machine is said by nobody, since nothing of Daoris's is recorded there. Counted at the process seam, its
+    /// stand-in starting nothing.
+    /// </summary>
+    [Fact]
+    public async Task A_registered_repository_no_record_or_tree_names_is_listed_once()
+    {
+        var checkout = Path.Combine(_home, "checkouts", "engine");
+        Directory.CreateDirectory(checkout);
+        var roots = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["engine"] = checkout,
+            ["deck"] = Path.Combine(_home, "checkouts", "deck"),
+        };
+        var starts = 0;
+        var unread = new List<string>();
+
+        using (ProcessStarts.Within(_ =>
+               {
+                   Interlocked.Increment(ref starts);
+                   return null;
+               }))
+        {
+            await WorkInventories.GatherAsync(_home, roots, new HashSet<string>(), unread);
+            Assert.Equal(1, starts);
+
+            await WorkInventories.ReadPartAsync(_home, roots, new HashSet<string>(), only: repository => repository != "engine");
+            Assert.Equal(1, starts);
+        }
+
+        Assert.DoesNotContain(unread, said => said.Contains("`deck`", StringComparison.Ordinal));
+    }
+
     /// <summary>One whose name says no date is never purged by itself, so it stays a unit whose owner is unknown: it does need the person.</summary>
     [Fact]
     public void A_moved_aside_folder_with_no_date_stays_a_unit_its_owner_unknown()

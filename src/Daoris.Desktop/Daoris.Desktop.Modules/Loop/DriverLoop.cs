@@ -271,7 +271,8 @@ public sealed class DriverLoop(
     }
 
     /// <summary>
-    /// The main window has the person's focus (FABRIC-END6): the driver asks a plugin about each open pull request, within D148's minute.
+    /// A main window has the person's focus (FABRIC-END6; the first one's and, since FABRIC-END6a, each later one's): the driver asks a
+    /// plugin about each open pull request, within D148's minute.
     /// No look and no nudge; returns at once, so the window's thread waits on nothing.
     /// </summary>
     public void Focused() => _focus.Focused();

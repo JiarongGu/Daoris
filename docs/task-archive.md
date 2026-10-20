@@ -17783,3 +17783,33 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **PUSH1e — accounts and usage pushed, and their twins moved into .NET** (driver, modules, web, cli; D182 point 6; after PUSH1a). Sanitized account rows and curve points pushed on probe results and session changes, never a probe per window; the CLI's usage-curve, account-listing and home-table twins replaced by .NET through PUSH1f. Proof: the page and the CLI agree from one implementation.
 
 **Outcome** 2026-10-20: accounts and usage are judged in .NET and pushed: a `usage` slice (sessions and accounts' shares, through `USAGE`'s own builders) and an `accounts` slice (a partition per agent, through `ACCOUNTS`' own builder, its running counts from the records the sessions slice already holds, woken by `StateSlice.Pushed` when a count moved); the usage-curve verdicts (each window's start, its curve now and whether it is over; each scope's curves, measures and overs) are added to `ACCOUNTS`' answer, so the page's usage-curve twin is gone and the page only words them; a tick and a focus read neither route; an older host still pulls. Left: the account's state read from the roster's sign-ins (`HARNESSES`, never pushed), the CLI's twins (PUSH1f), the install's measurement. The merge mended `SessionsStateSliceTests` for CLOSETAKE1's `tookBind` (pull-only). On Opus: about 354 tool calls, 75 minutes. Detail: D182's PUSH1e note.
+
+## FABRIC-END6a — a later main window's focus is a moment too (2026-10-20, D173)
+
+> - [ ] **FABRIC-END6a — a later main window's focus is a moment too** (modules; after END6; §A4.3). Only the first main window's `Activated` reaches `DriverLoop.Focused`. Proof: the `SecondaryForm` main window's activation reaches it once.
+
+**Outcome** 2026-10-20: built as ENDAGREE1, one feature end to end (D187): each later main window's focus reaches `DriverLoop.Focused` as the first one's does (`SecondaryWindowHost` hands a `main:<n>` window's `Activated`; the monitor and a detached session hand nothing). Commit 5278ae22e. Detail: D173's ENDAGREE1 note. On Opus, the whole feature: about 216 tool calls, 46 minutes.
+
+## FABRIC-END6b — a line moved inside an ask's minute stays a moment (2026-10-20, D173)
+
+> - [ ] **FABRIC-END6b — a line moved inside an ask's minute stays a moment** (driver; after END6; §A4.3, §C6). Keep the move pending until the minute ends and ask at the next wake past it. Proof: origin moving at +20 s asked at the first wake after +60 s, never twice.
+
+**Outcome** 2026-10-20: built as ENDAGREE1, one feature end to end (D187): origin's line moving while a pull request is inside D148's minute is kept per repository until every open pull request there has been asked after it, and the first wake of that repository past the minute asks it once. Commit dedd8ed3d. Detail: D173's ENDAGREE1 note.
+
+## FABRIC-END6d — a landing's hold shown over real git (2026-10-20, D173)
+
+> - [ ] **FABRIC-END6d — a landing's hold shown over real git** (driver; after END6c). A moment due while a plugin landing runs asks nothing until the landing ends, then exactly once. Proof: a `PullRequestMomentsGitTests` row holding the platform's push.
+
+**Outcome** 2026-10-20: built as ENDAGREE1, one feature end to end (D187): a landing's hold shown over real git: a focus that comes due while a plugin landing's push is held asks nothing, and the landing's end asks the open pull request once (`PullRequestMomentsGitTests`). Commit 1c3ff765c. Detail: D173's ENDAGREE1 note.
+
+## FABRIC-END7b — a session's end concerns the entries on its tree (2026-10-20, D173)
+
+> - [ ] **FABRIC-END7b — a session's end concerns the entries on its tree** (driver; after END7; §A3, D173's END7 note). A hold or review released while a live session holds the entry's tree waits for the whole look, because the session's end does not concern `quests`-waiting entries: hand the concluded sessions' trees to the landing as wakes, and bound the `gates` deadline's listing of `workflows/runs/`. Proof: a held entry released under a live session lands at that session's end with no whole look; a count of the files the deadline lists.
+
+**Outcome** 2026-10-20: built as ENDAGREE1, one feature end to end (D187): `LandingJudged` keeps the due entries a look left because a live session held their tree, and the ledger's `sessions` wake looks at them, so a hold released under a live session lands at its end with no whole look; the `gates` deadline reads of `workflows/runs/` only the runs the due entries' gates read. Commit dc6a187db. Detail: D173's ENDAGREE1 note.
+
+## FABRIC-UNKNOWN1b — the repositories no record or tree names are read too (2026-10-20, D173)
+
+> - [ ] **FABRIC-UNKNOWN1b — the repositories no record or tree names are read too** (driver; after UNKNOWN1; §D3). List the registered repositories' roots so a repository with only an unrecorded `daoris/*` branch is seen. Proof: an empty home and a root holding `daoris/x`.
+
+**Outcome** 2026-10-20: built as ENDAGREE1, one feature end to end (D187): each registered repository with a checkout here, within the part, is read too with one `for-each-ref` each, so a repository no record or tree names is inventoried. Commit 2f5ca753a. Detail: D173's ENDAGREE1 note.

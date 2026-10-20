@@ -20,6 +20,13 @@ public sealed class PullRequestMomentsGitTests : LandedFixture
 
     private int _asked;
 
+    // Each branch the platform was asked about, in order (FABRIC-END6d).
+    private readonly List<string> _askedOf = [];
+
+    // A landing's push held on the platform until the test lets it go, and told once it is held there (FABRIC-END6d); none by default.
+    private TaskCompletionSource? _pushHeld;
+    private readonly TaskCompletionSource _pushing = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
     private DateTimeOffset _now = DateTimeOffset.UtcNow;
 
     public PullRequestMomentsGitTests()
@@ -97,6 +104,54 @@ public sealed class PullRequestMomentsGitTests : LandedFixture
     }
 
     /// <summary>
+    /// FABRIC-END6d: a landing's hold shown over real git. A moment that comes due while a plugin landing of the same repository runs (its
+    /// push held on the platform) asks nothing, and is owed; once the landing ends, the open pull request is asked exactly once, by the
+    /// owed moment and the landing's own push together, and later moments inside the minute ask nothing more.
+    /// </summary>
+    [Fact]
+    public async Task A_moment_due_while_a_plugin_landing_runs_asks_nothing_until_it_ends_then_once()
+    {
+        using var lease = HomeLease.TryAcquire(Home, LeaseKind.Headless, out _);
+        var (root, _) = await RepositoryWithOriginAsync("engine");
+        IReadOnlyList<RepoView> registry = [new RepoView("engine", true, root, "aurora")];
+        var trees = Trees();
+        await using var moments = PullRequestMoments.ForDriver(Home, _ => Task.FromResult(registry), trees: trees, clock: () => _now);
+        moments.Open();
+
+        // The first landing's pull request, open, asked at its push; a minute and more later, it is due again.
+        var first = (await LandAsync(trees, root, "a.txt", "the work\n", new LandingSubject("s1", "q1", "First"))).Branch!;
+        await Step(moments);
+        var before = _askedOf.Count(branch => branch == first);
+        Assert.True(before >= 1, $"asked {before} times at its push");
+        _now += TimeSpan.FromMinutes(2);
+
+        // A second landing, its push held on the platform: the repository is held for the moments meanwhile.
+        _pushHeld = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var second = Task.Run(() => LandAsync(trees, root, "b.txt", "more work\n", new LandingSubject("s2", "q2", "Second")));
+        await _pushing.Task.WaitAsync(TimeSpan.FromMinutes(2));
+        Assert.True(RepositoryHolds.Held(Home, "engine"));
+
+        // The window's focus, due for the first pull request: skipped while the landing holds the repository.
+        moments.Focused();
+        await Step(moments);
+        Assert.Equal(before, _askedOf.Count(branch => branch == first));
+
+        // The landing ends: the owed moment and the push's ask the first pull request once between them.
+        _pushHeld.SetResult();
+        Assert.True((await second.WaitAsync(TimeSpan.FromMinutes(2))).Plugin is { Pushed: true });
+        Assert.False(RepositoryHolds.Held(Home, "engine"));
+        await Step(moments);
+        Assert.Equal(before + 1, _askedOf.Count(branch => branch == first));
+
+        // Inside its minute, nothing more.
+        moments.Focused();
+        await Step(moments);
+        PullRequestMoments.Pushed(Home, "engine");
+        await Step(moments);
+        Assert.Equal(before + 1, _askedOf.Count(branch => branch == first));
+    }
+
+    /// <summary>
     /// FABRIC-END6c, finding 4: the person's fetch that changed nothing moves no line for the ref watch to hear, and is still a fetch: git's
     /// <c>FETCH_HEAD</c> says when, which a later Daoris reads as this one does.
     /// </summary>
@@ -138,6 +193,12 @@ public sealed class PullRequestMomentsGitTests : LandedFixture
         {
             var frame = JsonSerializer.SerializeToElement(payload);
             var branch = frame.GetProperty("branch").GetString()!;
+            if (test._pushHeld is { } held)
+            {
+                test._pushing.TrySetResult();
+                await held.Task.WaitAsync(ct);
+            }
+
             await GitAsync(frame.GetProperty("root").GetString()!, "push", "--quiet", "origin", branch);
             return new PluginLanding(Plugin, Pushed: true, "https://example.test/org/project/_git/engine/pullrequest/7", "pushed");
         }
@@ -146,6 +207,7 @@ public sealed class PullRequestMomentsGitTests : LandedFixture
         {
             test._asked++;
             var branch = JsonSerializer.SerializeToElement(payload).GetProperty("branch").GetString()!;
+            lock (test._askedOf) test._askedOf.Add(branch);
             return Task.FromResult(test._answers.TryGetValue(branch, out var answer) ? answer() : new PullRequestState(PullRequestStates.Open));
         }
 
