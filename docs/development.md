@@ -116,7 +116,7 @@ once the heavy light gates (the CLI, .NET and web suites) have ended, so its tim
 suite loading the CPU (GATEORDER1). A Process half runs `--no-build` when its fast half passed in the
 same run on the same tree (GATEBUILD1). The release, family and deployment rehearsals run beside the git half, one after
 the other, and every other Process-lane gate alone (REHLANE1, REHLANE2, REHLANE2b); the web gate's vitests are a light gate of their own, `web-unit`, beside the
-service suite (WEBSPLIT1). The driver's Process half runs eight classes at once (PROCPAR1), and its
+service suite (WEBSPLIT1), and the measured-box check (`web-measured`: the flowchart's and the setting rows' stories in Chromium) is another that builds none (FLOWCHART1e). The driver's Process half runs eight classes at once (PROCPAR1), and its
 slowest classes print by their own times beside the half's wall. Add `--one-at-a-time` on a
 loaded machine to run every gate in turn. `--full --beside` is a guest on the machine (CIPRIO1): it runs
 at below normal priority with build servers of its own (its Process lane at normal: FAMILYFAIL1c), a second is refused

@@ -17999,3 +17999,9 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **RPC1f — the CLI's edits through the running Daoris** (CLI; after RPC1a). `daoris driver …` edits a `SET_*` route answers, and the `agent`, `plugin` and `tool` verbs the census finds a route for, go over the pipe while the desktop runs, and under the lease (`lease.ts`) when none runs. Proof: CLI tests against a stand-in pipe; a `twins.md` row with both tables.
 
 **Outcome** 2026-10-20: built with PUSH1f, one branch; see its entry above.
+
+## FLOWCHART1e — the measured-box check as a gate (2026-10-20, D186)
+
+> - [ ] **FLOWCHART1e — the measured-box check as a gate** (tools; after FLOWCHART1a1, D186). `npm --prefix src/Daoris.Web run e2e:measured` draws the flowchart's stories in Chromium and measures every box, path and label (15 checks); it is in no gate yet. Declare it in `daoris.gates.json`, reached by `src/Daoris.Web/src/design/flow*` and `measured/`, with the reach scan's test. Proof: a merge touching `flowLayout.ts` runs it.
+
+**Outcome** 2026-10-20: built. The gate `web-measured` (`npm run test:web:measured`, a light, heavy, clock-bound gate that builds no .NET component) runs the 47 measured checks, the setting rows' with the flowchart's. The merge tool's lane table reaches it from `measured/**` and `playwright.measured.config.ts` alone, and from `src/design/` `flow*`, `Flow*`, `ui.tsx`, `ui.stories.tsx` and `storyWidths*` beside the web shell's gates; `merge-branch.test.ts` holds each row, and a merge touching `flowLayout.ts` lists the gate, "in the CI beside", and `--gated` runs it. One of three runs lost a story to a page navigation mid-measure; two ran clean. Detail: D186's FLOWCHART1e note.
