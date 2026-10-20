@@ -5,6 +5,21 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-20 — Ask Daoris's conversations were listed among the chat sessions (ASKRAIL1)
+
+- **Symptom:** the Sessions rail drew an *Ask Daoris* group beside the repositories' (and its rows by state, its name search and the
+  words search), while Ask Daoris has its own panel and history. Red first: `SessionRail.test.tsx`, *Ask Daoris's records beside a
+  session's*, en and 中文.
+- **Root cause:** the rail never excluded `daoris:help`; it had been spared by what the list was asked. Until ASKSCOPE1a (0759e9465) a
+  help record carried no workspace, so the workspace-scoped sessions read left it out; ASKSCOPE1a gave it the workspace it was started
+  in, so every scoped read held it. HELP1a (a42219eaf) had even labelled its group by name (`label` in `repositoryFacts`), which made it
+  look intended. PUSH1d2 (4da91876f) then made each list a client-side filter of the one widest slice (`sessionsIn`), with no help
+  exclusion, and PUSH1c3b's pushed groups/entries answer carries every record's too.
+- **Fix:** `SessionRail` takes Ask Daoris's records (`isHelp`) out of its sessions and out of the groups and entries read beside them,
+  so the groups, the name search and the words search (joined to the listed sessions) never hold them; `useHelpSessions` and so Ask
+  Daoris's history are unchanged. D158's note, ASKRAIL1.
+- **Verification:** `SessionRail.test.tsx` and the rail and `src/help` suites, green.
+
 ## 2026-10-20 — A line's move inside the minute, a release under a live session, and a repository nothing recorded were each missed (ENDAGREE1)
 
 - **Symptom:** each shown red first. Origin's line moving 20 s after a pull request was asked was never asked about at the wakes after
