@@ -1,11 +1,12 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { InTheme } from '../../plugins/storyIcons';
 import { chinese } from '../../design/storyLanguage';
+import { sessionWidths } from '../../design/storyWidths';
 import { PermissionAsks, type PermissionWait } from './PermissionAsks';
 
 // A tool call a session holds for the person's answer under asking (AUTONOMY1b3c, D184 point 3): the call as the agent named it,
 // its kind, how long it has waited and the bound, and a press per choice the agent offered, never an allow it did not offer. In
-// English, 中文 and dark.
+// English, 中文 and dark, in a session's page at the frame's widths (the UI/UX design R6): its head and its foot carry it.
 
 const minutesAgo = (minutes: number) => new Date(Date.now() - minutes * 60_000).toISOString();
 
@@ -26,7 +27,7 @@ const meta: Meta<typeof PermissionAsks> = {
   title: 'Work/PermissionAsks',
   component: PermissionAsks,
   args: { waits: WAITS, onAnswer: () => {} },
-  decorators: [(Story) => <div className="w-[36rem] max-w-full bg-page p-4"><Story /></div>],
+  decorators: [sessionWidths.half],
 };
 export default meta;
 
@@ -34,6 +35,12 @@ type Story = StoryObj<typeof PermissionAsks>;
 
 /** A command and an edit with *Allow once* and *Refuse*, and an untitled fetch where no allow was offered. */
 export const Held: Story = {};
+
+/** The same at a 1546 px window. */
+export const HeldWide: Story = { decorators: [sessionWidths.wide] };
+
+/** The same at the main area's 400 px floor. */
+export const HeldNarrow: Story = { decorators: [sessionWidths.narrow] };
 
 /** The same in 中文. */
 export const HeldChinese: Story = { decorators: [chinese] };

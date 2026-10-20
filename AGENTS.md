@@ -5,7 +5,7 @@
 Daoris coordinates agent development across repositories. Its desktop hosts the local service and
 driver, presents the shared React platform, and lets a person set targets and review outcomes.
 The CLI distributes engineering doctrine; the service indexes knowledge and exchanges quests.
-The direction is [D45](docs/decisions/D45.md). Detailed contributor procedures are in
+The direction is [D45](docs/decisions/D45.md), read through [D193](docs/decisions/D193.md)'s picture of a development company run by agents. Detailed contributor procedures are in
 [docs/development.md](docs/development.md).
 
 ## The constraint every change serves

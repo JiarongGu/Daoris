@@ -1,6 +1,7 @@
 import type { Decorator, Meta, StoryObj } from '@storybook/react-vite';
 import { InTheme } from '../../plugins/storyIcons';
 import { chinese } from '../../design/storyLanguage';
+import { storyWidths } from '../../design/storyWidths';
 import { BranchPage, type BranchGraph, type BranchRead } from './BranchPage';
 import { GIT_BRANCH_PARTED, GIT_BRANCH_PARTED_PAGES, GIT_BRANCHES_ENGINE } from '../fixtures';
 import { SHARED_BRANCH, SHARED_DUE, SHARED_UNITS } from './landingFixtures';
@@ -13,10 +14,12 @@ import { SHARED_BRANCH, SHARED_DUE, SHARED_UNITS } from './landingFixtures';
 
 const nothing = () => {};
 
-const dark: Decorator = (Story) => <InTheme theme="dark"><Story /></InTheme>;
+// A flex item of the main area's height frame, with no padding of its own, so the page's scroll box stays bounded.
+const dark: Decorator = (Story) => <InTheme theme="dark" className="flex min-h-0 min-w-0 flex-1 p-0"><Story /></InTheme>;
 
-/** The list beside the main area a strip and the side bar closed: the main area at 34 rem. */
-const narrow: Decorator = (Story) => <div className="flex h-[44rem] w-[34rem] max-w-full border border-line bg-page"><Story /></div>;
+// The main area at the frame's widths (the UI/UX design R6, STORYGAP1): wide by default, `storyWidths.half` a 680 px window
+// with the list a strip beside it, and `storyWidths.narrow` the main area's 400 px floor.
+const narrow = storyWidths.narrow;
 
 const PHYSICS = 'daoris/engine-physics-step';
 const LINE_COMMIT = GIT_BRANCHES_ENGINE.line.commit!;
@@ -40,12 +43,9 @@ const meta: Meta<typeof BranchPage> = {
     onBack: nothing,
     onMore: nothing,
   },
-  // The main area's height, and a width between the side bar's two states, as a repository's page's stories have.
-  decorators: [(Story) => (
-    <div className="flex h-[44rem] w-[52rem] max-w-full border border-line bg-page">
-      <Story />
-    </div>
-  )],
+  // The main area's height, inside the main area at its wide width, as a repository's page's stories have; a story's own
+  // width is drawn instead of it.
+  decorators: [(Story) => <div className="flex h-[44rem] border border-line bg-page"><Story /></div>, storyWidths.wide],
 };
 export default meta;
 
@@ -118,6 +118,9 @@ export const LandedChinese: Story = { args: Landed.args, decorators: [chinese] }
 export const MoreChinese: Story = { args: MoreFailed.args, decorators: [chinese] };
 
 export const LandedNarrow: Story = { args: Landed.args, decorators: [narrow] };
+
+/** Landed, at a 680 px window: the list a strip beside the main area. */
+export const LandedHalf: Story = { args: Landed.args, decorators: [storyWidths.half] };
 
 /** How it landed (FLOWCHART1c), folded to its line above the commits until it is opened. */
 export const LandedHowItLandedFolded: Story = {

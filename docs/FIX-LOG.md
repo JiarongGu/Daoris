@@ -5,6 +5,20 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-21 — The full set on 824886d: an end-to-end test held the old asks group, and a test home's delete met a held log (QUESTLISTS1, FLAKE1)
+
+- **Symptom:** the `web` gate failed the end-to-end INT4c case (with closed work included, no *Asks* group came back), and on
+  another run a different case of the same file; the `modules` gate failed `PipeConfirmTests` in its teardown, the test home's
+  delete refused because `2026-10-20.jsonl` was in use.
+- **Root cause:** QUESTLISTS1 made an ask that became one quest that quest's row, so a done ask no longer has a group of its own;
+  its builder, held to filtered unit tests, never ran the end-to-end file, whose words still expected the group. The same merge
+  added an `ask #id` tag to the row though a quest an ask published already comes `from` that ask, so the row said it twice. The
+  modules test bridge deleted its home once, while a module's machine log still held its day's file (the run crossed midnight).
+- **Fix:** INT4c now expects the one row, its route naming the ask once, and no asks group; the row's tag is drawn only where the
+  route does not already name the ask (a `QuestList` case holds it); the bridge asks the delete again for two seconds and leaves a
+  scratch folder rather than fail a test that passed.
+- **Verification:** the whole end-to-end file, 24 of 24, on a fresh build; `QuestList.test.tsx` 16; `PipeConfirmTests` 7.
+
 ## 2026-10-20 — A session whose quest closed while it waited on its background work worked on until the timeout (DONEEND1)
 
 - **Symptom:** on the install two driven sessions went on working, showing *Stop…* and holding a slot of the cap, after their
