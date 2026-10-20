@@ -736,6 +736,18 @@ public sealed record DriverConfig(
 
     public const string PathVariable = "DAORIS_DRIVER_CONFIG";
 
+    /// <summary>The file's name, as a sentence names the file that keeps something (CACHECLEAR1's reasons): never a path to read.</summary>
+    public static string FileName => Path.GetFileName(HomeEntry.DriverConfig.New);
+
+    /// <summary>
+    /// Whether <paramref name="environment"/> names a file of its own (D194 point 2): one no running instance holds, so a change to it
+    /// is written alone and sent nowhere.
+    /// </summary>
+    public static bool Overridden(Func<string, string?> environment) => Named(environment) is { Length: > 0 };
+
+    /// <summary>The file the variable names, read here alone.</summary>
+    private static string? Named(Func<string, string?> environment) => environment(PathVariable);
+
     /// <summary>
     /// The conventional home, beside the store the driver watches — under the Daoris home (D63). A
     /// machine with no home and no override is refused, naming what to set, rather than written to. The file is the home's
@@ -750,7 +762,7 @@ public sealed record DriverConfig(
     /// <c>ConfigSeamTests</c> scans for one that does not.
     /// </summary>
     public static string? FindPath(Func<string, string?> environment) =>
-        environment(PathVariable) ?? DaorisHome.File(environment, HomeEntry.DriverConfig);
+        Named(environment) ?? DaorisHome.File(environment, HomeEntry.DriverConfig);
 
     /// <summary>The same, from the process environment: for a reader with no home in hand that reads nothing on a machine with none.</summary>
     public static string? FindPath() => FindPath(Environment.GetEnvironmentVariable);

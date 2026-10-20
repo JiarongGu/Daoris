@@ -101,7 +101,7 @@ public sealed partial class DriverChoicesTextTests
         }
         finally
         {
-            Directory.Delete(home, recursive: true);
+            GitSeed.Discard(home);
         }
     }
 

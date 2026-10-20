@@ -81,7 +81,7 @@ public static class VerbLeases
     /// alone-path design §1.2), so the driver family acting on it holds nothing, as it sends nothing.
     /// </summary>
     public static bool HoldsHere(IReadOnlyList<string> args, Func<string, string?> environment) =>
-        Holds(args) && !(args[0] == "driver" && environment(DriverConfig.PathVariable) is { Length: > 0 });
+        Holds(args) && !(args[0] == "driver" && DriverConfig.Overridden(environment));
 
     /// <summary>The words a lease names a verb by: its verb, and its sub-verb where it has one; never an argument.</summary>
     public static string Name(IReadOnlyList<string> args) =>

@@ -77,6 +77,27 @@ repository.
   failed the same way, then passed. `InstancePipeTests` and `PipeCensusTests` (77) and `InstanceDoorTests` (39) under both
   elevated PowerShell and Git Bash, the instance-path classes (109), `instance.test.ts` (29).
 
+## 2026-10-21 — The full set's run on 091e5007f: a driver handed a home read another's roster, and two censuses broke
+
+- **Symptom:** the full set on 091e5007f failed the `driver` gate in 95 cases across 13 classes (`MeetingTests`,
+  `OpinionDeliveryTests`, `HelperLookTests` and ten more) with `no Daoris home … (wanted: data/harnesses.json)`. It also failed
+  `ConfigSeamTests`' census and `GitSeedTests`' census, `web-unit`'s glossary audit (`names.test.ts`), and `tool-tests`' web
+  reach (SESSDEL1c).
+- **Root cause:** `ChatRunner`, `LoopContext` and `DriverWatch` are each handed a home, and every other default they build reads
+  it, but each built its `HarnessRoster` from the home the process's environment names. The tests passed while an earlier class
+  left `DAORIS_HOME` set in the process; ENVSEAM1 stopped that leak, and the gate runs with no home. The censuses were broken by
+  code landed the same day: PUSH1f2a's `DriverChoicesCommand` and `VerbLeases` read `DAORIS_DRIVER_CONFIG` outside
+  `DriverConfig`, CACHECLEAR1's `DownloadClearing` named `driver.json`, and three PUSH1f2a test classes deleted their scratch
+  with `Directory.Delete`. CACHECLEAR1's Chinese said 清理 for *clear*, which the glossary keeps as 清除 (清理 is the clean-up of
+  landed trees). `say.test.ts` reads SESSCTX1c's `BriefedMove.cs`, which no reach rule sent to the web gate. None of these is
+  run by a merge's blocking checks.
+- **Fix:** the three rosters read the handed home's `harnesses.json`; `DriverConfig` gains `FileName` and `Overridden`,
+  the variable still read in one place; the three classes use `GitSeed.Discard`; the downloads' words say 清除; the merge tool's
+  rule for the say twin's files names `BriefedMove.cs`. `HelpAccessSwapTests`, which built its runner without a roster, was
+  fixed earlier the same day the test's way (6cc3e800e).
+- **Verification:** the 13 classes and the touched ones with no `DAORIS_HOME` (489, and 370 after the seam's change); the
+  locales, This Daoris and wiring vitests (139), `names-check --strict`; the merge tool's reach test.
+
 ## 2026-10-21 — The full set's run on d263cd0 failed three gates that its merges never ran
 
 - **Symptom:** the full set on d263cd0 failed `web-unit`, `cli` and `deployment`. The web design checks found

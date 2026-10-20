@@ -257,7 +257,7 @@ public static class DriverChoicesCommand
         }
 
         // A file DAORIS_DRIVER_CONFIG names is no instance's (D194 point 2): written alone, and nothing sent.
-        if (press.Route is null || world.Instance.Environment(DriverConfig.PathVariable) is { Length: > 0 }) return await Alone().ConfigureAwait(false);
+        if (press.Route is null || DriverConfig.Overridden(world.Instance.Environment)) return await Alone().ConfigureAwait(false);
         return await InstanceDoor.PressAsync(press.Route, press.Payload, Alone, answer => press.Words(press.Fields(answer)), world.Instance, ct)
             .ConfigureAwait(false);
     }

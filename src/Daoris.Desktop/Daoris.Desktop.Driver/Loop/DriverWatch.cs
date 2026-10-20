@@ -74,7 +74,7 @@ public sealed class DriverWatch(
     private int _nudges;
 
     /// <summary>This machine's harnesses, as the loop sees them — also what a roster surface reads.</summary>
-    private readonly HarnessRoster _harnesses = harnesses ?? new HarnessRoster(AdapterSet.Built());
+    private readonly HarnessRoster _harnesses = harnesses ?? new HarnessRoster(AdapterSet.Built(), DaorisHome.Entry(home, HomeEntry.Harnesses));
 
     /// <inheritdoc cref="_harnesses"/>
     public HarnessRoster Harnesses => _harnesses;

@@ -252,6 +252,6 @@ public sealed class DriverChoicesCommandTests : IDisposable
 
     public void Dispose()
     {
-        if (Directory.Exists(_home)) Directory.Delete(_home, recursive: true);
+        GitSeed.Discard(_home);
     }
 }

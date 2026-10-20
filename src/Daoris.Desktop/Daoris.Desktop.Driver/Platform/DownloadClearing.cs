@@ -231,8 +231,8 @@ public static class DownloadClearing
 
         if (uses.Tools.Problem is not null) return ("unread", ["tools.json"]);
         if (uses.Tools.Entries.Values.Any(entry => entry.Way == ToolWay.File && Inside(entry.File, folder))) return ("named", ["tools.json"]);
-        if (uses.Config is null) return ("unread", ["driver.json"]);
-        if (uses.Config.Commands.Values.Any(command => command.Count > 0 && Inside(command[0], folder))) return ("named", ["driver.json"]);
+        if (uses.Config is null) return ("unread", [DriverConfig.FileName]);
+        if (uses.Config.Commands.Values.Any(command => command.Count > 0 && Inside(command[0], folder))) return ("named", [DriverConfig.FileName]);
         return now - Arrived(folder) < Settling ? ("recent", []) : (null, []);
     }
 

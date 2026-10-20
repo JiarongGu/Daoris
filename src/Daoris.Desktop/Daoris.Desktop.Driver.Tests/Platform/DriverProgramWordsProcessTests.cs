@@ -28,7 +28,7 @@ public sealed class DriverProgramWordsProcessTests(DriverProgramWordsProcessTest
 
         public void Dispose()
         {
-            if (Directory.Exists(Root)) Directory.Delete(Root, recursive: true);
+            GitSeed.Discard(Root);
         }
     }
 

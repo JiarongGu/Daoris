@@ -504,8 +504,8 @@ describe('Settings → This Daoris', () => {
     invoke.mockImplementation(withDownloads(() => ({ cleared: [] })));
     open();
     const folders = within(await screen.findByRole('region', { name: '文件夹' }));
-    await userEvent.click(folders.getByRole('button', { name: '清理未使用的下载内容…' }));
-    const list = within(await screen.findByRole('region', { name: '清理下载内容' }));
+    await userEvent.click(folders.getByRole('button', { name: '清除未使用的下载内容…' }));
+    const list = within(await screen.findByRole('region', { name: '清除下载内容' }));
 
     expect((await list.findAllByText('没有任何地方使用')).length).toBe(2);
     expect(list.getByText('保留：本机固定了这个版本')).toBeTruthy();
