@@ -231,6 +231,56 @@ public sealed class ChatGoesOnProcessTests : IDisposable
     }
 
     /// <summary>
+    /// 🔴 SESSCTX1c (D189's amendment, the session-context design §2): a native chat whose harness ends on a failed exit before it
+    /// names its conversation proves nothing of its loss, so the same resume is tried once more. Where that one opens it, the words go
+    /// on in it under the same record, said once. Where it ends the same way again, the reason is <c>exited</c>, never <c>gone</c>,
+    /// and the words wait as said; what the conversation then does is its own (SESSCTX1c's part B).
+    /// </summary>
+    [Theory]
+    [InlineData(1)]
+    [InlineData(2)]
+    public async Task A_native_chats_resume_that_ends_before_naming_its_conversation_is_tried_once_more(int exits)
+    {
+        var ledger = new ChatLedger().Register("engine", _root);
+        var log = Path.Combine(_home, "native.log");
+        var config = Config("claude-code", "node", NativeHarness(), log);
+        var events = Events;
+        using var client = ledger.Client();
+        using var runner = Runner(client, events);
+
+        var id = (await runner.StartAsync("engine", "claude-code", config)).SessionId!;
+        await Poll.Until(() => ledger.State(id) == "working", () => Seen(ledger, events, id));
+        Assert.True(runner.Say(id, "first"));
+        await Poll.Until(() => new HarnessConversations(_home).Read(id) is not null, () => Seen(ledger, events, id));
+        Assert.True(runner.Finish(id));
+        await Poll.Until(() => ledger.State(id) == "completed", () => Seen(ledger, events, id));
+
+        File.WriteAllText(log + ".exits", exits.ToString(System.Globalization.CultureInfo.InvariantCulture));
+        Say(ledger, events, id, ("w1", "Also log the port."));
+        string Native() => $"{Seen(ledger, events, id)}; native [{string.Join(" | ", StubFile.Lines(log))}]";
+        if (exits == 1)
+        {
+            await Poll.Until(() => ledger.Taken.Count == 1, Native);
+            Assert.True(runner.Finish(id));
+            await Poll.Until(() => ledger.Moves(id).Count(move => move == "completed") == 2, Native);
+            Assert.Equal(["resume=none", "message=first", "resume=native-1 exited", "resume=native-1", "message=Also log the port."], StubFile.Lines(log));
+            Assert.Equal([(id, "w1")], ledger.Taken);
+            Assert.Single(events.After(id, 0).Events, e => e is { Kind: SessionEventKind.User, Id: "w1", Reaches: null });
+        }
+        else
+        {
+            await Poll.Until(() => events.After(id, 0).Events.Any(e => e.Kind == SessionEventKind.Note && e.Why == ContinueWhy.Exited), Native);
+            await Poll.Until(() => ledger.Moves(id).Count(move => move == "completed") == 2, Native);
+            Assert.Equal(["resume=none", "message=first", "resume=native-1 exited", "resume=native-1 exited"], StubFile.Lines(log));
+            Assert.Equal(["w1"], ledger.Said(id));
+            Assert.Empty(ledger.Taken);
+            Assert.DoesNotContain(events.After(id, 0).Events, e => e.Why == ContinueWhy.Gone);
+        }
+
+        Assert.Equal(1, ledger.Count);
+    }
+
+    /// <summary>
     /// 🔴 A chat on the next-step door (D137 §2.1): its agent says it takes a prompt during a turn, so a word said while a
     /// turn runs goes at once as a second prompt — never queued — shown waiting with its reach, and taken where the agent
     /// hands the turn off to it. The turn lasts until the word is answered.
@@ -521,7 +571,7 @@ public sealed class ChatGoesOnProcessTests : IDisposable
     {
         var script = Path.Combine(_home, "claude.mjs");
         File.WriteAllText(script, """
-            import { appendFileSync } from 'node:fs';
+            import { appendFileSync, existsSync, readFileSync, writeFileSync } from 'node:fs';
             import { createInterface } from 'node:readline';
             const [log, ...argv] = process.argv.slice(2);
             if (argv.includes('--version')) { console.log('2.1.0 (Claude Code)'); process.exit(0); }
@@ -529,6 +579,14 @@ public sealed class ChatGoesOnProcessTests : IDisposable
             const after = (flag) => { const at = argv.indexOf(flag); return at < 0 ? null : argv[at + 1]; };
             const resume = after('--resume');
             const out = (frame) => process.stdout.write(JSON.stringify(frame) + '\n');
+            // SESSCTX1c: while the count in `<log>.exits` says so, a resume ends on a failed exit before it names its conversation.
+            const exits = log + '.exits';
+            const left = resume && existsSync(exits) ? Number(readFileSync(exits, 'utf8')) : 0;
+            if (left > 0) {
+              writeFileSync(exits, String(left - 1));
+              appendFileSync(log, `resume=${resume} exited\n`);
+              process.exit(1);
+            }
             appendFileSync(log, `resume=${resume ?? 'none'}\n`);
             let named = false;
             const lines = createInterface({ input: process.stdin });

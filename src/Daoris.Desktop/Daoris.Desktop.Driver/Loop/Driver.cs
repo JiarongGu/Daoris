@@ -1505,6 +1505,22 @@ public sealed class Driver(
                          && string.Equals(earlier.Session, handedQuest.From, StringComparison.Ordinal);
         string? passedAccount = null;
 
+        // 🔴 SESSCTX1c (D189's amendment): the person's words waiting on a record whose agent this machine no longer has wait for the
+        // person, its conversation saying so with the hand-over's offer, since only they can choose the agent it goes on with. Asked
+        // where the roster or the access setup refuses the agent, before anything is spawned; any other start's refusal holds as before.
+        StartRun? AgentGone()
+        {
+            if (!start.GoesOn || start.Resumes is not { WordsWaiting: true } waiting
+                || Context.Adapters.Names.Contains(agent, StringComparer.OrdinalIgnoreCase))
+            {
+                return null;
+            }
+
+            var gone = Continuations.AgentGone(agent, waiting.Session);
+            GoOns.HeldSaying(waiting, gone);
+            return Hold(gone.Note);
+        }
+
         // Clean tree, or nothing: uncommitted changes are somebody's work in flight (D46 §3). No
         // session record exists yet, so a hold here costs nothing and destroys nothing. VACUOUS for a
         // repository opted into session trees (D51 rule 5) — a fresh tree is clean by construction,
@@ -1551,7 +1567,7 @@ public sealed class Driver(
         }
         catch (DriverException error)
         {
-            return Hold(error.Message);
+            return AgentGone() ?? Hold(error.Message);
         }
 
         if (resume is { Waits: true })
@@ -1583,7 +1599,7 @@ public sealed class Driver(
         }
         catch (DriverException error)
         {
-            return Hold(error.Message);
+            return AgentGone() ?? Hold(error.Message);
         }
 
         if (permissions.Refusal is { } unsupported) return Hold(unsupported);
@@ -1801,8 +1817,10 @@ public sealed class Driver(
             written = park;
 
             // Nothing carries the words on by itself from a closed quest's session, nor from a never (D137 §2.2): they stay
-            // waiting as said, marked so a later look leaves them there, and the person's press is the next move (MSG1f).
-            if (fellBack!.Never || quest.Status is not ("Open" or "Taken"))
+            // waiting as said, marked so a later look leaves them there, and the person's press is the next move (MSG1f). 🔴 SESSCTX1c
+            // (D189's amendment): nor where another client holds its conversation (`elsewhere`), since a second writer in its tree could
+            // redo its work; every other refusal carries a driven record on below, handed the brief, `from` why `retry`.
+            if (fellBack!.Never || fellBack.Holds || quest.Status is not ("Open" or "Taken"))
             {
                 await fresh.LetGoAsync().ConfigureAwait(false);
                 return GoOns.CannotGoOn(quest, park, fellBack);
@@ -1963,6 +1981,7 @@ public sealed class Driver(
                 : await ContextBriefs.ComposeAsync(
                     service, Context.Events, home, prior.Session, continues?.Why ?? HandOverWhy.CarryOn, conversation: false, note: handedNote,
                     config: config, tree: workTree, ct: ct).ConfigureAwait(false);
+            if (prior is not null && continues is not null && brief is not null) SayMoved(prior, sessionId, agent, selection.Profile, continues.Why, brief);
             var elsewhere = prior is not null && OnAnotherAccount(prior, selection.Profile);
             // The person's words on the ask the quest was asked by (DRIFT1b, D133 §2), read for this start whatever kind it is;
             // their standing answer for its repository (KNOWUSE1b), and the work's session language (LANG1c), from this
@@ -2978,6 +2997,17 @@ public sealed class Driver(
             : structured is not null ? await structured.ConfigureAwait(false)
             : null;
 
+        // 🔴 SESSCTX1c (D189's amendment, the session-context design §2): a native resume whose harness ended on a failed exit before it
+        // named its conversation proves nothing of its loss, so it is tried once more as the same resume, the same conversation, account
+        // and access, before its conclusion reads a second such end as `exited`. Never after a stop.
+        if (structured is not null && resume is { Named: false, Refused: null, Retried: false } && exitCode is int early && early != 0
+            && !Context.Processes.WasStopRequested(sessionId))
+        {
+            (exitCode, used) = await GoOns.AgainAsync(
+                    info, adapter, sessionId, transcript, refusesInput, drivesBrowser, resume, said, wentOn, keepAs, own, ct)
+                .ConfigureAwait(false);
+        }
+
         // 🔴 A session never concludes while words are held (MSG1b, D137 §2.1): on the native door its process has exited, so
         // its own conversation is resumed with them under the same record, which stays working, until a run ends with none.
         if (held is not null)
@@ -3387,8 +3417,9 @@ public sealed class Driver(
             // the conversation, and the reason goes to the resume, which ends the park and carries the answer on.
             resume.Refused = refused.Why;
             // Its reason by code, the agent's words its own (CONVNOTE2e). A resume keeps its conversation under the adapter it
-            // runs on, which is the one it ran on, so that is the agent `elsewhere` names.
-            SaidByCode(DoorNotes.AnswerCarriedOn(refused, keepAs));
+            // runs on, which is the one it ran on, so that is the agent `elsewhere` names. SESSCTX1c: a record that waits for the
+            // person (`elsewhere`) says no carry-on.
+            SaidByCode(refused.Why.Holds ? DoorNotes.ResumeRefused(refused, keepAs) : DoorNotes.AnswerCarriedOn(refused, keepAs));
             return (null, null, []);
         }
         catch (DriverException error)
@@ -3533,6 +3564,27 @@ public sealed class Driver(
     /// </summary>
     internal static bool OnAnotherAccount(PriorSession prior, string? profile) =>
         !string.Equals(prior.Profile ?? "", profile ?? "", StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// A driven move to a new part said as it happens (SESSCTX1c, D189 point 8; the session-context design §7): a coded line on the
+    /// part it left and on the new part, each on its console too, with the context the part it left stood at (its high-water, H)
+    /// and the brief's characters (B); and <c>session.moved</c> in the machine log. Every driven start that continues another says it,
+    /// whatever moved it, since each is a new part handed the brief.
+    /// </summary>
+    private void SayMoved(PriorSession prior, string sessionId, string agent, string? account, string why, ComposedBrief brief)
+    {
+        var context = RotatedOpening.ContextOf(usage, Context.Events, prior.Session);
+        var ranOn = prior.Adapter ?? agent;
+        var on = HandOverNotes.MovedOn(sessionId, agent, account, why, context, brief.Text.Length);
+        var from = HandOverNotes.MovedFrom(prior.Session, ranOn, prior.Profile, why, context, brief.Text.Length);
+        foreach (var (session, line) in new[] { (prior.Session, on), (sessionId, from) })
+        {
+            output?.Append(session, line.Note);
+            Context.Events.Keep(session, new SessionEvent { Kind = SessionEventKind.Note, Text = line.Note, Parts = line.Parts }, say: null);
+        }
+
+        service.AccountSaid(Continuations.Moved(sessionId, prior.Session, ranOn, agent, prior.Profile, account, why, briefed: true));
+    }
 
     /// <summary>
     /// The session a quest's start continues, for its record's <c>from</c> link (MIXAGENT1a-iii, D163 point 4): the session the

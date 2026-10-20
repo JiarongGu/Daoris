@@ -47,9 +47,9 @@ public sealed class AnswerContinuesTickTests : IDisposable
 
     private IReadOnlyList<SessionEvent> Events(string session) => new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions)).After(session, 0).Events;
 
-    private Daoris.Driver.Driver Driver(ParkStandIn service, string mode, HarnessRoster? roster = null)
+    private Daoris.Driver.Driver Driver(ParkStandIn service, string mode, HarnessRoster? roster = null, ServiceClient? client = null, AdapterSet? set = null)
     {
-        var adapters = AdapterSet.Built();
+        var adapters = set ?? AdapterSet.Built();
         var config = DriverConfig.Empty with
         {
             Drivable = ["engine"],
@@ -60,7 +60,7 @@ public sealed class AnswerContinuesTickTests : IDisposable
             Commands = new Dictionary<string, IReadOnlyList<string>> { ["acp-stub"] = ["node", Agent(), Log, mode] },
         };
         return new Daoris.Driver.Driver(
-            new ServiceClient(service.Url, null), config, adapters, _home, processes: new SessionProcesses(),
+            client ?? new ServiceClient(service.Url, null), config, adapters, _home, processes: new SessionProcesses(),
             harnesses: roster ?? new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)));
     }
 
@@ -156,6 +156,78 @@ public sealed class AnswerContinuesTickTests : IDisposable
         Assert.Contains("Port 8080.", handed);
         // The answer sits beneath its question in the park's own record once, though a resume was tried there first.
         Assert.Single(Events("s1"), e => e is { Kind: SessionEventKind.User, Origin: "person", Text: "Port 8080." });
+    }
+
+    /// <summary>
+    /// 🔴 SESSCTX1c (D189's amendment): a driven record whose resume its agent refused on the wire, proving no loss, carries on by
+    /// itself, since a driven session runs without a person: the park ends saying why, and a new session in the same tree is handed
+    /// the brief, its record continuing the park `from` why <c>retry</c>. The move is said on both parts, with the brief's size, and
+    /// in the machine log as <c>session.moved</c>.
+    /// </summary>
+    [Fact]
+    public async Task A_refusal_on_the_wire_carries_a_driven_record_on_handed_the_brief_and_says_the_move()
+    {
+        await using var service = ParkStandIn.Start(_repository);
+        var client = new ServiceClient(service.Url, null);
+        var lines = new List<AccountLine>();
+        client.AccountLined += line => { lock (lines) lines.Add(line); };
+        var driver = Driver(service, "refuses", client: client);
+        await ParkedAsync(service, driver);
+        await client.AnswerSessionAsync("s1", "Port 8080.");
+
+        await driver.RunOnceAsync().WaitAsync(Poll.Patience);
+
+        var park = service.Session("s1");
+        Assert.Equal("completed", park["state"]!.GetValue<string>());
+        Assert.EndsWith("Carried on in a new session, because its conversation could not be resumed.", park["note"]!.GetValue<string>());
+        var carried = service.Session("s2");
+        Assert.Equal(("completed", "s1", "retry"),
+            (carried["state"]!.GetValue<string>(), carried["from"]?.GetValue<string>(), carried["fromWhy"]?.GetValue<string>()));
+        Assert.Equal("Done", service.Status("q1"));
+        Assert.Contains("Port 8080.", Heard().Last(line => line["method"]!.GetValue<string>() == "session/prompt")["prompt"]!.GetValue<string>());
+
+        var on = Assert.Single(Events("s1"), e => e.Parts?.Any(part => part.Code == NoteCodes.MovedOn.Code) == true).Parts![0];
+        Assert.Equal(("s2", "retry"), ((string?)on.Value("session"), (string?)on.Value("why")));
+        // A number reads back from the record as a long.
+        Assert.True(on.Value("count") is long brief && brief > 0);
+        var from = Assert.Single(Events("s2"), e => e.Parts?.Any(part => part.Code == NoteCodes.MovedFrom.Code) == true).Parts![0];
+        Assert.Equal(("s1", "acp-stub"), ((string?)from.Value("session"), (string?)from.Value("agent")));
+        AccountLine moved;
+        lock (lines) moved = Assert.Single(lines, line => line.Event == "session.moved");
+        Assert.Equal(
+            [("session", (object?)"s2"), ("continues", "s1"), ("why", "retry"), ("briefed", true)],
+            moved.Data.Where(field => field.Key is "session" or "continues" or "why" or "briefed"));
+    }
+
+    /// <summary>
+    /// 🔴 SESSCTX1c (D189's amendment, the session-context design §2): an adapter no longer installed proves nothing of the conversation,
+    /// and only the person can choose the agent it goes on with: the answered park stays parked with its answer, nothing is spawned and
+    /// no session opens, and its conversation says so once with the hand-over's offer, never ending the park for a carry-on that could
+    /// not start there either.
+    /// </summary>
+    [Fact]
+    public async Task An_adapter_no_longer_here_holds_the_park_with_the_hand_overs_offer()
+    {
+        await using var service = ParkStandIn.Start(_repository);
+        await ParkedAsync(service, Driver(service, "resumes"));
+        await new ServiceClient(service.Url, null).AnswerSessionAsync("s1", "Port 8080.");
+        var built = AdapterSet.Built();
+        var without = new AdapterSet(
+            built.Names.Where(name => name != "acp-stub").ToDictionary(name => name, built.Resolve, StringComparer.OrdinalIgnoreCase));
+        var heard = Heard().Length;
+
+        var look = await Driver(service, "resumes", set: without).RunOnceAsync().WaitAsync(Poll.Patience);
+        await Driver(service, "resumes", set: without).RunOnceAsync().WaitAsync(Poll.Patience);
+
+        var park = service.Session("s1");
+        var seen = $"plan: {string.Join(" | ", look.Considerations.Select(c => $"{c.Quest.Id} {c.Verdict}: {c.Reason}"))}\nafter: {park.ToJsonString()}";
+        Assert.True(service.SessionCount == 1, seen);
+        Assert.True((park["state"]!.GetValue<string>(), park["answer"]?.GetValue<string>()) == ("awaiting-person", "Port 8080."), seen);
+        Assert.Equal("Taken", service.Status("q1"));
+        Assert.Equal(heard, Heard().Length);
+        var held = Assert.Single(Events("s1"), e => e.Parts?.Any(part => part.Code == NoteCodes.HeldAgentGone.Code) == true).Parts![0];
+        Assert.Equal(("acp-stub", "s1"), ((string?)held.Value("agent"), (string?)held.Value("session")));
+        Assert.Contains(look.Considerations, c => c.Quest.Id == "q1" && c.Reason.Contains("daoris-driver sessions hand-over s1", StringComparison.Ordinal));
     }
 
     /// <summary>
@@ -341,6 +413,9 @@ public sealed class AnswerContinuesTickTests : IDisposable
                 heard({ method: frame.method, conversation: frame.params?.sessionId });
                 if (mode === 'gone') {
                   send({ jsonrpc: '2.0', id: frame.id, error: { code: -32002, message: 'Resource not found: ' + frame.params?.sessionId } });
+                } else if (mode === 'refuses') {
+                  // SESSCTX1c: a refusal on the wire that proves no loss and names no other client.
+                  send({ jsonrpc: '2.0', id: frame.id, error: { code: -32603, message: 'Internal error: the thread could not be loaded' } });
                 } else {
                   conversation = frame.params.sessionId;
                   resumed = true;
@@ -526,6 +601,9 @@ public sealed class AnswerContinuesTickTests : IDisposable
                             ["created"] = DateTimeOffset.UtcNow.AddMinutes(_sessions.Count).ToString("O"),
                             // The setup the start resolved (AUTONOMY1a), kept and answered as the service does on loopback.
                             ["access"] = body["access"]?.DeepClone(),
+                            // The session it continues and why (MIXAGENT1a-iii, SESSCTX1b), as the service keeps them.
+                            ["from"] = body["from"]?.DeepClone(),
+                            ["fromWhy"] = body["fromWhy"]?.DeepClone(),
                         };
                         _sessions.Add(session);
                         return (200, new JsonObject { ["session"] = session.DeepClone(), ["message"] = "opened" }.ToJsonString());

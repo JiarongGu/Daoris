@@ -27,7 +27,8 @@ namespace Daoris.Driver;
 /// <c>account.limited</c> and <c>starts.waiting</c> (TOOL4d); of a landing at done, <c>landing.auto</c> (LAND2b); and of a
 /// done's evidence read, <c>evidence.checked</c> (EVID1b). An answer taken up, <c>session.answered</c> (ANSWER1a,
 /// D131 §2), and words that reopened an ended record, <c>session.reopened</c> with the door they were said at (MSG1b,
-/// MSG1d, D137 §3.3), ride the account lines' channel, which writes a catalogued line as it is given. The person's words
+/// MSG1d, D137 §3.3), and a move to a new part, <c>session.moved</c> (SESSCTX1c, D189 point 8), ride the account lines' channel,
+/// which writes a catalogued line as it is given. The person's words
 /// shown the moment they are said (an event with <c>reaches</c>) are no prompt, and time nothing.</para>
 ///
 /// <para><b>A park is counted where it is made</b> (WSSETUP11, D124 §7.3): a session that stopped to ask the

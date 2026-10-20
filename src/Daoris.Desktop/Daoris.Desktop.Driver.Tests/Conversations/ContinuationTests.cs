@@ -151,6 +151,43 @@ public sealed class ContinuationTests : IDisposable
     }
 
     /// <summary>
+    /// SESSCTX1c (D189's amendment, the session-context design §2): the native door's harness that ended on a failed exit before it
+    /// named its conversation proves nothing of its loss, so it has a code of its own apart from <c>gone</c>, which stays the
+    /// protocol door's <c>resource_not_found</c> and reads as it always did. Neither is a never.
+    /// </summary>
+    [Fact]
+    public void The_native_doors_failed_exit_is_a_reason_of_its_own_apart_from_gone()
+    {
+        Assert.Equal("exited", ContinueWhy.Exited);
+        Assert.NotEqual(ContinueWhy.Gone, ContinueWhy.Exited);
+        Assert.Equal("its agent ended before it reopened its conversation", ContinueWhy.Of(ContinueWhy.Exited).Sentence);
+        Assert.Equal("the agent no longer has its conversation", ContinueWhy.Of(ContinueWhy.Gone).Sentence);
+        Assert.False(ContinueWhy.Of(ContinueWhy.Exited).Never);
+    }
+
+    /// <summary>
+    /// 🔴 SESSCTX1c (D189's amendment): a driven record's fallback carries on by itself, `from` why <c>retry</c>, after any refusal of
+    /// its resume but one: another client holding its conversation (<c>elsewhere</c>), since a second writer in its tree could redo its
+    /// work. That one holds it for the person.
+    /// </summary>
+    [Fact]
+    public void Only_another_client_holding_the_conversation_holds_a_driven_record_for_the_person()
+    {
+        Assert.True(ContinueWhy.Of(ContinueWhy.Elsewhere).Holds);
+        foreach (var code in new[]
+                 {
+                     ContinueWhy.Account, ContinueWhy.Unkept, ContinueWhy.Tree, ContinueWhy.Offered, ContinueWhy.Gone,
+                     ContinueWhy.Exited, ContinueWhy.Refused, ContinueWhy.Ended,
+                 })
+        {
+            Assert.False(ContinueWhy.Of(code).Holds, code);
+        }
+
+        Assert.False(ContinueWhy.AdapterChanged("claude-code", "codex-acp").Holds);
+        Assert.False(ContinueWhy.CannotResume("claude-code").Holds);
+    }
+
+    /// <summary>
     /// The park a fallback ends keeps what it asked and says why the answer went to a new session; the new session's note
     /// says the same in one line. Neither names an account.
     /// </summary>
@@ -215,6 +252,64 @@ public sealed class ContinuationTests : IDisposable
         Assert.Equal(
             [("session", (object?)"s1"), ("adapter", "claude-code-acp"), ("resumed", false), ("why", "gone")],
             carried.Data);
+    }
+
+    /// <summary>
+    /// SESSCTX1c (D189 point 8; the session-context design §7): a move to a new part is said by a coded line on both parts, the part
+    /// it left naming where it went on and the new part where it came from, each with the agent and account, why, the context the
+    /// part stood at (H) and the brief's characters (B); and <c>session.moved</c> in the machine log, by profile name, the new part
+    /// and the one it continues, whether it was briefed. A line with no account or no context leaves that value out, and the page
+    /// shows the line as recorded.
+    /// </summary>
+    [Fact]
+    public void A_move_is_said_on_both_parts_and_in_the_machine_log()
+    {
+        var on = HandOverNotes.MovedOn("s2", "claude-code", "work", HandOverWhy.Retry, context: 182_000, brief: 12_345);
+        Assert.Equal(
+            "Went on in session s2 with claude-code as `work`, because its own conversation could not be resumed: its context stood "
+            + "at 182000 tokens, and the new session was handed Daoris's brief of it, 12345 characters.",
+            on.Note);
+        Assert.Equal(["moved.on"], NoteAssert.Codes(on.Parts));
+        Assert.Equal(
+            new object?[] { "s2", "claude-code", "work", "retry", 182_000L, 12_345 },
+            new[] { "session", "agent", "account", "why", "tokens", "count" }.Select(on.Parts[0].Value));
+        NoteAssert.Holds(on);
+
+        var from = HandOverNotes.MovedFrom("s1", "codex-acp", account: null, HandOverWhy.Retry, context: null, brief: 900);
+        Assert.Equal(
+            "Continues session s1, which ran on codex-acp, because its own conversation could not be resumed: it was handed Daoris's "
+            + "brief of it, 900 characters.",
+            from.Note);
+        Assert.Equal(["moved.from"], NoteAssert.Codes(from.Parts));
+        Assert.Null(from.Parts[0].Value("account"));
+        Assert.Null(from.Parts[0].Value("tokens"));
+        NoteAssert.Holds(from);
+
+        var line = Continuations.Moved("s2", "s1", "codex-acp", "claude-code", from: "work", to: null, HandOverWhy.Retry, briefed: true);
+        Assert.Equal("session.moved", line.Event);
+        Assert.Equal(
+            [("session", (object?)"s2"), ("continues", "s1"), ("ranOn", "codex-acp"), ("adapter", "claude-code"), ("from", "work"),
+             ("to", null), ("why", "retry"), ("briefed", true)],
+            line.Data);
+    }
+
+    /// <summary>
+    /// SESSCTX1c (D189's amendment): words whose agent this machine no longer has wait on their record, said by a code that names the
+    /// agent and the session, with the hand-over as the way on; the agent to name is the person's.
+    /// </summary>
+    [Fact]
+    public void Words_whose_agent_is_no_longer_here_wait_with_the_hand_overs_offer()
+    {
+        var gone = Continuations.AgentGone("retired-agent", "s1");
+
+        Assert.Equal(
+            "It does not go on yet: `retired-agent` is no longer an agent on this machine, so its words cannot go on with it. They wait "
+            + "on it: hand it over to another agent to go on with them, `daoris-driver sessions hand-over s1 --agent <agent>`.",
+            gone.Note);
+        Assert.Equal(["held.agent-gone"], NoteAssert.Codes(gone.Parts));
+        Assert.Equal("retired-agent", gone.Parts[0].Value("agent"));
+        Assert.Equal("s1", gone.Parts[0].Value("session"));
+        NoteAssert.Holds(gone);
     }
 
     /// <summary>A park the person has not answered is no continuation at all; only an answered one is.</summary>
@@ -374,33 +469,53 @@ public sealed class ContinuationTests : IDisposable
 
     /// <summary>
     /// 🔴 SAIDBACK1e (D137 §2.4): a quest's record goes on by the ledger's move to working before its run is spawned, so no word is
-    /// taken back once the words are read, and where no run of it then started it goes back, its words waiting on it again. An
-    /// ended record goes back to how it ended, its note, parts and flags as they were; a park whose words were all taken back
-    /// waits on the person again; a park whose run could not start ends as a fallback ends it, its words carried on, since back
-    /// to waiting on the person the ledger would clear them.
+    /// taken back once the words are read, and where every word was taken back first it goes back as it was. An ended record goes
+    /// back to how it ended, its note, parts and flags as they were; a park waits on the person again.
     /// </summary>
     [Fact]
-    public void A_record_moved_to_working_goes_back_as_it_was_where_no_run_of_it_started()
+    public void A_record_moved_to_working_goes_back_as_it_was_where_every_word_was_taken_back_first()
     {
-        var why = ContinueWhy.Of(ContinueWhy.Refused);
-
         var stopped = Written("stopped", Word) with { Note = "the sweep stopped it.", Interrupted = true };
-        var back = Continuations.PutBack(stopped, why);
+        var back = Continuations.PutBack(stopped);
         Assert.Equal(("stopped", "the sweep stopped it.", true, false), (back.State, back.Note.Note, back.Interrupted, back.Limit));
         Assert.Empty(back.Note.Parts);
 
         var limited = Written("failed", Word) with { Note = "the quest reached done.", NoteParts = [NoteCodes.EndedDone.Part("the quest reached done.")], Limit = true };
-        back = Continuations.PutBack(limited, why);
+        back = Continuations.PutBack(limited);
         Assert.Equal(("failed", "the quest reached done.", false, true), (back.State, back.Note.Note, back.Interrupted, back.Limit));
         Assert.Equal(["ended.done"], NoteAssert.Codes(back.Note.Parts));
-        // Nothing to go on with is the same way back for an ended record.
-        Assert.Equal(back, Continuations.PutBack(limited, why: null));
 
         var park = Written("awaiting-person", Word);
-        back = Continuations.PutBack(park, why);
-        Assert.Equal(("completed", Continuations.EndedNote(park, why).Note, false, false), (back.State, back.Note.Note, back.Interrupted, back.Limit));
-        back = Continuations.PutBack(park, why: null);
+        back = Continuations.PutBack(park);
         Assert.Equal(("awaiting-person", park.Note), (back.State, back.Note.Note));
+    }
+
+    /// <summary>
+    /// 🔴 SESSCTX1c (D189's amendment, the session-context design §2): a resumed run that could not start is a start failure, never a
+    /// move. Its record ends <c>failed</c> with the spawn's own words, as a first start's failed spawn does, so the strikes count it,
+    /// and its words wait on it to go again, said so; a park as well as an ended record, since a park moved back to waiting on the
+    /// person would lose them. Where its note already said its words wait, they failed twice running and wait for the person, as a
+    /// failed turn's do (TURNFAIL1).
+    /// </summary>
+    [Fact]
+    public void A_resumed_run_that_could_not_start_is_a_failed_start_with_its_words_waiting()
+    {
+        foreach (var record in new[] { Written("completed", Word), Written("awaiting-person", Word) })
+        {
+            var (note, words) = Continuations.Unstarted(record, "The system cannot find the file specified.");
+            Assert.Equal(WordsAfter.Wait, words);
+            Assert.Equal("The system cannot find the file specified.\n\nYour words wait to go again at the next look.", note.Note);
+            Assert.Equal([null, "ended.words-wait"], NoteAssert.Codes(note.Parts));
+            Assert.Equal(NoteBy.Program, note.Parts[0].By);
+            NoteAssert.Holds(note);
+        }
+
+        var once = Continuations.Unstarted(Written("completed", Word), "no such file").Note;
+        var (twice, after) = Continuations.Unstarted(
+            Written("failed", Word) with { Note = once.Note, NoteParts = once.Parts }, "no such file");
+        Assert.Equal(WordsAfter.Held, after);
+        Assert.EndsWith("Your words failed twice and wait for you: they go again with the next words you say.", twice.Note);
+        Assert.Equal([null, "ended.words-wait-you"], NoteAssert.Codes(twice.Parts));
     }
 
     /// <summary>

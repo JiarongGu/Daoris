@@ -248,6 +248,9 @@ export const NOTE_CODES: Readonly<Record<string, NoteCode>> = {
   'chat.handed-over': { values: ['agent', 'session'] },
   'chat.taken-over': { values: ['agent', 'session', 'why'], why: 'handed' },
   'chat.briefing-unsaid': { values: [] },
+  // A session's move to a new part (SESSCTX1c): on the part it left and on the new part, each with why by the hand-over's reasons.
+  'moved.on': { values: ['session', 'agent', 'account', 'why', 'tokens', 'count'], why: 'handed' },
+  'moved.from': { values: ['session', 'agent', 'account', 'why', 'tokens', 'count'], why: 'handed' },
   // A conversation moved to another account of its agent by the usage curve (SWITCH1c-i): where it went and where it came from,
   // each account by the name the person gave it, and how far over its curve the account it left was.
   'chat.moved': { values: ['to', 'from', 'window', 'used', 'curve'], accounts: ['to', 'from'] },
@@ -315,6 +318,8 @@ export const NOTE_CODES: Readonly<Record<string, NoteCode>> = {
   'held.config-unread': { values: [] },
   'held.lead': { values: [] },
   'held.tail': { values: [] },
+  // SESSCTX1c: the agent its words would go on with is no longer one this machine has; the hand-over is the way on.
+  'held.agent-gone': { values: ['agent', 'session'] },
   // The roster's refusal as a held note's reason (ROSTERREFUSE1): an account by its owner and its id, the sign-in's profile the
   // id as a shell spells it, the tool's own sign-in's refresh `waits.read-again`.
   'held.cooling-account': { values: ['owner', 'account', 'until', 'why'], why: 'cooling' },

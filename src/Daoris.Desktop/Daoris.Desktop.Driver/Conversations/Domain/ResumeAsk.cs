@@ -65,6 +65,20 @@ internal sealed class ResumeAsk(
     public bool Named { get; set; }
 
     /// <summary>
+    /// Whether the native door's one retry of this resume was made (SESSCTX1c, D189's amendment): a harness that ended on a failed exit
+    /// before it named its conversation is tried once more, and only a second such end reads as <see cref="ContinueWhy.Exited"/>.
+    /// </summary>
+    public bool Retried { get; private set; }
+
+    /// <summary>The same resume, tried once more (SESSCTX1c): nothing the first try learned of the wire stands, and its opening stays said.</summary>
+    public void Again()
+    {
+        Retried = true;
+        Named = false;
+        Refused = null;
+    }
+
+    /// <summary>
     /// The words went to the session (MSG1b): the protocol door's first prompt is on the wire, or the native door's harness
     /// opened the conversation its argument carried them to. Only then are they taken off the record.
     /// </summary>

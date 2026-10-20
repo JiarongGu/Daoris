@@ -264,6 +264,8 @@ export const REASONS: Readonly<Record<string, { key: string; needs?: readonly (k
   'stood-down': { key: 'work.say.why.stoodDown' },
   // The person started a conversation with them (MSG1f2): the reason the went line gives where the press took them.
   'started': { key: 'work.say.why.started' },
+  // SESSCTX1c: the native door's agent ended before it reopened its conversation, apart from `gone`.
+  'exited': { key: 'work.say.why.exited' },
 };
 
 /**

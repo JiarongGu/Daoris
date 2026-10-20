@@ -626,7 +626,7 @@ internal sealed class ChatGoOn
         var line = new Noted(TakenBackBeforeGoingOn, []);
         // As it ended (SAIDBACK1g): its own note, parts and flags, which the move to working cleared; the line is said in the
         // conversation beside, never in place of what ended it.
-        var (state, note, interrupted, limit) = Continuations.PutBack(record, why: null);
+        var (state, note, interrupted, limit) = Continuations.PutBack(record);
         try
         {
             await _context.Service.AdvanceAsync(record.Session, state, note, ct: ct, interrupted: interrupted, limit: limit).ConfigureAwait(false);

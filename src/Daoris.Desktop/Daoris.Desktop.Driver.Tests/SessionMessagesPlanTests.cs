@@ -230,6 +230,33 @@ public sealed class SessionMessagesPlanTests
         Assert.True(Assert.Single(Planner.Plan(again, Config())).GoesOn);
     }
 
+    /// <summary>
+    /// 🔴 SESSCTX1c (D189's amendment): a driven record whose resume found its conversation held by another client waits for the
+    /// person, its words marked <c>elsewhere</c>. Its quest is not carried on in a new session meanwhile, as a failed record's
+    /// otherwise is (D80), since that would be the move the hold refuses; a word said since tries it again. A mark of any other
+    /// reason leaves the carry-on as it was.
+    /// </summary>
+    [Fact]
+    public void A_record_held_because_another_client_holds_its_conversation_is_not_carried_on_meanwhile()
+    {
+        var elsewhere = new GoOnMark(["w1"], ContinueWhy.Elsewhere, DateTimeOffset.Parse("2026-10-03T09:05:00Z"));
+        var snapshot = new Snapshot([Quest("q1", "Taken")], [Repo], [])
+        {
+            LastRun = new Dictionary<string, PriorSession> { ["q1"] = Written("failed") },
+            Unable = new Dictionary<string, GoOnMark> { ["s1"] = elsewhere },
+        };
+
+        Assert.Empty(Planner.Plan(snapshot, Config()));
+
+        var later = Word with { Id = "w2", Text = "It is closed there now." };
+        var again = snapshot with { LastRun = new Dictionary<string, PriorSession> { ["q1"] = Written("failed", "s1", Word, later) } };
+        Assert.True(Assert.Single(Planner.Plan(again, Config())).GoesOn);
+
+        var twice = snapshot with { Unable = new Dictionary<string, GoOnMark> { ["s1"] = elsewhere with { Why = GoOnMarks.FailedTwice } } };
+        var carried = Assert.Single(Planner.Plan(twice, Config()));
+        Assert.Equal((StartVerdict.Start, false, "s1"), (carried.Verdict, carried.GoesOn, carried.Resumes?.Session));
+    }
+
     /// <summary>A parked record's answer is planned as before, saying the answer (ANSWER1a), and goes on through the same verdict.</summary>
     [Fact]
     public void An_answered_park_still_goes_on_saying_the_answer()

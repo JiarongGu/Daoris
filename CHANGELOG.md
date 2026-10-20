@@ -5,6 +5,12 @@ with the version and date at release.
 
 ## Unreleased
 
+- A driven session whose own conversation cannot be resumed moves to a new session by itself only where waiting would not help.
+  A refusal from its agent still carries it on, handed what Daoris kept of it, but a conversation open in another client of its
+  agent now waits for you until you say more. Claude Code ending before it reopens a conversation is tried once more first, in a
+  conversation as in a driven session, and said apart from a conversation the agent no longer has. A session whose agent is no
+  longer installed waits for you to hand it to another, and one whose run could not start ends failed with your words still on
+  it. Each move to a new session is said on both sessions, with how much context the old one held and the brief's size.
 - A machine fact Daoris could not judge in time, such as the help room's under load, is logged once as late, no longer a
   second time as an error.
 - Ask Daoris no longer suggests setting a line for a repository you imported but Daoris does not drive: its *no line*
