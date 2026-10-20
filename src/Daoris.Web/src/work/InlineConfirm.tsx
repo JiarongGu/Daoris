@@ -2,7 +2,7 @@ import { type KeyboardEvent, type ReactNode, useEffect, useId, useRef, useState 
 import { useTranslation } from 'react-i18next';
 import { cn } from '../lib/cn';
 import { isComposing } from '../lib/composing';
-import { Button, Inline } from '../design/ui';
+import { Button, Icon, Inline } from '../design/ui';
 
 /**
  * How an act pressed in a question hears how it ended (ACCTEDIT1, D152): `done` once it landed, and `refused` with the
@@ -175,13 +175,18 @@ function giveBack(opener: Opener) {
  * - **A rich body** (a clear's *What goes* and *What stays*) is its explanation too: `block` lays it out as rows.
  * - **The move wears danger's hue**, since it is a destructive edit's; an outward-facing act that destroys nothing (a
  *   landing, LAND4) asks the same way with the primary's (`tone`), so the hue never says something goes when nothing does.
+ *   One that loosens what runs unasked (Ask Daoris's full access, ACCESSASK1; the UI/UX design §3.4) asks with the warning's:
+ *   its line down the ask's edge and its icon on the move, never red, since full access is a choice and not an outcome.
  */
 export function InlineConfirm({
   label, says, meanIt, block = false, busy = false, ready = true, refused = null, children, onConfirm, onClose, className,
   tone = 'danger',
 }: {
-  /** The move's hue: danger's for a destructive edit, the default; the primary's for an act that destroys nothing. */
-  tone?: 'danger' | 'primary';
+  /**
+   * The move's hue: danger's for a destructive edit, the default; the primary's for an act that destroys nothing; the warning's
+   * for one that loosens what runs unasked.
+   */
+  tone?: 'danger' | 'primary' | 'warn';
   /** The ask's name, as a reader hears the group: *delete this quest*. */
   label: string;
   /** What the second press does: a sentence, or a body of rows. It takes the focus on opening and describes the move. */
@@ -313,11 +318,13 @@ export function InlineConfirm({
     <>
       {meanIt && (
         <Button
-          variant={tone}
+          variant={tone === 'warn' ? 'default' : tone}
+          className={tone === 'warn' ? 'border-warn' : undefined}
           disabled={waiting || !ready}
           aria-describedby={refusal ? `${saysId} ${refusalId}` : saysId}
           onClick={confirm}
         >
+          {tone === 'warn' && <Icon name="conflict" size={13} className="text-warn" />}
           {meanIt}
         </Button>
       )}
@@ -339,6 +346,7 @@ export function InlineConfirm({
       onKeyDown={onKeyDown}
       className={cn(
         'rounded-control border border-line bg-sunken',
+        tone === 'warn' && 'border-l-[3px] border-l-warn',
         block ? 'grid gap-3 px-3 py-2.5' : 'flex flex-wrap items-center gap-2 px-2.5 py-2',
         className,
       )}

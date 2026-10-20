@@ -14,7 +14,8 @@ import {
 } from '../bridge/shell';
 import { useHeldHarnessRun } from '../agents/harnessRuns';
 import { Button, Prose, SESSION_ACTIVE } from '../design/ui';
-import { FullAccessConfirm, HelpModeChip, useModeChoice } from './access/HelpModePicker';
+import { FullAccessAsk, HelpModeChip, useModeChoice } from './access/HelpModePicker';
+import { Refused } from '../work/InlineConfirm';
 import { fullAdds } from './access/modes';
 import { WhatItHas } from './access/WhatItHas';
 import type { ChatMessage } from '../work/conversation/conversation';
@@ -747,14 +748,17 @@ export function useAskConversation(
   // Its own mutation, so ending the one opened ahead never reads as the person's New conversation pending.
   const retire = useEndChat();
   const [chipOpen, setChipOpen] = useState(0);
-  const choice = useModeChoice(selectedMode, (mode) => setMode.mutate({ mode }, {
+  // A refusal is said where its press was (ACCESSASK1, the UI/UX design R3): full access's inside its ask, a switch back under the
+  // chip, never in the composer's line, which is about the words.
+  const choice = useModeChoice(selectedMode, (mode, answered) => setMode.mutate({ mode }, {
     onSuccess: () => {
+      answered.done();
       // The conversation opened ahead (HELP5) was started under the mode before: nobody has spoken in it, so it is ended and the
       // next opens under the mode chosen, rather than the person's first words reaching one the chip no longer names.
       if (readied === null || !readiedLive) return;
       retire.mutate(readied, { onSuccess: () => setRound((was) => was + 1) });
     },
-    onError: (error) => setRefusal(sentence(error)),
+    onError: (error) => answered.refused(sentence(error)),
   }));
   const [wiredOpen, setWiredOpen] = useState(false);
   useEffect(() => {
@@ -768,6 +772,8 @@ export function useAskConversation(
   const adds = addsKnown ? fullAdds(wired.data?.receipts[0], plugins.data?.plugins) : null;
   const access = offered ? (
     <div className="grid min-w-0 gap-1.5">
+      {/* Above the chip, as the design's sketch draws it, so the composer's box stays where the person types (§3.4). */}
+      {choice.confirming && <FullAccessAsk adds={adds} onEnable={choice.enable} onClose={choice.cancel} />}
       <div className="flex min-w-0 items-center gap-2">
         <HelpModeChip selected={selectedMode} running={runningMode} busy={setMode.isPending} open={chipOpen} onPick={choice.pick} />
         {shown && (
@@ -781,9 +787,7 @@ export function useAskConversation(
           </Button>
         )}
       </div>
-      {choice.confirming && (
-        <FullAccessConfirm adds={adds} busy={setMode.isPending} onEnable={choice.enable} onCancel={choice.cancel} />
-      )}
+      {choice.refusal && <Refused sentence={choice.refusal} />}
     </div>
   ) : undefined;
   const whatItHas = offered && wiredOpen && shown ? (

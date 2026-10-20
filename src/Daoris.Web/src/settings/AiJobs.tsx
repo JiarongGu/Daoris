@@ -2,7 +2,8 @@ import { useTranslation } from 'react-i18next';
 import type { HelpGrantAgent, HelpGrantChoice, HelpGrantId, HelpMode } from '../help/access/wired';
 import { Card, Pill, Prose, SelectField, SettingList, SettingRow } from '../design/ui';
 import { ConfiguredAccess } from '../help/access/ConfiguredAccess';
-import { FullAccessConfirm, HelpModeChip } from '../help/access/HelpModePicker';
+import { FullAccessAsk, HelpModeChip } from '../help/access/HelpModePicker';
+import { type Answered, Refused } from '../work/InlineConfirm';
 import type { StartWiring } from '../map/wiring';
 
 /** What the service says answers search and convergence (D24) — its own words, verbatim. */
@@ -48,8 +49,10 @@ export type HelpAccessJob = {
   /** The servers full access would add, by name; null while they are being read. */
   adds: readonly string[] | null;
   busy?: boolean;
+  /** A switch refused, said under the chip (the UI/UX design R3); full access's refusal is said inside its ask. */
+  refusal?: string | null;
   onPick: (mode: HelpMode) => void;
-  onEnable: () => void;
+  onEnable: (answered: Answered) => void;
   onCancel: () => void;
 };
 
@@ -249,9 +252,10 @@ function HelpAccess({ access, grants }: { access: HelpAccessJob; grants?: HelpGr
       <p className="m-0 text-small text-ink-soft">
         {t(access.mode === 'full' ? 'settings.ai.helpMode.tierFull' : 'settings.ai.helpMode.tierRestricted')}
       </p>
+      {access.refusal && <Refused className="mt-2" sentence={access.refusal} />}
       {access.confirming && (
         <div className="mt-2">
-          <FullAccessConfirm adds={access.adds} busy={access.busy} onEnable={access.onEnable} onCancel={access.onCancel} />
+          <FullAccessAsk adds={access.adds} onEnable={access.onEnable} onClose={access.onCancel} />
         </div>
       )}
       {grants && access.mode === 'restricted' && (

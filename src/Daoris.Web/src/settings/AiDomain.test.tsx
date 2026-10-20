@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { screen, waitFor, within } from '@testing-library/react';
+import { cleanup, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 // Daoris's own AI in SHELL mode. Moved from `shell.test.tsx` with MOD4: tests follow their code.
@@ -233,6 +233,36 @@ describe('Ask Daoris’s access on Settings', () => {
 
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SET_HELP_MODE', { payload: { mode: 'full' } });
     await waitFor(() => expect(notify).toHaveBeenCalledWith('Ask Daoris runs with full access from each conversation’s next turn.'));
+  });
+
+  // ACCESSASK1 (the UI/UX design R3, §3.4): full access's refusal is said inside its ask, which stays open to be pressed again; a
+  // switch back refused is said under the chip. Neither is a toast.
+  it('says a refusal where it was pressed: inside full access’s ask, and under the chip for a switch back', async () => {
+    const refusing = invoke.getMockImplementation()!;
+    invoke.mockImplementation(async (module: string, type: string, request?: { payload?: { mode?: string } }) => {
+      if (type === 'SET_HELP_MODE') throw new Error(`The driver could not write the mode ${request?.payload?.mode}.`);
+      return refusing(module, type, request);
+    });
+    const notify = vi.fn();
+    show(<SettingsView notify={notify} section="ai" />);
+
+    await chip('Restricted');
+    await pick('full');
+    const asks = await screen.findByRole('group', { name: 'Enable full access?' });
+    await userEvent.click(within(asks).getByRole('button', { name: 'Enable full access' }));
+    expect(await within(asks).findByRole('alert')).toHaveTextContent('The driver could not write the mode full.');
+    expect(screen.getByRole('group', { name: 'Enable full access?' })).toBe(asks);
+    expect(within(asks).getByRole('button', { name: 'Enable full access' })).toBeEnabled();
+    expect(notify).not.toHaveBeenCalled();
+
+    cleanup();
+    helpMode = 'full';
+    show(<SettingsView notify={notify} section="ai" />);
+    await chip('Full access');
+    await pick('restricted');
+    const row = (await chip('Full access')).closest<HTMLElement>('[data-setting-row]')!;
+    expect(await within(row).findByRole('alert')).toHaveTextContent('The driver could not write the mode restricted.');
+    expect(notify).not.toHaveBeenCalled();
   });
 
   it('offers no access on a shell older than the mode', async () => {
