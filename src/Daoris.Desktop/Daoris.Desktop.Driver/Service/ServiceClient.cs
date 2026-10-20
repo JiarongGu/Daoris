@@ -2112,6 +2112,24 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
         return null;
     }
 
+    /// <summary>
+    /// This machine's records among the answer's, by id, read as <see cref="ReadRecord"/> reads one: what a brief follows a line's
+    /// <c>from</c> links through (SESSCTX1b). A teammate's is none here.
+    /// </summary>
+    internal static IReadOnlyDictionary<string, PriorSession> ReadRecords(string json)
+    {
+        using var document = JsonDocument.Parse(json);
+        var records = new Dictionary<string, PriorSession>(StringComparer.Ordinal);
+        if (document.RootElement.ValueKind != JsonValueKind.Array) return records;
+        foreach (var session in document.RootElement.EnumerateArray())
+        {
+            if (session.ValueKind != JsonValueKind.Object || IsTeams(session) || Text(session, "id") is not { Length: > 0 } id) continue;
+            records.TryAdd(id, Prior(session));
+        }
+
+        return records;
+    }
+
     /// <summary>A record as what a later run on it is compared with and told (D79, D80, ANSWER1a, MSG1b).</summary>
     private static PriorSession Prior(JsonElement session) =>
         new(
