@@ -42,7 +42,7 @@ import { spawn, spawnSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync } from 'node:fs';
 import { dirname, join, parse, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { isMain, writeAtomic } from './fsx.mjs';
+import { isMain, spawnGit, writeAtomic } from './fsx.mjs';
 
 const REPO = join(dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -730,7 +730,7 @@ export function buildFixture(dir, design, corpus) {
   for (const [path, text] of fixtureFiles(design, corpus)) writeAtomic(join(dir, path), text);
   writeAtomic(join(dir, MARKER), `knowledge bench fixture, design ${design}\n`);
   const git = (...args) => {
-    const r = spawnSync('git', ['-c', 'core.autocrlf=false', '-c', 'user.name=knowledge-bench', '-c', 'user.email=bench@example.invalid', ...args],
+    const r = spawnGit(['-c', 'core.autocrlf=false', '-c', 'user.name=knowledge-bench', '-c', 'user.email=bench@example.invalid', ...args],
       { cwd: dir, encoding: 'utf8' });
     if (r.status !== 0) throw new Error(`git ${args[0]} in ${dir}: ${r.stderr}`);
   };

@@ -73,7 +73,7 @@ import { dirname, isAbsolute, join, posix, relative, resolve, sep } from 'node:p
 import { fileURLToPath } from 'node:url';
 // The tar reader the CLI carries (AGT2b): what unpacks the doctrine tool's package (D124 §1.2).
 import { extractTarGz } from '../src/Daoris.Cli/src/platform/tarball.ts';
-import { copyTree, isMain, renameHeld, writeAtomic } from './fsx.mjs';
+import { copyTree, isMain, renameHeld, spawnGit, writeAtomic } from './fsx.mjs';
 import { running } from './processes.mjs';
 // The service hosts' one build recipe (CONNECTOR1): what `--service` lays under `app/`, built as the service publish builds it.
 import { HOSTS, builtInto, executableFor, publishCommand, publishHost } from './service-publish.mjs';
@@ -856,7 +856,7 @@ function pidAlive(pid) {
   }
 }
 
-const gitIn = (cwd, args) => spawnSync('git', args, { cwd, encoding: 'utf8', windowsHide: true });
+const gitIn = (cwd, args) => spawnGit(args, { cwd, encoding: 'utf8', windowsHide: true });
 const samePath = (a, b) => (process.platform === 'win32' ? resolve(a).toLowerCase() === resolve(b).toLowerCase() : resolve(a) === resolve(b));
 const minuteOf = (iso) => (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(iso ?? '') ? `${iso.slice(0, 10)} ${iso.slice(11, 16)} UTC` : 'an unknown time');
 

@@ -339,7 +339,7 @@ import {
 import { constants as osConstants, setPriority as osSetPriority } from 'node:os';
 import { basename, dirname, join, relative, resolve } from 'node:path';
 import { fenced, gluedLabels, records } from './doc-duplicates.mjs';
-import { isMain, renameHeld, stagedTree, writeAtomic } from './fsx.mjs';
+import { isMain, renameHeld, spawnGit, stagedTree, writeAtomic } from './fsx.mjs';
 import { endOrphans, endStranded } from './processes.mjs';
 
 export const MAIN = 'main';
@@ -1895,7 +1895,7 @@ export function classify(paths, { lanes = [], union = [], laneless = [] } = {}) 
 // Git
 
 function git(cwd, args, { allowFail = false, env } = {}) {
-  const result = spawnSync('git', args, { cwd, encoding: 'utf8', maxBuffer: 256 * 1024 * 1024, ...(env ? { env: { ...process.env, ...env } } : {}) });
+  const result = spawnGit(args, { cwd, encoding: 'utf8', maxBuffer: 256 * 1024 * 1024, ...(env ? { env: { ...process.env, ...env } } : {}) });
   if (result.error) throw new Refusal(`git could not start: ${result.error.message}`);
   if (result.status !== 0 && !allowFail) {
     throw new Refusal(`git ${args.join(' ')} failed: ${(result.stderr || result.stdout).trim()}`);
