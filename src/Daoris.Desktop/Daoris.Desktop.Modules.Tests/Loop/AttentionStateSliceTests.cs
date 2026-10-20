@@ -478,6 +478,29 @@ public sealed partial class AttentionStateSliceTests : DriverModuleBridge
         Assert.Equal(["parked:p4rk3d00"], Keys(Rows(new() { Sessions = sessions })));
     }
 
+    /// <summary>
+    /// ASKRAIL1: Ask Daoris's conversations (<c>daoris:help</c>) are reached from its own panel and history, never from Sessions: a
+    /// parked one and one placed to review are no session rows here, and the Sessions badge counts none, beside a session's that is.
+    /// </summary>
+    [Fact]
+    public void An_Ask_Daoris_record_is_no_session_row_and_the_sessions_badge_counts_none()
+    {
+        var facts = new AttentionFacts
+        {
+            Sessions =
+            [
+                Session("""{"id":"p4rk3d00","state":"awaiting-person"}"""),
+                Session("""{"id":"h3lp0001","repository":"daoris:help","kind":"chat","state":"awaiting-person"}"""),
+                Session("""{"id":"h3lp0002","repository":"daoris:help","kind":"chat","state":"completed"}"""),
+                Session("""{"id":"r3v13w00","state":"completed"}"""),
+            ],
+            Groups = [Placed(), Placed("""{"session":"h3lp0002"}""")],
+        };
+
+        Assert.Equal(["parked:p4rk3d00", "review:r3v13w00"], Keys(Rows(facts)));
+        Assert.Equal(["session:p4rk3d00"], NeedsAPerson.WaitingInSessions(facts).Select(each => each.Key));
+    }
+
     /// <summary>The badge's partition says each counted thing's workspace where the window's scope filters it: a session's, never a park's quest.</summary>
     [Fact]
     public void The_sessions_badge_says_a_session_s_workspace_for_the_window_s_scope()

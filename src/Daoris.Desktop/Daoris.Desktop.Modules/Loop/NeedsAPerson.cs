@@ -1,4 +1,5 @@
 using System.Text.Json.Nodes;
+using Daoris.Driver;
 
 namespace Daoris.Desktop;
 
@@ -173,10 +174,12 @@ public static class NeedsAPerson
             rows.Add(row);
         }
 
-        // What Sessions' list places To review (D126), from the groups the list reads: never a reader of its own.
+        // What Sessions' list places To review (D126), from the groups the list reads: never a reader of its own. Ask Daoris's
+        // conversations are reached from its own panel, never from Sessions (ASKRAIL1).
         foreach (var placed in facts.Groups.Where(placed => Text(placed, "group") == "review"))
         {
             var record = sessions.GetValueOrDefault(Text(placed, "session") ?? "");
+            if (AskDaoris(record) || Text(placed, "repository") == HelpRoom.Repository) continue;
             var row = Row("review", Text(placed, "session"), Text(record, "updated"));
             row["where"] = Text(record, "repository") ?? "";
             row["placed"] = placed.DeepClone();
@@ -401,8 +404,15 @@ public static class NeedsAPerson
         return [.. Objects(unit["entries"]).Take(1)];
     }
 
-    /// <summary>A session parked to ask that nobody answered yet (ANSWER1c): the person's answer goes on at the driver's next look.</summary>
-    private static bool Parks(JsonObject session) => Text(session, "state") == "awaiting-person" && Truthy(session, "answer") is null;
+    /// <summary>
+    /// A session parked to ask that nobody answered yet (ANSWER1c): the person's answer goes on at the driver's next look. Never Ask
+    /// Daoris's conversation, which is answered in its own panel (ASKRAIL1).
+    /// </summary>
+    private static bool Parks(JsonObject session) =>
+        Text(session, "state") == "awaiting-person" && Truthy(session, "answer") is null && !AskDaoris(session);
+
+    /// <summary>Ask Daoris's conversation (HELP1a, D89), by the repository it is recorded in: no session row of Sessions' (ASKRAIL1).</summary>
+    private static bool AskDaoris(JsonObject? session) => Text(session, "repository") == HelpRoom.Repository;
 
     /// <summary>A teammate's session, keyed by its machine's origin (D47): a local id never carries a separator.</summary>
     private static bool Elsewhere(string id) => id.IndexOf('/') > 0;
