@@ -89,6 +89,19 @@ its own (REHLANE1, REHLANE2, REHLANE2b). Do not overlap them with another full g
 development instance can hold its assemblies. Identify the owner before stopping a process; do not
 stop an installed application or an unrelated host merely to unblock a build.
 
+A branch that runs only its own classes still owes the censuses that read every source, since no merge runs them
+before the CI beside: each is quick, and on 2026-10-20 each failed a full set its branch never ran. Run the ones a
+change can reach before handing it back:
+
+| A change that… | The census to run |
+|---|---|
+| makes a page test read a file outside the page (a C# source, a fixture) | `node --test src/Daoris.Cli/tool-test/merge-branch.test.ts --test-name-pattern SESSDEL1c` (read a C# source through `src/test/driverSource.ts`, and name it in `tools/merge-branch.mjs`'s MOD9e row) |
+| adds or renames a CLI verb | `node --test src/Daoris.Cli/test/cli/cli-usage.test.ts` (the refusals fixture) |
+| names a `DAORIS_` variable in a source | `dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests --filter FullyQualifiedName~SystemWiringTests` |
+| joins a home path in a test or a source | `node --test src/Daoris.Cli/test/platform/home-census.test.ts` (ask `DaorisHome.Entry` or `homeEntry`) |
+| opens a listener in a test | `dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests --filter FullyQualifiedName~LoopbackListensTests` |
+| writes a string that names a workspace, or a `partial` class | `node --test src/Daoris.Cli/test/one-word.test.ts`, and `node tools/partials.mjs` |
+
 `node --test` alone is not the workspace's done command. The root `npm test` delegates to the CLI
 workspace; `npm run verify` also runs types, doctrine and document/tooling checks. Installed proof
 is not supplied by a mocked bridge, Storybook or a browser-only end-to-end test.
