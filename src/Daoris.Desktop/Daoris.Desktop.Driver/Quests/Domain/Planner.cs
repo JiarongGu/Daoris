@@ -493,8 +493,21 @@ public sealed record SaidWordView(string? Id, string Text, DateTimeOffset At, IR
     /// </summary>
     public string? Helper { get; init; }
 
-    /// <summary>Whether these are the person's words: no second opinion's and no helper's.</summary>
-    public bool Persons => By is null && Helper is null;
+    /// <summary>
+    /// Its author where that is not the person (COWORK1b, D188; the message-urgency design §9): <see cref="DaorisWords.From"/> for
+    /// Daoris's own words, a reopen or a step's go-on. Null for every other word, and for a host's from before the field, whose
+    /// words read as they did.
+    /// </summary>
+    public string? From { get; init; }
+
+    /// <summary>Its producer's key (COWORK1b, the design §6): Daoris's fact's, read by <see cref="DaorisKeys"/>; null for a word kept with none.</summary>
+    public string? Key { get; init; }
+
+    /// <summary>Whether these are Daoris's own words (COWORK1b): read from its mark, never its sentence.</summary>
+    public bool Daoris => From == DaorisWords.From;
+
+    /// <summary>Whether these are the person's words: no second opinion's, no helper's and not Daoris's.</summary>
+    public bool Persons => By is null && Helper is null && From is null;
 }
 
 /// <summary>One step of a chain, as the service answered it.</summary>

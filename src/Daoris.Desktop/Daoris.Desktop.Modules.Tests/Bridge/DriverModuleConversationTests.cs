@@ -373,7 +373,8 @@ public sealed class DriverModuleConversationTests : DriverModuleBridge
     /// <summary>
     /// SAIDBACK1b (D76, D137 §2.4): the person's words waiting on a record that ended or parked are its queue, each by the id
     /// the record gave it, so the composer's *Edit* and *Remove* reach them. Never another agent's words waiting there (a second
-    /// opinion's findings, a helper's answer), and none on a record that runs again, whose run is already taking them.
+    /// opinion's findings, a helper's answer), nor Daoris's own (COWORK1b), and none on a record that runs again, whose run is
+    /// already taking them.
     /// </summary>
     [Theory]
     [InlineData("completed")]
@@ -385,7 +386,8 @@ public sealed class DriverModuleConversationTests : DriverModuleBridge
             Records = Records(
                 Waiting(
                     "s1", state, Word("w1", "use the blue one", files: "\"plan.md\""), Word("w2", "the findings", mark: ",\"by\":\"o1\""),
-                    Word("w3", "a helper's answer", mark: ",\"helper\":\"h1\"")),
+                    Word("w3", "a helper's answer", mark: ",\"helper\":\"h1\""),
+                    Word("w5", "Daoris: the person reopened it.", mark: ",\"from\":\"daoris\",\"key\":\"reopen/q1/desk/44\"")),
                 WaitingIn("q2", "s2", "working", Word("w4", "on its way"))),
         };
         var (_, module) = await UpAsync(ledger);

@@ -1384,13 +1384,18 @@ if (mode == ServiceMode.Local)
     {
         var now = DateTimeOffset.UtcNow;
         var channel = string.IsNullOrWhiteSpace(body.Channel) ? null : body.Channel.Trim();
-        var outcome = await s.Ledger.SayAsync(id, body.Text, body.Files, now, ct, channel);
+        // COWORK1b (D188): whose words, where not the person's, and the producer's key, each read as absent where blank.
+        var from = string.IsNullOrWhiteSpace(body.From) ? null : body.From.Trim();
+        var key = string.IsNullOrWhiteSpace(body.Key) ? null : body.Key.Trim();
+        var outcome = await s.Ledger.SayAsync(id, body.Text, body.Files, now, ct, channel, from, key);
         if (outcome.Refusal == SessionSayRefusal.None)
         {
             // Words to a park are its answer, kept on its ask at once as the answer door keeps one (DRIFT1a); words to an
             // ended session are kept there once a session took them (the taken door, D137 §2.4). Words that are a channel
-            // message are on the ask already, as `channel` (SESSONE2e), so neither door keeps them again.
-            if (!outcome.Word!.Reopens && outcome.Word.Channel is null)
+            // message are on the ask already, as `channel` (SESSONE2e), so neither door keeps them again. Daoris's own words
+            // (COWORK1b) are never the person's, which every later session reads the ask's words as. A say answered with the
+            // word its key already kept keeps nothing again.
+            if (!outcome.Word!.Reopens && outcome.Word.Channel is null && outcome.Word.Persons && !outcome.Again)
             {
                 await s.Ledger.KeepOnAskAsync(id, AskWordKind.Answered, outcome.Word.Text, now, ct);
             }
@@ -1404,7 +1409,8 @@ if (mode == ServiceMode.Local)
         return outcome.Refusal switch
         {
             SessionSayRefusal.NotFound => Results.NotFound(refused),
-            SessionSayRefusal.Empty => Results.BadRequest(refused),
+            // COWORK1b: an author this service does not know is the caller's mistake, as no words are.
+            SessionSayRefusal.Empty or SessionSayRefusal.From => Results.BadRequest(refused),
             // A teammate's, an intake, a stand-down, a running session: a conflict with the record as it stands.
             _ => Results.Conflict(refused),
         };
@@ -2593,7 +2599,7 @@ static SessionResponse ToSession(Session s, bool loopback) => new(
     TookBind: loopback ? s.TookBind : null);
 
 // A word with whose it is (XAGENT1c): `by` names the second opinion whose findings these are, and is absent for the person's.
-static SaidWordResponse ToSaid(SaidWord word) => new(word.Id, word.Text, word.At, word.Files, word.Reopens, word.By, word.Helper);
+static SaidWordResponse ToSaid(SaidWord word) => new(word.Id, word.Text, word.At, word.Files, word.Reopens, word.By, word.Helper, word.From, word.Key);
 
 // An opinion as this machine's doors answer it (XAGENT1c), with where its pass stands, derived when read.
 static OpinionResponse ToOpinion(OpinionStanding standing)
@@ -2636,6 +2642,7 @@ static string SayRefusal(SessionSayRefusal refusal) => refusal switch
     SessionSayRefusal.Opinion => "opinion",
     SessionSayRefusal.Helper => "helper",
     SessionSayRefusal.Taken => "taken",
+    SessionSayRefusal.From => "from",
     _ => "running",
 };
 

@@ -205,6 +205,59 @@ describe('ConversationView', () => {
     await i18n.changeLanguage('en');
   });
 
+  /**
+   * COWORK1b (D188's COWORK1b note, the message-urgency design trap 6): Daoris's own words to a session, a reopen told or a step's go-on,
+   * are named as Daoris's, never as the person's and never as the target it composed, and shown whole: where the session took them,
+   * and while they are held for it, in either language. A word the person said in the same sentence is still theirs.
+   */
+  it('names Daoris’s own words as Daoris’s, taken or held, and never as the person’s', async () => {
+    const text = 'Daoris: the person reopened submission `desk` 41 of quest `#q1`, which your `ready` made.';
+    const { unmount } = view([
+      ev({ kind: 'user', origin: 'target', from: 'daoris', id: 'w1', text }),
+      ev({ kind: 'user', origin: 'target', from: 'daoris', id: 'said-1', reaches: 'turn-end', level: 'urgent', text: 'Daoris: went on.' }),
+    ]);
+
+    expect(screen.getAllByText('Daoris’s words')).toHaveLength(2);
+    expect(screen.queryByText('you')).toBeNull();
+    expect(screen.queryByText('The target Daoris composed')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Show all' })).toBeNull();
+    expect(screen.getByText(text)).toBeTruthy();
+    expect(screen.getByText('Urgent, held: its door takes words only when its turn ends.')).toBeTruthy();
+    unmount();
+
+    // The person's own words equal to Daoris's sentence are the person's.
+    const { unmount: again } = view([ev({ kind: 'user', origin: 'person', text })]);
+    expect(screen.getByText('you')).toBeTruthy();
+    expect(screen.queryByText('Daoris’s words')).toBeNull();
+    again();
+
+    await i18n.changeLanguage('zh');
+    view([ev({ kind: 'user', origin: 'target', from: 'daoris', id: 'w1', text })]);
+    expect(screen.getByText('Daoris 的话')).toBeTruthy();
+    await i18n.changeLanguage('en');
+  });
+
+  /**
+   * COWORK1b (the design §4.3): Daoris's word held for a running session and dropped where it was to be delivered, its fact answered
+   * by a later submission, is settled by the driver's coded note, worded in the reader's language, and waits no longer.
+   */
+  it('says Daoris’s held word was dropped once what it said no longer held', async () => {
+    const events = () => [
+      ev({ kind: 'user', origin: 'target', from: 'daoris', id: 'said-1', reaches: 'turn-end', level: 'urgent', text: 'Daoris: reopened.' }),
+      ev({ kind: 'note', code: 'dropped', words: ['said-1'], text: '— Daoris did not send this: what it said no longer holds.' }),
+    ];
+    const { unmount } = view(events());
+
+    expect(screen.getByText('Daoris did not send this: what it said no longer holds.')).toBeTruthy();
+    expect(screen.queryByText('Urgent, held: its door takes words only when its turn ends.')).toBeNull();
+    unmount();
+
+    await i18n.changeLanguage('zh');
+    view(events());
+    expect(screen.getByText('Daoris 没有发送这条：它所说的已不再成立。')).toBeTruthy();
+    await i18n.changeLanguage('en');
+  });
+
   /** The composed target is long and machine-written: two lines, and the rest on a press. */
   it('folds the target the driver composed, and names it as that', async () => {
     view([ev({ kind: 'user', origin: 'target', text: 'take quest #q1\n\nthe whole target…' })]);

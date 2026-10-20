@@ -359,27 +359,30 @@ function TurnMeter({ turn }: { turn: Turn }) {
 /**
  * What the person asked, or the target the driver composed — the latter folded, since it is long, with what it was composed
  * of beneath it (CONTEXT1). Another agent's findings handed as the session's next turn (XAGENT1g, the second-agent design §6.3)
- * are a block from that agent, open, under Daoris's fixed words that name it and its maker, never the person's.
+ * are a block from that agent, open, under Daoris's fixed words that name it and its maker, never the person's. Daoris's own words
+ * (COWORK1b), a reopen told or a step's go-on, are named as Daoris's by their mark, open, and never as the person's.
  */
 function AskView({ ask }: { ask: Ask }) {
   const { t } = useTranslation();
   const findings = Boolean(ask.opinion);
+  const daoris = ask.origin === 'target' && ask.from === 'daoris';
   // Another session's claim on the ask's channel (SESSONE2c): Daoris's words around it, kept as the driver's own, short enough to
   // read whole and never the target Daoris composed.
-  const claim = ask.origin === 'target' && !findings && (ask.text ?? '').startsWith(CHANNEL_CLAIM_OPENING);
-  const target = ask.origin === 'target' && !claim;
+  const claim = ask.origin === 'target' && !findings && !daoris && (ask.text ?? '').startsWith(CHANNEL_CLAIM_OPENING);
+  const target = ask.origin === 'target' && !claim && !daoris;
   const [open, setOpen] = useState(!target || findings);
 
   return (
     <div
       className={cn(
         'rounded-card border border-line border-l-[3px] bg-raised px-3 py-2',
-        findings ? 'border-l-line-strong' : 'border-l-accent',
+        findings || daoris ? 'border-l-line-strong' : 'border-l-accent',
       )}
     >
       <div className="flex items-center justify-between gap-2">
         <span className="text-meta text-ink-faint">
-          {findings ? t('work.conversation.opinion') : claim ? t('work.conversation.claim') : target ? t('work.conversation.target') : t('work.conversation.you')}
+          {findings ? t('work.conversation.opinion') : daoris ? t('work.conversation.daoris') : claim ? t('work.conversation.claim')
+            : target ? t('work.conversation.target') : t('work.conversation.you')}
         </span>
         {target && (
           <button
@@ -445,7 +448,8 @@ const waitingWords = (turn: Turn) =>
  * the composer's waiting words are, and saying when the session reads them — at its next step, at its turn's end, or as
  * the same session goes on, or at its account's reset where that account cools (MSG1g2) — or, the session over, that it
  * never did. Where the session takes them they become the ask of that turn, and this goes. Where a driver's note below
- * says where they went, or that they cannot go on here, that note is their line and this says none.
+ * says where they went, or that they cannot go on here, that note is their line and this says none. Daoris's own words held for
+ * a running session (COWORK1b) are named as Daoris's, never as the person's.
  */
 function HeldAsk({ block }: { block: Block }) {
   const { t } = useTranslation();
@@ -460,7 +464,7 @@ function HeldAsk({ block }: { block: Block }) {
     // Dashed while it waits; words taken already (`now`, STEER2b) are drawn solid, as a turn's ask is.
     <div className={cn('rounded-card border px-3 py-2', block.reaches === 'now' ? 'border-line-strong' : 'border-dashed border-line-strong')}>
       <span className="flex items-center gap-2">
-        <span className="text-meta text-ink-faint">{t('work.conversation.you')}</span>
+        <span className="text-meta text-ink-faint">{t(block.from === 'daoris' ? 'work.conversation.daoris' : 'work.conversation.you')}</span>
         {/* The level named only where it is not quiet (COWORK1a, the design §8.2): the person's own words sent now. A word in a
             neutral chip, never a hue, and never a wait's. */}
         {block.level === 'now' && <Chip>{t('work.level.now')}</Chip>}
