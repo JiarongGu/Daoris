@@ -94,7 +94,7 @@ export const FullAccess: Story = { args: { pauses: OPEN('repository') } };
 /** Full access asked once, in the warning tone: the switch pressed opens its ask in the row. */
 export const FullAccessAsked: Story = {
   play: async ({ canvasElement }) => {
-    canvasElement.querySelector<HTMLElement>('[role="checkbox"], input[type="checkbox"]')?.click();
+    canvasElement.querySelector<HTMLElement>('[role="checkbox"]')?.click();
   },
 };
 

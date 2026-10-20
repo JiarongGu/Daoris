@@ -1758,8 +1758,15 @@ if (!done.ok) throw new Error(done.text);
   console.log('  end, and the launcher swapped app/ and started the new build, which confirmed; a build that would not');
   console.log('  come up was rolled back to the one before it, and one that failed its check was refused with nothing closed.');
   // The last build's processes may still be letting go of their files as the result prints; a held file read as a failed
-  // run after every check had passed (FIX-LOG 2026-10-04), so this waits as the start's clean does.
-  rmSync(scratch, { recursive: true, force: true, maxRetries: 20, retryDelay: 500 });
+  // run after every check had passed (FIX-LOG 2026-10-04), so this waits as the start's clean does. A file still held past
+  // that wait (a scanner reading a fresh build, nothing of the run's left running) is said and left for the next start's
+  // clean: every check has passed by here, so the folder is not the run's verdict.
+  try {
+    rmSync(scratch, { recursive: true, force: true, maxRetries: 20, retryDelay: 500 });
+  } catch (error) {
+    if (!['EPERM', 'EBUSY'].includes(/** @type {NodeJS.ErrnoException} */ (error).code ?? '')) throw error;
+    console.log(`  (the scratch folder was held past its wait, ${/** @type {NodeJS.ErrnoException} */ (error).code}; the next run's start clears it)`);
+  }
 }
 
 /**

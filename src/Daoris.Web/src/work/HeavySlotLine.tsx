@@ -46,7 +46,7 @@ function SessionDoor({ session, titleOf, onOpen }: {
       type="button"
       onClick={() => onOpen(session)}
       title={title}
-      className="max-w-[24ch] truncate align-bottom text-accent underline-offset-2 hover:underline focus-visible:underline"
+      className="max-w-full truncate align-bottom text-accent underline-offset-2 hover:underline focus-visible:underline"
     >
       {title}
     </button>

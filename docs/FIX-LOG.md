@@ -5,6 +5,23 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-21 — The full set's run on d263cd0 failed three gates that its merges never ran
+
+- **Symptom:** the full set on d263cd0 failed `web-unit`, `cli` and `deployment`. The web design checks found
+  `work/HeavySlotLine.tsx` setting a line's measure (`max-w-[24ch]`) and `settings/repository/Access.stories.tsx` naming a
+  native checkbox. The desktop tool's census found seven `DAORIS_` variables a scratch run would inherit. The deployment
+  rehearsal passed every check and then failed with `EPERM` removing its scratch folder.
+- **Root cause:** a merge's blocking checks run neither the web units nor the CLI's census, so HEAVYSLOT1, ACCESSASK1's stories
+  and ENVSEAM1 landed past them. ENVSEAM1 made `Adapters.cs` ask the home, which put the variables a session's start writes into
+  the census's scan. The rehearsal's last clean retried for ten seconds, and a file was still held after that, with nothing of
+  the run left running (the machine's scanners, DEVDRIVE1).
+- **Fix:** the heavy slot's session door truncates at its line's width (`max-w-full`); the story presses `[role="checkbox"]`,
+  the platform's own control; the census names the variables a session's start writes, as it names the quest's attachments;
+  and the rehearsal's last clean says a held folder and leaves it for the next start, which clears it. The `cli` gate's other
+  failure, the release workflow not running `web-types`, was fixed on main before this run's result.
+- **Verification:** `tokens.test.ts` and `structure.test.ts`, with the heavy slot's and the access rows' tests (179); the
+  desktop tool's tests (47); `node --check` on the rehearsal.
+
 ## 2026-10-21 — The service's machine log overwrote another knowledge host's lines (MACHINELOGAPPEND2)
 
 - **Symptom:** every session starts a knowledge host writing the day's one `mcp` file, and of two `Daoris.Knowledge.MachineLog`s

@@ -93,11 +93,15 @@ test('every machine-local override the desktop reads is redirected, cleared, or 
   // the service answered, and read by nothing on this side. An intake's ask and session are too (`IntakeRoom.Scope`),
   // written into its spawn's environment; its room is asked of the home since HOMELAYOUT2, which puts the file in this scan.
   // A session's repository is the same (HEAVYRUN1b2a): written into a driven session's environment, read only by `run-heavy`
-  // inside that session, never by the desktop a scratch run starts.
+  // inside that session, never by the desktop a scratch run starts. A session's start (`Adapters.cs`, in this scan since
+  // ENVSEAM1 asks the home there) writes the rest of its target the same way: the target, the quest's words, the service it
+  // answers (the scratch run's own, `scratchEnvironment` sets it) and the stub's configuration home, which is an account's.
   const handled = new Set([
     ...REDIRECTED, ...CLEARED, 'DAORIS_HTTP_HOST', 'DAORIS_MCP_HOST',
     'DAORIS_PLUGIN_ID', 'DAORIS_PLUGIN_FOLDER', 'DAORIS_PLUGIN_DATA',
     'DAORIS_QUEST_ATTACHMENTS', 'DAORIS_ASK_ID', 'DAORIS_SESSION_ID', 'DAORIS_REPOSITORY',
+    'DAORIS_TARGET', 'DAORIS_QUEST_ID', 'DAORIS_QUEST_TITLE', 'DAORIS_QUEST_BODY', 'DAORIS_QUEST_ASKER',
+    'DAORIS_SERVICE_URL', 'DAORIS_STUB_CONFIG_DIR',
   ]);
   const missed = [...found].filter((name) => !handled.has(name));
   assert.deepEqual(missed, [], `a scratch run would inherit ${missed.join(', ')} from the real machine`);
