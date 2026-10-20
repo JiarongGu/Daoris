@@ -29,7 +29,8 @@ internal sealed class TreeWorkReads(TreeContext context, TreeSquashes squashes, 
     /// <para><b>One commit judged</b> (SQUASHTIDY1c): the tree's commit is read once, and the count and the content proof are
     /// both asked of that id, so a commit made meanwhile is never half of what was judged.</para>
     /// </remarks>
-    internal async Task<TreeWork?> WorkAsync(string tree, CancellationToken ct = default)
+    /// <param name="here">The tree's repository and branch as a landing read them a moment ago (LANDGIT1b); null reads them where needed.</param>
+    internal async Task<TreeWork?> WorkAsync(string tree, CancellationToken ct = default, TreeGit.CommonDirAndBranch? here = null)
     {
         if (!HeldHere(tree) || TreeFolders.TreeGone(tree) || !await WorkingTree.IsTopLevelAsync(tree, ct).ConfigureAwait(false)) return null;
 
@@ -52,7 +53,7 @@ internal sealed class TreeWorkReads(TreeContext context, TreeSquashes squashes, 
 
         // SQUASHTIDY1b: a squash merge or a cherry-pick holds commits ancestry cannot see, and landing them again would make a
         // branch of work already there.
-        return work.Commits is > 0 && judged is not null && await HeldWorkAsync(tree, judged, ct).ConfigureAwait(false) is { } found
+        return work.Commits is > 0 && judged is not null && await HeldWorkAsync(tree, judged, own, here, ct).ConfigureAwait(false) is { } found
             ? work with { Held = found }
             : work;
     }
@@ -77,8 +78,8 @@ internal sealed class TreeWorkReads(TreeContext context, TreeSquashes squashes, 
     /// head's own judgement (<see cref="WorkAsync"/>, then <see cref="DiscardOffer.Of"/>), which every landing asks before anything
     /// is made (SQUASHTIDY1f) and the terminal's plan says. Null where nothing holds them, or there is no tree of this home's to ask.
     /// </summary>
-    internal async Task<DiscardOffer?> DiscardOfferAsync(string tree, CancellationToken ct = default) =>
-        await WorkAsync(tree, ct).ConfigureAwait(false) is { } work ? DiscardOffer.Of(tree, work) : null;
+    internal async Task<DiscardOffer?> DiscardOfferAsync(string tree, CancellationToken ct = default, TreeGit.CommonDirAndBranch? here = null) =>
+        await WorkAsync(tree, ct, here).ConfigureAwait(false) is { } work ? DiscardOffer.Of(tree, work) : null;
 
     /// <summary>Whether this home opened the tree; a path that is no path is no tree of it.</summary>
     private bool HeldHere(string tree)
@@ -108,20 +109,23 @@ internal sealed class TreeWorkReads(TreeContext context, TreeSquashes squashes, 
     /// offered to go, and the clause says why. Otherwise the ref named is the one the discard would keep, numbered as it numbers
     /// one whose name another commit holds.</para>
     /// </remarks>
-    private async Task<HeldWork?> HeldWorkAsync(string tree, string judged, CancellationToken ct)
+    /// <param name="treeBranch">The tree's own branch (TREEFOLLOW1) as the judgement read it a moment ago (LANDGIT1b), null where it is on its session
+    /// branch or detached: the same read of the head, not a second one.</param>
+    /// <param name="read">The tree's repository and branch as a landing read them (LANDGIT1b); null reads them here.</param>
+    private async Task<HeldWork?> HeldWorkAsync(string tree, string judged, string? treeBranch, TreeGit.CommonDirAndBranch? read, CancellationToken ct)
     {
         try
         {
             var full = Path.GetFullPath(tree);
-            // Its repository, and the branch the discard below names, in one start (PROC1d-iii).
-            var here = await TreeGit.CommonDirAndBranchAsync(full, ct).ConfigureAwait(false);
+            // Its repository, and the branch the discard below names, in one start (PROC1d-iii); a landing's own read, where it hands one.
+            var here = read ?? await TreeGit.CommonDirAndBranchAsync(full, ct).ConfigureAwait(false);
             if (here.Code != 0) return null;
             var root = Path.GetDirectoryName(here.CommonDir.Trim())!;
             var (workspace, repository) = context.OwnerOf(full);
             var line = (await context.LineAsync(root, repository, workspace, ct).ConfigureAwait(false)).Branch;
             // TREEFOLLOW1: the branch its agent moved the tree onto holds its commits because it is where they are, not a copy.
             var notHolders = content.LandedHere(repository);
-            if (await TreeFollows.OwnBranchOfAsync(full, ct).ConfigureAwait(false) is { } ownBranch)
+            if (treeBranch is { } ownBranch)
             {
                 notHolders = new HashSet<string>(notHolders, StringComparer.Ordinal) { ownBranch };
             }

@@ -172,7 +172,11 @@ internal sealed class TreeLands(
     /// What the landing replayed onto the line here, leaving out what the line holds (LANDSYNC1, D87's 2026-10-15 amendment point 2):
     /// its tip is merged in place of the session's branch, as D86 merges one. Null merges the branch as made.
     /// </param>
-    internal async Task<TreeMerge> MergeAsync(string path, CancellationToken ct = default, LandReplay? replay = null)
+    /// <param name="here">
+    /// The session tree's repository and branch as its landing read them a moment ago (LANDGIT1b); null reads them here. Only the
+    /// tree's: every check of the root is still made here, immediately before the merge.
+    /// </param>
+    internal async Task<TreeMerge> MergeAsync(string path, CancellationToken ct = default, LandReplay? replay = null, CommonDirAndBranch? here = null)
     {
         var full = Path.GetFullPath(path);
         if (!full.StartsWith(Path.GetFullPath(context.TreesRoot) + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase))
@@ -186,8 +190,9 @@ internal sealed class TreeLands(
             return new(false, $"there is no tree at {path}.");
         }
 
-        // Its repository and its branch, one start (PROC1d-iii).
-        var here = await CommonDirAndBranchAsync(full, ct).ConfigureAwait(false);
+        // Its repository and its branch, one start (PROC1d-iii), or the landing's own read of them a moment ago (LANDGIT1b): what it lands
+        // is read from that branch below, as it stands.
+        here ??= await CommonDirAndBranchAsync(full, ct).ConfigureAwait(false);
         if (here.Code != 0)
         {
             return new(false, $"{path} is not a working tree git recognises: {FirstLine(here.Err)}");
@@ -428,9 +433,14 @@ internal sealed class TreeLands(
         // LANDGIT1: and what a commit's id answers, once, in the planning up to the branch made (GitFacts); closed before the tidy.
         using var facts = GitFacts.Within();
         var full = Path.GetFullPath(path);
+        // LANDGIT1b: the tree's repository and the branch it is on, read once and handed to the planning's readers (the content proof,
+        // the judgement against the line, the merge or the branch made), each of which asked it again. Only of a tree of this home's that
+        // is here, as each reader asks; what an act rests on (the branch's commits, the head the tree moves from) is read again before it.
+        var here = context.Holds(full) && Directory.Exists(full) && await CommonDirAndBranchAsync(full, ct).ConfigureAwait(false) is { Code: 0 } read
+            ? read : null;
         // SQUASHTIDY1f: the head's own judgement, asked first, since a second opinion or a review of work already on the line
         // lands nothing either.
-        if (await workReads.DiscardOfferAsync(full, ct).ConfigureAwait(false) is { } carried)
+        if (await workReads.DiscardOfferAsync(full, ct, here).ConfigureAwait(false) is { } carried)
         {
             return new(false, carried.NotLanded) { Refusal = AutoLandingCode.Carried };
         }
@@ -476,7 +486,7 @@ internal sealed class TreeLands(
 
         // LANDSYNC1 (D87's 2026-10-15 amendment): only what the line lacks lands. The person's press fetches the line once first
         // (point 6), a failed fetch said and judged against the last one; the look's automatic landing has no press and fetches nothing.
-        var (sync, notFetched) = await syncs.JudgeAsync(full, repository, workspace, branchForm, fetch: acceptedBy != AcceptedBy.Auto && !fetched, ct)
+        var (sync, notFetched) = await syncs.JudgeAsync(full, repository, workspace, branchForm, fetch: acceptedBy != AcceptedBy.Auto && !fetched, ct, here)
             .ConfigureAwait(false);
         var replaying = sync is { Held.HoldsNone: false } ? sync : null;
         if (replaying is { Held.Kept.Count: 0 })
@@ -501,7 +511,7 @@ internal sealed class TreeLands(
                 replayed = made;
             }
 
-            var merged = await MergeAsync(path, ct, replayed).ConfigureAwait(false);
+            var merged = await MergeAsync(path, ct, replayed, here).ConfigureAwait(false);
             landed = new(merged.Merged, merged.Message) { LeftOut = merged.Merged ? replayed?.LeftOut : null };
             landed = Fetched(landed, notFetched);
         }
@@ -513,7 +523,7 @@ internal sealed class TreeLands(
                 BranchNamed(worked, landing.Rule, repository),
                 handedOn: plugin is not null, ct,
                 entered: subject.EnteredName is not null, squash: landing.Rule.Squash ? worked : null, sync: replaying,
-                join: joins ? sync : null, pinned: gate?.Tip).ConfigureAwait(false);
+                join: joins ? sync : null, pinned: gate?.Tip, here: here).ConfigureAwait(false);
             landed = Fetched(branched.Landing, notFetched);
             replayed = landed.Landed ? branched.Replay : null;
             // ACCEPTALL1: a part that joined its entry's branch by a replay follows it as a replay onto the line does (point 7).
@@ -795,9 +805,10 @@ internal sealed class TreeLands(
     /// commits are read, or nothing lands, and the branch is made or moved to that commit, so one made after the judgement never lands
     /// unseen. Null lands the branch as it stands, as the press does.
     /// </param>
+    /// <param name="here">The tree's repository and branch as its landing read them a moment ago (LANDGIT1b); null reads them here.</param>
     private async Task<Branched> BranchAsync(
         string full, string workspace, string repository, string name, bool handedOn, CancellationToken ct, bool entered = false,
-        LandingSubject? squash = null, LandSync? sync = null, LandSync? join = null, string? pinned = null)
+        LandingSubject? squash = null, LandSync? sync = null, LandSync? join = null, string? pinned = null, CommonDirAndBranch? here = null)
     {
         if (!context.Holds(full))
         {
@@ -809,8 +820,9 @@ internal sealed class TreeLands(
             return new TreeLanding(false, $"there is no tree at {full}.");
         }
 
-        // Its repository and its branch, one start (PROC1d-iii).
-        var here = await CommonDirAndBranchAsync(full, ct).ConfigureAwait(false);
+        // Its repository and its branch, one start (PROC1d-iii), or the landing's own read of them a moment ago (LANDGIT1b): what it lands
+        // is read from that branch below, as it stands.
+        here ??= await CommonDirAndBranchAsync(full, ct).ConfigureAwait(false);
         if (here.Code != 0)
         {
             return new TreeLanding(false, $"{full} is not a working tree git recognises: {FirstLine(here.Err)}");

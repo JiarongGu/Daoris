@@ -18551,3 +18551,15 @@ confirmed in the open window.
 > - [ ] **CACHECLEAR1 — clearing downloads** (driver/web; after WIRING1c). An act on This Daoris's *Downloads* row that removes the agents' and tools' downloaded versions nothing uses, listed first then pressed (D88), saying what it keeps. Proof: driver tests per kept version; the list and press in en and zh.
 
 **Outcome** 2026-10-21: built. *Clear unused downloads…* on the Downloads row lists each version under `cache/toolchain` and `cache/tools` with its size and what keeps it (a pin of the machine's or a workspace's, Tools running it, a setting naming a file inside it, a file that cannot be read, a download within the hour), and one press removes those nothing uses, judged again right before each goes and moved aside first, so a version a program runs from is kept as in use; the answer says what it kept. `DownloadClearing` in the driver library, `SYSTEM_DOWNLOADS` and `SYSTEM_DOWNLOADS_CLEAR`, `WiringDownloads` en and zh. No terminal twin. Proof: `DownloadClearingTests` (16, one per kept version), `DriverModuleDownloadsTests`, `WiringDomain.test.tsx`'s list and press in en and zh. The window is WIRING1f's. On Opus: about 150 tool calls. Detail: D88's CACHECLEAR1 note.
+
+## LANDGIT1b — the head and tip reads saved safely (2026-10-21, D173)
+
+> - [ ] **LANDGIT1b — the head and tip reads saved safely** (driver; after LANDGIT1 and END4a; D88). Head, tip and ref reads are about 20 of a landing's remaining starts: pass them down from where they are read, with an uncached re-read right before any act that follows. Proof: the count test's ceilings lowered; `What_another_process_moves_is_asked_of_git_each_time` green.
+
+**Outcome** 2026-10-21: a landing passes down the head and tip reads it already holds instead of asking them again, and keeps none
+in `GitFacts`: the look's try takes the rule's plan alone, the landing reads the tree's repository and branch once for its readers,
+the content proof takes the tree's own branch its judgement read, and the line's two forms are one snapshot. The automatic landing
+starts 44 git processes (55), the squash press 46 (51), the merge press 40 (43); what an act rests on is still read right before it.
+Fewer than the row's estimate of 20: the rest are each act's own read, `status` (LANDGIT1c) and the tidy's. Proof: `LandGitCountTests`
+with its ceilings lowered, `What_another_process_moves_is_asked_of_git_each_time` green. On Opus: about 90 tool calls. Detail: D173's
+LANDGIT1b note.

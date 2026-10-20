@@ -215,9 +215,13 @@ public sealed class LandGitCountTests : IDisposable
     // with FABRIC-END4a's judged delete (its holders read and its one ref transaction) and END6c's per-line fetch reservation, the
     // automatic landing measured 55 and the merge press 43; the squash press stayed within 51. PROC1d-iv's questions of commits kept
     // a judgement (and `diff` and `rev-list --count` of ids kept in the planning) moved none of the three: one branch asks no pair twice.
-    private const int AutomaticCeiling = 55;
-    private const int SquashCeiling = 51;
-    private const int MergeCeiling = 43;
+    // LANDGIT1b passed the head and tip reads down instead of keeping them: the look's try takes the rule's plan alone (the press's plan
+    // read the line's tips, the head and the named branch's tip again), the landing reads the tree's repository and branch once for
+    // its readers, the content proof takes the tree's own branch its judgement read, and the line's two forms are one snapshot. 44, 46
+    // and 40, each act's own read (the branch's commits, the pinned tip, the tree's move) still made right before it.
+    private const int AutomaticCeiling = 44;
+    private const int SquashCeiling = 46;
+    private const int MergeCeiling = 40;
 
     private void Judge(List<string> starts, int ceiling)
     {
