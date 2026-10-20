@@ -13,9 +13,12 @@ namespace Daoris.Driver;
 /// using ChatGPT</c> or, under an empty <c>CODEX_HOME</c>, <c>Not logged in</c>, exiting 0 for both, so the words are the
 /// answer, anchored at a line's start because the second contains the first. It names nobody, so an account is named by
 /// the person (ACCT2).</para>
-/// <para><b>The sign-in is by device code</b> (CODEXACCT2, D125's note): plain <c>codex login</c> waits for its browser's
-/// callback on a local port, which Windows reserved on the owner's machine (os error 10013, exit 1), while
-/// <c>codex login --device-auth</c> prints a link and a one-time code and listens on nothing. The console shows both, its
+/// <para><b>Two ways in, the browser first</b> (CODEXLOGIN1, D125's note). <c>codex login</c> opens the system's browser and
+/// waits for its answer on 127.0.0.1:1455, else 1457 where another program holds 1455 (measured with 0.160.0, 2026-10-21), as
+/// ChatGPT's desktop app signs in; <c>codex login --device-auth</c> prints a link and a one-time code and listens on nothing
+/// (CODEXACCT2, which took it alone after a reserved range covered the port: os error 10013, exit 1). A workspace may refuse
+/// either: device codes are an admin's setting. So the browser is offered where one of its ports can be taken
+/// (<see cref="SignInPorts"/>) and the device code beside it, and the person may switch at any time. The console shows both,
 /// colours stripped as every action's are (<see cref="HarnessActions.Clean"/>).</para>
 /// <para><b>No key</b> (D67 §1, AGT3): <c>codex login --with-api-key</c> stores a key in Codex's own home, where D67 keeps
 /// a key in <c>keys.json</c> and hands it at spawn through a variable the tool reads, and no such variable is measured for
@@ -37,6 +40,8 @@ public static class CodexAccounts
         Binary: ["codex"],
         VersionArguments: ["--version"],
         ProfileVariable: "CODEX_HOME",
-        LoginArguments: ["login", "--device-auth"],
-        LoginCheck: new LoginQuestion(["login", "status"], LoggedIn: @"(?m)^\s*logged in", LoggedOut: @"(?m)^\s*not logged in"));
+        LoginArguments: ["login"],
+        LoginCheck: new LoginQuestion(["login", "status"], LoggedIn: @"(?m)^\s*logged in", LoggedOut: @"(?m)^\s*not logged in"),
+        DeviceLoginArguments: ["login", "--device-auth"],
+        LoginPorts: [1455, 1457]);
 }

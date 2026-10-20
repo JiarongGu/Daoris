@@ -200,8 +200,19 @@ export interface Toolchain {
   channel?: Channel;
   /** Its own updater, as arguments to the binary. */
   update?: string[];
-  /** Its own login flow, as arguments to the binary, run with a profile home in the environment. */
+  /** Its own login flow, as arguments to the binary, run with a profile home in the environment. Offered first. */
   login?: string[];
+  /**
+   * Its sign-in by a device code, beside `login` (CODEXLOGIN1, D125's note): `agent login <agent> --device-code`. Declared
+   * only where measured. The driver's `DeviceLoginArguments` is the twin.
+   */
+  deviceLogin?: string[];
+  /**
+   * The local ports `login` waits on for the browser's answer, in the order it tries them (CODEXLOGIN1: Codex 0.160.0 takes
+   * 1455, else 1457). Where none can be taken the sign-in is refused before it starts, offering `--device-code`. The
+   * driver's `LoginPorts` is the twin.
+   */
+  loginPorts?: number[];
   /**
    * How it answers "is this configuration home logged in?" — and the two shapes that answer takes.
    * Both supported harnesses EXIT 0 EITHER WAY, so the output is the answer and the exit code is
@@ -356,9 +367,12 @@ export const TOOLCHAINS: Record<string, Toolchain> = {
     // pin stays the version pinned without a switch (the channel evidence, §2).
     channel: 'codex-releases',
     update: ['update'],
-    // By its device code (CODEXACCT2): a link and a one-time code, and no port of this machine. The browser sign-in waits
-    // for a callback on a local port, and Windows reserves that port on some machines (os error 10013, D125's note).
-    login: ['login', '--device-auth'],
+    // By its browser first, as ChatGPT's desktop app signs in (CODEXLOGIN1, D125's note): a ChatGPT workspace may refuse
+    // device codes. It waits for the browser's answer on 127.0.0.1:1455, else 1457 (measured with 0.160.0), tried before it
+    // starts. Its device code beside it needs no port (CODEXACCT2, which took it alone when a reserved range covered 1455).
+    login: ['login'],
+    deviceLogin: ['login', '--device-auth'],
+    loginPorts: [1455, 1457],
     // ANCHORED, and that is load-bearing: this harness answers a sentence rather than a field, and
     // "Not logged in" contains "logged in". An unanchored pattern reported every logged-out profile
     // as logged in — found by a test, which is the only way a thing like this is ever found.
@@ -1044,6 +1058,44 @@ export function signInBinary(
   return { command: [managed, ...toolchain.binary.slice(1)], managed: true };
 }
 
+/**
+ * Whether a local port can be taken now (CODEXLOGIN1): `free` once taken and let go, `in-use` where another program holds it,
+ * `reserved` where Windows refuses it (a range it reserves, os error 10013), `refused` for any other reason. The driver's
+ * `PortHold` is the twin.
+ */
+export type PortHold = 'free' | 'in-use' | 'reserved' | 'refused';
+
+/** How a port is tried: `service.ts`' `portHold`, the one module that holds a socket, unless a test's. */
+export type PortProbe = (port: number) => Promise<PortHold>;
+
+/**
+ * Which of a browser sign-in's ports are held and by what, in plain words (CODEXLOGIN1, D125's note): the driver's
+ * `SignInPorts.Held` says it to the byte. The way out after it is each door's own.
+ */
+export function portsHeld(agent: string, login: readonly string[], held: readonly { port: number; hold: PortHold }[]): string {
+  const ports = held.map((each) => each.port).join(', else ');
+  const none = held.length === 1 ? 'it cannot' : held.length === 2 ? 'neither can' : 'none can';
+  const words = (hold: PortHold) => hold === 'in-use' ? 'held by another program'
+    : hold === 'reserved' ? 'held by a range Windows reserves, which a restart may move' : 'refused to Daoris';
+  const why = held.map((each) => `${each.port} is ${words(each.hold)}`).join('; ');
+  return `\`${[agent, ...login].join(' ')}\` waits for your browser on port ${ports}, and ${none} be taken now: ${why}.`;
+}
+
+/**
+ * The ports a browser sign-in waits on, each tried once before it starts (CODEXLOGIN1): null where one is free, since the tool
+ * takes the next where the first is held (measured with Codex 0.160.0), else each port with what holds it. Nothing is tried
+ * again in a loop.
+ */
+async function heldPorts(ports: readonly number[], probe: PortProbe): Promise<{ port: number; hold: PortHold }[] | null> {
+  const held: { port: number; hold: PortHold }[] = [];
+  for (const port of ports) {
+    const hold = await probe(port);
+    if (hold === 'free') return null;
+    held.push({ port, hold });
+  }
+  return held;
+}
+
 /** One scope an account runs in, as a person reads it: `this machine's list, as its default`, `` `work`'s default ``. */
 export function placeWords(place: AccountPlace): string {
   const scope = place.workspace === null ? 'this machine\'s' : `\`${place.workspace}\`'s`;
@@ -1643,6 +1695,7 @@ export function accountLines(
  */
 export function commandHarness(
   { argv, write }: CommandArgs, releases: Fetcher | null = null, npm: string[] = ['npm'], door: VerbDoor = ALONE,
+  ports: PortProbe | null = null,
 ): ExitCode | Promise<ExitCode> {
   const verb = argv[0] ?? 'list';
   const path = harnessesPath();
@@ -1705,12 +1758,18 @@ export function commandHarness(
 
     case 'login': {
       const { name, toolchain } = required(argv, 'login');
-      const login = toolchain.login;
-      if (!login) {
+      if (!toolchain.login) {
         throw new DaorisError(
           `\`${name}\` declares no login flow — log in with its own tooling, pointing `
           + `${toolchain.profileVariable} at the profile directory.`);
       }
+      // CODEXLOGIN1: the tool's own sign-in first, its device code where asked; the driver's `SignInWays.Arguments` words it.
+      const byCode = argv.includes('--device-code');
+      if (byCode && !toolchain.deviceLogin) {
+        throw new DaorisError(
+          `\`${name}\` signs in by no device code, so nothing was signed in — its own sign-in is its one way.`);
+      }
+      const login = byCode ? toolchain.deviceLogin! : toolchain.login;
 
       // ACCT1: the lists a sign-in joins at its end, `--join <workspace>` (repeated, or comma-separated) and
       // `--join-machine`, refused before anything starts where one cannot be joined.
@@ -1730,15 +1789,31 @@ export function commandHarness(
       // has nothing installed; the sign-in and its end's question both run it.
       const binary = signInBinary(name, toolchain, home, readHarnessSettings(path));
       const relayed = (where: string) => relay([...binary.command, ...login], where, toolchain, write, binary.managed);
+      // The same verb by the other way, said where one way did not sign in (CODEXLOGIN1): a workspace may refuse either.
+      const typed = ['daoris agent login', name, ...argv.slice(2).filter((word) => word !== '--device-code')].join(' ');
+      const otherWay = !toolchain.deviceLogin ? null : byCode
+        ? `\`${typed}\` signs in through your browser instead.`
+        : `\`${typed} --device-code\` signs in with a device code instead.`;
 
-      // A new account (D66 §3): made by the sign-in, offered who signed in as its name (ACCT2) — the desktop's
-      // *Add an account…*, from a terminal (D50).
-      if (argv.includes('--new')) {
-        return signInNew(name, toolchain, home, relayed, write, { name: flagValue(argv, '--name') ?? null, joins, path, binary });
-      }
+      const signIn = (): ExitCode => {
+        // A new account (D66 §3): made by the sign-in, offered who signed in as its name (ACCT2) — the desktop's
+        // *Add an account…*, from a terminal (D50). An account that is here, by its id or its name, else the machine's
+        // default: never a new folder (ACCT1).
+        const code = argv.includes('--new')
+          ? signInNew(name, toolchain, home, relayed, write, { name: flagValue(argv, '--name') ?? null, joins, path, binary })
+          : signInTo(name, toolchain, home, flagValue(argv, '--profile') ?? null, relayed, write, { joins, path, binary });
+        if (code !== 0 && otherWay) write(`daoris: ${otherWay}`);
+        return code;
+      };
 
-      // An account that is here, by its id or its name, else the machine's default: never a new folder (ACCT1).
-      return signInTo(name, toolchain, home, flagValue(argv, '--profile') ?? null, relayed, write, { joins, path, binary });
+      // The browser's ports, each tried once before anything is made, where this verb was handed a way to try them
+      // (`agent.ts` hands it `service.ts`' own): where none can be taken, refused in the driver's words.
+      if (byCode || !toolchain.loginPorts || !ports) return signIn();
+      return heldPorts(toolchain.loginPorts, ports).then((held) => {
+        if (held === null) return signIn();
+        throw new DaorisError(`${portsHeld(name, toolchain.login!, held)} Nothing was signed in — ${otherWay
+          ?? 'close what holds it, or restart, and try again.'}`);
+      });
     }
 
     // The managed toolchain (TOOL2/D57): Daoris owns where this version lives and which one runs.

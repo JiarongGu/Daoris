@@ -105,9 +105,11 @@ public sealed class AgentsRoutes(DriverContext context)
                     // Whether this door can run a sign-in at all — the same rule: an agent that
                     // declares no login flow gets no "Sign in" whose only outcome is a refusal. Its
                     // agent's flow (AGT7, CODEXACCT1), as `TakesKey` reads its key: `codex-acp` has no
-                    // sign-in of its own and runs `codex login --device-auth` (CODEXACCT2), so Agents → Codex
-                    // offered no account.
+                    // sign-in of its own and runs `codex login`, so Agents → Codex offered no account.
                     SignsIn = accountActs.SignsIn,
+                    // Whether its agent signs in by a device code beside its own sign-in (CODEXLOGIN1): the sign-in's
+                    // panel offers the other way while one runs and after one fails. Absent from an older shell.
+                    DeviceCode = accountActs.DeviceCode,
                     // Which Update this door has (USE1a): "pin" moves the pin to the newest
                     // release, "tool" runs the tool's own updater, and null offers none — the
                     // same rule again, after Update on a pinned door answered only a refusal.
@@ -218,15 +220,16 @@ public sealed class AgentsRoutes(DriverContext context)
     };
 
     /// <summary>
-    /// Whether a door signs in its agent's accounts, and takes a key into one, by that agent's own flow and key variable
-    /// (AGT7, CODEXACCT1): <c>codex-acp</c> signs in with <c>codex login --device-auth</c> (CODEXACCT2), as
-    /// <c>claude-code-acp</c> with <c>claude auth login</c>. Public for the fast half's table, which reads it without the
-    /// roster the route asks.
+    /// Whether a door signs in its agent's accounts, takes a key into one, and has a device code beside its own sign-in, by
+    /// that agent's own flows and key variable (AGT7, CODEXACCT1): <c>codex-acp</c> signs in with <c>codex login</c>, its
+    /// browser first, and <c>codex login --device-auth</c> beside it (CODEXLOGIN1), as <c>claude-code-acp</c> with <c>claude
+    /// auth login</c> alone. Public for the fast half's table, which reads it without the roster the route asks.
     /// </summary>
-    public static (bool SignsIn, bool TakesKey) AccountActs(HarnessRoster harnesses, string adapter) =>
+    public static (bool SignsIn, bool TakesKey, bool DeviceCode) AccountActs(HarnessRoster harnesses, string adapter) =>
         harnesses.AccountToolchain(adapter) is { } agent
-            ? (agent.LoginArguments is { Count: > 0 }, agent.KeyVariable is { Length: > 0 })
-            : (false, false);
+            ? (agent.LoginArguments is { Count: > 0 }, agent.KeyVariable is { Length: > 0 },
+               agent.LoginArguments is { Count: > 0 } && agent.DeviceLoginArguments is { Count: > 0 })
+            : (false, false, false);
 
     /// <summary>Where an account runs, as the page reads it: each scope, a null workspace for this machine, its list and default.</summary>
     internal static object[] PlacesShown(IReadOnlyList<AccountPlace> places) =>
@@ -494,7 +497,13 @@ public sealed class AgentsRoutes(DriverContext context)
         // A sign-in's `join` and a new account's `name` (ACCT1, ACCT2), the terminal's `--join` and `--name`.
         var joins = action is "login" or "login-new" ? Joins(request) : [];
         var named = action == "login-new" ? Optional(request, "name") : null;
-        var reached = await Actions.StartProcessActionAsync(harness, action, profile, version, toolchain, command, stream, config, joins: joins, name: named);
+        // A sign-in's way, its browser first, and whether it switches from the one running (CODEXLOGIN1): the terminal's
+        // `--device-code`. A word that is no way is refused before anything starts.
+        var signsIn = action is "login" or "login-new";
+        var way = signsIn ? SignInWays.Of(Optional(request, "way")) : SignInWay.Browser;
+        var switching = signsIn && Flag(request, "switch");
+        var reached = await Actions.StartProcessActionAsync(
+            harness, action, profile, version, toolchain, command, stream, config, joins: joins, name: named, way: way, switching: switching);
         return new { Harness = harness, Action = action, Started = true, Profile = reached };
     }
 

@@ -365,4 +365,6 @@ Options:
   --join <workspace>   a list a sign-in puts its account in, at its end;
                        repeated or comma-separated. --join-machine is this
                        machine's list (agent login)
+  --device-code        sign in by the agent's device code, not its browser,
+                       where it has one (agent login codex)
   --help, --version

@@ -81,6 +81,13 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
     public Func<DateTimeOffset> Clock { get; init; } = () => DateTimeOffset.UtcNow;
 
     /// <summary>
+    /// How a browser sign-in's port is tried before it starts (CODEXLOGIN1): taken for a moment on this machine
+    /// (<see cref="SignInPorts.Hold"/>), unless a test's, since the ports Codex waits on are this machine's and a test that
+    /// held them would race the person's own sign-in. Settable, as the loop builds its roster itself.
+    /// </summary>
+    public Func<int, PortHold> Ports { get; set; } = SignInPorts.Hold;
+
+    /// <summary>
     /// How one account's status is asked on its own (TOOL6h): by owner and account, the agent's own status question under the
     /// account's lock, unless a test hands in an in-process stand-in, since every real question spawns the agent, which the
     /// suite's fast half may not. A stand-in's answer is a reading, kept as the agent's would be.

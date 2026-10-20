@@ -2,7 +2,7 @@ import type { CliCommand } from '../platform/types.ts';
 import { ALONE } from '../platform/door.ts';
 import { daorisHome } from '../platform/home.ts';
 import { commandHarness, PATH_VARIABLE } from '../agents/toolchain.ts';
-import { instanceDoor, releaseFetcher } from '../service/service.ts';
+import { instanceDoor, portHold, releaseFetcher } from '../service/service.ts';
 
 export const command: CliCommand = {
   name: 'agent',
@@ -104,11 +104,14 @@ export const command: CliCommand = {
     '  --join <workspace>   a list a sign-in puts its account in, at its end;',
     '                       repeated or comma-separated. --join-machine is this',
     "                       machine's list (agent login)",
+    "  --device-code        sign in by the agent's device code, not its browser,",
+    '                       where it has one (agent login codex)',
   ],
   // `pin` and a pinned `update` fetch a maker's release (AGT2b, USE1a) through the one module that may
   // reach a network, handed in here so the toolchain never holds a socket of its own. So is the door an edit of the home goes
   // through (RPC1f): the Agents or Accounts place's route while Daoris runs on this home, alone under its lease when none does. A
-  // wiring file `DAORIS_HARNESS_CONFIG` names is no instance's, so the verbs act alone there, holding nothing.
+  // wiring file `DAORIS_HARNESS_CONFIG` names is no instance's, so the verbs act alone there, holding nothing. And the way a
+  // browser sign-in's ports are tried before it starts (CODEXLOGIN1), a socket of `service.ts`'s like the fetcher.
   run: (args) => commandHarness(args, releaseFetcher(), ['npm'],
-    process.env[PATH_VARIABLE] ? ALONE : instanceDoor({ home: daorisHome(), write: args.write })),
+    process.env[PATH_VARIABLE] ? ALONE : instanceDoor({ home: daorisHome(), write: args.write }), portHold),
 };

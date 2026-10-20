@@ -225,10 +225,11 @@ public sealed class HarnessProfileTests : Bridge
     }
 
     /// <summary>
-    /// CODEXACCT1: *Add an account…* on Agents → Codex runs <c>codex login --device-auth</c> (CODEXACCT2) — a stand-in named
-    /// for <c>codex</c>, answering in the words <c>codex login status</c> printed on the install — into a new folder under
-    /// <c>codex</c>'s accounts, with that folder as its <c>CODEX_HOME</c>, and keeps it once the status reads it signed in.
-    /// Codex names nobody, so the end says so, and the page's naming step asks for the name.
+    /// CODEXACCT1: *Add an account…* on Agents → Codex runs <c>codex login</c>, its browser first (CODEXLOGIN1) — a stand-in
+    /// named for <c>codex</c>, answering in the words <c>codex login status</c> printed on the install — into a new folder
+    /// under <c>codex</c>'s accounts, with that folder as its <c>CODEX_HOME</c>, and keeps it once the status reads it signed
+    /// in. Codex names nobody, so the end says so, and the page's naming step asks for the name. Its ports are tried by a
+    /// stand-in that finds them free, never this machine's.
     /// </summary>
     [Fact]
     public async Task Adding_a_codex_account_signs_in_with_codex_into_a_new_folder_and_keeps_it()
@@ -244,7 +245,7 @@ public sealed class HarnessProfileTests : Bridge
               console.log(home && fs.existsSync(path.join(home, 'auth.json')) ? 'Logged in using ChatGPT' : 'Not logged in');
               process.exit(0);
             }
-            if (verb === 'login' && sub === '--device-auth' && process.argv.length === 4 && home) {
+            if (verb === 'login' && process.argv.length === 3 && home) {
               fs.writeFileSync(path.join(home, 'auth.json'), '{}');
               process.exit(0);
             }
@@ -254,8 +255,10 @@ public sealed class HarnessProfileTests : Bridge
             { "drivable": [], "holds": [], "cap": 1, "adapter": "codex-acp",
               "commands": { "codex": ["node", {{JsonSerializer.Serialize(script)}}], "codex-acp": ["node", {{JsonSerializer.Serialize(script)}}] } }
             """);
+        var loop = Loop();
+        loop.Harnesses.Ports = _ => PortHold.Free;
 
-        var answer = await AnswerAsync(Module(), "HARNESS_ACTION", new { harness = "codex-acp", action = "login-new" });
+        var answer = await AnswerAsync(new DriverModule(Bus, loop), "HARNESS_ACTION", new { harness = "codex-acp", action = "login-new" });
         var made = answer.GetProperty("profile").GetString()!;
         await UntilAsync(() => Raised.Any(m => m.Type == "HARNESS_ENDED"));
 

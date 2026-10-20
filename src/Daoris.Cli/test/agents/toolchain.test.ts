@@ -6,10 +6,10 @@ import { dirname, join } from 'node:path';
 import { gzipSync } from 'node:zlib';
 import {
   TOOLCHAINS, accountLines, addKeyAccount, commandHarness, harnessesPath, joinsOf, keyOf, managedBinary, managedHome,
-  nextAccount, profileHome, profiles, probe, readHarnessSettings, removeProfile, replaceKeyAccount, resolveProfile,
+  nextAccount, portsHeld, profileHome, profiles, probe, readHarnessSettings, removeProfile, replaceKeyAccount, resolveProfile,
   resolveVersion, signInNew, signInTo, versionFromNpm, withDefault, writeHarnessSettings,
 } from '../../src/agents/toolchain.ts';
-import type { HarnessSettings, Toolchain } from '../../src/agents/toolchain.ts';
+import type { HarnessSettings, PortHold, Toolchain } from '../../src/agents/toolchain.ts';
 import { CLAUDE_LATEST, CODEX_LATEST, CODEX_RELEASES, codexTarget } from '../../src/agents/channels.ts';
 import type { Fetcher } from '../../src/agents/channels.ts';
 import { coolingOf, coolingWhen, machineZone } from '../../src/accounts/cooling.ts';
@@ -1586,25 +1586,137 @@ test('a pin with nothing installed at it probes as absent rather than as PATH', 
   fx.cleanup();
 });
 
-// ——— CODEXACCT2, CODEXACCT1b: Codex signs in by its device code, on the binary `agent list` asks.
+// ——— CODEXACCT2, CODEXACCT1b, CODEXLOGIN1: Codex signs in by its browser first, its device code beside it, on the binary
+// `agent list` asks.
 
 /**
- * 🔴 Measured with 0.160.0 (D125's CODEXACCT2 note): `codex login` waits for its browser callback on a local port, and
- * Windows reserves that port on the owner's machine, so it exits 1 there (os error 10013). `codex login --device-auth`
- * prints a link and a one-time code and needs no port. The driver's `CodexAccounts` reads this entry and holds itself to it.
+ * 🔴 CODEXLOGIN1 (D125's note): a ChatGPT workspace may refuse device codes, so the browser sign-in comes first, as ChatGPT's
+ * desktop app signs in. Measured with 0.160.0 on 2026-10-21: `codex login` waits for the browser's answer on 127.0.0.1:1455,
+ * else 1457 where 1455 is held; `codex login --device-auth` prints a link and a one-time code and needs no port (CODEXACCT2,
+ * which took it alone when a reserved range covered the port, os error 10013). The driver's `CodexAccounts` reads this entry
+ * and holds itself to it.
  */
-test('Codex signs in by its device code, which listens on no port of this machine (CODEXACCT2)', () => {
-  assert.deepEqual(TOOLCHAINS.codex!.login, ['login', '--device-auth']);
+test('Codex signs in by its browser first, on the ports it tries, and by its device code beside it (CODEXLOGIN1)', () => {
+  assert.deepEqual(TOOLCHAINS.codex!.login, ['login']);
+  assert.deepEqual(TOOLCHAINS.codex!.deviceLogin, ['login', '--device-auth']);
+  assert.deepEqual(TOOLCHAINS.codex!.loginPorts, [1455, 1457]);
   // Its status question is unchanged: the sign-in's end still asks `codex login status`.
   assert.deepEqual(TOOLCHAINS.codex!.loginCheck!.args, ['login', 'status']);
+  // Claude Code's own flow is its one way, and waits on no port Daoris tries.
+  assert.equal(TOOLCHAINS['claude-code']!.deviceLogin, undefined);
+  assert.equal(TOOLCHAINS['claude-code']!.loginPorts, undefined);
 });
 
 /**
- * A stand-in `codex`, pinned in npm's layout at `version` and nowhere on PATH: each call is logged with the folder it was
- * handed as `CODEX_HOME`, its device-code sign-in leaves `auth.json` there, and its status question answers in the words
- * `codex login status` printed (0.160.0).
+ * The twin of the driver's `SignInPorts` table (`CodexAccountTests`), row for row: only where none of the ports can be taken
+ * is the browser sign-in refused, in the same words to the byte; the way out after them is the terminal's own.
  */
-function pinnedCodex(fx: { root: string }, version: string): { binary: string; asked: () => string[] } {
+test('the browser sign-in is refused only where none of its ports can be taken, in the driver\'s words (CODEXLOGIN1)', () => {
+  const rows: [PortHold, PortHold, string | null][] = [
+    ['in-use', 'free', null],
+    ['free', 'in-use', null],
+    ['in-use', 'reserved',
+      '`codex login` waits for your browser on port 1455, else 1457, and neither can be taken now: 1455 is held by another '
+      + 'program; 1457 is held by a range Windows reserves, which a restart may move.'],
+    ['reserved', 'refused',
+      '`codex login` waits for your browser on port 1455, else 1457, and neither can be taken now: 1455 is held by a range '
+      + 'Windows reserves, which a restart may move; 1457 is refused to Daoris.'],
+  ];
+  for (const [first, second, said] of rows) {
+    const held = first === 'free' || second === 'free' ? null : [{ port: 1455, hold: first }, { port: 1457, hold: second }];
+    assert.equal(held === null ? null : portsHeld('codex', ['login'], held), said);
+  }
+});
+
+/**
+ * `agent login codex` with only a pin, through a port probe that says both ports are held: refused before anything is
+ * made, in the driver's words, naming `--device-code`; the stand-in `codex` is never asked. With one free, it runs `codex
+ * login`; with `--device-code`, `codex login --device-auth`, and no port is tried.
+ */
+test('`agent login codex` tries its ports first, and `--device-code` signs in with none (CODEXLOGIN1)', async () => {
+  const fx = makeFixture('harness-sign-in-codex-ports');
+  const codex = pinnedCodex(fx, '0.160.0');
+  const tried: number[] = [];
+  const held = (busy: PortHold) => async (port: number): Promise<PortHold> => {
+    tried.push(port);
+    return busy;
+  };
+
+  const refused = await pathless(fx, async () => runPorts(['login', 'codex', '--new'], at(fx), held('in-use')).then(
+    (answer) => assert.fail(`expected a refusal, but it answered: ${answer.out}`), (error: Error) => error));
+  assert.equal(refused.message,
+    '`codex login` waits for your browser on port 1455, else 1457, and neither can be taken now: 1455 is held by another '
+    + 'program; 1457 is held by another program. Nothing was signed in — `daoris agent login codex --new --device-code` signs '
+    + 'in with a device code instead.');
+  assert.deepEqual(tried, [1455, 1457]);
+  assert.deepEqual(profiles(fx.root, 'codex'), []);
+  assert.deepEqual(codex.asked(), []);
+
+  tried.length = 0;
+  const browser = await pathless(fx, async () => runPorts(['login', 'codex', '--new'], at(fx), held('free')));
+  assert.equal(browser.code, 0, browser.out);
+  assert.deepEqual(tried, [1455]);
+  const [first] = profiles(fx.root, 'codex');
+  assert.deepEqual(codex.asked(), [`${first} login`, `${first} login status`]);
+
+  tried.length = 0;
+  const device = await pathless(fx, async () => runPorts(['login', 'codex', '--new', '--device-code'], at(fx), held('in-use')));
+  assert.equal(device.code, 0, device.out);
+  assert.deepEqual(tried, []);
+  const second = profiles(fx.root, 'codex').find((account) => account !== first)!;
+  assert.deepEqual(codex.asked().slice(2), [`${second} login --device-auth`, `${second} login status`]);
+  assert.ok(device.out.includes(`$ ${codex.binary} login --device-auth`), device.out);
+
+  // An agent with no device code says so before anything starts.
+  const none = await pathless(fx, async () => captureError(() => run(['login', 'claude-code', '--new', '--device-code'], at(fx))));
+  assert.equal(none.message, '`claude-code` signs in by no device code, so nothing was signed in — its own sign-in is its one way.');
+  fx.cleanup();
+});
+
+/**
+ * 🔴 The owner's report: a workspace that refuses device codes says so on the maker's page, and the tool keeps waiting or
+ * ends with its own line. Whichever way failed, the terminal offers the other once nothing was kept: the browser after a
+ * device code, `--device-code` after the browser. The stand-in ends each with the line 0.160.0 prints (D125's note).
+ */
+test('a sign-in that fails one way offers the other (CODEXLOGIN1)', async () => {
+  const fx = makeFixture('harness-sign-in-codex-refused');
+  pinnedCodex(fx, '0.160.0', { refuse: true });
+
+  const device = await pathless(fx, async () => run(['login', 'codex', '--new', '--device-code'], at(fx)));
+  assert.equal(device.code, 2, device.out);
+  assert.match(device.out, /nothing was signed in, so nothing was kept/);
+  assert.match(device.out, /`daoris agent login codex --new` signs in through your browser instead\./);
+
+  const browser = await pathless(fx, async () => run(['login', 'codex', '--new'], at(fx)));
+  assert.equal(browser.code, 2, browser.out);
+  assert.match(browser.out, /`daoris agent login codex --new --device-code` signs in with a device code instead\./);
+  assert.deepEqual(profiles(fx.root, 'codex'), []);
+  fx.cleanup();
+});
+
+/** `commandHarness` handed a port probe, as `agent.ts` hands it `service.ts`' own: a sign-in through it is a promise. */
+async function runPorts(argv: string[], path: string, ports: (port: number) => Promise<PortHold>): Promise<{ code: number; out: string }> {
+  const saved = process.env.DAORIS_HARNESS_CONFIG;
+  process.env.DAORIS_HARNESS_CONFIG = path;
+  const lines: string[] = [];
+  try {
+    const code = await commandHarness({
+      root: process.cwd(), argv, write: (line) => lines.push(line), packageRoot: process.cwd(),
+    }, null, ['npm'], undefined, ports);
+    return { code, out: lines.join('\n') };
+  } finally {
+    if (saved === undefined) delete process.env.DAORIS_HARNESS_CONFIG;
+    else process.env.DAORIS_HARNESS_CONFIG = saved;
+  }
+}
+
+/**
+ * A stand-in `codex`, pinned in npm's layout at `version` and nowhere on PATH: each call is logged with the folder it was
+ * handed as `CODEX_HOME`, either sign-in leaves `auth.json` there, and its status question answers in the words `codex login
+ * status` printed (0.160.0). The browser's prints the lines 0.160.0 printed (D125's CODEXLOGIN1 note, the page's query
+ * left out); with `refuse`, each way ends with the line 0.160.0 ends a refused one with, exit 1.
+ */
+function pinnedCodex(fx: { root: string }, version: string, { refuse = false } = {}): { binary: string; asked: () => string[] } {
   const script = join(fx.root, 'codex-stand-in.mjs');
   const log = join(fx.root, 'codex-asked.log');
   writeFileSync(script, [
@@ -1612,12 +1724,23 @@ function pinnedCodex(fx: { root: string }, version: string): { binary: string; a
     "import { basename, join } from 'node:path';",
     "const home = process.env.CODEX_HOME ?? '';",
     'const args = process.argv.slice(2);',
+    `const refuse = ${JSON.stringify(refuse)};`,
     `appendFileSync(${JSON.stringify(log)}, basename(home) + ' ' + args.join(' ') + '\\n');`,
     "if (args[0] === 'login' && args[1] === 'status') {",
     "  console.log(existsSync(join(home, 'auth.json')) ? 'Logged in using ChatGPT' : 'Not logged in');",
     '  process.exit(0);',
     '}',
+    "if (args[0] === 'login' && args.length === 1 && home) {",
+    "  console.error('Starting local login server on http://localhost:1455.');",
+    "  console.error('If your browser did not open, navigate to this URL to authenticate:\\n\\nhttps://auth.openai.com/oauth/authorize?state=STATE\\n');",
+    "  console.error('On a remote or headless machine? Use `codex login --device-auth` instead.');",
+    "  if (refuse) { console.error('Error logging in: Sign-in failed: access_denied'); process.exit(1); }",
+    "  writeFileSync(join(home, 'auth.json'), '{}');",
+    "  console.error('Successfully logged in');",
+    '  process.exit(0);',
+    '}',
     "if (args[0] === 'login' && args[1] === '--device-auth' && args.length === 2 && home) {",
+    "  if (refuse) { console.error('Error logging in with device code: device auth timed out after 15 minutes'); process.exit(1); }",
     "  writeFileSync(join(home, 'auth.json'), '{}');",
     '  process.exit(0);',
     '}',
@@ -1639,10 +1762,10 @@ function pinnedCodex(fx: { root: string }, version: string): { binary: string; a
 
 /**
  * 🔴 CODEXACCT1b: the owner's machine has `codex` only as its pin, and the terminal's sign-in ran `PATH`'s, so it could not
- * start. It runs the binary `agent list` asks now: the pin, its device-code sign-in into a new folder, and the end's
- * status question on the same pin. Nothing is on PATH, so a regression fails here and runs no real `codex`.
+ * start. It runs the binary `agent list` asks now: the pin, its browser sign-in first (CODEXLOGIN1) into a new folder, and
+ * the end's status question on the same pin. Nothing is on PATH, so a regression fails here and runs no real `codex`.
  */
-test('`agent login codex --new` with only a pin signs in on the pinned codex, by its device code (CODEXACCT1b)', async () => {
+test('`agent login codex --new` with only a pin signs in on the pinned codex, by its browser first (CODEXACCT1b)', async () => {
   const fx = makeFixture('harness-sign-in-codex-pin');
   const codex = pinnedCodex(fx, '0.160.0');
 
@@ -1652,12 +1775,12 @@ test('`agent login codex --new` with only a pin signs in on the pinned codex, by
   const [account] = profiles(fx.root, 'codex');
   assert.match(account!, /^acct-[0-9a-f]{8}$/);
   assert.ok(existsSync(join(profileHome(fx.root, 'codex', account!), 'auth.json')));
-  assert.ok(made.out.includes(`$ ${codex.binary} login --device-auth`), made.out);
-  assert.deepEqual(codex.asked(), [`${account} login --device-auth`, `${account} login status`]);
+  assert.ok(made.out.split('\n').some((line) => line.trim() === `$ ${codex.binary} login`), made.out);
+  assert.deepEqual(codex.asked(), [`${account} login`, `${account} login status`]);
   assert.match(made.out, /`codex` did not say who/);
 
-  // Signing back in to it runs the same pin, into its own folder (ACCT1).
-  const again = await pathless(fx, async () => run(['login', 'codex', '--profile', account!], at(fx)));
+  // Signing back in to it runs the same pin, into its own folder (ACCT1), by its device code where asked.
+  const again = await pathless(fx, async () => run(['login', 'codex', '--profile', account!, '--device-code'], at(fx)));
   assert.equal(again.code, 0, again.out);
   assert.deepEqual(codex.asked().slice(2), [`${account} login --device-auth`, `${account} login status`]);
   fx.cleanup();
