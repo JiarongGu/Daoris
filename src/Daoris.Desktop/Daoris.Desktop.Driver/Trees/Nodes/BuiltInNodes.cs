@@ -92,13 +92,17 @@ public static class BuiltInNodes
     {
         NodeObservation Seen(string? outcome, string said) => new(unit.Id, node.Id, node.Kind, outcome, said) { Attempt = binding.Attempt };
 
-        NodeObservation Reached(string source, string? revision, string record, string artifact, string said)
+        NodeObservation Reached(string source, string? revision, string record, string artifact, string said) =>
+            ReachedAt(source, revision, revision, record, artifact, said);
+
+        // The acceptance's revision and the commit its evidence names, apart only where a run's `handed` keeps its bound tip (FABRIC-CUTOVER1a).
+        NodeObservation ReachedAt(string source, string? revision, string? evidenced, string record, string artifact, string said)
         {
             var accepted = binding with { SubjectRevision = revision, Evidence = null, Outputs = NodeAcceptance.NoPorts };
             return Seen(NodeStates.Reached, said) with
             {
                 Source = source,
-                Acceptance = accepted with { Evidence = new NodePort(EvidenceSchema(node.Kind), $"{record}#{artifact}", revision, accepted.Id) },
+                Acceptance = accepted with { Evidence = new NodePort(EvidenceSchema(node.Kind), $"{record}#{artifact}", evidenced, accepted.Id) },
             };
         }
 
@@ -118,6 +122,23 @@ public static class BuiltInNodes
         var branch = unit.Records.Branch;
         switch (node.Kind)
         {
+            case NodeKinds.Handed when binding.Subject is not null:
+                // FABRIC-CUTOVER1a (the cutover design §2.4.4, §11.2): a run's `handed` is its session's work handed on, reached where the
+                // session branch's landing holds the tip it is bound to, made at it or squashing it (LandedBranch.Squashed), so a squash, whose
+                // commit is another, still reaches it. Its acceptance keeps the bound tip, which its binding lapses on and the one table checks;
+                // its evidence names the landing's tip, which what follows binds. Merged into the line with no branch landed, as below.
+                if (binding.SubjectRevision is { } bound
+                    && unit.Records.Landings.LastOrDefault(each => each.Tip == bound || each.Squashed == bound) is { } holding)
+                {
+                    return ReachedAt(NodeSource.Git, bound, holding.Tip, LandedBranches.FileName, holding.Branch,
+                        $"`{holding.Branch}` was made at {TextBounds.ShortCommit(holding.Tip, 8)} {WorkInventory.Minute(holding.LandedAt)} UTC"
+                        + (holding.Tip == bound ? "" : $", squashing {TextBounds.ShortCommit(bound, 8)}"));
+                }
+
+                return branch?.Held is { } joined
+                    ? Reached(NodeSource.Git, joined.Tip, SessionBranches.FileName, branch.Branch, $"merged: {WorkInventory.ProofSaid(joined.By, joined.On)}")
+                    : Seen(null, "nothing was handed on at the bound commit yet");
+
             case NodeKinds.Handed:
                 if (landing is not null)
                 {

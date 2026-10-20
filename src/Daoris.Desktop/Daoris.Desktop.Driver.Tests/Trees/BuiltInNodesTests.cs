@@ -184,6 +184,34 @@ public sealed class BuiltInNodesTests
         }
     }
 
+    /// <summary>
+    /// FABRIC-CUTOVER1a (the cutover design §2.4.4, §11.2): on a run's subject <c>handed</c> is its session's work handed on, reached where the
+    /// session branch's landing holds the tip it is bound to, by its record: made at it, or squashing it. Its acceptance keeps that tip, the one
+    /// its binding lapses on, so the one table takes the reach; its evidence names the landing's tip, which what follows binds. A landing
+    /// squashing another tip is not this work's; a branch unit of Current's landing cycle reads as today, on the landing's tip.
+    /// </summary>
+    [Fact]
+    public void Handed_on_a_runs_subject_is_reached_by_its_landing_squashing_the_bound_tip()
+    {
+        var squash = Landed() with { Tip = "s1", Squashed = "t1" };
+        var unit = Unit(Grown(), squash);
+        var bound = new NodeAcceptance("run:r", "t1", Graph, NodeKinds.Handed, 1, 1) { Subject = unit.Id };
+
+        var seen = BuiltInNodes.Observe(unit, Node(NodeKinds.Handed), bound);
+        Assert.Equal((NodeStates.Reached, bound.Id, "s1"), (seen.Outcome, seen.Acceptance?.Id, seen.Acceptance?.Evidence?.Revision));
+        var moved = NodeLifecycle.Apply(Node(NodeKinds.Handed),
+            new NodeStatus("run:r", NodeKinds.Handed, NodeStates.Active) { Attempt = 1, Tries = 1, Binding = bound }, seen.Move!);
+        Assert.Equal(((string?)null, NodeStates.Reached), (moved.Refused, moved.Status.State));
+
+        foreach (var other in new[] { squash with { Squashed = "t0" }, squash with { Squashed = null } })
+        {
+            Assert.Null(BuiltInNodes.Observe(Unit(Grown(), other), Node(NodeKinds.Handed), bound).Move);
+        }
+
+        Assert.Equal(("s1", "s1"), (BuiltInNodes.Observe(unit, Node(NodeKinds.Handed), Graph, 1).Acceptance?.SubjectRevision,
+            BuiltInNodes.Observe(unit, Node(NodeKinds.Handed), Graph, 1).Acceptance?.Evidence?.Revision));
+    }
+
     /// <summary>An observer reads only its own unit's kind, and only the observed kinds: a pressed, performed or waited node is its row's.</summary>
     [Fact]
     public void Only_an_observed_built_in_on_its_own_kind_of_unit_is_observed()
