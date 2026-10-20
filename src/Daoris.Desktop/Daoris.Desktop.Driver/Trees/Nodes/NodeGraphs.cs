@@ -90,7 +90,10 @@ public static class GraphRefusal
     /// <summary>A node no entry reaches.</summary>
     public const string Unreachable = "unreachable";
 
-    /// <summary>D157 §2.2's protected order broken: the opinion comes before the look, and both before the landing.</summary>
+    /// <summary>
+    /// D157 §2.2's protected order broken: the opinion and the look come before the landing. Since FABRIC-CUTOVER1b the opinion is not asked
+    /// to come before the look (the cutover design §5.1), whose set-up the review gate holds while an agent reads it.
+    /// </summary>
     public const string ProtectedOrder = "protected-order";
 
     /// <summary>
@@ -236,9 +239,10 @@ public static class NodeGraphs
             }
         }
 
-        // D157 §2.2's protected order: the gates come before the landing, the opinion before the look. Of them the opinion (FABRIC-WORKFLOW2)
-        // and the look are nodes (§E4), so each must be reached before every later gate and every landing starts: through wires a reach
-        // satisfies, never a failure's or a rejection's path. The holds stay the rules' gate at the landing, no node yet.
+        // D157 §2.2's protected order: the gates come before the landing. Of them the opinion (FABRIC-WORKFLOW2)
+        // and the look are nodes (§E4), so each must be reached before every landing starts: through wires a reach satisfies, never a
+        // failure's or a rejection's path. The holds stay the rules' gate at the landing, no node yet. FABRIC-CUTOVER1b (the cutover design
+        // §5.1): the opinion is not asked to reach a look, whose set-up the review gate holds while an agent reads the opinion.
         var ordered = local.Where(wire => wire.Kind is WireKinds.After or WireKinds.Trigger or WireKinds.Data).ToList();
         var landings = byId.Values.Where(node => node.Kind == NodeKinds.Handed).ToList();
         var looks = byId.Values.Where(node => node.Kind == NodeKinds.Look).ToList();
@@ -246,7 +250,7 @@ public static class NodeGraphs
         foreach (var gate in byId.Values.Where(node => node.Kind is NodeKinds.Opinion or NodeKinds.Look))
         {
             var after = Reach([gate.Id], ordered, forward: true);
-            var later = gate.Kind == NodeKinds.Opinion ? looks.Select(look => ("look", look)).Concat(landings.Select(landing => ("landing", landing))) : landings.Select(landing => ("landing", landing));
+            var later = landings.Select(landing => ("landing", landing));
             if (gate.Kind == NodeKinds.Look) unreached.UnionWith(landings.Where(landing => !after.Contains(landing.Id)).Select(landing => landing.Id));
             if (later.FirstOrDefault(each => !after.Contains(each.Item2.Id)) is ({ } what, { } early))
             {
@@ -275,7 +279,7 @@ public static class NodeGraphs
             bool Wired(string from, string to) => ordered.Any(wire => wire.From!.Node == from && wire.To.Node == to && wire.Group?.Mode != WireGroupModes.AnyOf);
             foreach (var gate in byId.Values.Where(node => node.Kind is NodeKinds.Opinion or NodeKinds.Look))
             {
-                var later = gate.Kind == NodeKinds.Opinion ? looks.Select(look => ("look", look)).Concat(landings.Select(landing => ("landing", landing))) : landings.Select(landing => ("landing", landing));
+                var later = landings.Select(landing => ("landing", landing));
                 if (later.FirstOrDefault(each => !Wired(gate.Id, each.Item2.Id)) is ({ } what, { } next))
                 {
                     Say(GraphRefusal.ProtectedWire, null, gate.Id, $"the {gate.Kind} `{gate.Id}` is not wired into the {what} `{next.Id}`: a skip of a gate between them would let an `after` "

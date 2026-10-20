@@ -19,6 +19,10 @@ with the version and date at release.
   took: every word you said, once, what each turn did, where the work stands and the last check that failed, not just its last
   words. A handed-over conversation opens with *Daoris's brief of the session it continues*, folded. A session's Parts strip
   says how each part began: carried on, retried or handed over.
+- A named workflow's version saved as a graph lands its work once: it holds one landing, and at most one second opinion and one
+  look. `daoris workflow apply` and `import` refuse one that does not, saying which, and a stored one reads as unreadable with
+  the same words. Your look no longer has to be wired after the second opinion: Daoris already holds its set-up while an agent
+  reads the opinion, so the look can stand beside it, and both still come before the landing.
 - Your limit of sessions at once counts what the driver starts: a quest's session, an ask's intake, a helper, a second opinion and
   a brainstorm's or a meeting's pass. A conversation you hold, an Ask Daoris conversation or a chat, takes no place under it, idle
   or working, so conversations left open between turns no longer hold quests back. Ask Daoris says so when it describes the limit.

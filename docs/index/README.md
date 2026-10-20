@@ -143,7 +143,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/LandedBranches.cs` | 56 | 989 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/Landing/AutoLander.cs` | 51 | 761 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/Landing/Landing.cs` | 60 | 1057 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/Nodes/NodeGraphs.cs` | 50 | 867 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/Nodes/NodeGraphs.cs` | 50 | 871 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/Nodes/NodeRuntime.cs` | 73 | 1133 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/Nodes/QuestCloser.cs` | 60 | 946 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/Nodes/WireEvaluation.cs` | 45 | 717 |
@@ -209,7 +209,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Cli/src/driver/driverconfig.ts` | 160 | 2848 |
 | `src/Daoris.Cli/src/plugins/plugins.ts` | 82 | 1598 |
 | `src/Daoris.Cli/src/service/service.ts` | 41 | 862 |
-| `src/Daoris.Cli/src/workflows/namedworkflows.ts` | 44 | 882 |
+| `src/Daoris.Cli/src/workflows/namedworkflows.ts` | 46 | 902 |
 | `src/Daoris.Cli/src/workflows/workflowdoor.ts` | 50 | 897 |
 | `src/Daoris.Cli/test/agents/toolchain.test.ts` | 110 | 2082 |
 | `src/Daoris.Cli/test/desktop-tool.test.ts` | 46 | 878 |
@@ -239,7 +239,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 
 | File | KB | Lines |
 |---|---|---|
-| `.claude/knowledge/twins.md` | 112 | 182 |
+| `.claude/knowledge/twins.md` | 113 | 182 |
 | `docs/2026-09-19-platform-ux.md` | 69 | 720 |
 | `docs/2026-09-21-dsh-evaluation.md` | 43 | 483 |
 | `docs/2026-09-21-working-surface-components.md` | 54 | 354 |
