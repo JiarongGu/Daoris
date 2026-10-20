@@ -184,6 +184,18 @@ public sealed class DriverRoutes(DriverContext context)
         return State(_loop);
     }
 
+    // How many sessions Daoris starts at once on this machine (CAPSET1, D130's CAPCOUNT1 note): the person's dial, the same
+    // `cap` `daoris driver cap <n>` edits — one truth, two doors (D50). Less than one is the driver's refusal.
+    [DriverRoute("SET_CAP")]
+    [Publishes("SET_CAP", StateScopes.Driver)]
+    private object? SetCap(IpcRequest request)
+    {
+        var cap = Number(request, "cap")
+            ?? throw new DriverException(DriverConfig.CapRefusal);
+        _context.Change(config => config.WithCap((int)Math.Clamp(cap, int.MinValue, int.MaxValue)));
+        return State(_loop);
+    }
+
     // Which harness answers asks with an intake session (INT4b), or null for none — the same
     // file `daoris driver intake <adapter>|off` edits: one truth, two doors (D50). What an intake in each circle would run on
     // moves with it, which the roster's key holds.
