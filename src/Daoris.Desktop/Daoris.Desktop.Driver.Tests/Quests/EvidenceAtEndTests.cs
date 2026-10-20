@@ -76,6 +76,62 @@ public sealed class EvidenceAtEndTests : IDisposable
         Assert.Empty(service.Evidence);
     }
 
+    /// <summary>A submission in a closure graph whose answers name no evidence, said <c>ready</c> by <paramref name="session"/>.</summary>
+    private static QuestView Submitted(string? session = "s1", string? commit = null) =>
+        new("q1", "ask #a1", "reports", "Build the report", "b", "Taken")
+        {
+            Closure = "gph-0123",
+            Submission = new QuestSubmissionView("desk", 42, null, "ready", commit, session),
+        };
+
+    /// <summary>
+    /// 🔴 FABRIC-CLOSE1c6 (§E5, D173's CLOSE1c5 note, <i>Left</i>): a submission whose answers name no evidence is read for none, so its
+    /// commit was never known. The end of the session that said its <c>ready</c> posts the tree's HEAD alone, for that submission, so a
+    /// step that grew from it is brought up to date with it on the person's go-on. The record's evidence is what it was.
+    /// </summary>
+    [Fact]
+    public async Task A_submission_that_waits_on_no_evidence_has_its_commit_posted_alone_at_its_sessions_end()
+    {
+        var git = new StandInGit(Tree);
+        git.Commit("base", ("README.md", "r"));
+        var head = git.Commit("work", ("README.md", "r2"));
+        var service = new Recorded();
+        using var client = service.Client();
+
+        var evidence = await EvidenceCheck.AtEndAsync(
+            client, Submitted(), new EvidenceAt(Tree, EvidenceCodes.SessionEnd) { Session = "s1" }, $"commits landed:\n{head[..7]} work",
+            git.Read, CancellationToken.None);
+
+        Assert.Equal($"commits landed:\n{head[..7]} work", evidence);
+        var posted = Assert.Single(service.Evidence);
+        Assert.Equal(("q1", head, "session-end", "s1"), (posted.Quest, posted.Body["commit"]!.GetValue<string>(),
+            posted.Body["how"]!.GetValue<string>(), posted.Body["session"]!.GetValue<string>()));
+        Assert.Empty(posted.Body["items"]!.AsArray());
+        Assert.Equal(("desk", 42L), (posted.Body["submission"]!["machine"]!.GetValue<string>(), posted.Body["submission"]!["sequence"]!.GetValue<long>()));
+    }
+
+    /// <summary>
+    /// FABRIC-CLOSE1c6: only the session that said the <c>ready</c> posts its commit, and only while none is known: another session's
+    /// end, a submission naming no session, and one whose commit is known post nothing and ask git nothing.
+    /// </summary>
+    [Fact]
+    public async Task Another_sessions_submission_or_one_whose_commit_is_known_posts_nothing()
+    {
+        var git = new StandInGit(Tree);
+        var head = git.Commit("work", ("README.md", "r"));
+        var service = new Recorded();
+        using var client = service.Client();
+        var at = new EvidenceAt(Tree, EvidenceCodes.SessionEnd) { Session = "s1" };
+
+        foreach (var quest in new[] { Submitted(session: "s0"), Submitted(session: null), Submitted(commit: head) })
+        {
+            Assert.Equal("no commits landed", await EvidenceCheck.AtEndAsync(client, quest, at, "no commits landed", git.Read, CancellationToken.None));
+        }
+
+        Assert.Empty(git.Calls);
+        Assert.Empty(service.Evidence);
+    }
+
     /// <summary>
     /// 🔴 The sweep ends a lost session's record with what it read of its done's evidence: at its tree's HEAD, changed from the
     /// base its record names, posted with <c>sweep</c> and the session, and kept beneath the commits on the record it ends.
@@ -105,6 +161,27 @@ public sealed class EvidenceAtEndTests : IDisposable
             $"commits landed:\n{head[..7]} report\nevidence read at {head} (sweep): 1 of 1 found, kept\n"
             + "- requirement 1 `docs/report.md`: found, changed by this work",
             moved.Body["evidence"]!.GetValue<string>());
+    }
+
+    /// <summary>
+    /// FABRIC-CLOSE1c6: the sweep ends a lost session that said its quest's <c>ready</c> as its own end would, posting the tree's HEAD alone
+    /// for the submission, with <c>sweep</c>; the record it ends carries no evidence, as before.
+    /// </summary>
+    [Fact]
+    public async Task The_sweep_posts_the_commit_of_a_lost_sessions_submission_alone()
+    {
+        var git = new StandInGit(Tree);
+        var head = git.Commit("work", ("README.md", "r"));
+        var service = new Recorded { Quests = [Submitted()] };
+        service.Sessions.Add(new JsonObject { ["id"] = "s1", ["repository"] = "reports", ["state"] = "working", ["quest"] = "q1", ["tree"] = Tree });
+        using var client = service.Client();
+
+        await Orphans.EndAsync(client, new SessionProcesses(Path.Combine(_root, "markers")), git: git.Read);
+
+        var posted = Assert.Single(service.Evidence);
+        Assert.Equal((head, "sweep", "s1", 0), (posted.Body["commit"]!.GetValue<string>(), posted.Body["how"]!.GetValue<string>(),
+            posted.Body["session"]!.GetValue<string>(), posted.Body["items"]!.AsArray().Count));
+        Assert.Null(Assert.Single(service.Moves).Body["evidence"]);
     }
 
     /// <summary>A lost session whose quest waits on no evidence, or that the service no longer answers, is ended as before.</summary>

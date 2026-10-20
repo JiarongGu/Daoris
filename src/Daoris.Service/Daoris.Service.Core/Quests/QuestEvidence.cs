@@ -289,6 +289,15 @@ public sealed record QuestEvidenceVerdict(string Commit, string How, IReadOnlyLi
         : Submission is null;
 
     /// <summary>
+    /// Whether it is a commit read alone that <paramref name="quest"/> keeps (FABRIC-CLOSE1c6, §E5): it reads no evidence, and the quest is
+    /// taken with a current submission that waits on none, whose commit no verdict gave yet. Read at the end of the session that said the
+    /// <c>ready</c>, it is what a step that grew from the submission is brought up to date with on the person's go-on
+    /// (<see cref="Quest.SubmissionCommit"/>). It holds and lets go nothing: a submission that waits on none was not held for it.
+    /// </summary>
+    public bool KeepsCommitOf(Quest quest) =>
+        Items.Count == 0 && quest is { Status: QuestStatus.Taken, Submission: not null, AwaitsEvidence: false, SubmissionCommit: null };
+
+    /// <summary>
     /// Why this verdict is not one in shape, naming the first field at fault — or null when every field is one (REFAC3,
     /// D144 §3, §5). The one judge both doors call: the exchange, before it judges whether the verdict reads what the done
     /// waits on, and the wire (<see cref="Judged"/>), whose replay judges that by <see cref="Covers"/>. Whether the quest

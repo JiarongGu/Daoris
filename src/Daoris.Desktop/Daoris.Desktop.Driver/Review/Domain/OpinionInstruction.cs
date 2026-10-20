@@ -130,7 +130,8 @@ public static class OpinionInstruction
             text.Append("\nThe session that did the work closed it saying, as its own claim:\n\n").Append(Quoted(note, ""));
         }
 
-        if (quest.Evidence is { } read)
+        // A commit read alone is a submission's own, read with no evidence (FABRIC-CLOSE1c6): no reading of evidence to hand.
+        if (quest.Evidence is { Items.Count: > 0 } read)
         {
             text.Append($"\nWhat Daoris read of its evidence itself, at `{read.Commit}`:\n\n");
             foreach (var item in read.Items) text.Append($"- {(item.Path is not null ? $"`{item.Path}`" : $"gate `{item.Gate}`")}: {item.Result}\n");

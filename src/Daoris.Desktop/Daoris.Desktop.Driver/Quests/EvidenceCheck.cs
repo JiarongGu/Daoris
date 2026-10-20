@@ -64,6 +64,12 @@ public static partial class EvidenceCheck
     internal static async Task<string?> AtEndAsync(
         ServiceClient service, QuestView? quest, EvidenceAt at, string? commits, WorkingTree.GitRead git, CancellationToken ct)
     {
+        if (CommitWanted(quest, at) is { } submission)
+        {
+            await CommitAloneAsync(service, quest!, submission, at, git, ct).ConfigureAwait(false);
+            return commits;
+        }
+
         if (quest is not { AwaitsEvidence: true }) return commits;
 
         string bundle;
@@ -77,6 +83,41 @@ public static partial class EvidenceCheck
         }
 
         return commits is { Length: > 0 } ? $"{commits}\n{bundle}" : bundle;
+    }
+
+    /// <summary>
+    /// The submission whose commit the end <paramref name="at"/> reads posts alone (FABRIC-CLOSE1c6, §E5; D173's CLOSE1c5 note, <i>Left</i>):
+    /// <paramref name="quest"/> taken, its current submission said by the session ending here, waiting on no evidence and with no commit
+    /// known. A submission whose answers name evidence is read for it, and that verdict gives the commit. Null for every other quest and end.
+    /// </summary>
+    internal static QuestSubmissionView? CommitWanted(QuestView? quest, EvidenceAt at) =>
+        quest is { Status: "Taken", AwaitsEvidence: false, Submission: { Commit: null, Session: { Length: > 0 } said } submission }
+        && string.Equals(said, at.Session, StringComparison.Ordinal)
+            ? submission
+            : null;
+
+    /// <summary>
+    /// Post the tree's HEAD alone for <paramref name="submission"/> (FABRIC-CLOSE1c6): a verdict reading no evidence, which the service keeps as
+    /// the submission's commit, so a step that grew from it is brought up to date with it on the person's go-on. The record is written whatever
+    /// came of it, so this never throws but for the caller's own cancellation; a commit not read or not kept leaves the go-on syncing the line
+    /// alone, which it says.
+    /// </summary>
+    private static async Task CommitAloneAsync(
+        ServiceClient service, QuestView quest, QuestSubmissionView submission, EvidenceAt at, WorkingTree.GitRead git, CancellationToken ct)
+    {
+        try
+        {
+            if (await EvidenceReader.HeadAsync(at, git, ct).ConfigureAwait(false) is not { } head) return;
+            var alone = new EvidenceVerdict(head, at.How, [])
+            {
+                Session = at.Session, Submission = new QuestSubmissionRef(submission.Machine, submission.Sequence),
+            };
+            await service.EvidenceAsync(quest.Id, alone, ct).ConfigureAwait(false);
+        }
+        catch (Exception error) when (error is HttpRequestException or TaskCanceledException or DriverException && !ct.IsCancellationRequested)
+        {
+            // Unposted: the go-on reads no commit for the submission and syncs the line alone, saying so.
+        }
     }
 
     /// <summary>The record's lines for one read (D144 §5): the commit and how, then each item; or why nothing was read.</summary>

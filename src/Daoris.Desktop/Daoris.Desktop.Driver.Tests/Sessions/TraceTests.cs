@@ -396,6 +396,27 @@ public sealed class TraceTests : IDisposable
         Assert.DoesNotContain("departed from what you required", said);
     }
 
+    /// <summary>
+    /// FABRIC-CLOSE1c6: a submission whose answers name no evidence has its commit read alone at its session's end, and the trace says it as
+    /// the submission's commit, never as evidence read with nothing found.
+    /// </summary>
+    [Fact]
+    public async Task A_submissions_commit_read_alone_is_read_as_its_commit()
+    {
+        var commit = "0123456789abcdef0123456789abcdef01234567";
+        var quest = Quest("q1", "ask #a1", "Fix the dashboard figure", "Taken");
+        quest["evidence"] = new JsonObject
+        {
+            ["commit"] = commit, ["how"] = "session-end", ["session"] = "s2", ["at"] = At(10, 5).ToString("O"), ["machine"] = "laptop",
+            ["items"] = new JsonArray(), ["submission"] = new JsonObject { ["machine"] = "laptop", ["sequence"] = 42 },
+        };
+
+        var (_, said, _) = await TraceAsync(new TraceAsk("q1"), quests: [quest]);
+
+        Assert.Contains($"  its submission's commit, read at `{commit[..8]}` at the end of session s2 on laptop, 2026-10-03 10:05 UTC\n", said);
+        Assert.DoesNotContain("evidence read at", said);
+    }
+
     /// <summary>EVID1b: a done whose evidence nobody read yet says so, and says the driver reads it when the session ends.</summary>
     [Fact]
     public async Task A_dones_unread_evidence_says_it_is_not_read_yet()

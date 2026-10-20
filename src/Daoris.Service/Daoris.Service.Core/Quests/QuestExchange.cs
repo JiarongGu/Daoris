@@ -2193,8 +2193,14 @@ public sealed class QuestExchange(
             return new(QuestRespondRefusal.NotFound, $"No quest `#{name}`. Ids come from `quest_list`.", Quest: null);
         }
 
-        if (NotAwaiting(quest) is { } why) return new(QuestRespondRefusal.NotAwaitingEvidence, why, Quest: null);
-        if (JudgeVerdict(quest, verdict) is { } unfit) return new(QuestRespondRefusal.BadVerdict, unfit + " Nothing was kept.", Quest: null);
+        // FABRIC-CLOSE1c6: a verdict reading nothing, where nothing waits on evidence, is the commit a submission's session's end read alone.
+        var alone = verdict.Items.Count == 0 && !quest.AwaitsEvidence;
+        if ((alone ? NoCommitWanted(quest) : NotAwaiting(quest)) is { } why) return new(QuestRespondRefusal.NotAwaitingEvidence, why, Quest: null);
+        if ((alone ? Shape(verdict) : JudgeVerdict(quest, verdict)) is { } unfit)
+        {
+            return new(QuestRespondRefusal.BadVerdict, unfit + " Nothing was kept.", Quest: null);
+        }
+
         if (Unasked(quest, verdict) is { } other) return new(QuestRespondRefusal.NotAwaitingEvidence, other, Quest: null);
 
         var judged = verdict with { Commit = verdict.Commit.ToLowerInvariant() };
@@ -2207,12 +2213,34 @@ public sealed class QuestExchange(
         // Judged again inside the write: another verdict, the person's yes or a later ready may have come first.
         if (!move.Moved)
         {
-            return new(QuestRespondRefusal.NotAwaitingEvidence, NotAwaiting(move.Quest) ?? Unasked(move.Quest, judged)
-                ?? $"Quest `#{name}` no longer waits on what this verdict reads.", Quest: null);
+            return new(QuestRespondRefusal.NotAwaitingEvidence, (alone ? NoCommitWanted(move.Quest) : NotAwaiting(move.Quest))
+                ?? Unasked(move.Quest, judged) ?? $"Quest `#{name}` no longer waits on what this verdict reads.", Quest: null);
         }
 
-        return new(QuestRespondRefusal.None, await EvidencedAsync(move.Quest, judged, ct).ConfigureAwait(false) + Then(move.FollowUp), move.Quest);
+        return alone
+            ? new(QuestRespondRefusal.None,
+                $"Kept the commit of quest `#{name}`'s submission `{move.Quest.Submission!.Machine}` {move.Quest.Submission.Sequence}: "
+                + $"`{Short(judged.Commit)}`, read at the end of the session that made it. It waits on no evidence, so nothing else moved.",
+                move.Quest)
+            : new(QuestRespondRefusal.None, await EvidencedAsync(move.Quest, judged, ct).ConfigureAwait(false) + Then(move.FollowUp), move.Quest);
     }
+
+    /// <summary>
+    /// Why a commit read alone is not kept on <paramref name="quest"/> (FABRIC-CLOSE1c6), as a state, or null while it keeps one: a taken
+    /// quest's current submission that waits on no evidence and whose commit no verdict gave yet.
+    /// </summary>
+    private static string? NoCommitWanted(Quest quest) => quest switch
+    {
+        { Status: QuestStatus.Taken, Submission: { } current, SubmissionCommit: { } known } =>
+            $"Quest `#{quest.Id}`'s submission `{current.Machine}` {current.Sequence} was read at `{Short(known)}` already: its commit is "
+            + "known, and nothing more is kept.",
+        { Status: QuestStatus.Taken, Submission: not null } => null,
+        _ => $"Quest `#{quest.Id}` is {quest.Status} with no submission standing: a commit is read alone for a submission, at the end of the "
+             + "session that said its `ready`.",
+    };
+
+    /// <summary>Why a commit read alone is not one in shape (FABRIC-CLOSE1c6), or null: the verdict's own fields, the one judge's.</summary>
+    private static string? Shape(QuestEvidenceVerdict verdict) => verdict.JudgeShape() is { } fault ? Worded(fault, verdict) : null;
 
     /// <summary>Why a verdict on <paramref name="quest"/> is not taken, as a state — or null while its done waits on evidence.</summary>
     private static string? NotAwaiting(Quest quest) => quest switch

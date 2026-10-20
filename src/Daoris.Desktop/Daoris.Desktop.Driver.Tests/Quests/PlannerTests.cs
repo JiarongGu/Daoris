@@ -1821,6 +1821,54 @@ public sealed class PlannerTests
         Assert.Equal((StartVerdict.Start, false), (carried.Verdict, carried.GoesOn));
     }
 
+    // ── a step whose session ran across the reopen and the go-on (FABRIC-CLOSE1c16, §E5) ────────────────────────────────────────────
+    //
+    // The session was running when the person reopened its source and went on with the step, and ended normally after the go-on: the step
+    // reads unheld as it ends, so it was concluded as a park or a completion, and its record ended after the step's go-on, which neither the
+    // carry-on of a stopped session nor the telling read. Its end now reads the step's source moved under it.
+
+    /// <summary>q2 as its session started, grown from the source's first submission S1, before the reopen.</summary>
+    private static QuestView StartedOn() => Quest("q2", status: "Taken") with { Parent = "q1", GrewFrom = S1 };
+
+    /// <summary>
+    /// 🔴 The step before is named at the end of a session the person's reopen stopped: held by it as it ends (FABRIC-CLOSE1c2), or gone
+    /// on with on another submission since it started, with no result of its own since. Every other end names none.
+    /// </summary>
+    [Fact]
+    public void A_session_that_ran_across_the_reopen_and_the_go_on_ends_as_the_reopen_stopped_it()
+    {
+        Assert.Equal("q1", Planner.ReopenedFrom(StartedOn(), GoneOn()));
+        Assert.Equal("q1", Planner.ReopenedFrom(StartedOn(), Step("Taken")));
+        // A step from before named no source, and its go-on named one.
+        Assert.Equal("q1", Planner.ReopenedFrom(StartedOn() with { GrewFrom = null }, GoneOn()));
+
+        Assert.Null(Planner.ReopenedFrom(StartedOn(), null));
+        Assert.Null(Planner.ReopenedFrom(StartedOn(), GoneOn() with { GrewFrom = S1 }));
+        Assert.Null(Planner.ReopenedFrom(StartedOn() with { GrewFrom = S2 }, GoneOn()));
+        Assert.Null(Planner.ReopenedFrom(StartedOn(), GoneOn() with { Submission = new QuestSubmissionView("desk", 47, Ended.AddMinutes(11), "ready") }));
+        Assert.Null(Planner.ReopenedFrom(StartedOn(), GoneOn() with { Status = "Done" }));
+        Assert.Null(Planner.ReopenedFrom(Quest("q5", status: "Taken"), Quest("q5", status: "Taken")));
+    }
+
+    /// <summary>
+    /// Its record, ended after the step's go-on, is carried on at the next look, its branch brought up to date with the source's new
+    /// submission first, and never told the go-on as well; once carried on, its newest record here is the carry-on's, and nothing
+    /// more is planned for it.
+    /// </summary>
+    [Fact]
+    public void A_session_ended_after_the_go_on_is_carried_on_once_with_its_branch_brought_up_to_date()
+    {
+        var ranAcross = StoppedByReopen() with { Updated = Ended.AddMinutes(20) };
+
+        var carried = Assert.Single(Planner.Plan(Ran([GoneOn()], ("q2", ranAcross)), Config()));
+
+        Assert.Equal((StartVerdict.Start, false, ranAcross), (carried.Verdict, carried.GoesOn, carried.Resumes));
+        Assert.True(ReopenTelling.BringsToSource(GoneOn(), ranAcross));
+        Assert.False(Planner.GoneOnSince(GoneOn(), ranAcross));
+        var after = new PriorSession("s2", "D:/trees/s1", "completed", "reached its end.", Repository: "Game") { Updated = Ended.AddMinutes(40) };
+        Assert.Empty(Planner.Plan(Ran([GoneOn()], ("q2", after)), Config()));
+    }
+
     /// <summary>
     /// A look reads the hold from the service's answer: a withdrawn step and a held one sit, and no claim is asked of the held one
     /// while nothing would carry it on. Once the person goes on with each, the withdrawn step starts and the held one's claim is

@@ -17813,3 +17813,27 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **FABRIC-UNKNOWN1b — the repositories no record or tree names are read too** (driver; after UNKNOWN1; §D3). List the registered repositories' roots so a repository with only an unrecorded `daoris/*` branch is seen. Proof: an empty home and a root holding `daoris/x`.
 
 **Outcome** 2026-10-20: built as ENDAGREE1, one feature end to end (D187): each registered repository with a checkout here, within the part, is read too with one `for-each-ref` each, so a repository no record or tree names is inventoried. Commit 2f5ca753a. Detail: D173's ENDAGREE1 note.
+
+## FABRIC-CLOSE1f — a step pushed before its parent's take was found lost (2026-10-20, D173)
+
+> - [ ] **FABRIC-CLOSE1f — a step pushed before its parent's take was found lost** (service; after CLOSE1e; §E5). Once numbered, no rebase forgets a lost submission's step. Proof: a `QuestSyncTests` race ending with the step declined or held for the person.
+
+**Outcome** 2026-10-20: built as CLOSEREOPEN1, one feature end to end (D187): found already done by FABRIC-CLOSE1c21: a step pushed while its parent's push is behind is answered behind and never numbered, so the next round loses it with its submission; no rebase is asked to forget a numbered step. Proof added: `QuestSyncTests`' lost-submission case raced with another machine's take, red with CLOSE1c21's rule off. Commit 26a87e3ed. Detail: D173's CLOSEREOPEN1 note (four choices recorded there for review), the FIX-LOG's entry. On Opus, the whole feature: about 252 tool calls, 57 minutes.
+
+## FABRIC-CLOSE1e2 — a lost done's follow-up that the remote kept while its parent's push was behind stands (2026-10-20, D173)
+
+> - [ ] **FABRIC-CLOSE1e2 — a lost done's follow-up that the remote kept while its parent's push was behind stands** (service; D65 §4; D173's FABRIC-CLOSE1e *Left*). A step published by a done names no source submission, so CLOSE1c21's `AwaitsItsSourceAsync` cannot hold it back: it stands on a done that lost, and its take stands until a person declines it. Proof: a `QuestSyncTests` case where a lost done and its follow-up are pushed with the parent behind (`RacedRemote`): the follow-up is nowhere afterwards.
+
+**Outcome** 2026-10-20: built as CLOSEREOPEN1, one feature end to end (D187): the remote answers behind for a pushed step naming no source while it holds the parent not done (`AwaitsItsSourceAsync`), and the rebase forgets a lost close's follow-up with this machine's unpushed work on it, its take rewritten as a conflict naming the close so its session is stopped. Commit 26a87e3ed. Detail: D173's CLOSEREOPEN1 note (four choices recorded there for review), the FIX-LOG's entry.
+
+## FABRIC-CLOSE1c6 — every submission's commit known, not only one whose evidence was read (2026-10-20, D173)
+
+> - [ ] **FABRIC-CLOSE1c6 — every submission's commit known, not only one whose evidence was read** (service, driver; after CLOSE1c5; §E5). A submission whose requirements name no evidence carries no commit, so the go-on brings its step up to date with the line alone: post the tree's commit at the session's end for every submission. Proof: a submission with no evidence wanted answers its commit; `GoOnInSyncTests`' carry-on holds it.
+
+**Outcome** 2026-10-20: built as CLOSEREOPEN1, one feature end to end (D187): the end of the session that said a `ready`, and the orphan sweep, post the tree's HEAD as a verdict reading no evidence for a submission that waits on none; the replay keeps it once (`QuestEvidenceVerdict.KeepsCommitOf`), holding and publishing nothing, and `submission.commit` answers it on every machine, so the go-on rebases the step onto it. Commits 56938a3b3, c473d6a6a. Detail: D173's CLOSEREOPEN1 note (four choices recorded there for review), the FIX-LOG's entry.
+
+## FABRIC-CLOSE1c16 — a step whose session ran across the reopen and the go-on is brought up to date (2026-10-20, D173)
+
+> - [ ] **FABRIC-CLOSE1c16 — a step whose session ran across the reopen and the go-on is brought up to date** (driver; after CLOSE1c13; §E5). A session still running when its source was reopened and then gone on with ends normally after the go-on, so neither CLOSE1c2's carry-on nor CLOSE1c13's telling reads it, and its branch never gets the source's new submission. Contract: §E5 (*its branch brought up to date*), D173's CLOSE1c5 and CLOSE1c13 notes. Proof: a `ReopenTellingTests` or `PlannerTests` case where the record ends after the step's `updated`, with no new submission, and is told or carried on once with the rebase.
+
+**Outcome** 2026-10-20: built as CLOSEREOPEN1, one feature end to end (D187): a session's end reads its step's source moved since the run started (`Planner.ReopenedFrom`) and ends `ended.source-reopened`, so CLOSE1c2's carry-on brings its branch up to date once. Commit c473d6a6a. Detail: D173's CLOSEREOPEN1 note (four choices recorded there for review), the FIX-LOG's entry.

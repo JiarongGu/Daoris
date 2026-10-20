@@ -422,6 +422,30 @@ public sealed class McpToolsTests : McpToolsFixture
     }
 
     /// <summary>
+    /// FABRIC-CLOSE1c6: a submission that waits on no evidence has its commit read alone at its session's end, and the list says that
+    /// commit as the submission's, never as evidence read with nothing in it.
+    /// </summary>
+    [Fact]
+    public async Task A_submissions_commit_read_alone_is_listed_as_its_commit_not_as_evidence()
+    {
+        var exchange = new QuestExchange(_service, _quests, files: _files);
+        var quest = await _quests.PublishAsync("Asker", "Owner", "Write the bridge report", "For the review.", DateTimeOffset.UtcNow);
+        var owner = new QuestTools(_quests, exchange, In("Owner"), intake: new IntakeScope(null, "s0a1b2c3"));
+        await owner.RespondToQuestAsync(quest.Id, "take");
+        Assert.Equal(QuestRespondRefusal.None, (await exchange.BindAsync(quest.Id, "sha256:0f1e2d3c4b5a6978", DateTimeOffset.UtcNow)).Refusal);
+        await owner.RespondToQuestAsync(quest.Id, "ready", "Built.");
+        var submitted = (await _quests.FindAsync(quest.Id))!.Submission!;
+
+        Assert.Equal(QuestRespondRefusal.None, (await exchange.EvidenceAsync(quest.Id, new QuestEvidenceVerdict(
+            "a1b2c3d4e5f60718293a4b5c6d7e8f9012345678", "session-end", []) { Session = "s0a1b2c3", Submission = new(submitted.Machine, submitted.Sequence) },
+            DateTimeOffset.UtcNow)).Refusal);
+
+        var listed = await owner.ListQuestsAsync("Owner");
+        Assert.Contains("its submission's commit, read at the end of its session: `a1b2c3d`", listed);
+        Assert.DoesNotContain("evidence read at", listed);
+    }
+
+    /// <summary>
     /// The driver names the session on every connector it hands over (PERM2), so a rule proposal says
     /// who made it. With no ask that changes nothing about a publish: only an intake publishes as its ask.
     /// </summary>

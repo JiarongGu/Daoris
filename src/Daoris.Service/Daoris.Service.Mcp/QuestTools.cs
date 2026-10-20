@@ -297,8 +297,13 @@ public sealed class QuestTools(
                         : $"  requirement {answer.Requirement} met: {answer.Met}");
                 }
 
-                // What Daoris last read of its evidence (EVID1a): the commit, and each item's code.
-                if (quest.Evidence is { } read)
+                // What Daoris last read of its evidence (EVID1a): the commit, and each item's code. A commit read alone is the
+                // submission's own (FABRIC-CLOSE1c6), and no evidence was read with it.
+                if (quest.Evidence is { Items.Count: 0 } alone)
+                {
+                    text.AppendLine($"  its submission's commit, read at the end of its session: `{Clipped.ShortCommit(alone.Commit, 7)}`");
+                }
+                else if (quest.Evidence is { } read)
                 {
                     text.AppendLine($"  evidence read at `{Clipped.ShortCommit(read.Commit, 7)}` ({read.How}): "
                         + string.Join(" · ", read.Items.Select(item => $"requirement {item.Requirement} `{item.Path ?? item.Gate}` {item.Result}")));

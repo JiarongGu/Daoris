@@ -403,6 +403,82 @@ public sealed class QuestSyncTests : IAsyncLifetime
         Assert.Equal(QuestStatus.Done, Assert.Single((await _b.FindAsync(parent.Id))!.Conflicts).Attempted);
     }
 
+    /// <summary>
+    /// 🔴 FABRIC-CLOSE1e2 (D65 §4, D173's FABRIC-CLOSE1e <i>Left</i>): B, offline, takes the parent and closes it done, which publishes
+    /// the follow-up, and in one case takes that too, while A's take of the parent reaches the remote first. Plain, B fetches A's take
+    /// before pushing; raced, A's take reaches the remote between B's fetch and its push, so B pushes the follow-up while the parent is
+    /// behind. Either way the follow-up names no submission it grew from, and it stands on nothing: the remote numbers none of it while
+    /// it holds the parent not done, B's rebase loses the done, and the follow-up goes with it, B's take of it kept as a conflict on a
+    /// quest no list shows, so its session is stopped and told why. Once A's own close publishes the same follow-up, that conflict
+    /// goes up on it.
+    /// </summary>
+    [Theory]
+    [InlineData(false, false)]
+    [InlineData(false, true)]
+    [InlineData(true, false)]
+    [InlineData(true, true)]
+    public async Task A_lost_dones_follow_up_goes_with_it_though_pushed_while_its_parent_was_behind(bool raced, bool taken)
+    {
+        var parent = await _a.PublishAsync(
+            "Asker", "Federated", "Develop", "b", Now, then: [new QuestStep("Federated", "Verify {parent}", "c")]);
+        await SyncAsync(_a);
+        await SyncAsync(_b);
+
+        Assert.True((await _b.MoveAsync(parent.Id, QuestStatus.Taken, "B's session.", Now.AddHours(1))).Moved);
+        var followUp = (await _b.MoveAsync(parent.Id, QuestStatus.Done, "Built.", Now.AddHours(2))).FollowUp!;
+        if (taken) Assert.True((await _b.MoveAsync(followUp.Id, QuestStatus.Taken, "B's step session.", Now.AddHours(3))).Moved);
+        Assert.True((await _a.MoveAsync(parent.Id, QuestStatus.Taken, "A's session.", Now.AddHours(4))).Moved);
+        if (!raced) await SyncAsync(_a);
+
+        var lost = raced
+            ? await QuestSync.RunAsync(_b, _ => true, new RacedRemote(new StoreRemote(_remote), () => SyncAsync(_a)), Workspaces.Default)
+            : await SyncAsync(_b);
+        await SyncAsync(_a);
+
+        Assert.Null(lost.Problem);
+        Assert.Empty(lost.Refused);
+        Assert.Empty(lost.Behind);
+        Assert.Equal(QuestClaim.Lost, await _b.ClaimAsync(parent.Id));
+        Assert.DoesNotContain(await _b.PendingAsync(Workspaces.Default, _ => true), op => op.Quest == followUp.Id);
+        foreach (var store in new[] { _a, _b, _remote })
+        {
+            Assert.Equal(QuestStatus.Taken, (await store.FindAsync(parent.Id))!.Status);
+            Assert.Null(await store.FindAsync(followUp.Id));
+        }
+
+        Assert.Empty(await _remote.HistoryAsync(followUp.Id));
+        if (!taken)
+        {
+            Assert.Empty(await _b.HistoryAsync(followUp.Id));
+            Assert.Equal(QuestClaim.None, await _b.ClaimAsync(followUp.Id));
+            return;
+        }
+
+        // B's take of the follow-up reads lost, the claim its driver stops that session by, and the pass names why.
+        Assert.Equal(QuestClaim.Lost, await _b.ClaimAsync(followUp.Id));
+        var told = Assert.Single(lost.Conflicts, c => c.Quest == followUp.Id);
+        Assert.Equal((QuestStatus.Taken, _b.Machine), (told.Attempted, told.Machine));
+        Assert.StartsWith("B's step session. ", told.Note);
+        Assert.Contains($"#{parent.Id}'s close", told.Note);
+        Assert.Contains("another machine's take", told.Note);
+        Assert.Equal([QuestOperationKind.Conflict], (await _b.HistoryAsync(followUp.Id)).Select(o => o.Kind));
+
+        // A's own close publishes the same follow-up (the id comes from the parent and the step): B's conflict goes up on it.
+        Assert.Equal(followUp.Id, (await _a.MoveAsync(parent.Id, QuestStatus.Done, "Built by A.", Now.AddHours(5))).FollowUp!.Id);
+        await SyncAsync(_a);
+        var after = await SyncAsync(_b);
+        await SyncAsync(_a);
+
+        Assert.Equal((0, 0), (after.Refused.Count, after.Behind.Count));
+        Assert.Equal(QuestClaim.Lost, await _b.ClaimAsync(followUp.Id));
+        foreach (var store in new[] { _a, _b, _remote })
+        {
+            var open = (await store.FindAsync(followUp.Id))!;
+            Assert.Equal(QuestStatus.Open, open.Status);
+            Assert.Equal([(_b.Machine, QuestStatus.Taken, told.Note)], open.Conflicts.Select(c => (c.Machine, c.Attempted, c.Note)));
+        }
+    }
+
     /// <summary>A chain's parent carrying the person's requirement (DRIFT1c), closed done on B departing from it (DRIFT1d).</summary>
     private async Task<Quest> HeldOnBothAsync()
     {
@@ -1309,9 +1385,14 @@ public sealed class QuestSyncTests : IAsyncLifetime
     /// and the step it published goes with it, even once this machine took that step. Kept, the step's publication and take would
     /// sync on their own, and its session would run on a quest nobody asked. Its take reads lost, so the driver stops that session,
     /// and the loss says why: the parent's take lost.
+    /// <para>FABRIC-CLOSE1f: raced, B's take reaches the remote between A's fetch and its push, so A pushes the step while its parent is
+    /// behind. The remote numbers none of it, since the step grew from a submission it does not hold (CLOSE1c21's rule), and A's next round
+    /// loses the step with the submission as in the plain order: no rebase is asked to forget a numbered step.</para>
     /// </summary>
-    [Fact]
-    public async Task A_lost_submissions_step_goes_with_it_though_taken_and_its_session_is_told_why()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task A_lost_submissions_step_goes_with_it_though_taken_and_its_session_is_told_why(bool raced)
     {
         var quest = await _a.PublishAsync("Asker", "Federated", "Close in a graph", "why", Now,
             then: [new QuestStep("Federated", "Verify {parent}", "Look at it.")]);
@@ -1324,12 +1405,18 @@ public sealed class QuestSyncTests : IAsyncLifetime
         var step = (await _a.SubmitAsync(quest.Id, "Built.", [], Now.AddHours(2))).FollowUp!;
         Assert.True((await _a.MoveAsync(step.Id, QuestStatus.Taken, "A's step session.", Now.AddHours(3))).Moved);
         Assert.True((await _b.MoveAsync(quest.Id, QuestStatus.Taken, "B's session.", Now.AddHours(4))).Moved);
-        await SyncAsync(_b);
+        if (!raced) await SyncAsync(_b);
 
-        var lost = await SyncAsync(_a);
+        var lost = raced
+            ? await QuestSync.RunAsync(_a, _ => true, new RacedRemote(new StoreRemote(_remote), () => SyncAsync(_b)), Workspaces.Default)
+            : await SyncAsync(_a);
+        await SyncAsync(_b);
 
         Assert.Null(lost.Problem);
         Assert.Empty(lost.Refused);
+        Assert.Empty(lost.Behind);
+        Assert.Null(await _b.FindAsync(step.Id));
+        Assert.Empty(await _remote.HistoryAsync(step.Id));
         Assert.Equal(QuestClaim.Lost, await _a.ClaimAsync(quest.Id));
         // The step is gone with the submission that published it, here and at the remote, and nothing of it waits to go up.
         Assert.Null(await _a.FindAsync(step.Id));

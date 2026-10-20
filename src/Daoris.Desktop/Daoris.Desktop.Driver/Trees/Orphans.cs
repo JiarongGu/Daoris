@@ -109,7 +109,18 @@ public static class Orphans
             return null;
         }
 
-        if (quest is not { AwaitsEvidence: true }) return null;
+        // FABRIC-CLOSE1c6: a submission this session said, waiting on no evidence, has its commit posted alone as its own end would, and
+        // the record it ends carries no evidence, as before.
+        if (quest is not { AwaitsEvidence: true })
+        {
+            if (EvidenceCheck.CommitWanted(quest, new EvidenceAt(tree, EvidenceCodes.Sweep) { Session = session.Id }) is not null)
+            {
+                await EvidenceCheck.AtEndAsync(service, quest, new EvidenceAt(tree, EvidenceCodes.Sweep) { Session = session.Id }, null, git, ct)
+                    .ConfigureAwait(false);
+            }
+
+            return null;
+        }
 
         // The range only from a base the record names as a commit, since from none `git log` would list the whole history; and
         // only in a tree that is the top of its own repository, since git walks up (the read below says why it read nothing).

@@ -395,9 +395,10 @@ public static class QuestLog
         QuestOperationKind.Accepted => quest?.Hold is QuestHold.Departed or QuestHold.EvidenceUnread or QuestHold.EvidenceMissing,
         // A verdict only while the done waits on its evidence, and only one that reads exactly that (EVID1a): a second
         // machine's verdict on evidence already found is no move, and a verdict on what the done never named is none. On a
-        // submission, only one asked for that submission (FABRIC-CLOSE1e): one read before a later ready replaced it is none.
-        QuestOperationKind.Evidenced => quest is { AwaitsEvidence: true } && operation.Evidence is { } read
-                                        && read.Covers(quest) && read.AskedFor(quest),
+        // submission, only one asked for that submission (FABRIC-CLOSE1e): one read before a later ready replaced it is none. A commit read
+        // alone keeps the commit of a submission that waits on no evidence, once (FABRIC-CLOSE1c6, QuestEvidenceVerdict.KeepsCommitOf).
+        QuestOperationKind.Evidenced => quest is not null && operation.Evidence is { } read && read.AskedFor(quest)
+                                        && (quest.AwaitsEvidence ? read.Covers(quest) : read.KeepsCommitOf(quest)),
         // A set-up only on a set-up step not declined, and a second post of one already kept is no move (REVIEWENV1b).
         QuestOperationKind.SetUp => quest is { SetUpIn: not null, Status: not QuestStatus.Declined }
                                     && operation.SetUp is { } setUp && !quest.SetUps.Any(setUp.Same),

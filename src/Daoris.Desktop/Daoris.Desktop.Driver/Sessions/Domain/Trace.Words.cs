@@ -154,7 +154,15 @@ internal static class TraceWords
         if (quest.PublishedBy is { } by) text.Append($"  published by session {by}\n");
         if (quest.Awaits is { } awaits) text.Append($"  waits on quest #{awaits}, asked of the repository that knows\n");
         if (quest.Held) text.Append(Held(quest));
-        if (quest.Evidence is { } read)
+        // A commit read alone is the submission's own, read with no evidence (FABRIC-CLOSE1c6).
+        if (quest.Evidence is { Items: 0 } alone)
+        {
+            text.Append($"  its submission's commit, read at `{Short(alone.Commit)}` ")
+                .Append(alone.Session is { } session ? $"at the end of session {session}" : "from a terminal")
+                .Append(alone.Machine is { } machine ? $" on {machine}" : "")
+                .Append($", {WhenOr(alone.At)}\n");
+        }
+        else if (quest.Evidence is { } read)
         {
             text.Append($"  evidence read at `{Short(read.Commit)}` ({read.How}), ")
                 .Append(read.Session is { } session ? $"at the end of session {session}" : "from a terminal")

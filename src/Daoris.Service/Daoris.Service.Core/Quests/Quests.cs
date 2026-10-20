@@ -2508,7 +2508,8 @@ public sealed class QuestStore
     /// Daoris read a done's evidence (EVID1a, D144 §3): an <see cref="QuestOperationKind.Evidenced"/> operation, judged
     /// against the replayed history inside the write as every move is, so it applies only to a done still waiting on
     /// exactly what it reads. Found, and nothing else holding the done, the chain's next step is published in the same
-    /// transaction, as the yes publishes one; missing, the done stays held, now for that.
+    /// transaction, as the yes publishes one; missing, the done stays held, now for that. A commit read alone keeps the commit of a
+    /// submission that waits on no evidence, once, and publishes nothing (FABRIC-CLOSE1c6, <see cref="QuestEvidenceVerdict.KeepsCommitOf"/>).
     /// </summary>
     /// <returns>
     /// The quest as it now stands, whether this call kept the verdict — false for a quest not waiting on what it reads —
@@ -2534,9 +2535,10 @@ public sealed class QuestStore
                 .ConfigureAwait(false);
             var evidenced = QuestLog.Step(quest, operation)!;
             await WriteCacheAsync(evidenced, transaction, inside).ConfigureAwait(false);
+            // FABRIC-CLOSE1c6: a commit read alone kept the commit of a submission nothing held for it, so it lets nothing go.
             return new QuestMove(
                 evidenced, Moved: true,
-                evidenced.Held ? null : await PublishNextAsync(evidenced, now, transaction, inside).ConfigureAwait(false));
+                evidenced.Held || read.Items.Count == 0 ? null : await PublishNextAsync(evidenced, now, transaction, inside).ConfigureAwait(false));
         }, ct);
 
     /// <summary>
@@ -3065,14 +3067,14 @@ public sealed class QuestStore
                 // step standing, since the winner published the same one.
                 if (operation.Kind == QuestOperationKind.Accepted && quest is not { Accepted: not null })
                 {
-                    await ForgetFollowUpsAsync(id, transaction, ct).ConfigureAwait(false);
+                    conflicts.AddRange(await ForgetFollowUpsAsync(id, lostClaim, "yes", transaction, ct).ConfigureAwait(false));
                 }
 
                 // A review's verdict that lost while the step is still held takes the step it published with it, as a lost
                 // yes does (REVIEWENV1b); one that lost to another machine's leaves the step the winner published.
                 if (operation.Kind == QuestOperationKind.Verdict && quest is { Held: true })
                 {
-                    await ForgetFollowUpsAsync(id, transaction, ct).ConfigureAwait(false);
+                    conflicts.AddRange(await ForgetFollowUpsAsync(id, lostClaim, "review verdict", transaction, ct).ConfigureAwait(false));
                 }
 
                 // A submission that lost takes the step it published with it, its publication pending on the same take
@@ -3122,9 +3124,10 @@ public sealed class QuestStore
                 lostTake = (position, conflicts.Count - 1);
             }
 
+            // FABRIC-CLOSE1e2: with what this machine did on it, a take of it kept as a conflict, so its session is stopped.
             if (operation.Kind == QuestOperationKind.Done)
             {
-                await ForgetFollowUpsAsync(id, transaction, ct).ConfigureAwait(false);
+                conflicts.AddRange(await ForgetFollowUpsAsync(id, lostClaim, "close", transaction, ct).ConfigureAwait(false));
             }
         }
 
@@ -3225,41 +3228,26 @@ public sealed class QuestStore
 
     /// <summary>
     /// A follow-up published only by a close that has now lost (D65 §4): it was the chain moving on,
-    /// and the chain did not move. Forgotten only while nothing else has happened to it — a follow-up
-    /// somebody has acted on, or that another machine holds, stays.
+    /// and the chain did not move. Forgotten only while every operation of it is this machine's and none was
+    /// pushed; one another machine holds, or published itself on its own close, stays.
     /// </summary>
-    private async Task ForgetFollowUpsAsync(string parent, SqliteTransaction transaction, CancellationToken ct)
-    {
-        var children = new List<string>();
-        await using (var command = _db.Command())
-        {
-            command.Transaction = transaction;
-            command.CommandText = "SELECT id FROM quests WHERE parent = $parent";
-            command.Parameters.AddWithValue("$parent", parent);
-            await using var reader = await command.ExecuteReaderAsync(ct).ConfigureAwait(false);
-            while (await reader.ReadAsync(ct).ConfigureAwait(false)) children.Add(reader.GetString(0));
-        }
-
-        foreach (var child in children)
-        {
-            var history = await HistoryAsync(child, transaction, ct).ConfigureAwait(false);
-            if (history is not [{ Kind: QuestOperationKind.Published, Number: null } only]) continue;
-
-            await ForgetOperationAsync(
-                (await PositionOfAsync(only.Machine, only.Sequence, transaction, ct).ConfigureAwait(false))!.Value,
-                transaction, ct).ConfigureAwait(false);
-            await using var drop = _db.Command();
-            drop.Transaction = transaction;
-            drop.CommandText = "DELETE FROM quests WHERE id = $id";
-            drop.Parameters.AddWithValue("$id", child);
-            await drop.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
-        }
-    }
+    /// <remarks>
+    /// FABRIC-CLOSE1e2: what this machine did on it goes with it, as a lost submission's step's does (<see cref="ForgetStepsAsync"/>): a
+    /// take of it becomes a conflict naming the close that went, so its claim reads lost and its session is stopped, where it once stood
+    /// and synced on its own, numbered on a done that lost, until a person declined it. A remote holds no such follow-up while its parent
+    /// is not done there (<see cref="AwaitsItsSourceAsync"/>), so the raced order reaches this too.
+    /// </remarks>
+    /// <param name="published">What published it, as its take's conflict names it: the parent's close, or the yes or verdict that let it go.</param>
+    /// <returns>The takes rewritten, as the rebase reports its conflicts.</returns>
+    private Task<IReadOnlyList<QuestOperation>> ForgetFollowUpsAsync(
+        string parent, bool takeLost, string published, SqliteTransaction transaction, CancellationToken ct) =>
+        ForgetStepsAsync(parent, takeLost, reopened: false, transaction, ct, published);
 
     /// <summary>
     /// The steps a lost submission published (FABRIC-CLOSE1e, §E5), with what this machine did on them since, and the steps they
     /// published in turn: each grew from a submission that no longer stands, so none was asked. A step is forgotten only while
-    /// every operation of it is this machine's and none was pushed; one a remote holds is every machine's, and stays.
+    /// every operation of it is this machine's and none was pushed; one a remote holds is every machine's, and stays. A lost close's
+    /// follow-ups go the same way (<see cref="ForgetFollowUpsAsync"/>, FABRIC-CLOSE1e2).
     /// </summary>
     /// <remarks>
     /// Where this machine took a step, its take is not forgotten but rewritten as a conflict, which the claim reads as lost
@@ -3272,9 +3260,10 @@ public sealed class QuestStore
     /// (<see cref="LostToTheReopenAsync"/>) could not read the reopen from it, and the driver would stop the session in another
     /// machine's words.</para>
     /// </remarks>
+    /// <param name="published">What of the parent published it, as its take's conflict names it: its submission, or its close.</param>
     /// <returns>The takes rewritten, as the rebase reports its conflicts.</returns>
     private async Task<IReadOnlyList<QuestOperation>> ForgetStepsAsync(
-        string parent, bool takeLost, bool reopened, SqliteTransaction transaction, CancellationToken ct)
+        string parent, bool takeLost, bool reopened, SqliteTransaction transaction, CancellationToken ct, string published = "submission")
     {
         var children = new List<string>();
         await using (var command = _db.Command())
@@ -3296,7 +3285,7 @@ public sealed class QuestStore
                 continue;
             }
 
-            told.AddRange(await ForgetStepsAsync(child, takeLost, reopened, transaction, ct).ConfigureAwait(false));
+            told.AddRange(await ForgetStepsAsync(child, takeLost, reopened, transaction, ct, published).ConfigureAwait(false));
             foreach (var operation in history)
             {
                 var position = (await PositionOfAsync(operation.Machine, operation.Sequence, transaction, ct).ConfigureAwait(false))!.Value;
@@ -3308,7 +3297,8 @@ public sealed class QuestStore
 
                 var lost = operation with
                 {
-                    Kind = QuestOperationKind.Conflict, Attempted = QuestStatus.Taken, Note = StepWentWith(parent, takeLost, operation.Note, reopened),
+                    Kind = QuestOperationKind.Conflict, Attempted = QuestStatus.Taken,
+                    Note = StepWentWith(parent, takeLost, operation.Note, reopened, published),
                     NoteParts = null, WhileOpen = false, Close = null, Submission = null, LostToTheReopen = reopened,
                 };
                 await RewriteAsync(position, lost, transaction, ct).ConfigureAwait(false);
@@ -3325,11 +3315,12 @@ public sealed class QuestStore
     /// A lost step's take's note as it was given, then why the step went (FABRIC-CLOSE1e): the parent's submission that published
     /// it no longer stands, with the parent's take or to another machine's move on the parent. A parent's take lost to the person's
     /// reopen (<paramref name="reopened"/>, FABRIC-CLOSE1c22) has no winner, so it says the reopen, as the take's refusals do
-    /// (<see cref="QuestExchange.LostTake"/>).
+    /// (<see cref="QuestExchange.LostTake"/>). A step a close published names that close instead (<paramref name="published"/>,
+    /// FABRIC-CLOSE1e2).
     /// </summary>
-    internal static string StepWentWith(string parent, bool takeLost, string? note, bool reopened = false)
+    internal static string StepWentWith(string parent, bool takeLost, string? note, bool reopened = false, string published = "submission")
     {
-        var said = $"This quest was the next step of #{parent}'s submission, which "
+        var said = $"This quest was the next step of #{parent}'s {published}, which "
                    + (!takeLost ? $"lost to another machine's move on #{parent}"
                       : reopened ? $"went with this machine's take of #{parent}: the person's reopen of the work it grew from reached the "
                                    + "remote first"
@@ -3572,7 +3563,8 @@ public sealed class QuestStore
     /// <summary>
     /// Judge a push, quest by quest (design §8): <b>behind</b> when anything reached the quest after
     /// <paramref name="base"/> that this push did not carry, or it is a step whose source holds no submission it grew from here
-    /// (<see cref="AwaitsItsSourceAsync"/>, FABRIC-CLOSE1c21); <b>refused</b> when an operation does not
+    /// (<see cref="AwaitsItsSourceAsync"/>, FABRIC-CLOSE1c21), or, naming none, whose parent is not done here (FABRIC-CLOSE1e2);
+    /// <b>refused</b> when an operation does not
     /// apply through the table, is made on a take its machine lost (<see cref="QuestLog.OnALostTake"/>,
     /// WAITCLAIM3), or is a publish that fails <paramref name="judge"/>; otherwise every operation is
     /// kept under the machine that made it and numbered.
@@ -3700,12 +3692,21 @@ public sealed class QuestStore
     /// submission and the step it published (FABRIC-CLOSE1e's *Left*, the parent behind). Answered behind, so the machine goes round:
     /// its rebase forgets the step with the submission, or pushes it again beside it. The source's group comes first in a push, since its
     /// submission was written before the step's publication, so a submission kept by this push is held here by then. A source this store
-    /// never held (its receiver stays on its machine) waits on nothing, and a step from before names no source.
+    /// never held (its receiver stays on its machine) waits on nothing.
+    /// <para>A step naming no source (FABRIC-CLOSE1e2) was published by its parent's close, in the close's own write, so it waits until this
+    /// store holds the parent done; a done is terminal here, so once held it is held for good. Kept alone, it would stand on a close the
+    /// machine's rebase loses, as CLOSE1e's <i>Left</i> had it for a lost done's follow-up; answered behind, the machine goes round and its
+    /// rebase forgets the follow-up with the done (<see cref="ForgetFollowUpsAsync"/>), or pushes the done again beside it. A parent deleted
+    /// here was never done, since a delete takes only an open quest nobody moved, so its follow-up waits too, and goes as the done does.</para>
     /// </summary>
     private async Task<bool> AwaitsItsSourceAsync(QuestOperation first, SqliteTransaction transaction, CancellationToken ct) =>
-        first is { Kind: QuestOperationKind.Published, Published: { Parent: { Length: > 0 } parent, GrewFrom: { } source } }
-        && await PositionOfAsync(source.Machine, source.Sequence, transaction, ct).ConfigureAwait(false) is null
-        && (await HistoryAsync(parent, transaction, ct).ConfigureAwait(false)).Count > 0;
+        first is { Kind: QuestOperationKind.Published, Published: { Parent: { Length: > 0 } parent } step }
+        && await HistoryAsync(parent, transaction, ct).ConfigureAwait(false) is { Count: > 0 } history
+        && (step.GrewFrom is { } source
+            ? await PositionOfAsync(source.Machine, source.Sequence, transaction, ct).ConfigureAwait(false) is null
+            // FABRIC-CLOSE1e2: a step naming no source was published by its parent's close (a chain's next step, or a set-up step, which
+            // follows a done one), so it waits until this store holds the parent done: a close this push did not land here.
+            : QuestLog.Replay(history) is not { Status: QuestStatus.Done });
 
     /// <summary>Whether anything this push did not carry reached a quest after <paramref name="base"/>.</summary>
     private async Task<bool> MovedSinceAsync(
