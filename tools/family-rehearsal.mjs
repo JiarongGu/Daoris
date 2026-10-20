@@ -4367,7 +4367,7 @@ check(
 );
 
 // The record keeps what went, with each discarded branch's tip, and no path; the tip brings the branch back.
-const abandonRecordFile = join(scratch, 'abandoned.json');
+const abandonRecordFile = homeEntry(scratch, 'abandoned');
 const abandonRecordText = existsSync(abandonRecordFile) ? readFileSync(abandonRecordFile, 'utf8') : '';
 const abandonEntry = abandonRecordText ? JSON.parse(abandonRecordText).abandoned.at(-1) : null;
 const abandonTip = abandonEntry?.trees?.[0]?.tip ?? '';
