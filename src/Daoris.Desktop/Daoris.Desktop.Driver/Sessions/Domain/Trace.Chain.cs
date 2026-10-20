@@ -43,9 +43,19 @@ public static class TraceLinkGaps
 
     /// <summary>Its store holds none by the id the chain names.</summary>
     public const string NotFound = "not-found";
+}
 
-    /// <summary>Its store's host is from before the door that reads it, so it is not kept there (a quest's moves, FLOWCHART1a2).</summary>
+/// <summary>
+/// Why a quest link carries no moves (FLOWCHART1a2): codes of the moves' own, apart from a link's, since the moves are a part of
+/// the quest's link and the page draws them from the service's door, not from the trace.
+/// </summary>
+public static class TraceMovesGaps
+{
+    /// <summary>The service's host is from before the moves' door, so its path is not kept there: no failure (trap 18).</summary>
     public const string NoDoor = "no-door";
+
+    /// <summary>The moves' door did not answer, or answered something other than the moves.</summary>
+    public const string Unread = "unread";
 }
 
 /// <summary>Why this machine's record of a session is missing (D76).</summary>
@@ -409,8 +419,8 @@ public sealed record TraceQuestLink(string Id)
     public IReadOnlyList<TraceMove>? Moves { get; init; }
 
     /// <summary>
-    /// Why its moves are not here: <see cref="TraceLinkGaps.NoDoor"/>, a host from before the door, so its path is not kept there; or
-    /// <see cref="TraceLinkGaps.Unread"/>, the door did not answer. Null where they were read, or the quest was not.
+    /// Why its moves are not here: <see cref="TraceMovesGaps.NoDoor"/>, a host from before the door, so its path is not kept there; or
+    /// <see cref="TraceMovesGaps.Unread"/>, the door did not answer. Null where they were read, or the quest was not.
     /// </summary>
     public string? MovesMissing { get; init; }
 
@@ -1039,8 +1049,8 @@ internal static partial class TraceChains
             Moves = facts.Moves.GetValueOrDefault(quest.Id)?.Moves,
             MovesMissing = facts.Moves.GetValueOrDefault(quest.Id) switch
             {
-                { NoDoor: true } => TraceLinkGaps.NoDoor,
-                { Unread: not null } => TraceLinkGaps.Unread,
+                { NoDoor: true } => TraceMovesGaps.NoDoor,
+                { Unread: not null } => TraceMovesGaps.Unread,
                 _ => null,
             },
             MovesProblem = facts.Moves.GetValueOrDefault(quest.Id)?.Unread,

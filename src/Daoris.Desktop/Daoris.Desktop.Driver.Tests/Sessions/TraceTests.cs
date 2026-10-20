@@ -771,7 +771,7 @@ public sealed class TraceTests : IDisposable
             new StandIn(Sessions(), Quests(), id => id == "a1" ? AskJson() : null)));
         var link = (await Trace.ReadChainAsync(new TraceAsk("q1"), new TraceSources(service, _home, Config())))
             .Chain!.Links.Select(each => each.Quest).OfType<TraceQuestLink>().Single();
-        Assert.Equal((TraceLinkGaps.NoDoor, null), (link.MovesMissing, link.Moves));
+        Assert.Equal((TraceMovesGaps.NoDoor, null), (link.MovesMissing, link.Moves));
     }
 
     [Fact]

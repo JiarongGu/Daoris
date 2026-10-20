@@ -209,13 +209,13 @@ internal static class TraceWords
     /// </summary>
     private static void Moves(StringBuilder text, TraceQuestLink quest)
     {
-        if (quest.MovesMissing == TraceLinkGaps.NoDoor)
+        if (quest.MovesMissing == TraceMovesGaps.NoDoor)
         {
             text.Append("  its moves: this service answers none, a host from before the moves door, so its path is not kept here\n");
             return;
         }
 
-        if (quest.MovesMissing == TraceLinkGaps.Unread)
+        if (quest.MovesMissing == TraceMovesGaps.Unread)
         {
             text.Append($"  its moves could not be read: {quest.MovesProblem}\n");
             return;
