@@ -6,11 +6,14 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// A node's acceptance (FABRIC-NODE1; the fabric events design §E2, generalizing §D4's evidence binding): what a reach is bound to,
-/// <c>{ unit, subjectRevision, graphDigest, nodeVersion, inputs, prerequisiteReceipts, attempt }</c>, and the evidence it rests on.
+/// <c>{ unit, subjectRevision, graphDigest, nodeVersion, inputs, prerequisiteReceipts, attempt }</c>, and a run's node its <c>subject</c>
+/// (FABRIC-CUTOVER1a), and the evidence it rests on.
 /// A changed dependency invalidates it and everything downstream (<see cref="NodeAcceptances.Invalidate"/>).
 /// </summary>
-/// <param name="Unit">The unit it acts on.</param>
-/// <param name="SubjectRevision">The unit's revision it was accepted at: a branch's full tip, which names its repository by the unit.</param>
+/// <param name="Unit">The unit it acts on: its node record's.</param>
+/// <param name="SubjectRevision">
+/// The revision of the unit it observes it was accepted at (<see cref="Observes"/>): a branch's full tip, which names its repository by the unit.
+/// </param>
 /// <param name="GraphDigest">The graph that bound the run.</param>
 /// <param name="Node">The node's id in that graph.</param>
 /// <param name="NodeVersion">The node's declared version.</param>
@@ -34,6 +37,16 @@ public sealed record NodeAcceptance(string Unit, string? SubjectRevision, string
         get => prerequisiteReceipts;
         init => prerequisiteReceipts = ImmutableArray.CreateRange(value ?? throw new ArgumentNullException(nameof(value)));
     }
+
+    /// <summary>
+    /// The unit its node observes where that is not <see cref="Unit"/> (FABRIC-CUTOVER1a; the cutover design §2.1): a run's node, kept on the
+    /// run's record, observes the quest, the branch or the run its kind names. Null where the node observes its record's own unit, as every
+    /// acceptance written before does: it is in the id only when set, so those keep theirs, and an absent one reads as the unit.
+    /// </summary>
+    public string? Subject { get; init; }
+
+    /// <summary>The unit it observes: its <see cref="Subject"/> where set, else its <see cref="Unit"/>.</summary>
+    public string Observes => Subject ?? Unit;
 
     /// <summary>The immutable evidence reference it was reached on; not part of the binding.</summary>
     public NodePort? Evidence { get; init; }
@@ -80,6 +93,13 @@ public sealed record NodeAcceptance(string Unit, string? SubjectRevision, string
             Line(receipt);
         }
 
+        // FABRIC-CUTOVER1a: last and marked, only when set, so an acceptance naming none keeps the id it was written with.
+        if (Subject is not null)
+        {
+            Line("subject");
+            Line(Subject);
+        }
+
         return text.ToString();
     }
 }
@@ -89,6 +109,12 @@ public static class NodeLapse
 {
     /// <summary>The unit's revision moved: a new tip, or one no longer read.</summary>
     public const string Revision = "revision";
+
+    /// <summary>
+    /// The unit the node observes moved (FABRIC-CUTOVER1a; the cutover design §2.2): a run's chain went on to its next quest, or its next session
+    /// to another branch, at the same revision or not. Judged before the revision.
+    /// </summary>
+    public const string Subject = "subject";
 
     /// <summary>The graph that binds the run changed.</summary>
     public const string Graph = "graph";
@@ -120,9 +146,19 @@ public static class NodeAcceptances
         : acceptance.NodeVersion != nodeVersion ? NodeLapse.Version
         : null;
 
-    /// <summary>The roots a unit's new revision makes: every acceptance on that unit bound to another revision.</summary>
+    /// <summary>
+    /// Why <paramref name="acceptance"/> no longer binds against the subject its node observes now and that subject's revision (FABRIC-CUTOVER1a):
+    /// another subject first, whatever the revision, so a branch replaced at the same commit is new work; then as <see cref="Lapsed(NodeAcceptance, string?, string, int)"/>.
+    /// </summary>
+    public static string? Lapsed(NodeAcceptance acceptance, string subject, string? revision, string graphDigest, int nodeVersion) =>
+        !string.Equals(acceptance.Observes, subject, StringComparison.Ordinal) ? NodeLapse.Subject : Lapsed(acceptance, revision, graphDigest, nodeVersion);
+
+    /// <summary>
+    /// The roots a unit's new revision makes: every acceptance observing that unit bound to another revision, a run's node whose subject it is
+    /// included (FABRIC-CUTOVER1a, the cutover design §11.2: a run's roots name the subject, never the run's record).
+    /// </summary>
     public static Func<NodeAcceptance, string?> Moved(string unit, string? revision) => acceptance =>
-        acceptance.Unit == unit && !string.Equals(acceptance.SubjectRevision, revision, StringComparison.Ordinal) ? NodeLapse.Revision : null;
+        acceptance.Observes == unit && !string.Equals(acceptance.SubjectRevision, revision, StringComparison.Ordinal) ? NodeLapse.Revision : null;
 
     /// <summary>
     /// Every acceptance <paramref name="root"/> lapses, in the order given, then every one resting on an invalidated one, by a

@@ -32,9 +32,10 @@ public static class LookNode
         NodeObservation PassedOver(string said) => Seen(NodeStates.Skipped, said) with { Source = NodeSource.Review };
 
         if (node.Kind != NodeKinds.Look) return Seen(null, "this kind is not a look") with { Refused = NodeRefusal.NotObserved };
-        if (binding.Unit != unit.Id || binding.Node != node.Id || binding.NodeVersion != node.Version)
+        // FABRIC-CUTOVER1a: the unit its binding observes, a run's branch on the run's record, never the record's own unit.
+        if (binding.Observes != unit.Id || binding.Node != node.Id || binding.NodeVersion != node.Version)
         {
-            return Seen(null, "its binding names another unit, node or version") with { Refused = NodeRefusal.NotBound };
+            return Seen(null, "its binding names another subject, node or version") with { Refused = NodeRefusal.NotBound };
         }
 
         // FABRIC-NODE1b: a landing recorded at the bound commit keeps the review that let it go, whatever the gate says now (as an opinion's does).

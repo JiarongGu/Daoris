@@ -44,17 +44,29 @@ public sealed record WireRun(string GraphDigest, string Run)
     public NodeScope Scope => new(GraphDigest, Run);
 
     /// <summary>
-    /// Each unit's current revision, by <see cref="WorkUnit.Id"/>: a branch's full tip, null for a unit with none (a quest's). A complete
-    /// snapshot: a unit a node acts on that it leaves out, or a branch it names with none, refuses the evaluation (FABRIC-WIRE1e).
+    /// Each unit's current revision, by <see cref="WorkUnit.Id"/>: a branch's full tip, null for a unit with none (a run's own). A complete
+    /// snapshot of the units the nodes' statuses name: a record's unit that a node not named in <see cref="Subjects"/> acts on, left out or a
+    /// branch named with none, refuses the evaluation (FABRIC-WIRE1e). A named subject's is judged for its own nodes alone (FABRIC-CUTOVER1a).
     /// </summary>
     public IReadOnlyDictionary<string, string?> Revisions { get; init; } = ImmutableDictionary<string, string?>.Empty;
 
     /// <summary>
     /// A node's own revision where it is not its unit's, by node id (FABRIC-PERFORM1m): a branch unit's observed plugin node, bound to its
-    /// branch's tip read in the caller's pass rather than the end fact's revision, which lags it. The node's binding is made and lapses on
-    /// it; every other node on <see cref="Revisions"/>.
+    /// branch's tip read in the caller's pass rather than the end fact's revision, which lags it; a run's node after <c>handed</c>, bound to its
+    /// landing's tip as the landing's record keeps it (FABRIC-CUTOVER1a). The node's binding is made and lapses on it; every other node on
+    /// <see cref="Revisions"/>.
     /// </summary>
     public IReadOnlyDictionary<string, string?> NodeRevisions { get; init; } = ImmutableDictionary<string, string?>.Empty;
+
+    /// <summary>
+    /// The unit each node observes where it is not its record's, by node id (FABRIC-CUTOVER1a; the cutover design §2.1, §2.2): a run's record
+    /// keeps every node of its graph under <c>run:&lt;run&gt;</c>, each observing the quest, the branch or the run its kind names. The node is
+    /// observed and bound there, and its binding names it (<see cref="NodeAcceptance.Subject"/>), lapsing as <see cref="NodeLapse.Subject"/>
+    /// when it moves. A node named with null had no subject found this pass, and a branch subject with no revision handed in was not read:
+    /// either is judged on its wires and offered no start (<see cref="WireEligibility.Withheld"/>), a started one neither observed nor lapsed,
+    /// while the rest are evaluated. A node left out observes its record's unit, as every node did before.
+    /// </summary>
+    public IReadOnlyDictionary<string, string?> Subjects { get; init; } = ImmutableDictionary<string, string?>.Empty;
 
     /// <summary>The trigger firings already recorded (<see cref="WireFiring.Key"/>): a trigger fires once per receipt, whatever replays.</summary>
     public IReadOnlySet<string> Fired { get; init; } = ImmutableHashSet<string>.Empty;
@@ -118,8 +130,17 @@ public sealed record WireEligibility(string Node, bool Eligible)
     /// <summary>The wires not satisfied, in wire-id order: what it waits on.</summary>
     public IReadOnlyList<string> Waiting { get; init; } = [];
 
-    /// <summary>The binding its next attempt starts on, while eligible: its inputs from <c>data</c> wires and its receipts.</summary>
+    /// <summary>
+    /// The binding its next attempt starts on, while eligible on a subject it can be judged on: its inputs from <c>data</c> wires and its
+    /// receipts, and the subject it observes where that is not its record's unit.
+    /// </summary>
     public NodeAcceptance? Binding { get; init; }
+
+    /// <summary>
+    /// Why it is offered no start whatever its wires say (FABRIC-CUTOVER1a): <see cref="WireEvaluation.NoSubject"/>, no subject found for it this
+    /// pass, or <see cref="WireEvaluation.NoRevision"/>, its branch subject's revision not handed in; null where it is judged on its subject.
+    /// </summary>
+    public string? Withheld { get; init; }
 
     /// <summary>What a <c>wait.unit</c>'s <c>wait</c> wire names, for its adapter (WAITUNIT1): never an eligibility condition.</summary>
     public WaitTarget? Waits { get; init; }
@@ -225,6 +246,9 @@ public sealed record WireEvaluated(
 /// comes before observation (FABRIC-WIRE1e), so no start rests on a receipt the same evaluation would invalidate. A node invalidated here
 /// is judged again at the next evaluation, so the lapse is seen and no other witness is taken silently (canary 41). The caller evaluates
 /// again after applying what it starts, until <see cref="WireEvaluated.Settled"/>.</para>
+/// <para><b>A node observes a subject</b> (FABRIC-CUTOVER1a; the cutover design §2.1, §2.2): its record's unit, or on a run's record the quest,
+/// the branch or the run its kind names (<see cref="WireRun.Subjects"/>). It is observed there, bound there at that subject's revision, and
+/// lapses as <see cref="NodeLapse.Subject"/> once the subject moves; a named subject not found or not read withholds its own nodes alone.</para>
 /// <para><b>Receipts</b> (<see cref="WireReceipt"/>): a reach's acceptance; this run's skip; a failure whose declared retries are spent
 /// and a rejection, each of an attempt started in this graph and run. Each wire kind reads its own: <c>after</c> a reach or a skip,
 /// <c>data</c> and <c>trigger</c> a reach, <c>failed</c> a failure, <c>rejected</c> a rejection.</para>
@@ -248,9 +272,13 @@ public static class WireEvaluation
 
     /// <summary>
     /// The evaluation's refusal when a unit a node acts on has no revision handed in (FABRIC-WIRE1e): a unit missing from
-    /// <see cref="WireRun.Revisions"/>, or a branch's named with none. A quest's is null by design, and named so.
+    /// <see cref="WireRun.Revisions"/>, or a branch's named with none. A quest's is null by design, and named so. For a node whose subject is
+    /// named (<see cref="WireRun.Subjects"/>), why that node alone is withheld (FABRIC-CUTOVER1a).
     /// </summary>
     public const string NoRevision = "no-revision";
+
+    /// <summary>Why a node is withheld when no subject was found for it this pass (FABRIC-CUTOVER1a): a landing not made yet, a session not read.</summary>
+    public const string NoSubject = "no-subject";
 
     /// <summary>
     /// Evaluates <paramref name="wires"/> over <paramref name="nodes"/> and their <paramref name="statuses"/> for <paramref name="run"/>.
@@ -287,10 +315,11 @@ public static class WireEvaluation
         }
 
         // 0. FABRIC-WIRE1e: the revisions are a complete snapshot, or nothing is judged: a unit read as having none would bind and lapse
-        // on a guess. A quest's is named, as null.
-        var missing = declared.Select(node => now[node.Id].Unit).Distinct(StringComparer.Ordinal)
+        // on a guess. A quest's is named, as null. FABRIC-CUTOVER1a: a node whose subject is named is judged on that subject alone, for itself.
+        var missing = declared.Where(node => !run.Subjects.ContainsKey(node.Id)).Select(node => now[node.Id].Unit).Distinct(StringComparer.Ordinal)
             .Where(unit => !Revised(run, unit)).Order(StringComparer.Ordinal).ToList();
         if (missing.Count > 0) return new(now, [], [], [], [], []) { Refusal = NoRevision, Missing = missing };
+        var subjects = declared.ToDictionary(node => node.Id, node => SubjectOf(run, node, now[node.Id]), StringComparer.Ordinal);
 
         // 1. Invalidations, transitively, before anything is observed (FABRIC-WIRE1e): a node whose binding lapsed is invalidated, never
         // observed, so no receipt the same evaluation would invalidate is exposed, and nothing starts on one. Each round takes away the
@@ -302,7 +331,7 @@ public static class WireEvaluation
             var current = Receipts(declared, now, run, lapsing.Keys).Values.Select(receipt => receipt.Id).ToHashSet(StringComparer.Ordinal);
             foreach (var node in declared)
             {
-                if (lapsing.ContainsKey(node.Id) || Lapse(node, now[node.Id], run, current) is not { } lapse) continue;
+                if (lapsing.ContainsKey(node.Id) || Lapse(node, now[node.Id], run, current, subjects[node.Id]) is not { } lapse) continue;
                 lapsing[node.Id] = lapse;
                 found = true;
             }
@@ -316,22 +345,23 @@ public static class WireEvaluation
         // 2. The observed built-ins still bound, read from their records: NODE1's choice 8, with the caller's git reads; and D157's gates, each
         // from its records as the caller read them: an opinion from its gate's judgement (FABRIC-WIRE1g), a look from its gate's verdict and a
         // go-ahead from D135's answers (FABRIC-NODE1b). An observation moves an active or unknown node, which holds no receipt, so it takes none
-        // away from what step 1 judged current.
+        // away from what step 1 judged current. FABRIC-CUTOVER1a: each from its subject's records and reads, never its record's unit's; a node
+        // withheld, its subject not found or not read, is not observed.
         foreach (var node in declared.Where(node => !moved.Contains(node.Id)))
         {
             var status = now[node.Id];
             if (status.State is not (NodeStates.Active or NodeStates.Unknown) || status.Binding is not { } binding
                 || !(BuiltInNodes.Observed.Contains(node.Kind) || node.Kind is NodeKinds.Opinion or NodeKinds.Look or NodeKinds.GoAhead)
-                || !run.Units.TryGetValue(status.Unit, out var unit))
+                || subjects[node.Id] is not { Withheld: null, Subject: { } subject } || !run.Units.TryGetValue(subject, out var unit))
             {
                 continue;
             }
 
             var observation = node.Kind switch
             {
-                NodeKinds.Opinion => OpinionNode.Observe(unit, node, binding, run.Opinions.GetValueOrDefault(status.Unit)),
-                NodeKinds.Look => LookNode.Observe(unit, node, binding, run.Reviews.GetValueOrDefault(status.Unit)),
-                NodeKinds.GoAhead => GoAheadNode.Observe(unit, node, binding, run.GoAheads.GetValueOrDefault(status.Unit)),
+                NodeKinds.Opinion => OpinionNode.Observe(unit, node, binding, run.Opinions.GetValueOrDefault(subject)),
+                NodeKinds.Look => LookNode.Observe(unit, node, binding, run.Reviews.GetValueOrDefault(subject)),
+                NodeKinds.GoAhead => GoAheadNode.Observe(unit, node, binding, run.GoAheads.GetValueOrDefault(subject)),
                 _ => BuiltInNodes.Observe(unit, node, binding, run.Git),
             };
             if (observation.Move is not { } move || (status.State == NodeStates.Unknown && move.To == NodeStates.Unknown)) continue;
@@ -374,7 +404,7 @@ public static class WireEvaluation
         foreach (var node in declared)
         {
             var status = now[node.Id];
-            var judged = Eligible(node, status, wires, receipts, run);
+            var judged = Eligible(node, status, wires, receipts, run, subjects[node.Id]);
             eligibility.Add(judged);
             if (moved.Contains(node.Id)) continue;
             var to = status.State switch
@@ -454,6 +484,27 @@ public static class WireEvaluation
         && (revision is not null || !(run.Units.TryGetValue(unit, out var known) && known.Kind == WorkUnitKind.Branch));
 
     /// <summary>
+    /// The subject a node observes this pass and the revision it is judged on there, or why it cannot be judged on it (FABRIC-CUTOVER1a):
+    /// <see cref="NoSubject"/> with no subject, <see cref="NoRevision"/> with the subject whose revision was not read.
+    /// </summary>
+    private sealed record Subjected(string? Subject, string? Revision, string? Withheld);
+
+    /// <summary>
+    /// The subject <paramref name="node"/> observes this pass (FABRIC-CUTOVER1a; the cutover design §2.2): the one <see cref="WireRun.Subjects"/>
+    /// names, else its record's unit on that unit's revision, as before. A named subject is judged for this node alone: none found, or a branch
+    /// whose revision was not handed in (its own in <see cref="WireRun.NodeRevisions"/> first), withholds the node, and the rest are evaluated.
+    /// </summary>
+    private static Subjected SubjectOf(WireRun run, NodeDeclaration node, NodeStatus status)
+    {
+        if (!run.Subjects.TryGetValue(node.Id, out var subject)) return new(status.Unit, Revision(run, status.Unit, node.Id), null);
+        if (subject is null) return new(null, null, NoSubject);
+        var read = run.NodeRevisions.TryGetValue(node.Id, out var revision) || run.Revisions.TryGetValue(subject, out revision);
+        return read && (revision is not null || !(run.Units.TryGetValue(subject, out var known) && known.Kind == WorkUnitKind.Branch))
+            ? new(subject, revision, null)
+            : new(subject, null, NoRevision);
+    }
+
+    /// <summary>
     /// Each node's one current receipt, by node id: its reach, this run's skip, a spent failure or a rejection of an attempt started in
     /// this graph and run (FABRIC-WIRE1e: the attempt's scope, never the caller's run hashed into another run's outcome). The nodes in
     /// <paramref name="lapsing"/> have none, since they are about to be invalidated.
@@ -489,10 +540,10 @@ public static class WireEvaluation
     private static bool Retries(NodeDeclaration node, NodeStatus status) => status.Transient && status.Tries < (node.Retry?.MaxAttempts ?? 1);
 
     /// <summary>
-    /// Why a node is invalidated now, or null: a skip of another graph or run; a bound node whose binding's revision, graph or version is
-    /// no longer current; or one resting on a receipt or an input's acceptance that is no longer current.
+    /// Why a node is invalidated now, or null: a skip of another graph or run; a bound node whose binding's subject, revision, graph or version
+    /// is no longer current; or one resting on a receipt or an input's acceptance that is no longer current.
     /// </summary>
-    private static (string Why, string? Detail)? Lapse(NodeDeclaration node, NodeStatus status, WireRun run, HashSet<string> current)
+    private static (string Why, string? Detail)? Lapse(NodeDeclaration node, NodeStatus status, WireRun run, HashSet<string> current, Subjected subjected)
     {
         // FABRIC-WIRE1g: a skip by its kind's record (an opinion's gate, NodeAuthority.SkipBy) is that record's judgement of its binding, so
         // a new revision or a lost receipt lapses it, as it lapses an outcome; the person's skip is their word for the work, and holds.
@@ -505,16 +556,23 @@ public static class WireEvaluation
 
         if (!(recorded || NodeStates.Bound.Contains(status.State)) || status.Binding is not { } binding) return null;
 
+        // FABRIC-CUTOVER1a (the cutover design §2.2): a binding lapses as `subject` once its node's subject moves, whatever the revision. A node
+        // withheld this pass, its subject not found or its revision not read, is judged on its binding's own, so nothing lapses on a read not
+        // made, and only a moved subject lapses it there.
+        var subject = subjected.Subject ?? binding.Observes;
+        var revision = subjected.Withheld is null ? subjected.Revision : binding.SubjectRevision;
+
         // FABRIC-RUN1e, in place of WIRE1f's lapse of another run's failure: a failure or a rejection of another graph or run is kept for the
         // person, since a run begins at a graph edit and a Setup save can edit a derived graph, so edits back and forth would restart failed
-        // work past its retry bound for ever. Only a new revision, which is new work, lapses it, as in its own graph and run; the person's new
-        // attempt restarts it. It is no receipt here (Receipts reads this graph's and run's alone), so nothing fires on it.
+        // work past its retry bound for ever. Only new work lapses it, a new subject or a new revision, as in its own graph and run; the
+        // person's new attempt restarts it. It is no receipt here (Receipts reads this graph's and run's alone), so nothing fires on it.
         if (status.State is NodeStates.Failed or NodeStates.Rejected && (binding.GraphDigest != run.GraphDigest || status.Scope != run.Scope))
         {
-            return string.Equals(binding.SubjectRevision, Revision(run, binding.Unit, node.Id), StringComparison.Ordinal) ? null : (WireWhy.Lapsed, NodeLapse.Revision);
+            return !string.Equals(binding.Observes, subject, StringComparison.Ordinal) ? (WireWhy.Lapsed, NodeLapse.Subject)
+                : string.Equals(binding.SubjectRevision, revision, StringComparison.Ordinal) ? null : (WireWhy.Lapsed, NodeLapse.Revision);
         }
 
-        if (NodeAcceptances.Lapsed(binding, Revision(run, binding.Unit, node.Id), run.GraphDigest, node.Version) is { } why) return (WireWhy.Lapsed, why);
+        if (NodeAcceptances.Lapsed(binding, subject, revision, run.GraphDigest, node.Version) is { } why) return (WireWhy.Lapsed, why);
         var lost = binding.PrerequisiteReceipts.FirstOrDefault(receipt => !current.Contains(receipt))
             ?? binding.Inputs.Values.Select(port => port.Acceptance).FirstOrDefault(acceptance => acceptance is not null && !current.Contains(acceptance));
         return lost is null ? null : (WireWhy.Upstream, lost);
@@ -524,9 +582,13 @@ public static class WireEvaluation
     private static string? Revision(WireRun run, string unit, string node) =>
         run.NodeRevisions.TryGetValue(node, out var own) ? own : run.Revisions.TryGetValue(unit, out var revision) ? revision : null;
 
-    /// <summary>One node's eligibility on <paramref name="receipts"/>: its data inputs, its join members, and its groups (§E3, §E7).</summary>
+    /// <summary>
+    /// One node's eligibility on <paramref name="receipts"/>: its data inputs, its join members, and its groups (§E3, §E7); and the binding a
+    /// start takes on its subject, none while it is withheld there (FABRIC-CUTOVER1a). An input from another subject is resolved on its producer's
+    /// reach as any is: the producer's acceptance was judged on its own subject in step 1.
+    /// </summary>
     private static WireEligibility Eligible(
-        NodeDeclaration node, NodeStatus status, IReadOnlyList<Wire> wires, Dictionary<string, WireReceipt> receipts, WireRun run)
+        NodeDeclaration node, NodeStatus status, IReadOnlyList<Wire> wires, Dictionary<string, WireReceipt> receipts, WireRun run, Subjected subjected)
     {
         var join = node.Kind == NodeKinds.All;
         var into = wires.Where(wire => wire.To is { Unit: null } to && to.Node == node.Id).OrderBy(wire => wire.Id, StringComparer.Ordinal).ToList();
@@ -622,20 +684,24 @@ public static class WireEvaluation
         }
 
         var eligible = waiting.Count == 0;
+        var bound = eligible && subjected.Withheld is null;
         return new WireEligibility(node.Id, eligible)
         {
             Witnesses = witnesses,
             Receipts = [.. consumed.Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal)],
             Waiting = [.. waiting.Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal)],
-            Binding = eligible
-                ? new NodeAcceptance(status.Unit, Revision(run, status.Unit, node.Id), run.GraphDigest, node.Id, node.Version, status.Attempt + 1)
+            Binding = bound
+                ? new NodeAcceptance(status.Unit, subjected.Revision, run.GraphDigest, node.Id, node.Version, status.Attempt + 1)
                 {
+                    // Named only where it is not the record's unit, so every binding made as before keeps its id.
+                    Subject = subjected.Subject == status.Unit ? null : subjected.Subject,
                     Inputs = inputs,
                     PrerequisiteReceipts = [.. consumed.Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal)],
                 }
                 : null,
+            Withheld = subjected.Withheld,
             Waits = into.FirstOrDefault(wire => wire.Kind == WireKinds.Wait)?.Waits,
-            Firings = eligible ? firings : [],
+            Firings = bound ? firings : [],
         };
     }
 

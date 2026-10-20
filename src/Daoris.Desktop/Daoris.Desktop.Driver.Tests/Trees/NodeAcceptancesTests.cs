@@ -43,6 +43,47 @@ public sealed class NodeAcceptancesTests
     }
 
     /// <summary>
+    /// FABRIC-CUTOVER1a (the cutover design §2.1): an acceptance names the subject its node observes where that is not its unit, a run's
+    /// node kept on the run's record. The subject is in the id only when set, so an acceptance written before keeps the id it had, and one
+    /// with none observes its unit.
+    /// </summary>
+    [Fact]
+    public void A_subject_is_in_the_id_only_when_set_and_an_absent_one_reads_as_the_unit()
+    {
+        var before = new NodeAcceptance("unit-a", "tip-1", "graph-1", "line", 1, 1);
+        Assert.Equal("acc-6825de9c67f8dd29d84bd83f883ee3b3", before.Id);
+        Assert.Equal(((string?)null, "unit-a"), (before.Subject, before.Observes));
+
+        var run = new NodeAcceptance("run:r", "tip-1", "graph-1", "line", 1, 1) { Subject = "unit-a" };
+        Assert.Equal("unit-a", run.Observes);
+        Assert.NotEqual(run.Id, (run with { Subject = "unit-b" }).Id);
+        Assert.NotEqual(run.Id, (run with { Subject = null }).Id);
+        Assert.Equal(run.Id, (run with { Evidence = new NodePort("daoris/line@1", "landings.json#feature/x", "tip-1", null) }).Id);
+    }
+
+    /// <summary>
+    /// FABRIC-CUTOVER1a (the cutover design §2.2): a binding lapses as <c>subject</c> when its node's subject moves, whatever its revision, so a
+    /// branch replaced by another at the same commit is new work; and a new revision roots the acceptances observing that unit, a run's
+    /// included, never one whose unit is the run but whose subject is another.
+    /// </summary>
+    [Fact]
+    public void A_binding_lapses_as_subject_when_its_nodes_subject_moves_and_a_revision_roots_by_subject()
+    {
+        var handed = new NodeAcceptance("run:r", "tip-1", "graph-1", "handed", 1, 1) { Subject = "unit-a" };
+        Assert.Null(NodeAcceptances.Lapsed(handed, "unit-a", "tip-1", "graph-1", 1));
+        Assert.Equal(NodeLapse.Subject, NodeAcceptances.Lapsed(handed, "unit-b", "tip-1", "graph-1", 1));
+        Assert.Equal(NodeLapse.Revision, NodeAcceptances.Lapsed(handed, "unit-a", "tip-2", "graph-1", 1));
+        Assert.Null(NodeAcceptances.Lapsed(new NodeAcceptance("unit-a", "tip-1", "graph-1", "line", 1, 1), "unit-a", "tip-1", "graph-1", 1));
+
+        var claimed = new NodeAcceptance("run:r", "2026-10-17T09:00:00.000Z", "graph-1", "claimed", 1, 1) { Subject = "quest:q1" };
+        var line = new NodeAcceptance("unit-a", "tip-1", "graph-1", "line", 1, 1);
+        Assert.Equal(
+            [new NodeInvalidation(handed.Id, NodeLapse.Revision, null), new NodeInvalidation(line.Id, NodeLapse.Revision, null)],
+            NodeAcceptances.Invalidate([claimed, handed, line], NodeAcceptances.Moved("unit-a", "tip-2")));
+        Assert.Empty(NodeAcceptances.Invalidate([claimed, handed], NodeAcceptances.Moved("run:r", "tip-2")));
+    }
+
+    /// <summary>
     /// A new tip on one unit invalidates that unit's acceptances, and through their prerequisites and inputs every acceptance downstream,
     /// on another unit too, however far; an acceptance that depends on none of them stands. Each says why, and none is removed.
     /// </summary>

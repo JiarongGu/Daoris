@@ -22,9 +22,10 @@ public static class GoAheadNode
         NodeObservation Seen(string? outcome, string said) => new(unit.Id, node.Id, node.Kind, outcome, said) { Attempt = binding.Attempt };
 
         if (node.Kind != NodeKinds.GoAhead) return Seen(null, "this kind is not a go-ahead") with { Refused = NodeRefusal.NotObserved };
-        if (binding.Unit != unit.Id || binding.Node != node.Id || binding.NodeVersion != node.Version)
+        // FABRIC-CUTOVER1a: the unit its binding observes, on a run's record the run itself, projected as a unit for the evaluation.
+        if (binding.Observes != unit.Id || binding.Node != node.Id || binding.NodeVersion != node.Version)
         {
-            return Seen(null, "its binding names another unit, node or version") with { Refused = NodeRefusal.NotBound };
+            return Seen(null, "its binding names another subject, node or version") with { Refused = NodeRefusal.NotBound };
         }
 
         if (ActOf(node) is not { } act) return Seen(null, "it names no act, so no go-ahead answers it");
