@@ -234,7 +234,8 @@ own), that version read from the nearest `packageManager` field or the install's
 as written, said.
 A development pipeline says which checks its sessions run (`SessionChecks`, FABRIC-PIPELINE1b, D192 points 4 and 5): under Current,
 `sessionChecks` in `driver.json` by repository, `light` or `heavy-at-end`, absent being today's, set by `daoris-driver checks` and
-Setup's *Sessions' checks*; a named workflow's run takes its version's, which none carries in this build. A driven start composes
+Setup's *Sessions' checks*; a named workflow's run takes its version's, the `work` step's `checks` in a steps version (FABRIC-PIPELINE1b2),
+which `workflow new --from current:<repository>` keeps from a light Current. A driven start composes
 its words from them (`HeavyTold.Hand`): under `light` its light gates (those the file does not mark heavy) and the checks its change
 reaches, filtered, its heavy gates as the verification's; under `heavy-at-end` the heavy gates once, at its end, as the pipeline's.
 Where its agent takes Daoris's rules (Claude Code, both doors), each heavy gate's declared command joins its spawn file's deny list

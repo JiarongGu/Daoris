@@ -5,6 +5,9 @@ with the version and date at release.
 
 ## Unreleased
 
+- A named workflow keeps which checks its sessions run: its `work` step takes `checks`, `light` or `heavy-at-end`, and
+  `daoris driver workflow new <id> --from current:<repository>` keeps a repository's *Light* or *Heavy at end* there, so its
+  sessions no longer run every gate again once the workflow is chosen. Workflows saved before read and bind exactly as they did.
 - `daoris driver` hands its standing choices to Daoris's own driver program, as `daoris-driver driver` with the same words: the
   one your install carries, or the build `DAORIS_DRIVER_PROGRAM` names. A `daoris` with neither, such as a checkout's, says so and
   does nothing. What each choice says is as before; a refusal is said on the error stream, and a refusal the window's route would

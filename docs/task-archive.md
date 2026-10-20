@@ -18551,3 +18551,15 @@ confirmed in the open window.
 > - [ ] **CACHECLEAR1 — clearing downloads** (driver/web; after WIRING1c). An act on This Daoris's *Downloads* row that removes the agents' and tools' downloaded versions nothing uses, listed first then pressed (D88), saying what it keeps. Proof: driver tests per kept version; the list and press in en and zh.
 
 **Outcome** 2026-10-21: built. *Clear unused downloads…* on the Downloads row lists each version under `cache/toolchain` and `cache/tools` with its size and what keeps it (a pin of the machine's or a workspace's, Tools running it, a setting naming a file inside it, a file that cannot be read, a download within the hour), and one press removes those nothing uses, judged again right before each goes and moved aside first, so a version a program runs from is kept as in use; the answer says what it kept. `DownloadClearing` in the driver library, `SYSTEM_DOWNLOADS` and `SYSTEM_DOWNLOADS_CLEAR`, `WiringDownloads` en and zh. No terminal twin. Proof: `DownloadClearingTests` (16, one per kept version), `DriverModuleDownloadsTests`, `WiringDomain.test.tsx`'s list and press in en and zh. The window is WIRING1f's. On Opus: about 150 tool calls. Detail: D88's CACHECLEAR1 note.
+
+## FABRIC-PIPELINE1b2 — a saved workflow keeps a repository's light checks (2026-10-21, D192)
+
+> - [ ] **FABRIC-PIPELINE1b2 — a saved workflow keeps a repository's light checks** (driver, cli; D192; after FABRIC-PIPELINE1a). FABRIC-PIPELINE1b built the sessions' checks under Current only: schema 1's `work` takes no `checks`, since a new field in its canonical text would change every bound run's digest, so saving Current as a named workflow drops a light repository's rule and its sessions run every gate again. Wanted: `work.checks` written only where set (the canonical rule 1a's readers adopt), read by both twins, and a graph version's `claimed.checks` read at the bind (after CUTOVER1g). Proof: a workflow saved from a light Current keeps `light`; every existing version's digest unchanged.
+
+**Outcome** 2026-10-21: built for steps versions. Schema 1's `work` takes `checks` (`light` or `heavy-at-end`), a kind field marked
+`whereSet` in `workflow-named.json` and written into the canonical text and a decoded graph's options only where set, so every
+existing version's digest and derived graph digest are unchanged (the table's rows and `WorkflowRunNodesTests` hold them); both twins
+read it, `workflow new --from current:<repository>` keeps a light repository's rule, a named run's sessions take their version's
+checks, and a start reads the run's process wherever a named workflow is bound in the repository. A graph version's `claimed.checks`
+read at the bind waits for the bind before the take: carried on FABRIC-CUTOVER1g's row. D192's FABRIC-PIPELINE1b2 note says what was
+settled.
