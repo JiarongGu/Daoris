@@ -95,10 +95,16 @@ public sealed class RulesRoutes(DriverLoop loop)
             .Concat(file.Repositories.OrderBy(p => p.Key, StringComparer.Ordinal).Select(p => (Scope: "repository", Name: (string?)p.Key, Lists: p.Value)))
             .Select(held => new { held.Scope, held.Name, held.Lists.Allow, held.Lists.Ask, held.Lists.Deny })
             .ToArray(),
-        // What agents proposed about these rules (PERM2, D74), newest first. Structured rather than a
-        // sentence, so the page says it in the person's language. 🔴 Not the folder the session ran in:
-        // it is a machine path, and the page is told who proposed, never where they stood.
-        Proposals = RuleProposals.Load(_loop.Home).Select(proposal => new
+        Proposals = Proposals(_loop.Home),
+    };
+
+    /// <summary>
+    /// What agents proposed about these rules (PERM2, D74), newest first, as <c>RULES</c> answers them and <i>What needs you</i>'s judge
+    /// reads them (PUSH1d4). Structured rather than a sentence, so the page says it in the person's language. 🔴 Not the folder the
+    /// session ran in: it is a machine path, and the page is told who proposed, never where they stood.
+    /// </summary>
+    public static object[] Proposals(string home) =>
+        RuleProposals.Load(home).Select(proposal => new
         {
             proposal.Id,
             State = proposal.State.ToString().ToLowerInvariant(),
@@ -116,8 +122,7 @@ public sealed class RulesRoutes(DriverLoop loop)
             Settled = Moments.Write(proposal.Settled),
             proposal.SettledBy,
             proposal.Note,
-        }).ToArray(),
-    };
+        }).ToArray<object>();
 
     private static RuleScope ScopeOf(IpcRequest request) => Optional(request, "scope") switch
     {
