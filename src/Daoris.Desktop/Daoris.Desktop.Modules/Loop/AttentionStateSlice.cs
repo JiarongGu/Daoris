@@ -20,8 +20,8 @@ namespace Daoris.Desktop;
 ///
 /// <para><b>Its inputs, from memory.</b> The sessions, the quests, the asks, the groups and the work as their slices last judged them
 /// (<see cref="StateSlice.Snapshot"/>); the registry as the machine's facts hold it; and what the driver's look kept: the trust holds,
-/// the considerations and the account waits as the tick hands them, the second opinions judged, the rule proposals, the helpers' asks
-/// and the held tool calls; and for the accounts' rows, the roster's last readings as <c>HARNESSES</c> answers them (asking no account,
+/// the considerations and the account waits as the tick hands them, the second opinions judged, the rule proposals, the helpers' asks,
+/// the held tool calls and the answers the answers-alone bound holds (COWORK1e, off the home's marks); and for the accounts' rows, the roster's last readings as <c>HARNESSES</c> answers them (asking no account,
 /// ROSTER1) and how each agent's accounts are used as the accounts slice holds it. Not judged until every slice it reads has judged and
 /// the registry has landed (PUSHUX1): a band drawn from half its inputs would say nothing waits where something does. The look's own
 /// lists are empty before its first look, as the page's were.</para>
