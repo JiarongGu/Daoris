@@ -9,18 +9,30 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </summary>
 public sealed class HandOverNoteBriefingTests
 {
+    /// <summary>SESSCTX1b: the conversation's briefing is Daoris's brief of its line (<see cref="ContextBrief"/>), the note its own section.</summary>
     [Fact]
     public void A_conversations_briefing_carries_the_outgoing_agents_note_as_its_claim_after_daoris_record()
     {
-        var briefed = HandOverBriefing.Compose(
-            "claude-code", "s1", HandOverWhy.Agent, "Fix the parser.", [], "Parser done.", ["src/Parser.cs"],
-            note: "ParserTests fail on empty input; start there.");
-        var without = HandOverBriefing.Compose("claude-code", "s1", HandOverWhy.Agent, "Fix the parser.", [], "Parser done.", ["src/Parser.cs"]);
+        var line = new BriefLine(HandOverWhy.Agent,
+        [
+            new BriefPart("s1", "claude-code",
+            [
+                new SessionEvent { Kind = SessionEventKind.User, Origin = "person", Text = "Fix the parser." },
+                new SessionEvent { Kind = SessionEventKind.Message, Text = "Parser done." },
+                new SessionEvent { Kind = SessionEventKind.Turn, StopReason = "end_turn" },
+            ]),
+        ])
+        {
+            Conversation = true,
+            State = new BriefTree("4f2a9c1 Parse", [" M src/Parser.cs"], []),
+        };
+        var briefed = ContextBrief.Compose(line with { Note = "ParserTests fail on empty input; start there." }).Text;
+        var without = ContextBrief.Compose(line).Text;
 
         Assert.Contains("ParserTests fail on empty input; start there.", briefed);
         Assert.Contains("claim", briefed);
-        Assert.True(briefed.IndexOf("Uncommitted in this tree", StringComparison.Ordinal) < briefed.IndexOf("ParserTests fail", StringComparison.Ordinal));
-        Assert.Equal(without, HandOverBriefing.Compose("claude-code", "s1", HandOverWhy.Agent, "Fix the parser.", [], "Parser done.", ["src/Parser.cs"], note: "  "));
+        Assert.True(briefed.IndexOf("Uncommitted in the tree", StringComparison.Ordinal) < briefed.IndexOf("ParserTests fail", StringComparison.Ordinal));
+        Assert.Equal(without, ContextBrief.Compose(line with { Note = "  " }).Text);
         Assert.DoesNotContain("claim", without);
     }
 

@@ -40,6 +40,13 @@
   "work.handed.section.boundary": "The boundary",
   "work.handed.section.rules": "Permission rules",
   "work.handed.section.intake": "The intake's instruction",
+  "work.handed.section.brief-opening": "What it continues, and the request",
+  "work.handed.section.brief-words": "The words the session took",
+  "work.handed.section.brief-turns": "What each turn answered and did",
+  "work.handed.section.brief-state": "The work's state",
+  "work.handed.section.brief-note": "The outgoing agent's note",
+  "work.handed.section.brief-parts": "The session's other parts",
+  "work.handed.section.brief-left": "What the brief left out",
   "work.handed.source.quest": "the quest, as the service answered it",
   "work.handed.source.ask": "the ask's record",
   "work.handed.source.repository": "set on this machine for its repository",
@@ -67,5 +74,10 @@
   "work.handed.cut.plan-bound": "{{n}} plan steps left out past its bound of {{limit}}",
   "work.handed.cut.indexes-bound": "{{n}} more counted, not named, past the {{limit}} it names",
   "work.handed.cut.files-elsewhere": "{{n}} not on this machine, named without a path",
-  "work.handed.cut.rules-unread": "this machine's rules file could not be read, so only the defaults were handed"
+  "work.handed.cut.rules-unread": "this machine's rules file could not be read, so only the defaults were handed",
+  "work.handed.cut.brief-words-older": "{{n}} older ones left out past its bound of {{limit}} characters; the session's record keeps every one",
+  "work.handed.cut.brief-turns-older": "{{n}} older ones left out past what the brief's bound of {{limit}} characters leaves them",
+  "work.handed.cut.brief-clipped": "{{n}} items each clipped at its own bound, where it says so",
+  "work.handed.cut.brief-list": "{{n}} entries of its lists left out past their bound",
+  "work.handed.cut.brief-parts-bound": "{{n}} left out past its bound of {{limit}} characters"
 }

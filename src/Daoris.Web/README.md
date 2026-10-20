@@ -26,7 +26,10 @@ show workflow holds before Accept, preserving the driver's explanation and avail
 A second opinion's reviewer is a row of its own in Sessions' list, and says whose work it reads (XAGENT1g4c): the rail
 joins it to the working session through `GET /api/opinions`, asked only when the list holds a reviewer, and an unanswered
 read claims nothing. A session that continues another, and a helper, say so (MIXAGENT3a-i): the head's facts name the agent
-continued and why, in the hand-over's words, or *helping* and the session's title; *Details* holds *Continues* and *Helping*
+continued and why, in the hand-over's words (a carry-on, a fallback and a lost conversation's new part among them since
+SESSCTX1b, which the *Parts* strip and its flow read by the same why: carried on, retried, or *moved on*), or *helping* and the
+session's title; a new part's first prompt is shown as Daoris's brief of the session it continues, folded with its account, and
+another session's channel message is told by its event's `channel` mark before the claim's opening; *Details* holds *Continues* and *Helping*
 with a door to that session, or its id where the list holds none; the row says *continues* or *helps* and the title, from
 the record's own `from` and `serves` joined in the rail; and a helper is titled *Helper* and, as a reviewer is, offered
 no box. Review reads a session's work against its line (REVIEWBASE1): the head says, in one line, when the latest line the

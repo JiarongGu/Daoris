@@ -156,6 +156,31 @@ public sealed class ChannelCommandTests
         Assert.Contains("CHANNEL_CLAIM_OPENING = \"Another session says, on the ask's channel\"", page);
     }
 
+    /// <summary>
+    /// 🔴 SESSCTX1b (the session-context design §7): a channel's message is marked as one on its <c>user</c> event by a field of its
+    /// own, the message's id, as an opinion's is, so the page and the brief tell it by the field and never by Daoris's English. Another
+    /// session's is Daoris's (<c>target</c>), the person's theirs; a word that came by no channel carries none.
+    /// </summary>
+    [Fact]
+    public void A_channel_s_message_is_marked_on_its_user_event_by_its_own_field()
+    {
+        var at = DateTimeOffset.Parse("2026-10-14T09:02:00Z");
+        var claim = new ChannelItemView(ChannelItemView.Message, at) { Id = "m1", Repository = "db", Agent = "claude-code", Text = "Which column?" };
+        var persons = new ChannelItemView(ChannelItemView.Message, at) { Id = "m2", Person = true, Text = "Use the second." };
+
+        var theirs = ChatMessage.Words(new ChatMessage(ChannelText.Claim(claim), []) { Channel = claim, Id = "w1" });
+        var person = ChatMessage.Words(new ChatMessage(persons.Text!, []) { Channel = persons, Id = "w2" });
+        var plain = ChatMessage.Words(new ChatMessage("Go on.", []) { Id = "w3" });
+
+        Assert.Equal(("target", "m1"), (theirs.Origin, theirs.Channel));
+        Assert.Equal(("person", "m2"), (person.Origin, person.Channel));
+        Assert.Null(plain.Channel);
+        // Kept on the record by its own name, and a record from before reads none.
+        var line = System.Text.Json.JsonSerializer.Serialize(theirs, SessionEventText.Json);
+        Assert.Contains("\"channel\":\"m1\"", line);
+        Assert.Null(System.Text.Json.JsonSerializer.Deserialize<SessionEvent>("""{"kind":"user","origin":"target","text":"x"}""", SessionEventText.Json)!.Channel);
+    }
+
     /// <summary>The usage the host prints, and the one the bare invocation prints, spell the verb.</summary>
     [Fact]
     public void The_usage_spells_the_verb()

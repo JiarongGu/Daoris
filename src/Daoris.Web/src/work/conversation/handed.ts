@@ -28,6 +28,12 @@ export const HANDED_CUTS: Readonly<Record<string, readonly CutValue[]>> = {
   'indexes-bound': ['n', 'limit'],
   'files-elsewhere': ['n'],
   'rules-unread': [],
+  // SESSCTX1b: what a brief's bound left out (the session-context design §3.2).
+  'brief-words-older': ['n', 'limit'],
+  'brief-turns-older': ['n', 'limit'],
+  'brief-clipped': ['n'],
+  'brief-list': ['n'],
+  'brief-parts-bound': ['n', 'limit'],
 };
 
 type CutValue = 'n' | 'limit' | 'from' | 'to';

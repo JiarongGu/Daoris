@@ -61,6 +61,12 @@ note). The words beside a clean-up row, which the terminal and the bridge say, a
 Git for Windows' removal follows a junction out of a tree, so each path that has git delete a tree's folder (the removal, a
 landing's tidy, the press, an undone opening) first takes every link in it off as a link with `TreeLinks`, and keeps a tree it
 cannot (TREELINK1, D51's note); the look's own tidy moves folders aside and never needs it.
+The machine's `cap` counts what the driver starts (CAPCOUNT1, D130's note): a driven quest's session, an intake, a helper and a
+reviewer, and the passes of a brainstorm and a meeting, never a conversation the person holds, which spends nothing resting between
+turns. `ActiveSessions.HoldsSlot` tells them by the record's kind, its place and the mark each of the driver's own carries
+(`ask`, `serves`, `opinion`), and `Snapshot.SlotsHeld` is the one count every site that spends a slot reads: the planner's starts and
+a look's intakes, helpers, brainstorms and meetings. `Snapshot.Active` still lists every active session, for a busy tree and a
+repository's holder.
 A judgement reads a checkout's refs and working trees once (`RefSnapshot`, PROC1d-ii and -iii) and asks its git each question of
 commits by their ids once (PROC1d-iv), every write in its flow dropping both; a landing's planning keeps its facts in `GitFacts`
 (LANDGIT1). D88's notes say what each keeps.
@@ -222,6 +228,17 @@ runner, the use cases, the stores and their files sit in scope folders (SCOPE1c)
 turns, the chat files, the start requests), `GoOn/` (going on: marks, files, the new-session choice, the harness's own
 conversations, the continuation judge, the say, and the words a failed run left, kept to go again, `WordsLeft`), `HandOver/` and `Helpers/`; `ConversationTrees`, `DrivenInbox` and
 `TranscriptFile` stay at the top, named by several scopes.
+
+A session that goes on in a new part is handed Daoris's brief of its line (SESSCTX1b, D189 point 4; the session-context
+design §3), composed with no model by `ContextBrief.Compose` in `Conversations/Domain/` from what `Sessions/Events/ContextBriefs`
+reads: the line one chain back by each record's `from` (every continuation writes one, `carry-on` and `retry` beside a hand-over's
+five reasons, and `resume` for SESSCTX1c; no box takes those three), each part's events, the tree as it stands, the declared gates
+and the entry's other parts. It carries every word the session took once by its id (a word taken back left out, a channel's
+message by its event's own `channel` mark, another agent's findings by `opinion`, each as that agent's claim), each turn's last
+message and what it did, the plan with its turn, the last check each part ran by a declared gate and the last failed one's kept
+output, under a 40,000 bound with a Han character weighing three, every cut said and accounted in its `brief-*` sections. A
+hand-over's new conversation keeps it as its first prompt (`origin: target`, its account, `continues`), never read as its
+opening; a driven carry-on carries it as part of its instruction, accounted within it. The new part reads its line's kept folders.
 
 ## What the page can ask this machine
 

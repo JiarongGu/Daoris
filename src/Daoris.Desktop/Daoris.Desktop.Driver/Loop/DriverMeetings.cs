@@ -70,7 +70,7 @@ internal sealed class DriverMeetings(LoopContext context, DriverBrainstorms brai
                         events.Add(await FreezeAsync(request, snapshot, files, ct).ConfigureAwait(false));
                         break;
                     case BrainstormStates.Frozen when state.Packet is { } digest && files.Sent(request.Id, state.Round) == digest:
-                        if (_context.Config.Cap - snapshot.Active.Count - taken - begun <= 0) break;
+                        if (_context.Config.Cap - snapshot.SlotsHeld - taken - begun <= 0) break;
                         if (!_context.Runs.TryOpinion(Claim(request.Id))) break;
                         begun++;
                         files.WriteState(state with { State = BrainstormStates.Running, At = DateTimeOffset.UtcNow });

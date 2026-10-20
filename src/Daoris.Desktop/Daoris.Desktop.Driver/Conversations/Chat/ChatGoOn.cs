@@ -426,6 +426,8 @@ internal sealed class ChatGoOn
             OpeningNote(words, adapter.Name, selection.Version, record.HarnessVersion),
             Continuations.AfterWords(inSync, after: null),
             files: word => ChatFiles.Kept(_context.Home, sessionId, word.Files));
+        // SESSCTX1b: a part that continues another keeps reading its line's kept folders, whose files its brief named.
+        var continued = record.From is { Length: > 0 } from ? await ContextBriefs.LineIdsAsync(_context.Service, from, ct).ConfigureAwait(false) : [];
 
         return await _runner.RunAsync(
             sessionId,
@@ -436,7 +438,7 @@ internal sealed class ChatGoOn
                     ? $"conversation `{sessionId}` goes on with Daoris's words in its own conversation."
                     : $"conversation `{sessionId}` goes on with another agent's answer in its own conversation.",
             adapter, selection, config,
-            _runner.RepositoryPlace(config, registry, known, record.Repository!, record.Tree!), onEnded, ct,
+            _runner.RepositoryPlace(config, registry, known, record.Repository!, record.Tree!, continued), onEnded, ct,
             new GoingOn(record, ask)).ConfigureAwait(false);
     }
 

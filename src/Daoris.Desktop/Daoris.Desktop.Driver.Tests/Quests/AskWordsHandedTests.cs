@@ -74,13 +74,12 @@ public sealed class AskWordsHandedTests
 
         var standIn = new StandIn(request => request.RequestUri!.AbsolutePath == "/api/asks/a1" ? (HttpStatusCode.OK, AskJson(Words)) : null);
         using var service = new ServiceClient("http://stand-in", null, new HttpClient(standIn));
-        // The carry-on as the driver composes it (Driver.RunAsync): the cut-off's note and last words, the last record's
-        // answer (none), the account changed, and the ask's words read for the start.
+        // The carry-on as the driver composes it (Driver.RunAsync): the cut-off's note, the last record's answer (none), the account
+        // changed, and the ask's words read for the start; its brief (SESSCTX1b) is the record's, not the ask's.
         var carryOn = SessionTarget.ForQuest(Quest(), "C:/somewhere/report", service.BaseUrl) with
         {
             CutOff = prior.Note,
             PersonSaid = prior.Answer,
-            LastWords = prior.Note,
             AccountChanged = prior.Limit && Daoris.Driver.Driver.OnAnotherAccount(prior, "account-2"),
         };
 

@@ -708,7 +708,7 @@ public sealed class Driver(
         // it, and only in the slots the quests left: work somebody already asked for goes first. PARALLEL1b: a start still opening
         // holds its slot, and an ask whose intake is still opening is not begun again. A start a plugin will hold still counts here,
         // since each start asks its plugins on its own below: the intakes may wait a look for a slot a hold left, never overrun the cap.
-        var slotsLeft = config.Cap - snapshot.Active.Count - Planner.Opening(snapshot).Count - starts.Count - passes;
+        var slotsLeft = config.Cap - snapshot.SlotsHeld - Planner.Opening(snapshot).Count - starts.Count - passes;
         var intakes = (await Stages.TimeAsync("intakes", () => IntakesDueAsync(slotsLeft, events, ct)).ConfigureAwait(false))
             .Where(ask => !snapshot.Starting.Any(start => string.Equals(start.Ask, ask.Id, StringComparison.OrdinalIgnoreCase)))
             .ToList();
@@ -1866,8 +1866,12 @@ public sealed class Driver(
         var before = await WorkingTree.HeadAsync(workTree, ct).ConfigureAwait(false);
 
         // The session this start continues, why and who asked (MIXAGENT1a-iii, D163 point 4): the one the quest was handed over
-        // from, or one a limit cut off when this runs on another account; named on the record as it opens.
-        var continues = ContinuesFrom(handedQuest, carryingOn ? start.Resumes : null, selection.Profile, selection.Steps?.FirstOrDefault()?.Why);
+        // from, or one a limit cut off when this runs on another account; named on the record as it opens. SESSCTX1b: every other
+        // carry-on names its link too, `retry` where its resume fell back, so the brief follows the line.
+        var continues = ContinuesFrom(
+            handedQuest, carryingOn ? start.Resumes : null, selection.Profile, selection.Steps?.FirstOrDefault()?.Why,
+            retried: fellBack is not null,
+            pressed: start.BroughtForward is not null || (start.Resumes?.PersonStopped == true && !handedFrom));
 
         // The ledger judges the open — the same door any other client would use. A refusal here is
         // an answer (someone else got there first), not an error. Once asked, the ledger may hold the
@@ -1948,10 +1952,17 @@ public sealed class Driver(
             // What it may read and write outside its tree (D107): the rules it is handed, and the sentence
             // every harness's instruction carries.
             var across = AcrossRules.Reach(config, registry, quest.To, start.Workspace);
-            // What the cut-off session left in Daoris's own record (TOOL4f, D125 §3.5): its last plan and its last words,
-            // which every carry-on is handed, since a cut-off for any reason loses the same thread. And whether it ran on
+            // What the cut-off session's line left in Daoris's own record (TOOL4f, D125 §3.5, as SESSCTX1b widens it, D189 point 4):
+            // Daoris's brief of the whole line, every word it took and each turn's outcome, the tree read in the tree this start
+            // works in, which every carry-on is handed, since a cut-off for any reason loses the same thread. And whether it ran on
             // another account that is now cooling, which only a limit makes so.
-            var (lastPlan, lastWords) = prior is null ? ([], null) : SessionLastWords.CarriedFrom(Context.Events, home, prior.Session);
+            // The note its agent left where it asked to hand over (MIXAGENT1c), the brief's own section as that agent's claim.
+            var handedNote = carryingOn && handedFrom ? handedQuest?.Note : null;
+            var brief = prior is null
+                ? null
+                : await ContextBriefs.ComposeAsync(
+                    service, Context.Events, home, prior.Session, continues?.Why ?? HandOverWhy.CarryOn, conversation: false, note: handedNote,
+                    config: config, tree: workTree, ct: ct).ConfigureAwait(false);
             var elsewhere = prior is not null && OnAnotherAccount(prior, selection.Profile);
             // The person's words on the ask the quest was asked by (DRIFT1b, D133 §2), read for this start whatever kind it is;
             // their standing answer for its repository (KNOWUSE1b), and the work's session language (LANG1c), from this
@@ -2032,10 +2043,9 @@ public sealed class Driver(
                 // The quest was handed over from that session (MIXAGENT1a-ii): told so, with the agent it ran on.
                 BroughtForward = carryingOn && quest.Status != "Open" && start.BroughtForward is not null,
                 HandedOver = carryingOn && handedFrom ? start.Resumes!.Adapter ?? "another agent" : null,
-                // MIXAGENT1c: the note its agent left where it asked to hand over, told as that agent's claim.
-                HandedNote = carryingOn && handedFrom ? handedQuest?.Note : null,
-                LastPlan = lastPlan,
-                LastWords = lastWords,
+                Brief = brief,
+                // MIXAGENT1c: the note its agent left where it asked to hand over, told as that agent's claim; the brief carries it.
+                HandedNote = handedNote,
                 // Another agent's accounts are not this agent's: a hand-over says no account was cooling for it to be told of.
                 AccountChanged = elsewhere && !handedFrom && prior!.Limit && Context.Harnesses.CoolingOf(agent, prior.Profile) is not null,
                 // A set-up step is told its environment as the rule declares it now (REVIEWENV1c, design §2.2), and its account
@@ -2076,8 +2086,10 @@ public sealed class Driver(
 
             // What this session may do (PERM1, D72): the rules composed for its circle and repository,
             // handed over as the harness's own settings tier.
+            // SESSCTX1b: a carry-on reads the kept folders of its line's parts, whose files its brief names (the design §3.1 item 5).
             var rules = HandRules(
-                adapter, info, sessionId, start.Workspace, quest.To, workTree, target.AttachmentsDirectory, across: across, plugins: skillPlugins);
+                adapter, info, sessionId, start.Workspace, quest.To, workTree, target.AttachmentsDirectory, across: across, plugins: skillPlugins,
+                continued: brief?.Kept);
 
             Context.Runs.Live[quest.Id] = sessionId;
             using var live = new Disposer(() => Context.Runs.Live.TryRemove(quest.Id, out var _));
@@ -2369,22 +2381,29 @@ public sealed class Driver(
     /// A brainstorm's pass (BRAINSTORM1a2, D176 points 1 and 2): its one result tool, and the composition laid under the
     /// <c>brainstorm</c> posture (<see cref="BrainstormPermissions.Shape"/>), its room the <paramref name="tree"/>; null for any other session.
     /// </param>
+    /// <param name="continued">
+    /// The kept folders of the parts a carry-on's line continues (SESSCTX1b, the session-context design §3.1 item 5): its brief names
+    /// their files, so it may read exactly those folders too. None for every other start.
+    /// </param>
     internal (string? File, object? Meta, HandedSection Handed) HandRules(
         ISessionAdapter adapter, ProcessStartInfo info, string sessionId, string? workspace, string? repository,
         string tree, string? kept, IReadOnlyList<string>? job = null, AcrossReach? across = null, string? said = null,
-        bool opinion = false, bool helper = false, IReadOnlyList<string>? plugins = null, string? brainstorm = null)
+        bool opinion = false, bool helper = false, IReadOnlyList<string>? plugins = null, string? brainstorm = null,
+        IReadOnlyList<string>? continued = null)
     {
         // A harness a Claude Code rule means nothing to is handed nothing, and no file is written.
         if (!adapter.TakesSettings) return (null, null, RulesHanded(takes: false, PermissionFile.Empty, RuleLists.Empty, workspace, repository));
 
         var rules = PermissionRules.Load(home);
         var composed = PermissionRules.Compose(rules, workspace, repository);
-        foreach (var folder in new[] { kept, said }.OfType<string>().Where(folder => folder.Length > 0))
+        var folders = new[] { kept, said }.Concat(continued ?? []).OfType<string>().Where(folder => folder.Length > 0)
+            .Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+        foreach (var folder in folders)
         {
             composed = composed with { Allow = [.. composed.Allow, PermissionRules.ReadRule(folder)] };
         }
 
-        if (across is not null) composed = composed.Joined(AcrossRules.Rules(across, [tree, kept ?? "", said ?? ""]));
+        if (across is not null) composed = composed.Joined(AcrossRules.Rules(across, [tree, kept ?? "", said ?? "", .. folders]));
 
         // 🔴 What the session's job needs, beside the person's rules (FG5): an intake's room names its tools
         // in its own settings file, and over the protocol door only what is handed at spawn counts. The
@@ -3460,9 +3479,13 @@ public sealed class Driver(
     /// <summary>
     /// The session a quest's start continues, for its record's <c>from</c> link (MIXAGENT1a-iii, D163 point 4): the session the
     /// quest was handed over from, with the hand-over's why and asker (MIXAGENT1a-ii); else a session a limit cut off, carried on
-    /// onto another account (TOOL4f), Daoris's own move; else none. A carry-on on the same account, a resume and a fresh start
-    /// continue no other agent's or account's run, and say none.
+    /// onto another account (TOOL4f), Daoris's own move; else the curve's move. SESSCTX1b (D189 point 4): every other carry-on
+    /// names its link too, so the brief follows the line: <c>retry</c> where its resume fell back (D131 point 3), else
+    /// <c>carry-on</c>, the person's where their press released or brought it forward. A first start, a resume of its own record
+    /// and a fresh start carry nothing on and say none.
     /// </summary>
+    /// <param name="retried">Its record's resume was tried and fell back (D131 point 3): a driven record's fallback.</param>
+    /// <param name="pressed">The person's press carried it on: <i>Try again</i> after their stop, or a bring-forward.</param>
     /// <param name="handed">The quest's hand-over as held, or null.</param>
     /// <param name="carried">The record it carries on, where it carries one on, or null.</param>
     /// <param name="profile">The account it opens on.</param>
@@ -3471,7 +3494,8 @@ public sealed class Driver(
     /// curve passed, or the most room under it, is the usage curve's move (SWITCH1c-iii, the switch design §4); a cooling or
     /// refused account passed, a limit reached and the rest are not.
     /// </param>
-    internal static ContinuedFrom? ContinuesFrom(HandedQuest? handed, PriorSession? carried, string? profile, string? walked = null) =>
+    internal static ContinuedFrom? ContinuesFrom(
+        HandedQuest? handed, PriorSession? carried, string? profile, string? walked = null, bool retried = false, bool pressed = false) =>
         carried is null ? null
         : handed is not null && string.Equals(carried.Session, handed.From, StringComparison.Ordinal)
             ? new ContinuedFrom(carried.Session, handed.Why, handed.AskedBy)
@@ -3479,5 +3503,7 @@ public sealed class Driver(
             ? new ContinuedFrom(carried.Session, HandOverWhy.Limit, HandOverBy.Daoris)
         : walked is OpeningWhy.OverCurve or OpeningWhy.MostRoom && OnAnotherAccount(carried, profile)
             ? new ContinuedFrom(carried.Session, HandOverWhy.Curve, HandOverBy.Daoris)
-        : null;
+        : retried
+            ? new ContinuedFrom(carried.Session, HandOverWhy.Retry, HandOverBy.Daoris)
+        : new ContinuedFrom(carried.Session, HandOverWhy.CarryOn, pressed ? HandOverBy.Person : HandOverBy.Daoris);
 }

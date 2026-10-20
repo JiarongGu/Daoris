@@ -206,6 +206,48 @@ describe('ConversationView', () => {
   });
 
   /**
+   * SESSCTX1b (the session-context design §7): the driver now marks a channel's message on its `user` event by a field of its own,
+   * and the page reads the field before the old prefix, so a claim whose words Daoris words otherwise is still named one, in either
+   * language; a record from before is still read by the prefix (above).
+   */
+  /**
+   * SESSCTX1b (the session-context design §3.4): a conversation that went on from another opens with Daoris's brief of the line it
+   * continues, kept as its first prompt with its account, so it is named as that brief, folded as a target is with what it was composed
+   * of beneath it, and never as the person's, in either language.
+   */
+  it('names a part’s first prompt as Daoris’s brief of the session it continues, folded, with its account', async () => {
+    const account = { chars: 120, sections: [{ name: 'brief-opening', source: 'record', said: 'the brief’s opening', chars: 120 }] };
+    const text = 'You continue session `c0nv0001`, which ran on claude-code; it moved because the person asked for it.';
+    const { unmount } = view([ev({ kind: 'user', origin: 'target', continues: 'c0nv0001', account, text })]);
+
+    expect(screen.getByText('Daoris’s brief of the session it continues')).toBeTruthy();
+    expect(screen.queryByText('The target Daoris composed')).toBeNull();
+    expect(screen.getByRole('button', { name: 'Show all' })).toBeTruthy();
+    await userEvent.click(screen.getByRole('button', { name: /What it was handed/ }));
+    expect(screen.getByText('What it continues, and the request')).toBeTruthy();
+    unmount();
+
+    await i18n.changeLanguage('zh');
+    view([ev({ kind: 'user', origin: 'target', continues: 'c0nv0001', account, text })]);
+    expect(screen.getByText('Daoris 对所接续会话的简报')).toBeTruthy();
+    await i18n.changeLanguage('en');
+  });
+
+  it('names another session’s claim by its channel mark, whatever Daoris’s words around it say', async () => {
+    const text = 'Session `s9` on claude-code wrote:\n\n> Which column holds the figure?';
+    const { unmount } = view([ev({ kind: 'user', origin: 'target', channel: 'm1', text })]);
+
+    expect(screen.getByText('Another session’s claim, in Daoris’s words')).toBeTruthy();
+    expect(screen.queryByText('The target Daoris composed')).toBeNull();
+    unmount();
+
+    await i18n.changeLanguage('zh');
+    view([ev({ kind: 'user', origin: 'target', channel: 'm1', text })]);
+    expect(screen.getByText('另一个会话的说法，附 Daoris 的说明')).toBeTruthy();
+    await i18n.changeLanguage('en');
+  });
+
+  /**
    * COWORK1b (D188's COWORK1b note, the message-urgency design trap 6): Daoris's own words to a session, a reopen told or a step's go-on,
    * are named as Daoris's, never as the person's and never as the target it composed, and shown whole: where the session took them,
    * and while they are held for it, in either language. A word the person said in the same sentence is still theirs.

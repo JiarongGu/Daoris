@@ -961,6 +961,8 @@ export const REACH = Object.freeze([
       'HandOver.cs',
       // FLOWCHART1b: the parts flow's twin holds its words to `PartBegan`.
       'SessionEntries.cs',
+      // FLOWCHART1c: the landing flow's twin holds its codes to these.
+      'LandedCleanups.cs', 'EndJudgement.cs', 'PullRequestStates.cs',
     ].map((name) => `src/Daoris.Desktop/Daoris.Desktop.Driver/**/${name}`),
     gates: [...DRIVER_READERS, 'web-unit'],
     why: "the driver's own, and the page's note, conversation, handed, trace and say vitests parse their declarations (MOD9e, MSG1g3)",

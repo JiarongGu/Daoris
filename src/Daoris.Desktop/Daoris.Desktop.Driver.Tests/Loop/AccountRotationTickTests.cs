@@ -132,10 +132,13 @@ public sealed class AccountRotationTickTests : IDisposable
         Assert.DoesNotContain("account-1", note);
         Assert.DoesNotContain("account-2", note);
 
-        // It was handed the cut-off session's last words and told its account changed, naming none.
+        // It was handed Daoris's brief of its line, the cut-off session's last words among it (SESSCTX1b), and told its account
+        // changed, naming none.
         var handed = runs[1]["target"]!.GetValue<string>();
         Assert.Contains("carrying on quest `#q1`", handed);
-        Assert.Contains("Its last words were:\n\n> I started the field.", handed.ReplaceLineEndings("\n"));
+        Assert.Contains("You continue session `s1`, which ran on ", handed);
+        Assert.Contains("it moved because the account it ran on reached its limit.", handed);
+        Assert.Contains("> I started the field.", handed.ReplaceLineEndings("\n"));
         Assert.Contains("It ran on another account, which reached its limit and is cooling", handed);
         Assert.DoesNotContain("account-1", handed);
         // And the person's words on the ask, read from it for this start (DRIFT1b): the answer outlives the hop.

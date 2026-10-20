@@ -223,16 +223,12 @@ public sealed record SessionTarget(
     public bool BroughtForward { get; init; }
 
     /// <summary>
-    /// For a carry-on (D80): the cut-off session's plan as its record last kept it, the harness's own to-do list (TOOL4f,
-    /// D125 §3.5). Empty where the record kept none, and the instruction reads as it did.
+    /// For a carry-on (D80): Daoris's brief of the line it continues (SESSCTX1b, D189 point 4; <see cref="ContextBrief"/>), in place of
+    /// the cut-off session's last plan and last words (TOOL4f) and the tree's uncommitted list, which the brief reads itself. A
+    /// section of the instruction, counted by its own sections within its account (the session-context design §3.4). Null where none
+    /// was composed, and the instruction reads as it did.
     /// </summary>
-    public IReadOnlyList<PlanEntry> LastPlan { get; init; } = [];
-
-    /// <summary>
-    /// For a carry-on (D80): the cut-off session's last words, bounded, from its record or else its transcript (TOOL4f,
-    /// D125 §3.5). Null where it said nothing, and the instruction reads as it did.
-    /// </summary>
-    public string? LastWords { get; init; }
+    public ComposedBrief? Brief { get; init; }
 
     /// <summary>
     /// For a carry-on after an account's limit (TOOL4f, D125 §3.5): the cut-off session ran on another account, which is
@@ -468,9 +464,23 @@ public static class TargetPrompt
             $"You are carrying on quest `#{target.QuestId}`, asked by `{target.Asker}`. It is already taken, and\n"
             + "it is yours: do not take it again, and do not stand down."),
         .. Beneath(target),
-        new(HandedSections.CarryOn,
-            $"\n{Before(target, cutOff)} What it did is in this tree — any commits it made are on this branch,\n"
-            + $"and {InFlight(target)}{LastPlan(target)}{LastWords(target)}{HandedNote(target)}{AccountChanged(target)}\n"),
+        // SESSCTX1b: Daoris's brief of its line follows what the session before left, each of its sections counted on its own (§3.4),
+        // the outgoing agent's note among them (MIXAGENT1c); with none, what the tree holds uncommitted and the note, as before.
+        .. target.Brief is { } brief
+            ? (IEnumerable<Piece>)
+            [
+                new(HandedSections.CarryOn,
+                    $"\n{Before(target, cutOff)} What it did is in this tree — any commits it made are on this branch, and Daoris's brief\n"
+                    + "of its line follows, the tree read as you start.\n\n"),
+                .. brief.Pieces.Select(piece => new Piece(piece.Section, piece.Text)),
+                new(HandedSections.CarryOn, $"{AccountChanged(target)}\n"),
+            ]
+            :
+            [
+                new(HandedSections.CarryOn,
+                    $"\n{Before(target, cutOff)} What it did is in this tree — any commits it made are on this branch,\n"
+                    + $"and {InFlight(target)}{HandedNote(target)}{AccountChanged(target)}\n"),
+            ],
         .. Tail(target, target.Ready
             ? "\nFinish from there rather than starting again, inside this repository under its own doctrine and\n"
               + $"gates, then say `#{target.QuestId}` is ready: `ready` when its work is done, with your note and an\n"
@@ -556,7 +566,7 @@ public static class TargetPrompt
               + TextBounds.Quote(said, bareBlank: false) + $"\n\nIts record reads: {record}")
         : target.HandedOver is { } agent
             ? $"An earlier session on this quest, run by {agent}, was stopped so that the quest could go on with you: it was handed "
-              + $"over, and you carry on from its plan and last words below. Its record reads: {record}"
+              + $"over, and you carry on from {(target.Brief is null ? "what it left" : "Daoris's brief of its line")} below. Its record reads: {record}"
         : target.Released
             ? "An earlier session on this quest was stopped by the person before it closed it, and they have since released "
               + $"the quest for you to carry on. Its record reads: {record}"
@@ -703,31 +713,13 @@ public static class TargetPrompt
         : "these are the changes it had not committed yet:\n\n"
           + string.Join("\n", target.InFlight.Select(line => $"    {line}"));
 
-    /// <summary>The most of a cut-off session's plan a carry-on is handed: its to-do list, not a log.</summary>
-    internal const int PlanLimit = 50;
-
     /// <summary>The most earlier parts a further part of a session is told of by name (SESSONE1d): the newest, the rest counted.</summary>
     internal const int PartsShown = 3;
 
     /// <summary>
-    /// The cut-off session's plan as its record last kept it (TOOL4f, D125 §3.5), each step with its status in the wire's
-    /// own word — or nothing, where it kept none, and the instruction reads as it did.
+    /// The note the agent handed over from left (MIXAGENT1c), as its claim, where no brief carries it (SESSCTX1b puts it in the brief's
+    /// own section); nothing for any other start.
     /// </summary>
-    private static string LastPlan(SessionTarget target)
-    {
-        if (target.LastPlan.Count == 0) return "";
-        var steps = target.LastPlan.Take(PlanLimit)
-            .Select(step => $"    - {(step.Status is { Length: > 0 } status ? $"[{status}] " : "")}{TextBounds.OneLine(step.Content, trim: false)}");
-        var more = target.LastPlan.Count > PlanLimit ? $"\n    … and {target.LastPlan.Count - PlanLimit} more" : "";
-        return "\n\nIts plan, as its record last kept it:\n\n" + string.Join("\n", steps) + more;
-    }
-
-    /// <summary>The cut-off session's last words, quoted (TOOL4f, D125 §3.5), or nothing where it said none.</summary>
-    private static string LastWords(SessionTarget target) => target.LastWords is { Length: > 0 } words
-        ? "\n\nIts last words were:\n\n" + TextBounds.Quote(words, bareBlank: false)
-        : "";
-
-    /// <summary>The note the agent handed over from left (MIXAGENT1c), as its claim; nothing for any other start.</summary>
     private static string HandedNote(SessionTarget target) =>
         target.HandedOver is not null && HandOverNote.Said(target.HandedNote) is { } said ? "\n\n" + said : "";
 

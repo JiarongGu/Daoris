@@ -76,7 +76,7 @@ internal sealed class DriverBrainstorms(LoopContext context, Driver driver)
         int held;
         lock (_slots)
         {
-            _busy = snapshot.Active.Count + taken;
+            _busy = snapshot.SlotsHeld + taken;
             held = _holding;
         }
 
@@ -106,7 +106,7 @@ internal sealed class DriverBrainstorms(LoopContext context, Driver driver)
                         events.Add(await FreezeAsync(request, snapshot, files, ct).ConfigureAwait(false));
                         break;
                     case BrainstormStates.Frozen when files.Sent(request.Id) == state.Packet:
-                        if (_context.Config.Cap - snapshot.Active.Count - taken - begun - held <= 0) break;
+                        if (_context.Config.Cap - snapshot.SlotsHeld - taken - begun - held <= 0) break;
                         if (!_context.Runs.TryOpinion(Claim(request.Id))) break;
                         begun++;
                         files.WriteState(state with { State = BrainstormStates.Running, At = DateTimeOffset.UtcNow });

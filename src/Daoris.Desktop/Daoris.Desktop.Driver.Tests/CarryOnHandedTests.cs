@@ -3,9 +3,10 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// TOOL4f (D125 §3.5, amending D80): a carry-on is handed, from Daoris's own record of the cut-off session, its last plan
-/// and its last words, and after a limit that the last session ran on another account, now cooling. What does not travel
-/// is the harness's own conversation, which stays in the first account's home and is never read.
+/// TOOL4f (D125 §3.5, amending D80): a carry-on is handed, from Daoris's own record of the cut-off session, what it left, and after
+/// a limit that the last session ran on another account, now cooling. What does not travel is the harness's own conversation,
+/// which stays in the first account's home and is never read. SESSCTX1b (D189 point 4): what it left is Daoris's brief of its whole
+/// line (<see cref="ContextBrief"/>), in place of the last plan and the last words alone.
 /// </summary>
 public sealed class CarryOnHandedTests : IDisposable
 {
@@ -39,25 +40,36 @@ public sealed class CarryOnHandedTests : IDisposable
 
     // ——— The instruction.
 
-    [Fact]
-    public void A_carry_on_is_handed_the_cut_off_session_s_last_plan()
-    {
-        var prompt = TargetPrompt.Compose(Target() with { LastPlan = Plan });
+    /// <summary>The brief of a line whose one part planned and said its last words, as its record keeps them.</summary>
+    private static ComposedBrief Brief(string words = "The column is in.\nNext: the tests.") => ContextBrief.Compose(new BriefLine(
+        HandOverWhy.CarryOn,
+        [
+            new BriefPart("s1", "claude-code",
+            [
+                new SessionEvent { Kind = SessionEventKind.User, Origin = "target", Text = "You are the agent for `console-ui`…" },
+                new SessionEvent { Kind = SessionEventKind.Plan, Entries = Plan },
+                new SessionEvent { Kind = SessionEventKind.Message, Text = words },
+            ]),
+        ]));
 
+    /// <summary>
+    /// 🔴 SESSCTX1b: a carry-on is handed Daoris's brief of its line in its carry-on section: the session it continues and why, its
+    /// plan as last kept with the turn it was written in, and its last words, quoted; never the instruction it was handed again.
+    /// </summary>
+    [Fact]
+    public void A_carry_on_is_handed_the_brief_of_its_line_with_the_cut_off_session_s_plan_and_last_words()
+    {
+        var prompt = TargetPrompt.Compose(Target() with { Brief = Brief() });
+
+        Assert.Contains("You continue session `s1`, which ran on claude-code; it moved because it stopped before its work was done.", prompt);
         Assert.Contains(
-            "Its plan, as its record last kept it:\n\n"
+            "- The plan, as last kept, written in turn 1 of session `s1`:\n"
             + "    - [completed] Read the report's columns\n"
             + "    - [in_progress] Add the note column\n"
             + "    - [pending] Run the report's tests",
             prompt);
-    }
-
-    [Fact]
-    public void A_carry_on_is_handed_the_cut_off_session_s_last_words_quoted()
-    {
-        var prompt = TargetPrompt.Compose(Target() with { LastWords = "The column is in.\nNext: the tests." });
-
-        Assert.Contains("Its last words were:\n\n> The column is in.\n> Next: the tests.", prompt);
+        Assert.Contains("  > The column is in.\n  > Next: the tests.", prompt);
+        Assert.DoesNotContain("You are the agent for `console-ui`…", prompt);
     }
 
     [Fact]
@@ -80,17 +92,17 @@ public sealed class CarryOnHandedTests : IDisposable
     [Fact]
     public void A_handed_over_carry_on_says_it_was_handed_over_from_the_agent_and_never_that_it_was_released()
     {
-        var handed = Target() with { CutOff = "Handed over to codex-acp: its quest goes on with it, in the same tree.", Released = true, HandedOver = "claude-code", LastPlan = Plan, LastWords = "The column is in." };
+        var handed = Target() with { CutOff = "Handed over to codex-acp: its quest goes on with it, in the same tree.", Released = true, HandedOver = "claude-code", Brief = Brief("The column is in.") };
 
         var prompt = System.Text.RegularExpressions.Regex.Replace(TargetPrompt.Compose(handed), @"\s+", " ");
 
         Assert.Contains(
             "An earlier session on this quest, run by claude-code, was stopped so that the quest could go on with you: it was handed over, "
-            + "and you carry on from its plan and last words below. Its record reads: Handed over to codex-acp",
+            + "and you carry on from Daoris's brief of its line below. Its record reads: Handed over to codex-acp",
             prompt);
         Assert.DoesNotContain("released", prompt);
         Assert.DoesNotContain("cut off before it closed it", prompt);
-        Assert.Contains("Its plan, as its record last kept it:", prompt);
+        Assert.Contains("The plan, as last kept", prompt);
         var counted = Assert.Single(TargetPrompt.Composed(handed).Account.Sections, section => section.Name == "carry-on");
         Assert.Contains("that it was handed over from another agent", counted.Said);
         Assert.DoesNotContain("released", counted.Said);
@@ -112,44 +124,46 @@ public sealed class CarryOnHandedTests : IDisposable
     }
 
     [Fact]
-    public void With_nothing_kept_the_carry_on_reads_as_it_did()
+    public void With_no_brief_the_carry_on_reads_as_it_did()
     {
         var before = TargetPrompt.Compose(Target());
 
-        Assert.Equal(before, TargetPrompt.Compose(Target() with { LastPlan = [], LastWords = null, AccountChanged = false }));
-        Assert.DoesNotContain("Its plan", before);
-        Assert.DoesNotContain("Its last words", before);
+        Assert.Equal(before, TargetPrompt.Compose(Target() with { Brief = null, AccountChanged = false }));
+        Assert.Contains("it left nothing uncommitted.", before);
+        Assert.DoesNotContain("Daoris's brief", before);
         Assert.DoesNotContain("another account", before);
     }
 
     [Fact]
-    public void Only_a_carry_on_is_handed_the_plan_and_the_words()
+    public void Only_a_carry_on_is_handed_the_brief()
     {
-        var first = Target() with { CutOff = null, LastPlan = Plan, LastWords = "said.", AccountChanged = true };
+        var first = Target() with { CutOff = null, Brief = Brief("said."), AccountChanged = true };
 
         var prompt = TargetPrompt.Compose(first);
 
-        Assert.DoesNotContain("Its plan", prompt);
-        Assert.DoesNotContain("Its last words", prompt);
+        Assert.DoesNotContain("You continue session", prompt);
+        Assert.DoesNotContain("> said.", prompt);
     }
 
     [Fact]
-    public void The_plan_and_the_words_come_after_what_the_tree_holds_and_before_finishing()
+    public void The_brief_comes_after_what_the_session_before_left_in_the_tree_and_before_finishing()
     {
-        var prompt = TargetPrompt.Compose(Target() with { LastPlan = Plan, LastWords = "said.", AccountChanged = true });
+        var prompt = TargetPrompt.Compose(Target() with { Brief = Brief("said."), AccountChanged = true });
 
-        var tree = prompt.IndexOf("it left nothing uncommitted.", StringComparison.Ordinal);
-        var plan = prompt.IndexOf("Its plan", StringComparison.Ordinal);
-        var words = prompt.IndexOf("Its last words", StringComparison.Ordinal);
+        var tree = prompt.IndexOf("What it did is in this tree", StringComparison.Ordinal);
+        var brief = prompt.IndexOf("You continue session", StringComparison.Ordinal);
+        var words = prompt.IndexOf("> said.", StringComparison.Ordinal);
         var account = prompt.IndexOf("It ran on another account", StringComparison.Ordinal);
         var finish = prompt.IndexOf("Finish from there", StringComparison.Ordinal);
-        Assert.True(tree < plan && plan < words && words < account && account < finish, prompt);
+        Assert.True(tree < brief && brief < words && words < account && account < finish, prompt);
+        // Its own uncommitted list is the brief's, read as it starts: never said twice.
+        Assert.DoesNotContain("it left nothing uncommitted.", prompt);
     }
 
     // ——— What the driver hands it, from its own record of the cut-off session.
 
     [Fact]
-    public void The_plan_handed_on_is_the_record_s_last_and_the_words_its_last_message()
+    public void The_plan_kept_is_the_record_s_last()
     {
         var events = new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions));
         events.Append("s1", new SessionEvent { Kind = SessionEventKind.Plan, Entries = [new("an older plan", "pending")] });
@@ -157,50 +171,19 @@ public sealed class CarryOnHandedTests : IDisposable
         events.Append("s1", new SessionEvent { Kind = SessionEventKind.Message, Text = "is in." });
         events.Append("s1", new SessionEvent { Kind = SessionEventKind.Plan, Entries = Plan });
 
-        var (plan, words) = SessionLastWords.CarriedFrom(events, _home, "s1");
-
-        Assert.Equal(Plan, plan);
-        Assert.Equal("The column is in.", words);
         Assert.Equal(Plan, events.LastPlan("s1"));
-    }
-
-    [Fact]
-    public void A_session_whose_record_kept_no_words_hands_on_its_transcript_s_last_plain_lines()
-    {
-        var events = new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions));
-        File.WriteAllText(DaorisHome.Entry(_home, HomeEntry.Sessions,"s1.log"), "→ a tool ran\n    its output\nI changed the column.\n— the driver's line\n");
-
-        var (plan, words) = SessionLastWords.CarriedFrom(events, _home, "s1");
-
-        Assert.Empty(plan);
-        Assert.Equal("I changed the column.", words);
+        Assert.Equal("The column is in.", events.LastSaid("s1"));
     }
 
     [Theory]
     [InlineData("no-record")]
     [InlineData("../s1")]
     [InlineData("")]
-    public void A_session_with_no_record_here_or_no_id_hands_on_nothing(string session)
+    public void A_session_with_no_record_here_or_no_id_keeps_no_plan(string session)
     {
         var events = new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions));
 
-        var (plan, words) = SessionLastWords.CarriedFrom(events, _home, session);
-
-        Assert.Empty(plan);
-        Assert.Null(words);
         Assert.Empty(events.LastPlan(session));
-    }
-
-    [Fact]
-    public void The_last_words_handed_on_are_bounded_from_the_end()
-    {
-        var events = new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions));
-        events.Append("s1", new SessionEvent { Kind = SessionEventKind.Message, Text = new string('a', 6000) + "the end." });
-
-        var (_, words) = SessionLastWords.CarriedFrom(events, _home, "s1");
-
-        Assert.EndsWith("the end.", words);
-        Assert.True(words!.Length <= SessionLastWords.LastWordsLimit + 1);
     }
 
     [Theory]

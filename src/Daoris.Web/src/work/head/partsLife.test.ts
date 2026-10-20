@@ -76,6 +76,15 @@ describe('the parts, hung by what each follows (§2.3)', () => {
     }
   });
 
+  it('labels a part moved on from one whose conversation was lost by its own word (SESSCTX1b)', () => {
+    const flow = flowOf(entry([part('a1', 'opened'), part('b2', 'moved', { after: 'a1' })]));
+
+    expect(flow.edges.map((edge) => [edge.id, edge.label, edge.says])).toEqual([
+      ['start>a1', 'started', 'started'],
+      ['a1>b2', 'moved on', 'moved on from part 1: its own conversation was lost'],
+    ]);
+  });
+
   it('draws parts with no `after` between them as branches from the start: lineage, never a chain or a concurrency (trap 19)', () => {
     // Listed oldest first, and a part that began apart from the others: none follows another, and none is said to run beside one.
     const flow = flowOf(entry([part('a1', 'opened'), part('b2', 'opened'), part('c3', 'retried', { after: 'a1' })]));

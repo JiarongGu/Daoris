@@ -15,10 +15,12 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <para>The agent is a script standing in for one that refreshes an expired token when asked its status, as an OAuth
 /// client does: it reads the account's credential file, waits as a token request would, then spends the refresh token it
 /// read, which succeeds once. The one that spends it first writes the rotated tokens; one that finds it already spent is
-/// refused, and signs the account out by writing empty tokens. What the real agent does when asked its status with an
-/// expired token was not measured here: the script is the reading, made runnable.</para>
+/// refused once those tokens land, and signs the account out by writing empty tokens. What the real agent does when asked its
+/// status with an expired token was not measured here: the script is the reading, made runnable.</para>
 /// <para>The first case is the control: two status questions at once, with nothing of Daoris between them, sign the
-/// account out, so the script does reproduce the mechanism. The rest hold Daoris's probe to asking one account at a time,
+/// account out, so the script does reproduce the mechanism. Its two questions meet (a <c>meet</c> file beside the script)
+/// so each has read before either spends: on a loaded machine the second's start came after the first's wait, and the
+/// control saw no race (FLAKE1). The rest hold Daoris's probe to asking one account at a time,
 /// across its callers, across two adapters onto one account, across another process holding the account's lock, and
 /// never while a session of Daoris's runs on it.</para>
 /// </remarks>
@@ -50,11 +52,25 @@ public sealed class ProbeRaceTests : IDisposable
               const read = JSON.parse(fs.readFileSync(file, 'utf8')).claudeAiOauth;
               if (!read.refreshToken) { console.log(JSON.stringify({ loggedIn: false })); process.exit(0); }
               if (read.expired) {
-                await new Promise((resolve) => setTimeout(resolve, 1500));
+                if (fs.existsSync(new URL('./meet', import.meta.url))) {
+                  const met = new URL('./met.log', import.meta.url);
+                  fs.appendFileSync(met, 'read\n');
+                  const until = Date.now() + 60000;
+                  while (fs.readFileSync(met, 'utf8').split('\n').filter(Boolean).length < 2 && Date.now() < until) {
+                    await new Promise((resolve) => setTimeout(resolve, 50));
+                  }
+                } else {
+                  await new Promise((resolve) => setTimeout(resolve, 1500));
+                }
                 try {
                   fs.writeFileSync(path.join(home, 'spent-' + read.refreshToken), '', { flag: 'wx' });
                 } catch {
-                  await new Promise((resolve) => setTimeout(resolve, 100));
+                  const rotated = () => {
+                    try { return JSON.parse(fs.readFileSync(file, 'utf8')).claudeAiOauth.refreshToken !== read.refreshToken; }
+                    catch { return false; }
+                  };
+                  const until = Date.now() + 60000;
+                  while (!rotated() && Date.now() < until) await new Promise((resolve) => setTimeout(resolve, 50));
                   fs.writeFileSync(file, JSON.stringify({ claudeAiOauth: { accessToken: '', refreshToken: '' } }));
                   console.log(JSON.stringify({ loggedIn: false }));
                   process.exit(0);
@@ -125,6 +141,7 @@ public sealed class ProbeRaceTests : IDisposable
     {
         var home = Expired("account-1");
         var toolchain = Toolchain();
+        File.WriteAllText(Path.Combine(_home, "meet"), "");
 
         await Task.WhenAll(
             HarnessProbe.AskAsync(["node", Script], ["auth", "status"], home, toolchain, CancellationToken.None),

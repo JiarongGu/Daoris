@@ -64,4 +64,27 @@ describe('the parts strip', () => {
     expect(screen.getAllByRole('button')[1]).toHaveTextContent('接第 1 段重试');
     expect(screen.getAllByRole('button')[2]).toHaveTextContent('由 db 委托');
   });
+
+  /**
+   * SESSCTX1b (the session-context design §7): every continuation names its link, so the strip says how a part began by its why:
+   * carried on, retried, or moved on from a part whose own conversation was lost, in both languages.
+   */
+  it('says a part moved on from one whose conversation was lost, and a carry-on and a fallback by their own words', async () => {
+    const parts = [
+      { ...APP.parts[0]!, began: 'opened', after: null },
+      { ...APP.parts[1]!, began: 'carried-on', after: APP.parts[0]!.session },
+      { ...APP.parts[2]!, began: 'moved', after: APP.parts[1]!.session, askedBy: null },
+    ];
+    const line = { ...APP, parts };
+    render(<PartsStrip entry={line} attended="ap000003" rows={rows} onShow={() => {}} />);
+
+    const shown = screen.getAllByRole('button');
+    expect(shown[1]).toHaveTextContent('carried on from part 1');
+    expect(shown[2]).toHaveTextContent('moved on from part 2: its own conversation was lost');
+
+    cleanup();
+    await i18n.changeLanguage('zh');
+    render(<PartsStrip entry={line} attended="ap000003" rows={rows} onShow={() => {}} />);
+    expect(screen.getAllByRole('button')[2]).toHaveTextContent('接第 2 段另起：它自己的对话已丢失');
+  });
 });

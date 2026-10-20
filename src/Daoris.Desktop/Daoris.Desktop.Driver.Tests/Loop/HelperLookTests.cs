@@ -255,6 +255,30 @@ public sealed class HelperLookTests : IDisposable
     }
 
     /// <summary>
+    /// CAPCOUNT1 (D130's note): the cap counts what the driver starts. A conversation the person holds (Ask Daoris's, here) takes no
+    /// slot from a helper on a cap of one; an intake the driver started, or another helper, still does.
+    /// </summary>
+    [Fact]
+    public async Task A_conversation_the_person_holds_takes_no_slot_from_a_helper_but_what_the_driver_started_does()
+    {
+        Ask("a1");
+        var host = Host();
+        var pass = new Pass(Files) { Answer = "Line 42." };
+        var driver = Driver(host, pass, cap: 1);
+
+        await Look(driver, active: [new SessionView("i1", "ask #a0", "working") { Kind = "chat", Ask = "a0" }]);
+        Assert.Equal((HelperStates.Waiting, HelperVerdict.Cap), (Files.ReadState("a1")!.State, Files.ReadState("a1")!.Code));
+
+        await Look(driver, active: [new SessionView("w2", "reports", "working") { Kind = "chat", Serves = "s5" }]);
+        Assert.Equal((HelperStates.Waiting, HelperVerdict.Cap), (Files.ReadState("a1")!.State, Files.ReadState("a1")!.Code));
+        Assert.Empty(pass.Asked);
+
+        await Look(driver, active: [new SessionView("h1", HelpRoom.Repository, "working") { Kind = "chat" }]);
+        await Until(() => host.HelperHands.Count == 1);
+        Assert.Single(pass.Asked);
+    }
+
+    /// <summary>
     /// HELPERYES1 (D163 point 3): the person's yes outlives a full cap. The look that finds no slot leaves the ask `approved`
     /// (not `waiting/cap`, which the next look's judge would put back to waiting for a yes), and a look with a slot starts it
     /// without a second yes.

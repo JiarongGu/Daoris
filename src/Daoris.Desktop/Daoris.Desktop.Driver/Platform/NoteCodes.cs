@@ -519,6 +519,10 @@ public static class NoteCodes
         new(HandOverWhy.Limit, [], "note.handed.why.limit"),
         new(HandOverWhy.Agent, [], "note.handed.why.agent"),
         new(HandOverWhy.Curve, [], "note.handed.why.curve"),
+        // SESSCTX1b: the reasons every other continuation names its link by, added after the five (a reason is additive).
+        new(HandOverWhy.Resume, [], "note.handed.why.resume"),
+        new(HandOverWhy.CarryOn, [], "note.handed.why.carry-on"),
+        new(HandOverWhy.Retry, [], "note.handed.why.retry"),
     ]);
 
     /// <summary>Why no helper answered a question (MIXAGENT2a-ii, <see cref="HelperWhy"/>): the page's <c>note.helper.why.*</c>.</summary>

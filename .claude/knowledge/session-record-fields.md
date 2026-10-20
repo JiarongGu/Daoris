@@ -109,6 +109,12 @@ A branch in one lane cannot run the others; the hand-back then names the rows le
   two requests, so rows 6 and 7 do not apply.
 - **XAGENT1c** (D155): `opinion`, machine-only, set at the open; `said`'s `by` is a word's field, not a record's.
 - **SESSONE1a** (D167) and **CHATTAKE1**: `entry` and `tookQuest`, the travelling fields.
+- **SESSCTX1b** (D189's note of 2026-10-20): no field, but new values of one, `fromWhy`'s `resume`, `carry-on` and `retry`. A value
+  is a stored shape too: added, never a meaning changed, and every reader of the old values moved in the same change, both lanes:
+  `HandOverWhy` (`Known` kept on what a box takes, `Continues` for every why), `NoteCodes.Handed` with `NoteCodesTests`, the page's
+  `HANDED_REASONS` with `locales/note.test.ts` and `note.handed.why.*` in both catalogues, the *Parts* strip's reader
+  (`SessionEntries.ByLink`, the page's `PART_BEGAN` held by `partsLife.test.ts`) and the head's facts. The driver's `SessionRecord`
+  read `fromWhy` for the first time then.
 - **HELPMODE1a2** (D183's note of 2026-10-19): `helpMode`, machine-only, on one kind of record. It is set at Ask Daoris's open
   (`OpenHelpAsync`, `OpenHelpRequest`, `POST /api/sessions/help`), and later through a driver's door of its own
   (`POST /api/sessions/{id}/help-mode`, `SessionStore.KeepHelpModeAsync`, no revision). That door is a new route, so it takes a row

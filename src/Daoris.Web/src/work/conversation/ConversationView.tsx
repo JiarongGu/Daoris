@@ -375,8 +375,9 @@ function AskView({ ask }: { ask: Ask }) {
   const findings = Boolean(ask.opinion);
   const daoris = ask.origin === 'target' && ask.from === 'daoris';
   // Another session's claim on the ask's channel (SESSONE2c): Daoris's words around it, kept as the driver's own, short enough to
-  // read whole and never the target Daoris composed.
-  const claim = ask.origin === 'target' && !findings && !daoris && (ask.text ?? '').startsWith(CHANNEL_CLAIM_OPENING);
+  // read whole and never the target Daoris composed. Told by its channel mark (SESSCTX1b), and a record from before by its opening.
+  const claim = ask.origin === 'target' && !findings && !daoris
+    && (Boolean(ask.channel) || (ask.text ?? '').startsWith(CHANNEL_CLAIM_OPENING));
   const target = ask.origin === 'target' && !claim && !daoris;
   const [open, setOpen] = useState(!target || findings);
 
@@ -390,7 +391,9 @@ function AskView({ ask }: { ask: Ask }) {
       <div className="flex items-center justify-between gap-2">
         <span className="text-meta text-ink-faint">
           {findings ? t('work.conversation.opinion') : daoris ? t('work.conversation.daoris') : claim ? t('work.conversation.claim')
-            : target ? t('work.conversation.target') : t('work.conversation.you')}
+            // SESSCTX1b: a new part's first prompt is Daoris's brief of the line it continues, folded as a target is.
+            : target && ask.continues ? t('work.conversation.brief')
+              : target ? t('work.conversation.target') : t('work.conversation.you')}
         </span>
         {target && (
           <button

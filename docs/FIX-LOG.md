@@ -5,6 +5,49 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-20 — The full set's driver Process half failed a race's control and a start's git ceiling (TREELOCK1, FLAKE1)
+
+- **Symptom:** the full set on 50634f5 failed two `Process` tests, each again when re-run alone: `ProbeRaceTests`' control (two
+  status questions at once on an expired account sign it out) found the account still signed in, and `StartGitCountTests` counted
+  14 git starts before a session spawned, over its ceiling of 12.
+- **Root cause:** the control's stand-in agent waited a fixed 1.5 s after reading the credentials before spending the refresh
+  token, so it raced only when both questions had read within that window; on the loaded machine the second node start came
+  after the first had already rotated the tokens, and the second read fresh ones. The loser also signed out after a fixed 100 ms,
+  which could land before the winner's write. The ceiling was not raised when TREELOCK1, built by a session of the owner's install,
+  added a session's own lock at a start: it reads the tree's lock (`git worktree list --porcelain`) and takes it
+  (`git worktree lock`), two starts; the session's run had been told to run filtered classes, and this one was not among them.
+- **Fix:** the control's two questions meet (a `meet` file beside the script): each records its read and waits for the other's
+  before spending, and the loser signs out once the winner's tokens have landed. The other cases leave the file out and keep the
+  fixed wait. The ceiling is 14, its comment naming TREELOCK1's two starts.
+- **Verification:** `ProbeRaceTests` and `StartGitCountTests`, 8 passed, alone and with the CI's load beside.
+
+## 2026-10-20 — Idle conversations held the driver's cap, so quests started two at a time (CAPCOUNT1)
+
+- **Symptom:** on the install two Ask Daoris conversations resting between turns held two of the cap's four slots for hours, and
+  driven quests started two at a time.
+- **Root cause:** every site that spent a slot took the cap less `snapshot.Active.Count`, and `Active` is every active session the
+  service lists, a person's conversations among them (`SessionLedger.HelpRepository`'s records and any chat). The list is right for
+  a busy tree and a repository's holder; it was never the count of what the driver starts. The kind alone could not separate them
+  either, since an intake, a helper and a reviewer are chats at the service too.
+- **Fix:** `ActiveSessions.HoldsSlot` tells the driver's own by the record's kind, place and its `ask`, `serves` and `opinion`
+  marks, and `Snapshot.SlotsHeld` is the one count the planner's starts and a look's intakes, helpers, brainstorms and meetings read
+  (D130's note). `Active` is unchanged. The help room's machine line says what the cap counts.
+- **Verification:** `CapCountTests` (two idle Ask Daoris records at a cap of four start four quests; the table of record kinds;
+  `/api/sessions` read for the marks), `CapCountTickTests` over the stand-in service, and one test per site in `HelperLookTests`,
+  `BrainstormBoundsTests` and `MeetingTests`. Each site's test failed with the count made over every record and passed with it.
+
+## 2026-10-20 — Three census checks the merged branches' own runs never reached (FLOWCHART1c, MIXAGENT1c, the measured port)
+
+- **Symptom:** the full set on 50634f537 failed `tool-tests` (the SESSDEL1c page-reads scan: a vitest read the driver's folder),
+  `cli` (`cli-usage.test.ts`: the driver's unknown-verb refusal named `handover`, its fixture did not) and `driver`
+  (`SystemWiringTests`: `DAORIS_MEASURED_PORT` neither shown nor set aside).
+- **Root cause:** FLOWCHART1c's `landingLife.test.ts` walked the driver's folder for four sources, as FLOWCHART1b's parts test had;
+  MIXAGENT1c added the `handover` verb without the shared refusals fixture; and the measured config's port variable (the fix of
+  the same day) is read by a source the wiring census scans. Each branch ran its own tests, not the census that would see it.
+- **Fix:** the landing test reads each source through `driverSource` and MOD9e's row names `LandedCleanups.cs`, `EndJudgement.cs`
+  and `PullRequestStates.cs`; the fixture lists `handover`; `WiringVariables.SetAside` names the port's variable with its reason.
+- **Verification:** `landingLife.test.ts` 24, the SESSDEL1c scan, `cli-usage.test.ts` 3 and `SystemWiringTests` 28, all passing.
+
 ## 2026-10-20 — A driver test listened on every interface, so each new tree raised a firewall prompt (FIREWALL1)
 
 - **Symptom:** Windows Defender Firewall asked about `testhost.exe` for every new agent worktree, gate tree and driven session's
