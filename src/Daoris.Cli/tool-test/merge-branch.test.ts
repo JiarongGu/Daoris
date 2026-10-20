@@ -4384,12 +4384,14 @@ describe('the tool, end to end in a scratch repository', { concurrency: true }, 
   test('two notes a union merge leaves touching under one decision are set apart in the merge, and at --continue after a conflict', async () => {
     const decision = '## D1 — a thing (2026-10-04)\n\nBody of it.\n';
     const note = (task: string, words: string) => `\n**${task}, built 2026-10-04: ${words}.** What it settled.\n`;
-    // The merge's one gate is the real check `verify` runs, copied with the one module it imports.
+    // The merge's one gate is the real check `verify` runs, copied with the module it imports and what that starts git through.
     const repo = scratch('notes', [{ name: 'duplicates', run: 'node tools/doc-duplicates.mjs' }], {
       '.gitattributes': 'CHANGELOG.md merge=union\ndocs/decisions/*.md merge=union\n',
       'daoris.json': JSON.stringify({ documents: { decisions: 'docs/decisions' } }),
       'tools/doc-duplicates.mjs': readFileSync(join(repoRoot, 'tools', 'doc-duplicates.mjs'), 'utf8'),
       'tools/fsx.mjs': readFileSync(join(repoRoot, 'tools', 'fsx.mjs'), 'utf8'),
+      ...Object.fromEntries(['tools/gitforwindows.ts', 'platform/fsx.ts', 'platform/errors.ts'].map((file) =>
+        [`src/Daoris.Cli/src/${file}`, readFileSync(join(repoRoot, 'src', 'Daoris.Cli', 'src', file), 'utf8')])),
       'docs/decisions/D1.md': decision,
       'shared.md': 'base\n',
     });

@@ -50,7 +50,8 @@
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { THIS_INSTALL, daorisHome, homeEntry, homeOf, homePlaces, requireHomeFile } from '../platform/home.ts';
-import { commandOnTheSystem, commandThroughTools, handTools } from '../tools/tools.ts';
+import { commandOnTheSystem, commandThroughTools, handTools, readTools } from '../tools/tools.ts';
+import { pastLauncher } from '../tools/gitforwindows.ts';
 import { join, resolve } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import type { SpawnSyncReturns, StdioOptions } from 'node:child_process';
@@ -3007,6 +3008,10 @@ type Env = Record<string, string | undefined>;
  * from `$DAORIS_HOME/tools.json` through `tools.ts`, and its file found on that PATH. So an agent's probe, its
  * installer, its login and a pin's npm see the git and node a session of the desktop's would. With no home, or every
  * tool the system's, the environment is `base` exactly. Held by the dogfood test: the one `spawnSync` is here.
+ *
+ * GITSTART4: the system's git, where it is Git for Windows' launcher, starts as the git behind it with the launcher's
+ * variables, one process where it was two (`gitforwindows.ts`, the driver's `WorkingTree.GitStart`). A git the person
+ * named or a managed one starts as it is.
  */
 function startChild(
   command: string[], base: Env, options: { stdio?: StdioOptions; timeout?: number; exact?: boolean },
@@ -3015,8 +3020,12 @@ function startChild(
   // 🔴 One exception (PUSH1f2a, D194 point 1): Daoris's driver program is handed the terminal's environment exactly. It hands its own
   // children the tools itself, and its `agent install` finds the machine's npm on the PATH it inherited; a managed node's first
   // would install the agent into the managed node's folder. Only `runDriverProgram` asks it, which the dogfood test holds.
-  const env = exact ? base : handTools(base, daorisHome(base));
-  const [file, argv, verbatim] = spawnable(command, env);
+  // GITSTART4's way past the launcher is a git's alone, and the driver's program is none.
+  const home = exact ? null : daorisHome(base);
+  const handed = exact ? base : handTools(base, home);
+  const [named, argv, verbatim] = spawnable(command, handed);
+  const past = verbatim || exact ? null : pastLauncher(named, handed);
+  const { file, env } = past !== null && systemsGit(home) ? past : { file: named, env: handed };
   return spawnSync(file, argv, {
     ...started, env, encoding: 'utf8', shell: false, windowsHide: true,
     ...(verbatim ? { windowsVerbatimArguments: true } : {}),
@@ -3117,6 +3126,13 @@ export function runDriverProgram(
 export function gitAnswer(root: string, args: readonly string[]): { status: number | null; stdout: string } {
   const ran = startChild(throughTools(['git', '-C', root, ...args]), process.env, { timeout: 30_000 });
   return { status: ran.error ? null : ran.status, stdout: ran.stdout ?? '' };
+}
+
+/** Whether Daoris's git is the system's: with no home it is, and with one, where its entry reads so (§2.3). */
+function systemsGit(home: string | null): boolean {
+  if (home === null) return true;
+  const entry = readTools(home).entries.git!;
+  return entry.problem === null && entry.way === 'system';
 }
 
 /**

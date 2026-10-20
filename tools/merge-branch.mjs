@@ -339,7 +339,7 @@ import {
 import { constants as osConstants, setPriority as osSetPriority } from 'node:os';
 import { basename, dirname, join, relative, resolve } from 'node:path';
 import { fenced, gluedLabels, records } from './doc-duplicates.mjs';
-import { isMain, renameHeld, stagedTree, writeAtomic } from './fsx.mjs';
+import { isMain, renameHeld, spawnGit, stagedTree, writeAtomic } from './fsx.mjs';
 import { endOrphans, endStranded } from './processes.mjs';
 
 export const MAIN = 'main';
@@ -844,9 +844,12 @@ const DRIVER_READERS = [...DESKTOP_SUITES, 'rehearse-family', 'deployment'];
  */
 export const REACH = Object.freeze([
   {
-    paths: ['daoris.gates.json', 'daoris.lanes.json', 'package.json', 'package-lock.json', '.gitattributes', '.gitignore', 'tools/fsx.mjs'],
+    paths: [
+      'daoris.gates.json', 'daoris.lanes.json', 'package.json', 'package-lock.json', '.gitattributes', '.gitignore', 'tools/fsx.mjs',
+      'src/Daoris.Cli/src/tools/gitforwindows.ts',
+    ],
     gates: '*',
-    why: 'it changes how every gate runs or reaches a path: the gates, lanes, scripts, line endings, what is tracked, or the file helpers every rehearsal imports',
+    why: 'it changes how every gate runs or reaches a path: the gates, lanes, scripts, line endings, what is tracked, or the file helpers every rehearsal imports and the git they start (GITSTART4)',
   },
   // GATESLIM1: the tests of the tools only the parent runs (the merge tool, the install's publisher, the family rehearsal's kit) are
   // the tool-tests gate, no longer part of verify. These rules come first and keep what each path reached before.
@@ -1910,7 +1913,7 @@ export function classify(paths, { lanes = [], union = [], laneless = [] } = {}) 
 // Git
 
 function git(cwd, args, { allowFail = false, env } = {}) {
-  const result = spawnSync('git', args, { cwd, encoding: 'utf8', maxBuffer: 256 * 1024 * 1024, ...(env ? { env: { ...process.env, ...env } } : {}) });
+  const result = spawnGit(args, { cwd, encoding: 'utf8', maxBuffer: 256 * 1024 * 1024, ...(env ? { env: { ...process.env, ...env } } : {}) });
   if (result.error) throw new Refusal(`git could not start: ${result.error.message}`);
   if (result.status !== 0 && !allowFail) {
     throw new Refusal(`git ${args.join(' ')} failed: ${(result.stderr || result.stdout).trim()}`);

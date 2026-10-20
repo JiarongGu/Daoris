@@ -1,13 +1,46 @@
 /**
  * Import-safe filesystem and Git operations shared within repository tooling.
  */
-import { spawnSync } from 'node:child_process';
+import { execFileSync, spawnSync } from 'node:child_process';
 import { randomBytes } from 'node:crypto';
 import {
   copyFileSync, existsSync, mkdirSync, readFileSync, readdirSync, realpathSync, renameSync, rmSync, statSync, writeFileSync,
 } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { systemGit } from '../src/Daoris.Cli/src/tools/gitforwindows.ts';
+
+/**
+ * The system's git for a start with `env`, past Git for Windows' launcher where PATH finds it (GITSTART4): the real
+ * git and the launcher's variables over `env`, one process where it was two; elsewhere `git` and `env` as they were.
+ * Asked once per PATH and HOME a run starts git with, since a tool starts many.
+ */
+const gitStarts = new Map();
+export function gitStart(env = process.env) {
+  const key = ['PATH', 'PATHEXT', 'HOME', 'HOMEDRIVE', 'HOMEPATH', 'USERPROFILE', 'MSYSTEM', 'PLINK_PROTOCOL']
+    .map((name) => env[Object.keys(env).find((each) => each.toUpperCase() === name) ?? name] ?? '\u0001').join('\0');
+  let start = gitStarts.get(key);
+  if (start === undefined) {
+    const { file, env: handed } = systemGit(env);
+    // Only what the launcher sets is kept: the rest of each start's environment is that start's own.
+    const set = file === 'git' ? null : Object.fromEntries(Object.entries(handed).filter(([name, value]) => env[name] !== value));
+    start = { file, set };
+    gitStarts.set(key, start);
+  }
+  return { file: start.file, env: start.set === null ? env : { ...env, ...start.set } };
+}
+
+/** `spawnSync('git', args, options)`, through `gitStart` with `options.env` (the process's where none). */
+export function spawnGit(args, options = {}) {
+  const { file, env } = gitStart(options.env ?? process.env);
+  return spawnSync(file, args, { ...options, env });
+}
+
+/** `execFileSync('git', args, options)`, through `gitStart` with `options.env` (the process's where none). */
+export function execGit(args, options = {}) {
+  const { file, env } = gitStart(options.env ?? process.env);
+  return execFileSync(file, args, { ...options, env });
+}
 
 /**
  * Whether the module at `url` is the script node was asked to run — the runner guard every tool whose
@@ -35,7 +68,7 @@ export function isMain(url) {
  */
 export function repositoryFiles(root, { env = process.env } = {}) {
   const options = { cwd: root, encoding: 'utf8', windowsHide: true, env, maxBuffer: 256 * 1024 * 1024 };
-  const top = spawnSync('git', ['rev-parse', '--show-toplevel'], options);
+  const top = spawnGit(['rev-parse', '--show-toplevel'], options);
   const real = (path) => {
     const value = realpathSync(path).replace(/\\/g, '/').replace(/\/+$/, '');
     return process.platform === 'win32' ? value.toLowerCase() : value;
@@ -43,7 +76,7 @@ export function repositoryFiles(root, { env = process.env } = {}) {
   if (top.status !== 0 || real(top.stdout.trim()) !== real(root)) {
     throw new Error(`${root} is not the top of a git work tree`);
   }
-  const listed = spawnSync('git', ['ls-files', '-z', '--cached', '--others', '--exclude-standard'], options);
+  const listed = spawnGit(['ls-files', '-z', '--cached', '--others', '--exclude-standard'], options);
   if (listed.status !== 0) throw new Error(`git ls-files failed: ${listed.stderr?.trim() ?? listed.error?.message}`);
   return [...new Set(listed.stdout.split('\0').filter(Boolean))]
     .filter((path) => {
@@ -123,7 +156,7 @@ export function writeAtomic(file, data, { tries, waitMs, rename } = {}) {
  */
 export function stagedTree(cwd, { env = process.env } = {}) {
   const git = (args, extra = null) => {
-    const result = spawnSync('git', args, {
+    const result = spawnGit(args, {
       cwd, encoding: 'utf8', windowsHide: true, maxBuffer: 256 * 1024 * 1024, env: extra ? { ...env, ...extra } : env,
     });
     if (result.error) throw new Error(`git could not start: ${result.error.message}`);

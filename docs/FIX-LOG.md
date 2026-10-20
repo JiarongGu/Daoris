@@ -4713,6 +4713,13 @@ process costs a class.
 *`MaxParallelThreads` 6 and 8* on the same four classes after: 514 s at 59% and 383 s at 64%. Four classes cannot run
 more than four at once, so these are two more runs of one setting, and the knee is unmeasured. The setting stays at four.
 
+*The CLI's and tools' git (GITSTART4, 2026-10-21).* From PowerShell, where `PATH` finds `C:\Program Files\Git\cmd\git.exe`,
+`spawnGit` starts `mingw64\bin\git.exe`. One node process with other worktrees' work beside it, 40 starts each way
+interleaved (through the launcher, then past it): `git --version` median 1,001 ms against 723 (mean 1,238
+against 882), and the `ls-files` that `repositoryFiles` runs median 1,042 against 761 (mean 1,277 against 852), about 28%
+saved a start. A `!` alias started through `spawnGit` ran in `sh` and saw `MSYSTEM=MINGW64`. `npm run verify` itself was
+not timed: on this machine the full step set runs past a session's bound, so the starts it is made of were timed instead.
+
 **A repository copied from a seed (PROC1h, 2026-10-18).** `LandedFixture.RepositoryAsync` and `RepositoryWithOriginAsync` (284 and 73
 calls of `"engine"` in the driver's tests, the shape every other name follows) made each test's repositories with `init`, two
 `config`, a commit, and for an origin a bare `init`, `remote add` and `push`. `GitSeed` builds a shape once per test run, at its first
