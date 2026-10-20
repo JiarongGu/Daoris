@@ -35,7 +35,7 @@ const facts = (over: Partial<PushedAccountFacts> = {}): PushedAccountFacts => ({
 
 /** A start waiting on its accounts, as the shell pushes it. */
 const waiting = (over: Partial<PushedAttention> = {}): PushedAttention => ({
-  kind: 'account-wait', id: 'wait:claude-code/account-2', since: '2026-10-05T10:25:00Z', where: 'work', circle: true,
+  kind: 'account-wait', id: 'wait:claude-code/account-2', since: '2026-10-05T10:25:00Z', where: 'work', wholeWorkspace: true,
   holding: { quests: [], asks: ['a1', 'a2'] },
   account: facts({ named: [named('account-2', 'cooling', { name: 'home' }), named('account-1', 'out'), named('account-3', 'out')] }),
   ...over,

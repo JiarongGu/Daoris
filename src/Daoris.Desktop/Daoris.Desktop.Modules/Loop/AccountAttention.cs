@@ -79,7 +79,7 @@ internal static class AccountAttention
                 ["id"] = held.Key,
                 ["since"] = HeldSince(held, use, facts),
                 ["where"] = inOne ? repositories[0] : held.Workspace ?? "",
-                ["circle"] = !inOne && !string.IsNullOrEmpty(held.Workspace),
+                ["wholeWorkspace"] = !inOne && !string.IsNullOrEmpty(held.Workspace),
                 ["holding"] = new JsonObject { ["quests"] = Strings(held.Quests), ["asks"] = Strings(held.Asks) },
                 ["account"] = whose,
             });

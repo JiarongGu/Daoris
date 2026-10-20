@@ -153,7 +153,7 @@ export function accountRowWorded(row: PushedAttention, names: AttentionNames, no
     return {
       ...base,
       title: heldTitle(row.holding ?? { quests: [], asks: [] }, names.quests),
-      circle: row.circle === true,
+      circle: row.wholeWorkspace === true,
       // No account to name where none is signed in: the hold says so itself (OWNSPACE1b-B), once, as the driver does.
       detail: account.noAccount && account.named.length === 0
         ? i18n.t('work.attention.accounts.noAccount', { product: account.product })
