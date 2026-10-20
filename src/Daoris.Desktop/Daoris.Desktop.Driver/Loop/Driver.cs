@@ -369,8 +369,21 @@ public sealed class Driver(
     private Task<(StartRun? Run, ContinueReason? FellBack, bool AnswerKept)> ContinueAsync(
         Consideration start, PriorSession park, HarnessSelection selection, IReadOnlyList<RepoView> registry,
         TreeLock? starting, Action onOpened, CancellationToken ct, string agent, ContinueReason? account = null, string? inSync = null,
-        DrivenAccess? permissions = null) =>
-        GoOns.ContinueAsync(start, park, selection, registry, starting, onOpened, ct, agent, account, inSync, permissions);
+        DrivenAccess? permissions = null, bool treeStands = true) =>
+        GoOns.ContinueAsync(start, park, selection, registry, starting, onOpened, ct, agent, account, inSync, permissions, treeStands);
+
+    /// <summary>
+    /// What became of a session's tree before it went on (TREEGONE1), said on that session's record: its console and its conversation,
+    /// by code. The tree made again in its place is said once, as it happens.
+    /// </summary>
+    private void TreeSaid(string session, Noted said)
+    {
+        Context.Output?.Append(session, said.Note);
+        Context.Events.Keep(
+            session,
+            new SessionEvent { Kind = SessionEventKind.Note, Text = said.Note, Parts = said.Parts.Count > 0 ? said.Parts : null },
+            say: null);
+    }
 
     /// <summary>
     /// A tree a start goes on in, brought up to date where the line holds some of its commits (LANDSYNC2): what the session is told,
@@ -1547,7 +1560,7 @@ public sealed class Driver(
             // says the wait once and a screen shows the quest waiting for an account; the record's conversation says why, with
             // the door out of the wait. Nothing was spawned or probed to learn it.
             var why = DriverContinuations.WaitsFor(quest, start.Resumes!, resume.Selection);
-            GoOns.HeldForAccount(start.Resumes!, ResumeWords.NotYetOn(resume, DriverContinuations.DoorOf(quest, start.Resumes!)));
+            GoOns.HeldSaying(start.Resumes!, ResumeWords.NotYetOn(resume, DriverContinuations.DoorOf(quest, start.Resumes!)));
             return Hold(why) with { Cooling = resume.Selection.Cooling };
         }
 
@@ -1579,18 +1592,52 @@ public sealed class Driver(
         // the same reason every refusal above is asked before it: a failure here holds the quest
         // open and records nothing. The branch grows from the canonical line as WSP4 resolves it.
         // A RESUME (D79) carries on in the tree its earlier session asked from — that tree holds the work
-        // done before the question — where it still stands. One a person has since discarded is gone
-        // with its work, and the resume grows a fresh tree like a first start. A CARRY-ON after a
+        // done before the question — where it still stands, or made again below on its branch (TREEGONE1). One whose work
+        // landed and whose branch the tidy took grows a fresh tree like a first start. A CARRY-ON after a
         // cut-off (D80) is the same move for a different reason: the quest waits on nothing, and the
         // earlier session failed before closing it.
-        var resumedIn = start.Resumes is { Tree: { Length: > 0 } priorTree } && isolated && Directory.Exists(priorTree)
-            ? priorTree
+        // TREEGONE1 (D51, D131): a session never runs with its tree gone. The tree a session goes on in is asked for as git lists it,
+        // on its branch, before anything goes on there: made again in its place where its folder is gone and its branch stands, and
+        // said; where its branch is gone too, or it could not be made, the start is held for the person and said, and no harness
+        // starts in the checkout or a folder left behind in its place. Asked with the repository's trees held, as an open is (LEFT2).
+        // A session whose work landed and whose branch the tidy took grows a fresh tree as before (D79, D82).
+        var priorTree = start.Resumes is { Tree: { Length: > 0 } resumesIn } && Context.Trees.Holds(resumesIn) ? resumesIn : null;
+        var entryTree = isolated && start.Entry?.Into is { Tree: { Length: > 0 } partTree } ? partTree : null;
+        TreeStanding? priorStands = null, entryStands = null;
+        if (priorTree is not null || (entryTree is not null && Context.Trees.Holds(entryTree)))
+        {
+            using var returning = TreeLock.TryStarting(home, start.Workspace, quest.To);
+            if (returning is null) return Hold(TreeLock.Replaying(quest.To));
+            if (priorTree is not null) priorStands = await Context.Trees.EnsureAsync(root, priorTree, ct).ConfigureAwait(false);
+            if (entryTree is not null && Context.Trees.Holds(entryTree))
+            {
+                entryStands = await Context.Trees.EnsureAsync(root, entryTree, ct).ConfigureAwait(false);
+            }
+        }
+
+        if (priorStands is { Said: { } priorSaid } && start.Resumes is { } goneFrom)
+        {
+            var landedAway = priorStands.Stand == TreeStand.Gone && Context.Trees.Recorded.Landing(goneFrom.Session) is not null;
+            if (priorStands.Stand == TreeStand.Remade) TreeSaid(goneFrom.Session, priorSaid);
+            else if (!landedAway)
+            {
+                GoOns.HeldSaying(goneFrom, priorSaid);
+                return Hold(priorSaid.Note);
+            }
+        }
+
+        if (entryStands is { Stand: TreeStand.Remade, Said: { } entrySaid }) TreeSaid(start.Entry!.Into!.Session, entrySaid);
+        else if (entryStands is { Stand: TreeStand.Unmade, Said: { } entryUnmade }) return Hold(entryUnmade.Note);
+
+        static bool StandsNow(TreeStanding? stands, string tree) =>
+            stands is null ? Directory.Exists(tree) : stands.Stand is TreeStand.Stands or TreeStand.Remade;
+        var resumedIn = start.Resumes is { Tree: { Length: > 0 } resumedTree } && isolated && StandsNow(priorStands, resumedTree)
+            ? resumedTree
             : null;
         var carryingOn = start.Resumes is not null && quest.Awaits is null or "";
         // A further part of a session (SESSONE1d, D167 point 4 as amended) goes into the tree the planner found free, where it still
         // stands; one the tidy took at its landing grows again below, from the branch that work landed on (D82), else from the line.
-        var entryTree = isolated && start.Entry?.Into is { Tree: { Length: > 0 } partTree } ? partTree : null;
-        var joinedIn = entryTree is not null && Directory.Exists(entryTree) ? entryTree : null;
+        var joinedIn = entryTree is not null && StandsNow(entryStands, entryTree) ? entryTree : null;
 
         // What the question came back with, which is the whole point of resuming: the session is handed
         // it. Read before the record opens, like every hold above — a question the service no longer
@@ -1731,7 +1778,7 @@ public sealed class Driver(
             // Where its own account could not carry the words, the walk's pick did, and the reason says why (MSG1g).
             (var continued, fellBack, answerKept) = await ContinueAsync(
                     start, park, selection, registry, starting, onOpened, ct, agent, account: resume?.Elsewhere, inSync: inSync?.Told,
-                    permissions: permissions)
+                    permissions: permissions, treeStands: priorStands is null or { Stand: TreeStand.Stands or TreeStand.Remade })
                 .ConfigureAwait(false);
             // The fresh tree opened above is used by none of the returns that follow, so each lets it go by the clean path (GOONTREE1,
             // D51): a tree and branch for a start that is never made would be left at every look. On no token (QUEUEDTREE1): a

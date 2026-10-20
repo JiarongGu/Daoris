@@ -56,9 +56,10 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
     /// The record's conversation says why its words wait (MSG1g, D143 point 1), once for each wait: a look that finds it saying
     /// the same as its last event writes nothing more, and a word said since is answered again. The person wrote to it, so it
     /// stays in view while it waits (D137 §2.3). The words stay waiting and unmarked: the reset lets them go on. Its line is
-    /// <see cref="ResumeWords.NotYetOn"/>'s, by code (CONVNOTE2g); the last event is compared by its English, as it always was.
+    /// <see cref="ResumeWords.NotYetOn"/>'s, by code (CONVNOTE2g); the last event is compared by its English, as it always was. A start
+    /// held because the record's tree is gone and cannot be made again says so the same way (TREEGONE1).
     /// </summary>
-    internal void HeldForAccount(PriorSession record, Noted line)
+    internal void HeldSaying(PriorSession record, Noted line)
     {
         try
         {
@@ -97,10 +98,14 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
     /// The mode its repository's permission prompts name on its harness now (AUTONOMY1b, D184 point 3), which it goes on under, saying
     /// the change from the setup its record started under; null keeps the adapter's own.
     /// </param>
+    /// <param name="treeStands">
+    /// Whether the start found the record's tree there as git lists it (TREEGONE1): false where it is not, whatever folder stands at its
+    /// place, so the words never go on in one. True leaves the judgement to the disk, as for a tree this home did not open.
+    /// </param>
     internal async Task<(StartRun? Run, ContinueReason? FellBack, bool AnswerKept)> ContinueAsync(
         Consideration start, PriorSession park, HarnessSelection selection, IReadOnlyList<RepoView> registry,
         TreeLock? starting, Action onOpened, CancellationToken ct, string agent, ContinueReason? account = null, string? inSync = null,
-        DrivenAccess? permissions = null)
+        DrivenAccess? permissions = null, bool treeStands = true)
     {
         var service = _context.Service;
         var config = _context.Config;
@@ -123,7 +128,8 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
         var kept = _context.Conversations.Read(park.Session);
         var why = adapter is null
             ? ContinueWhy.Of(ContinueWhy.Refused)
-            : Continuations.Judge(park, adapter.Name, adapter.Resumes, selection.Profile, kept, account);
+            : Continuations.Judge(
+                tree => treeStands && ConversationTrees.Stands(tree), park, adapter.Name, adapter.Resumes, selection.Profile, kept, account);
         if (why is not null || adapter is null || kept is null)
         {
             var reason = why ?? ContinueWhy.Of(ContinueWhy.Refused);

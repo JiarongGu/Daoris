@@ -193,36 +193,106 @@ public sealed class SessionMessagesTickTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 GOONTREE1 (D137 §2.2, D51): words waiting on a closed quest's last session whose tree is gone cannot go on, and the
-    /// look leaves no fresh tree or branch for the start it never made. The record says its tree is gone and keeps its words.
+    /// 🔴 TREEGONE1 (D51, D131; GOONTREE1 before it): a session's tree removed while its branch stands, as a repository's merge tool
+    /// did to a driven session, is made again in its place on that branch before the person's words go on, and the record says so.
+    /// The words go on in the same record, its harness running in the tree made again; no other tree or branch is made.
     /// </summary>
     [Fact]
-    public async Task Words_that_cannot_go_on_because_the_tree_is_gone_leave_no_fresh_tree_behind()
+    public async Task Words_to_a_session_whose_tree_was_removed_go_on_in_its_tree_made_again_on_its_branch()
     {
         await using var service = SaidStandIn.Start(_repository);
         var driver = Protocol(service, "resumes");
         await driver.RunOnceAsync().WaitAsync(Poll.Patience);
-        var tree = JsonNode.Parse(service.Record("s1"))!["tree"]?.GetValue<string>();
-        if (tree is { Length: > 0 } && Directory.Exists(tree))
-        {
-            Git("worktree", "remove", "--force", tree);
-            if (Directory.Exists(tree)) Directory.Delete(tree, recursive: true);
-        }
-
-        Git("worktree", "prune");
+        var tree = TreeOf(service, "s1");
+        var folders = TreeFolders();
+        File.WriteAllText(Path.Combine(tree, "work.txt"), "the session's work\n");
+        GitIn(tree, "add", "-A");
+        GitIn(tree, "commit", "-qm", "the session's work");
+        Git("worktree", "remove", "--force", tree);
+        Assert.False(Directory.Exists(tree));
         await service.SayAsync("s1", "Also log the port.");
         var branches = Branches();
-        var folders = TreeFolders();
 
         var look = await driver.RunOnceAsync().WaitAsync(Poll.Patience);
 
-        var seen = $"look: {string.Join(" | ", look.Events)}\nafter: {service.Record("s1")}\nbranches: {string.Join(",", Branches())}";
+        var seen = $"look: {string.Join(" | ", look.Events)}\nafter: {service.Record("s1")}\nheard: {string.Join(" | ", Heard().Select(h => h.ToJsonString()))}";
         Assert.True(service.SessionCount == 1, seen);
+        Assert.True(service.Said("s1").Count == 0, seen);
         Assert.True(Branches().SequenceEqual(branches), seen);
         Assert.True(TreeFolders().SequenceEqual(folders), seen);
-        Assert.Equal(["w1"], service.Said("s1"));
-        Assert.Equal(ContinueWhy.Tree, new GoOnMarks(_home).Read("s1")!.Why);
+        // Its commit checked out again, line endings as this machine's git writes them.
+        Assert.Equal("the session's work", File.ReadAllText(Path.Combine(tree, "work.txt")).TrimEnd());
+        var prompt = Heard().Last(line => line["method"]!.GetValue<string>() == "session/prompt");
+        Assert.True(prompt["resumed"]!.GetValue<bool>(), seen);
+        Assert.Equal(Path.GetFullPath(tree), Path.GetFullPath(prompt["cwd"]!.GetValue<string>()), ignoreCase: true);
+        var remade = Assert.Single(Events("s1"), e => e.Parts?.Any(part => part.Code == NoteCodes.TreeRemade.Code) == true);
+        Assert.Contains($"`daoris/{Path.GetFileName(tree)}`", remade.Text, StringComparison.Ordinal);
     }
+
+    /// <summary>
+    /// TREEGONE1: a folder left where the tree was, which git no longer lists as one (a removal that could not delete everything),
+    /// is no tree to go on in: it is moved aside, never deleted, and the tree is made again in its place on its branch.
+    /// </summary>
+    [Fact]
+    public async Task A_folder_left_where_a_sessions_tree_was_is_moved_aside_and_the_tree_made_again()
+    {
+        await using var service = SaidStandIn.Start(_repository);
+        var driver = Protocol(service, "resumes");
+        await driver.RunOnceAsync().WaitAsync(Poll.Patience);
+        var tree = TreeOf(service, "s1");
+        Git("worktree", "remove", "--force", tree);
+        Directory.CreateDirectory(Path.Combine(tree, "node_modules"));
+        File.WriteAllText(Path.Combine(tree, "node_modules", "left.txt"), "left behind\n");
+        await service.SayAsync("s1", "Also log the port.");
+
+        var look = await driver.RunOnceAsync().WaitAsync(Poll.Patience);
+
+        var seen = $"look: {string.Join(" | ", look.Events)}\nafter: {service.Record("s1")}\nheard: {string.Join(" | ", Heard().Select(h => h.ToJsonString()))}";
+        Assert.True(service.Said("s1").Count == 0, seen);
+        Assert.True(File.Exists(Path.Combine(tree, ".git")), seen);
+        Assert.False(File.Exists(Path.Combine(tree, "node_modules", "left.txt")), seen);
+        var aside = Path.Combine(DaorisHome.Entry(_home, HomeEntry.Trees), ".tidied");
+        Assert.Contains(Directory.EnumerateFiles(aside, "left.txt", SearchOption.AllDirectories), _ => true);
+        var prompt = Heard().Last(line => line["method"]!.GetValue<string>() == "session/prompt");
+        Assert.Equal(Path.GetFullPath(tree), Path.GetFullPath(prompt["cwd"]!.GetValue<string>()), ignoreCase: true);
+    }
+
+    /// <summary>
+    /// 🔴 TREEGONE1: a session whose tree and branch are both gone is held for the person, and said: no harness starts, neither in
+    /// the repository's checkout nor in a fresh tree, the words stay waiting on the record, and no tree or branch is made. Each later
+    /// look holds it again without saying it twice.
+    /// </summary>
+    [Fact]
+    public async Task Words_to_a_session_whose_tree_and_branch_are_gone_are_held_and_no_harness_starts()
+    {
+        await using var service = SaidStandIn.Start(_repository);
+        var driver = Protocol(service, "resumes");
+        await driver.RunOnceAsync().WaitAsync(Poll.Patience);
+        var tree = TreeOf(service, "s1");
+        Git("worktree", "remove", "--force", tree);
+        Git("branch", "-D", $"daoris/{Path.GetFileName(tree)}");
+        await service.SayAsync("s1", "Also log the port.");
+        var heardBefore = Heard().Length;
+        var folders = TreeFolders();
+
+        var look = await driver.RunOnceAsync().WaitAsync(Poll.Patience);
+        await driver.RunOnceAsync().WaitAsync(Poll.Patience);
+
+        var seen = $"look: {string.Join(" | ", look.Events)}\nafter: {service.Record("s1")}\nheard: {string.Join(" | ", Heard().Select(h => h.ToJsonString()))}";
+        Assert.True(Heard().Length == heardBefore, seen);
+        Assert.True(service.SessionCount == 1, seen);
+        Assert.True(service.Said("s1").SequenceEqual(["w1"]), seen);
+        Assert.True(service.MovesAfterWords("s1").Count == 0, seen);
+        Assert.Empty(Branches());
+        Assert.True(TreeFolders().SequenceEqual(folders), seen);
+        Assert.False(Directory.Exists(tree));
+        Assert.Contains(look.Events, line => line.Contains("held", StringComparison.Ordinal) && line.Contains("are both gone", StringComparison.Ordinal));
+        Assert.Single(Events("s1"), e => e.Parts?.Any(part => part.Code == NoteCodes.TreeGone.Code) == true);
+    }
+
+    /// <summary>The tree the record says its session ran in.</summary>
+    private static string TreeOf(SaidStandIn service, string session) =>
+        JsonNode.Parse(service.Record(session))!["tree"]!.GetValue<string>();
 
     private string[] Branches()
     {
@@ -462,7 +532,8 @@ public sealed class SessionMessagesTickTests : IDisposable
             const url = process.env.DAORIS_SERVICE_URL;
             const session = process.env.DAORIS_SESSION_ID;
             const send = (frame) => process.stdout.write(JSON.stringify(frame) + '\n');
-            const heard = (what) => appendFileSync(log, JSON.stringify({ ...what, session }) + '\n');
+            // TREEGONE1: each line names the folder the harness runs in, so a test sees where a resume went on.
+            const heard = (what) => appendFileSync(log, JSON.stringify({ ...what, session, cwd: process.cwd() }) + '\n');
             const respond = (body) => fetch(`${url}/api/quests/q1/respond`, {
               method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
             let conversation = null;
@@ -562,9 +633,11 @@ public sealed class SessionMessagesTickTests : IDisposable
         return script;
     }
 
-    private void Git(params string[] arguments)
+    private void Git(params string[] arguments) => GitIn(_repository, arguments);
+
+    private static void GitIn(string folder, params string[] arguments)
     {
-        var info = new ProcessStartInfo("git") { WorkingDirectory = _repository, UseShellExecute = false, RedirectStandardOutput = true };
+        var info = new ProcessStartInfo("git") { WorkingDirectory = folder, UseShellExecute = false, RedirectStandardOutput = true };
         foreach (var argument in arguments) info.ArgumentList.Add(argument);
         using var process = Process.Start(TestGit.Past(info))!;
         process.StandardOutput.ReadToEnd();

@@ -65,7 +65,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Web/src/work/frame/frame.tsx` | 40 | 877 |
 | `src/Daoris.Web/src/work/head/SessionHead.test.tsx` | 67 | 1274 |
 | `src/Daoris.Web/src/work/noteLines.test.ts` | 79 | 1161 |
-| `src/Daoris.Web/src/work/noteLines.ts` | 41 | 749 |
+| `src/Daoris.Web/src/work/noteLines.ts` | 42 | 752 |
 | `src/Daoris.Web/src/work/rail/SessionRail.test.tsx` | 54 | 1061 |
 
 ### Driver library (`driver`)
@@ -92,7 +92,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Help/golden/help-room/scoped.md` | 51 | 412 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Help/golden/help-room/sparse.md` | 48 | 355 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Loop/DriverCommandTests.cs` | 44 | 685 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Loop/SessionMessagesTickTests.cs` | 51 | 912 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Loop/SessionMessagesTickTests.cs` | 56 | 985 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Loop/SessionsOutliveTheirLookTests.cs` | 43 | 957 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Plugins/PluginCatalogTests.cs` | 40 | 795 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Plugins/PluginKitTests.cs` | 50 | 1012 |
@@ -124,11 +124,11 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Conversations/DrivenInbox.cs` | 42 | 967 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Help/HelpFacts.cs` | 52 | 886 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Help/Proposals/HelpSettingProposals.cs` | 54 | 937 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/Loop/Driver.cs` | 213 | 3436 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/Loop/DriverContinuations.cs` | 57 | 928 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/Loop/Driver.cs` | 216 | 3483 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/Loop/DriverContinuations.cs` | 58 | 934 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Loop/DriverWatch.cs` | 55 | 943 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Platform/DriverConfig.cs` | 88 | 1505 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/Platform/NoteCodes.cs` | 76 | 1201 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/Platform/NoteCodes.cs` | 76 | 1205 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Platform/SystemWiring.cs` | 50 | 1072 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Plugins/Hooks.cs` | 59 | 1165 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Quests/Domain/Planner.cs` | 102 | 1683 |
@@ -149,7 +149,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/Nodes/WorkPerformer.cs` | 53 | 888 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/SessionGroups.cs` | 69 | 1213 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/SessionTrees/LandedCleanups.cs` | 46 | 753 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/SessionTrees/SessionTrees.cs` | 52 | 850 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/SessionTrees/SessionTrees.cs` | 53 | 857 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/SessionTrees/TreeLands.cs` | 77 | 1190 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/WorkingTree.cs` | 61 | 1218 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Workflows/Domain/WorkflowRun.cs` | 43 | 776 |
