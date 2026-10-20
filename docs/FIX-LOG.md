@@ -5,6 +5,25 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-21 — A terminal that was not elevated could not press into an elevated Daoris (PIPEOWNER1)
+
+- **Symptom:** on the install, which runs elevated, `daoris-driver sessions say` from a terminal that was not elevated was
+  refused at once, saying the running Daoris's pipe *did not answer within 5 seconds*. Its reads went alone without a word.
+- **Root cause:** the pipe's descriptor named no owner, so it took the creating token's default owner, which for an elevated
+  token is the Administrators group. The client opened with `PipeOptions.CurrentUserOnly`, which compares the pipe's owner with the
+  caller's token's default owner, the user's SID when not elevated, and refused it (`UnauthorizedAccessException`, about 50 ms);
+  the ACL let the same process in, in 1 ms. `ConnectAsync` returned null for that refusal as for a timeout, so it was said as
+  silence.
+- **Fix:** `InstancePipe.Security` owns the pipe by the user's SID. The driver's client reads the owner itself, taking the user's
+  SID or its token's default owner: with the server's change alone, `CurrentUserOnly` refused every elevated client instead (the
+  modules' pipe tests did so under elevated PowerShell). A refused connect (an ACL that refuses the user, or an owner not taken)
+  is `InstanceFound.Refused`, *… refused this terminal; nothing was done. Its pipe belongs to another Windows account or
+  elevation.* The CLI's client reads no owner; its connect the ACL refuses (`EPERM`) is said in the same words.
+- **Verification:** `InstancePipeTests`' owner row failed under elevated PowerShell (owner `S-1-5-32-544`), then passed;
+  `InstanceDoorTests`' three refused rows failed (two said *did not answer*, one pressed), then passed; `instance.test.ts`'s two
+  failed the same way, then passed. `InstancePipeTests` and `PipeCensusTests` (77) and `InstanceDoorTests` (39) under both
+  elevated PowerShell and Git Bash, the instance-path classes (109), `instance.test.ts` (29).
+
 ## 2026-10-21 — The full set's run on d263cd0 failed three gates that its merges never ran
 
 - **Symptom:** the full set on d263cd0 failed `web-unit`, `cli` and `deployment`. The web design checks found

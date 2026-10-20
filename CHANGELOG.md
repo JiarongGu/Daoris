@@ -5,6 +5,9 @@ with the version and date at release.
 
 ## Unreleased
 
+- A terminal that is not run as administrator can now press into a Daoris that is, such as `daoris-driver sessions say`. Where
+  the running Daoris's pipe does refuse a terminal, it says so (*Its pipe belongs to another Windows account or elevation.*)
+  rather than that the pipe did not answer within 5 seconds.
 - A conversation whose agent has lost it goes on by itself in a new conversation in the same folder, handed Daoris's record of it
   and then your words, and says so on both. A conversation its agent could still go on with never moves without you: your words
   wait, and beside *Start a conversation with these words* there is *Go on with Daoris's brief*, which goes on in a new part of the
