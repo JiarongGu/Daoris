@@ -18,15 +18,18 @@ namespace Daoris.Desktop;
 ///
 /// <para><b>Its inputs, from memory.</b> The sessions, the quests, the asks, the groups and the work as their slices last judged them
 /// (<see cref="StateSlice.Snapshot"/>); the registry as the machine's facts hold it; and what the driver's look kept: the trust holds,
-/// the considerations as the tick hands them, the second opinions judged, the rule proposals, the helpers' asks and the held tool calls.
-/// Not judged until every slice it reads has judged and the registry has landed (PUSHUX1): a band drawn from half its inputs would say
-/// nothing waits where something does. The look's own lists are empty before its first look, as the page's were.</para>
+/// the considerations and the account waits as the tick hands them, the second opinions judged, the rule proposals, the helpers' asks
+/// and the held tool calls; and for the accounts' rows, the roster's last readings as <c>HARNESSES</c> answers them (asking no account,
+/// ROSTER1) and how each agent's accounts are used as the accounts slice holds it. Not judged until every slice it reads has judged and
+/// the registry has landed (PUSHUX1): a band drawn from half its inputs would say nothing waits where something does. The look's own
+/// lists are empty before its first look, as the page's were.</para>
 ///
-/// <para><b>Its wakes</b>, each only asking. Each input slice's push (<see cref="StateSlice.Pushed"/>), the sessions' only where what the
-/// judge reads of them moved (<see cref="SessionsRead"/>), so a working session's every word judges nothing here; each look of the driver
-/// (the loop wakes it beside the driver's state); a held tool call's start and end (<see cref="HeldPermissions.Changed"/>); the registry
-/// landing in the machine's facts; a press declared to the rules, the sessions or the driver (a proposal answered, a helper's yes or
-/// no); the service coming up; and the 15 s period, which reads a helper's ask a terminal's driver wrote.</para>
+/// <para><b>Its wakes</b>, each only asking. Each input slice's push (<see cref="StateSlice.Pushed"/>), the accounts' among them, the
+/// sessions' only where what the judge reads of them moved (<see cref="SessionsRead"/>), so a working session's every word judges nothing
+/// here; each look of the driver (the loop wakes it beside the driver's state); a held tool call's start and end
+/// (<see cref="HeldPermissions.Changed"/>); the registry landing in the machine's facts; a press declared to the rules, the sessions, the
+/// driver or the roster (a proposal answered, a helper's yes or no, a reading); a harness action's end; the service coming up; and the
+/// 15 s period, which reads a helper's ask a terminal's driver wrote and an account a terminal signed in.</para>
 ///
 /// <para><b>Desktop-only.</b> A trust hold names a folder and the agent's own file, machine paths this machine's windows alone read
 /// (D47, D182 point 2).</para>
@@ -56,7 +59,7 @@ public static class AttentionStateSlice
         [
             "kind", "id", "since", "workspace", "where", "note", "detail", "publishTo", "choices", "ask", "number", "goAhead", "session",
             "departed", "setUp", "local", "environment", "shows", "opinion", "placed", "sitting", "trust", "quest", "proposal", "title",
-            "permission", "blocked", "held",
+            "permission", "blocked", "held", "circle", "holding", "read", "runs", "account",
         ],
         ["waiting"] = ["kind", "workspace"],
         ["note"] = ["note", "parts"],
@@ -85,6 +88,11 @@ public static class AttentionStateSlice
         ["blocked"] = ["unknown", "entries"],
         ["entry"] = ["kind", "resource", "detail"],
         ["attempt"] = WorkStateSlice.Fields["attempt"],
+        ["holding"] = ["quests", "asks"],
+        ["account"] = ["agent", "product", "harness", "signsIn", "named", "outside", "readFirst", "noAccount"],
+        ["named"] = ["id", "name", "state", "read", "until"],
+        ["outside"] = ["id", "list", "workspace"],
+        ["readFirst"] = ["id"],
     };
 
     /// <summary>Which shape a field holds, as <c>shape.field</c>, an object of it or a list of them; every other field is a value.</summary>
@@ -108,6 +116,11 @@ public static class AttentionStateSlice
         ["row.blocked"] = "blocked",
         ["blocked.entries"] = "entry",
         ["row.held"] = "attempt",
+        ["row.holding"] = "holding",
+        ["row.account"] = "account",
+        ["account.named"] = "named",
+        ["account.outside"] = "outside",
+        ["account.readFirst"] = "readFirst",
     };
 
     /// <summary>
@@ -116,19 +129,27 @@ public static class AttentionStateSlice
     /// </summary>
     public static readonly IReadOnlyList<SliceWake> WakesOn =
     [
-        new(StatePublisher.Type, payload => payload is StateChanged changed && changed.Scopes.Any(scope => scope is "rules" or "sessions" or "driver")),
+        new(StatePublisher.Type, payload => payload is StateChanged changed
+            && changed.Scopes.Any(scope => scope is "rules" or "sessions" or "driver" or "harnesses")),
+        // A harness action's end: a sign-in makes an account and moves its reading.
+        new("HARNESS_ENDED"),
         new("DRIVER_READY"),
     ];
 
     /// <summary>The slice the shell's loop owns, judged from what <paramref name="loop"/> holds in memory.</summary>
     public static StateSlice Of(DriverLoop loop, IEventBus bus) =>
-        Of(() => Facts(loop), bus,
+        Of(ct => FactsAsync(loop, ct), bus,
             [wake => HearSlices(loop.Slices, wake), wake => HearHolds(HeldPermissions.Of(loop.Events), wake), wake => HearRegistry(loop.Facts, wake)],
             loop.Log);
 
     /// <summary>The slice over <paramref name="facts"/>, read at each judgement, woken where <paramref name="hears"/> hear a move.</summary>
     public static StateSlice Of(Func<AttentionFacts?> facts, IEventBus bus, IReadOnlyList<Func<Action, IDisposable>> hears, MachineLog? log = null) =>
-        new(Name, bus, _ => Task.FromResult(Judge(facts())))
+        Of(_ => Task.FromResult(facts()), bus, hears, log);
+
+    /// <summary>The slice over what <paramref name="facts"/> reads at each judgement.</summary>
+    public static StateSlice Of(
+        Func<CancellationToken, Task<AttentionFacts?>> facts, IEventBus bus, IReadOnlyList<Func<Action, IDisposable>> hears, MachineLog? log = null) =>
+        new(Name, bus, async ct => Judge(await facts(ct).ConfigureAwait(false)))
         {
             Keyed = true,
             WakesOn = WakesOn,
@@ -181,19 +202,38 @@ public static class AttentionStateSlice
 
     /// <summary>
     /// Everything the judge reads, from <paramref name="loop"/>'s memory and the home's files the routes read; null until every input
-    /// slice has judged and the registry has landed.
+    /// slice has judged and the registry has landed. The roster is its last readings, as <c>HARNESSES</c> answers them, asking no
+    /// account (ROSTER1).
     /// </summary>
-    public static AttentionFacts? Facts(DriverLoop loop) =>
-        Gather(loop.Slices, loop.Facts.Current.Value<HelpMachineWhole>(HelpFacts.Machine, HelpFacts.Whole)?.Snapshot.Repositories) is { } facts
-            ? facts with
-            {
-                Untrusted = Written(loop.Trust.Latest),
-                Considered = Written(loop.Considered ?? []),
-                Proposals = Written(RulesRoutes.Proposals(loop.Home)),
-                Opinions = Written(TreesRoutes.OpinionWaits(loop.Judged.Latest)),
-                Helpers = Written(HelperWaits(loop.Home)),
-                Permissions = Written(PermissionWaits(HeldPermissions.Of(loop.Events))),
-            }
+    public static async Task<AttentionFacts?> FactsAsync(DriverLoop loop, CancellationToken ct)
+    {
+        if (Gather(loop.Slices, loop.Facts.Current.Value<HelpMachineWhole>(HelpFacts.Machine, HelpFacts.Whole)?.Snapshot.Repositories) is not { } facts)
+        {
+            return null;
+        }
+
+        var roster = await loop.Harnesses.RosterAsync(DriverConfig.Load(loop.ConfigPath), refresh: false, ct).ConfigureAwait(false);
+        return facts with
+        {
+            Untrusted = Written(loop.Trust.Latest),
+            Considered = Written(loop.Considered ?? []),
+            Proposals = Written(RulesRoutes.Proposals(loop.Home)),
+            Opinions = Written(TreesRoutes.OpinionWaits(loop.Judged.Latest)),
+            Helpers = Written(HelperWaits(loop.Home)),
+            Permissions = Written(PermissionWaits(HeldPermissions.Of(loop.Events))),
+            Doors = Written(AgentsRoutes.Doors(loop.Harnesses, roster)),
+            Use = Use(loop.Slices),
+            Waits = Written(loop.Look.Waits.Select(DriverLoop.TickWait)),
+        };
+    }
+
+    /// <summary>
+    /// How each agent's accounts are used, as <c>ACCOUNTS</c> answers it (<c>{agents}</c>), from the accounts slice's memory, a partition
+    /// per agent; null where it has not judged, and the look's waits alone say the account rows.
+    /// </summary>
+    public static JsonObject? Use(StateSlices slices) =>
+        Ready(slices.Find(AccountsStateSlice.Name)) is { } snapshot
+            ? new JsonObject { ["agents"] = new JsonArray([.. snapshot.Partitions.Select(each => Node(each.Data)?.DeepClone())]) }
             : null;
 
     /// <summary>
@@ -289,7 +329,8 @@ public static class AttentionStateSlice
     public static IDisposable HearSlices(StateSlices slices, Action wake)
     {
         var stops = new List<Action>();
-        foreach (var name in Inputs)
+        // And the accounts', which the account rows read where it has judged.
+        foreach (var name in Inputs.Append(AccountsStateSlice.Name))
         {
             if (slices.Find(name) is not { } slice) continue;
             var heard = name == SessionsStateSlice.Name ? OnMove(() => SessionsRead(Records(slice) ?? []), wake) : wake;

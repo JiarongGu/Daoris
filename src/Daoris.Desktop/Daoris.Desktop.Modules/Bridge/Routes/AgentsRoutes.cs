@@ -55,22 +55,31 @@ public sealed class AgentsRoutes(DriverContext context)
             roster = await _loop.Harnesses.RosterAsync(config, refresh, cancellationToken);
         }
 
-        var settings = _loop.Harnesses.Settings;
-
         return new
         {
             _loop.Harnesses.SettingsPath,
             Adapter = config.Adapter,
-            Harnesses = roster.Select(report =>
+            Harnesses = Doors(_loop.Harnesses, roster),
+        };
+    }
+
+    /// <summary>
+    /// Each door of the roster as <c>HARNESSES</c> answers it, and as <i>What needs you</i>'s judge reads the accounts' readings (PUSH1d4):
+    /// one builder for both, from the roster's reports and the harnesses' settings, asking nothing of an account.
+    /// </summary>
+    public static object[] Doors(HarnessRoster harnesses, IReadOnlyList<HarnessReport> roster)
+    {
+        var settings = harnesses.Settings;
+        return [.. roster.Select(report =>
             {
                 // Asked once per harness: every field below reads the same two answers.
-                var toolchain = _loop.Harnesses.Toolchain(report.Adapter);
+                var toolchain = harnesses.Toolchain(report.Adapter);
                 var pinned = settings.ResolveVersion(report.Adapter, null, null);
                 // The tool's own settings file under an account (AGT6, D98), where this build
                 // knows it: a door's is its owner's (AGT7), and null offers nothing.
-                var settingsFile = _loop.Harnesses.AccountToolchain(report.Adapter)?.SettingsFile;
+                var settingsFile = harnesses.AccountToolchain(report.Adapter)?.SettingsFile;
                 var owner = toolchain?.Owner(report.Adapter) ?? report.Adapter;
-                var accountActs = AccountActs(_loop.Harnesses, report.Adapter);
+                var accountActs = AccountActs(harnesses, report.Adapter);
                 return new
                 {
                     Harness = report.Adapter,
@@ -84,7 +93,7 @@ public sealed class AgentsRoutes(DriverContext context)
                     // imply the pin is in force.
                     Pinned = pinned,
                     Managed = HarnessSettings.ManagedBinary(
-                        _loop.Harnesses.Home, report.Adapter,
+                        harnesses.Home, report.Adapter,
                         pinned,
                         toolchain?.Binary ?? []),
                     // Whether this harness CAN be pinned at all. A harness that declares neither
@@ -120,16 +129,16 @@ public sealed class AgentsRoutes(DriverContext context)
                     // to the owner until it said.
                     toolchain?.Product,
                     toolchain?.Maker,
-                    Wire = _loop.Harnesses.Wire(report.Adapter).ToString().ToLowerInvariant(),
+                    Wire = harnesses.Wire(report.Adapter).ToString().ToLowerInvariant(),
                     // Whether a session on this door keeps a conversation (D76 §1) — what the page
                     // reads an empty record by, rather than guessing from the emptiness (CONV3b).
-                    Structured = _loop.Harnesses.Structured(report.Adapter),
+                    Structured = harnesses.Structured(report.Adapter),
                     // Whether a session on this door is handed the rules file (PERM1, D72): the agent's
                     // page has *What it may do* only where Daoris hands its agent one (UX6e, D150 §5.1).
-                    TakesRules = _loop.Harnesses.Adapters.Resolve(report.Adapter).TakesSettings,
+                    TakesRules = harnesses.Adapters.Resolve(report.Adapter).TakesSettings,
                     // The plugin this harness came from (D64), or null for one this build carries
                     // — shown beside it, so a person knows which folder to look in.
-                    Plugin = _loop.Harnesses.Adapters.DeclaredBy(report.Adapter),
+                    Plugin = harnesses.Adapters.DeclaredBy(report.Adapter),
                     // The profile HOME is a machine path, and this bridge is the one surface
                     // allowed to carry one (D47 §4) — the page renders it so a person can find
                     // the directory they were told Daoris owns.
@@ -165,8 +174,7 @@ public sealed class AgentsRoutes(DriverContext context)
                         .Select(circle => new { circle.Workspace, Profile = circle.Map[circle.Owner] })
                         .ToArray(),
                 };
-            }).ToArray(),
-        };
+            })];
     }
 
     /// <summary>

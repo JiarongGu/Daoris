@@ -1005,6 +1005,8 @@ public sealed partial class AttentionStateSliceTests : DriverModuleBridge
     [InlineData("STATE_CHANGED", """{"scopes":["rules"]}""", true)]
     [InlineData("STATE_CHANGED", """{"scopes":["sessions","driver"]}""", true)]
     [InlineData("STATE_CHANGED", """{"scopes":["sync"]}""", false)]
+    [InlineData("STATE_CHANGED", """{"scopes":["harnesses"]}""", true)]
+    [InlineData("HARNESS_ENDED", "{}", true)]
     [InlineData("DRIVER_READY", "{}", true)]
     [InlineData("DRIVER_TICK", "{}", false)]
     public void What_wakes_the_attention_slice_on_the_bus(string type, string payload, bool wakes)
@@ -1029,6 +1031,22 @@ public sealed partial class AttentionStateSliceTests : DriverModuleBridge
         Assert.NotEqual(read, AttentionStateSlice.SessionsRead([With(working, """{"state":"awaiting-person"}""")]));
         var parked = Session("""{"state":"awaiting-person"}""");
         Assert.NotEqual(AttentionStateSlice.SessionsRead([parked]), AttentionStateSlice.SessionsRead([With(parked, """{"answer":"go"}""")]));
+    }
+
+    /// <summary>
+    /// How each agent's accounts are used is read from the accounts slice's memory where it has judged, as <c>ACCOUNTS</c> answers it;
+    /// before it has, the look's waits alone say the account rows.
+    /// </summary>
+    [Fact]
+    public async Task How_the_accounts_are_used_is_read_from_the_accounts_slice_where_it_has_judged()
+    {
+        var agent = new JsonObject { ["agent"] = "claude-code", ["scopes"] = new JsonArray(), ["accounts"] = new JsonArray() };
+        var accounts = new StateSlice(AccountsStateSlice.Name, Bus, _ => Task.FromResult<IReadOnlyList<SliceJudged>?>([new SliceJudged("claude-code", agent)]));
+        var slices = new StateSlices(accounts);
+
+        Assert.Null(AttentionStateSlice.Use(slices));
+        await accounts.JudgeAsync();
+        Assert.Equal("""{"agents":[{"agent":"claude-code","scopes":[],"accounts":[]}]}""", AttentionStateSlice.Use(slices)!.ToJsonString());
     }
 
     /// <summary>The route answers the slice's snapshot from memory, `notJudged` with no partition before its inputs, on a loop with no service.</summary>

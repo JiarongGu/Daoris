@@ -47,6 +47,15 @@ public sealed record AttentionFacts
 
     /// <summary>The tool calls the sessions hold for the person's answer, as <c>PERMISSION_WAITS</c> answers them.</summary>
     public IReadOnlyList<JsonObject> Permissions { get; init; } = [];
+
+    /// <summary>The roster's doors, each as <c>HARNESSES</c> answers it: each account's last reading with its time (ROSTER1).</summary>
+    public IReadOnlyList<JsonObject> Doors { get; init; } = [];
+
+    /// <summary>How each agent's accounts are used, as <c>ACCOUNTS</c> answers it (<c>{agents}</c>); null where it has not answered.</summary>
+    public JsonObject? Use { get; init; }
+
+    /// <summary>The starts the last look held on their accounts, an intake's among them, as the tick hands them (UX6d).</summary>
+    public IReadOnlyList<JsonObject> Waits { get; init; } = [];
 }
 
 /// <summary>
@@ -274,6 +283,8 @@ public static class NeedsAPerson
             rows.Add(row);
         }
 
+        // The starts waiting on their accounts, and the signed-out accounts no waiting start names (UX6d).
+        rows.AddRange(AccountAttention.Rows(facts));
         return rows;
     }
 
