@@ -7,11 +7,12 @@
  * A proof is not a gate: it spends a login, and it is run by a person on a machine set up for it.
  * Without `--drive` it answers only what the machine has and what is left to do.
  */
-import { execFileSync, spawn } from 'node:child_process';
+import { spawn } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { setTimeout as sleep } from 'node:timers/promises';
+import { execGit } from './fsx.mjs';
 import { capture, makeChecker, openTranscript } from './rehearsal-kit.mjs';
 // The real resolution, not a second copy of it (TOOL2/D57): a pinned harness is found exactly the way
 // the CLI and the driver find one, so a proof cannot disagree with them about what would run.
@@ -169,7 +170,7 @@ export function openProof(name, { label, port }) {
   const born = (name, summary) => {
     const where = join(scratch, name);
     mkdirSync(where, { recursive: true });
-    const git = (command) => execFileSync('git', command, { cwd: where, encoding: 'utf8' });
+    const git = (command) => execGit(command, { cwd: where, encoding: 'utf8' });
     git(['init', '-q', '-b', 'main']);
     git(['config', 'user.email', 'proof@example.com']);
     git(['config', 'user.name', `${label} proof`]);
@@ -267,8 +268,8 @@ export function openProof(name, { label, port }) {
       // uncommitted, and the driver refuses a tree with work in flight — *"somebody's work in flight;
       // the driver holds rather than entangling a session with it"*. It was right and the fixture was
       // wrong: a repository is adopted in a commit, not left dirty.
-      execFileSync('git', ['add', '-A'], { cwd: where, encoding: 'utf8' });
-      execFileSync('git', ['commit', '-qm', 'adopt daoris'], { cwd: where, encoding: 'utf8' });
+      execGit(['add', '-A'], { cwd: where, encoding: 'utf8' });
+      execGit(['commit', '-qm', 'adopt daoris'], { cwd: where, encoding: 'utf8' });
       const ok = adopted.code === 0 && connected.code === 0;
       check(`\`${name}\` adopts, declares its domain, and registers`, ok, `${adopted.out}\n${connected.out}`);
       joined &&= ok;

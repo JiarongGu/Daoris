@@ -315,6 +315,9 @@ jobs:
       - name: Web types
         run: npm run typecheck:web
 
+      - name: Web design rules
+        run: npm run check:web-rules
+
       - name: Web unit tests
         run: npm run test:web:unit
 

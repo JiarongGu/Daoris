@@ -22,7 +22,7 @@ Each verb is a module of `src/Daoris.Cli/src/cli/`, its row in `COMMANDS` (`src/
 | `import` | management | `cli/import.ts:5` | `service/manage.ts:87` commandImport | [folder] register a folder's subdirectories in one go; safe to |
 | `brainstorm` | management | `cli/brainstorm.ts:5` | `service/brainstorm.ts:53` commandBrainstorm | [verb] a question put to this machine\'s agents (D176), through |
 | `remote` | management | `cli/remote.ts:5` | `service/remotes.ts:90` commandRemote | [verb] this machine's remotes, one per workspace: |
-| `agent` | management | `cli/agent.ts:8` | `agents/toolchain.ts:1644` commandHarness | [verb] this machine's agents — Claude Code, Codex, dsh — and the |
+| `agent` | management | `cli/agent.ts:8` | `agents/toolchain.ts:1645` commandHarness | [verb] this machine's agents — Claude Code, Codex, dsh — and the |
 | `driver` | management | `cli/driver.ts:10` | `cli/driver.ts:191` handed | [verb] what this machine drives ($DAORIS_HOME/driver.json): |
 | `plugin` | management | `cli/plugin.ts:7` | `plugins/plugins.ts:1315` commandPlugin | [verb] this machine's plugins ($DAORIS_HOME/plugins/<id>/plugin.json): |
 | `browser` | management | `cli/browser.ts:5` | `browser/browser.ts:316` commandBrowser | [verb] Daoris's browser: its favorites and its settings… |
@@ -96,16 +96,17 @@ Each a `case` in `tools/desktop.mjs`: `build` 887 · `run` 891 · `restart` 892 
 | `rehearse:family` | 18 | `node tools/family-rehearsal.mjs` |
 | `rehearse:deploy` | 19 | `node tools/deployment-rehearsal.mjs` |
 | `typecheck:web` | 20 | `npm --prefix src/Daoris.Web run typecheck` |
-| `test:web` | 21 | `npm run test:web:unit && npm run test:web:e2e` |
-| `test:web:unit` | 22 | `npm --prefix src/Daoris.Web run test` |
-| `test:web:e2e` | 23 | `npm --prefix src/Daoris.Web run build && dotnet build…` |
-| `test:web:measured` | 24 | `npm --prefix src/Daoris.Web run e2e:measured` |
-| `desktop` | 25 | `node tools/desktop.mjs` |
-| `testbed` | 26 | `node tools/testbed.mjs` |
-| `publish:service` | 27 | `node tools/service-publish.mjs` |
-| `knowledge:build` | 28 | `node tools/knowledge-server.mjs build` |
-| `publish:desktop` | 29 | `node tools/desktop-publish.mjs` |
-| `release-prep:check` | 30 | `node tools/release-prep.mjs --check` |
+| `check:web-rules` | 21 | `npm --prefix src/Daoris.Web run test -- src/design/tokens.test.ts…` |
+| `test:web` | 22 | `npm run test:web:unit && npm run test:web:e2e` |
+| `test:web:unit` | 23 | `npm --prefix src/Daoris.Web run test` |
+| `test:web:e2e` | 24 | `npm --prefix src/Daoris.Web run build && dotnet build…` |
+| `test:web:measured` | 25 | `npm --prefix src/Daoris.Web run e2e:measured` |
+| `desktop` | 26 | `node tools/desktop.mjs` |
+| `testbed` | 27 | `node tools/testbed.mjs` |
+| `publish:service` | 28 | `node tools/service-publish.mjs` |
+| `knowledge:build` | 29 | `node tools/knowledge-server.mjs build` |
+| `publish:desktop` | 30 | `node tools/desktop-publish.mjs` |
+| `release-prep:check` | 31 | `node tools/release-prep.mjs --check` |
 
 ## npm scripts in `src/Daoris.Web/package.json`
 

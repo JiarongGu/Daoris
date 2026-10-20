@@ -21,6 +21,9 @@ namespace Daoris.Driver;
 /// launcher reads, starts through the launcher as before, as does any other layout and any other platform.</para>
 /// <para>The devkit carries a twin (<c>Daoris.Devkit.Core/GitStart.cs</c>, GITSTART3), since it references nothing of the
 /// desktop's: a change to this rule is made there too, and its <c>GitStartTests</c> keeps this class's tests' rows.</para>
+/// <para>🔴 A TWIN of the CLI's <c>gitforwindows.ts</c> (GITSTART4), which the CLI's toolchain and the repository's tools
+/// start their git through; <c>gitforwindows.test.ts</c> holds <c>GitForWindowsTests</c>' tables row for row. A rule
+/// changed here is changed there, in the same commit.</para>
 /// </remarks>
 public static class GitForWindows
 {
