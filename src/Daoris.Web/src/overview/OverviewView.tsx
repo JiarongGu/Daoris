@@ -50,6 +50,8 @@ export function OverviewView({ onNavigate, onOpenQuest, doors, notify, onSession
 
   const repos = repositories.data ?? [];
   const adopted = (registry.data ?? []).filter((r) => r.adopted);
+  // The quests not answered yet are not none (PUSHUX1): their tiles hold placeholders, and the card its skeleton, until they are.
+  const questsKnown = quests.data !== undefined;
   const open = (quests.data ?? []).filter((q) => q.status === 'Open');
   const taken = (quests.data ?? []).filter((q) => q.status === 'Taken');
   const entries = repos.reduce((sum, r) => sum + r.total, 0);
@@ -79,7 +81,7 @@ export function OverviewView({ onNavigate, onOpenQuest, doors, notify, onSession
         <Tile
           warn={oldest >= 7}
           label={t('overview.tiles.open.label')}
-          value={open.length}
+          value={questsKnown ? open.length : null}
           note={
             open.length === 0
               ? t('overview.tiles.open.noteNone')
@@ -90,7 +92,7 @@ export function OverviewView({ onNavigate, onOpenQuest, doors, notify, onSession
         />
         <Tile
           label={t('overview.tiles.progress.label')}
-          value={taken.length}
+          value={questsKnown ? taken.length : null}
           note={t('overview.tiles.progress.note')}
         />
         <Tile
@@ -109,7 +111,7 @@ export function OverviewView({ onNavigate, onOpenQuest, doors, notify, onSession
             title={t('overview.outstanding.title')}
             aside={
               <Button onClick={() => onNavigate('quests')}>
-                {outstanding.length > 0 ? t('overview.outstanding.answer') : t('overview.outstanding.ask')}
+                {!questsKnown ? t('nav.quests') : outstanding.length > 0 ? t('overview.outstanding.answer') : t('overview.outstanding.ask')}
               </Button>
             }
           />
