@@ -2704,6 +2704,12 @@ repository.
 - **The trap:** the load beside the runs (a scratch spinner on every core) froze the owner's installed window, and the parent
   stopped it. Reproduce a flake with plain repeated runs of its one class, never with a load generator.
 - **Commit:** `e8498d33`.
+- **Followed (REALHOSTPORT1, 2026-10-21):** `RealHost.StartAsync` took its host as up once anything answered at its port, so a
+  port taken between `FreePort` and the bind could pass another host off as this one. `RealHost.Launch` now mints the host's
+  home id under its scratch before it starts, and a start takes the host as up only when `/api/status` names that home; an
+  answer naming another is said in the exit's or the timeout's message.
+  `StartFailureTests.A_host_whose_port_another_host_answers_is_not_taken_for_up` holds it (a stand-in answering a status over
+  another home holds the port).
 
 ## 2026-10-15 — A service test's SQLite connection was disposed just after it opened, by another class's pool clearing (FLAKE3)
 
@@ -4238,6 +4244,16 @@ building beside it: four of `setup-kit.test.ts`'s stub cases (the set-up quest a
 ANSWER1b) answered `session/prompt` with `fetch failed`, the stub's request to its stand-in quest door. The file passed
 31/31 alone, and `--rerun cli` on the open merge passed. Four cases of one file at once point at the stand-in door
 itself, not at each stub.
+*Looked into 2026-10-21 (FLAKE4), the cause not found:* each of those cases has a door of its own, so four at once
+point rather at the machine at that moment than at one door. Probed on Node 24.19 (undici 7.29): a stub's loop held
+12 s after its fetch starts, and the door's own loop held 12 s, each still answered; a second fetch from one process
+held 4.9 to 6 s past the door's 5 s keep-alive answered every time, undici noticing the close before reusing the
+socket; 96 real stub turns, 24 at once with every core busy, all took their quest; only a closed door refused
+(`ECONNREFUSED`). undici's 10 s connect timeout is ruled out too: ANSWER1b's error came inside the row's 10 s bound.
+The stub said only `fetch failed`, so the cause was lost each time. *Changed:* its `respond()` now says the door,
+the move and every cause beneath the error, and a failed turn answers that whole (`tools/rehearsal-kit.mjs`); a closed
+door's row and a loaded loop's (twelve turns at once, three rounds) hold it in `setup-kit.test.ts`. The next sighting
+carries its cause; FLAKE4b reads it.
 A page test, at UXTOAST1's merge, 2026-10-11 (a `ui.tsx` change), with a branch-worker building beside it: the web
 gate's `PluginsView.test.tsx` *keeps a trial's report on the page across a change of view* timed out at its 20 s, the
 file taking 58 s; alone the file passed 22/22 in 9 s. The first jsdom sighting: the page's suites are not real-process,
