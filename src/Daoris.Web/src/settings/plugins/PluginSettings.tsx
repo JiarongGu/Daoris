@@ -1,8 +1,8 @@
 import { useTranslation } from 'react-i18next';
-import { Button, Card, Pill, SectionTitle, SettingList, SettingRow, WhyGlyph } from '../design/ui';
-import { type HelpServerShown, pluginState, type PluginShown } from '../plugins/catalog';
-import { PluginIcon } from '../plugins/PluginIcon';
-import { STATE_WORD } from '../plugins/PluginList';
+import { Button, Card, Pill, SectionTitle, SettingList, SettingRow, WhyGlyph } from '../../design/ui';
+import { type HelpServerShown, pluginState, type PluginShown } from '../../plugins/catalog';
+import { PluginIcon } from '../../plugins/PluginIcon';
+import { STATE_WORD } from '../../plugins/PluginList';
 
 /** A server's approval in a word, as its plugin's page judges it (HELPPLUG1c): changed since approved is a wait that asks again. */
 function approval(server: HelpServerShown): string {

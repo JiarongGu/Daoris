@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { chinese } from '../design/storyLanguage';
-import { storyWidths } from '../design/storyWidths';
-import type { PluginShown } from '../plugins/catalog';
+import { chinese } from '../../design/storyLanguage';
+import { storyWidths } from '../../design/storyWidths';
+import type { PluginShown } from '../../plugins/catalog';
 import { PluginSettings } from './PluginSettings';
 
 // Settings → Driver's Plugins section (PLUGSET1, the modes design §4.1): each installed plugin with what it holds set and
