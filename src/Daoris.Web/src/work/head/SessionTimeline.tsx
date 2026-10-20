@@ -3,9 +3,10 @@ import { useTranslation } from 'react-i18next';
 import type { Quest, Session } from '../../data/api';
 import { ago } from '../../locales/format';
 import { cn } from '../../lib/cn';
-import { Button, SectionTitle } from '../../design/ui';
+import { Button, SectionTitle, type ShownState } from '../../design/ui';
 import { Note } from '../Note';
 import { linesTaken, noteBlocks, noteLines } from '../noteLines';
+import { SessionFlow } from './SessionFlow';
 import { type TimelineEvent, sessionTimeline } from './timeline';
 
 /**
@@ -121,9 +122,14 @@ export function TimelineEntry({ event }: { event: TimelineEvent }) {
  * layer, not the table — so this takes props, stays inside the presentational boundary, and every
  * shape of timeline is reachable in a story. The plan is corrected rather than quietly satisfied.
  */
-export function SessionTimeline({ session, quest, hideCurrentNote = false, titled = true }: {
+export function SessionTimeline({ session, quest, shown, hideCurrentNote = false, titled = true }: {
   session: Session;
   quest?: Quest | null;
+  /**
+   * The word the page shows the session as (*idle*, *parked*, *awaiting reply*, *answered*, *going on*), which the states'
+   * flow lights its current state with. Absent, the record's own reading.
+   */
+  shown?: ShownState;
   /**
    * Leave the note off the entry for the state the session is in NOW, because something above is
    * already showing it — a parked session's analysis, which design §4 puts at the top of the head.
@@ -148,6 +154,8 @@ export function SessionTimeline({ session, quest, hideCurrentNote = false, title
           <span title={t('work.timeline.hint')}>{t('work.timeline.title')}</span>
         </SectionTitle>
       )}
+      {/* The session's states at its head (FLOWCHART1b): what the record says it is, above what was observed. */}
+      <SessionFlow session={session} shown={shown} className="mb-3" />
       <ol className="m-0 list-none p-0">
         {events.map((event, index) => (
           <TimelineEntry key={`${event.kind}-${index}`} event={event} />

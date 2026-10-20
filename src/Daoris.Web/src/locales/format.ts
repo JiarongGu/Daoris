@@ -64,9 +64,10 @@ export function clockOf(iso: string, now: Date = new Date(), language?: string):
 /**
  * Items joined the way the reader's language joins a list (LANG1b, the language design §4): `#a1, #b2, and #c3`,
  * `#a1、#b2和#c3`. `language` is the page's unless a caller words in another (a story's or a test's fixed language).
+ * `'or'` joins alternatives rather than a sum (FLOWCHART1b): `when it fails, or you stop it`, `当它失败或你停止它时`.
  */
-export function list(items: readonly string[], language?: string): string {
-  return new Intl.ListFormat(locale(language), { type: 'conjunction' }).format(items);
+export function list(items: readonly string[], language?: string, joined: 'and' | 'or' = 'and'): string {
+  return new Intl.ListFormat(locale(language), { type: joined === 'or' ? 'disjunction' : 'conjunction' }).format(items);
 }
 
 /** A file's size, in the unit a person reads it in: 812 B · 2.4 KB · 3.1 MB. */
