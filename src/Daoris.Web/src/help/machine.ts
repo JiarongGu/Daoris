@@ -20,7 +20,10 @@ export type Machine = {
    * driver's next look, as the session list already says.
    */
   waiting: number;
-  /** Repositories with no line set and none git can name. */
+  /**
+   * Driven repositories with no line set and none git can name. One imported and never driven is not counted
+   * (STARTERSCOPE1): it has no line to want until the driver drives it.
+   */
   unnamedLines: readonly string[];
   /** The agent Ask Daoris runs on, or null. */
   helper: string | null;
@@ -62,7 +65,9 @@ export function readMachine(answers: {
     drivable,
     tools: byTool(answers.harnesses ?? []),
     waiting: (answers.sessions ?? []).filter((session) => session.state === 'awaiting-person' && !answeredPark(session)).length,
-    unnamedLines: (answers.lines ?? []).filter((line) => !line.notReadYet && line.source === 'none').map((line) => line.repository),
+    unnamedLines: (answers.lines ?? [])
+      .filter((line) => !line.notReadYet && line.source === 'none' && drivable.includes(line.repository))
+      .map((line) => line.repository),
     helper: answers.driver?.helperAdapter || null,
     intake: answers.driver?.intakeAdapter || null,
     unlanded: (answers.landings ?? [])
