@@ -5,6 +5,11 @@ with the version and date at release.
 
 ## Unreleased
 
+- A change of a repository's permission prompts reaches a driven session already running there at its next turn, whether made on
+  its Setup tab or with `daoris-driver access`. Where you have said something to the session for its next turn, its run ends as the
+  turn ends, never mid-turn, your words wait on it, and at the next look it goes on in the same conversation under the new setup,
+  saying the change. The session's console says when a change made in the window applies, and the terminal says how a running
+  session takes it.
 - `daoris driver`, `agent`, `plugin` and `tool`, run while Daoris is open on the same home, hand each change to Daoris instead of
   writing its files beside it: Daoris's window asks you to confirm it, and every window shows it at once. With Daoris closed they
   edit the files as before. A Daoris that is open and does not answer refuses the change, and nothing is written. What needs the
