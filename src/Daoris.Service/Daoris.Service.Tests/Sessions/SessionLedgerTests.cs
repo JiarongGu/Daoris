@@ -1302,7 +1302,8 @@ public sealed class SessionLedgerTests : IAsyncLifetime
         var first = await _ledger.SayAsync(ended.Id, "Daoris: reopened.", null, Now.AddMinutes(20), from: SaidFrom.Daoris, key: "reopen/q1/desk/44");
         var again = await _ledger.SayAsync(ended.Id, "Daoris: reopened.", null, Now.AddMinutes(21), from: SaidFrom.Daoris, key: "reopen/q1/desk/44");
         var other = await _ledger.SayAsync(ended.Id, "Daoris: reopened again.", null, Now.AddMinutes(22), from: SaidFrom.Daoris, key: "reopen/q1/desk/47");
-        var stranger = await _ledger.SayAsync(ended.Id, "Hello.", null, Now.AddMinutes(23), from: "agent");
+        // COWORK1d made `agent` an author this build knows (a claim the person passed on): a stranger is any other word.
+        var stranger = await _ledger.SayAsync(ended.Id, "Hello.", null, Now.AddMinutes(23), from: "teammate");
 
         Assert.Equal((SessionSayRefusal.None, SessionSayRefusal.None), (again.Refusal, other.Refusal));
         Assert.Equal((first.Word!.Id, first.Word.Text, first.Word.Key), (again.Word!.Id, again.Word.Text, again.Word.Key));

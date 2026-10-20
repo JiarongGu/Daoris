@@ -354,6 +354,25 @@ public sealed class ChannelTests : IAsyncLifetime
     }
 
     /// <summary>
+    /// 🔴 Trap 5 (the message-urgency design §4.2, §9): a claim the person passed on is kept on an ended part's record by the say door as
+    /// another agent's words, <c>from: agent</c> with its channel message, never the person's; the person's own channel message, kept
+    /// with its channel alone, is still theirs. Authorship is never read from the channel.
+    /// </summary>
+    [Fact]
+    public async Task A_claim_the_person_passed_on_is_kept_as_an_agents_and_the_persons_own_channel_message_as_theirs()
+    {
+        var (_, _, session) = await AskedAsync();
+        await _ledger.AdvanceAsync(session.Id, "failed", null, null, null, Now.AddMinutes(1));
+
+        var passed = await _ledger.SayAsync(session.Id, "Another session says: the bridge wants a column.", null, Now.AddMinutes(2), default, channel: "m1", from: SaidFrom.Agent);
+        var own = await _ledger.SayAsync(session.Id, "Use the older bridge.", null, Now.AddMinutes(3), default, channel: "p1");
+
+        Assert.Equal((SessionSayRefusal.None, SessionSayRefusal.None), (passed.Refusal, own.Refusal));
+        var said = (await _sessions.FindAsync(session.Id))!.Said;
+        Assert.Equal([("m1", "agent", false), ("p1", null, true)], said.Select(word => (word.Channel, word.From, word.Persons)));
+    }
+
+    /// <summary>
     /// 🔴 A read moves the entry's mark, so the next read holds only what is new; a second entry has its own mark; the person's entry
     /// is read without moving one unless asked; and <c>since</c> reads from a moment instead.
     /// </summary>
