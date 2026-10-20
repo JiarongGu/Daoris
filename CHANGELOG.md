@@ -5,6 +5,12 @@ with the version and date at release.
 
 ## Unreleased
 
+- A driven session never runs without its own tree. Before a session goes on in its tree (your words, an answer, a carry-on
+  or a further part), Daoris checks git still has that tree. If the folder was removed and the session's branch is still there,
+  Daoris makes the tree again in the same place on that branch, and the session's conversation says so. If the branch is gone
+  as well, the session does not start anywhere else. It waits for you, and its conversation says what went and how to go on;
+  your words stay waiting on it. Before this, a session whose tree was gone could start with its shell in the repository's own
+  checkout, or in a fresh tree without its commits.
 - A session's Timeline draws its states as a flowchart, the one it is in lit and going on drawn as a guarded move; a session page draws its parts as a flowchart in the parts strip's place, the strip its list, and Accept's plan as a dashed node of where they would land.
 - Signing an account in says where it is and for how long: *Starting*, *Waiting on your browser*, *Checking who signed in*
   and *Joining the lists*, each with its time, the one now counting. Codex's device code shows under the browser's step with

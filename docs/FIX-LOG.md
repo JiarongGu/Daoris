@@ -5,6 +5,27 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-20 — A resumed session whose tree was gone ran with its shell in the repository's checkout (TREEGONE1)
+
+- **Symptom:** the session the merge tool's prune took a tree from (DOGFOOD1, the entry below) was resumed with the person's
+  words, and its harness started with its shell in the repository's main checkout, the folder its tree had been made from.
+  Its agent noticed and remade its tree itself before editing; nothing stopped it editing the checkout.
+- **Root cause:** a start asked whether the session's tree stood by `Directory.Exists` alone (`ConversationTrees.Stands`,
+  `Driver.RunAsync`'s `resumedIn` and `joinedIn`). A removal that leaves its folder (anything it could not delete) answers
+  yes for a folder that is no tree, where git walks up to whatever holds it; and a tree truly gone made a resume grow a
+  fresh tree from the line, its agent starting without the session's commits. Where exactly the harness's shell landed in
+  the checkout was not reproduced here: the window's run was not instrumented.
+- **Fix:** `TreeReturns.EnsureAsync` (D51's TREEGONE1 note), asked by `Driver.RunAsync` with the repository's trees held,
+  before any resume, carry-on or further part goes on in a session's tree: listed by git, it goes on; its folder gone and its
+  branch standing, the tree is made again in its place on that branch, a leftover folder moved aside first, and said
+  (`tree.remade`); its branch gone too, or not makeable, the start is held and said once on the record (`tree.gone`,
+  `tree.unmade`), and `DriverContinuations.ContinueAsync` is told the tree does not stand, so no conversation resumes
+  anywhere else.
+- **Verification:** `TreeReturnsTests` (Process, git) 5 passed; `SessionMessagesTickTests` 12 passed, three new: a removed
+  tree made again with its commit and the resumed prompt's working folder the tree, a leftover folder moved aside and the
+  tree made again, and a branch gone too held with no harness started over two looks; `NoteCodesTests`, `NoteSitesTests`
+  and the web's `locales/note.test.ts` with the three codes in both languages.
+
 ## 2026-10-20 — A new Process test joined the driver's config path by hand (ACCESSSWAP1b)
 
 - **Symptom:** a session the owner's install drove (HEAVYRUN1a3, DOGFOOD1) found `npm run verify` failing on main at d0e51b54b: the

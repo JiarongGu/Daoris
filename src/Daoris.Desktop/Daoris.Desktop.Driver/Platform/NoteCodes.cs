@@ -487,6 +487,10 @@ public static class NoteCodes
     public static readonly NoteCode StartedUncopiedLink = new("started.uncopied-link", ["modules"]);
     public static readonly NoteCode StartedUncopiedUnignored = new("started.uncopied-unignored", ["modules"]);
     public static readonly NoteCode StartedUncopiedFailed = new("started.uncopied-failed", ["modules"]);
+    // A session's tree asked for before it goes on (TREEGONE1): made again on its branch, gone with its branch, or not made.
+    public static readonly NoteCode TreeRemade = new("tree.remade", ["branch"]);
+    public static readonly NoteCode TreeGone = new("tree.gone", ["branch"]);
+    public static readonly NoteCode TreeUnmade = new("tree.unmade", []);
     public static readonly NoteCode StartedJoined = new("started.joined", ["session"]);
     public static readonly NoteCode StartedResumesAnswered = new("started.resumes-answered", ["quest", "answered"]);
     public static readonly NoteCode StartedInAskingTree = new("started.in-asking-tree", ["session"]);
