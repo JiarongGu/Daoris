@@ -162,6 +162,13 @@ network, and nothing in the CLI may open a socket. So the CLI has no quest comma
 | `brainstorm_give` | A brainstorm's generator turn gives its `proposals` (each `idea`, `rationale`, `effort`, `risk`, `reversible`, `undo`, `confidence`, `assumptions`, `sources`), its `needs`, or `none` with why: written whole into the one answer file the driver names on the turn's connector, and judged by the driver's rules against the packet's sources in its room. A refusal says its codes back, and the file holds the last answer given until a valid one is kept, once. Refused on every connector that names no generator turn (BRAINSTORM1a2) |
 | `brainstorm_synthesize` | A brainstorm's synthesis turn gives its `groups` (each `title`, `idea`, `members` by anonymous id, `rank`, `why`, `flags`) and what it left out (`leftOut`, each `id` and `why`), judged against the ids its room was handed, as `brainstorm_give` is (BRAINSTORM1a2) |
 
+**A tool the connector gains is named in the same change** wherever a session's rules list the connector's tools: the host's
+list (`KnowledgeServer.ToolTypes`, held by `McpToolRegistrationTests`), the driver's `BrainstormPermissions.ConnectorTools` and its
+two `golden/brainstorm-rules` files (a pass is denied every tool but its own), and, as its contract decides, the default allow list
+(`Permissions.cs` with the CLI's twin `permissions.ts`, each held by the other's test) and a reviewer's and a helper's
+(`OpinionPermissions`). `McpToolDescriptionTests` refuses a name that says `history`, `clear` (bar Ask Daoris's `clear_propose`)
+or `forget`, since no tool clears a record, and one that says `evidence` or `verdict`.
+
 **A quest carries links and files** (D65 §2). A link is an absolute http or https address, refused
 otherwise, because a drawer shows it as a link. A file's **bytes stay on the machine that published
 it**, kept under that machine's home at `quests/<id>/attachments/<first 12 of the sha256>-<name>`.

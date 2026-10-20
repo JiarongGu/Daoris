@@ -340,17 +340,20 @@ public sealed class LineEvents(string? home)
         return body.Count == 0 ? said : said + "\n" + string.Join("\n", body);
     }
 
-    /// <summary>Whose an entry is, by the marks the record keeps, never by its words.</summary>
+    /// <summary>
+    /// Whose an entry is, by the marks the record keeps, never by its words. A word with no <c>origin</c>, from a record kept before
+    /// it was written, is the person's, as the driver's brief reads it.
+    /// </summary>
     private static string Who(LineEntry entry) => entry.Kind switch
     {
-        "user" when entry.Origin == "person" => entry.Mark == "channel" ? "the person, on the ask's channel" : "the person",
+        "user" when entry.Origin is null or "person" => entry.Mark == "channel" ? "the person, on the ask's channel" : "the person",
         "user" => entry.Mark switch
         {
             "brief" => "Daoris's brief of the line before this part",
             "channel" => "another session on the ask's channel, its claim",
             "opinion" => "a second opinion's findings, another agent's claims",
-            "daoris" => "Daoris",
-            _ => "Daoris's instruction",
+            "daoris" => "Daoris's own words",
+            _ => "Daoris",
         },
         "message" => "the agent",
         "tool" => $"a tool call{(entry.Status is { } status ? $", {status}" : "")}: "
@@ -514,7 +517,7 @@ public sealed record LineEntry(long Seq, string Kind)
 {
     public DateTimeOffset? At { get; init; }
 
-    /// <summary>For <c>user</c>: <c>person</c>, or <c>target</c> for words that are not the person's.</summary>
+    /// <summary>For <c>user</c>: <c>person</c>, or <c>target</c> for words that are not the person's; none on a record from before, read as the person's.</summary>
     public string? Origin { get; init; }
 
     /// <summary>

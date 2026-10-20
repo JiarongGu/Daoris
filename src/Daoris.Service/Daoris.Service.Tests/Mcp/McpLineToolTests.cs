@@ -59,7 +59,8 @@ public sealed class McpLineToolTests : McpToolsFixture
             moved = await PartAsync(sessions, first, "limit");
             return (await PartAsync(sessions, moved, "press")).Id;
         });
-        Keep(first.Id, [Person(1, "Make the report faster."), Agent(2, "Found the slow query.")]);
+        // A word from a record kept before `origin` was written reads as the person's, as the driver's brief reads it.
+        Keep(first.Id, [Person(1, "Make the report faster."), Agent(2, "Found the slow query."), Event(3, "user", "\"text\":\"Old words.\"")]);
         Keep(moved.Id, [Person(1, "Go on with the index."), Agent(2, "Added the index.")]);
 
         var said = await tools.ReadAsync();
@@ -78,6 +79,7 @@ public sealed class McpLineToolTests : McpToolsFixture
 
         Assert.Contains("Make the report faster.", earlier);
         Assert.Contains("Found the slow query.", earlier);
+        Assert.Contains("· the person\nOld words.", earlier);
         Assert.Contains("start of the line", earlier);
         Assert.DoesNotContain("Go on with the index.", earlier);
     }
