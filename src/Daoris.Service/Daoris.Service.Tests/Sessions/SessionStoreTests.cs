@@ -586,6 +586,30 @@ public sealed class SessionStoreTests : IAsyncLifetime
     }
 
     /// <summary>
+    /// COWORK1b (the message-urgency design §9, trap 6): Daoris's own words keep <c>from</c> and their producer's <c>key</c> through the
+    /// store, and are never the person's, so <c>answer</c> joins none of them. A word kept with neither field, as every word before
+    /// them was, reads as it did: the person's, with no key.
+    /// </summary>
+    [Fact]
+    public async Task Daoris_words_keep_their_author_and_key_and_a_word_from_before_reads_as_the_persons()
+    {
+        var ended = await Create();
+        await _sessions.SetStateAsync(ended.Id, SessionState.Completed, "landed.", null, null, Now);
+        await _sessions.KeepSaidAsync(ended.Id, new SaidWord("w1", "Also add the changelog line.", Now, [], Reopens: true));
+        await _sessions.KeepSaidAsync(
+            ended.Id, new SaidWord("w2", "Daoris: the person reopened it.", Now, [], Reopens: true, From: SaidFrom.Daoris, Key: "reopen/q1/desk/44"));
+
+        var words = (await _sessions.FindAsync(ended.Id))!;
+
+        Assert.Equal(new (string?, string?, bool)[] { (null, null, true), ("daoris", "reopen/q1/desk/44", false) },
+            words.Said.Select(word => (word.From, word.Key, word.Persons)));
+        Assert.Equal("Also add the changelog line.", words.Answer);
+        await _sessions.TakeSaidAsync(ended.Id, ["w1"]);
+        var left = Assert.Single((await _sessions.FindAsync(ended.Id))!.Said);
+        Assert.Equal(("daoris", "reopen/q1/desk/44"), (left.From, left.Key));
+    }
+
+    /// <summary>
     /// MIXAGENT1a-iii (D163 point 4): a session that continues another names it on its own record, with why and who asked; a
     /// record that continues none names none, and a why or an asker with no session is no link. This machine's own, as the
     /// opinion is: the mirror writes none.

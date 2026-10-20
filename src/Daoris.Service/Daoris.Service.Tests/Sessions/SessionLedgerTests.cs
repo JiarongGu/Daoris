@@ -1183,6 +1183,79 @@ public sealed class SessionLedgerTests : IAsyncLifetime
     }
 
     /// <summary>
+    /// COWORK1b (D188's COWORK1b note; the message-urgency design §9, trap 6): Daoris's own words are kept with <c>from</c> and their
+    /// producer's key, never as the person's: <c>answer</c>, which every reader takes as theirs, joins none of them, and the door's
+    /// sentence, the ledger's line and its message say whose words the session goes on with.
+    /// </summary>
+    [Fact]
+    public async Task Daoris_words_are_kept_as_daoris_with_their_key_and_never_read_as_the_persons()
+    {
+        var ended = await Ended("completed", note: "landed.");
+
+        var said = await _ledger.SayAsync(
+            ended.Id, "Daoris: the person reopened it.", null, Now.AddMinutes(20), from: SaidFrom.Daoris, key: "reopen/q1/desk/44");
+
+        Assert.Equal(SessionSayRefusal.None, said.Refusal);
+        Assert.Equal($"Kept for session `{ended.Id}`: the same session goes on with Daoris's words at the driver's next look.", said.Message);
+        var record = (await _sessions.FindAsync(ended.Id))!;
+        var word = Assert.Single(record.Said);
+        Assert.Equal(("daoris", "reopen/q1/desk/44", false, true), (word.From, word.Key, word.Persons, word.Reopens));
+        Assert.Null(record.Answer);
+
+        var reopened = await _ledger.AdvanceAsync(ended.Id, "working", null, null, null, Now.AddMinutes(30));
+
+        Assert.Equal($"Session `{ended.Id}` is working again: it goes on from completed with Daoris's words.", reopened.Message);
+        Assert.Equal("landed.\n\nWent on with Daoris's words at 2026-09-19 10:30 UTC.", reopened.Session!.Note);
+        using var parts = System.Text.Json.JsonDocument.Parse(reopened.Session.NoteParts!);
+        Assert.Equal("ledger.went-on-daoris", parts.RootElement[1].GetProperty("code").GetString());
+    }
+
+    /// <summary>
+    /// COWORK1b: Daoris's words to a park are its answer as the person's are (the design §5's parked row), the note's words part
+    /// saying they are Daoris's, never the person's.
+    /// </summary>
+    [Fact]
+    public async Task Daoris_words_to_a_park_are_its_answer_said_as_daoris()
+    {
+        var (_, parked) = await Parked();
+
+        var said = await _ledger.SayAsync(
+            parked.Id, "Daoris: the person reopened it.", null, Now.AddMinutes(2), from: SaidFrom.Daoris, key: "reopen/q1/desk/44");
+
+        Assert.Equal(SessionSayRefusal.None, said.Refusal);
+        var record = (await _sessions.FindAsync(parked.Id))!;
+        Assert.Equal((SessionState.AwaitingPerson, false), (record.State, Assert.Single(record.Said).Reopens));
+        Assert.Equal("needs a merge, a sign-in and a go-ahead.\n\nAnswered: Daoris: the person reopened it.", record.Note);
+        using var parts = System.Text.Json.JsonDocument.Parse(record.NoteParts!);
+        var words = parts.RootElement.EnumerateArray().Last();
+        Assert.Equal(("Daoris: the person reopened it.", "daoris"), (words.GetProperty("words").GetString(), words.GetProperty("by").GetString()));
+    }
+
+    /// <summary>
+    /// COWORK1b (the design §6, trap 19): a word is kept once by its producer's key. A say whose key the record already holds keeps
+    /// nothing new and is answered as the word kept, so a producer's retry, a crash between its say and its own mark, keeps one word;
+    /// another key keeps another word. An author this build does not know is refused before anything is kept.
+    /// </summary>
+    [Fact]
+    public async Task A_say_whose_key_the_record_holds_keeps_nothing_new_and_is_answered_as_the_word_kept()
+    {
+        var ended = await Ended("completed");
+
+        var first = await _ledger.SayAsync(ended.Id, "Daoris: reopened.", null, Now.AddMinutes(20), from: SaidFrom.Daoris, key: "reopen/q1/desk/44");
+        var again = await _ledger.SayAsync(ended.Id, "Daoris: reopened.", null, Now.AddMinutes(21), from: SaidFrom.Daoris, key: "reopen/q1/desk/44");
+        var other = await _ledger.SayAsync(ended.Id, "Daoris: reopened again.", null, Now.AddMinutes(22), from: SaidFrom.Daoris, key: "reopen/q1/desk/47");
+        var stranger = await _ledger.SayAsync(ended.Id, "Hello.", null, Now.AddMinutes(23), from: "agent");
+
+        Assert.Equal((SessionSayRefusal.None, SessionSayRefusal.None), (again.Refusal, other.Refusal));
+        Assert.Equal((first.Word!.Id, first.Word.Text, first.Word.Key), (again.Word!.Id, again.Word.Text, again.Word.Key));
+        Assert.Equal(
+            $"Already kept for session `{ended.Id}` under key `reopen/q1/desk/44`, as word `{first.Word!.Id}`: nothing more was kept.",
+            again.Message);
+        Assert.Equal(SessionSayRefusal.From, stranger.Refusal);
+        Assert.Equal([first.Word.Id, other.Word!.Id], (await _sessions.FindAsync(ended.Id))!.Said.Select(word => word.Id));
+    }
+
+    /// <summary>
     /// 🔴 One session per working tree holds for going on too (D51): an ended record whose tree another session now holds
     /// does not go on there, and the refusal names the holder, never the path. Once that one ends, it goes on.
     /// </summary>

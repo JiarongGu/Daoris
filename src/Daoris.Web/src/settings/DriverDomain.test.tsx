@@ -70,7 +70,7 @@ describe('the driver domain', () => {
     const notify = vi.fn();
     show(<SettingsView notify={notify} section="driver" />);
     const access = within(await screen.findByRole('region', { name: "Sessions' access" }));
-    const row = (label: string) => access.getAllByText(label, { selector: 'span' })[0]!.closest('.\\@container') as HTMLElement;
+    const row = (label: string) => access.getAllByText(label, { selector: 'span' })[0]!.closest('[data-setting-row]') as HTMLElement;
 
     expect(access.getByText(/This machine's default, for every workspace and repository that sets none of its own/)).toBeTruthy();
     expect(row('Go-aheads')).toHaveTextContent('No go-ahead is asked, save one the quest or your words demand. Set for this machine.');

@@ -1127,11 +1127,16 @@ if (!done.ok) throw new Error(done.text);
   // read it back until now, and a deployed shell writing its WebView2 profile somewhere else is a
   // folder that cannot be deleted to uninstall.
   // HOMELAYOUT3: the home is still `${HOME}/`, but its places now sit in category folders beside it (D172), so a running
-  // shell's state is asked of the table: its address under `run/`, inside the install.
+  // shell's state is asked of the table: its address under `run/`, inside the install. The shell's loop writes it once it
+  // serves its host and pipe, which may follow the window: waited for, never poked (HOMEFIX3).
+  let runningAt = homeEntry(join(install, HOME), 'running');
+  for (let attempt = 0; attempt < 30 && !existsSync(runningAt); attempt += 1) {
+    await sleep(1000);
+    runningAt = homeEntry(join(install, HOME), 'running');
+  }
   check(`the install keeps its own state in its own folders (${HOME}/ and D172's)`,
-    existsSync(homeEntry(join(install, HOME), 'running'))
-      && resolve(homeEntry(join(install, HOME), 'running')).toLowerCase().startsWith(resolve(install).toLowerCase()),
-    readdirSync(install).join(', '));
+    existsSync(runningAt) && resolve(runningAt).toLowerCase().startsWith(resolve(install).toLowerCase()),
+    `${runningAt} after 30 s; the install holds ${readdirSync(install).join(', ')}`);
   // The application runs from `app/` and the home is still the install's (D93), never one beside it.
   check(`…at the install’s root, not beside the application in ${SHELL_HOME.join('/')}/`,
     !existsSync(join(install, ...SHELL_HOME, HOME)));

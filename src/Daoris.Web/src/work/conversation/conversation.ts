@@ -23,6 +23,8 @@ export const CONVERSATION_CODES: Readonly<Record<string, string>> = {
   lost: 'work.conversation.lost',
   /** A word the person took back, or reworded, while it still waited (QUEUEEDIT1a): never taken by a turn. */
   withdrawn: 'work.conversation.withdrawn',
+  /** Daoris's own word dropped where it was to be delivered (COWORK1b): what it said no longer held, so it was never said late. */
+  dropped: 'work.conversation.dropped',
 };
 
 /** Daoris's event kinds — `SessionEventKind` in the driver. */
@@ -48,8 +50,13 @@ export type SessionEvent = {
   /** A tool call's id: its updates carry the same one. */
   id?: string | null;
   text?: string | null;
-  /** For `user`: `person`, or `target` for the prompt the driver composed. */
+  /** For `user`: `person`, or `target` for the prompt the driver composed and every word that is not the person's. */
   origin?: string | null;
+  /**
+   * For `user`: `daoris` on Daoris's own words to the session (COWORK1b, D188), a reopen told or a step's go-on. Its origin is
+   * `target`, so a page that does not read this shows them as what Daoris handed, never as the person's. Absent on every other.
+   */
+  from?: string | null;
   /**
    * For the turn Daoris handed a session with another agent's findings (XAGENT1e, D155 point 7): the second opinion they are
    * from. Its origin is `target`, so a page that does not read this shows them as what Daoris handed, never as the person's.
@@ -208,6 +215,8 @@ export type Block = {
   reaches?: string | null;
   /** For `held`: the level the person asked for (COWORK1a), beside the reach the door gave; absent on a record from before. */
   level?: Level;
+  /** For `held`: Daoris's own words, never the person's (COWORK1b); absent on the person's. */
+  from?: 'daoris';
   /** For `held`: the names of what the person attached. */
   files?: string[];
   /** For `held`: the session ended without taking the words (STEER1) — said, never left waiting for ever. */
@@ -265,6 +274,8 @@ export type Ask = {
   key: string; text: string; origin: string; at: string; files?: string[]; account?: InstructionAccount | null;
   /** Another agent's findings, handed as the session's next turn (XAGENT1e): the second opinion they are from. */
   opinion?: string;
+  /** Daoris's own words (COWORK1b): a reopen told, a step's go-on; never the person's, and no target it composed. */
+  from?: 'daoris';
 };
 
 /**
@@ -387,9 +398,11 @@ export function toTurns(
     key, text: event.text ?? '', origin: event.origin ?? 'person', at: event.at,
     ...(event.files?.length ? { files: event.files } : {}),
     // What a target was composed of (CONTEXT1), or null where its record keeps none: said missing, never left out. Another
-    // agent's findings are no composed target (XAGENT1g): they name the opinion they are from instead.
-    ...(event.origin === 'target' && event.opinion ? { opinion: event.opinion }
-      : event.origin === 'target' ? { account: event.account ?? null } : {}),
+    // agent's findings are no composed target (XAGENT1g): they name the opinion they are from instead. Nor are Daoris's own words
+    // (COWORK1b), named by their mark, never their sentence.
+    ...(event.origin === 'target' && event.from === 'daoris' ? { from: 'daoris' as const }
+      : event.origin === 'target' && event.opinion ? { opinion: event.opinion }
+        : event.origin === 'target' ? { account: event.account ?? null } : {}),
   });
 
   // What was asked first, where the page began past it (SESS1 S1): the run reads from its ask, and the
@@ -435,6 +448,7 @@ export function toTurns(
           const block: Block = {
             key, kind: 'held', at: event.at, text: event.text ?? '', id: event.id, reaches: event.reaches,
             ...(level ? { level } : {}),
+            ...(event.origin === 'target' && event.from === 'daoris' ? { from: 'daoris' as const } : {}),
             ...(event.files?.length ? { files: event.files } : {}),
           };
           turn.items.push(block);

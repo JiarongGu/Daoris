@@ -594,6 +594,14 @@ public sealed class AcpSession(
 
                 if (next.Held is { } held)
                 {
+                    // COWORK1b (the message-urgency design §4.3): Daoris's word held for the turn's end is judged again by its key;
+                    // one whose fact a later submission answered is dropped, said so, and never prompted late.
+                    if (!await DaorisWords.GoesAsync(held, ct).ConfigureAwait(false))
+                    {
+                        Emit(DaorisWords.Dropped(held));
+                        continue;
+                    }
+
                     stopReason = await SendPromptAsync(held.Prompt, held.Files, ct, sent: null, held).ConfigureAwait(false);
                     continue;
                 }
@@ -642,7 +650,7 @@ public sealed class AcpSession(
     }
 
     /// <summary>Whether the person's words are held for the turn's end: those go before anything else.</summary>
-    private static bool Holds(DrivenInbox? inbox) => inbox?.State.Queued.Count > 0;
+    private static bool Holds(DrivenInbox? inbox) => inbox?.Holds == true;
 
     /// <summary>
     /// A turn that ended while the session's own background work runs (BGWAIT1): not a question. Where the driver says its

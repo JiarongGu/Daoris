@@ -16,9 +16,9 @@ namespace Daoris.Driver;
 /// events (D100); the standing answer from <c>driver.json</c> (D135 §3). Nothing is derived from what is current where the
 /// store kept no moment.</para>
 ///
-/// <para><b>What it cannot reach</b>, said where it would have been: the quest's operations themselves (a local host answers the
-/// state they replay to, and no door here reads one quest's); a merge into the line's own commit, which the acceptance does not
-/// name; an ended session's rules, whose file goes with its run; and a teammate's machine-local half.</para>
+/// <para><b>What it cannot reach</b>, said where it would have been: a quest's moves on a host from before their door
+/// (FLOWCHART1a2, whose door reads each quest's operations as moves, by allow-list); a merge into the line's own commit, which the
+/// acceptance does not name; an ended session's rules, whose file goes with its run; and a teammate's machine-local half.</para>
 /// </remarks>
 public static class Trace
 {
@@ -47,7 +47,72 @@ public static class Trace
             asks[id] = await ReadAskAsync(sources.Service, id, ct).ConfigureAwait(false);
         }
 
-        return new TraceRead(TraceChains.Of(found, facts, asks, TraceReads.Here(sources), unread), null, unread);
+        // FLOWCHART1a2: each quest the chain reads through, and that the service holds, with its moves; no other quest's are asked.
+        var moves = new Dictionary<string, TraceMovesRead>(StringComparer.OrdinalIgnoreCase);
+        foreach (var quest in found.Quests.Select(id => facts.Quests.FirstOrDefault(each => string.Equals(each.Id, id, StringComparison.OrdinalIgnoreCase))))
+        {
+            if (quest is not null && !moves.ContainsKey(quest.Id)) moves[quest.Id] = await ReadMovesAsync(sources.Service, quest.Id, ct).ConfigureAwait(false);
+        }
+
+        return new TraceRead(TraceChains.Of(found, facts with { Moves = moves }, asks, TraceReads.Here(sources), unread), null, unread);
+    }
+
+    /// <summary>One quest's moves, from its door (<c>GET /api/quests/{id}/moves</c>): never a failure of the trace.</summary>
+    private static async Task<TraceMovesRead> ReadMovesAsync(ServiceClient service, string id, CancellationToken ct)
+    {
+        try
+        {
+            return await service.QuestMovesJsonAsync(id, ct).ConfigureAwait(false) is { } json
+                ? ParseMoves(json) is { } moves ? new TraceMovesRead(moves) : new TraceMovesRead(null, Unread: "the service answered something other than the quest's moves")
+                : new TraceMovesRead(null, NoDoor: true);
+        }
+        catch (Exception error) when (Unanswered(error, ct))
+        {
+            return new TraceMovesRead(null, Unread: error.Message);
+        }
+    }
+
+    /// <summary>
+    /// A quest's moves as the door answers them (FLOWCHART1a2), in its order, field by field; a move with no kind, machine or time is
+    /// passed over. Null where the answer is not the moves.
+    /// </summary>
+    internal static IReadOnlyList<TraceMove>? ParseMoves(string json)
+    {
+        using var document = JsonDocument.Parse(json);
+        if (document.RootElement.ValueKind != JsonValueKind.Object
+            || !document.RootElement.TryGetProperty("moves", out var listed) || listed.ValueKind != JsonValueKind.Array)
+        {
+            return null;
+        }
+
+        var moves = new List<TraceMove>();
+        foreach (var move in listed.EnumerateArray())
+        {
+            if (move.ValueKind != JsonValueKind.Object || Filled(move, "kind") is not { } kind || Filled(move, "machine") is not { } machine
+                || Moment(move, "at") is not { } at || Long(move, "sequence") is not { } sequence)
+            {
+                continue;
+            }
+
+            moves.Add(new TraceMove(kind, at, machine, sequence, Flag(move, "applied"))
+            {
+                Number = Long(move, "number"),
+                From = Filled(move, "from"),
+                Attempted = Filled(move, "attempted"),
+                Dismisses = move.TryGetProperty("dismisses", out var named) && named.ValueKind == JsonValueKind.Object
+                            && Filled(named, "machine") is { } by && Long(named, "sequence") is { } its
+                    ? new TraceMoveRef(by, its)
+                    : null,
+                WaitsOn = Filled(move, "waitsOn"),
+                Session = Filled(move, "session"),
+                Evidence = Filled(move, "evidence"),
+                SetUp = Filled(move, "setUp"),
+                Verdict = Filled(move, "verdict"),
+                Hold = Filled(move, "hold"),
+            });
+        }
+
+        return moves;
     }
 
     /// <summary>One ask, whole, from its door (<c>GET /api/asks/{id}</c>): never a failure of the trace.</summary>

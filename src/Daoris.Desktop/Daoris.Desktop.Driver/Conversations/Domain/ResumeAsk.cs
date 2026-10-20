@@ -83,7 +83,7 @@ internal sealed class ResumeAsk(
     /// The record's opening for the resumed run: the driver's first line, then each of the person's words as theirs, under
     /// the id their record gave it, so the words shown while they waited pair with where the session took them (D137 §3.1).
     /// Another agent's findings (XAGENT1e, D155 point 7) are never the person's: they are the turn Daoris composed around that
-    /// agent's claims, naming the opinion they are from.
+    /// agent's claims, naming the opinion they are from. Daoris's own words (COWORK1b) are Daoris's, by their mark.
     /// </summary>
     public IReadOnlyList<SessionEvent> Opening()
     {
@@ -95,6 +95,7 @@ internal sealed class ResumeAsk(
             {
                 Kind = SessionEventKind.User,
                 Origin = word.Persons ? "person" : "target",
+                From = word.Daoris ? DaorisWords.From : null,
                 Opinion = word.By,
                 Id = word.Id,
                 Text = word.Text,

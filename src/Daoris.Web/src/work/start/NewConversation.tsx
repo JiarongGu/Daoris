@@ -282,8 +282,9 @@ export function NewConversation({
 
   return (
     <form
-      // A form at what it holds (platform language §4, D141 §4): the prompt reads as one, centred in the main area.
-      className="mx-auto grid w-full max-w-[48rem] grid-cols-[minmax(0,1fr)] gap-3 pt-[8vh] max-md:pt-6"
+      // A form at what it holds (platform language §4, D141 §4): the prompt reads as one, centred in the main area. Its
+      // room above follows the main area's own width, never the window's (R7, UIFIT1d).
+      className="mx-auto grid w-full max-w-[48rem] grid-cols-[minmax(0,1fr)] gap-3 pt-[8vh] @max-3xl/main:pt-6"
       onSubmit={(event) => { event.preventDefault(); go(); }}
       {...attach.handlers}
     >

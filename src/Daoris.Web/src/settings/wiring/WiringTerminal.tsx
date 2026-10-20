@@ -21,7 +21,7 @@ function onPath(terminal: Pick<SystemWiring['terminal'], 'onAccountPath' | 'onMa
 function Found({ found }: { found: SystemWiring['terminal']['firstDaoris'] }) {
   const { t } = useTranslation();
   return (
-    <span className="grid justify-items-end gap-0.5 text-small text-ink-soft @max-[26rem]:justify-items-start">
+    <span className="grid justify-items-start gap-0.5 text-small text-ink-soft">
       <span>{t(`settings.daoris.terminal.found.${found.is}`)}</span>
       {found.is === 'another' && found.path && <PathText path={found.path} className="text-small text-ink-faint" />}
     </span>

@@ -233,12 +233,14 @@ public sealed class LoopWords(SessionProcesses processes, Func<ServiceClient?> s
 
     /// <summary>
     /// Words a record kept, as its conversation shows them the moment they are kept (D137 §3.1): the person's, under the id the
-    /// record gave them, reaching it on <c>resume</c>, with the door they were said at, which <c>session.reopened</c> names.
+    /// record gave them, reaching it on <c>resume</c>, with the door they were said at, which <c>session.reopened</c> names. Daoris's
+    /// own words (COWORK1b) are shown as Daoris's, by their mark.
     /// </summary>
     public static SessionEvent Shown(SaidWordView kept, string door) => new()
     {
         Kind = SessionEventKind.User,
-        Origin = "person",
+        Origin = kept.Daoris ? "target" : "person",
+        From = kept.Daoris ? DaorisWords.From : null,
         Id = kept.Id,
         Text = kept.Text,
         Files = kept.Files.Count > 0 ? kept.Files : null,

@@ -1020,8 +1020,9 @@ public sealed class SessionWords : IDisposable
             if (Text(record, "state") is "queued" or "starting" or "working") return [];
             return
             [
+                // The person's alone: never another agent's (by, helper), nor Daoris's own words (COWORK1b's from).
                 .. Items(record, "said")
-                    .Where(word => NonEmpty(word, "by") is null && NonEmpty(word, "helper") is null)
+                    .Where(word => NonEmpty(word, "by") is null && NonEmpty(word, "helper") is null && NonEmpty(word, "from") is null)
                     .Select(word => NonEmpty(word, "id") is { } said && Text(word, "text") is { } text
                         ? new WaitingWord(said, text, Strings(word, "files"))
                         : null)

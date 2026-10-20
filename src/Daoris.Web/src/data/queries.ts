@@ -202,6 +202,11 @@ export const keys = {
   quests: (repository: string | null, includeClosed: boolean, workspace: string | null) =>
     ['quests', repository ?? 'all', includeClosed, workspace ?? '*'] as const,
   /**
+   * One quest's moves (FLOWCHART1a2), read from the service's door when its flowchart opens. Under the quests' key, so whatever
+   * asks the quests again (a press, a tick, the change stream's `quests`) asks these again.
+   */
+  questMoves: (id: string) => ['quests', 'moves', id] as const,
+  /**
    * The second opinions this machine holds (XAGENT1g4c): the service lists them, so not under the driver's key; under the
    * sessions', so whatever asks the sessions again (a new reviewer's record) asks these again.
    */
@@ -476,6 +481,18 @@ export const useQuests = (repository: string | null, includeClosed: boolean, ena
     enabled,
   });
 };
+
+/**
+ * One quest's moves, in the order its history replays (FLOWCHART1a2, D186): read only for the quest named, which its page names
+ * once its flowchart is opened, as the trace is read only when opened (D143); `null` names none and asks nothing. Pulled in a
+ * browser and in the window alike: the service's door answers both, and a host from before it answers no moves (`null`).
+ */
+export const useQuestMoves = (id: string | null) =>
+  useQuery({
+    queryKey: keys.questMoves(id ?? ''),
+    queryFn: ({ signal }) => api.questMoves(id!, signal),
+    enabled: id !== null,
+  });
 
 /**
  * The session records the shell pushes (PUSH1d2, D182; its spec is `sessionsSlice` in `bridge/sessions/sessions`): the widest list, every

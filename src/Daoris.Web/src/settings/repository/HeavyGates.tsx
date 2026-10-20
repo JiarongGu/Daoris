@@ -1,7 +1,7 @@
 import type { TFunction } from 'i18next';
 import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Button, Icon, Inline, SettingRow } from '../../design/ui';
+import { Button, FormField, FormGrid, FormRow, Icon, Inline, SettingRow } from '../../design/ui';
 import { shellWord } from '../../lib/shellWord';
 import { type Answered, Refused } from '../../work/InlineConfirm';
 
@@ -155,37 +155,47 @@ export function HeavyGates({ repository, gates, marks, busy = false, onSave }: {
               if (!busy && !same(sent, gates)) save(sent, () => setDrafts(null));
             }}
           >
-            <div className="grid grid-cols-[minmax(0,8rem)_minmax(0,1fr)_minmax(0,8rem)_auto] items-center gap-x-2 gap-y-1.5">
-              <span className="text-meta text-ink-faint">{t('settings.heavy.field.name')}</span>
-              <span className="text-meta text-ink-faint">{t('settings.heavy.field.run')}</span>
-              <span className="text-meta text-ink-faint">{t('settings.heavy.field.cwd')}</span>
-              <span />
+            {/* The list lays out by its own width (R1, UIFIT1d): a name, the command, a folder and the acts in columns
+                while the form holds them, each gate stacked under its own field names below 40rem, never by the window. */}
+            <FormGrid columns={['short', 'long', 'short', 'acts']} floor="40rem">
+              <FormRow head>
+                <span className="text-meta text-ink-faint">{t('settings.heavy.field.name')}</span>
+                <span className="text-meta text-ink-faint">{t('settings.heavy.field.run')}</span>
+                <span className="text-meta text-ink-faint">{t('settings.heavy.field.cwd')}</span>
+                <span />
+              </FormRow>
               {drafts.map((draft, at) => {
                 const n = at + 1;
                 return (
-                  <div key={draft.key} className="contents">
-                    <input
-                      aria-label={t('settings.heavy.nameOf', { n })}
-                      value={draft.name}
-                      spellCheck={false}
-                      onChange={(event) => change(draft.key, 'name', event.target.value)}
-                      className={FIELD}
-                    />
-                    <input
-                      aria-label={t('settings.heavy.runOf', { n })}
-                      value={draft.run}
-                      spellCheck={false}
-                      onChange={(event) => change(draft.key, 'run', event.target.value)}
-                      className={FIELD}
-                    />
-                    <input
-                      aria-label={t('settings.heavy.cwdOf', { n })}
-                      value={draft.cwd}
-                      spellCheck={false}
-                      placeholder={t('settings.heavy.checkout')}
-                      onChange={(event) => change(draft.key, 'cwd', event.target.value)}
-                      className={FIELD}
-                    />
+                  <FormRow key={draft.key}>
+                    <FormField label={t('settings.heavy.field.name')} when="stacked">
+                      <input
+                        aria-label={t('settings.heavy.nameOf', { n })}
+                        value={draft.name}
+                        spellCheck={false}
+                        onChange={(event) => change(draft.key, 'name', event.target.value)}
+                        className={FIELD}
+                      />
+                    </FormField>
+                    <FormField label={t('settings.heavy.field.run')} when="stacked">
+                      <input
+                        aria-label={t('settings.heavy.runOf', { n })}
+                        value={draft.run}
+                        spellCheck={false}
+                        onChange={(event) => change(draft.key, 'run', event.target.value)}
+                        className={FIELD}
+                      />
+                    </FormField>
+                    <FormField label={t('settings.heavy.field.cwd')} when="stacked">
+                      <input
+                        aria-label={t('settings.heavy.cwdOf', { n })}
+                        value={draft.cwd}
+                        spellCheck={false}
+                        placeholder={t('settings.heavy.checkout')}
+                        onChange={(event) => change(draft.key, 'cwd', event.target.value)}
+                        className={FIELD}
+                      />
+                    </FormField>
                     <span className="flex items-center">
                       <Button variant="ghost" disabled={busy || at === 0} aria-label={t('settings.heavy.up', { n })} onClick={() => move(at, at - 1)}>
                         <Icon name="chevronUp" size={12} />
@@ -207,10 +217,10 @@ export function HeavyGates({ repository, gates, marks, busy = false, onSave }: {
                         <Icon name="x" size={12} />
                       </Button>
                     </span>
-                  </div>
+                  </FormRow>
                 );
               })}
-            </div>
+            </FormGrid>
             <div className="flex flex-wrap gap-2">
               <Button variant="ghost" disabled={busy} onClick={() => setDrafts((now) => [...(now ?? []), draftOf()])}>
                 <Icon name="plus" size={12} />

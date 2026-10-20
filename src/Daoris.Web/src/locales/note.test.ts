@@ -68,6 +68,8 @@ describe('a session note’s codes, held to both catalogues', () => {
     expect(ledger.map((code) => code.code)).toEqual([
       'ledger.answered', 'ledger.parked', 'ledger.went-on', 'ledger.went-on-findings', 'ledger.went-on-both',
       'ledger.went-on-helper', 'ledger.went-on-helper-both',
+      // Daoris's own words alone (COWORK1b).
+      'ledger.went-on-daoris',
       // A quest's note (QUESTCLOSE1b1): the person's done, its lead coded and their words beneath it.
       'quest.person-done',
     ]);
@@ -159,7 +161,8 @@ describe('the page’s map of a note’s codes, held to both writers', () => {
   /** CONVNOTE2a: whose words a resumed conversation goes on with is a reason of its own family, held key for key. */
   it('words every way a resumed conversation’s first line says whose words', () => {
     const resumed = reasons('Resumed');
-    expect(resumed.length).toBe(7);
+    // COWORK1b: Daoris's own words alone are an eighth.
+    expect(resumed.length).toBe(8);
     const page = Object.values(RESUMED_REASONS).map(({ key, values }) => ({ key, values: [...values] }));
     const byKey = (a: { key: string }, b: { key: string }) => a.key.localeCompare(b.key);
     expect(page.sort(byKey)).toEqual([...resumed].sort(byKey));

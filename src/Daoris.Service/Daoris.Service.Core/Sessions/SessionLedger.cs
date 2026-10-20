@@ -117,6 +117,12 @@ public enum SessionSayRefusal
     /// run may already have read it. An answer, never an error, as a live queue's taken word is (QUEUEEDIT1a, D76).
     /// </summary>
     Taken,
+
+    /// <summary>
+    /// The words name an author this build does not know (COWORK1b, <see cref="SaidFrom"/>): kept as the person's, they would be
+    /// read as theirs, so nothing is kept.
+    /// </summary>
+    From,
 }
 
 /// <param name="Refusal"><see cref="SessionSayRefusal.None"/> when the words were kept.</param>
@@ -127,6 +133,12 @@ public sealed record SessionSayOutcome(SessionSayRefusal Refusal, string Message
 {
     /// <summary>The word a take-back took off the record, as it waited (SAIDBACK1a), when it did.</summary>
     public SaidWord? Taken { get; init; }
+
+    /// <summary>
+    /// The say was answered with the word its producer's key already kept (COWORK1b, the message-urgency design §6): nothing was kept
+    /// now, so nothing beside the say is kept again either.
+    /// </summary>
+    public bool Again { get; init; }
 
     /// <summary>The quest of a session that stood down, where that refused the words.</summary>
     public string? Quest { get; init; }
@@ -694,13 +706,31 @@ public sealed class SessionLedger(
     /// </remarks>
     /// <param name="files">What the person gave with the words: only each one's name is kept, never where it is.</param>
     /// <param name="channel">The channel message the words are (SESSONE2e): kept on the word, so its door tells the ask nothing more.</param>
+    /// <param name="from">
+    /// Their author where that is not the person (COWORK1b, <see cref="SaidFrom"/>): Daoris's own words are kept as Daoris's, never
+    /// read as the person's. An author this build does not know is refused before anything is kept.
+    /// </param>
+    /// <param name="key">
+    /// The producer's key (COWORK1b, the message-urgency design §6): where a word with it already waits on the record, nothing more
+    /// is kept and the answer is that word, so a producer's retry keeps one word. Once a session took it, the key is the producer's
+    /// own to remember (D188's COWORK1b note).
+    /// </param>
     public async Task<SessionSayOutcome> SayAsync(
-        string id, string? text, IReadOnlyList<string>? files, DateTimeOffset now, CancellationToken ct = default, string? channel = null)
+        string id, string? text, IReadOnlyList<string>? files, DateTimeOffset now, CancellationToken ct = default, string? channel = null,
+        string? from = null, string? key = null)
     {
         var words = text?.Trim() ?? "";
         if (words.Length == 0)
         {
             return new(SessionSayRefusal.Empty, "There are no words to keep: the person said nothing.", Session: null);
+        }
+
+        if (!SaidFrom.Known(from))
+        {
+            return new(
+                SessionSayRefusal.From,
+                $"Words from `{from}` are not kept: this service knows no such author, and kept as the person's they would be read as theirs.",
+                Session: null);
         }
 
         // Read, judged and written as one step (REV3): the driver taking the record up and the words arriving could
@@ -725,12 +755,21 @@ public sealed class SessionLedger(
                     Session: null);
             }
 
-            var word = new SaidWord(NewWordId(), words, now, Names(files), Reopens: !parked, Channel: channel);
-            var (note, parts) = parked ? AnsweredNote(session, words) : (null, null);
+            // COWORK1b (trap 19): a word with this producer's key already waits, so this say is its producer's retry.
+            if (key is not null && session.Said.FirstOrDefault(each => string.Equals(each.Key, key, StringComparison.Ordinal)) is { } waiting)
+            {
+                return new SessionSayOutcome(
+                    SessionSayRefusal.None,
+                    $"Already kept for session `{id}` under key `{key}`, as word `{waiting.Id}`: nothing more was kept.",
+                    session, waiting) { Again = true };
+            }
+
+            var word = new SaidWord(NewWordId(), words, now, Names(files), Reopens: !parked, Channel: channel, From: from, Key: key);
+            var (note, parts) = parked ? AnsweredNote(session, words, from) : (null, null);
             var kept = await sessions
                 .KeepSaidAsync(id, word, note, inside, noteParts: parts)
                 .ConfigureAwait(false);
-            return new SessionSayOutcome(SessionSayRefusal.None, KeptMessage(session), kept, word);
+            return new SessionSayOutcome(SessionSayRefusal.None, KeptMessage(session, from), kept, word);
         }, ct).ConfigureAwait(false);
     }
 
@@ -930,14 +969,20 @@ public sealed class SessionLedger(
             .Where(name => name.Length > 0)
             .ToList();
 
-    /// <summary>What the person is told their words will do, phrased once here for every door.</summary>
-    private static string KeptMessage(Session session) =>
-        session.State == SessionState.AwaitingPerson && session.Quest is { } quest
+    /// <summary>
+    /// What the person is told their words will do, phrased once here for every door; Daoris's own words are never called theirs
+    /// (COWORK1b).
+    /// </summary>
+    private static string KeptMessage(Session session, string? from = null)
+    {
+        var whose = from == SaidFrom.Daoris ? "Daoris's words" : "your words";
+        return session.State == SessionState.AwaitingPerson && session.Quest is { } quest
             ? $"Kept for session `{session.Id}`: it carries on with `#{quest}` at the driver's next look."
             : session.Kind == SessionKind.Chat
                 // A conversation is taken up by its runner the moment it can open, never by the driver's look.
-                ? $"Kept for session `{session.Id}`: the same conversation goes on with your words as it opens again."
-                : $"Kept for session `{session.Id}`: the same session goes on with your words at the driver's next look.";
+                ? $"Kept for session `{session.Id}`: the same conversation goes on with {whose} as it opens again."
+                : $"Kept for session `{session.Id}`: the same session goes on with {whose} at the driver's next look.";
+    }
 
     private static string IntakeRefusal(string id, string ask) =>
         $"Session `{id}` is an intake — answer its ask `#{ask}` instead: publish it or close it.";
@@ -951,13 +996,14 @@ public sealed class SessionLedger(
     /// <remarks>
     /// Its lines with their codes beside the English (LANG1a, the language design §4 rows 64–65): the record's parts, or its
     /// note carried whole, or the ledger's own line where it had none; then <c>Answered:</c> and the person's words, a part of
-    /// their own.
+    /// their own. Daoris's own words that answer a park (COWORK1b: a reopen, a go-on the person's press made) are a part by
+    /// <c>daoris</c>, never the person's.
     /// </remarks>
-    internal static (string Note, string Parts) AnsweredNote(Session parked, string said)
+    internal static (string Note, string Parts) AnsweredNote(Session parked, string said, string? from = null)
     {
         const string Asked = "It stopped to ask the person; its question is in its transcript.";
         var note = (parked.Note ?? Asked) + AnsweredLine(said);
-        NoteLine[] answered = [NoteLine.Coded(LedgerNoteCodes.Answered, "Answered:"), NoteLine.Said(said, "person")];
+        NoteLine[] answered = [NoteLine.Coded(LedgerNoteCodes.Answered, "Answered:"), NoteLine.Said(said, from ?? "person")];
         var parts = parked.Note is null
             ? NoteParts.After(null, null, [NoteLine.Coded(LedgerNoteCodes.Parked, Asked), .. answered])
             : NoteParts.After(parked.NoteParts, parked.Note, answered);
@@ -1293,10 +1339,11 @@ public sealed class SessionLedger(
 
         var with = WentOnWith(session) switch
         {
-            (Persons: false, Findings: true, _) => "another agent's findings",
-            (Persons: true, Findings: true, _) => "the person's words and another agent's findings",
-            (Persons: false, Findings: false, Helper: true) => "a helper's answer",
-            (Persons: true, Findings: false, Helper: true) => "the person's words and a helper's answer",
+            (Persons: false, Findings: true, _, _) => "another agent's findings",
+            (Persons: true, Findings: true, _, _) => "the person's words and another agent's findings",
+            (Persons: false, Findings: false, Helper: true, _) => "a helper's answer",
+            (Persons: true, Findings: false, Helper: true, _) => "the person's words and a helper's answer",
+            (Persons: false, Findings: false, Helper: false, Daoris: true) => "Daoris's words",
             _ => "the person's words",
         };
         return new SessionAdvanceOutcome(
@@ -1311,12 +1358,14 @@ public sealed class SessionLedger(
     /// </summary>
     /// <remarks>
     /// A helper's answer (MIXAGENT2a-ii, <see cref="SaidWord.Helper"/>) is its own third, never findings: alone, or beside the
-    /// person's words. Where findings and a helper's answer wait together the line says the findings, as it always did.
+    /// person's words. Where findings and a helper's answer wait together the line says the findings, as it always did. Daoris's own
+    /// words (COWORK1b, <see cref="SaidWord.From"/>) alone are a fourth, never "your words"; beside another's, the other's line stands.
     /// </remarks>
-    private static (bool Persons, bool Findings, bool Helper) WentOnWith(Session session) =>
+    private static (bool Persons, bool Findings, bool Helper, bool Daoris) WentOnWith(Session session) =>
         (session.Said.Count == 0 || session.Said.Any(word => word.Persons),
          session.Said.Any(word => word.By is not null),
-         session.Said.Any(word => word.Helper is not null));
+         session.Said.Any(word => word.Helper is not null),
+         session.Said.Any(word => word.From == SaidFrom.Daoris));
 
     /// <summary>
     /// The note an ended record goes on with (MSG1a, D137 §2.3): what ended it, when it went on, and the note the move passed,
@@ -1334,10 +1383,11 @@ public sealed class SessionLedger(
         var at = $"{now.UtcDateTime.ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture)} UTC";
         var (line, code) = WentOnWith(session) switch
         {
-            (Persons: false, Findings: true, _) => ($"Went on with another agent's findings at {at}.", LedgerNoteCodes.WentOnFindings),
-            (Persons: true, Findings: true, _) => ($"Went on with your words and another agent's findings at {at}.", LedgerNoteCodes.WentOnBoth),
-            (Persons: false, Findings: false, Helper: true) => ($"Went on with a helper's answer at {at}.", LedgerNoteCodes.WentOnHelper),
-            (Persons: true, Findings: false, Helper: true) => ($"Went on with your words and a helper's answer at {at}.", LedgerNoteCodes.WentOnHelperBoth),
+            (Persons: false, Findings: true, _, _) => ($"Went on with another agent's findings at {at}.", LedgerNoteCodes.WentOnFindings),
+            (Persons: true, Findings: true, _, _) => ($"Went on with your words and another agent's findings at {at}.", LedgerNoteCodes.WentOnBoth),
+            (Persons: false, Findings: false, Helper: true, _) => ($"Went on with a helper's answer at {at}.", LedgerNoteCodes.WentOnHelper),
+            (Persons: true, Findings: false, Helper: true, _) => ($"Went on with your words and a helper's answer at {at}.", LedgerNoteCodes.WentOnHelperBoth),
+            (Persons: false, Findings: false, Helper: false, Daoris: true) => ($"Went on with Daoris's words at {at}.", LedgerNoteCodes.WentOnDaoris),
             _ => ($"Went on with your words at {at}.", LedgerNoteCodes.WentOn),
         };
         var went = string.Join("\n\n", new[] { session.Note, line, note }.Where(part => !string.IsNullOrWhiteSpace(part)));
