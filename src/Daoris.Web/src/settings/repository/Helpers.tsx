@@ -108,7 +108,8 @@ export function HelperField({ name, set, inherited, busy = false, onChange }: {
 
   return (
     <form
-      className="grid max-w-[40rem] gap-2"
+      // Sized to its content up to the pane (R1, UIFIT1d): the agents are a list, which takes the form's width.
+      className="grid gap-2"
       onSubmit={(event) => {
         event.preventDefault();
         if (changed) onChange({ set: { mode, agents: named } });

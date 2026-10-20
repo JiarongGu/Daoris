@@ -267,7 +267,24 @@ controls are in the frame design's §3.
 **Forms and settings.**
 
 - **A form is sized to what it holds**, never to the column it sits in: three equal thirds of a card
-  gave a 570px box to the word "default". A completion list is sized to its rows (U64).
+  gave a 570px box to the word "default". A completion list is sized to its rows (U64). **And to its content up to the
+  pane, laid by its own width** (R1 of the UI/UX design, D185; UIFIT1d, 2026-10-20): each field by what it holds, a
+  number 4.5rem, a short name 8rem, a name 16rem, a branch pattern 20rem, an address, a command or a folder the rest of
+  the form's width (`FormGrid`'s `FIELD_WIDTHS`), and nothing caps the form below the pane: the 40rem and 48rem caps
+  settings' forms wore left half of a wide pane to a form that wanted it. A form of rows (the heavy gates) is one grid,
+  each row a subgrid of it, so its columns stay aligned while the form holds them, and below the form's floor, by a
+  container query of its own, each row stacks under its own field names and the head row goes; a fixed column yields to
+  its container. Removing a cap is not the rule. **Check:** `tokens.test.ts` fails on a `max-w-[…rem]` on a form or a
+  grid of fields, but the start prompt's column (D141 §4), and `measured/settings.spec.ts` reads a row's fields on one
+  line while the form holds them and under each other below its floor.
+- **A region lays out by its own width, never the viewport's** (the frame model §3b, D118; R7 of the UI/UX design;
+  UIFIT1d): no `sm:`, `md:`, `max-sm:`, `min-[…]:` or their kin inside a region, which is a container query on the region
+  or the component (`@max-[32rem]:`, `@max-3xl/main:`), since the side bar and the list narrow a region without the window
+  changing: a form at 630 px of pane kept its three columns because the window was 1546. What is placed against the
+  window keeps its viewport variants, by its responsibility, not its file: the strip's toggles, the status bar's items,
+  the toast viewport beside a drawer, the dock, and the main area's own gutters, which the main area, being the container
+  itself, cannot query. **Check:** `tokens.test.ts` fails on a viewport variant anywhere but the window's parts, which its
+  allow-list names by component, each with its reason, and on an entry that no longer carries one.
 - **The platform draws its own controls**: no native select, checkbox or radio outside `ui.tsx`
   (`tokens.test.ts`, U5); no native search clear, which WebView2 paints in the system's accent; and a
   scrollbar that follows the theme, through `color-scheme: light dark` and `--ink-faint`. **The
@@ -276,16 +293,35 @@ controls are in the frame design's §3.
   under the pointer, in a ten-pixel lane that takes a grab across its whole width.
 - **A setting is a row** (`SettingRow`, the owner: *"this really long list of setup … can be
   improved"*): the label, a one-line hint that is its terminal twin, written as code (U55), the
-  control at the right, and the paragraph that motivated it on an info glyph. **The label keeps its
-  room**: its column has a floor, 16rem or half the row, and the control gives way to it, a path
-  breaking at its separators (U58: a path crushed its label to one character a line). **A narrow row
-  stacks** (WSR4, 2026-09-30): the row is its own container, and below 26rem its control goes under
-  the label at the row's full width. With Settings' nav and the side bar open a row was 309px, the
-  floor left the control 130px, and a fixed-width branch pattern spilled left over the row's words; a
-  field in a control gives way to its column (`min-w-0 max-w-full`, and the form around it `min-w-0`). A settings page
-  laid out as an essay is read once and scrolled past every time after; a page of rows is scanned. A
-  rarely used form (wiring a deployment, adding an account) is one press away. The rule between rows
-  belongs to what has siblings: a row alone in its list item lost both.
+  value beside its words, and the paragraph that motivated it on an info glyph. A field in a control gives way to
+  its column (`min-w-0 max-w-full`, and the form around it `min-w-0`). A settings page laid out as an essay is read
+  once and scrolled past every time after; a page of rows is scanned. A rarely used form (wiring a deployment, adding
+  an account) is one press away. The rule between rows belongs to what has siblings: a row alone in its list item
+  lost both.
+- **A card's rows share one label track** (R1 of the UI/UX design, D185; UIFIT1, 2026-10-20): `SettingList` is the
+  card's one grid and each `SettingRow` a subgrid of it, so the track is the widest label of the card between a
+  floor of 12rem and a cap of 22rem (half the card where the card is narrower than 44rem; D185's UIFIT1 note has the
+  measurements that set them), and every value starts at the track's edge, the values one column the eye runs down.
+  A row's acts (*Open*, *Edit*, *Clear*) follow its value, never the pane's far edge, and its notice sits in the value
+  column under the value it is about. The hint sets no width (`contain-inline-size`): a hint is a sentence, and the
+  track is the labels'. The floor keeps the label's room, since a path as the value once crushed its label to one
+  character a line (U58), and a path breaks at its separators. **Below 32rem of the card's own width the track goes**
+  and each value sits under its words at the card's full width: WSR4's floor (2026-09-30: with Settings' nav and the
+  side bar open a row was 309px, the floor left the control 130px, and a fixed-width branch pattern spilled left over
+  the row's words), moved from the row to the card; a row alone is its own container and stacks by the same rule.
+  **Check:** jsdom lays nothing out, so `ui.test.tsx` holds the structure and `measured/settings.spec.ts` the
+  geometry in a browser, every value's box at its track's edge at the wide and the half width and under its words at
+  the floor, in both languages.
+- **Cards are 16 px apart, set once by the domain's container** (R1; `CardStack`): a card sets no outer margin of its
+  own, which `tokens.test.ts` holds. The 14 px margin each card wore was off the scale's step, a domain's first card
+  needed it undone, and two cards that forgot it touched.
+- **A story shows the widths the frame gives, without help** (R6 of the UI/UX design; UIFIT1): a main-area organism's
+  stories are drawn at wide, half and narrow (80rem, 39rem and 25rem of main area, the last the 400 px floor) by one
+  helper, `design/storyWidths.tsx`, with the page's own gutters, in English and 中文, light and dark. No decorator
+  adds what the page does not have (a gap, a cap, a padding), and a domain's cards are drawn in the domain's own
+  container: every R1 defect had passed its stories, drawn at 46rem with a gap of their own. An organism that holds
+  hooks splits a molecule for its states (`DriverCards`, `WiringCards`). **Check:** `storyWidths.test.tsx` names the
+  stories still framed by themselves, for STORYGAP1, and fails on a new one.
 - **A step in a task happens where it was started** (the owner, on signing in): `SignIn` sits on the
   account's row — numbered steps in the order the person meets them, one live control at a time, a
   Cancel that stops the process, the raw output one disclosure away, and the result as the row's own

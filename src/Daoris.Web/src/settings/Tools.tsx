@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { ago, size } from '../locales/format';
 import { type Answered, InlineConfirm } from '../work/InlineConfirm';
 import {
-  Button, Card, CardHeader, Inline, PathText, Pill, Prose, Segmented, SelectField, SettingRow,
+  Button, Card, CardHeader, Inline, PathText, Pill, Prose, Segmented, SelectField, SettingList, SettingRow,
 } from '../design/ui';
 
 /** How a tool is run (D121 §2.2): the system's, from PATH; a version Daoris keeps; or a file the person names. */
@@ -206,7 +206,7 @@ export function ToolCard({
         : t(`settings.tools.status.${saved}`)}</Pill>;
 
   return (
-    <Card id={`settings-tool-${tool.tool}`} className="mt-3.5 scroll-mt-3">
+    <Card id={`settings-tool-${tool.tool}`} className="scroll-mt-3">
       <CardHeader title={tool.name} aside={state} />
       <Prose className="mt-1 text-small">{t(`settings.tools.why.${tool.tool}`)}</Prose>
 
@@ -217,7 +217,7 @@ export function ToolCard({
         </p>
       )}
 
-      <div className="mt-2">
+      <SettingList className="mt-2">
         <SettingRow
           label={t('settings.tools.program')}
           hint={`\`daoris tool use ${tool.tool} system|managed|file\``}
@@ -244,7 +244,7 @@ export function ToolCard({
               : <span className="text-small text-ink-faint">{t('settings.tools.status.notFound')}</span>}
           >
             {changing && !asking && (
-              <div className="flex justify-end">
+              <div className="flex justify-start">
                 <Button variant="primary" disabled={acting} onClick={() => press({ action: 'system' })}>
                   {t('settings.tools.useSystem')}
                 </Button>
@@ -306,10 +306,10 @@ export function ToolCard({
             {versions.length === 0
               ? <Prose className="text-small"><Inline text={t('settings.tools.noVersions', { name: tool.name })} /></Prose>
               : (
-                <div className="flex flex-wrap items-center justify-end gap-2">
+                <div className="flex flex-wrap items-center justify-start gap-2">
                   {/* Which lists name the version chosen (§3.7): the person's first, then the one built in. */}
                   {chosenOffered && (
-                    <span className="mr-auto text-small text-ink-faint">
+                    <span className="text-small text-ink-faint">
                       {t('settings.tools.namedBy', { lists: chosenOffered.lists.map(listName).join(', ') })}
                     </span>
                   )}
@@ -377,7 +377,7 @@ export function ToolCard({
             {console}
           </div>
         )}
-      </div>
+      </SettingList>
     </Card>
   );
 }
@@ -506,7 +506,7 @@ export function ToolLocations({
   };
 
   return (
-    <Card id="settings-tool-locations" className="mt-3.5 scroll-mt-3">
+    <Card id="settings-tool-locations" className="scroll-mt-3">
       <CardHeader
         title={t('settings.tools.locations.title')}
         // A look fetches the person's locations; the list built in is the install's, so with none there is nothing
@@ -520,10 +520,10 @@ export function ToolLocations({
       <Prose className="mt-1 text-small">
         <Inline text={t(locations.length > 0 ? 'settings.tools.locations.hint' : 'settings.tools.locations.none')} />
       </Prose>
-      <div className="mt-2">
+      <SettingList className="mt-2">
         {locations.map((list, at) => row(list, `${at}:${list.address}`))}
         {row(builtIn, 'built-in')}
-      </div>
+      </SettingList>
       {adding
         ? (
           <form

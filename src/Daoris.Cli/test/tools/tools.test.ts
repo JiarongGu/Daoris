@@ -8,6 +8,7 @@ import {
 } from '../../src/tools/tools.ts';
 import { commandTool } from '../../src/tools/toolinstall.ts';
 import { homeEntry } from '../../src/platform/home.ts';
+import type { VerbPress } from '../../src/platform/door.ts';
 import { driverRows as csharpRows, driverTestFile } from '../_csharp.ts';
 import { captureError, makeFixture } from '../_fixture.ts';
 
@@ -677,4 +678,75 @@ test('the verb refuses what it does not set, with no file written', () => {
   assert.equal(existsSync(homeEntry(at, 'tools')), false);
   assert.match(captureError(() => run(['list'], null)).message, /no Daoris home.*\(wanted: tools\.json\)/);
   fx.cleanup();
+});
+
+/**
+ * RPC1f: a tool verb that changes the home is the Tools place's route while Daoris runs on it, with the payload that place sends,
+ * said in the alone path's words and written by the instance alone; a managed use, a download and an update act alone, since their
+ * routes answer once a download starts and its end is an event only a subscription hears (RPC1g).
+ */
+async function sent(argv: string[], at: string, answer: unknown = {}): Promise<{ code: number; out: string[]; press: VerbPress | null }> {
+  const out: string[] = [];
+  let press: VerbPress | null = null;
+  const code = await commandTool({ root: process.cwd(), argv, write: (line) => out.push(line), packageRoot: process.cwd() }, null,
+    { ...withOnlyPath('', process.env), DAORIS_HOME: at }, (given) => {
+      press = given;
+      return given.route ? given.words(answer) : given.alone();
+    });
+  return { code, out, press };
+}
+
+const routed = (press: VerbPress | null) => [press?.what, press?.route?.route, press?.route?.class, press?.payload];
+
+test('a tool verb that changes the home is the Tools place\'s route while Daoris runs, in the alone path\'s words', async () => {
+  const { fx, home: at, whole } = home('tools-door');
+  try {
+    const system = await sent(['use', 'git', 'system'], at);
+    assert.deepEqual(routed(system.press), ['tool use', 'TOOLS_USE', 'person', { tool: 'git', action: 'system' }]);
+    assert.equal(existsSync(homeEntry(at, 'tools')), false, 'the instance writes it, not this terminal');
+    assert.deepEqual(system.out, run(['use', 'git', 'system'], at).out);
+
+    mkdirSync(join(fx.root, 'bin'), { recursive: true });
+    writeFileSync(whole, '');
+    const file = await sent(['use', 'git', 'file', whole], at);
+    assert.deepEqual(routed(file.press), ['tool use', 'TOOLS_USE', 'person', { tool: 'git', action: 'file', file: whole }]);
+    assert.equal(readTools(at).entries.git!.way, 'system');
+    assert.deepEqual(file.out, run(['use', 'git', 'file', whole], at).out);
+
+    const deleted = await sent(['delete', 'git', '2.45.0'], at, { tool: 'git', version: '2.45.0', folder: 'X:/daoris/tools/git/2.45.0' });
+    assert.deepEqual(routed(deleted.press), ['tool delete', 'TOOLS_DELETE', 'person', { tool: 'git', version: '2.45.0' }]);
+    assert.deepEqual(deleted.out, ['daoris: Git 2.45.0 is deleted — X:/daoris/tools/git/2.45.0.']);
+
+    const address = 'https://lists.example.test/resources.json';
+    const added = await sent(['locations', 'add', address], at, { address, added: true });
+    assert.deepEqual(routed(added.press), ['tool locations', 'TOOLS_LOCATION', 'person', { action: 'add', address }]);
+    assert.deepEqual(readTools(at).locations, []);
+    assert.deepEqual(added.out, run(['locations', 'add', address], at).out);
+    const again = await sent(['locations', 'add', address], at, { address, added: false });
+    assert.deepEqual(again.out, run(['locations', 'add', address], at).out);
+    const removed = await sent(['locations', 'remove', address], at, { address, removed: true });
+    assert.deepEqual(routed(removed.press), ['tool locations', 'TOOLS_LOCATION', 'person', { action: 'remove', address }]);
+    assert.deepEqual(removed.out, run(['locations', 'remove', address], at).out);
+
+    const looked = await sent(['look'], at, { looks: [{ address, outcome: 'unreachable', sentence: `${address} did not answer.` }] });
+    assert.deepEqual(routed(looked.press), ['tool look', 'TOOLS_LOOK', 'open', {}]);
+    assert.equal(looked.code, 1);
+    assert.deepEqual(looked.out.slice(0, 2), ['daoris: looked at 1 location:', `  ${address} did not answer.`]);
+    assert.match(looked.out.join('\n'), /git +Git +runs /);
+
+    // Their alone path downloads, so the door here only says what it was handed.
+    for (const argv of [['use', 'git', 'managed'], ['download', 'git'], ['update', 'git']]) {
+      let handed: VerbPress | null = null;
+      await commandTool({ root: process.cwd(), argv, write: () => {}, packageRoot: process.cwd() }, null, { DAORIS_HOME: at }, (given) => {
+        handed = given;
+        return 0;
+      });
+      assert.deepEqual(routed(handed).slice(0, 3), [`tool ${argv[0]}`, undefined, undefined], argv.join(' '));
+    }
+    for (const argv of [['list'], ['path', 'git'], ['locations']]) {
+      assert.equal((await sent(argv, at)).press, null, argv.join(' '));
+    }
+  } finally {
+    fx.cleanup();
+  }
 });

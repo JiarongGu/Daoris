@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import type { AccountSettings } from '../../agents/tools';
+import { storyWidths } from '../../design/storyWidths';
 import { AccountSettingsForm, AccountSettingsSummary } from './AccountSettings';
 
 // An account's own model and effort (AGT6, D98), in the shapes the driver's roster answers with: the
@@ -22,7 +23,8 @@ const meta: Meta<typeof AccountSettingsForm> = {
     onSave: () => {},
     onCancel: () => {},
   },
-  decorators: [(Story) => <div className="max-w-4xl"><Story /></div>],
+  // The main area at its wide width, as the frame gives it (the UI/UX design R6, UIFIT1).
+  decorators: [storyWidths.wide],
 };
 export default meta;
 

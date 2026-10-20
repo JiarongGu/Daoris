@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { storyWidths } from '../../design/storyWidths';
 import { StandingAnswer } from './StandingAnswer';
 
 // A repository's standing answer on this machine (KNOWUSE1b, D135 §3): the person's words, handed to every session there,
@@ -10,7 +11,8 @@ const meta = {
   title: 'Projects/StandingAnswer',
   component: StandingAnswer,
   args: { repository: 'engine', says: null, onSave: () => {} },
-  decorators: [(Story) => <div className="w-[40rem] max-w-full bg-page p-4"><Story /></div>],
+  // The main area at its wide width, as the frame gives it (the UI/UX design R6, UIFIT1).
+  decorators: [storyWidths.wide],
 } satisfies Meta<typeof StandingAnswer>;
 export default meta;
 
@@ -18,6 +20,12 @@ type Story = StoryObj<typeof meta>;
 
 /** None kept: what one is for, and *Add*. */
 export const None: Story = {};
+
+/** Kept, at the 400 px floor: the words under the row's label. */
+export const KeptNarrow: Story = {
+  args: { says: 'dev writes allowed; test locally against dev; prod only on a yes', at: hoursAgo(26) },
+  decorators: [storyWidths.narrow],
+};
 
 /** Kept, in the person's words, with when they set them: *Edit* and *Clear*. */
 export const Kept: Story = {

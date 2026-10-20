@@ -1,7 +1,8 @@
 import type { CliCommand } from '../platform/types.ts';
 import { LOOK_BOUND_MS, REDIRECTS, commandTool } from '../tools/toolinstall.ts';
 import { isAddress } from '../tools/tools.ts';
-import { releaseFetcher } from '../service/service.ts';
+import { daorisHome } from '../platform/home.ts';
+import { instanceDoor, releaseFetcher } from '../service/service.ts';
 
 export const command: CliCommand = {
   name: 'tool',
@@ -30,6 +31,8 @@ export const command: CliCommand = {
     '                         look                      fetch every location; say what is newer',
   ],
   // TOOLS4: a download and a look reach a maker's host and a resource location through the one module that may
-  // reach a network, handed in here with the address rule every hop is held to, so the tools never hold a socket.
-  run: (args) => commandTool(args, releaseFetcher({ hop: isAddress, redirects: REDIRECTS, bound: LOOK_BOUND_MS })),
+  // reach a network, handed in here with the address rule every hop is held to, so the tools never hold a socket. So is the door
+  // a change goes through (RPC1f): the Tools place's route while Daoris runs on this home, alone under the home's lease when none does.
+  run: (args) => commandTool(args, releaseFetcher({ hop: isAddress, redirects: REDIRECTS, bound: LOOK_BOUND_MS }), process.env,
+    instanceDoor({ home: daorisHome(), write: args.write })),
 };

@@ -2,7 +2,7 @@ import { Fragment, useId, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { figure, stamp } from '../locales/format';
 import { cn } from '../lib/cn';
-import { Button, Card, Icon, Inline, MonoWell, PathText, Prose, Segmented, SelectField, SettingRow, SkeletonRows } from '../design/ui';
+import { Button, Card, Icon, Inline, MonoWell, PathText, Prose, Segmented, SelectField, SettingList, SettingRow, SkeletonRows } from '../design/ui';
 
 /** The process kinds that write a file (D94 §2), in the order the terminal names them. */
 export const LOG_SOURCES = ['desktop', 'host', 'mcp', 'browser', 'driver'] as const;
@@ -210,7 +210,7 @@ export function LogList({ reading, filters, busy, onFilters, onOpenFolder, onRef
       <Prose className="text-small text-ink-soft"><Inline text={t('settings.logs.body')} /></Prose>
 
       {reading?.folder && (
-        <div className="mt-3">
+        <SettingList className="mt-3">
           <SettingRow
             label={t('settings.logs.folder')}
             control={(
@@ -223,7 +223,7 @@ export function LogList({ reading, filters, busy, onFilters, onOpenFolder, onRef
               </>
             )}
           />
-        </div>
+        </SettingList>
       )}
 
       <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-line pt-3">

@@ -7,6 +7,7 @@ import type { LandedBranch, SweepBranch } from '../../settings/Sweep';
 import { SweepList } from '../../settings/Sweep';
 import { SyncSection } from '../../settings/Sync';
 import { chinese } from '../../design/storyLanguage';
+import { storyWidths } from '../../design/storyWidths';
 import type { HistoryPlan } from '../../work/history/history';
 import { WORKSPACE_EMPTY, WORKSPACE_PLAN } from '../../work/history/historyFixtures';
 import { WORKSPACE } from '../../workflow/fixtures';
@@ -306,24 +307,24 @@ export const BranchesManyRepositories: Story = { args: { tab: 'branches', held: 
 /** Branches in 中文: the groups' words, the fold apart and its *纳入*. */
 export const BranchesChinese: Story = { args: { tab: 'branches' }, decorators: [chinese] };
 
-/** The main area at a width: 600 px at a 680 px window, the list a strip beside it, and 400 px, its floor. */
-const mainAt = (width: number): Decorator => (Story) => <div className="flex" style={{ width }}><Story /></div>;
+// The main area at the frame's widths (the UI/UX design R6, UIFIT1): `storyWidths.half` is about 630 px, a 680 px
+// window with the list a strip beside it, and `storyWidths.narrow` the 400 px floor.
 const dark: Decorator = (Story) => <InTheme theme="dark"><Story /></InTheme>;
 
 /** Branches at a 680 px window (UXFIX4): each row's three columns, its long name whole over two lines. */
-export const BranchesAt680: Story = { args: { tab: 'branches' }, decorators: [mainAt(600)] };
+export const BranchesAt680: Story = { args: { tab: 'branches' }, decorators: [storyWidths.half] };
 
 /** The same, in dark. */
-export const BranchesAt680Dark: Story = { args: { tab: 'branches' }, decorators: [mainAt(600), dark] };
+export const BranchesAt680Dark: Story = { args: { tab: 'branches' }, decorators: [storyWidths.half, dark] };
 
 /**
  * Branches at the main area's 400 px floor (UXFIX4): each row's sentence under its name, every name whole; each group's
  * branch names and subjects wrap rather than widen the tab, and the fold apart lays its boxes one to a line (UX6h2b2).
  */
-export const BranchesAtTheFloor: Story = { args: { tab: 'branches' }, decorators: [mainAt(400)] };
+export const BranchesAtTheFloor: Story = { args: { tab: 'branches' }, decorators: [storyWidths.narrow] };
 
 /** The same, in dark. */
-export const BranchesAtTheFloorDark: Story = { args: { tab: 'branches' }, decorators: [mainAt(400), dark] };
+export const BranchesAtTheFloorDark: Story = { args: { tab: 'branches' }, decorators: [storyWidths.narrow, dark] };
 
 /**
  * **Workflow** (WORKFLOW1b, the workflow design §6.1): its Current, its second opinion, its look in `dev` and a branch for
@@ -335,13 +336,25 @@ export const Workflow: Story = { args: { tab: 'workflow' } };
 export const WorkflowChinese: Story = { args: { tab: 'workflow' }, decorators: [chinese] };
 
 /** Workflow at a 680 px window, in dark. */
-export const WorkflowAt680Dark: Story = { args: { tab: 'workflow' }, decorators: [mainAt(600), dark] };
+export const WorkflowAt680Dark: Story = { args: { tab: 'workflow' }, decorators: [storyWidths.half, dark] };
 
 /** Workflow at the main area's 400 px floor. */
-export const WorkflowAtTheFloor: Story = { args: { tab: 'workflow' }, decorators: [mainAt(400)] };
+export const WorkflowAtTheFloor: Story = { args: { tab: 'workflow' }, decorators: [storyWidths.narrow] };
 
 /** Setup at Daoris's defaults: both sections fold, each value marked as Daoris's. */
 export const SetupFolded: Story = { args: { tab: 'setup', wired: false } };
+
+// Setup's open sections at the frame's widths (the UI/UX design R1, R6; UIFIT1): each section's rows on one label track,
+// values beside their words at the half width and under them at the floor. `measured/settings.spec.ts` reads them.
+
+/** Setup with its own values, at the half width. */
+export const SetupOwnHalf: Story = { args: { tab: 'setup', setup: { ...DEFAULTS_OWN, onOpenPlugin: nothing } }, decorators: [storyWidths.half] };
+
+/** Setup with its own values, at the 400 px floor. */
+export const SetupOwnNarrow: Story = { args: { tab: 'setup', setup: { ...DEFAULTS_OWN, onOpenPlugin: nothing } }, decorators: [storyWidths.narrow] };
+
+/** The process defaults open, in 中文, at the half width. */
+export const SetupProcessChineseHalf: Story = { args: { tab: 'setup', wired: false, setup: DEFAULTS_PROCESS_OWN }, decorators: [storyWidths.half, chinese] };
 
 /** Its process at Daoris's defaults (DOORS1b): *Commits* and *Helpers* among the Defaults, each offering *Set for this workspace*. */
 export const SetupProcess: Story = { args: { tab: 'setup', wired: false, setup: { ...DEFAULTS_PROCESS, open: 'defaults' } } };

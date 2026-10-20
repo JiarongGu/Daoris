@@ -200,13 +200,18 @@ function Lack({ lack, why, onDoor, onMode }: {
   );
 }
 
-/** One field of a receipt: its term, and its value. */
+/**
+ * One field of a receipt: its term, and its value. It lays out by its own width, never the window's (R7, UIFIT1): the
+ * value sits beside its term, and under it below 20rem of the field, as the side bar's dock near its 300 px floor gives.
+ */
 function Field({ name, children }: { name: string; children: ReactNode }) {
   const { t } = useTranslation();
   return (
-    <div className="grid min-w-0 grid-cols-[minmax(0,8rem)_minmax(0,1fr)] gap-x-3 max-sm:grid-cols-1">
-      <dt className="text-ink-faint">{t(`help.wired.field.${name}`)}</dt>
-      <dd className="m-0 min-w-0 wrap-anywhere text-ink">{children}</dd>
+    <div className="@container min-w-0">
+      <div className="grid min-w-0 grid-cols-[minmax(0,8rem)_minmax(0,1fr)] gap-x-3 @max-[20rem]:grid-cols-1">
+        <dt className="text-ink-faint">{t(`help.wired.field.${name}`)}</dt>
+        <dd className="m-0 min-w-0 wrap-anywhere text-ink">{children}</dd>
+      </div>
     </div>
   );
 }

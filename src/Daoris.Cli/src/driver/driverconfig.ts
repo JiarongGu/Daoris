@@ -49,6 +49,7 @@ import {
   BRAINSTORM_DEFAULT, applyBrainstormEdit, brainstormListed, brainstormMachineOf, brainstormsOf, type BrainstormEdit, type BrainstormRule,
 } from './brainstorms.ts';
 import { workflowChoicesOf, writtenChoices, type WorkflowChoice } from '../workflows/workflowchoice.ts';
+import { ALONE, DRIVER_ROUTES, type InstanceRoute, type VerbDoor } from '../platform/door.ts';
 import type { CommandArgs } from '../platform/types.ts';
 import type { ExitCode } from '../platform/errors.ts';
 
@@ -968,6 +969,14 @@ function orderedCycles(map: Record<string, Record<string, Cycle>>): Record<strin
   return Object.fromEntries(Object.entries(ordered(map)).map(([owner, kinds]) => [owner, ordered(kinds)]));
 }
 
+/** Whether a route's answer, or a field of it, is an object to read fields from. */
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+/** The `workflow` verbs that write a workflow under the home or choose one in `driver.json` (WORKFLOW1d, WORKFLOW1e). */
+const WORKFLOW_WRITES: ReadonlySet<string> = new Set(['new', 'edit', 'apply', 'import', 'use', 'kind']);
+
 /** No way to read the records was handed in, so a retry that needs them is refused (RETRY1b). */
 const unhanded: RecordsReader = async () => ({ unread: 'this command was handed no way to read them' });
 
@@ -1002,15 +1011,38 @@ const unhandedWorkflows: WorkflowDoor = () => {
  * @param checkouts How the registry's checkouts are read, for `review` to check a procedure in (REVIEWENV1a): handed in the
  * same way. Absent, a rule is written unchecked, and the terminal says so.
  * @param workflows The `workflow` verbs (`workflowdoor.ts`'s `commandWorkflow`), handed in the same way.
+ * @param door Where a change goes (RPC1f, the terminal RPC design §7.2 and §9): the running Daoris's route while one runs on this
+ * home, which its own handler judges, writes and publishes, so a window shows it at once; this verb's own write under the home's
+ * lease where none does, and for a change no route takes. The `driver` row hands in `service.ts`'s; absent, every change is written
+ * here, holding nothing, as before.
  */
 export function commandDriver(
   args: CommandArgs, records: RecordsReader = unhanded, checkouts: CheckoutsReader = uncheckable,
-  workflows: WorkflowDoor = unhandedWorkflows,
+  workflows: WorkflowDoor = unhandedWorkflows, door: VerbDoor = ALONE,
 ): ExitCode | Promise<ExitCode> {
   const { argv, write } = args;
   const verb = argv[0] ?? 'list';
   const path = driverConfigPath();
   const choices = readDriverChoices(path);
+  const what = `driver ${verb}`;
+
+  /**
+   * A change through the door: `route` and `payload` as a window's press sends them, `edit` this verb's own write, and `said` its words,
+   * which both paths print, so the terminal's text is one (§7.3). A route answers the page's shape; `said` reads from it what it needs.
+   */
+  const press = (route: InstanceRoute, payload: unknown, edit: () => void, said: (answer?: unknown) => ExitCode): ExitCode | Promise<ExitCode> =>
+    door({
+      what, route, payload,
+      alone: () => {
+        edit();
+        return said();
+      },
+      words: (answer) => said(answer),
+    });
+
+  /** A change no route takes: this verb's own act, through the door for the home's lease. */
+  const alone = (act: () => ExitCode | Promise<ExitCode>): ExitCode | Promise<ExitCode> =>
+    door({ what, route: null, alone: act, words: () => act() });
 
   switch (verb) {
     case 'list':
@@ -1040,22 +1072,24 @@ export function commandDriver(
       }
 
       const on = direction === 'on';
-      const kept = choices.trees.filter((name) => !sameName(name, repository));
-      writeDriverChoices(path, { ...choices, trees: on ? [...kept, repository] : kept });
+      return press(DRIVER_ROUTES.trees, { repository, ownTree: on }, () => {
+        const kept = choices.trees.filter((name) => !sameName(name, repository));
+        writeDriverChoices(path, { ...choices, trees: on ? [...kept, repository] : kept });
+      }, () => {
+        write(on
+          ? `daoris: sessions in \`${repository}\` open their own worktree (D51).`
+          : `daoris: sessions in \`${repository}\` run in its registered root again.`);
+        if (on) {
+          // TREEDEPS1: npm's dependencies are copied in where the tree's lockfile matches the checkout's.
+          write('  A fresh tree holds nothing git does not track but the npm dependencies copied');
+          write('  from your checkout where the tree\'s lockfile matches — no build outputs, no other');
+          write('  installs — so a session pays the rest of that repository\'s own setup cost per tree.');
+          write('  In exchange, your uncommitted work in the root no longer holds the driver.');
+        }
 
-      write(on
-        ? `daoris: sessions in \`${repository}\` open their own worktree (D51).`
-        : `daoris: sessions in \`${repository}\` run in its registered root again.`);
-      if (on) {
-        // TREEDEPS1: npm's dependencies are copied in where the tree's lockfile matches the checkout's.
-        write('  A fresh tree holds nothing git does not track but the npm dependencies copied');
-        write('  from your checkout where the tree\'s lockfile matches — no build outputs, no other');
-        write('  installs — so a session pays the rest of that repository\'s own setup cost per tree.');
-        write('  In exchange, your uncommitted work in the root no longer holds the driver.');
-      }
-
-      write(`  Written to ${path} — the driver re-reads it every tick, so nothing restarts.`);
-      return 0;
+        write(`  Written to ${path} — the driver re-reads it every tick, so nothing restarts.`);
+        return 0;
+      });
     }
 
     // One flag with two directions, like `trees` and for the same reason. The desktop has a
@@ -1067,18 +1101,18 @@ export function commandDriver(
       }
 
       const on = direction === 'on';
-      writeDriverChoices(path, { ...choices, notify: on });
+      return press(DRIVER_ROUTES.notify, { notify: on }, () => writeDriverChoices(path, { ...choices, notify: on }), () => {
+        write(on
+          ? 'daoris: this machine says so when a session parks or ends without you asking.'
+          : 'daoris: this machine will not interrupt you about sessions.');
+        if (!on) {
+          write('  The records still say everything they said — this is about being TOLD, not about');
+          write('  what is recorded. A parked session waits for you either way.');
+        }
 
-      write(on
-        ? 'daoris: this machine says so when a session parks or ends without you asking.'
-        : 'daoris: this machine will not interrupt you about sessions.');
-      if (!on) {
-        write('  The records still say everything they said — this is about being TOLD, not about');
-        write('  what is recorded. A parked session waits for you either way.');
-      }
-
-      write(`  Written to ${path} — the driver re-reads it every tick, so nothing restarts.`);
-      return 0;
+        write(`  Written to ${path} — the driver re-reads it every tick, so nothing restarts.`);
+        return 0;
+      });
     }
 
     case 'cap': {
@@ -1088,9 +1122,11 @@ export function commandDriver(
           '`driver cap` needs a whole number of concurrent sessions, at least 1 — e.g. `daoris driver cap 3`.');
       }
 
-      writeDriverChoices(path, { ...choices, cap: value });
-      write(`daoris: this machine runs at most ${value} session(s) at once.`);
-      return 0;
+      return alone(() => {
+        writeDriverChoices(path, { ...choices, cap: value });
+        write(`daoris: this machine runs at most ${value} session(s) at once.`);
+        return 0;
+      });
     }
 
     // DRV6. A number rather than on|off, because the useful question is not "should it give up" but
@@ -1103,20 +1139,21 @@ export function commandDriver(
           + 'e.g. `daoris driver strikes 3`, or `0` to never park a quest.');
       }
 
-      writeDriverChoices(path, { ...choices, strikes: value });
-      write(value === 0
-        ? 'daoris: this machine never parks a quest — it keeps trying, as it did before this setting.'
-        : `daoris: a quest is parked after ${value} failed session(s), and waits for you.`);
-      if (value === 0) {
-        write('  🔴 A quest that fails for a reason no retry can fix will be started again every tick,');
-        write('     and every start spends a real login. That is the behaviour this setting exists for.');
-      } else {
-        write('  A failure is a session that ended without landing anything. A stand-down, a decline,');
-        write('  a stop and a held repository are not failures and never count toward this.');
-      }
+      return press(DRIVER_ROUTES.strikes, { strikes: value }, () => writeDriverChoices(path, { ...choices, strikes: value }), () => {
+        write(value === 0
+          ? 'daoris: this machine never parks a quest — it keeps trying, as it did before this setting.'
+          : `daoris: a quest is parked after ${value} failed session(s), and waits for you.`);
+        if (value === 0) {
+          write('  🔴 A quest that fails for a reason no retry can fix will be started again every tick,');
+          write('     and every start spends a real login. That is the behaviour this setting exists for.');
+        } else {
+          write('  A failure is a session that ended without landing anything. A stand-down, a decline,');
+          write('  a stop and a held repository are not failures and never count toward this.');
+        }
 
-      write(`  Written to ${path} — the driver re-reads it every tick, so nothing restarts.`);
-      return 0;
+        write(`  Written to ${path} — the driver re-reads it every tick, so nothing restarts.`);
+        return 0;
+      });
     }
 
     // Not `unpark` or `forgive`: the person is saying "try this again", and the mark records where
@@ -1138,13 +1175,11 @@ export function commandDriver(
             + '(`--at <n>`) — a stop is not a strike, so the two never go together.');
         }
 
-        const key = findName(Object.keys(choices.released), quest) ?? quest;
-        writeDriverChoices(path, { ...choices, released: { ...choices.released, [key]: session } });
-        write(`daoris: quest \`#${quest}\` is released from your stop of session \`${session}\`.`);
-        write('  The driver takes it up again at its next look: a taken quest is carried on in the tree that session');
-        write('  worked in, an open one is planned again. A later stop holds it again.');
-        write(`  Written to ${path} — the driver re-reads it every tick, so nothing restarts.`);
-        return 0;
+        return alone(() => {
+          const key = findName(Object.keys(choices.released), quest) ?? quest;
+          writeDriverChoices(path, { ...choices, released: { ...choices.released, [key]: session } });
+          return released(session);
+        });
       }
 
       // RETRY1b: the mark is the quest's failures as the records count them, which the person may give with `--at`. Without
@@ -1154,11 +1189,7 @@ export function commandDriver(
         // Read again: the records were read over the network, and the driver may have written the file meanwhile.
         const now = counted ? readDriverChoices(path) : choices;
         writeDriverChoices(path, { ...now, forgiven: { ...now.forgiven, [quest]: mark } });
-        write(`daoris: quest \`#${quest}\` may be started again.`);
-        write(`  Counting from ${mark} failure(s)${counted ? ', as this machine\'s records count them' : ''} — what already`);
-        write(`  happened is still in the records, and ${now.strikes || 'no'} more failure(s) will park it again.`);
-        write(`  Written to ${path} — the driver re-reads it every tick, so nothing restarts.`);
-        return 0;
+        return markedSaid(mark, counted, now.strikes);
       };
 
       const at = argv.indexOf('--at');
@@ -1167,21 +1198,50 @@ export function commandDriver(
         if (!Number.isInteger(mark) || mark < 0) {
           throw new DaorisError('`driver retry --at` needs a whole number of failures to count from.');
         }
-        return marked(mark, false);
+        return alone(() => marked(mark, false));
       }
 
-      return records().then((read) => {
-        const failures = 'records' in read ? failuresOf(read.records, quest) : null;
-        if (failures === null) {
-          const why = 'unread' in read ? read.unread : 'the records answered were not a list';
-          const before = choices.forgiven[quest] ?? 0;
-          throw new DaorisError(`cannot count the failures of \`#${quest}\`: this machine's session records could not be read — `
-            + `${why}.\n  Nothing was written. Give the count yourself: \`daoris driver retry ${quest} --at <n>\`, with n the `
-            + `failures its *Sitting* names${before > 0 ? ` plus ${before}, the mark its last retry left` : ''}.\n`
-            + '  The quest\'s page\'s *Try again* counts them for you.');
-        }
-        return marked(failures, true);
+      // While Daoris runs, the quest's *Try again* (RETRY_QUEST): the instance counts from its planner's verdict, which reads the same
+      // records, and marks the quest at its failures or releases the stop that holds it; the answer says which, and its mark.
+      return door({
+        what, route: DRIVER_ROUTES.retry, payload: { quest },
+        alone: () => records().then((read) => {
+          const failures = 'records' in read ? failuresOf(read.records, quest) : null;
+          if (failures === null) {
+            const why = 'unread' in read ? read.unread : 'the records answered were not a list';
+            const before = choices.forgiven[quest] ?? 0;
+            throw new DaorisError(`cannot count the failures of \`#${quest}\`: this machine's session records could not be read — `
+              + `${why}.\n  Nothing was written. Give the count yourself: \`daoris driver retry ${quest} --at <n>\`, with n the `
+              + `failures its *Sitting* names${before > 0 ? ` plus ${before}, the mark its last retry left` : ''}.\n`
+              + '  The quest\'s page\'s *Try again* counts them for you.');
+          }
+          return marked(failures, true);
+        }),
+        words: (answer) => {
+          const state = isRecord(answer) ? answer : {};
+          const retried = isRecord(state.retried) ? state.retried : {};
+          if (retried.did === 'released' && typeof retried.session === 'string') return released(retried.session);
+          const forgiven = isRecord(state.forgiven) ? state.forgiven : {};
+          const mark = forgiven[findName(Object.keys(forgiven), quest) ?? quest];
+          return markedSaid(typeof mark === 'number' ? mark : 0, true, typeof state.strikes === 'number' ? state.strikes : choices.strikes);
+        },
       });
+
+      function released(session: string): ExitCode {
+        write(`daoris: quest \`#${quest}\` is released from your stop of session \`${session}\`.`);
+        write('  The driver takes it up again at its next look: a taken quest is carried on in the tree that session');
+        write('  worked in, an open one is planned again. A later stop holds it again.');
+        write(`  Written to ${path} — the driver re-reads it every tick, so nothing restarts.`);
+        return 0;
+      }
+
+      function markedSaid(mark: number, counted: boolean, strikes: number): ExitCode {
+        write(`daoris: quest \`#${quest}\` may be started again.`);
+        write(`  Counting from ${mark} failure(s)${counted ? ', as this machine\'s records count them' : ''} — what already`);
+        write(`  happened is still in the records, and ${strikes || 'no'} more failure(s) will park it again.`);
+        write(`  Written to ${path} — the driver re-reads it every tick, so nothing restarts.`);
+        return 0;
+      }
     }
 
     // How long one session may run before the driver kills it. A real development turn — the work,
@@ -1195,12 +1255,14 @@ export function commandDriver(
           '`driver timeout` needs a whole number of minutes, at least 1 — e.g. `daoris driver timeout 120`.');
       }
 
-      writeDriverChoices(path, { ...choices, timeoutMinutes: value });
-      write(`daoris: a session on this machine may run ${value} minutes before the driver ends it.`);
-      write('  One that runs out is recorded as failed, and its quest is carried on in the same tree at a');
-      write('  later tick, until the strikes park it.');
-      write(`  Written to ${path} — the driver re-reads it every tick; a session already running keeps its own.`);
-      return 0;
+      return alone(() => {
+        writeDriverChoices(path, { ...choices, timeoutMinutes: value });
+        write(`daoris: a session on this machine may run ${value} minutes before the driver ends it.`);
+        write('  One that runs out is recorded as failed, and its quest is carried on in the same tree at a');
+        write('  later tick, until the strikes park it.');
+        write(`  Written to ${path} — the driver re-reads it every tick; a session already running keeps its own.`);
+        return 0;
+      });
     }
 
     // How long an account cools when its agent hits a limit and names no time this reads (TOOL4e, D125 §2.2). A time the
@@ -1213,11 +1275,12 @@ export function commandDriver(
           + 'cool-off would start a spent account again at every look.');
       }
 
-      writeDriverChoices(path, { ...choices, cooloff: value });
-      write(`daoris: an account whose agent names no time for its limit cools for ${value} minutes on this machine.`);
-      write('  When the agent names when its limit resets, that time is the cool-off, whatever this says.');
-      write(`  Written to ${path} — read at the next limit, so nothing restarts.`);
-      return 0;
+      return press(DRIVER_ROUTES.cooloff, { minutes: value }, () => writeDriverChoices(path, { ...choices, cooloff: value }), () => {
+        write(`daoris: an account whose agent names no time for its limit cools for ${value} minutes on this machine.`);
+        write('  When the agent names when its limit resets, that time is the cool-off, whatever this says.');
+        write(`  Written to ${path} — read at the next limit, so nothing restarts.`);
+        return 0;
+      });
     }
 
     case 'adapter': {
@@ -1225,13 +1288,15 @@ export function commandDriver(
       // Not refused against a list: the driver's adapter set is the driver's, and the CLI naming a
       // shorter list than it has would refuse a harness that actually works. The driver errors
       // naming what exists (D23), which is the answer that comes from the side that knows.
-      writeDriverChoices(path, { ...choices, adapter });
-      write(`daoris: sessions on this machine spawn via \`${adapter}\`.`);
-      if (!(adapter in TOOLCHAINS)) {
-        write('  Daoris manages no toolchain for that name — `daoris agent list` shows the ones it does.');
-      }
+      return alone(() => {
+        writeDriverChoices(path, { ...choices, adapter });
+        write(`daoris: sessions on this machine spawn via \`${adapter}\`.`);
+        if (!(adapter in TOOLCHAINS)) {
+          write('  Daoris manages no toolchain for that name — `daoris agent list` shows the ones it does.');
+        }
 
-      return 0;
+        return 0;
+      });
     }
 
     // Which harness answers an ask with an intake session (INT4b, D65 §1b), or `off`. A NAME rather
@@ -1246,16 +1311,18 @@ export function commandDriver(
       }
 
       const off = agent === 'off';
-      writeDriverChoices(path, { ...choices, helperAdapter: off ? null : agent });
-      write(off
-        ? 'daoris: Ask Daoris runs no agent here — it offers its starters, each a door to the screen that fixes it.'
-        : `daoris: Ask Daoris runs on \`${agent}\`. It reads, and proposes; every change is yours to apply (D89).`);
-      if (!off && !(agent in TOOLCHAINS)) {
-        write('  Daoris manages no toolchain for that name — `daoris agent list` shows the ones it does.');
-      }
+      return press(DRIVER_ROUTES.helper, { adapter: off ? null : agent },
+        () => writeDriverChoices(path, { ...choices, helperAdapter: off ? null : agent }), () => {
+          write(off
+            ? 'daoris: Ask Daoris runs no agent here — it offers its starters, each a door to the screen that fixes it.'
+            : `daoris: Ask Daoris runs on \`${agent}\`. It reads, and proposes; every change is yours to apply (D89).`);
+          if (!off && !(agent in TOOLCHAINS)) {
+            write('  Daoris manages no toolchain for that name — `daoris agent list` shows the ones it does.');
+          }
 
-      write(`  Written to ${path}.`);
-      return 0;
+          write(`  Written to ${path}.`);
+          return 0;
+        });
     }
 
     case 'intake': {
@@ -1267,21 +1334,23 @@ export function commandDriver(
       }
 
       const off = named === 'off';
-      writeDriverChoices(path, { ...choices, intakeAdapter: off ? null : named });
-      if (off) {
-        write('daoris: asks on this machine are answered by declarations only — proposed, never published unasked.');
-        write('  An intake already waiting on you still waits; answering its ask ends it.');
-      } else {
-        write(`daoris: an ask the declarations do not settle opens an intake session via \`${named}\`.`);
-        write('  It reads the workspace\'s declarations, publishes the quests itself, and asks you where they do not');
-        write('  settle it. 🔴 Every intake spends a real login on that harness\'s account.');
-        if (!(named in TOOLCHAINS)) {
-          write('  Daoris manages no toolchain for that name — `daoris agent list` shows the ones it does.');
-        }
-      }
+      return press(DRIVER_ROUTES.intake, { adapter: off ? null : named },
+        () => writeDriverChoices(path, { ...choices, intakeAdapter: off ? null : named }), () => {
+          if (off) {
+            write('daoris: asks on this machine are answered by declarations only — proposed, never published unasked.');
+            write('  An intake already waiting on you still waits; answering its ask ends it.');
+          } else {
+            write(`daoris: an ask the declarations do not settle opens an intake session via \`${named}\`.`);
+            write('  It reads the workspace\'s declarations, publishes the quests itself, and asks you where they do not');
+            write('  settle it. 🔴 Every intake spends a real login on that harness\'s account.');
+            if (!(named in TOOLCHAINS)) {
+              write('  Daoris manages no toolchain for that name — `daoris agent list` shows the ones it does.');
+            }
+          }
 
-      write(`  Written to ${path} — the driver re-reads it every tick, so nothing restarts.`);
-      return 0;
+          write(`  Written to ${path} — the driver re-reads it every tick, so nothing restarts.`);
+          return 0;
+        });
     }
 
     // The line a repository's work grows from and lands on (WSR2) — for one repository, or with
@@ -1304,22 +1373,24 @@ export function commandDriver(
       }
 
       const set = clear ? null : branch!;
-      writeDriverChoices(path, workspace
-        ? { ...choices, workspaceLines: withEntry(choices.workspaceLines, workspace, set) }
-        : { ...choices, lines: withEntry(choices.lines, name, set) });
+      return press(DRIVER_ROUTES.line, { ...(workspace ? { workspace } : { repository: name }), branch: set }, () => {
+        writeDriverChoices(path, workspace
+          ? { ...choices, workspaceLines: withEntry(choices.workspaceLines, workspace, set) }
+          : { ...choices, lines: withEntry(choices.lines, name, set) });
+      }, () => {
+        const whose = workspace ? `repositories in the workspace \`${workspace}\`` : `\`${name}\``;
+        write(set === null
+          ? `daoris: ${whose} take${workspace ? '' : 's'} ${workspace ? 'their' : 'its'} line from `
+            + `${workspace ? 'their own setting or ' : 'its workspace, else '}the checkout again.`
+          : `daoris: work in ${whose} grows from \`${set}\` and lands on it.`);
+        if (set !== null && workspace) {
+          write('  A repository with a line of its own keeps it — `daoris driver line <repository> --clear` hands it back.');
+        }
 
-      const whose = workspace ? `repositories in the workspace \`${workspace}\`` : `\`${name}\``;
-      write(set === null
-        ? `daoris: ${whose} take${workspace ? '' : 's'} ${workspace ? 'their' : 'its'} line from `
-          + `${workspace ? 'their own setting or ' : 'its workspace, else '}the checkout again.`
-        : `daoris: work in ${whose} grows from \`${set}\` and lands on it.`);
-      if (set !== null && workspace) {
-        write('  A repository with a line of its own keeps it — `daoris driver line <repository> --clear` hands it back.');
-      }
-
-      write('  A session already running keeps the line it started from.');
-      write(`  Written to ${path} — the driver re-reads it every tick, so nothing restarts.`);
-      return 0;
+        write('  A session already running keeps the line it started from.');
+        write(`  Written to ${path} — the driver re-reads it every tick, so nothing restarts.`);
+        return 0;
+      });
     }
 
     // How work lands (WSR1, D87) — for one repository, or with `--workspace` for every repository in
@@ -1411,65 +1482,86 @@ export function commandDriver(
       }
 
       const held = workspace ? atName(choices.workspaceLandings, workspace) : atName(choices.landings, name);
-      writeDriverChoices(path, landingEdited(choices, name, workspace, rule, cycle));
+      const edit = () => writeDriverChoices(path, landingEdited(choices, name, workspace, rule, cycle));
+      // SET_LANDING has no field for the cycle and keeps the one the rule holds, as this verb does with neither flag; a cycle set or
+      // taken is this verb's alone. The rule is sent whole, its key and its squash named, as this verb replaces it whole: a route that
+      // kept the standing rule's key or squash would leave what the terminal did not say.
+      const scope = workspace ? { workspace } : { repository: name };
+      return cycle === 'keep'
+        ? press(DRIVER_ROUTES.landing, rule === null ? scope : {
+          ...scope,
+          form: rule.form,
+          ...(rule.pattern !== undefined ? { pattern: rule.pattern } : {}),
+          tidy: rule.tidy === true,
+          ...(rule.plugin !== undefined ? { plugin: rule.plugin } : {}),
+          autoAccept: rule.autoAccept === true,
+          key: rule.key ?? null,
+          squash: rule.squash === true,
+        }, edit, landed)
+        : alone(() => {
+          edit();
+          return landed();
+        });
 
-      const whose = workspace ? `repositories in the workspace \`${workspace}\`` : `\`${name}\``;
-      if (rule === null) {
-        write(`daoris: work in ${whose} lands as ${workspace ? 'each one\'s own rule, else ' : 'its workspace\'s rule, else '}`
-          + 'the merge into its line.');
-      } else if (rule.form === 'merge') {
-        write(`daoris: work in ${whose} is merged into the line when you accept it, in the repository's own checkout.`);
-      } else if (rule.plugin !== undefined) {
-        write(`daoris: work in ${whose} is put on a branch named \`${rule.pattern}\` when you accept it, and then`);
-        write(`  plugin \`${rule.plugin}\` pushes it and opens the pull request, over its wire. Daoris itself never pushes`);
-        write('  (D87, D100): the plugin\'s own process does, signed in as its platform\'s tools are. A plugin that fails');
-        write('  leaves the branch standing, and the review says how to push it yourself.');
-      } else {
-        write(`daoris: work in ${whose} is put on a branch named \`${rule.pattern}\` when you accept it —`);
-        write('  from the session\'s branch, with nothing merged and no checkout touched. You push it and open');
-        write('  the pull request: Daoris never pushes (D87).');
+      function landed(): ExitCode {
+        const whose = workspace ? `repositories in the workspace \`${workspace}\`` : `\`${name}\``;
+        if (rule === null) {
+          write(`daoris: work in ${whose} lands as ${workspace ? 'each one\'s own rule, else ' : 'its workspace\'s rule, else '}`
+            + 'the merge into its line.');
+        } else if (rule.form === 'merge') {
+          write(`daoris: work in ${whose} is merged into the line when you accept it, in the repository's own checkout.`);
+        } else if (rule.plugin !== undefined) {
+          write(`daoris: work in ${whose} is put on a branch named \`${rule.pattern}\` when you accept it, and then`);
+          write(`  plugin \`${rule.plugin}\` pushes it and opens the pull request, over its wire. Daoris itself never pushes`);
+          write('  (D87, D100): the plugin\'s own process does, signed in as its platform\'s tools are. A plugin that fails');
+          write('  leaves the branch standing, and the review says how to push it yourself.');
+        } else {
+          write(`daoris: work in ${whose} is put on a branch named \`${rule.pattern}\` when you accept it —`);
+          write('  from the session\'s branch, with nothing merged and no checkout touched. You push it and open');
+          write('  the pull request: Daoris never pushes (D87).');
+        }
+
+        // What names the branch's ticket, said where the pattern asks for one (PROCESS1b-i).
+        if (rule?.form === 'branch' && rule.pattern?.includes('{ticket}')) write(`  ${ticketSays(rule.key)}`);
+
+        if (rule?.tidy) {
+          write('  Once a press lands the work, its tree and its branch go — only where git proves the work is on a');
+          write('  branch of yours. Without --tidy the tree stays until you discard it.');
+        }
+
+        // The person's standing say-so for a push with no press, said as it is given (D145 point 5, design §6).
+        if (rule?.autoAccept) {
+          write(`  Accept automatically: ${autoAcceptSays(rule.plugin)}`);
+        } else if (rule?.form === 'branch' && argv.includes('--no-auto-accept')) {
+          write('  Done work there waits for your Accept — a repository\'s own rule replaces its workspace\'s whole, the switch with it.');
+        }
+
+        // The first commit Daoris itself makes (PROCESS1b-ii), said with the identity it is made under.
+        if (rule?.squash) {
+          for (const line of SQUASH_SAYS) write(`  ${line}`);
+        } else if (rule?.form === 'branch' && argv.includes('--no-squash')) {
+          write('  The branch holds the session\'s own commits — a repository\'s own rule replaces its workspace\'s whole, the squash with it.');
+        }
+
+        // The cycle (FABRIC-GRAPH1c): set, taken, or kept and judged under the rule as it now stands, since a form that changed under
+        // a cycle keeps it and the driver says one that does not hold (FABRIC-GRAPH1's choice 3).
+        if (typeof cycle === 'object') {
+          write(`  After the landing, its cycle: ${cycleSaid(cycle.set)}.`);
+        } else if (cycle === 'clear') {
+          write('  Its cycle is cleared: the work ends when the line holds it.');
+        } else if (rule !== null && held?.cycle !== undefined) {
+          const [first] = cycleProblems({ form: rule.form, plugin: rule.plugin ?? null }, held.cycle);
+          write(first === undefined ? `  Its cycle is kept: ${cycleSaid(held.cycle)}.`
+            : `  Its cycle is kept as written, and does not hold under this rule: ${first.words}`);
+        }
+
+        if (rule !== null && workspace) {
+          write('  A repository with a rule of its own keeps it — `daoris driver landing <repository> --clear` hands it back.');
+        }
+
+        write(`  Written to ${path} — the review reads it at each press, so nothing restarts.`);
+        return 0;
       }
-
-      // What names the branch's ticket, said where the pattern asks for one (PROCESS1b-i).
-      if (rule?.form === 'branch' && rule.pattern?.includes('{ticket}')) write(`  ${ticketSays(rule.key)}`);
-
-      if (rule?.tidy) {
-        write('  Once a press lands the work, its tree and its branch go — only where git proves the work is on a');
-        write('  branch of yours. Without --tidy the tree stays until you discard it.');
-      }
-
-      // The person's standing say-so for a push with no press, said as it is given (D145 point 5, design §6).
-      if (rule?.autoAccept) {
-        write(`  Accept automatically: ${autoAcceptSays(rule.plugin)}`);
-      } else if (rule?.form === 'branch' && argv.includes('--no-auto-accept')) {
-        write('  Done work there waits for your Accept — a repository\'s own rule replaces its workspace\'s whole, the switch with it.');
-      }
-
-      // The first commit Daoris itself makes (PROCESS1b-ii), said with the identity it is made under.
-      if (rule?.squash) {
-        for (const line of SQUASH_SAYS) write(`  ${line}`);
-      } else if (rule?.form === 'branch' && argv.includes('--no-squash')) {
-        write('  The branch holds the session\'s own commits — a repository\'s own rule replaces its workspace\'s whole, the squash with it.');
-      }
-
-      // The cycle (FABRIC-GRAPH1c): set, taken, or kept and judged under the rule as it now stands, since a form that changed under a
-      // cycle keeps it and the driver says one that does not hold (FABRIC-GRAPH1's choice 3).
-      if (typeof cycle === 'object') {
-        write(`  After the landing, its cycle: ${cycleSaid(cycle.set)}.`);
-      } else if (cycle === 'clear') {
-        write('  Its cycle is cleared: the work ends when the line holds it.');
-      } else if (rule !== null && held?.cycle !== undefined) {
-        const [first] = cycleProblems({ form: rule.form, plugin: rule.plugin ?? null }, held.cycle);
-        write(first === undefined ? `  Its cycle is kept: ${cycleSaid(held.cycle)}.`
-          : `  Its cycle is kept as written, and does not hold under this rule: ${first.words}`);
-      }
-
-      if (rule !== null && workspace) {
-        write('  A repository with a rule of its own keeps it — `daoris driver landing <repository> --clear` hands it back.');
-      }
-
-      write(`  Written to ${path} — the review reads it at each press, so nothing restarts.`);
-      return 0;
     }
 
     // A quest's or an ask's cycle of work (FABRIC-GRAPH1c; the fabric events design §D7's `workCycles`): a whole graph for one kind, for
@@ -1495,16 +1587,18 @@ export function commandDriver(
         if (refused !== null) throw new DaorisError(refused);
       }
 
-      writeDriverChoices(path, workspace
-        ? { ...choices, workspaceWorkCycles: workCycleEdited(choices.workspaceWorkCycles, workspace, kind, cycle) }
-        : { ...choices, workCycles: workCycleEdited(choices.workCycles, owner, kind, cycle) });
-      const unit = kind === 'ask' ? 'an ask' : `a ${kind}`;
-      const where = workspace ? `each repository of the workspace \`${workspace}\` that names none of its own` : `\`${owner}\``;
-      write(cycle !== null
-        ? `daoris: ${unit} in ${where} follows its cycle: ${cycleSaid(cycle, '')}.`
-        : `daoris: ${unit} in ${where} takes ${workspace ? 'none' : 'its workspace\'s cycle'} again${workspace ? '' : ', else none'}.`);
-      write(`  Written to ${path} — the driver re-reads it every tick, so nothing restarts.`);
-      return 0;
+      return alone(() => {
+        writeDriverChoices(path, workspace
+          ? { ...choices, workspaceWorkCycles: workCycleEdited(choices.workspaceWorkCycles, workspace, kind, cycle) }
+          : { ...choices, workCycles: workCycleEdited(choices.workCycles, owner, kind, cycle) });
+        const unit = kind === 'ask' ? 'an ask' : `a ${kind}`;
+        const where = workspace ? `each repository of the workspace \`${workspace}\` that names none of its own` : `\`${owner}\``;
+        write(cycle !== null
+          ? `daoris: ${unit} in ${where} follows its cycle: ${cycleSaid(cycle, '')}.`
+          : `daoris: ${unit} in ${where} takes ${workspace ? 'none' : 'its workspace\'s cycle'} again${workspace ? '' : ', else none'}.`);
+        write(`  Written to ${path} — the driver re-reads it every tick, so nothing restarts.`);
+        return 0;
+      });
     }
 
     // Reading and writing across repositories (READ1, D107). `read` is whether a repository's checkout —
@@ -1529,30 +1623,32 @@ export function commandDriver(
         }
 
         const set = clear ? null : value === 'on';
-        writeDriverChoices(path, workspace
-          ? { ...choices, workspaceReadAcross: withEntry(choices.workspaceReadAcross, workspace, set) }
-          : { ...choices, readAcross: withEntry(choices.readAcross, name, set) });
+        return press(DRIVER_ROUTES.readAcross, { ...(workspace ? { workspace } : { repository: name }), read: set }, () => {
+          writeDriverChoices(path, workspace
+            ? { ...choices, workspaceReadAcross: withEntry(choices.workspaceReadAcross, workspace, set) }
+            : { ...choices, readAcross: withEntry(choices.readAcross, name, set) });
+        }, () => {
+          const whose = workspace ? `each checkout in the workspace \`${workspace}\` that sets none of its own is`
+            : `\`${name}\`'s checkout is`;
+          if (set === null) {
+            write(workspace
+              ? `daoris: checkouts in the workspace \`${workspace}\` are read across again, unless one says otherwise.`
+              : `daoris: \`${name}\` takes its workspace's reading again, else on.`);
+          } else if (set) {
+            write(`daoris: ${whose} read by sessions in its workspace's other repositories and by Ask Daoris —`);
+            write('  its files and `git status` and the branch list, never a write.');
+          } else {
+            write(`daoris: ${whose} read by no agent outside it: no session in another repository, and not Ask Daoris.`);
+          }
 
-        const whose = workspace ? `each checkout in the workspace \`${workspace}\` that sets none of its own is`
-          : `\`${name}\`'s checkout is`;
-        if (set === null) {
-          write(workspace
-            ? `daoris: checkouts in the workspace \`${workspace}\` are read across again, unless one says otherwise.`
-            : `daoris: \`${name}\` takes its workspace's reading again, else on.`);
-        } else if (set) {
-          write(`daoris: ${whose} read by sessions in its workspace's other repositories and by Ask Daoris —`);
-          write('  its files and `git status` and the branch list, never a write.');
-        } else {
-          write(`daoris: ${whose} read by no agent outside it: no session in another repository, and not Ask Daoris.`);
-        }
+          if (set !== null && workspace) {
+            write('  A repository with a setting of its own keeps it — `daoris driver across <repository> read --clear` hands it back.');
+          }
 
-        if (set !== null && workspace) {
-          write('  A repository with a setting of its own keeps it — `daoris driver across <repository> read --clear` hands it back.');
-        }
-
-        write('  A session already running keeps what it started with.');
-        write(`  Written to ${path} — the driver reads it at every start, so nothing restarts.`);
-        return 0;
+          write('  A session already running keeps what it started with.');
+          write(`  Written to ${path} — the driver reads it at every start, so nothing restarts.`);
+          return 0;
+        });
       }
 
       if (what === 'write-to') {
@@ -1563,18 +1659,20 @@ export function commandDriver(
         const problem = writeAcrossProblem(name, value ?? '');
         if (problem !== null) throw new DaorisError(problem);
 
-        writeDriverChoices(path, { ...choices, writeAcross: withTarget(choices.writeAcross, name, value!, !clear) });
-        if (clear) {
-          write(`daoris: sessions in \`${name}\` no longer write into \`${value}\`; a change needed there is a quest again.`);
-        } else {
-          write(`daoris: sessions in \`${name}\` may also write into \`${value}\` — its files, and a commit there —`);
-          write('  where both are in one workspace with a checkout here. This is your standing say-so for writing');
-          write(`  across; it has one direction, so \`${value}\` writes nothing into \`${name}\` unless you declare that too.`);
-          write(`  \`daoris driver across ${name} write-to ${value} --clear\` takes it back.`);
-        }
+        return press(DRIVER_ROUTES.writeAcross, { repository: name, to: value!, allow: !clear },
+          () => writeDriverChoices(path, { ...choices, writeAcross: withTarget(choices.writeAcross, name, value!, !clear) }), () => {
+            if (clear) {
+              write(`daoris: sessions in \`${name}\` no longer write into \`${value}\`; a change needed there is a quest again.`);
+            } else {
+              write(`daoris: sessions in \`${name}\` may also write into \`${value}\` — its files, and a commit there —`);
+              write('  where both are in one workspace with a checkout here. This is your standing say-so for writing');
+              write(`  across; it has one direction, so \`${value}\` writes nothing into \`${name}\` unless you declare that too.`);
+              write(`  \`daoris driver across ${name} write-to ${value} --clear\` takes it back.`);
+            }
 
-        write(`  Written to ${path} — the driver reads it at every start, so nothing restarts.`);
-        return 0;
+            write(`  Written to ${path} — the driver reads it at every start, so nothing restarts.`);
+            return 0;
+          });
       }
 
       throw new DaorisError(
@@ -1601,20 +1699,22 @@ export function commandDriver(
 
       // The repository's spelling first written, when it has one in another case: one entry, never two.
       const key = findName(Object.keys(choices.standing), repository) ?? repository;
-      const rest = Object.fromEntries(Object.entries(choices.standing).filter(([name]) => name !== key));
-      writeDriverChoices(path, { ...choices, standing: clear ? rest : { ...rest, [key]: { says, at: new Date() } } });
+      return press(DRIVER_ROUTES.standing, { repository, says: clear ? null : says }, () => {
+        const rest = Object.fromEntries(Object.entries(choices.standing).filter(([name]) => name !== key));
+        writeDriverChoices(path, { ...choices, standing: clear ? rest : { ...rest, [key]: { says, at: new Date() } } });
+      }, () => {
+        if (clear) {
+          write(`daoris: \`${key}\` keeps no standing answer; its sessions are handed none.`);
+        } else {
+          write(`daoris: every session in \`${key}\` is handed your standing answer, beneath its quest:`);
+          write(`  > ${says}`);
+          write('  A quest\'s own words, and yours on its ask, are newer and win where they differ. It is kept on this');
+          write('  machine and never written into the repository.');
+        }
 
-      if (clear) {
-        write(`daoris: \`${key}\` keeps no standing answer; its sessions are handed none.`);
-      } else {
-        write(`daoris: every session in \`${key}\` is handed your standing answer, beneath its quest:`);
-        write(`  > ${says}`);
-        write('  A quest\'s own words, and yours on its ask, are newer and win where they differ. It is kept on this');
-        write('  machine and never written into the repository.');
-      }
-
-      write(`  Written to ${path} — the driver reads it at every start, so nothing restarts.`);
-      return 0;
+        write(`  Written to ${path} — the driver reads it at every start, so nothing restarts.`);
+        return 0;
+      });
     }
 
     // The session language (LANG1c, D142 point 7): what a repository's sessions — or, with `--workspace`, those of each
@@ -1639,30 +1739,32 @@ export function commandDriver(
       const map = workspace ? choices.workspaceLanguages : choices.languages;
       // The name's spelling first written, when it has one in another case: one entry, never two.
       const key = findName(Object.keys(map), name) ?? name;
-      const rest = Object.fromEntries(Object.entries(map).filter(([each]) => each !== key));
-      const next = code === null ? rest : { ...rest, [key]: code };
-      writeDriverChoices(path, workspace ? { ...choices, workspaceLanguages: next } : { ...choices, languages: next });
-
-      if (code === null) {
-        write(workspace
-          ? `daoris: repositories in the workspace \`${key}\` keep their own session language, else none.`
-          : `daoris: \`${key}\` takes its workspace's session language again, else none.`);
-      } else {
-        write(workspace
-          ? `daoris: sessions in each repository in the workspace \`${key}\` that sets none of its own write to you in `
-            + `${SESSION_LANGUAGES[code]}: their questions, closing notes, decline reasons and last words.`
-          : `daoris: sessions in \`${key}\` write to you in ${SESSION_LANGUAGES[code]}: their questions, closing notes, `
-            + 'decline reasons and last words.');
-        write('  One line in each instruction asks it; code, commands and anything quoted stay as written. The window\'s own');
-        write('  language is Settings → Appearance, and neither sets the other.');
-        if (workspace) {
-          write('  A repository with a language of its own keeps it — `daoris driver language <repository> --clear` hands it back.');
+      return press(DRIVER_ROUTES.language, { ...(workspace ? { workspace } : { repository: name }), language: code }, () => {
+        const rest = Object.fromEntries(Object.entries(map).filter(([each]) => each !== key));
+        const next = code === null ? rest : { ...rest, [key]: code };
+        writeDriverChoices(path, workspace ? { ...choices, workspaceLanguages: next } : { ...choices, languages: next });
+      }, () => {
+        if (code === null) {
+          write(workspace
+            ? `daoris: repositories in the workspace \`${key}\` keep their own session language, else none.`
+            : `daoris: \`${key}\` takes its workspace's session language again, else none.`);
+        } else {
+          write(workspace
+            ? `daoris: sessions in each repository in the workspace \`${key}\` that sets none of its own write to you in `
+              + `${SESSION_LANGUAGES[code]}: their questions, closing notes, decline reasons and last words.`
+            : `daoris: sessions in \`${key}\` write to you in ${SESSION_LANGUAGES[code]}: their questions, closing notes, `
+              + 'decline reasons and last words.');
+          write('  One line in each instruction asks it; code, commands and anything quoted stay as written. The window\'s own');
+          write('  language is Settings → Appearance, and neither sets the other.');
+          if (workspace) {
+            write('  A repository with a language of its own keeps it — `daoris driver language <repository> --clear` hands it back.');
+          }
         }
-      }
 
-      write('  A session already running keeps what it was handed.');
-      write(`  Written to ${path} — the driver reads it at every start, so nothing restarts.`);
-      return 0;
+        write('  A session already running keeps what it was handed.');
+        write(`  Written to ${path} — the driver reads it at every start, so nothing restarts.`);
+        return 0;
+      });
     }
 
     // Where work is reviewed before it is offered to land (REVIEWENV1a, D154 point 2, design §1.7): for a repository, or with
@@ -1700,8 +1802,12 @@ export function commandDriver(
 
     // How work here moves (D157, design §4.7): Current, drawn from the rules as they stand (WORKFLOW1a), and the workflows the
     // person names, each a file of versions beside this one (WORKFLOW1d). The door is handed in (`WorkflowDoor` says why).
-    case 'workflow':
-      return workflows(args, { path, choices, checkouts });
+    // A verb that writes a workflow or chooses one acts under the home's lease (no route takes it); a read (`list`, `show`, `export`, a
+    // `--plan`) holds nothing.
+    case 'workflow': {
+      const run = () => workflows(args, { path, choices, checkouts });
+      return WORKFLOW_WRITES.has(argv[1] ?? '') && !argv.includes('--plan') ? alone(run) : run();
+    }
 
     default:
       throw new DaorisError(
@@ -1987,46 +2093,60 @@ export function commandDriver(
     };
 
     if (edit.put === undefined) {
-      writeDriverChoices(path, { ...choices, ...after });
-      said();
-      write(`  Written to ${path}.`);
-      return 0;
+      return press(DRIVER_ROUTES.review, edit, () => writeDriverChoices(path, { ...choices, ...after }), () => {
+        said();
+        write(`  Written to ${path}.`);
+        return 0;
+      });
     }
 
-    // An environment put: its procedure is looked for in each checkout the rule reaches, before anything is written.
+    // An environment put: its procedure is looked for in each checkout the rule reaches, before anything is written: by this verb
+    // alone, and by the instance's own route while Daoris runs, whose answer says what it found (`reviewed`).
     const procedure = edit.put.procedure!;
-    return checkouts().then((read) => {
-      const notes: string[] = [];
-      if ('unread' in read) {
-        notes.push(`Not checked: the registry could not be read — ${read.unread}; a set-up step sits until its tree holds \`${procedure}\`.`);
-      } else if (!workspace) {
-        const checkout = read.checkouts.find((each) => inScope(each, { repository: name }) && each.root);
-        if (!checkout) {
-          notes.push(`Not checked: \`${key}\` has no checkout on this machine; a set-up step sits until its tree holds \`${procedure}\`.`);
-        } else if (!holdsProcedure(checkout.root!, procedure)) {
-          throw new DaorisError(`\`${procedure}\` is not a file in \`${key}\`'s checkout here — a procedure is a document or a `
-            + 'skill the repository holds, and writing it is that repository\'s own work. Nothing was written.');
-        } else {
-          notes.push(`\`${procedure}\` is in \`${key}\`'s checkout here.`);
-        }
-      } else {
-        const reached = read.checkouts.filter((each) => inScope(each, { workspace: name }) && each.root);
-        const lacking = reached.filter((each) => !holdsProcedure(each.root!, procedure));
-        if (reached.length === 0) {
-          notes.push(`Not checked: no repository of the workspace \`${key}\` has a checkout on this machine.`);
-        } else if (lacking.length === 0) {
-          notes.push(`Every repository of the workspace \`${key}\` with a checkout here holds \`${procedure}\`.`);
-        }
-        for (const each of lacking) notes.push(`\`${each.repository}\` holds no \`${procedure}\` here: its set-up steps sit until it does.`);
-      }
-
-      // Read again: the registry was read over the network, and the driver may have written the file meanwhile.
-      const now = readDriverChoices(path);
-      writeDriverChoices(path, { ...now, ...applyReviewEdit(now, edit) });
+    const noted = (notes: string[]): ExitCode => {
       said();
       for (const note of notes) write(`  ${note}`);
       write(`  Written to ${path}.`);
-      return 0 as ExitCode;
+      return 0;
+    };
+    const found = (reached: boolean, lacking: readonly string[]): string[] => !workspace
+      ? [reached ? `\`${procedure}\` is in \`${key}\`'s checkout here.`
+        : `Not checked: \`${key}\` has no checkout on this machine; a set-up step sits until its tree holds \`${procedure}\`.`]
+      : [
+        ...(!reached ? [`Not checked: no repository of the workspace \`${key}\` has a checkout on this machine.`]
+          : lacking.length === 0 ? [`Every repository of the workspace \`${key}\` with a checkout here holds \`${procedure}\`.`] : []),
+        ...lacking.map((each) => `\`${each}\` holds no \`${procedure}\` here: its set-up steps sit until it does.`),
+      ];
+
+    return door({
+      what, route: DRIVER_ROUTES.review, payload: edit,
+      alone: () => checkouts().then((read) => {
+        let notes: string[];
+        if ('unread' in read) {
+          notes = [`Not checked: the registry could not be read — ${read.unread}; a set-up step sits until its tree holds \`${procedure}\`.`];
+        } else if (!workspace) {
+          const checkout = read.checkouts.find((each) => inScope(each, { repository: name }) && each.root);
+          if (checkout && !holdsProcedure(checkout.root!, procedure)) {
+            throw new DaorisError(`\`${procedure}\` is not a file in \`${key}\`'s checkout here — a procedure is a document or a `
+              + 'skill the repository holds, and writing it is that repository\'s own work. Nothing was written.');
+          }
+          notes = found(checkout !== undefined, []);
+        } else {
+          const reached = read.checkouts.filter((each) => inScope(each, { workspace: name }) && each.root);
+          notes = found(reached.length > 0, reached.filter((each) => !holdsProcedure(each.root!, procedure)).map((each) => each.repository));
+        }
+
+        // Read again: the registry was read over the network, and the driver may have written the file meanwhile.
+        const now = readDriverChoices(path);
+        writeDriverChoices(path, { ...now, ...applyReviewEdit(now, edit) });
+        return noted(notes);
+      }),
+      // The route refuses a repository's checkout that lacks the procedure, in the driver's words, before it writes anything.
+      words: (answer) => {
+        const reviewed = isRecord(answer) && isRecord(answer.reviewed) ? answer.reviewed : {};
+        const lacking = Array.isArray(reviewed.lacking) ? reviewed.lacking.filter((each): each is string => typeof each === 'string') : [];
+        return noted(found(reviewed.unchecked !== true, lacking));
+      },
     });
   }
 
@@ -2035,7 +2155,7 @@ export function commandDriver(
    * what a helper an agent asks for now does here. Nothing starts a helper yet, so it says what is kept and that the rule is read
    * when the driver starts its helper sessions.
    */
-  function helpers(): ExitCode {
+  function helpers(): ExitCode | Promise<ExitCode> {
     const valued = new Set(['--workspace', '--mode', '--agents']);
     const usage = '`driver helpers` needs <repository>|--workspace <name>, then --mode ask|on|off and/or --agents <adapter,adapter>, '
       + 'or --clear — e.g. `daoris driver helpers web-app --mode on --agents codex-acp`.';
@@ -2065,25 +2185,25 @@ export function commandDriver(
       ...(clear ? { clear: true } : {}),
     };
     const after = applyHelperEdit(choices, edit);
-    writeDriverChoices(path, { ...choices, ...after });
+    return press(DRIVER_ROUTES.helpers, edit, () => writeDriverChoices(path, { ...choices, ...after }), () => {
+      const map = workspace ? after.workspaceHelpers : after.helpers;
+      const key = Object.keys(map).find((each) => sameName(each, name))
+        ?? Object.keys(workspace ? choices.workspaceHelpers : choices.helpers).find((each) => sameName(each, name)) ?? name;
+      const rule = map[key];
+      if (rule === undefined) {
+        write(workspace
+          ? `daoris: repositories in the workspace \`${key}\` keep their own helpers rule, else each helper waits for your yes.`
+          : `daoris: \`${key}\` takes its workspace's helpers rule again, else each helper waits for your yes.`);
+      } else {
+        write(workspace
+          ? `daoris: helpers for repositories in the workspace \`${key}\` that set none of their own: ${helperListed(rule)}.`
+          : `daoris: helpers for \`${key}\`: ${helperListed(rule)}.`);
+        write(`  ${helperModeSays(rule.mode)}`);
+      }
 
-    const map = workspace ? after.workspaceHelpers : after.helpers;
-    const key = Object.keys(map).find((each) => sameName(each, name))
-      ?? Object.keys(workspace ? choices.workspaceHelpers : choices.helpers).find((each) => sameName(each, name)) ?? name;
-    const rule = map[key];
-    if (rule === undefined) {
-      write(workspace
-        ? `daoris: repositories in the workspace \`${key}\` keep their own helpers rule, else each helper waits for your yes.`
-        : `daoris: \`${key}\` takes its workspace's helpers rule again, else each helper waits for your yes.`);
-    } else {
-      write(workspace
-        ? `daoris: helpers for repositories in the workspace \`${key}\` that set none of their own: ${helperListed(rule)}.`
-        : `daoris: helpers for \`${key}\`: ${helperListed(rule)}.`);
-      write(`  ${helperModeSays(rule.mode)}`);
-    }
-
-    write(`  Written to ${path}.`);
-    return 0;
+      write(`  Written to ${path}.`);
+      return 0;
+    });
   }
 
   /**
@@ -2091,7 +2211,7 @@ export function commandDriver(
    * person's words made one edit, judged by the twin's table (`brainstorms.ts`), and said plainly. A minute given as anything but
    * digits is handed on as written, to be refused in the driver's words.
    */
-  function brainstorms(): ExitCode {
+  function brainstorms(): ExitCode | Promise<ExitCode> {
     const minuteFlags: Record<string, string> = {
       '--pass-minutes': 'pass', '--synthesis-minutes': 'synthesis', '--challenge-minutes': 'challenge', '--request-minutes': 'request',
     };
@@ -2141,30 +2261,32 @@ export function commandDriver(
       ...(clear ? { clear: true } : {}),
     };
     const after = applyBrainstormEdit(choices, edit);
-    writeDriverChoices(path, { ...choices, ...after });
+    return alone(() => {
+      writeDriverChoices(path, { ...choices, ...after });
 
-    if (!workspace) {
-      write(after.brainstorms === null
-        ? `daoris: this machine's brainstorms take the default again: ${brainstormListed(BRAINSTORM_DEFAULT)}.`
-        : `daoris: brainstorms on this machine: ${brainstormListed(after.brainstorms)}.`);
-    } else {
-      const key = Object.keys(after.workspaceBrainstorms).find((each) => sameName(each, workspace))
-        ?? Object.keys(choices.workspaceBrainstorms).find((each) => sameName(each, workspace)) ?? workspace;
-      const rule = after.workspaceBrainstorms[key];
-      write(rule === undefined
-        ? `daoris: questions about repositories in the workspace \`${key}\` take this machine's brainstorms rule again.`
-        : `daoris: brainstorms for questions about repositories in the workspace \`${key}\`: ${brainstormListed(rule)}.`);
-    }
+      if (!workspace) {
+        write(after.brainstorms === null
+          ? `daoris: this machine's brainstorms take the default again: ${brainstormListed(BRAINSTORM_DEFAULT)}.`
+          : `daoris: brainstorms on this machine: ${brainstormListed(after.brainstorms)}.`);
+      } else {
+        const key = Object.keys(after.workspaceBrainstorms).find((each) => sameName(each, workspace))
+          ?? Object.keys(choices.workspaceBrainstorms).find((each) => sameName(each, workspace)) ?? workspace;
+        const rule = after.workspaceBrainstorms[key];
+        write(rule === undefined
+          ? `daoris: questions about repositories in the workspace \`${key}\` take this machine's brainstorms rule again.`
+          : `daoris: brainstorms for questions about repositories in the workspace \`${key}\`: ${brainstormListed(rule)}.`);
+      }
 
-    write(`  Written to ${path}.`);
-    return 0;
+      write(`  Written to ${path}.`);
+      return 0;
+    });
   }
 
   /**
    * `commits` (PROCESS1a): the person's words made one edit, judged by the twin's table (`commits.ts`), and said plainly: how
    * work is committed here now. Nothing yet tells a session, so it says what is kept and that sessions are told in a later row.
    */
-  function commits(): ExitCode {
+  function commits(): ExitCode | Promise<ExitCode> {
     const valued = new Set(['--workspace', '--mode', '--convention']);
     const usage = '`driver commits` needs <repository>|--workspace <name>, then --mode as-you-go|ask|at-end and/or '
       + '--convention "<your words>" (one paragraph, at most 400 characters) or --no-convention, or --clear — '
@@ -2197,32 +2319,32 @@ export function commandDriver(
       ...(clear ? { clear: true } : {}),
     };
     const after = applyCommitEdit(choices, edit);
-    writeDriverChoices(path, { ...choices, ...after });
+    return press(DRIVER_ROUTES.commits, edit, () => writeDriverChoices(path, { ...choices, ...after }), () => {
+      const map = workspace ? after.workspaceCommits : after.commits;
+      const key = Object.keys(map).find((each) => sameName(each, name))
+        ?? Object.keys(workspace ? choices.workspaceCommits : choices.commits).find((each) => sameName(each, name)) ?? name;
+      const rule = map[key];
+      if (rule === undefined) {
+        write(workspace
+          ? `daoris: repositories in the workspace \`${key}\` keep their own commit rule, else work is committed as it goes.`
+          : `daoris: \`${key}\` takes its workspace's commit rule again, else work is committed as it goes.`);
+      } else {
+        write(workspace
+          ? `daoris: commits for repositories in the workspace \`${key}\` that set none of their own: ${commitListed(rule)}`
+          : `daoris: commits for \`${key}\`: ${commitListed(rule)}`);
+        write(`  ${commitModeSays(rule.mode)}`);
+      }
 
-    const map = workspace ? after.workspaceCommits : after.commits;
-    const key = Object.keys(map).find((each) => sameName(each, name))
-      ?? Object.keys(workspace ? choices.workspaceCommits : choices.commits).find((each) => sameName(each, name)) ?? name;
-    const rule = map[key];
-    if (rule === undefined) {
-      write(workspace
-        ? `daoris: repositories in the workspace \`${key}\` keep their own commit rule, else work is committed as it goes.`
-        : `daoris: \`${key}\` takes its workspace's commit rule again, else work is committed as it goes.`);
-    } else {
-      write(workspace
-        ? `daoris: commits for repositories in the workspace \`${key}\` that set none of their own: ${commitListed(rule)}`
-        : `daoris: commits for \`${key}\`: ${commitListed(rule)}`);
-      write(`  ${commitModeSays(rule.mode)}`);
-    }
-
-    write(`  Written to ${path}.`);
-    return 0;
+      write(`  Written to ${path}.`);
+      return 0;
+    });
   }
 
   /**
    * `opinion` (XAGENT1a): the person's words made one edit, judged by the twin's table (`opinions.ts`), and said in the
    * driver's sentences, the working agent's own family named among the reviewers, then what the gate does with it (XAGENT1f4).
    */
-  function opinion(): ExitCode {
+  function opinion(): ExitCode | Promise<ExitCode> {
     const valued = new Set(['--workspace', '--reviewers', '--on', '--minutes']);
     const switches = new Set(['--required', '--not-required', '--verify', '--no-verify', '--recheck', '--no-recheck', '--clear']);
     const usage = '`driver opinion` needs <repository>|--workspace <name>, then --reviewers <adapter,adapter> [--on landing,steps] '
@@ -2271,44 +2393,49 @@ export function commandDriver(
       ...(clear ? { clear: true } : {}),
     };
     const after = applyOpinionEdit(choices, edit);
-    writeDriverChoices(path, { ...choices, ...after });
+    return press(DRIVER_ROUTES.opinion, edit, () => writeDriverChoices(path, { ...choices, ...after }), () => {
+      const map = workspace ? after.workspaceOpinions : after.opinions;
+      const key = Object.keys(map).find((each) => sameName(each, name))
+        ?? Object.keys(workspace ? choices.workspaceOpinions : choices.opinions).find((each) => sameName(each, name)) ?? name;
+      const rule = map[key];
+      if (clear) {
+        write(workspace
+          ? `daoris: repositories in the workspace \`${key}\` keep their own second-opinion rule, else none.`
+          : `daoris: \`${key}\` takes its workspace's second-opinion rule again, else none.`);
+      } else if (none) {
+        write(`daoris: \`${key}\` declares no second opinion.`);
+      } else if (rule !== undefined && rule !== false) {
+        const named = rule.reviewers.map((each) => `\`${each}\``).join(', else ');
+        write(workspace
+          ? `daoris: second opinions for repositories in the workspace \`${key}\` that set none of their own: ${named}.`
+          : `daoris: second opinions for \`${key}\`: ${named}.`);
+      }
 
-    const map = workspace ? after.workspaceOpinions : after.opinions;
-    const key = Object.keys(map).find((each) => sameName(each, name))
-      ?? Object.keys(workspace ? choices.workspaceOpinions : choices.opinions).find((each) => sameName(each, name)) ?? name;
-    const rule = map[key];
-    if (clear) {
-      write(workspace
-        ? `daoris: repositories in the workspace \`${key}\` keep their own second-opinion rule, else none.`
-        : `daoris: \`${key}\` takes its workspace's second-opinion rule again, else none.`);
-    } else if (none) {
-      write(`daoris: \`${key}\` declares no second opinion.`);
-    } else if (rule !== undefined && rule !== false) {
-      const named = rule.reviewers.map((each) => `\`${each}\``).join(', else ');
-      write(workspace
-        ? `daoris: second opinions for repositories in the workspace \`${key}\` that set none of their own: ${named}.`
-        : `daoris: second opinions for \`${key}\`: ${named}.`);
-    }
+      if (rule !== undefined) {
+        // The working agent is the one this machine's work runs on: a reviewer of its family is no independent reading. A
+        // plugin's agent is judged by what its plugin declares (XAGENT1b2), from the plugins beside the file, as the driver reads them.
+        const sameAgent = rule === false ? [] : sameAgentOf(rule, choices.adapter, readPlugins(homeOf(path, 'driver')));
+        for (const sentence of [...opinionSays(rule, sameAgent), ...opinionGate(rule)]) write(`  ${sentence}`);
+      }
+      if (rule !== undefined && rule !== false && workspace) {
+        write('  A repository with a rule of its own keeps it — `daoris driver opinion <repository> --clear` hands it back.');
+      }
 
-    if (rule !== undefined) {
-      // The working agent is the one this machine's work runs on: a reviewer of its family is no independent reading. A
-      // plugin's agent is judged by what its plugin declares (XAGENT1b2), from the plugins beside the file, as the driver reads them.
-      const sameAgent = rule === false ? [] : sameAgentOf(rule, choices.adapter, readPlugins(homeOf(path, 'driver')));
-      for (const sentence of [...opinionSays(rule, sameAgent), ...opinionGate(rule)]) write(`  ${sentence}`);
-    }
-    if (rule !== undefined && rule !== false && workspace) {
-      write('  A repository with a rule of its own keeps it — `daoris driver opinion <repository> --clear` hands it back.');
-    }
-
-    write(`  Written to ${path}.`);
-    return 0;
+      write(`  Written to ${path}.`);
+      return 0;
+    });
   }
 
-  function toggle(field: 'drivable' | 'holds', repository: string, present: boolean): ExitCode {
-    const kept = choices[field].filter((name) => !sameName(name, repository));
-    const next = present ? [...kept, repository] : kept;
-    writeDriverChoices(path, { ...choices, [field]: next });
+  function toggle(field: 'drivable' | 'holds', repository: string, present: boolean): ExitCode | Promise<ExitCode> {
+    const route = field === 'drivable' ? DRIVER_ROUTES.drivable : DRIVER_ROUTES.hold;
+    const payload = field === 'drivable' ? { repository, drivable: present } : { repository, held: present };
+    return press(route, payload, () => {
+      const kept = choices[field].filter((name) => !sameName(name, repository));
+      writeDriverChoices(path, { ...choices, [field]: present ? [...kept, repository] : kept });
+    }, () => toggled(field, repository, present));
+  }
 
+  function toggled(field: 'drivable' | 'holds', repository: string, present: boolean): ExitCode {
     if (field === 'drivable') {
       write(present
         ? `daoris: this machine may drive \`${repository}\`.`

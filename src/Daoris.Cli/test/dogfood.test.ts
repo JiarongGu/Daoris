@@ -783,8 +783,9 @@ test('agent pin reaches a release channel only through the fetcher the dispatche
   }
 
   const row = readText(join(cliRoot, 'src', 'cli', 'agent.ts'));
-  assert.match(row, /import \{ releaseFetcher \} from '\.\.\/(?:[\w-]+\/)*service\.ts';/);
-  assert.match(row, /run: \(args\) => commandHarness\(args, releaseFetcher\(\)\)/);
+  assert.match(row, /import \{ instanceDoor, releaseFetcher \} from '\.\.\/(?:[\w-]+\/)*service\.ts';/);
+  // RPC1f hands the door an edit goes through after them, the running Daoris's pipe reached through the same module.
+  assert.match(row, /run: \(args\) => commandHarness\(args, releaseFetcher\(\), \['npm'\],\s+process\.env\[PATH_VARIABLE\] \? ALONE : instanceDoor\(/);
 });
 
 /**
@@ -795,15 +796,18 @@ test('agent pin reaches a release channel only through the fetcher the dispatche
  */
 test('tool download reaches a host only through the fetcher the dispatcher hands in, every hop held to the address rule', () => {
   const row = readText(join(cliRoot, 'src', 'cli', 'tool.ts'));
-  assert.match(row, /import \{ releaseFetcher \} from '\.\.\/(?:[\w-]+\/)*service\.ts';/);
+  assert.match(row, /import \{ instanceDoor, releaseFetcher \} from '\.\.\/(?:[\w-]+\/)*service\.ts';/);
   assert.match(row, /import \{ isAddress \} from '\.\.\/(?:[\w-]+\/)*tools\.ts';/);
-  assert.match(row, /run: \(args\) => commandTool\(args, releaseFetcher\(\{ hop: isAddress, redirects: REDIRECTS, bound: LOOK_BOUND_MS \}\)\)/);
+  // RPC1f hands the door a change goes through after them, the running Daoris's pipe reached through the same module.
+  assert.match(row, /run: \(args\) => commandTool\(args, releaseFetcher\(\{ hop: isAddress, redirects: REDIRECTS, bound: LOOK_BOUND_MS \}\), process\.env,\s+instanceDoor\(/);
 
   // The only rows that reach the service client are the ones that say so: a new row reaching it is a decision.
   const reaching = COMMANDS.map((command) => `cli/${command.name}.ts`).filter((entry) => reachableFrom(entry).has(SERVICE_CLIENT));
-  // BRAINSTORM1a3: `brainstorm` reaches this machine's own service, by the local host's brainstorm door (D176 point 8).
+  // BRAINSTORM1a3: `brainstorm` reaches this machine's own service, by the local host's brainstorm door (D176 point 8). RPC1f:
+  // `plugin` reaches the running Daoris's pipe, by the door its row hands in (D171 point 3, the terminal RPC design §9).
   assert.deepEqual(reaching.sort(), [
-    'cli/agent.ts', 'cli/brainstorm.ts', 'cli/connect.ts', 'cli/driver.ts', 'cli/import.ts', 'cli/retire.ts', 'cli/tool.ts', 'cli/wire.ts',
+    'cli/agent.ts', 'cli/brainstorm.ts', 'cli/connect.ts', 'cli/driver.ts', 'cli/import.ts', 'cli/plugin.ts', 'cli/retire.ts', 'cli/tool.ts',
+    'cli/wire.ts',
   ]);
 });
 
@@ -817,9 +821,10 @@ test('tool download reaches a host only through the fetcher the dispatcher hands
  */
 test('driver retry and review read the service only through the readers the dispatcher hands in', () => {
   const row = readText(join(cliRoot, 'src', 'cli', 'driver.ts'));
-  assert.match(row, /import \{ registryCheckouts, sessionRecords \} from '\.\.\/(?:[\w-]+\/)*service\.ts';/);
-  // WORKFLOW1d hands the `workflow` verbs in after them, which read the registry through the same reader.
-  assert.match(row, /run: \(args\) => commandDriver\(args, \(\) => sessionRecords\(\), \(\) => registryCheckouts\(\), \(each, context\) => commandWorkflow\(each, context\)\)/);
+  assert.match(row, /import \{ instanceDoor, registryCheckouts, sessionRecords \} from '\.\.\/(?:[\w-]+\/)*service\.ts';/);
+  // WORKFLOW1d hands the `workflow` verbs in after them, which read the registry through the same reader; RPC1f the door a change
+  // goes through last, the running Daoris's pipe reached through the same module.
+  assert.match(row, /run: \(args\) => commandDriver\(args, \(\) => sessionRecords\(\), \(\) => registryCheckouts\(\), \(each, context\) => commandWorkflow\(each, context\),\s+process\.env\[PATH_VARIABLE\] \? ALONE : instanceDoor\(/);
 });
 
 /**

@@ -24,7 +24,7 @@ Listed first, because nothing below restates their rows: open one of these for w
 | `decisions.md` | each decision's title with its entry's lines, then each dated note with its lines |
 | `outlines/<path>.md` | the declarations or headings of a file over 40 KB, each with its line range |
 
-## Files over 40 KB (195)
+## Files over 40 KB (198)
 
 Each has its outline at `outlines/<its path>.md`: open the outline, then read the range you need, not the file.
 
@@ -41,8 +41,9 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Web/src/app/pushedState.test.tsx` | 57 | 1218 |
 | `src/Daoris.Web/src/data/api.ts` | 51 | 847 |
 | `src/Daoris.Web/src/data/queries.ts` | 47 | 890 |
-| `src/Daoris.Web/src/design/ui.test.tsx` | 48 | 975 |
-| `src/Daoris.Web/src/design/ui.tsx` | 78 | 1678 |
+| `src/Daoris.Web/src/design/tokens.test.ts` | 48 | 856 |
+| `src/Daoris.Web/src/design/ui.test.tsx` | 57 | 1148 |
+| `src/Daoris.Web/src/design/ui.tsx` | 86 | 1836 |
 | `src/Daoris.Web/src/help/AskConversation.tsx` | 53 | 987 |
 | `src/Daoris.Web/src/help/AskDaoris.test.tsx` | 85 | 1716 |
 | `src/Daoris.Web/src/menus/commands.ts` | 40 | 793 |
@@ -150,7 +151,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/Bridge/DriverModuleAccountsTests.cs` | 61 | 1064 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/Bridge/DriverModuleConversationTests.cs` | 52 | 943 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/Bridge/DriverModuleSessionsTests.cs` | 69 | 1162 |
-| `src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/Loop/AttentionStateSliceTests.cs` | 61 | 1121 |
+| `src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/Loop/AttentionStateSliceTests.cs` | 59 | 1090 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/Platform/InstancePipeTests.cs` | 40 | 768 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules/Bridge/Routes/AgentsRoutes.cs` | 45 | 794 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules/Bridge/Routes/HelpRoutes.cs` | 76 | 1290 |
@@ -191,16 +192,18 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 
 | File | KB | Lines |
 |---|---|---|
-| `src/Daoris.Cli/src/agents/toolchain.ts` | 156 | 2989 |
+| `src/Daoris.Cli/src/agents/toolchain.ts` | 163 | 3101 |
 | `src/Daoris.Cli/src/doctrine/materialize.ts` | 47 | 935 |
-| `src/Daoris.Cli/src/driver/driverconfig.ts` | 148 | 2634 |
-| `src/Daoris.Cli/src/plugins/plugins.ts` | 80 | 1550 |
+| `src/Daoris.Cli/src/driver/driverconfig.ts` | 156 | 2761 |
+| `src/Daoris.Cli/src/plugins/plugins.ts` | 82 | 1598 |
+| `src/Daoris.Cli/src/service/service.ts` | 41 | 862 |
 | `src/Daoris.Cli/src/workflows/namedworkflows.ts` | 44 | 882 |
 | `src/Daoris.Cli/src/workflows/workflowdoor.ts` | 50 | 897 |
 | `src/Daoris.Cli/test/agents/toolchain.test.ts` | 110 | 2082 |
 | `src/Daoris.Cli/test/desktop-tool.test.ts` | 46 | 878 |
-| `src/Daoris.Cli/test/dogfood.test.ts` | 48 | 847 |
-| `src/Daoris.Cli/test/driver/driverconfig.test.ts` | 141 | 2577 |
+| `src/Daoris.Cli/test/dogfood.test.ts` | 49 | 852 |
+| `src/Daoris.Cli/test/driver/driverconfig.test.ts` | 153 | 2786 |
+| `src/Daoris.Cli/test/tools/tools.test.ts` | 44 | 752 |
 | `src/Daoris.Cli/test/usage-report.test.ts` | 71 | 1227 |
 | `src/Daoris.Cli/tool-test/desktop-publish.test.ts` | 72 | 1255 |
 | `src/Daoris.Cli/tool-test/merge-branch.test.ts` | 328 | 5055 |
@@ -224,8 +227,8 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 
 | File | KB | Lines |
 |---|---|---|
-| `.claude/knowledge/twins.md` | 107 | 179 |
-| `docs/2026-09-19-platform-ux.md` | 65 | 684 |
+| `.claude/knowledge/twins.md` | 110 | 180 |
+| `docs/2026-09-19-platform-ux.md` | 69 | 720 |
 | `docs/2026-09-21-dsh-evaluation.md` | 43 | 483 |
 | `docs/2026-09-21-working-surface-components.md` | 54 | 354 |
 | `docs/2026-09-25-rev3-review.md` | 51 | 407 |

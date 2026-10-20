@@ -11,8 +11,8 @@ import { Card, SkeletonRows } from '../design/ui';
  */
 export function DomainLoading({ rows = 4 }: { rows?: number }) {
   return (
-    // The card's own margin, so a domain's first card loses it as the card it stands in for would.
-    <div aria-busy="true" className="mt-3.5">
+    // No margin of its own: the domain's container spaces its cards (R1), this one as the card it stands in for.
+    <div aria-busy="true">
       <Card><SkeletonRows rows={rows} /></Card>
     </div>
   );

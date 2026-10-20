@@ -251,7 +251,7 @@ describe("a workspace's review before landing", () => {
     expect(screen.getByText('None: work is offered to land once its quest is done.')).toBeInTheDocument();
     expect(screen.getByText(code(
       'daoris driver review --workspace aurora <environment> --kind local|deployed --procedure <path>|--drop <environment>|--clear'))).toBeInTheDocument();
-    const row = screen.getByText('Review before landing', { selector: 'span' }).closest('.\\@container') as HTMLElement;
+    const row = screen.getByText('Review before landing', { selector: 'span' }).closest('[data-setting-row]') as HTMLElement;
     await userEvent.click(within(row).getByRole('button', { name: 'Set for this workspace' }));
     expect(screen.queryByRole('button', { name: 'None here' })).toBeNull();
     await userEvent.type(screen.getByRole('textbox', { name: "The environment's name for aurora" }), 'dev');
@@ -295,7 +295,7 @@ describe("a workspace's second opinion before landing", () => {
     await userEvent.click(section('Defaults'));
     expect(screen.getByText('None: no other agent reads work here.')).toBeInTheDocument();
     expect(screen.getByText(code('daoris driver opinion --workspace aurora --reviewers <adapter,adapter>|--clear'))).toBeInTheDocument();
-    const row = screen.getByText('Second opinion before landing', { selector: 'span' }).closest('.\\@container') as HTMLElement;
+    const row = screen.getByText('Second opinion before landing', { selector: 'span' }).closest('[data-setting-row]') as HTMLElement;
     await userEvent.click(within(row).getByRole('button', { name: 'Set for this workspace' }));
     expect(screen.queryByRole('button', { name: 'None here' })).toBeNull();
     await userEvent.type(screen.getByRole('textbox', { name: 'Its reviewers for aurora, in the order they are tried' }), 'codex-acp');
@@ -345,7 +345,7 @@ describe("a workspace's commits and helpers", () => {
     expect(screen.getByText(code('daoris driver helpers --workspace aurora --mode ask|on|off --agents <adapter,adapter>|--clear')))
       .toBeInTheDocument();
 
-    const commitRow = screen.getByText('Commits', { selector: 'span' }).closest('.\\@container') as HTMLElement;
+    const commitRow = screen.getByText('Commits', { selector: 'span' }).closest('[data-setting-row]') as HTMLElement;
     expect(commitRow).toHaveTextContent("Each piece that passes its checks is committed as the work goes. Daoris's default: nothing is set.");
     await userEvent.click(within(commitRow).getByRole('button', { name: 'Set for this workspace' }));
     await userEvent.click(within(commitRow).getByRole('radio', { name: 'At the end' }));
@@ -353,7 +353,7 @@ describe("a workspace's commits and helpers", () => {
     await userEvent.click(within(commitRow).getByRole('button', { name: 'Save' }));
     expect(commits).toHaveBeenLastCalledWith({ set: { mode: 'at-end', convention: 'Say why.' } });
 
-    const helperRow = screen.getByText('Helpers', { selector: 'span' }).closest('.\\@container') as HTMLElement;
+    const helperRow = screen.getByText('Helpers', { selector: 'span' }).closest('[data-setting-row]') as HTMLElement;
     expect(helperRow).toHaveTextContent('Each helper an agent asks for waits for your yes.');
     await userEvent.click(within(helperRow).getByRole('button', { name: 'Set for this workspace' }));
     await userEvent.type(within(helperRow).getByRole('textbox', { name: "The agents aurora's sessions may ask, in the order they are tried" }), 'codex-acp');
@@ -370,14 +370,14 @@ describe("a workspace's commits and helpers", () => {
     );
 
     expect(section('Defaults')).toHaveAttribute('aria-expanded', 'true');
-    const commitRow = screen.getByText('Commits', { selector: 'span' }).closest('.\\@container') as HTMLElement;
+    const commitRow = screen.getByText('Commits', { selector: 'span' }).closest('[data-setting-row]') as HTMLElement;
     expect(commitRow).toHaveTextContent(
       'Each commit waits for your yes before it is made. Each session is told how a commit message is written: “Imperative subject.” '
       + 'From the workspace aurora.');
     await userEvent.click(within(commitRow).getByRole('button', { name: 'Clear' }));
     expect(commits).toHaveBeenLastCalledWith({ clear: true });
 
-    const helperRow = screen.getByText('Helpers', { selector: 'span' }).closest('.\\@container') as HTMLElement;
+    const helperRow = screen.getByText('Helpers', { selector: 'span' }).closest('[data-setting-row]') as HTMLElement;
     expect(helperRow).toHaveTextContent('A helper is not offered to a session here: only your own press asks one. From the workspace aurora.');
     await userEvent.click(within(helperRow).getByRole('button', { name: 'Clear' }));
     expect(helpers).toHaveBeenLastCalledWith({ clear: true });
@@ -396,7 +396,7 @@ describe("a workspace's sessions' access", () => {
     { pause: 'goAheads', value: 'named', source: 'default' },
     { pause: 'questions', value: 'claude-code', source: 'default' },
   ];
-  const row = (label: string) => screen.getAllByText(label, { selector: 'span' })[0]!.closest('.\\@container') as HTMLElement;
+  const row = (label: string) => screen.getAllByText(label, { selector: 'span' })[0]!.closest('[data-setting-row]') as HTMLElement;
 
   it('folds after Defaults to each pause marked where it came from, and sets one for the workspace', async () => {
     const onChange = vi.fn();

@@ -1,32 +1,13 @@
-import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   useDriver, usePlugins, useSayUpdate, useSetAccess, useSetCoolOff, useSetNotify, useSetStrikes, useUpdateState,
 } from '../bridge/shell';
 import { useSystemWiring } from '../bridge/system';
-import { Button, Card, CheckField, failure, Icon, PathText, SectionTitle, SettingRow } from '../design/ui';
+import { failure } from '../design/ui';
 import { sentence } from '../locales/format';
-import { accessToast, AccessRows, resolveAccess } from './repository/Access';
+import { DriverCards } from './DriverCards';
+import { accessToast } from './repository/Access';
 import type { SettingsDomainProps } from './domains';
-import { UpdateSection } from './Update';
-
-/**
- * The home's hint for how the home stands to the account's DAORIS_HOME, which a terminal's daoris reads
- * (D105; LEFT1, then LEFT2). Read from the state's `homeAccount` (`InstallHome.AccountOf`), never from the
- * notice's English, which is the host's sentence passed through as it was said.
- *
- * - `same`: a terminal reads this folder, and the hint says so.
- * - `overridden`: this install's own `data/` replaced another the account names; the notice under the row
- *   says which folder a terminal reads, and the hint points there.
- * - `this-start`: DAORIS_HOME was named for this start alone. D105 respects it and writes no notice, so the
- *   hint itself says a terminal does not read this folder.
- *
- * A shell older than the field says nothing of it, and the hint says what it always said.
- */
-const HOME_HINT: Record<string, string> = {
-  overridden: 'settings.home.hintOverridden',
-  'this-start': 'settings.home.hintThisStart',
-};
 
 /**
  * The Driver domain (D75): where this machine's Daoris lives, and the driver's two dials over
@@ -41,6 +22,9 @@ const HOME_HINT: Record<string, string> = {
  * **Where plugins are looked for** is a fact of the home, so it is a row under it since UX6j (D150 §2.3; the plugins
  * design §5), read-only, with the door to the Plugins place: Settings → Plugins retired there, since nothing about a
  * plugin is set here.
+ *
+ * The cards are `DriverCards`, a molecule over the shell's facts, so a story draws the domain at the frame's widths (R6);
+ * this holds the hooks and says each change's toast (`presentational.test.ts`).
  */
 export function DriverDomain({ notify, onGo }: Pick<SettingsDomainProps, 'notify' | 'onGo'>) {
   const { t } = useTranslation();
@@ -55,220 +39,52 @@ export function DriverDomain({ notify, onGo }: Pick<SettingsDomainProps, 'notify
   const wiring = useSystemWiring();
   const placeAnswers = typeof wiring.query.data?.schema === 'number';
   const setNotify = useSetNotify();
-  const setStrikesMutation = useSetStrikes();
-
-  // Held as text while it is being typed: a number input mid-edit passes through the empty string
-  // and through "0", and writing either straight to the config would park nothing while the person
-  // was still reaching for the second digit.
-  const [strikes, setStrikes] = useState<string | null>(null);
-  // The cool-off's minutes as typed (TOOL4g), held as text for the strikes' reason.
-  const setCoolOffMutation = useSetCoolOff();
-  const [coolOff, setCoolOff] = useState<string | null>(null);
+  const setStrikes = useSetStrikes();
+  const setCoolOff = useSetCoolOff();
   // The install's update (UPDATE1b, D139 §6): the query the banner reads, and the same word it says.
   const update = useUpdateState();
   const sayUpdate = useSayUpdate();
   // This machine's sessions' access (AUTONOMY1d, D184 point 1): the default under every workspace's and repository's.
   const setAccess = useSetAccess();
-  const machineAccess = driver.data?.machineAccess;
   const onError = failure(notify);
 
   return (
-    <>
-      {/* 🔴 A setting is a ROW. Every card here used to open with a
-          paragraph and put its one control beneath it, so the first checkbox sat 580px below the
-          title and the next dial a screen further down. `SettingRow` carries the shape now — the
-          label leads, the hint is one line, the control is at the right, the paragraph is on the
-          glyph — and the cards are the sections of one settings page rather than five essays. */}
-
-      {/* The driver's two dials, in one card: that one asks to be TOLD when a driver stops, this one
-          bounds what it spends before anyone is told (D58). The notification switch leads because it
-          is the setting a person is most likely to have come here to change. */}
-      <Card>
-        {/* Where this machine's Daoris lives (D63): the card's first row since D75, where it had
-            floated above the card with no label once the page lost its "This machine" heading. The
-            notice is the shell's own sentence about what the start did, carried in the state rather
-            than only raised: a toast raised before the page subscribed reached nobody. */}
-        {/* The home's page is This Daoris since WIRING1c, and this row is its door (the this-Daoris design §2). A shell that
-            answers no wiring is older than that page, so the row stays as it was: path, hint and the two notices. */}
-        {driver.data?.home && placeAnswers && (
-          <SettingRow
-            label={t('settings.home.label')}
-            hint={t('settings.daoris.door')}
-            control={(
-              <>
-                <PathText path={driver.data.home} className="text-small text-ink-soft" />
-                <Button onClick={() => onGo({ view: 'settings', section: 'wiring' })}>{t('settings.daoris.button.here')}</Button>
-              </>
-            )}
-          />
-        )}
-        {driver.data?.home && !placeAnswers && (
-          <SettingRow
-            label={t('settings.home.label')}
-            why={t(HOME_HINT[driver.data.homeAccount ?? ''] ?? 'settings.home.hint')}
-            control={<PathText path={driver.data.home} className="text-small text-ink-soft" />}
-          >
-            {driver.data.homeNotice && (
-              <p className="border-l-[3px] border-accent bg-page/60 px-3.5 py-2 text-body text-ink-soft">
-                {driver.data.homeNotice}
-              </p>
-            )}
-            {/* The host this window adopted serves another install's page (case study 4d). A
-                standing fact, so a standing line: the toast that carried it fired before this page
-                existed to hear it, which is how the second deployment showed a new window, an old
-                page, and no surface saying so. */}
-            {driver.data.hostNotice && (
-              <p className="mt-2 border-l-[3px] border-warn bg-page/60 px-3.5 py-2 text-body text-ink-soft">
-                {driver.data.hostNotice}
-              </p>
-            )}
-          </SettingRow>
-        )}
-        {pluginsFolder && (
-          <SettingRow
-            label={t('plugin.folder')}
-            hint={t('settings.pluginsFolder.hint')}
-            why={t('plugin.body')}
-            control={(
-              <>
-                <PathText path={pluginsFolder} className="text-small text-ink-faint" />
-                <Button onClick={() => onGo({ view: 'plugins' })}>
-                  <Icon name="plug" size={14} />
-                  {t('settings.pluginsFolder.open')}
-                </Button>
-              </>
-            )}
-          />
-        )}
-        <SettingRow
-          label={t('settings.notify.label')}
-          hint={t('settings.notify.terminal')}
-          why={t('settings.notify.body')}
-          control={(
-            <CheckField
-              hideLabel
-              checked={driver.data?.notify ?? true}
-              onChange={(on) => setNotify.mutate({ notify: on }, {
-                onSuccess: () => notify(t(on ? 'settings.notify.on' : 'settings.notify.off')),
-                onError,
-              })}
-              label={t('settings.notify.label')}
-            />
-          )}
-        />
-
-        <SettingRow
-          label={t('settings.strikes.label')}
-          hint={t('settings.strikes.terminal')}
-          why={t('settings.strikes.body')}
-          control={(
-            /* Sized to what it HOLDS, which is one or two digits. A full-width box for a number reads
-               as a text field somebody forgot. */
-            <input
-              type="number"
-              min={0}
-              max={99}
-              aria-label={t('settings.strikes.label')}
-              value={strikes ?? String(driver.data?.strikes ?? 3)}
-              onChange={(event) => setStrikes(event.target.value)}
-              onBlur={() => {
-                // 🔴 Passing through is not a write (REV3): `Number(null)` and `Number('')` are both 0,
-                // the one value that means "never park". Nothing typed, a cleared box, or the value it
-                // already holds all leave the config alone and put the held value back.
-                const held = driver.data?.strikes ?? 3;
-                const value = strikes === null || strikes.trim() === '' ? held : Number(strikes);
-                if (!Number.isInteger(value) || value < 0 || value === held) {
-                  setStrikes(null);
-                  return;
-                }
-
-                setStrikesMutation.mutate({ strikes: value }, {
-                  onSuccess: () => notify(t(value === 0 ? 'settings.strikes.never' : 'settings.strikes.set', { count: value })),
-                  onError,
-                });
-              }}
-              className="w-[4.5rem] rounded-control border border-line-strong bg-raised px-2.5 py-1 text-right text-body text-ink"
-            />
-          )}
-        >
-          {/* Stated where the zero is, because zero is the one value whose consequence is invisible. */}
-          {Number(strikes ?? driver.data?.strikes ?? 3) === 0 && (
-            <p className="border-l-[3px] border-warn bg-page/60 px-3.5 py-2 text-body text-ink-soft">
-              {t('settings.strikes.zero')}
-            </p>
-          )}
-        </SettingRow>
-
-        {/* How long an account cools when its agent names no reset (TOOL4g, D125 §2.2): offered where the shell says it,
-            since an older shell answers no such field and has no route to write it. */}
-        {typeof driver.data?.coolOff === 'number' && (
-          <SettingRow
-            label={t('settings.cooloff.label')}
-            hint={t('settings.cooloff.terminal')}
-            why={t('settings.cooloff.body')}
-            control={(
-              <span className="inline-flex items-center gap-1.5">
-                <input
-                  type="number"
-                  min={1}
-                  aria-label={t('settings.cooloff.label')}
-                  value={coolOff ?? String(driver.data.coolOff)}
-                  onChange={(event) => setCoolOff(event.target.value)}
-                  onBlur={() => {
-                    // As the strikes: passing through is not a write, and less than a minute is the driver's refusal, so
-                    // a value under one, not whole, or the one it holds puts the held value back.
-                    const held = driver.data?.coolOff ?? 60;
-                    const value = coolOff === null || coolOff.trim() === '' ? held : Number(coolOff);
-                    setCoolOff(null);
-                    if (!Number.isInteger(value) || value < 1 || value === held) return;
-                    setCoolOffMutation.mutate({ minutes: value }, {
-                      onSuccess: () => notify(t('settings.cooloff.set', { count: value })),
-                      onError,
-                    });
-                  }}
-                  className="w-[4.5rem] rounded-control border border-line-strong bg-raised px-2.5 py-1 text-right text-body text-ink"
-                />
-                <span className="text-small text-ink-soft">{t('settings.cooloff.minutes')}</span>
-              </span>
-            )}
-          />
-        )}
-      </Card>
-
-      {/* This machine's sessions' access (AUTONOMY1d, D184 point 1): the level under every workspace's and repository's, whose
-          own are on their Setup tabs. Here because it is the machine's, as the driver's dials are, and offered where the shell
-          answers it, since an older shell has no route to write it. Nothing stands above it, so turning full access off clears it. */}
-      {machineAccess && (
-        <Card>
-          <section aria-label={t('projects.setup.section.access')}>
-            <SectionTitle>{t('projects.setup.section.access')}</SectionTitle>
-            <p className="m-0 mb-2 text-small text-ink-soft">{t('settings.access.machineHint')}</p>
-            <AccessRows
-              owner="machine"
-              pauses={resolveAccess([{ setting: machineAccess, source: 'machine' }])}
-              aboveFull={false}
-              busy={setAccess.isPending}
-              setHere={t('settings.access.setHere.machine')}
-              onChange={(edit, answered) => setAccess.mutate({ machine: true, ...edit }, {
-                onSuccess: () => {
-                  notify(accessToast(t, t('settings.access.thisMachine'), edit, true));
-                  answered?.done();
-                },
-                onError: (error) => (answered ? answered.refused(sentence(error)) : onError(error)),
-              })}
-            />
-          </section>
-        </Card>
-      )}
-
-      {/* The install's update (UPDATE1b): the banner, its other door on the screen, is gone once dismissed, and this
-          stands. Here because the update is the application's own, as the home above is, and holds the driver's starts
-          while it drains. A word the shell refuses is said in its sentence; one it takes is shown by the row itself. */}
-      <UpdateSection
-        update={update.data}
-        busy={sayUpdate.isPending}
-        onSay={(mode) => sayUpdate.mutate(mode, { onError })}
-      />
-    </>
+    <DriverCards
+      facts={{
+        home: driver.data?.home,
+        homeAccount: driver.data?.homeAccount,
+        homeNotice: driver.data?.homeNotice,
+        hostNotice: driver.data?.hostNotice,
+        placeAnswers,
+        pluginsFolder,
+        notify: driver.data?.notify ?? true,
+        strikes: driver.data?.strikes ?? 3,
+        coolOff: driver.data?.coolOff,
+        machineAccess: driver.data?.machineAccess,
+        update: update.data,
+      }}
+      busy={{ access: setAccess.isPending, update: sayUpdate.isPending }}
+      onGo={onGo}
+      onNotify={(on) => setNotify.mutate({ notify: on }, {
+        onSuccess: () => notify(t(on ? 'settings.notify.on' : 'settings.notify.off')),
+        onError,
+      })}
+      onStrikes={(value) => setStrikes.mutate({ strikes: value }, {
+        onSuccess: () => notify(t(value === 0 ? 'settings.strikes.never' : 'settings.strikes.set', { count: value })),
+        onError,
+      })}
+      onCoolOff={(value) => setCoolOff.mutate({ minutes: value }, {
+        onSuccess: () => notify(t('settings.cooloff.set', { count: value })),
+        onError,
+      })}
+      onAccess={(edit, answered) => setAccess.mutate({ machine: true, ...edit }, {
+        onSuccess: () => {
+          notify(accessToast(t, t('settings.access.thisMachine'), edit, true));
+          answered?.done();
+        },
+        onError: (error) => (answered ? answered.refused(sentence(error)) : onError(error)),
+      })}
+      onSayUpdate={(mode) => sayUpdate.mutate(mode, { onError })}
+    />
   );
 }

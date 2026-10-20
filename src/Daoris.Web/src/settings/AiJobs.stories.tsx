@@ -1,4 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { chinese } from '../design/storyLanguage';
+import { storyWidths } from '../design/storyWidths';
 import { AiJobs, type IntakeJob } from './AiJobs';
 import type { StartWiring } from '../map/wiring';
 
@@ -35,7 +37,8 @@ const meta: Meta<typeof AiJobs> = {
   title: 'Settings/AiJobs',
   component: AiJobs,
   args: { search: LEXICAL, intake: intake({}) },
-  decorators: [(Story) => <div className="max-w-4xl"><Story /></div>],
+  // The main area at its wide width, as the frame gives it (the UI/UX design R6, UIFIT1).
+  decorators: [storyWidths.wide],
 };
 export default meta;
 
@@ -43,6 +46,18 @@ type Story = StoryObj<typeof AiJobs>;
 
 /** A machine as it arrives: no embedding model, and asks answered by declarations only. */
 export const NothingNamed: Story = {};
+
+/** The same at the half width, 630 px. */
+export const NothingNamedHalf: Story = { decorators: [storyWidths.half] };
+
+/** The same at the 400 px floor: each value under its words. */
+export const NothingNamedNarrow: Story = { decorators: [storyWidths.narrow] };
+
+/** The same in 中文, wide. */
+export const NothingNamedChinese: Story = { decorators: [chinese] };
+
+/** The same in 中文 at the floor. */
+export const NothingNamedChineseNarrow: Story = { decorators: [storyWidths.narrow, chinese] };
 
 /** A model for search, and an agent for the intake — running as the machine's default account. */
 export const BothJobsOnAModel: Story = {
