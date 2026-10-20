@@ -246,6 +246,14 @@ tidied branch row's. The record head's budget is measured in a rendered browser 
 over `work/AttendedSession.head.stories.tsx`): how far down the main area the conversation starts, with every block of the
 head present, at the three widths and in both languages; D185's MILESTONEUX1 note says what it measured.
 
+The parts and the relations fold likewise (HEADFIT1). `work/head/PartsFold` is one line (*Part 2 of 3*, how the newest began, *Show
+the parts*) that gives way to the flowchart, or to the strip where only the rail fits, on a press, with *Hide the parts* back;
+`SessionRelations` folds itself to what it asked and was asked, with *Show who it worked with*. Each keeps its state in the molecule;
+the page mounts the relations under the session's id and the parts under the line of work's, since a press on a part shows another
+session of the same line and the flow being read must stay open. Accept's plan is drawn in the opened flow only. The head with both
+folded is still over UX7's 200 px, so `head.spec.ts` keeps the budget as an expected failure; D185's HEADFIT1 note says by how much and
+what remains.
+
 ## Running it
 
 The HTTP host requires `DAORIS_HOME` or an explicit `DAORIS_KNOWLEDGE_DB`. Use a development
