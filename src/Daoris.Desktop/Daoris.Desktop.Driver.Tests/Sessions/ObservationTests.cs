@@ -58,6 +58,31 @@ public sealed class ObservationTests
         }
     }
 
+    /// <summary>
+    /// FABRIC-CLOSE1h5 (D173's CLOSELAND1 note): in a closure graph a quest stays taken at its agent's <c>ready</c>, so a session that took
+    /// it and ended there would read as parked, waiting on the person, and never be due. Its submission is its result in: completed, as a
+    /// done is, before a messy exit or a failed turn, a first run's and a carried-on run's alike; a new question still asks first.
+    /// </summary>
+    [Fact]
+    public void A_session_ending_at_its_quests_submission_completes_where_it_would_have_parked()
+    {
+        var parked = Observation.Conclude(0, "Taken", took: true);
+        Assert.Equal("awaiting-person", parked.State);
+
+        foreach (var submitted in new[]
+                 {
+                     Observation.Conclude(0, "Taken", took: true, submitted: true),
+                     Observation.Conclude(0, "Taken", turnFailed: "the connection was reset", submitted: true),
+                     Observation.Resumed(0, "awaiting-person", "Taken", "Taken", took: true, submitted: true),
+                 })
+        {
+            Assert.Equal(("completed", "ended.submitted"), (submitted.State, submitted.Parts![0].Code));
+        }
+
+        Assert.Equal(["ended.submitted", "ended.exit"], Observation.Conclude(3, "Taken", submitted: true).Parts!.Select(part => part.Code));
+        Assert.Equal("ended.awaits", Observation.Conclude(0, "Taken", awaitsAfter: "q9", submitted: true).Parts![0].Code);
+    }
+
     /// <summary>Whose decision a stop was (SURF5b): the person's where the driver gave no reason of its own.</summary>
     [Fact]
     public void A_stop_with_the_drivers_reason_is_the_drivers_and_any_other_the_persons()

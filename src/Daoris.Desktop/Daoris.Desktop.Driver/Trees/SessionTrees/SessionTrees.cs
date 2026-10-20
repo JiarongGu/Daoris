@@ -584,7 +584,7 @@ public sealed class SessionTrees(string home, LandingPlugins? plugins = null) : 
     public Task<TreeLanding> LandAsync(
         string path, LandingSubject subject, CancellationToken ct = default, Func<CancellationToken, Task<IReadOnlySet<string>>>? inUse = null,
         string acceptedBy = AcceptedBy.Person, LandingGate? gate = null, bool joins = false,
-        Func<bool, CancellationToken, Task<TreeLanding?>>? judged = null, Func<bool, CancellationToken, Task<string?>>? beforePush = null) =>
+        Func<bool, CancellationToken, Task<TreeLanding?>>? judged = null, Func<LandedBranch?, bool, CancellationToken, Task<string?>>? beforePush = null) =>
         Lands.LandAsync(path, subject, ct, inUse, acceptedBy, gate, joins, judged: judged, beforePush: beforePush);
 
     /// <inheritdoc cref="EntryLands.JoinAsync"/>
@@ -613,10 +613,16 @@ public sealed class SessionTrees(string home, LandingPlugins? plugins = null) : 
         var lead = EntryAccepts.EntryLead(records, session);
         var named = lead?.Id ?? session;
         var subject = await LandingRules.SubjectAsync(named, lead is null ? quest : lead.Quest, find, opening(named)).ConfigureAwait(false);
-        if (lead is null) return subject;
+        // FABRIC-UNITLINK1, FABRIC-CLOSE1h13: whatever it is named for, the quest this session served and the submission its landing is
+        // made on, as the door's own find read it (each door's find reads a quest once), which the landing's record keeps.
+        var served = quest is null ? null : quest.TrimStart('#');
+        var submission = served is null ? null : (await find(served).ConfigureAwait(false))?.Submission is { } made
+            ? new QuestSubmissionRef(made.Machine, made.Sequence)
+            : null;
+        if (lead is null) return subject with { Served = served, Submission = submission };
         // ACCEPTFOOT2: a conversation's entry is named for its first part's work, not for the part pressed here.
         subject = await Lands.EntryForWorkAsync(subject, lead.Tree, path, ct).ConfigureAwait(false);
-        var joined = await JoinEntryAsync(path, session, subject, ct, process).ConfigureAwait(false);
+        var joined = await JoinEntryAsync(path, session, subject, ct, process).ConfigureAwait(false) with { Served = served, Submission = submission };
         // TREEFOLLOWNAME1: a tree on a branch of its own lands as that branch, so it is named for its own quest, not its entry's first part's.
         if (joined.EntryBranch is null || !await Entries.FollowsOwnAsync(path, ct).ConfigureAwait(false)) return joined;
         return joined.NamedFor(await LandingRules.SubjectAsync(session, quest, find, opening(session)).ConfigureAwait(false));
@@ -760,8 +766,9 @@ public sealed class SessionTrees(string home, LandingPlugins? plugins = null) : 
 
     /// <inheritdoc cref="TreeGates.GateAsync"/>
     public Task<LandingGate> GateAsync(
-        string path, string? quest, IOpinionWorld world, string? session = null, CancellationToken ct = default, WorkflowProcess? process = null) =>
-        Gates.GateAsync(path, quest, world, session, ct, process);
+        string path, string? quest, IOpinionWorld world, string? session = null, CancellationToken ct = default, WorkflowProcess? process = null,
+        string? tip = null) =>
+        Gates.GateAsync(path, quest, world, session, ct, process, tip);
 
     /// <inheritdoc cref="TreeGates.ProcessAsync"/>
     public Task<WorkflowProcess> ProcessAsync(
@@ -830,6 +837,6 @@ public sealed class SessionTrees(string home, LandingPlugins? plugins = null) : 
     /// <inheritdoc cref="TreeHandOffs.HandAsync"/>
     public Task<TreeHand> HandAsync(
         string root, LandedBranch entry, string? plugin = null, CancellationToken ct = default,
-        Func<string, bool, CancellationToken, Task<string?>>? beforePush = null) =>
+        Func<LandedBranch?, bool, CancellationToken, Task<string?>>? beforePush = null) =>
         HandOffs.HandAsync(root, entry, plugin, ct, beforePush);
 }

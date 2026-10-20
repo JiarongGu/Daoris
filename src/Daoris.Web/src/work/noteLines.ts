@@ -41,6 +41,8 @@ export const NOTE_CODES: Readonly<Record<string, NoteCode>> = {
   'ended.answered-unfinished': { values: ['awaits', 'exit'] },
   'ended.carried-unfinished': { values: ['exit'] },
   'ended.done': { values: [] },
+  // CLOSELAND1: a bound session ended at its `ready`, the result in; worded by its status's hint.
+  'ended.submitted': { values: [], key: 'statusHint.Submitted' },
   'ended.declined': { values: [] },
   'ended.stood-down': { values: [] },
   'ended.source-reopened': { values: ['quest'] },

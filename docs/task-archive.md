@@ -17897,3 +17897,45 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **FLOWCHART1a1 — a quest's statuses drawn as a flowchart on its page** (web-shell; D186 accepted 2026-10-20, D187; the flowchart design §2.1, §3, §4). The layout (`design/flowLayout.ts`), the `Flow` component and its stories, the glossary's *flowchart*; on the quest's page a folded section draws the four statuses from `QuestTransitions` (held by a source test), the current one lit, the moves out of it said, the rail at the side bar's floor; a browser too. Proof: `flowLayout.test.ts` and `Flow.test.tsx` (placement at 300/400/544/1200 px, crossings, keys, the reader), the quest's test in en and zh, stories, `i18n:check`, `names:check --strict`; seen on the window at 1546 and 680 px, both themes. Revised 2026-10-20 by another maker's read (DESIGNREAD1): its outcome, proof and trap as the flowchart design's §10 now words them.
 
 **Outcome** 2026-10-20: a quest's page draws its four statuses as a flowchart in a folded *Flowchart* section after the chain: the status it stands at lit, the moves out of each said, held to `QuestTransitions.Allows` by a source test. It is placed left to right, top to bottom or as the rail by the pane's width, with *Show as list*, one Tab stop and its keys, on the new `Flow` primitive (`design/Flow.tsx`, `flowLayout.ts`, `flowInk.ts`), with stories at 300, 400, 544 and 1200 px in both themes and languages, and the glossary's *flowchart* / 流程图. The measured-box check (`npm --prefix src/Daoris.Web run e2e:measured`, 15 checks) locked the hand layout over dagre; its gate is FLOWCHART1e. Seeing it on the window, with a screen reader's pass, follows the republish. Detail: D186's FLOWCHART1a1 note.
+
+## FABRIC-UNITLINK1 — a landing's advance keeps its own quest and unit (2026-10-20, D173, CLOSELAND1)
+
+> - [ ] **FABRIC-UNITLINK1 — a landing's advance keeps its own quest and unit** (driver; after UNIT1a; §D2). A landing carrying several units names only its first session's quest and adds every session to every unit's executors: add `Quest` and `Unit` to `LandedAdvance`, additive, and build each unit's executors and link from its own advance. Proof: `WorkUnitsTests` links each unit to its own quest with no session records; old entries read unchanged.
+
+**Outcome** 2026-10-20: `LandedAdvance` keeps the advancing session's own `Quest` and `Unit` (and `LandedBranch` its `Served`), each written only where known; the branch adapter executes and links each unit of a landing that carries several from its own work, and older landings read as before. Commit 424cf7614. Detail: D173's CLOSELAND1 note.
+
+## FABRIC-CLOSE1h13 — a later session's submission made again since its advance holds a waiting hand-off back (2026-10-20, D173, CLOSELAND1)
+
+> - [ ] **FABRIC-CLOSE1h13 — a later session's submission made again since its advance holds a waiting hand-off back** (driver; after CLOSE1h10). The record keeps no submission per advance, so a later session is judged only on whether its result is in, and work superseded by a new `ready` can ride a person's hand-off. Keep the submission on `LandedAdvance` (old records read as before). Proof: `AutoLanding` Git, s2 readied again at another commit while the hand-off waits: refused, no frame.
+
+**Outcome** 2026-10-20: each advance and landing keeps the submission it was accepted on (machine and sequence), and a person's hand-off holds back a later session whose submission was made again since its advance. Commits 424cf7614 and 513d3910c. Detail: D173's CLOSELAND1 note.
+
+## FABRIC-CLOSE1h11 — an advance's push judged on every session whose work it carries (2026-10-20, D173, CLOSELAND1)
+
+> - [ ] **FABRIC-CLOSE1h11 — an advance's push judged on every session whose work it carries** (driver; after CLOSE1h10; D145, LANDRACE1). An advance's own push (`TreeLands.cs` ~576-616) is judged only on the advancing session's quest, yet it pushes the whole branch at the new tip, carrying an earlier session's held-back work (its first landing unpushed, or advances after `PushedTip`); nothing refuses an advance while the record is `push-held`. Judge the quests of every session whose unpushed work the push carries, by the caller's rule, and say which one stopped it. Contract: D173's FABRIC-CLOSE1h8 and CLOSE1h10 notes. Proof (Git): s1's push held back (its quest reopened), s2 advances with its own result standing: nothing is pushed and the answer names s1's quest; s1's quest standing again: one push carries both.
+
+**Outcome** 2026-10-20: the push's judgement is told the branch's record under its hold: the look's push and hand-on, and the person's press, judge every earlier session whose unpushed work they carry, by the caller's rule, and a stop names the session and its quest. An advance whose earlier work is held back is still made; only its push is held. Commit 513d3910c. Detail: D173's CLOSELAND1 note.
+
+## FABRIC-CLOSE1h16 — the gate at the push judges the branch's pinned tip (2026-10-20, D173, CLOSELAND1)
+
+> - [ ] **FABRIC-CLOSE1h16 — the gate at the push judges the branch's pinned tip** (driver; after CLOSE1h12; low). `TreeGates.GateAsync` reads the tree's HEAD, so commits made on the tree after the branch was made hold a push that does not carry them (safe, but a needless hold). Contract: `LandingGate.Tip` (FABRIC-END7), D173's CLOSE1h12 note. Proof: commits after the branch was made do not hold a push whose gate passes at the branch's tip.
+
+**Outcome** 2026-10-20: the gate at the look's push judges `LandingGate.Tip`, the branch's pinned tip, not the tree's head. Commit 513d3910c. Detail: D173's CLOSELAND1 note.
+
+## FABRIC-CLOSE1h4 — an opinion's and a look's refusal of a submission over real git (2026-10-20, D173, CLOSELAND1)
+
+> - [ ] **FABRIC-CLOSE1h4 — an opinion's and a look's refusal of a submission over real git** (driver; after CLOSE1h; §E5, D155, D154). `OpinionLandingTests` and `ReviewLandingTests` cover only a done: add a disputed opinion and a look's rejection on a bound submission, each released and landing with no Done.
+
+**Outcome** 2026-10-20: a disputed opinion (`OpinionLandingTests`) and a not-yet (`ReviewLandingTests`) on a bound submission are each released and land with no Done, over real git; they passed as written and stand as guards. Commit 89ff2a037. Detail: D173's CLOSELAND1 note.
+
+## FABRIC-CLOSE1h5 — a session ending at `ready` made due through the driver's conclusion (2026-10-20, D173, CLOSELAND1)
+
+> - [ ] **FABRIC-CLOSE1h5 — a session ending at `ready` made due through the driver's conclusion** (driver; after CLOSE1h; §E5). No test drives the three call sites that hand on `QuestResults.Status`. Proof: a `RunningSessionsTests` landing case where a bound quest's session ends at `ready` and its branch lands.
+
+**Outcome** 2026-10-20: confirmed: a session ending at its `ready` parked and was never due. `Observation.Conclude` now reads a current submission as the result being in (`completed`, `ended.submitted`, worded by `statusHint.Submitted`), held by `SubmittedEndTickTests`; the page's note map gained the code at the merge. Commit 89ff2a037 and the FIX-LOG. Detail: D173's CLOSELAND1 note.
+
+## FABRIC-CLOSE1h19 — a done already on its landed branch closes its entry before the opinion gate (2026-10-20, D173, CLOSELAND1)
+
+> - [ ] **FABRIC-CLOSE1h19 — a done already on its landed branch closes its entry before the opinion gate** (driver; after CLOSE1h18; D173's CLOSE1h17 point 4, CLOSE1h18's note point 2). A session concluded again with nothing new, under an opinion rule that never read its work, has its due closed as landed by git, and CLOSE1h17's `Owe(since:)` will not reopen it; if the landing gate still holds `opinion` with nothing to land, the entry waits on the person's ask. Check, before the opinion gate, whether the tree is already on its landed branch, and close the entry `already`. Proof: an `AutoLandingTriesTests` case. (Unverified by its finder: confirm first.)
+
+**Outcome** 2026-10-20: confirmed by a test that failed first (the entry waited as `opinion` with nothing to land): the look now closes such an entry `already` before the gate. Commit 89ff2a037 and the FIX-LOG. Detail: D173's CLOSELAND1 note.

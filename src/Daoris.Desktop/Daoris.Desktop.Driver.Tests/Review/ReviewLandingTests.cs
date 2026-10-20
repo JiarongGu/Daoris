@@ -235,6 +235,48 @@ public sealed class ReviewLandingTests : IDisposable
     }
 
     /// <summary>
+    /// FABRIC-CLOSE1h4 (D173's CLOSELAND1 note; §E5, D154): a bound quest at its agent's submission, never done, under <i>Accept
+    /// automatically</i>. The person's <i>not yet</i> on what its set-up step showed holds the look's landing as <c>unreviewed</c>, and
+    /// nothing is made; once the step shows again and the person reviews that, the first look lands it while the quest stays taken at its
+    /// submission: the landing waits on the unheld submission and writes no Done.
+    /// </summary>
+    [Fact]
+    public async Task A_not_yet_holds_a_bound_submission_and_the_next_set_up_reviewed_lands_it_with_no_done()
+    {
+        var root = await RepositoryAsync("web-app");
+        Configure(new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}", AutoAccept: true), required: true);
+        var tree = await DoneSessionAsync(root, "s1", "q1", due: true, submitted: true);
+        var tip = await HeadAsync(tree);
+        ShowStep(tip);
+        _world.Quests["q2"] = _world.Quests["q2"] with
+        {
+            Verdicts = [new QuestReviewVerdictView(ReviewVerdicts.NotYet) { SetUpMachine = "desk", SetUpSequence = 41, Commit = tip, Words = "the column is empty", At = Verdicted }],
+        };
+
+        Assert.Contains("you said not yet", Assert.Single(await LookAsync()));
+        Assert.Equal(AutoLandingCode.Unreviewed, new AutoLandings(_home).Of("s1")!.Last!.Code);
+        Assert.False(await BranchAsync(root, "feature/q1-fix-the-gap"), "nothing is made while the person's not yet stands");
+
+        _world.Quests["q2"] = _world.Quests["q2"] with
+        {
+            SetUps = [.. _world.Quests["q2"].SetUps, new QuestSetUpView(tip) { Shows = "the column, filled", Session = "s2", Local = true, Machine = "desk", Sequence = 42 }],
+            Held = false,
+            Hold = null,
+            Verdicts =
+            [
+                .. _world.Quests["q2"].Verdicts,
+                new QuestReviewVerdictView(ReviewVerdicts.Reviewed) { SetUpMachine = "desk", SetUpSequence = 42, Commit = tip, At = Verdicted.AddMinutes(5) },
+            ],
+        };
+        Assert.Single(await LookAsync());
+
+        Assert.True(await BranchAsync(root, "feature/q1-fix-the-gap"));
+        Assert.Equal(AutoLandingCode.Landed, new AutoLandings(_home).Of("s1")!.Last!.Code);
+        Assert.Equal(ReviewVerdicts.Reviewed, new LandedBranches(_home).Landing("s1")!.Review!.Said);
+        Assert.True(QuestResults.Submitted(_world.Quests["q1"]), "the landing writes no Done");
+    }
+
+    /// <summary>
     /// FABRIC-END7's review, finding 1: the gate is read again just before the landing, never taken from the look that chose it. A
     /// commit the tree gains after the look chose it is work nobody reviewed: it waits as unreviewed, and nothing is made.
     /// </summary>
@@ -379,17 +421,23 @@ public sealed class ReviewLandingTests : IDisposable
         Assert.True(WorkflowRunBindings.Bind(_home, WorkflowRunBindings.Plan(Config(), _home, "q1", "web-app", "aurora", null, null, [], DateTimeOffset.UtcNow)));
     }
 
-    /// <summary>A session that worked in its own tree and concluded on its quest's done; made due as the conclusion makes it, where asked.</summary>
-    private async Task<string> DoneSessionAsync(string root, string session, string quest, bool due = false)
+    /// <summary>
+    /// A session that worked in its own tree and concluded on its quest's done, or, <paramref name="submitted"/>, at its closure graph's
+    /// submission with the quest still taken (FABRIC-CLOSE1h4, §E5); made due as the conclusion makes it, where asked.
+    /// </summary>
+    private async Task<string> DoneSessionAsync(string root, string session, string quest, bool due = false, bool submitted = false)
     {
         var opened = await new SessionTrees(_home).OpenAsync(root, "web-app", "aurora");
         await CommitAsync(opened.Path, $"{session}.txt", $"the work of {session}", $"the work of {session}");
-        _world.Quests[quest] = new QuestView(quest, "ask #a1", "web-app", "Fix the gap", "Fix it.", "Done");
+        var view = new QuestView(quest, "ask #a1", "web-app", "Fix the gap", "Fix it.", submitted ? "Taken" : "Done");
+        _world.Quests[quest] = submitted
+            ? view with { Closure = "sha256:closure", Submission = new QuestSubmissionView("desk", 1, DateTimeOffset.UtcNow, "ready") }
+            : view;
         _world.Records.Add(new SessionRecord(session, "web-app", "completed") { Quest = quest, Tree = opened.Path, Created = DateTimeOffset.UtcNow });
         if (due)
         {
             Assert.Equal(AutoConcluded.Due, AutoLander.Concluded(_home, Config(), new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions)), session,
-                _world.Quests[quest], "Done", "completed", opened.Path, "aurora"));
+                _world.Quests[quest], QuestResults.Status(_world.Quests[quest]), "completed", opened.Path, "aurora"));
         }
 
         return opened.Path;

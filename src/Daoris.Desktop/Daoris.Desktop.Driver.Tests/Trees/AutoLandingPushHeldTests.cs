@@ -209,8 +209,13 @@ public sealed class AutoLandingPushHeldTests : AutoLandingFixture
     /// back: no plugin is told, nothing is recorded, the answer names `trees hand s2` and the verb exits 1. s2's result standing, held or
     /// not (a hold does not stop the person's own word), pushes the branch once, at its tip.
     /// </summary>
+    /// <remarks>
+    /// FABRIC-CLOSE1h13 (D173's CLOSELAND1 note), the row's proof: s2 readied again at another commit while the hand-off waits holds it
+    /// back too, since s2's advance now keeps the submission it was accepted on, and the branch carries the work that one replaced.
+    /// </remarks>
     [Theory]
     [InlineData("reopened", false)]
+    [InlineData("readied-again", false)]
     [InlineData("held", true)]
     [InlineData("standing", true)]
     public async Task A_hand_off_is_judged_on_the_session_that_moved_its_branch_while_it_waited(string change, bool pushes)
@@ -224,13 +229,15 @@ public sealed class AutoLandingPushHeldTests : AutoLandingFixture
         var door = new LandedBranches(_home).Of("engine", PushBranch)!;
         Assert.Equal("s1", door.LastSession());
         var pressed = await PressQuests.HandedAsync(door, SessionQuestAsync, _world.QuestAsync);
-        await DoneSessionAsync(root, "s2", "q2", parent: "q1", from: $"daoris/{Path.GetFileName(first)}", submitted: true);
+        var second = await DoneSessionAsync(root, "s2", "q2", parent: "q1", from: $"daoris/{Path.GetFileName(first)}", submitted: true);
         Assert.Single(await LookAsync(pushes: false));
         Assert.Equal("s2", new LandedBranches(_home).Of("engine", PushBranch)!.LastSession());
         var was = _world.Quests["q2"];
+        if (change == "readied-again") await CommitAsync(second, "again.txt", "s2's work after its advance", "s2's work after its advance");
         _world.Quests["q2"] = change switch
         {
             "reopened" => was with { Submission = null },
+            "readied-again" => was with { Submission = Made(2) with { Commit = await HeadAsync(second) } },
             "held" => was with { Held = true, Hold = EvidenceCodes.Departed },
             _ => was,
         };
@@ -304,6 +311,58 @@ public sealed class AutoLandingPushHeldTests : AutoLandingFixture
         Assert.Null(entry.Closed);
     }
 
+    // ——— FABRIC-CLOSE1h11: an advance's push judged on every session whose work it carries (D173's CLOSELAND1 note)
+
+    /// <summary>
+    /// The row's proof. s1's push was held back, its quest reopened as the push waited; s2's done then moves s1's branch on with its own
+    /// result standing. The advance's push carries s1's held-back work, so it is judged on s1's quest too: nothing is pushed, no plugin is
+    /// told, s2's entry stays <c>push-held</c>, and the answer names s1's quest. The record keeps each session's quest, unit and
+    /// submission (FABRIC-UNITLINK1, CLOSE1h13). While s1's quest is taken back neither entry hands anything on; once it stands again,
+    /// one push carries both, at s2's tip.
+    /// </summary>
+    [Fact]
+    public async Task An_advance_carrying_an_earlier_sessions_held_back_work_pushes_nothing_until_that_quest_stands_again()
+    {
+        var root = await RepositoryAsync("engine");
+        Rule(new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}", Plugin: Plugin, AutoAccept: true));
+        InstallManifest();
+        var first = await DoneSessionAsync(root, "s1", "q1", submitted: true);
+        await HeldAtThePushAsync(root, quest => quest with { Submission = null });
+        Assert.Equal(AutoLandingCode.PushHeld, new AutoLandings(_home).Of("s1")!.Last!.Code);
+
+        var second = await DoneSessionAsync(root, "s2", "q2", parent: "q1", from: $"daoris/{Path.GetFileName(first)}", submitted: true);
+        var said = await LookAsync();
+
+        Assert.Empty(_frames);
+        var recorded = new LandedBranches(_home).Of("engine", PushBranch)!;
+        Assert.Equal(("s1", "s2", false), (recorded.Session, recorded.LastSession(), recorded.Pushed));
+        Assert.Equal(await HeadAsync(second), recorded.Tip);
+        Assert.Equal(AutoLandingCode.PushHeld, new AutoLandings(_home).Of("s2")!.Last!.Code);
+        Assert.Contains("#q1", Assert.Single(said));
+        Assert.Contains("its push was not tried", said[0]);
+        // FABRIC-UNITLINK1, CLOSE1h13: whose work each is, its unit and the submission it was accepted on.
+        Assert.Equal(("q1", new QuestSubmissionRef("desk", 1)), (recorded.Served, recorded.Submission));
+        var advance = Assert.Single(recorded.Advances);
+        Assert.Equal(("s2", "q2", new QuestSubmissionRef("desk", 1)), (advance.Session, advance.Quest, advance.Submission));
+        Assert.NotNull(advance.Unit);
+        Assert.Equal([recorded.Units[0], advance.Unit], recorded.Units);
+
+        // Taken back, s1's quest holds both: a look hands nothing on and says nothing more.
+        Assert.Empty(await LookAsync());
+        Assert.Empty(_frames);
+
+        _world.Quests["q1"] = _world.Quests["q1"] with { Submission = Made(2) };
+        await LookAsync();
+
+        var frame = Json(Assert.Single(_frames));
+        Assert.Equal(await HeadAsync(second), frame.GetProperty("tip").GetString());
+        Assert.True(new LandedBranches(_home).Of("engine", PushBranch)!.Pushed);
+        Assert.NotNull(new AutoLandings(_home).Of("s1")!.Closed);
+        Assert.NotNull(new AutoLandings(_home).Of("s2")!.Closed);
+        Assert.Empty(await LookAsync());
+        Assert.Single(_frames);
+    }
+
     // ——— FABRIC-CLOSE1h12: the landing's gates judged again at the push and in its recovery (D173's note)
 
     /// <summary>
@@ -346,6 +405,36 @@ public sealed class AutoLandingPushHeldTests : AutoLandingFixture
         Assert.True(new LandedBranches(_home).Landing("s1")!.Pushed);
         Assert.Equal(AutoLandingCode.Landed, new AutoLandings(_home).Of("s1")!.Last!.Code);
         Assert.Equal([$"refs/heads/{PushBranch}"], await FeatureBranchesAsync(root));
+    }
+
+    /// <summary>
+    /// FABRIC-CLOSE1h16 (D173's CLOSELAND1 note): the gate at the push judges the commit the landing was judged and made at
+    /// (<see cref="LandingGate.Tip"/>), not the tree's head. A second opinion settled, or a set-up reviewed, at that commit lets the look's
+    /// landing go; a commit made on the tree while its push waits behind another push of the branch does not ride the push, so it holds
+    /// nothing back: the plugin is told once, at the commit landed.
+    /// </summary>
+    [Theory]
+    [InlineData("opinion")]
+    [InlineData("review")]
+    public async Task A_commit_made_on_the_tree_after_its_branch_does_not_hold_a_push_whose_gate_passes_at_the_branchs_tip(string gate)
+    {
+        var root = await RepositoryAsync("engine");
+        Rule(new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}", Plugin: Plugin, AutoAccept: true));
+        InstallManifest();
+        var tree = await DoneSessionAsync(root, "s1", "q1");
+        var tip = await HeadAsync(tree);
+        Holds(gate, tip);
+        if (gate == "opinion") Settled("op1", tip);
+        else LetsGo(gate, tip);
+
+        var said = await HeldAtThePushAsync(root, () => CommitAsync(tree, "later.txt", "work after the branch", "work after the branch")
+            .GetAwaiter().GetResult());
+
+        var frame = Json(Assert.Single(_frames));
+        Assert.Equal(tip, frame.GetProperty("tip").GetString());
+        Assert.NotEqual(tip, await HeadAsync(tree));
+        Assert.True(new LandedBranches(_home).Landing("s1")!.Pushed, string.Join("\n", said));
+        Assert.Equal(AutoLandingCode.Landed, new AutoLandings(_home).Of("s1")!.Last!.Code);
     }
 
     /// <summary>

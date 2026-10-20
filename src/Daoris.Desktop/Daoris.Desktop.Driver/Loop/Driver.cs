@@ -2050,7 +2050,9 @@ public sealed class Driver(
                                 // carried on with its branch brought up to date.
                                 reopenedFrom: Planner.ReopenedFrom(quest, after),
                                 // BGWAIT1c: the native door's harness ended its own background work with its turn.
-                                backgroundCut: ended.BackgroundCut)
+                                backgroundCut: ended.BackgroundCut,
+                                // FABRIC-CLOSE1h5: a closure graph's submission is its done, so its session is due, never parked.
+                                submitted: QuestResults.Submitted(after))
                             // BGWAIT2: a done this run reached outranks the timeout, as it outranks a messy exit.
                             : Observation.AfterTimeout(config.TimeoutMinutes, quest.Status, status);
 

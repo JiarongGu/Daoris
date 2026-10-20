@@ -74,6 +74,30 @@ public sealed class OwnAcceptSubjectTests : IDisposable
         Assert.Equal((Branch, false), (entered.EntryBranch, entered.Joins));
     }
 
+    /// <summary>
+    /// FABRIC-UNITLINK1 and FABRIC-CLOSE1h13 (D173's CLOSELAND1 note): whatever the landing is named for, the subject keeps the quest the
+    /// session itself served and its current submission as the door read it, which the landing's record keeps: a later part of an entry
+    /// its own, not its first part's; a session alone its own; a conversation none.
+    /// </summary>
+    [Fact]
+    public async Task The_subject_keeps_the_quest_its_session_served_and_its_submission_as_read()
+    {
+        Rule(new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}", AutoAccept: true));
+        _quests["q2"] = _quests["q2"] with { Status = "Taken", Closure = "sha256:closure", Submission = new QuestSubmissionView("desk", 43, null, "ready") };
+
+        var later = await SubjectAsync("s2", "q2", Entry());
+        var first = await SubjectAsync("s1", "q1", Entry());
+        var alone = await SubjectAsync("s3", "q3", []);
+        var chat = await new SessionTrees(_home).OwnSubjectAsync(
+            DaorisHome.Entry(_home, HomeEntry.Trees, "aurora", "engine", "a1b2c3d4"), "s5", null, [], _ => Task.FromResult<QuestView?>(null),
+            _ => "tidy the docs", process: null);
+
+        Assert.Equal(("q1", "q2", new QuestSubmissionRef("desk", 43)), (later.Quest, later.Served, later.Submission));
+        Assert.Equal(("q1", "q1", (QuestSubmissionRef?)null), (first.Quest, first.Served, first.Submission));
+        Assert.Equal(("q3", "q3", (QuestSubmissionRef?)null), (alone.Quest, alone.Served, alone.Submission));
+        Assert.Equal(((string?)null, (QuestSubmissionRef?)null), (chat.Served, chat.Submission));
+    }
+
     private static List<SessionRecord> Entry() => [Record("s2", "ask:a3/engine", "q2", 2), Record("s1", "ask:a3/engine", "q1", 1)];
 
     private static SessionRecord Record(string id, string entry, string quest, int minute) =>

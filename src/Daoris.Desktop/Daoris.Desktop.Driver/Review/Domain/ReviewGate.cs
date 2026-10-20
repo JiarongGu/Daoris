@@ -446,9 +446,13 @@ public static class ReviewGate
     /// The run's process (WORKFLOW1f, <see cref="WorkflowProcesses"/>), read once by the door for every part of the gate: under a
     /// named workflow, rows 5 and 6 are its version's look. Null reads the rule live, as every gate did before.
     /// </param>
+    /// <param name="at">
+    /// The commit to judge the work at (FABRIC-CLOSE1h16): a landing's push passes the one its branch was made at, so a commit made on the
+    /// tree after it holds nothing back. Null reads the tree's <c>HEAD</c>, as before.
+    /// </param>
     public static async Task<ReviewGateState> ReadAsync(
         IReviewWorld world, DriverConfig config, string tree, string repository, string workspace, string? quest, CancellationToken ct = default,
-        WorkflowProcess? process = null)
+        WorkflowProcess? process = null, string? at = null)
     {
         var rule = process is null ? ReviewRules.Resolve(config, repository, workspace) : process.Review;
         var look = process?.Look;
@@ -473,7 +477,7 @@ public static class ReviewGate
         }
 
         // Git is asked only where a review is asked: a landing no review touches costs no process.
-        var tip = decision.Reviews ? await ReviewGit.HeadAsync(tree, ct).ConfigureAwait(false) : null;
+        var tip = decision.Reviews ? at ?? await ReviewGit.HeadAsync(tree, ct).ConfigureAwait(false) : null;
         return await JudgeAsync(decision, tip, commit => ReviewGit.HoldsAsync(tree, tip!, commit, ct)).ConfigureAwait(false);
     }
 }

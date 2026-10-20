@@ -210,6 +210,16 @@ public sealed class AutoLander(
         var (tip, status, uncommitted) = await ReadTreeAsync(entry.Tree, ct).ConfigureAwait(false);
         if (!AutoLandingRules.ShouldTry(entry, tip, status)) return (null, null);
 
+        // FABRIC-CLOSE1h19 (D173's CLOSELAND1 note): a session concluded again with nothing new is already on the branch its landing made,
+        // so it closes `already` here, before the gate: an opinion its rule never read would hold an entry with nothing to land, owed by
+        // nobody (its due closed as landed by git at once, CLOSE1h18, and not owed again, CLOSE1h17). D88's proof, read only where a
+        // standing landing names the session, as words that went on (D137) or a later `ready` leave it, and the tree holds nothing uncommitted.
+        if (uncommitted == 0 && trees.Recorded.Landing(entry.Session) is { GoneAt: null } made
+            && await trees.UnlandedHereAsync(entry.Tree, ct).ConfigureAwait(false) == 0)
+        {
+            return (Closed(entry, AutoLandingCode.Already, branch: made.Branch), null);
+        }
+
         // The landing gate, read once (XAGENT1f, the second-agent design §7), with the process read above (WORKFLOW1f), by the one
         // helper the push and a push held back's recovery read it with (FABRIC-CLOSE1h12). Its first part that holds, in §7's order:
         var (gate, held, line) = await GateAsync(entry, entry.Session, entry.Quest, entry.Tree, world, ct, process).ConfigureAwait(false);
@@ -335,7 +345,7 @@ public sealed class AutoLander(
                 judgedAgain = await UnderHoldAsync(choice, waited, token).ConfigureAwait(false);
                 return judgedAgain is null ? null : new TreeLanding(false, judgedAgain) { Refusal = AutoLandingCode.Refused };
             },
-            beforePush: (waited, token) => BeforePushAsync(choice, entry.Session, waited, token)).ConfigureAwait(false);
+            beforePush: (record, waited, token) => BeforePushAsync(choice, record, waited, token)).ConfigureAwait(false);
         // Judged again under the tree's hold and refused there: what that judgement kept is the try, so nothing more is kept for it.
         if (judgedAgain is not null) return judgedAgain;
         var code = AutoLandingRules.CodeOf(landed);
@@ -370,44 +380,92 @@ public sealed class AutoLander(
     /// for a hold, a reopen or a later submission. A closure graph's submission is read every time; a plain done only where the push
     /// waited behind another push of its branch, so a landing that waited for nothing reads nothing more (LANDGIT1's counts stand).
     /// </summary>
-    /// <param name="last">
-    /// The session that last moved the branch, as its record reads under the branch's hold (FABRIC-CLOSE1h10, D173's note): another than
-    /// the choice's where a later session's done moved it on since the look chose it, and then that session's quest is judged instead, read
-    /// every time, by the same rule (taken back or held stops the push). The landing's own push passes the choice's session.
+    /// <param name="landing">
+    /// The branch's record as it reads under the branch's hold, null where none was recorded. Its last session (FABRIC-CLOSE1h10, D173's
+    /// note) is another than the choice's where a later session's done moved it on since the look chose it, and then that session's quest
+    /// is judged instead, read every time, by the same rule (taken back or held stops the push). FABRIC-CLOSE1h11 (D173's CLOSELAND1
+    /// note): every earlier session whose work the push carries unpushed is judged too, on its quest alone, read every time.
     /// </param>
     /// <returns>Why the push is held back, as the landing's sentence says it; null where it goes on.</returns>
     /// <remarks>
     /// FABRIC-CLOSE1h12 (D173's note): where the quest is read again, and stands, the landing's gate is read again too, for the same
     /// session, its quest and its tree (<see cref="GateAsync"/>), so an opinion, a review or the run's workflow that started holding
     /// after the look chose the landing holds its push back as a hold does. The review's own <c>unreviewed</c> hold is the gate's to
-    /// judge, read here. Where the quest is not read again, neither is the gate, so an uncontended landing of a plain done reads nothing more.
+    /// judge, read here. Where the quest is not read again, neither is the gate, so an uncontended landing of a plain done reads nothing
+    /// more, unless its push carries an earlier session's unpushed work. An earlier session's gate is not read again: its work went by its
+    /// gate when it landed, and the pushing session's gate reads its chain's work.
     /// </remarks>
-    private async Task<string?> BeforePushAsync(AutoChoice choice, string last, bool waited, CancellationToken ct)
+    private async Task<string?> BeforePushAsync(AutoChoice choice, LandedBranch? landing, bool waited, CancellationToken ct)
     {
         var entry = choice.Entry;
+        var last = landing?.LastSession() ?? entry.Session;
         var later = !string.Equals(last, entry.Session, StringComparison.OrdinalIgnoreCase);
-        if (!later && !waited && !QuestResults.Submitted(choice.Quest)) return null;
+        var earlier = Earlier(landing, entry.Session, last);
+        if (!later && earlier.Count == 0 && !waited && !QuestResults.Submitted(choice.Quest)) return null;
         var fresh = world.Again();
-        // A later session on no quest holds the push to nothing, as at the person's door: its work landed by the person's own press.
-        var record = later ? RecordOf(await fresh.RecordsAsync(ct).ConfigureAwait(false), last) : null;
-        if ((later ? record?.Quest : entry.Quest) is not { } id) return null;
-        var quest = await fresh.QuestAsync(id, ct).ConfigureAwait(false);
-        var why = !QuestResults.Judged(quest) ? "its quest was taken back"
-            : !later && !QuestResults.Same(choice.Quest, quest) ? "its quest's submission was made again"
-            : quest is { Held: true } && quest.Hold != EvidenceCodes.Unreviewed ? "its quest was held for your yes"
-            : null;
-        if (why is not null)
+        IReadOnlyList<SessionRecord>? records = null;
+        async Task<SessionRecord?> RecordAsync(string session) =>
+            RecordOf(records ??= await fresh.RecordsAsync(ct).ConfigureAwait(false), session);
+
+        if (later || waited || QuestResults.Submitted(choice.Quest))
         {
-            return $"{why} before its plugin was told, so its push was not tried: the branch stands, and the first look once its quest stands "
-                + $"again hands it on, or `daoris-driver trees hand {last}` does now";
+            // A later session on no quest holds the push to nothing, as at the person's door: its work landed by the person's own press.
+            var record = later ? await RecordAsync(last).ConfigureAwait(false) : null;
+            if ((later ? record?.Quest : entry.Quest) is { } id)
+            {
+                var quest = await fresh.QuestAsync(id, ct).ConfigureAwait(false);
+                var why = !QuestResults.Judged(quest) ? "its quest was taken back"
+                    : !later && !QuestResults.Same(choice.Quest, quest) ? "its quest's submission was made again"
+                    : quest is { Held: true } && quest.Hold != EvidenceCodes.Unreviewed ? "its quest was held for your yes"
+                    : null;
+                if (why is not null)
+                {
+                    return $"{why} before its plugin was told, so its push was not tried: the branch stands, and the first look once its quest "
+                        + $"stands again hands it on, or `daoris-driver trees hand {last}` does now";
+                }
+
+                // FABRIC-CLOSE1h16: the choice's own work is judged at the commit its branch was judged and made at (LandingGate.Tip, the
+                // try's tip for a hand-on), so a commit made on its tree since, which this push does not carry, holds nothing back. A later
+                // session's tree is read at its head, as before.
+                var (_, held, line) = await GateAsync(entry, last, id, record?.Tree ?? entry.Tree, fresh, ct, tip: later ? null : choice.Gate?.Tip ?? choice.Tip)
+                    .ConfigureAwait(false);
+                if (held is not null)
+                {
+                    if (line is not null) log?.Invoke(line);
+                    return "its landing's gate held it before its plugin was told, so its push was not tried: the branch stands, and the first "
+                        + $"look once the gate lets it go hands it on, or `daoris-driver trees hand {last}` does now. {held.Message}";
+                }
+            }
         }
 
-        var (_, held, line) = await GateAsync(entry, last, id, record?.Tree ?? entry.Tree, fresh, ct).ConfigureAwait(false);
-        if (held is null) return null;
-        if (line is not null) log?.Invoke(line);
-        return "its landing's gate held it before its plugin was told, so its push was not tried: the branch stands, and the first look "
-            + $"once the gate lets it go hands it on, or `daoris-driver trees hand {last}` does now. {held.Message}";
+        // FABRIC-CLOSE1h11: the earlier sessions' work this push carries, which no push carried yet (an earlier landing's push held back,
+        // or advances after the commit last pushed), each by the look's rule on its quest: taken back or held stops it, naming which.
+        foreach (var work in earlier)
+        {
+            if ((work.Quest ?? (await RecordAsync(work.Session).ConfigureAwait(false))?.Quest) is not { } carried) continue;
+            var id = carried.TrimStart('#');
+            var quest = await fresh.QuestAsync(id, ct).ConfigureAwait(false);
+            var why = !QuestResults.Judged(quest) ? "was taken back"
+                : quest is { Held: true } && quest.Hold != EvidenceCodes.Unreviewed ? "was held for your yes"
+                : null;
+            if (why is not null)
+            {
+                return $"session {work.Session}'s quest #{id}, whose work this push carries, {why} before its plugin was told, so its push was "
+                    + $"not tried: the branch stands, and the first look once that quest stands again hands it on, or "
+                    + $"`daoris-driver trees hand {last}` does now";
+            }
+        }
+
+        return null;
     }
+
+    /// <summary>
+    /// The earlier sessions whose work a push of <paramref name="landing"/> carries unpushed (FABRIC-CLOSE1h11): every one besides the
+    /// choice's own and the branch's last, which are judged on their own rules. None where no record was read.
+    /// </summary>
+    private static IReadOnlyList<LandedWork> Earlier(LandedBranch? landing, string own, string last) =>
+        landing is null ? []
+        : [.. landing.UnpushedBesides(own).Where(work => !string.Equals(work.Session, last, StringComparison.OrdinalIgnoreCase))];
 
     /// <summary>A session's record, null where the records hold no such session.</summary>
     private static SessionRecord? RecordOf(IReadOnlyList<SessionRecord> records, string session) =>
@@ -451,6 +509,14 @@ public sealed class AutoLander(
         var later = !string.Equals(last, entry.Session, StringComparison.OrdinalIgnoreCase);
         var record = later ? RecordOf(await looked.ReadAsync(ct).ConfigureAwait(false), last) : null;
         if (record?.Quest is { } laterQuest && !Stands(await world.QuestAsync(laterQuest, ct).ConfigureAwait(false))) return (null, null);
+
+        // FABRIC-CLOSE1h11: and every earlier session whose work the hand-on carries unpushed, so a later entry's hand-on never pushes an
+        // earlier one's work held back on its quest; it waits as that entry waits, said once already at the push.
+        foreach (var work in Earlier(landing, entry.Session, last))
+        {
+            var carried = work.Quest ?? RecordOf(await looked.ReadAsync(ct).ConfigureAwait(false), work.Session)?.Quest;
+            if (carried is not null && !Stands(await world.QuestAsync(carried, ct).ConfigureAwait(false))) return (null, null);
+        }
 
         var (tip, status, _) = await ReadTreeAsync(entry.Tree, ct).ConfigureAwait(false);
         if (!string.Equals(tip, held.Tip, StringComparison.OrdinalIgnoreCase)) return null;
@@ -516,8 +582,9 @@ public sealed class AutoLander(
             : entry.Tree;
         // FABRIC-CLOSE1h8: its quest judged once more just before the plugin is told, by the look's own rule (a hold stops it too), so a
         // hand-off that waited behind another push of the branch tells no plugin where its quest moved meanwhile. FABRIC-CLOSE1h10: the
-        // quest of the session that last moved the branch as the record reads there, so a later session's work rides no earlier quest.
-        var handed = await trees.HandAsync(root, made, made.Rule?.Plugin, ct, (last, waited, token) => BeforePushAsync(choice, last, waited, token))
+        // quest of the session that last moved the branch as the record reads there, so a later session's work rides no earlier quest;
+        // FABRIC-CLOSE1h11: and every earlier session's whose work the push carries unpushed.
+        var handed = await trees.HandAsync(root, made, made.Rule?.Plugin, ct, (record, waited, token) => BeforePushAsync(choice, record, waited, token))
             .ConfigureAwait(false);
         // Held back there, the branch stands made as it was, so it stays `push-held` for the first look once its quest stands again: a
         // refusal would be kept at this tip and never tried again, since the tree does not move.
@@ -591,11 +658,12 @@ public sealed class AutoLander(
     /// <param name="quest">That session's quest, whose chain the opinion and the review read; null reads no part that needs one.</param>
     /// <param name="tree">That session's tree, whose tip the opinion and the review judge.</param>
     /// <param name="process">The run's process where the caller read it already (WORKFLOW1f); otherwise the gate reads it, once.</param>
+    /// <param name="tip">The commit to judge the work at, where a push is judged (FABRIC-CLOSE1h16); null reads the tree's head.</param>
     private async Task<(LandingGate Gate, TreeLanding? Held, LandingLine? Line)> GateAsync(
         AutoLanding entry, string session, string? quest, string tree, IAutoLandingWorld world, CancellationToken ct,
-        WorkflowProcess? process = null)
+        WorkflowProcess? process = null, string? tip = null)
     {
-        var gate = await trees.GateAsync(tree, quest, world, session, ct, process).ConfigureAwait(false);
+        var gate = await trees.GateAsync(tree, quest, world, session, ct, process, tip).ConfigureAwait(false);
         return gate.Refusal is { } held
             ? (gate, held, LandingGateWords.Held(session, (entry.Workspace, entry.Repository), gate, held, ReviewDoors.Look))
             : (gate, null, null);

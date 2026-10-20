@@ -81,10 +81,14 @@ public static class Observation
     /// The session's own background work its harness ended with its turn, by name (BGWAIT1c, <see cref="HarnessEnding.BackgroundCut"/>):
     /// the native door's; none on any other.
     /// </param>
+    /// <param name="submitted">
+    /// Whether its quest stands at a closure graph's current submission (FABRIC-CLOSE1h5, <see cref="QuestResults.Submitted"/>): taken,
+    /// and its result in, so the session ends as one whose quest reached done does, never parked as though it waited on the person.
+    /// </param>
     public static SessionConclusion Conclude(
         int exitCode, string questStatus, string? awaitsBefore = null, string? awaitsAfter = null,
         string? turnFailed = null, bool resumed = false, bool took = false, string? lastWords = null,
-        string? reopenedFrom = null, IReadOnlyList<string>? backgroundCut = null) => questStatus switch
+        string? reopenedFrom = null, IReadOnlyList<string>? backgroundCut = null, bool submitted = false) => questStatus switch
     {
         // Ask and wait (D79): the session published a question to another repository and waits on it.
         // Its quest stays taken for the same tree to resume in, and that is a good ending.
@@ -95,6 +99,14 @@ public static class Observation
                     $"asked `#{awaitsAfter}` of another repository and waits for its answer — the quest resumes, "
                     + "in the same tree, once that is answered" + (exitCode == 0 ? "." : $" (exit {exitCode})."),
                     ("awaits", awaitsAfter)),
+                exitCode)),
+
+        // FABRIC-CLOSE1h5 (§E5): in a closure graph the agent's `ready` is its done, and Daoris writes no Done before the graph's end, so
+        // the quest stays taken at its submission. That is the work's result in, read as a done is, before a messy exit, a failed turn or
+        // the park a session holding its own quest would read as: parked, it was never due, and its branch never landed by itself.
+        "Taken" when submitted
+            => SessionConclusion.Of("completed", Exit(
+                Noted.Of(NoteCodes.EndedSubmitted, "its agent made its work ready: the quest is submitted, and closes at its workflow's end."),
                 exitCode)),
 
         // 🔴 A refused turn (ACPEND1), before the stand-down reading: measured on the first real run, an
@@ -215,11 +227,14 @@ public static class Observation
     /// <param name="startedOn">Its quest's status as the look planned the run.</param>
     /// <param name="questStatus">Its quest's status as the run left it.</param>
     /// <param name="backgroundCut">The session's own background work its harness ended with its turn (BGWAIT1c), as a start's.</param>
+    /// <param name="submitted">Whether its quest stands at a closure graph's current submission, as a start's (FABRIC-CLOSE1h5).</param>
     public static SessionConclusion Resumed(
         int exitCode, string before, string startedOn, string questStatus, string? awaitsBefore = null, string? awaitsAfter = null,
-        string? turnFailed = null, bool took = false, string? lastWords = null, IReadOnlyList<string>? backgroundCut = null) =>
+        string? turnFailed = null, bool took = false, string? lastWords = null, IReadOnlyList<string>? backgroundCut = null,
+        bool submitted = false) =>
         startedOn is "Open" or "Taken"
-            ? Conclude(exitCode, questStatus, awaitsBefore, awaitsAfter, turnFailed, resumed: true, took, lastWords, backgroundCut: backgroundCut)
+            ? Conclude(exitCode, questStatus, awaitsBefore, awaitsAfter, turnFailed, resumed: true, took, lastWords, backgroundCut: backgroundCut,
+                submitted: submitted)
             : WentOn(exitCode, before, turnFailed);
 
     /// <summary>

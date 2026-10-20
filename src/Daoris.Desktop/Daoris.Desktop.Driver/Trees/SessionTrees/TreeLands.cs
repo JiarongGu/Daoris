@@ -334,14 +334,16 @@ internal sealed class TreeLands(
     /// (FABRIC-CLOSE1h3), on the result the press was made on.
     /// </param>
     /// <param name="beforePush">
-    /// The door's judgement once more, just before the rule's plugin is told (FABRIC-CLOSE1h2, D173's note), told whether the push
-    /// waited behind another push of its branch: a sentence it answers holds the push back (<see cref="TreeLanding.Withheld"/>), the
-    /// branch made and recorded and no plugin spoken to; null lets the push begin, past which nothing stops it. Null asks nothing.
+    /// The door's judgement once more, just before the rule's plugin is told (FABRIC-CLOSE1h2, D173's note), told the branch's record as
+    /// it reads under the branch's hold (null where none was recorded), so the work of every session the push carries
+    /// (FABRIC-CLOSE1h11), and whether the push waited behind another push of its branch: a sentence it answers holds the push back
+    /// (<see cref="TreeLanding.Withheld"/>), the branch made and recorded and no plugin spoken to; null lets the push begin, past which
+    /// nothing stops it. Null asks nothing.
     /// </param>
     internal async Task<TreeLanding> LandAsync(
         string path, LandingSubject subject, CancellationToken ct = default, Func<CancellationToken, Task<IReadOnlySet<string>>>? inUse = null,
         string acceptedBy = AcceptedBy.Person, LandingGate? gate = null, bool joins = false, bool fetched = false,
-        Func<bool, CancellationToken, Task<TreeLanding?>>? judged = null, Func<bool, CancellationToken, Task<string?>>? beforePush = null)
+        Func<bool, CancellationToken, Task<TreeLanding?>>? judged = null, Func<LandedBranch?, bool, CancellationToken, Task<string?>>? beforePush = null)
     {
         var repository = context.OwnerOf(Path.GetFullPath(path)).Repository;
         // LANDRACE1 (D145 point 2, D173's FABRIC-END7 note and its review): one landing of one session's tree at a time, whichever door
@@ -417,7 +419,7 @@ internal sealed class TreeLands(
     private async Task<TreeLanding> LandingAsync(
         string path, LandingSubject subject, CancellationToken ct, Func<CancellationToken, Task<IReadOnlySet<string>>>? inUse,
         string acceptedBy, LandingGate? gate, bool joins, bool fetched, LandingHold? hold,
-        Func<bool, CancellationToken, Task<string?>>? beforePush = null)
+        Func<LandedBranch?, bool, CancellationToken, Task<string?>>? beforePush = null)
     {
         // One look (UIFREEZE1, PROC1d-i): the landing and its tidy ask git's guess at the line once.
         using var look = context.OneLook();
@@ -523,13 +525,16 @@ internal sealed class TreeLands(
             if (landed.Landed && tip is not null && landed.AdvancedFrom is { } advancedFrom)
             {
                 // Moved on (LAND2c): the entry's tip is the new commit, and the advance is kept with who accepted it (D143).
+                var unit = UnitOf(full, repository);
                 landed = Remember(landed, () => context.Recorded.Advanced(repository, landed.Branch!,
                     new LandedAdvance(advancedFrom, tip, DateTimeOffset.UtcNow, subject.Session)
                     {
                         AcceptedBy = acceptedBy, Review = review?.Landing, Opinion = gate?.Opinion.Landing, Workflow = named?.Record,
                         // The record moves to the session tip this advance squashed (PROCESS1b-ii point 4); a fast-forward keeps it.
                         Squashed = branched.Squashed,
-                    }, UnitOf(full, repository)));
+                        // FABRIC-UNITLINK1, FABRIC-CLOSE1h13: whose work this is, its unit, and the submission it was accepted on.
+                        Quest = subject.Served, Unit = unit, Submission = subject.Submission,
+                    }, unit));
             }
             else if (landed.Landed && tip is not null)
             {
@@ -556,6 +561,9 @@ internal sealed class TreeLands(
                     Squashed = branched.Squashed,
                     // The branch work unit whose work it carries (FABRIC-END2, design §D2), where the session's entry has one.
                     Units = UnitOf(full, repository) is { } unit ? [unit] : [],
+                    // FABRIC-CLOSE1h11, FABRIC-CLOSE1h13: the quest its session served and the submission it was accepted on.
+                    Served = subject.Served,
+                    Submission = subject.Submission,
                 }));
             }
 
@@ -596,10 +604,13 @@ internal sealed class TreeLands(
                 {
                     said = handed;
                 }
-                else if (beforePush is not null && await beforePush(pushing.Waited, ct).ConfigureAwait(false) is { } heldNow)
+                else if (beforePush is not null
+                         && await beforePush(context.Recorded.Of(repository, landed.Branch!), pushing.Waited, ct).ConfigureAwait(false) is { } heldNow)
                 {
                     // FABRIC-CLOSE1h2 (D173's note): the door's judgement once more, just before its plugin is told, past which the push
                     // has begun and nothing stops it. Held here, the branch stays made and recorded, and no plugin is spoken to.
+                    // FABRIC-CLOSE1h11: told the record under the branch's hold, so an advance's push is judged on every session whose
+                    // work it carries unpushed, an earlier session's held back among them, never on the advancing session's alone.
                     withheld = heldNow;
                     said = null;
                 }

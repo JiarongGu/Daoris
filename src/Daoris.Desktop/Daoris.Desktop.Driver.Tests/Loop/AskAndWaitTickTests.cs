@@ -268,6 +268,12 @@ public sealed class AskAndWaitTickTests : IDisposable
         /// <summary>The person's bring-forward the claim door names beside the claim (SYNCMERGE1b0), or null for none, as before.</summary>
         public JsonObject? ClaimForward { get; set; }
 
+        /// <summary>
+        /// Whether a take marks the newest session as the one that took <c>q1</c> (STANDDOWN2's <c>took</c>), as the service's connector
+        /// does: off, as before, so the tests that never read it read as they did (FABRIC-CLOSE1h5).
+        /// </summary>
+        public bool Took { get; set; }
+
         public int SessionCount { get { lock (_sessions) return _sessions.Count; } }
 
         public JsonObject Session(string id)
@@ -420,6 +426,18 @@ public sealed class AskAndWaitTickTests : IDisposable
                         {
                             case "take":
                                 quest["status"] = "Taken";
+                                if (Took && _sessions.Count > 0) _sessions[^1]["took"] = true;
+                                break;
+                            // FABRIC-CLOSE1h5: the agent's `ready` in a closure graph (§E5), standing in for the bind its take made: the quest
+                            // stays taken, at a submission naming the session that said it and the commit it was made at.
+                            case "ready" when quest["status"]!.GetValue<string>() == "Taken":
+                                quest["closure"] = "gph-0123";
+                                quest["submission"] = new JsonObject
+                                {
+                                    ["machine"] = "desk", ["sequence"] = 1, ["at"] = DateTimeOffset.UtcNow.ToString("O"),
+                                    ["note"] = body["reason"]?.GetValue<string>(), ["commit"] = body["commit"]?.GetValue<string>(),
+                                    ["session"] = _sessions.Count > 0 ? _sessions[^1]["id"]!.GetValue<string>() : null,
+                                };
                                 break;
                             case "wait" when quest["status"]!.GetValue<string>() == "Taken":
                                 quest["awaits"] = body["on"]!.GetValue<string>();
