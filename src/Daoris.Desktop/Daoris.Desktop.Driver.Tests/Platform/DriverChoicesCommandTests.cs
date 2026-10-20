@@ -16,7 +16,7 @@ public sealed class DriverChoicesCommandTests : IDisposable
 
     public DriverChoicesCommandTests() => Directory.CreateDirectory(_home);
 
-    private string Config => Path.Combine(_home, "driver.json");
+    private string Config => DaorisHome.Entry(_home, HomeEntry.DriverConfig);
 
     /// <summary>A terminal on this test's home with the variables named, where no Daoris runs (a workspace build reads no address file).</summary>
     private DriverChoicesWorld World(params (string Name, string Value)[] variables) => new()
@@ -164,7 +164,7 @@ public sealed class DriverChoicesCommandTests : IDisposable
         standIn.Confirming = true;
         standIn.Data = new { drivable = new[] { "engine" } };
         var instance = running.World("daoris");
-        var config = Path.Combine(running.Home, "driver.json");
+        var config = DaorisHome.Entry(running.Home, HomeEntry.DriverConfig);
         var world = new DriverChoicesWorld
         {
             Instance = new InstanceWorld

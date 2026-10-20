@@ -42,7 +42,8 @@ public sealed partial class DriverChoicesTextTests
         Directory.CreateDirectory(home);
         try
         {
-            var config = Path.Combine(home, "driver.json");
+            var config = DaorisHome.Entry(home, HomeEntry.DriverConfig);
+            Directory.CreateDirectory(Path.GetDirectoryName(config)!);
             if (row.GetProperty("before").GetString() is { } before) File.WriteAllText(config, before);
             if (row.TryGetProperty("files", out var files))
             {
