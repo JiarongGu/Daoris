@@ -45,6 +45,7 @@ import {
 } from './opinions.ts';
 import { applyCommitEdit, commitListed, commitsOf, type CommitEdit, type CommitRule } from './commits.ts';
 import { applyHelperEdit, helperListed, helpersOf, type HelperEdit, type HelperRule } from './helpers.ts';
+import { applyHandOverEdit, handOverModeSays, handOversOf, type HandOverEdit, type HandOverRule } from './handover.ts';
 import {
   BRAINSTORM_DEFAULT, applyBrainstormEdit, brainstormListed, brainstormMachineOf, brainstormsOf, type BrainstormEdit, type BrainstormRule,
 } from './brainstorms.ts';
@@ -171,6 +172,14 @@ export interface DriverChoices {
   helpers: Record<string, HelperRule>;
   /** A workspace's helpers rule, for every repository in it that sets none of its own. */
   workspaceHelpers: Record<string, HelperRule>;
+  /**
+   * What an agent's ask to hand its session over to another agent does in each repository (MIXAGENT1c, D163 point 3): a mode; it
+   * replaces its workspace's, and absent is `ask`. The driver's `DriverConfig.HandOver` is the twin, read by one shared table
+   * (`handover.ts`).
+   */
+  handOver: Record<string, HandOverRule>;
+  /** A workspace's hand-over rule, for every repository in it that sets none of its own. */
+  workspaceHandOver: Record<string, HandOverRule>;
   /**
    * The person's brainstorm policy on this machine (BRAINSTORM1b, D176 point 9): whether an agent's ask for one waits for their yes,
    * the agents a brainstorm runs and its minutes; null is the default. The driver's `DriverConfig.Brainstorms` is the twin, read by
@@ -313,6 +322,7 @@ const EMPTY: DriverChoices = {
   landings: {}, workspaceLandings: {}, workCycles: {}, workspaceWorkCycles: {}, readAcross: {}, workspaceReadAcross: {}, writeAcross: {},
   standing: {}, languages: {},
   workspaceLanguages: {}, reviews: {}, workspaceReviews: {}, opinions: {}, workspaceOpinions: {}, helpers: {}, workspaceHelpers: {},
+  handOver: {}, workspaceHandOver: {},
   brainstorms: null, workspaceBrainstorms: {},
   commits: {}, workspaceCommits: {},
   workflows: {}, workspaceWorkflows: {},
@@ -630,7 +640,7 @@ function choicesOf(parsed: Record<string, unknown> | null): DriverChoices {
       ...EMPTY, forgiven: {}, released: {}, pausedAsks: {}, pausedQuests: {}, lines: {}, workspaceLines: {}, landings: {},
       workspaceLandings: {}, workCycles: {}, workspaceWorkCycles: {}, readAcross: {}, workspaceReadAcross: {}, writeAcross: {}, standing: {}, languages: {},
       workspaceLanguages: {}, reviews: {}, workspaceReviews: {}, opinions: {}, workspaceOpinions: {}, helpers: {}, workspaceHelpers: {},
-      brainstorms: null, workspaceBrainstorms: {},
+      handOver: {}, workspaceHandOver: {}, brainstorms: null, workspaceBrainstorms: {},
   commits: {}, workspaceCommits: {},
       workflows: {}, workspaceWorkflows: {}, access: {}, workspaceAccess: {}, machineAccess: null, heavyGates: {}, rest: {},
     };
@@ -639,8 +649,8 @@ function choicesOf(parsed: Record<string, unknown> | null): DriverChoices {
   const {
     drivable, holds, trees, cap, adapter, notify, strikes, forgiven, released, intakeAdapter, helperAdapter, helpMode, timeoutMinutes,
     cooloff, lines, workspaceLines, landings, workspaceLandings, workCycles, workspaceWorkCycles, readAcross, workspaceReadAcross, writeAcross, standing,
-    languages, workspaceLanguages, reviews, workspaceReviews, opinions, workspaceOpinions, helpers, workspaceHelpers, brainstorms,
-    workspaceBrainstorms, commits, workspaceCommits, workflows, workspaceWorkflows, access, workspaceAccess, machineAccess, heavyGates,
+    languages, workspaceLanguages, reviews, workspaceReviews, opinions, workspaceOpinions, helpers, workspaceHelpers, handOver,
+    workspaceHandOver, brainstorms, workspaceBrainstorms, commits, workspaceCommits, workflows, workspaceWorkflows, access, workspaceAccess, machineAccess, heavyGates,
     ...rest
   } = parsed;
   return {
@@ -707,6 +717,9 @@ function choicesOf(parsed: Record<string, unknown> | null): DriverChoices {
     // As the driver reads them (MIXAGENT2a-i): a rule with a problem is not read.
     helpers: helpersOf(helpers),
     workspaceHelpers: helpersOf(workspaceHelpers),
+    // As the driver reads them (MIXAGENT1c): a rule with a problem is not read.
+    handOver: handOversOf(handOver),
+    workspaceHandOver: handOversOf(workspaceHandOver),
     // As the driver reads them (BRAINSTORM1b): a rule with a problem is not read, and this machine's is one rule, not a map.
     brainstorms: brainstormMachineOf(brainstorms),
     workspaceBrainstorms: brainstormsOf(workspaceBrainstorms),
@@ -931,6 +944,9 @@ function choicesWritten(choices: DriverChoices): Record<string, unknown> {
     // Written only when set (MIXAGENT2a-i), as the driver writes them: absent is the default, `ask`.
     ...(Object.keys(choices.helpers).length > 0 ? { helpers: ordered(choices.helpers) } : {}),
     ...(Object.keys(choices.workspaceHelpers).length > 0 ? { workspaceHelpers: ordered(choices.workspaceHelpers) } : {}),
+    // Written only when set (MIXAGENT1c), as the driver writes them: absent is the default, `ask`.
+    ...(Object.keys(choices.handOver).length > 0 ? { handOver: ordered(choices.handOver) } : {}),
+    ...(Object.keys(choices.workspaceHandOver).length > 0 ? { workspaceHandOver: ordered(choices.workspaceHandOver) } : {}),
     // Written only when set (BRAINSTORM1b), as the driver writes them: absent is D176 point 9's proposed defaults.
     ...(choices.brainstorms !== null ? { brainstorms: choices.brainstorms } : {}),
     ...(Object.keys(choices.workspaceBrainstorms).length > 0 ? { workspaceBrainstorms: ordered(choices.workspaceBrainstorms) } : {}),
@@ -1789,6 +1805,12 @@ export function commandDriver(
     case 'helpers':
       return helpers();
 
+    // What an agent's ask to hand its session over does (MIXAGENT1c, D163 point 3, design §5): for a repository, or with
+    // `--workspace` for each repository there that sets none of its own. `--mode` sets it; `--clear`. The repository's and the
+    // workspace's Setup are its other doors; the driver's look reads it at every ask.
+    case 'handover':
+      return handover();
+
     // The brainstorm policy (BRAINSTORM1b, D176 point 9): this machine's, or with `--workspace` for the questions about a
     // workspace's repositories. `--mode`, `--agents` and the minutes set what they name over the rule set there; `--clear`.
     case 'brainstorms':
@@ -1812,7 +1834,8 @@ export function commandDriver(
     default:
       throw new DaorisError(
         `unknown driver verb '${verb}' — one of: list, drive, undrive, hold, resume, trees, line, landing, across, standing, `
-        + 'language, review, opinion, helpers, brainstorms, commits, workflow, notify, strikes, retry, timeout, cooloff, cap, adapter, intake, helper');
+        + 'language, review, opinion, helpers, handover, brainstorms, commits, workflow, notify, strikes, retry, timeout, cooloff, cap, adapter, '
+        + 'intake, helper');
   }
 
   function list(): ExitCode {
@@ -1982,6 +2005,20 @@ export function commandDriver(
     if (Object.keys(choices.helpers).length === 0 && Object.keys(choices.workspaceHelpers).length === 0) {
       write('  helpers    none set — each helper an agent asks for waits for your yes; `daoris driver helpers <repository> '
         + '--mode on|off` sets one');
+    }
+
+    // MIXAGENT1c: each hand-over rule and where it was set; a workspace's is said for the repositories there that set none.
+    for (const [repository, rule] of Object.entries(choices.handOver)) {
+      write(`  hand-over  ${repository}  ${rule.mode}`);
+    }
+
+    for (const [workspace, rule] of Object.entries(choices.workspaceHandOver)) {
+      write(`  hand-over  workspace ${workspace}  ${rule.mode}  (for each repository there that sets none)`);
+    }
+
+    if (Object.keys(choices.handOver).length === 0 && Object.keys(choices.workspaceHandOver).length === 0) {
+      write('  hand-over  none set — an agent\'s ask to hand its session over waits for your yes; `daoris driver handover '
+        + '<repository> --mode on|off` sets one');
     }
 
     // BRAINSTORM1b: this machine's brainstorm policy and each workspace's, which replaces it for that workspace's questions.
@@ -2199,6 +2236,56 @@ export function commandDriver(
           ? `daoris: helpers for repositories in the workspace \`${key}\` that set none of their own: ${helperListed(rule)}.`
           : `daoris: helpers for \`${key}\`: ${helperListed(rule)}.`);
         write(`  ${helperModeSays(rule.mode)}`);
+      }
+
+      write(`  Written to ${path}.`);
+      return 0;
+    });
+  }
+
+  /**
+   * `handover` (MIXAGENT1c): the person's words made one edit, judged by the twin's table (`handover.ts`), and said plainly: what an
+   * agent's ask to hand its session over now does here.
+   */
+  function handover(): ExitCode | Promise<ExitCode> {
+    const valued = new Set(['--workspace', '--mode']);
+    const usage = '`driver handover` needs <repository>|--workspace <name>, then --mode ask|on|off, or --clear — e.g. '
+      + '`daoris driver handover web-app --mode on`.';
+    for (let at = 1; at < argv.length; at += 1) {
+      const token = argv[at]!;
+      if (valued.has(token)) at += 1;
+      else if (token.startsWith('--') && token !== '--clear') {
+        throw new DaorisError(`\`${token}\` is not a flag \`driver handover\` takes — ${usage}`);
+      }
+    }
+
+    const workspace = flagValue(argv, '--workspace');
+    const name = workspace ?? operands(argv, valued).slice(1).shift();
+    const clear = argv.includes('--clear');
+    const mode = flagValue(argv, '--mode');
+    if (!name || (!clear && mode === undefined)) throw new DaorisError(usage);
+
+    // The same edit the screen sends: its mode where it was said, else the clear.
+    const edit: HandOverEdit = {
+      ...(workspace ? { workspace } : { repository: name }),
+      ...(mode !== undefined ? { set: { mode } } : {}),
+      ...(clear ? { clear: true } : {}),
+    };
+    const after = applyHandOverEdit(choices, edit);
+    return press(DRIVER_ROUTES.handOver, edit, () => writeDriverChoices(path, { ...choices, ...after }), () => {
+      const map = workspace ? after.workspaceHandOver : after.handOver;
+      const key = Object.keys(map).find((each) => sameName(each, name))
+        ?? Object.keys(workspace ? choices.workspaceHandOver : choices.handOver).find((each) => sameName(each, name)) ?? name;
+      const rule = map[key];
+      if (rule === undefined) {
+        write(workspace
+          ? `daoris: repositories in the workspace \`${key}\` keep their own hand-over rule, else an agent's ask waits for your yes.`
+          : `daoris: \`${key}\` takes its workspace's hand-over rule again, else an agent's ask waits for your yes.`);
+      } else {
+        write(workspace
+          ? `daoris: hand-over for repositories in the workspace \`${key}\` that set none of their own: ${rule.mode}.`
+          : `daoris: hand-over for \`${key}\`: ${rule.mode}.`);
+        write(`  ${handOverModeSays(rule.mode)}`);
       }
 
       write(`  Written to ${path}.`);

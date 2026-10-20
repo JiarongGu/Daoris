@@ -266,6 +266,82 @@ public sealed class SessionsRoutes(DriverContext context)
         return new { Declined = answer.Stands, answer.Why, answer.Message };
     }
 
+    // A session's agent's ask to hand it over (MIXAGENT1c, D163 point 3), as the driver's look left it, for the session's page: its
+    // note (the agent's claim), when, its state, code and the agent it goes to; null where its agent asked none. A read off the home's
+    // sessions folder, the driver's own files: it declares nothing, and the look says a change in its report.
+    [DriverRoute("SESSION_HAND_OVER_ASK")]
+    private Task<object?> SessionHandOverAskAsync(IpcRequest request, CancellationToken cancellationToken)
+    {
+        var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id");
+        var files = new HandOverAskFiles(_loop.Home);
+        var ask = files.Ask(id);
+        var state = ask is null ? null : files.ReadState(id) is { } kept && kept.Id == ask.Id ? kept : null;
+        return Task.FromResult<object?>(new
+        {
+            Ask = ask is null ? null : new { ask.Id, ask.Note, At = Moments.Write(ask.At), state?.State, state?.Code, state?.Agent },
+        });
+    }
+
+    // The person's yes to their session's agent's ask to hand it over under the `handOver` rule's `ask` (MIXAGENT1c, D163 point 3):
+    // the judge the terminal's `sessions hand-over <id> --approve` shares (`HandOverAskWord`). A conversation this shell's chat runner
+    // holds is handed over at once, through the runner's own hand-over (taken where it is not talking, else at its turn's end), the
+    // state written `taken` first so no look keeps a second box; anything else is `approved` with the agent the look named, for the
+    // look, nudged, to take as the rule's `on` would. `ask` names the one the page showed, else the session's own. A word that waits on
+    // nothing is `approved: false` with its code, its state untouched.
+    [DriverRoute("SESSION_HAND_OVER_APPROVE")]
+    [Publishes("SESSION_HAND_OVER_APPROVE", StateScopes.Sessions | StateScopes.Driver, Session = "session")]
+    private async Task<object?> SessionHandOverApproveAsync(IpcRequest request, CancellationToken cancellationToken)
+    {
+        var session = PayloadHelper.GetRequiredValue<string>(request.Payload, "session");
+        // RPC1d: `sessions hand-over <id> --approve` asks for the verb's own words.
+        if (Flag(request, "said")) return await SaidAsync(new SessionsAsk("hand-over-approve") { Ids = [session] }, cancellationToken).ConfigureAwait(false);
+
+        var files = new HandOverAskFiles(_loop.Home);
+        var askId = Optional(request, "ask") ?? files.Ask(session)?.Id ?? "";
+        var record = _loop.Chat is not null && _loop.Service is { } service
+            ? await service.RecordAsync(session, cancellationToken).ConfigureAwait(false)
+            : null;
+        var taking = record is { Kind: "chat" } && files.ReadState(session) is { Id: var named, Agent: { Length: > 0 } } && named == askId;
+        var answer = HandOverAskWord.Approve(files, session, askId, taking);
+        if (taking && answer.Wrote && answer.Agent is { } agent)
+        {
+            var handed = await _loop.Chat!.HandOverAsync(
+                    session, agent, null, HandOverWhy.Agent, HandOverBy.Agent, DriverConfig.Load(_loop.ConfigPath),
+                    onEnded: (ended, state) => DriverLoop.Ended(_context.Events, ended, state), cancellationToken)
+                .ConfigureAwait(false);
+            if (!handed.Kept && handed.SessionId is null)
+            {
+                // Refused as it was taken: the look's own refusal, said on the session's record.
+                files.WriteState(session, new HandOverAskState(askId, HandOverAskStates.Refused, HandOverAskWhy.Cannot, null, DateTimeOffset.UtcNow));
+                var note = HandOverAskNotes.Refused(HandOverAskWhy.Cannot);
+                _loop.Output?.Append(session, $"— {note.Note}");
+                _loop.Events.Keep(session, new SessionEvent { Kind = SessionEventKind.Note, Text = note.Note, Parts = note.Parts }, say: null);
+                _loop.Nudge();
+                return new { Approved = false, Why = handed.Why ?? HandOverAskWhy.Cannot, handed.Message, Agent = agent };
+            }
+        }
+
+        if (answer.Wrote) _loop.Nudge();
+        return new { Approved = answer.Stands, answer.Why, answer.Message, answer.Agent };
+    }
+
+    // The person's no to their session's agent's ask to hand it over (MIXAGENT1c, D163 point 3), beside the yes: refused `declined` at
+    // once, with the coded note the look writes for every refusal (`handover.refused`), where the look holds it waiting on their word.
+    // One not read yet, one with their yes, one past it and one gone are `declined: false` with its code, its state untouched.
+    [DriverRoute("SESSION_HAND_OVER_DECLINE")]
+    [Publishes("SESSION_HAND_OVER_DECLINE", StateScopes.Sessions | StateScopes.Driver, Session = "session")]
+    private async Task<object?> SessionHandOverDeclineAsync(IpcRequest request, CancellationToken cancellationToken)
+    {
+        var session = PayloadHelper.GetRequiredValue<string>(request.Payload, "session");
+        // RPC1d: `sessions hand-over <id> --decline` asks for the verb's own words.
+        if (Flag(request, "said")) return await SaidAsync(new SessionsAsk("hand-over-decline") { Ids = [session] }, cancellationToken).ConfigureAwait(false);
+
+        var files = new HandOverAskFiles(_loop.Home);
+        var askId = Optional(request, "ask") ?? files.Ask(session)?.Id ?? "";
+        var answer = HandOverAskWord.Decline(files, _loop.Events, _loop.Output, session, askId);
+        return new { Declined = answer.Stands, answer.Why, answer.Message };
+    }
+
     // What this machine's driven sessions hold for the person under their repository's asking permission prompts (AUTONOMY1b3a, D184
     // point 3), oldest first: each request with its session, its call as the agent named it, and what the person may choose (never a
     // standing allow). A read off the driver's memory (`HeldPermissions`), which a restart empties with the agents that asked.

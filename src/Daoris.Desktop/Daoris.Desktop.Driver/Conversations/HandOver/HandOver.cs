@@ -237,7 +237,9 @@ public static class HandOverTake
             var from = prior!.Adapter ?? "its agent";
             var uncommitted = await ConversationTrees.UncommittedAsync(prior.Tree!, HandOverBriefing.ListLimit, ct).ConfigureAwait(false);
             var (plan, words) = SessionLastWords.CarriedFrom(events, home, id);
-            var briefing = HandOverBriefing.Compose(from, id, ask.Why, events.FirstAsked(id), plan, words, uncommitted);
+            // MIXAGENT1c: where its agent asked to hand over, its own note, told after Daoris's record as that agent's claim.
+            var note = ask.AskedBy == HandOverBy.Agent ? new HandOverAskFiles(home).Ask(id)?.Note : null;
+            var briefing = HandOverBriefing.Compose(from, id, ask.Why, events.FirstAsked(id), plan, words, uncommitted, note);
 
             await end(id).ConfigureAwait(false);
 

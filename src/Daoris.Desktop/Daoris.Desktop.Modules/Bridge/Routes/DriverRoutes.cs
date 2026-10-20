@@ -494,6 +494,11 @@ public sealed class DriverRoutes(DriverContext context)
                 .Select(p => new { Repository = p.Key, Rule = LinesRoutes.HelperWire(p.Value) }).ToArray(),
             WorkspaceHelpers = config.WorkspaceHelpers.OrderBy(p => p.Key, StringComparer.Ordinal)
                 .Select(p => new { Workspace = p.Key, Rule = LinesRoutes.HelperWire(p.Value) }).ToArray(),
+            // The hand-over rules as set (MIXAGENT1c), as rows for the same reason: a workspace's Defaults reads its own here.
+            HandOver = config.HandOver.OrderBy(p => p.Key, StringComparer.Ordinal)
+                .Select(p => new { Repository = p.Key, Rule = new { p.Value.Mode } }).ToArray(),
+            WorkspaceHandOver = config.WorkspaceHandOver.OrderBy(p => p.Key, StringComparer.Ordinal)
+                .Select(p => new { Workspace = p.Key, Rule = new { p.Value.Mode } }).ToArray(),
             Commits = config.Commits.OrderBy(p => p.Key, StringComparer.Ordinal)
                 .Select(p => new { Repository = p.Key, Rule = LinesRoutes.CommitWire(p.Value) }).ToArray(),
             WorkspaceCommits = config.WorkspaceCommits.OrderBy(p => p.Key, StringComparer.Ordinal)

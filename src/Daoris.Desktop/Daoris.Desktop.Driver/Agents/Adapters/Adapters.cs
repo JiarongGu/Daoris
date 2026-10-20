@@ -211,6 +211,12 @@ public sealed record SessionTarget(
     public string? HandedOver { get; init; }
 
     /// <summary>
+    /// The note the session before's agent left where it asked to hand over (MIXAGENT1c, design §2): told after its plan and last
+    /// words as that agent's own claim. Null for every other start, and where it left none.
+    /// </summary>
+    public string? HandedNote { get; init; }
+
+    /// <summary>
     /// Whether the session before was stood down for a lost take that the person has since brought forward (SYNCMERGE1b2): the carry-on
     /// is told the press, not that the session was cut off. Its <see cref="CutOff"/> is the words of that bring-forward.
     /// </summary>
@@ -464,7 +470,7 @@ public static class TargetPrompt
         .. Beneath(target),
         new(HandedSections.CarryOn,
             $"\n{Before(target, cutOff)} What it did is in this tree — any commits it made are on this branch,\n"
-            + $"and {InFlight(target)}{LastPlan(target)}{LastWords(target)}{AccountChanged(target)}\n"),
+            + $"and {InFlight(target)}{LastPlan(target)}{LastWords(target)}{HandedNote(target)}{AccountChanged(target)}\n"),
         .. Tail(target, target.Ready
             ? "\nFinish from there rather than starting again, inside this repository under its own doctrine and\n"
               + $"gates, then say `#{target.QuestId}` is ready: `ready` when its work is done, with your note and an\n"
@@ -720,6 +726,10 @@ public static class TargetPrompt
     private static string LastWords(SessionTarget target) => target.LastWords is { Length: > 0 } words
         ? "\n\nIts last words were:\n\n" + TextBounds.Quote(words, bareBlank: false)
         : "";
+
+    /// <summary>The note the agent handed over from left (MIXAGENT1c), as its claim; nothing for any other start.</summary>
+    private static string HandedNote(SessionTarget target) =>
+        target.HandedOver is not null && HandOverNote.Said(target.HandedNote) is { } said ? "\n\n" + said : "";
 
     /// <summary>
     /// After an account's limit (TOOL4f, D125 §3.5): the session before ran on another account, which is cooling, so

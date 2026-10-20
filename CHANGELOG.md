@@ -5,6 +5,12 @@ with the version and date at release.
 
 ## Unreleased
 
+- A session's agent can ask to hand its session over to another agent, with a note of where the work stands that the next agent
+  reads as its claim, after what Daoris kept of the session. Each repository's or workspace's *Hand-over* row on its Setup, and
+  `daoris driver handover`, say what such an ask does: by default it waits at the foot of the session's page with *Hand over to …*
+  and *Not now* (or `daoris-driver sessions hand-over <id> --approve|--decline`); set to take it, the session goes on with the next
+  agent in your order once its turn ends, never in the middle of one; set to refuse, the session's timeline says so. A session that
+  was itself just handed over cannot ask again before a turn of its own.
 - Where a piece of work stands reads in one line on a session's record, folded: *Ended · clean-up pending · recovery kept
   until 10 Nov*, which says *blocked* and *held for you* when something waits on you, and opens in place to four facts, the end,
   the result, the clean-up and the recovery, each marked by its own colour: reached and kept in green, a clean-up that waits in

@@ -7,6 +7,7 @@ import { sessionTitle } from '../../work/identity';
 import { accessToast, isFull, resolveAccess } from '../../settings/repository/Access';
 import { commitToast } from '../../settings/repository/Commits';
 import { helperToast } from '../../settings/repository/Helpers';
+import { handOverToast } from '../../settings/repository/HandOver';
 import type { LandingRule } from '../../settings/repository/Landings';
 import { opinionToast } from '../../settings/repository/Opinions';
 import { reviewToast } from '../../settings/repository/Reviews';
@@ -15,7 +16,7 @@ import { sayDiscard, sweepKey, SweepList } from '../../settings/Sweep';
 import { SyncSection } from '../../settings/Sync';
 import {
   stoppedWaiting, useAccounts, useAcross, useDriver, useHarnesses, useHistoryPlan, usePlugins, useRemotes, useRuleAction, useRules,
-  useDiscardSessionBranch, useDropRecoveries, useSetAccess, useSetCommits, useSetHelpers, useSetLanding, useSetLanguage, useSetLine, useSetOpinion,
+  useDiscardSessionBranch, useDropRecoveries, useSetAccess, useSetCommits, useSetHandOver, useSetHelpers, useSetLanding, useSetLanguage, useSetLine, useSetOpinion,
   useSetReadAcross,
   useSetReview, useStarts,
   useSweep, useSweepLook, useSweepPlan, useTreesSync, useTreesSyncPlan, useTreesSyncScope, useUnwireRemote, useWireRemote, useWorkflowCurrent,
@@ -390,6 +391,7 @@ function SetupPart({ workspace, notify, open, wiring, onOpenPlugin }: {
   const setOpinion = useSetOpinion();
   const setCommits = useSetCommits();
   const setHelpers = useSetHelpers();
+  const setHandOver = useSetHandOver();
   const setAccess = useSetAccess();
   const setRead = useSetReadAcross();
   const act = useRuleAction();
@@ -414,7 +416,7 @@ function SetupPart({ workspace, notify, open, wiring, onOpenPlugin }: {
     open,
     wiring,
     busy: setLine.isPending || setLanding.isPending || setLanguage.isPending || setReview.isPending || setOpinion.isPending
-      || setCommits.isPending || setHelpers.isPending || setAccess.isPending || setRead.isPending || act.isPending || wire.isPending
+      || setCommits.isPending || setHelpers.isPending || setHandOver.isPending || setAccess.isPending || setRead.isPending || act.isPending || wire.isPending
       || unwire.isPending,
     // The access its repositories' sessions start under (AUTONOMY1d): the workspace's over this machine's, resolved on the page from
     // the levels as set, since the driver resolves only a repository's; a shell older than it answers none, and nothing is drawn.
@@ -522,6 +524,16 @@ function SetupPart({ workspace, notify, open, wiring, onOpenPlugin }: {
             set: ofWorkspace(state.workspaceHelpers)?.rule,
             onChange: (edit) => setHelpers.mutate({ workspace, ...edit }, {
               onSuccess: () => notify(helperToast(t, workspace, edit)),
+              onError,
+            }),
+          }
+        : null,
+      // What an agent's ask to hand its session over does in its repositories (MIXAGENT1c); none on a shell older than it.
+      handOver: state && Array.isArray(state.workspaceHandOver)
+        ? {
+            set: ofWorkspace(state.workspaceHandOver)?.rule,
+            onChange: (edit) => setHandOver.mutate({ workspace, ...edit }, {
+              onSuccess: () => notify(handOverToast(t, workspace, edit)),
               onError,
             }),
           }

@@ -30,6 +30,7 @@
   "work.wait.toWait": "To the wait: {{names}}",
   "work.wait.name.helper": "a helper it asked for",
   "work.wait.helper.lead": "It asked for another agent’s help. Nothing is asked until you let it.",
+  "work.wait.name.handOver": "its ask to hand over",
   "work.wait.name.permission": "a tool call to answer",
   "work.wait.permission.title": "Tool calls held for your answer",
   "work.wait.permission.lead": "Its rules do not allow these by themselves, so each waits for your answer. Allowing one lets that call alone run.",

@@ -94,6 +94,12 @@ public sealed class DriverWatch(
     /// <summary>Handed to every look's driver (<see cref="Driver.Log"/>): where a failure nothing else awaits is written (ANSWER2).</summary>
     public MachineLog? Log { get; init; }
 
+    /// <summary>
+    /// Handed to every look's driver (<see cref="Driver.HandsOver"/>): the shell's chat runner's hand-over of a conversation whose
+    /// agent asked (MIXAGENT1c). Null in the headless host, which runs no conversation.
+    /// </summary>
+    public Func<string, string, CancellationToken, Task<HandedOver>>? HandsOver { get; init; }
+
     private LookStages? _stages;
 
     /// <summary>
@@ -517,7 +523,7 @@ public sealed class DriverWatch(
                     service, draining ? InstallUpdate.Drained(config) : config, AdapterSet.Built(), home, processes, sync, output,
                     _harnesses, usage, hooks, events, browser, Running)
                 {
-                    Runner = Runner, Stops = Stops, Log = Log, Stages = Stages, Reviews = Reviews, Part = part, Woke = taken.Woke,
+                    Runner = Runner, Stops = Stops, HandsOver = HandsOver, Log = Log, Stages = Stages, Reviews = Reviews, Part = part, Woke = taken.Woke,
                     LandingEnded = Reoffered, Wanted = token => WantedAsync(part, token), WokeBack = () => Unspent(taken, busy: false),
                     // ACCESSSWAP1b: a session outlives this look's reading of the file, so its run reads the file again at its turn's end.
                     ConfigPath = configPath,

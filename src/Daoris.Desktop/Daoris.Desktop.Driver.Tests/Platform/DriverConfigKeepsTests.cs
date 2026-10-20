@@ -145,6 +145,9 @@ public sealed class DriverConfigKeepsTests
             "machine-access" => config.WithAccess(Access(edit, new AccessEdit { Machine = true })),
             // HEAVYRUN1b2a: a repository's heavy gates on this machine, through the door the terminal's `heavy` goes through.
             "heavy" => config.WithHeavyGates(Text("repository"), Gates(edit.GetProperty("gates"))),
+            // MIXAGENT1c: a repository's hand-over rule, through the edit the route and the terminal make.
+            "hand-over" => HandOverRules.Apply(
+                config, new HandOverEdit { Repository = Text("repository"), Set = new HandOverSet { Mode = Text("mode"), ModeGiven = true } }),
             "notify" => config.WithNotify(edit.GetProperty("on").GetBoolean()),
             "work-cycle-clear" => config.WithWorkCycle(Text("repository"), Text("kind"), null),
             var op => throw new InvalidOperationException($"the table names an edit this test does not make: {op}"),

@@ -30,6 +30,7 @@
   "work.wait.toWait": "到等待处：{{names}}",
   "work.wait.name.helper": "它请的助手",
   "work.wait.helper.lead": "它想请另一个智能体帮忙。在你同意之前，不会去问。",
+  "work.wait.name.handOver": "它要求的转交",
   "work.wait.name.permission": "待答复的工具调用",
   "work.wait.permission.title": "扣住等你答复的工具调用",
   "work.wait.permission.lead": "它的规则不会自行允许这些调用，所以每个都在等你答复。允许一个，只放行那一次调用。",

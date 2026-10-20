@@ -748,6 +748,11 @@ public sealed class DriverLoop(
             // PARALLEL1a: each move the sources hear wakes the facts it moves (a ref its repository's line, a ledger family the rest),
             // and the slices that hear the moves (PUSH1d2: the sessions' on the ledger's `sessions`).
             Heard = HeardMove,
+            // MIXAGENT1c: a conversation whose agent asked to hand it over goes on through this shell's chat runner, at once where it
+            // is not talking and at its turn's end where it is, as the person's yes on its page hands it over.
+            HandsOver = (session, agent, token) => chat.HandOverAsync(
+                session, agent, null, HandOverWhy.Agent, HandOverBy.Agent, DriverConfig.Load(ConfigPath),
+                onEnded: (ended, state) => Ended(eventBus, ended, state), token),
         };
         // FABRIC-END6c: a focus heard before the watch existed is told to it now, once; the watch keeps it until its moments exist.
         _focus.Ready(_watch.Focused);

@@ -4,6 +4,9 @@ import { AccessRows, accessSummary } from '../../settings/repository/Access';
 import type { RuleListName } from '../../settings/repository/AgentRules';
 import { COMMIT_DEFAULT, type CommitEdit, CommitField, type CommitRule, commitRowSays, commitSummary } from '../../settings/repository/Commits';
 import { HELPER_DEFAULT, type HelperEdit, HelperField, type HelperRule, helperRowSays, helperSummary } from '../../settings/repository/Helpers';
+import {
+  HAND_OVER_DEFAULT, type HandOverEdit, HandOverField, type HandOverRule, handOverRowSays, handOverSummary,
+} from '../../settings/repository/HandOver';
 import { type Accepting, AcceptingNote, LandingField, landingProcessSays, type LandingRule } from '../../settings/repository/Landings';
 import { LanguageChoice, type LanguageOption } from '../../settings/repository/Languages';
 import { LineField } from '../../settings/repository/Lines';
@@ -39,6 +42,8 @@ export type WorkspaceDefaults = {
   commits?: { set?: CommitRule; onChange: (edit: CommitEdit) => void } | null;
   /** What a helper its repositories' agents ask for does (DOORS1b, D163 point 3): `daoris driver helpers --workspace`. */
   helpers?: { set?: HelperRule; onChange: (edit: HelperEdit) => void } | null;
+  /** What an agent's ask to hand its session over does in its repositories (MIXAGENT1c, D163 point 3): `daoris driver handover --workspace`. */
+  handOver?: { set?: HandOverRule; onChange: (edit: HandOverEdit) => void } | null;
 };
 
 /** Where it syncs (D48 §5), and Claude Code's rules for it (PERM1): its remote and its reach. */
@@ -103,7 +108,7 @@ export function WorkspaceSetup({
 }: WorkspaceSetupProps) {
   const { t } = useTranslation();
   const daoris = (value: string) => t('projects.setup.marked.daoris', { value });
-  const { line, landing, language, read, review, opinion, commits, helpers } = defaults;
+  const { line, landing, language, read, review, opinion, commits, helpers, handOver } = defaults;
 
   const defaultsParts = [
     ...(line ? [line.set ? t('projects.setup.summary.line', { branch: line.set }) : daoris(t('projects.workspace.summary.noLine'))] : []),
@@ -115,6 +120,7 @@ export function WorkspaceSetup({
           : daoris(t('projects.setup.summary.noLanguage'))]
       : []),
     ...(helpers ? [helpers.set ? helperSummary(t, helpers.set) : daoris(helperSummary(t, HELPER_DEFAULT))] : []),
+    ...(handOver ? [handOver.set ? handOverSummary(t, handOver.set) : daoris(handOverSummary(t, HAND_OVER_DEFAULT))] : []),
     ...(read
       ? [read.set === undefined
           ? daoris(t('projects.setup.summary.read'))
@@ -139,7 +145,7 @@ export function WorkspaceSetup({
 
   const opensItself: Record<WorkspaceSection, boolean> = {
     defaults: Boolean(line?.set || landing?.set || language?.set || read?.set !== undefined || review?.set || opinion?.set
-      || commits?.set || helpers?.set),
+      || commits?.set || helpers?.set || handOver?.set),
     access: Boolean(accessShown?.pauses.some((each) => each.source === 'workspace')),
     remote: Boolean(wired) || ruleCount > 0 || startWiring,
   };
@@ -229,6 +235,21 @@ export function WorkspaceSetup({
               onClear={() => helpers.onChange({ clear: true })}
               editor={() => (
                 <HelperField name={workspace} set={helpers.set} inherited={HELPER_DEFAULT} busy={busy} onChange={helpers.onChange} />
+              )}
+            />
+          )}
+          {handOver && (
+            <Inheritable
+              setHere={t('projects.workspace.setHere')}
+              label={t('settings.handOver.label')}
+              twin={t('settings.handOver.twin.workspace', { workspace: shellWord(workspace, '<workspace>') })}
+              why={plain(t('settings.handOver.body'))}
+              says={handOverRowSays(t, handOver.set ?? HAND_OVER_DEFAULT, handOver.set ? { source: 'workspace', workspace } : { source: 'default' })}
+              own={handOver.set !== undefined}
+              busy={busy}
+              onClear={() => handOver.onChange({ clear: true })}
+              editor={() => (
+                <HandOverField name={workspace} set={handOver.set} inherited={HAND_OVER_DEFAULT} busy={busy} onChange={handOver.onChange} />
               )}
             />
           )}

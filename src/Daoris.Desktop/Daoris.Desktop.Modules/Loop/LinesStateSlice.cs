@@ -37,7 +37,7 @@ public static class LinesStateSlice
     public const string Name = "lines";
 
     /// <summary>What each partition carries: every field of <c>LINES</c>' answer, each holding that repository's rows of it.</summary>
-    public static readonly IReadOnlyList<string> Fields = ["lines", "landings", "languages", "reviews", "opinions", "helpers", "commits", "access"];
+    public static readonly IReadOnlyList<string> Fields = ["lines", "landings", "languages", "reviews", "opinions", "helpers", "handOver", "commits", "access"];
 
     /// <summary>What <c>LINES</c> answers that is never pushed: none, every field a view reads.</summary>
     public static readonly IReadOnlyList<string> PulledOnly = [];
