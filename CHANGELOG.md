@@ -5,6 +5,12 @@ with the version and date at release.
 
 ## Unreleased
 
+- A repository's Setup says which checks its driven sessions run, beside its heavy gates, and `daoris-driver checks` sets
+  the same choice from a terminal. *Light* has sessions run the gates the repository does not mark heavy and the checks their
+  change reaches, filtered; its heavy gates are left out of every session. Each session is told so when it starts,
+  `daoris-driver run-heavy` refuses its tree, and on Claude Code each heavy gate's declared command is refused too; an agent
+  that takes no rules from Daoris is told them instead. *Heavy at end* has sessions run them once, at their end. Nothing set
+  runs as before.
 - A driven session whose own conversation cannot be resumed moves to a new session by itself only where waiting would not help.
   A refusal from its agent still carries it on, handed what Daoris kept of it, but a conversation open in another client of its
   agent now waits for you until you say more. Claude Code ending before it reopens a conversation is tried once more first, in a
