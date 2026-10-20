@@ -589,8 +589,10 @@ public sealed class Driver(
             .ConfigureAwait(false));
 
         // A source's reopen (FABRIC-CLOSE1c8, §E5): the session that said the reopened ready is told once, with the person's words,
-        // and the planner's go-on resumes it at the next look. Read from the quests this look read: nothing more where none is reopened.
-        events.AddRange(await Stages.TimeAsync("reopens", () => Context.Reopens.LookAsync(new ServiceReopenDoors(service), looked, ct))
+        // and the planner's go-on resumes it at the next look; a running one this loop runs at its next step, through its inbox
+        // (COWORK1b). Read from the quests this look read: nothing more where none is reopened.
+        events.AddRange(await Stages.TimeAsync("reopens", () => Context.Reopens
+                .LookAsync(new ServiceReopenDoors(service, Context.Processes, Context.Events), looked, ct))
             .ConfigureAwait(false));
 
         // The set-ups waiting for the person here, and each set-up step's tab let go once they answered it (REVIEWENV1d, design
@@ -1740,7 +1742,8 @@ public sealed class Driver(
             // Another agent's findings go on only in their own session (XAGENT1e, design §6.7): where they are all that waits,
             // nothing is carried on, and they go to the person. The person's words beside them are carried on as ever.
             // A helper's answer is the same (MIXAGENT2a-ii): another agent's claim, never carried to a new session as the person's.
-            if ((park.Findings.Count > 0 || park.Helpers.Count > 0) && !park.Waiting.Any(word => word.Persons))
+            // So are Daoris's own words (COWORK1b): a message of Daoris's never starts a new session (the message-urgency design §4.1).
+            if (park.Waiting.Any(word => !word.Persons) && !park.Waiting.Any(word => word.Persons))
             {
                 await fresh.LetGoAsync().ConfigureAwait(false);
                 return GoOns.CannotGoOn(quest, park, fellBack);

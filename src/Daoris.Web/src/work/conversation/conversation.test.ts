@@ -122,6 +122,26 @@ describe('toTurns', () => {
   });
 
   /**
+   * COWORK1b (D188's COWORK1b note): Daoris's own words, a reopen told or a step's go-on, open a turn naming them as Daoris's, never the
+   * person's and no composed target with an account to miss; held for a running session, they wait marked so, and the driver's note
+   * that dropped one settles it there.
+   */
+  it('opens a turn with Daoris’s own words, and holds them marked as Daoris’s until taken or dropped', () => {
+    const taken = toTurns([e(1, { kind: 'user', origin: 'target', from: 'daoris', id: 'w1', text: 'Daoris: reopened.' })]).turns;
+    expect(taken[0]!.ask).toMatchObject({ origin: 'target', from: 'daoris' });
+    expect(taken[0]!.ask).not.toHaveProperty('account');
+    expect(toTurns([e(1, { kind: 'user', origin: 'person', text: 'Daoris: reopened.' })]).turns[0]!.ask).not.toHaveProperty('from');
+
+    const { turns } = toTurns([
+      e(1, { kind: 'user', origin: 'target', text: 'go' }),
+      e(2, { kind: 'user', origin: 'target', from: 'daoris', id: 'said-1', reaches: 'turn-end', level: 'urgent', text: 'Daoris: reopened.' }),
+      e(3, { kind: 'note', code: 'dropped', words: ['said-1'], text: '— Daoris did not send this: what it said no longer holds.' }),
+    ]);
+    const held = turns[0]!.items.find((item) => item.kind === 'held')!;
+    expect(held).toMatchObject({ from: 'daoris', reaches: 'turn-end', settled: true });
+  });
+
+  /**
    * STEER1 (D136): what the person tells a working session shows the moment it is said, in the turn it was said in, as
    * waiting — without opening a turn, since the agent is still on the one before. Where the session took the words, the
    * same words come again under the same id as that turn's ask, and they wait no longer.
@@ -592,7 +612,7 @@ describe('a conversation note’s codes, held to the driver', () => {
 
   it('maps exactly the codes the driver declares, each to its key', () => {
     // A scan that matched nothing would pass on a moved or renamed class: it has to see them.
-    expect(declared).toEqual(['lost', 'withdrawn']);
+    expect(declared).toEqual(['lost', 'withdrawn', 'dropped']);
     expect(Object.keys(CONVERSATION_CODES).sort()).toEqual([...declared].sort());
     for (const code of declared) expect(CONVERSATION_CODES[code]).toBe(`work.conversation.${code}`);
   });

@@ -758,7 +758,7 @@ public sealed class ChatTurnsTests
     {
         var catalogue = NoteCodesTests.Catalogue(language);
 
-        Assert.Equal([SessionEventCodes.Lost, SessionEventCodes.Withdrawn], SessionEventCodes.All);
+        Assert.Equal([SessionEventCodes.Lost, SessionEventCodes.Withdrawn, SessionEventCodes.Dropped], SessionEventCodes.All);
         foreach (var code in SessionEventCodes.All)
         {
             Assert.Matches("^[a-z]+(-[a-z]+)*$", code);

@@ -427,17 +427,23 @@ public sealed record SessionResponse(
 // MSG1a: one word waiting on a record — its id, which the record's events say again where the session took it; the
 // words; when; its files' names, never where they are; and whether it was said after the record ended. XAGENT1c: `by`, the
 // second opinion whose findings these are, another agent's claims; absent, the person's words, as every word before it was.
+// COWORK1b (D188): `from`, the author where it is not the person (`daoris`), and `key`, its producer's; absent on a word kept with none.
 public sealed record SaidWordResponse(
-    string Id, string Text, DateTimeOffset At, IReadOnlyList<string> Files, bool Reopens, string? By = null, string? Helper = null);
+    string Id, string Text, DateTimeOffset At, IReadOnlyList<string> Files, bool Reopens, string? By = null, string? Helper = null,
+    string? From = null, string? Key = null);
 // MSG1a (D137 §5.3): what the person says to a parked or ended session. `Files` are the names of what they gave with it;
 // a path is cut to its name before it is kept.
 // `Channel` (SESSONE2e, D167) is the id of the channel message the words are, which the channel already keeps on the ask:
 // absent, the door keeps them as before.
-public sealed record SayRequest(string? Text, IReadOnlyList<string>? Files = null, string? Channel = null);
+// COWORK1b (D188): `From` names the author where it is not the person (`daoris`, refused `from` for any other), and `Key` the
+// producer's key, a word kept once per key on the record; absent, the door keeps the person's words as before.
+public sealed record SayRequest(
+    string? Text, IReadOnlyList<string>? Files = null, string? Channel = null, string? From = null, string? Key = null);
 // The session as it stands, the ledger's sentence, and the word as kept (to this machine only).
 public sealed record SaidResponse(SessionResponse Session, string Message, SaidWordResponse? Said);
 // A say refused: the sentence as `error`, beside its word (`refusal`: `no-words`, `not-found`, `not-ours`, `intake`,
-// `stood-down`, `running`, and XAGENT1c's `opinion`, a reviewer's record), which a reader acts on instead of the sentence, and
+// `stood-down`, `running`, XAGENT1c's `opinion`, a reviewer's record, and COWORK1b's `from`, an author this service does not
+// know), which a reader acts on instead of the sentence, and
 // the quest, ask, machine or second opinion it names.
 public sealed record SessionSayRefusalResponse(
     string Error, string Refusal, string? Quest = null, string? Ask = null, string? Origin = null, string? Opinion = null);

@@ -8,16 +8,51 @@ public interface IReopenDoors
     /// <summary>This machine's record with this id, as a run that goes on reads it; null where none is kept here.</summary>
     Task<PriorSession?> RecordAsync(string session, CancellationToken ct);
 
-    /// <summary>The say door (MSG1a): words kept on a parked or ended record of this machine's, for it to go on with.</summary>
-    Task<SayAnswer> SayAsync(string session, string text, CancellationToken ct);
+    /// <summary>
+    /// The say door (MSG1a): Daoris's words kept on a parked or ended record of this machine's, for it to go on with, marked as
+    /// Daoris's under their fact's key (COWORK1b), so a say again under the same key is answered with the word kept.
+    /// </summary>
+    Task<SayAnswer> SayAsync(string session, string text, string key, CancellationToken ct);
+
+    /// <summary>One quest as it stands now, for whether a word's fact still holds where it is delivered (COWORK1b); null where none.</summary>
+    Task<QuestView?> QuestAsync(string quest, CancellationToken ct);
+
+    /// <summary>
+    /// A running session's inbox where this loop runs it and its door takes words (COWORK1b, SESS3), or null: a conversation, a
+    /// session another loop runs, or one whose door takes none.
+    /// </summary>
+    DrivenInbox? InboxOf(string session);
+
+    /// <summary>
+    /// Take Daoris's words whose fact no longer holds off a record (COWORK1b), saying so in its conversation; a refusal is the next
+    /// look's to try again.
+    /// </summary>
+    Task DropAsync(string session, IReadOnlyList<SaidWordView> words, CancellationToken ct);
 }
 
-/// <summary>The reopen's doors through the loop's service: the records' read and the say door.</summary>
-public sealed class ServiceReopenDoors(ServiceClient service) : IReopenDoors
+/// <summary>The reopen's doors through the loop's service, its sessions' inboxes and its records of what each session did.</summary>
+public sealed class ServiceReopenDoors(ServiceClient service, SessionProcesses processes, SessionEvents events) : IReopenDoors
 {
     public Task<PriorSession?> RecordAsync(string session, CancellationToken ct) => service.RecordAsync(session, ct);
 
-    public Task<SayAnswer> SayAsync(string session, string text, CancellationToken ct) => service.SayAsync(session, text, null, ct);
+    public Task<SayAnswer> SayAsync(string session, string text, string key, CancellationToken ct) =>
+        service.SayAsync(session, text, null, ct, from: DaorisWords.From, key: key);
+
+    public Task<QuestView?> QuestAsync(string quest, CancellationToken ct) => service.FindQuestAsync(quest, ct);
+
+    public DrivenInbox? InboxOf(string session) => processes.InboxOf(session);
+
+    public async Task DropAsync(string session, IReadOnlyList<SaidWordView> words, CancellationToken ct)
+    {
+        var ids = words.Select(word => word.Id).OfType<string>().ToList();
+        if (ids.Count == 0) return;
+        var (taken, message) = await service.TakenAsync(session, ids, ct: ct).ConfigureAwait(false);
+        if (!taken) throw new DriverException(message);
+        events.Keep(session, new SessionEvent
+        {
+            Kind = SessionEventKind.Note, Text = DaorisWords.DroppedLine, Words = ids, Code = SessionEventCodes.Dropped,
+        }, say: null);
+    }
 }
 
 /// <summary>
@@ -34,22 +69,34 @@ public sealed class ServiceReopenDoors(ServiceClient service) : IReopenDoors
 ///
 /// <para><b>When.</b> While the quest is taken and its reopen stands; a later submission answers it, so nothing is said. A parked
 /// or ended record is told at once: words on a park are its answer, on an ended record they reopen it, and the planner's go-on
-/// resumes it at the next look. A running one is told at the first look that finds it parked or ended, since the say door refuses a
-/// running record. A record this machine keeps no more, or whose tree is gone, is told nothing, since its go-on would make the work
+/// resumes it at the next look. A running one this loop runs is told through its inbox as Daoris's urgent words (COWORK1b, the
+/// message-urgency design §5): at its next step where its door takes words then, held for its turn's end where it takes them only
+/// then, and judged again by the word's key where it is delivered (<see cref="DaorisWords"/>). A running one no inbox here reaches,
+/// a conversation or another loop's, is told at the first look that finds it parked or ended, since the say door refuses a running
+/// record. A record this machine keeps no more, or whose tree is gone, is told nothing, since its go-on would make the work
 /// again: the look says why, once.</para>
 ///
-/// <para><b>Once.</b> A mark beside the session's transcript (<see cref="ReopenMarks"/>), written once the say door kept the words,
-/// keyed by the quest and the reopen's machine and sequence, holds it across a restart; this telling's own memory holds it where the
-/// mark could not be written, and holds a refusal other than <c>running</c>, said once and not asked again. A crash between the
-/// say and the mark may tell it twice (D173's note).</para>
+/// <para><b>Once.</b> Every word is said as Daoris's under its fact's key (<see cref="DaorisKeys"/>), and the say door keeps one word
+/// per key, answering a say again with the word kept. A mark beside the session's transcript (<see cref="ReopenMarks"/>), written
+/// once the say door kept the words, or once the inbox delivered them, keyed by the quest and the reopen's machine and sequence,
+/// holds it across a restart; this telling's own memory holds it where the mark could not be written, and holds a refusal other than
+/// <c>running</c>, said once and not asked again. A crash between the say and the mark says the words again under the same key, so
+/// the record keeps one word (the design's trap 19). Words held in an inbox and lost with the driver were never marked, and are told
+/// again once the record is not running.</para>
+///
+/// <para><b>Dropped, never said late</b> (the design §4.3): Daoris's words waiting on a record the planner would go on with are judged
+/// at each look by their keys, before the go-on that would deliver them, and those whose fact no longer holds are taken off, said in
+/// the session's conversation.</para>
 ///
 /// <para><b>The cost.</b> Nothing is read where no quest this look read is a reopened source; otherwise one read of the records per
 /// reopen not yet told, unless the look's last records or <see cref="Snapshot.NamedByReopen"/> hold its session.</para>
 ///
 /// <para><b>The step's go-on</b> (FABRIC-CLOSE1c13): a step the person went on with after its last session here had ended normally,
 /// parked after its <c>ready</c> or completed (<see cref="Planner.GoneOnSince"/>), is told so in that session with Daoris's words, and
-/// the start that goes on with them brings its branch up to date with the source's new submission first (<see cref="BringsToSource"/>).
-/// Once with no mark, by the fact itself; nothing more is read.</para>
+/// the start that goes on with them brings its branch up to date with the source's new submission first (<see cref="BringsToSource"/>,
+/// which reads the word's mark and key, never its sentence). Once with no mark, by the fact itself; nothing more is read. Never to a
+/// running session: one that runs across the go-on is carried on at its end with its branch brought up to date
+/// (<see cref="Planner.ReopenedFrom"/>), which only a start can do (D188's COWORK1b note).</para>
 /// </remarks>
 public sealed class ReopenTelling(ReopenMarks marks)
 {
@@ -61,6 +108,7 @@ public sealed class ReopenTelling(ReopenMarks marks)
     public async Task<IReadOnlyList<string>> LookAsync(IReopenDoors doors, Snapshot snapshot, CancellationToken ct)
     {
         var lines = new List<string>();
+        await DropAnsweredAsync(doors, snapshot, lines, ct).ConfigureAwait(false);
         foreach (var quest in snapshot.Quests)
         {
             if (quest is not { Status: "Taken", Reopened: { Session: { Length: > 0 } session } reopen } || session.Contains('/')) continue;
@@ -117,7 +165,8 @@ public sealed class ReopenTelling(ReopenMarks marks)
             return;
         }
 
-        var said = await doors.SayAsync(last.Session, GoneOnWords(step.Id, step.Parent!, step.GrewFrom!), ct).ConfigureAwait(false);
+        var said = await doors.SayAsync(
+            last.Session, GoneOnWords(step.Id, step.Parent!, step.GrewFrom!), DaorisKeys.GoneOn(step.Id, step.GrewFrom!), ct).ConfigureAwait(false);
         if (said.Kept)
         {
             _settled[key] = true;
@@ -149,7 +198,13 @@ public sealed class ReopenTelling(ReopenMarks marks)
             return;
         }
 
-        if (record.Running) return;
+        // 🔴 COWORK1b (the design's §14 trap): a running session is told at its next step through its inbox, never left to its end.
+        // One no inbox here reaches is told once a later look finds it parked or ended, since the say door refuses a running record.
+        if (record.Running)
+        {
+            if (doors.InboxOf(session) is { } inbox) TellRunning(doors, inbox, quest, reopen, session, key, lines);
+            return;
+        }
 
         if (record.Tree is not { Length: > 0 } tree || !Directory.Exists(tree))
         {
@@ -167,18 +222,88 @@ public sealed class ReopenTelling(ReopenMarks marks)
             return;
         }
 
-        var said = await doors.SayAsync(session, Words(quest, reopen), ct).ConfigureAwait(false);
+        var said = await doors.SayAsync(session, Words(quest, reopen), DaorisKeys.Reopen(quest, reopen), ct).ConfigureAwait(false);
         if (said.Kept)
         {
             _settled[key] = true;
             marks.Mark(session, quest, reopen, DateTimeOffset.UtcNow);
-            lines.Add($"reopen  session {session} was told the person reopened its submission on quest #{quest}, and goes on with their words");
+            lines.Add($"reopen  session {session} was told the person reopened its submission on quest #{quest}, and goes on with Daoris's words");
             return;
         }
 
         // A record that began running since it was read is told at a later look; any other refusal is said once.
         if (said.Refusal != "running") Settle(key, lines, $"reopen  session {session} was not told of quest #{quest}'s reopen: {said.Message}");
     }
+
+    /// <summary>
+    /// Tell a running session through its inbox (COWORK1b, the message-urgency design §3.1, §5): Daoris's words at urgent, which go
+    /// at its next step where its door takes words then, and are held for its turn's end where it takes them only then. Judged again
+    /// where they leave a hold, by the quest as it stands then; the mark is written as they go. An inbox closing as the session
+    /// winds up takes none, and a later look finds the record parked or ended.
+    /// </summary>
+    private void TellRunning(
+        IReopenDoors doors, DrivenInbox inbox, string quest, QuestReopenView reopen, string session, string key, List<string> lines)
+    {
+        var fact = DaorisKeys.Read(DaorisKeys.Reopen(quest, reopen))!;
+        var word = new ChatMessage(Words(quest, reopen), [])
+        {
+            Level = MessageLevel.Urgent,
+            Daoris = new DaorisWord(DaorisKeys.Reopen(quest, reopen))
+            {
+                Stands = async ct => DaorisKeys.Stands(fact, await doors.QuestAsync(quest, ct).ConfigureAwait(false)),
+                Delivered = () => marks.Mark(session, quest, reopen, DateTimeOffset.UtcNow),
+            },
+        };
+        var reach = inbox.ReachAt(MessageLevel.Urgent);
+        if (!inbox.Hold(word)) return;
+
+        _settled[key] = true;
+        var when = reach switch
+        {
+            DrivenReach.NextStep => "at its next step",
+            DrivenReach.TurnEnd => "when its turn ends",
+            _ => "as its first prompt goes",
+        };
+        lines.Add($"reopen  session {session} is told the person reopened its submission on quest #{quest} {when}, as Daoris's words");
+    }
+
+    /// <summary>
+    /// Daoris's words waiting on the records the planner would go on with (COWORK1b, the design §4.3), judged by their keys against the
+    /// quests this look read, before the go-on that would deliver them: those whose fact no longer holds are taken off and said once.
+    /// A word whose quest this look did not read, or whose key names no fact of Daoris's, waits as it is.
+    /// </summary>
+    private async Task DropAnsweredAsync(IReopenDoors doors, Snapshot snapshot, List<string> lines, CancellationToken ct)
+    {
+        var records = snapshot.LastRun.Values.Concat(snapshot.NamedByReopen.Values)
+            .Where(record => !record.Teammate && record.WordsWaiting)
+            .DistinctBy(record => record.Session, StringComparer.Ordinal);
+        foreach (var record in records)
+        {
+            var answered = record.Waiting
+                .Where(word => word is { Daoris: true, Id: { } id } && !_settled.ContainsKey(Dropping(record.Session, id))
+                               && DaorisKeys.Read(word.Key) is { } fact
+                               && snapshot.Quests.FirstOrDefault(quest => string.Equals(quest.Id, fact.Quest, StringComparison.OrdinalIgnoreCase)) is { } quest
+                               && !DaorisKeys.Stands(fact, quest))
+                .ToList();
+            if (answered.Count == 0) continue;
+
+            try
+            {
+                await doors.DropAsync(record.Session, answered, ct).ConfigureAwait(false);
+                foreach (var word in answered) _settled[Dropping(record.Session, word.Id!)] = true;
+                lines.Add(
+                    $"reopen  session {record.Session}'s words from Daoris were taken off its record, since what they said no longer holds: "
+                    + string.Join(", ", answered.Select(word => word.Key)));
+            }
+            catch (Exception error) when (error is DriverException or HttpRequestException or System.Text.Json.JsonException
+                                              || (error is OperationCanceledException && !ct.IsCancellationRequested))
+            {
+                lines.Add($"reopen  session {record.Session}'s words from Daoris that no longer hold were not taken off at this look, and the next tries again: {error.Message}");
+            }
+        }
+    }
+
+    private static string Dropping(string session, string word) => $"{session}\n{word}\ndropped";
 
     private void Settle(string key, List<string> lines, string line)
     {
@@ -189,8 +314,8 @@ public sealed class ReopenTelling(ReopenMarks marks)
 
     /// <summary>
     /// What a step's session is told once the person went on with it on its source's new submission (FABRIC-CLOSE1c13): Daoris's own
-    /// sentence, naming that submission, which is also how the start knows to bring its branch up to date (<see cref="BringsToSource"/>).
-    /// What the start did with the branch is said after it (LANDSYNC2's place).
+    /// sentence, naming that submission. The start knows to bring its branch up to date from the word's mark and key, never from this
+    /// sentence (<see cref="BringsToSource"/>, COWORK1b). What the start did with the branch is said after it (LANDSYNC2's place).
     /// </summary>
     public static string GoneOnWords(string quest, string source, QuestSubmissionRef grew) =>
         $"Daoris: the person reopened the work of `#{source}` that quest `#{quest}` grew from, and went on with `#{quest}` on its new "
@@ -203,11 +328,16 @@ public sealed class ReopenTelling(ReopenMarks marks)
     /// normally, going on with Daoris's words of the go-on to the submission the step grows from now, while it has no result again.
     /// Every other going-on syncs with the line alone, as before.
     /// </summary>
+    /// <remarks>
+    /// 🔴 FABRIC-CLOSE1c17 (COWORK1b): the go-on is read from the word's mark, Daoris's under the go-on's key, never from its sentence.
+    /// The person's words equal to the sentence are theirs, and a word an older host kept, with no mark, reads as the person's: either
+    /// goes on with the line alone.
+    /// </remarks>
     public static bool BringsToSource(QuestView step, PriorSession record) =>
         step.GrewFrom is { } grew
         && (Planner.StoppedByReopen(record)
-            || (step is { Submission: null, Parent: { Length: > 0 } source }
-                && record.Waiting.Any(word => string.Equals(word.Text, GoneOnWords(step.Id, source, grew), StringComparison.Ordinal))));
+            || (step is { Submission: null, Parent: { Length: > 0 } }
+                && record.Waiting.Any(word => word.Daoris && string.Equals(word.Key, DaorisKeys.GoneOn(step.Id, grew), StringComparison.Ordinal))));
 
     /// <summary>What the session is told: Daoris's own sentence naming the reopened submission, then the person's words quoted.</summary>
     public static string Words(string quest, QuestReopenView reopen)

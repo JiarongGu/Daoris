@@ -119,5 +119,8 @@ A branch in one lane cannot run the others; the hand-back then names the rows le
 ## What this does not cover
 
 A column on another table (`quests`, `asks`) has its own store and feed (`twins`). A word on a record (`SaidWord`'s
-`By`, `Helper`) is a member of the word's own records and the `said` JSON the store keeps, not a column. A record's *state*
+`By`, `Helper`, `From`, `Key`) is a member of the word's own records and the `said` JSON the store keeps, not a column. COWORK1b's
+`From` and `Key` (D188's COWORK1b note) walked that chain: `SaidWord` and `SaidWord.Persons`, the store's `SaidWords` read and
+`Write`, the say door's `SayRequest` and `SaidWordResponse` with `ToSaid`, then the driver's `ServiceClient.SayAsync` and
+`ReadWord` into `SaidWordView`, and every reader of `Persons` on both sides. A record's *state*
 or a new `SessionKind` changes the ledger's rules (D46) and is wider than a field.

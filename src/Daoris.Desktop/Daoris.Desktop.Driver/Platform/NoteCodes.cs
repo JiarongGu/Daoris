@@ -381,6 +381,7 @@ public static class NoteCodes
         new(ResumedWhy.WordsAndFindings, [], "note.resumed.why.words-and-findings"),
         new(ResumedWhy.Helper, [], "note.resumed.why.helper"),
         new(ResumedWhy.WordsAndHelper, [], "note.resumed.why.words-and-helper"),
+        new(ResumedWhy.Daoris, [], "note.resumed.why.daoris"),
     ]);
 
     /// <summary>Why the person's words never reached the session (CONVNOTE2d1; <see cref="UnreachedWhy"/>): the page's <c>note.words.why.*</c>.</summary>
@@ -644,6 +645,8 @@ public static class NoteCodes
     public static readonly NoteCode ResumedOpening = new("resumed.opening", ["adapter", "why"]) { Why = Resumed };
     public static readonly NoteCode ResumedMoved = new("resumed.moved", ["now", "then"]);
     public static readonly NoteCode ResumedNative = new("resumed.native", ["adapter"]);
+    // The native door going on with Daoris's own words alone (COWORK1b): never "what you said".
+    public static readonly NoteCode ResumedNativeDaoris = new("resumed.native-daoris", ["adapter"]);
 
     // ——— A permission the rules refused (CONVNOTE2b, Acp.AnswerPermissionAsync): the lead and the closing sentence are facts
     // of Daoris's; the call's title between them is the agent's words, which may hold a path (D142 point 2).
@@ -1049,6 +1052,9 @@ public static class ResumedWhy
 
     /// <summary>The person's words and a helper's answer.</summary>
     public const string WordsAndHelper = "words-and-helper";
+
+    /// <summary>Daoris's own words alone (COWORK1b): a reopen told, a step's go-on.</summary>
+    public const string Daoris = "daoris";
 }
 
 /// <summary>

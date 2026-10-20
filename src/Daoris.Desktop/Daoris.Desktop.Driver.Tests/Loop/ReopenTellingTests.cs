@@ -30,7 +30,11 @@ public sealed class ReopenTellingTests : IDisposable
 
     private string Tree => DaorisHome.Entry(_home, HomeEntry.Trees, "s-1");
 
-    /// <summary>The service's doors standing in: this machine's records by id, and every read and every word said.</summary>
+    /// <summary>
+    /// The service's doors standing in: this machine's records by id, every read and every word said with its key, the words a
+    /// record keeps, one per key as the say door keeps them (COWORK1b), the running sessions' inboxes, the quests as they stand
+    /// now, and the words taken off a record whose fact no longer holds.
+    /// </summary>
     private sealed class Doors : IReopenDoors
     {
         public Dictionary<string, PriorSession> Records { get; } = new(StringComparer.Ordinal);
@@ -38,6 +42,17 @@ public sealed class ReopenTellingTests : IDisposable
         public List<string> Reads { get; } = [];
 
         public List<(string Session, string Text)> Said { get; } = [];
+
+        public List<string> Keys { get; } = [];
+
+        /// <summary>What each record keeps, by session: one word per key, as the say door answers a retry with the word kept.</summary>
+        public Dictionary<string, List<string>> Kept { get; } = new(StringComparer.Ordinal);
+
+        public Dictionary<string, DrivenInbox> Inboxes { get; } = new(StringComparer.Ordinal);
+
+        public Dictionary<string, QuestView?> Quests { get; } = new(StringComparer.Ordinal);
+
+        public List<(string Session, IReadOnlyList<string?> Words)> Dropped { get; } = [];
 
         public string? Refuse { get; set; }
 
@@ -47,12 +62,25 @@ public sealed class ReopenTellingTests : IDisposable
             return Task.FromResult(Records.GetValueOrDefault(session));
         }
 
-        public Task<SayAnswer> SayAsync(string session, string text, CancellationToken ct)
+        public Task<SayAnswer> SayAsync(string session, string text, string key, CancellationToken ct)
         {
             Said.Add((session, text));
-            return Task.FromResult(Refuse is null
-                ? new SayAnswer(true, "Kept.")
-                : new SayAnswer(false, $"Refused: {Refuse}.") { Refusal = Refuse });
+            Keys.Add(key);
+            if (Refuse is not null) return Task.FromResult(new SayAnswer(false, $"Refused: {Refuse}.") { Refusal = Refuse });
+
+            var kept = Kept.TryGetValue(session, out var words) ? words : Kept[session] = [];
+            if (!kept.Contains(key)) kept.Add(key);
+            return Task.FromResult(new SayAnswer(true, "Kept."));
+        }
+
+        public Task<QuestView?> QuestAsync(string quest, CancellationToken ct) => Task.FromResult(Quests.GetValueOrDefault(quest));
+
+        public DrivenInbox? InboxOf(string session) => Inboxes.GetValueOrDefault(session);
+
+        public Task DropAsync(string session, IReadOnlyList<SaidWordView> words, CancellationToken ct)
+        {
+            Dropped.Add((session, [.. words.Select(word => word.Id)]));
+            return Task.CompletedTask;
         }
     }
 
@@ -108,6 +136,8 @@ public sealed class ReopenTellingTests : IDisposable
 
         var said = Assert.Single(doors.Said);
         Assert.Equal(("s1", ReopenTelling.Words("q1", source.Reopened!)), said);
+        // COWORK1b: said as Daoris's under its fact's key, the quest and the reopen's machine and sequence.
+        Assert.Equal("reopen/q1/desk/44", Assert.Single(doors.Keys));
         Assert.Contains(told, line => line.StartsWith("reopen  ", StringComparison.Ordinal) && line.Contains("session s1", StringComparison.Ordinal));
         Assert.True(File.Exists(new ReopenMarks(_home).PathOf("s1")));
 
@@ -135,8 +165,76 @@ public sealed class ReopenTellingTests : IDisposable
         Assert.False(new ReopenMarks(blocked).Told("s1", "q1", Source().Reopened!));
     }
 
+    /// <summary>
+    /// 🔴 COWORK1b (the message-urgency design §5's Daoris row, trap 17): a running session this loop runs is told at its next step,
+    /// as Daoris's urgent words through its inbox, never the say door, which refuses a running record. Once: the mark is written as
+    /// the words go, and the look tells it nothing more.
+    /// </summary>
     [Fact]
-    public async Task A_running_session_is_told_nothing_until_a_look_finds_it_parked_or_ended()
+    public async Task A_running_session_whose_door_takes_words_at_its_next_step_is_told_there_once_as_daoris_words()
+    {
+        var doors = new Doors();
+        doors.Records["s1"] = Record("working");
+        var sent = new List<ChatMessage>();
+        var inbox = new DrivenInbox(_ => { });
+        inbox.Attach(interrupt: null, deliver: message =>
+        {
+            sent.Add(message);
+            return Task.FromResult("end_turn");
+        });
+        inbox.Flow();
+        doors.Inboxes["s1"] = inbox;
+        var telling = Telling();
+
+        var told = await LookAsync(telling, doors, Look(Source()));
+        Assert.Empty(await LookAsync(telling, doors, Look(Source())));
+
+        var word = Assert.Single(sent);
+        Assert.Equal(ReopenTelling.Words("q1", Source().Reopened!), word.Text);
+        Assert.Equal((MessageLevel.Urgent, "reopen/q1/desk/44"), (word.Level, word.Daoris?.Key));
+        Assert.Contains("at its next step, as Daoris's words", Assert.Single(told), StringComparison.Ordinal);
+        Assert.Empty(doors.Said);
+        Assert.True(new ReopenMarks(_home).Told("s1", "q1", Source().Reopened!));
+        Assert.Empty(await LookAsync(Telling(), doors, Look(Source())));
+    }
+
+    /// <summary>
+    /// COWORK1b (the design §3.1): on a door that takes words only at its turn's end, Daoris's words are held for it, marked urgent,
+    /// and judged again where they are delivered: while the reopen stands they go, and the mark is written then; once a later
+    /// submission answered it they are dropped, never said late, and nothing is marked.
+    /// </summary>
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task A_running_session_whose_door_takes_words_at_its_turns_end_holds_them_and_judges_them_again_there(bool stands)
+    {
+        var doors = new Doors();
+        doors.Records["s1"] = Record("working");
+        var inbox = new DrivenInbox(_ => { });
+        inbox.Attach(interrupt: null);
+        doors.Inboxes["s1"] = inbox;
+        var telling = Telling();
+
+        var told = await LookAsync(telling, doors, Look(Source()));
+        Assert.Contains("when its turn ends, as Daoris's words", Assert.Single(told), StringComparison.Ordinal);
+        Assert.False(new ReopenMarks(_home).Told("s1", "q1", Source().Reopened!));
+
+        // Between the look and the turn's end the session said `ready` again, or did not.
+        doors.Quests["q1"] = stands ? Source() : Source(sequence: null);
+        var held = inbox.NextOrClose()!.Held!;
+        Assert.Equal(stands, await DaorisWords.GoesAsync(held, _closing.Token));
+
+        Assert.Equal(stands, new ReopenMarks(_home).Told("s1", "q1", Source().Reopened!));
+        Assert.Empty(await LookAsync(telling, doors, Look(Source())));
+        Assert.Empty(doors.Said);
+    }
+
+    /// <summary>
+    /// A running session no inbox here reaches, a conversation or one another loop runs, is told at the first look that finds it
+    /// parked or ended, through the say door, as before (D188's COWORK1b note).
+    /// </summary>
+    [Fact]
+    public async Task A_running_session_no_inbox_here_reaches_is_told_once_a_look_finds_it_parked_or_ended()
     {
         var doors = new Doors();
         doors.Records["s1"] = Record("working");
@@ -148,6 +246,57 @@ public sealed class ReopenTellingTests : IDisposable
         doors.Records["s1"] = Record("completed");
         await LookAsync(telling, doors, Look(Source()));
         Assert.Equal("s1", Assert.Single(doors.Said).Session);
+    }
+
+    /// <summary>
+    /// 🔴 COWORK1b (the design §6, trap 19): a failure between the say and the mark tells one word. The driver started again says the
+    /// same words under the same key, and the say door answers it with the word kept.
+    /// </summary>
+    [Fact]
+    public async Task A_failure_between_the_say_and_the_mark_tells_one_word()
+    {
+        var doors = new Doors();
+        doors.Records["s1"] = Record("completed");
+        // A home whose sessions folder is a file: the mark after the say is never written.
+        var blocked = Path.Combine(_home, "blocked");
+        Directory.CreateDirectory(blocked);
+        File.WriteAllText(DaorisHome.Entry(blocked, HomeEntry.Sessions), "not a folder");
+
+        await LookAsync(new ReopenTelling(new ReopenMarks(blocked)), doors, Look(Source()));
+        await LookAsync(new ReopenTelling(new ReopenMarks(blocked)), doors, Look(Source()));
+
+        Assert.Equal(2, doors.Said.Count);
+        Assert.Equal(["reopen/q1/desk/44", "reopen/q1/desk/44"], doors.Keys);
+        Assert.Equal(["reopen/q1/desk/44"], doors.Kept["s1"]);
+    }
+
+    /// <summary>
+    /// COWORK1b (the design §4.3): Daoris's words waiting on a record the planner would go on with are judged at each look by the key
+    /// each carries, before the go-on that would deliver them: one whose reopen a later submission answered, or whose go-on another
+    /// moved past, is taken off and said once; one whose fact holds, and the person's words, wait as they are.
+    /// </summary>
+    [Fact]
+    public async Task Daoris_words_waiting_on_a_record_whose_fact_no_longer_holds_are_taken_off_and_said_once()
+    {
+        var doors = new Doors();
+        var stale = new SaidWordView("w1", "Daoris: reopened.", Moved, [], Reopens: true) { From = DaorisWords.From, Key = "reopen/q1/desk/44" };
+        var standing = new SaidWordView("w2", "Daoris: reopened.", Moved, [], Reopens: true) { From = DaorisWords.From, Key = "reopen/q3/desk/50" };
+        var persons = new SaidWordView("w3", "Also the changelog.", Moved, [], Reopens: true);
+        var last = new Dictionary<string, PriorSession>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["q1"] = Record("completed") with { Said = [stale, persons] },
+            ["q3"] = Record("completed", "s3") with { Said = [standing] },
+        };
+        var look = Look(Source(sequence: null), Source(session: "s3", id: "q3", sequence: 50)) with { LastRun = last };
+        var telling = Telling();
+
+        var lines = await LookAsync(telling, doors, look);
+        await LookAsync(telling, doors, look);
+
+        var dropped = Assert.Single(doors.Dropped);
+        Assert.Equal("s1", dropped.Session);
+        Assert.Equal(["w1"], dropped.Words);
+        Assert.Contains(lines, line => line.StartsWith("reopen  ", StringComparison.Ordinal) && line.Contains("no longer holds", StringComparison.Ordinal));
     }
 
     [Fact]
@@ -359,6 +508,8 @@ public sealed class ReopenTellingTests : IDisposable
         Assert.Empty(await LookAsync(telling, doors, StepLook(EndedBefore(state))));
 
         Assert.Equal(("s2", ReopenTelling.GoneOnWords("q2", "q1", Grew)), Assert.Single(doors.Said));
+        // COWORK1b: under its fact's key, the step and the submission it grew from.
+        Assert.Equal("gone-on/q2/desk/43", Assert.Single(doors.Keys));
         Assert.Contains(told, line => line.StartsWith("reopen  session s2 ", StringComparison.Ordinal) && line.Contains("#q2", StringComparison.Ordinal));
         Assert.Empty(doors.Reads);
     }
@@ -424,6 +575,8 @@ public sealed class ReopenTellingTests : IDisposable
         var told = await driver.TickAsync(_closing.Token).WaitAsync(Bound);
         var said = Assert.Single(ledger.Session("s2")["said"]!.AsArray());
         Assert.Equal(ReopenTelling.GoneOnWords("q2", "q1", Grew), said!["text"]!.GetValue<string>());
+        // COWORK1b: kept as Daoris's, under the go-on's key, which is what the start reads to bring the branch up to date.
+        Assert.Equal(("daoris", "gone-on/q2/desk/43"), (said["from"]?.GetValue<string>(), said["key"]?.GetValue<string>()));
         Assert.Contains(told.Events, line => line.StartsWith("reopen  session s2 ", StringComparison.Ordinal));
 
         var next = await driver.TickAsync(_closing.Token).WaitAsync(Bound);
@@ -456,6 +609,7 @@ public sealed class ReopenTellingTests : IDisposable
         var told = await driver.TickAsync(_closing.Token).WaitAsync(Bound);
         var said = Assert.Single(ledger.Session("s1")["said"]!.AsArray());
         Assert.StartsWith("Daoris: the person reopened submission `desk` 41 of quest `#q1`", said!["text"]!.GetValue<string>());
+        Assert.Equal(("daoris", "reopen/q1/desk/44"), (said["from"]?.GetValue<string>(), said["key"]?.GetValue<string>()));
         Assert.Contains(told.Events, line => line.StartsWith("reopen  ", StringComparison.Ordinal));
 
         var next = await driver.TickAsync(_closing.Token).WaitAsync(Bound);

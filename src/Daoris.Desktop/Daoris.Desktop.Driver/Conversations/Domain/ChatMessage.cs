@@ -85,6 +85,13 @@ public sealed record ChatMessage(string Text, IReadOnlyList<KeptFile> Files)
     public ChannelItemView? Channel { get; init; }
 
     /// <summary>
+    /// Daoris's own words to a running session (COWORK1b, D188): a reopen told, a step's go-on, at urgent. The record keeps them as
+    /// Daoris's, never the person's (<see cref="Words"/>); the page's queue never lists them, and the run judges them again by their
+    /// key where they leave a hold for the wire (<see cref="DaorisWords.GoesAsync"/>). Null for every other message.
+    /// </summary>
+    public DaorisWord? Daoris { get; init; }
+
+    /// <summary>
     /// Whether the record already shows this message waiting, so the queue a page is told never lists it and a stop never hands
     /// it back to the person's composer: the words a conversation goes on with, and a helper's answer.
     /// </summary>
@@ -109,12 +116,14 @@ public sealed record ChatMessage(string Text, IReadOnlyList<KeptFile> Files)
     /// What the person told a driven session, as its record keeps it (SESS3, STEER1): theirs, under the id that pairs the
     /// words shown while they wait with the same words where the session took them, and the names of what they attached.
     /// The message's own, so a conversation records it as the loop does without naming the loop (LOOPOUT1). Another session's
-    /// message on the ask's channel is Daoris's words around that agent's claim (SESSONE2b), never the person's.
+    /// message on the ask's channel is Daoris's words around that agent's claim (SESSONE2b), never the person's, and Daoris's own
+    /// words are Daoris's (COWORK1b).
     /// </summary>
     internal static SessionEvent Words(ChatMessage message) => new()
     {
         Kind = SessionEventKind.User,
-        Origin = message.Channel is { Person: false } ? "target" : "person",
+        Origin = message.Channel is { Person: false } || message.Daoris is not null ? "target" : "person",
+        From = message.Daoris is not null ? DaorisWords.From : null,
         Id = message.Id,
         Text = message.Text,
         Files = message.Files.Count > 0 ? [.. message.Files.Select(kept => kept.Name)] : null,
