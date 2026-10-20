@@ -288,7 +288,7 @@ export type PushedAttention = {
   blocked?: { unknown: boolean; entries: Pick<MilestoneEntry, 'kind' | 'resource' | 'detail'>[] };
   held?: HeldAttempt;
   /** A start waiting on accounts that holds an intake, or quests in several repositories: `where` is its workspace. */
-  circle?: boolean;
+  wholeWorkspace?: boolean;
   /** What a start waiting on accounts holds, which its title says. */
   holding?: { quests: string[]; asks: string[] };
   /** When a signed-out account was read (UXFIX3). */
