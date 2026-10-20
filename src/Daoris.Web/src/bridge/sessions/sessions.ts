@@ -53,9 +53,10 @@ export const sessionsSlice: SliceSpec = {
 
 /**
  * The call a running session is making: its title and when it began, as `SESSION_GROUPS` writes `calling`, and whether it waits on
- * the person's answer to its permission request (AUTONOMY1b3b), absent from a host older than the mark.
+ * the person's answer to its permission request (AUTONOMY1b3b), and whether Daoris told the session it ran past its pipeline's bound
+ * (FABRIC-PIPELINE1c), each absent from a host older than the mark.
  */
-export type PushedCall = { title: string; since: string; waiting?: boolean };
+export type PushedCall = { title: string; since: string; waiting?: boolean; told?: boolean };
 
 const isCall = (value: unknown): value is PushedCall =>
   typeof value === 'object' && value !== null

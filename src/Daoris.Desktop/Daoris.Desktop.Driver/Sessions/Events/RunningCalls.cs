@@ -18,6 +18,12 @@ public sealed record RunningCall(string Title, DateTimeOffset Since)
     /// asking permission prompts (<see cref="HeldPermissions"/>), so the session stands still until they answer or the bound refuses it.
     /// </summary>
     public bool Waiting { get; init; }
+
+    /// <summary>
+    /// Whether Daoris told the session this call ran past its pipeline's <c>callMinutes</c> (FABRIC-PIPELINE1c, <see cref="LongCalls"/>):
+    /// the rail says so beside its time. Held in memory with the call, as the call is.
+    /// </summary>
+    public bool Told { get; init; }
 }
 
 /// <summary>
@@ -51,6 +57,9 @@ public sealed record RunningCall(string Title, DateTimeOffset Since)
 /// that call is open here, else by the request's own title. The registry's <see cref="HeldPermissions.Changed"/> moves it as
 /// <see cref="SessionEvents.Evented"/> moves a call.</para>
 ///
+/// <para><b>A call told it ran long</b> (FABRIC-PIPELINE1c): once Daoris told the session that a call ran past its pipeline's bound
+/// (<see cref="MarkTold"/>), that call answers <see cref="RunningCall.Told"/> while it runs, and the mark goes with it.</para>
+///
 /// <para>Bounded: each record's watch holds the calls of at most <see cref="Remembered"/> sessions, the oldest call's session
 /// dropped past it. The holds are the registry's, which holds each only while its session's agent waits.</para>
 /// </remarks>
@@ -68,6 +77,9 @@ public sealed class RunningCalls
 
     // AUTONOMY1b3b: each session's newest request held for the person, as the registry last told it.
     private readonly Dictionary<string, HeldPermission> _waiting = new(StringComparer.OrdinalIgnoreCase);
+
+    // FABRIC-PIPELINE1c: each session's calls Daoris told ran long, by when each began, gone with the session's open calls.
+    private readonly Dictionary<string, HashSet<DateTimeOffset>> _told = new(StringComparer.OrdinalIgnoreCase);
 
     private readonly HeldPermissions _held;
 
@@ -132,10 +144,30 @@ public sealed class RunningCalls
         }
     }
 
+    /// <summary>
+    /// Mark <paramref name="call"/>, the one <paramref name="session"/>'s agent is inside, as told it ran past its bound
+    /// (FABRIC-PIPELINE1c): told as a move where it is the call running, so the rail says it; a call no longer open marks nothing.
+    /// </summary>
+    public void MarkTold(string session, RunningCall call)
+    {
+        bool moved;
+        lock (_gate)
+        {
+            if (_open.GetValueOrDefault(session)?.Exists(open => open.Since == call.Since) != true) return;
+            var before = CurrentOf(session);
+            if (!_told.TryGetValue(session, out var told)) _told[session] = told = [];
+            told.Add(call.Since);
+            moved = CurrentOf(session) != before;
+        }
+
+        if (moved) Tell(session);
+    }
+
     private RunningCall? CurrentOf(string session)
     {
         var calls = _open.GetValueOrDefault(session);
-        return _waiting.TryGetValue(session, out var hold) ? Waits(hold, calls) : calls is null ? null : Current(calls);
+        var call = _waiting.TryGetValue(session, out var hold) ? Waits(hold, calls) : calls is null ? null : Current(calls);
+        return call is { Waiting: false } && _told.GetValueOrDefault(session)?.Contains(call.Since) == true ? call with { Told = true } : call;
     }
 
     /// <summary>
@@ -172,6 +204,7 @@ public sealed class RunningCalls
             var before = CurrentOf(session);
             if (call is null) _open.Remove(session);
             else Called(session, call, e, ref forgotten);
+            if (!_open.ContainsKey(session)) _told.Remove(session);
             moved = CurrentOf(session) != before;
         }
 
@@ -235,6 +268,7 @@ public sealed class RunningCalls
         {
             var (session, calls) = _open.MinBy(pair => pair.Value.Count == 0 ? DateTimeOffset.MinValue : pair.Value[0].Since);
             _open.Remove(session);
+            _told.Remove(session);
             if (!string.Equals(session, heard, StringComparison.OrdinalIgnoreCase) && Current(calls) is not null) (forgotten ??= []).Add(session);
         }
     }

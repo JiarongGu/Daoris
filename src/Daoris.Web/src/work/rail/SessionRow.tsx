@@ -79,7 +79,8 @@ export type SessionWhere = {
  */
 function callLine(t: TFunction, calling: NonNullable<SessionGrouping['calling']>): string {
   const title = callHead(calling.title);
-  if (!calling.waiting) return t('work.rail.calling', { title, elapsed: elapsed(calling.since) });
+  // FABRIC-PIPELINE1c: a call past its pipeline's bound, which Daoris told the session of, says so beside its time.
+  if (!calling.waiting) return t(calling.told ? 'work.rail.callingLong' : 'work.rail.calling', { title, elapsed: elapsed(calling.since) });
   return calling.title
     ? t('work.rail.callWaits', { title, elapsed: elapsed(calling.since) })
     : t('work.rail.callWaitsUnnamed', { elapsed: elapsed(calling.since) });
@@ -212,7 +213,7 @@ export function SessionRow({
     archived ? t('work.rail.archivedTip') : null,
     placed ? t(placed.tip) : null,
     // A held call's bound is its card's to say, read off the driver for that request (PERMUNTIL1): the mark carries none.
-    calling ? t(calling.waiting ? 'work.rail.callWaitsTip' : 'work.rail.callingTip') : null,
+    calling ? t(calling.waiting ? 'work.rail.callWaitsTip' : calling.told ? 'work.rail.callingLongTip' : 'work.rail.callingTip') : null,
     heavyPart?.kind === 'waiting' ? t('work.heavy.waitingTip') : null,
     landed ? t(landed.state === 'gone' ? 'work.rail.landedGoneTip' : 'work.rail.landedTip') : null,
     tree ? t('work.rail.treeTip') : null,

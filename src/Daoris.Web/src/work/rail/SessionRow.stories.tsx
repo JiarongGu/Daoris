@@ -226,6 +226,21 @@ export const RunningALongCall: Story = {
 export const RunningALongCallChinese: Story = { ...RunningALongCall, decorators: [chinese] };
 
 /**
+ * FABRIC-PIPELINE1c: a call past its pipeline's bound, which Daoris told the session of once: its line says so beside its time, and its
+ * tip that the word is in its conversation and that Daoris does not end the call.
+ */
+export const PastItsBoundTold: Story = {
+  args: {
+    session: { ...SESSION, created: at(62), updated: at(2) },
+    grouping: placed({ group: 'working', shown: 'working', calling: { title: 'dotnet test src/Daoris.Service', since: at(24), told: true } }),
+    place: 'engine',
+  },
+};
+
+/** The same, in 中文. */
+export const PastItsBoundToldChinese: Story = { ...PastItsBoundTold, decorators: [chinese] };
+
+/**
  * AUTONOMY1b3b: a working session whose tool call is held for the person's answer under asking: its line says the call waits for
  * your answer and for how long, timed from the hold, and its tip where to answer it.
  */

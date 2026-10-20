@@ -3402,6 +3402,13 @@ public sealed class Driver(
             // What it says about its account's windows, kept as it says it (TOOL6c).
             if (said is not null) session.LimitsSaid += said;
             using var stops = output is null ? null : Context.Processes.OpenTaskStops(sessionId, session.StopTaskAsync);
+            // FABRIC-PIPELINE1c (D192 point 5's fourth layer): under its run's light checks, a call or a background task past its bound is
+            // told to it once, as Daoris's urgent word, and never ended; the checks its start kept, so every run of it reads the same.
+            var acpSession = session;
+            using var longCalls = LongCalls.Watch(
+                SessionChecks.Held(home, sessionId), sessionId, RunningCalls.Of(Context.Events), () => acpSession.BackgroundRunning, inbox,
+                inbox is null ? null : new SaidDoor(service, sessionId),
+                failed: error => Line($"— Daoris's look at this session's long calls failed, and tells it nothing more: {error}"));
             // The person's words in the record the moment they are said, with when they reach the session (STEER1, D136):
             // the page shows them waiting in the turn they were said in, rather than nothing until they are handed over.
             inbox?.OnSaid((message, reach) =>
@@ -3415,6 +3422,9 @@ public sealed class Driver(
                     // COWORK1d: an urgent ask's helper answer, the helper's claim, never the person's.
                     : message.Helped is { Helper: var helper }
                         ? $"— helper `{helper}`'s answer, which reaches the session {(reach == DrivenReach.NextStep ? "at its next step" : "when its turn ends")}"
+                    // Daoris's own word (COWORK1b, FABRIC-PIPELINE1c): never said as the person's.
+                    : message.Daoris is not null
+                        ? $"— Daoris said, which reaches the session {(reach == DrivenReach.NextStep ? "at its next step" : "when its turn ends")}: {message.Text}"
                     : reach switch
                     {
                         DrivenReach.NextStep => $"— the person added, which reaches the session at its next step: {message.Text}",

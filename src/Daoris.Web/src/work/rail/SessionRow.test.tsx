@@ -464,6 +464,21 @@ describe("a row as the list's reader places it", () => {
     expect(screen.getByText(/running git push for 3m/)).toBeInTheDocument();
   });
 
+  /**
+   * FABRIC-PIPELINE1c: a call Daoris told the session ran past its pipeline's bound says so beside its time, and its tip says the word
+   * went to its conversation and that Daoris ends nothing.
+   */
+  it('says a call past its bound was told, and that Daoris does not end it', () => {
+    const calling = { title: 'dotnet test', since: '2026-09-21T11:30:00Z', told: true };
+    const { rerender } = render(<SessionRow session={session()} place="engine" grouping={placed({ group: 'working', shown: 'working', calling })} />);
+    expect(screen.getByText(/^engine · running dotnet test for 30m, past its bound: told · driven · /)).toBeInTheDocument();
+    expect(screen.getByTitle(/Daoris told the session once, in its conversation, .*Daoris does not end the call: Stop is yours\./)).toBeInTheDocument();
+
+    rerender(<SessionRow session={session()} grouping={placed({ group: 'working', shown: 'working', calling: { ...calling, told: false } })} />);
+    expect(screen.getByText(/running dotnet test for 30m · /)).toBeInTheDocument();
+    expect(screen.queryByText(/past its bound/)).toBeNull();
+  });
+
   /** WAITSAY1c2: a pushed call arrives once, so its time steps by the row's own clock with no new record. */
   it('steps a call\'s elapsed time on its own while it is said', () => {
     const calling = { title: 'npm test', since: '2026-09-21T11:52:00Z' };
@@ -513,6 +528,11 @@ describe("a row as the list's reader places it", () => {
       render(<SessionRow session={session()} grouping={placed({ group: 'working', shown: 'working', calling: { title: 'git push', since: '2026-09-21T11:57:00Z', waiting: true } })} />);
       expect(screen.getByText(/git push 等你答复，已 3 分钟/)).toBeInTheDocument();
       expect(screen.getByTitle(/“等你处理”.*它的卡片会说明无人答复时何时拒绝它/)).toBeInTheDocument();
+
+      // FABRIC-PIPELINE1c: a call past its bound, told.
+      render(<SessionRow session={session()} grouping={placed({ group: 'working', shown: 'working', calling: { title: 'dotnet test', since: '2026-09-21T11:30:00Z', told: true } })} />);
+      expect(screen.getByText(/正在运行 dotnet test，已 30 分钟，超过时限：已告知/)).toBeInTheDocument();
+      expect(screen.getByTitle(/Daoris 不会结束这次调用：停止由你决定/)).toBeInTheDocument();
     } finally {
       await i18n.changeLanguage('en');
     }

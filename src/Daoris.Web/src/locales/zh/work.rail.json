@@ -50,6 +50,8 @@
   "work.rail.archivedTip": "已在本机归档：完整保留；只有在列表的 ⋯ 中勾选「显示已归档」时才会列出。",
   "work.rail.calling": "正在运行 {{title}}，已 {{elapsed}}",
   "work.rail.callingTip": "它的智能体正在进行的工具调用，以及已运行多久，以驱动最近一次所说为准。",
+  "work.rail.callingLong": "正在运行 {{title}}，已 {{elapsed}}，超过时限：已告知",
+  "work.rail.callingLongTip": "它的智能体正在进行的工具调用已超过所在流水线对单次调用的时限，因此 Daoris 已在它的对话中告知会话一次：整套运行的测试属于验证流水线。Daoris 不会结束这次调用：停止由你决定。",
   "work.rail.callWaits": "{{title}} 等你答复，已 {{elapsed}}",
   "work.rail.callWaitsUnnamed": "一个工具调用等你答复，已 {{elapsed}}",
   "work.rail.callWaitsTip": "它的智能体请求进行这个工具调用，它的规则不会自行允许；在你于它的页面或“等你处理”里答复之前，会话停在这里；它的卡片会说明无人答复时何时拒绝它。",

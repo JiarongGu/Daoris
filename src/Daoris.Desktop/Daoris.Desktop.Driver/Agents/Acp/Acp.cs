@@ -421,6 +421,9 @@ public sealed class AcpSession(
     /// <summary>The background work its harness says it runs (BGWAIT1), read whether or not its streams are kept.</summary>
     private readonly AcpBackground _background = new();
 
+    /// <summary>The background work its harness says still runs, with when each began (FABRIC-PIPELINE1c, <see cref="LongCalls"/>).</summary>
+    public IReadOnlyList<RunningTask> BackgroundRunning => _background.RunningSince;
+
     /// <summary>The turns its harness starts by itself when that work ends (BGWAIT2), read from the session's opening.</summary>
     private readonly AcpWake _wake = new();
 

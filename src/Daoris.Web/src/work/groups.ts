@@ -82,9 +82,10 @@ export type SessionGrouping = {
    * amendment): its title, and when it began by the driver's clock, a call begun before this window opened among them. Its
    * row and its head say *running … for …*. Held in the driver's memory, never the record; null where none is open, and
    * absent on a host older than the fact. `waiting` (AUTONOMY1b3b): its permission request is held for the person's answer,
-   * timed from the hold, its title empty where the agent named none; absent on a host older than the mark.
+   * timed from the hold, its title empty where the agent named none; absent on a host older than the mark. `told`
+   * (FABRIC-PIPELINE1c): Daoris told the session this call ran past its pipeline's bound; absent on a host older than the mark.
    */
-  calling?: { title: string; since: string; waiting?: boolean } | null;
+  calling?: { title: string; since: string; waiting?: boolean; told?: boolean } | null;
 };
 
 /** The characters a running call's head is said in at most (RAILLINE1), its ellipsis among them. */

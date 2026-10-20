@@ -50,6 +50,8 @@
   "work.rail.archivedTip": "Archived on this machine: kept whole, and out of the list unless Show archived, in the list’s ⋯, is ticked.",
   "work.rail.calling": "running {{title}} for {{elapsed}}",
   "work.rail.callingTip": "The tool call its agent is inside, and how long it has run, as the driver last said.",
+  "work.rail.callingLong": "running {{title}} for {{elapsed}}, past its bound: told",
+  "work.rail.callingLongTip": "The tool call its agent is inside ran past its pipeline’s bound for one call, so Daoris told the session once, in its conversation, that a suite run whole is the verification pipeline’s. Daoris does not end the call: Stop is yours.",
   "work.rail.callWaits": "waiting for your answer to {{title}} for {{elapsed}}",
   "work.rail.callWaitsUnnamed": "waiting for your answer to a tool call for {{elapsed}}",
   "work.rail.callWaitsTip": "Its agent asked to make this tool call, which its rules do not allow by themselves, and the session stands still until you answer it on its page or in What needs you, where its card says when it is refused if nobody answers.",
