@@ -284,7 +284,8 @@ a notice's sentence is passed through verbatim, as the home's notice is today.
 - **A file in `data/` for the service's address**: a second source beside the variable a terminal reads first (D171
   point 1); the account's variable is one fact for the window and the terminal.
 - **Clearing a folder from this page**: what may be cleared is cleared by its own act (D153, D88, D102); *Downloads* has
-  no such act yet (a proposed row).
+  no such act yet (a proposed row). *Amended 2026-10-21 (CACHECLEAR1):* it has one now, on its row: the agents' and tools'
+  versions nothing uses, listed first then pressed (D88's CACHECLEAR1 note); the folder itself is still never cleared whole.
 - **Showing a key's value once, to copy it**: a key goes in and never comes out (`DriverDomain.tsx:35-36`).
 
 ## 10. Build rows

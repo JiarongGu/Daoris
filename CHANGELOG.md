@@ -5,6 +5,10 @@ with the version and date at release.
 
 ## Unreleased
 
+- Settings → This Daoris can clear downloads: *Clear unused downloads…* on the *Downloads* row lists every version the agents and
+  tools downloaded, with its size and what keeps it (a pin on this machine or a workspace, Tools running it, a setting naming a
+  file in it, or a download within the last hour), and one press removes those nothing uses. A version a program is running from
+  is kept and said, and the next use downloads a removed version again.
 - A repository's and a workspace's Workflow tab now begins with where work there goes: the default, each kind of task, and the
   work that lands on the line, each wired to the workflow it follows and saying what chose it. A workflow can be made a
   verification workflow of checks (marked `verification` in the file you import), which only the route for landed work names:
