@@ -215,6 +215,8 @@ public sealed class PipeCensus
             // The person's words, and a conversation begun or carried on with them.
             "SESSION_INPUT", "SESSION_QUEUE_EDIT", "CHANNEL_POST", "CHANNEL_FORWARD", "START_CHAT", "START_HELP", "HELP_START_FROM",
             "SESSION_GO_ON_NEW", "SESSION_START_FROM", "SESSION_HAND_OVER", "HELP_RENAME", "HELP_PIN",
+            // SESSCTX1c part B: *Go on with Daoris's brief*, the person's words carried into a new part of their session.
+            "SESSION_GO_ON_BRIEF",
             // Their set-up and their standing choices: what a review is set to, how work lands, what agents may reach.
             "SETUP_PRESS", "SET_ACCESS", "SET_AGENT_SETTINGS", "SET_CAP", "SET_COMMITS", "SET_COOLOFF", "SET_DRIVABLE", "SET_HAND_OVER", "SET_HELPER", "SET_HELPERS", "SET_HELP_MODE",
             // HELPMODE1c2b: what Ask Daoris's housekeeping may do, the person's grant alone.

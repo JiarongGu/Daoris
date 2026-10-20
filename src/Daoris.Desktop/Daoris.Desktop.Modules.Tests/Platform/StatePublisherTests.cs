@@ -447,6 +447,8 @@ public sealed partial class StatePublisherTests : DriverModuleBridge
     [InlineData("SESSION_OPEN_FOLDER", "", null)]
     [InlineData("START_CHAT", "sessions,driver", null)]
     [InlineData("SESSION_START_FROM", "sessions,driver", "id")]
+    // SESSCTX1c part B: *Go on with Daoris's brief*, a new part of the session opened and the words taken off the one it continues.
+    [InlineData("SESSION_GO_ON_BRIEF", "sessions,driver", "id")]
     [InlineData("SESSION_HAND_OVER", "sessions,driver", "id")]
     [InlineData("END_CHAT", "sessions", "id")]
     [InlineData("SESSION_INPUT", "sessions,help", "id")]

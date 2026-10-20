@@ -152,6 +152,26 @@ public sealed class ConversationRoutes(DriverContext context)
         return new { started.SessionId, started.Sent, started.Why, started.Message };
     }
 
+    // *Go on with Daoris's brief* (SESSCTX1c part B, D189 point 3): a conversation, or a closed quest's session, whose words wait for the
+    // person goes on in a new part of its session, in its tree on its agent and account, its record naming the one it continues (why
+    // `resume`, by the person), handed Daoris's brief and then their words, which leave the record they were said to naming it. Beside
+    // SESSION_START_FROM, the person's fresh start. `{ sessionId, sent, why, message }`: what never goes on, a session still running, no
+    // words waiting, a quest carried on by itself, a tree gone and an agent no longer here are refused by their codes before anything
+    // opens. Its end reaches the page as a start's does.
+    [DriverRoute("SESSION_GO_ON_BRIEF")]
+    [Publishes("SESSION_GO_ON_BRIEF", StateScopes.Sessions | StateScopes.Driver, Session = "id")]
+    private async Task<object?> SessionGoOnBriefAsync(IpcRequest request, CancellationToken cancellationToken)
+    {
+        var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id");
+        var chat = _loop.Chat ?? throw NotReady();
+        var config = DriverConfig.Load(_loop.ConfigPath);
+        var moved = await chat.GoOnBriefedAsync(
+                id, config, onEnded: (session, state) => DriverLoop.Ended(_events, session, state), cancellationToken)
+            .ConfigureAwait(false);
+        _loop.Nudge();
+        return new { moved.SessionId, moved.Sent, moved.Why, moved.Message };
+    }
+
     // *Go on with another agent…* (MIXAGENT1b-i, D163): a conversation of this machine handed to another agent, from its page.
     // The chat runner judges and keeps the ask: taken at once for a conversation that is not talking, kept for its turn's end
     // for one that is (the page's *Stop and hand over…* asks this first, then stops the turn). `{ sessionId, kept, why, message }`;
