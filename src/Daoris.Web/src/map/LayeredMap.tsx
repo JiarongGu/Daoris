@@ -10,7 +10,7 @@ import {
   ASKS_DASH, AsksMark, CHAIN_DASH, chainOpen, Count, DependsLine, howMany, lineLabel, type MapSelection, sameSelection,
 } from './MapCanvas';
 import { ASKS, type Topology } from './topology';
-import { useTall, useWidth } from './useWidth';
+import { useTall, useWidth } from '../design/useWidth';
 
 /** What follows the viewport down to the window's foot: the legend, the card's padding, the status bar. */
 const BELOW = 150;
