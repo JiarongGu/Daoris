@@ -383,6 +383,7 @@ public sealed class DriverRoutes(DriverContext context)
     internal static object State(DriverLoop loop, object? retried = null, object? reviewed = null, object? shownAgain = null)
     {
         var config = DriverConfig.Load(loop.ConfigPath);
+        var housekeeping = ConfiguredAccess.Read(loop.Home).Housekeeping;
         return new
         {
             Retried = retried,
@@ -423,13 +424,14 @@ public sealed class DriverRoutes(DriverContext context)
             config.HelpMode,
             // Restricted mode's configured access as the person chose it (HELPMODE1c2b): each grant the driver serves by its id, with the
             // operations chosen, housekeeping's from the home's record, what the next start and every tool call read, and those it acts
-            // on, so the page offers no other.
+            // on, so the page offers no other; and whether a conversation running here was handed another choice of it, which its next
+            // turn takes (ACCESSSWAP1, the grant's *pending* mark), false once its agent has ended.
             HelpGrants = new[]
             {
                 new
                 {
-                    Id = ConfiguredAccess.HousekeepingGrant, Chosen = ConfiguredAccess.Read(loop.Home).Housekeeping,
-                    Built = ConfiguredAccess.HousekeepingBuilt,
+                    Id = ConfiguredAccess.HousekeepingGrant, Chosen = housekeeping, Built = ConfiguredAccess.HousekeepingBuilt,
+                    Pending = loop.Chat?.HousekeepingPending(housekeeping) == true,
                 },
             },
             // The lines as set (WSR2), as rows rather than an object's keys: a key policy on the
@@ -506,6 +508,9 @@ public sealed class DriverRoutes(DriverContext context)
             Running = loop.Processes.Running,
             // Who is driving Daoris's browser (BRW8): the running sessions handed a server that drives it.
             DrivingBrowser = loop.Processes.DrivingBrowser,
+            // The Ask Daoris conversations running under another access than the one chosen (ACCESSSWAP1): each ends at its turn's end,
+            // and the page keeps it in view so its next words resume it under the new access.
+            HelpSwapping = loop.Chat?.HelpSwapping(config.HelpMode) ?? [],
             // The set-ups waiting for the person here (REVIEWENV1d, design §3.3), each with whether Daoris serves its tab now: the
             // strip's chip beside the browser's door. Left out where the loop carries no browser, which shows nothing.
             InReview = loop.Reviews?.Waiting
