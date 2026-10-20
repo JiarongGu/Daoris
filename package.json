@@ -18,6 +18,7 @@
     "rehearse:family": "node tools/family-rehearsal.mjs",
     "rehearse:deploy": "node tools/deployment-rehearsal.mjs",
     "typecheck:web": "npm --prefix src/Daoris.Web run typecheck",
+    "check:web-rules": "npm --prefix src/Daoris.Web run test -- src/design/tokens.test.ts src/test/structure.test.ts",
     "test:web": "npm run test:web:unit && npm run test:web:e2e",
     "test:web:unit": "npm --prefix src/Daoris.Web run test",
     "test:web:e2e": "npm --prefix src/Daoris.Web run build && dotnet build src/Daoris.Service/Daoris.Service.Http && npm --prefix src/Daoris.Web run e2e",
