@@ -38,6 +38,7 @@
   "work.wait.permission.untitled": "无标题的工具调用",
   "work.wait.permission.untitledKind": "无标题的 `{{kind}}` 工具调用",
   "work.wait.permission.waited": "已等待 {{span}} · {{minutes}} 分钟内无人答复则拒绝",
+  "work.wait.permission.waitedUnbounded": "已等待 {{span}}",
   "work.wait.permission.answered.allow": "已允许这一次：该调用继续。",
   "work.wait.permission.answered.refuse": "已拒绝：智能体会得知，并在没有它的情况下继续。",
   "work.wait.permission.refused.unheld": "它已不在等待：已先被答复或释放。未作答。",

@@ -10,7 +10,7 @@ import type { Attention, AttentionKind } from './AttentionRow';
 import { accountRowWorded, type PushedAccountFacts } from './accountWords';
 import { CLOSE_SENDER, entryDetail, entryName, type HeldAttempt, heldWhy, heldWords, type MilestoneEntry } from '../head/milestone';
 import { type OpinionWait, opinionState } from '../gates/opinion';
-import { PERMISSION_BOUND_MINUTES, type PermissionWait } from '../waits/PermissionAsks';
+import { boundMinutes, type PermissionWait } from '../waits/PermissionAsks';
 import { opinionSays } from '../gates/OpinionGate';
 import { placedFact } from '../rail/SessionRow';
 import type { NoteRecord } from '../noteLines';
@@ -477,14 +477,19 @@ export function attentionWorded(row: PushedAttention, names: AttentionNames = {}
         detail: i18n.t('work.attention.helperWhy', { session: named(row.session) }),
         session: row.session ?? null,
       };
-    case 'permission':
+    case 'permission': {
+      // The bound as the driver answered it for this request (PERMUNTIL1); a host that does not say leaves it out.
+      const minutes = row.permission ? boundMinutes(row.permission) : null;
       return {
         ...base,
         title: row.permission?.title ?? i18n.t('work.wait.permission.untitled'),
-        detail: i18n.t('work.attention.permissionWhy', { session: named(row.session), minutes: PERMISSION_BOUND_MINUTES }),
+        detail: minutes === null
+          ? i18n.t('work.attention.permissionWhyUnbounded', { session: named(row.session) })
+          : i18n.t('work.attention.permissionWhy', { session: named(row.session), minutes }),
         session: row.session ?? null,
         ...(row.permission ? { permission: row.permission } : {}),
       };
+    }
     case 'work': {
       if (row.held) return heldWorded(row, row.held);
       const entries = row.blocked?.entries ?? [];

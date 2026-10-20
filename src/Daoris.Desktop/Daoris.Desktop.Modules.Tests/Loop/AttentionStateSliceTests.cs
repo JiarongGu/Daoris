@@ -835,6 +835,7 @@ public sealed class AttentionStateSliceTests : DriverModuleBridge
     {
         var held = """
                    {"session":"c0nv0001","request":"900","call":"tc-1","title":"npm test","kind":"execute","since":"2026-09-21T09:30:00Z",
+                    "until":"2026-09-21T09:45:00Z",
                     "choices":[{"id":"allow","name":"Allow","kind":"allow_once"},{"id":"reject","name":"Reject","kind":"reject_once"}]}
                    """;
         var untitled = """
@@ -1005,7 +1006,7 @@ public sealed class AttentionStateSliceTests : DriverModuleBridge
             Groups = [Placed("""{"pausedBy":{"scope":"ask","id":"a1"},"holds":{"why":"cap","reason":"r","repository":"engine","until":"2026-10-20T10:00:00Z"},"strikes":2,"awaits":"q","awaitsOf":"engine","holdsQuest":true}""")],
             Opinions = [JsonNode.Parse("""{"session":"s42","quest":"q1","repository":"engine","workspace":"aurora","since":"2026-09-21T09:00:00Z","auto":false,"opinion":{"state":"disputed","holds":true,"required":true,"opinion":"o1","reviewer":"codex","product":"Codex","maker":"OpenAI","label":"Codex","reviewing":"s42","findings":2,"disputes":2,"since":"2026-09-21T09:00:00Z","code":"c","until":"2026-09-22T09:00:00Z","later":1,"person":"p","answers":"o1","says":"s"}}""")!.AsObject()],
             Helpers = [JsonNode.Parse("""{"id":"a1","session":"parked","question":"Which?","agent":null,"at":"2026-09-21T09:30:00Z"}""")!.AsObject()],
-            Permissions = [JsonNode.Parse("""{"session":"parked","request":"9","call":"c","title":"t","kind":"edit","since":"2026-09-21T09:10:00Z","choices":[{"id":"a","name":"A","kind":"allow_once"}]}""")!.AsObject()],
+            Permissions = [JsonNode.Parse("""{"session":"parked","request":"9","call":"c","title":"t","kind":"edit","since":"2026-09-21T09:10:00Z","until":"2026-09-21T09:25:00Z","choices":[{"id":"a","name":"A","kind":"allow_once"}]}""")!.AsObject()],
             // OVERVIEWNOISE1b: a unit's row, its blocked entry with its code and facts.
             Works = [Unit($$$"""{"cleanup":{"state":"pending","waits":[{{{Entry("""{"code":"unfollowed","facts":{"branch":"daoris/s1a2b3c4"}}""").ToJsonString()}}}],"gone":[]}}""")],
             Held = [HeldAttempt("""{"outcome":"reached","revision":"r","resolution":"stop","resolvedAt":"2026-10-17T10:00:00Z","words":["stop"]}""")],

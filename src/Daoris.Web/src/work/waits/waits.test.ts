@@ -168,7 +168,7 @@ describe('the waits on the person', () => {
   // AUTONOMY1b3c (D184 point 3): a tool call the session holds for the person's answer under asking is one of its waits, the first
   // after a park's, since its turn stands still until they answer.
   const held = (request: string, over: Partial<PermissionWait> = {}): PermissionWait => ({
-    session: 's1a2b3c4', request, call: null, title: 'npm test', kind: 'execute', since: '2026-10-20T09:00:00Z',
+    session: 's1a2b3c4', request, call: null, title: 'npm test', kind: 'execute', since: '2026-10-20T09:00:00Z', until: '2026-10-20T09:15:00Z',
     choices: [{ id: 'allow', name: 'Allow', kind: 'allow_once' }, { id: 'reject', name: 'Reject', kind: 'reject_once' }], ...over,
   });
 

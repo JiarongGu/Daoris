@@ -683,6 +683,7 @@ const readPermissionWaits = (rows: unknown): PermissionWait[] => {
       kind: word(row.kind),
       choices: Array.isArray(row.choices) ? row.choices.map(readChoice).filter((choice): choice is PermissionChoice => choice !== null) : [],
       since: typeof row.since === 'string' ? row.since : '',
+      until: word(row.until),
     }));
 };
 

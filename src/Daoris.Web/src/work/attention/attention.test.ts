@@ -427,10 +427,11 @@ describe('the groups', () => {
   it('words a tool call a session holds for the person, with a press per offered choice', () => {
     const held = {
       session: 'c0nv0001', request: '900', call: 'tc-1', title: 'npm test', kind: 'execute', since: '2026-09-21T09:30:00Z',
+      until: '2026-09-21T09:45:00Z',
       choices: [{ id: 'allow', name: 'Allow', kind: 'allow_once' }, { id: 'reject', name: 'Reject', kind: 'reject_once' }],
     };
     const untitled = {
-      session: 'g0n3', request: '7', call: null, title: null, kind: 'edit', since: '2026-09-21T09:10:00Z',
+      session: 'g0n3', request: '7', call: null, title: null, kind: 'edit', since: '2026-09-21T09:10:00Z', until: null,
       choices: [{ id: 'no', name: 'Reject', kind: 'reject_once' }, { id: 'later', name: 'Later', kind: 'snooze' }],
     };
     const rows = attentionOf(attentionInOrder([
@@ -445,7 +446,12 @@ describe('the groups', () => {
         + 'answers within 15 minutes.',
     });
     expect(rows[0]).toMatchObject({ title: 'An untitled tool call', where: '' });
-    expect(rows[0]!.detail).toMatch(/^#g0n3 waits on your answer/);
+    // PERMUNTIL1: the bound is the route's for each request; where a host said none, none is said.
+    expect(rows[0]!.detail).toBe('#g0n3 waits on your answer before this tool call runs; it is refused if nobody answers in time.');
+    const sooner = attentionOf([row('permission', 'c0nv0001#900', held.since, {
+      where: 'engine', session: 'c0nv0001', permission: { ...held, until: '2026-09-21T09:40:00Z' },
+    })], { sessions: [session({ id: 'c0nv0001', quest: '7a82cc' })], quests: [quest()] });
+    expect(sooner[0]!.detail).toMatch(/within 10 minutes\.$/);
     expect(rows.map(attentionActs)).toEqual([['refuse-once'], ['allow-once', 'refuse-once']]);
     expect(attentionOffers(rows[1]!)).toEqual([{ act: 'allow-once', option: 'allow' }, { act: 'refuse-once', option: 'reject' }]);
     expect(ASKS_ONCE.has('allow-once')).toBe(false);

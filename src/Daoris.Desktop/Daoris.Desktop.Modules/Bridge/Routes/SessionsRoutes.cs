@@ -344,20 +344,12 @@ public sealed class SessionsRoutes(DriverContext context)
 
     // What this machine's driven sessions hold for the person under their repository's asking permission prompts (AUTONOMY1b3a, D184
     // point 3), oldest first: each request with its session, its call as the agent named it, and what the person may choose (never a
-    // standing allow). A read off the driver's memory (`HeldPermissions`), which a restart empties with the agents that asked.
+    // standing allow), and when its bound releases it (`until`, PERMUNTIL1: the page's one source for the bound). A read off the
+    // driver's memory (`HeldPermissions`), which a restart empties with the agents that asked; the attention slice's own projection,
+    // so the pushed rows and the route say each hold alike.
     [DriverRoute("PERMISSION_WAITS")]
-    private Task<object?> PermissionWaitsAsync(IpcRequest request, CancellationToken cancellationToken)
-    {
-        var waits = HeldPermissions.Of(_loop.Events).Now()
-            .Select(held => new
-            {
-                held.Session, held.Request, held.Call, held.Title, held.Kind,
-                Choices = held.Choices.Select(choice => new { choice.Id, choice.Name, choice.Kind }),
-                Since = Moments.Write(held.Since),
-            })
-            .ToList();
-        return Task.FromResult<object?>(new { Waits = waits });
-    }
+    private Task<object?> PermissionWaitsAsync(IpcRequest request, CancellationToken cancellationToken) =>
+        Task.FromResult<object?>(new { Waits = AttentionStateSlice.PermissionWaits(HeldPermissions.Of(_loop.Events)) });
 
     // The person's answer to a request a session holds for them (AUTONOMY1b3a): an option the agent offered, by its id, or none to
     // refuse it, which takes the offered one-time rejection, else none. The allow is the person's press for this call alone, and

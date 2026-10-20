@@ -95,7 +95,7 @@ public static class AttentionStateSlice
             "id", "state", "action", "scope", "name", "list", "rule", "default", "on", "why", "session", "ask", "proposed", "settled",
             "settledBy", "note",
         ],
-        ["permission"] = ["session", "request", "call", "title", "kind", "choices", "since"],
+        ["permission"] = ["session", "request", "call", "title", "kind", "choices", "since", "until"],
         ["choice"] = ["id", "name", "kind"],
         ["blocked"] = ["unknown", "entries"],
         ["entry"] = ["kind", "resource", "detail", "code", "facts"],
@@ -309,7 +309,8 @@ public static class AttentionStateSlice
 
     /// <summary>
     /// What this machine's driven sessions hold for the person under asking (AUTONOMY1b3a, D184 point 3), as <c>PERMISSION_WAITS</c>
-    /// answers them, oldest first, from the driver's memory.
+    /// answers them (the route answers this list), oldest first, from the driver's memory: each with when its bound releases it
+    /// (<c>until</c>, PERMUNTIL1), the page's one source for the bound.
     /// </summary>
     public static IReadOnlyList<object> PermissionWaits(HeldPermissions holds) =>
     [
@@ -318,6 +319,7 @@ public static class AttentionStateSlice
             held.Session, held.Request, held.Call, held.Title, held.Kind,
             Choices = held.Choices.Select(choice => new { choice.Id, choice.Name, choice.Kind }),
             Since = Moments.Write(held.Since),
+            Until = Moments.Write(held.Until),
         }),
     ];
 

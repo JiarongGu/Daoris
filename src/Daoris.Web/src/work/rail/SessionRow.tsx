@@ -9,7 +9,6 @@ import { actMenu, type SessionActId } from '../acts';
 import { callHead, type SessionGrouping, shownOf } from '../groups';
 import { isHelper, isIntake, isOpinion, ownTree, sessionOrigin, sessionTitle } from '../identity';
 import { ListRowDoor } from '../frame/ListPane';
-import { PERMISSION_BOUND_MINUTES } from '../waits/PermissionAsks';
 import { movedAt } from './rail';
 import { useNow } from '../useNow';
 import type { HeavyPart } from '../heavySlot';
@@ -212,7 +211,8 @@ export function SessionRow({
   const explained = [
     archived ? t('work.rail.archivedTip') : null,
     placed ? t(placed.tip) : null,
-    calling ? t(calling.waiting ? 'work.rail.callWaitsTip' : 'work.rail.callingTip', { minutes: PERMISSION_BOUND_MINUTES }) : null,
+    // A held call's bound is its card's to say, read off the driver for that request (PERMUNTIL1): the mark carries none.
+    calling ? t(calling.waiting ? 'work.rail.callWaitsTip' : 'work.rail.callingTip') : null,
     heavyPart?.kind === 'waiting' ? t('work.heavy.waitingTip') : null,
     landed ? t(landed.state === 'gone' ? 'work.rail.landedGoneTip' : 'work.rail.landedTip') : null,
     tree ? t('work.rail.treeTip') : null,

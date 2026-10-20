@@ -18,7 +18,8 @@ export type PermissionChoice = { id: string; name: string; kind: string };
 /**
  * A tool's permission request a driven session holds for the person under its repository's asking permission prompts (AUTONOMY1b3a,
  * D184 point 3), as `PERMISSION_WAITS` answers it: the session, the request's id on the agent's wire, the call it asks for and its
- * title and kind as the agent wrote them (null where it gave none), what the person may choose, and when it was held.
+ * title and kind as the agent wrote them (null where it gave none), what the person may choose, when it was held, and when the
+ * driver's bound releases it (PERMUNTIL1; null from a host that does not say).
  */
 export type PermissionWait = {
   session: string;
@@ -28,6 +29,7 @@ export type PermissionWait = {
   kind: string | null;
   choices: PermissionChoice[];
   since: string;
+  until: string | null;
 };
 
 /** The person's answer as the driver took it (`SESSION_PERMISSION_ANSWER`): whether it stands, and where not, its code and sentence. */
@@ -49,10 +51,14 @@ export type PermissionWaits = {
 };
 
 /**
- * How long a held request waits before the driver refuses it, in minutes: `HeldPermissions.Bound`, which `PERMISSION_WAITS` does not
- * answer, so the page says the driver's constant (AUTONOMY1b3a: half the session's default 30-minute run).
+ * How long a held request waits before the driver refuses it, in whole minutes, from what `PERMISSION_WAITS` answered for it: its
+ * `until` less its `since` (PERMUNTIL1), so the page keeps no copy of the driver's bound. Null where either is not a moment, or they
+ * say no wait: a host that does not say, whose card says how long it waited and no bound.
  */
-export const PERMISSION_BOUND_MINUTES = 15;
+export const boundMinutes = (wait: Pick<PermissionWait, 'since' | 'until'>): number | null => {
+  const span = wait.until ? Date.parse(wait.until) - Date.parse(wait.since) : Number.NaN;
+  return Number.isFinite(span) && span > 0 ? Math.round(span / 60_000) : null;
+};
 
 /** The requests one session holds, in the order the driver listed them (oldest first). */
 export const heldFor = (waits: readonly PermissionWait[], session: string) => waits.filter((wait) => wait.session === session);
@@ -79,7 +85,7 @@ export const permissionSaid = (t: TFunction, why: string | null, message: string
  * **A tool call its session holds for the person's answer** (AUTONOMY1b3c; D184 point 3 and its AUTONOMY1b3a note): under a
  * repository's asking permission prompts, a call its rules do not allow by themselves waits here, as the console asks its person,
  * with the call as the agent named it (content, shown as written), its kind, how long it has waited and the bound at which the
- * driver refuses it, and one press per choice the agent offered, named for what it does: *Allow once* lets this call alone run,
+ * driver refuses it, as the driver answered it (`boundMinutes`), and one press per choice the agent offered, named for what it does: *Allow once* lets this call alone run,
  * and a refusal refuses it. Never an allow the agent did not offer, and never a standing one, which is a rule's to give (D74).
  *
  * @remarks
@@ -150,6 +156,7 @@ function PermissionAsk({ wait, onAnswer, busy, onConversation, marked }: {
     });
   };
   const untitled = wait.kind ? t('work.wait.permission.untitledKind', { kind: wait.kind }) : t('work.wait.permission.untitled');
+  const minutes = boundMinutes(wait);
 
   return (
     <li
@@ -169,7 +176,9 @@ function PermissionAsk({ wait, onAnswer, busy, onConversation, marked }: {
         <p className="m-0 text-small text-ink-soft"><Inline text={t('work.wait.permission.kind', { kind: wait.kind })} /></p>
       )}
       <p className="m-0 font-mono text-meta text-ink-faint">
-        {t('work.wait.permission.waited', { span: elapsed(wait.since), minutes: PERMISSION_BOUND_MINUTES })}
+        {minutes === null
+          ? t('work.wait.permission.waitedUnbounded', { span: elapsed(wait.since) })
+          : t('work.wait.permission.waited', { span: elapsed(wait.since), minutes })}
       </p>
       {onAnswer && wait.choices.length > 0 && (
         <div className="mt-1 flex flex-wrap items-center gap-2">
