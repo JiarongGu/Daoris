@@ -5,6 +5,12 @@ with the version and date at release.
 
 ## Unreleased
 
+- Settings, This Daoris and a repository's or a workspace's Setup use the pane. A setting's value sits beside its words, on one
+  label column a card shares, so a card's values form one column the eye runs down rather than sitting at the pane's far edge;
+  a row's acts follow its value, and a notice sits under the value it is about. Below about 512 px of card each value sits under
+  its words. Cards are 16 px apart. A form (a remote's address and key, a favourite's address and title, a rule, the heavy
+  gates) takes the width its content needs up to the pane, by the pane's own width rather than the window's, and stacks its
+  fields where the pane is narrow.
 - A change of Ask Daoris's access reaches a running conversation at its next turn. Choosing full access or restricted, or granting
   or taking back a housekeeping operation, ends the conversation's agent as its turn ends, never mid-turn and at once where it is
   idle, and your next words go on in the same conversation under the new access, its history kept. Its console says so; the chip

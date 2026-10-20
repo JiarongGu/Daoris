@@ -99,8 +99,6 @@ type FieldProps = {
   busy?: boolean;
   /** Whether the control carries its own *Clear*: a repository's Setup gives each value one beside it (UX6f). */
   clearable?: boolean;
-  /** Laid out from the row's start, as beneath a Setup row's label, where it has the row's width (UX6f). */
-  alignStart?: boolean;
   onSave: (rule?: LandingRule) => void;
 };
 
@@ -126,9 +124,9 @@ export function AcceptingNote({ accepting }: { accepting: Accepting }) {
  * One rule's control: merge or branch, the pattern, who pushes it and whether it accepts automatically when it is a
  * branch, the ticket's key where the pattern says `{ticket}` and the squash on a branch (DOORS1b), each refused by the
  * driver in the terminal's words, and a clear only where a rule is set — the row keeps the clear's room either way, so
- * every row's control sits in one column.
+ * every row's control sits in one column. Laid out from the row's start, where the value column begins (R1, UIFIT1).
  */
-export function LandingField({ name, set, inherited, landers, busy, clearable = true, alignStart = false, onSave, onAccepting }: FieldProps & {
+export function LandingField({ name, set, inherited, landers, busy, clearable = true, onSave, onAccepting }: FieldProps & {
   /** What the draft accepts automatically through, said beneath the row by its owner. */
   onAccepting: (accepting: Accepting) => void;
 }) {
@@ -185,7 +183,7 @@ export function LandingField({ name, set, inherited, landers, busy, clearable = 
 
   return (
     <form
-      className={cn('flex min-w-0 flex-wrap items-center gap-2', alignStart ? 'justify-start' : 'justify-end')}
+      className="flex min-w-0 flex-wrap items-center justify-start gap-2"
       onSubmit={(event) => {
         event.preventDefault();
         if (changed) onSave(draft);
@@ -268,7 +266,7 @@ export function LandingField({ name, set, inherited, landers, busy, clearable = 
           disabled={busy || set === undefined}
           aria-hidden={set === undefined}
           tabIndex={set === undefined ? -1 : undefined}
-          className={cn(set === undefined && 'invisible @max-[26rem]:hidden')}
+          className={cn(set === undefined && 'invisible @max-[32rem]:hidden')}
           onClick={() => onSave(undefined)}
         >
           {t('settings.landing.clear')}

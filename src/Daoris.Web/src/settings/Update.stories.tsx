@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { storyWidths } from '../design/storyWidths';
 import { InTheme } from '../plugins/storyIcons';
 import type { UpdateOutcome, UpdateState } from '../update/UpdateBanner';
 import { UpdateSection } from './Update';
@@ -23,8 +24,8 @@ const meta = {
   title: 'Settings/Update',
   component: UpdateSection,
   args: { onSay: () => {} },
-  // A width between the side bar's two states, as the Driver domain's main area has.
-  decorators: [(Story) => <div className="w-[46rem] max-w-full"><Story /></div>],
+  // The main area at its wide width, as the frame gives it (the UI/UX design R6, UIFIT1).
+  decorators: [storyWidths.wide],
 } satisfies Meta<typeof UpdateSection>;
 
 export default meta;
@@ -89,5 +90,5 @@ export const AfterDismissal: Story = {
 /** A narrow main area: the row stacks its words under its label. */
 export const Narrow: Story = {
   args: { update: DRAINING },
-  decorators: [(Story) => <div className="w-[22rem] max-w-full"><Story /></div>],
+  decorators: [storyWidths.narrow],
 };

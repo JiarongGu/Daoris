@@ -29,7 +29,7 @@ const draw = (gates: HeavyGate[], onSave = vi.fn(), marks?: HeavyMarks) => {
 };
 
 /** The row's own region: the gate list's setting row, found by its label. */
-const row = (label: string) => screen.getByText(label, { selector: 'span' }).closest('.\\@container') as HTMLElement;
+const row = (label: string) => screen.getByText(label, { selector: 'span' }).closest('[data-setting-row]') as HTMLElement;
 
 afterEach(async () => { await i18n.changeLanguage('en'); });
 

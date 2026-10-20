@@ -1,6 +1,10 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import type { ReactElement } from 'react';
+import { chinese } from '../../design/storyLanguage';
+import { storyWidths } from '../../design/storyWidths';
+import { CardStack } from '../../design/ui';
 import { InTheme } from '../../plugins/storyIcons';
+import { WiringCards } from './WiringCards';
 import { WiringFiles } from './WiringFiles';
 import { WiringFolders } from './WiringFolders';
 import { WiringHead, WiringOlder } from './WiringHead';
@@ -16,18 +20,22 @@ import { DEVELOPMENT, MEASURING, WIRED } from './wiringFixtures';
 
 // Settings → This Daoris's cards (WIRING1c, the this-Daoris design §3.1-3.3, §7), in the shape `SYSTEM_WIRING` answers: an
 // install with every size counted, a walk under way, a development run with the account naming another home and a service
-// that does not answer, and a shell older than the page; light and dark, and a narrow main area where the rows stack.
+// that does not answer, and a shell older than the page; light and dark, and a narrow main area where the rows stack. The
+// whole domain at the frame's three widths, in English and 中文 (the UI/UX design R6, UIFIT1): every row's value on the
+// card's track, the cards 16 px apart by the domain's own container.
 
 const meta = {
   title: 'Settings/This Daoris',
-  // A width between the side bar's two states, as the Driver domain's main area has.
-  decorators: [(Story) => <div className="grid w-[46rem] max-w-full gap-3.5"><Story /></div>],
+  // The main area at its wide width, as the frame gives it (R6): no frame of the story's own.
+  decorators: [storyWidths.wide],
 } satisfies Meta;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
 
 const inTheme = (theme: 'light' | 'dark') => [(Story: () => ReactElement) => <InTheme theme={theme}><Story /></InTheme>];
+/** The main area at its 400 px floor: the rows stack. */
+const narrow = [storyWidths.narrow];
 
 /** An install, every size counted, an entry still at its old place and a folder an earlier build left. */
 export const FoldersCounted: Story = { render: () => <WiringFolders wiring={WIRED} onMeasure={() => {}} />, decorators: inTheme('light') };
@@ -59,10 +67,7 @@ export const FoldersUnreadable: Story = {
 };
 
 /** A narrow main area: the row stacks its value under its label, and a path breaks at its separators. */
-export const FoldersNarrow: Story = {
-  render: () => <WiringFolders wiring={WIRED} onMeasure={() => {}} />,
-  decorators: [(Story) => <div className="w-[22rem] max-w-full"><Story /></div>],
-};
+export const FoldersNarrow: Story = { render: () => <WiringFolders wiring={WIRED} onMeasure={() => {}} />, decorators: narrow };
 
 /** The service this window started, answering, with its programs and a workspace's remote. */
 export const ServiceAnswering: Story = { render: () => <WiringService wiring={WIRED} />, decorators: inTheme('light') };
@@ -74,10 +79,7 @@ export const ServiceAnsweringDark: Story = { render: () => <WiringService wiring
 export const ServiceNotAnswering: Story = { render: () => <WiringService wiring={DEVELOPMENT} /> };
 
 /** A narrow main area. */
-export const ServiceNarrow: Story = {
-  render: () => <WiringService wiring={WIRED} />,
-  decorators: [(Story) => <div className="w-[22rem] max-w-full"><Story /></div>],
-};
+export const ServiceNarrow: Story = { render: () => <WiringService wiring={WIRED} />, decorators: narrow };
 
 /** This window holds the home, nothing is held, and the loop looks every thirty seconds. */
 export const LoopHeld: Story = { render: () => <WiringLoop loop={WIRED.loop} onDriver={() => {}} />, decorators: inTheme('light') };
@@ -94,12 +96,8 @@ export const LoopStarting: Story = {
 };
 
 /** A narrow main area. */
-export const LoopNarrow: Story = {
-  render: () => <WiringLoop loop={WIRED.loop} onDriver={() => {}} />,
-  decorators: [(Story) => <div className="w-[22rem] max-w-full"><Story /></div>],
-};
+export const LoopNarrow: Story = { render: () => <WiringLoop loop={WIRED.loop} onDriver={() => {}} />, decorators: narrow };
 
-const narrow = [(Story: () => ReactElement) => <div className="w-[22rem] max-w-full"><Story /></div>];
 const none = () => {};
 
 // The six cards after the loop (WIRING1c-ii, §3.4-3.9): each from the installed read and from a development run, in the other
@@ -229,3 +227,37 @@ export const ToolHomeNarrow: Story = { render: () => <WiringToolHome toolHome={W
 
 /** A shell older than the page: one line, and Driver's home row is its fallback. */
 export const Older: Story = { render: () => <WiringOlder /> };
+
+// The whole domain, as `WiringDomain` composes it, in the domain's own container (R1, R6): at the three widths the frame
+// gives, in English and 中文, light and dark. `measured/settings.spec.ts` reads each row's value box against the track.
+
+const DOORS = { driver: none, tools: none, ai: none, logs: none, file: none };
+const thisDaoris = () => (
+  <CardStack>
+    <WiringCards wiring={WIRED} update={UPDATE} onMeasure={none} onOpenLogFolder={none} doors={DOORS} />
+  </CardStack>
+);
+
+/** The whole domain at the wide main area: one label track a card, values beside their words, cards 16 px apart. */
+export const ThisDaoris: Story = { render: thisDaoris };
+
+/** The same at the half width, 630 px: the track still beside. */
+export const ThisDaorisHalf: Story = { render: thisDaoris, decorators: [storyWidths.half] };
+
+/** The same at the 400 px floor: the track goes, each value under its words. */
+export const ThisDaorisNarrow: Story = { render: thisDaoris, decorators: [storyWidths.narrow] };
+
+/** The whole domain in 中文, wide: the shorter labels set the track no narrower than its floor. */
+export const ThisDaorisChinese: Story = { render: thisDaoris, decorators: [chinese] };
+
+/** The same in 中文 at the half width. */
+export const ThisDaorisChineseHalf: Story = { render: thisDaoris, decorators: [storyWidths.half, chinese] };
+
+/** The same in 中文 at the floor. */
+export const ThisDaorisChineseNarrow: Story = { render: thisDaoris, decorators: [storyWidths.narrow, chinese] };
+
+/** The whole domain in dark, wide. */
+export const ThisDaorisDark: Story = { render: thisDaoris, decorators: inTheme('dark') };
+
+/** The whole domain in dark at the floor. */
+export const ThisDaorisDarkNarrow: Story = { render: thisDaoris, decorators: [storyWidths.narrow, ...inTheme('dark')] };

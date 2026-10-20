@@ -233,7 +233,7 @@ export type MainNotice = { icon?: IconName; headline: string; body: string; acti
  * The view's gutters: a page's (24 px, 12 below 768 px) or the session's tighter column, which is a flex
  * column so its conversation follows its tail.
  */
-const GUTTERS = {
+export const GUTTERS = {
   page: 'px-6 pb-12 pt-5 max-md:px-3 max-md:pb-8 max-md:pt-4',
   session: 'flex flex-col px-4 py-3',
 } as const;

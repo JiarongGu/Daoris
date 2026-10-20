@@ -606,7 +606,6 @@ function LandingSetting({ repository, landing, above, landers, busy, onLanding, 
           landers={landers}
           busy={busy}
           clearable={false}
-          alignStart
           onSave={(rule) => onLanding(rule)}
           onAccepting={setAccepting}
         />

@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { moment } from '../locales/format';
-import { Button, Card, MetaLine, Pill, SectionTitle, SettingRow } from '../design/ui';
+import { Button, Card, MetaLine, Pill, SectionTitle, SettingList, SettingRow } from '../design/ui';
 import type { UpdateMode, UpdateOutcome, UpdateState } from '../update/UpdateBanner';
 
 /** The pill a drain's state wears: in progress in taken's hue, a refusal an outcome in declined's, a held word neutral. */
@@ -78,7 +78,7 @@ export function UpdateSection({ update, busy = false, onSay }: {
       <section aria-label={t('settings.update.title')}>
         <SectionTitle>{t('settings.update.title')}</SectionTitle>
         {/* The rows apart from the title, so the rule between rows falls between them and never under the title. */}
-        <div>
+        <SettingList>
           <SettingRow
             label={t('settings.update.staged')}
             hint={t('settings.update.terminal')}
@@ -108,7 +108,7 @@ export function UpdateSection({ update, busy = false, onSay }: {
               <Said pill={{ tone: OUTCOME_TONE[last.phase] ?? 'declined', word: pillWord(last.phase) }}>{ending(last)}</Said>
             </SettingRow>
           )}
-        </div>
+        </SettingList>
       </section>
     </Card>
   );

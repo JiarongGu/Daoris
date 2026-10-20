@@ -167,7 +167,8 @@ export function OpinionField({ name, owner, set, busy = false, onChange }: {
   return (
     <div className="grid gap-2">
       <form
-        className="grid max-w-[40rem] gap-2"
+        // Sized to its content up to the pane (R1, UIFIT1d): the reviewers are a list, the minutes a number of their own width.
+        className="grid gap-2"
         onSubmit={(event) => {
           event.preventDefault();
           if (!ready) return;
