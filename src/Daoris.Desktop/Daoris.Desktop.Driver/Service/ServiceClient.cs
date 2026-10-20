@@ -996,8 +996,13 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
     /// ask's repositories, answering a message or not. A refusal is an answer carrying the service's code (<c>empty</c>,
     /// <c>too-long</c>, <c>bad-to</c>, <c>bad-re</c>, <c>not-found</c>), which each door words its own way.
     /// </summary>
+    /// <param name="urgent">
+    /// Their level (COWORK1e, D188 point 2): false posts it ordinary, true urgent; null sends none, and the service keeps the
+    /// person's default, urgent.
+    /// </param>
     /// <exception cref="DriverException">The host answered neither the post nor a code.</exception>
-    public async Task<ChannelPosted> ChannelPostAsync(string ask, string text, string? to, string? re, CancellationToken ct = default)
+    public async Task<ChannelPosted> ChannelPostAsync(
+        string ask, string text, string? to, string? re, CancellationToken ct = default, bool? urgent = null)
     {
         var body = WriteJson(writer =>
         {
@@ -1005,6 +1010,7 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
             writer.WriteString("text", text);
             if (to is not null) writer.WriteString("to", to);
             if (re is not null) writer.WriteString("re", re);
+            if (urgent is { } level) writer.WriteBoolean("urgent", level);
             writer.WriteEndObject();
         });
         var (ok, _, payload, root) = await PostJsonAsync($"/api/asks/{Uri.EscapeDataString(ask.TrimStart('#'))}/channel", body, ct)
