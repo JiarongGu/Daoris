@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest';
+import { moment } from '../../locales/format';
 import i18n from '../../locales/i18n';
 import {
   type AccountScope, type AgentAccounts, agentOf, cannotLeave, coolingLine, heldLine, listedIn, machineScope, moved, nextLine,
@@ -204,6 +205,29 @@ describe('what is said', () => {
       .toBe('下一次启动使用 account-2：它在曲线下的余量比 work@example.invalid 多。');
     expect(nextLine(next({ account: null, reason: 'own', over: null }), scope(), labelOf))
       .toBe('下一次启动运行在工具自己的配置目录中，那里不是任何人的登录：这里没有指定任何账户。');
+  });
+
+  /**
+   * NEXTLAPSE1 (D165's USAGERESET1 note): a start ranked by what would lapse says the window, its reset, how much of it is
+   * unused and when that was read, as the start's own line does; an answer without them says its reset alone.
+   */
+  it('says what would lapse where the next start was ranked by it', async () => {
+    const list = scope({ list: ['account-1', 'account-2'], begins: 'account-1' });
+    const lapses: NextStart = {
+      account: 'account-2', reason: 'lapsing', over: 'account-1', others: [],
+      when: '2026-10-04T10:00:00Z', window: 'weekly', unused: 40, seen: '2026-10-03T14:00:00Z',
+    };
+    const at = moment('2026-10-04T10:00:00Z');
+    const read = moment('2026-10-03T14:00:00Z');
+
+    expect(nextLine(lapses, list, (name) => name))
+      .toBe(`The next start takes account-2: its weekly window resets at ${at} with 40% of it unused, as read at ${read}.`);
+    expect(nextLine({ ...lapses, window: null, unused: null, seen: null }, list, (name) => name))
+      .toBe(`The next start takes account-2: its week resets ${at}, with more of it left to spend before then.`);
+
+    await i18n.changeLanguage('zh');
+    expect(nextLine(lapses, list, (name) => name))
+      .toBe(`下一次启动使用 account-2：它的每周窗口在 ${moment('2026-10-04T10:00:00Z')} 重置，按 ${moment('2026-10-03T14:00:00Z')} 的读数还有 40% 未用。`);
   });
 
   /**

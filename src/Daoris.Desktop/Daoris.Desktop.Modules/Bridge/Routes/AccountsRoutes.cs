@@ -152,6 +152,10 @@ public sealed class AccountsRoutes(DriverLoop loop)
             Reason = Code(next.Reason.ToString()),
             next.Over,
             next.When,
+            // NEXTLAPSE1: where it is lapsing, what would lapse, as the start's line says it; new fields beside the old.
+            next.Window,
+            next.Unused,
+            next.Seen,
             Others = next.Others.Select(held => new { held.Account, Hold = Code(held.Hold.ToString()), held.Until }).ToArray(),
         };
 

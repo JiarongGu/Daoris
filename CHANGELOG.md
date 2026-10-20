@@ -7,6 +7,8 @@ with the version and date at release.
 
 - A plugin's line on stderr longer than 8 KB is shown under `plugin:<id>` clipped to its start and ending ` …`, and the lines
   after it as before, so a plugin that writes without a line end can no longer grow Daoris's memory.
+- An agent's page in Agents says what would lapse where its next start goes to an account for its week's last day: *its
+  weekly window resets at … with 40% of it unused, as read at …*, as the start's own first line says it, in English and 中文.
 - A repository's and a workspace's Workflow tab now begins with where work there goes: the default, each kind of task, and the
   work that lands on the line, each wired to the workflow it follows and saying what chose it. A workflow can be made a
   verification workflow of checks (marked `verification` in the file you import), which only the route for landed work names:

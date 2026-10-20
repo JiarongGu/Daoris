@@ -106,6 +106,13 @@ export type NextStart = {
   over?: string | null;
   /** Its week's reset (`lapsing`), or when the first account is offered again (`waits`). */
   when?: string | null;
+  /**
+   * Where it is `lapsing`, what would lapse as the start's line says it (NEXTLAPSE1): the window that won, the whole percent of it
+   * unused, and when that reading was made; absent from a shell older than that.
+   */
+  window?: string | null;
+  unused?: number | null;
+  seen?: string | null;
   /** Every other account, in the order the walk tried them, then kept, missing and unused ones. */
   others: AccountHeld[];
 };
@@ -390,6 +397,12 @@ export function nextWhy(next: NextStart, scope: AccountScope, labelOf: (name: st
     case 'kept':
       return next.over ? i18n.t('harness.next.why.keptOver', { over }) : i18n.t('harness.next.why.kept');
     case 'lapsing':
+      // NEXTLAPSE1: what would lapse, as the start's line says it; a shell older than that says its reset alone.
+      if (next.when && next.window && next.seen && typeof next.unused === 'number') {
+        return i18n.t('harness.next.why.lapses', {
+          window: windowName(next.window), when: moment(next.when), unused: `${next.unused}%`, seen: moment(next.seen),
+        });
+      }
       return next.when ? i18n.t('harness.next.why.lapsing', { when: moment(next.when) }) : i18n.t('harness.next.why.lapsingSoon');
     default:
       return i18n.t(`harness.next.why.${next.reason}`, { over });

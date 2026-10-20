@@ -155,6 +155,21 @@ public sealed class AccountRotationNextTests
 
         Assert.Equal(NextReason.Lapsing, next.Reason);
         Assert.Equal(Now.AddHours(5), next.When);
+        // NEXTLAPSE1: what would lapse, as the start's line says it: the window, its unused share, the reading's moment.
+        Assert.Equal("weekly", next.Window);
+        Assert.Equal(40, next.Unused);
+        Assert.Equal(Now.AddMinutes(-10), next.Seen);
+    }
+
+    [Fact]
+    public void A_start_not_ranked_by_what_would_lapse_says_no_window()
+    {
+        var next = Next("account-1 account-2 account-3", "account-1:W40@+4d account-2:W10@+4d account-3:W20@+4d");
+
+        Assert.Equal(NextReason.Pace, next.Reason);
+        Assert.Null(next.Window);
+        Assert.Null(next.Unused);
+        Assert.Null(next.Seen);
     }
 
     [Fact]
