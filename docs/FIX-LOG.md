@@ -5,6 +5,17 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-20 — The attention judge's tests were one class split across two files (PUSH1d4)
+
+- **Symptom:** the full set on 3cf9d20ec failed the CLI gate's partials check: `AttentionStateSliceTests` was declared
+  `partial` in `AttentionStateSliceTests.cs` and `AttentionStateSliceTests.Accounts.cs`.
+- **Root cause:** PUSH1d4 ported the page's account rows' tests as a second half of the judge's test class, to share its record
+  helpers; the partials rule keeps `partial` for generated code, and the branch's checks did not include the CLI gate's verify,
+  which runs it. The same rule stopped the TreesWords split on 2026-10-20.
+- **Fix:** the helpers both use (`With`, `Session`, `Registration`, `Rows`, `Keys`, `Is`, `Normal`) are `AttentionTestRows`,
+  imported by both; the account rows are `AccountAttentionSliceTests` in a file of that name.
+- **Verification:** the two classes, 112 passed; `partials` clean.
+
 ## 2026-10-20 — The deployment rehearsal read the shell's running record before the shell wrote it (HOMEFIX3)
 
 - **Symptom:** the full set on 32889e2a4 failed the deployment rehearsal's "the install keeps its own state in its own folders
