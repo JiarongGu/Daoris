@@ -34,6 +34,7 @@
   "work.conversation.held.cooling": "Held: its account is cooling until {{time}}; it goes on with this then.",
   "work.conversation.went": "Your words went to session {{id}}, because {{why}}.",
   "work.conversation.lost": "It may have read this; its answer was not kept.",
+  "work.conversation.sayAgain": "Say it again",
   "work.conversation.withdrawn": "Taken back before it was sent.",
   "work.conversation.dropped": "Daoris did not send this: what it said no longer holds.",
   "work.conversation.plan": "Plan",

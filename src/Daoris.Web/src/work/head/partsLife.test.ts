@@ -1,9 +1,8 @@
-import { readdirSync, readFileSync } from 'node:fs';
-import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { SESSION_TONE } from '../../design/ui';
 import i18n from '../../locales/i18n';
 import { en, zh } from '../../locales';
+import { driverSource } from '../../test/driverSource';
 import { EVIDENCE_ENTRIES, EVIDENCE_SESSIONS } from '../entries.fixtures';
 import type { EntryPart, SessionEntry } from '../entries';
 import type { EntryAcceptPlan } from '../review/EntryAccept';
@@ -14,7 +13,6 @@ import { PART_BEGAN, partsFlow } from './partsLife';
 // or whether two ran at once; the landing plan is where Accept *would* land them, a prospective node, never a join drawn as done.
 
 const t = i18n.t.bind(i18n);
-const root = join(process.cwd(), '..', '..');
 const APP = EVIDENCE_ENTRIES[0]!;
 const rows = Object.fromEntries(EVIDENCE_SESSIONS.map((session) => [session.id, { session, root: 'C:/work/app' }]));
 
@@ -64,13 +62,10 @@ describe('the parts, hung by what each follows (§2.3)', () => {
 
   it('says every way a part began, held to the driver\'s words in both languages', () => {
     // The driver's `PartBegan`, read from its source (`.claude/knowledge/twins.md`): the page's list is a copy no test would hold else.
-    const driver = 'src/Daoris.Desktop/Daoris.Desktop.Driver';
-    const sources = readdirSync(join(root, ...driver.split('/')), { recursive: true, encoding: 'utf8' })
-      .filter((path) => path.split(/[\\/]/).at(-1) === 'SessionEntries.cs')
-      .map((path) => readFileSync(join(root, ...driver.split('/'), path), 'utf8'))
-      .filter((text) => /static class PartBegan\b/.test(text));
-    expect(sources).toHaveLength(1);
-    const block = /static class PartBegan\s*\{([\s\S]*?)\n\}/.exec(sources[0]!)?.[1] ?? '';
+    // By its name (`driverSource`), so the merge tool's page-reads scan sees the one file and its row reaches this gate (MOD9e).
+    const source = driverSource('SessionEntries.cs');
+    expect(source).toMatch(/static class PartBegan\b/);
+    const block = /static class PartBegan\s*\{([\s\S]*?)\n\}/.exec(source)?.[1] ?? '';
     const words = [...block.matchAll(/public const string \w+ = "([^"]+)";/g)].map((match) => match[1]!);
     expect(words.length).toBeGreaterThan(4);
     expect([...PART_BEGAN].sort()).toEqual([...words].sort());

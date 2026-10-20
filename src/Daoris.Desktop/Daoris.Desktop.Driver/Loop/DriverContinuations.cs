@@ -787,6 +787,8 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
             // whose fact a later submission answered is dropped, said so, and never goes late. None left, the next take closes.
             var words = await DaorisWords.GoingAsync(
                 taken, note => _context.Events.Keep(sessionId, note, say: null), ct).ConfigureAwait(false);
+            // COWORK1c: a word dropped is settled without the wire, so off its record too.
+            Went([.. taken.Except(words)]);
             if (words.Count == 0) continue;
             carried = words;
             // The id its harness named, kept as each run's output ended (ANSWER1a); never read from the account's home.
@@ -794,8 +796,15 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
             var info = conversation is null ? null : goOn(conversation, NativeWords.Prompt(words));
             if (info is null)
             {
+                Went(words);
                 Untaken(sessionId, held.Close().Count + words.Count, UnreachedWhy.Unkept);
                 return (exitCode, used);
+            }
+
+            // COWORK1c (the message-urgency design §6): each kept word marked attempted on its record before the run that carries it.
+            foreach (var word in words)
+            {
+                if (word.Attempting is { } attempting) await attempting().ConfigureAwait(false);
             }
 
             // Through the start gate (PROCSTART2), as the first run's start is, waiting for its place on the loop's token
@@ -808,11 +817,19 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
             }
             catch (OperationCanceledException) when (ct.IsCancellationRequested)
             {
+                Went(words);
                 Untaken(sessionId, held.Close().Count + words.Count, UnreachedWhy.EndedFirst);
                 throw;
             }
 
             var process = started ?? throw new DriverException($"the {adapter.Name} adapter's process did not start");
+            // COWORK1c (the design §7): the resumed run carries them from its start, their receipt `sent`, and they leave the record.
+            foreach (var word in words)
+            {
+                if (word.Id is { } id) _context.Events.Keep(sessionId, new SessionEvent { Kind = SessionEventKind.Receipt, Id = id, Receipt = Receipts.Sent }, say: null);
+            }
+
+            Went(words);
             // As the first run's: the process, tracked so a stop reaches it, and a reaper that ends it while still tracked.
             keep.Add(process);
             keep.Add(processes.Track(sessionId, process, refusesInput, drivesBrowser));
@@ -840,6 +857,12 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
         var line = WordsNotes.Unreached(count, "while it worked never reached it", why);
         _context.Output?.Append(sessionId, line.Note);
         _context.Events.Keep(sessionId, new SessionEvent { Kind = SessionEventKind.Note, Text = line.Note, Parts = line.Parts }, say: null);
+    }
+
+    /// <summary>Words the run carried, or settled without it (COWORK1c): each kept one leaves its record through its dispatcher.</summary>
+    private static void Went(IEnumerable<ChatMessage> words)
+    {
+        foreach (var word in words) word.Went?.Invoke();
     }
 }
 

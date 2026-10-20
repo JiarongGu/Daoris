@@ -44,6 +44,8 @@
   "work.milestone.line.cleanupPending": "清理未完成",
   "work.milestone.line.recoveryUntil": "可找回至 {{when}}",
   "work.milestone.line.recovery": "可找回",
+  "work.milestone.line.blocked": "受阻",
+  "work.milestone.line.held": "等你处理",
   "work.milestone.wait.title": "{{unit}}：它的清理受阻",
   "work.milestone.wait.owner": "没有任何记录说明这是谁的工作，所以它的内容都不会被清理。",
   "work.milestone.held.label": "等你定夺",

@@ -594,6 +594,7 @@ internal sealed class ChatLedger : HttpMessageHandler
     private readonly List<JsonObject> _registry = [];
     private readonly List<JsonObject> _sessions = [];
     private readonly Dictionary<string, List<string>> _moves = new(StringComparer.Ordinal);
+    private int _kept;
 
     /// <summary>Where set, the ledger refuses the move out of an ended state with this sentence (D51's tree, held by another).</summary>
     public string? Busy { get; set; }
@@ -609,6 +610,9 @@ internal sealed class ChatLedger : HttpMessageHandler
 
     /// <summary>Each take of words: the session and the ids joined.</summary>
     public List<(string Session, string Ids)> Taken { get; } = [];
+
+    /// <summary>Each word taken back (COWORK1c's uncertain words, as a shell comes up): the session and the word.</summary>
+    public List<(string Session, string Word)> TakenBack { get; } = [];
 
     /// <summary>The workspace each Ask Daoris open named in its body, in order: null where it named none (ASKSCOPE1a).</summary>
     public List<string?> HelpAsked { get; } = [];
@@ -881,6 +885,48 @@ internal sealed class ChatLedger : HttpMessageHandler
                     if (!_moves.TryGetValue(id, out var moves)) _moves[id] = moves = [];
                     moves.Add(to);
                     return (HttpStatusCode.OK, new JsonObject { ["session"] = session.DeepClone(), ["message"] = "moved" }.ToJsonString());
+                }
+
+                // COWORK1c: the say door, keeping a word last on the record under an id of its own, for a running record only where the
+                // driver that runs it asks so; a word kept for a run reopens nothing.
+                case ("POST", _) when path.StartsWith("/api/sessions/", StringComparison.Ordinal) && path.EndsWith("/say", StringComparison.Ordinal):
+                {
+                    var id = IdOf(path, "/say");
+                    var asked = JsonNode.Parse(body!)!;
+                    var session = Find(id);
+                    var running = session["state"]!.GetValue<string>() is "queued" or "starting" or "working";
+                    if (running && asked["running"]?.GetValue<bool>() != true)
+                    {
+                        return (HttpStatusCode.Conflict, """{"error":"words to a running session reach it through the driver that runs it.","refusal":"running"}""");
+                    }
+
+                    var word = new JsonObject
+                    {
+                        ["id"] = $"k{++_kept}", ["text"] = asked["text"]!.GetValue<string>(), ["at"] = "2026-10-03T09:30:00Z",
+                        ["files"] = new JsonArray(), ["reopens"] = !running, ["level"] = asked["level"]?.GetValue<string>(),
+                        ["key"] = asked["key"]?.GetValue<string>(),
+                    };
+                    session["said"]!.AsArray().Add(word);
+                    return (HttpStatusCode.OK, new JsonObject
+                    {
+                        ["session"] = session.DeepClone(), ["message"] = "kept", ["said"] = word.DeepClone(),
+                    }.ToJsonString());
+                }
+
+                // SAIDBACK1a's take-back door, without a reword: a word waiting on a record that runs no more leaves it.
+                case ("POST", _) when path.StartsWith("/api/sessions/", StringComparison.Ordinal) && path.EndsWith("/take-back", StringComparison.Ordinal):
+                {
+                    var id = IdOf(path, "/take-back");
+                    var named = JsonNode.Parse(body!)!["word"]!.GetValue<string>();
+                    var said = Find(id)["said"]!.AsArray();
+                    if (said.FirstOrDefault(word => word!["id"]!.GetValue<string>() == named) is not { } waiting)
+                    {
+                        return (HttpStatusCode.OK, """{"done":false,"why":"taken","message":"no longer waits"}""");
+                    }
+
+                    said.Remove(waiting);
+                    TakenBack.Add((id, named));
+                    return (HttpStatusCode.OK, """{"done":true,"message":"taken back"}""");
                 }
 
                 case ("POST", _) when path.StartsWith("/api/sessions/", StringComparison.Ordinal) && path.EndsWith("/taken", StringComparison.Ordinal):

@@ -246,6 +246,16 @@ its advances, the push as a fact with no time and the pull request's latest answ
 edges between its members said in its description. The work's milestone and a run's landing step open the page through the
 application's opener (`opening`'s `branch`), with the section open.
 
+A session's record folds where its work stands (`work/head/WorkMilestone`, MILESTONEUX1, the UI/UX design §3.7 and R4): the
+milestone's end, result, clean-up and recovery are four independent facts, each marked by `Dot`'s own tone for its value
+(`done` for what is reached or kept, `waits` for what waits on another, the danger hue for a blocked entry, none for a
+recovery with nothing kept), never a sequence and never a `PhaseList`. It is folded to `MilestoneLine`, which also says
+*blocked* and *held for you* so nothing that waits on the person hides behind the fold, and opens in place; the fold is the
+molecule's own state, and the page mounts it under the record's id so another record starts folded. The line is also a
+tidied branch row's. The record head's budget is measured in a rendered browser (`e2e:measured`, `measured/head.spec.ts`
+over `work/AttendedSession.head.stories.tsx`): how far down the main area the conversation starts, with every block of the
+head present, at the three widths and in both languages; D185's MILESTONEUX1 note says what it measured.
+
 ## Running it
 
 The HTTP host requires `DAORIS_HOME` or an explicit `DAORIS_KNOWLEDGE_DB`. Use a development
@@ -264,7 +274,7 @@ npm --prefix src/Daoris.Web run dev                             # http://localho
 npm run test:web
 npm --prefix src/Daoris.Web run test:watch                      # the inner loop, on save
 npm --prefix src/Daoris.Web run e2e:ui                          # the outer loop, watch-and-poke mode
-npm --prefix src/Daoris.Web run e2e:measured                    # the flowchart's stories in Chromium, every box measured (D186)
+npm --prefix src/Daoris.Web run e2e:measured                    # the flowchart's, Settings' and the record head's stories in Chromium, measured (D185, D186)
 
 # the design tool
 npm --prefix src/Daoris.Web run storybook

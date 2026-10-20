@@ -109,7 +109,41 @@ public sealed class SessionWords : IDisposable
     public SessionWords(DriverLoop loop)
     {
         _loop = loop;
+        _loop.Processes.KeptLeft += OnKeptLeft;
         Restore();
+    }
+
+    /// <summary>
+    /// One key per press of the person's (COWORK1c, the message-urgency design §6), where the door that took the words named none:
+    /// the record keeps one word per key, so a press that arrives twice keeps one.
+    /// </summary>
+    private static string PressKey() => $"press/{Guid.NewGuid():N}";
+
+    /// <summary>
+    /// Words kept for a driven session's run that stay on its record as its inbox closed under them (COWORK1c): its door failed, or the
+    /// shell is shutting down. Shown again under the ids they were shown by, as waiting for the session to go on (the reach
+    /// <c>resume</c>), so the page never says they were lost; and the loop is nudged, so a look goes on with them.
+    /// </summary>
+    private void OnKeptLeft(string id, IReadOnlyList<ChatMessage> words)
+    {
+        foreach (var word in words)
+        {
+            var daoris = word.Daoris is not null;
+            _loop.Output.Append(id, $"— the session ended before it took {(daoris ? "Daoris's words" : "what the person added")}, which wait for it to go on: {word.Text}");
+            _loop.Events.Keep(id, new SessionEvent
+            {
+                Kind = SessionEventKind.User,
+                Origin = daoris ? "target" : "person",
+                From = daoris ? DaorisWords.From : null,
+                Id = word.Id,
+                Text = word.Text,
+                Reaches = "resume",
+                Level = daoris ? null : MessageLevels.Spelled(word.Level),
+            }, null);
+        }
+
+        Tell(id);
+        _loop.Said(id);
     }
 
     /// <summary>
@@ -331,20 +365,24 @@ public sealed class SessionWords : IDisposable
     /// </exception>
     public async Task<WordsAnswer?> SayAsync(
         string id, string text, IReadOnlyList<ChatUpload> files, string? preface, string door, CancellationToken ct,
-        MessageLevel level = MessageLevel.Urgent)
+        MessageLevel level = MessageLevel.Urgent, string? key = null)
     {
         var now = level == MessageLevel.Now;
-        // A driven session that hears words during its run (SESS3, D136; the native door's run, MSG1b).
+        // A driven session that hears words during its run (SESS3, D136; the native door's run, MSG1b). COWORK1c: kept on its record
+        // first, under the press's key, then held by its one dispatcher under the record's id.
         if (_loop.Processes.InboxOf(id) is { } inbox)
         {
-            if (now && await inbox.HoldNowAsync(new ChatMessage(text, [])).ConfigureAwait(false) is { } sentNow)
+            var forRun = await inbox
+                .KeepOrHoldAsync(
+                    _loop.Service is { } service ? new SaidDoor(service, id) : null,
+                    new ChatMessage(text, []) { Level = level, Key = key ?? PressKey() }, ct)
+                .ConfigureAwait(false);
+            switch (forRun)
             {
-                return new(true, sentNow.Reaches, sentNow.Why) { Running = true, Now = sentNow.Now };
-            }
-
-            if (!now && inbox.Hold(new ChatMessage(text, []) { Level = level }))
-            {
-                return new(true, Spelled(inbox.ReachAt(level)), null) { Running = true };
+                case { Outcome: InboxKeep.Held, Now: { } sentNow }:
+                    return new(true, sentNow.Reaches, sentNow.Why) { Running = true, Now = sentNow.Now, Word = forRun.Said?.Word?.Id };
+                case { Outcome: InboxKeep.Held }:
+                    return new(true, Spelled(forRun.Reach), null) { Running = true, Word = forRun.Said?.Word?.Id };
             }
         }
 
@@ -363,16 +401,12 @@ public sealed class SessionWords : IDisposable
         {
             // A conversation this machine runs (D49 §3): its turns take the words, into the running turn at its next step where
             // its agent takes them then (MSG1c), when the running one ends elsewhere (CONV4a), or now; its runner says which.
-            if (now)
+            // COWORK1c: kept on its record first, under the press's key, and its turns are their one dispatcher.
+            if (await chat.SayKeptAsync(id, text, files, preface, level, key ?? PressKey(), ct).ConfigureAwait(false) is { } chatSaid)
             {
-                if (await chat.SayNowAsync(id, text, files, preface).ConfigureAwait(false) is { } sentNow)
-                {
-                    return new(true, sentNow.Reaches, sentNow.Why) { Running = true, Now = sentNow.Now };
-                }
-            }
-            else if (chat.Say(id, text, out var reaches, files, preface, level))
-            {
-                return new(true, reaches, null) { Running = true };
+                return chatSaid.Now is { } sentNow
+                    ? new(true, sentNow.Reaches, sentNow.Why) { Running = true, Now = sentNow.Now, Word = chatSaid.Word }
+                    : new(true, chatSaid.Reaches, null) { Running = true, Word = chatSaid.Word };
             }
         }
 
@@ -577,8 +611,10 @@ public sealed class SessionWords : IDisposable
     public async Task<WordsHeld> HoldAsync(SessionRequest request, CancellationToken ct)
     {
         var text = request.Text ?? "";
+        // COWORK1c: the request's own key, so a request read again after a restart keeps one word.
         var said = await SayAsync(
-                request.Session, text, Kept(request.Session, request.Files), preface: null, RequestDoor.Terminal, ct, request.Asked)
+                request.Session, text, Kept(request.Session, request.Files), preface: null, RequestDoor.Terminal, ct, request.Asked,
+                request.Key is { Length: > 0 } key ? $"request/{key}" : null)
             .ConfigureAwait(false);
         if (said is null) return WordsHeld.Failed(NotUp);
         if (said.Running) KeepOnAsk(request.Session, text);
@@ -1045,5 +1081,9 @@ public sealed class SessionWords : IDisposable
         error is HttpRequestException or DriverException or JsonException or OperationCanceledException or TaskCanceledException;
 
     /// <summary>Stop trying held words: the loop is closing. The source is cancelled, never disposed, so a pump still starting reads it.</summary>
-    public void Dispose() => _stopping.Cancel();
+    public void Dispose()
+    {
+        _loop.Processes.KeptLeft -= OnKeptLeft;
+        _stopping.Cancel();
+    }
 }

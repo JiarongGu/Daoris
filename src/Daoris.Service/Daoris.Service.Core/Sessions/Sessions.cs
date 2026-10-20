@@ -344,9 +344,18 @@ public sealed record Session(
 /// Its producer's key (COWORK1b, the design §6): the say door keeps one word per key on a record, so a producer's retry is answered
 /// with the word kept. Null for a word kept with none, each its own, as every word before the field was.
 /// </param>
+/// <param name="Level">
+/// When its sender asked it to reach a working session (COWORK1c, D188 point 1; the message-urgency design §9), one of
+/// <see cref="SaidLevel"/>. Null for a word kept with none, which reads as its old reach: the person's as urgent, any other as ordinary.
+/// </param>
+/// <param name="Attempt">
+/// When a dispatcher first wrote it to a harness (COWORK1c, the design §6), marked before the wire by
+/// <see cref="SessionStore.MarkAttemptAsync"/>: a word with an attempt and not taken off when a shell comes up may have reached the agent,
+/// and is never sent again. Null for a word never attempted, and every word kept before the field.
+/// </param>
 public sealed record SaidWord(
     string Id, string Text, DateTimeOffset At, IReadOnlyList<string> Files, bool Reopens = false, string? By = null, string? Helper = null,
-    string? Channel = null, string? From = null, string? Key = null)
+    string? Channel = null, string? From = null, string? Key = null, string? Level = null, DateTimeOffset? Attempt = null)
 {
     /// <summary>Whether the person said it: every word but another agent's, a reviewer's, a helper's or Daoris's.</summary>
     public bool Persons => By is null && Helper is null && From is null;
@@ -360,6 +369,25 @@ public static class SaidFrom
 
     /// <summary>Whether this build keeps a word by <paramref name="from"/>: none named, or one it knows.</summary>
     public static bool Known(string? from) => from is null or Daoris;
+}
+
+/// <summary>
+/// The levels a word on a record names in its <see cref="SaidWord.Level"/> (COWORK1c, D188 point 1): when its sender asked it to reach
+/// a working session. No level stops a turn.
+/// </summary>
+public static class SaidLevel
+{
+    /// <summary>At a natural point, never into a turn in flight.</summary>
+    public const string Ordinary = "ordinary";
+
+    /// <summary>At the agent's next step, where its door takes words then.</summary>
+    public const string Urgent = "urgent";
+
+    /// <summary>Cutting the step in flight, where the agent steers: the person's alone.</summary>
+    public const string Now = "now";
+
+    /// <summary>Whether this build keeps a word at <paramref name="level"/>: none named, or one it knows.</summary>
+    public static bool Known(string? level) => level is null or Ordinary or Urgent or Now;
 }
 
 /// <summary>
@@ -1364,6 +1392,31 @@ public sealed class SessionStore
     }, ct);
 
     /// <summary>
+    /// Mark the moment a dispatcher first wrote one waiting word to a harness (COWORK1c, the message-urgency design §6): before the
+    /// wire, so a shell that comes up again tells a word that may have reached the agent from one that never left. Only the first
+    /// mark holds. No revision, since the words never travel. False where this machine's record holds no such word.
+    /// </summary>
+    /// <remarks>
+    /// <b>One statement</b>, for the reason a word is appended in one (REV3): the word is found in the list and marked in place in the
+    /// same write, so a word kept or taken off meanwhile is never lost under a whole-list save.
+    /// </remarks>
+    public Task<bool> MarkAttemptAsync(string id, string word, DateTimeOffset at, CancellationToken ct = default) => _db.RunAsync<bool>(async () =>
+    {
+        await using var command = _db.Command();
+        command.CommandText = """
+            UPDATE sessions SET said = json_insert(said, (
+                SELECT '$[' || each.key || '].attempt' FROM json_each(sessions.said) AS each
+                WHERE json_extract(each.value, '$.id') = $word LIMIT 1), $at)
+            WHERE id = $id AND origin IS NULL AND said IS NOT NULL
+              AND EXISTS (SELECT 1 FROM json_each(sessions.said) AS each WHERE json_extract(each.value, '$.id') = $word)
+            """;
+        command.Parameters.AddWithValue("$id", id);
+        command.Parameters.AddWithValue("$word", word);
+        command.Parameters.AddWithValue("$at", Moments.Write(at));
+        return await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false) > 0;
+    }, ct);
+
+    /// <summary>
     /// The record's words: its list, or, on a record from before the list, its answer as the first word, said when the
     /// record last changed, which is when the answer was kept (ANSWER1b).
     /// </summary>
@@ -1413,7 +1466,10 @@ public sealed class SessionStore
                 // COWORK1b: whose words where not the person's, and the producer's key; absent on every word before them.
                 var from = JsonFields.Text(element, "from") is { Length: > 0 } author ? author : null;
                 var key = JsonFields.Text(element, "key") is { Length: > 0 } produced ? produced : null;
-                words.Add(new SaidWord(wordId, text, at, files, reopens, by, helper, channel, from, key));
+                // COWORK1c: its level, a later build's word read as none, and when a dispatcher first wrote it to a harness.
+                var level = JsonFields.Text(element, "level") is { Length: > 0 } asked && SaidLevel.Known(asked) ? asked : null;
+                var attempt = Moments.Read(element, "attempt");
+                words.Add(new SaidWord(wordId, text, at, files, reopens, by, helper, channel, from, key, level, attempt));
             }
 
             return words;
@@ -1449,6 +1505,8 @@ public sealed class SessionStore
         if (word.Channel is not null) writer.WriteString("channel", word.Channel);
         if (word.From is not null) writer.WriteString("from", word.From);
         if (word.Key is not null) writer.WriteString("key", word.Key);
+        if (word.Level is not null) writer.WriteString("level", word.Level);
+        if (word.Attempt is { } attempt) writer.WriteString("attempt", Moments.Write(attempt));
         writer.WriteEndObject();
     }
 

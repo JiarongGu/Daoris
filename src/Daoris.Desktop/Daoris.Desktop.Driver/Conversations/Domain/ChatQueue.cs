@@ -64,6 +64,23 @@ public enum TurnReach
     Steered,
 }
 
+/// <summary>What keeping a word for a conversation's turns did (COWORK1c): where it reaches, and the record's id for it.</summary>
+/// <param name="Word">The id its record kept it under; null where the record would not keep it, and it waits here alone as before.</param>
+public sealed record TurnKept(TurnReach Reach, string? Word)
+{
+    /// <summary>A word at <c>now</c>: what the door did with it (<c>ChatTurns.TakeNowAsync</c>).</summary>
+    public SentNow? Now { get; init; }
+}
+
+/// <summary>What the person's words to a live chat did (COWORK1c): when they reach it in the record's spelling, and the record's id for them.</summary>
+/// <param name="Reaches">As <c>ChatRunner.Say</c> spells it: <c>next-step</c>, <c>turn-end</c>, <c>now</c>, or null where they are its turn at once.</param>
+/// <param name="Word">The id the record kept them under; null where nothing kept them (a text-only door, a record that would not).</param>
+public sealed record ChatSaid(string? Reaches, string? Word)
+{
+    /// <summary>The person's *Send now*: what the door did with it.</summary>
+    public SentNow? Now { get; init; }
+}
+
 /// <summary>When what a person tells a driven session reaches it (STEER1, D136).</summary>
 public enum DrivenReach
 {

@@ -54,16 +54,27 @@ public sealed class SessionProcesses(string? markers = null)
     public DrivenInbox OpenInbox(string sessionId)
     {
         var inbox = new DrivenInbox(queue => HeldChanged?.Invoke(sessionId, queue));
-        inbox.OnClosing(() =>
-        {
-            lock (_gate)
+        inbox.OnClosing(
+            () =>
             {
-                if (_inboxes.TryGetValue(sessionId, out var held) && ReferenceEquals(held, inbox)) _inboxes.Remove(sessionId);
-            }
-        });
+                lock (_gate)
+                {
+                    if (_inboxes.TryGetValue(sessionId, out var held) && ReferenceEquals(held, inbox)) _inboxes.Remove(sessionId);
+                }
+            },
+            // COWORK1c: the person's stop ends what was kept for the run with it; any other end leaves it on the record to go on.
+            personStopped: () => StopMade(sessionId) is { Reason: null },
+            left: words => KeptLeft?.Invoke(sessionId, words));
         lock (_gate) _inboxes[sessionId] = inbox;
         return inbox;
     }
+
+    /// <summary>
+    /// The words kept on a driven session's record for its run that stay there as its inbox closes under them (COWORK1c): its door
+    /// failed, or the shell shut down. They wait on the ended record for the session's go-on, and whoever shows the conversation
+    /// says so under their ids.
+    /// </summary>
+    public event Action<string, IReadOnlyList<ChatMessage>>? KeptLeft;
 
     /// <summary>A running driven session's inbox, or null: one on the pipe door, a conversation, or none.</summary>
     public DrivenInbox? InboxOf(string sessionId)

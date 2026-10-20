@@ -559,7 +559,7 @@ public sealed class AcpSession(
         string cwd, string prompt, CancellationToken ct, IReadOnlyList<AcpMcpServer>? servers = null,
         DrivenInbox? inbox = null, Action<ChatMessage>? asked = null, string? resume = null,
         IReadOnlyList<string>? blocks = null, Action? prompted = null, IReadOnlyList<KeptFile>? files = null,
-        Func<CancellationToken, Task<bool>>? waitsOnBackground = null)
+        Func<CancellationToken, Task<bool>>? waitsOnBackground = null, Func<Task>? attempting = null)
     {
         _asked = asked;
         try
@@ -582,6 +582,9 @@ public sealed class AcpSession(
                     inbox?.Flow();
                     prompted?.Invoke();
                 };
+            // COWORK1c (the message-urgency design §6): the words a resumed run carries are marked attempted on its record once the agent
+            // took the conversation back and before the prompt carrying them is written.
+            if (attempting is not null) await attempting().ConfigureAwait(false);
             var stopReason = blocks is { Count: > 0 }
                 ? await SendPromptAsync(blocks, files, ct, sent, words: null).ConfigureAwait(false)
                 : await PromptAsync(prompt, ct, sent).ConfigureAwait(false);
@@ -625,6 +628,8 @@ public sealed class AcpSession(
                     if (!await DaorisWords.GoesAsync(held, ct).ConfigureAwait(false))
                     {
                         Emit(DaorisWords.Dropped(held));
+                        // COWORK1c: settled without the wire, so off its record too.
+                        held.Went?.Invoke();
                         continue;
                     }
 
@@ -1003,12 +1008,16 @@ public sealed class AcpSession(
 
         if (_sessionId is null) throw new DriverException("this ACP session is not open — nothing can be steered into it.");
 
+        // COWORK1c: a kept word is marked attempted on its record before the wire, in the order asked for.
+        await Attempted(words).ConfigureAwait(false);
+
         // The adapter's own parameters (claude-agent-acp 0.84.0, `parseSteerRequest`, acp-agent.js:215-238): the session, the
         // prompt's content blocks as `session/prompt` carries them, and the steering `_meta`. The priority is the adapter's.
         var answer = await RequestAsync(
             "_session/steering",
             new { sessionId = _sessionId, prompt = Blocks([words.Prompt], words.Files), _meta = new { steering = new { idleBehavior = "promptRequired" } } },
             ct,
+            Wrote(null, words),
             answered: frame =>
             {
                 if (Outcome(frame) != "injected") return;
@@ -1140,17 +1149,19 @@ public sealed class AcpSession(
         if (_sessionId is null) throw new DriverException("this ACP session is not open — nothing can be prompted on it.");
 
         var prompt = Blocks(texts, files);
+        // COWORK1c (the message-urgency design §6): a kept word is marked attempted on its record before the wire, in the order the
+        // prompts were asked for, so a shell that comes up again never sends it twice.
+        await Attempted(words).ConfigureAwait(false);
+
         var open = new OpenPrompt(words);
-        bool takenNow;
         lock (_promptsGate)
         {
-            takenNow = words is not null && _prompts.Count == 0;
-            open.Taken = takenNow;
+            // 🔴 COWORK1c (trap 8): words prompted to an idle session are taken at the first thing the agent does for them, or by
+            // their own answer, never before the wire, as words after an error are (USERSHOWN1): the record told them taken before
+            // the prompt was written, and a write that failed left them taken.
+            if (words is not null && _prompts.Count == 0) _afterError = true;
             _prompts.AddLast(open);
         }
-
-        // Recorded before the prompt, so the answer never sits above the question.
-        if (takenNow) Asked(words!);
 
         JsonElement result;
         try
@@ -1158,7 +1169,7 @@ public sealed class AcpSession(
             result = await RequestAsync(
                 "session/prompt",
                 new { sessionId = _sessionId, prompt },
-                ct, sent, answered: frame => Answered(open, frame)).ConfigureAwait(false);
+                ct, Wrote(sent, words), answered: frame => Answered(open, frame)).ConfigureAwait(false);
         }
         catch (OperationCanceledException)
         {
@@ -1173,6 +1184,54 @@ public sealed class AcpSession(
         return result.TryGetProperty("stopReason", out var reason)
             ? reason.GetString() ?? "unknown"
             : "unknown";
+    }
+
+    /// <summary>The attempts marked so far, in the order the words were asked to go (COWORK1c), and the lock that guards the chain.</summary>
+    private Task _attempts = Task.CompletedTask;
+    private readonly object _attemptsGate = new();
+
+    /// <summary>
+    /// A kept word's attempt, marked on its record before the wire (COWORK1c, the message-urgency design §6), after every attempt asked
+    /// for before it, so two words said at once are written in the order their dispatcher handed them. Completed at once for words kept
+    /// nowhere, and for the driver's own prompts. Never faults.
+    /// </summary>
+    private Task Attempted(ChatMessage? words)
+    {
+        if (words?.Attempting is not { } attempting) return Task.CompletedTask;
+        lock (_attemptsGate)
+        {
+            _attempts = AfterAsync(_attempts, attempting);
+            return _attempts;
+        }
+
+        static async Task AfterAsync(Task before, Func<Task> attempting)
+        {
+            await before.ConfigureAwait(false);
+            await attempting().ConfigureAwait(false);
+        }
+    }
+
+    /// <summary>
+    /// What the write's return tells (COWORK1c, the design §7): the caller's own, then, for words under an id, their receipt
+    /// <c>sent</c>, and their dispatcher, which takes a kept word off its record. <i>Sent</i> is the write's return, never the
+    /// prompt's answer, which comes with the turn's end.
+    /// </summary>
+    private Action? Wrote(Action? sent, ChatMessage? words)
+    {
+        if (words?.Id is not { } id) return sent;
+        return () =>
+        {
+            sent?.Invoke();
+            Emit(new SessionEvent { Kind = SessionEventKind.Receipt, Id = id, Receipt = Receipts.Sent });
+            try
+            {
+                words.Went?.Invoke();
+            }
+            catch (Exception error) when (error is not OperationCanceledException)
+            {
+                // The word went: what keeps the record is its dispatcher's, which says nothing more here.
+            }
+        };
     }
 
     /// <summary>
@@ -1224,15 +1283,25 @@ public sealed class AcpSession(
             var tokens = result.ValueKind == JsonValueKind.Object && result.TryGetProperty("usage", out var usage)
                 ? TurnTokens.Read(usage, "inputTokens", "outputTokens", "cachedReadTokens", "cachedWriteTokens")
                 : null;
+            var stopReason = result.ValueKind == JsonValueKind.Object && result.TryGetProperty("stopReason", out var reason)
+                ? reason.GetString() ?? "unknown"
+                : "unknown";
             Emit(new SessionEvent
             {
                 Kind = SessionEventKind.Turn,
-                StopReason = result.ValueKind == JsonValueKind.Object && result.TryGetProperty("stopReason", out var reason)
-                    ? reason.GetString() ?? "unknown"
-                    : "unknown",
+                StopReason = stopReason,
                 Tokens = tokens,
                 Models = TurnModelsOf(result, tokens),
             });
+
+            // COWORK1c (the design §7): the turn that took the words ended with an answer, their receipt `answered`. Acted upon, never
+            // obeyed; and only where the words were taken here.
+            bool took;
+            lock (_promptsGate) took = open.Taken;
+            if (took && stopReason == "end_turn" && open.Words?.Id is { } word)
+            {
+                Emit(new SessionEvent { Kind = SessionEventKind.Receipt, Id = word, Receipt = Receipts.Answered });
+            }
         }
         else
         {

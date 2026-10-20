@@ -105,8 +105,10 @@ public sealed class SessionWordsTerminalTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// A driven session running here hears a terminal's words at its door, as the box's (D136): its inbox holds them, the
-    /// answer says when they reach it, and once it took them they are kept on its ask as the box's are (DRIFT1a2).
+    /// A driven session running here hears a terminal's words at its door, as the box's (D136): COWORK1c keeps them on its record
+    /// first, for its run (<c>running</c>), under the request's key, and its inbox holds them under the record's id; the answer says
+    /// when they reach it, they are kept on its ask as the box's are (DRIFT1a2), and once its run took them they leave the record by
+    /// that id.
     /// </summary>
     [Fact]
     public async Task A_terminals_words_to_a_driven_session_running_here_are_held_at_its_door_and_kept_on_its_ask()
@@ -115,16 +117,25 @@ public sealed class SessionWordsTerminalTests : DriverModuleBridge
         var loop = await UpAsync(service);
         var inbox = loop.Processes.OpenInbox("s1");
         inbox.Attach(() => Task.CompletedTask, _ => Task.FromResult("end_turn"));
+        var request = Say("s1", "the level file moved");
 
-        var held = await loop.Words.HoldAsync(Say("s1", "the level file moved"), CancellationToken.None);
+        var held = await loop.Words.HoldAsync(request, CancellationToken.None);
 
-        Assert.Equal((true, "next-step", (string?)null), (held.Sent, held.Reaches, held.Why));
-        Assert.Equal("the level file moved", inbox.TakeOrClose()?.Text);
-        await UntilAsync(() => service.Posts.Count > 0);
-        var (path, body) = Assert.Single(service.Posts);
-        Assert.Equal("/api/sessions/s1/added", path);
-        using var words = JsonDocument.Parse(body);
+        Assert.Equal((true, "next-step", (string?)null, "w1"), (held.Sent, held.Reaches, held.Why, held.Word));
+        Assert.Equal("w1", inbox.TakeOrClose()?.Id);
+        await UntilAsync(() => service.Posts.Count >= 3);
+        Assert.Equal(
+            ["/api/sessions/s1/added", "/api/sessions/s1/say", "/api/sessions/s1/taken"],
+            service.Posts.Select(post => post.Path).Order(StringComparer.Ordinal));
+        using var kept = JsonDocument.Parse(service.Posts.Single(post => post.Path.EndsWith("/say", StringComparison.Ordinal)).Body);
+        Assert.Equal(
+            ("the level file moved", true, "urgent", $"request/{request.Key}"),
+            (kept.RootElement.GetProperty("text").GetString(), kept.RootElement.GetProperty("running").GetBoolean(),
+                kept.RootElement.GetProperty("level").GetString(), kept.RootElement.GetProperty("key").GetString()));
+        using var words = JsonDocument.Parse(service.Posts.Single(post => post.Path.EndsWith("/added", StringComparison.Ordinal)).Body);
         Assert.Equal("the level file moved", words.RootElement.GetProperty("text").GetString());
+        using var taken = JsonDocument.Parse(service.Posts.Single(post => post.Path.EndsWith("/taken", StringComparison.Ordinal)).Body);
+        Assert.Equal(["w1"], taken.RootElement.GetProperty("said").EnumerateArray().Select(id => id.GetString()));
     }
 
     /// <summary>

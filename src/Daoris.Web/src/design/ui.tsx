@@ -396,6 +396,10 @@ const DOT_TONE: Record<string, { mark: string; word: string }> = {
   // green put a success mark beside a failed session in the rail. The pill beside it names the outcome.
   ended: { mark: 'bg-ink-faint', word: 'text-ink-soft' },
   idle: { mark: 'bg-line', word: 'text-ink-faint' },
+  // A fact's mark (the UI/UX design §4, MILESTONEUX1): what is reached or kept wears done's hue, the one the status palette's
+  // done already is; what waits on another is a neutral, neither the person's open hue nor an outcome's.
+  done: { mark: 'bg-st-done', word: 'text-ink-done' },
+  waits: { mark: 'bg-ink-soft', word: 'text-ink-soft' },
 };
 
 /**
@@ -403,7 +407,7 @@ const DOT_TONE: Record<string, { mark: string; word: string }> = {
  *
  * @remarks
  * The mark is `aria-hidden`: the label already IS the accessible name, and a screen reader that
- * announces the state twice is worse served than one that hears it once. Hue distinguishes the four
+ * announces the state twice is worse served than one that hears it once. Hue distinguishes the tones
  * at a glance for the people hue works for; the word is what everyone else reads.
  */
 export function Dot({ tone = 'idle', label, className }: {

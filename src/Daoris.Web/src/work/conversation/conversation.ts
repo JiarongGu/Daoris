@@ -29,7 +29,7 @@ export const CONVERSATION_CODES: Readonly<Record<string, string>> = {
 
 /** Daoris's event kinds — `SessionEventKind` in the driver. */
 export type SessionEventKind =
-  | 'user' | 'message' | 'thought' | 'tool' | 'plan' | 'usage' | 'turn' | 'note' | 'raw';
+  | 'user' | 'message' | 'thought' | 'tool' | 'plan' | 'usage' | 'turn' | 'note' | 'raw' | 'receipt';
 
 /** What a tool call carries: text, a diff, or a terminal — ACP's three shapes. */
 export type ToolContent = {
@@ -96,6 +96,11 @@ export type SessionEvent = {
    * English, which stands for a code this page does not know.
    */
   code?: string | null;
+  /**
+   * For `receipt` (COWORK1c, the message-urgency design §7): what the door observed of the word under `id`, `sent` (the write to its
+   * harness returned) or `answered` (the turn that took it ended so). Each written only where it was observed.
+   */
+  receipt?: string | null;
   /**
    * For a driver's note whose lines are worded by code (LAND2b, LANG1a; SIGNIN1b's refused sign-in): its parts, as a session
    * record's note carries them, which the page words in the reader's language (CONVNOTE1). `text` beside them is the
@@ -241,6 +246,11 @@ export type Block = {
    * the note names — what *Start a conversation with these words* starts with. Absent where it holds only some.
    */
   said?: string[];
+  /**
+   * For a `note` about the person's words (COWORK1c): every word it names was the person's own, shown where they said it, never
+   * Daoris's nor another agent's; what *Say it again* offers, with `said`.
+   */
+  persons?: boolean;
   title?: string | null;
   toolKind?: string | null;
   status?: string | null;
@@ -276,7 +286,16 @@ export type Ask = {
   opinion?: string;
   /** Daoris's own words (COWORK1b): a reopen told, a step's go-on; never the person's, and no target it composed. */
   from?: 'daoris';
+  /**
+   * What the door observed of these words (COWORK1c, the message-urgency design §7, §8.2), each moment only where it was: `sent` when
+   * the write to the harness returned, `taken` the ask's own moment, `answered` when the turn that took them ended so. Absent on
+   * words whose door told no receipt, a record from before among them.
+   */
+  receipts?: Receipts;
 };
+
+/** A word's receipts as its conversation folds them (COWORK1c): each the driver's moment it was observed. */
+export type Receipts = { sent?: string; taken?: string; answered?: string };
 
 /**
  * A message as the driver tells the page of one it has not sent yet, or handed back (CONV4a/c): the
@@ -412,8 +431,12 @@ export function toTurns(
     where[opening.seq] = `e${opening.seq}`;
   }
 
-  // The person's words waiting to reach a session (STEER1, MSG1f), by their id: where each was said, and its block.
-  const waiting = new Map<string, { turn: Turn; key: string; seq: number; block: Block }>();
+  // The person's words waiting to reach a session (STEER1, MSG1f), by their id: where each was said, its block, and whether they
+  // were the person's own (COWORK1c), never Daoris's nor another agent's.
+  const waiting = new Map<string, { turn: Turn; key: string; seq: number; block: Block; person?: boolean }>();
+  // COWORK1c (the design §7): each word's receipts by its id, and the ask each word became, which they fold under.
+  const receipts = new Map<string, Receipts>();
+  const asks = new Map<string, Ask>();
   // The note that hands over what each word said (MSG1f), by the word's id: a later note saying the word went elsewhere
   // takes it back (MSG1f2), so no second conversation is offered with words already gone.
   const handing = new Map<string, Block>();
@@ -454,13 +477,14 @@ export function toTurns(
           turn.items.push(block);
           // Words sent now (STEER2b, D136) are taken where the steer is answered `injected`: the same words come again under
           // the same id as the ask of the turn that goes on. A refused or unreached steer is settled by its note instead.
-          if (event.id) waiting.set(event.id, { turn, key, seq: event.seq, block });
+          if (event.id) waiting.set(event.id, { turn, key, seq: event.seq, block, person: (event.origin ?? 'person') === 'person' });
           where[event.seq] = key;
           break;
         }
 
         const opened = open(key, asked(event, key));
         where[event.seq] = key;
+        if (event.id && opened.ask) asks.set(event.id, opened.ask);
         // Taken: the words are this turn's ask now, and wait no longer where they were said.
         const was = event.id ? waiting.get(event.id) : undefined;
         if (was) {
@@ -593,6 +617,8 @@ export function toTurns(
           waiting.delete(named[index]!);
         }
         const said = named.length > 0 && held.every(Boolean) ? held.map((was) => was!.block.text ?? '') : undefined;
+        // COWORK1c: every word it names the person's own, so the page may offer to say them again (*Say it again*).
+        const persons = said !== undefined && held.every((was) => was!.person === true);
         if (event.to) {
           for (const id of named) {
             const handed = handing.get(id);
@@ -604,7 +630,7 @@ export function toTurns(
         const note: Block = {
           key, kind: 'note', at: event.at, text: event.text, ...(event.id ? { id: event.id } : {}),
           ...(event.to ? { to: event.to } : {}), ...(event.why ? { why: event.why } : {}),
-          ...(named.length > 0 ? { words: named } : {}), ...(said ? { said } : {}),
+          ...(named.length > 0 ? { words: named } : {}), ...(said ? { said } : {}), ...(persons ? { persons } : {}),
           ...(event.code ? { code: event.code } : {}), ...(event.parts?.length ? { parts: event.parts } : {}),
         };
         if (said) for (const id of named) handing.set(id, note);
@@ -612,10 +638,23 @@ export function toTurns(
         where[event.seq] = key;
         break;
       }
+      case 'receipt': {
+        // COWORK1c (the design §7, §8.2): no block of its own; it folds under the ask its word became, below.
+        if (event.id && (event.receipt === 'sent' || event.receipt === 'answered')) {
+          receipts.set(event.id, { ...receipts.get(event.id), [event.receipt]: event.at });
+        }
+        break;
+      }
       default:
         here(key).items.push({ key, kind: 'raw', at: event.at, title: event.title, text: event.text, raw: event.raw });
         where[event.seq] = key;
     }
+  }
+
+  // Each word's receipts under the ask it became, taken at the ask's own moment (COWORK1c): only where a receipt was observed.
+  for (const [id, ask] of asks) {
+    const seen = receipts.get(id);
+    if (seen) ask.receipts = { ...seen, taken: ask.at };
   }
 
   // The first thing the agent did, after the ask: the driver's own note is not the agent answering, nor are the person's

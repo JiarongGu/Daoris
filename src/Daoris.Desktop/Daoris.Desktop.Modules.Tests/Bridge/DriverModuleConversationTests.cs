@@ -607,7 +607,7 @@ public sealed class DriverModuleConversationTests : DriverModuleBridge
     [Fact]
     public async Task Send_now_to_a_driven_session_answers_what_its_door_did()
     {
-        var (loop, module) = await UpAsync(new Ledger());
+        var (loop, module) = await UpAsync(Numbering());
         var stopped = 0;
         var steered = new List<string>();
         loop.Processes.OpenInbox("d1").Attach(() => { stopped++; return Task.CompletedTask; });
@@ -652,7 +652,7 @@ public sealed class DriverModuleConversationTests : DriverModuleBridge
     [Fact]
     public async Task A_level_to_a_driven_session_is_held_or_sent_by_its_door_and_listed_with_it()
     {
-        var (loop, module) = await UpAsync(new Ledger());
+        var (loop, module) = await UpAsync(Numbering());
         var sent = new List<string>();
         var inbox = loop.Processes.OpenInbox("d3");
         inbox.Attach(() => Task.CompletedTask, message => { sent.Add(message.Text); return new TaskCompletionSource<string>().Task; });
@@ -870,6 +870,16 @@ public sealed class DriverModuleConversationTests : DriverModuleBridge
     }
 
     /// <summary>The say door's yes: the record, its sentence, and the word as kept, with the id the record gave it.</summary>
+    /// <summary>
+    /// A ledger whose say door keeps each word under an id of its own, as the service does (COWORK1c): a running session's words are
+    /// kept on its record before its inbox holds them, under the record's id.
+    /// </summary>
+    private static Ledger Numbering()
+    {
+        var words = 0;
+        return new Ledger { Say = id => (HttpStatusCode.OK, Kept(id, $"w{Interlocked.Increment(ref words)}")) };
+    }
+
     private static string Kept(string id, string word = "w1", string text = "also the changelog") => $$"""
         {"session":{"id":"{{id}}","state":"completed"},"message":"Kept for session `{{id}}` to go on with.",
          "said":{"id":"{{word}}","text":"{{text}}","at":"2026-10-03T09:00:00+00:00","files":[],"reopens":true}

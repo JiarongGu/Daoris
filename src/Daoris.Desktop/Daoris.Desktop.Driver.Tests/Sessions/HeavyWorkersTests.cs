@@ -268,6 +268,161 @@ public sealed class HeavyWorkersTests : IDisposable
         Assert.Equal("`unit` runs Vitest 5.0.1 through npm's `test` script, so its workers are bounded to two (`--maxWorkers=2`).", bound.Said);
     }
 
+    /// <summary>
+    /// HEAVYRUN1a3: <c>yarn test</c> and <c>yarn run &lt;script&gt;</c> at each yarn major read (1–4), which hands the script every word
+    /// after its name: the bound at the end, with no <c>--</c>. The version is the <c>packageManager</c> field's, a corepack hash taken off.
+    /// </summary>
+    [Theory]
+    [InlineData("yarn test", "test", "jest --ci", "yarn@1.22.22", "yarn test --maxWorkers=2", "Jest 29.7.0 through yarn 1.22.22's `test`")]
+    [InlineData("yarn test --ci", "test", "jest", "yarn@2.4.2", "yarn test --ci --maxWorkers=2", "Jest 29.7.0 through yarn 2.4.2's `test`")]
+    [InlineData("yarn run unit", "unit", "vitest run", "yarn@3.8.7", "yarn run unit --maxWorkers=2", "Vitest 5.0.1 through yarn 3.8.7's `unit`")]
+    [InlineData("yarn run test:unit --reporter=dot", "test:unit", "vitest run", "yarn@4.18.1+sha512.abc123", "yarn run test:unit --reporter=dot --maxWorkers=2", "Vitest 5.0.1 through yarn 4.18.1's `test:unit`")]
+    public void A_yarn_script_is_bounded_with_the_flag_at_its_end(string run, string script, string declared, string manager, string bound, string runs)
+    {
+        _fixture.Managed(_fixture.Checkout, manager, (script, declared));
+        Install(_fixture.Checkout, "jest@29.7.0");
+        Install(_fixture.Checkout, "vitest@5.0.1");
+
+        var said = Bind(run);
+
+        Assert.Equal(bound, said.Run);
+        Assert.Equal($"`unit` runs {runs} script, so its workers are bounded to two (`--maxWorkers=2`).", said.Said);
+    }
+
+    /// <summary>
+    /// HEAVYRUN1a3: pnpm as each major hands a script its words. pnpm 6 reads every flag as its own until its <c>--</c>; its test command
+    /// does through pnpm 9, and <c>t</c> and <c>tst</c> still do; <c>run</c> from pnpm 7, and <c>test</c> spelled so from pnpm 10, hand
+    /// the script every word after its name.
+    /// </summary>
+    [Theory]
+    [InlineData("pnpm test", "pnpm@6.35.1", "pnpm test -- --maxWorkers=2", "Jest 29.7.0 through pnpm 6.35.1's `test`")]
+    [InlineData("pnpm run unit", "pnpm@6.35.1", "pnpm run unit -- --maxWorkers=2", "Vitest 5.0.1 through pnpm 6.35.1's `unit`")]
+    [InlineData("pnpm run unit", "pnpm@7.33.7", "pnpm run unit --maxWorkers=2", "Vitest 5.0.1 through pnpm 7.33.7's `unit`")]
+    [InlineData("pnpm t -- --ci", "pnpm@8.15.9", "pnpm t -- --ci --maxWorkers=2", "Jest 29.7.0 through pnpm 8.15.9's `test`")]
+    [InlineData("pnpm test", "pnpm@9.15.9", "pnpm test -- --maxWorkers=2", "Jest 29.7.0 through pnpm 9.15.9's `test`")]
+    [InlineData("pnpm test --silent", "pnpm@9.15.9", "pnpm test --silent -- --maxWorkers=2", "Jest 29.7.0 through pnpm 9.15.9's `test`")]
+    [InlineData("pnpm test", "pnpm@10.34.7", "pnpm test --maxWorkers=2", "Jest 29.7.0 through pnpm 10.34.7's `test`")]
+    [InlineData("pnpm test --ci", "pnpm@11.28.6", "pnpm test --ci --maxWorkers=2", "Jest 29.7.0 through pnpm 11.28.6's `test`")]
+    [InlineData("pnpm tst", "pnpm@11.28.6", "pnpm tst -- --maxWorkers=2", "Jest 29.7.0 through pnpm 11.28.6's `test`")]
+    [InlineData("pnpm run-script unit --reporter=dot", "pnpm@10.34.7", "pnpm run-script unit --reporter=dot --maxWorkers=2", "Vitest 5.0.1 through pnpm 10.34.7's `unit`")]
+    public void A_pnpm_script_is_bounded_as_its_major_hands_a_script_its_words(string run, string manager, string bound, string runs)
+    {
+        _fixture.Managed(_fixture.Checkout, manager, ("test", "jest"), ("unit", "vitest run"));
+        Install(_fixture.Checkout, "jest@29.7.0");
+        Install(_fixture.Checkout, "vitest@5.0.1");
+
+        var said = Bind(run);
+
+        Assert.Equal(bound, said.Run);
+        Assert.Equal($"`unit` runs {runs} script, so its workers are bounded to two (`--maxWorkers=2`).", said.Said);
+    }
+
+    /// <summary>
+    /// Without a <c>packageManager</c> field the install's own record is read: pnpm's <c>node_modules/.modules.yaml</c>, yarn's
+    /// <c>.yarnrc.yml</c> release, and the <c>.yarn-integrity</c> only yarn 1 writes. The nearest field wins over a record.
+    /// </summary>
+    [Fact]
+    public void Without_a_packageManager_field_the_install_s_own_record_is_read()
+    {
+        _fixture.Scripts(_fixture.Checkout, ("test", "jest"));
+        Install(_fixture.Checkout, "jest@29.7.0");
+        var modules = Path.Combine(_fixture.Checkout, "node_modules");
+
+        File.WriteAllText(Path.Combine(modules, ".modules.yaml"), "hoistPattern:\n  - '*'\npackageManager: pnpm@9.15.9\nlayoutVersion: 5\n");
+        Assert.Equal("pnpm test -- --maxWorkers=2", Bind("pnpm test").Run);
+
+        _fixture.Managed(_fixture.Checkout, "pnpm@10.34.7", ("test", "jest"));
+        Assert.Equal("pnpm test --maxWorkers=2", Bind("pnpm test").Run);
+
+        _fixture.Scripts(_fixture.Checkout, ("test", "jest"));
+        File.WriteAllText(Path.Combine(modules, ".yarn-integrity"), "{}");
+        Assert.Equal("`unit` runs Jest 29.7.0 through yarn 1.x's `test` script, so its workers are bounded to two (`--maxWorkers=2`).", Bind("yarn test").Said);
+
+        File.WriteAllText(Path.Combine(_fixture.Checkout, ".yarnrc.yml"), "nodeLinker: node-modules\nyarnPath: .yarn/releases/yarn-4.5.0.cjs\n");
+        var berry = Bind("yarn test");
+        Assert.Equal("yarn test --maxWorkers=2", berry.Run);
+        Assert.Equal("`unit` runs Jest 29.7.0 through yarn 4.5.0's `test` script, so its workers are bounded to two (`--maxWorkers=2`).", berry.Said);
+    }
+
+    /// <summary>
+    /// A yarn or pnpm whose version is recorded nowhere, or whose nearest <c>packageManager</c> names another tool, or whose version's
+    /// forwarding was not read (pnpm 12 ships native; yarn 5, pnpm 5 and a prerelease were not read) runs as written, saying so.
+    /// </summary>
+    [Theory]
+    [InlineData("yarn test", null, "`unit` runs yarn's `test` script, and which yarn version runs it is recorded neither by a `packageManager` field nor by its install, so it runs as written.")]
+    [InlineData("pnpm test", null, "`unit` runs pnpm's `test` script, and which pnpm version runs it is recorded neither by a `packageManager` field nor by its install, so it runs as written.")]
+    [InlineData("yarn test", "pnpm@9.15.9", "`unit` runs yarn's `test` script, and the package.json nearest it declares `pnpm@9.15.9` as its package manager, so it runs as written.")]
+    [InlineData("pnpm test", "pnpm@12.5.1", "`unit` runs pnpm 12.5.1's `test` script, and how this pnpm version hands a script its words is not known here, so it runs as written.")]
+    [InlineData("pnpm test", "pnpm@5.18.10", "`unit` runs pnpm 5.18.10's `test` script, and how this pnpm version hands a script its words is not known here, so it runs as written.")]
+    [InlineData("pnpm test", "pnpm@10.0.0-rc.1", "`unit` runs pnpm 10.0.0-rc.1's `test` script, and how this pnpm version hands a script its words is not known here, so it runs as written.")]
+    [InlineData("yarn test", "yarn@5.0.0", "`unit` runs yarn 5.0.0's `test` script, and how this yarn version hands a script its words is not known here, so it runs as written.")]
+    public void A_yarn_or_pnpm_whose_forwarding_is_not_known_here_runs_as_written_saying_so(string run, string? manager, string said)
+    {
+        _fixture.Managed(_fixture.Checkout, manager, ("test", "jest"));
+        Install(_fixture.Checkout, "jest@29.7.0");
+
+        var bound = Bind(run);
+
+        Assert.Equal(run, bound.Run);
+        Assert.Equal(said, bound.Said);
+    }
+
+    /// <summary>
+    /// Each yarn and pnpm form that would not reach the runner as one bound runs as written, said: the tool's own options before its
+    /// script, a shorthand that may name the tool's own command, a <c>--</c> after yarn's script, pnpm pointed at other packages, a
+    /// <c>--</c> pnpm hands on, an owner's own bound, and a script that is not one runner command or cannot be read.
+    /// </summary>
+    [Theory]
+    [InlineData("yarn --silent test", "yarn@4.18.1", "`unit` names yarn's own options before its script, so it runs as written.")]
+    [InlineData("yarn run", "yarn@4.18.1", "`unit` runs `yarn run` with no script named after it, so it runs as written.")]
+    [InlineData("yarn build", "yarn@4.18.1", "`unit` runs `yarn build`, which is not `yarn test` or `yarn run <script>`, so it runs as written.")]
+    [InlineData("yarn test -- --ci", "yarn@1.22.22", "`unit` puts `--` after yarn's script, which yarn 1 takes away and yarn 2 and later hand on, so it runs as written.")]
+    [InlineData("yarn test -w 1", "yarn@4.18.1", "`unit` names its own worker bound (`-w`), so it runs as written.")]
+    [InlineData("pnpm -r test", "pnpm@9.15.9", "`unit` names pnpm's own options before its script, so it runs as written.")]
+    [InlineData("pnpm --filter web test", "pnpm@9.15.9", "`unit` names pnpm's own options before its script, so it runs as written.")]
+    [InlineData("pnpm vitest", "pnpm@9.15.9", "`unit` runs `pnpm vitest`, which is not `pnpm test` or `pnpm run <script>`, so it runs as written.")]
+    [InlineData("pnpm run-script --silent", "pnpm@9.15.9", "`unit` runs `pnpm run-script` with no script named after it, so it runs as written.")]
+    [InlineData("pnpm test -r", "pnpm@9.15.9", "`unit` points pnpm at other packages (`-r`), whose scripts are not read here, so it runs as written.")]
+    [InlineData("pnpm test --filter=web", "pnpm@6.35.1", "`unit` points pnpm at other packages (`--filter=web`), whose scripts are not read here, so it runs as written.")]
+    [InlineData("pnpm test -- --ci", "pnpm@10.34.7", "`unit` ends its runner's options with `--`, so a bound after them would not be read as one; it runs as written.")]
+    [InlineData("pnpm run unit -- src", "pnpm@7.33.7", "`unit` ends its runner's options with `--`, so a bound after them would not be read as one; it runs as written.")]
+    [InlineData("pnpm test -- --maxWorkers=4", "pnpm@9.15.9", "`unit` names its own worker bound (`--maxWorkers=4`), so it runs as written.")]
+    [InlineData("pnpm run lint", "pnpm@9.15.9", "`unit`'s pnpm script `lint` runs `eslint`, neither Jest nor Vitest, so it runs as written.")]
+    [InlineData("pnpm run e2e", "pnpm@9.15.9", "`unit` runs pnpm's `e2e` script, and its folder's package.json declares no `e2e` script, so it runs as written.")]
+    [InlineData("yarn run chain", "yarn@1.22.22", "`unit`'s yarn script `chain` is more than one command, so it runs as written.")]
+    [InlineData("yarn run ended", "yarn@4.18.1", "`unit`'s yarn script `ended` ends its runner's options with `--`, so a bound after them would not be read as one; it runs as written.")]
+    public void A_yarn_or_pnpm_form_that_would_not_reach_the_runner_runs_as_written(string run, string manager, string said)
+    {
+        _fixture.Managed(
+            _fixture.Checkout, manager, ("test", "jest"), ("unit", "vitest run"), ("lint", "eslint ."), ("chain", "tsc -b && jest"), ("ended", "jest --"));
+        Install(_fixture.Checkout, "jest@29.7.0");
+        Install(_fixture.Checkout, "vitest@5.0.1");
+
+        var bound = Bind(run);
+
+        Assert.Equal(run, bound.Run);
+        Assert.Equal(said, bound.Said);
+    }
+
+    /// <summary>The tool's version is read from the gate's folder up to the checkout, never past it, the nearest field winning.</summary>
+    [Fact]
+    public void The_tool_s_version_is_read_from_the_gate_s_folder_up_to_the_checkout_and_never_past_it()
+    {
+        var web = Path.Combine(_fixture.Checkout, "web");
+        _fixture.Managed(_fixture.Folder, "pnpm@10.34.7");
+        _fixture.Scripts(web, ("test", "jest"));
+        Install(_fixture.Checkout, "jest@29.7.0");
+        var gate = new HeavyGate("unit", "pnpm test", "web", true);
+
+        Assert.Equal("pnpm test", HeavyWorkers.Bind(gate, web, _fixture.Checkout).Run);
+
+        _fixture.Managed(_fixture.Checkout, "pnpm@9.15.9");
+        Assert.Equal("pnpm test -- --maxWorkers=2", HeavyWorkers.Bind(gate, web, _fixture.Checkout).Run);
+
+        _fixture.Managed(web, "pnpm@10.34.7", ("test", "jest"));
+        Assert.Equal("pnpm test --maxWorkers=2", HeavyWorkers.Bind(gate, web, _fixture.Checkout).Run);
+    }
+
     private HeavyBound Bind(string run) => HeavyWorkers.Bind(new HeavyGate("unit", run, null, true), _fixture.Checkout, _fixture.Checkout);
 
     /// <summary><paramref name="installed"/> as <c>package@version</c>, installed under <paramref name="folder"/>.</summary>
