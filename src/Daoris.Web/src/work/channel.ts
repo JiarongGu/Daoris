@@ -34,8 +34,9 @@ export type ChannelItem = {
 
 /**
  * How Daoris's words around another session's claim begin when the driver hands one to a running session (SESSONE2b,
- * `ChannelText.Claim`): the record keeps them as the driver's own words (`target`), so this is how the page tells a claim from the
- * target Daoris composed. A twin of the driver's fixed opening, held by a test on the driver's side.
+ * `ChannelText.Claim`): the record keeps them as the driver's own words (`target`). Since SESSCTX1b the event carries the message's
+ * own mark (`channel`), which the page reads first; this opening tells a claim on a record from before. A twin of the driver's fixed
+ * opening, held by a test on the driver's side.
  */
 export const CHANNEL_CLAIM_OPENING = "Another session says, on the ask's channel";
 

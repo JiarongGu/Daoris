@@ -206,6 +206,25 @@ describe('ConversationView', () => {
   });
 
   /**
+   * SESSCTX1b (the session-context design §7): the driver now marks a channel's message on its `user` event by a field of its own,
+   * and the page reads the field before the old prefix, so a claim whose words Daoris words otherwise is still named one, in either
+   * language; a record from before is still read by the prefix (above).
+   */
+  it('names another session’s claim by its channel mark, whatever Daoris’s words around it say', async () => {
+    const text = 'Session `s9` on claude-code wrote:\n\n> Which column holds the figure?';
+    const { unmount } = view([ev({ kind: 'user', origin: 'target', channel: 'm1', text })]);
+
+    expect(screen.getByText('Another session’s claim, in Daoris’s words')).toBeTruthy();
+    expect(screen.queryByText('The target Daoris composed')).toBeNull();
+    unmount();
+
+    await i18n.changeLanguage('zh');
+    view([ev({ kind: 'user', origin: 'target', channel: 'm1', text })]);
+    expect(screen.getByText('另一个会话的说法，附 Daoris 的说明')).toBeTruthy();
+    await i18n.changeLanguage('en');
+  });
+
+  /**
    * COWORK1b (D188's COWORK1b note, the message-urgency design trap 6): Daoris's own words to a session, a reopen told or a step's go-on,
    * are named as Daoris's, never as the person's and never as the target it composed, and shown whole: where the session took them,
    * and while they are held for it, in either language. A word the person said in the same sentence is still theirs.

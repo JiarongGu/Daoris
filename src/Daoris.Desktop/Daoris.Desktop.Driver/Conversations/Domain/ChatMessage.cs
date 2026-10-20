@@ -150,6 +150,8 @@ public sealed record ChatMessage(string Text, IReadOnlyList<KeptFile> Files)
         Kind = SessionEventKind.User,
         Origin = message.Channel is { Person: false } || message.Daoris is not null ? "target" : "person",
         From = message.Daoris is not null ? DaorisWords.From : null,
+        // SESSCTX1b: the channel's message these words carry, marked by its id, so a reader never tells it by Daoris's English.
+        Channel = message.Channel?.Id is { Length: > 0 } channel ? channel : null,
         Id = message.Id,
         Text = message.Text,
         Files = message.Files.Count > 0 ? [.. message.Files.Select(kept => kept.Name)] : null,

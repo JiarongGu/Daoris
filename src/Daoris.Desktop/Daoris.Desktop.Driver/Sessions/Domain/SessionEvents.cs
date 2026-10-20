@@ -197,6 +197,15 @@ public sealed record SessionEvent
     public string? Opinion { get; init; }
 
     /// <summary>
+    /// For <see cref="SessionEventKind.User"/>: the ask's channel message these words carry (SESSONE2b), by its id (SESSCTX1b, the
+    /// session-context design §7), so the page and a brief tell a channel's message by this mark, as an opinion's is, and never by
+    /// the English Daoris wraps another session's claim in. Its <see cref="Origin"/> says whose: <c>target</c> for another session's
+    /// claim, <c>person</c> for theirs. Null on every other event, and on a record from before, which the page still reads by the
+    /// claim's opening.
+    /// </summary>
+    public string? Channel { get; init; }
+
+    /// <summary>
     /// For the person's words to a driven session, on the event that shows them the moment they are said (STEER1, D136):
     /// when they reach it, <c>next-step</c> or <c>turn-end</c>, or <c>now</c> where the person's *Send now* steered them into
     /// the running turn (STEER2a). The words where the session took them come again without it, under the same
