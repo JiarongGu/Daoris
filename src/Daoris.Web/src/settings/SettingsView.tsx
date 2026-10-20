@@ -1,7 +1,7 @@
 import { type ComponentType, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { WithHarnessRuns } from '../agents/harnessRuns';
-import { useDriver } from '../bridge/shell';
+import { useAttached } from '../bridge/shell';
 import { CardStack, type Notify } from '../design/ui';
 import type { StarterDoor } from '../help/starters';
 import type { SetupStepId } from '../help/setup';
@@ -76,8 +76,9 @@ export type SettingsProps = {
  */
 export function useSettingsLayout({ notify, section = 'appearance', onSection, onGo = () => {}, onAskSetup, browserDrivers = [], onAttend, anchor = null, onAnchored }: SettingsProps): ViewLayout {
   const { t } = useTranslation();
-  // The same "is a shell here" answer every control uses — one detection path, not two that drift.
-  const attached = useDriver().data !== undefined;
+  // The same "is a shell here" answer every control uses — one detection path, not two that drift. A shell whose driver has not
+  // answered yet keeps its machine's domains (PUSHUX2).
+  const attached = useAttached();
   const offered = SETTINGS_DOMAINS.filter((domain) => attached || !domain.machine);
   // A domain this window cannot show opens on Appearance: a machine's domain in a browser, or one a
   // shell remembered.

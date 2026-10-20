@@ -257,6 +257,17 @@ export const useDriver = () => {
 };
 
 /**
+ * Whether this window is a shell's (PUSHUX2): its driver answered, or the bridge is here and its driver's read is still on its way.
+ * A shell is known before its driver answers, so until the driver's slice lands its window keeps the shell's places and waits,
+ * never drawing a browser's frame and then swapping it. A driver whose read failed reads as no driver, as it did before.
+ */
+export const useAttached = (): boolean => {
+  const { isAvailable } = useShenora();
+  const driver = useDriver();
+  return driver.data !== undefined || (isAvailable && !driver.isError);
+};
+
+/**
  * The driver's state a press answered (MOD3), written into this window's cache where the state is pulled. Where it is pushed
  * (PUSH1a), the push is the one writer, so an answer arriving after a newer push can never set it back.
  */
