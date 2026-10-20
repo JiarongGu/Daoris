@@ -65,7 +65,14 @@ public static class NodeKinds
     /// </summary>
     public const string Stop = "stop";
 
-    public static readonly IReadOnlyList<string> BuiltIn = [Claimed, Handed, Pushed, PullRequest, Line, Human, Look, GoAhead, WaitUnit, QuestClose, All, Opinion, Stop];
+    /// <summary>
+    /// The declared gates Daoris runs itself on a verification pipeline's run (FABRIC-PIPELINE1a, D192 point 6, the pipeline design
+    /// §4.1): performed, no agent session, never skipped by its kind. Declared and judged here; row 1d performs it, so until then it is
+    /// started by nothing.
+    /// </summary>
+    public const string Check = "check";
+
+    public static readonly IReadOnlyList<string> BuiltIn = [Claimed, Handed, Pushed, PullRequest, Line, Human, Look, GoAhead, WaitUnit, QuestClose, All, Opinion, Stop, Check];
 
     /// <summary>Whether a kind is a plugin's own node: <c>&lt;plugin&gt;/&lt;node&gt;</c>, both parts named.</summary>
     public static bool IsPlugin(string kind)
@@ -180,6 +187,12 @@ public static class NodeSource
 
     /// <summary>The path into a sink (§E7): the failure or the refusal whose receipt leads there, as a join's members reach it.</summary>
     public const string Path = "path";
+
+    /// <summary>
+    /// The exits of the declared gates as Daoris's executor ran them (FABRIC-PIPELINE1a, the pipeline design §4.1): what reaches and
+    /// fails a <c>check</c>.
+    /// </summary>
+    public const string Gates = "gates";
 }
 
 /// <summary>A node's declared retry (§D4, §D6): how many attempts it may take on one binding, and the delay before each new one.</summary>
@@ -435,6 +448,9 @@ public static class NodeAuthorities
         // FABRIC-WIRE1g: the gate's own record passes it over where its rule asks none, or an optional one none could be had.
         [NodeKinds.Opinion] = new(NodeKinds.Opinion, NodeReach.Observed, NodeSource.Opinion, null, false, true, true, true) { SkipBy = NodeSource.Opinion },
         [NodeKinds.Stop] = new(NodeKinds.Stop, NodeReach.Observed, NodeSource.Path, null, false, false, MayEnd: false, Evidenced: false),
+        // FABRIC-PIPELINE1a (the pipeline design §4.1): reached and failed by the gates' exits, never skipped by its kind, since a skip
+        // would read as a verdict a stage and the line rest on; the person's doors on it are a new attempt and a stop.
+        [NodeKinds.Check] = new(NodeKinds.Check, NodeReach.Performed, NodeSource.Gates, NodeSource.Gates, false, false, true, true),
     };
 
     /// <summary>

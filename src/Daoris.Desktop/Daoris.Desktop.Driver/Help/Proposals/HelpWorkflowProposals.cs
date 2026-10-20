@@ -85,6 +85,15 @@ internal sealed class HelpWorkflowProposals : IHelpProposalKind
         }
 
         var found = facts.Workflows.FirstOrDefault(each => each.Id == id);
+        // FABRIC-PIPELINE1a: a verification pipeline's versions are graphs, which a proposal of steps cannot change, and only its landed
+        // route names one; FABRIC-PIPELINE1i lets a proposal carry a graph and a route.
+        if (found?.Read.Verifies == true)
+        {
+            return Refused($"`{id}` is a verification pipeline, whose versions are graphs, and a proposal carries steps: it changes and chooses "
+                + $"none yet. `daoris driver workflow apply {id} <file>` saves a graph version, and `daoris driver workflow use {id} "
+                + "--repository <name> --landed` names it for work that lands.");
+        }
+
         if (BaseProblem(id, proposal.Base, found) is { } stale) return Refused(stale);
 
         var before = proposal.Base is null ? null : found!.Read.Versions[^1];

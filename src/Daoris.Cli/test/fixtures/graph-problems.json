@@ -242,6 +242,24 @@
     { "name": "a declaration that does not hold", "base": "graphBase",
       "replace": { "nodes": [{ "id": "deploy", "kind": "acme.deploy/deploy", "version": 0, "reach": "performed", "evidence": "acme.deploy/receipt@1", "inputs": { "approval": "qa-proof@1" } }] },
       "problems": [{ "code": "declaration", "wire": null, "node": "deploy", "words": "node `deploy`: its `version` does not hold for a `acme.deploy/deploy`." }] },
+    { "name": "a check, Daoris's own performed built-in, holds (FABRIC-PIPELINE1a)", "base": "graphBase",
+      "add": {
+        "nodes": [{ "id": "gates", "kind": "check", "version": 1, "reach": "performed", "options": { "gates": "heavy", "failed": "wait" } }],
+        "wires": [{ "id": "x", "kind": "after", "from": "line", "to": "gates" }]
+      },
+      "problems": [] },
+    { "name": "a check declared skippable false is refused as a built-in's is: its skip is its kind's (FABRIC-PIPELINE1a)", "base": "graphBase",
+      "add": {
+        "nodes": [{ "id": "gates", "kind": "check", "version": 1, "reach": "performed", "skippable": false }],
+        "wires": [{ "id": "x", "kind": "after", "from": "line", "to": "gates" }]
+      },
+      "problems": [{ "code": "declaration", "wire": null, "node": "gates", "words": "node `gates`: its `skippable` does not hold for a `check`." }] },
+    { "name": "a check declared observed is refused: Daoris performs it (FABRIC-PIPELINE1a)", "base": "graphBase",
+      "add": {
+        "nodes": [{ "id": "gates", "kind": "check", "version": 1, "reach": "observed" }],
+        "wires": [{ "id": "x", "kind": "after", "from": "line", "to": "gates" }]
+      },
+      "problems": [{ "code": "declaration", "wire": null, "node": "gates", "words": "node `gates`: its `reach` does not hold for a `check`." }] },
     { "name": "no entry", "base": "graphBase", "set": { "entries": [] },
       "problems": [{ "code": "no-entry", "wire": null, "node": null, "words": "the graph has no entry, so nothing in it would start." }] },
     { "name": "an entry naming no node", "base": "graphBase", "set": { "entries": ["line", "dependency", "nowhere"] },

@@ -59,6 +59,29 @@ public sealed class HelpWorkflowProposalsTests : HelpProposalsFixture
         return Assert.IsType<HelpWorkflowCard>(plan.Workflow);
     }
 
+    /// <summary>
+    /// FABRIC-PIPELINE1a (the pipeline design §1.3, §2.1): a proposal carries steps, and a verification pipeline's versions are graphs, so
+    /// an agent's proposal can neither change one nor choose one for a default; FABRIC-PIPELINE1i lets it propose a graph and a route.
+    /// </summary>
+    [Fact]
+    public void A_proposal_on_a_verification_pipeline_is_refused_as_its_versions_are_graphs()
+    {
+        WorkflowStore.Add(_home, new WorkflowVersionAdded(Id, "Verify the line", "terminal", "2026-10-21T09:00:00Z", null, JsonNode.Parse(
+            """{"schemaVersion":2,"entries":["gates"],"end":"gates","nodes":[{"id":"gates","kind":"check","version":1,"reach":"performed"}],"wires":[]}"""))
+        {
+            Pipeline = WorkflowPipelines.Verification,
+        }, kept: []);
+
+        var plan = HelpProposals.Plan(Propose(Merge, @base: 1, choose: true), DriverConfig.Empty, Here());
+
+        Assert.Null(plan.Workflow);
+        Assert.Equal(
+            "`docs-to-pr` is a verification pipeline, whose versions are graphs, and a proposal carries steps: it changes and chooses none "
+            + "yet. `daoris driver workflow apply docs-to-pr <file>` saves a graph version, and `daoris driver workflow use docs-to-pr "
+            + "--repository <name> --landed` names it for work that lands.",
+            plan.Refusal);
+    }
+
     [Fact]
     public void Its_doors_are_new_edit_and_use()
     {

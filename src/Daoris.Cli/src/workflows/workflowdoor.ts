@@ -621,7 +621,7 @@ export function commandWorkflow({ root, argv, write }: CommandArgs, context: Wor
       readKeptVersions(folder, found.id));
     if (plan.problem !== null) throw new DaorisError(plan.problem, 1);
     const versions = plan.result!['versions'] as Record<string, unknown>[];
-    const next = readVersion(versions[versions.length - 1]!, plan.version!, []);
+    const next = readVersion(versions[versions.length - 1]!, plan.version!, [], found.read.pipeline ?? 'development');
     if (base.graph !== undefined && base.digest === next.digest) {
       write(`daoris: \`${found.id}\` v${base.version} already says this: nothing was written.`);
       return 0;
