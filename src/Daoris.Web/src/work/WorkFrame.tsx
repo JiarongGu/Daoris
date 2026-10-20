@@ -2074,7 +2074,7 @@ export function WorkFrame({
               and the words are what the region follows. Only where the session ran: a teammate's
               record came without its transcript, which stays on their machine (D47 §4). */}
           {attended && here && (
-            <div className="mt-4 min-w-0">
+            <div className="mt-2 min-w-0">
               {/* A file a tool card names opens in the side bar's preview (PREVIEW1, D111). */}
               <FileOpener.Provider value={openPreview}>
                 <SessionConversation

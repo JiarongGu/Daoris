@@ -82,7 +82,7 @@ export function SessionPageHead({ session, title, shown, facts = [], acts, prima
     // PageHead's own bottom margin is the box's padding instead.
     <div
       ref={own}
-      className="sticky -top-3 z-10 -mx-4 -mt-3 mb-3 border-b border-line bg-page px-4 pb-2.5 pt-3 [&>header]:mb-0"
+      className="sticky -top-3 z-10 -mx-4 -mt-3 mb-2 border-b border-line bg-page px-4 pb-2.5 pt-3 [&>header]:mb-0"
     >
       <PageHead
         title={title}

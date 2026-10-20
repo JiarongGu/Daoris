@@ -69,9 +69,18 @@ const ACCEPT: ComponentProps<typeof AttendedSession>['entryAccept'] = {
   scope: 'entry', offered: 2, open: false, onOpen: nothing, plans: null, onLand: nothing,
 };
 
-/** The main area at one width, as the frame draws a session: the pinned head, the record and the conversation's first lines. */
-function RecordHead({ width, milestone = MILESTONE }: { width: keyof typeof MAIN_WIDTHS; milestone?: MilestoneUnit | null }) {
-  const title = questName(QUEST);
+/** A typical record's quest (HEADFIT1b): asked by an ask straight to this repository, so its chain is the ask and this quest. */
+const ASKED = quest({ id: 'q0000e', from: 'ask #c98a7e', title: 'Read the export table from the app' });
+
+/**
+ * The main area at one width, as the frame draws a session: the pinned head, the record and the conversation's first lines.
+ * `typical` draws the record UX7's budget binds (HEADFIT1b): its page head, the record's head and *Details*, the chain's line and
+ * one folded line, the trace's; without it every block the head can carry is drawn.
+ */
+function RecordHead({ width, milestone = MILESTONE, typical = false }: {
+  width: keyof typeof MAIN_WIDTHS; milestone?: MilestoneUnit | null; typical?: boolean;
+}) {
+  const title = questName(typical ? ASKED : QUEST);
   return (
     <div data-record-frame={MAIN_WIDTHS[width]} style={{ width: MAIN_WIDTHS[width] }} className="flex h-[47.5rem] max-w-full flex-col bg-page text-ink">
       <ViewMain
@@ -87,24 +96,36 @@ function RecordHead({ width, milestone = MILESTONE }: { width: keyof typeof MAIN
           />
         )}
       >
-        <AttendedSession
-          session={ATTENDED}
-          quest={QUEST}
-          headed
-          parts={{ entry: ENTRY, attended: ATTENDED.id, rows: ROWS, onShow: nothing }}
-          entryAccept={ACCEPT}
-          chain={buildChain(QUEST.id, [QUEST, PARENT], EVIDENCE_SESSIONS)}
-          relations={{
-            askedBy: { id: 'db000003', session: EVIDENCE_SESSIONS.find((session) => session.id === 'db000003') ?? null },
-            resumedAfter: null,
-            asked: [{ quest: quest({ id: 'q0000d', to: 'db', title: 'Index the export table by date', status: 'Taken' }), question: false }],
-          }}
-          channel={{ channel: CHANNEL, only: { entry: 'ask:c98a7e/app', repository: 'app' }, onPost: nothing }}
-          milestone={milestone}
-          trace={{ open: false, onToggle: nothing }}
-        />
+        {typical
+          ? (
+            <AttendedSession
+              session={ATTENDED}
+              quest={ASKED}
+              headed
+              chain={buildChain(ASKED.id, [ASKED], EVIDENCE_SESSIONS)}
+              trace={{ open: false, onToggle: nothing }}
+            />
+          )
+          : (
+            <AttendedSession
+              session={ATTENDED}
+              quest={QUEST}
+              headed
+              parts={{ entry: ENTRY, attended: ATTENDED.id, rows: ROWS, onShow: nothing }}
+              entryAccept={ACCEPT}
+              chain={buildChain(QUEST.id, [QUEST, PARENT], EVIDENCE_SESSIONS)}
+              relations={{
+                askedBy: { id: 'db000003', session: EVIDENCE_SESSIONS.find((session) => session.id === 'db000003') ?? null },
+                resumedAfter: null,
+                asked: [{ quest: quest({ id: 'q0000d', to: 'db', title: 'Index the export table by date', status: 'Taken' }), question: false }],
+              }}
+              channel={{ channel: CHANNEL, only: { entry: 'ask:c98a7e/app', repository: 'app' }, onPost: nothing }}
+              milestone={milestone}
+              trace={{ open: false, onToggle: nothing }}
+            />
+          )}
         {/* The conversation (D76): below the record, in the same scroll; its first box is what the budget measures to. */}
-        <div data-conversation className="mt-4 min-w-0">
+        <div data-conversation className="mt-2 min-w-0">
           {Array.from({ length: 12 }, (_, line) => (
             <p key={line} className="m-0 py-1 text-body text-ink-soft">The agent’s words, line {line + 1}.</p>
           ))}
@@ -140,3 +161,21 @@ export const ChineseHalf: Story = { args: { width: 'half' }, decorators: [chines
 
 /** In 中文, at the floor. */
 export const ChineseNarrow: Story = { args: { width: 'narrow' }, decorators: [chinese] };
+
+/** A typical record, the one UX7's budget binds (HEADFIT1b): the page head, the head and *Details*, the chain's line, the trace's. */
+export const TypicalWide: Story = { args: { typical: true } };
+
+/** The typical record at half. */
+export const TypicalHalf: Story = { args: { width: 'half', typical: true } };
+
+/** The typical record at the floor. */
+export const TypicalNarrow: Story = { args: { width: 'narrow', typical: true } };
+
+/** The typical record in 中文, wide. */
+export const TypicalChineseWide: Story = { args: { typical: true }, decorators: [chinese] };
+
+/** The typical record in 中文, half. */
+export const TypicalChineseHalf: Story = { args: { width: 'half', typical: true }, decorators: [chinese] };
+
+/** The typical record in 中文, at the floor. */
+export const TypicalChineseNarrow: Story = { args: { width: 'narrow', typical: true }, decorators: [chinese] };

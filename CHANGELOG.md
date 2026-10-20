@@ -5,6 +5,9 @@ with the version and date at release.
 
 ## Unreleased
 
+- A session's page puts its conversation higher: the lines above it, its details, how the work ran, the folded parts, who it
+  worked with, the channel, where the work stands and how it came to be, now sit 8 px apart instead of 16, and so do the page's
+  head above them and the conversation below. A typical session's conversation starts within the top 200 px of a wide window.
 - Your limit of sessions at once counts what the driver starts: a quest's session, an ask's intake, a helper, a second opinion and
   a brainstorm's or a meeting's pass. A conversation you hold, an Ask Daoris conversation or a chat, takes no place under it, idle
   or working, so conversations left open between turns no longer hold quests back. Ask Daoris says so when it describes the limit.

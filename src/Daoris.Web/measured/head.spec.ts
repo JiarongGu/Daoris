@@ -7,12 +7,13 @@ import { measureRecordHead, type RecordHeadMeasure } from './recordHead';
 // three widths the frame gives (`MAIN_WIDTHS`), in English and 中文. jsdom lays nothing out, so no unit test can hold it. The
 // stories are `work/AttendedSession.head.stories.tsx`.
 //
-// UX7's 200 px is not kept by the head with the parts and the relations folded either, and the run says by how much and which
-// block costs it (HEADFIT1; D185's MILESTONEUX1 and HEADFIT1 notes): the folds took the head from 806-1030 px to 375-472, and what
-// remains is the page head, the folded lines' own heights and the 16 px between nine blocks. The budget stays a test expected to
-// fail, which turns red the day a head fits it and says to remove the mark, and the head's height today is a ceiling a change that
-// makes it worse fails. Each fold's cost is held exactly: the milestone's, the parts' and the relations' is one line where the main
-// area is wide (two where its words wrap), and opening one moves what is under it and nothing above.
+// UX7's 200 px binds a typical record (HEADFIT1b; D185's MILESTONEUX1, HEADFIT1 and HEADFIT1b notes): its page head, the record's
+// head and *Details*, the chain's line and one folded line, the trace's, drawn as stories of their own and held to the budget. The
+// head with every block is a ratchet: the folds took it from 806-1030 px to 375-472 and the head's blocks 8 px apart, not 16, to
+// 307-404; what remains is the page head, the folded lines' own heights and the 8 px between nine blocks. Its budget stays a test
+// expected to fail, which turns red the day a head fits it and says to remove the mark, and the head's height today is a ceiling a
+// change that makes it worse fails. Each fold's cost is held exactly: the milestone's, the parts' and the relations' is one line
+// where the main area is wide (two where its words wrap), and opening one moves what is under it and nothing above.
 //
 // `npm --prefix src/Daoris.Web run e2e:measured -- --grep head/`.
 
@@ -39,16 +40,16 @@ const FOLDS = [
 /**
  * Each story, by its book and name: the main-area width it is drawn at, its language, and the head's height today with the
  * margin a font's rounding needs. A change that draws the head taller fails; one that draws it shorter lowers its ceiling.
- * Measured 2026-10-20, HEADFIT1: 375, 433 and 472 px in English, 375, 416 and 455 in 中文 (806, 916, 995, 806, 881 and 1030 before
- * the parts and the relations folded).
+ * Measured 2026-10-20, HEADFIT1b: 307, 365 and 404 px in English, 307, 348 and 387 in 中文, with the head's blocks 8 px apart
+ * (375, 433, 472, 375, 416 and 455 at 16 px, HEADFIT1; 806, 916, 995, 806, 881 and 1030 before the parts and the relations folded).
  */
 const TABLE: Record<string, { width: keyof typeof WIDTH_PX; language: keyof typeof MILESTONE; ceiling: number }> = {
-  'head/Wide': { width: 'wide', language: 'en', ceiling: 385 },
-  'head/Half': { width: 'half', language: 'en', ceiling: 443 },
-  'head/Narrow': { width: 'narrow', language: 'en', ceiling: 482 },
-  'head/ChineseWide': { width: 'wide', language: 'zh', ceiling: 385 },
-  'head/ChineseHalf': { width: 'half', language: 'zh', ceiling: 426 },
-  'head/ChineseNarrow': { width: 'narrow', language: 'zh', ceiling: 465 },
+  'head/Wide': { width: 'wide', language: 'en', ceiling: 317 },
+  'head/Half': { width: 'half', language: 'en', ceiling: 375 },
+  'head/Narrow': { width: 'narrow', language: 'en', ceiling: 414 },
+  'head/ChineseWide': { width: 'wide', language: 'zh', ceiling: 317 },
+  'head/ChineseHalf': { width: 'half', language: 'zh', ceiling: 358 },
+  'head/ChineseNarrow': { width: 'narrow', language: 'zh', ceiling: 397 },
 };
 
 /** The page measured again until the head holds still, since a flowchart chooses its placement after it is drawn. */
@@ -72,6 +73,43 @@ async function open(page: Page, story: string): Promise<RecordHeadMeasure> {
 }
 
 const said = (measured: RecordHeadMeasure) => measured.blocks.map((block) => `${Math.round(block.height)} px ${block.name}`).join('; ');
+
+/**
+ * The typical record's stories (HEADFIT1b): the width, the language, and the head's height today with a font's margin where it
+ * is still over the budget (`over`), which only falls. Measured 2026-10-20 with the head's blocks 8 px apart: 167 px at the wide
+ * width in either language; 208 at half and 229 at the floor in English, 208 and 208 in 中文. Under 640 px of the main area the
+ * page head's acts take a row of their own (111 px against 70), and at the English floor the chain's *Show how it ran* wraps to
+ * a row of its own (52 px against 30): blocks, which HEADFIT1b moves none of, so the budget there stays an expected failure.
+ */
+const TYPICAL: Record<string, { width: keyof typeof WIDTH_PX; over?: number }> = {
+  'head/TypicalWide': { width: 'wide' },
+  'head/TypicalHalf': { width: 'half', over: 218 },
+  'head/TypicalNarrow': { width: 'narrow', over: 239 },
+  'head/TypicalChineseWide': { width: 'wide' },
+  'head/TypicalChineseHalf': { width: 'half', over: 218 },
+  'head/TypicalChineseNarrow': { width: 'narrow', over: 218 },
+};
+
+for (const [story, { width, over }] of Object.entries(TYPICAL)) {
+  test(`${story} at ${width}: a typical record ${over ? 'no taller than today' : `keeps UX7's ${BUDGET} px budget`}`, async ({ page }) => {
+    const measured = await open(page, story);
+    expect(measured.width, `the main area is ${WIDTH_PX[width]} px, not ${measured.width}`).toBe(WIDTH_PX[width]);
+    // The page head, the head's own line, the chain's line and the trace's: one that lost a block would keep the budget by losing
+    // what it measures.
+    expect(measured.blocks.length, `the blocks: ${said(measured)}`).toBe(4);
+    console.log(`[measured] ${story} (${measured.width}px): the conversation ${measured.down} px down, budget ${BUDGET}; ${said(measured)}`);
+    expect(measured.down, `the conversation starts ${measured.down} px down at ${width}, over ${over ?? BUDGET}: ${said(measured)}`).toBeLessThanOrEqual(over ?? BUDGET);
+  });
+
+  if (over) {
+    test(`${story} at ${width}: UX7's ${BUDGET} px budget, kept by no typical record at this width yet`, async ({ page }) => {
+      // A typical record that fits turns this red ("expected to fail"): remove the mark and the story's `over`.
+      test.fail(true, `the page head's acts row, and at the English floor the chain's wrapped press, are blocks HEADFIT1b moves none of`);
+      const measured = await open(page, story);
+      expect(measured.down, `the conversation starts ${measured.down} px down at ${width}, over ${BUDGET}: ${said(measured)}`).toBeLessThanOrEqual(BUDGET);
+    });
+  }
+}
 
 for (const [story, { width, language, ceiling }] of Object.entries(TABLE)) {
   test(`${story} at ${width}: every block of the head is drawn, the milestone, the parts and the relations folded to one line (two where it wraps), the head no taller than today`, async ({ page }) => {
@@ -105,9 +143,9 @@ for (const [story, { width, language, ceiling }] of Object.entries(TABLE)) {
 
   test(`${story} at ${width}: UX7's ${BUDGET} px budget, kept by no head with every block yet`, async ({ page }) => {
     // The gap, held open: with the parts and the relations folded, what is left is the page head (70 to 111 px), the chain's line
-    // and *Accept* (30 px each, the chain's 52 at the floor), six folded lines of 17 px or two, and 16 px between nine blocks, and
-    // HEADFIT1 moves no other block. A head that fits turns this red ("expected to fail"): remove the mark and lower the ceiling.
-    test.fail(true, `the head with every block is over ${BUDGET} px at every width; HEADFIT1 measured it with the parts and the relations folded and moved no other block`);
+    // and *Accept* (30 px each, the chain's 52 at the floor), six folded lines of 17 px or two, and 8 px between nine blocks; the
+    // blocks alone are over the budget. A head that fits turns this red ("expected to fail"): remove the mark and lower the ceiling.
+    test.fail(true, `the head with every block is over ${BUDGET} px at every width: its blocks alone are, before any space between them`);
     const measured = await open(page, story);
     expect(measured.down, `the conversation starts ${measured.down} px down at ${width}, over ${BUDGET}: ${said(measured)}`).toBeLessThanOrEqual(BUDGET);
   });
