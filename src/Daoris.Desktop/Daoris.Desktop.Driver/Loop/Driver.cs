@@ -1805,8 +1805,12 @@ public sealed class Driver(
         var before = await WorkingTree.HeadAsync(workTree, ct).ConfigureAwait(false);
 
         // The session this start continues, why and who asked (MIXAGENT1a-iii, D163 point 4): the one the quest was handed over
-        // from, or one a limit cut off when this runs on another account; named on the record as it opens.
-        var continues = ContinuesFrom(handedQuest, carryingOn ? start.Resumes : null, selection.Profile, selection.Steps?.FirstOrDefault()?.Why);
+        // from, or one a limit cut off when this runs on another account; named on the record as it opens. SESSCTX1b: every other
+        // carry-on names its link too, `retry` where its resume fell back, so the brief follows the line.
+        var continues = ContinuesFrom(
+            handedQuest, carryingOn ? start.Resumes : null, selection.Profile, selection.Steps?.FirstOrDefault()?.Why,
+            retried: fellBack is not null,
+            pressed: start.BroughtForward is not null || (start.Resumes?.PersonStopped == true && !handedFrom));
 
         // The ledger judges the open — the same door any other client would use. A refusal here is
         // an answer (someone else got there first), not an error. Once asked, the ledger may hold the
@@ -3373,9 +3377,13 @@ public sealed class Driver(
     /// <summary>
     /// The session a quest's start continues, for its record's <c>from</c> link (MIXAGENT1a-iii, D163 point 4): the session the
     /// quest was handed over from, with the hand-over's why and asker (MIXAGENT1a-ii); else a session a limit cut off, carried on
-    /// onto another account (TOOL4f), Daoris's own move; else none. A carry-on on the same account, a resume and a fresh start
-    /// continue no other agent's or account's run, and say none.
+    /// onto another account (TOOL4f), Daoris's own move; else the curve's move. SESSCTX1b (D189 point 4): every other carry-on
+    /// names its link too, so the brief follows the line: <c>retry</c> where its resume fell back (D131 point 3), else
+    /// <c>carry-on</c>, the person's where their press released or brought it forward. A first start, a resume of its own record
+    /// and a fresh start carry nothing on and say none.
     /// </summary>
+    /// <param name="retried">Its record's resume was tried and fell back (D131 point 3): a driven record's fallback.</param>
+    /// <param name="pressed">The person's press carried it on: <i>Try again</i> after their stop, or a bring-forward.</param>
     /// <param name="handed">The quest's hand-over as held, or null.</param>
     /// <param name="carried">The record it carries on, where it carries one on, or null.</param>
     /// <param name="profile">The account it opens on.</param>
@@ -3384,7 +3392,8 @@ public sealed class Driver(
     /// curve passed, or the most room under it, is the usage curve's move (SWITCH1c-iii, the switch design §4); a cooling or
     /// refused account passed, a limit reached and the rest are not.
     /// </param>
-    internal static ContinuedFrom? ContinuesFrom(HandedQuest? handed, PriorSession? carried, string? profile, string? walked = null) =>
+    internal static ContinuedFrom? ContinuesFrom(
+        HandedQuest? handed, PriorSession? carried, string? profile, string? walked = null, bool retried = false, bool pressed = false) =>
         carried is null ? null
         : handed is not null && string.Equals(carried.Session, handed.From, StringComparison.Ordinal)
             ? new ContinuedFrom(carried.Session, handed.Why, handed.AskedBy)
@@ -3392,5 +3401,7 @@ public sealed class Driver(
             ? new ContinuedFrom(carried.Session, HandOverWhy.Limit, HandOverBy.Daoris)
         : walked is OpeningWhy.OverCurve or OpeningWhy.MostRoom && OnAnotherAccount(carried, profile)
             ? new ContinuedFrom(carried.Session, HandOverWhy.Curve, HandOverBy.Daoris)
-        : null;
+        : retried
+            ? new ContinuedFrom(carried.Session, HandOverWhy.Retry, HandOverBy.Daoris)
+        : new ContinuedFrom(carried.Session, HandOverWhy.CarryOn, pressed ? HandOverBy.Person : HandOverBy.Daoris);
 }

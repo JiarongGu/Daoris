@@ -380,9 +380,11 @@ public sealed class WordsNotesTests
     }
 
     /// <summary>
-    /// MIXAGENT1a-i: why a conversation was handed over is a family of its own, each reason a box takes declared once; the two lines
-    /// carry facts only. `curve` (MIXAGENT1a-iii, D165) is a reason a record continues another by, and since SWITCH1c-i one the box
-    /// takes, declared with its line: every reason is one a box takes, so a reason added without its line fails here.
+    /// MIXAGENT1a-i: why a conversation was handed over is a family of its own, each reason declared once; the two lines carry facts
+    /// only. `curve` (MIXAGENT1a-iii, D165) is a reason a record continues another by, and since SWITCH1c-i one the box takes.
+    /// SESSCTX1b (D189 point 4, the session-context design §7): every continuation names its link, so `resume`, `carry-on` and
+    /// `retry` are reasons a record continues another by, worded as every reason is, and no box takes them: the box's check stays on
+    /// the five a hand-over is asked for.
     /// </summary>
     [Fact]
     public void A_conversation_handed_over_says_where_it_went_and_why_by_code_with_facts_only()
@@ -392,10 +394,14 @@ public sealed class WordsNotesTests
             .Select(field => (string)field.GetRawConstantValue()!)
             .Order(StringComparer.Ordinal)
             .ToList();
-        Assert.All(reasons, why => Assert.True(HandOverWhy.Known(why), $"`{why}` is no reason a box takes"));
+        Assert.Equal(["agent", "carry-on", "curve", "limit", "near", "press", "resume", "retry"], reasons);
         Assert.Equal(reasons, NoteCodes.Handed.All.Select(reason => reason.Code).Order(StringComparer.Ordinal));
-        Assert.Equal(["agent", "curve", "limit", "near", "press"], reasons);
+        Assert.Equal(["agent", "curve", "limit", "near", "press"], reasons.Where(HandOverWhy.Known));
+        Assert.All(reasons, why => Assert.True(HandOverWhy.Continues(why), $"`{why}` is no reason a record continues another by"));
+        Assert.All(reasons, why => Assert.NotEqual(why, HandOverWhy.Noted(why)));
+        Assert.All(reasons, why => Assert.NotEqual(why, HandOverWhy.Briefed(why)));
         Assert.False(HandOverWhy.Known("moved-on"));
+        Assert.False(HandOverWhy.Continues("moved-on"));
 
         var went = HandOverNotes.HandedOver("codex-acp", "ab12cd34");
         Assert.Equal("The conversation went on with codex-acp, in conversation ab12cd34.", went.Note);

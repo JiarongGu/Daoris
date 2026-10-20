@@ -10,14 +10,15 @@ import type { PartFacts } from './PartsStrip';
 type Translate = (key: string, values?: Record<string, unknown>) => string;
 
 /** The ways the driver says a part began (`PartBegan`), held to its source by `partsLife.test.ts`. */
-export const PART_BEGAN = ['opened', 'retried', 'resumed', 'carried-on', 'handed-over', 'asked'] as const;
+export const PART_BEGAN = ['opened', 'retried', 'resumed', 'carried-on', 'handed-over', 'moved', 'asked'] as const;
 type Began = (typeof PART_BEGAN)[number];
 const isBegan = (word: string): word is Began => (PART_BEGAN as readonly string[]).includes(word);
 
 /**
  * How a part began, in the reader's words (D167, SESSONE1b's `began`): started, retried after another part, resumed or carried
- * on from one, handed over from one, or asked by a repository. The earlier part is named by its number in the strip, and by its
- * id where the strip does not hold it. A word a newer host adds reads as a start rather than as nothing.
+ * on from one, handed over from one, moved on from one whose own conversation was lost (SESSCTX1b), or asked by a repository. The
+ * earlier part is named by its number in the strip, and by its id where the strip does not hold it. A word a newer host adds reads
+ * as a start rather than as nothing.
  */
 export function beganLine(t: Translate, part: EntryPart, parts: readonly EntryPart[]): string {
   const at = part.after ? parts.findIndex((other) => other.session === part.after) : -1;
@@ -27,6 +28,7 @@ export function beganLine(t: Translate, part: EntryPart, parts: readonly EntryPa
     case 'resumed': return t('work.parts.began.resumed', { after });
     case 'carried-on': return part.after ? t('work.parts.began.carriedOn', { after }) : t('work.parts.began.carriedOnAlone');
     case 'handed-over': return t('work.parts.began.handedOver', { after });
+    case 'moved': return t('work.parts.began.moved', { after });
     case 'asked': return part.askedBy ? t('work.parts.began.asked', { repository: part.askedBy }) : t('work.parts.began.askedUnnamed');
     default: return t('work.parts.began.opened');
   }

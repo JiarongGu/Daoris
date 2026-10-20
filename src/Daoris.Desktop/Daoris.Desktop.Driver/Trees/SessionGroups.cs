@@ -79,6 +79,12 @@ public sealed record SessionRecord(string Id, string Repository, string State)
     public string? From { get; init; }
 
     /// <summary>
+    /// Why it continues <see cref="From"/>, one of <see cref="HandOverWhy"/> (SESSCTX1b, the session-context design §7): what the
+    /// <i>Parts</i> strip says a part began by. Null with no link, and from a host before the field.
+    /// </summary>
+    public string? FromWhy { get; init; }
+
+    /// <summary>
     /// The access mode an Ask Daoris record ran under (HELPMODE1a2, D183 point 3), as the service answers it to this machine; null for
     /// every other record and from a host before the field, which <see cref="HelpModes.Recorded"/> reads as restricted.
     /// </summary>
@@ -141,6 +147,7 @@ public static class SessionRecords
                 // SESSONE1b: the key's group, and what a part continues; absent from a host before them.
                 Entry = Text(session, "entry") is { Length: > 0 } entry ? entry : null,
                 From = Text(session, "from") is { Length: > 0 } from ? from : null,
+                FromWhy = Text(session, "fromWhy") is { Length: > 0 } why ? why : null,
                 // HELPMODE1a2: an Ask Daoris record's mode, answered on loopback alone; absent from a host before it.
                 HelpMode = Text(session, "helpMode") is { Length: > 0 } mode ? mode : null,
             });

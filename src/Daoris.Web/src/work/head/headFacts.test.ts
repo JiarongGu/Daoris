@@ -166,6 +166,24 @@ describe('a session’s facts line', () => {
         .toEqual(['engine', 'continues from Claude Code', 'its account was over its usage curve', 'started 2m ago']);
     });
 
+    /**
+     * SESSCTX1b (the session-context design §7): every continuation names its link, so a carry-on, a driven record's fallback and a
+     * conversation that went on from one it lost say so by the same map, in both languages.
+     */
+    it('says why a carry-on, a fallback and a lost conversation’s new part continue another', async () => {
+      expect(sessionFacts(t, { session: continued({ fromWhy: 'carry-on' }), shown: 'working', continuesAgent: 'Codex' }))
+        .toEqual(['engine', 'continues from Codex', 'it stopped before its work was done', 'started 2m ago']);
+      expect(sessionFacts(t, { session: continued({ fromWhy: 'retry' }), shown: 'working', continuesAgent: 'Codex' }))
+        .toEqual(['engine', 'continues from Codex', 'its own conversation could not be resumed', 'started 2m ago']);
+      expect(sessionFacts(t, { session: continued({ fromWhy: 'resume' }), shown: 'working', continuesAgent: 'Codex' }))
+        .toEqual(['engine', 'continues from Codex', 'its own conversation was lost', 'started 2m ago']);
+
+      await i18n.changeLanguage('zh');
+      expect(sessionFacts(t, { session: continued({ fromWhy: 'carry-on' }), shown: 'working', continuesAgent: 'Codex' })).toContain('它在工作完成前停下了');
+      expect(sessionFacts(t, { session: continued({ fromWhy: 'retry' }), shown: 'working', continuesAgent: 'Codex' })).toContain('它自己的对话无法恢复');
+      expect(sessionFacts(t, { session: continued({ fromWhy: 'resume' }), shown: 'working', continuesAgent: 'Codex' })).toContain('它自己的对话已丢失');
+    });
+
     /** A why this build has no words for: the line says what it knows and guesses nothing. */
     it('says no why it has no words for, and another session where the one it continues is not held', () => {
       expect(sessionFacts(t, { session: continued({ fromWhy: 'moved-on' }), shown: 'working', continuesAgent: 'Codex' }))

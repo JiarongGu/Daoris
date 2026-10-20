@@ -22,7 +22,25 @@ public static class HandOverWhy
     /// <remarks>A box takes it since SWITCH1c-i, which declares its coded line; the automatic move that asks for it is SWITCH1c-ii's.</remarks>
     public const string Curve = "curve";
 
-    /// <summary>The reason as the briefing's agent reads it, in Daoris's one English: after <c>handed over because</c>.</summary>
+    /// <summary>
+    /// Its own conversation was proven lost, and it went on by itself in a new part (SESSCTX1b, D189 point 3; the session-context
+    /// design §7). A reason a record continues another by; no box takes it.
+    /// </summary>
+    public const string Resume = "resume";
+
+    /// <summary>
+    /// A carry-on on the same account (D80, TOOL4f): after a cut-off, a time-out, a crash, a refused turn or an interrupted take
+    /// (SESSCTX1b). A reason a record continues another by; no box takes it.
+    /// </summary>
+    public const string CarryOn = "carry-on";
+
+    /// <summary>
+    /// A driven record's fallback (D131 point 3): its resume was refused and it went on in a new part (SESSCTX1b). A reason a record
+    /// continues another by; no box takes it.
+    /// </summary>
+    public const string Retry = "retry";
+
+    /// <summary>The reason as the brief's agent reads it, in Daoris's one English: after <c>because</c>.</summary>
     public static string Briefed(string why) => why switch
     {
         Press => "the person asked for it",
@@ -30,10 +48,13 @@ public static class HandOverWhy
         Limit => "the account it ran on reached its limit",
         Agent => "the agent asked for it",
         Curve => "the account it ran on was over the usage curve the person's switching setting draws",
+        Resume => "its own conversation was lost, so it could not go on in it",
+        CarryOn => "it stopped before its work was done",
+        Retry => "its own conversation could not be resumed",
         _ => why,
     };
 
-    /// <summary>The reason as the record's English says it, after <c>handed over because</c>: the page's <c>note.handed.why.*</c> in English.</summary>
+    /// <summary>The reason as the record's English says it, after <c>because</c>: the page's <c>note.handed.why.*</c> in English.</summary>
     public static string Noted(string why) => why switch
     {
         Press => "the person asked for it",
@@ -41,11 +62,20 @@ public static class HandOverWhy
         Limit => "its account reached its limit",
         Agent => "the agent asked for it",
         Curve => "its account was over its usage curve",
+        Resume => "its own conversation was lost",
+        CarryOn => "it stopped before its work was done",
+        Retry => "its own conversation could not be resumed",
         _ => why,
     };
 
-    /// <summary>Whether a word is one of the reasons a hand-over's box takes: each has its <c>note.handed.why.*</c> line.</summary>
+    /// <summary>
+    /// Whether a word is one of the reasons a hand-over's box takes: the five a hand-over is asked for (SESSCTX1b keeps the box's
+    /// check on them; <see cref="Continues"/> is every reason a record names).
+    /// </summary>
     public static bool Known(string? why) => why is Press or Near or Limit or Agent or Curve;
+
+    /// <summary>Whether a word is one of the reasons a record continues another by (SESSCTX1b): each has its <c>note.handed.why.*</c> line.</summary>
+    public static bool Continues(string? why) => Known(why) || why is Resume or CarryOn or Retry;
 }
 
 /// <summary>Who asked for a hand-over (MIXAGENT1a-i, D163), by code.</summary>
