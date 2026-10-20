@@ -172,7 +172,7 @@ internal sealed class HelpRoomDoors : IHelpRoomSection
         // Ask Daoris's `setting` kind's `cooloff` (HelpCoverageTests).
         ("set how long an account cools when its agent hits a limit and names no time", "Settings → Driver → Cool-off when no time is named",
             "`daoris driver cooloff <minutes>`"),
-        ("bound how many sessions run at once", "(no screen yet)", "`daoris driver cap <n>`"),
+        ("bound how many sessions run at once", "Settings → Driver → Sessions at once on this machine", "`daoris driver cap <n>`"),
         ("say so when a session parks", "Settings → Driver", "`daoris driver notify on|off`"),
         // UX6e2: the rules for every session and Daoris's defaults are the agent's page's (UX6e); a repository's are on its
         // Setup (UX6f); a workspace's are on its page (UX6g2a).

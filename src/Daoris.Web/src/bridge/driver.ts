@@ -59,6 +59,8 @@ export type DriverState = {
    * Absent on a shell older than it, and the setting is then not offered.
    */
   coolOff?: number;
+  /** How many sessions Daoris starts at once on this machine (CAPSET1); absent on a shell older than the setting's route. */
+  cap?: number;
   /** Quests the person restarted, by id, and the failure count each was restarted at. */
   forgiven: Record<string, number>;
   /**
@@ -384,6 +386,9 @@ export const useSetStrikes = () => useDriverChange<{ strikes: number }>('SET_STR
  * `cooloff` `daoris driver cooloff <minutes>` edits; less than one is the driver's refusal.
  */
 export const useSetCoolOff = () => useDriverChange<{ minutes: number }>('SET_COOLOFF');
+
+/** How many sessions Daoris starts at once (CAPSET1): the same `cap` `daoris driver cap <n>` edits; less than one is refused. */
+export const useSetCap = () => useDriverChange<{ cap: number }>('SET_CAP');
 
 /**
  * *Try again* (RETRY1; SESSUX1b, D126 §3.4): let a parked quest run again, counting from where it stands, or release one

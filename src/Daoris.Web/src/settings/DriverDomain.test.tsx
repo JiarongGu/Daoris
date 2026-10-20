@@ -242,6 +242,39 @@ describe('the driver domain', () => {
   });
 
   /**
+   * CAPSET1 (D130's CAPCOUNT1 note): how many sessions Daoris starts at once, the `cap` `daoris driver cap` edits. Written
+   * only when changed to a whole number of at least one; an older shell that answers no such field is offered no row.
+   */
+  it('sets the cap of sessions Daoris starts, and offers nothing to a shell older than it', async () => {
+    const notify = vi.fn();
+    invoke.mockImplementation(async (module: string, type: string) => {
+      if (module !== 'DAORIS.DRIVER') return WIRING;
+      return type === 'SET_CAP' ? { ...DRIVER_STATE, cap: 4 } : { ...DRIVER_STATE, cap: 2 };
+    });
+    const { unmount } = show(<SettingsView notify={notify} section="driver" />);
+    const field = await screen.findByLabelText('Sessions at once on this machine');
+    expect((field as HTMLInputElement).value).toBe('2');
+
+    await userEvent.clear(field);
+    await userEvent.type(field, '0');
+    await userEvent.tab();
+    expect(invoke.mock.calls.some(([, type]) => type === 'SET_CAP')).toBe(false);
+    expect((field as HTMLInputElement).value).toBe('2');
+
+    await userEvent.clear(field);
+    await userEvent.type(field, '4');
+    await userEvent.tab();
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SET_CAP', { payload: { cap: 4 } });
+    await vi.waitFor(() => expect(notify).toHaveBeenCalledWith('Daoris now starts at most 4 sessions at once on this machine.'));
+    unmount();
+
+    invoke.mockImplementation(async (module: string) => (module === 'DAORIS.DRIVER' ? DRIVER_STATE : WIRING));
+    show(<SettingsView notify={() => {}} section="driver" />);
+    await screen.findByLabelText('Failures before a quest parks');
+    expect(screen.queryByLabelText('Sessions at once on this machine')).toBeNull();
+  });
+
+  /**
    * TOOL4g (D125 §2.2, §6): how long an account cools when its agent names no reset, the `cooloff` `daoris driver cooloff`
    * edits. Written only when changed to a whole number of at least one, as the strikes are; an older shell that answers no
    * such field is offered no row.

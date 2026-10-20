@@ -197,7 +197,7 @@ session named; never propose adding one that has not landed.
 | start a quest your stop holds again: carry a taken one on in its tree, or plan an open one | Quests → the quest's page, whose *Sitting* names the session | `daoris driver retry <quest> --session <id>` |
 | bound how long one session runs | (no screen yet) | `daoris driver timeout <minutes>` |
 | set how long an account cools when its agent hits a limit and names no time | Settings → Driver → Cool-off when no time is named | `daoris driver cooloff <minutes>` |
-| bound how many sessions run at once | (no screen yet) | `daoris driver cap <n>` |
+| bound how many sessions run at once | Settings → Driver → Sessions at once on this machine | `daoris driver cap <n>` |
 | say so when a session parks | Settings → Driver | `daoris driver notify on|off` |
 | allow, ask or deny what an agent may do | Agents → the agent's page → What it may do; a repository's, Repositories → the repository's page → Setup → Reach; a workspace's, Repositories → the workspace's page → Setup → Remote and reach | `daoris agent rules …` |
 | let agents read a repository's checkout, or not; let one repository's sessions write into another | Repositories → the repository's page → Setup → Reach; a workspace's reading, Repositories → the workspace's page → Setup → Defaults → Read by agents outside | `daoris driver across <repository> read on|off|--clear` (`--workspace <name>` for a whole workspace), `daoris driver across <repository> write-to <other> [--clear]` |

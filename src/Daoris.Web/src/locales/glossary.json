@@ -144,7 +144,7 @@
         "settings.heavy.label", "settings.heavy.field.*", "settings.heavy.nameOf", "settings.heavy.runOf", "settings.heavy.cwdOf",
         "settings.lines.repositoryField", "settings.lines.workspaceField", "settings.logs.event",
         "settings.logs.folder", "settings.logs.levels", "settings.logs.since", "settings.logs.source",
-        "settings.cooloff.label", "settings.notify.label", "settings.rules.defaultOn", "settings.rules.file",
+        "settings.cap.label", "settings.cooloff.label", "settings.notify.label", "settings.rules.defaultOn", "settings.rules.file",
         "settings.sessionLanguage.field", "settings.strikes.label",
         "settings.sync.apart.all", "settings.theme.label", "settings.tools.file", "settings.tools.fileOf",
         "settings.tools.locations.address", "settings.tools.locations.builtIn", "settings.tools.program",

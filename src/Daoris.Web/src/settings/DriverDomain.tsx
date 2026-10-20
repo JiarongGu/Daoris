@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import {
-  useDriver, usePlugins, useSayUpdate, useSetAccess, useSetCoolOff, useSetNotify, useSetStrikes, useUpdateState,
+  useDriver, usePlugins, useSayUpdate, useSetAccess, useSetCap, useSetCoolOff, useSetNotify, useSetStrikes, useUpdateState,
 } from '../bridge/shell';
 import { useSystemWiring } from '../bridge/system';
 import { failure } from '../design/ui';
@@ -41,6 +41,7 @@ export function DriverDomain({ notify, onGo }: Pick<SettingsDomainProps, 'notify
   const setNotify = useSetNotify();
   const setStrikes = useSetStrikes();
   const setCoolOff = useSetCoolOff();
+  const setCap = useSetCap();
   // The install's update (UPDATE1b, D139 §6): the query the banner reads, and the same word it says.
   const update = useUpdateState();
   const sayUpdate = useSayUpdate();
@@ -60,6 +61,7 @@ export function DriverDomain({ notify, onGo }: Pick<SettingsDomainProps, 'notify
         notify: driver.data?.notify ?? true,
         strikes: driver.data?.strikes ?? 3,
         coolOff: driver.data?.coolOff,
+        cap: driver.data?.cap,
         machineAccess: driver.data?.machineAccess,
         update: update.data,
       }}
@@ -75,6 +77,10 @@ export function DriverDomain({ notify, onGo }: Pick<SettingsDomainProps, 'notify
       })}
       onCoolOff={(value) => setCoolOff.mutate({ minutes: value }, {
         onSuccess: () => notify(t('settings.cooloff.set', { count: value })),
+        onError,
+      })}
+      onCap={(value) => setCap.mutate({ cap: value }, {
+        onSuccess: () => notify(t('settings.cap.set', { count: value })),
         onError,
       })}
       onAccess={(edit, answered) => setAccess.mutate({ machine: true, ...edit }, {

@@ -5,6 +5,9 @@ with the version and date at release.
 
 ## Unreleased
 
+- How many sessions Daoris starts at once on this machine is set in Settings → Driver, beside the strike limit and the
+  cool-off, and `daoris driver cap <n>` sets the same number while Daoris runs. It counts the sessions Daoris starts, never
+  a conversation you hold yourself.
 - A session that goes on in a new part, on another agent, on another account or after it was cut off, is handed everything it
   took: every word you said, once, what each turn did, where the work stands and the last check that failed, not just its last
   words. A handed-over conversation opens with *Daoris's brief of the session it continues*, folded. A session's Parts strip

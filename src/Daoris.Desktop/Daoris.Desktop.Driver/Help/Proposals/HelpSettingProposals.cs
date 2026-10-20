@@ -221,7 +221,7 @@ internal sealed class HelpSettingProposals : IHelpProposalKind
             case "cap" when int.TryParse(value, NumberStyles.None, CultureInfo.InvariantCulture, out var cap) && cap >= 1:
                 planned = (cap == 1 ? "Run one session at a time on this machine, across every repository."
                         : $"Run at most {cap} sessions at once on this machine, across every repository.",
-                    $"daoris driver cap {cap}", c => c with { Cap = cap });
+                    $"daoris driver cap {cap}", c => c.WithCap(cap));
                 break;
             // TOOL4l-b (D125 §6): how long an account cools when its limit names no time, as `daoris driver cooloff` takes it;
             // a zero would start a spent account again at every look, so less than a minute falls to the refusal below.

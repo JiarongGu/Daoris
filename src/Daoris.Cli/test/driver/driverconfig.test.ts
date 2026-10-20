@@ -2700,6 +2700,7 @@ const SENT: readonly (readonly [argv: string[], route: string, payload: Record<s
   [['notify', 'off'], 'SET_NOTIFY', { notify: false }],
   [['strikes', '0'], 'SET_STRIKES', { strikes: 0 }],
   [['cooloff', '90'], 'SET_COOLOFF', { minutes: 90 }],
+  [['cap', '3'], 'SET_CAP', { cap: 3 }],
   [['intake', 'off'], 'SET_INTAKE', { adapter: null }],
   [['intake', 'claude-code-acp'], 'SET_INTAKE', { adapter: 'claude-code-acp' }],
   [['helper', 'off'], 'SET_HELPER', { adapter: null }],
@@ -2754,7 +2755,7 @@ test('each verb a route takes sends it while Daoris runs, writes nothing itself,
 
 test('a verb no route takes acts alone through its door, and a read never asks it', async () => {
   for (const argv of [
-    ['cap', '3'], ['timeout', '120'], ['adapter', 'claude-code-acp'], ['retry', '42', '--at', '2'], ['retry', '42', '--session', 's1'],
+    ['timeout', '120'], ['adapter', 'claude-code-acp'], ['retry', '42', '--at', '2'], ['retry', '42', '--session', 's1'],
     ['landing', 'engine', 'merge', '--no-cycle'], ['work-cycle', 'engine', 'quest', '--clear'], ['brainstorms', '--mode', 'off'],
   ]) {
     const fx = makeFixture('driver-door-alone');

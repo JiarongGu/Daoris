@@ -1061,4 +1061,18 @@ public sealed class DriverModuleAccountsTests : DriverModuleBridge
         Assert.StartsWith(Refusals.DriverRefused, await RefusalAsync(Module(), "SET_COOLOFF", new { minutes = 0 }));
         Assert.Equal(90, DriverConfig.Load(DriverConfigPath).CoolOffMinutes);
     }
+
+    /// <summary>CAPSET1: the cap of sessions Daoris starts at once, the file <c>daoris driver cap</c> edits.</summary>
+    [Fact]
+    public async Task The_cap_is_answered_with_the_state_and_set_to_a_whole_number_of_at_least_one()
+    {
+        Assert.Equal(2, (await AnswerAsync(Module(), "STATE")).GetProperty("cap").GetInt32());
+
+        var state = await AnswerAsync(Module(), "SET_CAP", new { cap = 5 });
+
+        Assert.Equal(5, state.GetProperty("cap").GetInt32());
+        Assert.Equal(5, DriverConfig.Load(DriverConfigPath).Cap);
+        Assert.StartsWith(Refusals.DriverRefused, await RefusalAsync(Module(), "SET_CAP", new { cap = 0 }));
+        Assert.Equal(5, DriverConfig.Load(DriverConfigPath).Cap);
+    }
 }

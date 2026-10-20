@@ -68,6 +68,7 @@ export const DECLARED: Readonly<Record<string, { scopes: readonly string[]; sess
   SET_NOTIFY: { scopes: ['driver'] },
   SET_STRIKES: { scopes: ['driver'] },
   SET_COOLOFF: { scopes: ['driver'] },
+  SET_CAP: { scopes: ['driver'] },
   SET_INTAKE: { scopes: ['driver', 'harnesses'] },
   SET_HELPER: { scopes: ['driver'] },
   SET_HELP_MODE: { scopes: ['driver'] },
