@@ -322,6 +322,18 @@ public sealed class AcpSession(
     /// </summary>
     public IReadOnlyList<ChatMessage> HandedBack { get; private set; } = [];
 
+    /// <summary>
+    /// How often a session that waits on its own background work reads its quest again (DONEEND1, D83's note): once it no longer
+    /// waits on that work, the session ends. The driver sets every fourth of its own ticks; this default is that at its default tick.
+    /// </summary>
+    public TimeSpan BackgroundLook { get; init; } = TimeSpan.FromSeconds(60);
+
+    /// <summary>
+    /// The session's own background work still running, by name, when its run ended (DONEEND1): what ends with the session. The
+    /// driver gives an agent that leaves such work a bound to exit before it ends the agent's tree. Empty until the run ends.
+    /// </summary>
+    public IReadOnlyList<string> LeftRunning { get; private set; } = [];
+
     /// <summary>Whether the posture says the person answers this session's permission requests.</summary>
     private readonly bool _personAnswers = Marks(posture).PersonAnswers;
 
@@ -660,7 +672,9 @@ public sealed class AcpSession(
             }
 
             // A driven session's end is its last turn's (CONSOLE2, BGWAIT1): what it left running ends with it, and
-            // is said while the caller's transcript is still open, before the reader is let go.
+            // is said while the caller's transcript is still open, before the reader is let go. DONEEND1: named for the driver,
+            // which ends the agent's tree where it does not exit with that work still running.
+            LeftRunning = _background.Running;
             await EndStreamsAsync().ConfigureAwait(false);
             Release();
         }
@@ -703,6 +717,9 @@ public sealed class AcpSession(
     /// <para><b>Bounded by the session's own bounds</b>: the person's stop and the timeout end the process, the reader with
     /// it, and the wait with that; the driver's shutdown cancels it. Work that never ends (a dev server), and a woken turn whose
     /// end is never said, are waited for until one of those, as a park would have held its tree for the person (D83).</para>
+    ///
+    /// <para><b>And by its quest</b> (DONEEND1): while the work runs the quest is read again every <see cref="BackgroundLook"/>,
+    /// and once it no longer waits on that work, with no turn running, the session ends, saying so, and the work ends with it.</para>
     /// </remarks>
     /// <exception cref="DriverException">The agent's stream ended first: a failure of the door, never a clean turn's end.</exception>
     private async Task<string?> AfterBackgroundAsync(Func<CancellationToken, Task<bool>>? waits, CancellationToken ct)
@@ -728,7 +745,41 @@ public sealed class AcpSession(
         const string waited =
             "the ACP agent's stream ended while the session waited for its own background work — the agent exited, or it was "
             + "ended.";
-        var ended = await _background.EndedAsync(Ended, ct, work.Select(each => each.Id)).ConfigureAwait(false) ?? throw StreamEnded(waited);
+
+        // 🔴 DONEEND1: the quest is read again while the work runs, never only at the turn's end. Read once, a quest that closed
+        // done during the wait (its agent closing it in a turn its harness woke for one piece of work, while a long test run went
+        // on) held its session working until the timeout killed it, a slot of the cap held all the while (2026-10-20). Once it no
+        // longer waits, and no turn runs, the session ends here and the work still running ends with it (D105 §3).
+        using var looking = CancellationTokenSource.CreateLinkedTokenSource(ct);
+        using var cut = CancellationTokenSource.CreateLinkedTokenSource(ct);
+        var moved = QuestMovedAsync(waits, looking.Token);
+        var ending = _background.EndedAsync(Ended, cut.Token, work.Select(each => each.Id));
+        try
+        {
+            if (await Task.WhenAny(ending, moved).ConfigureAwait(false) == moved && moved.IsCompletedSuccessfully
+                && _background.Running is { Count: > 0 } left)
+            {
+                await cut.CancelAsync().ConfigureAwait(false);
+                try
+                {
+                    await ending.ConfigureAwait(false);
+                }
+                catch (OperationCanceledException)
+                {
+                    // The wait this ended: nothing more is read of the work, which ends with the session.
+                }
+
+                ct.ThrowIfCancellationRequested();
+                Note(BackgroundNotes.WaitOver(left));
+                return null;
+            }
+        }
+        finally
+        {
+            await looking.CancelAsync().ConfigureAwait(false);
+        }
+
+        var ended = await ending.ConfigureAwait(false) ?? throw StreamEnded(waited);
 
         var said = BackgroundNotes.EndedSaid(ended);
         Note(BackgroundNotes.Ended(ended));
@@ -752,6 +803,33 @@ public sealed class AcpSession(
 
     /// <summary>The stop reason of a turn its harness woke, which ends as a turn the agent finished does (BGWAIT2).</summary>
     private const string WokenStop = "end_turn";
+
+    /// <summary>
+    /// Completes once the quest, read again every <see cref="BackgroundLook"/> while the session waits on its own background work,
+    /// no longer waits on it (DONEEND1, BGWAIT1's own condition), and no turn runs: a turn its harness woke, or one a prompt opened,
+    /// is the agent's and is never cut.
+    /// </summary>
+    /// <remarks>
+    /// A look that cannot be read says nothing, so the session goes on waiting and looks again: silence is never read as the quest's
+    /// close, and a wait cut on a service's hiccup would end a session whose quest still waits, which then parks on the person.
+    /// </remarks>
+    private async Task QuestMovedAsync(Func<CancellationToken, Task<bool>> waits, CancellationToken ct)
+    {
+        while (true)
+        {
+            await Task.Delay(BackgroundLook, ct).ConfigureAwait(false);
+            try
+            {
+                if (!await waits(ct).ConfigureAwait(false)) break;
+            }
+            catch (Exception) when (!ct.IsCancellationRequested)
+            {
+                // Unread: the next look reads it again.
+            }
+        }
+
+        await _wake.IdleAsync(Prompted, ct).ConfigureAwait(false);
+    }
 
     /// <summary>
     /// The person's words this run sent and the session never took, once the run has ended (TURNFAIL1): on the wire behind a

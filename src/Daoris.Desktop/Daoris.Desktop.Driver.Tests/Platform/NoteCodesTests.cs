@@ -475,6 +475,21 @@ public sealed class BackgroundNotesTests
         NoteAssert.Holds(waits);
     }
 
+    /// <summary>DONEEND1: the wait a quest no longer needs ends, naming the work that ends with the session.</summary>
+    [Fact]
+    public void A_wait_the_quest_no_longer_needs_names_the_work_that_ends_with_the_session()
+    {
+        var over = BackgroundNotes.WaitOver(["Run the gates", "Build"]);
+        Assert.Equal(
+            "— its quest no longer waits on its background work: the session ends, and the work still running ends with it: "
+            + "`Run the gates`, `Build`.",
+            over.Note);
+        var part = Assert.Single(over.Parts);
+        Assert.Equal("background.wait-over", part.Code);
+        Assert.Equal(["Run the gates", "Build"], Assert.IsAssignableFrom<IReadOnlyList<string>>(part.Value("works")));
+        NoteAssert.Holds(over);
+    }
+
     [Fact]
     public void Unread_leaves_the_programs_words_as_theirs()
     {

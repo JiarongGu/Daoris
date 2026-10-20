@@ -2772,13 +2772,15 @@ public sealed class Driver(
     {
         if (resumed && planned.Status is not ("Open" or "Taken")) return null;
 
+        // DONEEND1: read again at every look while the session waits. A take once read stays this session's (its record keeps it), so
+        // the sessions are read only until it is.
+        var took = false;
         return async token =>
         {
             var now = await service.FindQuestAsync(planned.Id, token).ConfigureAwait(false);
             var status = now?.Status ?? "Open";
-            return Observation.Parks(
-                status, planned.Awaits, now?.Awaits, resumed,
-                took: !resumed && status == "Taken" && await service.TookAsync(sessionId, token).ConfigureAwait(false));
+            took = took || (!resumed && status == "Taken" && await service.TookAsync(sessionId, token).ConfigureAwait(false));
+            return Observation.Parks(status, planned.Awaits, now?.Awaits, resumed, took: took && status == "Taken");
         };
     }
 
@@ -2968,6 +2970,9 @@ public sealed class Driver(
         // What it consumed, where the door reported it (TOOL3/D57 §4). A pipe with only text reports
         // nothing, and a surface then says "not measured" rather than zero.
         var (outcome, turnFailed, acpLeft) = acp is not null ? await acp.ConfigureAwait(false) : (null, null, []);
+        // DONEEND1: an agent the run ended because it lingered after its session had ended exited as its session did, cleanly: on this
+        // door the agent exits 0 once its stdin closes whatever happened, and the kill was Daoris's own, never the agent's end.
+        if (ending?.EndedLingering == true && exitCode is not null) exitCode = 0;
         List<ChatMessage> left = [.. acpLeft];
         var used = acp is not null ? outcome?.Usage
             : structured is not null ? await structured.ConfigureAwait(false)
@@ -3308,6 +3313,7 @@ public sealed class Driver(
                 Unoffered = unoffered,
                 Permissions = HeldPermissions.Of(Context.Events).For(sessionId), // AUTONOMY1b3a: held only under asking's mark
                 SetupChanged = setupChanged,
+                BackgroundLook = BackgroundLook, // DONEEND1: its quest read again while it waits on its own background work
             };
             ending?.Open(session);
             // What it says about its account's windows, kept as it says it (TOOL6c).
@@ -3407,7 +3413,49 @@ public sealed class Driver(
                 // Already gone: the agent exited first, which is the ending this was asking for.
             }
 
+            // 🔴 DONEEND1: an agent whose session ended while its own background work ran (a test run its quest no longer waited on)
+            // may never exit, that work holding it, and the run would then wait for the timeout. Given a bound, its tree is ended
+            // here, the work with it, before the stderr it may hold is waited for.
+            if (session?.LeftRunning is { Count: > 0 } work && await EndedLingeringAsync(process, LingerBound, ending).ConfigureAwait(false))
+            {
+                Line($"— its agent had not exited {LingerBound.TotalSeconds:0} s after its session ended, its own background work still "
+                     + $"running ({string.Join(", ", work.Select(name => $"`{name}`"))}): Daoris ended its process tree.");
+            }
+
             await errors.ConfigureAwait(false);
+        }
+    }
+
+    /// <summary>
+    /// How long an agent whose session ended with its own background work still running is given to exit once its stdin closed,
+    /// before its tree is ended (DONEEND1). Its session has said all it will; the work is what can hold it.
+    /// </summary>
+    internal static readonly TimeSpan LingerBound = TimeSpan.FromSeconds(10);
+
+    /// <summary>
+    /// How often a driven session that waits on its own background work reads its quest again (DONEEND1, D83's note): every fourth
+    /// tick of the driver's own, a minute at its default. Each look reads what a tick reads (the board, and the sessions until this
+    /// session's take is read), so a waiting session costs a quarter of a tick, and its run ends within a minute of its quest's close.
+    /// </summary>
+    internal TimeSpan BackgroundLook => TimeSpan.FromSeconds(4 * Math.Max(1, config.PollSeconds));
+
+    /// <summary>
+    /// Wait up to <paramref name="bound"/> for an agent to exit; past it, end its process tree, saying so to the run first (DONEEND1).
+    /// True where its tree was ended here.
+    /// </summary>
+    internal static async Task<bool> EndedLingeringAsync(Process process, TimeSpan bound, AcpEnding? ending)
+    {
+        using var within = new CancellationTokenSource(bound);
+        try
+        {
+            await process.WaitForExitAsync(within.Token).ConfigureAwait(false);
+            return false;
+        }
+        catch (OperationCanceledException)
+        {
+            ending?.Lingering();
+            SessionProcesses.EndIfRunning(process);
+            return true;
         }
     }
 

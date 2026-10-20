@@ -5,6 +5,9 @@ with the version and date at release.
 
 ## Unreleased
 
+- A session waiting on its own background work, such as a long test run, now ends within about a minute once its quest closes,
+  is declined or asks another repository, instead of working on until the session timeout. It is recorded completed where its
+  quest reached done, its conversation says the work still running ended with it, and that work ends with its process.
 - The Sessions icon counts the sessions Daoris is running for you, and the status bar shows the same number; neither counts
   a conversation you hold yourself, Ask Daoris's included. Something in Sessions waiting on you is a dot in the waiting colour
   beside the count, and hovering the icon says both in words. The window's title keeps to the count *What needs you* shows,

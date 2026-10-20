@@ -271,6 +271,8 @@ export const NOTE_CODES: Readonly<Record<string, NoteCode>> = {
   'background.waits': { values: ['works'] },
   'background.work-ended': { values: ['work', 'state'] },
   'background.goes-on': { values: [] },
+  // DONEEND1: the quest read again no longer waits on the work, so the session ends and the work still running ends with it.
+  'background.wait-over': { values: ['works'] },
   // A conversation's door that failed (CONVNOTE2e): a program's words follow each lead but the resume's; a refused resume is
   // its reason by MSG1f's family, the agent's words after it where it said any, then an answer carried on.
   'door.not-open': { values: [] },
