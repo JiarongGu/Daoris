@@ -107,6 +107,7 @@ public sealed class SignInPhasesTests : Bridge
         var ended = JsonSerializer.SerializeToElement(Raised.Single(m => m.Type == "HARNESS_ENDED").Payload);
         Assert.Equal(0, ended.GetProperty("ExitCode").GetInt32());
         Assert.True(ended.GetProperty("Kept").GetBoolean());
+        Assert.False(ended.GetProperty("Cancelled").GetBoolean());
         Assert.True(File.Exists(Path.Combine(DaorisHome.Entry(Home, HomeEntry.AgentHomes, "codex", made), "auth.json")));
         Assert.Equal(["start", "browser", "who", "lists"], Phases());
         Assert.Contains("Successfully logged in", Texts());
@@ -194,6 +195,9 @@ public sealed class SignInPhasesTests : Bridge
 
         var end = LogLines().Single(line => line.GetProperty("event").GetString() == "harness.ended").GetProperty("data");
         Assert.Equal("cancelled", end.GetProperty("outcome").GetString());
+        // The end's news says so too, so the page closes the panel saying nothing: the person pressed it (§3.2).
+        var ended = JsonSerializer.SerializeToElement(Raised.Single(m => m.Type == "HARNESS_ENDED").Payload);
+        Assert.True(ended.GetProperty("Cancelled").GetBoolean());
     }
 
     /// <summary>The relayed lines' texts, in their order, phases included.</summary>

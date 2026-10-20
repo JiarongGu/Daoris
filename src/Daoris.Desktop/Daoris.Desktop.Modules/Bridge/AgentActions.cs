@@ -363,6 +363,8 @@ public sealed class AgentActions(IEventBus events, DriverLoop loop)
             Places = signingIn
                 ? AgentsRoutes.PlacesShown(_loop.Harnesses.Settings.PlacesOf(owner, profile!))
                 : null,
+            // Whether the person's *Cancel* stopped it (SIGNIN1), so its end is no failure to say: the page closes its panel.
+            Cancelled = life?.Cancelled ?? false,
         });
     }
 
