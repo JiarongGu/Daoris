@@ -66,7 +66,7 @@ public static class TidyKept
     /// <summary>A tracked path in its tree is marked <c>assume-unchanged</c> or <c>skip-worktree</c>, which hides its changes.</summary>
     public const string Hidden = "hidden";
 
-    /// <summary>Its tree holds another repository, which the tree's own status does not see.</summary>
+    /// <summary>Its tree holds another repository, not under an ignored path, which the tree's own status does not see.</summary>
     public const string Nested = "nested";
 
     /// <summary>Its tree is reached through a link under the trees home, so it is somewhere else.</summary>
