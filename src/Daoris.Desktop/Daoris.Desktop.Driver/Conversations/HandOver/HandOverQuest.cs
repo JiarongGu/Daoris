@@ -146,7 +146,9 @@ public static class QuestHandOver
                 return (HandOver.Refused(HandOver.NotLastRun, $"#{quest} went on in a later session here, {last}: hand that one over."), null);
         }
 
-        if (record.State == "awaiting-person" && !agentAsk)
+        // SESSCTX1c (D189's amendment): a park whose own agent is no longer here is never answered in its own conversation, so it waits
+        // with this hand-over's offer, the person choosing the agent it goes on with.
+        if (record.State == "awaiting-person" && !agentAsk && !AgentGone(ServiceClient.ReadRecord(json, id)?.Adapter, drives))
         {
             return (HandOver.Refused(HandOver.Parked, $"{id} is waiting on you: answer it instead."), null);
         }
@@ -203,4 +205,7 @@ public static class QuestHandOver
 
         return (null, prior);
     }
+
+    /// <summary>Whether the agent a record ran on is one this machine no longer drives: named, and not in the roster.</summary>
+    private static bool AgentGone(string? ranOn, Func<string, HandOverAgent?> drives) => ranOn is { Length: > 0 } && drives(ranOn) is null;
 }

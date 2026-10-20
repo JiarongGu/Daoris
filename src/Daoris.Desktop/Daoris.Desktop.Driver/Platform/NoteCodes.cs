@@ -322,6 +322,8 @@ public static class NoteCodes
         new(ContinueWhy.Intake, [], "work.say.why.intake"),
         new(ContinueWhy.StoodDown, [], "work.say.why.stoodDown"),
         new(ContinueWhy.Started, [], "work.say.why.started"),
+        // SESSCTX1c: the native door's failed exit apart from `gone`, added after the rest (a reason is additive).
+        new(ContinueWhy.Exited, [], "work.say.why.exited"),
     ]);
 
     /// <summary>Why a cool-off lasts until then, as the page words it (<c>harness.cooling.why.*</c>).</summary>
@@ -574,6 +576,12 @@ public static class NoteCodes
     public static readonly NoteCode ChatTakenOver = new("chat.taken-over", ["agent", "session", "why"]) { Why = Handed };
     public static readonly NoteCode ChatBriefingUnsaid = new("chat.briefing-unsaid", []);
 
+    // ——— A session's move to a new part (SESSCTX1c, D189 point 8; the session-context design §7): the part it left says where it went
+    // on, the new part where it came from, each the agent and account, why, the context the part stood at (`tokens`) and the brief's
+    // characters (`count`). The account by its id, as `chat.moved` names them: a session's events stay on this machine.
+    public static readonly NoteCode MovedOn = new("moved.on", ["session", "agent", "account", "why", "tokens", "count"]) { Why = Handed };
+    public static readonly NoteCode MovedFrom = new("moved.from", ["session", "agent", "account", "why", "tokens", "count"]) { Why = Handed };
+
     // ——— A conversation moved to another account of its agent by the usage curve (SWITCH1c-i, D165 point 3; the switch design
     // §4): the old one's last line says where it went and how far over its curve its account was, the new one's first where it
     // came from. They name the accounts, as `opening.*` does: a conversation's record stays on this machine.
@@ -795,6 +803,8 @@ public static class NoteCodes
     public static readonly NoteCode HeldConfigUnread = new("held.config-unread", []);
     public static readonly NoteCode HeldLead = new("held.lead", []);
     public static readonly NoteCode HeldTail = new("held.tail", []);
+    // SESSCTX1c (D189's amendment): the agent its words would go on with is no longer one this machine has; the hand-over is the way on.
+    public static readonly NoteCode HeldAgentGone = new("held.agent-gone", ["agent", "session"]);
 
     // ——— The roster's refusal as a held note's reason (ROSTERREFUSE1, <see cref="HeldWords.Refused"/>): an account by its owner and its
     // id, never the name the person gave it (the page names it), until when a moment, why a cool-off's reason; the tool's own sign-in

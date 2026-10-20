@@ -589,6 +589,26 @@ public sealed class HandOverTests : IDisposable
         Assert.Empty(Directory.EnumerateFiles(DaorisHome.Entry(_home, HomeEntry.Sessions), "*" + HandOverBox.Suffix));
     }
 
+    /// <summary>
+    /// 🔴 SESSCTX1c (D189's amendment, the session-context design §2): a park whose own agent is no longer here waits with the
+    /// hand-over's offer, since only the person can choose the agent it goes on with; so its hand-over is kept rather than refused as
+    /// a question for the person, which nothing here could answer in its own conversation.
+    /// </summary>
+    [Fact]
+    public async Task A_park_whose_own_agent_is_no_longer_here_may_be_handed_over()
+    {
+        var park = Driven("p4rk0000", "q5", "awaiting-person");
+        park["adapter"] = "retired-agent";
+        var room = QuestRoom(Driven("qu3st000", minute: 20), park);
+        room.Quests.Add(QuestRow("q5", "Taken"));
+        room.Claims["q5"] = "held";
+
+        var answer = await AskQuestAsync(room, "p4rk0000");
+
+        Assert.Equal((true, (string?)null), (answer.Kept, answer.Why));
+        Assert.Equal("codex-acp", new HandOverBox(_home).Read("p4rk0000")!.Agent);
+    }
+
     [Fact]
     public async Task A_second_ask_for_a_quest_s_session_waits_behind_the_first_and_an_open_quest_may_be_handed_over()
     {

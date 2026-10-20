@@ -125,14 +125,22 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
             _context.Marks.Clear(park.Session);
         }
 
-        var kept = _context.Conversations.Read(park.Session);
-        var why = adapter is null
-            ? ContinueWhy.Of(ContinueWhy.Refused)
-            : Continuations.Judge(
-                tree => treeStands && ConversationTrees.Stands(tree), park, adapter.Name, adapter.Resumes, selection.Profile, kept, account);
-        if (why is not null || adapter is null || kept is null)
+        // 🔴 SESSCTX1c (D189's amendment): an adapter no longer here proves nothing of the conversation, and only the person can choose
+        // the agent it goes on with, so the record waits as it is, a park still parked, its words unmarked, saying so with the hand-over's
+        // offer. Never a park ended for a carry-on that could not start on that agent either.
+        if (adapter is null)
         {
-            var reason = why ?? ContinueWhy.Of(ContinueWhy.Refused);
+            var gone = Continuations.AgentGone(agent, park.Session);
+            HeldSaying(park, gone);
+            return (new StartRun($"held  #{quest.Id} → {quest.To}: {gone.Note}", false, null, gone.Note), null, false);
+        }
+
+        var kept = _context.Conversations.Read(park.Session);
+        var why = Continuations.Judge(
+            tree => treeStands && ConversationTrees.Stands(tree), park, adapter.Name, adapter.Resumes, selection.Profile, kept, account);
+        if (why is not null || kept is null)
+        {
+            var reason = why ?? ContinueWhy.Of(ContinueWhy.Unkept);
             if (await EndParkAsync(park, reason, agent, ct).ConfigureAwait(false) is { } refused)
             {
                 return (new StartRun($"held  #{quest.Id} → {quest.To}: {refused}", false, null, refused), null, false);
@@ -240,7 +248,7 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
         {
             // Every word waiting once it moved, as the move left them (SAIDBACK1d): none can be taken back from a record that runs.
             var words = Continuations.HandedAfterMove(park.Waiting, await ReadAgainAsync(service, sessionId, ct).ConfigureAwait(false));
-            if (words.Count == 0) return await PutBackAsync(quest, park, agent, why: null).ConfigureAwait(false);
+            if (words.Count == 0) return await PutBackAsync(quest, park).ConfigureAwait(false);
 
             // Each word's files where they were kept as it was said (MSG1d3, D137 §2.4), handed with the words; what its start did with
             // its tree against the line first after them (LANDSYNC2), since that is where its next commit goes.
@@ -311,18 +319,21 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
         }
         catch (Exception error) when (!spawned && !(error is OperationCanceledException && ct.IsCancellationRequested))
         {
-            // 🔴 No run started (SAIDBACK1e): the record the move took up goes back with its words, never `failed` with them, and
-            // they are handed on as when its conversation could not be resumed, as a failed spawn handed them on before the move.
-            return await PutBackAsync(quest, park, agent, ContinueWhy.Of(ContinueWhy.Refused)).ConfigureAwait(false);
+            // 🔴 SESSCTX1c (D189's amendment, the session-context design §2): no run started, so this is a start failure, never a move.
+            // The record ends `failed` as a first start's failed spawn does, counted by the strikes, its words waiting on it to go again;
+            // nothing is handed on and no part opens for it. Before, the words went to a new session as a refused resume's did.
+            return await UnstartedAsync(
+                    quest, park, agent, error.Message, resume?.Ids ?? [.. park.Waiting.Select(word => word.Id).OfType<string>()])
+                .ConfigureAwait(false);
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested && !spawned && !park.Parked)
         {
             // 🔴 PARALLEL1f (D181's PARALLEL1de note, D137 §2.4): the driver closed before its run started, most often while its start
-            // waited for a place. No run began, so the record the move took up goes back as it ended with its words waiting, as a
-            // failed spawn's does, and the next start goes on with them; nothing is handed on, since no session opens as the driver
-            // closes. A park is closed below as the close's interrupted take (D104): back to waiting on the person the ledger would
-            // clear its words (a park asks anew), while closed they stay on it for the next start.
-            return await PutBackAsync(quest, park, agent, why: null, unsent: ClosedFirst(quest, sessionId)).ConfigureAwait(false);
+            // waited for a place. No run began, so the record the move took up goes back as it ended with its words waiting, and the
+            // next start goes on with them; nothing is handed on, since no session opens as the driver closes. A park is closed below
+            // as the close's interrupted take (D104): back to waiting on the person the ledger would clear its words (a park asks
+            // anew), while closed they stay on it for the next start.
+            return await PutBackAsync(quest, park, unsent: ClosedFirst(quest, sessionId)).ConfigureAwait(false);
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)
         {
@@ -356,18 +367,11 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
         catch (Exception error)
         {
             // Failed once its process started: a failure, which the strikes bound. Where the ledger refuses that move, the record
-            // moved on first; a park is ended as a fallback ends it where the ledger takes that, and its words handed on.
+            // moved on first, and the next look reads it as it now is. SESSCTX1c: never a park ended for a fallback here, since a run
+            // that failed is no refusal of its conversation.
             try
             {
                 await service.AdvanceAsync(sessionId, "failed", Observation.Failure(error.Message), ct: CancellationToken.None).ConfigureAwait(false);
-            }
-            catch (DriverException)
-            {
-                var reason = ContinueWhy.Of(ContinueWhy.Refused);
-                if (await EndParkAsync(park, reason, agent, CancellationToken.None).ConfigureAwait(false) is null)
-                {
-                    return (null, reason, resume?.Spoken ?? false);
-                }
             }
             catch (Exception)
             {
@@ -445,11 +449,13 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
         var config = _context.Config;
         var sessionId = park.Session;
 
-        // 🔴 The native door's harness ended on a failed exit before naming its conversation: it never opened it, which is
-        // how a conversation it no longer has ends there. Read from the structure, never from its words.
+        // 🔴 The native door's harness ended on a failed exit before naming its conversation, once more after its one retry as the same
+        // resume (SESSCTX1c, D189's amendment; HoldAsync tried it): it never opened it, which a crash, a failed sign-in or a flag it
+        // rejected ends the same way, so it is `exited`, never `gone`, and the record carries on as any refused resume's does. Read from
+        // the structure, never from its words.
         if (resume.Refused is null && adapter.Wire == SessionWire.Pipe && !resume.Named && exitCode is int failed && failed != 0)
         {
-            resume.Refused = ContinueWhy.Of(ContinueWhy.Gone);
+            resume.Refused = ContinueWhy.Of(ContinueWhy.Exited);
         }
 
         var after = await service.FindQuestAsync(quest.Id, ct).ConfigureAwait(false);
@@ -461,11 +467,13 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
         if (resume.Refused is { } refused)
         {
             // Back to how it ended (MSG1b): an ended record goes on only with words, and these never went. A park ends
-            // completed, as an answer it could not take always ended it (D131 §2).
+            // completed, as an answer it could not take always ended it (D131 §2). SESSCTX1c: where another client holds its
+            // conversation it waits for the person (the caller marks its words), so its note says it cannot go on, as a closed quest's.
+            var held = closed || refused.Holds;
             await service.AdvanceAsync(
                     sessionId, park.Parked ? "completed" : park.State,
-                    park.Parked ? Continuations.EndedNote(park, refused)
-                        : closed ? Continuations.CannotNote(park, refused)
+                    held ? Continuations.CannotNote(park, refused)
+                        : park.Parked ? Continuations.EndedNote(park, refused)
                         : Continuations.WentNote(park, refused),
                     ct: ct, interrupted: !park.Parked && park.Interrupted, limit: !park.Parked && park.Limit)
                 .ConfigureAwait(false);
@@ -561,20 +569,19 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
     }
 
     /// <summary>
-    /// The record the move to working took up goes back where no run of it started (SAIDBACK1e, D137 §2.4), its words waiting on
-    /// it again, as <see cref="Continuations.PutBack"/> says. A run that could not start is a resume refused (<paramref name="why"/>):
-    /// the machine log says so, and the caller hands the words on as any fallback does, or marks them where nothing carries them
-    /// on. Every word taken back first (no reason): nothing is sent and nothing holds it. Where the ledger will not move it back,
-    /// its refusal holds the start, and the next look reads the record as it now is.
+    /// The record the move to working took up goes back where no run of it started and nothing went (SAIDBACK1e, D137 §2.4), as
+    /// <see cref="Continuations.PutBack"/> says: every word taken back first, or the driver closed first (PARALLEL1f). Nothing is
+    /// sent and nothing holds it. Where the ledger will not move it back, its refusal holds the start, and the next look reads the
+    /// record as it now is. A run that could not start is <see cref="UnstartedAsync"/>'s (SESSCTX1c).
     /// </summary>
     /// <param name="unsent">
-    /// The look's line where nothing is handed on (no <paramref name="why"/>): every word taken back first, unless the driver closed
-    /// before its run started (PARALLEL1f, <see cref="ClosedFirst"/>), its words still waiting.
+    /// The look's line: every word taken back first, unless the driver closed before its run started (PARALLEL1f,
+    /// <see cref="ClosedFirst"/>), its words still waiting.
     /// </param>
     private async Task<(StartRun? Run, ContinueReason? FellBack, bool AnswerKept)> PutBackAsync(
-        QuestView quest, PriorSession park, string agent, ContinueReason? why, StartRun? unsent = null)
+        QuestView quest, PriorSession park, StartRun? unsent = null)
     {
-        var (state, note, interrupted, limit) = Continuations.PutBack(park, why);
+        var (state, note, interrupted, limit) = Continuations.PutBack(park);
         try
         {
             // Never cancelled: a record left working with no run is the orphan sweep's to end, its words with it.
@@ -588,9 +595,47 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
                 false, null, refused.Message), null, false);
         }
 
-        if (why is null) return (unsent ?? TakenBackFirst(quest, park.Session), null, false);
-        _context.Service.AccountSaid(Took(park, agent, why));
-        return (null, why, false);
+        return (unsent ?? TakenBackFirst(quest, park.Session), null, false);
+    }
+
+    /// <summary>
+    /// A resumed run that could not start (SESSCTX1c, D189's amendment; the session-context design §2): a start failure, never a move.
+    /// The record the move to working took up ends <c>failed</c> with the spawn's words, as <see cref="Continuations.Unstarted"/> says,
+    /// so the strikes count it as they count a first start's failed spawn (DRV6), and the words wait on it to go again; failing twice
+    /// running they are marked and wait for the person, as a failed turn's are (TURNFAIL1). Its conversation says so beside them, by
+    /// their ids. No new session opens and nothing is handed on.
+    /// </summary>
+    /// <param name="ids">The ids of the words that were to go, said beside the line.</param>
+    private async Task<(StartRun? Run, ContinueReason? FellBack, bool AnswerKept)> UnstartedAsync(
+        QuestView quest, PriorSession park, string agent, string failure, IReadOnlyList<string> ids)
+    {
+        var (note, words) = Continuations.Unstarted(park, failure);
+        try
+        {
+            // Never cancelled: a record left working with no run is the orphan sweep's to end, its words with it.
+            await _context.Service.AdvanceAsync(park.Session, "failed", note, ct: CancellationToken.None).ConfigureAwait(false);
+        }
+        catch (Exception refused) when (refused is DriverException or HttpRequestException)
+        {
+            return (new StartRun(
+                $"held  #{quest.Id} → {quest.To}: session {park.Session} could not start, and its record would not end failed: {refused.Message}",
+                false, null, refused.Message), null, false);
+        }
+
+        if (words == WordsAfter.Held) _context.Marks.Mark(park.Session, ids, GoOnMarks.FailedTwice, DateTimeOffset.UtcNow);
+        if (FailedTurnWords.Line(words) is { } waits)
+        {
+            _context.Output?.Append(park.Session, $"— its run could not start: {failure}");
+            _context.Events.Keep(
+                park.Session,
+                new SessionEvent { Kind = SessionEventKind.Note, Text = waits.Note, Parts = waits.Parts, Words = ids.Count > 0 ? ids : null },
+                say: null);
+        }
+
+        return (new StartRun(
+            $"failed  session {park.Session} (#{quest.Id} → {quest.To}): its run could not start: {failure}",
+            false,
+            new SessionEnded(park.Session, quest.To, "failed", ByPerson: false, failure, Quest: quest.Id, Adapter: agent)), null, false);
     }
 
     /// <summary>
@@ -870,6 +915,36 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
         // Words held when it could go on no more: a stop, a timeout. Said, never dropped without a trace.
         if (held.Close() is { Count: > 0 } unreached) Untaken(sessionId, unreached.Count, UnreachedWhy.EndedFirst);
         return (exitCode, used);
+    }
+
+    /// <summary>
+    /// The one retry of a native resume whose harness ended on a failed exit before it named its conversation (SESSCTX1c, D189's
+    /// amendment; the session-context design §2): the same start again, its conversation, account, access and the files the first was
+    /// handed, which stand until the record concludes. Kept and tracked as the first run was, its output appended to the same record,
+    /// its opening not said again. What it came to is read as the first run's would have been: a conversation it named goes on, and a
+    /// second such end is <c>exited</c>.
+    /// </summary>
+    /// <param name="keep">Where its process, its tracking and its reaper are kept until the record has concluded.</param>
+    internal async Task<(int? ExitCode, AcpUsage? Used)> AgainAsync(
+        System.Diagnostics.ProcessStartInfo info, ISessionAdapter adapter, string sessionId, string transcript, string? refusesInput,
+        bool drivesBrowser, ResumeAsk resume, Action<System.Text.Json.JsonElement>? said, List<IDisposable> keep, string? keepAs,
+        HarnessWords own, CancellationToken ct)
+    {
+        _context.Output?.Append(sessionId, "— its harness ended before it reopened its conversation, so the same resume is tried once more.");
+        var process = await ProcessStarts.Shared.StartAsync(info, StartClass.Person, ct).ConfigureAwait(false)
+            ?? throw new DriverException($"the {adapter.Name} adapter's process did not start");
+        keep.Add(process);
+        keep.Add(_context.Processes.Track(sessionId, process, refusesInput, drivesBrowser));
+        keep.Add(new Disposer(() => SessionProcesses.EndIfRunning(process)));
+
+        var capture = adapter.StructuredOutput() is { } mapper
+            ? _driver.KeepingAsync(mapper, HarnessCapture.CaptureStructuredAsync(
+                process.StandardOutput, process.StandardError, transcript, sessionId, _context.Output, _context.Events, mapper,
+                prompt: null, ct, append: true, said: said, own: own, lineageHome: _context.Home),
+                sessionId, keepAs, resume)
+            : null;
+        var exitCode = await _driver.WaitAsync(process, ct).ConfigureAwait(false);
+        return (exitCode, capture is null ? null : await capture.ConfigureAwait(false));
     }
 
     /// <summary>The driver's line in the record for words the person said that never reached the session, and why.</summary>

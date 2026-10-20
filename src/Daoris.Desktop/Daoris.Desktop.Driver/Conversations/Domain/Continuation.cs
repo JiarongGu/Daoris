@@ -28,6 +28,14 @@ public sealed record ContinueReason(string Code, string Sentence)
     /// on, whatever the quest, where every other reason carries them to a new session or leaves them waiting.
     /// </summary>
     public bool Never => Code is ContinueWhy.Teammate or ContinueWhy.Intake or ContinueWhy.StoodDown;
+
+    /// <summary>
+    /// Whether a driven record whose resume met this waits for the person rather than carrying on by itself (SESSCTX1c, D189's
+    /// amendment of 2026-10-20): another client holding its conversation (<see cref="ContinueWhy.Elsewhere"/>) alone, since a second
+    /// writer in its tree could redo its work. Every other reason carries a driven record on in a new part, `from` why <c>retry</c>,
+    /// as D131 point 3 always did; a driven session runs without a person by design.
+    /// </summary>
+    public bool Holds => Code is ContinueWhy.Elsewhere;
 }
 
 /// <summary>
@@ -58,10 +66,23 @@ public static class ContinueWhy
     /// <summary>The agent advertised neither <c>session/resume</c> nor <c>loadSession</c>.</summary>
     public const string Offered = "offered";
 
-    /// <summary>The agent no longer has the conversation: <c>resource_not_found</c>, or the native door ended before opening it.</summary>
+    /// <summary>
+    /// The agent no longer has the conversation: the protocol door's <c>resource_not_found</c>. A note written before SESSCTX1c may
+    /// say it of the native door's failed exit too, which is <see cref="Exited"/> since, and reads as it always did.
+    /// </summary>
     public const string Gone = "gone";
 
-    /// <summary>The agent refused the resume otherwise, or the resumed run could not start.</summary>
+    /// <summary>
+    /// The native door's harness ended on a failed exit before it named its conversation (SESSCTX1c, D189's amendment), once more
+    /// after the one retry as the same resume: a crash, a failed sign-in or a flag it rejected ends it the same way, so it proves
+    /// nothing of the conversation's loss, apart from <see cref="Gone"/>.
+    /// </summary>
+    public const string Exited = "exited";
+
+    /// <summary>
+    /// The agent refused the resume on its wire otherwise. A note written before SESSCTX1c may say it of an adapter no longer here or
+    /// of a resumed run that could not start, which a driven record holds for and fails as a start since (D189's amendment).
+    /// </summary>
     public const string Refused = "refused";
 
     /// <summary>
@@ -99,6 +120,7 @@ public static class ContinueWhy
         Tree => "its tree is gone",
         Offered => "the agent offers no way to resume a conversation",
         Gone => "the agent no longer has its conversation",
+        Exited => "its agent ended before it reopened its conversation",
         Refused => "its conversation could not be resumed",
         Ended => "its record had already ended",
         // Names no client: which one holds it is the agent's to know, and the note travels (D131 §2).
@@ -260,24 +282,35 @@ public static class Continuations
     }
 
     /// <summary>
-    /// Where a quest's record goes back to when the driver moved it to working and no run of it then started (SAIDBACK1e, D137
-    /// §2.4), its words waiting on it again. An ended record goes back to how it ended, its note, its parts and its flags as the
-    /// look read them. A park whose words were all taken back waits on the person again; one whose run could not start ends as a
-    /// fallback ends it (<see cref="EndedNote"/>), its words carried on, since moved back to waiting on the person the ledger
-    /// would clear them (a park asks anew).
+    /// Where a quest's record goes back to when the driver moved it to working and every word was taken back before any run of it
+    /// started (SAIDBACK1e, D137 §2.4), or the driver closed first (PARALLEL1f). An ended record goes back to how it ended, its note,
+    /// its parts and its flags as the look read them; a park waits on the person again. A run that could not start is
+    /// <see cref="Unstarted"/>'s (SESSCTX1c).
     /// </summary>
-    /// <param name="why">Why its run could not start; null where every word was taken back before it went on.</param>
-    internal static (string State, Noted Note, bool Interrupted, bool Limit) PutBack(PriorSession record, ContinueReason? why)
+    internal static (string State, Noted Note, bool Interrupted, bool Limit) PutBack(PriorSession record)
     {
-        if (record.Parked)
-        {
-            return why is null ? (record.State, record.AsNoted(), false, false) : ("completed", EndedNote(record, why), false, false);
-        }
+        if (record.Parked) return (record.State, record.AsNoted(), false, false);
 
         // Each flag only where the ledger takes it, on the state that says it.
         var stopped = string.Equals(record.State, "stopped", StringComparison.OrdinalIgnoreCase);
         var failed = string.Equals(record.State, "failed", StringComparison.OrdinalIgnoreCase);
         return (record.State, new Noted(record.Note ?? "", record.NoteParts ?? []), record.Interrupted && stopped, record.Limit && failed);
+    }
+
+    /// <summary>
+    /// How a record ends whose resumed run could not start (SESSCTX1c, D189's amendment; the session-context design §2): a start
+    /// failure, never a move. It ends <c>failed</c> with the spawn's own words, as a first start's failed spawn does, so the strikes
+    /// count it (DRV6), and the words the move to working left on it wait to go again, said so. A park ends so too, since moved back
+    /// to waiting on the person the ledger would clear its words (a park asks anew). Where its note already said its words wait,
+    /// they failed twice running and wait for the person, as a failed turn's do (TURNFAIL1, <see cref="FailedTurnWords"/>).
+    /// </summary>
+    /// <param name="failure">Why its process did not start, in the program's own words.</param>
+    internal static (Noted Note, WordsAfter Words) Unstarted(PriorSession record, string failure)
+    {
+        var words = record.NoteParts?.Any(part => part.Code == NoteCodes.EndedWordsWait.Code || part.Code == NoteCodes.EndedWordsWaitYou.Code) == true
+            ? WordsAfter.Held
+            : WordsAfter.Wait;
+        return (Observation.Failure(failure).Then("\n\n", FailedTurnWords.Line(words)!), words);
     }
 
     /// <summary><see cref="GoingOn"/> with its code (LANG1a).</summary>
@@ -384,6 +417,18 @@ public static class Continuations
         After(record, Detailed(Noted.Of(
             NoteCodes.WentNewSession, $"Your words went to a new session, because {why.Sentence}.", NoteCodes.Reason(why, record.Adapter)), why));
 
+    /// <summary>
+    /// What a record's conversation says where the agent its words would go on with is no longer one this machine has (SESSCTX1c,
+    /// D189's amendment; the session-context design §2): they wait on it, and the hand-over is the way on, since only the person can
+    /// choose the agent. The command is the terminal's; its agent is the person's to name.
+    /// </summary>
+    public static Noted AgentGone(string agent, string session) =>
+        Noted.Of(
+            NoteCodes.HeldAgentGone,
+            $"It does not go on yet: `{agent}` is no longer an agent on this machine, so its words cannot go on with it. They wait on "
+            + $"it: hand it over to another agent to go on with them, `daoris-driver sessions hand-over {session} --agent <agent>`.",
+            ("agent", agent), ("session", session));
+
     /// <summary>The record's note, then a blank line and the new line; the line alone where the record said nothing.</summary>
     private static Noted After(PriorSession record, Noted line) =>
         record.Note is { Length: > 0 } ? record.AsNoted().Then("\n\n", line) : line;
@@ -454,4 +499,18 @@ public static class Continuations
     /// <param name="why">Null where it resumed.</param>
     public static AccountLine Answered(string session, string adapter, ContinueReason? why) =>
         new("session.answered", [("session", session), ("adapter", adapter), ("resumed", why is null), ("why", why?.Code)]);
+
+    /// <summary>
+    /// <c>session.moved</c> (SESSCTX1c, D189 point 8; the session-context design §7): once per move to a new part, as
+    /// <c>account.rotated</c> says a start moved off its scope's first account (D125 point 7): the new part and the one it continues,
+    /// the agent each ran on, the account each by its profile name (null for the tool's own home), why by the link's code
+    /// (<see cref="HandOverWhy"/>), and whether it was handed Daoris's brief. Never a word, the brief or an account's key.
+    /// </summary>
+    public static AccountLine Moved(
+        string session, string continues, string? ranOn, string adapter, string? from, string? to, string why, bool briefed) =>
+        new("session.moved",
+        [
+            ("session", session), ("continues", continues), ("ranOn", ranOn), ("adapter", adapter), ("from", from), ("to", to),
+            ("why", why), ("briefed", briefed),
+        ]);
 }

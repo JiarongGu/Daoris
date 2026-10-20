@@ -144,6 +144,33 @@ public static class HandOverNotes
             ("agent", agent), ("session", session), ("why", why));
 
     /// <summary>
+    /// A move to a new part (SESSCTX1c, D189 point 8; the session-context design §7), the line on the part it left: the session it
+    /// went on in, the agent and account that one runs on, why by the link's code, the context this part stood at as it moved (H,
+    /// its high-water in tokens) and the characters of the brief the new part was handed (B). The account by its id, as
+    /// <see cref="Moved"/>'s are: a session's events stay on this machine. A value not known is left out, and its words with it.
+    /// </summary>
+    public static Noted MovedOn(string session, string agent, string? account, string why, long? context, int brief) =>
+        Noted.Of(
+            NoteCodes.MovedOn,
+            $"Went on in session {session} with {agent}{As(account)}, because {HandOverWhy.Noted(why)}: "
+            + (context is { } tokens
+                ? $"its context stood at {tokens} tokens, and the new session was handed Daoris's brief of it, {brief} characters."
+                : $"the new session was handed Daoris's brief of it, {brief} characters."),
+            ("session", session), ("agent", agent), ("account", account), ("why", why), ("tokens", context), ("count", brief));
+
+    /// <summary>The same move's line on the new part (<see cref="MovedOn"/>): the session it continues, the agent and account that one ran on.</summary>
+    public static Noted MovedFrom(string session, string agent, string? account, string why, long? context, int brief) =>
+        Noted.Of(
+            NoteCodes.MovedFrom,
+            $"Continues session {session}, which ran on {agent}{As(account)}, because {HandOverWhy.Noted(why)}: "
+            + (context is { } tokens
+                ? $"its context stood at {tokens} tokens, and it was handed Daoris's brief of it, {brief} characters."
+                : $"it was handed Daoris's brief of it, {brief} characters."),
+            ("session", session), ("agent", agent), ("account", account), ("why", why), ("tokens", context), ("count", brief));
+
+    private static string As(string? account) => account is { Length: > 0 } named ? $" as `{named}`" : "";
+
+    /// <summary>
     /// A conversation moved by the usage curve (SWITCH1c-i; the switch design §4), its last line: the account it went on on, and
     /// how far over its curve the account it left was. It names accounts, as the start's <c>opening.*</c> lines do: a
     /// conversation's record stays on this machine (<see cref="NotePart"/>). Its new conversation's first line is
