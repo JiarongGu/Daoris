@@ -1,10 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Quest, Session } from '../../data/api';
-import { useQuests, useSessions } from '../../data/queries';
+import { SESSIONS_SLICE, useQuests, useSessions } from '../../data/queries';
+import { usePushedResyncing } from '../../bridge/state/slices';
 import { useChatTurns, useDriver, useHarnesses, useOpenWindow, useSessionOpenings } from '../../bridge/shell';
 import { frameShortcut } from '../../menus/shortcuts';
-import { EmptyState, type Notify, SESSION_ACTIVE, SkeletonRows, useErrorNotify } from '../../design/ui';
+import { EmptyState, Inline, type Notify, Prose, SESSION_ACTIVE, SkeletonRows, useErrorNotify } from '../../design/ui';
+import { sentence } from '../../locales/format';
 import { SessionConsole } from './SessionConsole';
 import { type ListMode, listToggled } from '../frame/layout';
 import { useListPanes } from '../frame/listPanes';
@@ -51,6 +53,7 @@ const tileId = (session: string) => `stream-${session}`;
 export function MonitorWindow({ notify }: { notify: Notify }) {
   const { t } = useTranslation();
   const sessions = useSessions(null, false);
+  const resyncing = usePushedResyncing(SESSIONS_SLICE);
   const quests = useQuests(null, true);
   const driver = useDriver();
   const openWindow = useOpenWindow();
@@ -113,6 +116,7 @@ export function MonitorWindow({ notify }: { notify: Notify }) {
     name: t('work.rail.label'),
     labels: { open: t('work.rail.open'), close: t('work.rail.close'), resize: t('work.rail.resize') },
     loading: sessions.isPending,
+    resyncing,
     // Each running session's initial and mark, in the open rail's order, as Sessions' strip.
     strip: <SessionRail notify={notify} taking={taking} live compact onSelect={toTile} />,
     body: <SessionRail notify={notify} taking={taking} lastTurns={lastTurns} live onSelect={toTile} />,
@@ -141,6 +145,9 @@ export function MonitorWindow({ notify }: { notify: Notify }) {
             <main data-region="main" className="min-h-0 flex-1 overflow-y-auto p-3">
               {sessions.isPending
               ? <SkeletonRows rows={3} />
+              // A read that failed is not nothing running (PUSHUX1): its sentence, never the empty state.
+              : sessions.data === undefined
+                ? <Prose><Inline text={sentence(sessions.error)} /></Prose>
               : shown.length === 0
                 ? (
                   <EmptyState

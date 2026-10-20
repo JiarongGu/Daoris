@@ -349,14 +349,15 @@ function AgentsMain({ tool, adapter, notify, part, onAnchored, onOpenPlugin, say
 
   const rulesAnswer = rules.data && Array.isArray(rules.data.defaults) && Array.isArray(rules.data.scopes) ? rules.data : null;
   const doorRunning = tool.doors.find((each) => DOOR_ACTIONS.some((action) => running === `${each.harness}:${action}`))?.harness ?? null;
-  const used = Array.isArray(usage.data?.accounts) ? usage.data.accounts : [];
+  // Not answered yet is not nothing measured (PUSHUX1): the fold says it is reading until the usage is known.
+  const used = usage.isPending ? null : Array.isArray(usage.data?.accounts) ? usage.data.accounts : [];
 
   return (
     <AgentPage
       tool={tool}
       use={use}
       rules={rulesAnswer}
-      usage={used.filter((account) => tool.doors.some((each) => each.harness === account.harness))}
+      usage={used && used.filter((account) => tool.doors.some((each) => each.harness === account.harness))}
       workspaces={workspacesOf(registry.data ?? [])}
       inView={inView}
       adapter={adapter}

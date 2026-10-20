@@ -73,6 +73,16 @@ describe('the list pane, open', () => {
     expect(screen.queryByRole('button', { name: 'Chat · engine · working' })).toBeNull();
   });
 
+  /** PUSHUX1: a pushed list read again whole holds its last rows at reduced opacity, never a skeleton nor its empty state. */
+  it('holds its rows, dimmed and busy, while its slice is read again', () => {
+    pane(OPEN, { resyncing: true, empty: undefined });
+
+    const row = screen.getByRole('button', { name: 'first' });
+    const rows = row.closest('[aria-busy]');
+    expect(rows).toHaveAttribute('aria-busy', 'true');
+    expect(rows).toHaveClass('opacity-60');
+  });
+
   it('moves between its rows by the arrows', async () => {
     pane(OPEN);
     screen.getByRole('button', { name: 'first' }).focus();

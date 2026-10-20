@@ -5,6 +5,10 @@ with the version and date at release.
 
 ## Unreleased
 
+- Nothing in the window says it is empty before Daoris knows. While the sessions, quests or usage are still being read, the status
+  bar's count, Overview's quest tiles and an agent's *Usage* show placeholders, not *0 sessions*, *nothing is waiting* or *nothing
+  measured yet*. A read that failed says why, and no longer says an ask or a session is gone. When Daoris reads a list again whole,
+  *What needs you* and the session, quest and ask lists keep what they showed, dimmed, until it lands.
 - A session that goes on in a new part, on another agent, on another account or after it was cut off, is handed everything it
   took: every word you said, once, what each turn did, where the work stands and the last check that failed, not just its last
   words. A handed-over conversation opens with *Daoris's brief of the session it continues*, folded. A session's Parts strip
