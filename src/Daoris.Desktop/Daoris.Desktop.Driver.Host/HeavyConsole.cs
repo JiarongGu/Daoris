@@ -24,6 +24,9 @@ internal static class HeavyConsole
             return 2;
         }
 
+        // HEAVYSLOT1: a look reads the slot's records and runs nothing, so it has nothing to stop.
+        if (ask.Look) return HeavyRun.Look(HeavyRunWorld.OfThisProcess(home), Console.Out);
+
         // Ctrl+C stops the run, never this process outright: what the gates started is ended and waited for, then the slot is let go.
         using var stopping = new CancellationTokenSource();
         ConsoleCancelEventHandler stop = (_, press) =>

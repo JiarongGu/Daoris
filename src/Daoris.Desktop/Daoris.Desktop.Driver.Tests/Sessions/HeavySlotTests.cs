@@ -171,6 +171,91 @@ public sealed class HeavySlotTests : IDisposable
         Assert.NotNull(free);
     }
 
+    /// <summary>
+    /// 🔴 HEAVYSLOT1 (the UI/UX design §3.5), two runs: the holder's record says the gate it runs and since when, the run waiting
+    /// behind it keeps a record of its own while it waits, and the look reads both; once the holder lets go, the waiter takes the slot
+    /// and its wait is gone. Read from the records, never a run's output.
+    /// </summary>
+    [Fact]
+    public async Task Two_runs_the_look_says_the_holder_at_its_gate_and_the_one_waiting_until_it_takes_the_slot()
+    {
+        var key = Key(_fixture.Checkout);
+        var since = DateTimeOffset.Parse("2026-10-20T09:00:00Z");
+        var holding = HeavySlot.TryTake(_fixture.Home, key)!;
+        holding.Keep(new HeavyHolder(4242, 1, _fixture.Checkout, ["build", "web"], since, "s-12", null)
+        {
+            Now = new HeavyGateNow("web", 1, since + TimeSpan.FromMinutes(5)),
+        });
+
+        var waiter = new HeavyWaiter(5151, 2, _fixture.Tree, since + TimeSpan.FromMinutes(6), "s-34");
+        var waiting = new HeavyWaiting(TimeSpan.FromMilliseconds(20), TimeSpan.FromMinutes(1), () => since);
+        var taking = HeavySlot.TakeAsync(_fixture.Home, key, "engine", new SaidWriter(), CancellationToken.None, waiting, waiter);
+        await Poll.Until(() => HeavySlot.Look(_fixture.Home, key, (_, _) => true).Waiters.Count == 1, () => "no waiter was recorded");
+
+        var look = HeavySlot.Look(_fixture.Home, key, (_, _) => true);
+        Assert.Equal(("s-12", "web", 1), (look.Holder?.Session, look.Holder?.Now?.Gate, look.Holder?.Now?.At));
+        Assert.Equal(since + TimeSpan.FromMinutes(5), look.Holder?.Now?.Since);
+        Assert.Equal(waiter, Assert.Single(look.Waiters));
+
+        holding.Dispose();
+        using var taken = await taking.WaitAsync(Poll.Patience);
+        var after = HeavySlot.Look(_fixture.Home, key, (_, _) => true);
+        Assert.Null(after.Holder);
+        Assert.Empty(after.Waiters);
+        Assert.Empty(Directory.EnumerateFiles(HeavySlot.WaitersOf(_fixture.Home, key)));
+    }
+
+    /// <summary>
+    /// 🔴 The handle is the lock: a holder's or a waiter's record whose process (its id and its start) is gone holds nothing and waits
+    /// for nothing, though its file is still there.
+    /// </summary>
+    [Fact]
+    public void A_record_left_by_a_run_that_died_is_no_holder_and_no_waiter()
+    {
+        var key = Key(_fixture.Checkout);
+        var since = DateTimeOffset.Parse("2026-10-20T09:00:00Z");
+        Directory.CreateDirectory(HeavySlot.WaitersOf(_fixture.Home, key));
+        File.WriteAllText(HeavySlot.RecordOf(_fixture.Home, key), HeavySlot.Serialize(new HeavyHolder(4242, 1, _fixture.Checkout, ["build"], since, "s-12", null)));
+        File.WriteAllText(
+            Path.Combine(HeavySlot.WaitersOf(_fixture.Home, key), "5151-2.json"),
+            HeavySlot.SerializeWaiter(new HeavyWaiter(5151, 2, _fixture.Tree, since, "s-34")));
+        File.WriteAllText(
+            Path.Combine(HeavySlot.WaitersOf(_fixture.Home, key), "6161-3.json"),
+            HeavySlot.SerializeWaiter(new HeavyWaiter(6161, 3, _fixture.Tree, since, null)));
+
+        // A reused id is another process: alive only where the id and its start both match.
+        var look = HeavySlot.Look(_fixture.Home, key, (pid, started) => pid == 6161 && started == 3);
+
+        Assert.Null(look.Holder);
+        Assert.Equal(6161, Assert.Single(look.Waiters).Pid);
+        Assert.False(HeavySlot.Running(4242, 1));
+        Assert.True(HeavySlot.Running(Environment.ProcessId, System.Diagnostics.Process.GetCurrentProcess().StartTime.ToUniversalTime().Ticks));
+    }
+
+    /// <summary>The gate running and the gate that failed read back as written; a record older than them reads with neither.</summary>
+    [Fact]
+    public void The_gate_running_and_the_gate_that_failed_read_back_and_an_older_record_has_neither()
+    {
+        var key = Key(_fixture.Checkout);
+        var since = DateTimeOffset.Parse("2026-10-20T09:00:00Z");
+        using var slot = HeavySlot.TryTake(_fixture.Home, key)!;
+        slot.Keep(new HeavyHolder(4242, 1, _fixture.Checkout, ["build", "web"], since, null, null)
+        {
+            Now = new HeavyGateNow("web", 1, since + TimeSpan.FromMinutes(2)),
+            Failed = new HeavyGateFailed("web", 3),
+        });
+
+        var read = HeavySlot.Holder(_fixture.Home, key)!;
+        Assert.Equal(new HeavyGateNow("web", 1, since + TimeSpan.FromMinutes(2)), read.Now);
+        Assert.Equal(new HeavyGateFailed("web", 3), read.Failed);
+
+        File.WriteAllText(HeavySlot.RecordOf(_fixture.Home, key),
+            """{ "pid": 4242, "started": 1, "checkout": "x", "gates": ["build"], "since": "2026-10-20T09:00:00Z" }""");
+        var older = HeavySlot.Holder(_fixture.Home, key)!;
+        Assert.Null(older.Now);
+        Assert.Null(older.Failed);
+    }
+
     /// <summary>A free slot is taken at once, with nothing said.</summary>
     [Fact]
     public async Task A_free_slot_is_taken_at_once_saying_nothing()

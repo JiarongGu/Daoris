@@ -13,27 +13,31 @@ public sealed class HeavyRunCommandTests : IDisposable
 
     public void Dispose() => _fixture.Dispose();
 
-    public static TheoryData<string, string?> AskRows() => new()
+    public static TheoryData<string, string?, bool> AskRows() => new()
     {
-        { "", null },
-        { "--gate web", "web" },
+        { "", null, false },
+        { "--gate web", "web", false },
+        // HEAVYSLOT1: the terminal's twin of a repository's *Heavy run* row, which runs nothing.
+        { "--look", null, true },
     };
 
     [Theory]
     [MemberData(nameof(AskRows))]
-    public void The_words_name_every_heavy_gate_or_one(string words, string? gate)
+    public void The_words_name_every_heavy_gate_or_one_or_a_look(string words, string? gate, bool look)
     {
         var ask = HeavyRun.Read(Words(words), out var problem);
 
         Assert.Null(problem);
         Assert.Equal(gate, ask?.Gate);
+        Assert.Equal(look, ask?.Look);
     }
 
     [Theory]
     [InlineData("--gate", "`--gate` takes a gate's name.")]
     [InlineData("--gate --gate", "`--gate` takes a gate's name.")]
-    [InlineData("web", "`web` is not a word `run-heavy` takes: it takes `--gate <name>`, or nothing for every heavy gate.")]
+    [InlineData("web", "`web` is not a word `run-heavy` takes: it takes `--gate <name>`, `--look`, or nothing for every heavy gate.")]
     [InlineData("--gate web --gate e2e", "`run-heavy` runs one named gate, or every heavy one.")]
+    [InlineData("--look --gate web", "`--look` says who holds the slot and runs nothing, so it takes no gate.")]
     public void Words_it_does_not_take_are_said(string words, string said)
     {
         Assert.Null(HeavyRun.Read(Words(words), out var problem));
@@ -281,12 +285,49 @@ public sealed class HeavyRunCommandTests : IDisposable
     [Fact]
     public void The_host_routes_the_verb_and_its_usage_names_it()
     {
-        Assert.Equal("usage: daoris-driver run-heavy [--gate <name>]", HeavyRun.Usage);
+        Assert.Equal("usage: daoris-driver run-heavy [--gate <name> | --look]", HeavyRun.Usage);
 
         var program = File.ReadAllText(Path.Combine(WorkspaceRoot.Folder, "src", "Daoris.Desktop", "Daoris.Desktop.Driver.Host", "Program.cs"));
         Assert.Contains("if (args is [\"run-heavy\", .. var heavyArgs])", program);
         Assert.Contains("Daoris.Driver.Host.HeavyConsole.RunAsync(heavyArgs)", program);
-        Assert.Contains("//   run-heavy [--gate <name>]", program);
+        Assert.Contains("//   run-heavy [--gate <name> | --look]", program);
+        Assert.Contains("if (ask.Look) return HeavyRun.Look(", File.ReadAllText(
+            Path.Combine(WorkspaceRoot.Folder, "src", "Daoris.Desktop", "Daoris.Desktop.Driver.Host", "HeavyConsole.cs")));
+    }
+
+    /// <summary>
+    /// HEAVYSLOT1 (the UI/UX design §3.5): <c>--look</c> says the slot as the page reads it, its holder at its gate and who waits, a run
+    /// from a terminal named as one, and a holder whose process is gone as no run at all; it runs nothing.
+    /// </summary>
+    [Fact]
+    public void A_look_says_the_holder_at_its_gate_and_who_waits_and_no_run_where_the_holder_is_gone()
+    {
+        var key = HeavySlot.KeyOf(_fixture.Checkout)!;
+        var since = DateTimeOffset.Parse("2026-10-20T09:00:00Z");
+        using var slot = HeavySlot.TryTake(_fixture.Home, key)!;
+        slot.Keep(new HeavyHolder(4242, 7, _fixture.Checkout, ["build", "web", "e2e"], since, "s-12", null)
+        {
+            Now = new HeavyGateNow("web", 1, since + TimeSpan.FromMinutes(4)),
+        });
+        Directory.CreateDirectory(HeavySlot.WaitersOf(_fixture.Home, key));
+        File.WriteAllText(
+            Path.Combine(HeavySlot.WaitersOf(_fixture.Home, key), "5151-9.json"),
+            HeavySlot.SerializeWaiter(new HeavyWaiter(5151, 9, _fixture.Tree, since + TimeSpan.FromMinutes(3), null)));
+        var world = World(_fixture.Tree) with
+        {
+            Waiting = new HeavyWaiting(TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(1), () => since + TimeSpan.FromMinutes(6)),
+        };
+
+        var said = new StringWriter();
+        Assert.Equal(0, HeavyRun.Look(world, said, (_, _) => true));
+        Assert.Equal(
+            "run-heavy: `engine`'s heavy run: session s-12 (process 4242), 2 of 3, `web` for 2m 0s; 6m 0s in all.\n"
+            + "run-heavy: waits: a run from a terminal (process 5151), for 3m 0s.\n",
+            said.ToString().ReplaceLineEndings("\n"));
+
+        var gone = new StringWriter();
+        Assert.Equal(0, HeavyRun.Look(world, gone, (pid, _) => pid != 4242));
+        Assert.StartsWith("run-heavy: no heavy run of `engine` now.", gone.ToString());
     }
 
     private HeavyRunWorld World(string directory, params (string Name, string Value)[] variables) =>

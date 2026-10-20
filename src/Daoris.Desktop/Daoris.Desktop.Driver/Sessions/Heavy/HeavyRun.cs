@@ -4,8 +4,15 @@ using System.Text.Json;
 
 namespace Daoris.Driver;
 
-/// <summary>What <c>daoris-driver run-heavy</c> was asked: one gate by name, or every heavy one (null).</summary>
-public sealed record HeavyRunAsk(string? Gate);
+/// <summary>
+/// What <c>daoris-driver run-heavy</c> was asked: one gate by name, or every heavy one (null); or, with <see cref="Look"/>, who holds
+/// the slot and who waits, running nothing (HEAVYSLOT1).
+/// </summary>
+public sealed record HeavyRunAsk(string? Gate)
+{
+    /// <summary><c>--look</c>: say the slot as it stands (<see cref="HeavyRun.Look"/>), and run nothing.</summary>
+    public bool Look { get; init; }
+}
 
 /// <summary>Where a heavy run runs: the home its slot is under, the folder it was run in, and its environment, read through a seam.</summary>
 /// <param name="Home">The home whose <c>locks/</c> holds the slot.</param>
@@ -57,7 +64,7 @@ public sealed record HeavyMarker(string Slot, IReadOnlyList<string> Gates);
 public static class HeavyRun
 {
     /// <summary>The verb's usage, said with a word it does not take.</summary>
-    public const string Usage = "usage: daoris-driver run-heavy [--gate <name>]";
+    public const string Usage = "usage: daoris-driver run-heavy [--gate <name> | --look]";
 
     /// <summary>What a run hands its gates' environment: <see cref="Marker"/>, the slot it holds and the gates running.</summary>
     public const string Variable = "DAORIS_HEAVY_RUN";
@@ -70,11 +77,18 @@ public static class HeavyRun
     {
         problem = null;
         string? gate = null;
+        var look = false;
         for (var at = 0; at < args.Count; at++)
         {
+            if (args[at] == "--look")
+            {
+                look = true;
+                continue;
+            }
+
             if (args[at] != "--gate")
             {
-                problem = $"`{args[at]}` is not a word `run-heavy` takes: it takes `--gate <name>`, or nothing for every heavy gate.";
+                problem = $"`{args[at]}` is not a word `run-heavy` takes: it takes `--gate <name>`, `--look`, or nothing for every heavy gate.";
                 return null;
             }
 
@@ -93,7 +107,13 @@ public static class HeavyRun
             gate = args[++at].Trim();
         }
 
-        return new HeavyRunAsk(gate);
+        if (look && gate is not null)
+        {
+            problem = "`--look` says who holds the slot and runs nothing, so it takes no gate.";
+            return null;
+        }
+
+        return new HeavyRunAsk(gate) { Look = look };
     }
 
     /// <summary>Run the checkout's heavy gates, or the one asked, saying on <paramref name="output"/> what it waits for and runs.</summary>
@@ -193,10 +213,14 @@ public static class HeavyRun
             return await RunGatesAsync(checkout, choice.Gates, key, outer.Gates, Job(null), output, ct).ConfigureAwait(false);
         }
 
+        var session = world.Variable(IntakeRoom.SessionVariable) is { Length: > 0 } ofSession ? ofSession : null;
+        var started = ThisProcessStarted();
         HeavySlot slot;
         try
         {
-            slot = await HeavySlot.TakeAsync(world.Home, key, repository, output, ct, world.Waiting).ConfigureAwait(false);
+            // HEAVYSLOT1: while it waits it says so beside the slot, for the page to say who waits behind whom.
+            var waiter = new HeavyWaiter(Environment.ProcessId, started, checkout, DateTimeOffset.UtcNow, session);
+            slot = await HeavySlot.TakeAsync(world.Home, key, repository, output, ct, world.Waiting, waiter).ConfigureAwait(false);
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)
         {
@@ -213,11 +237,11 @@ public static class HeavyRun
 
             var named = OperatingSystem.IsWindows() ? $"Local\\daoris-heavy-{Guid.NewGuid():N}" : null;
             var job = Job(named);
+            var holder = new HeavyHolder(
+                Environment.ProcessId, started, checkout, [.. choice.Gates.Select(gate => gate.Name)], DateTimeOffset.UtcNow, session, named);
             try
             {
-                slot.Keep(new HeavyHolder(
-                    Environment.ProcessId, ThisProcessStarted(), checkout, [.. choice.Gates.Select(gate => gate.Name)], DateTimeOffset.UtcNow,
-                    world.Variable(IntakeRoom.SessionVariable) is { Length: > 0 } session ? session : null, named));
+                slot.Keep(holder);
             }
             catch (Exception error) when (error is IOException or UnauthorizedAccessException)
             {
@@ -225,8 +249,69 @@ public static class HeavyRun
                 throw new DriverException($"what this run runs could not be written beside its slot ({error.Message}), so nothing ran.");
             }
 
-            return await RunGatesAsync(checkout, choice.Gates, key, [], job, output, ct).ConfigureAwait(false);
+            // HEAVYSLOT1: the record says the gate running from its start, and the gate that failed before the slot goes. A rewrite
+            // that fails costs the page a gate's name, never the run: the record it replaces still names this run and its job.
+            void Keep(Func<HeavyHolder, HeavyHolder> change)
+            {
+                holder = change(holder);
+                try
+                {
+                    slot.Keep(holder);
+                }
+                catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+                {
+                    output.WriteLine($"run-heavy: the gate running could not be written beside the slot ({error.Message}); the run goes on.");
+                }
+            }
+
+            return await RunGatesAsync(checkout, choice.Gates, key, [], job, output, ct, Keep).ConfigureAwait(false);
         }
+    }
+
+    /// <summary>
+    /// <c>run-heavy --look</c> (HEAVYSLOT1, the UI/UX design §3.5's terminal twin of a repository's *Heavy run* row): who holds the
+    /// checkout's repository's slot, at which gate and for how long, and who waits, read as the page reads it; runs nothing.
+    /// </summary>
+    /// <returns>0 said · 2 it could not tell: no checkout, or git's files do not say its repository.</returns>
+    public static int Look(HeavyRunWorld world, TextWriter output, Func<int, long, bool>? alive = null)
+    {
+        if (HeavySlot.CheckoutOf(world.Directory) is not { } checkout)
+        {
+            output.WriteLine($"run-heavy: {world.Directory} is in no git checkout: `run-heavy --look` reads a checkout's repository's slot, from inside it.");
+            return 2;
+        }
+
+        var repository = HeavySlot.RepositoryOf(checkout) ?? Path.GetFileName(checkout);
+        if (HeavySlot.KeyOf(checkout) is not { } key)
+        {
+            output.WriteLine($"run-heavy: git's files at {checkout} do not say which repository it is a checkout of, so its heavy-run slot cannot be told.");
+            return 2;
+        }
+
+        var look = HeavySlot.Look(world.Home, key, alive);
+        var now = world.Waiting.Clock();
+        if (look.Holder is not { } holder)
+        {
+            output.WriteLine($"run-heavy: no heavy run of `{repository}` now.");
+        }
+        else
+        {
+            var who = holder.Session is { } session ? $"session {session}" : "a run from a terminal";
+            var where = holder.Failed is { } failed
+                ? $"failed at `{failed.Gate}` (exit {failed.Exit}), ending what it started"
+                : holder.Now is { } gate
+                    ? $"{gate.At + 1} of {holder.Gates.Count}, `{gate.Gate}` for {HeavySlot.Took(now - gate.Since)}"
+                    : "starting its gates";
+            output.WriteLine($"run-heavy: `{repository}`'s heavy run: {who} (process {holder.Pid}), {where}; {HeavySlot.Took(now - holder.Since)} in all.");
+        }
+
+        foreach (var waiter in look.Waiters)
+        {
+            var who = waiter.Session is { } session ? $"session {session}" : "a run from a terminal";
+            output.WriteLine($"run-heavy: waits: {who} (process {waiter.Pid}), for {HeavySlot.Took(now - waiter.Since)}.");
+        }
+
+        return 0;
     }
 
     /// <summary>
@@ -235,7 +320,7 @@ public static class HeavyRun
     /// </summary>
     private static async Task<int> RunGatesAsync(
         string checkout, IReadOnlyList<HeavyGate> gates, string key, IReadOnlyList<string> running, ProcessJob? job, TextWriter output,
-        CancellationToken ct)
+        CancellationToken ct, Action<Func<HeavyHolder, HeavyHolder>>? keep = null)
     {
         var ran = Stopwatch.StartNew();
         HeavyGate? current = null;
@@ -261,12 +346,16 @@ public static class HeavyRun
                     ["MSBUILDDISABLENODEREUSE"] = "1",
                 };
 
+                var gateAt = at;
+                var gateName = current.Name;
+                keep?.Invoke(holder => holder with { Now = new HeavyGateNow(gateName, gateAt, DateTimeOffset.UtcNow) });
                 step = HeavyStep.Start(job, bound.Run, folder, added);
                 var code = await step.ExitAsync(ct).ConfigureAwait(false);
                 step.Dispose();
                 step = null;
                 if (code == 0) continue;
 
+                keep?.Invoke(holder => holder with { Failed = new HeavyGateFailed(gateName, code) });
                 var after = gates.Skip(at + 1).Select(gate => gate.Name).ToList();
                 output.WriteLine($"run-heavy: `{current.Name}` failed (exit {code}){(after.Count > 0 ? $"; not run after it: {string.Join(", ", after)}" : "")}.");
                 failed = true;
