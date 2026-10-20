@@ -218,6 +218,11 @@ using Daoris.Driver;
 //                 HEAVYRUN1b2a note), in the order they run: what run-heavy runs there and its sessions are told of. Kept in
 //                 the driver's file, never in the repository; a command may bound its own workers. Alone, lists each
 //                 repository's; with a repository alone, says its gates. A change holds the home's lease.
+//   checks [<repository> [light | heavy-at-end | --clear]]
+//                 which checks a repository's sessions run under Current (FABRIC-PIPELINE1b, D192 point 4): light, the gates
+//                 its daoris.gates.json does not mark heavy and the checks a change reaches, its heavy gates refused to them
+//                 and left to the verification; heavy-at-end, those gates once at a session's end; none, as they did. Kept in
+//                 the driver's file. Alone, lists each repository's; with a repository alone, says its rule.
 //
 //   trace <commit|session|quest> · trace commit|session|quest <id>
 //                 one read back to the ask (TRACE1, D143): from a commit (a landing's tip, or in a session's evidence), a
@@ -551,6 +556,13 @@ try
     if (args is ["heavy", .. var mappingArgs])
     {
         return Daoris.Driver.Host.HeavyMappingConsole.Run(mappingArgs);
+    }
+
+    // Which checks a repository's sessions run under Current (FABRIC-PIPELINE1b, D192 point 4, D50): kept in the driver's file; the
+    // repository's setup page is the other door.
+    if (args is ["checks", .. var checksArgs])
+    {
+        return Daoris.Driver.Host.SessionChecksConsole.Run(checksArgs);
     }
 
     // Finished history from a terminal (HIST1d, D153, the history-clearing design §6.2, D50): what this machine keeps of it, per
