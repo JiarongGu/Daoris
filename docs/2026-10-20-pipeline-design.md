@@ -483,6 +483,7 @@ verification pipeline is the line's lane, at a batch. Neither design waits for t
 | Gate | Under the design | Why |
 |---|---|---|
 | `universal`, `code-map`, `orient-index` | light: a session's, and the merge's blocking set | seconds to a minute; what must never reach history (`merge-branch.mjs:786`, D180 point 1) |
+| `web-types` | light: a session's, and the merge's blocking set where the page's sources change | about a minute; two sides that each typecheck may not together (MERGETSC1, D180's note) |
 | `cli`, `tool-tests`, `service`, `devkit`, `driver`, `modules`, `driver-process`, `driver-process-git`, `modules-process`, `web`, `web-unit`, `web-measured`, `deployment` | `"heavy": true` | minutes to an hour each; the CI beside's (D180 point 2) |
 | `rehearse` (`npm run rehearse`), `rehearse-family` (`npm run rehearse:family`) | declared, `"heavy": true` | the release and family rehearsals, which the merge tool runs today from the release workflow's steps the declaration lacks (`merge-branch.mjs:708-741`, `release.yml:297`, `:302`); declared, a session's deny rules name them and the acceptance covers them. Under the names the tool already gives them, so its reach table (`merge-branch.mjs:792-848`) is unchanged |
 | `verification` (top-level) | `node tools/merge-branch.mjs --full --beside` | the merge tool already runs the full set in its lanes, in its gate tree, writes the verdict the stage reads, and keeps its logs |

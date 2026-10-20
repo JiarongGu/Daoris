@@ -44,7 +44,8 @@
  *    long-lived build server carried a broken environment into a publish, so that rehearsal started after
  *    `dotnet build-server shutdown`; since REHLANE2b its builds keep servers of their own, and no gate has a step before it.
  *    GATESLIM1: by default a merge runs the blocking checks alone (`BLOCKING`: the universal gates, the code map and the
- *    orientation index's check); every other gate it reaches is listed and skipped, "in the CI beside" (`--full --beside`).
+ *    orientation index's check), and each typecheck one of its paths reaches (`TYPECHECKS`, MERGETSC1: the web's
+ *    `tsc --noEmit` where the page's sources change); every other gate it reaches is listed and skipped, "in the CI beside" (`--full --beside`).
  *    `--gated` runs what follows: of the plan, the baseline (`BASELINE`: the blocking checks and the CLI's `verify`, at every
  *    merge) and each gate a path the merge changes can reach (`REACH`). A path no rule
  *    places reaches every gate, and so does a gate the table never names. A long gate (`isLongGate`) is
@@ -693,14 +694,15 @@ export const slug = (name) => name.replace(/[^A-Za-z0-9._-]+/g, '-').replace(/^-
 
 /**
  * What kind of gate a command is, which orders it and never drops it: a devkit `dotnet run` and a tool's
- * `--check` (the orientation index, ORIENT1a) are checks, `npm run rehearse*` and `npm run test:*` are
- * rehearsals, and anything else is a suite. A command run through `tools/as-merged.mjs` (GATE1) is the kind of
+ * `--check` (the orientation index, ORIENT1a) and `npm run typecheck*` (MERGETSC1) are checks, `npm run rehearse*` and
+ * `npm run test:*` are rehearsals, and anything else is a suite. A command run through `tools/as-merged.mjs` (GATE1) is the kind of
  * what it runs: the universal gates read history as the merge would commit it, and are still the devkit's check.
  */
 export function gateKind(run) {
   const command = run.trim().replace(/^node tools\/as-merged\.mjs\s+/, '');
   if (/^dotnet run\b/.test(command) || /^node tools\/\S+\.mjs --check$/.test(command)) return 'check';
   const script = /^npm run (\S+)$/.exec(command)?.[1];
+  if (script && /^typecheck\b/.test(script)) return 'check';
   if (script && /^(rehearse|test:)/.test(script)) return 'rehearsal';
   return 'suite';
 }
@@ -785,6 +787,30 @@ export const BASELINE = Object.freeze(['universal', 'code-map', 'orient-index', 
  * (`--full --beside`); `--gated` runs what the merge's paths reach, `--full` every gate, `--rerun <gate>` a named one.
  */
 export const BLOCKING = Object.freeze(['universal', 'code-map', 'orient-index']);
+
+/**
+ * MERGETSC1: the typechecks a merge blocks on when one of its paths reaches what they read, beside `BLOCKING`. Two sides
+ * that each typecheck may not together (RAILLINE1's stories named a helper STORYGAP1 had renamed, 2026-10-21), and the CI
+ * beside found it hours after the commit; the web's `tsc --noEmit` takes about a minute. Each is reached by its own
+ * `paths`, and by a path the lane table's every-gate rule places (the gates, the scripts, the lanes), never by the rest of
+ * the table: a path no rule of `REACH` places reaches every other gate, and a typecheck stays a minute of the merges that
+ * change what it reads. `--gated` runs it where reached, `--full` always.
+ */
+export const TYPECHECKS = Object.freeze([
+  {
+    gate: 'web-types',
+    paths: ['src/Daoris.Web/src/**', 'src/Daoris.Web/tsconfig.json', 'src/Daoris.Web/vite.config.ts', 'src/Daoris.Web/package.json', 'src/Daoris.Web/package-lock.json'],
+    why: "the web's typecheck: the page's sources, what configures its compiler, or what changes how every gate runs (MERGETSC1)",
+  },
+]);
+
+const typecheckOf = (gate, typechecks = TYPECHECKS) => typechecks.find((check) => check.gate === gate) ?? null;
+
+/** Of `paths`, the ones that reach a typecheck (MERGETSC1): its own, and those the lane table sends to every gate. */
+const typecheckPaths = (typecheck, paths, reach, lanes) => {
+  const own = laneMatcher(typecheck.paths);
+  return paths.filter((path) => own(path) || ruleFor(path, reach, lanes)?.gates === '*');
+};
 
 // The .NET suites with a test that reads the page's catalogues or sources: MOD9's incident was two of them.
 const PAGE_READERS = ['service', 'driver', 'modules'];
@@ -1218,7 +1244,7 @@ const namedGates = (reach) => new Set(reach.flatMap((rule) => (rule.gates === '*
  * set before staging; `full` runs every gate. `reached` is the lane table's answer, run or not, which is what
  * its tests hold to the code. `unplaced` is the paths no rule placed.
  */
-export function selectGates(plan, changed, { lanes = [], full = false, gated = false, reach = REACH } = {}) {
+export function selectGates(plan, changed, { lanes = [], full = false, gated = false, reach = REACH, typechecks = TYPECHECKS } = {}) {
   const names = new Set(plan.map((gate) => gate.name));
   const named = namedGates(reach);
   const reachedBy = new Map();
@@ -1244,6 +1270,14 @@ export function selectGates(plan, changed, { lanes = [], full = false, gated = f
   };
   const gates = plan.map((gate) => {
     if (BLOCKING.includes(gate.name) || (gated && BASELINE.includes(gate.name))) return { gate, run: true, reached: true, why: 'runs at every merge' };
+    const typecheck = typecheckOf(gate.name, typechecks);
+    if (typecheck) {
+      // MERGETSC1: a typecheck blocks the merges whose paths reach what it reads, and only those.
+      const by = typecheckPaths(typecheck, changed, reach, lanes);
+      if (full) return { gate, run: true, reached: by.length > 0, why: '--full runs every gate' };
+      if (by.length === 0) return { gate, run: false, reached: false, why: gated ? 'no changed path reaches it' : 'in the CI beside' };
+      return { gate, run: true, reached: true, why: `blocks the merge: ${andMore(by)} (${typecheck.why})` };
+    }
     const { reached, why } = BASELINE.includes(gate.name) ? { reached: true, why: 'the baseline' } : reachOf(gate);
     if (full) return { gate, run: true, reached, why: '--full runs every gate' };
     const detail = reached ? `; ${why.replace(/^everything runs: /, '')}` : '';
@@ -1261,7 +1295,9 @@ export function selectGates(plan, changed, { lanes = [], full = false, gated = f
  * its rule names. A verdict stays good until one of these changes, so the stage and `--rerun` ask this of the paths
  * changed since it was given. The test of the table checks that it and `selectGates` agree on every case.
  */
-export function pathsReaching(gate, paths, { lanes = [], reach = REACH } = {}) {
+export function pathsReaching(gate, paths, { lanes = [], reach = REACH, typechecks = TYPECHECKS } = {}) {
+  const typecheck = typecheckOf(gate, typechecks);
+  if (typecheck) return typecheckPaths(typecheck, paths, reach, lanes);
   if (BASELINE.includes(gate) || !namedGates(reach).has(gate)) return [...paths];
   return paths.filter((path) => {
     const rule = ruleFor(path, reach, lanes);
