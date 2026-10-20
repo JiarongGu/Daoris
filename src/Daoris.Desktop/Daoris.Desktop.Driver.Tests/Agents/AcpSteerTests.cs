@@ -314,6 +314,71 @@ public sealed class AcpSteerTests
     }
 
     /// <summary>
+    /// ACCESSSWAP1b (D183's note): a driven session whose setup changed while its turn ran is asked so at that turn's end, before
+    /// the word held for it is prompted. Changed, the run ends there: every held word is handed back unprompted, in the order said,
+    /// none said unreached, and the inbox takes no more. Unchanged, the word goes as before. Never asked where nothing is held.
+    /// </summary>
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task A_changed_setup_ends_the_run_at_its_turns_end_and_hands_the_held_words_back_unprompted(bool changed)
+    {
+        var first = new TaskCompletionSource<int>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var agent = new Agent((frame, self) =>
+        {
+            switch (frame.GetProperty("method").GetString())
+            {
+                case "initialize":
+                    return Ok(frame, Silent);
+                case "session/new":
+                    return Ok(frame, """{"sessionId":"s-1"}""");
+                case "session/prompt" when !first.Task.IsCompleted:
+                    first.SetResult(frame.GetProperty("id").GetInt32());
+                    return null;
+                case "session/prompt":
+                    return Ok(frame, """{"stopReason":"end_turn"}""");
+                default:
+                    return frame.TryGetProperty("id", out _) ? Ok(frame, "{}") : null;
+            }
+        });
+        var record = new Record();
+        var inbox = new DrivenInbox(_ => { });
+        inbox.OnSaid(record.SaidTo);
+        var asked = 0;
+        var session = new AcpSession(agent.Incoming, agent.Outgoing, _ => { }, onEvent: record.Event)
+        {
+            SetupChanged = () =>
+            {
+                asked++;
+                return changed;
+            },
+        };
+
+        var run = session.RunAsync("X:/daoris/Game", "read the five files", CancellationToken.None, inbox: inbox, asked: record.Asked);
+        var id = await first.Task.WaitAsync(Poll.Patience);
+        Assert.True(inbox.Hold(new ChatMessage("the budget is in level.json", [])));
+        Assert.True(inbox.Hold(new ChatMessage("and the prices in shop.json", [])));
+        agent.Push(Answer(id, "end_turn"));
+        await run.WaitAsync(Poll.Patience);
+
+        if (!changed)
+        {
+            Assert.Equal(["read the five files", "the budget is in level.json", "and the prices in shop.json"], agent.Prompts);
+            Assert.Empty(session.HandedBack);
+            // Asked before each held word, and never once nothing is held.
+            Assert.Equal(2, asked);
+            return;
+        }
+
+        Assert.Equal(["read the five files"], agent.Prompts);
+        Assert.Equal(["the budget is in level.json", "and the prices in shop.json"], session.HandedBack.Select(word => word.Text));
+        Assert.Equal(1, asked);
+        Assert.DoesNotContain(record.Lines, line => line.StartsWith("taken:", StringComparison.Ordinal));
+        Assert.DoesNotContain(record.Notes, note => note.Text?.Contains("never reached", StringComparison.Ordinal) == true);
+        Assert.False(inbox.Hold(new ChatMessage("after it ended", [])));
+    }
+
+    /// <summary>
     /// COWORK1b (the message-urgency design §4.3, trap 17): Daoris's word held for the turn's end is judged again where it is
     /// delivered, by the key it carries. Its fact still holding, it goes as the next prompt and is told delivered; answered by a
     /// later submission meanwhile, it is dropped with a coded note naming it, never said late, and the run ends.

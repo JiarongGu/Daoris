@@ -31,6 +31,12 @@ public sealed record HarnessEnding(int? Exit, string? Failure, IReadOnlyList<str
     public IReadOnlyList<string> BackgroundCut { get; init; } = [];
 
     /// <summary>
+    /// Not the harness's word: Daoris ended the run at a turn's end because its repository's permission prompts changed while it worked,
+    /// handing back the words held for it (ACCESSSWAP1b, <see cref="Observation.SetupChanged"/>). Null on every other run.
+    /// </summary>
+    public SetupSwap? SetupChanged { get; init; }
+
+    /// <summary>
     /// A door that carries only text (AGT3c): its transcript's last lines, both its streams, beside the process's exit. Its
     /// agent's words are among them and cannot be told apart, so only an exit that was not 0 lets them be read. Unreadable
     /// is none.

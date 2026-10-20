@@ -263,6 +263,38 @@ public static class Observation
         : SessionConclusion.Of("failed", Noted.Of(
             NoteCodes.EndedWentOnExit, $"it went on with your words and exited {exitCode}; its quest stays as it closed.", ("exit", exitCode)));
 
+    /// <summary>
+    /// How a run Daoris ended at its turn's end because its repository's permission prompts changed concludes (ACCESSSWAP1b, D183's note):
+    /// neither a park nor a failure. It stopped because Daoris ended it, so where its clean end would read as the session's own choice, a
+    /// park asking the person or a quest it never touched, it is completed, saying the change; its held words wait on the record, and the
+    /// next look goes on with them in the same conversation under the new setup. Where its work had reached an ending of its own (done,
+    /// declined, a wait, a submission) or its door failed, that ending stands, and the change is said after it.
+    /// </summary>
+    /// <remarks>
+    /// <para>🔴 <b>Never parked.</b> A park asks the person what the session never asked, and a move into <c>awaiting-person</c> clears
+    /// the words waiting, which are the ones it goes on with. <b>Never failed</b>: a failure is a strike, and D80 would carry the quest on
+    /// in a new conversation, where this one is to go on.</para>
+    /// </remarks>
+    /// <param name="observed">How the run concluded by the exit and the quest's state, the person's stop first.</param>
+    public static SessionConclusion SetupChanged(SessionConclusion observed, SetupSwap swap)
+    {
+        var line = Noted.Of(
+            NoteCodes.EndedSetupChanged,
+            $"its permission prompts changed while it worked, from `{swap.From}` to `{swap.To}`: Daoris ended it at its turn's end, never "
+            + "mid-turn, and it goes on in the same conversation under the new setup.",
+            ("from", swap.From), ("to", swap.To));
+        var ownChoice = SessionStates.IsParked(observed.State)
+                        || observed.Parts?.Any(part => part.Code == NoteCodes.EndedUntouched.Code) == true;
+        return ownChoice ? SessionConclusion.Of("completed", line) : observed.Then("\n\n", line);
+    }
+
+    /// <summary>
+    /// What the record and the conversation say of the words a run handed back for a changed setup (ACCESSSWAP1b): they never went, so
+    /// they go on, not again (<see cref="FailedTurnWords"/>).
+    /// </summary>
+    public static Noted WordsUnderNewSetup =>
+        Noted.Of(NoteCodes.EndedWordsSetup, "Your words go on at the next look, in the same conversation under the new setup.");
+
     /// <summary>The person's plain stop, where the door that stopped it said nothing more (the language design §4 row 19).</summary>
     public static Noted Stopped => Noted.Of(NoteCodes.EndedStopped, "the person stopped it.");
 

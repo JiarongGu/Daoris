@@ -1965,6 +1965,12 @@ function commitProblems(root, branch, commits) {
  * checkout has out, the one this runs in, and the `hold` names: a batch's branches still to merge, since
  * one merged already is refused by name at its turn, and a deleted one would read as a misspelling. Each
  * comes with the worktree that has it out, if any; a held one says why it is held.
+ *
+ * A Daoris session's tree and branch are Daoris's, never this tool's (DOGFOOD1): an install driving this repository makes
+ * each session a worktree under its own home and a branch at main's tip, which reads as merged until its first commit, and
+ * a prune took one mid-session. So a branch Daoris names, `daoris/` for a session (D51) and `quest/` for this repository's
+ * landings, is held with its worktree; Daoris's own housekeeping removes them. A tree's place is no sign: the agent harness's
+ * trees may stand beside the checkout too.
  */
 export function pruneCandidates({ merged, worktrees, current, hold = [] }) {
   const mainCheckout = worktrees[0]?.branch ?? '';
@@ -1973,6 +1979,7 @@ export function pruneCandidates({ merged, worktrees, current, hold = [] }) {
     if (branch === mainCheckout) held = 'the main checkout has it checked out';
     else if (branch === current) held = 'this runs in its checkout';
     else if (hold.includes(branch)) held = 'named in this batch, still to merge';
+    else if (/^(daoris|quest)\//.test(branch)) held = "a Daoris session's or landing's branch: Daoris's own housekeeping removes it";
     return { branch, worktree: worktrees.find((tree) => tree.branch === branch) ?? null, held };
   });
 }

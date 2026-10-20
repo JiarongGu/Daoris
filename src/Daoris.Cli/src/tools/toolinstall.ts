@@ -33,11 +33,12 @@ import {
 } from './resources.ts';
 import { extractTarGz } from '../platform/tarball.ts';
 import {
-  TOOLS, TOOLS_FILE, TOOL_PACKAGE, TOOL_RECORD, addLocation, declaredTool, isAddress, isExactVersion, isWholePath,
+  TOOLS, TOOLS_FILE, TOOL_PACKAGE, TOOL_RECORD, addLocation, declaredTool, isAddress, isExactVersion, isWholePath, locationProblem,
   managedExecutable, readTools, removeLocation, resolveFrom, resolveTool, toolsFile, undeclaredTool, useFile, useManaged, useSystem,
   wayWords, type ToolDeclaration, type ToolResolution,
 } from './tools.ts';
 import type { CommandArgs } from '../platform/types.ts';
+import { ALONE, TOOL_ROUTES, type VerbDoor } from '../platform/door.ts';
 import { extractZip } from '../platform/zipfile.ts';
 
 type Env = Record<string, string | undefined>;
@@ -425,9 +426,15 @@ const VERBS = 'list, path, use, download, update, delete, locations, look';
  * `daoris tool` — the terminal's door onto `tools.json`, the lists and the versions kept in the home (D50, §4.2).
  * Management class. `download`, `use … managed`, `update` and `look` reach a network, and only through the fetcher
  * the dispatcher hands in; every other verb answers at once and opens nothing.
+ *
+ * A change goes through `door` (RPC1f): the Tools place's route while Daoris runs on this home, which its own handler judges,
+ * writes and publishes; this verb's own act under the home's lease where none does, and for a change no route answers at its end.
  */
-export function commandTool({ root, argv, write }: CommandArgs, fetcher: Fetcher | null = null, env: Env = process.env): ExitCode | Promise<ExitCode> {
+export function commandTool(
+  { root, argv, write }: CommandArgs, fetcher: Fetcher | null = null, env: Env = process.env, door: VerbDoor = ALONE,
+): ExitCode | Promise<ExitCode> {
   const [verb = 'list', id, way, named] = operands(argv, new Set());
+  const what = `tool ${verb}`;
   const ids = TOOLS.map((tool) => tool.id).join(', ');
   const needTool = (said: string): ToolDeclaration => {
     if (!id) throw new DaorisError(`\`tool ${said}\` needs a tool — one of: ${ids}`);
@@ -471,47 +478,89 @@ export function commandTool({ root, argv, write }: CommandArgs, fetcher: Fetcher
       const written = toolsFile(home);
 
       if (way === 'system') {
-        useSystem(home, tool.id);
-        const resolution = resolveTool(home, tool.id, env);
-        write(`daoris: ${tool.name} is set to the system's, from PATH — written to ${written}.`);
-        write(resolution.file !== null
-          ? `  \`daoris tool path ${tool.id}\` answers ${resolution.file}.`
-          : `  \`daoris tool path ${tool.id}\` answers: ${resolution.problem}.`);
-        return 0;
+        const said = (): ExitCode => {
+          const resolution = resolveTool(home, tool.id, env);
+          write(`daoris: ${tool.name} is set to the system's, from PATH — written to ${written}.`);
+          write(resolution.file !== null
+            ? `  \`daoris tool path ${tool.id}\` answers ${resolution.file}.`
+            : `  \`daoris tool path ${tool.id}\` answers: ${resolution.problem}.`);
+          return 0;
+        };
+        return door({
+          what, route: TOOL_ROUTES.use, payload: { tool: tool.id, action: 'system' },
+          alone: () => {
+            useSystem(home, tool.id);
+            return said();
+          },
+          words: said,
+        });
       }
 
       if (way === 'file') {
         if (!named) throw new DaorisError(`\`tool use ${tool.id} file\` needs a path — the executable to run`);
         const file = isWholePath(named) ? named : resolve(root, named);
-        useFile(home, tool.id, file);
-        write(`daoris: ${tool.name} is set to the file ${file} — written to ${written}.`);
-        write(`  \`daoris tool path ${tool.id}\` answers ${file}; \`daoris tool use ${tool.id} system\` puts it back on PATH.`);
-        return 0;
+        const said = (): ExitCode => {
+          write(`daoris: ${tool.name} is set to the file ${file} — written to ${written}.`);
+          write(`  \`daoris tool path ${tool.id}\` answers ${file}; \`daoris tool use ${tool.id} system\` puts it back on PATH.`);
+          return 0;
+        };
+        // The instance refuses a file that is not there, as this verb does, and one that does not answer its version.
+        return door({
+          what, route: TOOL_ROUTES.use, payload: { tool: tool.id, action: 'file', file },
+          alone: () => {
+            useFile(home, tool.id, file);
+            return said();
+          },
+          words: said,
+        });
       }
 
-      if (way === 'managed') return managed(home, tool, 'use', named ?? null);
+      // A managed use answers once the driver's download starts, and its end is an event a terminal hears only by subscribing
+      // (RPC1g): this verb's alone, as a download and an update are.
+      if (way === 'managed') return door({ what, route: null, alone: () => managed(home, tool, 'use', named ?? null), words: () => 2 });
       throw new DaorisError(`\`tool use ${tool.id}\` takes \`system\`, \`managed [<version>]\` or \`file <path>\``);
     }
 
-    case 'download':
-      return managed(requireHome(env), needTool('download'), 'download', way ?? null);
+    case 'download': {
+      const [home, tool] = [requireHome(env), needTool('download')];
+      return door({ what, route: null, alone: () => managed(home, tool, 'download', way ?? null), words: () => 2 });
+    }
 
-    case 'update':
-      return managed(requireHome(env), needTool('update'), 'update', null);
+    case 'update': {
+      const [home, tool] = [requireHome(env), needTool('update')];
+      return door({ what, route: null, alone: () => managed(home, tool, 'update', null), words: () => 2 });
+    }
 
     case 'delete': {
       const tool = needTool('delete');
       if (!way) throw new DaorisError(`\`tool delete ${tool.id}\` needs a version — \`daoris tool list\` names the ones downloaded`);
-      const folder = refusing(() => deleteVersion(requireHome(env), tool.id, way));
-      write(`daoris: ${tool.name} ${way} is deleted — ${folder}.`);
-      return 0;
+      const home = requireHome(env);
+      const said = (folder: string): ExitCode => {
+        write(`daoris: ${tool.name} ${way} is deleted — ${folder}.`);
+        return 0;
+      };
+      return door({
+        what, route: TOOL_ROUTES.delete, payload: { tool: tool.id, version: way },
+        alone: () => said(refusing(() => deleteVersion(home, tool.id, way))),
+        words: (answer) => said(isRecord(answer) && typeof answer.folder === 'string' ? answer.folder : ''),
+      });
     }
 
     case 'locations':
       return locations(requireHome(env), id ?? null, way ?? null);
 
-    case 'look':
-      return look(requireHome(env));
+    case 'look': {
+      const home = requireHome(env);
+      // The look's copies are kept under the home, so while Daoris runs it is the instance's own look, which this terminal reads.
+      return door({
+        what, route: TOOL_ROUTES.look, payload: {},
+        alone: () => look(home),
+        words: (answer) => looked(home, isRecord(answer) && Array.isArray(answer.looks) ? answer.looks.filter(isRecord).map((each) => ({
+          outcome: typeof each.outcome === 'string' ? each.outcome : '',
+          sentence: typeof each.sentence === 'string' ? each.sentence : '',
+        })) : []),
+      });
+    }
 
     default:
       throw new DaorisError(`unknown tool verb '${verb}' — one of: ${VERBS}`);
@@ -562,19 +611,29 @@ export function commandTool({ root, argv, write }: CommandArgs, fetcher: Fetcher
   }
 
   /** `locations` alone lists them in read order; `add` and `remove` edit the file (§3.3). */
-  function locations(home: string, sub: string | null, address: string | null): ExitCode {
+  function locations(home: string, sub: string | null, address: string | null): ExitCode | Promise<ExitCode> {
     if (sub === 'add' || sub === 'remove') {
       if (!address) throw new DaorisError(`\`tool locations ${sub}\` needs an address — https://, or http:// to this machine`);
-      if (sub === 'add') {
-        write(addLocation(home, address)
-          ? `daoris: ${address} is added, read before the list built in — \`daoris tool look\` fetches it.`
-          : `daoris: ${address} is already a location — nothing was written.`);
-      } else {
-        write(removeLocation(home, address)
-          ? `daoris: ${address} is removed: its versions are no longer offered, and a version already downloaded stays.`
-          : `daoris: ${address} is not a location — nothing was written.`);
-      }
-      return 0;
+      // Refused here in this verb's words before anything is sent, as the instance would refuse it in its own.
+      const problem = sub === 'add' ? locationProblem(address) : null;
+      if (problem !== null) throw new DaorisError(`${problem} — nothing was written.`);
+      const said = (changed: boolean): ExitCode => {
+        if (sub === 'add') {
+          write(changed
+            ? `daoris: ${address} is added, read before the list built in — \`daoris tool look\` fetches it.`
+            : `daoris: ${address} is already a location — nothing was written.`);
+        } else {
+          write(changed
+            ? `daoris: ${address} is removed: its versions are no longer offered, and a version already downloaded stays.`
+            : `daoris: ${address} is not a location — nothing was written.`);
+        }
+        return 0;
+      };
+      return door({
+        what, route: TOOL_ROUTES.location, payload: { action: sub, address },
+        alone: () => said(sub === 'add' ? addLocation(home, address) : removeLocation(home, address)),
+        words: (answer) => said(isRecord(answer) && answer[sub === 'add' ? 'added' : 'removed'] === true),
+      });
     }
     if (sub !== null) throw new DaorisError(`\`tool locations\` takes \`add <address>\` or \`remove <address>\`, or nothing to list them`);
 
@@ -598,8 +657,12 @@ export function commandTool({ root, argv, write }: CommandArgs, fetcher: Fetcher
   /** Fetch every location, then say for each tool what it runs and the newest the lists name (§3.7). */
   async function look(home: string): Promise<ExitCode> {
     if (!fetcher) throw new DaorisError('this build was given no way to reach a network, so no location was fetched.');
+    return looked(home, await lookLocations(home, fetcher, currentPlatform()));
+  }
+
+  /** What a look found, each location's sentence, then what each tool runs and the newest the lists name: exit 1 where one was not fetched. */
+  function looked(home: string, looks: readonly { outcome: string; sentence: string }[]): ExitCode {
     const platform = currentPlatform();
-    const looks = await lookLocations(home, fetcher, platform);
     write(looks.length === 0
       ? 'daoris: no resource location is listed — only the list built in is read. `daoris tool locations add <address>` adds one.'
       : `daoris: looked at ${looks.length} location${looks.length === 1 ? '' : 's'}:`);
@@ -621,6 +684,11 @@ export function commandTool({ root, argv, write }: CommandArgs, fetcher: Fetcher
     for (const note of merged.notes) write(`  ${note}`);
     return looks.every((each) => each.outcome === 'fetched') ? 0 : 1;
   }
+}
+
+/** Whether a route's answer, or a field of it, is an object to read fields from. */
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
 /** A refusal by a check is exit 1 (§4.2): the file's rules or a check said no, which is not a tool error. */

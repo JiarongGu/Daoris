@@ -36,6 +36,54 @@ public sealed record DrivenAccess(string Permissions, string Said)
     public string Repository { get; init; } = "";
 
     /// <summary>
+    /// The workspace its repository's setup was resolved in (ACCESSSWAP1b), so a running session reads its setup again where its start
+    /// read it (<see cref="ChangedIn"/>); null is <c>default</c>.
+    /// </summary>
+    public string? Workspace { get; init; }
+
+    /// <summary>
+    /// What a running session's next turn would get (ACCESSSWAP1b, D183's note): its repository's permission prompts as
+    /// <paramref name="now"/> resolves them, in the workspace its start read, where they name another value than it runs under; null
+    /// where they name the same. Only the permission prompts are compared: every other pause applies at its own point (AUTONOMY1c).
+    /// </summary>
+    /// <param name="now">The driver's file as it reads now, not as the look that started the session read it.</param>
+    public DrivenAccess? ChangedIn(DriverConfig now, ISessionAdapter adapter)
+    {
+        var got = For(AccessRules.Resolve(now, Repository, Workspace), Repository, adapter) with { Workspace = Workspace };
+        return got.Permissions == Permissions ? null : got;
+    }
+
+    /// <summary>The same change as a swap from what it started under (ACCESSSWAP1b); null where <paramref name="now"/> names the same.</summary>
+    public SetupSwap? SwapIn(DriverConfig now, ISessionAdapter adapter) =>
+        ChangedIn(now, adapter) is { } got ? new SetupSwap(Permissions, got.Permissions) : null;
+
+    /// <summary>
+    /// Tell the console of each driven session running here whose permission prompts a change of the driver's file moves (ACCESSSWAP1b,
+    /// D183's note), as Ask Daoris's console is told its access changed (<see cref="HelpSwap.Said"/>): what it started under, what the
+    /// file names now, and that its next turn runs under them; or, moved back to what it started under, that it goes on as it runs. The
+    /// page's press calls it; the terminal writes the file from another process and reaches no console, so a run reads the file at its
+    /// turn's end all the same.
+    /// </summary>
+    /// <param name="say">Told each session and its console line.</param>
+    public static void TellRunning(SessionProcesses processes, DriverConfig before, DriverConfig after, Action<string, string> say)
+    {
+        foreach (var (session, was, now) in processes.SetupsMoved(before, after))
+        {
+            if (now is not null)
+            {
+                say(session,
+                    $"— Permission prompts changed under this session: it started under `{now.From}`, and its repository's setup now names "
+                    + $"`{now.To}`. Its next turn runs under them: its run ends at this turn's end, never mid-turn, and goes on in the same "
+                    + "conversation under the new setup.");
+            }
+            else if (was is not null)
+            {
+                say(session, $"— Permission prompts changed back to `{was.From}`, which this session started under: it goes on under them as it runs.");
+            }
+        }
+    }
+
+    /// <summary>
     /// The access a driven start of <paramref name="repository"/> gets on <paramref name="adapter"/> under <paramref name="access"/>'s
     /// permission prompts: auto as it always ran; asking or unrestricted in the harness's mode for it, or refused where it names none.
     /// </summary>
@@ -159,3 +207,9 @@ public sealed record DrivenAccess(string Permissions, string Said)
     public static string? GoingOnNote(PriorSession prior, DrivenAccess got) =>
         ChangedSince(prior, got.Permissions) is { } changed ? $"{changed} {got.Said}" : null;
 }
+
+/// <summary>
+/// A running driven session's permission prompts changed under it (ACCESSSWAP1b, D183's note): what it started under and what its
+/// repository's setup names now, each a permission prompts value. Its run ends at that turn's end, its held words handed back.
+/// </summary>
+public sealed record SetupSwap(string From, string To);

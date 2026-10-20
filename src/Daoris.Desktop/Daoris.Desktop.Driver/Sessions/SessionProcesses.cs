@@ -100,6 +100,40 @@ public sealed class SessionProcesses(string? markers = null)
         return stop is null ? null : await stop(taskId, ct).ConfigureAwait(false);
     }
 
+    private readonly Dictionary<string, Func<DriverConfig, SetupSwap?>> _setups = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// Hold how a running driven session reads a change of its permission prompts in the driver's file (ACCESSSWAP1b, D183's note), for
+    /// as long as its run lives: here, beside its inbox, so a press on the page reaches the session the look that started it outlived.
+    /// The run disposes the answer when it ends.
+    /// </summary>
+    /// <param name="swapIn">What the session's permission prompts changed to in a file as given, from what it started under; null for none.</param>
+    public IDisposable OpenSetup(string sessionId, Func<DriverConfig, SetupSwap?> swapIn)
+    {
+        lock (_gate) _setups[sessionId] = swapIn;
+        return new Closing(() =>
+        {
+            lock (_gate)
+            {
+                if (_setups.TryGetValue(sessionId, out var held) && held == swapIn) _setups.Remove(sessionId);
+            }
+        });
+    }
+
+    /// <summary>
+    /// Each driven session running here whose permission prompts a change of the driver's file from <paramref name="before"/> to
+    /// <paramref name="after"/> moves (ACCESSSWAP1b): its change against what it started under before, and after, either null for none.
+    /// </summary>
+    public IReadOnlyList<(string Session, SetupSwap? Before, SetupSwap? After)> SetupsMoved(DriverConfig before, DriverConfig after)
+    {
+        KeyValuePair<string, Func<DriverConfig, SetupSwap?>>[] held;
+        lock (_gate) held = [.. _setups];
+        return [.. held
+            .Select(each => (Session: each.Key, Before: each.Value(before), After: each.Value(after)))
+            .Where(each => each.Before != each.After)
+            .OrderBy(each => each.Session, StringComparer.Ordinal)];
+    }
+
     private sealed class Closing(Action close) : IDisposable
     {
         private int _closed;
