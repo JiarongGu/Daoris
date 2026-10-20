@@ -1836,6 +1836,48 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
     }
 
     /// <summary>
+    /// COWORK1b (D188's COWORK1b note; the message-urgency design §6, §9): Daoris's own words reach the say door with <c>from</c> and
+    /// their producer's <c>key</c>, are answered back with both, and are never kept on the ask, where every later session would read
+    /// them as the person's (DRIFT1a): not as a park's answer, nor as <c>reopened</c> once taken. A second say under the same key is
+    /// answered as the word kept, and an author this build does not know is refused, 400.
+    /// </summary>
+    [Fact]
+    public async Task Daoris_words_are_kept_with_their_author_and_key_and_never_kept_on_the_ask()
+    {
+        var asked = await host.PostAsync("/api/asks", new
+        {
+            workspace = "default", sentence = "Build the yearly summary through the v5 bridge.", to = "Keeper",
+        });
+        var ask = asked.Json.GetProperty("ask").GetProperty("id").GetString()!;
+        var quest = asked.Json.GetProperty("quest").GetProperty("id").GetString()!;
+        var id = await RunningAsync(quest, "cowork1b-ask");
+        Assert.Equal(200, (await host.PostAsync($"/api/sessions/{id}/state", new { state = "awaiting-person", note = "Which report?" })).Status);
+
+        var told = await host.PostAsync($"/api/sessions/{id}/say", new { text = "Daoris: the person reopened it.", from = "daoris", key = "reopen/q1/desk/44" });
+        var again = await host.PostAsync($"/api/sessions/{id}/say", new { text = "Daoris: the person reopened it.", from = "daoris", key = "reopen/q1/desk/44" });
+        var stranger = await host.PostAsync($"/api/sessions/{id}/say", new { text = "Hello.", from = "agent" });
+
+        Assert.Equal((200, 200, 400), (told.Status, again.Status, stranger.Status));
+        var word = told.Json.GetProperty("said");
+        Assert.Equal(("daoris", "reopen/q1/desk/44"), (word.GetProperty("from").GetString(), word.GetProperty("key").GetString()));
+        Assert.Equal(word.GetProperty("id").GetString(), again.Json.GetProperty("said").GetProperty("id").GetString());
+        Assert.Equal("from", stranger.Json.GetProperty("refusal").GetString());
+        Assert.Equal(["asked"], await KindsAsync());
+
+        foreach (var state in new[] { "working", "completed" })
+        {
+            Assert.Equal(200, (await host.PostAsync($"/api/sessions/{id}/state", new { state })).Status);
+        }
+
+        var later = await host.PostAsync($"/api/sessions/{id}/say", new { text = "Daoris: went on.", from = "daoris", key = "gone-on/q2/desk/43" });
+        Assert.Equal(200, (await host.PostAsync($"/api/sessions/{id}/taken", new { said = new[] { later.Json.GetProperty("said").GetProperty("id").GetString() } })).Status);
+        Assert.Equal(["asked"], await KindsAsync());
+
+        async Task<IEnumerable<string?>> KindsAsync() =>
+            (await host.GetAsync($"/api/asks/{ask}")).Json.GetProperty("words").EnumerateArray().Select(w => w.GetProperty("kind").GetString()).ToList();
+    }
+
+    /// <summary>
     /// TOOL4c (D125 §5.2): the driver says a failure was an account's limit through the state door, and the
     /// record answers it back to every caller, off this machine too: the flag names no account, so it
     /// travels where the account's name does not. Asked of any other move, it is refused, 409.

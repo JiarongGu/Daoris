@@ -68,6 +68,8 @@ describe('a session note’s codes, held to both catalogues', () => {
     expect(ledger.map((code) => code.code)).toEqual([
       'ledger.answered', 'ledger.parked', 'ledger.went-on', 'ledger.went-on-findings', 'ledger.went-on-both',
       'ledger.went-on-helper', 'ledger.went-on-helper-both',
+      // Daoris's own words alone (COWORK1b).
+      'ledger.went-on-daoris',
       // A quest's note (QUESTCLOSE1b1): the person's done, its lead coded and their words beneath it.
       'quest.person-done',
     ]);

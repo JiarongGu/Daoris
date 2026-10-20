@@ -286,5 +286,6 @@
   "note.ledger.went-on-both": "于 {{at}} 带着你的话和另一个智能体的发现继续。",
   "note.ledger.went-on-helper": "于 {{at}} 带着助手的回答继续。",
   "note.ledger.went-on-helper-both": "于 {{at}} 带着你的话和助手的回答继续。",
+  "note.ledger.went-on-daoris": "于 {{at}} 带着 Daoris 的话继续。",
   "note.quest.person-done": "已由人标为完成。"
 }

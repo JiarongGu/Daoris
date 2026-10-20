@@ -244,7 +244,8 @@ public sealed record Session(
     /// </summary>
     /// <remarks>
     /// <b>Never another agent's</b> (XAGENT1c, D155 point 7): every reader of this field reads it as the person's, and a
-    /// carry-on hands it to a new session as theirs. An opinion's findings wait in <see cref="Said"/> alone, marked by whom.
+    /// carry-on hands it to a new session as theirs. An opinion's findings wait in <see cref="Said"/> alone, marked by whom, and so
+    /// do Daoris's own words, marked <see cref="SaidWord.From"/> (COWORK1b).
     /// </remarks>
     public string? Answer =>
         Said.Where(word => word.Persons).Select(word => word.Text).ToList() is { Count: > 0 } persons ? string.Join("\n\n", persons) : null;
@@ -332,12 +333,33 @@ public sealed record Session(
 /// <param name="Channel">
 /// The channel message these words came from (SESSONE2e, D167), or null: the channel keeps that message on the ask as its
 /// word kind <c>channel</c>, so the ask is not told of these words a second time. A record from before reads as null.
+/// Never whose words they are: the person's own channel message is kept with it, and is theirs.
+/// </param>
+/// <param name="From">
+/// Its author where that is not the person (COWORK1b, D188; the message-urgency design §9): <see cref="SaidFrom.Daoris"/> for Daoris's
+/// own words, a reopen or a step's go-on told to a session. Null is the person's, or another agent's named by <paramref name="By"/>
+/// or <paramref name="Helper"/>, so a word kept before the field reads as it did.
+/// </param>
+/// <param name="Key">
+/// Its producer's key (COWORK1b, the design §6): the say door keeps one word per key on a record, so a producer's retry is answered
+/// with the word kept. Null for a word kept with none, each its own, as every word before the field was.
 /// </param>
 public sealed record SaidWord(
-    string Id, string Text, DateTimeOffset At, IReadOnlyList<string> Files, bool Reopens = false, string? By = null, string? Helper = null, string? Channel = null)
+    string Id, string Text, DateTimeOffset At, IReadOnlyList<string> Files, bool Reopens = false, string? By = null, string? Helper = null,
+    string? Channel = null, string? From = null, string? Key = null)
 {
-    /// <summary>Whether the person said it: every word but another agent's, a reviewer's or a helper's.</summary>
-    public bool Persons => By is null && Helper is null;
+    /// <summary>Whether the person said it: every word but another agent's, a reviewer's, a helper's or Daoris's.</summary>
+    public bool Persons => By is null && Helper is null && From is null;
+}
+
+/// <summary>The authors a word on a record names in its <see cref="SaidWord.From"/> (COWORK1b, D188): never the person, who is the absence.</summary>
+public static class SaidFrom
+{
+    /// <summary>Daoris's own words to a session: a reopen told, a step's go-on (the message-urgency design §2.2).</summary>
+    public const string Daoris = "daoris";
+
+    /// <summary>Whether this build keeps a word by <paramref name="from"/>: none named, or one it knows.</summary>
+    public static bool Known(string? from) => from is null or Daoris;
 }
 
 /// <summary>
@@ -1388,7 +1410,10 @@ public sealed class SessionStore
                 // MIXAGENT2a-i: the helper whose answer this is, its own field; absent is not a helper's.
                 var helper = JsonFields.Text(element, "helper") is { Length: > 0 } helped ? helped : null;
                 var channel = JsonFields.Text(element, "channel") is { Length: > 0 } carried ? carried : null;
-                words.Add(new SaidWord(wordId, text, at, files, reopens, by, helper, channel));
+                // COWORK1b: whose words where not the person's, and the producer's key; absent on every word before them.
+                var from = JsonFields.Text(element, "from") is { Length: > 0 } author ? author : null;
+                var key = JsonFields.Text(element, "key") is { Length: > 0 } produced ? produced : null;
+                words.Add(new SaidWord(wordId, text, at, files, reopens, by, helper, channel, from, key));
             }
 
             return words;
@@ -1422,6 +1447,8 @@ public sealed class SessionStore
         if (word.By is not null) writer.WriteString("by", word.By);
         if (word.Helper is not null) writer.WriteString("helper", word.Helper);
         if (word.Channel is not null) writer.WriteString("channel", word.Channel);
+        if (word.From is not null) writer.WriteString("from", word.From);
+        if (word.Key is not null) writer.WriteString("key", word.Key);
         writer.WriteEndObject();
     }
 

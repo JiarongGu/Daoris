@@ -34,6 +34,8 @@ public static class LedgerNoteCodes
     // A helper's answer alone, or beside the person's words (MIXAGENT2a-ii, D163 point 4): never findings, never "your words".
     public static readonly LedgerNoteCode WentOnHelper = new("ledger.went-on-helper", ["at"]);
     public static readonly LedgerNoteCode WentOnHelperBoth = new("ledger.went-on-helper-both", ["at"]);
+    // Daoris's own words alone (COWORK1b, D188): a reopen told, a step's go-on; never "your words".
+    public static readonly LedgerNoteCode WentOnDaoris = new("ledger.went-on-daoris", ["at"]);
     // A quest's note (QUESTCLOSE1b1): the person marked it done, their words, where they gave any, a part beneath it.
     public static readonly LedgerNoteCode PersonDone = new("quest.person-done", []);
 
