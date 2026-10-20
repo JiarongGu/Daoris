@@ -67,13 +67,19 @@ internal sealed class ChatContext(
 
     /// <summary>
     /// The access mode each of Ask Daoris's running conversations got at its start (HELPMODE1a2, D183 point 3), by session: what a
-    /// switch of the person's mode is compared with, since a switch takes its next start.
+    /// change of the person's access is compared with (ACCESSSWAP1), and the census of those running.
     /// </summary>
     public ConcurrentDictionary<string, string> HelpModes { get; } = new(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>
-    /// The Ask Daoris conversations running full access that the person narrowed to restricted mid-turn (HELPMODE1a5): each ends as
-    /// its turn ends, and the entry goes with it.
+    /// The housekeeping operations each of Ask Daoris's running conversations was handed at its start (HELPMODE1c2a), by session: what
+    /// a change of the grant is compared with (ACCESSSWAP1), as its receipt keeps them.
+    /// </summary>
+    public ConcurrentDictionary<string, IReadOnlyList<string>> HousekeepingHanded { get; } = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// The Ask Daoris conversations whose access the person changed while they ran (ACCESSSWAP1, after HELPMODE1a5): <c>true</c> while
+    /// one is due to end at its turn's end, <c>false</c> once it is ending. The entry goes with its run.
     /// </summary>
     public ConcurrentDictionary<string, bool> HelpEnding { get; } = new(StringComparer.OrdinalIgnoreCase);
 

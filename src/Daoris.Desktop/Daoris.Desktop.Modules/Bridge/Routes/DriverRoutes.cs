@@ -208,9 +208,9 @@ public sealed class DriverRoutes(DriverContext context)
     }
 
     // Ask Daoris's access mode (HELPMODE1a2, D183 point 2): `restricted` or `full`, the person's press alone, over the same key
-    // `daoris-driver help mode` sets: one truth, two doors (D50). Each start reads it; a conversation running under another is told on
-    // its console that the switch takes its next start, since nothing it runs with changes while it runs. A mode it does not know, or
-    // none, is the driver's refusal, with nothing written.
+    // `daoris-driver help mode` sets: one truth, two doors (D50). Each start reads it, and a conversation running under another ends
+    // at its turn's end, its next words resuming it under the mode chosen (ACCESSSWAP1): nothing it runs with changes while it runs.
+    // A mode it does not know, or none, is the driver's refusal, with nothing written.
     [DriverRoute("SET_HELP_MODE")]
     [Publishes("SET_HELP_MODE", StateScopes.Driver)]
     private object? SetHelpMode(IpcRequest request)
@@ -218,14 +218,15 @@ public sealed class DriverRoutes(DriverContext context)
         var mode = Optional(request, "mode")
             ?? throw new DriverException($"Ask Daoris's mode is `{HelpModes.Restricted}` or `{HelpModes.Full}`; the press named none.");
         _context.Change(config => config.WithHelpMode(mode));
-        _loop.Chat?.HelpModeChosen(HelpModes.Named(mode)!);
+        _loop.Chat?.HelpAccessChosen(HelpModes.Named(mode)!);
         return State(_loop);
     }
 
     // Restricted mode's configured access (HELPMODE1c2b, D183's note): the person's choice of one housekeeping operation, set on Ask
     // Daoris's screen, written to the home's own file. Each start reads it onto its allow-list, receipt and room, and each tool call
-    // is judged by it then, so a revoke refuses the next call and a grant takes the next start. No proposal names it: a helper never
-    // widens its own access. A grant or an operation this build does not act on is the driver's refusal, with nothing written.
+    // is judged by it then, so a revoke refuses the next call; a conversation running with another choice ends at its turn's end, its
+    // next words resuming it with this one (ACCESSSWAP1). No proposal names it: a helper never widens its own access. A grant or an
+    // operation this build does not act on is the driver's refusal, with nothing written.
     [DriverRoute("SET_HELP_GRANT")]
     [Publishes("SET_HELP_GRANT", StateScopes.Driver)]
     private object? SetHelpGrant(IpcRequest request)
@@ -235,6 +236,7 @@ public sealed class DriverRoutes(DriverContext context)
             ?? throw new DriverException("A grant's press names the operation it chooses; this one named none.");
         var chosen = request.Payload is { } payload && payload.TryGetProperty("chosen", out var value) && value.ValueKind == JsonValueKind.True;
         ConfiguredAccess.Choose(_loop.Home, grant, operation, chosen);
+        _loop.Chat?.HelpAccessChosen(DriverConfig.Load(_loop.ConfigPath).HelpMode);
         return State(_loop);
     }
 
