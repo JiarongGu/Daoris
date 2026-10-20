@@ -504,6 +504,23 @@ public sealed class DrivenInboxTests
     }
 
     /// <summary>
+    /// COWORK1a (the design §7, §9): the record keeps a level beside the person's own words, urgent where none was said, and none
+    /// beside another session's claim, whose level is its own row's (COWORK1d), so nothing reads a claim's default as stated. The
+    /// person's channel message is theirs, and keeps one.
+    /// </summary>
+    [Fact]
+    public void The_level_the_record_keeps_is_said_beside_the_persons_own_words_only()
+    {
+        var claim = new ChannelItemView(ChannelItemView.Message, DateTimeOffset.UtcNow) { Id = "m1", Person = false };
+        var persons = claim with { Person = true };
+
+        Assert.Equal("urgent", Said("the budget is 64 KiB").LevelSaid);
+        Assert.Equal("ordinary", (Said("tidy the readme after") with { Level = MessageLevel.Ordinary }).LevelSaid);
+        Assert.Equal("now", (Said("stop") with { Level = MessageLevel.Now, Channel = persons }).LevelSaid);
+        Assert.Null((Said("another agent's claim") with { Channel = claim }).LevelSaid);
+    }
+
+    /// <summary>
     /// 🔴 COWORK1a (the design trap 1, a census of the interrupt's callers): no delivery path decides a stop. In the driven inbox only
     /// the keeping stop does; in a conversation's turns only the keeping stop and the withdrawing stop, each the person's own press.
     /// </summary>
