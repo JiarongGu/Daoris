@@ -201,9 +201,11 @@ internal sealed class ChatHandOver(ChatContext context, ChatRunner runner)
 
     /// <summary>
     /// The new conversation's first message (MIXAGENT1a-i): Daoris's briefing, with the browser's line after it where it was handed
-    /// one, never the person's words, and recorded as the note of where it came from (<see cref="ChatMessage.TakenOver"/>).
+    /// one, and recorded as the note of where it came from (<see cref="ChatMessage.TakenOver"/>). A hand-over's carries none of the
+    /// person's words; a part that goes on from a lost conversation carries those that waited there after the brief (SESSCTX1c part B,
+    /// <see cref="BriefedMove"/>).
     /// </summary>
-    private async Task<bool> SayHandedOver(string sessionId, ChatMessage message)
+    internal async Task<bool> SayHandedOver(string sessionId, ChatMessage message)
     {
         if (!_context.Turned.ContainsKey(sessionId) && !_context.Talking.ContainsKey(sessionId)) return false;
 

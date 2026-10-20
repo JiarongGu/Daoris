@@ -383,6 +383,28 @@ public sealed class HandOverTests : IDisposable
         Assert.DoesNotContain("The browser", recorded[1].Text);
     }
 
+    /// <summary>
+    /// 🔴 SESSCTX1c part B (the session-context design §2): a part that goes on from a lost conversation is handed the brief, then the
+    /// person's words that waited on the part it continues, in one prompt: the record keeps the opening line, the brief as Daoris's, then
+    /// the words as the person's, with the files said beside them.
+    /// </summary>
+    [Fact]
+    public void A_new_part_handed_the_brief_and_the_persons_words_records_both_in_that_order()
+    {
+        var brief = ContextBrief.Compose(new BriefLine(HandOverWhy.Resume, [new BriefPart("c0nv0001", "claude-code", [])]));
+        var opening = HandOverNotes.MovedFrom("c0nv0001", "claude-code", null, HandOverWhy.Resume, null, brief.Text.Length);
+        var message = new ChatMessage("Also log the port.", [new KeptFile("trace.txt", "kept/trace.txt")]) { Brief = brief, TakenOver = opening };
+
+        var recorded = ChatRunner.Recorded(message).ToList();
+
+        Assert.Equal([SessionEventKind.Note, SessionEventKind.User, SessionEventKind.User], recorded.Select(e => e.Kind));
+        Assert.Equal(("target", "c0nv0001"), (recorded[1].Origin, recorded[1].Continues));
+        Assert.Equal(("person", "Also log the port."), (recorded[2].Origin, recorded[2].Text));
+        Assert.Equal(["trace.txt"], recorded[2].Files!);
+        Assert.StartsWith(brief.Text, message.Prompt, StringComparison.Ordinal);
+        Assert.EndsWith("\n\nAlso log the port.", message.Prompt, StringComparison.Ordinal);
+    }
+
     // ——— The terminal's door (D50): `daoris-driver sessions hand-over <id> --agent <adapter> [--account <name>]`.
 
     [Fact]

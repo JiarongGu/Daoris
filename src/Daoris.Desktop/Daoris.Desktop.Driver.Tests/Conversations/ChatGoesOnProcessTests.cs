@@ -161,38 +161,71 @@ public sealed class ChatGoesOnProcessTests : IDisposable
     }
 
     /// <summary>
-    /// An agent that no longer has the conversation refuses to resume it (<c>resource_not_found</c>): nothing went, so the
-    /// record goes back to how it ended, its note saying why; the words stay waiting, marked; and its conversation says it
-    /// cannot go on in it, by the code the page words (`gone`), with the words' ids.
+    /// 🔴 SESSCTX1c part B (D189 point 3, the session-context design §2): an agent that no longer has the conversation refuses to resume
+    /// it (<c>resource_not_found</c>), which proves it lost, so it goes on by itself in a new part. The record goes back to how it ended,
+    /// its note saying why; a new conversation opens in its tree on the same agent, its record naming the one it continues, why
+    /// <c>resume</c>, by Daoris; it is handed Daoris's brief, then the words, in one prompt; the words leave the old record naming the new
+    /// one; and both parts say the move, the old one with a door to where the words went.
     /// </summary>
     [Fact]
-    public async Task A_conversation_the_agent_no_longer_has_sends_the_record_back_with_its_words_waiting()
+    public async Task A_conversation_the_agent_no_longer_has_goes_on_in_a_new_part_handed_the_brief_and_the_words()
     {
         var ledger = new ChatLedger().Register("engine", _root);
         var config = Config("acp-stub", "node", Agent(), Heard);
         var events = Events;
         using var client = ledger.Client();
+        var lines = new List<AccountLine>();
+        client.AccountLined += line => { lock (lines) lines.Add(line); };
         using var runner = Runner(client, events);
 
         var id = (await runner.StartAsync("engine", "acp-stub", config)).SessionId!;
         await Poll.Until(() => ledger.State(id) == "working", () => Seen(ledger, events, id));
+        Assert.True(runner.Say(id, "first"));
+        await Poll.Until(() => events.After(id, 0).Events.Any(e => e.Kind == SessionEventKind.Turn), () => Seen(ledger, events, id));
         Assert.True(runner.Finish(id));
         await Poll.Until(() => ledger.State(id) == "completed", () => Seen(ledger, events, id));
 
         Config("acp-stub", "node", Agent(), Heard, "gone");
         Say(ledger, events, id, ("w1", "Also log the port."));
-        await Poll.Until(
-            () => events.After(id, 0).Events.Any(e => e.Kind == SessionEventKind.Note && e.Why == ContinueWhy.Gone),
-            () => Seen(ledger, events, id));
-        await Poll.Until(() => ledger.Moves(id).Count(move => move == "completed") == 2, () => Seen(ledger, events, id));
+        await Poll.Until(() => ledger.Count == 2 && ledger.TakenBy.Count == 1, () => Seen(ledger, events, id));
+        var next = ledger.Record("c2")["id"]!.GetValue<string>();
+        await Poll.Until(() => StubFile.Text(Heard).Contains("Also log the port.", StringComparison.Ordinal), () => Seen(ledger, events, next));
 
         Assert.Equal(["starting", "working", "completed", "working", "completed"], ledger.Moves(id));
         Assert.Contains("It cannot go on in this session, because the agent no longer has its conversation.", ledger.Note(id));
-        Assert.Equal(["w1"], ledger.Said(id));
-        Assert.Empty(ledger.Taken);
-        Assert.Equal(ContinueWhy.Gone, new GoOnMarks(_home).Read(id)!.Why);
-        Assert.Equal(["w1"], events.After(id, 0).Events.Single(e => e.Why == ContinueWhy.Gone).Words!);
-        Assert.DoesNotContain(HeardLines(), line => line.StartsWith("prompt: Also", StringComparison.Ordinal));
+        var part = ledger.Record(next);
+        Assert.Equal(
+            (id, HandOverWhy.Resume, HandOverBy.Daoris, _root, "acp-stub"),
+            (part["from"]?.GetValue<string>(), part["fromWhy"]?.GetValue<string>(), part["fromBy"]?.GetValue<string>(),
+             part["tree"]?.GetValue<string>(), part["adapter"]?.GetValue<string>()));
+        Assert.Equal([(id, "w1", (string?)next)], ledger.TakenBy);
+        Assert.Empty(ledger.Said(id));
+        Assert.Null(new GoOnMarks(_home).Read(id));
+
+        // The new part's one prompt: the brief first, then the words; its record keeps the opening, the brief as Daoris's, the words.
+        var heard = StubFile.Text(Heard);
+        Assert.True(heard.IndexOf("session/resume: conv-1", StringComparison.Ordinal) < heard.LastIndexOf("session/new", StringComparison.Ordinal), heard);
+        Assert.True(heard.IndexOf("Daoris", heard.LastIndexOf("session/new", StringComparison.Ordinal), StringComparison.Ordinal)
+                    < heard.LastIndexOf("Also log the port.", StringComparison.Ordinal), heard);
+        await Poll.Until(() => events.After(next, 0).Events.Any(e => e.Kind == SessionEventKind.User && e.Origin == "person"), () => Seen(ledger, events, next));
+        var opened = events.After(next, 0).Events;
+        Assert.Contains(opened, e => e.Kind == SessionEventKind.Note && e.Parts?.Any(p => p.Code == NoteCodes.MovedFrom.Code) == true);
+        Assert.Contains(opened, e => e is { Kind: SessionEventKind.User, Origin: "target" } && e.Continues == id);
+        Assert.Contains(opened, e => e is { Kind: SessionEventKind.User, Origin: "person", Text: "Also log the port." });
+
+        // The old part: where the words went, by the reason's code, and the move's own line.
+        var left = events.After(id, 0).Events;
+        var went = Assert.Single(left, e => e.To is not null);
+        Assert.Equal((next, ContinueWhy.Gone), (went.To, went.Why));
+        Assert.Equal(["w1"], went.Words!);
+        Assert.Contains(left, e => e.Parts?.Any(p => p.Code == NoteCodes.MovedOn.Code) == true);
+        lock (lines)
+        {
+            var moved = Assert.Single(lines, line => line.Event == "session.moved");
+            Assert.Contains(("why", (object?)HandOverWhy.Resume), moved.Data);
+            Assert.Contains(("continues", (object?)id), moved.Data);
+            Assert.Single(lines, line => line.Event == "session.reopened");
+        }
     }
 
     /// <summary>

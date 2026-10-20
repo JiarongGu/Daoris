@@ -91,6 +91,9 @@ public sealed class ChatRunner : IDisposable
 
     private readonly ChatGoOn _goOn;
 
+    // SESSCTX1c part B: a conversation, or a closed quest's session, going on in a new part handed Daoris's brief.
+    private readonly BriefedMove _move;
+
     // The requests *Start a conversation on its first words* has answered (NEW1a), made when the first carries an id.
     private StartRequests? _starts;
 
@@ -137,10 +140,30 @@ public sealed class ChatRunner : IDisposable
         _curve = new CurveMove(_context, _handOver);
         _help = new ChatHelp(_context, this);
         _words = new ChatHelperWords(_context);
+        _move = new BriefedMove(_context, this, _handOver, _help);
 
         // The go-on hears the record's events from its construction: the person's words to an ended chat (MSG1d, MSG1c).
-        _goOn = new ChatGoOn(_context, this, _handOver, _help, _words);
+        _goOn = new ChatGoOn(_context, this, _handOver, _help, _words, _move);
     }
+
+    /// <summary>
+    /// *Go on with Daoris's brief* (SESSCTX1c part B, D189 point 3; <see cref="BriefedMove.MoveAsync"/>): a conversation, or a closed
+    /// quest's session, whose words wait for the person goes on in a new part of its session, in its tree on its agent and account,
+    /// handed Daoris's brief and then their words. Beside *Start a conversation with these words*, which stays the person's fresh start.
+    /// </summary>
+    /// <param name="onEnded">Told when the new part ends, as a start's is.</param>
+    public Task<StartedFrom> GoOnBriefedAsync(
+        string sessionId, DriverConfig config, Func<string, string, Task>? onEnded = null, CancellationToken ct = default) =>
+        _move.MoveAsync(sessionId, lost: null, HandOverBy.Person, config, onEnded, ct);
+
+    /// <summary>
+    /// A closed quest's session whose own conversation is proven lost goes on by itself as a conversation in its tree (SESSCTX1c part B,
+    /// the steward's choice: a closed quest opens no driven record), handed Daoris's brief and the person's words; the driver hands it
+    /// here through its seam, since conversations are this runner's.
+    /// </summary>
+    public Task<StartedFrom> GoOnLostAsync(
+        string sessionId, ContinueReason lost, DriverConfig config, Func<string, string, Task>? onEnded = null, CancellationToken ct = default) =>
+        _move.MoveAsync(sessionId, lost, HandOverBy.Daoris, config, onEnded, ct);
 
     /// <summary>
     /// The ended chats whose words wait from while no runner heard them are taken up, as the shell comes up (MSG1c2,
@@ -1290,19 +1313,30 @@ public sealed class ChatRunner : IDisposable
         // same resume, its record still working, once its watch let its process, its files and its turns go; never while closing.
         if (goOn is not null)
         {
-            _ = AgainAsync(watch, () => RunAsync(
-                sessionId, message, resolved, selection, config, asked, onEnded, CancellationToken.None, new GoingOn(goOn.Record, goOn.Ask)));
+            _ = AgainAsync(
+                watch,
+                () => RunAsync(
+                    sessionId, message, resolved, selection, config, asked, onEnded, CancellationToken.None, new GoingOn(goOn.Record, goOn.Ask)),
+                () => goOn.Ask.Refused is { Lost: true } lost
+                    ? _goOn.LostAsync(goOn.Record, lost, resolved.Name, config, onEnded, held: false, CancellationToken.None)
+                    : Task.FromResult(new ChatStart(null, "")));
         }
 
         return new(sessionId, message);
     }
 
-    /// <summary>The one retry of a native go-on (SESSCTX1c), where its watch asked for it and the runner is not closing.</summary>
-    private async Task AgainAsync(Task<bool> watch, Func<Task<ChatStart>> again)
+    /// <summary>
+    /// The one retry of a native go-on (SESSCTX1c), where its watch asked for it and the runner is not closing; else, where the wire
+    /// refused the resume as lost (SESSCTX1c part B), the new part it goes on in, once this run let its process, files and turns go, since
+    /// that part starts in the same tree.
+    /// </summary>
+    private async Task AgainAsync(Task<bool> watch, Func<Task<ChatStart>> again, Func<Task<ChatStart>> lost)
     {
         try
         {
-            if (await watch.ConfigureAwait(false) && !_context.Closing) await again().ConfigureAwait(false);
+            var retry = await watch.ConfigureAwait(false);
+            if (_context.Closing) return;
+            await (retry ? again() : lost()).ConfigureAwait(false);
         }
         catch (Exception)
         {
@@ -1691,6 +1725,9 @@ public sealed class ChatRunner : IDisposable
                 };
             }
 
+            // SESSCTX1c part B (the session-context design §2): a part that goes on from a lost conversation is handed the person's
+            // words that waited there after the brief, in the same prompt; they are the person's, as they said them.
+            if (message.Text.Length > 0) yield return Asked(message);
             yield break;
         }
 
