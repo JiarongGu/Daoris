@@ -276,6 +276,6 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `docs/2026-10-20-pipeline-design.md` | 96 | 845 |
 | `docs/2026-10-20-session-context-design.md` | 45 | 478 |
 | `docs/2026-10-20-ui-ux-design.md` | 106 | 1115 |
-| `docs/2026-10-21-alone-path-design.md` | 51 | 414 |
+| `docs/2026-10-21-alone-path-design.md` | 73 | 541 |
 | `docs/DAORIS_UNIFIED_COLLABORATION_ARCHITECTURE_AND_PLAN_2026-10-16.md` | 164 | 5380 |
 | `src/Daoris.Desktop/README.md` | 131 | 693 |
