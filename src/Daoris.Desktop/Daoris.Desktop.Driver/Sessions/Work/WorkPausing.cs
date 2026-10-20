@@ -411,5 +411,6 @@ public static class WorkPausing
                 : null,
             TakenBy = consideration.Verdict == StartVerdict.TakenElsewhere ? consideration.TakenBy : null,
             CannotShow = consideration.Verdict == StartVerdict.CannotShow ? consideration.CannotShow : null,
+            Said = consideration.Said,
         };
 }

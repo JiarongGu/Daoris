@@ -45,7 +45,8 @@ public sealed class OpinionLookTests : IDisposable
         await driver.Running.SettledAsync();
 
         Assert.Equal(1, passes);
-        Assert.StartsWith("set-up step `#q2` waits for a second opinion on the work it shows", sits["q2"]);
+        Assert.StartsWith("set-up step `#q2` waits for a second opinion on the work it shows", sits["q2"].Reason);
+        Assert.Equal(SittingFact.Landing, sits["q2"].Fact.Code);
         var (ask, choice) = Assert.Single(_passes);
         Assert.Equal((OpinionRules.Landing, "s1", "reports", line, await HeadAsync(tree)), (ask.Occasion, ask.Working, ask.Repository, ask.Base, ask.Tip));
         Assert.Equal(["q1", "q2"], ask.Quests.Select(quest => quest.Id));

@@ -280,6 +280,26 @@ public sealed class TickConsiderationTests
         Assert.Equal(JsonValueKind.Null, other.GetProperty("cannotShow").ValueKind);
     }
 
+    /// <summary>
+    /// OVERVIEWNOISE1c: a verdict the page had no words for carries which of its sentences it is, by code, with its facts — the cap
+    /// as a number — so the page words it in the reader's language; a verdict with none says none.
+    /// </summary>
+    [Fact]
+    public void A_quest_at_capacity_carries_its_code_and_the_cap_as_a_number()
+    {
+        var capped = new Consideration(Quest, StartVerdict.AtCapacity, "the concurrency cap (6) is spent — it frees as sessions finish.")
+        {
+            Said = new SittingFact(SittingFact.CapSpent) { Cap = 6 },
+        };
+
+        var said = JsonSerializer.SerializeToElement(DriverLoop.TickConsideration(capped), Wire).GetProperty("said");
+        var other = JsonSerializer.SerializeToElement(DriverLoop.TickConsideration(new Consideration(Quest, StartVerdict.Start, "starting.")), Wire);
+
+        Assert.Equal(("cap", 6), (said.GetProperty("code").GetString(), said.GetProperty("cap").GetInt32()));
+        Assert.Equal(JsonValueKind.Null, said.GetProperty("session").ValueKind);
+        Assert.Equal(JsonValueKind.Null, other.GetProperty("said").ValueKind);
+    }
+
     /// <summary>Every other verdict holds by no session, and says none.</summary>
     [Fact]
     public void A_quest_no_stop_holds_names_no_session()

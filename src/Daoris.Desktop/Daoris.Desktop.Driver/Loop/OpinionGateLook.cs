@@ -34,10 +34,10 @@ internal sealed class OpinionGateLook(LoopContext context, DriverOpinions opinio
     /// Where each owed landing opinion's gate is kept, as the attention band's route reads it (XAGENT1g3): oldest first, one per
     /// session, the review's own answer read with it as every landing door reads it. A look that could not read leaves none.
     /// </param>
-    internal async Task<(IReadOnlyDictionary<string, string> Sits, int Passes)> OpinionsAsync(
+    internal async Task<(IReadOnlyDictionary<string, OpinionSit> Sits, int Passes)> OpinionsAsync(
         Snapshot snapshot, List<string> events, CancellationToken ct, List<OpinionJudged>? judged = null)
     {
-        var sits = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        var sits = new Dictionary<string, OpinionSit>(StringComparer.OrdinalIgnoreCase);
         var dues = new OpinionDues(Home);
         var open = dues.Open();
         if (open.Count == 0) return (sits, 0);
@@ -86,10 +86,10 @@ internal sealed class OpinionGateLook(LoopContext context, DriverOpinions opinio
     /// waits on the service, git or a reviewer.
     /// </summary>
     /// <param name="judged">Where each owed landing opinion's gate is kept, as its last judgment read it (XAGENT1g3).</param>
-    internal (IReadOnlyDictionary<string, string> Sits, int Passes) OpinionsBeside(
+    internal (IReadOnlyDictionary<string, OpinionSit> Sits, int Passes) OpinionsBeside(
         Snapshot snapshot, List<OpinionJudged> judged, LookStages stages, CancellationToken ct)
     {
-        var sits = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        var sits = new Dictionary<string, OpinionSit>(StringComparer.OrdinalIgnoreCase);
         var facts = _context.Runs.Facts;
         var open = new OpinionDues(Home).Open();
         facts.KeepOpinionsOf(open.Select(Subject));
@@ -119,7 +119,7 @@ internal sealed class OpinionGateLook(LoopContext context, DriverOpinions opinio
     private static string Subject(OpinionDue due) => $"{due.Session}/{due.Occasion}";
 
     /// <summary>What a judgment that closed its opinion found: nothing sat, nothing owed.</summary>
-    private static readonly OpinionFact Settled = new(new Dictionary<string, string>(), null, null);
+    private static readonly OpinionFact Settled = new(new Dictionary<string, OpinionSit>(), null, null);
 
     /// <summary>
     /// One owed opinion judged as the <c>opinion</c> topic's judge beside the look (PARALLEL1g): kept, and the plan woken where what it
@@ -156,12 +156,16 @@ internal sealed class OpinionGateLook(LoopContext context, DriverOpinions opinio
     /// start still opening: under <c>steps</c>, the chain's next steps; under <c>landing</c>, every open set-up step of its repository,
     /// since which chain each is in is what the judgment reads. A wait of one judgment, never a start before the opinion.
     /// </summary>
-    internal static IEnumerable<(string Quest, string Why)> NotJudged(OpinionDue due, Snapshot snapshot) =>
+    internal static IEnumerable<(string Quest, OpinionSit Why)> NotJudged(OpinionDue due, Snapshot snapshot) =>
         due.Occasion == OpinionRules.Landing
             ? snapshot.Quests.Where(each => each.SetUpIn is not null && each.Status == "Open" && Same(each.To, due.Repository))
-                .Select(step => (step.Id, $"set-up step `#{step.Id}` waits for a second opinion on the work it shows, which is not judged yet."))
+                .Select(step => (step.Id, new OpinionSit(
+                    $"set-up step `#{step.Id}` waits for a second opinion on the work it shows, which is not judged yet.",
+                    new SittingFact(SittingFact.Landing))))
             : snapshot.Quests.Where(each => Same(each.Parent, due.Quest) && each.Status == "Open")
-                .Select(next => (next.Id, $"waits for a second opinion on the step before it, `#{due.Quest}`, before it starts: it is not judged yet."));
+                .Select(next => (next.Id, new OpinionSit(
+                    $"waits for a second opinion on the step before it, `#{due.Quest}`, before it starts: it is not judged yet.",
+                    new SittingFact(SittingFact.Steps) { Quest = due.Quest })));
 
     /// <summary>
     /// One owed opinion judged as it stands now (XAGENT1f, §2.1, §7, §8.1): null where it is closed, and closed on file; otherwise the quests
@@ -224,7 +228,7 @@ internal sealed class OpinionGateLook(LoopContext context, DriverOpinions opinio
             OpinionBeside(claim, token => DeliverBesideAsync(due, chain, first, process, token), ct);
         }
 
-        var sits = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        var sits = new Dictionary<string, OpinionSit>(StringComparer.OrdinalIgnoreCase);
         Sit(sits, due, chain, gate);
         return new OpinionFact(sits, kept, inFlight ? null : act);
     }
@@ -267,15 +271,17 @@ internal sealed class OpinionGateLook(LoopContext context, DriverOpinions opinio
     /// on the opinion of the work it shows (a dispute does not sit it: the person is about to look); under <c>steps</c>, the chain's
     /// next step while the opinion on the step before is unsettled.
     /// </summary>
-    private static void Sit(Dictionary<string, string> sits, OpinionDue due, IReadOnlyList<QuestView> chain, OpinionGateState gate)
+    private static void Sit(Dictionary<string, OpinionSit> sits, OpinionDue due, IReadOnlyList<QuestView> chain, OpinionGateState gate)
     {
         if (due.Occasion == OpinionRules.Landing)
         {
             if (!OpinionGateStates.AtWork(gate.State)) return;
             foreach (var step in chain.Where(each => each.SetUpIn is not null && each.Status == "Open" && Same(each.To, due.Repository)))
             {
-                sits[step.Id] = $"set-up step `#{step.Id}` waits for a second opinion on the work it shows, so you look once at work that "
-                    + $"already answered another agent: {gate.Says}";
+                sits[step.Id] = new(
+                    $"set-up step `#{step.Id}` waits for a second opinion on the work it shows, so you look once at work that "
+                    + $"already answered another agent: {gate.Says}",
+                    new SittingFact(SittingFact.Landing) { State = gate.State });
             }
 
             return;
@@ -284,7 +290,9 @@ internal sealed class OpinionGateLook(LoopContext context, DriverOpinions opinio
         if (gate.LetsGo) return;
         foreach (var next in chain.Where(each => Same(each.Parent, due.Quest) && each.Status == "Open"))
         {
-            sits[next.Id] = $"waits for a second opinion on the step before it, `#{due.Quest}`, before it starts: {gate.Says}";
+            sits[next.Id] = new(
+                $"waits for a second opinion on the step before it, `#{due.Quest}`, before it starts: {gate.Says}",
+                new SittingFact(SittingFact.Steps) { Quest = due.Quest, State = gate.State });
         }
     }
 

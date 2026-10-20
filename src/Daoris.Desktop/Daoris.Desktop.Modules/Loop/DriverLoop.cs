@@ -387,8 +387,18 @@ public sealed class DriverLoop(
             // them, a take made here, and the session here not carried on, so the page says it from facts. Null otherwise.
             TakenBy = consideration.TakenBy is { } taken ? new { taken.Machine, taken.Session, taken.Here, taken.Last } : null,
             CannotShow = consideration.CannotShow is { } sat ? new { sat.Code, sat.Environment, sat.Address } : null,
+            // Which of its sentences the planner said, by code and facts (OVERVIEWNOISE1c): the page words it. Null otherwise.
+            Said = SaidShown(consideration.Said),
         };
     }
+
+    /// <summary>
+    /// Which of a verdict's sentences the planner said, as the page receives it (OVERVIEWNOISE1c): the code and the facts its words
+    /// are said from, the cap as a number; null where the planner named none. One shape for the tick and a work's holds.
+    /// </summary>
+    public static object? SaidShown(SittingFact? said) => said is null
+        ? null
+        : new { said.Code, said.Cap, said.Session, said.Quest, said.Repository, said.Environment, said.State };
 
     /// <summary>
     /// One wait as the tick hands it to the page (UX6d, D150 §6.2): starts held because every account they may use is
