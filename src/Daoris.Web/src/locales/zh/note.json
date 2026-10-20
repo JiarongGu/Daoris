@@ -21,6 +21,8 @@
   "note.ended.went-on-failed": "它带着你的话继续，但这一轮失败了：",
   "note.ended.words-wait": "你的话仍在等待，下次查看时会再次发出。",
   "note.ended.words-wait-you": "你的话两次都失败了，正在等你：你再说话时会一起发出。",
+  "note.ended.setup-changed": "它工作期间权限提示从 `{{from}}` 改成了 `{{to}}`：Daoris 在这一轮走完时结束了它，没有在一轮中途打断，它会在同一个对话中按新的配置继续。",
+  "note.ended.words-setup": "你的话会在下次查看时，在同一个对话中按新的配置继续发出。",
   "note.ended.timeout": "运行超过 {{minutes}} 分钟，已被终止。",
   "note.ended.stopped": "已被手动停止。",
   "note.ended.handed-over": "已转交给 {{agent}}：它的委托会在同一个工作树中用它继续。",
