@@ -12,17 +12,15 @@ namespace Daoris.Desktop.Driver.Tests;
 /// into the line while the planner sat a review step for it.
 /// </summary>
 /// <remarks>
-/// The variable is the process's, and set here for the class's life: the class runs alone, after the rest of the Process half
-/// (<see cref="Alone"/>, PROCPAR1), since a door with no home in hand, and every child a class beside it started, would read this
-/// override. Every other door holding a home ignores an override in another one (<see cref="ConfigSeamTests"/>).
+/// The override is handed to the trees as their environment (ENVSEAM1), never set on the process: the class runs beside the rest
+/// of the Process half (PROCPAR1), and a door with no home in hand, or a child a class beside it started, would read a variable set
+/// here. Every other door holding a home ignores an override in another one (<see cref="ConfigSeamTests"/>).
 /// </remarks>
-[Collection(Alone.Name)]
 [Trait(Category.Name, Category.Process)]
 public sealed class ConfigSeamLandingTests : IDisposable
 {
     private readonly string _scratch;
     private readonly string _home;
-    private readonly string? _overrideBefore;
     private readonly World _world = new();
 
     public ConfigSeamLandingTests()
@@ -30,18 +28,15 @@ public sealed class ConfigSeamLandingTests : IDisposable
         _scratch = Path.Combine(RepoRoot(), "_fixtures", "config-seam", Guid.NewGuid().ToString("N")[..8]);
         _home = Path.Combine(_scratch, "daoris-home");
         Directory.CreateDirectory(_home);
-        _overrideBefore = Environment.GetEnvironmentVariable(DriverConfig.PathVariable);
-        Environment.SetEnvironmentVariable(DriverConfig.PathVariable, Override);
     }
 
-    public void Dispose()
-    {
-        Environment.SetEnvironmentVariable(DriverConfig.PathVariable, _overrideBefore);
-        GitSeed.Discard(_scratch);
-    }
+    public void Dispose() => GitSeed.Discard(_scratch);
 
     /// <summary>The override: a file of another name, in the home.</summary>
     private string Override => Path.Combine(_home, "landing.json");
+
+    /// <summary>The trees over this home, in an environment that names the override and nothing else.</summary>
+    private SessionTrees Trees() => new(_home, variable: name => name == DriverConfig.PathVariable ? Override : null);
 
     [Fact]
     public async Task The_plan_the_gate_and_the_landing_read_the_file_the_override_names()
@@ -60,7 +55,7 @@ public sealed class ConfigSeamLandingTests : IDisposable
         var tree = await DoneSessionAsync(root);
         var tip = await HeadAsync(tree);
         ShowStep(tip);
-        var trees = new SessionTrees(_home);
+        var trees = Trees();
         var subject = new LandingSubject("s1", "q1", "Fix the gap");
 
         // `trees land --plan`: the override's branch rule, and the gate's line.
@@ -129,7 +124,7 @@ public sealed class ConfigSeamLandingTests : IDisposable
     /// <summary>A session that worked in its own tree and concluded on its quest's done.</summary>
     private async Task<string> DoneSessionAsync(string root)
     {
-        var opened = await new SessionTrees(_home).OpenAsync(root, "web-app", "aurora");
+        var opened = await Trees().OpenAsync(root, "web-app", "aurora");
         await CommitAsync(opened.Path, "s1.txt", "the work of s1", "the work of s1");
         _world.Quests["q1"] = new QuestView("q1", "ask #a1", "web-app", "Fix the gap", "Fix it.", "Done");
         _world.Records.Add(new SessionRecord("s1", "web-app", "completed") { Quest = "q1", Tree = opened.Path, Created = DateTimeOffset.UtcNow });

@@ -59,6 +59,12 @@ public sealed record SessionTarget(
     public string? Helper { get; init; }
 
     /// <summary>
+    /// The home the start's tools are read from (ENVSEAM1, D63's seam, TOOLS5): the one the driver's environment names, as the
+    /// driver hands it. Null reads this process's <c>DAORIS_HOME</c>.
+    /// </summary>
+    public string? Home { get; init; }
+
+    /// <summary>
     /// The permission prompts a driven session of a quest runs under (AUTONOMY1b, D184 point 3): the posture its protocol door asks, or
     /// the permission mode its native door names, as its repository's setup resolved at this start or resume. Null keeps the adapter's
     /// own, as an intake, a reviewer, a helper and a brainstorm have.
@@ -1335,7 +1341,7 @@ internal static class Spawning
     public static ProcessStartInfo InRoot(
         SessionTarget target, string fileName, IEnumerable<string> arguments, bool redirectInput = false)
     {
-        var info = Shell(target.Root, fileName, arguments, target.Repository, target.ServiceUrl);
+        var info = Shell(target.Root, fileName, arguments, target.Repository, target.ServiceUrl, target.Home ?? DaorisHome.Resolve());
         if (redirectInput) info.RedirectStandardInput = true;
 
         // An intake (D65 §1b) serves an ask, not a quest: the ask and its own session, and the quest
@@ -1402,7 +1408,7 @@ internal static class Spawning
     public static ProcessStartInfo ChatInRoot(
         ChatTarget target, string fileName, IEnumerable<string> arguments)
     {
-        var info = Shell(target.Root, fileName, arguments, target.Repository, target.ServiceUrl);
+        var info = Shell(target.Root, fileName, arguments, target.Repository, target.ServiceUrl, DaorisHome.Resolve());
         info.RedirectStandardInput = true;
         // Its own record, as a driven session's is named (CHATTAKE1b): a connector its harness starts on the pipe door from the
         // repository's own server list inherits it, so a take there marks this conversation's record.
@@ -1411,7 +1417,7 @@ internal static class Spawning
     }
 
     private static ProcessStartInfo Shell(
-        string root, string fileName, IEnumerable<string> arguments, string repository, string serviceUrl)
+        string root, string fileName, IEnumerable<string> arguments, string repository, string serviceUrl, string? home)
     {
         var info = new ProcessStartInfo
         {
@@ -1444,8 +1450,9 @@ internal static class Spawning
         info.Environment["DAORIS_SERVICE_URL"] = serviceUrl;
         // TOOLS5 (D121 §2.4): every session, chat, intake and helper finds the tools the person chose first on its
         // PATH, so its own `git push` is the git the driver's fetch ran. Before the harness's binary is resolved on
-        // that PATH (HarnessProbe.Apply), so an agent npm put under a managed node is found the same way.
-        Tools.Hand(info);
+        // that PATH (HarnessProbe.Apply), so an agent npm put under a managed node is found the same way. The tools are the
+        // home's the start was handed (ENVSEAM1), this process's where it was handed none.
+        Tools.Hand(info, home);
 
         return info;
     }

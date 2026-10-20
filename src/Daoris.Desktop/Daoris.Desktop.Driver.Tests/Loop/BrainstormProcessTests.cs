@@ -15,19 +15,18 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <remarks>
 /// Real git and real processes, so the class is in the real-process half (MOD8): a branch's worktree does not run it, the parent
 /// runs it on the merge. The service is a port nobody holds: a brainstorm asks it only for a search, and does without. It needs
-/// `Daoris.Service.Mcp` built, as <see cref="KnowledgeConnectorStartTests"/> does, and sets this process's home, connector and store to
-/// its own scratch for its run, so the connector it starts never opens another home. Those are every class's, so it runs alone, after
-/// the rest (<see cref="Alone"/>, PROCPAR1), as its pass of five seconds, a bound on a real stub's answer, would anyway.
+/// `Daoris.Service.Mcp` built, as <see cref="KnowledgeConnectorStartTests"/> does, and hands the driver an environment naming its own
+/// scratch for home, connector and store (ENVSEAM1), so the connector it starts never opens another home. It sets nothing of this
+/// process's, so it runs beside the rest of the Process half (PROCPAR1).
 /// </remarks>
-[Collection(Alone.Name)]
 [Trait(Category.Name, Category.Process)]
 public sealed class BrainstormProcessTests : IDisposable
 {
     private readonly GitTree _repository = new("brainstorm-pass");
     private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-brainstorm-pass-" + Guid.NewGuid().ToString("N")[..8]);
 
-    /// <summary>The variables this class sets for its run, each with what it held before, put back when it ends.</summary>
-    private readonly Dictionary<string, string?> _saved = new(StringComparer.Ordinal);
+    /// <summary>The environment the driver is handed (ENVSEAM1): this run's scratch, and nothing of this process's.</summary>
+    private readonly Dictionary<string, string> _variables = new(StringComparer.Ordinal);
 
     public BrainstormProcessTests()
     {
@@ -37,7 +36,8 @@ public sealed class BrainstormProcessTests : IDisposable
 
     /// <summary>
     /// The connector the driver offers a pass found and started on this run's scratch alone: the development build named outright,
-    /// its home this run's, and its store and the folder it reads empty scratch of their own.
+    /// its home this run's, and its store and the folder it reads empty scratch of their own. The driver reads them from the
+    /// environment it is handed (<see cref="Variable"/>).
     /// </summary>
     private void OwnConnector()
     {
@@ -52,14 +52,15 @@ public sealed class BrainstormProcessTests : IDisposable
                      ("DAORIS_KNOWLEDGE_DB", Path.Combine(store, "knowledge.db")),
                  })
         {
-            _saved[name] = Environment.GetEnvironmentVariable(name);
-            Environment.SetEnvironmentVariable(name, value);
+            _variables[name] = value;
         }
     }
 
+    /// <summary>A variable of the environment the driver is handed.</summary>
+    private string? Variable(string name) => _variables.GetValueOrDefault(name);
+
     public void Dispose()
     {
-        foreach (var (name, value) in _saved) Environment.SetEnvironmentVariable(name, value);
         _repository.Dispose();
         try
         {
@@ -213,7 +214,10 @@ public sealed class BrainstormProcessTests : IDisposable
                 Adapter = "stub", Cap = 3, TimeoutMinutes = 2,
                 Commands = new Dictionary<string, IReadOnlyList<string>> { ["stub"] = ["node", Native()], ["acp-stub"] = ["node", Protocol()] },
             },
-            adapters, _home, harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)));
+            adapters, _home, harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)))
+        {
+            Variable = Variable,
+        };
         var files = new BrainstormFiles(_home);
         var id = files.WriteRequest("Why does the daily report drop its last day?", "reports", ["stub", "acp-stub"], DateTimeOffset.UtcNow);
         var snapshot = new Snapshot([], [new RepoView("reports", true, _repository.Root)], []);
@@ -324,6 +328,7 @@ public sealed class BrainstormProcessTests : IDisposable
             adapters, _home, harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)))
         {
             BrainstormMinute = TimeSpan.FromSeconds(1),
+            Variable = Variable,
         };
         var files = new BrainstormFiles(_home);
         var id = files.WriteRequest("Why does the daily report drop its last day?", null, ["stub", "acp-stub"], DateTimeOffset.UtcNow);
