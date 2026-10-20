@@ -156,6 +156,24 @@ export type Quest = {
 };
 /** A submission by the machine and sequence that made it (FABRIC-CLOSE1a): what a reopen names it by. */
 export type SubmissionRef = { machine: string; sequence: number };
+/**
+ * One move of a quest (FLOWCHART1a2; D186, the flowchart design §2.1), as `GET /api/quests/{id}/moves` answers it on either host,
+ * by allow-list: its kind as the service spells it (`published`, `taken`, `done`, `conflict`, `dismissed`, `waited`, …; a newer
+ * host may name another, shown as recorded), when and on which machine it was made, its sequence there, the remote's number (absent
+ * while it is pending), whether the replay applied it, and the status it reached the quest at (absent before the publish). Its kind's
+ * own field: a conflict's `attempted`, a dismissal's `dismisses` (the conflict's machine and sequence), a wait's `waitsOn`, a
+ * submission's `session`, and the codes of an evidence read, a set-up and a verdict. `hold`: the hold it set, or `none` where it let
+ * one go. Never the publish's words, a note's body, the answers or a path; a field a move does not keep is absent: not recorded.
+ */
+export type QuestMove = {
+  kind: string; at: string; machine: string; sequence: number; number?: number | null; applied: boolean;
+  from?: Quest['status'] | null; attempted?: Quest['status'] | null; dismisses?: SubmissionRef | null;
+  waitsOn?: string | null; session?: string | null;
+  evidence?: 'found' | 'missing' | 'commit' | (string & {}) | null;
+  setUp?: 'local' | 'deployed' | (string & {}) | null;
+  verdict?: Verdict | (string & {}) | null;
+  hold?: QuestHold | 'none' | null;
+};
 /** A taker's submission in a closure graph (FABRIC-CLOSE1a): the operation that made it, when, and its note. */
 export type QuestSubmission = SubmissionRef & { at: string; note?: string | null };
 /**
@@ -689,6 +707,21 @@ export const api = {
     get<Convergence[]>(`/api/convergence${qs({ minimumSimilarity, limit: PAGE_SHOWN + 1, workspace })}`, signal),
   quests: (repository: string | null, includeClosed: boolean, workspace: string | null, signal?: AbortSignal) =>
     get<Quest[]>(`/api/quests${qs({ includeClosed, repository, workspace })}`, signal),
+  /**
+   * One quest's moves, in the order its history replays (FLOWCHART1a2): the service's own door on both hosts, so a browser draws
+   * its flowchart as the window does. Null from a host from before the door, which answers it not found: its path is not kept
+   * there, which is no failure (the flowchart design §7, trap 18). The door answers every id, so its own answer is never a 404.
+   */
+  questMoves: async (id: string, signal?: AbortSignal): Promise<QuestMove[] | null> => {
+    try {
+      const answer = await get<{ moves?: unknown }>(`/api/quests/${encodeURIComponent(id)}/moves`, signal);
+      if (!Array.isArray(answer?.moves)) throw new Error('the service answered something other than the quest\'s moves');
+      return answer.moves as QuestMove[];
+    } catch (error) {
+      if (notFound(error)) return null;
+      throw error;
+    }
+  },
   // Asks (D65 §1a), a local host's doors: the screen twin of `daoris-driver ask` (INT4c, D50). Files
   // travel whole, as a quest's do, because the host keeps them until the ask becomes quests.
   asks: (includeClosed: boolean, workspace: string | null, signal?: AbortSignal) =>
