@@ -204,6 +204,7 @@ public sealed class StartInSyncTickTests : IDisposable
         File.WriteAllText(Path.Combine(bin, "daoris-driver.cmd"), "");
         var home = Path.Combine(install, DaorisHome.InstallData);
         Directory.CreateDirectory(home);
+        File.WriteAllText(Path.Combine(install, DaorisHome.InstallMarker), "# Daoris — installed desktop\n");
         File.WriteAllText(DaorisHome.Entry(home, HomeEntry.DriverConfig), """{"heavyGates":{"engine":[{"name":"build","run":"dotnet build"},{"name":"e2e","run":"npm run e2e"}]}}""");
         // The repository the quest names `engine` sits in a folder of another name.
         var checkout = Path.Combine(_home, "shop-checkout");
