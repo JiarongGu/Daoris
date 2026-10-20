@@ -508,6 +508,10 @@ public sealed record BrainstormActionResponse(BrainstormResponse? Brainstorm, st
 // MSG1a (D137 §2.4): the words a session took, by their ids; `By` the session that took them where it is not this one
 // (a fallback's new session).
 public sealed record TakenRequest(IReadOnlyList<string?>? Said, string? By = null);
+// COWORK1c (D188): the words a session's dispatcher is about to write to its harness, by their ids, marked attempted before the wire.
+public sealed record AttemptRequest(IReadOnlyList<string?>? Said);
+// The session as it stands, the ledger's sentence, and the ids named that no longer wait, which were marked nothing.
+public sealed record AttemptResponse(SessionResponse Session, string Message, IReadOnlyList<string> Unmarked);
 // SAIDBACK1a (D137 §2.4): one word waiting on a record, by its id, taken back before a session took it; with `text`, reworded:
 // the old word out and these words kept last under a new id, its files' names kept.
 public sealed record TakeBackRequest(string? Word, string? Text = null);
@@ -747,6 +751,8 @@ public sealed record ChangesResponse(string Since, IReadOnlyList<string> Moved);
 [JsonSerializable(typeof(SaidResponse))]
 [JsonSerializable(typeof(SessionSayRefusalResponse))]
 [JsonSerializable(typeof(TakenRequest))]
+[JsonSerializable(typeof(AttemptRequest))]
+[JsonSerializable(typeof(AttemptResponse))]
 [JsonSerializable(typeof(TakeBackRequest))]
 [JsonSerializable(typeof(TakeBackResponse))]
 [JsonSerializable(typeof(OpinionAskRequest))]

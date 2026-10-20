@@ -1454,6 +1454,23 @@ if (mode == ServiceMode.Local)
         };
     });
 
+    // A word's attempt (COWORK1c, D188 point 6; the message-urgency design §6): the session's dispatcher marks the words it is about to
+    // write to its harness, before the wire, so a shell that comes up again never sends one a second time. LOCAL mode only, as the say
+    // door: the words wait only here.
+    app.MapPost("/api/sessions/{id}/attempt", async (
+        ComposedService s, HttpContext http, string id, AttemptRequest body, CancellationToken ct) =>
+    {
+        var ids = (body.Said ?? []).OfType<string>().Where(word => word.Length > 0).ToList();
+        var outcome = await s.Ledger.MarkAttemptAsync(id, ids, DateTimeOffset.UtcNow, ct);
+        return outcome.Refusal switch
+        {
+            SessionSayRefusal.None => Results.Ok(new AttemptResponse(
+                await ToSessionAsync(s, outcome.Session!, MachineLocal(http)), outcome.Message, outcome.Unmarked)),
+            SessionSayRefusal.Empty => Results.BadRequest(new SessionSayRefusalResponse(outcome.Message, SayRefusal(outcome.Refusal))),
+            _ => Results.NotFound(new SessionSayRefusalResponse(outcome.Message, SayRefusal(outcome.Refusal))),
+        };
+    });
+
     // The person taking back, or rewording, one word waiting on a record before a session took it (SAIDBACK1a, D137 §2.4). A
     // word that no longer waits, or one on a record that runs again, answers `done: false, why: taken`, never an error. Nothing
     // is kept on the ask, since nothing took the words. LOCAL mode only, as the say door: the words wait only here.

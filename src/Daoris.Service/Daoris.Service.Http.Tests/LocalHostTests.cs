@@ -1808,6 +1808,21 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
             (await ListedSessionAsync(running))!.Value.GetProperty("said").EnumerateArray().Select(w => w.GetProperty("id").GetString()));
         Assert.Equal((400, "level"), (shouted.Status, shouted.Json.GetProperty("refusal").GetString()));
         Assert.Equal(words, await WordsAsync());
+
+        // The attempt door (COWORK1c, the design §6): the dispatcher marks the word before the wire, the first moment kept; a word no
+        // longer waiting marks nothing and is said so, never an error; none named is 400, and a session nobody holds 404.
+        var kept = word.GetProperty("id").GetString()!;
+        var attempted = await host.PostAsync($"/api/sessions/{running}/attempt", new { said = new[] { kept } });
+        var again = await host.PostAsync($"/api/sessions/{running}/attempt", new { said = new[] { kept } });
+        var gone = await host.PostAsync($"/api/sessions/{running}/attempt", new { said = new[] { "ab12cd34" } });
+        var unnamed = await host.PostAsync($"/api/sessions/{running}/attempt", new { said = Array.Empty<string>() });
+        var nobody = await host.PostAsync("/api/sessions/nothing5/attempt", new { said = new[] { kept } });
+
+        Assert.Equal((200, 200, 200), (attempted.Status, again.Status, gone.Status));
+        Assert.Equal(["ab12cd34"], gone.Json.GetProperty("unmarked").EnumerateArray().Select(id => id.GetString()));
+        var listed = (await ListedSessionAsync(running))!.Value.GetProperty("said").EnumerateArray().Single();
+        Assert.Equal(attempted.Json.GetProperty("session").GetProperty("said")[0].GetProperty("attempt").GetString(), listed.GetProperty("attempt").GetString());
+        Assert.Equal((400, 404), (unnamed.Status, nobody.Status));
         Assert.Equal(200, (await host.PostAsync($"/api/sessions/{running}/state", new { state = "stopped" })).Status);
 
         async Task<IEnumerable<string?>> WordsAsync() =>

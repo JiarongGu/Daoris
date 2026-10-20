@@ -131,6 +131,9 @@ public enum SessionSayRefusal
     Level,
 }
 
+/// <summary>What marking words attempted did (COWORK1c): the record as it now stands, and the words named that no longer wait.</summary>
+public sealed record SessionAttemptOutcome(SessionSayRefusal Refusal, string Message, Session? Session, IReadOnlyList<string> Unmarked);
+
 /// <param name="Refusal"><see cref="SessionSayRefusal.None"/> when the words were kept.</param>
 /// <param name="Message">The whole answer, phrased once here for every door.</param>
 /// <param name="Session">The session as it now stands, when the words were kept.</param>
@@ -852,6 +855,40 @@ public sealed class SessionLedger(
                       + (by is null || by == id ? "." : $": session `{by}` took them."),
                 left, taken);
         }, ct).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Mark the moment a session's dispatcher first wrote these waiting words to its harness (COWORK1c, the message-urgency design §6),
+    /// before the wire: a shell that comes up again never sends a word with an attempt a second time, and says it may have reached the
+    /// agent. Each word in its own statement, the first moment kept. A word no longer waiting is answered unmarked, never an error:
+    /// it was taken, or taken back, meanwhile. No revision, since the words never travel.
+    /// </summary>
+    public async Task<SessionAttemptOutcome> MarkAttemptAsync(
+        string id, IReadOnlyCollection<string> words, DateTimeOffset at, CancellationToken ct = default)
+    {
+        if (words.Count == 0)
+        {
+            return new(SessionSayRefusal.Empty, "Name the words attempted: none were named, so nothing was marked.", Session: null, []);
+        }
+
+        if (await sessions.FindAsync(id, ct).ConfigureAwait(false) is not { Origin: null })
+        {
+            return new(SessionSayRefusal.NotFound, $"No session `{id}` of this machine's.", Session: null, []);
+        }
+
+        var unmarked = new List<string>();
+        foreach (var word in words)
+        {
+            if (!await sessions.MarkAttemptAsync(id, word, at, ct).ConfigureAwait(false)) unmarked.Add(word);
+        }
+
+        var session = await sessions.FindAsync(id, ct).ConfigureAwait(false);
+        return new(
+            SessionSayRefusal.None,
+            unmarked.Count == 0
+                ? $"Marked {words.Count} word(s) on session `{id}` as written to its harness."
+                : $"Marked {words.Count - unmarked.Count} word(s) on session `{id}`; {string.Join(", ", unmarked.Select(word => $"`{word}`"))} no longer wait.",
+            session, unmarked);
     }
 
     /// <summary>

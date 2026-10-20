@@ -1198,6 +1198,18 @@ public sealed class SessionLedgerTests : IAsyncLifetime
             (SessionState.Working, before.Note, before.Updated, revision),
             (record.State, record.Note, record.Updated, await RevisionOf(session.Id)));
 
+        // COWORK1c (the design §6): the dispatcher marks a word's attempt before the wire, once; a word no longer waiting is named
+        // unmarked, never an error; none named is refused, and so is a record this machine does not hold.
+        var attempted = await _ledger.MarkAttemptAsync(session.Id, [word.Id, "zz99zz99"], Now.AddMinutes(5));
+        var marked = await _ledger.MarkAttemptAsync(session.Id, [word.Id], Now.AddMinutes(9));
+        var none = await _ledger.MarkAttemptAsync(session.Id, [], Now.AddMinutes(9));
+        var nobody = await _ledger.MarkAttemptAsync("zzzzzzzz", [word.Id], Now.AddMinutes(9));
+
+        Assert.Equal((SessionSayRefusal.None, SessionSayRefusal.None), (attempted.Refusal, marked.Refusal));
+        Assert.Equal(["zz99zz99"], attempted.Unmarked);
+        Assert.Equal(Now.AddMinutes(5), Assert.Single((await _sessions.FindAsync(session.Id))!.Said).Attempt);
+        Assert.Equal((SessionSayRefusal.Empty, SessionSayRefusal.NotFound), (none.Refusal, nobody.Refusal));
+
         await Advance(session.Id, "stopped");
         var (_, parked) = await Parked();
         var answered = await _ledger.SayAsync(parked.Id, "Port 9090.", null, Now.AddMinutes(4), level: SaidLevel.Urgent, running: true);
