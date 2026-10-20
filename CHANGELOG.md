@@ -18,6 +18,9 @@ with the version and date at release.
   `daoris-driver run-heavy` refuses its tree, and on Claude Code each heavy gate's declared command is refused too; an agent
   that takes no rules from Daoris is told them instead. *Heavy at end* has sessions run them once, at their end. Nothing set
   runs as before.
+- Under *Light*, a session whose tool call or background task runs past 20 minutes is told so once, in its conversation, as
+  Daoris's urgent word: what ran and for how long, and that a suite run whole is left to verification. Its row in the list says
+  *past its bound: told* beside the call's time. Daoris never ends the call; *Stop* stays yours.
 - `daoris-driver ask channel` shows which messages are urgent and, under each message you posted, how far it got in each
   repository it went to: waiting, held, sent, taken, read, partly handed, answered or never reached, as the ask page shows it.
   Your post is still urgent by default. `--ordinary` posts it for each session to read when its turn ends instead.
