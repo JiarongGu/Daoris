@@ -312,6 +312,50 @@ public sealed class DrivenAccessTests : IDisposable
         Assert.Equal(AccessRules.Asking, started.ChangedIn(With(new AccessEdit { Machine = true, Set = [new(AccessRules.Permissions, AccessRules.Asking)] }), adapter)?.Permissions);
     }
 
+    /// <summary>
+    /// ACCESSSWAP1b (D183's note): a change of the driver's file tells the console of each driven session running here whose permission
+    /// prompts it moves, by what it started under and what the file names now: its next turn runs under them. Moved back to what it
+    /// started under, it is told it goes on as it runs; a change that does not move them, another repository's or another pause's, or one
+    /// it was already told, tells it nothing. A session's run that ended tells nothing.
+    /// </summary>
+    [Fact]
+    public void A_change_of_the_file_tells_each_running_session_it_moves_and_its_change_back()
+    {
+        var adapter = Adapter("claude-code-acp");
+        var config = (DriverConfig.Empty with { Drivable = ["engine", "editor"] })
+            .WithAccess(new AccessEdit { Repository = "engine", Set = [new(AccessRules.Permissions, AccessRules.Asking)] });
+        var started = DrivenAccess.For(AccessRules.Resolve(config, "engine", null), "engine", adapter);
+        var processes = new SessionProcesses();
+        var held = processes.OpenSetup("s1", now => started.SwapIn(now, adapter));
+        DriverConfig Engine(string permissions, DriverConfig from) =>
+            from.WithAccess(new AccessEdit { Repository = "engine", Set = [new(AccessRules.Permissions, permissions)] });
+        List<(string Session, string Line)> Told(DriverConfig before, DriverConfig after)
+        {
+            var told = new List<(string, string)>();
+            DrivenAccess.TellRunning(processes, before, after, (session, line) => told.Add((session, line)));
+            return told;
+        }
+
+        var widened = Engine(AccessRules.Unrestricted, config);
+        var (session, line) = Assert.Single(Told(config, widened));
+        Assert.Equal("s1", session);
+        Assert.Equal(
+            "— Permission prompts changed under this session: it started under `asking`, and its repository's setup now names "
+            + "`unrestricted`. Its next turn runs under them: its run ends at this turn's end, never mid-turn, and goes on in the same "
+            + "conversation under the new setup.",
+            line);
+
+        Assert.Empty(Told(widened, widened.WithAccess(new AccessEdit { Repository = "engine", Set = [new(AccessRules.Landing, AccessRules.Rule)] })));
+        Assert.Empty(Told(widened, widened.WithAccess(new AccessEdit { Repository = "editor", Set = [new(AccessRules.Permissions, AccessRules.Auto)] })));
+        Assert.Contains("now names `auto`", Assert.Single(Told(widened, Engine(AccessRules.Auto, widened))).Line);
+        Assert.Equal(
+            "— Permission prompts changed back to `asking`, which this session started under: it goes on under them as it runs.",
+            Assert.Single(Told(widened, config)).Line);
+
+        held.Dispose();
+        Assert.Empty(Told(config, widened));
+    }
+
     /// <summary>The record's setup read back as the service answers it on loopback (AUTONOMY1a), and none from a record before it.</summary>
     [Fact]
     public void A_record_s_setup_is_read_back_with_it()

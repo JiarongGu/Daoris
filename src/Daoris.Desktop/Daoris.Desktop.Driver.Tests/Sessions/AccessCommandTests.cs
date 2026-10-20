@@ -76,6 +76,25 @@ public sealed class AccessCommandTests : IDisposable
         Assert.Contains("its workspace was not read", unplaced);
     }
 
+    /// <summary>
+    /// ACCESSSWAP1b (D183's note): the terminal writes the file from another process and reaches no session's console, so a change that
+    /// moves a level's permission prompts says how a driven session already running takes it: at its next turn, ending at this one's end
+    /// and going on in the same conversation. A change of another pause says nothing of it.
+    /// </summary>
+    [Fact]
+    public void A_change_of_permission_prompts_says_a_running_session_takes_it_at_its_next_turn()
+    {
+        const string NextTurn = "a driven session running now under other permission prompts takes these at its next turn";
+        Assert.Equal(0, Run("engine permissions=asking", out var asking));
+        Assert.Contains(NextTurn, asking);
+        Assert.Equal(0, Run("engine landing=rule", out var landing));
+        Assert.DoesNotContain(NextTurn, landing);
+        Assert.Equal(0, Run("--workspace shop full", out var full));
+        Assert.Contains(NextTurn, full);
+        Assert.Equal(0, Run("engine permissions=asking", out var same));
+        Assert.DoesNotContain(NextTurn, same);
+    }
+
     [Fact]
     public void Full_access_and_a_clear_say_what_they_did()
     {

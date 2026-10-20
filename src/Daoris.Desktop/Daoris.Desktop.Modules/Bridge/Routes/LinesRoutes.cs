@@ -932,8 +932,12 @@ public sealed class LinesRoutes(DriverContext context)
     {
         var edit = AccessRules.EditOf(request.Payload ?? default);
         // The refusals come first, before anything is written.
-        AccessRules.Apply(DriverConfig.Load(_loop.ConfigPath), edit);
+        var before = DriverConfig.Load(_loop.ConfigPath);
+        AccessRules.Apply(before, edit);
         _context.Change(config => AccessRules.Apply(config, edit));
+        // ACCESSSWAP1b (D183's note): each driven session running here whose permission prompts this moves is told on its console that
+        // its next turn runs under them; its run reads the file at that turn's end, as it does after the terminal's change.
+        DrivenAccess.TellRunning(_loop.Processes, before, DriverConfig.Load(_loop.ConfigPath), _loop.Output.Append);
         return DriverRoutes.State(_loop);
     }
 

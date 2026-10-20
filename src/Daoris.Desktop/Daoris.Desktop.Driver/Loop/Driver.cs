@@ -2815,9 +2815,10 @@ public sealed class Driver(
         // then (DriverContinuations). Only a session that holds words: never an intake's or a reviewer's, and never Ask Daoris's, whose
         // own swap is ChatRunner's (ACCESSSWAP1).
         SetupSwap? swapped = null;
-        Func<bool>? setupChanged = target.Access is { } started && inbox is not null && ConfigPath is { } configPath
-            ? () => (swapped = SetupNow(started, adapter, configPath)) is not null
-            : null;
+        var started = inbox is not null && ConfigPath is not null ? target.Access : null;
+        Func<bool>? setupChanged = started is null ? null : () => (swapped = SetupNow(started, adapter, ConfigPath!)) is not null;
+        // And held beside its inbox while it runs, so the page's press tells its console when the change applies (SET_ACCESS).
+        using var setupHeld = started is null ? null : Context.Processes.OpenSetup(sessionId, now => started.SwapIn(now, adapter));
         // BGWAIT2: the timeout is said to the protocol door before the process is killed, so the stream's end it causes is said as
         // the timeout's, never as the agent having exited.
         var ending = adapter.Wire == SessionWire.Acp ? new AcpEnding() : null;
@@ -2923,7 +2924,7 @@ public sealed class Driver(
     {
         try
         {
-            return started.ChangedIn(DriverConfig.Load(configPath), adapter) is { } now ? new SetupSwap(started.Permissions, now.Permissions) : null;
+            return started.SwapIn(DriverConfig.Load(configPath), adapter);
         }
         catch (Exception error) when (error is DriverConfigUnreadableException or DriverException or IOException or UnauthorizedAccessException)
         {

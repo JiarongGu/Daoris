@@ -157,6 +157,8 @@ public static class HelpCommand
 
         config.WithHelpMode(mode).Save(configPath);
         output.WriteLine($"help: from its next start, {Says(mode)}");
+        // ACCESSSWAP1b (D183's note): written from another process, the mode reaches no running conversation, unlike the window's press.
+        output.WriteLine("help: A conversation running now keeps its mode until its next start; the window's choice ends one at its turn's end.");
         return 0;
 
         static string Named(string mode) => mode == HelpModes.Full ? "with full access" : "restricted";
