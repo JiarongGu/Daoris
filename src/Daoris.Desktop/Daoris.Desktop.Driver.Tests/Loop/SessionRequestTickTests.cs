@@ -25,7 +25,9 @@ public sealed class SessionRequestTickTests : IDisposable
     public SessionRequestTickTests()
     {
         Directory.CreateDirectory(_home);
-        _processes = new SessionProcesses(DaorisHome.Entry(_home, HomeEntry.Sessions));
+        // The markers' own entry, as the driver host's loop keeps them and the verb reads them (HOMEFIX1): the sessions folder
+        // is another place since D172's places, where the verb found no marker and took the session for nobody's.
+        _processes = new SessionProcesses(DaorisHome.Entry(_home, HomeEntry.SessionPids));
         _repository = Path.Combine(_home, "engine");
         Directory.CreateDirectory(_repository);
         Git("init", "-q", "-b", "main");

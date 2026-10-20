@@ -31,6 +31,7 @@ vi.mock('@shenora/react', async () => {
 });
 
 import type { OpenGroup } from '../../app/opener';
+import i18n from '../../locales/i18n';
 import { useStateHub } from '../../bridge/state/stateHub';
 import { SessionRail } from './SessionRail';
 
@@ -425,13 +426,51 @@ describe('the session rail', () => {
     expect(within(group).queryByText('busy')).toBeNull();
   });
 
-  /** HELP1a: Ask Daoris's conversations group under its own name, never the record's `daoris:help`. */
-  it('names Ask Daoris\'s group by its name, not by the repository its records are kept in', async () => {
-    SESSIONS = [{ ...base, id: 'h1e1p000', quest: null, kind: 'chat', repository: 'daoris:help', state: 'working' }];
-    show(<SessionRail notify={() => {}} arrangement="repository" />);
+  /**
+   * ASKRAIL1: Ask Daoris's conversations (HELP1a, `daoris:help`) are no session of the list: they are reached from Ask Daoris's
+   * panel and its history. Beside a session's, in every arrangement, in the search by name and by what was said.
+   */
+  describe.each([['en', 'Ask Daoris'], ['zh', '问道衍']])('Ask Daoris\'s records beside a session\'s (%s) (ASKRAIL1)', (language, name) => {
+    const HELP = { ...base, id: 'h1e1p000', quest: null, kind: 'chat', repository: 'daoris:help', state: 'working', workspace: 'default' };
+    beforeEach(async () => {
+      await i18n.changeLanguage(language);
+      SESSIONS = [...LIVE, HELP];
+      GROUPS = [...LIVE_GROUPS, { session: 'h1e1p000', group: 'working', shown: 'working', archived: false, teammate: false }];
+    });
+    afterEach(async () => { await i18n.changeLanguage('en'); });
 
-    expect(await screen.findByRole('heading', { name: 'Ask Daoris' })).toBeInTheDocument();
-    expect(screen.queryByText('daoris:help')).toBeNull();
+    it('lists none by repository', async () => {
+      show(<SessionRail notify={() => {}} arrangement="repository" />);
+      await screen.findByRole('heading', { name: 'engine' });
+      expect(screen.queryByRole('heading', { name })).toBeNull();
+      expect(screen.queryByText('daoris:help')).toBeNull();
+    });
+
+    it('lists none by state', async () => {
+      show(<SessionRail notify={() => {}} arrangement="state" />);
+      await screen.findAllByRole('heading', { level: 3 });
+      // Two working sessions of the list, never three; and no row is Ask Daoris's.
+      expect(screen.getAllByRole('heading', { level: 3 }).some((heading) => /[（(]3[）)]/.test(heading.textContent ?? ''))).toBe(false);
+      expect(screen.queryByText(name)).toBeNull();
+    });
+
+    it('finds none in a search by name or by what was said', async () => {
+      invoke.mockImplementation(async (_module: string, type: string, payload: { q?: string }) => {
+        if (type === 'SESSION_GROUPS') return { sessions: GROUPS };
+        if (type === 'SESSION_SEARCH') {
+          return { query: payload.q, cut: false, hits: [{ session: 'h1e1p000', seq: 1, kind: 'message', snippet: 'the streamer in help' }] };
+        }
+        return DRIVER_STATE;
+      });
+      show(<SessionRail notify={() => {}} arrangement="repository" />);
+      const box = await screen.findByRole('searchbox', { name: language === 'en' ? 'search sessions' : /./ });
+      await userEvent.type(box, language === 'en' ? 'Ask' : '问');
+      await waitFor(() => expect(screen.queryByRole('region', { name: 'By name' })).toBeNull());
+      await userEvent.clear(box);
+      await userEvent.type(box, 'streamer');
+      await waitFor(() => expect(invoke.mock.calls.some((call) => call[1] === 'SESSION_SEARCH')).toBe(true));
+      expect(screen.queryByText(/the streamer in help/)).toBeNull();
+    });
   });
 
   it('says busy without a name when the session holds the registered root', async () => {

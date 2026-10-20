@@ -542,7 +542,7 @@ public sealed class TreesRoutes(DriverLoop loop)
             earlier = await TreesWords.LandedBeforeAsync(new SessionTrees(_loop.Home), service, id, cancellationToken);
             if (earlier is not null && earlier.ReadsAsLanded(TreeFolders.TreeGone(tree)))
             {
-                return new { Session = id, Said = TreesWords.LandedPlan(id, earlier, new AutoLandings(_loop.Home).Of(id)).ToWire() };
+                return new { Session = id, Said = TreesPlanWords.LandedPlan(id, earlier, new AutoLandings(_loop.Home).Of(id)).ToWire() };
             }
 
             if (string.IsNullOrWhiteSpace(tree)) return new { Session = id, Said = TreesWords.NoTreeToLand(id).ToWire() };
@@ -597,7 +597,7 @@ public sealed class TreesRoutes(DriverLoop loop)
                 return new
                 {
                     Session = id,
-                    Said = (await TreesWords.LandPlanAsync(trees, _loop.Home, id, tree, plan, gate, earlier, pluginLines, cancellationToken)).ToWire(),
+                    Said = (await TreesPlanWords.LandPlanAsync(trees, _loop.Home, id, tree, plan, gate, earlier, pluginLines, cancellationToken)).ToWire(),
                 };
             }
 
@@ -1006,7 +1006,7 @@ public sealed class TreesRoutes(DriverLoop loop)
         if (request.Type == "HANDOFF_PLAN")
         {
             var plan = await trees.HandPlanAsync(root, entry, named, cancellationToken);
-            if (terminal) return new { Session = id, Said = TreesWords.HandPlan(plan, pluginLines).ToWire() };
+            if (terminal) return new { Session = id, Said = TreesPlanWords.HandPlan(plan, pluginLines).ToWire() };
             return new { Session = id, Branch = (string?)plan.Branch, plan.Repository, plan.Plugin, plan.Problem, plan.PullRequest, plan.Commits };
         }
 

@@ -6,7 +6,7 @@ namespace Daoris.Driver;
 /// the running Daoris's client prints what the alone path prints. Each takes the record the read's core returns; nothing here
 /// runs git or asks the service, except <see cref="LandPlanAsync"/>, which asks the landing's own two reads as the verb does.
 /// </summary>
-public static partial class TreesWords
+public static class TreesPlanWords
 {
     /// <summary>
     /// <c>trees clean</c>'s list: each session branch with what it holds and the doors offered beside a kept one (LAND4), the branches
@@ -19,7 +19,7 @@ public static partial class TreesWords
         var said = new List<string>();
         foreach (var item in plan.Sessions)
         {
-            said.Add($"  {(item.Removable ? "goes " : "kept ")} {Describe(item)}");
+            said.Add($"  {(item.Removable ? "goes " : "kept ")} {TreesWords.Describe(item)}");
             if (SessionBranchDoors.LandingOffered(item, SessionBranchDoors.SessionOfTree(records, item.Tree)) is { } landing)
             {
                 said.Add($"         {landing}");
