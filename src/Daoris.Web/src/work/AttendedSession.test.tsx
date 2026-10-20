@@ -73,6 +73,26 @@ describe('the attended session', () => {
     window.localStorage.removeItem('daoris.chainWhole');
   });
 
+  /**
+   * HEADFIT1: who it worked with is one line, opened in place, and another record starts folded (the relations are the session's
+   * own, unlike the parts', which belong to the line of work), as the milestone's fold does.
+   */
+  it('folds who it worked with to a line, and another record starts folded again', async () => {
+    const userEvent = (await import('@testing-library/user-event')).default;
+    vi.useRealTimers();
+    const relations = { askedBy: { id: 'z9y8x7w6', session: null }, resumedAfter: null, asked: [] };
+    const { rerender } = render(<AttendedSession session={session()} relations={relations} />);
+    expect(screen.getByRole('region', { name: 'Who it worked with' })).toHaveTextContent('asked by z9y8x7w6');
+    expect(screen.queryByText(/whose record this machine does not hold/)).toBeNull();
+
+    await userEvent.click(screen.getByRole('button', { name: 'Show who it worked with' }));
+    expect(screen.getByText(/session z9y8x7w6, whose record this machine does not hold/)).toBeInTheDocument();
+
+    rerender(<AttendedSession session={session({ id: 's9f8e7d6' })} relations={relations} />);
+    expect(screen.queryByText(/whose record this machine does not hold/)).toBeNull();
+    expect(screen.getByRole('button', { name: 'Show who it worked with' })).toBeInTheDocument();
+  });
+
   it('offers a designed nothing when the person has not chosen a session', () => {
     render(<AttendedSession session={null} />);
     expect(screen.getByText('Nothing attended')).toBeInTheDocument();
@@ -132,16 +152,45 @@ describe('the attended session', () => {
     expect(screen.queryByRole('navigation', { name: 'Parts' })).toBeNull();
 
     rerender(<AttendedSession session={session({ id: 'ap000003' })} parts={{ entry: EVIDENCE_ENTRIES[0]!, attended: 'ap000003', rows, onShow }} />);
+    // HEADFIT1: folded to its one line, which names how many and how the newest began; its parts are a press away.
+    expect(screen.getByRole('navigation', { name: 'Parts' })).toHaveTextContent('Part 3 of 3 · newest: asked by db');
+    expect(screen.getByRole('navigation', { name: 'Parts' }).querySelectorAll('button')).toHaveLength(1);
+    await userEvent.click(screen.getByRole('button', { name: 'Show the parts' }));
     const strip = screen.getByRole('navigation', { name: 'Parts' });
     await userEvent.click(strip.querySelectorAll('button')[0]!);
     expect(onShow).toHaveBeenCalledWith('ap000001');
   });
 
   /**
+   * HEADFIT1: the parts open where the person left them while they move among the parts of one line of work (a press on a part
+   * shows another session, and the flow they are reading must not fold under it), and another line of work starts folded.
+   */
+  it('keeps the parts open across the parts of one line of work, and folds them for another line', async () => {
+    const { EVIDENCE_ENTRIES, EVIDENCE_SESSIONS } = await import('./entries.fixtures');
+    const userEvent = (await import('@testing-library/user-event')).default;
+    vi.useRealTimers();
+    const rows = Object.fromEntries(EVIDENCE_SESSIONS.map((row) => [row.id, { session: row }]));
+    const parts = (entry: number, attended: string) => ({ entry: EVIDENCE_ENTRIES[entry]!, attended, rows, onShow: vi.fn() });
+    const { rerender } = render(<AttendedSession session={session({ id: 'ap000003' })} parts={parts(0, 'ap000003')} />);
+    await userEvent.click(screen.getByRole('button', { name: 'Show the parts' }));
+    expect(screen.getByRole('button', { name: 'Hide the parts' })).toBeInTheDocument();
+
+    rerender(<AttendedSession session={session({ id: 'ap000002' })} parts={parts(0, 'ap000002')} />);
+    expect(screen.getByRole('button', { name: 'Hide the parts' })).toBeInTheDocument();
+    expect(screen.getByText('Part 2 of 3')).toBeInTheDocument();
+
+    rerender(<AttendedSession session={session({ id: 'db000003' })} parts={parts(1, 'db000003')} />);
+    expect(screen.getByRole('button', { name: 'Show the parts' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Hide the parts' })).toBeNull();
+  });
+
+  /**
    * FLOWCHART1b (the flowchart design §2.3): Accept's plan, read once its ask is open, is where the parts would land: a dashed node in
-   * the parts' flow beside the press, drawn from the same plan and not before it is open.
+   * the parts' flow beside the press, drawn from the same plan and not before it is open. HEADFIT1: in the flow the person opened;
+   * Accept's ask does not open it (a block opening under a press elsewhere would move the control just pressed).
    */
   it('draws the landing plan Accept read as a prospective node in the parts\' flow, once its ask is open', async () => {
+    const userEvent = (await import('@testing-library/user-event')).default;
     const { EVIDENCE_ENTRIES, EVIDENCE_SESSIONS } = await import('./entries.fixtures');
     vi.useRealTimers();
     vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function (this: HTMLElement) {
@@ -158,6 +207,8 @@ describe('the attended session', () => {
       expect(screen.queryByText('Accept would land these on daoris/t-one')).toBeNull();
 
       rerender(<AttendedSession session={session({ id: 'ap000003' })} parts={parts} entryAccept={{ ...accept, open: true }} />);
+      expect(screen.queryByRole('listitem', { name: /^Accept would land these on daoris\/t-one/ })).toBeNull();
+      await userEvent.click(screen.getByRole('button', { name: 'Show the parts' }));
       expect(screen.getByRole('listitem', { name: /^Accept would land these on daoris\/t-one/ })).toBeInTheDocument();
     } finally {
       vi.restoreAllMocks();

@@ -2,16 +2,17 @@ import { expect, test, type Page } from '@playwright/test';
 import { measureRecordHead, type RecordHeadMeasure } from './recordHead';
 
 // The record head's budget, measured (MILESTONEUX1; the UI/UX design §3.7 and §9 row 6; UX7's budget, the UX7 design §6.2):
-// how far down the main area the conversation starts, with every block of the head present (the page head, the parts strip,
-// the one Accept, the chain's line, the relations, the channel, the milestone's line and the trace's line), drawn in a real
-// browser at the three widths the frame gives (`MAIN_WIDTHS`), in English and 中文. jsdom lays nothing out, so no unit test can
-// hold it. The stories are `work/AttendedSession.head.stories.tsx`.
+// how far down the main area the conversation starts, with every block of the head present (the page head, the parts, the one
+// Accept, the chain's line, the relations, the channel, the milestone's line and the trace's line), drawn in a real browser at the
+// three widths the frame gives (`MAIN_WIDTHS`), in English and 中文. jsdom lays nothing out, so no unit test can hold it. The
+// stories are `work/AttendedSession.head.stories.tsx`.
 //
-// UX7's 200 px is not kept by the head as it stands, and the run says by how much and which block costs it: the parts'
-// flowchart (FLOWCHART1b) alone is more than the whole budget. This row moves no block (D185's MILESTONEUX1 note), so the budget
-// is a test expected to fail, which turns red the day a head fits it and says to remove the mark, and the head's height today
-// is a ceiling a change that makes it worse fails. The milestone's own cost is held exactly: its fold is one line where the
-// main area is wide, two at the floor, and opening it moves what is under it and nothing above.
+// UX7's 200 px is not kept by the head with the parts and the relations folded either, and the run says by how much and which
+// block costs it (HEADFIT1; D185's MILESTONEUX1 and HEADFIT1 notes): the folds took the head from 806-1030 px to 375-472, and what
+// remains is the page head, the folded lines' own heights and the 16 px between nine blocks. The budget stays a test expected to
+// fail, which turns red the day a head fits it and says to remove the mark, and the head's height today is a ceiling a change that
+// makes it worse fails. Each fold's cost is held exactly: the milestone's, the parts' and the relations' is one line where the main
+// area is wide (two where its words wrap), and opening one moves what is under it and nothing above.
 //
 // `npm --prefix src/Daoris.Web run e2e:measured -- --grep head/`.
 
@@ -22,24 +23,36 @@ const WIDTH_PX = { wide: 80 * 16, half: 39 * 16, narrow: 25 * 16 } as const;
 const MILESTONE = { en: 'Where this work stands', zh: '这项工作进展到哪里' } as const;
 
 /**
+ * The other two folds (HEADFIT1): the block as its landmark is named in each language, the press that opens it, the press that
+ * folds it again, and the least it grows by opening, so a fold that opened nothing fails.
+ */
+const FOLDS = [
+  {
+    block: { en: 'Parts', zh: '各段' }, show: { en: 'Show the parts', zh: '展开各段' }, hide: { en: 'Hide the parts', zh: '收起各段' }, least: 100,
+  },
+  {
+    block: { en: 'Who it worked with', zh: '协作关系' }, show: { en: 'Show who it worked with', zh: '展开协作关系' },
+    hide: { en: 'Hide who it worked with', zh: '收起协作关系' }, least: 60,
+  },
+] as const;
+
+/**
  * Each story, by its book and name: the main-area width it is drawn at, its language, and the head's height today with the
  * margin a font's rounding needs. A change that draws the head taller fails; one that draws it shorter lowers its ceiling.
- * Measured 2026-10-20: 806, 916 and 995 px in English, 806, 881 and 1030 in 中文.
+ * Measured 2026-10-20, HEADFIT1: 375, 433 and 472 px in English, 375, 416 and 455 in 中文 (806, 916, 995, 806, 881 and 1030 before
+ * the parts and the relations folded).
  */
 const TABLE: Record<string, { width: keyof typeof WIDTH_PX; language: keyof typeof MILESTONE; ceiling: number }> = {
-  'head/Wide': { width: 'wide', language: 'en', ceiling: 820 },
-  'head/Half': { width: 'half', language: 'en', ceiling: 930 },
-  'head/Narrow': { width: 'narrow', language: 'en', ceiling: 1010 },
-  'head/ChineseWide': { width: 'wide', language: 'zh', ceiling: 820 },
-  'head/ChineseHalf': { width: 'half', language: 'zh', ceiling: 895 },
-  'head/ChineseNarrow': { width: 'narrow', language: 'zh', ceiling: 1045 },
+  'head/Wide': { width: 'wide', language: 'en', ceiling: 385 },
+  'head/Half': { width: 'half', language: 'en', ceiling: 443 },
+  'head/Narrow': { width: 'narrow', language: 'en', ceiling: 482 },
+  'head/ChineseWide': { width: 'wide', language: 'zh', ceiling: 385 },
+  'head/ChineseHalf': { width: 'half', language: 'zh', ceiling: 426 },
+  'head/ChineseNarrow': { width: 'narrow', language: 'zh', ceiling: 465 },
 };
 
-/** The story drawn and its faces loaded, then measured again until the flowchart has chosen its placement and holds still. */
-async function open(page: Page, story: string): Promise<RecordHeadMeasure> {
-  await page.goto(`/measured/flow.html?story=${story}`);
-  await page.waitForFunction(() => (window as unknown as { flowReady?: boolean }).flowReady === true);
-  await page.locator('[data-record-frame] [data-conversation]').waitFor();
+/** The page measured again until the head holds still, since a flowchart chooses its placement after it is drawn. */
+async function settled(page: Page): Promise<RecordHeadMeasure> {
   let last = await page.evaluate(measureRecordHead);
   for (let tries = 0; tries < 20; tries += 1) {
     await page.waitForTimeout(150);
@@ -50,10 +63,18 @@ async function open(page: Page, story: string): Promise<RecordHeadMeasure> {
   return last;
 }
 
+/** The story drawn and its faces loaded, then measured until it holds still. */
+async function open(page: Page, story: string): Promise<RecordHeadMeasure> {
+  await page.goto(`/measured/flow.html?story=${story}`);
+  await page.waitForFunction(() => (window as unknown as { flowReady?: boolean }).flowReady === true);
+  await page.locator('[data-record-frame] [data-conversation]').waitFor();
+  return settled(page);
+}
+
 const said = (measured: RecordHeadMeasure) => measured.blocks.map((block) => `${Math.round(block.height)} px ${block.name}`).join('; ');
 
 for (const [story, { width, language, ceiling }] of Object.entries(TABLE)) {
-  test(`${story} at ${width}: every block of the head is drawn, the milestone folded to one line (two at the floor), the head no taller than today`, async ({ page }) => {
+  test(`${story} at ${width}: every block of the head is drawn, the milestone, the parts and the relations folded to one line (two where it wraps), the head no taller than today`, async ({ page }) => {
     const measured = await open(page, story);
     expect(measured.width, `the main area is ${WIDTH_PX[width]} px, not ${measured.width}`).toBe(WIDTH_PX[width]);
     // The page head, the head's own line, the parts, Accept, the chain's line, the relations, the channel, the milestone and the
@@ -63,18 +84,30 @@ for (const [story, { width, language, ceiling }] of Object.entries(TABLE)) {
     expect(milestone, `the milestone is among the blocks: ${said(measured)}`).toBeDefined();
     console.log(`[measured] ${story} (${measured.width}px): the conversation ${measured.down} px down, budget ${BUDGET}; ${said(measured)}`);
 
-    // Folded: the line, whole, in the one text size's line height, two lines at the floor where it wraps. The facts are not drawn.
+    // Folded: the line, whole, in the one text size's line height (17 px, 20 with the line's leading), two lines at the floor where
+    // it wraps. The facts are not drawn.
     const LINE = 20;
     expect(milestone!.height, `the milestone's fold at ${width}`).toBeLessThanOrEqual(width === 'wide' && language === 'en' ? LINE : 2 * LINE);
     await expect(page.getByRole('button', { name: new RegExp(MILESTONE[language]) })).toHaveAttribute('aria-expanded', 'false');
     await expect(page.getByRole('region', { name: MILESTONE[language] }).locator('dl')).toHaveCount(0);
+
+    // The parts and the relations, folded likewise: a line each, and nothing of either drawn (no flowchart, no strip, no list).
+    for (const fold of FOLDS) {
+      const block = measured.blocks.find((one) => one.name.includes(`[${fold.block[language]}]`));
+      expect(block, `${fold.block.en} is among the blocks: ${said(measured)}`).toBeDefined();
+      expect(block!.height, `the ${fold.block.en} fold at ${width}`).toBeLessThanOrEqual(width === 'wide' && language === 'en' ? LINE : 2 * LINE);
+      await expect(page.getByRole('button', { name: fold.show[language] })).toBeVisible();
+    }
+    await expect(page.locator('[data-flow-pane]')).toHaveCount(0);
+    await expect(page.getByRole('region', { name: FOLDS[1].block[language] }).locator('dl')).toHaveCount(0);
     expect(measured.down, `the head's height at ${width} is ${measured.down}: ${said(measured)}`).toBeLessThanOrEqual(ceiling);
   });
 
   test(`${story} at ${width}: UX7's ${BUDGET} px budget, kept by no head with every block yet`, async ({ page }) => {
-    // The gap, held open: the parts' flowchart and the relations alone spend more than the budget, and the pack moves no
-    // block in MILESTONEUX1. A head that fits turns this red ("expected to fail"): remove the mark and the ceiling above.
-    test.fail(true, `the head with every block is over ${BUDGET} px at every width; MILESTONEUX1 measured it and moved no block`);
+    // The gap, held open: with the parts and the relations folded, what is left is the page head (70 to 111 px), the chain's line
+    // and *Accept* (30 px each, the chain's 52 at the floor), six folded lines of 17 px or two, and 16 px between nine blocks, and
+    // HEADFIT1 moves no other block. A head that fits turns this red ("expected to fail"): remove the mark and lower the ceiling.
+    test.fail(true, `the head with every block is over ${BUDGET} px at every width; HEADFIT1 measured it with the parts and the relations folded and moved no other block`);
     const measured = await open(page, story);
     expect(measured.down, `the conversation starts ${measured.down} px down at ${width}, over ${BUDGET}: ${said(measured)}`).toBeLessThanOrEqual(BUDGET);
   });
@@ -113,6 +146,34 @@ for (const [story, { width, language, ceiling }] of Object.entries(TABLE)) {
         expect(row.valueTop, 'the value sits beside its label').toBeLessThan(row.labelBottom);
         expect(row.valueLeft, 'in a column of its own').toBeGreaterThan(row.labelLeft + 40);
       }
+    }
+  });
+
+  test(`${story} at ${width}: the parts and who it worked with open in place and fold again, moving what is under them and nothing above`, async ({ page }) => {
+    const folded = await open(page, story);
+    for (const fold of FOLDS) {
+      const index = folded.blocks.findIndex((block) => block.name.includes(`[${fold.block[language]}]`));
+      expect(index, `${fold.block.en} is among the blocks`).toBeGreaterThan(0);
+
+      await page.getByRole('button', { name: fold.show[language] }).click();
+      await expect(page.getByRole('button', { name: fold.hide[language] })).toBeVisible();
+      const opened = await settled(page);
+      const grew = opened.blocks[index]!.height - folded.blocks[index]!.height;
+      console.log(`[measured] ${story}: ${fold.block.en} folded ${Math.round(folded.blocks[index]!.height)} px, opened ${Math.round(opened.blocks[index]!.height)} px`);
+      expect(grew, `opening ${fold.block.en} adds what it holds`).toBeGreaterThan(fold.least);
+      // Everything above keeps its place (the pinned page head is no block of the page's own flow), and the conversation moves down
+      // by what the block grew: one block, opened where it stood.
+      expect(opened.blocks.length, 'the same blocks, one of them taller').toBe(folded.blocks.length);
+      for (let above = 1; above < index; above += 1) {
+        expect(opened.blocks[above]!.top, `${folded.blocks[above]!.name} stays where it was`).toBeCloseTo(folded.blocks[above]!.top, 0);
+      }
+      expect(opened.down - folded.down, `the conversation moves down by what ${fold.block.en} grew`).toBeCloseTo(grew, 0);
+
+      // The press back folds it to the line it was.
+      await page.getByRole('button', { name: fold.hide[language] }).click();
+      await expect(page.getByRole('button', { name: fold.show[language] })).toBeVisible();
+      const again = await settled(page);
+      expect(again.down, `${fold.block.en} folded again is where it was`).toBeCloseTo(folded.down, 0);
     }
   });
 }

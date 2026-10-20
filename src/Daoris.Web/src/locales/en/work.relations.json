@@ -9,5 +9,11 @@
   "work.relations.question": "its question: its quest waited on this",
   "work.relations.answer": "Answered: {{note}}",
   "work.relations.declined": "Declined: {{note}}",
-  "work.relations.waiting": "Not answered yet."
+  "work.relations.waiting": "Not answered yet.",
+  "work.relations.show": "Show who it worked with",
+  "work.relations.hide": "Hide who it worked with",
+  "work.relations.line.askedBy": "asked by {{who}}",
+  "work.relations.line.resumed": "carried on once #{{id}} was answered",
+  "work.relations.line.asked": "asked {{count}} of another repository",
+  "work.relations.line.asked_other": "asked {{count}} of other repositories"
 }
