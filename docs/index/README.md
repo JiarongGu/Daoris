@@ -220,7 +220,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Cli/src/workflows/namedworkflows.ts` | 49 | 956 |
 | `src/Daoris.Cli/src/workflows/workflowdoor.ts` | 61 | 1056 |
 | `src/Daoris.Cli/test/agents/toolchain.test.ts` | 110 | 2083 |
-| `src/Daoris.Cli/test/desktop-tool.test.ts` | 46 | 878 |
+| `src/Daoris.Cli/test/desktop-tool.test.ts` | 47 | 882 |
 | `src/Daoris.Cli/test/dogfood.test.ts` | 49 | 852 |
 | `src/Daoris.Cli/test/driver/driverconfig.test.ts` | 160 | 2923 |
 | `src/Daoris.Cli/test/tools/tools.test.ts` | 44 | 752 |
@@ -233,7 +233,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 
 | File | KB | Lines |
 |---|---|---|
-| `tools/deployment-rehearsal.mjs` | 103 | 1771 |
+| `tools/deployment-rehearsal.mjs` | 103 | 1778 |
 | `tools/desktop-publish.mjs` | 74 | 1295 |
 | `tools/desktop.mjs` | 53 | 1082 |
 | `tools/family-rehearsal.mjs` | 349 | 6105 |
