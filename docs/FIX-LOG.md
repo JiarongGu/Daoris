@@ -5,6 +5,19 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-20 — A driver test listened on every interface, so each new tree raised a firewall prompt (FIREWALL1)
+
+- **Symptom:** Windows Defender Firewall asked about `testhost.exe` for every new agent worktree, gate tree and driven session's
+  tree; a Cancel left Block rules behind. Measured by another session with the Filtering Platform's audit (events 5154/5158): the
+  run's only listen on a non-loopback address.
+- **Root cause:** `DrivenAccessTests.A_resume_under_a_changed_setup_keeps_the_new_one_on_its_record_and_the_same_keeps_nothing`
+  found a free port with `TcpListener.Create(0)`, a dual-mode listener on `[::]`, all interfaces; Windows asks once per test
+  host's path, and every tree is a new path. The suites' own servers listen on loopback, and `HttpListener`'s listen belongs to
+  the system's HTTP service, not the test host.
+- **Fix:** the test probes on `IPAddress.Loopback`, as `InAppBrowser.FreePort` and the hosts' tests do; `LoopbackListensTests`
+  refuses `TcpListener.Create(`, `IPAddress.Any` and `IPAddress.IPv6Any` in every desktop and service test project.
+- **Verification:** `DrivenAccessTests` and `LoopbackListensTests`, 29 passed; the walk reads every test project.
+
 ## 2026-10-20 — Checkouts measuring at once shared one port, and a test held a word to one post (FLOWCHART1e, COWORK1c)
 
 - **Symptom:** the full set on 2b28b0112 failed `web-measured` (ten stories: `page.goto: net::ERR_CONNECTION_REFUSED` on

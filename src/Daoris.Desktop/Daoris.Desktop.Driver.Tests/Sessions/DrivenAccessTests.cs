@@ -239,7 +239,8 @@ public sealed class DrivenAccessTests : IDisposable
     public async Task A_resume_under_a_changed_setup_keeps_the_new_one_on_its_record_and_the_same_keeps_nothing()
     {
         using var listener = new System.Net.HttpListener();
-        var port = System.Net.Sockets.TcpListener.Create(0);
+        // Loopback only: a listener on every interface makes Windows ask its firewall about the test host, once per worktree.
+        var port = new System.Net.Sockets.TcpListener(System.Net.IPAddress.Loopback, 0);
         port.Start();
         var number = ((System.Net.IPEndPoint)port.LocalEndpoint).Port;
         port.Stop();
