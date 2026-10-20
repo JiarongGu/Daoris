@@ -4,8 +4,8 @@ import { useShenora, useShenoraEvent } from '@shenora/react';
 import { sentence } from '../locales/format';
 import { keys } from '../data/queries';
 import {
-  accountsSlice, asksSlice, callsSlice, driverSlice, groupsSlice, linesSlice, notPushed, questsSlice, sessionsSlice, sweepSlice, syncSlice,
-  usageSlice, useDriverReady, useStateHub, useStateSlices, workSlice,
+  accountsSlice, asksSlice, attentionSlice, callsSlice, driverSlice, groupsSlice, linesSlice, notPushed, questsSlice, sessionsSlice,
+  sweepSlice, syncSlice, usageSlice, useDriverReady, useStateHub, useStateSlices, workSlice,
 } from '../bridge/shell';
 import { type AccountWaitTick, type Consideration, type TrustHold, newsFrom } from '../data/signals';
 import type { Notify } from '../design/ui';
@@ -15,7 +15,7 @@ type Tick = { events?: string[]; considered?: Consideration[]; untrusted?: Trust
 /** The slices the shell pushes with their data and this page reads pushed (PUSH1a, D182); every other family keeps its pulls. */
 const PUSHED = [
   driverSlice, linesSlice, sessionsSlice, callsSlice, workSlice, groupsSlice, syncSlice, sweepSlice, questsSlice, asksSlice, usageSlice,
-  accountsSlice,
+  accountsSlice, attentionSlice,
 ];
 
 /**
@@ -69,8 +69,8 @@ export function ShellSignals({ notify, onAttend, attended }: {
     // And which of those holds are the agent's trust (D73), as facts the screen can offer the person
     // to grant. Replaced whole for the same reason; a shell older than the grant sends none.
     client.setQueryData(keys.untrusted, tick?.untrusted ?? []);
-    // And which starts wait on their accounts (UX6d), an ask's intake among them, which no consideration names: *What needs
-    // you* says each, from these facts and what the page already holds. Replaced whole; an older shell sends none.
+    // And which starts wait on their accounts (UX6d), an ask's intake among them, which no consideration names. Replaced whole; an
+    // older shell sends none. *What needs you* reads none of these three: who needs the person is pushed (PUSH1d4).
     client.setQueryData(keys.waits, tick?.waits ?? []);
 
     // 🔴 Refetching is NOT deduplicated. A tick that repeats its report can still have changed the
@@ -92,7 +92,7 @@ export function ShellSignals({ notify, onAttend, attended }: {
     // tick reads none of it again.
     void client.invalidateQueries({ queryKey: keys.driver, predicate: notPushed(client) });
     // And the rules: a tick settles what agents proposed about them (PERM2), applying a narrowing and
-    // holding a widening for the person — which *What needs you* reads.
+    // holding a widening for the person, which the Agents place's rules show (*What needs you*'s row is pushed, PUSH1d4).
     void client.invalidateQueries({ queryKey: keys.rules });
     // Every tick runs a pass for each wired circle, so where each stands may have moved (SYNC6b); where the shell pushes the
     // standings, the pass's end pushes what it moved (PUSH1a2), and a tick reads none of them again.

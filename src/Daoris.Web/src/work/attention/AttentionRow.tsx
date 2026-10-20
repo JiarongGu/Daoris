@@ -6,7 +6,8 @@ import { cn } from '../../lib/cn';
 import { shellWord } from '../../lib/shellWord';
 import type { TrustHold } from '../../data/signals';
 import { Button, Dot, Icon, Inline, SelectField } from '../../design/ui';
-import type { AccountRowFacts } from './accountAttention';
+import type { AccountRowFacts } from './accountWords';
+import type { RuleProposal } from '../../settings/repository/AgentRules';
 import type { HeldAttempt, HeldResolution } from '../head/milestone';
 import { ASKS_ONCE, type AttentionActId, type AttentionOffer, attentionOffers } from './attention';
 import { Note } from '../Note';
@@ -80,6 +81,8 @@ export type Attention = {
    * offered. Its `session` is the session that holds it, whose page its door opens.
    */
   permission?: PermissionWait;
+  /** A `rule` row's proposal (PERM2), whole: what its *Allow* answers and the session it tells (PROPOSEHERE1c). */
+  proposal?: RuleProposal;
   /** A `proposal`'s receivers, as its declarations named them: what *Publish to …* publishes to, in one press. */
   publishTo?: string[];
   /** A `proposal`'s other receivers: every repository its workspace can ask, which *Choose…* offers. */

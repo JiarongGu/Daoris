@@ -5,9 +5,10 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as Tooltip from '@radix-ui/react-tooltip';
 
 // Sessions' badge on the activity bar (SESSUX1c, D126 §2.5), the way the application holds it: the whole window over a
-// mocked shell whose last tick the cache holds, since the badge is only drawn where Sessions is, and Sessions is the
-// shell's alone (D47 §4). `App.test.tsx` holds the window in a browser, where there is no Sessions to badge. And
-// Overview's *What needs you* with the quest that tick parked, and its badge (SESSUX1i, §4.6), which only a driver says.
+// mocked shell that pushes who needs the person (PUSH1d4: judged in .NET, `AttentionStateSliceTests` holds what is counted),
+// since the badge is only drawn where Sessions is, and Sessions is the shell's alone (D47 §4). `App.test.tsx` holds the window
+// in a browser, where there is no Sessions to badge. And Overview's *What needs you* with the quest the driver parked, and its
+// badge (SESSUX1i, §4.6), which only a driver says.
 
 const { invoke, notifyReady } = vi.hoisted(() => ({
   invoke: vi.fn(),
@@ -28,11 +29,11 @@ vi.mock('@shenora/react', async () => {
 
 import '../locales/i18n';
 import { App } from './App';
-import { keys } from '../data/queries';
 import { AT_START } from '../help/setupGuide';
 import { WorkspaceScopeProvider } from '../data/scope';
-import type { RuleProposal } from '../settings/repository/AgentRules';
 import type { Consideration } from '../data/signals';
+import type { RuleProposal } from '../settings/repository/AgentRules';
+import type { PushedAttention } from '../work/attention/attention';
 
 const base = { adapter: 'claude-code', created: '2026-10-01T09:00:00Z', updated: '2026-10-01T09:30:00Z', workspace: 'default' };
 
@@ -44,14 +45,28 @@ const SESSIONS = [
   { ...base, id: 'w0rk1ng0', quest: 'q2', repository: 'game', kind: 'driven', state: 'working' },
 ];
 
-/** The last tick's verdicts: one quest parked on its failed sessions, one only waiting its turn. */
-const CONSIDERED: Consideration[] = [
-  {
-    quest: 'q1', repository: 'engine', verdict: 'Exhausted', reason: 'engine has failed q1 3 times; it sits until you try again.',
-    strikes: 3, since: '2026-10-01T09:21:00+00:00',
-  },
-  { quest: 'q3', repository: 'game', verdict: 'Busy', reason: 'game is busy.' },
-];
+/** An ask the declarations proposed and nobody has published (INT4a), as the service lists it. */
+const ASKS = [{
+  id: '7c1e9a04b2d5', workspace: 'default', sentence: 'Cap the hydration per frame.\n\nThe trace is attached.', state: 'Proposed',
+  tier: 'declarations', asked: '2026-09-21T08:00:00Z', updated: '2026-09-21T08:00:00Z',
+  links: [], attachments: [], quests: [], proposal: [{ repository: 'engine', score: 3, matched: ['frame'] }],
+}];
+
+/** The quest the driver's last look parked on its failed sessions. */
+const PARKED: Consideration = {
+  quest: 'q1', repository: 'engine', verdict: 'Exhausted', reason: 'engine has failed q1 3 times; it sits until you try again.',
+  strikes: 3, since: '2026-10-01T09:21:00+00:00',
+};
+
+/**
+ * What the shell pushes of the sessions above (PUSH1d4), as .NET judges them: each parked session a row, the teammate's among
+ * them; what the Sessions badge counts, this machine's park alone.
+ */
+const PARKS: PushedAttention[] = SESSIONS.filter((one) => one.state === 'awaiting-person').map((one) => ({
+  kind: 'parked', id: one.id, since: one.updated, workspace: 'default', where: one.repository, note: {},
+}));
+const PARKED_QUEST: PushedAttention = { kind: 'parked-quest', id: 'q1', since: PARKED.since!, where: 'engine', sitting: PARKED };
+const COUNTED = { 'session:c4a7c4a7': { kind: 'parked', workspace: 'default' } };
 
 /** The quest that tick parked, as the service lists it. */
 const QUESTS = [{
@@ -66,24 +81,27 @@ function respond(url: string): Response {
   if (url.startsWith('/api/status')) return Response.json({ semantic: false, tier: 'lexical', note: '' });
   if (url.startsWith('/api/sessions')) return Response.json(url.includes('daoris%3Ahelp') ? [] : SESSIONS);
   if (url.startsWith('/api/quests')) return Response.json(QUESTS);
+  if (url.startsWith('/api/asks')) return Response.json(ASKS);
   if (url.startsWith('/api/sync')) return Response.json({ workspace: 'default', wired: false, ahead: 0, behind: [], conflicts: [] });
   return Response.json([]);
 }
 
-/** What the driver's own lists say waits on the person besides the tick's: an agent's ask for a helper, and a second opinion. */
-type DriverWaits = { helpers?: unknown[]; opinions?: unknown[]; permissions?: unknown[] };
-
-function start(considered: Consideration[], proposals: RuleProposal[] = [], driverWaits: DriverWaits = {}) {
+/**
+ * The window over a shell that pushes who needs the person (PUSH1d4): its snapshot answers `STATE_SLICE` for the attention slice,
+ * every other slice keeping its pull. `rows` are the band's, `counted` what the Sessions badge counts, each as .NET judged them.
+ */
+function start(rows: PushedAttention[], counted: Record<string, unknown> = COUNTED) {
   vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => respond(String(input))));
-  invoke.mockImplementation(async (module: string, type: string) => {
+  invoke.mockImplementation(async (module: string, type: string, request?: { payload?: Record<string, unknown> }) => {
     if (module === 'DAORIS.REMOTES') return { path: 'remotes.json', fromEnvironment: false, remotes: [] };
-    if (module === 'DAORIS.DRIVER' && type === 'RULES') return { proposals };
-    if (module === 'DAORIS.DRIVER' && type === 'HELPER_WAITS') return { waits: driverWaits.helpers ?? [] };
-    if (module === 'DAORIS.DRIVER' && type === 'OPINION_WAITS') return { waits: driverWaits.opinions ?? [] };
-    if (module === 'DAORIS.DRIVER' && type === 'PERMISSION_WAITS') return { waits: driverWaits.permissions ?? [] };
-    if (module === 'DAORIS.DRIVER' && type === 'SESSION_GROUPS' && driverWaits.opinions) {
-      // One session to review, so the second opinions are asked at all (the band asks them only while there is one to name).
-      return { sessions: [{ session: 'r3v13w00', group: 'review', shown: 'completed', archived: false, teammate: false }] };
+    if (module === 'DAORIS.DRIVER' && type === 'STATE_SLICE' && request?.payload?.slice === 'attention') {
+      return {
+        slice: 'attention', epoch: 'e1', status: 'ready',
+        partitions: [
+          { partition: 'rows', seq: 1, status: 'ready', data: Object.fromEntries(rows.map((row) => [`${row.kind}:${row.id}`, row])) },
+          { partition: 'sessions', seq: 1, status: 'ready', data: counted },
+        ],
+      };
     }
     if (module === 'DAORIS.DRIVER' && type === 'STATE') {
       return { drivable: ['engine'], holds: [], trees: [], running: [], notify: false, strikes: 3, forgiven: {} };
@@ -92,8 +110,6 @@ function start(considered: Consideration[], proposals: RuleProposal[] = [], driv
   });
   window.localStorage.setItem(AT_START, 'off');
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  // What the last tick told the page, as `ShellSignals` writes it.
-  client.setQueryData(keys.considered, considered);
   return render(
     <QueryClientProvider client={client}>
       <Tooltip.Provider>
@@ -116,19 +132,18 @@ describe("Sessions' badge", () => {
   });
 
   /**
-   * It counts the list's first group: this machine's session parked to ask, and the quest parked on its failed sessions,
-   * whose last session the list shows parked. The teammate's park and the quest only waiting its turn are not the
-   * person's to press.
+   * It counts the list's first group as .NET counted it: this machine's session parked to ask, and the quest parked on its failed
+   * sessions, whose last session the list shows parked. The teammate's park is not the person's to press, though the band lists it.
    */
   it('counts what waits on the person: a session parked to ask, and a quest parked on its failed sessions', async () => {
-    start(CONSIDERED);
+    start([...PARKS, PARKED_QUEST], { ...COUNTED, 'quest:q1': { kind: 'parked-quest' } });
 
     await waitFor(() => expect(within(sessionsButton()).getByText('2')).toBeInTheDocument());
     expect(within(sessionsButton()).getByText('2').className).toContain('text-ink-open');
   });
 
-  it('counts the sessions alone before a tick has said what is parked', async () => {
-    start([]);
+  it('counts the sessions alone where nothing is parked', async () => {
+    start(PARKS);
 
     await waitFor(() => expect(within(sessionsButton()).getByText('1')).toBeInTheDocument());
   });
@@ -150,12 +165,14 @@ describe("Overview's What needs you, on a machine", () => {
   });
 
   it('holds the quest the driver parked, counts it, and opens its page', async () => {
-    start(CONSIDERED);
+    start([...PARKS, PARKED_QUEST]);
 
     // The band is drawn again as the window's answers arrive, so its row is found afresh rather than inside a held node.
     await screen.findByRole('listitem', { name: 'Expose a streaming budget' });
-    // Two sessions parked to ask, and the parked quest: the band's count, on the icon of the view that holds it.
+    // Two sessions parked to ask, and the parked quest: the band's count, on the icon of the view that holds it (UX5 U20), in
+    // the waiting hue.
     await waitFor(() => expect(within(overviewButton()).getByText('3')).toBeInTheDocument());
+    expect(within(overviewButton()).getByText('3').className).toContain('text-ink-open');
     const row = screen.getByRole('listitem', { name: 'Expose a streaming budget' });
     expect(screen.getByRole('region', { name: 'What needs you' })).toContainElement(row);
     expect(within(row).getByText('parked after failed sessions')).toBeInTheDocument();
@@ -169,17 +186,34 @@ describe("Overview's What needs you, on a machine", () => {
 
   /** The badge counts every row the band lists: an agent's proposal to widen the rules was listed and not counted. */
   it('counts an agent’s proposal waiting on the person, as the band lists it', async () => {
-    start([], [{
+    const proposal: RuleProposal = {
       id: 'p0000002', state: 'waiting', action: 'add', scope: 'machine', list: 'allow', rule: 'WebFetch',
       why: 'The docs it needs are on the web.', proposed: '2026-10-01T11:00:00Z',
-    }]);
+    };
+    start([...PARKS, { kind: 'rule', id: proposal.id, since: proposal.proposed, detail: proposal.why, proposal }]);
 
     await screen.findByText('an agent asks to do more');
     await waitFor(() => expect(within(overviewButton()).getByText('3')).toBeInTheDocument());
   });
 
-  it('holds no parked quest before a tick has said one', async () => {
-    start([]);
+  /**
+   * INT4d: an ask waits on a person, and its row is a door into the ask's record in Quests, where the answer is, chosen there as
+   * an ask; its row is named by the ask's first line, from the asks the page holds.
+   */
+  it('opens an ask’s record from its row, chosen as an ask', async () => {
+    start([{ kind: 'proposal', id: ASKS[0]!.id, since: ASKS[0]!.asked, workspace: 'default', where: 'default', publishTo: ['engine'], choices: ['engine'] }]);
+
+    const row = await screen.findByRole('listitem', { name: 'Cap the hydration per frame.' });
+    expect(within(row).getByText('proposed, not yet published')).toBeInTheDocument();
+    await userEvent.click(within(row).getByRole('button', { name: 'Open' }));
+
+    expect(await screen.findByRole('heading', { level: 1, name: 'Cap the hydration per frame.' })).toBeInTheDocument();
+    expect(within(screen.getByRole('main')).getByRole('button', { name: 'Publish to engine' })).toBeInTheDocument();
+    expect(window.localStorage.getItem('daoris.list.quests.chosen')).toBe('ask:7c1e9a04b2d5');
+  });
+
+  it('holds no parked quest where none is pushed', async () => {
+    start(PARKS);
 
     await waitFor(() => expect(within(overviewButton()).getByText('2')).toBeInTheDocument());
     expect(within(screen.getByRole('region', { name: 'What needs you' })).queryByText('parked after failed sessions')).toBeNull();
@@ -204,7 +238,7 @@ describe("The taskbar's count", () => {
   });
 
   it('tells the main window’s frame what needs the person, as Overview’s badge counts it', async () => {
-    start(CONSIDERED);
+    start([...PARKS, PARKED_QUEST]);
 
     await waitFor(() => expect(within(overviewButton()).getByText('3')).toBeInTheDocument());
     await waitFor(() => expect(badges().at(-1)).toEqual(
@@ -213,18 +247,22 @@ describe("The taskbar's count", () => {
 
   /**
    * WAITCOUNT1: the band listed an agent's ask for a helper and a second opinion that waits on the person, and the badge and
-   * the taskbar did not count them: two answers to "how many need me". One count, with every row the band lists.
+   * the taskbar did not count them: two answers to "how many need me". One count, every row the band lists, one judgement.
    */
   it('counts an agent’s ask for a helper and a second opinion that wait on the person, as the band lists them', async () => {
-    start([], [], {
-      helpers: [{ id: 'a1b2c3d4', session: 'c4a7c4a7', question: 'Which test covers the loader?', agent: null, at: '2026-10-01T11:00:00Z' }],
-      opinions: [{
-        session: 'r3v13w00', quest: 'q1', repository: 'engine', since: '2026-10-01T10:00:00Z', auto: false,
-        opinion: { state: 'unavailable', holds: true, required: true, code: 'no-reviewer' },
-      }],
-    });
+    start([
+      ...PARKS,
+      { kind: 'review', id: 'r3v13w00', since: null, where: '', placed: { session: 'r3v13w00', group: 'review', shown: 'completed', archived: false, teammate: false } },
+      { kind: 'helper', id: 'a1b2c3d4', since: '2026-10-01T11:00:00Z', where: 'engine', session: 'c4a7c4a7', title: 'Which test covers the loader?' },
+      {
+        kind: 'opinion', id: 'r3v13w00', since: '2026-10-01T10:00:00Z', where: 'engine', opinion: {
+          session: 'r3v13w00', quest: 'q1', repository: 'engine', since: '2026-10-01T10:00:00Z', auto: false,
+          opinion: { state: 'unavailable', holds: true, required: true, code: 'no-reviewer' },
+        },
+      },
+    ]);
 
-    // The two the band lists with no tick (see 'holds no parked quest'), the work ready to review, the helper's ask and the opinion.
+    // The two parks, the work ready to review, the helper's ask and the opinion.
     await waitFor(() => expect(within(overviewButton()).getByText('5')).toBeInTheDocument());
     await waitFor(() => expect(badges().at(-1)).toEqual(
       ['DAORIS.WINDOWS', 'SET_BADGE', { payload: { count: 5, description: '5 waiting on you' } }]));
@@ -235,14 +273,13 @@ describe("The taskbar's count", () => {
    * the bound refuses it, so the badge counts it as the band lists it: the window behind others still says a turn waits on them.
    */
   it('counts a tool call a session holds for the person, as the band lists it', async () => {
-    start([], [], {
-      permissions: [{
-        session: 'c4a7c4a7', request: '900', call: null, title: 'npm test', kind: 'execute', since: '2026-10-01T11:00:00Z',
-        choices: [{ id: 'allow', name: 'Allow', kind: 'allow_once' }],
-      }],
-    });
+    const permission = {
+      session: 'c4a7c4a7', request: '900', call: null, title: 'npm test', kind: 'execute', since: '2026-10-01T11:00:00Z',
+      choices: [{ id: 'allow', name: 'Allow', kind: 'allow_once' }],
+    };
+    start([...PARKS, { kind: 'permission', id: 'c4a7c4a7#900', since: permission.since, where: 'engine', session: 'c4a7c4a7', permission }]);
 
-    // The two the band lists with no tick (see 'holds no parked quest'), and the held call.
+    // The two parks, and the held call.
     await waitFor(() => expect(within(overviewButton()).getByText('3')).toBeInTheDocument());
     await waitFor(() => expect(badges().at(-1)).toEqual(
       ['DAORIS.WINDOWS', 'SET_BADGE', { payload: { count: 3, description: '3 waiting on you' } }]));
@@ -250,7 +287,7 @@ describe("The taskbar's count", () => {
 
   it('is never told from a secondary window’s page', async () => {
     window.history.replaceState(null, '', '/?window=monitor');
-    start(CONSIDERED);
+    start([...PARKS, PARKED_QUEST]);
 
     await waitFor(() => expect(within(overviewButton()).getByText('3')).toBeInTheDocument());
     expect(badges()).toEqual([]);

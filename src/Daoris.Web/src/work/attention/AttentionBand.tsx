@@ -2,25 +2,21 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { runsForLine } from '../../agents/agents';
 import { useHarnessRun, WithHarnessRuns } from '../../agents/harnessRuns';
+import { useAcceptQuest, useAnswerGoAhead, useAsks, usePublishAsk, useQuests, useSessions } from '../../data/queries';
 import {
-  useAcceptQuest, useAnswerGoAhead, useAsks, usePublishAsk, useQuests, useRegistry, useSessions,
-} from '../../data/queries';
-import {
-  retryNotice, useAccounts, useApproveHelper, useConsidered, useDeclineHelper, useHarnessAction, useHarnesses, useHelperWaits, useNudge,
-  useOpinionWaits, useRefreshHarnesses, useResolveHeld, useWorkState, useRetryQuest, useRules, useSessionGroups, useTrustFolder, useUntrusted,
-  useWaits, useAnswerPermission, usePermissionWaits,
+  retryNotice, useApproveHelper, useAttention, useDeclineHelper, useHarnessAction, useHarnesses, useNudge, useRefreshHarnesses,
+  useResolveHeld, useRetryQuest, useTrustFolder, useAnswerPermission,
 } from '../../bridge/shell';
 import { permissionSaid } from '../waits/PermissionAsks';
 import { useSay } from '../../bridge/sessions/conversation';
 import { SignIn } from '../../agents/SignIn';
 import { byTool } from '../../agents/tools';
-import { failure, type Notify } from '../../design/ui';
-import type { AccountsKnown } from './accountAttention';
+import { failure, type Notify, SkeletonRows } from '../../design/ui';
 import { sentence } from '../../locales/format';
 import type { Attention, AttentionActs } from './AttentionRow';
 import type { Answered } from '../InlineConfirm';
 import { attentionKey, AttentionList, type AttentionDoors, AttentionRegion, NothingNeedsYou } from './AttentionList';
-import { needsAPerson, rowRun } from './attention';
+import { attentionOf, rowRun } from './attention';
 import { useOpinionActs } from '../gates/opinionActs';
 import { useReviewActs } from '../gates/reviewActs';
 import { ruleHearing, useRuleAnswer } from '../waits/ruleAnswer';
@@ -36,19 +32,6 @@ const WORKING: ReadonlySet<string> = new Set(['starting', 'working']);
 const ACCOUNT_KINDS: ReadonlySet<Attention['kind']> = new Set(['account-wait', 'signed-out']);
 
 /**
- * What the band reads of the accounts (UX6d): the roster as last read and the accounts' files, which the frame already
- * holds (the Agents place and its badge read the same two), and the tick's waits. Never a refresh: opening Overview asks
- * no agent about an account (D150 point 5).
- */
-export function useAccountsKnown(): AccountsKnown {
-  const roster = useHarnesses();
-  const accounts = useAccounts();
-  const waits = useWaits();
-  const harnesses = Array.isArray(roster.data?.harnesses) ? roster.data.harnesses : [];
-  return { tools: byTool(harnesses), use: accounts.data, waits: waits.data ?? [] };
-}
-
-/**
  * Overview's **what needs you**, the page's lead (UX6c, design §6).
  *
  * @remarks
@@ -57,16 +40,20 @@ export function useAccountsKnown(): AccountsKnown {
  * longest waiting first in each. Continuous monitoring is the reported source of fatigue (research §2), so visibility is
  * load-bearing and *watching* is not the mechanism: the band is what a person checks instead of watching.
  *
+ * **Who needs the person is .NET's to judge** (PUSH1d4, D182 point 6): the rows are pushed (`useAttention`), read from memory and
+ * asked again by no tick or focus; the band orders them, names each from the records the page holds (the sessions, quests and asks
+ * pushed beside them, the roster's last readings for an account), words them and keeps their acts. Before the owner has judged,
+ * the band draws its skeleton, never *Nothing needs you* (PUSHUX1). A plain browser has no Daoris to judge: it says the band is
+ * the app's.
+ *
  * **It settles what one press can** (§6.3): a proposed ask is published to what its declarations named, a parked quest
  * tried again, a departure accepted, each on its record's own route with its sentence said back; a go-ahead's answer, a
  * folder's trust and a widening of the rules ask once under the row. Every other row is a door. **No row starts a process
- * to find out**: every fact here is a list the page already holds or the tick hands it (`needsAPerson`), the session
- * groups included, which the frame reads on every view of a shell and this reads under the same key.
+ * to find out**.
  *
- * **The accounts** (UX6d): a start waiting on its accounts and a signed-out account a list holds, from the tick's waits,
- * the roster's last readings and the accounts' files. *Sign in* runs the agent's own sign-in through the application's one
- * running action (SIGNIN1), the agent page's own, so it outlives leaving Overview and its steps follow under the row;
- * *Read* reads that one account (ROSTER1); *Let … run …* joins the list (ACCT1's `profile-join`) after its question.
+ * **The accounts** (UX6d): *Sign in* runs the agent's own sign-in through the application's one running action (SIGNIN1), the
+ * agent page's own, so it outlives leaving Overview and its steps follow under the row; *Read* reads that one account (ROSTER1);
+ * *Let … run …* joins the list (ACCT1's `profile-join`) after its question.
  *
  * **With nothing waiting it is one line**, *Nothing needs you*, and what is working (§6.1).
  *
@@ -96,44 +83,20 @@ function Band({ doors, notify, onSessions, onRun }: {
   doors: AttentionDoors; notify: Notify; onSessions?: () => void; onRun?: (session: string) => void;
 }) {
   const { t } = useTranslation();
-  const sessions = useSessions(null, false);
-  const quests = useQuests(null, false);
-  const registry = useRegistry();
-  // The asks still waiting (INT4d) — the Quests view's own list, so one fetch serves both. Each carries its go-aheads.
-  const asks = useAsks(false);
-  // The folders the driver is holding for the agent's trust (D73) — the shell's tick, so a browser has none.
-  const untrusted = useUntrusted();
-  // What agents proposed about the rules (PERM2) — the machine's file, so a browser has none.
-  const rules = useRules();
-  // An older shell never sends proposals, and one that answers RULES with something else sends none.
-  const proposals = rules.data?.proposals;
-  // The quests the driver's last look parked on their failed sessions (SESSUX1i) — the shell's tick, so a browser has none.
-  const considered = useConsidered();
-  // Where Sessions' list places each session (D126): the answer the frame already holds on every view, under its key.
-  const groups = useSessionGroups();
-  // A session to review has ended, so its record is in the list with the ended ones, which the frame holds too; asked only
-  // while there is one to name, so a browser, which has no groups, asks nothing more.
-  const reviewing = (groups.data ?? []).some((placed) => placed.group === 'review');
-  // And every record, ended ones too, where a row's door opens its run (WORKFLOW1c): a held done's or a set-up's quest is
-  // found its newest session here. The frame holds the same list on every view of a shell, under the same key.
-  // A rule's proposer is found here too (PROPOSEHERE1c), so the list is asked while a proposal names a session.
-  const proposed = Array.isArray(proposals) && proposals.some((one) => one.session);
-  const ended = useSessions(null, true, reviewing || onRun !== undefined || proposed);
-  const opinionWaits = useOpinionWaits(reviewing);
-  // Each unit's milestone (FABRIC-MILESTONE1b): the band lists only a unit with something waiting on the person, as the driver's
-  // derivation says it. Every unit is read, one answer the page shares with Branches; a browser has none.
-  const workState = useWorkState();
-  // The agents' asks for a helper that wait on the person's yes (MIXAGENT2c): the driver's own list, so a browser has none.
-  const helperWaits = useHelperWaits();
+  // Who needs the person, as the shell pushes it (PUSH1d4): the rows, judged in .NET.
+  const attention = useAttention();
+  const shell = attention.state !== 'app';
+  // What names each row and what its doors open: every record, ended ones too, the quests and the asks, pushed beside the rows and
+  // read from memory; a browser asks none of them for the band.
+  const sessions = useSessions(null, true, shell);
+  const quests = useQuests(null, true, shell);
+  const asks = useAsks(true, shell);
+  // The roster as last read (ROSTER1), which names an account as the person knows it: never a refresh, which asks the agents.
+  const roster = useHarnesses();
   const approveHelper = useApproveHelper();
   const declineHelper = useDeclineHelper();
-  // The tool calls the sessions hold for the person's answer under asking (AUTONOMY1b3c): the driver's memory, asked every few
-  // seconds while a session works, since a hold publishes nothing; a browser has none.
-  const permissionWaits = usePermissionWaits((sessions.data ?? []).some((session) => WORKING.has(session.state)));
   const answerPermission = useAnswerPermission();
   const resolveHeld = useResolveHeld();
-  // The accounts as last known and the tick's waits (UX6d): a browser has none.
-  const accounts = useAccountsKnown();
 
   const publish = usePublishAsk();
   const answerGoAhead = useAnswerGoAhead();
@@ -150,16 +113,28 @@ function Band({ doors, notify, onSessions, onRun }: {
   const harnessRun = useHarnessRun();
   // A set-up's verdict, from its row (REVIEWENV1g): the review's one owner, as the step's page presses it.
   const reviewActs = useReviewActs({ notify });
-  // What of the second opinion's gates waits on the person (XAGENT1g), and its presses' one owner, as the session's page has.
-  // An opinion is owed only on work Sessions' list places To review, so it is asked only while there is one to name.
+  // A second opinion's presses' one owner (XAGENT1g), as the session's page has.
   const opinionActs = useOpinionActs({ notify });
   // The row an act is on its way for: its acts are held until it answers.
   const [acting, setActing] = useState<string | null>(null);
 
-  const waiting = needsAPerson(
-    (reviewing ? ended.data : undefined) ?? sessions.data ?? [], quests.data ?? [], registry.data ?? [], asks.data ?? [],
-    untrusted.data ?? [], Array.isArray(proposals) ? proposals : [], considered.data ?? [], groups.data ?? [], accounts,
-    opinionWaits.data ?? [], helperWaits.data ?? [], workState.data?.units ?? [], workState.data?.held ?? [], permissionWaits.data ?? []);
+  // A plain browser: the band is the app's (PUSH1d4), since nothing here judges who needs the person.
+  if (attention.state === 'app') {
+    return (
+      <AttentionRegion>
+        <p className="m-0 text-body text-ink-soft">{t('work.attention.needsApp')}</p>
+      </AttentionRegion>
+    );
+  }
+  // Not judged yet: loading, never empty (PUSHUX1).
+  if (attention.state === 'reading') {
+    return <AttentionRegion><SkeletonRows /></AttentionRegion>;
+  }
+
+  const harnesses = Array.isArray(roster.data?.harnesses) ? roster.data.harnesses : [];
+  const waiting = attentionOf(attention.rows, {
+    sessions: sessions.data ?? [], quests: quests.data ?? [], asks: asks.data ?? [], tools: byTool(harnesses),
+  });
 
   if (waiting.length === 0) {
     return (
@@ -254,12 +229,11 @@ function Band({ doors, notify, onSessions, onRun }: {
     // An *Allow* tells the session that proposed it, as the conversation's does (PROPOSEHERE1c); a proposal naming none tells none.
     acceptRule: (item, answered) => run(item, () => ruleAnswer.settled(
       item.id, true, item.title, 'allow',
-      ruleHearing((Array.isArray(proposals) ? proposals : []).find((one) => one.id === item.id), ended.data ?? sessions.data ?? [],
-        (session, text) => say.mutateAsync({ id: session, text })),
+      ruleHearing(item.proposal, sessions.data ?? [], (session, text) => say.mutateAsync({ id: session, text })),
     ), (said) => notify(said), answered),
     declineRule: (item) => run(item, () => ruleAnswer.settled(item.id, false, item.title), (said) => notify(said)),
     // The person's word on a plugin step's attempt held for them (FABRIC-PERFORM1g): recorded, it is said; refused (the desktop not holding
-    // the home, the attempt no longer held), the driver's own sentence in the error's tone. The hub reads the work state again (D169).
+    // the home, the attempt no longer held), the driver's own sentence in the error's tone. Its row moves as the slice is judged again.
     held: (item, resolution) => {
       const attempt = item.held;
       if (!attempt) return;
@@ -267,7 +241,7 @@ function Band({ doors, notify, onSessions, onRun }: {
         (answer) => notify(answer.done ? t('work.milestone.held.recorded', { node: attempt.node }) : answer.message, answer.done ? undefined : 'error'));
     },
     // An agent's ask for a helper said yes or no to, as its session's page says it (MIXAGENT2c): its answer said in the page's
-    // words, a refusal by its code in the error's tone. The hub reads the waits again (D169).
+    // words, a refusal by its code in the error's tone.
     helper: (item, yes) => {
       const session = item.session;
       if (!session) return;
@@ -284,7 +258,7 @@ function Band({ doors, notify, onSessions, onRun }: {
       });
     },
     // A tool call held for the person answered with the choice pressed, as its session's page answers it (AUTONOMY1b3c): its answer
-    // said in the page's words, a refusal by its code in the error's tone. The answer asks the waits again itself.
+    // said in the page's words, a refusal by its code in the error's tone.
     permission: (item, option) => {
       const held = item.permission;
       if (!held) return;
@@ -343,10 +317,10 @@ function Band({ doors, notify, onSessions, onRun }: {
     ? waiting.find((item) => item.account?.noAccount && item.account.harness === harnessRun.signingInNew)
     : undefined;
   const below = (item: Attention) => {
-    if (signingNewRow && item === signingNewRow) {
+    if (signingNewRow && item.id === signingNewRow.id && item.kind === signingNewRow.kind) {
       return <SignIn id={`${signingNewRow.account!.harness}:login-new`} harness={signingNewRow.account!.harness!} action="login-new" tool={signingNewRow.account!.product} refused={harnessRun.refusal} onRetry={harnessRun.retry} onClose={harnessRun.dismiss} />;
     }
-    if (!signing || item !== signingRow) return null;
+    if (!signing || !signingRow || item.id !== signingRow.id || item.kind !== signingRow.kind) return null;
     const label = item.account?.named.find((one) => one.id === signing.account)?.label ?? signing.account;
     return <SignIn id={harnessRun.running!} harness={signing.harness} profile={label} refused={harnessRun.refusal} onRetry={harnessRun.retry} onClose={harnessRun.dismiss} />;
   };
@@ -354,7 +328,7 @@ function Band({ doors, notify, onSessions, onRun }: {
   // Each row whose step waits on the person opens its run there (WORKFLOW1c): the session it names, else its quest's newest here.
   const runDoor = (item: Attention) => {
     const named = onRun ? rowRun(item) : null;
-    const session = named ? runSessionOf(named, ended.data ?? sessions.data ?? []) : null;
+    const session = named ? runSessionOf(named, sessions.data ?? []) : null;
     return session && onRun ? () => onRun(session) : undefined;
   };
 

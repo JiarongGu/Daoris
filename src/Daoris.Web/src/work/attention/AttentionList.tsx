@@ -18,7 +18,7 @@ export const attentionKey = (item: Attention) => `${item.kind}:${item.id}`;
 
 /**
  * *What needs you* with something in it (UX6c, design §6.2): its title and count, then a group per kind of wait that holds
- * any, each named, its rows in the order `needsAPerson` gave them. *Ready for you* shows five, then counts the rest with a
+ * any, each named, its rows in the order `attentionInOrder` gave them. *Ready for you* shows five, then counts the rest with a
  * door into Sessions, where they are.
  *
  * @remarks

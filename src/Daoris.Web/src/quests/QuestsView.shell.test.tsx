@@ -26,7 +26,12 @@ import { OverviewView } from '../overview/OverviewView';
 import { chooseRow, QuestsView } from '../test/questsView';
 import { ShellSignals } from '../app/ShellSignals';
 import { keys } from '../data/queries';
+import { composeAttention } from '../bridge/shell';
 import { DRIVER_STATE, respond, show } from '../test/shellHarness';
+
+/** *What needs you*'s rows as the shell pushes them (PUSH1d4: judged in .NET), composed into the client as the slice composes them. */
+const pushAttention = (client: QueryClient, rows: Record<string, unknown>[]) => client.setQueryData(keys.attention, composeAttention(
+  new Map<string, unknown>([['rows', Object.fromEntries(rows.map((row) => [`${row.kind}:${row.id}`, row]))], ['sessions', {}]]), true));
 
 describe('a driven quest in the shell', () => {
   beforeEach(() => {
@@ -214,7 +219,12 @@ describe('trusting a folder the driver is holding (D73)', () => {
    */
   it('a held folder waits in *What needs you*, asks the grant under its row, and its door opens what it holds', async () => {
     const trust = vi.fn();
-    show(<OverviewView onNavigate={() => {}} onOpenQuest={() => {}} notify={() => {}} doors={{ trust }} />, holding());
+    const client = holding();
+    pushAttention(client, [{
+      kind: 'trust', id: `${HOLD.trustFile}\n${HOLD.folder}`, since: null, where: null,
+      trust: { folder: HOLD.folder, trustFile: HOLD.trustFile }, quest: HOLD.quest,
+    }]);
+    show(<OverviewView onNavigate={() => {}} onOpenQuest={() => {}} notify={() => {}} doors={{ trust }} />, client);
 
     const row = await screen.findByRole('listitem', { name: HOLD.folder });
     await userEvent.click(within(row).getByRole('button', { name: 'Open' }));
@@ -229,19 +239,16 @@ describe('trusting a folder the driver is holding (D73)', () => {
       'DAORIS.DRIVER', 'TRUST_FOLDER', { payload: { folder: HOLD.folder, trustFile: HOLD.trustFile } }));
   });
 
-  /** PERM2 (D74): a widening an agent proposed waits on the person, read from the machine's rules. */
+  /** PERM2 (D74): a widening an agent proposed waits on the person, judged from the machine's rules and pushed (PUSH1d4). */
   it('a widening the driver is holding waits in *What needs you*, and its row has a door', async () => {
-    invoke.mockImplementation(async (_module: string, type: string) => (type === 'RULES'
-      ? {
-        path: 'C:/somewhere/data/permissions.json', defaults: [], scopes: [],
-        proposals: [{
-          id: 'p0000002', state: 'waiting', action: 'add', scope: 'machine', list: 'allow', rule: 'WebFetch',
-          why: 'The docs it needs are on the web.', session: 'i9n8t7k6', proposed: '2026-09-24T11:00:00Z',
-        }],
-      }
-      : DRIVER_STATE));
+    const proposal = {
+      id: 'p0000002', state: 'waiting', action: 'add', scope: 'machine', list: 'allow', rule: 'WebFetch',
+      why: 'The docs it needs are on the web.', session: 'i9n8t7k6', proposed: '2026-09-24T11:00:00Z',
+    };
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    pushAttention(client, [{ kind: 'rule', id: proposal.id, since: proposal.proposed, detail: proposal.why, proposal }]);
     const rule = vi.fn();
-    show(<OverviewView onNavigate={() => {}} onOpenQuest={() => {}} notify={() => {}} doors={{ rule }} />);
+    show(<OverviewView onNavigate={() => {}} onOpenQuest={() => {}} notify={() => {}} doors={{ rule }} />, client);
 
     const row = await screen.findByRole('listitem', { name: 'allow WebFetch for every session on this machine' });
     await userEvent.click(within(row).getByRole('button', { name: 'Open' }));

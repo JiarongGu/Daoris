@@ -5,6 +5,10 @@ with the version and date at release.
 
 ## Unreleased
 
+- *What needs you* is judged once by Daoris for every window, which then shows it as it moves: no window works it out from its own
+  lists, and its count on Overview, on Sessions and on the taskbar button is the same judgement as the band's. Until Daoris has
+  judged it, the band shows placeholder rows rather than *Nothing needs you*. A plain browser lists nothing there and says *What needs
+  you* is the app's to show. Ask Daoris's conversations are no row of it and no count of the Sessions badge.
 - A quest's page draws its statuses as a flowchart, folded under *Flowchart* after the chain until you open it: open,
   taken, done and declined, the one it stands at lit, and under each the moves out of it and what makes each. It is drawn
   left to right on a wide page, top to bottom on a narrower one, and as a list at the side bar's width; *Show as list* gives

@@ -894,21 +894,23 @@ public sealed class TreesRoutes(DriverLoop loop)
     private Task<object?> OpinionWaitsAsync(IpcRequest request, CancellationToken cancellationToken)
     {
         _ = _loop.Service ?? throw NotReady();
-        var waits = new List<object>();
-        foreach (var judged in _loop.Judged.Latest ?? [])
-        {
-            if (!WaitsOnPerson(judged.Gate, judged.Auto)) continue;
-            waits.Add(new
-            {
-                judged.Session, judged.Quest, judged.Repository, judged.Workspace,
-                Since = Moments.Write(judged.Since),
-                judged.Auto,
-                Opinion = Opinion(judged.Gate),
-            });
-        }
-
-        return Task.FromResult<object?>(new { Waits = waits });
+        return Task.FromResult<object?>(new { Waits = OpinionWaits(_loop.Judged.Latest) });
     }
+
+    /// <summary>
+    /// Each judged gate that waits on the person, as <c>OPINION_WAITS</c> answers it and <i>What needs you</i>'s judge reads it (PUSH1d4):
+    /// the work, since when, whether it lands by itself, and the gate as <see cref="Opinion"/> says it, oldest first as the look kept them.
+    /// </summary>
+    public static IReadOnlyList<object> OpinionWaits(IEnumerable<OpinionJudged>? judged) =>
+    [
+        .. (judged ?? []).Where(each => WaitsOnPerson(each.Gate, each.Auto)).Select(each => (object)new
+        {
+            each.Session, each.Quest, each.Repository, each.Workspace,
+            Since = Moments.Write(each.Since),
+            each.Auto,
+            Opinion = Opinion(each.Gate),
+        }),
+    ];
 
     /// <summary>
     /// Whether the second opinion's gate waits on the person's answer (the second-agent design §9's *What needs you*): a dispute, a

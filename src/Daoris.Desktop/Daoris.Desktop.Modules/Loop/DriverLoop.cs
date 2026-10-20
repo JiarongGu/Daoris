@@ -119,7 +119,7 @@ public sealed class DriverLoop(
         DriverSlice, LinesStateSlice.Of(this, eventBus), SessionsStateSlice.Of(this, eventBus), CallsStateSlice.Of(this, eventBus),
         WorkStateSlice.Of(this, eventBus), GroupsStateSlice.Of(this, eventBus), SweepStateSlice.Of(this, eventBus),
         SyncStateSlice.Of(this, eventBus), QuestsStateSlice.Of(this, eventBus), AsksStateSlice.Of(this, eventBus),
-        UsageStateSlice.Of(this, eventBus), AccountsStateSlice.Of(this, eventBus)));
+        UsageStateSlice.Of(this, eventBus), AccountsStateSlice.Of(this, eventBus), AttentionStateSlice.Of(this, eventBus)));
 
     private StateSlices? _slices;
 
@@ -449,6 +449,14 @@ public sealed class DriverLoop(
     /// What the last tick held for the harness's trust (D73) — the only grants the screen may confirm.
     /// </summary>
     public TrustHolds Trust { get; } = new();
+
+    /// <summary>
+    /// What the last look considered of each open quest, as the tick hands it to the page (<see cref="TickConsideration"/>), kept whether
+    /// or not the tick was forwarded, for <i>What needs you</i>'s judge (PUSH1d4) to read from memory. Null before the first look.
+    /// </summary>
+    public IReadOnlyList<object>? Considered => _considered;
+
+    private volatile IReadOnlyList<object>? _considered;
 
     /// <summary>
     /// What the last tick parked by its strikes (DRV6) — the verdict the quest drawer shows its Retry by, and what
@@ -799,9 +807,24 @@ public sealed class DriverLoop(
                 Look.Record(report.Considerations, report.Waits);
                 // And the second-opinion gates it judged, whole (XAGENT1g3), for *What needs you* to read without running a gate.
                 Judged.Record(report.JudgedOpinions);
+                // And the considerations as the page reads them, each with its park and its wait, kept for *What needs you*'s judge
+                // whether or not this tick is forwarded (PUSH1d4), and the same ones the tick below hands the page.
+                var sitting = report.Considerations
+                    .Select(consideration => TickConsideration(
+                        consideration,
+                        parks.Latest.FirstOrDefault(park =>
+                            string.Equals(park.Quest, consideration.Quest.Id, StringComparison.OrdinalIgnoreCase)),
+                        // The wait holding it on a cooling account, if one does (TOOL4g, D125 §4).
+                        report.Waits.FirstOrDefault(wait =>
+                            wait.Quests.Contains(consideration.Quest.Id, StringComparer.OrdinalIgnoreCase))))
+                    .ToArray();
+                _considered = sitting;
                 // And the driver's state judged again (PUSH1a, D182), pushed only where it moved: what runs and what waits for review
                 // move at a look, and a terminal's edit of `driver.json` is read here. A wake only asks; the slice's worker judges.
                 DriverSlice.Wake();
+                // And who needs the person (PUSH1d4): what the look kept above (its trust holds, its considerations, its second opinions)
+                // and the helpers' asks it wrote are read at the slice's judgement, which pushes only a row that moved.
+                Slices.Find(AttentionStateSlice.Name)?.Wake();
 
                 // 🔴 And the asks (INT4d): the attention band reads them beside the sessions, and an
                 // ask made by the other door — a terminal, a teammate's sync — moves nothing above,
@@ -841,15 +864,7 @@ public sealed class DriverLoop(
                     await eventBus.EmitAsync("DAORIS", "DRIVER_TICK", new
                     {
                         Events = report.Events,
-                        Considered = report.Considerations
-                            .Select(consideration => TickConsideration(
-                                consideration,
-                                parks.Latest.FirstOrDefault(park =>
-                                    string.Equals(park.Quest, consideration.Quest.Id, StringComparison.OrdinalIgnoreCase)),
-                                // The wait holding it on a cooling account, if one does (TOOL4g, D125 §4).
-                                report.Waits.FirstOrDefault(wait =>
-                                    wait.Quests.Contains(consideration.Quest.Id, StringComparer.OrdinalIgnoreCase))))
-                            .ToArray(),
+                        Considered = sitting,
                         // The trust holds as facts (D73): machine-local paths, so over this bridge only.
                         // A hold's `quest` or `ask`, whichever it is not, is left out by the bridge.
                         Untrusted = report.Untrusted.Select(hold => new

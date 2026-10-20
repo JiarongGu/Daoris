@@ -39,6 +39,7 @@
   "work.attention.unanswerableWhy": "`{{repository}}` 不在本部署的注册表上，不会有任何智能体来拉取这条委托。",
   "work.attention.since": "已等待 {{span}}",
   "work.attention.nothing": "没有等你处理的事",
+  "work.attention.needsApp": "“等你处理”由 Daoris 应用判断：打开应用即可看到等你答复的事。",
   "work.attention.working": "{{count}} 个会话在工作",
   "work.attention.working_other": "{{count}} 个会话在工作",
   "work.attention.more": "会话中还有 {{count}} 个",
