@@ -5,6 +5,35 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-21 — The modules' and the service's signal waits were 2-60 seconds, the bound the driver's had lost to load (TESTCLOCK1)
+
+- **Symptom:** four fast-half tests failed on time alone beside loaded merges on 2026-10-18 (TESTWAIT5-7 and a
+  `SessionsOutliveTheirLookTests` case); the driver half was swept on 2026-10-19 (TESTWAIT7, TESTWAIT8, TESTPATIENCE1-2), and the
+  modules' fast half and the service's two test projects still carried the same shape.
+- **Root cause:** as TESTPATIENCE1's: a bound on a signal that arrives in milliseconds, which elapses only on failure, short enough
+  for a starved thread to reach it.
+- **Fix:** each project has `Poll.Patience` (two minutes, the driver tests' constant), and these read it. Modules: the hand-written
+  poll helpers (`DriverModuleBridge.UntilAsync` and the copies in `DriverLoopAddressTests`, `InstancePipeTests`, `PipeConfirmTests`,
+  `StateSlicesTests`, `LaterLaunchTests`, 15 s; `ReviewServingTests.Until` 10 s, `UpdateWatchTests.Until` 30 s,
+  `OffTheWindowTests.PumpUntil` and `DriverModuleOneFlightTests.AskedAsync` 10 s); the `Patience` of `DriverModuleOneFlightTests` and
+  `RouteFlightsTests` (30 s) and the `Within` of the Groups, Lines, Sweep and Work slice tests (10-20 s); `WaitAsync` on an answer or
+  a fact in `DriverModuleHelpStartTests` (16), `DriverModuleConsoleTests`, `DriverModuleToolsTests`, `DriverLoopAddressTests`,
+  `LastLinesTests`, `InstancePipeTests`, `OffTheWindowTests`, `SplashLiftTests`, `StateObservedTests`,
+  `DriverModuleSessionPermissionsTests` (5 s), `DriverModuleSessionsTests`, `StandInChromium` and `PipeTestKit`'s line reads; the
+  pipes' notifications and drains, `InstancePipeTests`' result poll (200 tries), `LaterLaunchTests`' hand-over, `TerminalOpenGateTests`'
+  hold and `FirstWindowTests`' socket wait. Service: `ChangeStreamTests`' answers and sampler deadlines (its stream waits are now the
+  stream's own longest, 30 s, where they were 10 s), `CheckoutFreshnessTests.Heard` (10 s), `NewerIndexTests`' open and the connector's
+  log and error polls, `ConnectorStartFailureTests`' exit, the three MCP filters' line reads, and the settings and housekeeping boxes'
+  defaults and stand-in loops (60 s, FLAKE1's). HTTP: `RealHost`'s start polls and status client (2 s), `ChangeStreamHostTests` and
+  `ChangeStreamProcessTests`' answers (their held waits 30 s), `InputEndStopTests`' watches, every `StopByInput` and exit wait that
+  expects a stop, the client timeouts in `ConfirmationTests` and `PersonDoorHostTests`, and `PersonKeyTests`' reads.
+  Left as they were: the windows in which nothing should happen (a `Task.Delay` before an `Assert.Empty`, `False` or equal count,
+  which load only lengthens), waits a test means to elapse (`PersonKeyTests`' 300 ms, `FirstWindowTests`' 0.3 s port, the not-asked
+  host's 2 s stop, a 400 ms stream wait), clean-up retries, and the elapsed bounds that state a claim (TESTCLOCK3). No assertion
+  changed.
+- **Verification:** the touched classes, filtered, three times each: modules 298 passed each (23-26 s), `Daoris.Service.Tests` 83
+  (1 m 8-12 s), `Daoris.Service.Http.Tests` 95 (1 m 9-18 s). Run on a quiet machine, not beside load, and not the whole halves.
+
 ## 2026-10-21 — Two branches built on main at once met only at the merge: a story on the old width helper (RAILLINE1, STORYGAP1)
 
 - **Symptom:** merging RAILLINE1 after STORYGAP1, the page head's stories named `at`, a helper STORYGAP1 had replaced with
