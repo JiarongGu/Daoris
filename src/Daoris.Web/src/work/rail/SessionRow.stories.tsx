@@ -203,6 +203,29 @@ export const RunningACall: Story = {
 export const RunningACallChinese: Story = { ...RunningACall, decorators: [chinese] };
 
 /**
+ * RAILLINE1: a shell call's title is its whole command, which took the row's one line on the install and pushed out the kind,
+ * the tree and the time. Its line says the command's head in at most 40 characters; its tip says it whole.
+ */
+export const RunningALongCall: Story = {
+  args: {
+    session: { ...SESSION, created: at(62), updated: at(40) },
+    grouping: placed({
+      group: 'working', shown: 'working',
+      calling: {
+        title: 'cd src/Daoris.Web && npm ci --no-audit --no-fund && npx vitest run src/work/rail/SessionRow.test.tsx '
+          + 'src/work/head/headFacts.test.ts --reporter=verbose; dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests '
+          + '--filter "FullyQualifiedName~RunningCallsTests|FullyQualifiedName~SessionLookTests" --no-build; git status --short',
+        since: at(6),
+      },
+    }),
+    place: 'engine',
+  },
+};
+
+/** The same, in 中文. */
+export const RunningALongCallChinese: Story = { ...RunningALongCall, decorators: [chinese] };
+
+/**
  * AUTONOMY1b3b: a working session whose tool call is held for the person's answer under asking: its line says the call waits for
  * your answer and for how long, timed from the hold, and its tip where to answer it.
  */

@@ -39,7 +39,8 @@ afterEach(async () => {
 describe('the access a session started under', () => {
   it('wears the full-access chip on its facts line only where every pause it recorded is open', () => {
     pageHead({ access: FULL });
-    const line = screen.getByText(/engine · 12m/);
+    // The facts are cut before the chip, never the chip (RAILLINE1): the line holds both, the facts in a span of their own.
+    const line = screen.getByText('engine · 12m').parentElement!;
     expect(within(line).getByText('Full access')).toBeInTheDocument();
     expect(line.querySelector('[data-access="full"] svg')).not.toBeNull();
   });

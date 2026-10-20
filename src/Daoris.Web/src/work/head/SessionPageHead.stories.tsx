@@ -1,5 +1,6 @@
-import type { ReactNode } from 'react';
-import type { Meta, StoryObj } from '@storybook/react-vite';
+import type { ComponentProps, ReactNode } from 'react';
+import { useTranslation } from 'react-i18next';
+import type { Decorator, Meta, StoryObj } from '@storybook/react-vite';
 import i18n from '../../locales/i18n';
 import { InTheme } from '../../plugins/storyIcons';
 import { chinese } from '../../design/storyLanguage';
@@ -8,6 +9,7 @@ import type { Session } from '../../data/api';
 import { AskHelper } from '../start/AskHelper';
 import { HandOverAsk, type HandOverRoster } from '../start/HandOverAsk';
 import { HandOverOfferLine } from '../start/HandOverOfferLine';
+import { type SessionFactsOf, sessionFacts, sessionFactsTip } from './headFacts';
 import { DeleteAsk, SessionPageHead, StopAsk } from './SessionPageHead';
 import { PauseAsk } from '../pausing/WorkAsks';
 
@@ -412,6 +414,56 @@ export const HandOverOfferNearChinese: Story = {
 /** Cut, in 中文. */
 export const HandOverOfferCutChinese: Story = {
   args: { ...HandOverOfferCut.args, title: '限制每帧的水合工作量' },
+  decorators: [sessionWidths.half, chinese],
+};
+
+// ——— RAILLINE1: a running shell call's title is its whole command, three lines of the facts line on the install. The line keeps
+// to one, the call said by its head in at most 40 characters, the whole line in its tip; at the main area's 400 px floor and at
+// 680 px of window, in English and 中文. The facts are `sessionFacts`' own, in the story's language.
+
+const LONG_CALL = 'cd src/Daoris.Web && npm ci --no-audit --no-fund && npx vitest run src/work/rail/SessionRow.test.tsx '
+  + 'src/work/head/headFacts.test.ts --reporter=verbose; dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests '
+  + '--filter "FullyQualifiedName~RunningCallsTests|FullyQualifiedName~SessionLookTests" --no-build; git status --short';
+
+/** The head of a session running `LONG_CALL`, its facts and their tip worked out in the language the story reads in. */
+function RunningALongCallHead(args: ComponentProps<typeof SessionPageHead>) {
+  const { t } = useTranslation();
+  const of: SessionFactsOf = {
+    session: { ...SESSION, created: new Date(Date.now() - 62 * 60_000).toISOString() },
+    shown: 'working',
+    grouping: {
+      session: SESSION.id, group: 'working', shown: 'working', archived: false, teammate: false,
+      calling: { title: LONG_CALL, since: new Date(Date.now() - 6 * 60_000).toISOString() },
+    },
+  };
+  return <Page><SessionPageHead {...args} facts={sessionFacts(t, of)} factsTip={sessionFactsTip(t, of)} /></Page>;
+}
+
+/** At the main area's 400 px floor: the facts on one line, the call cut, the acts beside the title. */
+export const RunningALongCallAt400: Story = {
+  args: { title: 'Continue the production half' },
+  render: (args) => <RunningALongCallHead {...args} />,
+  decorators: [(Story) => <div className="flex h-[30rem] w-[25rem] max-w-full border border-line bg-page"><Story /></div>],
+};
+
+/** The same in 中文. */
+export const RunningALongCallAt400Chinese: Story = {
+  ...RunningALongCallAt400,
+  args: { title: '继续生产环境的部分' },
+  decorators: [...RunningALongCallAt400.decorators as Decorator[], chinese],
+};
+
+/** At 680 px of window. */
+export const RunningALongCallAt680: Story = {
+  args: { title: 'Continue the production half' },
+  render: (args) => <RunningALongCallHead {...args} />,
+  decorators: [sessionWidths.half],
+};
+
+/** The same in 中文. */
+export const RunningALongCallAt680Chinese: Story = {
+  ...RunningALongCallAt680,
+  args: { title: '继续生产环境的部分' },
   decorators: [sessionWidths.half, chinese],
 };
 

@@ -5,7 +5,7 @@ import type { Consideration } from '../../data/signals';
 import type { SweepBranch } from '../../settings/Sweep';
 import type { AccountNamer } from '../../agents/tools';
 import { SESSION_ACTIVE } from '../../design/ui';
-import type { SessionGrouping } from '../groups';
+import { callHead, type SessionGrouping } from '../groups';
 import { isIntake } from '../identity';
 import { HANDED_REASONS } from '../noteLines';
 import { placedFact } from '../rail/SessionRow';
@@ -37,7 +37,10 @@ export type SessionFactsOf = {
   helping?: string | null;
   /** When the turn its agent is on was asked, while it has answered nothing (`firstAnswerWait`, WAITSHOWN1); absent otherwise. */
   waitingSince?: string | null;
-  /** The call its agent is inside, and since when (`runningCall`, WAITSAY1); absent where none is open. */
+  /**
+   * The call its agent is inside, and since when, as its conversation reads it (`runningCall`, WAITSAY1); absent where none is
+   * open. Said only where the reader's `grouping` carries no call of its own (RAILLINE1).
+   */
   calling?: { title: string; since: string } | null;
 };
 
@@ -59,13 +62,25 @@ function linkFacts(t: TFunction, session: Session, { continuesAgent, helping }: 
 
 /**
  * The call a working session is inside, with how long (WAITSAY1): one that waits on the person's answer to its permission request
- * says so, timed from the hold (AUTONOMY1b3b), and one the agent named nothing for is a tool call.
+ * says so, timed from the hold (AUTONOMY1b3b), and one the agent named nothing for is a tool call. Said in a few words on the line
+ * (`callHead`, RAILLINE1), and whole in its tip.
  */
-function callFact(t: TFunction, calling: { title: string; since: string; waiting?: boolean }): string {
-  if (!calling.waiting) return t('work.facts.calling', { title: calling.title, elapsed: elapsed(calling.since) });
+function callFact(t: TFunction, calling: { title: string; since: string; waiting?: boolean }, whole: boolean): string {
+  const title = whole ? calling.title : callHead(calling.title);
+  if (!calling.waiting) return t('work.facts.calling', { title, elapsed: elapsed(calling.since) });
   return calling.title
-    ? t('work.facts.callWaits', { title: calling.title, elapsed: elapsed(calling.since) })
+    ? t('work.facts.callWaits', { title, elapsed: elapsed(calling.since) })
     : t('work.facts.callWaitsUnnamed', { elapsed: elapsed(calling.since) });
+}
+
+/**
+ * The call the head says (RAILLINE1): the driver's, which the row says, wherever the list's reader answered for the session, so
+ * the two never disagree; the conversation's open call only where no reader answered (a browser) or its host is older than the
+ * fact.
+ */
+function headCall(of: SessionFactsOf): { title: string; since: string; waiting?: boolean } | null {
+  const heard = of.grouping?.calling;
+  return heard !== undefined ? heard : of.calling ?? null;
 }
 
 /**
@@ -77,6 +92,15 @@ function callFact(t: TFunction, calling: { title: string; since: string; waiting
  * repository in every state (MIXAGENT3a-i), since it says what the session is.
  */
 export function sessionFacts(t: TFunction, of: SessionFactsOf): string[] {
+  return factsOf(t, of, false);
+}
+
+/** The facts line's tip (RAILLINE1): the line as `sessionFacts` says it, with its running call's title whole. */
+export function sessionFactsTip(t: TFunction, of: SessionFactsOf): string {
+  return factsOf(t, of, true).join(' · ');
+}
+
+function factsOf(t: TFunction, of: SessionFactsOf, whole: boolean): string[] {
   const { session, shown, grouping, branch } = of;
   if (isIntake(session)) return [t('work.scope.ask', { id: session.ask }), t('work.intake.kind')];
 
@@ -107,11 +131,10 @@ export function sessionFacts(t: TFunction, of: SessionFactsOf): string[] {
     // WAITSHOWN1: its agent has said nothing since it was asked; a resumed long conversation can wait many minutes.
     if (of.waitingSince && session.state === 'working') facts.push(t('work.facts.firstAnswer', { time: moment(of.waitingSince) }));
     // WAITSAY1: a call that runs for minutes is what the session waits on; said with how long, and only while it is working.
-    // WAITSAY1b: the record read here first, which moves live; else the call the driver heard, which the row's reader carries.
-    // AUTONOMY1b3b: a call the driver marks held for the person's answer is said as one first, since the record shows no hold.
-    const heard = grouping?.calling;
-    const calling = heard?.waiting ? heard : of.calling ?? heard;
-    if (calling && session.state === 'working') facts.push(callFact(t, calling));
+    // RAILLINE1: the call the row says, the driver's (pushed since WAITSAY1c2, so it moves live), which also marks a call held for
+    // the person's answer (AUTONOMY1b3b); the record read here only where no reader answered.
+    const calling = headCall(of);
+    if (calling && session.state === 'working') facts.push(callFact(t, calling, whole));
     return facts.filter((fact): fact is string => Boolean(fact));
   }
 

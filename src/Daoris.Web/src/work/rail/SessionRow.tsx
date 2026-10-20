@@ -6,7 +6,7 @@ import { Dot, Icon, Menu, SESSION_ACTIVE, SESSION_DOT, shownKey, StripMark } fro
 import { cn } from '../../lib/cn';
 import { contextOffer } from '../../menus/press';
 import { actMenu, type SessionActId } from '../acts';
-import { type SessionGrouping, shownOf } from '../groups';
+import { callHead, type SessionGrouping, shownOf } from '../groups';
 import { isHelper, isIntake, isOpinion, ownTree, sessionOrigin, sessionTitle } from '../identity';
 import { ListRowDoor } from '../frame/ListPane';
 import { PERMISSION_BOUND_MINUTES } from '../waits/PermissionAsks';
@@ -73,12 +73,14 @@ export type SessionWhere = {
 /**
  * The call a working session is inside, with how long (WAITSAY1b): one whose permission request is held for the person says it
  * waits for their answer, timed from the hold (AUTONOMY1b3b), so a glance at the rail finds the session that stands still on them;
- * one the agent named nothing for is a tool call.
+ * one the agent named nothing for is a tool call. Said in a few words (`callHead`, RAILLINE1), so the row's one line keeps room for
+ * the facts after it; its whole title leads the line's tip.
  */
 function callLine(t: TFunction, calling: NonNullable<SessionGrouping['calling']>): string {
-  if (!calling.waiting) return t('work.rail.calling', { title: calling.title, elapsed: elapsed(calling.since) });
+  const title = callHead(calling.title);
+  if (!calling.waiting) return t('work.rail.calling', { title, elapsed: elapsed(calling.since) });
   return calling.title
-    ? t('work.rail.callWaits', { title: calling.title, elapsed: elapsed(calling.since) })
+    ? t('work.rail.callWaits', { title, elapsed: elapsed(calling.since) })
     : t('work.rail.callWaitsUnnamed', { elapsed: elapsed(calling.since) });
 }
 
@@ -194,8 +196,8 @@ export function SessionRow({
   ].filter(Boolean).join(' · ');
 
   // Only the unusual facts explain themselves: a tip that appeared on every row would be one
-  // people stop reading.
-  const tip = [
+  // people stop reading. A running call's whole title leads, on a line of its own (RAILLINE1).
+  const explained = [
     archived ? t('work.rail.archivedTip') : null,
     placed ? t(placed.tip) : null,
     calling ? t(calling.waiting ? 'work.rail.callWaitsTip' : 'work.rail.callingTip', { minutes: PERMISSION_BOUND_MINUTES }) : null,
@@ -203,6 +205,7 @@ export function SessionRow({
     tree ? t('work.rail.treeTip') : null,
     origin ? t('work.rail.onTip') : null,
   ].filter(Boolean).join(' ');
+  const tip = [calling?.title || null, explained || null].filter(Boolean).join('\n');
 
   // What the rule offered, each absent where it does not apply and never disabled (D119 §3.2); nothing at all where there
   // is nowhere to report a press. One list for its ⋯ and its right-click (CTX1).

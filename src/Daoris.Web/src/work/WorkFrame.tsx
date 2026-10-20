@@ -69,7 +69,7 @@ import { type ActFacts, actMenu, headerActs, offeredActs, primaryAct, stopAsk } 
 import { askOfEntry, entryOfSession, isIntakeEntry } from './entries';
 import { useChannel, useForwardChannel, usePostChannel } from '../bridge/shell';
 import { keptSessionFilters, sessionFilters, shownOf } from './groups';
-import { sessionFacts } from './head/headFacts';
+import { type SessionFactsOf, sessionFacts, sessionFactsTip } from './head/headFacts';
 import type { Answered } from './InlineConfirm';
 import type { AgentChoice } from './start/AgentChip';
 import { HandOverAsk, type HandOverRoster } from './start/HandOverAsk';
@@ -1711,27 +1711,30 @@ export function WorkFrame({
     }
     : null;
   const attendedShown = attended ? shownOf(attended, grouping, taking[attended.id]) : null;
-  const pageHead = attended && attendedFacts && attendedShown && (
+  // Its facts line by its state (UX7c, D152 §7): the row's facts and the record's, so the head and the row agree.
+  const headFactsOf: SessionFactsOf | null = attended && attendedShown ? {
+    session: attended,
+    shown: attendedShown,
+    grouping,
+    ownSignIn: roster.some((row) => row.harness === attended.adapter),
+    branch,
+    nameOf,
+    // The agent it continues by the roster's name for it, as the hand-over's ask names agents (MIXAGENT3a-i).
+    continuesAgent: continues
+      ? roster.find((row) => row.harness === continues.session.adapter)?.product || continues.session.adapter
+      : null,
+    helping: helps?.title,
+    waitingSince: waiting?.session === attended.id ? waiting.since : undefined,
+    calling: waiting?.session === attended.id ? waiting.calling : undefined,
+  } : null;
+  const pageHead = attended && attendedFacts && attendedShown && headFactsOf && (
     <SessionPageHead
       session={attended}
       title={attendedTitle}
       shown={attendedShown}
-      // Its facts line by its state (UX7c, D152 §7): the row's facts and the record's, so the head and the row agree.
-      facts={sessionFacts(t, {
-        session: attended,
-        shown: attendedShown,
-        grouping,
-        ownSignIn: roster.some((row) => row.harness === attended.adapter),
-        branch,
-        nameOf,
-        // The agent it continues by the roster's name for it, as the hand-over's ask names agents (MIXAGENT3a-i).
-        continuesAgent: continues
-          ? roster.find((row) => row.harness === continues.session.adapter)?.product || continues.session.adapter
-          : null,
-        helping: helps?.title,
-        waitingSince: waiting?.session === attended.id ? waiting.since : undefined,
-        calling: waiting?.session === attended.id ? waiting.calling : undefined,
-      })}
+      facts={sessionFacts(t, headFactsOf)}
+      // RAILLINE1: the line is one line, its running call said short; the whole line, the call's whole title in it, is its tip.
+      factsTip={sessionFactsTip(t, headFactsOf)}
       acts={headActs}
       primary={headPrimary}
       busy={actions.busy}

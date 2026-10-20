@@ -16,6 +16,9 @@ with the version and date at release.
 - A session waiting on its own background work, such as a long test run, now ends within about a minute once its quest closes,
   is declined or asks another repository, instead of working on until the session timeout. It is recorded completed where its
   quest reached done, its conversation says the work still running ended with it, and that work ends with its process.
+- A session running a long tool call, a shell command above all, says it in a few words: its row in Sessions and its page's head
+  each show the call's first 40 characters or so, the same call in both, and hovering shows it whole. The row keeps room for
+  its kind, its tree and when it moved, and the head's facts stay on one line.
 - The Sessions icon counts the sessions Daoris is running for you, and the status bar shows the same number; neither counts
   a conversation you hold yourself, Ask Daoris's included. Something in Sessions waiting on you is a dot in the waiting colour
   beside the count, and hovering the icon says both in words. The window's title keeps to the count *What needs you* shows,
