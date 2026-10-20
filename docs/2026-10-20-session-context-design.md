@@ -31,13 +31,13 @@ conversation resumes under the new access at its next turn. This design decides 
 
 | The change | Today | What the agent knows after |
 |---|---|---|
-| Access, the same agent and account | the same conversation resumed (ACCESSSWAP1; a narrowing of Ask Daoris's mode already, D183's HELPMODE1a5 note) | its own conversation |
+| Access, the same agent and account | the same conversation resumed under the new access at its next start (D183 point 3, D184's AUTONOMY1b note), at its turn's end for a narrowing of Ask Daoris's mode (D183's HELPMODE1a5 note), and at the next turn for every change once ACCESSSWAP1 lands | its own conversation |
 | Another account of the same agent: D165's move, a pick, a rotation after a limit | a new part: a carry-on or a hand-over (D125 point 4, D165 point 3) | the request as first written, the last plan, the last words, what is uncommitted |
 | Another agent (D163) | a new part: the hand-over | the same four facts, with *None of its own context carries over to you* (`HandOverRecords.cs:111-112`) |
 | Its resume refused: `unkept`, `unable`, `offered`, `gone`, `refused`, `elsewhere` | a driven record: a carry-on handed the four facts; a conversation or a closed quest's session: the words wait, marked, and *Start a conversation with these words* is the person's press (`ChatGoOn.cs:60-62`) | the four facts, or nothing |
 
-So a session changes agent or account only by losing every word the person said after the first, every answer but the last,
-and what each turn did. An access change keeps everything while the resume holds, and loses everything where it does not.
+So a session changes agent or account only by losing every word the person said between the first and those still waiting,
+every answer but the last, and what each turn did. An access change keeps everything while the resume holds, and loses everything where it does not.
 
 ## 1. Two contexts
 
@@ -96,7 +96,7 @@ No model writes any of it.
 
 1. **Its opening**, in Daoris's one English: which session it continues, on which agent it ran, why it moved, and that what
    follows is Daoris's record of the conversation, not the agent's memory.
-2. **The request** as first written, at most 4,000 characters, as today.
+2. **The request** as first written, at most 4,000 characters, as today; a conversation's is its first word, not repeated in 3.
 3. **Every word the session took**, in order, marked by who said it as its record marks it: the person's, verbatim; another
    agent's answer or findings and a channel's message, as that agent's claim (D155 point 7, D167 point 7). Daoris's own
    composed prompts are not repeated, since the new part's instruction is composed afresh.
@@ -278,7 +278,8 @@ SESSCTX1f held.
 
 - **Claude Code's native `--resume`** has never run on this machine (`Adapters.cs:1985`): of an ended conversation, once
   unchanged and once under another `--permission-mode`.
-- **The protocol door's `session/resume` under another mode**, on `claude-agent-acp`.
+- **The protocol door's `session/resume` under another mode**, on `claude-agent-acp`; whether it takes
+  `bypassPermissions` at a load is HELPMODE1a3's, which SESSCTX1a may share.
 - **Codex**: whether a thread resumes after its `codex-acp` process has ended, and whether `thread_active_writer` (read,
   session messages design §1.1) clears once that process is gone.
 - **The cache** at each resume above: the first turn's input, cache reads and cache writes, against H.
