@@ -746,46 +746,88 @@ public sealed class ChatRunner : IDisposable
     }
 
     /// <summary>
-    /// The person chose <paramref name="mode"/> for Ask Daoris (HELPMODE1a2, D183 point 2): each of its conversations running here
-    /// under another is told on its console that the switch takes its next start. Nothing it runs with changes: a live switch of
-    /// its harness's mode alone would leave the rules, servers and room its start handed for the old one (D183's HELPMODE1a2 note).
+    /// The person changed Ask Daoris's access (ACCESSSWAP1, D183 point 2): its mode, now <paramref name="mode"/>, or its configured
+    /// access, read from the home's record now. Each of its conversations running here under another access than that ends at its
+    /// turn's end, never mid-turn, and at once where it is idle, the way a person finishing ends it (<see cref="Finish"/>: the turns
+    /// asked for run first); its console says what changed and when. Its next words resume the same conversation under the access
+    /// chosen then (D131), as every go-on reads the mode and the record at its start, keeps the mode on the record and a new receipt.
     /// </summary>
     /// <remarks>
-    /// HELPMODE1a5: a narrowing (full to restricted) is the exception, since full access is never kept past the person's choice
-    /// (D183 point 2): the conversation ends at its turn's end, never mid-turn, and at once where it is idle; its next words resume
-    /// it restricted, as any go-on reads the mode chosen then and says the change. A widening still takes the next start.
+    /// <para>Nothing a running conversation was handed changes while it runs: a live switch of its harness's posture alone would
+    /// leave the rules, servers, guard and room its start handed for the old access (D183's HELPMODE1a2 note). HELPMODE1a5 ended a
+    /// narrowing so; a widening and a grant now take the same path, and a grant taken back too, overturning HELPMODE1c2a's "a revoke
+    /// ends no conversation", since every access change applies at the next turn.</para>
+    ///
+    /// <para>A change back to what it runs under before its turn ends withdraws the end; one already ending goes on, and its next
+    /// words resume it under the same access. A further change while one is due is said again.</para>
     /// </remarks>
-    public void HelpModeChosen(string mode)
+    public void HelpAccessChosen(string mode)
     {
+        var housekeeping = ConfiguredAccess.Read(_home).Housekeeping;
         foreach (var (sessionId, running) in _context.HelpModes)
         {
-            if (HelpModes.Recorded(running) == HelpModes.Recorded(mode))
+            if (_context.HelpEnding.TryGetValue(sessionId, out var due) && !due) continue;
+            if (HelpSwap.Changed(running, Handed(sessionId), mode, housekeeping) is not { } changed)
             {
-                // Chosen back to what it runs under: an end scheduled for the turn's end is withdrawn.
-                _context.HelpEnding.TryRemove(sessionId, out _);
+                // Chosen back to what it runs under: an end due at its turn's end is withdrawn.
+                _context.HelpEnding.TryRemove(new KeyValuePair<string, bool>(sessionId, true));
                 continue;
             }
 
-            if (HelpModes.Narrows(running, mode))
-            {
-                var idle = !Taking(sessionId);
-                _output?.Append(sessionId, HelpModes.EndsForNarrowing(idle));
-                if (idle) Finish(sessionId);
-                else _context.HelpEnding[sessionId] = true;
-            }
-            else if (HelpModes.TakesNextStart(running, mode) is { } line) _output?.Append(sessionId, line);
+            // Due first and judged idle after, so a turn ending between the two is ended by HelpTurnChanged, and once.
+            _context.HelpEnding[sessionId] = true;
+            var idle = !Taking(sessionId);
+            _output?.Append(sessionId, HelpSwap.Said(changed, idle));
+            if (idle && _context.HelpEnding.TryUpdate(sessionId, false, true)) Finish(sessionId);
         }
     }
 
     /// <summary>
-    /// Where a conversation's turns stand (HELPMODE1a5): one a narrowing switch scheduled to end is ended once nothing runs or
+    /// The Ask Daoris conversations running here under another access than the one chosen now (ACCESSSWAP1), by session, in order:
+    /// each ends at its turn's end, and its next words resume it under the access chosen. What the page's <i>pending</i> marks read.
+    /// </summary>
+    /// <param name="mode">The mode chosen now; the configured access is read from the home's record.</param>
+    public IReadOnlyList<string> HelpSwapping(string mode)
+    {
+        var housekeeping = ConfiguredAccess.Read(_home).Housekeeping;
+        return [.. _context.HelpModes
+            .Where(each => HelpSwap.Changed(each.Value, Handed(each.Key), mode, housekeeping) is not null)
+            .Select(each => each.Key)
+            .Order(StringComparer.Ordinal)];
+    }
+
+    /// <summary>
+    /// Whether an Ask Daoris conversation running here was handed another choice of housekeeping than <paramref name="chosen"/>
+    /// (ACCESSSWAP1): the grant's <i>pending</i> mark, from the change until that conversation's agent has ended.
+    /// </summary>
+    public bool HousekeepingPending(IReadOnlyList<string> chosen) =>
+        _context.HelpModes.Keys.Any(sessionId => !Handed(sessionId).SequenceEqual(chosen, StringComparer.Ordinal));
+
+    /// <summary>The housekeeping a running Ask Daoris conversation's start was handed; none where it kept none.</summary>
+    private IReadOnlyList<string> Handed(string sessionId) =>
+        _context.HousekeepingHanded.TryGetValue(sessionId, out var handed) ? handed : [];
+
+    /// <summary>
+    /// Where a conversation's turns stand (ACCESSSWAP1, after HELPMODE1a5): one whose access changed is ended once nothing runs or
     /// waits, as its turn has ended. Called by each start's turns, under their lock, so it ends off it.
     /// </summary>
     internal void HelpTurnChanged(string sessionId, ChatQueue queue)
     {
         if (queue.Taking || queue.Opening || queue.Queued.Count > 0) return;
-        if (!_context.HelpEnding.TryRemove(sessionId, out _)) return;
+        // Due at its turn's end, and marked ending in the same step, so it is finished once.
+        if (!_context.HelpEnding.TryUpdate(sessionId, false, true)) return;
         _ = Task.Run(() => Finish(sessionId));
+    }
+
+    /// <summary>
+    /// A conversation's run is over (ACCESSSWAP1): what its start was handed is no longer compared with the person's access, so it
+    /// is pending no more. Said before its end is told, so the state judged at that word reads it gone.
+    /// </summary>
+    private void ForgetAccess(string sessionId)
+    {
+        _context.HelpModes.TryRemove(sessionId, out _);
+        _context.HousekeepingHanded.TryRemove(sessionId, out _);
+        _context.HelpEnding.TryRemove(sessionId, out _);
     }
 
     /// <summary>The runner's shared state, for tests that stand a conversation up without a spawn.</summary>
@@ -1107,8 +1149,12 @@ public sealed class ChatRunner : IDisposable
         // One at a time in each workspace (ASKHIST1, ASKSCOPE1a): going back to an earlier conversation of its workspace sets this one
         // aside first, and one of another workspace's leaves it be.
         if (string.Equals(place.Name, HelpRoom.Repository, StringComparison.Ordinal)) _context.Rooms[sessionId] = RemoteTarget.Workspace(place.Workspace);
-        // The mode it got, which a switch of the person's mode is compared with while it runs (HELPMODE1a2).
-        if (helpMode is not null) _context.HelpModes[sessionId] = helpMode;
+        // The access it got, its mode and its housekeeping, which a change of the person's is compared with while it runs (ACCESSSWAP1).
+        if (helpMode is not null)
+        {
+            _context.HousekeepingHanded[sessionId] = place.Housekeeping;
+            _context.HelpModes[sessionId] = helpMode;
+        }
 
         // 🔴 On the protocol door a conversation is ONE session held over the wire (CONV3b): opened
         // once, each message a turn on it. It used to be spawned as a pipe, and a person's words went
@@ -1746,8 +1792,7 @@ public sealed class ChatRunner : IDisposable
             _context.Talking.TryRemove(sessionId, out _);
             _context.Turned.TryRemove(sessionId, out _);
             _context.Rooms.TryRemove(sessionId, out _);
-            _context.HelpModes.TryRemove(sessionId, out _);
-            _context.HelpEnding.TryRemove(sessionId, out _);
+            ForgetAccess(sessionId);
             _context.Handing.TryRemove(sessionId, out _);
             _context.Browsers.TryRemove(sessionId, out _);
             _toldProcess.TryRemove(sessionId, out _);
@@ -2412,6 +2457,8 @@ public sealed class ChatRunner : IDisposable
     private async Task Conclude(
         string sessionId, string state, Noted note, Func<string, string, Task>? onEnded)
     {
+        // Its agent has ended: an Ask Daoris conversation whose access changed is pending no more once its end is told (ACCESSSWAP1).
+        ForgetAccess(sessionId);
         try
         {
             await _service.AdvanceAsync(sessionId, state, note).ConfigureAwait(false);

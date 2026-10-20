@@ -159,20 +159,26 @@ public sealed class HelpAccessTests : IDisposable
     }
 
     /// <summary>
-    /// HELPMODE1a2 (D183 point 2): a switch takes a running conversation's next start, never the conversation as it runs; its console
-    /// is told when, and why the start is what changes. A switch to the mode it runs under says nothing.
+    /// ACCESSSWAP1 (D183 point 2, replacing HELPMODE1a2's next start): a change under a running conversation is said as what changed,
+    /// its mode and its housekeeping grant each, and when it applies: its agent ends at its turn's end, never mid-turn, or now where it
+    /// is idle, and its next words resume the same conversation under the new access. Under the access chosen there is nothing to say.
     /// </summary>
     [Fact]
-    public void A_switch_while_a_conversation_runs_says_its_next_start_takes_it()
+    public void A_change_while_a_conversation_runs_says_what_changed_and_that_its_next_turn_takes_it()
     {
-        var widened = HelpModes.TakesNextStart(running: HelpModes.Restricted, chosen: HelpModes.Full);
-        var narrowed = HelpModes.TakesNextStart(running: HelpModes.Full, chosen: HelpModes.Restricted);
+        var widened = HelpSwap.Changed(HelpModes.Restricted, [], HelpModes.Full, [ConfiguredAccess.Inspect, ConfiguredAccess.CleanUp]);
 
-        Assert.StartsWith("— Ask Daoris's mode is now full access, from this conversation's next start: it runs restricted until then", widened);
-        Assert.Contains("rules, servers and room", widened);
-        Assert.StartsWith("— Ask Daoris's mode is now restricted, from this conversation's next start: it runs with full access until then", narrowed);
-        Assert.Null(HelpModes.TakesNextStart(running: HelpModes.Full, chosen: HelpModes.Full));
-        Assert.DoesNotContain('\n', widened!);
+        Assert.Equal("its mode is now full access, and its housekeeping grants `inspect`, `clean-up` now", widened);
+        Assert.Equal("its mode is now restricted", HelpSwap.Changed(HelpModes.Full, [], HelpModes.Restricted, []));
+        Assert.Equal("its housekeeping grants nothing now", HelpSwap.Changed(HelpModes.Restricted, [ConfiguredAccess.Inspect], "RESTRICTED", []));
+        Assert.Null(HelpSwap.Changed(HelpModes.Full, [ConfiguredAccess.Inspect], HelpModes.Full, [ConfiguredAccess.Inspect]));
+
+        var turning = HelpSwap.Said(widened!, idle: false);
+        Assert.StartsWith("— Ask Daoris's access changed under this conversation: its mode is now full access", turning);
+        Assert.Contains("Its agent ends at its turn's end, never mid-turn, and your next words resume this conversation", turning);
+        Assert.Contains("Its agent ends now, and", HelpSwap.Said(widened!, idle: true));
+        Assert.DoesNotContain("next start", turning);
+        Assert.DoesNotContain('\n', turning);
     }
 
     /// <summary>A record's mode as read: as kept, any case; none, or one this build does not know, is restricted, what it ran before the modes.</summary>

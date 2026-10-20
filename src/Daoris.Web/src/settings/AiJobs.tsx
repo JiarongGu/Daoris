@@ -38,8 +38,8 @@ export type HelperJob = {
 };
 
 /**
- * Ask Daoris's access on THIS machine (HELPMODE1b, D183 point 2): the mode its next start reads, chosen by the panel's chip's rule,
- * which the domain holds: restricted at once, full access only on its confirmation.
+ * Ask Daoris's access on THIS machine (HELPMODE1b, D183 point 2): the mode each conversation's next turn takes (ACCESSSWAP1), chosen
+ * by the panel's chip's rule, which the domain holds: restricted at once, full access only on its confirmation.
  */
 export type HelpAccessJob = {
   mode: HelpMode;
