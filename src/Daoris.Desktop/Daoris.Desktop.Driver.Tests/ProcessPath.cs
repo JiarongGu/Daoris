@@ -11,8 +11,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// so only these need to be kept apart from each other.
 ///
 /// Since the Process half runs its classes several at once (PROCPAR1), these run alone, after the rest, as
-/// <see cref="Alone"/>'s do: <see cref="ToolsChildProcessTests"/> sets <c>DAORIS_HOME</c> too, and a child any class
-/// beside it started meanwhile would inherit that home.
+/// <see cref="Alone"/>'s do: a child any class beside them started meanwhile would inherit the shim's <c>PATH</c>.
 /// </remarks>
 [CollectionDefinition(Name, DisableParallelization = true)]
 public sealed class ProcessPath

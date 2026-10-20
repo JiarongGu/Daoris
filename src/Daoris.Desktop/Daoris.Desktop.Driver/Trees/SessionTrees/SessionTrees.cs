@@ -90,10 +90,11 @@ public sealed record SessionTree(string Path, string Workspace, string Repositor
 /// The plugin wire a branch rule's landing speaks (WSR4, D100) — the home's own plugins by default; the
 /// shell and the terminal hand one that says the plugin's lines where each says things.
 /// </param>
-public sealed class SessionTrees(string home, LandingPlugins? plugins = null) : IWorkTrees
+/// <param name="variable">The environment the trees read (ENVSEAM1): this process's by default, a test's own where it hands one.</param>
+public sealed class SessionTrees(string home, LandingPlugins? plugins = null, Func<string, string?>? variable = null) : IWorkTrees
 {
     /// <summary>What the parts share (PART10i): the home, the plugin wire, the seams.</summary>
-    private readonly TreeContext _context = new(home, plugins ?? new LandingPlugins(home));
+    private readonly TreeContext _context = new(home, plugins ?? new LandingPlugins(home), variable);
 
     // The parts, each built once at first use (a field initializer cannot read `_context`), leaves first; a class takes the
     // others it reads in its constructor, and none takes this front.

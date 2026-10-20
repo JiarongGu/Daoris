@@ -314,6 +314,13 @@ public sealed class Driver(
         init => Context.BrainstormCheckouts = value;
     }
 
+    /// <summary>
+    /// The environment this driver reads its variables from (ENVSEAM1, D63's seam): the connector's host, home and store, the
+    /// remotes, and the home a start's tools are read from. This process's, unless a test hands in its own, so a test that names
+    /// its own scratch sets nothing every class beside it shares.
+    /// </summary>
+    internal Func<string, string?> Variable { get; init; } = Environment.GetEnvironmentVariable;
+
     /// <summary>How long a brainstorm's minute lasts (BRAINSTORM1b): a minute, unless a test shortens it.</summary>
     internal TimeSpan? BrainstormMinute
     {
@@ -2008,7 +2015,7 @@ public sealed class Driver(
             // FABRIC-CLOSE1o: named for this session, whose take alone binds it, the service judging it again at the take.
             var closure = await ClosureBinding.AtStartAsync(
                 service, config, quest, start.Workspace ?? RemoteTarget.DefaultWorkspace,
-                RemoteTarget.Effective(Environment.GetEnvironmentVariable, home).ContainsKey(RemoteTarget.Workspace(start.Workspace)), home, ct,
+                RemoteTarget.Effective(Variable, home).ContainsKey(RemoteTarget.Workspace(start.Workspace)), home, ct,
                 session: sessionId)
                 .ConfigureAwait(false);
             // The process its work follows (WORKFLOW1f): read for the landing a session in a tree of its own is told, and for the checks its
@@ -2342,7 +2349,7 @@ public sealed class Driver(
     internal (ProcessStartInfo Info, string? Notice) Prepare(
         ISessionAdapter adapter, SessionTarget target, HarnessSelection selection, ProcessStartInfo? prepared = null)
     {
-        var info = prepared ?? adapter.Prepare(target, config.Commands.GetValueOrDefault(adapter.Name));
+        var info = prepared ?? adapter.Prepare(target with { Home = target.Home ?? DaorisHome.Resolve(Variable) }, config.Commands.GetValueOrDefault(adapter.Name));
 
         // The environment seam every harness already carries for exactly this (D49 §4). Applied
         // by the driver rather than inside the adapter's Prepare, so one line governs both doors
@@ -3536,11 +3543,7 @@ public sealed class Driver(
     /// ask when it is one.
     /// </summary>
     internal AcpMcpServer? Connector(string sessionId, IReadOnlyDictionary<string, string>? scope) =>
-        KnowledgeConnector.Offer(
-            Environment.GetEnvironmentVariable(KnowledgeConnector.PathVariable),
-            DaorisHome.Resolve(),
-            AppContext.BaseDirectory,
-            scope: KnowledgeConnector.SessionScope(home, sessionId, scope));
+        KnowledgeConnector.Offer(Variable, AppContext.BaseDirectory, KnowledgeConnector.SessionScope(home, sessionId, scope));
 
     /// <summary>
     /// Why the graph named for a session's take did not bind it (CLOSETAKE1), or null: a line's extra word is never worth failing the end of a
