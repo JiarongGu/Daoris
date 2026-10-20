@@ -18207,3 +18207,17 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **STORYGAP1 — every screen since UX7 in the catalogue at the frame's widths** (web-shell, web-settings; after UIFIT1; §1.2 item 6, R6). Stories for `WorkspaceRecoveries`, `TeammateAskPage`, `AskReview`, `Conflicts` and `CommitGraph` at wide, half and narrow, en and zh, both themes. Proof: the stories, with the story-width test passing over them. Revised 2026-10-20 by another maker's read (DESIGNREAD1): its outcome, proof and trap as the UI/UX design's §9 now words them.
 
 **Outcome** 2026-10-20: stories of their own, at the main area's three widths (the 400 px floor among them), in en and zh and both themes, for the eight screens §9 item 13 names: the row's five, and `AskLines`, `QuestStatus` (*submitted*, *source reopened*) and `AskWorkflowKind`. The story-width check now reads `asks/` and `quests/` as well. Of the 26 stories files still framed by themselves, 18 moved to the helper, as did `AskPage`, `ChannelSection` and `QuestPage`; the helper gained `sessionWidths` for a session's page's gutters. The 11 left are parts of other regions, named with their mounts in `NOT_IN_A_MAIN_AREA`. Doubled gutters under a page's own `ViewMain` and a side bar's 45% width are carried, not fixed. Detail: D185's STORYGAP1 note. On Opus.
+
+## OVERVIEWNOISE1c — the planner's verdicts and the recall tier said in the page's language (2026-10-21)
+
+> - [ ] **OVERVIEWNOISE1c — the planner's verdicts and the recall tier said in the page's language** (driver, web-shell; the owner's report, 2026-10-20). The parked reasons AtCapacity, RepositoryBusy, Waiting, WaitsForOpinion, NotAdopted and SourceReopened have no page words, so the Chinese page shows the driver's English ("the concurrency cap (6) is spent — it frees as sessions finish", `Planner.cs:1609-1611`, passed through by `data/signals.ts:184-192`, `:257-260`), and the status bar says "lexical only" with an English tip (`frame.tsx:461-464`, `App.tsx:1250-1251`). Wanted: each verdict carried as a code with its facts (the cap as a number) and worded by the page; the tier's label by its value, its note in the tip. Proof: signals tests per verdict in en and zh; a zh frame test.
+
+**Outcome** 2026-10-21: each of the six verdicts carries which of its sentences it is as a `SittingFact` (`Planner.cs`): a code and
+its facts — the cap as a number, the session, the other quest, the question's repository, a review's environment, the second
+opinion's state — set beside every sentence the planner and the opinion look say (the look's sits became `OpinionSit`), and
+written as `said` on the tick's considerations (`DriverLoop.TickConsideration`) and a work's holds (`WorkRoutes.WorkHoldShown`).
+`sittingSentence` words them by code in en and zh (`work.sitting.<Verdict>_<code>`), the terminal's doors verbatim and the
+opinion's state in the gate's own words; no code, or an unknown one, keeps the driver's words. The status bar takes the tier as
+`{ semantic }` and says its label and its tip by that value (`work.status.tier*`). Proof: PlannerTests, OpinionGateTests,
+OpinionLookTests, TickConsiderationTests, DriverModuleWorkTests; signals.test.ts per verdict and code in en and zh; chrome.test.tsx
+in zh. The sessions page's held words (`WordsHold`) still carry the driver's sentence, out of this row.

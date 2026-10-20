@@ -5,6 +5,10 @@ with the version and date at release.
 
 ## Unreleased
 
+- In Chinese, why a quest is sitting is now said in Chinese for every reason the driver gives: the concurrency cap (with its
+  number), a session or an earlier quest holding the repository or the tree, a question it waits on, a second opinion, a
+  repository not registered or not adopted, and a reopened source. The status bar says the recall tier in the page's language
+  too, with what it means in its tip.
 - A session waiting on its own background work, such as a long test run, now ends within about a minute once its quest closes,
   is declined or asks another repository, instead of working on until the session timeout. It is recorded completed where its
   quest reached done, its conversation says the work still running ended with it, and that work ends with its process.
