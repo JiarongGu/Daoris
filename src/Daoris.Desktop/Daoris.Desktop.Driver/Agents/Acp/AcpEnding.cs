@@ -37,4 +37,22 @@ public sealed class AcpEnding
 
         door?.Ending(why);
     }
+
+    /// <summary>
+    /// Whether the run ended its agent's tree itself because the agent did not exit once its session had ended with its own background
+    /// work still running (DONEEND1). The session's end was its own and clean, so the conclusion reads it as the clean exit this door's
+    /// agent gives once its stdin closes, never as a kill's exit.
+    /// </summary>
+    public bool EndedLingering
+    {
+        get { lock (_gate) return _lingering; }
+    }
+
+    private bool _lingering;
+
+    /// <summary>Said by the capture before it ends the tree of an agent that lingered after its session ended (DONEEND1).</summary>
+    public void Lingering()
+    {
+        lock (_gate) _lingering = true;
+    }
 }

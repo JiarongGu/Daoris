@@ -65,6 +65,19 @@ public sealed class BackgroundWaitJudgementTests : IDisposable
         Assert.False(await judge(CancellationToken.None));
     }
 
+    /// <summary>DONEEND1: a start's judgement, read again, holds while the quest it took stays taken, and ends once it is done.</summary>
+    [Fact]
+    public async Task A_start_s_judgement_read_again_holds_while_taken_and_turns_false_once_done()
+    {
+        _ledger.Driven("s2", "q1", "tree");
+        var judge = Daoris.Driver.Driver.WaitsOnBackground(_ledger.Client(), Planned("Open"), "s2", resumed: false)!;
+
+        Assert.True(await judge(CancellationToken.None));
+        Assert.True(await judge(CancellationToken.None));
+        _ledger.Move("q1", "Done");
+        Assert.False(await judge(CancellationToken.None));
+    }
+
     [Fact]
     public async Task A_start_that_did_not_take_its_quest_does_not_wait()
     {

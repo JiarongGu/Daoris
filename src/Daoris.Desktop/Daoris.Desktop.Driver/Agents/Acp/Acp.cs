@@ -324,9 +324,9 @@ public sealed class AcpSession(
 
     /// <summary>
     /// How often a session that waits on its own background work reads its quest again (DONEEND1, D83's note): once it no longer
-    /// waits on that work, the session ends. The driver sets its own tick; this default is the driver's default tick.
+    /// waits on that work, the session ends. The driver sets every fourth of its own ticks; this default is that at its default tick.
     /// </summary>
-    public TimeSpan BackgroundLook { get; init; } = TimeSpan.FromSeconds(15);
+    public TimeSpan BackgroundLook { get; init; } = TimeSpan.FromSeconds(60);
 
     /// <summary>
     /// The session's own background work still running, by name, when its run ended (DONEEND1): what ends with the session. The
