@@ -195,6 +195,8 @@ public sealed class WorkStateSliceTests : DriverModuleBridge
             new(unit, kind, "daoris/s-a", role, disposition, "the driver's clause")
             {
                 Until = At.AddDays(7), Repository = "alpha", Commit = "a1b2c3d4", Proof = "every commit of it is on `main`",
+                // OVERVIEWNOISE1b: a blocked entry's code and the facts the page words it with.
+                Code = InventoryCode.Kept, Facts = new Dictionary<string, string> { ["why"] = "nested", ["at"] = "2026-10-20T09:00:00.0000000+00:00" },
             };
 
         InventoryEntry[] entries =

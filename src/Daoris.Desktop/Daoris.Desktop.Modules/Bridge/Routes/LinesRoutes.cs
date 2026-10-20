@@ -573,7 +573,10 @@ public sealed class LinesRoutes(DriverContext context)
         }
 
         var unread = new List<string>();
-        var (units, recovery) = await WorkInventories.ReadAsync(_loop.Home, roots, inUse, unread, cancellationToken);
+        // OVERVIEWNOISE1b: each tree joined to the session that recorded it, from the sessions' look the work slice reads too.
+        var looked = _loop.Facts.Current.Value<SessionLook>(HelpFacts.Sessions, HelpFacts.Whole);
+        var (units, recovery) = await WorkInventories.ReadAsync(
+            _loop.Home, roots, inUse, unread, cancellationToken, looked is null ? null : WorkInventories.RecordedOf(looked.Records));
         if (Optional(request, "unit") is { } named)
         {
             units = WorkInventories.Named(units, named);
@@ -607,9 +610,12 @@ public sealed class LinesRoutes(DriverContext context)
         Entries = unit.Entries.Select(WorkEntry).ToArray(),
     };
 
-    /// <summary>One inventory entry as <c>WORK_STATE</c> answers it and the work slice pushes it (PUSH1c2a).</summary>
+    /// <summary>
+    /// One inventory entry as <c>WORK_STATE</c> answers it and the work slice pushes it (PUSH1c2a). OVERVIEWNOISE1b, additive: a blocked
+    /// entry's <c>code</c> and the <c>facts</c> the page words it with; a page before them shows its detail as recorded.
+    /// </summary>
     public static object WorkEntry(InventoryEntry each) =>
-        new { each.Unit, each.Kind, each.Resource, each.Role, each.Disposition, each.Detail, each.Until, each.Proof, each.Repository, each.Commit };
+        new { each.Unit, each.Kind, each.Resource, each.Role, each.Disposition, each.Detail, each.Until, each.Proof, each.Repository, each.Commit, each.Code, each.Facts };
 
     /// <summary>
     /// The attempts held for the person as the wire carries them: the page words <c>why</c> by its code. FABRIC-CLOSE1q, additive: <c>words</c>,

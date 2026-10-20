@@ -253,8 +253,9 @@ public static class NeedsAPerson
             rows.Add(row);
         }
 
-        // A unit whose clean-up is blocked, or whose owner nothing records (FABRIC-MILESTONE1b): its blocked entries as the driver says them.
-        // A wait the cycle ends by itself is no row.
+        // A unit only the person's press settles (FABRIC-MILESTONE1b, OVERVIEWNOISE1b): one whose owner nothing records, or a tree its session
+        // recorded that no branch record follows, each waiting on the clean-up's press; its blocked entries with the code the page words
+        // each by. A guard the tidy keeps a branch by is said on its session's page and its branch's line; a wait that ends by itself is no row.
         foreach (var unit in facts.Works)
         {
             var waits = WaitsOnPerson(unit);
@@ -264,14 +265,12 @@ public static class NeedsAPerson
             var row = Row("work", Text(unit, "session") ?? Text(unit, "unit"), Text(end, "at"));
             row["where"] = Text(unit, "repository");
             row["session"] = Text(unit, "session");
-            row["title"] = Text(unit, "branch") ?? Text(unit, "unit");
+            // Its branch, else its tree's folder by name: never the unit's id, which a tree's path makes.
+            row["title"] = Text(unit, "branch") ?? TreeName(waits.Concat(Objects(unit["entries"]))) ?? Text(unit, "unit");
             row["blocked"] = new JsonObject
             {
                 ["unknown"] = unknown,
-                ["entries"] = new JsonArray([
-                    .. waits.Where(entry => !unknown || Text(entry, "disposition") == "blocked")
-                        .Select(entry => (JsonNode)new JsonObject { ["kind"] = Text(entry, "kind"), ["resource"] = Text(entry, "resource"), ["detail"] = Text(entry, "detail") }),
-                ]),
+                ["entries"] = new JsonArray([.. waits.Where(entry => !unknown || Text(entry, "disposition") == "blocked").Select(Blocked)]),
             };
             rows.Add(row);
         }
@@ -415,15 +414,31 @@ public static class NeedsAPerson
             : null;
 
     /// <summary>
-    /// What of a unit waits on the person (design §D0): the entries its clean-up is blocked on, and, where no record names its owner, the
-    /// unit itself by its first entry. A pending wait ends by itself.
+    /// What of a unit waits on the person (design §D0; OVERVIEWNOISE1b, only where they have an act): where no record names its owner, the
+    /// entries its clean-up is blocked on, else the unit itself by its first entry; where its owner is known, the trees its session recorded
+    /// and no branch record follows, which only the clean-up's press takes. A guard the tidy keeps a branch by has no act of the person's
+    /// here, and a pending wait ends by itself.
     /// </summary>
     private static List<JsonObject> WaitsOnPerson(JsonObject unit)
     {
         var blocked = Objects((unit["cleanup"] as JsonObject)?["waits"]).Where(entry => Text(entry, "disposition") == "blocked").ToList();
-        if (blocked.Count > 0 || Text(unit["end"] as JsonObject, "state") != "unknown") return blocked;
-        return [.. Objects(unit["entries"]).Take(1)];
+        if (Text(unit["end"] as JsonObject, "state") != "unknown") return [.. blocked.Where(entry => Text(entry, "code") == InventoryCode.Unfollowed)];
+        return blocked.Count > 0 ? blocked : [.. Objects(unit["entries"]).Take(1)];
     }
+
+    /// <summary>A blocked entry as the row carries it: what it is, the driver's sentence, and the code the page words it by, with its facts.</summary>
+    private static JsonNode Blocked(JsonObject entry)
+    {
+        var said = new JsonObject { ["kind"] = Text(entry, "kind"), ["resource"] = Text(entry, "resource"), ["detail"] = Text(entry, "detail") };
+        if (Truthy(entry, "code") is { } code) said["code"] = code;
+        if (entry["facts"] is JsonObject facts) said["facts"] = facts.DeepClone();
+        return said;
+    }
+
+    /// <summary>The first tree entry's folder by its name (OVERVIEWNOISE1b): what a unit with no branch is called, never its path.</summary>
+    private static string? TreeName(IEnumerable<JsonObject> entries) =>
+        entries.Where(entry => Text(entry, "kind") == InventoryKind.Tree).Select(entry => Text(entry, "resource")).OfType<string>()
+            .Select(path => path.Replace('\\', '/').TrimEnd('/').Split('/')[^1]).FirstOrDefault(name => name.Length > 0);
 
     /// <summary>
     /// A session parked to ask that nobody answered yet (ANSWER1c): the person's answer goes on at the driver's next look. Never Ask

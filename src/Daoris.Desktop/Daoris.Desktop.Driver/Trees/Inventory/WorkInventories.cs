@@ -21,17 +21,31 @@ public static class WorkInventories
     /// repository's trees are never listed, so they cost no git. Each line not read names its repository as data.
     /// </summary>
     /// <param name="only">Whether a repository the trees or the records name is this part's.</param>
+    /// <param name="recorded">The trees this machine's sessions recorded (<see cref="RecordedOf"/>), each joined to its session; none, none joined.</param>
     public static async Task<(IReadOnlyList<WorkMilestone> Units, IReadOnlyList<InventoryEntry> Recovery, IReadOnlyList<InventoryUnread> Unread)> ReadPartAsync(
-        string home, IReadOnlyDictionary<string, string> roots, IReadOnlySet<string> inUse, Func<string, bool> only, CancellationToken ct = default)
+        string home, IReadOnlyDictionary<string, string> roots, IReadOnlySet<string> inUse, Func<string, bool> only, CancellationToken ct = default,
+        IReadOnlyList<RecordedTree>? recorded = null)
     {
         var unread = new List<InventoryUnread>();
-        var facts = await GatherAsync(home, roots, inUse, (repository, said) => unread.Add(new(repository, said)), only, ct, now: null).ConfigureAwait(false);
+        var facts = await GatherAsync(home, roots, inUse, (repository, said) => unread.Add(new(repository, said)), only, ct, now: null, recorded).ConfigureAwait(false);
         return (WorkInventory.Derive(facts), WorkInventory.Recoveries(facts), unread);
     }
 
+    /// <summary>
+    /// The trees this machine's session records name (OVERVIEWNOISE1b, <see cref="InventoryFacts.Recorded"/>), oldest record first: a
+    /// teammate's record names no tree of this machine's, and a record with none names nothing.
+    /// </summary>
+    public static IReadOnlyList<RecordedTree> RecordedOf(IEnumerable<SessionRecord> records) =>
+    [
+        .. records
+            .Where(record => record.Id.Length > 0 && !record.Id.Contains('/', StringComparison.Ordinal) && !string.IsNullOrWhiteSpace(record.Tree))
+            .OrderBy(record => record.Created).ThenBy(record => record.Id, StringComparer.Ordinal)
+            .Select(record => new RecordedTree(record.Id, record.Tree!)),
+    ];
+
     private static async Task<InventoryFacts> GatherAsync(
         string home, IReadOnlyDictionary<string, string> roots, IReadOnlySet<string> inUse, Action<string, string> unread,
-        Func<string, bool>? only, CancellationToken ct, DateTimeOffset? now)
+        Func<string, bool>? only, CancellationToken ct, DateTimeOffset? now, IReadOnlyList<RecordedTree>? recorded = null)
     {
         IReadOnlyList<T> Ours<T>(IReadOnlyList<T> all, Func<T, string> repository) => only is null ? all : [.. all.Where(each => only(repository(each)))];
 
@@ -83,14 +97,16 @@ public static class WorkInventories
         return new InventoryFacts(
             branches, landings, trees, Ours(new AutoLandings(home).All(), entry => entry.Repository), refs, inUse,
             session => Directory.Exists(DaorisHome.Entry(home, HomeEntry.Sessions, session)), at)
-        { Standing = standing };
+        { Standing = standing, Recorded = recorded ?? [] };
     }
 
     /// <summary>The milestone of every unit this home names, and Daoris's own recoveries no unit names (CLEANUP1), from one read.</summary>
+    /// <param name="recorded">The trees this machine's sessions recorded (<see cref="RecordedOf"/>), each joined to its session; none, none joined.</param>
     public static async Task<(IReadOnlyList<WorkMilestone> Units, IReadOnlyList<InventoryEntry> Recovery)> ReadAsync(
-        string home, IReadOnlyDictionary<string, string> roots, IReadOnlySet<string> inUse, ICollection<string> unread, CancellationToken ct = default)
+        string home, IReadOnlyDictionary<string, string> roots, IReadOnlySet<string> inUse, ICollection<string> unread, CancellationToken ct = default,
+        IReadOnlyList<RecordedTree>? recorded = null)
     {
-        var facts = await GatherAsync(home, roots, inUse, unread, ct).ConfigureAwait(false);
+        var facts = await GatherAsync(home, roots, inUse, (_, said) => unread.Add(said), only: null, ct, now: null, recorded).ConfigureAwait(false);
         return (WorkInventory.Derive(facts), WorkInventory.Recoveries(facts));
     }
 

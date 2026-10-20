@@ -26,6 +26,7 @@ internal static class WorkConsole
         var unread = new List<string>();
         var roots = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         var inUse = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        IReadOnlyList<RecordedTree> recorded = [];
         try
         {
             using var service = ServiceClient.FromEnvironment();
@@ -38,13 +39,16 @@ internal static class WorkConsole
             {
                 if (!string.IsNullOrEmpty(session.Tree)) inUse.Add(session.Tree);
             }
+
+            // OVERVIEWNOISE1b: each tree joined to the session that recorded it, as the page's work reads it.
+            recorded = WorkInventories.RecordedOf(await service.SessionRecordsAsync().ConfigureAwait(false));
         }
         catch (Exception error) when (error is DriverException or HttpRequestException or System.Text.Json.JsonException or IOException or TaskCanceledException)
         {
             unread.Add($"the service did not answer ({error.Message}), so recovery refs were not read and a tree a session holds may read as idle");
         }
 
-        var (units, recovery) = await WorkInventories.ReadAsync(home, roots, inUse, unread).ConfigureAwait(false);
+        var (units, recovery) = await WorkInventories.ReadAsync(home, roots, inUse, unread, recorded: recorded).ConfigureAwait(false);
         return (units, recovery, unread);
     }
 
