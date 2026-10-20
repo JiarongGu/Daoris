@@ -339,3 +339,85 @@ describe('a node outside the record\'s own, and a rail the caller draws (FLOWCHA
     expect(node('Accept would land these')).toHaveAccessibleDescription('Not reached. From Part 1: its work would land.');
   });
 });
+
+describe('a stack of like nodes (FLOWCHART1c; the flowchart design §3.6 step 1)', () => {
+  /** A due entry's tries, each a node like the others of its code, then the landing they ended in. */
+  const tried = (codes: string[]): Partial<Parameters<typeof Flow>[0]> => {
+    const ids = ['due', ...codes.map((_, index) => `t${index}`), 'landed'];
+    return {
+      label: 'How it landed',
+      nodes: [
+        { id: 'due', title: 'Due to land' },
+        ...codes.map((code, index) => ({
+          id: `t${index}`, title: `${code}, try ${index + 1}`,
+          stack: { key: code, word: code === 'held' ? 'held for your yes' : code, at: `10:0${index + 1}` },
+        })),
+        { id: 'landed', title: 'Landed' },
+      ],
+      edges: ids.slice(1).map((to, index) => ({
+        id: `e${index}`, from: ids[index]!, to,
+        says: index === 0 ? 'tried' : to === 'landed' ? 'it landed' : 'tried again',
+      })),
+      entries: ['due'],
+    };
+  };
+  const stackList = () => screen.getByRole('list', { name: 'How it landed' });
+  const stackItem = (name: string) => within(stackList()).getByRole('listitem', { name: new RegExp(`^${name}`) });
+  const titles = () => within(stackList()).getAllByRole('listitem').map((item) => item.getAttribute('data-flow-node'));
+
+  it('folds three like nodes that follow each other into one, saying its count, its first and last time and its shared word', () => {
+    draw(tried(['held', 'held', 'held']));
+    expect(titles()).toEqual(['due', 'stack:t0', 'landed']);
+    const fold = stackItem('held for your yes ×3');
+    expect(fold).toHaveTextContent('first 10:01, last 10:03');
+    expect(within(fold).getByRole('button', { name: 'Show all 3' })).toHaveAttribute('aria-expanded', 'false');
+  });
+
+  it('keeps every edge across its boundary with its cause, and says the edges between its members (a fold keeps its boundary)', () => {
+    draw(tried(['held', 'held', 'held']));
+    expect(stackItem('held for your yes ×3')).toHaveAccessibleDescription(
+      'Holds 3 like this: held for your yes. From Due to land: tried. Next: Landed, it landed. Between them: tried again ×2.');
+    expect(stackItem('Due to land')).toHaveAccessibleDescription('Next: held for your yes ×3, tried.');
+    expect(stackItem('Landed')).toHaveAccessibleDescription('From held for your yes ×3: it landed.');
+  });
+
+  it('keeps two like nodes apart, so a single retry stays visible', () => {
+    draw(tried(['held', 'held']));
+    expect(titles()).toEqual(['due', 't0', 't1', 'landed']);
+    expect(screen.queryByRole('button', { name: /Show all/ })).toBeNull();
+  });
+
+  it('opens with its press, every member drawn whole, and folds again from its first member, never remembered', async () => {
+    const user = userEvent.setup();
+    const { unmount } = draw(tried(['held', 'held', 'held']));
+    await user.click(screen.getByRole('button', { name: 'Show all 3' }));
+    expect(titles()).toEqual(['due', 't0', 't1', 't2', 'landed']);
+    const again = within(stackItem('held, try 1')).getByRole('button', { name: 'Fold the 3 again' });
+    expect(again).toHaveAttribute('aria-expanded', 'true');
+    await user.click(again);
+    expect(titles()).toEqual(['due', 'stack:t0', 'landed']);
+
+    await user.click(screen.getByRole('button', { name: 'Show all 3' }));
+    unmount();
+    draw(tried(['held', 'held', 'held']));
+    expect(titles()).toEqual(['due', 'stack:t0', 'landed']);
+  });
+
+  it('opens with Enter on the fold, the focus on its first member, and folds again with Enter there, the focus back on the fold', async () => {
+    const user = userEvent.setup();
+    draw(tried(['held', 'held', 'held']));
+    stackItem('held for your yes ×3').focus();
+    await user.keyboard('{Enter}');
+    expect(stackItem('held, try 1')).toHaveFocus();
+    expect(stackItem('held, try 1')).toHaveAccessibleDescription(/The first of 3 like it: Enter folds them again\./);
+    await user.keyboard('{Enter}');
+    expect(stackItem('held for your yes ×3')).toHaveFocus();
+  });
+
+  it('says it in 中文', async () => {
+    await i18n.changeLanguage('zh');
+    draw(tried(['held', 'held', 'held']));
+    expect(within(stackItem('held for your yes ×3')).getByRole('button', { name: '展开全部 3 个' })).toBeInTheDocument();
+    expect(stackItem('held for your yes ×3')).toHaveAccessibleDescription(/^共 3 个同类：held for your yes。/);
+  });
+});
