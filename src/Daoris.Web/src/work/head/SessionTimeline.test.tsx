@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import i18n from '../../locales/i18n';
 import type { Quest, Session } from '../../data/api';
 import { SessionTimeline, TimelineEntry } from './SessionTimeline';
@@ -149,8 +150,12 @@ describe('one timeline entry', () => {
   });
 });
 
-/** The entries are the ordered list's own children — a commit list nests inside one of them. */
-const entriesOf = () => [...screen.getAllByRole('list')[0].children];
+/**
+ * The entries are the ordered list's own children — a commit list nests inside one of them. The states' flow draws a list
+ * above them (FLOWCHART1b), so the observed events are the ordered one.
+ */
+const eventsOf = () => document.querySelector('ol')!;
+const entriesOf = () => [...eventsOf().children];
 
 describe('the timeline', () => {
   beforeEach(() => {
@@ -202,7 +207,7 @@ describe('the timeline', () => {
   it('invents nothing a harness did not tell the record', () => {
     render(<SessionTimeline session={session({ state: 'queued', updated: '2026-09-21T09:00:00Z' })} />);
 
-    expect(screen.queryByText(/step/i)).not.toBeInTheDocument();
+    expect(within(eventsOf()).queryByText(/step/i)).not.toBeInTheDocument();
     expect(entriesOf()).toHaveLength(1);
   });
 
@@ -231,5 +236,98 @@ describe('a quest event’s coded note (QUESTCLOSE1b2)', () => {
 
     render(<TimelineEntry event={{ kind: 'quest', at: '2026-09-21T10:30:00Z', status: 'Done', note: 'Plain English.' }} />);
     expect(screen.getByText('Plain English.')).toBeInTheDocument();
+  });
+});
+
+describe('the states at the head of the timeline (FLOWCHART1b; the flowchart design §2.2)', () => {
+  beforeEach(() => {
+    localStorage.removeItem('daoris.timeline.states');
+    localStorage.removeItem('daoris.flow.list');
+  });
+  afterEach(async () => { await i18n.changeLanguage('en'); });
+
+  const states = () => screen.getByRole('list', { name: 'How session s1a2b3c4 moves' });
+  const node = (name: RegExp) => within(states()).getByRole('listitem', { name });
+
+  it('draws the states above the observed events, the one the record is in lit, and the events as they were', () => {
+    render(<SessionTimeline session={session({ state: 'awaiting-person' })} quest={quest()} />);
+
+    expect(states().compareDocumentPosition(eventsOf()) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(within(states()).getAllByRole('listitem').map((each) => each.getAttribute('data-flow-node')))
+      .toEqual(['queued', 'starting', 'working', 'awaiting-person', 'ended']);
+    expect(node(/^waiting on you/)).toHaveAttribute('aria-current', 'step');
+    expect(node(/^waiting on you/)).toHaveAccessibleName('waiting on you here now');
+    expect(node(/^working/)).not.toHaveAttribute('aria-current');
+    // Opened, reached waiting on you, and the quest's move: the observed events as they were.
+    expect(entriesOf()).toHaveLength(3);
+  });
+
+  it('lights the outcomes for an ended session with the outcome\'s word, and says which may go on and which never does', () => {
+    render(<SessionTimeline session={session({ state: 'completed' })} />);
+
+    const ended = node(/^ended/);
+    expect(ended).toHaveAttribute('aria-current', 'step');
+    expect(ended).toHaveAccessibleName('ended completed');
+    // Its members are words, the reached one marked; the stop is said once, and a stand-down is said never to go on.
+    expect(within(ended).getByText('completed', { selector: '[aria-current]' })).toBeInTheDocument();
+    for (const word of ['declined', 'stood down', 'failed', 'stopped']) expect(within(ended).getByText(word)).toBeInTheDocument();
+    expect(within(ended).getByText('stopped: by you, from any live state')).toBeInTheDocument();
+    expect(within(ended).getByText('a stand-down never goes on')).toBeInTheDocument();
+    expect(ended).toHaveAccessibleDescription(/when your words wait for it and its working tree is free; a stand-down never goes on/);
+  });
+
+  it('says the return as a foot line, and that the record keeps where it stands and not how it got there', () => {
+    render(<SessionTimeline session={session({ state: 'working' })} />);
+
+    expect(within(node(/^waiting on you/)).getByRole('button', { name: /back to working, when you answer it/ })).toBeInTheDocument();
+    expect(screen.getByText(/not how it got there/)).toBeInTheDocument();
+  });
+
+  it('says the shown word the page reads over the record, and no time (trap 19)', () => {
+    render(<SessionTimeline session={session({ state: 'failed' })} shown="parked" />);
+
+    expect(node(/^ended/)).toHaveAccessibleName('ended parked');
+    expect(within(states()).queryByText(/ago|since/)).toBeNull();
+  });
+
+  it('draws going on refused with its reason for a record that can never go on', () => {
+    render(<SessionTimeline session={session({ state: 'stood-down' })} />);
+
+    expect(node(/^ended/)).toHaveAccessibleDescription(/it cannot go on: a stand-down has nothing to go on with/);
+  });
+
+  it('folds to its line, remembered, and opens again', async () => {
+    const { unmount } = render(<SessionTimeline session={session({ state: 'working' })} />);
+    const fold = screen.getByRole('button', { name: /^States/ });
+    expect(fold).toHaveAttribute('aria-expanded', 'true');
+    expect(fold).toHaveTextContent('States · working');
+
+    await userEvent.click(fold);
+    expect(screen.queryByRole('list', { name: 'How session s1a2b3c4 moves' })).toBeNull();
+    expect(fold).toHaveAttribute('aria-expanded', 'false');
+    unmount();
+
+    // Remembered on this machine: the next Timeline opens folded, and opens on a press.
+    render(<SessionTimeline session={session({ state: 'working' })} />);
+    expect(screen.queryByRole('list', { name: 'How session s1a2b3c4 moves' })).toBeNull();
+    await userEvent.click(screen.getByRole('button', { name: /^States/ }));
+    expect(states()).toBeInTheDocument();
+  });
+
+  it('says a state it does not know as recorded on its line and its node, never as a catalogue key (trap 10)', () => {
+    render(<SessionTimeline session={session({ state: 'paused' as Session['state'] })} />);
+
+    expect(screen.getByRole('button', { name: /^States/ })).toHaveTextContent('States · paused');
+    expect(node(/^`paused`, shown as recorded/)).toHaveAttribute('aria-current', 'step');
+    expect(within(states()).queryByText(/sessionState\./)).toBeNull();
+  });
+
+  it('says it in 中文', async () => {
+    await i18n.changeLanguage('zh');
+    render(<SessionTimeline session={session({ state: 'working' })} />);
+
+    expect(screen.getByRole('list', { name: '会话 s1a2b3c4 如何流转' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /^状态/ })).toHaveTextContent('状态 · 工作中');
+    expect(screen.getByRole('listitem', { name: '工作中 当前所在' })).toHaveAttribute('aria-current', 'step');
   });
 });

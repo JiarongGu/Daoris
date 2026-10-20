@@ -1200,6 +1200,8 @@ export function WorkFrame({
           <SessionTimeline
             session={following}
             quest={quest}
+            // The word the session list shows it as, which the states' flow lights its state with (FLOWCHART1b).
+            shown={shownOf(following, (groups.data ?? []).find((row) => row.session === following.id), taking[following.id])}
             // Off Sessions there is no head to carry the parked note, so the timeline keeps it.
             hideCurrentNote={!elsewhere && noteIsInTheHead(following, here)}
             titled={false}

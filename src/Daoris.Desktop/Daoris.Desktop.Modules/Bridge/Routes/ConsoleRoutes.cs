@@ -8,21 +8,26 @@ namespace Daoris.Desktop;
 /// A session's live console, the page's `bridge/console.ts` (MOD5): its backlog (D49 §2), the streams it
 /// runs beside itself (CONSOLE2c), and a task stopped from its tab (CONSOLE3a).
 /// </summary>
-public sealed class ConsoleRoutes(DriverLoop loop)
+public sealed class ConsoleRoutes(DriverLoop loop, AgentActions actions)
 {
     private readonly DriverLoop _loop = loop;
+    private readonly AgentActions _actions = actions;
 
     // The console's backlog (D49 §2): what this session has said, or what it has said since
     // the page last heard. Live lines arrive as `SESSION_OUTPUT` events; this is how a page
     // that just opened catches up, and how one that missed a batch closes the gap — the
-    // sequence numbers are the driver's, so neither side has to remember the other.
+    // sequence numbers are the driver's, so neither side has to remember the other. A harness
+    // action's relay (`harness:action`) is no session's, and answers its latest run (SIGNIN1),
+    // so a sign-in's panel mounted after its link or its phases began reads them.
     [DriverRoute("TAIL_SESSION")]
     private object? TailSession(IpcRequest request)
     {
         var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id");
         // Absent means "everything you have": a page opening a drawer has seen nothing, and
         // making it say so explicitly would be ceremony with a wrong default available.
-        var tail = _loop.Output.Tail(id, Number(request, "after") ?? 0);
+        var after = Number(request, "after") ?? 0;
+        var tail = _loop.Output.Tail(id, after);
+        if (tail.Sequence == 0 && _actions.Tail(id, after) is { } relayed) tail = relayed;
         return new
         {
             Session = id,

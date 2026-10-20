@@ -27,6 +27,11 @@ export type FlowNode = {
   lines?: ReactNode;
   /** False: not reached, drawn dashed with its words at the soft ink. Absent: the record does not say. */
   reached?: boolean;
+  /**
+   * Drawn as a node not reached is, dashed with its words at the soft ink, without saying it was not reached: a node outside the
+   * record's own, such as the repository that asked a part (FLOWCHART1b).
+   */
+  faint?: boolean;
   current?: boolean;
   /** Its record's door: Enter on the node opens it. */
   open?: () => void;
@@ -57,6 +62,12 @@ export type FlowProps = {
   entries: string[];
   /** What stands after the flow. */
   end?: ReactNode;
+  /**
+   * The caller's own rail (FLOWCHART1b): drawn where only the rail fits, or the person chose the list, in place of the nodes' list.
+   * The parts' strip is one: its buttons show a part, which the node list's feet cannot. The nodes remain the list wherever the
+   * drawing fits.
+   */
+  rail?: ReactNode;
   className?: string;
 };
 
@@ -92,7 +103,7 @@ type Ink = { paths: InkPath[]; labels: InkLabel[]; width: number; height: number
  *
  * A molecule: the flow arrives worded and its doors go out.
  */
-export function Flow({ label, nodes, edges, entries, end, className }: FlowProps) {
+export function Flow({ label, nodes, edges, entries, end, rail, className }: FlowProps) {
   const { t } = useTranslation();
   const keysId = useId();
   const marks = useId().replace(/[^\w-]/g, '');
@@ -263,7 +274,7 @@ export function Flow({ label, nodes, edges, entries, end, className }: FlowProps
         <span id={keysId} hidden>{t('flow.keys')}</span>
         <div ref={root} onKeyDown={onKeyDown} onFocus={onFocus} onBlur={onBlur} className="min-w-0">
           {placement === 'rail'
-            ? (
+            ? (rail ?? (
               <div role="list" aria-label={label} aria-describedby={keysId} className="m-0 grid min-w-0 gap-0 p-0">
                 {layout.order.map((id, index) => (
                   <div key={id} className="grid min-w-0 grid-cols-[1rem_minmax(0,1fr)] gap-x-2">
@@ -272,7 +283,7 @@ export function Flow({ label, nodes, edges, entries, end, className }: FlowProps
                   </div>
                 ))}
               </div>
-            )
+            ))
             : (
               <div
                 ref={drawing}
@@ -383,7 +394,7 @@ function FlowNodeBox({ node, stop, feet, description, onFollow, style }: NodePro
   const titleId = useId();
   const stateId = useId();
   const descriptionId = useId();
-  const faint = node.reached === false;
+  const faint = node.reached === false || node.faint === true;
   return (
     <div
       role="listitem"
@@ -434,7 +445,7 @@ function RailMark({ node, last }: { node: FlowNode; last: boolean }) {
       <span
         className={cn(
           'block size-2.5 shrink-0 rounded-full border',
-          node.current ? 'border-ink-soft bg-ink-soft' : node.reached === false ? 'border-dashed border-line-strong' : 'border-ink-soft',
+          node.current ? 'border-ink-soft bg-ink-soft' : node.reached === false || node.faint ? 'border-dashed border-line-strong' : 'border-ink-soft',
         )}
       />
       {!last && <span className="mt-1 w-px flex-1 bg-ink-faint" />}

@@ -218,6 +218,8 @@ export type HarnessEnded = {
   kept?: boolean | null;
   /** For a sign-in: where the account runs now (ACCT1), none where no list or default holds it; absent from an older shell. */
   places?: AccountPlace[] | null;
+  /** Whether the person's *Cancel* stopped it (SIGNIN1), so its end is no failure to say; absent from an older shell. */
+  cancelled?: boolean | null;
 };
 
 /**

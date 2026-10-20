@@ -1,13 +1,12 @@
 import { useTranslation } from 'react-i18next';
-import type { TFunction } from 'i18next';
 import type { Session } from '../../data/api';
 import { ago } from '../../locales/format';
 import { cn } from '../../lib/cn';
 import { Dot, SectionTitle, SESSION_DOT, shownKey } from '../../design/ui';
-import type { EntryPart, SessionEntry } from '../entries';
+import type { SessionEntry } from '../entries';
 import { shownOf } from '../groups';
-import { ownTree } from '../identity';
 import type { SessionWhere } from '../rail/SessionRow';
+import { beganLine, partPlace } from './partsLife';
 
 /** What the strip reads of one part's record besides the driver's word: its record, its repository's checkout, where its work is. */
 export type PartFacts = {
@@ -18,22 +17,68 @@ export type PartFacts = {
   where?: SessionWhere | null;
 };
 
+/** What the strip and the flow beside it are handed: the entry, the part shown, each part's record and place, and how to show another. */
+export type PartsProps = {
+  entry: SessionEntry;
+  /** The part shown: the session the page attends. */
+  attended: string;
+  /** Each part's record and place, by its id. */
+  rows: Readonly<Record<string, PartFacts | undefined>>;
+  onShow: (session: string) => void;
+};
+
+/** The strip's heading: its name, and which part the page is on, *Part 2 of 3*. */
+export function PartsHeading({ entry, attended }: Pick<PartsProps, 'entry' | 'attended'>) {
+  const { t } = useTranslation();
+  const shown = Math.max(0, entry.parts.findIndex((part) => part.session === attended));
+  return (
+    <div className="flex items-baseline justify-between gap-2">
+      <SectionTitle level={3}>{t('work.parts.title')}</SectionTitle>
+      <span className="text-meta text-ink-faint">{t('work.parts.of', { n: shown + 1, total: entry.parts.length })}</span>
+    </div>
+  );
+}
+
 /**
- * How a part began, in the reader's words (D167, SESSONE1b's `began`): started, retried after another part, resumed or carried
- * on from one, handed over from one, or asked by a repository. The earlier part is named by its number in the strip, and by its
- * id where the strip does not hold it. A word a newer host adds reads as a start rather than as nothing.
+ * The parts, one button each, oldest first: each with its word, how it began and which tree or branch it held. The strip's
+ * body, and the rail of the parts' flowchart where the flow does not fit (FLOWCHART1b).
  */
-export function beganLine(t: TFunction, part: EntryPart, parts: readonly EntryPart[]): string {
-  const at = part.after ? parts.findIndex((other) => other.session === part.after) : -1;
-  const after = at >= 0 ? t('work.parts.number', { n: at + 1 }) : part.after ?? '';
-  switch (part.began) {
-    case 'retried': return t('work.parts.began.retried', { after });
-    case 'resumed': return t('work.parts.began.resumed', { after });
-    case 'carried-on': return part.after ? t('work.parts.began.carriedOn', { after }) : t('work.parts.began.carriedOnAlone');
-    case 'handed-over': return t('work.parts.began.handedOver', { after });
-    case 'asked': return part.askedBy ? t('work.parts.began.asked', { repository: part.askedBy }) : t('work.parts.began.askedUnnamed');
-    default: return t('work.parts.began.opened');
-  }
+export function PartsList({ entry, attended, rows, onShow }: PartsProps) {
+  const { t } = useTranslation();
+  const { parts } = entry;
+  return (
+    <ol className="m-0 grid list-none gap-1 p-0">
+      {parts.map((part, index) => {
+        const facts = rows[part.session];
+        const word = facts ? shownOf(facts.session, { shown: part.shown }, undefined) : null;
+        const place = partPlace(t, facts);
+        const here = part.session === attended;
+        return (
+          <li key={part.session}>
+            <button
+              type="button"
+              aria-current={here || undefined}
+              onClick={() => onShow(part.session)}
+              className={cn(
+                'flex w-full min-w-0 flex-wrap items-baseline gap-x-2 gap-y-0.5 rounded-control border-l-[3px] px-2.5 py-1 text-left text-small',
+                'transition-colors duration-(--speed) hover:bg-accent-soft/50',
+                here ? 'border-l-accent bg-accent-soft text-ink' : 'border-l-transparent text-ink-soft',
+              )}
+            >
+              <span className="font-mono text-meta text-ink-faint">{index + 1}</span>
+              {word
+                ? <Dot tone={SESSION_DOT[word]} label={t(shownKey(word))} />
+                : <span className="text-meta text-ink-faint">{part.shown}</span>}
+              <span>{beganLine(t, part, parts)}</span>
+              {part.quest && <span className="font-mono text-meta text-ink-faint">#{part.quest}</span>}
+              {place && <span className="text-meta text-ink-faint">{place}</span>}
+              {facts && <span className="ml-auto shrink-0 text-meta text-ink-faint">{ago(facts.session.updated)}</span>}
+            </button>
+          </li>
+        );
+      })}
+    </ol>
+  );
 }
 
 /**
@@ -46,60 +91,17 @@ export function beganLine(t: TFunction, part: EntryPart, parts: readonly EntryPa
  * **A molecule**: the entry arrives as the driver's reader placed it and each part's record and place as props, so every
  * entry is reached without a bridge. Nothing is drawn for a line of work of one part, whose page needs no strip. A part the
  * page does not hold the record of (a teammate's, deleted) is still listed by its word and how it began, with no tree.
+ *
+ * **The page mounts the flow in its place** (FLOWCHART1b, `PartsFlow`), and this strip is that flow's rail: where the flowchart
+ * does not fit, or the person chose the list, the strip is what is shown.
  */
-export function PartsStrip({ entry, attended, rows, onShow }: {
-  entry: SessionEntry;
-  /** The part shown: the session the page attends. */
-  attended: string;
-  /** Each part's record and place, by its id. */
-  rows: Readonly<Record<string, PartFacts | undefined>>;
-  onShow: (session: string) => void;
-}) {
+export function PartsStrip(props: PartsProps) {
   const { t } = useTranslation();
-  const { parts } = entry;
-  if (parts.length < 2) return null;
-  const shown = Math.max(0, parts.findIndex((part) => part.session === attended));
-
+  if (props.entry.parts.length < 2) return null;
   return (
     <nav aria-label={t('work.parts.title')}>
-      <div className="flex items-baseline justify-between gap-2">
-        <SectionTitle level={3}>{t('work.parts.title')}</SectionTitle>
-        <span className="text-meta text-ink-faint">{t('work.parts.of', { n: shown + 1, total: parts.length })}</span>
-      </div>
-      <ol className="m-0 grid list-none gap-1 p-0">
-        {parts.map((part, index) => {
-          const facts = rows[part.session];
-          const word = facts ? shownOf(facts.session, { shown: part.shown }, undefined) : null;
-          const landed = facts?.where?.landed && (facts.where.treeGone || facts.where.landed.state === 'standing') ? facts.where.landed : null;
-          const tree = facts && !landed && !facts.where?.treeGone ? ownTree(facts.session, facts.root) : null;
-          const here = part.session === attended;
-          return (
-            <li key={part.session}>
-              <button
-                type="button"
-                aria-current={here || undefined}
-                onClick={() => onShow(part.session)}
-                className={cn(
-                  'flex w-full min-w-0 flex-wrap items-baseline gap-x-2 gap-y-0.5 rounded-control border-l-[3px] px-2.5 py-1 text-left text-small',
-                  'transition-colors duration-(--speed) hover:bg-accent-soft/50',
-                  here ? 'border-l-accent bg-accent-soft text-ink' : 'border-l-transparent text-ink-soft',
-                )}
-              >
-                <span className="font-mono text-meta text-ink-faint">{index + 1}</span>
-                {word
-                  ? <Dot tone={SESSION_DOT[word]} label={t(shownKey(word))} />
-                  : <span className="text-meta text-ink-faint">{part.shown}</span>}
-                <span>{beganLine(t, part, parts)}</span>
-                {part.quest && <span className="font-mono text-meta text-ink-faint">#{part.quest}</span>}
-                {landed
-                  ? <span className="text-meta text-ink-faint">{t(landed.state === 'gone' ? 'work.rail.landedGone' : 'work.rail.landedOn', { branch: landed.branch })}</span>
-                  : tree && <span className="text-meta text-ink-faint">{t('work.rail.inTree', { tree })}</span>}
-                {facts && <span className="ml-auto shrink-0 text-meta text-ink-faint">{ago(facts.session.updated)}</span>}
-              </button>
-            </li>
-          );
-        })}
-      </ol>
+      <PartsHeading entry={props.entry} attended={props.attended} />
+      <PartsList {...props} />
     </nav>
   );
 }

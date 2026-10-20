@@ -21,5 +21,11 @@
   "signin.continue": "Continue",
   "signin.sent": "Code sent — the tool is finishing.",
   "signin.ready": "The account is ready when the row reads signed in.",
-  "signin.output": "The tool's own output"
+  "signin.output": "The tool's own output",
+  "signin.phase.start": "Starting {{tool}}",
+  "signin.phase.browser": "Waiting on your browser",
+  "signin.phase.who": "Checking who signed in",
+  "signin.phase.lists": "Joining the lists",
+  "signin.device.enter": "Open the page and enter this code:",
+  "signin.device.expires": "Expires in {{time}}"
 }

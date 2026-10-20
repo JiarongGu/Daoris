@@ -64,9 +64,10 @@ export function clockOf(iso: string, now: Date = new Date(), language?: string):
 /**
  * Items joined the way the reader's language joins a list (LANG1b, the language design §4): `#a1, #b2, and #c3`,
  * `#a1、#b2和#c3`. `language` is the page's unless a caller words in another (a story's or a test's fixed language).
+ * `'or'` joins alternatives rather than a sum (FLOWCHART1b): `when it fails, or you stop it`, `当它失败或你停止它时`.
  */
-export function list(items: readonly string[], language?: string): string {
-  return new Intl.ListFormat(locale(language), { type: 'conjunction' }).format(items);
+export function list(items: readonly string[], language?: string, joined: 'and' | 'or' = 'and'): string {
+  return new Intl.ListFormat(locale(language), { type: joined === 'or' ? 'disjunction' : 'conjunction' }).format(items);
 }
 
 /** A file's size, in the unit a person reads it in: 812 B · 2.4 KB · 3.1 MB. */
@@ -136,6 +137,19 @@ export function span(ms: number, language?: string): string {
   const minutes = Math.floor(seconds / 60);
   if (minutes < 60) return i18n.t('duration.minuteSeconds', { minutes, seconds: Math.floor(seconds % 60), ...lng });
   return i18n.t('duration.hours', { hours: Math.floor(minutes / 60), minutes: minutes % 60, ...lng });
+}
+
+/**
+ * How long a phase has run (R2, SIGNIN1): whole seconds in the first minute, whole minutes after, then hours and minutes, so
+ * a time that steps by its own clock steps each second and then each minute (`design/phases`' `Elapsed`). Where `span`
+ * says a turn's length to the tenth, this says a wait's, which moves.
+ */
+export function phaseTime(ms: number): string {
+  const seconds = Math.floor(Math.max(0, ms) / 1000);
+  if (seconds < 60) return i18n.t('duration.seconds', { seconds });
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return i18n.t('duration.minutes', { count: minutes });
+  return i18n.t('duration.hours', { hours: Math.floor(minutes / 60), minutes: minutes % 60 });
 }
 
 /**
