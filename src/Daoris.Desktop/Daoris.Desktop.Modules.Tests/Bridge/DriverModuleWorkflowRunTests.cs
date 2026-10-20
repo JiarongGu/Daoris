@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Daoris.Desktop.Driver.Tests;
 using Daoris.Driver;
 
 namespace Daoris.Desktop.Modules.Tests;
@@ -84,7 +85,7 @@ public sealed class DriverModuleWorkflowRunTests : DriverModuleBridge
         var info = new System.Diagnostics.ProcessStartInfo("git")
         { WorkingDirectory = root, RedirectStandardOutput = true, RedirectStandardError = true, CreateNoWindow = true };
         foreach (var argument in arguments) info.ArgumentList.Add(argument);
-        using var process = System.Diagnostics.Process.Start(info)!;
+        using var process = System.Diagnostics.Process.Start(TestGit.Past(info))!;
         var output = process.StandardOutput.ReadToEndAsync();
         var error = process.StandardError.ReadToEndAsync();
         await Task.WhenAll(output, error);

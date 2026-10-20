@@ -15,4 +15,10 @@
     <ProjectReference Include="..\Daoris.Desktop.Modules\Daoris.Desktop.Modules.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- The git a test's own fixture starts, past Git for Windows' launcher (GITSTART1, GITSTART6): the driver tests'
+         helper, compiled in, so both projects' fixtures start git one way. -->
+    <Compile Include="..\Daoris.Desktop.Driver.Tests\TestGit.cs" Link="TestGit.cs" />
+  </ItemGroup>
+
 </Project>
