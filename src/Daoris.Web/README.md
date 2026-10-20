@@ -219,6 +219,14 @@ as a guarded edge (refused, with its reason, for a record that can never go on).
 not how it got there, so the drawing lights the state it is in, in the tone of the word the page shows it as, and draws no path
 and no time.
 
+A session's parts are a flowchart in the parts strip's place on its page (FLOWCHART1b): `work/head/partsLife.ts` hangs each part by
+what it followed (`EntryPart.after`) and labels the edge by how it began, an asked part from a faint node for the repository that
+asked it and a part with no `after` from the start, and draws Accept's plan, once its ask is open and read, as a dashed node of
+where the parts *would* land. Parts are lineage, never a cause or a concurrency, and a part keeps no time, so its agent and when it
+began are said only where the page holds that part's record. The strip is the flow's rail, drawn where only the rail fits or the
+person chose the list (`Flow`'s `rail`), and a press on a node, or Enter on it, shows that part as the strip's button did. The
+measured check (`e2e:measured`) draws both flows' stories in a rendered browser, each frame with a ceiling of crossings.
+
 ## Running it
 
 The HTTP host requires `DAORIS_HOME` or an explicit `DAORIS_KNOWLEDGE_DB`. Use a development

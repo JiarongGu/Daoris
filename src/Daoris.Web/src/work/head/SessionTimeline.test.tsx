@@ -314,6 +314,14 @@ describe('the states at the head of the timeline (FLOWCHART1b; the flowchart des
     expect(states()).toBeInTheDocument();
   });
 
+  it('says a state it does not know as recorded on its line and its node, never as a catalogue key (trap 10)', () => {
+    render(<SessionTimeline session={session({ state: 'paused' as Session['state'] })} />);
+
+    expect(screen.getByRole('button', { name: /^States/ })).toHaveTextContent('States · paused');
+    expect(node(/^`paused`, shown as recorded/)).toHaveAttribute('aria-current', 'step');
+    expect(within(states()).queryByText(/sessionState\./)).toBeNull();
+  });
+
   it('says it in 中文', async () => {
     await i18n.changeLanguage('zh');
     render(<SessionTimeline session={session({ state: 'working' })} />);

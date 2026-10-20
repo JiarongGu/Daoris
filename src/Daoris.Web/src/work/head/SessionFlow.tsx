@@ -1,7 +1,7 @@
 import { Fragment, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Flow } from '../../design/Flow';
-import { Icon, type ShownState, shownKey, shownState } from '../../design/ui';
+import { Icon, SESSION_TONE, type ShownState, shownKey, shownState } from '../../design/ui';
 import { cn } from '../../lib/cn';
 import { store, stored } from '../../lib/stored';
 import { type OutcomeMember, type SessionOfLife, sessionFlow } from './sessionLife';
@@ -40,7 +40,8 @@ export function SessionFlow({ session, shown, className }: { session: SessionOfL
         <Icon name={folded ? 'chevronRight' : 'chevronDown'} size={12} className="mt-1 shrink-0" />
         <span className="min-w-0 [overflow-wrap:anywhere]">
           <span className="font-semibold">{title}</span>
-          <span> · {t(shownKey(word))}</span>
+          {/* A word this page does not name is said as recorded, never as a missing catalogue key (trap 10). */}
+          <span> · {word in SESSION_TONE ? t(shownKey(word)) : String(word)}</span>
         </span>
       </button>
       {!folded && (

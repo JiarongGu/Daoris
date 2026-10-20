@@ -121,9 +121,10 @@ export function partsFlow(
         ? { actor: t('work.parts.actor', { agent: sessionTool({ adapter: facts.session.adapter }), when: ago(facts.session.created) }) }
         : {}),
     });
+    const place = partPlace(t, facts);
     lines[part.session] = [
       ...(part.quest ? [`#${part.quest}`] : []),
-      ...(partPlace(t, facts) ? [partPlace(t, facts)!] : []),
+      ...(place ? [place] : []),
       ...(part.session === entry.leading ? [t('work.parts.leads')] : []),
     ];
 

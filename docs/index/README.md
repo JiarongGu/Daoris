@@ -54,7 +54,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Web/src/work/WorkFrame.conversation.test.tsx` | 60 | 1168 |
 | `src/Daoris.Web/src/work/WorkFrame.landed.test.tsx` | 103 | 1809 |
 | `src/Daoris.Web/src/work/WorkFrame.test.tsx` | 81 | 1533 |
-| `src/Daoris.Web/src/work/WorkFrame.tsx` | 127 | 2247 |
+| `src/Daoris.Web/src/work/WorkFrame.tsx` | 127 | 2249 |
 | `src/Daoris.Web/src/work/WorkFrame.words.test.tsx` | 46 | 851 |
 | `src/Daoris.Web/src/work/conversation/ConversationView.test.tsx` | 64 | 1200 |
 | `src/Daoris.Web/src/work/conversation/conversation.test.ts` | 60 | 1133 |
@@ -225,7 +225,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 
 | File | KB | Lines |
 |---|---|---|
-| `.claude/knowledge/twins.md` | 107 | 179 |
+| `.claude/knowledge/twins.md` | 108 | 180 |
 | `docs/2026-09-19-platform-ux.md` | 69 | 720 |
 | `docs/2026-09-21-dsh-evaluation.md` | 43 | 483 |
 | `docs/2026-09-21-working-surface-components.md` | 54 | 354 |
