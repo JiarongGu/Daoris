@@ -88,7 +88,7 @@ what its refusal proves decides:
 
 - **One rule for every record whose resume is judged**: a driven record, a conversation and a closed quest's session. What
   differs is its new part's why: `retry` where a driven record falls back, `resume` where a conversation goes on by itself.
-- **Only a proven loss moves a session by itself.** The agent's `resource_not_found` says it no longer has the conversation;
+- **Of the refusals, only a proven loss moves a session by itself.** The agent's `resource_not_found` says it no longer has the conversation;
   `unkept`, `unable` and `offered` say no conversation was kept or none can be resumed here. Nothing else proves the
   conversation gone, so nothing else ends its line without the person.
 - **The native door's failed exit proves nothing of loss.** Both of its sites mark `gone` on any non-zero exit before the
