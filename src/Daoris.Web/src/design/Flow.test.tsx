@@ -283,3 +283,59 @@ describe('Show as list (§3.2, trap 21)', () => {
     expect(screen.queryByRole('button', { name: 'Show as list' })).toBeNull();
   });
 });
+
+describe('a node outside the record\'s own, and a rail the caller draws (FLOWCHART1b)', () => {
+  const outside = (): Partial<Parameters<typeof Flow>[0]> => ({
+    nodes: [{ id: 'asked', title: 'asked by db', faint: true }, { id: 'part', title: 'Part 1', current: true }],
+    edges: [{ id: 'asked>part', from: 'asked', to: 'part', says: 'asked by db' }],
+    entries: ['asked'],
+  });
+
+  it('draws a faint node dashed with its words at a token ink, and does not say it was not reached', () => {
+    const { container } = draw(outside());
+    expect(node('asked by db').className).toMatch(/border-dashed/);
+    expect(node('asked by db').className).not.toMatch(/opacity-/);
+    expect(container.innerHTML).not.toMatch(/opacity-/);
+    expect(node('asked by db')).toHaveAccessibleDescription('Next: Part 1, asked by db.');
+    expect(node('Part 1')).toHaveAccessibleDescription('From asked by db: asked by db.');
+  });
+
+  it('draws the caller\'s own rail where only the rail fits, in the nodes\' place, and the drawing where it fits', () => {
+    const rail = <ol aria-label="the strip"><li>the strip's own</li></ol>;
+    // Nothing measured the pane: the rail.
+    const { container, rerender } = draw({ ...outside(), rail });
+    expect(placement(container)).toBe('rail');
+    expect(screen.getByRole('list', { name: 'the strip' })).toBeInTheDocument();
+    expect(screen.queryByRole('list', { name: 'How #q1 moves' })).toBeNull();
+
+    // Where the drawing fits, the nodes are the list and the strip is not drawn twice.
+    paneWidth = 1200;
+    rerender(<Flow {...(outside() as Parameters<typeof Flow>[0])} label="How #q1 moves" rail={rail} />);
+    resizeTo(1200);
+    expect(placement(container)).toBe('across');
+    expect(screen.queryByRole('list', { name: 'the strip' })).toBeNull();
+    expect(screen.getByRole('list', { name: 'How #q1 moves' })).toBeInTheDocument();
+  });
+
+  it('draws the caller\'s rail when the person chose the list, and the drawing again on Show as flowchart (trap 21)', async () => {
+    paneWidth = 1200;
+    const rail = <ol aria-label="the strip"><li>the strip's own</li></ol>;
+    const { container } = draw({ ...outside(), rail });
+    await userEvent.click(screen.getByRole('button', { name: 'Show as list' }));
+    expect(placement(container)).toBe('rail');
+    expect(screen.getByRole('list', { name: 'the strip' })).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Show as flowchart' }));
+    expect(placement(container)).toBe('across');
+    expect(screen.queryByRole('list', { name: 'the strip' })).toBeNull();
+  });
+
+  it('says a conditional edge in the foot and the description like any other (its dashes are the measured check\'s)', () => {
+    draw({
+      nodes: [{ id: 'part', title: 'Part 1' }, { id: 'landing', title: 'Accept would land these', reached: false }],
+      edges: [{ id: 'land', from: 'part', to: 'landing', says: 'its work would land', style: 'conditional' }],
+      entries: ['part'],
+    });
+    expect(within(node('Part 1')).getByRole('button', { name: /Accept would land these, its work would land/ })).toBeInTheDocument();
+    expect(node('Accept would land these')).toHaveAccessibleDescription('Not reached. From Part 1: its work would land.');
+  });
+});
