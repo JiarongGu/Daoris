@@ -48,6 +48,11 @@
     "mcp__daoris-knowledge__review_serve",
     "mcp__daoris-knowledge__session_propose",
     "mcp__daoris-knowledge__setting_propose",
+    "mcp__daoris-knowledge__settings_cap",
+    "mcp__daoris-knowledge__settings_cooloff",
+    "mcp__daoris-knowledge__settings_language",
+    "mcp__daoris-knowledge__settings_notify",
+    "mcp__daoris-knowledge__settings_timeout",
     "mcp__daoris-knowledge__setup_propose",
     "mcp__daoris-knowledge__sync_propose",
     "mcp__daoris-knowledge__workflow_propose"
