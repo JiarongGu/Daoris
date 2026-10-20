@@ -1,13 +1,14 @@
 import { createContext, type ReactNode, useContext, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { compact, elapsed, moment, span } from '../../locales/format';
+import { clockOf, compact, elapsed, moment, span } from '../../locales/format';
 import { cn } from '../../lib/cn';
 import { Button, Chip, Dot, Icon, Inline, Tip } from '../../design/ui';
 import type { NotePart } from '../../data/api';
 import { turnEnd } from '../waits/anchors';
 import { CHANNEL_CLAIM_OPENING } from '../channel';
 import {
-  type Ask, type Block, CONVERSATION_CODES, type Level, type PlanEntry, runCount, type RunningCall, runningCall, segments, type Turn,
+  type Ask, type Block, CONVERSATION_CODES, type Level, type PlanEntry, type Receipts, runCount, type RunningCall, runningCall, segments,
+  type Turn,
 } from './conversation';
 import { useNow } from '../useNow';
 import type { AccountNames } from '../accountNames';
@@ -52,6 +53,8 @@ type Said = {
   chat: boolean;
   onSession?: (id: string) => void;
   onStartFrom?: (words: string[]) => void;
+  /** *Say it again* (COWORK1c): the person's own words that may have reached the agent, said anew. */
+  onSayAgain?: (words: string[]) => void;
   reasons: ReasonValues;
   cooling?: Cooling;
   /** What the person calls each account (NOTENAME1), for a driver's note that names one. */
@@ -91,8 +94,13 @@ const SaidDoors = createContext<Said>({ chat: false, reasons: {} });
  */
 export function ConversationView({
   turns, tree, structured, chat = false, live = false, turnRunning, loaded = true, earlier = false, onLoadEarlier,
-  reveal, toolbar, onSession, onStartFrom, reasons = {}, cooling, names, marks, onToWait, callMark,
+  reveal, toolbar, onSession, onStartFrom, onSayAgain, reasons = {}, cooling, names, marks, onToWait, callMark,
 }: {
+  /**
+   * *Say it again* (COWORK1c, the message-urgency design §6, §8.2): the person's own words a shell before attempted, which may have
+   * reached the agent and were never sent again, said anew, a new word. Absent, no press is drawn.
+   */
+  onSayAgain?: (words: string[]) => void;
   /** The call the driver's grouping pushes for this session (AUTONOMY1b3e): when held for the person's answer, the foot says it waits. */
   callMark?: CallMark;
   /**
@@ -173,7 +181,7 @@ export function ConversationView({
     // own: the agent's words are content, shown at the width they are given (UX5 U16: a 768px
     // cap was half a maximized window).
     // A chat's words go on with the next word said to it, never by themselves at a reset (MSG1c), so its cool-off is not said.
-    <SaidDoors.Provider value={{ chat, onSession, onStartFrom, reasons, cooling: chat ? undefined : cooling, names }}>
+    <SaidDoors.Provider value={{ chat, onSession, onStartFrom, onSayAgain, reasons, cooling: chat ? undefined : cooling, names }}>
       <WaitMarks.Provider value={onToWait ? { marks, onToWait } : {}}>
         <section aria-label={t('work.conversation.label')} className="grid w-full grid-cols-[minmax(0,1fr)] gap-3">
           {/* Pinned beneath the session's page header where one is pinned above it (SESSUX1d, D126 §3.2): the header says its
@@ -400,10 +408,24 @@ function AskView({ ask }: { ask: Ask }) {
         <p className={cn('m-0 mt-0.5 whitespace-pre-wrap wrap-anywhere text-body text-ink', !open && 'line-clamp-2')}>{ask.text}</p>
       )}
       <Attached files={ask.files} />
+      {ask.receipts && <ReceiptsLine receipts={ask.receipts} />}
       {/* What the target was composed of, section by section (CONTEXT1), beside the words it composed. */}
       {target && !findings && <HandedAccount account={ask.account} />}
     </div>
   );
+}
+
+/**
+ * What the door observed of these words (COWORK1c, the message-urgency design §7, §8.2): *sent 14:02 · taken 14:03 · answered 14:09*,
+ * each only where it was observed, folded under them as a quiet line.
+ */
+function ReceiptsLine({ receipts }: { receipts: Receipts }) {
+  const { t, i18n } = useTranslation();
+  const seen = (['sent', 'taken', 'answered'] as const)
+    .filter((receipt) => receipts[receipt])
+    .map((receipt) => `${t(`work.receipt.${receipt}`)} ${clockOf(receipts[receipt]!, new Date(), i18n.language)}`);
+  if (seen.length === 0) return null;
+  return <p data-receipts className="m-0 mt-1 text-meta text-ink-faint">{seen.join(' · ')}</p>;
 }
 
 /** What the person attached (CONV4c): names, as the record keeps them. */
@@ -560,9 +582,19 @@ function CannotLine({ block }: { block: Block }) {
  */
 function CodedLine({ block }: { block: Block }) {
   const { t } = useTranslation();
+  const { onSayAgain } = useContext(SaidDoors);
   const key = block.code ? CONVERSATION_CODES[block.code] : undefined;
   if (!key) return <NoteLine text={block.text ?? ''} />;
-  return <p className="m-0 text-small text-ink-soft">{t(key)}</p>;
+  // *Say it again* (COWORK1c, the design §6): the person's own words that may have reached the agent were never sent again; saying
+  // them anew is theirs to press. Never Daoris's words nor another agent's.
+  const again = block.code === 'lost' && block.persons && block.said?.length && onSayAgain ? block.said : null;
+  if (!again) return <p className="m-0 text-small text-ink-soft">{t(key)}</p>;
+  return (
+    <div className="grid justify-items-start gap-1.5">
+      <p className="m-0 text-small text-ink-soft">{t(key)}</p>
+      <Button onClick={() => onSayAgain!(again)}>{t('work.conversation.sayAgain')}</Button>
+    </div>
+  );
 }
 
 /**

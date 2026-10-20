@@ -752,6 +752,26 @@ export function WorkFrame({
       },
     });
   };
+  // *Say it again* (COWORK1c, the message-urgency design §6, §8.2): the person's own words that may have reached the agent before a
+  // restart were never sent again; this says them anew, a new word, as the person's default. What the session would not take goes back
+  // to the composer, said why, as a word said there does.
+  const onSayAgain = (words: string[]) => {
+    if (!attended || words.length === 0) return;
+    const session = attended.id;
+    const text = words.join('\n\n');
+    const giveBack = () => setDraft((was) => [text, was.trim()].filter(Boolean).join('\n\n'));
+    say.mutate({ id: session, text }, {
+      onSuccess: (result) => {
+        if (result.sent) return;
+        giveBack();
+        setRefusal({ session, text: untaken(result, t('work.say.notTaken')) });
+      },
+      onError: (error: unknown) => {
+        giveBack();
+        notify(sentence(error), 'error');
+      },
+    });
+  };
   // *Start a conversation with these words* (MSG1f, D137 §2.2): a new chat in the repository, its first message the words
   // this session could not go on with, attended once it opens. One act of the driver's (MSG1f2), which reads the words off
   // the record and takes them off it, so the words the page shows are not sent. A refusal is said by its code; the driver's
@@ -2057,6 +2077,8 @@ export function WorkFrame({
                   // that starts a conversation with them, where a chat can start here (MSG1f, D137 §3.1, §2.2).
                   onSession={(id) => attend(id)}
                   onStartFrom={rootOf(attended.repository) ? onStartFrom : undefined}
+                  // *Say it again* (COWORK1c): the person's own words that may have reached the agent before a restart, said anew.
+                  onSayAgain={onSayAgain}
                   // Words its cooling account holds, and *Go on in a new session* with what it came to (MSG1g2, D137 §2.2).
                   cooling={coolsUntil ? {
                     until: coolsUntil,

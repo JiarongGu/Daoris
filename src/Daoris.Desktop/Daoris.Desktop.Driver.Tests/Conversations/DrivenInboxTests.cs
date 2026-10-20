@@ -658,4 +658,252 @@ public sealed class DrivenInboxTests
         Assert.Null(processes.InboxOf("s1a2b3c4"));
         Assert.Null(processes.InboxOf("someone-else"));
     }
+
+    /// <summary>
+    /// COWORK1c (the message-urgency design §6, D188 point 6): a word said to a running session is kept on its record first, with its
+    /// level and key, and only then held and told, under the record's own id. The run takes it at the turn's end, and it leaves the
+    /// record by that id once handed to the wire; the inbox closes only once the take-off has landed, so a record never ends holding
+    /// a word its session already took.
+    /// </summary>
+    [Fact]
+    public async Task A_word_kept_for_the_run_waits_on_the_record_under_its_id_and_leaves_it_once_taken()
+    {
+        var record = new StandInSaid();
+        var told = new List<(string? Id, DrivenReach Reach)>();
+        var inbox = new DrivenInbox(_ => { });
+        inbox.OnSaid((message, reach) => told.Add((message.Id, reach)));
+        inbox.Attach(interrupt: null);
+        var landing = new TaskCompletionSource();
+        record.TakingOff = _ => landing.Task;
+
+        var kept = await inbox.KeepAsync(record, Said("the budget is in level.json") with { Level = MessageLevel.Ordinary, Key = "press/1" }, default);
+
+        Assert.Equal((InboxKeep.Held, DrivenReach.TurnEnd), (kept.Outcome, kept.Reach));
+        var word = Assert.Single(record.Said);
+        Assert.Equal(("w1", MessageLevel.Ordinary, "press/1"), (word.Id, word.Level, word.Key));
+        Assert.Equal([("w1", DrivenReach.TurnEnd)], told);
+        Assert.Equal(["w1"], inbox.State.Queued.Select(message => message.Id));
+
+        var held = inbox.NextOrClose()!.Held!;
+        Assert.Equal("w1", held.Id);
+        // Its door writes it: attempted first, and off the record once written.
+        await held.Attempting!();
+        held.Went!();
+        var waits = inbox.NextOrClose();
+        Assert.NotNull(waits?.Waits);
+        Assert.False(waits!.Waits!.IsCompleted);
+        landing.SetResult();
+        await waits.Waits;
+
+        Assert.Null(inbox.NextOrClose());
+        Assert.Equal(["w1"], record.TakenOff);
+        Assert.Empty(record.Said);
+    }
+
+    /// <summary>
+    /// COWORK1c (the design §6): a kept word leaves the inbox for its door to be attempted and taken off, never taken off as it is
+    /// handed out: the door marks its attempt on the record before it writes it, and once written it leaves the record. One the door
+    /// never wrote, nor attempted, stays there.
+    /// </summary>
+    [Fact]
+    public async Task A_kept_word_is_attempted_by_its_door_before_the_wire_and_leaves_the_record_once_written()
+    {
+        var record = new StandInSaid();
+        var inbox = new DrivenInbox(_ => { });
+        inbox.Attach(interrupt: null);
+        await inbox.KeepAsync(record, Said("first"), default);
+        await inbox.KeepAsync(record, Said("second"), default);
+
+        var first = inbox.NextOrClose()!.Held!;
+        await inbox.TakingOff;
+        Assert.Empty(record.Attempted);
+        Assert.Empty(record.TakenOff);
+
+        await first.Attempting!();
+        Assert.Equal(["w1"], record.Attempted);
+        Assert.NotNull(record.Said.Single(word => word.Id == "w1").Attempt);
+        first.Went!();
+        await inbox.TakingOff;
+
+        Assert.Equal(["w1"], record.TakenOff);
+        Assert.Equal(["w2"], record.Ids);
+        Assert.Null(record.Said.Single().Attempt);
+    }
+
+    /// <summary>
+    /// COWORK1c (the design §14's trap 20): two words kept at once reach the session in the record's order, through its one
+    /// dispatcher. The first word's write lands first and answers last; had each caller held its own word once its write returned,
+    /// the second would have overtaken it.
+    /// </summary>
+    [Fact]
+    public async Task Two_words_kept_at_once_reach_the_session_in_the_records_order()
+    {
+        var record = new StandInSaid();
+        var first = new TaskCompletionSource();
+        record.Answering = word => word.Text == "first" ? first.Task : Task.CompletedTask;
+        var sent = new List<string?>();
+        var inbox = new DrivenInbox(_ => { });
+        // The door as the protocol door is: the attempt marked before the write, the word off the record once written.
+        inbox.Attach(interrupt: null, deliver: async message =>
+        {
+            await message.Attempting!();
+            lock (sent) sent.Add(message.Id);
+            message.Went!();
+            return "end_turn";
+        });
+        inbox.Flow();
+
+        var keepingFirst = inbox.KeepAsync(record, Said("first"), default);
+        var keepingSecond = inbox.KeepAsync(record, Said("second"), default);
+        await Task.Delay(50);
+        first.SetResult();
+        await Task.WhenAll(keepingFirst, keepingSecond);
+        while (inbox.NextOrClose() is { } next) await (next.Waits ?? next.Answer ?? Task.CompletedTask);
+
+        Assert.Equal(["w1", "w2"], sent);
+        Assert.Equal(["w1", "w2"], record.Attempted);
+        Assert.Equal(["w1", "w2"], record.TakenOff);
+        Assert.Empty(record.Said);
+    }
+
+    /// <summary>
+    /// COWORK1c: a keep on its way holds the inbox open, so a word said as the turn ends is taken by this run rather than left on a
+    /// record that concludes under it; one said once the inbox closed keeps nothing, and its caller keeps it on the record as before.
+    /// </summary>
+    [Fact]
+    public async Task A_keep_on_its_way_holds_the_inbox_open_and_a_closed_inbox_keeps_nothing()
+    {
+        var record = new StandInSaid();
+        var answer = new TaskCompletionSource();
+        record.Answering = _ => answer.Task;
+        var inbox = new DrivenInbox(_ => { });
+        inbox.Attach(interrupt: null);
+
+        var keeping = inbox.KeepAsync(record, Said("and the readme"), default);
+        var next = inbox.NextOrClose();
+        Assert.NotNull(next?.Waits);
+        answer.SetResult();
+        await next!.Waits!;
+        Assert.Equal(InboxKeep.Held, (await keeping).Outcome);
+        var held = inbox.NextOrClose()!.Held!;
+        Assert.Equal("and the readme", held.Text);
+        held.Went!();
+
+        while (inbox.NextOrClose() is { } more) await (more.Waits ?? Task.CompletedTask);
+        var late = await inbox.KeepAsync(record, Said("too late"), default);
+
+        Assert.Equal(InboxKeep.Closed, late.Outcome);
+        Assert.Equal(["w1"], record.TakenOff);
+        Assert.Empty(record.Said);
+    }
+
+    /// <summary>
+    /// COWORK1c (the design §6): a word whose keep was on its way as the inbox closed under the run never stays on the record, which
+    /// is ending: it is taken off again, and its caller holds it as words said while a session winds up are held.
+    /// </summary>
+    [Fact]
+    public async Task A_word_kept_as_the_inbox_closed_is_taken_off_the_ending_record()
+    {
+        var record = new StandInSaid();
+        var answer = new TaskCompletionSource();
+        record.Answering = _ => answer.Task;
+        var inbox = new DrivenInbox(_ => { });
+        inbox.Attach(interrupt: null);
+
+        var keeping = inbox.KeepAsync(record, Said("as it ends"), default);
+        await Task.Delay(20);
+        Assert.Empty(inbox.Close());
+        answer.SetResult();
+
+        Assert.Equal(InboxKeep.Closed, (await keeping).Outcome);
+        await inbox.TakingOff;
+        Assert.Equal(["w1"], record.TakenOff);
+        Assert.Empty(record.Said);
+    }
+
+    /// <summary>
+    /// COWORK1c (the design §6: nothing undelivered vanishes): closed by anything but the person's own stop of the session (its door
+    /// failed, the shell shut down), the words kept for the run stay on the record, told as left there, for the session's go-on; only
+    /// the words held in this process alone come back, for the run to say. Closed by the person's stop, the kept words leave the
+    /// record and come back with the rest, never reached, as before.
+    /// </summary>
+    [Fact]
+    public async Task Closed_under_the_run_the_kept_words_stay_on_the_record_and_the_persons_stop_takes_them_off()
+    {
+        var record = new StandInSaid();
+        var stopped = false;
+        var left = new List<string?>();
+        var inbox = new DrivenInbox(_ => { });
+        inbox.OnClosing(() => { }, personStopped: () => stopped, left: words => left.AddRange(words.Select(word => word.Id)));
+        inbox.Attach(interrupt: null);
+        await inbox.KeepAsync(record, Said("kept"), default);
+        Assert.True(inbox.Hold(Said("held here alone")));
+
+        Assert.Equal(["held here alone"], inbox.Close().Select(word => word.Text));
+        Assert.Equal(["w1"], left);
+        Assert.Equal(["w1"], record.Ids);
+
+        stopped = true;
+        var other = new DrivenInbox(_ => { });
+        other.OnClosing(() => { }, personStopped: () => stopped);
+        other.Attach(interrupt: null);
+        await other.KeepAsync(record, Said("kept, then stopped"), default);
+
+        Assert.Equal(["kept, then stopped"], other.Close().Select(word => word.Text));
+        await other.TakingOff;
+        Assert.Equal(["w2"], record.TakenOff);
+        Assert.Equal(["w1"], record.Ids);
+    }
+
+    /// <summary>
+    /// COWORK1c: a kept word the person takes back leaves the record too, and one reworded is kept anew in its place: the new words
+    /// on the record under their own id, the old taken off, so a restart never brings back what the person changed.
+    /// </summary>
+    [Fact]
+    public async Task A_kept_word_taken_back_or_reworded_changes_the_record_too()
+    {
+        var record = new StandInSaid();
+        var withdrawn = new List<string?>();
+        var inbox = new DrivenInbox(_ => { });
+        inbox.OnWithdrawn(message => withdrawn.Add(message.Id));
+        inbox.Attach(interrupt: null);
+        await inbox.KeepAsync(record, Said("first"), default);
+        await inbox.KeepAsync(record, Said("second"), default);
+
+        Assert.Equal(QueueEdit.Done, await inbox.EditAsync("w1", text: null));
+        Assert.Equal(QueueEdit.Done, await inbox.EditAsync("w2", "second, reworded"));
+        await inbox.TakingOff;
+
+        Assert.Equal(["w1", "w2"], withdrawn);
+        Assert.Equal(["w3"], record.Ids);
+        Assert.Equal(["second, reworded"], record.Said.Select(word => word.Text));
+        Assert.Equal([("w3", "second, reworded")], inbox.State.Queued.Select(message => (message.Id, message.Text)));
+        Assert.Equal(QueueEdit.Taken, await inbox.EditAsync("w1", text: null));
+    }
+
+    /// <summary>
+    /// COWORK1c (the design §6, trap 19): a producer's retry under the key a waiting word holds is answered with that word, and the
+    /// inbox, which holds it already, holds nothing more; a word the record refused is never held.
+    /// </summary>
+    [Fact]
+    public async Task A_retry_under_a_held_key_holds_nothing_more_and_a_refused_word_is_never_held()
+    {
+        var record = new StandInSaid();
+        var inbox = new DrivenInbox(_ => { });
+        inbox.Attach(interrupt: null);
+        var daoris = new ChatMessage("Daoris: reopened.", []) { Daoris = new DaorisWord("reopen/q1/desk/44") };
+
+        Assert.Equal(InboxKeep.Held, (await inbox.KeepAsync(record, daoris, default)).Outcome);
+        Assert.Equal(InboxKeep.Held, (await inbox.KeepAsync(record, daoris, default)).Outcome);
+        Assert.True(inbox.Holds);
+        Assert.Equal("w1", inbox.NextOrClose()?.Held?.Id);
+        Assert.Null(inbox.NextOrClose()?.Held);
+
+        record.Refusing = "running";
+        var other = new DrivenInbox(_ => { });
+        other.Attach(interrupt: null);
+        var refused = await other.KeepAsync(record, Said("hello"), default);
+        Assert.Equal((InboxKeep.Refused, "running"), (refused.Outcome, refused.Said?.Refusal));
+        Assert.False(other.Holds);
+    }
 }

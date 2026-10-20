@@ -194,6 +194,8 @@ public static class PersonDoors
         new("POST", "/api/sessions/help", DoorClass.Driver, "Ask Daoris's record"),
         new("POST", "/api/sessions/{id}/state", DoorClass.Driver, "a session's state"),
         new("POST", "/api/sessions/{id}/taken", DoorClass.Driver, "the words a session took"),
+        // COWORK1c: a word's attempt, marked by the dispatcher that writes it to its harness, before the wire.
+        new("POST", "/api/sessions/{id}/attempt", DoorClass.Driver, "the words a session's dispatcher wrote to its harness"),
         // HELPMODE1a2: the driver spawns it, so it is the half that knows the mode a conversation going on got.
         new("POST", "/api/sessions/{id}/help-mode", DoorClass.Driver, "the mode Ask Daoris goes on under"),
         // AUTONOMY1b2: the driver spawns it, so it is the half that knows the setup a resumed driven record now runs under.

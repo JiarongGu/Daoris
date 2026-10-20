@@ -35,10 +35,11 @@ public static class WordsLeft
         {
             try
             {
-                // COWORK1b: Daoris's own word is kept as Daoris's, under its fact's key, never as the person's.
+                // COWORK1b: Daoris's own word is kept as Daoris's, under its fact's key, never as the person's. COWORK1c: a word kept on
+                // the record for the run, and still there, is answered as itself under its press's key, never kept a second time.
                 var said = await service.SayAsync(
                         session, word.Text, word.Files.Count > 0 ? [.. word.Files.Select(file => file.Name)] : null, ct,
-                        from: word.Daoris is null ? null : DaorisWords.From, key: word.Daoris?.Key)
+                        from: word.Daoris is null ? null : DaorisWords.From, key: word.Key ?? word.Daoris?.Key)
                     .ConfigureAwait(false);
                 if (said.Kept) kept.Add((word, said.Word));
                 else lost++;

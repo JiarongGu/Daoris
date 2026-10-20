@@ -117,8 +117,10 @@ public sealed class ConversationRoutes(DriverContext context)
         var files = request.Payload is { } payload ? FilesOf(payload) : [];
         // Where the person is (HELP1b), which a conversation's agent is handed ahead of the words; absent for most. `now` is the
         // person's *Send now* (STEER2a), which a running session carries out by its door.
+        // COWORK1c: `key`, the press's own where the page names one, so a press that arrives twice keeps one word; the shell gives each
+        // press one otherwise.
         var said = await _loop.Words
-            .SayAsync(id, text, files, Optional(request, "preface"), door: "screen", cancellationToken, level)
+            .SayAsync(id, text, files, Optional(request, "preface"), door: "screen", cancellationToken, level, Optional(request, "key"))
             .ConfigureAwait(false) ?? throw NotReady();
         // Words a running session took are kept on its ask now (DRIFT1a2); words kept on a record are kept there once a
         // session takes them (MSG1a's taken door), so they are never posted twice.
@@ -297,12 +299,13 @@ public sealed class ConversationRoutes(DriverContext context)
         QueueEdit edit;
         if (_loop.Processes.InboxOf(session) is { } inbox)
         {
-            edit = inbox.Edit(id, text, level);
+            // COWORK1c: a word kept on the record for the run is taken back there too, and reworded as a word said is kept.
+            edit = await inbox.EditAsync(id, text, level, cancellationToken).ConfigureAwait(false);
         }
         else
         {
             if (_loop.Processes.RefusesInput(session) is { } why) throw new DriverException(why);
-            edit = _loop.Chat?.EditQueued(session, id, text, level) ?? QueueEdit.Taken;
+            edit = _loop.Chat is { } chat ? await chat.EditQueuedAsync(session, id, text, level, cancellationToken).ConfigureAwait(false) : QueueEdit.Taken;
         }
 
         // Neither holds it: the record's words, which only the service can take back (SAIDBACK1b). A record that runs again

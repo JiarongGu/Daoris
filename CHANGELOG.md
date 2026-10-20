@@ -5,6 +5,11 @@ with the version and date at release.
 
 ## Unreleased
 
+- What you say to a session or a conversation while it works is kept on its record before it waits, so a restart of Daoris never
+  loses it: once Daoris is back, the same session goes on with your words in the order you said them. A word Daoris had already
+  written to the agent when it went away may have reached it, so it is never sent again: its place says *It may have read this; its
+  answer was not kept*, with *Say it again* under your own words. Under words the agent took, the conversation shows when they were
+  sent, taken and answered, each only where Daoris saw it.
 - A session's Timeline draws its states as a flowchart, the one it is in lit and going on drawn as a guarded move; a session page draws its parts as a flowchart in the parts strip's place, the strip its list, and Accept's plan as a dashed node of where they would land.
 - Signing an account in says where it is and for how long: *Starting*, *Waiting on your browser*, *Checking who signed in*
   and *Joining the lists*, each with its time, the one now counting. Codex's device code shows under the browser's step with

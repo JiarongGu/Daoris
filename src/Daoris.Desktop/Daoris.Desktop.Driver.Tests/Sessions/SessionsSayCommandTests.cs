@@ -443,7 +443,9 @@ public sealed class SessionsSayCommandTests : IDisposable
         Assert.Equal(0, exit);
         Assert.Equal("sessions: held: it reads this at its next step.\n", said);
         Assert.Equal("use the cache", Assert.Single(inbox.State.Queued).Text);
-        Assert.Equal(0, room.Says);
+        // COWORK1c: the record is asked to keep it for the run first; this one, as a service from before would, refuses a running
+        // record, and the inbox holds it here alone, as it always did.
+        Assert.Equal(1, room.Says);
         Assert.False(AnyRequest());
     }
 
