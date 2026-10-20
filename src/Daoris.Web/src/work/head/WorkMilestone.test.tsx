@@ -4,7 +4,7 @@ import i18n from '../../locales/i18n';
 import userEvent from '@testing-library/user-event';
 import { type HeldAttempt, type MilestoneEntry, type MilestoneUnit, readWorkState, unitOfBranch, waitsOnPerson } from './milestone';
 import { MilestoneLine, WorkMilestone } from './WorkMilestone';
-import { attentionActs, needsAPerson } from '../attention/attention';
+import { attentionActs, attentionWorded } from '../attention/attention';
 import { AttentionRow } from '../attention/AttentionRow';
 
 // The milestone on the work's foot (FABRIC-MILESTONE1b, the fabric events design §D0): a molecule over the driver's answer, each
@@ -151,6 +151,11 @@ const heldAttempt = (over: Partial<HeldAttempt> = {}): HeldAttempt => ({
   at: '2026-10-17T09:00:00Z', said: 'its plugin was asked and cannot say what became of it', ...over,
 });
 
+/** What needs you's row for a held attempt, as the shell pushes it (PUSH1d4: .NET judges it) and the page words it. */
+const heldRow = (attempt: HeldAttempt) => attentionWorded({
+  kind: 'work', id: `${attempt.unit}#${attempt.node}#${attempt.attempt}`, since: attempt.resolvedAt ?? attempt.at, where: attempt.unit, held: attempt,
+});
+
 describe('an attempt held for the person', () => {
   afterEach(async () => { await i18n.changeLanguage('en'); });
 
@@ -162,18 +167,18 @@ describe('an attempt held for the person', () => {
   });
 
   it('is a row in What needs you naming its step, its attempt and why, offering the three words until one is recorded', () => {
-    const [row] = needsAPerson([], [], [], [], [], [], [], [], undefined, [], [], [], [heldAttempt()]);
+    const row = heldRow(heldAttempt());
     expect(row).toMatchObject({ kind: 'work', title: 'deploy, attempt 2', where: 'u1' });
-    expect(row!.detail).toContain('Its plugin was asked and cannot say what became of it');
-    expect(attentionActs(row!)).toEqual(['happened', 'did-not', 'stop-step']);
+    expect(row.detail).toContain('Its plugin was asked and cannot say what became of it');
+    expect(attentionActs(row)).toEqual(['happened', 'did-not', 'stop-step']);
 
-    const [worded] = needsAPerson([], [], [], [], [], [], [], [], undefined, [], [], [], [heldAttempt({ resolution: 'did-not' })]);
-    expect(worded!.detail).toContain('your word “it did not” is recorded');
-    expect(attentionActs(worded!)).toEqual([]);
+    const worded = heldRow(heldAttempt({ resolution: 'did-not' }));
+    expect(worded.detail).toContain('your word “it did not” is recorded');
+    expect(attentionActs(worded)).toEqual([]);
   });
 
   it('presses the person’s word for the row it is on', async () => {
-    const [row] = needsAPerson([], [], [], [], [], [], [], [], undefined, [], [], [], [heldAttempt()]);
+    const row = heldRow(heldAttempt());
     const words: string[] = [];
     render(<ul><AttentionRow item={row!} acts={{ held: (_, resolution) => words.push(resolution) }} /></ul>);
     await userEvent.click(screen.getByRole('button', { name: 'It did not: try again' }));
@@ -190,15 +195,13 @@ describe('an attempt held for the person', () => {
   });
 
   it('offers a held close only its own recoveries and its stop, saying what its door answered', async () => {
-    const [row] = needsAPerson([], [], [], [], [], [], [], [], undefined, [], [], [], [heldClose()]);
+    const row = heldRow(heldClose());
     expect(row).toMatchObject({ kind: 'work', title: 'close, attempt 1', where: 'quest:q7' });
-    expect(row!.detail).toContain('The quest was closed, and Daoris could not record that on this work (no-acceptance)');
-    expect(row!.detail).toContain('never closed a second time');
-    expect(attentionActs(row!)).toEqual(['record-close', 'resend-close', 'stop-close']);
-    const [unkept] = needsAPerson([], [], [], [], [], [], [], [], undefined, [], [], [], [heldClose({ outcome: null, words: ['resend', 'stop'] })]);
-    expect(attentionActs(unkept!)).toEqual(['resend-close', 'stop-close']);
-    const [older] = needsAPerson([], [], [], [], [], [], [], [], undefined, [], [], [], [heldClose({ words: undefined })]);
-    expect(attentionActs(older!)).toEqual([]);
+    expect(row.detail).toContain('The quest was closed, and Daoris could not record that on this work (no-acceptance)');
+    expect(row.detail).toContain('never closed a second time');
+    expect(attentionActs(row)).toEqual(['record-close', 'resend-close', 'stop-close']);
+    expect(attentionActs(heldRow(heldClose({ outcome: null, words: ['resend', 'stop'] })))).toEqual(['resend-close', 'stop-close']);
+    expect(attentionActs(heldRow(heldClose({ words: undefined })))).toEqual([]);
 
     const words: string[] = [];
     render(<ul><AttentionRow item={row!} acts={{ held: (_, resolution) => words.push(resolution) }} /></ul>);
@@ -209,9 +212,9 @@ describe('an attempt held for the person', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Record the answer again' }));
     expect(words).toEqual(['resend', 'stop', 'record']);
 
-    const [worded] = needsAPerson([], [], [], [], [], [], [], [], undefined, [], [], [], [heldClose({ resolution: 'resend' })]);
-    expect(worded!.detail).toContain('your word “ask for the answer again” is recorded');
-    expect(attentionActs(worded!)).toEqual([]);
+    const worded = heldRow(heldClose({ resolution: 'resend' }));
+    expect(worded.detail).toContain('your word “ask for the answer again” is recorded');
+    expect(attentionActs(worded)).toEqual([]);
   });
 
   it('says a held close on the work’s foot in English and in 中文', async () => {
@@ -239,8 +242,8 @@ describe('an attempt held for the person', () => {
   });
 
   it('offers a close whose submission moved the one press the driver names, resend alone (FABRIC-CLOSE1q3)', async () => {
-    const [row] = needsAPerson([], [], [], [], [], [], [], [], undefined, [], [], [], [heldClose({ why: 'submission-moved', words: ['resend'] })]);
-    expect(attentionActs(row!)).toEqual(['resend-close']);
+    const row = heldRow(heldClose({ why: 'submission-moved', words: ['resend'] }));
+    expect(attentionActs(row)).toEqual(['resend-close']);
     const words: string[] = [];
     render(<ul><AttentionRow item={row!} acts={{ held: (_, resolution) => words.push(resolution) }} /></ul>);
     expect(screen.queryByRole('button', { name: 'Record the answer again' })).toBeNull();
@@ -266,6 +269,5 @@ describe('an attempt held for the person', () => {
   it('shows nothing held where the driver lists none, as on an install no plugin step governs', () => {
     render(<WorkMilestone unit={unit({ held: [] })} />);
     expect(screen.queryByText('Held for you')).not.toBeInTheDocument();
-    expect(needsAPerson([], [], [], [], [], [], [], [], undefined, [], [], [], [])).toEqual([]);
   });
 });

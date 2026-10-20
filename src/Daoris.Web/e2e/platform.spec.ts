@@ -399,14 +399,13 @@ test('an ask is proposed by declarations, published by a person, and closed with
 });
 
 /**
- * **An ask that waits on a person is in *What needs you*, and its record says who answered** (INT4d),
- * over the real host. A proposal waits until a person settles it. An intake that parks asking is ONE
- * row, the ask's, because the answer is on the ask. A browser opens the ask's record from the band,
- * and names the intake session there without a door, because a browser has no Sessions. The intake is
- * opened and parked through the doors the driver uses. The driver is not running here, and the
- * record is what a page reads.
+ * **A plain browser's *What needs you* says it is the app's, and an ask's record says who answered** (INT4d, PUSH1d4), over
+ * the real host. Who needs the person is judged by the app (D182 point 6), so a browser lists no row, even with an ask proposed
+ * and its intake parked asking: the band says the app judges it, never *Nothing needs you*. The ask's record, opened from
+ * Quests' list, names the intake session there without a door, because a browser has no Sessions. The intake is opened and
+ * parked through the doors the driver uses. The driver is not running here, and the record is what a page reads.
  */
-test('an ask waiting on a person is in What needs you, and its record names its intake (INT4d)', async ({ page, request }) => {
+test('a browser’s What needs you is the app’s, and an ask’s record names its intake (INT4d)', async ({ page, request }) => {
   const sentence = 'the release notes should explain the streaming budget';
   const asked = await request.post('/api/asks', { data: { workspace: 'default', sentence } });
   expect(asked.ok(), await asked.text()).toBe(true);
@@ -415,12 +414,13 @@ test('an ask waiting on a person is in What needs you, and its record names its 
 
   await page.goto('/');
   const band = page.getByRole('region', { name: 'What needs you' });
-  // UX6c: a row is named by its title, and its door is the press at its end, beside the acts it settles in place.
-  const proposed = band.getByRole('listitem', { name: sentence });
-  await expect(proposed).toContainText('proposed, not yet published');
-  await expect(proposed).toContainText('workspace default');
-  await proposed.getByRole('button', { name: 'Open' }).click();
-  // Its page, in Quests' main area (FRAME1d), with the ask chosen in the list beside it.
+  await expect(band.getByText('What needs you is judged by the Daoris app: open the app to see what waits for your word.')).toBeVisible();
+  await expect(band.getByRole('listitem')).toHaveCount(0);
+  await expect(band.getByText('Nothing needs you')).toHaveCount(0);
+
+  // Its page, in Quests' main area (FRAME1d), from the list where the ask sits at the head.
+  await nav(page, 'Quests').click();
+  await questList(page).getByRole('button', { name: new RegExp(sentence) }).click();
   await expect(record(page).getByRole('heading', { level: 1, name: sentence })).toBeVisible();
   await expect(record(page).getByRole('region', { name: 'Where it belongs' })).toBeVisible();
 
@@ -437,15 +437,11 @@ test('an ask waiting on a person is in What needs you, and its record names its 
   });
   expect(parked.ok(), await parked.text()).toBe(true);
 
+  // Parked asking, it is still no row in a browser's band; its record says who asked.
   await page.goto('/');
-  const asking = page.getByRole('region', { name: 'What needs you' }).getByRole('listitem', { name: sentence });
-  await expect(asking).toContainText('its intake asked you');
-  await expect(asking).toContainText('published nothing: it asks you rather than guess.');
-  // One thing, one row: the parked intake is the ask's row, not a parked session beside it.
-  await expect(page.getByRole('region', { name: 'What needs you' }).getByText('parked at a checkpoint')).toHaveCount(0);
-
-  // An intake's question needs reading, so its door is the row's one control, naming the ask it opens.
-  await asking.getByRole('button', { name: `Answer ask #${ask.id}` }).click();
+  await expect(page.getByRole('region', { name: 'What needs you' }).getByRole('listitem')).toHaveCount(0);
+  await nav(page, 'Quests').click();
+  await questList(page).getByRole('button', { name: new RegExp(sentence) }).click();
   await expect(record(page).getByRole('heading', { level: 1, name: sentence })).toBeVisible();
   const intake = record(page).getByRole('region', { name: 'Intake session' });
   await expect(intake.getByText('waiting on you')).toBeVisible();

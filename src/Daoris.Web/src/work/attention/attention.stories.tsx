@@ -499,7 +499,7 @@ export const AccountRows: StoryObj = {
 };
 
 /**
- * The rows as 中文 derives them (`accountAttention` words each from the catalogue, in the reader's language): the titles and
+ * The rows as 中文 words them (`accountWords` words each from the catalogue, in the reader's language): the titles and
  * the lines in 中文, the accounts' names and the reset's moment as the reader's language writes them. A signed-out account's
  * reading is the row's own words (*… 读取*), so its line says only where it runs (UXFIX3).
  */

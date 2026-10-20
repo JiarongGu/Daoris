@@ -13,8 +13,8 @@ import type { HandOverTold } from '../sessionActs';
  * this run. Under the `ask` rule (D163) nothing is taken without a press.
  *
  * @remarks
- * A molecule: the offer and its press arrive as props. The line is the page's own, not Overview's band (`useAccountsKnown` reads
- * the roster and the accounts for a list of every session; the frame already holds both for the one it attends). A refusal is said
+ * A molecule: the offer and its press arrive as props. The line is the page's own, not Overview's band (whose account rows .NET
+ * judges for every session, PUSH1d4; the frame already holds the roster and the accounts for the one it attends). A refusal is said
  * in the line and keeps it; a kept answer, for a conversation that is talking, says where it goes on.
  */
 export function HandOverOfferLine({ offer, agentName, accountName, busy = false, onGoOn, onChoose, onDismiss }: {

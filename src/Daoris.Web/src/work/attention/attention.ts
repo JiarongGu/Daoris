@@ -1,21 +1,19 @@
 import i18n from '../../locales/i18n';
-import { type Ask, canBeAsked, type GoAhead, type Quest, type Registration, type Session } from '../../data/api';
+import type { Ask, GoAhead, Quest, SetUpRef, Session } from '../../data/api';
 import type { RuleProposal } from '../../settings/repository/AgentRules';
 import { proposalAuthor, proposalChange } from '../../settings/repository/proposals';
 import { type Consideration, type TrustHold, sittingSentence } from '../../data/signals';
-import { answeredPark } from '../../design/ui';
-import { workspaceOf } from '../../data/workspaces';
-import { accountAttention, type AccountsKnown } from './accountAttention';
+import type { Tool } from '../../agents/tools';
 import type { SessionGrouping } from '../groups';
-import { askName, questName, sessionOrigin, sessionTitle } from '../identity';
+import { askName, questName, sessionTitle } from '../identity';
 import type { Attention, AttentionKind } from './AttentionRow';
-import type { HelperWait } from '../waits/HelperAsks';
-import { CLOSE_SENDER, entryName, type HeldAttempt, heldWhy, heldWords, type MilestoneUnit, waitsOnPerson } from '../head/milestone';
+import { accountRowWorded, type PushedAccountFacts } from './accountWords';
+import { CLOSE_SENDER, entryName, type HeldAttempt, heldWhy, heldWords, type MilestoneEntry } from '../head/milestone';
 import { type OpinionWait, opinionState } from '../gates/opinion';
 import { PERMISSION_BOUND_MINUTES, type PermissionWait } from '../waits/PermissionAsks';
 import { opinionSays } from '../gates/OpinionGate';
-import { newestSetUp, setUpRef, waitsForLook } from '../gates/review';
 import { placedFact } from '../rail/SessionRow';
+import type { NoteRecord } from '../noteLines';
 
 /**
  * *What needs you*'s three groups (UX6c, design §6.2), in the order a person acts on them: what holds work up until they
@@ -64,7 +62,7 @@ export const ATTENTION_GROUP: Readonly<Record<AttentionKind, AttentionGroup>> = 
 };
 
 /**
- * The rows by group, only the groups that hold any, in `GROUP_ORDER`, each keeping the order `needsAPerson` gave it.
+ * The rows by group, only the groups that hold any, in `GROUP_ORDER`, each keeping the order `attentionInOrder` gave it.
  * A group with no rows is not shown (design §6.2).
  */
 export function attentionGroups(items: readonly Attention[]): { group: AttentionGroup; items: Attention[] }[] {
@@ -243,411 +241,271 @@ export function attentionActs(item: Attention): AttentionActId[] {
   return attentionOffers(item).map(({ act }) => act);
 }
 
+/**
+ * One row of *What needs you* as the shell pushes it (PUSH1d4, D182's PUSH1d4 note): who needs the person is judged in .NET
+ * (`NeedsAPerson`, `AccountAttention`), and the page orders and words its rows. Each carries its kind, its id, since when it has
+ * waited (null where nothing says), the values its words are made of, and the workspace of the record it was judged from where a
+ * window's scope filters it. What it is called is named here from the records the page holds (`attentionWorded`).
+ */
+export type PushedAttention = {
+  kind: AttentionKind;
+  id: string;
+  since: string | null;
+  /** The record's workspace, for a row judged from the service's sessions, quests or asks: a scoped window shows its own. */
+  workspace?: string;
+  /** Where it waits, where that is a value: a repository, a circle, an agent's product; absent or null where the page words it. */
+  where?: string | null;
+  /** A parked session's or a parked intake's note, its parts beside its English (LANG1b). */
+  note?: NoteRecord;
+  /** Authored words shown as written: a refused receiver's sentence, a go-ahead's why, a widening's why. */
+  detail?: string | null;
+  publishTo?: string[];
+  choices?: string[];
+  ask?: string;
+  number?: number;
+  /** A go-ahead's act, which its title says. */
+  goAhead?: Pick<GoAhead, 'kind' | 'on' | 'act'>;
+  session?: string | null;
+  /** A held done's first departed requirement, its reason, and how many it departed from. */
+  departed?: { count: number; number: number; reason: string } | null;
+  setUp?: SetUpRef;
+  local?: boolean;
+  /** A set-up's environment and what its newest set-up showed. */
+  environment?: string;
+  shows?: string | null;
+  opinion?: OpinionWait;
+  /** Work to review's place in Sessions' list, which its line says. */
+  placed?: SessionGrouping;
+  /** A parked quest's verdict, which says why it sits. */
+  sitting?: Consideration;
+  trust?: TrustHold;
+  quest?: string;
+  proposal?: RuleProposal;
+  /** A title that is a value: a helper's question's first line, a unit's branch. */
+  title?: string;
+  permission?: PermissionWait;
+  /** A unit's blocked clean-up: whether its owner is unknown, and the entries it is blocked on. */
+  blocked?: { unknown: boolean; entries: Pick<MilestoneEntry, 'kind' | 'resource' | 'detail'>[] };
+  held?: HeldAttempt;
+  /** A start waiting on accounts that holds an intake, or quests in several repositories: `where` is its workspace. */
+  circle?: boolean;
+  /** What a start waiting on accounts holds, which its title says. */
+  holding?: { quests: string[]; asks: string[] };
+  /** When a signed-out account was read (UXFIX3). */
+  read?: string | null;
+  /** Where a signed-out account runs, each a workspace or null for this machine. */
+  runs?: (string | null)[];
+  account?: PushedAccountFacts;
+};
+
+/** The slice's answer composed (`attentionSlice`): the rows in the band's order, and the keys of what the Sessions badge counts. */
+export type AttentionPushed = { rows: PushedAttention[]; sessions: { key: string; workspace?: string | null }[] };
+
+/**
+ * Each kind's place among the kinds of its group when two waited as long (design §6.2's order of kinds), as the judge listed them
+ * before it moved to .NET: the accounts', parks, parked quests, go-aheads, held calls and folders; then asks, departures, set-ups,
+ * second opinions, widenings, helpers, a unit's blocked clean-up, a held attempt and quests nobody can take; then review.
+ */
+const KIND_ORDER: readonly AttentionKind[] = [
+  'account-wait', 'signed-out', 'parked', 'parked-quest', 'go-ahead', 'permission', 'trust',
+  'proposal', 'departure', 'set-up', 'opinion', 'rule', 'helper', 'work', 'unanswerable', 'review',
+];
+
+/** A row's place among its group's kinds; an intake is an ask's, and a held attempt comes after a unit's blocked clean-up. */
+function kindRank(row: PushedAttention): number {
+  const kind = row.kind === 'intake' ? 'proposal' : row.kind;
+  return KIND_ORDER.indexOf(kind) + (row.kind === 'work' && row.held ? 0.5 : 0);
+}
+
+/**
+ * The band's order (UX6c, design §6.2; D182's PUSH1d4 note): by group, holding work first; within a group what has waited longest
+ * first, whatever its kind, a row with no known wait (a signed-out account's, UXFIX3) after every row with one; then §6.2's order
+ * of kinds; then the row's key. A place in the list is never pushed (D182's PUSH1c3a note): one move would push every row after it.
+ */
+export function attentionInOrder(rows: readonly PushedAttention[]): PushedAttention[] {
+  const groupOf = (row: PushedAttention) => GROUP_ORDER.indexOf(ATTENTION_GROUP[row.kind] ?? 'word');
+  const key = (row: PushedAttention) => `${row.kind}:${row.id}`;
+  return [...rows].sort((a, b) => groupOf(a) - groupOf(b)
+    || (a.since === null || b.since === null ? Number(a.since === null) - Number(b.since === null) : a.since.localeCompare(b.since))
+    || kindRank(a) - kindRank(b)
+    || (key(a) < key(b) ? -1 : key(a) > key(b) ? 1 : 0));
+}
+
+/** What the page names a pushed row's records by: the lists it holds and the roster, each optional. A record not in hand is named by its id. */
+export type AttentionNames = {
+  sessions?: readonly Session[];
+  quests?: readonly Quest[];
+  asks?: readonly Ask[];
+  /** The roster by agent (`byTool`), which names an account as the person knows it. */
+  tools?: readonly Tool[];
+};
+
 /** A go-ahead's act, as its ask's page names it: its kind in the reader's language where the page has a word, and the session's words. */
-function goAheadTitle(goAhead: GoAhead): string {
+function goAheadTitle(goAhead: Pick<GoAhead, 'kind' | 'on' | 'act'>): string {
   const known = `asks.goAhead.kind.${goAhead.kind}`;
   const kind = i18n.exists(known) ? i18n.t(known) : goAhead.kind;
   return i18n.t('work.attention.goAheadTitle', { act: i18n.t('asks.goAhead.act', { kind, on: goAhead.on }), words: goAhead.act });
 }
 
 /** Which requirement a held done departed from and why, in its own words; how many where it departed from several. */
-function departureWhy(quest: Quest): string | null {
-  const departed = (quest.answers ?? []).filter((answer) => !answer.met?.trim() && answer.departed?.trim());
-  const [first] = departed;
-  if (!first) return null;
-  return departed.length === 1
-    ? i18n.t('work.attention.departureWhy', { number: first.requirement, reason: first.departed })
-    : i18n.t('work.attention.departureWhyMore', { departed: departed.length, number: first.requirement, reason: first.departed });
-}
-
-/** The intake states in which an ask is the harness's to answer, not yet the person's (D65 §1b). */
-const INTAKE_BUSY: ReadonlySet<Session['state']> = new Set(['queued', 'starting', 'working']);
-
-/**
- * How many of Sessions' own sessions wait on the person: the Sessions icon's badge (UX5 U20).
- *
- * @remarks
- * **A badge counts what its place holds** (D76 as amended, the owner's choice). The icon carried the
- * whole of {@link needsAPerson}, six on the scratch window, while Sessions held one of them: the asks
- * are on Quests and in Overview's band, so the press the badge invited showed a sixth of what it
- * counted. Overview carries the whole now. A parked intake counts here, because it is in the rail,
- * even though the band lets its ask stand for it.
- *
- * **It counts the list's first group, *Waiting on you*** (SESSUX1c, D126 §2.5): this machine's sessions parked to ask,
- * and each quest parked on its failed sessions, whose last session here the list shows *parked*. A teammate's parked
- * session waits on them and is listed under Working (SESSUX1a), and so is one the person answered, which the same
- * session goes on from at the driver's next look (ANSWER1c). The parked quests are the planner's verdicts the tick
- * hands the page (`useConsidered`), as Overview's band reads them, so both counts read the same two facts; the list's
- * reader would walk git in every tree to review on every view, for a number it does not need trees for.
- */
-export function waitingInSessions(
-  sessions: readonly Session[], considered: readonly Pick<Consideration, 'verdict'>[] = [],
-): number {
-  const asking = sessions
-    .filter((session) => session.state === 'awaiting-person' && !answeredPark(session) && !sessionOrigin(session)).length;
-  return asking + considered.filter((consideration) => consideration.verdict === 'Exhausted').length;
+function departureWhy(departed: PushedAttention['departed']): string | null {
+  if (!departed) return null;
+  return departed.count === 1
+    ? i18n.t('work.attention.departureWhy', { number: departed.number, reason: departed.reason })
+    : i18n.t('work.attention.departureWhyMore', { departed: departed.count, number: departed.number, reason: departed.reason });
 }
 
 /**
- * What is waiting on a person: by group, and the longest waiting first within each (UX6c, design §6.2).
- *
- * @remarks
- * **Holding work first, then what waits for the person's word, then what is ready for them** (`ATTENTION_GROUP`).
- * Within a group what has waited longest comes first, whatever its kind: the groups say what matters most, and inside
- * one a parked session is not more urgent than a folder held for trust a week longer. Rows that waited exactly as long
- * keep §6.2's order of kinds.
- *
- * **No row starts a process to find out** (design §6.3): every input is a list the page already holds or the tick hands
- * it. The sessions, quests, asks and registry are the service's; the trust holds and the planner's verdicts the tick's;
- * the rules the machine's file; and the groups (`SESSION_GROUPS`) the answer Sessions' list reads, which the frame holds
- * on every view of a shell. A browser has none of the last four, so it lists what it can know: asks and quests.
- *
- * **An ask waits on the person unless its intake is busy with it.** Proposed with nothing serving it
- * (or its intake ended without publishing), only a person publishes, so it is a `proposal`. An intake
- * that parked asking the person makes it `intake`. The page cannot know whether this machine names
- * an intake harness, so an ask the driver has not picked up yet is a proposal until it is. It is the
- * person's to take either way, and the band never guesses what a driver will do next.
- *
- * **One thing is counted once.** A parked intake is a session awaiting a person too, and its ask's
- * row stands for it, because the answer is on the ask (publish or close). It leaves the parked list
- * only while its ask is in hand and live, so a list that did not arrive never hides it.
- *
- * **A quest is unanswerable when this deployment has no registration for its receiver.** The
- * publish door already refuses a quest addressed to a non-adopter, so the way one comes to exist is
- * afterwards: the receiver retired, or the registration never arrived here. Either way no agent
- * will pull it, and "who cannot be asked" is the same question as "who can" (the Projects view
- * already argues this for repositories).
- *
- * **A quest parked on its failed sessions here holds work** (SESSUX1i, D126 §4.6): only the person's *Try again* starts
- * it again, and on 1 October the owner's work stood there while nothing here said so. It is read from the planner's
- * verdicts the tick hands the page (`Exhausted`), so a browser has none: its time is when its last session ended, and its
- * detail the driver's sitting sentence. A person's stop holds its quest too, and is never here: the person caused it.
- *
- * **A folder waiting on the person's trust (D73) holds work.** The driver is holding a start there because the agent
- * ignores that folder's own permissions until trusted, and the grant is the person's alone. One row per folder, since the
- * oldest thing it holds. Only the shell's tick says so, so a browser has none.
- *
- * **A go-ahead a session asked holds work** (KNOWUSE1a): the session's act waits for the person's yes or no, which every
- * session on the ask is handed. One row per go-ahead still asked, read from its ask's `goAheads`.
- *
- * **A tool call a session holds for the person holds work** (AUTONOMY1b3c, D184 point 3): under its repository's asking permission
- * prompts, a call its rules do not allow waits for their answer, its turn standing still until they give one or the driver's
- * bound refuses it, from the driver's own list (`PERMISSION_WAITS`), which a browser has none of. A press per choice its agent
- * offered; its session's page the door. So it is counted in the badge, which is how a person with the window behind others learns
- * a turn waits on them.
- *
- * **An agent's proposal to widen the rules (PERM2, D74) waits for the person's word.** 🔴 A widening never applies
- * without the person, so the driver holds it as `waiting` and only they can settle it. The session that proposed it
- * carries on meanwhile, so it holds nothing up. A narrowing applied itself, and one the driver has not judged yet may be
- * one, so neither is here. Only the shell reads the rules, so a browser has none.
- *
- * **An agent's ask for a helper waits for the person's word** (MIXAGENT2c, D163 point 3): one the driver's look holds waiting
- * on their yes under the `helpers` rule's `ask`, from the driver's own list (`HELPER_WAITS`), which a browser has none of. Its row
- * is the question's first line, as written, and the session that asked; *Let it ask* and *Not now* are its session's page's own.
- *
- * **A departure waits for the person's word** (DRIFT1d2, D133 §4): a done held for their yes because it departed from
- * what they required, which the quests list carries (`held`) until they accept it.
- *
- * **A set-up shown waits for the person's look** (REVIEWENV1g, D154 point 8): a set-up step whose newest set-up has no verdict,
- * from the quests list's own record, with *Reviewed*, *Not yet…* and *Show it again* on its row, the set-up named as the row
- * drew it. A step held for its review is never a departure's row, since no yes lifts a review's hold.
- *
- * **A second opinion that waits on the person waits for their word** (XAGENT1g, the second-agent design §9): a dispute, a
- * required one none could be had for, and commits nobody read where the work lands by itself, oldest first, from the driver's
- * own list (`OPINION_WAITS`), which a browser has none of. Its row says what the gate says, and its door is its session's page.
- *
- * **Work to review is ready for the person** (D126): each session Sessions' list places *To review*, named from its
- * record where the page holds it and by its id where it does not, so nothing waiting is dropped.
- *
- * **The accounts hold work** (UX6d, TOOL4m's row): a start waiting on its accounts, an ask's intake among them, and a
- * signed-out account a list or a default holds that no waiting start names (`accountAttention`). From the tick's waits and
- * considerations, the roster's last readings with their times and the accounts' files: nothing a row would have to ask
- * for. A browser has none of them. **A signed-out account's row has no wait** (UXFIX3): only when it was read is known, and
- * sorted by that, reading it again sent an old blocker to the end of its group. It holds no start that waits now (a waiting
- * start would stand for it), so it comes after every row with a wait, in the roster's order.
+ * A pushed row worded (PUSH1d4): what it is called, from the records the page holds (a session as Sessions names it, a quest and an
+ * ask by their names, an account as the roster names it), where it waits, and its line of why in the reader's language, with the
+ * values its acts and its door read. Pure: the judge is .NET's, and nothing here decides whether a row is.
  */
-export function needsAPerson(
-  sessions: readonly Session[],
-  quests: readonly Quest[],
-  registry: readonly Registration[],
-  asks: readonly Ask[],
-  untrusted: readonly TrustHold[] = [],
-  proposals: readonly RuleProposal[] = [],
-  considered: readonly Consideration[] = [],
-  groups: readonly SessionGrouping[] = [],
-  accounts: AccountsKnown = { tools: [] },
-  opinions: readonly OpinionWait[] = [],
-  helpers: readonly HelperWait[] = [],
-  works: readonly MilestoneUnit[] = [],
-  held: readonly HeldAttempt[] = [],
-  permissions: readonly PermissionWait[] = [],
-): Attention[] {
-  const live = asks.filter((ask) => ask.state === 'Open' || ask.state === 'Proposed');
-  const intakeOf = (ask: Ask) =>
-    ask.intake ? sessions.find((session) => session.id === ask.intake) : undefined;
-  // Whom an ask in this workspace could be published to: what the host says can be asked, as the ask's page offers (D70).
-  const receiversIn = (workspace: string) => registry
-    .filter((row) => canBeAsked(row) && workspaceOf(row) === workspace)
-    .map((row) => row.repository)
-    .sort();
+export function attentionWorded(row: PushedAttention, names: AttentionNames = {}, now: Date = new Date()): Attention {
+  const sessionOf = (id: string | null | undefined) => (id ? names.sessions?.find((one) => one.id === id) : undefined);
+  const questOf = (id: string | null | undefined) => (id ? names.quests?.find((one) => one.id === id) : undefined);
+  const named = (id: string | null | undefined) => {
+    const record = sessionOf(id);
+    return record ? sessionTitle(record, questOf(record.quest)) : `#${id ?? ''}`;
+  };
+  const quested = (id: string) => {
+    const quest = questOf(id);
+    return quest ? questName(quest) : `#${id}`;
+  };
+  const base = { id: row.id, kind: row.kind, since: row.since, where: row.where ?? '' };
+  const askWhere = (ask: string) => i18n.t('work.attention.askWhere', { id: ask });
 
-  const waitingAsks = live
-    .filter((ask) => !INTAKE_BUSY.has(intakeOf(ask)?.state ?? 'completed'))
-    .map((ask): Attention => {
-      const intake = intakeOf(ask);
-      const asked = intake?.state === 'awaiting-person';
-      const row = { id: ask.id, title: askName(ask), where: ask.workspace };
-      // The intake's own note, which the row words in the reader's language (LANG1b).
-      if (asked) return { ...row, kind: 'intake', since: intake.updated, note: { note: intake.note, parts: intake.noteParts } };
-      return {
-        ...row,
-        kind: 'proposal',
-        since: ask.asked,
-        // A refused receiver's sentence is the service's, verbatim; otherwise what was proposed.
-        detail: ask.note ?? (ask.proposal.length > 0
-          ? i18n.t('work.attention.proposalWhy', {
-            repositories: ask.proposal.map((match) => match.repository).join(', '),
-          })
-          : i18n.t('work.attention.proposalNobody')),
-        publishTo: ask.proposal.map((match) => match.repository),
-        choices: receiversIn(ask.workspace),
-      };
-    });
-
-  // Every go-ahead still asked on an ask that is not closed: one row each, since each is its own act (KNOWUSE1a).
-  const goAheads = asks
-    .filter((ask) => ask.state !== 'Closed')
-    .flatMap((ask) => (ask.goAheads ?? [])
-      .filter((goAhead) => goAhead.state === 'asked')
-      .map((goAhead): Attention => ({
-        id: `${ask.id}#${goAhead.number}`,
-        kind: 'go-ahead',
-        ask: ask.id,
-        number: goAhead.number,
-        title: goAheadTitle(goAhead),
-        where: i18n.t('work.attention.askWhere', { id: ask.id }),
-        since: goAhead.asked[0]?.at ?? ask.updated,
-        // Why the first session needed it, in its words.
-        detail: goAhead.asked[0]?.why ?? null,
-        // The session that asked it first, whose run its door opens (WORKFLOW1c).
-        session: goAhead.asked[0]?.session ?? null,
-      })));
-
-  // A done its departure holds for the person's yes (DRIFT1d2), until they accept it. A set-up step its review holds waits
-  // for their review instead (REVIEWENV1g), which no yes lifts, so it is the row below and never this one.
-  const departures = quests
-    .filter((quest) => quest.held === true && !quest.accepted && quest.hold !== 'unreviewed')
-    .map((quest): Attention => ({
-      id: quest.id,
-      kind: 'departure',
-      title: questName(quest),
-      where: quest.to,
-      since: quest.updated,
-      detail: departureWhy(quest),
-    }));
-
-  // A set-up step whose newest set-up waits for the person's look (REVIEWENV1g, design §3.3), oldest first with the rest: what
-  // it showed, and the set-up the row drew, which its verdict names.
-  const setUps = quests
-    .filter(waitsForLook)
-    .map((quest): Attention => {
-      const newest = newestSetUp(quest)!;
-      return {
-        id: quest.id,
-        kind: 'set-up',
-        title: questName(quest),
-        where: quest.to,
-        since: newest.at ?? quest.updated,
-        detail: newest.shows
-          ? i18n.t('work.attention.setUpShows', { environment: quest.setUpIn, shows: newest.shows })
-          : i18n.t('work.attention.setUpShown', { environment: quest.setUpIn }),
-        setUp: setUpRef(newest)!,
-        local: newest.local !== false,
-        session: newest.session ?? null,
-      };
-    });
-
-  // A second opinion that waits on the person (XAGENT1g, design §9), from the driver's own list: a dispute, a required one none
-  // could be had for, and commits nobody read where the work lands by itself. Its row says what the gate says.
-  const secondOpinions = opinions.map((wait): Attention => {
-    const quest = quests.find((one) => one.id === wait.quest);
-    const record = sessions.find((one) => one.id === wait.session);
-    return {
-      id: wait.session,
-      kind: 'opinion',
-      title: quest ? questName(quest) : record ? sessionTitle(record) : `#${wait.quest}`,
-      where: wait.repository,
-      since: wait.since,
-      detail: opinionSays(i18n.t, wait.opinion).join(' '),
-      opinion: wait,
-    };
-  });
-
-  // What Sessions' list places To review (D126), from the one reader the frame holds: never a reader of its own.
-  const reviews = groups
-    .filter((placed) => placed.group === 'review')
-    .map((placed): Attention => {
-      const record = sessions.find((one) => one.id === placed.session);
-      const fact = placedFact(placed, placed.shown);
-      return {
-        id: placed.session,
-        kind: 'review',
-        title: record
-          ? sessionTitle(record, quests.find((quest) => quest.id === record.quest))
-          : `#${placed.session}`,
-        where: record?.repository ?? '',
-        since: record?.updated ?? new Date().toISOString(),
-        detail: fact ? i18n.t(fact.line, fact.values) : null,
-      };
-    });
-
-  const standsFor = new Set(live.map((ask) => ask.intake).filter(Boolean));
-  // A park the person answered goes on at the driver's next look (ANSWER1c): it no longer needs them.
-  const parked = sessions
-    .filter((session) => session.state === 'awaiting-person' && !answeredPark(session) && !standsFor.has(session.id))
-    .map((session): Attention => ({
-      id: session.id,
-      kind: 'parked',
-      title: sessionTitle(session, quests.find((quest) => quest.id === session.quest)),
-      where: session.repository,
-      since: session.updated,
-      // Its note whole, parts beside the English, which the row words in the reader's language (LANG1b).
-      note: { note: session.note, parts: session.noteParts },
-    }));
-
-  const parkedQuests = considered
-    .filter((consideration) => consideration.verdict === 'Exhausted')
-    .map((consideration): Attention => {
-      const held = quests.find((one) => one.id === consideration.quest);
-      return {
-        id: consideration.quest,
-        kind: 'parked-quest',
-        title: held?.title ?? `#${consideration.quest}`,
-        where: consideration.repository,
-        // When its last session ended, which the tick names; a shell older than that names none, and the quest's last
-        // move is the nearest the page holds.
-        since: consideration.since ?? held?.updated ?? new Date().toISOString(),
-        detail: sittingSentence(consideration),
-      };
-    });
-
-  const registered = new Set(registry.map((row) => row.repository.toLowerCase()));
-  const unanswerable = quests
-    .filter((quest) => quest.status === 'Open' && !registered.has(quest.to.toLowerCase()))
-    .map((quest): Attention => ({
-      id: quest.id,
-      kind: 'unanswerable',
-      title: questName(quest),
-      where: quest.to,
-      since: quest.filed,
-      detail: i18n.t('work.attention.unanswerableWhy', { repository: quest.to }),
-    }));
-
-  // One row per folder in one file: two quests held on one untrusted tree are one grant.
-  const folders = new Map<string, Attention & { since: string }>();
-  for (const hold of untrusted) {
-    const held = hold.quest ? quests.find((quest) => quest.id === hold.quest) : undefined;
-    const asked = hold.ask ? asks.find((one) => one.id === hold.ask) : undefined;
-    const where = held?.to
-      ?? (hold.ask ? i18n.t('work.attention.askWhere', { id: hold.ask }) : `#${hold.quest ?? ''}`);
-    const since = held?.filed ?? asked?.asked ?? new Date().toISOString();
-    const key = `${hold.trustFile}\n${hold.folder}`;
-    const seen = folders.get(key);
-    if (seen) {
-      if (since.localeCompare(seen.since) < 0) seen.since = since;
-      continue;
+  switch (row.kind) {
+    case 'parked':
+      return { ...base, title: named(row.id), ...(row.note ? { note: row.note } : {}) };
+    case 'intake': {
+      const ask = names.asks?.find((one) => one.id === row.id);
+      return { ...base, title: ask ? askName(ask) : `#${row.id}`, ...(row.note ? { note: row.note } : {}) };
     }
-    folders.set(key, {
-      // The row's identity is what makes it one row: the file AND the folder (REV3). The folder alone
-      // gave one folder held in two accounts' files two rows with one key.
-      id: key,
-      kind: 'trust',
-      title: hold.folder,
-      where,
-      since,
-      detail: i18n.t('work.attention.trustWhy'),
-      trust: { folder: hold.folder, trustFile: hold.trustFile },
-      // What its door opens: the quest it holds, or the ask whose intake it holds (D73).
-      ...(hold.quest ? { quest: hold.quest } : hold.ask ? { ask: hold.ask } : {}),
-    });
+    case 'proposal': {
+      const ask = names.asks?.find((one) => one.id === row.id);
+      const publishTo = row.publishTo ?? [];
+      return {
+        ...base,
+        title: ask ? askName(ask) : `#${row.id}`,
+        // A refused receiver's sentence is the service's, verbatim; otherwise what was proposed.
+        detail: row.detail ?? (publishTo.length > 0
+          ? i18n.t('work.attention.proposalWhy', { repositories: publishTo.join(', ') })
+          : i18n.t('work.attention.proposalNobody')),
+        publishTo,
+        choices: row.choices ?? [],
+      };
+    }
+    case 'go-ahead':
+      return {
+        ...base,
+        title: row.goAhead ? goAheadTitle(row.goAhead) : row.id,
+        where: askWhere(row.ask ?? ''),
+        detail: row.detail ?? null,
+        ask: row.ask,
+        number: row.number,
+        session: row.session ?? null,
+      };
+    case 'departure':
+      return { ...base, title: quested(row.id), detail: departureWhy(row.departed) };
+    case 'set-up':
+      return {
+        ...base,
+        title: quested(row.id),
+        detail: row.shows
+          ? i18n.t('work.attention.setUpShows', { environment: row.environment, shows: row.shows })
+          : i18n.t('work.attention.setUpShown', { environment: row.environment }),
+        ...(row.setUp ? { setUp: row.setUp } : {}),
+        local: row.local !== false,
+        session: row.session ?? null,
+      };
+    case 'opinion': {
+      const wait = row.opinion;
+      const quest = questOf(wait?.quest);
+      const record = sessionOf(row.id);
+      return {
+        ...base,
+        title: quest ? questName(quest) : record ? sessionTitle(record) : `#${wait?.quest ?? ''}`,
+        detail: wait ? opinionSays(i18n.t, wait.opinion).join(' ') : null,
+        ...(wait ? { opinion: wait } : {}),
+      };
+    }
+    case 'review': {
+      const fact = row.placed ? placedFact(row.placed, row.placed.shown) : null;
+      return { ...base, title: named(row.id), detail: fact ? i18n.t(fact.line, fact.values) : null };
+    }
+    case 'parked-quest':
+      return {
+        ...base,
+        title: questOf(row.id)?.title ?? `#${row.id}`,
+        detail: row.sitting ? sittingSentence(row.sitting) : null,
+      };
+    case 'unanswerable':
+      return { ...base, title: quested(row.id), detail: i18n.t('work.attention.unanswerableWhy', { repository: row.where ?? '' }) };
+    case 'trust':
+      return {
+        ...base,
+        title: row.trust?.folder ?? row.id,
+        where: row.where ?? (row.ask ? askWhere(row.ask) : `#${row.quest ?? ''}`),
+        detail: i18n.t('work.attention.trustWhy'),
+        ...(row.trust ? { trust: { folder: row.trust.folder, trustFile: row.trust.trustFile } } : {}),
+        // What its door opens: the quest it holds, or the ask whose intake it holds (D73).
+        ...(row.quest ? { quest: row.quest } : row.ask ? { ask: row.ask } : {}),
+      };
+    case 'rule':
+      return {
+        ...base,
+        title: row.proposal ? proposalChange(row.proposal) : row.id,
+        where: row.proposal ? proposalAuthor(row.proposal) : '',
+        detail: row.detail ?? null,
+        ...(row.proposal ? { proposal: row.proposal } : {}),
+      };
+    case 'helper':
+      return {
+        ...base,
+        title: row.title ?? row.id,
+        detail: i18n.t('work.attention.helperWhy', { session: named(row.session) }),
+        session: row.session ?? null,
+      };
+    case 'permission':
+      return {
+        ...base,
+        title: row.permission?.title ?? i18n.t('work.wait.permission.untitled'),
+        detail: i18n.t('work.attention.permissionWhy', { session: named(row.session), minutes: PERMISSION_BOUND_MINUTES }),
+        session: row.session ?? null,
+        ...(row.permission ? { permission: row.permission } : {}),
+      };
+    case 'work':
+      return row.held ? heldWorded(row, row.held) : {
+        ...base,
+        title: row.title ?? row.id,
+        // An unknown owner says so, then each blocked entry's own reason (FABRIC-UNKNOWN1: which press removes it).
+        detail: [
+          ...(row.blocked?.unknown ? [i18n.t('work.milestone.wait.owner')] : []),
+          ...(row.blocked?.entries ?? []).map((entry) => i18n.t('work.milestone.cleanup.blocked', {
+            what: entryName(i18n.t, entry as MilestoneEntry), detail: entry.detail,
+          })),
+        ].join(' '),
+        session: row.session ?? null,
+      };
+    case 'account-wait':
+    case 'signed-out':
+      return accountRowWorded(row, names, now);
+    default:
+      return { ...base, title: row.title ?? row.id };
   }
+}
 
-  const widenings = proposals
-    .filter((proposal) => proposal.state === 'waiting')
-    .map((proposal): Attention => ({
-      id: proposal.id,
-      kind: 'rule',
-      title: proposalChange(proposal),
-      where: proposalAuthor(proposal),
-      since: proposal.proposed,
-      // The session's own reason, verbatim.
-      detail: proposal.why,
-    }));
-
-  // An agent's ask for a helper that waits on the person's yes (MIXAGENT2c): its question's first line as written, the session
-  // that asked named as Sessions names it, or by its id where the page holds no such record, and its repository.
-  const helperAsks = helpers.map((wait): Attention => {
-    const record = sessions.find((one) => one.id === wait.session);
-    const asker = record ? sessionTitle(record, quests.find((quest) => quest.id === record.quest)) : `#${wait.session}`;
-    return {
-      id: wait.id,
-      kind: 'helper',
-      title: wait.question.split('\n')[0]!.trim() || wait.question,
-      where: record?.repository ?? '',
-      since: wait.at || null,
-      detail: i18n.t('work.attention.helperWhy', { session: asker }),
-      session: wait.session,
-    };
-  });
-
-  // A tool call a session holds for the person's answer under asking (AUTONOMY1b3c): the call as the agent named it (content, as
-  // written), the session that holds it named as Sessions names it, or by its id where the page holds no such record, and its
-  // repository. Keyed by both, since a request's id is only its agent's wire's.
-  const heldCalls = permissions.map((wait): Attention => {
-    const record = sessions.find((one) => one.id === wait.session);
-    const holder = record ? sessionTitle(record, quests.find((quest) => quest.id === record.quest)) : `#${wait.session}`;
-    return {
-      id: `${wait.session}#${wait.request}`,
-      kind: 'permission',
-      title: wait.title ?? i18n.t('work.wait.permission.untitled'),
-      where: record?.repository ?? '',
-      since: wait.since || null,
-      detail: i18n.t('work.attention.permissionWhy', { session: holder, minutes: PERMISSION_BOUND_MINUTES }),
-      session: wait.session,
-      permission: wait,
-    };
-  });
-
-  // A unit whose clean-up is blocked, or whose owner nothing records (FABRIC-MILESTONE1b): its blocked entries as the driver says
-  // them, its session's page the door, where its foot says the whole milestone. A wait the cycle ends by itself is no row.
-  const blocked = works.flatMap((unit): Attention[] => {
-    const waits = waitsOnPerson(unit);
-    if (waits.length === 0) return [];
-    return [{
-      id: unit.session ?? unit.unit,
-      kind: 'work',
-      title: unit.branch ?? unit.unit,
-      where: unit.repository,
-      since: unit.end.at ?? null,
-      // An unknown owner says so, then each blocked entry's own reason where it has one (FABRIC-UNKNOWN1: which press removes it).
-      detail: [
-        ...(unit.end.state === 'unknown' ? [i18n.t('work.milestone.wait.owner')] : []),
-        ...waits.filter((entry) => unit.end.state !== 'unknown' || entry.disposition === 'blocked')
-          .map((entry) => i18n.t('work.milestone.cleanup.blocked', { what: entryName(i18n.t, entry), detail: entry.detail })),
-      ].join(' '),
-      session: unit.session ?? null,
-    }];
-  });
-
-  // A plugin step's attempt held for the person (FABRIC-PERFORM1g, the fabric events design §D6, §D3's *blocked, needs the person*): the
-  // step and its attempt, its unit, and why nothing else can say what became of it. Its gate holds until their word; a word recorded
-  // stays a row, saying so, until the driver's next look applies it.
-  const heldSteps = held.map((attempt): Attention => ({
-    id: `${attempt.unit}#${attempt.node}#${attempt.attempt}`,
+/**
+ * A plugin step's attempt held for the person (FABRIC-PERFORM1g, the fabric events design §D6): the step and its attempt, its unit,
+ * and why nothing else can say what became of it; a word recorded stays a row, saying so, until the driver's next look applies it.
+ */
+function heldWorded(row: PushedAttention, attempt: HeldAttempt): Attention {
+  return {
+    id: row.id,
     kind: 'work',
+    since: row.since,
+    where: row.where ?? attempt.unit,
     title: i18n.t('work.milestone.held.title', { node: attempt.node, attempt: attempt.attempt }),
-    where: attempt.unit,
-    since: attempt.resolvedAt ?? attempt.at,
     detail: attempt.resolution
       ? i18n.t('work.milestone.held.worded', { node: attempt.node, attempt: attempt.attempt, word: i18n.t(`work.milestone.held.word.${attempt.resolution}`) })
       // FABRIC-CLOSE1q: a held close's outcome is its door's answer, so its row says what the door answered and that no second close is made.
@@ -655,19 +513,10 @@ export function needsAPerson(
         ? i18n.t('work.milestone.held.close.detail', { why: heldWhy(i18n.t, attempt) })
         : i18n.t('work.milestone.held.detail', { why: heldWhy(i18n.t, attempt), step: attempt.step }),
     held: attempt,
-  }));
+  };
+}
 
-  // The starts waiting on their accounts, and the signed-out accounts no waiting start names (UX6d).
-  const accountRows = accountAttention(accounts, considered, quests, asks, registry);
-
-  // Each group's kinds in §6.2's order, then the longest waiting first: a stable sort keeps §6.2's order for a tie. A row
-  // with no known wait (a signed-out account's, UXFIX3) comes after those that have one, in the order it was listed, so a
-  // reading moves nothing.
-  const oldestFirst = (a: Attention, b: Attention) =>
-    (a.since === null || b.since === null ? Number(a.since === null) - Number(b.since === null) : a.since.localeCompare(b.since));
-  return [
-    [...accountRows, ...parked, ...parkedQuests, ...goAheads, ...heldCalls, ...folders.values()],
-    [...waitingAsks, ...departures, ...setUps, ...secondOpinions, ...widenings, ...helperAsks, ...blocked, ...heldSteps, ...unanswerable],
-    reviews,
-  ].flatMap((group) => group.sort(oldestFirst));
+/** Each pushed row worded, in the order given. */
+export function attentionOf(rows: readonly PushedAttention[], names: AttentionNames = {}, now: Date = new Date()): Attention[] {
+  return rows.map((row) => attentionWorded(row, names, now));
 }

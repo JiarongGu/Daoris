@@ -28,6 +28,11 @@ export const keys = {
   untrusted: ['untrusted'] as const,
   /** The starts the last tick held on cooling accounts, an intake's among them (UX6d) — written by the tick, like `considered`. */
   waits: ['waits'] as const,
+  /**
+   * Who needs the person, as the shell pushes it (PUSH1d4) — written by the pushes, never pulled: no route answers it, and a plain
+   * browser has none (its own root, so no broad invalidation reaches it).
+   */
+  attention: ['attention'] as const,
   /** The presses the driver has not answered yet, as it last told them (STATEHUB1c) — written by the state hub, never fetched. */
   underWay: ['underWay'] as const,
   /** Ask Daoris's conversation opened ahead of the person (HELP5) — kept by the page, never fetched. */
@@ -496,8 +501,21 @@ export const USAGE_SLICE = 'usage';
  */
 export const ACCOUNTS_SLICE = 'accounts';
 
+/**
+ * Who needs the person, as the shell pushes it (PUSH1d4; its spec is `attentionSlice` in `bridge/attention`): *What needs you*'s rows
+ * and what the Sessions badge counts, judged in .NET.
+ */
+export const ATTENTION_SLICE = 'attention';
+
 /** The service's own name for a workspace asked of it (`Workspaces.Normalize`), its ASCII letters folded as its `NOCASE` folds them. */
 const circle = (workspace: string) => (workspace.trim() || 'default').replace(/[A-Z]/g, (letter) => letter.toLowerCase());
+
+/**
+ * Whether a record of `workspace` is in a window's scope, as the service filters a list by it (`circle`): every record where the window
+ * looks at every circle. *What needs you*'s pushed rows are filtered by it as the lists they were judged from were (PUSH1d4).
+ */
+export const inCircle = (workspace: string | null | undefined, scope: string | null): boolean =>
+  scope === null || circle(workspace ?? '') === circle(scope);
 
 /**
  * One view's list read from the widest the shell pushes (PUSH1d2), as the service filters `/api/sessions`: the repository named

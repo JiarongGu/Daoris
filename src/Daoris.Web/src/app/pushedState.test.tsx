@@ -57,7 +57,17 @@ import type { AccountsAnswer } from '../settings/accounts/accounts';
 const CHOICES = { drivable: ['engine'], holds: [], trees: [], notify: false, strikes: 3, forgiven: {} };
 
 /** How many slices a window reads pushed, each its one snapshot as the window opens (`PUSHED` in `ShellSignals`). */
-const SLICES = 12;
+const SLICES = 13;
+
+/** A session parked to ask, as the attention slice's owner pushes its row and what the Sessions badge counts (PUSH1d4). */
+const PARKED_ROW = { kind: 'parked', id: 'a-1', since: '2026-10-20T08:00:00+00:00', workspace: 'default', where: 'engine', note: {} };
+const ATTENTION_SNAPSHOT = {
+  slice: 'attention', epoch: 'n1', status: 'ready',
+  partitions: [
+    { partition: 'rows', seq: 1, status: 'ready', data: { 'parked:a-1': PARKED_ROW } },
+    { partition: 'sessions', seq: 1, status: 'ready', data: { 'session:a-1': { kind: 'parked', workspace: 'default' } } },
+  ],
+};
 
 /** The driver's slice as the shell's owner holds it: three partitions, each at its first number. */
 const SNAPSHOT = {
@@ -264,7 +274,8 @@ function host(pushes: boolean) {
         return slice === 'lines' ? LINES_SNAPSHOT : slice === 'sessions' ? SESSIONS_SNAPSHOT : slice === 'calls' ? CALLS_SNAPSHOT
           : slice === 'work' ? WORK_SNAPSHOT : slice === 'groups' ? GROUPS_SNAPSHOT : slice === 'sync' ? SYNC_SNAPSHOT
             : slice === 'sweep' ? SWEEP_SNAPSHOT : slice === 'quests' ? QUESTS_SNAPSHOT : slice === 'asks' ? ASKS_SNAPSHOT
-              : slice === 'usage' ? USAGE_SNAPSHOT : slice === 'accounts' ? ACCOUNTS_SNAPSHOT : SNAPSHOT;
+              : slice === 'usage' ? USAGE_SNAPSHOT : slice === 'accounts' ? ACCOUNTS_SNAPSHOT
+                : slice === 'attention' ? ATTENTION_SNAPSHOT : SNAPSHOT;
       }
       throw Object.assign(new Error('NO_ROUTE'), { code: 'NO_ROUTE' });
     }
@@ -318,8 +329,8 @@ describe("the driver's state, pushed (PUSH1a)", () => {
     host(true);
     const client = await open();
     // One snapshot for each slice the window reads pushed (the driver's state, the lines, the sessions, the calls, the work, the
-    // groups, where each circle stands, the clean-up's list, the quests, the asks, what sessions consumed and how the accounts are
-    // used), and no pull beside any.
+    // groups, where each circle stands, the clean-up's list, the quests, the asks, what sessions consumed, how the accounts are
+    // used and who needs the person), and no pull beside any.
     expect(asked().get('DAORIS.DRIVER.STATE_SLICE')).toBe(SLICES);
     expect(syncReads()).toBe(0);
     expect(questReads()).toBe(0);
@@ -687,11 +698,52 @@ describe("the driver's state, pushed (PUSH1a)", () => {
     expect(since(answered, asked())['DAORIS.DRIVER.PERMISSION_WAITS']).toBe(1);
   });
 
-  /** A host older than the calls' push has no mark to wake the page: it keeps asking every few seconds while a session works. */
+  /**
+   * PUSH1d4 (D182 point 6): who needs the person is .NET's judgement, read once as its snapshot, the badge and the taskbar counting
+   * its rows. A tick reads none of what the band was judged from (the rules, the second opinions, the helpers' asks, the held calls,
+   * the work, the accounts), and a push moves the count with no read.
+   */
+  it('counts who needs the person from its snapshot, a tick reading none of its inputs and a push moving it with no read (PUSH1d4)', async () => {
+    host(true);
+    const client = await open();
+    const badge = () => invoke.mock.calls.filter(([module, type]) => module === 'DAORIS.WINDOWS' && type === 'SET_BADGE').at(-1)?.[2];
+    expect(client.getQueryData<{ rows: { id: string }[] }>(keys.attention)?.rows.map((row) => row.id)).toEqual(['a-1']);
+    expect(badge()).toEqual({ payload: { count: 1, description: '1 waiting on you' } });
+
+    const before = asked();
+    await act(async () => {
+      heard.get('DRIVER_TICK')?.({ events: [], considered: [], untrusted: [], waits: [] });
+      await vi.advanceTimersByTimeAsync(2_000);
+    });
+    const ticked = since(before, asked());
+    // The rules and the held calls are still asked at a tick, by the places that show them (the Agents place, the attended session's
+    // head), never for the band.
+    for (const route of ['OPINION_WAITS', 'HELPER_WAITS', 'WORK_STATE', 'ACCOUNTS', 'HARNESSES', 'STATE_SLICE']) {
+      expect(ticked[`DAORIS.DRIVER.${route}`], route).toBeUndefined();
+    }
+
+    const pushed = asked();
+    await act(async () => {
+      heard.get('STATE_PUSH')?.({
+        slice: 'attention', epoch: 'n1', partition: 'rows', seq: 2, status: 'ready', baseSeq: 1, removed: [],
+        data: { 'parked:a-2': { ...PARKED_ROW, id: 'a-2' } },
+      });
+      await vi.advanceTimersByTimeAsync(1_000);
+    });
+    expect(badge()).toEqual({ payload: { count: 2, description: '2 waiting on you' } });
+    expect(Object.keys(since(pushed, asked())).filter((route) => route.startsWith('DAORIS.DRIVER.'))).toEqual([]);
+  });
+
+  /**
+   * A host older than the calls' push has no mark to wake the page: the working session's own page keeps asking every few seconds.
+   * (The window's badge no longer asks at all: who needs the person is pushed, PUSH1d4.)
+   */
   it('keeps asking the held permissions every few seconds on a host that pushes no calls', async () => {
     host(false);
     vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => (/^\/api\/sessions(\?|$)/.test(String(input))
       ? Response.json([record('a-1', { state: 'working' })]) : respond(String(input)))));
+    window.localStorage.setItem('daoris.view', 'sessions');
+    window.localStorage.setItem('daoris.attending', 'a-1');
     await open();
     const before = asked();
     await later(20_000);
@@ -1143,9 +1195,9 @@ describe("the driver's state, pushed (PUSH1a)", () => {
     });
 
     expect(since(before, asked())['DAORIS.DRIVER.STATE']).toBe(1);
-    // And the lines with it: an older host's page pulls them at the tick, as before.
+    // And the lines with it: an older host's page pulls them at the tick, as before. (The work's pull is no longer Overview's: its
+    // badge and its band read who needs the person pushed, PUSH1d4; the PUSH1c2b cases hold the work's own pull.)
     expect(since(before, asked())['DAORIS.DRIVER.LINES']).toBe(1);
-    expect(asked().get('DAORIS.DRIVER.WORK_STATE')).toBeGreaterThan(0);
     // And the clean-up's list (PUSH1c4b).
     expect(since(before, asked())['DAORIS.DRIVER.SWEEP_PLAN']).toBe(1);
   });

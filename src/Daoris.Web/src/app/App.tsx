@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
-  useAsks, useQuests, useRefreshIndex, useRegistry, useRepositories, useSessions,
+  useQuests, useRefreshIndex, useRepositories, useSessions,
   useStatus, useSyncStanding, useWorkspaceHoldings, useWorkspaces,
 } from '../data/queries';
 import { useScope } from '../data/scope';
@@ -40,9 +40,9 @@ import {
 import { type SettingsAnchor, type SettingsSection, useSettingsLayout } from '../settings/SettingsView';
 import { ShellSignals } from './ShellSignals';
 import {
-  logEvent, useConsidered, useDismissUpdate, useDriver, useHarnesses, useLinkOpener, useOpenBrowser, useOpenWindow, useRemotes,
-  useHelperWaits, useOpinionWaits, useWorkState, useRules, useSayUpdate, useSessionGroups, useShowReviewAgain, useSyncNow, useTaskbarCount, useUntrusted, useUpdateState,
-  usePermissionWaits, useAnswerConfirmation, usePersonKey, useServiceConfirmations, useTerminalConfirmations, useUnkeyedHost,
+  logEvent, useAttention, useDismissUpdate, useDriver, useHarnesses, useLinkOpener, useOpenBrowser, useOpenWindow, useRemotes,
+  useSayUpdate, useShowReviewAgain, useSyncNow, useTaskbarCount, useUpdateState,
+  useAnswerConfirmation, usePersonKey, useServiceConfirmations, useTerminalConfirmations, useUnkeyedHost,
 } from '../bridge/shell';
 import { Confirmations } from '../person/Confirmations';
 import { byTool } from '../agents/tools';
@@ -62,9 +62,8 @@ import { MONITOR_WINDOW } from '../work/window';
 import { WorkFrame } from '../work/WorkFrame';
 import { ViewFrame, type ViewLayout } from '../work/frame/ViewFrame';
 import { ViewMain } from '../work/frame/ViewMain';
-import { type AttentionDoors, useAccountsKnown } from '../work/attention/AttentionBand';
+import type { AttentionDoors } from '../work/attention/AttentionBand';
 import type { Attention } from '../work/attention/AttentionRow';
-import { needsAPerson, waitingInSessions } from '../work/attention/attention';
 import { ActivityBar, AppStrip, type DriverPresence, StatusBar } from '../work/frame/frame';
 import { useWindowChrome, useWindowTitle } from './windowChrome';
 import { useSplashLift } from './splash';
@@ -277,32 +276,11 @@ export function App() {
   // second fetch — and both are absent in a browser, which is what the bar then says.
   const running = useSessions(null, false);
   const remotes = useRemotes();
-  const registry = useRegistry();
-  // The asks still waiting (INT4d), from the cache Quests fills — the count below includes them.
-  const asks = useAsks(false);
-  // The folders the driver is holding for the agent's trust (D73), from the tick. The band's row asks the question in
-  // place (UX6c); only the person's press grants it.
-  const untrusted = useUntrusted();
-  // The planner's verdicts as of the last tick: Sessions' badge counts the quests parked on their failed sessions
-  // (SESSUX1c, D126 §2.5), and Overview's, which counts the band, does too (SESSUX1i). Empty in a browser.
-  const considered = useConsidered();
-  // What agents proposed about the rules (PERM2): the menus count those waiting, and the band lists them.
-  const rules = useRules();
-  const proposals = Array.isArray(rules.data?.proposals) ? rules.data.proposals : [];
+  // Who needs the person, as the shell pushes it (PUSH1d4): Overview's badge counts the band's rows, Sessions' its own sessions
+  // waiting, both judged in .NET once for every window, so the badge and the band are one judgement. A browser has none.
+  const attention = useAttention();
   // The agents this machine has, for the Agents menu (UX6e): the roster the frame holds, asked once and kept.
   const roster = useHarnesses();
-  // Where Sessions' list places each session (D126): Overview's badge counts the work to review the band lists (UX6c).
-  // The frame reads the same answer under the same key on every view, so this asks nothing more; a browser has none.
-  const sessionGroups = useSessionGroups();
-  // The driver's own lists of what waits on the person, which the band reads too (WAITCOUNT1): an agent's ask for a helper
-  // (MIXAGENT2c) and a second opinion (XAGENT1g), the second asked only while there is work to review, as the band asks it.
-  const opinionWaits = useOpinionWaits((sessionGroups.data ?? []).some((placed) => placed.group === 'review'));
-  const helperWaits = useHelperWaits();
-  // And the tool calls the sessions hold for the person's answer under asking (AUTONOMY1b3c): each stands its turn still, so the
-  // badge counts it; asked every few seconds while a session works, as the band asks it, under the same key.
-  const permissionWaits = usePermissionWaits((running.data ?? []).some((session) => session.state === 'working' || session.state === 'starting'));
-  // The units whose clean-up waits on the person (FABRIC-MILESTONE1b): the same answer the band reads, so the badge and the band agree.
-  const workState = useWorkState();
   // The install's update (UPDATE1, D139): what is staged, the drain, and the person's word on it, as the banner's.
   const update = useUpdateState();
   const sayUpdate = useSayUpdate();
@@ -371,8 +349,6 @@ export function App() {
   });
   // Its badge (D150 §2.1): the accounts a list or a default holds that read signed out, in open's hue. A browser has none.
   const agentsWaiting = useAgentsWaiting();
-  // The same accounts as *What needs you* reads them, with the tick's waits (UX6d), for Overview's badge.
-  const accountsKnown = useAccountsKnown();
 
   // Whether the view in front has a list pane (D118 §3a), whose four doors — the strip's toggle, the View
   // menu's item, Ctrl+B and a press on its place — are absent where it has none, never disabled. A browser
@@ -461,17 +437,13 @@ export function App() {
     ? (driver.data.ready === false ? 'starting' : 'running')
     : driver.isError ? 'stopped' : 'absent';
   const liveSessions = (running.data ?? []).filter((s) => SESSION_ACTIVE.has(s.state)).length;
-  // Overview's badge, from the one derivation the band uses and every input it reads, the rule proposals, the parked
-  // quests (SESSUX1i) and the work to review (UX6c) among them — two answers to "how many need me" would disagree the
-  // first time either was edited. Sessions' badge is its own sessions only (U20). The accounts' rows too (UX6d), from the
-  // roster and the accounts' files the Agents badge reads, and the tick's waits.
-  const waiting = needsAPerson(
-    running.data ?? [], outstanding.data ?? [], registry.data ?? [], asks.data ?? [], untrusted.data ?? [],
-    proposals, considered.data ?? [], sessionGroups.data ?? [], accountsKnown, opinionWaits.data ?? [], helperWaits.data ?? [], workState.data?.units ?? [],
-    workState.data?.held ?? [], permissionWaits.data ?? []).length;
+  // Overview's badge, the band's own rows as .NET judged them (PUSH1d4) — two answers to "how many need me" would disagree the
+  // first time either was edited. Sessions' badge is its own sessions only (U20): those parked asking and the quests parked on
+  // their failed sessions, judged beside the rows. Nothing before the first judgement, which is no count yet.
+  const waiting = attention.state === 'known' ? attention.rows.length : 0;
   // The same count on the window's taskbar button and in its title (NOTIFY1b), so it is seen with the window behind others.
   useTaskbarCount(waiting, t('nav.waiting', { count: waiting }));
-  const sessionsWaiting = waitingInSessions(running.data ?? [], considered.data ?? []);
+  const sessionsWaiting = attention.state === 'known' ? attention.sessions : 0;
   // Where this circle stands with its remote (SYNC6b), from this machine's own host — so a browser on
   // the machine reads it too, and it says for itself whether the circle is wired. Before it answers,
   // the shell's map says; a browser with neither is not asked.

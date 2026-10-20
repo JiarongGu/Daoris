@@ -39,6 +39,7 @@
   "work.attention.unanswerableWhy": "`{{repository}}` is not on this deployment's register, so no agent will ever pull this quest.",
   "work.attention.since": "waiting {{span}}",
   "work.attention.nothing": "Nothing needs you",
+  "work.attention.needsApp": "What needs you is judged by the Daoris app: open the app to see what waits for your word.",
   "work.attention.working": "{{count}} session working",
   "work.attention.working_other": "{{count}} sessions working",
   "work.attention.more": "{{count}} more in Sessions",

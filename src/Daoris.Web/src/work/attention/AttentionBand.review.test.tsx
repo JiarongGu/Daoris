@@ -23,9 +23,17 @@ vi.mock('@shenora/react', async () => {
 });
 
 import i18n from '../../locales/i18n';
+import { keys } from '../../data/queries';
 import { WorkspaceScopeProvider } from '../../data/scope';
+import { composeAttention } from '../../bridge/shell';
 import { AttentionBand } from './AttentionBand';
-import { STEP_SHOWN } from '../gates/reviewFixtures';
+import { SET_UP, STEP_SHOWN } from '../gates/reviewFixtures';
+
+/** The set-up step's row as the shell pushes it (PUSH1d4): judged in .NET from the step's record. */
+const SHOWN = {
+  kind: 'set-up', id: 'q2', since: SET_UP.at, workspace: 'aurora', where: 'reports', setUp: { machine: 'desk', sequence: 7 },
+  local: true, session: 's9', environment: 'local', shows: SET_UP.shows,
+};
 
 const posts = () => vi.mocked(fetch).mock.calls
   .filter(([, init]) => init?.method === 'POST')
@@ -41,6 +49,7 @@ function start(notify = vi.fn(), post?: () => Response) {
   }));
   invoke.mockImplementation(async () => ({}));
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  client.setQueryData(keys.attention, composeAttention(new Map<string, unknown>([['rows', { 'set-up:q2': SHOWN }], ['sessions', {}]]), true));
   render(
     <QueryClientProvider client={client}>
       <Tooltip.Provider>

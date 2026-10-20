@@ -661,22 +661,6 @@ describe('every door names its item', () => {
     expect(within(list).getByRole('button', { name: /Read the media field names from config/ })).toHaveAttribute('aria-current', 'true');
   });
 
-  it("What needs you's ask row opens the ask, chosen as an ask", async () => {
-    ASKS = [{
-      id: '7c1e9a04b2d5', workspace: 'default', sentence: 'Cap the hydration per frame.', state: 'Proposed',
-      tier: 'declarations', asked: '2026-09-21T08:00:00Z', updated: '2026-09-21T08:00:00Z',
-      links: [], attachments: [], quests: [], proposal: [{ repository: 'engine', score: 3, matched: ['frame'] }],
-    }];
-    shell();
-    // UX6c: the row is named by its title, and its door is the press at its end, beside its acts.
-    const row = await screen.findByRole('listitem', { name: 'Cap the hydration per frame.' });
-    await userEvent.click(within(row).getByRole('button', { name: 'Open' }));
-
-    expect(await screen.findByRole('heading', { level: 1, name: 'Cap the hydration per frame.' })).toBeInTheDocument();
-    expect(within(screen.getByRole('main')).getByRole('button', { name: 'Publish to engine' })).toBeInTheDocument();
-    expect(window.localStorage.getItem('daoris.list.quests.chosen')).toBe('ask:7c1e9a04b2d5');
-  });
-
   it("the status bar's conflict opens its quest, chosen", async () => {
     SYNC = {
       workspace: 'aurora', wired: true, ahead: 0, behind: [], conflicts: ['5e7a11'],
@@ -737,8 +721,8 @@ describe('every door names its item', () => {
 });
 
 /**
- * *What needs you* (design §4). It is service data, so a browser sees it — knowing is the half
- * that travels — but the doors into Work are not offered where Work does not exist.
+ * *What needs you* (design §4). Who needs the person is judged by the app (PUSH1d4, D182 point 6), so a browser has no rows to
+ * show, and its band says so: the owner's decision. `sessionsBadge.test.tsx` holds the band, its count and its doors in a shell.
  */
 describe('the attention band', () => {
   beforeEach(() => {
@@ -755,62 +739,29 @@ describe('the attention band', () => {
     window.localStorage.removeItem('daoris.list.quests.chosen');
   });
 
-  /** UX6c (design §6.1): one line when nothing is waiting, never a card saying all clear, which is not read. */
-  it('is one line when nothing is waiting, never a card', async () => {
+  /**
+   * The owner's decision (PUSH1d4): a browser judges nothing, so a session parked at the service and a quest nobody can take are
+   * no rows here, and Overview's icon counts none. Its band says what needs you is the app's, never *Nothing needs you*.
+   */
+  it('says in a browser that what needs you is the app’s, listing and counting nothing', async () => {
+    SESSIONS = [{
+      id: 'p4rk3d00', quest: null, repository: 'engine', adapter: 'stub', kind: 'chat',
+      state: 'awaiting-person', note: 'two ways forward.',
+      created: '2026-09-21T09:00:00Z', updated: '2026-09-21T10:00:00Z',
+    }];
+    QUESTS = [{
+      id: '7a82cc', from: 'engine', to: 'retired', title: 'Expose a streaming budget',
+      body: 'a per-frame cap.', status: 'Open',
+      filed: '2026-09-01T00:00:00Z', updated: '2026-09-01T00:00:00Z',
+    }];
     shell();
-    await screen.findByRole('heading', { name: 'Overview' });
 
     const band = await screen.findByRole('region', { name: 'What needs you' });
-    expect(within(band).getByText('Nothing needs you')).toBeInTheDocument();
-    expect(within(band).queryByRole('heading')).toBeNull();
-  });
-
-  it('names a parked session and a quest nobody here can take', async () => {
-    SESSIONS = [{
-      id: 'p4rk3d00', quest: null, repository: 'engine', adapter: 'stub', kind: 'chat',
-      state: 'awaiting-person', note: 'two ways forward.',
-      created: '2026-09-21T09:00:00Z', updated: '2026-09-21T10:00:00Z',
-    }];
-    QUESTS = [{
-      id: '7a82cc', from: 'engine', to: 'retired', title: 'Expose a streaming budget',
-      body: 'a per-frame cap.', status: 'Open',
-      filed: '2026-09-01T00:00:00Z', updated: '2026-09-01T00:00:00Z',
-    }];
-
-    shell();
-
-    expect(await screen.findByText('What needs you')).toBeInTheDocument();
-    // UX6c: each in its group, the parked session holding work and the quest waiting for the person's word.
-    expect(within(screen.getByRole('group', { name: 'Holding work' })).getByText('parked at a checkpoint')).toBeInTheDocument();
-    expect(within(screen.getByRole('group', { name: 'Waiting for your word' })).getByText('nobody here can take this')).toBeInTheDocument();
-    // Work to review is a row of its own now, so the sentence that said it was not listed went with it; a browser has
-    // no Sessions, so nothing is ever ready for review there.
-    expect(screen.queryByText(/nothing yet keeps a record of what you have looked at/)).toBeNull();
-    expect(screen.queryByRole('group', { name: 'Ready for you' })).toBeNull();
-  });
-
-  /**
-   * 🔴 A badge counts what its place holds (UX5 U20, the owner's choice). The band's count is
-   * Overview's, beside the band that lists it; it rode the Sessions icon, which held a sixth of it.
-   */
-  it("puts the band's count on Overview's icon, in the waiting hue", async () => {
-    SESSIONS = [{
-      id: 'p4rk3d00', quest: null, repository: 'engine', adapter: 'stub', kind: 'chat',
-      state: 'awaiting-person', note: 'two ways forward.',
-      created: '2026-09-21T09:00:00Z', updated: '2026-09-21T10:00:00Z',
-    }];
-    QUESTS = [{
-      id: '7a82cc', from: 'engine', to: 'retired', title: 'Expose a streaming budget',
-      body: 'a per-frame cap.', status: 'Open',
-      filed: '2026-09-01T00:00:00Z', updated: '2026-09-01T00:00:00Z',
-    }];
-    shell();
-
-    await screen.findByText('What needs you');
-    const bar = screen.getByRole('navigation', { name: 'Views' });
-    const overview = within(bar).getByRole('button', { name: 'Overview' });
-    await waitFor(() => expect(within(overview).getByText('2')).toBeInTheDocument());
-    expect(within(overview).getByText('2').className).toContain('text-ink-open');
+    expect(within(band).getByText('What needs you is judged by the Daoris app: open the app to see what waits for your word.')).toBeInTheDocument();
+    expect(within(band).queryByRole('listitem')).toBeNull();
+    expect(within(band).queryByText('Nothing needs you')).toBeNull();
+    const overview = within(screen.getByRole('navigation', { name: 'Views' })).getByRole('button', { name: 'Overview' });
+    expect(within(overview).queryByText(/^\d+$/)).toBeNull();
   });
 
   /**
@@ -834,69 +785,6 @@ describe('the attention band', () => {
     expect(within(screen.getByRole('main')).getByRole('button', { name: /^Details/ })).toHaveTextContent('#5e7a11');
   });
 
-  /**
-   * A door opens something, or it is not a door (platform language §4). A browser has no Sessions, so
-   * a parked row is text there; a quest nobody can take opens its own page, which a browser has.
-   */
-  it('makes a row a door only where its destination exists', async () => {
-    SESSIONS = [{
-      id: 'p4rk3d00', quest: null, repository: 'engine', adapter: 'stub', kind: 'chat',
-      state: 'awaiting-person', note: 'two ways forward.',
-      created: '2026-09-21T09:00:00Z', updated: '2026-09-21T10:00:00Z',
-    }];
-    QUESTS = [{
-      id: '7a82cc', from: 'engine', to: 'retired', title: 'Expose a streaming budget',
-      body: 'a per-frame cap.', status: 'Open',
-      filed: '2026-09-01T00:00:00Z', updated: '2026-09-01T00:00:00Z',
-    }];
-    shell();
-
-    const parked = await screen.findByRole('listitem', { name: 'Chat' });
-    expect(within(parked).queryByRole('button')).toBeNull();
-    expect(within(parked).getByText('two ways forward.')).toBeInTheDocument();
-
-    const nobody = screen.getByRole('listitem', { name: 'Expose a streaming budget' });
-    await userEvent.click(within(nobody).getByRole('button', { name: 'Open' }));
-    await screen.findByRole('heading', { level: 1, name: 'Expose a streaming budget' });
-    expect(within(screen.getByRole('main')).getByRole('button', { name: /^Details/ })).toHaveTextContent('#7a82cc');
-  });
-
-  /**
-   * INT4d: an ask waits on a person — a proposal only a person publishes, or an intake that parked
-   * asking — and its row is a door into the ask's record in Quests, where the answer is. The parked
-   * intake is a session awaiting a person too, and is counted once: as the ask.
-   */
-  it('names each ask waiting on a person once, and opens its record where it is answered', async () => {
-    const proposed = {
-      id: '7c1e9a04b2d5', workspace: 'default', sentence: 'Cap the hydration per frame.\n\nThe trace is attached.',
-      state: 'Proposed', tier: 'declarations', asked: '2026-09-21T08:00:00Z', updated: '2026-09-21T08:00:00Z',
-      links: [], attachments: [], quests: [],
-      proposal: [{ repository: 'engine', score: 3, matched: ['frame', 'hydration'] }],
-    };
-    ASKS = [
-      proposed,
-      { ...proposed, id: '0b9f3c21aa77', sentence: 'Tidy the release notes.', proposal: [], intake: 'i9n8t7k6' },
-    ];
-    SESSIONS = [{
-      id: 'i9n8t7k6', quest: null, repository: 'ask #0b9f3c21aa77', adapter: 'stub', kind: 'chat',
-      state: 'awaiting-person', ask: '0b9f3c21aa77', note: 'published nothing: it asks you rather than guess.',
-      created: '2026-09-21T09:00:00Z', updated: '2026-09-21T09:30:00Z',
-    }];
-    try {
-      shell();
-
-      expect(await screen.findByText('proposed, not yet published')).toBeInTheDocument();
-      expect(screen.getByText('its intake asked you')).toBeInTheDocument();
-      expect(screen.queryByText('parked at a checkpoint')).toBeNull();
-
-      const row = screen.getByRole('listitem', { name: 'Cap the hydration per frame.' });
-      await userEvent.click(within(row).getByRole('button', { name: 'Open' }));
-      await screen.findByRole('heading', { level: 1, name: 'Cap the hydration per frame.' });
-      expect(within(screen.getByRole('main')).getByRole('button', { name: 'Publish to engine' })).toBeInTheDocument();
-    } finally {
-      ASKS = [];
-    }
-  });
 });
 
 /**
