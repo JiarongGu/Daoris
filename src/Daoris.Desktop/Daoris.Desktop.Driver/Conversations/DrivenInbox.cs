@@ -52,6 +52,22 @@ public sealed class DrivenInbox(Action<ChatQueue> changed)
     private Action? _closing;
     private Action<ChatMessage>? _withdrawn;
 
+    // COWORK1c (the message-urgency design §6): the session's one dispatcher. Words are kept on the record one at a time, so the order
+    // they are held in is the record's; each keep on its way holds the inbox open, and each kept word leaves the record by its id, in
+    // order, once on its way to the wire, before the inbox closes.
+    private readonly SemaphoreSlim _keeping = new(1, 1);
+    private int _keepsOnTheirWay;
+    private TaskCompletionSource _keepsLanded = Landed();
+    private ISaidDoor? _door;
+    private Task _takingOff = Task.CompletedTask;
+    // Ids a take-off could not take, tried again with the next one, and once more before the inbox closes.
+    private readonly List<string> _untaken = [];
+    private bool _triedAgain;
+    // The record's ids this inbox held, so a producer's retry under a held key holds nothing twice.
+    private readonly HashSet<string> _known = new(StringComparer.Ordinal);
+    private Func<bool>? _personStopped;
+    private Action<IReadOnlyList<ChatMessage>>? _left;
+
     /// <summary>Where it stands: a turn is running while it is open, and what is held waits for its end.</summary>
     public ChatQueue State
     {
@@ -204,77 +220,277 @@ public sealed class DrivenInbox(Action<ChatQueue> changed)
     {
         lock (_gate)
         {
-            // Daoris's own words are no word of the person's to edit (COWORK1b): the page never lists them.
-            var at = _closed ? -1 : _held.FindIndex(message => message.Id == id && message.Daoris is null);
+            var at = HeldAt(id);
             if (at < 0) return QueueEdit.Taken;
-
-            var old = _held[at];
-            // A word said before the door was known was never told: the record has nothing of it to settle.
-            var told = _reach is not null;
-            ChatMessage? word = text is null && level is null
-                ? null
-                : old with { Text = text ?? old.Text, Id = text is null ? old.Id : $"said-{++_said}", Level = level ?? old.Level };
-            _held.RemoveAt(at);
-
-            if (told && (word is null || text is not null))
-            {
-                try
-                {
-                    _withdrawn?.Invoke(old);
-                }
-                catch (Exception error) when (error is not OperationCanceledException)
-                {
-                    // The record misses it; the queue has moved either way.
-                }
-            }
-
-            if (word is not null)
-            {
-                if (word.Level == MessageLevel.Now && _reach == DrivenReach.NextStep && _flowing && _steer is { } steer)
-                {
-                    Tell(word, DrivenReach.Steered);
-                    Steer(steer, word);
-                }
-                else if (GoesAtNextStep(word))
-                {
-                    Tell(word, DrivenReach.NextStep);
-                    Send(word);
-                }
-                else
-                {
-                    _held.Insert(at, word);
-                    if (told) Tell(word, ReachOf(word.Level));
-                }
-            }
-
-            Publish();
-            return QueueEdit.Done;
+            return Edited(at, text, level, text is null ? null : $"said-{++_said}", kept: false);
         }
     }
 
-    /// <summary>Called once, when it closes — how the registry forgets it.</summary>
-    internal void OnClosing(Action closing)
+    /// <summary>
+    /// <see cref="Edit"/>, and a word kept on the record reworded as a word said is kept (COWORK1c): the new words on the record first,
+    /// under their own id, then in the old one's place, which leaves the record. One taken while the new words were kept is the
+    /// session's, and the new words leave the record again. Where the record will not keep them, they are held in this process alone.
+    /// </summary>
+    public async Task<QueueEdit> EditAsync(string id, string? text, MessageLevel? level = null, CancellationToken ct = default)
     {
-        lock (_gate) _closing = closing;
+        ISaidDoor? door;
+        lock (_gate)
+        {
+            var at = HeldAt(id);
+            door = _door;
+            if (at < 0 || text is null || !_held[at].Kept || door is null) return Edit(id, text, level);
+        }
+
+        await _keeping.WaitAsync(ct).ConfigureAwait(false);
+        try
+        {
+            ChatMessage old;
+            lock (_gate)
+            {
+                var at = HeldAt(id);
+                if (at < 0) return QueueEdit.Taken;
+                old = _held[at];
+            }
+
+            SayAnswer said;
+            try
+            {
+                said = await door.KeepAsync(old with { Text = text, Level = level ?? old.Level, Key = null, Id = null, Kept = false }, ct)
+                    .ConfigureAwait(false);
+            }
+            catch (Exception error) when (error is HttpRequestException or DriverException
+                                              || (error is OperationCanceledException && !ct.IsCancellationRequested))
+            {
+                said = new SayAnswer(false, error.Message);
+            }
+
+            lock (_gate)
+            {
+                var at = HeldAt(id);
+                var kept = said is { Kept: true, Word.Id: { } newId } ? newId : null;
+                if (at < 0)
+                {
+                    if (kept is not null) TakeOff([new ChatMessage(text, []) { Id = kept, Kept = true }]);
+                    return QueueEdit.Taken;
+                }
+
+                if (kept is not null) _known.Add(kept);
+                return Edited(at, text, level, kept ?? $"said-{++_said}", kept: kept is not null);
+            }
+        }
+        finally
+        {
+            _keeping.Release();
+        }
+    }
+
+    /// <summary>Where a word of the person's is held, by its id; -1 once closed. Daoris's own words are no word of theirs to edit (COWORK1b).</summary>
+    private int HeldAt(string id) => _closed ? -1 : _held.FindIndex(message => message.Id == id && message.Daoris is null);
+
+    /// <summary>
+    /// The held word at <paramref name="at"/> taken back, reworded under <paramref name="newId"/>, or at a new level. A kept word
+    /// taken back or reworded leaves the record (COWORK1c), so a restart never brings back what the person changed. Called under the gate.
+    /// </summary>
+    private QueueEdit Edited(int at, string? text, MessageLevel? level, string? newId, bool kept)
+    {
+        var old = _held[at];
+        // A word said before the door was known was never told: the record has nothing of it to settle.
+        var told = _reach is not null;
+        ChatMessage? word = text is null && level is null
+            ? null
+            : old with
+            {
+                Text = text ?? old.Text, Id = text is null ? old.Id : newId, Level = level ?? old.Level, Kept = text is null ? old.Kept : kept,
+            };
+        _held.RemoveAt(at);
+        if (word is null || text is not null) TakeOff([old]);
+
+        if (told && (word is null || text is not null))
+        {
+            try
+            {
+                _withdrawn?.Invoke(old);
+            }
+            catch (Exception error) when (error is not OperationCanceledException)
+            {
+                // The record misses it; the queue has moved either way.
+            }
+        }
+
+        if (word is not null)
+        {
+            if (word.Level == MessageLevel.Now && _reach == DrivenReach.NextStep && _flowing && _steer is { } steer)
+            {
+                Tell(word, DrivenReach.Steered);
+                Steer(steer, word);
+            }
+            else if (GoesAtNextStep(word))
+            {
+                Tell(word, DrivenReach.NextStep);
+                Send(word);
+            }
+            else
+            {
+                _held.Insert(at, word);
+                if (told) Tell(word, ReachOf(word.Level));
+            }
+        }
+
+        Publish();
+        return QueueEdit.Done;
+    }
+
+    /// <summary>Called once, when it closes — how the registry forgets it.</summary>
+    /// <param name="personStopped">
+    /// Whether the person stopped the session (COWORK1c), asked as it closes: then the words kept for its run leave the record with
+    /// it, as they always left the session; closed by anything else, they stay on the record for the session's go-on.
+    /// </param>
+    /// <param name="left">Told the words kept for the run that stay on the record as it closes under them (COWORK1c).</param>
+    internal void OnClosing(Action closing, Func<bool>? personStopped = null, Action<IReadOnlyList<ChatMessage>>? left = null)
+    {
+        lock (_gate)
+        {
+            _closing = closing;
+            _personStopped = personStopped;
+            _left = left;
+        }
+    }
+
+    /// <summary>
+    /// The take-offs on their way (COWORK1c), in order: what completes once every kept word handed to the wire so far has left the
+    /// record, or failed to and waits to be tried again. Never faults.
+    /// </summary>
+    public Task TakingOff
+    {
+        get
+        {
+            lock (_gate) return _takingOff;
+        }
+    }
+
+    /// <summary>
+    /// Keep a word for the run on the session's record first, then take it as <see cref="Hold"/> or, at <c>now</c>,
+    /// <see cref="HoldNowAsync"/> takes it, under the record's id (COWORK1c, D188 point 6; the message-urgency design §6). One keep
+    /// at a time: two said at once are held in the order the record kept them, whichever write answered first (trap 20). A keep on
+    /// its way holds the inbox open, so a word said as the turn ends is taken by this run. A word the record answers by a key it
+    /// already holds is held once.
+    /// </summary>
+    /// <remarks>
+    /// <para><b>Kept before told.</b> The record keeps the word, then the inbox tells it with where it reaches the session; a word the
+    /// record refused is never held, and its caller says so.</para>
+    ///
+    /// <para><b>Closed meanwhile</b> (<see cref="InboxKeep.OnRecord"/>), the word waits on the record and the session's go-on takes
+    /// it, as words said to an ended record go on. <b>Closed before</b>, nothing is kept (<see cref="InboxKeep.Closed"/>).</para>
+    /// </remarks>
+    /// <exception cref="HttpRequestException">The record did not answer: nothing holds the word.</exception>
+    public async Task<InboxKept> KeepAsync(ISaidDoor door, ChatMessage message, CancellationToken ct)
+    {
+        lock (_gate)
+        {
+            if (_closed) return InboxKept.Closed;
+            if (_keepsOnTheirWay++ == 0) _keepsLanded = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        }
+
+        try
+        {
+            await _keeping.WaitAsync(ct).ConfigureAwait(false);
+            try
+            {
+                lock (_gate)
+                {
+                    if (_closed) return InboxKept.Closed;
+                }
+
+                var said = await door.KeepAsync(message, ct).ConfigureAwait(false);
+                if (!said.Kept || said.Word?.Id is not { } id) return new InboxKept(InboxKeep.Refused, said);
+
+                lock (_gate)
+                {
+                    _door ??= door;
+                    if (_closed) return new InboxKept(InboxKeep.OnRecord, said);
+
+                    var kept = message with { Id = id, Kept = true };
+                    var reach = _reach is null ? (DrivenReach?)null : ReachOf(kept.Level);
+                    // A producer's retry under the key of a word held already (trap 19): held once.
+                    if (!_known.Add(id)) return new InboxKept(InboxKeep.Held, said) { Reach = reach };
+                    if (kept.Level == MessageLevel.Now) return new InboxKept(InboxKeep.Held, said) { Reach = _reach, Now = NowHeld(kept) };
+
+                    HoldHere(kept);
+                    return new InboxKept(InboxKeep.Held, said) { Reach = reach };
+                }
+            }
+            finally
+            {
+                _keeping.Release();
+            }
+        }
+        finally
+        {
+            TaskCompletionSource? landed = null;
+            lock (_gate)
+            {
+                if (--_keepsOnTheirWay == 0) landed = _keepsLanded;
+            }
+
+            landed?.TrySetResult();
+        }
+    }
+
+    /// <summary>
+    /// <see cref="KeepAsync"/> where the record can keep the word, and held in this process alone, as before, where it cannot: no
+    /// service yet (<paramref name="door"/> null), one from before COWORK1c that refuses a running record, a record that refuses it
+    /// for any reason, or one that did not answer. Words said to a session this process runs are never lost to a record that will not
+    /// keep them; a restart loses only those. Never <see cref="InboxKeep.Refused"/>.
+    /// </summary>
+    public async Task<InboxKept> KeepOrHoldAsync(ISaidDoor? door, ChatMessage message, CancellationToken ct)
+    {
+        if (door is not null)
+        {
+            try
+            {
+                var kept = await KeepAsync(door, message, ct).ConfigureAwait(false);
+                if (kept.Outcome != InboxKeep.Refused) return kept;
+            }
+            catch (Exception error) when (error is HttpRequestException or DriverException or ObjectDisposedException
+                                              or System.Text.Json.JsonException
+                                              || (error is OperationCanceledException && !ct.IsCancellationRequested))
+            {
+                // Unanswered: held here alone, below.
+            }
+        }
+
+        if (message.Level == MessageLevel.Now)
+        {
+            return await HoldNowAsync(message).ConfigureAwait(false) is { } now
+                ? new InboxKept(InboxKeep.Held) { Reach = ReachAt(MessageLevel.Now), Now = now }
+                : InboxKept.Closed;
+        }
+
+        return Hold(message) ? new InboxKept(InboxKeep.Held) { Reach = ReachAt(message.Level) } : InboxKept.Closed;
     }
 
     /// <summary>
     /// Take the person's words at the level they carry (COWORK1a): told at once with where they reach the session, then sent where
     /// the agent takes them during its turn and they are urgent, or held for the turn's end. False once the session has stopped
-    /// taking any: it is ending.
+    /// taking any: it is ending. Held in this process alone: what the record keeps first goes through <see cref="KeepAsync"/>.
     /// </summary>
     public bool Hold(ChatMessage message)
     {
         lock (_gate)
         {
             if (_closed) return false;
-            var said = message with { Id = $"said-{++_said}" };
-            if (_reach is not null) Tell(said, ReachOf(said.Level));
-            if (GoesAtNextStep(said)) Send(said);
-            else _held.Add(said);
-            Publish();
+            HoldHere(message with { Id = $"said-{++_said}" });
             return true;
         }
+    }
+
+    /// <summary>Told with where it reaches, then sent at the next step or held for the turn's end, under its own id. Called under the gate.</summary>
+    private void HoldHere(ChatMessage said)
+    {
+        if (_reach is not null) Tell(said, ReachOf(said.Level));
+        if (GoesAtNextStep(said)) Send(said);
+        else _held.Add(said);
+        Publish();
     }
 
     /// <summary>
@@ -299,24 +515,28 @@ public sealed class DrivenInbox(Action<ChatQueue> changed)
         lock (_gate)
         {
             if (_closed) return Task.FromResult<SentNow?>(null);
-            var now = message with { Level = MessageLevel.Now };
-            var onTheirWay = _sent.Any(answer => !answer.IsCompleted);
-            if (_reach == DrivenReach.NextStep && _flowing && _steer is { } steer)
-            {
-                var said = now with { Id = $"said-{++_said}" };
-                Tell(said, DrivenReach.Steered);
-                Steer(steer, said);
-                Publish();
-                return Task.FromResult<SentNow?>(new SentNow(SendNowWhy.Spelled(DrivenReach.Steered), Now: true, Why: null));
-            }
-
-            var reach = _reach;
-            Hold(now);
-            var why = reach is null || reach == DrivenReach.NextStep && !_flowing ? SendNowWhy.Opening
-                : reach == DrivenReach.NextStep && onTheirWay ? SendNowWhy.Behind
-                : SendNowWhy.NoInterrupt;
-            return Task.FromResult<SentNow?>(new SentNow(SendNowWhy.Spelled(reach), Now: false, why));
+            return Task.FromResult<SentNow?>(NowHeld(message with { Level = MessageLevel.Now, Id = $"said-{++_said}" }));
         }
+    }
+
+    /// <summary>A word at <c>now</c> under its own id, steered where the agent steers, held as an urgent word anywhere else. Called under the gate.</summary>
+    private SentNow NowHeld(ChatMessage said)
+    {
+        var onTheirWay = _sent.Any(answer => !answer.IsCompleted);
+        if (_reach == DrivenReach.NextStep && _flowing && _steer is { } steer)
+        {
+            Tell(said, DrivenReach.Steered);
+            Steer(steer, said);
+            Publish();
+            return new SentNow(SendNowWhy.Spelled(DrivenReach.Steered), Now: true, Why: null);
+        }
+
+        var reach = _reach;
+        HoldHere(said);
+        var why = reach is null || reach == DrivenReach.NextStep && !_flowing ? SendNowWhy.Opening
+            : reach == DrivenReach.NextStep && onTheirWay ? SendNowWhy.Behind
+            : SendNowWhy.NoInterrupt;
+        return new SentNow(SendNowWhy.Spelled(reach), Now: false, why);
     }
 
     /// <summary>
@@ -330,7 +550,8 @@ public sealed class DrivenInbox(Action<ChatQueue> changed)
         lock (_gate)
         {
             if (_closed) return false;
-            _held.Insert(0, message);
+            // Off the record once steered (COWORK1c): held again in this process alone.
+            _held.Insert(0, message with { Kept = false });
             Publish();
             return true;
         }
@@ -379,6 +600,20 @@ public sealed class DrivenInbox(Action<ChatQueue> changed)
                 next = new DrivenNext(_held[0], null);
                 _held.RemoveAt(0);
                 _turn++;
+                // COWORK1c: on its way to the wire, so off the record by its id.
+                TakeOff([next.Held!]);
+            }
+            else if (_keepsOnTheirWay > 0)
+            {
+                // 🔴 COWORK1c: a word on its way to the record is this run's, so the inbox stays open for it rather than leave it on a
+                // record that concludes under it.
+                next = new DrivenNext(null, null) { Waits = _keepsLanded.Task };
+            }
+            else if (!_takingOff.IsCompleted || (_untaken.Count > 0 && !_triedAgain))
+            {
+                // 🔴 COWORK1c: every word the session took is off the record before it can end, or a go-on would say it again.
+                if (_takingOff.IsCompleted) TryAgain();
+                next = new DrivenNext(null, null) { Waits = _takingOff };
             }
             else
             {
@@ -409,6 +644,7 @@ public sealed class DrivenInbox(Action<ChatQueue> changed)
                 next = _held[0];
                 _held.RemoveAt(0);
                 _turn++;
+                TakeOff([next]);
             }
             else if (_sent.Count > 0 || _steered.Count > 0)
             {
@@ -442,6 +678,8 @@ public sealed class DrivenInbox(Action<ChatQueue> changed)
             taken = [.. _held];
             _held.Clear();
             if (taken.Count > 0) _turn++;
+            // COWORK1c: the resumed run carries them, so off the record by their ids.
+            TakeOff(taken);
             if (taken.Count == 0 && _sent.Count == 0 && _steered.Count == 0)
             {
                 _closed = true;
@@ -460,10 +698,18 @@ public sealed class DrivenInbox(Action<ChatQueue> changed)
     /// can say so rather than drop the person's words without a trace. A word already sent is the session's: the run
     /// says which of those it never took.
     /// </summary>
+    /// <remarks>
+    /// 🔴 <b>Nothing undelivered vanishes</b> (COWORK1c, the message-urgency design §6): a word kept on the record stays there when the
+    /// session closes under it (its door failed, the shell shut down), told as left (<see cref="OnClosing"/>), and the session's go-on
+    /// takes it; only words held in this process alone come back. Where the person stopped the session, the kept words leave the
+    /// record and come back with the rest, as a stop always ended them, rather than restart what the person stopped.
+    /// </remarks>
     public IReadOnlyList<ChatMessage> Close()
     {
         Action? closing;
         List<ChatMessage> left;
+        List<ChatMessage> stays = [];
+        Action<IReadOnlyList<ChatMessage>>? told = null;
         lock (_gate)
         {
             if (_closed) return [];
@@ -473,11 +719,106 @@ public sealed class DrivenInbox(Action<ChatQueue> changed)
             _steered.Clear();
             _closed = true;
             closing = _closing;
+            if (left.Any(word => word.Kept))
+            {
+                if (PersonStopped())
+                {
+                    TakeOff(left);
+                }
+                else
+                {
+                    stays = [.. left.Where(word => word.Kept)];
+                    left = [.. left.Where(word => !word.Kept)];
+                    told = _left;
+                }
+            }
+
             Publish();
         }
 
         closing?.Invoke();
+        if (stays.Count > 0)
+        {
+            try
+            {
+                told?.Invoke(stays);
+            }
+            catch (Exception error) when (error is not OperationCanceledException)
+            {
+                // The words wait on the record either way; whoever shows them misses the line.
+            }
+        }
+
         return left;
+    }
+
+    /// <summary>Whether the person stopped the session, as the registry knows it. Called under the gate; a failed answer is no stop.</summary>
+    private bool PersonStopped()
+    {
+        try
+        {
+            return _personStopped?.Invoke() == true;
+        }
+        catch (Exception error) when (error is not OperationCanceledException)
+        {
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// Kept words on their way to the wire, or taken back (COWORK1c): off the record by their ids, after every take-off before them,
+    /// awaited in order and never fired and forgotten (the design §6). One that fails is tried again with the next, and once more
+    /// before the inbox closes. Called under the gate.
+    /// </summary>
+    private void TakeOff(IReadOnlyList<ChatMessage> words)
+    {
+        if (_door is not { } door) return;
+        List<string> ids = [.. words.Where(word => word.Kept && word.Id is not null).Select(word => word.Id!)];
+        if (ids.Count == 0) return;
+        _takingOff = TakeOffAfterAsync(_takingOff, door, ids);
+    }
+
+    /// <summary>The take-offs that failed, tried once more as the inbox would close. Called under the gate.</summary>
+    private void TryAgain()
+    {
+        _triedAgain = true;
+        if (_door is { } door) _takingOff = TakeOffAfterAsync(_takingOff, door, []);
+    }
+
+    /// <summary>One take-off, after the one before it; never faults, and what it could not take waits for the next.</summary>
+    private async Task TakeOffAfterAsync(Task before, ISaidDoor door, IReadOnlyList<string> ids)
+    {
+        await before.ConfigureAwait(false);
+        List<string> taking;
+        lock (_gate)
+        {
+            taking = [.. _untaken, .. ids];
+            _untaken.Clear();
+        }
+
+        if (taking.Count == 0) return;
+        bool taken;
+        try
+        {
+            taken = await door.TakeOffAsync(taking, CancellationToken.None).ConfigureAwait(false);
+        }
+        catch (Exception error) when (error is HttpRequestException or DriverException or OperationCanceledException
+                                          or ObjectDisposedException or System.Text.Json.JsonException)
+        {
+            taken = false;
+        }
+
+        if (!taken)
+        {
+            lock (_gate) _untaken.InsertRange(0, taking);
+        }
+    }
+
+    private static TaskCompletionSource Landed()
+    {
+        var landed = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        landed.SetResult();
+        return landed;
     }
 
     /// <summary>
@@ -564,6 +905,8 @@ public sealed class DrivenInbox(Action<ChatQueue> changed)
         // Observed here as well as by the run, which may have ended before it reads this one.
         _ = answer.ContinueWith(static sent => sent.Exception, TaskScheduler.Default);
         _sent.Enqueue(answer);
+        // COWORK1c: handed to the wire, so off the record by its id.
+        TakeOff([message]);
         // COWORK1b: Daoris's word at the next step went now, as the look that held it judged it.
         DaorisWords.Delivered(message);
     }
@@ -583,6 +926,7 @@ public sealed class DrivenInbox(Action<ChatQueue> changed)
 
         _ = answer.ContinueWith(static steered => steered.Exception, TaskScheduler.Default);
         _steered.Enqueue(answer);
+        TakeOff([message]);
     }
 
     /// <summary>Tell the record what was said. Called under the gate, so told in order; a listener's failure is its own.</summary>

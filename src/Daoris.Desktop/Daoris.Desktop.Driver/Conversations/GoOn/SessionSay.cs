@@ -166,18 +166,27 @@ public sealed class LoopWords(SessionProcesses processes, Func<ServiceClient?> s
         if (processes.InboxOf(id) is { } inbox)
         {
             // The terminal's level (COWORK1a) goes by the door it has, as the screen's press does: now by DrivenInbox.HoldNowAsync
-            // (STEER2c), ordinary and urgent by its hold, each answered with where it reaches the session.
+            // (STEER2c), ordinary and urgent by its hold, each answered with where it reaches the session. COWORK1c: kept on the record
+            // first under the request's key, then held by the session's one dispatcher under the record's id.
             var level = request.Asked;
-            if (level == MessageLevel.Now && await inbox.HoldNowAsync(new ChatMessage(text, [])).ConfigureAwait(false) is { } sentNow)
+            var kept = await inbox
+                .KeepOrHoldAsync(
+                    service() is { } keeping ? new SaidDoor(keeping, id) : null,
+                    new ChatMessage(text, []) { Level = level, Key = request.Key is { Length: > 0 } key ? $"request/{key}" : null }, ct)
+                .ConfigureAwait(false);
+            switch (kept)
             {
-                _ = WordsOnAsk.Keep(service(), id, text);
-                return new WordsHeld(true, sentNow.Reaches, sentNow.Why) { Now = sentNow.Now };
-            }
-
-            if (level != MessageLevel.Now && inbox.Hold(new ChatMessage(text, []) { Level = level }))
-            {
-                _ = WordsOnAsk.Keep(service(), id, text);
-                return new WordsHeld(true, Spelled(inbox.ReachAt(level)), null);
+                case { Outcome: InboxKeep.Held, Now: { } sentNow }:
+                    _ = WordsOnAsk.Keep(service(), id, text);
+                    return new WordsHeld(true, sentNow.Reaches, sentNow.Why) { Now = sentNow.Now, Word = kept.Said?.Word?.Id };
+                case { Outcome: InboxKeep.Held }:
+                    _ = WordsOnAsk.Keep(service(), id, text);
+                    return new WordsHeld(true, Spelled(kept.Reach), null) { Word = kept.Said?.Word?.Id };
+                case { Outcome: InboxKeep.OnRecord, Said.Word: { } waiting }:
+                    // Its run stopped taking words as they were kept: they wait on its record, and its go-on takes them.
+                    Events?.Keep(id, Shown(waiting, request.By), null);
+                    Nudge?.Invoke(id);
+                    return new WordsHeld(true, "resume", null) { Word = waiting.Id };
             }
         }
 

@@ -34,9 +34,22 @@ public sealed record ChatMessage(string Text, IReadOnlyList<KeptFile> Files)
 
     /// <summary>
     /// The words' id in a driven session's record (STEER1, D136), stamped by its inbox: it pairs the words shown at once,
-    /// while they wait, with the same words where the session took them. Null for a conversation's message.
+    /// while they wait, with the same words where the session took them. Null for a conversation's message. A word kept on the
+    /// record's <c>said</c> (COWORK1c) carries the record's own id for it.
     /// </summary>
     public string? Id { get; init; }
+
+    /// <summary>
+    /// Its producer's key (COWORK1c, the message-urgency design §6): one per press of the person's, so a press that arrives twice keeps
+    /// one word. Daoris's words carry their fact's key on <see cref="Daoris"/>. Null for a word kept with none.
+    /// </summary>
+    public string? Key { get; init; }
+
+    /// <summary>
+    /// Kept on the session's record before anything held it (COWORK1c), under <see cref="Id"/>: taken off it by that id once on the
+    /// wire. False for words held in this process alone (a channel message, a word a service from before would not keep).
+    /// </summary>
+    internal bool Kept { get; init; }
 
     /// <summary>
     /// The person's words a conversation goes on with (MSG1c, D137 §2.2), kept on its record while it had ended: its first

@@ -503,6 +503,18 @@ public sealed record SaidWordView(string? Id, string Text, DateTimeOffset At, IR
     /// <summary>Its producer's key (COWORK1b, the design §6): Daoris's fact's, read by <see cref="DaorisKeys"/>; null for a word kept with none.</summary>
     public string? Key { get; init; }
 
+    /// <summary>
+    /// When its sender asked it to reach a working session (COWORK1c, the design §9); null for a word kept with none, which reads as
+    /// its old reach: the person's as urgent, any other as ordinary.
+    /// </summary>
+    public MessageLevel? Level { get; init; }
+
+    /// <summary>
+    /// When a dispatcher first wrote it to a harness (COWORK1c, the design §6): a word with one, still waiting when a shell comes up,
+    /// may have reached the agent. Null for a word never attempted, and a host's from before the field.
+    /// </summary>
+    public DateTimeOffset? Attempt { get; init; }
+
     /// <summary>Whether these are Daoris's own words (COWORK1b): read from its mark, never its sentence.</summary>
     public bool Daoris => From == DaorisWords.From;
 

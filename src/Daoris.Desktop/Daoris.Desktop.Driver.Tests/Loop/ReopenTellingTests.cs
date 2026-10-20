@@ -1,5 +1,6 @@
 using System.Text.Json.Nodes;
 using Daoris.Driver;
+using Daoris.Driver.Tests;
 
 namespace Daoris.Desktop.Driver.Tests;
 
@@ -82,6 +83,11 @@ public sealed class ReopenTellingTests : IDisposable
             Dropped.Add((session, [.. words.Select(word => word.Id)]));
             return Task.CompletedTask;
         }
+
+        /// <summary>A running record's <c>said</c> (COWORK1c), where a test gives one; none holds Daoris's words in the inbox alone.</summary>
+        public StandInSaid? Running { get; set; }
+
+        public ISaidDoor? SaidOf(string session) => Running;
     }
 
     /// <summary>A source as the service lists it, read through the driver's own client: reopened unless <paramref name="sequence"/> is none.</summary>
@@ -227,6 +233,42 @@ public sealed class ReopenTellingTests : IDisposable
         Assert.Equal(stands, new ReopenMarks(_home).Told("s1", "q1", Source().Reopened!));
         Assert.Empty(await LookAsync(telling, doors, Look(Source())));
         Assert.Empty(doors.Said);
+    }
+
+    /// <summary>
+    /// COWORK1c (the message-urgency design §6): Daoris's words to a running session are kept on its record first, as Daoris's, at
+    /// urgent and under the fact's key, then held by its inbox under the record's id: a shell that restarts before the turn's end finds
+    /// them waiting there for the session's go-on. Once the run takes them they leave the record by that id, and the mark is written.
+    /// </summary>
+    [Fact]
+    public async Task A_running_sessions_reopen_is_kept_on_its_record_first_and_leaves_it_once_taken()
+    {
+        var doors = new Doors { Running = new StandInSaid() };
+        doors.Records["s1"] = Record("working");
+        var inbox = new DrivenInbox(_ => { });
+        inbox.Attach(interrupt: null);
+        doors.Inboxes["s1"] = inbox;
+        doors.Quests["q1"] = Source();
+        var telling = Telling();
+
+        var told = await LookAsync(telling, doors, Look(Source()));
+
+        Assert.Contains("when its turn ends, as Daoris's words", Assert.Single(told), StringComparison.Ordinal);
+        var kept = Assert.Single(doors.Running.Said);
+        Assert.Equal(
+            ("w1", ReopenTelling.Words("q1", Source().Reopened!), DaorisWords.From, "reopen/q1/desk/44", MessageLevel.Urgent),
+            (kept.Id, kept.Text, kept.From, kept.Key, kept.Level));
+        Assert.Empty(doors.Said);
+        Assert.Empty(await LookAsync(telling, doors, Look(Source())));
+
+        var held = inbox.NextOrClose()!.Held!;
+        Assert.Equal("w1", held.Id);
+        Assert.True(await DaorisWords.GoesAsync(held, _closing.Token));
+        await inbox.TakingOff;
+
+        Assert.Equal(["w1"], doors.Running.TakenOff);
+        Assert.Empty(doors.Running.Said);
+        Assert.True(new ReopenMarks(_home).Told("s1", "q1", Source().Reopened!));
     }
 
     /// <summary>

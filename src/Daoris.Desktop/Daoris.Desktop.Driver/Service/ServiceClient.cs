@@ -446,9 +446,14 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
     /// person's. A service from before the field ignores it and keeps the person's words, which is how such a word reads back.
     /// </param>
     /// <param name="key">The producer's key (COWORK1b): a say under a key the record holds is answered with the word kept.</param>
+    /// <param name="level">When the sender asked the words to reach a working session (COWORK1c), kept beside them; null keeps none.</param>
+    /// <param name="running">
+    /// This driver runs the session and keeps the words for its run (COWORK1c, the message-urgency design §6): a running record keeps
+    /// them only so, and a service from before refuses them as <c>running</c>, as it always did.
+    /// </param>
     public async Task<SayAnswer> SayAsync(
         string id, string text, IReadOnlyList<string>? files = null, CancellationToken ct = default, string? channel = null,
-        string? from = null, string? key = null)
+        string? from = null, string? key = null, string? level = null, bool running = false)
     {
         var body = WriteJson(writer =>
         {
@@ -458,6 +463,8 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
             if (channel is { Length: > 0 }) writer.WriteString("channel", channel);
             if (from is { Length: > 0 }) writer.WriteString("from", from);
             if (key is { Length: > 0 }) writer.WriteString("key", key);
+            if (level is { Length: > 0 }) writer.WriteString("level", level);
+            if (running) writer.WriteBoolean("running", true);
             if (files is { Count: > 0 })
             {
                 writer.WriteStartArray("files");
@@ -2185,6 +2192,9 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
                 // COWORK1b: Daoris's own words, and the producer's key; a host from before says neither, and its word is the person's.
                 From = Text(word, "from") is { Length: > 0 } from ? from : null,
                 Key = Text(word, "key") is { Length: > 0 } key ? key : null,
+                // COWORK1c: its level, and when a dispatcher first wrote it to a harness; a host from before says neither.
+                Level = MessageLevels.Read(Text(word, "level")),
+                Attempt = Moment(word, "attempt"),
             }
             : null;
 
