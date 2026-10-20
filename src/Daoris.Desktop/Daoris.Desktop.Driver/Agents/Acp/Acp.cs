@@ -710,7 +710,9 @@ public sealed class AcpSession(
     /// <summary>
     /// A turn that ended while the session's own background work runs (BGWAIT1): not a question. Where the driver says its
     /// quest would otherwise park it on the person, the session stays open until the harness says that work ended, then until
-    /// the turn its harness woke for it ends (BGWAIT2), whose stop reason this answers. Null where nothing runs, or nothing waits.
+    /// the turn its harness woke for it ends (BGWAIT2), whose stop reason this answers. So too a turn that ended after work of its
+    /// own ended unseen, after its agent's last step (BGWAIT3): its harness wakes it with that ending once the turn is over, and the
+    /// session waits for that turn. Null where nothing runs and no ending is owed a wake, or nothing waits.
     /// </summary>
     /// <remarks>
     /// <para><b>The woken turn's end is the turn's end.</b> The harness wakes its agent itself when the work ends, with no prompt
@@ -734,7 +736,12 @@ public sealed class AcpSession(
     /// <exception cref="DriverException">The agent's stream ended first: a failure of the door, never a clean turn's end.</exception>
     private async Task<string?> AfterBackgroundAsync(Func<CancellationToken, Task<bool>>? waits, CancellationToken ct)
     {
-        if (waits is null || _background.RunningWork is not { Count: > 0 } work) return null;
+        if (waits is null) return null;
+        var work = _background.RunningWork;
+        // 🔴 BGWAIT3 (2026-10-21): work that ended after the agent's last step is owed the wake its harness gives it once the turn is
+        // over, as work still running is. Read only as nothing runs: a turn that ends on running work waits for it, and its wake.
+        IReadOnlyList<(string Name, string State)> unseen = work.Count > 0 ? [] : _background.Ended(_wake.Unseen);
+        if (work.Count == 0 && unseen.Count == 0) return null;
         var running = work.Select(each => each.Name).ToList();
 
         bool waiting;
@@ -751,10 +758,20 @@ public sealed class AcpSession(
 
         if (!waiting) return null;
 
-        Note(BackgroundNotes.Waits(running));
         const string waited =
             "the ACP agent's stream ended while the session waited for its own background work — the agent exited, or it was "
             + "ended.";
+
+        // 🔴 BGWAIT3: the install's session's command ended three seconds before its turn did, after its agent's last step, while
+        // the agent wrote that it still ran; nothing ran at the turn's end, so the session closed and parked on the person, five
+        // seconds before its harness would have woken it with the ending. It waits now for that turn, or tells the agent itself.
+        if (work.Count == 0)
+        {
+            Note(BackgroundNotes.Ended(unseen));
+            return await AfterEndedAsync(BackgroundNotes.EndedSaid(unseen), waited, ct).ConfigureAwait(false);
+        }
+
+        Note(BackgroundNotes.Waits(running));
 
         // 🔴 DONEEND1: the quest is read again while the work runs, never only at the turn's end. Read once, a quest that closed
         // done during the wait (its agent closing it in a turn its harness woke for one piece of work, while a long test run went
@@ -791,8 +808,17 @@ public sealed class AcpSession(
 
         var ended = await ending.ConfigureAwait(false) ?? throw StreamEnded(waited);
 
-        var said = BackgroundNotes.EndedSaid(ended);
         Note(BackgroundNotes.Ended(ended));
+        return await AfterEndedAsync(BackgroundNotes.EndedSaid(ended), waited, ct).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Once the session's background work has ended (BGWAIT2): the end of the turn its harness wakes for it, or, where none wakes
+    /// within <see cref="AcpWake.Quiet"/>, the answer to Daoris's go-on, which says <paramref name="said"/>.
+    /// </summary>
+    /// <exception cref="DriverException">The agent's stream ended first, said as <paramref name="waited"/>.</exception>
+    private async Task<string?> AfterEndedAsync(string said, string waited, CancellationToken ct)
+    {
         switch (await _wake.AfterAsync(Prompted, _wakeQuiet, Ended, ct).ConfigureAwait(false))
         {
             case true:
@@ -1001,6 +1027,11 @@ public sealed class AcpSession(
     /// the adapter reads it. It is sent too, for when the schema carries it. <c>terminal_output</c> is
     /// never asked for: it streams nothing, and it moves a command's output out of the field the record
     /// reads (docs/2026-09-28-console2-streams-evidence.md).</para>
+    ///
+    /// <para><b>Every session asks for its background tasks</b> (BGWAIT3): their frames are what a turn that ends on its own
+    /// background work waits by (BGWAIT1), and the headless loop's sessions, which keep no streams, carried none, so their turns
+    /// parked on work still running. Where no stream takes the frames, the record and the console keep none of them
+    /// (<see cref="Map"/>, <see cref="Render"/>). A subagent's own session is asked for only where streams route it.</para>
     /// </remarks>
     internal static object Capabilities(bool streams) => streams
         ? new
@@ -1010,7 +1041,12 @@ public sealed class AcpSession(
             subagents = new { },
             _meta = new { jetbrains = new { air = new { version = 1, capabilities = new[] { "nativeSubagentSessions", "asyncTasks" } } } },
         }
-        : new { fs = new { readTextFile = false, writeTextFile = false }, terminal = false };
+        : new
+        {
+            fs = new { readTextFile = false, writeTextFile = false },
+            terminal = false,
+            _meta = new { jetbrains = new { air = new { version = 1, capabilities = new[] { "asyncTasks" } } } },
+        };
 
     /// <summary>
     /// One turn: the text as a prompt on the open session, answered by the agent's stop reason — which
@@ -2221,6 +2257,8 @@ public sealed class AcpSession(
             "usage_update" => Field(update, "used") is { } used && Field(update, "size") is { } size
                 ? $"  context {used}/{size}"
                 : null,
+            // BGWAIT3: as the record keeps none (Map): the door's notes say the waits on the console.
+            "async_task_spawned" or "async_task_progress" or "async_task_state_update" => null,
             null => $"[update] {Compact(update)}",
             _ => $"[{kind}] {Compact(update)}",
         };
@@ -2295,6 +2333,9 @@ public sealed class AcpSession(
             // record they were rows over a chat nobody had spoken in yet (CONV3b), as the native door's
             // `system` frames would have been (CONV3a).
             "available_commands_update" or "current_mode_update" or "config_option_update" or "session_info_update" => null,
+            // BGWAIT3: the session's background tasks, where no stream takes them. The Bash call that started one is its card, the
+            // door's notes say what it waited on, and a raw row would carry the harness's output path into the record.
+            "async_task_spawned" or "async_task_progress" or "async_task_state_update" => null,
             _ => new SessionEvent { Kind = SessionEventKind.Raw, Title = kind ?? "update", Raw = Compact(update) },
         };
     }

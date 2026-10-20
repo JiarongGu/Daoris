@@ -151,6 +151,39 @@ public sealed class AcpBackgroundTests
         agent.Push(Update($$"""{"sessionUpdate":"async_task_state_update","asyncTaskId":"{{task}}","state":"{{state}}"}"""));
     }
 
+    /// <summary>The background command of the BGWAIT3 cases, as the spawn names it.</summary>
+    private const string Census = "dotnet test --filter Census";
+
+    /// <summary>The last words of the install's session in BGWAIT3's case, said after its command had ended unseen.</summary>
+    private const string ClosesWhenItEnds =
+        "Everything else is committed. The census is still building and running in the background. I'll close the quest when it finishes.";
+
+    /// <summary>
+    /// BGWAIT3: a background Bash as <c>claude-agent-acp</c> 0.84.0 says it (<c>async-tasks.js</c>, read): the spawn goes at the
+    /// call's result, which the adapter reads for the task's id and its output file, and names the command, the file and the
+    /// call; then the call's result, the task named in its text; then the agent's other calls, the last one completed.
+    /// </summary>
+    private static void BackgroundsTheCensus(Agent agent, string task = "b71")
+    {
+        agent.Push(Update("""{"sessionUpdate":"tool_call","toolCallId":"toolu_census","title":"Terminal","kind":"execute","status":"pending"}"""));
+        agent.Push(Update($$"""{"sessionUpdate":"tool_call_update","toolCallId":"toolu_census","title":"{{Census}}","rawInput":{"command":"{{Census}}","run_in_background":true} }"""));
+        agent.Push(Update($$"""{"sessionUpdate":"async_task_spawned","asyncTaskId":"{{task}}","name":"{{Census}}","taskType":"shell","description":"{{Census}}","showInTranscript":false,"canStop":true,"outputFilePath":"D:/fam/tasks/{{task}}.output","toolCallId":"toolu_census"}"""));
+        var result = $"Command running in background with ID: {task}. Output is being written to: D:/fam/tasks/{task}.output. "
+            + "You will be notified when it completes.";
+        agent.Push(Update(
+            """{"sessionUpdate":"tool_call_update","toolCallId":"toolu_census","status":"completed","content":[{"type":"content","content":{"type":"text","text":"""
+            + JsonSerializer.Serialize(result)
+            + """}}],"_meta":{"jetbrains":{"air":{"version":1,"asyncTasks":{"backgrounded":true}}}}}"""));
+        LooksAtSomethingElse(agent);
+    }
+
+    /// <summary>One more call of the agent's own, completed: a step of its turn, after which its harness hands it what ended.</summary>
+    private static void LooksAtSomethingElse(Agent agent, string call = "toolu_tsc")
+    {
+        agent.Push(Update($$"""{"sessionUpdate":"tool_call","toolCallId":"{{call}}","title":"npm run typecheck","kind":"execute","status":"pending"}"""));
+        agent.Push(Update($$"""{"sessionUpdate":"tool_call_update","toolCallId":"{{call}}","status":"completed"}"""));
+    }
+
     /// <summary>The run's record: the turns, the agent's words and the driver's notes, in order.</summary>
     private sealed class Record
     {
@@ -928,9 +961,10 @@ public sealed class AcpBackgroundTests
     }
 
     /// <summary>
-    /// 🔴 A real question still parks: a turn that ends with no background work running ends the run as before, one prompt
-    /// and the close, and nothing asks whether to wait. A task that ended inside the turn is not running (CONSOLE2a's second
-    /// run: the ticker finished while an async subagent held the turn open).
+    /// 🔴 A real question still parks: a turn that ends with no background work running, and none whose ending its agent was
+    /// never told, ends the run as before, one prompt and the close, and nothing asks whether to wait. A task that ended inside
+    /// the turn, before a step its agent took after it, is neither running nor owed a wake: the harness handed the ending to
+    /// that step (BGWAIT3).
     /// </summary>
     [Fact]
     public async Task A_turn_that_asks_with_no_background_work_running_ends_as_before()
@@ -946,6 +980,7 @@ public sealed class AcpBackgroundTests
                 case "session/prompt":
                     BackgroundsTheGates(self);
                     GatesEnd(self);
+                    LooksAtSomethingElse(self);
                     self.Push(Said("Which branch should the release land on?"));
                     return Ok(frame, """{"stopReason":"end_turn"}""");
                 default:
@@ -1007,6 +1042,143 @@ public sealed class AcpBackgroundTests
 
         Assert.Equal(["initialize", "session/new", "session/prompt", "session/close"], agent.Methods);
         Assert.Equal(1, asked);
+    }
+
+    /// <summary>
+    /// The agent of BGWAIT3's case: its first prompt backgrounds the census, takes another step, and the census ends after that
+    /// step, while the agent writes its last words, which say it still runs; any later prompt is never answered.
+    /// </summary>
+    private static Agent EndsUnseen(TaskCompletionSource<int> goOn) => new((frame, self) =>
+    {
+        switch (frame.GetProperty("method").GetString())
+        {
+            case "initialize":
+                return Ok(frame, Queues);
+            case "session/new":
+                return Ok(frame, """{"sessionId":"s-1"}""");
+            case "session/prompt" when self.Prompts.Count == 1:
+                BackgroundsTheCensus(self);
+                GatesEnd(self, "b71");
+                self.Push(Said(ClosesWhenItEnds));
+                return Ok(frame, """{"stopReason":"end_turn"}""");
+            case "session/prompt":
+                return Unanswered(frame, goOn);
+            default:
+                return frame.TryGetProperty("id", out _) ? Ok(frame, "{}") : null;
+        }
+    });
+
+    /// <summary>
+    /// 🔴 BGWAIT3, the owner's report (2026-10-21): a driven session on the install backgrounded a test class, and the command
+    /// ended about three seconds before its turn did, after the agent's last step, while it wrote that the command still ran and
+    /// that it would close its quest when it finished. Nothing was running at the turn's end, so the session closed and parked
+    /// on the person (等你处理), five seconds before the harness would have woken its agent with the ending it was never handed.
+    /// An ending said after the turn's last step is owed a wake: the session waits, working, for the turn its harness wakes, and
+    /// that turn's end ends the run, with no go-on and no second ask of the quest.
+    /// </summary>
+    [Fact]
+    public async Task A_turn_that_ends_after_its_own_work_ended_unseen_waits_for_the_turn_its_harness_wakes()
+    {
+        var goOn = new TaskCompletionSource<int>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var agent = EndsUnseen(goOn);
+        var record = new Record();
+        var asked = 0;
+
+        var run = Session(agent, record, Never)
+            .RunAsync(
+                "D:/fam/Game", "close quest #12", CancellationToken.None,
+                waitsOnBackground: _ =>
+                {
+                    Interlocked.Increment(ref asked);
+                    return Task.FromResult(true);
+                });
+
+        await Poll.Until(
+            () => record.Lines.Any(line => line.StartsWith("note:", StringComparison.Ordinal) && line.Contains(Census)),
+            () => string.Join(" | ", record.Lines), Poll.Patience);
+        await Task.Delay(300);
+        Assert.False(run.IsCompleted);
+        Assert.DoesNotContain("session/close", agent.Methods);
+        Assert.Equal(1, Volatile.Read(ref asked));
+
+        // The harness wakes its agent with the ending, as it does for work that ends after the turn (CONSOLE2a), and its turn ends.
+        agent.Push(Said("The census passed. Closing the quest."));
+        WokenEnds(agent);
+        var outcome = await EndsWithoutGoOn(run, goOn.Task);
+
+        Assert.Equal("end_turn", outcome.StopReason);
+        Assert.Equal(["initialize", "session/new", "session/prompt", "session/close"], agent.Methods);
+        Assert.Equal(1, Volatile.Read(ref asked));
+        Assert.Equal(
+            [
+                $"message:{ClosesWhenItEnds}",
+                "turn:end_turn",
+                $"note:— its background work ended: `{Census}` (completed). The session goes on.",
+                "message:The census passed. Closing the quest.",
+                "turn:end_turn",
+            ],
+            record.Lines);
+    }
+
+    /// <summary>
+    /// BGWAIT3's fallback is BGWAIT2's: where no turn wakes within the bound after an ending the agent was never handed, Daoris's
+    /// go-on tells it, as a fresh turn the adapter answers. That tells it the ending: the go-on's answer ends the run, and no
+    /// second go-on follows it.
+    /// </summary>
+    [Fact]
+    public async Task Where_no_turn_wakes_for_an_ending_its_agent_was_never_handed_the_go_on_tells_it_once()
+    {
+        var goOn = new TaskCompletionSource<int>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var agent = EndsUnseen(goOn);
+        var record = new Record();
+        var asked = 0;
+
+        var run = Session(agent, record, Soon)
+            .RunAsync(
+                "D:/fam/Game", "close quest #12", CancellationToken.None,
+                waitsOnBackground: _ =>
+                {
+                    Interlocked.Increment(ref asked);
+                    return Task.FromResult(true);
+                });
+
+        var id = await goOn.Task.WaitAsync(Poll.Patience);
+        Assert.Contains($"`{Census}` (completed)", agent.Prompts[1]);
+        Assert.False(run.IsCompleted);
+
+        agent.Push(Answer(id, "end_turn"));
+        var outcome = await run.WaitAsync(Poll.Patience);
+
+        Assert.Equal("end_turn", outcome.StopReason);
+        Assert.Equal(["initialize", "session/new", "session/prompt", "session/prompt", "session/close"], agent.Methods);
+        Assert.Equal(1, Volatile.Read(ref asked));
+    }
+
+    /// <summary>
+    /// D105 stands for an ending the agent was never handed as it does for work still running: where the quest does not wait on
+    /// it, the session ends at its turn's end, the driver asked once.
+    /// </summary>
+    [Fact]
+    public async Task An_ending_its_agent_was_never_handed_ends_with_the_session_where_the_quest_does_not_wait()
+    {
+        var goOn = new TaskCompletionSource<int>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var agent = EndsUnseen(goOn);
+        var record = new Record();
+        var asked = 0;
+
+        await Session(agent, record, Never)
+            .RunAsync(
+                "D:/fam/Game", "close quest #12", CancellationToken.None,
+                waitsOnBackground: _ =>
+                {
+                    Interlocked.Increment(ref asked);
+                    return Task.FromResult(false);
+                })
+            .WaitAsync(Poll.Patience);
+
+        Assert.Equal(["initialize", "session/new", "session/prompt", "session/close"], agent.Methods);
+        Assert.Equal(1, asked);
+        Assert.DoesNotContain(record.Lines, line => line.StartsWith("note:", StringComparison.Ordinal));
     }
 
     /// <summary>How often the DONEEND1 tests' sessions read their quest again while they wait: many times in a breath.</summary>
