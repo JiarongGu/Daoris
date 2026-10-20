@@ -104,7 +104,7 @@ with the pipelines it routes to (§1.3), and each pipeline is versioned and boun
   mapping of its kinds.
 - **Older builds.** Both twins read a choice by its `default` and `kinds` and pass over the rest (`WorkflowSelection.cs:183-207`,
   `workflowchoice.ts:129-151`), and an entry naming neither is not read (`WorkflowSelection.cs:25`, `:261`), so an older build reads
-  a repository naming only `landed` as naming nothing and follows its workspace, as this build does. An older build that writes a
+  a repository naming only `landed` as naming nothing and follows its workspace, as the build this design asks does. An older build that writes a
   choice writes its `default` and `kinds` alone (`:283-315`), dropping the route: a downgrade's cost, said where the route is set.
 - **When it is read.** A chain's route at the binding moment D190 §8 placed after the start's tree opens and before its take; a
   landed route when the pass reads the line's tip past the newest verdict (§4.3), and when a person asks a verification (§4.3).
@@ -394,7 +394,8 @@ awaits each (`NodeRuntime.cs:388`, `:560`), and a full set runs for an hour.
   home's. The attempts it was sent wait in the order they came, each with a waiter record of its own beside the slot naming its run
   (as HEAVYSLOT1's waiters are kept, `HeavySlot.cs:36-39`), so the run and the repository's *Details* say behind what (D185 §3.5's
   *Heavy run* row). Once both are held, the holder record names the run and its invocation beside its job (`HeavyHolder`,
-  `HeavySlot.cs:19-20`, gains `run`, which an older reader passes over), and the bound starts.
+  `HeavySlot.cs:19-20`, gains `run`, which an older reader passes over), and the bound starts. Until then the check is active and
+  says *waiting for* what holds a slot.
 - **Per home, and said so.** Both slots are the home's, as every slot is (`HeavySlot.cs:131`; one writer per home,
   `HomeLease.cs:52-55`). A second home on the machine (a development home beside the install's) holds its own, so two homes may each
   run one: D180's budget note, point 2 (one CI run at a time, `D180.md:68`), is narrowed to one per home. Where the repository's
@@ -462,10 +463,12 @@ awaits each (`NodeRuntime.cs:388`, `:560`), and a full set runs for an hour.
   20, are read from both, since today they are read from `runs/` alone (`WorkflowRunFiles.cs:85-105`) and a version a landed run
   binds would be pruned under it. One folder, not one per repository: a run's file names its repository, and no repository's name
   has to make a safe folder name.
-- **Batching.** One run per line at a time. When the pass reads the line's tip past the base and no run on the line is unsettled, it
-  binds one at the newest tip, so every landing since the base is in it; what lands while it waits for its slots or runs is the next
-  batch's. So every landing on the line comes under a verdict: its batch's, or a later batch's that holds it (D193 part 8).
-- **Each run to its verdict.** A run, once bound, is never superseded: the line moving on binds nothing until it settles, and only
+- **Batching.** One run per line at a time. A run is settled once its check is reached, failed or stopped by the person; until then,
+  waiting, running or held, it is the line's run in flight. When the pass reads the line's tip past the base and the line has no run
+  in flight, it binds one at the newest tip, so every landing since the base is in it; what lands while it waits for its slots or
+  runs is the next batch's. So every landing on the line comes under a verdict: its batch's, or a later batch's that holds it (D193
+  part 8).
+- **Each run to its verdict.** A run, once bound, is never superseded: the line moving on binds nothing until it is settled, and only
   the bound or the person's stop ends its job (§4.2). A run that waits for its slots behind another verification or a `run-heavy`
   verifies its bound tip when they come, and what landed meanwhile is its successor's batch. Superseding needed a state no lifecycle
   has: `NodeStates.All` holds no `superseded` (`NodeContract.cs:113`), only the person stops a live node (`NodeLifecycle.cs:283`),
