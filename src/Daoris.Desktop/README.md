@@ -251,6 +251,16 @@ pages the line's event files on this machine with the service's own reader, `Lin
 each side (`LineEventFilesTests` here). A working session is allowed it by default; a reviewer, a helper and a brainstorm pass are
 denied it.
 
+When a driven session moves to a new part is the driver's own judgement (SESSCTX1c's part A, D189's amendment; the session-context
+design §2): a refusal of its resume carries it on by itself, handed the brief, `from` why `retry`, except another client holding its
+conversation (`elsewhere`, `ContinueReason.Holds`), which holds its words marked and keeps the planner from carrying its quest on
+meanwhile. The native door's failed exit before it names its conversation is `exited`, apart from `gone`, and the same resume is tried
+once more first, on both doors (`DriverContinuations.AgainAsync`; a conversation's watch asks its run again). An agent this machine no
+longer has holds the words with the hand-over's offer (`held.agent-gone`, and a park so held may be handed over), and a resumed run
+that could not start ends `failed` as a start failure, its words waiting (`Continuations.Unstarted`), never a move. Every driven start
+that continues another says the move on both parts (`moved.on`, `moved.from`, with the part's context and the brief's size) and in the
+machine log as `session.moved`.
+
 ## What the page can ask this machine
 
 | Module | What it carries |
