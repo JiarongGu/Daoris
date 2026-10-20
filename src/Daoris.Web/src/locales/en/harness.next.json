@@ -25,6 +25,7 @@
   "harness.next.why.fewest": "it runs fewer of Daoris's sessions than {{over}}",
   "harness.next.why.lapsing": "its week resets {{when}}, with more of it left to spend before then",
   "harness.next.why.lapsingSoon": "its week resets within a day, with more of it left to spend before then",
+  "harness.next.why.lapses": "its {{window}} window resets at {{when}} with {{unused}} of it unused, as read at {{seen}}",
   "harness.next.why.pace": "it is further behind its week's pace than {{over}}",
   "harness.next.why.room": "it has more room under its curve than {{over}}",
   "harness.next.why.leastRecent": "Daoris started on it less recently than {{over}}",
