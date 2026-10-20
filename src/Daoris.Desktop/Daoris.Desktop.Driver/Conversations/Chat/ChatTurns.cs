@@ -143,25 +143,36 @@ internal sealed class ChatTurns(
     public const string WithdrawnLine = SessionNotes.WithdrawnLine;
 
     /// <summary>
-    /// Take back or reword one word that still waits (QUEUEEDIT1a): with no <paramref name="text"/> it is removed, with some its
-    /// words are replaced where it waits, its place and its files kept, under a new id. The word taken while the door opens is
-    /// still the queue's. <see cref="QueueEdit.Taken"/> where a turn took it already. A conversation's queued words are in no
-    /// record until taken (D76), so nothing is written.
+    /// Take back, reword, or change the level of one word that still waits (QUEUEEDIT1a, COWORK1a): with neither
+    /// <paramref name="text"/> nor <paramref name="level"/> it is removed; with words, they replace its words where it waits, its
+    /// place and its files kept, under a new id; with a level, it keeps its id and asks to reach the agent then. Raised while a turn
+    /// is on the wire whose door takes words at its next step, it goes into that turn as a word said now would (the design §8.2),
+    /// steered past what waits where it is <c>now</c> and the agent steers. The word taken while the door opens is still the
+    /// queue's. <see cref="QueueEdit.Taken"/> where a turn took it already. A conversation's queued words are in no record until
+    /// taken (D76), so nothing is written.
     /// </summary>
-    public QueueEdit EditQueued(string id, string? text)
+    public QueueEdit EditQueued(string id, string? text, MessageLevel? level = null)
     {
         lock (_gate)
         {
             if (_holding is { OnRecord: false } holding && holding.Id == id)
             {
-                _holding = text is null ? null : Reworded(holding, text);
+                _holding = text is null && level is null ? null : Changed(holding, text, level);
             }
             else
             {
                 var at = _waiting.FindIndex(message => !message.OnRecord && message.Id == id);
                 if (at < 0) return QueueEdit.Taken;
-                if (text is null) _waiting.RemoveAt(at);
-                else _waiting[at] = Reworded(_waiting[at], text);
+                if (text is null && level is null)
+                {
+                    _waiting.RemoveAt(at);
+                }
+                else
+                {
+                    var word = Changed(_waiting[at], text, level);
+                    _waiting.RemoveAt(at);
+                    if (!IntoTheTurn(word, at)) _waiting.Insert(at, word);
+                }
             }
 
             Publish();
@@ -169,12 +180,54 @@ internal sealed class ChatTurns(
         }
     }
 
+    /// <summary>A waiting word reworded under a new id, or at a new level under its own. Called under the lock.</summary>
+    private ChatMessage Changed(ChatMessage message, string? text, MessageLevel? level) =>
+        (text is null ? message : Reworded(message, text)) with { Level = level ?? message.Level };
+
     private ChatMessage Reworded(ChatMessage message, string text)
     {
         var id = $"said-{++_said}";
         _stamped.Add(id);
         return message with { Text = text, Id = id };
     }
+
+    /// <summary>
+    /// A waiting word raised (COWORK1a): handed to the turn on the wire where its level and the door allow, as a word said now goes
+    /// there; at <c>now</c> steered past what waits where the agent steers, and at its next step only with no urgent word waiting
+    /// before it. False where it waits on. Called under the lock, with the word out of the queue.
+    /// </summary>
+    private bool IntoTheTurn(ChatMessage word, int at)
+    {
+        if (word.Level == MessageLevel.Ordinary || word.Helped is not null || !_inFlight || !_sent || _stopped || _stopPending
+            || _holding is not null) return false;
+
+        // Without the queue's id, as a turn is sent (QUEUEEDIT1a): the door gives a word handed to the turn its own.
+        var stamped = word.Id is { } queued && _stamped.Remove(queued) ? queued : null;
+        var handed = stamped is null ? word : word with { Id = null };
+        if (word.Level == MessageLevel.Now && steerNow?.Invoke(handed) is { } steered)
+        {
+            _steered.Add(steered);
+            return true;
+        }
+
+        if (!UrgentWaiting(before: at) && steer?.Invoke(handed) is { } stepped)
+        {
+            _steered.Add(stepped);
+            _onTheirWay.Add(stepped);
+            return true;
+        }
+
+        if (stamped is not null) _stamped.Add(stamped);
+        return false;
+    }
+
+    /// <summary>
+    /// Whether a word that asks for the turn's next step waits (COWORK1a): the person's urgent or now words, never an ordinary one
+    /// nor a helper's answer, which is ordinary (the design §5). An urgent word goes past ordinary ones, never past an urgent one
+    /// said before it. Called under the lock.
+    /// </summary>
+    private bool UrgentWaiting(int? before = null) =>
+        _waiting.Take(before ?? _waiting.Count).Any(message => message.Helped is null && message.Level != MessageLevel.Ordinary);
 
     /// <summary>Queue a turn. False once the conversation is finishing, held or gone: nothing more will be heard.</summary>
     public bool Say(ChatMessage message) => Take(message) is not null;
@@ -206,9 +259,9 @@ internal sealed class ChatTurns(
     }
 
     /// <summary>
-    /// Take a word: handed to the turn on the wire where the door takes words at its next step and nothing waits before it
-    /// (MSG1c), else queued as a turn of its own. Null once the conversation is finishing, held for a hand-over's take, or gone:
-    /// nothing more is heard.
+    /// Take a word at the level it carries (COWORK1a): an urgent one handed to the turn on the wire where the door takes words at
+    /// its next step and no urgent word waits before it (MSG1c); an ordinary one, and any other, queued as a turn of its own. Null
+    /// once the conversation is finishing, held for a hand-over's take, or gone: nothing more is heard.
     /// </summary>
     public TurnReach? Take(ChatMessage message)
     {
@@ -218,10 +271,11 @@ internal sealed class ChatTurns(
             if (_finishing || _gone || _held) return null;
 
             // At its next step (D137 §2.1): only into a turn already on the wire, never one the person stopped, and never
-            // ahead of a word still waiting, which would make the agent read them out of the order said.
-            // A helper's answer is a turn of its own, never handed to the running one (MIXAGENT2a-iii).
-            if (steer is not null && message.Helped is null && _inFlight && _sent && !_stopped && !_stopPending && _holding is null
-                && _waiting.Count == 0 && steer(message) is { } answered)
+            // ahead of an urgent word still waiting, which would make the agent read them out of the order said. An ordinary word
+            // never enters a turn in flight, and an urgent one goes past it, since its sender chose sooner (COWORK1a, the design
+            // §2.1). A helper's answer is a turn of its own, never handed to the running one (MIXAGENT2a-iii).
+            if (steer is not null && message.Helped is null && message.Level != MessageLevel.Ordinary && _inFlight && _sent
+                && !_stopped && !_stopPending && _holding is null && !UrgentWaiting() && steer(message) is { } answered)
             {
                 _steered.Add(answered);
                 _onTheirWay.Add(answered);
@@ -271,83 +325,68 @@ internal sealed class ChatTurns(
     }
 
     /// <summary>
-    /// The person's *Send now* (STEER2a, D136's 2026-10-16 note), carried out by the door it has: with no turn running the words
-    /// are the next turn at once; into a turn on the wire whose agent steers, they are steered at once (<c>now</c>) and the turn
-    /// lasts until the steer is answered; on a door that takes words only at its next step they go there, said so; on a door
-    /// that takes none during a turn they wait as <see cref="Take"/> queues them and the turn is stopped keeping them
-    /// (<see cref="StopKeepingAsync"/>), so they are the next turn (D90). Null once the conversation is finishing, held or gone.
+    /// The person's words at <c>now</c> (STEER2a, COWORK1a), carried out by the door it has: with no turn running the words are the
+    /// next turn at once; into a turn on the wire whose agent steers, they are steered at once (<c>now</c>) and the turn lasts until
+    /// the steer is answered; on a door that takes words only at its next step they go there, said so; on a door that takes none
+    /// during a turn they wait as <see cref="Take"/> queues them, said <c>no-interrupt</c>, and are the next turn when it ends (D90).
+    /// Null once the conversation is finishing, held or gone.
     /// </summary>
     /// <remarks>
-    /// <para>🔴 <b>On a next-step door nothing is stopped</b> (D136 point 4): with a word on its way, a stop would answer it
-    /// cancelled while the agent may still act on it (evidence §3). A steer is no stop: it goes past words on their way and
-    /// waiting, the person's choice to go first, and they keep their places. Where the agent cannot steer, the words go behind
-    /// what is ahead, said <see cref="SendNowWhy.Behind"/>.</para>
-    ///
-    /// <para>Judged and done under one lock while a turn is in flight: queued and stopped in two steps, a turn ending between
-    /// them would hand the words their own turn, and the stop would cut it.</para>
+    /// <para>🔴 <b>Nothing is stopped, on any door</b> (D188 points 1 and 3): the stop that keeps the waiting words is the person's
+    /// own press (<see cref="StopKeepingAsync"/>, <c>CANCEL_TURN</c> with <c>keep</c>), never a word's. On a next-step door a stop
+    /// would besides answer a word on its way cancelled while the agent may still act on it (D136 point 4, evidence §3). A steer is
+    /// no stop: it goes past words on their way and waiting, the person's choice to go first, and they keep their places. Where the
+    /// agent cannot steer, the words go behind what is ahead, said <see cref="SendNowWhy.Behind"/>.</para>
     /// </remarks>
-    public async Task<SentNow?> TakeNowAsync(ChatMessage message)
+    public Task<SentNow?> TakeNowAsync(ChatMessage message)
     {
-        Stop? stop = null;
-        SentNow? queued = null;
+        message = message with { Level = MessageLevel.Now };
         lock (_gate)
         {
-            if (_finishing || _gone || _held) return null;
+            if (_finishing || _gone || _held) return Task.FromResult<SentNow?>(null);
             if (_inFlight && message.Helped is null)
             {
-                // Words before these: handed to this turn at its next step and not yet answered, or waiting as turns of their
-                // own (a helper's answer among them). A helper's answer is never the person's press (MIXAGENT2a-iii).
+                // Words before these: handed to this turn at its next step and not yet answered, or urgent words waiting as turns
+                // of their own. Ordinary words and a helper's answer, which is ordinary, wait for the turn's end, and these go
+                // past them (COWORK1a). A helper's answer is never the person's press (MIXAGENT2a-iii).
                 var onTheirWay = OnTheirWay();
-                var behind = onTheirWay || _holding is not null || _waiting.Count > 0;
+                var behind = onTheirWay || _holding is not null || UrgentWaiting();
                 var running = _sent && !_stopped && !_stopPending;
                 // 🔴 Steered past whatever is ahead (the owner's case): the steer cuts the step in flight, not the prompt a word on
                 // its way is queued as, which is still taken at its next step; what waits keeps its place. The person chose now.
                 if (running && steerNow?.Invoke(message) is { } steered)
                 {
                     _steered.Add(steered);
-                    return new SentNow(SendNowWhy.Spelled(TurnReach.Steered), Now: true, Why: null);
+                    return Task.FromResult<SentNow?>(new SentNow(SendNowWhy.Spelled(TurnReach.Steered), Now: true, Why: null));
                 }
 
-                // At its next step, behind any word on its way, as a word said then goes; never ahead of one still waiting.
-                if (running && _holding is null && _waiting.Count == 0 && steer?.Invoke(message) is { } stepped)
+                // At its next step, behind any word on its way, as a word said then goes; never ahead of an urgent one still waiting.
+                if (running && _holding is null && !UrgentWaiting() && steer?.Invoke(message) is { } stepped)
                 {
                     _steered.Add(stepped);
                     _onTheirWay.Add(stepped);
-                    return new SentNow(
-                        SendNowWhy.Spelled(TurnReach.NextStep), Now: false, onTheirWay ? SendNowWhy.Behind : SendNowWhy.NoInterrupt);
+                    return Task.FromResult<SentNow?>(new SentNow(
+                        SendNowWhy.Spelled(TurnReach.NextStep), Now: false, onTheirWay ? SendNowWhy.Behind : SendNowWhy.NoInterrupt));
                 }
 
                 _waiting.Add(Stamped(message));
-                if (_stopped || _stopPending)
-                {
-                    // The stop already asked carries them next.
-                    queued = new SentNow(SendNowWhy.Spelled(TurnReach.TurnEnd), Now: true, Why: null);
-                }
-                else if (onTheirWay || nextStep?.Invoke() == true)
-                {
-                    queued = new SentNow(
-                        SendNowWhy.Spelled(TurnReach.TurnEnd), Now: false, behind ? SendNowWhy.Behind : SendNowWhy.Opening);
-                }
-                else
-                {
-                    stop = StopKeeping();
-                    queued = new SentNow(SendNowWhy.Spelled(TurnReach.TurnEnd), Now: true, Why: null);
-                }
-
+                // Held for the turn's end: behind what is ahead on a door that takes words at its next step, and on any other, or
+                // behind the person's own stop, because nothing interrupts a turn for them.
+                var why = !_stopped && !_stopPending && (onTheirWay || nextStep?.Invoke() == true)
+                    ? behind ? SendNowWhy.Behind : SendNowWhy.Opening
+                    : SendNowWhy.NoInterrupt;
                 Publish();
+                return Task.FromResult<SentNow?>(new SentNow(SendNowWhy.Spelled(TurnReach.TurnEnd), Now: false, why));
             }
         }
 
-        if (stop is not null) await SendStopAsync(stop).ConfigureAwait(false);
-        if (queued is not null) return queued;
-
         // No turn in flight: the next turn at once, or behind the one the door is still opening for.
-        return Take(message) switch
+        return Task.FromResult<SentNow?>(Take(message) switch
         {
             null => null,
             TurnReach.Now => new SentNow(null, Now: true, Why: null),
             var reach => new SentNow(SendNowWhy.Spelled(reach), Now: false, SendNowWhy.Opening),
-        };
+        });
     }
 
     /// <summary>

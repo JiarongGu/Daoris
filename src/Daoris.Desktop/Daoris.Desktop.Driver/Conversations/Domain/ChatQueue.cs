@@ -83,6 +83,17 @@ public enum DrivenReach
     Steered,
 }
 
+/// <summary>
+/// What a running session's door can do with a word while a turn runs (COWORK1a, the message-urgency design §3.0), which the page
+/// offers the composer's levels and the keeping stop by.
+/// </summary>
+/// <param name="Steers">Its agent steers (STEER2a): a word at <c>now</c> cuts its step in flight.</param>
+/// <param name="KeepingStop">
+/// It can stop a turn and keep the session, so the keeping stop is offered beside words held for the turn's end: a protocol door
+/// (<c>session/cancel</c>) and Claude Code's conversation (its <c>interrupt</c>); never the native door's run.
+/// </param>
+public sealed record TurnDoor(bool Steers, bool KeepingStop);
+
 /// <summary>What a run does next with what the person said: prompt a word still held, or wait for one already sent.</summary>
 /// <param name="Held">A word held for the turn's end, to prompt now; null when <paramref name="Answer"/> is set.</param>
 /// <param name="Answer">The answer to a word sent during the turn, in the order sent; null when <paramref name="Held"/> is set.</param>
@@ -105,8 +116,8 @@ public sealed record DrivenNext(ChatMessage? Held, Task<string>? Answer)
 /// <c>turn-end</c>; null where no turn ran and they are its turn at once, or where the door is not known yet.
 /// </param>
 /// <param name="Now">
-/// The press was carried out: steered into the running turn, held with the turn stopped so they go next (D90), or taken at
-/// once because no turn ran.
+/// The press was carried out: steered into the running turn, or taken at once because no turn ran. Never a turn stopped: no word
+/// stops one (COWORK1a, D188 point 1), and the keeping stop is the person's own press.
 /// </param>
 /// <param name="Why">Where it was not, why, by a <see cref="SendNowWhy"/> code; null where it was.</param>
 public sealed record SentNow(string? Reaches, bool Now, string? Why);
@@ -115,8 +126,10 @@ public sealed record SentNow(string? Reaches, bool Now, string? Why);
 public static class SendNowWhy
 {
     /// <summary>
-    /// A turn runs on a door that can neither steer it nor stop it keeping the session: the native door's driven run, a text-only
-    /// door, or a next-step door whose agent never said it steers (a stop there would answer a word on its way cancelled).
+    /// A turn runs on a door whose agent does not steer, and no word interrupts it (COWORK1a, D188 point 3): the words go at its
+    /// next step on a door that takes words then, and are held for its turn's end on any other (a protocol door that holds words,
+    /// Claude Code's conversation, the native door's driven run), or go at once on a text-only door. Where the door can stop a turn
+    /// and keep the session, the keeping stop is the person's own press beside the held words.
     /// </summary>
     public const string NoInterrupt = "no-interrupt";
 

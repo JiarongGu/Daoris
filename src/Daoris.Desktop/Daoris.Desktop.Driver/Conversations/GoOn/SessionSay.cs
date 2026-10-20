@@ -165,17 +165,19 @@ public sealed class LoopWords(SessionProcesses processes, Func<ServiceClient?> s
         // they are the person's words on its ask (D133 §1), which the headless loop missed until MSG1e4.
         if (processes.InboxOf(id) is { } inbox)
         {
-            // The terminal's *Send now* (STEER2c) goes by the door it has, as the screen's press does (DrivenInbox.HoldNowAsync).
-            if (request.Now && await inbox.HoldNowAsync(new ChatMessage(text, [])).ConfigureAwait(false) is { } sentNow)
+            // The terminal's level (COWORK1a) goes by the door it has, as the screen's press does: now by DrivenInbox.HoldNowAsync
+            // (STEER2c), ordinary and urgent by its hold, each answered with where it reaches the session.
+            var level = request.Asked;
+            if (level == MessageLevel.Now && await inbox.HoldNowAsync(new ChatMessage(text, [])).ConfigureAwait(false) is { } sentNow)
             {
                 _ = WordsOnAsk.Keep(service(), id, text);
                 return new WordsHeld(true, sentNow.Reaches, sentNow.Why) { Now = sentNow.Now };
             }
 
-            if (!request.Now && inbox.Hold(new ChatMessage(text, [])))
+            if (level != MessageLevel.Now && inbox.Hold(new ChatMessage(text, []) { Level = level }))
             {
                 _ = WordsOnAsk.Keep(service(), id, text);
-                return new WordsHeld(true, Spelled(inbox.Reach), null);
+                return new WordsHeld(true, Spelled(inbox.ReachAt(level)), null);
             }
         }
 

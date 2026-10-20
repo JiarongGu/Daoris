@@ -157,34 +157,63 @@ public sealed class SessionsSayCommandTests : IDisposable
         var plain = SessionsCommand.Read(["say", "d0ne0000", "also the changelog"], out _);
 
         Assert.Null(problem);
-        Assert.Equal(("also the changelog", true), (now!.Text, now.Now));
+        Assert.Equal(("also the changelog", true, "now"), (now!.Text, now.Now, now.Level));
         Assert.False(plain!.Now);
+        Assert.Null(plain.Level);
         Assert.Null(SessionsCommand.Read(["say", "d0ne0000", "--now"], out var bare));
         Assert.False(string.IsNullOrWhiteSpace(bare));
         Assert.Contains("--now", SessionsCommand.Usage);
     }
 
-    /// <summary>The answer a loop gives to a say with <c>--now</c> reads back whole, by the request's file.</summary>
+    /// <summary>
+    /// COWORK1a (the message-urgency design §8.6): <c>--level ordinary|urgent|now</c> says when the words should reach a working
+    /// session, beside the words and no part of them; <c>--level now</c> is <c>--now</c>; any other word is a problem said.
+    /// </summary>
+    [Fact]
+    public void A_level_is_a_flag_beside_the_words_and_now_is_the_level_now()
+    {
+        var ordinary = SessionsCommand.Read(["say", "d0ne0000", "tidy", "--level", "ordinary", "the readme"], out var problem);
+        var now = SessionsCommand.Read(["say", "d0ne0000", "--level", "now", "stop: the tests are in /spec"], out _);
+
+        Assert.Null(problem);
+        Assert.Equal(("tidy the readme", "ordinary", false), (ordinary!.Text, ordinary.Level, ordinary.Now));
+        Assert.Equal(("stop: the tests are in /spec", "now", true), (now!.Text, now.Level, now.Now));
+        Assert.Null(SessionsCommand.Read(["say", "d0ne0000", "hi", "--level", "priority"], out var unknown));
+        Assert.Contains("ordinary, urgent or now", unknown);
+        Assert.Null(SessionsCommand.Read(["say", "d0ne0000", "hi", "--level"], out _));
+        Assert.Contains("[--level ordinary|urgent|now]", SessionsCommand.Usage);
+    }
+
+    /// <summary>The answer a loop gives to a say with <c>--now</c> reads back whole, by the request's file, and its level beside it.</summary>
     [Fact]
     public void A_nows_request_and_answer_carry_it_through_the_request_folder()
     {
         var requests = new SessionRequests(_home);
-        var request = new SessionRequest("w0rk1ng0", SessionMove.Say, DateTimeOffset.UtcNow) { Text = "hi", Key = SessionRequests.NewKey(), Now = true };
+        var request = new SessionRequest("w0rk1ng0", SessionMove.Say, DateTimeOffset.UtcNow)
+        {
+            Text = "hi", Key = SessionRequests.NewKey(), Now = true, Level = "now",
+        };
         requests.Write(request);
 
-        Assert.True(Assert.Single(requests.Pending(DateTimeOffset.UtcNow)).Now);
+        var pending = Assert.Single(requests.Pending(DateTimeOffset.UtcNow));
+        Assert.Equal((true, "now", MessageLevel.Now), (pending.Now, pending.Level, pending.Asked));
         requests.Answer(request, new WordsHeld(true, "now", null) { Now = true });
         Assert.Equal(new WordsHeld(true, "now", null) { Now = true }, requests.AnswerOf(request));
+        // A request from before COWORK1a carries no level: read by its `now`, else urgent.
+        Assert.Equal(MessageLevel.Urgent, new SessionRequest("w0rk1ng0", SessionMove.Say, DateTimeOffset.UtcNow).Asked);
     }
 
     /// <summary>
-    /// STEER2c: the verb says what the door did, in its own words, from the answer { sent, reaches, why, now }: taken at once, the
-    /// turn stopping so the words go next, or not now with the reason. Its clock is held until the loop took the words (FLAKE5).
+    /// STEER2c, COWORK1a: the verb says what the door did, in its own words, from the answer { sent, reaches, why, now }: taken at
+    /// once, or not now with the reason and where it reads the words instead. No door's turn is stopped (D188 point 3): a door that
+    /// takes words only when its turn ends holds them for it, interrupt or none. Its clock is held until the loop took the words
+    /// (FLAKE5).
     /// </summary>
     [Theory]
     [InlineData("steers", "sessions: sent now: it took this at once, cutting its step in flight.\n")]
-    [InlineData("stops", "sessions: sent now: its turn is stopping, so this goes next.\n")]
-    [InlineData("no-interrupt", "sessions: not sent now: it cannot be interrupted; it reads this when its turn ends.\n")]
+    [InlineData("turn-end", "sessions: not sent now: its door takes words only when its turn ends; it reads this when its turn ends.\n")]
+    [InlineData("no-interrupt", "sessions: not sent now: its door takes words only when its turn ends; it reads this when its turn ends.\n")]
+    [InlineData("next-step", "sessions: not sent now: its agent cannot be steered mid-step; it reads this at its next step.\n")]
     [InlineData("opening", "sessions: not sent now: its first prompt has not left yet; it reads this at its next step.\n")]
     [InlineData("behind", "sessions: not sent now: words ahead of these are still on their way; it reads this at its next step.\n")]
     public async Task Now_says_what_the_door_did(string door, string line)
@@ -193,17 +222,22 @@ public sealed class SessionsSayCommandTests : IDisposable
         using var service = room.Client();
         var processes = new SessionProcesses(Pids);
         var inbox = processes.OpenInbox("w0rk1ng0");
+        var stopped = 0;
         switch (door)
         {
             case "steers":
                 inbox.Attach(interrupt: null, deliver: _ => Task.FromResult(""), steer: _ => Task.FromResult("injected"));
                 inbox.Flow();
                 break;
-            case "stops":
-                inbox.Attach(interrupt: () => Task.CompletedTask);
+            case "turn-end":
+                inbox.Attach(interrupt: () => { stopped++; return Task.CompletedTask; });
                 break;
             case "no-interrupt":
                 inbox.Attach(interrupt: null);
+                break;
+            case "next-step":
+                inbox.Attach(interrupt: null, deliver: _ => new TaskCompletionSource<string>().Task);
+                inbox.Flow();
                 break;
             case "opening":
                 inbox.Attach(interrupt: null, deliver: _ => Task.FromResult(""));
@@ -232,6 +266,54 @@ public sealed class SessionsSayCommandTests : IDisposable
 
         Assert.Equal(0, exit);
         Assert.Equal(line, said);
+        Assert.Equal(0, stopped);
+    }
+
+    /// <summary>
+    /// COWORK1a (the design §8.6): a say at a level prints where the words reach, and the level where the door could not honour it
+    /// with the reason: an ordinary word waits for the turn's end on a door that takes words at its next step; an urgent one asked
+    /// of a door that takes words only when its turn ends is held for it, said so.
+    /// </summary>
+    [Theory]
+    [InlineData("next-step", "ordinary", "sessions: held: it reads this when its turn ends.\n")]
+    [InlineData("next-step", "urgent", "sessions: held: it reads this at its next step.\n")]
+    [InlineData("turn-end", "urgent", "sessions: held, not urgent: its door takes words only when its turn ends; it reads this then.\n")]
+    [InlineData("turn-end", "ordinary", "sessions: held: it reads this when its turn ends.\n")]
+    public async Task A_level_says_where_the_words_reach_and_why_where_the_door_cannot_honour_it(string door, string level, string line)
+    {
+        var room = Running();
+        using var service = room.Client();
+        var processes = new SessionProcesses(Pids);
+        var inbox = processes.OpenInbox("w0rk1ng0");
+        var sent = new List<string>();
+        if (door == "next-step")
+        {
+            inbox.Attach(interrupt: null, deliver: message => { sent.Add(message.Text); return new TaskCompletionSource<string>().Task; });
+            inbox.Flow();
+        }
+        else
+        {
+            inbox.Attach(interrupt: () => Task.CompletedTask);
+        }
+
+        Alive("w0rk1ng0");
+        var clock = new HeldClock();
+        var world = World(service) with { Clock = clock };
+        var words = new LoopWords(processes, () => service);
+        await using var loop = new SessionRequestWatch(_home, processes, () => service, every: TimeSpan.FromMilliseconds(20))
+        {
+            Say = (request, ct) =>
+            {
+                clock.Run();
+                return words.HoldAsync(request, ct);
+            },
+        };
+
+        var (exit, said) = await SayAsync(room, ["w0rk1ng0", "use the cache", "--level", level], world);
+
+        Assert.Equal(0, exit);
+        Assert.Equal(line, said);
+        Assert.Equal(door == "next-step" && level == "urgent" ? ["use the cache"] : [], sent);
     }
 
     private static Room Nevers() => new(

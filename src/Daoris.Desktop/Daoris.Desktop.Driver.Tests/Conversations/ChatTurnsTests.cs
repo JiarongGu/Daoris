@@ -236,11 +236,12 @@ public sealed class ChatTurnsTests
     }
 
     /// <summary>
-    /// STEER2a (D90): where the door steers nothing and takes no word mid-turn, *Send now* queues the words and stops the turn
-    /// keeping them, so they are the next turn; with no turn running they are that turn at once.
+    /// 🔴 COWORK1a (D188 point 3, the message-urgency design trap 1): where the door steers nothing and takes no word mid-turn,
+    /// *now* queues the words for the turn's end and stops nothing, said <c>no-interrupt</c>; the turn runs on, and the words are
+    /// the next turn once it ends. With no turn running they are that turn at once.
     /// </summary>
     [Fact]
-    public async Task Sending_now_where_the_door_steers_nothing_stops_the_turn_and_the_words_go_next()
+    public async Task Now_where_the_door_steers_nothing_holds_the_words_for_the_turns_end_and_stops_nothing()
     {
         var door = new Door { TakesWordsMidTurn = false, SteersNow = false };
         var turns = door.Turns();
@@ -248,22 +249,23 @@ public sealed class ChatTurnsTests
         Assert.Equal(new SentNow(null, true, null), await turns.TakeNowAsync(new ChatMessage("read the five files", [])));
         await Poll.Until(() => door.Took.Count == 1, () => "the first turn never reached the door");
 
-        var now = await turns.TakeNowAsync(new ChatMessage("start with the tests", []));
+        var now = await turns.TakeNowAsync(new ChatMessage("start with the tests", []) { Level = MessageLevel.Now });
 
-        Assert.Equal(new SentNow("turn-end", true, null), now);
-        Assert.Equal(1, door.Interrupts);
+        Assert.Equal(new SentNow("turn-end", false, SendNowWhy.NoInterrupt), now);
+        Assert.Equal(0, door.Interrupts);
         Assert.Equal(["start with the tests"], turns.State.Queued.Select(message => message.Text));
-        // A second press asks the turn no second stop.
-        Assert.Equal(new SentNow("turn-end", true, null), await turns.TakeNowAsync(new ChatMessage("and the readme", [])));
-        Assert.Equal(1, door.Interrupts);
+        Assert.Equal(MessageLevel.Now, turns.State.Queued.Single().Level);
+        Assert.Equal(new SentNow("turn-end", false, SendNowWhy.NoInterrupt), await turns.TakeNowAsync(new ChatMessage("and the readme", [])));
+        Assert.Equal(0, door.Interrupts);
         door.EndTurn(0);
-        await Poll.Until(() => door.Took.Count == 2, () => "the words never went after the stopped turn");
+        await Poll.Until(() => door.Took.Count == 2, () => "the words never went after the turn");
         Assert.Equal(["read the five files", "start with the tests"], door.Took);
     }
 
     /// <summary>
     /// 🔴 STEER2a (a second maker's review): a stop decided for turn A is on the wire, or dropped, before the kept words' own
     /// turn B goes. A slow stop that landed after B had gone would cut B, whose words have left the queue and would be lost.
+    /// The keeping stop is the person's own press (COWORK1a), so it is pressed here beside the words, never by them.
     /// </summary>
     [Fact]
     public async Task The_kept_words_turn_waits_for_the_stop_decided_for_the_turn_before_and_is_never_cut_by_it()
@@ -273,15 +275,77 @@ public sealed class ChatTurnsTests
         turns.Take(new ChatMessage("read the five files", []));
         await Poll.Until(() => door.Took.Count == 1, () => "the first turn never reached the door");
 
-        var pressing = turns.TakeNowAsync(new ChatMessage("start with the tests", []));
+        turns.Take(new ChatMessage("start with the tests", []));
+        var pressing = turns.StopKeepingAsync();
         door.EndTurn(0);
         await Task.Delay(150);
 
         Assert.Single(door.Took);
         door.InterruptGate.SetResult();
-        Assert.Equal(new SentNow("turn-end", true, null), await pressing.WaitAsync(Poll.Patience));
+        Assert.True((await pressing.WaitAsync(Poll.Patience)).Cancelled);
         await Poll.Until(() => door.Took.Count == 2, () => "the kept words never went");
         Assert.Equal([1], door.InterruptedAt);
+    }
+
+    /// <summary>
+    /// 🔴 COWORK1a (the design §2.1, trap 13): on a door that takes words at its next step an ordinary word is never handed to the
+    /// turn in flight; it waits as a turn of its own. An urgent word said after it goes at the next step past it, since its sender
+    /// chose sooner; when the turn ends the ordinary one goes, in the order said.
+    /// </summary>
+    [Fact]
+    public async Task An_ordinary_word_waits_as_its_own_turn_and_an_urgent_one_goes_at_the_next_step_past_it()
+    {
+        var door = new Door();
+        var turns = door.Turns();
+        turns.Take(new ChatMessage("read the five files", []));
+        await Poll.Until(() => door.Took.Count == 1, () => "the first turn never reached the door");
+
+        Assert.Equal(TurnReach.TurnEnd, turns.Take(new ChatMessage("tidy the readme after", []) { Level = MessageLevel.Ordinary }));
+        Assert.Equal(TurnReach.NextStep, turns.Take(new ChatMessage("the budget is 64 KiB", [])));
+
+        Assert.Equal(["the budget is 64 KiB"], door.Steered);
+        var waiting = Assert.Single(turns.State.Queued);
+        Assert.Equal(("tidy the readme after", MessageLevel.Ordinary), (waiting.Text, waiting.Level));
+
+        door.EndTurn(0);
+        door.Step.SetResult();
+        await Poll.Until(() => door.Took.Count == 2, () => "the ordinary word never went as its own turn");
+        Assert.Equal(["read the five files", "tidy the readme after"], door.Took);
+    }
+
+    /// <summary>
+    /// COWORK1a (the design §8.2): a waiting word's level is changed while it waits, under its id. Made urgent, it goes at the turn's
+    /// next step where the door takes words then; made <i>now</i> where the agent steers, it is steered. A word a turn took already is
+    /// answered taken.
+    /// </summary>
+    [Fact]
+    public async Task A_waiting_words_level_is_changed_under_its_id_and_raised_it_goes_into_the_turn()
+    {
+        var door = new Door();
+        var turns = door.Turns();
+        turns.Take(new ChatMessage("read the five files", []));
+        await Poll.Until(() => door.Took.Count == 1, () => "the first turn never reached the door");
+        turns.Take(new ChatMessage("tidy the readme after", []) { Level = MessageLevel.Ordinary });
+        turns.Take(new ChatMessage("and the changelog", []) { Level = MessageLevel.Ordinary });
+        var ids = turns.State.Queued.Select(message => message.Id!).ToList();
+
+        Assert.Equal(QueueEdit.Done, turns.EditQueued(ids[0], text: null, MessageLevel.Urgent));
+        Assert.Equal(["tidy the readme after"], door.Steered);
+        Assert.Equal(QueueEdit.Done, turns.EditQueued(ids[1], text: null, MessageLevel.Now));
+        Assert.Equal(["and the changelog"], door.SteeredNow);
+        Assert.Empty(turns.State.Queued);
+        Assert.Equal(QueueEdit.Taken, turns.EditQueued(ids[1], text: null, MessageLevel.Ordinary));
+
+        var held = new Door { TakesWordsMidTurn = false, SteersNow = false };
+        var holding = held.Turns();
+        holding.Take(new ChatMessage("read the five files", []));
+        await Poll.Until(() => held.Took.Count == 1, () => "the first turn never reached the door");
+        holding.Take(new ChatMessage("tidy the readme after", []));
+        var id = holding.State.Queued.Single().Id!;
+
+        Assert.Equal(QueueEdit.Done, holding.EditQueued(id, text: null, MessageLevel.Ordinary));
+        Assert.Equal((id, MessageLevel.Ordinary), (holding.State.Queued.Single().Id, holding.State.Queued.Single().Level));
+        Assert.Equal(0, held.Interrupts);
     }
 
     /// <summary>
@@ -320,8 +384,9 @@ public sealed class ChatTurnsTests
 
     /// <summary>
     /// 🔴 STEER2a (D136 point 4, evidence §3): on a next-step door whose agent cannot steer, the driver never stops a turn while a
-    /// word is on its way. With a helper's answer waiting as its own turn the press queues the words behind it; with nothing
-    /// waiting they go at the next step, behind the word on its way. Either way <c>now: false</c>, <c>behind</c>.
+    /// word is on its way. The press goes at the next step, behind the word on its way, and past a helper's answer waiting as its
+    /// own turn, which is ordinary (COWORK1a, the design §2.1: urgency is when, not order). Either way <c>now: false</c>,
+    /// <c>behind</c>.
     /// </summary>
     [Fact]
     public async Task Sending_now_behind_words_on_their_way_where_the_agent_cannot_steer_stops_nothing_and_says_so()
@@ -336,10 +401,11 @@ public sealed class ChatTurnsTests
 
         var now = await turns.TakeNowAsync(new ChatMessage("start with the tests", []));
 
-        Assert.Equal(new SentNow("turn-end", false, SendNowWhy.Behind), now);
+        Assert.Equal(new SentNow("next-step", false, SendNowWhy.Behind), now);
         Assert.Equal(0, door.Interrupts);
         Assert.Empty(door.SteeredNow);
-        Assert.Equal(["start with the tests"], turns.State.Queued.Select(message => message.Text));
+        Assert.Equal(["put PINEAPPLE after the words", "start with the tests"], door.Steered);
+        Assert.Empty(turns.State.Queued);
 
         var next = new Door { SteersNow = false };
         var stepping = next.Turns();

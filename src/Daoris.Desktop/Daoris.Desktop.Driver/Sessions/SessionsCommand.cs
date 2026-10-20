@@ -46,6 +46,12 @@ public sealed record SessionsAsk(string Verb)
     /// <summary>A say's <c>--now</c> (STEER2c): the terminal's twin of the page's *Send now*, which <c>SESSION_INPUT</c> carries as <c>now: true</c>.</summary>
     public bool Now { get; init; }
 
+    /// <summary>
+    /// A say's <c>--level</c> (COWORK1a): <c>ordinary</c>, <c>urgent</c> or <c>now</c>, which <c>SESSION_INPUT</c> carries as
+    /// <c>level</c>; <c>--now</c> is <c>now</c>. Null where none was asked, the person's default, urgent.
+    /// </summary>
+    public string? Level { get; init; }
+
     /// <summary>A hand-over's agent (MIXAGENT1a-i): the adapter the conversation goes on with.</summary>
     public string? Agent { get; init; }
 
@@ -125,10 +131,36 @@ public sealed record SessionsWorld(ServiceClient Service, string Home, DriverCon
     public Func<string, string, string?, CancellationToken, Task<int>>? HandOver { get; init; }
 
     /// <summary>
+    /// The keeping stop (COWORK1a, <c>sessions stop &lt;id&gt; --turn</c>): stop the session's turn so what waits goes next, through the
+    /// Daoris whose loop holds its turns, answering a <see cref="KeepingStops"/> code. Null where nothing here holds them: the verb
+    /// alone, which sends it to the running Daoris instead.
+    /// </summary>
+    public Func<string, CancellationToken, Task<string>>? StopTurn { get; init; }
+
+    /// <summary>
     /// The agents a quest's session may go on with (MIXAGENT1a-ii, D163 point 1): each one's accounts and door, as the loop's
     /// roster reads them for a start. Null reads this build's adapters and the home's plugins.
     /// </summary>
     public Func<string, HandOverAgent?>? Drives { get; init; }
+}
+
+/// <summary>
+/// What the keeping stop came to (COWORK1a, the message-urgency design §3.2): <c>CANCEL_TURN</c>'s answer to a terminal's
+/// <c>sessions stop &lt;id&gt; --turn</c>, which the verb words.
+/// </summary>
+public static class KeepingStops
+{
+    /// <summary>The turn was asked to stop, keeping the session: what waits goes next.</summary>
+    public const string Stopped = "stopped";
+
+    /// <summary>No turn ran, or nothing waited for its end: nothing was stopped, since ending the work is the session's own stop.</summary>
+    public const string Nothing = "nothing";
+
+    /// <summary>The door has no stop that keeps the session (the native door's run): nothing was stopped.</summary>
+    public const string NoInterrupt = "no-interrupt";
+
+    /// <summary>Nothing here runs the session.</summary>
+    public const string NotHere = "not-here";
 }
 
 /// <summary>
@@ -161,9 +193,9 @@ public static class SessionsCommand
     public const string Usage =
         """
         usage: daoris-driver sessions [--group you|review|working|later|ended|archived] [--repository <name>] [--json]
-               daoris-driver sessions stop <id>  ·  sessions finish <id> [--note "…"]  ·  sessions decline <id> --reason "…"
+               daoris-driver sessions stop <id> [--turn]  ·  sessions finish <id> [--note "…"]  ·  sessions decline <id> --reason "…"
                daoris-driver sessions archive <id>… | --ended [--yes]  ·  sessions unarchive <id>…  ·  sessions delete <id>
-               daoris-driver sessions say <id> "…" [--file <path>]… [--now]
+               daoris-driver sessions say <id> "…" [--file <path>]… [--level ordinary|urgent|now] [--now]
                daoris-driver sessions take-back <id> [<word>]  ·  sessions reword <id> <word> "…"
                daoris-driver sessions go-on-new <id>
                daoris-driver sessions start-from <id>
@@ -191,8 +223,10 @@ public static class SessionsCommand
         {
             case ["stop", var id] when Id(id):
                 return new SessionsAsk("stop") { Ids = [id] };
+            case ["stop", var id, "--turn"] when Id(id):
+                return new SessionsAsk("stop-turn") { Ids = [id] };
             case ["stop", ..]:
-                problem = "`stop` takes one session's id.";
+                problem = "`stop` takes one session's id, and `--turn` to stop only its turn so what waits goes next.";
                 return null;
             case ["finish", var id] when Id(id):
                 return new SessionsAsk("finish") { Ids = [id] };
@@ -290,20 +324,36 @@ public static class SessionsCommand
         return ask;
     }
 
-    /// <summary><c>say &lt;id&gt; "…" [--file &lt;path&gt;]…</c>: the words after the id joined by a space, and each path after its flag.</summary>
+    /// <summary>
+    /// <c>say &lt;id&gt; "…" [--file &lt;path&gt;]… [--level ordinary|urgent|now] [--now]</c>: the words after the id joined by a space,
+    /// each path after its flag, and the level after its own (COWORK1a); <c>--now</c> is <c>--level now</c> (STEER2c).
+    /// </summary>
     private static SessionsAsk? ReadSay(IReadOnlyList<string> args, out string? problem)
     {
-        problem = "`say` takes one session's id, then your words, `--file <path>` for each file you give with them, and `--now` to send them now.";
+        problem = "`say` takes one session's id, then your words, `--file <path>` for each file you give with them, and "
+            + "`--level ordinary|urgent|now` for when it reads them (`--now` is `--level now`).";
         if (args.Count < 2 || !Id(args[1])) return null;
 
         var words = new List<string>();
         var files = new List<string>();
-        var now = false;
+        string? level = null;
         for (var at = 2; at < args.Count; at++)
         {
             if (args[at] == "--now")
             {
-                now = true;
+                level = MessageLevels.Now;
+                continue;
+            }
+
+            if (args[at] == "--level")
+            {
+                if (at + 1 >= args.Count || MessageLevels.Read(args[at + 1]) is null)
+                {
+                    problem = "`--level` is when it reads your words: ordinary, urgent or now.";
+                    return null;
+                }
+
+                level = args[++at];
                 continue;
             }
 
@@ -321,7 +371,7 @@ public static class SessionsCommand
         if (text.Length == 0) return null;
 
         problem = null;
-        return new SessionsAsk("say") { Ids = [args[1]], Text = text, Files = files, Now = now };
+        return new SessionsAsk("say") { Ids = [args[1]], Text = text, Files = files, Level = level, Now = level == MessageLevels.Now };
     }
 
     public static async Task<int> RunAsync(SessionsAsk ask, SessionsWorld world, TextWriter output, CancellationToken ct = default) =>
@@ -349,6 +399,9 @@ public static class SessionsCommand
                 () => SessionsHelperCommand.RunWordAsync(world, ask, output), output, ct).ConfigureAwait(false),
             "stop" => await ThroughAsync(
                 world, PersonPresses.SessionStop, Body(("id", ask.Ids[0])), () => StopAsync(world, ask.Ids[0], output, ct), output, ct).ConfigureAwait(false),
+            "stop-turn" => await ThroughAsync(
+                world, PersonPresses.SessionStopTurn, Body(("id", ask.Ids[0]), ("keep", true)), () => StopTurnAsync(world, ask.Ids[0], output, ct), output, ct)
+                .ConfigureAwait(false),
             "finish" or "decline" => await ThroughAsync(
                 world, PersonPresses.SessionResolve,
                 Body(("id", ask.Ids[0]), ("state", ask.Verb == "finish" ? "completed" : "declined"), ("note", ask.Note)),
@@ -412,7 +465,7 @@ public static class SessionsCommand
 
         return await ThroughAsync(
             world, PersonPresses.SessionSay,
-            Body(("id", ask.Ids[0]), ("text", ask.Text ?? ""), ("paths", paths.Count > 0 ? paths : null), ("now", ask.Now ? true : null)),
+            Body(("id", ask.Ids[0]), ("text", ask.Text ?? ""), ("paths", paths.Count > 0 ? paths : null), ("now", ask.Now ? true : null), ("level", ask.Level)),
             () => SayAsync(world, ask, output, ct), output, ct).ConfigureAwait(false);
     }
 
@@ -765,6 +818,44 @@ public static class SessionsCommand
 
     // ——— Stop, finish and decline.
 
+    /// <summary>
+    /// <c>stop &lt;id&gt; --turn</c>, the keeping stop (COWORK1a, the message-urgency design §3.2, §8.6): the session's turn stopped so
+    /// what waits goes next, through the Daoris whose loop holds its turns, and what it came to said. Only that Daoris holds a turn,
+    /// so alone, with no seam, the verb could not: exit 2. A door with no stop that keeps the session, or no turn to stop, is a
+    /// policy answer, exit 1; a door that carries only text refuses in the driver's words.
+    /// </summary>
+    private static async Task<int> StopTurnAsync(SessionsWorld world, string id, TextWriter output, CancellationToken ct)
+    {
+        if (world.StopTurn is not { } stopTurn)
+        {
+            output.WriteLine(
+                $"sessions: the Daoris that runs {id} holds its turns and did not answer here; stop its turn in Daoris's window, beside the words that wait.");
+            return 2;
+        }
+
+        string came;
+        try
+        {
+            came = await stopTurn(id, ct).ConfigureAwait(false);
+        }
+        catch (DriverException refused)
+        {
+            output.WriteLine($"sessions: {refused.Message}");
+            return 1;
+        }
+
+        output.WriteLine(came switch
+        {
+            KeepingStops.Stopped => $"sessions: stopping {id}'s turn: what waits goes next, and what it has done stays.",
+            KeepingStops.NoInterrupt =>
+                $"sessions: {id}'s door cannot stop a turn and keep the session, so nothing was stopped: what waits goes when its turn ends, "
+                + $"and `daoris-driver sessions stop {id}` ends the session.",
+            KeepingStops.NotHere => $"sessions: nothing here runs {id}, so it has no turn to stop.",
+            _ => $"sessions: {id} has no turn running with words waiting for its end, so nothing was stopped.",
+        });
+        return came == KeepingStops.Stopped ? 0 : 1;
+    }
+
     private static async Task<int> StopAsync(SessionsWorld world, string id, TextWriter output, CancellationToken ct)
     {
         var record = await RecordAsync(world, id, output, ct).ConfigureAwait(false);
@@ -998,8 +1089,8 @@ public static class SessionsCommand
         var runs = world.Processes.AliveOnThisMachine(id);
         if (!runs && !world.LoopRuns()) return await KeepAsync(world, record, text, files, loop: false, output, ct).ConfigureAwait(false);
 
-        var (held, taken) = await AskLoopAsync(world, record, text, files, waited, ask.Now, ct).ConfigureAwait(false);
-        if (held is not null) return await SaidAsync(world, record, held, waited, output, ct).ConfigureAwait(false);
+        var (held, taken) = await AskLoopAsync(world, record, text, files, waited, ask, ct).ConfigureAwait(false);
+        if (held is not null) return await SaidAsync(world, record, held, waited, ask.Level, output, ct).ConfigureAwait(false);
         if (taken)
         {
             output.WriteLine(
@@ -1027,15 +1118,17 @@ public static class SessionsCommand
     /// no loop acts on it after the person was told.
     /// </summary>
     private static async Task<(WordsHeld? Held, bool Taken)> AskLoopAsync(
-        SessionsWorld world, SessionRecord record, string text, IReadOnlyList<string> files, Waited waited, bool now, CancellationToken ct)
+        SessionsWorld world, SessionRecord record, string text, IReadOnlyList<string> files, Waited waited, SessionsAsk ask, CancellationToken ct)
     {
         var requests = new SessionRequests(world.Home);
         WordsHeld? winding = null;
         while (true)
         {
+            // The level beside `now`, which a say at now still writes for a loop from before COWORK1a.
             var request = new SessionRequest(record.Id, SessionMove.Say, DateTimeOffset.UtcNow)
             {
-                Text = text, Files = files, Key = SessionRequests.NewKey(), Now = now,
+                Text = text, Files = files, Key = SessionRequests.NewKey(), Now = MessageLevels.Asked(ask.Level, ask.Now) == MessageLevel.Now,
+                Level = ask.Level,
             };
             requests.Write(request);
 
@@ -1078,27 +1171,33 @@ public static class SessionsCommand
         }
     }
 
-    /// <summary>Where the words stand, in one line, from the loop's answer (§5.2); words kept on the record are followed.</summary>
+    /// <summary>
+    /// Where the words stand, in one line, from the loop's answer (§5.2); words kept on the record are followed. The level asked
+    /// (COWORK1a) is named where the door could not honour it, with the reason (the message-urgency design §8.6).
+    /// </summary>
     private static async Task<int> SaidAsync(
-        SessionsWorld world, SessionRecord record, WordsHeld held, Waited waited, TextWriter output, CancellationToken ct)
+        SessionsWorld world, SessionRecord record, WordsHeld held, Waited waited, string? level, TextWriter output, CancellationToken ct)
     {
         switch (held)
         {
-            // STEER2c: what the door did with a *Send now*, in the terminal's words (D136's 2026-10-16 note).
+            // STEER2c: what the door did with words at now, in the terminal's words (D136's 2026-10-16 note). No door's turn is
+            // stopped for them (D188 point 3): its turn stopping retired with COWORK1a.
             case { Sent: true, Now: true, Reaches: "now" }:
                 output.WriteLine("sessions: sent now: it took this at once, cutting its step in flight.");
                 return 0;
-            case { Sent: true, Now: true, Reaches: "turn-end" }:
-                output.WriteLine("sessions: sent now: its turn is stopping, so this goes next.");
-                return 0;
             case { Sent: true, Why: SendNowWhy.NoInterrupt or SendNowWhy.Opening or SendNowWhy.Behind }:
+                var nextStep = held.Reaches == "next-step";
                 var reason = held.Why switch
                 {
-                    SendNowWhy.NoInterrupt => "it cannot be interrupted",
+                    SendNowWhy.NoInterrupt when nextStep => "its agent cannot be steered mid-step",
+                    SendNowWhy.NoInterrupt => "its door takes words only when its turn ends",
                     SendNowWhy.Opening => "its first prompt has not left yet",
                     _ => "words ahead of these are still on their way",
                 };
-                output.WriteLine($"sessions: not sent now: {reason}; it reads this {(held.Reaches == "next-step" ? "at its next step" : "when its turn ends")}.");
+                output.WriteLine($"sessions: not sent now: {reason}; it reads this {(nextStep ? "at its next step" : "when its turn ends")}.");
+                return 0;
+            case { Sent: true, Reaches: "turn-end" } when level == MessageLevels.Urgent:
+                output.WriteLine("sessions: held, not urgent: its door takes words only when its turn ends; it reads this then.");
                 return 0;
             case { Sent: true, Now: true, Reaches: not "resume" }:
                 output.WriteLine("sessions: sent now: it takes this as its next turn.");

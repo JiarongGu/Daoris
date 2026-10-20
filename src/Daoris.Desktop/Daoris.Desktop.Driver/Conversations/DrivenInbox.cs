@@ -1,9 +1,10 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// What a person tells a driven session while it works (SESS3), handed over where the protocol door allows: at once,
-/// where the agent takes a prompt during its turn (STEER1, D136); else as the next prompt of the same session when the
-/// running turn ends, or at once when the person stops the turn to send it.
+/// What a person tells a driven session while it works (SESS3), handed over where the protocol door allows and its urgency asks
+/// (COWORK1a, D188): an urgent word at once, where the agent takes a prompt during its turn (STEER1, D136); an ordinary word, and
+/// every word on a door that takes none during a turn, as the next prompt of the same session when the running turn ends. No
+/// word stops the turn: the person's keeping stop does, pressed on its own (<see cref="SendNowAsync"/>).
 /// </summary>
 /// <remarks>
 /// <para><b>Why a prompt and never a line.</b> A driven session is handed its whole quest in one turn, and on the
@@ -20,10 +21,12 @@ namespace Daoris.Driver;
 /// ends, and an inbox with nothing held and nothing on its way closes in the same breath, so a word said as the session
 /// winds up is refused, and the person told, rather than kept where nobody reads it.</para>
 ///
-/// <para><b>Sending now stops the turn and withdraws nothing</b>, the reverse of a conversation's stop (CONV4a), which
-/// hands queued words back: here the person stops the turn so their words go at once. With nothing held it stops
-/// nothing: ending the work is the session's own stop. Where words go at once nothing is ever held, and a stop while one
-/// is on its way would answer it cancelled while the agent may still act on it, so there it stops nothing either.</para>
+/// <para><b>The keeping stop stops the turn and withdraws nothing</b>, the reverse of a conversation's stop (CONV4a), which
+/// hands queued words back: here the person stops the turn so what is held goes next. It is the person's own press, never a
+/// word's (D188 point 1): *now* on a door that holds words for the turn's end holds them and stops nothing, said so. With
+/// nothing held it stops nothing: ending the work is the session's own stop. On a door that takes words at its next step it is
+/// not needed, since an urgent word reaches sooner, and a stop while one is on its way would answer it cancelled while the agent
+/// may still act on it, so there it stops nothing either.</para>
 /// </remarks>
 /// <param name="changed">Where it stands, each time that changes — the page shows what is waiting.</param>
 public sealed class DrivenInbox(Action<ChatQueue> changed)
@@ -71,6 +74,40 @@ public sealed class DrivenInbox(Action<ChatQueue> changed)
     }
 
     /// <summary>
+    /// When a word said now at <paramref name="level"/> reaches the session (COWORK1a, the design §3.0): an ordinary one at the
+    /// turn's end on every door, any other at <see cref="Reach"/>. Null as <see cref="Reach"/> is.
+    /// </summary>
+    public DrivenReach? ReachAt(MessageLevel level)
+    {
+        lock (_gate) return _closed || _reach is null ? null : ReachOf(level);
+    }
+
+    /// <summary>
+    /// Whether the agent steers (STEER2a): a word at <c>now</c> cuts its step in flight, where anywhere else it is told why not
+    /// (COWORK1a, the design §8.1). False until the door is known, and once it has closed.
+    /// </summary>
+    public bool Steers
+    {
+        get
+        {
+            lock (_gate) return !_closed && _steer is not null;
+        }
+    }
+
+    /// <summary>
+    /// Whether the door can stop a turn and keep the session (COWORK1a, the design §3.2): where words wait for the turn's end, the
+    /// keeping stop is offered beside them. False on the native door's run (MSG1b), which has no such interrupt and whose stop ends
+    /// the session, until the door is known, and once it has closed.
+    /// </summary>
+    public bool KeepingStop
+    {
+        get
+        {
+            lock (_gate) return !_closed && _interrupt is not null;
+        }
+    }
+
+    /// <summary>
     /// The door, once the session is open: its way of stopping the running turn, and — where the agent takes a prompt
     /// during its turn — its way of sending one (STEER1). What is held then is told with when it reaches the session; a
     /// word goes only once the door says the turn has begun (<see cref="Flow"/>), so none overtakes the prompt it follows.
@@ -98,15 +135,19 @@ public sealed class DrivenInbox(Action<ChatQueue> changed)
             _reach = deliver is null ? DrivenReach.TurnEnd : DrivenReach.NextStep;
             if (_closed) return;
 
-            foreach (var message in _held) Tell(message, _reach.Value);
+            foreach (var message in _held) Tell(message, ReachOf(message.Level));
             Publish();
         }
     }
 
     /// <summary>
-    /// The session's first prompt is on the wire (STEER1): where words go during a turn, what is held goes now, and every
-    /// word after it the moment it is said. Nothing on a door that holds words for the turn's end.
+    /// The session's first prompt is on the wire (STEER1): where words go during a turn, the urgent words held go now, and every
+    /// urgent word after it the moment it is said. Nothing on a door that holds words for the turn's end.
     /// </summary>
+    /// <remarks>
+    /// 🔴 An ordinary word stays held for the turn's end (COWORK1a, the design §14's trap): it never enters a turn in flight, and
+    /// sending every held word here sent it with the urgent ones.
+    /// </remarks>
     public void Flow()
     {
         lock (_gate)
@@ -114,8 +155,8 @@ public sealed class DrivenInbox(Action<ChatQueue> changed)
             _flowing = true;
             if (_closed || _reach != DrivenReach.NextStep) return;
 
-            foreach (var message in _held) Send(message);
-            _held.Clear();
+            foreach (var message in _held.Where(GoesAtNextStep).ToList()) Send(message);
+            _held.RemoveAll(GoesAtNextStep);
             Publish();
         }
     }
@@ -139,12 +180,15 @@ public sealed class DrivenInbox(Action<ChatQueue> changed)
     }
 
     /// <summary>
-    /// Take back or reword one held word (QUEUEEDIT1a): with no <paramref name="text"/> it is removed, with some its words are
-    /// replaced where it is held, its place and its files kept, under a new id the record is told as said. Only a word still held
-    /// (<see cref="QueueEdit.Taken"/> otherwise): one sent to the turn on the wire, or taken for the next, is the session's. The
-    /// record, which showed it waiting once the door was known, settles the old id as withdrawn.
+    /// Take back, reword, or change the level of one held word (QUEUEEDIT1a, COWORK1a): with neither <paramref name="text"/> nor
+    /// <paramref name="level"/> it is removed; with words, they replace its words where it is held, its place and its files kept,
+    /// under a new id the record is told as said; with a level, it asks to reach the session then, under the same id, told again
+    /// with where it reaches now. Raised where the door takes words at its next step, it goes there at once, and at <c>now</c> where
+    /// the agent steers, steered past what waits (the design §8.2). Only a word still held (<see cref="QueueEdit.Taken"/>
+    /// otherwise): one sent to the turn on the wire, or taken for the next, is the session's. The record, which showed it waiting
+    /// once the door was known, settles a reworded or removed word's old id as withdrawn.
     /// </summary>
-    public QueueEdit Edit(string id, string? text)
+    public QueueEdit Edit(string id, string? text, MessageLevel? level = null)
     {
         lock (_gate)
         {
@@ -154,16 +198,12 @@ public sealed class DrivenInbox(Action<ChatQueue> changed)
             var old = _held[at];
             // A word said before the door was known was never told: the record has nothing of it to settle.
             var told = _reach is not null;
-            if (text is null)
-            {
-                _held.RemoveAt(at);
-            }
-            else
-            {
-                _held[at] = old with { Text = text, Id = $"said-{++_said}" };
-            }
+            ChatMessage? word = text is null && level is null
+                ? null
+                : old with { Text = text ?? old.Text, Id = text is null ? old.Id : $"said-{++_said}", Level = level ?? old.Level };
+            _held.RemoveAt(at);
 
-            if (told)
+            if (told && (word is null || text is not null))
             {
                 try
                 {
@@ -173,8 +213,25 @@ public sealed class DrivenInbox(Action<ChatQueue> changed)
                 {
                     // The record misses it; the queue has moved either way.
                 }
+            }
 
-                if (text is not null && _reach is { } reach) Tell(_held[at], reach);
+            if (word is not null)
+            {
+                if (word.Level == MessageLevel.Now && _reach == DrivenReach.NextStep && _flowing && _steer is { } steer)
+                {
+                    Tell(word, DrivenReach.Steered);
+                    Steer(steer, word);
+                }
+                else if (GoesAtNextStep(word))
+                {
+                    Tell(word, DrivenReach.NextStep);
+                    Send(word);
+                }
+                else
+                {
+                    _held.Insert(at, word);
+                    if (told) Tell(word, ReachOf(word.Level));
+                }
             }
 
             Publish();
@@ -189,8 +246,9 @@ public sealed class DrivenInbox(Action<ChatQueue> changed)
     }
 
     /// <summary>
-    /// Take the person's words: told at once, then held for the turn's end, or sent where the agent takes them during
-    /// its turn. False once the session has stopped taking any: it is ending.
+    /// Take the person's words at the level they carry (COWORK1a): told at once with where they reach the session, then sent where
+    /// the agent takes them during its turn and they are urgent, or held for the turn's end. False once the session has stopped
+    /// taking any: it is ending.
     /// </summary>
     public bool Hold(ChatMessage message)
     {
@@ -198,8 +256,8 @@ public sealed class DrivenInbox(Action<ChatQueue> changed)
         {
             if (_closed) return false;
             var said = message with { Id = $"said-{++_said}" };
-            if (_reach is { } reach) Tell(said, reach);
-            if (_reach == DrivenReach.NextStep && _flowing) Send(said);
+            if (_reach is not null) Tell(said, ReachOf(said.Level));
+            if (GoesAtNextStep(said)) Send(said);
             else _held.Add(said);
             Publish();
             return true;
@@ -207,61 +265,45 @@ public sealed class DrivenInbox(Action<ChatQueue> changed)
     }
 
     /// <summary>
-    /// The person's *Send now* (STEER2a, D136's 2026-10-16 note), carried out by the door it has. Where the agent steers and its
-    /// first prompt is on the wire, the words are steered into the running turn at once, told with the reach <c>now</c>. On a
-    /// door that holds words for the turn's end they are held as <see cref="Hold"/> holds them, and the turn is stopped so they
-    /// go next (D90). Where the door can do neither, or the first prompt has not left, they go as <see cref="Hold"/> sends
-    /// them, and the answer says why by its code. Null once the session has stopped taking any.
+    /// The person's words at <c>now</c> (STEER2a, COWORK1a), carried out by the door it has. Where the agent steers and its first
+    /// prompt is on the wire, the words are steered into the running turn at once, told with the reach <c>now</c>. Anywhere else
+    /// they go as <see cref="Hold"/> takes an urgent word, and the answer says why not now by its code: <c>opening</c> before the
+    /// first prompt left, <c>behind</c> or <c>no-interrupt</c> at a next step, and <c>no-interrupt</c> held for the turn's end.
+    /// Null once the session has stopped taking any.
     /// </summary>
     /// <remarks>
-    /// <para>The steer is answered by the run (<see cref="NextOrClose"/>), which closes nothing while one is on its way. The stop
-    /// is asked once per turn, once the words are held, as <see cref="SendNowAsync"/> asks it.</para>
+    /// <para>🔴 <b>It never stops the turn</b> (D188 points 1 and 3): on a door that holds words for the turn's end the words are
+    /// held and the turn runs on. The keeping stop is the person's own press, <see cref="SendNowAsync"/>, offered beside the held
+    /// words where the door has an interrupt that keeps the session (<see cref="KeepingStop"/>).</para>
     ///
-    /// <para>🔴 <b>A steer goes past a word on its way; a stop never does</b> (D136 point 4): the steer cuts the step in flight,
-    /// not the prompt the word is queued as, which is still taken at its next step, and the person chose to go first. Where the
-    /// agent cannot steer, these go at its next step behind it, said <see cref="SendNowWhy.Behind"/>; that door is never
-    /// stopped.</para>
+    /// <para>🔴 <b>A steer goes past a word on its way</b> (D136 point 4): the steer cuts the step in flight, not the prompt the
+    /// word is queued as, which is still taken at its next step, and the person chose to go first. Where the agent cannot steer,
+    /// these go at its next step behind it, said <see cref="SendNowWhy.Behind"/>. The steer is answered by the run
+    /// (<see cref="NextOrClose"/>), which closes nothing while one is on its way.</para>
     /// </remarks>
-    public async Task<SentNow?> HoldNowAsync(ChatMessage message)
+    public Task<SentNow?> HoldNowAsync(ChatMessage message)
     {
-        Stop? stop = null;
-        SentNow now;
         lock (_gate)
         {
-            if (_closed) return null;
+            if (_closed) return Task.FromResult<SentNow?>(null);
+            var now = message with { Level = MessageLevel.Now };
             var onTheirWay = _sent.Any(answer => !answer.IsCompleted);
             if (_reach == DrivenReach.NextStep && _flowing && _steer is { } steer)
             {
-                var said = message with { Id = $"said-{++_said}" };
+                var said = now with { Id = $"said-{++_said}" };
                 Tell(said, DrivenReach.Steered);
                 Steer(steer, said);
                 Publish();
-                return new SentNow(SendNowWhy.Spelled(DrivenReach.Steered), Now: true, Why: null);
+                return Task.FromResult<SentNow?>(new SentNow(SendNowWhy.Spelled(DrivenReach.Steered), Now: true, Why: null));
             }
 
             var reach = _reach;
-            Hold(message);
-            if (reach is null || reach == DrivenReach.NextStep && !_flowing)
-            {
-                now = new SentNow(SendNowWhy.Spelled(reach), Now: false, SendNowWhy.Opening);
-            }
-            else if (reach == DrivenReach.NextStep)
-            {
-                now = new SentNow(SendNowWhy.Spelled(reach), Now: false, onTheirWay ? SendNowWhy.Behind : SendNowWhy.NoInterrupt);
-            }
-            else if (_interrupt is not null)
-            {
-                stop = StopThisTurn();
-                now = new SentNow(SendNowWhy.Spelled(reach), Now: true, Why: null);
-            }
-            else
-            {
-                now = new SentNow(SendNowWhy.Spelled(reach), Now: false, SendNowWhy.NoInterrupt);
-            }
+            Hold(now);
+            var why = reach is null || reach == DrivenReach.NextStep && !_flowing ? SendNowWhy.Opening
+                : reach == DrivenReach.NextStep && onTheirWay ? SendNowWhy.Behind
+                : SendNowWhy.NoInterrupt;
+            return Task.FromResult<SentNow?>(new SentNow(SendNowWhy.Spelled(reach), Now: false, why));
         }
-
-        if (stop is not null) await SendStopAsync(stop).ConfigureAwait(false);
-        return now;
     }
 
     /// <summary>
@@ -426,9 +468,10 @@ public sealed class DrivenInbox(Action<ChatQueue> changed)
     }
 
     /// <summary>
-    /// Stop the running turn so what is held goes next. <see cref="TurnStop.Nothing"/> with nothing held, before the
-    /// session is open, or where words go at once (STEER1): a stop while one is on its way would answer it cancelled while
-    /// the agent may still act on it (docs/2026-10-03-steer-evidence.md §3).
+    /// The keeping stop (COWORK1a, the design §3.2; <c>CANCEL_TURN</c>, <c>sessions stop --turn</c>): stop the running turn so what
+    /// is held goes next, the person's own press. <see cref="TurnStop.Nothing"/> with nothing held, before the session is open,
+    /// where nothing can stop a turn and keep the session (the native door's run), or where words go at once (STEER1): a stop
+    /// while one is on its way would answer it cancelled while the agent may still act on it (docs/2026-10-03-steer-evidence.md §3).
     /// </summary>
     /// <remarks>A turn is asked to stop once, however often the person presses (STEER2a): the answer still says it was.</remarks>
     public async Task<TurnStop> SendNowAsync()
@@ -479,6 +522,17 @@ public sealed class DrivenInbox(Action<ChatQueue> changed)
     }
 
     private ChatQueue Now() => _closed ? ChatQueue.Idle : new ChatQueue(Taking: true, [.. _held]);
+
+    /// <summary>
+    /// When a word reaches the session on the door known, by its level (COWORK1a, the design §3.0): an ordinary word at the turn's
+    /// end on every door; any other at the door's own reach. Called under the gate, once the door is known.
+    /// </summary>
+    private DrivenReach ReachOf(MessageLevel level) =>
+        level == MessageLevel.Ordinary ? DrivenReach.TurnEnd : _reach ?? DrivenReach.TurnEnd;
+
+    /// <summary>Whether a word goes to the running turn now: urgent or now, on a door that takes words at its next step, its first prompt on the wire.</summary>
+    private bool GoesAtNextStep(ChatMessage message) =>
+        _reach == DrivenReach.NextStep && _flowing && message.Level != MessageLevel.Ordinary;
 
     /// <summary>Send one word now, under the gate so words leave in the order said; its answer waits for the run.</summary>
     private void Send(ChatMessage message)
