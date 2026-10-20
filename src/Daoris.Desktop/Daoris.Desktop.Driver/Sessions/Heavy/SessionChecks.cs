@@ -16,9 +16,9 @@ namespace Daoris.Driver;
 /// from, which <c>run-heavy</c> and the harness refuse by, is the process's, not any agent's memory (D161).</para>
 ///
 /// <para><b>A named workflow's run</b> takes its bound version's <c>checks</c> (<c>claimed</c>'s option in a graph version, the
-/// <c>work</c> step's field in a steps version), never this rule, which is Current's. No version carries one in this build: a graph
-/// version's option is read at the bind once the bind comes before the take (FABRIC-CUTOVER1g), and a steps version's <c>work</c> takes no
-/// field yet, so a named workflow's sessions run as today (<see cref="Of"/>).</para>
+/// <c>work</c> step's field in a steps version), never this rule, which is Current's. A steps version's <c>work</c> takes <c>checks</c>
+/// (FABRIC-PIPELINE1b2), written into its canonical text only where set, so every version saved before keeps its digest; a graph version's
+/// option is read at the bind once the bind comes before the take (FABRIC-CUTOVER1g), so a graph's sessions run as today (<see cref="Of"/>).</para>
 ///
 /// <para><b>Read as a stored shape</b>: a value this build does not know is passed over, read as no rule, and kept in the file by the
 /// keeping writer. Keyed as <c>heavyGates</c> is: the repository's name, trimmed, matched in any case, a key keeping the spelling first
@@ -46,10 +46,12 @@ public static class SessionChecks
 
     /// <summary>
     /// The checks a run takes (the pipeline design §3.1): under Current, or where no process was read, the repository's rule; a named
-    /// workflow's, its bound version's, which none carries in this build, so today's.
+    /// workflow's, its bound version's <c>work</c> step's (FABRIC-PIPELINE1b2), none where it sets none or the version could not be read.
     /// </summary>
     public static string? Of(DriverConfig config, string repository, WorkflowProcess? process) =>
-        process is { Named: true } ? null : For(config, repository);
+        process is { Named: true }
+            ? Choice((string?)process.Steps.FirstOrDefault(step => step.Kind == WorkflowKinds.Work)?.Field("checks"))
+            : For(config, repository);
 
     /// <summary>
     /// One repository's rule set, a choice read in any case and kept in its own spelling, or taken away with null: the config changed and

@@ -14,7 +14,7 @@
 import { createHash } from 'node:crypto';
 import { sameName } from '../platform/casefold.ts';
 import { isoMoment } from '../accounts/cooling.ts';
-import { landingProblem } from '../driver/driverconfig.ts';
+import { SESSION_CHECKS, landingProblem } from '../driver/driverconfig.ts';
 import { isPluginId } from '../plugins/plugins.ts';
 import { GRAPH_SCHEMA, graphFormDigest, type GraphForm } from './graphversions.ts';
 import { readGraph } from './nodegraphs.ts';
@@ -37,6 +37,11 @@ export interface KindField {
   choices?: readonly string[];
   required: boolean;
   default: string | boolean | null;
+  /**
+   * Set where a version's canonical text writes it only where it is set (FABRIC-PIPELINE1b2): a field a kind gains after versions were
+   * saved, absent read as none, so every version saved before it keeps its digest — the driver's `WorkflowKindField.WhereSet`.
+   */
+  whereSet?: true;
 }
 
 /** One kind of step: how much of it this build runs, the limit it is said with, and its fields. */
@@ -55,7 +60,12 @@ const FAILED: KindField = { name: 'failed', type: 'choice', choices: ['wait', 's
  * since XAGENT1f's gate reads its rule, with Current's limit for it.
  */
 export const WORKFLOW_KINDS: readonly KindRow[] = [
-  { kind: 'work', runtime: 'built', limit: null, fields: [] },
+  // The checks its sessions run (FABRIC-PIPELINE1b2, D192 point 4), as Current draws a repository's rule; absent is today's.
+  {
+    kind: 'work', runtime: 'built', limit: null, fields: [
+      { name: 'checks', type: 'choice', choices: SESSION_CHECKS, required: false, default: null, whereSet: true },
+    ],
+  },
   {
     kind: 'opinion', runtime: 'partial', limit: 'opinion-partial', fields: [
       { name: 'reviewers', type: 'names', required: false, default: null },
@@ -594,13 +604,16 @@ function orderProblem(steps: readonly NamedStep[], v: string): string | null {
  * The text a version's digest is of, built by hand so both runtimes write the same bytes (the driver's
  * `WorkflowNamed.Canonical`): `workflow`, then each step's line, its quoted id and its kind, each followed by every field its
  * kind takes, a line each in order, absence written as its default. Text is quoted, with `\`, `"` and each control character
- * escaped; none is `-`; a list is its quoted items between brackets; a group's members follow it, a step deeper.
+ * escaped; none is `-`; a list is its quoted items between brackets; a group's members follow it, a step deeper. A field the table
+ * writes only where set (`whereSet`) has no line where it is none.
  */
 export function versionCanonical(steps: readonly NamedStep[]): string {
   const lines = ['workflow'];
   const write = (step: NamedStep, indent: string): void => {
     lines.push(`${indent}step ${quoted(step.id)} ${step.kind}`);
+    const row = kindOf(step.kind);
     for (const [name, value] of step.fields) {
+      if (value === null && row?.fields.find((each) => each.name === name)?.whereSet === true) continue;
       if (Array.isArray(value) && value.length > 0 && typeof value[0] !== 'string') {
         lines.push(`${indent}  ${name}:`);
         for (const member of value as NamedStep[]) write(member, `${indent}    `);

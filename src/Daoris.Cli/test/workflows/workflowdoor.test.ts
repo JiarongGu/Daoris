@@ -141,6 +141,21 @@ test('new from Current copies a repository\'s rules as Current draws them, and t
   fx.cleanup();
 });
 
+test('new from a light Current keeps its sessions\' checks on the work, and a repository that sets none writes none (FABRIC-PIPELINE1b2)', async () => {
+  const fx = makeFixture('workflowdoor-current-light');
+  writeFileSync(fx.entry('driver'), JSON.stringify({ sessionChecks: { 'web-app': 'light' } }));
+  const checkouts: CheckoutsReader = async () => ({ checkouts: [{ repository: 'web-app', workspace: 'work', root: null }] });
+
+  const { code, out } = await run(fx, ['new', 'web-app-light', '--from', 'current:web-app'], checkouts);
+  await run(fx, ['new', 'docs-today', '--from', 'current:docs'], checkouts);
+
+  assert.equal(code, 0);
+  assert.deepEqual(saved(fx, 'web-app-light').versions[0]!.steps[0], { id: 'work', kind: 'work', checks: 'light' });
+  assert.match(out, /\+ work · work: checks `light`/);
+  assert.deepEqual(saved(fx, 'docs-today').versions[0]!.steps[0], { id: 'work', kind: 'work' });
+  fx.cleanup();
+});
+
 test('edit saves the next version from the change language, said step by step; a stale base, no change and a bad change', async () => {
   const fx = makeFixture('workflowdoor-edit');
   await run(fx, ['new', 'docs', '--from', 'pull-request-after-accept', '--with-look', '--name', 'Docs']);

@@ -39,7 +39,7 @@ test('the kinds are the table\'s, each its runtime on main, its limit and its fi
     kind: row.kind, runtime: row.runtime, limit: row.limit,
     fields: row.fields.map((each) => ({
       name: each.name, type: each.type, ...(each.choices === undefined ? {} : { choices: [...each.choices] }),
-      required: each.required, default: each.default,
+      required: each.required, default: each.default, ...(each.whereSet === true ? { whereSet: true } : {}),
     })),
   })), TABLE.kinds);
   for (const row of WORKFLOW_KINDS) {

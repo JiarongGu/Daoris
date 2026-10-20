@@ -12,7 +12,7 @@
  */
 import { createHash } from 'node:crypto';
 import type { GraphForm } from './graphversions.ts';
-import { field, members, quoted, versionDigest, type NamedStep, type NamedVersion, type StepValue } from './namedworkflows.ts';
+import { field, kindOf, members, quoted, versionDigest, type NamedStep, type NamedVersion, type StepValue } from './namedworkflows.ts';
 
 /**
  * The decoder's own version — the driver's `WorkflowGraphs.DecoderVersion`: a decoded graph's digest is derived from it. 2 since
@@ -61,8 +61,11 @@ function nodeOf(step: NamedStep): GraphNode {
   const kind = step.kind === 'check' ? `${plugin}/${CHECKS_NODE}` : step.kind === 'stage' ? `${plugin}/${field(step, 'stage') as string}` : NODE_KIND[step.kind];
   if (kind === undefined) throw new Error(`\`${step.kind}\` is no kind of step.`);
   const reach = REACH[kind] ?? (step.kind === 'stage' ? 'performed' : 'observed');
+  // A field written only where set (FABRIC-PIPELINE1b2) is no option where it is none, so a version saved before it decodes as it did.
+  const row = kindOf(step.kind);
   const options = Object.fromEntries(step.fields
     .filter(([name]) => !(step.kind === 'all' && name === 'steps'))
+    .filter(([name, value]) => value !== null || row?.fields.find((each) => each.name === name)?.whereSet !== true)
     .map(([name, value]) => [name, value as StepOption] as const)
     .sort(([a], [b]) => ordinal(a, b)));
   return { id: step.id, kind, version: 1, reach, ...(Object.keys(options).length > 0 ? { options } : {}) };
