@@ -24,7 +24,7 @@ Listed first, because nothing below restates their rows: open one of these for w
 | `decisions.md` | each decision's title with its entry's lines, then each dated note with its lines |
 | `outlines/<path>.md` | the declarations or headings of a file over 40 KB, each with its line range |
 
-## Files over 40 KB (218)
+## Files over 40 KB (219)
 
 Each has its outline at `outlines/<its path>.md`: open the outline, then read the range you need, not the file.
 
@@ -153,7 +153,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/SessionGroups.cs` | 70 | 1220 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/SessionTrees/LandedCleanups.cs` | 46 | 753 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/SessionTrees/SessionTrees.cs` | 53 | 857 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/SessionTrees/TreeLands.cs` | 77 | 1190 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/SessionTrees/TreeLands.cs` | 78 | 1193 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/WorkingTree.cs` | 61 | 1218 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Workflows/Domain/WorkflowNamed.cs` | 42 | 751 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Workflows/Domain/WorkflowRun.cs` | 43 | 776 |
@@ -167,6 +167,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/Bridge/DriverModuleSessionsTests.cs` | 69 | 1162 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/Loop/AttentionStateSliceTests.cs` | 71 | 1282 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/Platform/InstancePipeTests.cs` | 40 | 768 |
+| `src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/Platform/StatePublisherTests.cs` | 40 | 793 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules/Bridge/Routes/AgentsRoutes.cs` | 45 | 793 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules/Bridge/Routes/HelpRoutes.cs` | 76 | 1290 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules/Bridge/Routes/LinesRoutes.cs` | 61 | 1001 |

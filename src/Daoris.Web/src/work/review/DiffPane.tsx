@@ -9,7 +9,7 @@ import { ExternalLink } from '../../design/links';
 import { store, stored } from '../../lib/stored';
 import {
   type LandingConflict, useDiscardSessionTree, useHandOff, useHandOffPress, useLandSessionTree, useLanding, useReadingSince, useSay, useSessionDiff,
-  useUnderWay, useUnderWayStep, useUnderWaySubject,
+  useUnderWay, useUnderWayBehind, useUnderWayStep, useUnderWaySubject,
 } from '../../bridge/shell';
 import { Button, EmptyState, Inline, SESSION_ACTIVE } from '../../design/ui';
 import { reviewBranch, reviewKnown } from './diff';
@@ -197,6 +197,9 @@ export function DiffPane({
     landStep: useUnderWayStep('LAND_SESSION_TREE', session),
     // LANDHOLD2: a hand-off says it waits behind another push of its branch.
     handStep: useUnderWayStep('HANDOFF', session),
+    // LANDHOLD3: and either names the session it waits behind, where the holder said who it is.
+    landBehind: useUnderWayBehind('LAND_SESSION_TREE', session),
+    handBehind: useUnderWayBehind('HANDOFF', session),
     // Its line of work's one Accept, or its ask's, lands this part too (ACCEPTALL1h): a press carries its entry or ask, not its parts.
     entry: useUnderWaySubject('LAND_ENTRY', entry),
     ask: useUnderWaySubject('LAND_ASK', ask),
@@ -450,7 +453,13 @@ export function DiffPane({
               }));
             }}
           >
-            {landsNow ? t(LANDING_WORDS[underWay.landStep ?? ''] ?? 'work.review.accepting') : t('work.review.accept')}
+            {!landsNow
+              ? t('work.review.accept')
+              : underWay.landStep === 'waiting'
+                ? underWay.landBehind
+                  ? t('work.review.acceptingWaitingBehind', { session: underWay.landBehind })
+                  : t('work.review.acceptingWaiting')
+                : t(LANDING_WORDS[underWay.landStep ?? ''] ?? 'work.review.accepting')}
           </Button>
         )}
 
@@ -462,7 +471,13 @@ export function DiffPane({
             disabled={underWay.hand || Boolean(handable.problem)}
             onClick={() => act(hand.mutateAsync(session))}
           >
-            {underWay.hand ? t(underWay.handStep === 'waiting' ? 'work.review.handingWaiting' : 'work.review.handing') :t('work.review.hand', { plugin: handable.plugin })}
+            {!underWay.hand
+              ? t('work.review.hand', { plugin: handable.plugin })
+              : underWay.handStep === 'waiting'
+                ? underWay.handBehind
+                  ? t('work.review.handingWaitingBehind', { session: underWay.handBehind })
+                  : t('work.review.handingWaiting')
+                : t('work.review.handing')}
           </Button>
         )}
 
