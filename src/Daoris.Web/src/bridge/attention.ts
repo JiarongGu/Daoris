@@ -6,15 +6,23 @@ import { type AttentionPushed, attentionInOrder, type PushedAttention } from '..
 import { readSlice } from './driver';
 import { mergeKeyed, readPushed, type SliceSpec } from './state/slices';
 
-// Who needs the person, as the shell pushes it (PUSH1d4, D182 points 2-4 and 6): *What needs you*'s rows and what the Sessions badge
-// counts, judged in .NET once for every window (`AttentionStateSlice`). The page orders the rows, words them and keeps their acts.
+// Who needs the person, as the shell pushes it (PUSH1d4, D182 points 2-4 and 6): *What needs you*'s rows, what waits on the person in
+// Sessions and the sessions the driver runs (SESSBADGE1), judged in .NET once for every window (`AttentionStateSlice`). The page orders
+// the rows, words them and keeps their acts.
 
-/** The partition of the rows, each under its kind and id, and of what the Sessions badge counts. */
+/** The partition of the rows, each under its kind and id; of what waits on the person in Sessions; and of the sessions the driver runs. */
 const ROWS = 'rows';
 const SESSIONS = 'sessions';
+const WORKING = 'working';
 
 const keyed = (value: unknown): Record<string, unknown> | null =>
   typeof value === 'object' && value !== null && !Array.isArray(value) ? (value as Record<string, unknown>) : null;
+
+/** Each key of a partition with the workspace its value says, for the window's scope. */
+const scopedKeys = (partition: Record<string, unknown>) => Object.entries(partition).map(([key, value]) => {
+  const workspace = keyed(value)?.workspace;
+  return { key, workspace: typeof workspace === 'string' ? workspace : null };
+});
 
 /** A pushed row of a shape the page reads, or null: a kind and an id, its wait a time or null. */
 function rowOf(value: unknown): PushedAttention | null {
@@ -24,9 +32,10 @@ function rowOf(value: unknown): PushedAttention | null {
 }
 
 /**
- * The slice's two partitions composed into one entry (PUSH1d4): the rows in the band's order (`attentionInOrder`, D182's PUSH1d4
- * note), and the keys of what the Sessions badge counts. Nothing until the owner judged and both partitions are held, so a window
- * never reads half a judgement as the whole: before, the band draws its skeleton (PUSHUX1).
+ * The slice's partitions composed into one entry (PUSH1d4): the rows in the band's order (`attentionInOrder`, D182's PUSH1d4
+ * note), the keys of what waits on the person in Sessions, and the keys of the sessions the driver runs (SESSBADGE1). Nothing until
+ * the owner judged and the rows and the waits are held, so a window never reads half a judgement as the whole: before, the band
+ * draws its skeleton (PUSHUX1). A shell from before the sessions the driver runs pushes none, read as none.
  */
 export function composeAttention(partitions: ReadonlyMap<string, unknown>, judged: boolean): AttentionPushed | undefined {
   const rows = keyed(partitions.get(ROWS));
@@ -34,10 +43,8 @@ export function composeAttention(partitions: ReadonlyMap<string, unknown>, judge
   if (!judged || !rows || !sessions) return undefined;
   return {
     rows: attentionInOrder(Object.values(rows).map(rowOf).filter((row): row is PushedAttention => row !== null)),
-    sessions: Object.entries(sessions).map(([key, value]) => {
-      const workspace = keyed(value)?.workspace;
-      return { key, workspace: typeof workspace === 'string' ? workspace : null };
-    }),
+    sessions: scopedKeys(sessions),
+    working: scopedKeys(keyed(partitions.get(WORKING)) ?? {}),
   };
 }
 
@@ -52,13 +59,13 @@ export const attentionSlice: SliceSpec = {
 
 /**
  * What a window knows of who needs the person: in a plain browser, nothing, since the judgement is the app's (`app`); in a shell,
- * nothing yet until the owner has judged (`reading`), never an empty band (PUSHUX1); then the rows in its scope and the Sessions
- * badge's count.
+ * nothing yet until the owner has judged (`reading`), never an empty band (PUSHUX1); then, in its scope, the rows, how many things
+ * wait on the person in Sessions (`sessions`), and how many sessions the driver runs (`working`, SESSBADGE1).
  */
 export type AttentionRead =
   | { state: 'app' }
   | { state: 'reading' }
-  | { state: 'known'; rows: PushedAttention[]; sessions: number };
+  | { state: 'known'; rows: PushedAttention[]; sessions: number; working: number };
 
 /**
  * Who needs the person in this window (PUSH1d4): the pushed rows, read from memory and never pulled, since no route answers them;
@@ -80,5 +87,10 @@ export const useAttention = (): AttentionRead => {
   if (!isAvailable) return { state: 'app' };
   if (!read.data) return { state: 'reading' };
   const scoped = <T extends { workspace?: string | null }>(each: T) => each.workspace == null || inCircle(each.workspace, workspace);
-  return { state: 'known', rows: read.data.rows.filter(scoped), sessions: read.data.sessions.filter(scoped).length };
+  return {
+    state: 'known',
+    rows: read.data.rows.filter(scoped),
+    sessions: read.data.sessions.filter(scoped).length,
+    working: read.data.working.filter(scoped).length,
+  };
 };

@@ -209,10 +209,18 @@ export type ActivityItem<T extends string> = {
   /** A count on the icon. Zero wears nothing. */
   badge?: number;
   /**
-   * `open` for a count that IS a status — sessions waiting on a person — and the accent for a
-   * quantity. The only status hue on the bar, because it is the only status on it.
+   * `open` for a count that IS a status — what waits on a person — and the accent for a
+   * quantity.
    */
   tone?: 'accent' | 'open';
+  /**
+   * Something in its place waits on the person, marked beside a quantity in the waiting hue (SESSBADGE1, D76's note): Sessions
+   * counts the sessions the driver runs and marks what waits there. A dot, a shape of its own, since at badge size the waiting hue
+   * and the accent read alike (UX5 U24); shown with no count too.
+   */
+  waiting?: boolean;
+  /** Its counts in words, said in its tip and as its description, so the marks are never hue alone (D41 §6). */
+  detail?: string;
   /** Its key, as the Go menu prints it (UX7a, D152 §3.4), said in its tip: a place's position is its key. */
   keys?: string;
 };
@@ -253,11 +261,12 @@ export function ActivityBar<T extends string>({
    */
   onToggleCurrent?: () => void;
 }) {
-  const place = ({ tab, label: name, icon, badge, tone, keys }: ActivityItem<T>) => (
-    <Tip key={tab} content={keys ? `${name} (${keys})` : name} side="right">
+  const place = ({ tab, label: name, icon, badge, tone, waiting, detail, keys }: ActivityItem<T>) => (
+    <Tip key={tab} content={[keys ? `${name} (${keys})` : name, detail].filter(Boolean).join(' · ')} side="right">
       <button
         type="button"
         aria-label={name}
+        aria-description={detail}
         aria-keyshortcuts={keys}
         aria-current={active === tab ? 'page' : undefined}
         // The current place is a door to its list where it toggles it (D118 §3a).
@@ -276,6 +285,8 @@ export function ActivityBar<T extends string>({
         )}
         <Icon name={icon} size={17} />
         <CountBadge count={badge ?? 0} tone={tone} />
+        {/* What waits on the person, beside the quantity, at the corner the count leaves free (SESSBADGE1). */}
+        {waiting && <DotMark tone="parked" className="absolute bottom-1 right-1 size-2 ring-2 ring-page" />}
       </button>
     </Tip>
   );
