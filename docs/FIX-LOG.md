@@ -5,6 +5,19 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-20 — Checkouts measuring at once shared one port, and a test held a word to one post (FLOWCHART1e, COWORK1c)
+
+- **Symptom:** the full set on 2b28b0112 failed `web-measured` (ten stories: `page.goto: net::ERR_CONNECTION_REFUSED` on
+  `localhost:5181`) and `modules` (`DriverModuleAddedTests`' "posted once": two posts heard, `/say` and `/added`).
+- **Root cause:** every checkout measured on port 5181 and reused a server already up there, so the CI beside's run reused a
+  builder's Vite in another worktree and lost it when that builder's run ended (MILESTONEUX1's builder saw the same once). And
+  COWORK1c keeps a word on its session's record through the say door before holding it, beside DRIFT1a2's `added` post that
+  keeps it on the ask once taken: two right posts, where the test, written before COWORK1c, wanted one.
+- **Fix:** the measured config derives a port from its checkout's path (or `DAORIS_MEASURED_PORT`) and never reuses another's
+  server; the warm-up names a missing base address rather than guess. The test holds each post once: `say` with `running`,
+  then `added`.
+- **Verification:** `e2e:measured` 82 passed on its own port; `DriverModuleAddedTests` 7 passed.
+
 ## 2026-10-20 — The measured check's first story timed out on Vite's cold compile, and a window's test met the states flow's word (FLOWCHART1e, FLOWCHART1b)
 
 - **Symptom:** the full set on 3aeb4b81a failed `web-measured` (2 of 58: the first story of each spec, `page.goto` past the
