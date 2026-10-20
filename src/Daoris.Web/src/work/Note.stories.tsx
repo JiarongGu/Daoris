@@ -1,7 +1,11 @@
-import type { Meta, StoryObj } from '@storybook/react-vite';
+import type { Decorator, Meta, StoryObj } from '@storybook/react-vite';
 import type { NotePart } from '../data/api';
+import { InTheme } from '../plugins/storyIcons';
 import { chinese } from '../design/storyLanguage';
+import { sessionWidths } from '../design/storyWidths';
 import { Note } from './Note';
+
+const dark: Decorator = (Story) => <InTheme theme="dark"><Story /></InTheme>;
 
 // A session's note in every shape a record brings it (LANG1b, D142; the language design §2, §5, §6): Daoris's lines worded
 // in the reader's language, in English and in 中文; a split note, the lead-in worded and the agent's question beneath it
@@ -46,7 +50,8 @@ const meta: Meta<typeof Note> = {
   title: 'Work/Note',
   component: Note,
   args: { note: ENDED_NOTE, parts: ENDED, className: 'text-body leading-relaxed text-ink-soft' },
-  decorators: [(Story) => <div className="max-w-3xl"><Story /></div>],
+  // A session's page at the frame's widths (the UI/UX design R6, STORYGAP1), where its head draws the note: wide by default.
+  decorators: [sessionWidths.wide],
 };
 export default meta;
 
@@ -102,6 +107,15 @@ export const ProgramWords: Story = {
     ],
   },
 };
+
+/** The split note at a 680 px window. */
+export const AgentQuestionHalf: Story = { ...AgentQuestion, decorators: [sessionWidths.half] };
+
+/** The split note at the main area's 400 px floor. */
+export const AgentQuestionNarrow: Story = { ...AgentQuestion, decorators: [sessionWidths.narrow] };
+
+/** The split note in dark: the agent's and the person's words in the theme's inks. */
+export const AgentQuestionDark: Story = { ...AgentQuestion, decorators: [dark] };
 
 /** One run, for a row too narrow for blocks: the band's two lines, the question inline. */
 export const Compact: Story = {

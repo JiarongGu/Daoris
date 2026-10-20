@@ -1,11 +1,15 @@
-import type { Meta, StoryObj } from '@storybook/react-vite';
+import type { Decorator, Meta, StoryObj } from '@storybook/react-vite';
+import { InTheme } from '../plugins/storyIcons';
 import { chinese } from '../design/storyLanguage';
+import { sessionWidths, storyWidths } from '../design/storyWidths';
 import type { Channel, ChannelItem } from '../work/channel';
 import { ChannelPanel, ChannelSection } from './ChannelSection';
 
 // An ask's channel (SESSONE2c, D167 points 6 to 8): the owner's ask over an app and its database repository, where the two sessions
 // and the person talk. Molecules, so each state is reached by passing a channel: no driver, no service. English and 中文, since
 // the section's, the composer's and Daoris's lines' words are chrome, while the messages are shown as written.
+
+const dark: Decorator = (Story) => <InTheme theme="dark"><Story /></InTheme>;
 
 const ago = (minutes: number) => new Date(Date.now() - minutes * 60_000).toISOString();
 
@@ -32,7 +36,8 @@ const meta: Meta<typeof ChannelSection> = {
   title: 'Asks/ChannelSection',
   component: ChannelSection,
   args: { onPost: () => {}, repositories: ['app', 'db'] },
-  decorators: [(Story) => <div className="max-w-2xl p-4"><Story /></div>],
+  // An ask's page at the frame's widths (the UI/UX design R6, STORYGAP1): half by default, a story's own width instead.
+  decorators: [storyWidths.half],
 };
 export default meta;
 
@@ -41,6 +46,12 @@ type Story = StoryObj<typeof ChannelSection>;
 /** The whole exchange: Daoris's lines, an open question, the person's answer and the other session's note, newest at the foot. */
 export const Exchange: Story = { args: { channel: CHANNEL } };
 export const ExchangeChinese: Story = { ...Exchange, decorators: [chinese] };
+/** The exchange across a maximized window's main area. */
+export const ExchangeWide: Story = { ...Exchange, decorators: [storyWidths.wide] };
+/** The exchange at the main area's 400 px floor. */
+export const ExchangeNarrow: Story = { ...Exchange, decorators: [storyWidths.narrow] };
+/** The exchange in dark. */
+export const ExchangeDark: Story = { ...Exchange, decorators: [dark] };
 
 /** Opened with two messages past the person's mark: counted in the heading and marked new, as the mark moves. */
 export const Unread: Story = {
@@ -55,12 +66,12 @@ export const EmptyChinese: Story = { ...Empty, decorators: [chinese] };
 /** The channel on its way. */
 export const Reading: Story = { args: { channel: null } };
 
-/** A session's panel: the database repository's line of work, folded to its title; opened, it is kept to what concerns it. */
+/**
+ * A session's panel: the database repository's line of work, folded to its title; opened, it is kept to what concerns it.
+ * Drawn in a session's page, with its gutters.
+ */
 export const Panel: StoryObj<typeof ChannelPanel> = {
-  render: () => (
-    <div className="max-w-2xl p-4">
-      <ChannelPanel channel={CHANNEL} only={{ entry: 'ask:c98a7e/db', repository: 'db' }} onPost={() => {}} onOpenAsk={() => {}} />
-    </div>
-  ),
+  render: () => <ChannelPanel channel={CHANNEL} only={{ entry: 'ask:c98a7e/db', repository: 'db' }} onPost={() => {}} onOpenAsk={() => {}} />,
+  decorators: [sessionWidths.half],
 };
-export const PanelChinese: StoryObj<typeof ChannelPanel> = { ...Panel, decorators: [chinese] };
+export const PanelChinese: StoryObj<typeof ChannelPanel> = { ...Panel, decorators: [sessionWidths.half, chinese] };

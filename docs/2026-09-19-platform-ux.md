@@ -320,8 +320,10 @@ controls are in the frame design's §3.
   helper, `design/storyWidths.tsx`, with the page's own gutters, in English and 中文, light and dark. No decorator
   adds what the page does not have (a gap, a cap, a padding), and a domain's cards are drawn in the domain's own
   container: every R1 defect had passed its stories, drawn at 46rem with a gap of their own. An organism that holds
-  hooks splits a molecule for its states (`DriverCards`, `WiringCards`). **Check:** `storyWidths.test.tsx` names the
-  stories still framed by themselves, for STORYGAP1, and fails on a new one.
+  hooks splits a molecule for its states (`DriverCards`, `WiringCards`). A session's page's parts take the same widths
+  in its own gutters (`sessionWidths`). **Check:** `storyWidths.test.tsx` reads every story under `settings/`, `projects/`,
+  `work/`, `workflow/`, `asks/` and `quests/`, names the parts of other regions that keep a frame of their own (the list
+  column, the side bar, the composer's row), each with where it is mounted, and fails on any other (STORYGAP1).
 - **A step in a task happens where it was started** (the owner, on signing in): `SignIn` sits on the
   account's row — numbered steps in the order the person meets them, one live control at a time, a
   Cancel that stops the process, the raw output one disclosure away, and the result as the row's own
