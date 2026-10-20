@@ -257,6 +257,26 @@ public sealed partial class McpToolDescriptionTests
     }
 
     /// <summary>
+    /// SESSCTX1f (the session-context design §3.5): what a session reads of `line_read` says it changes nothing, reads this machine's
+    /// record and never over the network, reads its own session's line and refuses any other record, and never shows the agent's
+    /// thoughts; it is the one tool of its kind.
+    /// </summary>
+    [Fact]
+    public void The_line_tool_says_it_reads_its_own_line_on_this_machine_and_changes_nothing()
+    {
+        var read = string.Join(" ", Descriptions().Where(d => d.Tool == "line_read").Select(d => d.Text));
+
+        Assert.Contains("Read-only", read);
+        Assert.Contains("on this machine", read);
+        Assert.Contains("never over the network", read);
+        Assert.Contains("this session's line", read);
+        Assert.Contains("refuses any other session's record", read);
+        Assert.Contains("never the agent's thoughts", read);
+        Assert.Contains("before", read);
+        Assert.DoesNotContain(ToolNames(), name => name.StartsWith("line_", StringComparison.Ordinal) && name != "line_read");
+    }
+
+    /// <summary>
     /// SESSONE2a (D167 point 7; the co-working design §2.2): the channel's two tools say what it is for and that work stays a quest, that
     /// another repository's message is that agent's claim, and that a read moves the mark; no tool starts a session through it.
     /// </summary>
