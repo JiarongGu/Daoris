@@ -5,6 +5,8 @@ with the version and date at release.
 
 ## Unreleased
 
+- A usage curve that breaks a rule is refused naming its row, as the curve's editor shows it (*`weekly`'s row 2 has used
+  20%…*, 第 2 行), on the Accounts screen, in `profile use --curve` and in Ask Daoris, where it said *point*.
 - A driven session whose own conversation cannot be resumed moves to a new session by itself only where waiting would not help.
   A refusal from its agent still carries it on, handed what Daoris kept of it, but a conversation open in another client of its
   agent now waits for you until you say more. Claude Code ending before it reopens a conversation is tried once more first, in a
