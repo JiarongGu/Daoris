@@ -40,7 +40,7 @@ const TABLE: Record<string, 'wide' | 'half' | 'narrow'> = {
   'driver/DriverChinese': 'wide',
   'driver/DriverChineseHalf': 'half',
   'driver/DriverChineseNarrow': 'narrow',
-  // Settings → AI features: its rows stand alone until ACCESSSWAP1 lands and its card takes a list, each on a track of its own.
+  // Settings → AI features, its card's rows on one list.
   'ai/NothingNamed': 'wide',
   'ai/NothingNamedHalf': 'half',
   'ai/NothingNamedNarrow': 'narrow',

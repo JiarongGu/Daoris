@@ -41,7 +41,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Web/src/app/pushedState.test.tsx` | 57 | 1218 |
 | `src/Daoris.Web/src/data/api.ts` | 51 | 847 |
 | `src/Daoris.Web/src/data/queries.ts` | 47 | 890 |
-| `src/Daoris.Web/src/design/tokens.test.ts` | 48 | 860 |
+| `src/Daoris.Web/src/design/tokens.test.ts` | 48 | 856 |
 | `src/Daoris.Web/src/design/ui.test.tsx` | 57 | 1148 |
 | `src/Daoris.Web/src/design/ui.tsx` | 86 | 1836 |
 | `src/Daoris.Web/src/help/AskConversation.tsx` | 53 | 987 |

@@ -810,10 +810,6 @@ const WINDOW_PARTS: Record<string, string> = {
   './work/frame/ViewMain.tsx': "the main area's gutters (ViewMain)",
   // The dock is the frame's part, sized against the window by `layout.ts`.
   './help/AskPanel.tsx': 'the dock (AskPanel, framed)',
-  // Held by a branch in flight (FLOWCHART1a2, `quests/**`): a container query on the composer once it lands.
-  './quests/QuestComposer.tsx': 'left for FLOWCHART1a2 (QuestComposer)',
-  // Held by a branch in flight (ACCESSSWAP1, `help/access/**`): a container query on the table once it lands.
-  './help/access/WhatItHas.tsx': 'left for ACCESSSWAP1 (WhatItHas)',
 };
 
 export function viewportVariants(files: [path: string, source: string][]): string[] {

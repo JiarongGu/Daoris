@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import type { HelpGrantAgent, HelpGrantChoice, HelpGrantId, HelpMode } from '../help/access/wired';
-import { Card, Pill, Prose, SelectField, SettingRow } from '../design/ui';
+import { Card, Pill, Prose, SelectField, SettingList, SettingRow } from '../design/ui';
 import { ConfiguredAccess } from '../help/access/ConfiguredAccess';
 import { FullAccessConfirm, HelpModeChip } from '../help/access/HelpModePicker';
 import type { StartWiring } from '../map/wiring';
@@ -102,6 +102,8 @@ export function AiJobs({ search, intake, helper, access, grants }: {
     <Card>
       <Prose className="mb-3 mt-0 text-small text-ink-soft">{t('settings.ai.body')}</Prose>
 
+      {/* The card's rows on one label track (R1, UIFIT1): each job's value beside its words. */}
+      <SettingList>
       <SettingRow
         label={t('settings.ai.search.label')}
         hint={t('settings.ai.search.hint')}
@@ -116,6 +118,7 @@ export function AiJobs({ search, intake, helper, access, grants }: {
       {intake && <Intake intake={intake} />}
       {helper && <Helper helper={helper} />}
       {access && <HelpAccess access={access} grants={grants} />}
+      </SettingList>
     </Card>
   );
 }
