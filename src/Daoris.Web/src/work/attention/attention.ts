@@ -11,6 +11,7 @@ import { accountRowWorded, type PushedAccountFacts } from './accountWords';
 import { CLOSE_SENDER, entryDetail, entryName, type HeldAttempt, heldWhy, heldWords, type MilestoneEntry } from '../head/milestone';
 import { type OpinionWait, opinionState } from '../gates/opinion';
 import { boundMinutes, type PermissionWait } from '../waits/PermissionAsks';
+import type { AnswerWait } from '../waits/AnswerAlone';
 import { opinionSays } from '../gates/OpinionGate';
 import { placedFact } from '../rail/SessionRow';
 import type { NoteRecord } from '../noteLines';
@@ -37,6 +38,9 @@ export const ATTENTION_GROUP: Readonly<Record<AttentionKind, AttentionGroup>> = 
   // A tool call a session holds for the person's answer under asking (AUTONOMY1b3c, D184 point 3): its turn stands still until they
   // answer, or the bound refuses it, as a go-ahead holds its session's act.
   permission: 'holding',
+  // A third answer in a row with nobody between, which the answers-alone bound holds for the person (COWORK1e, D188 point 4): its
+  // line stands still until they let it go on or keep it.
+  answer: 'holding',
   trust: 'holding',
   // A start waiting on its accounts holds that start; a signed-out account a list holds, the next start the list takes (UX6d).
   'account-wait': 'holding',
@@ -100,6 +104,8 @@ export type AttentionActId =
   | 'let-ask' | 'not-now'
   // AUTONOMY1b3c: the person's answer to a tool call held for them, one per choice its agent offered.
   | 'allow-once' | 'refuse-once' | 'refuse-always'
+  // COWORK1e: the person's word on a third answer alone held for them: *Go on with this answer*, *Not now*.
+  | 'go-on-answer' | 'keep-answer'
   // FABRIC-PERFORM1g: the person's word on a plugin step's attempt held for them.
   | 'happened' | 'did-not' | 'stop-step'
   // FABRIC-CLOSE1q: the person's word on Daoris's own close held for them: its recoveries, and the rest of the work stopped apart.
@@ -211,6 +217,8 @@ export function attentionOffers(item: Attention): AttentionOffer[] {
     case 'helper': return plain('let-ask', 'not-now');
     // A tool call held for the person (AUTONOMY1b3c): its session's card's own presses, one each, as `PermissionAsks` says why.
     case 'permission': return permissionOffers(item);
+    // A third answer alone held for the person (COWORK1e, §8.3): its session's page's own two presses, each one press.
+    case 'answer': return item.answer ? plain('go-on-answer', 'keep-answer') : [];
     // A second opinion that waits on the person (XAGENT1g, §8.5): *Go on anyway…* only where no press of theirs is coming (the
     // work lands by itself, or none could be had and the rule requires one), and a pass asked again; the rest are its session's.
     case 'opinion': return opinionOffers(item);
@@ -285,6 +293,8 @@ export type PushedAttention = {
   /** A title that is a value: a helper's question's first line, a unit's branch or its tree's folder. */
   title?: string;
   permission?: PermissionWait;
+  /** A third answer alone held for the person (COWORK1e): its wait whole, the agent that answered among it. */
+  answer?: AnswerWait;
   /**
    * A unit only the person's press settles (OVERVIEWNOISE1b): whether its owner is unknown, and the entries it is blocked on, each with
    * the code the page words it by and its facts, where the driver gave one.
@@ -314,11 +324,11 @@ export type AttentionPushed = {
 
 /**
  * Each kind's place among the kinds of its group when two waited as long (design §6.2's order of kinds): the accounts', parks,
- * parked quests, go-aheads, held calls and folders; then asks, departures, set-ups, second opinions, widenings, helpers, a unit's
+ * parked quests, go-aheads, held calls, held answers (COWORK1e) and folders; then asks, departures, set-ups, second opinions, widenings, helpers, a unit's
  * blocked clean-up, a held attempt and quests nobody can take; then review.
  */
 const KIND_ORDER: readonly AttentionKind[] = [
-  'account-wait', 'signed-out', 'parked', 'parked-quest', 'go-ahead', 'permission', 'trust',
+  'account-wait', 'signed-out', 'parked', 'parked-quest', 'go-ahead', 'permission', 'answer', 'trust',
   'proposal', 'departure', 'set-up', 'opinion', 'rule', 'helper', 'work', 'unanswerable', 'review',
 ];
 
@@ -488,6 +498,17 @@ export function attentionWorded(row: PushedAttention, names: AttentionNames = {}
           : i18n.t('work.attention.permissionWhy', { session: named(row.session), minutes }),
         session: row.session ?? null,
         ...(row.permission ? { permission: row.permission } : {}),
+      };
+    }
+    // COWORK1e: named as Sessions names the session whose line it would take on, said by the agent that answered.
+    case 'answer': {
+      const agent = row.answer?.agent;
+      return {
+        ...base,
+        title: named(row.session ?? row.id),
+        detail: agent ? i18n.t('work.attention.answerWhy', { agent }) : i18n.t('work.attention.answerWhySomeone'),
+        session: row.session ?? row.id,
+        ...(row.answer ? { answer: row.answer } : {}),
       };
     }
     case 'work': {

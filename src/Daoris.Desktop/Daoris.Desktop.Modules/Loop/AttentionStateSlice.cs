@@ -20,8 +20,8 @@ namespace Daoris.Desktop;
 ///
 /// <para><b>Its inputs, from memory.</b> The sessions, the quests, the asks, the groups and the work as their slices last judged them
 /// (<see cref="StateSlice.Snapshot"/>); the registry as the machine's facts hold it; and what the driver's look kept: the trust holds,
-/// the considerations and the account waits as the tick hands them, the second opinions judged, the rule proposals, the helpers' asks
-/// and the held tool calls; and for the accounts' rows, the roster's last readings as <c>HARNESSES</c> answers them (asking no account,
+/// the considerations and the account waits as the tick hands them, the second opinions judged, the rule proposals, the helpers' asks,
+/// the held tool calls and the answers the answers-alone bound holds (COWORK1e, off the home's marks); and for the accounts' rows, the roster's last readings as <c>HARNESSES</c> answers them (asking no account,
 /// ROSTER1) and how each agent's accounts are used as the accounts slice holds it. Not judged until every slice it reads has judged and
 /// the registry has landed (PUSHUX1): a band drawn from half its inputs would say nothing waits where something does. The look's own
 /// lists are empty before its first look, as the page's were.</para>
@@ -70,7 +70,7 @@ public static class AttentionStateSlice
         [
             "kind", "id", "since", "workspace", "where", "note", "detail", "publishTo", "choices", "ask", "number", "goAhead", "session",
             "departed", "setUp", "local", "environment", "shows", "opinion", "placed", "sitting", "trust", "quest", "proposal", "title",
-            "permission", "blocked", "held", "wholeWorkspace", "holding", "read", "runs", "account",
+            "permission", "blocked", "held", "wholeWorkspace", "holding", "read", "runs", "account", "answer",
         ],
         ["waiting"] = ["kind", "workspace"],
         ["working"] = ["workspace"],
@@ -97,6 +97,7 @@ public static class AttentionStateSlice
         ],
         ["permission"] = ["session", "request", "call", "title", "kind", "choices", "since", "until"],
         ["choice"] = ["id", "name", "kind"],
+        ["answer"] = ["session", "agent", "words", "since"],
         ["blocked"] = ["unknown", "entries"],
         ["entry"] = ["kind", "resource", "detail", "code", "facts"],
         ["attempt"] = WorkStateSlice.Fields["attempt"],
@@ -125,6 +126,7 @@ public static class AttentionStateSlice
         ["row.proposal"] = "proposal",
         ["row.permission"] = "permission",
         ["permission.choices"] = "choice",
+        ["row.answer"] = "answer",
         ["row.blocked"] = "blocked",
         ["blocked.entries"] = "entry",
         ["row.held"] = "attempt",
@@ -235,6 +237,7 @@ public static class AttentionStateSlice
             Opinions = Written(TreesRoutes.OpinionWaits(loop.Judged.Latest)),
             Helpers = Written(HelperWaits(loop.Home)),
             Permissions = Written(PermissionWaits(HeldPermissions.Of(loop.Events))),
+            Answers = Written(AnswerWaits(loop.Home)),
             Doors = Written(AgentsRoutes.Doors(loop.Harnesses, roster)),
             Use = Use(loop.Slices),
             Waits = Written(loop.Look.Waits.Select(DriverLoop.TickWait)),
@@ -321,6 +324,20 @@ public static class AttentionStateSlice
             Since = Moments.Write(held.Since),
             Until = Moments.Write(held.Until),
         }),
+    ];
+
+    /// <summary>
+    /// The answers the answers-alone bound holds for the person (COWORK1e, D188 point 4; the message-urgency design §8.3), as
+    /// <c>ANSWER_WAITS</c> answers them, oldest first: each session's mark <see cref="GoOnMarks.AnswersAlone"/> with the agent that
+    /// answered, the answers' ids and since when. A read off the home's marks; one the person kept with *Not now*, and a mark of any
+    /// other reason, waits on nothing of theirs.
+    /// </summary>
+    public static IReadOnlyList<object> AnswerWaits(string home) =>
+    [
+        .. new GoOnMarks(home).All()
+            .Where(each => each.Mark.Why == GoOnMarks.AnswersAlone)
+            .OrderBy(each => each.Mark.At).ThenBy(each => each.Session, StringComparer.Ordinal)
+            .Select(each => (object)new { each.Session, each.Mark.Agent, Words = each.Mark.Said, Since = Moments.Write(each.Mark.At) }),
     ];
 
     /// <summary>

@@ -437,6 +437,9 @@ public sealed partial class StatePublisherTests : DriverModuleBridge
     [InlineData("SESSION_HAND_OVER_ASK", "", null)]
     // MIXAGENT2c: what of the agents' asks waits on the person, *What needs you*'s read.
     [InlineData("HELPER_WAITS", "", null)]
+    // COWORK1e: the person's answer to a third answer alone held for them, the mark taken away or kept; and the waits' read.
+    [InlineData("SESSION_ANSWER_ALONE", "sessions,driver", "session")]
+    [InlineData("ANSWER_WAITS", "", null)]
     [InlineData("SESSION_OPENINGS", "", null)]
     [InlineData("SESSION_WHERE", "", null)]
     [InlineData("SESSION_GROUPS", "", null)]

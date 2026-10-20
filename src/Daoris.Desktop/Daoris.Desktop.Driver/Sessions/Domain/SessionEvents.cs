@@ -197,6 +197,13 @@ public sealed record SessionEvent
     public string? Opinion { get; init; }
 
     /// <summary>
+    /// For <see cref="SessionEventKind.User"/>: the helper session whose answer these words are (COWORK1e, D188 point 4), as its word on
+    /// the record names it, so the answers-alone bound tells a helper's answer from Daoris's composed prompt (<see cref="AnswersAlone"/>).
+    /// Its <see cref="Origin"/> is <c>target</c>, as before. Null on every other event, and on a record from before, read as it was.
+    /// </summary>
+    public string? Helper { get; init; }
+
+    /// <summary>
     /// For <see cref="SessionEventKind.User"/>: the ask's channel message these words carry (SESSONE2b), by its id (SESSCTX1b, the
     /// session-context design §7), so the page and a brief tell a channel's message by this mark, as an opinion's is, and never by
     /// the English Daoris wraps another session's claim in. Its <see cref="Origin"/> says whose: <c>target</c> for another session's

@@ -286,6 +286,28 @@ describe('the strip of what waits on the person, at the foot', () => {
     expect(container).toBeEmptyDOMElement();
   });
 
+  // COWORK1e (D188 point 4; the message-urgency design §8.3): a third answer in a row with nobody between, held for the person, with
+  // the head's own *Go on with this answer* and *Not now*, and none another session's line holds.
+  const ALONE = { session: 's1a2b3c4', agent: 'codex-acp', words: ['w3'], since: '2026-10-21T09:00:00Z' };
+
+  it('answers a third answer alone held for the person, and folds naming it', async () => {
+    const onAnswer = vi.fn();
+    render(
+      <WaitStrip
+        session={session()}
+        answers={{ waits: [{ ...ALONE, session: 'o7h3r000' }, ALONE], onAnswer, nameOf: () => 'Codex' }}
+        helpers={helpers()}
+        onTop={vi.fn()}
+      />,
+    );
+
+    expect(within(strip()).getByText('Codex’s answer would take this work on a third time with nobody between.')).toBeInTheDocument();
+    await userEvent.click(within(strip()).getByRole('button', { name: 'Go on with this answer' }));
+    expect(onAnswer).toHaveBeenCalledWith(ALONE, true, { done: expect.any(Function), refused: expect.any(Function) });
+    await userEvent.click(within(strip()).getByRole('button', { name: 'Fold' }));
+    expect(strip()).toHaveTextContent('an answer to let go on · a helper it asked for');
+  });
+
   /**
    * WAITFOOT2a (D168's WAITFOOT2 note): the owner found each wait drawn two and three times at once, so while the head's waits
    * are on screen the strip stands aside; never from under an ask open in it, nor from under the person's focus.

@@ -49,6 +49,9 @@ public sealed record AttentionFacts
     /// <summary>The tool calls the sessions hold for the person's answer, as <c>PERMISSION_WAITS</c> answers them.</summary>
     public IReadOnlyList<JsonObject> Permissions { get; init; } = [];
 
+    /// <summary>The answers the answers-alone bound holds for the person (COWORK1e), as <c>ANSWER_WAITS</c> answers them.</summary>
+    public IReadOnlyList<JsonObject> Answers { get; init; } = [];
+
     /// <summary>The roster's doors, each as <c>HARNESSES</c> answers it: each account's last reading with its time (ROSTER1).</summary>
     public IReadOnlyList<JsonObject> Doors { get; init; } = [];
 
@@ -250,6 +253,18 @@ public static class NeedsAPerson
             row["where"] = Text(record, "repository") ?? "";
             row["session"] = Text(wait, "session");
             row["permission"] = wait.DeepClone();
+            rows.Add(row);
+        }
+
+        // A third answer in a row with nobody between, which its session's work waits on the person for (COWORK1e, D188 point 4; the
+        // message-urgency design §8.3): keyed by the session, its wait whole, the agent that answered among it.
+        foreach (var wait in facts.Answers)
+        {
+            var record = sessions.GetValueOrDefault(Text(wait, "session") ?? "");
+            var row = Row("answer", Text(wait, "session"), Truthy(wait, "since"));
+            row["where"] = Text(record, "repository") ?? "";
+            row["session"] = Text(wait, "session");
+            row["answer"] = wait.DeepClone();
             rows.Add(row);
         }
 

@@ -313,7 +313,7 @@ describe('work to review, worded', () => {
 describe('the groups', () => {
   it('puts each kind in its group', () => {
     expect(ATTENTION_GROUP).toEqual({
-      parked: 'holding', 'parked-quest': 'holding', 'go-ahead': 'holding', permission: 'holding', trust: 'holding',
+      parked: 'holding', 'parked-quest': 'holding', 'go-ahead': 'holding', permission: 'holding', answer: 'holding', trust: 'holding',
       'account-wait': 'holding', 'signed-out': 'holding',
       proposal: 'word', intake: 'word', departure: 'word', 'set-up': 'word', opinion: 'word', rule: 'word', helper: 'word',
       unanswerable: 'word', review: 'ready', work: 'word',
@@ -421,6 +421,26 @@ describe('the groups', () => {
     expect(words(row('helper', 'a2', null, { where: '', session: 'g0n3', title: 'Is the cap right?' })))
       .toMatchObject({ where: '', detail: '#g0n3 asked for another agent’s help. Nothing is asked until you let it.' });
     expect(attentionActs(asked)).toEqual(['let-ask', 'not-now']);
+  });
+
+  /**
+   * COWORK1e (D188 point 4; the message-urgency design §8.3): a third answer in a row with nobody between holds its session's work,
+   * named as Sessions names the session, said by the agent that answered, with *Go on with this answer* and *Not now*; after a held call.
+   */
+  it('words a third answer alone held for the person, with its two acts', () => {
+    const answer = { session: 'c0nv0001', agent: 'codex-acp', words: ['w3'], since: '2026-09-21T09:30:00Z' };
+    const rows = attentionOf(attentionInOrder([
+      row('answer', 'c0nv0001', answer.since, { where: 'engine', session: 'c0nv0001', answer }),
+      row('answer', 'g0n3', answer.since, { where: '', session: 'g0n3', answer: { ...answer, session: 'g0n3', agent: null } }),
+    ]), { sessions: [session({ id: 'c0nv0001', quest: '7a82cc' })], quests: [quest()] });
+
+    expect(rows[0]).toMatchObject({
+      kind: 'answer', title: 'Expose a streaming budget on the chunk API', where: 'engine', session: 'c0nv0001',
+      detail: 'codex-acp’s answer would take this work on a third time with nobody between. It waits for you.',
+    });
+    expect(rows[1]).toMatchObject({ title: '#g0n3', detail: 'Another agent’s answer would take this work on a third time with nobody between. It waits for you.' });
+    expect(rows.map(attentionActs)).toEqual([['go-on-answer', 'keep-answer'], ['go-on-answer', 'keep-answer']]);
+    expect(keyed([row('answer', 'a1', '2026-09-21T09:00:00Z'), row('permission', 'p1', '2026-09-21T09:00:00Z')])).toEqual(['permission:p1', 'answer:a1']);
   });
 
   /** AUTONOMY1b3c (D184 point 3): a tool call a session holds for the person, a press per choice its agent offered. */

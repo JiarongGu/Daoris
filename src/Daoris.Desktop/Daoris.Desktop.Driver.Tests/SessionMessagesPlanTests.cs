@@ -257,6 +257,32 @@ public sealed class SessionMessagesPlanTests
         Assert.Equal((StartVerdict.Start, false, "s1"), (carried.Verdict, carried.GoesOn, carried.Resumes?.Session));
     }
 
+    /// <summary>
+    /// 🔴 COWORK1e (D188 point 4; the message-urgency design §2.3): a record whose answers the answers-alone bound holds for the person
+    /// neither goes on with them nor has its quest carried on in a new session meanwhile, which would take the line on with nobody
+    /// between; so with answers the person kept (*Not now*). A word of theirs said since tries it again, the answers beside it.
+    /// </summary>
+    [Theory]
+    [InlineData(GoOnMarks.AnswersAlone)]
+    [InlineData(GoOnMarks.NotNow)]
+    public void A_record_whose_answers_wait_for_the_person_neither_goes_on_nor_is_carried_on(string why)
+    {
+        var answer = Word with { Helper = "h1", Text = "Another agent answered." };
+        var held = new GoOnMark(["w1"], why, DateTimeOffset.Parse("2026-10-21T09:05:00Z"));
+        var snapshot = new Snapshot([Quest("q1", "Taken")], [Repo], [])
+        {
+            LastRun = new Dictionary<string, PriorSession> { ["q1"] = Written("failed", "s1", answer) },
+            Unable = new Dictionary<string, GoOnMark> { ["s1"] = held },
+        };
+
+        Assert.Empty(Planner.Plan(snapshot, Config()));
+
+        var later = Word with { Id = "w2", Text = "Go on with it." };
+        var again = snapshot with { LastRun = new Dictionary<string, PriorSession> { ["q1"] = Written("failed", "s1", answer, later) } };
+        var goesOn = Assert.Single(Planner.Plan(again, Config()));
+        Assert.Equal((true, 2), (goesOn.GoesOn, goesOn.Resumes!.Waiting.Count));
+    }
+
     /// <summary>A parked record's answer is planned as before, saying the answer (ANSWER1a), and goes on through the same verdict.</summary>
     [Fact]
     public void An_answered_park_still_goes_on_saying_the_answer()

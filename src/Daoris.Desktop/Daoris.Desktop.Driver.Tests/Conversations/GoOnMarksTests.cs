@@ -88,6 +88,25 @@ public sealed class GoOnMarksTests : IDisposable
         Assert.Equal(["s1"], read.Keys);
     }
 
+    /// <summary>
+    /// The answers-alone bound's mark (COWORK1e) names the agent that answered, which the person's wait is worded by; a mark from before
+    /// the field reads with none. Every mark this home keeps is read for the waits the person answers, one that does not read left out.
+    /// </summary>
+    [Fact]
+    public void A_mark_keeps_the_agent_that_answered_and_every_mark_is_read_for_the_waits()
+    {
+        var marks = new GoOnMarks(_home);
+        marks.Mark("s1", ["w1", "w2"], GoOnMarks.AnswersAlone, At, agent: "codex-acp");
+        marks.Mark("s2", ["w9"], ContinueWhy.Of(ContinueWhy.Tree), At);
+        File.WriteAllText(DaorisHome.Entry(_home, HomeEntry.Sessions, "s3.cannot.json"), "{ not json");
+
+        Assert.Equal(("codex-acp", GoOnMarks.AnswersAlone), (marks.Read("s1")!.Agent, marks.Read("s1")!.Why));
+        Assert.Null(marks.Read("s2")!.Agent);
+        Assert.Equal(["s1", "s2"], marks.All().Select(each => each.Session).Order(StringComparer.Ordinal));
+        Assert.Equal(["w1", "w2"], marks.All().Single(each => each.Session == "s1").Mark.Said);
+        Assert.Empty(new GoOnMarks(Path.Combine(_home, "none")).All());
+    }
+
     private sealed class MarkComparer : IEqualityComparer<GoOnMark?>
     {
         public bool Equals(GoOnMark? x, GoOnMark? y) =>
