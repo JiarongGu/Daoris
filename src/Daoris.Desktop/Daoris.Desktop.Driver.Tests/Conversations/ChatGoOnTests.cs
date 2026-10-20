@@ -611,6 +611,9 @@ internal sealed class ChatLedger : HttpMessageHandler
     /// <summary>Each take of words: the session and the ids joined.</summary>
     public List<(string Session, string Ids)> Taken { get; } = [];
 
+    /// <summary>Each word taken back (COWORK1c's uncertain words, as a shell comes up): the session and the word.</summary>
+    public List<(string Session, string Word)> TakenBack { get; } = [];
+
     /// <summary>The workspace each Ask Daoris open named in its body, in order: null where it named none (ASKSCOPE1a).</summary>
     public List<string?> HelpAsked { get; } = [];
 
@@ -908,6 +911,22 @@ internal sealed class ChatLedger : HttpMessageHandler
                     {
                         ["session"] = session.DeepClone(), ["message"] = "kept", ["said"] = word.DeepClone(),
                     }.ToJsonString());
+                }
+
+                // SAIDBACK1a's take-back door, without a reword: a word waiting on a record that runs no more leaves it.
+                case ("POST", _) when path.StartsWith("/api/sessions/", StringComparison.Ordinal) && path.EndsWith("/take-back", StringComparison.Ordinal):
+                {
+                    var id = IdOf(path, "/take-back");
+                    var named = JsonNode.Parse(body!)!["word"]!.GetValue<string>();
+                    var said = Find(id)["said"]!.AsArray();
+                    if (said.FirstOrDefault(word => word!["id"]!.GetValue<string>() == named) is not { } waiting)
+                    {
+                        return (HttpStatusCode.OK, """{"done":false,"why":"taken","message":"no longer waits"}""");
+                    }
+
+                    said.Remove(waiting);
+                    TakenBack.Add((id, named));
+                    return (HttpStatusCode.OK, """{"done":true,"message":"taken back"}""");
                 }
 
                 case ("POST", _) when path.StartsWith("/api/sessions/", StringComparison.Ordinal) && path.EndsWith("/taken", StringComparison.Ordinal):

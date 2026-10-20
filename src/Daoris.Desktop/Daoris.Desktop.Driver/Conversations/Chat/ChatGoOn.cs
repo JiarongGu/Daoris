@@ -124,11 +124,18 @@ internal sealed class ChatGoOn
             try
             {
                 if (await _context.ReadAgainAsync(session, CancellationToken.None).ConfigureAwait(false)
-                        is not { Kind: "chat", Teammate: false, Interrupted: true, WordsWaiting: true } record
-                    || GoOnMarks.Judged(record, _context.Marks.Read(session)))
+                        is not { Kind: "chat", Teammate: false, Interrupted: true, WordsWaiting: true } record)
                 {
                     return;
                 }
+
+                // Words the shell cut off had written to its agent leave the record first, never sent again (trap 8).
+                if (await UncertainWords.SettleOneAsync(_context.Service, _context.Events, record, CancellationToken.None).ConfigureAwait(false) > 0)
+                {
+                    record = await _context.ReadAgainAsync(session, CancellationToken.None).ConfigureAwait(false);
+                }
+
+                if (record is not { WordsWaiting: true } || GoOnMarks.Judged(record, _context.Marks.Read(session))) return;
 
                 // No route started it, so its end is announced (MSG1c2).
                 await GoOnAsync(session, onEnded: Announce).ConfigureAwait(false);
@@ -197,6 +204,14 @@ internal sealed class ChatGoOn
             if (WordsNever.ContinuedIn(records, each.Id) is not null) continue;
 
             if (ServiceClient.ReadRecord(json, each.Id) is not { WordsWaiting: true } record) continue;
+            // COWORK1c (the message-urgency design §6, trap 8): words a shell before this one wrote to its agent leave the record first,
+            // never sent again, since this may run before the loop's first look settles them.
+            if (await UncertainWords.SettleOneAsync(_context.Service, _context.Events, record, ct).ConfigureAwait(false) > 0
+                && await _context.ReadAgainAsync(each.Id, ct).ConfigureAwait(false) is not { WordsWaiting: true })
+            {
+                continue;
+            }
+
             if (GoOnMarks.Judged(record, _context.Marks.Read(each.Id))) continue;
 
             try

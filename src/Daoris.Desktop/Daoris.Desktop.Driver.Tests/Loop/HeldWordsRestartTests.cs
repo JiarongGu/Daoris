@@ -72,6 +72,49 @@ public sealed class HeldWordsRestartTests : IDisposable
     }
 
     /// <summary>
+    /// 🔴 Trap 8, a driven session: words its shell attempted before it was cut off may have reached the agent, so the next shell's
+    /// come-up takes them off the record and never sends them again. One its conversation never showed taken is said uncertain there by
+    /// the <c>lost</c> code, under its id; one it showed taken leaves without the line. The look goes on with the word never attempted.
+    /// </summary>
+    [Fact]
+    public async Task Words_attempted_before_a_restart_are_never_sent_again_and_said_uncertain()
+    {
+        using var ledger = new StandInLedger();
+        ledger.Register("engine", Path.Combine(_home, "engine"));
+        ledger.Publish("q1", "engine");
+        ledger.Driven("s1", "q1", Tree);
+        var service = ledger.Client();
+        var events = new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions));
+
+        var inbox = Processes().OpenInbox("s1");
+        inbox.Attach(interrupt: null);
+        var door = new SaidDoor(service, "s1");
+        foreach (var (text, key) in new[] { ("Also log the port.", "press/1"), ("No, 9090.", "press/2"), ("And the readme.", "press/3") })
+        {
+            await inbox.KeepAsync(door, new ChatMessage(text, []) { Key = key }, _closing.Token);
+        }
+
+        // The run hands the first two to its door, which marks each attempted; the first was shown taken, and the shell is cut off.
+        await inbox.NextOrClose()!.Held!.Attempting!();
+        await inbox.NextOrClose()!.Held!.Attempting!();
+        events.Append("s1", new SessionEvent { Kind = SessionEventKind.User, Origin = "person", Id = "w1", Text = "Also log the port." });
+
+        await Orphans.EndAsync(service, Processes(), ct: _closing.Token);
+        var settled = await UncertainWords.SettleAsync(service, events, _closing.Token);
+
+        Assert.Contains(settled, line => line.Contains("session s1", StringComparison.Ordinal));
+        var lost = Assert.Single(events.After("s1", 0).Events, e => e.Code == SessionEventCodes.Lost);
+        Assert.Equal(["w2"], lost.Words);
+        Assert.Equal(["w3"], ledger.Session("s1")["said"]!.AsArray().Select(word => word!["id"]!.GetValue<string>()));
+
+        var (driver, began) = Driver(service);
+        await driver.TickAsync(_closing.Token).WaitAsync(Bound);
+
+        Assert.Equal([["And the readme."]], began);
+        Assert.Empty(await UncertainWords.SettleAsync(service, events, _closing.Token));
+    }
+
+    /// <summary>
     /// The real driver over the ledger, its runs standing in for <c>Driver.ContinueAsync</c>, as <c>ReopenTellingTests</c>' is: each goes
     /// on with the words waiting on its record, takes them off it, and ends it completed, the texts it went on with kept in order.
     /// </summary>

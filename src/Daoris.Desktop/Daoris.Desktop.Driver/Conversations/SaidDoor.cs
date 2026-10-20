@@ -41,6 +41,25 @@ public sealed class SaidDoor(ServiceClient service, string session) : ISaidDoor
         (await service.AttemptAsync(session, ids, ct).ConfigureAwait(false)).Ok;
 
     /// <summary>
+    /// The words a go-on carries from a record that ended or parked (COWORK1c, the message-urgency design §6), marked attempted before
+    /// the resumed run writes them, so a shell cut off under that run never sends them again. Never faults: unmarked, they still go.
+    /// </summary>
+    internal static async Task AttemptedAsync(ServiceClient service, string session, IReadOnlyList<SaidWordView> words)
+    {
+        List<string> ids = [.. words.Select(word => word.Id).OfType<string>()];
+        if (ids.Count == 0) return;
+        try
+        {
+            await service.AttemptAsync(session, ids).ConfigureAwait(false);
+        }
+        catch (Exception error) when (error is HttpRequestException or DriverException or OperationCanceledException
+                                          or ObjectDisposedException or System.Text.Json.JsonException)
+        {
+            // Unmarked, the words still go (above).
+        }
+    }
+
+    /// <summary>
     /// A kept word as its dispatcher hands it to a door (COWORK1c): marked attempted through <paramref name="door"/> before the wire,
     /// and told <paramref name="went"/> once written. A word kept nowhere, or with no door yet, is handed as it is.
     /// </summary>

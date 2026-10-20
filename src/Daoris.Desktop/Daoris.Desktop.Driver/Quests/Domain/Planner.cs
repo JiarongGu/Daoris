@@ -348,7 +348,11 @@ public sealed record PriorSession(
     /// </summary>
     public bool Running => State.ToLowerInvariant() is "queued" or "starting" or "working";
 
-    /// <summary>The words it goes on with, in order: each of <see cref="Said"/>, or a host's answer from before <c>said</c>.</summary>
+    /// <summary>
+    /// The words it goes on with, in order: each of <see cref="Said"/>, or a host's answer from before <c>said</c>. A word a shell before
+    /// this one attempted is settled as this one comes up, before any go-on (COWORK1c, <see cref="UncertainWords"/>); one this shell
+    /// attempted and kept waiting after a failed turn goes again (TURNFAIL1).
+    /// </summary>
     public IReadOnlyList<SaidWordView> Waiting =>
         Said is { } said ? said
         : Answer is { } answer ? [new SaidWordView(null, answer, DateTimeOffset.MinValue, [], false)]

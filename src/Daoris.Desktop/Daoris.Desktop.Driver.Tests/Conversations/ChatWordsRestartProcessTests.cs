@@ -105,10 +105,16 @@ public sealed class ChatWordsRestartProcessTests : IDisposable
             await Poll.Until(() => ledger.State(id) == "completed", () => Seen(ledger, id));
         }
 
-        // Cut off: the record still says it runs, a word kept for its run waits on it, and nothing on this machine runs it.
+        // Cut off: the record still says it runs, and nothing on this machine runs it. On it wait a word its shell had written to the
+        // agent (attempted), which may have reached it, and a word kept for its run and never attempted.
         ledger.Edit(id, record =>
         {
             record["state"] = "working";
+            record["said"]!.AsArray().Add(new System.Text.Json.Nodes.JsonObject
+            {
+                ["id"] = "k8", ["text"] = "Use port 9090.", ["at"] = "2026-10-03T09:59:00Z", ["files"] = new System.Text.Json.Nodes.JsonArray(),
+                ["reopens"] = false, ["level"] = "urgent", ["key"] = "press/8", ["attempt"] = "2026-10-03T09:59:30Z",
+            });
             record["said"]!.AsArray().Add(new System.Text.Json.Nodes.JsonObject
             {
                 ["id"] = "k9", ["text"] = "And the readme.", ["at"] = "2026-10-03T10:00:00Z", ["files"] = new System.Text.Json.Nodes.JsonArray(),
@@ -121,9 +127,14 @@ public sealed class ChatWordsRestartProcessTests : IDisposable
         await after.TakeUpAsync();
         var swept = await Orphans.EndAsync(client, processes);
 
+        // 🔴 Trap 8: the attempted word is never sent again; it leaves the record, said uncertain under its id, and the other goes.
         Assert.Equal(id, Assert.Single(swept).Id);
         await Poll.Until(() => HeardLines().Contains("prompt: And the readme.") && ledger.Said(id).Count == 0, () => Seen(ledger, id));
+        Assert.DoesNotContain(HeardLines(), line => line.Contains("Use port 9090.", StringComparison.Ordinal));
+        Assert.Equal([(id, "k8")], ledger.TakenBack);
         Assert.Equal([(id, "k1,k2"), (id, "k9")], ledger.Taken);
+        var lost = Assert.Single(events.After(id, 0).Events, e => e.Code == SessionEventCodes.Lost);
+        Assert.Equal(["k8"], lost.Words);
         Assert.True(after.Finish(id));
         await Poll.Until(() => ledger.State(id) == "completed", () => Seen(ledger, id));
     }

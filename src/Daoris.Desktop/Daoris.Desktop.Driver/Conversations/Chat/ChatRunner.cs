@@ -1216,7 +1216,14 @@ public sealed class ChatRunner : IDisposable
 
         // The person's words a conversation goes on with are its first turn (MSG1c, D137 §2.2), queued before any word said
         // to it once it runs.
-        var first = goOn is null ? null : new ChatMessage(goOn.Ask.Prompt, []) { GoesOn = goOn.Ask };
+        // COWORK1c: marked attempted on the record before the turn carrying them is on the wire, so a shell cut off under it never sends
+        // them again.
+        var first = goOn is null
+            ? null
+            : new ChatMessage(goOn.Ask.Prompt, [])
+            {
+                GoesOn = goOn.Ask, Attempting = () => SaidDoor.AttemptedAsync(_context.Service, sessionId, goOn.Ask.Words),
+            };
         if (first is not null)
         {
             // Their words, so the turn's end they start is an answer they wait on (NOTIFY1a).

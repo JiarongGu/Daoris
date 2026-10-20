@@ -559,7 +559,7 @@ public sealed class AcpSession(
         string cwd, string prompt, CancellationToken ct, IReadOnlyList<AcpMcpServer>? servers = null,
         DrivenInbox? inbox = null, Action<ChatMessage>? asked = null, string? resume = null,
         IReadOnlyList<string>? blocks = null, Action? prompted = null, IReadOnlyList<KeptFile>? files = null,
-        Func<CancellationToken, Task<bool>>? waitsOnBackground = null)
+        Func<CancellationToken, Task<bool>>? waitsOnBackground = null, Func<Task>? attempting = null)
     {
         _asked = asked;
         try
@@ -582,6 +582,9 @@ public sealed class AcpSession(
                     inbox?.Flow();
                     prompted?.Invoke();
                 };
+            // COWORK1c (the message-urgency design §6): the words a resumed run carries are marked attempted on its record once the agent
+            // took the conversation back and before the prompt carrying them is written.
+            if (attempting is not null) await attempting().ConfigureAwait(false);
             var stopReason = blocks is { Count: > 0 }
                 ? await SendPromptAsync(blocks, files, ct, sent, words: null).ConfigureAwait(false)
                 : await PromptAsync(prompt, ct, sent).ConfigureAwait(false);
