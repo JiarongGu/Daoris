@@ -26,6 +26,7 @@ import { writeKeeping } from '../platform/jsonkeep.ts';
 import { requireHomeFile } from '../platform/home.ts';
 import { normalizeWorkspace } from '../service/remotemap.ts';
 import type { CommandArgs } from '../platform/types.ts';
+import { AGENT_ROUTES, ALONE, type VerbDoor } from '../platform/door.ts';
 
 export const PERMISSIONS_FILE = 'permissions.json';
 
@@ -236,11 +237,23 @@ export function switchDefault(file: PermissionFile, id: string, on: boolean): Pe
   return { ...file, defaultsOff: on ? off : [...off, id] };
 }
 
-/** `daoris agent rules …` — list, add to a list, remove, or switch a default. */
-export function commandRules({ argv, write }: CommandArgs): ExitCode {
+/**
+ * `daoris agent rules …` — list, add to a list, remove, or switch a default. An edit is judged here, then goes through `door`
+ * (RPC1f): the rules screen's `RULE_ACTION` while Daoris runs on this home, written here under the home's lease where none does.
+ */
+export function commandRules({ argv, write }: CommandArgs, door: VerbDoor = ALONE): ExitCode | Promise<ExitCode> {
   const verb = argv[0] ?? 'list';
   const path = permissionsPath();
   const file = readPermissions(path);
+  /** One edit, judged and made here as `next`, or sent as the screen sends it, said the same either way. */
+  const press = (payload: Record<string, unknown>, next: PermissionFile, said: () => ExitCode) => door({
+    what: `agent rules ${verb}`, route: AGENT_ROUTES.rule, payload,
+    alone: () => {
+      writePermissions(path, next);
+      return said();
+    },
+    words: said,
+  });
 
   const workspace = flagValue(argv, '--workspace');
   const repository = flagValue(argv, '--repository');
@@ -259,20 +272,22 @@ export function commandRules({ argv, write }: CommandArgs): ExitCode {
     case 'ask':
     case 'deny': {
       const [rule] = operands('<rule>');
-      writePermissions(path, addRule(file, scope, name, verb, rule!));
-      write(`daoris: \`${rule}\` is now ${verb === 'allow' ? 'allowed' : verb === 'ask' ? 'asked for' : 'denied'} for ${where}.`);
-      write('  Sessions started from now on are handed it; one already running keeps what it began with.');
-      if (verb === 'ask') {
-        write('  An ask is a refusal for anything Daoris starts — nobody is there to answer it.');
-      }
-      return 0;
+      return press({ action: 'add', scope, ...(name !== null ? { name } : {}), list: verb, rule }, addRule(file, scope, name, verb, rule!), () => {
+        write(`daoris: \`${rule}\` is now ${verb === 'allow' ? 'allowed' : verb === 'ask' ? 'asked for' : 'denied'} for ${where}.`);
+        write('  Sessions started from now on are handed it; one already running keeps what it began with.');
+        if (verb === 'ask') {
+          write('  An ask is a refusal for anything Daoris starts — nobody is there to answer it.');
+        }
+        return 0;
+      });
     }
 
     case 'remove': {
       const [rule] = operands('<rule>');
-      writePermissions(path, removeRule(file, scope, name, rule!));
-      write(`daoris: \`${rule}\` is no longer one of the rules for ${where}.`);
-      return 0;
+      return press({ action: 'remove', scope, ...(name !== null ? { name } : {}), rule }, removeRule(file, scope, name, rule!), () => {
+        write(`daoris: \`${rule}\` is no longer one of the rules for ${where}.`);
+        return 0;
+      });
     }
 
     case 'default': {
@@ -280,9 +295,10 @@ export function commandRules({ argv, write }: CommandArgs): ExitCode {
       if (state !== 'on' && state !== 'off') {
         throw new DaorisError(`say whether the default \`${id}\` is on or off: \`daoris agent rules default ${id} on|off\`.`);
       }
-      writePermissions(path, switchDefault(file, id!, state === 'on'));
-      write(`daoris: the default \`${id}\` is ${state} on this machine.`);
-      return 0;
+      return press({ action: 'default', id, on: state === 'on' }, switchDefault(file, id!, state === 'on'), () => {
+        write(`daoris: the default \`${id}\` is ${state} on this machine.`);
+        return 0;
+      });
     }
 
     default:

@@ -783,8 +783,9 @@ test('agent pin reaches a release channel only through the fetcher the dispatche
   }
 
   const row = readText(join(cliRoot, 'src', 'cli', 'agent.ts'));
-  assert.match(row, /import \{ releaseFetcher \} from '\.\.\/(?:[\w-]+\/)*service\.ts';/);
-  assert.match(row, /run: \(args\) => commandHarness\(args, releaseFetcher\(\)\)/);
+  assert.match(row, /import \{ instanceDoor, releaseFetcher \} from '\.\.\/(?:[\w-]+\/)*service\.ts';/);
+  // RPC1f hands the door an edit goes through after them, the running Daoris's pipe reached through the same module.
+  assert.match(row, /run: \(args\) => commandHarness\(args, releaseFetcher\(\), \['npm'\],\s+process\.env\[PATH_VARIABLE\] \? ALONE : instanceDoor\(/);
 });
 
 /**

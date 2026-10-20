@@ -2,7 +2,8 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import {
-  DRIVER_MODULE, DRIVER_ROUTES, DRIVER_VERBS, PLUGIN_ROUTES, PLUGIN_VERBS, TOOL_ROUTES, TOOL_VERBS, type InstanceRoute, type RouteClass,
+  AGENT_ROUTES, AGENT_VERBS, DRIVER_MODULE, DRIVER_ROUTES, DRIVER_VERBS, PLUGIN_ROUTES, PLUGIN_VERBS, TOOL_ROUTES, TOOL_VERBS,
+  type InstanceRoute, type RouteClass,
 } from '../../src/platform/door.ts';
 import { desktopFile } from '../_csharp.ts';
 
@@ -35,8 +36,10 @@ function censusClasses(): Map<string, RouteClass> {
 /** The payload field a route classed by its payload is sent with by a verb, as JSON: `plugin update --yes` sends `apply: true`. */
 const PAYLOADS: Record<string, Record<string, string>> = { PLUGIN_UPDATE: { apply: 'true' } };
 
-const SENT: readonly InstanceRoute[] = [...Object.values(DRIVER_ROUTES), ...Object.values(PLUGIN_ROUTES), ...Object.values(TOOL_ROUTES)];
-const VERBS = [...DRIVER_VERBS, ...PLUGIN_VERBS, ...TOOL_VERBS];
+const SENT: readonly InstanceRoute[] = [
+  ...Object.values(DRIVER_ROUTES), ...Object.values(PLUGIN_ROUTES), ...Object.values(TOOL_ROUTES), ...Object.values(AGENT_ROUTES),
+];
+const VERBS = [...DRIVER_VERBS, ...PLUGIN_VERBS, ...TOOL_VERBS, ...AGENT_VERBS];
 
 test('the census is read: its reads are open, its standing choices the person\'s, its pickers the window\'s', () => {
   const classes = censusClasses();
