@@ -14,7 +14,10 @@ namespace Daoris.Driver;
 /// <param name="SubjectRevision">
 /// The revision of the unit it observes it was accepted at (<see cref="Observes"/>): a branch's full tip, which names its repository by the unit.
 /// </param>
-/// <param name="GraphDigest">The graph that bound the run.</param>
+/// <param name="GraphDigest">
+/// The graph that bound the run: on a live graph its node's place (<c>plc-</c>, FABRIC-RUN1f, <see cref="NodeGraphs.Places"/>), so an edit
+/// elsewhere leaves it bound; else, and in every acceptance written before, the whole graph's digest (<c>gph-</c>).
+/// </param>
 /// <param name="Node">The node's id in that graph.</param>
 /// <param name="NodeVersion">The node's declared version.</param>
 /// <param name="Attempt">The attempt that reached it.</param>
@@ -116,7 +119,7 @@ public static class NodeLapse
     /// </summary>
     public const string Subject = "subject";
 
-    /// <summary>The graph that binds the run changed.</summary>
+    /// <summary>The graph that binds the run changed: on a live graph, the node's place in it (FABRIC-RUN1f).</summary>
     public const string Graph = "graph";
 
     /// <summary>The node's declared version changed.</summary>

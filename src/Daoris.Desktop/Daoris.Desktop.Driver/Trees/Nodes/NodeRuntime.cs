@@ -99,6 +99,9 @@ public sealed record GovernedUnit(
     /// begun, awaited and reached by a believed event.
     /// </summary>
     public IReadOnlySet<string> Observable { get; init; } = new HashSet<string>(StringComparer.Ordinal);
+
+    /// <summary>Each node's place in its graph (FABRIC-RUN1f, <see cref="NodeGraphs.Places"/>): what its scope, receipts and binding name.</summary>
+    public IReadOnlyDictionary<string, string> Places { get; init; } = new Dictionary<string, string>(StringComparer.Ordinal);
 }
 
 /// <summary>What one pass did (FABRIC-RUN1), for the look's report, the machine log and the tests.</summary>
@@ -117,13 +120,20 @@ public sealed record NodeRuntimePass(bool Armed, IReadOnlyList<WorkPerformed> Pe
 }
 
 /// <summary>
-/// A run's identity under Current's graphs (FABRIC-RUN1): a digest of the unit and the graph governing it. So a run begins when a graph
-/// naming a plugin's performed node first governs the unit, and again only when the governing graph changes (another digest); never at a
-/// wake, a look, a restart or a new revision (a moved revision lapses the bindings it moved, WIRE1e, in the same run). WIRE1f lapses a
-/// failure kept from another run, so a run begun afresh at each wake would retry a permanent failure for ever.
+/// A run's identity under Current's graphs (FABRIC-RUN1f; the cutover design §9): a digest of the unit alone, so a run begins when a graph
+/// naming a plugin's performed node first governs the unit and an edit of that graph begins none; never at a wake, a look, a restart or a new
+/// revision either (a moved revision lapses the bindings it moved, WIRE1e, in the same run). What an edit changes is each node's place
+/// (<see cref="NodeGraphs.Places"/>), which lapses that node and what rests on it alone.
 /// </summary>
 public static class NodeRuns
 {
+    public static string Of(string unit) =>
+        "run-" + Convert.ToHexStringLower(System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes($"node-run\n{unit}\n")))[..24];
+
+    /// <summary>
+    /// The run's name before FABRIC-RUN1f, of the unit and the graph governing it, so each edit began another: what a scope, a receipt and a
+    /// firing written before name, judged on the graph now (<see cref="WireRun.Legacy"/>) so nothing lapses or fires again at the upgrade.
+    /// </summary>
     public static string Of(string unit, string graphDigest) =>
         "run-" + Convert.ToHexStringLower(System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes($"node-run\n{unit}\n{graphDigest}\n")))[..24];
 }
@@ -303,9 +313,9 @@ public sealed class NodeRuntime(
             {
                 Unit = unit.Id, Identity = identity,
             };
-            governed.Add(new GovernedUnit(unit, graph, digest, NodeRuns.Of(unit.Id, digest), declared, dispatchable, watched)
+            governed.Add(new GovernedUnit(unit, graph, digest, NodeRuns.Of(unit.Id), declared, dispatchable, watched)
             {
-                Closes = closes, Observable = observable,
+                Closes = closes, Observable = observable, Places = NodeGraphs.Places(graph),
             });
         }
 
@@ -579,6 +589,8 @@ public sealed class NodeRuntime(
         var before = nodes.ToDictionary(node => node.Id, node => record.Statuses.GetValueOrDefault(node.Id) ?? NodeLifecycle.Start(unit, node.Id), StringComparer.Ordinal);
         var run = new WireRun(governed.GraphDigest, governed.Run)
         {
+            Places = governed.Places,
+            Legacy = NodeRuns.Of(unit, governed.GraphDigest),
             Revisions = new Dictionary<string, string?>(StringComparer.Ordinal) { [unit] = governed.Unit.Subject.Revision },
             NodeRevisions = tipped ? ObservedRevisions(governed, tip, before) : new Dictionary<string, string?>(StringComparer.Ordinal),
             Fired = record.Fired.ToHashSet(StringComparer.Ordinal),

@@ -96,7 +96,10 @@ public sealed record NodeMove(string To, string By)
 }
 
 /// <summary>Where a skip holds (FABRIC-NODE1c): the graph that bound the run, and the run, D157's skip on a run (§E7).</summary>
-/// <param name="GraphDigest">The graph's digest.</param>
+/// <param name="GraphDigest">
+/// The graph's digest, or on a live graph the node's place (FABRIC-RUN1f): a start's is its binding's, and a skip by its kind's record names its
+/// binding's, so each is checked like with like (<see cref="WireRun.Own"/>).
+/// </param>
 /// <param name="Run">The run's id.</param>
 public sealed record NodeScope(string GraphDigest, string Run);
 
