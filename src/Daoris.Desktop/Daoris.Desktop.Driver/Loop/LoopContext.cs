@@ -50,8 +50,8 @@ internal sealed class LoopContext(
     /// <summary>
     /// How a conversation an agent asked to hand over goes on with another agent (MIXAGENT1c): the shell's chat runner's own
     /// hand-over (<c>ChatRunner.HandOverAsync</c> with the agent's why and asker), taken at once where the conversation is not talking,
-    /// kept for its turn's end where it is. Null where the loop holds no runner: the look keeps the box, which the runner takes at the
-    /// conversation's turn's end or as it comes up. Set once, before a look.
+    /// kept for its turn's end where it is; the shell's loop hands it in. Null where the loop holds no runner (the headless host): the
+    /// look keeps the box, which a runner takes at the conversation's turn's end or as it comes up. Set once, before a look.
     /// </summary>
     public Func<string, string, CancellationToken, Task<HandedOver>>? HandsOver { get; set; }
 
