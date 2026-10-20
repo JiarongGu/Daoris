@@ -5,6 +5,21 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-21 — Two machine logs on one day's file overwrote each other's lines (MACHINELOGAPPEND1, ONEINSTANCE2)
+
+- **Symptom:** ONEINSTANCE2 measured that of two `MachineLog`s on one file, the second's line was gone after the first's next,
+  so a later desktop launch's line (the guard's warning as it exits) could be overwritten by the running instance's next.
+- **Root cause:** `FileMode.Append` on Windows seeks to the end once, at the open, and the handle then writes at its own
+  position; it is not an append-only handle. A second writer's lines sat where the first's next went.
+- **Fix:** each line seeks to the file's end before it is written, under a mutex named for the file (`Local\Daoris.MachineLog.`
+  and a hash of its full path) that every writer of it takes, so the seek and the write are one step across processes; a
+  wait of a second at most, a mutex left by a dead writer taken on, and a writer that cannot open it still writing at the end.
+  And the desktop's `app.Run()` runs through `MachineLog.RunWatched`, which writes the exception leaving it while the log is
+  open (the `using` closes it as the exception leaves `Main`) and rethrows it; the unhandled handler skips that one.
+- **Verification:** `MachineLogTests` (driver), 22, with two logs on one file in turn and from many threads at once keeping
+  all their lines, the watched body's exception written once, and the desktop's `Program` running it so; the desktop app built.
+  The service's twin keeps the old write (MACHINELOGAPPEND2).
+
 ## 2026-10-21 — A connector test's stand-in loop ended on a request a scanner held, and its tool waited a minute (FLAKE1)
 
 - **Symptom:** the full set on 195e6f9 failed `McpChosenSettingsToolTests.Each_tool_writes_its_value_as_the_door_spells_it`
