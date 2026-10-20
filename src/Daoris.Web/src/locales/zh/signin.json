@@ -27,5 +27,9 @@
   "signin.phase.who": "正在确认登录的是谁",
   "signin.phase.lists": "正在加入列表",
   "signin.device.enter": "打开页面并输入这个代码：",
-  "signin.device.expires": "{{time}}后过期"
+  "signin.device.expires": "{{time}}后过期",
+  "signin.switch.device": "改用设备代码",
+  "signin.switch.browser": "改用浏览器",
+  "signin.switch.deviceHint": "关闭了设备代码的工作区只会在那个页面上说明，而这里会一直等待。",
+  "signin.toolSaid": "{{tool}} 说：{{line}}"
 }

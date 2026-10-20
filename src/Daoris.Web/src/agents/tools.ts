@@ -40,6 +40,11 @@ export interface ToolDoor {
   /** Whether this door can run the tool's sign-in — false where it declares no login flow. Absent from an older shell. */
   signsIn?: boolean;
   /**
+   * Whether its agent signs in by a device code beside its own sign-in (CODEXLOGIN1): Codex's browser first, its device code
+   * offered beside it. Absent from an older shell, read as no.
+   */
+  deviceCode?: boolean;
+  /**
    * Which Update this door has (USE1a): `pin` moves its pin to the newest release, `tool` runs the
    * tool's own updater, and absent means none — so no Update is offered, rather than one that can
    * only be refused.

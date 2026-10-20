@@ -27,5 +27,9 @@
   "signin.phase.who": "Checking who signed in",
   "signin.phase.lists": "Joining the lists",
   "signin.device.enter": "Open the page and enter this code:",
-  "signin.device.expires": "Expires in {{time}}"
+  "signin.device.expires": "Expires in {{time}}",
+  "signin.switch.device": "Use a device code",
+  "signin.switch.browser": "Use the browser",
+  "signin.switch.deviceHint": "A workspace that turns device codes off says so only on that page, and this one keeps waiting.",
+  "signin.toolSaid": "{{tool}} said: {{line}}"
 }

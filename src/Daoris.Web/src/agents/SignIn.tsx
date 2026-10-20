@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { phaseOf, useHarnessCancel, useHarnessInput, useSessionConsole } from '../bridge/shell';
 import { Elapsed } from '../design/phases';
 import { Button, Icon, MonoWell } from '../design/ui';
-import { type SignInPhase, SignInSteps } from './SignInSteps';
+import { type SignInPhase, SignInSteps, type SignInWay } from './SignInSteps';
 
 /**
  * Signing an account in, on the row that asked for it (2026-09-23).
@@ -33,6 +33,7 @@ import { type SignInPhase, SignInSteps } from './SignInSteps';
  */
 export function SignIn({
   id, harness, profile, action = 'login', tool, refused, failed, failedAt, pressedAt, shown = 'list', onRetry, onClose,
+  other, onSwitch,
 }: {
   id: string;
   harness: string;
@@ -54,6 +55,12 @@ export function SignIn({
   shown?: 'list' | 'line';
   onRetry?: () => void;
   onClose?: () => void;
+  /**
+   * The way this sign-in's agent has beside the one running, and the press that switches to it (CODEXLOGIN1): the running
+   * one is stopped and the other starts in this panel. Absent where the agent has one way.
+   */
+  other?: SignInWay | null;
+  onSwitch?: () => void;
 }) {
   const { t } = useTranslation();
   const { lines, live, dropped } = useSessionConsole(id);
@@ -62,13 +69,21 @@ export function SignIn({
   const [code, setCode] = useState('');
   const [copied, setCopied] = useState<'link' | 'code' | null>(null);
 
-  // The driver's phases and the tool's own lines, apart: a phase line is never the tool's words.
+  // The driver's phases and the tool's own lines, apart: a phase line is never the tool's words. The steps read the latest
+  // run's lines, those after its own start, since a panel that stayed up through *Try again* or a switch of ways (CODEXLOGIN1)
+  // holds both runs, and the first run's link is not the second's; the disclosure keeps them all.
   const phases: SignInPhase[] = [];
   const texts: string[] = [];
+  let latest: string[] = [];
   for (const line of lines) {
     const phase = phaseOf(line.text);
-    if (phase) phases.push(phase);
-    else texts.push(line.text);
+    if (phase) {
+      phases.push(phase);
+      if (phase.phase === 'start') latest = [];
+    } else {
+      texts.push(line.text);
+      latest.push(line.text);
+    }
   }
   const ended = Boolean(refused || failed);
   const starts = phases.filter((each) => each.phase === 'start');
@@ -118,14 +133,14 @@ export function SignIn({
         tool={tool ?? harness}
         action={action}
         phases={phases}
-        texts={texts}
+        texts={latest}
         refused={refused}
         failed={failed}
         failedAt={failedAt}
         shown={shown}
         acts={{
           copied, onCopy: (what, text) => { void copy(what, text); }, code, onCode: setCode, onSend: submit,
-          sending: input.isPending, sent: input.isSuccess, onRetry, onClose,
+          sending: input.isPending, sent: input.isSuccess, onRetry, onClose, other, onSwitch,
         }}
       />
 
