@@ -321,7 +321,7 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
         {
             // 🔴 SESSCTX1c (D189's amendment, the session-context design §2): no run started, so this is a start failure, never a move.
             // The record ends `failed` as a first start's failed spawn does, counted by the strikes, its words waiting on it to go again;
-            // nothing is handed on and no part opens for it. Before, the words went to a new session as a refused resume's did.
+            // nothing is handed on and no part opens for it.
             return await UnstartedAsync(
                     quest, park, agent, error.Message, resume?.Ids ?? [.. park.Waiting.Select(word => word.Id).OfType<string>()])
                 .ConfigureAwait(false);
