@@ -5,6 +5,21 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-21 — An edit of `harnesses.json` moved what it did not know and lost another writer's change (KEEPALL1b)
+
+- **Symptom:** found by KEEPALL1's audit, left for a decision on D165 §6's rewrites. Any edit of `harnesses.json`, from the
+  Agents page, Ask Daoris or `daoris agent`, moved the keys neither writer knows to the top, and dropped a value of its own
+  sections it could not read (a default that is not text, a workspace that is not an object). A change another writer made
+  between this writer's read and its write was lost, since both wrote the whole file from the copy they read.
+- **Root cause:** `HarnessSettings.Save` and the CLI's `writeHarnessSettings` rebuilt every section from what their readers
+  understood, keeping only the unknown top-level keys, and never read the file again at the write.
+- **Fix:** D173's KEEPALL1b note. Both write through the keeping write (`JsonKeeping.Save`, `writeKeeping`), measured from the
+  file as read, in which each settings entry is written as the file holds it, so the old and retired names still go at a save.
+  Wiring built in memory is written whole, as before.
+- **Verification:** 11 `harnesses.json` rows in `home-files-keep.json`, read by `HomeFilesKeepTests` and `homefileskeep.test.ts`
+  (no edit, each door's edit, an old name at a save, CRLF, a change between, a section made a string, a key twice);
+  `RotationTwinTests`, `RotationUseTwinTests` and `AccountJoinTwinTests` with their CLI twins, their rows re-decided.
+
 ## 2026-10-21 — The full set's run on d263cd0 failed three gates that its merges never ran
 
 - **Symptom:** the full set on d263cd0 failed `web-unit`, `cli` and `deployment`. The web design checks found

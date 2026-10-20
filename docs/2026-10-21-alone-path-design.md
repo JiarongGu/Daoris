@@ -234,6 +234,10 @@ and no other run meets it; and it **publishes** under `HomeLease.ForVerb`, taken
   their merge unchanged); and 2e `harnesses.json`'s, through one change under the lock, `HarnessSettings.Change(path, edit)` (the
   lock, the file read, the edit, the whole write), every writer of the file through it, the routes' and the command's, so its
   whole-file layout (KEEPALL1b) stays as it is.
+  *Amended 2026-10-21 (KEEPALL1b, D173's note):* `harnesses.json`'s two writers now write through `JsonKeeping.Save` and
+  `writeKeeping`, which take its keep lock and read the file again at the write, so another writer's change landing between them
+  is kept already. 2e's `HarnessSettings.Change` remains for a verb that must decide its edit from the file as it stands under
+  the lock; the race this bullet names is closed for `harnesses.json`.
 - **Each run stages under its own name.** The fixed `<version>.part` is deleted at a download's start and at its end
   (`ToolInstall.cs:196-200, 233-239`), so a second download of one version deletes the first's staging under it; on Windows the
   delete throws on the first's open archive, an `IOException` that neither of `DownloadAsync`'s catches (`:223-232`) nor the host's
