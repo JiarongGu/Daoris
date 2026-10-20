@@ -223,6 +223,25 @@ public static class TreeTips
     }
 
     /// <summary>
+    /// The branch <paramref name="tree"/>'s <c>HEAD</c> names, without <c>refs/heads/</c>, or null where it is detached or the files
+    /// cannot say: what a landing's hold names its tree by (LANDHOLD3).
+    /// </summary>
+    public static string? Branch(string tree)
+    {
+        try
+        {
+            if (GitBranches.GitDirectory(tree) is not { } own) return null;
+            var head = File.ReadAllText(Path.Combine(own, "HEAD")).Trim();
+            const string Heads = "ref: refs/heads/";
+            return head.StartsWith(Heads, StringComparison.Ordinal) && head.Length > Heads.Length ? head[Heads.Length..].Trim() : null;
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException or ArgumentException or NotSupportedException)
+        {
+            return null;
+        }
+    }
+
+    /// <summary>
     /// The commit <paramref name="name"/> (<c>refs/…</c>) stands at in the common directory <paramref name="common"/>, lower case: a loose
     /// ref, else a line of <c>packed-refs</c>. Null where the files cannot say it (FABRIC-END6 reads origin's line by it).
     /// </summary>
