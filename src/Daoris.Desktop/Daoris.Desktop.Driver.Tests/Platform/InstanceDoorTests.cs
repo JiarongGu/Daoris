@@ -45,16 +45,17 @@ public sealed class InstanceDoorTests : IAsyncLifetime
         if (Directory.Exists(_root)) Directory.Delete(_root, recursive: true);
     }
 
-    private InstanceStandIn Serve()
+    private InstanceStandIn Serve(bool refusing = false)
     {
-        _standIn = new InstanceStandIn(_pipe, _id);
+        _standIn = new InstanceStandIn(_pipe, _id, refusing);
         return _standIn;
     }
 
     private InstanceWorld World(Func<string, string?>? environment = null, string? baseDirectory = null, string? statusHome = null,
-                                TimeSpan? wait = null, TimeSpan? answer = null) => new()
+                                TimeSpan? wait = null, TimeSpan? answer = null, IReadOnlySet<string>? owners = null) => new()
     {
         Home = _home,
+        Owners = owners,
         // 🔴 Never the account's: a test reads no variable it was not handed (D171's FINDDAORIS1 note).
         Environment = environment ?? (_ => null),
         BaseDirectory = baseDirectory ?? _app,
@@ -298,6 +299,38 @@ public sealed class InstanceDoorTests : IAsyncLifetime
             $"trees: Daoris is running on this home (`Daoris.exe`, pid {Environment.ProcessId}) and did not answer; nothing was done.",
             _error.ToString());
         Assert.Contains("names no pipe", _error.ToString());
+    }
+
+    /// <summary>
+    /// A pipe this terminal does not take as its user's (PIPEOWNER1) refuses the press saying so, at once and never as a pipe that
+    /// did not answer, exit 2, nothing sent and nothing done alone: one another account serves, whose ACL refuses the connect, or
+    /// one whose owner the terminal does not take, as a terminal that is not elevated did an elevated Daoris's before the pipe was
+    /// its user's. The owners taken are the world's here, so no second elevation is needed.
+    /// </summary>
+    [Theory]
+    [InlineData("acl")]
+    [InlineData("owner")]
+    [InlineData("variable")]
+    public async Task A_pipe_another_account_or_elevation_holds_refuses_the_press_saying_so_and_nothing_is_done_alone(string how)
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        var standIn = Serve(refusing: how != "owner");
+        using var running = RunningAddress.Write(_home, "http://localhost:5177", _pipe);
+        // The Guests group's: an owner no pipe served here has.
+        var owners = how == "owner" ? new HashSet<string> { "S-1-5-32-546" } : null;
+        var named = how == "variable" ? _pipe : null;
+
+        var exit = await PressAsync(World(environment: name => name == InstanceDoor.Variable ? named : null, owners: owners));
+
+        Assert.Equal(2, exit);
+        Assert.Equal(0, _alone);
+        Assert.Empty(standIn.Sent);
+        var who = how == "variable"
+            ? $"the Daoris {InstanceDoor.Variable} names ({_pipe})"
+            : $"Daoris is running on this home (`Daoris.exe`, pid {Environment.ProcessId}) and";
+        Assert.Equal(
+            $"trees: {who} refused this terminal; nothing was done. Its pipe belongs to another Windows account or elevation.",
+            _error.ToString().TrimEnd());
     }
 
     [Theory]

@@ -1,11 +1,19 @@
 using System.IO.Pipes;
 using System.Reflection;
 using System.Runtime.InteropServices;
+using System.Runtime.Versioning;
+using System.Security.Principal;
 using System.Text;
 using System.Text.Json;
 using Microsoft.Win32.SafeHandles;
 
 namespace Daoris.Driver;
+
+/// <summary>
+/// A terminal's connect to the running Daoris's pipe: <paramref name="Client"/> where it connected; else <paramref name="Refused"/>
+/// where the pipe refused this terminal as another account's or elevation's (PIPEOWNER1), and otherwise nothing took it in time.
+/// </summary>
+public readonly record struct PipeConnect(InstanceClient? Client, bool Refused);
 
 /// <summary>
 /// A terminal's connection to the running Daoris's pipe (RPC1b, D171 point 3, the terminal RPC design §6): the wire RPC1a's
@@ -17,8 +25,12 @@ namespace Daoris.Driver;
 /// connection's verb holds, which <c>RESULT</c> asks with again; answers are the kit's <c>{ category: "ipc", id, success, data?,
 /// error? }</c>, and a route's progress the kit's notification envelope naming the request's id.</para>
 ///
-/// <para><b>This user's pipe only</b>: opened <see cref="PipeOptions.CurrentUserOnly"/>, so a pipe of that name another account
-/// serves is not connected to (§4.1), and the process serving it is read, for the finder to hold to the address file's.</para>
+/// <para><b>This user's pipe only</b> (§4.1): a pipe whose owner is not one of <see cref="ThisUser"/>'s SIDs is refused before a
+/// line crosses, as one whose ACL refuses this user is, and said as a refusal (<see cref="PipeConnect.Refused"/>), never as a pipe
+/// that did not answer. On Windows the owner is read here rather than through <see cref="PipeOptions.CurrentUserOnly"/>, which takes
+/// only the token's default owner: an elevated token's is the Administrators group, so a terminal and a Daoris of one user at two
+/// elevations refused each other (PIPEOWNER1). The process serving the pipe is read, for the finder to hold to the address
+/// file's.</para>
 /// </remarks>
 public sealed class InstanceClient : IAsyncDisposable
 {
@@ -46,19 +58,64 @@ public sealed class InstanceClient : IAsyncDisposable
     /// <summary>The process serving the pipe, where Windows says; null where it cannot.</summary>
     public int? Server { get; }
 
-    /// <summary>The connection to <paramref name="pipe"/>, or null where it does not take one within <paramref name="within"/>.</summary>
-    public static async Task<InstanceClient?> ConnectAsync(string pipe, TimeSpan within, CancellationToken ct = default)
+    /// <summary>
+    /// The connection to <paramref name="pipe"/>; or none, <see cref="PipeConnect.Refused"/> where the pipe refused this terminal
+    /// (its ACL, or an owner not among <paramref name="owners"/>, <see cref="ThisUser"/>'s where null), else where it did not take
+    /// one within <paramref name="within"/>.
+    /// </summary>
+    public static async Task<PipeConnect> ConnectAsync(
+        string pipe, TimeSpan within, IReadOnlySet<string>? owners = null, CancellationToken ct = default)
     {
-        var stream = new NamedPipeClientStream(".", pipe, PipeDirection.InOut, PipeOptions.Asynchronous | PipeOptions.CurrentUserOnly);
+        // Elsewhere the kit's own check stands: a socket's peer is read there, not an owner (§11).
+        var options = PipeOptions.Asynchronous | (OperatingSystem.IsWindows() ? PipeOptions.None : PipeOptions.CurrentUserOnly);
+        var stream = new NamedPipeClientStream(".", pipe, PipeDirection.InOut, options);
         try
         {
             await stream.ConnectAsync(within, ct).ConfigureAwait(false);
-            return new InstanceClient(pipe, stream, ServerOf(stream));
+            if (OperatingSystem.IsWindows() && !OwnedBy(stream, owners ?? ThisUser()))
+            {
+                await stream.DisposeAsync().ConfigureAwait(false);
+                return new(null, Refused: true);
+            }
+
+            return new(new InstanceClient(pipe, stream, ServerOf(stream)), Refused: false);
         }
-        catch (Exception error) when (error is TimeoutException or IOException or UnauthorizedAccessException or OperationCanceledException)
+        catch (UnauthorizedAccessException)
         {
             await stream.DisposeAsync().ConfigureAwait(false);
-            return null;
+            return new(null, Refused: true);
+        }
+        catch (Exception error) when (error is TimeoutException or IOException or OperationCanceledException)
+        {
+            await stream.DisposeAsync().ConfigureAwait(false);
+            return new(null, Refused: false);
+        }
+    }
+
+    /// <summary>
+    /// The SIDs a pipe of this user's is owned by (PIPEOWNER1): the user's, which a Daoris at either elevation makes its pipe's owner
+    /// (<c>InstancePipe.Security</c>), and this token's default owner, the only one <see cref="PipeOptions.CurrentUserOnly"/> took and
+    /// the one an older Daoris left its pipe's, so an elevated terminal still reaches an older elevated Daoris, whose pipe the
+    /// Administrators group owns. A terminal that is not elevated has one: its default owner is the user.
+    /// </summary>
+    [SupportedOSPlatform("windows")]
+    public static IReadOnlySet<string> ThisUser()
+    {
+        using var self = WindowsIdentity.GetCurrent();
+        return new HashSet<string>(StringComparer.OrdinalIgnoreCase) { self.User!.Value, self.Owner!.Value };
+    }
+
+    /// <summary>Whether the pipe <paramref name="stream"/> is connected to is owned by one of <paramref name="owners"/>; false where its owner cannot be read.</summary>
+    [SupportedOSPlatform("windows")]
+    public static bool OwnedBy(PipeStream stream, IReadOnlySet<string> owners)
+    {
+        try
+        {
+            return stream.GetAccessControl().GetOwner(typeof(SecurityIdentifier)) is SecurityIdentifier owner && owners.Contains(owner.Value);
+        }
+        catch (Exception error) when (error is UnauthorizedAccessException or IOException or InvalidOperationException)
+        {
+            return false;
         }
     }
 

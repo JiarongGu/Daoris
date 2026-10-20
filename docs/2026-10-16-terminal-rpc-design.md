@@ -147,8 +147,11 @@ resolved another home's id is not this instance's client.
 - **Its ACL** grants the current user's SID alone and denies the network SID, so nothing reaches it from another machine or
   another account. The server is made as the first instance of its name (`PipeOptions.FirstPipeInstance`): where the name is
   already held the desktop serves no pipe and says so in its machine log (`pipe.refused`), rather than share a name.
-- **The client** connects with `PipeOptions.CurrentUserOnly`, which refuses a server another account owns, and checks the
-  server's process (§3.3).
+- **Its owner** is the current user's SID at either elevation (PIPEOWNER1, D171's note): left to the token's default owner, an
+  elevated Daoris's pipe was the Administrators group's.
+- **The client** takes a pipe owned by its user's SID or its token's default owner, and nothing else, and checks the server's
+  process (§3.3). It reads the owner itself: `PipeOptions.CurrentUserOnly` took the token's default owner alone, so a terminal
+  and a Daoris of one user at two elevations refused each other. A pipe that refuses the terminal is said as a refusal.
 - **Bounded**: eight connections at once, a line of at most one mebibyte, a hello within five seconds, and a connection idle
   for two minutes closed.
 
@@ -341,8 +344,9 @@ and each holds the hello's, the switch's and the lease's rows. A CLI the install
 - **A copy of a home** (a backup put back beside the original) carries the original's id: two instances on the two copies meet
   at the pipe's name, the second serving none and saying so. A copy is not a use this design serves.
 - **Windows only.** The desktop is a Windows application; a Unix socket is the same design where one is wanted.
-- **Not measured**: the pipe's ACL, `CurrentUserOnly`'s check, a round trip's time, and the census's every write; each is a row's
-  proof.
+- **Not measured**: the pipe's ACL against another account or machine, a round trip's time, and the census's every write; each is
+  a row's proof. `CurrentUserOnly`'s check was measured on the install (PIPEOWNER1): it refused a terminal that was not elevated
+  the elevated Daoris's pipe, which the ACL let in.
 
 ## 12. The rows
 
