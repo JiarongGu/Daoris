@@ -924,6 +924,39 @@ public sealed partial class AttentionStateSliceTests : DriverModuleBridge
         foreach (var row in rows) Assert.Equal(Normal(row), Normal(AttentionStateSlice.Picked(row)));
     }
 
+    /// <summary>
+    /// The allow-list's twin on the page: every field of a row the page's <c>PushedAttention</c> reads is pushed, and every field pushed
+    /// is one it declares; the same for an account row's facts, as <c>AccountRowFacts</c> declares them. Read from the page's sources,
+    /// so a field one side comes to read or write fails here until the other names it.
+    /// </summary>
+    [Fact]
+    public void Every_field_the_page_reads_of_a_row_is_pushed_and_every_field_pushed_the_page_declares()
+    {
+        var attention = PageSource("work", "attention", "attention.ts");
+        var accounts = PageSource("work", "attention", "accountWords.ts");
+
+        Assert.Equal(AttentionStateSlice.Fields["row"].Order(StringComparer.Ordinal), TypeFields(attention, "PushedAttention").Order(StringComparer.Ordinal));
+        Assert.Equal(AttentionStateSlice.Fields["account"].Order(StringComparer.Ordinal), TypeFields(accounts, "AccountRowFacts").Order(StringComparer.Ordinal));
+    }
+
+    private static string PageSource(params string[] path)
+    {
+        var at = new DirectoryInfo(AppContext.BaseDirectory);
+        while (at is not null && !File.Exists(Path.Combine(at.FullName, "daoris.json"))) at = at.Parent;
+        Assert.NotNull(at);
+        return File.ReadAllText(Path.Combine([at.FullName, "src", "Daoris.Web", "src", .. path]));
+    }
+
+    /// <summary>The top-level fields of a type the page declares as <c>export type Name = { … };</c>, comments apart.</summary>
+    private static IReadOnlyList<string> TypeFields(string source, string name)
+    {
+        var block = System.Text.RegularExpressions.Regex.Match(
+            source, $@"export type {name} = \{{(?<body>.*?)\n\}};", System.Text.RegularExpressions.RegexOptions.Singleline);
+        Assert.True(block.Success, $"the page declares no `{name}`");
+        var body = System.Text.RegularExpressions.Regex.Replace(block.Groups["body"].Value, @"/\*.*?\*/|//[^\n]*", "", System.Text.RegularExpressions.RegexOptions.Singleline);
+        return [.. System.Text.RegularExpressions.Regex.Matches(body, @"^\s{2}(?<name>\w+)\??:", System.Text.RegularExpressions.RegexOptions.Multiline).Select(each => each.Groups["name"].Value)];
+    }
+
     /// <summary>A hostile field in an input never reaches a partition: each row and what it holds is picked to its allow-list.</summary>
     [Fact]
     public void A_hostile_field_in_an_input_never_reaches_a_partition()
