@@ -5,6 +5,16 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-20 — A page test walked the driver's whole folder, so no driver change reached its gate (FLOWCHART1b)
+
+- **Symptom:** the full set on 3aeb4b81a failed `tool-tests`' SESSDEL1c scan, "every file outside the page a page's vitest reads
+  is one whose change reaches the web gate": it read `src/Daoris.Desktop/Daoris.Desktop.Driver/` (the folder's probe).
+- **Root cause:** FLOWCHART1b's `partsLife.test.ts` held its words to the driver's `PartBegan` by walking the driver's folder for
+  `SessionEntries.cs`; a walk reads the whole folder, and MOD9e's row sends only the named sources the page parses to the web
+  gate's unit run. The branch ran its vitests, not the tool tests.
+- **Fix:** the test reads the file by name through the shared `driverSource` helper, and MOD9e's row names `SessionEntries.cs`.
+- **Verification:** `partsLife.test.ts` 19 passed, `tsc` clean, the SESSDEL1c and MOD9e cases of `merge-branch.test.ts` pass.
+
 ## 2026-10-20 — A new Process test joined the driver's config path by hand (ACCESSSWAP1b)
 
 - **Symptom:** a session the owner's install drove (HEAVYRUN1a3, DOGFOOD1) found `npm run verify` failing on main at d0e51b54b: the
