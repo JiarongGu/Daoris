@@ -5,6 +5,11 @@ with the version and date at release.
 
 ## Unreleased
 
+- A landed branch's page draws how it landed as a flowchart, folded under *How it landed* above its commits until you open it:
+  its tries to land, three alike in a row folded into one you can open, the landing with who accepted it, each later session that
+  moved it on, the push, its pull request's latest answer, where its work ended, its clean-up and what is kept for recovery. The
+  work's milestone on a session's page and a run's landing step open it. `daoris-driver trace` now names the session a landing was
+  made for, each session that moved it on, and the units of work it carries, and finds the landing from any of those sessions.
 - A session's Timeline draws its states as a flowchart, the one it is in lit and going on drawn as a guarded move; a session page draws its parts as a flowchart in the parts strip's place, the strip its list, and Accept's plan as a dashed node of where they would land.
 - Signing an account in says where it is and for how long: *Starting*, *Waiting on your browser*, *Checking who signed in*
   and *Joining the lists*, each with its time, the one now counting. Codex's device code shows under the browser's step with
