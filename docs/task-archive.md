@@ -18435,9 +18435,7 @@ in zh. The sessions page's held words (`WordsHold`) still carry the driver's sen
 
 > - [ ] **PUSH1f2a — the seam, proved by the driver's standing choices** (cli, driver, modules, tools; first; D194, the alone-path design §5). Read its row in §5 and the sections it names; build it end to end (D187), the family's TypeScript leaving as §4 says. Proof: as §5 names it.
 
-**Outcome** 2026-10-21: `daoris driver`'s `list` and every standing choice run `daoris-driver driver` through the CLI's one spawn site
-with the terminal's environment exactly, the host's `DriverChoicesCommand` the running Daoris's client or the library's own operations
-alone (`StandingChoices`, which the routes call too), refused from a session's terminal; today's text kept by a table of 143 cases,
-two changed with reasons. What the building decided, and the start's measured cost, are D194's PUSH1f2a note; the commits are the
-detail. The handed verbs' TypeScript leaves with `driverconfig.ts` in PUSH1f2b. Unproven until the install: a `daoris driver drive`
-with the window open, confirmed there and shown at once.
+**Outcome** 2026-10-21: `daoris driver`'s standing choices run `daoris-driver driver`, the running Daoris's client or the library's
+own operations alone, refused from a session's terminal; today's text kept by a 143-case table. The decisions and the measured
+start are D194's PUSH1f2a note. The handed verbs' TypeScript leaves in PUSH1f2b. Unproven until the install: `daoris driver drive`
+confirmed in the open window.
