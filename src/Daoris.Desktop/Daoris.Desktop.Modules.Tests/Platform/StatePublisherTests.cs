@@ -431,6 +431,10 @@ public sealed partial class StatePublisherTests : DriverModuleBridge
     // HELPERNO1: the person's no, the ask refused and the asker's note written at once.
     [InlineData("SESSION_HELPER_DECLINE", "sessions,driver", "session")]
     [InlineData("SESSION_HELPERS", "", null)]
+    // MIXAGENT1c: the person's yes and no to a session's agent's own ask to hand it over, and the ask's read.
+    [InlineData("SESSION_HAND_OVER_APPROVE", "sessions,driver", "session")]
+    [InlineData("SESSION_HAND_OVER_DECLINE", "sessions,driver", "session")]
+    [InlineData("SESSION_HAND_OVER_ASK", "", null)]
     // MIXAGENT2c: what of the agents' asks waits on the person, *What needs you*'s read.
     [InlineData("HELPER_WAITS", "", null)]
     [InlineData("SESSION_OPENINGS", "", null)]
