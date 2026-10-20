@@ -200,6 +200,8 @@ export const NOTE_CODES: Readonly<Record<string, NoteCode>> = {
   'resumed.opening': { values: ['adapter', 'why'], why: 'resumed' },
   'resumed.moved': { values: ['now', 'then'] },
   'resumed.native': { values: ['adapter'] },
+  // The native door going on with Daoris's own words alone (COWORK1b): never "what you said".
+  'resumed.native-daoris': { values: ['adapter'] },
   // A permission the rules refused (CONVNOTE2b): the call's title rides between the two as the agent's words.
   'refused.lead': { values: [] },
   'refused.governs': { values: [] },
@@ -345,6 +347,8 @@ export const RESUMED_REASONS: Readonly<Record<string, { key: string; values: rea
   'words-and-findings': { key: 'note.resumed.why.words-and-findings', values: [] },
   helper: { key: 'note.resumed.why.helper', values: [] },
   'words-and-helper': { key: 'note.resumed.why.words-and-helper', values: [] },
+  // Daoris's own words alone (COWORK1b): a reopen told, a step's go-on.
+  daoris: { key: 'note.resumed.why.daoris', values: [] },
 };
 
 /**
