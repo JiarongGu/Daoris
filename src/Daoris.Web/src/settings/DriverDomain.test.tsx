@@ -143,6 +143,33 @@ describe('the driver domain', () => {
   });
 
   /**
+   * PLUGSET1 (the modes design §4.1): the Plugins section lists each installed plugin from the catalogue the Plugins place
+   * reads, with what it holds set, and its door opens that plugin's page, where its settings are changed.
+   */
+  it('lists each installed plugin with what it holds set, its door opening its page', async () => {
+    invoke.mockImplementation(async (module: string, type: string) => (module !== 'DAORIS.DRIVER' ? WIRING
+      : type === 'PLUGINS'
+        ? {
+          folder: 'D:/somewhere/Daoris/data/plugins',
+          plugins: [{
+            id: 'in-app-browser', name: 'In-app browser', version: '1.0.0', description: '', enabled: true, problem: null,
+            harnesses: [], points: [], running: false, folder: 'D:/somewhere/Daoris/data/plugins/in-app-browser', data: '',
+            helpServers: [{ name: 'browser', allow: ['browser_snapshot'], writes: ['browser_click'], state: 'approved', accepted: ['browser_click'] }],
+          }],
+        }
+        : { ...DRIVER_STATE, home: 'D:/somewhere/Daoris/data' }));
+    const onGo = vi.fn();
+    show(<SettingsView notify={() => {}} section="driver" onGo={onGo} />);
+
+    const plugins = within(await screen.findByRole('region', { name: 'Installed plugins' }));
+    expect(await plugins.findByText('In-app browser')).toBeTruthy();
+    expect(plugins.getByText('approved for Ask Daoris')).toBeTruthy();
+
+    await userEvent.click(plugins.getByRole('button', { name: "Open In-app browser's page" }));
+    expect(onGo).toHaveBeenCalledWith({ view: 'plugins', item: 'in-app-browser' });
+  });
+
+  /**
    * LEFT1 then LEFT2 (D105): a terminal's daoris reads the folder the account's DAORIS_HOME names. The hint says
    * that is this folder only when the state's `homeAccount` says the account names it. An install that overrode
    * an inherited home says which folder a terminal still reads in its notice, and the hint points there; a home
