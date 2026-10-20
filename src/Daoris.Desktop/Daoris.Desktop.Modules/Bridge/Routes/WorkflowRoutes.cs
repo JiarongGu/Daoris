@@ -10,12 +10,13 @@ namespace Daoris.Desktop;
 /// How work moves in a repository or a workspace, the page's `bridge/workflow.ts` (WORKFLOW1b; D157 point 7, the workflow
 /// design §2.7, §6.1): its Current workflow, which <see cref="WorkflowCurrent.Derive"/> draws from this machine's driver file,
 /// its plugins and its registry exactly as `daoris driver workflow show` reads them; and where a piece of work stands in it
-/// (WORKFLOW1c), the runs <see cref="WorkflowRunReader"/> reads. Read-only: nothing here writes, and every gate goes on
-/// reading the rules as it did.
+/// (WORKFLOW1c), the runs <see cref="WorkflowRunReader"/> reads. Read-only but one: <c>WORKFLOW_LANDED</c>, the person's press that sets
+/// the landed route and accepts the gates it runs unasked (FABRIC-PIPELINE1a).
 /// </summary>
-public sealed class WorkflowRoutes(DriverLoop loop)
+public sealed class WorkflowRoutes(DriverContext context)
 {
-    private readonly DriverLoop _loop = loop;
+    private readonly DriverContext _context = context;
+    private readonly DriverLoop _loop = context.Loop;
 
     // A repository's Current, or a workspace's: `{repository}` or `{workspace}`, exactly one. A repository's workspace is the
     // registry's, so it waits for the driver as the lines do; one the registry does not hold is read as in no workspace, and
@@ -41,7 +42,8 @@ public sealed class WorkflowRoutes(DriverLoop loop)
             var snapshot = await service.SnapshotAsync(cancellationToken).ConfigureAwait(false);
             var known = snapshot.Repositories.FirstOrDefault(each => string.Equals(each.Repository, repository, StringComparison.OrdinalIgnoreCase));
             var drawn = WorkflowCurrent.Derive(config, repository, known?.Workspace, plugins);
-            return Answer(drawn, repository, RemoteTarget.Workspace(known?.Workspace), registered: known is not null, repositories: null);
+            var start = await StartAsync(config, repository, known?.Workspace, cancellationToken).ConfigureAwait(false);
+            return Answer(drawn, repository, RemoteTarget.Workspace(known?.Workspace), registered: known is not null, repositories: null, start);
         }
 
         var shared = WorkflowCurrent.Derive(config, null, workspace, plugins);
@@ -59,14 +61,130 @@ public sealed class WorkflowRoutes(DriverLoop loop)
                 })];
         }
 
-        return Answer(shared, null, workspace!, registered: null, repositories: here);
+        return Answer(shared, null, workspace!, registered: null, repositories: here,
+            await StartAsync(config, null, workspace, cancellationToken).ConfigureAwait(false));
+    }
+
+    /// <summary>
+    /// The start node a Workflow tab draws first (FABRIC-PIPELINE1a, the pipeline design §1.3): <see cref="WorkflowStart.Read"/>'s routes,
+    /// each with the pipeline it names and what chose it; the landed route with its pipeline's name, the gates accepted and where they
+    /// stand against the line's tip (<see cref="LandedGates.StateOf"/>), the tip and the declaration there where it is to be accepted, or
+    /// why the tip could not be read; and the verification pipelines saved here. A workspace has no line, so its route's gates are
+    /// accepted repository by repository, and its tip is never read. git is asked only where a repository's route names a pipeline.
+    /// </summary>
+    private async Task<object> StartAsync(DriverConfig config, string? repository, string? workspace, CancellationToken ct)
+    {
+        var start = WorkflowStart.Read(config, repository, workspace, WorkflowStore.List(_loop.Home));
+        var (root, tip, problem) = repository is not null && start.Landed.Workflow != WorkflowSelection.Current
+            ? await TipAsync(config, repository, workspace, ct).ConfigureAwait(false)
+            : (null, null, null);
+        var state = repository is null && start.Landed.Workflow != WorkflowSelection.Current ? LandedGates.Unread : LandedGates.StateOf(start.Landed, tip);
+        var declaration = root is not null && tip is not null && state is LandedGates.Changed or LandedGates.Unaccepted
+            ? await LandedGates.TextAsync(root, tip.Gates, ct).ConfigureAwait(false)
+            : null;
+        return new
+        {
+            Routes = start.Routes.Select(route => new { route.Kind, route.Label, route.Paths, route.Workflow, route.Level, route.Name }).ToArray(),
+            Landed = new
+            {
+                start.Landed.Workflow,
+                start.Landed.Level,
+                start.Landed.Gates,
+                Name = start.LandedName,
+                State = state,
+                Tip = tip is null ? null : new { tip.Line, tip.Commit, tip.Gates },
+                Problem = problem,
+                Declaration = declaration,
+            },
+            Verifications = start.Verifications.Select(each => new { each.Id, each.Name }).ToArray(),
+        };
+    }
+
+    /// <summary>
+    /// The tip of a repository's line in its checkout here, as the registry holds it, and its declaration's blob; or why it could not be
+    /// read: no checkout here, no line known, or git's refusal (<see cref="LandedGates.ReadAsync"/>).
+    /// </summary>
+    private async Task<(string? Root, LandedTip? Tip, string? Problem)> TipAsync(DriverConfig config, string repository, string? workspace, CancellationToken ct)
+    {
+        if (_loop.Service is not { } service) return (null, null, "the driver is still coming up.");
+        var root = LinesRoutes.Checkouts(await service.RegistryAsync(ct).ConfigureAwait(false), repository, null)
+            .Select(row => row.Root).FirstOrDefault(path => Directory.Exists(path));
+        if (root is null) return (null, null, $"`{repository}` has no checkout on this machine to read.");
+        var line = await CanonicalLine.ResolveAsync(root, repository, workspace, config, ct).ConfigureAwait(false);
+        if (line.Branch is not { } branch) return (root, null, $"`{repository}`'s line is not known here.");
+        var (tip, problem) = await LandedGates.ReadAsync(root, branch, ct).ConfigureAwait(false);
+        return (root, tip, problem is null ? null : $"`{repository}`: {problem}.");
+    }
+
+    /// <summary>
+    /// The person's press on the landed route (FABRIC-PIPELINE1a, D192 point 2; Setup's route row and the Workflow tab's <i>Accept the
+    /// gates</i>, D156's door): <c>{repository}</c> or <c>{workspace}</c>, and <c>workflow</c>, a verification pipeline's id, <c>current</c>
+    /// for no verification, or null to clear. For a repository naming a verification pipeline it reads the <c>daoris.gates.json</c> at its
+    /// line's tip and accepts it by its blob, as <c>daoris driver workflow use … --landed</c> does; where the tip cannot be read it keeps
+    /// what was accepted for the same pipeline. Judged by the twins' edit first (<see cref="WorkflowSelection.Apply"/>), so a development
+    /// pipeline is refused in its words before anything is written. Answers the start node as it now stands, and what the change lowers
+    /// (<see cref="Involvement.LowersRoute"/>), said: the person's press applies it (D157 point 10).
+    /// </summary>
+    [DriverRoute("WORKFLOW_LANDED")]
+    private async Task<object?> WorkflowLandedAsync(IpcRequest request, CancellationToken cancellationToken)
+    {
+        var repository = Optional(request, "repository");
+        var workspace = Optional(request, "workspace");
+        if ((repository is null) == (workspace is null))
+        {
+            throw new DriverException("a landed route is set for a `repository` or a `workspace` — name one of them.");
+        }
+
+        var workflow = Optional(request, "workflow");
+        var config = DriverConfig.Load(_loop.ConfigPath);
+        var inWorkspace = workspace;
+        if (repository is not null)
+        {
+            var service = _loop.Service ?? throw NotReady();
+            var snapshot = await service.SnapshotAsync(cancellationToken).ConfigureAwait(false);
+            inWorkspace = snapshot.Repositories.FirstOrDefault(each => string.Equals(each.Repository, repository, StringComparison.OrdinalIgnoreCase))?.Workspace;
+        }
+
+        var named = workflow is { } id && id != WorkflowSelection.Current ? id : null;
+        var found = named is not null && WorkflowNamed.IsId(named) ? WorkflowStore.Load(_loop.Home, named) : null;
+        if (named is not null && found is null) throw new DriverException($"no workflow `{named}` is saved here — `daoris driver workflow list` names them.");
+
+        string? gates = null;
+        if (repository is not null && found?.Read.Verifies == true)
+        {
+            var (_, tip, _) = await TipAsync(config, repository, inWorkspace, cancellationToken).ConfigureAwait(false);
+            var own = config.Workflows.TryGetValue(repository.Trim(), out var held) ? held.Landed : null;
+            gates = tip?.Gates ?? (own?.Workflow == named ? own.Gates : null);
+        }
+
+        var use = new WorkflowUse(workflow, repository, repository is null ? workspace : null, null)
+        {
+            Landed = true,
+            Gates = gates,
+            Pipeline = found?.Read.Pipeline,
+        };
+        var before = WorkflowSelection.ResolveLanded(config, repository, inWorkspace);
+        // Judged before anything is written: a refusal is the twins' sentence.
+        var after = WorkflowSelection.Apply(config, use);
+        _context.Change(each => WorkflowSelection.Apply(each, use));
+
+        NodeGraph? Newest(string id) =>
+            WorkflowStore.Load(_loop.Home, id) is { Read: { Problem: null, Versions: [.., var last] } } ? last.Graph : null;
+        var now = WorkflowSelection.ResolveLanded(after, repository, inWorkspace);
+        var lowered = Involvement.LowersRoute(new WorkflowLanded(now.Workflow, now.Gates), new WorkflowLanded(before.Workflow, before.Gates), Newest);
+        return new
+        {
+            Start = await StartAsync(DriverConfig.Load(_loop.ConfigPath), repository, inWorkspace, cancellationToken).ConfigureAwait(false),
+            Lowered = lowered,
+        };
     }
 
     /// <summary>
     /// The answer: each step as the shared table's cell, its settings in the order the version reads them, and each limit's
-    /// sentence by its code, for a page with no words of its own for one.
+    /// sentence by its code, for a page with no words of its own for one; and the start node (FABRIC-PIPELINE1a).
     /// </summary>
-    private static object Answer(CurrentWorkflow drawn, string? repository, string workspace, bool? registered, IReadOnlyList<object>? repositories)
+    private static object Answer(
+        CurrentWorkflow drawn, string? repository, string workspace, bool? registered, IReadOnlyList<object>? repositories, object start)
     {
         var limits = new JsonObject();
         foreach (var code in drawn.Steps.Select(step => step.Limit).OfType<string>().Distinct(StringComparer.Ordinal))
@@ -84,6 +202,7 @@ public sealed class WorkflowRoutes(DriverLoop loop)
             drawn.Version,
             Limits = limits,
             Repositories = repositories,
+            Start = start,
         };
     }
 
@@ -147,7 +266,9 @@ public sealed class WorkflowRoutes(DriverLoop loop)
             WorkflowGate = TreesRoutes.WorkflowWaits(run.WorkflowGate),
             Workflow = new { run.Current.Version, run.Current.StartHolds, Limits = limits,
                 Id = run.Process?.Named == true ? run.Process.Binding!.Workflow : null,
-                BoundVersion = run.Process?.Named == true ? run.Process.Binding!.Version : null },
+                BoundVersion = run.Process?.Named == true ? run.Process.Binding!.Version : null,
+                // FABRIC-PIPELINE1a: the route that chose its pipeline, as its binding keeps it; the page says it in its own words.
+                Route = run.Process?.Binding is { } bound ? new { bound.Level, bound.Kind, bound.Label } : null },
             Steps = run.Steps.Select(step => new
             {
                 Step = JsonDocument.Parse(WorkflowCurrent.ToJson(step.Step)).RootElement.Clone(),

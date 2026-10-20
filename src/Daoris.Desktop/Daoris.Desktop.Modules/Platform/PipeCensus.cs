@@ -217,8 +217,10 @@ public sealed class PipeCensus
             "SETUP_PRESS", "SET_ACCESS", "SET_AGENT_SETTINGS", "SET_CAP", "SET_COMMITS", "SET_COOLOFF", "SET_DRIVABLE", "SET_HAND_OVER", "SET_HELPER", "SET_HELPERS", "SET_HELP_MODE",
             // HELPMODE1c2b: what Ask Daoris's housekeeping may do, the person's grant alone.
             "SET_HELP_GRANT",
+            // FABRIC-PIPELINE1a: the landed route and the gates it runs unasked, accepted by their blob (D156).
+            "WORKFLOW_LANDED",
             // HEAVYRUN1b2b: the commands this machine runs for a repository's heavy gates, which the person writes.
-            "SET_HEAVY_GATES", "SET_HOLD", "SET_INTAKE", "SET_LANDING", "SET_LANGUAGE", "SET_LINE", "SET_NOTIFY", "SET_OPINION", "SET_READ_ACROSS",
+            "SET_HEAVY_GATES","SET_HOLD", "SET_INTAKE", "SET_LANDING", "SET_LANGUAGE", "SET_LINE", "SET_NOTIFY", "SET_OPINION", "SET_READ_ACROSS",
             "SET_REVIEW", "SET_SESSION_OPTION", "SET_STANDING", "SET_STRIKES", "SET_TREES", "SET_WRITE_ACROSS", "TRUST_FOLDER",
             "RULE_ACTION", "RULE_PROPOSAL", "ACCOUNT_USE", "HARNESS_ACTION",
             // Code that runs in the driver, and the programs it runs with.
