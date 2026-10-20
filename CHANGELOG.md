@@ -5,6 +5,9 @@ with the version and date at release.
 
 ## Unreleased
 
+- `daoris-driver ask channel` shows which messages are urgent and, under each message you posted, how far it got in each
+  repository it went to: waiting, held, sent, taken, read, partly handed, answered or never reached, as the ask page shows it.
+  Your post is still urgent by default. `--ordinary` posts it for each session to read when its turn ends instead.
 - The desktop's machine log keeps every line when a second launch writes beside the running Daoris, where before their lines
   could overwrite each other's in the day's file. An error that ends the desktop's application is written there before the log closes.
 - Settings → Driver lists the plugins installed here under *Installed plugins*: whether each is on, whether each of its servers is

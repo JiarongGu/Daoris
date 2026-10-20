@@ -39,7 +39,7 @@ Routed in `src/Daoris.Desktop/Daoris.Desktop.Driver.Host/Program.cs`, its usage 
 | `workflow` | `Program.cs:334` | `Daoris.Desktop.Driver.Host/WorkflowConsole.cs:10` WorkflowConsole | run · keep `WorkflowConsole.cs:14` |
 | `run-heavy` | `Program.cs:341` | `Daoris.Desktop.Driver.Host/HeavyConsole.cs:8` HeavyConsole | — |
 | `chat` | `Program.cs:368` | `Daoris.Desktop.Driver.Host/ChatConsole.cs:28` ChatConsole | — |
-| `ask` | `Program.cs:375` | `Daoris.Desktop.Driver.Host/ChannelConsole.cs:8` ChannelConsole; `Daoris.Desktop.Driver.Host/WorkConsole.cs:10` WorkConsole; `Daoris.Desktop.Driver.Host/HistoryConsole.cs:11` HistoryConsole; `Daoris.Desktop.Driver.Host/AskConsole.cs:40` AskConsole | channel `ChannelCommand.cs:32` |
+| `ask` | `Program.cs:375` | `Daoris.Desktop.Driver.Host/ChannelConsole.cs:8` ChannelConsole; `Daoris.Desktop.Driver.Host/WorkConsole.cs:10` WorkConsole; `Daoris.Desktop.Driver.Host/HistoryConsole.cs:11` HistoryConsole; `Daoris.Desktop.Driver.Host/AskConsole.cs:40` AskConsole | channel `ChannelCommand.cs:39` |
 | `setup` | `Program.cs:404` | `Daoris.Desktop.Driver.Host/SetupConsole.cs:9` SetupConsole | — |
 | `register` | `Program.cs:411` | `Daoris.Desktop.Driver.Host/RegisterConsole.cs:8` RegisterConsole | — |
 | `opinion` | `Program.cs:418` | `Daoris.Desktop.Driver.Host/OpinionConsole.cs:8` OpinionConsole | ask `OpinionCommand.cs:68` · show `OpinionCommand.cs:61` · stop `OpinionCommand.cs:61` · anyway `OpinionCommand.cs:66` · myself `OpinionCommand.cs:66` |
@@ -63,7 +63,7 @@ Routed in `src/Daoris.Desktop/Daoris.Desktop.Driver.Host/Program.cs`, its usage 
 | `wiring` | `Program.cs:622` | `Daoris.Desktop.Driver/Platform/WiringCommand.cs:16` WiringCommand | — |
 | `logs` | `Program.cs:630` | `Daoris.Desktop.Driver.Host/LogsConsole.cs:18` LogsConsole | — |
 | `plugins` | `Program.cs:637` | `Daoris.Desktop.Driver/Plugins/PluginsCommand.cs:25` PluginsCommand | install `Program.cs:604` · new `PluginsCommand.cs:49` · try `PluginsCommand.cs:49` · show `PluginsCommand.cs:51` · activity `PluginsCommand.cs:53` · approve `PluginsCommand.cs:57` · withdraw `PluginsCommand.cs:75` |
-| `drive` | `Program.cs:356` | `Daoris.Desktop.Driver/Loop/DriverCommand.cs:274` DriverCommand.Read | — |
+| `drive` | `Program.cs:356` | `Daoris.Desktop.Driver/Loop/DriverCommand.cs:275` DriverCommand.Read | — |
 
 ## `daoris-devkit`
 
