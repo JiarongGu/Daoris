@@ -281,7 +281,8 @@ public sealed class PluginKitTests : IDisposable
     /// <summary>
     /// 🔴 PROC1g: the wire test ends once its plugin leaves at `shutdown`. The grace it races is a bound on a plugin that stays,
     /// never a wait on one that went: its timer left running held every run open for the whole grace after the plugin had gone.
-    /// Here the grace is a minute, so a run that waits it out cannot end inside half of one.
+    /// Here the grace is ten minutes, past the run's own limit (<see cref="RunAsync"/>'s ninety seconds), so a run that waits it out never
+    /// ends at all (TESTCLOCK2), where the machine's clock timed a minute's grace against thirty seconds.
     /// </summary>
     [Fact]
     public async Task A_wire_test_ends_once_its_plugin_leaves_not_when_the_grace_runs_out()
@@ -291,14 +292,12 @@ public sealed class PluginKitTests : IDisposable
         var grace = $"const GRACE = {(long)HookProcess.Grace.TotalMilliseconds};";
         var text = File.ReadAllText(test);
         Assert.Contains(grace, text);
-        File.WriteAllText(test, text.Replace(grace, "const GRACE = 60000;", StringComparison.Ordinal));
-        var clock = Stopwatch.StartNew();
+        File.WriteAllText(test, text.Replace(grace, "const GRACE = 600000;", StringComparison.Ordinal));
 
         var (exit, output) = await NodeTestAsync(folder);
 
         Assert.True(exit == 0, output);
         Assert.Contains("# fail 0", output);
-        Assert.True(clock.Elapsed < TimeSpan.FromSeconds(30), $"the wire test took {clock.Elapsed.TotalSeconds:0.#}s, its minute of grace waited out: {output}");
     }
 
     [Theory]
@@ -968,7 +967,17 @@ public sealed class PluginKitTests : IDisposable
         var stdout = process.StandardOutput.ReadToEndAsync();
         var stderr = process.StandardError.ReadToEndAsync();
         using var limit = new CancellationTokenSource(TimeSpan.FromSeconds(90));
-        await process.WaitForExitAsync(limit.Token);
+        try
+        {
+            await process.WaitForExitAsync(limit.Token);
+        }
+        catch (OperationCanceledException)
+        {
+            // A run past its limit is ended, so one that waits out a long grace leaves nothing behind.
+            process.Kill(entireProcessTree: true);
+            throw;
+        }
+
         return (process.ExitCode, await stdout + await stderr);
     }
 

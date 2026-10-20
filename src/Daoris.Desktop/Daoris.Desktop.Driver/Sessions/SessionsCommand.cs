@@ -79,8 +79,11 @@ public sealed record SessionsWorld(ServiceClient Service, string Home, DriverCon
     /// </summary>
     public InstanceWorld? Instance { get; init; }
 
-    /// <summary>How long a request is waited for: ten seconds (§7.1).</summary>
-    public TimeSpan Wait { get; init; } = TimeSpan.FromSeconds(10);
+    /// <summary>How long a request is waited for unless a world says otherwise: ten seconds (§7.1).</summary>
+    public static readonly TimeSpan DefaultWait = TimeSpan.FromSeconds(10);
+
+    /// <summary>How long a request is waited for: <see cref="DefaultWait"/>.</summary>
+    public TimeSpan Wait { get; init; } = DefaultWait;
 
     /// <summary>How often the record is read while a request waits.</summary>
     public TimeSpan Poll { get; init; } = TimeSpan.FromMilliseconds(250);

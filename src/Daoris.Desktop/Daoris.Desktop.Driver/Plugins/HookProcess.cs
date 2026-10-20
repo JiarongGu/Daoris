@@ -16,12 +16,14 @@ public sealed class HookProcess : IHookChannel
     private readonly Process _process;
     private readonly HookPeer _peer;
     private readonly Task _stderr;
+    private readonly TimeProvider _clock;
 
-    private HookProcess(Process process, HookPeer peer, Task stderr)
+    private HookProcess(Process process, HookPeer peer, Task stderr, TimeProvider clock)
     {
         _process = process;
         _peer = peer;
         _stderr = stderr;
+        _clock = clock;
     }
 
     public IReadOnlyList<string> Points => _peer.Points;
@@ -117,8 +119,9 @@ public sealed class HookProcess : IHookChannel
     public static int FrameLimit(PluginEntry plugin) => WorkPlugins.Speaks(plugin) ? WorkBounds.FrameBytes : HookPeer.AnswerBytes;
 
     /// <summary>Start the plugin's program and complete the handshake, or throw with the reason.</summary>
+    /// <param name="clock">The clock its <see cref="Grace"/> is read on: the machine's unless a test hands its own (TESTCLOCK2).</param>
     public static async Task<HookProcess> StartAsync(
-        PluginEntry plugin, string home, Action<string> onLine, CancellationToken ct, TimeSpan? patience = null)
+        PluginEntry plugin, string home, Action<string> onLine, CancellationToken ct, TimeSpan? patience = null, TimeProvider? clock = null)
     {
         var info = StartInfo(plugin, home);
         var hooks = plugin.Manifest.Hooks!;
@@ -142,8 +145,9 @@ public sealed class HookProcess : IHookChannel
         var stderr = RelayAsync(process.StandardError, onLine);
         // FABRIC-PERFORM1a (§C4): every frame a plugin's process writes is bounded, so none can grow the driver's memory past it; the work
         // wire's 64 KB holds a plugin that speaks it, and round 2 gave every other the answers' bound, which none of theirs reaches.
-        var peer = new HookPeer(process.StandardOutput, process.StandardInput, plugin.Manifest.Id, onLine, patience, FrameLimit(plugin));
-        var started = new HookProcess(process, peer, stderr);
+        clock ??= TimeProvider.System;
+        var peer = new HookPeer(process.StandardOutput, process.StandardInput, plugin.Manifest.Id, onLine, patience, FrameLimit(plugin), clock);
+        var started = new HookProcess(process, peer, stderr, clock);
         try
         {
             await peer.InitializeAsync(home, plugin.Data, hooks.Points, ct).ConfigureAwait(false);
@@ -184,7 +188,7 @@ public sealed class HookProcess : IHookChannel
     /// </remarks>
     public async ValueTask DisposeAsync()
     {
-        using var grace = new CancellationTokenSource(Grace);
+        using var grace = new CancellationTokenSource(Grace, _clock);
         await _peer.ShutdownAsync(grace.Token).ConfigureAwait(false);
         try
         {
