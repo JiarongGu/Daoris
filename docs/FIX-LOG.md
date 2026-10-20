@@ -17,6 +17,22 @@ repository.
 - **Fix:** both connector tests' stand-in loops try a refused read or delete again at the next turn, never ending on it.
 - **Verification:** both classes, 9; the full set beside.
 
+## 2026-10-21 — Seven driver tests timed their claim on the machine's clock, which a bigger bound would weaken (TESTCLOCK2, TESTCLOCK1)
+
+- **Symptom:** TESTPATIENCE1 left the elapsed bounds that state a claim as they were: each compared a `Stopwatch` with a few seconds
+  (or a 400 ms negative wait), so a loaded machine could fail it, and widening it would let the defect it guards pass.
+- **Root cause:** the claim ("at once", "within its grace", "inside the door's ten seconds", "the edit waited") was measured as the
+  machine's time, not as what the code waited on.
+- **Fix:** each states its claim on a held clock or a signal. `HookPeer` and `HookProcess` read a shutdown's grace on a handed
+  `TimeProvider` (the machine's by default), and `WorkPeerTests`' stuck write and `WorkProcessTests`' deaf plugin move a `MovedClock`
+  (the driver tests' copy of the modules' RPC1c clock, `Plugins/MovedClock.cs`) to the grace and see the disposal end there.
+  `WorkPeerTests`' too-long answers have no patience to wait out (`Timeout.InfiniteTimeSpan`), and `SessionsSayCommandTests`' unanswered
+  say has an hour's bound, so a call that waited it out never ends inside `Poll.Patience`; `PluginKitTests`' wire test has a ten-minute
+  grace past its run's 90 s limit, and a run past the limit is now ended. `SessionRequestChangeTests` holds the listing's period
+  against `SessionsWorld.DefaultWait`, both the code's own. `HeldFactsTests`' holder writes once the edit has found the lock held
+  (`RecordLock.Waiting`, the lock's path), where a loaded edit not yet begun passed its 400 ms without waiting at all.
+- **Verification:** the six classes, 219 tests, green once alone and three times at once (about 3 m 10 s each).
+
 ## 2026-10-21 — Two branches built on main at once met only at the merge: a story on the old width helper (RAILLINE1, STORYGAP1)
 
 - **Symptom:** merging RAILLINE1 after STORYGAP1, the page head's stories named `at`, a helper STORYGAP1 had replaced with

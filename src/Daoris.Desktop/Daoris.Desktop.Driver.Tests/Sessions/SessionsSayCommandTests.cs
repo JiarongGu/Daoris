@@ -609,7 +609,8 @@ public sealed class SessionsSayCommandTests : IDisposable
 
     /// <summary>
     /// The answer is waited for only while a loop holds the home (FLAKE3): one that took the words and went away without
-    /// answering is said at once, never waited out to the loop's bound on a say.
+    /// answering is said at once, never waited out to the loop's bound on a say. TESTCLOCK2: the bound is an hour, so a verb that
+    /// waited it out never ends inside the test's patience, where the machine's clock timed it against twenty seconds.
     /// </summary>
     [Fact]
     public async Task A_loop_that_took_the_words_and_went_away_unanswered_is_said_at_once()
@@ -621,7 +622,7 @@ public sealed class SessionsSayCommandTests : IDisposable
         var world = World(service, wait: TimeSpan.FromMilliseconds(300)) with
         {
             LoopRuns = () => Volatile.Read(ref holds) == 1,
-            Answer = TimeSpan.FromMinutes(1),
+            Answer = TimeSpan.FromHours(1),
             Clock = clock,
         };
         await using var loop = new SessionRequestWatch(_home, new SessionProcesses(Pids), () => service, every: Late(world))
@@ -635,13 +636,11 @@ public sealed class SessionsSayCommandTests : IDisposable
                 return WordsHeld.Failed("never");
             },
         };
-        var waited = Stopwatch.StartNew();
 
-        var (exit, said) = await SayAsync(room, ["d0ne0000", "also the changelog"], world);
+        var (exit, said) = await SayAsync(room, ["d0ne0000", "also the changelog"], world).WaitAsync(Poll.Patience);
 
         Assert.Equal(2, exit);
         Assert.Contains("took your words, and gave no answer of where they stand", said);
-        Assert.True(waited.Elapsed < TimeSpan.FromSeconds(20), $"{waited.Elapsed} waited");
     }
 
     /// <summary>And no longer than the loop's own bound on a say (FLAKE3), where a loop that holds the home never answers.</summary>

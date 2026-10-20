@@ -223,6 +223,8 @@ public sealed partial class HeldFactsTests : IDisposable
     /// <summary>
     /// 🔴 The cross-process writer (D173's END2 note): an edit waits while another handle holds the record's lock under the home's
     /// <c>locks/records/</c>, then reads what the holder wrote, so neither write is lost. A second process is <see cref="RecordLockProcessTests"/>'.
+    /// TESTCLOCK2: the holder writes once the edit has found the lock held (<see cref="RecordLock.Waiting"/>), where 400 ms of the
+    /// machine's clock stood for it, and a loaded edit not yet begun passed without waiting at all.
     /// </summary>
     [Fact]
     public void An_edit_waits_for_the_records_lock_and_loses_nothing()
@@ -232,14 +234,27 @@ public sealed partial class HeldFactsTests : IDisposable
         var lockPath = RecordLock.PathOf(_home, SessionBranches.FileName);
         Assert.StartsWith(DaorisHome.Entry(_home, HomeEntry.Locks), lockPath, StringComparison.Ordinal);
 
-        Task edit;
-        using (var held = new FileStream(lockPath, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None))
+        Task edit = Task.CompletedTask;
+        var waiting = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        void Waits(string path)
         {
+            if (path == lockPath) waiting.TrySetResult();
+        }
+
+        RecordLock.Waiting += Waits;
+        try
+        {
+            using var held = new FileStream(lockPath, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None);
             edit = Task.Run(() => grown.Record(Grown("daoris/second")));
-            Assert.False(edit.Wait(TimeSpan.FromMilliseconds(400)));
+            Assert.True(waiting.Task.Wait(Poll.Patience), "the edit never found the lock held");
+            Assert.False(edit.IsCompleted);
             // The holder's own read-modify-write, made while the edit waits.
             var text = File.ReadAllText(grown.FilePath);
             File.WriteAllText(grown.FilePath, text.Replace("daoris/first", "daoris/holder", StringComparison.Ordinal));
+        }
+        finally
+        {
+            RecordLock.Waiting -= Waits;
         }
 
         Assert.True(edit.Wait(Poll.Patience));

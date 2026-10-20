@@ -92,9 +92,10 @@ public sealed class WorkPeerTests
     private static string? Handshake(JsonElement frame, string points, string capabilities = "[]") =>
         Method(frame) == "initialize" ? Ok(frame, $$"""{"protocolVersion":1,"points":{{points}},"capabilities":{{capabilities}}}""") : null;
 
-    private static async Task<HookPeer> Started(Stand stand, IReadOnlyList<string>? declared = null, Action<string>? onLine = null)
+    private static async Task<HookPeer> Started(
+        Stand stand, IReadOnlyList<string>? declared = null, Action<string>? onLine = null, TimeSpan? patience = null)
     {
-        var peer = new HookPeer(stand.Incoming, stand.Outgoing, "acme.deploy", onLine, frameLimit: WorkBounds.FrameBytes);
+        var peer = new HookPeer(stand.Incoming, stand.Outgoing, "acme.deploy", onLine, patience, frameLimit: WorkBounds.FrameBytes);
         await peer.InitializeAsync("h", "d", declared ?? Declared, CancellationToken.None);
         return peer;
     }
@@ -207,7 +208,8 @@ public sealed class WorkPeerTests
 
     /// <summary>
     /// FABRIC-PERFORM1a, round 2: an answer too long to read fails its call at once, as the plugin's unreadable answer, wherever its id stands
-    /// in the frame — never left to wait out its patience as a late one — and the wire goes on.
+    /// in the frame — never left to wait out its patience as a late one — and the wire goes on. TESTCLOCK2: the calls have no patience to
+    /// wait out, so a call left waiting as a late one never ends, where the machine's clock timed one against ten seconds.
     /// </summary>
     [Fact]
     public async Task An_answer_too_long_to_read_fails_its_call_at_once_and_the_wire_goes_on()
@@ -223,33 +225,37 @@ public sealed class WorkPeerTests
                     var other => Ok(frame, $$"""{"invocation":"{{other}}"}"""),
                 }
                 : null));
-        var peer = await Started(stand);
-        var clock = System.Diagnostics.Stopwatch.StartNew();
+        var peer = await Started(stand, patience: Timeout.InfiniteTimeSpan);
 
         foreach (var invocation in new[] { "first", "last" })
         {
-            var error = await Assert.ThrowsAsync<DriverException>(() => peer.PerformAsync(Perform(invocation), CancellationToken.None));
+            var error = await Assert.ThrowsAsync<DriverException>(
+                () => peer.PerformAsync(Perform(invocation), CancellationToken.None).WaitAsync(Poll.Patience));
             Assert.Equal(PluginEvents.Unreadable, PluginFailures.KindOf(error, PluginEvents.Errored));
             Assert.Contains("64 KB", error.Message, StringComparison.Ordinal);
         }
 
-        Assert.True(clock.Elapsed < HookPeer.DefaultPatience, $"the calls waited {clock.Elapsed.TotalSeconds:0.#}s, as late ones do");
-        await peer.PerformAsync(Perform("next"), CancellationToken.None);
+        await peer.PerformAsync(Perform("next"), CancellationToken.None).WaitAsync(Poll.Patience);
     }
 
     /// <summary>
     /// FABRIC-PERFORM1a, round 2: telling a plugin to go is bounded by its grace. A plugin that stopped reading its stdin held the write of
-    /// <c>shutdown</c>, and with it the disposal of its process, for ever.
+    /// <c>shutdown</c>, and with it the disposal of its process, for ever. TESTCLOCK2: the grace is read on a clock the test moves, so
+    /// the telling waits until its grace and ends at it, where the machine's clock timed it against five seconds.
     /// </summary>
     [Fact]
     public async Task Telling_a_plugin_to_go_never_waits_past_its_grace_on_a_write_that_does_not_end()
     {
-        var peer = new HookPeer(new StringReader(""), new Stuck(), "acme.deploy");
-        var clock = System.Diagnostics.Stopwatch.StartNew();
+        var clock = new MovedClock();
+        var peer = new HookPeer(new StringReader(""), new Stuck(), "acme.deploy", clock: clock);
 
-        await peer.DisposeAsync().AsTask().WaitAsync(Poll.Patience);
+        var telling = peer.DisposeAsync().AsTask();
+        await clock.Timed.WaitAsync(Poll.Patience);
+        clock.Advance(HookProcess.Grace - TimeSpan.FromMilliseconds(1));
+        Assert.False(telling.IsCompleted);
+        clock.Advance(TimeSpan.FromMilliseconds(1));
 
-        Assert.True(clock.Elapsed < HookProcess.Grace + TimeSpan.FromSeconds(3), $"the shutdown took {clock.Elapsed.TotalSeconds:0.#}s");
+        await telling.WaitAsync(Poll.Patience);
     }
 
     /// <summary>A writer whose every line waits for ever: the pipe of a plugin that no longer reads it, full.</summary>

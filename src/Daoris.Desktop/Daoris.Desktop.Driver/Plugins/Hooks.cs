@@ -95,7 +95,9 @@ public sealed class HookPeer(
     TimeSpan? patience = null,
     // FABRIC-PERFORM1a (§C4): a frame longer than this, in UTF-8 bytes, is dropped unread. A process's stdout is read with the bound
     // HookProcess.FrameLimit names for its plugin; null reads whole lines, as a test's stand-in that gives only lines is read.
-    int? frameLimit = null) : IHookChannel
+    int? frameLimit = null,
+    // The clock the grace of a shutdown is read on (TESTCLOCK2): the machine's, or a test's that it moves itself.
+    TimeProvider? clock = null) : IHookChannel
 {
     /// <summary>The wire version this host speaks. Stated in `initialize`; a plugin answering another is refused.</summary>
     public const int ProtocolVersion = 1;
@@ -350,7 +352,7 @@ public sealed class HookPeer(
     /// <summary>Told to go, politely, within <see cref="HookProcess.Grace"/>; whoever owns the process then makes sure it did.</summary>
     public async ValueTask DisposeAsync()
     {
-        using var grace = new CancellationTokenSource(HookProcess.Grace);
+        using var grace = new CancellationTokenSource(HookProcess.Grace, clock ?? TimeProvider.System);
         await ShutdownAsync(grace.Token).ConfigureAwait(false);
     }
 
@@ -570,8 +572,8 @@ public static class HookChannels
     /// <see cref="HookProcess"/>, behind the port. Throws with the reason where it does not start or does not answer.
     /// </summary>
     public static async Task<IHookChannel> StartAsync(
-        PluginEntry plugin, string home, Action<string> onLine, CancellationToken ct, TimeSpan? patience = null) =>
-        await HookProcess.StartAsync(plugin, home, onLine, ct, patience).ConfigureAwait(false);
+        PluginEntry plugin, string home, Action<string> onLine, CancellationToken ct, TimeSpan? patience = null, TimeProvider? clock = null) =>
+        await HookProcess.StartAsync(plugin, home, onLine, ct, patience, clock).ConfigureAwait(false);
 }
 
 /// <summary>
