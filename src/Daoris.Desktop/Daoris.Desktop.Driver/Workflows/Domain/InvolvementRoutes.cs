@@ -12,10 +12,10 @@ public sealed record InvolvementJudged(IReadOnlyList<string> Lowered, bool Appli
 /// The lowering table's rows for routes and verification pipelines (FABRIC-PIPELINE1a, D192 point 2, the pipeline design §1.3): a landed
 /// route removed, set to <c>current</c> or pointed at a pipeline whose checks run fewer of the declaration's gates; a verification
 /// version that drops a <c>check</c>, narrows a check's <c>gates</c> (from <c>heavy</c> to names, or by a name), or removes the wire a
-/// node waits on a check by; and a check's <c>failed</c> moved off <c>wait</c>. A table compared node by node, never a reading. The
-/// fourth row, <c>light</c> with nothing running the heavy gates, ships with FABRIC-PIPELINE1b.
+/// node waits on a check by; and a check's <c>failed</c> moved off <c>wait</c>. A table compared node by node, never a reading, beside
+/// <see cref="Involvement"/>'s steps. The fourth row, <c>light</c> with nothing running the heavy gates, ships with FABRIC-PIPELINE1b.
 /// </summary>
-public static partial class Involvement
+public static class InvolvementRoutes
 {
     /// <summary>A check's <c>gates</c> when it names none: the declaration's heavy gates (the pipeline design §4.1).</summary>
     public const string HeavyGates = "heavy";

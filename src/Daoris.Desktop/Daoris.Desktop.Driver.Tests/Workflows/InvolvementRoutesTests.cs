@@ -53,7 +53,7 @@ public sealed class InvolvementRoutesTests
     [Theory]
     [MemberData(nameof(Versions))]
     public void A_verification_versions_lowering_is_a_table(string name, string otherwise, string chosen, string lowered) =>
-        Assert.True(lowered == string.Join("; ", Involvement.LowersVerification(Graph(chosen), Graph(otherwise))), name);
+        Assert.True(lowered == string.Join("; ", InvolvementRoutes.LowersVerification(Graph(chosen), Graph(otherwise))), name);
 
     private static readonly Dictionary<string, NodeGraph?> Newest = new(StringComparer.Ordinal)
     {
@@ -82,7 +82,7 @@ public sealed class InvolvementRoutesTests
     public void A_landed_routes_lowering_is_a_table(string name, string? otherwise, string? chosen, string lowered)
     {
         static WorkflowLanded? Route(string? workflow) => workflow is null ? null : new WorkflowLanded(workflow, null);
-        var said = Involvement.LowersRoute(Route(chosen), Route(otherwise), id => Newest.GetValueOrDefault(id));
+        var said = InvolvementRoutes.LowersRoute(Route(chosen), Route(otherwise), id => Newest.GetValueOrDefault(id));
 
         Assert.True(lowered == string.Join("; ", said), $"{name}: {string.Join("; ", said)}");
     }
@@ -91,12 +91,12 @@ public sealed class InvolvementRoutesTests
     [Fact]
     public void An_agents_choice_that_lowers_is_kept_as_a_proposal_and_the_persons_press_applies_it()
     {
-        IReadOnlyList<string> lowered = Involvement.LowersRoute(null, new WorkflowLanded("full-verify", null), id => Newest.GetValueOrDefault(id));
+        IReadOnlyList<string> lowered = InvolvementRoutes.LowersRoute(null, new WorkflowLanded("full-verify", null), id => Newest.GetValueOrDefault(id));
 
-        Assert.Equal(new InvolvementJudged(lowered, Applies: false), Involvement.Judge(lowered, byThePerson: false));
-        Assert.Equal(new InvolvementJudged(lowered, Applies: true), Involvement.Judge(lowered, byThePerson: true));
-        Assert.True(Involvement.Judge([], byThePerson: false).Applies);
-        Assert.True(Involvement.Judge(Involvement.LowersVerification(Newest["full-verify"]!, Newest["quick-verify"]!), byThePerson: false).Applies);
-        Assert.False(Involvement.Judge(Involvement.LowersVerification(Newest["quick-verify"]!, Newest["full-verify"]!), byThePerson: false).Applies);
+        Assert.Equal(new InvolvementJudged(lowered, Applies: false), InvolvementRoutes.Judge(lowered, byThePerson: false));
+        Assert.Equal(new InvolvementJudged(lowered, Applies: true), InvolvementRoutes.Judge(lowered, byThePerson: true));
+        Assert.True(InvolvementRoutes.Judge([], byThePerson: false).Applies);
+        Assert.True(InvolvementRoutes.Judge(InvolvementRoutes.LowersVerification(Newest["full-verify"]!, Newest["quick-verify"]!), byThePerson: false).Applies);
+        Assert.False(InvolvementRoutes.Judge(InvolvementRoutes.LowersVerification(Newest["quick-verify"]!, Newest["full-verify"]!), byThePerson: false).Applies);
     }
 }

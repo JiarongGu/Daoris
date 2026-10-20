@@ -230,9 +230,9 @@ public sealed record WorkflowProcess(string Repository, Landing Landing, Resolve
 /// The person's part in a workflow, compared (WORKFLOW1f, D157 point 10; the workflow design §4.3–§4.4): lowering is a table, not a
 /// reading. A look or an opinion dropped, an opinion made not required, a landing or a stage made automatic, a go-ahead removed or a
 /// pull request skipped each lower it; raising one never does. WORKFLOW1i's intake reads the same table. The routes' and the
-/// verification pipelines' rows are <c>InvolvementRoutes.cs</c>'s (FABRIC-PIPELINE1a).
+/// verification pipelines' rows are <see cref="InvolvementRoutes"/>'s (FABRIC-PIPELINE1a).
 /// </summary>
-public static partial class Involvement
+public static class Involvement
 {
     /// <summary>
     /// How <paramref name="chosen"/> asks less of the person than <paramref name="otherwise"/> (design §4.3), each said as what it

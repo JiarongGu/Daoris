@@ -123,7 +123,7 @@ public sealed class WorkflowRoutes(DriverContext context)
     /// line's tip and accepts it by its blob, as <c>daoris driver workflow use … --landed</c> does; where the tip cannot be read it keeps
     /// what was accepted for the same pipeline. Judged by the twins' edit first (<see cref="WorkflowSelection.Apply"/>), so a development
     /// pipeline is refused in its words before anything is written. Answers the start node as it now stands, and what the change lowers
-    /// (<see cref="Involvement.LowersRoute"/>), said: the person's press applies it (D157 point 10).
+    /// (<see cref="InvolvementRoutes.LowersRoute"/>), said: the person's press applies it (D157 point 10).
     /// </summary>
     [DriverRoute("WORKFLOW_LANDED")]
     private async Task<object?> WorkflowLandedAsync(IpcRequest request, CancellationToken cancellationToken)
@@ -171,7 +171,7 @@ public sealed class WorkflowRoutes(DriverContext context)
         NodeGraph? Newest(string id) =>
             WorkflowStore.Load(_loop.Home, id) is { Read: { Problem: null, Versions: [.., var last] } } ? last.Graph : null;
         var now = WorkflowSelection.ResolveLanded(after, repository, inWorkspace);
-        var lowered = Involvement.LowersRoute(new WorkflowLanded(now.Workflow, now.Gates), new WorkflowLanded(before.Workflow, before.Gates), Newest);
+        var lowered = InvolvementRoutes.LowersRoute(new WorkflowLanded(now.Workflow, now.Gates), new WorkflowLanded(before.Workflow, before.Gates), Newest);
         return new
         {
             Start = await StartAsync(DriverConfig.Load(_loop.ConfigPath), repository, inWorkspace, cancellationToken).ConfigureAwait(false),
