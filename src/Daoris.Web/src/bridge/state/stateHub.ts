@@ -56,8 +56,9 @@ const scopes = new Map<string, (sessions: string[] | null) => QueryKey[]>([
   // (only an enabled query, the open panel's, asks again).
   ['help', () => [HELP_HISTORY, HELP_PROPOSALS, HELP_WIRED]],
   ['browser', () => [keys.browserSettings]],
-  // How this Daoris is wired, told by the driver as a walk of its sizes starts and ends (FABRIC-EVENT5b), no press behind it.
-  ['wiring', () => [keys.systemWiring]],
+  // How this Daoris is wired, told by the driver as a walk of its sizes starts and ends (FABRIC-EVENT5b), and by the Downloads
+  // row's clearing (CACHECLEAR1), with that row's list.
+  ['wiring', () => [keys.systemWiring, keys.systemDownloads]],
 ]);
 
 const words = (value: unknown): string[] =>

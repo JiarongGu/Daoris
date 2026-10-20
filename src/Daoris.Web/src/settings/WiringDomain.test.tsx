@@ -20,7 +20,7 @@ import i18n from '../locales/i18n';
 import { code } from '../test/code';
 import { DRIVER_STATE, respond, show, WIRING } from '../test/shellHarness';
 import type { SystemWiring } from '../bridge/system';
-import { DEVELOPMENT, MEASURING, WIRED } from './wiring/wiringFixtures';
+import { DEVELOPMENT, DOWNLOADS, MEASURING, WIRED } from './wiring/wiringFixtures';
 
 const NO_UPDATE = { state: 'none', staged: null, mode: null, driven: 0, turns: 0, problem: null, outcome: null, last: null };
 
@@ -445,6 +445,74 @@ describe('Settings → This Daoris', () => {
 
     expect(card.getByText(/nothing of Daoris's is left/i)).toBeTruthy();
     expect(card.queryAllByRole('button')).toEqual([]);
+  });
+
+  // CACHECLEAR1 (D88's shape): the Downloads row lists the agents' and tools' downloaded versions with what keeps each, then one
+  // press removes those nothing uses; the driver judges each again, and what it kept at the press is said.
+  const withDownloads = (cleared?: (versions: unknown) => unknown) =>
+    async (module: string, type: string, request?: { payload?: { measure?: boolean; versions?: unknown } }) => {
+      if (module === 'DAORIS.DRIVER' && type === 'SYSTEM_DOWNLOADS') return DOWNLOADS;
+      if (module === 'DAORIS.DRIVER' && type === 'SYSTEM_DOWNLOADS_CLEAR') return cleared?.(request?.payload?.versions);
+      return shell(WIRED)(module, type, request);
+    };
+
+  it('lists the downloads only once the row is opened, each with its size and what keeps it', async () => {
+    invoke.mockImplementation(withDownloads());
+    open();
+    const folders = within(await screen.findByRole('region', { name: 'Folders' }));
+    expect(invoke.mock.calls.some(([, type]) => type === 'SYSTEM_DOWNLOADS')).toBe(false);
+
+    await userEvent.click(folders.getByRole('button', { name: 'Clear unused downloads…' }));
+    const list = within(await screen.findByRole('region', { name: 'Clear downloads' }));
+
+    expect(await list.findByText('claude-code 2.0.1')).toBeTruthy();
+    expect(list.getAllByText('nothing uses it')).toHaveLength(2);
+    expect(list.getByText('kept: pinned on this machine')).toBeTruthy();
+    expect(list.getByText('kept: pinned by the games workspace')).toBeTruthy();
+    expect(list.getByText('kept: downloaded within the hour, so a pin may be on its way')).toBeTruthy();
+    expect(list.getByText('kept: Tools runs this version')).toBeTruthy();
+    expect(list.getByRole('button', { name: /^Remove 2 unused versions \(.+\)$/ })).toBeTruthy();
+    expect(invoke.mock.calls.some(([, type]) => type === 'SYSTEM_DOWNLOADS_CLEAR')).toBe(false);
+  });
+
+  it('removes only the rows nothing keeps, and says what the driver kept at the press', async () => {
+    const asked = vi.fn();
+    invoke.mockImplementation(withDownloads((versions) => {
+      asked(versions);
+      return { cleared: [
+        { kind: 'agent', name: 'claude-code', version: '2.0.1', unfinished: false, outcome: 'removed', bytes: 120_000_000 },
+        { kind: 'tool', name: 'gh', version: '2.61.0', unfinished: false, outcome: 'kept', bytes: 30_000_000, keeps: 'in-use', by: [] },
+      ] };
+    }));
+    open();
+    const folders = within(await screen.findByRole('region', { name: 'Folders' }));
+    await userEvent.click(folders.getByRole('button', { name: 'Clear unused downloads…' }));
+    const list = within(await screen.findByRole('region', { name: 'Clear downloads' }));
+
+    await userEvent.click(await list.findByRole('button', { name: /^Remove 2 unused versions/ }));
+
+    await vi.waitFor(() => expect(asked).toHaveBeenCalledWith([
+      { kind: 'agent', name: 'claude-code', version: '2.0.1', unfinished: false },
+      { kind: 'tool', name: 'gh', version: '2.61.0', unfinished: false },
+    ]));
+    expect(await list.findByText(/^Removed 1 version \(.+\)\.$/)).toBeTruthy();
+    expect(list.getByText(/kept: a program is running from it$/).textContent).toBe('gh 2.61.0 · kept: a program is running from it');
+  });
+
+  it('lists and presses in 中文', async () => {
+    await i18n.changeLanguage('zh');
+    invoke.mockImplementation(withDownloads(() => ({ cleared: [] })));
+    open();
+    const folders = within(await screen.findByRole('region', { name: '文件夹' }));
+    await userEvent.click(folders.getByRole('button', { name: '清理未使用的下载内容…' }));
+    const list = within(await screen.findByRole('region', { name: '清理下载内容' }));
+
+    expect((await list.findAllByText('没有任何地方使用')).length).toBe(2);
+    expect(list.getByText('保留：本机固定了这个版本')).toBeTruthy();
+    expect(list.getByText('保留：工作区 games 固定了这个版本')).toBeTruthy();
+    expect(list.getAllByText('智能体').length).toBeGreaterThan(0);
+    await userEvent.click(list.getByRole('button', { name: /^移除 2 个未使用的版本/ }));
+    expect(await list.findByText(/^已移除 0 个版本/)).toBeTruthy();
   });
 
   it('draws no card from a shell older than the list', async () => {
