@@ -420,4 +420,74 @@ public sealed class QuestOperationKindsTests
         Assert.True(QuestWire.ReadPush(QuestWire.Push(0, [lost])) is not null,
             $"A rebase makes a conflict of `{kind}` that the wire refuses: only a move, which names the status it attempted, becomes one ({Guide}, the rebase's rule).");
     }
+
+    // ——— The moves read: QuestMoves.Read, which `GET /api/quests/{id}/moves` and the trace answer (FLOWCHART1a2).
+
+    /// <summary>
+    /// The fields a move of each kind answers beyond those every move answers (the flowchart design §2.1, its allow-list): a
+    /// conflict's attempted status, a dismissal's conflict, a wait's quest, a submission's session, and the code of an evidence
+    /// read, a set-up and a verdict. Whatever else the kind carries on the log, its payload, its note and its answers, no move answers.
+    /// </summary>
+    private static readonly Dictionary<QuestOperationKind, string[]> MoveFields = new()
+    {
+        [QuestOperationKind.Published] = [],
+        [QuestOperationKind.Taken] = [],
+        [QuestOperationKind.Done] = [],
+        [QuestOperationKind.Declined] = [],
+        [QuestOperationKind.Conflict] = [nameof(QuestMoveReading.Attempted)],
+        [QuestOperationKind.Dismissed] = [nameof(QuestMoveReading.Dismisses)],
+        [QuestOperationKind.Waited] = [nameof(QuestMoveReading.WaitsOn)],
+        [QuestOperationKind.Deleted] = [],
+        [QuestOperationKind.Accepted] = [],
+        [QuestOperationKind.Evidenced] = [nameof(QuestMoveReading.Evidence)],
+        [QuestOperationKind.SetUp] = [nameof(QuestMoveReading.SetUp)],
+        [QuestOperationKind.Verdict] = [nameof(QuestMoveReading.Verdict)],
+        [QuestOperationKind.Bound] = [],
+        [QuestOperationKind.Submitted] = [nameof(QuestMoveReading.Session)],
+        [QuestOperationKind.Reopened] = [],
+        [QuestOperationKind.Rebound] = [],
+    };
+
+    /// <summary>
+    /// Every kind is read as a move, applied where it applies, from the status the quest stood at, and carrying its own fields and
+    /// no others: a kind <see cref="QuestMoves"/> has no row for throws, so the quest's page and the trace would draw nothing of it.
+    /// </summary>
+    [Theory]
+    [MemberData(nameof(Kinds))]
+    public void Every_kind_is_read_as_a_move_with_its_own_fields_and_no_others(QuestOperationKind kind)
+    {
+        Assert.True(MoveFields.TryGetValue(kind, out var fields),
+            $"No moves' row for `{kind}` here. A new kind goes in every place {Guide} names; the moves read is one, and its fields are listed here.");
+        var applying = Applying(kind);
+        Assert.True(applying.Count > 0, $"`{kind}` applies to no quest ({Guide}, the replay's rule).");
+        var (_, history, operation) = applying[0];
+
+        IReadOnlyList<QuestMoveReading> moves = [];
+        var read = Record.Exception(() => moves = QuestMoves.Read([.. history, operation]));
+        Assert.True(read is null, $"QuestMoves has no row for `{kind}` ({read?.GetType().Name}; {Guide}, the moves read).");
+
+        var move = moves[^1];
+        Assert.Equal((kind, operation.Machine, operation.Sequence, operation.At, true),
+            (move.Kind, move.Machine, move.Sequence, move.At, move.Applied));
+        Assert.Equal(QuestLog.Replay(history)?.Status, move.From);
+        Assert.Equal(fields, QuestMovesFields.Own.Where(name => typeof(QuestMoveReading).GetProperty(name)!.GetValue(move) is not null));
+    }
+}
+
+/// <summary>The names of a move's own fields, the ones a kind answers beyond what every move does (FLOWCHART1a2).</summary>
+internal static class QuestMovesFields
+{
+    public static readonly string[] Own =
+    [
+        nameof(QuestMoveReading.Attempted), nameof(QuestMoveReading.Dismisses), nameof(QuestMoveReading.WaitsOn),
+        nameof(QuestMoveReading.Session), nameof(QuestMoveReading.Evidence), nameof(QuestMoveReading.SetUp),
+        nameof(QuestMoveReading.Verdict),
+    ];
+
+    /// <summary>What every move answers: what it is, when and where it was made, its name, its number, whether it applied, from where, and the hold it left.</summary>
+    public static readonly string[] Every =
+    [
+        nameof(QuestMoveReading.Kind), nameof(QuestMoveReading.At), nameof(QuestMoveReading.Machine), nameof(QuestMoveReading.Sequence),
+        nameof(QuestMoveReading.Number), nameof(QuestMoveReading.Applied), nameof(QuestMoveReading.From), nameof(QuestMoveReading.Hold),
+    ];
 }

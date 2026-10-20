@@ -42,6 +42,11 @@ export type FlowEdge = {
   /** A word or two, drawn on the edge where it fits. */
   label?: string;
   style?: EdgeStyle;
+  /**
+   * On the path its record kept (FLOWCHART1a2): drawn heavier, in ink and never a status hue (D186 point 6). Its cause says so in
+   * words, for the rail and a reader. What is lit lays nothing out again: the layout never reads it.
+   */
+  taken?: boolean;
 };
 
 export type FlowProps = {
@@ -105,6 +110,11 @@ export function Flow({ label, nodes, edges, entries, end, className }: FlowProps
 
   const byId = useMemo(() => new Map(nodes.map((node) => [node.id, node])), [nodes]);
   const backs = useMemo(() => new Set(layout.paths.filter((path) => path.back).flatMap((path) => path.edges)), [layout]);
+  // The paths that carry an edge the record kept as taken (FLOWCHART1a2), drawn heavier; the layout never reads it.
+  const taken = useMemo(() => {
+    const kept = new Set(edges.filter((edge) => edge.taken).map((edge) => edge.id));
+    return new Set(layout.paths.filter((path) => path.edges.some((id) => kept.has(id))).map((path) => path.id));
+  }, [layout, edges]);
 
   // The roving stop: the node the person was last on, else the current one, else the first in reading order.
   const [stop, setStop] = useState<string | null>(null);
@@ -318,10 +328,11 @@ export function Flow({ label, nodes, edges, entries, end, className }: FlowProps
                       data-flow-edge={path.id}
                       data-from={path.from}
                       data-to={path.to}
+                      data-taken={taken.has(path.id) ? '' : undefined}
                       d={path.d}
                       fill="none"
-                      className="stroke-ink-faint"
-                      strokeWidth={1}
+                      className={taken.has(path.id) ? 'stroke-ink-soft' : 'stroke-ink-faint'}
+                      strokeWidth={taken.has(path.id) ? 2 : 1}
                       strokeDasharray={path.style === 'next' ? undefined : '4 3'}
                       markerEnd={`url(#${marks}-${path.style === 'refused' ? 'refused' : 'arrow'})`}
                     />

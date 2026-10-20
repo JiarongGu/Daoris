@@ -1,7 +1,7 @@
 ---
 name: quest-operations
 applies_when: adding a kind of quest operation, or changing what one carries, when it applies, or what a rebase does with it
-enforces: a new kind goes into every one of its places in the same change, the eight every kind needs and those its fields and its verb bring; the census test runs over every kind and fails on the place it misses
+enforces: a new kind goes into every one of its places in the same change, the nine every kind needs and those its fields and its verb bring; the census test runs over every kind and fails on the place it misses
 ---
 
 # Quest operations — every place a new kind goes
@@ -56,7 +56,7 @@ before its commit, and a restart is the store opened again on its connection.
 ### The places
 
 Rows 1 to 8 are the eight `evidenced` needed, and every kind needs them. Rows 9 to 11 come with what the kind carries and who
-makes it. Paths are under `src/Daoris.Service/`.
+makes it. Row 12, the moves read, every kind needs too (FLOWCHART1a2). Paths are under `src/Daoris.Service/`.
 
 | # | Place | Where | Why it is there |
 |---|---|---|---|
@@ -71,6 +71,7 @@ makes it. Paths are under `src/Daoris.Service/`.
 | 9 | What the operation carries | A parameter of `QuestOperation`, `QuestLog.cs`, null or false by default | Every other kind is unchanged by it. Rows 3 and 4 write it only for this kind. |
 | 10 | What it gives the quest | A property of `Quest`, `Quests.cs`, set by its step, and any reading made from it | A state that holds a quest for a person goes through `Quest.Hold`. The outstanding list (`ListAsync` reads `held`), an ask's done (`Asks.cs`) and the history clear (`History.cs`) then follow it unchanged, as they did for EVID1a. |
 | 11 | The verb | A `QuestStore` method, a `QuestExchange` method, and a door on each host that may make it | In one transaction the store replays, judges with row 2, appends, writes the cache, and publishes any held step it releases (`PublishNextAsync`). The exchange judges what the store cannot, once for both hosts. A person's act has a local host's door and no MCP tool, as a delete, a yes and a verdict do. A new request shape joins the serializer context in `ApiContracts.cs`. |
+| 12 | The moves read | `QuestMoves.Read` and its row for the kind (`Own`), `Daoris.Service.Core/Quests/QuestMoves.cs`; `QuestMovesResponse`, `ApiContracts.cs`, which `GET /api/quests/{id}/moves` answers on both hosts | A quest's page draws its path from it and a trace says it (FLOWCHART1a2, D186). A kind with no row throws, so neither draws it. What a move answers is an allow-list: a field the kind carries reaches a page only once `QuestMoveReading` and the answer name it, and never the payload, a note's body, the answers or a path. Whether it applied is the replay's, judged against the quest the moves before it replay to, never stored. |
 
 ### Beyond the service
 
@@ -80,6 +81,10 @@ These are other lanes' files, so a service branch names them in its hand-back an
 - the page's quest type (`src/Daoris.Web/src/data/api.ts`);
 - the family rehearsal, which compares some answers whole (`tools/family-rehearsal.mjs`). A new field fails checks a
   service branch cannot run, as EVID1a's `evidence: []` did;
+- the words a quest's flowchart says each kind in (`quests.flow.kind.<kind>` in `src/Daoris.Web/src/locales/{en,zh}/quests.json`,
+  drawn by `quests/questLife.ts`), which `questLife.test.ts` holds to the enum, and the trace's (`TraceWords.MoveSaid`, the
+  driver's `Trace.Words.cs`); each shows a kind it does not know as recorded, and a new kind's own field, once row 12 answers
+  it, is worded in both;
 - the records: the decision that adds a kind amends D68. The sync design's list of kinds (§2) is history and is not
   kept current: the enum is the list.
 
@@ -93,7 +98,10 @@ failure names this document. Then each theory checks one or two rows:
 - **row 4:** it crosses the wire both ways as it was made, and if the wire refuses it with only the fields every
   operation names, `QuestWire.Shape` names it;
 - **rows 3 and 6:** it is kept in the log and read back as made, and the cached row is its replay, property by property;
-- **row 5:** it has a rebase rule, and only a move becomes a conflict.
+- **row 5:** it has a rebase rule, and only a move becomes a conflict;
+- **row 12:** it is read as a move, applied where it applies, from the status it reached the quest at, carrying its own fields
+  and no others (`MoveFields`). `QuestMovesTests` holds the reading's properties to the allow-list, the replay's order, what
+  did not apply, and a dismissal's reference.
 
 `QuestResponseTests` (`Daoris.Service.Http.Tests`) checks row 7: every property of `Quest` is answered by
 `QuestResponse`, or left out with its reason.

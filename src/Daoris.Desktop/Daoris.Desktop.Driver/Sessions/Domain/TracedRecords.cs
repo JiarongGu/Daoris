@@ -149,7 +149,19 @@ internal sealed record TraceFacts(
 {
     /// <summary>This machine's due list (LAND2b, design §8): each session due to land automatically, and each try's code.</summary>
     public IReadOnlyList<AutoLanding> AutoLandings { get; init; } = [];
+
+    /// <summary>
+    /// Each quest's moves the chain reached, by its id (FLOWCHART1a2): read once the id is resolved, for the quests the chain reads
+    /// through and no other. A quest with none here was not reached.
+    /// </summary>
+    public IReadOnlyDictionary<string, TraceMovesRead> Moves { get; init; } = new Dictionary<string, TraceMovesRead>();
 }
+
+/// <summary>
+/// A quest's moves as the service's door answered them (FLOWCHART1a2): the moves; or none, from a host from before the door
+/// (<paramref name="NoDoor"/>); or why the door did not answer.
+/// </summary>
+internal sealed record TraceMovesRead(IReadOnlyList<TraceMove>? Moves, bool NoDoor = false, string? Unread = null);
 
 /// <summary>What an id was found to name, before the chain is read: the sessions and quests it starts from, and how each was found.</summary>
 /// <param name="Kind">The kind it names, one of <see cref="TraceEntry"/>.</param>
