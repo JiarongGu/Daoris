@@ -616,6 +616,27 @@ public sealed record SyncStandingResponse(
 // `Forward` (SYNCMERGE1b0): the take this machine holds the quest by, where the person's bring-forward made it, the one take a stood-down
 // session is carried on over; absent otherwise, and from a host before it.
 public sealed record QuestClaimResponse(string Quest, string Claim, string? Why = null, QuestForwardResponse? Forward = null);
+// FLOWCHART1a2 (D186; the flowchart design §2.1): one quest's moves, in the order its history replays, on both hosts. Each move by
+// allow-list (Core's `QuestMoveReading`): its kind as the wire spells it, when and on which machine it was made, its sequence there,
+// the remote's number (absent while pending), whether the replay applied it, and the status it reached the quest at (absent before
+// the publish). Its kind's own field: a conflict's `attempted`, a dismissal's `dismisses`, a wait's `waitsOn`, a submission's
+// `session`, and the codes of an evidence read (`found`, `missing`, `commit`), a set-up (`local`, `deployed`) and a verdict. `hold`:
+// the hold an applied move set (its code) or let go (`none`). Never the publish's payload, a note's body, the answers or a path: a
+// field a move does not keep is absent, which a reader says is not recorded. An id with no history answers no moves.
+public sealed record QuestMovesResponse(string Quest, IReadOnlyList<QuestMoveResponse> Moves)
+{
+    public static QuestMovesResponse Of(string quest, IReadOnlyList<QuestMoveReading> moves) =>
+        new(quest, [.. moves.Select(move => new QuestMoveResponse(
+            QuestMoves.Spell(move.Kind), move.At, move.Machine, move.Sequence, move.Number, move.Applied, move.From?.ToString(),
+            move.Attempted?.ToString(), move.Dismisses is { } named ? new QuestMoveRefResponse(named.Machine, named.Sequence) : null,
+            move.WaitsOn, move.Session, move.Evidence, move.SetUp, move.Verdict, move.Hold))]);
+}
+public sealed record QuestMoveResponse(
+    string Kind, DateTimeOffset At, string Machine, long Sequence, long? Number, bool Applied, string? From = null,
+    string? Attempted = null, QuestMoveRefResponse? Dismisses = null, string? WaitsOn = null, string? Session = null,
+    string? Evidence = null, string? SetUp = null, string? Verdict = null, string? Hold = null);
+// An operation by the machine and sequence that name it everywhere: what a dismissal names its conflict by.
+public sealed record QuestMoveRefResponse(string Machine, long Sequence);
 public sealed record FeedResponse(int Accepted, string Message);
 // A repository's code map is answered in Core's shape (CodeMapWire, MAP3e), not a record here: the
 // host that brings a teammate's map down reads the same answer the door writes.
@@ -742,6 +763,7 @@ public sealed record ChangesResponse(string Since, IReadOnlyList<string> Moved);
 [JsonSerializable(typeof(SyncResponse))]
 [JsonSerializable(typeof(SyncStandingResponse))]
 [JsonSerializable(typeof(QuestClaimResponse))]
+[JsonSerializable(typeof(QuestMovesResponse))]
 [JsonSerializable(typeof(FeedResponse))]
 [JsonSerializable(typeof(FeedRefusalResponse))]
 [JsonSerializable(typeof(ErrorResponse))]

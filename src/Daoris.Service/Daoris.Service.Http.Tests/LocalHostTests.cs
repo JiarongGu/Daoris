@@ -105,6 +105,90 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
         Assert.True(!toATake.TryGetProperty("why", out var why) || why.ValueKind == JsonValueKind.Null);
     }
 
+    /// <summary>What a move of <c>GET /api/quests/{id}/moves</c> may answer (FLOWCHART1a2; the flowchart design §2.1, trap 13), and nothing else.</summary>
+    private static readonly string[] MoveFields =
+        ["kind", "at", "machine", "sequence", "number", "applied", "from", "hold", "attempted", "dismisses", "waitsOn", "session", "evidence", "setUp", "verdict"];
+
+    /// <summary>
+    /// FLOWCHART1a2 (D186; the flowchart design §2.1, traps 13 and 20): one quest's moves, in the order its history replays, each by
+    /// the allow-list alone: its kind, when and where it was made, its name and number, whether the replay applied it and from which
+    /// status, and its kind's own field (a wait's quest, a conflict's attempted status, the conflict a dismissal names). Never the
+    /// publish's words, a note's body, the answers, or a path any of them holds.
+    /// </summary>
+    [Fact]
+    public async Task The_moves_door_answers_each_move_by_its_allow_list_and_never_a_payload_a_note_or_a_path()
+    {
+        var at = DateTimeOffset.Parse("2026-10-20T09:00:00Z");
+        const string id = "f10c4a2a0002", other = "f10c4a2a0003";
+        var asked = new Quest(id, "Asker", "Keeper", "Moves on the page", "SECRET-BODY at X:/daoris/asked.md", QuestStatus.Open, null, at, at, "moving");
+        QuestOperation Op(QuestOperationKind kind, string machine, long sequence, long number) =>
+            new(id, kind, machine, sequence, at.AddMinutes(number), Number: number);
+
+        // Machines of this test's own: the host is the class's, and an operation it holds already, by machine and sequence, is only
+        // numbered again.
+        await host.Composed.Quests.IntegrateAsync("moving",
+        [
+            Op(QuestOperationKind.Published, "mv2", 1, 1) with { Published = asked },
+            Op(QuestOperationKind.Taken, "mv3", 1, 2),
+            Op(QuestOperationKind.Waited, "mv3", 2, 3) with { Note = other },
+            Op(QuestOperationKind.Conflict, "mv4", 1, 4) with { Attempted = QuestStatus.Taken, Note = "SECRET-NOTE at X:/daoris/conflict.md" },
+            Op(QuestOperationKind.Dismissed, "mv3", 3, 5) with { Dismisses = new QuestOperationRef("mv4", 1) },
+            Op(QuestOperationKind.Done, "mv3", 4, 6) with
+            {
+                Note = "SECRET-CLOSE at X:/daoris/close.md", Answers = [new QuestAnswer(1, Met: "SECRET-ANSWER")],
+            },
+            Op(QuestOperationKind.Done, "mv5", 1, 7) with { Note = "SECRET-LATE" },
+        ], 7);
+
+        var answer = await host.GetAsync($"/api/quests/{id}/moves");
+
+        Assert.Equal(200, answer.Status);
+        Assert.Equal(id, answer.Json.GetProperty("quest").GetString());
+        var moves = answer.Json.GetProperty("moves").EnumerateArray().ToList();
+        Assert.Equal(["published", "taken", "waited", "conflict", "dismissed", "done", "done"], moves.Select(move => move.GetProperty("kind").GetString()));
+        Assert.Equal([1L, 2, 3, 4, 5, 6, 7], moves.Select(move => move.GetProperty("number").GetInt64()));
+        Assert.All(moves, move => Assert.All(move.EnumerateObject(), field => Assert.Contains(field.Name, MoveFields)));
+        Assert.Equal(other, moves[2].GetProperty("waitsOn").GetString());
+        Assert.Equal(("Taken", "Taken"), (moves[3].GetProperty("from").GetString(), moves[3].GetProperty("attempted").GetString()));
+        var dismisses = moves[4].GetProperty("dismisses");
+        Assert.Equal(("mv4", 1L), (dismisses.GetProperty("machine").GetString(), dismisses.GetProperty("sequence").GetInt64()));
+        // A done after a done is recorded and not applied: drawn inside its state, never as an edge.
+        Assert.Equal([true, true, true, true, true, true, false], moves.Select(move => move.GetProperty("applied").GetBoolean()));
+        Assert.Equal("Done", moves[6].GetProperty("from").GetString());
+        Assert.False(moves[0].TryGetProperty("from", out _));
+        foreach (var words in new[] { "SECRET", "X:/daoris", "Moves on the page" }) Assert.DoesNotContain(words, answer.Body);
+    }
+
+    /// <summary>
+    /// Trap 20: this machine's pending move comes after the ones the remote accepted, with no number, though its own clock made it
+    /// earlier than theirs; the order is the replay's, never the times'. And any id is answered: one with no history has no moves,
+    /// and a <c>#</c> before it names the same quest.
+    /// </summary>
+    [Fact]
+    public async Task The_moves_door_answers_a_pending_move_after_the_accepted_ones_and_any_id()
+    {
+        var ahead = DateTimeOffset.Parse("2030-01-01T12:00:00Z");
+        const string id = "f10c4a2a0004";
+        var asked = new Quest(id, "Asker", "Keeper", "A remote ahead of this clock", "why", QuestStatus.Open, null, ahead, ahead, "pending");
+        await host.Composed.Quests.IntegrateAsync("pending",
+        [
+            new QuestOperation(id, QuestOperationKind.Published, "pd2", 1, ahead, Published: asked, Number: 1),
+            new QuestOperation(id, QuestOperationKind.Taken, "pd3", 1, ahead.AddMinutes(1), Number: 2),
+        ], 2);
+        Assert.True((await host.Composed.Quests.WaitAsync(id, "f10c4a2a0005", DateTimeOffset.Parse("2026-10-20T09:00:00Z"))).Moved);
+
+        var moves = (await host.GetAsync($"/api/quests/%23{id}/moves")).Json.GetProperty("moves").EnumerateArray().ToList();
+
+        Assert.Equal(["published", "taken", "waited"], moves.Select(move => move.GetProperty("kind").GetString()));
+        Assert.False(moves[2].TryGetProperty("number", out _));
+        Assert.Equal(host.Composed.Quests.Machine, moves[2].GetProperty("machine").GetString());
+        Assert.True(moves[2].GetProperty("at").GetDateTimeOffset() < moves[0].GetProperty("at").GetDateTimeOffset());
+
+        var none = await host.GetAsync("/api/quests/f10c4a2a9999/moves");
+        Assert.Equal(200, none.Status);
+        Assert.Empty(none.Json.GetProperty("moves").EnumerateArray());
+    }
+
     [Fact]
     public async Task A_registrations_root_is_never_answered_to_a_caller_off_this_machine()
     {
