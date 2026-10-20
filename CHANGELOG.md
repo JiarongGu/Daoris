@@ -5,6 +5,10 @@ with the version and date at release.
 
 ## Unreleased
 
+- Ask Daoris in restricted mode reads your checkouts through one tool Daoris checks at every read, on Codex as on Claude Code: a
+  file (up to 200 KB, saying when it is cut), a folder's entries, `git status` and `git branch --list`, never outside the
+  checkout and never what git ignores. Each checkout its repository lets agents outside read is on by default; turn one off under
+  Settings → AI features → *Configured access* → *Reading checkouts*, and the next read of it is refused.
 - A repository's and a workspace's Workflow tab now begins with where work there goes: the default, each kind of task, and the
   work that lands on the line, each wired to the workflow it follows and saying what chose it. A workflow can be made a
   verification workflow of checks (marked `verification` in the file you import), which only the route for landed work names:

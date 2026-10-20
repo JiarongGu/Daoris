@@ -99,6 +99,10 @@ plugin's tab; the writer, the outcome record and what stays unbuilt are D183's n
 *Built 2026-10-21 (PLUGSET1):* Settings' *Plugins* section as a read-only section of Settings → Driver, *Installed plugins*, each
 plugin's switch and approvals with its door to the plugin's tab; why a section and not a domain is D183's note of that day.
 
+*Built 2026-10-21 (HELPMODE1c4):* the checkouts as one typed read, `checkout_read`, for Claude and Codex alike, replacing the table's
+`Read` and git rules: a repository and a path relative to its checkout, judged at every call, out of git's own folder and of what
+git ignores; on by default, each checkout turned off on its own. The tool, the judge and the record are D183's note of that day.
+
 ## 5. The screen (HELPMODE1b)
 
 The picker sits beside the composer, the docked panel included. History keeps its own head. The text is translated, the
