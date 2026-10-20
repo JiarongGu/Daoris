@@ -4,6 +4,7 @@ import userEvent from '@testing-library/user-event';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import i18n from '../../locales/i18n';
 import { code } from '../../test/code';
+import { START } from '../../workflow/fixtures';
 import { SETUP_DEFAULTS, SETUP_OWN } from '../fixtures';
 import { RepositorySetup, type RepositorySetupProps } from './RepositorySetup';
 
@@ -670,6 +671,31 @@ describe("a repository's landing, its ticket's key and its squash", () => {
     expect(onLanding).toHaveBeenLastCalledWith({
       form: 'branch', pattern: 'feature/{ticket}-{slug}', key: 'TK-\\d+', squash: true, tidy: true,
     });
+  });
+});
+
+/**
+ * FABRIC-PIPELINE1a (the pipeline design §1.3): the landed route is a row of *Line and landing*, folded to what verifies the work that
+ * lands, open where the repository names a route of its own, and its choice the person's press.
+ */
+describe("a repository's landed route", () => {
+  it('folds into Line and landing, opens on a route of its own, and its choice goes out', async () => {
+    const onChoose = vi.fn();
+    draw({ ...SETUP_DEFAULTS, landed: { start: START, workspace: 'aurora', onChoose } });
+
+    expect(head('Line and landing')).toHaveAttribute('aria-expanded', 'true');
+    const work = section('Line and landing');
+    expect(within(row(work, 'Verification of the work that lands')).getByText(code('daoris driver workflow use <id> --repository engine --landed')))
+      .toBeInTheDocument();
+    await userEvent.click(within(work).getByRole('button', { name: 'No verification here' }));
+    expect(onChoose).toHaveBeenLastCalledWith('current', expect.anything());
+  });
+
+  it("folds to its workspace's route, marked as such, and stays folded", () => {
+    draw({ ...SETUP_DEFAULTS, landed: { start: { ...START, landed: { ...START.landed, level: 'workspace-landed' } }, workspace: 'aurora', onChoose: vi.fn() } });
+
+    expect(head('Line and landing')).toHaveAttribute('aria-expanded', 'false');
+    expect(head('Line and landing')).toHaveAccessibleDescription(/ · verified by Verify the line \(the workspace's default\)$/);
   });
 });
 

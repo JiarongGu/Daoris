@@ -345,5 +345,8 @@
   "projects.heavy.waits": "{{count}} waits: {{sessions}}",
   "projects.heavy.waits_other": "{{count}} wait: {{sessions}}",
   "projects.heavy.terminal": "a run from a terminal",
-  "projects.heavy.tip": "Who holds this repository's heavy-run slot, at which gate, and who waits behind it. In a terminal, from its checkout: daoris-driver run-heavy --look"
+  "projects.heavy.tip": "Who holds this repository's heavy-run slot, at which gate, and who waits behind it. In a terminal, from its checkout: daoris-driver run-heavy --look",
+  "projects.landed.set": "{{repository}}: what verifies the work that lands is set.",
+  "projects.landed.lowered": "{{repository}}: what verifies the work that lands is set, and asks less of you: {{lowered}}.",
+  "projects.landed.accepted": "{{repository}}: the gates at its line's tip are accepted, and its checks run them unasked."
 }

@@ -1,4 +1,4 @@
-import type { CurrentWorkflow, WorkflowStep } from './current';
+import type { CurrentWorkflow, WorkflowStart, WorkflowStep } from './current';
 
 // What `WORKFLOW_CURRENT` answers, for the stories and the tests: each step a cell of the driver's shared table
 // (`Daoris.Desktop.Driver.Tests/fixtures/workflow-current.json`, WORKFLOW1a), its rows renamed to this suite's
@@ -93,6 +93,46 @@ export const PLUGIN_UNREADY = current({
   ],
   version: '24bf4508996f',
 });
+
+/** A line's tip and the declaration's blob there, as the driver reads them (FABRIC-PIPELINE1a). */
+export const ACCEPTED_BLOB = '3b18e512dba79e4c8300dd08aeb37f8e728b8dad';
+export const CHANGED_BLOB = '0e5751c026e543b2e8ab2eb06099daa1d1e5df47';
+
+/**
+ * The start node (FABRIC-PIPELINE1a, the pipeline design §1.3): nothing names a workflow by default, Documentation goes to its own
+ * workflow by the workspace's choice, and the work that lands is verified by `web-verify`, its gates accepted at the line's tip.
+ */
+export const START: WorkflowStart = {
+  routes: [
+    { kind: null, label: null, paths: [], workflow: 'current', level: 'current' },
+    {
+      kind: 'docs', label: 'Documentation', paths: ['docs/**', '**/*.md'], workflow: 'docs-to-pr', level: 'workspace-kind',
+      name: 'Documentation to a pull request',
+    },
+  ],
+  landed: {
+    workflow: 'web-verify', level: 'repository-landed', gates: ACCEPTED_BLOB, name: 'Verify the line', state: 'accepted',
+    tip: { line: 'main', commit: 'aa11bb22cc33dd44ee55ff6677889900aabbccdd', gates: ACCEPTED_BLOB },
+  },
+  verifications: [{ id: 'web-verify', name: 'Verify the line' }],
+};
+
+/** The declaration at the tip changed since the person accepted it: nothing runs until they accept it again. */
+export const GATES_CHANGED: WorkflowStart = {
+  ...START,
+  landed: {
+    ...START.landed, state: 'changed', tip: { ...START.landed.tip!, gates: CHANGED_BLOB },
+    declaration: '{\n  "gates": [{ "name": "suite", "run": "npm test", "heavy": true }]\n}',
+  },
+};
+
+/** No landed route anywhere: the work that lands is not verified, today's. */
+export const NO_VERIFICATION: WorkflowStart = {
+  ...START, landed: { workflow: 'current', level: 'current', gates: null, state: 'none' }, verifications: [],
+};
+
+/** Everything at once, with its start node first. */
+export const ROUTED = current({ ...FULL, start: START });
 
 /**
  * A workspace's Current, read from its rules with nothing set for any repository: its opinion, its look in `dev`, and a

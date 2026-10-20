@@ -30,8 +30,10 @@ import { normalizeWorkspace } from '../service/remotemap.ts';
 import { inScope, type CheckoutsReader } from '../driver/reviews.ts';
 import { writeDriverChoices, type DriverChoices } from '../driver/driverconfig.ts';
 import {
-  CURRENT, applyWorkflowEdit, readKeptVersions, resolveWorkflow, type WorkflowChoiceEdit, type WorkflowSelected,
+  CURRENT, NO_GATES, applyWorkflowEdit, namesDevelopment, readKeptVersions, resolveLanded, resolveWorkflow, type WorkflowChoice,
+  type WorkflowChoiceEdit, type WorkflowLandedSelected, type WorkflowSelected,
 } from './workflowchoice.ts';
+import { declarationText, lineOf, readLandedTip } from './landedgates.ts';
 import type { CommandArgs } from '../platform/types.ts';
 import { WORKFLOW_LIMITS, currentWorkflow, workflowPluginsOf, workflowSaid, type CurrentWorkflow } from './workflows.ts';
 import { GRAPH_SCHEMA } from './graphversions.ts';
@@ -44,7 +46,7 @@ import {
 const USAGE = '`driver workflow` takes list; show <id>[@<version>]; show --repository <name>|--workspace <name> [--kind <kind>]; '
   + 'new <id> --from <preset>|current:<repository>|<id>[@<version>] [--with-opinion] [--with-look] [--name "…"]; '
   + 'edit <id> [--base <version>] <change>…; apply <id> <file> [--base <version>]; export <id> [--to <file>]; import <file>; '
-  + 'use <id>|current|--clear --repository <name>|--workspace <name> [--kind <kind>]; '
+  + 'use <id>|current|--clear --repository <name>|--workspace <name> [--kind <kind>|--landed]; '
   + 'kind <workspace> <kind> --label "…" [--paths <path,…>]|--drop. '
   + 'new, edit, apply, import, use and kind print their change, and with --plan save nothing — e.g. '
   + '`daoris driver workflow new docs --from pull-request-no-press --plan`.';
@@ -63,6 +65,13 @@ export const WHAT_CHOOSES = '  A choice names a workflow (`daoris driver workflo
 /** Said by every verb that edits the choice (WORKFLOW1e): what the gate reads of it (WORKFLOW1f). */
 export const GATE_READS = '  Every gate reads the version a run bound at its first start: how it lands, your look and its second '
   + 'opinion follow that version.';
+
+/**
+ * Said by `use … --landed` (FABRIC-PIPELINE1a): what reads the landed route. A verification run binds as a chain's run does, and this
+ * build keeps the route and judges the pipeline without running its checks yet.
+ */
+export const LANDED_READS = '  A verification binds the newest version of its pipeline when it starts, and keeps it; this build keeps the '
+  + 'route and does not run its checks yet.';
 
 /** What the door is handed by `commandDriver`: the file it read, its choices, the registry's reader, and the clock. */
 export interface WorkflowDoorContext {
@@ -236,29 +245,50 @@ export function commandWorkflow({ root, argv, write }: CommandArgs, context: Wor
     if (workspace !== undefined) {
       const selected = resolveWorkflow(context.choices, null, workspace, task);
       const whose = `the workspace \`${workspace}\`${kindSaid(selected)}`;
-      if (selected.workflow !== CURRENT) return named(selected, whose, workspace, null, []);
+      if (selected.workflow !== CURRENT) return named(selected, whose, workspace, null, [], workspace);
       const said = workflowSaid(currentWorkflow(context.choices, null, workspace, plugins()), whose, 'for each repository there that sets none of its own');
-      for (const line of withChoice(said, selected, workspace, null, [])) write(line);
+      for (const line of withChoice(said, selected, workspace, null, [], workspace)) write(line);
       return 0;
     }
 
     return currentOf(repository!).then(({ drawn, where, notes, inWorkspace }) => {
       const selected = resolveWorkflow(context.choices, repository!, inWorkspace, task);
       const whose = `\`${repository}\`${kindSaid(selected)}`;
-      if (selected.workflow !== CURRENT) return named(selected, whose, normalizeWorkspace(inWorkspace), repository!, notes);
-      for (const line of withChoice(workflowSaid(drawn, whose, where), selected, normalizeWorkspace(inWorkspace), repository!, notes)) write(line);
+      if (selected.workflow !== CURRENT) return named(selected, whose, normalizeWorkspace(inWorkspace), repository!, notes, inWorkspace);
+      for (const line of withChoice(workflowSaid(drawn, whose, where), selected, normalizeWorkspace(inWorkspace), repository!, notes, inWorkspace)) {
+        write(line);
+      }
       return 0 as ExitCode;
     });
 
-    /** Current's lines, with the registry's notes and, where a choice or a kind is read, what chose it under the header. */
-    function withChoice(said: string[], selected: WorkflowSelected, circle: string, owner: string | null, notes: string[]): string[] {
+    /** Current's lines, with the registry's notes and, where a choice or a kind is read, what chose it under the header; then the routes. */
+    function withChoice(
+      said: string[], selected: WorkflowSelected, circle: string, owner: string | null, notes: string[], inWorkspace: string | null,
+    ): string[] {
       const [header, ...rest] = said;
       const chosen = selected.level === 'current' && kind === undefined ? [] : [`  Chosen: ${whyChosen(selected, owner, circle)}.`];
-      return [header!, ...notes, ...chosen, ...undeclaredSaid(selected, circle), ...rest];
+      return [header!, ...notes, ...chosen, ...undeclaredSaid(selected, circle), ...routesSaid(owner, circle, inWorkspace), ...rest];
+    }
+
+    /**
+     * The start node's routes (FABRIC-PIPELINE1a, the pipeline design §1.3), printed before the steps: the default, each kind the
+     * workspace declares by its label and paths, and the landed route, each with the workflow it names and what chose it.
+     */
+    function routesSaid(owner: string | null, circle: string, inWorkspace: string | null): string[] {
+      const target = (selected: WorkflowSelected): string =>
+        `${selected.workflow === CURRENT ? 'Current' : `\`${selected.workflow}\``}, ${whyChosen(selected, owner, circle)}`;
+      const lines = ['  Its start node routes the work that comes here:',
+        `    the default → ${target(resolveWorkflow(context.choices, owner, inWorkspace, null))}`];
+      for (const [id, declared] of atName(context.choices.workspaceWorkflows, circle)?.kinds ?? []) {
+        const paths = declared.paths.map((path) => `, \`${path}\``).join('');
+        lines.push(`    kind \`${id}\` (${declared.label}${paths}) → ${target(resolveWorkflow(context.choices, owner, inWorkspace, { kind: id, workflow: null }))}`);
+      }
+      lines.push(`    landed work → ${landedSaid(resolveLanded(context.choices, owner, inWorkspace), owner, circle)}`);
+      return lines;
     }
 
     /** A named workflow chosen: its newest version, which new work binds, or why it cannot be read here. */
-    function named(selected: WorkflowSelected, whose: string, circle: string, owner: string | null, notes: string[]): ExitCode {
+    function named(selected: WorkflowSelected, whose: string, circle: string, owner: string | null, notes: string[], inWorkspace: string | null): ExitCode {
       const why = whyChosen(selected, owner, circle);
       const found = load(selected.workflow);
       const newest = found?.read.problem === null ? found.read.versions[found.read.versions.length - 1]! : null;
@@ -271,7 +301,7 @@ export function commandWorkflow({ root, argv, write }: CommandArgs, context: Wor
         return 1;
       }
       write(`daoris: ${whose} follows \`${selected.workflow}\` — ${found!.read.name}, v${newest.version} (digest ${newest.digest}), ${why}.`);
-      for (const line of [...notes, ...undeclaredSaid(selected, circle)]) write(line);
+      for (const line of [...notes, ...undeclaredSaid(selected, circle), ...routesSaid(owner, circle, inWorkspace)]) write(line);
       write(`  ${workflowLine(newest.steps)}`);
       for (const step of newest.steps) for (const line of stepSaid(step)) write(line);
       write(WHAT_CHOOSES);
@@ -304,13 +334,13 @@ export function commandWorkflow({ root, argv, write }: CommandArgs, context: Wor
    */
   function use(): ExitCode | Promise<ExitCode> {
     const usage = '`driver workflow use` takes <id>|current|--clear, then --repository <name>|--workspace <name>, and --kind <kind> '
-      + 'for a kind of task — e.g. `daoris driver workflow use docs-to-pr --workspace work --kind docs`.';
+      + 'for a kind of task or --landed for the work that lands — e.g. `daoris driver workflow use docs-to-pr --workspace work --kind docs`.';
     const valued = new Set(['--repository', '--workspace', '--kind']);
     const operands: string[] = [];
     for (let at = 2; at < argv.length; at += 1) {
       const token = argv[at]!;
       if (valued.has(token)) at += 1;
-      else if (token === '--clear' || token === '--plan') continue;
+      else if (token === '--clear' || token === '--plan' || token === '--landed') continue;
       else if (token.startsWith('--')) throw new DaorisError(`\`${token}\` is not a flag \`driver workflow use\` takes — ${usage}`);
       else operands.push(token);
     }
@@ -321,9 +351,12 @@ export function commandWorkflow({ root, argv, write }: CommandArgs, context: Wor
     if ((repository === undefined) === (workspace === undefined) || operands.length !== (clear ? 0 : 1)) throw new DaorisError(usage);
     const chosen = clear ? null : operands[0]!;
 
-    // A named workflow is chosen only where it reads here (design §3.9): refused where it would be chosen, naming why.
+    // A named workflow is chosen only where it reads here (design §3.9): refused where it would be chosen, naming why. Its file's
+    // mark (FABRIC-PIPELINE1a) goes with the edit, so a verification pipeline is named by the landed route alone.
+    let pipeline: string | undefined;
     if (chosen !== null && chosen !== CURRENT && isWorkflowId(chosen)) {
       const found = load(chosen);
+      pipeline = found?.read.pipeline ?? undefined;
       if (found === null) {
         throw new DaorisError(`no workflow \`${chosen}\` is saved here — \`daoris driver workflow list\` names them, and \`new\` names one.`);
       }
@@ -368,8 +401,11 @@ export function commandWorkflow({ root, argv, write }: CommandArgs, context: Wor
       if (owner !== null) {
         write(after === undefined
           ? `  \`${owner}\` names no workflow now, so its workspace's choice reaches it again.`
-          : `  This replaces the workspace's for every kind: \`${owner}\` follows its own kinds and its own default, and Current `
-            + 'where it names none.');
+          : !namesDevelopment(after)
+            // A landed route alone replaces nothing (FABRIC-PIPELINE1a).
+            ? `  \`${owner}\` names no workflow for its work now, only its landed route, so its workspace's choice reaches it again.`
+            : `  This replaces the workspace's for every kind: \`${owner}\` follows its own kinds and its own default, and Current `
+              + 'where it names none.');
       }
       if (unchecked !== null) {
         write(`  The registry was not read (${unchecked}), so kind \`${kind}\` was not checked against the kinds \`${owner}\`'s `
@@ -379,12 +415,121 @@ export function commandWorkflow({ root, argv, write }: CommandArgs, context: Wor
       return savedChoice({ ...context.choices, ...edited.maps! });
     };
 
-    const base = { use: chosen, ...(kind !== undefined ? { kind } : {}) };
+    const base = { use: chosen, ...(kind !== undefined ? { kind } : {}), ...(pipeline !== undefined ? { pipeline } : {}) };
+    if (argv.includes('--landed')) return useLanded(base);
     if (workspace !== undefined) return apply({ ...base, workspace }, null);
     if (kind === undefined || chosen === null) return apply({ ...base, repository: repository! }, null);
     return workspaceOf(repository!).then((found) => found.read
       ? apply({ ...base, repository: repository!, in: found.workspace }, null)
       : apply({ ...base, repository: repository! }, found.unread));
+
+    /**
+     * `use <id>|current|--clear … --landed` (FABRIC-PIPELINE1a, the pipeline design §1.3, §4.2): the landed route, a verification
+     * pipeline for the work that reaches the line. For a repository it shows the `daoris.gates.json` at its line's tip and accepts it by
+     * its blob, as the tab's *Accept the gates* does; run again, it accepts the tip's new blob. A workspace's route accepts its gates
+     * repository by repository. Judged before any git is read, so a development pipeline or a route by kind is refused first.
+     */
+    function useLanded(given: { use: string | null; kind?: string; pipeline?: string }): ExitCode | Promise<ExitCode> {
+      const scoped = repository !== undefined ? { repository } : { workspace: workspace! };
+      const edit = (gates: string | null): WorkflowChoiceEdit => ({ ...given, ...scoped, landed: true, ...(gates !== null ? { gates } : {}) });
+      const judged = applyWorkflowEdit(context.choices, edit(null));
+      if (judged.refusal !== null) throw new DaorisError(`${judged.refusal} Nothing was written.`, 1);
+      if (repository === undefined) {
+        const shared = chosen !== null && chosen !== CURRENT
+          ? [`  Its gates are accepted repository by repository, at each line's tip: \`daoris driver workflow use ${chosen} --repository <name> `
+            + '--landed` accepts one\'s.']
+          : [];
+        return landedDone(edit(null), workspace!, shared);
+      }
+
+      const own = atName(context.choices.workflows, repository.trim())?.landed ?? null;
+      // A tip that cannot be read keeps what was accepted for the same pipeline: an acceptance names a blob, never a moment.
+      const kept = own !== null && own.workflow === chosen ? own.gates : null;
+      return context.checkouts().then((read) => {
+        const inWorkspace = 'unread' in read ? null : read.checkouts.find((each) => inScope(each, { repository }))?.workspace ?? null;
+        if (chosen === null || chosen === CURRENT) return landedDone(edit(null), inWorkspace, []);
+        if ('unread' in read) {
+          return landedDone(edit(kept), inWorkspace, [`  No gates were accepted: the registry was not read (${read.unread}). Run this again where it can be.`]);
+        }
+        const root = read.checkouts.find((each) => inScope(each, { repository }) && each.root !== null && existsSync(each.root))?.root ?? null;
+        if (root === null) {
+          return landedDone(edit(kept), inWorkspace,
+            [`  No gates were accepted: \`${repository}\` has no checkout here whose line could be read. Run this again where it has one.`]);
+        }
+        const line = lineOf(context.choices.lines, context.choices.workspaceLines, repository, normalizeWorkspace(inWorkspace), root);
+        const tipped = readLandedTip(root, line);
+        if ('problem' in tipped) {
+          return landedDone(edit(kept), inWorkspace, [`  No gates were accepted: for \`${repository}\`, ${tipped.problem}. Run this again where its line can be read.`]);
+        }
+        const { tip } = tipped;
+        const at = `\`${line}\`'s tip \`${tip.commit.slice(0, 7)}\``;
+        if (tip.gates === NO_GATES) {
+          return landedDone(edit(NO_GATES), inWorkspace,
+            [`  ${at} holds no \`daoris.gates.json\`: accepted as none, so its checks find no declaration until one lands and you accept it.`]);
+        }
+        const text = (declarationText(root, tip.gates) ?? '').replace(/\s+$/, '');
+        const replaced = own?.gates && own.gates !== NO_GATES && own.gates !== tip.gates
+          ? [`  It replaces the gates accepted before, at blob \`${own.gates.slice(0, 7)}\`: what changed is \`git diff ${own.gates} ${tip.gates}\`.`]
+          : [];
+        return landedDone(edit(tip.gates), inWorkspace, [
+          `  The gates it runs unasked, as \`daoris.gates.json\` declares them at ${at} (blob \`${tip.gates.slice(0, 7)}\`):`,
+          ...text.split(/\r?\n/).map((each) => `    ${each}`),
+          '  Accepted: these gates run unasked on the work that lands; an edit of `daoris.gates.json` asks you again, and nothing runs '
+            + 'until you accept it.',
+          ...replaced,
+        ]);
+      });
+    }
+
+    /** The landed route edited, said and written, or not with `--plan`: its pipeline, what was accepted, and what it lowers. */
+    function landedDone(edit: WorkflowChoiceEdit, inWorkspace: string | null, accepted: string[]): ExitCode {
+      const edited = applyWorkflowEdit(context.choices, edit);
+      if (edited.refusal !== null) throw new DaorisError(`${edited.refusal} Nothing was written.`, 1);
+      const whose = repository !== undefined ? `\`${repository}\`` : `the workspace \`${workspace}\``;
+      const name = (repository ?? workspace)!.trim();
+      const pick = (maps: { workflows: Record<string, WorkflowChoice>; workspaceWorkflows: Record<string, WorkflowChoice> }) =>
+        atName(repository !== undefined ? maps.workflows : maps.workspaceWorkflows, name);
+      if (JSON.stringify(pick(edited.maps!)) === JSON.stringify(pick(context.choices))) {
+        write(`daoris: ${whose} ${chosen === null ? 'names no landed route' : `names \`${chosen}\` for the work that lands already, its gates as accepted`}: `
+          + 'nothing was written.');
+        return 0;
+      }
+
+      if (chosen === null) {
+        write(`daoris: ${whose} no longer names a landed route: ${repository !== undefined
+          ? 'its workspace\'s reaches it, where it names one.' : 'each repository there verifies only the work it names a route for.'}`);
+      } else if (chosen === CURRENT) {
+        write(`daoris: ${whose} now names no verification for the work that lands: \`current\`, which keeps its workspace's away.`);
+      } else {
+        const found = load(chosen)!;
+        const newest = found.read.versions[found.read.versions.length - 1]!;
+        const graph = newest.graph!;
+        write(`daoris: ${whose} now verifies the work that lands with \`${chosen}\` — ${found.read.name}, v${newest.version} now: a graph `
+          + `(schema ${GRAPH_SCHEMA}) of ${graph.nodes.length} node${graph.nodes.length === 1 ? '' : 's'} and ${graph.wires.length} `
+          + `wire${graph.wires.length === 1 ? '' : 's'}, digest ${newest.digest}.`);
+      }
+      for (const line of accepted) write(line);
+      // D157 point 10 (the pipeline design §1.3): what the change asks less of the person, said where they make it.
+      const owner = repository ?? null;
+      const circle = repository !== undefined ? inWorkspace : workspace!;
+      if (resolveLanded(context.choices, owner, circle).workflow !== CURRENT && resolveLanded(edited.maps!, owner, circle).workflow === CURRENT) {
+        write('  This asks less of you: it leaves the work that lands unverified.');
+      }
+      if (chosen !== null) {
+        write(repository !== undefined
+          ? `  The landed route resolves on its own: \`${repository}\`'s development routes stay as they are.`
+          : '  The landed route resolves on its own: each repository there that names none of its own follows it, and every development '
+            + 'route stays as it is.');
+      }
+      if (argv.includes('--plan')) {
+        write('  --plan: nothing was written.');
+      } else {
+        writeDriverChoices(context.path, { ...context.choices, ...edited.maps! });
+        write(`  Written to ${context.path}.`);
+      }
+      write(LANDED_READS);
+      return 0;
+    }
   }
 
   /**
@@ -621,7 +766,7 @@ export function commandWorkflow({ root, argv, write }: CommandArgs, context: Wor
       readKeptVersions(folder, found.id));
     if (plan.problem !== null) throw new DaorisError(plan.problem, 1);
     const versions = plan.result!['versions'] as Record<string, unknown>[];
-    const next = readVersion(versions[versions.length - 1]!, plan.version!, []);
+    const next = readVersion(versions[versions.length - 1]!, plan.version!, [], found.read.pipeline ?? 'development');
     if (base.graph !== undefined && base.digest === next.digest) {
       write(`daoris: \`${found.id}\` v${base.version} already says this: nothing was written.`);
       return 0;
@@ -673,7 +818,9 @@ export function commandWorkflow({ root, argv, write }: CommandArgs, context: Wor
         + `versions differ: \`daoris driver workflow apply ${id} ${from}\` adds the file's newest version to it.`, 1);
     }
 
-    const header = `daoris: \`${id}\` — ${read.name}, from ${from}: ${read.versions.length === 1 ? 'one version' : `${read.versions.length} versions`}, `
+    // A verification pipeline is made so here, its mark in its file (FABRIC-PIPELINE1a), and said so.
+    const marked = read.pipeline === 'verification' ? ', a verification pipeline' : '';
+    const header = `daoris: \`${id}\` — ${read.name}${marked}, from ${from}: ${read.versions.length === 1 ? 'one version' : `${read.versions.length} versions`}, `
       + `its newest v${newest.version}:`;
     if (newest.steps === null) {
       write(`${header} ${graphSaid(newest)}`);
@@ -758,6 +905,18 @@ export function whyChosen(selected: WorkflowSelected, repository: string | null,
     case 'workspace': return `the workspace \`${workspace}\`'s default`;
     default: return 'since nothing names a workflow';
   }
+}
+
+/**
+ * A landed route as `show` says it (FABRIC-PIPELINE1a, the pipeline design §1.3): the verification pipeline it names, who chose it and
+ * the gates accepted, or that it names no verification, which is today's.
+ */
+export function landedSaid(route: WorkflowLandedSelected, repository: string | null, workspace: string): string {
+  const who = route.level === 'repository-landed' ? `as \`${repository}\` chooses` : `as the workspace \`${workspace}\` chooses`;
+  if (route.workflow === CURRENT) return route.level === 'current' ? 'no verification here' : `no verification here, ${who}`;
+  const gates = route.gates === null ? 'its gates not accepted yet'
+    : route.gates === NO_GATES ? 'its gates accepted as none' : `its gates accepted at blob \`${route.gates.slice(0, 7)}\``;
+  return `\`${route.workflow}\`, ${who}; ${gates}`;
 }
 
 /** Which door saved a version, as `show` says it (design §2.5): never *the person*, since a terminal's edit cannot be told from an agent's. */

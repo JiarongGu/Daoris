@@ -63,7 +63,9 @@ public sealed class WorkflowGraphsTests : IDisposable
     {
         var version = row.GetProperty("version");
         var number = version.GetProperty("version").GetInt32();
-        if (row.GetProperty("read").GetString() == "version") return WorkflowGraphs.Decode(WorkflowNamed.ReadVersion(version, number, []));
+        // FABRIC-PIPELINE1a: the mark the version's workflow carries, absent read as a development pipeline's.
+        var pipeline = row.TryGetProperty("pipeline", out var mark) ? mark.GetString()! : WorkflowPipelines.Development;
+        if (row.GetProperty("read").GetString() == "version") return WorkflowGraphs.Decode(WorkflowNamed.ReadVersion(version, number, [], pipeline));
         var (steps, problem) = WorkflowNamed.ReadShape(version.GetProperty("steps"), number);
         Assert.Null(problem);
         return WorkflowGraphs.DecodeSteps(number, steps!);

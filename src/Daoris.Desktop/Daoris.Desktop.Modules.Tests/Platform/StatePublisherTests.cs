@@ -568,6 +568,8 @@ public sealed partial class StatePublisherTests : DriverModuleBridge
     [InlineData("TOOLS_PICK", "", null)]
     [InlineData("WORKFLOW_CURRENT", "", null)]
     [InlineData("WORKFLOW_RUN", "", null)]
+    // FABRIC-PIPELINE1a: the landed route set, which the page reads again by its own query, as every workflow route is read.
+    [InlineData("WORKFLOW_LANDED", "", null)]
     [InlineData("START_HELP", "sessions", null)]
     [InlineData("HELP_RENAME", "sessions,help", "id")]
     [InlineData("HELP_PIN", "sessions,help", "id")]

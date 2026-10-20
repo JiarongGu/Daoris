@@ -85,6 +85,15 @@ internal sealed class HelpWorkflowProposals : IHelpProposalKind
         }
 
         var found = facts.Workflows.FirstOrDefault(each => each.Id == id);
+        // FABRIC-PIPELINE1a: a verification pipeline's versions are graphs, which a proposal of steps cannot change, and only its landed
+        // route names one; FABRIC-PIPELINE1i lets a proposal carry a graph and a route.
+        if (found?.Read.Verifies == true)
+        {
+            return Refused($"`{id}` is a verification pipeline, whose versions are graphs, and a proposal carries steps: it changes and chooses "
+                + $"none yet. `daoris driver workflow apply {id} <file>` saves a graph version, and `daoris driver workflow use {id} "
+                + "--repository <name> --landed` names it for work that lands.");
+        }
+
         if (BaseProblem(id, proposal.Base, found) is { } stale) return Refused(stale);
 
         var before = proposal.Base is null ? null : found!.Read.Versions[^1];
@@ -142,7 +151,7 @@ internal sealed class HelpWorkflowProposals : IHelpProposalKind
         }
 
         // §4.7: a repository's choice replaces its workspace's whole, as the terminal's `use` says it.
-        if (use is { Repository: { } chooser } && ChoiceOf(config.Workflows, chooser) is null)
+        if (use is { Repository: { } chooser } && OwnOf(config, chooser) is null)
         {
             said.Add($"This replaces the workspace's for every kind: `{chooser}` follows its own kinds and its own default, and Current where "
                 + "it names none.");
@@ -291,7 +300,7 @@ internal sealed class HelpWorkflowProposals : IHelpProposalKind
     private static List<string> Reached(DriverConfig config, HelpMachineFacts facts, string id) =>
     [
         .. facts.Repositories
-            .Where(repository => ChoiceOf(config.Workflows, repository) is { } own
+            .Where(repository => OwnOf(config, repository) is { } own
                 ? Chooses(own, id, kinds: true)
                 : Chooses(ChoiceOf(config.WorkspaceWorkflows, RemoteTarget.Workspace(WorkspaceOf(facts, repository))), id, kinds: true))
             .Order(StringComparer.OrdinalIgnoreCase),
@@ -302,7 +311,7 @@ internal sealed class HelpWorkflowProposals : IHelpProposalKind
         repository is not null
             ? [repository]
             : facts.Repositories
-                .Where(each => Same(RemoteTarget.Workspace(WorkspaceOf(facts, each)), workspace!) && ChoiceOf(config.Workflows, each) is null)
+                .Where(each => Same(RemoteTarget.Workspace(WorkspaceOf(facts, each)), workspace!) && OwnOf(config, each) is null)
                 .Order(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>§8.2's *Applies to*: new work only, where, and how many runs keep the version they started on.</summary>
@@ -325,6 +334,13 @@ internal sealed class HelpWorkflowProposals : IHelpProposalKind
 
     private static WorkflowChoice? ChoiceOf(IReadOnlyDictionary<string, WorkflowChoice> map, string name) =>
         map.FirstOrDefault(pair => Same(pair.Key, name)).Value;
+
+    /// <summary>
+    /// A repository's own development routes, which replace its workspace's (§4.1), or null: an entry naming only its landed route
+    /// names none, so its workspace's reach it (FABRIC-PIPELINE1a).
+    /// </summary>
+    private static WorkflowChoice? OwnOf(DriverConfig config, string repository) =>
+        ChoiceOf(config.Workflows, repository) is { NamesDevelopment: true } own ? own : null;
 
     /// <summary>Whether a choice names the workflow as its default, or, with <paramref name="kinds"/>, for any kind.</summary>
     private static bool Chooses(WorkflowChoice? choice, string id, bool kinds) =>

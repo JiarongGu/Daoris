@@ -1,5 +1,5 @@
 {
-  "about": "FABRIC-WORKFLOW2: D157's stored versions and the graphs they decode to (the fabric events design §E7's migration contract). Read row for row by the CLI's workflowgraphs.test.ts and the driver's WorkflowGraphsTests. A row's `version` is a version as a workflow's file holds it. `read` is `version` (as the stored version reads in this build: a kind it does not run, or a version that does not read, is unreadable with its reason) or `shape` (its steps as their shape reads, every kind included: the mapping, for the build that runs them). `identity` is the version's digest (WorkflowNamed.Digest, unchanged), `graphDigest` the decoded graph's, derived from the version and the decoder's version; `graph` is the decoded graph, each node's options as JSON values.",
+  "about": "FABRIC-WORKFLOW2: D157's stored versions and the graphs they decode to (the fabric events design §E7's migration contract). Read row for row by the CLI's workflowgraphs.test.ts and the driver's WorkflowGraphsTests. A row's `version` is a version as a workflow's file holds it. `read` is `version` (as the stored version reads in this build: a kind it does not run, or a version that does not read, is unreadable with its reason) or `shape` (its steps as their shape reads, every kind included: the mapping, for the build that runs them). `pipeline` is the mark the version's workflow carries (FABRIC-PIPELINE1a), absent read as `development`. `identity` is the version's digest (WorkflowNamed.Digest, unchanged), `graphDigest` the decoded graph's, derived from the version and the decoder's version; `graph` is the decoded graph, each node's options as JSON values.",
   "decoderVersion": 3,
   "rows": [
     {
@@ -107,6 +107,15 @@
         { "id": "second", "kind": "opinion" },
         { "id": "land", "kind": "landing", "form": "merge", "accept": "you" } ] },
       "unreadable": "v5, step `second`: the second opinion is read before your look, so the `opinion` comes first."
+    },
+    {
+      "name": "a verification pipeline's version of steps is never decoded: its versions are graphs (FABRIC-PIPELINE1a, `pipeline` the file's mark)",
+      "read": "version",
+      "pipeline": "verification",
+      "version": { "version": 1, "at": "2026-10-21T09:00:00Z", "door": "terminal", "steps": [
+        { "id": "work", "kind": "work" },
+        { "id": "land", "kind": "landing", "form": "merge", "accept": "you" } ] },
+      "unreadable": "v1: a verification pipeline's versions are graphs (schema 2) holding its checks, never steps."
     },
     {
       "name": "a group and every `failed` policy, decoded from the shape for the build that runs them",

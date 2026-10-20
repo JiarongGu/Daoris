@@ -48,6 +48,52 @@ export interface WorkflowRepository {
   own: boolean;
 }
 
+/**
+ * One development route of the start node (FABRIC-PIPELINE1a, the pipeline design §1.3): the default where `kind` is null, else a kind
+ * the workspace declares, with its label and paths; the workflow it names (`current` where none does), the level that chose it, and
+ * the named workflow's name where it reads.
+ */
+export interface WorkflowRoute {
+  kind: string | null;
+  label: string | null;
+  paths: string[];
+  workflow: string;
+  level: string;
+  name?: string | null;
+}
+
+/**
+ * Where a landed route's acceptance stands against the declaration at the line's tip, as the driver judged it (`LandedGates.StateOf`):
+ * `none` where it names no verification.
+ */
+export type LandedState = 'accepted' | 'changed' | 'unaccepted' | 'unread' | 'none';
+
+/** The landed route: the verification workflow for the work that lands, and the gates the person accepted for it, by their blob. */
+export interface WorkflowLanded {
+  /** A verification workflow's id, or `current`: no verification. */
+  workflow: string;
+  /** `repository-landed`, `workspace-landed`, or `current` where nothing names one. */
+  level: string;
+  /** The accepted blob, `none` where the line held none, or null where none was accepted. */
+  gates: string | null;
+  name?: string | null;
+  /** One of `LandedState`; one a newer driver names is said as recorded. */
+  state: string;
+  /** The line's tip as read: its line, its commit, and its declaration's blob or `none`. */
+  tip?: { line: string; commit: string; gates: string } | null;
+  /** Why the tip could not be read, in the driver's words. */
+  problem?: string | null;
+  /** The declaration at the tip, where it waits to be accepted. */
+  declaration?: string | null;
+}
+
+/** The start node a Workflow tab draws first (FABRIC-PIPELINE1a): its routes, the landed route, and the verification workflows saved here. */
+export interface WorkflowStart {
+  routes: WorkflowRoute[];
+  landed: WorkflowLanded;
+  verifications: { id: string; name: string }[];
+}
+
 /** What `WORKFLOW_CURRENT` answers. */
 export interface CurrentWorkflow {
   /** The repository drawn, or none for a workspace's Current: a host may leave a null out. */
@@ -68,6 +114,8 @@ export interface CurrentWorkflow {
    * was not read, and for a repository's.
    */
   repositories?: WorkflowRepository[] | null;
+  /** The start node (FABRIC-PIPELINE1a); none from a driver before it, and for a run's chart. */
+  start?: WorkflowStart | null;
 }
 
 /** What the page asks for: a repository's Current, or a workspace's. */

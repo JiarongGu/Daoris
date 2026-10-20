@@ -910,4 +910,24 @@ public sealed class NodeLifecycleTests
         Assert.Null(NodeDeclarations.Problem(pinned));
         Assert.Equal("skippable", NodeDeclarations.Problem(Declared(NodeKinds.Look) with { Retry = null, Skippable = false }));
     }
+
+    /// <summary>
+    /// FABRIC-PIPELINE1a (the pipeline design §4.1): a <c>check</c> is never skipped, by its kind, since a skip would read as a verdict a
+    /// stage and the line rest on; its declaration cannot say so itself, as no built-in's can; its doors are a new attempt and a stop.
+    /// </summary>
+    [Fact]
+    public void A_checks_skip_is_refused_by_its_kind_and_its_declaration_cannot_say_so()
+    {
+        var check = Declared(NodeKinds.Check) with { Retry = null };
+        var skip = new NodeMove(NodeStates.Skipped, NodeCause.Person) { Words = "not needed", Scope = Run };
+
+        Assert.Equal(NodeRefusal.NotSkippable, NodeLifecycle.Apply(check, At(NodeStates.Ready), skip).Refused);
+        Assert.Equal(NodeRefusal.NotSkippable, NodeLifecycle.Apply(check, At(NodeStates.Blocked), skip).Refused);
+        Assert.Equal("skippable", NodeDeclarations.Problem(check with { Skippable = false }));
+        Assert.Equal("perform", NodeDeclarations.Problem(check with { Perform = new NodePerform(true, true, []) }));
+        Assert.Null(NodeDeclarations.Problem(check));
+        Assert.Equal((NodeReach.Performed, NodeSource.Gates, NodeSource.Gates, false), (
+            NodeAuthorities.Of(check)!.Reach, NodeAuthorities.Of(check)!.ReachBy, NodeAuthorities.Of(check)!.FailureBy, NodeAuthorities.Of(check)!.PersonSettles));
+        Assert.Equal(NodeStates.Ready, NodeLifecycle.Apply(check, At(NodeStates.Stopped), new NodeMove(NodeStates.Ready, NodeCause.Person)).Status.State);
+    }
 }
