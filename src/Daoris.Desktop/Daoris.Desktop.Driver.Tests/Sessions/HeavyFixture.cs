@@ -75,19 +75,35 @@ internal sealed class HeavyFixture : IDisposable
     }
 
     /// <summary>Write <paramref name="folder"/>'s <c>package.json</c>, declaring each script by name (HEAVYRUN1a2).</summary>
-    public void Scripts(string folder, params (string Name, string Run)[] scripts)
+    public void Scripts(string folder, params (string Name, string Run)[] scripts) => Managed(folder, null, scripts);
+
+    /// <summary>
+    /// Write <paramref name="folder"/>'s <c>package.json</c>, declaring each script by name and, where one is given, the
+    /// <c>packageManager</c> corepack reads (HEAVYRUN1a3).
+    /// </summary>
+    public void Managed(string folder, string? packageManager, params (string Name, string Run)[] scripts)
     {
         Directory.CreateDirectory(folder);
+        var manifest = new Dictionary<string, object>
+        {
+            ["name"] = "engine",
+            ["version"] = "0.0.0",
+            ["private"] = true,
+            ["scripts"] = scripts.ToDictionary(script => script.Name, script => script.Run),
+        };
+        if (packageManager is not null) manifest["packageManager"] = packageManager;
+        File.WriteAllText(Path.Combine(folder, "package.json"), JsonSerializer.Serialize(manifest));
+    }
+
+    /// <summary>Write a checkout's <c>daoris.gates.json</c>, each heavy gate run in its own <c>cwd</c> (HEAVYRUN1a3).</summary>
+    public void GatesIn(string checkout, params (string Name, string Run, string Cwd)[] gates) =>
         File.WriteAllText(
-            Path.Combine(folder, "package.json"),
+            Path.Combine(checkout, "daoris.gates.json"),
             JsonSerializer.Serialize(new Dictionary<string, object>
             {
-                ["name"] = "engine",
-                ["version"] = "0.0.0",
-                ["private"] = true,
-                ["scripts"] = scripts.ToDictionary(script => script.Name, script => script.Run),
+                ["devkit"] = "0.0.1",
+                ["gates"] = gates.Select(gate => new Dictionary<string, object> { ["name"] = gate.Name, ["run"] = gate.Run, ["cwd"] = gate.Cwd, ["heavy"] = true }).ToList(),
             }));
-    }
 
     /// <summary>A file in the scratch folder, by name.</summary>
     public string At(string name) => Path.Combine(Folder, name);

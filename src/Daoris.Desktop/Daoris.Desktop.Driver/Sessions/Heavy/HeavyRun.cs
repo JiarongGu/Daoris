@@ -43,9 +43,9 @@ public sealed record HeavyMarker(string Slot, IReadOnlyList<string> Gates);
 /// that job if it is still there before its own gates start (<see cref="ProcessJob.EndNamedAsync"/>). The gates run with
 /// <c>MSBUILDDISABLENODEREUSE=1</c>, so a build node they start serves this run alone and ends with it, never a neighbour's build.</para>
 ///
-/// <para><b>Its test runners bounded.</b> A gate the repository declares as Jest or Vitest, itself or through its npm script, runs
-/// with <c>--maxWorkers=2</c> where the installed version's flag is known, and as written otherwise; each gate's line says which and
-/// why (<see cref="HeavyWorkers"/>, HEAVYRUN1a2).</para>
+/// <para><b>Its test runners bounded.</b> A gate the repository declares as Jest or Vitest, itself or through its npm, yarn or pnpm
+/// script, runs with <c>--maxWorkers=2</c> where the installed version's flag, and the tool's forwarding at its recorded version, are
+/// known, and as written otherwise; each gate's line says which and why (<see cref="HeavyWorkers"/>, HEAVYRUN1a2, HEAVYRUN1a3).</para>
 ///
 /// <para><b>Never waits on itself.</b> The run hands its gates <see cref="Variable"/>, naming its slot and the gates running. A gate
 /// that runs <c>run-heavy</c> again in the same repository runs inside the held slot without waiting, and one asked for a gate
