@@ -33,6 +33,63 @@ public sealed class DriverModuleHelpGrantTests : DriverModuleBridge
         Assert.Equal(["clean-up"], Chosen(one));
     }
 
+    /// <summary>
+    /// HELPMODE1c3: the chosen settings are a grant of their own, chosen one setting at a time beside housekeeping, and the state answers
+    /// what it holds and the five it acts on.
+    /// </summary>
+    [Fact]
+    public async Task The_route_chooses_a_setting_beside_housekeeping()
+    {
+        var module = Module();
+        await AnswerAsync(module, "SET_HELP_GRANT", new { grant = "housekeeping", operation = "inspect", chosen = true });
+
+        var state = await AnswerAsync(module, "SET_HELP_GRANT", new { grant = "settings", operation = "cap", chosen = true });
+
+        var settings = state.GetProperty("helpGrants").EnumerateArray().Single(grant => grant.GetProperty("id").GetString() == "settings");
+        Assert.Equal(["cap"], settings.GetProperty("chosen").EnumerateArray().Select(each => each.GetString()));
+        Assert.Equal(
+            ["notify", "language", "timeout", "cap", "cooloff"], settings.GetProperty("built").EnumerateArray().Select(each => each.GetString()));
+        Assert.False(settings.GetProperty("pending").GetBoolean());
+        Assert.Equal(["inspect"], Chosen(state));
+        Assert.Contains("`mode`", await RefusalAsync(module, "SET_HELP_GRANT", new { grant = "settings", operation = "mode", chosen = true }));
+    }
+
+    /// <summary>
+    /// HELPMODE1c3 (the modes design §4.1's decided note): the browser's row is drawn from its plugin's own record, read only: its state
+    /// and the plugin whose tab changes it, never a choice made here. With no plugin attaching to Daoris's browser, it names none.
+    /// </summary>
+    [Fact]
+    public async Task The_state_answers_the_browsers_grant_from_its_plugins_record()
+    {
+        var module = Module();
+        JsonElement Browser(JsonElement state) =>
+            state.GetProperty("helpGrants").EnumerateArray().Single(grant => grant.GetProperty("id").GetString() == "browser");
+        // The bridge leaves a null out.
+        static string? Text(JsonElement grant, string name) =>
+            grant.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String ? value.GetString() : null;
+
+        var none = Browser(await AnswerAsync(module, "STATE"));
+        Assert.Null(Text(none, "plugin"));
+        Assert.Empty(none.GetProperty("chosen").EnumerateArray());
+
+        var folder = DaorisHome.Entry(Home, HomeEntry.Plugins, "in-app-browser");
+        Directory.CreateDirectory(folder);
+        File.WriteAllText(Path.Combine(folder, PluginCatalog.ManifestName), """
+            { "id": "in-app-browser", "servers": [
+                { "name": "browser", "command": ["node", "server.js", "--cdp", "${browser}"], "to": ["sessions", "help"],
+                  "allow": ["browser_snapshot"], "writes": ["browser_click", "browser_type"] } ] }
+            """);
+        var waiting = Browser(await AnswerAsync(module, "STATE"));
+        Assert.Equal("in-app-browser", Text(waiting, "plugin"));
+        Assert.Empty(waiting.GetProperty("chosen").EnumerateArray());
+        Assert.False(waiting.GetProperty("changed").GetBoolean());
+
+        HelpGrants.Approve(Home, PluginCatalog.Load(Home), "in-app-browser", "browser", ["browser_click"]);
+        var approved = Browser(await AnswerAsync(module, "STATE"));
+        Assert.Equal(["reads", "browser_click"], approved.GetProperty("chosen").EnumerateArray().Select(each => each.GetString()));
+        Assert.False(approved.TryGetProperty("built", out var built) && built.ValueKind == JsonValueKind.Array);
+    }
+
     /// <summary>A grant or an operation this build does not act on, or a press naming none, is refused in the driver's words, and nothing is written.</summary>
     [Fact]
     public async Task What_it_does_not_act_on_is_refused_and_nothing_is_written()

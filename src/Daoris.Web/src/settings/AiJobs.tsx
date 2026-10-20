@@ -66,6 +66,8 @@ export type HelpGrantsJob = {
   /** The operations the driver acts on, for each grant it serves (HELPMODE1c2b); a grant not named is drawn as the mock. */
   built?: Partial<Record<HelpGrantId, readonly string[]>>;
   onChoose: (grant: HelpGrantId, operation: string, chosen: boolean) => void;
+  /** A grant set on a plugin's own tab (the browser's, HELPMODE1c3): its door, leading to that tab. */
+  onManage?: (grant: HelpGrantId, plugin: string | null) => void;
 };
 
 /** Off, as the control's value. The terminal spells it the same way (`daoris driver intake off`). */
@@ -261,6 +263,7 @@ function HelpAccess({ access, grants }: { access: HelpAccessJob; grants?: HelpGr
             busy={grants.busy}
             built={grants.built}
             onChoose={grants.onChoose}
+            onManage={grants.onManage}
           />
         </div>
       )}

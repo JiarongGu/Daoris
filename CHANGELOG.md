@@ -8,6 +8,13 @@ with the version and date at release.
 - How many sessions Daoris starts at once on this machine is set in Settings → Driver, beside the strike limit and the
   cool-off, and `daoris driver cap <n>` sets the same number while Daoris runs. It counts the sessions Daoris starts, never
   a conversation you hold yourself.
+- Restricted Ask Daoris can change five ordinary settings itself where you grant them: Settings → AI features → Ask Daoris's
+  access → *Configured access* → Chosen settings lets you choose notifications, a repository's or a workspace's session
+  language, how long a session may run, how many run at once, and the cool-off, each on its own. It changes them with no
+  Apply, through the same checks as Settings, on every agent, Codex included; each change is kept in the machine log, and any
+  other setting is still proposed for your Apply. The browser's row now shows its plugin's approval as it stands, and its
+  *Manage* opens the plugin's page, the one place it is changed. On an agent that takes no permission rules, the browser and
+  scoped checkout reads say they are unavailable until Daoris serves a tool that can hold them.
 - A session that goes on in a new part, on another agent, on another account or after it was cut off, is handed everything it
   took: every word you said, once, what each turn did, where the work stands and the last check that failed, not just its last
   words. A handed-over conversation opens with *Daoris's brief of the session it continues*, folded. A session's Parts strip

@@ -22,7 +22,8 @@ public sealed class McpToolRegistrationTests : McpToolsFixture
         "housekeeping_clean_up", "housekeeping_discard_branch", "housekeeping_inspect", "knowledge_convergence",
         "knowledge_get", "knowledge_refresh", "knowledge_repositories", "knowledge_search", "opinion_answer", "opinion_give",
         "pause_propose", "permission_propose", "plugin_propose", "quest_list", "quest_publish", "quest_respond", "registry",
-        "repository_propose", "review_ready", "review_serve", "session_propose", "setting_propose", "setup_propose", "sync_propose",
+        "repository_propose", "review_ready", "review_serve", "session_propose", "setting_propose", "settings_cap", "settings_cooloff",
+        "settings_language", "settings_notify", "settings_timeout", "setup_propose", "sync_propose",
         "workflow_propose",
     ];
 
@@ -80,7 +81,7 @@ public sealed class McpToolRegistrationTests : McpToolsFixture
         Assert.Equal(marked, KnowledgeServer.ToolTypes.Select(type => type.Name).Order(StringComparer.Ordinal));
         Assert.Equal(
             [
-                "BrainstormTools", "ChannelTools", "GoAheadTools", "HandOverTools", "HelpAcceptTool", "HelpAccountTool", "HelpAgentTool", "HelpAskTool", "HelpBrowserTool", "HelpClearTool",
+                "BrainstormTools", "ChannelTools", "ChosenSettingsTools", "GoAheadTools", "HandOverTools", "HelpAcceptTool", "HelpAccountTool", "HelpAgentTool", "HelpAskTool", "HelpBrowserTool", "HelpClearTool",
                 "HelpDeleteTool", "HelpGoTool", "HelpHandTool", "HelpPauseTool", "HelpPluginTool", "HelpRepositoryTool", "HelpSessionTool",
                 "HelpSettingTool", "HelpSetupTool", "HelpSyncTool", "HelpWorkflowTool", "HelperTools", "HousekeepingTools", "KnowledgeSearchTools",
                 "OpinionTools", "QuestTools",

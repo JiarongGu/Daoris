@@ -122,7 +122,9 @@ internal sealed class HelpRoomMayDo : IHelpRoomSection
             ? "Never offer to push, merge, sign in, or handle a key: those stay the person's own presses,\n"
             : "Never offer to push, merge, discard, sign in, or handle a key: those stay the person's own presses,\n");
         text.Append("where they already are.\n\n");
-        if (machine.Housekeeping.Count > 0) text.Append(Housekeeping(machine.Housekeeping));
+        if (machine.Housekeeping.Count > 0) text.Append(Housekeeping(machine.Housekeeping, alone: machine.Settings.Count == 0));
+        // HELPMODE1c3 (D183's note): the chosen settings granted, changed by the helper's own tools with no Apply.
+        if (machine.Settings.Count > 0) text.Append(Settings(machine.Settings, alone: machine.Housekeeping.Count == 0));
         // HELP4: the first repository question met a shell refused before it ran, then a guess at the
         // repository's branches presented as its tree. HELP5: a later one spent a turn on a ticket's URL,
         // refused the same way. Said plainly, so none of them happens again. D107: the checkouts reading
@@ -234,13 +236,15 @@ internal sealed class HelpRoomMayDo : IHelpRoomSection
     }
 
     /// <summary>
-    /// HELPMODE1c2a (D183's note): the housekeeping the person granted, the one change restricted mode makes itself, each tool named
-    /// with what it does, and what holds every one of them.
+    /// HELPMODE1c2a (D183's note): the housekeeping the person granted, a change restricted mode makes itself (the one, where no
+    /// setting is granted beside it), each tool named with what it does, and what holds every one of them.
     /// </summary>
-    private static string Housekeeping(IReadOnlyList<string> granted)
+    private static string Housekeeping(IReadOnlyList<string> granted, bool alone)
     {
         var text = new StringBuilder();
-        text.Append("The person granted you Daoris's own housekeeping, the one change you make yourself here, with these tools alone:\n\n");
+        text.Append(alone
+            ? "The person granted you Daoris's own housekeeping, the one change you make yourself here, with these tools alone:\n\n"
+            : "The person granted you Daoris's own housekeeping, a change you make yourself here, with these tools alone:\n\n");
         if (granted.Contains(ConfiguredAccess.Inspect))
         {
             text.Append("- `housekeeping_inspect`: Daoris's session branches and the branches its landings made, each cleared to go or kept, and why\n");
@@ -262,6 +266,37 @@ internal sealed class HelpRoomMayDo : IHelpRoomSection
         text.Append("remove before you do, and what went and what was kept after. A tool the person has not granted is refused.\n\n");
         return text.ToString();
     }
+
+    /// <summary>
+    /// HELPMODE1c3 (D183's note): the chosen settings the person granted, each changed by its own tool with no Apply, through the
+    /// checks and writer Settings uses; every other setting is still proposed.
+    /// </summary>
+    private static string Settings(IReadOnlyList<string> granted, bool alone)
+    {
+        var text = new StringBuilder();
+        text.Append(alone
+            ? "The person granted you these settings, the one change you make yourself here, with these tools alone:\n\n"
+            : "The person also granted you these settings, changed yourself with these tools alone:\n\n");
+        foreach (var setting in ConfiguredAccess.SettingsBuilt.Where(granted.Contains))
+        {
+            text.Append($"- `{ConfiguredAccess.SettingToolOf(setting)}`: {SettingSaid(setting)}\n");
+        }
+
+        text.Append('\n');
+        text.Append("Each changes the setting at once, with no Apply, through the same checks and writer as Settings, and the change\n");
+        text.Append("is recorded. Do it only when the person asks for it, and say what you changed, and to what. Any other setting is\n");
+        text.Append("still proposed with `setting_propose` for their Apply. A tool the person has not granted is refused.\n\n");
+        return text.ToString();
+    }
+
+    private static string SettingSaid(string setting) => setting switch
+    {
+        ConfiguredAccess.Notify => "whether Daoris says so when a session parks, or ends without being asked",
+        ConfiguredAccess.Language => "the language a repository's or a workspace's sessions write to the person in",
+        ConfiguredAccess.Timeout => "how many minutes one session may run",
+        ConfiguredAccess.Cap => "how many sessions run at once on this machine",
+        _ => "how long an account whose limit names no time cools before it is offered again",
+    };
 
     /// <summary>
     /// The section in full access (HELPMODE1a1, D183 points 1, 5): it acts on this machine itself, with every server the plugins here

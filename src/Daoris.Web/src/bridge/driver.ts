@@ -79,11 +79,13 @@ export type DriverState = {
   helpMode?: string;
   /**
    * Restricted mode's configured access as this machine chose it (HELPMODE1c2b): each grant the driver serves, by its id, with the
-   * operations chosen and those it acts on (`built`); housekeeping's today. What each start of Ask Daoris and every call of its
-   * tools read; `pending` while a conversation running here was handed another choice, which its next turn takes (ACCESSSWAP1).
-   * Absent on a shell older than it, which draws no configured access.
+   * operations chosen and those it acts on (`built`); housekeeping's, and the chosen settings' (HELPMODE1c3). What each start of Ask
+   * Daoris and every call of its tools read; `pending` while a conversation running here was handed another choice, which its next
+   * turn takes (ACCESSSWAP1). And the browser's, read only from its plugin's approval: no `built`, `changed` since approval, and
+   * the `plugin` whose tab changes it, absent where none here offers it. Absent on a shell older than it, which draws no configured
+   * access.
    */
-  helpGrants?: { id: string; chosen: string[]; built?: string[]; pending?: boolean }[];
+  helpGrants?: { id: string; chosen: string[]; built?: string[]; pending?: boolean; changed?: boolean; plugin?: string | null }[];
   /**
    * The Ask Daoris conversations running under another access than the one chosen (ACCESSSWAP1, D183 point 2): each ends at its
    * turn's end, and its next words resume it under the access chosen, so the panel keeps it in view as it ends. Absent on an older

@@ -25,7 +25,8 @@ public sealed class PluginsRoutes(DriverContext context)
     /// What a plugin added, switched, updated or removed changes (STATEHUB1d, D169): the catalogue, and the agents' roster, since
     /// a harness a plugin declares comes and goes with it. Making a plugin's folder and trying one install nothing, and declare nothing.
     /// </summary>
-    private const StateScopes Installs = StateScopes.Plugins | StateScopes.Harnesses;
+    // HELPMODE1c3: the driver's too, whose helpGrants draws Ask Daoris's browser grant from the plugin's approval, read only.
+    private const StateScopes Installs = StateScopes.Plugins | StateScopes.Harnesses | StateScopes.Driver;
 
     // This machine's plugins (D64): the catalogue as the driver reads it, each with what it
     // declares, what it speaks on, whether it is running, and why it contributes nothing when

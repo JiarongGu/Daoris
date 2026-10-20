@@ -233,4 +233,13 @@ public sealed record HelpGrantSet(IReadOnlyList<HelpGrant> All)
     /// <summary>Each write of an approved server the person did not accept: asked, which Ask Daoris's asking mode refuses.</summary>
     public IReadOnlyList<string> Ask => [.. Granted.SelectMany(grant =>
         grant.Server.Writes.Except(grant.Accepted, StringComparer.Ordinal).Select(tool => $"mcp__{grant.Server.Name}__{tool}"))];
+
+    /// <summary>
+    /// The browser's grant of Ask Daoris's configured access (HELPMODE1c3, the modes design §4.1): the server declared for it that
+    /// attaches to Daoris's own browser (<see cref="InAppBrowserServers.Placeholder"/> in its command or environment), the first such;
+    /// null where no plugin here declares one. *Configured access* draws its state from this, read only, and leads to its plugin's tab.
+    /// </summary>
+    public HelpGrant? Browser => All.FirstOrDefault(grant =>
+        grant.Server.Command.Any(part => part.Contains(InAppBrowserServers.Placeholder, StringComparison.Ordinal))
+        || grant.Server.Environment.Values.Any(value => value.Contains(InAppBrowserServers.Placeholder, StringComparison.Ordinal)));
 }

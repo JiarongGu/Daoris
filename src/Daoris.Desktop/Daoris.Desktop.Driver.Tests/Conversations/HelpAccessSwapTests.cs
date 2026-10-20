@@ -41,8 +41,12 @@ public sealed class HelpAccessSwapTests : IDisposable
     private ChatRunner Runner() => new(
         new ChatLedger().Client(), AdapterSet.Built(), _home, new SessionProcesses(DaorisHome.Entry(_home, HomeEntry.Sessions)), _output);
 
-    /// <summary>A conversation running under <paramref name="mode"/>, its start handed <paramref name="housekeeping"/> (none by default).</summary>
-    private static Chat Running(ChatRunner runner, string id, string mode, IReadOnlyList<string>? housekeeping = null)
+    /// <summary>
+    /// A conversation running under <paramref name="mode"/>, its start handed <paramref name="housekeeping"/> and
+    /// <paramref name="settings"/> (none by default).
+    /// </summary>
+    private static Chat Running(
+        ChatRunner runner, string id, string mode, IReadOnlyList<string>? housekeeping = null, IReadOnlyList<string>? settings = null)
     {
         var chat = new Chat();
         chat.Turns = new ChatTurns(
@@ -56,7 +60,7 @@ public sealed class HelpAccessSwapTests : IDisposable
             changed: queue => runner.HelpTurnChanged(id, queue));
         runner.Context.Turned[id] = chat;
         runner.Context.HelpModes[id] = mode;
-        runner.Context.HousekeepingHanded[id] = housekeeping ?? [];
+        runner.Context.AccessHanded[id] = new ConfiguredAccess(housekeeping ?? []) { Settings = settings ?? [] };
         return chat;
     }
 
@@ -163,6 +167,31 @@ public sealed class HelpAccessSwapTests : IDisposable
         Assert.Contains("ends now", Console("h1"));
     }
 
+    /// <summary>
+    /// 🔴 HELPMODE1c3: a chosen setting given while a turn runs takes its next turn the same way, naming the settings it now has, and
+    /// one taken back ends an idle conversation at once.
+    /// </summary>
+    [Fact]
+    public async Task A_chosen_setting_given_or_taken_back_takes_the_next_turn()
+    {
+        var runner = Runner();
+        var talking = Running(runner, "h1", HelpModes.Restricted);
+        var idle = Running(runner, "h2", HelpModes.Restricted, settings: [ConfiguredAccess.Notify]);
+        await Talking(talking);
+
+        ConfiguredAccess.Choose(_home, ConfiguredAccess.SettingsGrant, ConfiguredAccess.Cap, chosen: true);
+        runner.HelpAccessChosen(HelpModes.Restricted);
+
+        Assert.Equal(0, talking.Finished);
+        Assert.Contains("its chosen settings are `cap` now", Console("h1"));
+        Assert.DoesNotContain("housekeeping", Console("h1"));
+        await Poll.Until(() => idle.Finished == 1, () => "the idle conversation was never ended");
+        Assert.Contains("its chosen settings are `cap` now", Console("h2"));
+
+        talking.Turn.SetResult();
+        await Poll.Until(() => talking.Finished == 1, () => "the turn's end never ended it");
+    }
+
     /// <summary>HELPMODE1a5: a switch back to the mode it runs under, before the turn ends, withdraws the end.</summary>
     [Fact]
     public async Task Choosing_full_again_before_the_turn_ends_withdraws_the_end()
@@ -218,8 +247,8 @@ public sealed class HelpAccessSwapTests : IDisposable
 
     /// <summary>
     /// ACCESSSWAP1: what the page's pending marks read. A conversation running under another access than the one chosen is pending, and
-    /// the housekeeping grant is pending while any running conversation was handed another choice of it; neither is, once each runs
-    /// under the access chosen.
+    /// a grant is pending while any running conversation was handed another choice of it, each grant on its own; neither is, once each
+    /// runs under the access chosen.
     /// </summary>
     [Fact]
     public void The_conversations_under_another_access_are_pending()
@@ -230,11 +259,13 @@ public sealed class HelpAccessSwapTests : IDisposable
         Running(runner, "h3", HelpModes.Full);
 
         Assert.Equal(["h2", "h3"], runner.HelpSwapping(HelpModes.Restricted));
-        Assert.True(runner.HousekeepingPending([]));
+        Assert.True(runner.GrantPending(ConfiguredAccess.HousekeepingGrant, ConfiguredAccess.None));
+        Assert.False(runner.GrantPending(ConfiguredAccess.SettingsGrant, ConfiguredAccess.None));
         Assert.Equal(["h1", "h2"], runner.HelpSwapping(HelpModes.Full));
 
-        runner.Context.HousekeepingHanded["h2"] = [];
-        Assert.False(runner.HousekeepingPending([]));
-        Assert.True(runner.HousekeepingPending([ConfiguredAccess.Inspect]));
+        runner.Context.AccessHanded["h2"] = ConfiguredAccess.None;
+        Assert.False(runner.GrantPending(ConfiguredAccess.HousekeepingGrant, ConfiguredAccess.None));
+        Assert.True(runner.GrantPending(ConfiguredAccess.HousekeepingGrant, new ConfiguredAccess([ConfiguredAccess.Inspect])));
+        Assert.True(runner.GrantPending(ConfiguredAccess.SettingsGrant, ConfiguredAccess.None with { Settings = [ConfiguredAccess.Cap] }));
     }
 }

@@ -166,8 +166,9 @@ public static class HelpRoom
     {
         var room = PathOf(home, machine.Workspace);
         Directory.CreateDirectory(Path.Combine(room, ".claude"));
-        // HELPMODE1c2a: the housekeeping granted, as the record holds it as this start writes its room.
-        AtomicFile.WriteText(Path.Combine(room, "AGENTS.md"), Render(machine with { Housekeeping = ConfiguredAccess.Read(home).Housekeeping }));
+        // HELPMODE1c2a: the housekeeping granted, and HELPMODE1c3's chosen settings, as the record holds them as this start writes its room.
+        var access = ConfiguredAccess.Read(home);
+        AtomicFile.WriteText(Path.Combine(room, "AGENTS.md"), Render(machine with { Housekeeping = access.Housekeeping, Settings = access.Settings }));
         // Two harnesses read AGENTS.md; Claude Code reads CLAUDE.md — the canon's own shape (D59).
         AtomicFile.WriteText(Path.Combine(room, "CLAUDE.md"), "@AGENTS.md\n");
         AtomicFile.WriteText(Path.Combine(room, ".claude", "settings.json"), Settings());
@@ -231,15 +232,18 @@ public static class HelpRoom
     /// allowed beside the room's own; none by default. The tool's call is judged again by the driver, so this list is no ceiling
     /// for an agent that takes no rules.
     /// </param>
+    /// <param name="settings">The chosen settings the person granted it (HELPMODE1c3), each one's connector tool allowed the same way.</param>
     public static RuleLists Rules(
         PermissionFile file, string kept, IReadOnlyList<HelpRead>? reads = null, IReadOnlyList<string>? plugins = null,
-        IReadOnlyList<string>? asked = null, string? workspace = null, IReadOnlyList<string>? housekeeping = null)
+        IReadOnlyList<string>? asked = null, string? workspace = null, IReadOnlyList<string>? housekeeping = null,
+        IReadOnlyList<string>? settings = null)
     {
         var composed = PermissionRules.Compose(file, workspace, repository: null);
         return new RuleLists(
             [
                 .. Allowed,
                 .. (housekeeping ?? []).Select(operation => $"mcp__{KnowledgeConnector.ServerName}__{ConfiguredAccess.ToolOf(operation)}"),
+                .. (settings ?? []).Select(setting => $"mcp__{KnowledgeConnector.ServerName}__{ConfiguredAccess.SettingToolOf(setting)}"),
                 PermissionRules.ReadRule(kept),
                 .. (reads ?? []).SelectMany(read => AcrossRules.ReadOnlyRules(new AcrossCheckout(read.Name, read.Path))),
                 .. plugins ?? [],
@@ -345,6 +349,12 @@ public sealed record HelpMachine
     /// room is written at a start (<see cref="HelpRoom.Prepare"/>); none where none is chosen, as a machine described by hand has.
     /// </summary>
     public IReadOnlyList<string> Housekeeping { get; init; } = [];
+
+    /// <summary>
+    /// The chosen settings the person granted it (HELPMODE1c3, <see cref="ConfiguredAccess.Settings"/>), read as
+    /// <see cref="Housekeeping"/> is; none where none is chosen.
+    /// </summary>
+    public IReadOnlyList<string> Settings { get; init; } = [];
 
     // The room's scope (ASKSCOPE1b).
 

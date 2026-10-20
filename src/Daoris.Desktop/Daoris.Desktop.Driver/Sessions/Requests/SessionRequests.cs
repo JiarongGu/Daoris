@@ -39,7 +39,14 @@ public static class SessionMove
     /// </summary>
     public const string Housekeep = "housekeep";
 
-    public static bool Known(string move) => move is Stop or Finish or Decline or Say or TakeBack or Housekeep;
+    /// <summary>
+    /// Ask Daoris's chosen-settings tool asking to change one setting (HELPMODE1c3, D183's note): written by the connector as a
+    /// housekeeping request is, taken by the loop running the conversation, judged and applied there at the call, and answered beside
+    /// the request in <see cref="SettingAnswer"/>'s shape. Keyed as a say is.
+    /// </summary>
+    public const string Set = "set";
+
+    public static bool Known(string move) => move is Stop or Finish or Decline or Say or TakeBack or Housekeep or Set;
 }
 
 /// <summary>Who asked, as the machine log's <c>door</c> names a door: a word, never a sentence.</summary>
@@ -112,14 +119,61 @@ public sealed record SessionRequest(string Session, string Move, DateTimeOffset 
     /// <summary>A take-back's word: the id it waits under on the record (SAIDBACK1c); null for any other move.</summary>
     public string? Word { get; init; }
 
-    /// <summary>A housekeeping request's operation, one of <see cref="ConfiguredAccess.HousekeepingBuilt"/> (HELPMODE1c2a); null for any other move.</summary>
+    /// <summary>
+    /// A housekeeping request's operation, one of <see cref="ConfiguredAccess.HousekeepingBuilt"/> (HELPMODE1c2a); a setting request's
+    /// setting, one of <see cref="ConfiguredAccess.SettingsBuilt"/> (HELPMODE1c3); null for any other move.
+    /// </summary>
     public string? Operation { get; init; }
 
-    /// <summary>A housekeeping request's repository, by its registered name; null for a look at every one, and for any other move.</summary>
+    /// <summary>
+    /// A housekeeping request's repository, by its registered name, null for a look at every one; a language's repository, for a
+    /// setting request; null for any other move.
+    /// </summary>
     public string? Repository { get; init; }
 
     /// <summary>A housekeeping request's branches, by name, never a path; none for a look, and for any other move.</summary>
     public IReadOnlyList<string> Branches { get; init; } = [];
+
+    /// <summary>A setting request's value, as the setting's door spells it (HELPMODE1c3); null for any other move.</summary>
+    public string? Value { get; init; }
+
+    /// <summary>A language's workspace, for a setting request (HELPMODE1c3); null for any other.</summary>
+    public string? Workspace { get; init; }
+}
+
+/// <summary>
+/// What became of a setting request (HELPMODE1c3), written beside it for the tool that asked, in housekeeping's answer's fields: the
+/// setting, whether it was changed, a code where it was not, and the words the agent reads. A twin: the service's <c>SettingsBox</c>
+/// reads <c>said</c> by the same name.
+/// </summary>
+public sealed record SettingAnswer(string Setting, bool Done, string? Code, string Said)
+{
+    /// <summary>No service answered, so no record could be read.</summary>
+    public const string NoService = "no-service";
+
+    /// <summary>The session is not an Ask Daoris conversation of this machine's.</summary>
+    public const string NotHelp = "not-help";
+
+    /// <summary>The person has not chosen the setting in configured access.</summary>
+    public const string NotGranted = "not-granted";
+
+    /// <summary>Chosen after this conversation's start, which was not handed it: it holds from its next turn.</summary>
+    public const string NotHanded = "not-handed";
+
+    /// <summary>A language for a repository or a workspace outside the conversation's.</summary>
+    public const string Outside = "outside";
+
+    /// <summary>The request named no setting of the five.</summary>
+    public const string Named = "named";
+
+    /// <summary>The setting's own door refused the value, in its words.</summary>
+    public const string Refused = "refused";
+
+    /// <summary>The change failed on its way: the driver's file or the service.</summary>
+    public const string Failed = "failed";
+
+    /// <summary>A refusal of <paramref name="setting"/> with its code, its words ending that nothing was changed.</summary>
+    public static SettingAnswer Refusal(string setting, string code, string said) => new(setting, false, code, $"{said} Nothing was changed.");
 }
 
 /// <summary>
@@ -453,7 +507,15 @@ public sealed partial class SessionRequests(string home)
     {
         var path = AnswerPath(request);
         Directory.CreateDirectory(Folder);
-        AtomicFile.WriteText(path, ToJson(answer));
+        AtomicFile.WriteText(path, ToJson(answer.Operation, answer.Done, answer.Code, answer.Said));
+    }
+
+    /// <summary>What became of a setting request (HELPMODE1c3), written beside it in housekeeping's answer's fields.</summary>
+    public void Answer(SessionRequest request, SettingAnswer answer)
+    {
+        var path = AnswerPath(request);
+        Directory.CreateDirectory(Folder);
+        AtomicFile.WriteText(path, ToJson(answer.Setting, answer.Done, answer.Code, answer.Said));
     }
 
     /// <summary>
@@ -537,6 +599,8 @@ public sealed partial class SessionRequests(string home)
                 Branches = root.TryGetProperty("branches", out var branches) && branches.ValueKind == JsonValueKind.Array
                     ? [.. branches.EnumerateArray().Where(name => name.ValueKind == JsonValueKind.String).Select(name => name.GetString()!)]
                     : [],
+                Value = Text("value"),
+                Workspace = Text("workspace"),
             };
         }
         catch (JsonException)
@@ -597,7 +661,15 @@ public sealed partial class SessionRequests(string home)
         if (request.Now) writer.WriteBoolean("now", true);
         if (request.Level is not null) writer.WriteString("level", request.Level);
         if (request.Word is not null) writer.WriteString("takeBackWord", request.Word);
-        if (request.Operation is not null)
+        if (request.Operation is not null && request.Move == SessionMove.Set)
+        {
+            // HELPMODE1c3: a setting's fields, in the connector's order.
+            writer.WriteString("operation", request.Operation);
+            if (request.Value is not null) writer.WriteString("value", request.Value);
+            if (request.Repository is not null) writer.WriteString("repository", request.Repository);
+            if (request.Workspace is not null) writer.WriteString("workspace", request.Workspace);
+        }
+        else if (request.Operation is not null)
         {
             writer.WriteString("operation", request.Operation);
             if (request.Repository is not null) writer.WriteString("repository", request.Repository);
@@ -609,15 +681,15 @@ public sealed partial class SessionRequests(string home)
         writer.WriteEndObject();
     });
 
-    // The twin's fields, in its order (HELPMODE1c2a): the service's HousekeepingBox reads `said`.
-    private static string ToJson(HousekeepingAnswer answer) => JsonFile.Serialize(writer =>
+    // The twin's fields, in its order (HELPMODE1c2a, and HELPMODE1c3's settings alike): the service's boxes read `said`.
+    private static string ToJson(string operation, bool done, string? code, string said) => JsonFile.Serialize(writer =>
     {
         writer.WriteStartObject();
-        writer.WriteString("operation", answer.Operation);
-        writer.WriteBoolean("done", answer.Done);
-        if (answer.Code is null) writer.WriteNull("code");
-        else writer.WriteString("code", answer.Code);
-        writer.WriteString("said", answer.Said);
+        writer.WriteString("operation", operation);
+        writer.WriteBoolean("done", done);
+        if (code is null) writer.WriteNull("code");
+        else writer.WriteString("code", code);
+        writer.WriteString("said", said);
         writer.WriteEndObject();
     });
 

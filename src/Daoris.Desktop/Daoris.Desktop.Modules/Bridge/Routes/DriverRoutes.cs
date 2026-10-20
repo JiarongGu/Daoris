@@ -234,8 +234,8 @@ public sealed class DriverRoutes(DriverContext context)
         return State(_loop);
     }
 
-    // Restricted mode's configured access (HELPMODE1c2b, D183's note): the person's choice of one housekeeping operation, set on Ask
-    // Daoris's screen, written to the home's own file. Each start reads it onto its allow-list, receipt and room, and each tool call
+    // Restricted mode's configured access (HELPMODE1c2b, D183's note): the person's choice of one housekeeping operation, or since
+    // HELPMODE1c3 one chosen setting, set on Ask Daoris's screen, written to the home's own file. Each start reads it onto its allow-list, receipt and room, and each tool call
     // is judged by it then, so a revoke refuses the next call; a conversation running with another choice ends at its turn's end, its
     // next words resuming it with this one (ACCESSSWAP1). No proposal names it: a helper never widens its own access. A grant or an
     // operation this build does not act on is the driver's refusal, with nothing written.
@@ -395,7 +395,9 @@ public sealed class DriverRoutes(DriverContext context)
     internal static object State(DriverLoop loop, object? retried = null, object? reviewed = null, object? shownAgain = null)
     {
         var config = DriverConfig.Load(loop.ConfigPath);
-        var housekeeping = ConfiguredAccess.Read(loop.Home).Housekeeping;
+        var access = ConfiguredAccess.Read(loop.Home);
+        // HELPMODE1c3: the browser's grant is its plugin's approval, drawn here read only from that record.
+        var browser = HelpGrants.Read(loop.Home, PluginCatalog.Load(loop.Home, AdapterSet.Built().Names)).Browser;
         return new
         {
             Retried = retried,
@@ -437,14 +439,18 @@ public sealed class DriverRoutes(DriverContext context)
             // Restricted mode's configured access as the person chose it (HELPMODE1c2b): each grant the driver serves by its id, with the
             // operations chosen, housekeeping's from the home's record, what the next start and every tool call read, and those it acts
             // on, so the page offers no other; and whether a conversation running here was handed another choice of it, which its next
-            // turn takes (ACCESSSWAP1, the grant's *pending* mark), false once its agent has ended.
+            // turn takes (ACCESSSWAP1, the grant's *pending* mark), false once its agent has ended. HELPMODE1c3: the chosen settings
+            // the same way; and the browser's, read only from its plugin's approval (`plugin-approvals.json`): `chosen` holds `reads`
+            // and each write accepted, by its tool's name, once approved; `changed` an update since; `plugin` whose tab changes it, none
+            // where no plugin here attaches to Daoris's browser; no `built`, so the page offers nothing to choose.
             HelpGrants = new[]
             {
-                new
-                {
-                    Id = ConfiguredAccess.HousekeepingGrant, Chosen = housekeeping, Built = ConfiguredAccess.HousekeepingBuilt,
-                    Pending = loop.Chat?.HousekeepingPending(housekeeping) == true,
-                },
+                Grant(loop, ConfiguredAccess.HousekeepingGrant, access, ConfiguredAccess.HousekeepingBuilt),
+                Grant(loop, ConfiguredAccess.SettingsGrant, access, ConfiguredAccess.SettingsBuilt),
+                new HelpGrantRow(
+                    "browser",
+                    browser is { State: HelpGrants.Approved } ? ["reads", .. browser.Accepted] : [],
+                    null, false, browser?.Changed == true, browser?.Plugin),
             },
             // The lines as set (WSR2), as rows rather than an object's keys: a key policy on the
             // bridge would respell a repository's name.
@@ -535,4 +541,15 @@ public sealed class DriverRoutes(DriverContext context)
                 .ToArray(),
         };
     }
+
+    /// <summary>A grant kept in the home's record, as <c>helpGrants</c> answers it: chosen, built, and pending a running conversation's next turn.</summary>
+    private static HelpGrantRow Grant(DriverLoop loop, string grant, ConfiguredAccess access, IReadOnlyList<string> built) =>
+        new(grant, access.Of(grant), built, loop.Chat?.GrantPending(grant, access) == true, false, null);
+
+    /// <summary>
+    /// One row of <c>helpGrants</c> (HELPMODE1c2b, HELPMODE1c3): the grant, what is chosen, the operations the driver acts on (none for one
+    /// set elsewhere, the browser's), whether a running conversation has yet to take it, whether its plugin's update changed it since
+    /// approval, and the plugin whose tab sets it.
+    /// </summary>
+    private sealed record HelpGrantRow(string Id, IReadOnlyList<string> Chosen, IReadOnlyList<string>? Built, bool Pending, bool Changed, string? Plugin);
 }

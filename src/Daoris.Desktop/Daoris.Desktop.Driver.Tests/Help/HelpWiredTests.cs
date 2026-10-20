@@ -252,8 +252,9 @@ public sealed class HelpWiredTests : IDisposable
         await using var service = StandInService.Start(_home);
         await StartAsync(service, "help0005", "claude-code", HelpModes.Restricted);
         Assert.Empty(Assert.Single(new HelpWired(_home).Read("help0005")).Housekeeping);
+        Assert.Empty(Assert.Single(new HelpWired(_home).Read("help0005")).Settings);
 
-        File.WriteAllText(ConfiguredAccess.PathOf(_home), """{ "housekeeping": ["inspect", "clean-up"] }""");
+        File.WriteAllText(ConfiguredAccess.PathOf(_home), """{ "housekeeping": ["inspect", "clean-up"], "settings": ["cap"] }""");
         var spawned = await StartAsync(service, "help0006", "claude-code", HelpModes.Restricted);
         await StartAsync(service, "help0007", "codex-acp", HelpModes.Restricted);
 
@@ -262,12 +263,18 @@ public sealed class HelpWiredTests : IDisposable
         Assert.Contains($"mcp__{KnowledgeConnector.ServerName}__housekeeping_inspect", claude.Tools);
         Assert.Contains($"mcp__{KnowledgeConnector.ServerName}__housekeeping_clean_up", claude.Tools);
         Assert.DoesNotContain($"mcp__{KnowledgeConnector.ServerName}__housekeeping_discard_branch", claude.Tools);
+        // HELPMODE1c3: the chosen settings, kept beside housekeeping the same way.
+        Assert.Equal([ConfiguredAccess.Cap], claude.Settings);
+        Assert.Contains($"mcp__{KnowledgeConnector.ServerName}__settings_cap", claude.Tools);
         using var settings = JsonDocument.Parse(spawned.Settings!);
         Assert.Contains($"mcp__{KnowledgeConnector.ServerName}__housekeeping_clean_up", Strings(settings.RootElement.GetProperty("permissions"), "allow"));
+        Assert.Contains($"mcp__{KnowledgeConnector.ServerName}__settings_cap", Strings(settings.RootElement.GetProperty("permissions"), "allow"));
         var codex = Assert.Single(new HelpWired(_home).Read("help0007"));
         Assert.Null(codex.Rules);
         Assert.Equal([ConfiguredAccess.Inspect, ConfiguredAccess.CleanUp], codex.Housekeeping);
+        Assert.Equal([ConfiguredAccess.Cap], codex.Settings);
         Assert.Contains("\"housekeeping\"", File.ReadAllText(new HelpWired(_home).PathOf("help0007")));
+        Assert.Contains("\"settings\"", File.ReadAllText(new HelpWired(_home).PathOf("help0007")));
     }
 
     /// <summary>

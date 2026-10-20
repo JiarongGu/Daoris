@@ -73,16 +73,22 @@ public sealed class SessionRequestWatch : IAsyncDisposable
     /// </summary>
     internal Chain? Chain { get; }
 
-    /// <summary>Where a look the folder woke is written with its ms (<c>change.judged</c>), and one that took something as the chain's (<c>chain.fired</c>); none by default.</summary>
+    /// <summary>
+    /// Where a look the folder woke is written with its ms (<c>change.judged</c>), and one that took something as the chain's
+    /// (<c>chain.fired</c>); and each chosen setting's outcome (<c>help.setting</c>, HELPMODE1c3); none by default.
+    /// </summary>
     public MachineLog? Log
     {
-        get => Changes?.Log;
+        get => _log;
         init
         {
+            _log = value;
             if (Changes is not null) Changes.Log = value;
             if (Chain is not null) Chain.Log = value;
         }
     }
+
+    private readonly MachineLog? _log;
 
     /// <summary>
     /// A loop's half of a terminal's words (MSG1e, D137 §5.2): what it does with a say it takes, answered beside the request.
@@ -103,6 +109,13 @@ public sealed class SessionRequestWatch : IAsyncDisposable
     /// default, which judges each call and calls the cleanup's own judges; null takes none.
     /// </summary>
     public Func<SessionRequest, CancellationToken, Task<HousekeepingAnswer>>? Housekeep { get; init; }
+
+    /// <summary>
+    /// A loop's half of Ask Daoris's chosen settings (HELPMODE1c3, D183's note): what it does with a setting request for a conversation
+    /// its registry runs, answered beside the request, and its outcome kept in <see cref="Log"/>. A loop on a registry has
+    /// <see cref="HelpSettings"/>'s by default, which judges each call and changes the setting through its own door's edit; null takes none.
+    /// </summary>
+    public Func<SessionRequest, CancellationToken, Task<SettingAnswer>>? Set { get; init; }
 
     /// <summary>
     /// What a loop does with a press a terminal told (STATEHUB1e, D169 point 8): the shell's publishes it to its windows as the
@@ -131,6 +144,7 @@ public sealed class SessionRequestWatch : IAsyncDisposable
         Say = words.HoldAsync;
         TakeBack = words.TakeBackAsync;
         Housekeep = new HelpHousekeeping(home, service).AnswerAsync;
+        Set = new HelpSettings(home, service).AnswerAsync;
         // FABRIC-EVENT2c: made before the watch starts, so its watcher opens at once and the first request after an install is
         // heard, not found at the listing. Both loops (the desktop's and the headless host's) build their watch here.
         Directory.CreateDirectory(_requests.Folder);
@@ -289,6 +303,8 @@ public sealed class SessionRequestWatch : IAsyncDisposable
         SessionMove.TakeBack => TakeBack is not null && SaysHere(pending.Session),
         // HELPMODE1c2a: only the loop running the conversation, whose tool is waiting on it now.
         SessionMove.Housekeep => Housekeep is not null && _runsHere(pending.Session),
+        // HELPMODE1c3: the same for a chosen setting.
+        SessionMove.Set => Set is not null && _runsHere(pending.Session),
         _ => _runsHere(pending.Session) && (!Resolves(pending) || _service() is not null),
     };
 
@@ -307,6 +323,7 @@ public sealed class SessionRequestWatch : IAsyncDisposable
         if (pending.Move == SessionMove.Say) return await SayAsync(pending, Say, ct).ConfigureAwait(false);
         if (pending.Move == SessionMove.TakeBack) return await SayAsync(pending, TakeBack, ct).ConfigureAwait(false);
         if (pending.Move == SessionMove.Housekeep) return await HousekeepAsync(pending, ct).ConfigureAwait(false);
+        if (pending.Move == SessionMove.Set) return await SetAsync(pending, ct).ConfigureAwait(false);
         if (!_runsHere(pending.Session)) return null;
 
         var resolves = Resolves(pending);
@@ -431,6 +448,46 @@ public sealed class SessionRequestWatch : IAsyncDisposable
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {
             // Unwritten: the tool waits out its time and says the act may still be under way.
+        }
+
+        return request;
+    }
+
+    /// <summary>
+    /// A setting request (HELPMODE1c3), taken where this loop runs its conversation and handed to <see cref="Set"/>, as a housekeeping
+    /// request is; what became of it is written beside it, a failure included, and kept as its outcome in the machine log: the setting,
+    /// its value, where it was set and whether it changed, never the words. Null where it is not this loop's, or another loop took it.
+    /// </summary>
+    private async Task<SessionRequest?> SetAsync(SessionRequest pending, CancellationToken ct)
+    {
+        if (Set is not { } set || !_runsHere(pending.Session)) return null;
+        if (_requests.Take(pending) is not { } request) return null;
+
+        var setting = request.Operation ?? "";
+        SettingAnswer answer;
+        try
+        {
+            answer = await set(request, ct).ConfigureAwait(false);
+        }
+        catch (Exception error) when (
+            error is DriverException or HttpRequestException or System.Text.Json.JsonException or IOException or UnauthorizedAccessException
+            || (error is TaskCanceledException && !ct.IsCancellationRequested))
+        {
+            // Never "nothing was changed": a write that failed at its rename may or may not have landed.
+            answer = new SettingAnswer(setting, false, SettingAnswer.Failed,
+                $"Daoris could not finish it ({error.Message.TrimEnd('.')}). Ask the person to look in Settings to see what stands now.");
+        }
+
+        Log?.Info(
+            "help.setting", ("session", request.Session), ("setting", setting), ("value", request.Value), ("repository", request.Repository),
+            ("workspace", request.Workspace), ("done", answer.Done), ("code", answer.Code));
+        try
+        {
+            _requests.Answer(request, answer);
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+        {
+            // Unwritten: the tool waits out its time and says the change may still be under way.
         }
 
         return request;
