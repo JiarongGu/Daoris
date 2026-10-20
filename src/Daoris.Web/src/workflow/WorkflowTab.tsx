@@ -3,8 +3,10 @@ import { useTranslation } from 'react-i18next';
 import { Button, Inline, Prose, SkeletonRows, Tip } from '../design/ui';
 import { PageSection } from '../work/frame/ViewMain';
 import type { CurrentWorkflow, WorkflowRepository } from './current';
+import type { Answered } from '../work/InlineConfirm';
 import { partSaid } from './said';
 import { type WorkflowDoors, WorkflowChart } from './WorkflowChart';
+import { WorkflowStartNode } from './WorkflowStartNode';
 
 export type { WorkflowDoors } from './WorkflowChart';
 
@@ -17,6 +19,13 @@ export type WorkflowTabProps = {
   /** The read was refused, in the driver's sentence that says why. */
   refusal?: string | null;
   doors?: WorkflowDoors;
+  /**
+   * The person's *Accept the gates* on the start node's landed route (FABRIC-PIPELINE1a): the declaration at the line's tip, accepted
+   * by its blob. None, and the start offers no press.
+   */
+  onAcceptGates?: (answered: Answered) => void;
+  /** An acceptance is on its way. */
+  accepting?: boolean;
 };
 
 /**
@@ -33,7 +42,7 @@ export type WorkflowTabProps = {
  * **Named workflows, kinds and the editor are not here yet** (WORKFLOW1d, 1e, 1g): with none, every repository follows
  * Current, and that is what this draws (design §2.8).
  */
-export function WorkflowTab({ page, name, current, reading = false, refusal = null, doors }: WorkflowTabProps & {
+export function WorkflowTab({ page, name, current, reading = false, refusal = null, doors, onAcceptGates, accepting = false }: WorkflowTabProps & {
   page: 'repository' | 'workspace';
   /** The repository or the workspace whose page it is. */
   name: string;
@@ -75,6 +84,17 @@ export function WorkflowTab({ page, name, current, reading = false, refusal = nu
           />
         </p>
       </section>
+
+      {/* FABRIC-PIPELINE1a: the start node first, the routes into the workflows; a driver before it answers none. */}
+      {current.start && (
+        <WorkflowStartNode
+          start={current.start}
+          page={page}
+          scope={{ repository: current.repository ?? (page === 'repository' ? name : null), workspace: current.workspace }}
+          onAccept={onAcceptGates}
+          accepting={accepting}
+        />
+      )}
 
       <WorkflowChart workflow={current} page={page} name={name} doors={doors} />
 

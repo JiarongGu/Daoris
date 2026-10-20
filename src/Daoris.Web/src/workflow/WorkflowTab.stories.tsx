@@ -2,7 +2,7 @@ import type { Decorator, Meta, StoryObj } from '@storybook/react-vite';
 import { InTheme } from '../plugins/storyIcons';
 import { chinese } from '../design/storyLanguage';
 import { storyWidths } from '../design/storyWidths';
-import { FULL, NOTHING_SET, PLUGIN_UNREADY, WORK, WORKSPACE } from './fixtures';
+import { FULL, GATES_CHANGED, NO_VERIFICATION, NOTHING_SET, PLUGIN_UNREADY, ROUTED, START, WORK, WORKSPACE } from './fixtures';
 import { WorkflowTab } from './WorkflowTab';
 
 // The Workflow tab (WORKFLOW1b; D157 point 12, the workflow design §6.1, §6.2, §6.4), every state the design names drawn
@@ -94,3 +94,29 @@ export const AtTheFloor: Story = { decorators: [storyWidths.narrow] };
 
 /** At the floor, in 中文 and dark. */
 export const AtTheFloorChineseDark: Story = { decorators: [storyWidths.narrow, chinese, dark] };
+
+/**
+ * **The start node first** (FABRIC-PIPELINE1a; the pipeline design §1.3): the default to Current, Documentation to its own workflow by
+ * the workspace's choice, and the work that lands to `Verify the line`, its gates accepted at the line's tip; then the steps.
+ */
+export const Routed: Story = { args: { current: ROUTED, onAcceptGates: nothing } };
+
+/** The declaration at the tip changed since it was accepted: shown whole, nothing runs, and *Accept the gates* is the person's. */
+export const GatesChanged: Story = { args: { current: { ...ROUTED, start: GATES_CHANGED }, onAcceptGates: nothing } };
+
+/** No landed route anywhere: the work that lands goes to *No verification here*, today's. */
+export const NoVerification: Story = { args: { current: { ...ROUTED, start: NO_VERIFICATION } } };
+
+/** A workspace's start: its own routes, and its landed route's gates accepted repository by repository. */
+export const AWorkspaceRouted: Story = {
+  args: {
+    page: 'workspace', name: 'aurora', doors: { setup: nothing, repository: nothing },
+    current: { ...WORKSPACE, start: { ...START, landed: { ...START.landed, level: 'workspace-landed', gates: null, state: 'unread', tip: null } } },
+  },
+};
+
+/** The start node in 中文: 起点, 落地的工作, 采纳这些检查. */
+export const RoutedChinese: Story = { ...GatesChanged, decorators: [chinese] };
+
+/** The start node at the floor, in 中文 and dark: the flow becomes its rail, every route a row. */
+export const RoutedAtTheFloorChineseDark: Story = { ...GatesChanged, decorators: [storyWidths.narrow, chinese, dark] };

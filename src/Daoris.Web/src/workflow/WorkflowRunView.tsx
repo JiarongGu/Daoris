@@ -5,6 +5,7 @@ import { ExternalLink } from '../design/links';
 import { Button, Icon, Inline, Pill, Prose, SkeletonRows } from '../design/ui';
 import type { CurrentWorkflow } from './current';
 import { type RunStep, runTone, type WorkflowRun, type WorkflowRunAnswer } from './run';
+import { whySaid } from './routeSaid';
 import { addedSaid, runSaid, runShort, stateSaid } from './runSaid';
 import { type RunMarks, WorkflowChart } from './WorkflowChart';
 import { WorkflowHold } from './WorkflowHold';
@@ -163,6 +164,13 @@ function Run({ run, here, doors, controls, named }: {
           ? t('workflow.run.namedHead', { repository: run.repository, workflow: run.workflow.id, version: run.workflow.boundVersion })
           : run.problem ? t('workflow.run.unreadHead', { repository: run.repository })
             : t('workflow.run.head', { repository: run.repository, version: run.workflow.version })}</p>
+        {/* FABRIC-PIPELINE1a: the route that chose its workflow, as its binding keeps it; a driver before it keeps none. */}
+        {run.workflow.route && (
+          <p className="m-0 text-meta text-ink-faint">{t('workflow.run.route', {
+            why: whySaid(t, run.workflow.route.level, { repository: run.repository, workspace: run.workspace },
+              run.workflow.route.label ?? run.workflow.route.kind ?? null),
+          })}</p>
+        )}
       </div>
       {run.workflowGate?.holds && <WorkflowHold gate={run.workflowGate} />}
       {run.problem ? <Prose className="text-small"><Inline text={run.problem} /></Prose> : <WorkflowChart

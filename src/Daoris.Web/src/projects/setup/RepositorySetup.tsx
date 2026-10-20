@@ -5,6 +5,7 @@ import type { RepositoryAcross } from '../../settings/repository/Across';
 import type { RuleListName } from '../../settings/repository/AgentRules';
 import { COMMIT_DEFAULT, type CommitEdit, CommitField, commitRowSays, commitSummary, type RepositoryCommits } from '../../settings/repository/Commits';
 import { type HeavyGate, HeavyGates, type HeavyMarks, heavySummary } from '../../settings/repository/HeavyGates';
+import { LandedRoute, type LandedSetup, landedSummary } from '../../settings/repository/LandedRoute';
 import { HELPER_DEFAULT, type HelperEdit, HelperField, helperRowSays, helperSummary, type RepositoryHelpers } from '../../settings/repository/Helpers';
 import {
   HAND_OVER_DEFAULT, type HandOverEdit, HandOverField, handOverRowSays, handOverSummary, type RepositoryHandOver,
@@ -145,6 +146,11 @@ export type RepositorySetupProps = {
   access?: AccessSetup | null;
   /** This machine's heavy gates for it, where it can be driven. */
   heavy?: HeavySetup | null;
+  /**
+   * The landed route (FABRIC-PIPELINE1a): what verifies the work that lands, from its Workflow answer's start node, with its workspace
+   * and the person's press; absent until the driver has answered, and on a shell older than it.
+   */
+  landed?: (LandedSetup & { workspace: string }) | null;
   /** Its sessions' language and standing answer, where it can be driven. */
   sessions?: SessionsSetup | null;
   reach?: ReachSetup | null;
@@ -181,7 +187,7 @@ const JOIN = ' · ';
  *
  * A molecule: every state is reached by its props, and every press goes out.
  */
-export function RepositorySetup({ repository, driving, work, access, heavy, sessions, reach, busy = false, open, onOpenPlugin }: RepositorySetupProps) {
+export function RepositorySetup({ repository, driving, work, access, heavy, landed, sessions, reach, busy = false, open, onOpenPlugin }: RepositorySetupProps) {
   const { t } = useTranslation();
   const marked = (value: string, source: 'repository' | 'workspace' | 'daoris') =>
     source === 'repository' ? value : t(`projects.setup.marked.${source}`, { value });
@@ -208,6 +214,7 @@ export function RepositorySetup({ repository, driving, work, access, heavy, sess
   const commits = work?.onCommits ? work.commits : undefined;
   const commitRule = commits?.rule ?? COMMIT_DEFAULT;
   const commitsOwn = commits?.source === 'repository';
+  const landedOwn = landed?.start.landed.level === 'repository-landed';
   const workParts = work && [
     ...(line
       ? [marked(
@@ -220,6 +227,8 @@ export function RepositorySetup({ repository, driving, work, access, heavy, sess
     ...(commits ? [marked(commitSummary(t, commitRule), commits.source === 'repository' || commits.source === 'workspace' ? commits.source : 'daoris')] : []),
     ...(review ? [marked(reviewSummary(t, review.rule), review.rule && review.source ? review.source : 'daoris')] : []),
     ...(opinion ? [marked(opinionSummary(t, opinion.rule), opinion.rule && opinion.source ? opinion.source : 'daoris')] : []),
+    // FABRIC-PIPELINE1a: what verifies the work that lands, marked where its workspace chose it.
+    ...(landed ? [marked(landedSummary(t, landed.start), landedOwn ? 'repository' : landed.start.landed.level === 'workspace-landed' ? 'workspace' : 'daoris')] : []),
   ];
 
   // Sessions: the language they write in, what a helper their agent asks for does (DOORS1b), then the standing answer.
@@ -274,7 +283,7 @@ export function RepositorySetup({ repository, driving, work, access, heavy, sess
   // What opens on its own: a section holding a value set for this repository.
   const opensItself: Record<SetupSectionId, boolean> = {
     driving: false,
-    work: lineOwn || landingOwn || commitsOwn || reviewOwn || opinionOwn,
+    work: lineOwn || landingOwn || commitsOwn || reviewOwn || opinionOwn || landedOwn,
     access: accessOwn,
     // This machine's heavy gates are set for this repository alone, so a list set is its own.
     heavy: (heavy?.gates.length ?? 0) > 0,
@@ -422,6 +431,9 @@ export function RepositorySetup({ repository, driving, work, access, heavy, sess
                 />
               )}
             />
+          )}
+          {landed && (
+            <LandedRoute repository={repository} workspace={landed.workspace} start={landed.start} busy={busy} onChoose={landed.onChoose} />
           )}
         </>
       ),

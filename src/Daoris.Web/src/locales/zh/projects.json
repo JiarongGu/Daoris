@@ -345,5 +345,8 @@
   "projects.heavy.waits": "{{count}} 个在等：{{sessions}}",
   "projects.heavy.waits_other": "{{count}} 个在等：{{sessions}}",
   "projects.heavy.terminal": "从终端发起的一次运行",
-  "projects.heavy.tip": "谁占着这个仓库的重型检查名额、在跑哪一项，以及谁在后面等。在终端里，从它的检出目录运行：daoris-driver run-heavy --look"
+  "projects.heavy.tip": "谁占着这个仓库的重型检查名额、在跑哪一项，以及谁在后面等。在终端里，从它的检出目录运行：daoris-driver run-heavy --look",
+  "projects.landed.set": "{{repository}}：验证落地工作的工作流已设定。",
+  "projects.landed.lowered": "{{repository}}：验证落地工作的工作流已设定，它对你要求更少：{{lowered}}。",
+  "projects.landed.accepted": "{{repository}}：它主线最新提交上的检查已采纳，它的检查会不经询问地运行这些检查。"
 }

@@ -81,6 +81,15 @@ public sealed partial class HelpCoverageTests
         + "`SET_HEAVY_GATES`, so a helper never chooses what a session's end runs on the owner's machine.";
 
     /// <summary>
+    /// The landed route on a repository's Setup and its Workflow tab's <i>Accept the gates</i> (FABRIC-PIPELINE1a, the pipeline design
+    /// §1.3, §4.2): what verifies the work that lands, and the declaration its checks run unasked, accepted by its blob.
+    /// </summary>
+    private const string LandedRoute =
+        "accepting a repository's gates by their blob is what lets them run unasked, the person's door alone (D156), and an agent never "
+        + "lowers the person's part (D157 point 10): no proposal names `WORKFLOW_LANDED` until FABRIC-PIPELINE1i proposes a route for "
+        + "the person's press.";
+
+    /// <summary>
     /// ACCT2's <c>daoris agent profile rename</c> and the route's <c>profile-rename</c>: exempt, since an account's name is the
     /// person's own word. The agent's page presses it (UX7b), and this is its control's row.
     /// </summary>
@@ -808,6 +817,7 @@ public sealed partial class HelpCoverageTests
         ("projects", "useSetAccess", null, new Exempt(SessionAccess)),
         // HEAVYRUN1b2b: *Heavy gates*, on a repository's Setup.
         ("projects", "useSetHeavyGates", null, new Exempt(HeavyGates)),
+        ("projects", "useSetLanded", null, new Exempt(LandedRoute)),
         ("projects", "useSetStanding", null, new Door("setting", "standing")),
         ("projects", "useSetReadAcross", null, new Door("setting", "across")),
         ("projects", "useSetWriteAcross", null, new Door("setting", "across")),

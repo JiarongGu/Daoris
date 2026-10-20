@@ -1,7 +1,7 @@
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useShenora } from '@shenora/react';
 import { keys } from '../../data/queries';
-import type { CurrentWorkflow, WorkflowScope } from '../../workflow/current';
+import type { CurrentWorkflow, WorkflowScope, WorkflowStart } from '../../workflow/current';
 import type { RunScope, WorkflowRunAnswer } from '../../workflow/run';
 import { call } from '../call';
 
@@ -25,6 +25,24 @@ export const useWorkflowCurrent = (scope: WorkflowScope | null, { enabled = true
     queryFn: () => call<CurrentWorkflow>('WORKFLOW_CURRENT', kind === 'repository' ? { repository: name } : { workspace: name }),
     enabled: isAvailable && enabled && scope !== null,
     staleTime: 0,
+  });
+};
+
+/** What `WORKFLOW_LANDED` answers: the start node as it now stands, and what the change asks less of the person, in the driver's words. */
+export type LandedAnswer = { start: WorkflowStart; lowered: string[] };
+
+/**
+ * The person's press on the landed route (FABRIC-PIPELINE1a; the pipeline design §1.3, §4.2): Setup's route row and the Workflow tab's
+ * *Accept the gates*. `workflow` is a verification workflow's id, `current` for no verification, or null for the workspace's again;
+ * for a repository naming one, the driver reads the `daoris.gates.json` at its line's tip and accepts it by its blob. Every workflow
+ * answer is asked again after it, since each page's start node reads the route.
+ */
+export const useSetLanded = () => {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (variables: ({ repository: string } | { workspace: string }) & { workflow: string | null }) =>
+      call<LandedAnswer>('WORKFLOW_LANDED', variables),
+    onSuccess: () => client.invalidateQueries({ queryKey: keys.workflow('repository', '').slice(0, 3) }),
   });
 };
 

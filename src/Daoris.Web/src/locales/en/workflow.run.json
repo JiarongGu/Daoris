@@ -150,5 +150,6 @@
   "workflow.run.door.review": "Open its review",
   "workflow.run.door.pullRequest": "Open pull request",
   "workflow.run.door.view": "Workflow",
-  "workflow.run.viewNamed": "Open where this work stands in its workflow"
+  "workflow.run.viewNamed": "Open where this work stands in its workflow",
+  "workflow.run.route": "Its route: {{why}}."
 }

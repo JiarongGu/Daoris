@@ -25,7 +25,7 @@ import { type ReviewEdit, reviewToast } from '../settings/repository/Reviews';
 import {
   useAcross, useDriver, useHarnesses, useLines, usePlugins, useRuleAction, useRules, useSetAccess, useSetCommits, useHeavyMarks, useHeavySlot, useSetDrivable, useSetHeavyGates, useSetHelpers,
   useSetHandOver, useSetHold, useSetLanding, useSetLanguage, useSetLine, useSetOpinion, useSetReadAcross, useSetReview, useSetStanding, useSetTrees,
-  useSetupPlan, useSetupPress, useSetWriteAcross, useSweepPlan, useWorkflowCurrent,
+  useSetupPlan, useSetupPress, useSetWriteAcross, useSweepPlan, useWorkflowCurrent, useSetLanded,
 } from '../bridge/shell';
 import type { SetUpForAgentsProps } from './setup/SetUpForAgents';
 import { doorOf } from '../agents/tools';
@@ -211,7 +211,9 @@ export function useProjectsView({
     .map((plugin) => plugin.id);
   // How its work moves (WORKFLOW1b): its Current, asked only while its Workflow tab shows, as Setup's own answers are.
   const workflowShown = active && driver.data !== undefined && tab === 'workflow' && chosenRepository !== null;
-  const current = useWorkflowCurrent(chosenRepository === null ? null : { repository: chosenRepository }, { enabled: workflowShown });
+  // FABRIC-PIPELINE1a: Setup's route row reads the same answer's start node, so it is asked while Setup shows too.
+  const current = useWorkflowCurrent(chosenRepository === null ? null : { repository: chosenRepository }, { enabled: workflowShown || setupShown });
+  const setLanded = useSetLanded();
   // Session branches holding work no branch of the person's holds (WSR3, D88) — named on the repository,
   // so work is not lost in a pile nobody reads. A workspace's Branches lists them one by one (UX6g).
   const sweep = useSweepPlan();
@@ -506,18 +508,36 @@ export function useProjectsView({
       }),
     };
 
+    // The landed route (FABRIC-PIPELINE1a): what verifies the work that lands, read from its Workflow answer's start node, which a
+    // driver before it does not answer; the choice is the person's press, and accepts the declaration at its line's tip.
+    const start = current.data?.repository === repository ? current.data.start ?? null : null;
+    const landed: RepositorySetupProps['landed'] = start ? {
+      start,
+      workspace: current.data!.workspace,
+      onChoose: (workflow, answered) => setLanded.mutate({ repository, workflow }, {
+        onSuccess: (answer) => {
+          notify(answer.lowered.length > 0
+            ? t('projects.landed.lowered', { repository, lowered: answer.lowered.join('; ') })
+            : t('projects.landed.set', { repository }));
+          answered.done();
+        },
+        onError: (error) => answered.refused(sentence(error)),
+      }),
+    } : null;
+
     return {
       repository,
       driving,
       work,
       access,
       heavy,
+      landed,
       sessions,
       reach,
       onOpenPlugin,
       busy: setLine.isPending || setLanding.isPending || setReview.isPending || setOpinion.isPending || setLanguage.isPending
         || setCommits.isPending || setHelpers.isPending || setHandOver.isPending || setAccess.isPending || setHeavy.isPending || setStanding.isPending
-        || setRead.isPending || setWrite.isPending || ruleAction.isPending,
+        || setRead.isPending || setWrite.isPending || ruleAction.isPending || setLanded.isPending,
     };
   };
 
@@ -556,6 +576,7 @@ export function useProjectsView({
   const workflowOf = (registration: Registration): WorkflowTabProps | null => {
     if (!driver.data) return null;
     const workspace = current.data?.workspace ?? workspaceOf(registration);
+    const landed = current.data?.start?.landed;
     return {
       current: current.data,
       reading: current.isPending,
@@ -566,6 +587,15 @@ export function useProjectsView({
           onWorkspaceTab?.('setup');
         },
       },
+      // FABRIC-PIPELINE1a: the person's *Accept the gates*, the route's own pipeline again, which accepts the tip's declaration by its blob.
+      onAcceptGates: landed && landed.workflow !== 'current' ? (answered) => setLanded.mutate({ repository: registration.repository, workflow: landed.workflow }, {
+        onSuccess: () => {
+          notify(t('projects.landed.accepted', { repository: registration.repository }));
+          answered.done();
+        },
+        onError: (error) => answered.refused(sentence(error)),
+      }) : undefined,
+      accepting: setLanded.isPending,
     };
   };
 

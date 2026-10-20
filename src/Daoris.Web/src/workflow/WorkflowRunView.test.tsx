@@ -32,6 +32,28 @@ describe("the session's Workflow view", () => {
     expect(screen.queryByText(/Current workflow/)).toBeNull();
   });
 
+  // FABRIC-PIPELINE1a (the pipeline design §1.3): the run's view heads with the route that chose its workflow, as its binding keeps it.
+  it('heads with the route that chose its workflow', async () => {
+    const routed = (route: NonNullable<WorkflowRun['workflow']['route']>) =>
+      answerOf({ ...IN_REVIEW, workflow: { ...IN_REVIEW.workflow, id: 'release', boundVersion: 1, route } });
+    const { unmount } = render(<WorkflowRunView answer={routed({ level: 'workspace-kind', kind: 'docs', label: 'Documentation' })} />);
+    expect(screen.getByText('Its route: chosen by the workspace aurora for Documentation.')).toBeInTheDocument();
+    unmount();
+
+    const chosen = render(<WorkflowRunView answer={routed({ level: 'task' })} />);
+    expect(screen.getByText('Its route: chosen by its ask.')).toBeInTheDocument();
+    chosen.unmount();
+
+    await i18n.changeLanguage('zh');
+    render(<WorkflowRunView answer={routed({ level: 'repository' })} />);
+    expect(screen.getByText('它的路线：engine 的默认。')).toBeInTheDocument();
+  });
+
+  it('says no route where a driver before it keeps none', () => {
+    render(<WorkflowRunView answer={answerOf(IN_REVIEW)} />);
+    expect(screen.queryByText(/^Its route:/)).toBeNull();
+  });
+
   it('shows an unread binding without a completed diagram', () => {
     const run = { ...IN_REVIEW, steps: [], at: null, problem: 'Its stored binding could not be read.' };
     render(<WorkflowRunView answer={answerOf(run)} />);
