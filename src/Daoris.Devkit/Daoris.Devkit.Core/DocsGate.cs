@@ -100,7 +100,7 @@ public sealed class CommandLineGitHistory(string repositoryRoot) : IGitHistory
         string[] arguments = _merge.Value is { } merge
             ? ["log", "-1", "--format=%aI", merge.Commit, "--", relativePath]
             : ["log", "-1", "--format=%aI", "--", relativePath];
-        var result = Process.Run("git", arguments, repositoryRoot);
+        var result = GitStart.Run(arguments, repositoryRoot);
 
         if (result.ExitCode != 0) return null;
         var text = result.Output.Trim();
@@ -145,7 +145,7 @@ internal sealed record ProposedMerge(string Commit, string Head, IReadOnlyList<s
     /// </summary>
     public static ProposedMerge? Build(string root)
     {
-        var located = Process.Run("git", ["rev-parse", "--absolute-git-dir"], root);
+        var located = GitStart.Run(["rev-parse", "--absolute-git-dir"], root);
         if (located.ExitCode != 0) return null;
         var gitDir = located.Output.Trim();
         var mergeHead = Path.Combine(gitDir, "MERGE_HEAD");
@@ -185,7 +185,7 @@ internal sealed record ProposedMerge(string Commit, string Head, IReadOnlyList<s
 
     private static string Git(string root, IReadOnlyDictionary<string, string>? environment, params string[] arguments)
     {
-        var result = Process.Run("git", arguments, root, environment);
+        var result = GitStart.Run(arguments, root, environment);
         if (result.ExitCode != 0)
         {
             var said = (result.Error.Trim().Length > 0 ? result.Error : result.Output).Trim();

@@ -54,7 +54,7 @@ public sealed class CommandLineGitObjects(string repositoryRoot) : IGitObjects
     /// </remarks>
     private IEnumerable<HistoryItem> Paths()
     {
-        var result = Process.Run("git", ["rev-list", "--objects", "--all"], repositoryRoot);
+        var result = GitStart.Run(["rev-list", "--objects", "--all"], repositoryRoot);
         if (result.ExitCode != 0)
         {
             throw new DevkitException($"git rev-list failed: {result.Error.Trim()}");
@@ -87,7 +87,7 @@ public sealed class CommandLineGitObjects(string repositoryRoot) : IGitObjects
             start.ArgumentList.Add(argument);
         }
 
-        using var process = System.Diagnostics.Process.Start(start)
+        using var process = System.Diagnostics.Process.Start(GitStart.Past(start))
             ?? throw new DevkitException("could not start git cat-file");
 
         var stream = process.StandardOutput.BaseStream;

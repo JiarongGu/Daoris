@@ -251,7 +251,7 @@ public sealed class CommandLineGit(string repositoryRoot) : IGit
     /// <summary>The index's copy (`git show :path`), which is what the commit being made will hold.</summary>
     public string? StagedText(string path)
     {
-        var output = Process.Run("git", ["show", $":{path}"], repositoryRoot);
+        var output = GitStart.Run(["show", $":{path}"], repositoryRoot);
         return output.ExitCode == 0 ? output.Output : null;
     }
 
@@ -262,7 +262,7 @@ public sealed class CommandLineGit(string repositoryRoot) : IGit
     /// </summary>
     private IReadOnlyList<string> Paths(params string[] arguments)
     {
-        var output = Process.Run("git", arguments, repositoryRoot);
+        var output = GitStart.Run(arguments, repositoryRoot);
         if (output.ExitCode != 0)
         {
             throw new DevkitException($"git {string.Join(' ', arguments)} failed: {output.Error.Trim()}");
