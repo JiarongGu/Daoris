@@ -1160,6 +1160,52 @@ public sealed class SessionLedgerTests : IAsyncLifetime
     }
 
     /// <summary>
+    /// COWORK1c (the message-urgency design §6, §9): words for a running session's run are kept on its record where the driver that
+    /// runs it asks so (<c>running</c>), each with the level it was said at, before its run is handed them: never a park's answer nor a
+    /// word that reopens it, and nothing that travels changes. Kept once by its key, as on an ended record. Asked without it, a running
+    /// record refuses as before; a level this build does not know is refused before anything is kept; and a park asked so is answered
+    /// as a park, since it runs no turn.
+    /// </summary>
+    [Fact]
+    public async Task Words_for_a_running_sessions_run_wait_on_its_record_with_their_level()
+    {
+        var quest = await Publish();
+        var session = (await _ledger.OpenAsync(quest.Id, "stub", Now)).Session!;
+        await Advance(session.Id, "starting");
+        await Advance(session.Id, "working");
+        var before = (await _sessions.FindAsync(session.Id))!;
+        var revision = await RevisionOf(session.Id);
+
+        var kept = await _ledger.SayAsync(
+            session.Id, "And the readme.", null, Now.AddMinutes(1), key: "press/1", level: SaidLevel.Ordinary, running: true);
+        var again = await _ledger.SayAsync(
+            session.Id, "And the readme.", null, Now.AddMinutes(2), key: "press/1", level: SaidLevel.Ordinary, running: true);
+        var unasked = await _ledger.SayAsync(session.Id, "Hello.", null, Now.AddMinutes(3));
+        var unknown = await _ledger.SayAsync(session.Id, "Hello.", null, Now.AddMinutes(3), level: "shouted", running: true);
+
+        Assert.Equal(SessionSayRefusal.None, kept.Refusal);
+        Assert.Equal(
+            $"Kept for session `{session.Id}`, which runs: your words wait on its record until its run takes them.", kept.Message);
+        var record = (await _sessions.FindAsync(session.Id))!;
+        var word = Assert.Single(record.Said);
+        Assert.Equal((kept.Word!.Id, "ordinary", "press/1", false, true), (word.Id, word.Level, word.Key, word.Reopens, word.Persons));
+        Assert.Equal((true, kept.Word.Id), (again.Again, again.Word!.Id));
+        Assert.Equal(SessionSayRefusal.Running, unasked.Refusal);
+        Assert.Equal(SessionSayRefusal.Level, unknown.Refusal);
+        Assert.Equal(
+            "Words at `shouted` are not kept: this service knows the levels ordinary, urgent and now.", unknown.Message);
+        Assert.Equal(
+            (SessionState.Working, before.Note, before.Updated, revision),
+            (record.State, record.Note, record.Updated, await RevisionOf(session.Id)));
+
+        await Advance(session.Id, "stopped");
+        var (_, parked) = await Parked();
+        var answered = await _ledger.SayAsync(parked.Id, "Port 9090.", null, Now.AddMinutes(4), level: SaidLevel.Urgent, running: true);
+        Assert.Equal(SessionSayRefusal.None, answered.Refusal);
+        Assert.EndsWith("Answered: Port 9090.", (await _sessions.FindAsync(parked.Id))!.Note);
+    }
+
+    /// <summary>
     /// MSG1a (D137 §2.2, §5.3): words said to a parked session are its answer — kept with their line on its note, the park
     /// kept, joining what was said before — so the answer door is the parked case of saying.
     /// </summary>

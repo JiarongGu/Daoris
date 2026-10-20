@@ -610,6 +610,37 @@ public sealed class SessionStoreTests : IAsyncLifetime
     }
 
     /// <summary>
+    /// COWORK1c (the message-urgency design §6, §9): a word keeps the level it was said at, and the moment a dispatcher first wrote it
+    /// to a harness, each beside the others; a word from before reads with neither, no level and never attempted. The attempt is marked
+    /// on one word in place, in one statement, and only once: a second mark keeps the first moment. An id the record does not hold,
+    /// or a record this machine does not hold, marks nothing.
+    /// </summary>
+    [Fact]
+    public async Task A_word_keeps_its_level_and_its_first_attempt_marked_in_place_and_one_from_before_reads_with_neither()
+    {
+        var working = await Create();
+        await _sessions.KeepSaidAsync(working.Id, new SaidWord("w1", "Also add the changelog line.", Now, []));
+        await _sessions.KeepSaidAsync(working.Id, new SaidWord("w2", "And the readme.", Now, [], Key: "press/1", Level: SaidLevel.Ordinary));
+        await _sessions.KeepSaidAsync(working.Id, new SaidWord("w3", "Now, the tests.", Now, [], Level: SaidLevel.Now));
+
+        Assert.True(await _sessions.MarkAttemptAsync(working.Id, "w2", Now.AddMinutes(1)));
+        Assert.True(await _sessions.MarkAttemptAsync(working.Id, "w2", Now.AddMinutes(5)));
+        Assert.False(await _sessions.MarkAttemptAsync(working.Id, "w9", Now.AddMinutes(1)));
+        Assert.False(await _sessions.MarkAttemptAsync("zzzzzzzz", "w2", Now.AddMinutes(1)));
+
+        var words = (await _sessions.FindAsync(working.Id))!.Said;
+        Assert.Equal(
+            new (string, string?, DateTimeOffset?)[] { ("w1", null, null), ("w2", "ordinary", Now.AddMinutes(1)), ("w3", "now", null) },
+            words.Select(word => (word.Id, word.Level, word.Attempt)));
+        Assert.Equal(("press/1", "And the readme."), (words[1].Key, words[1].Text));
+
+        await _sessions.TakeSaidAsync(working.Id, ["w1"]);
+        Assert.Equal(
+            new (string?, DateTimeOffset?)[] { ("ordinary", Now.AddMinutes(1)), ("now", null) },
+            (await _sessions.FindAsync(working.Id))!.Said.Select(word => (word.Level, word.Attempt)));
+    }
+
+    /// <summary>
     /// MIXAGENT1a-iii (D163 point 4): a session that continues another names it on its own record, with why and who asked; a
     /// record that continues none names none, and a why or an asker with no session is no link. This machine's own, as the
     /// opinion is: the mirror writes none.

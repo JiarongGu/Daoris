@@ -1774,6 +1774,47 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
     }
 
     /// <summary>
+    /// COWORK1c (the message-urgency design §6, §9): the say door keeps words for a running session's run where the driver that runs
+    /// it asks so (<c>running</c>), the record staying as it runs, and answers the word with its level, to this machine only. Nothing
+    /// is kept on the ask, since no park was answered: the run keeps them there as it takes them. A level this service does not know
+    /// is 400 by its word, and nothing is kept.
+    /// </summary>
+    [Fact]
+    public async Task The_say_door_keeps_words_for_a_running_sessions_run_with_their_level()
+    {
+        var asked = await host.PostAsync("/api/asks", new
+        {
+            workspace = "default", sentence = "Build the quarterly digest through the v3 bridge.", to = "Keeper",
+        });
+        var ask = asked.Json.GetProperty("ask").GetProperty("id").GetString()!;
+        var quest = asked.Json.GetProperty("quest").GetProperty("id").GetString()!;
+        var running = await RunningAsync(quest, "cowork1c-running");
+        var words = await WordsAsync();
+
+        var said = await host.PostAsync(
+            $"/api/sessions/{running}/say", new { text = "And the readme.", level = "ordinary", key = "press/1", running = true });
+        var shouted = await host.PostAsync($"/api/sessions/{running}/say", new { text = "Hello.", level = "shouted", running = true });
+
+        Assert.Equal(200, said.Status);
+        Assert.Equal("working", said.Json.GetProperty("session").GetProperty("state").GetString());
+        var word = said.Json.GetProperty("said");
+        Assert.Equal(
+            ("And the readme.", "ordinary", "press/1", false),
+            (word.GetProperty("text").GetString(), word.GetProperty("level").GetString(), word.GetProperty("key").GetString(),
+                word.GetProperty("reopens").GetBoolean()));
+        Assert.False(word.TryGetProperty("attempt", out _));
+        Assert.Equal(
+            [word.GetProperty("id").GetString()],
+            (await ListedSessionAsync(running))!.Value.GetProperty("said").EnumerateArray().Select(w => w.GetProperty("id").GetString()));
+        Assert.Equal((400, "level"), (shouted.Status, shouted.Json.GetProperty("refusal").GetString()));
+        Assert.Equal(words, await WordsAsync());
+        Assert.Equal(200, (await host.PostAsync($"/api/sessions/{running}/state", new { state = "stopped" })).Status);
+
+        async Task<IEnumerable<string?>> WordsAsync() =>
+            (await host.GetAsync($"/api/asks/{ask}")).Json.GetProperty("words").EnumerateArray().Select(w => w.GetProperty("kind").GetString()).ToList();
+    }
+
+    /// <summary>
     /// SAIDBACK1a (D137 §2.4): the take-back door takes a word waiting on an ended session of this machine's off its record by
     /// its id, or with <c>text</c> rewords it: the old word out, the new one last under a new id, answered to this machine only.
     /// A word no longer waiting answers <c>done: false, why: taken</c>, never an error; a reword with no words is 400, a session

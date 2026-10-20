@@ -123,6 +123,12 @@ public enum SessionSayRefusal
     /// read as theirs, so nothing is kept.
     /// </summary>
     From,
+
+    /// <summary>
+    /// The words name a level this build does not know (COWORK1c, <see cref="SaidLevel"/>): kept, they would reach the session at a
+    /// point nobody asked for, so nothing is kept.
+    /// </summary>
+    Level,
 }
 
 /// <param name="Refusal"><see cref="SessionSayRefusal.None"/> when the words were kept.</param>
@@ -139,6 +145,12 @@ public sealed record SessionSayOutcome(SessionSayRefusal Refusal, string Message
     /// now, so nothing beside the say is kept again either.
     /// </summary>
     public bool Again { get; init; }
+
+    /// <summary>
+    /// The words answered a park (ANSWER1b), which its door keeps on the ask at once. False for words to an ended record, which are
+    /// kept there once taken, and for words kept for a running record's run (COWORK1c), which its run keeps there as it takes them.
+    /// </summary>
+    public bool Answers { get; init; }
 
     /// <summary>The quest of a session that stood down, where that refused the words.</summary>
     public string? Quest { get; init; }
@@ -715,9 +727,15 @@ public sealed class SessionLedger(
     /// is kept and the answer is that word, so a producer's retry keeps one word. Once a session took it, the key is the producer's
     /// own to remember (D188's COWORK1b note).
     /// </param>
+    /// <param name="level">When its sender asked it to reach a working session (COWORK1c, <see cref="SaidLevel"/>); one this build does not know is refused.</param>
+    /// <param name="running">
+    /// The driver that runs the session asks for its run (COWORK1c, the message-urgency design §6): a running record keeps the word,
+    /// which that driver's one dispatcher hands its run and takes off once on the wire. Without it a running record refuses as before,
+    /// since only that driver hands a running session its words.
+    /// </param>
     public async Task<SessionSayOutcome> SayAsync(
         string id, string? text, IReadOnlyList<string>? files, DateTimeOffset now, CancellationToken ct = default, string? channel = null,
-        string? from = null, string? key = null)
+        string? from = null, string? key = null, string? level = null, bool running = false)
     {
         var words = text?.Trim() ?? "";
         if (words.Length == 0)
@@ -730,6 +748,14 @@ public sealed class SessionLedger(
             return new(
                 SessionSayRefusal.From,
                 $"Words from `{from}` are not kept: this service knows no such author, and kept as the person's they would be read as theirs.",
+                Session: null);
+        }
+
+        if (!SaidLevel.Known(level))
+        {
+            return new(
+                SessionSayRefusal.Level,
+                $"Words at `{level}` are not kept: this service knows the levels {SaidLevel.Ordinary}, {SaidLevel.Urgent} and {SaidLevel.Now}.",
                 Session: null);
         }
 
@@ -746,7 +772,9 @@ public sealed class SessionLedger(
             if (Never(session) is { } never) return never;
 
             var parked = session.State == SessionState.AwaitingPerson;
-            if (session.Active && !parked)
+            // COWORK1c: a running record keeps words only for its own run, asked by the driver that runs it.
+            var forRun = session.Active && !parked;
+            if (forRun && !running)
             {
                 return new SessionSayOutcome(
                     SessionSayRefusal.Running,
@@ -764,12 +792,17 @@ public sealed class SessionLedger(
                     session, waiting) { Again = true };
             }
 
-            var word = new SaidWord(NewWordId(), words, now, Names(files), Reopens: !parked, Channel: channel, From: from, Key: key);
+            // A word for a running record's run reopens nothing and answers no park, so no note is written and nothing travels.
+            var word = new SaidWord(
+                NewWordId(), words, now, Names(files), Reopens: !parked && !forRun, Channel: channel, From: from, Key: key, Level: level);
             var (note, parts) = parked ? AnsweredNote(session, words, from) : (null, null);
             var kept = await sessions
                 .KeepSaidAsync(id, word, note, inside, noteParts: parts)
                 .ConfigureAwait(false);
-            return new SessionSayOutcome(SessionSayRefusal.None, KeptMessage(session, from), kept, word);
+            return new SessionSayOutcome(SessionSayRefusal.None, forRun ? ForRunMessage(id, from) : KeptMessage(session, from), kept, word)
+            {
+                Answers = parked,
+            };
         }, ct).ConfigureAwait(false);
     }
 
@@ -973,6 +1006,10 @@ public sealed class SessionLedger(
     /// What the person is told their words will do, phrased once here for every door; Daoris's own words are never called theirs
     /// (COWORK1b).
     /// </summary>
+    /// <summary>The say's sentence for words kept for a running session's run (COWORK1c).</summary>
+    private static string ForRunMessage(string id, string? from) =>
+        $"Kept for session `{id}`, which runs: {(from == SaidFrom.Daoris ? "Daoris's words wait" : "your words wait")} on its record until its run takes them.";
+
     private static string KeptMessage(Session session, string? from = null)
     {
         var whose = from == SaidFrom.Daoris ? "Daoris's words" : "your words";

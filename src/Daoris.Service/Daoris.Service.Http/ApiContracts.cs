@@ -428,17 +428,22 @@ public sealed record SessionResponse(
 // words; when; its files' names, never where they are; and whether it was said after the record ended. XAGENT1c: `by`, the
 // second opinion whose findings these are, another agent's claims; absent, the person's words, as every word before it was.
 // COWORK1b (D188): `from`, the author where it is not the person (`daoris`), and `key`, its producer's; absent on a word kept with none.
+// COWORK1c (D188): `level`, when its sender asked it to reach a working session, and `attempt`, when a dispatcher first wrote it to a
+// harness; each absent on a word kept with none.
 public sealed record SaidWordResponse(
     string Id, string Text, DateTimeOffset At, IReadOnlyList<string> Files, bool Reopens, string? By = null, string? Helper = null,
-    string? From = null, string? Key = null);
+    string? From = null, string? Key = null, string? Level = null, DateTimeOffset? Attempt = null);
 // MSG1a (D137 §5.3): what the person says to a parked or ended session. `Files` are the names of what they gave with it;
 // a path is cut to its name before it is kept.
 // `Channel` (SESSONE2e, D167) is the id of the channel message the words are, which the channel already keeps on the ask:
 // absent, the door keeps them as before.
 // COWORK1b (D188): `From` names the author where it is not the person (`daoris`, refused `from` for any other), and `Key` the
 // producer's key, a word kept once per key on the record; absent, the door keeps the person's words as before.
+// COWORK1c (D188): `Level` (`ordinary`, `urgent` or `now`, refused `level` for any other), and `Running`, the driver that runs the
+// session asking for its run: a running record keeps the word only so; absent, it refuses as before.
 public sealed record SayRequest(
-    string? Text, IReadOnlyList<string>? Files = null, string? Channel = null, string? From = null, string? Key = null);
+    string? Text, IReadOnlyList<string>? Files = null, string? Channel = null, string? From = null, string? Key = null,
+    string? Level = null, bool? Running = null);
 // The session as it stands, the ledger's sentence, and the word as kept (to this machine only).
 public sealed record SaidResponse(SessionResponse Session, string Message, SaidWordResponse? Said);
 // A say refused: the sentence as `error`, beside its word (`refusal`: `no-words`, `not-found`, `not-ours`, `intake`,
