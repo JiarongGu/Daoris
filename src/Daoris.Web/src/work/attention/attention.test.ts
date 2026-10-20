@@ -11,6 +11,7 @@ import {
   ASKS_ONCE, ATTENTION_GROUP, attentionActs, attentionGroups, attentionInOrder, attentionOf, attentionOffers, attentionWorded,
   type AttentionNames, type PushedAttention,
 } from './attention';
+import { entryDetail } from '../head/milestone';
 
 // *What needs you* on the page (PUSH1d4): who needs the person is judged in .NET (`NeedsAPerson`, whose cases
 // `AttentionStateSliceTests` ports from this file cell for cell); the page orders the pushed rows, names each from the records it
@@ -319,19 +320,83 @@ describe('the groups', () => {
     });
   });
 
-  /** FABRIC-MILESTONE1b: a unit's blocked clean-up says its entries as the driver says them; its door is its session. */
-  it('words a unit whose clean-up is blocked, and offers it nothing', () => {
-    const item = words(row('work', 's1a2b3c4', '2026-09-21T09:00:00Z', {
-      where: 'engine', session: 's1a2b3c4', title: 'daoris/s1a2b3c4',
-      blocked: { unknown: false, entries: [{ kind: 'tree', resource: 's1a2b3c4', detail: 'a session still holds this tree' }] },
-    }));
+  /**
+   * OVERVIEWNOISE1b: a tree its session recorded and no branch record follows is named by that session as Sessions names it, and its
+   * block is worded by its code in the reader's language, the reason said once, the tree by its folder's name and never its path.
+   */
+  it('names a unit by the session that recorded its tree, and words its block by its code, once, in each language', async () => {
+    const reopened = row('work', 'c0nv0001', null, {
+      where: 'engine', session: 'c0nv0001', title: 's-e0a8e0fd',
+      blocked: {
+        unknown: false,
+        entries: [{
+          kind: 'tree', resource: 'X:/daoris/trees/default/engine/s-e0a8e0fd', code: 'unfollowed', facts: { branch: 'daoris/s-e0a8e0fd' },
+          detail: 'its session recorded it, but no branch record follows `daoris/s-e0a8e0fd`, so the look’s tidy never takes it',
+        }],
+      },
+    });
+    const names = { sessions: [session({ id: 'c0nv0001', quest: '7a82cc' })], quests: [quest()] };
 
-    expect(item).toMatchObject({ title: 'daoris/s1a2b3c4', where: 'engine', session: 's1a2b3c4', since: '2026-09-21T09:00:00Z' });
-    expect(item.detail).toContain('a session still holds this tree');
+    const item = words(reopened, names);
+    expect(item).toMatchObject({ title: 'Expose a streaming budget on the chunk API', where: 'engine', session: 'c0nv0001' });
+    expect(item.detail).toBe(
+      'Blocked: tree s-e0a8e0fd, its session recorded it, but no branch record follows daoris/s-e0a8e0fd, so the look never cleans it up: '
+      + 'the session branches on its workspace’s Branches remove it');
     expect(attentionActs(item)).toEqual([]);
+    // A session the page does not hold: the tree's folder, as the row was titled.
+    expect(words(reopened).title).toBe('s-e0a8e0fd');
+
+    await i18n.changeLanguage('zh');
+    try {
+      const said = words(reopened, names).detail ?? '';
+      expect(said).toBe('受阻：工作树 s-e0a8e0fd，它的会话记录了它，但没有分支记录跟随 daoris/s-e0a8e0fd，所以查看时不会清理它：在它所在工作区的“分支”中，会话分支列表可以移除它');
+      expect(said).not.toMatch(/[a-z]{3,} [a-z]{3,}/);
+    } finally {
+      await i18n.changeLanguage('en');
+    }
   });
 
-  /** FABRIC-UNKNOWN1 (design §D3): an unrecorded daoris/* branch says its owner is unknown, why and which press removes it. */
+  /** OVERVIEWNOISE1b: an owner nothing records is said once, by the entry's own code, with the press that removes it. */
+  it('words an unknown owner by its code once, in each language, with the press that removes it', async () => {
+    const orphan = row('work', 'unknown-branch:engine/daoris/orphan', null, {
+      where: 'engine', session: null, title: 'daoris/orphan',
+      blocked: {
+        unknown: true,
+        entries: [{
+          kind: 'session-branch', resource: 'daoris/orphan', code: 'unrecorded', facts: { branch: 'daoris/orphan' },
+          detail: 'its owner is unknown: Daoris did not record `daoris/orphan`, so nothing here is cleaned',
+        }],
+      },
+    });
+
+    const item = words(orphan);
+    expect(item).toMatchObject({ title: 'daoris/orphan', session: null });
+    expect(item.detail).toBe(
+      'Blocked: session branch daoris/orphan, Daoris did not record daoris/orphan, so nothing of it is cleaned up: Discard branch… '
+      + 'in the session branches on its workspace’s Branches removes it');
+
+    await i18n.changeLanguage('zh');
+    try {
+      expect(words(orphan).detail).toBe(
+        '受阻：会话分支 daoris/orphan，Daoris 没有记录 daoris/orphan，所以它的内容都不会被清理：在它所在工作区的“分支”中，按会话分支列表里的“丢弃分支…”即可移除');
+    } finally {
+      await i18n.changeLanguage('en');
+    }
+  });
+
+  /** OVERVIEWNOISE1b: the tidy's guard said once by its code, and a retry promised only where the guard frees by itself. */
+  it('words a guard the clean-up kept a branch by once, promising a retry only where one comes', () => {
+    const kept = (why: string) => entryDetail(i18n.t, { detail: 'the driver’s clause', code: 'kept', facts: { why, at: '2026-10-20T09:00:00Z' } });
+
+    expect(kept('nested')).toBe('the look kept it, since its tree holds another repository');
+    expect(kept('busy')).toBe('the look kept it, since something on this machine holds its tree’s folder open; it is tried again at the next look');
+    // A guard or a code the page has no words for is said as recorded.
+    expect(kept('newer')).toBe('the driver’s clause');
+    expect(entryDetail(i18n.t, { detail: 'as recorded', code: 'later', facts: {} })).toBe('as recorded');
+    expect(entryDetail(i18n.t, { detail: 'as recorded' })).toBe('as recorded');
+  });
+
+  /** FABRIC-UNKNOWN1 (design §D3): an unrecorded daoris/* branch from a shell before the codes says its owner, then the driver's reason. */
   it('words an unrecorded daoris branch as an unknown owner, with the reason and the press', () => {
     const why = 'its owner is unknown: Daoris did not record `daoris/orphan`, so nothing here is cleaned; only your Discard branch press removes it';
     const item = words(row('work', 'unknown-branch:engine/daoris/orphan', null, {

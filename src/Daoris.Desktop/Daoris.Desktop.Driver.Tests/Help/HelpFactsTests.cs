@@ -262,6 +262,56 @@ public sealed class HelpFactsTests : IDisposable
     }
 
     /// <summary>
+    /// OVERVIEWNOISE1b: a part of the work reads the trees its own repositories' sessions recorded, from the sessions' look, so each
+    /// tree joins the session that recorded it; a teammate's record and another part's are left out. A look whose recorded trees moved
+    /// judges again each part they moved in, and no other.
+    /// </summary>
+    [Fact]
+    public async Task A_part_of_the_work_reads_the_trees_its_sessions_recorded_and_is_judged_again_as_they_move()
+    {
+        var engineTree = Path.Combine("trees", "default", "engine", "s-1");
+        var judged = new Dictionary<string, int>(StringComparer.Ordinal);
+        var recorded = new Dictionary<string, IReadOnlyList<RecordedTree>>(StringComparer.Ordinal);
+        var look = new SessionLook([], [], []);
+        var clock = new Clock();
+        using var facts = new MachineFacts(clock.Now);
+        HelpFacts.Keep(facts, Judges(Whole(Engine, Site, Docs)) with
+        {
+            Sessions = _ => Task.FromResult<SessionLook?>(look),
+            Work = (part, _) =>
+            {
+                var subject = part.Repository ?? HelpFacts.NoCheckout;
+                lock (judged)
+                {
+                    judged[subject] = judged.GetValueOrDefault(subject) + 1;
+                    recorded[subject] = part.Recorded;
+                }
+
+                return Task.FromResult<HelpWork?>(new HelpWork([], [], []));
+            },
+        });
+        facts.Start();
+        foreach (var part in (string[])["engine", "site", HelpFacts.NoCheckout])
+        {
+            await facts.FirstAsync(HelpFacts.Work, part, CancellationToken.None).WaitAsync(Within);
+        }
+
+        await facts.FirstAsync(HelpFacts.Sessions, HelpFacts.Whole, CancellationToken.None).WaitAsync(Within);
+        await facts.Settled().WaitAsync(Within);
+        var before = (Judged(judged, "engine"), Judged(judged, "site"), Judged(judged, HelpFacts.NoCheckout));
+
+        // Past the rest a part's judgement is held to; then the look lands naming an engine session's tree, a teammate's, and nothing of site.
+        clock.Pass(HelpFacts.WorkRules.Rest + TimeSpan.FromSeconds(1));
+        look = new SessionLook([Ended("e1", "engine", engineTree), Ended("peer/t3", "engine", Path.Combine("trees", "default", "engine", "s-3"))], [], []);
+        HelpFacts.Wake(facts, ChangeTopics.Ledger, "words");
+        await Poll.Until(() => Judged(judged, "engine") == before.Item1 + 1, within: Within);
+        await facts.Settled().WaitAsync(Within);
+
+        Assert.Equal((before.Item2, before.Item3), (Judged(judged, "site"), Judged(judged, HelpFacts.NoCheckout)));
+        lock (judged) Assert.Equal([new RecordedTree("e1", engineTree)], recorded["engine"]);
+    }
+
+    /// <summary>
     /// 🔴 FACTSPLIT1a: the room reads the work as it read the whole, merged from the parts: by repository as the lines are, the
     /// repositories with no checkout here last. While any part was never judged the work is not read yet, as the whole was.
     /// </summary>

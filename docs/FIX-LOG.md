@@ -16,6 +16,25 @@ repository.
 - **Fix:** `ChannelForwarded` is declared in the domain beside the answer that reads it; both tests' boxes wait sixty seconds by
   default, their stand-in polling as long, and the two cases that test a wait running out keep their own short ones.
 - **Verification:** `StructureTests` and `ChannelReachTests`, 31; both connector test classes, 9.
+## 2026-10-21 — What needs you called a session's tree unowned, titled it by its path, and said a kept branch's reason twice in English (OVERVIEWNOISE1b)
+
+- **Symptom:** on the owner's Chinese Overview with many sessions running, *Waiting for your word* filled with rows offering no
+  act: blocked clean-ups saying their reason twice in the driver's English, each promising a retry, and a tree titled
+  `tree:` and its folder's path, called unowned though the rail showed its session in it.
+- **Root cause:** the inventory attached a tree to a unit only through a standing session-branch record (`AttachTrees`), and no
+  record joined a tree to the session whose record names it; a tree made again on its branch after that branch's record went
+  became a unit of its own with an unknown owner, whose id is its path, which the row took as its title. A kept branch's detail
+  wrapped the guard's clause (`KeptSaid`) around the tidy's own sentence, which says the same with a path, and always ended
+  "tried again when that frees", which a nested repository never does; the page passed that English through
+  `work.milestone.cleanup.blocked` as recorded. The judge listed every blocked entry, though the band offered none of them an act.
+- **Fix:** `InventoryFacts.Recorded` joins each tree to the session that recorded it (the facts' sessions look, the service's
+  records for `work state`); a tree no standing record names that a session recorded is that session's, blocked `unfollowed`.
+  Each blocked entry carries `code` and `facts`, worded by the page (`entryDetail`); a kept branch says its guard once and a
+  retry only where the guard frees by itself. `NeedsAPerson` lists a unit only where the clean-up's press settles it, named by
+  its session or its tree's folder. D173's OVERVIEWNOISE1b note.
+- **Verification:** `WorkInventoryTests` (a reopened tree joined to its session; a guard said once), `HelpFactsTests` (a part
+  reads its sessions' trees and is judged again as they move), `AttentionStateSliceTests`, and the page's `attention.test.ts`,
+  `WorkMilestone.test.tsx` and `AttentionBand.test.tsx` in English and Chinese. Not yet seen on the installed Overview.
 
 ## 2026-10-21 — The full set on 824886d: an end-to-end test held the old asks group, and a test home's delete met a held log (QUESTLISTS1, FLAKE1)
 

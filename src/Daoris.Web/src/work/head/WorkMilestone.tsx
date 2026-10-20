@@ -4,7 +4,7 @@ import type { TFunction } from 'i18next';
 import { moment } from '../../locales/format';
 import { cn } from '../../lib/cn';
 import { DotMark, Icon } from '../../design/ui';
-import { entryName, heldSentence, type MilestoneUnit } from './milestone';
+import { entryDetail, entryName, heldSentence, type MilestoneUnit } from './milestone';
 
 /** The proofs the driver names by code (`EndBy`): any other code is said by the driver's own sentence. */
 const PROOFS = ['merged', 'empty', 'on-line', 'pull-request', 'landed', 'carried', 'inside'] as const;
@@ -139,7 +139,7 @@ function Facts({ id, unit }: { id: string; unit: MilestoneUnit }) {
               <span>{t('work.milestone.cleanup.pending')}</span>
               {waits.map((entry, index) => (
                 <span key={`${entry.kind}-${entry.resource}-${index}`} className={entry.disposition === 'blocked' ? 'text-ink-danger' : undefined}>
-                  {t(entry.disposition === 'blocked' ? 'work.milestone.cleanup.blocked' : 'work.milestone.cleanup.waits', { what: what(t, entry), detail: entry.detail })}
+                  {t(entry.disposition === 'blocked' ? 'work.milestone.cleanup.blocked' : 'work.milestone.cleanup.waits', { what: what(t, entry), detail: entryDetail(t, entry) })}
                 </span>
               ))}
               {unit.cleanup.gone.length > 0 && (

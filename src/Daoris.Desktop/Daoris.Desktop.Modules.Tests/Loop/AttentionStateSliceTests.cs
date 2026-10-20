@@ -701,11 +701,23 @@ public sealed class AttentionStateSliceTests : DriverModuleBridge
         """,
         over);
 
-    /// <summary>FABRIC-MILESTONE1b: a unit is a row only where something waits on the person: a clean-up blocked on an entry.</summary>
+    /// <summary>
+    /// FABRIC-MILESTONE1b, OVERVIEWNOISE1b: a unit is a row only where the person has an act: a tree its session recorded and no branch
+    /// record follows waits on the clean-up's press, named by that session and its tree's folder, never its path. A guard the tidy keeps
+    /// a branch by, coded or not, is said on its session's page and its branch's line, not here; a wait that ends by itself is no row.
+    /// </summary>
     [Fact]
-    public void A_unit_whose_clean_up_is_blocked_is_a_row_and_no_unit_whose_wait_ends_by_itself()
+    public void A_unit_is_a_row_only_where_the_clean_up_s_press_settles_it_and_never_for_a_guard_or_a_wait_that_ends_by_itself()
     {
         var pending = Entry("""{"unit":"u2","disposition":"pending","kind":"end","resource":"the end"}""").ToJsonString();
+        var kept = Entry("""
+            {"unit":"u4","kind":"session-branch","resource":"daoris/s-4","code":"kept","facts":{"why":"nested","at":"2026-09-21T09:00:00Z"},
+             "detail":"the look's tidy kept it at 2026-09-21 09:00 UTC, since its tree holds another repository at docs/inner"}
+            """).ToJsonString();
+        var unfollowed = Entry("""
+            {"unit":"session:c0ffee01","resource":"X:/daoris/trees/default/engine/s-e0a8e0fd","code":"unfollowed",
+             "facts":{"branch":"daoris/s-e0a8e0fd"},"detail":"its session recorded it, but no branch record follows `daoris/s-e0a8e0fd`"}
+            """).ToJsonString();
         var rows = Rows(new()
         {
             Works =
@@ -713,13 +725,45 @@ public sealed class AttentionStateSliceTests : DriverModuleBridge
                 Unit(),
                 Unit($$$"""{"unit":"u2","session":null,"cleanup":{"state":"pending","waits":[{{{pending}}}],"gone":[]}}"""),
                 Unit("""{"unit":"u3","cleanup":{"state":"completed","waits":[],"gone":[]}}"""),
+                Unit($$$"""{"unit":"u4","session":"s4","branch":"daoris/s-4","cleanup":{"state":"pending","waits":[{{{kept}}}],"gone":[]}}"""),
+                Unit($$$"""
+                    {"unit":"session:c0ffee01","session":"c0ffee01","branch":null,"end":{"state":"not-ended","said":"no branch record follows its tree"},
+                     "cleanup":{"state":"pending","waits":[{{{unfollowed}}}],"gone":[]}}
+                    """),
             ],
         });
 
         Is("""
-           {"kind":"work","id":"s1a2b3c4","since":"2026-09-21T09:00:00Z","where":"engine","session":"s1a2b3c4","title":"daoris/s1a2b3c4",
-            "blocked":{"unknown":false,"entries":[{"kind":"tree","resource":"s1a2b3c4","detail":"a session still holds this tree"}]}}
+           {"kind":"work","id":"c0ffee01","since":null,"where":"engine","session":"c0ffee01","title":"s-e0a8e0fd",
+            "blocked":{"unknown":false,"entries":[{"kind":"tree","resource":"X:/daoris/trees/default/engine/s-e0a8e0fd",
+              "detail":"its session recorded it, but no branch record follows `daoris/s-e0a8e0fd`","code":"unfollowed","facts":{"branch":"daoris/s-e0a8e0fd"}}]}}
            """, Assert.Single(rows));
+    }
+
+    /// <summary>OVERVIEWNOISE1b: a tree no record and no session names is titled by its folder's name, never the unit id its path makes.</summary>
+    [Fact]
+    public void An_unknown_owner_s_tree_is_titled_by_its_folder_s_name_with_its_code()
+    {
+        var entry = Entry("""
+            {"unit":"tree:X:/daoris/trees/default/engine/stray","resource":"X:/daoris/trees/default/engine/stray","code":"unknown-branch",
+             "facts":{"branch":"daoris/stray"},"detail":"its owner is unknown: no record names `daoris/stray`, so nothing here is cleaned"}
+            """).ToJsonString();
+        var item = Assert.Single(Rows(new()
+        {
+            Works =
+            [
+                Unit($$"""
+                    {"unit":"tree:X:/daoris/trees/default/engine/stray","session":null,"branch":null,"end":{"state":"unknown","said":"no record"},
+                     "cleanup":{"state":"pending","waits":[{{entry}}],"gone":[]},"entries":[{{entry}}]}
+                    """),
+            ],
+        }));
+
+        Assert.Equal(("tree:X:/daoris/trees/default/engine/stray", "stray"), (item["id"]!.GetValue<string>(), item["title"]!.GetValue<string>()));
+        Is("""
+           {"unknown":true,"entries":[{"kind":"tree","resource":"X:/daoris/trees/default/engine/stray",
+             "detail":"its owner is unknown: no record names `daoris/stray`, so nothing here is cleaned","code":"unknown-branch","facts":{"branch":"daoris/stray"}}]}
+           """, item["blocked"]!.AsObject());
     }
 
     /// <summary>FABRIC-UNKNOWN1: a daoris/* branch no record names is a unit with an unknown owner, its blocked entry and no session.</summary>
@@ -962,10 +1006,12 @@ public sealed class AttentionStateSliceTests : DriverModuleBridge
             Opinions = [JsonNode.Parse("""{"session":"s42","quest":"q1","repository":"engine","workspace":"aurora","since":"2026-09-21T09:00:00Z","auto":false,"opinion":{"state":"disputed","holds":true,"required":true,"opinion":"o1","reviewer":"codex","product":"Codex","maker":"OpenAI","label":"Codex","reviewing":"s42","findings":2,"disputes":2,"since":"2026-09-21T09:00:00Z","code":"c","until":"2026-09-22T09:00:00Z","later":1,"person":"p","answers":"o1","says":"s"}}""")!.AsObject()],
             Helpers = [JsonNode.Parse("""{"id":"a1","session":"parked","question":"Which?","agent":null,"at":"2026-09-21T09:30:00Z"}""")!.AsObject()],
             Permissions = [JsonNode.Parse("""{"session":"parked","request":"9","call":"c","title":"t","kind":"edit","since":"2026-09-21T09:10:00Z","choices":[{"id":"a","name":"A","kind":"allow_once"}]}""")!.AsObject()],
-            Works = [Unit()],
+            // OVERVIEWNOISE1b: a unit's row, its blocked entry with its code and facts.
+            Works = [Unit($$$"""{"cleanup":{"state":"pending","waits":[{{{Entry("""{"code":"unfollowed","facts":{"branch":"daoris/s1a2b3c4"}}""").ToJsonString()}}}],"gone":[]}}""")],
             Held = [HeldAttempt("""{"outcome":"reached","revision":"r","resolution":"stop","resolvedAt":"2026-10-17T10:00:00Z","words":["stop"]}""")],
         };
         var rows = Rows(facts);
+        Assert.Contains(rows, row => row["blocked"] is JsonObject blocked && blocked["entries"]![0]!["facts"] is JsonObject);
 
         // Every kind but the accounts': fifteen.
         Assert.Equal(15, rows.Select(row => row["kind"]!.GetValue<string>()).Distinct().Count());
@@ -1064,8 +1110,11 @@ public sealed class AttentionStateSliceTests : DriverModuleBridge
         var asks = new StateSlice(AsksStateSlice.Name, Bus, _ => Task.FromResult<IReadOnlyList<SliceJudged>?>(AsksStateSlice.Judge("[]"))) { Keyed = true };
         var groups = new StateSlice(GroupsStateSlice.Name, Bus, _ => Task.FromResult<IReadOnlyList<SliceJudged>?>(
             [new SliceJudged(GroupsStateSlice.Rows, new JsonObject { ["r3v13w00"] = Placed() }), new SliceJudged(GroupsStateSlice.Entries, new JsonObject())])) { Keyed = true };
+        // OVERVIEWNOISE1b: a unit with an act of the person's, a tree its session recorded that no branch record follows.
+        var unfollowed = Entry("""{"code":"unfollowed","facts":{"branch":"daoris/s1a2b3c4"}}""").ToJsonString();
+        var unit = Unit($$$"""{"cleanup":{"state":"pending","waits":[{{{unfollowed}}}],"gone":[]}}""");
         var work = new StateSlice(WorkStateSlice.Name, Bus, _ => Task.FromResult<IReadOnlyList<SliceJudged>?>(
-            [new SliceJudged("engine", new JsonObject { ["units"] = new JsonArray(Unit()), ["recovery"] = new JsonArray(), ["unread"] = new JsonArray() }),
+            [new SliceJudged("engine", new JsonObject { ["units"] = new JsonArray(unit.DeepClone()), ["recovery"] = new JsonArray(), ["unread"] = new JsonArray() }),
              new SliceJudged(WorkStateSlice.Held, new JsonObject { ["held"] = new JsonArray(HeldAttempt()) })]));
         var slices = new StateSlices(sessions, quests, asks, groups, work);
         RepoView[] registry = [new("engine", true, null)];

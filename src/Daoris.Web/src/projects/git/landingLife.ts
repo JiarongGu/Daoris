@@ -3,7 +3,7 @@ import type { EdgeStyle } from '../../design/flowLayout';
 import type { FlowEdge, FlowNode } from '../../design/Flow';
 import { moment } from '../../locales/format';
 import { runTone } from '../../workflow/run';
-import { entryName, type MilestoneEntry, type MilestoneUnit } from '../../work/head/milestone';
+import { entryDetail, entryName, type MilestoneEntry, type MilestoneUnit } from '../../work/head/milestone';
 import { short, type TraceAnswer, type TraceBranch, type TraceDue } from '../../work/head/trace';
 
 type Translate = TFunction;
@@ -225,7 +225,8 @@ export function landingFlow(t: Translate, read: LandingOf, at: (iso: string) => 
       state: { word: t(`landing.cleanup.state.${cleanup}`), tone: runTone(cleanup === 'completed' ? 'done' : cleanup === 'blocked' ? 'waiting-on-you' : 'not-known') },
     });
     lines.cleanup = [
-      ...waits.map((each) => t(each.disposition === 'blocked' ? 'work.milestone.cleanup.blocked' : 'work.milestone.cleanup.waits', { what: entryName(t, each), detail: each.detail })),
+      // OVERVIEWNOISE1b: a blocked entry by its code in the reader's language, the driver's sentence where the page has no words.
+      ...waits.map((each) => t(each.disposition === 'blocked' ? 'work.milestone.cleanup.blocked' : 'work.milestone.cleanup.waits', { what: entryName(t, each), detail: entryDetail(t, each) })),
       ...gone.map((each) => t('landing.cleanup.gone', { what: entryName(t, each), detail: each.detail })),
       ...(branch?.gone && has(REMOVED_AS, branch.removedAs) ? [t(`landing.removedAs.${branch.removedAs}`, { on: branch.removedOn ?? '' })] : []),
       ...(completed && gone.length === 0 ? [t('work.milestone.cleanup.completedNone')] : []),

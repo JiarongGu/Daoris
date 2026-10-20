@@ -98,7 +98,7 @@ public static class AttentionStateSlice
         ["permission"] = ["session", "request", "call", "title", "kind", "choices", "since"],
         ["choice"] = ["id", "name", "kind"],
         ["blocked"] = ["unknown", "entries"],
-        ["entry"] = ["kind", "resource", "detail"],
+        ["entry"] = ["kind", "resource", "detail", "code", "facts"],
         ["attempt"] = WorkStateSlice.Fields["attempt"],
         ["holding"] = ["quests", "asks"],
         ["account"] = ["agent", "product", "harness", "signsIn", "named", "outside", "readFirst", "noAccount"],

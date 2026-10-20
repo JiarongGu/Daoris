@@ -25,7 +25,7 @@ vi.mock('@shenora/react', async () => {
   };
 });
 
-import '../../locales/i18n';
+import i18n from '../../locales/i18n';
 import { keys } from '../../data/queries';
 import { WorkspaceScopeProvider } from '../../data/scope';
 import type { RuleProposal } from '../../settings/repository/AgentRules';
@@ -355,6 +355,37 @@ describe('What needs you on a machine', () => {
     expect(within(item).getByText('signed out')).toBeInTheDocument();
     await userEvent.click(within(item).getByRole('button', { name: 'Claude Code' }));
     expect(door).toHaveBeenCalledWith(expect.objectContaining({ kind: 'signed-out', account: expect.objectContaining({ agent: 'claude-code' }) }));
+  });
+
+  /**
+   * OVERVIEWNOISE1b, the owner's report: a tree its session recorded that no branch record follows is one row, named by that session
+   * as Sessions names it, its block said once in the reader's language and never by the tree's path; its door is where the clean-up's
+   * press is.
+   */
+  it('lists a tree only the clean-up settles under its session’s name, said once in 中文, with its door', async () => {
+    await i18n.changeLanguage('zh');
+    try {
+      const door = vi.fn();
+      start([row('work', 'r3v13w00', null, {
+        where: 'engine', session: 'r3v13w00', title: 's-e0a8e0fd',
+        blocked: {
+          unknown: false,
+          entries: [{
+            kind: 'tree', resource: 'X:/daoris/trees/default/engine/s-e0a8e0fd', code: 'unfollowed', facts: { branch: 'daoris/s-e0a8e0fd' },
+            detail: 'its session recorded it, but no branch record follows `daoris/s-e0a8e0fd`, so the look’s tidy never takes it',
+          }],
+        },
+      })], { doors: { work: door } });
+      const item = await screen.findByRole('listitem', { name: sessionTitle(ENDED[0] as Session) });
+
+      expect(item).toHaveTextContent('受阻：工作树 s-e0a8e0fd，它的会话记录了它');
+      expect(item.textContent?.match(/daoris\/s-e0a8e0fd/g)).toHaveLength(1);
+      expect(item).not.toHaveTextContent(/X:\/daoris|its session recorded|tidy/);
+      await userEvent.click(within(item).getByRole('button', { name: i18n.t('work.attention.door.open') }));
+      expect(door).toHaveBeenCalledWith(expect.objectContaining({ kind: 'work', session: 'r3v13w00' }));
+    } finally {
+      await i18n.changeLanguage('en');
+    }
   });
 
   /** Review can be many (§6.2): five rows, then the rest counted, a door into Sessions, where they are. */

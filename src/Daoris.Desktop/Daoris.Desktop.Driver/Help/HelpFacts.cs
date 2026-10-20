@@ -221,6 +221,7 @@ public static class HelpFacts
                 (seen, looked) = (whole, look);
                 if (!ReferenceEquals(before, whole)) Known(facts, before, whole);
                 if (look is not null) TreesKnown(facts, before ?? whole, lookedBefore, whole, look);
+                if (look is not null && !ReferenceEquals(lookedBefore, look)) RecordedKnown(facts, whole, lookedBefore, look);
             }
         };
         foreach (var topic in (string[])[Machine, Sessions, History]) facts.Subject(topic, Whole);
@@ -247,6 +248,22 @@ public static class HelpFacts
 
         foreach (var gone in facts.Current.Subjects(Trees).Where(part => part != NoCheckout && !checkouts.Contains(part))) facts.Forget(Trees, gone);
     }
+
+    /// <summary>
+    /// The parts of the work whose sessions' recorded trees moved in the look (OVERVIEWNOISE1b), each judged again, so a tree joins the
+    /// session that recorded it once the look names it: the ledger's wake may judge a part before the look it woke lands.
+    /// </summary>
+    private static void RecordedKnown(MachineFacts facts, HelpMachineWhole whole, SessionLook? lookedBefore, SessionLook look)
+    {
+        foreach (var part in Parts(whole))
+        {
+            if (facts.Current.Of(Work, part) is not null && RecordedBasis(whole, lookedBefore, part) != RecordedBasis(whole, look, part)) facts.Wake(Work, part);
+        }
+    }
+
+    /// <summary>The trees <paramref name="part"/>'s sessions recorded in <paramref name="look"/>, as one string; none without a look.</summary>
+    private static string RecordedBasis(HelpMachineWhole whole, SessionLook? look, string part) =>
+        look is not null && PartOf(whole, part, look) is { } of ? string.Join('\n', of.Recorded.Select(each => $"{each.Session}\t{each.Tree}")) : "";
 
     /// <summary>
     /// The repositories the service's answers name with a checkout here, made subjects of the lines, the work and the clean-up's list,
@@ -491,21 +508,28 @@ public static class HelpFacts
     /// What <paramref name="subject"/>'s part of the work reads from the service's answers (FACTSPLIT1a): a repository's, its own
     /// checkout; the rest's, which repositories have one. Each with the trees the sessions still running or waiting hold, as
     /// <c>/api/sessions</c> answered them, as the module read them afresh before. Null for a repository not named with a checkout.
+    /// With the sessions' look, the trees its repositories' sessions recorded (OVERVIEWNOISE1b), each of which joins its session.
     /// </summary>
-    public static HelpWorkPart? PartOf(HelpMachineWhole whole, string subject)
+    public static HelpWorkPart? PartOf(HelpMachineWhole whole, string subject, SessionLook? look = null)
     {
         var checkouts = Checkouts(whole);
         var inUse = whole.Snapshot.Active.Select(session => session.Tree).OfType<string>().Where(tree => tree.Length > 0)
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
-        if (subject == NoCheckout) return new HelpWorkPart(null, new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase), checkouts, inUse);
-        if (whole.Snapshot.Repositories.FirstOrDefault(known => string.Equals(known.Repository, subject, StringComparison.OrdinalIgnoreCase)
-                && !string.IsNullOrWhiteSpace(known.Root)) is not { } checkout)
+        HelpWorkPart? part = null;
+        if (subject == NoCheckout)
         {
-            return null;
+            part = new HelpWorkPart(null, new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase), checkouts, inUse);
+        }
+        else if (whole.Snapshot.Repositories.FirstOrDefault(known => string.Equals(known.Repository, subject, StringComparison.OrdinalIgnoreCase)
+                     && !string.IsNullOrWhiteSpace(known.Root)) is { } checkout)
+        {
+            var roots = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase) { [checkout.Repository] = checkout.Root! };
+            part = new HelpWorkPart(checkout.Repository, roots, checkouts, inUse);
         }
 
-        var roots = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase) { [checkout.Repository] = checkout.Root! };
-        return new HelpWorkPart(checkout.Repository, roots, checkouts, inUse);
+        return part is not null && look is not null
+            ? part with { Recorded = WorkInventories.RecordedOf(look.Records.Where(record => part.Holds(record.Repository))) }
+            : part;
     }
 
     /// <summary>
@@ -534,17 +558,24 @@ public static class HelpFacts
     private static async Task<object?> JudgeWorkAsync(
         MachineFacts facts, string subject, Func<HelpWorkPart, CancellationToken, Task<HelpWork?>> work, CancellationToken ct)
     {
-        if (facts.Current.Value<HelpMachineWhole>(Machine, Whole) is not { } whole || PartOf(whole, subject) is not { } part) return null;
+        var current = facts.Current;
+        if (current.Value<HelpMachineWhole>(Machine, Whole) is not { } whole
+            || PartOf(whole, subject, current.Value<SessionLook>(Sessions, Whole)) is not { } part)
+        {
+            return null;
+        }
+
         return await work(part, ct).ConfigureAwait(false);
     }
 
     /// <summary>
     /// One part of the work read from <paramref name="home"/> (FACTSPLIT1a), as the module's judge reads it: the trees, the records
-    /// and the checkout's refs of the part's repositories alone, read-only, as `work state` reads the whole.
+    /// and the checkout's refs of the part's repositories alone, read-only, as `work state` reads the whole; each tree joined to the
+    /// session that recorded it (OVERVIEWNOISE1b).
     /// </summary>
     public static async Task<HelpWork> ReadWorkAsync(string home, HelpWorkPart part, CancellationToken ct)
     {
-        var (units, recovery, unread) = await WorkInventories.ReadPartAsync(home, part.Roots, part.InUse, part.Holds, ct).ConfigureAwait(false);
+        var (units, recovery, unread) = await WorkInventories.ReadPartAsync(home, part.Roots, part.InUse, part.Holds, ct, part.Recorded).ConfigureAwait(false);
         return new HelpWork(units, unread, recovery);
     }
 
@@ -725,6 +756,9 @@ public sealed record HelpWork(IReadOnlyList<WorkMilestone> Units, IReadOnlyList<
 public sealed record HelpWorkPart(
     string? Repository, IReadOnlyDictionary<string, string> Roots, IReadOnlySet<string> Checkouts, IReadOnlySet<string> InUse)
 {
+    /// <summary>The trees this part's repositories' sessions recorded (OVERVIEWNOISE1b), from the sessions' look; none before it.</summary>
+    public IReadOnlyList<RecordedTree> Recorded { get; init; } = [];
+
     /// <summary>Whether a repository the trees or the records name is this part's.</summary>
     public bool Holds(string repository) => Repository is { } own
         ? string.Equals(own, repository, StringComparison.OrdinalIgnoreCase)

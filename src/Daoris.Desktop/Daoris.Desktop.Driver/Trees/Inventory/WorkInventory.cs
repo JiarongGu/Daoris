@@ -61,6 +61,38 @@ public static class InventoryKind
     public const string Attachment = "attachment";
 }
 
+/// <summary>
+/// Why a blocked entry is blocked, as a code the page words in its reader's language with the entry's <see cref="InventoryEntry.Facts"/>
+/// (OVERVIEWNOISE1b): the <see cref="InventoryEntry.Detail"/> stays the driver's sentence, which the terminal says and a page that has
+/// no words for a code shows as recorded.
+/// </summary>
+public static class InventoryCode
+{
+    /// <summary>The look's tidy kept a line-held branch (FABRIC-END4a): facts <c>why</c>, the guard's code, and <c>at</c>, when.</summary>
+    public const string Kept = "kept";
+
+    /// <summary>A tree its session recorded that no branch record follows, so only the clean-up's press takes it: fact <c>branch</c>.</summary>
+    public const string Unfollowed = "unfollowed";
+
+    /// <summary>A tree of a known unit whose branch git could not read.</summary>
+    public const string Unread = "unread";
+
+    /// <summary>An unknown owner: a folder no repository is linked to.</summary>
+    public const string UnknownFolder = "unknown-folder";
+
+    /// <summary>An unknown owner: a tree whose branch git could not read.</summary>
+    public const string UnknownUnread = "unknown-unread";
+
+    /// <summary>An unknown owner: a tree on a branch no record and no session names: fact <c>branch</c>.</summary>
+    public const string UnknownBranch = "unknown-branch";
+
+    /// <summary>An unknown owner: a standing <c>daoris/*</c> branch Daoris did not record (FABRIC-UNKNOWN1): fact <c>branch</c>.</summary>
+    public const string Unrecorded = "unrecorded";
+}
+
+/// <summary>A tree a session's record names (D51): the join from a tree to the session that recorded it (OVERVIEWNOISE1b).</summary>
+public sealed record RecordedTree(string Session, string Tree);
+
 /// <summary>One resource a unit's work made, with its role and what became of it (FABRIC-MILESTONE1a, the design's §D3).</summary>
 /// <param name="Unit">The unit it belongs to (<see cref="WorkMilestone.Unit"/>).</param>
 /// <param name="Kind">One of <see cref="InventoryKind"/>.</param>
@@ -81,6 +113,12 @@ public sealed record InventoryEntry(string Unit, string Kind, string Resource, s
 
     /// <summary>A removal's proof, where its record kept one.</summary>
     public string? Proof { get; init; }
+
+    /// <summary>Why a blocked entry is blocked (<see cref="InventoryCode"/>), which the page words; null where it says only its detail.</summary>
+    public string? Code { get; init; }
+
+    /// <summary>The values its code is worded with, by name; null where it has no code.</summary>
+    public IReadOnlyDictionary<string, string>? Facts { get; init; }
 }
 
 /// <summary>Whether the unit's end was reached, and on what evidence.</summary>
@@ -172,6 +210,13 @@ public sealed record InventoryFacts(
     /// no tree holds is a unit of its own with an unknown owner, blocked. Read in the same git start as the recovery refs.
     /// </summary>
     public IReadOnlyList<StandingBranch> Standing { get; init; } = [];
+
+    /// <summary>
+    /// The trees this machine's sessions recorded, from their records, in the order they list them (OVERVIEWNOISE1b): each tree is joined
+    /// to the session that recorded it, so its unit is named by that session, and a tree no standing branch record names is that
+    /// session's rather than an unknown owner's. None given, none is joined, as before.
+    /// </summary>
+    public IReadOnlyList<RecordedTree> Recorded { get; init; } = [];
 }
 
 /// <summary>
@@ -187,8 +232,9 @@ public sealed record InventoryFacts(
 /// <para><b>The end is the kept fact</b> (<see cref="HeldFact"/>), never judged again here: a fact whose branch moved since is
 /// cleared by the next look (§B5), so this reads what the keeper last proved. Absent, the work is <i>handed</i> where a landing
 /// carries it and the line does not hold that, else <i>not ended</i> (<see cref="EndState"/>'s words).</para>
-/// <para><b>An unknown owner blocks</b> (canary 27): a tree no record names, or one git cannot read the branch of, is
-/// <see cref="InventoryDisposition.Blocked"/> and says so, in a unit of its own that is never read as ended.</para>
+/// <para><b>An unknown owner blocks</b> (canary 27): a tree no record and no session's record names, or one git cannot read the
+/// branch of, is <see cref="InventoryDisposition.Blocked"/> and says so, in a unit of its own that is never read as ended. A tree a
+/// session recorded is that session's (OVERVIEWNOISE1b, <see cref="InventoryFacts.Recorded"/>).</para>
 /// </remarks>
 public static partial class WorkInventory
 {
@@ -205,6 +251,12 @@ public static partial class WorkInventory
         /// <summary>The standing branch no record names (FABRIC-UNKNOWN1), which is the whole of such a unit.</summary>
         public string? Standing { get; set; }
         public HashSet<string> Sessions { get; } = new(StringComparer.OrdinalIgnoreCase);
+
+        /// <summary>A unit of its own for a tree its session recorded and no record of Daoris's names (OVERVIEWNOISE1b): the session's record names it.</summary>
+        public bool Joined { get; init; }
+
+        /// <summary>The trees joined by the session that recorded them and no branch record follows (OVERVIEWNOISE1b), by their full path.</summary>
+        public HashSet<string> Unfollowed { get; } = new(StringComparer.OrdinalIgnoreCase);
     }
 
     /// <summary>The milestone of every unit the records name, and of what no record names, oldest first: each read from its unit.</summary>
@@ -332,6 +384,20 @@ public static partial class WorkInventory
                 continue;
             }
 
+            // OVERVIEWNOISE1b: a tree no standing branch record names that a session recorded (one made again after its branch's record
+            // went, TREEGONE1) is that session's: the unit it executes, else a unit of its own named by it. Never an unknown owner's.
+            if (found is null && !aside && RecordedBy(facts, tree).FirstOrDefault() is { } session)
+            {
+                found = drafts.Values.FirstOrDefault(draft => draft.Sessions.Contains(session));
+                if (found is null)
+                {
+                    found = new Draft($"session:{session}", tree.Repository, tree.Workspace) { Joined = true };
+                    drafts[found.Id] = found;
+                }
+
+                found.Unfollowed.Add(Full(tree.Path));
+            }
+
             if (found is null)
             {
                 found = new Draft($"{(aside ? "aside" : "tree")}:{Full(tree.Path)}", tree.Repository, tree.Workspace) { Unowned = true };
@@ -341,9 +407,23 @@ public static partial class WorkInventory
             if (!attached.TryGetValue(found.Id, out var list)) attached[found.Id] = list = [];
             list.Add(tree);
             treeOf[Full(tree.Path)] = found.Id;
+            // OVERVIEWNOISE1b: each session that recorded the tree executed its unit, after what its landings name.
+            if (!aside && !found.Unowned)
+            {
+                foreach (var recorder in RecordedBy(facts, tree)) found.Sessions.Add(recorder);
+            }
         }
 
         return attached;
+    }
+
+    /// <summary>The sessions whose records name <paramref name="tree"/>, in the order the records list them (OVERVIEWNOISE1b).</summary>
+    private static IEnumerable<string> RecordedBy(InventoryFacts facts, SessionTree tree)
+    {
+        var full = Full(tree.Path);
+        return facts.Recorded
+            .Where(recorded => recorded.Session.Length > 0 && recorded.Tree.Length > 0 && string.Equals(Full(recorded.Tree), full, StringComparison.OrdinalIgnoreCase))
+            .Select(recorded => recorded.Session);
     }
 
     private static void AttachAutoLandings(InventoryFacts facts, Dictionary<string, Draft> drafts, Dictionary<string, string> treeOf)
@@ -405,9 +485,9 @@ public static partial class WorkInventory
             var id = $"unknown-branch:{each.Repository.ToLowerInvariant()}/{each.Branch}";
             if (drafts.ContainsKey(id)) continue;
             var draft = new Draft(id, each.Repository, "default") { Unowned = true, Standing = each.Branch };
-            draft.Extra.Add(new InventoryEntry(id, InventoryKind.SessionBranch, each.Branch, InventoryRole.Temporary, InventoryDisposition.Blocked,
+            draft.Extra.Add(Coded(id, InventoryKind.SessionBranch, each.Branch, InventoryCode.Unrecorded, [("branch", each.Branch)],
                 $"its owner is unknown: Daoris did not record `{each.Branch}`, so nothing here is cleaned; only your Discard branch press "
-                + "(Settings, clean-up) removes it"));
+                + "(the clean-up on its workspace's page) removes it"));
             drafts[id] = draft;
         }
     }
@@ -448,11 +528,7 @@ public static partial class WorkInventory
                     $"went {Minute(gone)} UTC") { Proof = branch.Held is { } held ? ProofSaid(held.By, held.On) : null }
                 // FABRIC-END4a: a guard that kept it at the tidy's last try is the record's, so it reads as blocked, saying why.
                 : ended && branch.Blocked is { } blocked
-                    ? new InventoryEntry(draft.Id, InventoryKind.SessionBranch, branch.Branch, InventoryRole.Temporary, InventoryDisposition.Blocked,
-                        $"the look's tidy kept it at {Minute(blocked.At)} UTC, since {KeptSaid(blocked.Why)}"
-                        // The tidy's own sentence where one was kept (FABRIC-END4a, second review): why, not only which guard.
-                        + (blocked.Reason is { Length: > 0 } reason && reason != "kept" ? $" ({reason})" : "")
-                        + "; it is tried again when that frees")
+                    ? KeptEntry(draft.Id, branch.Branch, blocked)
                     : new InventoryEntry(draft.Id, InventoryKind.SessionBranch, branch.Branch, InventoryRole.Temporary, InventoryDisposition.Pending,
                         ended ? "the look's tidy removes it, with fresh proof" : "waits for the work to end"));
         }
@@ -501,15 +577,18 @@ public static partial class WorkInventory
                 "the session's record and log: history, which the end never removes (clearing governs it)"));
         }
 
-        // The record that names it, by what the draft was read from; none for what no record names (canary 27).
+        // The record that names it, by what the draft was read from; none for what no record names (canary 27). A tree its session
+        // recorded and no record of Daoris's names is named by that session's record, the service's (OVERVIEWNOISE1b).
         var record = draft.Unowned ? null
             : branch is not null ? SessionBranches.FileName
             : draft.Landings.Count > 0 ? LandedBranches.FileName
+            : draft.Joined ? WorkRecord.Sessions
             : AutoLandings.FileName;
         var quests = draft.Landings.SelectMany(landing => QuestsOf(landing, draft.Id))
             .Select(quest => new WorkLink(WorkRelation.ProducedBy, QuestUnits.IdOf(quest))).Distinct().ToList();
         return new WorkUnit(
-            draft.Id, WorkUnitKind.Branch, new WorkOwner(draft.Repository, draft.Workspace, record, WorkRecord.DriverWriter),
+            draft.Id, WorkUnitKind.Branch,
+            new WorkOwner(draft.Repository, draft.Workspace, record, record == WorkRecord.Sessions ? WorkRecord.ServiceWriter : WorkRecord.DriverWriter),
             new WorkSubject(branch?.Branch ?? draft.Landings.FirstOrDefault()?.Branch ?? draft.Standing, end.Revision), end, entries)
         {
             Executors = [.. draft.Sessions],
@@ -545,27 +624,65 @@ public static partial class WorkInventory
     {
         if (tree.Branch == SessionTree.SetAside) return AsideEntry(draft.Id, tree);
 
+        // OVERVIEWNOISE1b: each blocked entry carries its code and the facts it is worded with, beside the driver's sentence.
         if (draft.Unowned)
         {
-            return new InventoryEntry(draft.Id, InventoryKind.Tree, tree.Path, InventoryRole.Temporary, InventoryDisposition.Blocked,
-                tree.Branch is SessionTree.NotATree
-                    ? "its owner is unknown: no repository is linked to this folder, so nothing here is cleaned until the person says"
-                    : tree.Branch == "(unreadable)"
-                        ? "its owner is unknown: git could not read which branch it is on, so nothing here is cleaned"
-                        : $"its owner is unknown: no record names `{tree.Branch}`, so nothing here is cleaned");
+            return tree.Branch is SessionTree.NotATree
+                ? Coded(draft.Id, InventoryKind.Tree, tree.Path, InventoryCode.UnknownFolder, [],
+                    "its owner is unknown: no repository is linked to this folder, so nothing here is cleaned until the person says")
+                : tree.Branch == "(unreadable)"
+                    ? Coded(draft.Id, InventoryKind.Tree, tree.Path, InventoryCode.UnknownUnread, [],
+                        "its owner is unknown: git could not read which branch it is on, so nothing here is cleaned")
+                    : Coded(draft.Id, InventoryKind.Tree, tree.Path, InventoryCode.UnknownBranch, [("branch", tree.Branch)],
+                        $"its owner is unknown: no record names `{tree.Branch}`, so nothing here is cleaned");
         }
 
         if (tree.Branch is SessionTree.NotATree or "(unreadable)")
         {
-            return new InventoryEntry(draft.Id, InventoryKind.Tree, tree.Path, InventoryRole.Temporary, InventoryDisposition.Blocked,
-                "git could not read which branch it is on, so it is not cleaned");
+            return Coded(draft.Id, InventoryKind.Tree, tree.Path, InventoryCode.Unread, [], "git could not read which branch it is on, so it is not cleaned");
         }
 
         var held = facts.InUse.Contains(Full(tree.Path)) || facts.InUse.Any(path => string.Equals(Full(path), Full(tree.Path), StringComparison.OrdinalIgnoreCase));
+        if (!held && draft.Unfollowed.Contains(Full(tree.Path)))
+        {
+            // OVERVIEWNOISE1b: the look's tidy takes recorded branches alone, so a tree no branch record follows waits on the clean-up's
+            // press; no retry is promised that will not come.
+            return Coded(draft.Id, InventoryKind.Tree, tree.Path, InventoryCode.Unfollowed, [("branch", tree.Branch)],
+                $"its session recorded it, but no branch record follows `{tree.Branch}`, so the look's tidy never takes it: the clean-up on "
+                + "its workspace's page removes it once you press it");
+        }
+
         return new InventoryEntry(draft.Id, InventoryKind.Tree, tree.Path, InventoryRole.Temporary, InventoryDisposition.Pending,
             held ? "a session still running or waiting holds it, so its folder is not moved aside yet"
                 : ended ? "the look's tidy moves its folder aside once nothing holds it" : "waits for the work to end");
     }
+
+    /// <summary>A temporary entry blocked for <paramref name="code"/>'s reason, with the facts it is worded with (OVERVIEWNOISE1b).</summary>
+    private static InventoryEntry Coded(
+        string unit, string kind, string resource, string code, IEnumerable<(string Name, string Value)> facts, string detail) =>
+        new(unit, kind, resource, InventoryRole.Temporary, InventoryDisposition.Blocked, detail)
+        {
+            Code = code,
+            Facts = facts.ToDictionary(fact => fact.Name, fact => fact.Value, StringComparer.Ordinal),
+        };
+
+    /// <summary>
+    /// A line-held branch the look's tidy kept (FABRIC-END4a), its guard said once (OVERVIEWNOISE1b): the tidy's own sentence where one
+    /// was kept, which says why and not only which guard, else the guard's words; and a retry only where the guard frees by itself.
+    /// </summary>
+    private static InventoryEntry KeptEntry(string unit, string branch, TidyBlock blocked)
+    {
+        var why = blocked.Reason is { Length: > 0 } reason && reason != "kept" ? reason : KeptSaid(blocked.Why);
+        return Coded(unit, InventoryKind.SessionBranch, branch, InventoryCode.Kept, [("why", blocked.Why), ("at", Moments.Write(blocked.At))],
+            $"the look's tidy kept it at {Minute(blocked.At)} UTC, since {why}" + (Frees(blocked.Why) ? "; it is tried again at the next look" : ""));
+    }
+
+    /// <summary>
+    /// Whether a guard's hold ends by itself (OVERVIEWNOISE1b): a session holding its tree ends, a folder held open is let go, a start
+    /// finishes, git and the service answer again. Another repository, a link, a hidden change, a refusal or uncommitted work stays until
+    /// someone settles it, so nothing promises that the next try takes it.
+    /// </summary>
+    internal static bool Frees(string why) => why is SweepKind.InUse or TidyKept.Busy or TidyKept.Starting or TidyKept.Sessions or TidyKept.Unread;
 
     /// <summary>A guard's code, as a clause after "since" (FABRIC-END4a): the look's tidy's codes, and the press's two kinds that keep a tree.</summary>
     internal static string KeptSaid(string why) => why switch
@@ -607,6 +724,12 @@ public static partial class WorkInventory
         }
 
         if (draft.Landings.Count > 0) return GoneOutside(draft);
+
+        // OVERVIEWNOISE1b: no record of Daoris's follows a tree its session recorded, so no proof was ever kept for it.
+        if (draft.Branch is null && draft.Joined)
+        {
+            return new MilestoneEnd(WorkEndState.NotEnded, null, null, null, null, "no branch record follows its tree, so whether the line holds its work is not judged");
+        }
 
         return new MilestoneEnd("not-ended", null, null, null, null, draft.Branch?.GoneAt is not null
             ? "its branch went and nothing proved the line holds its work"

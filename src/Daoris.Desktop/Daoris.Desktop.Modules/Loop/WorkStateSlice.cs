@@ -61,7 +61,7 @@ public static class WorkStateSlice
         ["unit"] = ["unit", "repository", "branch", "session", "end", "result", "cleanup", "recovery", "entries"],
         ["end"] = ["state", "by", "on", "revision", "at", "said"],
         ["cleanup"] = ["state", "waits", "gone"],
-        ["entry"] = ["unit", "kind", "resource", "role", "disposition", "detail", "until", "proof", "repository", "commit"],
+        ["entry"] = ["unit", "kind", "resource", "role", "disposition", "detail", "until", "proof", "repository", "commit", "code", "facts"],
         ["attempt"] =
         [
             "unit", "node", "attempt", "plugin", "step", "nodeState", "why", "outcome", "revision", "at", "resolution", "resolvedAt", "said",

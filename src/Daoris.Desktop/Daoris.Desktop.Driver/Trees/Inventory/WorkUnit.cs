@@ -82,6 +82,9 @@ public static class WorkRecord
     /// <summary>The service's ask store.</summary>
     public const string Asks = "asks";
 
+    /// <summary>The service's session records: what names a tree a session recorded and no record of Daoris's follows (OVERVIEWNOISE1b).</summary>
+    public const string Sessions = "sessions";
+
     /// <summary>The driver writes the branch records, in the process that holds the home's lease.</summary>
     public const string DriverWriter = "driver";
 

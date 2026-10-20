@@ -30,10 +30,11 @@ public sealed class WorkInventoryTests
 
     private static InventoryFacts Facts(
         GrownBranch[]? branches = null, LandedBranch[]? landings = null, SessionTree[]? trees = null, AutoLanding[]? autos = null,
-        RecoveryRef[]? refs = null, string[]? inUse = null, string[]? history = null, StandingBranch[]? standing = null) =>
+        RecoveryRef[]? refs = null, string[]? inUse = null, string[]? history = null, StandingBranch[]? standing = null,
+        RecordedTree[]? recorded = null) =>
         new(branches ?? [], landings ?? [], trees ?? [], autos ?? [], refs ?? [], (inUse ?? []).ToHashSet(StringComparer.OrdinalIgnoreCase),
             session => (history ?? []).Contains(session), Then.AddDays(1))
-        { Standing = standing ?? [] };
+        { Standing = standing ?? [], Recorded = recorded ?? [] };
 
     private static WorkMilestone One(InventoryFacts facts) => Assert.Single(WorkInventory.Derive(facts));
 
@@ -362,6 +363,88 @@ public sealed class WorkInventoryTests
 
         Assert.DoesNotContain(units, unit => unit.End.State == "unknown" && unit.Cleanup.Waits.Any(wait => wait.Kind == "session-branch"));
         Assert.Equal(1, units.Count(unit => unit.Entries.Any(entry => entry.Kind == "session-branch" && entry.Resource == "daoris/s1")));
+    }
+
+    // ---- OVERVIEWNOISE1b: a tree joined to the session that recorded it, and each blocked entry worded by a kept code
+
+    /// <summary>
+    /// The owner's report: a tree made again on its branch after that branch's record went (TREEGONE1) is named by no standing record,
+    /// yet its session recorded it. It joins that session, named by it, its owner known and never titled by its folder's path; and since
+    /// no branch record follows it, the look's tidy never takes it: it waits on the clean-up's press, said by its code. While its
+    /// session still runs, it is that session's to hold.
+    /// </summary>
+    [Fact]
+    public void A_tree_reopened_after_its_branch_record_went_joins_the_session_that_recorded_it()
+    {
+        var tree = Tree("s-e0a8e0fd", "daoris/s-e0a8e0fd");
+        var trace = Grown("daoris/s-e0a8e0fd", held: Held(), gone: Then.AddHours(1));
+        RecordedTree[] recorded = [new("c0ffee01", tree.Path + Path.DirectorySeparatorChar), new("0ther001", Path.Combine(Trees, "s9"))];
+
+        var units = WorkInventory.Derive(Facts(branches: [trace], trees: [tree], recorded: recorded));
+
+        Assert.DoesNotContain(units, unit => unit.End.State == "unknown");
+        var joined = Assert.Single(units, unit => unit.Session == "c0ffee01");
+        Assert.Equal("session:c0ffee01", joined.Unit);
+        Assert.DoesNotContain(tree.Path, joined.Unit, StringComparison.OrdinalIgnoreCase);
+        var wait = Assert.Single(joined.Cleanup.Waits);
+        Assert.Equal((InventoryKind.Tree, InventoryDisposition.Blocked, InventoryCode.Unfollowed), (wait.Kind, wait.Disposition, wait.Code));
+        Assert.Equal("daoris/s-e0a8e0fd", wait.Facts!["branch"]);
+        Assert.DoesNotContain("owner is unknown", wait.Detail);
+        // The trace keeps its own unit, which the tree never joins.
+        Assert.DoesNotContain(units.Single(unit => unit.Unit == "unit-a").Entries, entry => entry.Kind == InventoryKind.Tree);
+
+        var running = WorkInventory.Derive(Facts(branches: [trace], trees: [tree], inUse: [tree.Path], recorded: recorded))
+            .Single(unit => unit.Session == "c0ffee01");
+        Assert.Equal(InventoryDisposition.Pending, Assert.Single(running.Cleanup.Waits).Disposition);
+    }
+
+    /// <summary>A tree its branch's record names is named by the session that recorded it, so its milestone says whose work it is.</summary>
+    [Fact]
+    public void A_tree_its_branch_record_names_is_named_by_the_session_that_recorded_it()
+    {
+        var tree = Tree();
+        var unit = One(Facts(branches: [Grown()], trees: [tree], recorded: [new("0ther001", Path.Combine(Trees, "s9")), new("c0ffee01", tree.Path)]));
+
+        Assert.Equal("c0ffee01", unit.Session);
+        Assert.Equal("unit-a", unit.Unit);
+        Assert.Equal(InventoryDisposition.Pending, unit.Cleanup.Waits.Single(entry => entry.Kind == InventoryKind.Tree).Disposition);
+    }
+
+    /// <summary>
+    /// FABRIC-END4a's blocked branch says its guard once, by its kept code and when, the tidy's own sentence where one was kept and the
+    /// guard's words otherwise, never both; and it promises a retry only where the guard frees by itself.
+    /// </summary>
+    [Theory]
+    [InlineData(TidyKept.Nested, "its tree holds another repository at docs/inner", "another repository", false)]
+    [InlineData(TidyKept.Busy, null, "holds its tree's folder open", true)]
+    [InlineData(SweepKind.Dirty, null, "uncommitted or untracked", false)]
+    public void A_branch_the_tidy_kept_says_its_guard_once_by_its_code_and_a_retry_only_where_one_comes(
+        string why, string? reason, string said, bool retried)
+    {
+        var blocked = Grown(held: Held()) with { Blocked = new TidyBlock(why, Then.AddHours(3)) { Reason = reason } };
+
+        var wait = One(Facts(branches: [blocked])).Cleanup.Waits.Single(entry => entry.Kind == InventoryKind.SessionBranch);
+
+        Assert.Equal((InventoryDisposition.Blocked, InventoryCode.Kept), (wait.Disposition, wait.Code));
+        Assert.Equal(why, wait.Facts!["why"]);
+        Assert.Equal(Moments.Write(Then.AddHours(3)), wait.Facts["at"]);
+        Assert.Single(System.Text.RegularExpressions.Regex.Matches(wait.Detail, System.Text.RegularExpressions.Regex.Escape(said)));
+        Assert.Equal(retried, wait.Detail.Contains("tried again", StringComparison.Ordinal));
+    }
+
+    /// <summary>What no record names is coded by why its owner is unknown, with the branch it is on where git named one.</summary>
+    [Fact]
+    public void An_unknown_owner_is_coded_by_why_with_its_branch()
+    {
+        var tree = Assert.Single(One(Facts(trees: [Tree("stray", "daoris/stray")])).Entries);
+        var folder = Assert.Single(One(Facts(trees: [Tree("odd", SessionTree.NotATree)])).Entries);
+        var unread = Assert.Single(One(Facts(trees: [Tree("odd", "(unreadable)")])).Entries);
+        var branch = Assert.Single(One(Facts(standing: [new StandingBranch("engine", "daoris/orphan")])).Entries);
+
+        Assert.Equal((InventoryCode.UnknownBranch, "daoris/stray"), (tree.Code, tree.Facts!["branch"]));
+        Assert.Equal(InventoryCode.UnknownFolder, folder.Code);
+        Assert.Equal(InventoryCode.UnknownUnread, unread.Code);
+        Assert.Equal((InventoryCode.Unrecorded, "daoris/orphan"), (branch.Code, branch.Facts!["branch"]));
     }
 
     [Fact]

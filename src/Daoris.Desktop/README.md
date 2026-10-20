@@ -316,7 +316,10 @@ and the sessions the driver runs (`working`, the cap's own count by `ActiveSessi
 bar count, SESSBADGE1) judged in .NET (`NeedsAPerson`, `AccountAttention`) from the other slices' snapshots, the registry the machine's facts hold and what the
 driver's look kept, read from memory once every input slice has judged, woken by their pushes (the sessions' only where what the judge
 reads of them moved), each look, a held tool call's move and the rules', sessions', driver's and roster's scopes, so no window judges
-who needs the person and a tick reads none of what the band was judged from. A keyed slice's partition
+who needs the person and a tick reads none of what the band was judged from. A unit of work is a row there only where the person's
+press settles it (OVERVIEWNOISE1b, D173's note): an owner nothing records, or a tree its session recorded that no branch record
+follows; the work parts join each tree to the session that recorded it (`InventoryFacts.Recorded`, from the facts' sessions look),
+and each blocked entry carries a `code` and its `facts`, which the page words. A keyed slice's partition
 (`StateSlice.Keyed`) pushes the keys a judgement moved as a delta {baseSeq, removed}, never coalesced.
 
 | Domain | What it carries |
