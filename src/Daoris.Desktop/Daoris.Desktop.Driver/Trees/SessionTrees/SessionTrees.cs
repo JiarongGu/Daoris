@@ -544,6 +544,14 @@ public sealed class SessionTrees(string home, LandingPlugins? plugins = null) : 
         CancellationToken ct = default) =>
         Strays.TidyAsync(root, repository, workspace, inUse, now, ct);
 
+    /// <inheritdoc cref="SessionLocks.LetGoUnheldAsync"/>
+    public Task<IReadOnlyList<string>> LetGoUnheldLocksAsync(
+        string root, string repository, string? workspace, Func<CancellationToken, Task<IReadOnlySet<string>>> inUse, CancellationToken ct = default)
+    {
+        var space = RemoteTarget.Workspace(workspace);
+        return SessionLocks.LetGoUnheldAsync(_context.Home, root, Path.Combine(TreesRoot, space, repository), space, repository, inUse, ct);
+    }
+
     /// <inheritdoc cref="PassLeftovers.ClearCopies"/>
     internal IReadOnlyList<string> ClearPassCopies(string trees, DateTimeOffset now, Func<int, bool>? running = null) =>
         Leftovers.ClearCopies(trees, now, running ?? TreeOpenings.Running);

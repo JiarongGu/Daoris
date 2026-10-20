@@ -92,6 +92,8 @@ public sealed class BranchTidying(string home)
                 IReadOnlyList<StrayResult> strays = [];
                 try
                 {
+                    // TREELOCK1: a session lock whose session no longer holds its tree goes first, since the tidy refuses a locked tree.
+                    await trees.LetGoUnheldLocksAsync(row.Root!, row.Repository, row.Workspace, InUseAsync, ct).ConfigureAwait(false);
                     // AUTOTIDY2c, OPENCUT1: the folders under its trees that are no tree first, so a branch whose folder one was
                     // goes in the same look rather than being kept as unreadable.
                     strays = await trees.TidyStraysAsync(row.Root!, row.Repository, row.Workspace, InUseAsync, Clock(), ct).ConfigureAwait(false);

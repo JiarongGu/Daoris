@@ -25,6 +25,10 @@ with the version and date at release.
   `yarn run`, `pnpm test` or `pnpm run`, as it already did through npm. The flag goes where that yarn or pnpm version passes it
   on to the script; the version comes from the `packageManager` field or the install's own record. Where the version is not
   recorded, or is one whose argument handling was not read, the gate runs as written, and the run says why under the gate's line.
+- A driven session's own tree is locked while the session holds it, so a tool that prunes merged branches or removes clean trees
+  no longer takes it mid-session: `git worktree list` shows it locked for `daoris session <id>`, and git refuses `git worktree
+  prune` and a `git worktree remove` without `--force` on it. The lock is lifted when the session ends, and kept while it waits
+  on you; a lock of your own on a tree is never changed.
 - A change of a repository's permission prompts reaches a driven session already running there at its next turn, whether made on
   its Setup tab or with `daoris-driver access`. Where you have said something to the session for its next turn, its run ends as the
   turn ends, never mid-turn, your words wait on it, and at the next look it goes on in the same conversation under the new setup,
