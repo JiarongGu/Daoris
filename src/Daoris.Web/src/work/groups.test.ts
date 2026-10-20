@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Session } from '../data/api';
 import {
-  cutEnded, endedToArchive, GROUP_ORDER, keptSessionFilters, type NestedRow, nestServing, sessionFilters, type SessionGrouping,
+  CALL_HEAD, callHead, cutEnded, endedToArchive, GROUP_ORDER, keptSessionFilters, type NestedRow, nestServing, sessionFilters, type SessionGrouping,
   sessionsByRepository, sessionsByState, shownOf, stripSessions, waitsOnYou,
 } from './groups';
 
@@ -19,6 +19,31 @@ const grouping = (over: Partial<SessionGrouping> & { session: string; group: Ses
 });
 
 const ids = (rows: { id: string }[]) => rows.map((row) => row.id);
+
+/** RAILLINE1: a running call in a few words, as its row and its head say it. */
+describe('a running call’s head', () => {
+  it('says a short call as it is', () => {
+    expect(callHead('npm test')).toBe('npm test');
+    expect(callHead('x'.repeat(CALL_HEAD))).toBe('x'.repeat(CALL_HEAD));
+  });
+
+  it('cuts a long one to its bound, with an ellipsis', () => {
+    const said = callHead(`npm run build && ${'y'.repeat(300)}`);
+    expect(Array.from(said)).toHaveLength(CALL_HEAD);
+    expect(said.endsWith('…')).toBe(true);
+    expect(said.startsWith('npm run build && yyy')).toBe(true);
+  });
+
+  it('says a many-line command by its first line, its spaces run together, and says more followed', () => {
+    expect(callHead('\n  cd  src\t&& ls\nnpm test\n')).toBe('cd src && ls…');
+    expect(callHead('cd src\n\n')).toBe('cd src');
+  });
+
+  it('never splits a character outside the basic plane', () => {
+    const said = callHead('🙂'.repeat(60));
+    expect(Array.from(said)).toEqual([...Array<string>(CALL_HEAD - 1).fill('🙂'), '…']);
+  });
+});
 
 describe('what the session list remembers', () => {
   /** A first open with nothing remembered is by state (D126 §4.1), and nothing shows archived. */

@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import i18n from '../../locales/i18n';
 import type { Quest, Session } from '../../data/api';
 import type { SessionGrouping } from '../groups';
-import { questFacts, sessionFacts } from './headFacts';
+import { questFacts, sessionFacts, sessionFactsTip } from './headFacts';
 
 // The facts line under a head's title (UX7c, D152 §7; the UX7 design §5.2, §5.3): the facts a record's state makes
 // matter, each said once. The clock is held, so every span reads the same on every run.
@@ -24,6 +24,12 @@ const quest = (over: Partial<Quest> = {}): Quest => ({
 });
 
 const t = i18n.t.bind(i18n);
+
+/** A shell call's title as the driver names it (RAILLINE1): the whole command, many statements, past 300 characters. */
+const LONG_COMMAND = 'cd src/Daoris.Web && npm ci --no-audit --no-fund && npx vitest run src/work/rail/SessionRow.test.tsx '
+  + 'src/work/head/headFacts.test.ts --reporter=verbose; dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests '
+  + '--filter "FullyQualifiedName~RunningCallsTests|FullyQualifiedName~SessionLookTests" --no-build; git status --short && '
+  + 'git diff --stat HEAD~1';
 
 describe('a session’s facts line', () => {
   beforeEach(() => { vi.useFakeTimers(); vi.setSystemTime(NOW); });
@@ -56,14 +62,37 @@ describe('a session’s facts line', () => {
 
   /**
    * WAITSAY1b: where the page holds none of the call's events (begun before the window opened, or past the history's page), the
-   * head says the call the driver heard, from the row's reader; the record's own reading, live, goes first where it has one.
+   * head says the call the driver heard, from the row's reader. RAILLINE1: the head and the row read that one source wherever the
+   * reader answered, so the two never say different calls; the record read here speaks only where no reader carries a call.
    */
-  it('says the call the driver heard where the record read here names none', () => {
+  it('says the call the driver heard, the row’s, before the record read here', () => {
     const heard = grouping({ calling: { title: 'npm test', since: '2026-10-05T09:52:00Z' } });
     expect(sessionFacts(t, { session: session(), shown: 'working', grouping: heard }).at(-1)).toBe('running npm test for 8m');
     const read = { title: 'npm run build', since: '2026-10-05T09:58:00Z' };
-    expect(sessionFacts(t, { session: session(), shown: 'working', grouping: heard, calling: read }).at(-1)).toBe('running npm run build for 2m');
+    expect(sessionFacts(t, { session: session(), shown: 'working', grouping: heard, calling: read }).at(-1)).toBe('running npm test for 8m');
+    // The reader answered none open: the head says none, as the row does.
+    expect(sessionFacts(t, { session: session(), shown: 'working', grouping: grouping({ calling: null }), calling: read }).join()).not.toMatch(/running/);
+    // No reader, or a host older than the fact: the record read here.
+    expect(sessionFacts(t, { session: session(), shown: 'working', calling: read }).at(-1)).toBe('running npm run build for 2m');
+    expect(sessionFacts(t, { session: session(), shown: 'working', grouping: grouping(), calling: read }).at(-1)).toBe('running npm run build for 2m');
     expect(sessionFacts(t, { session: session({ state: 'completed' }), shown: 'completed', grouping: heard }).join()).not.toMatch(/running/);
+  });
+
+  /**
+   * RAILLINE1: a shell call's title is its whole command, which wrapped the head's facts line to three lines on the install. The
+   * line says it in at most 40 characters, the row's same head; the tip says the line with the command whole.
+   */
+  it('says a long call in a few words, whole in the line’s tip', async () => {
+    const heard = grouping({ calling: { title: LONG_COMMAND, since: '2026-10-05T09:52:00Z' } });
+    const of = { session: session(), shown: 'working', grouping: heard };
+    const said = /^running (.+) for 8m$/.exec(sessionFacts(t, of).at(-1)!)![1]!;
+    expect(Array.from(said).length).toBeLessThanOrEqual(40);
+    expect(said).toBe('cd src/Daoris.Web && npm ci --no-audit…');
+    expect(sessionFactsTip(t, of)).toBe(`engine · 2m · running ${LONG_COMMAND} for 8m`);
+
+    await i18n.changeLanguage('zh');
+    expect(sessionFacts(t, of).at(-1)).toBe('正在运行 cd src/Daoris.Web && npm ci --no-audit…，已 8 分钟');
+    expect(sessionFactsTip(t, of)).toContain(LONG_COMMAND);
   });
 
   /**

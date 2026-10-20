@@ -38,6 +38,12 @@ const quest = (over: Partial<Quest> = {}): Quest => ({
   ...over,
 });
 
+/** A shell call's title as the driver names it (RAILLINE1): the whole command, many statements, past 300 characters. */
+const LONG_COMMAND = 'cd src/Daoris.Web && npm ci --no-audit --no-fund && npx vitest run src/work/rail/SessionRow.test.tsx '
+  + 'src/work/head/headFacts.test.ts --reporter=verbose; dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests '
+  + '--filter "FullyQualifiedName~RunningCallsTests|FullyQualifiedName~SessionLookTests" --no-build; git status --short && '
+  + 'git diff --stat HEAD~1';
+
 const STATES: SessionState[] = [
   'queued', 'starting', 'working', 'awaiting-person',
   'completed', 'declined', 'stood-down', 'failed', 'stopped',
@@ -466,9 +472,32 @@ describe("a row as the list's reader places it", () => {
     expect(screen.getByText(/running npm test for 9m/)).toBeInTheDocument();
   });
 
+  /**
+   * RAILLINE1: a shell call's title is its whole command, which took the row's one line and pushed out the kind, the tree and
+   * the time. The line says its first line in at most 40 characters; the tip says it whole.
+   */
+  it('says a long call in a few words, whole in its tip', () => {
+    const title = LONG_COMMAND;
+    expect(title.length).toBeGreaterThanOrEqual(300);
+    render(<SessionRow session={session()} place="engine" grouping={placed({ group: 'working', shown: 'working', calling: { title, since: '2026-09-21T11:52:00Z' } })} />);
+    const line = screen.getByText(/^engine · running /);
+    const said = /running (.+) for 8m · driven · /.exec(line.textContent ?? '')![1]!;
+    expect(Array.from(said).length).toBeLessThanOrEqual(40);
+    expect(said).toBe('cd src/Daoris.Web && npm ci --no-audit…');
+    expect(line.textContent).toMatch(/ · driven · moved 4m ago$/);
+    expect(line.getAttribute('title')!.split('\n')[0]).toBe(title);
+    expect(line.getAttribute('title')).toMatch(/\nThe tool call its agent is inside/);
+  });
+
   it('says it in 中文 too', async () => {
     await i18n.changeLanguage('zh');
     try {
+      // RAILLINE1: a long call in a few words, the same head in both languages.
+      const long = render(<SessionRow session={session()} grouping={placed({ group: 'working', shown: 'working', calling: { title: LONG_COMMAND, since: '2026-09-21T11:52:00Z' } })} />);
+      const line = screen.getByText(/正在运行 cd src\/Daoris\.Web && npm ci --no-audit…，已 8 分钟/);
+      expect(line.getAttribute('title')).toBe(`${LONG_COMMAND}\n它的智能体正在进行的工具调用，以及已运行多久，以驱动最近一次所说为准。`);
+      long.unmount();
+
       render(<SessionRow session={session({ state: 'failed' })} place="engine" grouping={placed({ group: 'you', shown: 'parked', strikes: 3 })} />);
       expect(screen.getByText('已挂起')).toBeInTheDocument();
       expect(screen.getByText(/^engine · 3 个会话失败后挂起/)).toBeInTheDocument();

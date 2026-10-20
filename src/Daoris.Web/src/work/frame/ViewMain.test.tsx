@@ -138,6 +138,26 @@ describe("a page's header", () => {
     expect(screen.getByRole('banner').querySelector('.font-mono')).toBeNull();
   });
 
+  /**
+   * RAILLINE1: a session's head keeps its facts to one line, cut with an ellipsis before the door at its end, which is never cut;
+   * the line says what it cut in its tip. jsdom lays nothing out, so the classes are what is read.
+   */
+  it('keeps its facts to one line where asked, whole in its tip, and never cuts the door after them', () => {
+    render(
+      <PageHead
+        title="A session" facts={['engine', '2m', 'running npm test…']} factsOneLine factsTip="engine · 2m · running npm test --all"
+        fact={<button type="button">Full access</button>}
+      />,
+    );
+    const said = screen.getByText('engine · 2m · running npm test…');
+    expect(said).toHaveClass('truncate', 'min-w-0');
+    const line = said.parentElement!;
+    expect(line).toHaveClass('flex');
+    expect(line).not.toHaveClass('wrap-anywhere');
+    expect(line).toHaveAttribute('title', 'engine · 2m · running npm test --all');
+    expect(screen.getByRole('button', { name: 'Full access' }).parentElement).toHaveClass('shrink-0');
+  });
+
   /** A title cut at its lines is whole on a press (the UX7 design §5.3), and only where it was cut. */
   it('offers the whole title on a press where it was cut, and nothing where it fits', async () => {
     const tall = vi.spyOn(HTMLElement.prototype, 'scrollHeight', 'get').mockReturnValue(120);

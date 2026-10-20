@@ -25,7 +25,10 @@ import { usePublishedOffer } from '../../menus/mainOffer';
  * whole in its tip and on *Show all* where it was cut; and `facts` is the line under it, the facts the state makes
  * matter, said once. Such a head has no id line: the id is its ⋯'s and its *Details*'.
  */
-export function PageHead({ title, version, pills, id, line, acts, fold, more, icon, lead, clamp, facts, fact, wholeElsewhere, actsBeside = false }: {
+export function PageHead({
+  title, version, pills, id, line, acts, fold, more, icon, lead, clamp, facts, fact, wholeElsewhere, actsBeside = false,
+  factsOneLine = false, factsTip,
+}: {
   title: string; version?: string; pills?: ReactNode; id?: string; line?: string; icon?: ReactNode;
   /**
    * The acts (HEAD2a, D162 §3, the entry-and-heads design §2): primary first, then the secondary. They hold still: above
@@ -58,6 +61,13 @@ export function PageHead({ title, version, pills, id, line, acts, fold, more, ic
    * and the ⋯, so a row of their own under the facts would spend 38 px of the record head's 200.
    */
   actsBeside?: boolean;
+  /**
+   * The facts line keeps to one line, cut with an ellipsis before `fact`, which it never cuts (RAILLINE1): a session's head,
+   * whose line a running call's whole command once wrapped to three.
+   */
+  factsOneLine?: boolean;
+  /** The facts line's tip: what a fact says whole where the line says it short (a running call's title, RAILLINE1). */
+  factsTip?: string;
 }) {
   const said = facts && facts.length > 0 ? facts.join(' · ') : null;
   return (
@@ -76,13 +86,21 @@ export function PageHead({ title, version, pills, id, line, acts, fold, more, ic
             {version && <span className="font-mono text-small text-ink-faint">{version}</span>}
             {pills}
           </div>
-          {(said || fact) && (
-            <p className="m-0 mt-0.5 text-small text-ink-faint wrap-anywhere">
-              {said}
-              {said && fact && <span aria-hidden> · </span>}
-              {fact}
-            </p>
-          )}
+          {(said || fact) && (factsOneLine
+            ? (
+              <p title={factsTip} className="m-0 mt-0.5 flex min-w-0 items-baseline text-small text-ink-faint">
+                {said && <span className="min-w-0 truncate">{said}</span>}
+                {said && fact && <span aria-hidden className="shrink-0 whitespace-pre"> · </span>}
+                {fact && <span className="shrink-0">{fact}</span>}
+              </p>
+            )
+            : (
+              <p title={factsTip} className="m-0 mt-0.5 text-small text-ink-faint wrap-anywhere">
+                {said}
+                {said && fact && <span aria-hidden> · </span>}
+                {fact}
+              </p>
+            ))}
           {id && <p className="m-0 mt-0.5 font-mono text-meta text-ink-faint">{id}</p>}
           {line && <Prose className="mt-1 wrap-anywhere">{line}</Prose>}
         </div>

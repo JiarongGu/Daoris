@@ -87,6 +87,21 @@ export type SessionGrouping = {
   calling?: { title: string; since: string; waiting?: boolean } | null;
 };
 
+/** The characters a running call's head is said in at most (RAILLINE1), its ellipsis among them. */
+export const CALL_HEAD = 40;
+
+/**
+ * A running call said in a few words (RAILLINE1): its title's first line, its spaces run together, cut to `CALL_HEAD` characters
+ * with an ellipsis where more followed. A shell call's title is its whole command, three lines on the install's head and the
+ * whole of a rail row's line; the row and the head say this, and the whole title in their tips.
+ */
+export function callHead(title: string): string {
+  const lines = title.split(/\r?\n/).map((line) => line.replace(/\s+/g, ' ').trim()).filter(Boolean);
+  const first = Array.from(lines[0] ?? '');
+  if (first.length <= CALL_HEAD && lines.length <= 1) return first.join('');
+  return `${first.slice(0, CALL_HEAD - 1).join('').trimEnd()}…`;
+}
+
 /** What an ended session's tree offers to land (LAND4): the driver's `LandOffer`, as `SESSION_GROUPS` answers it. */
 export type LandOffer = { branch: string; tree: string; commits: number; uncommitted: number | null };
 

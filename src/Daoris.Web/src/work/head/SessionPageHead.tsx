@@ -19,7 +19,8 @@ import { PageHead } from '../frame/ViewMain';
  *
  * - **On the left** (UX7c, D152 §7, the UX7 design §5.2): its shown word on its pill first, so the word stays in one place
  *   whatever the title's length; its title on one line, whole in its tip; and under them the facts its state makes matter,
- *   handed in (`sessionFacts`), faint, ending in the *Full access* chip where its record says it started so (SESSACCESS1).
+ *   handed in (`sessionFacts`), faint, on one line whole in its tip (RAILLINE1), ending in the *Full access* chip where its
+ *   record says it started so (SESSACCESS1).
  *   Its id is not a line here: it is the ⋯'s *Copy session ID* and the record's *Details*.
  * - **On the right**: the primary act where the state has one (*Try again*, *Review*), then *Stop…* while it is live,
  *   then ⋯ with the rest in §3.1's order. *Answer…* is not here: the card under the header keeps the answer.
@@ -33,7 +34,7 @@ import { PageHead } from '../frame/ViewMain';
  * **It says how tall it is** to the main area it is pinned in (`--session-head`), so the long run's toolbar (SESS1 S9)
  * pins beneath it rather than under it.
  */
-export function SessionPageHead({ session, title, shown, facts = [], acts, primary = null, busy = false, onAct, asking }: {
+export function SessionPageHead({ session, title, shown, facts = [], factsTip, acts, primary = null, busy = false, onAct, asking }: {
   /** The session it heads, as the frame holds it; its acts and its facts are worked out from it by the frame. */
   session: Session;
   /**
@@ -43,6 +44,8 @@ export function SessionPageHead({ session, title, shown, facts = [], acts, prima
   title: string;
   /** Its facts line (`sessionFacts`), said in this order; none draws no line. */
   facts?: readonly string[];
+  /** The facts line's tip (`sessionFactsTip`): the running call's whole title, where the line says it short. */
+  factsTip?: string | null;
   /** Its shown word (D126 §2.2): the record's state, *idle*, or the reader's *parked* or *awaiting reply*. */
   shown: ShownState;
   /** The acts the one rule offers it in this header, in §3.1's order. */
@@ -96,8 +99,11 @@ export function SessionPageHead({ session, title, shown, facts = [], acts, prima
         actsBeside
         lead={<Pill tone={SESSION_TONE[shown]}>{t(shownKey(shown))}</Pill>}
         facts={facts}
+        // One line (RAILLINE1): a running call is said in a few words there (`callHead`), and whole in the line's tip.
+        factsOneLine
+        factsTip={factsTip ?? undefined}
         // Started under full access, by its record's pauses (SESSACCESS1, D184 point 1): the warning chip, last on the line, so the
-        // line wraps before it rather than cutting it. Any other start wears nothing.
+        // line is cut before it rather than cutting it. Any other start wears nothing.
         fact={startedFull(session) ? <AccessChip /> : undefined}
         // One group names the buttons together, the ⋯ with them (its name is how the page's tests and readers find them), so
         // the ⋯ is inside `acts` rather than PageHead's `more` slot: the two sit in one flex row either way, and *Stop…* is
