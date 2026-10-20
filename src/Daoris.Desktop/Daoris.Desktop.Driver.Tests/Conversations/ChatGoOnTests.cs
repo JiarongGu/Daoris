@@ -425,6 +425,47 @@ public sealed class ChatGoOnTests : IDisposable
     }
 
     /// <summary>
+    /// 🔴 COWORK1e (D188 point 4; the message-urgency design §2.3, trap 11), an ended conversation's go-on: its line went on by answers
+    /// alone twice, so a third answer shown to it waits for the person, marked with the agent that answered and said once, before
+    /// anything moves; the shell's come-up leaves it so. The person's *Go on with this answer* lets it go on in its own conversation.
+    /// </summary>
+    [Fact]
+    public async Task A_third_answer_alone_to_an_ended_chat_waits_for_the_person_until_they_let_it_go_on()
+    {
+        var ledger = new ChatLedger().Register("engine", _root);
+        ledger.Chat("c1", "completed", "talk", _root).Helped("w3", "Another agent says five.", helper: "h1");
+        ledger.Chat("h1", "completed", "codex-acp", _root);
+        new HarnessConversations(_home).Keep("c1", "talk", "conv-c1");
+        var events = Events;
+        foreach (var answered in new[] { "w1", "w2" })
+        {
+            events.Append("c1", new SessionEvent { Kind = SessionEventKind.User, Origin = "target", Helper = "h1", Id = answered, Text = "An answer." });
+            events.Append("c1", new SessionEvent { Kind = SessionEventKind.Message, Text = "Read it, and asked again." });
+            events.Append("c1", new SessionEvent { Kind = SessionEventKind.Turn, StopReason = "end_turn" });
+        }
+
+        using var runner = Runner(ledger, events);
+        var ended = new List<(string Session, string State)>();
+        runner.TakenUpEnded += (session, state) => { lock (ended) ended.Add((session, state)); };
+
+        events.Append("c1", Shown("w3", "Another agent says five.") with { Origin = "target", Helper = "h1" });
+
+        var held = await NoteAsync(events, "c1", e => e.Parts?.Any(part => part.Code == NoteCodes.AnswersHeld.Code) == true);
+        Assert.Equal(["w3"], held.Words!);
+        Assert.Equal((GoOnMarks.AnswersAlone, "codex-acp"), (new GoOnMarks(_home).Read("c1")!.Why, new GoOnMarks(_home).Read("c1")!.Agent));
+        Assert.Empty(ledger.Moves("c1"));
+        Assert.Equal(["w3"], ledger.Said("c1"));
+        Assert.Empty(await runner.TakeUpAsync());
+
+        Assert.True(AnswersAloneWord.GoOn(new GoOnMarks(_home), events, "c1").Stands);
+        runner.AnswerGoesOn("c1");
+
+        await Poll.Until(() => { lock (ended) return ended.Count > 0; }, () => $"moves [{string.Join(",", ledger.Moves("c1"))}]");
+        Assert.Equal(["working", "failed"], ledger.Moves("c1"));
+        Assert.Single(events.After("c1", 0).Events, e => e.Parts?.Any(part => part.Code == NoteCodes.AnswersHeld.Code) == true);
+    }
+
+    /// <summary>
     /// MIXAGENT2a-iii: a helper's answer for a conversation that is open in no runner here (the shell came up with it left on a
     /// record that works) is not an ended chat's words: nothing goes on, and it waits where it is.
     /// </summary>

@@ -154,6 +154,12 @@ public sealed class ChatRunner : IDisposable
         _goOn.GoOnAsync(sessionId, config, onEnded, ct);
 
     /// <summary>
+    /// The person let an answer the answers-alone bound held go on (COWORK1e, <see cref="ChatGoOn.AnswerGoesOn"/>): said as an open
+    /// conversation's next turn, or gone on with where it ended.
+    /// </summary>
+    public void AnswerGoesOn(string sessionId) => _goOn.AnswerGoesOn(sessionId);
+
+    /// <summary>
     /// A conversation this runner took up by itself ended (MSG1c2): the session and the state its record took, as a start's
     /// <c>onEnded</c> is told. No route started it, so the shell announces it as the page's <c>SESSION_ENDED</c>.
     /// </summary>

@@ -272,6 +272,28 @@ internal sealed class ChatGoOn
     }
 
     /// <summary>
+    /// The person let an answer the answers-alone bound held go on (COWORK1e, §8.3; <see cref="AnswersAloneWord.GoOn"/>, which already
+    /// kept their press and took the mark away): a conversation open here says it as its next turn, and one that ended goes on with it,
+    /// its end announced, as words shown to it would. On its own thread: the press is answered at once.
+    /// </summary>
+    public void AnswerGoesOn(string session)
+    {
+        if (_context.Closing) return;
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                if (_context.Holds(session)) await _words.SayHelperWordsAsync(session).ConfigureAwait(false);
+                else await GoOnAsync(session, onEnded: Announce).ConfigureAwait(false);
+            }
+            catch (Exception)
+            {
+                // Said in its conversation wherever it could be; the answer waits on the record, unmarked, for the next word or come-up.
+            }
+        });
+    }
+
+    /// <summary>
     /// Go on with an ended chat the person wrote to (MSG1c, D137 §2.2): its record reopened, its own conversation resumed by
     /// the id kept for it with every word waiting its first turn, or why not said in its conversation. Nothing for a record
     /// that is not an ended chat of this machine's with words waiting.
@@ -328,6 +350,14 @@ internal sealed class ChatGoOn
         if (WordsNever.ContinuedIn(json, sessionId) is { } next)
         {
             return new(null, $"conversation `{sessionId}` went on in conversation `{next}`, which takes its words.");
+        }
+
+        // 🔴 COWORK1e (D188 point 4; the message-urgency design §2.3): answers alone that would take its line on a third time in a row with
+        // nobody between wait for the person, marked before any mark is cleared; a word of theirs, or their *Go on with this answer*, lets
+        // them go. Its line is read over the records already in hand.
+        if (new AnswersAloneHold(_context.Events, _context.Marks).Holds(record, ServiceClient.ReadRecords(json), DateTimeOffset.UtcNow))
+        {
+            return new(null, $"conversation `{sessionId}`'s answer waits for you: it would take its work on a third time with nobody between.");
         }
 
         // The person wrote to it, so it stays in view whatever comes of it (D137 §2.3), and an earlier mark of words it could

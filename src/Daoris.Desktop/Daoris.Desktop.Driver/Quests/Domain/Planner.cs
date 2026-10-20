@@ -1273,8 +1273,11 @@ public static class Planner
 
         // 🔴 SESSCTX1c (D189's amendment): a record whose words wait marked because another client holds its conversation waits for the
         // person, as a park does, so no carry-on moves its quest to a new session meanwhile; a word said since is tried by WordsOn first.
+        // 🔴 COWORK1e (D188 point 4): so does one whose answers the answers-alone bound holds for the person, or that they kept with *Not
+        // now*: a carry-on would take the line on with nobody between.
         bool HeldForPerson(PriorSession last) =>
-            snapshot.Unable.GetValueOrDefault(last.Session) is { Why: ContinueWhy.Elsewhere } mark && GoOnMarks.Judged(last, mark);
+            snapshot.Unable.GetValueOrDefault(last.Session) is { Why: ContinueWhy.Elsewhere or GoOnMarks.AnswersAlone or GoOnMarks.NotNow } mark
+            && GoOnMarks.Judged(last, mark);
 
         // 🔴 The stand-down a bring-forward carries on (SYNCMERGE1b, D178 point 3), or null: the quest's newest record here stood down, and
         // the take the claim reads stands by a press made after that record began. Once, by that alone, as the ledger opens it (SYNCMERGE1b0

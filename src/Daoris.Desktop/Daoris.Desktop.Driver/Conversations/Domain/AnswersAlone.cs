@@ -104,16 +104,16 @@ internal static class AnswersAloneNotes
     /// <summary>The answers wait for the person: going on with them would be the third time in a row with nobody between.</summary>
     public static SessionEvent Held(string agent, IReadOnlyList<string> words) => Note(Noted.Of(
         NoteCodes.AnswersHeld,
-        $"— {agent}'s answer waits for you: it would take this work on a third time with nobody between.",
+        $"{agent}'s answer waits for you: it would take this work on a third time with nobody between.",
         ("agent", agent)), words);
 
     /// <summary>The person let the answer go on (<em>Go on with this answer</em>): their word on the line.</summary>
     public static SessionEvent Passed(IReadOnlyList<string> words) =>
-        Note(Noted.Of(NoteCodes.AnswersPassed, "— you let this answer go on."), words);
+        Note(Noted.Of(NoteCodes.AnswersPassed, "You let this answer go on."), words);
 
     /// <summary>The person kept the answer (<em>Not now</em>): it goes on only beside words of theirs.</summary>
     public static SessionEvent Kept(IReadOnlyList<string> words) =>
-        Note(Noted.Of(NoteCodes.AnswersKept, "— you kept this answer: it goes on only with your words."), words);
+        Note(Noted.Of(NoteCodes.AnswersKept, "You kept this answer: it goes on only with your words."), words);
 
     private static SessionEvent Note(Noted noted, IReadOnlyList<string> words) => new()
     {
