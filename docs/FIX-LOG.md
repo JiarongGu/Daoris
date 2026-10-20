@@ -5,6 +5,17 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-21 — Two branches built on main at once met only at the merge: a story on the old width helper (RAILLINE1, STORYGAP1)
+
+- **Symptom:** merging RAILLINE1 after STORYGAP1, the page head's stories named `at`, a helper STORYGAP1 had replaced with
+  `sessionWidths` (the web's typecheck failed), and the full set on 3307f91 failed `storyWidths.test.tsx`: a new story drew its
+  own 400 px frame rather than the helper's narrow width.
+- **Root cause:** both were built by the owner's install at the same time from an older main; each branch's own checks were
+  green, and the merge tool's blocking checks run no web typecheck and no web census, so the two met only in the CI beside.
+- **Fix:** the two stories take `sessionWidths.half` and the narrow one `sessionWidths.narrow`. MERGETSC1 adds the web's
+  typecheck to a merge's blocking checks where its paths reach the web's sources.
+- **Verification:** `tsc --noEmit` clean; `storyWidths.test.tsx` and the head's tests, 308.
+
 ## 2026-10-21 — The full set on 90466f4: a domain record named the loop, and two connector tests gave a starved pool five seconds (COWORK1d, FLAKE1)
 
 - **Symptom:** the driver's `StructureTests` refused `Quests/Domain/ChannelAnswers.cs:49` for naming `ChannelForwarded`, declared in
