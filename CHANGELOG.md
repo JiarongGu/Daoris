@@ -5,6 +5,10 @@ with the version and date at release.
 
 ## Unreleased
 
+- A session that goes on from another (a hand-over, a move onto another account, a carry-on, a fallback) can read what its
+  brief left out: Daoris's connector gains `line_read`, which pages the earlier parts' words, messages, tool calls, plans and notes
+  from this machine's records, a bounded page at a time, and the brief's note of what it left out names it. It changes nothing,
+  reads only the session's own line and never crosses the network.
 - A session waiting on its own background work, such as a long test run, now ends within about a minute once its quest closes,
   is declined or asks another repository, instead of working on until the session timeout. It is recorded completed where its
   quest reached done, its conversation says the work still running ended with it, and that work ends with its process.

@@ -301,6 +301,8 @@ public sealed class ContextBriefTests
         // And the brief says what it left out, by count, and that the record holds it.
         Assert.Contains($"{leftWords.Count} of the words the session took", Folded(brief));
         Assert.Contains("Daoris's record of this line holds", Folded(brief));
+        // SESSCTX1f: and the tool that reads it, one call away.
+        Assert.Contains("`line_read`", Folded(brief));
         Assert.Equal(brief.Text.Length, brief.Sections.Sum(section => section.Chars ?? 0));
     }
 
