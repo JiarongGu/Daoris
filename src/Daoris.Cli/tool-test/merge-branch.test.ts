@@ -4117,6 +4117,9 @@ describe('the tool, end to end in a scratch repository', { concurrency: true }, 
     assert.equal(result.status, 0, result.out);
     assert.match(result.out, /in the CI beside/);
     assert.deepEqual(repo.ran(), ['universal'], 'only the blocking check ran');
+    repo.cleanup();
+    // OVERVIEWNOISE1a: a scratch repository left under `_fixtures/` kept a landed session's tree from the tidy.
+    assert.equal(existsSync(dirname(repo.root)), false, 'the case left its scratch repository');
   });
 
   test('a clean merge prints its lanes, runs every gate, keeps each whole output, and never commits', async () => {
