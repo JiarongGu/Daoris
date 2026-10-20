@@ -234,6 +234,15 @@ public sealed record NextStart(string? Account, NextReason Reason, IReadOnlyList
 
     /// <summary>The moment the reason names: its week's reset (<see cref="NextReason.Lapsing"/>), or the first account offered again (<see cref="NextReason.Waits"/>).</summary>
     public DateTimeOffset? When { get; init; }
+
+    /// <summary>Where it is <see cref="NextReason.Lapsing"/>, the window that won (NEXTLAPSE1, D165's USAGERESET1 note): <c>weekly</c>.</summary>
+    public string? Window { get; init; }
+
+    /// <summary>Where it is <see cref="NextReason.Lapsing"/>, the whole percent of that window unused, as the start's line says it.</summary>
+    public int? Unused { get; init; }
+
+    /// <summary>Where it is <see cref="NextReason.Lapsing"/>, when the reading that says it was made.</summary>
+    public DateTimeOffset? Seen { get; init; }
 }
 
 /// <summary>
@@ -458,10 +467,15 @@ public static class AccountRotation
             { Step: WalkStep.LeastRecent } => Started(own).Tier == 0 ? NextReason.NotStarted : NextReason.LeastRecent,
             _ => NextReason.List,
         };
+        // NEXTLAPSE1: what would lapse, as the start's line says it (Lapses), from the one reading that ranked it.
+        var lapse = reason == NextReason.Lapsing ? UsageCurves.Lapsing(scope.Use, own.Said, now)?.Window : null;
         return new NextStart(runs, reason, others)
         {
             Over = against,
-            When = reason == NextReason.Lapsing ? UsageCurves.Lapsing(scope.Use, own.Said, now)?.Window.Reset : null,
+            When = lapse?.Reset,
+            Window = lapse?.Window,
+            Unused = lapse?.Used is { } used ? RotationWords.Whole(1 - used) : null,
+            Seen = lapse?.Seen,
         };
 
         AccountHeld Held(AccountState state) => state.Readiness switch
