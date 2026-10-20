@@ -337,7 +337,9 @@ daoris <command> [options]
   update open a connection themselves, to a maker's release channel for Claude
   Code and Codex, and tool download, use … managed, update and look, to a tool's
   maker and a resource location; driver retry without --at asks this machine's
-  service for the quest's session records.
+  service for the quest's session records. While Daoris runs on that home, agent,
+  driver, plugin and tool send what they change to it over its own pipe, and its
+  window asks you to confirm it; with none running they edit the files themselves.
   Every doctrine command is offline.
 
 Options:

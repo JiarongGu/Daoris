@@ -18,9 +18,9 @@ import { ensureHomeId, homePlaces } from './home.ts';
  * An older build's `driver.lock` is read as its lease while its holder lives, so a desktop from before HOMELEASE1 is still a
  * holder to this one.
  *
- * The twin's half for this CLI's own verbs: `daoris driver …`, `agent`, `plugin` and `tool` edit files under the home, and
- * RPC1f sends them over the running instance's pipe while one runs and takes this lease (`leaseForVerb`) when none does, the
- * design's §9. Until then they act as they always did.
+ * The twin's half for this CLI's own verbs (RPC1f, the design's §9): a verb that changes the home goes through `service.ts`'s
+ * `instanceDoor`, which sends its route to the running instance that answers, refuses where one lives and does not answer, and only
+ * where it finds none takes this lease (`leaseForVerb`) for the verb's own act. A read holds nothing.
  */
 
 /** The lease's name: the home's `home-lease` entry, which the table places (D172; `run/` once HOMELAYOUT3 switched it on). */
@@ -48,7 +48,10 @@ export interface LeaseHolder {
 export interface Lease {
   /** Whether this process holds the home's lease. */
   readonly holds: boolean;
-  /** The instance it acts beside, holding nothing (until RPC1f's pipe makes a verb that instance's client), or null. */
+  /**
+   * The instance it acts beside, holding nothing, or null: an instance the door's look did not find (a workspace build reads no
+   * address file; an instance starting holds the lease before it writes one), as the driver's `HomeLease.ForVerb` acts beside it.
+   */
   readonly beside: LeaseHolder | null;
   /** Let the home go, only while the lease still says what this one wrote. */
   release(): void;
@@ -136,9 +139,10 @@ export function tryLease(
 }
 
 /**
- * The lease for a verb acting alone (§5, §7.2): taken where the home is free; beside an instance, holding nothing, as a verb
- * acts today until RPC1f's pipe makes it that instance's client; and where another verb, a migration or a swap holds it,
- * waited for up to thirty seconds, then refused naming which holds it.
+ * The lease for a verb acting alone (§5, §7.2): taken where the home is free; and where another verb, a migration or a swap holds
+ * it, waited for up to thirty seconds, then refused naming which holds it. Beside an instance's lease it holds nothing: the verb's
+ * door asked first (`service.ts`' `instanceDoor`), so an instance that answered took the change and one that lives without answering
+ * refused it, and an instance only the lease names is one that look could not find, which the driver's twin acts beside too.
  */
 export async function leaseForVerb(
   home: string, what: string,

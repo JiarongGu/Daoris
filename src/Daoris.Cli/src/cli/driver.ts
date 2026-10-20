@@ -1,6 +1,8 @@
 import type { CliCommand } from '../platform/types.ts';
-import { commandDriver } from '../driver/driverconfig.ts';
-import { registryCheckouts, sessionRecords } from '../service/service.ts';
+import { ALONE } from '../platform/door.ts';
+import { daorisHome } from '../platform/home.ts';
+import { commandDriver, PATH_VARIABLE } from '../driver/driverconfig.ts';
+import { instanceDoor, registryCheckouts, sessionRecords } from '../service/service.ts';
 import { commandWorkflow } from '../workflows/workflowdoor.ts';
 
 export const command: CliCommand = {
@@ -166,6 +168,9 @@ export const command: CliCommand = {
   ],
   // `retry` without `--at` counts the quest's failures from this machine's records (RETRY1b), and `review` looks for a
   // procedure in the registry's checkouts (REVIEWENV1a), through the one module that may reach a network, handed in here so
-  // `driverconfig.ts` never holds a socket of its own. The `workflow` verbs are handed in too (WORKFLOW1d, `WorkflowDoor`).
-  run: (args) => commandDriver(args, () => sessionRecords(), () => registryCheckouts(), (each, context) => commandWorkflow(each, context)),
+  // `driverconfig.ts` never holds a socket of its own. The `workflow` verbs are handed in too (WORKFLOW1d, `WorkflowDoor`). So is
+  // the door a change goes through (RPC1f): the running Daoris's route while it runs on this home, this verb's own write under the
+  // home's lease when none does. A file `DAORIS_DRIVER_CONFIG` names is no instance's, so it is written alone, holding nothing.
+  run: (args) => commandDriver(args, () => sessionRecords(), () => registryCheckouts(), (each, context) => commandWorkflow(each, context),
+    process.env[PATH_VARIABLE] ? ALONE : instanceDoor({ home: daorisHome(), write: args.write })),
 };

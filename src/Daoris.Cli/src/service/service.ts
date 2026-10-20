@@ -21,14 +21,22 @@
 //
 // And since TOOLS4, a tool's maker and a resource location, for `daoris tool download|use … managed|update|look`
 // (D121 §3.6, §3.7): the same fetcher, its hops held to the address rule the dispatcher names.
+//
+// And since RPC1f, the running Daoris's own pipe (D171 point 3, the terminal RPC design §9): a management verb that edits what a
+// window's route edits sends that route while Daoris runs, so the instance's own handler judges, writes and publishes it, and takes
+// the home's lease where none runs (`instanceDoor`). Node opens a Windows named pipe with `net.connect`, so the wire is here too.
 
-import { createWriteStream, readFileSync } from 'node:fs';
-import { createHash } from 'node:crypto';
+import { createWriteStream, mkdirSync, readdirSync, readFileSync, statSync, unlinkSync } from 'node:fs';
+import { createHash, randomBytes, randomUUID } from 'node:crypto';
 import { once } from 'node:events';
-import { join } from 'node:path';
+import { connect, type Socket } from 'node:net';
+import { dirname, join } from 'node:path';
 import { finished } from 'node:stream/promises';
-import { DaorisError, RefusalError } from '../platform/errors.ts';
+import { DaorisError, RefusalError, type ExitCode } from '../platform/errors.ts';
+import { writeTextAtomic } from '../platform/fsx.ts';
 import { daorisHome, homeEntry, homeId, isHomeId, THIS_INSTALL } from '../platform/home.ts';
+import { leaseForVerb, leaseHolder, leaseNamed } from '../platform/lease.ts';
+import type { InstanceRoute, VerbDoor, VerbPress } from '../platform/door.ts';
 import type { Fetcher } from '../agents/channels.ts';
 
 const NO_SERVICE =
@@ -153,6 +161,465 @@ function processLives(pid: number): boolean {
   } catch (error) {
     return (error as NodeJS.ErrnoException).code === 'EPERM';
   }
+}
+
+// ------------------------------------------------------------------------------------------- the running Daoris's pipe (RPC1f)
+
+/** The pipe the dev loop and a rehearsal name, as they name the service (§7.4): the driver's `InstanceDoor.Variable`. */
+export const INSTANCE_VARIABLE = 'DAORIS_INSTANCE';
+
+/** The pipe's own module and the wire's version, as `InstancePipe` names them (the driver's `InstanceClient.PipeModule`, `Protocol`). */
+const PIPE_MODULE = 'DAORIS.PIPE';
+const PIPE_PROTOCOL = 1;
+
+/** The instance's refusals that are the person's word on a press (RPC1c): refused in the window, or nobody confirmed in two minutes. */
+const PERSON_ANSWERS: ReadonlySet<string> = new Set(['refused', 'expired']);
+
+/** How long the pipe is given to connect and answer the hello (§7.2: five seconds), and a press its answer before `RESULT` is asked. */
+const ANSWER_MS = 5_000;
+const WAIT_MS = 30 * 60_000;
+
+/** How long a sent press is kept to be asked again: the instance's journal keeps its lines as long (§6.1, the driver's `SentPresses.Kept`). */
+const SENT_KEPT_MS = 24 * 60 * 60_000;
+
+/** What a verb finds when it looks for the running Daoris (§7.2's rows; the driver's `InstanceFound`). */
+export type InstanceFound =
+  /** No instance on this home, or a workspace build, which reads no address file: the verb acts alone. */
+  | 'none'
+  /** A headless `drive` loop holds the home: alone under the lease's rule, until a headless loop serves the pipe. */
+  | 'headless'
+  /** The instance answered its hello on this home: the verb is its client. */
+  | 'answers'
+  /** The instance lives and its pipe did not answer, or it names none: a press is refused, never done alone. */
+  | 'silent'
+  /** The hello was refused (`protocol`, `home`, `stopping`): a press is refused, saying which. */
+  | 'refused';
+
+/** What a verb found, with the sentence that says it. */
+export interface InstanceLook {
+  readonly found: InstanceFound;
+  readonly why: string;
+  /** Lets the connection go where the instance answered; nothing otherwise. */
+  close(): void;
+}
+
+/** Where a verb looks for the running Daoris, and where it says what it hears: the process's own, or a test's. */
+export interface InstanceWorld {
+  /** The home the verb acts on, or null where it has none. */
+  readonly home: string | null;
+  /** The variables; the process's where absent. */
+  readonly env?: NodeJS.ProcessEnv;
+  /** The install this `daoris` runs from, null for a checkout (which reads no address file); this package's where absent. */
+  readonly install?: string | null;
+  /** How the address's status door is asked; `fetch` where absent. */
+  readonly get?: Get;
+  /** Whether a process lives; signal 0 where absent. */
+  readonly lives?: (pid: number) => boolean;
+  /** Where the answer's words and the route's progress are said: the verb's own `write`. */
+  readonly write: (line: string) => void;
+  /** Where the door says it waits for the window, so the output stays the answer's; the standard error where absent. */
+  readonly say?: (line: string) => void;
+  /** How long the pipe is given to connect and answer the hello, in milliseconds. */
+  readonly answer?: number;
+  /** How long a press is waited on before its answer is asked for by `RESULT`, in milliseconds. */
+  readonly wait?: number;
+  /** How long a verb acting alone waits on another act's lease before it is refused, in milliseconds (§5: thirty seconds). */
+  readonly leaseWait?: number;
+}
+
+type Envelope = Record<string, unknown>;
+
+/** Where Windows serves a pipe of this name; the CLI opens it as the driver's `NamedPipeClientStream` does, by name on this machine. */
+const pipePath = (name: string): string => `\\\\.\\pipe\\${name}`;
+
+/**
+ * A terminal's connection to the running Daoris's pipe (the driver's `InstanceClient`): UTF-8 lines of JSON, LF; the hello first;
+ * then the kit's request envelope with `key` beside it; answers the kit's `{ category: "ipc", id, success, data?, error? }`, and a
+ * route's progress the kit's notification envelope naming the request's id. One request at a time.
+ *
+ * Node cannot ask Windows which process serves a pipe, so where the driver also holds the pipe's server to the address file's
+ * process, this client takes the hello's answer on this home's id as what tells (`twins.md`).
+ */
+class PipeClient {
+  /** The pipe's name. */
+  readonly pipe: string;
+  private readonly socket: Socket;
+  private held = '';
+  private readonly lines: string[] = [];
+  private ended = false;
+  private wake: (() => void) | null = null;
+
+  private constructor(pipe: string, socket: Socket) {
+    this.pipe = pipe;
+    this.socket = socket;
+    socket.on('data', (chunk: Buffer) => {
+      this.held += chunk.toString('utf8');
+      for (let at = this.held.indexOf('\n'); at !== -1; at = this.held.indexOf('\n')) {
+        this.lines.push(this.held.slice(0, at));
+        this.held = this.held.slice(at + 1);
+      }
+      this.poke();
+    });
+    const end = (): void => {
+      this.ended = true;
+      this.poke();
+    };
+    socket.on('close', end);
+    socket.on('error', end);
+  }
+
+  /** The connection to `pipe`, or null where it does not take one within `within` milliseconds. */
+  static connect(pipe: string, within: number): Promise<PipeClient | null> {
+    return new Promise((resolve) => {
+      const socket = connect(pipePath(pipe));
+      const failed = (): void => {
+        clearTimeout(timer);
+        socket.destroy();
+        resolve(null);
+      };
+      const timer = setTimeout(failed, within);
+      socket.once('error', failed);
+      socket.once('connect', () => {
+        clearTimeout(timer);
+        socket.removeListener('error', failed);
+        resolve(new PipeClient(pipe, socket));
+      });
+    });
+  }
+
+  /** The hello's answer, the whole envelope, or null where none came within `within`. */
+  hello(home: string | null, within: number): Promise<Envelope | null> {
+    return this.request(randomUUID(), PIPE_MODULE, 'HELLO', { protocol: PIPE_PROTOCOL, home, client: 'daoris', version: cliVersion() },
+      null, null, within);
+  }
+
+  /** `RESULT { id, key }`: how the press `id` ended, the whole envelope, or null where none came. */
+  result(id: string, key: string, within: number): Promise<Envelope | null> {
+    return this.request(randomUUID(), PIPE_MODULE, 'RESULT', { id, key }, null, null, within);
+  }
+
+  /**
+   * One request, and its answer's whole envelope; null where the connection was lost or nothing answered within `within`. Each
+   * notification on the way is handed to `told`.
+   */
+  async request(
+    id: string, module: string, type: string, payload: unknown, key: string | null, told: ((envelope: Envelope) => void) | null,
+    within: number,
+  ): Promise<Envelope | null> {
+    if (this.ended) return null;
+    this.socket.write(`${JSON.stringify(key === null ? { id, module, type, payload } : { id, module, type, payload, key })}\n`);
+    const until = Date.now() + within;
+    for (;;) {
+      const line = await this.next(until);
+      if (line === null) return null;
+      let read: unknown;
+      try {
+        read = JSON.parse(line);
+      } catch {
+        // Not the wire: nothing it says is an answer.
+        continue;
+      }
+      if (!isObject(read)) continue;
+      if (read.category === 'notification') {
+        told?.(read);
+        continue;
+      }
+      if (read.id === id) return read;
+    }
+  }
+
+  close(): void {
+    this.socket.destroy();
+  }
+
+  /** The next line, or null once the connection ended with none left or `until` passed. */
+  private next(until: number): Promise<string | null> {
+    if (this.lines.length > 0) return Promise.resolve(this.lines.shift()!);
+    const left = until - Date.now();
+    if (this.ended || left <= 0) return Promise.resolve(null);
+    return new Promise((resolve) => {
+      const timer = setTimeout(() => {
+        this.wake = null;
+        resolve(null);
+      }, left);
+      this.wake = () => {
+        clearTimeout(timer);
+        this.wake = null;
+        resolve(this.lines.shift() ?? null);
+      };
+    });
+  }
+
+  private poke(): void {
+    if (this.wake && (this.lines.length > 0 || this.ended)) this.wake();
+  }
+}
+
+/** What was found, and the connection where the instance answered. */
+interface Look {
+  readonly found: InstanceFound;
+  readonly why: string;
+  readonly client: PipeClient | null;
+}
+
+/**
+ * What the verb finds on its home (§7.4; the driver's `InstanceDoor.FindAsync`): the instance whose address file's process lives,
+ * whose file and status answer this home's id, and whose pipe answers the hello on it; or the pipe `DAORIS_INSTANCE` names, whose
+ * hello answers this home's id.
+ *
+ * @remarks
+ * 🔴 **A workspace build reads no address file** (D171's FINDDAORIS1 note): on a machine with an install the account's `DAORIS_HOME`
+ * names that install's live home, and a gate or a test that met a running Daoris would act on it. The dev loop and a rehearsal that
+ * mean to reach an instance name its pipe in `DAORIS_INSTANCE`.
+ */
+export async function findInstance(world: InstanceWorld): Promise<InstanceLook> {
+  const look = await find(world);
+  return { found: look.found, why: look.why, close: () => look.client?.close() };
+}
+
+async function find(world: InstanceWorld): Promise<Look> {
+  const mine = world.home ? homeId(world.home) : null;
+  const named = (world.env ?? process.env)[INSTANCE_VARIABLE]?.trim();
+  if (named) return hello(named, mine, world, `the Daoris ${INSTANCE_VARIABLE} names (${named}) did not answer; nothing was done.`);
+
+  const install = world.install === undefined ? THIS_INSTALL : world.install;
+  if (!install || !world.home) return { found: 'none', why: 'a workspace build reads no address file.', client: null };
+
+  const lives = world.lives ?? processLives;
+  const holder = leaseHolder(world.home, lives);
+  if (holder?.kind === 'headless') return { found: 'headless', why: `${world.home} is held by ${leaseNamed(holder)}.`, client: null };
+
+  const entry = runningEntry(world.home);
+  if (!entry || !lives(entry.pid)) return { found: 'none', why: 'Daoris is not running on this home.', client: null };
+
+  // HOMEID1: only this home's instance. A file naming another home's id, or a status answering as another's, is not it.
+  const answered = mine && (entry.home === undefined || entry.home === mine) ? await statusHome(entry.url, world.get ?? fetch) : null;
+  if (!mine || (entry.home !== undefined && entry.home !== mine) || (answered !== null && answered !== mine)) {
+    return { found: 'none', why: 'the Daoris running here answers as another home\'s.', client: null };
+  }
+
+  const running = `Daoris is running on this home (\`Daoris.exe\`, pid ${entry.pid}) and did not answer; nothing was done.`;
+  if (!entry.pipe) {
+    return {
+      found: 'silent',
+      why: `${running} It names no pipe for a terminal to send this to: a Daoris from before the terminal's pipe, or one that `
+        + 'could not serve it, which its machine log says.',
+      client: null,
+    };
+  }
+
+  return hello(entry.pipe, mine, world, running);
+}
+
+/** The home id a Daoris host's status door names, asked with redirects off; null where it does not answer as one, or names none. */
+async function statusHome(url: string, get: Get): Promise<string | null> {
+  if (!isLocalService(url)) return null;
+  try {
+    const response = await get(`${url}/api/status`, { method: 'GET', redirect: 'manual', signal: AbortSignal.timeout(2_000) });
+    const status: unknown = await response.json().catch(() => null);
+    return response.ok && isObject(status) && typeof status.tier === 'string' && isHomeId(status.home) ? status.home : null;
+  } catch {
+    return null;
+  }
+}
+
+/** The pipe connected and its hello said, or why not. */
+async function hello(pipe: string, mine: string | null, world: InstanceWorld, silent: string): Promise<Look> {
+  const within = world.answer ?? ANSWER_MS;
+  const seconds = `${Number((within / 1000).toFixed(1))} seconds`;
+  const client = await PipeClient.connect(pipe, within);
+  if (!client) return { found: 'silent', why: `${silent} Its pipe did not answer within ${seconds}.`, client: null };
+
+  const answer = await client.hello(mine, within);
+  if (!answer) {
+    client.close();
+    return { found: 'silent', why: `${silent} Its pipe did not answer the hello within ${seconds}.`, client: null };
+  }
+
+  if (answer.success === true && mine !== null && isObject(answer.data) && answer.data.home === mine) {
+    return { found: 'answers', why: '', client };
+  }
+
+  client.close();
+  const { code, message, why } = refusalOf(answer);
+  return {
+    found: 'refused',
+    why: code === 'stopping' && why === 'update' ? 'Daoris is updating; run this again once it is back.'
+      : code === 'stopping' ? 'Daoris is closing; run this again once it is back.'
+        : code === 'protocol'
+          ? `Daoris on this home speaks another version of the terminal's pipe (${message}); nothing was done: run this from the same `
+            + 'build as the desktop.'
+          : `the Daoris at ${pipe} runs on another home (${code ?? 'home'}: ${message}); nothing was done.`,
+    client: null,
+  };
+}
+
+/**
+ * A press of `route` as §7.2's switch takes it (the driver's `InstanceDoor.PressAsync`): `alone` where no instance runs on this home
+ * (or a headless loop holds it); sent where the instance answers, its answer said by `words`; refused, exit 2, where an instance lives
+ * and does not answer or refuses the hello. A window's route is never sent. The exit code is the verb's; a refusal is thrown, as
+ * every refusal of this CLI is, for the dispatcher to say.
+ *
+ * @remarks
+ * 🔴 **A timeout never means "do it here"** (§7.2): once a request was sent, a lost answer is asked for by `RESULT` with the request's
+ * key on a new connection, and what it says is said; the press is never sent again nor done alone.
+ *
+ * **A person's press is confirmed in the window** (RPC1c): the instance shows it there naming this terminal, and the door says it
+ * waits as the instance tells it so (`CONFIRMING`); the person's refusal or the two minutes' end is the instance's sentence, exit 1.
+ *
+ * The press is kept before it is sent, `{ id, key, route, at }` in `<home>/pipe/sent/<id>.json` for a day, the driver's own record
+ * (RPC1j), so `daoris-driver result <id>` can ask for an answer that never reached this terminal.
+ */
+export async function pressInstance(
+  route: InstanceRoute, payload: unknown, alone: () => ExitCode | Promise<ExitCode>,
+  words: (answer: unknown) => ExitCode | Promise<ExitCode>, world: InstanceWorld,
+): Promise<ExitCode> {
+  if (route.class === 'window') return alone();
+
+  const look = await find(world);
+  switch (look.found) {
+    case 'none':
+    case 'headless':
+      return alone();
+    case 'silent':
+    case 'refused':
+      throw new DaorisError(look.why, 2);
+  }
+
+  const client = look.client!;
+  const id = randomUUID();
+  const key = randomBytes(16).toString('hex');
+  if (world.home) keepSent(world.home, { id, key, route: `${route.module}.${route.route}`, at: new Date() });
+  let answer: Envelope | null;
+  try {
+    answer = await client.request(id, route.module, route.route, payload ?? null, key, (told) => tell(told, id, world),
+      world.wait ?? WAIT_MS);
+  } finally {
+    client.close();
+  }
+
+  // The answer was lost (the connection, or the verb's wait over): asked for, never sent again, never done here (§6.1).
+  if (answer === null) {
+    const result = await resultOf(client.pipe, id, key, world);
+    const data = result?.success === true && isObject(result.data) ? result.data : null;
+    if (data?.state === 'answered' && isObject(data.answer)) {
+      answer = data.answer;
+    } else {
+      throw new DaorisError(data?.state === 'unknown'
+        ? `Daoris does not know how it ended (request ${id}): it stopped while this was under way, and nothing was done again here.`
+        : `Daoris was still working on it (request ${id}), and its answer did not reach this terminal; nothing was done again here.`, 2);
+    }
+  }
+
+  if (answer.success === true) return words(answer.data);
+  const { code, message } = refusalOf(answer);
+  // RPC1c: the person's refusal in the window, and the two minutes with no answer, are the person's word: a policy answer, exit 1.
+  throw new DaorisError(`${message} (${code ?? ''})`, code !== null && PERSON_ANSWERS.has(code) ? 1 : 2);
+}
+
+/**
+ * The door the management rows hand their verbs (§7.2, §5): a verb with a route is the running Daoris's client through
+ * `pressInstance`; where none runs, and for a verb no route takes, it acts alone holding the home's lease for its act, waiting on
+ * another verb's as the lease says and refused, exit 1, once that wait is over. Beside an instance's lease the finder did not find
+ * (a workspace build, which reads no address file) it acts holding nothing, as the lease's twin does.
+ */
+export function instanceDoor(world: InstanceWorld): VerbDoor {
+  return (press) => {
+    const leased = () => underLease(world, press);
+    return press.route ? pressInstance(press.route, press.payload, leased, press.words, world) : leased();
+  };
+}
+
+/** The verb's own act, holding the home's lease while it acts (HOMELEASE1). */
+async function underLease(world: InstanceWorld, press: VerbPress): Promise<ExitCode> {
+  if (!world.home) return press.alone();
+  const taken = await leaseForVerb(world.home, press.what, {
+    ...(world.lives ? { lives: world.lives } : {}), ...(world.leaseWait !== undefined ? { within: world.leaseWait, poll: 10 } : {}),
+  });
+  if ('refusal' in taken) throw new DaorisError(taken.refusal, 1);
+  try {
+    return await press.alone();
+  } finally {
+    taken.lease.release();
+  }
+}
+
+/** `RESULT` for a press whose answer was lost, asked on a new connection to the pipe the verb found; null where none came. */
+async function resultOf(pipe: string, id: string, key: string, world: InstanceWorld): Promise<Envelope | null> {
+  const within = world.answer ?? ANSWER_MS;
+  const again = await PipeClient.connect(pipe, within);
+  if (!again) return null;
+  try {
+    const said = await again.hello(world.home ? homeId(world.home) : null, within);
+    return said?.success === true ? await again.result(id, key, within) : null;
+  } finally {
+    again.close();
+  }
+}
+
+/**
+ * A route's progress, said as a line where it names this press and says something (§6); and that the press waits for the person in
+ * the window (RPC1c), said on the door's own channel, so the output stays the answer's.
+ */
+function tell(told: Envelope, id: string, world: InstanceWorld): void {
+  if (!Array.isArray(told.payload)) return;
+  for (const each of told.payload as unknown[]) {
+    if (!isObject(each) || !isObject(each.payload) || each.payload.id !== id) continue;
+    if (each.module === PIPE_MODULE && each.type === 'CONFIRMING') {
+      (world.say ?? sayOnError)("daoris: waiting for you to confirm this in Daoris's window…");
+      continue;
+    }
+    const detail = each.payload.detail;
+    if (isObject(detail) && typeof detail.text === 'string' && detail.text.length > 0) world.write(`  ${detail.text}`);
+  }
+}
+
+/** A refusal's code, sentence and `why`, as the kit's error envelope carries them. */
+function refusalOf(envelope: Envelope): { code: string | null; message: string; why: string | null } {
+  if (!isObject(envelope.error)) return { code: null, message: 'Daoris answered no answer it could read', why: null };
+  const { code, message, parameters } = envelope.error;
+  return {
+    code: typeof code === 'string' ? code : null,
+    message: typeof message === 'string' ? message : 'it said no more',
+    why: isObject(parameters) && typeof parameters.why === 'string' ? parameters.why : null,
+  };
+}
+
+/** A press kept before it is sent (RPC1j): never a failure of the press, which is still sent and then cannot be asked again. */
+function keepSent(home: string, sent: { id: string; key: string; route: string; at: Date }): void {
+  try {
+    const file = homeEntry(home, 'pipe', 'sent', `${sent.id}.json`);
+    const folder = dirname(file);
+    mkdirSync(folder, { recursive: true });
+    for (const name of readdirSync(folder).filter((each) => each.endsWith('.json'))) {
+      try {
+        if (sent.at.getTime() - statSync(join(folder, name)).mtimeMs > SENT_KEPT_MS) unlinkSync(join(folder, name));
+      } catch {
+        // Held by another verb: left for the next look.
+      }
+    }
+    writeTextAtomic(file, `${JSON.stringify({ id: sent.id, key: sent.key, route: sent.route, at: sent.at.toISOString() })}\n`);
+  } catch {
+    // A press whose record cannot be written is still sent: the verb then says its id and cannot be asked again.
+  }
+}
+
+function sayOnError(line: string): void {
+  process.stderr.write(`${line}\n`);
+}
+
+/** This build's version, as the hello names it. */
+function cliVersion(): string {
+  try {
+    const read: unknown = JSON.parse(readFileSync(new URL('../../package.json', import.meta.url), 'utf8'));
+    return isObject(read) && typeof read.version === 'string' ? read.version : '0';
+  } catch {
+    return '0';
+  }
+}
+
+function isObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
 /**
