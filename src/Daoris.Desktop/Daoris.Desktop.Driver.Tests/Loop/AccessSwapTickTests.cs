@@ -44,7 +44,7 @@ public sealed class AccessSwapTickTests : IDisposable
 
     private string Taken => Path.Combine(_home, "taken.flag");
 
-    private string ConfigPath => Path.Combine(_home, "driver.json");
+    private string ConfigPath => DaorisHome.Entry(_home, HomeEntry.DriverConfig);
 
     private JsonObject[] Heard() => [.. StubFile.Lines(Log).Select(line => JsonNode.Parse(line)!.AsObject())];
 

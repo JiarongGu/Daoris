@@ -32,7 +32,7 @@ internal sealed class ChatHelperWords(ChatContext context)
             bool said;
             try
             {
-                said = SayHelperWord(sessionId, word);
+                said = await SayHelperWordAsync(sessionId, word).ConfigureAwait(false);
             }
             catch (Exception)
             {
@@ -49,15 +49,25 @@ internal sealed class ChatHelperWords(ChatContext context)
     /// person's (<see cref="ChatMessage.Helped"/>). On the structured doors the turns queue it behind a turn in flight; a text-only
     /// door has no turns, so it is sent at once and recorded here, as a hand-over's first message is.
     /// </summary>
-    private bool SayHelperWord(string sessionId, SaidWordView word)
+    /// <remarks>
+    /// 🔴 COWORK1c (the message-urgency design §6's trap): its take-off is awaited and in order, never fired and forgotten. On the
+    /// structured doors it is the turns' own, kept under the record's id, after every take-off before it; on a text-only door it is
+    /// awaited here before the next answer is said.
+    /// </remarks>
+    private async Task<bool> SayHelperWordAsync(string sessionId, SaidWordView word)
     {
-        var message = new ChatMessage(word.Text, []) { Helped = word, Delivered = () => _ = TakeOffAsync(sessionId, word.Id!) };
-        if (context.Turned.TryGetValue(sessionId, out var chat)) return chat.Turns.Take(message) is not null;
+        var message = new ChatMessage(word.Text, []) { Helped = word, Id = word.Id, Kept = true };
+        if (context.Turned.TryGetValue(sessionId, out var chat))
+        {
+            chat.Turns.Keeps(new SaidDoor(context.Service, sessionId));
+            return chat.Turns.Take(message) is not null;
+        }
+
         if (!context.Talking.TryGetValue(sessionId, out var adapter)) return false;
 
         if (!context.Processes.Send(sessionId, adapter.FrameMessage(message.Prompt))) return false;
         foreach (var recorded in ChatRunner.Recorded(message)) context.Record(sessionId, recorded);
-        message.Delivered!();
+        await TakeOffAsync(sessionId, word.Id!).ConfigureAwait(false);
         return true;
     }
 

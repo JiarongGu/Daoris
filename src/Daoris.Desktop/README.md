@@ -205,7 +205,10 @@ repository its session is handed, and the start's instruction says it too. Each 
 (`HeavyWorkers`, HEAVYRUN1a2): a gate whose one command is `jest` or `vitest`, or an `npm test`/`npm run` whose script in the
 folder's `package.json` is, gets `--maxWorkers=2` (through npm, after its `--`) where the version installed between its folder
 and the checkout is one whose flag was read; a chain, another runner, an owner's own bound or an unknown version runs as written,
-and the run says which under the gate's line.
+and the run says which under the gate's line. `yarn test`/`yarn run` and `pnpm test`/`pnpm run` are bound the same way
+(HEAVYRUN1a3), in the form the tool's version takes (after the script's name, or after pnpm's `--` where it reads flags as its
+own), that version read from the nearest `packageManager` field or the install's own record; an unrecorded or unread version runs
+as written, said.
 
 `Conversations/` keeps the onion for its model and rules alone (STRUCT3h, D166's STRUCT3h note): `Domain/` holds a
 conversation's pure records, rules and words (the message, the resume's judgement and its reasons, the hand-over's codes,

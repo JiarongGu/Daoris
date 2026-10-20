@@ -20,6 +20,12 @@ public sealed class ChatTurnsTests
 
         public List<string> Steered { get; } = [];
 
+        /// <summary>The ids of the words handed to the running turn at its next step, as the door was handed them (COWORK1c).</summary>
+        public List<string?> SteeredIds { get; } = [];
+
+        /// <summary>The ids of the turns that reached the door, as the door was handed them (COWORK1c).</summary>
+        public List<string?> TookIds { get; } = [];
+
         /// <summary>The words *Send now* steered into the running turn (STEER2a).</summary>
         public List<string> SteeredNow { get; } = [];
 
@@ -45,14 +51,19 @@ public sealed class ChatTurnsTests
         /// <summary>The steer's answer, which the turn waits for as it waits for a word at its next step.</summary>
         public TaskCompletionSource Now { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
+        /// <summary>Told each turn as it reaches the door, before it is on the wire (COWORK1c).</summary>
+        public Action<ChatMessage>? OnTake { get; set; }
+
         public ChatTurns Turns(bool steers = true) => new(
             ready: () => Task.FromResult(true),
             take: (message, sent) =>
             {
                 var ended = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+                OnTake?.Invoke(message);
                 lock (_gate)
                 {
                     Took.Add(message.Text);
+                    TookIds.Add(message.Id);
                     _turns.Add(ended);
                 }
 
@@ -73,8 +84,13 @@ public sealed class ChatTurnsTests
                 ? message =>
                 {
                     if (!TakesWordsMidTurn) return null;
-                    lock (_gate) Steered.Add(message.Text);
-                    return Step.Task;
+                    lock (_gate)
+                    {
+                        Steered.Add(message.Text);
+                        SteeredIds.Add(message.Id);
+                    }
+
+                    return Written(message, Step.Task);
                 }
                 : null,
             steerNow: steers
@@ -82,10 +98,21 @@ public sealed class ChatTurnsTests
                 {
                     if (!SteersNow) return null;
                     lock (_gate) SteeredNow.Add(message.Text);
-                    return Now.Task;
+                    return Written(message, Now.Task);
                 }
                 : null,
             nextStep: steers ? () => TakesWordsMidTurn : null);
+
+        /// <summary>
+        /// A word handed to the turn on the wire, as the protocol door handles one (COWORK1c): its attempt marked before the write, and
+        /// off the record once written; then the agent's answer.
+        /// </summary>
+        private static async Task Written(ChatMessage message, Task answered)
+        {
+            if (message.Attempting is { } attempting) await attempting();
+            message.Went?.Invoke();
+            await answered;
+        }
 
         public void EndTurn(int at)
         {
@@ -744,6 +771,135 @@ public sealed class ChatTurnsTests
         door.EndTurn(1);
         await Poll.Until(() => !turns.Running, () => "the second turn never ended");
         Assert.True(turns.Hold());
+    }
+
+    // ——— COWORK1c: the conversation's queue is a view of its record's `said`.
+
+    /// <summary>
+    /// COWORK1c (the message-urgency design §6, trap 20): words said to a running conversation are kept on its record first and wait
+    /// under the record's ids, in its order, through its one dispatcher, though the first word's write answered last. Each leaves the
+    /// record by its id once its turn is on the wire, and the turns finish only once those take-offs have landed.
+    /// </summary>
+    [Fact]
+    public async Task Two_words_kept_at_once_wait_in_the_records_order_and_leave_it_once_on_the_wire()
+    {
+        var door = new Door { TakesWordsMidTurn = false };
+        var turns = door.Turns();
+        var record = new Daoris.Driver.Tests.StandInSaid();
+        var first = new TaskCompletionSource();
+        record.Answering = word => word.Text == "first" ? first.Task : Task.CompletedTask;
+        turns.Take(new ChatMessage("read the five files", []));
+        await Poll.Until(() => door.Took.Count == 1, () => "the first turn never reached the door");
+
+        var keepingFirst = turns.KeepAsync(record, new ChatMessage("first", []), default);
+        var keepingSecond = turns.KeepAsync(record, new ChatMessage("second", []), default);
+        await Task.Delay(50);
+        first.SetResult();
+        var kept = await Task.WhenAll(keepingFirst, keepingSecond);
+
+        Assert.Equal([("w1", TurnReach.TurnEnd), ("w2", TurnReach.TurnEnd)], kept.Select(each => (each!.Word, each.Reach)));
+        Assert.Equal(["w1", "w2"], turns.State.Queued.Select(message => message.Id));
+        Assert.Equal(["w1", "w2"], record.Ids);
+
+        door.EndTurn(0);
+        await Poll.Until(() => door.Took.Count == 2, () => "the first kept word never became its turn");
+        door.EndTurn(1);
+        await Poll.Until(() => door.Took.Count == 3, () => "the second kept word never became its turn");
+        door.EndTurn(2);
+        await turns.FinishAsync();
+
+        Assert.Equal(["read the five files", "first", "second"], door.Took);
+        Assert.Equal([null, "w1", "w2"], door.TookIds);
+        Assert.Equal(["w1", "w2"], record.TakenOff);
+        Assert.Empty(record.Said);
+    }
+
+    /// <summary>
+    /// COWORK1c: a kept word handed to the turn on the wire at its next step goes under the record's id, never one of the door's own,
+    /// and leaves the record once handed.
+    /// </summary>
+    [Fact]
+    public async Task A_kept_word_handed_to_the_turn_at_its_next_step_goes_under_the_records_id_and_leaves_it()
+    {
+        var door = new Door();
+        var turns = door.Turns();
+        var record = new Daoris.Driver.Tests.StandInSaid();
+        turns.Take(new ChatMessage("read the five files", []));
+        await Poll.Until(() => door.Took.Count == 1, () => "the first turn never reached the door");
+
+        var kept = await turns.KeepAsync(record, new ChatMessage("put PINEAPPLE after the words", []), default);
+        await turns.TakingOff;
+
+        Assert.Equal((TurnReach.NextStep, "w1"), (kept!.Reach, kept.Word));
+        Assert.Equal(["w1"], door.SteeredIds);
+        Assert.Equal(["w1"], record.Attempted);
+        Assert.Equal(["w1"], record.TakenOff);
+    }
+
+    /// <summary>
+    /// COWORK1c (the design §6): a kept word waiting as a turn of its own is marked attempted on the record before its turn reaches the
+    /// door, and leaves the record once its turn is on the wire; a word that never reached the door is never marked.
+    /// </summary>
+    [Fact]
+    public async Task A_kept_word_is_attempted_before_its_turn_reaches_the_door()
+    {
+        var door = new Door { TakesWordsMidTurn = false };
+        var record = new Daoris.Driver.Tests.StandInSaid();
+        var attemptedAtTake = new List<bool>();
+        door.OnTake = message => attemptedAtTake.Add(message.Id is { } id && record.Attempted.Contains(id));
+        var turns = door.Turns();
+        turns.Take(new ChatMessage("read the five files", []));
+        await Poll.Until(() => door.Took.Count == 1, () => "the first turn never reached the door");
+
+        await turns.KeepAsync(record, new ChatMessage("first", []), default);
+        await turns.KeepAsync(record, new ChatMessage("second", []), default);
+        Assert.Empty(record.Attempted);
+
+        door.EndTurn(0);
+        await Poll.Until(() => door.Took.Count == 2, () => "the first kept word never became its turn");
+        await turns.TakingOff;
+
+        Assert.Equal([false, true], attemptedAtTake);
+        Assert.Equal(["w1"], record.Attempted);
+        Assert.Equal(["w1"], record.TakenOff);
+        Assert.Equal(["w2"], record.Ids);
+    }
+
+    /// <summary>
+    /// COWORK1c (the design §6): kept words a stop withdraws leave the record with them, handed back to the person; kept words waiting
+    /// when the harness went stay on the record, for the conversation to go on with as the shell comes up again, unless the person
+    /// stopped it, which ends them with it. Turns that take no more words keep nothing.
+    /// </summary>
+    [Fact]
+    public async Task Kept_words_a_stop_withdraws_leave_the_record_and_those_left_when_the_harness_went_stay()
+    {
+        var door = new Door { TakesWordsMidTurn = false };
+        var record = new Daoris.Driver.Tests.StandInSaid();
+        var turns = door.Turns();
+        turns.Take(new ChatMessage("read the five files", []));
+        await Poll.Until(() => door.Took.Count == 1, () => "the first turn never reached the door");
+
+        await turns.KeepAsync(record, new ChatMessage("first", []), default);
+        var stop = await turns.StopAsync();
+        await turns.TakingOff;
+        Assert.Equal(["w1"], stop.Withdrawn.Select(message => message.Id));
+        Assert.Equal(["w1"], record.TakenOff);
+
+        await turns.KeepAsync(record, new ChatMessage("second", []), default);
+        turns.Gone();
+        await turns.TakingOff;
+        Assert.Equal(["w2"], record.Ids);
+        Assert.Null(await turns.KeepAsync(record, new ChatMessage("too late", []), default));
+        Assert.Equal(["w2"], record.Ids);
+
+        var stopped = door.Turns();
+        stopped.Take(new ChatMessage("read the five files", []));
+        await Poll.Until(() => door.Took.Count == 2, () => "the other conversation's first turn never reached the door");
+        await stopped.KeepAsync(record, new ChatMessage("third", []), default);
+        stopped.Gone(personStopped: true);
+        await stopped.TakingOff;
+        Assert.Equal(["w2"], record.Ids);
+        Assert.Equal(["w1", "w3"], record.TakenOff);
     }
 
     /// <summary>

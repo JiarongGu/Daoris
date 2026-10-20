@@ -1384,7 +1384,8 @@ if (mode == ServiceMode.Local)
 
     // What the person says to a parked or ended session of this machine's (MSG1a, D137 §5.3): kept on its record for it
     // to go on with, the record staying as it is. LOCAL mode only: a session goes on only where its process and its
-    // conversation are, and a shared host runs none. What never goes on is refused by its word.
+    // conversation are, and a shared host runs none. What never goes on is refused by its word. A running session's words are
+    // kept for its run where the driver that runs it asks so (COWORK1c, D188 point 6), with their level.
     app.MapPost("/api/sessions/{id}/say", async (
         ComposedService s, HttpContext http, string id, SayRequest body, CancellationToken ct) =>
     {
@@ -1393,15 +1394,17 @@ if (mode == ServiceMode.Local)
         // COWORK1b (D188): whose words, where not the person's, and the producer's key, each read as absent where blank.
         var from = string.IsNullOrWhiteSpace(body.From) ? null : body.From.Trim();
         var key = string.IsNullOrWhiteSpace(body.Key) ? null : body.Key.Trim();
-        var outcome = await s.Ledger.SayAsync(id, body.Text, body.Files, now, ct, channel, from, key);
+        var level = string.IsNullOrWhiteSpace(body.Level) ? null : body.Level.Trim();
+        var outcome = await s.Ledger.SayAsync(id, body.Text, body.Files, now, ct, channel, from, key, level, body.Running == true);
         if (outcome.Refusal == SessionSayRefusal.None)
         {
             // Words to a park are its answer, kept on its ask at once as the answer door keeps one (DRIFT1a); words to an
-            // ended session are kept there once a session took them (the taken door, D137 §2.4). Words that are a channel
-            // message are on the ask already, as `channel` (SESSONE2e), so neither door keeps them again. Daoris's own words
-            // (COWORK1b) are never the person's, which every later session reads the ask's words as. A say answered with the
-            // word its key already kept keeps nothing again.
-            if (!outcome.Word!.Reopens && outcome.Word.Channel is null && outcome.Word.Persons && !outcome.Again)
+            // ended session are kept there once a session took them (the taken door, D137 §2.4), and words for a running
+            // session's run as its run takes them (COWORK1c). Words that are a channel message are on the ask already, as
+            // `channel` (SESSONE2e), so neither door keeps them again. Daoris's own words (COWORK1b) are never the person's,
+            // which every later session reads the ask's words as. A say answered with the word its key already kept keeps
+            // nothing again.
+            if (outcome.Answers && outcome.Word!.Channel is null && outcome.Word.Persons && !outcome.Again)
             {
                 await s.Ledger.KeepOnAskAsync(id, AskWordKind.Answered, outcome.Word.Text, now, ct);
             }
@@ -1416,7 +1419,7 @@ if (mode == ServiceMode.Local)
         {
             SessionSayRefusal.NotFound => Results.NotFound(refused),
             // COWORK1b: an author this service does not know is the caller's mistake, as no words are.
-            SessionSayRefusal.Empty or SessionSayRefusal.From => Results.BadRequest(refused),
+            SessionSayRefusal.Empty or SessionSayRefusal.From or SessionSayRefusal.Level => Results.BadRequest(refused),
             // A teammate's, an intake, a stand-down, a running session: a conflict with the record as it stands.
             _ => Results.Conflict(refused),
         };
@@ -1448,6 +1451,23 @@ if (mode == ServiceMode.Local)
             SessionSayRefusal.NotFound => Results.NotFound(refused),
             SessionSayRefusal.Empty => Results.BadRequest(refused),
             _ => Results.Conflict(refused),
+        };
+    });
+
+    // A word's attempt (COWORK1c, D188 point 6; the message-urgency design §6): the session's dispatcher marks the words it is about to
+    // write to its harness, before the wire, so a shell that comes up again never sends one a second time. LOCAL mode only, as the say
+    // door: the words wait only here.
+    app.MapPost("/api/sessions/{id}/attempt", async (
+        ComposedService s, HttpContext http, string id, AttemptRequest body, CancellationToken ct) =>
+    {
+        var ids = (body.Said ?? []).OfType<string>().Where(word => word.Length > 0).ToList();
+        var outcome = await s.Ledger.MarkAttemptAsync(id, ids, DateTimeOffset.UtcNow, ct);
+        return outcome.Refusal switch
+        {
+            SessionSayRefusal.None => Results.Ok(new AttemptResponse(
+                await ToSessionAsync(s, outcome.Session!, MachineLocal(http)), outcome.Message, outcome.Unmarked)),
+            SessionSayRefusal.Empty => Results.BadRequest(new SessionSayRefusalResponse(outcome.Message, SayRefusal(outcome.Refusal))),
+            _ => Results.NotFound(new SessionSayRefusalResponse(outcome.Message, SayRefusal(outcome.Refusal))),
         };
     });
 
@@ -2605,7 +2625,8 @@ static SessionResponse ToSession(Session s, bool loopback) => new(
     TookBind: loopback ? s.TookBind : null);
 
 // A word with whose it is (XAGENT1c): `by` names the second opinion whose findings these are, and is absent for the person's.
-static SaidWordResponse ToSaid(SaidWord word) => new(word.Id, word.Text, word.At, word.Files, word.Reopens, word.By, word.Helper, word.From, word.Key);
+static SaidWordResponse ToSaid(SaidWord word) =>
+    new(word.Id, word.Text, word.At, word.Files, word.Reopens, word.By, word.Helper, word.From, word.Key, word.Level, word.Attempt);
 
 // An opinion as this machine's doors answer it (XAGENT1c), with where its pass stands, derived when read.
 static OpinionResponse ToOpinion(OpinionStanding standing)
@@ -2649,6 +2670,7 @@ static string SayRefusal(SessionSayRefusal refusal) => refusal switch
     SessionSayRefusal.Helper => "helper",
     SessionSayRefusal.Taken => "taken",
     SessionSayRefusal.From => "from",
+    SessionSayRefusal.Level => "level",
     _ => "running",
 };
 
