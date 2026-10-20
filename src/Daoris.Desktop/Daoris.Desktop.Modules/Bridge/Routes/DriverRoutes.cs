@@ -106,6 +106,24 @@ public sealed class DriverRoutes(DriverContext context)
     }
 
     /// <summary>
+    /// Which checks a repository's sessions run under Current (FABRIC-PIPELINE1b, D192 point 4), Setup's half of <c>daoris-driver
+    /// checks</c> over the same key (D50): <c>repository</c>, and <c>checks</c>, <c>light</c> or <c>heavy-at-end</c> in any case, or none
+    /// or null to clear it, which is today's. Judged by <see cref="SessionChecks.Apply"/> against the file before anything is written, so a
+    /// value that is no choice is refused in its words. The person's standing choice: light lowers their part, so no proposal names it.
+    /// </summary>
+    [DriverRoute("SET_SESSION_CHECKS")]
+    [Publishes("SET_SESSION_CHECKS", StateScopes.Driver)]
+    private object? SetSessionChecks(IpcRequest request)
+    {
+        var repository = Optional(request, "repository") ?? "";
+        var checks = Optional(request, "checks");
+        // The refusals come first, before anything is written.
+        SessionChecks.Apply(DriverConfig.Load(_loop.ConfigPath), repository, checks);
+        _context.Change(config => config.WithSessionChecks(repository, checks));
+        return State(_loop);
+    }
+
+    /// <summary>
     /// Whether a repository's own <c>daoris.gates.json</c> wins over this machine's heavy gates (HEAVYRUN1b2c, D180's HEAVYRUN1b2c note):
     /// <c>{ repository, marks, names, refusal? }</c>, <c>marks</c> true where the file marks some (their names), false where it marks none or
     /// there is no file, null with <c>refusal</c> where it cannot be told (a file that does not read, or no checkout here). A read of one
@@ -121,11 +139,16 @@ public sealed class DriverRoutes(DriverContext context)
             .Select(row => row.Root).FirstOrDefault(path => Directory.Exists(path));
         if (root is null)
         {
-            return new { repository, marks = (bool?)null, names = Array.Empty<string>(), refusal = $"`{repository}` has no checkout on this machine to read." };
+            return new
+            {
+                repository, marks = (bool?)null, names = Array.Empty<string>(), light = Array.Empty<string>(),
+                refusal = $"`{repository}` has no checkout on this machine to read.",
+            };
         }
 
+        // FABRIC-PIPELINE1b: and its light gates, those it declares and does not mark heavy, which Setup's sessions' checks name.
         var marks = HeavyGates.Marks(root);
-        return new { repository, marks = marks.Marks, names = marks.Names, refusal = marks.Refusal };
+        return new { repository, marks = marks.Marks, names = marks.Names, light = marks.Light, refusal = marks.Refusal };
     }
 
     /// <summary>
@@ -540,6 +563,9 @@ public sealed class DriverRoutes(DriverContext context)
                     Repository = p.Key,
                     Gates = p.Value.Select(gate => new { gate.Name, gate.Run, Cwd = gate.WorkingDirectory }).ToArray(),
                 }).ToArray(),
+            // Which checks each repository's sessions run under Current (FABRIC-PIPELINE1b), as rows for the same reason.
+            SessionChecks = config.SessionChecks.OrderBy(p => p.Key, StringComparer.Ordinal)
+                .Select(p => new { Repository = p.Key, Checks = p.Value }).ToArray(),
             // The session languages as set (LANG1c), as rows for the same reason, and the closed table each screen names its
             // options from, so adding a language is a row in the driver's table and needs no window catalogue.
             Languages = config.Languages.OrderBy(p => p.Key, StringComparer.Ordinal)

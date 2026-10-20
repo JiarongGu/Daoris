@@ -39,7 +39,13 @@ const same = (sent: HeavyGate[] | null, set: readonly HeavyGate[]) =>
  * `marks` true where the file marks heavy gates (their `names`), false where it marks none or there is no file, null with the driver's
  * `refusal` where it cannot be told. The page judges nothing of its own.
  */
-export type HeavyMarks = { marks: boolean | null; names: string[]; refusal?: string | null };
+export type HeavyMarks = {
+  marks: boolean | null;
+  names: string[];
+  refusal?: string | null;
+  /** The gates the file declares and does not mark heavy (FABRIC-PIPELINE1b); absent on a shell older than it. */
+  light?: string[];
+};
 
 /**
  * A repository's heavy gates in its Setup's folded line: each by name in its order, or that none is set here; cued "not used" where the

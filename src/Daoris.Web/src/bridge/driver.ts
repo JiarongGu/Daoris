@@ -7,6 +7,7 @@ import type { AccountWaitTick, Consideration, TrustHold } from '../data/signals'
 import type { AccessLevel } from '../settings/repository/Access';
 import type { CommitRule } from '../settings/repository/Commits';
 import type { HeavyGate, HeavyMarks } from '../settings/repository/HeavyGates';
+import type { SessionChecksValue } from '../settings/repository/SessionChecks';
 import type { HelperRule } from '../settings/repository/Helpers';
 import type { HandOverRule } from '../settings/repository/HandOver';
 import type { LandingRule } from '../settings/repository/Landings';
@@ -194,6 +195,11 @@ export type DriverState = {
    * heavy gate, the list `run-heavy` runs for it in its order — absent on a shell older than it, which offers no heavy gates section.
    */
   heavyGates?: { repository: string; gates: HeavyGate[] }[];
+  /**
+   * Which checks each repository's sessions run under Current (FABRIC-PIPELINE1b, D192 point 4): `light` or `heavy-at-end` by
+   * repository, none being today's — absent on a shell older than it, which offers no sessions' checks row.
+   */
+  sessionChecks?: { repository: string; checks: string }[];
 };
 
 /**
@@ -517,6 +523,13 @@ export const useSetStanding = () => useDriverChange<{ repository: string; says?:
  */
 export const useSetHeavyGates = () =>
   useDriverChange<{ repository: string; gates: HeavyGate[] | null }>('SET_HEAVY_GATES');
+/**
+ * Which checks a repository's sessions run (FABRIC-PIPELINE1b, D192 point 4): `light`, `heavy-at-end`, or null for as before — the same
+ * `sessionChecks` `daoris-driver checks <repo> light|heavy-at-end|--clear` edits. A value that is no choice is the driver's refusal, its
+ * sentence verbatim, nothing written. The person's choice alone: no proposal names it.
+ */
+export const useSetSessionChecks = () =>
+  useDriverChange<{ repository: string; checks: SessionChecksValue | null }>('SET_SESSION_CHECKS');
 
 /**
  * Whether a repository's own `daoris.gates.json` marks heavy gates, so wins over this machine's list (HEAVYRUN1b2c, D180's note): the
