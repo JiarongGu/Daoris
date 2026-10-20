@@ -470,8 +470,7 @@ public sealed class AgentsRoutes(DriverContext context)
             "install" or "update" or "login" or "login-new" or "pin" => null,
             _ => throw Refusals.Because(
                 Refusals.HarnessActionUnknown,
-                $"unknown agent action '{action}' — one of: install, update, login, login-new, "
-                + "key-add, key-replace, pin, unpin, profile-add, profile-remove, profile-default, profile-rename, profile-join",
+                $"unknown agent action '{action}' — one of: {string.Join(", ", AgentActions.Words)}",
                 ("action", action)),
         };
         if (edited is { } code)
@@ -537,7 +536,7 @@ public sealed class AgentsRoutes(DriverContext context)
     [DriverRoute("HARNESS_CANCEL")]
     private object? HarnessCancel(IpcRequest request)
     {
-        Actions.Running(request).Cancel();
+        Actions.Cancel(request);
         return new { Cancelled = true };
     }
 
