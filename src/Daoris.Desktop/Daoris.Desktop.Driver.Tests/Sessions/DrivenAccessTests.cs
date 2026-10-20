@@ -285,6 +285,33 @@ public sealed class DrivenAccessTests : IDisposable
         Assert.Equal(AccessRules.Unrestricted, sent[AccessRules.Permissions]!.GetValue<string>());
     }
 
+    /// <summary>
+    /// ACCESSSWAP1b (D183's note): a running session asks, at its turn's end, whether its repository's permission prompts as the file
+    /// stands now name another value than it started under: the access it would go on under, its workspace kept, or null where they
+    /// name the same. Its workspace's and this machine's levels count as its start's did; another repository's change, or another
+    /// pause's, is none.
+    /// </summary>
+    [Fact]
+    public void A_running_session_reads_a_change_of_its_permission_prompts_from_the_file_as_it_stands_now()
+    {
+        var adapter = Adapter("claude-code-acp");
+        var config = DriverConfig.Empty with { Drivable = ["engine", "editor"] };
+        var started = DrivenAccess.For(AccessRules.Resolve(config, "engine", "default"), "engine", adapter) with { Workspace = "default" };
+        DriverConfig With(AccessEdit edit) => config.WithAccess(edit);
+
+        Assert.Null(started.ChangedIn(config, adapter));
+        Assert.Null(started.ChangedIn(With(new AccessEdit { Repository = "editor", Set = [new(AccessRules.Permissions, AccessRules.Unrestricted)] }), adapter));
+        Assert.Null(started.ChangedIn(With(new AccessEdit { Repository = "engine", Set = [new(AccessRules.Landing, AccessRules.Rule)] }), adapter));
+        Assert.Null(started.ChangedIn(With(new AccessEdit { Repository = "engine", Set = [new(AccessRules.Permissions, AccessRules.Auto)] }), adapter));
+
+        var widened = started.ChangedIn(With(new AccessEdit { Repository = "engine", Set = [new(AccessRules.Permissions, AccessRules.Unrestricted)] }), adapter);
+        Assert.NotNull(widened);
+        Assert.Equal((AccessRules.Unrestricted, "!bypassPermissions", "engine", "default"), (widened.Permissions, widened.Posture, widened.Repository, widened.Workspace));
+
+        Assert.Equal(AccessRules.Unrestricted, started.ChangedIn(With(new AccessEdit { Workspace = "default", Full = true }), adapter)?.Permissions);
+        Assert.Equal(AccessRules.Asking, started.ChangedIn(With(new AccessEdit { Machine = true, Set = [new(AccessRules.Permissions, AccessRules.Asking)] }), adapter)?.Permissions);
+    }
+
     /// <summary>The record's setup read back as the service answers it on loopback (AUTONOMY1a), and none from a record before it.</summary>
     [Fact]
     public void A_record_s_setup_is_read_back_with_it()

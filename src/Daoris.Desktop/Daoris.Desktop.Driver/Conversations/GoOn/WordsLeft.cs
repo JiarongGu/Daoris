@@ -3,7 +3,8 @@ namespace Daoris.Driver;
 /// <summary>
 /// The person's words a driven session held when its door failed (TURNFAIL1, USERSHOWN1; D137 §2.2): sent behind a turn that
 /// failed, or held for its end, they never reached the agent, and its run ends with them. They are kept on its ended record
-/// through the say door (MSG1a), to go again with the next run that goes on, as words said to it once it ended are.
+/// through the say door (MSG1a), to go again with the next run that goes on, as words said to it once it ended are. So are the
+/// words a run held when Daoris ended it at its turn's end for a changed setup (ACCESSSWAP1b), which go on under the new one.
 /// </summary>
 /// <remarks>
 /// <para><b>After the conclusion.</b> The say door refuses a running record, so the words are kept once the run moved it;
@@ -16,9 +17,13 @@ namespace Daoris.Driver;
 /// </remarks>
 public static class WordsLeft
 {
+    /// <param name="why">
+    /// The line that says why they wait: a failed turn's, to go again (<see cref="WordsAfter.Wait"/>), where null; or a run's that ended for
+    /// a changed setup, which go on under it (ACCESSSWAP1b, <see cref="Observation.WordsUnderNewSetup"/>).
+    /// </param>
     /// <returns>How many the record kept.</returns>
     public static async Task<int> KeepAsync(
-        ServiceClient service, SessionEvents events, string session, IReadOnlyList<ChatMessage> left, CancellationToken ct)
+        ServiceClient service, SessionEvents events, string session, IReadOnlyList<ChatMessage> left, CancellationToken ct, Noted? why = null)
     {
         if (left.Count == 0) return 0;
 
@@ -47,7 +52,7 @@ public static class WordsLeft
 
         if (kept.Count > 0)
         {
-            var line = FailedTurnWords.Line(WordsAfter.Wait)!;
+            var line = why ?? FailedTurnWords.Line(WordsAfter.Wait)!;
             var named = kept.Select(each => each.Word.Id).OfType<string>().ToList();
             events.Keep(session, new SessionEvent
             {

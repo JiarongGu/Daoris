@@ -305,6 +305,23 @@ public sealed class AcpSession(
     /// </summary>
     public PermissionHolds? Permissions { get; init; }
 
+    /// <summary>
+    /// Asked at a turn's end before a word held for it is prompted (ACCESSSWAP1b, D183's note): whether the setup this session opened
+    /// under changed since, a driven session's repository's permission prompts. Yes ends the run there, never mid-turn: every held word is
+    /// handed back unprompted (<see cref="HandedBack"/>), none prompted into a process opened under the old posture. Null never asks.
+    /// </summary>
+    /// <remarks>
+    /// Asked only where a held word would open a turn of Daoris's: a word already sent is the agent's and is waited for, and the turn a
+    /// session's own background work wakes is its own (BGWAIT1), so neither is cut.
+    /// </remarks>
+    public Func<bool>? SetupChanged { get; init; }
+
+    /// <summary>
+    /// The words held for the turn's end that the run handed back unprompted because its setup changed (ACCESSSWAP1b), in the order
+    /// said: the driver keeps them on the record for the run that goes on under the new setup. Empty otherwise.
+    /// </summary>
+    public IReadOnlyList<ChatMessage> HandedBack { get; private set; } = [];
+
     /// <summary>Whether the posture says the person answers this session's permission requests.</summary>
     private readonly bool _personAnswers = Marks(posture).PersonAnswers;
 
@@ -594,6 +611,15 @@ public sealed class AcpSession(
 
                 if (next.Held is { } held)
                 {
+                    // ACCESSSWAP1b (D183's note): the setup changed while the turn ran, so the run ends at this turn's end and every word
+                    // held goes back unprompted, to go on in the same conversation under the new setup. Daoris's words go back unjudged:
+                    // the look judges them on the record before its go-on (COWORK1b).
+                    if (SetupChanged?.Invoke() == true)
+                    {
+                        HandedBack = [held, .. inbox!.Close()];
+                        break;
+                    }
+
                     // COWORK1b (the message-urgency design §4.3): Daoris's word held for the turn's end is judged again by its key;
                     // one whose fact a later submission answered is dropped, said so, and never prompted late.
                     if (!await DaorisWords.GoesAsync(held, ct).ConfigureAwait(false))

@@ -93,6 +93,14 @@ public sealed class Driver(
     /// </summary>
     public ReviewDesk? Reviews { get; init; }
 
+    /// <summary>
+    /// The driver's file, read again at a running driven session's turn's end (ACCESSSWAP1b, D183's note): the look's config is the file
+    /// as that look read it, and a session outlives its look, so a change the page's <c>SET_ACCESS</c> or the terminal's
+    /// <c>daoris-driver access</c> wrote since is seen only here. The watch's; null where nothing names it, a one-look run's and a gate's,
+    /// and a session there goes on under its start's setup until its next start.
+    /// </summary>
+    public string? ConfigPath { get; init; }
+
     /// <summary>What a session whose take lost is told, in its record (D68 §5).</summary>
     public const string LostClaim =
         "stopped by this machine's driver: another machine's take on the quest reached the remote first, so this "
@@ -2058,6 +2066,9 @@ public sealed class Driver(
                                 submitted: QuestResults.Submitted(after))
                             // BGWAIT2: a done this run reached outranks the timeout, as it outranks a messy exit.
                             : Observation.AfterTimeout(config.TimeoutMinutes, quest.Status, status);
+                    // ACCESSSWAP1b: a run Daoris ended at its turn's end for a changed setup is neither a park nor a failure, and goes on.
+                    var swappedOn = stop is null && ended.SetupChanged is not null;
+                    if (swappedOn) conclusion = Observation.SetupChanged(conclusion, ended.SetupChanged!);
 
                     conclusion = AccountRefused(conclusion, adapter, selection, ended);
                     conclusion = AccountSignedOut(conclusion, adapter, selection, turnFailed);
@@ -2104,8 +2115,9 @@ public sealed class Driver(
                         // 🔴 The stop flag IS the "whose decision was this" answer (SURF5b) — the same
                         // one that outranks the observation above. Read once, used for both. A park is
                         // not an ending (STANDDOWN2): the record waits on the person, and the attention
-                        // watch says so from the active list, as it does for a parked intake.
-                        SessionStates.IsParked(conclusion.State)
+                        // watch says so from the active list, as it does for a parked intake. Nor is a run ended for a changed setup,
+                        // whose record goes on at the next look (ACCESSSWAP1b).
+                        SessionStates.IsParked(conclusion.State) || swappedOn
                             ? null
                             : new SessionEnded(
                                 sessionId, quest.To, conclusion.State,
@@ -2797,6 +2809,15 @@ public sealed class Driver(
             });
             held.Attach(interrupt: null);
         }
+        // ACCESSSWAP1b (D183's note): a driven session's permission prompts are read again from the driver's file at a turn's end where a
+        // word is held for the next, so a change made while it runs, on the page or at a terminal, applies at its next turn: the run ends
+        // there, its held words handed back to its record, and the next look goes on in the same conversation under the setup standing
+        // then (DriverContinuations). Only a session that holds words: never an intake's or a reviewer's, and never Ask Daoris's, whose
+        // own swap is ChatRunner's (ACCESSSWAP1).
+        SetupSwap? swapped = null;
+        Func<bool>? setupChanged = target.Access is { } started && inbox is not null && ConfigPath is { } configPath
+            ? () => (swapped = SetupNow(started, adapter, configPath)) is not null
+            : null;
         // BGWAIT2: the timeout is said to the protocol door before the process is killed, so the stream's end it causes is said as
         // the timeout's, never as the agent having exited.
         var ending = adapter.Wire == SessionWire.Acp ? new AcpEnding() : null;
@@ -2807,7 +2828,7 @@ public sealed class Driver(
             ? CaptureAcpAsync(
                 process, transcript, sessionId, cwd, prompt, target.Access?.Posture ?? adapter.AcpPosture, harnessNotice, ct, scope, rules.Meta,
                 handedServers ?? Context.Servers, target.PersonSaid, inbox, said, keepAs, resume, account, waitsOnBackground, noConnector, ending,
-                unoffered: target.Access is { } access ? access.Unoffered : null)
+                unoffered: target.Access is { } access ? access.Unoffered : null, setupChanged: setupChanged)
             : null;
         // What the native door's harness says in its own words, apart from its agent's, for its ending (AGT3c).
         var own = new HarnessWords();
@@ -2850,11 +2871,23 @@ public sealed class Driver(
         if (held is not null)
         {
             (exitCode, used) = await GoOns.GoOnAsync(
-                held, goOn!, adapter, sessionId, transcript, refusesInput, drivesBrowser, exitCode, used, resume, said, wentOn, left, ct, own)
+                held, goOn!, adapter, sessionId, transcript, refusesInput, drivesBrowser, exitCode, used, resume, said, wentOn, left, ct, own,
+                setupChanged)
                 .ConfigureAwait(false);
         }
 
-        var concluded = await conclude(exitCode, used, turnFailed, Ending(acp is not null, structured is not null, exitCode, turnFailed, own, transcript))
+        // ACCESSSWAP1b: the run Daoris ended for a changed setup says so on its console as it ends; its record's note says it once concluded.
+        if (swapped is not null && left.Count > 0)
+        {
+            output?.Append(
+                sessionId,
+                $"— its permission prompts changed from `{swapped.From}` to `{swapped.To}` while it worked: Daoris ended it at its turn's end, "
+                + $"never mid-turn, and the {left.Count} word(s) held for it go on in the same conversation under the new setup at the next look.");
+        }
+
+        var concluded = await conclude(
+                exitCode, used, turnFailed,
+                Ending(acp is not null, structured is not null, exitCode, turnFailed, own, transcript) with { SetupChanged = left.Count > 0 ? swapped : null })
             .ConfigureAwait(false);
 
         // The part's native children end with it (FABRIC-C1a): a run killed, stopped or failed says nothing of theirs, so each its
@@ -2862,10 +2895,40 @@ public sealed class Driver(
         ChildLineage.End(home, sessionId, clean: exitCode == 0 && Context.Processes.StopMade(sessionId) is null, DateTimeOffset.UtcNow);
 
         // The words its failed door never delivered wait on its ended record to go again (TURNFAIL1, USERSHOWN1): kept once the
-        // conclusion moved it, since the say door refuses a running record.
-        if (left.Count > 0) await WordsLeft.KeepAsync(service, Context.Events, sessionId, left, CancellationToken.None).ConfigureAwait(false);
+        // conclusion moved it, since the say door refuses a running record. ACCESSSWAP1b: so do the words a changed setup handed back,
+        // to go on under it; unless a stop was made of it since, which ends it with them unreached as any stop does, since words on its
+        // record would carry it on past the stop.
+        if (left.Count > 0 && swapped is not null && turnFailed is null && Context.Processes.StopMade(sessionId) is not null)
+        {
+            var unreached = WordsNotes.Unreached(left.Count, "never reached the session", UnreachedWhy.EndedFirst);
+            output?.Append(sessionId, unreached.Note);
+            Context.Events.Keep(sessionId, new SessionEvent { Kind = SessionEventKind.Note, Text = unreached.Note, Parts = unreached.Parts }, say: null);
+        }
+        else if (left.Count > 0)
+        {
+            await WordsLeft.KeepAsync(
+                    service, Context.Events, sessionId, left, CancellationToken.None,
+                    why: swapped is not null && turnFailed is null ? Observation.WordsUnderNewSetup : null)
+                .ConfigureAwait(false);
+        }
 
         return concluded;
+    }
+
+    /// <summary>
+    /// What a running driven session's permission prompts changed to (ACCESSSWAP1b), read from the driver's file now; null where they did
+    /// not, or the file does not read: a write torn half-way is read again at the next turn's end, never taken for a change.
+    /// </summary>
+    private static SetupSwap? SetupNow(DrivenAccess started, ISessionAdapter adapter, string configPath)
+    {
+        try
+        {
+            return started.ChangedIn(DriverConfig.Load(configPath), adapter) is { } now ? new SetupSwap(started.Permissions, now.Permissions) : null;
+        }
+        catch (Exception error) when (error is DriverConfigUnreadableException or DriverException or IOException or UnauthorizedAccessException)
+        {
+            return null;
+        }
     }
 
     /// <summary>Where a run's capture failed once the run was ended before awaiting it (ANSWER2): the machine log's <c>where</c>.</summary>
@@ -3048,6 +3111,10 @@ public sealed class Driver(
     /// What the open says where the agent does not offer a required posture, a driven start's permission prompts' (AUTONOMY1b); null
     /// says Ask Daoris's (<see cref="AcpSession.Unoffered"/>).
     /// </param>
+    /// <param name="setupChanged">
+    /// Asked at a turn's end before a held word is prompted, whether the setup the run started under changed (ACCESSSWAP1b,
+    /// <see cref="AcpSession.SetupChanged"/>): yes ends the run there, the held words handed back as <c>Left</c>. Null never asks.
+    /// </param>
     private async Task<(AcpOutcome? Outcome, string? Failure, IReadOnlyList<ChatMessage> Left)> CaptureAcpAsync(
         Process process, string transcript, string sessionId, string cwd, string prompt,
         string? posture, string? harnessNotice, CancellationToken ct,
@@ -3055,7 +3122,7 @@ public sealed class Driver(
         IReadOnlyList<AcpMcpServer>? servers = null, string? personSaid = null, DrivenInbox? inbox = null,
         Action<JsonElement>? said = null, string? keepAs = null, ResumeAsk? resume = null, InstructionAccount? account = null,
         Func<CancellationToken, Task<bool>>? waitsOnBackground = null, string? noConnector = null, AcpEnding? ending = null,
-        Func<string, string, string>? unoffered = null)
+        Func<string, string, string>? unoffered = null, Func<bool>? setupChanged = null)
     {
         await using var file = TranscriptFile.Open(transcript, append: resume is not null);
 
@@ -3133,6 +3200,7 @@ public sealed class Driver(
             {
                 Unoffered = unoffered,
                 Permissions = HeldPermissions.Of(Context.Events).For(sessionId), // AUTONOMY1b3a: held only under asking's mark
+                SetupChanged = setupChanged,
             };
             ending?.Open(session);
             // What it says about its account's windows, kept as it says it (TOOL6c).
@@ -3185,7 +3253,8 @@ public sealed class Driver(
             Line($"— the turn ended: {outcome.StopReason}, after {outcome.Updates} update(s). The "
                  + "session record is concluded from the exit code and the quest's own state, not "
                  + "from this line (D46 §4).");
-            return (outcome, null, []);
+            // ACCESSSWAP1b: the words a changed setup handed back, kept on the record once it concluded, to go on under the new one.
+            return (outcome, null, session.HandedBack);
         }
         catch (AcpResumeRefused refused) when (resume is not null)
         {
@@ -3210,7 +3279,7 @@ public sealed class Driver(
             // 🔴 The person's words it never took (TURNFAIL1, USERSHOWN1): sent behind the failed turn, or held for its end. They
             // go back to the run, which keeps them on the record once it ended, to go again (WordsLeft); closed here, so the
             // finally below says nothing of them.
-            return (null, error.Message, [.. session?.Unreached ?? [], .. inbox?.Close() ?? []]);
+            return (null, error.Message, [.. session?.Unreached ?? [], .. session?.HandedBack ?? [], .. inbox?.Close() ?? []]);
         }
         finally
         {
