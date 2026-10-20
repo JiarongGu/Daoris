@@ -137,4 +137,18 @@ public sealed class HeldPermissionsTests
         Assert.Same(HeldPermissions.Of(events), HeldPermissions.Of(events));
         Assert.Equal(HeldPermissions.Bound, HeldPermissions.Of(events).For("s1").Bound);
     }
+
+    /// <summary>PERMUNTIL1: a hold says when its door's bound releases it, which the page reads rather than a copy of the bound.</summary>
+    [Fact]
+    public void A_hold_says_when_its_doors_bound_releases_it()
+    {
+        var registry = new HeldPermissions();
+        registry.For("s1").Hold("900", "c9", "npm start", Offered);
+        registry.For("s2", bound: TimeSpan.FromMinutes(3)).Hold("901", "c9", "npm start", Offered);
+
+        var standard = Assert.Single(registry.Held("s1"));
+        var shorter = Assert.Single(registry.Held("s2"));
+        Assert.Equal(HeldPermissions.Bound, standard.Until - standard.Since);
+        Assert.Equal(TimeSpan.FromMinutes(3), shorter.Until - shorter.Since);
+    }
 }

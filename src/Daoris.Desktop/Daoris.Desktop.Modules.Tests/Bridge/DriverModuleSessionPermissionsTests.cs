@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text.Json;
 using Daoris.Driver;
 
@@ -35,6 +36,21 @@ public sealed class DriverModuleSessionPermissionsTests : DriverModuleBridge
         Assert.Equal(["yes", "no"], wait.GetProperty("choices").EnumerateArray().Select(choice => choice.GetProperty("id").GetString()));
         Assert.Equal(["allow_once", "reject_once"], wait.GetProperty("choices").EnumerateArray().Select(choice => choice.GetProperty("kind").GetString()));
         Assert.True(wait.TryGetProperty("since", out _));
+    }
+
+    /// <summary>PERMUNTIL1: each hold says when its bound releases it, the driver's bound from its start, so the page keeps no copy.</summary>
+    [Fact]
+    public async Task Each_hold_says_when_its_bound_releases_it()
+    {
+        var loop = Loop();
+        var module = new DriverModule(Bus, loop);
+        HeldPermissions.Of(loop.Events).For("d1").Hold("900", "c9", "npm start", Offered);
+
+        var wait = Assert.Single((await AnswerAsync(module, "PERMISSION_WAITS")).GetProperty("waits").EnumerateArray());
+
+        var since = DateTimeOffset.Parse(wait.GetProperty("since").GetString()!, CultureInfo.InvariantCulture);
+        var until = DateTimeOffset.Parse(wait.GetProperty("until").GetString()!, CultureInfo.InvariantCulture);
+        Assert.Equal(HeldPermissions.Bound, until - since);
     }
 
     /// <summary>The person's answer with an offered option ends the hold with it; the same answer again finds nothing held.</summary>

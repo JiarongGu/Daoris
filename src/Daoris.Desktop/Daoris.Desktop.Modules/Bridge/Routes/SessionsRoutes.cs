@@ -344,7 +344,8 @@ public sealed class SessionsRoutes(DriverContext context)
 
     // What this machine's driven sessions hold for the person under their repository's asking permission prompts (AUTONOMY1b3a, D184
     // point 3), oldest first: each request with its session, its call as the agent named it, and what the person may choose (never a
-    // standing allow). A read off the driver's memory (`HeldPermissions`), which a restart empties with the agents that asked.
+    // standing allow), and when its bound releases it (`until`, PERMUNTIL1: the page's one source for the bound). A read off the
+    // driver's memory (`HeldPermissions`), which a restart empties with the agents that asked.
     [DriverRoute("PERMISSION_WAITS")]
     private Task<object?> PermissionWaitsAsync(IpcRequest request, CancellationToken cancellationToken)
     {
@@ -354,6 +355,7 @@ public sealed class SessionsRoutes(DriverContext context)
                 held.Session, held.Request, held.Call, held.Title, held.Kind,
                 Choices = held.Choices.Select(choice => new { choice.Id, choice.Name, choice.Kind }),
                 Since = Moments.Write(held.Since),
+                Until = Moments.Write(held.Until),
             })
             .ToList();
         return Task.FromResult<object?>(new { Waits = waits });
