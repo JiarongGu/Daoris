@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using Daoris.Driver;
+using Xunit.Abstractions;
 
 namespace Daoris.Desktop.Driver.Tests;
 
@@ -23,9 +24,11 @@ public sealed class LandGitCountTests : IDisposable
 
     private readonly string _scratch;
     private readonly string _home;
+    private readonly ITestOutputHelper _output;
 
-    public LandGitCountTests()
+    public LandGitCountTests(ITestOutputHelper output)
     {
+        _output = output;
         _scratch = Path.Combine(RepoRoot(), "_fixtures", "land-git-count", Guid.NewGuid().ToString("N")[..8]);
         _home = Path.Combine(_scratch, "daoris-home");
         Directory.CreateDirectory(_home);
@@ -216,10 +219,12 @@ public sealed class LandGitCountTests : IDisposable
     private const int SquashCeiling = 51;
     private const int MergeCeiling = 43;
 
-    private static void Judge(List<string> starts, int ceiling)
+    private void Judge(List<string> starts, int ceiling)
     {
         var git = starts.Where(each => each.StartsWith("git ", StringComparison.Ordinal)).ToList();
         var report = $"{git.Count} git starts:\n{string.Join('\n', git)}";
+        // The run's starts in its output, so a ceiling is lowered to what was measured.
+        _output.WriteLine(report);
         // A question of commits by their ids is asked once unless a git that may move a ref ran between its two askings. What names a
         // ref or the head is never kept (another process moves it, and a judgement or a delete must see the move), so those are asked
         // as often as the steps ask them; `status` too is the files'. Layout reads are kept only in the planning, so the tidy's own
