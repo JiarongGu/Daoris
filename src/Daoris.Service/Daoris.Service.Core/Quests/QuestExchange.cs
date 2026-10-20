@@ -1328,12 +1328,13 @@ public sealed class QuestExchange(
         }
 
         // A close on the winner's take, made after the pass that found this machine's take lost (WAITCLAIM2): the stand-down
-        // the take's own loss says, since the session making it may not have heard that yet.
+        // the take's own loss says, since the session making it may not have heard that yet. The person's choices follow, since a
+        // decline here may be theirs (SYNCMERGE1a3).
         if (move.ClaimLost)
         {
             return new(
                 QuestRespondRefusal.AlreadyTaken,
-                LostTake(move.Quest.Id, $"so this {action.ToLowerInvariant()} is not this machine's to make. Nothing moved.", move),
+                LostStep(move.Quest.Id, $"so this {action.ToLowerInvariant()} is not this machine's to make. Nothing moved.", move),
                 Quest: null);
         }
 
@@ -1448,6 +1449,31 @@ public sealed class QuestExchange(
     internal static string LostTake(string id, string what, QuestMove move) =>
         LostTake(id, what, reopened: move is { Quest.Status: QuestStatus.Open, LostToTheReopen: true },
             outgrown: move is { Quest.Status: QuestStatus.Open, LostToTheReopen: false });
+
+    /// <summary>
+    /// A done, a decline or a set-up refused on a take this machine lost (SYNCMERGE1a3, D178 point 7): the lost take's words, then the
+    /// two choices that stand for the person on its conflict, since a remote cannot tell their move from the session's and refuses both.
+    /// </summary>
+    internal static string LostStep(string id, string what, QuestMove move) => LostTake(id, what, move) + Choices(move.Quest!);
+
+    /// <summary>
+    /// The person's two choices on this machine's lost take (D178 point 2), named as the page and the terminal name them, with why
+    /// <i>Bring mine forward</i> does not stand yet where it does not (point 3): the step held by another machine, or its source held by the
+    /// reopen. A closed step offers neither, and no refusal here meets one.
+    /// </summary>
+    internal static string Choices(Quest step)
+    {
+        const string Lead = " The person chooses how its conflict ends: *Drop mine* dismisses it and leaves this machine's work where it is, "
+            + "or *Bring mine forward* takes the step afresh and goes on with that work in its kept tree";
+        const string Doors = " (on the quest's page, or `daoris-driver sync dismiss` and `sync forward`).";
+        return step switch
+        {
+            { Status: QuestStatus.Open, SourceReopened: not null } => Lead + ", once the work the step grows from is submitted again" + Doors,
+            { Status: QuestStatus.Open } => Lead + Doors,
+            { Status: QuestStatus.Taken } => Lead + ", once the step is open again: another machine holds it now" + Doors,
+            _ => "",
+        };
+    }
 
     /// <summary>
     /// The driver binds a taken quest to the graph that closes it (FABRIC-CLOSE1a, §E5), at the run's first start.
@@ -2146,7 +2172,7 @@ public sealed class QuestExchange(
         {
             return new(
                 QuestRespondRefusal.AlreadyTaken,
-                LostTake(move.Quest.Id, "so this done is not this machine's to make. Nothing moved.", move),
+                LostStep(move.Quest.Id, "so this done is not this machine's to make. Nothing moved.", move),
                 Quest: null);
         }
 

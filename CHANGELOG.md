@@ -464,7 +464,8 @@ with the version and date at release.
   says how it ended. A step the reopen holds names its go-on and abandon the same way, and says that abandoning declines it for
   every machine. Once brought forward, confirmed or offline, the stopped session is carried on at Daoris's next look in the tree
   it worked in, brought up to date first with the work its step grows from, and only once: if that session stops too, the same
-  press does not carry it on again, and a bring-forward that lost again carries nothing on.
+  press does not carry it on again, and a bring-forward that lost again carries nothing on. A done, a decline or a set-up refused
+  on such a step names these two choices too, and says when *Bring mine forward* stands where it does not yet.
 
 - Beside the readings, Daoris keeps every turn's tokens in `usage-history/`: input, output and cache as the agent reported them,
   the account the session ran as, and the model they were spent on where the agent said it, with a helper model's share kept
