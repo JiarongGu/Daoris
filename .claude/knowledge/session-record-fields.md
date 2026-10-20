@@ -130,4 +130,11 @@ A column on another table (`quests`, `asks`) has its own store and feed (`twins`
 `Write`, the say door's `SayRequest` and `SaidWordResponse` with `ToSaid`, then the driver's `ServiceClient.SayAsync` and
 `ReadWord` into `SaidWordView`, and every reader of `Persons` on both sides. COWORK1c's `Level` and `Attempt` (D188's COWORK1c
 note) walked it again, and an attempt is written in place by its own door (`/attempt`, `SessionStore.MarkAttemptAsync`), never by a
-whole-list save. A record's *state* or a new `SessionKind` changes the ledger's rules (D46) and is wider than a field.
+whole-list save. A new author for `From` (COWORK1d's `agent`, a channel claim the person passed on) is only `SaidFrom.Known` and the
+driver's twin (`ChannelFrom`), since `Persons` on both sides already excludes any `From`; a test that used the word as its example of an
+unknown author takes another. A record's *state* or a new `SessionKind` changes the ledger's rules (D46) and is wider than a field.
+
+A channel message's field (COWORK1d's `urgent`) walks its own chain, in the same spirit: the column by `SchemaColumns.EnsureAsync` in
+`ChannelStore`, its insert (`KeepAsync`, where a bound is judged in the same statement), `MirrorAsync` and `Read`; `ChannelWire`'s write
+and read, said whenever kept so absent keeps meaning *from before*; the HTTP item (`ChannelItemResponse`, `ToChannelItem`); the driver's
+`ChannelItemView.ReadItem` and `ChannelItemAnswer`; and the page's `ChannelItem` in `work/channel.ts`.
