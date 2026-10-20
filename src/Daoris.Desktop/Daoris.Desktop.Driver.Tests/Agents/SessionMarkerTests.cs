@@ -22,14 +22,14 @@ public sealed partial class SessionMarkerTests
     [Fact]
     public void Every_start_that_hands_the_marker_is_listed_with_why()
     {
-        var desktop = Path.Combine(WorkspaceRoot.Folder, "src", "Daoris.Desktop");
         var found = new Dictionary<string, int>(StringComparer.Ordinal);
-        foreach (var file in Directory.EnumerateFiles(desktop, "*.cs", SearchOption.AllDirectories))
+        foreach (var project in new[] { SourceFiles.DriverProject, "Daoris.Desktop.Driver.Host", "Daoris.Desktop.Modules", "Daoris.Desktop.App" })
         {
-            var relative = Path.GetRelativePath(desktop, file).Replace('\\', '/');
-            if (relative.Split('/').Any(part => part.EndsWith(".Tests", StringComparison.Ordinal) || part is "bin" or "obj")) continue;
-            var count = Handed().Matches(File.ReadAllText(file)).Count;
-            if (count > 0) found[relative] = count;
+            foreach (var file in SourceFiles.All(project, "*.cs"))
+            {
+                var count = Handed().Matches(File.ReadAllText(file)).Count;
+                if (count > 0) found[$"{project}/{Path.GetRelativePath(SourceFiles.Project(project), file).Replace('\\', '/')}"] = count;
+            }
         }
 
         Assert.Equal(Starts.ToDictionary(each => each.Key, each => each.Value.Count).OrderBy(each => each.Key), found.OrderBy(each => each.Key));

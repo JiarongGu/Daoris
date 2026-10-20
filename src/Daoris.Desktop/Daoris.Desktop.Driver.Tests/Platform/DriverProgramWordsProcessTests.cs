@@ -109,7 +109,15 @@ public sealed class DriverProgramWordsProcessTests(DriverProgramWordsProcessTest
         return environment;
     }
 
-    private static string Cli => Path.Combine(WorkspaceRoot.Folder, "src", "Daoris.Cli", "bin", "daoris.mjs");
+    /// <summary>
+    /// `daoris` as its entry runs it, from the CLI's sources: their dispatcher, handed the words after `--`, its exit the process's. Never
+    /// the package's entry, which prefers a `dist/` a pack beside this run may stage.
+    /// </summary>
+    private static readonly string Dispatcher =
+        $"const {{ runCli }} = await import({JsonSerializer.Serialize(new Uri(Path.Combine(WorkspaceRoot.Folder, "src", "Daoris.Cli", "src", "cli.ts")).AbsoluteUri)});"
+        + " process.exitCode = await runCli(process.argv.slice(1), process.cwd());";
+
+    private static string[] Typed(params string[] words) => ["--input-type=module", "-e", Dispatcher, "--", .. words];
 
     [Fact]
     public void The_words_arrive_whole_and_the_terminals_environment_exactly()
@@ -122,7 +130,7 @@ public sealed class DriverProgramWordsProcessTests(DriverProgramWordsProcessTest
         ];
         var terminal = Terminal(program);
 
-        var (code, output, error) = Run("node", [Cli, "driver", .. words], terminal);
+        var (code, output, error) = Run("node", Typed(["driver", .. words]), terminal);
 
         Assert.True(code == 0, $"{output}\n{error}");
         using var said = JsonDocument.Parse(output);
@@ -141,7 +149,7 @@ public sealed class DriverProgramWordsProcessTests(DriverProgramWordsProcessTest
     {
         var program = echo.Program;
 
-        var (code, output, error) = Run("node", [Cli, "driver", "list"], Terminal(program, exit));
+        var (code, output, error) = Run("node", Typed("driver", "list"), Terminal(program, exit));
 
         Assert.True(code == expected, $"{output}\n{error}");
         if (exit == "7") Assert.Contains("ended with status 7", output + error, StringComparison.Ordinal);
