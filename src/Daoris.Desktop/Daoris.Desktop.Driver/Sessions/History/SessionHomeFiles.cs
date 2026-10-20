@@ -108,6 +108,8 @@ public sealed class SessionHomeFiles(string home, Action<string, bool>? remover 
         new(HandOver, Place.Sessions, HandOverBox.Suffix, false, Beside),
         new(Spawn, Place.Spawn, ".mcp.json", false, Beside),
         new(Spawn, Place.Spawn, ".settings.json", false, Beside),
+        // FABRIC-PIPELINE1b: the checks its run took, which `run-heavy` reads by the session its tree's lock names.
+        new(Spawn, Place.Spawn, SessionChecks.Suffix, false, Beside),
         new(Help, Place.Sessions, HelpConversations.Suffix, false, Beside),
         // HELPWIRED1: what each of its starts handed, Ask Daoris's too, so it goes under the same name.
         new(Help, Place.Sessions, HelpWired.Suffix, false, Beside),

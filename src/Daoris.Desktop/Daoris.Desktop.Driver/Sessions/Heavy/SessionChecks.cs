@@ -75,6 +75,57 @@ public static class SessionChecks
         return config with { SessionChecks = changed };
     }
 
+    /// <summary>What a session's kept checks are named by under the home's <c>spawn/</c>, after its id.</summary>
+    public const string Suffix = ".checks.json";
+
+    /// <summary>
+    /// Keep the checks <paramref name="session"/>'s run takes, where <c>run-heavy</c> reads them by the session its tree's lock names
+    /// (the pipeline design §3.2's second layer): beside the session's other spawn files, gone when its run is (<see cref="LetGo"/>) or with
+    /// its record (<see cref="SessionHomeFiles"/>). Nothing set keeps nothing, which reads as today's.
+    /// </summary>
+    /// <returns>The file kept, or null for none.</returns>
+    public static string? Hold(string home, string session, string? checks)
+    {
+        if (Choice(checks) is not { } choice) return null;
+        var path = DaorisHome.Entry(home, HomeEntry.Spawn, session + Suffix);
+        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+        JsonFile.Write(path, new System.Text.Json.Nodes.JsonObject { ["checks"] = choice });
+        return path;
+    }
+
+    /// <summary>The checks <paramref name="session"/>'s run took, as its start kept them; null where none were kept or the file does not read.</summary>
+    public static string? Held(string home, string session)
+    {
+        var path = DaorisHome.Entry(home, HomeEntry.Spawn, session + Suffix);
+        try
+        {
+            if (!File.Exists(path)) return null;
+            using var document = JsonDocument.Parse(File.ReadAllText(path));
+            return document.RootElement.ValueKind == JsonValueKind.Object
+                   && document.RootElement.TryGetProperty("checks", out var checks) && checks.ValueKind == JsonValueKind.String
+                ? Choice(checks.GetString())
+                : null;
+        }
+        catch (Exception error) when (error is JsonException or IOException or UnauthorizedAccessException)
+        {
+            return null;
+        }
+    }
+
+    /// <summary>A session's kept checks let go as its run ends; none there is nothing to do.</summary>
+    public static void LetGo(string? path)
+    {
+        if (path is null) return;
+        try
+        {
+            File.Delete(path);
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+        {
+            // Left for the history clear, which removes a gone session's spawn files by their suffix.
+        }
+    }
+
     /// <summary>A choice as kept, trimmed and matched in any case, in its own spelling; null for anything else.</summary>
     public static string? Choice(string? said) =>
         said?.Trim() is { } trimmed ? Choices.FirstOrDefault(choice => string.Equals(choice, trimmed, StringComparison.OrdinalIgnoreCase)) : null;

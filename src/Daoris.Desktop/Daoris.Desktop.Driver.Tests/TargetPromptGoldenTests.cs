@@ -233,6 +233,10 @@ public sealed class TargetPromptGoldenTests
         "ready" => Bare with { Ready = true },
         // HEAVYRUN1b1: a repository that marks heavy gates, its session told to run them once, at its end, through `run-heavy`.
         "heavy" => Bare with { Heavy = HeavyTold.Words(["build", "test"]) },
+        // FABRIC-PIPELINE1b: a light development pipeline, its light gates and its heavy gates as the verification's, refused by the
+        // harness of an agent that takes Daoris's rules, and said to one that takes none.
+        "light" => Bare with { Heavy = HeavyTold.LightWords(["universal", "code-map"], ["build", "test"], takesRules: true) },
+        "light-said" => Bare with { Heavy = HeavyTold.LightWords(["universal", "code-map"], ["build", "test"], takesRules: false) },
         _ => throw new ArgumentOutOfRangeException(nameof(which), which, null),
     };
 
@@ -269,6 +273,8 @@ public sealed class TargetPromptGoldenTests
     [InlineData("channel")]
     [InlineData("ready")]
     [InlineData("heavy")]
+    [InlineData("light")]
+    [InlineData("light-said")]
     [InlineData("carry-on-brief")]
     public void The_quests_instruction_is_its_golden_text(string which)
     {
@@ -315,6 +321,8 @@ public sealed class TargetPromptGoldenTests
     [InlineData("channel")]
     [InlineData("ready")]
     [InlineData("heavy")]
+    [InlineData("light")]
+    [InlineData("light-said")]
     [InlineData("carry-on-brief")]
     public void The_account_beside_it_is_its_golden(string which)
     {
