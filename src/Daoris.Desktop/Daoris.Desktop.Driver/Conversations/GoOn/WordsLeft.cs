@@ -30,7 +30,10 @@ public static class WordsLeft
         {
             try
             {
-                var said = await service.SayAsync(session, word.Text, word.Files.Count > 0 ? [.. word.Files.Select(file => file.Name)] : null, ct)
+                // COWORK1b: Daoris's own word is kept as Daoris's, under its fact's key, never as the person's.
+                var said = await service.SayAsync(
+                        session, word.Text, word.Files.Count > 0 ? [.. word.Files.Select(file => file.Name)] : null, ct,
+                        from: word.Daoris is null ? null : DaorisWords.From, key: word.Daoris?.Key)
                     .ConfigureAwait(false);
                 if (said.Kept) kept.Add((word, said.Word));
                 else lost++;

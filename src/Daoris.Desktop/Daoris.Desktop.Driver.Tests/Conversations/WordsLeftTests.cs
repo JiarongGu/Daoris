@@ -46,6 +46,32 @@ public sealed class WordsLeftTests : IDisposable
         Assert.Equal((SessionEventKind.User, "w9", "stuck?", "resume", "screen"), (record[1].Kind, record[1].Id, record[1].Text, record[1].Reaches, record[1].Door));
     }
 
+    /// <summary>
+    /// COWORK1b: Daoris's own word a failed door left is kept on the record as Daoris's, under its fact's key, and shown waiting
+    /// as Daoris's, never as the person's.
+    /// </summary>
+    [Fact]
+    public async Task Daoris_word_a_failed_door_left_is_kept_and_shown_as_daoris()
+    {
+        var standIn = new StandIn(HttpStatusCode.OK, """
+            {"session":{"id":"s1","state":"failed"},"message":"Kept for session `s1`.",
+             "said":{"id":"w9","text":"Daoris: reopened.","at":"2026-10-14T06:53:37+00:00","files":[],"reopens":true,"from":"daoris","key":"reopen/q1/desk/44"}}
+            """);
+        using var service = new ServiceClient("http://stand-in", null, new HttpClient(standIn));
+        var events = new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions));
+        var word = new ChatMessage("Daoris: reopened.", []) { Id = "said-1", Daoris = new DaorisWord("reopen/q1/desk/44") };
+
+        Assert.Equal(1, await WordsLeft.KeepAsync(service, events, "s1", [word], CancellationToken.None));
+
+        using (var sent = JsonDocument.Parse(Assert.Single(standIn.Heard).Body))
+        {
+            Assert.Equal(("daoris", "reopen/q1/desk/44"), (sent.RootElement.GetProperty("from").GetString(), sent.RootElement.GetProperty("key").GetString()));
+        }
+
+        var shown = events.After("s1", 0).Events.Last();
+        Assert.Equal(("target", "daoris", "w9", "resume"), (shown.Origin, shown.From, shown.Id, shown.Reaches));
+    }
+
     [Fact]
     public async Task Words_the_record_would_not_keep_are_said_never_to_have_reached_it()
     {
