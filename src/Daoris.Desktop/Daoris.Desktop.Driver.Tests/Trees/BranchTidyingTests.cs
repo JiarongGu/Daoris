@@ -300,7 +300,7 @@ public sealed class BranchTidyingTests : IDisposable
         Assert.Contains("\"level\":\"info\",\"event\":\"branch.tidied\"", line, StringComparison.Ordinal);
         Assert.Contains(
             "\"repository\":\"engine\",\"workspace\":\"default\",\"branch\":\"daoris/s-1a2b3c4d\",\"tree\":true,"
-            + "\"folder\":\"trees/.tidied/default/engine/s-1a2b3c4d-20261009T090000000Z\"",
+            + "\"folder\":\"work/trees/.tidied/default/engine/s-1a2b3c4d-20261009T090000000Z\"",
             line, StringComparison.Ordinal);
     }
 
@@ -325,7 +325,7 @@ public sealed class BranchTidyingTests : IDisposable
         Assert.Contains("\"level\":\"info\",\"event\":\"branch.tidied\"", line, StringComparison.Ordinal);
         Assert.Contains(
             "\"repository\":\"engine\",\"workspace\":\"default\",\"branch\":null,\"tree\":true,"
-            + "\"folder\":\"trees/.tidied/default/engine/devtools-20261009T090000000Z\",\"on\":null,\"kind\":\"stray\",\"kept\":null",
+            + "\"folder\":\"work/trees/.tidied/default/engine/devtools-20261009T090000000Z\",\"on\":null,\"kind\":\"stray\",\"kept\":null",
             line, StringComparison.Ordinal);
     }
 
@@ -350,8 +350,9 @@ public sealed class BranchTidyingTests : IDisposable
             [$"tidy  engine: removed `daoris/s-0031408d`, whose tree's opening was cut off: git's own lock from the start of its add was left on it; "
              + $"its tree's folder was moved aside to {aside}, and goes once it is left untouched for 14 days."],
             said);
+        // The folder said relative to the home: under `work/trees/` in a new home (HOMELAYOUT3).
         Assert.Contains(
-            "\"branch\":\"daoris/s-0031408d\",\"tree\":true,\"folder\":\"trees/.tidied/default/engine/s-0031408d-20261009T090000000Z\","
+            "\"branch\":\"daoris/s-0031408d\",\"tree\":true,\"folder\":\"work/trees/.tidied/default/engine/s-0031408d-20261009T090000000Z\","
             + "\"on\":null,\"kind\":\"opening\",\"kept\":null",
             Assert.Single(LogLines()), StringComparison.Ordinal);
     }

@@ -15,12 +15,15 @@ public sealed class ProbeLockTests : IDisposable
         try { Directory.Delete(_home, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
     }
 
-    /// <summary>Where each lock lives, relative to the home: the twin's <c>PATH_ROWS</c>, which reads these rows, cell for cell.</summary>
+    /// <summary>
+    /// Where each lock lives, relative to the home: the twin's <c>PATH_ROWS</c>, which reads these rows, cell for cell. In <c>run/</c>
+    /// since HOMELAYOUT3 (D172 §3.5); a home whose locks are still at <c>harnesses/.probing</c> is read there.
+    /// </summary>
     [Theory]
-    [InlineData("claude-code", "account-1", "harnesses/.probing/claude-code/account-1.lock")]
-    [InlineData("claude-code", "work.account", "harnesses/.probing/claude-code/work.account.lock")]
-    [InlineData("claude-code", null, "harnesses/.probing/claude-code.lock")]
-    [InlineData("codex", "account-2", "harnesses/.probing/codex/account-2.lock")]
+    [InlineData("claude-code", "account-1", "run/probing/claude-code/account-1.lock")]
+    [InlineData("claude-code", "work.account", "run/probing/claude-code/work.account.lock")]
+    [InlineData("claude-code", null, "run/probing/claude-code.lock")]
+    [InlineData("codex", "account-2", "run/probing/codex/account-2.lock")]
     public void Each_lock_lives_beside_the_accounts_never_inside_one(string owner, string? profile, string relative)
     {
         var path = ProbeLock.PathOf(_home, owner, profile);
@@ -31,8 +34,8 @@ public sealed class ProbeLockTests : IDisposable
 
     /// <summary>Where a sign-in or a key into an account is marked: the twin's <c>MARK_ROWS</c> reads these.</summary>
     [Theory]
-    [InlineData("claude-code", "account-1", "harnesses/.probing/claude-code/account-1.signed-in")]
-    [InlineData("codex", "work", "harnesses/.probing/codex/work.signed-in")]
+    [InlineData("claude-code", "account-1", "run/probing/claude-code/account-1.signed-in")]
+    [InlineData("codex", "work", "run/probing/codex/work.signed-in")]
     public void A_sign_in_is_marked_beside_the_account_s_lock(string owner, string profile, string relative) =>
         Assert.Equal(relative, Path.GetRelativePath(_home, ProbeLock.SignedInPathOf(_home, owner, profile)).Replace('\\', '/'));
 

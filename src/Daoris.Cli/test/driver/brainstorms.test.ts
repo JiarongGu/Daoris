@@ -1,10 +1,11 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { commandDriver, readDriverChoices, writeDriverChoices } from '../../src/driver/driverconfig.ts';
 import { applyBrainstormEdit, brainstormFor, brainstormListed, brainstormRuleOf } from '../../src/driver/brainstorms.ts';
+import { homeEntry } from '../../src/platform/home.ts';
 import { makeFixture, captureError } from '../_fixture.ts';
 
 /**
@@ -22,7 +23,9 @@ const TABLE = JSON.parse(readFileSync(join(dirname(dirname(fileURLToPath(import.
 };
 
 function at(fx: { root: string }): string {
-  return join(fx.root, 'driver.json');
+  const path = homeEntry(fx.root, 'driver');
+  mkdirSync(dirname(path), { recursive: true });
+  return path;
 }
 
 function run(argv: string[], path: string): { code: number; out: string } {

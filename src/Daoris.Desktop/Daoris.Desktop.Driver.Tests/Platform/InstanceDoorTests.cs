@@ -407,7 +407,7 @@ public sealed class InstanceDoorTests : IAsyncLifetime
         Assert.Single(standIn.Presses);
         Assert.Contains("trees: the plan.", _out.ToString());
         // A read keeps no record to ask again: nothing it did needs finding out.
-        Assert.False(Directory.Exists(Path.Combine(_home, "pipe", "sent")));
+        Assert.False(Directory.Exists(Path.Combine(DaorisHome.Entry(_home, HomeEntry.Pipe), "sent")));
     }
 
     [Theory]

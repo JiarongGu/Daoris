@@ -8,8 +8,7 @@ import {
   CURVE_MOST_POINTS, CURVE_WINDOWS, SWITCHES, USE_DEFAULTS, USE_MODES, curveProblem, resolveScope, scopeProblem, withRotation, withUse,
 } from '../../src/accounts/rotation.ts';
 import type { RotationUse, UseChange } from '../../src/accounts/rotation.ts';
-import { COOLING_FILE } from '../../src/accounts/cooling.ts';
-import { WINDOWS_FILE } from '../../src/accounts/windows.ts';
+import { homeEntry } from '../../src/platform/home.ts';
 import { captureError, makeFixture } from '../_fixture.ts';
 
 /**
@@ -37,7 +36,9 @@ const TABLE = JSON.parse(readFileSync(join(here, 'fixtures', 'rotation-use.json'
 };
 
 function at(fx: { root: string }): string {
-  return join(fx.root, 'harnesses.json');
+  const path = homeEntry(fx.root, 'harnesses');
+  mkdirSync(dirname(path), { recursive: true });
+  return path;
 }
 
 /** A file cell: the text on disk where it is a string, else that JSON. */
@@ -240,7 +241,7 @@ test('`profile use` with no flag prints the scope\'s settings and what each acco
   accounts(fx, 'claude-code', 'account-1', 'account-2');
   run(['profile', 'order', 'claude-code', 'account-1', 'account-2'], at(fx));
   const ahead = new Date(Date.now() + 86_400_000).toISOString().replace(/\.\d+Z$/, 'Z');
-  writeFileSync(join(fx.root, COOLING_FILE), JSON.stringify({ 'claude-code': { 'account-2': { until: ahead, stated: true } } }), 'utf8');
+  writeFileSync(fx.entry('cooling'), JSON.stringify({ 'claude-code': { 'account-2': { until: ahead, stated: true } } }), 'utf8');
   const before = readFileSync(at(fx), 'utf8');
 
   const printed = run(['profile', 'use', 'claude-code'], at(fx));
@@ -293,7 +294,7 @@ test('`profile use` shows each account\'s last reading and its age, and says no 
   run(['profile', 'order', 'dsh', 'account-1', 'account-2'], at(fx));
   run(['profile', 'use', 'claude-code', '--near', '85'], at(fx));
   const stamp = (offset: number) => new Date(Date.now() + offset).toISOString().replace(/\.\d+Z$/, 'Z');
-  writeFileSync(join(fx.root, WINDOWS_FILE), JSON.stringify({
+  writeFileSync(fx.entry('windows'), JSON.stringify({
     'claude-code': {
       'account-1': {
         session: { reset: stamp(2 * 3_600_000), used: 0.88, standing: 'clear', seen: stamp(-20 * 60_000), session: 's1' },

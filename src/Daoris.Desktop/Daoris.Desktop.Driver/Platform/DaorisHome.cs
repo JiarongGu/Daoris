@@ -118,26 +118,106 @@ public static class DaorisHome
     /// <exception cref="HomeEntryTwiceException">Both places hold the entry, or the item.</exception>
     public static string Entry(string home, HomeEntry entry, params string[] asked)
     {
-        var (next, rest, whole) = Expand(home, entry.New, asked);
-        if (!string.Equals(entry.New, entry.Old, StringComparison.Ordinal))
-        {
-            var (old, _, _) = Expand(home, entry.Old, asked);
-            next = Choose(entry, next, old, whole);
-        }
-
-        return rest.Length == 0 ? next : Path.Combine([next, .. rest]);
+        var (folder, oldHome) = FolderOf(home);
+        var (next, rest, whole) = Expand(folder, entry.New, asked);
+        var (old, _, _) = Expand(oldHome, entry.Old, asked);
+        // One place by two spellings (an install's data entries, a root's logs) is the old one, spelled under the home as named.
+        var place = SamePlace(next, old) ? old : Choose(entry, next, old, whole);
+        if (ReferenceEquals(place, next)) MakeCategory(folder, entry);
+        return rest.Length == 0 ? place : Path.Combine([place, .. rest]);
     }
 
     /// <summary>
-    /// Both places of an entry, asked as <see cref="Entry"/> is, without the disk: for a list of its items, which reads both
-    /// (the design §6.2). The new place first, then the old, once each.
+    /// The folder of an entry's category, made where its new place is answered and the Daoris folder is there (HOMELAYOUT3): a
+    /// writer of a file the home's top held before (<c>driver.json</c>, <c>keys.json</c>, <c>running.json</c>) found its folder
+    /// in the home itself, which was there, and now writes into its category's, which a new home has not made yet. Nothing else
+    /// is made: an entry's own folders are its writer's, and a home that is not there stays not there.
+    /// </summary>
+    private static void MakeCategory(string folder, HomeEntry entry)
+    {
+        var parts = entry.New.Split('/', StringSplitOptions.RemoveEmptyEntries);
+        if (parts.Length < 2) return;
+        var category = Path.Combine(folder, parts[0]);
+        if (Directory.Exists(category) || !Directory.Exists(folder)) return;
+        try
+        {
+            Directory.CreateDirectory(category);
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+        {
+            // The writer that follows meets the same refusal and says it.
+        }
+    }
+
+    /// <summary>
+    /// Both places of an entry, asked as <see cref="Entry"/> is, without reading them: for a list of its items, which reads both
+    /// (the design §6.2). The new place first, then the old, once each. Only the marker that says which folder the home names is
+    /// read (<see cref="FolderOf"/>).
     /// </summary>
     public static IReadOnlyList<string> Places(string home, HomeEntry entry, params string[] asked)
     {
-        var (next, rest, _) = Expand(home, entry.New, asked);
-        var (old, _, _) = Expand(home, entry.Old, asked);
-        return [.. new[] { next, old }.Select(place => rest.Length == 0 ? place : Path.Combine([place, .. rest])).Distinct(StringComparer.Ordinal)];
+        var (folder, oldHome) = FolderOf(home);
+        var (next, rest, _) = Expand(folder, entry.New, asked);
+        var (old, _, _) = Expand(oldHome, entry.Old, asked);
+        var places = SamePlace(next, old) ? new[] { old } : [next, old];
+        return [.. places.Select(place => rest.Length == 0 ? place : Path.Combine([place, .. rest]))];
     }
+
+    /// <summary>
+    /// The Daoris folder a home names, and the old home its entries were under before D172's places (D172 point 2, HOMELAYOUT3):
+    /// an install's folder (it holds <see cref="InstallMarker"/>), whose old home is its <c>data/</c>; that <c>data/</c>, which
+    /// names the same install and is its old home, as every account that met D63 names it; and any other home, which is both.
+    /// </summary>
+    public static (string Folder, string Old) FolderOf(string home)
+    {
+        var trimmed = Path.TrimEndingDirectorySeparator(home);
+        if (System.IO.File.Exists(Path.Combine(trimmed, InstallMarker))) return (trimmed, Path.Combine(trimmed, InstallData));
+        if (string.Equals(Path.GetFileName(trimmed), InstallData, StringComparison.OrdinalIgnoreCase)
+            && Path.GetDirectoryName(trimmed) is { Length: > 0 } parent
+            && System.IO.File.Exists(Path.Combine(parent, InstallMarker)))
+        {
+            return (parent, trimmed);
+        }
+
+        return (trimmed, trimmed);
+    }
+
+    /// <summary>
+    /// The home a file or folder of it is in, the entry it is named (HOMELAYOUT3): undone from the entry's new place, the Daoris
+    /// folder, spelled as its <c>data/</c> where that folder is an install, as every install's home has been since D63; else
+    /// undone from its old place, the old home. For the readers that hold a file rather than its home (<c>DriverConfig.HomeOf</c>,
+    /// <c>HarnessSettings.HomeOf</c>, the in-app browser's profile). An entry kept per item is not asked here.
+    /// </summary>
+    public static string HomeOf(string path, HomeEntry entry)
+    {
+        var full = Path.TrimEndingDirectorySeparator(Path.GetFullPath(path));
+        if (Undone(full, entry.New) is { } folder)
+        {
+            return System.IO.File.Exists(Path.Combine(folder, InstallMarker)) ? Path.Combine(folder, InstallData) : folder;
+        }
+
+        return Undone(full, entry.Old) ?? Path.GetDirectoryName(full)!;
+    }
+
+    /// <summary>The folder a place's parts sit under in <paramref name="full"/>, or null where it does not end with them.</summary>
+    private static string? Undone(string full, string place)
+    {
+        var at = full;
+        foreach (var part in place.Split('/', StringSplitOptions.RemoveEmptyEntries).Reverse())
+        {
+            if (!string.Equals(Path.GetFileName(at), part, PathCase) || Path.GetDirectoryName(at) is not { Length: > 0 } parent) return null;
+            at = parent;
+        }
+
+        return at;
+    }
+
+    /// <summary>Two spellings of one place: full, and without regard to case where the file system has none.</summary>
+    private static bool SamePlace(string a, string b) =>
+        string.Equals(Path.GetFullPath(a), Path.GetFullPath(b), PathCase);
+
+    private static StringComparison PathCase =>
+        OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
 
     /// <summary>An entry under the environment's home, or null when there is no home.</summary>
     public static string? File(Func<string, string?> environment, HomeEntry entry) =>
@@ -230,84 +310,87 @@ public enum HomeCategory
 }
 
 /// <summary>
-/// An entry of D172's table (the install layout design §3, HOMELAYOUT2): its name, its category, its new place and its old one,
-/// each <c>/</c>-separated under the home, a <c>*</c> for each part of an item where the entry is kept per item, and the names
-/// that make a place there where the entry is known by them (none: the place itself). <see cref="DaorisHome.Entry"/> reads it.
+/// An entry of D172's table (the install layout design §3, HOMELAYOUT2): its name, its category, its new place under the Daoris
+/// folder and its old one under the old home (<see cref="DaorisHome.FolderOf"/>), each <c>/</c>-separated, a <c>*</c> for each
+/// part of an item where the entry is kept per item, and the names that make a place there where the entry is known by them
+/// (none: the place itself). <see cref="DaorisHome.Entry"/> reads it.
 /// </summary>
 /// <remarks>
 /// One of three twins: the CLI's <c>HOME_ENTRIES</c> (<c>home.ts</c>) and the service's <c>HomeEntry</c> hold the same rows in
-/// the same order, which <c>home.test.ts</c> holds cell for cell. 🔴 Every new place is still the old one (HOMELAYOUT2): the
-/// table names the entries, and HOMELAYOUT3 switches the new places on with the move.
+/// the same order, which <c>home.test.ts</c> holds cell for cell. 🔴 The new places are switched on (HOMELAYOUT3): each is under
+/// the top folder its category names, and an install's <c>data/</c> entries are where they were. An entry made by HOMELAYOUT3
+/// itself had no old place: its old column repeats its new, a place under the old home nothing writes.
 /// </remarks>
 public sealed record HomeEntry(string Name, HomeCategory Category, string New, string Old, params string[] Holds)
 {
-    public static readonly HomeEntry DriverConfig = new("driver", HomeCategory.Data, "driver.json", "driver.json");
-    public static readonly HomeEntry Harnesses = new("harnesses", HomeCategory.Data, "harnesses.json", "harnesses.json");
-    public static readonly HomeEntry Accounts = new("accounts", HomeCategory.Data, "accounts.json", "accounts.json");
-    public static readonly HomeEntry Cooling = new("cooling", HomeCategory.Data, "cooling.json", "cooling.json");
-    public static readonly HomeEntry Windows = new("windows", HomeCategory.Data, "windows.json", "windows.json");
-    public static readonly HomeEntry Reads = new("reads", HomeCategory.Data, "reads.json", "reads.json");
-    public static readonly HomeEntry Permissions = new("permissions", HomeCategory.Data, "permissions.json", "permissions.json");
-    public static readonly HomeEntry RuleProposals = new("rule-proposals", HomeCategory.Data, "proposals", "proposals");
-    public static readonly HomeEntry Tools = new("tools", HomeCategory.Data, "tools.json", "tools.json");
-    public static readonly HomeEntry PluginState = new("plugin-state", HomeCategory.Data, "plugins.json", "plugins.json");
-    public static readonly HomeEntry Plugins = new("plugins", HomeCategory.Data, "plugins", "plugins");
-    public static readonly HomeEntry PluginApprovals = new("plugin-approvals", HomeCategory.Data, "plugin-approvals.json", "plugin-approvals.json");
-    public static readonly HomeEntry Usage = new("usage", HomeCategory.Data, "usage.json", "usage.json");
-    public static readonly HomeEntry Landings = new("landings", HomeCategory.Data, "landings.json", "landings.json");
-    public static readonly HomeEntry SessionBranches = new("session-branches", HomeCategory.Data, "session-branches.json", "session-branches.json");
-    public static readonly HomeEntry LinesMoved = new("lines-moved", HomeCategory.Data, "lines-moved.json", "lines-moved.json");
-    public static readonly HomeEntry RegistryFollowed = new("registry-followed", HomeCategory.Data, "registry-followed.json", "registry-followed.json");
-    public static readonly HomeEntry Abandoned = new("abandoned", HomeCategory.Data, "abandoned.json", "abandoned.json");
-    public static readonly HomeEntry Update = new("update", HomeCategory.Data, "update.json", "update.json");
-    public static readonly HomeEntry Knowledge = new("knowledge", HomeCategory.Data, "knowledge.db", "knowledge.db");
-    public static readonly HomeEntry Sessions = new("sessions", HomeCategory.Data, "sessions", "sessions");
-    public static readonly HomeEntry Helpers = new("helpers", HomeCategory.Data, "helpers", "helpers");
-    public static readonly HomeEntry Handed = new("handed", HomeCategory.Data, "handed", "handed");
-    public static readonly HomeEntry Setup = new("setup", HomeCategory.Data, "setup", "setup");
-    public static readonly HomeEntry Workflows = new("workflows", HomeCategory.Data, "workflows", "workflows");
-    public static readonly HomeEntry HelpProposals = new("help-proposals", HomeCategory.Data, "help/proposals", "help/proposals");
-    public static readonly HomeEntry ConfiguredAccess = new("configured-access", HomeCategory.Data, "configured-access.json", "configured-access.json");
-    public static readonly HomeEntry OpinionGates = new("opinion-gates", HomeCategory.Data, "opinions/gates", "opinions/gates");
-    public static readonly HomeEntry OpinionDues = new("opinion-dues", HomeCategory.Data, "opinions/due.json", "opinions/due.json");
-    public static readonly HomeEntry BrowserSettings = new("browser-settings", HomeCategory.Data, "browser/settings.json", "browser/settings.json");
-    public static readonly HomeEntry BrowserFavorites = new("browser-favorites", HomeCategory.Data, "browser/favorites.json", "browser/favorites.json");
-    public static readonly HomeEntry HomeId = new("home-id", HomeCategory.Data, "home.json", "home.json");
-    public static readonly HomeEntry Brainstorms = new("brainstorms", HomeCategory.Data, "brainstorms", "brainstorms");
-    public static readonly HomeEntry UsageHistory = new("usage-history", HomeCategory.Data, "usage-history", "usage-history");
-    public static readonly HomeEntry Keys = new("keys", HomeCategory.Profiles, "keys.json", "keys.json");
-    public static readonly HomeEntry Remotes = new("remotes", HomeCategory.Profiles, "remotes.json", "remotes.json");
-    public static readonly HomeEntry AgentHomes = new("agent-homes", HomeCategory.Profiles, "harnesses/*/*", "harnesses/*/*");
-    public static readonly HomeEntry BrowserEngine = new("browser-engine", HomeCategory.Profiles, "browser/engine", "browser/engine");
-    public static readonly HomeEntry BrowserEdge = new("browser-edge", HomeCategory.Profiles, "browser/edge", "browser/edge");
-    public static readonly HomeEntry EdgeCookies = new("edge-cookies", HomeCategory.Profiles, "browser/edge-session-cookies.bin", "browser/edge-session-cookies.bin");
-    public static readonly HomeEntry Window = new("window", HomeCategory.Profiles, "", "", "chromium", "config");
-    public static readonly HomeEntry Trees = new("trees", HomeCategory.Work, "trees/*/*/*", "trees/*/*/*");
-    public static readonly HomeEntry HelpRoom = new("help-room", HomeCategory.Work, "help", "help", "CLAUDE.md");
-    public static readonly HomeEntry HelpRooms = new("help-rooms", HomeCategory.Work, "help-*", "help-*", "CLAUDE.md");
-    public static readonly HomeEntry Intake = new("intake", HomeCategory.Work, "intake/*", "intake/*");
-    public static readonly HomeEntry OpinionPackets = new("opinion-packets", HomeCategory.Work, "opinions/*", "opinions/*");
-    public static readonly HomeEntry QuestFiles = new("quest-files", HomeCategory.Work, "quests/*", "quests/*");
-    public static readonly HomeEntry AskFiles = new("ask-files", HomeCategory.Work, "asks/*", "asks/*");
-    public static readonly HomeEntry SessionFiles = new("session-files", HomeCategory.Work, "sessions/*/files", "sessions/*/files");
-    public static readonly HomeEntry Proof = new("proof", HomeCategory.Work, "proof/*", "proof/*");
-    public static readonly HomeEntry UsageRead = new("usage-read", HomeCategory.Work, "usage-read", "usage-read");
-    public static readonly HomeEntry BrainstormRooms = new("brainstorm-rooms", HomeCategory.Work, "brainstorm-rooms/*", "brainstorm-rooms/*");
-    public static readonly HomeEntry Toolchain = new("toolchain", HomeCategory.Cache, "toolchain", "toolchain");
-    public static readonly HomeEntry ToolVersions = new("tool-versions", HomeCategory.Cache, "tools", "tools");
-    public static readonly HomeEntry Bin = new("bin", HomeCategory.Cache, "bin", "bin");
-    public static readonly HomeEntry HomeLease = new("home-lease", HomeCategory.Run, "home.lease", "home.lease");
-    public static readonly HomeEntry DriverLock = new("driver-lock", HomeCategory.Run, "driver.lock", "driver.lock");
-    public static readonly HomeEntry Running = new("running", HomeCategory.Run, "running.json", "running.json");
-    public static readonly HomeEntry Locks = new("locks", HomeCategory.Run, "locks", "locks");
-    public static readonly HomeEntry Spawn = new("spawn", HomeCategory.Run, "spawn", "spawn");
-    public static readonly HomeEntry Starts = new("starts", HomeCategory.Run, "starts", "starts");
-    public static readonly HomeEntry Hooks = new("hooks", HomeCategory.Run, "hooks", "hooks");
-    public static readonly HomeEntry Probing = new("probing", HomeCategory.Run, "harnesses/.probing", "harnesses/.probing");
-    public static readonly HomeEntry SessionPids = new("session-pids", HomeCategory.Run, "sessions/*.pid", "sessions/*.pid");
-    public static readonly HomeEntry Requests = new("requests", HomeCategory.Run, "sessions/requests", "sessions/requests");
-    public static readonly HomeEntry EdgeRecord = new("edge-record", HomeCategory.Run, "browser/edge.json", "browser/edge.json");
-    public static readonly HomeEntry Pipe = new("pipe", HomeCategory.Run, "pipe", "pipe");
+    public static readonly HomeEntry DriverConfig = new("driver", HomeCategory.Data, "data/driver.json", "driver.json");
+    public static readonly HomeEntry Harnesses = new("harnesses", HomeCategory.Data, "data/harnesses.json", "harnesses.json");
+    public static readonly HomeEntry Accounts = new("accounts", HomeCategory.Data, "data/accounts.json", "accounts.json");
+    public static readonly HomeEntry Cooling = new("cooling", HomeCategory.Data, "data/cooling.json", "cooling.json");
+    public static readonly HomeEntry Windows = new("windows", HomeCategory.Data, "data/windows.json", "windows.json");
+    public static readonly HomeEntry Reads = new("reads", HomeCategory.Data, "data/reads.json", "reads.json");
+    public static readonly HomeEntry Permissions = new("permissions", HomeCategory.Data, "data/permissions.json", "permissions.json");
+    public static readonly HomeEntry RuleProposals = new("rule-proposals", HomeCategory.Data, "data/proposals", "proposals");
+    public static readonly HomeEntry Tools = new("tools", HomeCategory.Data, "data/tools.json", "tools.json");
+    public static readonly HomeEntry PluginState = new("plugin-state", HomeCategory.Data, "data/plugins.json", "plugins.json");
+    public static readonly HomeEntry Plugins = new("plugins", HomeCategory.Data, "data/plugins", "plugins");
+    public static readonly HomeEntry PluginApprovals = new("plugin-approvals", HomeCategory.Data, "data/plugin-approvals.json", "plugin-approvals.json");
+    public static readonly HomeEntry Usage = new("usage", HomeCategory.Data, "data/usage.json", "usage.json");
+    public static readonly HomeEntry Landings = new("landings", HomeCategory.Data, "data/landings.json", "landings.json");
+    public static readonly HomeEntry SessionBranches = new("session-branches", HomeCategory.Data, "data/session-branches.json", "session-branches.json");
+    public static readonly HomeEntry LinesMoved = new("lines-moved", HomeCategory.Data, "data/lines-moved.json", "lines-moved.json");
+    public static readonly HomeEntry RegistryFollowed = new("registry-followed", HomeCategory.Data, "data/registry-followed.json", "registry-followed.json");
+    public static readonly HomeEntry Abandoned = new("abandoned", HomeCategory.Data, "data/abandoned.json", "abandoned.json");
+    public static readonly HomeEntry Update = new("update", HomeCategory.Data, "data/update.json", "update.json");
+    public static readonly HomeEntry Knowledge = new("knowledge", HomeCategory.Data, "data/knowledge.db", "knowledge.db");
+    public static readonly HomeEntry Sessions = new("sessions", HomeCategory.Data, "data/sessions", "sessions");
+    public static readonly HomeEntry Helpers = new("helpers", HomeCategory.Data, "data/helpers", "helpers");
+    public static readonly HomeEntry Handed = new("handed", HomeCategory.Data, "data/handed", "handed");
+    public static readonly HomeEntry Setup = new("setup", HomeCategory.Data, "data/setup", "setup");
+    public static readonly HomeEntry Workflows = new("workflows", HomeCategory.Data, "data/workflows", "workflows");
+    public static readonly HomeEntry HelpProposals = new("help-proposals", HomeCategory.Data, "data/help/proposals", "help/proposals");
+    public static readonly HomeEntry ConfiguredAccess = new("configured-access", HomeCategory.Data, "data/configured-access.json", "configured-access.json");
+    public static readonly HomeEntry OpinionGates = new("opinion-gates", HomeCategory.Data, "data/opinions/gates", "opinions/gates");
+    public static readonly HomeEntry OpinionDues = new("opinion-dues", HomeCategory.Data, "data/opinions/due.json", "opinions/due.json");
+    public static readonly HomeEntry BrowserSettings = new("browser-settings", HomeCategory.Data, "data/browser/settings.json", "browser/settings.json");
+    public static readonly HomeEntry BrowserFavorites = new("browser-favorites", HomeCategory.Data, "data/browser/favorites.json", "browser/favorites.json");
+    public static readonly HomeEntry HomeId = new("home-id", HomeCategory.Data, "data/home.json", "home.json");
+    public static readonly HomeEntry Brainstorms = new("brainstorms", HomeCategory.Data, "data/brainstorms", "brainstorms");
+    public static readonly HomeEntry UsageHistory = new("usage-history", HomeCategory.Data, "data/usage-history", "usage-history");
+    public static readonly HomeEntry Keys = new("keys", HomeCategory.Profiles, "profiles/keys.json", "keys.json");
+    public static readonly HomeEntry Remotes = new("remotes", HomeCategory.Profiles, "profiles/remotes.json", "remotes.json");
+    public static readonly HomeEntry AgentHomes = new("agent-homes", HomeCategory.Profiles, "profiles/agents/*/*", "harnesses/*/*");
+    public static readonly HomeEntry BrowserEngine = new("browser-engine", HomeCategory.Profiles, "profiles/browser/engine", "browser/engine");
+    public static readonly HomeEntry BrowserEdge = new("browser-edge", HomeCategory.Profiles, "profiles/browser/edge", "browser/edge");
+    public static readonly HomeEntry EdgeCookies = new("edge-cookies", HomeCategory.Profiles, "profiles/browser/edge-session-cookies.bin", "browser/edge-session-cookies.bin");
+    public static readonly HomeEntry Window = new("window", HomeCategory.Profiles, "profiles/window", "", "chromium", "config");
+    public static readonly HomeEntry Trees = new("trees", HomeCategory.Work, "work/trees/*/*/*", "trees/*/*/*");
+    public static readonly HomeEntry HelpRoom = new("help-room", HomeCategory.Work, "work/rooms/help", "help", "CLAUDE.md");
+    public static readonly HomeEntry HelpRooms = new("help-rooms", HomeCategory.Work, "work/rooms/help-*", "help-*", "CLAUDE.md");
+    public static readonly HomeEntry Intake = new("intake", HomeCategory.Work, "work/rooms/intake/*", "intake/*");
+    public static readonly HomeEntry OpinionPackets = new("opinion-packets", HomeCategory.Work, "work/opinions/*", "opinions/*");
+    public static readonly HomeEntry QuestFiles = new("quest-files", HomeCategory.Work, "work/files/quests/*", "quests/*");
+    public static readonly HomeEntry AskFiles = new("ask-files", HomeCategory.Work, "work/files/asks/*", "asks/*");
+    public static readonly HomeEntry SessionFiles = new("session-files", HomeCategory.Work, "work/files/sessions/*", "sessions/*/files");
+    public static readonly HomeEntry Proof = new("proof", HomeCategory.Work, "work/files/proof/*", "proof/*");
+    public static readonly HomeEntry UsageRead = new("usage-read", HomeCategory.Work, "work/usage-read", "usage-read");
+    public static readonly HomeEntry BrainstormRooms = new("brainstorm-rooms", HomeCategory.Work, "work/brainstorm-rooms/*", "brainstorm-rooms/*");
+    public static readonly HomeEntry Toolchain = new("toolchain", HomeCategory.Cache, "cache/toolchain", "toolchain");
+    public static readonly HomeEntry ToolVersions = new("tool-versions", HomeCategory.Cache, "cache/tools", "tools");
+    public static readonly HomeEntry Bin = new("bin", HomeCategory.Cache, "cache/bin", "bin");
+    public static readonly HomeEntry HomeLease = new("home-lease", HomeCategory.Run, "run/home.lease", "home.lease");
+    public static readonly HomeEntry DriverLock = new("driver-lock", HomeCategory.Run, "run/driver.lock", "driver.lock");
+    public static readonly HomeEntry Running = new("running", HomeCategory.Run, "run/running.json", "running.json");
+    public static readonly HomeEntry Locks = new("locks", HomeCategory.Run, "run/locks", "locks");
+    public static readonly HomeEntry Spawn = new("spawn", HomeCategory.Run, "run/spawn", "spawn");
+    public static readonly HomeEntry Starts = new("starts", HomeCategory.Run, "run/starts", "starts");
+    public static readonly HomeEntry Hooks = new("hooks", HomeCategory.Run, "run/hooks", "hooks");
+    public static readonly HomeEntry Probing = new("probing", HomeCategory.Run, "run/probing", "harnesses/.probing");
+    public static readonly HomeEntry SessionPids = new("session-pids", HomeCategory.Run, "run/sessions/*.pid", "sessions/*.pid");
+    public static readonly HomeEntry Requests = new("requests", HomeCategory.Run, "run/requests", "sessions/requests");
+    public static readonly HomeEntry EdgeRecord = new("edge-record", HomeCategory.Run, "run/edge.json", "browser/edge.json");
+    public static readonly HomeEntry Pipe = new("pipe", HomeCategory.Run, "run/pipe", "pipe");
+    public static readonly HomeEntry HomeMove = new("home-move", HomeCategory.Run, "run/home-move.json", "run/home-move.json");
     public static readonly HomeEntry Logs = new("logs", HomeCategory.Logs, "logs", "logs");
 
     /// <summary>Every entry, in the table's order, which the twins hold in the same order.</summary>
@@ -321,7 +404,7 @@ public sealed record HomeEntry(string Name, HomeCategory Category, string New, s
         Keys, Remotes, AgentHomes, BrowserEngine, BrowserEdge, EdgeCookies, Window,
         Trees, HelpRoom, HelpRooms, Intake, OpinionPackets, QuestFiles, AskFiles, SessionFiles, Proof, UsageRead, BrainstormRooms,
         Toolchain, ToolVersions, Bin,
-        HomeLease, DriverLock, Running, Locks, Spawn, Starts, Hooks, Probing, SessionPids, Requests, EdgeRecord, Pipe,
+        HomeLease, DriverLock, Running, Locks, Spawn, Starts, Hooks, Probing, SessionPids, Requests, EdgeRecord, Pipe, HomeMove,
         Logs,
     ];
 

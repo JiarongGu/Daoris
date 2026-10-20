@@ -446,7 +446,8 @@ public sealed class ToolResourcesTests : IDisposable
     [InlineData("https://例え.jp/r.json", "e2e2d45ac6cca9317d9ebea32cf02ce29eb338fe0926e0e2eecdd7111a125f9b.json")]
     public void A_location_s_copy_is_named_as_the_cli_names_it(string address, string name)
     {
-        Assert.Equal(Path.Combine(["HOME", .. ToolResources.LocationsFolder, name]), ToolResources.LocationCopy("HOME", address));
+        // Under the cache since HOMELAYOUT3 (D172 §3.4), as the CLI's twin asks it.
+        Assert.Equal(Path.Combine(["HOME", "cache", .. ToolResources.LocationsFolder, name]), ToolResources.LocationCopy("HOME", address));
     }
 
     [Theory]
@@ -470,7 +471,7 @@ public sealed class ToolResourcesTests : IDisposable
         const string second = "http://localhost:5177/resources.json";
         File.WriteAllText(DaorisHome.Entry(Home, HomeEntry.Tools), $$"""{"locations":["{{first}}","{{second}}"]}""");
         var firstText = ListText("gh 2.63.0 win-x64 b mirror.example");
-        Directory.CreateDirectory(Path.Combine([Home, .. ToolResources.LocationsFolder]));
+        Directory.CreateDirectory(Path.GetDirectoryName(ToolResources.LocationCopy(Home, first))!);
         File.WriteAllText(ToolResources.LocationCopy(Home, first), firstText);
         Directory.CreateDirectory(Path.Combine(_root, "app"));
         File.WriteAllText(Path.Combine([_root, .. ToolResources.Layout]), ListText("gh 2.62.0 win-x64 a maker.example"));

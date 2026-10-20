@@ -41,8 +41,8 @@ public sealed class RunningAddressTests : IDisposable
         var text = File.ReadAllText(RunningAddress.PathIn(_home));
         Assert.Equal(JsonValueKind.Object, JsonDocument.Parse(text).RootElement.ValueKind);
         Assert.Equal(
-            [HomeIdentity.FileName, Path.GetFileName(RunningAddress.PathIn(_home))],
-            Directory.GetFiles(_home).Select(Path.GetFileName).Order(StringComparer.Ordinal));
+            new[] { HomeIdentity.PathIn(_home), RunningAddress.PathIn(_home) }.Select(Path.GetFullPath).Order(StringComparer.Ordinal),
+            Directory.GetFiles(_home, "*", SearchOption.AllDirectories).Select(Path.GetFullPath).Order(StringComparer.Ordinal));
     }
 
     /// <summary>A file from before HOMEID1 names no home, and still reads: fields are added, never changed in place.</summary>

@@ -1,9 +1,10 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { dirname } from 'node:path';
 import { commandHarness, profileHome, readHarnessSettings, withDefault, writeHarnessSettings } from '../../src/agents/toolchain.ts';
 import { resolveRotation, rotationProblem, withRotation, withoutAccount } from '../../src/accounts/rotation.ts';
+import { homeEntry } from '../../src/platform/home.ts';
 import { driverRows as csharpRows, driverTestFile } from '../_csharp.ts';
 import { captureError, makeFixture } from '../_fixture.ts';
 
@@ -20,7 +21,9 @@ import { captureError, makeFixture } from '../_fixture.ts';
 type Cell = string | null;
 
 function at(fx: { root: string }): string {
-  return join(fx.root, 'harnesses.json');
+  const path = homeEntry(fx.root, 'harnesses');
+  mkdirSync(dirname(path), { recursive: true });
+  return path;
 }
 
 function read(fx: { root: string }, file: string) {

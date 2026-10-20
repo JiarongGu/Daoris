@@ -7,7 +7,9 @@ import { fileURLToPath } from 'node:url';
 import vm from 'node:vm';
 import { createServer, type Server } from 'node:net';
 import { readText, listFiles } from '../src/platform/fsx.ts';
+import { homePlaces } from '../src/platform/home.ts';
 import { desktopFile } from './_csharp.ts';
+import { makeFixture } from './_fixture.ts';
 // The workspace's own tooling is plain `.mjs` and ships no declarations, so this import is untyped
 // by construction. Suppressed at the one site rather than given a hand-written `.d.mts`, which would
 // be a second description of the tool to keep in step with it — and the thing this suite asserts is
@@ -268,7 +270,20 @@ test('the report of an application that ended says so, and does not claim a wind
 
 test('the engine log is under the root the run gave the application', () => {
   const sep = (path: string) => path.replaceAll('\\', '/');
-  assert.equal(sep(engineLogOf({ install: '/i', real: true, exe: '/i/app/Daoris.Desktop.exe' })), '/i/data/chromium/cef.log');
+  // HOMELAYOUT4: an install's is in the window's memory, the home's `window` entry: its `data/` while an older build's engine
+  // profile is still there, `profiles/window/` once moved and for a new install.
+  const fx = makeFixture('desktop-engine-log');
+  try {
+    fx.write('INSTALLED.md', '# Daoris — installed desktop\n');
+    const exe = join(fx.root, 'app', 'Daoris.Desktop.exe');
+    const windowNow = homePlaces(fx.root, 'window')[0]!;
+    assert.equal(sep(windowNow).slice(sep(fx.root).length), '/profiles/window');
+    assert.equal(engineLogOf({ install: fx.root, real: true, exe }), join(windowNow, 'chromium', 'cef.log'));
+    fx.write('data/chromium/Default/Preferences', '{}');
+    assert.equal(engineLogOf({ install: fx.root, real: true, exe }), join(fx.root, 'data', 'chromium', 'cef.log'));
+  } finally {
+    fx.cleanup();
+  }
   assert.equal(sep(engineLogOf({ install: null, real: true, exe: '/b/Daoris.Desktop.exe' })), '/b/data/chromium/cef.log');
   assert.match(sep(engineLogOf({ install: null, real: false, exe: '/b/Daoris.Desktop.exe' })),
     /_fixtures\/desktop\/app\/data\/chromium\/cef\.log$/);

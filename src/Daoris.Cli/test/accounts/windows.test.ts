@@ -1,10 +1,9 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
 import { TOOLCHAINS, accountLines } from '../../src/agents/toolchain.ts';
 import type { HarnessReport, HarnessSettings } from '../../src/agents/toolchain.ts';
-import { OWN_WINDOWS, WINDOWS_FILE, age, saidLine, saidOf } from '../../src/accounts/windows.ts';
+import { OWN_WINDOWS, age, saidLine, saidOf } from '../../src/accounts/windows.ts';
 import type { WindowSaid } from '../../src/accounts/windows.ts';
 import type { CurveScope } from '../../src/accounts/usagecurves.ts';
 import { driverRows as csharpRows, driverFile, driverTestFile } from '../_csharp.ts';
@@ -61,7 +60,7 @@ const READ_ROWS: [name: string, file: Cell, now: string, agent: string, account:
 test('an account\'s windows read as the driver reads them (the twin\'s table)', () => {
   for (const [index, [name, file, now, agent, account, expected]] of READ_ROWS.entries()) {
     const fx = makeFixture(`windows-read-${index}`);
-    if (file !== null) writeFileSync(join(fx.root, WINDOWS_FILE), file, 'utf8');
+    if (file !== null) writeFileSync(fx.entry('windows'), file, 'utf8');
 
     const read = saidOf(fx.root, agent, account, moment(now));
 
@@ -127,7 +126,7 @@ test('a source that is not `read` is said, and absent is said (USAGEREAD2b)', ()
   const fx = makeFixture('windows-source');
   const file = (source: string) => `{"claude-code":{"account-1":{"session":{"reset":"2026-10-02T14:00:00Z","used":0.5,"seen":"2026-10-02T11:00:00Z"${source}}}}}`;
   const sources = (source: string) => {
-    writeFileSync(join(fx.root, WINDOWS_FILE), file(source), 'utf8');
+    writeFileSync(fx.entry('windows'), file(source), 'utf8');
     return saidOf(fx.root, 'claude-code', 'account-1', moment('2026-10-02T12:00:00Z'))?.map((each) => each.source);
   };
 
@@ -149,7 +148,7 @@ test('`agent list` says beneath each account what it last said, and nothing for 
   const fx = makeFixture('windows-list');
   const ahead = (hours: number) => new Date(Date.now() + hours * 3_600_000).toISOString().replace(/\.\d+Z$/, 'Z');
   const seen = new Date(Date.now() - 3 * 3_600_000).toISOString().replace(/\.\d+Z$/, 'Z');
-  writeFileSync(join(fx.root, WINDOWS_FILE), JSON.stringify({
+  writeFileSync(fx.entry('windows'), JSON.stringify({
     'claude-code': { 'account-1': { session: { reset: ahead(2), used: 0.88, standing: 'clear', seen } } },
   }), 'utf8');
   const report: HarnessReport = {
@@ -183,7 +182,7 @@ test('`agent list` says what the tool\'s own sign-in last said beneath its agent
   const fx = makeFixture('windows-own');
   const ahead = (hours: number) => new Date(Date.now() + hours * 3_600_000).toISOString().replace(/\.\d+Z$/, 'Z');
   const seen = new Date(Date.now() - 3 * 3_600_000).toISOString().replace(/\.\d+Z$/, 'Z');
-  writeFileSync(join(fx.root, WINDOWS_FILE), JSON.stringify({
+  writeFileSync(fx.entry('windows'), JSON.stringify({
     codex: { [OWN_WINDOWS]: { session: { reset: ahead(2), used: 0.01, seen }, weekly: { reset: ahead(100), used: 0.15, seen } } },
   }), 'utf8');
   const report: HarnessReport = {

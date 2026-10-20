@@ -18,6 +18,13 @@ with the version and date at release.
   it, says Daoris cannot tell whether you ran it or an agent did, and offers *Refuse* and *Confirm*. The terminal says it
   waits, then prints what it printed before; refused, or left two minutes, nothing is done and the command exits 1. At most
   five wait at once. With Daoris closed, the commands act on their own as before.
+- The Daoris folder keeps each kind of thing in a folder of its own beside `data/`: your sign-ins in `profiles/`, the agents'
+  work in `work/`, what Daoris downloads again in `cache/`, what a running Daoris holds in `run/`, and the logs in `logs/`, so
+  `data/` holds only your settings and records and no key. An install's `INSTALLED.md` says what each folder holds and which to
+  back up. An install from before moves into them once, at a start after its update has settled with nothing else of the
+  folder running, and says what moved; account homes, session trees, rooms, kept files and `data/bin/` stay where they are.
+  A `daoris` installed apart from the install and older than it no longer sees the keys, the remotes or the running Daoris:
+  update it too.
 - The terminal judges a workflow's graph as the desktop does, in the same words, and saves what it judges:
   - `daoris driver landing … --cycle <file>` sets a landing rule's cycle after the landing, and `--no-cycle` takes it away;
     `daoris driver work-cycle <repository> quest|ask <file>` sets the cycle a quest or an ask follows to its end. A cycle that does

@@ -308,13 +308,15 @@ export async function awaitDebugPort({
 }
 
 /**
- * Where the engine's own log is for a run: CEF keeps it in the kit's `chromium` data area, under the
- * `data/` of the root the application anchors at (`ShenoraPaths`). That root is the install's folder
- * (`Program.cs` passes it as the explicit root), the scratch run's `--app-root`, or, for `--real`, the
- * built executable's folder.
+ * Where the engine's own log is for a run: CEF keeps it in the kit's `chromium` data area. For an install that is the
+ * window's memory (D172 point 4, HOMELAYOUT4): the install's home's `window` entry, which `Program.cs` hands the kit as its
+ * data area: `profiles/window/` once moved, the install's `data/` while an older build's engine profile is still there.
+ * Otherwise the kit's own `data/` under the root the application anchors at (`ShenoraPaths`): the scratch run's
+ * `--app-root`, or, for `--real`, the built executable's folder.
  */
 export function engineLogOf({ install, real, exe }) {
-  const root = install ?? (real ? dirname(exe) : join(scratchRoot, 'app'));
+  if (install) return join(homeEntry(install, 'window'), 'chromium', 'cef.log');
+  const root = real ? dirname(exe) : join(scratchRoot, 'app');
   return join(root, 'data', 'chromium', 'cef.log');
 }
 

@@ -67,11 +67,11 @@ public sealed class HomeWatchTests : IDisposable
         await using var watch = Watching(TimeSpan.FromHours(1));
 
         File.WriteAllText(Config, "{}");
-        Say(_home, "driver.json", ChangeKind.Renamed);
+        Say(Path.GetDirectoryName(Config)!, "driver.json", ChangeKind.Renamed);
         await Poll.Until(() => _woken.Contains((ChangeTopics.Config, "driver.json")), () => "the configuration was never heard");
 
         File.WriteAllText(Lines, "{}");
-        Say(_home, "lines-moved.json", ChangeKind.Renamed);
+        Say(Path.GetDirectoryName(Lines)!, "lines-moved.json", ChangeKind.Renamed);
         await Poll.Until(() => _woken.Contains((ChangeTopics.Lines, "lines-moved.json")), () => "the moved lines were never heard");
 
         File.WriteAllText(Words, "{}");
@@ -121,7 +121,7 @@ public sealed class HomeWatchTests : IDisposable
         await using var watch = Watching(TimeSpan.FromHours(1));
 
         RegistryFollowing.Moved(_home, "repo", DateTimeOffset.UtcNow);
-        Say(_home, "lines-moved.json", ChangeKind.Renamed);
+        Say(Path.GetDirectoryName(Lines)!, "lines-moved.json", ChangeKind.Renamed);
         await Settle(watch, 1);
 
         File.WriteAllText(Words, "{\"held\":[]}");
@@ -133,7 +133,7 @@ public sealed class HomeWatchTests : IDisposable
 
         // A terminal's move to the same file afterwards is no mark of ours, and is heard.
         File.WriteAllText(Lines, "{\"moved\":{\"other\":\"2026-01-01T00:00:00Z\"}}");
-        Say(_home, "lines-moved.json", ChangeKind.Renamed);
+        Say(Path.GetDirectoryName(Lines)!, "lines-moved.json", ChangeKind.Renamed);
         await Poll.Until(() => _woken.Contains((ChangeTopics.Lines, "lines-moved.json")), () => "a move that was not ours was not heard");
     }
 
@@ -147,8 +147,8 @@ public sealed class HomeWatchTests : IDisposable
         File.WriteAllText(Path.Combine(Plugins, PluginCatalog.DataFolder, "one", "state.json"), "{}");
         Say(Plugins, PluginCatalog.DataFolder + "/one/state.json");
         Say(Plugins, "one/plugin.json.tmp");
-        Say(_home, "driver.json.tmp", ChangeKind.Created);
-        Say(_home, "unrelated.json");
+        Say(Path.GetDirectoryName(Config)!, "driver.json.tmp", ChangeKind.Created);
+        Say(Path.GetDirectoryName(Config)!, "unrelated.json");
         await Settle(watch, 0);
         await Task.Delay(700);
 
@@ -204,7 +204,7 @@ public sealed class HomeWatchTests : IDisposable
         await using var watch = Watching(TimeSpan.FromHours(1));
         File.WriteAllText(Config, "{}");
 
-        foreach (var handle in _source.Opened.Where(handle => handle.Folder == _home)) handle.Lose();
+        foreach (var handle in _source.Opened.Where(handle => handle.Folder == Path.GetDirectoryName(Config))) handle.Lose();
 
         await Poll.Until(() => _woken.Contains((ChangeTopics.Config, "driver.json")), () => "the loss was never reconciled");
     }

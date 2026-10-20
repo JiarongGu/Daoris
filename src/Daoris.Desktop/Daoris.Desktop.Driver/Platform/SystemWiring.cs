@@ -387,7 +387,9 @@ public static class SystemWiring
                 : category is null && install is null ? null
                 : Path.Combine(root, id);
             Fact(row, "path", path, root is null ? "no-home" : "development");
-            row["present"] = path is not null && Directory.Exists(path);
+            // A category's folder is made where an entry of it is first asked at its new place (HOMELAYOUT3), for its writer: one
+            // that holds nothing yet is no folder the person has.
+            row["present"] = path is not null && Directory.Exists(path) && Directory.EnumerateFileSystemEntries(path).Any();
 
             var old = new JsonArray();
             long? bytes = reading is null || path is null && category is null ? null : reading.Folders.GetValueOrDefault(id);

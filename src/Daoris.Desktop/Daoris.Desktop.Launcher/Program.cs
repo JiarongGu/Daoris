@@ -80,7 +80,9 @@ public static class Launcher
                 // The swap holds the home's lease (HOMELEASE1, the terminal RPC design §5) from before its first move until the
                 // new application has confirmed, so no verb the install carries acts alone from a folder being replaced; the new
                 // application's loop takes it once the swap lets go. Where an act holds the home for the whole of the wait (a
-                // verb, a migration), nothing is replaced, as when something still runs from `app/`.
+                // verb, a migration), nothing is replaced, as when something still runs from `app/`. The install's `data/` names the
+                // install (D172 point 2), and the compiled-in table places the lease (HOMELAYOUT3): taken at `run/home.lease` as the
+                // application takes it, an older build's live lease in `data/` holding it still.
                 using var lease = HomeLease.Await(
                     Path.Combine(root, "data"), LeaseKind.Swap, null, HomeLease.Wait, out var holder);
                 if (lease is null)

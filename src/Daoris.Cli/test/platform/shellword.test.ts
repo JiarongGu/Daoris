@@ -9,6 +9,7 @@ import { CLI_BIN, CLI_ENTRY, CLI_PACKAGE, cliLaunchers } from '../../../../tools
 import { coolingLine } from '../../src/accounts/cooling.ts';
 import { joinRefusal } from '../../src/accounts/rotation.ts';
 import { shellWord, shellWords } from '../../src/platform/shellword.ts';
+import { homeEntry } from '../../src/platform/home.ts';
 import { TOOLCHAINS, accountLines, commandHarness, profileHome, readHarnessSettings } from '../../src/agents/toolchain.ts';
 import { captureError, makeFixture } from '../_fixture.ts';
 
@@ -106,7 +107,9 @@ test('a line ending in a placeholder, pasted as it is, reaches nothing: each she
 // ——— The hints: every command the CLI prints from an account's name or id, or a workspace's name, spells it.
 
 function at(fx: { root: string }): string {
-  return join(fx.root, 'harnesses.json');
+  const path = homeEntry(fx.root, 'harnesses');
+  mkdirSync(dirname(path), { recursive: true });
+  return path;
 }
 
 function run(argv: string[], path: string): { code: number; out: string } {

@@ -4,6 +4,7 @@ import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSy
 import { join } from 'node:path';
 import { grantTrust, isTrusted, trustKey } from '../../src/agents/trust.ts';
 import { commandHarness } from '../../src/agents/toolchain.ts';
+import { homeEntry } from '../../src/platform/home.ts';
 import { makeFixture, captureError } from '../_fixture.ts';
 
 /**
@@ -142,11 +143,12 @@ function machine(name: string) {
   const fx = makeFixture(name);
   const folder = join(fx.root, 'engine');
   mkdirSync(folder, { recursive: true });
-  const profileFile = join(fx.root, 'data', 'harnesses', 'claude-code', 'work', '.claude.json');
-  mkdirSync(join(fx.root, 'data', 'harnesses', 'claude-code', 'work'), { recursive: true });
+  const account = homeEntry(fx.root, 'agent-homes', 'claude-code', 'work');
+  const profileFile = join(account, '.claude.json');
+  mkdirSync(account, { recursive: true });
   const ownHome = join(fx.root, 'own-home');
   mkdirSync(ownHome, { recursive: true });
-  return { fx, folder, profileFile, ownHome, config: join(fx.root, 'data', 'harnesses.json') };
+  return { fx, folder, profileFile, ownHome, config: fx.entry('harnesses') };
 }
 
 function run(argv: string[], m: ReturnType<typeof machine>): { code: number; out: string } {

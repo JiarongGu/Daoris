@@ -49,7 +49,7 @@
 
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync } from 'node:fs';
 import { homedir } from 'node:os';
-import { daorisHome, homeEntry, homePlaces, requireHomeFile } from '../platform/home.ts';
+import { daorisHome, homeEntry, homeOf, homePlaces, requireHomeFile } from '../platform/home.ts';
 import { commandOnTheSystem, commandThroughTools, handTools } from '../tools/tools.ts';
 import { join, resolve } from 'node:path';
 import { spawnSync } from 'node:child_process';
@@ -149,9 +149,12 @@ export function harnessesPath(env: Record<string, string | undefined> = process.
   return env[PATH_VARIABLE] ?? requireHomeFile(env, 'harnesses');
 }
 
-/** The directory profiles live under — the Daoris home (D63). */
+/**
+ * The Daoris home the wiring is in (D63), which the profile tree is under: the home whose `harnesses` entry this file is, at its
+ * new place or its old (HOMELAYOUT3, the driver's `HarnessSettings.HomeOf`).
+ */
 export function harnessHome(path = harnessesPath()): string {
-  return join(path, '..');
+  return homeOf(path, 'harnesses');
 }
 
 /**

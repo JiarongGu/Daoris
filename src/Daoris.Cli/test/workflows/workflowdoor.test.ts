@@ -1,10 +1,10 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { existsSync, readFileSync, readdirSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { commandDriver } from '../../src/driver/driverconfig.ts';
 import { DaorisError } from '../../src/platform/errors.ts';
-import { HOME_SENTENCE } from '../../src/platform/home.ts';
+import { HOME_SENTENCE, homeEntry, homePlaces } from '../../src/platform/home.ts';
 import type { CheckoutsReader } from '../../src/driver/reviews.ts';
 import { WHAT_CHOOSES, commandWorkflow } from '../../src/workflows/workflowdoor.ts';
 import { makeFixture, type Fixture } from '../_fixture.ts';
@@ -49,7 +49,12 @@ async function refused(fx: Fixture, argv: string[], checkouts: CheckoutsReader =
 }
 
 function saved(fx: Fixture, id: string): { id: string; name: string; versions: { version: number; at: string; door: string; steps: unknown[] }[] } {
-  return JSON.parse(fx.read(`workflows/${id}.json`));
+  return JSON.parse(kept(fx, id));
+}
+
+/** A workflow's file as written, its text whole, where the home's table keeps it. */
+function kept(fx: Fixture, id: string): string {
+  return readFileSync(homeEntry(fx.root, 'workflows', `${id}.json`), 'utf8');
 }
 
 test('new from a preset: --plan says the change and writes nothing, then v1 is written, BOM-less, LF and whole', async () => {
@@ -71,12 +76,12 @@ test('new from a preset: --plan says the change and writes nothing, then v1 is w
     '  --plan: nothing was written.',
     WHAT_CHOOSES,
   ].join('\n'));
-  assert.equal(fx.exists('workflows/docs-to-pr.json'), false);
+  assert.equal(existsSync(homeEntry(fx.root, 'workflows', 'docs-to-pr.json')), false);
 
   const { code, out } = await run(fx, ['new', 'docs-to-pr', '--from', 'pull-request-no-press', '--name', 'Documentation to a pull request']);
   assert.equal(code, 0);
   assert.match(out, /Written to .*docs-to-pr\.json\./);
-  const bytes = readFileSync(join(fx.root, 'workflows', 'docs-to-pr.json'));
+  const bytes = readFileSync(homeEntry(fx.root, 'workflows', 'docs-to-pr.json'));
   assert.notEqual(bytes[0], 0xef, 'no BOM');
   const text = bytes.toString('utf8');
   assert.ok(!text.includes('\r') && text.endsWith('}\n'));
@@ -86,7 +91,7 @@ test('new from a preset: --plan says the change and writes nothing, then v1 is w
       steps: [{ id: 'work', kind: 'work' }, { id: 'landing', kind: 'landing', form: 'branch', accept: 'automatic' }, { id: 'pull-request', kind: 'pull-request' }],
     }],
   });
-  assert.deepEqual(readdirSync(join(fx.root, 'workflows')), ['docs-to-pr.json'], 'nothing written beside it is left');
+  assert.deepEqual(readdirSync(homeEntry(fx.root, 'workflows')), ['docs-to-pr.json'], 'nothing written beside it is left');
 
   // A workflow is new once: a version is added by `edit`.
   const again = await refused(fx, ['new', 'docs-to-pr', '--from', 'merge-after-accept']);
@@ -117,7 +122,7 @@ test('new with a second opinion and your look, and from a saved workflow\'s vers
 
 test('new from Current copies a repository\'s rules as Current draws them, and the change is drawn from nothing', async () => {
   const fx = makeFixture('workflowdoor-current');
-  fx.write('driver.json', JSON.stringify({
+  writeFileSync(fx.entry('driver'), JSON.stringify({
     workspaceLandings: { work: { form: 'branch', pattern: 'work/{quest}-{slug}', autoAccept: true } },
     workspaceReviews: { work: { required: true, environments: [{ name: 'local', kind: 'local', procedure: 'README.md', address: 'http://localhost:4200' }] } },
   }));
@@ -254,7 +259,7 @@ test('apply saves a file\'s graph as the next version, judged whole as the drive
 
   const applied = await run(fx, ['apply', 'docs', 'graph.json']);
   assert.equal(applied.code, 0);
-  const file = fx.read('workflows/docs.json');
+  const file = kept(fx, 'docs');
   assert.match(file, /"weight": 1\.0/);
   assert.match(file, /"order": \{\n\s+"2": "b",\n\s+"1": "a"\n\s+\}/);
   assert.deepEqual(Object.keys(saved(fx, 'docs').versions[1]!), ['version', 'at', 'door', 'schema', 'graph']);
@@ -263,27 +268,27 @@ test('apply saves a file\'s graph as the next version, judged whole as the drive
   assert.match((await run(fx, ['apply', 'docs', 'graph.json'])).out, /^daoris: `docs` v2 already says this: nothing was written\./);
   fx.write('steps.json', JSON.stringify([{ id: 'work', kind: 'work' }, { id: 'landing', kind: 'landing', form: 'merge', accept: 'you' }]));
   await run(fx, ['apply', 'docs', 'steps.json']);
-  assert.match(fx.read('workflows/docs.json'), /"weight": 1\.0/);
+  assert.match(kept(fx, 'docs'), /"weight": 1\.0/);
 
   // A graph that does not hold writes nothing, in the driver's words: a loop is refused when saved (§E3).
   fx.write('loop.json', JSON.stringify({ entries: ['a'], end: 'b', nodes: [{ id: 'a', kind: 'human', version: 1, reach: 'pressed' },
     { id: 'b', kind: 'human', version: 1, reach: 'pressed' }], wires: [{ id: 'x', kind: 'after', from: 'a', to: 'b' }, { id: 'y', kind: 'after', from: 'b', to: 'a' }] }));
-  const before = fx.read('workflows/docs.json');
+  const before = kept(fx, 'docs');
   const loop = await refused(fx, ['apply', 'docs', 'loop.json']);
   assert.equal(loop.exitCode, 1);
   assert.match(loop.message, /^v4: its graph does not hold: nodes `a`, `b`: they wait on each other through `x`, `y`; a graph's wires never come back/);
-  assert.equal(fx.read('workflows/docs.json'), before);
+  assert.equal(kept(fx, 'docs'), before);
 
   // A graph whose digest this build cannot write as the driver does is not saved here: the driver's door saves it.
   fx.write('letters.json', GRAPH.replace('Verify the release', 'Vérifier'));
   const letters = await refused(fx, ['apply', 'docs', 'letters.json']);
   assert.match(letters.message, /^v4: its graph does not hold here: node `qa`'s option `brief` holds a value this build cannot write as the driver does/);
-  assert.equal(fx.read('workflows/docs.json'), before);
+  assert.equal(kept(fx, 'docs'), before);
 
   // A version holding a graph is a file's graph to apply too, and export writes the file as read.
   fx.write('version.json', JSON.stringify({ version: 9, at: '2026-10-18T09:00:00Z', door: 'screen', schema: 2, graph: JSON.parse(GRAPH) }));
   assert.match((await run(fx, ['apply', 'docs', 'version.json', '--plan'])).out, /^daoris: `docs` v3 → v4 — Docs: a graph \(schema 2\) of 2 nodes/);
-  assert.equal((await run(fx, ['export', 'docs'])).out, fx.read('workflows/docs.json').slice(0, -1));
+  assert.equal((await run(fx, ['export', 'docs'])).out, kept(fx, 'docs').slice(0, -1));
   fx.cleanup();
 });
 
@@ -295,13 +300,13 @@ test('import takes a file whose versions are graphs that hold, and refuses one w
   const imported = await run(fx, ['import', 'carried.json']);
   assert.equal(imported.code, 0);
   assert.match(imported.out, /^daoris: `release` — Release, from carried\.json: 2 versions, its newest v2: a graph \(schema 2\) of 2 nodes and 1 wire/);
-  assert.match(fx.read('workflows/release.json'), /"weight": 1\.0/);
+  assert.match(kept(fx, 'release'), /"weight": 1\.0/);
 
   fx.write('broken.json', JSON.stringify({ id: 'broken', name: 'Broken', versions: [steps,
     { version: 2, at: '2026-10-18T09:00:00Z', door: 'terminal', schema: 2, graph: { entries: ['qa'], end: 'nowhere', nodes: [{ id: 'qa', kind: 'human', version: 1, reach: 'pressed' }] } }] }));
   const broken = await refused(fx, ['import', 'broken.json']);
   assert.equal(broken.message, '`broken.json` cannot be imported: v2: its graph does not hold: the end `nowhere` names no node of this graph.');
-  assert.equal(fx.exists('workflows/broken.json'), false);
+  assert.equal(existsSync(homeEntry(fx.root, 'workflows', 'broken.json')), false);
   fx.cleanup();
 });
 
@@ -318,7 +323,7 @@ test('a round trip: export to a file, import on another home, and show the same 
 
   const plan = await run(two, ['import', 'carried.json', '--plan']);
   assert.match(plan.out, /^daoris: `docs-to-pr` — 文档直接开拉取请求, from carried\.json: 2 versions, its newest v2:/);
-  assert.equal(two.exists('workflows/docs-to-pr.json'), false);
+  assert.equal(existsSync(homeEntry(two.root, 'workflows', 'docs-to-pr.json')), false);
   const imported = await run(two, ['import', 'carried.json']);
   assert.equal(imported.code, 0);
 
@@ -345,7 +350,7 @@ test('a round trip: export to a file, import on another home, and show the same 
 
 test('import refuses a file a version of which does not read here, and list says what each file holds', async () => {
   const fx = makeFixture('workflowdoor-list');
-  assert.equal((await run(fx, ['list'])).out.split('\n')[0], `daoris: no workflow is named in ${join(fx.root, 'workflows')} yet.`);
+  assert.equal((await run(fx, ['list'])).out.split('\n')[0], `daoris: no workflow is named in ${homeEntry(fx.root, 'workflows')} yet.`);
 
   fx.write('newer.json', JSON.stringify({ id: 'release', name: 'Release', versions: [
     { version: 1, at: '2026-10-09T09:12:00Z', door: 'screen', steps: [{ id: 'work', kind: 'work' }, { id: 'landing', kind: 'landing', form: 'branch', accept: 'you' }, { id: 'pull-request', kind: 'pull-request' }] },
@@ -356,13 +361,13 @@ test('import refuses a file a version of which does not read here, and list says
   assert.equal(newer.message, '`newer.json` cannot be imported: v2, step `checks`: this build does not run a step of kind `check` yet.');
 
   // The same file under the home, as a newer build would leave it: kept, listed, and never chosen here.
-  fx.write('workflows/release.json', fx.read('newer.json'));
-  fx.write('workflows/broken.json', '{ not json');
+  writeFileSync(fx.entry('workflows', 'release.json'), fx.read('newer.json'));
+  writeFileSync(fx.entry('workflows', 'broken.json'), '{ not json');
   await run(fx, ['new', 'docs', '--from', 'merge-after-accept', '--name', 'Docs']);
   const { code, out } = await run(fx, ['list']);
   assert.equal(code, 0);
   assert.deepEqual(out.split('\n').slice(0, 4), [
-    `daoris: 3 workflows named in ${join(fx.root, 'workflows')}:`,
+    `daoris: 3 workflows named in ${homeEntry(fx.root, 'workflows')}:`,
     '  `broken` — cannot be read: `broken.json` is not readable JSON.',
     '  `docs` — Docs: v1, 2 steps. You accept each piece of work, and it merges into the line.',
     '  `release` — Release: v2 cannot be read here (v2, step `checks`: this build does not run a step of kind `check` yet.); v1 is the newest that reads.',
@@ -378,7 +383,7 @@ test('import refuses a file a version of which does not read here, and list says
   const broken = await refused(fx, ['edit', 'broken', 'remove', 'look']);
   assert.equal(broken.exitCode, 1);
   assert.equal(broken.message, '`broken` cannot be read: `broken.json` is not readable JSON.');
-  assert.equal(fx.read('workflows/broken.json'), '{ not json');
+  assert.equal(readFileSync(homeEntry(fx.root, 'workflows', 'broken.json'), 'utf8'), '{ not json');
   fx.cleanup();
 });
 
@@ -414,7 +419,7 @@ test('with no home, every verb is refused before anything is read or written', a
       assert.throws(() => commandDriver({ root: fx.root, argv, write: () => {}, packageRoot: process.cwd() }, undefined, unread,
         (args, context) => commandWorkflow(args, context)), (error: Error) => error.message.startsWith(HOME_SENTENCE));
     }
-    assert.equal(existsSync(join(fx.root, 'workflows')), false);
+    assert.ok(homePlaces(fx.root, 'workflows').every((place) => !existsSync(place)));
   } finally {
     if (saved.home !== undefined) process.env.DAORIS_HOME = saved.home;
     if (saved.config !== undefined) process.env.DAORIS_DRIVER_CONFIG = saved.config;

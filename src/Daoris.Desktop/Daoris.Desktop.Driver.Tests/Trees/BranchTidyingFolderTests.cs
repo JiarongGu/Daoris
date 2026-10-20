@@ -390,7 +390,9 @@ public sealed class BranchTidyingFolderTests : BranchTidyingFixture
         {
             Assert.Equal(JsonValueKind.Null, data.GetProperty("branch").ValueKind);
             Assert.True(data.GetProperty("tree").GetBoolean());
-            Assert.StartsWith("trees/.tidied/default/engine/", data.GetProperty("folder").GetString(), StringComparison.Ordinal);
+            // Under the trees' folder, `work/trees/` in a new home (HOMELAYOUT3), said relative to the home.
+            var aside = Path.GetRelativePath(_home, DaorisHome.Entry(_home, HomeEntry.Trees, ".tidied", "default", "engine")).Replace('\\', '/');
+            Assert.StartsWith(aside + "/", data.GetProperty("folder").GetString(), StringComparison.Ordinal);
         });
         Assert.Empty(Events("branch.kept"));
 

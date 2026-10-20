@@ -24,7 +24,7 @@ public sealed class InstallUpdateTests : IDisposable
         InstallUpdate.Write(_root, new UpdateRequest(UpdateMode.NotNow, "20261003-abc", at));
 
         Assert.Equal(new UpdateRequest(UpdateMode.NotNow, "20261003-abc", at), InstallUpdate.Read(_root));
-        var text = File.ReadAllText(Path.Combine(_root, "update.json"));
+        var text = File.ReadAllText(DaorisHome.Entry(_root, HomeEntry.Update));
         Assert.DoesNotContain("\r", text);
         Assert.Contains("\"mode\": \"not-now\"", text);
     }

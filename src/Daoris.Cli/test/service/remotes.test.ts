@@ -7,6 +7,7 @@ import { readRemotes, redactKey, remotesPath } from '../../src/service/remotemap
 import { commandStatus } from '../../src/doctrine/commands.ts';
 import { makeFixture } from '../_fixture.ts';
 import { DaorisError } from '../../src/platform/errors.ts';
+import { homeEntry } from '../../src/platform/home.ts';
 
 /**
  * `daoris remote` — management parity for the machine's wiring (D50, workspace design §2b).
@@ -23,7 +24,7 @@ const KEY = 'dk_abcd1234wxyzsecret';
 
 /** A remotes map in the fixture, never the developer's real one — and never OS temp. */
 function mapAt(fx: { root: string }): string {
-  return join(fx.root, 'remotes.json');
+  return homeEntry(fx.root, 'remotes');
 }
 
 /** Run a command with the map pointed at a fixture and the environment otherwise clean. */
@@ -288,7 +289,8 @@ test('a redacted key shows the audit prefix and nothing else', () => {
 });
 
 test('the map has a conventional home, overridable for a test or a second profile', () => {
-  assert.match(remotesPath({ DAORIS_HOME: '/x/data' }) ?? '', /[\\/]data[\\/]remotes\.json$/);
+  // A sign-in's file (D172 point 3): `profiles/` once the new places are switched on (HOMELAYOUT3).
+  assert.match(remotesPath({ DAORIS_HOME: '/x/daoris' }) ?? '', /[\\/]daoris[\\/]profiles[\\/]remotes\.json$/);
   // 🔴 No default under the user profile (D63): no home is no map, which is the silent default (D21).
   assert.equal(remotesPath({}), null);
   assert.equal(remotesPath({ DAORIS_REMOTE_CONFIG: '/tmp/x.json' }), '/tmp/x.json');

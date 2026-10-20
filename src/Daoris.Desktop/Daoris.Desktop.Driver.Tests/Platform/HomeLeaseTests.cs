@@ -38,8 +38,11 @@ public sealed class HomeLeaseTests : IDisposable
         return self.StartTime.ToUniversalTime().Ticks;
     }
 
-    /// <summary>A lease by hand, as another holder writes it: the file is the contract (twins.md).</summary>
-    private void Plant(string kind, int? pid = null, long? started = null, string? what = null, string file = HomeLease.FileName)
+    /// <summary>
+    /// A lease by hand, as another holder writes it: the file is the contract (twins.md). At the place this build takes it, or,
+    /// <paramref name="older"/>, where a build from before HOMELAYOUT3 took it; an older build's <c>driver.lock</c> is at its old place.
+    /// </summary>
+    private void Plant(string kind, int? pid = null, long? started = null, string? what = null, string file = HomeLease.FileName, bool older = false)
     {
         var lease = new JsonObject
         {
@@ -47,7 +50,48 @@ public sealed class HomeLeaseTests : IDisposable
             ["since"] = "2026-10-16T08:02:13+00:00",
         };
         if (what is not null) lease["what"] = what;
-        File.WriteAllText(Path.Combine(_home, file), lease.ToJsonString());
+        var path = file == HomeLease.FileName && !older
+            ? HomeLease.PathIn(_home)
+            : DaorisHome.Places(_home, file == HomeLease.FileName ? HomeEntry.HomeLease : HomeEntry.DriverLock)[^1];
+        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+        File.WriteAllText(path, lease.ToJsonString());
+    }
+
+    /// <summary>
+    /// 🔴 HOMELAYOUT3: the lease is taken at the home's <c>home-lease</c> entry's new place, <c>run/home.lease</c>, its folder made;
+    /// a live lease at the old place, a build's from before the switch, still holds the home; and a stale one there is left where it
+    /// is. Every spelling of an install (its folder, its <c>data/</c>) meets the one lease.
+    /// </summary>
+    [Fact]
+    public void The_lease_is_taken_at_its_new_place_and_an_older_builds_at_the_old_place_still_holds()
+    {
+        File.WriteAllText(Path.Combine(_home, DaorisHome.InstallMarker), "# Daoris — installed desktop\n");
+        var data = Path.Combine(_home, DaorisHome.InstallData);
+        using (var held = HomeLease.TryAcquire(data, LeaseKind.Verb, out _, "trees land"))
+        {
+            Assert.NotNull(held);
+            Assert.True(File.Exists(Path.Combine(_home, "run", HomeLease.FileName)));
+            Assert.Null(HomeLease.TryAcquire(_home, LeaseKind.Desktop, out var met));
+            Assert.Equal("trees land", met!.What);
+        }
+
+        Directory.CreateDirectory(data);
+        var older = Path.Combine(data, HomeLease.FileName);
+        File.WriteAllText(older, new JsonObject
+        {
+            ["kind"] = "desktop", ["pid"] = Environment.ProcessId, ["started"] = OurStart(), ["since"] = "2026-10-16T08:02:13+00:00",
+        }.ToJsonString());
+        Assert.Null(HomeLease.TryAcquire(data, LeaseKind.Verb, out var holder, "trees land"));
+        Assert.Equal(LeaseKind.Desktop, holder!.Kind);
+        Assert.Equal(LeaseKind.Desktop, HomeLease.HeldBy(_home)!.Kind);
+
+        File.WriteAllText(older, new JsonObject
+        {
+            ["kind"] = "desktop", ["pid"] = NoProcess, ["started"] = OurStart(), ["since"] = "2026-10-16T08:02:13+00:00",
+        }.ToJsonString());
+        using var after = HomeLease.TryAcquire(data, LeaseKind.Verb, out _, "trees land");
+        Assert.NotNull(after);
+        Assert.True(File.Exists(older), "a stale lease at the old place is left where it is");
     }
 
     [Fact]
@@ -107,6 +151,7 @@ public sealed class HomeLeaseTests : IDisposable
                 Plant("desktop", started: OurStart() - TimeSpan.FromMinutes(5).Ticks);
                 break;
             default:
+                Directory.CreateDirectory(Path.GetDirectoryName(LeaseFile)!);
                 File.WriteAllText(LeaseFile, "{ \"kind\": \"verb\", \"pid\": ");
                 break;
         }
@@ -246,7 +291,7 @@ public sealed class HomeLeaseTests : IDisposable
         Plant("headless", pid: NoProcess, file: HomeLease.LegacyFileName);
         using var held = HomeLease.TryAcquire(_home, LeaseKind.Desktop, out _);
         Assert.NotNull(held);
-        Assert.True(File.Exists(Path.Combine(_home, HomeLease.LegacyFileName)));
+        Assert.True(File.Exists(DaorisHome.Places(_home, HomeEntry.DriverLock)[^1]));
     }
 
     /// <summary>A release takes away only the lease it wrote — never one another holder has written since.</summary>
