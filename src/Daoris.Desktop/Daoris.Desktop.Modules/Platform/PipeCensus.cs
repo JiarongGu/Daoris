@@ -190,7 +190,7 @@ public sealed class PipeCensus
             "OPINION_WAITS", "PERMISSION_WAITS", "PLUGIN", "PLUGINS", "PLUGIN_ACTIVITY", "PLUGIN_READ", "RULES", "SESSION_DIFF", "SESSION_FILE",
             "SESSION_FILES", "SESSION_GROUPS", "SESSION_HAND_OVER_ASK", "SESSION_HELPERS", "SESSION_HISTORY", "SESSION_OPENINGS", "SESSION_OPTIONS",
             "SESSION_PROCESS", "SESSION_QUEUE", "SESSION_SEARCH", "SESSION_STREAMS", "SESSION_WHERE", "SETUP_PLAN", "STARTS",
-            "STATE", "STATE_SLICE", "SWEEP_PLAN", "SYSTEM_WIRING", "TAIL_SESSION", "TOOLS_LIST", "TRACE", "TREES_SYNC_PLAN", "TREES_SYNC_SCOPE",
+            "STATE", "STATE_SLICE", "SWEEP_PLAN", "SYSTEM_DOWNLOADS", "SYSTEM_WIRING", "TAIL_SESSION", "TOOLS_LIST", "TRACE", "TREES_SYNC_PLAN", "TREES_SYNC_SCOPE",
             "UNDER_WAY", "USAGE", "WORKFLOW_CURRENT", "WORKFLOW_RUN", "WORK_PLAN", "WORK_STATE",
             // The driver's own (D156 §3: sync, refresh): a look now, a sync pass with the service, the registry and the
             // accounts' use read again, the tools' locations looked at.
@@ -199,7 +199,7 @@ public sealed class PipeCensus
             // The yes, and what answers for the person's verdict: a landing, a hand-off, an opinion overridden or taken on.
             "LAND_SESSION_TREE", "LAND_ENTRY", "LAND_ASK", "HANDOFF", "OPINION_ANYWAY", "OPINION_MYSELF",
             // Deletes, clears and closes: a discard, a sweep, an archive, a delete, a stop, an end, an abandon.
-            "DISCARD_SESSION_TREE", "DISCARD_SESSION_BRANCH", "RECOVERY_DROP", "SWEEP", "HISTORY_CLEAR", "SESSION_ARCHIVE", "SESSION_DELETE",
+            "DISCARD_SESSION_TREE", "DISCARD_SESSION_BRANCH", "RECOVERY_DROP", "SWEEP", "HISTORY_CLEAR", "SYSTEM_DOWNLOADS_CLEAR", "SESSION_ARCHIVE", "SESSION_DELETE",
             "STOP_SESSION", "STOP_OPINION", "STOP_TASK", "CANCEL_TURN", "END_CHAT", "WORK_ABANDON", "WORK_PAUSE", "WORK_RESUME",
             // FABRIC-PERFORM1g: the person's word on a plugin step's attempt held for them, which settles what nothing else can.
             "WORK_HELD",
