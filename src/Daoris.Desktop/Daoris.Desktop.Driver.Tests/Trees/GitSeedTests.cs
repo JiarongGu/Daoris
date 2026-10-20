@@ -161,4 +161,28 @@ public sealed class GitSeedTests : IDisposable
         Assert.Equal(1, builds);
         Assert.Single(seeds.Distinct());
     }
+
+    /// <summary>
+    /// OVERVIEWNOISE1a: a host killed at a session's timeout never removes its run's folder, so the next run's start sweeps every
+    /// run folder whose host no longer runs; a running host's and a folder not named as a run's stay.
+    /// </summary>
+    [Fact]
+    public void A_killed_runs_seed_folder_is_swept_and_a_running_ones_stays()
+    {
+        var seeds = Path.Combine(_scratch, "seeds");
+        var killed = Path.Combine(seeds, "4242-0123456789a", "1a2b3c4d", ".git", "objects");
+        var running = Path.Combine(seeds, "5151-0123456789a");
+        var other = Path.Combine(seeds, "kept-by-hand");
+        Directory.CreateDirectory(killed);
+        File.WriteAllText(Path.Combine(killed, "blob"), "blob");
+        File.SetAttributes(Path.Combine(killed, "blob"), FileAttributes.ReadOnly);
+        Directory.CreateDirectory(running);
+        Directory.CreateDirectory(other);
+
+        GitSeed.Sweep(seeds, id => id == 5151);
+
+        Assert.False(Directory.Exists(Path.Combine(seeds, "4242-0123456789a")));
+        Assert.True(Directory.Exists(running));
+        Assert.True(Directory.Exists(other));
+    }
 }

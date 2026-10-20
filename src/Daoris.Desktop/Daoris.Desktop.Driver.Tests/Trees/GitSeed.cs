@@ -10,7 +10,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </summary>
 /// <remarks>
 /// A seed is built by the fixture's own steps in a folder under the run's own scratch (<c>_fixtures/seeds/&lt;run&gt;</c>,
-/// removed when the host exits), at the first test that asks for the shape; the git half's classes run four at once in one host, so
+/// removed when the host exits, and a killed host's swept at the next run's start), at the first test that asks for the shape; the git half's classes run four at once in one host, so
 /// the build is a lazy task per shape and the others wait for it. A copy is a plain file copy of the folders, so each test has its
 /// own writable repositories and none sees another's; what git keeps in them is copied too, hooks and config included. Two things
 /// are mended: the origin's url, which names the seed's bare repository and now names the copy's own, and <c>worktrees/</c>, which a
@@ -26,6 +26,7 @@ internal static class GitSeed
 
     static GitSeed()
     {
+        Sweep(Path.GetDirectoryName(Folder())!, Running);
         AppDomain.CurrentDomain.ProcessExit += (_, _) =>
         {
             try
@@ -37,6 +38,39 @@ internal static class GitSeed
                 // Scratch the host leaves is under the ignored fixtures folder; the next run's own folder never meets it.
             }
         };
+    }
+
+    /// <summary>
+    /// The run folders under <paramref name="seeds"/> whose host no longer runs, removed (OVERVIEWNOISE1a): a host killed at a
+    /// session's timeout never reaches its exit, and its folder stayed, a scratch repository that kept a landed session's tree from
+    /// the tidy. A folder is a run's by its name, the host's process id then a dash; one whose host still runs (another run in this
+    /// checkout, at once) is left, as is any folder not named so. One something still holds is left for a later run's sweep.
+    /// </summary>
+    internal static void Sweep(string seeds, Func<int, bool> running)
+    {
+        if (!Directory.Exists(seeds)) return;
+        foreach (var folder in Directory.EnumerateDirectories(seeds))
+        {
+            var name = Path.GetFileName(folder);
+            var dash = name.IndexOf('-', StringComparison.Ordinal);
+            if (dash <= 0 || !int.TryParse(name.AsSpan(0, dash), System.Globalization.NumberStyles.None, System.Globalization.CultureInfo.InvariantCulture, out var host)) continue;
+            if (running(host)) continue;
+            Discard(folder);
+        }
+    }
+
+    /// <summary>Whether a process of <paramref name="id"/> runs on this machine: a reused id reads as running, and keeps a folder.</summary>
+    private static bool Running(int id)
+    {
+        try
+        {
+            using var process = System.Diagnostics.Process.GetProcessById(id);
+            return !process.HasExited;
+        }
+        catch (Exception error) when (error is ArgumentException or InvalidOperationException)
+        {
+            return false;
+        }
     }
 
     /// <summary>The seed of <paramref name="shape"/>: <paramref name="build"/> runs once per run, in a folder of its own.</summary>

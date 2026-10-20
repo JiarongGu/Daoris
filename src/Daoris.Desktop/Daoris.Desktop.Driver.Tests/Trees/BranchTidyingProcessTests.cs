@@ -280,6 +280,35 @@ public sealed class BranchTidyingProcessTests : BranchTidyingFixture
     }
 
     /// <summary>
+    /// 🔴 OVERVIEWNOISE1a: a repository a test made under an ignored folder (<c>_fixtures/&lt;run&gt;/repo</c>) is ignored content like
+    /// any other, so the tree goes by the look and the repository goes aside with it, whole. One the tree does not ignore still
+    /// keeps it, as the case above holds.
+    /// </summary>
+    [Fact]
+    public async Task A_repository_under_an_ignored_path_goes_aside_with_its_tree()
+    {
+        var root = await RepositoryAsync("engine");
+        await File.WriteAllTextAsync(Path.Combine(root, ".gitignore"), "_fixtures/\n");
+        await GitAsync(root, "add", ".gitignore");
+        await GitAsync(root, "commit", "--quiet", "-m", "ignore the scratch folder");
+        var trees = new SessionTrees(_home);
+        var scratch = await LandedTreeAsync(trees, root);
+        var inner = Path.Combine(scratch.Path, "_fixtures", "run-1", "repo");
+        Directory.CreateDirectory(inner);
+        await GitAsync(inner, "init", "--quiet");
+        await File.WriteAllTextAsync(Path.Combine(inner, "seed.txt"), "a test's scratch\n");
+        _ledger.Register("engine", root);
+
+        var said = await new BranchTidying(_home).LookAsync(_ledger.Client(), null, _closing.Token).WaitAsync(Bound);
+
+        Assert.StartsWith(Removed(scratch), Assert.Single(said), StringComparison.Ordinal);
+        Assert.DoesNotContain(scratch.Branch, await GitAsync(root, "branch", "--list", "daoris/*"), StringComparison.Ordinal);
+        var aside = Assert.Single(Directory.GetDirectories(DaorisHome.Entry(_home, HomeEntry.Trees, ".tidied", "default", "engine")));
+        Assert.Equal("a test's scratch\n", await File.ReadAllTextAsync(Path.Combine(aside, "_fixtures", "run-1", "repo", "seed.txt")));
+        Assert.True(Directory.Exists(Path.Combine(aside, "_fixtures", "run-1", "repo", ".git")));
+    }
+
+    /// <summary>
     /// The line is read by its full name: a tag named as the line, which git reads before the branch, never stands for it. A
     /// session branch a person's feature branch took, which such a tag holds, is landed elsewhere, not on the line, and stays
     /// the press's (AUTOTIDY2a's wait for the line).

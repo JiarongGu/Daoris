@@ -48,7 +48,7 @@ internal sealed class TreeSetAside(TreeContext context)
     /// <item>A tree a person locked (<c>git worktree lock</c>).</item>
     /// <item>A tracked path marked <c>assume-unchanged</c> or <c>skip-worktree</c>: an edit to it reads as clean to git's status.</item>
     /// <item>Another repository in the tree, a <c>.git</c> file or folder below its top, which the tree's own status skips: read
-    /// from the folders themselves, not through git.</item>
+    /// from the folders themselves, not through git. One under a path git ignores goes aside with the tree (OVERVIEWNOISE1a).</item>
     /// </list>
     /// What cannot be read keeps it too.
     /// </remarks>
@@ -86,49 +86,71 @@ internal sealed class TreeSetAside(TreeContext context)
                 + $"hides their changes from git: {string.Join(", ", hidden.Take(3))}" + (hidden.Count > 3 ? $" and {hidden.Count - 3} more" : ""), null);
         }
 
+        IReadOnlyList<string> nested;
         try
         {
-            return NestedRepository(tree) is { } nested ? (TidyKept.Nested, $"its tree holds another repository at {nested}", null) : null;
+            nested = NestedRepositories(tree);
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {
             return (TidyKept.Unread, $"its tree's folders could not be read: {error.Message}", TidyCause.Folders);
         }
+
+        // OVERVIEWNOISE1a: a repository under an ignored path (a test's scratch under `_fixtures/`) is ignored content like any
+        // other, and goes aside with the folder for fourteen days; only one git would not ignore keeps the tree.
+        foreach (var path in nested)
+        {
+            var (ignoredCode, _, ignoredErr) = await WorkingTree.GitAsync(tree, ["check-ignore", "--quiet", "--", path + "/"], ct).ConfigureAwait(false);
+            if (ignoredCode == 0) continue;
+            return ignoredCode == 1
+                ? (TidyKept.Nested, $"its tree holds another repository at {path}", null)
+                : (TidyKept.Unread, $"git could not read whether its tree ignores {path}: {FirstLine(ignoredErr)}", TidyCause.Folders);
+        }
+
+        return null;
     }
 
     /// <summary>
-    /// The first folder below the tree's top that holds a <c>.git</c> file or folder, as a path from the tree's root with forward
-    /// slashes; null where none does. Read from the folders, hidden ones included, never following a link; the tree's own
-    /// <c>.git</c> at its top is passed over, and never read into. A folder that cannot be read throws.
+    /// Every folder below the tree's top that holds a <c>.git</c> file or folder, as paths from the tree's root with forward
+    /// slashes, none read into: what lies inside one is that repository's. Read from the folders, hidden ones included, never
+    /// following a link; the tree's own <c>.git</c> at its top is passed over, and never read into. A folder that cannot be read throws.
     /// </summary>
-    private static string? NestedRepository(string tree)
+    private static List<string> NestedRepositories(string tree)
     {
         var top = Path.TrimEndingDirectorySeparator(Path.GetFullPath(tree));
         var options = new EnumerationOptions { IgnoreInaccessible = false, AttributesToSkip = 0, RecurseSubdirectories = false };
+        var found = new List<string>();
         var pending = new Stack<string>();
         pending.Push(top);
         while (pending.TryPop(out var folder))
         {
+            var below = new List<string>();
+            var repository = false;
             foreach (var entry in new DirectoryInfo(folder).EnumerateFileSystemInfos("*", options))
             {
                 if (string.Equals(entry.Name, ".git", StringComparison.OrdinalIgnoreCase))
                 {
-                    if (!string.Equals(folder, top, StringComparison.OrdinalIgnoreCase))
-                    {
-                        return Path.GetRelativePath(top, folder).Replace('\\', '/');
-                    }
-
+                    repository = !string.Equals(folder, top, StringComparison.OrdinalIgnoreCase);
+                    if (repository) break;
                     continue;
                 }
 
                 if (entry is DirectoryInfo directory && !directory.Attributes.HasFlag(FileAttributes.ReparsePoint))
                 {
-                    pending.Push(directory.FullName);
+                    below.Add(directory.FullName);
                 }
             }
+
+            if (repository)
+            {
+                found.Add(Path.GetRelativePath(top, folder).Replace('\\', '/'));
+                continue;
+            }
+
+            foreach (var each in below) pending.Push(each);
         }
 
-        return null;
+        return found;
     }
 
     /// <summary>

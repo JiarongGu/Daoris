@@ -13,6 +13,9 @@ with the version and date at release.
   tree that only the session branches list on its workspace's Branches can remove, and its Open goes there. Such a row is
   named by the session that worked in the tree, never by the tree's folder path, and says why once in the page's language.
   A branch the clean-up kept says why in your language on its session's page, and says it will try again only where it will.
+- A finished session's tree that holds a repository inside a folder the project ignores, such as a test's scratch, is now tidied
+  away like the rest of its ignored files, moved aside for 14 days, instead of waiting in *What needs you* as a cleanup nobody
+  could do. A tree holding a repository the project does not ignore still waits for you.
 - A session waiting on its own background work, such as a long test run, now ends within about a minute once its quest closes,
   is declined or asks another repository, instead of working on until the session timeout. It is recorded completed where its
   quest reached done, its conversation says the work still running ended with it, and that work ends with its process.
