@@ -96,26 +96,34 @@ public sealed class HelpGoOnTests : IDisposable
     }
 
     /// <summary>
-    /// One from before its conversation's id was kept cannot go on in it: its words wait marked by the reason <c>unkept</c>, and
-    /// its conversation says so, as a chat's do. Nothing moves and nothing is spawned.
+    /// 🔴 SESSCTX1c part B (the steward's choice: Ask Daoris follows the same rule in its own room): one whose conversation's id was not
+    /// kept has lost it, so it goes on by itself in a new conversation of its room, placed in its workspace, its history naming the one it
+    /// continues and that it was handed Daoris's brief. Here that one's spawn fails, as a go-on test spawns nothing, so the words wait on
+    /// the old one marked by the reason <c>unkept</c>, its conversation saying so; the old record never moves.
     /// </summary>
     [Fact]
-    public async Task One_whose_conversation_was_not_kept_cannot_go_on_and_says_why()
+    public async Task One_whose_conversation_was_not_kept_goes_on_in_a_new_conversation_of_its_room()
     {
         var ledger = new ChatLedger();
         ledger.Chat("h1", "completed", "native-talk", Room, repository: HelpRoom.Repository).Say("w1", "and the remote?");
         var native = new Native();
         var events = Events;
         using var runner = Runner(ledger, native, events);
+        runner.DescribeHelp = _ => Task.FromResult<HelpMachine?>(HelpRoomFixture.Machine);
 
         events.Append("h1", Shown("w1", "and the remote?"));
 
         await Poll.Until(
             () => events.After("h1", 0).Events.Any(e => e.Kind == SessionEventKind.Note && e.Why is not null),
             () => string.Join(" | ", events.After("h1", 0).Events.Select(e => $"{e.Kind}:{e.Text}")));
+        Assert.Equal(2, ledger.Count);
+        Assert.Equal(("h1", HelpConversations.Brief), (new HelpConversations(_home).Read("h2").From, new HelpConversations(_home).Read("h2").Handed));
+        ChatTarget asked;
+        lock (native.Asked) asked = Assert.Single(native.Asked);
+        Assert.Equal(("h2", (string?)null), (asked.Session, asked.Resume));
+        Assert.Equal(Path.GetFullPath(Room), Path.GetFullPath(asked.Root));
         Assert.Equal(ContinueWhy.Unkept, new GoOnMarks(_home).Read("h1")!.Why);
         Assert.Empty(ledger.Moves("h1"));
-        lock (native.Asked) Assert.Empty(native.Asked);
     }
 
     /// <summary>

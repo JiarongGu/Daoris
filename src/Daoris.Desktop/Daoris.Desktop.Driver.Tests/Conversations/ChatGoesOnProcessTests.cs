@@ -229,6 +229,52 @@ public sealed class ChatGoesOnProcessTests : IDisposable
     }
 
     /// <summary>
+    /// 🔴 SESSCTX1c part B (the session-context design §2): a refusal on the wire proves nothing of the conversation's loss, so the
+    /// conversation waits for the person: its record goes back, its words wait marked by <c>refused</c>, and nothing opens by itself. The
+    /// person's *Go on with Daoris's brief* then opens the new part, why <c>resume</c> by the person, handed the brief and the words, which
+    /// leave the old record naming it, its went line giving the person's press as the reason.
+    /// </summary>
+    [Fact]
+    public async Task A_conversation_whose_resume_is_refused_waits_until_the_person_goes_on_with_the_brief()
+    {
+        var ledger = new ChatLedger().Register("engine", _root);
+        var config = Config("acp-stub", "node", Agent(), Heard);
+        var events = Events;
+        using var client = ledger.Client();
+        using var runner = Runner(client, events);
+
+        var id = (await runner.StartAsync("engine", "acp-stub", config)).SessionId!;
+        await Poll.Until(() => ledger.State(id) == "working", () => Seen(ledger, events, id));
+        Assert.True(runner.Finish(id));
+        await Poll.Until(() => ledger.State(id) == "completed", () => Seen(ledger, events, id));
+
+        config = Config("acp-stub", "node", Agent(), Heard, "refuses");
+        Say(ledger, events, id, ("w1", "Also log the port."));
+        await Poll.Until(
+            () => events.After(id, 0).Events.Any(e => e.Kind == SessionEventKind.Note && e.Why == ContinueWhy.Refused),
+            () => Seen(ledger, events, id));
+        await Poll.Until(() => ledger.Moves(id).Count(move => move == "completed") == 2, () => Seen(ledger, events, id));
+        await Task.Delay(500);
+        Assert.Equal(1, ledger.Count);
+        Assert.Equal(["w1"], ledger.Said(id));
+        Assert.Equal(ContinueWhy.Refused, new GoOnMarks(_home).Read(id)!.Why);
+
+        var answer = await runner.GoOnBriefedAsync(id, config);
+
+        Assert.True(answer.Sent, answer.Message);
+        var next = answer.SessionId!;
+        var part = ledger.Record(next);
+        Assert.Equal(
+            (id, HandOverWhy.Resume, HandOverBy.Person),
+            (part["from"]?.GetValue<string>(), part["fromWhy"]?.GetValue<string>(), part["fromBy"]?.GetValue<string>()));
+        Assert.Equal([(id, "w1", (string?)next)], ledger.TakenBy);
+        Assert.Null(new GoOnMarks(_home).Read(id));
+        await Poll.Until(() => StubFile.Text(Heard).Contains("Also log the port.", StringComparison.Ordinal), () => Seen(ledger, events, next));
+        var went = Assert.Single(events.After(id, 0).Events, e => e.To is not null);
+        Assert.Equal((next, ContinueWhy.Started), (went.To, went.Why));
+    }
+
+    /// <summary>
     /// 🔴 The native door (D137 §4.2): a chat keeps the id its harness's <c>init</c> line names, and an ended one goes on
     /// with <c>--resume &lt;id&gt;</c> and the words as its first message, joined by a blank line, taken off the record once its
     /// harness opened the conversation.
@@ -563,6 +609,9 @@ public sealed class ChatGoesOnProcessTests : IDisposable
                 note(`${frame.method}: ${frame.params.sessionId}`);
                 if (mode === 'gone') {
                   send({ jsonrpc: '2.0', id: frame.id, error: { code: -32002, message: 'Resource not found: ' + frame.params.sessionId } });
+                } else if (mode === 'refuses') {
+                  // SESSCTX1c part B: a refusal on the wire that proves no loss and names no other client.
+                  send({ jsonrpc: '2.0', id: frame.id, error: { code: -32603, message: 'Internal error: the thread could not be loaded' } });
                 } else {
                   conversation = frame.params.sessionId;
                   send({ jsonrpc: '2.0', id: frame.id, result: {} });
