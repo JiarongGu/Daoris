@@ -12,7 +12,7 @@
   "note.ended.declined": "会话已谢绝，理由写在委托上。",
   "note.ended.stood-down": "它正常退出，委托已被别人接下。",
   "note.ended.source-reopened": "它停了下来，委托仍已接下，因为你重新打开了它所基于的委托 #{{quest}} 的工作；你选择在新的工作上继续后，它会在同一工作树中继续。",
-  "note.ended.background-cut": "它这一轮结束时，自己的后台工作仍在运行：{{works}}。它的智能体会在一轮结束时终止这类工作，所以它在那项工作完成之前就被中断了，会在同一工作树中接续。",
+  "note.ended.background-cut": "它这一轮走完时，自己的后台工作仍在运行：{{works}}。它的智能体会在一轮走完时终止这类工作，所以它在那项工作完成之前就被中断了，会在同一工作树中接续。",
   "note.ended.taken-exit": "退出码 {{exit}}，委托仍已接下。",
   "note.ended.untouched": "它退出了，没有动它的委托。",
   "note.ended.untouched-exit": "退出码 {{exit}}，未接下委托。",

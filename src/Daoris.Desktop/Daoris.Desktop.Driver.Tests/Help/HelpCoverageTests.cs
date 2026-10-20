@@ -609,6 +609,10 @@ public sealed partial class HelpCoverageTests
         ("trees", new Door("setting", "trees")),
         ("line", new Door("setting", "line")),
         ("landing", new Door("setting", "landing")),
+        // GRAPHTWINS1 (FABRIC-GRAPH1c): a quest's or an ask's cycle of work, a graph the person writes and the CLI judges in the driver's words.
+        ("work-cycle", new Exempt(
+            "it sets a quest's or an ask's cycle of work, a graph the person writes and the CLI refuses in the driver's words "
+            + "before anything is written; no Ask Daoris door proposes a graph yet, which the fabric's graph editor owns (FABRIC-GRAPHEDIT1).")),
         ("across read", new Door("setting", "across")),
         ("across write-to", new Door("setting", "across")),
         // KNOWUSE1b: a standing answer for a repository, the person's words, which Ask Daoris proposes and the person applies.
