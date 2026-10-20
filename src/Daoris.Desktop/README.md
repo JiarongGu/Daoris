@@ -537,7 +537,7 @@ summary, the tools' table, the steps' and resources' (`PluginSteps`, FABRIC-UNIT
 `NodeDeclaration` and judged by its `Problem`), the work wire's contract and bounds (`WorkWire`, `WorkBounds`, FABRIC-PERFORM1a:
 `work.perform@1`'s messages, the 64 KB frame, 60 events a minute, the restarts' waits), and the icon's, the offer's, the source
 record's and the package's rules. The rest sits at the module's top, beside `plugin-kit/`: the home's plugin folders
-(`PluginFolders`), the hook process (`HookProcess`, its stdout read under the frame bound by `BoundedLines`), the work wire's
+(`PluginFolders`), the hook process (`HookProcess`, its stdout read under the frame bound by `BoundedLines`, and its stderr clipped by it at 8 KB a line, PLUGSTDERR1), the work wire's
 supervision under the home's lease (`WorkPlugins`, which the hook set holds), the tool
 checks' runs, the kit's files and templates, a trial's process and the package file, and what other modules and the hosts call:
 the catalogue's reads, install and update, offers, the page and the activity, the kit and its trial, the hook set the loop

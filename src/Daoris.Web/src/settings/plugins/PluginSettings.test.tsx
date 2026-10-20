@@ -2,8 +2,8 @@ import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import i18n from '../locales/i18n';
-import type { PluginShown } from '../plugins/catalog';
+import i18n from '../../locales/i18n';
+import type { PluginShown } from '../../plugins/catalog';
 import { PluginSettings } from './PluginSettings';
 
 // PLUGSET1 (the modes design §4.1): Settings' Plugins section lists each installed plugin with what it holds set and leads to

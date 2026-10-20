@@ -350,7 +350,9 @@ internal sealed class TreeLands(
         // lands it. The second to come waits for the first, and where the first landed the very commit this one would land, says what
         // came of it, its plugin's answer included, and lands nothing more. A later commit lands as any landing does; a landing that
         // waited for nothing is judged as before, and reads nothing more of git.
-        using var hold = await LandingHolds.TakeAsync(context.Home, path, ct).ConfigureAwait(false);
+        // LANDHOLD3: named by its session and the branch its tree stands on, for a door that waits behind it.
+        using var hold = await LandingHolds.TakeAsync(context.Home, path, ct, by: new LandingHolder(subject.Session, TreeTips.Branch(path)))
+            .ConfigureAwait(false);
         if (hold is null) return new(false, StillLanding) { Refusal = AutoLandingCode.Refused };
         if (hold.Before is { } before && await JudgedAsync(path, gate, ct).ConfigureAwait(false) is { } asked
             && string.Equals(asked, before.Tip, StringComparison.OrdinalIgnoreCase))
@@ -589,7 +591,8 @@ internal sealed class TreeLands(
             {
                 // LANDRACE1's review: one push of the branch at a time, this one's and a hand-off's alike (TreeHandOffs.HandAsync). A
                 // hand-off that pushed this very commit while this waited is this push's answer, and the plugin is not told again.
-                using var pushing = await LandingHolds.BranchAsync(context.Home, branched.Root, landed.Branch!, ct).ConfigureAwait(false);
+                using var pushing = await LandingHolds.BranchAsync(
+                    context.Home, branched.Root, landed.Branch!, ct, by: new LandingHolder(subject.Session, landed.Branch)).ConfigureAwait(false);
                 var handed = pushing?.Before is { Said: { Pushed: true, Failed: false } pushed } other && tip is not null
                     && string.Equals(other.Tip, tip, StringComparison.OrdinalIgnoreCase) ? pushed : null;
                 PluginLanding? said;

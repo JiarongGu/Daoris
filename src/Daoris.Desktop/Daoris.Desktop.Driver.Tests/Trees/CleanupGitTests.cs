@@ -25,11 +25,12 @@ public sealed class CleanupGitTests : LandedFixture
     }
 
     /// <summary>A commit dated long ago, with <paramref name="parent"/>'s tree and <paramref name="parent"/> as its parent, held by no ref.</summary>
-    private static async Task<string> OldCommitAsync(string root, string parent, string message)
+    private static async Task<string> OldCommitAsync(string root, string parent, string message, DateTimeOffset? dated = null)
     {
         var tree = (await GitAsync(root, "rev-parse", $"{parent}^{{tree}}")).Trim();
-        var body = $"tree {tree}\nparent {parent}\nauthor Tester <tester@example.invalid> 1600000000 +0000\n"
-            + $"committer Tester <tester@example.invalid> 1600000000 +0000\n\n{message}\n";
+        var seconds = dated?.ToUnixTimeSeconds() ?? 1600000000;
+        var body = $"tree {tree}\nparent {parent}\nauthor Tester <tester@example.invalid> {seconds} +0000\n"
+            + $"committer Tester <tester@example.invalid> {seconds} +0000\n\n{message}\n";
         var (code, made, err) = await WorkingTree.GitAsync(root, ["hash-object", "-t", "commit", "-w", "--stdin"], body, CancellationToken.None);
         Assert.True(code == 0, err);
         return made.Trim();
@@ -587,6 +588,38 @@ public sealed class CleanupGitTests : LandedFixture
         var read = Assert.Single((await RecoveryRetention.ReadAsync(root, "engine", NoneMade, CancellationToken.None)).Refs!);
         Assert.True(read.Held);
         Assert.True(RecoveryRetention.Until(read) > DateTimeOffset.UtcNow);
+    }
+
+    /// <summary>
+    /// RECOVERYDATE1: a ref Daoris makes today for a 40-day-old commit the line holds counts its retention from when it was made, read from
+    /// the reflog it is written with, by either of its makes: kept today, and removed once 30 days have passed since it was made.
+    /// </summary>
+    [Fact]
+    public async Task A_recovery_ref_made_today_for_an_old_held_commit_is_kept_30_days_from_when_it_was_made()
+    {
+        var root = await RepositoryAsync("engine");
+        var main = (await GitAsync(root, "rev-parse", "main")).Trim();
+        var old = await OldCommitAsync(root, main, "work from 40 days ago", DateTimeOffset.UtcNow.AddDays(-40));
+        await GitAsync(root, "update-ref", "refs/heads/main", old, main);
+        var before = DateTimeOffset.UtcNow.AddMinutes(-1);
+        var (plain, _) = await ContentHolds.KeepDiscardedAsync(root, "daoris/s-plain", old, CancellationToken.None);
+        var (verified, why) = await ContentHolds.KeepDiscardedAsync(root, "daoris/s-verified", old, CancellationToken.None, absent: "refs/heads/daoris/s-verified");
+        Assert.True(plain is not null && verified is not null, why);
+
+        Assert.Empty(await RecoveryRetention.TidyAsync(root, "engine", NoneMade, DateTimeOffset.UtcNow, CancellationToken.None));
+
+        var (refs, unread) = await RecoveryRetention.ReadAsync(root, "engine", NoneMade, CancellationToken.None);
+        Assert.Null(unread);
+        Assert.Equal(2, refs!.Count);
+        Assert.All(refs, each =>
+        {
+            Assert.True(each.Held);
+            Assert.InRange(each.Dated!.Value, before, DateTimeOffset.UtcNow.AddMinutes(1));
+            Assert.Equal(each.Dated + RecoveryRetention.Kept, RecoveryRetention.Until(each));
+        });
+
+        var gone = await RecoveryRetention.TidyAsync(root, "engine", NoneMade, DateTimeOffset.UtcNow.AddDays(31), CancellationToken.None);
+        Assert.Equal([plain, verified], gone.Select(each => each.Ref).Order(StringComparer.Ordinal));
     }
 
     /// <summary>The look's tidy runs it, in the lease's process, and says what went.</summary>

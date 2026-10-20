@@ -1260,12 +1260,12 @@ test('`agent list` says the next start\'s steps beneath each list, and where the
   });
 
   assert.match(out, new RegExp('rotation\\s+account-1, then account-2, then account-3\\n(?:.*\\n)*?'
-    + '\\s+next start: the ready account running the fewest of Daoris\'s sessions; then one whose week resets within a day; '
+    + '\\s+next start: the ready account running the fewest of Daoris\'s sessions; then the one whose week would lapse the '
+    + 'most: within its last day, its room under its curve per hour to its reset; '
     + 'then the one with the most room under its curve; then the one Daoris started on least recently; then this list\'s '
     + 'order, from `account-1`; one whose limit is reached, that draws on usage credits or whose use is over its curve goes '
     + 'last, the least over first\\n'
-    + '\\s+no account has said what it has left yet: Daoris spreads starts across them by its own sessions, and learns each '
-    + 'account\'s weekly reset from the limits it meets\\n'
+    + '\\s+no account has said what it has left yet: Daoris spreads starts across them by its own sessions\\n'
     + `\\s+${POINTER}\\n`));
   assert.match(out, new RegExp('rotation in work account-2, then account-1\\n(?:.*\\n)*?'
     + '\\s+next start: the first ready account of this list, from `account-2`; one whose limit is reached, that draws on usage '
@@ -1353,7 +1353,8 @@ test('`agent list` reads a Codex account\'s kept reading as one that speaks: its
   assert.match(codex, new RegExp('rotation\\s+account-1, then account-2\\n(?:.*\\n)*?'
     + '\\s+switch accounts: Smart — a session moves at a turn\'s end when its use is over the curve; a start passes an account whose limit is reached, that draws on usage credits, or '
     + 'whose use is over Daoris\'s smart curve\\n'
-    + '\\s+next start: the ready account running the fewest of Daoris\'s sessions; then one whose week resets within a day; '
+    + '\\s+next start: the ready account running the fewest of Daoris\'s sessions; then the one whose week would lapse the '
+    + 'most: within its last day, its room under its curve per hour to its reset; '
     + 'then the one with the most room under its curve; then the one Daoris started on least recently; then this list\'s '
     + 'order, from `account-1`; one whose limit is reached, that draws on usage credits or whose use is over its curve goes '
     + 'last, the least over first\\n'

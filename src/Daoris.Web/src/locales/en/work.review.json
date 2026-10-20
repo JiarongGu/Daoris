@@ -67,6 +67,8 @@
   "work.review.acceptingGate": "Checking…",
   "work.review.acceptingWaiting": "Waiting its turn…",
   "work.review.handingWaiting": "Waiting its turn…",
+  "work.review.acceptingWaitingBehind": "Waiting behind {{session}}…",
+  "work.review.handingWaitingBehind": "Waiting behind {{session}}…",
   "work.review.sendBack": "Send back…",
   "work.review.discard": "Discard tree",
   "work.review.discardTitle": "discard this tree",

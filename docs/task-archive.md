@@ -18466,3 +18466,62 @@ in zh. The sessions page's held words (`WordsHold`) still carry the driver's sen
 > - [ ] **HELPMODE1c4 — the scoped checkouts grant built on Claude** (driver, service, web-shell; the modes design's §4.1; after HELPMODE1c3). Restricted mode's *checkouts* grant is still drawn as the design's mock on Claude (on Codex it says unavailable until a scoped read tool exists): build it as HELPMODE1c3 built chosen settings, a typed tool reading only the checkouts chosen, judged by the driver at each call against the grant handed at the start. Proof: the grant's refusal off and its read on, a checkout not chosen refused; the page's row chosen in en and zh.
 
 **Outcome** 2026-10-21: built for Claude and Codex alike. Ask Daoris reads its checkouts through one connector tool, `checkout_read` (a file, a folder, `status`, `branches`), which the driver's `HelpCheckouts` judges at every call, in place of the `Read` and git rules a restricted start handed Claude; the checkouts are on by default from D107's readable set, each turned off on its own in *Configured access*. Detail: D183's HELPMODE1c4 note.
+## GITSTART6 — the remaining tests' git past the launcher (2026-10-21, D121)
+
+> - [ ] **GITSTART6 — the remaining tests' git past the launcher** (driver, modules tests). `DriverModuleGitTests`, `DriverModuleWorkflowRunTests`, `TreeSyncReplayTests`' holder and two `--version` checks. Proof: those classes once each.
+
+**Outcome** 2026-10-21: `DriverModuleGitTests` and `DriverModuleWorkflowRunTests` start git through `TestGit.Past`, which the modules tests compile in by link from the driver tests; `TreeSyncReplayTests`' holder, the `--version` checks in `BranchTidyingFixture` and `PassLeftoversProcessTests`, and `SessionChecksStartTests`' git (found bare as well) go the same way. Proof: those classes, and the two that use `BranchTidyingFixture`'s ended process (`BranchTidyingFolderTests`, `TreeLinkRemovalTests`), ran once each and passed: driver 29, modules 31. The `git` in `LookWaitTests` and `RunningSessionsTests` is a name handed to a stand-in starter that starts nothing, so it was left as it is. On Opus: about 25 tool calls.
+
+## PLUGSTDERR1 — a plugin's stderr read under a bound (2026-10-21)
+
+> - [ ] **PLUGSTDERR1 — a plugin's stderr read under a bound** (driver; after PERFORM1a; §C4). `HookProcess.RelayAsync` reads stderr as whole, unbounded lines. Proof: a stand-in writing a stderr line past the bound has it clipped and the next line relayed (a Process class).
+
+**Outcome** 2026-10-21: `HookProcess.RelayAsync` reads stderr through `BoundedLines` in a clipping mode (`clip: true`): a line past `HookProcess.StderrBytes` (8 KB of UTF-8) is relayed as its start in whole characters, ending `HookProcess.Clipped` (` …`), and the rest passes unread and unscanned; stdout's frames are still dropped whole. Proof: `HookTests.A_stderr_line_past_the_bound_is_clipped_and_the_next_is_relayed` (a Process class, a node stand-in) and `WorkBoundsTests.A_clipping_reader_keeps_a_long_lines_start_and_reads_the_next`. On Opus, by a driven session.
+
+## LANDHOLD3 — a waiting press names what it waits behind (2026-10-21, D173)
+
+> - [ ] **LANDHOLD3 — a waiting press names what it waits behind** (web-shell, driver; after LANDHOLD2). The holder writes its branch and session to the hold's file when it takes the hold, and a waiting door reads them through a second handle opened with read sharing, so the step carries the name. Proof: the waiting step names the holder's session, en and zh.
+
+**Outcome** 2026-10-21: a landing or push that takes a tree's or branch's hold writes its session and branch to its process's gate and to the hold's file (shared for reading on Windows), and unwrites them as it lets go; a waiting door reads the gate, or the file through a second handle, and says `waiting` again once it knows the holder, which `UNDER_WAY` carries as `behind`. The review's Accept and hand button read "Waiting behind {{session}}…" / "排在 {{session}} 之后…", and `trees land` / `trees hand` name the session and branch. Proof: `LandingHoldsTests`, `LandingWakesTests`, `StatePublisherTests`, `DiffPane.underway.test.tsx` (en and zh). On Opus, by a driven session. Detail: D173's LANDHOLD3 note.
+
+## KNOW-REFTX1 — a knowledge note on removals that rest on other refs (2026-10-21, D173)
+
+> - [ ] **KNOW-REFTX1 — a knowledge note on removals that rest on other refs** (knowledge). A ref removal whose proof reads other refs goes as one `update-ref --stdin` transaction with `verify` lines for exactly what the proof rested on, never delete-then-look-again; a holder is a branch of the person's before a session branch. Proof: the note, indexed.
+
+**Outcome** 2026-10-21: `.claude/knowledge/ref-removal-transactions.md`, indexed in `.claude/INDEX.md` by `daoris sync`: the removal, a `verify` for each ref and commit the proof returned and nothing found afterwards, rests carried down a chain, a holder by ancestry chosen as the line's form, then a branch of the person's, then a session branch, and what no ref says (a late checkout) kept as its own check. Written from D173's FABRIC-END4a review notes and `ContentHolds`. On Opus, by a session of the owner's install.
+
+## FABRIC-MILESTONEDOOR1 — a work row with no session opens Branches (2026-10-21, D173)
+
+> - [ ] **FABRIC-MILESTONEDOOR1 — a work row with no session opens Branches** (web-shell; after MILESTONE1b). A `work` row for a unit known only by a branch or a landing has no door: open the workspace's Branches. Proof: an attention test pressing the row.
+
+**Outcome** 2026-10-21: the door itself landed with OVERVIEWNOISE1b, whose `work` door in `App.tsx` opens the workspace's Branches for every row that is not a held attempt. This row adds its proof: `sessionsBadge.test.tsx` presses a unit's row known only by its branch, its owner unrecorded, and Projects opens on Branches, the tab remembered; seen failing with the door pointed at Details. Not looked at on the window. On Opus: about 30 tool calls.
+
+## RECOVERYDATE1 — a recovery ref's own date (2026-10-21, D102)
+
+> - [ ] **RECOVERYDATE1 — a recovery ref's own date** (driver; after CLEANUP1; D102). Write the ref with `--create-reflog` so retention counts from when it was made, not its commit's date. Proof: a ref made today for a 40-day-old held commit kept until 30 days after it was made.
+
+**Outcome** 2026-10-21: `ContentHolds.KeepDiscardedAsync` writes every recovery ref with `--create-reflog`, and `RecoveryRetention` dates a ref by its oldest reflog entry (one `log --walk-reflogs` beside the listing), a ref with no reflog keeping its commit's date. Proof: `CleanupGitTests.A_recovery_ref_made_today_for_an_old_held_commit_is_kept_30_days_from_when_it_was_made`, both makes, kept today and gone 31 days on. On Opus, by a driven session. Detail: D102's RECOVERYDATE1 note.
+
+## NEXTLAPSE1 — the agent page's next start says what would lapse (2026-10-21, D165)
+
+> - [ ] **NEXTLAPSE1 — the agent page's next start says what would lapse** (modules, web; D165's USAGERESET1 note). The Accounts answer's `next` carries the winning window, its unused share and its reading's moment beside `when`, so the page says what would lapse as the start's line does. Proof: a modules test of the answer's shape, the web's next line in en and 中文, the rehearsals searched for `next` fields.
+
+**Outcome** 2026-10-21: the driver's `NextStart` carries `Window`, `Unused` (a whole percent, as the start's `lapses` reason) and `Seen` where its reason is `lapsing`, from the reading that gives `When`; `ACCOUNTS`' `next` answers them as `window`, `unused` and `seen` beside `when`, and the page says *its weekly window resets at … with 40% of it unused, as read at …* (`harness.next.why.lapses`), a shell answering `when` alone keeping the old line. Proof: `DriverModuleAccountsTests` (the answer's shape), `AccountRotationNextTests`, `accounts.test.ts` in en and 中文. The rehearsals under `tools/` read no `next` field, so none changed. On Opus: about 70 tool calls. Detail: D165's 2026-10-21 note.
+
+## CLILAPSE1 — the terminal says the walk's last day as what would lapse (2026-10-21, D165)
+
+> - [ ] **CLILAPSE1 — the terminal says the walk's last day as what would lapse** (cli; D165's USAGERESET1 note). `nextStartLines` (`toolchain.ts` ~1383) says step 4 as what would lapse per hour within the last day, and stops implying a reset learned from a limit ranks anything. Proof: the CLI's `profile use` and `agent list` tests.
+
+**Outcome** 2026-10-21: built. `profile use` and `agent list` say step 4 as *then the one whose week would lapse the most: within its last day, its room under its curve per hour to its reset* (under `off`, *Daoris's smart curve*), and only for an agent that says its use, since nothing unread ranks there; the no-reading note no longer says Daoris learns a weekly reset from the limits it meets. Proof: the `profile use` tests in `rotation-use.test.ts` and the `agent list` tests in `toolchain.test.ts`. Detail: D165's CLILAPSE1 note. On Opus, by a session of the owner's install.
+
+## GITSTART3 — the devkit's git past the launcher (2026-10-21, D121)
+
+> - [ ] **GITSTART3 — the devkit's git past the launcher** (devkit; after GITSTART1). `SensitiveGate.cs:254,265` (a `git show` per staged file, serial), `GitObjects.cs:57,79`, `DocsGate.cs:103,148,188`, `Program.cs:124`: route them through one helper with the launcher rule. Proof: `scan --allow-builtins-only` timed before and after from PowerShell.
+
+**Outcome** 2026-10-21: every git the devkit runs starts through `GitStart` (`Daoris.Devkit.Core/GitStart.cs`): the git `PATH` finds, by its whole path, and past Git for Windows' launcher with its measured variables where that is what it finds. `GitForWindows` there is a twin of the driver's, since the devkit references nothing of the desktop's; `GitStartTests` holds the driver's rows. Timed from PowerShell on 201 staged files, `scan --allow-builtins-only` went from a median 220 s (189–264 s, six runs) to 123 s (122–125 s, three) at 57–100% CPU. The staged scan is still one `git show` per file, one at a time. On Opus: about 60 tool calls. Detail: FIX-LOG GITSTART3, D121's 2026-10-21 note.
+
+## ENVSEAM1 — the driver handed an environment, so three Process classes leave `Alone` (2026-10-21, D63, PROCPAR1)
+
+> - [ ] **ENVSEAM1 — the driver handed an environment, so three Process classes leave `Alone`** (driver; D63's environment seam, CONFIGSEAM1; PROCPAR1's FIX-LOG entry). `ConfigSeamLandingTests`, `BrainstormProcessTests` and `ToolsChildProcessTests` run alone only because the product reads `DAORIS_DRIVER_CONFIG`, `DAORIS_HOME` and `DAORIS_MCP_HOST` from the process (`DriverConfig.ResolvePath`, `SessionTrees`, the connector lookup, `StubAdapter.Prepare`). Proof: those classes leave `Alone` with `CategoryTests` green.
+
+**Outcome** 2026-10-21: built. `SessionTrees` takes an environment (`TreeContext.Variable`, read by `Config()`); the driver has `Variable` (its connector's host, home and store through a new `KnowledgeConnector.Offer` over it, the remotes, and the home its `Prepare` hands a start); `SessionTarget.Home` names the home a start's tools are read from, the process's `DAORIS_HOME` where none is handed. Each defaults to the process's, so production reads as before. `ConfigSeamLandingTests` and `BrainstormProcessTests` left `Alone`, and `ToolsChildProcessTests` left `ProcessPath`, which held it for its `DAORIS_HOME` alone: each hands its environment and sets nothing of the process's. Proof: the three classes (7 tests), `CategoryTests`, `ConfigSeamTests`, `ToolsChildrenTests`, `KnowledgeConnector(Start)Tests`, `AdapterTests` and `EveryChildIsHandedTheToolsTests` green, 121 tests filtered; `SystemWiringTests` (28). `BrainstormProcessTests`' five-second pass, which its remarks said would keep it alone anyway, now runs beside the rest: the parent's Process half is its first loaded run. On Opus.

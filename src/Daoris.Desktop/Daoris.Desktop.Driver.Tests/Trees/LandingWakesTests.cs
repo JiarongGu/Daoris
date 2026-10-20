@@ -215,6 +215,19 @@ public sealed class LandingWakesTests : IDisposable
         Assert.Null(TreeTips.Read(Path.Combine(_home, "nowhere")));
     }
 
+    /// <summary>LANDHOLD3: the branch a tree stands on is its <c>HEAD</c>'s, read without a process; a detached one, or none, names none.</summary>
+    [Fact]
+    public void A_tree_s_branch_is_read_from_its_head_without_a_process()
+    {
+        var (root, tree) = Layout();
+        Assert.Equal("main", TreeTips.Branch(root));
+        Assert.Equal("daoris/s1", TreeTips.Branch(tree));
+
+        Write(Path.Combine(Git(root), "worktrees", "t1", "HEAD"), Tip + "\n");
+        Assert.Null(TreeTips.Branch(tree));
+        Assert.Null(TreeTips.Branch(Path.Combine(_home, "nowhere")));
+    }
+
     // ——— the loop's wakes, kept between looks
 
     /// <summary>

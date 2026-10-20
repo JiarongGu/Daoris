@@ -273,11 +273,13 @@ test('`profile use` says the step the next start would follow (TOOL6b), with one
   const one = run(['profile', 'use', 'claude-code', '--workspace', 'solo'], at(fx)).out;
 
   // The curve's steps (D165 point 2, the switch design §3): over its curve last, the least over first; the most room under
-  // its curve at step 5; under `off`, the smart curve for step 2 and D130's pace for step 5.
-  assert.match(goal, /next start\s+the ready account running the fewest of Daoris's sessions; then one whose week resets within a day; then the one with the most room under its curve; then the one Daoris started on least recently; then this list's order, from `account-1`; one whose limit is reached, that draws on usage credits or whose use is over its curve goes last, the least over first\n/);
-  assert.match(goal, /\n {2}no account has said what it has left yet: Daoris spreads starts across them by its own sessions, and learns each account's weekly reset from the limits it meets\n/);
+  // its curve at step 5; under `off`, the smart curve for steps 2 and 4 and D130's pace for step 5. Step 4 is what would
+  // lapse in a week's last day (CLILAPSE1, D165's USAGERESET1 note), and no reset learned from a limit is said to rank.
+  assert.match(goal, /next start\s+the ready account running the fewest of Daoris's sessions; then the one whose week would lapse the most: within its last day, its room under its curve per hour to its reset; then the one with the most room under its curve; then the one Daoris started on least recently; then this list's order, from `account-1`; one whose limit is reached, that draws on usage credits or whose use is over its curve goes last, the least over first\n/);
+  assert.match(goal, /\n {2}no account has said what it has left yet: Daoris spreads starts across them by its own sessions\n/);
+  assert.doesNotMatch(goal, /resets within a day|from the limits it meets/);
   assert.match(kept, /then this list's order, from `account-1`; driven work passes `account-3`, kept for conversations; one whose limit is reached, [^\n]+ goes last, the least over first\n/);
-  assert.match(paced, /next start\s+the ready account running the fewest of Daoris's sessions; then one whose week resets within a day; then the one furthest behind its week's pace; then the one Daoris started on least recently; then this list's order, from `account-1`; one whose limit is reached, that draws on usage credits or whose use is over Daoris's smart curve goes last, the least over first\n/);
+  assert.match(paced, /next start\s+the ready account running the fewest of Daoris's sessions; then the one whose week would lapse the most: within its last day, its room under Daoris's smart curve per hour to its reset; then the one furthest behind its week's pace; then the one Daoris started on least recently; then this list's order, from `account-1`; one whose limit is reached, that draws on usage credits or whose use is over Daoris's smart curve goes last, the least over first\n/);
   assert.match(order, /next start\s+the first ready account of this list, from `account-1`, its default; one whose limit is reached, that draws on usage credits or whose use is over its curve goes last\n/);
   assert.doesNotMatch(order, /no account has said what it has left yet/);
   assert.match(one, /next start\s+`account-2`, the one account this list holds\n/);
@@ -315,9 +317,10 @@ test('`profile use` shows each account\'s last reading and its age, and says no 
   assert.match(codex, /switch accounts\s+Smart — a session moves at a turn's end when its use is over the curve; a start passes an account whose limit is reached, that draws on usage credits, or whose use is over Daoris's smart curve\n/);
   assert.match(codex, /next start\s+the ready account running [^\n]*then the one with the most room under its curve;[^\n]*; one whose limit is reached, [^\n]+ goes last, the least over first\n/);
   assert.match(codex, /no account has said what it has left yet/);
-  // An agent whose accounts do not say it passes nothing, says so, and walks without the curve's steps.
+  // An agent whose accounts do not say it passes nothing, says so, and walks without the curve's steps, nor what would
+  // lapse, which only a reading weighs (CLILAPSE1).
   assert.match(silent, /switch accounts\s+Smart — DeepSeek Harness's sessions here do not say how much of each window is used, so a start passes no account by its use\n/);
-  assert.match(silent, /next start\s+the ready account running the fewest of Daoris's sessions; then one whose week resets within a day; then the one Daoris started on least recently;/);
+  assert.match(silent, /next start\s+the ready account running the fewest of Daoris's sessions; then the one Daoris started on least recently;/);
   assert.match(silent, /no account has said what it has left yet/);
   fx.cleanup();
 });
