@@ -1,4 +1,5 @@
 using System.Text.Json.Nodes;
+using static Daoris.Desktop.Modules.Tests.AttentionTestRows;
 
 namespace Daoris.Desktop.Modules.Tests;
 
@@ -7,7 +8,7 @@ namespace Daoris.Desktop.Modules.Tests;
 /// signed-out account a list holds, ported cell for cell from <c>accountAttention.test.ts</c> and <c>attention.test.ts</c>'s last block.
 /// An account's name, the row's title and its line of why are the page's words over what is pushed here, held by its own tests.
 /// </summary>
-public sealed partial class AttentionStateSliceTests
+public sealed class AccountAttentionSliceTests
 {
     private const string Read = "2026-10-05T10:42:00Z";
     private const string Until = "2026-10-06T04:42:00Z";

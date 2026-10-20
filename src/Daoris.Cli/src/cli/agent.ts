@@ -1,6 +1,8 @@
 import type { CliCommand } from '../platform/types.ts';
-import { commandHarness } from '../agents/toolchain.ts';
-import { releaseFetcher } from '../service/service.ts';
+import { ALONE } from '../platform/door.ts';
+import { daorisHome } from '../platform/home.ts';
+import { commandHarness, PATH_VARIABLE } from '../agents/toolchain.ts';
+import { instanceDoor, releaseFetcher } from '../service/service.ts';
 
 export const command: CliCommand = {
   name: 'agent',
@@ -104,6 +106,9 @@ export const command: CliCommand = {
     "                       machine's list (agent login)",
   ],
   // `pin` and a pinned `update` fetch a maker's release (AGT2b, USE1a) through the one module that may
-  // reach a network, handed in here so the toolchain never holds a socket of its own.
-  run: (args) => commandHarness(args, releaseFetcher()),
+  // reach a network, handed in here so the toolchain never holds a socket of its own. So is the door an edit of the home goes
+  // through (RPC1f): the Agents or Accounts place's route while Daoris runs on this home, alone under its lease when none does. A
+  // wiring file `DAORIS_HARNESS_CONFIG` names is no instance's, so the verbs act alone there, holding nothing.
+  run: (args) => commandHarness(args, releaseFetcher(), ['npm'],
+    process.env[PATH_VARIABLE] ? ALONE : instanceDoor({ home: daorisHome(), write: args.write })),
 };

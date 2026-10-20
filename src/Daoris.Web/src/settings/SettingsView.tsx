@@ -2,7 +2,7 @@ import { type ComponentType, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { WithHarnessRuns } from '../agents/harnessRuns';
 import { useDriver } from '../bridge/shell';
-import type { Notify } from '../design/ui';
+import { CardStack, type Notify } from '../design/ui';
 import type { StarterDoor } from '../help/starters';
 import type { SetupStepId } from '../help/setup';
 import type { BrowserDriver } from '../work/strip/browserDrivers';
@@ -162,10 +162,10 @@ function SettingsMain({ title, Domain, domain, anchor, onAnchored }: {
           </header>
         )}
       >
-        {/* A card stacked under another keeps its own top margin; the first in a domain does not. */}
-        <div className="min-w-0 [&>*:first-child]:mt-0">
+        {/* The domain's cards, 16 px apart, set once here (the UI/UX design R1): a card has no margin of its own. */}
+        <CardStack>
           <Domain {...domain} />
-        </div>
+        </CardStack>
       </ViewMain>
     </WithHarnessRuns>
   );

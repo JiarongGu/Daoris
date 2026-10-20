@@ -127,6 +127,8 @@ public sealed class HelpCommandTests : IDisposable
         var full = Mode("full");
         Assert.Contains("full access", full);
         Assert.Contains("next start", full);
+        // ACCESSSWAP1b (D183's note): the terminal writes the file from another process and tells no running conversation, and says so.
+        Assert.Contains("A conversation running now keeps its mode until its next start; the window's choice ends one at its turn's end.", full);
         Assert.Equal(HelpModes.Full, DriverConfig.Load(path).HelpMode);
         Assert.Equal("claude-code-acp", DriverConfig.Load(path).HelperAdapter);
         Assert.Contains("full access", Mode());

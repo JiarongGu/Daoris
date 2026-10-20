@@ -83,6 +83,47 @@ public sealed class ObservationTests
         Assert.Equal("ended.awaits", Observation.Conclude(0, "Taken", awaitsAfter: "q9", submitted: true).Parts![0].Code);
     }
 
+    /// <summary>
+    /// ACCESSSWAP1b (D183's note): a run Daoris ended at its turn's end because its repository's permission prompts changed is neither a
+    /// park nor a failure. Where it ended cleanly with its quest as a park or an untouched quest would read, a first run's and a resumed
+    /// one's alike, it is completed, saying the change and that it goes on in the same conversation under the new setup; where its work
+    /// had reached an ending of its own (done, declined, a wait) or its door failed, that ending stands, the line after it.
+    /// </summary>
+    [Fact]
+    public void A_run_ended_for_a_changed_setup_completes_where_it_would_have_parked_and_says_the_change()
+    {
+        var swap = new SetupSwap(AccessRules.Asking, AccessRules.Unrestricted);
+        foreach (var observed in new[]
+                 {
+                     Observation.Conclude(0, "Taken", took: true),
+                     Observation.Conclude(0, "Open"),
+                     Observation.Resumed(0, "awaiting-person", "Taken", "Taken", took: true),
+                 })
+        {
+            var swapped = Observation.SetupChanged(observed, swap);
+            Assert.Equal(("completed", "ended.setup-changed"), (swapped.State, Assert.Single(swapped.Parts!).Code));
+            Assert.Equal(AccessRules.Asking, swapped.Parts![0].Value("from"));
+            Assert.Equal(AccessRules.Unrestricted, swapped.Parts![0].Value("to"));
+            Assert.Equal(
+                "its permission prompts changed while it worked, from `asking` to `unrestricted`: Daoris ended it at its turn's end, never "
+                + "mid-turn, and it goes on in the same conversation under the new setup.",
+                swapped.Note);
+        }
+
+        foreach (var (observed, state, first) in new[]
+                 {
+                     (Observation.Conclude(0, "Done"), "completed", "ended.done"),
+                     (Observation.Conclude(0, "Declined"), "declined", "ended.declined"),
+                     (Observation.Conclude(0, "Taken", awaitsAfter: "q9"), "completed", "ended.awaits"),
+                     (Observation.Conclude(0, "Taken", took: true, turnFailed: "the connection was reset"), "failed", "ended.turn-failed-taken"),
+                     (Observation.Resumed(0, "completed", "Done", "Done"), "completed", "ended.went-on"),
+                 })
+        {
+            var swapped = Observation.SetupChanged(observed, swap);
+            Assert.Equal((state, first, "ended.setup-changed"), (swapped.State, swapped.Parts![0].Code, swapped.Parts[^1].Code));
+        }
+    }
+
     /// <summary>Whose decision a stop was (SURF5b): the person's where the driver gave no reason of its own.</summary>
     [Fact]
     public void A_stop_with_the_drivers_reason_is_the_drivers_and_any_other_the_persons()

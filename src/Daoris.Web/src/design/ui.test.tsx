@@ -6,9 +6,9 @@ import type { SessionState } from '../data/api';
 import i18n from '../locales/i18n';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import {
-  Button, CodeText, CountBadge, Dot, Drawer, EmptyState, Inline, Menu, MetaLine, MonoWell, PathText, Pill, QuickPanel, Segmented,
-  SelectField, SESSION_ACTIVE, SESSION_DOT, SESSION_TONE, SettingRow, shownKey, type ShownState, shownState, StripMark, Tile,
-  Tip, Toasts, WaitingCard,
+  Button, Card, CardStack, CodeText, CountBadge, Dot, Drawer, EmptyState, FIELD_WIDTHS, FormField, FormGrid, FormRow, Inline, Menu,
+  MetaLine, MonoWell, PathText, Pill, QuickPanel, Segmented, SelectField, SESSION_ACTIVE, SESSION_DOT, SESSION_TONE, SETTING_TRACK,
+  SettingList, SettingRow, shownKey, type ShownState, shownState, StripMark, Tile, Tip, Toasts, WaitingCard,
 } from './ui';
 import { code } from '../test/code';
 import { CommandPalette } from '../work/strip/CommandPalette';
@@ -165,23 +165,38 @@ describe('a setting row', () => {
   });
 
   /**
-   * UX5 U58, seen on the window: at 888 a path as the control took its whole width first, and the
-   * label beside it was 24px wide, one character a line. The label's column has a floor, 16rem or
-   * half the row, and the control gives way to it: a path breaks at its separators.
+   * UX5 U58, seen on the window: at 888 a path as the control took its whole width first, and the label beside it was
+   * 24px wide, one character a line. The label's column keeps a floor and the control gives way to it: a path breaks at
+   * its separators. Since UIFIT1 (the UI/UX design R1) the column is a label track: content-sized between the floor and
+   * a cap, never half the row, so the value sits beside its words and a long label wraps at the cap.
    */
-  it('keeps a floor under the label, so a long control gives way to it', () => {
+  it('keeps a floor under the label and a cap over it, so a long control gives way to it and a long label wraps', () => {
     const { container } = render(
-      <SettingRow label="Which account each tool runs as" control={<span>a-long-path</span>} />);
+      <SettingRow label="Which account each tool runs as" hint="A sentence wider than any label, which sets no track." control={<span>a-long-path</span>} />);
 
     const grid = container.querySelector('.grid')!;
-    expect(grid.getAttribute('class')).toContain('grid-cols-[minmax(min(16rem,50%),1fr)_auto]');
+    expect(grid.getAttribute('class')).toContain(`grid-cols-[fit-content(min(${SETTING_TRACK.cap},50%))_minmax(0,1fr)]`);
+    expect(container.querySelector('[data-setting-label]')!.getAttribute('class')).toContain(`min-w-[${SETTING_TRACK.floor}]`);
+    // The track is the widest label, never the hint: a hint's sentence sets no width of the cell.
+    expect(screen.getByText(/sets no track/).closest('div')!.getAttribute('class')).toContain('contain-inline-size');
   });
 
   /**
-   * WSR4, seen on the window: with Settings' nav and the side bar open a row was 309px, the floor left
-   * the control 130px, and a branch pattern showed eleven characters. A row that narrow puts its control
-   * under the label, at the row's full width; the row is its own container, so it answers to the width
-   * it has, not the window's.
+   * R1: a value starts at the track's edge and the row's own acts follow it, never the pane's far edge. The control's
+   * wrapper justifies to the start, at every width (the far-edge `justify-end` is what UIFIT1a's shots showed).
+   */
+  it("starts the value at the track's edge, and its acts follow it rather than the pane's far edge", () => {
+    render(<SettingRow label="Daoris home" control={<span>a-path</span>} />);
+    const wrapper = screen.getByText('a-path').parentElement!;
+    expect(wrapper.getAttribute('class')).toContain('justify-start');
+    expect(wrapper.getAttribute('class')).not.toContain('justify-end');
+  });
+
+  /**
+   * WSR4, seen on the window: with Settings' nav and the side bar open a row was 309px, the floor left the control
+   * 130px, and a branch pattern showed eleven characters. A row that narrow puts its control under the label, at the
+   * row's full width. A row alone is its own container (R1 moves the floor to the card's list, below); it answers to
+   * the width it has, not the window's.
    */
   it('puts the control under the label when the row itself is narrow', () => {
     const { container } = render(
@@ -190,8 +205,166 @@ describe('a setting row', () => {
     const row = container.firstElementChild!;
     expect(row.getAttribute('class')).toContain('@container');
     const grid = row.querySelector('.grid')!;
-    expect(grid.getAttribute('class')).toContain('@max-[26rem]:grid-cols-1');
-    expect(screen.getByLabelText('pattern').parentElement!.getAttribute('class')).toContain('@max-[26rem]:justify-start');
+    expect(grid.getAttribute('class')).toContain(`@max-[${SETTING_TRACK.stack}]:grid-cols-1`);
+  });
+
+  /** R1: a row's notice sits in the value column, under the value it is about, where it spanned both columns. */
+  it('keeps its notice in the value column, under the value', () => {
+    render(
+      <SettingRow label="Failures before a quest parks" control={<input aria-label="count" />}>
+        <p>Zero means it keeps trying.</p>
+      </SettingRow>,
+    );
+    const value = screen.getByLabelText('count').closest('[data-setting-value]')!;
+    expect(value.contains(screen.getByText('Zero means it keeps trying.'))).toBe(true);
+    expect(value.getAttribute('class')).not.toContain('col-span-2');
+  });
+});
+
+/**
+ * R1 (the UI/UX design, UIFIT1): a card's rows share one label track. `SettingList` is the one grid, its rows subgrids
+ * of it, so the track is the widest of the card's labels between the floor and the cap, and every value starts at its
+ * edge. jsdom lays nothing out, so the structure is held here and the geometry in `measured/settings.spec.ts`.
+ */
+describe('a setting list', () => {
+  const rows = () => (
+    <SettingList>
+      <SettingRow label="Daoris home" control={<span>a-path</span>} />
+      <SettingRow label="Tell me when a session parks or ends unasked" control={<input aria-label="notify" />}>
+        <p>a notice</p>
+      </SettingRow>
+      <p>not a row</p>
+    </SettingList>
+  );
+
+  it('is one grid of two columns, the track content-sized between its floor and its cap', () => {
+    const { container } = render(rows());
+    const list = container.querySelector('[data-setting-list]')!;
+    expect(list.getAttribute('class')).toContain('@container');
+    expect(list.getAttribute('class')).toContain(`grid-cols-[fit-content(min(${SETTING_TRACK.cap},50%))_minmax(0,1fr)]`);
+    expect(list.getAttribute('class')).toContain('gap-x-6');
+  });
+
+  it('hands each row the track: a row in it is a subgrid across both columns, and no container of its own', () => {
+    const { container } = render(rows());
+    const list = container.querySelector('[data-setting-list]')!;
+    const each = [...list.querySelectorAll('[data-setting-row]')];
+    expect(each).toHaveLength(2);
+    for (const row of each) {
+      expect(row.parentElement).toBe(list);
+      expect(row.getAttribute('class')).toContain('grid-cols-subgrid');
+      expect(row.getAttribute('class')).toContain('col-span-2');
+      expect(row.getAttribute('class')).not.toContain('@container');
+      expect(row.querySelector('[data-setting-label]')!.getAttribute('class')).toContain(`min-w-[${SETTING_TRACK.floor}]`);
+    }
+    // The notice is in the value column, under its value.
+    expect(screen.getByText('a notice').closest('[data-setting-value]')).not.toBeNull();
+  });
+
+  it("stacks its rows below 32rem of the list's own width: the floor moved from the row to the card", () => {
+    const { container } = render(rows());
+    const list = container.querySelector('[data-setting-list]')!;
+    expect(list.getAttribute('class')).toContain(`@max-[${SETTING_TRACK.stack}]:grid-cols-1`);
+    for (const row of list.querySelectorAll('[data-setting-row]')) {
+      expect(row.getAttribute('class')).toContain(`@max-[${SETTING_TRACK.stack}]:col-span-1`);
+      expect(row.getAttribute('class')).toContain(`@max-[${SETTING_TRACK.stack}]:grid-cols-1`);
+    }
+  });
+
+  it('lets what is not a row span both columns, so a fold or a sentence under the rows keeps its width', () => {
+    const { container } = render(rows());
+    const list = container.querySelector('[data-setting-list]')!;
+    expect(list.getAttribute('class')).toContain('[&>*:not([data-setting-row])]:col-span-full');
+    expect(screen.getByText('not a row').parentElement).toBe(list);
+  });
+
+  it('keeps the rule between rows: the first row of the list has none', () => {
+    const { container } = render(rows());
+    const [first, second] = [...container.querySelectorAll('[data-setting-row]')];
+    expect(first!.getAttribute('class')).toContain('first:border-t-0');
+    expect(second!.getAttribute('class')).toContain('border-t');
+  });
+});
+
+/**
+ * R1 (the UI/UX design, UIFIT1d): a form is sized to its content up to the pane, laid by its own width. `FormGrid` is the
+ * one grid, its columns by what each field holds, each `FormRow` a subgrid of it; below the form's floor, by a container
+ * query of its own, each row stacks, the head row goes and each field shows its own label. jsdom lays nothing out, so the
+ * structure is held here.
+ */
+describe('a form grid', () => {
+  const form = (floor?: '24rem' | '32rem' | '40rem') => (
+    <FormGrid columns={['short', 'long', 'short', 'acts']} floor={floor}>
+      <FormRow head>
+        <span>Name</span><span>Command</span><span>Folder</span><span />
+      </FormRow>
+      <FormRow>
+        <FormField label="Name" when="stacked"><input aria-label="name of gate 1" /></FormField>
+        <FormField label="Command" when="stacked"><input aria-label="command of gate 1" /></FormField>
+        <FormField label="Folder" when="stacked"><input aria-label="folder of gate 1" /></FormField>
+        <button type="button">Remove</button>
+      </FormRow>
+    </FormGrid>
+  );
+
+  it('lays its fields by kind in one grid, its own container, each row a subgrid of it', () => {
+    const { container } = render(form());
+    const grid = container.querySelector('[data-form-grid]')!;
+    expect(grid.getAttribute('class')).toContain('@container');
+    const columns = grid.firstElementChild!;
+    expect(columns.getAttribute('class')).toContain('grid-cols-(--form-columns)');
+    expect(columns.getAttribute('style')).toContain('--form-columns: minmax(0,8rem) minmax(0,1fr) minmax(0,8rem) auto');
+    for (const row of columns.querySelectorAll('[data-form-row]')) {
+      expect(row.parentElement).toBe(columns);
+      expect(row.getAttribute('class')).toContain('grid-cols-subgrid');
+      expect(row.getAttribute('class')).toContain('col-span-full');
+    }
+  });
+
+  it('sizes a field by what it holds: a number, a short name, a name, a pattern, the rest, the acts', () => {
+    expect(FIELD_WIDTHS).toEqual({
+      number: 'minmax(0,4.5rem)', short: 'minmax(0,8rem)', name: 'minmax(0,16rem)', pattern: 'minmax(0,20rem)', long: 'minmax(0,1fr)', acts: 'auto',
+    });
+  });
+
+  it("stacks each row below the form's floor, by a container query of its own: the head row goes, each field's label shows", () => {
+    const { container } = render(form('40rem'));
+    const columns = container.querySelector('[data-form-grid]')!.firstElementChild!;
+    expect(columns.getAttribute('class')).toContain('@max-[40rem]:grid-cols-1');
+    const [head, row] = [...columns.querySelectorAll('[data-form-row]')];
+    expect(head!.getAttribute('class')).toContain('@max-[40rem]:hidden');
+    expect(row!.getAttribute('class')).toContain('@max-[40rem]:col-span-1');
+    expect(row!.getAttribute('class')).toContain('@max-[40rem]:grid-cols-1');
+    // A field's own label is for the stacked form, where the head row is gone; the field keeps its accessible name.
+    const label = screen.getByLabelText('name of gate 1').closest('label')!;
+    expect(label.querySelector('span')!.textContent).toBe('Name');
+    expect(label.querySelector('span')!.getAttribute('class')).toContain('hidden @max-[40rem]:block');
+  });
+
+  it('stacks below 32rem unless told another floor, and shows a label asked for always', () => {
+    const { container } = render(
+      <FormGrid columns={['long', 'name']}>
+        <FormRow>
+          <FormField label="Address"><input aria-label="address" /></FormField>
+          <FormField label="Title"><input aria-label="title" /></FormField>
+        </FormRow>
+      </FormGrid>,
+    );
+    expect(container.querySelector('[data-form-grid]')!.firstElementChild!.getAttribute('class')).toContain('@max-[32rem]:grid-cols-1');
+    const label = screen.getByLabelText('address').closest('label')!.querySelector('span')!;
+    expect(label.textContent).toBe('Address');
+    expect(label.getAttribute('class')).not.toContain('hidden');
+  });
+});
+
+/** R1: cards are 16 px apart, set once by the domain's container; a card sets no outer margin of its own. */
+describe('a card stack', () => {
+  it('spaces its cards by one rule, the scale\'s 16 px step', () => {
+    const { container } = render(<CardStack><Card>one</Card><Card>two</Card></CardStack>);
+    const stack = container.querySelector('[data-card-stack]')!;
+    expect(stack.getAttribute('class')).toContain('gap-4');
+    expect(stack.getAttribute('class')).toContain('grid');
+    expect([...stack.children].map((card) => card.tagName)).toEqual(['ARTICLE', 'ARTICLE']);
   });
 });
 

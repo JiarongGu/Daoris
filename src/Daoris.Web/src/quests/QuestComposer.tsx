@@ -97,14 +97,16 @@ export function QuestComposer({ draft, onChange, receivers, nobody = false, caut
       }
     >
       <form
-        className="grid gap-3"
+        // The composer lays out by its own width, never the window's (R7, UIFIT1): its two columns of choices go to one
+        // below 28rem of the form, which is the drawer at its full width on a narrow window.
+        className="@container grid gap-3"
         onSubmit={(e) => { e.preventDefault(); if (ready) onPublish(); }}
         // The whole composer takes a drop and a paste (D65 §2) — aiming at a box inside a drawer is a chore, and
         // the box below lights up to say where the file went.
         {...carry.handlers}
       >
         <p className="m-0 text-body text-ink-soft">{t('quests.compose.hint')}</p>
-        <div className="grid grid-cols-2 gap-2.5 max-md:grid-cols-1">
+        <div className="grid grid-cols-2 gap-2.5 @max-[28rem]:grid-cols-1">
           <label className="grid gap-1 text-small text-ink-soft">
             {t('quests.compose.from')}
             <SelectField

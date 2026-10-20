@@ -4,7 +4,8 @@ import {
   useAddFavorite, useBrowserSettings, useRemoveFavorite, useSetBrowser, useSetExtensions, useSetLinks,
 } from '../bridge/shell';
 import {
-  Button, Card, failure, Icon, type Notify, PathText, Prose, SectionTitle, Segmented, SettingRow, useErrorNotify,
+  Button, Card, failure, FormField, FormGrid, FormRow, Icon, type Notify, PathText, Prose, SectionTitle, Segmented, SettingList,
+  SettingRow, useErrorNotify,
 } from '../design/ui';
 import type { BrowserDriver } from '../work/strip/browserDrivers';
 
@@ -53,6 +54,7 @@ export function BrowserDomain({ notify, drivers, onAttend }: {
       {/* Which browser (BRW12): Daoris's own, or the person's Edge on a profile of Daoris's. */}
       <Card id="settings-which-browser" className="scroll-mt-3">
         <SectionTitle>{t('settings.browser.which.title')}</SectionTitle>
+        <SettingList>
         <SettingRow
           label={t('settings.browser.which.label')}
           hint={data?.browser === 'edge'
@@ -83,7 +85,7 @@ export function BrowserDomain({ notify, drivers, onAttend }: {
           control={drivers.length === 0
             ? <span className="text-small text-ink-faint">{t('settings.browser.driving.none')}</span>
             : (
-              <span className="flex min-w-0 flex-wrap justify-end gap-1.5">
+              <span className="flex min-w-0 flex-wrap justify-start gap-1.5">
                 {drivers.map((driver) => (onAttend
                   ? (
                     <Button
@@ -100,6 +102,7 @@ export function BrowserDomain({ notify, drivers, onAttend }: {
               </span>
             )}
         />
+        </SettingList>
         {data && !data.edgeFound && (
           <p className="mt-3 border-l-[3px] border-warn bg-raised px-3.5 py-2 text-body text-ink-soft">
             {t('settings.browser.which.noEdge')}
@@ -112,7 +115,8 @@ export function BrowserDomain({ notify, drivers, onAttend }: {
 
       {/* Where the page's links open (BRW7): the system's browser, or the one chosen above. The page
           reads this at each click, so unlike the rest of the domain it holds at once. */}
-      <Card id="settings-links" className="mt-3.5 scroll-mt-3">
+      <Card id="settings-links" className="scroll-mt-3">
+        <SettingList>
         <SettingRow
           label={t('settings.browser.links.label')}
           hint={t('settings.browser.links.hint')}
@@ -132,15 +136,18 @@ export function BrowserDomain({ notify, drivers, onAttend }: {
             />
           )}
         />
+        </SettingList>
       </Card>
 
-      <Card id="settings-favorites" className="mt-3.5 scroll-mt-3">
+      <Card id="settings-favorites" className="scroll-mt-3">
         <SectionTitle>{t('settings.browser.favorites.title')}</SectionTitle>
+        <SettingList>
         <SettingRow
           label={t('settings.browser.favorites.label')}
           hint={t('settings.browser.favorites.hint')}
           control={data && <PathText path={data.favoritesPath} className="text-small text-ink-faint" />}
         />
+        </SettingList>
         {data?.favoritesProblem && (
           <p className="mt-3 border-l-[3px] border-warn bg-raised px-3.5 py-2 text-body text-ink-soft">
             {t('settings.browser.unreadable', { file: data.favoritesPath, problem: data.favoritesProblem })}
@@ -174,37 +181,38 @@ export function BrowserDomain({ notify, drivers, onAttend }: {
           </ul>
         )}
         {/* The rule runs the card's width, as the list's rows do; the fields are sized to what they
-            hold, an address long and a title short. */}
+            hold, an address long and a title short, by the form's own width (R1, UIFIT1d). */}
         <div className="mt-3 border-t border-line pt-3">
-        <div className="grid max-w-[48rem] items-end gap-2 md:grid-cols-[minmax(0,1fr)_12rem_auto]">
-          <label className="grid gap-1 text-small text-ink-faint">
-            {t('settings.browser.favorites.address')}
+        <FormGrid columns={['long', 'name', 'acts']}>
+        <FormRow>
+          <FormField label={t('settings.browser.favorites.address')}>
             <input
               value={address}
               onChange={(event) => setAddress(event.target.value)}
               placeholder="https://…"
               className="rounded-control border border-line-strong bg-raised px-2.5 py-1.5 font-mono text-body text-ink"
             />
-          </label>
-          <label className="grid gap-1 text-small text-ink-faint">
-            {t('settings.browser.favorites.titleField')}
+          </FormField>
+          <FormField label={t('settings.browser.favorites.titleField')}>
             <input
               value={title}
               onChange={(event) => setTitle(event.target.value)}
               placeholder={t('settings.browser.favorites.titlePlaceholder')}
               className="rounded-control border border-line-strong bg-raised px-2.5 py-1.5 text-body text-ink"
             />
-          </label>
+          </FormField>
           <Button variant="primary" disabled={!address.trim() || add.isPending} onClick={keep}>
             <Icon name="plus" size={13} />
             {t('settings.browser.favorites.add')}
           </Button>
-        </div>
+        </FormRow>
+        </FormGrid>
         </div>
       </Card>
 
-      <Card id="settings-extensions" className="mt-3.5 scroll-mt-3">
+      <Card id="settings-extensions" className="scroll-mt-3">
         <SectionTitle>{t('settings.browser.extensions.title')}</SectionTitle>
+        <SettingList>
         <SettingRow
           label={t('settings.browser.extensions.label')}
           hint={t('settings.browser.extensions.hint')}
@@ -225,6 +233,7 @@ export function BrowserDomain({ notify, drivers, onAttend }: {
             />
           )}
         />
+        </SettingList>
         {data?.settingsProblem && (
           <p className="mt-3 border-l-[3px] border-warn bg-raised px-3.5 py-2 text-body text-ink-soft">
             {t('settings.browser.unreadable', { file: data.settingsPath, problem: data.settingsProblem })}

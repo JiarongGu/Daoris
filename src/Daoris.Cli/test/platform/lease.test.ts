@@ -4,6 +4,8 @@ import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node
 import { basename, dirname, join } from 'node:path';
 import { homeEntry, homeId, homePlaces } from '../../src/platform/home.ts';
 import { leaseForVerb, leaseHolder, leaseNamed, tryLease, VERB_WAIT_MS } from '../../src/platform/lease.ts';
+import type { DaorisError } from '../../src/platform/errors.ts';
+import { instanceDoor } from '../../src/service/service.ts';
 import { makeFixture } from '../_fixture.ts';
 
 /**
@@ -130,6 +132,48 @@ test('a verb finding an instance acts beside it, holding nothing, and leaves its
     const beside = await leaseForVerb(fx.root, 'daoris driver cap', { lives: alive, sleep: async () => { throw new Error('waited'); } });
     assert.ok('lease' in beside && !beside.lease.holds && beside.lease.beside?.kind === 'desktop');
     beside.lease.release();
+    assert.equal(readFileSync(homeEntry(fx.root, 'home-lease'), 'utf8'), planted);
+  } finally {
+    fx.cleanup();
+  }
+});
+
+/**
+ * RPC1f, the switch's lease rows (§5, §7.2): a verb's door that finds no instance acts alone holding the home as that verb for its
+ * act, and lets it go; another verb's hold is waited on, then refused, exit 1, naming it, and the act never runs; and an instance's
+ * lease the look could not find (a workspace build reads no address file) is acted beside, holding nothing, as the driver's twin does.
+ */
+test("a verb's door with no Daoris running holds the home for the verb's act alone, waits on another verb's, and acts beside an unfound instance", async () => {
+  const fx = makeFixture('lease-door');
+  const press = async (alone: () => 0) => instanceDoor({ home: fx.root, install: null, env: {}, write: () => {}, leaseWait: 50, lives: alive })({
+    what: 'driver cap', route: { module: 'DAORIS.DRIVER', route: 'SET_STRIKES', class: 'person' }, payload: {}, alone, words: () => 2,
+  });
+  try {
+    let held: string | null = null;
+    assert.equal(await press(() => {
+      held = leaseHolder(fx.root, alive)?.what ?? null;
+      return 0;
+    }), 0);
+    assert.equal(held, 'driver cap');
+    assert.equal(existsSync(homeEntry(fx.root, 'home-lease')), false, 'let go once the act ended');
+
+    plant(fx.root, 'verb', process.pid, 'daoris-driver trees sync');
+    let ran = false;
+    const refused = await press(() => {
+      ran = true;
+      return 0;
+    }).then(() => null, (error: DaorisError) => error);
+    assert.ok(refused, 'refused');
+    assert.equal(refused.exitCode, 1);
+    assert.match(refused.message, /is held by a terminal's `daoris-driver trees sync`/);
+    assert.equal(ran, false);
+
+    const planted = plant(fx.root, 'desktop');
+    assert.equal(await press(() => {
+      held = leaseHolder(fx.root, alive)?.kind ?? null;
+      return 0;
+    }), 0);
+    assert.equal(held, 'desktop', 'acted beside it, holding nothing');
     assert.equal(readFileSync(homeEntry(fx.root, 'home-lease'), 'utf8'), planted);
   } finally {
     fx.cleanup();

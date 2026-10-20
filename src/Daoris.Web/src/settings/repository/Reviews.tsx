@@ -210,7 +210,8 @@ function EnvironmentForm({ name, fresh, busy, onSave, onCancel }: {
 
   return (
     <form
-      className="grid max-w-[40rem] gap-2"
+      // Sized to its content up to the pane (R1, UIFIT1d): a name has its own width, a procedure and an address take the form's.
+      className="grid gap-2"
       onSubmit={(event) => {
         event.preventDefault();
         if (!ready) return;

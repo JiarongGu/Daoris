@@ -67,6 +67,7 @@ import { daorisHome, HOME_SENTENCE, homeEntry, homeFolder } from '../platform/ho
 import { TOOLCHAINS } from '../agents/toolchain.ts';
 import { TOOLS, isAddress } from '../tools/tools.ts';
 import type { CommandArgs } from '../platform/types.ts';
+import { ALONE, PLUGIN_ROUTES, type VerbDoor } from '../platform/door.ts';
 import { stepsDeclared } from './steps.ts';
 import type { NodeDeclaration, PluginResource } from './steps.ts';
 
@@ -1307,9 +1308,13 @@ function sourceLine(installFolder: string): string {
  * `.data/<id>` exactly where it was — an update never touches what a plugin keeps. `remove` takes the
  * install folder and NAMES the data folder rather than deleting it: what a plugin kept is the person's
  * to throw away, the same judgement Forget makes for an account.
+ *
+ * Each change goes through `door` (RPC1f): the Plugins place's route while Daoris runs on this home, which its own handler
+ * judges, makes and publishes; this verb's own act under the home's lease where none does. Absent, every change is made here.
  */
-export function commandPlugin({ argv, write }: CommandArgs): ExitCode {
+export function commandPlugin({ argv, write }: CommandArgs, door: VerbDoor = ALONE): ExitCode | Promise<ExitCode> {
   const verb = argv[0] ?? 'list';
+  const what = `plugin ${verb}`;
 
   switch (verb) {
     case 'list': {
@@ -1407,43 +1412,57 @@ export function commandPlugin({ argv, write }: CommandArgs): ExitCode {
         throw new DaorisError(`${from} is already the installed folder for \`${manifest.id}\`.`);
       }
       const replacing = existsSync(target);
-      // 🔴 Replaced wholesale, never merged: a stale file from the previous install is exactly the
-      // kind of thing that makes "which version is running" unanswerable. `.data/` is beside it.
-      // Copied in beside first, and the old folder moved aside WHOLE (REV3): deleting it first left
-      // no plugin at all when its folder was held, or when the copy then failed.
-      mkdirSync(pluginsRoot(home), { recursive: true });
-      const staging = join(pluginsRoot(home), `.adding-${manifest.id}-${process.pid}-${Date.now()}`);
-      copyTree(from, staging);
-      // Where it came from, in the copy before it is renamed in (PLUG9 c): the record and the install
-      // are one move, so neither can outlive the other.
-      writePluginSource(staging, recorded);
-      if (replacing) {
-        const aside = join(pluginsRoot(home), `.removing-${manifest.id}-${process.pid}-${Date.now()}`);
-        try {
-          renameSync(target, aside);
-        } catch {
-          rmSync(staging, { recursive: true, force: true });
-          throw new DaorisError(
-            `\`${manifest.id}\` was not replaced: something on this machine still has its folder open — a `
-            + `running desktop's hook process, most likely. \`daoris plugin disable ${manifest.id}\`, give the `
-            + 'desktop a moment to stop it, then add it again. The installed version is untouched.');
+      const added = (): ExitCode => {
+        write(`daoris: ${replacing ? 'replaced' : 'added'} plugin \`${manifest.id}\` at ${target}`);
+        write(`  ${describe(manifest)}.`);
+        write(`  From ${sourceSaid(recorded)}; \`daoris plugin update ${manifest.id}\` takes a newer one from there.`);
+        if (existsSync(dataFolder(home, manifest.id))) write(`  ${dataFolder(home, manifest.id)} kept, untouched.`);
+        write('  It takes effect at the driver\'s next look — a harness on the roster, a hook at the next tick.');
+        return 0;
+      };
+      const copied = (): ExitCode => {
+        // 🔴 Replaced wholesale, never merged: a stale file from the previous install is exactly the
+        // kind of thing that makes "which version is running" unanswerable. `.data/` is beside it.
+        // Copied in beside first, and the old folder moved aside WHOLE (REV3): deleting it first left
+        // no plugin at all when its folder was held, or when the copy then failed.
+        mkdirSync(pluginsRoot(home), { recursive: true });
+        const staging = join(pluginsRoot(home), `.adding-${manifest.id}-${process.pid}-${Date.now()}`);
+        copyTree(from, staging);
+        // Where it came from, in the copy before it is renamed in (PLUG9 c): the record and the install
+        // are one move, so neither can outlive the other.
+        writePluginSource(staging, recorded);
+        if (replacing) {
+          const aside = join(pluginsRoot(home), `.removing-${manifest.id}-${process.pid}-${Date.now()}`);
+          try {
+            renameSync(target, aside);
+          } catch {
+            rmSync(staging, { recursive: true, force: true });
+            throw new DaorisError(
+              `\`${manifest.id}\` was not replaced: something on this machine still has its folder open — a `
+              + `running desktop's hook process, most likely. \`daoris plugin disable ${manifest.id}\`, give the `
+              + 'desktop a moment to stop it, then add it again. The installed version is untouched.');
+          }
+          renameHeld(staging, target);
+          try {
+            rmSync(aside, { recursive: true, force: true });
+          } catch {
+            // A dot-folder is never read as a plugin; one that cannot be deleted now is nobody's.
+          }
+        } else {
+          renameHeld(staging, target);
         }
-        renameHeld(staging, target);
-        try {
-          rmSync(aside, { recursive: true, force: true });
-        } catch {
-          // A dot-folder is never read as a plugin; one that cannot be deleted now is nobody's.
-        }
-      } else {
-        renameHeld(staging, target);
-      }
+        return added();
+      };
 
-      write(`daoris: ${replacing ? 'replaced' : 'added'} plugin \`${manifest.id}\` at ${target}`);
-      write(`  ${describe(manifest)}.`);
-      write(`  From ${sourceSaid(recorded)}; \`daoris plugin update ${manifest.id}\` takes a newer one from there.`);
-      if (existsSync(dataFolder(home, manifest.id))) write(`  ${dataFolder(home, manifest.id)} kept, untouched.`);
-      write('  It takes effect at the driver\'s next look — a harness on the roster, a hook at the next tick.');
-      return 0;
+      // RPC1f: the Plugins place's install while Daoris runs, which adds and never replaces; a replace is this verb's alone.
+      if (replacing) return door({ what, route: null, alone: copied, words: copied });
+      return door({
+        what,
+        route: 'offer' in recorded ? PLUGIN_ROUTES.install : PLUGIN_ROUTES.add,
+        payload: 'offer' in recorded ? { offer: recorded.offer } : { folder: resolve(from) },
+        alone: copied,
+        words: added,
+      });
     }
 
     case 'update': {
@@ -1467,11 +1486,21 @@ export function commandPlugin({ argv, write }: CommandArgs): ExitCode {
         return 1;
       }
 
-      applyUpdate(home, id);
-      write(`daoris: updated plugin \`${plan.id}\` from ${plan.from}.`);
-      if (existsSync(dataFolder(home, plan.id))) write(`  ${dataFolder(home, plan.id)} kept, untouched.`);
-      write('  It takes effect at the driver\'s next look — its hook, if it speaks, restarted at the next tick.');
-      return 0;
+      const updated = (): ExitCode => {
+        write(`daoris: updated plugin \`${plan.id}\` from ${plan.from}.`);
+        if (existsSync(dataFolder(home, plan.id))) write(`  ${dataFolder(home, plan.id)} kept, untouched.`);
+        write('  It takes effect at the driver\'s next look — its hook, if it speaks, restarted at the next tick.');
+        return 0;
+      };
+      // RPC1f: the update's press while Daoris runs, which stops the plugin's process before it swaps the folder.
+      return door({
+        what, route: PLUGIN_ROUTES.update, payload: { id: plan.id, apply: true },
+        alone: () => {
+          applyUpdate(home, id);
+          return updated();
+        },
+        words: updated,
+      });
     }
 
     case 'remove': {
@@ -1482,30 +1511,40 @@ export function commandPlugin({ argv, write }: CommandArgs): ExitCode {
         write(`daoris: no plugin \`${id}\` on this machine — nothing to remove.`);
         return 0;
       }
-      // 🔴 Moved aside WHOLE, then deleted (REV3): a running desktop's hook process holds its plugin's
-      // folder on Windows, and a recursive delete took every file it could before failing — a plugin
-      // with no manifest, neither there nor gone. A dot-folder is never read as a plugin.
-      const aside = join(pluginsRoot(home), `.removing-${id}-${process.pid}-${Date.now()}`);
-      try {
-        renameSync(target, aside);
-      } catch {
-        throw new DaorisError(
-          `\`${id}\` was not removed: something on this machine still has its folder open — a running `
-          + `desktop's hook process, most likely. \`daoris plugin disable ${id}\`, give the desktop a moment `
-          + 'to stop it, then remove it again. Nothing was taken.');
-      }
-      try {
-        rmSync(aside, { recursive: true, force: true });
-      } catch {
-        // Aside is invisible to the catalogue; a delete that cannot finish leaves no plugin behind.
-      }
-      enablePlugin(home, id);
-      write(`daoris: plugin \`${id}\` removed from this machine.`);
-      const data = dataFolder(home, id);
-      if (existsSync(data)) {
-        write(`  What it kept is still at ${data} — yours to delete, never Daoris's.`);
-      }
-      return 0;
+      const removed = (): ExitCode => {
+        write(`daoris: plugin \`${id}\` removed from this machine.`);
+        const data = dataFolder(home, id);
+        if (existsSync(data)) {
+          write(`  What it kept is still at ${data} — yours to delete, never Daoris's.`);
+        }
+        return 0;
+      };
+      // RPC1f: the row's remove while Daoris runs, which stops the plugin's process before the folder goes.
+      return door({
+        what, route: PLUGIN_ROUTES.action, payload: { action: 'remove', id },
+        alone: () => {
+          // 🔴 Moved aside WHOLE, then deleted (REV3): a running desktop's hook process holds its plugin's
+          // folder on Windows, and a recursive delete took every file it could before failing — a plugin
+          // with no manifest, neither there nor gone. A dot-folder is never read as a plugin.
+          const aside = join(pluginsRoot(home), `.removing-${id}-${process.pid}-${Date.now()}`);
+          try {
+            renameSync(target, aside);
+          } catch {
+            throw new DaorisError(
+              `\`${id}\` was not removed: something on this machine still has its folder open — a running `
+              + `desktop's hook process, most likely. \`daoris plugin disable ${id}\`, give the desktop a moment `
+              + 'to stop it, then remove it again. Nothing was taken.');
+          }
+          try {
+            rmSync(aside, { recursive: true, force: true });
+          } catch {
+            // Aside is invisible to the catalogue; a delete that cannot finish leaves no plugin behind.
+          }
+          enablePlugin(home, id);
+          return removed();
+        },
+        words: removed,
+      });
     }
 
     case 'enable':
@@ -1516,15 +1555,24 @@ export function commandPlugin({ argv, write }: CommandArgs): ExitCode {
       if (!entry) {
         throw new DaorisError(`no plugin \`${id}\` on this machine — \`daoris plugin list\` shows what there is.`);
       }
-      if (verb === 'enable') enablePlugin(home, entry.manifest.id);
-      else disablePlugin(home, entry.manifest.id);
-      write(`daoris: plugin \`${entry.manifest.id}\` is ${verb === 'enable' ? 'on' : 'off'} on this machine.`);
-      if (verb === 'disable') {
-        write('  It stays where it is, and so does what it kept; the driver stops asking it at its next look.');
-      } else if (entry.problem) {
-        write(`  ⚠ ${entry.problem}`);
-      }
-      return 0;
+      const switched = (): ExitCode => {
+        write(`daoris: plugin \`${entry.manifest.id}\` is ${verb === 'enable' ? 'on' : 'off'} on this machine.`);
+        if (verb === 'disable') {
+          write('  It stays where it is, and so does what it kept; the driver stops asking it at its next look.');
+        } else if (entry.problem) {
+          write(`  ⚠ ${entry.problem}`);
+        }
+        return 0;
+      };
+      return door({
+        what, route: PLUGIN_ROUTES.action, payload: { action: verb, id: entry.manifest.id },
+        alone: () => {
+          if (verb === 'enable') enablePlugin(home, entry.manifest.id);
+          else disablePlugin(home, entry.manifest.id);
+          return switched();
+        },
+        words: switched,
+      });
     }
 
     // The kit a plugin is made with (PLUG8, D101) lives with the code that starts plugins and speaks

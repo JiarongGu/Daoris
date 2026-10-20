@@ -2,7 +2,7 @@ import type { TFunction } from 'i18next';
 import { type ReactNode, useEffect, useId, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { LandingRule } from '../../settings/repository/Landings';
-import { Button, Icon, Inline, SettingRow } from '../../design/ui';
+import { Button, Icon, Inline, SettingList, SettingRow } from '../../design/ui';
 
 // The parts a Setup tab is made of (UX6f, UX6g; D150 §1 rule 4, §4.2, §4.3): a section that folds to the line naming its
 // values, and a value that is the thing's own or stands from above. A repository's Setup and a workspace's share them, so
@@ -82,7 +82,8 @@ export function SetupSection({ title, summary, startsOpen, children }: {
           </span>
         </button>
       </h2>
-      {open && <div id={`${id}-body`} className="pb-3 pl-3">{children}</div>}
+      {/* The section's rows on one label track (R1): each value beside its words, the values one column. */}
+      {open && <SettingList id={`${id}-body`} className="pb-3 pl-3">{children}</SettingList>}
     </section>
   );
 }
@@ -119,7 +120,9 @@ export function Inheritable({ label, twin, why, says, own, busy, wide = false, s
     ? <Button disabled={busy} onClick={() => setEditing(true)}>{setHere}</Button>
     : wide ? close : <>{editor()}{close}</>;
   return (
-    <SettingRow label={label} hint={twin} why={why} control={<div className="flex min-w-0 flex-wrap items-center justify-end gap-2 @max-[26rem]:justify-start">{control}</div>}>
+    // The row's own wrapper lays the control out (R1): a wrapper of its own here once kept `justify-end`, so the value
+    // drifted to the pane's far edge after the row stopped sending it there (the design §9's trap for UIFIT1b).
+    <SettingRow label={label} hint={twin} why={why} control={control}>
       <p className="m-0 text-small text-ink-soft">{typeof says === 'string' ? <Inline text={says} /> : says}</p>
       {open && wide && <div className="mt-2">{editor()}</div>}
       {children}

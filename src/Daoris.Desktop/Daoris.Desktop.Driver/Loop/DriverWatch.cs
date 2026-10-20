@@ -519,6 +519,8 @@ public sealed class DriverWatch(
                 {
                     Runner = Runner, Stops = Stops, Log = Log, Stages = Stages, Reviews = Reviews, Part = part, Woke = taken.Woke,
                     LandingEnded = Reoffered, Wanted = token => WantedAsync(part, token), WokeBack = () => Unspent(taken, busy: false),
+                    // ACCESSSWAP1b: a session outlives this look's reading of the file, so its run reads the file again at its turn's end.
+                    ConfigPath = configPath,
                 };
             try
             {

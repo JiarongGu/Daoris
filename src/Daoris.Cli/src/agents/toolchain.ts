@@ -141,6 +141,7 @@ import { markSignedIn, probeLockPath, takeProbeLock } from '../accounts/probeloc
 import type { Channel, Fetcher } from './channels.ts';
 import type { CommandArgs } from '../platform/types.ts';
 import type { ExitCode } from '../platform/errors.ts';
+import { AGENT_ROUTES, ALONE, type InstanceRoute, type VerbDoor } from '../platform/door.ts';
 
 export const PATH_VARIABLE = 'DAORIS_HARNESS_CONFIG';
 
@@ -1114,9 +1115,19 @@ function refuseJoins(settings: HarnessSettings, harness: string, joins: (string 
 /** The lists joined, in the order named, written once; the wiring as it now stands. */
 function joined(path: string, settings: HarnessSettings, harness: string, account: string, joins: (string | null)[]): HarnessSettings {
   if (joins.length === 0) return settings;
-  const after = joins.reduce((next, workspace) => withJoined(next, harness, account, workspace), settings);
+  const after = joinedSettings(settings, harness, account, joins);
   writeHarnessSettings(path, after);
   return after;
+}
+
+/** The wiring with the lists joined, in the order named, written nowhere: what `joined` writes, and what a sent join says. */
+function joinedSettings(settings: HarnessSettings, harness: string, account: string, joins: (string | null)[]): HarnessSettings {
+  return joins.reduce((next, workspace) => withJoined(next, harness, account, workspace), settings);
+}
+
+/** A route's answer read for its fields, an answer that is no object read as none. */
+function fieldsOf(answer: unknown): Record<string, unknown> {
+  return typeof answer === 'object' && answer !== null && !Array.isArray(answer) ? answer as Record<string, unknown> : {};
 }
 
 /** `joined` at a sign-in's end, where the sign-in stands whatever the write does: a list not written is said. */
@@ -1621,13 +1632,29 @@ export function accountLines(
  *
  * `npm` is the package manager a package pin, and a package pin's update, runs — npm itself, unless a
  * test hands in a stand-in.
+ *
+ * `door` is where an edit of the home goes (RPC1f): the Agents or Accounts place's route while Daoris runs on this home, which its
+ * own handler judges, writes and publishes; this verb's own write under the home's lease where none does. A verb that needs this
+ * terminal (an installer, a sign-in, a key on stdin, a pin's download) acts alone, as `door.ts`'s `AGENT_VERBS` says.
  */
 export function commandHarness(
-  { argv, write }: CommandArgs, releases: Fetcher | null = null, npm: string[] = ['npm'],
+  { argv, write }: CommandArgs, releases: Fetcher | null = null, npm: string[] = ['npm'], door: VerbDoor = ALONE,
 ): ExitCode | Promise<ExitCode> {
   const verb = argv[0] ?? 'list';
   const path = harnessesPath();
   const home = harnessHome(path);
+  // The verb as a lease names it: `profile`'s own verb with it, never an argument.
+  const what = verb === 'profile' ? `agent profile ${argv[1] ?? 'list'}` : `agent ${verb}`;
+
+  /** An edit through the door: the route's payload, this verb's own write, and its words for either path. */
+  const press = (route: InstanceRoute, payload: unknown, edit: () => void, said: (answer?: unknown) => ExitCode) => door({
+    what, route, payload,
+    alone: () => {
+      edit();
+      return said();
+    },
+    words: (answer) => said(answer),
+  });
 
   switch (verb) {
     case 'list':
@@ -1737,14 +1764,19 @@ export function commandHarness(
     case 'unpin': {
       const { name } = required(argv, 'unpin');
       const workspace = flagValue(argv, '--workspace');
-
-      pinTo(name, null, workspace);
-      write(workspace
-        ? `daoris: the \`${workspace}\` workspace no longer pins \`${name}\` on this machine.`
-        : `daoris: \`${name}\` runs from PATH again on this machine.`);
-      write('  Nothing was deleted — the managed install stays where it is, and re-pinning that');
-      write('  version needs no download.');
-      return 0;
+      const said = (): ExitCode => {
+        write(workspace
+          ? `daoris: the \`${workspace}\` workspace no longer pins \`${name}\` on this machine.`
+          : `daoris: \`${name}\` runs from PATH again on this machine.`);
+        write('  Nothing was deleted — the managed install stays where it is, and re-pinning that');
+        write('  version needs no download.');
+        return 0;
+      };
+      const unpinned = () => pinTo(name, null, workspace);
+      // HARNESS_ACTION's unpin is the machine's pin alone: a workspace's is this verb's.
+      return workspace
+        ? door({ what, route: null, alone: () => { unpinned(); return said(); }, words: said })
+        : press(AGENT_ROUTES.harness, { action: 'unpin', harness: name }, unpinned, said);
     }
 
     case 'profile':
@@ -1756,8 +1788,8 @@ export function commandHarness(
     // without the person.
     case 'rules':
       return PROPOSAL_VERBS.includes(argv[1] ?? '')
-        ? commandProposals({ argv: argv.slice(1), write, root: '', packageRoot: '' })
-        : commandRules({ argv: argv.slice(1), write, root: '', packageRoot: '' });
+        ? commandProposals({ argv: argv.slice(1), write, root: '', packageRoot: '' }, door)
+        : commandRules({ argv: argv.slice(1), write, root: '', packageRoot: '' }, door);
 
     // The harness's trust in a folder (D73): the person's grant, asked and then written — the
     // terminal's door onto the screen's *trust this folder…*, and the one that names any folder.
@@ -2054,7 +2086,7 @@ export function commandHarness(
     return 0;
   }
 
-  function profileVerb(): ExitCode {
+  function profileVerb(): ExitCode | Promise<ExitCode> {
     const action = argv[1] ?? 'list';
     const settings = readHarnessSettings(path);
 
@@ -2073,33 +2105,49 @@ export function commandHarness(
         const profile = bare(argv, 3, 'profile add', '<agent> <profile>');
         const where = profileHome(home, name, profile);
         const existed = existsSync(where);
-        mkdirSync(where, { recursive: true });
-
-        write(existed
-          ? `daoris: \`${name}\` profile \`${profile}\` already exists — ${where}`
-          : `daoris: \`${name}\` profile \`${profile}\` — ${where}`);
-        write(`  It is empty until you log into it: \`daoris agent login ${name} --profile ${shellWord(profile, '<account>')}\`.`);
-        return 0;
+        return press(AGENT_ROUTES.harness, { action: 'profile-add', harness: name, profile }, () => mkdirSync(where, { recursive: true }), () => {
+          write(existed
+            ? `daoris: \`${name}\` profile \`${profile}\` already exists — ${where}`
+            : `daoris: \`${name}\` profile \`${profile}\` — ${where}`);
+          write(`  It is empty until you log into it: \`daoris agent login ${name} --profile ${shellWord(profile, '<account>')}\`.`);
+          return 0;
+        });
       }
 
       case 'remove': {
         const name = accountsOf(operand(argv, 2), 'profile remove');
         const profile = accountNamed(name, bare(argv, 3, 'profile remove', '<agent> <profile>'));
         const where = profileHome(home, name, profile);
+        const existed = existsSync(where);
+        const said = (removed: boolean): ExitCode => {
+          write(removed
+            ? `daoris: removed the \`${name}\` account \`${profile}\` — the directory and the sign-in in it are gone: ${where}`
+            : `daoris: \`${name}\` has no account \`${profile}\` on this machine — there was nothing to remove.`);
+          write(`  It is no longer a default for \`${name}\` anywhere on this machine: no default and no order names it.`);
+          return 0;
+        };
 
-        // 🔴 The account goes, directory and sign-in both (D66 §3, amending SES3's "deletes
-        // nothing"): an account a person removes should not still be signed in on disk. The old
-        // rule kept any directory the harness would not call signed out, so a removed account
-        // stayed listed and signed in. The desktop's Remove is the same verb.
-        const removed = removeProfile(home, name, profile);
-        // No default and no order names it afterwards (TOOL4e), as the driver's `WithoutAccount` leaves the wiring.
-        writeHarnessSettings(path, withoutAccount(settings, name, profile));
-
-        write(removed
-          ? `daoris: removed the \`${name}\` account \`${profile}\` — the directory and the sign-in in it are gone: ${where}`
-          : `daoris: \`${name}\` has no account \`${profile}\` on this machine — there was nothing to remove.`);
-        write(`  It is no longer a default for \`${name}\` anywhere on this machine: no default and no order names it.`);
-        return 0;
+        return door({
+          what, route: AGENT_ROUTES.harness, payload: { action: 'profile-remove', harness: name, profile },
+          alone: () => {
+            // 🔴 The account goes, directory and sign-in both (D66 §3, amending SES3's "deletes
+            // nothing"): an account a person removes should not still be signed in on disk. The old
+            // rule kept any directory the harness would not call signed out, so a removed account
+            // stayed listed and signed in. The desktop's Remove is the same verb.
+            const removed = removeProfile(home, name, profile);
+            // No default and no order names it afterwards (TOOL4e), as the driver's `WithoutAccount` leaves the wiring.
+            writeHarnessSettings(path, withoutAccount(settings, name, profile));
+            return said(removed);
+          },
+          // The instance says a delete that could not finish on its own console, and answers exit 1: said here too.
+          words: (answer) => {
+            if (fieldsOf(answer).exitCode === 1) {
+              throw new DaorisError(`${where} was not removed — a session running as this account may hold a file open in it; stop it `
+                + 'and remove it again. Part of it may already be gone.', 1);
+            }
+            return said(existed);
+          },
+        });
       }
 
       // The accounts rotation may use, in order (TOOL4e, D125 §3.1, §6): the machine's, or with `--workspace` one
@@ -2137,14 +2185,16 @@ export function commandHarness(
         const bound = scopeProblem({ default: ownDefault(name, workspace), list, keep: ownKeep(name, workspace) });
         if (bound !== null) throw new DaorisError(orderRefusal(name, workspace, bound, list));
 
-        writeHarnessSettings(path, withRotation(settings, name, named, workspace));
-        const spelled = named.map((account) => account.trim()).join(', then ');
-        write(workspace
-          ? `daoris: in \`${workspace}\`, \`${name}\`'s rotation is ${spelled}.`
-          : `daoris: on this machine, \`${name}\`'s rotation is ${spelled}.`);
-        write('  An account not in it is never rotated into, and work resolved to it never moves (D125 §3.1).');
-        write(`  Written to ${path} — machine-local, tracked by nothing, like every wiring file here.`);
-        return 0;
+        return press(AGENT_ROUTES.account, { action: 'order', harness: name, accounts: list, ...(workspace ? { workspace } : {}) },
+          () => writeHarnessSettings(path, withRotation(settings, name, named, workspace)), () => {
+            const spelled = named.map((account) => account.trim()).join(', then ');
+            write(workspace
+              ? `daoris: in \`${workspace}\`, \`${name}\`'s rotation is ${spelled}.`
+              : `daoris: on this machine, \`${name}\`'s rotation is ${spelled}.`);
+            write('  An account not in it is never rotated into, and work resolved to it never moves (D125 §3.1).');
+            write(`  Written to ${path} — machine-local, tracked by nothing, like every wiring file here.`);
+            return 0;
+          });
       }
 
       // The terminal's *Try now* (TOOL4e, D125 §2.3, §6): an account's cool-off ended early, since the person may know
@@ -2167,19 +2217,27 @@ export function commandHarness(
 
         const now = new Date();
         const who = account === null ? `\`${name}\`'s own sign-in` : `the \`${name}\` account \`${account}\``;
-        if (endCooling(home, name, account, now)) {
-          write(`daoris: ${who} is offered again: no start waits on its limit now.`);
-          write('  If the limit still holds, the agent refuses the next start at once, and the account cools again until');
-          write('  the time it names.');
-          return 0;
-        }
+        const said = (ended: boolean): ExitCode => {
+          if (ended) {
+            write(`daoris: ${who} is offered again: no start waits on its limit now.`);
+            write('  If the limit still holds, the agent refuses the next start at once, and the account cools again until');
+            write('  the time it names.');
+            return 0;
+          }
 
-        const others = readCooling(home, now).filter((entry) => sameName(entry.agent, name));
-        write(`daoris: ${who} is not cooling, so nothing changed — `
-          + (others.length > 0
-            ? `cooling now: ${others.map((entry) => entry.account ?? 'its own sign-in').join(', ')}.`
-            : `no account of \`${name}\` is cooling.`));
-        return 0;
+          const others = readCooling(home, now).filter((entry) => sameName(entry.agent, name));
+          write(`daoris: ${who} is not cooling, so nothing changed — `
+            + (others.length > 0
+              ? `cooling now: ${others.map((entry) => entry.account ?? 'its own sign-in').join(', ')}.`
+              : `no account of \`${name}\` is cooling.`));
+          return 0;
+        };
+        // *Try now* while Daoris runs: the instance's roster ends the cool-off it holds, as well as the file's.
+        return door({
+          what, route: AGENT_ROUTES.account, payload: { action: 'ready', harness: name, ...(account === null ? { own: true } : { profile: account }) },
+          alone: () => said(endCooling(home, name, account, now)),
+          words: (answer) => said(fieldsOf(answer).ended === true),
+        });
       }
 
       case 'default': {
@@ -2212,13 +2270,14 @@ export function commandHarness(
             + 'of the list the default.');
         }
 
-        writeHarnessSettings(path, withDefault(settings, name, profile, workspace));
-
-        write(workspace
-          ? `daoris: sessions in \`${workspace}\` run \`${name}\` as \`${profile}\`.`
-          : `daoris: this machine runs \`${name}\` as \`${profile}\` by default.`);
-        write(`  Written to ${path} — machine-local, tracked by nothing, like every wiring file here.`);
-        return 0;
+        return press(AGENT_ROUTES.harness, { action: 'profile-default', harness: name, profile, ...(workspace ? { workspace } : {}) },
+          () => writeHarnessSettings(path, withDefault(settings, name, profile, workspace)), () => {
+            write(workspace
+              ? `daoris: sessions in \`${workspace}\` run \`${name}\` as \`${profile}\`.`
+              : `daoris: this machine runs \`${name}\` as \`${profile}\` by default.`);
+            write(`  Written to ${path} — machine-local, tracked by nothing, like every wiring file here.`);
+            return 0;
+          });
       }
 
       // How a scope's list is used (TOOL6a, D130 §2, §9): the machine's, or with `--workspace` one workspace's. Each choice
@@ -2240,13 +2299,22 @@ export function commandHarness(
             + `${shellWord(account, '<account>')} work\`; `
             + `naming it \`${account}\` gives it none.`);
         }
-        const now = renameAccount(home, name, profiles(home, name), account, wanted);
-        write(now !== null
-          ? `daoris: \`${name}\`'s account \`${account}\` is called \`${now}\` now.`
-          : `daoris: \`${name}\`'s account \`${account}\` has no name of yours now: it reads as its id.`);
-        write('  Its id stays, so every list, default, reading and record that names it still does.');
-        write(`  Written to ${accountsPath(home)} — machine-local, tracked by nothing.`);
-        return 0;
+        const said = (now: string | null): ExitCode => {
+          write(now !== null
+            ? `daoris: \`${name}\`'s account \`${account}\` is called \`${now}\` now.`
+            : `daoris: \`${name}\`'s account \`${account}\` has no name of yours now: it reads as its id.`);
+          write('  Its id stays, so every list, default, reading and record that names it still does.');
+          write(`  Written to ${accountsPath(home)} — machine-local, tracked by nothing.`);
+          return 0;
+        };
+        return door({
+          what, route: AGENT_ROUTES.harness, payload: { action: 'profile-rename', harness: name, profile: account, name: wanted },
+          alone: () => said(renameAccount(home, name, profiles(home, name), account, wanted)),
+          words: (answer) => {
+            const now = fieldsOf(answer).name;
+            return said(typeof now === 'string' && now.length > 0 ? now : null);
+          },
+        });
       }
 
       // An account put into lists a start runs on (ACCT1): each workspace's own list named, and with `--machine` this
@@ -2271,12 +2339,15 @@ export function commandHarness(
         }
         refuseJoins(settings, name, joins);
 
-        const after = joined(path, settings, name, account, joins);
-        write(`daoris: \`${name}\`'s account \`${shownAs(accountNames(home, name), account)}\` is in `
-          + `${joins.map((workspace) => (workspace === null ? 'this machine\'s list' : `\`${workspace}\`'s list`)).join(', ')}.`);
-        for (const line of placeLines(name, account, after, accountNames(home, name))) write(line);
-        write(`  Written to ${path} — machine-local, tracked by nothing, like every wiring file here.`);
-        return 0;
+        const after = joinedSettings(settings, name, account, joins);
+        return press(AGENT_ROUTES.harness, { action: 'profile-join', harness: name, profile: account, join: joins },
+          () => writeHarnessSettings(path, after), () => {
+            write(`daoris: \`${name}\`'s account \`${shownAs(accountNames(home, name), account)}\` is in `
+              + `${joins.map((workspace) => (workspace === null ? 'this machine\'s list' : `\`${workspace}\`'s list`)).join(', ')}.`);
+            for (const line of placeLines(name, account, after, accountNames(home, name))) write(line);
+            write(`  Written to ${path} — machine-local, tracked by nothing, like every wiring file here.`);
+            return 0;
+          });
       }
 
       default:
@@ -2325,7 +2396,7 @@ export function commandHarness(
      * with no list of its own has nothing to use and is refused, naming the door that gives it one; a kept account is one
      * of the list and leaves driven work another (§4.6); a curve is refused in the sentence the driver says.
      */
-    function useVerb(): ExitCode {
+    function useVerb(): ExitCode | Promise<ExitCode> {
       const name = accountsOf(operand(argv, 2), 'profile use');
       const flagged = flagValue(argv, '--workspace');
       const workspace = flagged ? normalizeWorkspace(flagged) : null;
@@ -2351,12 +2422,14 @@ export function commandHarness(
           + 'the scope to today\'s defaults, and the setting is set on its own.');
       }
 
+      const scope = workspace ? { workspace } : {};
       if (clear) {
-        const after = withUse(settings, name, null, workspace);
-        writeHarnessSettings(path, after);
-        write(`daoris: ${where(workspace)}, \`${name}\` sets nothing of its own about how its list is used: today's defaults apply.`);
-        write(`  Written to ${path} — machine-local, tracked by nothing, like every wiring file here.`);
-        return 0;
+        return press(AGENT_ROUTES.account, { action: 'use', harness: name, ...scope, clear: true },
+          () => writeHarnessSettings(path, withUse(settings, name, null, workspace)), () => {
+            write(`daoris: ${where(workspace)}, \`${name}\` sets nothing of its own about how its list is used: today's defaults apply.`);
+            write(`  Written to ${path} — machine-local, tracked by nothing, like every wiring file here.`);
+            return 0;
+          });
       }
 
       if (Object.keys(change).length === 0) return printUse(name, workspace, resolveScope(settings, name, workspace));
@@ -2388,11 +2461,21 @@ export function commandHarness(
         }
       }
 
+      // As the Accounts place sends a change (`ACCOUNT_USE`'s `UseChangeOf`): a kept account or a curve taken out is its own flag.
+      const sent = {
+        ...(change.use !== undefined ? { use: change.use } : {}),
+        ...(change.keep === null ? { noKeep: true } : change.keep !== undefined ? { keep: change.keep } : {}),
+        ...(change.switch !== undefined ? { switch: change.switch } : {}),
+        ...(change.curve === null ? { noCurve: true } : change.curve !== undefined ? { curve: change.curve } : {}),
+        ...(change.early !== undefined ? { early: change.early } : {}),
+        ...(change.near !== undefined ? { near: change.near } : {}),
+      };
       const after = withUse(settings, name, change, workspace);
-      writeHarnessSettings(path, after);
-      printUse(name, workspace, resolveScope(after, name, workspace));
-      write(`  Written to ${path} — machine-local, tracked by nothing, like every wiring file here.`);
-      return 0;
+      return press(AGENT_ROUTES.account, { action: 'use', harness: name, ...scope, ...sent }, () => writeHarnessSettings(path, after), () => {
+        printUse(name, workspace, resolveScope(after, name, workspace));
+        write(`  Written to ${path} — machine-local, tracked by nothing, like every wiring file here.`);
+        return 0;
+      });
     }
 
     /** The settings `profile use`'s flags name, each refused unless it is one; none named is an empty change. */
@@ -2549,23 +2632,25 @@ export function commandHarness(
      * `profile order <agent> --clear [--workspace <name>]`: the order gone, the machine's or one workspace's, saying which
      * order applies now, since a workspace with none takes the machine's.
      */
-    function clearOrder(name: string, workspace: string | null): ExitCode {
+    function clearOrder(name: string, workspace: string | null): ExitCode | Promise<ExitCode> {
       const after = withRotation(settings, name, null, workspace);
-      writeHarnessSettings(path, after);
+      // An order of none clears it, as the Accounts place sends it.
+      return press(AGENT_ROUTES.account, { action: 'order', harness: name, accounts: [], ...(workspace ? { workspace } : {}) },
+        () => writeHarnessSettings(path, after), () => {
+          if (workspace) {
+            const machine = resolveRotation(after, name, null).order;
+            write(machine.length > 0
+              ? `daoris: \`${workspace}\` names no order for \`${name}\` now: the machine's applies there, ${machine.join(', then ')}.`
+              : `daoris: \`${workspace}\` names no order for \`${name}\` now, and neither does this machine.`);
+          } else {
+            write(`daoris: \`${name}\` has no order on this machine now.`);
+            const scoped = Object.entries(after.workspaceRotation).filter(([, orders]) => orders[name]).map(([circle]) => circle);
+            if (scoped.length > 0) write(`  A workspace's own still applies there: ${scoped.join(', ')}.`);
+          }
 
-      if (workspace) {
-        const machine = resolveRotation(after, name, null).order;
-        write(machine.length > 0
-          ? `daoris: \`${workspace}\` names no order for \`${name}\` now: the machine's applies there, ${machine.join(', then ')}.`
-          : `daoris: \`${workspace}\` names no order for \`${name}\` now, and neither does this machine.`);
-      } else {
-        write(`daoris: \`${name}\` has no order on this machine now.`);
-        const scoped = Object.entries(after.workspaceRotation).filter(([, orders]) => orders[name]).map(([circle]) => circle);
-        if (scoped.length > 0) write(`  A workspace's own still applies there: ${scoped.join(', ')}.`);
-      }
-
-      write(`  No account was deleted. Written to ${path} — machine-local, tracked by nothing, like every wiring file here.`);
-      return 0;
+          write(`  No account was deleted. Written to ${path} — machine-local, tracked by nothing, like every wiring file here.`);
+          return 0;
+        });
     }
 
     /**
@@ -2573,7 +2658,7 @@ export function commandHarness(
      * workspace's, as the screen's own clear writes it. Nothing is deleted, and it says what sessions run as now, since
      * a workspace with none falls back to the machine's default.
      */
-    function clearDefault(name: string, workspace: string | null): ExitCode {
+    function clearDefault(name: string, workspace: string | null): ExitCode | Promise<ExitCode> {
       if (operand(argv, 3) !== undefined) {
         throw new DaorisError(
           `\`--clear\` names no account — \`daoris agent profile default ${name} --clear\` clears the default, `
@@ -2581,16 +2666,18 @@ export function commandHarness(
       }
 
       const after = withDefault(settings, name, null, workspace);
-      writeHarnessSettings(path, after);
-
-      const fallback = resolveProfile(after, name, workspace, null);
-      write(!workspace
-        ? `daoris: this machine names no default for \`${name}\` now: Daoris takes its accounts in turn.`
-        : fallback
-          ? `daoris: \`${workspace}\` names no account for \`${name}\` now: its sessions run as the machine's default, \`${fallback}\`.`
-          : `daoris: \`${workspace}\` names no account for \`${name}\` now: its sessions take Daoris's accounts in turn.`);
-      write(`  No account was deleted. Written to ${path} — machine-local, tracked by nothing, like every wiring file here.`);
-      return 0;
+      // No account named clears it, as the Accounts place's own clear sends it.
+      return press(AGENT_ROUTES.harness, { action: 'profile-default', harness: name, ...(workspace ? { workspace } : {}) },
+        () => writeHarnessSettings(path, after), () => {
+          const fallback = resolveProfile(after, name, workspace, null);
+          write(!workspace
+            ? `daoris: this machine names no default for \`${name}\` now: Daoris takes its accounts in turn.`
+            : fallback
+              ? `daoris: \`${workspace}\` names no account for \`${name}\` now: its sessions run as the machine's default, \`${fallback}\`.`
+              : `daoris: \`${workspace}\` names no account for \`${name}\` now: its sessions take Daoris's accounts in turn.`);
+          write(`  No account was deleted. Written to ${path} — machine-local, tracked by nothing, like every wiring file here.`);
+          return 0;
+        });
     }
   }
 
@@ -2666,7 +2753,7 @@ export function commandHarness(
    * Settings screen says Daoris never touches it — so with no account anywhere this refuses and says
    * how, rather than writing into it. A door's account is its owner's (twin rule 7).
    */
-  function settingsVerb(): ExitCode {
+  function settingsVerb(): ExitCode | Promise<ExitCode> {
     const { name } = required(argv, 'settings');
     const owner = ownerOf(name);
     if (owner !== name) write(`daoris: \`${name}\` runs as \`${owner}\`'s accounts — this is one of them.`);
@@ -2697,22 +2784,47 @@ export function commandHarness(
     }
 
     const where = join(profileHome(home, owner, account), file);
-    if (edit) writeAgentSettings(where, edit);
-    const held = readAgentSettings(where);
-    if (held.problem) throw new DaorisError(`${held.problem} — fix it, or change the setting with the tool itself.`);
+    const said = (held: { model: string | null; effort: string | null; perModel: { model: string; effort: string }[]; problem: string | null }):
+      ExitCode => {
+      if (held.problem) throw new DaorisError(`${held.problem} — fix it, or change the setting with the tool itself.`);
 
-    write(`daoris: \`${owner}\` account \`${account}\` — ${edit ? 'written to' : 'read from'} the tool's own settings:`);
-    write(`  ${where}`);
-    const unset = "the tool's own default";
-    write(`  model    ${held.model ?? unset}`);
-    write(`  effort   ${held.effort ?? unset}`);
-    if (held.perModel.length > 0) {
-      write('  per model — the tool reads these first, for that model:');
-      for (const entry of held.perModel) write(`    ${entry.model.padEnd(24)} ${entry.effort}`);
-    }
-    write('  A session reads these when it starts. A repository\'s own .claude/settings.json and the');
-    write('  ANTHROPIC_MODEL variable take precedence over an account\'s model.');
-    return 0;
+      write(`daoris: \`${owner}\` account \`${account}\` — ${edit ? 'written to' : 'read from'} the tool's own settings:`);
+      write(`  ${where}`);
+      const unset = "the tool's own default";
+      write(`  model    ${held.model ?? unset}`);
+      write(`  effort   ${held.effort ?? unset}`);
+      if (held.perModel.length > 0) {
+        write('  per model — the tool reads these first, for that model:');
+        for (const entry of held.perModel) write(`    ${entry.model.padEnd(24)} ${entry.effort}`);
+      }
+      write('  A session reads these when it starts. A repository\'s own .claude/settings.json and the');
+      write('  ANTHROPIC_MODEL variable take precedence over an account\'s model.');
+      return 0;
+    };
+    if (!edit) return said(readAgentSettings(where));
+
+    // While Daoris runs, the Settings screen's edit: a key sent as null cleared, one left out untouched. The answer is the file read
+    // back, which this verb says as it says its own read.
+    return door({
+      what, route: AGENT_ROUTES.settings, payload: { harness: name, profile: account, ...edit },
+      alone: () => {
+        writeAgentSettings(where, edit);
+        return said(readAgentSettings(where));
+      },
+      words: (answer) => {
+        const read = fieldsOf(answer);
+        const text = (value: unknown) => (typeof value === 'string' ? value : null);
+        return said({
+          model: text(read.model),
+          effort: text(read.effort),
+          perModel: Array.isArray(read.perModel)
+            ? read.perModel.map(fieldsOf).filter((entry) => typeof entry.model === 'string' && typeof entry.effort === 'string')
+              .map((entry) => ({ model: entry.model as string, effort: entry.effort as string }))
+            : [],
+          problem: text(read.problem),
+        });
+      },
+    });
   }
 
   /**

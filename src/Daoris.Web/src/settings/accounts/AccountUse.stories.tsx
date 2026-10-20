@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { chinese } from '../../design/storyLanguage';
+import { storyWidths } from '../../design/storyWidths';
 import { USE_DEFAULTS } from './accounts';
 import {
   AHEAD, CHOICES, MACHINE_NEAR, OFFERED_AGAIN, OWN_COOLING, scopeOf, SILENT, SIX_AGENT, SIX_CHOICES, THREE,
@@ -20,8 +21,8 @@ const meta: Meta<typeof ScopeEditor> = {
   title: 'Settings/AccountUse',
   component: ScopeEditor,
   args: { agent: THREE, product: 'Claude Code', scope: THREE.scopes[0]!, accounts: CHOICES, acts: ACTS },
-  // A settings card's width, between the side bar's two states.
-  decorators: [(Story) => <div className="max-w-3xl rounded-card border border-line bg-page/60 p-3"><Story /></div>],
+  // The main area at its wide width, as the frame gives it (the UI/UX design R6, UIFIT1).
+  decorators: [storyWidths.wide],
 };
 export default meta;
 
@@ -29,6 +30,12 @@ type Story = StoryObj<typeof ScopeEditor>;
 
 /** This machine's three accounts, made the most of: where starts begin, one cooling, nothing kept. */
 export const ThreeAccounts: Story = {};
+
+/** The same at the half width, 630 px. */
+export const ThreeAccountsHalf: Story = { decorators: [storyWidths.half] };
+
+/** The same at the 400 px floor: each value under its words. */
+export const ThreeAccountsNarrow: Story = { decorators: [storyWidths.narrow] };
 
 /**
  * SWITCH1d: the person's own curve, its five-hour window flat at 85, with one account over it and one kept for conversations;
