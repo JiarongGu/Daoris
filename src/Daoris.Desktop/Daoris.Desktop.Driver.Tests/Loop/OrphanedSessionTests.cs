@@ -479,7 +479,9 @@ public sealed class OrphanedSessionTests : IDisposable
         {
             _listener.Stop();
             _listener.Close();
-            try { await _serving; } catch (ObjectDisposedException) { }
+            // A request the stop cut short throws from its write or its close: that belongs to the stop, not to the test (FLAKE1).
+            try { await _serving; }
+            catch (Exception error) when (error is HttpListenerException or ObjectDisposedException or InvalidOperationException) { }
         }
     }
 }
