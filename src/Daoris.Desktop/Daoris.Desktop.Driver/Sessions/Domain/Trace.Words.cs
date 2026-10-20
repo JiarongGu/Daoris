@@ -568,6 +568,22 @@ internal static class TraceWords
         // under Current, whose rules the line above names.
         said.Append(WorkflowSaid(landing.Workflow));
 
+        // A landing carries several sessions' work (FLOWCHART1c): the session it was made for, each done that moved it on with its
+        // session and who accepted it, and the units whose work it carries, so a session that only moved it on reads it whole.
+        if (landing.Session is { } made) said.Append($"; made for session {made}");
+        foreach (var advance in landing.Advances)
+        {
+            said.Append($"; moved on by session {advance.Session} at {When(advance.At)} from {Short(advance.From)} to {Short(advance.To)}, ")
+                .Append(advance.AcceptedBy switch
+                {
+                    AcceptedBy.Auto => "accepted automatically when its quest was done",
+                    AcceptedBy.Person => "accepted by the person's press",
+                    _ => "who accepted it is not kept",
+                });
+        }
+
+        if (landing.Units.Count > 0) said.Append($"; carries the work of units {string.Join(", ", landing.Units)}");
+
         return said.ToString();
     }
 
