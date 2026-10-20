@@ -118,6 +118,13 @@
     },
     {
       "pack": "core",
+      "source": "core/skills/co-working/SKILL.md",
+      "target": "skills/co-working/SKILL.md",
+      "canonVersion": "0.0.1",
+      "sha256": "00bac3dad785d91f2c21df07697809488b0cb348d4a717853a472fcc7535b174"
+    },
+    {
+      "pack": "core",
       "source": "core/skills/doc-loader/SKILL.md",
       "target": "skills/doc-loader/SKILL.md",
       "canonVersion": "0.0.1",
