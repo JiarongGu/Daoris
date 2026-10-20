@@ -334,6 +334,43 @@ public sealed class WorkflowGateTests : IDisposable
     public void Lowering_the_persons_part_is_a_table(string name, string otherwise, string chosen, string lowered) =>
         Assert.True(lowered == string.Join("; ", Involvement.Lowers(Steps(chosen), Steps(otherwise))), name);
 
+    /// <summary>
+    /// FABRIC-PIPELINE1b (the pipeline design §1.3's fourth row): a development pipeline's checks set to light gives its heavy gates away
+    /// to a verification, and no verification route runs them in this build (FABRIC-PIPELINE1a's `landed` route is its row), so light
+    /// lowers the person's part from anything else, and an agent's choice of it is kept as a proposal. Raising, light given up or kept,
+    /// never lowers. Written by hand, since a steps version's work takes no field in this build.
+    /// </summary>
+    [Theory]
+    [InlineData(null, "light", "its sessions leave the heavy gates to a verification nothing here runs")]
+    [InlineData("heavy-at-end", "light", "its sessions leave the heavy gates to a verification nothing here runs")]
+    [InlineData("light", "light", "")]
+    [InlineData("light", null, "")]
+    [InlineData("light", "heavy-at-end", "")]
+    [InlineData(null, "heavy-at-end", "")]
+    public void Light_checks_lower_the_persons_part_where_nothing_runs_the_heavy_gates(string? otherwise, string? chosen, string lowered)
+    {
+        IReadOnlyList<NamedStep> Work(string? checks) =>
+        [
+            new("work", WorkflowKinds.Work, checks is null ? [] : [new WorkflowSetting("checks", checks)]),
+            new("land", WorkflowKinds.Landing, [new("form", "merge"), new("accept", "you")]),
+        ];
+
+        Assert.Equal(lowered, string.Join("; ", Involvement.Lowers(Work(chosen), Work(otherwise))));
+    }
+
+    /// <summary>Current's work carries its repository's checks where it sets them, so Current as steps lowers as its rule says.</summary>
+    [Fact]
+    public void Current_as_steps_carries_its_repositorys_checks()
+    {
+        var light = Involvement.StepsOf(WorkflowCurrent.Derive(Config("{}").WithSessionChecks("web-app", SessionChecks.Light), "web-app", "work", []));
+        var today = Involvement.StepsOf(WorkflowCurrent.Derive(Config("{}"), "web-app", "work", []));
+
+        Assert.Equal("light", light[0].Field("checks"));
+        Assert.Null(today[0].Field("checks"));
+        Assert.Equal(["its sessions leave the heavy gates to a verification nothing here runs"], Involvement.Lowers(light, today));
+        Assert.Empty(Involvement.Lowers(today, light));
+    }
+
     [Fact]
     public void Current_as_steps_lowers_as_its_rules_say()
     {

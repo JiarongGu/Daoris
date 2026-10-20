@@ -61,7 +61,7 @@ export interface CurrentWorkflow {
 /** The rule maps the derivation reads: `driver.json`'s, as `readDriverChoices` reads them. */
 export type WorkflowRules = Pick<DriverChoices,
   'landings' | 'workspaceLandings' | 'reviews' | 'workspaceReviews' | 'opinions' | 'workspaceOpinions' | 'standing'
-  | 'access' | 'workspaceAccess' | 'machineAccess'>;
+  | 'access' | 'workspaceAccess' | 'machineAccess' | 'sessionChecks'>;
 
 /**
  * Each limit a step may carry, said where the step is drawn (design §3.9), in the table's order — the driver's
@@ -138,10 +138,16 @@ export function currentWorkflow(
   const startHolds = plugins.filter((plugin) => plugin.points.includes(CONSIDER_POINT)).map((plugin) => plugin.id);
   // `standingFor`'s reading, the name trimmed and matched in any case: imported, it would make `driverconfig.ts` a cycle.
   const standingKey = findName(Object.keys(read.standing), named.trim());
+  // The checks its sessions run, where the repository sets them (FABRIC-PIPELINE1b), after the standing answer, as the driver's
+  // `SessionChecks.For` reads them; never where it sets none, so Current's version is what it was.
+  const checksKey = repository === null ? null : findName(Object.keys(read.sessionChecks), named.trim());
   const steps: WorkflowStep[] = [{
     id: 'work', kind: 'work', participation: 'agent', executor: 'agent', press: null,
     source: { rule: null, level: 'default' },
-    settings: { standing: standingKey === null ? null : read.standing[standingKey]!.says },
+    settings: {
+      standing: standingKey === null ? null : read.standing[standingKey]!.says,
+      ...(checksKey === null ? {} : { checks: read.sessionChecks[checksKey]! }),
+    },
     runtime: 'built', limit: null,
   }];
 
@@ -287,6 +293,14 @@ function stepSaid(step: WorkflowStep): string[] {
 
   const lines = [`  ${title} — ${participation} · ${executor}${press}. ${set} ${sourceSaid(step.source)}`];
   if (step.kind === 'work' && s['standing'] !== null) lines.push(`      Your standing answer, handed to each session: "${s['standing']}"`);
+  // FABRIC-PIPELINE1b: the checks its sessions run, where the repository sets them (`daoris-driver checks`, Setup).
+  if (step.kind === 'work' && s['checks'] === 'light') {
+    lines.push('      Its sessions\' checks: light: the gates it does not mark heavy and the checks a change reaches; its heavy gates are its '
+      + 'verification\'s, refused to them.');
+  }
+  if (step.kind === 'work' && s['checks'] === 'heavy-at-end') {
+    lines.push('      Its sessions\' checks: heavy-at-end: its heavy gates once, at a session\'s end, through `run-heavy`.');
+  }
   if (step.limit !== null) lines.push(`      ${WORKFLOW_LIMITS[step.limit]}`);
   return lines;
 }
