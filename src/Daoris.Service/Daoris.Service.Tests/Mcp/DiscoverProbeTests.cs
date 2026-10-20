@@ -123,7 +123,7 @@ public sealed class DiscoverProbeTests : IDisposable
             var request = new JsonObject { ["jsonrpc"] = "2.0", ["id"] = 1, ["method"] = method, ["params"] = new JsonObject() };
             await toServer.Writer.WriteAsync(Encoding.UTF8.GetBytes(request.ToJsonString() + "\n"));
             using var reader = new StreamReader(fromServer.Reader.AsStream());
-            line = await reader.ReadLineAsync().WaitAsync(TimeSpan.FromSeconds(10));
+            line = await reader.ReadLineAsync().WaitAsync(Poll.Patience);
             await toServer.Writer.CompleteAsync();
             await host.StopAsync();
         }

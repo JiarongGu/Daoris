@@ -871,7 +871,7 @@ public sealed class ConfirmationProcessTests : IDisposable
             _scratch,
             new Dictionary<string, string?> { [PersonKey.InputVariable] = "1", [InputEndStop.Variable] = "1" },
             input => input.WriteLine(KeyedHost.Key));
-        using var client = new HttpClient { Timeout = TimeSpan.FromSeconds(10) };
+        using var client = new HttpClient { Timeout = Poll.Patience };
 
         // A retire whose name holds a space, sent escaped: the address the client asked for is the one it sends.
         const string Retire = "/api/registry/my%20repo";
@@ -903,7 +903,7 @@ public sealed class ConfirmationProcessTests : IDisposable
         Assert.Contains("`default` is not a workspace this machine holds", answered.Body);
 
         host.Process.StandardInput.Close();
-        Assert.True(host.Process.WaitForExit(15_000), "the host did not stop when its input closed");
+        Assert.True(host.Process.WaitForExit(Poll.Patience), "the host did not stop when its input closed");
         Assert.All(host.LogLines(), line =>
         {
             Assert.DoesNotContain(secret, line);

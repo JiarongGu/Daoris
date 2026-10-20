@@ -547,7 +547,7 @@ public sealed class PersonDoorProcessTests : IDisposable
 
     private static async Task<(int Status, string Body)> SendAsync(string url, string path, string? person)
     {
-        using var client = new HttpClient { Timeout = TimeSpan.FromSeconds(10) };
+        using var client = new HttpClient { Timeout = Poll.Patience };
         using var request = new HttpRequestMessage(HttpMethod.Post, url + path) { Content = new StringContent("{}", System.Text.Encoding.UTF8, "application/json") };
         if (person is not null) request.Headers.Add(PersonKey.Header, person);
         using var response = await client.SendAsync(request);
@@ -567,13 +567,13 @@ public sealed class PersonDoorProcessTests : IDisposable
         Assert.Contains($"\"code\":\"{PersonDoors.PersonOnly}\"", keyless.Body);
         Assert.Equal(404, (await SendAsync(host.Url, "/api/quests/probe/accept", KeyedHost.Key)).Status);
 
-        using (var client = new HttpClient { Timeout = TimeSpan.FromSeconds(10) })
+        using (var client = new HttpClient { Timeout = Poll.Patience })
         {
             var proved = await client.GetStringAsync(host.Url + "/api/status?prove=" + Uri.EscapeDataString("a nonce, 一个"));
             Assert.Contains("\"proof\":\"gQMDWolsIQRnw-_d19k3A1c9E6ey2aP9-8RL_n_pJ50\"", proved);
         }
 
-        var missed = host.StopByInput(TimeSpan.FromSeconds(15));
+        var missed = host.StopByInput(Poll.Patience);
         Assert.True(missed is null, missed);
         Assert.Equal(0, host.Process.ExitCode);
         var lines = host.LogLines();

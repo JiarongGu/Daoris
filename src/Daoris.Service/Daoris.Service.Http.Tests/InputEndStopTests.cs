@@ -77,7 +77,7 @@ public sealed class InputEndStopTests : IDisposable
         var lifetime = new Lifetime();
         var input = new MemoryStream("whatever was written is read past, never read as anything"u8.ToArray());
 
-        await InputEndStop.Watch(input, lifetime).WaitAsync(TimeSpan.FromSeconds(10));
+        await InputEndStop.Watch(input, lifetime).WaitAsync(Poll.Patience);
 
         Assert.Equal(1, lifetime.Stops);
         Assert.Equal(input.Length, input.Position);
@@ -99,7 +99,7 @@ public sealed class InputEndStopTests : IDisposable
         Assert.False(watching.IsCompleted);
 
         writer.Dispose();
-        await watching.WaitAsync(TimeSpan.FromSeconds(10));
+        await watching.WaitAsync(Poll.Patience);
         Assert.Equal(1, lifetime.Stops);
     }
 
@@ -109,7 +109,7 @@ public sealed class InputEndStopTests : IDisposable
     {
         var lifetime = new Lifetime();
 
-        await InputEndStop.Watch(new Breaking(), lifetime).WaitAsync(TimeSpan.FromSeconds(10));
+        await InputEndStop.Watch(new Breaking(), lifetime).WaitAsync(Poll.Patience);
 
         Assert.Equal(1, lifetime.Stops);
     }
@@ -138,7 +138,7 @@ public sealed class InputEndStopTests : IDisposable
         var watching = InputEndStop.WatchWhenAsked("1", () => new MemoryStream(), lifetime);
 
         Assert.NotNull(watching);
-        await watching.WaitAsync(TimeSpan.FromSeconds(10));
+        await watching.WaitAsync(Poll.Patience);
         Assert.Equal(1, lifetime.Stops);
     }
 
@@ -152,7 +152,7 @@ public sealed class InputEndStopTests : IDisposable
     {
         using var host = await StartHostAsync(asked: true);
 
-        var missed = host.StopByInput(TimeSpan.FromSeconds(15));
+        var missed = host.StopByInput(Poll.Patience);
 
         Assert.True(missed is null, missed);
         Assert.Equal(0, host.Process.ExitCode);

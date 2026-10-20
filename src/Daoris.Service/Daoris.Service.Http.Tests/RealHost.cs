@@ -38,7 +38,7 @@ public sealed class RealHost(Process process, string url, string scratch) : IDis
             host.Process.StandardInput.Flush();
         }
 
-        for (var attempt = 0; attempt < 150; attempt++)
+        for (var attempt = 0; attempt < Poll.Patience.TotalMilliseconds / 200; attempt++)
         {
             if (await AnswersAsync(host.Url)) return host;
             if (host.Process.HasExited)
@@ -186,7 +186,7 @@ public sealed class RealHost(Process process, string url, string scratch) : IDis
 
     public static async Task<bool> AnswersAsync(string url)
     {
-        using var client = new HttpClient { Timeout = TimeSpan.FromSeconds(2) };
+        using var client = new HttpClient { Timeout = Poll.Patience };
         try
         {
             using var response = await client.GetAsync($"{url}/api/status");
