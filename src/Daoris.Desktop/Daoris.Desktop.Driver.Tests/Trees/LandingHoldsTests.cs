@@ -287,6 +287,73 @@ public sealed class LandingHoldsTests : IDisposable
         Assert.Empty(said);
     }
 
+    /// <summary>
+    /// LANDHOLDSWEEP1: a sweep removes a hold's file no door has held for longer than the bound, and keeps one held, however old its
+    /// time, and one let go within the bound. A door after the sweep takes the tree as one that waited for nothing.
+    /// </summary>
+    [Fact]
+    public async Task A_sweep_removes_a_hold_left_past_the_bound_and_keeps_one_held_or_held_recently()
+    {
+        var path = LandingHolds.PathOf(_home, _tree);
+        var past = LandingHolds.Wait + TimeSpan.FromMinutes(1);
+        using (var landed = await LandingHolds.TakeAsync(_home, _tree)) landed!.Keep(Landed);
+        Assert.True(File.Exists(path));
+
+        Assert.Equal(0, LandingHolds.Sweep(_home, DateTime.UtcNow));
+        Assert.True(File.Exists(path), "let go just now: a door behind it may still read it");
+
+        var other = Path.Combine(_scratch, "trees", "aurora", "engine", "s-2");
+        Directory.CreateDirectory(other);
+        using (var held = await LandingHolds.TakeAsync(_home, other))
+        {
+            var heldPath = LandingHolds.PathOf(_home, other);
+            File.SetLastWriteTimeUtc(heldPath, DateTime.UtcNow - past);
+            Assert.Equal(1, LandingHolds.Sweep(_home, DateTime.UtcNow + past));
+            Assert.True(File.Exists(heldPath), "held, however old its time");
+        }
+
+        Assert.False(File.Exists(path), "no door held it past the bound");
+        using var next = await LandingHolds.TakeAsync(_home, _tree);
+        Assert.False(next!.Waited);
+        Assert.Null(next.Before);
+    }
+
+    /// <summary>
+    /// LANDHOLDSWEEP1: beside another process, a file it holds stays, whatever its time says; once that process lets go of it untouched,
+    /// the next sweep removes it.
+    /// </summary>
+    [Fact]
+    public void A_sweep_keeps_a_hold_another_process_holds()
+    {
+        var path = LandingHolds.PathOf(_home, _tree);
+        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+        using (var holder = new FileStream(path, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None))
+        {
+            File.SetLastWriteTimeUtc(holder.SafeFileHandle, DateTime.UtcNow - LandingHolds.Wait - TimeSpan.FromMinutes(1));
+            Assert.Equal(0, LandingHolds.Sweep(_home, DateTime.UtcNow));
+        }
+
+        Assert.True(File.Exists(path));
+        Assert.Equal(1, LandingHolds.Sweep(_home, DateTime.UtcNow));
+        Assert.False(File.Exists(path));
+    }
+
+    /// <summary>LANDHOLDSWEEP1: taking a hold sweeps the home's files left past the bound, so nothing has to call the sweep.</summary>
+    [Fact]
+    public async Task Taking_a_hold_sweeps_what_was_left_past_the_bound()
+    {
+        var folder = DaorisHome.Entry(_home, HomeEntry.Locks, "landings");
+        Directory.CreateDirectory(folder);
+        var left = Path.Combine(folder, "0123456789abcdef.lock");
+        File.WriteAllText(left, "");
+        File.SetLastWriteTimeUtc(left, DateTime.UtcNow - LandingHolds.Wait - TimeSpan.FromMinutes(1));
+
+        using var hold = await LandingHolds.TakeAsync(_home, _tree);
+
+        Assert.False(File.Exists(left));
+        Assert.True(File.Exists(LandingHolds.PathOf(_home, _tree)));
+    }
+
     private static bool[] Snapshot(List<bool> said)
     {
         lock (said) return [.. said];

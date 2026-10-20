@@ -26,8 +26,15 @@ namespace Daoris.Driver;
 /// <para><b>In this process, then across processes.</b> A semaphore per key keeps this process's doors apart without polling; it is
 /// dropped once nobody holds or waits for it, so they never accumulate. A file under the home's <c>locks/landings/</c>, opened alone,
 /// keeps this process apart from another (a terminal's press beside the desktop's look): the handle is the lock, as
-/// <see cref="TreeLock"/>'s and <see cref="RecordLock"/>'s are, so a process that dies lets go with it. The files stay, one of under a
-/// kilobyte per tree landed and per branch pushed: removing one could lose what a door in another process is about to read.</para>
+/// <see cref="TreeLock"/>'s and <see cref="RecordLock"/>'s are, so a process that dies lets go with it.</para>
+///
+/// <para><b>Swept once nobody can be owed them</b> (LANDHOLDSWEEP1). A hold stamps its file's written time when it is taken and when
+/// it is let go, so the time says when a door last held it. A file no door has held for longer than <see cref="Wait"/> is owed to
+/// nobody: a door waiting behind its last holder took it within <see cref="Poll"/> of the release, and one that came later waited for
+/// nothing and clears it. <see cref="Sweep"/> removes such a file under its own handle, opened alone, after reading the time again
+/// through it, so a door that took and let go of it since is kept; a held file does not open, and stays. A taken hold sweeps its home
+/// at most once per <see cref="Wait"/> in a process. The age is the wall clock's, as the file's time is: a clock stepped forward past
+/// the bound can sweep a file a waiting door would have read, and that door judges the work as it stands, as before LANDRACE1.</para>
 ///
 /// <para><b>What the one before came to, not when.</b> The holder keeps what its attempt came to in the file
 /// (<see cref="LandingHold.Keep"/>): the branch, the commit, who accepted it, and its plugin's answer once it has one. A hold that
@@ -51,6 +58,9 @@ internal static class LandingHolds
     private static readonly Dictionary<string, KeyGate> Gates = new(StringComparer.Ordinal);
 
     private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web);
+
+    // LANDHOLDSWEEP1: when this process last swept each home, by the monotonic clock; guarded by itself.
+    private static readonly Dictionary<string, long> Swept = new(StringComparer.Ordinal);
 
     /// <summary>Hold the tree for one landing, waiting while another landing of it holds it, here or in another process.</summary>
     /// <returns>The hold, which knows whether it waited and what the one before kept; null where it was held for the whole of <paramref name="within"/>.</returns>
@@ -139,6 +149,8 @@ internal static class LandingHolds
             // A hold that waited reads what the one before kept; one that waited for nothing begins a chain of its own.
             var before = waited ? Read(file) : null;
             if (!waited) file.SetLength(0);
+            Stamp(file);
+            SweepDue(home);
             hold = new LandingHold(
                 () =>
                 {
@@ -213,7 +225,11 @@ internal static class LandingHolds
         lock (Gates) return Gates.TryGetValue(named, out var gate) ? Volatile.Read(ref gate.Waiting) : 0;
     }
 
-    /// <remarks>A sharing violation is another door holding it: null. A folder that cannot be made is thrown.</remarks>
+    /// <remarks>
+    /// A sharing violation is another door holding it, or a sweep reading it: null. A refusal is a sweep's removal not yet complete,
+    /// where the system keeps the name until its handle closes: null too, so a door asks again within its bound. A folder that cannot be
+    /// made is thrown.
+    /// </remarks>
     private static FileStream? Open(string path)
     {
         try
@@ -224,6 +240,73 @@ internal static class LandingHolds
         {
             return null;
         }
+        catch (UnauthorizedAccessException)
+        {
+            return null;
+        }
+    }
+
+    /// <summary>Mark the file as held now, through the hold's own handle; never throws, since the mark only delays a sweep.</summary>
+    internal static void Stamp(FileStream file)
+    {
+        try
+        {
+            File.SetLastWriteTimeUtc(file.SafeFileHandle, DateTime.UtcNow);
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException or ObjectDisposedException)
+        {
+            // Unmarked: the file's last write stands as its time.
+        }
+    }
+
+    /// <summary>Sweep the home's holds once per <see cref="Wait"/> in this process, beside a hold just taken.</summary>
+    private static void SweepDue(string home)
+    {
+        var named = Homes.Full(home);
+        var now = Stopwatch.GetTimestamp();
+        lock (Swept)
+        {
+            if (Swept.TryGetValue(named, out var last) && Stopwatch.GetElapsedTime(last, now) < Wait) return;
+            Swept[named] = now;
+        }
+
+        Sweep(home, DateTime.UtcNow);
+    }
+
+    /// <summary>
+    /// Remove the home's landing holds no door has held for longer than <see cref="Wait"/> before <paramref name="now"/> (LANDHOLDSWEEP1).
+    /// One held does not open and stays; one held since it was listed reads as recent through the sweep's own handle and stays.
+    /// </summary>
+    /// <returns>How many it removed. Never throws: a file that will not go is swept next time.</returns>
+    internal static int Sweep(string home, DateTime now)
+    {
+        var folder = DaorisHome.Entry(home, HomeEntry.Locks, "landings");
+        var removed = 0;
+        try
+        {
+            foreach (var path in Directory.EnumerateFiles(folder, "*.lock"))
+            {
+                try
+                {
+                    if (now - File.GetLastWriteTimeUtc(path) <= Wait) continue;
+                    // Opened alone but for removal, so no door opens it meanwhile, and the name goes while the sweep still holds it.
+                    using var file = new FileStream(path, FileMode.Open, FileAccess.ReadWrite, FileShare.Delete);
+                    if (now - File.GetLastWriteTimeUtc(file.SafeFileHandle) <= Wait) continue;
+                    File.Delete(path);
+                    removed++;
+                }
+                catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+                {
+                    // Held, gone already, or refused: swept next time.
+                }
+            }
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+        {
+            // No folder yet, or one that does not list: nothing to sweep.
+        }
+
+        return removed;
     }
 
     /// <summary>What the one before kept; null where it kept nothing, or what it kept does not read.</summary>
@@ -295,6 +378,8 @@ internal sealed class LandingHold(Action release, FileStream file) : IDisposable
     public void Dispose()
     {
         if (Interlocked.Exchange(ref _gone, 1) == 1) return;
+        // LANDHOLDSWEEP1: held until now, so a sweep keeps it for a door that waits behind this one.
+        LandingHolds.Stamp(file);
         file.Dispose();
         release();
     }
