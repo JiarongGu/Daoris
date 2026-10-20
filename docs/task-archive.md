@@ -18466,3 +18466,9 @@ in zh. The sessions page's held words (`WordsHold`) still carry the driver's sen
 > - [ ] **GITSTART6 — the remaining tests' git past the launcher** (driver, modules tests). `DriverModuleGitTests`, `DriverModuleWorkflowRunTests`, `TreeSyncReplayTests`' holder and two `--version` checks. Proof: those classes once each.
 
 **Outcome** 2026-10-21: `DriverModuleGitTests` and `DriverModuleWorkflowRunTests` start git through `TestGit.Past`, which the modules tests compile in by link from the driver tests; `TreeSyncReplayTests`' holder, the `--version` checks in `BranchTidyingFixture` and `PassLeftoversProcessTests`, and `SessionChecksStartTests`' git (found bare as well) go the same way. Proof: those classes, and the two that use `BranchTidyingFixture`'s ended process (`BranchTidyingFolderTests`, `TreeLinkRemovalTests`), ran once each and passed: driver 29, modules 31. The `git` in `LookWaitTests` and `RunningSessionsTests` is a name handed to a stand-in starter that starts nothing, so it was left as it is. On Opus: about 25 tool calls.
+
+## PLUGSTDERR1 — a plugin's stderr read under a bound (2026-10-21)
+
+> - [ ] **PLUGSTDERR1 — a plugin's stderr read under a bound** (driver; after PERFORM1a; §C4). `HookProcess.RelayAsync` reads stderr as whole, unbounded lines. Proof: a stand-in writing a stderr line past the bound has it clipped and the next line relayed (a Process class).
+
+**Outcome** 2026-10-21: `HookProcess.RelayAsync` reads stderr through `BoundedLines` in a clipping mode (`clip: true`): a line past `HookProcess.StderrBytes` (8 KB of UTF-8) is relayed as its start in whole characters, ending `HookProcess.Clipped` (` …`), and the rest passes unread and unscanned; stdout's frames are still dropped whole. Proof: `HookTests.A_stderr_line_past_the_bound_is_clipped_and_the_next_is_relayed` (a Process class, a node stand-in) and `WorkBoundsTests.A_clipping_reader_keeps_a_long_lines_start_and_reads_the_next`. On Opus, by a driven session.
