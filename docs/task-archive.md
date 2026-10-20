@@ -18460,3 +18460,9 @@ in zh. The sessions page's held words (`WordsHold`) still carry the driver's sen
 > - [ ] **LANDHOLDSWEEP1 — the landing locks swept** (driver; D173's LANDRACE1/LANDPIN2 note, *Left*). `locks/landings/` keeps one small file per tree landed and per branch pushed, and nothing removes them. Proof: a sweep removes a file no door has held for longer than `LandingHolds.Wait`, and keeps one held or held recently.
 
 **Outcome** 2026-10-21: built. A hold stamps its file's time when taken and let go; `LandingHolds.Sweep` removes a file no door has held for longer than `Wait`, reading its time again under its own handle, and keeps one held or let go within the bound; a taken hold sweeps its home at most once per `Wait` in a process. Proof: three tests in `LandingHoldsTests`. Detail: D173's LANDHOLDSWEEP1 note.
+
+## CLILAPSE1 — the terminal says the walk's last day as what would lapse (2026-10-21, D165)
+
+> - [ ] **CLILAPSE1 — the terminal says the walk's last day as what would lapse** (cli; D165's USAGERESET1 note). `nextStartLines` (`toolchain.ts` ~1383) says step 4 as what would lapse per hour within the last day, and stops implying a reset learned from a limit ranks anything. Proof: the CLI's `profile use` and `agent list` tests.
+
+**Outcome** 2026-10-21: built. `profile use` and `agent list` say step 4 as *then the one whose week would lapse the most: within its last day, its room under its curve per hour to its reset* (under `off`, *Daoris's smart curve*), and only for an agent that says its use, since nothing unread ranks there; the no-reading note no longer says Daoris learns a weekly reset from the limits it meets. Proof: the `profile use` tests in `rotation-use.test.ts` and the `agent list` tests in `toolchain.test.ts`. Detail: D165's CLILAPSE1 note. On Opus, by a session of the owner's install.

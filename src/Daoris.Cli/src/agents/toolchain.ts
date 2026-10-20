@@ -1373,9 +1373,10 @@ function curveLine(use: RotationUse): string | null {
  * goal's steps as the driver's walk takes them, or the list's order under `order`, and the kept account driven work passes.
  * Where the agent says how much of each window is used (`windows`), the curve's steps (D165 point 2, the switch design §3,
  * SWITCH1b-iii): an account whose limit is reached, that draws on usage credits or whose use is over its curve goes last,
- * under every switch and either use, the least over first under the goal; the goal's step 5 is the most room under its
- * curve, and under `off`, which reads the smart curve for the first, D130's pace. With the goal and no account of the list
- * having said anything, it says so.
+ * under every switch and either use, the least over first under the goal; the goal's step 4 is what would lapse, within a
+ * week's last day its room under the curve per hour to its reset (D165's USAGERESET1 note), said only where the agent says
+ * its use, since nothing unread ranks there; step 5 is the most room under its curve, and under `off`, which reads the smart
+ * curve for steps 2 and 4, D130's pace. With the goal and no account of the list having said anything, it says so.
  *
  * @remarks
  * Prose about the driver's walk (`AccountRotation.Order`), not a twin of a file: this command is offline and reads no
@@ -1403,15 +1404,18 @@ export function nextStartLines(
     return { row: `the first ready account of this list, ${from}${passes}${last}`, note: null };
   }
 
+  // Step 4 weighs what would lapse (D165's USAGERESET1 note): only a read week's room, so an agent that says nothing has no
+  // such step, and a reset a limit told ranks nothing.
+  const lapses = !says ? '' : 'then the one whose week would lapse the most: within its last day, its room under '
+    + `${off ? 'Daoris\'s smart curve' : 'its curve'} per hour to its reset; `;
   const room = !says ? '' : off ? 'then the one furthest behind its week\'s pace; ' : 'then the one with the most room under its curve; ';
   return {
-    row: 'the ready account running the fewest of Daoris\'s sessions; then one whose week resets within a day; '
+    row: `the ready account running the fewest of Daoris's sessions; ${lapses}`
       + `${room}then the one Daoris started on least recently; then this list's order, ${from}${passes}`
       + `${last}${says ? ', the least over first' : ''}`,
     note: anySaid
       ? null
-      : 'no account has said what it has left yet: Daoris spreads starts across them by its own sessions, and learns '
-        + 'each account\'s weekly reset from the limits it meets',
+      : 'no account has said what it has left yet: Daoris spreads starts across them by its own sessions',
   };
 }
 
