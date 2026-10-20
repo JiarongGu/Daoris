@@ -444,7 +444,6 @@ UNBLOCK6–8; TOOLS6/8 precede 9, TOOLS10 precedes managed-Git sessions, 11 last
 - [ ] **GITSTART3 — the devkit's git past the launcher** (devkit; after GITSTART1). `SensitiveGate.cs:254,265` (a `git show` per staged file, serial), `GitObjects.cs:57,79`, `DocsGate.cs:103,148,188`, `Program.cs:124`: route them through one helper with the launcher rule. Proof: `scan --allow-builtins-only` timed before and after from PowerShell.
 - [ ] **GITSTART4 — the CLI's and tools' git past the launcher** (cli, tools; after GITSTART1). `toolchain.ts`'s `startChild` and `tools/*.mjs`'s `spawnSync('git')`: a TypeScript twin of the launcher rule beside `tools.ts`, held row for row like `ToolsChildrenTests`. Proof: a twin test; `verify` timed from PowerShell before and after.
 - [ ] **GITSTART5 — a managed git past its launcher** (driver; D121 §2.3). A managed git is laid out alike (`resources.json`: `cmd/git.exe`) and still starts through its launcher. Proof: `ToolsChildrenTests`' managed row expecting `<version>/mingw64/bin/git.exe` with the launcher's variables.
-- [ ] **GITSTART6 — the remaining tests' git past the launcher** (driver, modules tests). `DriverModuleGitTests`, `DriverModuleWorkflowRunTests`, `TreeSyncReplayTests`' holder and two `--version` checks. Proof: those classes once each.
 
 ## Code structure
 
