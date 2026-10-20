@@ -487,6 +487,10 @@ public static class NoteCodes
     public static readonly NoteCode StartedUncopiedLink = new("started.uncopied-link", ["modules"]);
     public static readonly NoteCode StartedUncopiedUnignored = new("started.uncopied-unignored", ["modules"]);
     public static readonly NoteCode StartedUncopiedFailed = new("started.uncopied-failed", ["modules"]);
+    // A session's tree asked for before it goes on (TREEGONE1): made again on its branch, gone with its branch, or not made.
+    public static readonly NoteCode TreeRemade = new("tree.remade", ["branch"]);
+    public static readonly NoteCode TreeGone = new("tree.gone", ["branch"]);
+    public static readonly NoteCode TreeUnmade = new("tree.unmade", []);
     public static readonly NoteCode StartedJoined = new("started.joined", ["session"]);
     public static readonly NoteCode StartedResumesAnswered = new("started.resumes-answered", ["quest", "answered"]);
     public static readonly NoteCode StartedInAskingTree = new("started.in-asking-tree", ["session"]);
@@ -536,6 +540,24 @@ public static class NoteCodes
         // HELPERNO1: the person's no to an agent's ask, added after the nine (a reason is additive).
         new(HelperWhy.Declined, [], "note.helper.why.declined"),
     ]);
+
+    /// <summary>Why an agent's ask to hand its session over came to nothing (MIXAGENT1c, <see cref="HandOverAskWhy"/>): the page's <c>note.handover.why.*</c>.</summary>
+    public static readonly NoteReasons HandOver = new(
+    [
+        new(HandOverAskWhy.Off, [], "note.handover.why.off"),
+        new(HandOverAskWhy.Declined, [], "note.handover.why.declined"),
+        new(HandOverAskWhy.JustHanded, [], "note.handover.why.just-handed"),
+        new(HandOverAskWhy.NoAgent, [], "note.handover.why.no-agent"),
+        new(HandOverAskWhy.AskerGone, [], "note.handover.why.asker-gone"),
+        new(HandOverAskWhy.AskerUnfit, [], "note.handover.why.asker-unfit"),
+        new(HandOverAskWhy.Cannot, [], "note.handover.why.cannot"),
+    ]);
+
+    // ——— An agent's ask to hand its session over (MIXAGENT1c, D163 point 3): on its session, waiting for the person's word with the
+    // agent it would go on with, going with that agent at its turn's end, or refused and why. Facts only: never an account's name or a path.
+    public static readonly NoteCode HandOverAsked = new("handover.asked", ["agent"]);
+    public static readonly NoteCode HandOverTaking = new("handover.taking", ["agent"]);
+    public static readonly NoteCode HandOverRefused = new("handover.refused", ["why"]) { Why = HandOver };
 
     // ——— A helper (MIXAGENT2a-ii, D163 point 2): on the asker, a helper asked, answered or refused, with the agent and why;
     // on the helper, whose session it helps. Facts only: never an account's name or a path.

@@ -448,6 +448,21 @@ internal sealed class StandInLedger : HttpMessageHandler
     }
 
     /// <summary>
+    /// A record's link to the session it continues (MIXAGENT1a-iii's <c>from</c>, <c>fromWhy</c>, <c>fromBy</c>), as the ledger
+    /// answers it on loopback: what MIXAGENT1c's judge reads to know a part a hand-over started.
+    /// </summary>
+    public void Continues(string session, string from, string why, string by)
+    {
+        lock (_gate)
+        {
+            var record = _sessions.Single(s => s["id"]!.GetValue<string>() == session);
+            record["from"] = from;
+            record["fromWhy"] = why;
+            record["fromBy"] = by;
+        }
+    }
+
+    /// <summary>
     /// A driven session of this machine's that took <paramref name="quest"/> and parked to ask the person (D83), in its own
     /// tree, with no words on it yet (ANSWER2): what the say door keeps the person's answer on.
     /// </summary>

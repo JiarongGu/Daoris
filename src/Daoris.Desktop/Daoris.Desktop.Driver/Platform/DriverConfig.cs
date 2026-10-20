@@ -289,6 +289,19 @@ public sealed record DriverConfig(
         new Dictionary<string, HelperRule>(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>
+    /// What an agent's ask to hand its session over to another agent does in each repository (MIXAGENT1c, D163 point 3; the mixed
+    /// agents design §5): a mode (<c>ask</c>, <c>on</c>, <c>off</c>). A repository's rule replaces its workspace's
+    /// (<see cref="HandOverRules.Resolve"/>); absent is the default, <c>ask</c>. Edited only through <see cref="HandOverRules.Apply"/>;
+    /// the CLI's <c>driverconfig.ts</c> reads it the same way, by one shared table (<c>HandOverRulesTests</c>).
+    /// </summary>
+    public IReadOnlyDictionary<string, HandOverRule> HandOver { get; init; } =
+        new Dictionary<string, HandOverRule>(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>A workspace's hand-over rule, for every repository in it that sets none of its own.</summary>
+    public IReadOnlyDictionary<string, HandOverRule> WorkspaceHandOver { get; init; } =
+        new Dictionary<string, HandOverRule>(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>
     /// The person's brainstorm policy on this machine (BRAINSTORM1b, D176 point 9): who may start one, the agents it runs and its
     /// minutes. A workspace's rule replaces it whole for a question about a repository in that workspace
     /// (<see cref="BrainstormRules.Resolve"/>); null is the default. Edited only through <see cref="BrainstormRules.Apply"/>; the
@@ -957,6 +970,9 @@ public sealed record DriverConfig(
             // Written only when set (MIXAGENT2a-i), as the CLI writes them: absent is the default, `ask`.
             HelperRules.WriteMap(writer, "helpers", Helpers);
             HelperRules.WriteMap(writer, "workspaceHelpers", WorkspaceHelpers);
+            // Written only when set (MIXAGENT1c), as the CLI writes them: absent is the default, `ask`.
+            HandOverRules.WriteMap(writer, "handOver", HandOver);
+            HandOverRules.WriteMap(writer, "workspaceHandOver", WorkspaceHandOver);
             // Written only when set (BRAINSTORM1b), as the CLI writes them: absent is D176 point 9's proposed defaults.
             BrainstormRules.WriteMachine(writer, Brainstorms);
             BrainstormRules.WriteMap(writer, "workspaceBrainstorms", WorkspaceBrainstorms);
@@ -1375,6 +1391,8 @@ public sealed record DriverConfig(
             WorkspaceOpinions = OpinionRules.Map(root, "workspaceOpinions", allowNone: false),
             Helpers = HelperRules.Map(root, "helpers"),
             WorkspaceHelpers = HelperRules.Map(root, "workspaceHelpers"),
+            HandOver = HandOverRules.Map(root, "handOver"),
+            WorkspaceHandOver = HandOverRules.Map(root, "workspaceHandOver"),
             Brainstorms = BrainstormRules.Machine(root),
             WorkspaceBrainstorms = BrainstormRules.Map(root, "workspaceBrainstorms"),
             Commits =CommitRules.Map(root, "commits"),

@@ -143,6 +143,12 @@ public static class PersonPresses
     /// <summary><c>sessions helper --decline &lt;ask&gt;</c>: the no to an agent's ask of a helper.</summary>
     public static InstanceRoute SessionHelperDecline { get; } = Person("SESSION_HELPER_DECLINE");
 
+    /// <summary><c>sessions hand-over &lt;id&gt; --approve</c>: the yes to an agent's ask to hand its session over (MIXAGENT1c).</summary>
+    public static InstanceRoute SessionHandOverApprove { get; } = Person("SESSION_HAND_OVER_APPROVE");
+
+    /// <summary><c>sessions hand-over &lt;id&gt; --decline</c>: the no to an agent's ask to hand its session over (MIXAGENT1c).</summary>
+    public static InstanceRoute SessionHandOverDecline { get; } = Person("SESSION_HAND_OVER_DECLINE");
+
     /// <summary>Each person's press a verb sends over the pipe, in the verb's words, with its route.</summary>
     public static IReadOnlyList<(string Verb, InstanceRoute Route)> Presses { get; } =
     [
@@ -159,6 +165,8 @@ public static class PersonPresses
         ("sessions go-on-new <id>", SessionGoOnNew),
         ("sessions start-from <id>", SessionStartFrom),
         ("sessions hand-over <id>", SessionHandOver),
+        ("sessions hand-over <id> --approve", SessionHandOverApprove),
+        ("sessions hand-over <id> --decline", SessionHandOverDecline),
         ("sessions helper <id> \"…\"", SessionHelperAsk),
         ("sessions helper --approve <ask>", SessionHelperApprove),
         ("sessions helper --decline <ask>", SessionHelperDecline),

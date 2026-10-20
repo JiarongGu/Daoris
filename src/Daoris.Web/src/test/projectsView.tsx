@@ -16,7 +16,7 @@ import { useDoor } from './door';
 
 export function ProjectsView({
   notify, onOpenCode, onOpenAgent, onSyncNow, addRequested, onAddOpened, importRequested, onImportOpened, drawerWorkspace, door,
-  section = null, onOpenQuest, onOpenAsk, onAttend,
+  section = null, onOpenQuest, onOpenAsk, onAttend, branchAsked = null, onBranchOpened,
 }: {
   notify: Notify;
   onOpenCode?: (repository: string) => void;
@@ -35,11 +35,14 @@ export function ProjectsView({
   door?: string;
   /** The section of a workspace's Setup the door asked to see open (UX6g). */
   section?: WorkspaceSection | null;
+  /** A door into how a landed branch landed (FLOWCHART1c): its opening chose the repository (`door`) and Branches, as `App`'s does. */
+  branchAsked?: { repository: string; branch: string } | null;
+  onBranchOpened?: () => void;
 }) {
   const lists = useListPanes();
   const [over, setOver] = useState(false);
   // The page's tab, held as `App` holds it, so a relaunch reopens the tab a test chose (UX6f); a workspace's apart (UX6g).
-  const [tab, setTab] = useState<ProjectTab>(readProjectTab);
+  const [tab, setTab] = useState<ProjectTab>(() => (branchAsked ? 'branches' : readProjectTab()));
   const [workspaceTab, setWorkspaceTab] = useState<WorkspaceTab>(() => (section ? 'setup' : readWorkspaceTab()));
   useDoor(lists, 'projects', door);
   const layout = useProjectsView({
@@ -52,7 +55,7 @@ export function ProjectsView({
     onWorkspaceTab: (next) => { setWorkspaceTab(next); storeWorkspaceTab(next); },
     workspaceSection: section,
     notify, onOpenCode, onOpenAgent, onSyncNow, addRequested, onAddOpened, importRequested, onImportOpened, drawerWorkspace,
-    onOpenQuest, onOpenAsk, onAttend,
+    onOpenQuest, onOpenAsk, onAttend, branchAsked, onBranchOpened,
   });
   return <ViewFrame layout={layout} lists={lists} over={over} onOver={setOver} />;
 }

@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Quest, Session } from '../../data/api';
 import { SectionTitle } from '../../design/ui';
@@ -9,7 +10,10 @@ import type { Relations } from './relations';
 /** How much of an answer the head carries: enough to know what was said, and the quest holds the rest. */
 const SAYS = 280;
 
-const DOOR = 'min-w-0 cursor-pointer truncate border-0 bg-transparent p-0 text-left underline decoration-line-strong underline-offset-2 hover:text-accent hover:decoration-accent';
+/** The press that opens or folds the relations, in the ink of the chain's and the parts' own presses. */
+const PRESS = 'cursor-pointer border-0 bg-transparent p-0 text-small text-accent hover:underline';
+
+const DOOR ='min-w-0 cursor-pointer truncate border-0 bg-transparent p-0 text-left underline decoration-line-strong underline-offset-2 hover:text-accent hover:decoration-accent';
 
 /**
  * Who a session worked with (SESS1): the session that asked for its
@@ -21,16 +25,40 @@ const DOOR = 'min-w-0 cursor-pointer truncate border-0 bg-transparent p-0 text-l
  * waited on (D79). **Each is a door**, as the strip's are: a session attends it, a quest opens its
  * record. Nothing to say, and nothing is drawn.
  *
- * A molecule: the relations arrive worked out (`relationsOf`), and a press goes out.
+ * **Folded to one line** (HEADFIT1; the UI/UX design §3.7 and R4, the UX7 design §6.2): measured in a real browser the relations cost
+ * 126 px between the record's head and its conversation, so the page says who it worked with in a line (who asked, what it carried
+ * on after, how many it asked of others) and opens the rest in place, as the milestone and the parts do. The line gives way to the
+ * list rather than sitting above it, so the title is said once, and *Hide* is the press back, as the chain's is.
+ *
+ * A molecule: the relations arrive worked out (`relationsOf`), a press goes out, and its one state is whether it is open. The page
+ * mounts it under the session's id, so another record starts folded.
  */
-export function SessionRelations({ relations, onQuest, onSession }: {
+export function SessionRelations({ relations, onQuest, onSession, defaultOpen = false }: {
   relations: Relations;
   onQuest?: (quest: Quest) => void;
   onSession?: (session: Session) => void;
+  /** Open on first draw: a story's or a test's, since the page's own default is folded. */
+  defaultOpen?: boolean;
 }) {
   const { t } = useTranslation();
+  const [open, setOpen] = useState(defaultOpen);
   const { askedBy, resumedAfter, asked } = relations;
   if (!askedBy && !resumedAfter && asked.length === 0) return null;
+
+  if (!open) {
+    const line = [
+      askedBy ? t('work.relations.line.askedBy', { who: askedBy.session?.repository ?? askedBy.id }) : null,
+      resumedAfter ? t('work.relations.line.resumed', { id: resumedAfter.id }) : null,
+      asked.length > 0 ? t('work.relations.line.asked', { count: asked.length }) : null,
+    ].filter(Boolean).join(' · ');
+    return (
+      <section aria-label={t('work.relations.title')} className="flex min-w-0 flex-wrap items-baseline gap-x-2 text-small text-ink-faint">
+        <span className="font-semibold">{t('work.relations.title')}</span>
+        <span className="min-w-0 text-ink-soft [overflow-wrap:anywhere]">{line}</span>
+        <button type="button" onClick={() => setOpen(true)} className={PRESS}>{t('work.relations.show')}</button>
+      </section>
+    );
+  }
 
   // Each quest by its name (SESSUX1j), whole title on its tip.
   const title = (quest: Quest) => (onQuest
@@ -89,6 +117,7 @@ export function SessionRelations({ relations, onQuest, onSession }: {
           </div>
         )}
       </dl>
+      <button type="button" onClick={() => setOpen(false)} className={`${PRESS} mt-1`}>{t('work.relations.hide')}</button>
     </section>
   );
 }

@@ -117,7 +117,8 @@ public sealed record HandOverRequest(string Agent, string? Account, string Why, 
 public sealed record HandOverAnswer(bool Kept, string? Why, string Message);
 
 // SESSCTX1b (D189 point 4): the briefing a hand-over composed here is replaced by ContextBrief.Compose, Daoris's brief of the whole
-// line, which a hand-over, an account move, a carry-on and a fallback are all handed; the outgoing agent's note is its `note` seam.
+// line, which a hand-over, an account move, a carry-on and a fallback are all handed; the outgoing agent's note (MIXAGENT1c's
+// `handover_propose`) is its own section there, in HandOverNote's one wording.
 
 /// <summary>The two lines a hand-over writes into conversations' records (MIXAGENT1a-i), each by its code with facts only.</summary>
 public static class HandOverNotes

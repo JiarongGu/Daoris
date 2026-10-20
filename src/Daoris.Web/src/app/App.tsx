@@ -193,6 +193,8 @@ export function App() {
     storeWorkspaceTab(next);
   }, []);
   const [workspaceSection, setWorkspaceSection] = useState<WorkspaceSection | null>(null);
+  // A landed branch's page a door asked for, with how it landed open (FLOWCHART1c): an event Repositories consumes.
+  const [branchAsked, setBranchAsked] = useState<{ repository: string; branch: string } | null>(null);
   // The repository whose code map a door opened the Map on (MAP3a; FRAME1e): a repository's page names it. The Map
   // goes one level in on it, and back to the workspace from there by its own door.
   const [mapCode, setMapCode] = useState<string | null>(null);
@@ -504,6 +506,7 @@ export function App() {
     if (plan.drawer === 'add') setAddRequested(true);
     if (plan.drawer === 'import') setImportRequested(true);
     if (plan.tab) chooseProjectTab(plan.tab);
+    if (plan.branch) setBranchAsked(plan.branch);
     if (plan.workspaceTab) chooseWorkspaceTab(plan.workspaceTab);
     setWorkspaceSection(plan.workspaceSection ?? null);
     // A door naming a code map opens the Map on it; any other way onto the Map opens the workspace, as it always has.
@@ -805,6 +808,8 @@ export function App() {
     onOpenQuest: openQuest,
     onOpenAsk: openAsk,
     onAttend: attached ? openInWork : undefined,
+    branchAsked,
+    onBranchOpened: () => setBranchAsked(null),
   });
   // Knowledge (UX6i, D150 §2.2): Search and Convergence (FRAME1f, D118 §2) as one place, held on every view as Quests is
   // and asking the service nothing until in front. Each mode's list memory is its chosen item and its one filter, *local
@@ -1148,6 +1153,8 @@ export function App() {
               onAnswerAsk={openAsk}
               // A quest on the chain, or one the session asked (SESS1), opens where quests are read.
               onOpenQuest={openQuest}
+              // How a landed branch landed (FLOWCHART1c): the work's milestone and the run's landing step open its page in Repositories.
+              onOpenBranch={(repository, branch) => open('projects', repository, { branch })}
               // Ask Daoris as a view of the frame's regions: one right region, never a second column.
               ask={<AskDaoris {...askProps} framed={false} opening={helpOpening} onOpened={() => setHelpOpening(null)} />}
               askFocus={helpFocus}

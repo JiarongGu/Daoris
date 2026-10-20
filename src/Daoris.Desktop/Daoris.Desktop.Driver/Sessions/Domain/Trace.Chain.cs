@@ -749,6 +749,43 @@ public sealed record TraceBranch(string Branch, string Tip, DateTimeOffset At)
     /// chose it; null under Current, and for a landing recorded before it was kept.
     /// </summary>
     public LandingWorkflow? Workflow { get; init; }
+
+    /// <summary>
+    /// The session it was made for (FLOWCHART1c): a landing that carries several sessions' work is read from each, so the one that made
+    /// it is named beside those whose done moved it on (<see cref="Advances"/>). Null only from a driver before the field.
+    /// </summary>
+    public string? Session { get; init; }
+
+    /// <summary>
+    /// Each later done that moved it on (FLOWCHART1c, LAND2c), oldest first, each with its session: one landing carries several units'
+    /// work, so the flowchart is the branch's and never one session's. Empty where none moved it.
+    /// </summary>
+    public IReadOnlyList<TraceAdvance> Advances { get; init; } = [];
+
+    /// <summary>The branch work units whose work it carries (FLOWCHART1c, FABRIC-END2), its own session's first; empty where its record keeps none.</summary>
+    public IReadOnlyList<string> Units { get; init; } = [];
+}
+
+/// <summary>
+/// One later done that moved a landed branch on (FLOWCHART1c, LAND2c): from the commit it stood at to the one it moved to, when, the
+/// session whose done moved it, who accepted that done and what let it go, and the quest and unit its record keeps for that session.
+/// </summary>
+public sealed record TraceAdvance(string From, string To, DateTimeOffset At, string Session)
+{
+    /// <summary>One of <see cref="Daoris.Driver.AcceptedBy"/>, or null in a record that did not keep it.</summary>
+    public string? AcceptedBy { get; init; }
+
+    public LandingReview? Review { get; init; }
+
+    public LandingOpinion? Opinion { get; init; }
+
+    public LandingWorkflow? Workflow { get; init; }
+
+    /// <summary>The quest its session served; null where it served none, and in a record from before.</summary>
+    public string? Quest { get; init; }
+
+    /// <summary>Its session's branch work unit; null where its tree had none, and in a record from before.</summary>
+    public string? Unit { get; init; }
 }
 
 /// <summary>What stood when a driven session on a quest started, by the moments the stores keep (D143 point 3).</summary>
@@ -1224,7 +1261,8 @@ internal static partial class TraceChains
     {
         if (facts.LandingsUnread is not null) return new TraceLanding { Missing = TraceLandingGaps.Unread };
 
-        var branches = facts.Landings.Where(each => Same(each.Session, session.Id)).Select(Branch).ToList();
+        // FLOWCHART1c: every landing that names it, the one made for it and each it moved on, so a shared branch is read from each.
+        var branches = facts.Landings.Where(each => each.Names(session.Id)).Select(Branch).ToList();
         var due = Due(session, facts);
         if (branches.Count > 0) return new TraceLanding { Branches = branches, Due = due };
 
@@ -1261,7 +1299,7 @@ internal static partial class TraceChains
 
     /// <summary>A landing whose session the service holds no record of: what the landing alone says.</summary>
     private static TraceUnrecordedLink Unrecorded(string session, TraceFacts facts) =>
-        new(session) { Branches = [.. facts.Landings.Where(each => Same(each.Session, session)).Select(Branch)] };
+        new(session) { Branches = [.. facts.Landings.Where(each => each.Names(session)).Select(Branch)] };
 
     private static TraceBranch Branch(LandedBranch landing) => new(landing.Branch, landing.Tip, landing.LandedAt)
     {
@@ -1280,6 +1318,20 @@ internal static partial class TraceChains
         Review = landing.Review,
         Opinion = landing.Opinion,
         Workflow = landing.Workflow,
+        Session = landing.Session,
+        Advances =
+        [
+            .. landing.Advances.Select(advance => new TraceAdvance(advance.From, advance.To, advance.At, advance.Session)
+            {
+                AcceptedBy = advance.AcceptedBy,
+                Review = advance.Review,
+                Opinion = advance.Opinion,
+                Workflow = advance.Workflow,
+                Quest = advance.Quest,
+                Unit = advance.Unit,
+            }),
+        ],
+        Units = landing.Units,
     };
 
     /// <summary>

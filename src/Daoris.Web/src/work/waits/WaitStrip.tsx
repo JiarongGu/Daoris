@@ -9,6 +9,7 @@ import type { QuestClose, Resolution } from './AwaitingPerson';
 import type { LineBehind } from '../review/diff';
 import type { DiscardOffer, LandOffer } from '../groups';
 import { HelperAsks, type HelperWaits } from './HelperAsks';
+import { HandOverAgentAsk, type HandOverAskWait } from './HandOverAgentAsk';
 import type { Answered } from '../InlineConfirm';
 import type { SayRebase } from '../review/LandingSync';
 import { Discards, type HeadOpinion, type HeadReview, type LandingPlan, Lands, type WorkAsk } from '../review/Lands';
@@ -47,6 +48,11 @@ export type WaitProps = {
    * Absent where nothing reads them (a browser, a teammate's record).
    */
   helpers?: HelperWaits | null;
+  /**
+   * Its agent's own ask to hand it over (MIXAGENT1c, D163 point 3): the ask as the driver's look left it, the agents' names, the
+   * person's yes and no. One the look holds waiting on their word is a wait. Absent where nothing reads it (a browser, a teammate's record).
+   */
+  handOver?: HandOverAskWait | null;
   lands?: LandOffer | null;
   landing?: LandingPlan | null;
   planning?: boolean;
@@ -134,6 +140,8 @@ export function WaitStrip({ answerBelow = false, workAsk, ruleAsk, onTop, seek, 
   const asking = new Set(waits.filter((wait) => wait.kind === 'permission').map((wait) => (wait as { request: string }).request));
   const ruled = new Set(waits.filter((wait) => wait.kind === 'rule').map((wait) => (wait as { id: string }).id));
   const helping = new Set(waits.filter((wait) => wait.kind === 'helper').map((wait) => (wait as { id: string }).id));
+  // Its agent's ask to hand it over (MIXAGENT1c) is the strip's own: the head draws no line of it, so the strip never stands aside for it.
+  const handing = waits.some((wait) => wait.kind === 'handOver');
   const work = waits.some((wait) => WORK_WAITS.has(wait.kind));
   const discard = waits.some((wait) => wait.kind === 'discard');
   // Never pluralised by `count`: in Chinese one is `other` too, and one wait is said without its number.
@@ -143,7 +151,7 @@ export function WaitStrip({ answerBelow = false, workAsk, ruleAsk, onTop, seek, 
     <section
       ref={section}
       aria-label={title}
-      hidden={aside && !held}
+      hidden={aside && !held && !handing}
       className="shrink-0 border-t border-line bg-page"
       onFocus={() => setInside(true)}
       // The outline goes once the person moves on from the line it led to, and the strip with it where the head's are on screen.
@@ -237,6 +245,12 @@ export function WaitStrip({ answerBelow = false, workAsk, ruleAsk, onTop, seek, 
                   inConversation={toEvent?.helpers}
                   marked={sought?.startsWith('helper:') ? sought.slice('helper:'.length) : undefined}
                 />
+              </div>
+            )}
+            {handing && props.handOver && (
+              <div className="grid gap-1">
+                <p className="m-0 text-small text-ink-soft">{t('work.handOverAsk.lead')}</p>
+                <HandOverAgentAsk {...props.handOver} />
               </div>
             )}
             {work && props.lands && (

@@ -8,6 +8,7 @@ import type { AccessLevel } from '../settings/repository/Access';
 import type { CommitRule } from '../settings/repository/Commits';
 import type { HeavyGate, HeavyMarks } from '../settings/repository/HeavyGates';
 import type { HelperRule } from '../settings/repository/Helpers';
+import type { HandOverRule } from '../settings/repository/HandOver';
 import type { LandingRule } from '../settings/repository/Landings';
 import type { LanguageOption } from '../settings/repository/Languages';
 import type { OpinionRule } from '../settings/repository/Opinions';
@@ -167,6 +168,13 @@ export type DriverState = {
   helpers?: { repository: string; rule: HelperRule }[];
   /** And by workspace, for each repository there that sets none of its own. */
   workspaceHelpers?: { workspace: string; rule: HelperRule }[];
+  /**
+   * The hand-over rules as set (MIXAGENT1c, D163 point 3): what an agent's ask to hand its session over does in each repository —
+   * absent on a shell older than it, which offers no hand-over row.
+   */
+  handOver?: { repository: string; rule: HandOverRule }[];
+  /** And by workspace, for each repository there that sets none of its own. */
+  workspaceHandOver?: { workspace: string; rule: HandOverRule }[];
   /**
    * The access setups as set (AUTONOMY1a, D184 point 1): what each repository's sessions start under, full access or the pauses it
    * names — absent on a shell older than it, which offers no access section. What each repository resolves to is `LINES`' `access`.

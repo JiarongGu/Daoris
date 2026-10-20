@@ -13,8 +13,9 @@ import {
   useParkGoAhead, useAccounts, useGoOnNew, useTrace, useDiscardSessionBranch, useLanding, useLandSessionTree, useSessionDiff,
   useDiscardSessionTree, useDriver, useOpinionGate, useWorkflowRun, useRules, useSessionEvents, stoppedWaiting, useUnderWay,
   useEntryLanding, useLandEntry, useSessionHelpers, useUnderWaySubject, useSessionProcess, useWorkState, usePushedCalls, withCall,
-  useAnswerPermission, usePermissionWaits,
+  useAnswerPermission, usePermissionWaits, useSessionHandOverAsk, useApproveHandOver, useDeclineHandOver, type HandOverWord,
 } from '../bridge/shell';
+import { handOverRefused, type HandOverAskWait } from './waits/HandOverAgentAsk';
 import { permissionSaid, type PermissionWaits } from './waits/PermissionAsks';
 import { type Sent, useSending, useSettled } from './conversation/sending';
 import { WorkflowRunView } from '../workflow/WorkflowRunView';
@@ -178,6 +179,7 @@ function SentSettler({ sending, giveBack }: { sending: ReturnType<typeof useSend
 export function WorkFrame({
   selected, onSelect, notify, onSendBack, onAnswerAsk, onOpenQuest, intent, onIntentTaken, ask, askFocus = 0, closings, placements,
   lists, layout: viewLayout, onOpenSessions, terminal = false, onListMode, group = null, onGroupBrought, compose = null, onMakeTask,
+  onOpenBranch,
 }: {
   /**
    * What each view's list remembers (D118 §3f), held by the application so the list's doors reach it from
@@ -215,6 +217,11 @@ export function WorkFrame({
    * record is the application's to open, as an ask's is.
    */
   onOpenQuest?: (quest: string) => void;
+  /**
+   * Open a landed branch's page in Repositories, with how it landed (FLOWCHART1c): the work's milestone and a run's landing step
+   * name the branch. The page is the application's to open, as a quest's is.
+   */
+  onOpenBranch?: (repository: string, branch: string) => void;
   /**
    * The attended session, held by the application — because a door into Work from somewhere else
    * (a quest's record) has to be able to say WHICH session, and a selection this frame kept to
@@ -1174,6 +1181,7 @@ export function WorkFrame({
                 ...(onOpenQuest ? { quest: onOpenQuest } : {}),
                 ...(onAnswerAsk ? { ask: onAnswerAsk } : {}),
                 review: (id) => { doors.review?.(id); if (elsewhere) onOpenSessions?.(); },
+                ...(onOpenBranch ? { branch: onOpenBranch } : {}),
               }}
               controls={lookControl || opinionControl ? controls : undefined}
             />
@@ -1258,6 +1266,10 @@ export function WorkFrame({
   // The helpers the attended session asked for (MIXAGENT2b, D163): this machine's own files, so only for its own record. Its head
   // lists those still on their way, with the person's yes to an agent's ask that waits on it and a door to each helper.
   const helperAsks = useSessionHelpers(attended && here ? attended.id : null);
+  // Its agent's own ask to hand it over (MIXAGENT1c, D163 point 3): this machine's own files, so only for its own record.
+  const handOverAsk = useSessionHandOverAsk(attended && here ? attended.id : null);
+  const approveHandOver = useApproveHandOver();
+  const declineHandOver = useDeclineHandOver();
   // Where its work stands (FABRIC-MILESTONE1b): the driver's derivation for this session, read only for this machine's own record,
   // whose branch and tree are this machine's. A session no record names a unit for (a chat with no tree) shows none.
   const milestones = useWorkState(attended && here ? attended.id : null, Boolean(attended && here));
@@ -1360,6 +1372,23 @@ export function WorkFrame({
       attend(helper);
     },
     busy: actions.approvingHelper,
+  } : null;
+  // Its agent's own ask to hand it over (MIXAGENT1c, D163 point 3), with the person's yes and no: a wait at the foot while the look
+  // holds it on their word. A refusal is said beside the presses, in the page's words for its code.
+  const handOverWord = (answer: HandOverWord, answered: Answered) =>
+    (answer.stands ? answered.done() : answered.refused(handOverRefused(t, answer.why, answer.message)));
+  const handOverWait: HandOverAskWait | null = attended && here && handOverAsk.data ? {
+    ask: handOverAsk.data,
+    nameOf: (agent: string) => agentRoster.names?.[agent] ?? agent,
+    onApprove: (ask, answered) => approveHandOver.mutate({ session: attended.id, ask }, {
+      onSuccess: (answer) => handOverWord(answer, answered),
+      onError: (error) => answered.refused(sentence(error)),
+    }),
+    onDecline: (ask, answered) => declineHandOver.mutate({ session: attended.id, ask }, {
+      onSuccess: (answer) => handOverWord(answer, answered),
+      onError: (error) => answered.refused(sentence(error)),
+    }),
+    busy: approveHandOver.isPending || declineHandOver.isPending,
   } : null;
   // The tool calls the attended session holds for the person's answer under asking (AUTONOMY1b3c, D184 point 3): the driver's own
   // list, this machine's record alone, asked every few seconds while it runs (the routes publish nothing), and the answer's one
@@ -1519,6 +1548,8 @@ export function WorkFrame({
     // The helpers it asked for (MIXAGENT2b), with the yes and the no: an agent's ask the look holds waiting on the person's word is
     // one of its waits, at the head and at the foot alike (MIXAGENT2c, D168).
     helpers: helperWaits,
+    // Its agent's own ask to hand it over (MIXAGENT1c): one of its waits while the look holds it on the person's word, the strip's.
+    handOver: handOverWait,
     // The tool calls it holds for the person's answer (AUTONOMY1b3c): one of its waits, at the head and at the foot alike.
     permissions: heldPermissions,
     // Its review, wherever the review stands (SESS2 H4): the move beside unlanded work.
@@ -2027,6 +2058,7 @@ export function WorkFrame({
               : undefined}
             discardingBranch={discardBranch.isPending}
             milestone={milestone}
+            onOpenBranch={onOpenBranch}
             trace={attended && trace.available ? {
               open: tracing === attended.id,
               onToggle: () => setTracing(tracing === attended.id ? null : attended.id),

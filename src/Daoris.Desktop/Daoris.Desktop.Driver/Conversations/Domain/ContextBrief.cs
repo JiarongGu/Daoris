@@ -162,8 +162,9 @@ public static class ContextBrief
         var opening = Opening(line, read, clipped);
         // Items 5, 6 and 7 fill under their own caps.
         var (state, stateLeft, planLeft) = State(line, read, clipped);
-        var note = line.Note?.Trim() is { Length: > 0 } said
-            ? "\n\nThe outgoing agent's own note, as its claim:\n\n" + TextBounds.Quote(clipped.Head(said, NoteCap - 60), bareBlank: false)
+        // In MIXAGENT1c's one wording for an outgoing agent's note (HandOverNote), clipped by weight first.
+        var note = line.Note?.Trim() is { Length: > 0 } said && HandOverNote.Said(clipped.Head(said, NoteCap - 200)) is { } claim
+            ? "\n\n" + claim
             : null;
         var (others, othersLeft) = Others(line.Others);
 

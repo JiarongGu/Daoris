@@ -7,6 +7,7 @@ import type { LineBehind, SessionDiff } from '../review/diff';
 import type { DiscardOffer, LandOffer } from '../groups';
 import { heldDiscardable } from '../review/HeldDiscard';
 import { type HelperAskRow, waitsOnWord } from './HelperAsks';
+import { type HandOverAskRow, waitsOnHandOverWord } from './HandOverAgentAsk';
 import { isIntake } from '../identity';
 import type { LandingPlan } from '../review/Lands';
 import { acceptAnswers, opinionAsked, opinionHolds, opinionState, opinionTone } from '../gates/opinion';
@@ -27,6 +28,7 @@ export type Wait =
   | { kind: 'permission'; request: string }
   | { kind: 'rule'; id: string }
   | { kind: 'helper'; id: string }
+  | { kind: 'handOver'; id: string }
   | { kind: 'accept' }
   | { kind: 'rebase' }
   | { kind: 'opinion' }
@@ -117,6 +119,8 @@ export type WaitFacts = {
   rules?: { proposals?: unknown; onAnswer?: unknown } | null;
   /** The helpers it asked for as the driver's look left them, and the yes that answers one (MIXAGENT2c). */
   helpers?: { asks?: readonly HelperAskRow[]; onApprove?: unknown } | null;
+  /** Its agent's own ask to hand it over as the driver's look left it, and the yes that answers it (MIXAGENT1c). */
+  handOver?: { ask?: HandOverAskRow | null; onApprove?: unknown } | null;
   lands?: LandOffer | null;
   landing?: LandingPlan | null;
   behind?: LineBehind | null;
@@ -162,6 +166,10 @@ export function waitsOf(facts: WaitFacts): Wait[] {
   if (facts.helpers?.onApprove) {
     for (const row of facts.helpers.asks ?? []) if (waitsOnWord(row)) waits.push({ kind: 'helper', id: row.id });
   }
+  // Its agent's own ask to hand it over, which the look holds waiting on the person's word under the `handOver` rule's `ask`
+  // (MIXAGENT1c, D163 point 3), whatever the session's state: one not read yet, one with their yes, taken or refused waits on none.
+  const handing = facts.handOver?.ask;
+  if (facts.handOver?.onApprove && handing && waitsOnHandOverWord(handing)) waits.push({ kind: 'handOver', id: handing.id });
   if (facts.lands) {
     const stands = landingStands({ lands: facts.lands, landing: facts.landing, behind: facts.behind });
     if (facts.onLand && stands.acceptable && !stands.conflict) waits.push({ kind: 'accept' });

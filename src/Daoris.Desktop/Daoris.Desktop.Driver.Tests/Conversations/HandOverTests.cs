@@ -394,7 +394,9 @@ public sealed class HandOverTests : IDisposable
         Assert.Null(SessionsCommand.Read(["hand-over", "s1", "--agent", "codex-acp"], out _)!.Account);
 
         Assert.Null(SessionsCommand.Read(["hand-over", "s1"], out problem));
-        Assert.Equal("`hand-over` takes one session's id, `--agent <adapter>` and, where one is wanted, `--account <name>`.", problem);
+        Assert.Equal(
+            "`hand-over` takes one session's id, `--agent <adapter>` and, where one is wanted, `--account <name>`; "
+            + "or `--approve` or `--decline` for its agent's own ask to hand it over.", problem);
         Assert.Null(SessionsCommand.Read(["hand-over", "--agent", "codex-acp"], out _));
         Assert.Null(SessionsCommand.Read(["hand-over", "s1", "--agent"], out _));
         Assert.Contains("sessions hand-over <id> --agent <adapter> [--account <name>]", SessionsCommand.Usage);

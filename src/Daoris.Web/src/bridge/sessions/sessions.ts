@@ -9,6 +9,7 @@ import type { SessionEvent } from '../../work/conversation/conversation';
 import type { SessionEntry } from '../../work/entries';
 import { GROUP_ORDER, type SessionGroupName, type SessionGrouping } from '../../work/groups';
 import type { HelperAskRow, HelperWait } from '../../work/waits/HelperAsks';
+import type { HandOverAskRow } from '../../work/waits/HandOverAgentAsk';
 import type { PermissionAnswered, PermissionChoice, PermissionWait } from '../../work/waits/PermissionAsks';
 import type { NewSessionAnswer } from '../../work/say';
 import type { SessionWhere } from '../../work/rail/SessionRow';
@@ -556,6 +557,58 @@ export const useDeclineHelper = () => useMutation({
       session: no.session, ask: no.ask,
     });
     return { declined: answer?.declined === true, why: word(answer?.why), message: typeof answer?.message === 'string' ? answer.message : '' };
+  },
+});
+
+/**
+ * A session's agent's own ask to hand it over (MIXAGENT1c, D163 point 3), as the driver's look left it, read off this machine's own
+ * files: shell-only, and asked only for a session of this machine's; null where its agent asked none. Under the sessions' key, so a
+ * look's tick and the session's moves ask it again, as its helpers' asks are.
+ */
+export const useSessionHandOverAsk = (session: string | null | undefined) => {
+  const { isAvailable } = useShenora();
+  return useQuery({
+    queryKey: ['sessions', 'handOverAsk', session ?? ''] as const,
+    queryFn: async (): Promise<HandOverAskRow | null> => {
+      const ask = (await call<{ ask?: unknown } | null>('SESSION_HAND_OVER_ASK', { id: session }))?.ask as Record<string, unknown> | null;
+      if (!ask || typeof ask !== 'object' || word(ask.id) === null || typeof ask.note !== 'string') return null;
+      return {
+        id: ask.id as string, note: ask.note, at: typeof ask.at === 'string' ? ask.at : '',
+        state: word(ask.state), code: word(ask.code), agent: word(ask.agent),
+      };
+    },
+    enabled: isAvailable && Boolean(session),
+    refetchOnWindowFocus: false,
+  });
+};
+
+/** What the person's yes or no to their session's agent's ask to hand over came to: whether it stands, its code, the sentence. */
+export type HandOverWord = { stands: boolean; why: string | null; message: string; agent: string | null };
+
+/**
+ * The person's yes to their session's agent's ask to hand it over (MIXAGENT1c): a conversation this shell holds is handed over at
+ * once, anything else is `approved` for the driver's look. A refusal is the answer, by its code. The sessions and the driver are
+ * asked again by the state hub (D169).
+ */
+export const useApproveHandOver = () => useMutation({
+  mutationFn: async (yes: { session: string; ask: string }): Promise<HandOverWord> => {
+    const answer = await call<{ approved?: unknown; why?: unknown; message?: unknown; agent?: unknown } | null>('SESSION_HAND_OVER_APPROVE', {
+      session: yes.session, ask: yes.ask,
+    });
+    return {
+      stands: answer?.approved === true, why: word(answer?.why), message: typeof answer?.message === 'string' ? answer.message : '',
+      agent: word(answer?.agent),
+    };
+  },
+});
+
+/** The person's no to their session's agent's ask to hand it over (MIXAGENT1c): refused `declined`, its note on the record, at once. */
+export const useDeclineHandOver = () => useMutation({
+  mutationFn: async (no: { session: string; ask: string }): Promise<HandOverWord> => {
+    const answer = await call<{ declined?: unknown; why?: unknown; message?: unknown } | null>('SESSION_HAND_OVER_DECLINE', {
+      session: no.session, ask: no.ask,
+    });
+    return { stands: answer?.declined === true, why: word(answer?.why), message: typeof answer?.message === 'string' ? answer.message : '', agent: null };
   },
 });
 

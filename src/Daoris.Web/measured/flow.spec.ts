@@ -54,6 +54,15 @@ const TABLE: Record<string, Record<number, number>> = {
   'parts/ForkChinese': { 544: 0, 1200: 0 },
   'parts/WithTheLandingPlan': { 400: 0, 544: 0, 1200: 0 },
   'parts/WithTheLandingPlanChinese': { 400: 0, 544: 0, 1200: 0 },
+  // How a landed branch landed (FLOWCHART1c): its tries and its advances stacked, the push, the pull request and the first advance
+  // hung side by side from the landing, a rank of three, so it is the rail below 544 px; top to bottom from there, being too long
+  // for left to right. A landing from before the advances is two nodes, left to right from 400 px; a merge's is one node a rank.
+  'landing/Shared': { 544: 0, 1200: 0 },
+  'landing/SharedChinese': { 544: 0, 1200: 0 },
+  'landing/Waiting': { 544: 0, 1200: 0 },
+  'landing/WaitingChinese': { 544: 0, 1200: 0 },
+  'landing/Older': { 300: 0, 400: 0, 544: 0, 1200: 0 },
+  'landing/MergedIntoTheLine': { 300: 0, 400: 0, 544: 0, 1200: 0 },
 };
 
 /** The story drawn, its faces loaded, and every drawn flow's edges drawn and holding still. */

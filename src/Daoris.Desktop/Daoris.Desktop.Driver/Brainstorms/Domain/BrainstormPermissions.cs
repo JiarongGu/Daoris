@@ -35,7 +35,7 @@ public static class BrainstormPermissions
     [
         "accept_propose", "agent_propose", "agent_settings_propose", "ask_propose", "brainstorm_give", "brainstorm_synthesize",
         "browser_propose", "channel_post", "channel_read", "clear_propose", "delete_propose", "go_ahead_ask", "go_propose",
-        "hand_propose", "helper_answer", "helper_ask", "housekeeping_clean_up", "housekeeping_discard_branch", "housekeeping_inspect",
+        "hand_propose", "handover_propose", "helper_answer", "helper_ask", "housekeeping_clean_up", "housekeeping_discard_branch", "housekeeping_inspect",
         "knowledge_convergence", "knowledge_get", "knowledge_refresh",
         "knowledge_repositories", "knowledge_search", "opinion_answer", "opinion_give", "pause_propose", "permission_propose",
         "plugin_propose", "quest_list", "quest_publish", "quest_respond", "registry", "repository_propose", "review_ready",

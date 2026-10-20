@@ -14,4 +14,11 @@ public sealed record HandOverAgent(IReadOnlyList<string> Accounts, SessionWire W
 /// <param name="From">The session that was stopped to hand the quest over: the one stop the planner reads as released.</param>
 /// <param name="Why">One of <see cref="HandOverWhy"/>.</param>
 /// <param name="AskedBy">One of <see cref="HandOverBy"/>.</param>
-public sealed record HandedQuest(string Agent, string? Account, string From, string Why, string AskedBy, DateTimeOffset At);
+public sealed record HandedQuest(string Agent, string? Account, string From, string Why, string AskedBy, DateTimeOffset At)
+{
+    /// <summary>
+    /// The note the agent it went on from left where it asked to hand over (MIXAGENT1c): told to the carry-on as that agent's claim.
+    /// Null for every other hand-over, and in a file from before, which keeps its shape.
+    /// </summary>
+    public string? Note { get; init; }
+}

@@ -62,6 +62,20 @@ public sealed class Driver(
         init => Context.Stops = value;
     }
 
+    /// <summary>How a conversation an agent asked to hand over is handed to the shell's chat runner (MIXAGENT1c): <see cref="LoopContext.HandsOver"/>.</summary>
+    public Func<string, string, CancellationToken, Task<HandedOver>>? HandsOver
+    {
+        get => Context.HandsOver;
+        init => Context.HandsOver = value;
+    }
+
+    /// <summary>The roster's doors a hand-over's order reads, a test's stand-in (MIXAGENT1c): <see cref="LoopContext.HandOverDoors"/>.</summary>
+    internal Func<CancellationToken, Task<IReadOnlyList<HandOverDoor>>>? HandOverDoors
+    {
+        get => Context.HandOverDoors;
+        init => Context.HandOverDoors = value;
+    }
+
     /// <summary>
     /// The world a look's workspace plans read (WSSETUP6): <see cref="WorkspaceSetupWorld"/> over this driver's client, unless
     /// a test hands in a stand-in, since every real press reads a line with git and asks the tools their version.
@@ -355,8 +369,21 @@ public sealed class Driver(
     private Task<(StartRun? Run, ContinueReason? FellBack, bool AnswerKept)> ContinueAsync(
         Consideration start, PriorSession park, HarnessSelection selection, IReadOnlyList<RepoView> registry,
         TreeLock? starting, Action onOpened, CancellationToken ct, string agent, ContinueReason? account = null, string? inSync = null,
-        DrivenAccess? permissions = null) =>
-        GoOns.ContinueAsync(start, park, selection, registry, starting, onOpened, ct, agent, account, inSync, permissions);
+        DrivenAccess? permissions = null, bool treeStands = true) =>
+        GoOns.ContinueAsync(start, park, selection, registry, starting, onOpened, ct, agent, account, inSync, permissions, treeStands);
+
+    /// <summary>
+    /// What became of a session's tree before it went on (TREEGONE1), said on that session's record: its console and its conversation,
+    /// by code. The tree made again in its place is said once, as it happens.
+    /// </summary>
+    private void TreeSaid(string session, Noted said)
+    {
+        Context.Output?.Append(session, said.Note);
+        Context.Events.Keep(
+            session,
+            new SessionEvent { Kind = SessionEventKind.Note, Text = said.Note, Parts = said.Parts.Count > 0 ? said.Parts : null },
+            say: null);
+    }
 
     /// <summary>
     /// A tree a start goes on in, brought up to date where the line holds some of its commits (LANDSYNC2): what the session is told,
@@ -1533,7 +1560,7 @@ public sealed class Driver(
             // says the wait once and a screen shows the quest waiting for an account; the record's conversation says why, with
             // the door out of the wait. Nothing was spawned or probed to learn it.
             var why = DriverContinuations.WaitsFor(quest, start.Resumes!, resume.Selection);
-            GoOns.HeldForAccount(start.Resumes!, ResumeWords.NotYetOn(resume, DriverContinuations.DoorOf(quest, start.Resumes!)));
+            GoOns.HeldSaying(start.Resumes!, ResumeWords.NotYetOn(resume, DriverContinuations.DoorOf(quest, start.Resumes!)));
             return Hold(why) with { Cooling = resume.Selection.Cooling };
         }
 
@@ -1565,18 +1592,52 @@ public sealed class Driver(
         // the same reason every refusal above is asked before it: a failure here holds the quest
         // open and records nothing. The branch grows from the canonical line as WSP4 resolves it.
         // A RESUME (D79) carries on in the tree its earlier session asked from — that tree holds the work
-        // done before the question — where it still stands. One a person has since discarded is gone
-        // with its work, and the resume grows a fresh tree like a first start. A CARRY-ON after a
+        // done before the question — where it still stands, or made again below on its branch (TREEGONE1). One whose work
+        // landed and whose branch the tidy took grows a fresh tree like a first start. A CARRY-ON after a
         // cut-off (D80) is the same move for a different reason: the quest waits on nothing, and the
         // earlier session failed before closing it.
-        var resumedIn = start.Resumes is { Tree: { Length: > 0 } priorTree } && isolated && Directory.Exists(priorTree)
-            ? priorTree
+        // TREEGONE1 (D51, D131): a session never runs with its tree gone. The tree a session goes on in is asked for as git lists it,
+        // on its branch, before anything goes on there: made again in its place where its folder is gone and its branch stands, and
+        // said; where its branch is gone too, or it could not be made, the start is held for the person and said, and no harness
+        // starts in the checkout or a folder left behind in its place. Asked with the repository's trees held, as an open is (LEFT2).
+        // A session whose work landed and whose branch the tidy took grows a fresh tree as before (D79, D82).
+        var priorTree = start.Resumes is { Tree: { Length: > 0 } resumesIn } && Context.Trees.Holds(resumesIn) ? resumesIn : null;
+        var entryTree = isolated && start.Entry?.Into is { Tree: { Length: > 0 } partTree } ? partTree : null;
+        TreeStanding? priorStands = null, entryStands = null;
+        if (priorTree is not null || (entryTree is not null && Context.Trees.Holds(entryTree)))
+        {
+            using var returning = TreeLock.TryStarting(home, start.Workspace, quest.To);
+            if (returning is null) return Hold(TreeLock.Replaying(quest.To));
+            if (priorTree is not null) priorStands = await Context.Trees.EnsureAsync(root, priorTree, ct).ConfigureAwait(false);
+            if (entryTree is not null && Context.Trees.Holds(entryTree))
+            {
+                entryStands = await Context.Trees.EnsureAsync(root, entryTree, ct).ConfigureAwait(false);
+            }
+        }
+
+        if (priorStands is { Said: { } priorSaid } && start.Resumes is { } goneFrom)
+        {
+            var landedAway = priorStands.Stand == TreeStand.Gone && Context.Trees.Recorded.Landing(goneFrom.Session) is not null;
+            if (priorStands.Stand == TreeStand.Remade) TreeSaid(goneFrom.Session, priorSaid);
+            else if (!landedAway)
+            {
+                GoOns.HeldSaying(goneFrom, priorSaid);
+                return Hold(priorSaid.Note);
+            }
+        }
+
+        if (entryStands is { Stand: TreeStand.Remade, Said: { } entrySaid }) TreeSaid(start.Entry!.Into!.Session, entrySaid);
+        else if (entryStands is { Stand: TreeStand.Unmade, Said: { } entryUnmade }) return Hold(entryUnmade.Note);
+
+        static bool StandsNow(TreeStanding? stands, string tree) =>
+            stands is null ? Directory.Exists(tree) : stands.Stand is TreeStand.Stands or TreeStand.Remade;
+        var resumedIn = start.Resumes is { Tree: { Length: > 0 } resumedTree } && isolated && StandsNow(priorStands, resumedTree)
+            ? resumedTree
             : null;
         var carryingOn = start.Resumes is not null && quest.Awaits is null or "";
         // A further part of a session (SESSONE1d, D167 point 4 as amended) goes into the tree the planner found free, where it still
         // stands; one the tidy took at its landing grows again below, from the branch that work landed on (D82), else from the line.
-        var entryTree = isolated && start.Entry?.Into is { Tree: { Length: > 0 } partTree } ? partTree : null;
-        var joinedIn = entryTree is not null && Directory.Exists(entryTree) ? entryTree : null;
+        var joinedIn = entryTree is not null && StandsNow(entryStands, entryTree) ? entryTree : null;
 
         // What the question came back with, which is the whole point of resuming: the session is handed
         // it. Read before the record opens, like every hold above — a question the service no longer
@@ -1717,7 +1778,7 @@ public sealed class Driver(
             // Where its own account could not carry the words, the walk's pick did, and the reason says why (MSG1g).
             (var continued, fellBack, answerKept) = await ContinueAsync(
                     start, park, selection, registry, starting, onOpened, ct, agent, account: resume?.Elsewhere, inSync: inSync?.Told,
-                    permissions: permissions)
+                    permissions: permissions, treeStands: priorStands is null or { Stand: TreeStand.Stands or TreeStand.Remade })
                 .ConfigureAwait(false);
             // The fresh tree opened above is used by none of the returns that follow, so each lets it go by the clean path (GOONTREE1,
             // D51): a tree and branch for a start that is never made would be left at every look. On no token (QUEUEDTREE1): a
@@ -1838,6 +1899,14 @@ public sealed class Driver(
                 $"refused  #{quest.Id} → {quest.To}: {message}", false, null, start.GoesOn ? $"the service refused the open: {message}" : null);
         }
 
+        // TREELOCK1 (D51's note): its own tree locked in its name while it holds it, so no tool that prunes merged branches takes it;
+        // asked before the starting hold goes, so the look's let-go of unheld locks sees it held. Never a reason to hold the start.
+        var locksTree = Context.Trees.Holds(workTree);
+        if (locksTree && await SessionLocks.HoldAsync(workTree, sessionId, ct).ConfigureAwait(false) is { } unlocked)
+        {
+            Log?.Warn("tree.unlocked", ("session", sessionId), ("why", unlocked));
+        }
+
         // The record is open, so the ledger holds the tree and a replay's own look sees it in use (LEFT2).
         starting?.Dispose();
         restarting?.Dispose();
@@ -1870,6 +1939,8 @@ public sealed class Driver(
 
         // The stop made of it before a close cut its conclusion off, told as its run lets go (FLAKE3).
         SessionStop? stoppedFirst = null;
+        // TREELOCK1: whether its record still holds its tree as the run ends, waiting on the person or going on at the next look.
+        var holdsTree = false;
         try
         {
             // The words a session could not go on with went to this one (MSG1b, D137 §2.2): off that record by their ids, kept
@@ -1885,11 +1956,13 @@ public sealed class Driver(
             // Daoris's brief of the whole line, every word it took and each turn's outcome, the tree read in the tree this start
             // works in, which every carry-on is handed, since a cut-off for any reason loses the same thread. And whether it ran on
             // another account that is now cooling, which only a limit makes so.
+            // The note its agent left where it asked to hand over (MIXAGENT1c), the brief's own section as that agent's claim.
+            var handedNote = carryingOn && handedFrom ? handedQuest?.Note : null;
             var brief = prior is null
                 ? null
                 : await ContextBriefs.ComposeAsync(
-                    service, Context.Events, home, prior.Session, continues?.Why ?? HandOverWhy.CarryOn, conversation: false, config: config,
-                    tree: workTree, ct: ct).ConfigureAwait(false);
+                    service, Context.Events, home, prior.Session, continues?.Why ?? HandOverWhy.CarryOn, conversation: false, note: handedNote,
+                    config: config, tree: workTree, ct: ct).ConfigureAwait(false);
             var elsewhere = prior is not null && OnAnotherAccount(prior, selection.Profile);
             // The person's words on the ask the quest was asked by (DRIFT1b, D133 §2), read for this start whatever kind it is;
             // their standing answer for its repository (KNOWUSE1b), and the work's session language (LANG1c), from this
@@ -1971,6 +2044,8 @@ public sealed class Driver(
                 BroughtForward = carryingOn && quest.Status != "Open" && start.BroughtForward is not null,
                 HandedOver = carryingOn && handedFrom ? start.Resumes!.Adapter ?? "another agent" : null,
                 Brief = brief,
+                // MIXAGENT1c: the note its agent left where it asked to hand over, told as that agent's claim; the brief carries it.
+                HandedNote = handedNote,
                 // Another agent's accounts are not this agent's: a hand-over says no account was cooling for it to be told of.
                 AccountChanged = elsewhere && !handedFrom && prior!.Limit && Context.Harnesses.CoolingOf(agent, prior.Profile) is not null,
                 // A set-up step is told its environment as the rule declares it now (REVIEWENV1c, design §2.2), and its account
@@ -2080,6 +2155,15 @@ public sealed class Driver(
                     var swappedOn = stop is null && ended.SetupChanged is not null;
                     if (swappedOn) conclusion = Observation.SetupChanged(conclusion, ended.SetupChanged!);
 
+                    // MIXAGENT1c (D191): its agent's ask to hand over, where the person's rule or their yes lets it go, is taken at this
+                    // turn's end and never mid-turn: the quest is held on the next agent with the agent's note, written before the record
+                    // says it stopped, as the person's own hand-over stops it. Not over the person's stop, nor a run ended for a changed setup.
+                    if (stop is null && !swappedOn && exitCode is int && status == "Taken"
+                        && await HandOvers.AtTurnEndAsync(sessionId, quest.Id, ct).ConfigureAwait(false) is { } handedTo)
+                    {
+                        conclusion = SessionConclusion.Of("stopped", HandOverNotes.QuestHandedOver(handedTo));
+                    }
+
                     conclusion = AccountRefused(conclusion, adapter, selection, ended);
                     conclusion = AccountSignedOut(conclusion, adapter, selection, turnFailed);
                     (conclusion, var limited) = AccountLimited(conclusion, adapter, selection, turnFailed, sessionId, used);
@@ -2111,6 +2195,7 @@ public sealed class Driver(
                     var where = opened is not null ? $" [own tree: {opened.Path}]"
                         : resumedIn is not null ? $" [own tree, resumed: {resumedIn}]"
                         : "";
+                    holdsTree = SessionStates.IsParked(conclusion.State) || swappedOn;
                     // FABRIC-CLOSE1o: a take its start named a graph for that went unbound (an expired bind, a remote since) is said
                     // here once, beside its take's own answer, since its next start reads it unbound and names nothing.
                     return new StartRun(
@@ -2201,6 +2286,10 @@ public sealed class Driver(
             // In the finally rather than the happy path, because a session that FAILED is the one
             // whose last lines someone most wants to read.
             output?.Close(sessionId);
+
+            // TREELOCK1: the session lets go of its tree however it ended, before any clean-up of Daoris's removes it; on no token,
+            // since a close is one of the ways. A record that still holds it keeps the lock.
+            if (locksTree && !holdsTree) await SessionLocks.LetGoAsync(workTree, sessionId, CancellationToken.None).ConfigureAwait(false);
         }
     }
 

@@ -4,7 +4,8 @@ import { chromium, type FullConfig } from '@playwright/test';
 // beside on 3aeb4b81a (2026-10-20) the first story of each spec timed out at its navigation while the other 56 checks passed.
 // One load here, before any check, with a bound of its own, pays that compile once (FIX-LOG, FLOWCHART1e).
 export default async function warm(config: FullConfig): Promise<void> {
-  const baseURL = config.projects[0]?.use.baseURL ?? 'http://localhost:5181';
+  const baseURL = config.projects[0]?.use.baseURL;
+  if (!baseURL) throw new Error('the measured config names no baseURL: the warm-up has no page to load');
   const browser = await chromium.launch();
   try {
     const page = await browser.newPage();

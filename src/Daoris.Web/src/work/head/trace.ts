@@ -139,6 +139,55 @@ export type TraceBranch = {
    * access setup turned its switch on (ACCESSWORDS1b, D184's AUTONOMY1c2 note); absent where the rule's own switch stood.
    */
   rule?: { plugin?: string | null; autoAccept: boolean; source: string; access?: string | null } | null;
+  /**
+   * What its plugin last answered about its pull request, with when it was asked (PLUGHOOK1c): a snapshot, never a sequence of
+   * states; absent where none is kept.
+   */
+  pullRequestState?: TracePullRequestState | null;
+  /** The latest ask about it that failed since that answer. */
+  pullRequestAskFailed?: { code: string; plugin: string; at: string } | null;
+  /** The review that let it land (REVIEWENV1c): `reviewed` with its environment, or `skipped` with the person's words. */
+  review?: TraceReview | null;
+  /** The second opinion that let it land (XAGENT1f): how its gate let it go, by its code. */
+  opinion?: { said: string; reviewer?: string | null; code?: string | null } | null;
+  /** The named workflow it landed by (WORKFLOW1f); absent under Current. */
+  workflow?: { workflow: string; version: number; level: string } | null;
+  /** The session it was made for (FLOWCHART1c); absent from a driver before the field. */
+  session?: string | null;
+  /**
+   * Each later done that moved it on (FLOWCHART1c, LAND2c), oldest first, each with its session. Absent from a driver before the
+   * field, which a drawing says was not read; empty where none moved it.
+   */
+  advances?: TraceAdvance[];
+  /** The branch work units whose work it carries, its own session's first (FLOWCHART1c); absent from a driver before the field. */
+  units?: string[];
+};
+
+/** A pull request's kept answer (PLUGHOOK1c): its state, the platform's own time where it ended, and when Daoris asked. */
+export type TracePullRequestState = {
+  state: string;
+  pullRequest?: string | null;
+  target?: string | null;
+  how?: string | null;
+  at?: string | null;
+  plugin?: string | null;
+  askedAt: string;
+};
+
+export type TraceReview = { said: string; environment?: string | null; quest?: string | null; commit?: string | null; at?: string | null; words?: string | null };
+
+/** One later done that moved a landed branch on (FLOWCHART1c): from and to, when, its session, who accepted it and what let it go. */
+export type TraceAdvance = {
+  from: string;
+  to: string;
+  at: string;
+  session: string;
+  acceptedBy?: string | null;
+  review?: TraceReview | null;
+  opinion?: { said: string; reviewer?: string | null; code?: string | null } | null;
+  workflow?: { workflow: string; version: number; level: string } | null;
+  quest?: string | null;
+  unit?: string | null;
 };
 
 /** A session's entry on the due list (LAND2b): when it became due, when a try closed it, and each try by its code. */

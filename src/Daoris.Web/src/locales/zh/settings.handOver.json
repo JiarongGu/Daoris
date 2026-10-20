@@ -1,0 +1,23 @@
+{
+  "settings.handOver.label": "转交",
+  "settings.handOver.body": "会话的智能体可以要求把会话转交给另一个智能体，并附上一段说明工作进展的备注，作为它自己的说法保留。这里决定它的要求是在会话页面上等你同意或拒绝，还是在它这一轮结束时按你的顺序交给下一个智能体，或是直接拒绝。无论这里怎么设，你自己按下的转交照常进行。仓库自己的规则取代其工作区的规则。",
+  "settings.handOver.twin.repository": "`daoris driver handover {{repository}} --mode ask|on|off|--clear`",
+  "settings.handOver.twin.workspace": "`daoris driver handover --workspace {{workspace}} --mode ask|on|off|--clear`",
+  "settings.handOver.says.ask": "智能体要求转交会话时，在会话页面上等你同意或拒绝。",
+  "settings.handOver.says.on": "智能体要求转交会话时，在它这一轮结束时转交：由你顺序中的下一个智能体接着做。",
+  "settings.handOver.says.off": "智能体要求转交会话会被拒绝：只有你自己按下才会转交。",
+  "settings.handOver.from.repository": "为这个仓库设置。",
+  "settings.handOver.from.workspace": "来自工作区 {{workspace}}。",
+  "settings.handOver.from.default": "道衍的默认值：未设置。",
+  "settings.handOver.summary.ask": "转交需你同意",
+  "settings.handOver.summary.on": "本轮结束时转交",
+  "settings.handOver.summary.off": "拒绝转交",
+  "settings.handOver.mode": "{{name}} 中的智能体要求转交会话时怎么做",
+  "settings.handOver.modes.ask": "问我",
+  "settings.handOver.modes.on": "本轮结束时",
+  "settings.handOver.modes.off": "拒绝",
+  "settings.handOver.saved.ask": "{{name}} 中的智能体要求转交会话时，现在会等你同意。",
+  "settings.handOver.saved.on": "{{name}} 中的智能体要求转交会话时，现在会在它这一轮结束时交给下一个智能体。",
+  "settings.handOver.saved.off": "{{name}} 中的智能体要求转交会话，现在会被拒绝。",
+  "settings.handOver.cleared": "{{name}} 重新沿用上一级的转交规则。"
+}

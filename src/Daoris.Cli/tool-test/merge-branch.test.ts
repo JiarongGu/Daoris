@@ -1028,6 +1028,8 @@ test('a merge runs the baseline and what each changed path can reach, but the lo
     ["the history words' table", ['src/Daoris.Service/Daoris.Service.Tests/fixtures/history-words.json'], [...BASE, 'service', 'driver']],
     // SESSDEL1c: the kept names' table sits among the driver's tests, and the page's twin reads it too.
     ["the kept names' table", [KEPT_NAMES], [...BASE, 'driver', 'web-unit']],
+    // MIXAGENT1c: the person's order's table sits among the driver's tests, and the page's twin reads it too.
+    ["the hand-over order's table", ['src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/hand-over-order.json'], [...BASE, 'driver', 'web-unit']],
     // REVIEWENV1c4: the review rules' table sits among the driver's tests, and the service's tool test reads its gate rows.
     ["the review rules' table", ['src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/review-rules.json'], [...BASE, 'service', 'driver']],
     // XAGENT1f4: the second-opinion rules' table, whose gate rows the service's tool test reads too.

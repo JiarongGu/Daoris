@@ -235,9 +235,11 @@ public static class HandOverTake
             if (refused is not null) return new HandedOver(null, false, refused.Why, refused.Message);
 
             var from = prior!.Adapter ?? "its agent";
+            // MIXAGENT1c: where its agent asked to hand over, its own note, told after Daoris's record as that agent's claim.
+            var note = ask.AskedBy == HandOverBy.Agent ? new HandOverAskFiles(home).Ask(id)?.Note : null;
             // SESSCTX1b: Daoris's brief of the whole line (ContextBrief), in place of the request, the last plan and words and what
-            // is uncommitted; the outgoing agent's own note is its seam (`note`, the design §3.1 item 6), none asked yet.
-            var brief = await ContextBriefs.ComposeAsync(service, events, home, id, ask.Why, conversation: true, note: null, ct: ct).ConfigureAwait(false);
+            // is uncommitted, the note its own section (the design §3.1 item 6).
+            var brief = await ContextBriefs.ComposeAsync(service, events, home, id, ask.Why, conversation: true, note: note, ct: ct).ConfigureAwait(false);
 
             await end(id).ConfigureAwait(false);
 

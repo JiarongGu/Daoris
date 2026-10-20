@@ -7,7 +7,7 @@ import { cn } from '../lib/cn';
 import { isComposing } from '../lib/composing';
 import { store, stored } from '../lib/stored';
 import { type Box, type InkLabel, type InkPath, placeLabels, routeInk, RUN } from './flowInk';
-import { type EdgeStyle, FLOW_REM, type FlowLayout, layoutFlow, type Placement, placementFor } from './flowLayout';
+import { type EdgeStyle, findStacks, FLOW_REM, type FlowLayout, layoutFlow, type Placement, placementFor, type Stack } from './flowLayout';
 import { Button, Icon, type IconName, Pill } from './ui';
 import { useWidth } from './useWidth';
 
@@ -35,6 +35,12 @@ export type FlowNode = {
   current?: boolean;
   /** Its record's door: Enter on the node opens it. */
   open?: () => void;
+  /**
+   * What makes it like the nodes beside it (FLOWCHART1c; the flowchart design §3.6 step 1): three or more with one `key`, each
+   * following the one before in a chain, are drawn as one fold, titled by their shared `word` and counted, with the first and the
+   * last `at` (worded by the caller, where its record keeps a time). A try's code is one key; an advance is another.
+   */
+  stack?: { key: string; word: string; at?: string | null };
 };
 
 /** One move between two nodes, with its cause. */
@@ -103,7 +109,7 @@ type Ink = { paths: InkPath[]; labels: InkLabel[]; width: number; height: number
  *
  * A molecule: the flow arrives worded and its doors go out.
  */
-export function Flow({ label, nodes, edges, entries, end, rail, className }: FlowProps) {
+export function Flow({ label, nodes: given, edges: givenEdges, entries: givenEntries, end, rail, className }: FlowProps) {
   const { t } = useTranslation();
   const keysId = useId();
   const marks = useId().replace(/[^\w-]/g, '');
@@ -112,10 +118,34 @@ export function Flow({ label, nodes, edges, entries, end, rail, className }: Flo
   const width = useWidth(pane);
   const [asList, setAsList] = useState(() => stored(LIST_KEY) === 'list');
 
+  // The roving stop (below) and the node that has the focus, kept by id across a fold as across a placement.
+  const [stop, setStop] = useState<string | null>(null);
+  const focused = useRef<string | null>(null);
+
+  // Stacks (FLOWCHART1c; §3.6 step 1): three or more like nodes in a chain drawn as one fold, opened by its press. Which are open is
+  // page state, never remembered. The stacks are found from the shape alone, as the layout is; the focus follows a fold that opens
+  // to its first member, and one that closes to the fold.
+  const stackKey = JSON.stringify([given.map((node) => [node.id, node.stack?.key ?? null]), givenEdges.map((edge) => [edge.id, edge.from, edge.to]), givenEntries]);
+  const stacks = useMemo(() => findStacks({
+    nodes: given.map((node) => (node.stack ? { id: node.id, stack: node.stack.key } : { id: node.id })), edges: givenEdges, entries: givenEntries,
+  }), [stackKey]);
+  const [opened, setOpened] = useState<ReadonlySet<string>>(() => new Set());
+  const toggle = useCallback((stack: Stack, open: boolean) => {
+    focused.current = open ? stack.members[0]! : stack.id;
+    setStop(focused.current);
+    setOpened((was) => {
+      const next = new Set(was);
+      if (open) next.add(stack.id);
+      else next.delete(stack.id);
+      return next;
+    });
+  }, []);
+  const { nodes, edges, entries, notes } = foldStacks(t, given, givenEdges, givenEntries, stacks, opened, toggle);
+
   // The layout reads the shape alone, so a change of what is lit lays nothing out again (§3.1 step 5): it is kept by the
   // shape's key, not by the arrays a caller makes anew on each render.
   const shapeKey = JSON.stringify([nodes.map((node) => node.id), edges.map((edge) => [edge.id, edge.from, edge.to, edge.style]), entries]);
-  const layout = useMemo(() => layoutFlow({ nodes, edges, entries }), [shapeKey]);
+  const layout = useMemo(() => layoutFlow({ nodes: nodes.map((node) => ({ id: node.id })), edges, entries }), [shapeKey]);
   const fits = placementFor(layout, width);
   const placement: Placement = asList ? 'rail' : fits;
 
@@ -128,13 +158,11 @@ export function Flow({ label, nodes, edges, entries, end, rail, className }: Flo
   }, [layout, edges]);
 
   // The roving stop: the node the person was last on, else the current one, else the first in reading order.
-  const [stop, setStop] = useState<string | null>(null);
   const tabStop = stop !== null && byId.has(stop)
     ? stop
     : layout.order.find((id) => byId.get(id)?.current) ?? layout.order[0] ?? null;
 
   const root = useRef<HTMLDivElement>(null);
-  const focused = useRef<string | null>(null);
   const cameBy = useRef(new Map<string, string>());
   const focusNode = useCallback((id: string) => {
     const element = [...(root.current?.querySelectorAll<HTMLElement>('[data-flow-node]') ?? [])].find((each) => each.dataset.flowNode === id);
@@ -243,7 +271,7 @@ export function Flow({ label, nodes, edges, entries, end, rail, className }: Flo
         ? t('flow.footBack', { node: byId.get(edge.to)!.title, says: edge.says })
         : t('flow.move', { node: byId.get(edge.to)!.title, says: edge.says }),
     })),
-    description: describe(t, byId.get(id)!, edges, byId, backs),
+    description: describe(t, byId.get(id)!, edges, byId, backs, notes.get(id)),
     onFollow: follow,
   });
 
@@ -453,12 +481,20 @@ function RailMark({ node, last }: { node: FlowNode; last: boolean }) {
   );
 }
 
-/** A node's description (§3.7): its state, who acts, whether it was reached, and every edge in and out, in words. */
+type Translate = (key: string, values?: Record<string, unknown>) => string;
+
+/** What a stack adds to a node's description (§3.6): what a fold holds, before; the edges between its members, after. */
+type StackNote = { before: string[]; after: string[] };
+
+/**
+ * A node's description (§3.7): its state, who acts, whether it was reached, and every edge in and out, in words; a fold's says what
+ * it holds and the edges between its members, so no cause is lost to it (§3.6).
+ */
 function describe(
-  t: (key: string, values?: Record<string, unknown>) => string, node: FlowNode, edges: FlowEdge[], byId: Map<string, FlowNode>, backs: Set<string>,
+  t: Translate, node: FlowNode, edges: FlowEdge[], byId: Map<string, FlowNode>, backs: Set<string>, note?: StackNote,
 ): string {
   const title = (id: string) => byId.get(id)!.title;
-  const sentences: string[] = [];
+  const sentences: string[] = [...(note?.before ?? [])];
   if (node.state) sentences.push(t('flow.state', { word: node.state.word }));
   if (node.actor) sentences.push(t('flow.actor', { actor: node.actor }));
   if (node.reached === false) sentences.push(t('flow.notReached'));
@@ -467,7 +503,88 @@ function describe(
   const next = out.filter((edge) => !backs.has(edge.id)).map((edge) => t('flow.move', { node: title(edge.to), says: edge.says }));
   if (next.length > 0) sentences.push(t('flow.next', { moves: next.reduce((first, second) => t('flow.moves', { first, second })) }));
   for (const edge of out) if (backs.has(edge.id)) sentences.push(t('flow.back', { node: title(edge.to), says: edge.says }));
+  sentences.push(...(note?.after ?? []));
   return sentences.length === 0 ? '' : sentences.reduce((first, second) => t('flow.join', { first, second }));
+}
+
+const STACK_PRESS = 'cursor-pointer border-0 bg-transparent p-0 text-left text-meta text-ink-soft underline-offset-2 hover:text-ink hover:underline';
+
+/**
+ * The flow as drawn with its stacks (FLOWCHART1c; the flowchart design §3.6): each stack not opened is one node in its first
+ * member's place, titled by the members' shared word and counted, with their first and last time and its press; every edge across
+ * its boundary drawn to it with its cause, and those between its members said in its description. An opened stack is its members
+ * whole, the first carrying the press that folds them again, which Enter does where the member has no door of its own.
+ */
+function foldStacks(
+  t: Translate, nodes: FlowNode[], edges: FlowEdge[], entries: string[], stacks: Stack[], opened: ReadonlySet<string>,
+  toggle: (stack: Stack, open: boolean) => void,
+): { nodes: FlowNode[]; edges: FlowEdge[]; entries: string[]; notes: Map<string, StackNote> } {
+  const notes = new Map<string, StackNote>();
+  if (stacks.length === 0) return { nodes, edges, entries, notes };
+  const byId = new Map(nodes.map((node) => [node.id, node]));
+  const foldOf = new Map<string, string>();
+  const replaced = new Map<string, FlowNode>();
+  for (const stack of stacks) {
+    const members = stack.members.map((id) => byId.get(id)!);
+    const first = members[0]!;
+    const last = members[members.length - 1]!;
+    const count = members.length;
+    if (opened.has(stack.id)) {
+      const close = (
+        <button type="button" tabIndex={-1} aria-expanded onClick={() => toggle(stack, false)} className={STACK_PRESS}>
+          {t('flow.stack.close', { count })}
+        </button>
+      );
+      replaced.set(first.id, {
+        ...first,
+        lines: <div className="grid min-w-0 justify-items-start gap-0.5">{first.lines}{close}</div>,
+        open: first.open ?? (() => toggle(stack, false)),
+      });
+      notes.set(first.id, { before: [], after: [t(first.open ? 'flow.stack.memberPress' : 'flow.stack.member', { count })] });
+      continue;
+    }
+    for (const id of stack.members) foldOf.set(id, stack.id);
+    const word = first.stack!.word;
+    const reached = members.every((member) => member.reached === false) ? false : members.every((member) => member.reached === true) ? true : undefined;
+    const firstAt = first.stack?.at;
+    replaced.set(first.id, {
+      id: stack.id,
+      title: t('flow.stack.title', { word, count }),
+      ...(first.glyph ? { glyph: first.glyph } : {}),
+      ...(first.state && members.every((member) => member.state?.word === first.state!.word) ? { state: first.state } : {}),
+      ...(reached === undefined ? {} : { reached }),
+      ...(members.every((member) => member.faint) ? { faint: true } : {}),
+      current: members.some((member) => member.current),
+      open: () => toggle(stack, true),
+      lines: (
+        <div className="grid min-w-0 justify-items-start gap-0.5">
+          {firstAt && <p className="m-0 min-w-0 [overflow-wrap:anywhere]">{t('flow.stack.when', { first: firstAt, last: last.stack?.at ?? firstAt })}</p>}
+          <button type="button" tabIndex={-1} aria-expanded={false} onClick={() => toggle(stack, true)} className={STACK_PRESS}>
+            {t('flow.stack.open', { count })}
+          </button>
+        </div>
+      ),
+    });
+    // The edges between its members, merged by cause and counted, so none is lost to the fold.
+    const causes = new Map<string, number>();
+    for (const edge of edges) if (stack.within.includes(edge.id)) causes.set(edge.says, (causes.get(edge.says) ?? 0) + 1);
+    const between = [...causes].map(([says, times]) => (times > 1 ? t('flow.stack.times', { says, count: times }) : says));
+    notes.set(stack.id, {
+      before: [t('flow.stack.holds', { count, word })],
+      after: between.length === 0 ? [] : [t('flow.stack.between', { says: between.reduce((one, two) => t('flow.moves', { first: one, second: two })) })],
+    });
+  }
+  return {
+    nodes: nodes.flatMap((node) => replaced.get(node.id) ?? (foldOf.has(node.id) ? [] : [node])),
+    edges: edges.flatMap((edge) => {
+      const from = foldOf.get(edge.from) ?? edge.from;
+      const to = foldOf.get(edge.to) ?? edge.to;
+      if (foldOf.has(edge.from) && from === to) return [];
+      return from === edge.from && to === edge.to ? [edge] : [{ ...edge, from, to }];
+    }),
+    entries: [...new Set(entries.map((id) => foldOf.get(id) ?? id))],
+    notes,
+  };
 }
 
 /** The room a drawn placement keeps outside its nodes for the returns: their lanes, and their runs past the end ranks. */

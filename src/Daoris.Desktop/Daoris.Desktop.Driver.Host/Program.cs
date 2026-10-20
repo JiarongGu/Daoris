@@ -157,6 +157,10 @@ using Daoris.Driver;
 //                 a conversation goes on with another agent (MIXAGENT1a-i, D163): the chat runner ends it and opens a new
 //                 conversation in its tree on that agent, in this terminal, as start-from does; a conversation that is
 //                 talking keeps the ask until its turn ends. A quest's session, Ask Daoris's and an intake are refused, exit 1.
+//   sessions hand-over <id> --approve|--decline
+//                 the person's yes or no to a session's agent's own ask to hand it over (MIXAGENT1c, D163 point 3), waiting under
+//                 the `handOver` rule's `ask`: the state the driver's look reads, as the page's presses write it. Exit 1 where the
+//                 judge refuses the word.
 //   sessions helper <id> "<question>" [--agent <name>]
 //   sessions helper --approve|--decline <ask>
 //                 the person's own ask for a helper (MIXAGENT2a-ii, D163): the ask `helper_ask` writes, as the person's, under the

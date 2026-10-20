@@ -11,5 +11,14 @@
   "flow.moves": "{{first}}; {{second}}",
   "flow.back": "Back to {{node}}, {{says}}.",
   "flow.footBack": "back to {{node}}, {{says}}",
-  "flow.join": "{{first}} {{second}}"
+  "flow.join": "{{first}} {{second}}",
+  "flow.stack.title": "{{word}} ×{{count}}",
+  "flow.stack.when": "first {{first}}, last {{last}}",
+  "flow.stack.open": "Show all {{count}}",
+  "flow.stack.close": "Fold the {{count}} again",
+  "flow.stack.holds": "Holds {{count}} like this: {{word}}.",
+  "flow.stack.between": "Between them: {{says}}.",
+  "flow.stack.times": "{{says}} ×{{count}}",
+  "flow.stack.member": "The first of {{count}} like it: Enter folds them again.",
+  "flow.stack.memberPress": "The first of {{count}} like it: its press folds them again."
 }

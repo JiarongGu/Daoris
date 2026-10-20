@@ -93,6 +93,11 @@
     "    }",
     "  },",
     "  \"workspaceWorkCycles\": {},",
+    "  \"handOver\": {",
+    "    \"engine\": {",
+    "      \"mode\": \"on\"",
+    "    }",
+    "  },",
     "  \"access\": {",
     "    \"engine\": {",
     "      \"permissions\": \"asking\",",
@@ -224,6 +229,13 @@
       "edit": { "op": "access", "repository": "engine", "setting": { "permissions": "asking", "landing": "rule", "goAheads": "never" } },
       "changes": [
         { "from": ["      \"permissions\": \"asking\",", "      \"goAheads\": \"never\""], "to": ["      \"permissions\": \"asking\",", "      \"landing\": \"rule\",", "      \"goAheads\": \"never\""] }
+      ]
+    },
+    {
+      "name": "a repository's hand-over rule set (MIXAGENT1c): its mode alone, in its place, after the helpers rule's place",
+      "edit": { "op": "hand-over", "repository": "engine", "mode": "off" },
+      "changes": [
+        { "from": ["      \"mode\": \"on\""], "to": ["      \"mode\": \"off\""] }
       ]
     },
     {

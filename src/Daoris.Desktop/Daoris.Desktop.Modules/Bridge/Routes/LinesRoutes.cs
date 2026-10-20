@@ -161,6 +161,11 @@ public sealed class LinesRoutes(DriverContext context)
             Helpers = lines.Select(line => (line, helpers: HelperRules.Resolve(config, line.Repository, line.Workspace)))
                 .Select(pair => new { pair.line.Repository, pair.line.Workspace, Rule = HelperWire(pair.helpers.Rule), pair.helpers.Source })
                 .ToArray(),
+            // What an agent's ask to hand its session over does (MIXAGENT1c, D163 point 3), with where it was set, `default` where
+            // nothing is: the driver's resolution, never null.
+            HandOver = lines.Select(line => (line, handOver: HandOverRules.Resolve(config, line.Repository, line.Workspace)))
+                .Select(pair => new { pair.line.Repository, pair.line.Workspace, Rule = new { pair.handOver.Rule.Mode }, pair.handOver.Source })
+                .ToArray(),
             Commits = lines.Select(line => (line, commits: CommitRules.Resolve(config, line.Repository, line.Workspace)))
                 .Select(pair => new { pair.line.Repository, pair.line.Workspace, Rule = CommitWire(pair.commits.Rule), pair.commits.Source })
                 .ToArray(),
@@ -901,6 +906,22 @@ public sealed class LinesRoutes(DriverContext context)
         // The twin's refusals come first, in its words, before anything is written.
         HelperRules.Apply(DriverConfig.Load(_loop.ConfigPath), edit);
         _context.Change(config => HelperRules.Apply(config, edit));
+        return DriverRoutes.State(_loop);
+    }
+
+    /// <summary>
+    /// One change to a hand-over rule (MIXAGENT1c, D163 point 3), as the page sends it: the twin's edit in the shared table's own
+    /// shape (<c>repository</c> or <c>workspace</c>; <c>set</c> with its <c>mode</c>, or <c>clear</c>), judged by
+    /// <see cref="HandOverRules.Apply"/> before anything is written; the screens' half of `daoris driver handover`.
+    /// </summary>
+    [DriverRoute("SET_HAND_OVER")]
+    [Publishes("SET_HAND_OVER", Chosen)]
+    private object? SetHandOver(IpcRequest request)
+    {
+        var edit = HandOverRules.EditOf(request.Payload ?? default);
+        // The twin's refusals come first, in its words, before anything is written.
+        HandOverRules.Apply(DriverConfig.Load(_loop.ConfigPath), edit);
+        _context.Change(config => HandOverRules.Apply(config, edit));
         return DriverRoutes.State(_loop);
     }
 

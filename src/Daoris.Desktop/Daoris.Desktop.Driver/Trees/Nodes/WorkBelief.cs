@@ -46,8 +46,10 @@ public static class WorkBelief
     /// <summary>
     /// The input a start's binding names that the record no longer holds as its producer's current acceptance exposes it, or null (§D6: at
     /// dispatch each input resolves to the ref on the producing node's current, valid acceptance; a stale or invalidated producer leaves the
-    /// consumer ineligible, never given an old ref). A producer is on the consumer's unit (a <c>data</c> wire names a node of its own graph),
-    /// so its acceptance is current where it is reached, on the consumer's revision, and is the acceptance the port names.
+    /// consumer ineligible, never given an old ref). A producer is on the consumer's record (a <c>data</c> wire names a node of its own graph),
+    /// so its acceptance is current where it is reached and is the acceptance the port names; on the consumer's subject, at the consumer's
+    /// revision. On another subject (FABRIC-CUTOVER1a: a run's quest-side node feeding a branch-side one, whose revisions differ by design, a
+    /// quest's moment and a branch's tip) it is judged on its own, which the evaluation did in keeping it reached.
     /// </summary>
     public static string? Unresolved(NodeRecord record, NodeAcceptance binding)
     {
@@ -55,7 +57,8 @@ public static class WorkBelief
         {
             var producer = port.Acceptance is { } named ? record.Statuses.Values.FirstOrDefault(status => status.Acceptance?.Id == named) : null;
             if (producer is not { State: NodeStates.Reached, Acceptance: { } accepted }
-                || !string.Equals(accepted.SubjectRevision, binding.SubjectRevision, StringComparison.Ordinal)
+                || (string.Equals(accepted.Observes, binding.Observes, StringComparison.Ordinal)
+                    && !string.Equals(accepted.SubjectRevision, binding.SubjectRevision, StringComparison.Ordinal))
                 || !accepted.Outputs.Values.Append(accepted.Evidence).Any(exposed => exposed == port))
             {
                 return name;

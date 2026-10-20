@@ -239,6 +239,34 @@ began are said only where the page holds that part's record. The strip is the fl
 person chose the list (`Flow`'s `rail`), and a press on a node, or Enter on it, shows that part as the strip's button did. The
 measured check (`e2e:measured`) draws both flows' stories in a rendered browser, each frame with a ceiling of crossings.
 
+A landed branch's page draws how it landed (FLOWCHART1c, D186): a section above its commits, folded until it is opened, then read
+by the branch (`projects/git/RepositoryGitView.tsx`'s `useLandingDoor`): `TRACE` for the session its landing record names, whose
+landing carries the session it was made for, each advance with its session, and the units it carries, and `WORK_STATE` for the
+branch, whose units carry the end, the clean-up and the recovery. `projects/git/landingLife.ts` draws the due entry's tries by
+their codes (`AutoLandingCode`, held to the driver's source with `EndBy`, `PullRequestStates` and `LandedKind`), the landing and
+its advances, the push as a fact with no time and the pull request's latest answer as a snapshot, each hung from the landing.
+`Flow` folds three or more like nodes in a chain into a stack (`flowLayout.ts`' `findStacks`), its boundary edges kept and the
+edges between its members said in its description. The work's milestone and a run's landing step open the page through the
+application's opener (`opening`'s `branch`), with the section open.
+
+A session's record folds where its work stands (`work/head/WorkMilestone`, MILESTONEUX1, the UI/UX design §3.7 and R4): the
+milestone's end, result, clean-up and recovery are four independent facts, each marked by `Dot`'s own tone for its value
+(`done` for what is reached or kept, `waits` for what waits on another, the danger hue for a blocked entry, none for a
+recovery with nothing kept), never a sequence and never a `PhaseList`. It is folded to `MilestoneLine`, which also says
+*blocked* and *held for you* so nothing that waits on the person hides behind the fold, and opens in place; the fold is the
+molecule's own state, and the page mounts it under the record's id so another record starts folded. The line is also a
+tidied branch row's. The record head's budget is measured in a rendered browser (`e2e:measured`, `measured/head.spec.ts`
+over `work/AttendedSession.head.stories.tsx`): how far down the main area the conversation starts, with every block of the
+head present, at the three widths and in both languages; D185's MILESTONEUX1 note says what it measured.
+
+The parts and the relations fold likewise (HEADFIT1). `work/head/PartsFold` is one line (*Part 2 of 3*, how the newest began, *Show
+the parts*) that gives way to the flowchart, or to the strip where only the rail fits, on a press, with *Hide the parts* back;
+`SessionRelations` folds itself to what it asked and was asked, with *Show who it worked with*. Each keeps its state in the molecule;
+the page mounts the relations under the session's id and the parts under the line of work's, since a press on a part shows another
+session of the same line and the flow being read must stay open. Accept's plan is drawn in the opened flow only. The head with both
+folded is still over UX7's 200 px, so `head.spec.ts` keeps the budget as an expected failure; D185's HEADFIT1 note says by how much and
+what remains.
+
 ## Running it
 
 The HTTP host requires `DAORIS_HOME` or an explicit `DAORIS_KNOWLEDGE_DB`. Use a development
@@ -257,7 +285,7 @@ npm --prefix src/Daoris.Web run dev                             # http://localho
 npm run test:web
 npm --prefix src/Daoris.Web run test:watch                      # the inner loop, on save
 npm --prefix src/Daoris.Web run e2e:ui                          # the outer loop, watch-and-poke mode
-npm --prefix src/Daoris.Web run e2e:measured                    # the flowchart's stories in Chromium, every box measured (D186)
+npm --prefix src/Daoris.Web run e2e:measured                    # the flowchart's, Settings' and the record head's stories in Chromium, measured (D185, D186)
 
 # the design tool
 npm --prefix src/Daoris.Web run storybook

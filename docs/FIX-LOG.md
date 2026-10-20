@@ -5,6 +5,32 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-20 — A driver test listened on every interface, so each new tree raised a firewall prompt (FIREWALL1)
+
+- **Symptom:** Windows Defender Firewall asked about `testhost.exe` for every new agent worktree, gate tree and driven session's
+  tree; a Cancel left Block rules behind. Measured by another session with the Filtering Platform's audit (events 5154/5158): the
+  run's only listen on a non-loopback address.
+- **Root cause:** `DrivenAccessTests.A_resume_under_a_changed_setup_keeps_the_new_one_on_its_record_and_the_same_keeps_nothing`
+  found a free port with `TcpListener.Create(0)`, a dual-mode listener on `[::]`, all interfaces; Windows asks once per test
+  host's path, and every tree is a new path. The suites' own servers listen on loopback, and `HttpListener`'s listen belongs to
+  the system's HTTP service, not the test host.
+- **Fix:** the test probes on `IPAddress.Loopback`, as `InAppBrowser.FreePort` and the hosts' tests do; `LoopbackListensTests`
+  refuses `TcpListener.Create(`, `IPAddress.Any` and `IPAddress.IPv6Any` in every desktop and service test project.
+- **Verification:** `DrivenAccessTests` and `LoopbackListensTests`, 29 passed; the walk reads every test project.
+
+## 2026-10-20 — Checkouts measuring at once shared one port, and a test held a word to one post (FLOWCHART1e, COWORK1c)
+
+- **Symptom:** the full set on 2b28b0112 failed `web-measured` (ten stories: `page.goto: net::ERR_CONNECTION_REFUSED` on
+  `localhost:5181`) and `modules` (`DriverModuleAddedTests`' "posted once": two posts heard, `/say` and `/added`).
+- **Root cause:** every checkout measured on port 5181 and reused a server already up there, so the CI beside's run reused a
+  builder's Vite in another worktree and lost it when that builder's run ended (MILESTONEUX1's builder saw the same once). And
+  COWORK1c keeps a word on its session's record through the say door before holding it, beside DRIFT1a2's `added` post that
+  keeps it on the ask once taken: two right posts, where the test, written before COWORK1c, wanted one.
+- **Fix:** the measured config derives a port from its checkout's path (or `DAORIS_MEASURED_PORT`) and never reuses another's
+  server; the warm-up names a missing base address rather than guess. The test holds each post once: `say` with `running`,
+  then `added`.
+- **Verification:** `e2e:measured` 82 passed on its own port; `DriverModuleAddedTests` 7 passed.
+
 ## 2026-10-20 — The measured check's first story timed out on Vite's cold compile, and a window's test met the states flow's word (FLOWCHART1e, FLOWCHART1b)
 
 - **Symptom:** the full set on 3aeb4b81a failed `web-measured` (2 of 58: the first story of each spec, `page.goto` past the
@@ -26,6 +52,26 @@ repository.
   gate's unit run. The branch ran its vitests, not the tool tests.
 - **Fix:** the test reads the file by name through the shared `driverSource` helper, and MOD9e's row names `SessionEntries.cs`.
 - **Verification:** `partsLife.test.ts` 19 passed, `tsc` clean, the SESSDEL1c and MOD9e cases of `merge-branch.test.ts` pass.
+## 2026-10-20 — A resumed session whose tree was gone ran with its shell in the repository's checkout (TREEGONE1)
+
+- **Symptom:** the session the merge tool's prune took a tree from (DOGFOOD1, the entry below) was resumed with the person's
+  words, and its harness started with its shell in the repository's main checkout, the folder its tree had been made from.
+  Its agent noticed and remade its tree itself before editing; nothing stopped it editing the checkout.
+- **Root cause:** a start asked whether the session's tree stood by `Directory.Exists` alone (`ConversationTrees.Stands`,
+  `Driver.RunAsync`'s `resumedIn` and `joinedIn`). A removal that leaves its folder (anything it could not delete) answers
+  yes for a folder that is no tree, where git walks up to whatever holds it; and a tree truly gone made a resume grow a
+  fresh tree from the line, its agent starting without the session's commits. Where exactly the harness's shell landed in
+  the checkout was not reproduced here: the window's run was not instrumented.
+- **Fix:** `TreeReturns.EnsureAsync` (D51's TREEGONE1 note), asked by `Driver.RunAsync` with the repository's trees held,
+  before any resume, carry-on or further part goes on in a session's tree: listed by git, it goes on; its folder gone and its
+  branch standing, the tree is made again in its place on that branch, a leftover folder moved aside first, and said
+  (`tree.remade`); its branch gone too, or not makeable, the start is held and said once on the record (`tree.gone`,
+  `tree.unmade`), and `DriverContinuations.ContinueAsync` is told the tree does not stand, so no conversation resumes
+  anywhere else.
+- **Verification:** `TreeReturnsTests` (Process, git) 5 passed; `SessionMessagesTickTests` 12 passed, three new: a removed
+  tree made again with its commit and the resumed prompt's working folder the tree, a leftover folder moved aside and the
+  tree made again, and a branch gone too held with no harness started over two looks; `NoteCodesTests`, `NoteSitesTests`
+  and the web's `locales/note.test.ts` with the three codes in both languages.
 
 ## 2026-10-20 — A new Process test joined the driver's config path by hand (ACCESSSWAP1b)
 

@@ -3,6 +3,7 @@ import { InTheme } from '../../plugins/storyIcons';
 import { chinese } from '../../design/storyLanguage';
 import { BranchPage, type BranchGraph, type BranchRead } from './BranchPage';
 import { GIT_BRANCH_PARTED, GIT_BRANCH_PARTED_PAGES, GIT_BRANCHES_ENGINE } from '../fixtures';
+import { SHARED_BRANCH, SHARED_DUE, SHARED_UNITS } from './landingFixtures';
 
 // A branch's page (UX6h3b, the built-in Git design §2.3) in Repositories' main area, opened from a branch's name in Branches:
 // each kind (a session's with its state and title, landed in step with an open pull request, landed and gone from origin after
@@ -117,5 +118,25 @@ export const LandedChinese: Story = { args: Landed.args, decorators: [chinese] }
 export const MoreChinese: Story = { args: MoreFailed.args, decorators: [chinese] };
 
 export const LandedNarrow: Story = { args: Landed.args, decorators: [narrow] };
+
+/** How it landed (FLOWCHART1c), folded to its line above the commits until it is opened. */
+export const LandedHowItLandedFolded: Story = {
+  args: { ...Landed.args, landing: { open: false, onToggle: nothing } },
+};
+
+/**
+ * How it landed, opened by a door into it (the work's milestone, a run's landing step): its tries with three holds stacked, the
+ * landing and its advances, the push, the pull request, the end, the clean-up and the recovery.
+ */
+export const LandedHowItLanded: Story = {
+  args: { ...Landed.args, landing: { open: true, onToggle: nothing, landing: { name: SHARED_BRANCH.branch, branch: SHARED_BRANCH, due: SHARED_DUE, units: SHARED_UNITS } } },
+};
+
+export const LandedHowItLandedChinese: Story = { args: LandedHowItLanded.args, decorators: [chinese] };
+
+export const LandedHowItLandedNarrowDark: Story = { args: LandedHowItLanded.args, decorators: [narrow, dark] };
+
+/** Opened, its reads on their way. */
+export const LandedHowItLandedReading: Story = { args: { ...Landed.args, landing: { open: true, onToggle: nothing, reading: true } } };
 
 export const MoreNarrowDarkChinese: Story = { args: MoreFailed.args, decorators: [narrow, dark, chinese] };

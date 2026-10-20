@@ -1,0 +1,14 @@
+{
+  "work.handOverAsk.lead": "Its agent asks to hand this session over to another agent.",
+  "work.handOverAsk.claim": "Its note for the next agent, its own claim:",
+  "work.handOverAsk.waits": "It would go on with {{agent}} in the same tree, told Daoris’s record of this session and this note. Nothing goes until you say yes.",
+  "work.handOverAsk.approved": "You said yes: it goes on with {{agent}} at the driver’s next look, once its turn has ended.",
+  "work.handOverAsk.unread": "Daoris reads it at its next look, by your rule for hand-overs.",
+  "work.handOverAsk.approve": "Hand over to {{agent}}",
+  "work.handOverAsk.decline": "Not now",
+  "work.handOverAsk.refused.gone": "This session holds no such ask any more.",
+  "work.handOverAsk.refused.past": "It is past your word: taken or refused already.",
+  "work.handOverAsk.refused.unread": "Daoris has not read it yet: say no once it waits on your word.",
+  "work.handOverAsk.refused.approved": "It has your yes already, and goes at the driver’s next look.",
+  "work.handOverAsk.refused.cannot": "The hand-over could not be taken: the session’s timeline says why."
+}

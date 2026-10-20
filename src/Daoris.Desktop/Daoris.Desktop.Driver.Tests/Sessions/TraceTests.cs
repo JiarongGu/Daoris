@@ -694,6 +694,72 @@ public sealed class TraceTests : IDisposable
             + "as `github` answered at 2026-10-03 11:02 UTC; asking `github` again at 2026-10-03 11:30 UTC failed (`late`)", Block(said, "session s2"));
     }
 
+    /// <summary>
+    /// FLOWCHART1c (D186; the flowchart design §2.7, §10's row): a landing that carries several sessions' work reads back whole from
+    /// each session it names, with the session it was made for, each advance that moved it on with its session, who accepted it, its
+    /// unit and its quest, and the units it carries. A session that only moved the branch on reads it too (<see cref="LandedBranch.Names"/>),
+    /// so neither the shared landing nor its advances are lost to one session; a landing that names neither reads back for neither.
+    /// </summary>
+    [Fact]
+    public async Task A_shared_landing_reads_back_from_each_session_it_names_with_its_advances_and_units()
+    {
+        Machine();
+        var landings = new LandedBranches(_home);
+        var first = landings.Landing("s2")!;
+        landings.Record(first with { AcceptedBy = AcceptedBy.Auto, Units = ["u-s2"] });
+        landings.Advanced("dashboards", first.Branch, new LandedAdvance(first.Tip, "5e6f7a8b9c0d1e2f30415263748596a7b8c9d0e1", At(11, 0), "s3")
+        {
+            AcceptedBy = AcceptedBy.Person, Unit = "u-s3", Quest = "q1", Squashed = "77aa88bb99cc00dd11ee22ff33aa44bb55cc66dd",
+        }, unit: "u-s3");
+        var sessions = Sessions();
+        sessions.Add(Record("s3", "completed", "q1", 62, 70, evidence: "commits landed:\n5e6f7a8 Keep the tile's target"));
+        using var service = new ServiceClient("http://stand-in", null, new HttpClient(
+            new StandIn(sessions, Quests(), id => id == "a1" ? AskJson() : null)));
+        var sources = new TraceSources(service, _home, Config());
+
+        TraceBranch LandingOf(TraceRead read, string session) =>
+            read.Chain!.Links.Select(each => each.Session).OfType<TraceSessionLink>().Single(link => link.Id == session).Landing!.Branches.Single();
+
+        foreach (var session in new[] { "s2", "s3" })
+        {
+            var branch = LandingOf(await Trace.ReadChainAsync(new TraceAsk(session), sources), session);
+            Assert.Equal(("feature/q1-fix-the-dashboard-figure", "s2"), (branch.Branch, branch.Session));
+            Assert.Equal("5e6f7a8b9c0d1e2f30415263748596a7b8c9d0e1", branch.Tip);
+            var advance = Assert.Single(branch.Advances);
+            Assert.Equal((first.Tip, "5e6f7a8b9c0d1e2f30415263748596a7b8c9d0e1", At(11, 0), "s3"), (advance.From, advance.To, advance.At, advance.Session));
+            Assert.Equal((AcceptedBy.Person, "u-s3", "q1"), (advance.AcceptedBy, advance.Unit, advance.Quest));
+            Assert.Equal(["u-s2", "u-s3"], branch.Units);
+        }
+
+        // The terminal says it from the session that only moved it on as from its own.
+        var (_, said, _) = await TraceAsync(new TraceAsk("s3"), sessions);
+        var block = Block(said, "session s3");
+        Assert.Contains("landing: branch feature/q1-fix-the-dashboard-figure at 5e6f7a8b9c0d1e2f30415263748596a7b8c9d0e1", block);
+        Assert.Contains("; made for session s2; moved on by session s3 at 2026-10-03 11:00 UTC from 1a2b3c4d to 5e6f7a8b, accepted by the person's press; "
+            + "carries the work of units u-s2, u-s3", block);
+        Assert.DoesNotContain("landing: no branch landing on this machine names it", block);
+    }
+
+    /// <summary>
+    /// FLOWCHART1c: a landing from before its advances and units were kept answers none of either, and its words say nothing of them;
+    /// the session that made it is still named.
+    /// </summary>
+    [Fact]
+    public async Task A_landing_with_no_advances_answers_none_and_says_none()
+    {
+        Machine();
+        using var service = new ServiceClient("http://stand-in", null, new HttpClient(
+            new StandIn(Sessions(), Quests(), id => id == "a1" ? AskJson() : null)));
+
+        var read = await Trace.ReadChainAsync(new TraceAsk("s2"), new TraceSources(service, _home, Config()));
+        var branch = read.Chain!.Links.Select(each => each.Session).OfType<TraceSessionLink>().Single(link => link.Id == "s2").Landing!.Branches.Single();
+
+        Assert.Equal(("s2", 0, 0), (branch.Session, branch.Advances.Count, branch.Units.Count));
+        var (_, said, _) = await TraceAsync(new TraceAsk("s2"));
+        Assert.DoesNotContain("moved on by", Block(said, "session s2"));
+        Assert.DoesNotContain("carries the work of units", Block(said, "session s2"));
+    }
+
     /// <summary>A service that cannot be read is said, store by store, and a trace that needed it could not: exit 2.</summary>
     /// <summary>
     /// A quest's moves as the service's door answers them (FLOWCHART1a2), in the order its history replays: a take, another machine's

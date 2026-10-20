@@ -7,6 +7,7 @@ import {
   DRIVER_SETS, landingEdited, readDriverChoices, withTarget, writeDriverChoices, type AccessSetting, type DriverChoices, type HelpMode,
   type MappedHeavyGate, type LandingRule,
 } from '../../src/driver/driverconfig.ts';
+import { applyHandOverEdit } from '../../src/driver/handover.ts';
 import { sameName } from '../../src/platform/casefold.ts';
 import { makeFixture } from '../_fixture.ts';
 
@@ -66,6 +67,8 @@ function applied(choices: DriverChoices, edit: Edit): DriverChoices {
       const { [edit.repository!]: _gone, ...others } = choices.heavyGates;
       return { ...choices, heavyGates: edit.gates ? { ...choices.heavyGates, [edit.repository!]: edit.gates } : others };
     }
+    // MIXAGENT1c: a repository's hand-over rule as `daoris driver handover` sets it, through the twin's edit.
+    case 'hand-over': return { ...choices, ...applyHandOverEdit(choices, { repository: edit.repository!, set: { mode: edit.mode as string } }) };
     case 'notify': return { ...choices, notify: edit.on! };
     case 'work-cycle-clear': {
       const { [edit.kind!]: _gone, ...kinds } = choices.workCycles[edit.repository!] ?? {};

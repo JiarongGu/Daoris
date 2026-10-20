@@ -15,7 +15,7 @@ type Translate = (key: string, options?: Record<string, unknown>) => string;
  * the step that chose a conversation's account (`note.opening.why.*`, UX7d-1), or whose words a resumed conversation goes on
  * with (`note.resumed.why.*`, CONVNOTE2a), or why the person's words never reached it (`note.words.why.*`, CONVNOTE2d1).
  */
-type Why = 'continue' | 'cooling' | 'opening' | 'resumed' | 'unreached' | 'handed' | 'helper';
+type Why = 'continue' | 'cooling' | 'opening' | 'resumed' | 'unreached' | 'handed' | 'helper' | 'handover';
 
 /**
  * A code the page words: the values its sentence says, its key where it is not `note.<code>`, the reasons a `why` names, and
@@ -93,6 +93,9 @@ export const NOTE_CODES: Readonly<Record<string, NoteCode>> = {
   'started.uncopied-link': { values: ['modules'] },
   'started.uncopied-unignored': { values: ['modules'] },
   'started.uncopied-failed': { values: ['modules'] },
+  'tree.remade': { values: ['branch'] },
+  'tree.gone': { values: ['branch'] },
+  'tree.unmade': { values: [] },
   'started.joined': { values: ['session'] },
   'started.resumes-answered': { values: ['quest', 'answered'] },
   'started.in-asking-tree': { values: ['session'] },
@@ -257,6 +260,11 @@ export const NOTE_CODES: Readonly<Record<string, NoteCode>> = {
   'helper.refused': { values: ['why'], why: 'helper' },
   'helper.refused-by': { values: ['agent', 'why'], why: 'helper' },
   'helper.helping': { values: ['session'] },
+  // An agent's ask to hand its session over (MIXAGENT1c): waiting on the person with the agent it would go on with, going with it at
+  // the turn's end, or refused and why.
+  'handover.asked': { values: ['agent'] },
+  'handover.taking': { values: ['agent'] },
+  'handover.refused': { values: ['why'], why: 'handover' },
   // A session's own background work (CONVNOTE2f): the work's names as code, a state as the harness said it; a program's words
   // follow `unread`.
   'background.unread': { values: [] },
@@ -396,6 +404,20 @@ export const HELPER_REASONS: Readonly<Record<string, { key: string; values: read
   'cannot-take': { key: 'note.helper.why.cannot-take', values: [] },
   // The person's no to an agent's ask (HELPERNO1), added after the nine.
   declined: { key: 'note.helper.why.declined', values: [] },
+};
+
+/**
+ * Why an agent's ask to hand its session over came to nothing (MIXAGENT1c; the driver's `NoteCodes.HandOver`), each its entry;
+ * none carries a value of its own. `locales/note.test.ts` holds this map to the driver's declaration key for key.
+ */
+export const HAND_OVER_ASK_REASONS: Readonly<Record<string, { key: string; values: readonly string[] }>> = {
+  off: { key: 'note.handover.why.off', values: [] },
+  declined: { key: 'note.handover.why.declined', values: [] },
+  'just-handed': { key: 'note.handover.why.just-handed', values: [] },
+  'no-agent': { key: 'note.handover.why.no-agent', values: [] },
+  'asker-gone': { key: 'note.handover.why.asker-gone', values: [] },
+  'asker-unfit': { key: 'note.handover.why.asker-unfit', values: [] },
+  cannot: { key: 'note.handover.why.cannot', values: [] },
 };
 
 /**
@@ -602,6 +624,7 @@ function said(
       if (code.why === 'unreached') return UNREACHED_REASONS[why] ? t(UNREACHED_REASONS[why].key) : null;
       if (code.why === 'handed') return HANDED_REASONS[why] ? t(HANDED_REASONS[why].key) : null;
       if (code.why === 'helper') return HELPER_REASONS[why] ? t(HELPER_REASONS[why].key) : null;
+      if (code.why === 'handover') return HAND_OVER_ASK_REASONS[why] ? t(HAND_OVER_ASK_REASONS[why].key) : null;
       return reasonOf(t, why, {
         from: text(values.from), to: text(values.to), adapter: text(values.adapter), agent: text(values.agent),
       });

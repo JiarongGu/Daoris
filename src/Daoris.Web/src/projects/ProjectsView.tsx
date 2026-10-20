@@ -17,12 +17,13 @@ import { type AccessEdit, accessToast, isFull, resolveAccess } from '../settings
 import { type CommitEdit, commitToast } from '../settings/repository/Commits';
 import { heavyToast } from '../settings/repository/HeavyGates';
 import { type HelperEdit, helperToast } from '../settings/repository/Helpers';
+import { type HandOverEdit, handOverToast } from '../settings/repository/HandOver';
 import type { LandingRule } from '../settings/repository/Landings';
 import { type OpinionEdit, opinionToast } from '../settings/repository/Opinions';
 import { type ReviewEdit, reviewToast } from '../settings/repository/Reviews';
 import {
   useAcross, useDriver, useHarnesses, useLines, usePlugins, useRuleAction, useRules, useSetAccess, useSetCommits, useHeavyMarks, useSetDrivable, useSetHeavyGates, useSetHelpers,
-  useSetHold, useSetLanding, useSetLanguage, useSetLine, useSetOpinion, useSetReadAcross, useSetReview, useSetStanding, useSetTrees,
+  useSetHandOver, useSetHold, useSetLanding, useSetLanguage, useSetLine, useSetOpinion, useSetReadAcross, useSetReview, useSetStanding, useSetTrees,
   useSetupPlan, useSetupPress, useSetWriteAcross, useSweepPlan, useWorkflowCurrent,
 } from '../bridge/shell';
 import type { SetUpForAgentsProps } from './setup/SetUpForAgents';
@@ -68,7 +69,7 @@ const list = <T,>(value: unknown): T[] => (Array.isArray(value) ? value as T[] :
 export function useProjectsView({
   active, chosen, onChoose, tab = 'details', onTab, workspaceTab = 'details', onWorkspaceTab, workspaceSection = null, notify,
   onOpenCode, onOpenAgent, onOpenPlugin, onSyncNow, syncing = false, addRequested = false, onAddOpened, importRequested = false, onImportOpened,
-  drawerWorkspace = null, onOpenQuest, onOpenAsk, onAttend,
+  drawerWorkspace = null, onOpenQuest, onOpenAsk, onAttend, branchAsked = null, onBranchOpened,
 }: {
   /** The view is in front: only then are its errors said. */
   active: boolean;
@@ -118,6 +119,13 @@ export function useProjectsView({
   onOpenQuest?: (id: string) => void;
   onOpenAsk?: (id: string) => void;
   onAttend?: (session: string) => void;
+  /**
+   * A door into how a landed branch landed (FLOWCHART1c: the work's milestone, a run's landing step), an EVENT like the drawers':
+   * the branch's page opens on its repository's Branches with that section open, and its holder lets the word go through
+   * `onBranchOpened`. The door's opening chose the repository and the tab already.
+   */
+  branchAsked?: { repository: string; branch: string } | null;
+  onBranchOpened?: () => void;
 }): ViewLayout {
   const { t } = useTranslation();
   // A chosen item names a workspace or a repository (UX6g, §4.1).
@@ -140,6 +148,7 @@ export function useProjectsView({
   const setOpinion = useSetOpinion();
   const setCommits = useSetCommits();
   const setHelpers = useSetHelpers();
+  const setHandOver = useSetHandOver();
   const setAccess = useSetAccess();
   const setHeavy = useSetHeavyGates();
   const setRead = useSetReadAcross();
@@ -166,6 +175,9 @@ export function useProjectsView({
   const commitsOf = (repository: string) => (Array.isArray(lines.data?.commits) ? lines.data.commits : [])
     .find((one) => one.repository === repository);
   const helpersOf = (repository: string) => (Array.isArray(lines.data?.helpers) ? lines.data.helpers : [])
+    .find((one) => one.repository === repository);
+  // And what an agent's ask to hand its session over does (MIXAGENT1c), with where it was set: the driver's resolution.
+  const handOverOf = (repository: string) => (Array.isArray(lines.data?.handOver) ? lines.data.handOver : [])
     .find((one) => one.repository === repository);
   // And the access setup its sessions start under (AUTONOMY1d), each pause with where it was set: the driver's resolution.
   const accessOf = (repository: string) => (Array.isArray(lines.data?.access) ? lines.data.access : [])
@@ -227,7 +239,13 @@ export function useProjectsView({
   const [managing, setManaging] = useState<Registration | null>(null);
   // The branch open on a repository's page (UX6h3b): page state, as the Map holds its code map, never remembered across a
   // restart. It shows while its repository is chosen at Branches, whose page it is, and its way back clears it.
-  const [branchOpen, setBranchOpen] = useState<{ repository: string; branch: string } | null>(null);
+  // A door into how it landed opens it with that section open (FLOWCHART1c); the list's presses open the page alone.
+  const [branchOpen, setBranchOpen] = useState<{ repository: string; branch: string; landing?: boolean } | null>(null);
+  useEffect(() => {
+    if (!branchAsked) return;
+    setBranchOpen({ ...branchAsked, landing: true });
+    onBranchOpened?.();
+  }, [branchAsked, onBranchOpened]);
   // The list's own press opens the item it names, never a branch left open on it.
   const choose = (item: string | null) => {
     setBranchOpen(null);
@@ -420,6 +438,14 @@ export function useProjectsView({
             onError: onDriverError,
           })
         : undefined,
+      // What an agent's ask to hand its session over does (MIXAGENT1c); a shell older than it answers none, and no row is offered.
+      handOver: Array.isArray(lines.data?.handOver) ? handOverOf(repository) ?? { repository, workspace } : undefined,
+      onHandOver: Array.isArray(lines.data?.handOver)
+        ? (edit: HandOverEdit) => setHandOver.mutate({ repository, ...edit }, {
+            onSuccess: () => notify(handOverToast(t, repository, edit)),
+            onError: onDriverError,
+          })
+        : undefined,
       standing: (driver.data.standing ?? []).find((row) => same(row.repository)) ?? null,
       onStanding: driver.data.standing === undefined
         ? undefined
@@ -478,7 +504,7 @@ export function useProjectsView({
       reach,
       onOpenPlugin,
       busy: setLine.isPending || setLanding.isPending || setReview.isPending || setOpinion.isPending || setLanguage.isPending
-        || setCommits.isPending || setHelpers.isPending || setAccess.isPending || setHeavy.isPending || setStanding.isPending
+        || setCommits.isPending || setHelpers.isPending || setHandOver.isPending || setAccess.isPending || setHeavy.isPending || setStanding.isPending
         || setRead.isPending || setWrite.isPending || ruleAction.isPending,
     };
   };
@@ -575,6 +601,7 @@ export function useProjectsView({
           workspace={workspaceOf(shown)}
           here={Boolean(shown.root)}
           branch={branchShown}
+          landingOpen={branchOpen?.landing === true}
           onBack={() => {
             // The focus goes back to the branch's name button (UX6h3d); a branch no longer listed leaves it on the page's heading.
             const label = t('projects.git.branches.open', { branch: branchShown });

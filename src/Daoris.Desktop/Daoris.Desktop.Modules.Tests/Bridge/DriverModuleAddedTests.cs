@@ -26,12 +26,21 @@ public sealed class DriverModuleAddedTests : DriverModuleBridge
 
         Assert.True(sent.GetProperty("sent").GetBoolean());
         Assert.Equal("use the shared report module", inbox.TakeOrClose()?.Text);
-        await UntilAsync(() => standIn.Count > 0);
+        await UntilAsync(() => standIn.Heard.Any(heard => heard.Path == "/api/sessions/s1/added"));
         await Task.Delay(200);
-        var (path, body) = Assert.Single(standIn.Heard);
-        Assert.Equal("/api/sessions/s1/added", path);
+        // Kept twice over, each once: on the session's record for its run first (COWORK1c, the say door's `running`), and on
+        // the ask its work is for once the session took it (DRIFT1a2's added door).
+        var (_, kept) = Assert.Single(standIn.Heard, heard => heard.Path == "/api/sessions/s1/say");
+        using (var keep = JsonDocument.Parse(kept))
+        {
+            Assert.Equal("use the shared report module", keep.RootElement.GetProperty("text").GetString());
+            Assert.True(keep.RootElement.GetProperty("running").GetBoolean());
+        }
+
+        var (_, body) = Assert.Single(standIn.Heard, heard => heard.Path == "/api/sessions/s1/added");
         using var words = JsonDocument.Parse(body);
         Assert.Equal("use the shared report module", words.RootElement.GetProperty("text").GetString());
+        Assert.Equal(2, standIn.Heard.Count);
     }
 
     /// <summary>

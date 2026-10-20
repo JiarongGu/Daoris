@@ -5,11 +5,33 @@ with the version and date at release.
 
 ## Unreleased
 
+- A session's agent can ask to hand its session over to another agent, with a note of where the work stands that the next agent
+  reads as its claim, after what Daoris kept of the session. Each repository's or workspace's *Hand-over* row on its Setup, and
+  `daoris driver handover`, say what such an ask does: by default it waits at the foot of the session's page with *Hand over to …*
+  and *Not now* (or `daoris-driver sessions hand-over <id> --approve|--decline`); set to take it, the session goes on with the next
+  agent in your order once its turn ends, never in the middle of one; set to refuse, the session's timeline says so. A session that
+  was itself just handed over cannot ask again before a turn of its own.
+- A landed branch's page draws how it landed as a flowchart, folded under *How it landed* above its commits until you open it:
+  its tries to land, three alike in a row folded into one you can open, the landing with who accepted it, each later session that
+  moved it on, the push, its pull request's latest answer, where its work ended, its clean-up and what is kept for recovery. The
+  work's milestone on a session's page and a run's landing step open it. `daoris-driver trace` now names the session a landing was
+  made for, each session that moved it on, and the units of work it carries, and finds the landing from any of those sessions.
+- Where a piece of work stands reads in one line on a session's record, folded: *Ended · clean-up pending · recovery kept
+  until 10 Nov*, which says *blocked* and *held for you* when something waits on you, and opens in place to four facts, the end,
+  the result, the clean-up and the recovery, each marked by its own colour: reached and kept in green, a clean-up that waits in
+  grey, a blocked entry in red, and a recovery with nothing kept with no mark. A plugin step's attempt held for you stays its
+  own row under them. A tidied branch's row says *blocked* and *held for you* in the same line.
 - What you say to a session or a conversation while it works is kept on its record before it waits, so a restart of Daoris never
   loses it: once Daoris is back, the same session goes on with your words in the order you said them. A word Daoris had already
   written to the agent when it went away may have reached it, so it is never sent again: its place says *It may have read this; its
   answer was not kept*, with *Say it again* under your own words. Under words the agent took, the conversation shows when they were
   sent, taken and answered, each only where Daoris saw it.
+- A driven session never runs without its own tree. Before a session goes on in its tree (your words, an answer, a carry-on
+  or a further part), Daoris checks git still has that tree. If the folder was removed and the session's branch is still there,
+  Daoris makes the tree again in the same place on that branch, and the session's conversation says so. If the branch is gone
+  as well, the session does not start anywhere else. It waits for you, and its conversation says what went and how to go on;
+  your words stay waiting on it. Before this, a session whose tree was gone could start with its shell in the repository's own
+  checkout, or in a fresh tree without its commits.
 - A session's Timeline draws its states as a flowchart, the one it is in lit and going on drawn as a guarded move; a session page draws its parts as a flowchart in the parts strip's place, the strip its list, and Accept's plan as a dashed node of where they would land.
 - Signing an account in says where it is and for how long: *Starting*, *Waiting on your browser*, *Checking who signed in*
   and *Joining the lists*, each with its time, the one now counting. Codex's device code shows under the browser's step with
@@ -20,6 +42,10 @@ with the version and date at release.
   `yarn run`, `pnpm test` or `pnpm run`, as it already did through npm. The flag goes where that yarn or pnpm version passes it
   on to the script; the version comes from the `packageManager` field or the install's own record. Where the version is not
   recorded, or is one whose argument handling was not read, the gate runs as written, and the run says why under the gate's line.
+- A driven session's own tree is locked while the session holds it, so a tool that prunes merged branches or removes clean trees
+  no longer takes it mid-session: `git worktree list` shows it locked for `daoris session <id>`, and git refuses `git worktree
+  prune` and a `git worktree remove` without `--force` on it. The lock is lifted when the session ends, and kept while it waits
+  on you; a lock of your own on a tree is never changed.
 - A change of a repository's permission prompts reaches a driven session already running there at its next turn, whether made on
   its Setup tab or with `daoris-driver access`. Where you have said something to the session for its next turn, its run ends as the
   turn ends, never mid-turn, your words wait on it, and at the next look it goes on in the same conversation under the new setup,

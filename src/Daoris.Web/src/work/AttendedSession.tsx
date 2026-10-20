@@ -19,7 +19,7 @@ import type { SayRebase } from './review/LandingSync';
 import type { SessionEntry } from './entries';
 import { EntryAccept } from './review/EntryAccept';
 import type { DiscardOffer, LandOffer } from './groups';
-import { PartsFlow } from './head/PartsFlow';
+import { PartsFold } from './head/PartsFold';
 import type { PartFacts } from './head/PartsStrip';
 import type { SessionProcess } from './head/process';
 import type { Relations } from './head/relations';
@@ -66,7 +66,7 @@ export function AttendedSession({
   chain = [], onSession, onQuest, onReview, relations, timeline = 'dock', branch, ownBranch, onDiscardBranch, discardingBranch,
   headed = false, goAheads, onGoAhead, trace, ownSignIn = false, nameOf, lands, landing, planning, onLand, onSayRebase, onName, discards, onDiscardTree, review, behind,
   opinion, continues, helps, process, parts, entryAccept, channel, workAsk, workBusy, toEvent, rules, ruleAsk, seek, helpers, permissions,
-  milestone,
+  milestone, onOpenBranch,
 }: {
   /** Passed straight through to the head: the process its own tree runs under, *Details*' rows (PROCESS1e). */
   process?: SessionProcess | null;
@@ -147,6 +147,11 @@ export function AttendedSession({
    * kept, the clean-up and the recovery. Absent where the driver names no unit for it: a browser, a teammate's, or an older shell.
    */
   milestone?: MilestoneUnit | null;
+  /**
+   * How its work's landing branch landed (FLOWCHART1c): the milestone's door to that branch's page in Repositories, named by the
+   * branch the unit's landing made. Absent where nothing opens a page there.
+   */
+  onOpenBranch?: (repository: string, branch: string) => void;
   /** The go-aheads it asked on its quest's ask, shown in the head while it is parked (KNOWUSE1a2). */
   goAheads?: GoAhead[];
   /** Passed straight through to the head: one of them answered, the park with it once none is open (KNOWUSE1a2, GOAHEAD2b). */
@@ -269,8 +274,10 @@ export function AttendedSession({
         helpers={helpers}
         permissions={permissions}
       />
-      {/* Its parts as a flowchart, the strip its rail (FLOWCHART1b); Accept's plan, once read, is where they would land. */}
-      {parts && <PartsFlow {...parts} plan={entryAccept?.open ? entryAccept.plans?.[0] ?? null : null} />}
+      {/* Its parts as a flowchart, the strip its rail (FLOWCHART1b); Accept's plan, once read, is where they would land. Folded to one
+          line (HEADFIT1: the drawing alone was over the head's whole budget), keyed by the line of work, not the session: a press on
+          a part shows another session of it, and the flow being read stays open. */}
+      {parts && <PartsFold key={parts.entry.entry} {...parts} plan={entryAccept?.open ? entryAccept.plans?.[0] ?? null : null} />}
       {/* One Accept for every part with work to land (ACCEPTALL1, D167's 2026-10-15 amendment), under the strip that lists them. */}
       {entryAccept && <div className="grid justify-items-start gap-1"><EntryAccept {...entryAccept} /></div>}
       {/* Every stop a door (the study's §5: "every stop pressable"): a session attends, a quest opens.
@@ -284,11 +291,15 @@ export function AttendedSession({
           </div>
         )
         : <ChainLine chain={chain} onQuest={onQuest} onExpand={() => showChain(true)} />)}
-      {relations && <SessionRelations relations={relations} onQuest={onQuest} onSession={onSession} />}
+      {/* Who it worked with, folded to a line and opened in place (HEADFIT1); keyed by the record so another one starts folded. */}
+      {relations && <SessionRelations key={session.id} relations={relations} onQuest={onQuest} onSession={onSession} />}
       {/* Its ask's channel kept to this line of work, folded to a line (SESSONE2c, D167 points 6 to 8). */}
       {channel && <ChannelPanel {...channel} />}
-      {/* Where its work stands (FABRIC-MILESTONE1b): the end, the result, the clean-up and the recovery, read from the driver. */}
-      {milestone && <WorkMilestone unit={milestone} />}
+      {/* Where its work stands (FABRIC-MILESTONE1b): the end, the result, the clean-up and the recovery, read from the driver, folded
+          to its line, opened in place (MILESTONEUX1); keyed by the record so another one starts folded. */}
+      {milestone && <WorkMilestone key={session.id} unit={milestone} />}
+      {/* Its door to how the branch its landing made landed (FLOWCHART1c), a line beside the milestone and none of its own. */}
+      {milestone && onOpenBranch && <LandedBranchDoor unit={milestone} onOpen={onOpenBranch} />}
       {/* Folded, a line above the conversation: nothing is read until the person opens it (TRACE1b). */}
       {trace && <HowItCameToBe kind="session" id={session.id} {...trace} nameOf={nameOf} />}
       {/* The timeline lives in the right dock since SURF6 gave the dock its second occupant. It stayed
@@ -303,5 +314,23 @@ export function AttendedSession({
         />
       )}
     </article>
+  );
+}
+
+/**
+ * The milestone's door to how its landing branch landed (FLOWCHART1c): the branch the unit's landing made, as its result or its
+ * entries name it, opened on its repository's page. A landing branch is the branch's whole story, so it is named by the branch and
+ * never by the unit's session, which is any one of its executors. Nothing where the unit names no landing branch.
+ */
+function LandedBranchDoor({ unit, onOpen }: { unit: MilestoneUnit; onOpen: (repository: string, branch: string) => void }) {
+  const { t } = useTranslation();
+  const branch = [...unit.result, ...unit.entries].find((entry) => entry.kind === 'landing-branch')?.resource;
+  if (!branch) return null;
+  return (
+    <div className="flex justify-start">
+      <Button variant="ghost" className="min-h-0 px-1.5 py-0.5 text-small" onClick={() => onOpen(unit.repository, branch)}>
+        {t('landing.door', { branch })}
+      </Button>
+    </div>
   );
 }

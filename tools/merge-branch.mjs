@@ -860,6 +860,11 @@ export const REACH = Object.freeze([
     why: "the driver's KeptNamesTwinTests and the page's sessionActs vitest read the kept names' table (SESSDEL1c)",
   },
   {
+    paths: ['src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/hand-over-order.json'],
+    gates: ['driver', 'web-unit'],
+    why: "the driver's HandOverOrderTests and the page's handOverOrder vitest read the person's order's table (MIXAGENT1c)",
+  },
+  {
     paths: ['src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/workflow-run-said.json'],
     gates: ['driver', 'web-unit'],
     why: "the driver's WorkflowRunSaidTwinTests and the page's runSaid vitest read a run's English table (WORKFLOW1c5)",

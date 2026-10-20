@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { APPEND_AFTER, APPEND_BEFORE, DENSE, type Fixture, HARDEST, LIFECYCLE, MANY_CURRENT, NONE_CURRENT, UNEQUAL } from './flowFixtures';
-import { type FlowShape, layoutFlow, needs, placementFor, slotCrossings } from './flowLayout';
+import { type FlowShape, findStacks, layoutFlow, needs, placementFor, slotCrossings } from './flowLayout';
 
 // FLOWCHART1a1 (D186; the flowchart design §3.1, §3.2, §3.5, §7 traps 1, 2, 4 and the first half of 3): the layout is a
 // pure function of the graph's shape. It finds the back edges, ranks by the longest path, threads a waypoint through each
@@ -207,5 +207,58 @@ describe('the crossing table (trap 3, its first half: the slots)', () => {
   it('keeps the unequal fixture\'s boxes unequal in both languages, so the check measures what it is meant to', () => {
     const long = UNEQUAL.nodes.find((node) => node.id === 'lint')!.title;
     expect(long.zh.length).toBeGreaterThan(long.en.length * 5);
+  });
+});
+
+describe('stacks (FLOWCHART1c; the flowchart design §3.5, §3.6 step 1)', () => {
+  /** A due entry's tries, each its own node, `like` the try's code: a chain from the entry to where it landed. */
+  const tries = (codes: string[], extra: [string, string][] = []): FlowShape => ({
+    nodes: [{ id: 'due' }, ...codes.map((code, index) => ({ id: `t${index}`, stack: code })), { id: 'landed' }],
+    edges: [
+      ...['due', ...codes.map((_, index) => `t${index}`), 'landed'].slice(1).map((to, index, all) => ({
+        id: `e${index}`, from: index === 0 ? 'due' : all[index - 1]!, to,
+      })),
+      ...extra.map(([from, to], index) => ({ id: `x${index}`, from, to })),
+    ],
+    entries: ['due'],
+  });
+
+  it('stacks three or more like nodes that follow each other, and names the edges across its boundary and between its members', () => {
+    expect(findStacks(tries(['held', 'held', 'held', 'landed']))).toEqual([
+      { id: 'stack:t0', key: 'held', members: ['t0', 't1', 't2'], into: ['e0'], out: ['e3'], within: ['e1', 'e2'] },
+    ]);
+  });
+
+  it('keeps two like nodes apart, so a single retry stays visible', () => {
+    expect(findStacks(tries(['held', 'held', 'landed']))).toEqual([]);
+  });
+
+  it('breaks a run where the code changes, and stacks each run of three on its own', () => {
+    const found = findStacks(tries(['uncommitted', 'uncommitted', 'uncommitted', 'held', 'held', 'held', 'held', 'landed']));
+    expect(found.map((stack) => [stack.key, stack.members])).toEqual([
+      ['uncommitted', ['t0', 't1', 't2']],
+      ['held', ['t3', 't4', 't5', 't6']],
+    ]);
+  });
+
+  it('stacks only a chain: a member with a second edge in or out ends the run before it', () => {
+    // t1 has a second edge out, so it is no link of a chain: t2, t3 and t4 still follow each other.
+    const found = findStacks(tries(['held', 'held', 'held', 'held', 'held'], [['t1', 'landed']]));
+    expect(found.map((stack) => stack.members)).toEqual([['t2', 't3', 't4']]);
+  });
+
+  it('stacks nothing a caller did not mark like, and nothing in a loop of like nodes', () => {
+    expect(findStacks(shape(['a', 'b', 'c', 'd'], [['a', 'b'], ['b', 'c'], ['c', 'd']]))).toEqual([]);
+    const loop: FlowShape = {
+      nodes: ['a', 'b', 'c'].map((id) => ({ id, stack: 'same' })),
+      edges: [{ id: 'ab', from: 'a', to: 'b' }, { id: 'bc', from: 'b', to: 'c' }, { id: 'ca', from: 'c', to: 'a' }],
+      entries: ['a'],
+    };
+    expect(findStacks(loop)).toEqual([]);
+  });
+
+  it('reads only the shape: the same graph stacks the same way twice', () => {
+    const graph = tries(['held', 'held', 'held', 'opinion', 'landed']);
+    expect(findStacks(graph)).toEqual(findStacks(graph));
   });
 });

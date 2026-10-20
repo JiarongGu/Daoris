@@ -54,6 +54,7 @@ export const DRIVER_ROUTES = {
   review: person('SET_REVIEW'),
   opinion: person('SET_OPINION'),
   helpers: person('SET_HELPERS'),
+  handOver: person('SET_HAND_OVER'),
   commits: person('SET_COMMITS'),
 } as const satisfies Record<string, InstanceRoute>;
 
@@ -81,6 +82,7 @@ export const DRIVER_VERBS: readonly (readonly [verb: string, route: InstanceRout
   ['driver review', DRIVER_ROUTES.review, 'the review rule; its procedure is looked for by the instance in the registry\'s checkouts'],
   ['driver opinion', DRIVER_ROUTES.opinion, 'the second-opinion rule'],
   ['driver helpers', DRIVER_ROUTES.helpers, 'the helpers rule'],
+  ['driver handover', DRIVER_ROUTES.handOver, 'the hand-over rule'],
   ['driver commits', DRIVER_ROUTES.commits, 'the commit rule'],
   ['driver cap <n>', null, 'alone: no route sets the cap; the window shows it and has no press for it'],
   ['driver timeout <minutes>', null, 'alone: no route sets a session\'s timeout'],

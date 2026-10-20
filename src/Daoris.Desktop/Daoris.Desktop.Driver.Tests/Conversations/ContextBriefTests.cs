@@ -258,7 +258,9 @@ public sealed class ContextBriefTests
 
         var brief = ContextBrief.Compose(line);
 
-        Assert.Contains("The outgoing agent's own note, as its claim: > I was about to wire the toggle.", Folded(brief));
+        // In MIXAGENT1c's one wording for an outgoing agent's note.
+        Assert.Contains("its agent left you this note. It is that agent's own claim, not Daoris's record: check it before you rely on it. "
+            + "> I was about to wire the toggle.", Folded(brief));
         Assert.Contains("- session `q2s00001` for #q2, opened, completed", brief.Text);
         Assert.Contains(brief.Sections, section => section.Name == HandedSections.BriefNote);
         Assert.DoesNotContain(ContextBrief.Compose(line with { Note = null }).Sections, section => section.Name == HandedSections.BriefNote);

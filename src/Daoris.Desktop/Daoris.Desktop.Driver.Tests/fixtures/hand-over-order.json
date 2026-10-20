@@ -1,0 +1,13 @@
+{
+  "about": "The person's order of agents a hand-over goes to (MIXAGENT1c; D163's MIXAGENT1b-iii note; D191's settling of the design): the present doors of tools other than the session's own, one door per tool by its first present door, in the roster's order. A door's tool is its `accountOf` owner, else itself. The table both read: the page's `otherToolDoors` (`work/start/handOverOffer.ts`, through `handOverOrder.test.ts`) and the driver's `HandOverOrder.Others` (`HandOverOrderTests`). Each row: its name, the session's adapter, the roster's doors as [harness, present, accountOf], and the harnesses in order.",
+  "rows": [
+    ["another tool after the session's own", "claude-code", [["claude-code", true, null], ["codex-acp", true, "codex"]], ["codex-acp"]],
+    ["the session's own tool through another door is not another tool", "claude-code-acp", [["claude-code", true, null], ["claude-code-acp", true, "claude-code"], ["codex-acp", true, "codex"]], ["codex-acp"]],
+    ["a tool with two doors is one candidate, by its first present door", "claude-code", [["claude-code", true, null], ["codex", false, null], ["codex-acp", true, "codex"], ["codex-cli", true, "codex"]], ["codex-acp"]],
+    ["a door not present is passed over", "claude-code", [["codex-acp", false, "codex"], ["dsh", true, null], ["claude-code", true, null]], ["dsh"]],
+    ["the roster's order is kept", "dsh", [["codex-acp", true, "codex"], ["claude-code", true, null], ["dsh", true, null]], ["codex-acp", "claude-code"]],
+    ["an adapter the roster does not hold is its own tool", "gone-agent", [["claude-code", true, null], ["codex-acp", true, "codex"]], ["claude-code", "codex-acp"]],
+    ["a blank accountOf is no owner", "claude-code", [["claude-code", true, " "], ["codex-acp", true, "codex"]], ["codex-acp"]],
+    ["no other tool is no order", "claude-code", [["claude-code", true, null], ["claude-code-acp", true, "claude-code"]], []]
+  ]
+}

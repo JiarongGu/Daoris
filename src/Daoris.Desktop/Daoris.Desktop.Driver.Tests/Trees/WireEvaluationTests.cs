@@ -32,15 +32,18 @@ public sealed class WireEvaluationTests
 
     internal static Wire Data(string id, string from, string output, string to, string input) => new(id, WireKinds.Data, new(from, output), new(to, input));
 
-    /// <summary>A graph's nodes on one unit, with their statuses as a record writer would keep them between evaluations.</summary>
-    internal sealed class Graph(NodeDeclaration[] nodes, Wire[] wires)
+    /// <summary>
+    /// A graph's nodes on one record's unit (<see cref="Unit"/> unless named: FABRIC-CUTOVER1a's <c>run:r</c>), with their statuses as a record
+    /// writer would keep them between evaluations.
+    /// </summary>
+    internal sealed class Graph(NodeDeclaration[] nodes, Wire[] wires, string unit = Unit)
     {
         private readonly HashSet<string> fired = new(StringComparer.Ordinal);
 
         public WireRun Run { get; set; } = Base;
 
         public Dictionary<string, NodeStatus> Statuses { get; } =
-            nodes.ToDictionary(node => node.Id, node => NodeLifecycle.Start(Unit, node.Id), StringComparer.Ordinal);
+            nodes.ToDictionary(node => node.Id, node => NodeLifecycle.Start(unit, node.Id), StringComparer.Ordinal);
 
         public string State(string id) => Statuses[id].State;
 
@@ -719,5 +722,307 @@ public sealed class WireEvaluationTests
             Base with { Revisions = new Dictionary<string, string?> { [Quest] = null } });
         Assert.Null(quest.Refusal);
         Assert.Null(Assert.Single(quest.Starts).Move.Binding!.SubjectRevision);
+    }
+
+    // ——— FABRIC-CUTOVER1a: a run's graph evaluated over its subjects (the cutover design §2.1, §2.2, §11), each seen failing first
+
+    private const string RunRecord = "run:r";
+    private const string Act = "deploy the release to production";
+
+    /// <summary>A named version's graph as a run binds it: <c>claimed</c>, the opinion and the look beside it into <c>handed</c>, a push and a release after.</summary>
+    private static readonly NodeDeclaration[] RunNodes =
+    [
+        Node("claimed", NodeKinds.Claimed), Node("opinion", NodeKinds.Opinion), Node("look", NodeKinds.Look), Node("handed", NodeKinds.Handed),
+        Node("pushed", NodeKinds.Pushed), Node("release"),
+    ];
+
+    private static readonly Wire[] RunWires =
+    [
+        After("c>o", "claimed", "opinion"), After("c>l", "claimed", "look"), After("o>h", "opinion", "handed"), After("l>h", "look", "handed"),
+        After("h>p", "handed", "pushed"), After("p>r", "pushed", "release"),
+    ];
+
+    /// <summary>The run's quest here, done unless said, with the steps its chain still names.</summary>
+    private static WorkUnit QuestOf(string id = "q1", string status = "Done", params QuestStepView[] then) =>
+        Assert.Single(QuestUnits.Read([new QuestView(id, "game", "engine", "The work", "Body.", status) { Updated = Then, Then = then }], []));
+
+    /// <summary>A branch unit its records name; landed at <paramref name="landed"/> where given, and pushed there.</summary>
+    private static WorkUnit BranchOf(string id, string? landed = null) => new(id, WorkUnitKind.Branch,
+        new WorkOwner("engine", "default", SessionBranches.FileName, WorkRecord.DriverWriter), new WorkSubject("daoris/s1", null),
+        new MilestoneEnd(WorkEndState.NotEnded, null, null, null, null, "open"), [])
+    {
+        Records = new WorkUnitRecords(null, landed is null ? [] :
+        [
+            new LandedBranch("engine", "default", "feature/q1", "main", landed, "s1", "q1", null, Then) { Units = [id], Pushed = true, PushedTip = landed, Plugin = "acme-pr" },
+        ], null),
+    };
+
+    /// <summary>
+    /// A pass's read for run <c>r</c>: its record's own unit with no revision; <c>claimed</c> on <paramref name="quest"/>; the opinion, the look and
+    /// <c>handed</c> on <paramref name="branch"/> at <paramref name="tip"/>, its gates read at that tip; what follows the landing on the landing's
+    /// tip, and on no subject while there is no landing. No tip read, the branch's subject has no revision and its gates no read.
+    /// </summary>
+    private static WireRun RunOver(WorkUnit quest, WorkUnit branch, string? tip, string? landed = null)
+    {
+        var revisions = new Dictionary<string, string?> { [RunRecord] = null, [quest.Id] = quest.Subject.Revision };
+        if (tip is not null) revisions[branch.Id] = tip;
+        var after = landed is null ? null : branch.Id;
+        return new WireRun("graph-1", "r")
+        {
+            Revisions = revisions,
+            Subjects = new Dictionary<string, string?>
+            {
+                ["claimed"] = quest.Id, ["opinion"] = branch.Id, ["look"] = branch.Id, ["handed"] = branch.Id, ["pushed"] = after, ["release"] = after,
+            },
+            NodeRevisions = landed is null ? new Dictionary<string, string?>() : new Dictionary<string, string?> { ["pushed"] = landed, ["release"] = landed },
+            Units = new Dictionary<string, WorkUnit> { [quest.Id] = quest, [branch.Id] = branch },
+            Opinions = tip is null
+                ? new Dictionary<string, OpinionGateState>()
+                : new Dictionary<string, OpinionGateState> { [branch.Id] = new(OpinionGateStates.Settled, "engine") { Tip = tip } },
+            Reviews = tip is null
+                ? new Dictionary<string, ReviewGateState>()
+                : new Dictionary<string, ReviewGateState>
+                {
+                    [branch.Id] = new(ReviewStates.Reviewed, new ReviewDecision(ReviewLevels.Repository, "preview") { Repository = "engine" })
+                    {
+                        Tip = tip, Verdict = new QuestReviewVerdictView(ReviewVerdicts.Reviewed) { Commit = tip, At = Then },
+                    },
+                },
+            Git = new NodeGitReads(RemoteTip: landing => landing.PushedTip),
+        };
+    }
+
+    /// <summary>Run <c>r</c> taken to its landing: <c>claimed</c> reached on q1, the gates and <c>handed</c> on b1 at t1, the push started on the landing's tip.</summary>
+    private static Graph ThroughItsLanding(out WorkUnit quest)
+    {
+        quest = QuestOf();
+        var g = new Graph(RunNodes, RunWires, RunRecord) { Run = RunOver(quest, BranchOf("unit-b1"), "t1") };
+        var first = g.Evaluate();
+        Assert.Equal(["claimed"], first.Starts.Select(start => start.Node));
+        g.Start(first, "claimed");
+
+        var gates = g.Evaluate();
+        Assert.Equal(["look", "opinion"], gates.Starts.Select(start => start.Node));
+        g.Start(gates, "opinion");
+        g.Start(gates, "look");
+
+        var landing = g.Evaluate();
+        Assert.Equal(["handed"], landing.Starts.Select(start => start.Node));
+        g.Start(landing, "handed");
+
+        g.Run = RunOver(quest, BranchOf("unit-b1", landed: "t1"), "t1", landed: "t1");
+        var pushing = g.Evaluate();
+        Assert.Equal(NodeStates.Reached, g.State("handed"));
+        Assert.Equal(["pushed"], pushing.Starts.Select(start => start.Node));
+        g.Start(pushing, "pushed");
+        return g;
+    }
+
+    /// <summary>
+    /// One record of unit <c>run:r</c>: <c>claimed</c> observes the run's quest and reaches on its done; the opinion and the look observe the run's
+    /// branch's gates at the tip handed in, and <c>handed</c> its landing, reached through its wires; the push follows on the landing's tip. Every
+    /// status stays the record's, and every acceptance names its record's unit and the subject it observed.
+    /// </summary>
+    [Fact]
+    public void A_runs_record_observes_each_node_on_the_subject_its_kind_names()
+    {
+        var g = ThroughItsLanding(out var quest);
+        g.Evaluate();
+
+        foreach (var (node, subject, revision) in new[]
+        {
+            ("claimed", quest.Id, quest.Subject.Revision), ("opinion", "unit-b1", "t1"), ("look", "unit-b1", "t1"), ("handed", "unit-b1", "t1"),
+            ("pushed", "unit-b1", "t1"),
+        })
+        {
+            var status = g.Statuses[node];
+            Assert.Equal((node, RunRecord, NodeStates.Reached), (node, status.Unit, status.State));
+            Assert.Equal((node, RunRecord, subject, revision), (node, status.Current!.Unit, status.Current.Subject, status.Current.SubjectRevision));
+        }
+
+        Assert.Equal(new[] { g.Statuses["opinion"].Current!.Id, g.Statuses["look"].Current!.Id }.Order(StringComparer.Ordinal),
+            g.Statuses["handed"].Current!.PrerequisiteReceipts);
+        Assert.Equal(NodeStates.Ready, g.State("release"));
+    }
+
+    /// <summary>
+    /// <c>claimed</c> on a run waits for its chain's last step here: its quest's done, with a step still to come in this repository, leaves it
+    /// active and the nodes after it unstarted. The chain's next quest moves its subject, so it lapses as <c>subject</c>, is begun on that quest,
+    /// and reaches there.
+    /// </summary>
+    [Fact]
+    public void Claimed_on_a_run_waits_for_its_chains_last_step_here_and_moves_with_it()
+    {
+        var branch = BranchOf("unit-b1");
+        var g = new Graph(RunNodes, RunWires, RunRecord) { Run = RunOver(QuestOf("q1", "Done", new QuestStepView("engine", "Next", "More of it.")), branch, "t1") };
+        g.Start(g.Evaluate(), "claimed");
+
+        var waiting = g.Evaluate();
+        Assert.Equal((NodeStates.Active, NodeStates.Blocked, NodeStates.Blocked), (g.State("claimed"), g.State("opinion"), g.State("look")));
+        Assert.Empty(waiting.Starts);
+        Assert.Equal(["c>o"], waiting.Of("opinion")!.Waiting);
+
+        var next = QuestOf("q2");
+        g.Run = RunOver(next, branch, "t1");
+        var moved = Assert.Single(g.Evaluate().Moves);
+        Assert.Equal(("claimed", NodeStates.Invalidated, WireWhy.Lapsed, NodeLapse.Subject), (moved.Node, moved.Move.To, moved.Why, moved.Detail));
+
+        var again = g.Evaluate();
+        Assert.Equal((next.Id, next.Subject.Revision), (again.Starts.Single().Move.Binding!.Subject, again.Starts.Single().Move.Binding!.SubjectRevision));
+        g.Start(again, "claimed");
+        g.Evaluate();
+        Assert.Equal((NodeStates.Reached, NodeStates.Ready, NodeStates.Ready), (g.State("claimed"), g.State("opinion"), g.State("look")));
+    }
+
+    /// <summary>
+    /// The chain's next session replaces the run's branch with another at the same commit: a binding names its subject, so the gates and
+    /// <c>handed</c> lapse as <c>subject</c> though no revision moved, the push resting on <c>handed</c> lapses <c>upstream</c>, and <c>claimed</c>,
+    /// on its quest, stands.
+    /// </summary>
+    [Fact]
+    public void A_branch_replaced_at_the_same_commit_lapses_handed_and_what_rests_on_it()
+    {
+        var g = ThroughItsLanding(out var quest);
+        var handed = g.Statuses["handed"].Current!.Id;
+
+        g.Run = RunOver(quest, BranchOf("unit-b2"), "t1");
+        var replaced = g.Evaluate();
+
+        Assert.Equal(
+            [
+                ("opinion", NodeStates.Invalidated, WireWhy.Lapsed, NodeLapse.Subject),
+                ("look", NodeStates.Invalidated, WireWhy.Lapsed, NodeLapse.Subject),
+                ("handed", NodeStates.Invalidated, WireWhy.Lapsed, NodeLapse.Subject),
+                ("pushed", NodeStates.Invalidated, WireWhy.Upstream, handed),
+            ],
+            replaced.Moves.Select(move => (move.Node, move.Move.To, move.Why, move.Detail)));
+        Assert.Equal(NodeStates.Reached, g.State("claimed"));
+    }
+
+    /// <summary>
+    /// The session's branch tidied after its landing: no tip is handed in for it, and the evaluation goes on. What is bound on the branch keeps its
+    /// binding, offered no new start; the push, bound to the landing's tip as the landing's record keeps it, is observed there and reached, and the
+    /// release after it is offered its start on that tip.
+    /// </summary>
+    [Fact]
+    public void A_node_after_handed_binds_the_landings_tip_and_is_kept_with_no_tip_handed_in()
+    {
+        var g = ThroughItsLanding(out var quest);
+
+        g.Run = RunOver(quest, BranchOf("unit-b1", landed: "t1"), tip: null, landed: "t1");
+        var tidied = g.Evaluate();
+
+        Assert.Null(tidied.Refusal);
+        Assert.Equal([("pushed", NodeStates.Reached), ("release", NodeStates.Ready)], tidied.Moves.Select(move => (move.Node, move.Move.To)));
+        Assert.Equal((NodeStates.Reached, NodeStates.Reached, NodeStates.Reached), (g.State("opinion"), g.State("look"), g.State("handed")));
+        Assert.Equal(WireEvaluation.NoRevision, tidied.Of("handed")!.Withheld);
+        var start = Assert.Single(tidied.Starts).Move.Binding!;
+        Assert.Equal(("release", RunRecord, "unit-b1", "t1"), (start.Node, start.Unit, start.Subject, start.SubjectRevision));
+    }
+
+    /// <summary>
+    /// A data wire joins a quest-side node and a branch-side one, whose revisions differ by design: the input is resolved on its producer's
+    /// reach, the consumer bound to the branch's tip, and the dispatch's check takes it on the producer's own subject.
+    /// </summary>
+    [Fact]
+    public void A_data_wire_from_a_quest_side_node_into_a_branch_side_node_resolves()
+    {
+        var quest = QuestOf();
+        NodeDeclaration[] nodes =
+        [
+            Node("claimed", NodeKinds.Claimed), Node("deploy") with { Inputs = Ports("claim", BuiltInNodes.EvidenceSchema(NodeKinds.Claimed)) },
+        ];
+        var run = RunOver(quest, BranchOf("unit-b1"), "t1");
+        var g = new Graph(nodes, [Data("d", "claimed", WireEnd.Evidence, "deploy", "claim")], RunRecord)
+        {
+            Run = run with { Subjects = new Dictionary<string, string?> { ["claimed"] = quest.Id, ["deploy"] = "unit-b1" } },
+        };
+        g.Start(g.Evaluate(), "claimed");
+
+        var evaluated = g.Evaluate();
+        var claimed = g.Statuses["claimed"].Current!;
+        var binding = evaluated.Starts.Single(start => start.Node == "deploy").Move.Binding!;
+        Assert.Equal(("unit-b1", "t1", claimed.Evidence), (binding.Subject, binding.SubjectRevision, binding.Inputs["claim"]));
+        Assert.NotEqual(claimed.SubjectRevision, binding.SubjectRevision);
+
+        g.Start(evaluated, "deploy");
+        Assert.Null(WorkBelief.Unresolved(new NodeRecord(RunRecord) { Statuses = g.Statuses }, g.Statuses["deploy"].Binding!));
+    }
+
+    /// <summary>
+    /// The run's own nodes observe the run, projected as a unit for the evaluation alone: its go-ahead is answered only through the list the pass
+    /// hands in for the run, never another subject's, and its binding names no subject.
+    /// </summary>
+    [Fact]
+    public void A_go_ahead_on_the_run_is_answered_only_through_the_list_handed_in_for_it()
+    {
+        var go = Node("go", NodeKinds.GoAhead) with { Options = new Dictionary<string, string> { ["act"] = WorkflowCurrent.Quoted(Act) } };
+        var run = new WorkUnit(RunRecord, WorkUnitKind.Run, new WorkOwner("engine", "default", null, WorkRecord.DriverWriter), new WorkSubject("r", null),
+            new MilestoneEnd(WorkEndState.NotEnded, null, null, null, null, "running"), []);
+        IReadOnlyList<GoAheadView> yes =
+        [
+            new GoAheadView(1, "write", "production", Act, [new GoAheadRequestView("s1", "q1", Then, "to ship")]) { Answer = new GoAheadAnswerView(true, null, Then) },
+        ];
+        var g = new Graph([go, Node("handed", NodeKinds.Handed)], [After("g>h", "go", "handed")], RunRecord)
+        {
+            Run = new WireRun("graph-1", "r")
+            {
+                Revisions = new Dictionary<string, string?> { [RunRecord] = null, ["unit-b1"] = "t1" },
+                Subjects = new Dictionary<string, string?> { ["handed"] = "unit-b1" },
+                Units = new Dictionary<string, WorkUnit> { [RunRecord] = run, ["unit-b1"] = BranchOf("unit-b1") },
+                GoAheads = new Dictionary<string, IReadOnlyList<GoAheadView>> { ["unit-b1"] = yes, ["quest:q1"] = yes },
+            },
+        };
+        g.Start(g.Evaluate(), "go");
+
+        g.Evaluate();
+        Assert.Equal((NodeStates.Active, NodeStates.Blocked), (g.State("go"), g.State("handed")));
+
+        g.Run = g.Run with { GoAheads = new Dictionary<string, IReadOnlyList<GoAheadView>> { [RunRecord] = yes } };
+        g.Evaluate();
+        Assert.Equal((NodeStates.Reached, NodeStates.Ready, (string?)null), (g.State("go"), g.State("handed"), g.Statuses["go"].Current!.Subject));
+    }
+
+    /// <summary>
+    /// A subject the pass did not find, or a branch subject whose revision it did not read, withholds its own nodes alone: they are judged on their
+    /// wires and offered no start while the rest are evaluated, and a started one is neither observed nor lapsed, keeping its binding. A record's
+    /// own unit left out still refuses the whole evaluation (<see cref="A_missing_branch_revision_refuses_the_evaluation"/>).
+    /// </summary>
+    [Fact]
+    public void A_subject_not_found_or_not_read_withholds_its_own_nodes_alone()
+    {
+        var quest = QuestOf();
+        WireRun Read(string? subject, bool named, string? tip)
+        {
+            var revisions = new Dictionary<string, string?> { [quest.Id] = quest.Subject.Revision };
+            if (named) revisions["unit-b1"] = tip;
+            return new WireRun("graph-1", "r")
+            {
+                Revisions = revisions,
+                Subjects = new Dictionary<string, string?> { ["claimed"] = quest.Id, ["opinion"] = subject, ["check"] = null },
+                Units = new Dictionary<string, WorkUnit> { [quest.Id] = quest, ["unit-b1"] = BranchOf("unit-b1") },
+                Opinions = new Dictionary<string, OpinionGateState> { ["unit-b1"] = new(OpinionGateStates.Settled, "engine") { Tip = "t1" } },
+            };
+        }
+
+        var g = new Graph([Node("claimed", NodeKinds.Claimed), Node("opinion", NodeKinds.Opinion), Node("check")], [], RunRecord) { Run = Read("unit-b1", false, null) };
+        var unread = g.Evaluate();
+        Assert.Null(unread.Refusal);
+        Assert.Equal(["claimed"], unread.Starts.Select(start => start.Node));
+        Assert.Equal((WireEvaluation.NoRevision, WireEvaluation.NoSubject, (string?)null),
+            (unread.Of("opinion")!.Withheld, unread.Of("check")!.Withheld, unread.Of("claimed")!.Withheld));
+        Assert.Equal((true, (NodeAcceptance?)null), (unread.Of("opinion")!.Eligible, unread.Of("opinion")!.Binding));
+
+        g.Run = Read("unit-b1", true, null);
+        Assert.Equal(WireEvaluation.NoRevision, g.Evaluate().Of("opinion")!.Withheld);
+
+        g.Run = Read("unit-b1", true, "t1");
+        g.Start(g.Evaluate(), "opinion");
+        Assert.Equal(("unit-b1", "t1"), (g.Statuses["opinion"].Binding!.Subject, g.Statuses["opinion"].Binding!.SubjectRevision));
+
+        g.Run = Read(null, true, "t1");
+        var unfound = g.Evaluate();
+        Assert.DoesNotContain(unfound.Moves, move => move.Node == "opinion");
+        Assert.Equal((NodeStates.Active, "t1"), (g.State("opinion"), g.Statuses["opinion"].Binding!.SubjectRevision));
     }
 }

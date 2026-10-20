@@ -123,6 +123,7 @@ public sealed class SessionTrees(string home, LandingPlugins? plugins = null) : 
     private TreeLands? _lands;
     private EntryLands? _entries;
     private EndKeeping? _keeping;
+    private TreeReturns? _returns;
 
     /// <summary>The end judgement's one writer (FABRIC-END2): where the look's tidy and <i>Accept</i>'s tidy keep what the line holds.</summary>
     internal EndKeeping Ends => _keeping ??= new(_context, Asks);
@@ -201,6 +202,9 @@ public sealed class SessionTrees(string home, LandingPlugins? plugins = null) : 
 
     /// <summary>An entry's Accept: its parts' work on one branch, in ledger order (ACCEPTALL1, D167).</summary>
     private EntryLands Entries => _entries ??= new(_context, Lands, Syncs);
+
+    /// <summary>A session's tree asked for before it goes on, and made again where its folder is gone (TREEGONE1).</summary>
+    private TreeReturns Returns => _returns ??= new(_context, Follows, SetAsides);
 
     /// <summary>
     /// The test seam (SQUASHTIDY1c): run with the branch's name between a judgement and the delete it cleared, where a test
@@ -544,6 +548,14 @@ public sealed class SessionTrees(string home, LandingPlugins? plugins = null) : 
         CancellationToken ct = default) =>
         Strays.TidyAsync(root, repository, workspace, inUse, now, ct);
 
+    /// <inheritdoc cref="SessionLocks.LetGoUnheldAsync"/>
+    public Task<IReadOnlyList<string>> LetGoUnheldLocksAsync(
+        string root, string repository, string? workspace, Func<CancellationToken, Task<IReadOnlySet<string>>> inUse, CancellationToken ct = default)
+    {
+        var space = RemoteTarget.Workspace(workspace);
+        return SessionLocks.LetGoUnheldAsync(_context.Home, root, Path.Combine(TreesRoot, space, repository), space, repository, inUse, ct);
+    }
+
     /// <inheritdoc cref="PassLeftovers.ClearCopies"/>
     internal IReadOnlyList<string> ClearPassCopies(string trees, DateTimeOffset now, Func<int, bool>? running = null) =>
         Leftovers.ClearCopies(trees, now, running ?? TreeOpenings.Running);
@@ -641,6 +653,9 @@ public sealed class SessionTrees(string home, LandingPlugins? plugins = null) : 
         IReadOnlyList<EntryLandingPart> parts, LandingSubject subject, IReadOnlySet<string> leaveOut, CancellationToken ct = default,
         Func<CancellationToken, Task<IReadOnlySet<string>>>? inUse = null) =>
         Entries.LandAsync(parts, subject, leaveOut, ct, inUse);
+
+    /// <inheritdoc cref="TreeReturns.EnsureAsync"/>
+    public Task<TreeStanding> EnsureAsync(string root, string tree, CancellationToken ct = default) => Returns.EnsureAsync(root, tree, ct);
 
     /// <inheritdoc cref="TreeRemovals.RemoveAsync"/>
     public Task<TreeRemoval> RemoveAsync(string path, bool force = false, CancellationToken ct = default) => Removals.RemoveAsync(path, force, ct);

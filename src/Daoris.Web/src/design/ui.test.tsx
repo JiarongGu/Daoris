@@ -398,6 +398,25 @@ describe('the liveness dot', () => {
   });
 
   /**
+   * MILESTONEUX1 (the UI/UX design §4): a fact's mark. `done` is the one a thing reached or kept wears, in done's hue and
+   * ink; `waits` is what waits on another, a neutral that is neither the person's open hue nor an outcome's.
+   */
+  it('gains done, in done’s hue and ink, and waits, a neutral, each told apart from the five that stand', () => {
+    const marked = (tone: 'live' | 'parked' | 'failed' | 'ended' | 'idle' | 'done' | 'waits') => {
+      const { container } = render(<Dot tone={tone} label={tone} />);
+      return [container.querySelector('[aria-hidden="true"]')!.className, container.firstElementChild!.className] as const;
+    };
+    const [doneMark, doneWord] = marked('done');
+    expect(doneMark).toContain('bg-st-done');
+    expect(doneWord).toContain('text-ink-done');
+    const [waitsMark, waitsWord] = marked('waits');
+    expect(waitsMark).not.toMatch(/\bbg-st-/);
+    expect(waitsWord).not.toMatch(/text-ink-(open|done|danger|taken)/);
+    const hues = (['live', 'parked', 'failed', 'ended', 'idle', 'done', 'waits'] as const).map((tone) => marked(tone)[0]);
+    expect(new Set(hues).size).toBe(7);
+  });
+
+  /**
    * UX5 U1: waiting on the person wore declined's red on the dot and the pill, `--warn` on the map,
    * and open's amber on the band's card, three hues for one fact. It is the status palette's waiting
    * hue everywhere, and red stays an outcome's, which is what a failed tool call is.
