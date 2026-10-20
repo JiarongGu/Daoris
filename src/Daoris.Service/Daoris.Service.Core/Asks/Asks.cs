@@ -1259,8 +1259,9 @@ public sealed class AskDesk(KnowledgeService service, AskStore asks, QuestExchan
                 Then = draft?.Then ?? [],
                 // The person's words, each with its check (DRIFT1c): the exchange judges them against this ask's.
                 Requirements = draft?.Requirements ?? [],
-                // The intake's short title (SESSUX1j); a publish with none is named from the ask's words.
-                Short = draft?.Short,
+                // The intake's short title (SESSUX1j); where it gives none, the ask's own (TITLEONE1), so the quest and the ask
+                // it came from share one name. Neither, and the quest is named from the ask's words.
+                Short = string.IsNullOrWhiteSpace(draft?.Short) ? ask.Short : draft.Short,
                 // The chain's review choice (REVIEWENV1b): the exchange checks a session's quote against this ask's words.
                 Review = draft?.Review,
                 // The intake's kind proposal (WORKFLOW1i): the exchange checks its reason quotes this ask's words.
