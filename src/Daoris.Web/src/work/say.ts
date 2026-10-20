@@ -16,7 +16,23 @@ export type Reach = {
   reaches: string | null; why: string | null;
   /** The conversation a `continued` one went on in (HANDWORDS1); present only then. */
   to?: string;
+  /** A running session's agent steers (COWORK1a): a word at `now` cuts its step. Absent where the shell does not say. */
+  steers?: boolean;
+  /**
+   * A running session's door can stop a turn and keep the session (COWORK1a): the keeping stop is offered beside words held
+   * for the turn's end. Absent where the shell does not say.
+   */
+  keepingStop?: boolean;
 };
+
+/**
+ * The levels the composer offers while a turn runs (COWORK1a, the message-urgency design §8.1), from what a word said now would
+ * do: none where the reach is not a running turn's, or the shell does not say what its door can do.
+ */
+export const levelsOf = (reach: Reach | undefined): { nextStep: boolean; steers: boolean } | undefined =>
+  reach && (reach.reaches === 'next-step' || reach.reaches === 'turn-end') && reach.steers !== undefined
+    ? { nextStep: reach.reaches === 'next-step', steers: reach.steers }
+    : undefined;
 
 /**
  * The box a session is offered.

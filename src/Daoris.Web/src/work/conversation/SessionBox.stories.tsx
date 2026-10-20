@@ -12,7 +12,7 @@ import { SessionBox } from './SessionBox';
 const meta: Meta<typeof SessionBox> = {
   title: 'Work/SessionBox',
   component: SessionBox,
-  args: { onSend: () => {}, onSendNow: () => {}, quest: 'q8f2e1' },
+  args: { onSend: () => {}, quest: 'q8f2e1' },
   decorators: [(Story) => (
     <Tooltip.Provider><div className="max-w-2xl border border-line"><Story /></div></Tooltip.Provider>
   )],
@@ -22,25 +22,39 @@ export default meta;
 type Story = StoryObj<typeof SessionBox>;
 
 /**
- * Its turn running, on a door that takes words at its next step (D136): a word goes at once, so nothing waits above the
- * box and *Send now* has nothing to send; the conversation says when it reads it.
+ * Its turn running, on a door that takes words at its next step (D136): an urgent word goes at once, so nothing waits above
+ * the box; the conversation says when it reads it.
  */
-export const RunningNextStep: Story = { args: { box: { kind: 'steer' }, held: { queued: [], taking: true } } };
+export const RunningNextStep: Story = {
+  args: { box: { kind: 'steer' }, held: { queued: [], taking: true }, levels: { nextStep: true, steers: false } },
+};
 
-/** STEER2b (D136): words typed while its turn runs offer *Send now* beside *Queue*, sending them in the running turn. */
-export const RunningSendNow: Story = {
+/** COWORK1a (D188): words typed while its turn runs go with *Send* at the default, or at a level from the menu beside it. */
+export const RunningAtALevel: Story = {
   args: {
-    box: { kind: 'steer' }, held: { queued: [], taking: true }, onSayNow: () => {},
+    box: { kind: 'steer' }, held: { queued: [], taking: true }, levels: { nextStep: true, steers: true },
     draft: 'use the blue one instead', onDraft: () => {},
   },
 };
 
-/** Its turn running, on a door that hears words when its turn ends (D90): what it holds waits, and *Send now* sends it. */
+/**
+ * Its turn running, on a door that hears words when its turn ends (D90): what it holds waits, and the keeping stop beside it
+ * stops the turn so it goes next (COWORK1a), asking once; no word stops the turn.
+ */
 export const RunningTurnEnd: Story = {
   args: {
-    box: { kind: 'steer' },
-    held: { queued: [{ text: 'and cap the budget at 64 KiB', files: [] }], taking: true },
+    box: { kind: 'steer' }, levels: { nextStep: false, steers: false }, onKeepingStop: () => {},
+    held: { queued: [{ id: 'a1', text: 'and cap the budget at 64 KiB', files: [], level: 'urgent' }], taking: true },
   },
+};
+
+/** The same in 中文, a word sent now named so. */
+export const RunningTurnEndChinese: Story = {
+  args: {
+    ...RunningTurnEnd.args,
+    held: { queued: [{ id: 'a1', text: '先跑流式测试，它们在 /spec 里', files: [], level: 'now' }], taking: true },
+  },
+  decorators: [chinese],
 };
 
 /** QUEUEEDIT1b: a held word with an id can be removed or reworded. */

@@ -5,9 +5,10 @@ import { type Carry, NO_CARRY, useCarry, useFileChooser } from '../../compose/ca
 import { size } from '../../locales/format';
 import { cn } from '../../lib/cn';
 import { isComposing } from '../../lib/composing';
-import { Button, Icon, Tip } from '../../design/ui';
+import { Button, Chip, Icon, Menu, Tip } from '../../design/ui';
+import { type Answered, InlineConfirm } from '../InlineConfirm';
 import { ContextRing } from './ContextRing';
-import type { ChatMessage, Usage } from './conversation';
+import type { ChatMessage, Level, Usage } from './conversation';
 import { MentionList } from './MentionList';
 import { mentionAt, rankMentions, withMention } from './mentions';
 import { type SessionOption, SessionOptions } from './SessionOptions';
@@ -50,9 +51,12 @@ function Words({ message }: { message: ChatMessage }) {
  * conversation, and it is offered only while a turn runs on a door that can stop one: a text door
  * cannot see where a turn ends, and a button that could only be refused is worse than none.
  *
- * **A message sent while a turn runs waits for it**, so the button says *queue* then, and what is
- * waiting is shown above the box in the order sent. It is in no record until it goes, and nothing
- * else on the screen shows it.
+ * **A message sent while a turn runs reaches it at the level the person chooses** (COWORK1a, D188): one press, *Send*, at
+ * their default, its tip saying what the door does, and a menu of the three levels beside it, each sending the box's words at
+ * its level; *now* only where the agent steers, shown disabled with the reason elsewhere. No level stops a turn: where words
+ * wait for the turn's end and the door can stop a turn keeping the session, the keeping stop stands beside them, its own press
+ * that asks once. A composer told no levels queues as it did (*Queue*). What is waiting is shown above the box in the order
+ * sent, each word of the person's with its own level menu.
  *
  * **A session that ends mid-sentence keeps what was typed.** The draft stays, disabled, with the
  * ending stated — because the alternative is a box that silently swallows a paragraph somebody was
@@ -90,8 +94,22 @@ export function Composer({
   live, sending = false, refusal, endings = true, draft, onDraft, carried, onCarry,
   queued = [], queuedLabel, taking = false, opening = false, stoppable = false, stopping = false, mentions, onMentioning, context, placeholder,
   attachments = true, sendLabel, stopTurnLabel, stopTurnTip, offered, optionsBusy = false, onOption, onSend, onFinish, onStop, onStopTurn,
-  onSendNow, onSendHeld, focus = 0, accepts, onRemove, onEdit, going, fold = false,
+  levels, onLevel, onKeepingStop, focus = 0, accepts, onRemove, onEdit, going, fold = false,
 }: {
+  /**
+   * What the session's door does with a word while a turn runs (COWORK1a; the message-urgency design §3.0, §8.1), which the
+   * composer offers the levels by: `nextStep`, it takes words at the turn's next step; `steers`, its agent steers, so *now* cuts
+   * its step. Absent, no level is offered and a press queues as it did: a door this page does not follow, or none known yet.
+   */
+  levels?: { nextStep: boolean; steers: boolean };
+  /** Change a waiting word's level by its id (COWORK1a, the design §8.2), answering as `onRemove` does. Absent, its words offer none. */
+  onLevel?: (id: string, level: Level) => Promise<{ done: boolean } | void>;
+  /**
+   * The keeping stop (COWORK1a, the design §3.2): stop the turn so what waits goes next, the person's own press beside words held
+   * for the turn's end, offered only where the door can stop a turn keeping the session. It asks once; the caller tells it how
+   * the stop ended. Absent, none is offered.
+   */
+  onKeepingStop?: (answered: Answered) => void;
   /**
    * Fold the waiting words to one line with their count, open to the list on a press (WAITFOOT2c): a park's answer box and
    * the words waiting on it read as one box. The words on their way (`going`) are never folded.
@@ -171,8 +189,8 @@ export function Composer({
   sendLabel?: string;
   /** How full the session's context is, for the ring under the box (CONV5). Absent, no ring. */
   context?: { usage?: Usage; door?: 'structured' | 'text' };
-  /** The words and the files attached to them. */
-  onSend: (text: string, files: File[]) => void;
+  /** The words and the files attached to them, and the level chosen from the menu (COWORK1a); none is the default. */
+  onSend: (text: string, files: File[], level?: Level) => void;
   onFinish: () => void;
   /**
    * The session's stop, where this form owns it: Ask Daoris's panel, which holds its conversation on every view. In
@@ -180,16 +198,6 @@ export function Composer({
    */
   onStop?: () => void;
   onStopTurn?: () => void;
-  /**
-   * *Send now* beside *Queue* while a turn runs (STEER2b, D136): the box's words and files go in the running turn. Absent,
-   * none is offered. The driver carries it out by its door; the caller says what it came to.
-   */
-  onSendNow?: (text: string, files: File[]) => void;
-  /**
-   * *Send now* with the box empty and words held: stop the turn so they go next, keeping them. Offered only with
-   * `stoppable`, since a door that cannot stop a turn has no way to send what is held.
-   */
-  onSendHeld?: () => void;
 }) {
   const { t } = useTranslation();
   const waitingLabel = useId();
@@ -365,23 +373,36 @@ export function Composer({
     attach.forget();
   };
 
-  // *Send now* (STEER2b, D136): the box's words go in the running turn when it holds any; with the box empty it presses what
-  // is held (a stop that keeps it), offered only where the door can stop a turn. Enter stays the queue, and no key twins it:
-  // Ctrl+Enter already queues, as every Enter without Shift does.
+  // COWORK1a (D188; the message-urgency design §8.1): while a turn runs, the box's words at a level chosen from the menu beside
+  // *Send*. Enter and *Send* are the default; no level is remembered, so each word starts there. 🔴 With nothing typed the menu
+  // presses nothing: *now* was once a stop with an empty box, and a stop is the keeping stop's own press (trap 2).
   const hasWords = text.trim() !== '' || files.length > 0;
-  const heldPress = Boolean(onSendHeld) && stoppable && queued.length > 0;
-  const sendNowShown = live && taking && !editing && ((hasWords && Boolean(onSendNow)) || (!hasWords && heldPress));
-  const sendNow = () => {
-    if (hasWords) {
-      const message = text.trim();
-      if (accepts && !accepts(message)) return;
-      onSendNow?.(message, files);
-      setText('');
-      setCarry(NO_CARRY);
-      attach.forget();
-      return;
+  const leveled = live && taking && levels !== undefined && !editing;
+  const sendAt = (level: Level) => {
+    const message = text.trim();
+    if (!hasWords || !live || sending) return;
+    if (accepts && !accepts(message)) return;
+    onSend(message, files, level);
+    setText('');
+    setCarry(NO_CARRY);
+    attach.forget();
+  };
+  // A door that carries only text has no turns, so it honours no level and offers none (the design §3.0, trap 23).
+  const textDoor = context?.door === 'text';
+  // The keeping stop (the design §3.2): beside words held for the turn's end, where the door can stop a turn keeping the session.
+  const keeps = live && taking && Boolean(onKeepingStop) && levels !== undefined && !levels.nextStep && queued.length > 0;
+  const [asking, setAsking] = useState(false);
+  useEffect(() => { if (!keeps) setAsking(false); }, [keeps]);
+  // A level changed while the word waits (the design §8.2); one a turn took meanwhile is the agent's, said as a removal's is.
+  const changeLevel = async (id: string, level: Level) => {
+    setTaken(false);
+    setRefused(null);
+    try {
+      const answer = await onLevel?.(id, level);
+      if (answer && !answer.done) setTaken(true);
+    } catch (error) {
+      said(error);
     }
-    onSendHeld?.();
   };
 
   return (
@@ -422,8 +443,34 @@ export function Composer({
                 className={WORDS_ROW}
               >
                 <Words message={message} />
-                {message.id && (onRemove || onEdit) && (
+                {/* The level named only where it is not quiet (the design §8.2): the person's own word sent now. A word, never a hue. */}
+                {message.level === 'now' && <span className="shrink-0"><Chip>{t('work.level.now')}</Chip></span>}
+                {message.id && (onRemove || onEdit || (onLevel && leveled)) && (
                   <span className="flex shrink-0 items-center gap-1">
+                    {onLevel && leveled && (
+                      <Menu.Root>
+                        <Menu.Trigger asChild>
+                          <Button
+                            type="button" variant="ghost"
+                            aria-label={t('work.composer.levelItem', { text: message.text })}
+                            className="h-6 w-6 justify-center px-0"
+                          >
+                            <Icon name="chevronDown" size={12} />
+                          </Button>
+                        </Menu.Trigger>
+                        <Menu.Content align="end" className="min-w-40">
+                          {message.level === 'ordinary' && (
+                            <Menu.Item onSelect={() => { void changeLevel(message.id!, 'urgent'); }}>{t('work.queue.makeUrgent')}</Menu.Item>
+                          )}
+                          {message.level !== 'ordinary' && (
+                            <Menu.Item onSelect={() => { void changeLevel(message.id!, 'ordinary'); }}>{t('work.queue.makeOrdinary')}</Menu.Item>
+                          )}
+                          {levels?.steers && message.level !== 'now' && (
+                            <Menu.Item onSelect={() => { void changeLevel(message.id!, 'now'); }}>{t('work.steer.now')}</Menu.Item>
+                          )}
+                        </Menu.Content>
+                      </Menu.Root>
+                    )}
                     {onEdit && (
                       <Button
                         type="button" variant="ghost"
@@ -451,6 +498,25 @@ export function Composer({
           </ol>
           )}
           {taken &&<p role="status" className="m-0 text-small text-ink-soft">{t('work.composer.taken')}</p>}
+          {/* The keeping stop (the design §3.2): its own press beside what waits for the turn's end, asking once, as a stop does. */}
+          {keeps && (asking
+            ? (
+              <InlineConfirm
+                label={t('work.steer.stopKeeping')}
+                says={t('work.steer.stopKeepingAsk')}
+                meanIt={t('work.steer.stopKeepingConfirm')}
+                busy={stopping}
+                onConfirm={(answered) => onKeepingStop?.(answered)}
+                onClose={() => setAsking(false)}
+              />
+            )
+            : (
+              <span>
+                <Button type="button" variant="ghost" disabled={stopping} onClick={() => setAsking(true)} className="h-6 px-1.5 text-meta">
+                  {t('work.steer.stopKeeping')}
+                </Button>
+              </span>
+            ))}
         </div>
       )}
 
@@ -549,21 +615,58 @@ export function Composer({
         {/* With no box, the sentence saying why stands where the send would, on the meter's line. */}
         {!writing && <p className="m-0 text-small text-ink-soft">{t('work.composer.ended')}</p>}
         {/* The form's submit, and nothing else: its submit handler is the one path a press takes.
-            While a turn runs it says *queue*, because that is what a press does then. Absent once
-            the session has ended, where a send could only ever be a dead press (UX5 U9). */}
+            While a turn runs it is *Send* at the person's default, its tip saying what the door does (COWORK1a), or, with no
+            levels known, *queue*, because that is what a press does then. Absent once the session has ended, where a send
+            could only ever be a dead press (UX5 U9). */}
         {live && (taking
           ? (
-            <Tip content={t('work.composer.queueTip')}>
+            <Tip content={t(!levels ? 'work.composer.queueTip' : levels.nextStep ? 'work.composer.sendNextStepTip' : 'work.composer.sendTurnEndTip')}>
               <Button type="submit" variant="primary" disabled={(!text.trim() && files.length === 0) || sending}>
-                {t('work.composer.queue')}
+                {t(levels ? 'work.composer.send' : 'work.composer.queue')}
               </Button>
             </Tip>
           )
-          : (
-            <Button type="submit" variant="primary" disabled={(!text.trim() && files.length === 0) || sending}>
-              {sendLabel ?? t('work.composer.send')}
-            </Button>
-          ))}
+          : textDoor
+            ? (
+              <Tip content={t('work.composer.levelNoTurns')}>
+                <Button type="submit" variant="primary" disabled={(!text.trim() && files.length === 0) || sending}>
+                  {sendLabel ?? t('work.composer.send')}
+                </Button>
+              </Tip>
+            )
+            : (
+              <Button type="submit" variant="primary" disabled={(!text.trim() && files.length === 0) || sending}>
+                {sendLabel ?? t('work.composer.send')}
+              </Button>
+            ))}
+        {/* The levels beside *Send* (COWORK1a, the design §8.1), each sending the box's words at its level. */}
+        {leveled && levels && (
+          <Menu.Root>
+            <Menu.Trigger asChild>
+              <Button type="button" aria-label={t('work.composer.level')} disabled={!hasWords || sending} className="h-7 w-7 justify-center px-0">
+                <Icon name="chevronDown" size={14} />
+              </Button>
+            </Menu.Trigger>
+            <Menu.Content align="start" className="w-72">
+              <Menu.Label>{t('work.composer.level')}</Menu.Label>
+              <Menu.Item onSelect={() => sendAt('ordinary')}>{t('work.composer.levelOrdinary')}</Menu.Item>
+              <Menu.Item onSelect={() => sendAt('urgent')}>
+                <span className="grid min-w-0">
+                  <span>{t('work.composer.levelUrgent')}</span>
+                  {!levels.nextStep && <span className="text-meta text-ink-faint">{t('work.steer.notNowTurnEnd')}</span>}
+                </span>
+              </Menu.Item>
+              <Menu.Item disabled={!levels.steers} onSelect={() => sendAt('now')}>
+                <span className="grid min-w-0">
+                  <span>{t('work.composer.levelNow')}</span>
+                  <span className="text-meta text-ink-faint">
+                    {t(levels.steers ? 'work.steer.nowTip' : levels.nextStep ? 'work.steer.notNowNextStep' : 'work.steer.notNowTurnEnd')}
+                  </span>
+                </span>
+              </Menu.Item>
+            </Menu.Content>
+          </Menu.Root>
+        )}
         {live && attachments && (
           <>
             <Tip content={t('work.composer.attachTip')}>
@@ -578,11 +681,6 @@ export function Composer({
             </Tip>
             {chooser.input}
           </>
-        )}
-        {sendNowShown && (
-          <Tip content={t('work.steer.nowTip')}>
-            <Button type="button" disabled={stopping || sending} onClick={sendNow}>{t('work.steer.now')}</Button>
-          </Tip>
         )}
         {live && taking && stoppable && onStopTurn && (
           <Tip content={stopTurnTip ?? t('work.composer.stopTurnTip')}>

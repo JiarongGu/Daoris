@@ -660,6 +660,34 @@ describe('settle', () => {
     expect(turns[0]!.items.map((item) => item.stopped ?? false)).toEqual([false, true]);
   });
 
+  /**
+   * COWORK1a (D188; the message-urgency design §8.2): a held word keeps the level it asked for beside its reach, and a word told
+   * again under its id (its level changed while it waited, or raised to the next step) is one word where it stands, never a
+   * second; taken under the same id, it is the turn's ask as before. A word from before carries no level.
+   */
+  it('keeps a held word’s level, and a word told again under its id is one word where it stands', () => {
+    const waiting = run(
+      { kind: 'user', origin: 'target', text: 'go' },
+      { kind: 'user', origin: 'person', id: 'said-1', reaches: 'turn-end', level: 'ordinary', text: 'tidy the readme after' },
+      { kind: 'user', origin: 'person', id: 'said-2', reaches: 'turn-end', text: 'from before' },
+      { kind: 'user', origin: 'person', id: 'said-1', reaches: 'next-step', level: 'urgent', text: 'tidy the readme after' },
+    );
+
+    const held = waiting[0]!.items.filter((item) => item.kind === 'held');
+    expect(held.map((item) => [item.id, item.reaches, item.level])).toEqual([
+      ['said-1', 'next-step', 'urgent'], ['said-2', 'turn-end', undefined],
+    ]);
+
+    const taken = run(
+      { kind: 'user', origin: 'target', text: 'go' },
+      { kind: 'user', origin: 'person', id: 'said-1', reaches: 'turn-end', level: 'ordinary', text: 'tidy the readme after' },
+      { kind: 'user', origin: 'person', id: 'said-1', reaches: 'next-step', level: 'urgent', text: 'tidy the readme after' },
+      { kind: 'user', origin: 'person', id: 'said-1', text: 'tidy the readme after' },
+    );
+    expect(taken.flatMap((turn) => turn.items).filter((item) => item.kind === 'held')).toEqual([]);
+    expect(taken[1]!.ask?.text).toBe('tidy the readme after');
+  });
+
   /** STEER1: words still waiting when the session ended never reached it, and say so rather than waiting for ever. */
   it('says words still waiting when the session ended never reached it', () => {
     const turns = settle(run(

@@ -62,7 +62,7 @@
       "budget": { "en": 32, "zh": 12 },
       "case": "sentence",
       "keys": [
-        "agents.section.rules", "agents.section.settings", "agents.section.workspaces",
+        "agents.section.rules", "agents.section.settings", "agents.section.workspaces", "work.composer.level",
         "agents.list.absent", "agents.add.title", "agents.add.lists", "agents.place.title", "agents.rename.title",
         "asks.channel.title", "asks.group", "asks.record.files", "asks.record.goAheads", "asks.record.intake", "asks.record.links", "asks.record.proposal",
         "asks.record.stayed", "asks.record.went", "quests.detail.stayed", "quests.detail.went", "work.abandon.goes",
@@ -275,7 +275,7 @@
         "work.rail.open", "work.review.accept", "work.review.accepting", "work.review.acceptingGate", "work.review.acceptingWaiting", "work.review.discard",
         "work.review.discardMeanIt", "work.review.hand", "work.review.handing", "work.review.handingWaiting","work.review.pullRequest",
         "work.review.readAgain", "work.review.sendBack", "work.say.goOnNew", "work.say.startChat", "work.start.go", "work.start.going",
-        "work.start.useOwnTree", "work.start.openHolder", "work.start.chooseRepository", "work.steer.now", "work.terminal.again", "work.terminal.close",
+        "work.start.useOwnTree", "work.start.openHolder", "work.start.chooseRepository", "work.steer.now", "work.steer.stopKeeping", "work.steer.stopKeepingConfirm", "work.terminal.again", "work.terminal.close",
         "work.terminal.new", "work.terminal.open", "review.act.*", "review.ask.notYetMeanIt", "review.ask.skipMeanIt",
         "opinion.act.*", "opinion.ask.anywayMeanIt", "opinion.ask.myselfMeanIt", "opinion.ask.sendBackMeanIt", "opinion.ask.stopMeanIt",
         "opinion.findingsShow", "opinion.findingsHide",
@@ -327,7 +327,7 @@
         "review.state.*", "review.pill", "work.attention.set-up",
         "opinion.state.*", "opinion.weight.*", "opinion.sure.*", "opinion.disputed", "opinion.session.kind", "work.attention.opinion",
         "workflow.participation.*", "workflow.runtime.*", "workflow.repositories.follows", "workflow.repositories.own",
-        "workflow.run.state.*", "workflow.run.thisSession", "work.start.busyMark"
+        "workflow.run.state.*", "workflow.run.thisSession", "work.start.busyMark", "work.level.*"
       ]
     },
     "menu": {
@@ -349,7 +349,8 @@
         "work.monitor.detach", "work.rail.menu.copy", "help.history.rename", "help.history.pin", "help.history.unpin", "help.mode.option.*", "help.mode.configure",
         "help.history.startFrom", "help.history.delete", "asks.record.clear", "quests.detail.clear", "quests.detail.clearFailed",
         "work.sync.now", "work.sync.remotes", "work.sync.syncing", "work.views.reset",
-        "work.views.toPanel", "work.views.toRight"
+        "work.views.toPanel", "work.views.toRight", "work.composer.levelOrdinary", "work.composer.levelUrgent", "work.composer.levelNow",
+        "work.queue.makeUrgent", "work.queue.makeOrdinary"
       ]
     },
     "command": {
@@ -634,12 +635,14 @@
     { "term": "attend", "en": "attending", "zh": "当前", "zhForms": ["选中"], "means": "The session shown in Sessions' centre.", "match": "\\battend(s|ed|ing)?\\b", "avoid": { "en": [], "zh": [] } },
     { "term": "stand down", "en": "stand down", "zh": "让位", "means": "A session gives its quest back, since another holds its repository.", "match": "\\bst(and|ood)[ -]downs?\\b", "avoid": { "en": [], "zh": [] } },
     { "term": "go on", "en": "go on", "zh": "继续", "zhForms": ["接续"], "means": "What a session does with the person's words after its turn, its park or its end: the same session goes on in its own conversation (MSG1, D137).", "why": "Resume stays the code's word and the press that undoes a pause or a hold (恢复, D132); on the window a conversation goes on (继续) or is continued (接续), never resumed (D137 §5.1).", "match": "\\bgo(es)? on\\b|\\bgoing on\\b|\\bwent on\\b", "avoid": { "en": [], "zh": ["恢复"] } },
-    { "term": "settings", "en": "settings", "zh": "设置", "means": "The application's own page of domains, and what is true about this machine.", "match": "\\bsettings\\b", "avoid": { "en": [], "zh": [] } }
+    { "term": "settings", "en": "settings", "zh": "设置", "means": "The application's own page of domains, and what is true about this machine.", "match": "\\bsettings\\b", "avoid": { "en": [], "zh": [] } },
+    { "term": "urgency", "en": "urgency", "zh": "紧急程度", "means": "The sender's statement of when a message reaches a working agent: ordinary (普通) at a natural point, urgent (紧急) at its next step, now (立即) cutting its step where it steers; a stop is not among them (COWORK1a, D188).", "why": "Urgency decides when a message goes, never its order, so it is not priority (优先级), which would read as waiting words reordered.", "match": "\\burgency\\b", "avoid": { "en": ["priority"], "zh": ["优先级"] } }
   ],
 
   "accepted": {
     "_why": "Budget judgements looked at and kept (NAME2; docs/2026-10-01-naming-design.md §6): the length is the name, and the element it renders in gives it more room than its kind's budget assumes, or a placeholder's typical value overstates it. Each holds the name it accepted in each language it accepts, and why, naming the room the code gives the element; the window confirms the room. scripts/names-check.mjs stops reporting a name while it is the one accepted, and reports it again once it is renamed, or once it fits and the acceptance can go.",
     "names": [
+      { "key": "work.steer.stopKeeping", "en": "Stop its turn so this goes next…", "zh": "停止本轮，让这条接着送达…", "why": "The keeping stop's press, on its own line under the words waiting above the composer's box at the centre's width (COWORK1a); the message-urgency design names what it does and that it asks first (§3.2), since *Stop turn* beside it hands the waiting words back." },
       { "key": "help.door.browser", "en": "Open Browser settings", "why": "A press under a lack in *What it has*, on a row of its own in a side bar at least 300px wide (HELPMODE1b); *settings* says it opens Settings' Browser, not Daoris's browser itself." },
       { "key": "help.wired.close", "en": "Back to the conversation", "why": "The name of an icon-only press, read by a screen reader and drawn nowhere (HELPMODE1b)." },
       { "key": "help.grants.state.changed", "en": "changed since approved", "zh": "批准后已改动", "why": "A grant's state on its pill, on the grant's own head line, which wraps under its name in a Settings card at least 400px wide (HELPMODE1c1); the modes design names the state whole (§4.1), since *changed* alone would not say that it waits for approval again." },
