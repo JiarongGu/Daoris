@@ -390,10 +390,10 @@ internal sealed class HelpSettingProposals : IHelpProposalKind
         // What finds the branch's ticket and what Accept makes, said of the rule it leaves, as the terminal says them.
         if (leaves is { Form: LandingForm.Branch, Pattern: { } pattern } && pattern.Contains("{ticket}", StringComparison.Ordinal))
         {
-            lands += " " + TicketSays(leaves.Key);
+            lands += " " + LandingRules.TicketSays(leaves.Key);
         }
 
-        if (leaves is { Squash: true }) lands += " " + Squashed;
+        if (leaves is { Squash: true }) lands += " " + LandingRules.Squashed;
         else if (leaves is { Form: LandingForm.Branch } && unsquashed) lands += " The branch holds the session's own commits.";
         return (null, (lands, $"daoris driver landing {scope} {value}",
             c => circle ? c.WithWorkspaceLanding(workspace!, Kept(c)) : c.WithLanding(target!, Kept(c))));
@@ -411,16 +411,6 @@ internal sealed class HelpSettingProposals : IHelpProposalKind
         return (value, false);
     }
 
-    /// <summary>What finds a branch's ticket (PROCESS1b-i), in the words of the CLI's <c>ticketSays</c>.</summary>
-    private static string TicketSays(string? key) =>
-        $"`{{ticket}}` is the first match of `{key ?? LandingRules.DefaultKey}` in the title, then the request, then its links, as written"
-        + $"{(key is null ? " (the default shape)" : "")}; where none is found, the session's id stands in.";
-
-    /// <summary>What Accept makes under a rule that squashes (PROCESS1b-ii), in <c>daoris driver landing</c>'s words.</summary>
-    private const string Squashed =
-        "Squashed: Accept makes the pull request's branch one commit from the session's work — the quest's title, then each of the "
-        + "session's commits' subjects — made by git as the repository's own `user.name` and `user.email`; where git has none there, "
-        + "Accept is refused and says how to set them. A tree on a branch of its own lands as it stands.";
 
     /// <summary>
     /// <c>across</c> (HELP9, D107), as <c>daoris driver across</c> reads its words: <c>read on|off|--clear</c> for a
@@ -770,12 +760,7 @@ internal sealed class HelpSettingProposals : IHelpProposalKind
 
         var whose = circle ? $"each repository of workspace `{workspace}` that sets none of its own" : $"`{target}`";
         var describe = (circle ? after.WorkspaceHelpers : after.Helpers).TryGetValue((circle ? workspace : target)!, out var rule)
-            ? $"Set the helpers rule for {whose}: {HelperRules.Listed(rule)}. " + rule.Mode switch
-            {
-                HelperRules.On => "A helper an agent asks for starts at once, within the limits: two at once for a session, one turn each.",
-                HelperRules.Off => "A helper is not offered to a session here: only your own press asks one.",
-                _ => "Each helper an agent asks for waits for your yes.",
-            }
+            ? $"Set the helpers rule for {whose}: {HelperRules.Listed(rule)}. " + HelperRules.Says(rule.Mode)
             : circle
                 ? $"Clear workspace `{workspace}`'s helpers rule: each repository there keeps its own, else each helper waits for your yes."
                 : $"Clear `{target}`'s helpers rule: it takes its workspace's again, else each helper waits for your yes.";
@@ -843,12 +828,7 @@ internal sealed class HelpSettingProposals : IHelpProposalKind
 
         var whose = circle ? $"each repository of workspace `{workspace}` that sets none of its own" : $"`{target}`";
         var describe = (circle ? after.WorkspaceCommits : after.Commits).TryGetValue((circle ? workspace : target)!, out var rule)
-            ? $"Set the commit rule for {whose}: `{rule.Mode}`. " + rule.Mode switch
-            {
-                CommitRules.Ask => "Each commit waits for your yes before it is made.",
-                CommitRules.AtEnd => "One commit is made when the work is done.",
-                _ => "Each piece that passes its checks is committed as the work goes.",
-            } + (rule.Convention is { } convention ? $" Commit messages follow this convention: \"{convention}\"" : "")
+            ? $"Set the commit rule for {whose}: `{rule.Mode}`. " + CommitRules.Says(rule.Mode) + (rule.Convention is { } convention ? $" Commit messages follow this convention: \"{convention}\"" : "")
             : circle
                 ? $"Clear workspace `{workspace}`'s commit rule: each repository there keeps its own, else work is committed as it goes."
                 : $"Clear `{target}`'s commit rule: it takes its workspace's again, else work is committed as it goes.";

@@ -233,7 +233,7 @@
   "help.grants.name.shell": "隔离的命令行",
   "help.grants.reach.housekeeping": "Daoris 自己的工作：只限清理判定所允许的工作树、分支和恢复材料。不执行命令，也不接受路径。",
   "help.grants.reach.browser": "Daoris 浏览器的连接，包括已登录的页面。",
-  "help.grants.reach.checkouts": "工作区的检出，以各仓库允许其外部智能体读取的为限。",
+  "help.grants.reach.checkouts": "工作区的检出，以各仓库允许其外部智能体读取的为限；每次读取都由 Daoris 判定。",
   "help.grants.reach.settings": "只限你选定的设置，经过与设置页相同的校验和写入，每次更改都有记录。",
   "help.grants.reach.shell": "运行命令，只能在围绕选定 Daoris 工作树强制执行的文件系统和进程边界之内，远离账户和你主目录中的敏感数据。",
   "help.grants.default.off": "默认关闭。",
@@ -250,7 +250,6 @@
   "help.grants.pendingWhy": "正在进行的一段对话启动时用的是另一项选择：它会在本轮结束时结束，下一轮起采用这一项。“配备”显示它启动时拿到的东西。",
   "help.grants.why.changed": "你批准之后，插件的更新改动了它：在你再次批准之前，问道衍得不到它的任何内容。",
   "help.grants.why.browser": "{{agent}} 只能整个接收浏览器的服务器，或者完全不接收，所以在 Daoris 提供居间转发的浏览器工具之前，已批准的读取和选定的写入在这里都不可用。",
-  "help.grants.why.checkouts": "{{agent}} 不接收权限规则，所以在 Daoris 提供限定范围的读取工具之前，仅限这些检出的读取在这里不可用。",
   "help.grants.why.shell": "必须有强制执行的边界：工作文件夹、`cd` 或一条指示都不算隔离。",
   "help.grants.signedIn": "已登录的页面可能受到影响：它会以你的身份，在你于 Daoris 浏览器中登录的网站上操作。",
   "help.grants.onPlugin": "它的读取和写入在其插件页面上批准，那里是唯一修改它们的地方；“管理”会打开该页面。",
@@ -263,7 +262,6 @@
   "help.grants.op.housekeeping.clean-up": "清理工作树和分支",
   "help.grants.op.housekeeping.discard-branch": "按名称丢弃会话分支",
   "help.grants.op.housekeeping.drop-recovery": "删除不再被持有的恢复引用",
-  "help.grants.op.checkouts.read": "读取文件、状态和分支",
   "help.grants.op.settings.notify": "会话挂起时通知",
   "help.grants.op.settings.language": "会话语言",
   "help.grants.op.settings.timeout": "单个会话可运行的时长",
@@ -271,6 +269,7 @@
   "help.grants.op.settings.cooloff": "未说明时间时的冷却",
   "help.grants.never.housekeeping": "每个目标都按记录的身份和所有者认定，动手前再判定一次；正在运行或等待中的会话保留自己的分支，任何操作都不强制执行。",
   "help.grants.never.browser": "在页面中运行代码从不授予。",
-  "help.grants.never.checkouts": "文件、`git status` 和 `git branch --list`；从不包括 `git log`、`diff` 或 `show`，它们的输出选项可以写入文件。",
+  "help.grants.none.checkouts": "这里没有允许外部智能体读取的检出，所以没有可选的。仓库在其页面 → 配置 → 边界 中启用。",
+  "help.grants.never.checkouts": "按检出内的路径读取文件内容、文件夹条目、`git status` 和 `git branch --list`；从不读取 git 忽略的内容或 git 自己的文件夹，也从不运行 `git log`、`diff` 或 `show`，它们的输出选项可以写入文件。",
   "help.grants.never.settings": "访问模式、这些授权、账户、插件批准、跨仓库读取、长期答复、审阅、第二意见、助手、提交、落地、驱动和各项保护措施都不在其中。"
 }

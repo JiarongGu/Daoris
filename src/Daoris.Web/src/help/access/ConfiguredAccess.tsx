@@ -18,7 +18,8 @@ const TONE: Record<HelpGrantState, 'neutral' | 'open' | 'done'> = {
 /**
  * Ask Daoris's configured access in restricted mode: the five grants of §4.1 in its order. Each says what it reaches in a
  * sentence, its default and its state, and opens its operations from its door (*Choose operations*, *Manage*, *Choose
- * settings*): each a box of its own where the table chooses them apart, one box for a group. A grant set on a plugin's own tab,
+ * settings*): each a box of its own where the table chooses them apart, one box for a group; the checkouts a box each, by the
+ * repositories the driver serves (HELPMODE1c4). A grant set on a plugin's own tab,
  * the browser's, is drawn read only from that record and its *Manage* leads to the tab, never a second set of boxes (HELPMODE1c3).
  * A grant this agent cannot be held to says *unavailable on this agent* and why, its boxes disabled, whatever is chosen; the
  * browser says signed-in pages may be affected; and a choice a conversation running did not start with is marked as taking its
@@ -89,6 +90,8 @@ function Grant({ spec, choice, agent, open: openAtFirst, busy, built, onChoose, 
     : state === 'changed' ? t('help.grants.why.changed')
       : state === 'later' ? t('help.grants.why.shell') : null;
 
+  // HELPMODE1c4: a grant whose operations the driver names (the checkouts) draws a box for each it serves, none where it serves none.
+  const operations = spec.served ? built ?? [] : spec.operations;
   const box = (operation: string) => {
     // HELPMODE1c2b: an operation the driver does not act on yet is said so, and never chosen.
     const later = built !== undefined && !built.includes(operation);
@@ -98,7 +101,8 @@ function Grant({ spec, choice, agent, open: openAtFirst, busy, built, onChoose, 
         checked={chosen.includes(operation)}
         disabled={busy || !held || later}
         onChange={(checked) => onChoose(spec.id, operation, checked)}
-        label={t(`help.grants.op.${spec.id}.${operation}`)}
+        // A checkout is named by its repository, as written: authored, never translated.
+        label={spec.served ? operation : t(`help.grants.op.${spec.id}.${operation}`)}
         // A box the agent cannot be held to reads as disabled, its sentence too, while it keeps what was chosen.
         className={cn('text-small', (!held || later) && 'cursor-not-allowed opacity-60')}
       />
@@ -160,9 +164,11 @@ function Grant({ spec, choice, agent, open: openAtFirst, busy, built, onChoose, 
           <p className="m-0 text-meta text-ink-faint"><Inline text={t(`help.grants.never.${spec.id}`)} /></p>
         </>
       )}
-      {open && spec.operations.length > 0 && (
+      {open && (operations.length > 0 || spec.served) && (
         <div id={panel} className="mt-1 grid min-w-0 gap-1.5 rounded-control border border-line bg-raised px-3 py-2">
-          <div className="grid min-w-0 gap-1.5">{spec.operations.map(box)}</div>
+          {operations.length > 0
+            ? <div className="grid min-w-0 gap-1.5">{operations.map(box)}</div>
+            : <p className="m-0 text-small text-ink-soft"><Inline text={t('help.grants.none.checkouts')} /></p>}
           <p className="m-0 text-meta text-ink-faint"><Inline text={t(`help.grants.never.${spec.id}`)} /></p>
         </div>
       )}

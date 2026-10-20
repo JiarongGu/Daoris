@@ -71,7 +71,7 @@ public sealed class HelpCircleTests : IDisposable
         Assert.Equal(["console", "engine", "tools"], whole.Reads.Select(read => read.Name));
 
         var room = HelpRoom.Render(whole.Within("alpha"));
-        Assert.Contains("- `engine` (workspace `alpha`) — `/alpha/engine`", room);
+        Assert.Contains("- `engine` (workspace `alpha`)\n", room);
         Assert.DoesNotContain("/beta/console", room);
         Assert.DoesNotContain("/default/tools", room);
 
@@ -101,7 +101,9 @@ public sealed class HelpCircleTests : IDisposable
         var alpha = ChatRunner.HelpPlaceIn(_home, HelpRoom.PathOf(_home, "alpha"), [new("engine", "alpha", "/alpha/engine")], "alpha");
 
         var rules = alpha.Rules(file, "s1");
-        Assert.Contains("Read(//alpha/engine/**)", rules.Allow);
+        // HELPMODE1c4: its checkouts are read through the judged tool, not a rule on the checkout.
+        Assert.Contains($"mcp__{KnowledgeConnector.ServerName}__checkout_read", rules.Allow);
+        Assert.DoesNotContain("Read(//alpha/engine/**)", rules.Allow);
         Assert.Contains("Read(//alpha/secret/**)", rules.Deny);
         Assert.DoesNotContain("Read(//beta/secret/**)", rules.Deny);
         Assert.DoesNotContain("Read(//default/secret/**)", rules.Deny);

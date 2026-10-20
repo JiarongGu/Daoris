@@ -20,8 +20,15 @@ const HELP = readText(join(golden, 'help.txt')).replace(/\n$/, '');
 interface Refusal { argv: string[]; code: number; out: string[] }
 const REFUSALS = JSON.parse(readText(join(golden, 'refusals.json'))) as Refusal[];
 
-/** Runs one argv in an empty repository on an empty home, with the repository's path spelled `<cwd>`. */
-async function run(argv: string[]): Promise<{ code: number; out: string[] }> {
+/** What the driver's program was handed by the dispatcher, and what had been written when it was. */
+interface Handed { family: string; words: readonly string[]; written: number }
+
+/**
+ * Runs one argv in an empty repository on an empty home, with the repository's path spelled `<cwd>`. The driver's program is a stand-in
+ * (PUSH1f2a, the alone-path design §3): the verbs a family hands it are its own words, read by the host's table, and the stand-in records
+ * what it was handed and answers `exit`.
+ */
+async function run(argv: string[], handed: Handed[] = [], exit: 0 | 1 | 2 = 0): Promise<{ code: number; out: string[] }> {
   const home = makeFixture('cli-usage-home');
   const repo = makeFixture('cli-usage-repo');
   const previous = process.env.DAORIS_HOME;
@@ -29,7 +36,10 @@ async function run(argv: string[]): Promise<{ code: number; out: string[] }> {
   process.env.DAORIS_HOME = home.root;
   try {
     const out: string[] = [];
-    const code = await runCli(argv, repo.root, (line) => out.push(line));
+    const code = await runCli(argv, repo.root, (line) => out.push(line), (family, words) => {
+      handed.push({ family, words, written: out.length });
+      return exit;
+    });
     return { code, out: out.map((line) => line.split(repo.root).join('<cwd>')) };
   } finally {
     if (previous === undefined) delete process.env.DAORIS_HOME;
@@ -53,6 +63,37 @@ test('no arguments prints the same usage and exits 2', async () => {
 test('every refusal says what it said before the split, with the same exit code', async () => {
   assert.ok(REFUSALS.length >= 20, `only ${REFUSALS.length} refusals were captured, so this proves little`);
   for (const { argv, code, out } of REFUSALS) {
-    assert.deepEqual(await run(argv), { code, out }, `daoris ${argv.join(' ')}`);
+    const handed: Handed[] = [];
+    assert.deepEqual(await run(argv, handed), { code, out }, `daoris ${argv.join(' ')}`);
+    // A row the driver's program says is the host's table's now (`driver-choices-text.json`), never this one's.
+    assert.deepEqual(handed, [], `daoris ${argv.join(' ')} was handed to the driver's program`);
+  }
+});
+
+/**
+ * The families' verbs the CLI hands Daoris's driver program (PUSH1f2a, D194 point 1): the family and its words whole, nothing written
+ * before the start, and the program's exit the run's; `--help` stays the dispatcher's own, wherever it stands, and a verb the
+ * allow-list does not name stays the CLI's.
+ */
+test('a handed verb goes to the driver\'s program whole, with nothing written first, and its exit is the run\'s', async () => {
+  for (const [argv, words] of [
+    [['driver'], []],
+    [['driver', 'drive', 'engine'], ['drive', 'engine']],
+    [['driver', 'standing', 'engine', 'a "quoted" & 100% 中文 word', '--clear'], ['standing', 'engine', 'a "quoted" & 100% 中文 word', '--clear']],
+    [['driver', 'landing', 'engine', 'merge'], ['landing', 'engine', 'merge']],
+    [['driver', 'retry', '12', '--at', '2'], ['retry', '12', '--at', '2']],
+  ] as const) {
+    for (const exit of [0, 1, 2] as const) {
+      const handed: Handed[] = [];
+      assert.deepEqual(await run([...argv], handed, exit), { code: exit, out: [] }, `daoris ${argv.join(' ')}`);
+      assert.deepEqual(handed, [{ family: 'driver', words: [...words], written: 0 }], `daoris ${argv.join(' ')}`);
+    }
+  }
+
+  for (const argv of [['driver', '--help'], ['driver', 'drive', '--help'], ['driver', 'workflow', 'list'], ['driver', 'brainstorms'],
+    ['driver', 'work-cycle', 'engine', 'quest', '--clear'], ['driver', 'landing', 'engine', 'merge', '--no-cycle'], ['driver', 'frobnicate']]) {
+    const handed: Handed[] = [];
+    await run(argv, handed);
+    assert.deepEqual(handed, [], `daoris ${argv.join(' ')} is the CLI's own`);
   }
 });

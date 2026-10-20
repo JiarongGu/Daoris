@@ -44,6 +44,8 @@ const connectorProject = join(repoRoot, 'src', 'Daoris.Service', 'Daoris.Service
 // finds a development build (ServiceHostLocator, KnowledgeConnector): the service's folders, which no Process half builds.
 const ownOutput = ownBuildRoot(repoRoot, 'family');
 const driverDll = ownBuilt(ownOutput, driverProject, 'daoris-driver.dll');
+// The apphost the same build writes beside the DLL (PUSH1f2a, D194 point 1): the program a checkout's `daoris driver …` is handed to.
+const driverProgram = ownBuilt(ownOutput, driverProject, process.platform === 'win32' ? 'daoris-driver.exe' : 'daoris-driver');
 const scratch = join(repoRoot, '_fixtures', 'family-rehearsal');
 const family = join(scratch, 'family');
 
@@ -65,6 +67,16 @@ const NO_HARNESS = { DAORIS_HARNESS_CONFIG: join(scratch, 'no-harness.json') };
 // profile any more, and a gate must never make one there. Set on the process because every child
 // inherits it; the per-file guards above still outrank it where a phase wants a file of its own.
 process.env.DAORIS_HOME = join(scratch, 'home');
+
+// PUSH1f2a (D194 point 1): a checkout's `daoris` hands `driver …` to the driver's program DAORIS_DRIVER_PROGRAM names, never one it
+// finds by itself: this run's own build's apphost, beside the DLL its own driver runs through `dotnet`. Set on the process, as the home
+// is, so every `daoris driver` below runs this build.
+process.env.DAORIS_DRIVER_PROGRAM = driverProgram;
+
+// The person's own terminal (D194 point 5): a call this run makes as the person carries no session's marker, whatever its caller's
+// environment carries, since an agent may run this gate and the driver's program refuses a person's press from a session's terminal.
+// An undefined value is left out of a child's environment. One check below hands the marker back on purpose, to see the refusal.
+const PERSON = { DAORIS_SESSION_ID: undefined };
 
 openTranscript(repoRoot, 'family', { beforeExit: () => stopEverything() });
 // A failed check that hands its evidence keeps it beside the transcripts, in a folder of this run's (DEV3b): the scratch is
@@ -1548,7 +1560,7 @@ check(
 
 // And the person's way back in, from a terminal — the second door (D50). It counts the quest's failures from this
 // machine's records, as the driver does (RETRY1b), so it asks the host the driver watches.
-const retried = run(`node "${cliBin}" driver retry ${doomedId}`, scratch, { DAORIS_DRIVER_CONFIG: driverConfig, DAORIS_SERVICE_URL: BASE });
+const retried = run(`node "${cliBin}" driver retry ${doomedId}`, scratch, { DAORIS_DRIVER_CONFIG: driverConfig, DAORIS_SERVICE_URL: BASE, ...PERSON });
 const afterRetry = drive();
 const retriedSessions = await api('GET', '/api/sessions?includeClosed=true');
 check(
@@ -1560,7 +1572,7 @@ check(
 
 // 🔴 RETRY1b: parked a second time, six failures against a mark of three. A mark at the limit (3) left it parked, as both
 // doors did on the install; a retry marks it at its six, and it runs again.
-const retriedAgain = run(`node "${cliBin}" driver retry ${doomedId}`, scratch, { DAORIS_DRIVER_CONFIG: driverConfig, DAORIS_SERVICE_URL: BASE });
+const retriedAgain = run(`node "${cliBin}" driver retry ${doomedId}`, scratch, { DAORIS_DRIVER_CONFIG: driverConfig, DAORIS_SERVICE_URL: BASE, ...PERSON });
 const afterSecondRetry = drive();
 const retriedAgainSessions = await api('GET', '/api/sessions?includeClosed=true');
 check(
@@ -3904,7 +3916,7 @@ check(
 
 // And the driving choices themselves, from a terminal (D50): the same `driver.json` the desktop's
 // checkboxes edit and the loop re-reads every tick.
-const cliDriver = (args) => run(`node "${cliBin}" driver ${args}`, scratch, { DAORIS_DRIVER_CONFIG: driverConfig });
+const cliDriver = (args) => run(`node "${cliBin}" driver ${args}`, scratch, { DAORIS_DRIVER_CONFIG: driverConfig, ...PERSON });
 const held = cliDriver('hold newcomer');
 check(
   '`daoris driver hold` pauses a repository from a terminal',
@@ -3924,6 +3936,16 @@ check(
   '…and the driver honours it on the very next tick, with no restart',
   heldRunFromCli.code === 0 && /held by the person/.test(heldRunFromCli.out),
   heldRunFromCli.out,
+);
+// PUSH1f2a (D194 point 5): the same press from a session's terminal, acting in the driver's program with no window to confirm it, is
+// refused, exit 1, and nothing is written: the marker refuses an agent's honest attempt, the person's own terminal carrying none.
+const heldBefore = readFileSync(driverConfig, 'utf8');
+const marked = run(`node "${cliBin}" driver drive marked-elsewhere`, scratch, { DAORIS_DRIVER_CONFIG: driverConfig, DAORIS_SESSION_ID: 's-rehearsal' });
+check(
+  '`daoris driver` from a session\'s terminal is refused, exit 1, and the file is as it was',
+  marked.code === 1 && /this terminal is a session's \(`DAORIS_SESSION_ID`\)/.test(marked.out)
+    && readFileSync(driverConfig, 'utf8') === heldBefore,
+  marked.out,
 );
 const resumed = cliDriver('resume newcomer');
 const resumedRun = driver({ serviceUrl: BASE, config: driverConfig, harness: HARNESS_ENV, mode: '--until-idle' });
@@ -5489,7 +5511,7 @@ writeFileSync(reviewConfig, `${JSON.stringify({ ...JSON.parse(readFileSync(acpCo
 const REVIEW_STORE = { DAORIS_KNOWLEDGE_ROOT: family, DAORIS_KNOWLEDGE_DB: join(scratch, 'knowledge.db') };
 const reviewDrive = (mode = '--until-idle') => driver({ serviceUrl: BASE, config: reviewConfig, env: REVIEW_STORE, mode });
 // `daoris driver review` looks for a procedure in the checkouts the registry names, so it is handed the host to read them from.
-const reviewCli = (args) => run(`node "${cliBin}" driver ${args}`, scratch, { DAORIS_DRIVER_CONFIG: reviewConfig, DAORIS_SERVICE_URL: BASE });
+const reviewCli = (args) => run(`node "${cliBin}" driver ${args}`, scratch, { DAORIS_DRIVER_CONFIG: reviewConfig, DAORIS_SERVICE_URL: BASE, ...PERSON });
 const reviewQuests = async () => (await api('GET', '/api/quests?repository=newcomer&includeClosed=true')).json ?? [];
 const reviewRecords = async (quest) => (quest
   ? ((await api('GET', '/api/sessions?repository=newcomer&includeClosed=true')).json ?? []).filter((s) => s.quest === quest)

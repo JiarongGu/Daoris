@@ -12,7 +12,8 @@ namespace Daoris.Driver;
 /// <item><b>Reads</b>: <c>trace</c>, <c>git</c>, <c>logs</c>, <c>workflow run</c>, the lists (<c>sessions</c>, <c>history</c>,
 /// <c>trees</c>, <c>trees list</c>, <c>trees state</c>, <c>work state</c>, <c>work held</c> naming no word), <c>plugins show</c> and <c>activity</c>, <c>sync status</c>,
 /// <c>help list</c>, <c>help mode</c> naming no mode, <c>access</c> and <c>heavy</c> naming no change, <c>opinion show</c>, an <c>update</c> that only asks where it stands, any <c>--plan</c>, and asking for
-/// the usage.</item>
+/// the usage; the driver's standing choices' <c>list</c> (PUSH1f2a), and any of them on a file <c>DAORIS_DRIVER_CONFIG</c> names
+/// (<see cref="HoldsHere"/>).</item>
 /// <item><b>The service's own doors</b>, whose one writer is the service already (§7.1): <c>quest delete</c>, <c>accept</c>,
 /// <c>done</c>, <c>check</c> and <c>review</c>, <c>answer</c>, an ask's words, publish, close and delete, and <c>ask channel</c>.</item>
 /// <item><b>A conversation in the terminal</b> (<c>chat</c>, <c>help resume</c>, <c>sessions start-from</c> and
@@ -67,14 +68,24 @@ public static class VerbLeases
             // `checks` naming no change lists or says the rule; a set or a clear writes the driver's file (FABRIC-PIPELINE1b).
             "checks" => SessionChecksCommand.Read([.. args.Skip(1)], out _)?.Changes == true,
             "opinion" => next is "ask" or "stop" or "anyway" or "myself",
+            // The driver's standing choices `daoris driver …` hands on (PUSH1f2a, D194 point 2): each change is a short act, held from the
+            // top; `list`, the usage and a verb this program does not have hold none. Read through the command's own reading.
+            "driver" => DriverChoicesCommand.Changes([.. args.Skip(1)]),
             "update" => args.Skip(1).Any(arg => arg is "--when-idle" or "--now" or "--cancel"),
             _ => true,
         };
     }
 
+    /// <summary>
+    /// <see cref="Holds"/> on this terminal's variables: a file <c>DAORIS_DRIVER_CONFIG</c> names is no instance's (D194 point 2, the
+    /// alone-path design §1.2), so the driver family acting on it holds nothing, as it sends nothing.
+    /// </summary>
+    public static bool HoldsHere(IReadOnlyList<string> args, Func<string, string?> environment) =>
+        Holds(args) && !(args[0] == "driver" && environment(DriverConfig.PathVariable) is { Length: > 0 });
+
     /// <summary>The words a lease names a verb by: its verb, and its sub-verb where it has one; never an argument.</summary>
     public static string Name(IReadOnlyList<string> args) =>
-        args.Count > 1 && IsWord(args[1]) && SubVerbs.Contains(args[1])
+        args.Count > 1 && IsWord(args[1]) && (SubVerbs.Contains(args[1]) || (args[0] == "driver" && DriverChoicesCommand.Verbs.Contains(args[1])))
             ? $"daoris-driver {args[0]} {args[1]}"
             : $"daoris-driver {(args.Count > 0 ? args[0] : "")}".TrimEnd();
 

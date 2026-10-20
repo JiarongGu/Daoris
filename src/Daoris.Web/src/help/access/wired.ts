@@ -72,7 +72,7 @@ export type HelpGrantState = 'off' | 'on' | 'needs-approval' | 'changed' | 'unav
 
 /**
  * The agent Ask Daoris runs on, as the grants read it: its name as a person knows it, and whether it takes Claude's permission
- * rules (a receipt's `rules`), which hold the browser's chosen writes and the checkouts' scoped reads (§4.1).
+ * rules (a receipt's `rules`), which hold the browser's chosen writes (§4.1); the checkouts' read is Daoris's own (HELPMODE1c4).
  */
 export type HelpGrantAgent = { name: string; rules: boolean };
 

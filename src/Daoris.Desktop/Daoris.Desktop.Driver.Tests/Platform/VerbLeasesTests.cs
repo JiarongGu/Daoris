@@ -47,6 +47,33 @@ public sealed class VerbLeasesTests
     [InlineData("plugins new id --point p")]
     [InlineData("update --now")]
     [InlineData("workflow keep s-1")]
+    // The driver's standing choices, `daoris driver …` handed on (PUSH1f2a, D194 point 2): each a short change, held from the top.
+    [InlineData("driver drive engine")]
+    [InlineData("driver undrive engine")]
+    [InlineData("driver hold engine")]
+    [InlineData("driver resume engine")]
+    [InlineData("driver trees engine on")]
+    [InlineData("driver notify off")]
+    [InlineData("driver cap 3")]
+    [InlineData("driver strikes 0")]
+    [InlineData("driver retry 12")]
+    [InlineData("driver retry 12 --at 2")]
+    [InlineData("driver retry 12 --session s-1")]
+    [InlineData("driver timeout 90")]
+    [InlineData("driver cooloff 45")]
+    [InlineData("driver adapter claude-code")]
+    [InlineData("driver helper off")]
+    [InlineData("driver intake claude-code")]
+    [InlineData("driver line engine develop")]
+    [InlineData("driver landing engine merge")]
+    [InlineData("driver across engine read off")]
+    [InlineData("driver standing engine words")]
+    [InlineData("driver language engine zh")]
+    [InlineData("driver review engine none")]
+    [InlineData("driver opinion engine --reviewers codex-acp")]
+    [InlineData("driver helpers engine --mode on")]
+    [InlineData("driver handover engine --mode on")]
+    [InlineData("driver commits engine --mode ask")]
     [InlineData("a-verb-nobody-classed")]
     public void A_mutation_holds_the_lease(string words) => Assert.True(VerbLeases.Holds(words.Split(' ')), words);
 
@@ -102,10 +129,31 @@ public sealed class VerbLeasesTests
     // A repository's heavy gates, which run for minutes and write the home only in their own slot (HEAVYRUN1a).
     [InlineData("run-heavy")]
     [InlineData("run-heavy --gate web")]
+    // The driver's standing choices read, or the usage: `list`, the bare family, a verb it does not have, a plan (PUSH1f2a).
+    [InlineData("driver")]
+    [InlineData("driver list")]
+    [InlineData("driver --help")]
+    [InlineData("driver frobnicate engine")]
+    [InlineData("driver workflow list")]
+    [InlineData("driver landing engine merge --plan")]
     public void A_read_or_another_writers_verb_holds_none(string words) => Assert.False(VerbLeases.Holds(words.Split(' ')), words);
 
     [Fact]
     public void No_words_hold_nothing() => Assert.False(VerbLeases.Holds([]));
+
+    /// <summary>
+    /// A file `DAORIS_DRIVER_CONFIG` names is no instance's (D194 point 2, the alone-path design §1.2): the driver family acts on that
+    /// file's home alone, holding nothing; with none named, the same change holds the home.
+    /// </summary>
+    [Fact]
+    public void A_driver_choice_on_a_named_file_holds_nothing()
+    {
+        string[] words = ["driver", "drive", "engine"];
+        Assert.False(VerbLeases.HoldsHere(words, name => name == DriverConfig.PathVariable ? "X:/daoris/elsewhere/driver.json" : null));
+        Assert.True(VerbLeases.HoldsHere(words, _ => null));
+        // Another family's verb is not the driver family's file: a named driver file isolates only what it names.
+        Assert.True(VerbLeases.HoldsHere(["trees", "land", "s-1"], name => name == DriverConfig.PathVariable ? "X:/daoris/elsewhere/driver.json" : null));
+    }
 
     /// <summary>A lease names a verb by its own words, never an argument: a session, a branch or a path stays out of it.</summary>
     [Theory]
@@ -116,6 +164,8 @@ public sealed class VerbLeasesTests
     [InlineData("register", "daoris-driver register")]
     [InlineData("help mode full", "daoris-driver help mode")]
     [InlineData("heavy engine build=x", "daoris-driver heavy")]
+    [InlineData("driver drive engine", "daoris-driver driver drive")]
+    [InlineData("driver retry 12 --at 2", "daoris-driver driver retry")]
     public void A_lease_names_the_verb_and_never_its_arguments(string words, string named) =>
         Assert.Equal(named, VerbLeases.Name(words.Split(' ')));
 }

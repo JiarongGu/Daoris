@@ -123,6 +123,12 @@ public sealed class DriverModule : ModuleBase
         {
             return await RouteAsync(request, cancellationToken);
         }
+        catch (ChoiceRefusal coded)
+        {
+            // PUSH1f2a: a standing choice's operation refusing by a named check, said in the code the library's table gives it, the
+            // code `daoris-driver driver` says it in alone.
+            throw Refusals.Declared(ChoiceCodes.Of(coded), coded.Message, [.. coded.Facts]);
+        }
         catch (DriverException error)
         {
             throw Refusals.Because(Refusals.DriverRefused, error.Message, ("message", error.Message));

@@ -1,4 +1,4 @@
-import type { SystemWiring, WiringFile, WiringFolder, WiringVariable } from '../../data/wiring';
+import type { DownloadedVersion, DownloadsListing, SystemWiring, WiringFile, WiringFolder, WiringVariable } from '../../data/wiring';
 
 // What the wiring reads back, for the stories and the tests of This Daoris (WIRING1c): neutral paths by convention, like the
 // driver's fixtures, so a tracked file carries no machine path.
@@ -176,4 +176,23 @@ export const DEVELOPMENT: SystemWiring = {
     ...WIRED.loop, holder: { kind: 'headless', pid: 777, since: '2026-10-16T08:00:00Z', thisWindow: false },
     draining: true, holds: 2,
   },
+};
+
+/** One downloaded version (CACHECLEAR1), nothing keeping it by default. */
+export const downloaded = (kind: DownloadedVersion['kind'], name: string, version: string, extra: Partial<DownloadedVersion> = {}): DownloadedVersion => ({
+  kind, name, version, path: `${HOME}/cache/${kind === 'agent' ? 'toolchain' : 'tools'}/${name}/${version}`, bytes: 120_000_000,
+  partial: false, keeps: null, by: [], unfinished: false, ...extra,
+});
+
+/** The Downloads row's list: two versions nothing uses, and one each that a pin, Tools, a workspace and a moment keep. */
+export const DOWNLOADS: DownloadsListing = {
+  why: null,
+  versions: [
+    downloaded('agent', 'claude-code', '2.0.1'),
+    downloaded('agent', 'claude-code', '2.1.0', { keeps: 'pinned', by: ['machine'] }),
+    downloaded('agent', 'codex', '0.40.0', { keeps: 'pinned', by: ['workspace:games'] }),
+    downloaded('agent', 'claude-code', '2.2.0', { keeps: 'recent' }),
+    downloaded('tool', 'gh', '2.61.0', { bytes: 30_000_000 }),
+    downloaded('tool', 'gh', '2.62.0', { keeps: 'used', by: ['tools.json'] }),
+  ],
 };

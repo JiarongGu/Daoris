@@ -309,7 +309,8 @@ public sealed class DriverRoutes(DriverContext context)
     }
 
     // Restricted mode's configured access (HELPMODE1c2b, D183's note): the person's choice of one housekeeping operation, or since
-    // HELPMODE1c3 one chosen setting, set on Ask Daoris's screen, written to the home's own file. Each start reads it onto its allow-list, receipt and room, and each tool call
+    // HELPMODE1c3 one chosen setting, or since HELPMODE1c4 one checkout turned off or on by its repository, set on Ask Daoris's screen,
+    // written to the home's own file. Each start reads it onto its allow-list, receipt and room, and each tool call
     // is judged by it then, so a revoke refuses the next call; a conversation running with another choice ends at its turn's end, its
     // next words resuming it with this one (ACCESSSWAP1). No proposal names it: a helper never widens its own access. A grant or an
     // operation this build does not act on is the driver's refusal, with nothing written.
@@ -380,35 +381,11 @@ public sealed class DriverRoutes(DriverContext context)
         var considered = _loop.Look.Latest
             ?? await SessionGroups.VerdictsAsync(_loop.Service ?? throw NotReady(), config, _context.Door(config), lastLook: null, cancellationToken)
                 .ConfigureAwait(false);
-        var verdict = considered.FirstOrDefault(c => string.Equals(c.Quest.Id, quest, StringComparison.OrdinalIgnoreCase));
-
-        switch (verdict)
-        {
-            case { Verdict: StartVerdict.Exhausted } exhausted:
-                // Marked where it stands rather than erased, so the records still read true and the next `strikes`
-                // failures park it again. At its failures, not the limit (RETRY1b): a quest parked a second time has
-                // more failures than the limit, and a mark at the limit left it parked. A verdict carrying no count is
-                // marked at the least count the planner parks at.
-                _context.Change(config => config.WithForgiven(quest, exhausted.Failures ?? config.ForgivenAt(quest) + config.Strikes));
-                return State(_loop, new { Quest = quest, Did = "marked", Session = (string?)null });
-            case { Verdict: StartVerdict.Stopped, HeldBy: { } stop }:
-                // Released from that stop, and no mark: a stop is not a strike (D58). A later stop holds it again.
-                _context.Change(config => config.WithReleased(quest, stop.Session));
-                return State(_loop, new { Quest = quest, Did = "released", Session = (string?)stop.Session });
-            case { Verdict: StartVerdict.Paused, PausedBy: { } pause }:
-                // A pause is the reason before a stop and the strikes (PAUSE1b, D132 §6.1): Resume moves it, and nothing is written.
-                throw pause.Scope == WorkScope.Ask
-                    ? Refusals.Because(
-                        Refusals.QuestPaused, $"#{quest} is paused with ask #{pause.Id}; Resume carries it on.", ("id", quest), ("pause", pause.Id))
-                    : Refusals.Because(
-                        Refusals.QuestPaused, $"#{quest} is paused on its own; Resume carries it on.", ("id", quest), ("pause", pause.Id),
-                        ("context", "quest"));
-            default:
-                throw Refusals.Because(
-                    Refusals.QuestNotHeld,
-                    $"#{quest} is neither parked nor held by your stop on this machine, so there is nothing to try again.",
-                    ("id", quest));
-        }
+        // PUSH1f2a: the verdict's switch is the library's operation, which `daoris-driver driver retry` acting alone calls too; a
+        // pause or a quest neither parked nor held is its coded refusal (ChoiceCodes), raised here by the module's one mapping.
+        var decision = StandingChoices.Retry(quest, considered);
+        _context.Change(decision.Change);
+        return State(_loop, new { Quest = quest, decision.Did, decision.Session });
     }
 
     /// <summary>
@@ -472,6 +449,11 @@ public sealed class DriverRoutes(DriverContext context)
         var access = ConfiguredAccess.Read(loop.Home);
         // HELPMODE1c3: the browser's grant is its plugin's approval, drawn here read only from that record.
         var browser = HelpGrants.Read(loop.Home, PluginCatalog.Load(loop.Home, AdapterSet.Built().Names)).Browser;
+        // HELPMODE1c4: the checkouts D107 lets agents outside read, from the machine's facts as last judged, never a read of its own;
+        // none before the facts are judged, and the loop's next look pushes them.
+        string[] readable = loop.Facts.Current.Value<HelpMachineWhole>(HelpFacts.Machine, HelpFacts.Whole) is { } whole
+            ? [.. AcrossRules.Readable(config, whole.Snapshot.Repositories).Select(checkout => checkout.Repository)]
+            : [];
         return new
         {
             Retried = retried,
@@ -516,11 +498,15 @@ public sealed class DriverRoutes(DriverContext context)
             // turn takes (ACCESSSWAP1, the grant's *pending* mark), false once its agent has ended. HELPMODE1c3: the chosen settings
             // the same way; and the browser's, read only from its plugin's approval (`plugin-approvals.json`): `chosen` holds `reads`
             // and each write accepted, by its tool's name, once approved; `changed` an update since; `plugin` whose tab changes it, none
-            // where no plugin here attaches to Daoris's browser; no `built`, so the page offers nothing to choose.
+            // where no plugin here attaches to Daoris's browser; no `built`, so the page offers nothing to choose. HELPMODE1c4: the
+            // checkouts, on by default: `built` each readable checkout here by its repository, `chosen` those the person has not turned off.
             HelpGrants = new[]
             {
                 Grant(loop, ConfiguredAccess.HousekeepingGrant, access, ConfiguredAccess.HousekeepingBuilt),
                 Grant(loop, ConfiguredAccess.SettingsGrant, access, ConfiguredAccess.SettingsBuilt),
+                new HelpGrantRow(
+                    ConfiguredAccess.CheckoutsGrant, [.. readable.Where(access.Reads)], readable,
+                    loop.Chat?.GrantPending(ConfiguredAccess.CheckoutsGrant, access) == true, false, null),
                 new HelpGrantRow(
                     "browser",
                     browser is { State: HelpGrants.Approved } ? ["reads", .. browser.Accepted] : [],

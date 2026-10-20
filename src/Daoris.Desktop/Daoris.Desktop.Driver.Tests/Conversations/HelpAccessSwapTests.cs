@@ -38,8 +38,10 @@ public sealed class HelpAccessSwapTests : IDisposable
         }
     }
 
+    // The roster's file is this home's, never the one the process's environment names.
     private ChatRunner Runner() => new(
-        new ChatLedger().Client(), AdapterSet.Built(), _home, new SessionProcesses(DaorisHome.Entry(_home, HomeEntry.Sessions)), _output);
+        new ChatLedger().Client(), AdapterSet.Built(), _home, new SessionProcesses(DaorisHome.Entry(_home, HomeEntry.Sessions)), _output,
+        harnesses: new HarnessRoster(AdapterSet.Built(), DaorisHome.Entry(_home, HomeEntry.Harnesses)));
 
     /// <summary>
     /// A conversation running under <paramref name="mode"/>, its start handed <paramref name="housekeeping"/> and
@@ -190,6 +192,32 @@ public sealed class HelpAccessSwapTests : IDisposable
 
         talking.Turn.SetResult();
         await Poll.Until(() => talking.Finished == 1, () => "the turn's end never ended it");
+    }
+
+    /// <summary>
+    /// 🔴 HELPMODE1c4: a checkout turned off while a turn runs takes its next turn the same way, naming the checkouts turned off, and
+    /// marks the grant pending until then; turned on again before the turn ends, the end is withdrawn.
+    /// </summary>
+    [Fact]
+    public async Task A_checkout_turned_off_takes_the_next_turn_and_is_pending_till_then()
+    {
+        var runner = Runner();
+        var talking = Running(runner, "h1", HelpModes.Restricted);
+        await Talking(talking);
+
+        var off = ConfiguredAccess.Choose(_home, ConfiguredAccess.CheckoutsGrant, "engine", chosen: false);
+        runner.HelpAccessChosen(HelpModes.Restricted);
+
+        Assert.Equal(0, talking.Finished);
+        Assert.Contains("the checkouts turned off for it are `engine` now", Console("h1"));
+        Assert.True(runner.GrantPending(ConfiguredAccess.CheckoutsGrant, off));
+        Assert.False(runner.GrantPending(ConfiguredAccess.SettingsGrant, off));
+
+        ConfiguredAccess.Choose(_home, ConfiguredAccess.CheckoutsGrant, "engine", chosen: true);
+        runner.HelpAccessChosen(HelpModes.Restricted);
+        talking.Turn.SetResult();
+        await Poll.Until(() => !talking.Turns.Running, () => "the turn never ended");
+        Assert.Equal(0, talking.Finished);
     }
 
     /// <summary>HELPMODE1a5: a switch back to the mode it runs under, before the turn ends, withdraws the end.</summary>

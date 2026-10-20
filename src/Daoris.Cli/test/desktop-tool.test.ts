@@ -119,6 +119,19 @@ test('the index root and the store are redirected', () => {
   }
 });
 
+/**
+ * PUSH1f2a (D194 point 1): a `daoris driver …` typed in a scratch window's terminal is handed to the driver's program the variable names,
+ * which is this checkout's build; with none built, the variable names none, so the CLI says where the program is rather than finding
+ * another build, the parent shell's among them.
+ */
+test('a scratch run names this checkout\'s driver program, or none', () => {
+  const built = scratchEnvironment({
+    home: '/h', family: '/f', serviceUrl: 'http://127.0.0.1:5188', httpHost: '/x.exe', driverProgram: '/build/daoris-driver.exe',
+  });
+  assert.equal(built.DAORIS_DRIVER_PROGRAM, '/build/daoris-driver.exe');
+  assert.equal(environment().DAORIS_DRIVER_PROGRAM, '');
+});
+
 test('a scratch run sets every redirected variable, and points the host at the workspace build', () => {
   const env = environment();
   for (const name of REDIRECTED) assert.ok(env[name], `${name} is missing from the scratch environment`);

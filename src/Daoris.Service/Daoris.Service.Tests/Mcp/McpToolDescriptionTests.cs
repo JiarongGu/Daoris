@@ -340,6 +340,31 @@ public sealed partial class McpToolDescriptionTests
             && (name.Contains("mode") || name.Contains("grant") || name.Contains("account")));
     }
 
+    /// <summary>
+    /// HELPMODE1c4 (the Ask Daoris modes design §4.1): the checkouts' tool is Ask Daoris's alone and reads only what the person granted;
+    /// it takes a repository and a path relative to its checkout, says Daoris judges each read, that git's own folder and what git
+    /// ignores are refused, and that it changes nothing; it answers <c>git status</c> and <c>git branch --list</c>, and never a git
+    /// that writes files through its output options.
+    /// </summary>
+    [Fact]
+    public void The_checkout_tool_says_whose_it_is_and_what_holds_each_read()
+    {
+        var tools = ToolNames().Where(name => name.StartsWith("checkout_", StringComparison.Ordinal)).ToList();
+        var said = string.Join(" ", Descriptions().Where(d => d.Tool == "checkout_read").Select(d => d.Text));
+
+        Assert.Equal(["checkout_read"], tools);
+        Assert.Contains("Ask Daoris only", said);
+        Assert.Contains("granted", said);
+        Assert.Contains("relative to its checkout", said);
+        Assert.Contains("judges each read", said);
+        Assert.Contains("git ignores", said);
+        Assert.Contains("changes nothing", said);
+        Assert.Contains("`git status`", said);
+        Assert.Contains("`git branch --list`", said);
+        Assert.DoesNotContain(ToolNames(), name => name.StartsWith("checkout_", StringComparison.Ordinal)
+            && (name.Contains("log") || name.Contains("diff") || name.Contains("show") || name.Contains("write")));
+    }
+
     // Not after `#`: an entry id's example (`…/DECISIONS.md#D12`) is an anchor in the reader's own
     // repository, not a citation of this one's.
     [GeneratedRegex(@"(?<![#\w])D\d{1,3}\b")]

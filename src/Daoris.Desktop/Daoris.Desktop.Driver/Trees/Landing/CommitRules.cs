@@ -151,6 +151,17 @@ public static class CommitRules
     public static string Listed(CommitRule rule) => rule.Convention is null ? rule.Mode : $"{rule.Mode}: {rule.Convention}";
 
     /// <summary>
+    /// What the terminal and Ask Daoris's card say of a mode as it is set (TWINWORDS1, <c>landing-says.json</c>'s <c>commits</c>): one
+    /// function, <c>daoris-driver driver commits</c>' and the card's.
+    /// </summary>
+    public static string Says(string mode) => mode switch
+    {
+        Ask => "Each commit waits for your yes before it is made.",
+        AtEnd => "One commit is made when the work is done.",
+        _ => "Each piece that passes its checks is committed as the work goes.",
+    };
+
+    /// <summary>
     /// One change made to the config, or its refusal thrown in the twin's words, nothing changed — the CLI's
     /// <c>applyCommitEdit</c>. A set changes what it names over the rule set there, or over the default; the key keeps the
     /// spelling first written.

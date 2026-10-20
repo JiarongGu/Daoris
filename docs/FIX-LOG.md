@@ -19,6 +19,19 @@ repository.
 - **Verification:** `AcpBackgroundTests`' install case (0.84.0's frames: the spawn at the call's result, the ending after the
   last step), the go-on told once and the quest that does not wait failed before the fix; the reshaped real-question case
   stays green. `AcpTests`' capabilities and task-frame cases failed before it.
+## 2026-10-21 — Approving or withdrawing a plugin for Ask Daoris deleted what its writer did not know (KEEPALL1d)
+
+- **Symptom:** named by KEEPALL1's audit (D173's KEEPALL1 note). Approving a plugin's server for Ask Daoris, or withdrawing an
+  approval, on the plugin's page or with `daoris-driver plugins approve|withdraw`, rewrote `plugin-approvals.json` as
+  `{ "help": [...] }`: every other top-level key and every row's own unknown key went, line endings became LF, and a server
+  approved again moved to the end.
+- **Root cause:** `HelpGrants.Write` built the file from the approvals its reader parsed (plugin, server, allow, writes), as the
+  writers KEEPALL1 fixed had.
+- **Fix:** D173's KEEPALL1d note. `HelpGrants.Save` writes through `JsonKeeping.Save`; each approval keeps its row as read, written
+  as it was where untouched and changed in place with its own keys where approved again.
+- **Verification:** six driver-only `approvals:` rows in `home-files-keep.json` through `HomeFilesKeepTests`, with
+  `HelpGrantsTests`, `PluginsCommandTests`, `HelpPluginApprovalProposalsTests`, `DriverModuleHelpGrantTests` and
+  `HelpPluginApprovalDoorTests` green; the CLI's `homefileskeep.test.ts` skips the six and passes its sixteen.
 
 ## 2026-10-21 — The full set's run on d263cd0 failed three gates that its merges never ran
 

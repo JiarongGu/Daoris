@@ -161,14 +161,14 @@ public static class Refusals
     /// stop (SESSUX1b, D126 §3.4): nothing to mark and no stop to release, and forgiving it would let it run past its
     /// strikes (D110). Its <c>id</c> names the quest.
     /// </summary>
-    public const string QuestNotHeld = "QUEST_NOT_HELD";
+    public const string QuestNotHeld = Daoris.Driver.ChoiceCodes.QuestNotHeld;
 
     /// <summary>
     /// *Try again* asked of a quest a pause holds (PAUSE1b, D132 §6.1): the pause is the reason before a stop and the strikes,
     /// and *Resume* is the one press that moves it. Its <c>id</c> names the quest and <c>pause</c> the ask whose pause holds
     /// it; a quest paused on its own travels as the catalogue's <c>context</c> <c>quest</c>.
     /// </summary>
-    public const string QuestPaused = "QUEST_PAUSED";
+    public const string QuestPaused = Daoris.Driver.ChoiceCodes.QuestPaused;
 
     /// <summary>
     /// A work asked of an ask this machine has no record of, or a quest not here (PAUSE1b, D132 §7.3): nothing to plan, pause

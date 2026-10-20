@@ -18472,6 +18472,11 @@ in zh. The sessions page's held words (`WordsHold`) still carry the driver's sen
 
 **Outcome** 2026-10-21: built. A hold stamps its file's time when taken and let go; `LandingHolds.Sweep` removes a file no door has held for longer than `Wait`, reading its time again under its own handle, and keeps one held or let go within the bound; a taken hold sweeps its home at most once per `Wait` in a process. Proof: three tests in `LandingHoldsTests`. Detail: D173's LANDHOLDSWEEP1 note.
 
+## HELPMODE1c4 — the scoped checkouts grant (2026-10-21, D183)
+
+> - [ ] **HELPMODE1c4 — the scoped checkouts grant built on Claude** (driver, service, web-shell; the modes design's §4.1; after HELPMODE1c3). Restricted mode's *checkouts* grant is still drawn as the design's mock on Claude (on Codex it says unavailable until a scoped read tool exists): build it as HELPMODE1c3 built chosen settings, a typed tool reading only the checkouts chosen, judged by the driver at each call against the grant handed at the start. Proof: the grant's refusal off and its read on, a checkout not chosen refused; the page's row chosen in en and zh.
+
+**Outcome** 2026-10-21: built for Claude and Codex alike. Ask Daoris reads its checkouts through one connector tool, `checkout_read` (a file, a folder, `status`, `branches`), which the driver's `HelpCheckouts` judges at every call, in place of the `Read` and git rules a restricted start handed Claude; the checkouts are on by default from D107's readable set, each turned off on its own in *Configured access*. Detail: D183's HELPMODE1c4 note.
 ## GITSTART6 — the remaining tests' git past the launcher (2026-10-21, D121)
 
 > - [ ] **GITSTART6 — the remaining tests' git past the launcher** (driver, modules tests). `DriverModuleGitTests`, `DriverModuleWorkflowRunTests`, `TreeSyncReplayTests`' holder and two `--version` checks. Proof: those classes once each.
@@ -18537,3 +18542,23 @@ in zh. The sessions page's held words (`WordsHold`) still carry the driver's sen
 > - [ ] **BGWAIT3 — a turn that ends on the agent's own background command is not waiting for the person** (driver; the owner's report, 2026-10-21; D83's BGWAIT1). A driven session on the install (GITSTART4's) ran the driver's `SystemWiringTests` with Claude Code's background Bash, said it would close its quest when they finished, and ended its turn: the page said 等你处理, and nothing woke it when the command ended. Its last tool result reads "Command running in background with ID: …" and its events hold no `async_task_*` note, while `Agents/Acp/AcpBackground.cs` keeps only what `async_task_spawned` announces, so the end read as a question. Measure first, on the adapter the install pins, with a real sign-in: which frames a background Bash and a Monitor send with `asyncTasks` asked as BGWAIT1's streams ask it, and whether the harness wakes its agent when one ends. Then, whatever the wire says, a turn that ends while its own background command runs is the session's wait under D83's park rule, and the agent is woken when the command ends: by the frames where they come, else by the command's end as the harness records it, if the measure finds one. Proof: `AcpBackgroundTests` cases shaped on the measured frames, the park rule's table in `ObservationTests`, and the rail not saying 等你处理 for it.
 
 **Outcome** 2026-10-21: measured by reading the pinned adapter (0.84.0) and the session's record, no model turn: the frames came, and the command had ended after the agent's last step, about three seconds before its turn did, unseen by the agent, so nothing ran at the turn's end and the session parked before its harness could wake it. An ending read after the agent's last step, its last woken turn and Daoris's last go-on is now owed that wake (`AcpWake.Unseen`): where the quest would park, the session stays working and waits for the woken turn, or tells the agent after the quiet. Every protocol-door session asks for `asyncTasks`, so the headless loop waits too. Proof: `AcpBackgroundTests` and `AcpTests`; the park rule unchanged. Detail: D83's BGWAIT3 note.
+## PUSH1f2a — the seam, proved by the driver's standing choices (2026-10-21, D194)
+
+> - [ ] **PUSH1f2a — the seam, proved by the driver's standing choices** (cli, driver, modules, tools; first; D194, the alone-path design §5). Read its row in §5 and the sections it names; build it end to end (D187), the family's TypeScript leaving as §4 says. Proof: as §5 names it.
+
+**Outcome** 2026-10-21: `daoris driver`'s standing choices run `daoris-driver driver`, the running Daoris's client or the library's
+own operations alone, refused from a session's terminal; today's text kept by a 143-case table. The decisions and the measured
+start are D194's PUSH1f2a note. The handed verbs' TypeScript leaves in PUSH1f2b. Unproven until the install: `daoris driver drive`
+confirmed in the open window.
+
+## CACHECLEAR1 — clearing downloads (2026-10-21, D88)
+
+> - [ ] **CACHECLEAR1 — clearing downloads** (driver/web; after WIRING1c). An act on This Daoris's *Downloads* row that removes the agents' and tools' downloaded versions nothing uses, listed first then pressed (D88), saying what it keeps. Proof: driver tests per kept version; the list and press in en and zh.
+
+**Outcome** 2026-10-21: built. *Clear unused downloads…* on the Downloads row lists each version under `cache/toolchain` and `cache/tools` with its size and what keeps it (a pin of the machine's or a workspace's, Tools running it, a setting naming a file inside it, a file that cannot be read, a download within the hour), and one press removes those nothing uses, judged again right before each goes and moved aside first, so a version a program runs from is kept as in use; the answer says what it kept. `DownloadClearing` in the driver library, `SYSTEM_DOWNLOADS` and `SYSTEM_DOWNLOADS_CLEAR`, `WiringDownloads` en and zh. No terminal twin. Proof: `DownloadClearingTests` (16, one per kept version), `DriverModuleDownloadsTests`, `WiringDomain.test.tsx`'s list and press in en and zh. The window is WIRING1f's. On Opus: about 150 tool calls. Detail: D88's CACHECLEAR1 note.
+
+## KEEPALL1d — `plugin-approvals.json` keeps what its writer does not own (2026-10-21, D173)
+
+> - [ ] **KEEPALL1d — `plugin-approvals.json` keeps what its writer does not own** (driver). `HelpGrants.Write` rebuilds it, dropping unknown keys. Proof: a row in `home-files-keep.json` with unknown keys at the top and in a row.
+
+**Outcome** 2026-10-21: built. `HelpGrants` writes through `JsonKeeping.Save`: the top level's other keys and a row's own unknown keys stay as written, an untouched row is written as the file had it, a server approved again is changed where it stands, CRLF is kept, a key twice is refused, and a withdrawal of nothing writes nothing. Proof: six driver-only `approvals:` rows in `home-files-keep.json` (`only: driver`, which the CLI's twin skips) through `HomeFilesKeepTests`. On Opus: about 40 tool calls. Detail: D173's KEEPALL1d note; FIX-LOG 2026-10-21.

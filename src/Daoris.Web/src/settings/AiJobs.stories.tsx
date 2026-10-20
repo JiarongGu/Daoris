@@ -110,10 +110,13 @@ export const RestrictedWithConfiguredAccess: Story = {
       grants: [
         { id: 'housekeeping', chosen: ['inspect'] },
         { id: 'browser', chosen: [], plugin: 'in-app-browser' },
-        { id: 'checkouts', chosen: ['read'] },
+        { id: 'checkouts', chosen: ['engine'] },
         { id: 'settings', chosen: ['notify'] },
       ],
-      built: { housekeeping: ['inspect', 'clean-up', 'discard-branch'], settings: ['notify', 'language', 'timeout', 'cap', 'cooloff'] },
+      built: {
+        housekeeping: ['inspect', 'clean-up', 'discard-branch'], settings: ['notify', 'language', 'timeout', 'cap', 'cooloff'],
+        checkouts: ['engine', 'reports-db'],
+      },
       onChoose: () => {},
       onManage: () => {},
     },

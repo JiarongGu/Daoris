@@ -927,6 +927,11 @@ public sealed partial class HelpCoverageTests
             "it opens the log's folder in the system's file browser and changes nothing; a go reaches Settings → Logs.")),
         ("wiring", "useOpenLogFolder", null, new Exempt(
             "This Daoris's Logs card opens the same folder and changes nothing; a go reaches Settings → This Daoris (WIRING1c-ii).")),
+        // CACHECLEAR1: the Downloads row's clearing, listed first and then pressed (D88's shape).
+        ("wiring", "useClearDownloads", null, new Exempt(
+            "it removes downloaded versions from this machine after the person has read the list, a discard that stays the person's own "
+            + "press (D89), as the clean-up's is; nothing it removes is in use, and the next use downloads it again; a go reaches "
+            + "Settings → This Daoris.")),
     ];
 
     /// <summary>

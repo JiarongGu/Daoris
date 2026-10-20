@@ -731,12 +731,14 @@ public sealed class ChatRunner : IDisposable
         // HelpSettings).
         var access = ConfiguredAccess.Read(home);
         var housekeeping = access.Housekeeping;
+        // HELPMODE1c4: the readable checkouts the person left on, read through `checkout_read`, which each call judges again.
+        IReadOnlyList<HelpRead> handed = [.. reads.Where(read => access.Reads(read.Name))];
         return new(
             HelpRoom.Repository, room,
             (file, id) =>
             {
                 var grants = HelpGrants.Read(home, PluginCatalog.Load(home, AdapterSet.Built().Names));
-                return HelpRoom.Rules(file, ChatFiles.Folder(home, id), reads, grants.Allow, grants.Ask, circle, housekeeping, access.Settings);
+                return HelpRoom.Rules(file, ChatFiles.Folder(home, id), handed, grants.Allow, grants.Ask, circle, housekeeping, access.Settings);
             },
             Plugins: true, ConnectorOnPipe: true, Posture: HelpRoom.Posture, ToolsUpFront: true)
         {
@@ -744,9 +746,10 @@ public sealed class ChatRunner : IDisposable
             ServersTo = PluginServerTo.Help,
             Workspace = RemoteTarget.Workspace(workspace),
             Circle = circle,
-            Reads = reads,
+            Reads = handed,
             Housekeeping = housekeeping,
             Settings = access.Settings,
+            CheckoutsOff = access.CheckoutsOff,
         };
     }
 
@@ -958,10 +961,14 @@ public sealed class ChatRunner : IDisposable
         public bool Guarded { get; init; } = true;
 
         /// <summary>
-        /// The checkouts its rules let it read (D107): Ask Daoris's in restricted mode, none in full access, whose rules allow nothing
-        /// by list, and none for a repository's conversation. What its receipt says it was granted (HELPWIRED1).
+        /// The checkouts it may read through <c>checkout_read</c> (D107, HELPMODE1c4): Ask Daoris's in restricted mode, the readable ones
+        /// the person left on, none in full access, whose own shell reads them, and none for a repository's conversation. What its
+        /// receipt says it was handed (HELPWIRED1), which each call is judged by.
         /// </summary>
         public IReadOnlyList<HelpRead> Reads { get; init; } = [];
+
+        /// <summary>The checkouts the person had turned off as its start was composed (HELPMODE1c4), what a later narrowing is compared with.</summary>
+        public IReadOnlyList<string> CheckoutsOff { get; init; } = [];
 
         /// <summary>
         /// The housekeeping operations its start was handed (HELPMODE1c2a): Ask Daoris's, as the person chose them when the place was
@@ -1204,7 +1211,7 @@ public sealed class ChatRunner : IDisposable
         // (ACCESSSWAP1).
         if (helpMode is not null)
         {
-            _context.AccessHanded[sessionId] = new ConfiguredAccess(place.Housekeeping) { Settings = place.Settings };
+            _context.AccessHanded[sessionId] = new ConfiguredAccess(place.Housekeeping) { Settings = place.Settings, CheckoutsOff = place.CheckoutsOff };
             _context.HelpModes[sessionId] = helpMode;
         }
 

@@ -91,3 +91,22 @@ export interface SystemWiring {
     folders: WiringToolFolder[];
   };
 }
+
+/**
+ * One version an agent or a tool downloaded under the install's `cache/` (CACHECLEAR1): `SYSTEM_DOWNLOADS`' row. `keeps` is why it
+ * stays (`pinned`, `used`, `named`, `unread`, `recent`, and at a press `in-use`), absent or null where nothing uses it; `by` says
+ * what keeps it (`machine`, `workspace:<name>`, or a file). `unfinished` is one an earlier clearing moved aside and left part of.
+ */
+export type DownloadedVersion = {
+  kind: 'agent' | 'tool'; name: string; version: string; path: string; bytes: number; partial: boolean;
+  keeps?: string | null; by?: string[]; unfinished: boolean;
+};
+
+/** `SYSTEM_DOWNLOADS`' answer: every downloaded version, and why none could be listed (`no-home`, `twice`). */
+export type DownloadsListing = { why?: string | null; versions: DownloadedVersion[] };
+
+/** One row a press named, and what it came to: `removed`, `kept` with why, `gone` or `unfinished`. */
+export type DownloadCleared = {
+  kind: 'agent' | 'tool'; name: string; version: string; unfinished: boolean;
+  outcome: 'removed' | 'kept' | 'gone' | 'unfinished'; bytes?: number | null; keeps?: string | null; by?: string[] | null;
+};
