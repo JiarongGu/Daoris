@@ -13,10 +13,12 @@ const spec = (id: HelpGrantId) => GRANTS.find((grant) => grant.id === id)!;
 const choice = (id: HelpGrantId, chosen: string[], extra: Partial<HelpGrantChoice> = {}): HelpGrantChoice => ({ id, chosen, ...extra });
 
 describe('the grants', () => {
-  it('are the table’s five, in its order, each operation chosen on its own and the checkouts’ reads one group', () => {
+  it('are the table’s five, in its order, each operation chosen on its own and the checkouts the driver’s to name', () => {
     expect(GRANTS.map((grant) => grant.id)).toEqual(['housekeeping', 'browser', 'checkouts', 'settings', 'shell']);
     expect(spec('housekeeping').operations).toEqual(['inspect', 'clean-up', 'discard-branch', 'drop-recovery']);
-    expect(spec('checkouts').operations).toEqual(['read']);
+    // HELPMODE1c4: one box a checkout, by its repository's name, as the driver serves them.
+    expect(spec('checkouts').operations).toEqual([]);
+    expect(GRANTS.filter((grant) => grant.served).map((grant) => grant.id)).toEqual(['checkouts']);
     expect(spec('settings').operations).toEqual(['notify', 'language', 'timeout', 'cap', 'cooloff']);
     expect(spec('shell').operations).toEqual([]);
   });
@@ -41,7 +43,8 @@ describe('a grant’s state', () => {
     expect(grantState(spec('housekeeping'), choice('housekeeping', ['inspect']), CLAUDE)).toBe('on');
     expect(grantState(spec('housekeeping'), choice('housekeeping', []), CLAUDE)).toBe('off');
     expect(grantState(spec('settings'), undefined, CLAUDE)).toBe('off');
-    expect(grantState(spec('checkouts'), choice('checkouts', ['read']), CLAUDE)).toBe('on');
+    expect(grantState(spec('checkouts'), choice('checkouts', ['engine']), CLAUDE)).toBe('on');
+    expect(grantState(spec('checkouts'), choice('checkouts', []), CLAUDE)).toBe('off');
   });
 
   it('needs approval until the browser’s reads are approved, and says a change since approval apart', () => {
@@ -52,10 +55,10 @@ describe('a grant’s state', () => {
     expect(grantState(spec('browser'), choice('browser', ['reads'], { changed: true }), CLAUDE)).toBe('changed');
   });
 
-  it('is unavailable where the agent takes no permission rules: the browser’s chosen writes and the checkouts’ scoped reads', () => {
+  it('is unavailable where the agent takes no permission rules: the browser’s chosen writes alone', () => {
     expect(grantState(spec('browser'), choice('browser', ['reads', 'click']), CODEX)).toBe('unavailable');
-    expect(grantState(spec('checkouts'), choice('checkouts', ['read']), CODEX)).toBe('unavailable');
-    // Daoris holds the typed tools itself, so they hold on every agent.
+    // Daoris holds the typed tools itself, so they hold on every agent: the checkouts' read too since HELPMODE1c4.
+    expect(grantState(spec('checkouts'), choice('checkouts', ['engine']), CODEX)).toBe('on');
     expect(grantState(spec('housekeeping'), choice('housekeeping', ['inspect']), CODEX)).toBe('on');
     expect(grantState(spec('settings'), choice('settings', ['notify']), CODEX)).toBe('on');
   });

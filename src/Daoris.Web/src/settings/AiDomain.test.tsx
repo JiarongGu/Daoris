@@ -278,16 +278,19 @@ describe('Ask Daoris’s access on Settings', () => {
  * HELPMODE1c2b (D183's note; the modes design §4.1): restricted mode's configured access under Ask Daoris's access, its
  * housekeeping row live: what the driver's state says is chosen, each operation pressed over `SET_HELP_GRANT` one at a time, and
  * one the driver does not act on yet never sent. HELPMODE1c3: the chosen settings live the same way, and the browser's row read
- * only from its plugin's approval, its door leading to the plugin's tab. The checkouts are drawn as the mock draws them.
+ * only from its plugin's approval, its door leading to the plugin's tab. HELPMODE1c4: the checkouts live too, each readable checkout
+ * the driver serves a box by its repository's name, on until the person turns it off.
  */
 describe('Ask Daoris’s configured access on Settings', () => {
   let chosen: string[] = [];
   let settings: string[] = [];
+  let checkouts: string[] = [];
   let grants = true;
   let pending = false;
   beforeEach(() => {
     chosen = [];
     settings = [];
+    checkouts = ['engine', 'game'];
     grants = true;
     pending = false;
     vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => respond(String(input))));
@@ -297,9 +300,11 @@ describe('Ask Daoris’s configured access on Settings', () => {
       if (module !== 'DAORIS.DRIVER') return WIRING;
       if (type === 'SET_HELP_GRANT') {
         const operation = request?.payload?.operation ?? '';
-        const was = request?.payload?.grant === 'settings' ? settings : chosen;
+        const grant = request?.payload?.grant;
+        const was = grant === 'settings' ? settings : grant === 'checkouts' ? checkouts : chosen;
         const now = request?.payload?.chosen ? [...was, operation] : was.filter((each) => each !== operation);
-        if (request?.payload?.grant === 'settings') settings = now;
+        if (grant === 'settings') settings = now;
+        else if (grant === 'checkouts') checkouts = now;
         else chosen = now;
       }
       if (type === 'STATE' || type === 'SET_HELP_GRANT') {
@@ -310,6 +315,7 @@ describe('Ask Daoris’s configured access on Settings', () => {
               helpGrants: [
                 { id: 'housekeeping', chosen, built: ['inspect', 'clean-up', 'discard-branch'], pending },
                 { id: 'settings', chosen: settings, built: ['notify', 'language', 'timeout', 'cap', 'cooloff'], pending: false },
+                { id: 'checkouts', chosen: checkouts, built: ['engine', 'game'], pending: false },
                 { id: 'browser', chosen: ['reads', 'browser_click'], pending: false, changed: false, plugin: 'in-app-browser' },
               ],
             }
@@ -336,7 +342,7 @@ describe('Ask Daoris’s configured access on Settings', () => {
     return grant;
   }
   const box = (id: string, operation: string) =>
-    within(row(id)).getByRole('checkbox', { name: i18n.t(`help.grants.op.${id}.${operation}`) });
+    within(row(id)).getByRole('checkbox', { name: id === 'checkouts' ? operation : i18n.t(`help.grants.op.${id}.${operation}`) });
 
   it.each(['en', 'zh'])('draws housekeeping as the driver holds it, and a press chooses one operation, in %s', async (language) => {
     await i18n.changeLanguage(language);
@@ -365,17 +371,33 @@ describe('Ask Daoris’s configured access on Settings', () => {
       i18n.t('settings.ai.grants.revoked', { operation: i18n.t('help.grants.op.housekeeping.inspect') })));
   });
 
-  it('never sends what the driver does not act on yet: dropping recovery refs, and the rows still drawn as the mock', async () => {
+  it('never sends what the driver does not act on yet: dropping recovery refs', async () => {
     const notify = vi.fn();
     show(<SettingsView notify={notify} section="ai" />);
 
     await open('housekeeping', 'operations');
     expect(box('housekeeping', 'drop-recovery')).toBeDisabled();
-    await open('checkouts', 'manage');
-    await userEvent.click(box('checkouts', 'read'));
 
     expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'SET_HELP_GRANT', expect.anything());
-    expect(notify).toHaveBeenCalledWith(i18n.t('settings.ai.grants.notYet'));
+  });
+
+  // HELPMODE1c4: the checkouts the driver serves, each on until turned off, a press naming its repository as written.
+  it.each(['en', 'zh'])('draws the checkouts the driver serves, and a press turns one off by its name, in %s', async (language) => {
+    await i18n.changeLanguage(language);
+    const notify = vi.fn();
+    show(<SettingsView notify={notify} section="ai" />);
+
+    await open('checkouts', 'manage');
+    expect(within(row('checkouts')).getByText(i18n.t('help.grants.state.on'))).toBeInTheDocument();
+    expect(box('checkouts', 'engine')).toBeChecked();
+    await userEvent.click(box('checkouts', 'engine'));
+
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SET_HELP_GRANT', {
+      payload: { grant: 'checkouts', operation: 'engine', chosen: false },
+    });
+    await waitFor(() => expect(box('checkouts', 'engine')).not.toBeChecked());
+    expect(box('checkouts', 'game')).toBeChecked();
+    await waitFor(() => expect(notify).toHaveBeenCalledWith(i18n.t('settings.ai.grants.revoked', { operation: 'engine' })));
   });
 
   // HELPMODE1c3: the chosen settings, the five ordinary ones, each granted one at a time as housekeeping's operations are.
