@@ -392,9 +392,12 @@ test('an ask is proposed by declarations, published by a person, and closed with
   await expect(page.getByText(/is now Done/).first()).toBeVisible();
   await expect(questList(page).getByText(/^Asks \(/)).toHaveCount(0);
 
-  // With closed ones included, from the list's ⋯, it comes back, wearing its done pill.
+  // With closed ones included, from the list's ⋯, it comes back as one row: an ask that became one quest is that quest's row,
+  // its ask on the route line (QUESTLISTS1), wearing its done pill; no asks group holds it twice.
   await includeClosed(page);
-  await expect(questList(page).getByText(/^Asks \(/)).toBeVisible();
+  await expect(questList(page).getByText(/^ask #[0-9a-f]{6} → engine$/)).toBeVisible();
+  await expect(questList(page).getByText(/ask #[0-9a-f]{6}/)).toHaveCount(1);
+  await expect(questList(page).getByText(/^Asks \(/)).toHaveCount(0);
   await expect(questList(page).getByText('done', { exact: true }).first()).toBeVisible();
 });
 

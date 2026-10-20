@@ -223,8 +223,11 @@ function QuestRow({ facts, ask, chosen, resuming, onChoose, onResume }: {
           {quest.updated !== quest.filed && <> · {t('quests.card.moved', { ago: ago(quest.updated) })}</>}
           {/* A step of a chain says which quest's close published it (D65 §4). */}
           {quest.parent && <> · {t('quests.card.follows', { id: quest.parent })}</>}
-          {/* The ask it came from, the one piece of work's other name (QUESTLISTS1). */}
-          {ask && <> · <span title={t('quests.card.fromAskHint')}>{t('quests.card.fromAsk', { id: ask.id.slice(0, 6) })}</span></>}
+          {/* The ask it came from, the one piece of work's other name (QUESTLISTS1), unless its route already names it: a quest
+              an ask published comes `from` that ask, and the row would say it twice. */}
+          {ask && !quest.from.includes(ask.id.slice(0, 6)) && (
+            <> · <span title={t('quests.card.fromAskHint')}>{t('quests.card.fromAsk', { id: ask.id.slice(0, 6) })}</span></>
+          )}
         </span>
         {/* Why this machine's driver leaves it waiting (USE1): its record said so, the row did not, and a quest to
             a held repository read as a request that would not start. */}

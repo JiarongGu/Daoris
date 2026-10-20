@@ -67,6 +67,14 @@ describe("Quests' list", () => {
     expect(onChoose).toHaveBeenCalledWith(`ask:${PROPOSED.id}`);
   });
 
+  it('names the ask once where the quest already comes from it, as a quest an ask published does', () => {
+    const ask = { ...PROPOSED, id: 'a1a1a1a1a1a1', state: 'Published' as const, short: 'Streaming budget', quests: [OPEN.id] };
+    list({ asks: [{ ask }], quests: [{ quest: { ...OPEN, from: 'ask #a1a1a1' } }] });
+
+    const row = screen.getByText('Streaming budget').closest('li')!;
+    expect(within(row).getAllByText(/ask #a1a1a1/)).toHaveLength(1);
+  });
+
   it('keeps an ask whose one quest this list does not hold, so that no work is lost from it', () => {
     list({ asks: [{ ask: { ...PROPOSED, state: 'Published', short: 'Elsewhere work', quests: ['not-listed'] } }] });
 
