@@ -135,7 +135,9 @@ quest's chain is closed at its last quest by one close, its key and token writte
 is asked what became of the key and the close is never sent again blind: a key taken settles from its kept outcome, a key never taken is
 withdrawn there and the close judged again on what is there now, under a new key, and a close its door does not answer stays unknown with
 the person's `resend` and `stop` (FABRIC-CLOSE1u); a refusal is kept and said, the person's own done ends the graph as overridden, and a
-close found partial since is said once. Every other quest is read and written as before.
+close found partial since is said once. An open quest bound to a graph the choices no longer hold is said once a pass: closing through
+the graph kept for it, naming the nodes it runs that the choices' graph does not, or, its graph kept nowhere here, waiting (`NodeRuntime.Bindings`,
+FABRIC-CLOSE1k). Every other quest is read and written as before.
 `NodeGraphs` holds the graph they make: its bounds, entries, end and cleanup, the refusals a save adds to theirs, its digest, and
 its reading from JSON; `NodeGraphHomes` derives the graph that governs a unit from the driver's choices, a branch's from its landing
 rule and that rule's `cycle`, a quest's or an ask's from `workCycles`, a repository's own replacing its workspace's (FABRIC-GRAPH1),

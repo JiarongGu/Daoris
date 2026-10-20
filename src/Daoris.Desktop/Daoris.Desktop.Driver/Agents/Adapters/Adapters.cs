@@ -1439,6 +1439,7 @@ internal static class Spawning
         };
         foreach (var argument in arguments) info.ArgumentList.Add(argument);
 
+        Unrole(info.Environment);
         info.Environment["DAORIS_REPOSITORY"] = repository;
         info.Environment["DAORIS_SERVICE_URL"] = serviceUrl;
         // TOOLS5 (D121 §2.4): every session, chat, intake and helper finds the tools the person chose first on its
@@ -1447,6 +1448,28 @@ internal static class Spawning
         Tools.Hand(info);
 
         return info;
+    }
+
+    /// <summary>
+    /// The variables that say which work a start serves, each set by the start itself for its role (ENVLEAK1): a quest's, an
+    /// ask's, a brainstorm's, its own record's, and the repository and service it is the agent for.
+    /// </summary>
+    internal static readonly IReadOnlyList<string> Roles =
+    [
+        "DAORIS_QUEST_ID", "DAORIS_QUEST_TITLE", "DAORIS_QUEST_BODY", "DAORIS_QUEST_ASKER", "DAORIS_QUEST_ATTACHMENTS",
+        "DAORIS_TARGET", IntakeRoom.AskVariable, IntakeRoom.SessionVariable,
+        BrainstormVariables.Id, BrainstormVariables.Turn, BrainstormVariables.Answer, BrainstormVariables.Room,
+        "DAORIS_REPOSITORY", "DAORIS_SERVICE_URL",
+    ];
+
+    /// <summary>
+    /// A start begins from the driver's own environment, and drops every role variable it inherits (ENVLEAK1): a driver run
+    /// from inside a session Daoris drives — a test, a rehearsal — carries that session's quest, target and record, and a chat
+    /// that inherited them would serve a quest it was never given, absent being the rule. Its own role is set after.
+    /// </summary>
+    internal static void Unrole(IDictionary<string, string?> environment)
+    {
+        foreach (var name in Roles) environment.Remove(name);
     }
 }
 

@@ -337,6 +337,29 @@ public sealed class AdapterTests
     }
 
     /// <summary>
+    /// ENVLEAK1: a driver run inside a session Daoris drives inherits that session's quest, target and record, and a start
+    /// drops every one before it sets its own role, so the chat tests above hold in any environment. What is no role stays.
+    /// </summary>
+    [Fact]
+    public void A_start_drops_the_roles_it_inherits_and_keeps_the_rest()
+    {
+        var inherited = new Dictionary<string, string?>(StringComparer.Ordinal)
+        {
+            ["DAORIS_HOME"] = "D:/home",
+            ["PATH"] = "D:/bin",
+        };
+        foreach (var name in Spawning.Roles) inherited[name] = "the driving session's";
+
+        Spawning.Unrole(inherited);
+
+        Assert.Equal(["DAORIS_HOME", "PATH"], inherited.Keys.Order(StringComparer.Ordinal));
+        foreach (var name in new[] { "DAORIS_QUEST_ID", "DAORIS_TARGET", IntakeRoom.SessionVariable, IntakeRoom.AskVariable })
+        {
+            Assert.Contains(name, Spawning.Roles);
+        }
+    }
+
+    /// <summary>
     /// A driven session speaks the harness's structured output too (CONV3), and keeps its composed
     /// target as the one prompt — checked against the binary (docs/2026-09-25-stream-json-evidence.md).
     /// </summary>
