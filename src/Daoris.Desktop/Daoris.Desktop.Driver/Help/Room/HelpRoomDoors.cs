@@ -193,10 +193,12 @@ internal sealed class HelpRoomDoors : IHelpRoomSection
             Setup + "Sessions; a workspace's, " + Ws + "Setup → Defaults → Session language",
             "`daoris driver language <repository> en|zh|--clear` (`--workspace <name>` for a whole workspace)"),
         // UX6e2: an agent's accounts, ways in and model are on its page in the Agents place since UX6e (D150 §5.2). ACCT1: a
-        // sign-in reaches the account named, never a new folder; a new account joins the lists named at its end.
+        // sign-in reaches the account named, never a new folder; a new account joins the lists named at its end. CODEXLOGIN1:
+        // Codex's device code, in place of its browser, by `--device-code`.
         ("sign an agent in, or add an account", Agent + "Accounts",
             "`daoris agent login <agent> --profile <account>` (an account that is here, never a new one), "
-            + "`daoris agent login <agent> --new [--name <name>] [--join <workspace>] [--join-machine]`"),
+            + "`daoris agent login <agent> --new [--name <name>] [--join <workspace>] [--join-machine]`, "
+            + "either with `--device-code` for Codex's device code in place of its browser"),
         // ACCT2: an account's name is the person's, its id the folder's; ACCT1: an account in no list is put in one. UX7b
         // builds the screen's halves.
         ("name an account: its id stays, so every list, default and record keeps it", "(no screen yet)",
