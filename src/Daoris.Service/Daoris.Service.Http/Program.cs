@@ -1116,6 +1116,26 @@ if (mode == ServiceMode.Local)
         };
     });
 
+    // An entry's acknowledgment of messages by their ids (COWORK1d, D188 point 6; the message-urgency design §6): a part's claim, one
+    // part's only, its letting go, a start's packet, the write and the door's word. Each hand that moved the mark by moment writes these
+    // instead, and the mark moves for display. An unknown state is the caller's mistake; an unknown ask is not found.
+    app.MapPost("/api/asks/{id}/channel/ack", async (
+        ComposedService s, string id, ChannelAckRequest body, CancellationToken ct) =>
+    {
+        if (!ChannelAcks.Known(body.State) || string.IsNullOrWhiteSpace(body.Entry))
+        {
+            return Results.BadRequest(new ErrorResponse(
+                "an acknowledgment names its entry and a state: taking, released, sent, taken, read or partly", "bad-state"));
+        }
+
+        var changed = await s.Channel.AcknowledgeAsync(
+            id, body.Entry.Trim(), string.IsNullOrWhiteSpace(body.Session) ? null : body.Session.Trim(), body.State!,
+            [.. (body.Messages ?? []).OfType<string>()], DateTimeOffset.UtcNow, ct);
+        return changed is null
+            ? Results.NotFound(new ErrorResponse($"No ask `#{id.TrimStart('#')}`.", ChannelDesk.Spell(ChannelRefusal.NotFound)))
+            : Results.Ok(new ChannelAckResponse(changed));
+    });
+
     // An entry's read mark, moved: the person's, or a part's that a driver handed the channel to (SESSONE2b). Answers the channel as it then reads.
     app.MapPost("/api/asks/{id}/channel/read", async (
         ComposedService s, string id, ChannelReadRequest body, CancellationToken ct) =>
@@ -2512,18 +2532,23 @@ static async Task<IResult> DeletedWithChannelAsync(ComposedService s, string id,
 }
 
 // One message or line of an ask's channel as the page and the driver read it (SESSONE2a): a message's poster is named by its session,
-// repository and agent, and the person's by `person`; Daoris's lines are coded and carry no sentence.
-static ChannelItemResponse ToChannelItem(IChannelItem item) => item switch
+// repository and agent, and the person's by `person`; Daoris's lines are coded and carry no sentence. COWORK1d: its level, and the
+// reader's acknowledgment of it or, for the person, what it reached in each repository it addresses.
+static ChannelItemResponse ToChannelItem(IChannelItem item, ChannelRead? read = null) => item switch
 {
     ChannelMessage m => new ChannelItemResponse(
         "message", m.At, Id: m.Id, Person: m.ByPerson, Session: m.Session, Repository: m.Repository, Agent: m.Agent, Entry: m.Entry,
-        To: m.To, Re: m.Re, Question: m.Question, Open: m.Open, Text: m.Text, Origin: m.Origin, Urgent: m.Urgent),
+        To: m.To, Re: m.Re, Question: m.Question, Open: m.Open, Text: m.Text, Origin: m.Origin, Urgent: m.Urgent,
+        Ack: read?.Acknowledged.GetValueOrDefault(m.Id)?.State, AckSession: read?.Acknowledged.GetValueOrDefault(m.Id)?.Session,
+        Receipts: read?.Receipts.GetValueOrDefault(m.Id) is { } receipts
+            ? [.. receipts.Select(r => new ChannelReceiptResponse(r.Repository, r.State))]
+            : null),
     ChannelLine l => new ChannelItemResponse("line", l.At, From: l.From, To: l.To, Code: l.Code, Quest: l.Quest, Name: l.Name),
     _ => throw new InvalidOperationException("an item of the channel is a message or a line"),
 };
 
 static ChannelResponse ToChannel(string ask, string entry, ChannelRead read) =>
-    new(ask.TrimStart('#'), entry, [.. read.Items.Select(ToChannelItem)], read.Unread, read.Mark);
+    new(ask.TrimStart('#'), entry, [.. read.Items.Select(item => ToChannelItem(item, read))], read.Unread, read.Mark);
 
 static AskResponse ToAsk(Ask a, QuestFiles? files, bool machineLocal)
 {

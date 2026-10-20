@@ -200,6 +200,8 @@ public static class PersonDoors
         new("POST", "/api/sessions/{id}/help-mode", DoorClass.Driver, "the mode Ask Daoris goes on under"),
         // AUTONOMY1b2: the driver spawns it, so it is the half that knows the setup a resumed driven record now runs under.
         new("POST", "/api/sessions/{id}/access", DoorClass.Driver, "the access setup a resumed session goes on under"),
+        // COWORK1d: an entry's acknowledgment of a channel message, written by the driver that hands it to a part of the entry.
+        new("POST", "/api/asks/{id}/channel/ack", DoorClass.Driver, "an entry's acknowledgment of messages on an ask's channel"),
         new("POST", "/api/sync", DoorClass.Driver, "a sync pass"),
         new("DELETE", "/api/registry/retired/{repository}", DoorClass.Driver, "a retire carried to a workspace's deployment"),
         // Its root and workspace decide where sessions run and which circle sees a quest (WSP1, WSP2), so no agent sets it.

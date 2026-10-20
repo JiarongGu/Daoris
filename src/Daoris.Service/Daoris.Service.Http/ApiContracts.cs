@@ -284,12 +284,20 @@ public sealed record ChannelReadRequest(string? Entry = null, DateTimeOffset? Th
 // text, origin) or `line` (Daoris's, read from the ask's quests and never stored: code, quest, name, from, to). A message's `to` absent
 // is everyone; `person` true is the person's own words, and a session's are that agent's claim. `code` is `published`, `taken`, `done`,
 // `declined` or `awaiting`, which the page words in the reader's language. COWORK1d: a message's `urgent`, true or false, absent only on
-// one from before, which keeps its old reach.
+// one from before, which keeps its old reach; read for an entry, its acknowledgment `ack` (`taking`, `sent`, `taken`, `read`, `partly`)
+// with the part's `ackSession`; read for the person, `receipts`, one per repository it addresses.
 public sealed record ChannelItemResponse(
     string Kind, DateTimeOffset At, string? Id = null, bool? Person = null, string? Session = null, string? Repository = null,
     string? Agent = null, string? Entry = null, string? From = null, string? To = null, string? Re = null, bool? Question = null,
     bool? Open = null, string? Text = null, string? Origin = null, string? Code = null, string? Quest = null, string? Name = null,
-    bool? Urgent = null);
+    bool? Urgent = null, string? Ack = null, string? AckSession = null, IReadOnlyList<ChannelReceiptResponse>? Receipts = null);
+// What a message reached in one repository it addresses (COWORK1d): `waiting`, `held`, `sent`, `taken`, `read`, `partly`, `answered`
+// or `not-reached`, never more than was observed.
+public sealed record ChannelReceiptResponse(string Repository, string State);
+// An entry's acknowledgment of messages by id (COWORK1d): `taking` claims each for `session`'s part, one part's only; `released` lets a
+// claim go; `sent`, `taken`, `read` and `partly` raise what the entry holds, never lowering it. Answers the ids it changed.
+public sealed record ChannelAckRequest(string? Entry, string? Session, string? State, IReadOnlyList<string>? Messages);
+public sealed record ChannelAckResponse(IReadOnlyList<string> Acknowledged);
 // The channel as one entry reads it: every item (or those after `since`), `unread` against the entry's `mark` (absent for none).
 public sealed record ChannelResponse(string Ask, string Entry, IReadOnlyList<ChannelItemResponse> Items, int Unread, DateTimeOffset? Mark);
 public sealed record ChannelPostResponse(ChannelItemResponse Message);
@@ -728,6 +736,8 @@ public sealed record ChangesResponse(string Since, IReadOnlyList<string> Moved);
 [JsonSerializable(typeof(ChannelReadRequest))]
 [JsonSerializable(typeof(ChannelResponse))]
 [JsonSerializable(typeof(ChannelPostResponse))]
+[JsonSerializable(typeof(ChannelAckRequest))]
+[JsonSerializable(typeof(ChannelAckResponse))]
 [JsonSerializable(typeof(AddedRequest))]
 [JsonSerializable(typeof(AddedResponse))]
 [JsonSerializable(typeof(QuestActionResponse))]

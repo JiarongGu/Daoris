@@ -17,6 +17,7 @@ public sealed class McpChannelToolTests : IAsyncLifetime
     private AskDesk _asks = null!;
     private SessionLedger _ledger = null!;
     private ChannelDesk _channel = null!;
+    private QuestExchange _exchange = null!;
     private static readonly DateTimeOffset Now = DateTimeOffset.UtcNow.AddMinutes(-30);
 
     public async Task InitializeAsync()
@@ -41,8 +42,8 @@ public sealed class McpChannelToolTests : IAsyncLifetime
         await service.ImportAsync(Path.Combine(_root, "family"), Now);
         foreach (var row in await service.RegistryAsync()) await service.RegisterAsync(row with { Workspace = "work" }, Now);
         var files = new QuestFiles(Path.Combine(_root, "home"));
-        var exchange = new QuestExchange(service, _quests, files: files);
-        _asks = new AskDesk(service, askStore, exchange, files);
+        _exchange = new QuestExchange(service, _quests, files: files);
+        _asks = new AskDesk(service, askStore, _exchange, files);
         _ledger = new SessionLedger(_quests, sessions, service, askStore);
         _channel = new ChannelDesk(await ChannelStore.OpenAsync(_connection), _asks, askStore, _ledger, _quests, new StoreEntryFacts(_quests, sessions));
     }
@@ -103,6 +104,25 @@ public sealed class McpChannelToolTests : IAsyncLifetime
         Assert.Contains("ordinary", ordinary);
         Assert.All(answers[..ChannelBounds.UrgentPerPart], answer => Assert.Contains("urgent", answer));
         Assert.Contains($"kept as ordinary: a part posts at most {ChannelBounds.UrgentPerPart} urgent messages", answers[^1]);
+    }
+
+    /// <summary>
+    /// 🔴 COWORK1d (the message-urgency design §7, trap 15): <c>channel_read</c> marks an urgent message so, and answers a poster what each
+    /// of its own messages reached, per repository it addresses.
+    /// </summary>
+    [Fact]
+    public async Task A_read_marks_urgent_messages_and_answers_the_poster_what_its_messages_reached()
+    {
+        var (_, session) = await RunningAsync();
+        await _exchange.PublishAsync(new QuestAsk("reports", "checker", "Check the bridge", "Please.") { PublishedBy = session.Id }, Now);
+        var tools = As(_channel, session.Id);
+        await tools.PostAsync("for the checker", to: "checker", urgent: true);
+
+        var read = await tools.ReadAsync();
+
+        Assert.Contains("urgent message from reports", read);
+        Assert.Contains("What your messages reached", read);
+        Assert.Contains("checker: waiting", read);
     }
 
     /// <summary>🔴 Each refusal is said in a sentence the agent reads, and nothing is kept.</summary>

@@ -126,7 +126,83 @@ public sealed record ChannelRead(
     /// <summary>Both kinds in time order, a line before a message of the same moment.</summary>
     public IReadOnlyList<IChannelItem> Items =>
         [.. Lines.Cast<IChannelItem>().Concat(Messages).OrderBy(item => item.At)];
+
+    /// <summary>
+    /// The reading entry's acknowledgment of each message, by its id (COWORK1d, the design §6): what a driver reads to hand a part only
+    /// what its entry has not taken or read. Empty for the person's read and for an ask held elsewhere.
+    /// </summary>
+    public IReadOnlyDictionary<string, ChannelAck> Acknowledged { get; init; } = new Dictionary<string, ChannelAck>();
+
+    /// <summary>
+    /// For the person's read (COWORK1d, the design §8.4): each message's receipt for each repository it addresses, by the message's id.
+    /// Empty for an entry's read and for an ask held elsewhere.
+    /// </summary>
+    public IReadOnlyDictionary<string, IReadOnlyList<ChannelReceipt>> Receipts { get; init; } =
+        new Dictionary<string, IReadOnlyList<ChannelReceipt>>();
 }
+
+/// <summary>
+/// What an entry acknowledged of a channel message (COWORK1d, D188 point 6; the message-urgency design §6), one row per ask, entry and
+/// message, ranked so none moves back: <see cref="Partly"/>, <see cref="Taking"/>, <see cref="Sent"/>, <see cref="Read"/>,
+/// <see cref="Taken"/>.
+/// </summary>
+public static class ChannelAcks
+{
+    /// <summary>A part of the entry claimed it and holds it for its door: one part takes a message.</summary>
+    public const string Taking = "taking";
+
+    /// <summary>Written to the part's harness: the write returned.</summary>
+    public const string Sent = "sent";
+
+    /// <summary>The door confirmed the part took it, or a start's packet carried it whole.</summary>
+    public const string Taken = "taken";
+
+    /// <summary>The agent's own <c>channel_read</c> returned it whole.</summary>
+    public const string Read = "read";
+
+    /// <summary>A start's packet carried it cut, or counted it among the older ones left out: a new part is handed it again.</summary>
+    public const string Partly = "partly";
+
+    /// <summary>A part let its claim go unsent (its run ended with nothing else to say): never kept, the claim's row leaves.</summary>
+    public const string Released = "released";
+
+    /// <summary>Whether a door names a state this build keeps or lets go.</summary>
+    public static bool Known(string? state) => state is Taking or Sent or Taken or Read or Partly or Released;
+
+    /// <summary>Whether the entry has the message: sent, taken or read. A claim and a partial hand are not yet.</summary>
+    public static bool Settles(string? state) => state is Sent or Taken or Read;
+}
+
+/// <summary>One entry's acknowledgment of one message: its state, the part's session where one wrote it, and when.</summary>
+public sealed record ChannelAck(string State, string? Session, DateTimeOffset At);
+
+/// <summary>
+/// What a message reached in one repository's line of work, as the person reads it (COWORK1d, the design §7, §8.4): never more than
+/// was observed. Answered is a reply from that repository, never obeyed.
+/// </summary>
+public static class ChannelReceipts
+{
+    public const string Waiting = "waiting";
+
+    /// <summary>A running part claimed it and holds it for its door.</summary>
+    public const string Held = "held";
+
+    public const string Sent = "sent";
+
+    public const string Taken = "taken";
+
+    public const string Read = "read";
+
+    public const string Partly = "partly";
+
+    public const string Answered = "answered";
+
+    /// <summary>Its ask has no quest open and no part of the entry runs here: no part will come (the design §4.2).</summary>
+    public const string NotReached = "not-reached";
+}
+
+/// <summary>A message's receipt in one repository it addresses.</summary>
+public sealed record ChannelReceipt(string Repository, string State);
 
 /// <summary>An ask the mirrored messages name and this machine does not hold (SESSONE2h): all this machine knows of it.</summary>
 /// <param name="Id">The ask's id.</param>
@@ -140,8 +216,8 @@ public sealed record ElsewhereAsk(string Id, string Workspace, IReadOnlyList<str
 /// <summary>What a post did.</summary>
 public sealed record ChannelOutcome(ChannelRefusal Refusal, ChannelMessage? Message);
 
-/// <summary>What a session's read did: its refusal, or the ask it read and what it read.</summary>
-public sealed record ChannelReadOutcome(ChannelRefusal Refusal, Ask? Ask, ChannelRead? Read);
+/// <summary>What a session's read did: its refusal, or the ask it read and what it read, and the entry it read as (COWORK1d).</summary>
+public sealed record ChannelReadOutcome(ChannelRefusal Refusal, Ask? Ask, ChannelRead? Read, string? Entry = null);
 
 /// <summary>
 /// The messages of every ask's channel, and each entry's read mark (SESSONE2a; design §2.5). Machine-local service records beside the
@@ -229,8 +305,152 @@ public sealed class ChannelStore
         // COWORK1d (the message-urgency design §9): a message's level, said on every message kept from now; a message from before says
         // none, which keeps its old reach and is never read as ordinary.
         await SchemaColumns.EnsureAsync(_db, "channel", "urgent", "urgent INTEGER NULL", ct).ConfigureAwait(false);
+
+        // COWORK1d (the design §6): each entry's acknowledgment of each message, by its id, which a mark by moment could not keep. A
+        // channel from before has marks and no rows: every message at or before an entry's mark counts as taken, written once as the
+        // table is made, so a message mirrored later with an older moment is still the entry's to be handed.
+        await using var probe = _db.Command();
+        probe.CommandText = "SELECT COUNT(*) FROM sqlite_master WHERE type = 'table' AND name = 'channel_acks'";
+        var had = Convert.ToInt32(await probe.ExecuteScalarAsync(ct).ConfigureAwait(false)) > 0;
+        await using var acks = _db.Command();
+        acks.CommandText = """
+            CREATE TABLE IF NOT EXISTS channel_acks (
+              ask     TEXT NOT NULL,
+              entry   TEXT NOT NULL,
+              message TEXT NOT NULL,
+              state   TEXT NOT NULL,
+              session TEXT NULL,
+              at      TEXT NOT NULL,
+              PRIMARY KEY (ask, entry, message)
+            );
+            """;
+        await acks.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
+        if (!had) await AcknowledgedByMarksAsync(ct).ConfigureAwait(false);
         return this;
     }
+
+    /// <summary>A channel from before the acknowledgments: each message at or before an entry's mark, taken. Called inside the gate.</summary>
+    private async Task AcknowledgedByMarksAsync(CancellationToken ct)
+    {
+        var marks = new List<(string Ask, string Entry, DateTimeOffset Through)>();
+        await using (var read = _db.Command())
+        {
+            read.CommandText = "SELECT ask, entry, read_at FROM channel_marks WHERE entry <> $person";
+            read.Parameters.AddWithValue("$person", ChannelDesk.PersonEntry);
+            await using var reader = await read.ExecuteReaderAsync(ct).ConfigureAwait(false);
+            while (await reader.ReadAsync(ct).ConfigureAwait(false))
+            {
+                if (Moments.Read(reader.GetString(2)) is { } through) marks.Add((reader.GetString(0), reader.GetString(1), through));
+            }
+        }
+
+        foreach (var (ask, entry, through) in marks)
+        {
+            var taken = new List<string>();
+            await using (var messages = _db.Command())
+            {
+                messages.CommandText = "SELECT id, at FROM channel WHERE ask = $ask";
+                messages.Parameters.AddWithValue("$ask", ask);
+                await using var reader = await messages.ExecuteReaderAsync(ct).ConfigureAwait(false);
+                while (await reader.ReadAsync(ct).ConfigureAwait(false))
+                {
+                    if (Moments.Read(reader.GetString(1)) is { } at && at <= through) taken.Add(reader.GetString(0));
+                }
+            }
+
+            foreach (var id in taken)
+            {
+                await using var write = _db.Command();
+                write.CommandText = """
+                    INSERT OR IGNORE INTO channel_acks (ask, entry, message, state, session, at) VALUES ($ask, $entry, $message, $state, NULL, $at)
+                    """;
+                write.Parameters.AddWithValue("$ask", ask);
+                write.Parameters.AddWithValue("$entry", entry);
+                write.Parameters.AddWithValue("$message", id);
+                write.Parameters.AddWithValue("$state", ChannelAcks.Taken);
+                write.Parameters.AddWithValue("$at", Moments.Write(through));
+                await write.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
+            }
+        }
+    }
+
+    /// <summary>An acknowledgment's rank, in SQL: a state never moves back to a lower one (<see cref="ChannelAcks"/>).</summary>
+    private static string Rank(string state) =>
+        $"CASE {state} WHEN 'partly' THEN 0 WHEN 'taking' THEN 1 WHEN 'sent' THEN 2 WHEN 'read' THEN 3 WHEN 'taken' THEN 4 ELSE -1 END";
+
+    /// <summary>
+    /// One part's claim on a message for its entry (COWORK1d, trap 21), in one statement: it succeeds only where the entry holds no
+    /// acknowledgment of it, one a start's packet left <c>partly</c> for another part, or a claim <paramref name="stale"/> names, whose
+    /// holder no longer runs. So two parts of one entry never both take a message.
+    /// </summary>
+    /// <returns>Whether this part claimed it.</returns>
+    public Task<bool> ClaimAsync(
+        string ask, string entry, string message, string session, string? stale, DateTimeOffset at, CancellationToken ct = default) =>
+        _db.RunAsync<bool>(async () =>
+    {
+        await using var command = _db.Command();
+        command.CommandText = """
+            INSERT INTO channel_acks (ask, entry, message, state, session, at) VALUES ($ask, $entry, $message, 'taking', $session, $at)
+            ON CONFLICT (ask, entry, message) DO UPDATE SET state = 'taking', session = $session, at = $at
+            WHERE (channel_acks.state = 'partly' AND COALESCE(channel_acks.session, '') <> $session)
+               OR (channel_acks.state = 'taking' AND $stale IS NOT NULL AND channel_acks.session = $stale)
+            """;
+        command.Parameters.AddWithValue("$ask", ask);
+        command.Parameters.AddWithValue("$entry", entry);
+        command.Parameters.AddWithValue("$message", message);
+        command.Parameters.AddWithValue("$session", session);
+        command.Parameters.AddWithValue("$stale", (object?)stale ?? DBNull.Value);
+        command.Parameters.AddWithValue("$at", Moments.Write(at));
+        return await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false) > 0;
+    }, ct);
+
+    /// <summary>
+    /// An entry's acknowledgment of a message raised to <paramref name="state"/>, never lowered (COWORK1d, the design §6): a late
+    /// <c>sent</c> leaves <c>taken</c> as it was. <see cref="ChannelAcks.Released"/> lets a part's claim go instead.
+    /// </summary>
+    /// <returns>Whether the row changed.</returns>
+    public Task<bool> AcknowledgeAsync(
+        string ask, string entry, string message, string state, string? session, DateTimeOffset at, CancellationToken ct = default) =>
+        _db.RunAsync<bool>(async () =>
+    {
+        await using var command = _db.Command();
+        command.CommandText = state == ChannelAcks.Released
+            ? """
+              DELETE FROM channel_acks
+              WHERE ask = $ask AND entry = $entry AND message = $message AND state = 'taking' AND session = $session
+              """
+            : $"""
+              INSERT INTO channel_acks (ask, entry, message, state, session, at) VALUES ($ask, $entry, $message, $state, $session, $at)
+              ON CONFLICT (ask, entry, message) DO UPDATE SET
+                state = excluded.state, session = COALESCE(excluded.session, channel_acks.session), at = excluded.at
+              WHERE {Rank("excluded.state")} > {Rank("channel_acks.state")}
+              """;
+        command.Parameters.AddWithValue("$ask", ask);
+        command.Parameters.AddWithValue("$entry", entry);
+        command.Parameters.AddWithValue("$message", message);
+        command.Parameters.AddWithValue("$state", state);
+        command.Parameters.AddWithValue("$session", (object?)session ?? DBNull.Value);
+        command.Parameters.AddWithValue("$at", Moments.Write(at));
+        return await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false) > 0;
+    }, ct);
+
+    /// <summary>Every entry's acknowledgments on an ask's channel, by entry and message id.</summary>
+    public Task<IReadOnlyList<(string Entry, string Message, ChannelAck Ack)>> AcksOfAsync(string ask, CancellationToken ct = default) =>
+        _db.RunAsync<IReadOnlyList<(string Entry, string Message, ChannelAck Ack)>>(async () =>
+    {
+        await using var command = _db.Command();
+        command.CommandText = "SELECT entry, message, state, session, at FROM channel_acks WHERE ask = $ask";
+        command.Parameters.AddWithValue("$ask", ask);
+        var read = new List<(string, string, ChannelAck)>();
+        await using var reader = await command.ExecuteReaderAsync(ct).ConfigureAwait(false);
+        while (await reader.ReadAsync(ct).ConfigureAwait(false))
+        {
+            read.Add((reader.GetString(0), reader.GetString(1), new ChannelAck(
+                reader.GetString(2), reader.IsDBNull(3) ? null : reader.GetString(3), Moments.ReadRequired(reader.GetString(4)))));
+        }
+
+        return read;
+    }, ct);
 
     /// <summary>
     /// Keep a message, unless its session has posted <paramref name="perPart"/> already: one statement, so two posts at once cannot both
@@ -468,7 +688,7 @@ public sealed class ChannelStore
     public Task ForgetAsync(string ask, CancellationToken ct = default) => _db.RunAsync(async () =>
     {
         await using var command = _db.Command();
-        command.CommandText = "DELETE FROM channel WHERE ask = $ask; DELETE FROM channel_marks WHERE ask = $ask;";
+        command.CommandText = "DELETE FROM channel WHERE ask = $ask; DELETE FROM channel_marks WHERE ask = $ask; DELETE FROM channel_acks WHERE ask = $ask;";
         command.Parameters.AddWithValue("$ask", ask);
         await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
     }, ct);
@@ -593,14 +813,147 @@ public sealed class ChannelDesk(
     /// A session's read: what is new since its entry last read (or since <paramref name="since"/>, whatever the mark says), and the mark
     /// moves. The same speaker's rules as a post: a session on an ask, and no helper or reviewer.
     /// </summary>
-    public async Task<ChannelReadOutcome> ReadAsSessionAsync(string? sessionId, DateTimeOffset? since, CancellationToken ct = default)
+    /// <remarks>
+    /// 🔴 COWORK1d (the message-urgency design §6, traps 9 and 22): read from the last read, it also returns each message for its entry
+    /// that the entry has neither taken nor read, whatever its moment, so one mirrored late is still read. Each message for its entry
+    /// that it returns, whole, is acknowledged <see cref="ChannelAcks.Read"/> before the answer reaches the agent: the agent's own call,
+    /// which it makes again with <c>since</c> if the answer is lost. The mark then moves for display (<see cref="MoveEntryMarkAsync"/>).
+    /// </remarks>
+    public async Task<ChannelReadOutcome> ReadAsSessionAsync(
+        string? sessionId, DateTimeOffset? since, CancellationToken ct = default, DateTimeOffset? now = null)
     {
         var (refusal, ask, session) = await SpeakerAsync(sessionId, ct).ConfigureAwait(false);
         if (refusal != ChannelRefusal.None) return new(refusal, null, null);
 
         var entry = (await ledger.WithEntryAsync(session!, ct).ConfigureAwait(false)).Entry!;
-        var from = since ?? await store.MarkAsync(ask!.Id, entry, ct).ConfigureAwait(false);
-        return new(ChannelRefusal.None, ask, await ReadOfAsync(ask!, entry, from, moveMark: true, ct).ConfigureAwait(false));
+        var mark = await store.MarkAsync(ask!.Id, entry, ct).ConfigureAwait(false);
+        var from = since ?? mark;
+        var messages = await store.OfAsync(ask.Id, ct).ConfigureAwait(false);
+        var lines = await LinesAsync(ask, ct).ConfigureAwait(false);
+        var acknowledged = await AcknowledgedAsync(ask.Id, entry, ct).ConfigureAwait(false);
+
+        var unread = messages.Count(m => mark is null || m.At > mark) + lines.Count(l => mark is null || l.At > mark);
+        List<ChannelMessage> returned = [.. messages.Where(m => from is null || m.At > from
+            || (since is null && IsFor(m, entry) && !ChannelAcks.Settles(acknowledged.GetValueOrDefault(m.Id)?.State)))];
+        foreach (var message in returned.Where(m => IsFor(m, entry)))
+        {
+            await store.AcknowledgeAsync(ask.Id, entry, message.Id, ChannelAcks.Read, session!.Id, now ?? DateTimeOffset.UtcNow, ct)
+                .ConfigureAwait(false);
+        }
+
+        await MoveEntryMarkAsync(ask, entry, messages, lines, ct).ConfigureAwait(false);
+        var read = new ChannelRead(returned, [.. lines.Where(l => from is null || l.At > from)], unread, mark)
+        {
+            Acknowledged = await AcknowledgedAsync(ask.Id, entry, ct).ConfigureAwait(false),
+        };
+        return new(ChannelRefusal.None, ask, read, entry);
+    }
+
+    /// <summary>
+    /// An entry's acknowledgment of messages on an ask's channel (COWORK1d, D188 point 6; the message-urgency design §6), each by its
+    /// id: a part's claim (<see cref="ChannelAcks.Taking"/>, one part's only), its letting go, a start's packet, the write and the
+    /// door's word. The entry's mark then moves for display, to before the oldest message for it not yet sent, taken or read.
+    /// </summary>
+    /// <returns>The messages whose acknowledgment changed; null where this machine holds no such ask.</returns>
+    public async Task<IReadOnlyList<string>?> AcknowledgeAsync(
+        string askId, string entry, string? session, string state, IReadOnlyList<string> messages, DateTimeOffset now,
+        CancellationToken ct = default)
+    {
+        if (await asks.FindAsync(askId, ct).ConfigureAwait(false) is not { } ask) return null;
+        if (!ChannelAcks.Known(state) || string.IsNullOrWhiteSpace(entry) || entry == PersonEntry) return [];
+
+        var held = await AcknowledgedAsync(ask.Id, entry, ct).ConfigureAwait(false);
+        var changed = new List<string>();
+        foreach (var id in messages.Where(id => !string.IsNullOrWhiteSpace(id)).Distinct(StringComparer.Ordinal))
+        {
+            bool moved;
+            if (state == ChannelAcks.Taking)
+            {
+                if (string.IsNullOrWhiteSpace(session)) continue;
+                // A claim left by a part that no longer runs (a restart cut it off) is the entry's next part's to take.
+                var stale = held.GetValueOrDefault(id) is { State: ChannelAcks.Taking, Session: { } holder }
+                            && holder != session && await StaleAsync(holder, ct).ConfigureAwait(false)
+                    ? holder
+                    : null;
+                moved = await store.ClaimAsync(ask.Id, entry, id, session, stale, now, ct).ConfigureAwait(false);
+            }
+            else
+            {
+                moved = await store.AcknowledgeAsync(ask.Id, entry, id, state, session, now, ct).ConfigureAwait(false);
+            }
+
+            if (moved) changed.Add(id);
+        }
+
+        if (changed.Count > 0)
+        {
+            await MoveEntryMarkAsync(
+                ask, entry, await store.OfAsync(ask.Id, ct).ConfigureAwait(false), await LinesAsync(ask, ct).ConfigureAwait(false), ct)
+                .ConfigureAwait(false);
+        }
+
+        return changed;
+    }
+
+    /// <summary>
+    /// The messages waiting for a session's entry (COWORK1d, the design §4.2): for it, and neither sent, taken nor read by it, with
+    /// the ask they are on. What the connector's answers name; empty for a session on no ask, a helper and a reviewer.
+    /// </summary>
+    public async Task<(Ask? Ask, IReadOnlyList<ChannelMessage> Waiting)> WaitingForAsync(string? sessionId, CancellationToken ct = default)
+    {
+        var (refusal, ask, session) = await SpeakerAsync(sessionId, ct).ConfigureAwait(false);
+        if (refusal != ChannelRefusal.None) return (null, []);
+
+        var entry = (await ledger.WithEntryAsync(session!, ct).ConfigureAwait(false)).Entry!;
+        var acknowledged = await AcknowledgedAsync(ask!.Id, entry, ct).ConfigureAwait(false);
+        var messages = await store.OfAsync(ask.Id, ct).ConfigureAwait(false);
+        return (ask, [.. messages.Where(m => IsFor(m, entry) && !ChannelAcks.Settles(acknowledged.GetValueOrDefault(m.Id)?.State))]);
+    }
+
+    /// <summary>
+    /// What each message reached, for each repository it addresses (COWORK1d, the design §7, §8.4), by message id: a reply from that
+    /// repository answered it; else its entry's acknowledgment; else it waits, or is not reached once the ask has no quest open and no
+    /// part of that entry is here (§4.2's expiry, judged as it is read and never stored, so a quest opened again makes it wait again).
+    /// </summary>
+    public async Task<IReadOnlyDictionary<string, IReadOnlyList<ChannelReceipt>>> ReceiptsAsync(
+        Ask ask, IReadOnlyList<ChannelMessage> messages, CancellationToken ct = default)
+    {
+        var receipts = new Dictionary<string, IReadOnlyList<ChannelReceipt>>(StringComparer.Ordinal);
+        if (messages.Count == 0) return receipts;
+
+        var repositories = await RepositoriesAsync(ask, ct).ConfigureAwait(false);
+        var open = (await QuestsOfAsync(ask, ct).ConfigureAwait(false)).Any(q => q.Status is QuestStatus.Open or QuestStatus.Taken);
+        var here = open ? new HashSet<string>(StringComparer.OrdinalIgnoreCase) : await EntriesHereAsync(ask, ct).ConfigureAwait(false);
+        var acks = (await store.AcksOfAsync(ask.Id, ct).ConfigureAwait(false))
+            .ToDictionary(row => (row.Entry.ToLowerInvariant(), row.Message), row => row.Ack);
+
+        foreach (var message in messages)
+        {
+            IReadOnlyList<string> addressed = message.To is { } to
+                ? [to]
+                : [.. repositories.Where(r => !string.Equals(r, message.Repository, StringComparison.OrdinalIgnoreCase))];
+            receipts[message.Id] = [.. addressed.Select(repository =>
+            {
+                var entry = $"{SessionEntries.AskOrigin(ask.Id)}/{repository}";
+                if (messages.Any(m => m.Re == message.Id && string.Equals(m.Repository, repository, StringComparison.OrdinalIgnoreCase)))
+                {
+                    return new ChannelReceipt(repository, ChannelReceipts.Answered);
+                }
+
+                var state = acks.GetValueOrDefault((entry.ToLowerInvariant(), message.Id))?.State switch
+                {
+                    ChannelAcks.Taking => ChannelReceipts.Held,
+                    ChannelAcks.Sent => ChannelReceipts.Sent,
+                    ChannelAcks.Taken => ChannelReceipts.Taken,
+                    ChannelAcks.Read => ChannelReceipts.Read,
+                    ChannelAcks.Partly => ChannelReceipts.Partly,
+                    _ => open || here.Contains(entry) ? ChannelReceipts.Waiting : ChannelReceipts.NotReached,
+                };
+                return new ChannelReceipt(repository, state);
+            })];
+        }
+
+        return receipts;
     }
 
     /// <summary>Remove an ask's channel with the ask (D95).</summary>
@@ -616,8 +969,61 @@ public sealed class ChannelDesk(
         var unread = messages.Count(m => mark is null || m.At > mark) + lines.Count(l => mark is null || l.At > mark);
         if (moveMark && (messages.Count > 0 || lines.Count > 0)) await store.MoveMarkAsync(ask.Id, entry, newest, ct).ConfigureAwait(false);
 
-        return new ChannelRead(
+        var read = new ChannelRead(
             [.. messages.Where(m => from is null || m.At > from)], [.. lines.Where(l => from is null || l.At > from)], unread, mark);
+        // COWORK1d: the person reads what each message reached; an entry reads what it acknowledged, by message id.
+        return entry == PersonEntry
+            ? read with { Receipts = await ReceiptsAsync(ask, messages, ct).ConfigureAwait(false) }
+            : read with { Acknowledged = await AcknowledgedAsync(ask.Id, entry, ct).ConfigureAwait(false) };
+    }
+
+    /// <summary>An entry's acknowledgments on an ask's channel, by message id.</summary>
+    private async Task<IReadOnlyDictionary<string, ChannelAck>> AcknowledgedAsync(string ask, string entry, CancellationToken ct) =>
+        (await store.AcksOfAsync(ask, ct).ConfigureAwait(false))
+            .Where(row => string.Equals(row.Entry, entry, StringComparison.OrdinalIgnoreCase))
+            .ToDictionary(row => row.Message, row => row.Ack, StringComparer.Ordinal);
+
+    /// <summary>
+    /// The entry's mark, kept for display and for a driver from before (COWORK1d, the design §6): moved to the newest item before the
+    /// oldest message for the entry it has not yet had sent, taken or read, or to the newest item where none waits. Never back.
+    /// </summary>
+    private async Task MoveEntryMarkAsync(
+        Ask ask, string entry, IReadOnlyList<ChannelMessage> messages, IReadOnlyList<ChannelLine> lines, CancellationToken ct)
+    {
+        var acknowledged = await AcknowledgedAsync(ask.Id, entry, ct).ConfigureAwait(false);
+        var oldest = messages.Where(m => IsFor(m, entry) && !ChannelAcks.Settles(acknowledged.GetValueOrDefault(m.Id)?.State))
+            .OrderBy(m => m.At).FirstOrDefault();
+        var before = messages.Select(m => m.At).Concat(lines.Select(l => l.At)).Where(at => oldest is null || at < oldest.At).ToList();
+        if (before.Count > 0) await store.MoveMarkAsync(ask.Id, entry, before.Max(), ct).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Whether a message is for an entry (the driver's <c>ChannelEntry.IsFor</c>'s twin): addressed to its repository or to everyone,
+    /// and posted by no part of the entry itself.
+    /// </summary>
+    private static bool IsFor(ChannelMessage message, string entry)
+    {
+        var repository = entry.IndexOf('/') is > 0 and var slash ? entry[(slash + 1)..] : "";
+        return (message.To is null || string.Equals(message.To, repository, StringComparison.OrdinalIgnoreCase))
+               && !string.Equals(message.Entry, entry, StringComparison.Ordinal);
+    }
+
+    /// <summary>Whether a claim's holder no longer runs: its record ended or parked, its inbox gone with its run.</summary>
+    private async Task<bool> StaleAsync(string holder, CancellationToken ct) =>
+        await ledger.FindAsync(holder, ct).ConfigureAwait(false) is { } record
+        && record.State is not (SessionState.Queued or SessionState.Starting or SessionState.Working);
+
+    /// <summary>The entries on the ask with a part of this machine's still active: queued, starting, working or parked.</summary>
+    private async Task<HashSet<string>> EntriesHereAsync(Ask ask, CancellationToken ct)
+    {
+        var prefix = SessionEntries.AskOrigin(ask.Id) + "/";
+        var active = await ledger.ListAsync(includeClosed: false, ct: ct).ConfigureAwait(false);
+        return new HashSet<string>(
+            (await ledger.WithEntriesAsync(active.Where(s => s.Origin is null), ct).ConfigureAwait(false))
+                .Select(s => s.Entry)
+                .OfType<string>()
+                .Where(key => key.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)),
+            StringComparer.OrdinalIgnoreCase);
     }
 
     /// <summary>

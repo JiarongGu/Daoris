@@ -81,12 +81,52 @@ public sealed class ChannelTools(ChannelDesk? channel = null, IntakeScope? intak
         if (read.Refusal != ChannelRefusal.None) return Said(read.Refusal);
 
         var items = read.Read!.Items;
-        if (items.Count == 0) return $"Nothing new on ask `#{read.Ask!.Id}`'s channel.";
-
-        var text = new StringBuilder($"Ask `#{read.Ask!.Id}`'s channel, oldest first:\n");
+        var text = new StringBuilder(items.Count == 0
+            ? $"Nothing new on ask `#{read.Ask!.Id}`'s channel.\n"
+            : $"Ask `#{read.Ask!.Id}`'s channel, oldest first:\n");
         foreach (var item in items) text.AppendLine(item is ChannelMessage message ? Said(message) : Said((ChannelLine)item));
+        await ReachedAsync(read.Ask, read.Entry, text, ct).ConfigureAwait(false);
         return text.ToString().TrimEnd();
     }
+
+    /// <summary>
+    /// What each message the reading line of work posted reached, per repository it addresses (COWORK1d, the message-urgency design
+    /// §7): only what Daoris observed, and never that it was obeyed.
+    /// </summary>
+    private async Task ReachedAsync(Ask ask, string? entry, StringBuilder text, CancellationToken ct)
+    {
+        if (entry is null || await channel!.ReadAsync(ask.Id, ChannelDesk.PersonEntry, null, moveMark: false, ct).ConfigureAwait(false) is not { } all)
+        {
+            return;
+        }
+
+        var own = all.Messages.Where(m => string.Equals(m.Entry, entry, StringComparison.Ordinal) && all.Receipts.ContainsKey(m.Id)).ToList();
+        if (own.Count == 0) return;
+
+        text.AppendLine("What your messages reached, per repository addressed (answered is a reply from it, never that it obeyed):");
+        foreach (var message in own)
+        {
+            var receipts = all.Receipts[message.Id];
+            var reached = receipts.Count == 0
+                ? "addressed to no other repository"
+                : string.Join(", ", receipts.Select(r => $"{r.Repository}: {Receipt(r.State)}"));
+            text.AppendLine($"- `{message.Id}`{(message.Urgent == true ? " (urgent)" : "")}: {reached}");
+        }
+    }
+
+    /// <summary>A receipt in the words an agent reads.</summary>
+    private static string Receipt(string state) => state switch
+    {
+        ChannelReceipts.Waiting => "waiting",
+        ChannelReceipts.Held => "held by its session for its next point",
+        ChannelReceipts.Sent => "sent to its session",
+        ChannelReceipts.Taken => "taken by its session",
+        ChannelReceipts.Read => "read by its session",
+        ChannelReceipts.Partly => "partly handed to its session",
+        ChannelReceipts.Answered => "answered",
+        ChannelReceipts.NotReached => "not reached: the ask's work there ended first",
+        _ => state,
+    };
 
     /// <summary>One message as an agent reads it: who, when, to whom, what it answers, then the words as written.</summary>
     private static string Said(ChannelMessage message)
@@ -95,6 +135,8 @@ public sealed class ChannelTools(ChannelDesk? channel = null, IntakeScope? intak
             ? "the person"
             : $"{message.Repository} ({message.Agent}), another session's claim";
         var kind = message.Question ? (message.Open ? "question, open" : "question") : "message";
+        // COWORK1d: an urgent message says so; an ordinary one, and one from before, say nothing.
+        if (message.Urgent == true) kind = $"urgent {kind}";
         var to = message.To is { } addressed ? $"to {addressed}" : "to everyone";
         var re = message.Re is { } answers ? $", answering `{answers}`" : "";
         return $"- `{message.Id}` {message.At:u}, {kind} from {who}, {to}{re}: {message.Text}";
