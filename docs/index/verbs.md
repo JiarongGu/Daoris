@@ -116,6 +116,7 @@ Each a `case` in `tools/desktop.mjs`: `build` 879 · `run` 883 · `restart` 884 
 | `test:watch` | 14 | `vitest` |
 | `e2e` | 15 | `playwright test` |
 | `e2e:ui` | 16 | `playwright test --ui` |
-| `storybook` | 17 | `storybook dev -p 6006` |
-| `build-storybook` | 18 | `storybook build` |
-| `preview` | 19 | `vite preview` |
+| `e2e:measured` | 17 | `playwright test -c playwright.measured.config.ts` |
+| `storybook` | 18 | `storybook dev -p 6006` |
+| `build-storybook` | 19 | `storybook build` |
+| `preview` | 20 | `vite preview` |

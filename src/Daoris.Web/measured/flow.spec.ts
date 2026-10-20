@@ -1,0 +1,90 @@
+import { expect, test, type Page } from '@playwright/test';
+import { measureFlows } from './measure';
+
+// The measured-box check (FLOWCHART1a1; the flowchart design §7, traps 3 and 14): each of the hardest fixtures' stories,
+// and the quest's own, drawn by `Flow` in a real browser at the frame's widths; every node's and every label's box
+// measured and every edge sampled along its length by the browser's own geometry. No edge enters a box but its own ends',
+// no label lies over a node or another label, and each drawn frame's crossings stay at or under its ceiling.
+//
+// The table is the engine's (§4.3): the same fixtures were drawn by @dagrejs/dagre over the same measured boxes on
+// 2026-10-20, and D186's note of that day says what each engine gave and which was locked. Each ceiling is what the hand
+// layout drew that day: a change that draws worse fails here, and one that draws better lowers it.
+
+/** A story, by its stories file and name, and each frame it draws (not the rail) with that frame's crossing ceiling. */
+const TABLE: Record<string, Record<number, number>> = {
+  // The node lifecycle's multigraph, top to bottom with its eight returns on their lanes; the rail narrower.
+  'flow/Lifecycle': { 1200: 29 },
+  'flow/LifecycleChinese': { 1200: 29 },
+  // The dense graph at the bounds, drawn whole at the width it needs; the rail at every frame width until folds come.
+  'flow/Dense': { 1440: 155 },
+  'flow/DenseChinese': { 1440: 155 },
+  // Unequal boxes in both languages, left to right and top to bottom.
+  'flow/Unequal': { 570: 0, 1200: 0 },
+  'flow/UnequalChinese': { 570: 0, 1200: 0 },
+  // An instance before and after an append.
+  'flow/BeforeAnAppend': { 400: 0, 544: 0, 1200: 0 },
+  'flow/AfterAnAppend': { 400: 0, 544: 0, 1200: 0 },
+  // Several nodes current, and none.
+  'flow/SeveralCurrent': { 544: 0, 1200: 0 },
+  'flow/NoneCurrent': { 544: 0, 1200: 0 },
+  // A quest's four statuses, the rail at the side bar's floor.
+  'quest/Open': { 400: 0, 544: 0, 1200: 0 },
+  'quest/Taken': { 400: 0, 544: 0, 1200: 0 },
+  'quest/TakenChinese': { 400: 0, 544: 0, 1200: 0 },
+  'quest/Done': { 400: 0, 544: 0, 1200: 0 },
+};
+
+/** The story drawn, its faces loaded, and every drawn flow's edges drawn and holding still. */
+async function open(page: Page, story: string) {
+  await page.goto(`/measured/flow.html?story=${story}`);
+  await page.waitForFunction(() => (window as unknown as { flowReady?: boolean }).flowReady === true);
+  await page.waitForFunction(() => [...document.querySelectorAll<HTMLElement>('[data-flow-pane]')]
+    .filter((pane) => pane.dataset.placement !== 'rail')
+    .every((pane) => Number(pane.querySelector('[data-drawn]')?.getAttribute('data-drawn') ?? 0) > 0));
+  await page.waitForTimeout(250);
+}
+
+const drawnCounts = (page: Page) => page.evaluate(() =>
+  [...document.querySelectorAll('[data-drawn]')].map((element) => Number(element.getAttribute('data-drawn'))));
+
+for (const [story, ceilings] of Object.entries(TABLE)) {
+  test(`${story}: no edge through a box but its ends', no label over another box, crossings at or under the ceiling`, async ({ page }) => {
+    await open(page, story);
+    const measured = await page.evaluate(measureFlows);
+    const drawn = measured.filter((flow) => flow.placement !== 'rail');
+    // The frames that draw are the table's: a placement that changed is a change to look at, not to pass.
+    const byWidth = (a: number, b: number) => a - b;
+    expect(drawn.map((flow) => flow.frame).sort(byWidth), 'the frames drawn rather than the rail').toEqual(Object.keys(ceilings).map(Number).sort(byWidth));
+    for (const flow of drawn) {
+      const at = `${story} at ${flow.frame} px (${flow.placement})`;
+      expect(flow.paths, at).toBeGreaterThan(0);
+      expect(flow.collisions, at).toEqual([]);
+      expect(flow.overlaps, at).toEqual([]);
+      expect(flow.crossings, at).toBeLessThanOrEqual(ceilings[flow.frame]!);
+    }
+    // Drawn, the edges hold still: nothing measured loops back into what is measured.
+    const counts = await drawnCounts(page);
+    await page.waitForTimeout(400);
+    expect(await drawnCounts(page)).toEqual(counts);
+  });
+}
+
+test('drawing the edges takes no room, so it moves no node, and a resize draws them once (trap 14)', async ({ page }) => {
+  await open(page, 'flow/SeveralCurrent');
+  const frame = page.locator('[data-frame="1200"]');
+  const boxes = () => frame.locator('[data-flow-node]').evaluateAll((nodes) => nodes.map((node) => {
+    const rect = node.getBoundingClientRect();
+    return [rect.left, rect.top, rect.width, rect.height];
+  }));
+  const before = await boxes();
+  await frame.locator('svg[data-flow-ink], [data-flow-label]').evaluateAll((drawn) => drawn.forEach((element) => element.remove()));
+  expect(await boxes()).toEqual(before);
+
+  await open(page, 'flow/SeveralCurrent');
+  const pane = page.locator('[data-frame="1200"] [data-drawn]');
+  const was = Number(await pane.getAttribute('data-drawn'));
+  await page.locator('[data-frame="1200"] > div').evaluate((element) => { (element as HTMLElement).style.width = '1100px'; });
+  await expect.poll(async () => Number(await pane.getAttribute('data-drawn'))).toBe(was + 1);
+  await page.waitForTimeout(400);
+  expect(Number(await pane.getAttribute('data-drawn'))).toBe(was + 1);
+});

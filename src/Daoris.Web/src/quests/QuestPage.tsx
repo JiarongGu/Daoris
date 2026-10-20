@@ -24,6 +24,7 @@ import { Note } from '../work/Note';
 import { stepState } from '../work/gates/review';
 import { ReviewGate, type ReviewGateActs } from '../work/gates/ReviewGate';
 import { QuestConflicts, readConflicts, SettledConflicts } from './Conflicts';
+import { QuestFlow } from './QuestFlow';
 import { QuestRequirements } from './Requirements';
 import { shownStatus } from './records';
 import { TrustAsk } from '../work/waits/TrustAsk';
@@ -926,6 +927,9 @@ export function QuestPage({
           />
         </div>
       )}
+
+      {/* Its statuses drawn as a flowchart (FLOWCHART1a1, D186): after the chain, folded until it is opened. */}
+      <QuestFlow quest={quest} className="mt-4" />
 
       {quest.note && (quest.noteParts?.length
         // Daoris's lines in the reader's language, the person's words as theirs; a note without parts as kept (QUESTCLOSE1b2).

@@ -258,6 +258,11 @@ controls are in the frame design's §3.
   `src/Daoris.Desktop/Daoris.Desktop.Driver/Help/HelpCommand.cs:130-142,264-277`.
 - **A panel that keeps its height keeps it as a sentence**: an ended session's console was an empty
   bordered well, which reads as a field to type in.
+- **A process is drawn as a flowchart** (D186, `docs/2026-10-20-flowchart-design.md`; FLOWCHART1a1): one primitive,
+  `design/Flow.tsx`, laid out in layers by `design/flowLayout.ts` and placed by its own pane's width, left to right, top
+  to bottom, or the rail, a list whose edges are words, with *Show as list* wherever it draws. Its nodes are one list in
+  reading order and its edges one drawing a reader never hears; a node wears its caller's tone and words, an edge an ink,
+  never a status hue. Its stories are measured box by box in a browser (`src/Daoris.Web/measured/`).
 
 **Forms and settings.**
 

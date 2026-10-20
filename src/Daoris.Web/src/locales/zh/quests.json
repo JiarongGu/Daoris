@@ -185,5 +185,14 @@
   "quests.facts.taken": "{{ago}}接下",
   "quests.facts.submitted": "{{ago}}交付",
   "quests.facts.done": "{{ago}}完成",
-  "quests.facts.declined": "{{ago}}谢绝"
+  "quests.facts.declined": "{{ago}}谢绝",
+  "quests.flow.title": "流程图",
+  "quests.flow.hint": "点亮的是它现在所处的状态，以及从那里能走的每一步。",
+  "quests.flow.label": "委托 #{{id}} 如何流转",
+  "quests.flow.here": "当前所在",
+  "quests.flow.move.Open.Taken": "当某个仓库的智能体接下它时",
+  "quests.flow.move.Open.Done": "在无人接下之前被标为完成时",
+  "quests.flow.move.Open.Declined": "在无人接下之前被谢绝时",
+  "quests.flow.move.Taken.Done": "当它的工作完成时",
+  "quests.flow.move.Taken.Declined": "在接下之后被谢绝时"
 }

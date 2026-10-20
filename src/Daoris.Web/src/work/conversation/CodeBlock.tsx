@@ -2,7 +2,7 @@ import { useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import hljs from 'highlight.js/lib/common';
 import { cn } from '../../lib/cn';
-import { useWidth } from '../../map/useWidth';
+import { useWidth } from '../../design/useWidth';
 import { Icon } from '../../design/ui';
 import '../review/code.css';
 
