@@ -21,19 +21,19 @@ type Cell = string | null;
 const SECTIONS = ['defaults', 'workspaces', 'rotation', 'workspaceRotation', 'rotationUse', 'workspaceRotationUse'];
 
 const JOIN_ROWS: [why: string, before: string, agent: string, account: string, workspace: Cell, after: string][] = [
-  ['this machine\'s list gains it at its end', '{"rotation":{"claude-code":["account-1"]}}', 'claude-code', 'account-2', null, '{"defaults":{},"workspaces":{},"rotation":{"claude-code":["account-1","account-2"]}}'],
-  ['a list that holds it already is as it was', '{"rotation":{"claude-code":["account-2","account-1"]}}', 'claude-code', 'account-2', null, '{"defaults":{},"workspaces":{},"rotation":{"claude-code":["account-2","account-1"]}}'],
-  ['a workspace\'s own list gains it, this machine\'s kept', '{"rotation":{"claude-code":["account-1"]},"workspaceRotation":{"work":{"claude-code":["account-1"]}}}', 'claude-code', 'account-2', 'work', '{"defaults":{},"workspaces":{},"rotation":{"claude-code":["account-1"]},"workspaceRotation":{"work":{"claude-code":["account-1","account-2"]}}}'],
-  ['this machine with a default and no list begins a list at its default', '{"defaults":{"claude-code":"account-1"}}', 'claude-code', 'account-2', null, '{"defaults":{"claude-code":"account-1"},"workspaces":{},"rotation":{"claude-code":["account-1","account-2"]}}'],
-  ['this machine naming nobody begins its list with it', '{}', 'claude-code', 'account-2', null, '{"defaults":{},"workspaces":{},"rotation":{"claude-code":["account-2"]}}'],
-  ['a default that is the account itself is a list of it alone', '{"defaults":{"claude-code":"account-2"}}', 'claude-code', 'account-2', null, '{"defaults":{"claude-code":"account-2"},"workspaces":{},"rotation":{"claude-code":["account-2"]}}'],
-  ['a workspace with its own default and no list begins a list at its default', '{"workspaces":{"work":{"claude-code":"account-1"}}}', 'claude-code', 'account-2', 'work', '{"defaults":{},"workspaces":{"work":{"claude-code":"account-1"}},"workspaceRotation":{"work":{"claude-code":["account-1","account-2"]}}}'],
+  ['this machine\'s list gains it at its end', '{"rotation":{"claude-code":["account-1"]}}', 'claude-code', 'account-2', null, '{"rotation":{"claude-code":["account-1","account-2"]}}'],
+  ['a list that holds it already is as it was', '{"rotation":{"claude-code":["account-2","account-1"]}}', 'claude-code', 'account-2', null, '{"rotation":{"claude-code":["account-2","account-1"]}}'],
+  ['a workspace\'s own list gains it, this machine\'s kept', '{"rotation":{"claude-code":["account-1"]},"workspaceRotation":{"work":{"claude-code":["account-1"]}}}', 'claude-code', 'account-2', 'work', '{"rotation":{"claude-code":["account-1"]},"workspaceRotation":{"work":{"claude-code":["account-1","account-2"]}}}'],
+  ['this machine with a default and no list begins a list at its default', '{"defaults":{"claude-code":"account-1"}}', 'claude-code', 'account-2', null, '{"defaults":{"claude-code":"account-1"},"rotation":{"claude-code":["account-1","account-2"]}}'],
+  ['this machine naming nobody begins its list with it', '{}', 'claude-code', 'account-2', null, '{"rotation":{"claude-code":["account-2"]}}'],
+  ['a default that is the account itself is a list of it alone', '{"defaults":{"claude-code":"account-2"}}', 'claude-code', 'account-2', null, '{"defaults":{"claude-code":"account-2"},"rotation":{"claude-code":["account-2"]}}'],
+  ['a workspace with its own default and no list begins a list at its default', '{"workspaces":{"work":{"claude-code":"account-1"}}}', 'claude-code', 'account-2', 'work', '{"workspaces":{"work":{"claude-code":"account-1"}},"workspaceRotation":{"work":{"claude-code":["account-1","account-2"]}}}'],
   ['a workspace naming neither takes this machine\'s list, so joining it is refused', '{"rotation":{"claude-code":["account-1"]}}', 'claude-code', 'account-2', 'forge', 'refused borrows'],
   ['a workspace naming neither on a machine naming nobody is refused too', '{}', 'claude-code', 'account-2', 'forge', 'refused borrows'],
   ['a workspace naming only another agent\'s account takes this machine\'s list', '{"workspaces":{"work":{"codex":"account-1"}}}', 'claude-code', 'account-2', 'work', 'refused borrows'],
-  ['another agent\'s list is not this one\'s', '{"rotation":{"codex":["account-1"]}}', 'claude-code', 'account-2', null, '{"defaults":{},"workspaces":{},"rotation":{"codex":["account-1"],"claude-code":["account-2"]}}'],
-  ['a list\'s settings stay with it', '{"workspaceRotation":{"work":{"claude-code":["account-1"]}},"workspaceRotationUse":{"work":{"claude-code":{"use":"order"}}}}', 'claude-code', 'account-2', 'work', '{"defaults":{},"workspaces":{},"workspaceRotation":{"work":{"claude-code":["account-1","account-2"]}},"workspaceRotationUse":{"work":{"claude-code":{"use":"order"}}}}'],
-  ['a workspace named in another case joins its own list, as first written', '{"workspaceRotation":{"work":{"claude-code":["account-1"]}}}', 'claude-code', 'account-2', 'WORK', '{"defaults":{},"workspaces":{},"workspaceRotation":{"work":{"claude-code":["account-1","account-2"]}}}'],
+  ['another agent\'s list is not this one\'s', '{"rotation":{"codex":["account-1"]}}', 'claude-code', 'account-2', null, '{"rotation":{"codex":["account-1"],"claude-code":["account-2"]}}'],
+  ['a list\'s settings stay with it', '{"workspaceRotation":{"work":{"claude-code":["account-1"]}},"workspaceRotationUse":{"work":{"claude-code":{"use":"order"}}}}', 'claude-code', 'account-2', 'work', '{"workspaceRotation":{"work":{"claude-code":["account-1","account-2"]}},"workspaceRotationUse":{"work":{"claude-code":{"use":"order"}}}}'],
+  ['a workspace named in another case joins its own list, as first written', '{"workspaceRotation":{"work":{"claude-code":["account-1"]}}}', 'claude-code', 'account-2', 'WORK', '{"workspaceRotation":{"work":{"claude-code":["account-1","account-2"]}}}'],
 ];
 
 test('an account joins a list as the driver joins it (the twin\'s table)', () => {

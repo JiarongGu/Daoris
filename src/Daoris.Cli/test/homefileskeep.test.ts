@@ -74,7 +74,7 @@ function applied(home: string, row: Row, between: () => void): void {
     return;
   }
   if (row.file === 'harnesses.json') {
-    const path = join(home, 'harnesses.json');
+    const path = homeEntry(home, 'harnesses');
     const read = readHarnessSettings(path);
     between();
     const workspace = edit.workspace ?? null;
