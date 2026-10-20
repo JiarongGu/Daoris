@@ -202,12 +202,16 @@ public sealed class RegistrationStore
     /// there is one, the existing row wins when there is not, and `default` closes it: exactly the
     /// COALESCE below, decided here in one statement rather than as a read-modify-write two callers
     /// would race on.
+    /// <para>One write transaction, taken at once (QUESTOPENLOCK1): on its own, the statement's commit came at its reader's end, which
+    /// the driver never retries, so a registration while another host read failed with "database is locked".</para>
     /// </remarks>
     /// <returns>The row as it now stands, so the caller never has to guess which workspace took.</returns>
     public Task<Registration> UpsertAsync(
-        Registration registration, DateTimeOffset now, CancellationToken ct = default) => _db.RunAsync<Registration>(async () =>
+        Registration registration, DateTimeOffset now, CancellationToken ct = default) =>
+        _db.InTransactionAsync<Registration>(async (transaction, inside) =>
     {
         await using var command = _db.Command();
+        command.Transaction = transaction;
         command.CommandText = $"""
             INSERT INTO registrations (repository, summary, owns, accepts, packs, updated, root, joined, shares_knowledge, workspace, adopted, default_branch, uses, lanes)
             VALUES ($repository, $summary, $owns, $accepts, $packs, $updated, $root, $joined, $shares,
@@ -250,8 +254,8 @@ public sealed class RegistrationStore
         // Every preserved field comes back, for the same reason: what is SERVED is what the store
         // decided, never what arrived (D48 §2) — otherwise the row in memory and the row on disk
         // disagree until a restart.
-        await using var reader = await command.ExecuteReaderAsync(ct).ConfigureAwait(false);
-        if (!await reader.ReadAsync(ct).ConfigureAwait(false))
+        await using var reader = await command.ExecuteReaderAsync(inside).ConfigureAwait(false);
+        if (!await reader.ReadAsync(inside).ConfigureAwait(false))
         {
             return registration with { Workspace = registration.InWorkspace };
         }
