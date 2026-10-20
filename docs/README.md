@@ -95,7 +95,7 @@ Paths below are relative to this file. Historical documents have their own [arch
 | `2026-10-21-company-concept.md` | Contract (D193): Daoris framed as a development company run by agents; each part of the company mapped to the mechanism that serves it, and the roadmap ordered by those parts |
 | `2026-10-20-fabric-cutover-design.md` | Contract (accepted 2026-10-20 under D191): a run bound to a graph version governed by its graph; a steps run unchanged | D190; FABRIC-CUTOVER1 rows |
 | `2026-10-20-pipeline-design.md` | Proposed: a start node routes work into pipelines; sessions run light checks; verification its own pipeline on landed work | D192; FABRIC-PIPELINE1a-j |
-| `2026-10-21-alone-path-design.md` | Proposed: `daoris driver`, `agent`, `plugin` and `tool` run the driver's own program, the running Daoris's client or alone under the lease; route bodies in the driver library; one text per verb; the families' TypeScript retired | D194; PUSH1f2a-f proposed |
+| `2026-10-21-alone-path-design.md` | Proposed: `daoris driver`, `agent`, `plugin` and `tool` run the driver's own program, the running Daoris's client or alone under the lease; each change one typed operation in the driver library; one text per verb; the families' TypeScript retired | D194; PUSH1f2a-f proposed |
 
 ## UI, browser, tools and plugin contracts
 
