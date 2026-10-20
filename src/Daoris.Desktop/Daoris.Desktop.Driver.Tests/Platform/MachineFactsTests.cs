@@ -137,6 +137,43 @@ public sealed class MachineFactsTests
         Assert.Null(facts.Current.Of(Lines, "stuck"));
     }
 
+    /// <summary>FACTSLATE1: a judge cut at its own bound is late, said once and no error, and the fact stays as last judged.</summary>
+    [Fact]
+    public async Task A_judge_cut_at_its_bound_is_said_once_as_late_and_never_as_an_error()
+    {
+        var home = Path.Combine(Path.GetTempPath(), "daoris-facts-" + Guid.NewGuid().ToString("N")[..8]);
+        Directory.CreateDirectory(home);
+        try
+        {
+            var calls = 0;
+            using (var log = new MachineLog(home, "desktop"))
+            using (var facts = new MachineFacts { Log = log })
+            {
+                facts.Topic(Lines, Rules with { Bound = TimeSpan.FromMilliseconds(200) }, async (_, ct) =>
+                {
+                    if (Interlocked.Increment(ref calls) == 1) return "`main`";
+                    await Task.Delay(Timeout.Infinite, ct);
+                    return "`trunk`";
+                });
+                facts.Subject(Lines, "engine");
+                facts.Start();
+                await facts.FirstAsync(Lines, "engine", CancellationToken.None).WaitAsync(Within);
+
+                await facts.JudgedAsync(Lines, "engine", CancellationToken.None).WaitAsync(Within);
+
+                Assert.Equal("`main`", facts.Current.Value<string>(Lines, "engine"));
+            }
+
+            var lines = MachineLogReader.Read(DaorisHome.Entry(home, HomeEntry.Logs), new LogFilter()).Lines;
+            Assert.Equal(["facts.late"], lines.Select(line => line.Event));
+            Assert.Equal("warn", lines[0].Level);
+        }
+        finally
+        {
+            try { Directory.Delete(home, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
+        }
+    }
+
     [Fact]
     public async Task A_read_never_waits_on_a_judgement_under_way()
     {

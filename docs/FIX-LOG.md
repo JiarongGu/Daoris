@@ -47,6 +47,17 @@ repository.
   reads its sessions' trees and is judged again as they move), `AttentionStateSliceTests`, and the page's `attention.test.ts`,
   `WorkMilestone.test.tsx` and `AttentionBand.test.tsx` in English and Chinese. Not yet seen on the installed Overview.
 
+## 2026-10-21 — A facts judgement cut at its bound was logged late, then as an error (FACTSLATE1)
+
+- **Symptom:** under load the help room's facts (`help.trees`, `help.lines`, `help.work`, `help.sweep`) each wrote `facts.late`
+  and then an `error` line, seventeen errors in a day on the install with nothing broken.
+- **Root cause:** `MachineFacts.JudgeAsync` passes the judge a token cancelled at the bound. A judge that honours it throws
+  `OperationCanceledException`, which only the stopping filter caught, so the bound's own cancellation fell to the catch-all
+  and `Log.Failed` after the warning already said.
+- **Fix:** a cancellation whose bounded token was cancelled ends as late: `facts.late` once (said there only where the judge
+  ended before the bound's wait did), nothing landed, the fact kept as last judged; any other failure is still an error.
+- **Verification:** `MachineFactsTests` (13), its new bound case failing on the old code with `facts.late`, `error`.
+
 ## 2026-10-21 — The full set on 824886d: an end-to-end test held the old asks group, and a test home's delete met a held log (QUESTLISTS1, FLAKE1)
 
 - **Symptom:** the `web` gate failed the end-to-end INT4c case (with closed work included, no *Asks* group came back), and on
