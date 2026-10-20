@@ -1103,7 +1103,7 @@ if (mode == ServiceMode.Local)
     app.MapPost("/api/asks/{id}/channel", async (
         ComposedService s, string id, ChannelPostRequest body, CancellationToken ct) =>
     {
-        var posted = await s.Channel.PostAsPersonAsync(id, body.Text, body.To, body.Re, DateTimeOffset.UtcNow, ct);
+        var posted = await s.Channel.PostAsPersonAsync(id, body.Text, body.To, body.Re, DateTimeOffset.UtcNow, ct, urgent: body.Urgent ?? true);
         if (posted.Refusal == ChannelRefusal.None) return Results.Ok(new ChannelPostResponse(ToChannelItem(posted.Message!)));
 
         var code = ChannelDesk.Spell(posted.Refusal);
@@ -2517,7 +2517,7 @@ static ChannelItemResponse ToChannelItem(IChannelItem item) => item switch
 {
     ChannelMessage m => new ChannelItemResponse(
         "message", m.At, Id: m.Id, Person: m.ByPerson, Session: m.Session, Repository: m.Repository, Agent: m.Agent, Entry: m.Entry,
-        To: m.To, Re: m.Re, Question: m.Question, Open: m.Open, Text: m.Text, Origin: m.Origin),
+        To: m.To, Re: m.Re, Question: m.Question, Open: m.Open, Text: m.Text, Origin: m.Origin, Urgent: m.Urgent),
     ChannelLine l => new ChannelItemResponse("line", l.At, From: l.From, To: l.To, Code: l.Code, Quest: l.Quest, Name: l.Name),
     _ => throw new InvalidOperationException("an item of the channel is a message or a line"),
 };

@@ -159,10 +159,33 @@ public sealed class ChannelSyncTests : IAsyncLifetime
         var message = Assert.Single(feed!);
         Assert.Equal(("m1", "ask1", "hello", false), (message.Id, message.Ask, message.Text, message.Question));
         Assert.Null(message.To);
+        // COWORK1d: a message from before says no level, which keeps its old reach; absent is never read as ordinary.
+        Assert.Null(message.Urgent);
         var fetched = Assert.Single(page!.Messages);
         Assert.Equal(("a@one", "m1", 4L), (fetched.Origin, fetched.Id, page.Through));
+        Assert.Null(fetched.Urgent);
         Assert.Null(ChannelWire.ReadFeed("""{ "messages": [ { "ask": "ask1" } ] }"""));
         Assert.Null(ChannelWire.ReadPage("""{ "through": 1, "messages": [ { "id": "m1", "ask": "ask1", "text": "no origin" } ] }"""));
+    }
+
+    /// <summary>
+    /// 🔴 COWORK1d (the message-urgency design §9): a message's level travels on every message kept from now, an explicit false
+    /// included, and comes down to a teammate as it was said; one from before still says none.
+    /// </summary>
+    [Fact]
+    public async Task A_messages_level_travels_said_true_or_false_and_comes_down_as_it_was()
+    {
+        await _a.Channel.AddAsync(Message("m1", "now", "Shared") with { Urgent = true }, 10);
+        await _a.Channel.AddAsync(Message("m2", "later", "Shared") with { Urgent = false }, 10);
+
+        var feed = ChannelWire.Feed(await _a.Channel.OfAsync("ask1"));
+        Assert.Contains("\"urgent\":true", feed, StringComparison.Ordinal);
+        Assert.Contains("\"urgent\":false", feed, StringComparison.Ordinal);
+        Assert.Equal<bool?>([true, false], ChannelWire.ReadFeed(feed)!.Select(m => m.Urgent));
+
+        await SyncAsync(_a, "a@one");
+        await SyncAsync(_b, "b@two");
+        Assert.Equal<bool?>([true, false], (await _b.Channel.OfAsync("ask1")).Select(m => m.Urgent));
     }
 
     /// <summary>A remote from before has no channel doors: its 404 is said once, never as a wall each pass, and the channel stays here.</summary>

@@ -16,6 +16,12 @@ public static class ChannelBounds
 
     /// <summary>The most messages a next part is handed on starting: the newest, within the instruction's share (SESSONE2b).</summary>
     public const int HandedNewest = 20;
+
+    /// <summary>
+    /// The most of one part's posts kept urgent (COWORK1d, D188 point 2; the message-urgency design §2.2, trap 10): a first value, a
+    /// judgement, within the part's <see cref="MaxPerPart"/>. A further urgent post is kept ordinary, and its poster told so.
+    /// </summary>
+    public const int UrgentPerPart = 3;
 }
 
 /// <summary>Why the channel did not do what was asked of it, by a code: a tool says it in a sentence, a door answers the code.</summary>
@@ -87,6 +93,14 @@ public sealed record ChannelMessage(
 
     /// <summary>A question no message has answered yet; false for every other message. Read from the channel, never stored.</summary>
     public bool Open { get; init; }
+
+    /// <summary>
+    /// When its sender asked it to reach a working session (COWORK1d, D188 point 2; the message-urgency design §9): true, urgent, at
+    /// the session's next step where its door takes words then; false, ordinary, at a natural point. Said on every message kept from
+    /// COWORK1d on, decided in the insert's own statement (<see cref="ChannelBounds.UrgentPerPart"/>). Null only on a message from
+    /// before, or from an older teammate's machine, which keeps its old reach; null never means ordinary.
+    /// </summary>
+    public bool? Urgent { get; init; }
 }
 
 /// <summary>
@@ -211,6 +225,10 @@ public sealed class ChannelStore
             END;
             """;
         await revision.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
+
+        // COWORK1d (the message-urgency design §9): a message's level, said on every message kept from now; a message from before says
+        // none, which keeps its old reach and is never read as ordinary.
+        await SchemaColumns.EnsureAsync(_db, "channel", "urgent", "urgent INTEGER NULL", ct).ConfigureAwait(false);
         return this;
     }
 
@@ -219,13 +237,28 @@ public sealed class ChannelStore
     /// pass the count. A message of no session (the person's) has no cap.
     /// </summary>
     /// <returns>False when the cap refused it, and nothing was kept.</returns>
-    public Task<bool> AddAsync(ChannelMessage message, int perPart, CancellationToken ct = default) => _db.RunAsync<bool>(async () =>
+    public async Task<bool> AddAsync(ChannelMessage message, int perPart, CancellationToken ct = default) =>
+        await KeepAsync(message, perPart, ct).ConfigureAwait(false) is not null;
+
+    /// <summary>
+    /// <see cref="AddAsync"/>, answering the message as kept. Its level is decided in the same statement (COWORK1d, trap 10): a part's
+    /// urgent post past <paramref name="urgentPerPart"/> of its urgent ones is kept ordinary, an explicit false, so two posts at once
+    /// cannot both pass the bound; a message of no session has none.
+    /// </summary>
+    /// <returns>The message as kept, its <see cref="ChannelMessage.Urgent"/> as the statement decided; null when the cap refused it.</returns>
+    public Task<ChannelMessage?> KeepAsync(
+        ChannelMessage message, int perPart, CancellationToken ct = default, int urgentPerPart = ChannelBounds.UrgentPerPart) =>
+        _db.RunAsync<ChannelMessage?>(async () =>
     {
         await using var command = _db.Command();
         command.CommandText = """
-            INSERT INTO channel (id, ask, workspace, at, session, repository, agent, entry, to_repo, re, question, text, origin)
-            SELECT $id, $ask, $workspace, $at, $session, $repository, $agent, $entry, $to, $re, $question, $text, $origin
+            INSERT INTO channel (id, ask, workspace, at, session, repository, agent, entry, to_repo, re, question, text, origin, urgent)
+            SELECT $id, $ask, $workspace, $at, $session, $repository, $agent, $entry, $to, $re, $question, $text, $origin,
+              CASE WHEN $urgent = 1 AND $session IS NOT NULL
+                        AND (SELECT COUNT(*) FROM channel WHERE session = $session AND urgent = 1) >= $urgentCap THEN 0
+                   ELSE $urgent END
             WHERE $session IS NULL OR (SELECT COUNT(*) FROM channel WHERE session = $session) < $cap
+            RETURNING urgent
             """;
         command.Parameters.AddWithValue("$id", message.Id);
         command.Parameters.AddWithValue("$ask", message.Ask);
@@ -240,8 +273,12 @@ public sealed class ChannelStore
         command.Parameters.AddWithValue("$question", message.Question ? 1 : 0);
         command.Parameters.AddWithValue("$text", message.Text);
         command.Parameters.AddWithValue("$origin", (object?)message.Origin ?? DBNull.Value);
+        command.Parameters.AddWithValue("$urgent", Level(message.Urgent));
         command.Parameters.AddWithValue("$cap", perPart);
-        return await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false) > 0;
+        command.Parameters.AddWithValue("$urgentCap", urgentPerPart);
+        await using var reader = await command.ExecuteReaderAsync(ct).ConfigureAwait(false);
+        if (!await reader.ReadAsync(ct).ConfigureAwait(false)) return null;
+        return message with { Urgent = reader.IsDBNull(0) ? null : reader.GetInt32(0) != 0 };
     }, ct);
 
     /// <summary>The ask's messages, oldest arrival first; a question's <see cref="ChannelMessage.Open"/> is read from the answers among them.</summary>
@@ -290,9 +327,11 @@ public sealed class ChannelStore
     {
         await using var command = _db.Command();
         command.CommandText = """
-            INSERT OR IGNORE INTO channel (id, ask, workspace, at, session, repository, agent, entry, to_repo, re, question, text, origin)
-            VALUES ($id, $ask, $workspace, $at, $session, $repository, $agent, $entry, $to, $re, $question, $text, $origin)
+            INSERT OR IGNORE INTO channel (id, ask, workspace, at, session, repository, agent, entry, to_repo, re, question, text, origin, urgent)
+            VALUES ($id, $ask, $workspace, $at, $session, $repository, $agent, $entry, $to, $re, $question, $text, $origin, $urgent)
             """;
+        // COWORK1d: the level as its machine said it; none from an older machine, kept as none.
+        command.Parameters.AddWithValue("$urgent", Level(message.Urgent));
         command.Parameters.AddWithValue("$id", message.Id);
         command.Parameters.AddWithValue("$ask", message.Ask);
         command.Parameters.AddWithValue("$workspace", Workspaces.Normalize(message.Workspace));
@@ -359,14 +398,21 @@ public sealed class ChannelStore
         await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
     }, ct);
 
+    /// <summary>A message's level as its column keeps it: 1 urgent, 0 ordinary, null for one from before.</summary>
+    private static object Level(bool? urgent) => urgent is { } said ? said ? 1 : 0 : DBNull.Value;
+
     private static ChannelMessage Read(SqliteDataReader reader)
     {
         string Text(string column) => reader.GetString(reader.GetOrdinal(column));
         string? Maybe(string column) => reader.IsDBNull(reader.GetOrdinal(column)) ? null : reader.GetString(reader.GetOrdinal(column));
+        var urgent = reader.GetOrdinal("urgent");
         return new ChannelMessage(
             Text("id"), Text("ask"), Text("workspace"), Moments.ReadRequired(Text("at")), Maybe("session"), Maybe("repository"),
             Maybe("agent"), Maybe("entry"), Maybe("to_repo"), Maybe("re"), reader.GetInt32(reader.GetOrdinal("question")) != 0,
-            Text("text"), Maybe("origin"));
+            Text("text"), Maybe("origin"))
+        {
+            Urgent = reader.IsDBNull(urgent) ? null : reader.GetInt32(urgent) != 0,
+        };
     }
 
     /// <summary>
@@ -446,8 +492,13 @@ public sealed class ChannelDesk(
     private const string Everyone = "everyone";
 
     /// <summary>Post as the session the connector names: its record gives the ask (through its entry), its repository and its adapter.</summary>
+    /// <param name="urgent">
+    /// The poster's level (COWORK1d, D188 point 2): urgent asks the session's next step, ordinary (the default) a natural point. Kept
+    /// urgent for at most <see cref="ChannelBounds.UrgentPerPart"/> of the part's posts; the outcome's message says what was kept.
+    /// </param>
     public async Task<ChannelOutcome> PostAsSessionAsync(
-        string? sessionId, string? text, string? to, string? re, bool question, DateTimeOffset now, CancellationToken ct = default)
+        string? sessionId, string? text, string? to, string? re, bool question, DateTimeOffset now, bool urgent = false,
+        CancellationToken ct = default)
     {
         var (refusal, ask, session) = await SpeakerAsync(sessionId, ct).ConfigureAwait(false);
         if (refusal != ChannelRefusal.None) return new(refusal, null);
@@ -458,9 +509,9 @@ public sealed class ChannelDesk(
         var entry = (await ledger.WithEntryAsync(session!, ct).ConfigureAwait(false)).Entry;
         var message = new ChannelMessage(
             NewId(), ask!.Id, ask.Workspace, now, session!.Id, session.Repository, session.Adapter, entry,
-            judged.To, judged.Re, question, judged.Text!);
-        return await store.AddAsync(message, ChannelBounds.MaxPerPart, ct).ConfigureAwait(false)
-            ? new(ChannelRefusal.None, message)
+            judged.To, judged.Re, question, judged.Text!) { Urgent = urgent };
+        return await store.KeepAsync(message, ChannelBounds.MaxPerPart, ct).ConfigureAwait(false) is { } kept
+            ? new(ChannelRefusal.None, kept)
             : new(ChannelRefusal.TooMany, null);
     }
 
@@ -468,8 +519,9 @@ public sealed class ChannelDesk(
     /// Post as the person (D167 point 7): kept on the channel by no session, and on the ask as a word of the <c>channel</c> kind (D133 §1),
     /// which an older build passes over as it does any kind it does not know. A person has no cap.
     /// </summary>
+    /// <param name="urgent">Their level (COWORK1d): urgent unless they asked ordinary, their default as their words' is (D188 point 2).</param>
     public async Task<ChannelOutcome> PostAsPersonAsync(
-        string askId, string? text, string? to, string? re, DateTimeOffset now, CancellationToken ct = default)
+        string askId, string? text, string? to, string? re, DateTimeOffset now, CancellationToken ct = default, bool urgent = true)
     {
         if (await asks.FindAsync(askId, ct).ConfigureAwait(false) is not { } ask)
         {
@@ -481,7 +533,7 @@ public sealed class ChannelDesk(
 
         var message = new ChannelMessage(
             NewId(), ask.Id, ask.Workspace, now, Session: null, Repository: null, Agent: null, Entry: null, judged.To, judged.Re,
-            Question: false, judged.Text!);
+            Question: false, judged.Text!) { Urgent = urgent };
         await store.AddAsync(message, int.MaxValue, ct).ConfigureAwait(false);
         await askStore.RecordWordAsync(ask.Id, new AskWord(AskWordKind.Channel, judged.Text!, now), now, ct).ConfigureAwait(false);
         return new(ChannelRefusal.None, message);

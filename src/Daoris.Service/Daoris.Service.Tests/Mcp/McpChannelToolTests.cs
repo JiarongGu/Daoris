@@ -86,6 +86,25 @@ public sealed class McpChannelToolTests : IAsyncLifetime
         Assert.DoesNotContain("use the older bridge", again);
     }
 
+    /// <summary>
+    /// 🔴 COWORK1d (trap 10): <c>channel_post</c>'s <c>urgent</c> says the post reaches a working session at its next step; the
+    /// answer says so, and a part's fourth urgent post is kept ordinary, which the answer says too. An ordinary post says it waits.
+    /// </summary>
+    [Fact]
+    public async Task An_urgent_post_says_where_it_reaches_and_the_fourth_is_kept_ordinary_and_said_so()
+    {
+        var (_, session) = await RunningAsync();
+        var tools = As(_channel, session.Id);
+
+        var ordinary = await tools.PostAsync("a note", urgent: null);
+        var answers = new List<string>();
+        for (var n = 0; n <= ChannelBounds.UrgentPerPart; n++) answers.Add(await tools.PostAsync($"urgent {n}", urgent: true));
+
+        Assert.Contains("ordinary", ordinary);
+        Assert.All(answers[..ChannelBounds.UrgentPerPart], answer => Assert.Contains("urgent", answer));
+        Assert.Contains($"kept as ordinary: a part posts at most {ChannelBounds.UrgentPerPart} urgent messages", answers[^1]);
+    }
+
     /// <summary>🔴 Each refusal is said in a sentence the agent reads, and nothing is kept.</summary>
     [Fact]
     public async Task Each_refusal_is_a_sentence_and_nothing_is_kept()

@@ -18,6 +18,7 @@ public sealed class ChannelTests : IAsyncLifetime
     private SessionStore _sessions = null!;
     private SessionLedger _ledger = null!;
     private ChannelDesk _channel = null!;
+    private ChannelStore _store = null!;
     private static readonly DateTimeOffset Now = DateTimeOffset.Parse("2026-10-14T09:00:00Z");
 
     private const string Sentence = "the report needs the v3 bridge, and the bridge needs a column";
@@ -44,8 +45,8 @@ public sealed class ChannelTests : IAsyncLifetime
         _exchange = new QuestExchange(service, _quests, files: files);
         _asks = new AskDesk(service, askStore, _exchange, files);
         _ledger = new SessionLedger(_quests, _sessions, service, askStore);
-        _channel = new ChannelDesk(
-            await ChannelStore.OpenAsync(_connection), _asks, askStore, _ledger, _quests, new StoreEntryFacts(_quests, _sessions));
+        _store = await ChannelStore.OpenAsync(_connection);
+        _channel = new ChannelDesk(_store, _asks, askStore, _ledger, _quests, new StoreEntryFacts(_quests, _sessions));
     }
 
     public async Task DisposeAsync()
@@ -177,6 +178,46 @@ public sealed class ChannelTests : IAsyncLifetime
 
         // The cap is the part's, and the person has none.
         Assert.Equal(ChannelRefusal.None, (await _channel.PostAsPersonAsync(ask.Id, "and me", null, null, Now.AddHours(1))).Refusal);
+    }
+
+    /// <summary>
+    /// 🔴 COWORK1d (the message-urgency design §9, trap 10): every message kept from now says its level. A part's post is urgent on
+    /// its word for at most <see cref="ChannelBounds.UrgentPerPart"/> of its posts, judged in the insert's own statement, so its
+    /// fourth urgent post is kept ordinary; an ordinary post is an explicit false, never absent, which is a message from before.
+    /// </summary>
+    [Fact]
+    public async Task A_parts_fourth_urgent_post_is_kept_ordinary_and_every_post_says_its_level()
+    {
+        var (ask, _, session) = await AskedAsync();
+
+        var urgent = new List<ChannelMessage>();
+        for (var n = 0; n <= ChannelBounds.UrgentPerPart; n++)
+        {
+            urgent.Add((await _channel.PostAsSessionAsync(session.Id, $"urgent {n}", null, null, false, Now.AddMinutes(n), urgent: true)).Message!);
+        }
+
+        var ordinary = (await _channel.PostAsSessionAsync(session.Id, "ordinary", null, null, false, Now.AddMinutes(9))).Message!;
+
+        Assert.Equal<bool?>([true, true, true, false], urgent.Select(m => m.Urgent));
+        Assert.Equal(false, ordinary.Urgent);
+        var read = (await _channel.ReadAsync(ask.Id, ChannelDesk.PersonEntry, null, false))!.Messages;
+        Assert.Equal<bool?>([true, true, true, false, false], read.Select(m => m.Urgent));
+    }
+
+    /// <summary>The person's message is kept at their default, urgent, or ordinary where they asked; a mirrored one from before says none.</summary>
+    [Fact]
+    public async Task The_persons_post_is_urgent_unless_asked_ordinary_and_one_from_before_says_no_level()
+    {
+        var (ask, _, _) = await AskedAsync();
+
+        var urgent = (await _channel.PostAsPersonAsync(ask.Id, "now please", null, null, Now.AddMinutes(1))).Message!;
+        var ordinary = (await _channel.PostAsPersonAsync(ask.Id, "when you can", null, null, Now.AddMinutes(2), urgent: false)).Message!;
+        await _store.MirrorAsync(new ChannelMessage(
+            "old1", "elsewhere1", "work", Now, "a@two/s9", "reports", "stub", "ask:elsewhere1/reports", null, null, false, "from before",
+            Origin: "a@two"));
+
+        Assert.Equal((true, false), (urgent.Urgent, ordinary.Urgent));
+        Assert.Null(Assert.Single(await _store.OfAsync("elsewhere1")).Urgent);
     }
 
     /// <summary>

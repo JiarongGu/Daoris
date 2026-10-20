@@ -29,16 +29,28 @@ public sealed class ChannelTools(ChannelDesk? channel = null, IntakeScope? intak
         string? to = null,
         [Description("Optional: the id of the message this answers.")] string? re = null,
         [Description("Optional: true to mark this a question, which the page shows open until a message answers it.")] bool? question = null,
+        [Description(
+            "Optional: true when a session working on the ask should read this at its next step, while it works: a fact that makes "
+            + "its work in flight wrong. Left out, the message is ordinary and waits for a natural point: its turn's end, its next "
+            + "part, or its own channel_read. At most 3 of your posts are urgent; a further one is kept ordinary.")]
+        bool? urgent = null,
         CancellationToken ct = default)
     {
         if (channel is null) return "The channel is not available here: no session of this connector can post.";
 
         var posted = await channel.PostAsSessionAsync(
-            intake?.Session, text, to, re, question == true, DateTimeOffset.UtcNow, ct).ConfigureAwait(false);
-        return posted.Refusal == ChannelRefusal.None
-            ? $"Posted to ask `#{posted.Message!.Ask}` as message `{posted.Message.Id}`"
-              + (posted.Message.To is { } addressed ? $", to {addressed}." : ", to everyone.")
-            : Said(posted.Refusal);
+            intake?.Session, text, to, re, question == true, DateTimeOffset.UtcNow, urgent == true, ct).ConfigureAwait(false);
+        if (posted.Refusal != ChannelRefusal.None) return Said(posted.Refusal);
+
+        var message = posted.Message!;
+        var where = message.To is { } addressed ? $"to {addressed}" : "to everyone";
+        var level = (urgent == true, message.Urgent == true) switch
+        {
+            (_, true) => "urgent: a session working on the ask reads it at its next step, where its door takes words then, and otherwise at a natural point",
+            (true, false) => $"kept as ordinary: a part posts at most {ChannelBounds.UrgentPerPart} urgent messages. A session reads it at a natural point",
+            _ => "ordinary: a session reads it at a natural point (its turn's end, its next part, or its own channel_read)",
+        };
+        return $"Posted to ask `#{message.Ask}` as message `{message.Id}`, {where}, {level}. channel_read tells you what it reached.";
     }
 
     [McpServerTool(Name = "channel_read")]

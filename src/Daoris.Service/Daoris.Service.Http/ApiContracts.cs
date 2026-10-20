@@ -276,17 +276,20 @@ public sealed record AskReviewProposalResponse(string Choice, string Reason, Dat
 public sealed record AskWordResponse(string Kind, string Text, DateTimeOffset At, string? Session, string? Quest);
 // An ask's channel (SESSONE2a, D167 points 6 to 8). The person's post: `to` is one of the ask's repositories or `everyone`, `re` the id
 // of a message it answers.
-public sealed record ChannelPostRequest(string? Text, string? To = null, string? Re = null);
+// COWORK1d: `urgent` false keeps the person's message ordinary; absent, it is their default, urgent (D188 point 2).
+public sealed record ChannelPostRequest(string? Text, string? To = null, string? Re = null, bool? Urgent = null);
 // Moves an entry's read mark (the person's, `person`, when `entry` is left out) to `through`, else to the newest item.
 public sealed record ChannelReadRequest(string? Entry = null, DateTimeOffset? Through = null);
 // One item of the channel, in time order. `kind` is `message` (id, person, session, repository, agent, entry, to, re, question, open,
 // text, origin) or `line` (Daoris's, read from the ask's quests and never stored: code, quest, name, from, to). A message's `to` absent
 // is everyone; `person` true is the person's own words, and a session's are that agent's claim. `code` is `published`, `taken`, `done`,
-// `declined` or `awaiting`, which the page words in the reader's language.
+// `declined` or `awaiting`, which the page words in the reader's language. COWORK1d: a message's `urgent`, true or false, absent only on
+// one from before, which keeps its old reach.
 public sealed record ChannelItemResponse(
     string Kind, DateTimeOffset At, string? Id = null, bool? Person = null, string? Session = null, string? Repository = null,
     string? Agent = null, string? Entry = null, string? From = null, string? To = null, string? Re = null, bool? Question = null,
-    bool? Open = null, string? Text = null, string? Origin = null, string? Code = null, string? Quest = null, string? Name = null);
+    bool? Open = null, string? Text = null, string? Origin = null, string? Code = null, string? Quest = null, string? Name = null,
+    bool? Urgent = null);
 // The channel as one entry reads it: every item (or those after `since`), `unread` against the entry's `mark` (absent for none).
 public sealed record ChannelResponse(string Ask, string Entry, IReadOnlyList<ChannelItemResponse> Items, int Unread, DateTimeOffset? Mark);
 public sealed record ChannelPostResponse(ChannelItemResponse Message);
