@@ -87,6 +87,9 @@ public static class ChannelWire
         if (message.To is not null) writer.WriteString("to", message.To);
         if (message.Re is not null) writer.WriteString("re", message.Re);
         if (message.Question) writer.WriteBoolean("question", true);
+        // COWORK1d (the message-urgency design §9): said whenever kept, an explicit false included, since absent is a message from
+        // before and keeps its old reach. An older machine ignores the field.
+        if (message.Urgent is { } urgent) writer.WriteBoolean("urgent", urgent);
         writer.WriteString("text", message.Text);
         writer.WriteEndObject();
     }
@@ -104,7 +107,15 @@ public static class ChannelWire
         string? Maybe(string name) => Text(item, name) is { Length: > 0 } value ? value : null;
         return new ChannelMessage(
             id, ask, Workspaces.Default, at, Maybe("session"), Maybe("repository"), Maybe("agent"), Maybe("entry"), Maybe("to"), Maybe("re"),
-            item.TryGetProperty("question", out var question) && question.ValueKind == JsonValueKind.True, text);
+            item.TryGetProperty("question", out var question) && question.ValueKind == JsonValueKind.True, text)
+        {
+            Urgent = item.TryGetProperty("urgent", out var urgent) ? urgent.ValueKind switch
+            {
+                JsonValueKind.True => true,
+                JsonValueKind.False => false,
+                _ => null,
+            } : null,
+        };
     }
 }
 

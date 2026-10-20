@@ -30,7 +30,42 @@ export type ChannelItem = {
   quest?: string | null;
   name?: string | null;
   from?: string | null;
+  /**
+   * When its sender asked it to reach a working session (COWORK1d, D188 point 2): true urgent, false ordinary; absent on a message
+   * from before, which says no level.
+   */
+  urgent?: boolean | null;
+  /** What it reached in each repository it addresses, as the person reads it (COWORK1d, the design §8.4); absent from a host from before. */
+  receipts?: ChannelReceipt[] | null;
 };
+
+/**
+ * A message's receipt in one repository it addresses (COWORK1d, the message-urgency design §7): `waiting`, `held`, `sent`, `taken`,
+ * `read`, `partly`, `answered` or `not-reached`, never more than Daoris observed; answered is a reply, never that it was obeyed.
+ */
+export type ChannelReceipt = { repository: string; state: string };
+
+/** The receipts the page has words for; another is said as the shell wrote it. */
+export const RECEIPT_STATES = new Set(['waiting', 'held', 'sent', 'taken', 'read', 'partly', 'answered', 'not-reached']);
+
+/**
+ * Whether the person may send a message on to a repository's session from its receipt (COWORK1d, the design §4.2, §8.4): where it
+ * waits there, is held for a turn's end, was handed only partly, or never reached it. Taken, read, sent and answered have reached it.
+ */
+export const forwardable = (receipt: ChannelReceipt): boolean =>
+  receipt.state === 'waiting' || receipt.state === 'held' || receipt.state === 'partly' || receipt.state === 'not-reached';
+
+/** The person's *Send to its session* as the shell answers it: sent, to which session, or the code that says why not. */
+export type ChannelForwarded = { sent: boolean; code?: string | null; session?: string | null };
+
+/** The shell's answer to *Send to its session*; one of another shape is a refusal with a code this page has no words for. */
+export function forwardedOf(raw: unknown): ChannelForwarded {
+  if (typeof raw !== 'object' || raw === null || typeof (raw as ChannelForwarded).sent !== 'boolean') {
+    return { sent: false, code: 'other', session: null };
+  }
+  const { sent, code, session } = raw as ChannelForwarded;
+  return { sent, code: typeof code === 'string' ? code : null, session: typeof session === 'string' ? session : null };
+}
 
 /**
  * How Daoris's words around another session's claim begin when the driver hands one to a running session (SESSONE2b,

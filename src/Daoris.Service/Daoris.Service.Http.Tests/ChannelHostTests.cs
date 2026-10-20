@@ -162,6 +162,41 @@ public sealed class ChannelHostTests(LocalHost host) : IClassFixture<LocalHost>
         Assert.False(ours[0].TryGetProperty("title", out _));
     }
 
+    /// <summary>
+    /// 🔴 COWORK1d (the message-urgency design §6, §8.4, §9): a message answers its level, the person's urgent unless they asked
+    /// ordinary; <c>/channel/ack</c> keeps an entry's acknowledgment by message id, one part's claim once, which a session's read
+    /// answers as <c>ack</c> and the person's as each addressed repository's receipt; an unknown state is refused.
+    /// </summary>
+    [Fact]
+    public async Task A_message_answers_its_level_and_an_entrys_acknowledgment_shows_as_its_receipt()
+    {
+        var ask = await AskedAsync("Channel the fifth report through the bridge.");
+        var urgent = (await host.PostAsync($"/api/asks/{ask}/channel", new { text = "now please", to = "Keeper" })).Json.GetProperty("message");
+        var ordinary = (await host.PostAsync($"/api/asks/{ask}/channel", new { text = "later", urgent = false })).Json.GetProperty("message");
+        Assert.True(urgent.GetProperty("urgent").GetBoolean());
+        Assert.False(ordinary.GetProperty("urgent").GetBoolean());
+
+        var id = urgent.GetProperty("id").GetString()!;
+        var keeper = $"ask:{ask}/Keeper";
+        var claimed = await host.PostAsync($"/api/asks/{ask}/channel/ack", new { entry = keeper, session = "s1", state = "taking", messages = new[] { id } });
+        var again = await host.PostAsync($"/api/asks/{ask}/channel/ack", new { entry = keeper, session = "s2", state = "taking", messages = new[] { id } });
+        Assert.Equal(200, claimed.Status);
+        Assert.Equal([id], claimed.Json.GetProperty("acknowledged").EnumerateArray().Select(m => m.GetString()));
+        Assert.Equal(0, again.Json.GetProperty("acknowledged").GetArrayLength());
+
+        var forEntry = (await host.GetAsync($"/api/asks/{ask}/channel?entry={Uri.EscapeDataString(keeper)}")).Json.GetProperty("items")
+            .EnumerateArray().Single(item => item.TryGetProperty("id", out var each) && each.GetString() == id);
+        Assert.Equal(("taking", "s1"), (forEntry.GetProperty("ack").GetString(), forEntry.GetProperty("ackSession").GetString()));
+
+        var forPerson = (await host.GetAsync($"/api/asks/{ask}/channel")).Json.GetProperty("items")
+            .EnumerateArray().Single(item => item.TryGetProperty("id", out var each) && each.GetString() == id);
+        var receipt = Assert.Single(forPerson.GetProperty("receipts").EnumerateArray());
+        Assert.Equal(("Keeper", "held"), (receipt.GetProperty("repository").GetString(), receipt.GetProperty("state").GetString()));
+
+        Assert.Equal(400, (await host.PostAsync($"/api/asks/{ask}/channel/ack", new { entry = keeper, state = "obeyed", messages = new[] { id } })).Status);
+        Assert.Equal(404, (await host.PostAsync("/api/asks/ffffff/channel/ack", new { entry = keeper, state = "taken", messages = new[] { id } })).Status);
+    }
+
     /// <summary>Deleting an ask forgets its channel, so the same words asked again find none of it.</summary>
     [Fact]
     public async Task Deleting_the_ask_forgets_its_channel()

@@ -38,5 +38,21 @@
   "asks.channel.twin": "在终端里，`daoris-driver ask channel {{id}}` 读取频道，`daoris-driver ask channel {{id}} [--to <repository>] \"…\"` 以你的名义发送。",
   "asks.channel.panel.lead": "本需求的频道里与 {{repository}} 有关的内容：发给所有人的、发给它的，以及它写的。",
   "asks.channel.panel.empty": "频道里还没有与 {{repository}} 有关的内容。",
-  "asks.channel.panel.open": "打开完整的频道"
+  "asks.channel.panel.open": "打开完整的频道",
+  "asks.channel.receipts": "送达情况",
+  "asks.channel.receipt.waiting": "等待 {{repository}}",
+  "asks.channel.receipt.held": "已为 {{repository}} 的会话暂存",
+  "asks.channel.receipt.sent": "已发给 {{repository}}",
+  "asks.channel.receipt.taken": "{{repository}} 已收下",
+  "asks.channel.receipt.read": "{{repository}} 已读取",
+  "asks.channel.receipt.partly": "已部分送达 {{repository}}",
+  "asks.channel.receipt.answered": "{{repository}} 已回应",
+  "asks.channel.receipt.other": "{{repository}}：{{state}}",
+  "asks.channel.notReached": "它没有送达 {{repository}} 的会话：需求的工作先结束了。",
+  "asks.channel.forward": "发给它的会话",
+  "asks.channel.forwarded": "已发给它的会话。",
+  "asks.channel.forwardRefused.no-part": "本机没有 {{repository}} 的会话可以收下它。",
+  "asks.channel.forwardRefused.gone": "这条消息已不在频道上。",
+  "asks.channel.forwardRefused.held": "{{repository}} 的另一个会话现在持有它。",
+  "asks.channel.forwardRefused.other": "没有发送：{{code}}"
 }

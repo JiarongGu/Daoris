@@ -1976,7 +1976,7 @@ public sealed class Driver(
             // What waited on the ask's channel for this part's line of work (SESSONE2b, D167 point 7): read for its instruction, never
             // holding the start, and its entry's mark moved once the record works, not before, so a start that fails hands it on.
             var channelDoors = new ServiceChannelDoors(service);
-            var channelHeld = start.Channel is { } line ? await ChannelReach.HandAsync(channelDoors, line, ct).ConfigureAwait(false) : null;
+            var channelHeld = start.Channel is { } line ? await ChannelReach.HandAsync(channelDoors, line, sessionId, ct).ConfigureAwait(false) : null;
             // FABRIC-CLOSE1l (CLOSE1f, CLOSE1g; the fabric events design §E5): a quest whose work cycle holds `quest.close` names its graph for
             // the take as its first session opens, so the take binds it in its own write, and a bound quest's session says `ready`, never
             // `done`. A circle synced through a remote, by the map sync reads, is never bound. No closure graph: nothing asked, nothing said.
@@ -2108,7 +2108,7 @@ public sealed class Driver(
                 // A native run holds what the person says while it works, and goes on with it in its own conversation (MSG1b).
                 goOn: GoOns.GoOnWith(adapter, target, selection, rules.File, handed),
                 stopMade: stop => stoppedFirst = stop,
-                // The part works: what it was handed from the ask's channel is read, so its entry's mark moves (SESSONE2b).
+                // The part works: what it was handed from the ask's channel is acknowledged by its id (SESSONE2b, COWORK1d).
                 working: channelHeld is null ? null : () => _ = ChannelReach.HandedAsync(channelDoors, channelHeld, CancellationToken.None),
                 // BGWAIT1: a turn that ends on the session's own background work, holding its quest as a park would, is not
                 // a question. Read from the quest as the conclusion reads it, by the conclusion's own rule.
@@ -3323,9 +3323,15 @@ public sealed class Driver(
             // the page shows them waiting in the turn they were said in, rather than nothing until they are handed over.
             inbox?.OnSaid((message, reach) =>
             {
-                // Another session's message on the ask's channel is that agent's claim, never the person's (SESSONE2b).
+                // Another session's message on the ask's channel is that agent's claim, never the person's (SESSONE2b); at its next step
+                // where urgent, and beside words the session is told anyway when its turn ends otherwise (COWORK1d).
                 Line(message.Channel is { Person: false } claim
-                    ? $"— another session's message `{claim.Id}` on the ask's channel, which reaches the session at its next step"
+                    ? reach == DrivenReach.NextStep
+                        ? $"— another session's message `{claim.Id}` on the ask's channel, which reaches the session at its next step"
+                        : $"— another session's message `{claim.Id}` on the ask's channel, which goes beside what the session is told when its turn ends"
+                    // COWORK1d: an urgent ask's helper answer, the helper's claim, never the person's.
+                    : message.Helped is { Helper: var helper }
+                        ? $"— helper `{helper}`'s answer, which reaches the session {(reach == DrivenReach.NextStep ? "at its next step" : "when its turn ends")}"
                     : reach switch
                     {
                         DrivenReach.NextStep => $"— the person added, which reaches the session at its next step: {message.Text}",
@@ -3351,8 +3357,12 @@ public sealed class Driver(
                     {
                         Line(message.Channel is { Person: false } claim
                             ? $"— the session took another session's message `{claim.Id}` on the ask's channel"
-                            : $"— the session took what the person added: {message.Text}");
+                            : message.Helped is { Helper: var helper }
+                                ? $"— the session took helper `{helper}`'s answer"
+                                : $"— the session took what the person added: {message.Text}");
                         Event(ChatMessage.Words(message));
+                        // COWORK1d: a channel message's entry acknowledges it taken, on the door's word.
+                        message.Acknowledge?.Invoke(ChannelAcks.Taken);
                     },
                     resume: resume?.Conversation,
                     // Each of the person's words its own block (MSG1b, D137 §2.2), and taken once the prompt is on the wire.

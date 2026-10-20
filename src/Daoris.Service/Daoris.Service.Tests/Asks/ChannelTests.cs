@@ -18,6 +18,7 @@ public sealed class ChannelTests : IAsyncLifetime
     private SessionStore _sessions = null!;
     private SessionLedger _ledger = null!;
     private ChannelDesk _channel = null!;
+    private ChannelStore _store = null!;
     private static readonly DateTimeOffset Now = DateTimeOffset.Parse("2026-10-14T09:00:00Z");
 
     private const string Sentence = "the report needs the v3 bridge, and the bridge needs a column";
@@ -44,8 +45,8 @@ public sealed class ChannelTests : IAsyncLifetime
         _exchange = new QuestExchange(service, _quests, files: files);
         _asks = new AskDesk(service, askStore, _exchange, files);
         _ledger = new SessionLedger(_quests, _sessions, service, askStore);
-        _channel = new ChannelDesk(
-            await ChannelStore.OpenAsync(_connection), _asks, askStore, _ledger, _quests, new StoreEntryFacts(_quests, _sessions));
+        _store = await ChannelStore.OpenAsync(_connection);
+        _channel = new ChannelDesk(_store, _asks, askStore, _ledger, _quests, new StoreEntryFacts(_quests, _sessions));
     }
 
     public async Task DisposeAsync()
@@ -177,6 +178,198 @@ public sealed class ChannelTests : IAsyncLifetime
 
         // The cap is the part's, and the person has none.
         Assert.Equal(ChannelRefusal.None, (await _channel.PostAsPersonAsync(ask.Id, "and me", null, null, Now.AddHours(1))).Refusal);
+    }
+
+    /// <summary>
+    /// 🔴 COWORK1d (the message-urgency design §9, trap 10): every message kept from now says its level. A part's post is urgent on
+    /// its word for at most <see cref="ChannelBounds.UrgentPerPart"/> of its posts, judged in the insert's own statement, so its
+    /// fourth urgent post is kept ordinary; an ordinary post is an explicit false, never absent, which is a message from before.
+    /// </summary>
+    [Fact]
+    public async Task A_parts_fourth_urgent_post_is_kept_ordinary_and_every_post_says_its_level()
+    {
+        var (ask, _, session) = await AskedAsync();
+
+        var urgent = new List<ChannelMessage>();
+        for (var n = 0; n <= ChannelBounds.UrgentPerPart; n++)
+        {
+            urgent.Add((await _channel.PostAsSessionAsync(session.Id, $"urgent {n}", null, null, false, Now.AddMinutes(n), urgent: true)).Message!);
+        }
+
+        var ordinary = (await _channel.PostAsSessionAsync(session.Id, "ordinary", null, null, false, Now.AddMinutes(9))).Message!;
+
+        Assert.Equal<bool?>([true, true, true, false], urgent.Select(m => m.Urgent));
+        Assert.Equal(false, ordinary.Urgent);
+        var read = (await _channel.ReadAsync(ask.Id, ChannelDesk.PersonEntry, null, false))!.Messages;
+        Assert.Equal<bool?>([true, true, true, false, false], read.Select(m => m.Urgent));
+    }
+
+    /// <summary>The person's message is kept at their default, urgent, or ordinary where they asked; a mirrored one from before says none.</summary>
+    [Fact]
+    public async Task The_persons_post_is_urgent_unless_asked_ordinary_and_one_from_before_says_no_level()
+    {
+        var (ask, _, _) = await AskedAsync();
+
+        var urgent = (await _channel.PostAsPersonAsync(ask.Id, "now please", null, null, Now.AddMinutes(1))).Message!;
+        var ordinary = (await _channel.PostAsPersonAsync(ask.Id, "when you can", null, null, Now.AddMinutes(2), urgent: false)).Message!;
+        await _store.MirrorAsync(new ChannelMessage(
+            "old1", "elsewhere1", "work", Now, "a@two/s9", "reports", "stub", "ask:elsewhere1/reports", null, null, false, "from before",
+            Origin: "a@two"));
+
+        Assert.Equal((true, false), (urgent.Urgent, ordinary.Urgent));
+        Assert.Null(Assert.Single(await _store.OfAsync("elsewhere1")).Urgent);
+    }
+
+    // ——— COWORK1d: the entry's acknowledgments, by message id (the message-urgency design §6, §9).
+
+    /// <summary>
+    /// 🔴 Trap 21: one part of an entry claims a message, in one statement; another part of the same entry takes nothing while the
+    /// first runs and holds it, and claims it once the first lets it go.
+    /// </summary>
+    [Fact]
+    public async Task One_part_of_an_entry_claims_a_message_and_another_takes_nothing_until_it_lets_go()
+    {
+        var (ask, _, session) = await AskedAsync();
+        var entry = $"ask:{ask.Id}/reports";
+        var id = (await _channel.PostAsPersonAsync(ask.Id, "use the older bridge", "reports", null, Now.AddMinutes(1))).Message!.Id;
+
+        Assert.Equal([id], await _channel.AcknowledgeAsync(ask.Id, entry, session.Id, ChannelAcks.Taking, [id], Now.AddMinutes(2)));
+        Assert.Empty((await _channel.AcknowledgeAsync(ask.Id, entry, "other1", ChannelAcks.Taking, [id], Now.AddMinutes(2)))!);
+
+        Assert.Equal([id], await _channel.AcknowledgeAsync(ask.Id, entry, session.Id, ChannelAcks.Released, [id], Now.AddMinutes(3)));
+        Assert.Equal([id], await _channel.AcknowledgeAsync(ask.Id, entry, "other1", ChannelAcks.Taking, [id], Now.AddMinutes(4)));
+        Assert.Null(await _channel.AcknowledgeAsync("ffffff", entry, session.Id, ChannelAcks.Taking, [id], Now));
+    }
+
+    /// <summary>
+    /// 🔴 Trap 22: a message a start's packet handed partly is handed again to a new part, never to the part that had it; a receipt
+    /// never moves back, so a late <c>sent</c> leaves <c>taken</c> as it was.
+    /// </summary>
+    [Fact]
+    public async Task A_message_handed_partly_goes_again_to_a_new_part_and_a_receipt_never_moves_back()
+    {
+        var (ask, _, session) = await AskedAsync();
+        var entry = $"ask:{ask.Id}/reports";
+        var id = (await _channel.PostAsPersonAsync(ask.Id, "long words", null, null, Now.AddMinutes(1))).Message!.Id;
+
+        await _channel.AcknowledgeAsync(ask.Id, entry, session.Id, ChannelAcks.Partly, [id], Now.AddMinutes(2));
+        Assert.Empty((await _channel.AcknowledgeAsync(ask.Id, entry, session.Id, ChannelAcks.Taking, [id], Now.AddMinutes(3)))!);
+        Assert.Equal([id], await _channel.AcknowledgeAsync(ask.Id, entry, "next1", ChannelAcks.Taking, [id], Now.AddMinutes(3)));
+        await _channel.AcknowledgeAsync(ask.Id, entry, "next1", ChannelAcks.Taken, [id], Now.AddMinutes(4));
+        Assert.Empty((await _channel.AcknowledgeAsync(ask.Id, entry, "next1", ChannelAcks.Sent, [id], Now.AddMinutes(5)))!);
+
+        var read = (await _channel.ReadAsync(ask.Id, entry, null, moveMark: false))!;
+        Assert.Equal((ChannelAcks.Taken, "next1"), (read.Acknowledged[id].State, read.Acknowledged[id].Session));
+    }
+
+    /// <summary>
+    /// 🔴 The design §6: a claim left by a part that no longer runs (a restart cut it off) reads to its entry as none and to the person
+    /// as waiting, so the entry's next part is handed it and claims it.
+    /// </summary>
+    [Fact]
+    public async Task A_claim_whose_part_no_longer_runs_reads_as_none_and_goes_to_the_next_part()
+    {
+        var (ask, _, session) = await AskedAsync();
+        var entry = $"ask:{ask.Id}/reports";
+        var id = (await _channel.PostAsPersonAsync(ask.Id, "use the older bridge", "reports", null, Now.AddMinutes(1))).Message!.Id;
+        await _channel.AcknowledgeAsync(ask.Id, entry, session.Id, ChannelAcks.Taking, [id], Now.AddMinutes(2));
+        Assert.Equal(ChannelAcks.Taking, (await _channel.ReadAsync(ask.Id, entry, null, false))!.Acknowledged[id].State);
+
+        await _ledger.AdvanceAsync(session.Id, "failed", null, null, null, Now.AddMinutes(3));
+
+        Assert.False((await _channel.ReadAsync(ask.Id, entry, null, false))!.Acknowledged.ContainsKey(id));
+        Assert.Equal(ChannelReceipts.Waiting, Assert.Single((await _channel.ReadAsync(ask.Id, ChannelDesk.PersonEntry, null, false))!.Receipts[id]).State);
+        Assert.Equal([id], await _channel.AcknowledgeAsync(ask.Id, entry, "next1", ChannelAcks.Taking, [id], Now.AddMinutes(4)));
+    }
+
+    /// <summary>The entry's mark, kept for display, moves to before the oldest message for it that it has not acknowledged.</summary>
+    [Fact]
+    public async Task The_entrys_mark_stays_before_the_oldest_message_it_has_not_acknowledged()
+    {
+        var (ask, _, session) = await AskedAsync();
+        var entry = $"ask:{ask.Id}/reports";
+        var first = (await _channel.PostAsPersonAsync(ask.Id, "one", null, null, Now.AddMinutes(1))).Message!;
+        var second = (await _channel.PostAsPersonAsync(ask.Id, "two", null, null, Now.AddMinutes(2))).Message!;
+        await _channel.PostAsPersonAsync(ask.Id, "three", null, null, Now.AddMinutes(3));
+
+        await _channel.AcknowledgeAsync(ask.Id, entry, session.Id, ChannelAcks.Taken, [second.Id], Now.AddMinutes(4));
+        Assert.True(await _store.MarkAsync(ask.Id, entry) is not { } before || before < first.At);
+
+        await _channel.AcknowledgeAsync(ask.Id, entry, session.Id, ChannelAcks.Taken, [first.Id], Now.AddMinutes(4));
+        Assert.Equal(second.At, await _store.MarkAsync(ask.Id, entry));
+    }
+
+    /// <summary>
+    /// 🔴 Traps 9 and 22: a session's own read acknowledges each message for its entry it returned whole, and still returns one a
+    /// teammate's machine mirrored late with an older moment than the mark, which a mark alone would have passed.
+    /// </summary>
+    [Fact]
+    public async Task A_sessions_read_acknowledges_what_it_returned_and_still_returns_a_message_mirrored_late()
+    {
+        var (ask, _, session) = await AskedAsync();
+        var entry = $"ask:{ask.Id}/reports";
+        var first = (await _channel.PostAsPersonAsync(ask.Id, "one", null, null, Now.AddMinutes(2))).Message!;
+
+        Assert.Equal([first.Id], (await _channel.ReadAsSessionAsync(session.Id, null)).Read!.Messages.Select(m => m.Id));
+        Assert.Equal(ChannelAcks.Read, (await _channel.ReadAsync(ask.Id, entry, null, false))!.Acknowledged[first.Id].State);
+
+        await _store.MirrorAsync(new ChannelMessage(
+            "late1", ask.Id, "work", Now.AddMinutes(1), "b@two/s9", "checker", "stub", $"ask:{ask.Id}/checker", null, null, false,
+            "late words", Origin: "b@two") { Urgent = false });
+
+        Assert.Equal(["late1"], (await _channel.ReadAsSessionAsync(session.Id, null)).Read!.Messages.Select(m => m.Id));
+        Assert.Empty((await _channel.ReadAsSessionAsync(session.Id, null)).Read!.Messages);
+    }
+
+    /// <summary>
+    /// 🔴 Trap 15: each message shows, for each repository it addresses, what reached that repository's line of work: waiting, taken,
+    /// answered by a reply from it, and not reached once the ask has no quest open and no part of the entry runs here; a part still
+    /// running keeps it waiting.
+    /// </summary>
+    [Fact]
+    public async Task A_message_never_taken_is_not_reached_once_the_ask_has_no_quest_open_and_no_part_of_its_entry_runs()
+    {
+        var (ask, quest, session) = await AskedAsync();
+        var entry = $"ask:{ask.Id}/reports";
+        var taken = (await _channel.PostAsPersonAsync(ask.Id, "one", null, null, Now.AddMinutes(1))).Message!;
+        var waiting = (await _channel.PostAsPersonAsync(ask.Id, "two", "reports", null, Now.AddMinutes(2))).Message!;
+        await _channel.AcknowledgeAsync(ask.Id, entry, session.Id, ChannelAcks.Taken, [taken.Id], Now.AddMinutes(3));
+
+        async Task<IReadOnlyDictionary<string, IReadOnlyList<ChannelReceipt>>> ReceiptsAsync() =>
+            (await _channel.ReadAsync(ask.Id, ChannelDesk.PersonEntry, null, false))!.Receipts;
+
+        Assert.Equal([("reports", ChannelReceipts.Taken)], (await ReceiptsAsync())[taken.Id].Select(r => (r.Repository, r.State)));
+        Assert.Equal([("reports", ChannelReceipts.Waiting)], (await ReceiptsAsync())[waiting.Id].Select(r => (r.Repository, r.State)));
+
+        await _channel.PostAsSessionAsync(session.Id, "done that", null, taken.Id, false, Now.AddMinutes(3));
+        Assert.Equal(ChannelReceipts.Answered, Assert.Single((await ReceiptsAsync())[taken.Id]).State);
+
+        // Its quest closes while its part still runs: the message still waits for that part.
+        await _exchange.RespondAsync(quest.Id, "decline", "not ours", Now.AddMinutes(4));
+        Assert.Equal(ChannelReceipts.Waiting, Assert.Single((await ReceiptsAsync())[waiting.Id]).State);
+
+        await _ledger.AdvanceAsync(session.Id, "failed", null, null, null, Now.AddMinutes(5));
+        Assert.Equal(ChannelReceipts.NotReached, Assert.Single((await ReceiptsAsync())[waiting.Id]).State);
+        Assert.Equal(ChannelReceipts.Answered, Assert.Single((await ReceiptsAsync())[taken.Id]).State);
+    }
+
+    /// <summary>
+    /// 🔴 Trap 5 (the message-urgency design §4.2, §9): a claim the person passed on is kept on an ended part's record by the say door as
+    /// another agent's words, <c>from: agent</c> with its channel message, never the person's; the person's own channel message, kept
+    /// with its channel alone, is still theirs. Authorship is never read from the channel.
+    /// </summary>
+    [Fact]
+    public async Task A_claim_the_person_passed_on_is_kept_as_an_agents_and_the_persons_own_channel_message_as_theirs()
+    {
+        var (_, _, session) = await AskedAsync();
+        await _ledger.AdvanceAsync(session.Id, "failed", null, null, null, Now.AddMinutes(1));
+
+        var passed = await _ledger.SayAsync(session.Id, "Another session says: the bridge wants a column.", null, Now.AddMinutes(2), default, channel: "m1", from: SaidFrom.Agent);
+        var own = await _ledger.SayAsync(session.Id, "Use the older bridge.", null, Now.AddMinutes(3), default, channel: "p1");
+
+        Assert.Equal((SessionSayRefusal.None, SessionSayRefusal.None), (passed.Refusal, own.Refusal));
+        var said = (await _sessions.FindAsync(session.Id))!.Said;
+        Assert.Equal([("m1", "agent", false), ("p1", null, true)], said.Select(word => (word.Channel, word.From, word.Persons)));
     }
 
     /// <summary>

@@ -276,17 +276,28 @@ public sealed record AskReviewProposalResponse(string Choice, string Reason, Dat
 public sealed record AskWordResponse(string Kind, string Text, DateTimeOffset At, string? Session, string? Quest);
 // An ask's channel (SESSONE2a, D167 points 6 to 8). The person's post: `to` is one of the ask's repositories or `everyone`, `re` the id
 // of a message it answers.
-public sealed record ChannelPostRequest(string? Text, string? To = null, string? Re = null);
+// COWORK1d: `urgent` false keeps the person's message ordinary; absent, it is their default, urgent (D188 point 2).
+public sealed record ChannelPostRequest(string? Text, string? To = null, string? Re = null, bool? Urgent = null);
 // Moves an entry's read mark (the person's, `person`, when `entry` is left out) to `through`, else to the newest item.
 public sealed record ChannelReadRequest(string? Entry = null, DateTimeOffset? Through = null);
 // One item of the channel, in time order. `kind` is `message` (id, person, session, repository, agent, entry, to, re, question, open,
 // text, origin) or `line` (Daoris's, read from the ask's quests and never stored: code, quest, name, from, to). A message's `to` absent
 // is everyone; `person` true is the person's own words, and a session's are that agent's claim. `code` is `published`, `taken`, `done`,
-// `declined` or `awaiting`, which the page words in the reader's language.
+// `declined` or `awaiting`, which the page words in the reader's language. COWORK1d: a message's `urgent`, true or false, absent only on
+// one from before, which keeps its old reach; read for an entry, its acknowledgment `ack` (`taking`, `sent`, `taken`, `read`, `partly`)
+// with the part's `ackSession`; read for the person, `receipts`, one per repository it addresses.
 public sealed record ChannelItemResponse(
     string Kind, DateTimeOffset At, string? Id = null, bool? Person = null, string? Session = null, string? Repository = null,
     string? Agent = null, string? Entry = null, string? From = null, string? To = null, string? Re = null, bool? Question = null,
-    bool? Open = null, string? Text = null, string? Origin = null, string? Code = null, string? Quest = null, string? Name = null);
+    bool? Open = null, string? Text = null, string? Origin = null, string? Code = null, string? Quest = null, string? Name = null,
+    bool? Urgent = null, string? Ack = null, string? AckSession = null, IReadOnlyList<ChannelReceiptResponse>? Receipts = null);
+// What a message reached in one repository it addresses (COWORK1d): `waiting`, `held`, `sent`, `taken`, `read`, `partly`, `answered`
+// or `not-reached`, never more than was observed.
+public sealed record ChannelReceiptResponse(string Repository, string State);
+// An entry's acknowledgment of messages by id (COWORK1d): `taking` claims each for `session`'s part, one part's only; `released` lets a
+// claim go; `sent`, `taken`, `read` and `partly` raise what the entry holds, never lowering it. Answers the ids it changed.
+public sealed record ChannelAckRequest(string? Entry, string? Session, string? State, IReadOnlyList<string>? Messages);
+public sealed record ChannelAckResponse(IReadOnlyList<string> Acknowledged);
 // The channel as one entry reads it: every item (or those after `since`), `unread` against the entry's `mark` (absent for none).
 public sealed record ChannelResponse(string Ask, string Entry, IReadOnlyList<ChannelItemResponse> Items, int Unread, DateTimeOffset? Mark);
 public sealed record ChannelPostResponse(ChannelItemResponse Message);
@@ -490,7 +501,9 @@ public sealed record OpinionActionResponse(
 // MIXAGENT2a-ii (D163 point 2): the driver's helper session opens its record, and hands the helper's answer to the asker. Every
 // part nullable so one left out is refused by the desk naming which. `text` is Daoris's words around the helper's claim.
 public sealed record HelperOpenRequest(string? Asker, string? Adapter, string? Tree, string? Account = null, string? HarnessVersion = null, string? BaseCommit = null);
-public sealed record HelperHandRequest(string? Text);
+// COWORK1d: `running` true is the driver that runs a working driven asker handing an urgent ask's answer for its run's next step;
+// `level` the ask's, kept beside the word.
+public sealed record HelperHandRequest(string? Text, bool? Running = null, string? Level = null);
 // A helper door's answer: the desk's sentence, the helper's record a pass opened or the asker the answer went to, and the word.
 public sealed record HelperActionResponse(string Message, SessionResponse? Session = null, SaidWordResponse? Said = null);
 // BRAINSTORM1a3 (D176 points 1, 2 and 8): a person's question for a brainstorm, every part nullable so one left out is refused by
@@ -725,6 +738,8 @@ public sealed record ChangesResponse(string Since, IReadOnlyList<string> Moved);
 [JsonSerializable(typeof(ChannelReadRequest))]
 [JsonSerializable(typeof(ChannelResponse))]
 [JsonSerializable(typeof(ChannelPostResponse))]
+[JsonSerializable(typeof(ChannelAckRequest))]
+[JsonSerializable(typeof(ChannelAckResponse))]
 [JsonSerializable(typeof(AddedRequest))]
 [JsonSerializable(typeof(AddedResponse))]
 [JsonSerializable(typeof(QuestActionResponse))]

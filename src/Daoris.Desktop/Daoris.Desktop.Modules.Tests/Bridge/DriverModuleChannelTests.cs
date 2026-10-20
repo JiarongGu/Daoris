@@ -69,6 +69,60 @@ public sealed class DriverModuleChannelTests : DriverModuleBridge
         Assert.Equal(0, (await AnswerAsync(older, "ASKS_ELSEWHERE", new { })).GetProperty("asks").GetArrayLength());
     }
 
+    /// <summary>
+    /// 🔴 COWORK1d (the message-urgency design §8.4): each message answers the page its level, and what it reached in each repository it
+    /// addresses, as the service read them for the person; a message from before says neither.
+    /// </summary>
+    [Fact]
+    public async Task CHANNEL_READ_answers_each_messages_level_and_receipts()
+    {
+        var (module, _) = await UpAsync(new StandIn(_ => (HttpStatusCode.OK, """
+            {"ask":"a1","entry":"person","items":[
+             {"kind":"message","at":"2026-10-14T09:02:00Z","id":"m1","person":false,"session":"s1","repository":"db","entry":"ask:a1/db",
+              "text":"Stop: the column moved.","urgent":true,"receipts":[{"repository":"web","state":"not-reached"},{"repository":"api","state":"taken"}]},
+             {"kind":"message","at":"2026-10-14T09:03:00Z","id":"m0","person":true,"text":"From before."}],"unread":2}
+            """)));
+
+        var items = (await AnswerAsync(module, "CHANNEL_READ", new { ask = "a1" })).GetProperty("items").EnumerateArray().ToList();
+
+        Assert.True(items[0].GetProperty("urgent").GetBoolean());
+        Assert.Equal(
+            [("web", "not-reached"), ("api", "taken")],
+            items[0].GetProperty("receipts").EnumerateArray().Select(r => (r.GetProperty("repository").GetString(), r.GetProperty("state").GetString())));
+        Assert.Equal(JsonValueKind.Null, items[1].GetProperty("urgent").ValueKind);
+    }
+
+    /// <summary>
+    /// 🔴 COWORK1d (the design §4.2, §8.4): <c>CHANNEL_FORWARD</c>, the person's <i>Send to its session</i>, sends a message to the newest
+    /// part here of the line of work it names: kept on an ended part's record as the agent's claim passed on by the person, and the
+    /// entry acknowledges it sent. With no part of that line of work here, the answer is its code.
+    /// </summary>
+    [Fact]
+    public async Task CHANNEL_FORWARD_sends_a_message_on_to_its_line_of_works_newest_part_here()
+    {
+        var (module, service) = await UpAsync(new StandIn(request => request.RequestUri!.PathAndQuery switch
+        {
+            "/api/sessions?includeClosed=true" => (HttpStatusCode.OK, """
+                [{"id":"s4","quest":"q4","repository":"web","state":"completed","kind":"drive","entry":"ask:a1/web","created":"2026-10-14T08:00:00Z","said":[]},
+                 {"id":"s5","quest":"q5","repository":"web","state":"completed","kind":"drive","entry":"ask:a1/web","created":"2026-10-14T09:00:00Z","said":[]}]
+                """),
+            "/api/asks/a1/channel?entry=ask%3Aa1%2Fweb" => (HttpStatusCode.OK, Channel.Replace("\"entry\":\"person\"", "\"entry\":\"ask:a1/web\"")),
+            "/api/sessions/s5/say" => (HttpStatusCode.OK, """{"message":"kept","said":{"id":"w1","text":"x","at":"2026-10-14T09:10:00Z","files":[]}}"""),
+            "/api/asks/a1/channel/ack" => (HttpStatusCode.OK, """{"acknowledged":["m1"]}"""),
+            _ => null,
+        }));
+
+        var forwarded = await AnswerAsync(module, "CHANNEL_FORWARD", new { ask = "a1", message = "m1", repository = "web" });
+        var nobody = await AnswerAsync(module, "CHANNEL_FORWARD", new { ask = "a1", message = "m1", repository = "docs" });
+
+        Assert.Equal((true, "s5"), (forwarded.GetProperty("sent").GetBoolean(), forwarded.GetProperty("session").GetString()));
+        var say = service.Bodies[service.Requests.IndexOf("POST /api/sessions/s5/say")];
+        Assert.Contains("\"from\":\"agent\"", say);
+        Assert.Contains("\"channel\":\"m1\"", say);
+        Assert.Contains("\"state\":\"sent\"", service.Bodies[service.Requests.IndexOf("POST /api/asks/a1/channel/ack")]);
+        Assert.Equal((false, "no-part"), (nobody.GetProperty("sent").GetBoolean(), nobody.GetProperty("code").GetString()));
+    }
+
     /// <summary>A named entry's read and a tail after a moment go to the door as its query.</summary>
     [Fact]
     public async Task CHANNEL_READ_passes_an_entry_and_a_since_on()
@@ -145,6 +199,7 @@ public sealed class DriverModuleChannelTests : DriverModuleBridge
         Assert.Contains(Refusals.DriverNotReady, await RefusalAsync(Module(), "CHANNEL_READ", new { ask = "a1" }));
         Assert.Contains(Refusals.DriverNotReady, await RefusalAsync(Module(), "CHANNEL_POST", new { ask = "a1", text = "hi" }));
         Assert.Contains(Refusals.DriverNotReady, await RefusalAsync(Module(), "CHANNEL_MARK", new { ask = "a1" }));
+        Assert.Contains(Refusals.DriverNotReady, await RefusalAsync(Module(), "CHANNEL_FORWARD", new { ask = "a1", message = "m1", repository = "web" }));
     }
 
     /// <summary>An ask named by nothing is the driver's refusal, said verbatim.</summary>

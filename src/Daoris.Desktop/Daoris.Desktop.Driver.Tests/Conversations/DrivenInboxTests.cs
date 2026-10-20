@@ -906,4 +906,61 @@ public sealed class DrivenInboxTests
         Assert.Equal((InboxKeep.Refused, "running"), (refused.Outcome, refused.Said?.Refusal));
         Assert.False(other.Holds);
     }
+
+    // ——— COWORK1d: another agent's claim (the message-urgency design §2.3, §4.2).
+
+    private static ChatMessage Claim(string id, MessageLevel level) =>
+        new($"Another session says: {id}", []) { Level = level, Channel = new ChannelItemView(ChannelItemView.Message, DateTimeOffset.UnixEpoch) { Id = id, Text = id } };
+
+    /// <summary>
+    /// 🔴 Trap 3 (§2.3's race, narrowed): once the answer to the inbox's last open prompt is read, the turn is over, so a claim is
+    /// refused rather than written as a prompt that would start a turn of its own; the person's word is still held, and a prompt sent
+    /// again opens the inbox to claims.
+    /// </summary>
+    [Fact]
+    public void A_claim_after_the_last_prompts_answer_is_read_is_refused_while_a_persons_word_is_held()
+    {
+        var sent = new List<ChatMessage>();
+        var inbox = new DrivenInbox(_ => { });
+        inbox.Attach(interrupt: null, deliver: message =>
+        {
+            sent.Add(message);
+            return Task.FromResult("end_turn");
+        });
+        inbox.Flow();
+        Assert.True(inbox.TakesClaims);
+
+        inbox.LastAnswered();
+
+        Assert.False(inbox.TakesClaims);
+        Assert.False(inbox.HoldClaim(Claim("m1", MessageLevel.Urgent)));
+        Assert.True(inbox.Hold(Said("Use the older bridge.")));
+        Assert.True(inbox.TakesClaims);
+        Assert.True(inbox.HoldClaim(Claim("m2", MessageLevel.Urgent)));
+        Assert.Equal(["Use the older bridge.", "Another session says: m2"], sent.Select(message => message.Text));
+    }
+
+    /// <summary>
+    /// 🔴 Trap 3: claims alone at a turn's end make no turn. The run ends, and each is let go, never handed back as the person's words
+    /// never reached; beside a word that makes a turn, each goes in the order said.
+    /// </summary>
+    [Fact]
+    public void Claims_alone_at_a_turns_end_make_no_turn_and_are_let_go()
+    {
+        var released = new List<string>();
+        var inbox = new DrivenInbox(_ => { });
+        inbox.Attach(interrupt: null);
+        Assert.True(inbox.HoldClaim(Claim("m1", MessageLevel.Urgent) with { Acknowledge = state => released.Add($"m1 {state}") }));
+
+        Assert.False(inbox.Holds);
+        Assert.Empty(inbox.State.Queued);
+        Assert.Null(inbox.NextOrClose());
+        Assert.Equal([$"m1 {ChannelAcks.Released}"], released);
+
+        var other = new DrivenInbox(_ => { });
+        other.Attach(interrupt: null);
+        Assert.True(other.HoldClaim(Claim("m2", MessageLevel.Ordinary) with { Acknowledge = state => released.Add($"m2 {state}") }));
+        Assert.Empty(other.Close());
+        Assert.Contains($"m2 {ChannelAcks.Released}", released);
+    }
 }

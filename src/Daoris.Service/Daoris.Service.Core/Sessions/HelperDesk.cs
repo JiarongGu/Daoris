@@ -117,7 +117,14 @@ public sealed class HelperDesk(SessionStore sessions, bool local = true)
     /// end, never into a step in flight, so the driver hands it then.
     /// </summary>
     /// <param name="text">The words as Daoris composed them around the helper's claim.</param>
-    public async Task<HelperOutcome> HandAsync(string helperId, string text, DateTimeOffset now, CancellationToken ct = default)
+    /// <param name="running">
+    /// The driver that runs a working driven asker hands an urgent ask's answer for its run (COWORK1d, the message-urgency design §5): kept
+    /// on the running record's words, which that run's inbox takes at its next step and takes off by its id. Without it a running asker
+    /// takes the answer at its end, as before.
+    /// </param>
+    /// <param name="level">The ask's level, kept beside the word (COWORK1d): <c>urgent</c> where the ask was; none for an ordinary ask.</param>
+    public async Task<HelperOutcome> HandAsync(
+        string helperId, string text, DateTimeOffset now, CancellationToken ct = default, bool running = false, string? level = null)
     {
         if (!local) return new(HelperRefusal.Shared, Shared);
         if (string.IsNullOrWhiteSpace(text)) return Refused(HelperRefusal.BadShape, "The words handed are blank");
@@ -143,6 +150,8 @@ public sealed class HelperDesk(SessionStore sessions, bool local = true)
                 // An open conversation between turns (MIXAGENT2a-iii) is working: the chat runner says the word as its next turn,
                 // or at its turn's end, which it alone knows. One still being started is not open yet.
                 { Kind: SessionKind.Chat, State: SessionState.Working } => null,
+                // COWORK1d: a working driven asker whose driver hands an urgent ask's answer for its run's next step.
+                { Kind: SessionKind.Driven, State: SessionState.Working } when running => null,
                 { Active: true } =>
                     $"Session `{asker.Id}` is {Session.Spell(asker.State)}: a helper's answer reaches a running session at its turn's end, never into a step in flight",
                 _ => null,
@@ -154,7 +163,9 @@ public sealed class HelperDesk(SessionStore sessions, bool local = true)
                 return Refused(HelperRefusal.NotHanded, $"Helper `{helper.Id}`'s answer went to session `{asker.Id}` already: it goes once");
             }
 
-            var word = new SaidWord(Guid.NewGuid().ToString("N")[..8], text.Trim(), now, [], Reopens: true, Helper: helper.Id);
+            var word = new SaidWord(
+                Guid.NewGuid().ToString("N")[..8], text.Trim(), now, [], Reopens: true, Helper: helper.Id,
+                Level: level is { } said && SaidLevel.Known(said) ? said : null);
             var kept = await sessions.KeepSaidAsync(asker.Id, word, ct: inside).ConfigureAwait(false);
             return new HelperOutcome(
                 HelperRefusal.None,

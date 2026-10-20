@@ -205,7 +205,7 @@ public sealed class TargetPromptGoldenTests
                 To = "console-ui", Re = "m1a2", Question = true,
                 Text = "Should the API send the note as null or as an empty string?\nThe report reads both.",
             },
-        ], Asked.AddHours(2)),
+        ], "s1"),
     };
 
     private static string RepositoryRoot()

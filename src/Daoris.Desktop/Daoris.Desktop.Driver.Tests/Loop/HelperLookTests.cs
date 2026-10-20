@@ -28,14 +28,16 @@ public sealed class HelperLookTests : IDisposable
     private HelperFiles Files => new(_home);
 
     /// <summary>An ask on file as <c>helper_ask</c> writes it.</summary>
-    private void Ask(string id, string question = "Why does it drop the last day?", string by = "agent", string? agent = null, string asker = "s1")
+    private void Ask(
+        string id, string question = "Why does it drop the last day?", string by = "agent", string? agent = null, string asker = "s1", bool urgent = false)
     {
         Directory.CreateDirectory(DaorisHome.Entry(_home, HomeEntry.Helpers));
-        File.WriteAllText(DaorisHome.Entry(_home, HomeEntry.Helpers,$"{id}.ask.json"),
-            new JsonObject
-            {
-                ["id"] = id, ["asker"] = asker, ["question"] = question, ["agent"] = agent, ["askedBy"] = by, ["at"] = At.AddMinutes(int.Parse(id[^1..])).ToString("O"),
-            }.ToJsonString());
+        var ask = new JsonObject
+        {
+            ["id"] = id, ["asker"] = asker, ["question"] = question, ["agent"] = agent, ["askedBy"] = by, ["at"] = At.AddMinutes(int.Parse(id[^1..])).ToString("O"),
+        };
+        if (urgent) ask["urgent"] = true;
+        File.WriteAllText(DaorisHome.Entry(_home, HomeEntry.Helpers, $"{id}.ask.json"), ask.ToJsonString());
     }
 
     private static HelperRule On => new(HelperRules.On, []);
@@ -447,6 +449,59 @@ public sealed class HelperLookTests : IDisposable
 
         await Look(driver);
         Assert.Single(host.HelperHands);
+    }
+
+    /// <summary>
+    /// 🔴 COWORK1d (the message-urgency design §5): an urgent ask's answer reaches a running asker this loop runs at its next step,
+    /// where its door takes words then: kept on its record for its run with its level, held in its inbox under the record's id and sent
+    /// at once, recorded as Daoris's words around the helper's claim, never the person's; and handed once.
+    /// </summary>
+    [Fact]
+    public async Task An_urgent_answer_reaches_a_running_asker_at_its_next_step_once()
+    {
+        Ask("a1", urgent: true);
+        var host = Host(state: "working");
+        var driver = Driver(host, new Pass(Files) { Answer = "Line 42." });
+        var sent = new List<ChatMessage>();
+        var inbox = driver.Context.Processes.OpenInbox("s1");
+        inbox.Attach(interrupt: null, deliver: message =>
+        {
+            lock (sent) sent.Add(message);
+            return Task.FromResult("end_turn");
+        });
+        inbox.Flow();
+
+        await Look(driver);
+        await Until(() => Files.ReadState("a1") is { Handed: not null });
+
+        var answer = Assert.Single(sent);
+        Assert.Contains("Line 42.", answer.Text);
+        Assert.Equal("target", ChatMessage.Words(answer).Origin);
+        var word = host.Said("s1")[0]!;
+        Assert.Equal((word["id"]!.GetValue<string>(), "urgent"), (answer.Id, word["level"]?.GetValue<string>()));
+        Assert.Empty(inbox.State.Queued);
+        await Look(driver);
+        Assert.Single(host.HelperHands);
+    }
+
+    /// <summary>
+    /// An urgent answer to a running asker whose door takes words only at its turn's end, or that this loop does not run, waits for its
+    /// end, as an ordinary one does: never into a step in flight.
+    /// </summary>
+    [Fact]
+    public async Task An_urgent_answer_to_a_running_asker_on_a_turn_end_door_waits_for_its_end()
+    {
+        Ask("a1", urgent: true);
+        var host = Host(state: "working");
+        var driver = Driver(host, new Pass(Files) { Answer = "Line 42." });
+        driver.Context.Processes.OpenInbox("s1").Attach(interrupt: null);
+
+        await Look(driver);
+        await Until(() => Files.ReadState("a1") is { State: HelperStates.Answered });
+        await Look(driver);
+
+        Assert.Empty(host.HelperHands);
+        Assert.Null(Files.ReadState("a1")!.Handed);
     }
 
     /// <summary>An asker that stood down never goes on: refused with its code, and nothing handed.</summary>

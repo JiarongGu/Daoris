@@ -4,7 +4,8 @@ import type { TFunction } from 'i18next';
 import { ago } from '../locales/format';
 import { cn } from '../lib/cn';
 import {
-  type Channel, type ChannelItem, type ChannelPost, forEntry, lineWords, newestAt, repliesTo, repositoriesOf, sinceMark,
+  type Channel, type ChannelItem, type ChannelPost, type ChannelReceipt, forEntry, forwardable, lineWords, newestAt, RECEIPT_STATES,
+  repliesTo, repositoriesOf, sinceMark,
 } from '../work/channel';
 import { Refused } from '../work/InlineConfirm';
 import { Button, Icon, Pill, SelectField } from '../design/ui';
@@ -17,6 +18,12 @@ const NONE = '*';
 
 /** The codes the service refuses a post with, which this page has words for; another is said as the service wrote it. */
 const REFUSALS = new Set(['empty', 'too-long', 'bad-to', 'bad-re', 'not-found']);
+
+/** The codes *Send to its session* is refused with, which this page has words for (COWORK1d); another is said as the shell wrote it. */
+const FORWARD_REFUSALS = new Set(['no-part', 'gone', 'held']);
+
+/** The person's *Send to its session* (COWORK1d): a message, the repository whose session it goes to, and how it ended. */
+export type ChannelForward = (message: string, repository: string, answered: ChannelAnswered) => void;
 
 /** A door, in the accent, as the page's other doors are. */
 const DOOR = 'cursor-pointer border-0 bg-transparent p-0 text-left text-accent underline-offset-2 hover:underline';
@@ -52,13 +59,20 @@ const firstWords = (text: string | null | undefined, limit = 60) => {
  *
  * **A refusal is the service's code** (`empty`, `too-long`, `bad-to`, `bad-re`, `not-found`), said in the composer in the
  * reader's language, the words kept.
+ *
+ * **What a message reached** (COWORK1d, D188; the message-urgency design §7, §8.4): an urgent message names its level in a word, and
+ * each says, per repository it addresses, what reached that line of work, never more than Daoris observed. Where it waits there, is
+ * held for a turn's end, was handed only partly or never reached it, *Send to its session* sends it on (`onForward`), the person's own
+ * press; a read-only channel offers none.
  */
 export function ChannelSection({
-  channel, onPost, onRead, onOpenQuest, repositories = [], only, readOnly = false,
+  channel, onPost, onRead, onOpenQuest, onForward, repositories = [], only, readOnly = false,
 }: {
   /** Null while it is being read. */
   channel: Channel | null;
   onPost: (post: ChannelPost, answered: ChannelAnswered) => void;
+  /** *Send to its session* (COWORK1d). Absent where there is nowhere to send one from. */
+  onForward?: ChannelForward;
   /** A teammate's ask's channel (SESSONE2h): read here and posted nowhere from here, so no composer and no *Reply*. */
   readOnly?: boolean;
   /** The person's mark moved through the newest item shown, once what was unread is on the page. Absent in a panel. */
@@ -75,14 +89,16 @@ export function ChannelSection({
   return (
     <ChannelBody
       channel={channel} onPost={onPost} onRead={onRead} onOpenQuest={onOpenQuest} repositories={repositories} only={only} readOnly={readOnly}
+      onForward={readOnly ? undefined : onForward}
     />
   );
 }
 
-function ChannelBody({ channel, onPost, onRead, onOpenQuest, repositories, only, readOnly }: {
+function ChannelBody({ channel, onPost, onRead, onOpenQuest, onForward, repositories, only, readOnly }: {
   readOnly: boolean;
   channel: Channel;
   onPost: (post: ChannelPost, answered: ChannelAnswered) => void;
+  onForward?: ChannelForward;
   onRead?: (through: string) => void;
   onOpenQuest?: (quest: string) => void;
   repositories: readonly string[];
@@ -172,6 +188,7 @@ function ChannelBody({ channel, onPost, onRead, onOpenQuest, repositories, only,
                     anchorOf={(id) => `${place}-${id}`}
                     isNew={isNew}
                     onReply={readOnly ? undefined : () => answer(item)}
+                    onForward={onForward && item.id ? (repository, answered) => onForward(item.id!, repository, answered) : undefined}
                   />
                 );
             })}
@@ -241,8 +258,8 @@ function LineRow({ item, isNew, onOpenQuest }: { item: ChannelItem; isNew: boole
   );
 }
 
-/** One message as written, with who, to whom, when, what it answers, and a press to answer it. */
-function MessageRow({ item, anchor, anchorOf, quoted, isNew, onReply }: {
+/** One message as written, with who, to whom, when, what it answers, what it reached, and a press to answer it. */
+function MessageRow({ item, anchor, anchorOf, quoted, isNew, onReply, onForward }: {
   item: ChannelItem;
   anchor: string;
   anchorOf: (id: string) => string;
@@ -250,6 +267,8 @@ function MessageRow({ item, anchor, anchorOf, quoted, isNew, onReply }: {
   isNew: boolean;
   /** Absent in a read-only channel (SESSONE2h): there is nothing to answer from here. */
   onReply?: () => void;
+  /** *Send to its session* for one repository it addresses (COWORK1d); absent where nothing may be sent on from here. */
+  onForward?: (repository: string, answered: ChannelAnswered) => void;
 }) {
   const { t } = useTranslation();
   const toWords = item.to ? t('asks.channel.to', { to: item.to }) : t('asks.channel.toEveryone');
@@ -267,6 +286,8 @@ function MessageRow({ item, anchor, anchorOf, quoted, isNew, onReply }: {
         <span>{toWords}</span>
         <span>{ago(item.at)}</span>
         {item.question && <Pill tone={item.open ? 'open' : 'neutral'}>{item.open ? t('asks.channel.questionOpen') : t('asks.channel.question')}</Pill>}
+        {/* COWORK1d (the design §8.2): a level is named only where it is not quiet, in a word and a neutral emphasis. */}
+        {item.urgent === true && <Pill tone="neutral">{t('work.level.urgent')}</Pill>}
         {isNew && <Pill tone="neutral">{t('asks.channel.new')}</Pill>}
       </p>
       {item.re && (quoted
@@ -284,11 +305,62 @@ function MessageRow({ item, anchor, anchorOf, quoted, isNew, onReply }: {
         : <p className="m-0 text-small text-ink-faint">{t('asks.channel.inReplyGone')}</p>)}
       {/* A word wider than the column, a pasted URL, breaks inside it rather than scrolling the region sideways. */}
       <p className="m-0 whitespace-pre-wrap wrap-anywhere text-body text-ink">{item.text}</p>
+      {item.receipts && item.receipts.length > 0 && (
+        <ul aria-label={t('asks.channel.receipts')} className="m-0 grid list-none gap-0.5 p-0 text-small text-ink-soft">
+          {item.receipts.map((receipt) => (
+            <ReceiptRow
+              key={receipt.repository}
+              receipt={receipt}
+              onForward={onForward && forwardable(receipt) ? (answered) => onForward(receipt.repository, answered) : undefined}
+            />
+          ))}
+        </ul>
+      )}
       {onReply && (
         <div>
           <Button variant="ghost" className="px-1.5 py-0 text-small" onClick={onReply}>{t('asks.channel.reply')}</Button>
         </div>
       )}
+    </li>
+  );
+}
+
+/**
+ * What a message reached in one repository it addresses (COWORK1d, the design §7, §8.4), worded from the shell's state, and *Send to
+ * its session* where it may be sent on: pressed once, it says it was sent, or why not by the shell's code.
+ */
+function ReceiptRow({ receipt, onForward }: { receipt: ChannelReceipt; onForward?: (answered: ChannelAnswered) => void }) {
+  const { t } = useTranslation();
+  const [pending, setPending] = useState(false);
+  const [sent, setSent] = useState(false);
+  const [refusal, setRefusal] = useState<string | null>(null);
+  const { repository, state } = receipt;
+  const words = state === 'not-reached'
+    ? t('asks.channel.notReached', { repository })
+    : RECEIPT_STATES.has(state) ? t(`asks.channel.receipt.${state}`, { repository }) : t('asks.channel.receipt.other', { repository, state });
+  const refused = refusal === null
+    ? null
+    : FORWARD_REFUSALS.has(refusal) ? t(`asks.channel.forwardRefused.${refusal}`, { repository }) : t('asks.channel.forwardRefused.other', { code: refusal });
+
+  const forward = () => {
+    setPending(true);
+    setRefusal(null);
+    onForward?.({
+      done: () => { setPending(false); setSent(true); },
+      refused: (code) => { setPending(false); setRefusal(code); },
+    });
+  };
+
+  return (
+    <li className="grid min-w-0 gap-0.5">
+      <span className="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-0.5">
+        <span className="min-w-0 wrap-anywhere">{words}</span>
+        {onForward && !sent && (
+          <Button variant="ghost" className="px-1.5 py-0 text-small" disabled={pending} onClick={forward}>{t('asks.channel.forward')}</Button>
+        )}
+        {sent && <span role="status" className="text-ink-faint">{t('asks.channel.forwarded')}</span>}
+      </span>
+      {refused && <Refused sentence={refused} />}
     </li>
   );
 }
@@ -302,10 +374,12 @@ function MessageRow({ item, anchor, anchorOf, quoted, isNew, onReply }: {
  * A molecule over `ChannelSection`: it counts nothing unread and moves no mark, which the ask's page owns, since this reads a
  * part of the channel and a mark is for all of it.
  */
-export function ChannelPanel({ channel, only, onPost, onOpenQuest, onOpenAsk, repositories }: {
+export function ChannelPanel({ channel, only, onPost, onForward, onOpenQuest, onOpenAsk, repositories }: {
   channel: Channel | null;
   only: { entry: string; repository: string };
   onPost: (post: ChannelPost, answered: ChannelAnswered) => void;
+  /** *Send to its session* (COWORK1d), as the ask's page offers it. */
+  onForward?: ChannelForward;
   onOpenQuest?: (quest: string) => void;
   /** Open the ask's own page, where the whole channel is. Absent where there is nowhere to open it. */
   onOpenAsk?: () => void;
@@ -327,7 +401,9 @@ export function ChannelPanel({ channel, only, onPost, onOpenQuest, onOpenAsk, re
       </button>
       {open && (
         <div className="mt-2 grid gap-2">
-          <ChannelSection channel={channel} only={only} onPost={onPost} onOpenQuest={onOpenQuest} repositories={repositories} />
+          <ChannelSection
+            channel={channel} only={only} onPost={onPost} onForward={onForward} onOpenQuest={onOpenQuest} repositories={repositories}
+          />
           {onOpenAsk && <div><Button variant="ghost" className="px-1.5 py-0 text-small" onClick={onOpenAsk}>{t('asks.channel.panel.open')}</Button></div>}
         </div>
       )}

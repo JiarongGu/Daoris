@@ -64,7 +64,13 @@ public sealed class HelperDoors
     /// on its record as a word marked as the helper's, once, which reopens it at the driver's next look. A refusal is an
     /// answer, the host's sentence, not an exception, and so is a host older than the door.
     /// </summary>
-    public async Task<(bool Handed, string Message, string? Word)> HandAsync(string helper, string text, CancellationToken ct = default)
+    /// <param name="running">
+    /// COWORK1d: this driver runs the working asker and hands an urgent ask's answer for its run's next step, kept on its running record;
+    /// a host from before refuses it as running, and the answer waits for the asker's end, as before.
+    /// </param>
+    /// <param name="level">The ask's level, kept beside the word: <c>urgent</c> where the ask was, else none.</param>
+    public async Task<(bool Handed, string Message, string? Word)> HandAsync(
+        string helper, string text, CancellationToken ct = default, bool running = false, string? level = null)
     {
         var door = $"/api/helpers/{Uri.EscapeDataString(helper)}/hand";
         using var stream = new MemoryStream();
@@ -72,6 +78,8 @@ public sealed class HelperDoors
         {
             writer.WriteStartObject();
             writer.WriteString("text", text);
+            if (running) writer.WriteBoolean("running", true);
+            if (level is { Length: > 0 }) writer.WriteString("level", level);
             writer.WriteEndObject();
         }
 

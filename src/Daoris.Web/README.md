@@ -145,7 +145,10 @@ unread count and no composer. The ask's page, each session's panel under its hea
 *Group by ask* are molecules over those answers (`asks/ChannelSection.tsx`, `work/channel.ts`), with Daoris's lines worded from
 their codes in the reader's language and the messages shown as written. **A teammate's ask** (SESSONE2h) has a row in the Asks list's
 *Teammates' asks* group, from the driver's `ASKS_ELSEWHERE` (`useElsewhereAsks`), and a page of its channel alone, read-only
-(`asks/TeammateAskPage.tsx`): this machine holds no record of it, so it has no title and none of an ask's sections.
+(`asks/TeammateAskPage.tsx`): this machine holds no record of it, so it has no title and none of an ask's sections. **What a
+message reached** (COWORK1d, D188): an urgent message names its level in a word, each message lists its receipt per repository it
+addresses, and where it waits there or never reached it, *Send to its session* (`useForwardChannel`, the driver's `CHANNEL_FORWARD`)
+sends it on, the person's own press, on the ask's page and a session's panel alike; a teammate's channel offers none.
 
 **Knowledge results identify the active tier** — a reader looking at results has no way to
 know the semantic half was absent, and would read them as complete rather than as

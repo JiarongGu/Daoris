@@ -335,6 +335,7 @@ public sealed class SharedHostTests(SharedHost host) : IClassFixture<SharedHost>
         Assert.DoesNotContain(("GET", "/api/asks/{id}/channel"), host.Routes());
         Assert.DoesNotContain(("POST", "/api/asks/{id}/channel"), host.Routes());
         Assert.DoesNotContain(("POST", "/api/asks/{id}/channel/read"), host.Routes());
+        Assert.DoesNotContain(("POST", "/api/asks/{id}/channel/ack"), host.Routes());
     }
 
     /// <summary>

@@ -1,7 +1,9 @@
 import { useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useShenora } from '@shenora/react';
 import { keys } from '../../data/queries';
-import { type Channel, channelOf, type ChannelPost, type ChannelPosted, elsewhereOf, postedOf } from '../../work/channel';
+import {
+  type Channel, type ChannelForwarded, channelOf, type ChannelPost, type ChannelPosted, elsewhereOf, forwardedOf, postedOf,
+} from '../../work/channel';
 import { call } from '../call';
 
 // An ask's own doors (SESSONE2c, D167 points 6 to 8; the co-working design §2.4): its channel, where its sessions and the person
@@ -9,7 +11,7 @@ import { call } from '../call';
 // `daoris-driver ask channel` reads the same way (D50). Shell-only: a browser has no driver, and no channel is asked there.
 
 /** The shapes the routes answer live with the screen's own rule (`work/channel.ts`), since a molecule may read a shape and never a bridge domain. */
-export type { Channel, ChannelItem, ChannelPost, ChannelPosted, ElsewhereAsk } from '../../work/channel';
+export type { Channel, ChannelForwarded, ChannelItem, ChannelPost, ChannelPosted, ChannelReceipt, ElsewhereAsk } from '../../work/channel';
 
 /**
  * Under the asks' key, so a tick, which asks the asks again (the attention band reads them beside the sessions), asks each
@@ -88,6 +90,18 @@ export const usePostChannel = () =>
       'CHANNEL_POST',
       { ask, text: post.text, ...(post.to ? { to: post.to } : {}), ...(post.re ? { re: post.re } : {}) },
     )),
+  });
+
+/**
+ * *Send to its session* (`CHANNEL_FORWARD`, COWORK1d; the message-urgency design §4.2): a message of the ask's channel sent on to the
+ * newest session here of the line of work in `repository`, as the agent's claim passed on by the person. A refusal is an answer with
+ * its code, which the section words, so it resolves rather than rejects. Its route publishes the asks, whose key holds each channel,
+ * so its receipts move in every window.
+ */
+export const useForwardChannel = () =>
+  useMutation({
+    mutationFn: async ({ ask, message, repository }: { ask: string; message: string; repository: string }): Promise<ChannelForwarded> =>
+      forwardedOf(await call<unknown>('CHANNEL_FORWARD', { ask, message, repository })),
   });
 
 /**

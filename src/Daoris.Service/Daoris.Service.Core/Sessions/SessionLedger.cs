@@ -602,6 +602,14 @@ public sealed class SessionLedger(
     public Task<Session?> FindAsync(string sessionId, CancellationToken ct = default) => sessions.FindAsync(sessionId, ct);
 
     /// <summary>
+    /// The records as the store lists them, live work first (<see cref="SessionStore.ListAsync"/>): what the channel reads to judge
+    /// whether a part of an entry is still here before it says a message was never reached (COWORK1d).
+    /// </summary>
+    public Task<IReadOnlyList<Session>> ListAsync(
+        string? repository = null, bool includeClosed = false, string? workspace = null, CancellationToken ct = default) =>
+        sessions.ListAsync(repository, includeClosed, workspace, ct);
+
+    /// <summary>
     /// The session's own connector took its quest (STANDDOWN2): recorded on the session, so its end
     /// can tell "it holds the quest and stopped" from "somebody else had it". Only the session's own
     /// quest, only while it runs, and only this machine's record — anything else changes nothing.

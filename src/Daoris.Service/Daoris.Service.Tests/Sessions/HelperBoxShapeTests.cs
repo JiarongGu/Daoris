@@ -38,4 +38,24 @@ public sealed class HelperBoxShapeTests : IDisposable
         Assert.Equal(("waiting", "cap", null), (waiting.State, waiting.Code, waiting.Helper));
         Assert.Null(HelperBox.ReadState(_home, "c1b2c3d4"));
     }
+
+    /// <summary>
+    /// 🔴 COWORK1d (the message-urgency design §9): an urgent ask is written with `urgent: true` after `askedBy`, the text the driver's
+    /// suite (<c>HelperFilesTests</c>) reads; an ordinary ask writes no field, which the driver reads as today's delivery.
+    /// </summary>
+    [Fact]
+    public void An_urgent_ask_is_written_with_its_level_and_an_ordinary_one_with_none()
+    {
+        var box = new HelperBox(_home);
+        var asker = new Session("s1", "q1", "reports", "claude-code", SessionState.Working, null, null, null, DateTimeOffset.UnixEpoch, DateTimeOffset.UnixEpoch);
+        var at = DateTimeOffset.Parse("2026-10-12T10:00:00Z");
+
+        var (urgent, _) = box.Ask(asker, "s1", "Why?", null, at, urgent: true);
+        var (ordinary, _) = box.Ask(asker, "s1", "Where?", "codex-acp", at);
+
+        Assert.Equal(
+            $"{{\n  \"id\": \"{urgent}\",\n  \"asker\": \"s1\",\n  \"question\": \"Why?\",\n  \"agent\": null,\n  \"askedBy\": \"agent\",\n  \"urgent\": true,\n  \"at\": \"2026-10-12T10:00:00.0000000\\u002B00:00\"\n}}\n",
+            File.ReadAllText(HelperBox.PathOf(_home, urgent!, "ask")));
+        Assert.DoesNotContain("urgent", File.ReadAllText(HelperBox.PathOf(_home, ordinary!, "ask")));
+    }
 }

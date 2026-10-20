@@ -4,8 +4,8 @@ namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
 /// SESSONE2b (D167 point 7; the co-working design §2.3, §2.6): what a part starting on a line of work on an ask is handed from the
-/// ask's channel. The messages for its entry since the entry last read it, the newest within the bounds and the older counted, the
-/// person's as their words and another session's as that agent's claim; the entry's mark moves once the part has started. The
+/// ask's channel. The messages for its entry it has not acknowledged (COWORK1d), the newest within the bounds and the older counted,
+/// the person's as their words and another session's as that agent's claim; each is acknowledged once the part has started. The
 /// golden of the instruction is <see cref="TargetPromptGoldenTests"/>'s <c>channel</c>.
 /// </summary>
 public sealed class ChannelHandedTests
@@ -20,7 +20,7 @@ public sealed class ChannelHandedTests
             Id = id, Person = person, Text = text, Session = person ? null : "s9", Repository = person ? null : "console-api",
         };
 
-    private static ChannelHeld Held(params ChannelItemView[] messages) => new("a1b2c3", Key, messages, messages.LastOrDefault()?.At);
+    private static ChannelHeld Held(params ChannelItemView[] messages) => new("a1b2c3", Key, messages, "s3");
 
     // ——— The bounds.
 
@@ -63,7 +63,10 @@ public sealed class ChannelHandedTests
 
     // ——— The wire and the entry.
 
-    /// <summary>The channel as SESSONE2a answers it, an item without its kind or a moment passed over, a message without words none.</summary>
+    /// <summary>
+    /// The channel as SESSONE2a answers it, an item without its kind or a moment passed over, a message without words none; COWORK1d's
+    /// level and the entry's acknowledgment read beside each message, and an entry handed what it has not had, whatever the mark.
+    /// </summary>
     [Fact]
     public void The_channel_is_read_as_the_service_answers_it()
     {
@@ -71,18 +74,24 @@ public sealed class ChannelHandedTests
             {"ask":"a1b2c3","entry":"ask:a1b2c3/console-ui","unread":3,"mark":"2026-10-14T09:00:00+00:00","items":[
              {"kind":"line","at":"2026-10-14T08:59:00+00:00","code":"done","quest":"q1","name":"Notes","from":"ask #a1b2c3","to":"console-ui"},
              {"kind":"message","at":"2026-10-14T09:01:00+00:00","id":"m1","person":false,"session":"s9","repository":"console-api",
-              "agent":"claude-code","entry":"ask:a1b2c3/console-api","to":"console-ui","re":"p0","question":true,"open":true,"text":"Null or empty?"},
-             {"kind":"message","at":"2026-10-14T09:02:00+00:00","id":"p1","person":true,"text":"Use the older bridge."},
+              "agent":"claude-code","entry":"ask:a1b2c3/console-api","to":"console-ui","re":"p0","question":true,"open":true,"text":"Null or empty?",
+              "urgent":true,"ack":"partly","ackSession":"s0"},
+             {"kind":"message","at":"2026-10-14T09:02:00+00:00","id":"p1","person":true,"text":"Use the older bridge.","urgent":false},
+             {"kind":"message","at":"2026-10-14T08:00:00+00:00","id":"p0","person":true,"text":"Earlier, and taken.","ack":"taken","ackSession":"s0"},
              {"kind":"message","at":"2026-10-14T09:03:00+00:00","id":"p2","person":true},
              {"at":"2026-10-14T09:04:00+00:00","id":"x"},
              {"kind":"message","id":"y","text":"no moment"}]}
             """)!;
 
         Assert.Equal(("a1b2c3", Key, 3, At), (read.Ask, read.Entry, read.Unread, read.Mark!.Value));
-        Assert.Equal(["line", "message", "message", "message"], read.Items.Select(item => item.Kind));
+        Assert.Equal(["line", "message", "message", "message", "message"], read.Items.Select(item => item.Kind));
         var claim = read.Items[1];
         Assert.Equal(("s9", "console-api", "claude-code", "console-ui", "p0", true, false), (claim.Session, claim.Repository, claim.Agent, claim.To, claim.Re, claim.Question, claim.Person));
-        Assert.Equal(["m1", "p1"], read.ForEntry().Select(message => message.Id));
+        Assert.Equal((true, "partly", "s0"), (claim.Urgent, claim.Ack, claim.AckSession));
+        Assert.Equal((false, (bool?)null), (read.Items[2].Urgent, read.Items[4].Urgent));
+        // Handed partly to another part, a new part is handed it again; never the part that had it, nor one already taken.
+        Assert.Equal(["m1", "p1"], read.ForEntry("s3").Select(message => message.Id));
+        Assert.Equal(["p1"], read.ForEntry("s0").Select(message => message.Id));
         Assert.Equal(At.AddMinutes(3), read.Newest);
         Assert.Null(ChannelView.Read("""{"error":"none"}"""));
     }
@@ -125,53 +134,55 @@ public sealed class ChannelHandedTests
         Assert.Null(ChannelEntry.ForQuest(chat, snapshot));
     }
 
-    // ——— Handed at the start, and the mark.
+    // ——— Handed at the start, and acknowledged.
 
-    /// <summary>The service's doors standing in: one channel, and the marks moved.</summary>
+    /// <summary>The service's doors standing in: one channel, and the acknowledgments written.</summary>
     private sealed class Doors(ChannelView? read, bool fails = false) : IChannelDoors
     {
-        public List<(string Entry, DateTimeOffset Through)> Marks { get; } = [];
+        public List<(string Entry, string Session, string State, string Message)> Acks { get; } = [];
 
         public Task<ChannelView?> ReadAsync(string ask, string entry, CancellationToken ct) =>
             fails ? throw new HttpRequestException("refused") : Task.FromResult(read);
 
-        public Task MarkAsync(string ask, string entry, DateTimeOffset through, CancellationToken ct)
+        public Task<IReadOnlyList<string>> AcknowledgeAsync(
+            string ask, string entry, string session, string state, IReadOnlyList<string> messages, CancellationToken ct)
         {
-            Marks.Add((entry, through));
-            return Task.CompletedTask;
+            Acks.AddRange(messages.Select(message => (entry, session, state, message)));
+            return Task.FromResult(messages);
         }
 
-        public Task<SayAnswer> SayAsync(string session, string text, string channel, CancellationToken ct) => throw new InvalidOperationException("no say");
+        public Task<SayAnswer> SayAsync(string session, string text, string channel, string? from, CancellationToken ct) =>
+            throw new InvalidOperationException("no say");
     }
 
     /// <summary>
-    /// 🔴 A starting part is handed the messages for its entry past its mark, and the mark moves to the newest item read, a line
-    /// included, once the part has started: so the next part is not handed them again, and a later arrival is not passed over.
+    /// 🔴 A starting part is handed the messages for its entry it has not had, and acknowledges each, once the part has started, by its
+    /// own session (COWORK1d, the message-urgency design §6): so the next part is not handed them again, and none passes by its moment.
     /// </summary>
     [Fact]
-    public async Task A_starting_part_is_handed_what_waited_and_its_mark_moves_once_it_started()
+    public async Task A_starting_part_is_handed_what_waited_and_acknowledges_it_once_it_started()
     {
         var line = new ChannelItemView(ChannelItemView.Line, At.AddMinutes(5)) { Code = "done", Quest = "q1" };
         var doors = new Doors(new ChannelView("a1b2c3", Key, [Message("p1", 1, "Use the older bridge."), Message("m1", 2, "Null?", person: false), line], 3, null));
 
-        var held = await ChannelReach.HandAsync(doors, ChannelEntry.Of(Key)!, CancellationToken.None);
-        Assert.Empty(doors.Marks);
+        var held = await ChannelReach.HandAsync(doors, ChannelEntry.Of(Key)!, "s3", CancellationToken.None);
+        Assert.Empty(doors.Acks);
         await ChannelReach.HandedAsync(doors, held, CancellationToken.None);
 
         Assert.Equal(["p1", "m1"], held!.Messages.Select(message => message.Id));
-        Assert.Equal([(Key, At.AddMinutes(5))], doors.Marks);
+        Assert.Equal([(Key, "s3", ChannelAcks.Taken, "p1"), (Key, "s3", ChannelAcks.Taken, "m1")], doors.Acks);
     }
 
-    /// <summary>A channel that could not be read hands nothing and holds nothing: the start goes on, and its mark stays.</summary>
+    /// <summary>A channel that could not be read hands nothing and holds nothing: the start goes on, and nothing is acknowledged.</summary>
     [Fact]
-    public async Task A_channel_that_could_not_be_read_hands_nothing_and_moves_no_mark()
+    public async Task A_channel_that_could_not_be_read_hands_nothing_and_acknowledges_nothing()
     {
         var doors = new Doors(null, fails: true);
 
-        var held = await ChannelReach.HandAsync(doors, ChannelEntry.Of(Key)!, CancellationToken.None);
+        var held = await ChannelReach.HandAsync(doors, ChannelEntry.Of(Key)!, "s3", CancellationToken.None);
         await ChannelReach.HandedAsync(doors, held, CancellationToken.None);
 
         Assert.Null(held);
-        Assert.Empty(doors.Marks);
+        Assert.Empty(doors.Acks);
     }
 }
