@@ -99,9 +99,9 @@ units' revisions, with performed and waited attempts limited apart (FABRIC-WIRE1
 graph or run kept for the person, lapsed by a new revision alone (FABRIC-RUN1e, in place of WIRE1f's `run-scope`). A node may observe
 a subject apart from its record's unit (FABRIC-CUTOVER1a, D190 point 2): handed each node's subject (`WireRun.Subjects`), the evaluation
 observes and binds it there, the acceptance naming it (`NodeAcceptance.Subject`, in its id and the record's files only when set) and
-lapsing as `subject` once it moves, while a subject not found or a branch not read withholds its own nodes alone. So a run's record
-`run:<run>` can hold a graph whose `claimed` observes its quest, at its chain's last step here, and whose gates and `handed` observe its
-branch, `handed` reached by a landing that squashed its bound tip too; nothing governs a run yet (CUTOVER1c). A decoded `stop` is
+lapsing as `subject` once it moves, while a subject not found or a branch not read withholds its own nodes alone. On a run's record
+`run:<run>`, `claimed` observes its quest and reaches at its chain's last step here, and the gates and `handed` observe its branch,
+`handed` reached by a landing made at its bound tip or squashing it. A decoded `stop` is
 reached on the receipt of the path into it, and an `opinion` is read from the second opinion's gate as its caller judged it
 (`OpinionNode`, FABRIC-WIRE1g), a `look` from its gate's verdict and a `go-ahead` from D135's answers (`LookNode`, `GoAheadNode`,
 FABRIC-NODE1b). All are pure as well. `WorkPerformer` is what writes: a plugin's performed node dispatched
