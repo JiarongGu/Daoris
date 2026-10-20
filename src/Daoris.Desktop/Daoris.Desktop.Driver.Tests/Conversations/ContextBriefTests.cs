@@ -266,6 +266,23 @@ public sealed class ContextBriefTests
         Assert.DoesNotContain(ContextBrief.Compose(line with { Note = null }).Sections, section => section.Name == HandedSections.BriefNote);
     }
 
+    /// <summary>
+    /// 🔴 SESSCTX1c part B (the session-context design §2.2): where the outgoing agent was asked for its closing note and wrote none in
+    /// its one turn, the brief says the note is absent, in the note's own section; where none was asked it says nothing of one.
+    /// </summary>
+    [Fact]
+    public void A_closing_note_asked_and_not_written_is_said_absent()
+    {
+        var line = Line(Part("c0nv0001", Asked("Add a dark mode."), Said("One."), Ended())) with { NoteAsked = true };
+
+        var brief = ContextBrief.Compose(line);
+
+        Assert.Contains(HandOverNote.Absent, brief.Text);
+        Assert.Contains(brief.Sections, section => section.Name == HandedSections.BriefNote);
+        Assert.DoesNotContain(HandOverNote.Absent, ContextBrief.Compose(line with { NoteAsked = false }).Text);
+        Assert.DoesNotContain(HandOverNote.Absent, ContextBrief.Compose(line with { Note = "I was about to wire the toggle." }).Text);
+    }
+
     // ——— The bound.
 
     [Fact]

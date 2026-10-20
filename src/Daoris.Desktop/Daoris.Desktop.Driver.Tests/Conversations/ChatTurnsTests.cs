@@ -845,6 +845,31 @@ public sealed class ChatTurnsTests
         Assert.True(turns.Hold());
     }
 
+    /// <summary>
+    /// 🔴 SESSCTX1c part B (the session-context design §2.2): turns held for a hand-over's take still take the one closing turn the take
+    /// asks of the outgoing agent, and nothing else: a word said meanwhile takes nothing, and the closing turn's end is what the take
+    /// waits for. Not held, no closing turn is taken.
+    /// </summary>
+    [Fact]
+    public async Task Held_turns_take_the_one_closing_turn_and_tell_its_end()
+    {
+        var door = new Door { TakesWordsMidTurn = false };
+        var turns = door.Turns();
+        Assert.Null(turns.TakeHeld(new ChatMessage("write your closing note", [])));
+
+        Assert.True(turns.Hold());
+        var closing = turns.TakeHeld(new ChatMessage("write your closing note", []));
+
+        Assert.NotNull(closing);
+        await Poll.Until(() => door.Took.Count == 1, () => "the closing turn never reached the door");
+        Assert.Null(turns.Take(new ChatMessage("one more thing", [])));
+        Assert.False(closing!.IsCompleted);
+        door.EndTurn(0);
+        await closing.WaitAsync(Poll.Patience);
+        Assert.Single(door.Took);
+        Assert.False(turns.Running);
+    }
+
     // ——— COWORK1c: the conversation's queue is a view of its record's `said`.
 
     /// <summary>

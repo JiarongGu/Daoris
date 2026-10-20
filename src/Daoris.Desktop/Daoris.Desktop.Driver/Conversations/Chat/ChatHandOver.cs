@@ -15,6 +15,12 @@ internal sealed class ChatHandOver(ChatContext context, ChatRunner runner)
     /// <summary>How long the old conversation's end is waited for before the new one starts: a stop, not a wind-up.</summary>
     private static readonly TimeSpan HandOverEnd = TimeSpan.FromSeconds(15);
 
+    /// <summary>
+    /// The most the closing note's one turn is waited for (SESSCTX1c part B, §2.2): a move never waits more than that turn, and a turn
+    /// that hangs past this is the conversation's end's to stop; its note is then said absent.
+    /// </summary>
+    internal static TimeSpan ClosingBound { get; set; } = TimeSpan.FromMinutes(5);
+
     /// <summary>The states a record is live in, where nothing here may end it (it runs in another process).</summary>
     private static readonly HashSet<string> LiveStates = new(StringComparer.OrdinalIgnoreCase) { "queued", "starting", "working", "awaiting-person" };
 
@@ -128,12 +134,19 @@ internal sealed class ChatHandOver(ChatContext context, ChatRunner runner)
         ChatTurns? held = null;
         try
         {
+            ClosingNote? closing = null;
             // Never mid-turn (SWITCH1c-ii, the switch design §4): its turns are held while it is taken, so a word said as the take
             // begins either started its turn first, and the box waits for that turn's end (Due), or takes nothing.
             if (_context.Turned.TryGetValue(sessionId, out var chat))
             {
                 if (!chat.Turns.Hold()) return new HandedOver(null, true, null, $"`{sessionId}` is talking: it goes on as its turn ends.");
                 held = chat.Turns;
+
+                // 🔴 SESSCTX1c part B (D189's amendment, the session-context design §2.2): the person's press, or a change of agent its own
+                // agent asked for and left no note with, asks the outgoing agent for one closing note in one turn of Daoris's, before the
+                // conversation ends; a move the account forces asks none. Asked once, under the hold, so no word of the person's goes first.
+                var own = ask.AskedBy == HandOverBy.Agent ? new HandOverAskFiles(_context.Home).Ask(sessionId)?.Note : null;
+                if (HandOverNote.Asks(ask, own)) closing = await AskClosingAsync(sessionId, chat.Turns, ask.Agent).ConfigureAwait(false);
             }
 
             // A move by the usage curve says which accounts it moved between: the decision kept since its ask (SWITCH1c-ii).
@@ -142,7 +155,7 @@ internal sealed class ChatHandOver(ChatContext context, ChatRunner runner)
                 _context.Service, _context.Home, _context.Events, _context.Output, sessionId, ask, AccountsOf, EndForHandOverAsync,
                 (prior, request, from, token) => _runner.StartAsync(
                     prior.Repository!, request.Agent, config, onEnded, request.Account, ct: token, tree: prior.Tree, from: from),
-                SayHandedOver, ct, moved).ConfigureAwait(false);
+                SayHandedOver, ct, moved, closing).ConfigureAwait(false);
         }
         finally
         {
@@ -152,6 +165,22 @@ internal sealed class ChatHandOver(ChatContext context, ChatRunner runner)
             going.TrySetResult();
             Ended(sessionId);
         }
+    }
+
+    /// <summary>
+    /// The outgoing agent's one closing turn (SESSCTX1c part B, the session-context design §2.2), under the take's hold: Daoris's ask,
+    /// then its last message of that turn as its note, read from the events the turn added. The record keeps the ask as Daoris's and the
+    /// reply as the agent's; the brief is composed from the events before the ask, so the note is told once, in its own section.
+    /// </summary>
+    private async Task<ClosingNote> AskClosingAsync(string sessionId, ChatTurns turns, string agent)
+    {
+        var before = _context.Events.After(sessionId, 0).Events.Count;
+        // Daoris's word, by a key that names no fact of Daoris's, so nothing judges it again: it is the take's own, said once.
+        var turn = turns.TakeHeld(new ChatMessage(HandOverNote.Ask(agent), []) { Daoris = new DaorisWord($"closing-note/{sessionId}") });
+        if (turn is null) return new ClosingNote(null, before);
+        await Task.WhenAny(turn, Task.Delay(ClosingBound)).ConfigureAwait(false);
+        var added = _context.Events.After(sessionId, 0).Events;
+        return new ClosingNote(HandOverNote.Written([.. added.Skip(before)]), before);
     }
 
     /// <summary>Tell <see cref="TakeEnded"/>: a listener's failure is its own, and the take is over either way.</summary>

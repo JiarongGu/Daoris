@@ -1747,6 +1747,14 @@ public sealed class ChatRunner : IDisposable
             yield break;
         }
 
+        if (message.Daoris is not null)
+        {
+            // SESSCTX1c part B: Daoris's own turn to a conversation, the closing note a hand-over asks of its outgoing agent: Daoris's on
+            // the record, never the person's, so no brief reads it as their word.
+            yield return ChatMessage.Words(message);
+            yield break;
+        }
+
         if (ToldBrowser(message) is { } toldBrowser) yield return toldBrowser;
         if (ToldProcess(message) is { } toldProcess) yield return toldProcess;
         if (Told(message) is { } told) yield return told;

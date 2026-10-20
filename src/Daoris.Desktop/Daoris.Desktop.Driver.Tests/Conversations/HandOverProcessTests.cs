@@ -122,6 +122,48 @@ public sealed class HandOverProcessTests : IDisposable
     }
 
     /// <summary>
+    /// 🔴 SESSCTX1c part B (D189's amendment, the session-context design §2.2): the person's press asks the outgoing agent for one closing
+    /// note at its turn's end, before the conversation ends, and the new conversation's brief carries what it wrote as that agent's claim.
+    /// A move the account forces (here <c>near</c>) asks none: the outgoing agent is sent no other turn, and the brief says no note.
+    /// </summary>
+    [Theory]
+    [InlineData(HandOverWhy.Press, HandOverBy.Person, true)]
+    [InlineData(HandOverWhy.Near, HandOverBy.Daoris, false)]
+    public async Task The_persons_press_asks_the_outgoing_agent_for_one_closing_note_and_a_forced_move_none(string why, string by, bool asked)
+    {
+        var ledger = new ChatLedger().Register("engine", _root);
+        var config = Config();
+        var events = Events;
+        using var client = ledger.Client();
+        using var runner = Runner(client, events);
+        var old = (await runner.StartAsync("engine", "acp-stub", config)).SessionId!;
+        await Poll.Until(() => ledger.State(old) == "working", () => Seen(ledger, events, old));
+        Assert.True(runner.Say(old, "Make the port configurable."));
+        await Poll.Until(() => events.After(old, 0).Events.Any(e => e.Kind == SessionEventKind.Turn), () => Seen(ledger, events, old));
+        await Poll.Until(() => !runner.Taking(old), () => Seen(ledger, events, old));
+
+        var handed = await runner.HandOverAsync(old, "stub", null, why, by, config);
+
+        Assert.True(handed.Kept, handed.Message);
+        var next = handed.SessionId!;
+        string Told() => StubFile.Text(DaorisHome.Entry(_home, HomeEntry.Sessions, $"{next}.log"));
+        await Poll.Until(() => Told().Contains($"heard: You continue session `{old}`"), () => Seen(ledger, events, next));
+        var prompts = StubFile.Lines(Heard).Where(line => line.StartsWith("prompt: ", StringComparison.Ordinal)).ToList();
+        if (asked)
+        {
+            Assert.Equal(["prompt: Make the port configurable.", $"prompt: {HandOverNote.Ask("stub")}"], prompts);
+            await Poll.Until(() => Told().Contains("its agent left you this note"), () => Seen(ledger, events, next));
+            Assert.Contains("heard Daoris is handing", Told());
+        }
+        else
+        {
+            Assert.Equal(["prompt: Make the port configurable."], prompts);
+            Assert.DoesNotContain("its agent left you this note", Told());
+            Assert.DoesNotContain(HandOverNote.Absent, Told());
+        }
+    }
+
+    /// <summary>
     /// While a turn runs the box waits, the conversation untouched; as the turn ends (here stopped, which the stub answers
     /// cancelled) the box is taken: the first record ends and the second starts.
     /// </summary>
