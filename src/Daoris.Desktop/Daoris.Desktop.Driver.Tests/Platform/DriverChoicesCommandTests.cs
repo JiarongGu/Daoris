@@ -194,6 +194,29 @@ public sealed class DriverChoicesCommandTests : IDisposable
         Assert.False(File.Exists(config));
     }
 
+    /// <summary>
+    /// The host routes the family and takes Ctrl+C in one handler for it (D194 point 1, the alone-path design §1.1): registered where the
+    /// family is routed, after `closing` is made and after every verb routed above it, keeping the process and cancelling `closing`, whose
+    /// token the family's command is handed; and its lease is the named file's to forgo (<see cref="VerbLeases.HoldsHere"/>).
+    /// </summary>
+    [Fact]
+    public void The_host_routes_the_family_with_its_one_Ctrl_C_handler_and_the_named_files_lease()
+    {
+        var program = File.ReadAllText(Path.Combine(WorkspaceRoot.Folder, "src", "Daoris.Desktop", "Daoris.Desktop.Driver.Host", "Program.cs"))
+            .ReplaceLineEndings("\n");
+        var closing = program.IndexOf("using var closing = new CancellationTokenSource();", StringComparison.Ordinal);
+        var family = program.IndexOf("if (args is [\"driver\", .. var choicesArgs])", StringComparison.Ordinal);
+        var handed = program.IndexOf("DriverChoicesConsole.RunAsync(choicesArgs, closing.Token)", StringComparison.Ordinal);
+        Assert.True(closing > 0 && family > closing && handed > family, "the family is routed after `closing` is made, and handed its token");
+        var between = program[family..handed];
+        Assert.Contains("Console.CancelKeyPress += (_, press) =>", between, StringComparison.Ordinal);
+        Assert.Contains("press.Cancel = true;", between, StringComparison.Ordinal);
+        Assert.Contains("closing.Cancel();", between, StringComparison.Ordinal);
+        // Every verb routed above the family keeps the runtime's own Ctrl+C: no handler is registered before it but the loop's, below.
+        Assert.DoesNotContain("CancelKeyPress", program[..family], StringComparison.Ordinal);
+        Assert.Contains("VerbLeases.HoldsHere(args, Environment.GetEnvironmentVariable)", program, StringComparison.Ordinal);
+    }
+
     public void Dispose()
     {
         if (Directory.Exists(_home)) Directory.Delete(_home, recursive: true);
