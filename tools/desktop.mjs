@@ -43,7 +43,7 @@ import { copyTree, isMain } from './fsx.mjs';
 // Every home place is asked of D172's table (HOMELAYOUT2b), never joined here.
 import { homeEntry } from '../src/Daoris.Cli/src/platform/home.ts';
 // The install's layout, from the script that makes it (REV3 CLEAN1): one launcher at the root, the home in `data/`.
-import { HOME, LAUNCHER, RETIRED_LAUNCHERS, SHELL_EXE, SHELL_HOME, layOffers } from './desktop-publish.mjs';
+import { HOME, LAUNCHER, PLUGIN_OFFERS, RETIRED_LAUNCHERS, SHELL_EXE, SHELL_HOME, layOffers } from './desktop-publish.mjs';
 import {
   applicationsAt, applicationsIn, browsersIn, commandLinesAt, running, stopAll, stopProcesses,
 } from './processes.mjs';
@@ -52,6 +52,28 @@ export const repoRoot = dirname(dirname(fileURLToPath(import.meta.url)));
 
 /** Where a scratch run keeps everything it owns. Under `_fixtures/`, which is gitignored. */
 export const scratchRoot = join(repoRoot, '_fixtures', 'desktop');
+
+/**
+ * The scratch run's one Daoris folder (HOMELAYOUT4, the install layout design §6.1): `DAORIS_HOME` and `--app-root` both
+ * name it, as an install's folder is both, so the readers that look in the home's Daoris folder for `app/` (the launchers,
+ * the list built in, the plugin offers) and the window's memory (`profiles/window/`) are where an install has them.
+ */
+export const scratchDaoris = join(scratchRoot, 'daoris');
+
+/** The folders of a Daoris folder besides its files, in the order the design §2 gives them. */
+const DAORIS_FOLDERS = ['app', 'data', 'profiles', 'work', 'cache', 'run', 'logs'];
+
+/** What `run` lays out for a scratch run: the one root, and the places the readers will ask of it. Pure; `run` makes the folders. */
+export function scratchPlan(root = scratchDaoris) {
+  return {
+    root,
+    home: root,
+    appRoot: root,
+    folders: DAORIS_FOLDERS.map((folder) => join(root, folder)),
+    window: homeEntry(root, 'window'),
+    offers: join(root, ...PLUGIN_OFFERS),
+  };
+}
 
 /**
  * The machine-local files the desktop reads, and the variable that moves each one.
@@ -311,13 +333,13 @@ export async function awaitDebugPort({
  * Where the engine's own log is for a run: CEF keeps it in the kit's `chromium` data area. For an install that is the
  * window's memory (D172 point 4, HOMELAYOUT4): the install's home's `window` entry, which `Program.cs` hands the kit as its
  * data area: `profiles/window/` once moved, the install's `data/` while an older build's engine profile is still there.
- * Otherwise the kit's own `data/` under the root the application anchors at (`ShenoraPaths`): the scratch run's
- * `--app-root`, or, for `--real`, the built executable's folder.
+ * A scratch run's is the same entry of its one root (`scratchPlan`), handed the kit the same way. Otherwise, for `--real`,
+ * the kit's own `data/` under the built executable's folder.
  */
 export function engineLogOf({ install, real, exe }) {
   if (install) return join(homeEntry(install, 'window'), 'chromium', 'cef.log');
-  const root = real ? dirname(exe) : join(scratchRoot, 'app');
-  return join(root, 'data', 'chromium', 'cef.log');
+  if (!real) return join(scratchPlan().window, 'chromium', 'cef.log');
+  return join(dirname(exe), 'data', 'chromium', 'cef.log');
 }
 
 /** What `run` says when the debug port it asked for never answered (LOOK4), from `awaitDebugPort`'s outcome. */
@@ -710,11 +732,10 @@ async function start(command, args) {
       environment = installEnvironment(cdpPort);
     }
   } else {
-    const home = join(scratchRoot, 'home');
+    const plan = scratchPlan();
+    const { home, appRoot } = plan;
     const family = join(scratchRoot, 'family');
-    const appRoot = join(scratchRoot, 'app');
-    mkdirSync(home, { recursive: true });
-    mkdirSync(appRoot, { recursive: true });
+    for (const folder of plan.folders) mkdirSync(folder, { recursive: true });
 
     if (args.includes('--fresh')) rmSync(family, { recursive: true, force: true });
     if (!existsSync(family)) {
@@ -727,9 +748,9 @@ async function start(command, args) {
       for (const name of ['engine', 'game']) copyTree(join(repoRoot, 'examples', name), join(family, name));
       console.log(`copied examples/{engine,game} -> ${family}`);
     }
-    // The install's offers (PLUG9 d, D103), laid out beside this run's home as a publish lays them beside
-    // an install's `data/`, so the Plugins place shows them here too. None is installed by this.
-    layOffers(join(repoRoot, 'examples', 'plugins'), scratchRoot);
+    // The install's offers (PLUG9 d, D103), laid out in this run's Daoris folder as a publish lays them in an install's, so the
+    // Plugins place shows them here too. None is installed by this.
+    layOffers(join(repoRoot, 'examples', 'plugins'), plan.root);
 
     const httpHost = assemblyExe(HTTP_PROJECT);
     if (!httpHost) fail('the service host is not built — `node tools/desktop.mjs build`.');
@@ -738,8 +759,8 @@ async function start(command, args) {
 
     serviceUrl = `http://127.0.0.1:${await freePort(5188)}`;
     environment = scratchEnvironment({ home, family, serviceUrl, httpHost, mcpHost, cdpPort });
-    // Its own root, so the engine's profile, the window geometry and the runtime's single-instance
-    // scope all belong to this run — a scratch shell and a real one never contend for either.
+    // Its own root, the same folder as the home, so the engine's profile, the window geometry and the runtime's
+    // single-instance scope all belong to this run — a scratch shell and a real one never contend for either.
     extra.push('--app-root', appRoot);
   }
 
@@ -757,7 +778,7 @@ async function start(command, args) {
   const record = { pid: child.pid, exe, serviceUrl, cdpPort, real, started: new Date().toISOString() };
   writeFileSync(RUN_FILE, `${JSON.stringify(record, null, 2)}\n`);
 
-  const home = install ? join(install, HOME) : real ? process.env.DAORIS_HOME : join(scratchRoot, 'home');
+  const home = install ? join(install, HOME) : real ? process.env.DAORIS_HOME : scratchPlan().home;
   console.log(`shell started (pid ${child.pid})`);
   console.log(`  platform   ${serviceUrl}`);
   console.log(`  debug port ${cdpPort}`);
@@ -807,7 +828,7 @@ function doctor() {
   }
 
   console.log('\nwhat a scratch run would use');
-  console.log(`  machine          ${join(scratchRoot, 'home')}`);
+  console.log(`  machine          ${scratchPlan().home} (also its --app-root)`);
   console.log(`  family           ${join(scratchRoot, 'family')}`
     + `${existsSync(join(scratchRoot, 'family')) ? '' : ' (copied from examples/ on first run)'}`);
   console.log(`  service host     ${host ?? '(none built)'}`);

@@ -25,12 +25,9 @@ public static class PluginOffers
     /// <summary>The heading in an offer's README whose bullets say what it needs. Twin: the CLI's <c>NEEDS_HEADING</c>.</summary>
     public const string NeedsHeading = PluginOffer.NeedsHeading;
 
-    /// <summary>The offers beside the home: its sibling <c>app/plugin-offers/</c>.</summary>
-    public static string BesideHome(string home)
-    {
-        var full = Path.TrimEndingDirectorySeparator(PluginFolders.WholePath(home));
-        return Path.Combine([Path.GetDirectoryName(full) ?? full, .. Layout]);
-    }
+    /// <summary>The offers in the home's Daoris folder (<see cref="DaorisHome.FolderOf"/>, HOMELAYOUT4): its <c>app/plugin-offers/</c>.</summary>
+    public static string BesideHome(string home) =>
+        Path.Combine([DaorisHome.FolderOf(PluginFolders.WholePath(home)).Folder, .. Layout]);
 
     /// <summary>The offers beside a running application, whose folder is the install's <c>app/</c>.</summary>
     public static string BesideApplication(string baseDirectory) =>

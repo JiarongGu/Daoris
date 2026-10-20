@@ -572,14 +572,13 @@ public static class Tools
     public static readonly IReadOnlyList<string> InstallBinLayout = ["app", "bin"];
 
     /// <summary>
-    /// The install's launchers' folder beside the home, where it is a folder: in an install the home is <c>data/</c>,
-    /// its sibling <c>app/bin/</c>. Null for a home with no install beside it, and for an <c>app/bin</c> that is not a
-    /// folder.
+    /// The launchers' folder in the home's Daoris folder (<see cref="DaorisHome.FolderOf"/>, HOMELAYOUT4), where it is a folder:
+    /// an install's <c>app/bin/</c> whichever way its home is named, and a development run's scratch root's. Null for a Daoris
+    /// folder with none, and for an <c>app/bin</c> that is not a folder.
     /// </summary>
     public static string? InstallBin(string home)
     {
-        var full = Path.TrimEndingDirectorySeparator(Path.GetFullPath(home));
-        var bin = Path.Combine([Path.GetDirectoryName(full) ?? full, .. InstallBinLayout]);
+        var bin = Path.Combine([DaorisHome.FolderOf(Path.GetFullPath(home)).Folder, .. InstallBinLayout]);
         return Directory.Exists(bin) ? bin : null;
     }
 
