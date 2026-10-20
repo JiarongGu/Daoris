@@ -70,7 +70,7 @@ public static class AttentionStateSlice
         [
             "kind", "id", "since", "workspace", "where", "note", "detail", "publishTo", "choices", "ask", "number", "goAhead", "session",
             "departed", "setUp", "local", "environment", "shows", "opinion", "placed", "sitting", "trust", "quest", "proposal", "title",
-            "permission", "blocked", "held", "wholeWorkspace", "holding", "read", "runs", "account",
+            "permission", "blocked", "held", "wholeWorkspace", "holding", "read", "runs", "account", "answer",
         ],
         ["waiting"] = ["kind", "workspace"],
         ["working"] = ["workspace"],
@@ -97,6 +97,7 @@ public static class AttentionStateSlice
         ],
         ["permission"] = ["session", "request", "call", "title", "kind", "choices", "since"],
         ["choice"] = ["id", "name", "kind"],
+        ["answer"] = ["session", "agent", "words", "since"],
         ["blocked"] = ["unknown", "entries"],
         ["entry"] = ["kind", "resource", "detail", "code", "facts"],
         ["attempt"] = WorkStateSlice.Fields["attempt"],
@@ -125,6 +126,7 @@ public static class AttentionStateSlice
         ["row.proposal"] = "proposal",
         ["row.permission"] = "permission",
         ["permission.choices"] = "choice",
+        ["row.answer"] = "answer",
         ["row.blocked"] = "blocked",
         ["blocked.entries"] = "entry",
         ["row.held"] = "attempt",
@@ -235,6 +237,7 @@ public static class AttentionStateSlice
             Opinions = Written(TreesRoutes.OpinionWaits(loop.Judged.Latest)),
             Helpers = Written(HelperWaits(loop.Home)),
             Permissions = Written(PermissionWaits(HeldPermissions.Of(loop.Events))),
+            Answers = Written(AnswerWaits(loop.Home)),
             Doors = Written(AgentsRoutes.Doors(loop.Harnesses, roster)),
             Use = Use(loop.Slices),
             Waits = Written(loop.Look.Waits.Select(DriverLoop.TickWait)),
@@ -319,6 +322,20 @@ public static class AttentionStateSlice
             Choices = held.Choices.Select(choice => new { choice.Id, choice.Name, choice.Kind }),
             Since = Moments.Write(held.Since),
         }),
+    ];
+
+    /// <summary>
+    /// The answers the answers-alone bound holds for the person (COWORK1e, D188 point 4; the message-urgency design §8.3), as
+    /// <c>ANSWER_WAITS</c> answers them, oldest first: each session's mark <see cref="GoOnMarks.AnswersAlone"/> with the agent that
+    /// answered, the answers' ids and since when. A read off the home's marks; one the person kept with *Not now*, and a mark of any
+    /// other reason, waits on nothing of theirs.
+    /// </summary>
+    public static IReadOnlyList<object> AnswerWaits(string home) =>
+    [
+        .. new GoOnMarks(home).All()
+            .Where(each => each.Mark.Why == GoOnMarks.AnswersAlone)
+            .OrderBy(each => each.Mark.At).ThenBy(each => each.Session, StringComparer.Ordinal)
+            .Select(each => (object)new { each.Session, each.Mark.Agent, Words = each.Mark.Said, Since = Moments.Write(each.Mark.At) }),
     ];
 
     /// <summary>

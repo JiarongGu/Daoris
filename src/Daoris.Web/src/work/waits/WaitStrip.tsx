@@ -14,6 +14,7 @@ import type { Answered } from '../InlineConfirm';
 import type { SayRebase } from '../review/LandingSync';
 import { Discards, type HeadOpinion, type HeadReview, type LandingPlan, Lands, type WorkAsk } from '../review/Lands';
 import { heldFor, PermissionAsks, type PermissionWaits } from './PermissionAsks';
+import { AnswerAlone, answerFor, type AnswerWaits } from './AnswerAlone';
 import { ProposedRules, type RuleAsk, type RuleWaits } from './ProposedRules';
 import { InConversation, leftFor, type Seek, SOUGHT, useSought, waitName } from './WaitAnchor';
 import { rulesAsked, type Wait, WORK_WAITS, waitsOf } from './waits';
@@ -37,6 +38,11 @@ export type WaitProps = {
    * hold as the shell read them, its own drawn, the answer's one door and its pending. Absent where nothing reads them (a browser).
    */
   permissions?: PermissionWaits | null;
+  /**
+   * The answers the answers-alone bound holds for the person (COWORK1e, D188 point 4; the message-urgency design §8.3): every one the
+   * shell read, its own drawn, the agents' names, the answer's one door and its pending. Absent where nothing reads them (a browser).
+   */
+  answers?: AnswerWaits | null;
   /**
    * The rules it proposed that the person still answers (PROPOSEHERE1b, D74): the machine's proposals as the shell read them,
    * the answer's door, its pending, and whether the session takes words now. Absent where nothing reads the rules (a browser).
@@ -83,7 +89,8 @@ export type WaitProps = {
  * **The head's molecules, not copies** (D168 point 2): a go-ahead still open is `GoAheadList`'s, a rule the session proposed
  * `ProposedRules`' (PROPOSEHERE1b), the work's line `Lands` with its *Accept…*, the rebase words and the gates, a discard the line
  * holds `Discards`, an agent's ask for a helper waiting on the person's word `HelperAsks` with its yes and no (MIXAGENT2c), a tool
- * call held for their answer under asking `PermissionAsks` with a press per choice its agent offered (AUTONOMY1b3c), each
+ * call held for their answer under asking `PermissionAsks` with a press per choice its agent offered (AUTONOMY1b3c), a third answer
+ * alone the bound holds for them `AnswerAlone` with *Go on with this answer* and *Not now* (COWORK1e), each
  * handed what the head is handed. A park's
  * question is named and not answered here: the box below is its answer's one door (FIX-LOG 2026-09-29), and its *Finish…* and
  * *Decline…* stay its card's (D56). A hand-over offer is the pinned page head's, already on screen.
@@ -138,6 +145,7 @@ export function WaitStrip({ answerBelow = false, workAsk, ruleAsk, onTop, seek, 
   const intake = waits.find((wait): wait is Extract<Wait, { kind: 'intake' }> => wait.kind === 'intake');
   const open = new Set(waits.filter((wait) => wait.kind === 'goAhead').map((wait) => (wait as { number: number }).number));
   const asking = new Set(waits.filter((wait) => wait.kind === 'permission').map((wait) => (wait as { request: string }).request));
+  const alone = waits.some((wait) => wait.kind === 'answerAlone') && props.answers ? answerFor(props.answers.waits, session.id) : null;
   const ruled = new Set(waits.filter((wait) => wait.kind === 'rule').map((wait) => (wait as { id: string }).id));
   const helping = new Set(waits.filter((wait) => wait.kind === 'helper').map((wait) => (wait as { id: string }).id));
   // Its agent's ask to hand it over (MIXAGENT1c) is the strip's own: the head draws no line of it, so the strip never stands aside for it.
@@ -221,6 +229,14 @@ export function WaitStrip({ answerBelow = false, workAsk, ruleAsk, onTop, seek, 
                   lead={t('work.wait.permission.lead')}
                 />
               </div>
+            )}
+            {alone && props.answers && (
+              <AnswerAlone
+                wait={alone}
+                nameOf={props.answers.nameOf}
+                onAnswer={props.answers.onAnswer}
+                busy={props.answers.busy}
+              />
             )}
             {ruled.size > 0 && props.rules && (
               <div className="grid gap-1">

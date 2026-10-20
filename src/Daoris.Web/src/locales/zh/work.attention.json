@@ -83,6 +83,9 @@
   "work.attention.work": "清理受阻",
   "work.attention.permission": "智能体请求权限",
   "work.attention.permissionWhy": "{{session}} 在这个工具调用运行前等你答复；{{minutes}} 分钟内无人答复则拒绝它。",
+  "work.attention.answer": "回答在等你",
+  "work.attention.answerWhy": "{{agent}} 的回答会让这项工作在无人参与的情况下第三次继续。它在等你。",
+  "work.attention.answerWhySomeone": "另一个智能体的回答会让这项工作在无人参与的情况下第三次继续。它在等你。",
   "work.attention.act.allowOnce": "允许这一次",
   "work.attention.act.refuseOnce": "拒绝",
   "work.attention.act.refuseAlways": "始终拒绝"

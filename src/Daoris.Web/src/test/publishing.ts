@@ -53,6 +53,8 @@ export const DECLARED: Readonly<Record<string, { scopes: readonly string[]; sess
   SESSION_HELPER_ASK: { scopes: ['sessions', 'driver'], session: 'id' },
   SESSION_HELPER_APPROVE: { scopes: ['sessions', 'driver'], session: 'session' },
   SESSION_HELPER_DECLINE: { scopes: ['sessions', 'driver'], session: 'session' },
+  // The person's word on a third answer alone held for them (COWORK1e): the mark taken away or kept, the look nudged.
+  SESSION_ANSWER_ALONE: { scopes: ['sessions', 'driver'], session: 'session' },
   // The plugins' presses (STATEHUB1d), which the Plugins view's tests publish; and since HELPMODE1c3 the driver's, whose
   // helpGrants draws Ask Daoris's browser grant from the plugin's approval.
   PLUGIN_ACTION: { scopes: ['driver', 'plugins', 'harnesses'] },

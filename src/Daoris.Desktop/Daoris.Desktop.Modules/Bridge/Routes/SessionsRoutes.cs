@@ -373,6 +373,38 @@ public sealed class SessionsRoutes(DriverContext context)
         return Task.FromResult<object?>(new { answer.Answered, answer.Why, answer.Message });
     }
 
+    // What the answers-alone bound holds for the person across this machine's sessions (COWORK1e, D188 point 4; the message-urgency
+    // design §8.3), oldest first: each session whose answers would take its line on a third time in a row with nobody between, the agent
+    // that answered, the answers' ids and since when. A read off the home's marks (`GoOnMarks`), which the look and the conversations
+    // write; it declares nothing, and sits under the sessions' key on the page, which every tick asks again.
+    [DriverRoute("ANSWER_WAITS")]
+    private Task<object?> AnswerWaitsAsync(IpcRequest request, CancellationToken cancellationToken) =>
+        Task.FromResult<object?>(new { Waits = AttentionStateSlice.AnswerWaits(_loop.Home) });
+
+    // The person's answer to a third answer alone held for them (COWORK1e; §8.3): `goOn` true is *Go on with this answer*, their press
+    // kept as their word and the mark taken away, so the driver's next look, nudged, or the conversation's own go-on takes the answer on;
+    // false is *Not now*, the answer kept for them, going on only beside a word of theirs. Where nothing holds an answer of the session
+    // for them, `answered: false` with its code (`unheld`), and nothing is written.
+    [DriverRoute("SESSION_ANSWER_ALONE")]
+    [Publishes("SESSION_ANSWER_ALONE", StateScopes.Sessions | StateScopes.Driver, Session = "session")]
+    private Task<object?> SessionAnswerAloneAsync(IpcRequest request, CancellationToken cancellationToken)
+    {
+        var session = PayloadHelper.GetRequiredValue<string>(request.Payload, "session");
+        var goOn = PayloadHelper.GetRequiredValue<bool>(request.Payload, "goOn");
+        var marks = new GoOnMarks(_loop.Home);
+        var answer = goOn
+            ? AnswersAloneWord.GoOn(marks, _loop.Events, session)
+            : AnswersAloneWord.NotNow(marks, _loop.Events, session, DateTimeOffset.UtcNow);
+        if (answer.Stands && goOn)
+        {
+            // A conversation this shell holds says it, or goes on with it where it ended; a driven record goes on at the look.
+            _loop.Chat?.AnswerGoesOn(session);
+            _loop.Nudge();
+        }
+
+        return Task.FromResult<object?>(new { Answered = answer.Stands, answer.Why, answer.Message });
+    }
+
     private const string PersonMoves =
         "A person may finish, decline or stop a parked session — not move it anywhere else. "
         + "Answering it so it carries on is a message, not a move.";

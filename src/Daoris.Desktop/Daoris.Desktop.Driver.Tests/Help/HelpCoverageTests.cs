@@ -615,6 +615,12 @@ public sealed partial class HelpCoverageTests
             "it answers a tool call a session holds for the person under its repository's asking permission prompts, with a choice "
             + "its agent offered, for that one call (D184's AUTONOMY1b3a note): a live request is the person's own press, never a "
             + "proposal, and what an agent may do at all is the person's rules and access setup, doors of their own.")),
+        // COWORK1e (D188 point 4; the message-urgency design §8.3): the person's word on a third answer in a row with nobody between, on
+        // the session's page and What needs you.
+        ("work", "useAnswerAlone", null, new Exempt(
+            "it answers a third answer in a row with nobody between, which the answers-alone bound holds for the person (D188 point 4): "
+            + "*Go on with this answer* is their word on that one answer and *Not now* keeps it for them, given where it waits; the bound "
+            + "itself is fixed, so Ask Daoris proposes no single answer.")),
         // SESSONE2c (D167 points 6 to 8): the ask's channel, posted to from the ask's page and a session's panel, and its mark.
         ("asks", "usePostChannel", null, ChannelPostDoor),
         ("work", "usePostChannel", null, ChannelPostDoor),

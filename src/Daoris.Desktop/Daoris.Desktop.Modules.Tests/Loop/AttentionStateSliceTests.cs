@@ -854,6 +854,59 @@ public sealed class AttentionStateSliceTests : DriverModuleBridge
         Assert.Equal("", rows.Single(row => row["id"]!.GetValue<string>() == "g0n3#7")["where"]!.GetValue<string>());
     }
 
+    /// <summary>
+    /// COWORK1e (D188 point 4; the message-urgency design §8.3): a third answer in a row with nobody between holds its session's work for
+    /// the person: a row by its session, its wait whole (the agent that answered, the answers' ids, since when), its repository where the
+    /// record is in hand.
+    /// </summary>
+    [Fact]
+    public void A_third_answer_alone_held_for_the_person_is_a_row_with_its_wait_whole()
+    {
+        var held = """{"session":"c0nv0001","agent":"codex-acp","words":["w3","w4"],"since":"2026-09-21T09:30:00Z"}""";
+        var rows = Rows(new()
+        {
+            Sessions = [Session("""{"id":"c0nv0001","quest":"7a82cc"}""")],
+            Quests = [Quest()],
+            Registry = [Registration("engine")],
+            Answers = [JsonNode.Parse(held)!.AsObject(), JsonNode.Parse("""{"session":"g0n3","agent":"codex-acp","words":["w1"],"since":"2026-09-21T09:10:00Z"}""")!.AsObject()],
+        });
+
+        Assert.Equal(["answer:c0nv0001", "answer:g0n3"], Keys(rows));
+        Is($$"""{"kind":"answer","id":"c0nv0001","since":"2026-09-21T09:30:00Z","where":"engine","session":"c0nv0001","answer":{{held}}}""", rows.Single(row => row["id"]!.GetValue<string>() == "c0nv0001"));
+        Assert.Equal("", rows.Single(row => row["id"]!.GetValue<string>() == "g0n3")["where"]!.GetValue<string>());
+    }
+
+    /// <summary>
+    /// COWORK1e: the answers-alone waits are read off the home's marks: each held for the person with the agent, the answers and since
+    /// when, oldest first; a mark of any other reason, and answers the person kept with *Not now*, wait on nothing of theirs.
+    /// </summary>
+    [Fact]
+    public void The_answers_alone_waits_are_the_marks_held_for_the_person()
+    {
+        var home = Path.Combine(Path.GetTempPath(), "daoris-answer-waits-" + Guid.NewGuid().ToString("N")[..8]);
+        try
+        {
+            var marks = new GoOnMarks(home);
+            marks.Mark("s2", ["w5"], GoOnMarks.AnswersAlone, DateTimeOffset.Parse("2026-10-21T09:10:00Z"), agent: "claude-code-acp");
+            marks.Mark("s1", ["w3", "w4"], GoOnMarks.AnswersAlone, DateTimeOffset.Parse("2026-10-21T09:00:00Z"), agent: "codex-acp");
+            marks.Mark("s3", ["w9"], GoOnMarks.NotNow, DateTimeOffset.Parse("2026-10-21T08:00:00Z"), agent: "codex-acp");
+            marks.Mark("s4", ["w8"], ContinueWhy.Of(ContinueWhy.Tree), DateTimeOffset.Parse("2026-10-21T08:00:00Z"));
+
+            var waits = JsonSerializer.SerializeToNode(AttentionStateSlice.AnswerWaits(home), IpcJson.Options)!.AsArray();
+
+            Assert.Equal(
+                [("s1", "codex-acp", "w3,w4"), ("s2", "claude-code-acp", "w5")],
+                waits.Select(wait => (wait!["session"]!.GetValue<string>(), wait["agent"]!.GetValue<string>(),
+                    string.Join(",", wait["words"]!.AsArray().Select(id => id!.GetValue<string>())))));
+            Assert.Equal(DateTimeOffset.Parse("2026-10-21T09:00:00Z"), DateTimeOffset.Parse(waits[0]!["since"]!.GetValue<string>()));
+            Assert.Equal(["session", "agent", "words", "since"], waits[0]!.AsObject().Select(field => field.Key));
+        }
+        finally
+        {
+            try { Directory.Delete(home, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
+        }
+    }
+
     /// <summary>XAGENT1g: a second opinion that waits on the person, its wait whole, which the page says and offers by.</summary>
     [Fact]
     public void A_second_opinion_that_waits_on_the_person_is_a_row_with_its_wait_whole()
@@ -1006,6 +1059,8 @@ public sealed class AttentionStateSliceTests : DriverModuleBridge
             Opinions = [JsonNode.Parse("""{"session":"s42","quest":"q1","repository":"engine","workspace":"aurora","since":"2026-09-21T09:00:00Z","auto":false,"opinion":{"state":"disputed","holds":true,"required":true,"opinion":"o1","reviewer":"codex","product":"Codex","maker":"OpenAI","label":"Codex","reviewing":"s42","findings":2,"disputes":2,"since":"2026-09-21T09:00:00Z","code":"c","until":"2026-09-22T09:00:00Z","later":1,"person":"p","answers":"o1","says":"s"}}""")!.AsObject()],
             Helpers = [JsonNode.Parse("""{"id":"a1","session":"parked","question":"Which?","agent":null,"at":"2026-09-21T09:30:00Z"}""")!.AsObject()],
             Permissions = [JsonNode.Parse("""{"session":"parked","request":"9","call":"c","title":"t","kind":"edit","since":"2026-09-21T09:10:00Z","choices":[{"id":"a","name":"A","kind":"allow_once"}]}""")!.AsObject()],
+            // COWORK1e: a third answer alone held for the person.
+            Answers = [JsonNode.Parse("""{"session":"parked","agent":"codex-acp","words":["w1"],"since":"2026-09-21T09:20:00Z"}""")!.AsObject()],
             // OVERVIEWNOISE1b: a unit's row, its blocked entry with its code and facts.
             Works = [Unit($$$"""{"cleanup":{"state":"pending","waits":[{{{Entry("""{"code":"unfollowed","facts":{"branch":"daoris/s1a2b3c4"}}""").ToJsonString()}}}],"gone":[]}}""")],
             Held = [HeldAttempt("""{"outcome":"reached","revision":"r","resolution":"stop","resolvedAt":"2026-10-17T10:00:00Z","words":["stop"]}""")],
@@ -1013,8 +1068,8 @@ public sealed class AttentionStateSliceTests : DriverModuleBridge
         var rows = Rows(facts);
         Assert.Contains(rows, row => row["blocked"] is JsonObject blocked && blocked["entries"]![0]!["facts"] is JsonObject);
 
-        // Every kind but the accounts': fifteen.
-        Assert.Equal(15, rows.Select(row => row["kind"]!.GetValue<string>()).Distinct().Count());
+        // Every kind but the accounts': sixteen.
+        Assert.Equal(16, rows.Select(row => row["kind"]!.GetValue<string>()).Distinct().Count());
         foreach (var row in rows) Assert.Equal(Normal(row), Normal(AttentionStateSlice.Picked(row)));
     }
 
@@ -1061,6 +1116,7 @@ public sealed class AttentionStateSliceTests : DriverModuleBridge
             Groups = [Placed("""{"token":"sk-hostile-placed","work":{"commits":1,"token":"sk-hostile-work"}}""")],
             Held = [HeldAttempt("""{"token":"sk-hostile-attempt"}""")],
             Permissions = [JsonNode.Parse("""{"session":"s","request":"1","since":"2026-09-21T09:10:00Z","token":"sk-hostile-wait","choices":[{"id":"a","name":"A","kind":"allow_once","token":"sk-hostile-choice"}]}""")!.AsObject()],
+            Answers = [JsonNode.Parse("""{"session":"s","agent":"codex-acp","words":["w1"],"since":"2026-09-21T09:10:00Z","token":"sk-hostile-answer"}""")!.AsObject()],
             Opinions = [JsonNode.Parse("""{"session":"s42","quest":"q1","repository":"engine","since":"2026-09-21T09:00:00Z","auto":false,"token":"sk-hostile-opinion","opinion":{"state":"disputed","token":"sk-hostile-gate"}}""")!.AsObject()],
             Proposals = [Proposal("""{"token":"sk-hostile-proposal"}""")],
         })!;
