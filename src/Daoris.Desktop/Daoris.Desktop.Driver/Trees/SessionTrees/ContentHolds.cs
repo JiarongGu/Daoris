@@ -222,10 +222,11 @@ internal sealed class ContentHolds(TreeContext context)
         {
             var reference = DiscardedPrefix + branch + (n == 1 ? "" : $"-{n}");
             // An empty old value: made only where no ref of that name exists, so none is ever moved. `verify <ref>` with no id: git's word
-            // that it does not exist, in the same transaction.
+            // that it does not exist, in the same transaction. `--create-reflog` (RECOVERYDATE1): git writes no reflog outside
+            // `refs/heads/` by default, and the ref's first entry is the date its retention counts from (RecoveryRetention).
             var (code, _, err) = absent is null
-                ? await WorkingTree.GitAsync(root, ["update-ref", reference, judged, ""], ct).ConfigureAwait(false)
-                : await WorkingTree.GitAsync(root, ["update-ref", "--stdin"], $"verify {absent}\ncreate {reference} {judged}\n", ct).ConfigureAwait(false);
+                ? await WorkingTree.GitAsync(root, ["update-ref", "--create-reflog", reference, judged, ""], ct).ConfigureAwait(false)
+                : await WorkingTree.GitAsync(root, ["update-ref", "--create-reflog", "--stdin"], $"verify {absent}\ncreate {reference} {judged}\n", ct).ConfigureAwait(false);
             if (code == 0) return (reference, null);
             var (exists, at, _) = await WorkingTree.GitAsync(root, ["rev-parse", "--verify", "--quiet", reference], ct).ConfigureAwait(false);
             if (exists != 0) return (null, FirstLine(err));

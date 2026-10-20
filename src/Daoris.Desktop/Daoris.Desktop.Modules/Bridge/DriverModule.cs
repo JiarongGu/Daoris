@@ -220,7 +220,7 @@ public sealed class DriverModule : ModuleBase
         Domain.Of(context => new TraceRoutes(context.Loop)),
         Domain.Of(context => new TreesRoutes(context.Loop)),
         Domain.Of(context => new WorkRoutes(context)),
-        Domain.Of(context => new WorkflowRoutes(context.Loop)),
+        Domain.Of(context => new WorkflowRoutes(context)),
     ];
 
     // The handlers, read once off their marks. A route marked twice fails here, at the module's first use, as a switch with

@@ -523,6 +523,7 @@ public sealed class DriverModuleAccountsTests : DriverModuleBridge
         Assert.Equal("list", machine.GetProperty("reason").GetString());
         Assert.Equal("account-2", machine.GetProperty("over").GetString());
         Assert.Equal(JsonValueKind.Null, machine.GetProperty("when").ValueKind);
+        Assert.All(["window", "unused", "seen"], name => Assert.Equal(JsonValueKind.Null, machine.GetProperty(name).ValueKind));
         Assert.Equal(
             ["account-2=ready", "account-3=outside"],
             machine.GetProperty("others").EnumerateArray().Select(each => $"{each.GetProperty("account").GetString()}={each.GetProperty("hold").GetString()}"));
@@ -538,6 +539,31 @@ public sealed class DriverModuleAccountsTests : DriverModuleBridge
             until.ToUniversalTime().ToString("yyyy-MM-dd'T'HH:mm"),
             others[0].GetProperty("until").GetDateTimeOffset().ToUniversalTime().ToString("yyyy-MM-dd'T'HH:mm"));
         Assert.Equal(JsonValueKind.Null, others[1].GetProperty("until").ValueKind);
+    }
+
+    /// <summary>
+    /// NEXTLAPSE1 (D165's USAGERESET1 note): a next start ranked by what would lapse carries, beside its reset in <c>when</c>,
+    /// the window that won, the whole percent of it unused and when that reading was made, as the start's line says them.
+    /// </summary>
+    [Fact]
+    public async Task A_next_start_ranked_by_what_would_lapse_carries_its_window_its_unused_share_and_its_reading_s_moment()
+    {
+        Accounts("claude-code", "account-1", "account-2");
+        Wiring("""{ "rotation": { "claude-code": ["account-1", "account-2"] } }""");
+        // account-1's week resets in four days; account-2's in ten hours, with 60% of it unused, read an hour ago.
+        var seen = Now.AddHours(-1);
+        AccountWindows.Said(Home, "claude-code", "account-1", [new WindowReading("weekly", 0.30, Now.AddDays(4))], Now, "s1");
+        AccountWindows.Said(Home, "claude-code", "account-2", [new WindowReading("weekly", 0.40, Now.AddHours(10))], seen, "s2");
+
+        var next = Scope(Agent(await AnswerAsync(Module(), "ACCOUNTS"), "claude-code"), null).GetProperty("next");
+
+        Assert.Equal("account-2", next.GetProperty("account").GetString());
+        Assert.Equal("lapsing", next.GetProperty("reason").GetString());
+        Assert.Equal("account-1", next.GetProperty("over").GetString());
+        Assert.Equal(Now.AddHours(10).ToUnixTimeSeconds(), next.GetProperty("when").GetDateTimeOffset().ToUnixTimeSeconds());
+        Assert.Equal("weekly", next.GetProperty("window").GetString());
+        Assert.Equal(60, next.GetProperty("unused").GetInt32());
+        Assert.Equal(seen.ToUnixTimeSeconds(), next.GetProperty("seen").GetDateTimeOffset().ToUnixTimeSeconds());
     }
 
     /// <summary>

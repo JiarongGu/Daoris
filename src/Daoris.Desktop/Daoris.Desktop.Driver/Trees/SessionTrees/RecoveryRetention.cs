@@ -23,8 +23,8 @@ public static class RecoveryRetention
 
     /// <summary>
     /// The date from which the look removes it, where a branch or a tag holds its commit and its date was read; null otherwise. Counted from
-    /// the commit's date, since git keeps none for a ref: a ref made for an older commit may go sooner after it was made, and loses nothing,
-    /// since the holder keeps every commit and message it kept.
+    /// when the ref was made, its reflog's first entry (RECOVERYDATE1); a ref with no reflog, made before that or by hand, from its commit's
+    /// date, so it may go sooner after it was made, and loses nothing, since the holder keeps every commit and message it kept.
     /// </summary>
     public static DateTimeOffset? Until(RecoveryRef each) => each is { Held: true, Dated: { } dated } ? dated + Kept : null;
 
@@ -45,8 +45,9 @@ public static class RecoveryRetention
             && !landed.Contains(reference["refs/heads/".Length..], StringComparer.OrdinalIgnoreCase));
 
     /// <summary>
-    /// Every recovery ref of one checkout, with its commit, that commit's date, and whether a branch or a tag of the person's holds it
-    /// (<see cref="Holds"/>): one <c>for-each-ref</c>, and one <c>rev-list</c> where there are refs. Null with git's words where the list
+    /// Every recovery ref of one checkout, with its commit, its date (<see cref="Until"/>), and whether a branch or a tag of the person's
+    /// holds it (<see cref="Holds"/>): one <c>for-each-ref</c>, and one <c>rev-list</c> and one <c>log --walk-reflogs</c> where there are
+    /// refs. Null with git's words where the list
     /// did not read; where the holders did not read, each ref's <see cref="RecoveryRef.Held"/> is null, never false (D57).
     /// </summary>
     /// <param name="landed">The branches Daoris's landings made here (<see cref="Made"/>): no holders.</param>
@@ -95,12 +96,41 @@ public static class RecoveryRetention
         var alone = listedCode == 0
             ? unheld.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).ToHashSet(StringComparer.Ordinal)
             : null;
+        var made = await MadeAsync(root, [.. rows.Select(parts => parts[2])], ct).ConfigureAwait(false);
         return ([.. rows.Select(parts => new RecoveryRef(repository, parts[2])
         {
             Commit = parts[0],
-            Dated = long.TryParse(parts[1], out var seconds) ? DateTimeOffset.FromUnixTimeSeconds(seconds) : null,
+            Dated = made is null ? null
+                : made.TryGetValue(parts[2], out var at) ? at
+                : long.TryParse(parts[1], out var seconds) ? DateTimeOffset.FromUnixTimeSeconds(seconds) : null,
             Held = alone is null ? null : !alone.Contains(parts[0]),
         })], null, standing);
+    }
+
+    /// <summary>
+    /// When each of <paramref name="refs"/> was made (RECOVERYDATE1): its reflog's oldest entry, which <see cref="ContentHolds.KeepDiscardedAsync"/>
+    /// writes with <c>--create-reflog</c>, in one <c>log --walk-reflogs</c>. A ref with no reflog (made before it, or by hand) is not
+    /// named, and is dated by its commit; null where git did not answer, so no ref is dated and none goes at this look (D57).
+    /// </summary>
+    private static async Task<IReadOnlyDictionary<string, DateTimeOffset>?> MadeAsync(string root, IReadOnlyList<string> refs, CancellationToken ct)
+    {
+        // `--ignore-missing`: a ref deleted since the listing is no failure. `%gD` with `--date=unix` reads `<ref>@{<seconds>}`, and a
+        // ref name holds no `@{`.
+        var (code, walked, _) = await WorkingTree.GitAsync(
+            root, ["log", "--walk-reflogs", "--ignore-missing", "--date=unix", "--format=%gD", .. refs.Distinct(StringComparer.Ordinal), "--"], ct)
+            .ConfigureAwait(false);
+        if (code != 0) return null;
+        var made = new Dictionary<string, DateTimeOffset>(StringComparer.Ordinal);
+        foreach (var line in walked.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+        {
+            var at = line.LastIndexOf("@{", StringComparison.Ordinal);
+            if (at <= 0 || !line.EndsWith('}') || !long.TryParse(line[(at + 2)..^1], out var seconds)) continue;
+            var when = DateTimeOffset.FromUnixTimeSeconds(seconds);
+            var reference = line[..at];
+            if (!made.TryGetValue(reference, out var seen) || when < seen) made[reference] = when;
+        }
+
+        return made;
     }
 
     /// <summary>

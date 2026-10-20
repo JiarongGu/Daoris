@@ -5,7 +5,8 @@ namespace Daoris.Driver;
 /// <summary>One line read, or one dropped unread for its length (<see cref="Text"/> null), with what passing over it saw.</summary>
 /// <param name="Id">A dropped frame's top-level integer <c>id</c>, where it had one: the request it answers, failed at once rather than left to wait.</param>
 /// <param name="Method">Whether a dropped frame had a top-level <c>method</c>: a request or a notification, never an answer.</param>
-public readonly record struct BoundedLine(string? Text, int? Id = null, bool Method = false)
+/// <param name="Clipped">Read by a clipping reader, whether <see cref="Text"/> is only the line's start, the rest passed over (PLUGSTDERR1).</param>
+public readonly record struct BoundedLine(string? Text, int? Id = null, bool Method = false, bool Clipped = false)
 {
     public bool Dropped => Text is null;
 }
@@ -24,8 +25,11 @@ public readonly record struct BoundedLine(string? Text, int? Id = null, bool Met
 /// <para><b>Passing over a dropped line keeps two facts of it</b> (round 2): its top-level integer <c>id</c> and whether it names a top-level
 /// <c>method</c>, read by a scan that holds a few fields whatever the line's length. An answer too long to read is then failed at once, as the
 /// plugin's unreadable answer, rather than left to wait out its patience as a late one.</para>
+///
+/// <para><b>Words are clipped, never dropped</b> (PLUGSTDERR1, <paramref name="clip"/>): a plugin's stderr is read for a person, so a line over the
+/// limit keeps its start, as many whole characters as the limit holds, and the rest is passed over unscanned.</para>
 /// </remarks>
-public sealed class BoundedLines(TextReader reader, int limit)
+public sealed class BoundedLines(TextReader reader, int limit, bool clip = false)
 {
     private readonly char[] _buffer = new char[4096];
     private readonly StringBuilder _line = new();
@@ -73,12 +77,19 @@ public sealed class BoundedLines(TextReader reader, int limit)
             var stop = found < 0 ? _end : _at + found;
             if (over)
             {
-                _scan.Feed(_buffer, _at, stop - _at);
+                if (!clip) _scan.Feed(_buffer, _at, stop - _at);
             }
             else
             {
+                var room = limit - bytes;
                 bytes += Utf8Bytes(_buffer.AsSpan(_at, stop - _at));
-                if (bytes > limit)
+                if (bytes > limit && clip)
+                {
+                    // Over: the start that fits is kept, and the rest of the line passes unread.
+                    over = true;
+                    Keep(_buffer.AsSpan(_at, stop - _at), room);
+                }
+                else if (bytes > limit)
                 {
                     // Over: what was kept is scanned once and let go, and the rest of the line is scanned as it passes.
                     over = true;
@@ -117,7 +128,25 @@ public sealed class BoundedLines(TextReader reader, int limit)
         return any ? Finish(over) : null;
     }
 
-    private BoundedLine Finish(bool over) => over ? _scan.Dropped() : new BoundedLine(_line.ToString());
+    private BoundedLine Finish(bool over) => !over ? new BoundedLine(_line.ToString())
+        : clip ? new BoundedLine(_line.ToString(), Clipped: true)
+        : _scan.Dropped();
+
+    /// <summary>The start of <paramref name="chars"/> that fits in <paramref name="room"/> UTF-8 bytes, kept whole: a pair is never split.</summary>
+    private void Keep(ReadOnlySpan<char> chars, long room)
+    {
+        var take = 0;
+        for (; take < chars.Length; take++)
+        {
+            var size = Utf8Bytes(chars.Slice(take, 1));
+            if (size > room) break;
+            room -= size;
+        }
+
+        _line.Append(chars[..take]);
+        // A pair's first half kept without its second, here or at the end of the block before, is no character.
+        if (_line.Length > 0 && char.IsHighSurrogate(_line[^1])) _line.Length -= 1;
+    }
 
     /// <summary>What <paramref name="chars"/> take in UTF-8, counted per character so a pair split between two blocks still counts four.</summary>
     private static long Utf8Bytes(ReadOnlySpan<char> chars)

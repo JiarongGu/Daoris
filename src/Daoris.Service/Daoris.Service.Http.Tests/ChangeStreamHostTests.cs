@@ -1,15 +1,20 @@
-using System.Diagnostics;
 using Daoris.Knowledge;
 using Daoris.Knowledge.Http;
 
 namespace Daoris.Service.Http.Tests;
 
 /// <summary>
+/// A local host handed its person key, as <see cref="KeyedHost"/>, on a clock that stands still (TESTCLOCK3): a change stream's
+/// wait never ends by itself, so an answer came at once or was woken.
+/// </summary>
+public sealed class HeldChangesHost() : DaorisHost(ServiceMode.Local, seed: LocalHost.Seed, input: KeyedHost.Key + "\n", clock: new MovableClock());
+
+/// <summary>
 /// The change stream's door (FABRIC-EVENT3b, the fabric events design §A4.2): a read every caller may make on a local host, the key's
 /// host included, answering families and a cursor, woken by a write through the host's own doors; and no door at all on a shared
-/// host, which serves no machine's waits.
+/// host, which serves no machine's waits. The host's clock stands still, so "at once" and "woken" are each an answer at all.
 /// </summary>
-public sealed class ChangeStreamHostTests(KeyedHost host) : IClassFixture<KeyedHost>
+public sealed class ChangeStreamHostTests(HeldChangesHost host) : IClassFixture<HeldChangesHost>
 {
     private static readonly string[] Every = [ChangeFamilies.Sessions, ChangeFamilies.Quests, ChangeFamilies.Asks, ChangeFamilies.Channel, ChangeFamilies.Words];
 
@@ -31,7 +36,7 @@ public sealed class ChangeStreamHostTests(KeyedHost host) : IClassFixture<KeyedH
     [Fact]
     public async Task A_bootstrap_is_answered_to_any_caller_with_every_family()
     {
-        var (since, moved) = Read(await host.GetAsync(ChangeStream.Route + "?wait=10"));
+        var (since, moved) = Read(await host.GetAsync(ChangeStream.Route + "?wait=10").WaitAsync(Poll.Patience));
 
         Assert.Equal(Every, moved);
         Assert.Matches(@"^[0-9a-f]+\.\d+$", since);
@@ -46,12 +51,10 @@ public sealed class ChangeStreamHostTests(KeyedHost host) : IClassFixture<KeyedH
         await Task.Delay(200);
         Assert.False(waiting.IsCompleted, "a current cursor was answered before anything moved");
 
-        var clock = Stopwatch.StartNew();
         var published = await host.PostAsync("/api/quests", new { from = "Asker", to = "Keeper", title = "Wake the driver", body = "why" });
         Assert.Equal(200, published.Status);
         var (next, moved) = Read(await waiting.WaitAsync(Poll.Patience));
 
-        Assert.True(clock.Elapsed < TimeSpan.FromSeconds(5), $"{clock.Elapsed}");
         Assert.Equal([ChangeFamilies.Quests], moved);
         Assert.NotEqual(since, next);
     }
@@ -60,10 +63,8 @@ public sealed class ChangeStreamHostTests(KeyedHost host) : IClassFixture<KeyedH
     [Fact]
     public async Task A_stale_cursor_is_answered_every_family_at_once()
     {
-        var clock = Stopwatch.StartNew();
-        var (_, moved) = Read(await host.GetAsync(ChangeStream.Route + "?since=0123abcd.4&wait=10"));
+        var (_, moved) = Read(await host.GetAsync(ChangeStream.Route + "?since=0123abcd.4&wait=10").WaitAsync(Poll.Patience));
 
-        Assert.True(clock.Elapsed < TimeSpan.FromSeconds(5), $"{clock.Elapsed}");
         Assert.Equal(Every, moved);
     }
 

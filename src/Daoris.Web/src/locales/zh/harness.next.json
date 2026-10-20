@@ -25,6 +25,7 @@
   "harness.next.why.fewest": "它运行的 Daoris 会话比 {{over}} 少",
   "harness.next.why.lapsing": "它的一周额度将于 {{when}} 重置，重置前可用的余量更多",
   "harness.next.why.lapsingSoon": "它的一周额度将在一天之内重置，重置前可用的余量更多",
+  "harness.next.why.lapses": "它的{{window}}窗口在 {{when}} 重置，按 {{seen}} 的读数还有 {{unused}} 未用",
   "harness.next.why.pace": "它比 {{over}} 更落后于本周的用量节奏",
   "harness.next.why.room": "它在曲线下的余量比 {{over}} 多",
   "harness.next.why.leastRecent": "Daoris 在它上面启动的时间比 {{over}} 更早",

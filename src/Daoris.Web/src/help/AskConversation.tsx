@@ -10,8 +10,9 @@ import {
   type HelpSettled, NO_TURNS, helpModeOf, useCancelTurn, useChatTurns, useDeleteSession, useDriver, useEditQueued, useEndChat,
   useHarnesses, useHelpConversations, useHelpProposals, useHelpReadied, useHelpStartFrom, useHelpWired, usePinHelp, usePlugins,
   usePollUnlessTold, useRenameHelp, useSendMessage, useSessionEvents, useSetHelpMode, useSettleHelp, useStartHelp, useStopSession,
-  stoppedWaiting,
+  stoppedWaiting, useGoOnBrief,
 } from '../bridge/shell';
+import { goOnBriefRefusal } from '../work/say';
 import { useHeldHarnessRun } from '../agents/harnessRuns';
 import { Button, Prose, SESSION_ACTIVE } from '../design/ui';
 import { FullAccessAsk, HelpModeChip, useModeChoice } from './access/HelpModePicker';
@@ -673,6 +674,30 @@ export function useAskConversation(
       },
     });
   };
+  // SESSCTX1c part B (the steward's choice: Ask Daoris follows the same rule in its own room): words that wait for the person on a
+  // conversation in view go on in a new conversation of its room, handed Daoris's brief and the words, shown once it opens; a refusal is
+  // said by its code in the composer's line.
+  const goOnBrief = useGoOnBrief();
+  const onGoOnBrief = (id: string) => {
+    if (goOnBrief.isPending) return;
+    setRefusal(null);
+    goOnBrief.mutate({ session: id }, {
+      onSuccess: (moved) => {
+        if (moved.why) {
+          setRefusal(goOnBriefRefusal(t, moved.why, {}));
+          return;
+        }
+        if (!moved.sessionId) {
+          setRefusal(moved.message);
+          return;
+        }
+        help.spoke(moved.sessionId);
+        choose(moved.sessionId);
+        setFocusWhenListed(moved.sessionId);
+      },
+      onError: (error) => setRefusal(sentence(error)),
+    });
+  };
   const history = (
     <AskHistory
       rows={shownListing?.conversations ?? []}
@@ -812,6 +837,7 @@ export function useAskConversation(
       turnRunning={live ? turns.taking : undefined}
       scroller={scroller}
       onTail={setTail}
+      onGoOnBrief={live ? undefined : () => onGoOnBrief(shown.id)}
     />
   ) : null;
 

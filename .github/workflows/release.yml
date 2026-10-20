@@ -311,6 +311,10 @@ jobs:
 
       # The web gate's two halves as the declaration has them (WEBSPLIT1): the page's unit tests, which build nothing, then the
       # build, the HTTP host's and Playwright. `npm run test:web` runs both, in this order.
+      # The page's types alone (MERGETSC1's `web-types` gate), which a merge reaching the page's sources runs among its checks.
+      - name: Web types
+        run: npm run typecheck:web
+
       - name: Web unit tests
         run: npm run test:web:unit
 

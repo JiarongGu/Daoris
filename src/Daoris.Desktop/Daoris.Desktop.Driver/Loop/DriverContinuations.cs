@@ -732,6 +732,41 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
     }
 
     /// <summary>
+    /// A closed quest's session whose own conversation is proven lost goes on by itself as a conversation in its tree (SESSCTX1c part B,
+    /// D189 point 3): handed to the shell's chat runner, which opens the new part, hands it the brief and the person's words and takes
+    /// them off the record, naming it. Another agent's findings or answer among the words stay, marked, and go to the person (XAGENT1e),
+    /// since the conversation was handed only the person's. Null where nothing went on there, and the session then waits for the person.
+    /// </summary>
+    internal async Task<StartRun?> GoesOnLostAsync(
+        Func<string, ContinueReason, CancellationToken, Task<StartedFrom>> goesOn, QuestView quest, PriorSession record, ContinueReason why,
+        CancellationToken ct)
+    {
+        if (!record.Waiting.Any(word => word.Persons)) return null;
+        StartedFrom moved;
+        try
+        {
+            moved = await goesOn(record.Session, why, ct).ConfigureAwait(false);
+        }
+        catch (Exception error) when (error is HttpRequestException or DriverException or IOException or System.Text.Json.JsonException
+                                          || (error is OperationCanceledException && !ct.IsCancellationRequested))
+        {
+            return null;
+        }
+
+        if (moved is not { SessionId: not null, Sent: true }) return null;
+
+        // A choice of a new session is spent with the words it named, which went now (MSG1g).
+        _context.NewSessions.Clear(record.Session);
+        if (record.Waiting.Any(word => !word.Persons))
+        {
+            _context.Marks.Mark(record.Session, record.Waiting.Where(word => !word.Persons).Select(word => word.Id).OfType<string>(), why, DateTimeOffset.UtcNow);
+            _driver.Deliverer.FindingsToPerson(record, why);
+        }
+
+        return new StartRun($"moved   session {record.Session} (#{quest.Id} → {quest.To}): {moved.Message}", false);
+    }
+
+    /// <summary>
     /// The words a session could not go on with went to a new one (MSG1b, D137 §2.2): taken off the record they were said to
     /// by their ids, naming the session that took them, so the service keeps those said after it ended on the ask as
     /// <c>reopened</c>; and, for a record that had ended, said in its conversation where the person wrote them. A park's

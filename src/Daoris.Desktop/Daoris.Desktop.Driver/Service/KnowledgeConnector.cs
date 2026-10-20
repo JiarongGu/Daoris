@@ -188,6 +188,16 @@ public static class KnowledgeConnector
         return Server(located, variable, home, scope);
     }
 
+    /// <summary>
+    /// The same, every input read from the surroundings <paramref name="variable"/> answers (ENVSEAM1): the host it names, the home it
+    /// names, and what it passes through. The driver's own environment, which is this process's unless a test hands in its own.
+    /// </summary>
+    public static AcpMcpServer? Offer(Func<string, string?> variable, string baseDirectory, IReadOnlyDictionary<string, string>? scope)
+    {
+        var home = DaorisHome.Resolve(variable);
+        return Locate(variable(PathVariable), home, baseDirectory) is { } located ? Server(located, variable, home, scope) : null;
+    }
+
     /// <summary>The first place this machine actually has the host, or null.</summary>
     public static string? Locate(string? explicitPath, string? home, string baseDirectory) =>
         Candidates(explicitPath, home, baseDirectory).FirstOrDefault(File.Exists);

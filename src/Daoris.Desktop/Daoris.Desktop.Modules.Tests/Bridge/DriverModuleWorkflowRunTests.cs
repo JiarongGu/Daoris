@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Daoris.Desktop.Driver.Tests;
 using Daoris.Driver;
 
 namespace Daoris.Desktop.Modules.Tests;
@@ -84,7 +85,7 @@ public sealed class DriverModuleWorkflowRunTests : DriverModuleBridge
         var info = new System.Diagnostics.ProcessStartInfo("git")
         { WorkingDirectory = root, RedirectStandardOutput = true, RedirectStandardError = true, CreateNoWindow = true };
         foreach (var argument in arguments) info.ArgumentList.Add(argument);
-        using var process = System.Diagnostics.Process.Start(info)!;
+        using var process = System.Diagnostics.Process.Start(TestGit.Past(info))!;
         var output = process.StandardOutput.ReadToEndAsync();
         var error = process.StandardError.ReadToEndAsync();
         await Task.WhenAll(output, error);
@@ -125,6 +126,9 @@ public sealed class DriverModuleWorkflowRunTests : DriverModuleBridge
         Assert.Equal("release", workflow.GetProperty("id").GetString());
         Assert.Equal(1, workflow.GetProperty("boundVersion").GetInt32());
         Assert.Equal(binding.Digest, workflow.GetProperty("version").GetString());
+        // FABRIC-PIPELINE1a: the run's view says which route chose its pipeline, as its binding keeps it.
+        var route = workflow.GetProperty("route");
+        Assert.Equal((WorkflowLevels.Task, JsonValueKind.Null, JsonValueKind.Null), (route.GetProperty("level").GetString(), route.GetProperty("kind").ValueKind, route.GetProperty("label").ValueKind));
         var steps = run.GetProperty("steps").EnumerateArray().ToList();
         Assert.Equal(["write", "inspect", "publish"], steps.Select(step => step.GetProperty("step").GetProperty("id").GetString()));
         Assert.Equal("local", steps[1].GetProperty("step").GetProperty("settings").GetProperty("environment").GetString());

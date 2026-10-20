@@ -25,6 +25,30 @@ public static class Process
         IReadOnlyDictionary<string, string>? environment = null)
     {
         (file, arguments) = Resolve(file, arguments);
+        return Run(Captured(file, arguments, workingDirectory, environment));
+    }
+
+    /// <summary>Run a start <see cref="Captured"/> made, reading both its streams at once.</summary>
+    public static ProcessOutput Run(ProcessStartInfo start)
+    {
+        using var process = System.Diagnostics.Process.Start(start)
+            ?? throw new DevkitException($"could not start '{start.FileName}'");
+
+        var output = process.StandardOutput.ReadToEndAsync();
+        var error = process.StandardError.ReadToEndAsync();
+        process.WaitForExit();
+
+        return new ProcessOutput(process.ExitCode, output.Result, error.Result);
+    }
+
+    /// <summary>A start of <paramref name="file"/> as named, both streams captured as UTF-8.</summary>
+    /// <param name="environment">Variables set for this child alone, over the devkit's own.</param>
+    public static ProcessStartInfo Captured(
+        string file,
+        IReadOnlyList<string> arguments,
+        string workingDirectory,
+        IReadOnlyDictionary<string, string>? environment = null)
+    {
         var start = new ProcessStartInfo
         {
             FileName = file,
@@ -37,15 +61,7 @@ public static class Process
         };
         foreach (var argument in arguments) start.ArgumentList.Add(argument);
         foreach (var (name, value) in environment ?? new Dictionary<string, string>()) start.Environment[name] = value;
-
-        using var process = System.Diagnostics.Process.Start(start)
-            ?? throw new DevkitException($"could not start '{file}'");
-
-        var output = process.StandardOutput.ReadToEndAsync();
-        var error = process.StandardError.ReadToEndAsync();
-        process.WaitForExit();
-
-        return new ProcessOutput(process.ExitCode, output.Result, error.Result);
+        return start;
     }
 
     /// <summary>
@@ -61,7 +77,26 @@ public static class Process
     /// </remarks>
     private static (string File, IReadOnlyList<string> Arguments) Resolve(string file, IReadOnlyList<string> arguments)
     {
-        if (!OperatingSystem.IsWindows() || Path.HasExtension(file)) return (file, arguments);
+        if (Locate(file) is not { } candidate) return (file, arguments);
+        if (!IsCommandScript(candidate)) return (candidate, arguments);
+
+        if (arguments.FirstOrDefault(a => a.IndexOfAny(['"', '%', '&', '|', '<', '>', '^', '\r', '\n']) >= 0) is { } unsafeArgument)
+        {
+            throw new DevkitException(
+                $"'{candidate}' is a command script, and cmd would re-read the argument '{unsafeArgument}' — "
+                + "name the program itself under 'doctrine.command' instead.");
+        }
+
+        return ("cmd.exe", ["/d", "/c", candidate, .. arguments]);
+    }
+
+    /// <summary>
+    /// The file a command with no extension names on Windows, looked up by `PATHEXT` on `PATH` as `cmd` would; null
+    /// elsewhere, for a name with an extension, and where nothing is found.
+    /// </summary>
+    public static string? Locate(string file)
+    {
+        if (!OperatingSystem.IsWindows() || Path.HasExtension(file)) return null;
 
         var extensions = (Environment.GetEnvironmentVariable("PATHEXT") ?? ".COM;.EXE;.BAT;.CMD")
             .Split(';', StringSplitOptions.RemoveEmptyEntries);
@@ -76,26 +111,17 @@ public static class Process
             foreach (var extension in extensions)
             {
                 var candidate = place + extension;
-                if (!File.Exists(candidate)) continue;
-                if (!extension.Equals(".cmd", StringComparison.OrdinalIgnoreCase)
-                    && !extension.Equals(".bat", StringComparison.OrdinalIgnoreCase))
-                {
-                    return (candidate, arguments);
-                }
-
-                if (arguments.FirstOrDefault(a => a.IndexOfAny(['"', '%', '&', '|', '<', '>', '^', '\r', '\n']) >= 0) is { } unsafeArgument)
-                {
-                    throw new DevkitException(
-                        $"'{candidate}' is a command script, and cmd would re-read the argument '{unsafeArgument}' — "
-                        + "name the program itself under 'doctrine.command' instead.");
-                }
-
-                return ("cmd.exe", ["/d", "/c", candidate, .. arguments]);
+                if (File.Exists(candidate)) return candidate;
             }
         }
 
-        return (file, arguments);
+        return null;
     }
+
+    /// <summary>A `.cmd` or `.bat`, which only `cmd.exe` can start.</summary>
+    public static bool IsCommandScript(string file) =>
+        Path.GetExtension(file).Equals(".cmd", StringComparison.OrdinalIgnoreCase)
+        || Path.GetExtension(file).Equals(".bat", StringComparison.OrdinalIgnoreCase);
 
     /// <summary>
     /// Run a declared command line, streaming its output straight through.

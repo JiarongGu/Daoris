@@ -122,7 +122,17 @@ public sealed record NamedVersion(
 }
 
 /// <summary>A workflow file as read: its id and name and every version, each readable or not; or the file's own first problem.</summary>
-public sealed record NamedWorkflowRead(string? Id, string? Name, IReadOnlyList<NamedVersion> Versions, string? Problem);
+public sealed record NamedWorkflowRead(string? Id, string? Name, IReadOnlyList<NamedVersion> Versions, string? Problem)
+{
+    /// <summary>
+    /// The file's mark (FABRIC-PIPELINE1a, <see cref="WorkflowPipelines"/>): <c>development</c> where it says none, null where the file
+    /// does not read.
+    /// </summary>
+    public string? Pipeline { get; init; }
+
+    /// <summary>Whether it is marked a verification pipeline, which only the <c>landed</c> route names.</summary>
+    public bool Verifies => Pipeline == WorkflowPipelines.Verification;
+}
 
 /// <summary>
 /// Named workflows read (WORKFLOW1d, D157 points 5, 6 and 8, the workflow design §2.5, §2.6, §3.2, §3.3, §3.9): what a workflow
@@ -144,6 +154,11 @@ public static class WorkflowNamed
     private const string VersionsSentence = "a workflow's `versions` is a list of at least one.";
     private const string VersionShape = "each of its versions is a JSON object with its `version`, `at`, `door` and `steps`.";
     private const string VersionNumber = "each version's `version` is a whole number from 1, each greater than the one before it.";
+    private const string PipelineSentence = "a workflow's `pipeline` is `development` or `verification`, as it was made; absent is `development`.";
+
+    /// <summary>The kinds a verification pipeline's graph never holds: each observes a chain's work, or lands it (the pipeline design §2.1).</summary>
+    private static readonly string[] NotVerified =
+        [NodeKinds.Claimed, NodeKinds.Opinion, NodeKinds.Look, NodeKinds.GoAhead, NodeKinds.Handed, NodeKinds.QuestClose];
 
     /// <summary>A workflow's or a step's id: lower-case letters, digits and dashes, at most 40.</summary>
     public static bool IsId(string? value) => value is { Length: > 0 and <= 40 } && SafeNames.IsKebabId(value);
@@ -174,6 +189,15 @@ public static class WorkflowNamed
         if (IdProblem(id) is { } idProblem) return Unread(idProblem);
         var name = Json.Text(file, "name");
         if (NameProblem(name) is { } nameProblem) return Unread(nameProblem);
+
+        // The mark (FABRIC-PIPELINE1a): absent or null is a development pipeline; a value this build does not know reads nothing.
+        var pipeline = WorkflowPipelines.Development;
+        if (file.TryGetProperty("pipeline", out var mark) && mark.ValueKind != JsonValueKind.Null)
+        {
+            pipeline = mark.ValueKind == JsonValueKind.String ? mark.GetString()! : "";
+            if (pipeline is not (WorkflowPipelines.Development or WorkflowPipelines.Verification)) return Unread(PipelineSentence);
+        }
+
         if (!file.TryGetProperty("versions", out var versions) || versions.ValueKind != JsonValueKind.Array || versions.GetArrayLength() == 0)
         {
             return Unread(VersionsSentence);
@@ -190,15 +214,19 @@ public static class WorkflowNamed
         var read = new List<NamedVersion>();
         foreach (var version in versions.EnumerateArray())
         {
-            read.Add(ReadVersion(version, WholeOf(version, "version")!.Value, [.. read.Where(each => each.Steps is not null)]));
+            read.Add(ReadVersion(version, WholeOf(version, "version")!.Value, [.. read.Where(each => each.Steps is not null)], pipeline));
         }
 
-        return new NamedWorkflowRead(id, name, read, null);
+        return new NamedWorkflowRead(id, name, read, null) { Pipeline = pipeline };
     }
 
     /// <summary>One version read (design §2.5): its <c>at</c>, its <c>door</c>, then its steps, the first problem said with its number.</summary>
     /// <param name="prior">The versions before it that read, which a step's id is held to: an id is never used for another kind.</param>
-    public static NamedVersion ReadVersion(JsonElement version, int number, IReadOnlyList<NamedVersion> prior)
+    /// <param name="pipeline">
+    /// The mark its workflow's file carries (FABRIC-PIPELINE1a): a development pipeline's graph lands its work once, and a verification
+    /// pipeline's versions are graphs holding its checks.
+    /// </param>
+    public static NamedVersion ReadVersion(JsonElement version, int number, IReadOnlyList<NamedVersion> prior, string pipeline = WorkflowPipelines.Development)
     {
         var at = Json.Text(version, "at");
         var door = Json.Text(version, "door");
@@ -229,10 +257,17 @@ public static class WorkflowNamed
 
                 var (graph, problems) = NodeGraphs.Read(graphJson.GetRawText());
                 if (graph is null) return Unread($"v{number}: its graph does not hold: {problems[0].Words}");
-                return OneLandingProblem(graph, number) is { } landing
+                var shape = pipeline == WorkflowPipelines.Verification ? VerificationProblem(graph, number) : OneLandingProblem(graph, number);
+                return shape is { } landing
                     ? Unread(landing)
                     : new NamedVersion(number, at, door, null, null, NodeGraphs.Digest(graph), graph);
             }
+        }
+
+        // A verification pipeline's versions are graphs (the steps engine runs no `check`, D190 §10).
+        if (pipeline == WorkflowPipelines.Verification)
+        {
+            return Unread($"v{number}: a verification pipeline's versions are graphs (schema {GraphSchema}) holding its checks, never steps.");
         }
 
         var (steps, problem) = ReadSteps(hasSteps ? raw : null, number, prior);
@@ -258,6 +293,25 @@ public static class WorkflowNamed
         }
 
         return null;
+    }
+
+    /// <summary>
+    /// Why a verification pipeline's graph is not one, or null (FABRIC-PIPELINE1a, D192 point 3, the pipeline design §2.1): it holds none
+    /// of <c>claimed</c>, <c>opinion</c>, <c>look</c>, <c>go-ahead</c>, <c>handed</c> or <c>quest.close</c>, whose subjects (a chain's
+    /// quests, its branch, its ask) a landed run has none of, the first in node order named; then at least one <c>check</c>. A TWIN with
+    /// the CLI's <c>verificationProblem</c> (<c>namedworkflows.ts</c>), on <c>workflow-graph-versions.json</c>.
+    /// </summary>
+    private static string? VerificationProblem(NodeGraph graph, int number)
+    {
+        if (graph.Nodes.FirstOrDefault(node => NotVerified.Contains(node.Kind, StringComparer.Ordinal)) is { } held)
+        {
+            return $"v{number}: its graph holds `{held.Id}`, a `{held.Kind}`, and a verification pipeline's graph lands nothing and observes no "
+                + "chain's work: it holds no `claimed`, `opinion`, `look`, `go-ahead`, `handed` or `quest.close`.";
+        }
+
+        return graph.Nodes.Any(node => node.Kind == NodeKinds.Check)
+            ? null
+            : $"v{number}: its graph holds no `{NodeKinds.Check}`, and a verification pipeline's graph runs at least one.";
     }
 
     /// <summary>The schema of a version that is a graph (FABRIC-GRAPH1b); a version of steps is schema 1, named or not.</summary>
@@ -646,18 +700,28 @@ public static class WorkflowNamed
         {
             if ((IdProblem(add.Id) ?? NameProblem(add.Name)) is { } problem) return Refused(problem);
             version["version"] = 1;
-            var first = ReadVersion(ElementOf(version), 1, []);
-            return first.Problem is not null
-                ? Refused(first.Problem)
-                : new WorkflowAddPlan(new JsonObject { ["id"] = add.Id, ["name"] = add.Name, ["versions"] = new JsonArray(version) }, 1, null);
+            // The mark is written at creation (FABRIC-PIPELINE1a): a verification pipeline's, after the name; a development one's absent.
+            var verification = add.Pipeline == WorkflowPipelines.Verification;
+            var first = ReadVersion(ElementOf(version), 1, [], verification ? WorkflowPipelines.Verification : WorkflowPipelines.Development);
+            if (first.Problem is not null) return Refused(first.Problem);
+            var made = new JsonObject { ["id"] = add.Id, ["name"] = add.Name };
+            if (verification) made["pipeline"] = WorkflowPipelines.Verification;
+            made["versions"] = new JsonArray(version);
+            return new WorkflowAddPlan(made, 1, null);
         }
 
         var read = Read(ElementOf(file));
         if (read.Problem is not null) return Refused($"nothing was written: the workflow's file cannot be read — {read.Problem}");
         if (read.Id != add.Id) return Refused($"nothing was written: the file holds the workflow `{read.Id}`, not `{add.Id}`.");
+        if (add.Pipeline is { } asked && asked != read.Pipeline)
+        {
+            return Refused($"nothing was written: `{add.Id}` is a {read.Pipeline} pipeline, and a workflow keeps the pipeline it was made as: a "
+                + $"{asked} pipeline is a new workflow.");
+        }
+
         var number = read.Versions[^1].Version + 1;
         version["version"] = number;
-        var candidate = ReadVersion(ElementOf(version), number, [.. read.Versions.Where(each => each.Steps is not null)]);
+        var candidate = ReadVersion(ElementOf(version), number, [.. read.Versions.Where(each => each.Steps is not null)], read.Pipeline!);
         if (candidate.Problem is not null) return Refused(candidate.Problem);
 
         var result = file.DeepClone().AsObject();

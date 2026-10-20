@@ -67,7 +67,9 @@ internal sealed class TreeHandOffs(TreeContext context)
     {
         // LANDRACE1's review (D173's LANDRACE1 note): one push of a landed branch at a time, a hand-off's and a landing's plugin step
         // alike, so a hand-off beside the landing that is still pushing the branch never pushes it again or opens a second pull request.
-        using var pushing = await LandingHolds.BranchAsync(context.Home, root, entry.Branch, ct).ConfigureAwait(false);
+        // LANDHOLD3: named by the session the branch was landed for, for a door that waits behind it.
+        using var pushing = await LandingHolds.BranchAsync(context.Home, root, entry.Branch, ct, by: new LandingHolder(entry.Session, entry.Branch))
+            .ConfigureAwait(false);
         if (pushing is null)
         {
             return new(false, $"`{entry.Branch}` was not handed on: another push of it was still under way after "

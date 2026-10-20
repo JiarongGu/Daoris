@@ -10,6 +10,8 @@ namespace Daoris.Driver;
 /// environment the launcher would have handed it.
 /// </summary>
 /// <remarks>
+/// <para>The service's <c>GitForWindows</c> is its twin (GITSTART2; <c>.claude/knowledge/twins.md</c>): the same rule in
+/// the service's own code, its <c>GitForWindowsTests</c> holding this side's rows case for case. The two change together.</para>
 /// <para>🔴 The launcher's variables are what it was measured setting (git 2.53.0.windows.3; FIX-LOG, GITSTART1), held to
 /// a real install by <c>GitForWindowsProcessTests</c>. git started bare with no <c>MSYSTEM</c> repairs its own
 /// <c>PATH</c>, but in another order (<c>HOME\bin</c> first), and with any <c>MSYSTEM</c> set it repairs nothing, so
@@ -17,6 +19,8 @@ namespace Daoris.Driver;
 /// <para>Recognised only where the layout is unmistakable: a <c>git.exe</c> in a <c>cmd</c> folder, a git under a known
 /// prefix beside it, and <c>usr\bin</c>. An install with an <c>etc\git-bash.config</c>, whose <c>MSYS=</c> lines the
 /// launcher reads, starts through the launcher as before, as does any other layout and any other platform.</para>
+/// <para>The devkit carries a twin (<c>Daoris.Devkit.Core/GitStart.cs</c>, GITSTART3), since it references nothing of the
+/// desktop's: a change to this rule is made there too, and its <c>GitStartTests</c> keeps this class's tests' rows.</para>
 /// </remarks>
 public static class GitForWindows
 {

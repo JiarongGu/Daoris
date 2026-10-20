@@ -16,6 +16,8 @@ import { driverFile } from '../_csharp.ts';
 interface Row {
   name: string;
   read: 'version' | 'shape';
+  /** The mark the version's workflow carries (FABRIC-PIPELINE1a), absent read as `development`. */
+  pipeline?: 'development' | 'verification';
   version: Record<string, unknown> & { version: number; steps: unknown };
   identity?: string;
   graphDigest?: string;
@@ -27,7 +29,7 @@ const here = dirname(dirname(fileURLToPath(import.meta.url)));
 const TABLE = JSON.parse(readFileSync(join(here, 'fixtures', 'workflow-graphs.json'), 'utf8')) as { decoderVersion: number; rows: Row[] };
 
 function decoded(row: Row) {
-  if (row.read === 'version') return decodeVersion(readVersion(row.version, row.version.version, []));
+  if (row.read === 'version') return decodeVersion(readVersion(row.version, row.version.version, [], row.pipeline ?? 'development'));
   const { steps, problem } = readShape(row.version.steps, row.version.version);
   assert.equal(problem, null, row.name);
   return decodeSteps(row.version.version, steps!);

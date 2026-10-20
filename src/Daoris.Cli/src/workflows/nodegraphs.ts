@@ -60,6 +60,8 @@ export const BUILT_IN_AUTHORITIES: Readonly<Record<string, Authority>> = {
   all: { reach: 'observed', fails: true, judges: false, mayEnd: true },
   opinion: { reach: 'observed', fails: false, judges: false, mayEnd: true },
   stop: { reach: 'observed', fails: false, judges: false, mayEnd: false },
+  // FABRIC-PIPELINE1a (D192 point 6): the gates Daoris performs itself, never skipped by its kind; row 1d runs it.
+  check: { reach: 'performed', fails: true, judges: false, mayEnd: true },
 };
 
 /** The built-ins observed from records, whose evidence is their record's — the driver's `BuiltInNodes.Observed`. */

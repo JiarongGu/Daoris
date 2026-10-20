@@ -51,17 +51,28 @@ internal static class ContextBriefs
     /// closing note hand in. Null where none was written.
     /// </param>
     /// <param name="tree">The tree the new part works in, read now; null for the one the part moved from ran in.</param>
+    /// <param name="noteAsked">Whether the outgoing agent was asked for its closing note (SESSCTX1c part B): none written is said absent.</param>
+    /// <param name="before">
+    /// How many of the part moved from's events stood before its closing note was asked (SESSCTX1c part B): the brief reads those alone,
+    /// so the closing turn is told once, as the note. Null reads them all.
+    /// </param>
     internal static async Task<ComposedBrief> ComposeAsync(
         ServiceClient service, SessionEvents events, string home, string session, string why, bool conversation, string? note = null,
-        DriverConfig? config = null, string? tree = null, CancellationToken ct = default)
+        DriverConfig? config = null, string? tree = null, CancellationToken ct = default, bool noteAsked = false, int? before = null)
     {
         // Records that could not be read leave a line of the one part moved from: its own words, never nothing.
         var json = await RecordsAsync(service, ct).ConfigureAwait(false);
         var records = ServiceClient.ReadRecords(json);
         var line = LineOf(records, session);
+        IReadOnlyList<SessionEvent> Read(string part)
+        {
+            var kept = Events(events, home, part);
+            return before is { } count && string.Equals(part, session, StringComparison.Ordinal) && count < kept.Count ? [.. kept.Take(count)] : kept;
+        }
+
         var parts = line.Count == 0
-            ? [new BriefPart(session, null, Events(events, home, session)) { Kept = Kept(home, session) }]
-            : line.Select((part, at) => new BriefPart(part.Session, part.Record.Adapter, Events(events, home, part.Session))
+            ? [new BriefPart(session, null, Read(session)) { Kept = Kept(home, session) }]
+            : line.Select((part, at) => new BriefPart(part.Session, part.Record.Adapter, Read(part.Session))
             {
                 Why = at == 0 ? null : part.Why,
                 Kept = Kept(home, part.Session),
@@ -77,6 +88,7 @@ internal static class ContextBriefs
             State = standing is null ? null : await TreeAsync(standing, line.Count > 0 ? line[0].Record.BaseCommit : null, ct).ConfigureAwait(false),
             Gates = Gates(standing, last?.Repository, config ?? Config(home)),
             Note = note,
+            NoteAsked = noteAsked,
             Others = Others(json, line),
             Open = Open(home, line),
         });

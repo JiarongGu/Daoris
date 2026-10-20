@@ -317,6 +317,7 @@ than the driver in one place: a point the manifest declares and the process does
 ### The rules an author keeps
 
 1. **stdout is the wire.** Nothing but frames; everything else goes to stderr, shown under `plugin:<id>`.
+   *(PLUGSTDERR1)* A stderr line past 8 KB is shown clipped to its start and marked ` …`; the next line is shown whole.
 2. **What it keeps goes in its data folder**, `DAORIS_PLUGIN_DATA` or `${data}`. The install folder is
    replaced whole by the next `add`.
 3. **Where it is, is told**: `DAORIS_PLUGIN_ID`, `DAORIS_PLUGIN_FOLDER`, `DAORIS_PLUGIN_DATA`,

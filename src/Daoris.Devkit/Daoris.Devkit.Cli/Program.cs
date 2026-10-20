@@ -121,7 +121,7 @@ int InstallHooks()
 
     // core.hooksPath rather than copying into .git/hooks: the hooks become tracked files that a clone
     // gets, instead of something every contributor has to be told to install.
-    var result = Process.Run("git", ["config", "core.hooksPath", ".githooks"], root);
+    var result = GitStart.Run(["config", "core.hooksPath", ".githooks"], root);
     if (result.ExitCode != 0) throw new DevkitException($"could not set core.hooksPath: {result.Error.Trim()}");
 
     return Print($"wrote .githooks/ and set core.hooksPath — commit the directory so a clone gets them.\n"

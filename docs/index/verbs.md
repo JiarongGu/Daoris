@@ -22,7 +22,7 @@ Each verb is a module of `src/Daoris.Cli/src/cli/`, its row in `COMMANDS` (`src/
 | `import` | management | `cli/import.ts:5` | `service/manage.ts:87` commandImport | [folder] register a folder's subdirectories in one go; safe to |
 | `brainstorm` | management | `cli/brainstorm.ts:5` | `service/brainstorm.ts:53` commandBrainstorm | [verb] a question put to this machine\'s agents (D176), through |
 | `remote` | management | `cli/remote.ts:5` | `service/remotes.ts:90` commandRemote | [verb] this machine's remotes, one per workspace: |
-| `agent` | management | `cli/agent.ts:8` | `agents/toolchain.ts:1640` commandHarness | [verb] this machine's agents — Claude Code, Codex, dsh — and the |
+| `agent` | management | `cli/agent.ts:8` | `agents/toolchain.ts:1644` commandHarness | [verb] this machine's agents — Claude Code, Codex, dsh — and the |
 | `driver` | management | `cli/driver.ts:10` | `cli/driver.ts:191` handed | [verb] what this machine drives ($DAORIS_HOME/driver.json): |
 | `plugin` | management | `cli/plugin.ts:7` | `plugins/plugins.ts:1315` commandPlugin | [verb] this machine's plugins ($DAORIS_HOME/plugins/<id>/plugin.json): |
 | `browser` | management | `cli/browser.ts:5` | `browser/browser.ts:316` commandBrowser | [verb] Daoris's browser: its favorites and its settings… |
@@ -54,7 +54,7 @@ Routed in `src/Daoris.Desktop/Daoris.Desktop.Driver.Host/Program.cs`, its usage 
 | `heavy` | `Program.cs:575` | `Daoris.Desktop.Driver.Host/HeavyMappingConsole.cs:8` HeavyMappingConsole | — |
 | `checks` | `Program.cs:582` | `Daoris.Desktop.Driver.Host/SessionChecksConsole.cs:7` SessionChecksConsole | heavy-at-end |
 | `history` | `Program.cs:590` | `Daoris.Desktop.Driver.Host/HistoryConsole.cs:11` HistoryConsole | clear `HistoryCommand.cs:54` |
-| `trees` | `Program.cs:597` | `Daoris.Desktop.Driver.Host/TreesConsole.cs:15` TreesConsole | list `TreesConsole.cs:67` · remove `TreesConsole.cs:95` · clean `TreesConsole.cs:111` · land `TreesConsole.cs:219` · hand `TreesConsole.cs:389` · state `TreesConsole.cs:462` · sync `TreesConsole.cs:161` |
+| `trees` | `Program.cs:597` | `Daoris.Desktop.Driver.Host/TreesConsole.cs:15` TreesConsole | list `TreesConsole.cs:92` · remove `TreesConsole.cs:120` · clean `TreesConsole.cs:136` · land `TreesConsole.cs:244` · hand `TreesConsole.cs:414` · state `TreesConsole.cs:487` · sync `TreesConsole.cs:186` |
 | `work state` | `Program.cs:603` | `Program.cs:603` (inline) | — |
 | `work held` | `Program.cs:609` | `Program.cs:609` (inline) | — |
 | `work recovery drop` | `Program.cs:615` | `Program.cs:615` (inline) | — |

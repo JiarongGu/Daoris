@@ -188,6 +188,33 @@ public sealed class ContinuationTests : IDisposable
     }
 
     /// <summary>
+    /// 🔴 SESSCTX1c part B (D189 point 3, the session-context design §2): a conversation, or a closed quest's session, goes on by itself
+    /// in a new part only where its own conversation is proven lost: the protocol door's <c>resource_not_found</c> (<c>gone</c>), no id
+    /// kept (<c>unkept</c>), a door that cannot resume (<c>unable</c>) or an agent that offers no resume (<c>offered</c>). Nothing else
+    /// proves it lost, so everything else waits for the person.
+    /// </summary>
+    [Fact]
+    public void Only_a_proven_loss_moves_a_conversation_by_itself()
+    {
+        foreach (var code in new[] { ContinueWhy.Gone, ContinueWhy.Unkept, ContinueWhy.Offered })
+        {
+            Assert.True(ContinueWhy.Of(code).Lost, code);
+        }
+
+        Assert.True(ContinueWhy.CannotResume("claude-code").Lost);
+        foreach (var code in new[]
+                 {
+                     ContinueWhy.Account, ContinueWhy.Tree, ContinueWhy.Exited, ContinueWhy.Refused, ContinueWhy.Elsewhere,
+                     ContinueWhy.Ended, ContinueWhy.Teammate, ContinueWhy.Intake, ContinueWhy.StoodDown, ContinueWhy.Started,
+                 })
+        {
+            Assert.False(ContinueWhy.Of(code).Lost, code);
+        }
+
+        Assert.False(ContinueWhy.AdapterChanged("claude-code", "codex-acp").Lost);
+    }
+
+    /// <summary>
     /// The park a fallback ends keeps what it asked and says why the answer went to a new session; the new session's note
     /// says the same in one line. Neither names an account.
     /// </summary>

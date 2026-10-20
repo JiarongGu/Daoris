@@ -33,11 +33,16 @@ public sealed class WorkflowGraphVersionsTests
 
     public static TheoryData<string> Bound() => new([.. Table()["bound"]!.AsArray().Select(row => (string)row!["name"]!)]);
 
+    public static TheoryData<string> Marks() => new([.. Table()["marks"]!.AsArray().Select(row => (string)row!["name"]!)]);
+
+    /// <summary>A row's mark (FABRIC-PIPELINE1a), absent read as a development pipeline's.</summary>
+    private static string Pipeline(JsonObject row) => (string?)row["pipeline"] ?? WorkflowPipelines.Development;
+
     private static JsonObject Row(string section, string name) => Table()[section]!.AsArray().Select(row => row!.AsObject()).Single(row => (string)row["name"]! == name);
 
     [Fact]
     public void The_table_has_its_rows() =>
-        Assert.All(new[] { "reads", "adds", "bound" }, section => Assert.NotEmpty(Table()[section]!.AsArray()));
+        Assert.All(new[] { "reads", "adds", "bound", "marks" }, section => Assert.NotEmpty(Table()[section]!.AsArray()));
 
     [Theory, MemberData(nameof(Reads))]
     public void A_version_reads_as_the_table_says(string name)
@@ -45,7 +50,7 @@ public sealed class WorkflowGraphVersionsTests
         var row = Row("reads", name);
         var version = WorkflowNamed.ElementOf(Filled(row["version"], Graph())!);
         var number = version.GetProperty("version").GetInt32();
-        var read = WorkflowNamed.ReadVersion(version, number, []);
+        var read = WorkflowNamed.ReadVersion(version, number, [], Pipeline(row));
 
         Assert.Equal((bool)row["graph"]!, read.Graph is not null);
         Assert.Equal((string?)row["problem"], read.Problem);
@@ -93,7 +98,10 @@ public sealed class WorkflowGraphVersionsTests
     {
         var row = Row("adds", name);
         var file = (JsonNode?)Filled(row["file"], Graph());
-        var add = new WorkflowVersionAdded((string)row["id"]!, (string?)row["workflowName"], (string)row["door"]!, (string)row["at"]!, null, Filled(row["graph"], Graph()));
+        var add = new WorkflowVersionAdded((string)row["id"]!, (string?)row["workflowName"], (string)row["door"]!, (string)row["at"]!, null, Filled(row["graph"], Graph()))
+        {
+            Pipeline = (string?)row["pipeline"],
+        };
         var plan = WorkflowNamed.PlanAdd(file, add, []);
 
         Assert.Equal((string?)row["problem"], plan.Problem);
@@ -106,6 +114,21 @@ public sealed class WorkflowGraphVersionsTests
         {
             Assert.Null(plan.Result);
         }
+    }
+
+    /// <summary>
+    /// FABRIC-PIPELINE1a (D192 point 3, the pipeline design §2.1): a workflow's mark is read from its file and handed to each version's
+    /// reading, as the CLI's <c>readWorkflowFile</c> does on the same rows.
+    /// </summary>
+    [Theory, MemberData(nameof(Marks))]
+    public void A_workflows_pipeline_mark_is_read_from_its_file_and_judges_each_version(string name)
+    {
+        var row = Row("marks", name);
+        var read = WorkflowNamed.Read(WorkflowNamed.ElementOf(Filled(row["file"], Graph())!));
+
+        Assert.Equal((string?)row["pipeline"], read.Pipeline);
+        Assert.Equal((string?)row["problem"], read.Problem);
+        Assert.Equal(row["versions"]!.AsArray().Select(each => (string?)each), read.Versions.Select(each => each.Problem));
     }
 
     [Fact]

@@ -41,6 +41,31 @@ internal static class TreesConsole
     internal const string WaitingBehind = "trees: waiting for another landing of this work to end…";
 
     /// <summary>
+    /// What a `trees land` or `trees hand` says while it waits (LANDHOLD2): naming the session and branch it waits behind where that
+    /// one said who it is (LANDHOLD3), else <see cref="WaitingBehind"/>.
+    /// </summary>
+    internal static string WaitingLine(LandingHolder? behind) => behind is null
+        ? WaitingBehind
+        : $"trees: waiting for session {behind.Session}'s landing{(behind.Branch is { Length: > 0 } branch ? $" of `{branch}`" : "")} to end…";
+
+    /// <summary>
+    /// Says <see cref="WaitingLine"/> to <paramref name="write"/> once a wait begins, and again only where it comes to name a holder it
+    /// had not named, for the landings and hand-offs this call makes, until disposed.
+    /// </summary>
+    internal static IDisposable SayWaiting(Action<string> write)
+    {
+        var said = false;
+        LandingHolder? named = null;
+        return LandingHoldNotice.Told((now, behind) =>
+        {
+            if (!now || (said && (behind is null || behind == named))) return;
+            said = true;
+            named = behind ?? named;
+            write(WaitingLine(behind));
+        });
+    }
+
+    /// <summary>
     /// The lines this press moved, registered from the line at once (WSSETUP5, D124 §3.1) rather than at a loop's next
     /// look, so a terminal's landing reads as registered when it returns; each outcome to this host's log. What changed or
     /// must be fixed is said. A service that did not answer leaves them due, for the next loop to follow.
@@ -362,7 +387,7 @@ internal static class TreesConsole
                 // as the route's press is.
                 var pressed = await quests.PressedAsync(session, questId).ConfigureAwait(false);
                 // LANDHOLD2: said once where the landing has to wait behind another landing of this session's work.
-                using var waiting = LandingHoldNotice.Told(now => { if (now) Console.WriteLine(WaitingBehind); });
+                using var waiting = SayWaiting(Console.WriteLine);
                 // The sessions in use, asked when the rule's tidy reaches the other session branches the work holds (LAND3).
                 var landed = await landing.LandAsync(tree, subject, inUse: async token => (await service.ActiveSessionsAsync(token).ConfigureAwait(false))
                     .Select(each => each.Tree).OfType<string>().Where(each => each.Length > 0)
@@ -436,7 +461,7 @@ internal static class TreesConsole
                 // FABRIC-CLOSE1h8 (D173's note): judged again just before its plugin is told, on the result of the session that last
                 // moved the branch, as the route's hand-off is.
                 var pressed = await PressQuests.HandedAsync(entry, service).ConfigureAwait(false);
-                using var waiting = LandingHoldNotice.Told(now => { if (now) Console.WriteLine(WaitingBehind); });
+                using var waiting = SayWaiting(Console.WriteLine);
                 var handed = await handing.HandAsync(root, entry, plugin, beforePush: pressed.BeforePush).ConfigureAwait(false);
                 Told(home, PressesTold.HandOff, entry.Session);
                 // The plugin's lines were said as they came; the hand-off's sentence and the exit are the route's words too (RPC1b3).

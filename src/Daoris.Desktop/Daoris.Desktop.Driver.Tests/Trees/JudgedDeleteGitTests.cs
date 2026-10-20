@@ -287,7 +287,7 @@ public sealed class JudgedDeleteGitTests : LandedFixture
         var rewound = false;
         WorkingTree.Started.Value = arguments =>
         {
-            if (!rewound && arguments is ["update-ref", var reference, ..] && reference == $"{ContentHolds.DiscardedPrefix}{b.Branch}")
+            if (!rewound && arguments is ["update-ref", "--create-reflog", var reference, ..] && reference == $"{ContentHolds.DiscardedPrefix}{b.Branch}")
             {
                 rewound = true;
                 GitNow(root, "update-ref", "refs/heads/main", before);

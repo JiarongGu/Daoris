@@ -218,6 +218,11 @@ export const WrittenToAfterItEnded: Story = { args: { turns: settle(toTurns(WRIT
 export const ChatWrittenToAfterItEnded: Story = { args: { turns: settle(toTurns(WRITTEN_TO).turns, false), chat: true } };
 export const WordsWentToANewSession: Story = { args: { turns: settle(toTurns(WENT).turns, false), onSession: () => {} } };
 export const WordsCannotGoOnHere: Story = { args: { turns: settle(toTurns(CANNOT).turns, false), onStartFrom: () => {} } };
+/** SESSCTX1c part B: the words wait for the person, *Go on with Daoris's brief* beside the fresh start, in English and in 中文. */
+export const WordsWaitWithTheBriefReady: Story = {
+  args: { turns: settle(toTurns(CANNOT).turns, false), onStartFrom: () => {}, onGoOnBrief: () => {} },
+};
+export const WordsWaitWithTheBriefReadyChinese: Story = { ...WordsWaitWithTheBriefReady, decorators: [chinese] };
 export const WordCutOffByAStop: Story = { args: { turns: toTurns(CUT_OFF).turns, chat: true } };
 /** CONVNOTE1: a turn refused for its sign-in, the driver's line worded from its parts. */
 export const RefusedForItsSignIn: Story = { args: { turns: toTurns(SIGN_IN_REFUSED).turns, chat: true } };

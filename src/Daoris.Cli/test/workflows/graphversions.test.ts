@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { planAddVersion, readSteps, readVersion, readWorkflowFile, unrun } from '../../src/workflows/namedworkflows.ts';
+import { planAddVersion, readSteps, readVersion, readWorkflowFile, unrun, type Pipeline } from '../../src/workflows/namedworkflows.ts';
 import { parseWithSource, stringifyWithSource } from '../../src/workflows/jsonsource.ts';
 import { decodeVersion } from '../../src/workflows/workflowgraphs.ts';
 
@@ -16,6 +16,8 @@ import { decodeVersion } from '../../src/workflows/workflowgraphs.ts';
 
 interface ReadRow {
   name: string;
+  /** The mark the version's workflow carries (FABRIC-PIPELINE1a), absent read as `development`. */
+  pipeline?: Pipeline;
   judged: 'both' | 'cli-refuses';
   cli?: string;
   graph: boolean;
@@ -26,15 +28,16 @@ interface ReadRow {
 }
 
 interface AddRow {
-  name: string; file: unknown; id: string; workflowName: string | null; door: string; at: string; graph: unknown; problem: string | null;
-  result: unknown; version: number | null;
+  name: string; file: unknown; id: string; workflowName: string | null; pipeline?: Pipeline; door: string; at: string; graph: unknown;
+  problem: string | null; result: unknown; version: number | null;
 }
 interface BoundRow { name: string; file: unknown; version: number; digest: string; identity: string | null; unreadable: string | null }
+interface MarkRow { name: string; file: unknown; pipeline: Pipeline | null; problem: string | null; versions: (string | null)[] }
 
 const here = dirname(dirname(fileURLToPath(import.meta.url)));
 // Read with each number's own text and each object's keys as written, as the driver's JsonNode reads the table (FABRIC-GRAPH1f).
 const TABLE = parseWithSource(readFileSync(join(here, 'fixtures', 'workflow-graph-versions.json'), 'utf8')) as {
-  graph: unknown; reads: ReadRow[]; adds: AddRow[]; bound: BoundRow[];
+  graph: unknown; reads: ReadRow[]; adds: AddRow[]; bound: BoundRow[]; marks: MarkRow[];
 };
 
 /** A row's JSON with each `"$graph"` the table's one graph, every value's text kept. */
@@ -46,7 +49,7 @@ test('graph-versions: each read row of the shared table reads as the driver read
   assert.ok(TABLE.reads.length >= 10);
   for (const row of TABLE.reads) {
     const version = filled(row.version);
-    const read = readVersion(version, version.version, []);
+    const read = readVersion(version, version.version, [], row.pipeline ?? 'development');
     if (row.judged === 'cli-refuses') {
       // The driver reads the graph; the CLI cannot write its option's text as the driver does, so it says so and reads no digest.
       assert.equal(read.problem, row.cli, row.name);
@@ -58,6 +61,15 @@ test('graph-versions: each read row of the shared table reads as the driver read
     assert.equal(read.graph !== undefined, row.graph, row.name);
     assert.equal(read.problem, row.problem, row.name);
     assert.equal(read.digest, row.digest, row.name);
+  }
+});
+
+test('graph-versions: a workflow\'s pipeline mark is read from its file and judges each version (FABRIC-PIPELINE1a)', () => {
+  assert.ok(TABLE.marks.length >= 4);
+  for (const row of TABLE.marks) {
+    const read = readWorkflowFile(filled(row.file));
+    assert.deepEqual({ name: row.name, pipeline: read.pipeline, problem: read.problem, versions: read.versions.map((each) => each.problem) },
+      { name: row.name, pipeline: row.pipeline, problem: row.problem, versions: row.versions });
   }
 });
 
@@ -134,7 +146,9 @@ test('graph-versions: an option named __proto__ is kept as an option, and moves 
 test('graph-versions: each add row is planned as the driver plans it, a graph judged whole before it is saved (FABRIC-GRAPH1f)', () => {
   assert.ok(TABLE.adds.length >= 3);
   for (const row of TABLE.adds) {
-    const plan = planAddVersion(filled(row.file), { id: row.id, name: row.workflowName, door: row.door, at: row.at, steps: null, graph: filled(row.graph) });
+    const plan = planAddVersion(filled(row.file), {
+      id: row.id, name: row.workflowName, door: row.door, at: row.at, steps: null, graph: filled(row.graph), pipeline: row.pipeline ?? null,
+    });
     assert.deepEqual({ name: row.name, problem: plan.problem, version: plan.version, result: plan.result === null ? null : JSON.parse(JSON.stringify(plan.result)) },
       { name: row.name, problem: row.problem, version: row.version, result: row.result === null ? null : JSON.parse(JSON.stringify(filled(row.result))) });
   }

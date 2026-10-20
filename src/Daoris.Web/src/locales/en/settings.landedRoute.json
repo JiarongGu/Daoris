@@ -1,0 +1,12 @@
+{
+  "settings.landedRoute.label": "Verification of the work that lands",
+  "settings.landedRoute.why": "The workflow the work that lands on this repository's line follows: a verification workflow of checks, which runs the gates its daoris.gates.json declares, as you accepted them. Its own route replaces its workspace's for the work that lands alone; how each piece of work moves before it lands stays as its other routes say.",
+  "settings.landedRoute.twin": "In a terminal: `daoris driver workflow use <id> --repository {{repository}} --landed`",
+  "settings.landedRoute.says": "{{target}}, {{why}}.",
+  "settings.landedRoute.choices": "What verifies the work that lands on {{repository}}",
+  "settings.landedRoute.follow": "Follow {{workspace}}'s",
+  "settings.landedRoute.none": "No verification workflow is saved here: `daoris driver workflow import <file>` makes one from a file marked `verification`.",
+  "settings.landedRoute.accepts": "When you choose one, you accept the `daoris.gates.json` at its line's tip: its checks run those gates unasked, and an edit of it asks you again on the Workflow tab.",
+  "settings.landedRoute.summary": "verified by {{name}}",
+  "settings.landedRoute.summaryNone": "no verification"
+}

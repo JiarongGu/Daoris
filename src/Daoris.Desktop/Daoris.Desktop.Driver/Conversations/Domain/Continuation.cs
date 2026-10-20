@@ -36,6 +36,14 @@ public sealed record ContinueReason(string Code, string Sentence)
     /// as D131 point 3 always did; a driven session runs without a person by design.
     /// </summary>
     public bool Holds => Code is ContinueWhy.Elsewhere;
+
+    /// <summary>
+    /// Whether this proves the conversation lost (SESSCTX1c part B, D189 point 3): the protocol door's <c>resource_not_found</c>
+    /// (<see cref="ContinueWhy.Gone"/>), no id kept, a door that cannot resume, or an agent that offers no resume. A conversation and a
+    /// closed quest's session go on by themselves in a new part handed the brief on these alone; every other reason waits for the
+    /// person, since nothing else proves the conversation its agent could still go on with is gone.
+    /// </summary>
+    public bool Lost => Code is ContinueWhy.Gone or ContinueWhy.Unkept or ContinueWhy.Unable or ContinueWhy.Offered;
 }
 
 /// <summary>

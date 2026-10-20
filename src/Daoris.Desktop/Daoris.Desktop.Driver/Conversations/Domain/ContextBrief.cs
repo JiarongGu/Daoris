@@ -46,6 +46,12 @@ public sealed record BriefLine(string Why, IReadOnlyList<BriefPart> Parts)
     /// </summary>
     public string? Note { get; init; }
 
+    /// <summary>
+    /// Whether the outgoing agent was asked for its closing note (SESSCTX1c part B, §2.2): where it was and wrote none, the note's section
+    /// says it is absent (<see cref="HandOverNote.Absent"/>), since the move never waited more than that one turn.
+    /// </summary>
+    public bool NoteAsked { get; init; }
+
     /// <summary>The entry's other parts, beside the line, one line each (§3.1 item 7).</summary>
     public IReadOnlyList<string> Others { get; init; } = [];
 
@@ -165,7 +171,8 @@ public static class ContextBrief
         // In MIXAGENT1c's one wording for an outgoing agent's note (HandOverNote), clipped by weight first.
         var note = line.Note?.Trim() is { Length: > 0 } said && HandOverNote.Said(clipped.Head(said, NoteCap - 200)) is { } claim
             ? "\n\n" + claim
-            : null;
+            // SESSCTX1c part B: a closing note asked and not written in its one turn is said absent, in the note's own section.
+            : line.NoteAsked ? "\n\n" + HandOverNote.Absent : null;
         var (others, othersLeft) = Others(line.Others);
 
         // Item 3: the newest words under their cap, the oldest after the request left out first.

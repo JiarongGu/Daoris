@@ -6,10 +6,11 @@ namespace Daoris.Driver;
 /// </summary>
 internal sealed class TreeContext
 {
-    internal TreeContext(string home, LandingPlugins plugins)
+    internal TreeContext(string home, LandingPlugins plugins, Func<string, string?>? variable = null)
     {
         Home = home;
         Plugins = plugins;
+        Variable = variable ?? Environment.GetEnvironmentVariable;
         Worktrees = new TreeWorktrees(this);
         Leftovers = new TreeLeftovers(this);
     }
@@ -25,6 +26,12 @@ internal sealed class TreeContext
 
     /// <summary>The plugin wire a branch rule's landing speaks (WSR4, D100).</summary>
     internal LandingPlugins Plugins { get; }
+
+    /// <summary>
+    /// The environment the trees read their variables from (ENVSEAM1, D63's seam): this process's, unless a test hands in its own,
+    /// so a test naming an override sets nothing every class beside it shares.
+    /// </summary>
+    internal Func<string, string?> Variable { get; }
 
     /// <summary>The test seam (SQUASHTIDY1c): run with the branch's name between a judgement and the delete it cleared. Production sets none.</summary>
     internal Func<string, Task>? BeforeDeleting { get; set; }
@@ -58,7 +65,7 @@ internal sealed class TreeContext
     /// The person's choices, from the file the loop and the planner read (CONFIGSEAM1): this home's <c>driver.json</c> alone
     /// ignored an override's landing and review rules, so the work merged into the line while the planner sat a review for it.
     /// </summary>
-    internal DriverConfig Config() => DriverConfig.Load(DriverConfig.ResolvePath(Home));
+    internal DriverConfig Config() => DriverConfig.Load(DriverConfig.ResolvePath(Variable, Home));
 
     /// <summary>
     /// The repository's line (WSR2), from the choices beside this home, read per call: the person may

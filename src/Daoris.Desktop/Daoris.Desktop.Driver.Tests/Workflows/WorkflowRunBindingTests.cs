@@ -70,6 +70,28 @@ public sealed class WorkflowRunBindingTests : IDisposable
             WorkflowRunBindings.Said(binding, "a1b2c3"));
     }
 
+    /// <summary>
+    /// FABRIC-PIPELINE1a (the pipeline design §2.1): a development route naming a workflow marked a verification pipeline (set by hand, or
+    /// by a build before the mark) is judged at its bind: the run keeps what chose it, with why it cannot follow it, and follows nothing
+    /// else.
+    /// </summary>
+    [Fact]
+    public void A_development_route_naming_a_verification_pipeline_is_held_at_its_bind_with_why()
+    {
+        WorkflowStore.Add(_home, new WorkflowVersionAdded("web-verify", "Verify the line", "terminal", "2026-10-21T09:00:00Z", null, JsonNode.Parse(
+            """{"schemaVersion":2,"entries":["gates"],"end":"gates","nodes":[{"id":"gates","kind":"check","version":1,"reach":"performed"}],"wires":[]}"""))
+        {
+            Pipeline = WorkflowPipelines.Verification,
+        }, kept: []);
+
+        var binding = WorkflowRunBindings.Plan(
+            Config("""{"workflows":{"web-app":{"default":"web-verify"}}}"""), _home, "a1b2c3", "web-app", null, null, null, [], At);
+
+        Assert.Equal(("web-verify", WorkflowLevels.Repository), (binding.Workflow, binding.Level));
+        Assert.Equal(1, binding.Version);
+        Assert.Equal(WorkflowSelection.VerificationElsewhere("web-verify"), binding.Problem);
+    }
+
     [Fact]
     public void A_workflow_chosen_and_not_saved_here_is_kept_with_why_never_swapped_for_another()
     {

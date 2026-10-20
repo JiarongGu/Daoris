@@ -92,6 +92,32 @@ public sealed class WorkBoundsTests
             read);
     }
 
+    /// <summary>
+    /// PLUGSTDERR1: a clipping reader, a plugin's stderr's, keeps a long line's start up to the bound, in whole characters, and reads the next;
+    /// a line at the bound is whole and not marked.
+    /// </summary>
+    [Fact]
+    public async Task A_clipping_reader_keeps_a_long_lines_start_and_reads_the_next()
+    {
+        var full = new string('x', 100);
+        var huge = "预" + new string('h', 1_000_000);
+        // 😀 is a pair, four bytes: after 95 bytes it fits once and the second does not; after 97 its first half alone would, and is not kept.
+        var pairs = new string('a', 95) + "😀😀";
+        var half = new string('a', 97) + "😀";
+        var lines = new BoundedLines(new StringReader($"first\n{full}\n{huge}\n{pairs}\n{half}\nlast"), 100, clip: true);
+
+        var read = new List<BoundedLine>();
+        while (await lines.ReadAsync(CancellationToken.None) is { } line) read.Add(line);
+
+        Assert.Equal(
+            [
+                new BoundedLine("first"), new BoundedLine(full), new BoundedLine("预" + new string('h', 97), Clipped: true),
+                new BoundedLine(new string('a', 95) + "😀", Clipped: true), new BoundedLine(new string('a', 97), Clipped: true),
+                new BoundedLine("last"),
+            ],
+            read);
+    }
+
     [Fact]
     public void Sixty_events_a_minute_are_taken_and_the_next_one_is_not()
     {

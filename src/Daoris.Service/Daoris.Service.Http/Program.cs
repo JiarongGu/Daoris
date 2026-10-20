@@ -197,11 +197,6 @@ var composed = await ServiceFactory.CreateAsync(
     mode: mode);
 builder.Services.AddSingleton(composed);
 
-// FABRIC-EVENT3b (the fabric events design §A4.2): which ledger families moved, heard on an observer connection of its own, so
-// the driver wakes on a quest an agent published rather than at its pace. A local host's alone: a shared host serves no machine's
-// waits, and its circles keep their own cursors.
-var changes = mode == ServiceMode.Local ? await ChangeStream.OpenAsync(options.DatabasePath, log) : null;
-
 // KSCHEMA1: an index a newer Daoris wrote is left as it is; the host starts, and what is not derived works. Said once,
 // here: on stderr with the folder to update, and in the log by its versions. Each route over the index refuses below.
 if (composed.IndexRefusal is { } refusedIndex)
@@ -230,6 +225,13 @@ if (origins.Count > 0)
 }
 
 var app = builder.Build();
+
+// FABRIC-EVENT3b (the fabric events design §A4.2): which ledger families moved, heard on an observer connection of its own, so
+// the driver wakes on a quest an agent published rather than at its pace. A local host's alone: a shared host serves no machine's
+// waits, and its circles keep their own cursors. Its waits are bounded on the clock the services hold (TESTCLOCK3).
+var changes = mode == ServiceMode.Local
+    ? await ChangeStream.OpenAsync(options.DatabasePath, log, clock: app.Services.GetService<TimeProvider>() ?? TimeProvider.System)
+    : null;
 
 // The change stream's observer closes with the host, once the stop has answered every wait it held (FABRIC-EVENT3b).
 if (changes is not null) app.Lifetime.ApplicationStopped.Register(() => changes.DisposeAsync().AsTask().GetAwaiter().GetResult());

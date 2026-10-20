@@ -1087,6 +1087,35 @@ describe('Ask Daoris’s history', () => {
     await waitFor(() => expect(listed()).toBeGreaterThan(before));
   });
 
+  /**
+   * SESSCTX1c part B (the steward's choice: Ask Daoris follows the same rule in its own room): words to an ended conversation whose
+   * resume was refused wait for the person, and *Go on with Daoris's brief* goes on in a new conversation of the room handed Daoris's
+   * brief and the words, which the panel then shows.
+   */
+  it('goes on with Daoris’s brief in a new conversation where its words wait for the person', async () => {
+    withHistory([row({})]);
+    const answered = invoke.getMockImplementation()!;
+    invoke.mockImplementation(async (module: string, type: string, ...rest: unknown[]) => {
+      if (type === 'SESSION_HISTORY') {
+        return {
+          session: EARLIER.id, earlier: false, latest: 2,
+          events: [
+            { seq: 1, at: '2026-09-28T00:20:00Z', kind: 'user', origin: 'person', id: 'w1', reaches: 'resume', text: 'and a remote?' },
+            { seq: 2, at: '2026-09-28T00:20:05Z', kind: 'note', text: '— It cannot go on in this session, because its conversation could not be resumed.', words: ['w1'], why: 'refused' },
+          ],
+        };
+      }
+      if (type === 'SESSION_GO_ON_BRIEF') return { sessionId: 'br1ef000', sent: true, why: null, message: 'went on' };
+      return answered(module, type, ...rest);
+    });
+    show();
+
+    await userEvent.click(await screen.findByRole('button', { name: "Go on with Daoris's brief" }));
+
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_GO_ON_BRIEF', { payload: { id: EARLIER.id } }));
+    expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'HELP_START_FROM', expect.anything());
+  });
+
   /** The newest that ended still starts a new conversation by default, as before; *Go on in it* chooses it. */
   it('offers to go on in the newest that ended, and starts a new one unless the person chooses it', async () => {
     withHistory([row({})]);

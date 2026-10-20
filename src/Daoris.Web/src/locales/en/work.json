@@ -218,6 +218,8 @@
   "work.say.tooLong": "This agent's door takes at most {{count}} characters at once; shorten it, or send it in parts.",
   "work.say.cannot": "It cannot go on in this session, because {{why}}.",
   "work.say.startChat": "Start a conversation with these words",
+  "work.say.goOnBrief": "Go on with Daoris's brief",
+  "work.say.goOnBriefRefused.agentGone": "The agent it ran on is no longer on this machine: hand it over to another agent to go on with these words.",
   "work.say.goOnNew": "Go on in a new session",
   "work.say.newSession.loses": "A new session can take your words now, without this conversation's context.",
   "work.say.newSession.sent": "A new session takes your words at the driver's next look, without this conversation's context.",

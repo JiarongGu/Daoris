@@ -84,13 +84,16 @@ internal sealed class ChatGoOn
     private readonly ChatHelp _help;
     private readonly ChatHelperWords _words;
 
-    public ChatGoOn(ChatContext context, ChatRunner runner, ChatHandOver handOver, ChatHelp help, ChatHelperWords words)
+    private readonly BriefedMove _move;
+
+    public ChatGoOn(ChatContext context, ChatRunner runner, ChatHandOver handOver, ChatHelp help, ChatHelperWords words, BriefedMove move)
     {
         _context = context;
         _runner = runner;
         _handOver = handOver;
         _help = help;
         _words = words;
+        _move = move;
 
         // The person's words to an ended chat are kept on its record and shown in its conversation by whichever door they
         // were said at (MSG1d); hearing them there is what takes them up at once (MSG1c, D137 §2.2).
@@ -383,7 +386,15 @@ internal sealed class ChatGoOn
         var why = adapter is null
             ? ContinueWhy.Of(ContinueWhy.Refused)
             : Continuations.Judge(record, adapter.Name, adapter.Resumes, record.Profile, kept);
-        if (why is not null || adapter is null || kept is null) return CannotGoOn(record, why ?? ContinueWhy.Of(ContinueWhy.Unkept), ranOn);
+        if (why is not null || adapter is null || kept is null)
+        {
+            var reason = why ?? ContinueWhy.Of(ContinueWhy.Unkept);
+            // 🔴 SESSCTX1c part B (D189 point 3): no id kept, or a door that cannot resume, proves its conversation lost, so it goes on by
+            // itself in a new part handed the brief; anything else waits for the person, the brief ready.
+            return adapter is not null && reason.Lost
+                ? await LostAsync(record, reason, adapter.Name, config, onEnded, held: true, ct).ConfigureAwait(false)
+                : CannotGoOn(record, reason, ranOn);
+        }
 
         if (string.Equals(record.Repository, HelpRoom.Repository, StringComparison.OrdinalIgnoreCase))
         {
@@ -587,7 +598,9 @@ internal sealed class ChatGoOn
 
     /// <summary>
     /// The agent would not resume the conversation (MSG1c): nothing went, so the record goes back to how it ended, its flags
-    /// kept and its note saying why, and its words stay waiting, marked, as where it could not go on.
+    /// kept and its note saying why, and its words stay waiting, marked, as where it could not go on. Where the refusal proves the
+    /// conversation lost (SESSCTX1c part B), the words are not marked: the runner goes on in a new part once this run let go
+    /// (<see cref="LostAsync"/>), since the new part starts in the same tree.
     /// </summary>
     public async Task WentBackAsync(
         string sessionId, GoingOn goOn, ContinueReason why, string adapter, Func<string, string, Task>? onEnded)
@@ -605,7 +618,7 @@ internal sealed class ChatGoOn
             // Best-effort, as every conclusion here is: the host may be gone on the same shutdown.
         }
 
-        CannotGoOn(record, why, adapter);
+        if (!why.Lost) CannotGoOn(record, why, adapter);
         if (onEnded is not null)
         {
             try
@@ -624,16 +637,54 @@ internal sealed class ChatGoOn
     /// waiting as said and are marked by their ids; its conversation says why with their ids and the reason's code, which the
     /// page words with its one press (MSG1f); and the machine log says it did not resume.
     /// </summary>
-    private ChatStart CannotGoOn(PriorSession record, ContinueReason why, string adapter)
+    /// <param name="said">Whether the machine log's line is still to be written: false where <see cref="LostAsync"/> wrote it.</param>
+    private ChatStart CannotGoOn(PriorSession record, ContinueReason why, string adapter, bool said = false)
     {
         var words = record.Waiting.Select(word => word.Id).OfType<string>().ToList();
         _context.Marks.Mark(record.Session, words, why, DateTimeOffset.UtcNow);
         var note = Continuations.Cannot(words, why);
         _context.Output?.Append(record.Session, note.Text!);
         _context.Events.Keep(record.Session, note, say: null);
-        _context.Service.AccountSaid(Continuations.Reopened(
-            record.Session, adapter, record.State, why, _context.Events.DoorOf(record.Session, words), kind: "chat"));
+        if (!said) _context.Service.AccountSaid(Reopened(record, why, adapter, words));
         return new(null, $"it cannot go on in this conversation, because {why.Said}.");
+    }
+
+    private AccountLine Reopened(PriorSession record, ContinueReason why, string adapter, IReadOnlyList<string> words) =>
+        Continuations.Reopened(record.Session, adapter, record.State, why, _context.Events.DoorOf(record.Session, words), kind: "chat");
+
+    /// <summary>
+    /// 🔴 SESSCTX1c part B (D189 point 3, the session-context design §2): a conversation whose own conversation is proven lost goes on by
+    /// itself in a new part handed Daoris's brief, then the person's words, its record naming the one it continues, why <c>resume</c>
+    /// (<see cref="BriefedMove"/>). Where nothing opens (no words of the person's, a tree gone, a start refused or failed) the words wait
+    /// as anywhere a conversation cannot go on: marked, said why, the page offering *Go on with Daoris's brief* beside *Start a
+    /// conversation with these words*. The machine log says once that it did not resume, and why.
+    /// </summary>
+    /// <param name="held">Whether the caller holds the session's going-on already (the judgement before a spawn).</param>
+    internal async Task<ChatStart> LostAsync(
+        PriorSession record, ContinueReason why, string adapter, DriverConfig choices, Func<string, string, Task>? onEnded, bool held,
+        CancellationToken ct)
+    {
+        var words = record.Waiting.Select(word => word.Id).OfType<string>().ToList();
+        _context.Service.AccountSaid(Reopened(record, why, adapter, words));
+        if (record.Waiting.Any(word => word.Persons) && !_context.Closing)
+        {
+            StartedFrom moved;
+            try
+            {
+                moved = held
+                    ? await _move.MovingAsync(record.Session, why, HandOverBy.Daoris, choices, onEnded, ct).ConfigureAwait(false)
+                    : await _move.MoveAsync(record.Session, why, HandOverBy.Daoris, choices, onEnded, ct).ConfigureAwait(false);
+            }
+            catch (Exception error) when (error is HttpRequestException or DriverException or IOException or System.Text.Json.JsonException
+                                              || (error is OperationCanceledException && !ct.IsCancellationRequested))
+            {
+                moved = new StartedFrom(null, false, null, error.Message);
+            }
+
+            if (moved is { SessionId: { } to, Sent: true }) return new(to, moved.Message);
+        }
+
+        return CannotGoOn(record, why, adapter, said: true);
     }
 
     /// <summary>

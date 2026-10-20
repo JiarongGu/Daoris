@@ -13,6 +13,13 @@ namespace Daoris.Service.Http.Tests;
 /// </summary>
 public sealed class ChangeStreamProcessTests : IDisposable
 {
+    /// <summary>
+    /// The wait these tests ask for, the longest the host holds one. The real host's clock is the machine's, so an answer is told
+    /// woken (or answered by the stop) from one at its end by coming before it, counted from the ask (TESTCLOCK3): the code's own
+    /// bound, where a few seconds of the test's were the machine's load.
+    /// </summary>
+    private static readonly TimeSpan Wait = ChangeStream.LongestWait;
+
     private readonly string _scratch = Path.Combine(Path.GetTempPath(), "daoris-changes-" + Guid.NewGuid().ToString("N")[..8]);
 
     public void Dispose()
@@ -41,12 +48,12 @@ public sealed class ChangeStreamProcessTests : IDisposable
         using var http = new HttpClient { Timeout = Poll.Patience };
 
         var since = Since(await http.GetStringAsync($"{host.Url}{ChangeStream.Route}"));
-        var waiting = http.GetStringAsync($"{host.Url}{ChangeStream.Route}?since={since}&wait=30");
+        var asked = Stopwatch.StartNew();
+        var waiting = http.GetStringAsync($"{host.Url}{ChangeStream.Route}?since={since}&wait={(int)Wait.TotalSeconds}");
         await Task.Delay(300);
         Assert.False(waiting.IsCompleted, "a current cursor was answered before anything moved");
 
         // The connector's write: its own connection, in this process, to the file the host serves.
-        var clock = Stopwatch.StartNew();
         await using (var connector = new SqliteConnection($"Data Source={Path.Combine(_scratch, "index", "knowledge.db")};Pooling=False"))
         {
             await connector.OpenAsync();
@@ -55,18 +62,18 @@ public sealed class ChangeStreamProcessTests : IDisposable
         }
 
         var answer = JsonDocument.Parse(await waiting.WaitAsync(Poll.Patience)).RootElement;
-        Assert.True(clock.Elapsed < TimeSpan.FromSeconds(5), $"{clock.Elapsed}");
+        Assert.True(asked.Elapsed < Wait, $"answered at its wait's end, not woken: {asked.Elapsed}");
         Assert.Equal(
             [ChangeFamilies.Sessions],
             answer.GetProperty("moved").EnumerateArray().Select(family => family.GetString()!).ToArray());
 
-        // A wait held as the host stops: answered by the stop, never waited out.
-        var held = http.GetStringAsync($"{host.Url}{ChangeStream.Route}?since={Since(answer.GetRawText())}&wait=30");
+        // A wait held as the host stops: answered by the stop, never waited out, so the stop never waits for it.
+        asked.Restart();
+        var held = http.GetStringAsync($"{host.Url}{ChangeStream.Route}?since={Since(answer.GetRawText())}&wait={(int)Wait.TotalSeconds}");
         await Task.Delay(300);
-        clock.Restart();
         Assert.Null(host.StopByInput(Poll.Patience));
-        Assert.True(clock.Elapsed < TimeSpan.FromSeconds(10), $"the stop took {clock.Elapsed}");
-        var stopped = JsonDocument.Parse(await held.WaitAsync(TimeSpan.FromSeconds(5))).RootElement;
+        var stopped = JsonDocument.Parse(await held.WaitAsync(Poll.Patience)).RootElement;
+        Assert.True(asked.Elapsed < Wait, $"the stop and its answer waited out the held wait: {asked.Elapsed}");
         Assert.Empty(stopped.GetProperty("moved").EnumerateArray());
     }
 
@@ -81,11 +88,11 @@ public sealed class ChangeStreamProcessTests : IDisposable
         using var http = new HttpClient { Timeout = Poll.Patience };
 
         var since = Since(await http.GetStringAsync($"{host.Url}{ChangeStream.Route}"));
-        var waiting = http.GetStringAsync($"{host.Url}{ChangeStream.Route}?since={since}&wait=30");
+        var asked = Stopwatch.StartNew();
+        var waiting = http.GetStringAsync($"{host.Url}{ChangeStream.Route}?since={since}&wait={(int)Wait.TotalSeconds}");
         await Task.Delay(300);
         Assert.False(waiting.IsCompleted, "a current cursor was answered before anything moved");
 
-        var clock = Stopwatch.StartNew();
         await using (var connector = new SqliteConnection($"Data Source={Path.Combine(_scratch, "index", "knowledge.db")};Pooling=False"))
         {
             await connector.OpenAsync();
@@ -95,7 +102,7 @@ public sealed class ChangeStreamProcessTests : IDisposable
         }
 
         var answer = JsonDocument.Parse(await waiting.WaitAsync(Poll.Patience)).RootElement;
-        Assert.True(clock.Elapsed < TimeSpan.FromSeconds(5), $"{clock.Elapsed}");
+        Assert.True(asked.Elapsed < Wait, $"answered at its wait's end, not woken: {asked.Elapsed}");
         Assert.Equal(
             [ChangeFamilies.Asks],
             answer.GetProperty("moved").EnumerateArray().Select(family => family.GetString()!).ToArray());

@@ -5,7 +5,7 @@ import type { StarterDoor } from '../help/starters';
 import type { UpdateState } from '../update/UpdateBanner';
 import type { Answered } from '../work/InlineConfirm';
 import type { PluginShown } from '../plugins/catalog';
-import { PluginSettings } from './PluginSettings';
+import { PluginSettings } from './plugins/PluginSettings';
 import { type AccessEdit, type AccessLevel, AccessRows, resolveAccess } from './repository/Access';
 import { UpdateSection } from './Update';
 

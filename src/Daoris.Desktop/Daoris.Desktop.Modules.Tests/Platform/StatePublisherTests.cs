@@ -77,8 +77,11 @@ public sealed partial class StatePublisherTests : DriverModuleBridge
         }
     }
 
-    /// <summary>A route whose landing waits behind another's hold (LANDHOLD2), said as the hold says it, and ends when the test lets it.</summary>
-    private sealed class Queued : ModuleBase
+    /// <summary>
+    /// A route whose landing waits behind another's hold (LANDHOLD2), said as the hold says it, and ends when the test lets it; where
+    /// <paramref name="named"/> is given, the hold comes to name its holder once the wait has begun (LANDHOLD3).
+    /// </summary>
+    private sealed class Queued(LandingHolder? named = null) : ModuleBase
     {
         private readonly TaskCompletionSource _wait = new(TaskCreationOptions.RunContinuationsAsynchronously);
         private readonly TaskCompletionSource _end = new(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -94,8 +97,9 @@ public sealed partial class StatePublisherTests : DriverModuleBridge
             PressSteps.Reach(PressSteps.Landing);
             using var waiting = PressSteps.WhileWaiting(PressSteps.Landing);
             LandingHoldNotice.Waiting(true);
+            if (named is not null) LandingHoldNotice.Waiting(true, named);
             await _wait.Task;
-            LandingHoldNotice.Waiting(false);
+            LandingHoldNotice.Waiting(false, named);
             await _end.Task;
             return new { Done = true };
         }
@@ -296,6 +300,29 @@ public sealed partial class StatePublisherTests : DriverModuleBridge
     }
 
     /// <summary>
+    /// LANDHOLD3: once the hold names who holds it, the waiting step says it again with the holder's session, and only its session, no
+    /// branch; the step it goes back to names nobody.
+    /// </summary>
+    [Fact]
+    public async Task A_waiting_press_names_the_session_it_waits_behind()
+    {
+        var queued = new Queued(new LandingHolder("s-other", "feature/other"));
+        var dispatcher = Compose([queued], request => new StateChange(StateScopes.Landing, "id"), Loop().UnderWay);
+
+        var pressing = Dispatch(dispatcher, queued.ModuleName, "MOVE", new { id = "s1" });
+        await UntilAsync(() => Told().Count == 4);
+        Assert.Equal("""{"seq":3,"presses":[{"route":"MOVE","session":"s1","step":"waiting"}]}""", Told()[^2]);
+        Assert.Equal("""{"seq":4,"presses":[{"route":"MOVE","session":"s1","step":"waiting","behind":"s-other"}]}""", Told()[^1]);
+
+        queued.LetWait();
+        await UntilAsync(() => Told().Count == 5);
+        Assert.Equal("""{"seq":5,"presses":[{"route":"MOVE","session":"s1","step":"landing"}]}""", Told()[^1]);
+
+        queued.LetEnd();
+        Assert.True((await pressing).Success);
+    }
+
+    /// <summary>
     /// ACCEPTALL1e (D169 point 3): a press whose declaration names a payload field as its subject carries it, so an entry's or an
     /// ask's Accept under way is shown by every window that shows that entry or ask; it names no session of its own.
     /// </summary>
@@ -447,6 +474,8 @@ public sealed partial class StatePublisherTests : DriverModuleBridge
     [InlineData("SESSION_OPEN_FOLDER", "", null)]
     [InlineData("START_CHAT", "sessions,driver", null)]
     [InlineData("SESSION_START_FROM", "sessions,driver", "id")]
+    // SESSCTX1c part B: *Go on with Daoris's brief*, a new part of the session opened and the words taken off the one it continues.
+    [InlineData("SESSION_GO_ON_BRIEF", "sessions,driver", "id")]
     [InlineData("SESSION_HAND_OVER", "sessions,driver", "id")]
     [InlineData("END_CHAT", "sessions", "id")]
     [InlineData("SESSION_INPUT", "sessions,help", "id")]
@@ -568,6 +597,8 @@ public sealed partial class StatePublisherTests : DriverModuleBridge
     [InlineData("TOOLS_PICK", "", null)]
     [InlineData("WORKFLOW_CURRENT", "", null)]
     [InlineData("WORKFLOW_RUN", "", null)]
+    // FABRIC-PIPELINE1a: the landed route set, which the page reads again by its own query, as every workflow route is read.
+    [InlineData("WORKFLOW_LANDED", "", null)]
     [InlineData("START_HELP", "sessions", null)]
     [InlineData("HELP_RENAME", "sessions,help", "id")]
     [InlineData("HELP_PIN", "sessions,help", "id")]

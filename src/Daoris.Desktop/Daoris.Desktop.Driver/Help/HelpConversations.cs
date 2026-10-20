@@ -67,7 +67,7 @@ public sealed record HelpConversation(string Session, string State)
     /// <summary>The earlier conversation it started from, or null.</summary>
     public string? From { get; init; }
 
-    /// <summary>What it was handed of that one: <see cref="HelpConversations.Transcript"/>, or null.</summary>
+    /// <summary>What it was handed of that one: <see cref="HelpConversations.Transcript"/>, <see cref="HelpConversations.Brief"/>, or null.</summary>
     public string? Handed { get; init; }
 
     /// <summary>Where a search found its words: its title where that holds them, else a snippet around the match, or null.</summary>
@@ -114,6 +114,12 @@ public sealed class HelpConversations(string home)
 
     /// <summary>What a conversation started from an earlier one is handed: that one's words, both sides, as kept here.</summary>
     public const string Transcript = "transcript";
+
+    /// <summary>
+    /// What a conversation that went on from an earlier one in a new part is handed (SESSCTX1c part B): Daoris's brief of it, then the
+    /// words that waited there, where its own conversation was proven lost or the person went on with the brief.
+    /// </summary>
+    public const string Brief = "brief";
 
     /// <summary>A name's longest: a title, not a note.</summary>
     public const int NameLimit = 80;

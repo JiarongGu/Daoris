@@ -11,11 +11,9 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </summary>
 /// <remarks>
 /// The fast half holds the shapes (<see cref="ToolsChildrenTests"/>); this holds that a real child's own lookup, by
-/// its own shell, lands on the tools' <c>PATH</c>. A session's start reads the home from this process's
-/// <c>DAORIS_HOME</c>, D63's one seam, so that case sets it for its duration — in the process-PATH collection, kept
-/// apart from the classes that change this process's environment.
+/// its own shell, lands on the tools' <c>PATH</c>. A session's start reads its tools from the home its target is handed,
+/// as the driver hands its own (ENVSEAM1), so the class sets nothing of this process's and runs beside the rest (PROCPAR1).
 /// </remarks>
-[Collection(ProcessPath.Name)]
 [Trait(Category.Name, Category.Process)]
 public sealed class ToolsChildProcessTests : IDisposable
 {
@@ -123,18 +121,8 @@ public sealed class ToolsChildProcessTests : IDisposable
     public async Task A_sessions_own_git_is_the_file_the_person_named()
     {
         var marker = Path.Combine(_root, "session.txt");
-        var target = new SessionTarget("q1", "Title", "Body", "Asker", "engine", _root, "http://localhost:5177");
-        var saved = Environment.GetEnvironmentVariable(DaorisHome.Variable);
-        ProcessStartInfo info;
-        Environment.SetEnvironmentVariable(DaorisHome.Variable, Home);
-        try
-        {
-            info = new StubAdapter().Prepare(target, ["node", Probe(), marker]);
-        }
-        finally
-        {
-            Environment.SetEnvironmentVariable(DaorisHome.Variable, saved);
-        }
+        var target = new SessionTarget("q1", "Title", "Body", "Asker", "engine", _root, "http://localhost:5177") { Home = Home };
+        var info = new StubAdapter().Prepare(target, ["node", Probe(), marker]);
 
         var said = await RunAsync(info, marker);
 
@@ -150,18 +138,8 @@ public sealed class ToolsChildProcessTests : IDisposable
     {
         LayInstallBin();
         var marker = Path.Combine(_root, "session-daoris.txt");
-        var target = new SessionTarget("q1", "Title", "Body", "Asker", "engine", _root, "http://localhost:5177");
-        var saved = Environment.GetEnvironmentVariable(DaorisHome.Variable);
-        ProcessStartInfo info;
-        Environment.SetEnvironmentVariable(DaorisHome.Variable, Home);
-        try
-        {
-            info = new StubAdapter().Prepare(target, ["node", Probe("daoris"), marker]);
-        }
-        finally
-        {
-            Environment.SetEnvironmentVariable(DaorisHome.Variable, saved);
-        }
+        var target = new SessionTarget("q1", "Title", "Body", "Asker", "engine", _root, "http://localhost:5177") { Home = Home };
+        var info = new StubAdapter().Prepare(target, ["node", Probe("daoris"), marker]);
 
         var said = await RunAsync(info, marker);
 

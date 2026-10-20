@@ -1,5 +1,5 @@
 {
-  "about": "Which workflow work follows (WORKFLOW1e, D157 point 10, the workflow design §2.5, §4.1-§4.3, §4.5): `workflows` (by repository) and `workspaceWorkflows` (by workspace, which also declares its kinds) in driver.json, and the versions a kept run names. The table both twins hold, the CLI's workflowchoice.ts (through driverconfig.ts and workflowdoor.ts) and the driver's WorkflowSelection and WorkflowRunBindings. `read`: a file, and both maps as each side reads and writes them. `problems`: an entry, its scope, and the first problem in it, or null. `resolve`: a file, a repository (null for a workspace's own), its workspace (null for none), the task's choice (null for none), and the selection: the workflow, the level that chose it, the kind read, its label and paths, and a kind the workspace does not declare. `edits`: a file, an edit (`use` a workflow id, `current` or null to clear, for a `repository` or a `workspace`, a `kind` where one is named, and for a repository `in` the workspace it is in, absent where that is not known; `declare` a kind with its `label` and `paths`; `drop` one), and the maps after it, or the refusal. `kept`: the run files read, a workflow's id, and the versions they name. No row has a key twice, or a name with spaces other than plain ones, where the two runtimes' JSON and trimming part.",
+  "about": "Which workflow work follows (WORKFLOW1e, D157 point 10, the workflow design §2.5, §4.1-§4.3, §4.5): `workflows` (by repository) and `workspaceWorkflows` (by workspace, which also declares its kinds) in driver.json, and the versions a kept run names. The table both twins hold, the CLI's workflowchoice.ts (through driverconfig.ts and workflowdoor.ts) and the driver's WorkflowSelection and WorkflowRunBindings. `read`: a file, and both maps as each side reads and writes them. `problems`: an entry, its scope, and the first problem in it, or null. `resolve`: a file, a repository (null for a workspace's own), its workspace (null for none), the task's choice (null for none), and the selection: the workflow, the level that chose it, the kind read, its label and paths, and a kind the workspace does not declare. `edits`: a file, an edit (`use` a workflow id, `current` or null to clear, for a `repository` or a `workspace`, a `kind` where one is named, and for a repository `in` the workspace it is in, absent where that is not known; `declare` a kind with its `label` and `paths`; `drop` one), and the maps after it, or the refusal. `kept`: the run files read, a workflow's id, and the versions they name. FABRIC-PIPELINE1a (D192 point 2, the pipeline design §1.2): an entry's `landed` route, `{ workflow, gates? }`, is read, written after the kinds and edited (`landed: true` on a `use`, with the `gates` the person accepted and the `pipeline` the named workflow is marked, as the door read it), and `landed` resolves it on its own: a repository's, else its workspace's, else none (`current`), never part of the rule by which a repository's development routes replace its workspace's. No row has a key twice, or a name with spaces other than plain ones, where the two runtimes' JSON and trimming part.",
   "read": [
     {
       "name": "absent is nothing",
@@ -96,6 +96,46 @@
       "name": "a label is kept as written",
       "file": { "workspaceWorkflows": { "work": { "kinds": { "docs": { "label": " Documentation " } } } } },
       "read": { "workflows": {}, "workspaceWorkflows": { "work": { "kinds": { "docs": { "label": " Documentation " } } } } }
+    },
+    {
+      "name": "a repository's landed route: its verification pipeline and the gates accepted, by their blob",
+      "file": { "workflows": { "web-app": { "landed": { "workflow": "web-verify", "gates": "3b18e512dba79e4c8300dd08aeb37f8e728b8dad" } } } },
+      "read": { "workflows": { "web-app": { "landed": { "workflow": "web-verify", "gates": "3b18e512dba79e4c8300dd08aeb37f8e728b8dad" } } }, "workspaceWorkflows": {} }
+    },
+    {
+      "name": "a workspace's landed route, no gates accepted yet",
+      "file": { "workspaceWorkflows": { "work": { "landed": { "workflow": "web-verify" } } } },
+      "read": { "workflows": {}, "workspaceWorkflows": { "work": { "landed": { "workflow": "web-verify" } } } }
+    },
+    {
+      "name": "landed current is no verification, a choice like any other",
+      "file": { "workflows": { "notes-site": { "landed": { "workflow": "current" } } } },
+      "read": { "workflows": { "notes-site": { "landed": { "workflow": "current" } } }, "workspaceWorkflows": {} }
+    },
+    {
+      "name": "gates none: the line held no declaration when it was accepted",
+      "file": { "workflows": { "web-app": { "default": "feature-review", "landed": { "workflow": "web-verify", "gates": "none" } } } },
+      "read": { "workflows": { "web-app": { "default": "feature-review", "landed": { "workflow": "web-verify", "gates": "none" } } }, "workspaceWorkflows": {} }
+    },
+    {
+      "name": "a landed route beside a default and kinds keeps them",
+      "file": { "workflows": { "web-app": { "landed": { "workflow": "web-verify" }, "default": "feature-review", "kinds": { "docs": "docs-to-pr" } } } },
+      "read": { "workflows": { "web-app": { "default": "feature-review", "kinds": { "docs": "docs-to-pr" }, "landed": { "workflow": "web-verify" } } }, "workspaceWorkflows": {} }
+    },
+    {
+      "name": "landed null is absent",
+      "file": { "workflows": { "web-app": { "default": "feature-review", "landed": null } } },
+      "read": { "workflows": { "web-app": { "default": "feature-review" } }, "workspaceWorkflows": {} }
+    },
+    {
+      "name": "a landed route keeps no field it has no name for, and gates null are none",
+      "file": { "workflows": { "web-app": { "landed": { "workflow": "web-verify", "gates": null, "by": "someone" } } } },
+      "read": { "workflows": { "web-app": { "landed": { "workflow": "web-verify" } } }, "workspaceWorkflows": {} }
+    },
+    {
+      "name": "an entry whose landed route does not read is not read",
+      "file": { "workflows": { "web-app": { "default": "feature-review", "landed": "web-verify" }, "api": { "landed": { "workflow": "api-verify" } } } },
+      "read": { "workflows": { "api": { "landed": { "workflow": "api-verify" } } }, "workspaceWorkflows": {} }
     }
   ],
   "problems": [
@@ -277,6 +317,36 @@
         }
       },
       "problem": "a choice holds at most 12 kinds."
+    },
+    { "name": "a landed route alone is no problem", "scope": "workspace", "entry": { "landed": { "workflow": "web-verify" } }, "problem": null },
+    {
+      "name": "a landed route's gates of 64 hex, as a SHA-256 repository names a blob", "scope": "repository",
+      "entry": { "landed": { "workflow": "web-verify", "gates": "0e5751c026e543b2e8ab2eb06099daa1d1e5df47778f7787faab45cdf12fe3a8" } }, "problem": null
+    },
+    {
+      "name": "a landed route that is no object", "scope": "repository", "entry": { "landed": "web-verify" },
+      "problem": "its `landed` is an object: its `workflow`, a verification pipeline's id or `current`, and its `gates` where they were accepted."
+    },
+    {
+      "name": "a landed route naming no workflow", "scope": "repository", "entry": { "landed": { "gates": "none" } },
+      "problem": "its `landed` is an object: its `workflow`, a verification pipeline's id or `current`, and its `gates` where they were accepted."
+    },
+    {
+      "name": "a landed workflow that is no id", "scope": "workspace", "entry": { "landed": { "workflow": "Web Verify" } },
+      "problem": "its `landed` is an object: its `workflow`, a verification pipeline's id or `current`, and its `gates` where they were accepted."
+    },
+    {
+      "name": "a landed route's gates that are no blob", "scope": "repository", "entry": { "landed": { "workflow": "web-verify", "gates": "3b18e51" } },
+      "problem": "its `landed` route's `gates` is the blob id git gives the `daoris.gates.json` you accepted, 40 or 64 lower-case hex, or `none` where the line held none."
+    },
+    {
+      "name": "a landed route's gates in upper case, which git never writes", "scope": "repository", "entry": { "landed": { "workflow": "web-verify", "gates": "3B18E512DBA79E4C8300DD08AEB37F8E728B8DAD" } },
+      "problem": "its `landed` route's `gates` is the blob id git gives the `daoris.gates.json` you accepted, 40 or 64 lower-case hex, or `none` where the line held none."
+    },
+    {
+      "name": "the first problem is said: a kind's before the landed route's", "scope": "repository",
+      "entry": { "kinds": { "Docs": "docs-to-pr" }, "landed": "web-verify" },
+      "problem": "`Docs` is not a kind's id: lower-case letters, digits and dashes, at most 24, such as `docs`."
     }
   ],
   "resolve": [
@@ -398,6 +468,98 @@
       "file": { "workflows": { "notes-site": { "default": "current" } }, "workspaceWorkflows": { "work": { "default": "feature-local-review" } } },
       "repository": "notes-site", "workspace": "work", "task": null,
       "selection": { "workflow": "current", "level": "repository", "kind": null, "label": null, "paths": [], "undeclared": null }
+    },
+    {
+      "name": "a repository naming only its landed route follows its workspace's development routes, the kind's",
+      "file": {
+        "workflows": { "web-app": { "landed": { "workflow": "web-verify", "gates": "none" } } },
+        "workspaceWorkflows": { "work": { "default": "feature-local-review", "kinds": { "docs": { "label": "Documentation", "workflow": "docs-to-pr" } } } }
+      },
+      "repository": "web-app", "workspace": "work", "task": { "kind": "docs", "workflow": null },
+      "selection": { "workflow": "docs-to-pr", "level": "workspace-kind", "kind": "docs", "label": "Documentation", "paths": [], "undeclared": null }
+    },
+    {
+      "name": "a repository naming only its landed route follows its workspace's default",
+      "file": {
+        "workflows": { "web-app": { "landed": { "workflow": "current" } } },
+        "workspaceWorkflows": { "work": { "default": "feature-local-review" } }
+      },
+      "repository": "web-app", "workspace": "work", "task": null,
+      "selection": { "workflow": "feature-local-review", "level": "workspace", "kind": null, "label": null, "paths": [], "undeclared": null }
+    },
+    {
+      "name": "a repository naming a default beside its landed route replaces its workspace's development routes, as before",
+      "file": {
+        "workflows": { "web-app": { "default": "feature-review", "landed": { "workflow": "web-verify" } } },
+        "workspaceWorkflows": { "work": { "default": "feature-local-review", "kinds": { "docs": { "label": "Documentation", "workflow": "docs-to-pr" } } } }
+      },
+      "repository": "web-app", "workspace": "work", "task": { "kind": "docs", "workflow": null },
+      "selection": { "workflow": "feature-review", "level": "repository", "kind": "docs", "label": "Documentation", "paths": [], "undeclared": null }
+    }
+  ],
+  "landed": [
+    {
+      "name": "nothing names a landed route: no verification",
+      "file": { "workflows": { "web-app": { "default": "feature-review" } }, "workspaceWorkflows": { "work": { "default": "feature-local-review" } } },
+      "repository": "web-app", "workspace": "work",
+      "route": { "workflow": "current", "gates": null, "level": "current" }
+    },
+    {
+      "name": "the repository's landed route, with the gates accepted",
+      "file": {
+        "workflows": { "web-app": { "landed": { "workflow": "web-verify", "gates": "3b18e512dba79e4c8300dd08aeb37f8e728b8dad" } } },
+        "workspaceWorkflows": { "work": { "landed": { "workflow": "shared-verify" } } }
+      },
+      "repository": "web-app", "workspace": "work",
+      "route": { "workflow": "web-verify", "gates": "3b18e512dba79e4c8300dd08aeb37f8e728b8dad", "level": "repository-landed" }
+    },
+    {
+      "name": "the workspace's where the repository names none, though it names a default",
+      "file": {
+        "workflows": { "web-app": { "default": "feature-review", "kinds": { "docs": "docs-to-pr" } } },
+        "workspaceWorkflows": { "work": { "landed": { "workflow": "shared-verify" } } }
+      },
+      "repository": "web-app", "workspace": "work",
+      "route": { "workflow": "shared-verify", "gates": null, "level": "workspace-landed" }
+    },
+    {
+      "name": "a repository's landed current keeps its workspace's away",
+      "file": {
+        "workflows": { "notes-site": { "landed": { "workflow": "current" } } },
+        "workspaceWorkflows": { "work": { "landed": { "workflow": "shared-verify" } } }
+      },
+      "repository": "notes-site", "workspace": "work",
+      "route": { "workflow": "current", "gates": null, "level": "repository-landed" }
+    },
+    {
+      "name": "a workspace's own: no repository's route is read",
+      "file": {
+        "workflows": { "web-app": { "landed": { "workflow": "web-verify" } } },
+        "workspaceWorkflows": { "work": { "landed": { "workflow": "shared-verify", "gates": "none" } } }
+      },
+      "repository": null, "workspace": "work",
+      "route": { "workflow": "shared-verify", "gates": "none", "level": "workspace-landed" }
+    },
+    {
+      "name": "a repository in no workspace reads the default workspace's",
+      "file": { "workspaceWorkflows": { "default": { "landed": { "workflow": "shared-verify" } } } },
+      "repository": "web-app", "workspace": null,
+      "route": { "workflow": "shared-verify", "gates": null, "level": "workspace-landed" }
+    },
+    {
+      "name": "names match in any case",
+      "file": { "workflows": { "web-app": { "landed": { "workflow": "web-verify" } } } },
+      "repository": "WEB-APP", "workspace": "Work",
+      "route": { "workflow": "web-verify", "gates": null, "level": "repository-landed" }
+    },
+    {
+      "name": "a repository whose entry does not read leaves its workspace's to reach it",
+      "file": {
+        "workflows": { "web-app": { "landed": { "workflow": "web-verify", "gates": "short" } } },
+        "workspaceWorkflows": { "work": { "landed": { "workflow": "shared-verify" } } }
+      },
+      "repository": "web-app", "workspace": "work",
+      "route": { "workflow": "shared-verify", "gates": null, "level": "workspace-landed" }
     }
   ],
   "edits": [
@@ -578,6 +740,86 @@
       "name": "dropping a kind it does not declare is refused",
       "file": {}, "edit": { "drop": "docs", "workspace": "work" },
       "read": null, "refusal": "workspace `work` declares no kind `docs`, so there is none to drop."
+    },
+    {
+      "name": "a repository's landed route: a verification pipeline, with the gates accepted by their blob",
+      "file": {},
+      "edit": { "use": "web-verify", "repository": "web-app", "landed": true, "gates": "3b18e512dba79e4c8300dd08aeb37f8e728b8dad", "pipeline": "verification" },
+      "read": { "workflows": { "web-app": { "landed": { "workflow": "web-verify", "gates": "3b18e512dba79e4c8300dd08aeb37f8e728b8dad" } } }, "workspaceWorkflows": {} },
+      "refusal": null
+    },
+    {
+      "name": "a workspace's landed route, its gates accepted later",
+      "file": { "workspaceWorkflows": { "work": { "default": "feature-local-review" } } },
+      "edit": { "use": "shared-verify", "workspace": "work", "landed": true, "pipeline": "verification" },
+      "read": { "workflows": {}, "workspaceWorkflows": { "work": { "default": "feature-local-review", "landed": { "workflow": "shared-verify" } } } },
+      "refusal": null
+    },
+    {
+      "name": "the gates accepted again: the new blob written, the route kept",
+      "file": { "workflows": { "web-app": { "default": "feature-review", "landed": { "workflow": "web-verify", "gates": "3b18e512dba79e4c8300dd08aeb37f8e728b8dad" } } } },
+      "edit": { "use": "web-verify", "repository": "web-app", "landed": true, "gates": "none", "pipeline": "verification" },
+      "read": { "workflows": { "web-app": { "default": "feature-review", "landed": { "workflow": "web-verify", "gates": "none" } } }, "workspaceWorkflows": {} },
+      "refusal": null
+    },
+    {
+      "name": "landed current: no verification, its gates passed over",
+      "file": {}, "edit": { "use": "current", "repository": "notes-site", "landed": true, "gates": "none" },
+      "read": { "workflows": { "notes-site": { "landed": { "workflow": "current" } } }, "workspaceWorkflows": {} }, "refusal": null
+    },
+    {
+      "name": "clearing the landed route keeps the development routes",
+      "file": { "workflows": { "web-app": { "default": "feature-review", "landed": { "workflow": "web-verify" } } } },
+      "edit": { "use": null, "repository": "web-app", "landed": true },
+      "read": { "workflows": { "web-app": { "default": "feature-review" } }, "workspaceWorkflows": {} }, "refusal": null
+    },
+    {
+      "name": "clearing a default keeps the landed route",
+      "file": { "workflows": { "web-app": { "default": "feature-review", "landed": { "workflow": "web-verify" } } } },
+      "edit": { "use": null, "repository": "web-app" },
+      "read": { "workflows": { "web-app": { "landed": { "workflow": "web-verify" } } }, "workspaceWorkflows": {} }, "refusal": null
+    },
+    {
+      "name": "clearing the last of a repository's choice, its landed route, removes it",
+      "file": { "workflows": { "web-app": { "landed": { "workflow": "web-verify" } } } },
+      "edit": { "use": null, "repository": "web-app", "landed": true },
+      "read": { "workflows": {}, "workspaceWorkflows": {} }, "refusal": null
+    },
+    {
+      "name": "the landed route refused naming a development pipeline",
+      "file": {}, "edit": { "use": "feature-review", "repository": "web-app", "landed": true, "gates": "none", "pipeline": "development" },
+      "read": null,
+      "refusal": "`feature-review` is not a verification pipeline: the `landed` route names only a workflow marked `verification` when it was made."
+    },
+    {
+      "name": "the landed route refused naming a workflow whose mark was not read",
+      "file": {}, "edit": { "use": "web-verify", "repository": "web-app", "landed": true },
+      "read": null,
+      "refusal": "`web-verify` is not a verification pipeline: the `landed` route names only a workflow marked `verification` when it was made."
+    },
+    {
+      "name": "a default refused naming a verification pipeline",
+      "file": {}, "edit": { "use": "web-verify", "repository": "web-app", "pipeline": "verification" },
+      "read": null,
+      "refusal": "`web-verify` is a verification pipeline: it verifies the work that lands, so only the `landed` route names it, never a default or a kind."
+    },
+    {
+      "name": "a kind refused naming a verification pipeline",
+      "file": { "workspaceWorkflows": { "work": { "kinds": { "docs": { "label": "Documentation" } } } } },
+      "edit": { "use": "web-verify", "workspace": "work", "kind": "docs", "pipeline": "verification" },
+      "read": null,
+      "refusal": "`web-verify` is a verification pipeline: it verifies the work that lands, so only the `landed` route names it, never a default or a kind."
+    },
+    {
+      "name": "the landed route takes no kind",
+      "file": {}, "edit": { "use": "web-verify", "repository": "web-app", "kind": "docs", "landed": true, "pipeline": "verification" },
+      "read": null, "refusal": "the `landed` route is one for a repository or a workspace, and takes no kind."
+    },
+    {
+      "name": "gates that are no blob are refused",
+      "file": {}, "edit": { "use": "web-verify", "repository": "web-app", "landed": true, "gates": "HEAD", "pipeline": "verification" },
+      "read": null,
+      "refusal": "its `landed` route's `gates` is the blob id git gives the `daoris.gates.json` you accepted, 40 or 64 lower-case hex, or `none` where the line held none."
     }
   ],
   "kept": [
