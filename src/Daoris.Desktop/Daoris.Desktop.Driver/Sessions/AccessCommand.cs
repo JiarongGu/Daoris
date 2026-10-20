@@ -119,6 +119,8 @@ public static class AccessCommand
 
             changed.Save(configPath);
             output.WriteLine($"access: {Said(ask, Own(changed, ask), level)}");
+            // ACCESSSWAP1b (D183's note): this process reaches no session's console, so it says how one already running takes the change.
+            if (PermissionsOf(Own(config, ask)) != PermissionsOf(Own(changed, ask))) output.WriteLine($"access: {NextTurn}");
             return 0;
         }
 
@@ -149,6 +151,18 @@ public static class AccessCommand
 
         return 0;
     }
+
+    /// <summary>
+    /// How a driven session already running takes a change of its permission prompts (ACCESSSWAP1b, D183's note): its run reads the file
+    /// at its turn's end, so the change takes its next turn, never the one under way.
+    /// </summary>
+    internal const string NextTurn =
+        "a driven session running now under other permission prompts takes these at its next turn: it ends at its turn's end, never "
+        + "mid-turn, and goes on in the same conversation under them.";
+
+    /// <summary>The permission prompts a level's own setting names, full access's among them; null where it names none.</summary>
+    private static string? PermissionsOf(AccessSetting? setting) =>
+        setting is null ? null : setting.Full ? AccessRules.Unrestricted : setting.Pauses.GetValueOrDefault(AccessRules.Permissions);
 
     /// <summary>The level's own setting after the change, or before it for a say.</summary>
     private static AccessSetting? Own(DriverConfig config, AccessAsk ask) =>

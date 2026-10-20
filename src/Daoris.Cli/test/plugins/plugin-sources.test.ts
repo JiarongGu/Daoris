@@ -8,6 +8,7 @@ import {
   readNeeds, readOffers, readPluginSource,
 } from '../../src/plugins/plugins.ts';
 import type { PluginSource } from '../../src/plugins/plugins.ts';
+import type { VerbPress } from '../../src/platform/door.ts';
 import { driverRows, driverTestFile } from '../_csharp.ts';
 import { captureError, makeFixture } from '../_fixture.ts';
 
@@ -535,3 +536,73 @@ function renameAway(path: string): void {
 function rmManifest(path: string): void {
   rmSync(join(path, MANIFEST));
 }
+
+// ——— RPC1f: the running Daoris's route while it runs, alone where none does.
+
+/**
+ * A plugin verb through a door that records what it was handed and answers as the running Daoris would: the route the Plugins
+ * place presses for the same change, with its payload; the verb's words the alone path's, and nothing changed here.
+ */
+function sent(argv: string[], home: string, answer: unknown = {}): { code: number; out: string; press: VerbPress | null } {
+  const saved = process.env.DAORIS_HOME;
+  process.env.DAORIS_HOME = home;
+  const lines: string[] = [];
+  let press: VerbPress | null = null;
+  try {
+    const code = commandPlugin({ root: process.cwd(), argv, write: (line) => lines.push(line), packageRoot: process.cwd() }, (given) => {
+      press = given;
+      return (given.route ? given.words(answer) : given.alone()) as number as 0;
+    }) as number;
+    return { code, out: lines.join('\n'), press };
+  } finally {
+    if (saved === undefined) delete process.env.DAORIS_HOME;
+    else process.env.DAORIS_HOME = saved;
+  }
+}
+
+const routed = (press: VerbPress | null) => [press?.what, press?.route?.route, press?.route?.class, press?.payload];
+
+test('a plugin added, installed, updated, removed or switched while Daoris runs is its route, in the alone path\'s words', () => {
+  const { fx, home, offers } = machine('plugsrc-door');
+  try {
+    const source = folder(join(fx.root, 'checkout', 'gate'), GATE_V1, { 'gate.mjs': '// v1' });
+    const added = sent(['add', source], home, { id: 'acme.gate', name: 'Acme gate', version: '1.0.0' });
+    assert.deepEqual(routed(added.press), ['plugin add', 'PLUGIN_ADD', 'person', { folder: source }]);
+    assert.equal(existsSync(join(pluginsRoot(home), 'acme.gate')), false, 'the instance copies it, not this terminal');
+    const alone = run(['add', source], home);
+    assert.equal(added.out, alone.out);
+
+    // PLUGIN_ADD adds and never replaces: a replace is this verb's alone.
+    const replaced = sent(['add', source], home);
+    assert.deepEqual(routed(replaced.press), ['plugin add', undefined, undefined, undefined]);
+    assert.match(replaced.out, /replaced plugin `acme\.gate`/);
+
+    folder(join(offers, 'acme.offered'), JSON.stringify({ id: 'acme.offered', name: 'Offered', version: '2.0.0' }));
+    const installed = sent(['add', '--offer', 'acme.offered'], home);
+    assert.deepEqual(routed(installed.press), ['plugin add', 'PLUGIN_INSTALL', 'person', { offer: 'acme.offered' }]);
+    assert.equal(existsSync(join(pluginsRoot(home), 'acme.offered')), false);
+    assert.equal(installed.out, run(['add', '--offer', 'acme.offered'], home).out);
+
+    // An update's plan is a read, said here; its `--yes` is the instance's.
+    writeFileSync(join(source, MANIFEST), GATE_V1.replace('1.0.0', '1.1.0'));
+    const looked = sent(['update', 'acme.gate'], home);
+    assert.equal(looked.press, null);
+    assert.equal(looked.code, 1);
+    const updated = sent(['update', 'acme.gate', '--yes'], home, { id: 'acme.gate', applied: true });
+    assert.deepEqual(routed(updated.press), ['plugin update', 'PLUGIN_UPDATE', 'person', { id: 'acme.gate', apply: true }]);
+    assert.match(readFileSync(join(pluginsRoot(home), 'acme.gate', MANIFEST), 'utf8'), /1\.0\.0/, 'the instance replaces it');
+    assert.equal(updated.out, run(['update', 'acme.gate', '--yes'], home).out);
+
+    for (const verb of ['disable', 'enable', 'remove']) {
+      const switched = sent([verb, 'acme.gate'], home);
+      assert.deepEqual(routed(switched.press), [`plugin ${verb}`, 'PLUGIN_ACTION', 'person', { action: verb, id: 'acme.gate' }]);
+      assert.equal(switched.out, run([verb, 'acme.gate'], home).out, verb);
+    }
+
+    // What is not there is said here, and nothing is sent.
+    assert.equal(sent(['remove', 'acme.gate'], home).press, null);
+    assert.equal(sent(['list'], home).press, null);
+  } finally {
+    fx.cleanup();
+  }
+});

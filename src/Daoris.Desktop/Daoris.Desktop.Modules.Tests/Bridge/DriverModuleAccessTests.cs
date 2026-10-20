@@ -58,6 +58,29 @@ public sealed class DriverModuleAccessTests : DriverModuleBridge
     }
 
     /// <summary>
+    /// ACCESSSWAP1b (D183's note): a press that moves the permission prompts a driven session running here started under tells that
+    /// session's console when its change applies, at its next turn; a press that does not move them tells it nothing.
+    /// </summary>
+    [Fact]
+    public async Task The_route_tells_a_running_driven_sessions_console_when_its_permission_prompts_change()
+    {
+        var loop = Loop();
+        var module = new DriverModule(Bus, loop);
+        await AnswerAsync(module, "SET_ACCESS", new { repository = "engine", access = new { permissions = "asking" } });
+        var adapter = AdapterSet.Built().Resolve("claude-code-acp");
+        var started = DrivenAccess.For(AccessRules.Resolve(DriverConfig.Load(DriverConfigPath), "engine", null), "engine", adapter);
+        using var running = loop.Processes.OpenSetup("s1", now => started.SwapIn(now, adapter));
+        IReadOnlyList<string> Console() => [.. loop.Output.Tail("s1").Lines.Select(line => line.Text)];
+
+        await AnswerAsync(module, "SET_ACCESS", new { repository = "engine", access = new { landing = "rule" } });
+        Assert.Empty(Console());
+
+        await AnswerAsync(module, "SET_ACCESS", new { repository = "engine", access = new { permissions = "unrestricted" } });
+        var told = Assert.Single(Console());
+        Assert.StartsWith("— Permission prompts changed under this session: it started under `asking`, and its repository's setup now names `unrestricted`.", told);
+    }
+
+    /// <summary>
     /// 🔴 The route and the terminal agree (D50): what one sets the other reads, through the same keys, and both refuse a value the setup
     /// does not have in the same words.
     /// </summary>

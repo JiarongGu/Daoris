@@ -26,6 +26,7 @@ import { daorisHome, homeEntry, requireHomeFile } from '../platform/home.ts';
 import { addRule, readPermissions, removeRule, switchDefault, writePermissions } from './permissions.ts';
 import type { PermissionFile, RuleList, RuleScope } from './permissions.ts';
 import type { CommandArgs } from '../platform/types.ts';
+import { AGENT_ROUTES, ALONE, type VerbDoor } from '../platform/door.ts';
 
 export const PROPOSALS_FOLDER = 'proposals';
 
@@ -93,17 +94,7 @@ export function authorOf(proposal: RuleProposal): string {
  * not yet settled is answered, and a yes the rules cannot take writes nothing at all.
  */
 export function answerProposal(home: string, id: string, accept: boolean, note: string | null, at: string): RuleProposal {
-  const key = id.trim().replace(/^#/, '');
-  const path = homeEntry(home, 'rule-proposals', `${key}.json`);
-  // An id names a file in the folder, and a path is not an id.
-  const proposal = ID_SHAPE.test(key) && existsSync(path) ? parse(path) : null;
-  if (!proposal) {
-    throw new DaorisError(`no proposal \`#${key}\` on this machine — \`daoris agent rules proposals\` lists them.`);
-  }
-  if (proposal.state !== 'proposed' && proposal.state !== 'waiting') {
-    throw new DaorisError(`proposal \`#${key}\` was already ${proposal.state} — it is history now.`);
-  }
-
+  const { path, proposal } = openProposal(home, id);
   if (accept) {
     const rulesPath = homeEntry(home, 'permissions');
     writePermissions(rulesPath, apply(readPermissions(rulesPath), proposal.change));
@@ -115,8 +106,26 @@ export function answerProposal(home: string, id: string, accept: boolean, note: 
   return { ...proposal, state, settled: { at, by: 'the person', note: kept } };
 }
 
-/** `daoris agent rules proposals | accept <id> | decline <id> [--note "…"]`. */
-export function commandProposals({ argv, write }: CommandArgs): ExitCode {
+/** A proposal not yet settled, read from its file, or the refusal: none by that id, or one already history. */
+export function openProposal(home: string, id: string): { path: string; proposal: RuleProposal } {
+  const key = id.trim().replace(/^#/, '');
+  const path = homeEntry(home, 'rule-proposals', `${key}.json`);
+  // An id names a file in the folder, and a path is not an id.
+  const proposal = ID_SHAPE.test(key) && existsSync(path) ? parse(path) : null;
+  if (!proposal) {
+    throw new DaorisError(`no proposal \`#${key}\` on this machine — \`daoris agent rules proposals\` lists them.`);
+  }
+  if (proposal.state !== 'proposed' && proposal.state !== 'waiting') {
+    throw new DaorisError(`proposal \`#${key}\` was already ${proposal.state} — it is history now.`);
+  }
+  return { path, proposal };
+}
+
+/**
+ * `daoris agent rules proposals | accept <id> | decline <id> [--note "…"]`. An answer goes through `door` (RPC1f): the rules screen's
+ * `RULE_PROPOSAL` while Daoris runs on this home, which settles it; this verb's own answer under the home's lease where none does.
+ */
+export function commandProposals({ argv, write }: CommandArgs, door: VerbDoor = ALONE): ExitCode | Promise<ExitCode> {
   const verb = argv[0] ?? 'proposals';
   const folder = requireHomeFile(process.env, 'rule-proposals');
   const home = daorisHome(process.env)!;
@@ -127,12 +136,23 @@ export function commandProposals({ argv, write }: CommandArgs): ExitCode {
   const id = argv.slice(1).find((token, index, rest) => !token.startsWith('--') && rest[index - 1] !== '--note');
   if (!id) throw new DaorisError(`\`daoris agent rules ${verb}\` needs the proposal's id — \`daoris agent rules proposals\` lists them.`);
 
-  const answered = answerProposal(home, id, verb === 'accept', note, new Date().toISOString());
-  write(verb === 'accept'
-    ? `daoris: accepted #${answered.id} — ${describeChange(answered.change)} is now in the rules.`
-    : `daoris: declined #${answered.id} — the rules are as they were.`);
-  if (verb === 'accept') write('  Sessions started from now on are handed it; one already running keeps what it began with.');
-  return 0;
+  const accept = verb === 'accept';
+  const { proposal } = openProposal(home, id);
+  const said = (): ExitCode => {
+    write(accept
+      ? `daoris: accepted #${proposal.id} — ${describeChange(proposal.change)} is now in the rules.`
+      : `daoris: declined #${proposal.id} — the rules are as they were.`);
+    if (accept) write('  Sessions started from now on are handed it; one already running keeps what it began with.');
+    return 0;
+  };
+  return door({
+    what: `agent rules ${verb}`, route: AGENT_ROUTES.proposal, payload: { id: proposal.id, accept, ...(note !== null ? { note } : {}) },
+    alone: () => {
+      answerProposal(home, id, accept, note, new Date().toISOString());
+      return said();
+    },
+    words: said,
+  });
 
   function list(): ExitCode {
     const proposals = loadProposals(folder);

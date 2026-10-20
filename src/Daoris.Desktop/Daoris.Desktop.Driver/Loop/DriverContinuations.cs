@@ -479,6 +479,9 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
                     submitted: !closed && QuestResults.Submitted(after))
                 // BGWAIT2: a done this run reached outranks the timeout; a quest closed before it went on is not this run's.
                 : Observation.AfterTimeout(config.TimeoutMinutes, quest.Status, status);
+        // ACCESSSWAP1b: a run Daoris ended at its turn's end for a changed setup is neither a park nor a failure, and goes on again.
+        var swappedOn = stop is null && ended.SetupChanged is not null;
+        if (swappedOn) conclusion = Observation.SetupChanged(conclusion, ended.SetupChanged!);
 
         conclusion = _driver.AccountRefused(conclusion, adapter, selection, ended);
         conclusion = _driver.AccountSignedOut(conclusion, adapter, selection, turnFailed);
@@ -528,7 +531,7 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
         return (new StartRun(
             $"{conclusion.State}  session {sessionId} (#{quest.Id} → {quest.To}) [resumed its conversation]: {conclusion.Note}",
             true,
-            SessionStates.IsParked(conclusion.State)
+            SessionStates.IsParked(conclusion.State) || swappedOn
                 ? null
                 : new SessionEnded(
                     sessionId, quest.To, conclusion.State,
@@ -748,11 +751,16 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
     /// <param name="keep">Where each run's process, its tracking and its reaper are kept, until the record has concluded.</param>
     /// <param name="left">Where the words a failed run carried or left held are handed back to wait (TURNFAIL2).</param>
     /// <param name="own">Where the harness's own words are kept (AGT3c): each run begins it again, so it says the last run's ending.</param>
+    /// <param name="setupChanged">
+    /// Asked before the held words go on, whether the setup the record's start ran under changed since (ACCESSSWAP1b, D183's note): each
+    /// run here goes on under the start's spawn, so where it did, the words are handed back to <paramref name="left"/> and the record
+    /// concludes, its next look going on under the setup standing then. Null never asks.
+    /// </param>
     internal async Task<(int? ExitCode, AcpUsage? Used)> GoOnAsync(
         DrivenInbox held, Func<string, string, System.Diagnostics.ProcessStartInfo?> goOn, ISessionAdapter adapter,
         string sessionId, string transcript, string? refusesInput, bool drivesBrowser, int? exitCode, AcpUsage? used,
         ResumeAsk? resume, Action<System.Text.Json.JsonElement>? said, List<IDisposable> keep, List<ChatMessage> left,
-        CancellationToken ct, HarnessWords? own = null)
+        CancellationToken ct, HarnessWords? own = null, Func<bool>? setupChanged = null)
     {
         var processes = _context.Processes;
         IReadOnlyList<ChatMessage> carried = [];
@@ -767,6 +775,14 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
             }
 
             if (held.TakeAllOrClose() is not { Count: > 0 } taken) break;
+            // ACCESSSWAP1b: its setup changed while the run worked, so the words go back unjudged, to go on under the new one at the next
+            // look rather than in a run spawned under the start's; the look judges Daoris's words on the record before its go-on.
+            if (setupChanged?.Invoke() == true)
+            {
+                left.AddRange([.. taken, .. held.Close()]);
+                return (exitCode, used);
+            }
+
             // COWORK1b (the message-urgency design §4.3): Daoris's words held for the run's end are judged again here, by their key; one
             // whose fact a later submission answered is dropped, said so, and never goes late. None left, the next take closes.
             var words = await DaorisWords.GoingAsync(

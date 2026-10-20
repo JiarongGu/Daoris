@@ -431,6 +431,11 @@ public static class NoteCodes
     // The person's words a failed turn carried wait to go again (TURNFAIL1), or, failing twice, wait for the person.
     public static readonly NoteCode EndedWordsWait = new("ended.words-wait", []);
     public static readonly NoteCode EndedWordsWaitYou = new("ended.words-wait-you", []);
+
+    // ACCESSSWAP1b (D183's note): Daoris ended a run at its turn's end because its repository's permission prompts changed (`from`, `to`,
+    // each a permission prompts value), and the words it held go on in the same conversation under the new setup.
+    public static readonly NoteCode EndedSetupChanged = new("ended.setup-changed", ["from", "to"]);
+    public static readonly NoteCode EndedWordsSetup = new("ended.words-setup", []);
     public static readonly NoteCode EndedTimeout = new("ended.timeout", ["minutes"]);
     public static readonly NoteCode EndedStopped = new("ended.stopped", []);
     public static readonly NoteCode EndedLostClaim = new("ended.lost-claim", []);

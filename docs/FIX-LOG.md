@@ -5,6 +5,22 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-20 — The merge tool's prune took a running Daoris session's tree (DOGFOOD1)
+
+- **Symptom:** the first session the owner's install drove on this repository (HEAVYRUN1a3, DOGFOOD1) stopped mid-work and
+  asked for a tree: its worktree under the install's home and its branch `daoris/s-…` were gone. Its only commands had been
+  reads and `npm pack` in its own `_fixtures/`. The merge of ACCESSSWAP1b printed `removed daoris/s-… its worktree … and the
+  branch` at the same minute.
+- **Root cause:** a merge's prune removes every local branch merged into main with its unlocked, clean worktree. A Daoris
+  session opens its tree on a branch at main's tip and has no commit until it has work, so its branch reads as merged; its
+  tree is not locked. The prune's rules knew the agent harness's trees and its lock, not Daoris's, since no install drove this
+  repository before.
+- **Fix:** `pruneCandidates` holds a branch Daoris names (`daoris/` for a session, `quest/` for this repository's landings),
+  with its worktree, as Daoris's own housekeeping's to remove. That Daoris locks a session's tree while the session holds it,
+  so no tool takes it, is TREELOCK1.
+- **Verification:** `merge-branch.test.ts`' new case and the two end-to-end prune cases, 4 passed; `--prune --plan` keeps
+  `daoris/s-…` with that reason. The session was told and went on.
+
 ## 2026-10-20 — The attention judge's tests were one class split across two files (PUSH1d4)
 
 - **Symptom:** the full set on 3cf9d20ec failed the CLI gate's partials check: `AttentionStateSliceTests` was declared

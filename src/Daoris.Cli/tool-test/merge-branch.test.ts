@@ -647,6 +647,26 @@ test('a prune considers each merged branch but main, the main checkout\'s, the o
   assert.match(held['next']!, /batch/);
 });
 
+test('a prune never takes a Daoris session\'s tree or branch: a daoris/ or quest/ branch, with its worktree', () => {
+  // DOGFOOD1: the install drives this repository, its sessions' trees under its own home and their branches at main's tip
+  // until their first commit, which reads as merged; a merge's prune took one mid-session (HOMEFIX2's batch, 2026-10-20).
+  const worktrees = [
+    tree('D:/work/repo', 'main'),
+    tree('D:/work/repo/.claude/worktrees/agent-a', 'worktree-agent-a'),
+    tree('X:/daoris/data/trees/games/repo/s-1', 'daoris/s-1'),
+    tree('D:/work/repo-elsewhere', 'elsewhere'),
+  ];
+  const candidates = tool.pruneCandidates({
+    merged: ['daoris/s-1', 'daoris/s-2', 'elsewhere', 'quest/fix-7b175b', 'worktree-agent-a'], worktrees, current: 'main',
+  });
+  const held = Object.fromEntries(candidates.map((c) => [c.branch, c.held]));
+  assert.match(held['daoris/s-1']!, /Daoris/);
+  assert.match(held['daoris/s-2']!, /Daoris/, 'a session branch with no tree is still Daoris\'s');
+  assert.match(held['quest/fix-7b175b']!, /Daoris/);
+  assert.equal(held['elsewhere'], null, 'a tree beside the checkout is no sign: the harness may put its trees there');
+  assert.equal(held['worktree-agent-a'], null, 'an agent harness tree is still pruned as before');
+});
+
 test('a merged branch goes with its worktree only when that is unlocked, has no tracked change and holds nothing under local/', () => {
   const clean: Facts = { tracked: [], untracked: [], local: null };
   const at = (more: Partial<Worktree> = {}): Candidate => ({ branch: 'b', worktree: tree('/r/w/b', 'b', more), held: null });
