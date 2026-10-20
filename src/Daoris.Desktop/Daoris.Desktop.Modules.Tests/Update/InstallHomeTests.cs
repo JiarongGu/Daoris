@@ -299,7 +299,7 @@ public sealed class InstallHomeTests : IDisposable
     {
         var root = Path.Combine(_root, "scratch");
         Directory.CreateDirectory(root);
-        Assert.Equal(Path.Combine(root, "profiles", "window"), InstallHome.WindowMemoryOfRun(root));
+        Assert.Equal(Path.Combine("profiles", "window"), Path.GetRelativePath(root, InstallHome.WindowMemoryOfRun(root)));
 
         Lay(root, "chromium/Default/Preferences");
         Assert.Equal(root, InstallHome.WindowMemoryOfRun(root));
