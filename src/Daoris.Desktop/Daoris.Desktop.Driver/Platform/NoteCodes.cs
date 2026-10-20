@@ -401,6 +401,10 @@ public static class NoteCodes
     public static readonly NoteCode EndedAnsweredUnfinished = new("ended.answered-unfinished", ["awaits", "exit"]);
     public static readonly NoteCode EndedCarriedUnfinished = new("ended.carried-unfinished", ["exit"]);
     public static readonly NoteCode EndedDone = new("ended.done", []);
+
+    // FABRIC-CLOSE1h5 (D173's CLOSELAND1 note): a closure graph's quest is never done before the graph's end, so a session ends at its
+    // agent's `ready` with the quest still taken, at its submission. Worded by the sentence the page already says of a submitted quest.
+    public static readonly NoteCode EndedSubmitted = new("ended.submitted", [], Key: "statusHint.Submitted");
     public static readonly NoteCode EndedDeclined = new("ended.declined", []);
     public static readonly NoteCode EndedStoodDown = new("ended.stood-down", []);
 

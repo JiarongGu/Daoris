@@ -602,6 +602,40 @@ public sealed class AutoLandingTriesTests : AutoLandingFixture
     }
 
     /// <summary>
+    /// FABRIC-CLOSE1h19 (D173's CLOSELAND1 note), confirmed red first. A session landed, then concluded again with nothing new, under an
+    /// opinion rule that started reading after its landing: its due closes as landed at once, its tree being on the branch made
+    /// (CLOSE1h18 point 2), and CLOSE1h17 does not owe it again, so the gate's <c>opinion</c> would hold an entry with nothing to land
+    /// until the person's ask. The look reads the tree on its landed branch before the gate, and closes the entry <c>already</c>.
+    /// </summary>
+    [Fact]
+    public async Task A_done_already_on_its_landed_branch_closes_its_entry_before_the_opinion_gate()
+    {
+        var root = await RepositoryAsync("engine");
+        Rule(new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}", Plugin: Plugin, AutoAccept: true));
+        InstallManifest();
+        var tree = await DoneSessionAsync(root, "s1", "q1");
+        Assert.Single(await LookAsync());
+        Assert.Equal(AutoLandingCode.Landed, new AutoLandings(_home).Of("s1")!.Last!.Code);
+
+        ReadsAnOpinion();
+        ConcludeAgain("s1", "q1", tree);
+        Assert.Equal(OpinionRules.Landing, Assert.Single(OpinionLook.Concluded(_home, Config(), "s1", _world.Quests["q1"], "Done", "completed", tree)));
+        var due = Assert.Single(new OpinionDues(_home).Open());
+        // The loop's opinion look closes it as landed at once: the tree is on the branch made.
+        Assert.Equal(OpinionDueClosed.Landed, await ClosesAsync(due));
+        new OpinionDues(_home).Close("s1", OpinionRules.Landing, OpinionDueClosed.Landed, DateTimeOffset.UtcNow);
+
+        var said = await LookAsync();
+
+        var entry = new AutoLandings(_home).Of("s1")!;
+        Assert.Equal(AutoLandingCode.Already, entry.Last!.Code);
+        Assert.NotNull(entry.Closed);
+        Assert.Contains("already on a branch of yours", Assert.Single(said));
+        Assert.Single(_frames);
+        Assert.Empty(new OpinionDues(_home).Open());
+    }
+
+    /// <summary>
     /// The reading by git behind it. A landing of the session's recorded before its due lands only the work it holds: a tree gone on past
     /// it keeps the due owed; one still at the commit its branch was made at, or at the commit it squashed (its record's own word,
     /// PROCESS1b-ii), closes it as landed, as any landing closed it before (a push held back's recovery owes its due after the landing,

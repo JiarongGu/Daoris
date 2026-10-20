@@ -176,6 +176,38 @@ public sealed class OpinionLandingTests : IDisposable
         Assert.Equal(OpinionGateStates.Settled, new LandedBranches(_home).Landing("s1")!.Opinion!.Said);
     }
 
+    /// <summary>
+    /// FABRIC-CLOSE1h4 (D173's CLOSELAND1 note; §E5, D155): a bound quest at its agent's submission, never done, under <i>Accept
+    /// automatically</i>. A second opinion that raised a <c>must</c> and went to the person stands disputed: the look keeps the entry as
+    /// <c>opinion</c> and makes nothing. The person's <i>Go on anyway…</i> at its tip lets it go, and the first look after lands it while
+    /// the quest stays taken at its submission: the landing waits on the unheld submission and writes no Done.
+    /// </summary>
+    [Fact]
+    public async Task A_disputed_opinion_holds_a_bound_submission_and_the_persons_answer_lands_it_with_no_done()
+    {
+        var root = await RepositoryAsync("web-app");
+        Configure(new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}", AutoAccept: true), required: true);
+        var tree = await DoneSessionAsync(root, "s1", "q1", due: true, submitted: true);
+        var tip = await HeadAsync(tree);
+        Read("o1", tip, findings: [new OpinionFindingView(1, OpinionViews.Must, "report.ts", "The total drops a row", "Wrong totals", "Run it", "sure")]);
+        new OpinionDeliveries(_home).ToPerson("o1", ContinueWhy.Elsewhere, DateTimeOffset.UtcNow);
+
+        Assert.Contains("disputed", Assert.Single(await LookAsync()));
+        Assert.Equal(AutoLandingCode.Opinion, new AutoLandings(_home).Of("s1")!.Last!.Code);
+        Assert.False(await BranchAsync(root, "feature/q1-fix-the-gap"), "nothing is made while the dispute stands");
+
+        new OpinionGates(_home).Said("q1", "web-app", new OpinionPersonWord(OpinionPersonSaid.Anyway, tip, DateTimeOffset.UtcNow)
+        {
+            Words = "the totals are right", Door = ReviewDoors.Terminal,
+        });
+        Assert.Single(await LookAsync());
+
+        Assert.True(await BranchAsync(root, "feature/q1-fix-the-gap"));
+        Assert.Equal(AutoLandingCode.Landed, new AutoLandings(_home).Of("s1")!.Last!.Code);
+        Assert.Equal(OpinionGateStates.Anyway, new LandedBranches(_home).Landing("s1")!.Opinion!.Said);
+        Assert.True(QuestResults.Submitted(_world.Quests["q1"]), "the landing writes no Done");
+    }
+
     // ——— the world and the fixtures
 
     /// <summary>The service's quests and records, and the local host's opinions, standing in.</summary>
@@ -215,13 +247,16 @@ public sealed class OpinionLandingTests : IDisposable
         return [.. said, .. await lander.LandAsync(chosen)];
     }
 
-    /// <summary>A first pass by Codex on the work at <paramref name="tip"/>, kept at the gate as asked, reading or raising nothing.</summary>
-    private void Read(string id, string tip, bool reading = false, string working = "s1")
+    /// <summary>
+    /// A first pass by Codex on the work at <paramref name="tip"/>, kept at the gate as asked, reading, or raising nothing unless
+    /// <paramref name="findings"/> are named.
+    /// </summary>
+    private void Read(string id, string tip, bool reading = false, string working = "s1", IReadOnlyList<OpinionFindingView>? findings = null)
     {
         _world.Opinions[id] = new OpinionView(id, "landing", "first", working, "r-" + id, "web-app", tip, tip, "codex-acp", ReviewerLabels.AnotherMaker,
             reading ? "reading" : "given")
         {
-            Product = "Codex", Maker = "OpenAI", Minutes = 20, Findings = reading ? null : [], Read = "the whole change",
+            Product = "Codex", Maker = "OpenAI", Minutes = 20, Findings = reading ? null : findings ?? [], Read = "the whole change",
         };
         var gates = new OpinionGates(_home);
         if (!gates.Read("q1", "web-app").Asks.Any(ask => ask.Opinion == id))
@@ -249,17 +284,23 @@ public sealed class OpinionLandingTests : IDisposable
         (landing is null ? config : config.WithLanding("web-app", landing)).Save(DaorisHome.Entry(_home, HomeEntry.DriverConfig));
     }
 
-    /// <summary>A session that worked in its own tree and concluded on its quest's done; made due as the conclusion makes it, where asked.</summary>
-    private async Task<string> DoneSessionAsync(string root, string session, string quest, bool due = false)
+    /// <summary>
+    /// A session that worked in its own tree and concluded on its quest's done, or, <paramref name="submitted"/>, at its closure graph's
+    /// submission with the quest still taken (FABRIC-CLOSE1h4, §E5); made due as the conclusion makes it, where asked.
+    /// </summary>
+    private async Task<string> DoneSessionAsync(string root, string session, string quest, bool due = false, bool submitted = false)
     {
         var opened = await new SessionTrees(_home).OpenAsync(root, "web-app", "aurora");
         await CommitAsync(opened.Path, $"{session}.txt", $"the work of {session}", $"the work of {session}");
-        _world.Quests[quest] = new QuestView(quest, "ask #a1", "web-app", "Fix the gap", "Fix it.", "Done");
+        var view = new QuestView(quest, "ask #a1", "web-app", "Fix the gap", "Fix it.", submitted ? "Taken" : "Done");
+        _world.Quests[quest] = submitted
+            ? view with { Closure = "sha256:closure", Submission = new QuestSubmissionView("desk", 1, DateTimeOffset.UtcNow, "ready") }
+            : view;
         _world.Records.Add(new SessionRecord(session, "web-app", "completed") { Quest = quest, Tree = opened.Path, Created = DateTimeOffset.UtcNow });
         if (due)
         {
             Assert.Equal(AutoConcluded.Due, AutoLander.Concluded(_home, Config(), new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions)), session,
-                _world.Quests[quest], "Done", "completed", opened.Path, "aurora"));
+                _world.Quests[quest], QuestResults.Status(_world.Quests[quest]), "completed", opened.Path, "aurora"));
         }
 
         return opened.Path;

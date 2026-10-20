@@ -210,6 +210,16 @@ public sealed class AutoLander(
         var (tip, status, uncommitted) = await ReadTreeAsync(entry.Tree, ct).ConfigureAwait(false);
         if (!AutoLandingRules.ShouldTry(entry, tip, status)) return (null, null);
 
+        // FABRIC-CLOSE1h19 (D173's CLOSELAND1 note): a session concluded again with nothing new is already on the branch its landing made,
+        // so it closes `already` here, before the gate: an opinion its rule never read would hold an entry with nothing to land, owed by
+        // nobody (its due closed as landed by git at once, CLOSE1h18, and not owed again, CLOSE1h17). D88's proof, read only where a
+        // standing landing names the session, as words that went on (D137) or a later `ready` leave it, and the tree holds nothing uncommitted.
+        if (uncommitted == 0 && trees.Recorded.Landing(entry.Session) is { GoneAt: null } made
+            && await trees.UnlandedHereAsync(entry.Tree, ct).ConfigureAwait(false) == 0)
+        {
+            return (Closed(entry, AutoLandingCode.Already, branch: made.Branch), null);
+        }
+
         // The landing gate, read once (XAGENT1f, the second-agent design §7), with the process read above (WORKFLOW1f), by the one
         // helper the push and a push held back's recovery read it with (FABRIC-CLOSE1h12). Its first part that holds, in §7's order:
         var (gate, held, line) = await GateAsync(entry, entry.Session, entry.Quest, entry.Tree, world, ct, process).ConfigureAwait(false);
