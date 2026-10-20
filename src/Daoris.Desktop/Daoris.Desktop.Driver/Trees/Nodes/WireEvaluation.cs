@@ -24,7 +24,10 @@ public static class WireReceiptKinds
 /// One typed transition receipt (FABRIC-WIRE1b; §E3), scoped to its graph, run and binding: what a downstream binding's
 /// <see cref="NodeAcceptance.PrerequisiteReceipts"/> names, so losing it invalidates what rested on it.
 /// </summary>
-/// <param name="Id">A reach's acceptance id; else a digest of its kind, graph, run and binding (<c>skp-</c>, <c>fld-</c>, <c>rej-</c>).</param>
+/// <param name="Id">
+/// A reach's acceptance id; else a digest of its kind, graph, run and binding (<c>skp-</c>, <c>fld-</c>, <c>rej-</c>), worked out from its status's
+/// own scope (FABRIC-RUN1f): its node's place where that names one, else the graph and the run as the scope names them.
+/// </param>
 /// <param name="Kind">One of <see cref="WireReceiptKinds"/>.</param>
 /// <param name="Node">The node whose transition it is.</param>
 public sealed record WireReceipt(string Id, string Kind, string Node)
@@ -42,6 +45,35 @@ public sealed record WireReceipt(string Id, string Kind, string Node)
 public sealed record WireRun(string GraphDigest, string Run)
 {
     public NodeScope Scope => new(GraphDigest, Run);
+
+    /// <summary>
+    /// Each node's place on a live graph, by node id (FABRIC-RUN1f; the cutover design §9, <see cref="NodeGraphs.Places"/>): a node named here is
+    /// scoped, bound, receipted and fired on by its place where every other is by <see cref="GraphDigest"/>, so an edit elsewhere in the graph
+    /// leaves it current. Empty on a named version's run, which is never edited (D157 point 6).
+    /// </summary>
+    public IReadOnlyDictionary<string, string> Places { get; init; } = ImmutableDictionary<string, string>.Empty;
+
+    /// <summary>
+    /// The run's name before FABRIC-RUN1f, worked out from the graph now (<see cref="NodeRuns.Of(string, string)"/>): what a scope written before
+    /// names, so a record naming the whole graph's digest is judged as it was until the graph is edited. Null where the run had no other name.
+    /// </summary>
+    public string? Legacy { get; init; }
+
+    /// <summary>What <paramref name="node"/> is bound and scoped to now: its place where it has one, else the whole graph's digest.</summary>
+    public string GraphOf(string node) => Places.TryGetValue(node, out var place) ? place : GraphDigest;
+
+    /// <summary>The scope a start or a skip of <paramref name="node"/> takes now: its place, or the graph, and the run.</summary>
+    public NodeScope ScopeOf(string node) => new(GraphOf(node), Run);
+
+    /// <summary>
+    /// The scope a record of <paramref name="node"/> bound or skipped under <paramref name="graph"/> is judged against (FABRIC-RUN1f, the cutover
+    /// design §9: like with like): a record naming the whole graph's digest where the node now has a place was written before, and is judged on
+    /// the graph's digest and the run's old name, as it was; any other on <see cref="ScopeOf"/>.
+    /// </summary>
+    public NodeScope Own(string node, string? graph) =>
+        Places.ContainsKey(node) && graph is not null && !graph.StartsWith(NodeGraphs.PlacePrefix, StringComparison.Ordinal)
+            ? new(GraphDigest, Legacy ?? Run)
+            : ScopeOf(node);
 
     /// <summary>
     /// Each unit's current revision, by <see cref="WorkUnit.Id"/>: a branch's full tip, null for a unit with none (a run's own). A complete
@@ -366,8 +398,9 @@ public static class WireEvaluation
             };
             if (observation.Move is not { } move || (status.State == NodeStates.Unknown && move.To == NodeStates.Unknown)) continue;
 
-            // A record's skip holds for the attempt's graph and run, as the person's does for theirs.
-            Make(node, move.To == NodeStates.Skipped ? move with { Scope = status.Scope ?? run.Scope } : move, WireWhy.Observed, observation.Said);
+            // A record's skip holds for the attempt's graph and run, as the person's does for theirs. FABRIC-RUN1f: an attempt with no scope kept
+            // takes its binding's own rule, a place with a place and a graph written before with that graph, so the lifecycle compares like with like.
+            Make(node, move.To == NodeStates.Skipped ? move with { Scope = status.Scope ?? run.Own(node.Id, binding.GraphDigest) } : move, WireWhy.Observed, observation.Said);
         }
 
         // 3. Each started sink, on the receipt of the path into it (FABRIC-WIRE1g; §E7's synthetic sink, D173's FABRIC-WORKFLOW2 note,
@@ -445,7 +478,7 @@ public static class WireEvaluation
                 slots[authority.Reach]--;
             }
 
-            starts.Add(new WireStart(judged.Node, new NodeMove(NodeStates.Active, NodeCause.Daoris) { Binding = judged.Binding, Scope = run.Scope })
+            starts.Add(new WireStart(judged.Node, new NodeMove(NodeStates.Active, NodeCause.Daoris) { Binding = judged.Binding, Scope = run.ScopeOf(judged.Node) })
             {
                 Firings = judged.Firings,
             });
@@ -518,15 +551,19 @@ public static class WireEvaluation
         {
             var status = statuses[node.Id];
             if (gone.Contains(node.Id)) continue;
-            var ours = status.Binding is { } binding && binding.GraphDigest == run.GraphDigest && status.Scope == run.Scope ? binding : null;
+
+            // FABRIC-RUN1f (the cutover design §9): an id is worked out from its status's own scope, a place's from the place and one written
+            // before from the whole graph's digest and the run's old name, so a receipt kept before keeps its id and nothing resting on it lapses.
+            var skipped = run.Own(node.Id, status.Scope?.GraphDigest);
+            var (ours, bound) = Ours(node, status, run);
             WireReceipt? receipt = status.State switch
             {
                 NodeStates.Reached when status.Current is { } accepted => new(accepted.Id, WireReceiptKinds.Reached, node.Id) { Acceptance = accepted },
-                NodeStates.Skipped when NodeLifecycle.Skips(status, run.Scope) =>
-                    new(Digest("skp-", run.GraphDigest, run.Run, status.Unit, node.Id), WireReceiptKinds.Skipped, node.Id),
+                NodeStates.Skipped when NodeLifecycle.Skips(status, skipped) =>
+                    new(Digest("skp-", skipped.GraphDigest, skipped.Run, status.Unit, node.Id), WireReceiptKinds.Skipped, node.Id),
                 NodeStates.Failed when ours is not null && !Retries(node, status) =>
-                    new(Digest("fld-", run.GraphDigest, run.Run, ours.Id), WireReceiptKinds.Failed, node.Id),
-                NodeStates.Rejected when ours is not null => new(Digest("rej-", run.GraphDigest, run.Run, ours.Id), WireReceiptKinds.Rejected, node.Id),
+                    new(Digest("fld-", bound.GraphDigest, bound.Run, ours.Id), WireReceiptKinds.Failed, node.Id),
+                NodeStates.Rejected when ours is not null => new(Digest("rej-", bound.GraphDigest, bound.Run, ours.Id), WireReceiptKinds.Rejected, node.Id),
                 _ => null,
             };
 
@@ -534,6 +571,16 @@ public static class WireEvaluation
         }
 
         return receipts;
+    }
+
+    /// <summary>
+    /// The binding of <paramref name="status"/>'s attempt where it was started in this graph and run, by its own rule (FABRIC-RUN1f,
+    /// <see cref="WireRun.Own"/>), and that scope; a null binding where it is another's or there is none.
+    /// </summary>
+    private static (NodeAcceptance? Binding, NodeScope Scope) Ours(NodeDeclaration node, NodeStatus status, WireRun run)
+    {
+        var scope = run.Own(node.Id, status.Binding?.GraphDigest);
+        return (status.Binding is { } binding && binding.GraphDigest == scope.GraphDigest && status.Scope == scope ? binding : null, scope);
     }
 
     /// <summary>Whether Daoris still retries this failure (§D6): a transient code with attempts left, so its <c>failed</c> path is not taken yet.</summary>
@@ -550,7 +597,7 @@ public static class WireEvaluation
         var recorded = status.State == NodeStates.Skipped && status.By is { } by && by != NodeSource.Person && NodeAuthorities.Of(node)?.SkipBy == by;
         if (status.State == NodeStates.Skipped)
         {
-            if (!NodeLifecycle.Skips(status, run.Scope)) return (WireWhy.SkipScope, null);
+            if (!NodeLifecycle.Skips(status, run.Own(node.Id, status.Scope?.GraphDigest))) return (WireWhy.SkipScope, null);
             if (!recorded) return null;
         }
 
@@ -566,13 +613,15 @@ public static class WireEvaluation
         // person, since a run begins at a graph edit and a Setup save can edit a derived graph, so edits back and forth would restart failed
         // work past its retry bound for ever. Only new work lapses it, a new subject or a new revision, as in its own graph and run; the
         // person's new attempt restarts it. It is no receipt here (Receipts reads this graph's and run's alone), so nothing fires on it.
-        if (status.State is NodeStates.Failed or NodeStates.Rejected && (binding.GraphDigest != run.GraphDigest || status.Scope != run.Scope))
+        // FABRIC-RUN1f: this graph and run are the node's place and the run, or for an attempt bound before, the graph and the run's old name.
+        var (ours, own) = Ours(node, status, run);
+        if (status.State is NodeStates.Failed or NodeStates.Rejected && ours is null)
         {
             return !string.Equals(binding.Observes, subject, StringComparison.Ordinal) ? (WireWhy.Lapsed, NodeLapse.Subject)
                 : string.Equals(binding.SubjectRevision, revision, StringComparison.Ordinal) ? null : (WireWhy.Lapsed, NodeLapse.Revision);
         }
 
-        if (NodeAcceptances.Lapsed(binding, subject, revision, run.GraphDigest, node.Version) is { } why) return (WireWhy.Lapsed, why);
+        if (NodeAcceptances.Lapsed(binding, subject, revision, own.GraphDigest, node.Version) is { } why) return (WireWhy.Lapsed, why);
         var lost = binding.PrerequisiteReceipts.FirstOrDefault(receipt => !current.Contains(receipt))
             ?? binding.Inputs.Values.Select(port => port.Acceptance).FirstOrDefault(acceptance => acceptance is not null && !current.Contains(acceptance));
         return lost is null ? null : (WireWhy.Upstream, lost);
@@ -637,9 +686,10 @@ public static class WireEvaluation
                     return (receipt!.Id, null);
 
                 case WireKinds.Trigger when receipt?.Kind == WireReceiptKinds.Reached:
-                    var key = FiringKey(run, wire.Id, receipt.Id);
+                    // FABRIC-RUN1f: a firing kept before was keyed by the graph and the run's old name, so it is looked for under both rules.
+                    var key = FiringKey(run, node.Id, wire.Id, receipt.Id);
                     var rests = status.Binding?.PrerequisiteReceipts.Contains(receipt.Id, StringComparer.Ordinal) == true;
-                    var spent = rests || run.Fired.Contains(key);
+                    var spent = rests || run.Fired.Contains(key) || (run.Places.ContainsKey(node.Id) && run.Fired.Contains(LegacyKey(run, wire.Id, receipt.Id)));
                     var firing = spent ? null : new WireFiring(key, wire.Id, receipt.Id, node.Id);
                     return status.State == NodeStates.Ready || (rests && NodeStates.Bound.Contains(status.State)) || !spent ? (receipt.Id, firing) : (null, null);
 
@@ -691,7 +741,7 @@ public static class WireEvaluation
             Receipts = [.. consumed.Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal)],
             Waiting = [.. waiting.Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal)],
             Binding = bound
-                ? new NodeAcceptance(status.Unit, subjected.Revision, run.GraphDigest, node.Id, node.Version, status.Attempt + 1)
+                ? new NodeAcceptance(status.Unit, subjected.Revision, run.GraphOf(node.Id), node.Id, node.Version, status.Attempt + 1)
                 {
                     // Named only where it is not the record's unit, so every binding made as before keeps its id.
                     Subject = subjected.Subject == status.Unit ? null : subjected.Subject,
@@ -705,8 +755,14 @@ public static class WireEvaluation
         };
     }
 
-    /// <summary>A trigger's firing key: the graph, the run, the wire and the receipt.</summary>
-    public static string FiringKey(WireRun run, string wire, string receipt) => Digest("trg-", run.GraphDigest, run.Run, wire, receipt);
+    /// <summary>
+    /// A trigger's firing key: its target's place (FABRIC-RUN1f), else the graph, the run, the wire and the receipt, so an edit elsewhere fires
+    /// nothing again.
+    /// </summary>
+    public static string FiringKey(WireRun run, string target, string wire, string receipt) => Digest("trg-", run.GraphOf(target), run.Run, wire, receipt);
+
+    /// <summary>A firing's key as it was kept before FABRIC-RUN1f: the whole graph's digest and the run's old name.</summary>
+    private static string LegacyKey(WireRun run, string wire, string receipt) => Digest("trg-", run.GraphDigest, run.Legacy ?? run.Run, wire, receipt);
 
     private static string Digest(string prefix, params string?[] parts)
     {

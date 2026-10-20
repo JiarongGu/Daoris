@@ -77,6 +77,10 @@ with the version and date at release.
   bar's count, Overview's quest tiles and an agent's *Usage* show placeholders, not *0 sessions*, *nothing is waiting* or *nothing
   measured yet*. A read that failed says why, and no longer says an ask or a session is gone. When Daoris reads a list again whole,
   *What needs you* and the session, quest and ask lists keep what they showed, dimmed, until it lands.
+- Editing a work cycle on Setup no longer starts its plugin steps again where the edit leaves them be. A step you did not touch,
+  and nothing it waits on, keeps what it reached, a skip you made and a step it already started; only the step you edited, and
+  what follows from it, runs again. Work reached before this release is kept until the first edit after it.
+
 - A session that goes on in a new part, on another agent, on another account or after it was cut off, is handed everything it
   took: every word you said, once, what each turn did, where the work stands and the last check that failed, not just its last
   words. A handed-over conversation opens with *Daoris's brief of the session it continues*, folded. A session's Parts strip

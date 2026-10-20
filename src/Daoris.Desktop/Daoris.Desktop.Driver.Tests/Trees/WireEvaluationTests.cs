@@ -224,7 +224,7 @@ public sealed class WireEvaluationTests
         var g = new Graph([Node("a"), Node("t")], [Trigger("w1", "a", "t")]);
         g.Through("a");
         var receipt = g.Statuses["a"].Current!.Id;
-        var key = WireEvaluation.FiringKey(g.Run, "w1", receipt);
+        var key = WireEvaluation.FiringKey(g.Run, "t", "w1", receipt);
 
         var fires = g.Evaluate();
         Assert.Equal(NodeStates.Ready, g.State("t"));

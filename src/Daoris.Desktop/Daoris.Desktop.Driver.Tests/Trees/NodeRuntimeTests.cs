@@ -281,10 +281,12 @@ public sealed class NodeRuntimeTests : IDisposable
         Assert.Equal((Step.Perform, Step.Retry), (deploy.Perform, deploy.Retry));
         Assert.Equal(["deploy"], governed.Dispatchable);
 
-        // A run's identity is its unit's and its graph's: the same at every wake and every restart, another under another graph.
-        Assert.Equal(governed.Run, NodeRuns.Of(Unit, governed.GraphDigest));
-        Assert.NotEqual(governed.Run, NodeRuns.Of(Unit, "gph-other"));
-        Assert.NotEqual(governed.Run, NodeRuns.Of("quest:q8", governed.GraphDigest));
+        // FABRIC-RUN1f: a run's identity is its unit's alone, the same at every wake, every restart and every edit of its graph; the old rule's,
+        // of the unit and the graph, is another, which only records written before name.
+        Assert.Equal(governed.Run, NodeRuns.Of(Unit));
+        Assert.NotEqual(governed.Run, NodeRuns.Of("quest:q8"));
+        Assert.NotEqual(governed.Run, NodeRuns.Of(Unit, governed.GraphDigest));
+        Assert.Equal(NodeGraphs.Places(governed.Graph)["deploy"], governed.Places["deploy"]);
 
         // Without the plugin's step, the node is declared as the graph has it and is never sent.
         Assert.Empty(Assert.Single(NodeRuntime.Govern(config, new NodeUnitsRead([Quest], new Dictionary<string, string>()), [])).Dispatchable);
@@ -554,7 +556,7 @@ public sealed class NodeRuntimeTests : IDisposable
     }
 
     /// <summary>
-    /// FABRIC-RUN1e, finding 3: a failure stays across graph edits back and forth (each a new run, its bindings another graph's), so a Setup
+    /// FABRIC-RUN1e, finding 3: a failure stays across graph edits back and forth (each of the deploy itself, so its binding another place's, FABRIC-RUN1f), so a Setup
     /// save that changes the graph never restarts failed work; the person's new attempt does, under the graph that governs now.
     /// </summary>
     [Fact]
@@ -581,8 +583,99 @@ public sealed class NodeRuntimeTests : IDisposable
         await runtime.PassAsync(Look(Edited), CancellationToken.None);
 
         Assert.Equal(2, _port.Sent.Count);
-        Assert.Equal(NodeRuns.Of(Unit, NodeGraphs.Digest(NodeGraphHomes.Work(DriverConfig.Parse(Edited), "engine", "default", WorkUnitKind.Quest).Graph!)),
-            Record().Statuses["deploy"].Scope!.Run);
+        // FABRIC-RUN1f: the new attempt is the same run's, scoped to the deploy's place in the graph that governs now.
+        Assert.Equal(new NodeScope(NodeGraphs.Places(NodeGraphHomes.Work(DriverConfig.Parse(Edited), "engine", "default", WorkUnitKind.Quest).Graph!)["deploy"],
+            NodeRuns.Of(Unit)), Record().Statuses["deploy"].Scope);
+    }
+
+    /// <summary>
+    /// The engine's quests governed by a build whose reach triggers a deploy, a report after the deploy and a notify after it the person
+    /// skipped (FABRIC-RUN1f); with an unrelated audit added, and with the deploy given an option, as two Setup edits make them.
+    /// </summary>
+    private static string Chain(bool audit = false, string? region = null) => $$"""
+        { "workCycles": { "engine": { "quest": {
+            "schemaVersion": 2, "entries": ["build"{{(audit ? ", \"audit\"" : "")}}], "end": "report",
+            "nodes": [
+              { "id": "build", "kind": "acme.deploy/build", "version": 1, "reach": "performed" },
+              { "id": "deploy", "kind": "acme.deploy/deploy", "version": 1, "reach": "performed"{{(region is null ? "" : $$""", "options": { "region": "{{region}}" }""")}} },
+              { "id": "report", "kind": "acme.deploy/build", "version": 1, "reach": "performed" },
+              { "id": "notify", "kind": "acme.deploy/deploy", "version": 1, "reach": "performed" }{{(audit ? """, { "id": "audit", "kind": "acme.deploy/build", "version": 1, "reach": "performed" }""" : "")}} ],
+            "wires": [
+              { "id": "w1", "kind": "trigger", "from": "build", "to": "deploy" },
+              { "id": "w2", "kind": "after", "from": "deploy", "to": "report" },
+              { "id": "w3", "kind": "after", "from": "deploy", "to": "notify" } ] } } } }
+        """;
+
+    /// <summary>The plugin's completion of <paramref name="node"/>'s attempt still waiting, reached on its receipt: framed by its step's name.</summary>
+    private WorkStepHeard Reached(string node) =>
+        new(Plugin, 1, new WorkStepFrame(node is "deploy" or "notify" ? "deploy" : "build", new WorkOutcome(WorkStates.Reached, Evidence: new WorkEvidence($"acme.deploy/receipt@1:{node}", null, null, "done")),
+            _now, "e-" + node, Invocation: Assert.Single(Record().Attempts, attempt => attempt.Node == node && attempt.State != AttemptStates.Settled).Call.Invocation));
+
+    /// <summary>
+    /// FABRIC-RUN1f (the cutover design §9; D190 point 9): a live graph's run is named by its unit alone and each node by its place, so an edit
+    /// adding an unrelated node sends, fires and starts nothing again, and an edit of one node's option lapses it and what rests on it alone.
+    /// </summary>
+    [Fact]
+    public async Task A_reach_is_kept_across_a_live_graphs_edit_that_leaves_its_place()
+    {
+        var runtime = Runtime();
+        await runtime.PassAsync(Look(Chain()), CancellationToken.None);
+        _port.Heard.Enqueue(Reached("build"));
+        await runtime.PassAsync(Look(Chain(), whole: false), CancellationToken.None);
+
+        // The person passes the notify over, for its place and this run.
+        var graph = NodeGraphHomes.Work(DriverConfig.Parse(Chain()), "engine", "default", WorkUnitKind.Quest).Graph!;
+        var notify = graph.Nodes.Single(node => node.Id == "notify");
+        Assert.Null(Files.Edit<bool>(Unit, record => (record with
+        {
+            Statuses = new Dictionary<string, NodeStatus>(record.Statuses)
+            {
+                ["notify"] = NodeLifecycle.Apply(notify, record.Statuses["notify"],
+                    new NodeMove(NodeStates.Skipped, NodeCause.Person) { Words = "not now", Scope = new(NodeGraphs.Places(graph)["notify"], NodeRuns.Of(Unit)) }).Status,
+            },
+        }, true)).Refused);
+
+        _port.Heard.Enqueue(Reached("deploy"));
+        await runtime.PassAsync(Look(Chain(), whole: false), CancellationToken.None);
+        _port.Heard.Enqueue(Reached("report"));
+        await runtime.PassAsync(Look(Chain(), whole: false), CancellationToken.None);
+        Assert.Equal(["build", "deploy", "report"], SentNodes());
+        var reached = Record();
+        Assert.Single(reached.Fired);
+
+        // An unrelated node added: it alone starts, and every reach, the firing and the skip stand.
+        await runtime.PassAsync(Look(Chain(audit: true)), CancellationToken.None);
+        await runtime.PassAsync(Look(Chain(audit: true)), CancellationToken.None);
+        Assert.Equal(["build", "deploy", "report", "audit"], SentNodes());
+        var grown = Record();
+        Assert.Equal(reached.Fired, grown.Fired);
+        Assert.Equal(NodeStates.Skipped, grown.Statuses["notify"].State);
+        foreach (var id in new[] { "build", "deploy", "report" })
+        {
+            Assert.Equal((id, NodeStates.Reached, NodeStates.Reached), (id, reached.Statuses[id].State, grown.Statuses[id].State));
+            Assert.Equal(reached.Statuses[id].Acceptance!.Id, grown.Statuses[id].Acceptance!.Id);
+        }
+
+        // The deploy's option edited: the deploy lapses and is sent again, the report resting on it lapses and waits for it, and the build, the
+        // audit and the notify's skip, which do not rest on it, stand.
+        _port.Heard.Enqueue(Reached("audit"));
+        await runtime.PassAsync(Look(Chain(audit: true), whole: false), CancellationToken.None);
+        await runtime.PassAsync(Look(Chain(audit: true, region: "eu")), CancellationToken.None);
+        await runtime.PassAsync(Look(Chain(audit: true, region: "eu")), CancellationToken.None);
+        Assert.Equal(["build", "deploy", "report", "audit", "deploy"], SentNodes());
+        var edited = Record();
+        Assert.Equal((NodeStates.Active, 2), (edited.Statuses["deploy"].State, edited.Statuses["deploy"].Attempt));
+        Assert.Equal(NodeStates.Blocked, edited.Statuses["report"].State);
+        Assert.Equal(NodeStates.Skipped, edited.Statuses["notify"].State);
+        Assert.Equal((NodeStates.Reached, grown.Statuses["build"].Acceptance!.Id), (edited.Statuses["build"].State, edited.Statuses["build"].Acceptance!.Id));
+        Assert.Equal(NodeStates.Reached, edited.Statuses["audit"].State);
+    }
+
+    /// <summary>The node each call the plugin was sent started, in the order sent.</summary>
+    private IEnumerable<string> SentNodes()
+    {
+        var attempts = Record().Attempts;
+        return _port.Sent.Select(call => attempts.Single(attempt => attempt.Call.Invocation == call.Invocation).Node).ToList();
     }
 
     /// <summary>FABRIC-RUN1e, finding 4: the units past a pass's first 32 are judged at the next, not starved behind the same prefix.</summary>
