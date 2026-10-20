@@ -206,6 +206,27 @@ public sealed class AskDeskTests : IAsyncLifetime
         Assert.Equal([quest.Id], published.Ask.Quests);
     }
 
+    /// <summary>
+    /// TITLEONE1: one piece of work, one name. A quest an ask publishes takes the ask's short title where the intake gives none,
+    /// and keeps the intake's where it gives one.
+    /// </summary>
+    [Fact]
+    public async Task A_quest_from_an_ask_inherits_its_short_title_where_the_intake_gives_none()
+    {
+        var asked = (await _desk.AskAsync(new AskRequest("work", Sentence) { Short = "Media field names" }, Now)).Ask!;
+        var other = (await _desk.AskAsync(new AskRequest("work", "rotate the office wifi password") { Short = "Wifi password" }, Now)).Ask!;
+
+        var plain = (await _desk.PublishAsync(asked.Id, "media-api", Now.AddMinutes(1))).Quest!;
+        var drafted = (await _desk.PublishAsync(
+            asked.Id, "storefront", Now.AddMinutes(2), draft: new AskDraft("Read names from the media config", null) { Short = " " })).Quest!;
+        var named = (await _desk.PublishAsync(
+            other.Id, "media-api", Now.AddMinutes(3), draft: new AskDraft(null, null) { Short = "Office wifi" })).Quest!;
+
+        Assert.Equal("Media field names", plain.Short);
+        Assert.Equal("Media field names", drafted.Short);
+        Assert.Equal("Office wifi", named.Short);
+    }
+
     [Fact]
     public async Task Asking_the_same_sentence_again_in_a_circle_is_the_same_ask()
     {
