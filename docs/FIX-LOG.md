@@ -5,6 +5,24 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-20 — A session whose quest closed while it waited on its background work worked on until the timeout (DONEEND1)
+
+- **Symptom:** on the install two driven sessions went on working, showing *Stop…* and holding a slot of the cap, after their
+  quests closed done, until the 90-minute timeout killed them (one 14 minutes after its close); the kill left a test's scratch in
+  its tree.
+- **Root cause:** `AcpSession.AfterBackgroundAsync` read the quest once, at the turn's end (`waits(ct)`, BGWAIT1), then blocked in
+  `AcpBackground.EndedAsync` until every piece of background work ended. A quest closed during that wait, by the agent in a turn
+  its harness woke for one piece while a long test run went on, was never read, so only the timeout's kill ended it. Behind it, a
+  run that did end with its work still running closed the agent's stdin and waited on its exit bounded only by the timeout
+  (`Driver.WaitAsync`), so an agent the work held alive would hold the run the same way.
+- **Fix:** the background wait races a look (`QuestMovedAsync`): the same judgement read every `BackgroundLook` (every fourth
+  driver tick), which once the quest no longer parks waits for no turn to run (`AcpWake.IdleAsync`) and ends the session, saying
+  `background.wait-over`. An unread look keeps waiting. The capture gives an agent that leaves work running 10 s to exit, then ends
+  its tree (`Driver.EndedLingeringAsync`), told to `AcpEnding` so the conclusion reads the session's clean end, not the kill's exit.
+- **Verification:** `AcpBackgroundTests`, `BackgroundWaitJudgementTests`, `NoteCodesTests`, `AcpTests` (150 passed), the page's
+  `note.test.ts` and `noteLines.test.ts`; `DoneEndTickTests` (Process) failed at its 90 s bound before the driver's half and
+  passed in 28 s after it, the stand-in's test run ended with its tree.
+
 ## 2026-10-20 — The full set's driver Process half failed a race's control and a start's git ceiling (TREELOCK1, FLAKE1)
 
 - **Symptom:** the full set on 50634f5 failed two `Process` tests, each again when re-run alone: `ProbeRaceTests`' control (two

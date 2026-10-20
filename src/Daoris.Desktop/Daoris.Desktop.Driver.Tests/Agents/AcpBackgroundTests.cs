@@ -1053,7 +1053,7 @@ public sealed class AcpBackgroundTests
         var session = Looking(agent, record, Never);
 
         var run = session.RunAsync(
-            "D:/fam/Game", "close quest #12", CancellationToken.None,
+            "X:/daoris/game", "close quest #12", CancellationToken.None,
             waitsOnBackground: _ =>
             {
                 Interlocked.Increment(ref asked);
@@ -1101,7 +1101,7 @@ public sealed class AcpBackgroundTests
         var session = Looking(agent, record, Never);
 
         var run = session.RunAsync(
-            "D:/fam/Game", "close quest #12", CancellationToken.None,
+            "X:/daoris/game", "close quest #12", CancellationToken.None,
             waitsOnBackground: _ =>
             {
                 Interlocked.Increment(ref asked);
@@ -1151,7 +1151,7 @@ public sealed class AcpBackgroundTests
         var asked = 0;
 
         var run = Looking(agent, record, Never).RunAsync(
-            "D:/fam/Game", "close quest #12", CancellationToken.None,
+            "X:/daoris/game", "close quest #12", CancellationToken.None,
             waitsOnBackground: _ =>
             {
                 if (Interlocked.Increment(ref asked) == 1) return Task.FromResult(true);

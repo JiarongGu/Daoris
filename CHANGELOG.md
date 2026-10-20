@@ -5,6 +5,9 @@ with the version and date at release.
 
 ## Unreleased
 
+- A session waiting on its own background work, such as a long test run, now ends within about a minute once its quest closes,
+  is declined or asks another repository, instead of working on until the session timeout. It is recorded completed where its
+  quest reached done, its conversation says the work still running ended with it, and that work ends with its process.
 - The Quests list shows one row for one piece of work: an ask that became a single quest is that quest's row, named by the
   ask's short title with the ask on its second line (its page opens from the row's right-click menu), and the Asks group
   keeps only asks still waiting on something of their own. A published ask no longer wears the finished colour.
