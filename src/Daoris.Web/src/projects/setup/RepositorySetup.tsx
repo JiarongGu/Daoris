@@ -7,6 +7,9 @@ import { COMMIT_DEFAULT, type CommitEdit, CommitField, commitRowSays, commitSumm
 import { type HeavyGate, HeavyGates, type HeavyMarks, heavySummary } from '../../settings/repository/HeavyGates';
 import { HELPER_DEFAULT, type HelperEdit, HelperField, helperRowSays, helperSummary, type RepositoryHelpers } from '../../settings/repository/Helpers';
 import {
+  HAND_OVER_DEFAULT, type HandOverEdit, HandOverField, handOverRowSays, handOverSummary, type RepositoryHandOver,
+} from '../../settings/repository/HandOver';
+import {
   type Accepting, AcceptingNote, LandingField, landingFrom, landingProcessSays, type LandingRule, type RepositoryLanding,
 } from '../../settings/repository/Landings';
 import { LanguageChoice, type LanguageOption, type RepositoryLanguage } from '../../settings/repository/Languages';
@@ -105,6 +108,12 @@ export type SessionsSetup = {
    */
   helpers?: RepositoryHelpers | null;
   onHelpers?: (edit: HelperEdit) => void;
+  /**
+   * What an agent's ask to hand its session over does (MIXAGENT1c, D163 point 3), as the driver resolves it: its own, its
+   * workspace's, or Daoris's default; absent on a shell older than it, and no row is offered.
+   */
+  handOver?: RepositoryHandOver | null;
+  onHandOver?: (edit: HandOverEdit) => void;
   /** Its standing answer, the person's words and when they set them; null for none. */
   standing?: { says: string; at?: string | null } | null;
   /** Keep a standing answer, or with null clear it; absent on a shell older than it, and nothing is offered. */
@@ -219,6 +228,9 @@ export function RepositorySetup({ repository, driving, work, access, heavy, sess
   const helpers = sessions?.onHelpers ? sessions.helpers : undefined;
   const helperRule = helpers?.rule ?? HELPER_DEFAULT;
   const helpersOwn = helpers?.source === 'repository';
+  const handOver = sessions?.onHandOver ? sessions.handOver : undefined;
+  const handOverRule = handOver?.rule ?? HAND_OVER_DEFAULT;
+  const handOverOwn = handOver?.source === 'repository';
   const standing = sessions?.standing ?? null;
   const sessionsParts = sessions && [
     ...(language
@@ -227,6 +239,9 @@ export function RepositorySetup({ repository, driving, work, access, heavy, sess
           : marked(t('projects.setup.summary.noLanguage'), 'daoris')]
       : []),
     ...(helpers ? [marked(helperSummary(t, helperRule), helpers.source === 'repository' || helpers.source === 'workspace' ? helpers.source : 'daoris')] : []),
+    ...(handOver
+      ? [marked(handOverSummary(t, handOverRule), handOver.source === 'repository' || handOver.source === 'workspace' ? handOver.source : 'daoris')]
+      : []),
     ...(sessions.onStanding
       ? [standing ? t('projects.setup.summary.standing', { count: standing.says.split('\n').length }) : t('projects.setup.summary.noStanding')]
       : []),
@@ -263,7 +278,7 @@ export function RepositorySetup({ repository, driving, work, access, heavy, sess
     access: accessOwn,
     // This machine's heavy gates are set for this repository alone, so a list set is its own.
     heavy: (heavy?.gates.length ?? 0) > 0,
-    sessions: languageOwn || helpersOwn || standing !== null,
+    sessions: languageOwn || helpersOwn || handOverOwn || standing !== null,
     reach: readOwn || writesTo.length > 0 || ruleCount > 0,
   };
 
@@ -486,6 +501,27 @@ export function RepositorySetup({ repository, driving, work, access, heavy, sess
                   inherited={helperRule}
                   busy={busy}
                   onChange={(edit) => sessions.onHelpers?.(edit)}
+                />
+              )}
+            />
+          )}
+          {handOver && sessions.onHandOver && (
+            <Inheritable
+              setHere={t('projects.setup.setHere')}
+              label={t('settings.handOver.label')}
+              twin={t('settings.handOver.twin.repository', { repository })}
+              why={t('settings.handOver.body')}
+              says={handOverRowSays(t, handOverRule, { source: handOver.source, workspace: handOver.workspace })}
+              own={handOverOwn}
+              busy={busy}
+              onClear={() => sessions.onHandOver?.({ clear: true })}
+              editor={() => (
+                <HandOverField
+                  name={repository}
+                  set={handOverOwn ? handOverRule : undefined}
+                  inherited={handOverRule}
+                  busy={busy}
+                  onChange={(edit) => sessions.onHandOver?.(edit)}
                 />
               )}
             />

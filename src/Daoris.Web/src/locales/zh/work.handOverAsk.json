@@ -1,0 +1,14 @@
+{
+  "work.handOverAsk.lead": "它的智能体要求把这个会话转交给另一个智能体。",
+  "work.handOverAsk.claim": "它留给下一个智能体的备注，是它自己的说法：",
+  "work.handOverAsk.waits": "将由 {{agent}} 在同一棵树里接着做，并告诉它道衍对这个会话的记录和这段备注。你同意之前不会转交。",
+  "work.handOverAsk.approved": "你已同意：它这一轮结束后，驱动下次查看时由 {{agent}} 接着做。",
+  "work.handOverAsk.unread": "道衍下次查看时，会按你的转交规则处理它。",
+  "work.handOverAsk.approve": "转交给 {{agent}}",
+  "work.handOverAsk.decline": "暂不",
+  "work.handOverAsk.refused.gone": "这个会话的智能体已不再要求转交。",
+  "work.handOverAsk.refused.past": "它已不需要你答复：已经转交或被拒绝。",
+  "work.handOverAsk.refused.unread": "道衍还没读到它：等它等你答复时再拒绝。",
+  "work.handOverAsk.refused.approved": "它已得到你的同意，驱动下次查看时就会转交。",
+  "work.handOverAsk.refused.cannot": "转交无法完成：原因见这个会话的时间线。"
+}

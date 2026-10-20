@@ -5,6 +5,7 @@ import { keys } from '../../data/queries';
 import type { AccessChange, RepositoryAccess } from '../../settings/repository/Access';
 import type { CommitChange, RepositoryCommits } from '../../settings/repository/Commits';
 import type { HelperChange, RepositoryHelpers } from '../../settings/repository/Helpers';
+import type { HandOverChange, RepositoryHandOver } from '../../settings/repository/HandOver';
 import type { LineChange, RepositoryLine } from '../../settings/repository/Lines';
 import type { LandingChange, RepositoryLanding } from '../../settings/repository/Landings';
 import type { LanguageChange, RepositoryLanguage } from '../../settings/repository/Languages';
@@ -37,13 +38,16 @@ export type LinesAnswer = {
   // never null, `default` where nothing is set; absent on an older shell, which offers neither row.
   commits?: RepositoryCommits[];
   helpers?: RepositoryHelpers[];
+  // What an agent's ask to hand its session over does, as the driver resolves it (MIXAGENT1c): never null, `default` where
+  // nothing is set; absent on an older shell, which offers no hand-over row.
+  handOver?: RepositoryHandOver[];
   // The access setup each one's sessions start under, every pause with its value and where it was set (AUTONOMY1a, D184 point 1):
   // never null, `default` where nothing is set; absent on an older shell, which offers no access section.
   access?: RepositoryAccess[];
 };
 
 // The shell's `LinesStateSlice.Fields`, in its order: a field left out here is pushed and never composed (AUTONOMY1d).
-const LINES_FIELDS = ['lines', 'landings', 'languages', 'reviews', 'opinions', 'helpers', 'commits', 'access'] as const;
+const LINES_FIELDS = ['lines', 'landings', 'languages', 'reviews', 'opinions', 'helpers', 'handOver', 'commits', 'access'] as const;
 
 /**
  * The lines as the shell pushes them (PUSH1b2, D182): a partition per repository, named by it, each holding that repository's rows
@@ -465,6 +469,12 @@ export const useSetCommits = () => useDriverChange<CommitChange>('SET_COMMITS');
  * file `daoris driver helpers` edits (D50). A refusal is the driver's sentence, verbatim.
  */
 export const useSetHelpers = () => useDriverChange<HelperChange>('SET_HELPERS');
+
+/**
+ * Change what an agent's ask to hand its session over does in a repository, or a workspace (MIXAGENT1c, D163 point 3): the twins'
+ * edit, over the file `daoris driver handover` edits (D50). A refusal is the driver's sentence, verbatim.
+ */
+export const useSetHandOver = () => useDriverChange<HandOverChange>('SET_HAND_OVER');
 
 /**
  * Change the access setup a repository's sessions start under, a workspace's or this machine's (AUTONOMY1d, D184 points 1-3): full

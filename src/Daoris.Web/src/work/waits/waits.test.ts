@@ -3,6 +3,7 @@ import type { GoAhead, Session } from '../../data/api';
 import type { RuleProposal } from '../../settings/repository/AgentRules';
 import type { SessionDiff } from '../review/diff';
 import type { HelperAskRow } from './HelperAsks';
+import type { HandOverAskRow } from './HandOverAgentAsk';
 import { GATES } from '../gates/opinionFixtures';
 import type { PermissionWait } from './PermissionAsks';
 import { conversationOffer, landingStands, rulesAsked, waitsOf } from './waits';
@@ -138,6 +139,24 @@ describe('the waits on the person', () => {
       .toEqual([{ kind: 'helper', id: 'a1' }, { kind: 'helper', id: 'a8' }]);
     // With no press to answer them (a browser, a teammate's record), none.
     expect(waitsOf({ session: session({ state: 'working' }), helpers: { asks } })).toEqual([]);
+  });
+
+  // MIXAGENT1c (D163 point 3): its agent's ask to hand it over, which the driver's look holds waiting on the person's word under the
+  // `handOver` rule's `ask`, is one of the session's waits; one not read yet, one with their yes, taken or refused waits on none.
+  const handed = (state: string | null): HandOverAskRow => ({
+    id: 'a1b2c3d4', note: 'Near my limit; ParserTests are left.', at: '2026-10-20T09:00:00Z', state, code: null, agent: 'codex-acp',
+  });
+
+  it('names its agent’s ask to hand it over that waits on the person’s word, after the helpers', () => {
+    expect(waitsOf({ session: session({ state: 'working' }), handOver: { ask: handed('waiting'), onApprove: press } }))
+      .toEqual([{ kind: 'handOver', id: 'a1b2c3d4' }]);
+    for (const state of [null, 'approved', 'taken', 'refused']) {
+      expect(waitsOf({ session: session({ state: 'working' }), handOver: { ask: handed(state), onApprove: press } })).toEqual([]);
+    }
+    expect(waitsOf({ session: session({ state: 'working' }), handOver: { ask: handed('waiting') } })).toEqual([]);
+    expect(waitsOf({
+      session: session({ state: 'working' }), helpers: { asks: [ask('a1')], onApprove: press }, handOver: { ask: handed('waiting'), onApprove: press },
+    })).toEqual([{ kind: 'helper', id: 'a1' }, { kind: 'handOver', id: 'a1b2c3d4' }]);
   });
 
   it('stands after the rules and before the work', () => {

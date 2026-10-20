@@ -17,12 +17,13 @@ import { type AccessEdit, accessToast, isFull, resolveAccess } from '../settings
 import { type CommitEdit, commitToast } from '../settings/repository/Commits';
 import { heavyToast } from '../settings/repository/HeavyGates';
 import { type HelperEdit, helperToast } from '../settings/repository/Helpers';
+import { type HandOverEdit, handOverToast } from '../settings/repository/HandOver';
 import type { LandingRule } from '../settings/repository/Landings';
 import { type OpinionEdit, opinionToast } from '../settings/repository/Opinions';
 import { type ReviewEdit, reviewToast } from '../settings/repository/Reviews';
 import {
   useAcross, useDriver, useHarnesses, useLines, usePlugins, useRuleAction, useRules, useSetAccess, useSetCommits, useHeavyMarks, useSetDrivable, useSetHeavyGates, useSetHelpers,
-  useSetHold, useSetLanding, useSetLanguage, useSetLine, useSetOpinion, useSetReadAcross, useSetReview, useSetStanding, useSetTrees,
+  useSetHandOver, useSetHold, useSetLanding, useSetLanguage, useSetLine, useSetOpinion, useSetReadAcross, useSetReview, useSetStanding, useSetTrees,
   useSetupPlan, useSetupPress, useSetWriteAcross, useSweepPlan, useWorkflowCurrent,
 } from '../bridge/shell';
 import type { SetUpForAgentsProps } from './setup/SetUpForAgents';
@@ -140,6 +141,7 @@ export function useProjectsView({
   const setOpinion = useSetOpinion();
   const setCommits = useSetCommits();
   const setHelpers = useSetHelpers();
+  const setHandOver = useSetHandOver();
   const setAccess = useSetAccess();
   const setHeavy = useSetHeavyGates();
   const setRead = useSetReadAcross();
@@ -166,6 +168,9 @@ export function useProjectsView({
   const commitsOf = (repository: string) => (Array.isArray(lines.data?.commits) ? lines.data.commits : [])
     .find((one) => one.repository === repository);
   const helpersOf = (repository: string) => (Array.isArray(lines.data?.helpers) ? lines.data.helpers : [])
+    .find((one) => one.repository === repository);
+  // And what an agent's ask to hand its session over does (MIXAGENT1c), with where it was set: the driver's resolution.
+  const handOverOf = (repository: string) => (Array.isArray(lines.data?.handOver) ? lines.data.handOver : [])
     .find((one) => one.repository === repository);
   // And the access setup its sessions start under (AUTONOMY1d), each pause with where it was set: the driver's resolution.
   const accessOf = (repository: string) => (Array.isArray(lines.data?.access) ? lines.data.access : [])
@@ -420,6 +425,14 @@ export function useProjectsView({
             onError: onDriverError,
           })
         : undefined,
+      // What an agent's ask to hand its session over does (MIXAGENT1c); a shell older than it answers none, and no row is offered.
+      handOver: Array.isArray(lines.data?.handOver) ? handOverOf(repository) ?? { repository, workspace } : undefined,
+      onHandOver: Array.isArray(lines.data?.handOver)
+        ? (edit: HandOverEdit) => setHandOver.mutate({ repository, ...edit }, {
+            onSuccess: () => notify(handOverToast(t, repository, edit)),
+            onError: onDriverError,
+          })
+        : undefined,
       standing: (driver.data.standing ?? []).find((row) => same(row.repository)) ?? null,
       onStanding: driver.data.standing === undefined
         ? undefined
@@ -478,7 +491,7 @@ export function useProjectsView({
       reach,
       onOpenPlugin,
       busy: setLine.isPending || setLanding.isPending || setReview.isPending || setOpinion.isPending || setLanguage.isPending
-        || setCommits.isPending || setHelpers.isPending || setAccess.isPending || setHeavy.isPending || setStanding.isPending
+        || setCommits.isPending || setHelpers.isPending || setHandOver.isPending || setAccess.isPending || setHeavy.isPending || setStanding.isPending
         || setRead.isPending || setWrite.isPending || ruleAction.isPending,
     };
   };

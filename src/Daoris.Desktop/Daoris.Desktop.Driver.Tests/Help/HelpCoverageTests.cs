@@ -255,6 +255,27 @@ public sealed partial class HelpCoverageTests
         + "does at all is the person's `helpers` rule, the `setting` kind's `helpers` door, so Ask Daoris proposes no single answer.");
 
     /// <summary>
+    /// MIXAGENT1c's *Hand over to …* and *Not now* (<c>useApproveHandOver</c>, <c>useDeclineHandOver</c>) and the terminal's
+    /// <c>daoris-driver sessions hand-over &lt;id&gt; --approve|--decline</c>: the person's yes or no to a session's agent's own ask to hand
+    /// it over that waits on them under the <c>handOver</c> rule's <c>ask</c> (D163 point 3). Exempt, as a helper's yes and no are.
+    /// </summary>
+    private static readonly Exempt HandOverAnswerDoor = new(
+        "a yes or a no to a session's agent's own ask to hand it over is the person's word on that one ask, which ends the session on "
+        + "its agent and goes on with another or does not (D163 point 3), given where it waits, at the foot of the session's page or "
+        + "at a terminal with `daoris-driver sessions hand-over <id> --approve|--decline`; what an agent's ask does at all is the "
+        + "person's `handOver` rule, so Ask Daoris proposes no single answer.");
+
+    /// <summary>
+    /// MIXAGENT1c's *Hand-over* row (<c>useSetHandOver</c>) on a repository's Setup and a workspace's Defaults: the person's rule for an
+    /// agent's ask to hand its session over. Exempt for now: the steward's settling of the row (D191) keeps it out of Ask Daoris's
+    /// <c>setting_propose</c> doors, and `daoris driver handover` is its terminal twin.
+    /// </summary>
+    private static readonly Exempt HandOverRuleDoor = new(
+        "the hand-over rule says whether an agent may end its session and go on with another agent on the person's accounts without "
+        + "their yes (D163 point 3); it is set on a repository's Setup or a workspace's Defaults, or with `daoris driver handover`, and "
+        + "is not yet one of Ask Daoris's `setting` doors, by the row that built it (MIXAGENT1c, D191's settling).");
+
+    /// <summary>
     /// TRACE1's <c>daoris-driver trace</c> (D143), a verb of the headless host: exempt, since it reads the records back to an ask
     /// and changes nothing, as <c>driver list</c> is (D110 §4). A screen's door to the same read is a row of its own.
     /// </summary>
@@ -576,6 +597,9 @@ public sealed partial class HelpCoverageTests
         ("work", "useAskHelper", null, HelperAskDoor),
         ("work", "useApproveHelper", null, HelperAnswerDoor),
         ("work", "useDeclineHelper", null, HelperAnswerDoor),
+        // MIXAGENT1c (D163 point 3): the person's yes and no to a session's agent's own ask to hand it over, at the foot of its page.
+        ("work", "useApproveHandOver", null, HandOverAnswerDoor),
+        ("work", "useDeclineHandOver", null, HandOverAnswerDoor),
         // AUTONOMY1b3c (D184 point 3): the person's answer to a tool call a session holds for them under asking, on the session's page
         // and What needs you.
         ("work", "useAnswerPermission", null, new Exempt(
@@ -763,6 +787,8 @@ public sealed partial class HelpCoverageTests
         // the twins of Ask Daoris's `commits` and `helpers` doors (DOORS1a).
         ("projects", "useSetCommits", null, new Door("setting", "commits")),
         ("projects", "useSetHelpers", null, new Door("setting", "helpers")),
+        // MIXAGENT1c: *Hand-over* on Sessions, on a repository's Setup and a workspace's Defaults; not one of Ask Daoris's doors yet.
+        ("projects", "useSetHandOver", null, HandOverRuleDoor),
         // AUTONOMY1d: *Sessions' access*, on a repository's Setup and a workspace's.
         ("projects", "useSetAccess", null, new Exempt(SessionAccess)),
         // HEAVYRUN1b2b: *Heavy gates*, on a repository's Setup.
@@ -1237,6 +1263,15 @@ public sealed partial class HelpCoverageTests
     /// HELPERTERM1: the headless host's <c>sessions helper --approve|--decline</c> is exempt from Ask Daoris while its usage spells
     /// it, as the page's *Let it ask* and *Not now* are: the person's word on one ask, which no kind of that name takes.
     /// </summary>
+    [Fact]
+    public void The_headless_hosts_hand_over_yes_and_no_are_exempt_as_the_persons_word_on_one_ask()
+    {
+        Assert.Contains("sessions hand-over <id> --approve|--decline", DriverCommand.Usage);
+        Assert.Contains("sessions hand-over <id> --approve|--decline", HandOverAnswerDoor.Reason);
+        Assert.Contains("D163", HandOverAnswerDoor.Reason);
+        Assert.Contains("daoris driver handover", HandOverRuleDoor.Reason);
+    }
+
     [Fact]
     public void The_headless_hosts_helper_yes_and_no_are_exempt_as_the_persons_word_on_one_ask()
     {
