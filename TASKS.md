@@ -40,6 +40,7 @@ holds the detail. The structural changes come first, so the features built after
 
 - **The owner's UI/UX findings with many sessions running** (2026-10-20): all built and merged by 2026-10-21 (QUESTLISTS1, SESSBADGE1, RAILLINE1, OVERVIEWNOISE1a-d, TITLEONE1, DONEEND1, STARTERSCOPE1); they reach the owner's window with the next republish, and are looked at there.
 - **BGWAIT3**: a session that ended its turn on its own background command was shown as waiting for the person (等你处理), and nothing woke it when the command ended (the owner's report, 2026-10-21). Found answering it: PIPEOWNER1, a terminal that is not elevated cannot press into a Daoris that is.
+- **CLEANUP1**: one cleanup strategy built into Daoris, each kind of thing it keeps given a retention rule the person can set and see on This Daoris (the owner's direction, 2026-10-21); design first.
 - **CODEXLOGIN1**: a ChatGPT workspace that refuses device codes cannot add its Codex account, since Daoris signs Codex in by the device code only; the browser sign-in, as ChatGPT's desktop app does it, is wanted beside it (the owner's report, 2026-10-21).
 
 - **SIGNIN1b**: an account's sign-in says where it is and how long (SIGNIN1, merged: its phases, a late panel reading the code back, the log's harness lines); proved with the owner signing in on the install after the republish (SIGNIN1b).
@@ -101,6 +102,14 @@ up, with good UI/UX"* and *"we also need to shape the Daoris folder into a bette
 now (data, app, res, …)"*. An install today is `Daoris.exe`, `app/`, `data/` and `update/`, and `data/` mixes the person's
 settings, records, sign-ins, downloaded runtimes (`toolchain` 1.4 GB, `chromium`, `webview2`, `bin`), plugins, session trees
 (1.7 GB), locks and logs at one level. Order: HOMELAYOUT1 decides the folders, WIRING1a designs the page; then each builds.
+
+- [ ] **CLEANUP1 — one cleanup strategy built into Daoris, set and seen on This Daoris** (design, then its build rows; the owner's direction, 2026-10-21; D88, D172). On 2026-10-21 the install's `trees/.tidied` held 36.7 GB in 1.8 million files, found only when a session freeing disk space went looking. Those are the folders the automatic tidy (AUTOTIDY1) moves aside and keeps a fixed fourteen days (`Trees/Branches/BranchTidying.cs:145`), nearly all of it git-ignored build output a rebuild makes again. Each kind of thing Daoris keeps cleans itself by its own rule, or by none (the tidy's set-aside trees, CACHECLEAR1's downloaded versions, logs, session records, salvage), and This Daoris shows sizes but not the rules. Wanted, as a design under D191 (Codex reads it):
+  - an inventory of everything Daoris writes, with its size, its owner, its retention rule and what may remove it: live trees and their ignored outputs, set-aside trees, downloaded versions, session records and transcripts, logs, salvage, browser profiles, the knowledge store and the usage history;
+  - retention set per kind in one place, a default with the person's override;
+  - cleanup triggered at the look's pace, below a free-space floor, and by a press;
+  - each kind's size, rule, next clean and last clean's result shown on This Daoris, with a terminal twin;
+  - whether the tidy drops a set-aside tree's regenerable outputs at once and keeps only what cannot be made again.
+  Proof: the design accepted and its build rows filed.
 
 - [ ] **HOMELAYOUT5 — moving what D172 never moves, measured first** (driver/desktop; after 3). Measure per harness whether a conversation resumes from a moved folder and an account home works moved (sign-in, plugins); then move trees, rooms, kept files and account homes where safe, `bin/` never. The install layout design §8. Proof: the measurements in D172's note; a migration test per entry moved.
 - [ ] **OWNSPACE1e — on the install, no new session in the person's home** (parent; after the stage carrying OWNSPACE1a). A new conversation's and a driven session's transcript land under Daoris's profiles, and none new in the person's own tool home. Proof: the folders before and after, counted.
