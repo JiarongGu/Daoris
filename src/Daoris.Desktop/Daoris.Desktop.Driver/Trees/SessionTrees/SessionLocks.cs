@@ -35,6 +35,25 @@ internal static class SessionLocks
         reason is { } said && said.StartsWith(Prefix, StringComparison.Ordinal) && said.Length > Prefix.Length ? said[Prefix.Length..] : null;
 
     /// <summary>
+    /// The session whose lock holds <paramref name="tree"/>, read from git's own file with no git run (FABRIC-PIPELINE1b, the pipeline
+    /// design §3.2's second layer): a linked tree's <c>locked</c> in its folder under the checkout's git folder, whose text is the reason
+    /// <c>git worktree lock --reason</c> wrote. Null where the tree is no linked tree, is not locked, or its lock names no session.
+    /// </summary>
+    internal static string? HolderOf(string tree)
+    {
+        if (!File.Exists(Path.Combine(tree, ".git")) || GitBranches.GitDirectory(tree) is not { } git) return null;
+        try
+        {
+            var locked = Path.Combine(git, "locked");
+            return File.Exists(locked) ? SessionOf(File.ReadAllText(locked).Trim()) : null;
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+        {
+            return null;
+        }
+    }
+
+    /// <summary>
     /// Lock <paramref name="tree"/> for <paramref name="session"/>: null where it is locked now, for it or by a lock of anyone else's;
     /// otherwise git's reason. A lock an earlier session's left is taken over.
     /// </summary>

@@ -188,6 +188,72 @@ public sealed class HeavyRunCommandTests : IDisposable
             Assert.Single(said.Lines));
     }
 
+    /// <summary>
+    /// FABRIC-PIPELINE1b (the pipeline design §3.2's second layer): run from a tree a session holds, whose run's checks are light, it is
+    /// refused at once, exit 1, saying the heavy gates are the verification's, and takes no slot. The session is read from git's own lock
+    /// on the tree, whose reason names it, never from a variable the session could leave out.
+    /// </summary>
+    [Fact]
+    public async Task From_a_tree_a_light_session_holds_it_is_refused_at_once_and_takes_no_slot()
+    {
+        _fixture.Gates(_fixture.Tree, ("lint", "npm run lint", null), ("build", "dotnet build", true));
+        Locked("daoris session s-1");
+        SessionChecks.Hold(_fixture.Home, "s-1", SessionChecks.Light);
+        var said = new SaidWriter();
+
+        var exit = await HeavyRun.RunAsync(new HeavyRunAsk(null), World(_fixture.Tree), said, CancellationToken.None).WaitAsync(Poll.Patience);
+
+        Assert.Equal(1, exit);
+        Assert.Equal(
+            "run-heavy: this tree is session `s-1`'s, and its development pipeline is light: the repository's heavy gates run in its "
+            + "verification after the work lands, never in a session's tree. Run the checks your change reaches, filtered, instead.",
+            Assert.Single(said.Lines));
+        using var free = HeavySlot.TryTake(_fixture.Home, HeavySlot.KeyOf(_fixture.Checkout)!);
+        Assert.NotNull(free);
+    }
+
+    /// <summary>
+    /// A person's run, from a checkout no session holds, runs as today; so does one from a tree a session holds whose checks are not
+    /// light, or kept nothing, and one held by a lock that names no session (a person's, an opening's).
+    /// </summary>
+    [Theory]
+    [InlineData(null, null)]
+    [InlineData("daoris session s-1", SessionChecks.HeavyAtEnd)]
+    [InlineData("daoris session s-1", null)]
+    [InlineData("on a portable disk", SessionChecks.Light)]
+    public async Task From_a_tree_no_light_session_holds_it_runs_as_today(string? reason, string? checks)
+    {
+        _fixture.Gates(_fixture.Tree, ("lint", "npm run lint", null), ("build", "dotnet build", true));
+        if (reason is not null) Locked(reason);
+        SessionChecks.Hold(_fixture.Home, "s-1", checks);
+        var said = new SaidWriter();
+
+        // A gate not marked heavy is refused by the gates' own rule: the run got past the session's checks to its choice of gates.
+        var exit = await HeavyRun.RunAsync(new HeavyRunAsk("lint"), World(_fixture.Tree), said, CancellationToken.None).WaitAsync(Poll.Patience);
+
+        Assert.Equal(1, exit);
+        Assert.StartsWith("run-heavy: `lint` is not marked heavy", Assert.Single(said.Lines));
+    }
+
+    /// <summary>The checkout itself is never a session's tree: git locks only a linked tree, so a run there is the person's.</summary>
+    [Fact]
+    public async Task From_the_checkout_itself_it_runs_as_today()
+    {
+        _fixture.Gates(_fixture.Checkout, ("lint", "npm run lint", null));
+        Locked("daoris session s-1");
+        SessionChecks.Hold(_fixture.Home, "s-1", SessionChecks.Light);
+        var said = new SaidWriter();
+
+        var exit = await HeavyRun.RunAsync(new HeavyRunAsk(null), World(_fixture.Checkout), said, CancellationToken.None).WaitAsync(Poll.Patience);
+
+        Assert.Equal(2, exit);
+        Assert.Contains("run-heavy: daoris.gates.json marks no gate", said.Text);
+    }
+
+    /// <summary>The tree's lock as <c>git worktree lock --reason</c> writes it: the reason and a line's end, in its folder under the checkout's.</summary>
+    private void Locked(string reason) =>
+        File.WriteAllText(Path.Combine(_fixture.Checkout, ".git", "worktrees", "engine-tree", "locked"), reason + "\n");
+
     /// <summary>The marker a run hands its gates names its slot and the gates running, outermost first, and reads back as written.</summary>
     [Fact]
     public void The_marker_names_the_slot_and_the_gates_running_and_reads_back()
