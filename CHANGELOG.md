@@ -5,6 +5,8 @@ with the version and date at release.
 
 ## Unreleased
 
+- Ask Daoris no longer suggests setting a line for a repository you imported but Daoris does not drive: its *no line*
+  starter, like the setup guide, counts only the repositories Daoris drives.
 - A session that goes on from another (a hand-over, a move onto another account, a carry-on, a fallback) can read what its
   brief left out: Daoris's connector gains `line_read`, which pages the earlier parts' words, messages, tool calls, plans and notes
   from this machine's records, a bounded page at a time, and the brief's note of what it left out names it. It changes nothing,
