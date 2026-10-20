@@ -695,7 +695,10 @@ describe('the Work frame', () => {
       </QueryClientProvider>,
     );
 
+    // Folded to its line (HEADFIT1), opened in place on the press.
     const worked = await screen.findByRole('region', { name: 'Who it worked with' });
+    expect(worked).toHaveTextContent('asked 1 of another repository');
+    await userEvent.click(within(worked).getByRole('button', { name: 'Show who it worked with' }));
     expect(within(worked).getByText('Answered: Done: it reads level.budget now.')).toBeInTheDocument();
     await userEvent.click(within(worked).getByRole('button', { name: 'Read the budget from the level file' }));
     expect(onOpenQuest).toHaveBeenCalledWith('def456');

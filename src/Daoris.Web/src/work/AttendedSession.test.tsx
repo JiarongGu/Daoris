@@ -73,6 +73,26 @@ describe('the attended session', () => {
     window.localStorage.removeItem('daoris.chainWhole');
   });
 
+  /**
+   * HEADFIT1: who it worked with is one line, opened in place, and another record starts folded (the relations are the session's
+   * own, unlike the parts', which belong to the line of work), as the milestone's fold does.
+   */
+  it('folds who it worked with to a line, and another record starts folded again', async () => {
+    const userEvent = (await import('@testing-library/user-event')).default;
+    vi.useRealTimers();
+    const relations = { askedBy: { id: 'z9y8x7w6', session: null }, resumedAfter: null, asked: [] };
+    const { rerender } = render(<AttendedSession session={session()} relations={relations} />);
+    expect(screen.getByRole('region', { name: 'Who it worked with' })).toHaveTextContent('asked by z9y8x7w6');
+    expect(screen.queryByText(/whose record this machine does not hold/)).toBeNull();
+
+    await userEvent.click(screen.getByRole('button', { name: 'Show who it worked with' }));
+    expect(screen.getByText(/session z9y8x7w6, whose record this machine does not hold/)).toBeInTheDocument();
+
+    rerender(<AttendedSession session={session({ id: 's9f8e7d6' })} relations={relations} />);
+    expect(screen.queryByText(/whose record this machine does not hold/)).toBeNull();
+    expect(screen.getByRole('button', { name: 'Show who it worked with' })).toBeInTheDocument();
+  });
+
   it('offers a designed nothing when the person has not chosen a session', () => {
     render(<AttendedSession session={null} />);
     expect(screen.getByText('Nothing attended')).toBeInTheDocument();

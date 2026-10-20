@@ -286,7 +286,8 @@ export function AttendedSession({
           </div>
         )
         : <ChainLine chain={chain} onQuest={onQuest} onExpand={() => showChain(true)} />)}
-      {relations && <SessionRelations relations={relations} onQuest={onQuest} onSession={onSession} />}
+      {/* Who it worked with, folded to a line and opened in place (HEADFIT1); keyed by the record so another one starts folded. */}
+      {relations && <SessionRelations key={session.id} relations={relations} onQuest={onQuest} onSession={onSession} />}
       {/* Its ask's channel kept to this line of work, folded to a line (SESSONE2c, D167 points 6 to 8). */}
       {channel && <ChannelPanel {...channel} />}
       {/* Where its work stands (FABRIC-MILESTONE1b): the end, the result, the clean-up and the recovery, read from the driver, folded
