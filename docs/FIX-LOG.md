@@ -5,6 +5,24 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-20 — The window's counts disagreed: the title kept an older count, the status bar counted the person's conversations (SESSBADGE1)
+
+- **Symptom:** on the install, two captures ten minutes apart: the title read (5) while Overview's badge, from the same value, read
+  4; the status bar read one more than the rail's working group, an Ask Daoris conversation idle between turns among its count.
+- **Root cause:** the page tells the frame each *What needs you* count over `SET_BADGE` and waits for no answer
+  (`useTaskbarCount`), and the window posts each to its own thread as the module hands it on (`MainForm.ShowWaiting`). Nothing held
+  two counts told close together in the order they were told, so a 5 then a 4 could be worn as 4 then 5, the title keeping the
+  older. Not proven on the window to be the case seen; no other path from one value to two readings was found. The status bar
+  counted every active record of the sessions list (`liveSessions`, `SESSION_ACTIVE`), a rule of its own beside the cap's
+  (CAPCOUNT1), and ASKRAIL1 took Ask Daoris out of the rail but not out of that count.
+- **Fix:** each `SET_BADGE` carries an `order` later than the one before (`nextBadgeOrder` in `bridge/windows.ts`, the clock's
+  milliseconds so a reloaded page tells later), and `WindowsModule` wears a count only under a lock and only where its order is
+  later than the one worn. The status bar reads the attention slice's `working` partition, the sessions the driver runs by
+  `ActiveSessions.HoldsSlot` judged in .NET, the count Sessions' badge shows (D76's SESSBADGE1 note).
+- **Verification:** `WindowsModuleTests` (a count told before the one worn is not worn; forty told at once from as many threads
+  end on the latest, each worn in order) and `windows.test.tsx` (each order later than the one before, within one millisecond),
+  both seen failing first; `sessionsBadge.test.tsx`'s status bar case.
+
 ## 2026-10-20 — The full set's driver Process half failed a race's control and a start's git ceiling (TREELOCK1, FLAKE1)
 
 - **Symptom:** the full set on 50634f5 failed two `Process` tests, each again when re-run alone: `ProbeRaceTests`' control (two
