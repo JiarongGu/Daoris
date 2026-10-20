@@ -39,8 +39,9 @@
  *   output, a cut read at the length it says (`… (N chars)`). A call whose events carry neither is counted, and its
  *   size is said unknown, never zero.
  * - The first edit is the first call of kind edit, delete or move whose first place lies in the session's tree and
- *   outside its `local/`. The tree is `<home>/trees/<workspace>/<repository>/<name>/`, known by the home, or by the
- *   name the driver mints when the home read is a copy; a place spelled relative is the tree's.
+ *   outside its `local/`. The tree is `<workspace>/<repository>/<name>/` under the home's `trees` entry (either of its
+ *   places), known by the home, or by the innermost name the driver mints when the home read is a copy; a place spelled
+ *   relative is the tree's.
  * - A read is whole when its input names neither an offset nor a limit. A whole read that returned 40 × 1024
  *   characters or more ("40K+") is one of a file the orientation index would outline (files over 40 KB).
  * - The index is `docs/index/`, and the folder of the path a tree's `daoris.json` declares under `documents.index`
@@ -65,7 +66,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { basename, join, posix, resolve } from 'node:path';
 import { isMain } from './fsx.mjs';
 // Every home place is asked of D172's table (HOMELAYOUT2b), never joined here.
-import { homeEntry } from '../src/Daoris.Cli/src/platform/home.ts';
+import { homeEntry, homePlaces } from '../src/Daoris.Cli/src/platform/home.ts';
 import { readLogs } from './usage-report.mjs';
 
 const EDITS = new Set(['Edit', 'MultiEdit', 'Write', 'NotebookEdit']);
@@ -85,8 +86,11 @@ const OUTLINED = 40 * 1024;
 /** How the record says it cut a field: `SessionEvents.Cut`, and the protocol door's `Compact`. */
 const CUT = /… \((\d+) chars\)$/;
 
-/** A session tree's place, by the name `SessionTrees.OpenAsync` mints: `s-` and eight hex digits. */
-const MINTED = /(?:^|\/)trees\/([^/]+)\/([^/]+)\/(s-[0-9a-f]{8})(?:\/(.*))?$/i;
+/**
+ * A session tree's place, by the name `SessionTrees.OpenAsync` mints: `s-` and eight hex digits. The innermost one, so a home
+ * that lies inside a session's own tree (a driven session's test) places its trees, not the session's.
+ */
+const MINTED = /^(?:.*\/)?trees\/([^/]+)\/([^/]+)\/(s-[0-9a-f]{8})(?:\/(.*))?$/i;
 const ABSOLUTE = /^(?:[A-Za-z]:\/|\/)/;
 
 /** What a session id may be (`SessionEvents.IsId`): a name, never a path. */
@@ -351,8 +355,9 @@ export function placeOf(path, home) {
   if (!ABSOLUTE.test(at)) return { tree: null, rel: at, inside: !(at === '..' || at.startsWith('../')) };
   const top = home ? topOf(home) : null;
   const lower = at.toLowerCase();
-  if (top) {
-    const trees = `${top.toLowerCase()}/trees/`;
+  // The home's trees, by both its places (D172): the new one under `work/`, the old one at its top.
+  for (const place of top ? homePlaces(top, 'trees') : []) {
+    const trees = `${slash(place).replace(/\/+$/, '').toLowerCase()}/`;
     const parts = lower.startsWith(trees) ? at.slice(trees.length).split('/') : [];
     if (parts.length >= 3 && parts.slice(0, 3).every((part) => part && part !== '.' && part !== '..')) {
       return { tree: parts.slice(0, 3), rel: parts.slice(3).join('/'), inside: true };
