@@ -140,7 +140,7 @@ internal static class TreesConsole
                     var records = plan.Sessions.Any(item => item.Kind == SweepKind.Unlanded && item.Tree is not null)
                         ? await SessionBranchDoors.RecordsOrNoneAsync(service).ConfigureAwait(false)
                         : [];
-                    var listing = TreesWords.CleanPlan(plan, records, ask);
+                    var listing = TreesPlanWords.CleanPlan(plan, records, ask);
                     listing.Print(Console.Out, Console.Error);
                     return listing.Code;
                 }
@@ -195,7 +195,7 @@ internal static class TreesConsole
                     // Its fetch first, then its plugin asks where git cannot tell (PLUGHOOK1c, design §2.1 occasion 3).
                     var plan = await asking.SyncPlanAsync(repositories, inUse, fetch: true, scope: scope).ConfigureAwait(false);
                     // What was not fetched, said once and first (WSR7), rather than at the end of every row.
-                    var listing = TreesWords.SyncPlan(plan, ask, DateTimeOffset.UtcNow);
+                    var listing = TreesPlanWords.SyncPlan(plan, ask, DateTimeOffset.UtcNow);
                     listing.Print(Console.Out, Console.Error);
                     return listing.Code;
                 }
@@ -256,7 +256,7 @@ internal static class TreesConsole
                     foreach (var entry in entries)
                     {
                         var (plan, held) = await accepts.PlanAsync(entry, rows, default).ConfigureAwait(false);
-                        foreach (var line in TreesWords.EntryPlanned(entry, plan, held)) Console.WriteLine(line);
+                        foreach (var line in TreesPlanWords.EntryPlanned(entry, plan, held)) Console.WriteLine(line);
                     }
 
                     return 0;
@@ -313,7 +313,7 @@ internal static class TreesConsole
                 {
                     if (args.Contains("--plan"))
                     {
-                        var landedPlan = TreesWords.LandedPlan(session, before, new AutoLandings(home).Of(session));
+                        var landedPlan = TreesPlanWords.LandedPlan(session, before, new AutoLandings(home).Of(session));
                         landedPlan.Print(Console.Out, Console.Error);
                         return landedPlan.Code;
                     }
@@ -353,7 +353,7 @@ internal static class TreesConsole
                     var plan = await landing.PlanAsync(tree, subject, process: gate.Process).ConfigureAwait(false);
                     // The plan's lines, which the route answers as `said` too: what the line holds of it, the gate, the review's reading of
                     // an earlier landing and where it is due (RPCOPEN1, §7.3).
-                    var planned = await TreesWords.LandPlanAsync(landing, home, session, tree, plan, gate, before, []).ConfigureAwait(false);
+                    var planned = await TreesPlanWords.LandPlanAsync(landing, home, session, tree, plan, gate, before, []).ConfigureAwait(false);
                     planned.Print(Console.Out, Console.Error);
                     return planned.Code;
                 }
@@ -428,7 +428,7 @@ internal static class TreesConsole
                 if (args.Contains("--plan"))
                 {
                     var plan = await handing.HandPlanAsync(root, entry, plugin).ConfigureAwait(false);
-                    var handPlan = TreesWords.HandPlan(plan, []);
+                    var handPlan = TreesPlanWords.HandPlan(plan, []);
                     handPlan.Print(Console.Out, Console.Error);
                     return handPlan.Code;
                 }

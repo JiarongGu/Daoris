@@ -106,6 +106,16 @@ repository.
   and `keeplock.test.ts`, over `driver-config-keeps.json`'s rows, `sets`, `names` and `lock`; the driver classes over every config
   and home-file writer (1,011 and 323 tests) and the CLI's config, home-file, plugin, permission and toolchain tests pass.
 
+## 2026-10-20 — The trees words were one class split across two hand-written files (RPCOPEN1)
+
+- **Symptom:** the full set's `cli` gate failed on c932f50: `partials: TreesWords is declared partial in 2 hand-written files`.
+- **Root cause:** RPCOPEN1 put the trees reads' words beside `TreesWords` as a second `partial` half (`TreesPlanWords.cs`); the
+  repository keeps `partial` for generated code, and the branch's checks did not run `tools/partials.mjs`.
+- **Fix:** the reads' words are their own class, `TreesPlanWords`, and its callers (the host's `TreesConsole`, the three routes, the
+  tests) name it; it calls `TreesWords.Describe` by name.
+- **Verify:** `tools/partials.mjs` clean; `TreesPlanWordsTests`, `TreesWordsTests`, `DriverCommandTests` 100 of 100;
+  `DriverModuleTreesReadsTests` and `DriverModuleTreesWordsTests` 25 of 25.
+
 ## 2026-10-20 — The decoder's guard flagged the runtime's read of a run's bound version (FABRICRUN1)
 
 - **Symptom:** `WorkflowGraphsTests.Nothing_outside_the_read_only_projection_reads_the_decoder` failed on main after FABRICRUN1:
