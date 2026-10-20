@@ -144,7 +144,7 @@ public sealed class PassLeftoversProcessTests : TreeSyncFixture
     private static async Task<int> EndedProcessAsync()
     {
         using var process = System.Diagnostics.Process.Start(
-            new System.Diagnostics.ProcessStartInfo("git", "--version") { UseShellExecute = false, RedirectStandardOutput = true, CreateNoWindow = true })!;
+            TestGit.Past(new System.Diagnostics.ProcessStartInfo("git", "--version") { UseShellExecute = false, RedirectStandardOutput = true, CreateNoWindow = true }))!;
         await process.StandardOutput.ReadToEndAsync();
         await process.WaitForExitAsync();
         return process.Id;

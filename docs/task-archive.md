@@ -18460,3 +18460,9 @@ in zh. The sessions page's held words (`WordsHold`) still carry the driver's sen
 > - [ ] **LANDHOLDSWEEP1 — the landing locks swept** (driver; D173's LANDRACE1/LANDPIN2 note, *Left*). `locks/landings/` keeps one small file per tree landed and per branch pushed, and nothing removes them. Proof: a sweep removes a file no door has held for longer than `LandingHolds.Wait`, and keeps one held or held recently.
 
 **Outcome** 2026-10-21: built. A hold stamps its file's time when taken and let go; `LandingHolds.Sweep` removes a file no door has held for longer than `Wait`, reading its time again under its own handle, and keeps one held or let go within the bound; a taken hold sweeps its home at most once per `Wait` in a process. Proof: three tests in `LandingHoldsTests`. Detail: D173's LANDHOLDSWEEP1 note.
+
+## GITSTART6 — the remaining tests' git past the launcher (2026-10-21, D121)
+
+> - [ ] **GITSTART6 — the remaining tests' git past the launcher** (driver, modules tests). `DriverModuleGitTests`, `DriverModuleWorkflowRunTests`, `TreeSyncReplayTests`' holder and two `--version` checks. Proof: those classes once each.
+
+**Outcome** 2026-10-21: `DriverModuleGitTests` and `DriverModuleWorkflowRunTests` start git through `TestGit.Past`, which the modules tests compile in by link from the driver tests; `TreeSyncReplayTests`' holder, the `--version` checks in `BranchTidyingFixture` and `PassLeftoversProcessTests`, and `SessionChecksStartTests`' git (found bare as well) go the same way. Proof: those classes, and the two that use `BranchTidyingFixture`'s ended process (`BranchTidyingFolderTests`, `TreeLinkRemovalTests`), ran once each and passed: driver 29, modules 31. The `git` in `LookWaitTests` and `RunningSessionsTests` is a name handed to a stand-in starter that starts nothing, so it was left as it is. On Opus: about 25 tool calls.

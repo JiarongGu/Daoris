@@ -93,7 +93,7 @@ public sealed class SessionChecksStartTests : IDisposable
     {
         var info = new ProcessStartInfo("git") { WorkingDirectory = folder, RedirectStandardOutput = true, RedirectStandardError = true };
         foreach (var arg in args) info.ArgumentList.Add(arg);
-        using var git = Process.Start(info)!;
+        using var git = Process.Start(TestGit.Past(info))!;
         git.WaitForExit();
         Assert.Equal(0, git.ExitCode);
     }
