@@ -11,6 +11,7 @@ import { useModeChoice } from '../help/access/HelpModePicker';
 import { fullAdds } from '../help/access/modes';
 import { AiJobs, type SearchTier } from './AiJobs';
 import { namer } from './accounts/namer';
+import type { StarterDoor } from '../help/starters';
 
 /**
  * Daoris's own AI (AGT6): the jobs it may use a model for, the tier answering each, and how to
@@ -22,16 +23,16 @@ import { namer } from './accounts/namer';
  * `driver.json`, so its half — and every query it needs — exists only with a shell (D47 §4): a
  * browser is given no intake at all, never a disabled one.
  */
-export function AiDomain({ attached, notify }: { attached: boolean; notify: Notify }) {
+export function AiDomain({ attached, notify, onGo }: { attached: boolean; notify: Notify; onGo?: (door: StarterDoor) => void }) {
   const status = useStatus();
   const search: SearchTier | undefined = status.data
     ? { tier: status.data.tier, note: status.data.note, semantic: status.data.semantic }
     : undefined;
 
-  return attached ? <MachineAi search={search} notify={notify} /> : <AiJobs search={search} />;
+  return attached ? <MachineAi search={search} notify={notify} onGo={onGo} /> : <AiJobs search={search} />;
 }
 
-function MachineAi({ search, notify }: { search?: SearchTier; notify: Notify }) {
+function MachineAi({ search, notify, onGo }: { search?: SearchTier; notify: Notify; onGo?: (door: StarterDoor) => void }) {
   const { t } = useTranslation();
   const driver = useDriver();
   const roster = useHarnesses();
@@ -54,8 +55,9 @@ function MachineAi({ search, notify }: { search?: SearchTier; notify: Notify }) 
 
   const harnesses = Array.isArray(roster.data?.harnesses) ? roster.data.harnesses : [];
   // Restricted mode's configured access (HELPMODE1c2b): the grants the driver serves, as it holds them, each press one operation
-  // over SET_HELP_GRANT; one it does not act on is never sent. The browser, the checkouts and the settings are drawn as the mock
-  // draws them until their grants are built, so a press there says so and sends nothing.
+  // over SET_HELP_GRANT; one it does not act on is never sent. Housekeeping and the chosen settings (HELPMODE1c3) are chosen here;
+  // the checkouts are drawn as the mock draws them until their grant is built, so a press there says so and sends nothing; and the
+  // browser's is its plugin's approval, drawn read only, its door that plugin's tab (the modes design §4.1's decided note).
   const served = Array.isArray(driver.data?.helpGrants) ? driver.data.helpGrants : null;
   const helperDoor = harnesses.find((door) => door.harness === driver.data?.helperAdapter);
   const built: Partial<Record<HelpGrantId, readonly string[]>> = Object.fromEntries(
@@ -133,13 +135,17 @@ function MachineAi({ search, notify }: { search?: SearchTier; notify: Notify }) 
             name: helperDoor ? doorLabel(t, helperDoor) : driver.data?.helperAdapter ?? '',
             rules: helperDoor ? helperDoor.takesRules === true : true,
           },
-          // Pending while a conversation running here was handed another choice, which its next turn takes (ACCESSSWAP1).
+          // Pending while a conversation running here was handed another choice, which its next turn takes (ACCESSSWAP1); the
+          // browser's changed since approval, and the plugin whose tab holds it.
           grants: served.map((grant): HelpGrantChoice => ({
-            id: grant.id as HelpGrantId, chosen: grant.chosen, pending: grant.pending === true,
+            id: grant.id as HelpGrantId, chosen: grant.chosen, pending: grant.pending === true, changed: grant.changed === true,
+            plugin: grant.plugin ?? null,
           })),
           built,
           busy: setHelpGrant.isPending,
           onChoose: chooseGrant,
+          // The plugin's own tab, or Plugins where no plugin here offers it.
+          onManage: onGo ? (_grant, plugin) => onGo(plugin ? { view: 'plugins', item: plugin } : { view: 'plugins' }) : undefined,
         }
         : undefined}
     />

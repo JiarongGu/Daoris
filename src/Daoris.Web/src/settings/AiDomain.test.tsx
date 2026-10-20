@@ -247,27 +247,43 @@ describe('Ask Daoris’s access on Settings', () => {
 /**
  * HELPMODE1c2b (D183's note; the modes design §4.1): restricted mode's configured access under Ask Daoris's access, its
  * housekeeping row live: what the driver's state says is chosen, each operation pressed over `SET_HELP_GRANT` one at a time, and
- * one the driver does not act on yet never sent. The browser, checkouts and settings rows are drawn as the mock draws them.
+ * one the driver does not act on yet never sent. HELPMODE1c3: the chosen settings live the same way, and the browser's row read
+ * only from its plugin's approval, its door leading to the plugin's tab. The checkouts are drawn as the mock draws them.
  */
 describe('Ask Daoris’s configured access on Settings', () => {
   let chosen: string[] = [];
+  let settings: string[] = [];
   let grants = true;
   let pending = false;
   beforeEach(() => {
     chosen = [];
+    settings = [];
     grants = true;
     pending = false;
     vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => respond(String(input))));
-    invoke.mockImplementation(async (module: string, type: string, request?: { payload?: { operation?: string; chosen?: boolean } }) => {
+    invoke.mockImplementation(async (module: string, type: string, request?: {
+      payload?: { grant?: string; operation?: string; chosen?: boolean };
+    }) => {
       if (module !== 'DAORIS.DRIVER') return WIRING;
       if (type === 'SET_HELP_GRANT') {
         const operation = request?.payload?.operation ?? '';
-        chosen = request?.payload?.chosen ? [...chosen, operation] : chosen.filter((each) => each !== operation);
+        const was = request?.payload?.grant === 'settings' ? settings : chosen;
+        const now = request?.payload?.chosen ? [...was, operation] : was.filter((each) => each !== operation);
+        if (request?.payload?.grant === 'settings') settings = now;
+        else chosen = now;
       }
       if (type === 'STATE' || type === 'SET_HELP_GRANT') {
         return {
           ...DRIVER_STATE, helperAdapter: 'claude-code-acp', intakeAdapter: '', helpMode: 'restricted',
-          ...(grants ? { helpGrants: [{ id: 'housekeeping', chosen, built: ['inspect', 'clean-up', 'discard-branch'], pending }] } : {}),
+          ...(grants
+            ? {
+              helpGrants: [
+                { id: 'housekeeping', chosen, built: ['inspect', 'clean-up', 'discard-branch'], pending },
+                { id: 'settings', chosen: settings, built: ['notify', 'language', 'timeout', 'cap', 'cooloff'], pending: false },
+                { id: 'browser', chosen: ['reads', 'browser_click'], pending: false, changed: false, plugin: 'in-app-browser' },
+              ],
+            }
+            : {}),
         };
       }
       if (type === 'HARNESSES') return { harnesses: [] };
@@ -325,11 +341,47 @@ describe('Ask Daoris’s configured access on Settings', () => {
 
     await open('housekeeping', 'operations');
     expect(box('housekeeping', 'drop-recovery')).toBeDisabled();
-    await open('settings', 'settings');
-    await userEvent.click(box('settings', 'notify'));
+    await open('checkouts', 'manage');
+    await userEvent.click(box('checkouts', 'read'));
 
     expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'SET_HELP_GRANT', expect.anything());
     expect(notify).toHaveBeenCalledWith(i18n.t('settings.ai.grants.notYet'));
+  });
+
+  // HELPMODE1c3: the chosen settings, the five ordinary ones, each granted one at a time as housekeeping's operations are.
+  it.each(['en', 'zh'])('draws the chosen settings as the driver holds them, and a press grants one setting, in %s', async (language) => {
+    await i18n.changeLanguage(language);
+    const notify = vi.fn();
+    show(<SettingsView notify={notify} section="ai" />);
+
+    await open('settings', 'settings');
+    expect(within(row('settings')).getByText(i18n.t('help.grants.state.off'))).toBeInTheDocument();
+    await userEvent.click(box('settings', 'cooloff'));
+
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SET_HELP_GRANT', {
+      payload: { grant: 'settings', operation: 'cooloff', chosen: true },
+    });
+    await waitFor(() => expect(box('settings', 'cooloff')).toBeChecked());
+    expect(within(row('settings')).getByText(i18n.t('help.grants.state.on'))).toBeInTheDocument();
+    await waitFor(() => expect(notify).toHaveBeenCalledWith(
+      i18n.t('settings.ai.grants.granted', { operation: i18n.t('help.grants.op.settings.cooloff') })));
+  });
+
+  // HELPMODE1c3 (the modes design §4.1's decided note): the browser's row is its plugin's approval, read only, and its door the
+  // plugin's own tab, the one place it is changed; nothing is chosen for it here.
+  it('draws the browser from its plugin’s approval, and its door opens the plugin’s tab', async () => {
+    const onGo = vi.fn();
+    show(<SettingsView notify={() => {}} section="ai" onGo={onGo} />);
+
+    const browser = await screen.findByRole('listitem', { name: i18n.t('help.grants.name.browser') });
+    expect(within(browser).getByText(i18n.t('help.grants.state.on'))).toBeInTheDocument();
+    expect(within(browser).queryAllByRole('checkbox')).toEqual([]);
+    await userEvent.click(within(browser).getByRole('button', {
+      name: i18n.t('help.grants.doorFor', { door: i18n.t('help.grants.door.manage'), grant: i18n.t('help.grants.name.browser') }),
+    }));
+
+    expect(onGo).toHaveBeenCalledWith({ view: 'plugins', item: 'in-app-browser' });
+    expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'SET_HELP_GRANT', expect.anything());
   });
 
   // ACCESSSWAP1 (D183 point 2): the driver says the grant is pending while a conversation running started with another choice; its

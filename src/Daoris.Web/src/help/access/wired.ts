@@ -88,6 +88,11 @@ export type HelpGrantChoice = {
   /** The browser's server changed since it was approved: Ask Daoris is handed nothing of it until it is approved again. */
   changed?: boolean;
   pending?: boolean;
+  /**
+   * For a grant set on a plugin's own tab, the browser's (HELPMODE1c3, the modes design §4.1's decided note): the plugin whose
+   * approval it is, which its door opens; none where no plugin here offers it.
+   */
+  plugin?: string | null;
 };
 
 /** What the chip reads of a plugin to say what full access would add: whether it runs, and the servers it offers Ask Daoris. */
