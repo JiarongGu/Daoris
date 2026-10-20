@@ -3,9 +3,7 @@
 **Standing:** proposed under D194 (PUSH1f2), for the reads D191 asks. Revised the same day by Codex's read: every finding was checked
 against the code and is taken or answered in §8, where the reads are kept. Nothing here is built; its rows (§5) build it. Nothing in it
 waits for the owner (D191 point 3): it publishes nothing, spends no account and loses no data. Whether it changes a foundation is said
-in §8: after this round it does, narrowly. The long verbs' lifecycle under the lease (§1.4) is concurrency, and the CLI's hand-off to
-the host (§1.1) a protocol between processes; the pipe, the lease's rules and every record's shape are unchanged. Whether Fable reads
-it is the steward's to decide.
+in §8: after this round it does, narrowly, and whether Fable reads it is the steward's to decide.
 
 Read for it: D182 points 6 and its PUSH1a note's *Left* (lines 35-40, 98-104), its PUSH1e note's *Left* (497-502); D171's PUSH1f
 note (392-428); D50 (1-24); D156 points 1-4 and 7, its rejected *positive identity for agents* and its D50 relation (lines 10-48, 70,
