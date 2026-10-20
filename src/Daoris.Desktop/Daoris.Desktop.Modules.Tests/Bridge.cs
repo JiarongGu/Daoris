@@ -161,7 +161,24 @@ public abstract class Bridge : IDisposable
             // Git's object files are read-only on Windows, and a test may make a tree under the home (GIT1d-a).
             foreach (var file in Directory.EnumerateFiles(Home, "*", SearchOption.AllDirectories))
                 File.SetAttributes(file, File.GetAttributes(file) & ~FileAttributes.ReadOnly);
-            Directory.Delete(Home, recursive: true);
+            // A module's machine log can still hold its day's file for a moment after the test (the full set on 824886d met
+            // `2026-10-20.jsonl` held at the delete): asked again a few times, and a scratch folder left behind never fails a test.
+            for (var attempt = 1; ; attempt++)
+            {
+                try
+                {
+                    Directory.Delete(Home, recursive: true);
+                    break;
+                }
+                catch (IOException) when (attempt < 10)
+                {
+                    Thread.Sleep(200);
+                }
+                catch (IOException)
+                {
+                    break;
+                }
+            }
         }
         GC.SuppressFinalize(this);
     }

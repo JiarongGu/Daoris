@@ -345,6 +345,11 @@ test('a path is placed in its session\'s tree by the home, or by the tree\'s min
   assert.deepEqual(tool.placeOf('D:/Daoris/data/sessions/s-1.log', home), { tree: null, rel: '<home>/sessions/s-1.log', inside: false });
   assert.deepEqual(tool.placeOf('D:/scratchpad/plan.md', home), { tree: null, rel: 'D:/scratchpad/plan.md', inside: false });
   assert.equal(tool.placeOf('D:/repo/trees/a/b/c/x.ts', home)?.inside, false, 'a folder named trees elsewhere is no session tree');
+  // A home's new place for its trees (D172), and a home that lies in a session's own tree, as a driven session's test's (ORIENTTREE1).
+  assert.deepEqual(tool.placeOf('D:/Daoris/data/work/trees/main/engine/s-1a2b3c4d/src/a.ts', home)?.tree, ['main', 'engine', 's-1a2b3c4d']);
+  const nested = 'D:/h/trees/games/Daoris/s-349e65e2/_fixtures/home';
+  assert.deepEqual(tool.placeOf(`${nested}/work/trees/main/engine/s-1a2b3c4d/src/a.ts`, nested), { tree: ['main', 'engine', 's-1a2b3c4d'], rel: 'src/a.ts', inside: true });
+  assert.deepEqual(tool.placeOf(`${nested}/work/trees/main/engine/s-1a2b3c4d/src/a.ts`, 'E:/copy')?.tree, ['main', 'engine', 's-1a2b3c4d']);
 });
 
 test('what a driven session spent before its first edit, read from either door\'s events', () => {

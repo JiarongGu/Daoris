@@ -4,6 +4,7 @@ import i18n from '../locales/i18n';
 import { buildChain } from '../map/chain';
 import { InTheme } from '../plugins/storyIcons';
 import { chinese } from '../design/storyLanguage';
+import { sessionWidths } from '../design/storyWidths';
 import { AttendedSession } from './AttendedSession';
 import { sessionFacts } from './head/headFacts';
 import { questName } from './identity';
@@ -48,7 +49,8 @@ const meta: Meta<typeof AttendedSession> = {
   title: 'Work/AttendedSession',
   component: AttendedSession,
   args: { session: SESSION, quest: QUEST },
-  decorators: [(Story) => <div className="max-w-3xl p-4"><Story /></div>],
+  // A session's page at the frame's widths (the UI/UX design R6, STORYGAP1): wide by default, a story's own width instead.
+  decorators: [sessionWidths.wide],
 };
 export default meta;
 
@@ -107,7 +109,7 @@ const FAILED_BEFORE = [1, 2, 3].map((n): Session => ({
 function SessionPage({ quest }: { quest: Quest }) {
   const title = questName(quest);
   return (
-    <div className="flex h-[47.5rem] w-[50rem] max-w-full flex-col border border-line bg-page">
+    <div className="flex h-[47.5rem] flex-col border border-line bg-page">
       <ViewMain
         gutters="session"
         header={(
@@ -143,6 +145,12 @@ export const PageWithAShortTitle: Story = {
 export const PageWithNoShortTitle: Story = {
   render: () => <SessionPage quest={REFILED_QUEST} />,
 };
+
+/** No short title, at a 680 px window. */
+export const PageWithNoShortTitleHalf: Story = { ...PageWithNoShortTitle, decorators: [sessionWidths.half] };
+
+/** No short title, at the main area's 400 px floor: the head's acts take their row under the facts. */
+export const PageWithNoShortTitleNarrow: Story = { ...PageWithNoShortTitle, decorators: [sessionWidths.narrow] };
 
 /** Finished, reviewable: the lifetime, the quest's close, and what came out of it. */
 export const Finished: Story = {
@@ -182,3 +190,9 @@ export const HowItCameToBeDark: Story = { ...HowItCameToBeOpen, decorators: [dar
 
 /** Open, in 中文 and dark. */
 export const HowItCameToBeChineseDark: Story = { ...HowItCameToBeOpen, decorators: [chinese, dark] };
+
+/** Open, at a 680 px window. */
+export const HowItCameToBeHalf: Story = { ...HowItCameToBeOpen, decorators: [sessionWidths.half] };
+
+/** Open, at the main area's 400 px floor, in 中文. */
+export const HowItCameToBeNarrowChinese: Story = { ...HowItCameToBeOpen, decorators: [sessionWidths.narrow, chinese] };

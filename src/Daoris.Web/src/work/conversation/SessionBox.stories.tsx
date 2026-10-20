@@ -1,21 +1,24 @@
-import type { Meta, StoryObj } from '@storybook/react-vite';
+import type { Decorator, Meta, StoryObj } from '@storybook/react-vite';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import type { Session } from '../../data/api';
+import { InTheme } from '../../plugins/storyIcons';
 import { chinese } from '../../design/storyLanguage';
+import { sessionWidths } from '../../design/storyWidths';
 import { NATIVE_WORDS_LIMIT } from '../say';
 import { SessionBox } from './SessionBox';
 
 // Every state of the box at the foot of a session's page (MSG1f, D137 §5.1): the running door at its next step and at its
 // turn's end, the park's answer, a session that ended going on, words held while one winds up, the native door's bound,
-// and the line for each code nothing takes words for — the states a real session rarely shows at will.
+// and the line for each code nothing takes words for — the states a real session rarely shows at will. Drawn at the
+// frame's widths (the UI/UX design R6, STORYGAP1): half by default, then wide, narrow and dark.
+
+const dark: Decorator = (Story) => <InTheme theme="dark"><Story /></InTheme>;
 
 const meta: Meta<typeof SessionBox> = {
   title: 'Work/SessionBox',
   component: SessionBox,
   args: { onSend: () => {}, quest: 'q8f2e1' },
-  decorators: [(Story) => (
-    <Tooltip.Provider><div className="max-w-2xl border border-line"><Story /></div></Tooltip.Provider>
-  )],
+  decorators: [(Story) => <Tooltip.Provider><Story /></Tooltip.Provider>, sessionWidths.half],
 };
 export default meta;
 
@@ -147,3 +150,15 @@ export const LineNotFound: Story = { args: { box: { kind: 'line', why: 'not-foun
 
 /** A code a newer host answers that this page has no sentence for: named, never left unsaid. */
 export const LineUnknownCode: Story = { args: { box: { kind: 'line', why: 'no-words' } } };
+
+/** Words waiting on an ended session, across a maximized window's main area. */
+export const EndedWithWordsWaitingWide: Story = { args: EndedWithWordsWaiting.args, decorators: [sessionWidths.wide] };
+
+/** The same at the main area's 400 px floor. */
+export const EndedWithWordsWaitingNarrow: Story = { args: EndedWithWordsWaiting.args, decorators: [sessionWidths.narrow] };
+
+/** Its turn running with a held word, in 中文 at the floor. */
+export const RunningTurnEndChineseNarrow: Story = { args: RunningTurnEndChinese.args, decorators: [sessionWidths.narrow, chinese] };
+
+/** Its turn running with a held word, in dark. */
+export const RunningTurnEndDark: Story = { args: RunningTurnEnd.args, decorators: [dark] };
