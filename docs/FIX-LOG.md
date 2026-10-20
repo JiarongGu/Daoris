@@ -5,6 +5,19 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-20 — The family rehearsal read an abandon's record at the home's old place (HOMEFIX2)
+
+- **Symptom:** the full set on 2159d5887 (HOMEFIX1's merge) failed one check of the family rehearsal's phase 16a: "`abandoned.json`
+  keeps the reason, what went with each branch's tip, …" read an empty record; every other check of the phase passed, the abandon
+  among them.
+- **Root cause:** the check joined `abandoned.json` to the scratch home by hand. Since the home's table switched its new places on
+  (8a3359b20), the driver writes the record at the table's `abandoned` entry, `data/abandoned.json`, so the old place held nothing.
+  HOMEFIX1's sweep of the rehearsals read the places the run had failed on, and this one sits after the first failure it fixed.
+- **Fix:** the check reads `homeEntry(scratch, 'abandoned')`, as the rehearsal's other home reads do. A scan of every rehearsal for a
+  hand-joined name of the table's old places found no other: the remaining joins name files the rehearsal passes to the product
+  itself (its configs, the knowledge database, a tree).
+- **Verification:** the full set on main's tip, its family rehearsal included.
+
 ## 2026-10-20 — A session ending at its `ready` parked and never landed; a done already landed waited on an opinion with nothing to land (CLOSELAND1)
 
 - **Symptom:** each shown red first. Through a real tick, a bound quest's session that took its quest, committed and said `ready` ended
