@@ -5,6 +5,16 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-20 — A new Process test joined the driver's config path by hand (ACCESSSWAP1b)
+
+- **Symptom:** a session the owner's install drove (HEAVYRUN1a3, DOGFOOD1) found `npm run verify` failing on main at d0e51b54b: the
+  home census, "no code joins a home path by hand", named `AccessSwapTickTests.cs:47  Path.Combine(_home, "driver.json")`.
+- **Root cause:** ACCESSSWAP1b's new Process class built its config path by hand; its branch ran its own classes and the quick
+  checks, not the CLI's census, which reads every C# source for a home place joined by hand. Its siblings ask the table.
+- **Fix:** `DaorisHome.Entry(_home, HomeEntry.DriverConfig)`, as `ChatGoesOnProcessTests` does (96a85f758).
+- **Verification:** `home-census.test.ts` 3 passed; `AccessSwapTickTests` (Process) 2 passed. The two `orient-report` tests the
+  session also saw fail pass on main (13); its tree's environment carried the driven session's variables (ENVLEAK1).
+
 ## 2026-10-20 — A sign-in panel mounted after Codex printed its code never showed the code (SIGNIN1)
 
 - **Symptom:** found with a faithful stand-in, not yet on the window: a Codex sign-in, whose tool prints its link and its device
