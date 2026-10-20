@@ -7,7 +7,7 @@ import type { AddressInfo } from 'node:net';
 import { dirname, join } from 'node:path';
 import { createInterface } from 'node:readline';
 import { fileURLToPath } from 'node:url';
-import { makeFixture } from '../test/_fixture.ts';
+import { makeFixture, unroled } from '../test/_fixture.ts';
 
 /**
  * The family rehearsal's set-up phase, held where it can be without a host or a driver (LAYOUT7a): the reading
@@ -540,7 +540,7 @@ const askingBody = (prints: string) => [
 ].join('\n');
 
 const setUpEnvironment = (door: { url: string }, bin: string, body: string): Env => ({
-  ...process.env,
+  ...unroled(),
   ...withFirstOnPath(bin),
   DAORIS_SERVICE_URL: door.url,
   DAORIS_QUEST_ID: '0123456789ab',
@@ -623,7 +623,7 @@ test('the stub\'s ordinary quest turn ends with exit 0 once its input closes, af
       const tree = unadoptedRepository(join(fx.root, `atlas-${turn}`));
       const { answer, stderr, code } = await driveTurn({
         cwd: tree,
-        env: { ...process.env, DAORIS_SERVICE_URL: door.url, DAORIS_QUEST_ID: `quest-${turn}`, DAORIS_QUEST_TITLE: 'Answer the map tiles' },
+        env: { ...unroled(), DAORIS_SERVICE_URL: door.url, DAORIS_QUEST_ID: `quest-${turn}`, DAORIS_QUEST_TITLE: 'Answer the map tiles' },
       });
       assert.equal(answer.result?.stopReason, 'end_turn', `turn ${turn}: ${JSON.stringify(answer)}`);
       assert.match(git(tree, 'log', '-1', '--format=%s'), new RegExp(`^acp: answer quest quest-${turn}`), `turn ${turn}`);
@@ -709,7 +709,7 @@ test('the stub resumes the conversation it is asked to, and the person\'s answer
   const born = git(tree, 'rev-parse', 'HEAD').trim();
   const door = await questDoor();
   const env: Env = {
-    ...process.env,
+    ...unroled(),
     DAORIS_SERVICE_URL: door.url,
     DAORIS_QUEST_ID: 'quest-port',
     DAORIS_QUEST_TITLE: 'Ask the person first: which port should the report listen on?',
@@ -773,7 +773,7 @@ test('the stub resumed on a quest that asks nothing says what it heard, takes no
   try {
     const heard = await speak({
       cwd: tree,
-      env: { ...process.env, DAORIS_SERVICE_URL: door.url, DAORIS_QUEST_ID: 'quest-tiles', DAORIS_QUEST_TITLE: 'Answer the map tiles' },
+      env: { ...unroled(), DAORIS_SERVICE_URL: door.url, DAORIS_QUEST_ID: 'quest-tiles', DAORIS_QUEST_TITLE: 'Answer the map tiles' },
       frames: [
         { id: 1, method: 'initialize', params: { protocolVersion: 1 } },
         { id: 2, method: 'session/resume', params: { sessionId: 'acp-session-1', cwd: tree, mcpServers: [] } },
@@ -835,7 +835,7 @@ test('a stub that exits without answering fails its row in seconds, naming the a
     // Its start is the machine's load, not what this row tests: beside five workers the CI on b0a786d took past the
     // 10 s start bound to start it (FLAKE1). The exit's own message, never a bound's, shows it failed as the stub exited.
     await assert.rejects(
-      speak({ cwd: tree, env: { ...process.env }, frames: RESUME_FRAMES, agent: cutShort('exits'), start: 60_000 }),
+      speak({ cwd: tree, env: unroled(), frames: RESUME_FRAMES, agent: cutShort('exits'), start: 60_000 }),
       /^Error: the stub exited with code 3 and never answered 2 \(session\/new\), 3 \(session\/prompt\)/,
     );
   } finally {
@@ -850,7 +850,7 @@ test('a stub that stays without answering fails its row at the bound, and is sto
   mkdirSync(tree, { recursive: true });
   try {
     await assert.rejects(
-      speak({ cwd: tree, env: { ...process.env }, frames: RESUME_FRAMES, agent: cutShort('stays'), wait: 1_000 }),
+      speak({ cwd: tree, env: unroled(), frames: RESUME_FRAMES, agent: cutShort('stays'), wait: 1_000 }),
       /^Error: the stub never answered 2 \(session\/new\), 3 \(session\/prompt\) within 1000 ms of its first answer/,
     );
     // Stopped: a stub left running holds this file's process open past its last row, which the run would show as a hang.
@@ -871,7 +871,7 @@ test('a stub slow to start is not counted against the bound, which runs from its
   mkdirSync(tree, { recursive: true });
   try {
     await assert.rejects(
-      speak({ cwd: tree, env: { ...process.env }, frames: RESUME_FRAMES, agent: cutShort('stays', { startsAfter: 1_500 }), wait: 1_000 }),
+      speak({ cwd: tree, env: unroled(), frames: RESUME_FRAMES, agent: cutShort('stays', { startsAfter: 1_500 }), wait: 1_000 }),
       /^Error: the stub never answered 2 \(session\/new\), 3 \(session\/prompt\) within 1000 ms of its first answer/,
     );
   } finally {
@@ -886,7 +886,7 @@ test('a stub that answers nothing fails its row at the bound on its start, namin
   mkdirSync(tree, { recursive: true });
   try {
     await assert.rejects(
-      speak({ cwd: tree, env: { ...process.env }, frames: RESUME_FRAMES, agent: cutShort('stays', { startsAfter: 60_000 }), start: 1_000 }),
+      speak({ cwd: tree, env: unroled(), frames: RESUME_FRAMES, agent: cutShort('stays', { startsAfter: 60_000 }), start: 1_000 }),
       /^Error: the stub never answered 1 \(initialize\), 2 \(session\/new\), 3 \(session\/prompt\) within 1000 ms of its start/,
     );
   } finally {
@@ -929,7 +929,7 @@ test('a turn still at work past the bound is not counted as silent, which runs f
   mkdirSync(tree, { recursive: true });
   try {
     const { answer, updates, code } = await driveTurn({
-      cwd: tree, env: { ...process.env }, agent: atWork({ times: 6, every: 400, answers: true }), wait: 1_000,
+      cwd: tree, env: unroled(), agent: atWork({ times: 6, every: 400, answers: true }), wait: 1_000,
     });
 
     assert.equal(answer.result?.stopReason, 'end_turn');
@@ -947,7 +947,7 @@ test('a turn that falls silent fails at the bound from its last output, and is s
   mkdirSync(tree, { recursive: true });
   try {
     await assert.rejects(
-      driveTurn({ cwd: tree, env: { ...process.env }, agent: atWork({ times: 2, every: 200, answers: false }), wait: 1_000 }),
+      driveTurn({ cwd: tree, env: unroled(), agent: atWork({ times: 2, every: 200, answers: false }), wait: 1_000 }),
       /^Error: the stub never answered 3 \(session\/prompt\) within 1000 ms of its last output/,
     );
   } finally {

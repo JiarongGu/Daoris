@@ -8,7 +8,7 @@ import { fileURLToPath } from 'node:url';
 import vm from 'node:vm';
 import { readText } from '../src/platform/fsx.ts';
 import { driverFile } from './_csharp.ts';
-import { makeFixture } from './_fixture.ts';
+import { makeFixture, unroled } from './_fixture.ts';
 import {
   CLOSED_NOTE, SWEPT_NOTE, bridgeCall, cliProblems, concludedByTheClose, firstUnder, gitBashBeside, hookLines, insideWorkspace,
   invokeInPage, isInstallsConnector, isMarkedProcess, launchers, loggedData, markedProcess, offerProblems, offeredConnector, stageLiveBuild,
@@ -523,9 +523,8 @@ test('the protocol stub both rehearsals run holds a conversation open until its 
   const fx = makeFixture('deployment-rehearsal-acp-stub');
   const agent = join(fx.root, 'acp-agent.mjs');
   writeFileSync(agent, ACP_STUB_AGENT);
-  const env = { ...process.env };
-  // A conversation serves no quest; the stub's chat branch is the one without one.
-  delete env.DAORIS_QUEST_ID;
+  // A conversation serves no quest; the stub's chat branch is the one without one, and without a brainstorm's turn.
+  const env = unroled();
   const child = spawn(process.execPath, [agent], { cwd: fx.root, env, stdio: ['pipe', 'pipe', 'pipe'] });
   const exited = new Promise<number | null>((resolve) => child.on('exit', (code) => resolve(code)));
 
@@ -568,8 +567,7 @@ test('the protocol stub says the command of each server it was offered, which is
   const fx = makeFixture('deployment-rehearsal-acp-servers');
   const agent = join(fx.root, 'acp-agent.mjs');
   writeFileSync(agent, ACP_STUB_AGENT);
-  const env = { ...process.env };
-  delete env.DAORIS_QUEST_ID;
+  const env = unroled();
   const child = spawn(process.execPath, [agent], { cwd: fx.root, env, stdio: ['pipe', 'pipe', 'pipe'] });
   let said = '';
   child.stderr.on('data', (chunk) => { said += chunk; });
