@@ -18285,3 +18285,17 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **TITLEONE1 — one piece of work, one name** (service, web-shell; found auditing the owner's report, 2026-10-20). The rail names a session by its ask's short title (`SessionList.tsx:143`) while its head, Quests and the Overview name it by the quest's title cut from the ask's words with an ellipsis (`WorkFrame.tsx:1690`, `sessionTitle`), because an ask's quest takes only the intake's short title (`Asks.cs:1263`, `Short = draft?.Short`); all 20 of the install's ask and quest pairs differ. Wanted: an ask's quest inherits the ask's short title where the intake gives none, and the head names the entry as its row does. Proof: a service publish test; a WorkFrame test of the head equal to the row.
 
 **Outcome** 2026-10-21: a quest an ask publishes takes the ask's short title where the intake's draft gives none or a blank one, and keeps the intake's where it gives one (`Asks.cs` `PublishQuestAsync`; `AskDeskTests`' inheriting case). The session's head names a line of work an ask began by `nameOfEntry`, the rail's own name, from the asks read under the rail's key, and otherwise by `sessionTitle` as before (`WorkFrame.tsx` `attendedTitle`; a `WorkFrame.test.tsx` case with the head and the row both the ask's short title). Quests and the Overview still name a quest by `questName`, so a quest published before this, or from an ask with no short title, keeps its cut title there. On Opus.
+
+## OVERVIEWNOISE1c — the planner's verdicts and the recall tier said in the page's language (2026-10-21)
+
+> - [ ] **OVERVIEWNOISE1c — the planner's verdicts and the recall tier said in the page's language** (driver, web-shell; the owner's report, 2026-10-20). The parked reasons AtCapacity, RepositoryBusy, Waiting, WaitsForOpinion, NotAdopted and SourceReopened have no page words, so the Chinese page shows the driver's English ("the concurrency cap (6) is spent — it frees as sessions finish", `Planner.cs:1609-1611`, passed through by `data/signals.ts:184-192`, `:257-260`), and the status bar says "lexical only" with an English tip (`frame.tsx:461-464`, `App.tsx:1250-1251`). Wanted: each verdict carried as a code with its facts (the cap as a number) and worded by the page; the tier's label by its value, its note in the tip. Proof: signals tests per verdict in en and zh; a zh frame test.
+
+**Outcome** 2026-10-21: each of the six verdicts carries which of its sentences it is as a `SittingFact` (`Planner.cs`): a code and
+its facts — the cap as a number, the session, the other quest, the question's repository, a review's environment, the second
+opinion's state — set beside every sentence the planner and the opinion look say (the look's sits became `OpinionSit`), and
+written as `said` on the tick's considerations (`DriverLoop.TickConsideration`) and a work's holds (`WorkRoutes.WorkHoldShown`).
+`sittingSentence` words them by code in en and zh (`work.sitting.<Verdict>_<code>`), the terminal's doors verbatim and the
+opinion's state in the gate's own words; no code, or an unknown one, keeps the driver's words. The status bar takes the tier as
+`{ semantic }` and says its label and its tip by that value (`work.status.tier*`). Proof: PlannerTests, OpinionGateTests,
+OpinionLookTests, TickConsiderationTests, DriverModuleWorkTests; signals.test.ts per verdict and code in en and zh; chrome.test.tsx
+in zh. The sessions page's held words (`WordsHold`) still carry the driver's sentence, out of this row.

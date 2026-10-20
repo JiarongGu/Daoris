@@ -459,7 +459,7 @@ public sealed class Driver(
         Deliverer.DeliverAsync(opinion, asked, ct);
 
     /// <summary>The second opinions owed at a look (XAGENT1f): <see cref="OpinionGateLook.OpinionsAsync"/>.</summary>
-    internal Task<(IReadOnlyDictionary<string, string> Sits, int Passes)> OpinionsAsync(
+    internal Task<(IReadOnlyDictionary<string, OpinionSit> Sits, int Passes)> OpinionsAsync(
         Snapshot snapshot, List<string> events, CancellationToken ct, List<OpinionJudged>? judged = null) =>
         Gate.OpinionsAsync(snapshot, events, ct, judged);
 

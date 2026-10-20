@@ -98,6 +98,17 @@ export interface Consideration {
    * window to show it in), the environment's name and its address where it has one. Null or absent otherwise, and on an older shell.
    */
   cannotShow?: { code: string; environment: string; address: string | null } | null;
+  /**
+   * For the verdicts the page had no words for (`AtCapacity`, `RepositoryBusy`, `Waiting`, `WaitsForOpinion`, `NotAdopted`,
+   * `SourceReopened`, OVERVIEWNOISE1c): which of the planner's sentences `reason` is, as a code, with the facts its words are said
+   * from — the cap as a number, the session, the other quest (one queued ahead, the question waited on, the step before, the
+   * reopened source), the repository a question was asked of, a review's environment and the second opinion's state (null where
+   * it is not judged yet). Each fact is null where the code names none. Null or absent otherwise, and on an older shell.
+   */
+  said?: {
+    code: string; cap?: number | null; session?: string | null; quest?: string | null; repository?: string | null;
+    environment?: string | null; state?: string | null;
+  } | null;
 }
 
 /**
@@ -189,9 +200,13 @@ export function sittingBecause(considered: readonly Consideration[], quest: stri
  * keep the driver's words, since their sentences name a session or a cap the tick does not carry, and
  * so does a verdict the page has not heard of, and a stop, a park or a take on a shell that names no session,
  * number or machine. English passes the driver's sentence through as its only copy, as the rules' defaults do
- * (POLISH2).
+ * (POLISH2). Since OVERVIEWNOISE1c the six verdicts that kept the driver's words — `AtCapacity`, `RepositoryBusy`, `Waiting`,
+ * `WaitsForOpinion`, `NotAdopted` and `SourceReopened` — are worded by the code the tick names beside them (`said`), in English
+ * as well, as `CannotShow`'s are; with no code, or one the page has not heard of, the driver's words.
  */
 export function sittingSentence(sitting: Consideration): string {
+  const coded = saidSentence(sitting);
+  if (coded) return coded;
   if (sitting.verdict === 'Stopped' && !sitting.heldBy) return sitting.reason;
   if (sitting.verdict === 'Exhausted' && sitting.strikes == null) return sitting.reason;
   // A take that is not this machine's (CARRY2c) is said from whose it is: a teammate's machine and session where a record
@@ -257,6 +272,36 @@ export function sittingSentence(sitting: Consideration): string {
   if (signIn) return i18n.t('work.sitting.signedOut', { why: sitting.reason, agent: signedOut!.agent, ...signIn, defaultValue: sitting.reason });
   return i18n.t(`work.sitting.${sitting.verdict}`, {
     why: sitting.reason, session: sitting.heldBy, quest: sitting.quest, failed: sitting.strikes,
+    defaultValue: sitting.reason,
+  });
+}
+
+/** The codes the page words for each verdict that names one (OVERVIEWNOISE1c), as the planner's `SittingFact` spells them. */
+const SAID: Record<string, readonly string[]> = {
+  AtCapacity: ['cap'],
+  RepositoryBusy: ['serving', 'opening', 'tree', 'treeOpening', 'treeThisLook', 'repository', 'queued', 'repositoryOpening'],
+  Waiting: ['asked', 'unreadRunning', 'unread', 'unreadAtCommit', 'missing', 'unreviewed', 'departed'],
+  NotAdopted: ['unregistered', 'noRoot', 'noConnector'],
+  WaitsForOpinion: ['landing', 'steps'],
+  SourceReopened: ['withdrawn', 'held'],
+};
+
+/**
+ * A verdict's sentence worded from the code and facts the tick carries (OVERVIEWNOISE1c), or null where it names none the page
+ * knows, so the caller says what it said before. A review waited for in an environment, and an opinion not judged yet, are their
+ * code's other wording; the opinion's state is said in the gate's own words.
+ */
+function saidSentence(sitting: Consideration): string | null {
+  const said = sitting.said;
+  if (!said || !SAID[sitting.verdict]?.includes(said.code)) return null;
+  if (said.code === 'cap' && said.cap == null) return null;
+  const context = said.code === 'unreviewed' && said.environment ? 'unreviewedIn'
+    : sitting.verdict === 'WaitsForOpinion' && !said.state ? `${said.code}Unjudged`
+    : said.code;
+  return i18n.t(`work.sitting.${sitting.verdict}`, {
+    context, why: sitting.reason, quest: sitting.quest, cap: said.cap, session: said.session ?? '', other: said.quest ?? '',
+    to: said.repository ?? '', environment: said.environment ?? '',
+    state: said.state ? i18n.t(`opinion.state.${said.state}`, { defaultValue: said.state }) : '',
     defaultValue: sitting.reason,
   });
 }

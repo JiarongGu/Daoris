@@ -163,6 +163,13 @@ public sealed class DriverModuleWorkTests : DriverModuleBridge
             (shown.GetProperty("code").GetString(), shown.GetProperty("environment").GetString(), shown.GetProperty("address").GetString()));
         Assert.Equal(Null, held.GetProperty("cannotShow").ValueKind.ToString());
         Assert.Equal(Null, taken.GetProperty("cannotShow").ValueKind.ToString());
+        // OVERVIEWNOISE1c: a hold the page had no words for names its sentence by code.
+        var unregistered = Shown(new WorkHold("q13", StartVerdict.NotAdopted, "`Far` is not registered on this machine, so there is nowhere to start it.")
+        {
+            Said = new SittingFact(SittingFact.Unregistered),
+        });
+        Assert.Equal("unregistered", unregistered.GetProperty("said").GetProperty("code").GetString());
+        Assert.Equal(Null, held.GetProperty("said").ValueKind.ToString());
 
         Assert.Equal(("q8", "Stopped", StopSaid),
             (stopped.GetProperty("quest").GetString(), stopped.GetProperty("verdict").GetString(), stopped.GetProperty("reason").GetString()));

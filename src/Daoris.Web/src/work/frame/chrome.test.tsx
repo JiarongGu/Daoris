@@ -395,25 +395,34 @@ describe('StatusBar', () => {
   });
 
   /**
-   * AGT6: the tier leads where it is explained and changed — Daoris's own AI, on Settings — and its
-   * words stay the service's, verbatim, with the note one hover away (D24).
+   * AGT6: the tier leads where it is explained and changed — Daoris's own AI, on Settings — with what it means one hover
+   * away (D24); since OVERVIEWNOISE1c both are said by the tier's value, in the page's language.
    */
-  it('lets the tier lead to where it is changed, in the service\'s own words', async () => {
+  it('lets the tier lead to where it is changed, said by its value', async () => {
     const onTier = vi.fn();
-    render(
-      <StatusBar
-        driver="absent"
-        sessions={0}
-        workspace={null}
-        remote={null}
-        tier={{ label: 'lexical only', note: 'Set DAORIS_EMBED_MODEL to enable semantic recall.', semantic: false }}
-        onTier={onTier}
-      />,
-    );
+    render(<StatusBar driver="absent" sessions={0} workspace={null} remote={null} tier={{ semantic: false }} onTier={onTier} />);
 
     await userEvent.click(screen.getByRole('button', { name: 'recall' }));
     expect(onTier).toHaveBeenCalled();
     expect(screen.getByText('lexical only')).toBeTruthy();
+  });
+
+  /** OVERVIEWNOISE1c: in 中文 the tier and its tip are Chinese — the service's English label and note are never shown. */
+  it('says the tier and its tip in 中文', async () => {
+    await i18n.changeLanguage('zh');
+    try {
+      const { unmount } = render(<StatusBar driver="absent" sessions={0} workspace={null} remote={null} tier={{ semantic: false }} />);
+      expect(screen.getByText('仅字词')).toBeTruthy();
+      expect(screen.queryByText('lexical only')).toBeNull();
+      await userEvent.hover(screen.getByText('仅字词'));
+      expect((await screen.findAllByText(/只按字词/)).length).toBeGreaterThan(0);
+      unmount();
+
+      render(<StatusBar driver="absent" sessions={0} workspace={null} remote={null} tier={{ semantic: true }} />);
+      expect(screen.getByText('字词 + 语义')).toBeTruthy();
+    } finally {
+      await i18n.changeLanguage('en');
+    }
   });
 
   /** The scope is a control in its own right (WSP5) and replaces the read-only circle entirely. */

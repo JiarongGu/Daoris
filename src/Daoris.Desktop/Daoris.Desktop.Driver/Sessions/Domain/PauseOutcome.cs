@@ -150,6 +150,9 @@ public sealed record WorkHold(string Quest, StartVerdict Verdict, string Reason)
 
     /// <summary>For a set-up step the planner sits (<see cref="StartVerdict.CannotShow"/>): the code and facts of its sentence (CANNOTSHOW1a).</summary>
     public CannotShowFact? CannotShow { get; init; }
+
+    /// <summary>For a hold the page had no words for (<see cref="StartVerdict.NotAdopted"/>): which sentence, by code (OVERVIEWNOISE1c).</summary>
+    public SittingFact? Said { get; init; }
 }
 
 /// <summary>What a resume did.</summary>
