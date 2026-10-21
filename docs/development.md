@@ -87,7 +87,9 @@ rehearsals beside the git half, one after the other, each building what the Proc
 its own (REHLANE1, REHLANE2, REHLANE2b). Do not overlap them with another full gate run.
 `npm run test:web` runs `test:web:unit` (the vitests) then `test:web:e2e`, which rebuilds the HTTP host: a running
 development instance can hold its assemblies. Identify the owner before stopping a process; do not
-stop an installed application or an unrelated host merely to unblock a build.
+stop an installed application or an unrelated host merely to unblock a build. Never start a real sign-in (`claude auth login`,
+`codex login`, an agent's own login) from a test, a probe or a transcription of today's words, even under a scratch home: it opens
+the person's browser on their real account. Take the words from the code, or run the stub adapters (LIVELOGIN1).
 
 A branch that runs only its own classes still owes the censuses that read every source, since no merge runs them
 before the CI beside: each is quick, and on 2026-10-20 each failed a full set its branch never ran. Run the ones a
