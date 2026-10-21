@@ -346,6 +346,24 @@ export const SpaceEditingChineseNarrow: Story = {
   render: () => space({ space: SPACE_SET, onKeep: keep, editing: 'logs' }), decorators: [...narrow, chinese],
 };
 
+/** History's editor with an age set (KEEP1g), saying what the age clears. */
+export const SpaceEditingHistory: Story = { render: () => space({ space: SPACE_SET, onKeep: keep, editing: 'history' }) };
+
+/** The same at the half width. */
+export const SpaceEditingHistoryHalf: Story = {
+  render: () => space({ space: SPACE_SET, onKeep: keep, editing: 'history' }), decorators: [storyWidths.half],
+};
+
+/** The same at the floor. */
+export const SpaceEditingHistoryNarrow: Story = {
+  render: () => space({ space: SPACE_SET, onKeep: keep, editing: 'history' }), decorators: narrow,
+};
+
+/** The same in 中文 at the floor. */
+export const SpaceEditingHistoryChineseNarrow: Story = {
+  render: () => space({ space: SPACE_SET, onKeep: keep, editing: 'history' }), decorators: [...narrow, chinese],
+};
+
 /** The first load: skeleton rows in the card's place. */
 export const SpaceLoading: Story = { render: () => space({ space: undefined }) };
 

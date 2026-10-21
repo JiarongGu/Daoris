@@ -15,8 +15,14 @@ const KIND_WORD: Record<string, string> = {
 /** What a kind's *next* counts, in `settings.daoris.space.what.*`. */
 const WHAT_WORD: Record<string, string> = { 'set-aside': 'setAside', downloads: 'downloads', logs: 'logs' };
 
-/** The kinds whose rule is one of Daoris's runs, which keep a *last* in `keeping.json` (KEEP1a, KEEP1b; the logs' daily prune, KEEP1d). */
+/**
+ * The kinds whose rule is one of Daoris's runs, which keep a *last* in `keeping.json` (KEEP1a, KEEP1b; the logs' daily prune, KEEP1d);
+ * history's only once the person set an age (KEEP1g).
+ */
 const RUNS = new Set(['set-aside', 'downloads', 'logs']);
+
+/** Whether a kind's rule is one of Daoris's runs: history's while an age is set. */
+const runs = (kind: SpaceKind) => RUNS.has(kind.id) || (kind.id === 'history' && kind.rule.kind === 'days');
 
 /** What a rule's save came to, for the editor that sent it: done closes it, a refusal is said under it with the editor kept open (R3). */
 export type KeepAnswered = { done: () => void; refused: (words: string) => void };
@@ -27,6 +33,7 @@ type T = (key: string, options?: Record<string, unknown>) => string;
 function ruleWords(t: T, kind: SpaceKind): string {
   const { rule } = kind;
   if (rule.kind === 'days' && kind.id === 'downloads') return t('settings.daoris.space.rule.downloads', { count: rule.days });
+  if (rule.kind === 'days' && kind.id === 'history') return t('settings.daoris.space.rule.history', { count: rule.days });
   if (rule.kind === 'days' && kind.id === 'set-aside') {
     return t('settings.daoris.space.rule.joined', {
       days: t('settings.daoris.space.rule.days', { count: rule.days }),
@@ -74,7 +81,8 @@ function KeepEditor({ kind, onKeep, onClose }: { kind: SpaceKind; onKeep: (set: 
   const id = kind.id as KeepSet['kind'];
   const [days, setDays] = useState(kind.rule.days === null ? '' : String(kind.rule.days));
   const [whole, setWhole] = useState(kind.rule.whole === true);
-  const [never, setNever] = useState(kind.rule.kind === 'never');
+  // History's press alone is its `never` (KEEP1g).
+  const [never, setNever] = useState(kind.rule.kind === 'never' || kind.rule.kind === 'press');
   const [saving, setSaving] = useState(false);
   const [said, setSaid] = useState<string | null>(null);
   const send = (set: KeepSet) => {
@@ -112,8 +120,16 @@ function KeepEditor({ kind, onKeep, onClose }: { kind: SpaceKind; onKeep: (set: 
           <span className="text-small text-ink-faint">{t('settings.daoris.space.edit.bounds', { min: bounds.min, max: bounds.max })}</span>
         </span>
         {bounds.whole && <CheckField checked={whole} onChange={setWhole} disabled={saving} label={t('settings.daoris.space.edit.whole')} />}
-        {bounds.never && <CheckField checked={never} onChange={setNever} disabled={saving} label={t('settings.daoris.space.edit.never')} />}
+        {bounds.never && (
+          <CheckField
+            checked={never}
+            onChange={setNever}
+            disabled={saving}
+            label={t(id === 'history' ? 'settings.daoris.space.edit.neverClear' : 'settings.daoris.space.edit.never')}
+          />
+        )}
       </div>
+      {id === 'history' && !never && <p className="m-0 text-small text-ink-soft">{t('settings.daoris.space.edit.historyWarn')}</p>}
       <div className="flex flex-wrap items-center gap-2">
         <Button variant="primary" disabled={saving} onClick={save}>
           {saving ? t('settings.daoris.space.edit.saving') : t('settings.daoris.space.edit.save')}
@@ -139,7 +155,7 @@ function NextAndLast({ kind }: { kind: SpaceKind }) {
   } else if (kind.nextWhy) {
     parts.push(t('settings.daoris.space.nextUnread'));
   }
-  if (RUNS.has(kind.id)) {
+  if (runs(kind)) {
     if (kind.last) {
       parts.push(t('settings.daoris.space.last', { when: clockOf(kind.last.at), count: kind.last.removed.count, size: size(kind.last.removed.bytes) }));
     } else {

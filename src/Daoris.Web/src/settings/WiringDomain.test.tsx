@@ -585,8 +585,9 @@ describe('Settings → This Daoris', () => {
     // What an earlier build left goes only by the person's press, which frees space, listed first (KEEP1e).
     expect(scope.getByText('removed only by your press')).toBeTruthy();
     expect(scope.getByRole('button', { name: 'Free up space…' })).toBeTruthy();
-    // KEEP1d: the three rules the person sets carry their editor and their terminal twin.
-    expect(scope.getAllByRole('button', { name: 'Change…' })).toHaveLength(3);
+    // KEEP1d: the rules the person sets carry their editor and their terminal twin, history's age among them (KEEP1g).
+    expect(scope.getAllByRole('button', { name: 'Change…' })).toHaveLength(4);
+    expect(card.textContent).toContain('daoris driver keep history …');
     expect(card.textContent).toContain('daoris driver keep set-aside …');
     await vi.waitFor(() => expect(invoke.mock.calls.some(([, type]) => type === 'SYSTEM_SPACE')).toBe(true));
     expect(invoke.mock.calls.filter(([, type, request]) => type === 'SYSTEM_SPACE' && request?.payload)).toEqual([]);
@@ -805,6 +806,51 @@ describe('Settings → This Daoris', () => {
     await userEvent.click(logs.getByRole('button', { name: 'Change…' }));
     await userEvent.click(logs.getByRole('button', { name: 'The default' }));
     await vi.waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SET_KEEP', { payload: { kind: 'logs', default: true } }));
+  });
+
+  // KEEP1g (D195 point 7, decided by the owner): finished history by an age the person sets, the press alone by default.
+  it('sets an age for finished history, saying what it clears, and takes it back to the press alone', async () => {
+    invoke.mockImplementation(keeping(() => DRIVER_STATE));
+    open();
+    const card = within(await screen.findByRole('region', { name: 'Disk space' }));
+    const history = row(card, 'Conversations and records');
+
+    await userEvent.click(history.getByRole('button', { name: 'Change…' }));
+    expect((history.getByRole('checkbox', { name: 'Until I clear it' }) as HTMLElement).getAttribute('data-state')).toBe('checked');
+    expect((history.getByRole('spinbutton', { name: 'Days kept' }) as HTMLInputElement).disabled).toBe(true);
+    expect(history.getByText('30 to 3650 days')).toBeTruthy();
+    expect(history.queryByText(/Nothing brings it back/)).toBeNull();
+    await userEvent.click(history.getByRole('checkbox', { name: 'Until I clear it' }));
+    expect(history.getByText(/older than this is cleared from this machine, its words included/)).toBeTruthy();
+    await userEvent.type(history.getByRole('spinbutton', { name: 'Days kept' }), '365');
+    await userEvent.click(history.getByRole('button', { name: 'Save' }));
+
+    await vi.waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SET_KEEP', { payload: { kind: 'history', days: 365 } }));
+  });
+
+  it('says an age set for finished history and its last clear', async () => {
+    invoke.mockImplementation(keeping(() => DRIVER_STATE, SPACE_SET));
+    open();
+    const card = within(await screen.findByRole('region', { name: 'Disk space' }));
+    const history = row(card, 'Conversations and records');
+
+    expect(history.getByText('cleared 365 days after its last move')).toBeTruthy();
+    expect(history.getByText(`last: ${clockOf('2026-10-16T08:12:00.000+00:00')}, 4 removed, ${size(12 * 1024 ** 2)}`)).toBeTruthy();
+    await userEvent.click(history.getByRole('button', { name: 'Change…' }));
+    await userEvent.click(history.getByRole('checkbox', { name: 'Until I clear it' }));
+    await userEvent.click(history.getByRole('button', { name: 'Save' }));
+    await vi.waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SET_KEEP', { payload: { kind: 'history', never: true } }));
+  });
+
+  it('says an age for finished history in 中文', async () => {
+    await i18n.changeLanguage('zh');
+    invoke.mockImplementation(keeping(() => DRIVER_STATE, SPACE_SET));
+    open();
+    const card = within(await screen.findByRole('region', { name: '磁盘空间' }));
+    expect(card.getByText('最后一次变动 365 天后清除')).toBeTruthy();
+    const history = row(card, '会话与记录');
+    await userEvent.click(history.getByRole('button', { name: '更改…' }));
+    expect(history.getByRole('checkbox', { name: '保留到我清除为止' })).toBeTruthy();
   });
 
   it("says the driver's refusal of a value out of its bounds under the editor, which stays open, and a value that is no number", async () => {
