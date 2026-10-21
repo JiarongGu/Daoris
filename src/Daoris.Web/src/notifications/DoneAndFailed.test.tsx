@@ -147,4 +147,33 @@ describe('Done and failed', () => {
     await userEvent.click(within(rows[0]!).getByRole('button', { name: language === 'en' ? 'Open' : '打开' }));
     expect(onOpen).toHaveBeenCalledWith(LOST);
   });
+
+  /**
+   * NOTIFY2h2 (D196's NOTIFY2h note): the news its deeper producers class, each said by its code in the reader's language; a reopen whose
+   * tree is gone names its session and opens it, a plugin stopped as unsound names none.
+   */
+  it.each([
+    ['en', 'A reopened quest\'s session was told nothing: its tree is gone, so no work is made again',
+      'A plugin stopped after exiting three times within an hour: it starts again once you try it again',
+      'An ask for a helper was refused: the session that asked it has left this machine'],
+    ['zh', '一个被重新打开的委托的会话未被告知：它的工作树已不在，所以不会重做这项工作',
+      '一个插件在一小时内退出三次后已停止：你再试一次后它才会重新启动',
+      '一个请助手回答的请求被拒绝：提出它的会话已离开本机'],
+  ])("says the deeper producers' news by its code in %s", async (language, tree, plugin, helper) => {
+    await i18n.changeLanguage(language);
+    layout.row = { top: 500, height: 60 };
+    const TREE: Notice = { id: 'look-reopen-tree-gone-q4', kind: 'look', code: 'reopen-tree-gone', at: '2026-10-22T08:59:00.000Z', read: false, session: 's4', quest: 'q4' };
+    const PLUGIN: Notice = { id: 'look-plugin-unsound-acme', kind: 'look', code: 'plugin-unsound', at: '2026-10-22T08:58:00.000Z', read: false };
+    const HELPER: Notice = { id: 'look-helper-asker-gone-h1', kind: 'look', code: 'helper-asker-gone', at: '2026-10-22T08:57:00.000Z', read: false };
+    const { onOpen } = drawn([TREE, PLUGIN, HELPER]);
+
+    const rows = screen.getAllByRole('listitem');
+    expect(within(rows[0]!).getByText(tree)).toBeInTheDocument();
+    expect(within(rows[1]!).getByText(plugin)).toBeInTheDocument();
+    expect(within(rows[2]!).getByText(helper)).toBeInTheDocument();
+    expect(screen.queryByText(/tree-gone|plugin-unsound|asker-gone|reopen {2}/)).not.toBeInTheDocument();
+    expect(within(rows[1]!).queryByRole('button', { name: language === 'en' ? 'Open' : '打开' })).not.toBeInTheDocument();
+    await userEvent.click(within(rows[0]!).getByRole('button', { name: language === 'en' ? 'Open' : '打开' }));
+    expect(onOpen).toHaveBeenCalledWith(TREE);
+  });
 });

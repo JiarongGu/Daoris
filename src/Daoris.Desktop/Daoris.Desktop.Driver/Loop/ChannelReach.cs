@@ -152,11 +152,15 @@ public sealed class ChannelReach
         }
     }
 
-    /// <summary>One look's reach over <paramref name="parts"/>: the lines it says, one for each message that reached a part.</summary>
+    /// <summary>
+    /// One look's reach over <paramref name="parts"/>: the lines it says, one for each message that reached a part, each classed as it
+    /// is made (NOTIFY2h2): a channel not read the next look's, a message's reach what the ask's channel says.
+    /// </summary>
+    /// <param name="said">The look's classing; none classes and keeps nothing.</param>
     /// <exception cref="OperationCanceledException">The loop is closing.</exception>
-    public async Task<IReadOnlyList<string>> LookAsync(IChannelDoors doors, IReadOnlyList<ChannelPart> parts, CancellationToken ct)
+    public async Task<IReadOnlyList<string>> LookAsync(IChannelDoors doors, IReadOnlyList<ChannelPart> parts, CancellationToken ct, LookSaid? said = null)
     {
-        var lines = new List<string>();
+        var lines = new LookLines(said ?? LookSaid.None, "channel");
         foreach (var part in parts)
         {
             try
@@ -166,7 +170,7 @@ public sealed class ChannelReach
             catch (Exception error) when (error is DriverException or HttpRequestException or JsonException or InvalidOperationException
                                               || (error is OperationCanceledException && !ct.IsCancellationRequested))
             {
-                lines.Add($"channel  ask #{part.Entry.Ask}'s channel was not read for `{part.Entry.Repository}` at this look, and the next tries again: {error.Message}");
+                lines.Retry($"channel  ask #{part.Entry.Ask}'s channel was not read for `{part.Entry.Repository}` at this look, and the next tries again: {error.Message}");
             }
         }
 
@@ -176,10 +180,10 @@ public sealed class ChannelReach
             if (!parts.Any(part => string.Equals(part.Session, session, StringComparison.Ordinal))) _refused.TryRemove(session, out _);
         }
 
-        return lines;
+        return lines.Said;
     }
 
-    private async Task LookAtAsync(IChannelDoors doors, ChannelPart part, List<string> lines, CancellationToken ct)
+    private async Task LookAtAsync(IChannelDoors doors, ChannelPart part, LookLines lines, CancellationToken ct)
     {
         if (await doors.ReadAsync(part.Entry.Ask, part.Entry.Key, ct).ConfigureAwait(false) is not { } read) return;
 
@@ -200,7 +204,7 @@ public sealed class ChannelReach
 
     /// <summary>One message to one part, at its level (see the remarks); a reopen refused is remembered and not asked again.</summary>
     private static async Task ReachAsync(
-        IChannelDoors doors, ChannelPart part, ChannelItemView message, ConcurrentDictionary<string, bool> refused, List<string> lines,
+        IChannelDoors doors, ChannelPart part, ChannelItemView message, ConcurrentDictionary<string, bool> refused, LookLines lines,
         CancellationToken ct)
     {
         var id = message.Id!;
@@ -228,7 +232,7 @@ public sealed class ChannelReach
             }
 
             var when = reach == DrivenReach.NextStep ? "at its next step" : "when its turn ends";
-            lines.Add(message.Person
+            lines.Progress(message.Person
                 ? $"channel  the person's message `{id}` on ask #{part.Entry.Ask} reaches session {part.Session} {when}, as their words"
                 : level == MessageLevel.Urgent && reach == DrivenReach.NextStep
                     ? $"channel  message `{id}` on ask #{part.Entry.Ask} reaches session {part.Session} at its next step, as `{message.Repository}`'s claim"
@@ -251,7 +255,8 @@ public sealed class ChannelReach
             refused[id] = true;
         }
 
-        lines.Add(said.Kept
+        // Refused, the message waits for the entry's next part, which the ask's channel says: not asked again (NOTIFY2h2).
+        lines.Progress(said.Kept
             ? $"channel  the person's message `{id}` on ask #{part.Entry.Ask} was kept on session {part.Session}'s record, which goes on with it"
             : $"channel  the person's message `{id}` on ask #{part.Entry.Ask} waits for `{part.Entry.Repository}`'s next part: {said.Message}");
     }

@@ -101,6 +101,13 @@ public static class RegistrationFollow
             _ => $"registry  {followed.Repository}: {followed.Said}",
         };
 
+    /// <summary>
+    /// The look's line for one outcome, classed as it is made (NOTIFY2h2): what moved, a refusal included, since the repository's row is
+    /// keyed on its outcome and says it where the person fixes it. Null where <see cref="EventLine(RegistrationFollowed)"/> says nothing.
+    /// </summary>
+    public static string? EventLine(RegistrationFollowed followed, LookSaid said) =>
+        EventLine(followed) is { } line ? said.Progress("registry", line) : null;
+
     private static async Task<RegistrationFollowed> OneAsync(IRegistrationWorld world, RegistrationRow row, CancellationToken ct)
     {
         var name = row.Repository;

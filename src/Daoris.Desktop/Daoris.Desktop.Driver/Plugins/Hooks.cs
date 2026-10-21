@@ -680,11 +680,13 @@ public sealed class HookSet(
     /// <summary>
     /// Start what the catalogue now has and stop what it no longer has — a plugin disabled between
     /// ticks is stopped at the next one, one enabled is started, one whose manifest changed is
-    /// restarted. Returns the lines worth a tick's report.
+    /// restarted. Returns the lines worth a tick's report, each classed as it is made (NOTIFY2h2): a plugin now unsound is news, a
+    /// start that failed or an exit waited out the next look's, the rest what moved.
     /// </summary>
-    public async Task<IReadOnlyList<string>> ReconcileAsync(PluginCatalog catalog, CancellationToken ct)
+    /// <param name="said">The look's classing; none classes and keeps nothing.</param>
+    public async Task<IReadOnlyList<string>> ReconcileAsync(PluginCatalog catalog, CancellationToken ct, LookSaid? said = null)
     {
-        var lines = new List<string>();
+        var lines = new LookLines(said ?? LookSaid.None, "plugin");
         await _reconciling.WaitAsync(ct).ConfigureAwait(false);
         try
         {
@@ -744,9 +746,9 @@ public sealed class HookSet(
                 if (held.Work) _work.Stopped(id);
                 await held.Channel.DisposeAsync().ConfigureAwait(false);
                 var waited = waits.TryGetValue(id, out var wait);
-                lines.Add(wasAlive ? $"plugin  {id}: stopped."
-                    : waited ? Waiting(id, wait)
-                    : $"plugin  {id}: its hook process had exited — it will be started again if it is still enabled.");
+                if (wasAlive) lines.Progress($"plugin  {id}: stopped.");
+                else if (waited) Waiting(lines, id, wait);
+                else lines.Retry($"plugin  {id}: its hook process had exited — it will be started again if it is still enabled.");
                 if (wasAlive) Log.Stopped(id, WorkWhy(id, held, catalog, holds) ?? Why(id, held, catalog), PluginEvents.ByLoop);
                 else Log.Failed(id, PluginEvents.AtProcess, PluginEvents.Exited, code, ms: null, PluginEvents.ByLoop);
                 if (waited && wait is null) Log.Failed(id, PluginEvents.AtProcess, PluginEvents.Unsound, code: null, ms: null, PluginEvents.ByLoop);
@@ -790,7 +792,7 @@ public sealed class HookSet(
                     var work = WorkPlugins.Speaks(plugin);
                     if (work) _work.Started(id, channel, listen: holds, now);
                     lock (_running) _running[id] = new Held(Signature(plugin), plugin.Manifest.Version, InstalledAt(plugin.Folder), channel, work);
-                    lines.Add($"plugin  {id}: started, listening on {(channel.Points.Count > 0 ? string.Join(", ", channel.Points) : "nothing")}.");
+                    lines.Progress($"plugin  {id}: started, listening on {(channel.Points.Count > 0 ? string.Join(", ", channel.Points) : "nothing")}.");
                     _unstarted.Remove(id);
                     Log.Started(id, channel.Points, took.ElapsedMilliseconds, PluginEvents.ByLoop);
                 }
@@ -798,7 +800,7 @@ public sealed class HookSet(
                 {
                     // Logged and skipped, never fatal — and said where a person will read it.
                     Say(id, error.Message);
-                    lines.Add($"plugin  {id}: could not start — {error.Message}");
+                    lines.Retry($"plugin  {id}: could not start — {error.Message}");
                     var kind = PluginFailures.KindOf(error, PluginEvents.Unstartable);
                     if (_unstarted.GetValueOrDefault(id) != kind)
                     {
@@ -810,7 +812,7 @@ public sealed class HookSet(
                     // FABRIC-PERFORM1a: a start that failed waits as an unasked exit does, so it is not tried at every look.
                     if (WorkPlugins.Speaks(plugin) && _work.Exited(id, now) is null)
                     {
-                        lines.Add(Waiting(id, null));
+                        Waiting(lines, id, null);
                         Log.Failed(id, PluginEvents.AtStart, PluginEvents.Unsound, code: null, ms: null, PluginEvents.ByLoop);
                     }
                 }
@@ -823,13 +825,24 @@ public sealed class HookSet(
             _reconciling.Release();
         }
 
-        return lines;
+        return lines.Said;
     }
 
-    /// <summary>What a person reads of a work process's unasked exit (FABRIC-PERFORM1a): when it starts again, or that it does not.</summary>
-    private static string Waiting(string id, TimeSpan? wait) => wait is { } after
-        ? $"plugin  {id}: its hook process had exited — it is started again in {(after.TotalMinutes == 1 ? "1 minute" : $"{after.TotalMinutes:0} minutes")}."
-        : $"plugin  {id}: its hook process exited {WorkBounds.ExitsUnsound} times within an hour — it is not started again until you try again.";
+    /// <summary>
+    /// What a person reads of a work process's unasked exit (FABRIC-PERFORM1a): when it starts again, the next look's, or that it does
+    /// not, now unsound, which is news (NOTIFY2h2): nobody pressed it, and it stays stopped until the person tries again.
+    /// </summary>
+    private static void Waiting(LookLines lines, string id, TimeSpan? wait)
+    {
+        if (wait is { } after)
+        {
+            lines.Retry($"plugin  {id}: its hook process had exited — it is started again in {(after.TotalMinutes == 1 ? "1 minute" : $"{after.TotalMinutes:0} minutes")}.");
+            return;
+        }
+
+        lines.News(new LookNews(LookSaid.PluginUnsound, id),
+            $"plugin  {id}: its hook process exited {WorkBounds.ExitsUnsound} times within an hour — it is not started again until you try again.");
+    }
 
     /// <summary>
     /// Why a work process the catalogue still has, unchanged, was stopped (FABRIC-PERFORM1a): this loop no longer holds the home, or no unit
@@ -1045,10 +1058,14 @@ public sealed class HookSet(
         return HookDecision.Allow;
     }
 
-    /// <summary>The observation, fanned out and contained. Returns the lines a failure is worth.</summary>
-    public async Task<IReadOnlyList<string>> EndedAsync(SessionEnded ended, CancellationToken ct)
+    /// <summary>
+    /// The observation, fanned out and contained. Returns the lines a failure is worth, the log's (NOTIFY2h2): the plugin's own page
+    /// says its failed calls, and the session's end was said already.
+    /// </summary>
+    /// <param name="said">The look's classing; none classes and keeps nothing.</param>
+    public async Task<IReadOnlyList<string>> EndedAsync(SessionEnded ended, CancellationToken ct, LookSaid? said = null)
     {
-        var lines = new List<string>();
+        var lines = new LookLines(said ?? LookSaid.None, "plugin");
         var payload = HookFrames.Ended(ended);
 
         foreach (var (id, channel) in Listening(HookPoints.SessionEnded))
@@ -1062,12 +1079,12 @@ public sealed class HookSet(
             catch (DriverException error)
             {
                 Say(id, error.Message);
-                lines.Add($"plugin  {id}: {error.Message}");
+                lines.Progress($"plugin  {id}: {error.Message}");
                 CallFailed(id, channel, HookPoints.SessionEnded, error, took);
             }
         }
 
-        return lines;
+        return lines.Said;
     }
 
     /// <summary>

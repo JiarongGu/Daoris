@@ -17,8 +17,12 @@ namespace Daoris.Driver;
 /// </remarks>
 public static class UncertainWords
 {
-    /// <returns>A line for the loop's report per record settled; none where nothing was, or the service did not answer.</returns>
-    public static async Task<IReadOnlyList<string>> SettleAsync(ServiceClient service, SessionEvents? events, CancellationToken ct)
+    /// <returns>
+    /// A line for the loop's report per record settled, classed as it is made (NOTIFY2h2): what moved, which the session's conversation
+    /// says where it never showed the words taken; none where nothing was, or the service did not answer.
+    /// </returns>
+    /// <param name="said">The look's classing; none classes and keeps nothing.</param>
+    public static async Task<IReadOnlyList<string>> SettleAsync(ServiceClient service, SessionEvents? events, CancellationToken ct, LookSaid? said = null)
     {
         string json;
         IReadOnlyList<SessionRecord> records;
@@ -34,19 +38,19 @@ public static class UncertainWords
             return [];
         }
 
-        var lines = new List<string>();
+        var lines = new LookLines(said ?? LookSaid.None, "uncertain");
         foreach (var each in records)
         {
             if (each.Teammate || ServiceClient.ReadRecord(json, each.Id) is not { } record) continue;
             if (await SettleOneAsync(service, events, record, ct).ConfigureAwait(false) is > 0 and var gone)
             {
-                lines.Add(
+                lines.Progress(
                     $"uncertain  session {each.Id}: {gone} word(s) a shell before this one wrote to its agent left its record, never "
                     + "sent again");
             }
         }
 
-        return lines;
+        return lines.Said;
     }
 
     /// <summary>

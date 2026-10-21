@@ -97,8 +97,8 @@ internal sealed class DriverHelpers(LoopContext context, Driver driver)
                 switch (verdict.Kind)
                 {
                     case HelperVerdict.RefuseKind:
-                        // The asker is told on its own session; nobody else must answer (NOTIFY2h).
-                        events.Add(_context.Said.Progress("helper", await RefuseAsync(ask, verdict.Code!, null, files, ct).ConfigureAwait(false)));
+                        // The asker is told on its own session, or it has left and the refusal is news (NOTIFY2h2).
+                        events.Add(_context.Said.Say(await RefuseAsync(ask, verdict.Code!, null, files, ct).ConfigureAwait(false)));
                         break;
                     case HelperVerdict.WaitKind:
                         // An agent's ask that comes to wait on the person's word is said once (MIXAGENT2c, D168): the line makes
@@ -136,18 +136,18 @@ internal sealed class DriverHelpers(LoopContext context, Driver driver)
     /// under its claim: under the watch as the <c>helper</c> topic's judge beside the look (PARALLEL1g), its line joining a later report,
     /// so an asker's record or a helpers' door slow to answer holds no start; in the look otherwise, as before.
     /// </summary>
-    private async Task SettlingAsync(HelperAsk ask, List<string> events, Func<CancellationToken, Task<string?>> settle, CancellationToken ct)
+    private async Task SettlingAsync(HelperAsk ask, List<string> events, Func<CancellationToken, Task<LookLine?>> settle, CancellationToken ct)
     {
         if (_context.Beside)
         {
-            Judging(ask.Id, async token => await SettleOnceAsync(ask, settle, token).ConfigureAwait(false) is { } said ? [_context.Said.Progress("helper", said)] : [], ct);
+            Judging(ask.Id, async token => await SettleOnceAsync(ask, settle, token).ConfigureAwait(false) is { } said ? [_context.Said.Say(said)] : [], ct);
             return;
         }
 
-        if (await SettleOnceAsync(ask, settle, ct).ConfigureAwait(false) is { } line) events.Add(_context.Said.Progress("helper", line));
+        if (await SettleOnceAsync(ask, settle, ct).ConfigureAwait(false) is { } line) events.Add(_context.Said.Say(line));
     }
 
-    private async Task<string?> SettleOnceAsync(HelperAsk ask, Func<CancellationToken, Task<string?>> settle, CancellationToken ct)
+    private async Task<LookLine?> SettleOnceAsync(HelperAsk ask, Func<CancellationToken, Task<LookLine?>> settle, CancellationToken ct)
     {
         if (!_context.Runs.TryOpinion(HelperClaim(ask.Id))) return null;
         try
@@ -178,7 +178,7 @@ internal sealed class DriverHelpers(LoopContext context, Driver driver)
                                               || (error is OperationCanceledException && !token.IsCancellationRequested))
             {
                 return _context.Runs.Facts.Failed($"helper/{ask}")
-                    ? [$"helper  the ask for a helper `{ask}` could not be looked at this time, and is looked at again at a later look: {error.Message}"]
+                    ? [_context.Said.Retry("helper", $"helper  the ask for a helper `{ask}` could not be looked at this time, and is looked at again at a later look: {error.Message}")]
                     : [];
             }
         }, ct);
@@ -194,19 +194,23 @@ internal sealed class DriverHelpers(LoopContext context, Driver driver)
     private static string HelperClaim(string ask) => $"helper:{ask}";
 
     /// <summary>A pass beside the look, as a second opinion's is: told opened at once, its line joining a later look's report.</summary>
-    private void HelperBeside(string ask, Func<CancellationToken, Task<string>> work, CancellationToken ct) =>
+    private void HelperBeside(string ask, Func<CancellationToken, Task<LookLine>> work, CancellationToken ct) =>
         _ = _context.Runs.StartAsync(async opened =>
         {
             opened();
             try
             {
-                return new StartRun(await work(ct).ConfigureAwait(false), Opened: true);
+                var line = await work(ct).ConfigureAwait(false);
+                return new StartRun(line.Text, Opened: true) { Look = line.Look };
             }
             catch (Exception error) when (error is HttpRequestException or DriverException or JsonException or IOException
                                               or UnauthorizedAccessException
                                               || (error is OperationCanceledException && !ct.IsCancellationRequested))
             {
-                return new StartRun($"helper  the helper for ask `{ask}` stopped, and is looked at again at the next look: {error.Message}", Opened: true);
+                return new StartRun($"helper  the helper for ask `{ask}` stopped, and is looked at again at the next look: {error.Message}", Opened: true)
+                {
+                    Look = new LookClassed(LookClass.Retry, "helper"),
+                };
             }
             finally
             {
@@ -229,9 +233,10 @@ internal sealed class DriverHelpers(LoopContext context, Driver driver)
 
     /// <summary>
     /// An ask refused: its state <c>refused</c> with the code, and a coded line on the asker's record saying the agent (where one
-    /// was chosen) and why. Never an account's name or a path.
+    /// was chosen) and why. Never an account's name or a path. Its line is the log's, the asker told; an asker that has left is told
+    /// nothing, so the refusal is news (NOTIFY2h2).
     /// </summary>
-    private Task<string> RefuseAsync(HelperAsk ask, string code, string? agent, HelperFiles files, CancellationToken ct)
+    private Task<LookLine> RefuseAsync(HelperAsk ask, string code, string? agent, HelperFiles files, CancellationToken ct)
     {
         var kept = files.ReadState(ask.Id);
         files.WriteState(new HelperState(ask.Id, HelperStates.Refused, code, kept?.Helper, DateTimeOffset.UtcNow) { Agent = agent ?? kept?.Agent });
@@ -242,11 +247,18 @@ internal sealed class DriverHelpers(LoopContext context, Driver driver)
             _context.Events.Keep(ask.Asker, new SessionEvent { Kind = SessionEventKind.Note, Text = note.Note, Parts = note.Parts }, say: null);
         }
 
-        return Task.FromResult($"helper  ask `{ask.Id}` refused ({code}): {HelperWhy.Said(code)}.");
+        return Task.FromResult(new LookLine(
+            $"helper  ask `{ask.Id}` refused ({code}): {HelperWhy.Said(code)}.",
+            code == HelperWhy.AskerGone
+                ? LookClassed.Noticed("helper", new LookNews(LookSaid.HelperAskerGone, ask.Id))
+                : new LookClassed(LookClass.Progress, "helper")));
     }
 
+    /// <summary>A helper's line, classed where it is made (NOTIFY2h2).</summary>
+    private static LookLine Helper(LookClass @class, string line) => new(line, new LookClassed(@class, "helper"));
+
     /// <summary>One ask taken up: its agent chosen, its pass run, and what the helper said settled and delivered.</summary>
-    private async Task<string> RunHelperAsync(HelperAsk ask, PriorSession asker, HelperRule rule, HelperFiles files, CancellationToken ct)
+    private async Task<LookLine> RunHelperAsync(HelperAsk ask, PriorSession asker, HelperRule rule, HelperFiles files, CancellationToken ct)
     {
         string? tip = null, root = null;
         if (asker.Tree is { Length: > 0 } tree) (tip, root) = await ReadTreeAsync(tree, ct).ConfigureAwait(false);
@@ -262,7 +274,7 @@ internal sealed class DriverHelpers(LoopContext context, Driver driver)
         {
             // No agent ready: it waits, and the state says why (a cool-off, a sign-in, no other maker), tried again at a later look.
             Wait(files, ask, files.ReadState(ask.Id), choice.Code ?? ReviewerUnavailable.Refused);
-            return $"helper  ask `{ask.Id}` waits: {choice.Sentence}";
+            return Helper(LookClass.Retry, $"helper  ask `{ask.Id}` waits: {choice.Sentence}");
         }
 
         var agent = choice.Reviewer!;
@@ -294,10 +306,10 @@ internal sealed class DriverHelpers(LoopContext context, Driver driver)
     /// What the helper said, settled once its turn ended: the answer <c>helper_answer</c> wrote, else its last words bounded as a
     /// parked session's are (only where the turn completed), else <c>refused</c> with <c>no-answer</c>; then delivered.
     /// </summary>
-    private async Task<string> SettleHelperAsync(HelperAsk ask, HelperFiles files, string? ended, string? lastWords, CancellationToken ct)
+    private async Task<LookLine> SettleHelperAsync(HelperAsk ask, HelperFiles files, string? ended, string? lastWords, CancellationToken ct)
     {
         var state = files.ReadState(ask.Id);
-        if (state is not { State: HelperStates.Started, Helper: { } helper }) return $"helper  ask `{ask.Id}` is not started: nothing to settle.";
+        if (state is not { State: HelperStates.Started, Helper: { } helper }) return Helper(LookClass.Progress, $"helper  ask `{ask.Id}` is not started: nothing to settle.");
 
         if (files.ReadAnswer(ask.Id) is { } answer && string.Equals(answer.Helper, helper, StringComparison.Ordinal))
         {
@@ -314,14 +326,14 @@ internal sealed class DriverHelpers(LoopContext context, Driver driver)
 
         files.WriteState(state);
         return await DeliverHelperAsync(ask, state, files, ct).ConfigureAwait(false)
-               ?? $"helper  ask `{ask.Id}` is answered; the answer reaches session {ask.Asker} at its turn's end, never into a step in flight.";
+               ?? Helper(LookClass.Progress, $"helper  ask `{ask.Id}` is answered; the answer reaches session {ask.Asker} at its turn's end, never into a step in flight.");
     }
 
     /// <summary>
     /// A <c>started</c> ask nothing in this process runs (a restart ended its pass): its helper's record read, and if that ended the
     /// ask is settled from what the helper kept, its last words read from its transcript. A helper still running is left.
     /// </summary>
-    private async Task<string?> SettleStartedAsync(HelperAsk ask, HelperState state, HelperFiles files, CancellationToken ct)
+    private async Task<LookLine?> SettleStartedAsync(HelperAsk ask, HelperState state, HelperFiles files, CancellationToken ct)
     {
         if (state.Helper is not { } helper) return null;
         var record = await _context.Service.RecordAsync(helper, ct).ConfigureAwait(false);
@@ -340,7 +352,7 @@ internal sealed class DriverHelpers(LoopContext context, Driver driver)
     /// takes it open between turns, and ended: a shown event is left for the shell's chat runner, which says the word as its next
     /// turn, or goes the ended one on with it.
     /// </summary>
-    private async Task<string?> DeliverHelperAsync(HelperAsk ask, HelperState state, HelperFiles files, CancellationToken ct)
+    private async Task<LookLine?> DeliverHelperAsync(HelperAsk ask, HelperState state, HelperFiles files, CancellationToken ct)
     {
         var service = _context.Service;
         var output = _context.Output;
@@ -373,7 +385,7 @@ internal sealed class DriverHelpers(LoopContext context, Driver driver)
         var (handed, message, word) = await service.Helpers
             .HandAsync(state.Helper!, composed, ct, running: nextStep, level: ask.Urgent ? MessageLevels.Spelled(MessageLevel.Urgent) : null)
             .ConfigureAwait(false);
-        if (!handed) return $"helper  ask `{ask.Id}` is answered, and waits to be handed to session {ask.Asker}: {message}";
+        if (!handed) return Helper(LookClass.Retry, $"helper  ask `{ask.Id}` is answered, and waits to be handed to session {ask.Asker}: {message}");
 
         // Held where the run takes it at its next step; one the inbox no longer takes stays on the record, which goes on with it once.
         var atNextStep = nextStep && word is not null && inbox!.HoldKept(
@@ -399,9 +411,9 @@ internal sealed class DriverHelpers(LoopContext context, Driver driver)
                 say: null);
         }
 
-        return atNextStep
+        return Helper(LookClass.Progress, atNextStep
             ? $"helper  ask `{ask.Id}` answered by {agent}: its answer reaches session {ask.Asker} at its next step, marked as the helper's."
-            : $"helper  ask `{ask.Id}` answered by {agent}: its answer is session {ask.Asker}'s next turn, marked as the helper's, at the driver's next look.";
+            : $"helper  ask `{ask.Id}` answered by {agent}: its answer is session {ask.Asker}'s next turn, marked as the helper's, at the driver's next look.");
     }
 
     /// <summary>

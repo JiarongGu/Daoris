@@ -50,13 +50,12 @@ public sealed class LookSaidTests : IDisposable
         Assert.Equal("b", said.Own("meeting", "b"));
         Assert.Equal("c", said.Wait("helper", "c"));
         Assert.Equal("d", said.Progress("hand-over", "d"));
-        Assert.Equal(["e", "f"], said.Each(LookClass.Progress, "channel", ["e", "f"]));
         Assert.Equal("g", said.Of(LookClass.Wait, "start", "g"));
         Assert.Throws<ArgumentException>(() => said.Of(LookClass.News, "stop", "h"));
 
         var logged = Logged();
         Assert.Equal(
-            ["retry/rules", "own/meeting", "wait/helper", "progress/hand-over", "progress/channel", "progress/channel", "wait/start"],
+            ["retry/rules", "own/meeting", "wait/helper", "progress/hand-over", "wait/start"],
             logged.Select(each => $"{each["data"]!["class"]}/{each["data"]!["family"]}"));
         Assert.All(logged, each => Assert.Equal(["class", "family"], each["data"]!.AsObject().Select(field => field.Key)));
         Assert.DoesNotContain(logged, each => each.ToJsonString().Contains("busy", StringComparison.Ordinal));
@@ -120,9 +119,150 @@ public sealed class LookSaidTests : IDisposable
     }
 
     /// <summary>
+    /// NOTIFY2h2: a producer's lines are each classed as it adds them (<see cref="LookLines"/>), handed on unchanged and in order; a news
+    /// one is its notice.
+    /// </summary>
+    [Fact]
+    public void A_producers_lines_are_each_classed_as_they_are_made()
+    {
+        var lines = new LookLines(Said(), "reopen");
+        lines.Retry("a");
+        lines.Own("b");
+        lines.Wait("c");
+        lines.Progress("d");
+        lines.Of(LookClass.Progress, "e");
+        lines.News(new LookNews(LookSaid.ReopenTreeGone, "q1", "s1", "q1", "games"), "f");
+
+        Assert.Equal(["a", "b", "c", "d", "e", "f"], lines.Said);
+        Assert.Equal(["retry", "own", "wait", "progress", "progress", "news"], Logged().Select(each => (string?)each["data"]!["class"]));
+        Assert.All(Logged(), each => Assert.Equal("reopen", (string?)each["data"]!["family"]));
+        Assert.Equal(new Notice("look-reopen-tree-gone-q1", Notices.Look, Now, Workspace: "games", Session: "s1", Quest: "q1", Code: LookSaid.ReopenTreeGone),
+            Assert.Single(Notices.Read(_home, Now)!));
+    }
+
+    /// <summary>
+    /// NOTIFY2h2: a run's line, said where the look drains it, by the class the pass that made it gave it (a meeting's failure news, a
+    /// helper's wait its retry); one its pass did not class is a session's end, <c>progress</c>, or the person's own, <c>own</c>.
+    /// </summary>
+    [Fact]
+    public void A_runs_line_is_said_by_the_class_its_pass_gave_it()
+    {
+        var said = Said();
+
+        Assert.Equal("m", said.Ran(LookClassed.Noticed("meeting", new LookNews(LookSaid.MeetingFailed, "m1")), byPerson: false, "m"));
+        Assert.Equal("w", said.Say(new LookLine("w", new LookClassed(LookClass.Retry, "helper"))));
+        Assert.Equal("o", said.Ran(new LookClassed(LookClass.Own, "brainstorm"), byPerson: false, "o"));
+        Assert.Equal("e", said.Ran(null, byPerson: false, "e"));
+        Assert.Equal("p", said.Ran(null, byPerson: true, "p"));
+        Assert.Throws<ArgumentException>(() => said.Ran(new LookClassed(LookClass.News, "meeting"), byPerson: false, "x"));
+
+        Assert.Equal(
+            ["news/meeting", "retry/helper", "own/brainstorm", "progress/ended", "own/ended"],
+            Logged().Select(each => $"{each["data"]!["class"]}/{each["data"]!["family"]}"));
+        Assert.Equal("look-meeting-failed-m1", Assert.Single(Notices.Read(_home, Now)!).Id);
+    }
+
+    /// <summary>Every news code has its words in both of the page's catalogues (the translation contract): a code is never shown raw.</summary>
+    [Fact]
+    public void Every_news_code_has_its_words_in_en_and_zh()
+    {
+        foreach (var language in new[] { "en", "zh" })
+        {
+            var path = Path.Combine(WorkspaceRoot.Folder, "src", "Daoris.Web", "src", "locales", language, "notifications.json");
+            var catalogue = JsonNode.Parse(File.ReadAllText(path))!.AsObject();
+            Assert.All(LookSaid.NewsCodes, code =>
+                Assert.False(string.IsNullOrWhiteSpace((string?)catalogue[$"notifications.done.look.{code}"]), $"{language} has no words for {code}"));
+        }
+    }
+
+    /// <summary>
+    /// NOTIFY2h2's census (D196's NOTIFY2h note): the look's deeper producers, which hand it their lines whole, class each line where they
+    /// make it. Every look line one of them makes (a family's word and two spaces, as the report's lines read) is made by a statement that
+    /// classes it, and every run a meeting's, a brainstorm's or a helper's pass ends carries its class; one that does not fails here,
+    /// naming its file and line.
+    /// </summary>
+    [Fact]
+    public void Every_line_the_looks_deeper_producers_make_has_a_class()
+    {
+        var sources = SourceFiles.All(SourceFiles.DriverProject, "*.cs")
+            .Where(path => Producers.Contains(Path.GetFileName(path)))
+            .ToList();
+        Assert.Equal(Producers.Order(StringComparer.Ordinal), sources.Select(Path.GetFileName).Order(StringComparer.Ordinal));
+
+        var unclassed = new List<string>();
+        var found = 0;
+        foreach (var path in sources)
+        {
+            var text = File.ReadAllText(path).Replace("\r\n", "\n");
+            foreach (Match made in Made.Matches(text))
+            {
+                var statement = Statement(text, made.Index);
+                if (NotTheLook.Any(each => text.AsSpan(made.Index).StartsWith(each, StringComparison.Ordinal)) || OwnRecord.IsMatch(statement)) continue;
+                found++;
+                if (!ClassedStatement.IsMatch(statement)) unclassed.Add($"{Path.GetFileName(path)}:{LineOf(text, made.Index)}");
+            }
+
+            foreach (Match run in Runs.Matches(text))
+            {
+                found++;
+                if (!Statement(text, run.Index).Contains("Look =", StringComparison.Ordinal)) unclassed.Add($"{Path.GetFileName(path)}:{LineOf(text, run.Index)} (a run)");
+            }
+        }
+
+        Assert.True(found > 60, $"the census found {found} lines; the pattern no longer reads the producers");
+        Assert.True(unclassed.Count == 0, $"made with no class: {string.Join(", ", unclassed)}");
+    }
+
+    /// <summary>The producers that hand the look their lines whole (2h's list, D196's NOTIFY2h note), and the passes whose runs end beside it.</summary>
+    private static readonly string[] Producers =
+    [
+        "ChannelReach.cs", "ReopenTelling.cs", "ReviewDesk.cs", "RuleProposals.cs", "AutoLander.cs", "WorkspaceSetup.cs",
+        "RegistrationFollow.cs", "Hooks.cs", "BranchTidying.cs", "UncertainWords.cs", "DriverMeetings.cs", "DriverBrainstorms.cs",
+        "DriverHelpers.cs",
+    ];
+
+    /// <summary>A look line made: a string that opens with a family's word and two spaces.</summary>
+    private static readonly Regex Made = new(@"\$?""[a-z][a-z-]*  ", RegexOptions.CultureInvariant);
+
+    /// <summary>A run a pass beside the look ends with.</summary>
+    private static readonly Regex Runs = new(@"\bnew StartRun\(", RegexOptions.CultureInvariant);
+
+    /// <summary>A statement that classes what it makes: through <see cref="LookSaid"/>, a producer's <see cref="LookLines"/>, or a class carried up.</summary>
+    private static readonly Regex ClassedStatement = new(
+        @"\.(Retry|Own|Wait|Progress|News|Of|Say|Ran)\(|\b(Helper|Ran)\(LookClass\.|\bLookClassed\b", RegexOptions.CultureInvariant);
+
+    /// <summary>
+    /// Lines in those files the look does not say as they are made: a plugin's answer to a state change, which its one teller logs
+    /// (<c>Hooks.ChangedAsync</c>); and a registry outcome's words, which a terminal prints as they are and the look says through
+    /// <c>RegistrationFollow.EventLine(followed, said)</c>, classed there.
+    /// </summary>
+    private static readonly string[] NotTheLook =
+    [
+        "$\"plugin  {id}: {error.Message}\";",
+        "$\"registry  {followed.Repository}: {followed.Said}\",",
+    ];
+
+    /// <summary>
+    /// A turn's or a helper pass's own record, whose line nothing in the look reads: the pass reads its codes and state, and its run's
+    /// line is the one the look says (<see cref="Runs"/>).
+    /// </summary>
+    private static readonly Regex OwnRecord = new(@"\bnew (BrainstormTurnRun|HelperPassRun)\(", RegexOptions.CultureInvariant);
+
+    /// <summary>The statement around <paramref name="at"/>: from the last <c>;</c> ending a line before it to the first after.</summary>
+    private static string Statement(string text, int at)
+    {
+        var from = text.LastIndexOf(";\n", at, StringComparison.Ordinal) + 1;
+        var to = text.IndexOf(";\n", at, StringComparison.Ordinal);
+        return text[from..(to < 0 ? text.Length : to)];
+    }
+
+    private static int LineOf(string text, int at) => text[..at].Count(c => c == '\n') + 1;
+
+    /// <summary>
     /// The census (§9's proof): every line a producer of the look adds to the look's lines goes through <see cref="LookSaid"/> with its
     /// class, in every source that adds one; a line with no class fails here, naming its file and line. A list another producer
-    /// already classed and that is only carried on is named below, by its exact text.
+    /// already classed and that is only carried on is named below, by its exact text, and a producer handed the look's classing
+    /// (<c>Lines</c>) classes each line it makes (NOTIFY2h2, the census above).
     /// </summary>
     [Fact]
     public void Every_line_the_look_adds_has_a_class()
@@ -143,6 +283,7 @@ public sealed class LookSaidTests : IDisposable
                 found++;
                 var argument = text[(add.Index + add.Length)..].TrimStart();
                 if (Classed.IsMatch(argument) || Carried.Any(each => argument.StartsWith(each, StringComparison.Ordinal))) continue;
+                if (HandsLines.IsMatch(Statement(text, add.Index))) continue;
                 var line = text[..add.Index].Count(c => c == '\n') + 1;
                 unclassed.Add($"{Path.GetFileName(path)}:{line}");
             }
@@ -157,7 +298,10 @@ public sealed class LookSaidTests : IDisposable
 
     /// <summary>A line classed where it is made: the driver's <c>Lines</c>, a class's <c>Said</c>, a static producer's <c>said</c>.</summary>
     private static readonly Regex Classed = new(
-        @"^((_?context|_said)\.Said|Lines|said|Said)\.(Retry|Own|Wait|Progress|News|Each|Of)\(", RegexOptions.CultureInvariant);
+        @"^((_?context|_said)\.Said|Lines|said|Said)\.(Retry|Own|Wait|Progress|News|Of|Say|Ran)\(", RegexOptions.CultureInvariant);
+
+    /// <summary>A statement that hands the look's classing to the producer whose lines it adds (NOTIFY2h2): <c>Lines</c> as an argument.</summary>
+    private static readonly Regex HandsLines = new(@"[(,]\s*Lines\s*[),]", RegexOptions.CultureInvariant);
 
     /// <summary>The lists only carried on, each classed by the producer that made it.</summary>
     private static readonly string[] Carried =
@@ -166,5 +310,7 @@ public sealed class LookSaidTests : IDisposable
         "lines);",
         // A failed look's lines, classed as that look made them.
         "said.Events);",
+        // The lander's lines, classed where it made them (NOTIFY2h2: the lander is handed `Lines` as its `Look`).
+        "said);",
     ];
 }

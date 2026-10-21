@@ -153,6 +153,9 @@ internal sealed class DriverMeetings(LoopContext context, DriverBrainstorms brai
             + $"Read it with `daoris-driver meeting show {request.Id}`, and send it with `daoris-driver meeting send {request.Id}`.";
     }
 
+    /// <summary>A round's line, classed where it is made (NOTIFY2h2).</summary>
+    private static StartRun Ran(LookClass @class, string line) => new(line, Opened: true) { Look = new LookClassed(@class, "meeting") };
+
     private static string Named(IEnumerable<MeetingParticipant> participants) =>
         string.Join(", ", participants.Select(each => $"{each.Id} `{each.Adapter}`"));
 
@@ -186,7 +189,7 @@ internal sealed class DriverMeetings(LoopContext context, DriverBrainstorms brai
             opened();
             try
             {
-                return new StartRun(await RoundAsync(request, round, digest, rule, files, ct).ConfigureAwait(false), Opened: true);
+                return await RoundAsync(request, round, digest, rule, files, ct).ConfigureAwait(false);
             }
             catch (Exception error) when (error is HttpRequestException or DriverException or JsonException or IOException
                                               or UnauthorizedAccessException
@@ -194,7 +197,11 @@ internal sealed class DriverMeetings(LoopContext context, DriverBrainstorms brai
             {
                 files.WriteState(new MeetingState(request.Id, BrainstormStates.Ended, round, digest, "failed", DateTimeOffset.UtcNow));
                 files.RemoveRooms(request.Id);
-                return new StartRun($"meeting `{request.Id}` stopped in round {round}: {error.Message}", Opened: true);
+                // Stopped by a failure, not by the person: an end nobody pressed and nobody must answer (NOTIFY2h2).
+                return new StartRun($"meeting `{request.Id}` stopped in round {round}: {error.Message}", Opened: true)
+                {
+                    Look = LookClassed.Noticed("meeting", new LookNews(LookSaid.MeetingFailed, request.Id)),
+                };
             }
             finally
             {
@@ -205,9 +212,10 @@ internal sealed class DriverMeetings(LoopContext context, DriverBrainstorms brai
     /// <summary>
     /// One round the person sent (D177 point 4): each participant's turn in their order, one at a time, within its own minutes and the
     /// round's deadline; each message relayed as it is read; then the next round's packet frozen, or the meeting ended after its last.
-    /// The person's stop is watched throughout, and the rooms removed however the round ended.
+    /// The person's stop is watched throughout, and the rooms removed however the round ended. Its line is classed here (NOTIFY2h2): the
+    /// person's stop their own, a next round's packet a wait on their send, an end its page says.
     /// </summary>
-    private async Task<string> RoundAsync(MeetingRequest request, int round, string digest, BrainstormRule rule, MeetingFiles files, CancellationToken ct)
+    private async Task<StartRun> RoundAsync(MeetingRequest request, int round, string digest, BrainstormRule rule, MeetingFiles files, CancellationToken ct)
     {
         var id = request.Id;
         var bytes = files.PacketBytes(id, round);
@@ -261,27 +269,27 @@ internal sealed class DriverMeetings(LoopContext context, DriverBrainstorms brai
             if (stop.IsCancellationRequested)
             {
                 files.WriteState(new MeetingState(id, BrainstormStates.Ended, round, digest, BrainstormStates.Stopped, DateTimeOffset.UtcNow));
-                return $"meeting `{id}` stopped by the person in round {round}: {spoke} of its messages kept, and nothing more goes to any agent.{refusals}";
+                return Ran(LookClass.Own, $"meeting `{id}` stopped by the person in round {round}: {spoke} of its messages kept, and nothing more goes to any agent.{refusals}");
             }
 
             var spoken = $"{spoke} of {packet.Participants.Count} participants spoke{(gaps.Count == 0 ? "" : "; " + string.Join("; ", gaps))}.";
             if (spoke == 0)
             {
                 files.WriteState(new MeetingState(id, BrainstormStates.Ended, round, digest, BrainstormStates.NoAgent, DateTimeOffset.UtcNow));
-                return $"meeting `{id}` ended: no agent spoke in round {round}, and its packets are kept. {spoken}{refusals}";
+                return Ran(LookClass.Progress, $"meeting `{id}` ended: no agent spoke in round {round}, and its packets are kept. {spoken}{refusals}");
             }
 
             if (round >= MeetingPackets.MostRounds)
             {
                 files.WriteState(new MeetingState(id, BrainstormStates.Ended, round, digest, null, DateTimeOffset.UtcNow));
-                return $"meeting `{id}` ended after round {round}: {spoken} Read the transcript with `daoris-driver meeting show {id}`.{refusals}";
+                return Ran(LookClass.Progress, $"meeting `{id}` ended after round {round}: {spoken} Read the transcript with `daoris-driver meeting show {id}`.{refusals}");
             }
 
             var next = MeetingPackets.Refresh(packet, messages);
             files.WritePacket(id, round + 1, MeetingPackets.Bytes(next));
             files.WriteState(new MeetingState(id, BrainstormStates.Frozen, round + 1, next.Digest, null, DateTimeOffset.UtcNow));
-            return $"meeting `{id}` round {round} ended: {spoken} Round {round + 1}'s packet `{next.Digest[..19]}` adds their messages: read it with "
-                + $"`daoris-driver meeting show {id}`, and send it with `daoris-driver meeting send {id} --round {round + 1}`.{refusals}";
+            return Ran(LookClass.Wait, $"meeting `{id}` round {round} ended: {spoken} Round {round + 1}'s packet `{next.Digest[..19]}` adds their messages: read it with "
+                + $"`daoris-driver meeting show {id}`, and send it with `daoris-driver meeting send {id} --round {round + 1}`.{refusals}");
         }
         finally
         {

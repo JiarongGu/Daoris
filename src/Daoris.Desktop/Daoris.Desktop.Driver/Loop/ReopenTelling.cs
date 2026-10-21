@@ -111,11 +111,16 @@ public sealed class ReopenTelling(ReopenMarks marks)
     /// <summary>The reopens settled in this run, by <see cref="Key"/>: told, or said once why they are not.</summary>
     private readonly ConcurrentDictionary<string, bool> _settled = new(StringComparer.Ordinal);
 
-    /// <summary>One look's telling over the quests it read: the lines it says.</summary>
+    /// <summary>
+    /// One look's telling over the quests it read: the lines it says, each classed as it is made (NOTIFY2h2): a reopen that reaches no
+    /// record or no tree is news, since nobody is told and nobody must answer; a stop of the person's their own; a telling not made the
+    /// next look's; the rest what moved.
+    /// </summary>
+    /// <param name="said">The look's classing; none classes and keeps nothing.</param>
     /// <exception cref="OperationCanceledException">The loop is closing.</exception>
-    public async Task<IReadOnlyList<string>> LookAsync(IReopenDoors doors, Snapshot snapshot, CancellationToken ct)
+    public async Task<IReadOnlyList<string>> LookAsync(IReopenDoors doors, Snapshot snapshot, CancellationToken ct, LookSaid? said = null)
     {
-        var lines = new List<string>();
+        var lines = new LookLines(said ?? LookSaid.None, "reopen");
         await DropAnsweredAsync(doors, snapshot, lines, ct).ConfigureAwait(false);
         foreach (var quest in snapshot.Quests)
         {
@@ -131,7 +136,7 @@ public sealed class ReopenTelling(ReopenMarks marks)
                                               or InvalidOperationException
                                               || (error is OperationCanceledException && !ct.IsCancellationRequested))
             {
-                lines.Add($"reopen  quest #{quest.Id}'s reopen was not told to session {session} at this look, and the next tries again: {error.Message}");
+                lines.Retry($"reopen  quest #{quest.Id}'s reopen was not told to session {session} at this look, and the next tries again: {error.Message}");
             }
         }
 
@@ -151,11 +156,11 @@ public sealed class ReopenTelling(ReopenMarks marks)
                                               or InvalidOperationException
                                               || (error is OperationCanceledException && !ct.IsCancellationRequested))
             {
-                lines.Add($"reopen  quest #{step.Id}'s go-on was not told to session {last.Session} at this look, and the next tries again: {error.Message}");
+                lines.Retry($"reopen  quest #{step.Id}'s go-on was not told to session {last.Session} at this look, and the next tries again: {error.Message}");
             }
         }
 
-        return lines;
+        return lines.Said;
     }
 
     /// <summary>
@@ -163,13 +168,18 @@ public sealed class ReopenTelling(ReopenMarks marks)
     /// answer, on an ended record they reopen it, so the planner goes on in that same session. A tree gone is told nothing, as a
     /// reopen's is, since its go-on would make the work again; said once.
     /// </summary>
-    private async Task TellGoneOnAsync(IReopenDoors doors, QuestView step, PriorSession last, string key, List<string> lines, CancellationToken ct)
+    private async Task TellGoneOnAsync(IReopenDoors doors, QuestView step, PriorSession last, string key, LookLines lines, CancellationToken ct)
     {
         if (last.Tree is not { Length: > 0 } tree || !Directory.Exists(tree))
         {
-            Settle(key, lines,
-                $"reopen  quest #{step.Id} was gone on with on the new work of #{step.Parent} after session {last.Session} ended, and its tree "
-                + "is gone: it is told nothing, and no work is made again for it");
+            if (Settles(key))
+            {
+                lines.News(
+                    new LookNews(LookSaid.ReopenTreeGone, step.Id, last.Session, step.Id, last.Workspace),
+                    $"reopen  quest #{step.Id} was gone on with on the new work of #{step.Parent} after session {last.Session} ended, and its tree "
+                    + "is gone: it is told nothing, and no work is made again for it");
+            }
+
             return;
         }
 
@@ -178,18 +188,18 @@ public sealed class ReopenTelling(ReopenMarks marks)
         if (said.Kept)
         {
             _settled[key] = true;
-            lines.Add(
+            lines.Progress(
                 $"reopen  session {last.Session} was told the person went on with quest #{step.Id} on the new work of #{step.Parent}, and goes on "
                 + "with Daoris's words");
             return;
         }
 
         // A record that began running since it was read is told at a later look; any other refusal is said once.
-        if (said.Refusal != "running") Settle(key, lines, $"reopen  session {last.Session} was not told of quest #{step.Id}'s go-on: {said.Message}");
+        if (said.Refusal != "running" && Settles(key)) lines.Progress($"reopen  session {last.Session} was not told of quest #{step.Id}'s go-on: {said.Message}");
     }
 
     private async Task TellAsync(
-        IReopenDoors doors, Snapshot snapshot, string quest, QuestReopenView reopen, string session, string key, List<string> lines,
+        IReopenDoors doors, Snapshot snapshot, string quest, QuestReopenView reopen, string session, string key, LookLines lines,
         CancellationToken ct)
     {
         // The look's last records name the session where it is the quest's newest here, and the look's snapshot where a later one
@@ -202,7 +212,7 @@ public sealed class ReopenTelling(ReopenMarks marks)
         var named = $"quest #{quest}'s reopened submission names session {session}";
         if (record is null)
         {
-            Settle(key, lines, $"reopen  {named}, which this machine keeps no record of: nobody here is told");
+            if (Settles(key)) lines.News(new LookNews(LookSaid.ReopenUnrecorded, quest, Quest: quest), $"reopen  {named}, which this machine keeps no record of: nobody here is told");
             return;
         }
 
@@ -216,7 +226,12 @@ public sealed class ReopenTelling(ReopenMarks marks)
 
         if (record.Tree is not { Length: > 0 } tree || !Directory.Exists(tree))
         {
-            Settle(key, lines, $"reopen  {named}, whose tree is gone: it is told nothing, and no work is made again for it");
+            if (Settles(key))
+            {
+                lines.News(new LookNews(LookSaid.ReopenTreeGone, quest, session, quest, record.Workspace),
+                    $"reopen  {named}, whose tree is gone: it is told nothing, and no work is made again for it");
+            }
+
             return;
         }
 
@@ -224,9 +239,7 @@ public sealed class ReopenTelling(ReopenMarks marks)
         // person's stop as their own words do, and these are Daoris's. So it is told nothing, and the stop is theirs to lift.
         if (record.PersonStopped)
         {
-            Settle(key, lines,
-                $"reopen  {named}, which the person stopped: it is told nothing, and nothing goes on with it "
-                + "until they say so");
+            if (Settles(key)) lines.Own($"reopen  {named}, which the person stopped: it is told nothing, and nothing goes on with it until they say so");
             return;
         }
 
@@ -235,12 +248,12 @@ public sealed class ReopenTelling(ReopenMarks marks)
         {
             _settled[key] = true;
             marks.Mark(session, quest, reopen, DateTimeOffset.UtcNow);
-            lines.Add($"reopen  session {session} was told the person reopened its submission on quest #{quest}, and goes on with Daoris's words");
+            lines.Progress($"reopen  session {session} was told the person reopened its submission on quest #{quest}, and goes on with Daoris's words");
             return;
         }
 
         // A record that began running since it was read is told at a later look; any other refusal is said once.
-        if (said.Refusal != "running") Settle(key, lines, $"reopen  session {session} was not told of quest #{quest}'s reopen: {said.Message}");
+        if (said.Refusal != "running" && Settles(key)) lines.Progress($"reopen  session {session} was not told of quest #{quest}'s reopen: {said.Message}");
     }
 
     /// <summary>
@@ -251,7 +264,7 @@ public sealed class ReopenTelling(ReopenMarks marks)
     /// fact's key, through the session's one dispatcher, so a restart before they go leaves them waiting there.
     /// </summary>
     private async Task TellRunningAsync(
-        IReopenDoors doors, DrivenInbox inbox, string quest, QuestReopenView reopen, string session, string key, List<string> lines,
+        IReopenDoors doors, DrivenInbox inbox, string quest, QuestReopenView reopen, string session, string key, LookLines lines,
         CancellationToken ct)
     {
         var fact = DaorisKeys.Read(DaorisKeys.Reopen(quest, reopen))!;
@@ -274,7 +287,7 @@ public sealed class ReopenTelling(ReopenMarks marks)
             DrivenReach.TurnEnd => "when its turn ends",
             _ => "as its first prompt goes",
         };
-        lines.Add($"reopen  session {session} is told the person reopened its submission on quest #{quest} {when}, as Daoris's words");
+        lines.Progress($"reopen  session {session} is told the person reopened its submission on quest #{quest} {when}, as Daoris's words");
     }
 
     /// <summary>
@@ -282,7 +295,7 @@ public sealed class ReopenTelling(ReopenMarks marks)
     /// quests this look read, before the go-on that would deliver them: those whose fact no longer holds are taken off and said once.
     /// A word whose quest this look did not read, or whose key names no fact of Daoris's, waits as it is.
     /// </summary>
-    private async Task DropAnsweredAsync(IReopenDoors doors, Snapshot snapshot, List<string> lines, CancellationToken ct)
+    private async Task DropAnsweredAsync(IReopenDoors doors, Snapshot snapshot, LookLines lines, CancellationToken ct)
     {
         var records = snapshot.LastRun.Values.Concat(snapshot.NamedByReopen.Values)
             .Where(record => !record.Teammate && record.WordsWaiting)
@@ -301,24 +314,22 @@ public sealed class ReopenTelling(ReopenMarks marks)
             {
                 await doors.DropAsync(record.Session, answered, ct).ConfigureAwait(false);
                 foreach (var word in answered) _settled[Dropping(record.Session, word.Id!)] = true;
-                lines.Add(
+                lines.Progress(
                     $"reopen  session {record.Session}'s words from Daoris were taken off its record, since what they said no longer holds: "
                     + string.Join(", ", answered.Select(word => word.Key)));
             }
             catch (Exception error) when (error is DriverException or HttpRequestException or System.Text.Json.JsonException
                                               || (error is OperationCanceledException && !ct.IsCancellationRequested))
             {
-                lines.Add($"reopen  session {record.Session}'s words from Daoris that no longer hold were not taken off at this look, and the next tries again: {error.Message}");
+                lines.Retry($"reopen  session {record.Session}'s words from Daoris that no longer hold were not taken off at this look, and the next tries again: {error.Message}");
             }
         }
     }
 
     private static string Dropping(string session, string word) => $"{session}\n{word}\ndropped";
 
-    private void Settle(string key, List<string> lines, string line)
-    {
-        if (_settled.TryAdd(key, false)) lines.Add(line);
-    }
+    /// <summary>Whether a reopen not told is said now: once, and never asked again in this run.</summary>
+    private bool Settles(string key) => _settled.TryAdd(key, false);
 
     private static string Key(string quest, QuestReopenView reopen) => $"{quest}\n{reopen.Machine}\n{reopen.Sequence}";
 

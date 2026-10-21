@@ -39,6 +39,12 @@ public sealed class BranchTidying(string home)
     /// <summary>How often a pass looks, at most; a test's is zero.</summary>
     public TimeSpan Pace { get; init; } = DefaultPace;
 
+    /// <summary>
+    /// The look's classing (NOTIFY2h2), by which each line is classed as it is made: what the tidy removed or kept, which the session's
+    /// page, its branch's line and This Daoris's cards say, is what moved; what it could not do now, a later look's. None by default.
+    /// </summary>
+    public LookSaid Look { get; init; } = LookSaid.None;
+
     /// <summary>What time it is; the system's by default.</summary>
     internal Func<DateTimeOffset> Clock { get; init; } = () => DateTimeOffset.UtcNow;
 
@@ -203,8 +209,8 @@ public sealed class BranchTidying(string home)
             {
                 if (First(met, "", "keeping", "held"))
                 {
-                    lines.Add($"tidy  {(setAside ? "the folders moved aside" : "the downloads")} were not cleaned this look: {holder?.Said ?? "another run"} "
-                        + "holds Daoris's keeping, and a later look tries again.");
+                    lines.Add(Look.Retry("tidy", $"tidy  {(setAside ? "the folders moved aside" : "the downloads")} were not cleaned this look: {holder?.Said ?? "another run"} "
+                        + "holds Daoris's keeping, and a later look tries again."));
                 }
             }
 
@@ -274,22 +280,22 @@ public sealed class BranchTidying(string home)
                 switch (each.Outcome)
                 {
                     case "removed":
-                        lines.Add($"tidy  removed the download {named}, which nothing had used for {policy.Days?.TotalDays:0} days ({Size(row?.Bytes ?? 0)}); "
-                            + "its next pin or use downloads it again.");
+                        lines.Add(Look.Progress("tidy", $"tidy  removed the download {named}, which nothing had used for {policy.Days?.TotalDays:0} days ({Size(row?.Bytes ?? 0)}); "
+                            + "its next pin or use downloads it again."));
                         break;
                     case "unfinished":
-                        lines.Add($"tidy  moved the download {named} aside, unused for {policy.Days?.TotalDays:0} days, and part of it could not be removed yet; "
-                            + "nothing runs it, and a later clearing takes the rest.");
+                        lines.Add(Look.Retry("tidy", $"tidy  moved the download {named} aside, unused for {policy.Days?.TotalDays:0} days, and part of it could not be removed yet; "
+                            + "nothing runs it, and a later clearing takes the rest."));
                         break;
                     case "kept" when row?.Keeps is { } why && First(met, "", $"download/{named}", "kept-" + why):
-                        lines.Add($"tidy  the download {named} stays past its days, since {DownloadKept(why, row.By)}.");
+                        lines.Add(Look.Progress("tidy", $"tidy  the download {named} stays past its days, since {DownloadKept(why, row.By)}."));
                         break;
                 }
             }
 
             if (pass.Unwritten is { } unwritten && First(met, "", KeepingRecord.PathOf(home), "unwritten"))
             {
-                lines.Add($"tidy  {Clause(unwritten)}.");
+                lines.Add(Look.Retry("tidy", $"tidy  {Clause(unwritten)}."));
             }
         }
 
@@ -356,7 +362,7 @@ public sealed class BranchTidying(string home)
         {
             lock (_gate)
             {
-                if (First(met, "", KeepingRecord.PathOf(home), "unwritten")) lines.Add($"tidy  {Clause(refused)}.");
+                if (First(met, "", KeepingRecord.PathOf(home), "unwritten")) lines.Add(Look.Retry("tidy", $"tidy  {Clause(refused)}."));
             }
         }
 
@@ -377,31 +383,31 @@ public sealed class BranchTidying(string home)
             {
                 if (slim.Removed.Count > 0)
                 {
-                    lines.Add($"tidy  dropped the package folders of the folder moved aside to {slim.Folder}: {string.Join(", ", slim.Removed)} "
-                        + $"({Size(slim.Bytes)}); `npm ci` beside each `package.json` makes them again, and the rest of it waits its days.");
+                    lines.Add(Look.Progress("tidy", $"tidy  dropped the package folders of the folder moved aside to {slim.Folder}: {string.Join(", ", slim.Removed)} "
+                        + $"({Size(slim.Bytes)}); `npm ci` beside each `package.json` makes them again, and the rest of it waits its days."));
                 }
 
                 if (slim.Said is { } said && First(met, "", slim.Folder, "slim-" + SlimKept.Written))
                 {
-                    lines.Add($"tidy  the folder moved aside to {slim.Folder} keeps its package folders for its days, since {Clause(said)}.");
+                    lines.Add(Look.Progress("tidy", $"tidy  the folder moved aside to {slim.Folder} keeps its package folders for its days, since {Clause(said)}."));
                 }
 
                 foreach (var path in slim.Kept.Where(path => slim.Said is null))
                 {
                     if (!First(met, "", $"{slim.Folder}/{path.Path}", "slim-" + path.Why)) continue;
-                    lines.Add($"tidy  `{path.Path}` in the folder moved aside to {slim.Folder} stays for its days, since {KeptWhy(path.Why)}.");
+                    lines.Add(Look.Progress("tidy", $"tidy  `{path.Path}` in the folder moved aside to {slim.Folder} stays for its days, since {KeptWhy(path.Why)}."));
                 }
 
                 foreach (var path in slim.Failed)
                 {
                     if (!First(met, "", $"{slim.Folder}/{path.Path}", "slim-failed")) continue;
-                    lines.Add($"tidy  `{path.Path}` in the folder moved aside to {slim.Folder} could not be removed yet ({Clause(path.Why ?? "")}); "
-                        + "a later look tries again.");
+                    lines.Add(Look.Retry("tidy", $"tidy  `{path.Path}` in the folder moved aside to {slim.Folder} could not be removed yet ({Clause(path.Why ?? "")}); "
+                        + "a later look tries again."));
                 }
 
                 if (slim.Unread is { } unread && First(met, "", slim.Folder, "slim-" + SetAsideKept.Unread))
                 {
-                    lines.Add($"tidy  the folder moved aside to {slim.Folder} keeps its package folders this look, since {Clause(unread)}.");
+                    lines.Add(Look.Retry("tidy", $"tidy  the folder moved aside to {slim.Folder} keeps its package folders this look, since {Clause(unread)}."));
                 }
 
                 if (slim.Removed.Count > 0 || slim.Kept.Count > 0)
@@ -512,14 +518,15 @@ public sealed class BranchTidying(string home)
                 // carry a title's words, so the machine log is not told (the machine-log design §5).
                 foreach (var gone in pass.Recovered)
                 {
-                    lines.Add($"tidy  {pass.Repository}: removed the recovery ref `{gone.Ref}`, past its {RecoveryRetention.Kept.TotalDays:0} days: "
-                        + $"`{ContentHolds.Named(gone.Holder)}` holds its commit {TextBounds.ShortCommit(gone.Commit, 8)}.");
+                    lines.Add(Look.Progress("tidy", $"tidy  {pass.Repository}: removed the recovery ref `{gone.Ref}`, past its {RecoveryRetention.Kept.TotalDays:0} days: "
+                        + $"`{ContentHolds.Named(gone.Holder)}` holds its commit {TextBounds.ShortCommit(gone.Commit, 8)}."));
                 }
 
                 if (pass.Held is { } held)
                 {
                     if (!First(met, pass.Repository, "", held)) continue;
-                    lines.Add($"tidy  {Held(pass)}");
+                    // What held the whole repository this look (a start in a tree, a service not answering): a later look's.
+                    lines.Add(Look.Retry("tidy", $"tidy  {Held(pass)}"));
                     log?.Warn("branch.kept", Kept(Name(pass.Repository), Name(pass.Workspace), null, held, pass.Cause));
                     continue;
                 }
@@ -529,12 +536,12 @@ public sealed class BranchTidying(string home)
                     var item = result.Item;
                     if (result.Removed)
                     {
-                        lines.Add($"tidy  {pass.Repository}: removed `{item.Branch}`, {Why(item)}"
+                        lines.Add(Look.Progress("tidy", $"tidy  {pass.Repository}: removed `{item.Branch}`, {Why(item)}"
                             + (result.MovedTo is { } to
                                 ? $"; its tree's folder was moved aside to {to}, and goes once it is left untouched for {Policy(home).SetAside.Days.TotalDays:0} days."
                                 // TREEFOLLOW1: the tree stays, on the branch its agent made; this one only said where it started.
                                 : item.TreeOn is { } on && on != item.Where ? $"; the session's work is on `{on}`." : ".")
-                            + (result.KeptRef is { } kept ? $" {ContentHold.KeptAt(item.Branch, kept)}" : ""));
+                            + (result.KeptRef is { } kept ? $" {ContentHold.KeptAt(item.Branch, kept)}" : "")));
                         // AUTOTIDY2a: `kind` and `kept` are fields added after the rest, so what read the line before reads it the same.
                         log?.Info("branch.tidied",
                             ("repository", pass.Repository), ("workspace", pass.Workspace), ("branch", item.Branch), ("tree", item.Tree is not null),
@@ -549,7 +556,8 @@ public sealed class BranchTidying(string home)
                         : item.Unread ? (TidyKept.Unread, item.Detail ?? "git could not say")
                         : result.Message == "kept" ? (null, null) : (TidyKept.Refused, result.Message);
                     if (why is null || !First(met, pass.Repository, item.Branch, why)) continue;
-                    lines.Add($"tidy  {pass.Repository}: `{item.Branch}` stays, since {Clause(clause!)}.");
+                    // One git could not read is read again at a later look; one a guard kept, its session's page and its branch's line say.
+                    lines.Add(Look.Of(why == TidyKept.Unread ? LookClass.Retry : LookClass.Progress, "tidy", $"tidy  {pass.Repository}: `{item.Branch}` stays, since {Clause(clause!)}."));
                     log?.Warn("branch.kept", Kept(pass.Repository, pass.Workspace, item.Branch, why, why == TidyKept.Unread ? result.Cause ?? (item.Unread ? TidyCause.Judged : null) : null));
                 }
 
@@ -572,8 +580,8 @@ public sealed class BranchTidying(string home)
             var item = result.Item;
             if (result.Removed)
             {
-                lines.Add($"tidy  {pass.Repository}: removed `{item.Branch}`, a branch a landing made, {LandedWhy(item)}."
-                    + (result.KeptRef is { } kept ? $" {ContentHold.KeptAt(item.Branch, kept)}" : ""));
+                lines.Add(Look.Progress("tidy", $"tidy  {pass.Repository}: removed `{item.Branch}`, a branch a landing made, {LandedWhy(item)}."
+                    + (result.KeptRef is { } kept ? $" {ContentHold.KeptAt(item.Branch, kept)}" : "")));
                 log?.Info("branch.tidied",
                     ("repository", pass.Repository), ("workspace", pass.Workspace), ("branch", null), ("tree", false), ("folder", null),
                     ("on", null), ("kind", item.Kind), ("kept", null), ("session", result.Session));
@@ -582,7 +590,7 @@ public sealed class BranchTidying(string home)
 
             // A branch the look did not name is the press's (its own judgement keeps it), and says nothing.
             if (result.Message == "kept" || !First(met, pass.Repository, item.Branch, TidyKept.Refused)) continue;
-            lines.Add($"tidy  {pass.Repository}: `{item.Branch}` stays, since {Clause(result.Message)}.");
+            lines.Add(Look.Progress("tidy", $"tidy  {pass.Repository}: `{item.Branch}` stays, since {Clause(result.Message)}."));
             log?.Warn("branch.kept", [.. Kept(pass.Repository, pass.Workspace, null, TidyKept.Refused, null), ("session", result.Session)]);
         }
     }
@@ -601,12 +609,12 @@ public sealed class BranchTidying(string home)
             if (stray.Moved)
             {
                 var goes = $"was moved aside to {stray.MovedTo}, and goes once it is left untouched for {Policy(home).SetAside.Days.TotalDays:0} days.";
-                lines.Add(stray.Kind != StrayKind.Opening
+                lines.Add(Look.Progress("tidy", stray.Kind != StrayKind.Opening
                     ? $"tidy  {pass.Repository}: `{name}`, a folder under its trees that git knows no tree in, {goes}"
                     : stray is { Branch: { } branch, BranchKept: null }
                         ? $"tidy  {pass.Repository}: removed `{branch}`, whose tree's opening was cut off: {stray.Message}; its tree's folder {goes}"
                         : $"tidy  {pass.Repository}: the tree `{name}`, whose opening was cut off ({stray.Message}), {goes}"
-                          + (stray.BranchKept is { } why ? $" Its branch `{stray.Branch}` stays, since {Clause(why)}." : ""));
+                          + (stray.BranchKept is { } why ? $" Its branch `{stray.Branch}` stays, since {Clause(why)}." : "")));
                 log?.Info("branch.tidied",
                     ("repository", pass.Repository), ("workspace", pass.Workspace), ("branch", stray.BranchKept is null ? stray.Branch : null),
                     ("tree", true), ("folder", stray.MovedTo is { } to ? Path.GetRelativePath(home, to).Replace('\\', '/') : null),
@@ -616,9 +624,9 @@ public sealed class BranchTidying(string home)
 
             var code = stray.Kept ?? TidyKept.Refused;
             if (!First(met, pass.Repository, stray.Branch ?? stray.Folder, code)) continue;
-            lines.Add(stray.Branch is { } kept
+            lines.Add(Look.Of(code == TidyKept.Unread ? LookClass.Retry : LookClass.Progress, "tidy", stray.Branch is { } kept
                 ? $"tidy  {pass.Repository}: `{kept}` stays, since {Clause(stray.Message)}."
-                : $"tidy  {pass.Repository}: the folder `{name}` under its trees stays, since {Clause(stray.Message)}.");
+                : $"tidy  {pass.Repository}: the folder `{name}` under its trees stays, since {Clause(stray.Message)}."));
             log?.Warn("branch.kept", Kept(pass.Repository, pass.Workspace, stray.Branch, code, code == TidyKept.Unread ? stray.Cause : null));
         }
     }
@@ -654,14 +662,14 @@ public sealed class BranchTidying(string home)
                 var on = folder.Moved.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture);
                 if (folder.Purged)
                 {
-                    lines.Add($"tidy  deleted the folder moved aside to {folder.Folder} on {on}: nothing was written in it since.");
+                    lines.Add(Look.Progress("tidy", $"tidy  deleted the folder moved aside to {folder.Folder} on {on}: nothing was written in it since."));
                     log?.Info("tidied.purged", ("folder", named), ("days", (int)(Clock() - folder.Moved).TotalDays));
                     continue;
                 }
 
                 if (!First(met, "", folder.Folder, folder.Code ?? SetAsideKept.Unread)) continue;
-                lines.Add($"tidy  the folder moved aside to {folder.Folder} on {on} stays, since {Clause(folder.Kept ?? "")}. "
-                    + "Look at it, and delete it once it holds nothing you need.");
+                lines.Add(Look.Progress("tidy", $"tidy  the folder moved aside to {folder.Folder} on {on} stays, since {Clause(folder.Kept ?? "")}. "
+                    + "Look at it, and delete it once it holds nothing you need."));
                 log?.Warn("tidied.kept", ("folder", named), ("why", folder.Code ?? SetAsideKept.Unread));
             }
         }
