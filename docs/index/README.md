@@ -40,7 +40,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Web/src/app/App.tsx` | 76 | 1357 |
 | `src/Daoris.Web/src/app/pushedState.test.tsx` | 63 | 1325 |
 | `src/Daoris.Web/src/bridge/sessions/sessions.ts` | 44 | 868 |
-| `src/Daoris.Web/src/data/api.ts` | 51 | 847 |
+| `src/Daoris.Web/src/data/api.ts` | 52 | 862 |
 | `src/Daoris.Web/src/data/queries.ts` | 47 | 897 |
 | `src/Daoris.Web/src/design/tokens.test.ts` | 48 | 856 |
 | `src/Daoris.Web/src/design/ui.test.tsx` | 58 | 1167 |
@@ -51,7 +51,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Web/src/projects/ProjectsView.test.tsx` | 103 | 1807 |
 | `src/Daoris.Web/src/projects/ProjectsView.tsx` | 44 | 781 |
 | `src/Daoris.Web/src/projects/setup/RepositorySetup.test.tsx` | 45 | 787 |
-| `src/Daoris.Web/src/quests/QuestPage.tsx` | 56 | 1028 |
+| `src/Daoris.Web/src/quests/QuestPage.tsx` | 57 | 1043 |
 | `src/Daoris.Web/src/quests/QuestsView.test.tsx` | 75 | 1464 |
 | `src/Daoris.Web/src/work/WorkFrame.conversation.test.tsx` | 60 | 1168 |
 | `src/Daoris.Web/src/work/WorkFrame.landed.test.tsx` | 106 | 1850 |

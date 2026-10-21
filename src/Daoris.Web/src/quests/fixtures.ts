@@ -236,6 +236,18 @@ export const REOPENED: Quest = {
 /** The same step reopened before anyone took it: withdrawn, taken by nobody until the source is ready again. */
 export const WITHDRAWN: Quest = { ...REOPENED, id: 'wd0wd0', status: 'Open' };
 
+/**
+ * The source the person reopened (FABRIC-CLOSE1c4): still taken, its submission cleared, and the reopen it answers until its
+ * next `ready`, with their words and the session that said the reopened one (FABRIC-CLOSE1d3).
+ */
+export const SOURCE_REOPENED: Quest = {
+  ...SEALED, id: 'sr0sr0', submission: null,
+  reopened: {
+    machine: 'desk', sequence: 44, of: { machine: 'desk', sequence: 41 }, note: 'The cold cache still seams.', at: hoursAgo(1),
+    session: 's-7f3a21',
+  },
+};
+
 // SYNCMERGE1c2 (D178 points 2, 7 and 8): two machines' work on one step, read from where this machine (`desk`) stands. The quest
 // answer names this machine (`here`), the machine holding the step while it is taken (`holder`), and how each settled conflict ended.
 

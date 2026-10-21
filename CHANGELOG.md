@@ -5,6 +5,10 @@ with the version and date at release.
 
 ## Unreleased
 
+- A quest whose submission you reopened now says so on its page, under *Reopened*: when, your words as you wrote them (or that
+  you gave none), that it waits for its agent to make it ready again, and the session that submitted it, which is told. Before,
+  it read as a quest whose agent had not yet said it was ready. A submission also names the session that made it. In English and
+  中文; a service from before these shows neither.
 - `daoris tool` hands every verb to Daoris's own driver program, as `daoris-driver tool` with the same words, as `daoris driver`
   does. What each verb says is as before, but for these: a delete refused, and a file named for a tool that is not there, are said
   as the window's Tools place says them, with their code, and exit 2; and a file you name is asked its version before it is written,

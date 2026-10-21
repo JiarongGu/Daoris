@@ -1,10 +1,10 @@
 import type { ReactElement } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { render as rtlRender, screen, within } from '@testing-library/react';
+import { cleanup, render as rtlRender, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import i18n from '../locales/i18n';
-import { REOPENED, SEALED, SUBMITTED, TAKEN, WITHDRAWN } from './fixtures';
+import { REOPENED, SEALED, SOURCE_REOPENED, SUBMITTED, TAKEN, WITHDRAWN } from './fixtures';
 import { QuestPage } from './QuestPage';
 
 // FABRIC-CLOSE1d and CLOSE1c3 (the fabric events design §E5; D173's CLOSE1a, CLOSE1c and WORKFLOW2d notes; D156): a closure
@@ -68,6 +68,59 @@ describe("a closure graph's quest on its page", () => {
     page({ quest: SEALED });
 
     expect(screen.queryByRole('button', { name: 'Reopen…' })).toBeNull();
+  });
+});
+
+// FABRIC-CLOSE1d3 (after CLOSE1c4 and CLOSE1c8): a reopened source, taken with no submission, says the reopen with the person's
+// words as they wrote them and the session told of it, and a submission names the session that said its ready.
+describe('a source the person reopened', () => {
+  afterEach(async () => { await i18n.changeLanguage('en'); });
+
+  const reopenedFact = () => screen.getByText('Reopened').nextElementSibling as HTMLElement;
+
+  it('says the reopen, the person’s words as written, and the session it is told to', () => {
+    page({ quest: SOURCE_REOPENED });
+
+    expect(within(header()).getByText('taken')).toBeInTheDocument();
+    const fact = reopenedFact();
+    expect(fact).toHaveTextContent('1h ago');
+    expect(fact).toHaveTextContent('it waits for its agent to make it ready again');
+    expect(within(fact).getByText('The cold cache still seams.')).toBeInTheDocument();
+    expect(fact).toHaveTextContent('The session that submitted it, s-7f3a21, is told.');
+    expect(screen.queryByText('Submitted')).toBeNull();
+  });
+
+  it('says a reopen given without words, and names no session where none said the ready', () => {
+    page({ quest: { ...SOURCE_REOPENED, reopened: { ...SOURCE_REOPENED.reopened!, note: null, session: null } } });
+
+    const fact = reopenedFact();
+    expect(fact).toHaveTextContent('You gave no words with it.');
+    expect(fact).not.toHaveTextContent('is told');
+  });
+
+  it('says it in Chinese, the person’s words kept as they wrote them', async () => {
+    await i18n.changeLanguage('zh');
+    page({ quest: SOURCE_REOPENED });
+
+    const fact = screen.getByText('重新打开').nextElementSibling as HTMLElement;
+    expect(fact).toHaveTextContent('它等它的智能体再次交付');
+    expect(within(fact).getByText('The cold cache still seams.')).toBeInTheDocument();
+    expect(fact).toHaveTextContent('交付它的会话 s-7f3a21 会被告知。');
+  });
+
+  it('names the session that said a submission’s ready, and none from an older host', async () => {
+    page({ quest: { ...SEALED, submission: { ...SEALED.submission!, session: 's-7f3a21' } } });
+    expect(screen.getByText('Submitted').nextElementSibling).toHaveTextContent('by session s-7f3a21');
+    cleanup();
+
+    page({ quest: SEALED });
+    expect(screen.getByText('Submitted').nextElementSibling).not.toHaveTextContent('by session');
+    expect(screen.queryByText('Reopened')).toBeNull();
+    cleanup();
+
+    await i18n.changeLanguage('zh');
+    page({ quest: { ...SEALED, submission: { ...SEALED.submission!, session: 's-7f3a21' } } });
+    expect(screen.getByText('交付').nextElementSibling).toHaveTextContent('由会话 s-7f3a21 交付');
   });
 });
 

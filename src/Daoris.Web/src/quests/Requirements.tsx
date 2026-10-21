@@ -4,7 +4,7 @@ import { ago } from '../locales/format';
 import { Button, Pill, SectionTitle } from '../design/ui';
 
 /** The person's words, quoted: set apart by a rule, never slanted, kept as they were said (D133 §1). */
-function Quoted({ words }: { words: string }) {
+export function Quoted({ words }: { words: string }) {
   return <p className="m-0 border-l-2 border-line-strong pl-2.5 text-body text-ink whitespace-pre-wrap wrap-anywhere">{words}</p>;
 }
 

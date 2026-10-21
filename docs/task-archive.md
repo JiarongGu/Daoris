@@ -18844,3 +18844,13 @@ otherwise, so an older page reads it as before). The review's foot says the driv
 hand it off here* and offers the hand-off, and the head's Accept… tells it as an error notice naming the review, in en and zh. The
 family rehearsal compares no `LAND_SESSION_TREE` answer whole. Proof: `DriverModuleLandSyncTests`, `DiffPane.pushheld.test.tsx`,
 `WorkFrame.landed.test.tsx`. Detail: D173's FABRIC-CLOSE1h9 note.
+
+## FABRIC-CLOSE1d3 — the page reads a source's reopen and its submitting session (2026-10-21, D173)
+
+> - [ ] **FABRIC-CLOSE1d3 — the page reads a source's reopen and its submitting session** (web; after CLOSE1c4, CLOSE1d2). `api.ts`'s quest type lacks `reopened` and `submission.session`, so *Submitted* cannot show a reopened source with the person's words. Proof: the type and a vitest reading both, absent from an older host; the quest page showing the reopen's note, en and zh.
+
+**Outcome** 2026-10-21: `Quest.reopened` (`QuestReopen`: machine, sequence, `of`, note, `at`, and CLOSE1c8's `session`) and
+`QuestSubmission.session` are on the page's type. A taken source with no submission and a reopen says *Reopened* (重新打开) among its
+facts: when, that it waits for its agent's ready, the person's words quoted as written (or that they gave none), and the session told.
+*Submitted* names the session that said its ready. Proof: `api.test.ts` (both read, neither from an older host) and
+`QuestPage.closure.test.tsx` in en and zh. On Opus, by a driven session. Detail: D173's FABRIC-CLOSE1d3 note.

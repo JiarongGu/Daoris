@@ -25,7 +25,7 @@ import { stepState } from '../work/gates/review';
 import { ReviewGate, type ReviewGateActs } from '../work/gates/ReviewGate';
 import { QuestConflicts, readConflicts, SettledConflicts } from './Conflicts';
 import { QuestFlow, type QuestMovesDoor } from './QuestFlow';
-import { QuestRequirements } from './Requirements';
+import { QuestRequirements, Quoted } from './Requirements';
 import { shownStatus } from './records';
 import { TrustAsk } from '../work/waits/TrustAsk';
 import { type MainNotice, PageHead, PageSection, ViewMain } from '../work/frame/ViewMain';
@@ -733,10 +733,25 @@ export function QuestPage({
           /* When its agent made it ready (FABRIC-CLOSE1d), and the person's reopen of it where a step stands on it (CLOSE1c3). */
           <Fact name={t('quests.detail.submitted')}>
             {stamp(quest.submission.at)} · {ago(quest.submission.at)}
+            {quest.submission.session && <> · {t('quests.detail.submittedBy', { session: quest.submission.session })}</>}
             {reopenable && asking !== 'reopen' && (
               <span className="mt-1.5 block">
                 <Button disabled={waiting} onClick={() => press('reopen')}>{t(QUEST_ACT.reopen.label)}</Button>
               </span>
+            )}
+          </Fact>
+        )}
+        {quest.status === 'Taken' && !quest.submission && quest.reopened && (
+          /* A source the person reopened (FABRIC-CLOSE1d3, after CLOSE1c4 and CLOSE1c8): taken with no submission, which would
+             otherwise read as one whose taker has not said ready yet; when, their words as they wrote them, and the session told. */
+          <Fact name={t('quests.detail.reopened')}>
+            {stamp(quest.reopened.at)} · {ago(quest.reopened.at)}
+            <span className="mt-1 block">{t('quests.detail.reopenedWaits')}</span>
+            <div className="mt-1.5">
+              {quest.reopened.note ? <Quoted words={quest.reopened.note} /> : t('quests.detail.reopenedNoWords')}
+            </div>
+            {quest.reopened.session && (
+              <span className="mt-1.5 block">{t('quests.detail.reopenedTold', { session: quest.reopened.session })}</span>
             )}
           </Fact>
         )}
