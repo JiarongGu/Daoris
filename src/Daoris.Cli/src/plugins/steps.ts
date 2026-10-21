@@ -261,6 +261,51 @@ function stepDeclared(plugin: string, row: unknown, read: NodeDeclaration[]): St
   return problem === null ? { step, code: null, name } : broken(problem);
 }
 
+// ——— What a person reads (FABRIC-UNIT1e, §D9): `plugin list`, `describe` and an update's change list say a step and a resource in
+// these words. Twin: `PluginSteps.NameOf` and `PluginSteps.Said`, word for word; `plugin-steps.test.ts` holds the driver's table.
+
+/** A step's name as its manifest writes it: its kind past `<plugin>/`. Twin: `PluginSteps.NameOf`. */
+export function stepName(step: NodeDeclaration): string {
+  return step.kind.slice(step.kind.indexOf('/') + 1);
+}
+
+const portsSaid = (ports: Record<string, string>): string =>
+  Object.entries(ports).map(([name, schema]) => `${name} ${schema}`).join(', ');
+
+/**
+ * A step as an update's change says it: its name, then everything it declares that is not the default, so two declarations that
+ * differ are never said alike. Twin: `PluginSteps.Said(NodeDeclaration)`.
+ */
+export function stepSaid(step: NodeDeclaration): string {
+  const parts = [`${step.reach}, version ${step.version}`];
+  if (Object.keys(step.inputs).length > 0) parts.push(`inputs ${portsSaid(step.inputs)}`);
+  if (Object.keys(step.outputs).length > 0) parts.push(`outputs ${portsSaid(step.outputs)}`);
+  if (step.evidence !== null) parts.push(`evidence ${step.evidence}`);
+  if (step.retry !== null) {
+    const { maxAttempts, delaysSeconds } = step.retry;
+    parts.push(`at most ${maxAttempts} attempt${maxAttempts === 1 ? '' : 's'}`
+      + (delaysSeconds.length > 0 ? `, waiting ${delaysSeconds.join(', ')} seconds` : ''));
+  }
+  if (step.timeoutSeconds !== null) parts.push(`timeout ${step.timeoutSeconds} seconds`);
+  if (!step.skippable) parts.push('not skippable');
+  if (step.rejectable) parts.push('rejectable');
+  if (step.perform !== null) {
+    const { idempotent, reconcile, transient } = step.perform;
+    const said = [
+      ...(idempotent ? ['idempotent'] : []),
+      ...(reconcile ? ['reconciled'] : []),
+      ...(transient.length > 0 ? [`transient ${transient.join(', ')}`] : []),
+    ];
+    parts.push(...(said.length > 0 ? said : ['perform declared']));
+  }
+  return `${stepName(step)} (${parts.join('; ')})`;
+}
+
+/** A resource as `describe` and an update's change say it: its schema and its role. Twin: `PluginSteps.Said(PluginResource)`. */
+export function resourceSaid(resource: PluginResource): string {
+  return `${resource.schema} (${resource.role})`;
+}
+
 /**
  * The manifest's `steps` and `resources`, read from its root object for plugin `plugin`: absent is none, so a manifest written
  * before reads as it did. Twin: `PluginSteps.Read`.

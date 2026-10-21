@@ -183,7 +183,7 @@ public static class PluginPackageCommand
     }
 
     /// <summary>What a plugin declares and speaks, as the CLI's <c>describe</c> says it.</summary>
-    private static string Describe(PluginManifest manifest)
+    internal static string Describe(PluginManifest manifest)
     {
         var parts = new List<string>();
         if (manifest.Harnesses.Count > 0) parts.Add($"declares {string.Join(", ", manifest.Harnesses.Select(harness => harness.Name))}");
@@ -205,6 +205,15 @@ public static class PluginPackageCommand
             var skills = manifest.Skills.Where(skill => skill.HandedTo(to)).Select(skill => skill.Name).ToList();
             if (skills.Count > 0) parts.Add($"hands {who} skill{(skills.Count == 1 ? "" : "s")} {string.Join(", ", skills)}");
         }
+
+        // FABRIC-UNIT1e (§D9): the steps it declares, each with its reach, and what they create, as the CLI's `describe` says them.
+        if (manifest.Steps.Count > 0)
+        {
+            var steps = manifest.Steps.Select(step => $"{PluginSteps.NameOf(step)} ({step.Reach})").ToList();
+            parts.Add($"declares step{(steps.Count == 1 ? "" : "s")} {string.Join(", ", steps)}");
+        }
+
+        if (manifest.Resources.Count > 0) parts.Add($"creates {string.Join(", ", manifest.Resources.Select(PluginSteps.Said))}");
 
         return parts.Count > 0 ? string.Join("; ", parts) : "declares nothing and speaks nothing";
     }

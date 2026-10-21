@@ -263,4 +263,54 @@ public sealed class PluginStepsTests : IDisposable
         Assert.Empty(entry.Manifest.Steps);
         Assert.Empty(entry.Manifest.Resources);
     }
+
+    /// <summary>A manifest a row declares, read as the catalogue reads one.</summary>
+    private static PluginManifest Parsed(string declared)
+    {
+        var (manifest, problem) = PluginCatalog.Parse("acme.deploy", Manifest(declared));
+        Assert.Null(problem);
+        return manifest;
+    }
+
+    /// <summary>
+    /// FABRIC-UNIT1e (§D9): what an update changes in a plugin's steps and resources, each said in <see cref="PluginSteps.Said(NodeDeclaration)"/>'s
+    /// words: [case, what the installed manifest declares after its id, what the source's declares, then each change as
+    /// <c>what: was → now</c>, <c>(none)</c> for an empty side, joined by <c> | </c>]. A step is said whole, so a declaration that
+    /// changes without a new version is still a change. The twin is <c>plugin-steps.test.ts</c>'s <c>CHANGE_ROWS</c>.
+    /// </summary>
+    [Theory]
+    [InlineData("the same steps", """, "steps": [{ "id": "deploy", "reach": "performed" }] """, """, "steps": [{ "id": "deploy", "reach": "performed" }] """, "")]
+    [InlineData("a step added", "", """, "steps": [{ "id": "deploy", "reach": "performed" }] """, "steps: (none) → deploy (performed, version 1)")]
+    [InlineData("a step taken out", """, "steps": [{ "id": "build", "reach": "performed" }, { "id": "deployed", "reach": "observed" }] """, """, "steps": [{ "id": "deployed", "reach": "observed" }] """, "steps: build (performed, version 1); deployed (observed, version 1) → deployed (observed, version 1)")]
+    [InlineData("a new version", """, "steps": [{ "id": "deploy", "reach": "performed" }] """, """, "steps": [{ "id": "deploy", "version": 2, "reach": "performed" }] """, "steps: deploy (performed, version 1) → deploy (performed, version 2)")]
+    [InlineData("a whole step", "", """, "steps": [{ "id": "deploy", "version": 2, "reach": "performed", "inputs": { "release": "acme.build/artifact@1" }, "outputs": { "preview": "acme.deploy/preview@1", "log": "acme.deploy/log@1" }, "evidence": { "schema": "acme.deploy/receipt@1" }, "retry": { "maxAttempts": 3, "delaysSeconds": [5, 30] }, "timeoutSeconds": 600, "skippable": false, "rejectable": true, "perform": { "idempotent": true, "reconcile": "work/reconcile", "transient": ["unavailable", "rate-limited"] } }] """, "steps: (none) → deploy (performed, version 2; inputs release acme.build/artifact@1; outputs log acme.deploy/log@1, preview acme.deploy/preview@1; evidence acme.deploy/receipt@1; at most 3 attempts, waiting 5, 30 seconds; timeout 600 seconds; not skippable; rejectable; idempotent; reconciled; transient unavailable, rate-limited)")]
+    [InlineData("a retry widened in the same version", """, "steps": [{ "id": "deploy", "reach": "performed", "retry": { "maxAttempts": 2 }, "perform": { "reconcile": "work/reconcile", "transient": ["unavailable"] } }] """, """, "steps": [{ "id": "deploy", "reach": "performed", "retry": { "maxAttempts": 4, "delaysSeconds": [10] }, "perform": { "reconcile": "work/reconcile", "transient": ["unavailable"] } }] """, "steps: deploy (performed, version 1; at most 2 attempts; reconciled; transient unavailable) → deploy (performed, version 1; at most 4 attempts, waiting 10 seconds; reconciled; transient unavailable)")]
+    [InlineData("a retry of one attempt", "", """, "steps": [{ "id": "deploy", "reach": "performed", "retry": { "maxAttempts": 1 } }] """, "steps: (none) → deploy (performed, version 1; at most 1 attempt)")]
+    [InlineData("perform declared with nothing in it", """, "steps": [{ "id": "deploy", "reach": "performed" }] """, """, "steps": [{ "id": "deploy", "reach": "performed", "perform": {} }] """, "steps: deploy (performed, version 1) → deploy (performed, version 1; perform declared)")]
+    [InlineData("an observed step made performed", """, "steps": [{ "id": "deploy", "reach": "observed" }] """, """, "steps": [{ "id": "deploy", "reach": "performed" }] """, "steps: deploy (observed, version 1) → deploy (performed, version 1)")]
+    [InlineData("a resource kept as the result", """, "resources": [{ "schema": "acme.deploy/preview@1", "cleanup": "work/cleanup" }] """, """, "resources": [{ "schema": "acme.deploy/preview@1", "role": "result", "cleanup": "work/cleanup" }] """, "resources: acme.deploy/preview@1 (temporary) → acme.deploy/preview@1 (result)")]
+    [InlineData("a step and a resource added", "", """, "steps": [{ "id": "deployed", "reach": "observed", "skippable": true, "rejectable": false }], "resources": [{ "schema": "acme.deploy/site@1", "role": "temporary", "cleanup": "work/cleanup" }] """, "steps: (none) → deployed (observed, version 1) | resources: (none) → acme.deploy/site@1 (temporary)")]
+    public void An_update_says_its_step_changes_as_the_cli_says_them(string name, string was, string now, string changes)
+    {
+        static string Side(string said) => said.Length > 0 ? said : "(none)";
+        var between = PluginChange.Between(Parsed(was), Parsed(now));
+        Assert.True(
+            changes == string.Join(" | ", between.Select(change => $"{change.What}: {Side(change.Was)} → {Side(change.Now)}")),
+            $"{name}: {string.Join(" | ", between)}");
+    }
+
+    /// <summary>
+    /// FABRIC-UNIT1e (§D9): a plugin described where its other declarations are (<c>plugins install</c>'s line; the CLI's
+    /// <c>plugin list</c> and <c>plugin add</c>): [case, what the manifest declares after its id, the description]. The twin is
+    /// <c>plugin-steps.test.ts</c>'s <c>DESCRIBE_ROWS</c>.
+    /// </summary>
+    [Theory]
+    [InlineData("no steps", "", "speaks on work/perform")]
+    [InlineData("one step", """, "steps": [{ "id": "deploy", "reach": "performed" }] """, "speaks on work/perform; declares step deploy (performed)")]
+    [InlineData("steps and resources", """, "steps": [{ "id": "build", "reach": "performed" }, { "id": "deployed", "reach": "observed" }], "resources": [{ "schema": "acme.deploy/preview@1", "cleanup": "work/cleanup" }, { "schema": "acme.deploy/site@1", "role": "result", "cleanup": "work/cleanup" }] """, "speaks on work/perform; declares steps build (performed), deployed (observed); creates acme.deploy/preview@1 (temporary), acme.deploy/site@1 (result)")]
+    [InlineData("after a skill", """, "skills": [{ "name": "triage" }], "steps": [{ "id": "deployed", "reach": "observed" }] """, "speaks on work/perform; hands sessions skill triage; declares step deployed (observed)")]
+    public void A_plugin_is_described_with_its_steps_as_the_cli_describes_it(string name, string declared, string described)
+    {
+        Assert.True(described == PluginPackageCommand.Describe(Parsed(declared)), $"{name}: {PluginPackageCommand.Describe(Parsed(declared))}");
+    }
 }
