@@ -5,6 +5,10 @@ with the version and date at release.
 
 ## Unreleased
 
+- `daoris driver workflow apply <id> --as-graph` saves a workflow's newest version of steps as its next version, a graph, one holding
+  checks, stages or a group included. The graph is judged as any graph you save: two checks of one plugin are refused, naming both,
+  and nothing is written. The steps version stays as it was, and a go-ahead is said, since in the graph it holds what follows it until
+  your yes or your skip.
 - A quest whose submission you reopened now says so on its page, under *Reopened*: when, your words as you wrote them (or that
   you gave none), that it waits for its agent to make it ready again, and the session that submitted it, which is told. Before,
   it read as a quest whose agent had not yet said it was ready. A submission also names the session that made it. In English and

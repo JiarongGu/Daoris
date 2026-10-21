@@ -18893,3 +18893,13 @@ and `plugins install` name each step with its reach and what the steps create. `
 page and the offer's page list them in en and zh; `daoris-driver plugins show` says them too. Proof: `PluginStepsTests`' change and
 description theories held cell for cell by `plugin-steps.test.ts`, `PluginPageTests`, `DriverModulePluginPageTests`,
 `PluginPage.test.tsx` in both languages. Detail: D173's FABRIC-UNIT1e note.
+
+## FABRIC-GRAPH1j — a steps version saved as a graph, judged as saved (2026-10-21, D190)
+
+> - [ ] **FABRIC-GRAPH1j — a steps version saved as a graph, judged as saved** (cli, driver; after 1b; D190, design §7.2). `daoris driver workflow apply <id> --as-graph` reads the version by its shape (`WorkflowNamed.cs:250-256`), decodes it, materializes synthetic nodes as authored ones (`NodeGraphs.cs:588-589`), judges and saves it; `decodeSteps` judges as the driver's (`workflowgraphs.ts:194-198`). Proof on shape-level input: two checks of one plugin refused naming both; a group's join materialized; rows on `workflow-graphs.json`.
+
+**Outcome** 2026-10-21: `daoris driver workflow apply <id> --as-graph` reads the newest version's steps by their shape, writes the decoder's
+graph with every synthetic node authored (`WorkflowGraphs.Saved`), and saves it through the graph save, which judges it as saved: two
+observed nodes of one plugin step are refused naming both, and nothing is written; the steps version is kept as written, and a go-ahead
+is said as now holding what follows it. The CLI half has no file since PUSH1f2b, so the driver is the one reader. Proof:
+`workflow-graphs.json`'s `saved` rows (`WorkflowGraphsTests`) and `WorkflowAsGraphCommandTests`. Detail: D190's FABRIC-GRAPH1j note.
