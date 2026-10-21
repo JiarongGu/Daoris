@@ -58,7 +58,7 @@ instead).
 | The start's notice and the adopted host's notice | `homeNotice`, `hostNotice` | the two lines Driver shows today, under the folder |
 | Each top folder (D172's seven, and `update/`) | the layout's table (HOMELAYOUT2) | its window name (§8), its path, its size and when it was measured, *Open* |
 | An entry still at its old place | the layout's rule (D172 point 5) | under its folder: its name, its size, and why it stays (*a conversation may resume in it*, *a repository's `.mcp.json` names it*, *could not be moved: in use*) |
-| What is not Daoris's, or an earlier build's | names the layout does not hold (`webview2/`, `salvage/`, …) | one row each with its size: *left by an earlier build* or *not written by Daoris*; nothing offers to delete it |
+| What is not Daoris's, or an earlier build's | names the layout does not hold (`webview2/`, `salvage/`, …) | one row each with its size: *left by an earlier build* or *not written by Daoris*; nothing offers to delete it but the *Disk space* card's *Free up space…*, which offers `webview2/` and `browser/profile/` alone by their exact paths (D195, KEEP1e) |
 
 **Sizes are measured, never guessed.** Opening the page asks once; a walk runs in the background, one at a time, not
 following links or junctions, and the answer carries each folder's bytes and when they were counted. Until then a row says

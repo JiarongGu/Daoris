@@ -1520,7 +1520,7 @@ public sealed partial class HelpCoverageTests
 
     /// <summary>
     /// KEEP1c: the headless host's <c>space</c> is exempt from Ask Daoris (D195, D110 §4) while its usage spells it: a read that removes
-    /// nothing, with no kind of that name to take it. Its <c>space free</c> and the rules' <c>keep</c> are KEEP1e's and KEEP1d's.
+    /// nothing, with no kind of that name to take it. Its <c>space free</c> is <see cref="SpaceFreeDoor"/>; the rules' <c>keep</c> is KEEP1d's.
     /// </summary>
     [Fact]
     public void The_headless_hosts_space_is_exempt_since_it_changes_nothing()

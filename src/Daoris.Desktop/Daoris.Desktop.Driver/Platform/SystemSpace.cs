@@ -44,7 +44,7 @@ public static class SpaceKinds
 
     /// <summary>
     /// The browser's caches, relative to <c>browser-engine</c>'s root, its active profile being <c>Default</c> (the cleanup design §3.2's
-    /// table): counted here as the browser's own; nothing of Daoris's clears them yet (KEEP1e, KEEP1f).
+    /// table): counted here as the browser's own, cleared only by the person's press while the browser is closed (KEEP1e, <see cref="BrowserCacheClearing"/>); below the floor too once KEEP1f builds it.
     /// </summary>
     public static IReadOnlyList<string> BrowserCaches { get; } =
     [

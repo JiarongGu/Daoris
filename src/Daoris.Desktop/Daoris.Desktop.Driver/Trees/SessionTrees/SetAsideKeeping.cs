@@ -5,7 +5,7 @@ namespace Daoris.Driver;
 /// <summary>
 /// The set-aside kind's one removal (KEEP1a, D195 points 1 and 3; the cleanup design §2.1, §3.1 and §5): the purge at the policy's days,
 /// then the slims due, within the pass's budget. The look's Keeping pass calls it holding the home's run lock (<see cref="KeepingRun"/>);
-/// a press's run and a terminal's will call it the same way (KEEP1e), so the three share one set of guards. Outside every repository's
+/// a press's run and a terminal's call it the same way (KEEP1e, <see cref="SpaceFree"/>), so the three share one set of guards. Outside every repository's
 /// hold: it touches no git and no live tree.
 /// </summary>
 /// <remarks>
