@@ -10,8 +10,8 @@ import { coolingLine } from '../../src/accounts/cooling.ts';
 import { joinRefusal } from '../../src/accounts/rotation.ts';
 import { shellWord, shellWords } from '../../src/platform/shellword.ts';
 import { homeEntry } from '../../src/platform/home.ts';
-import { TOOLCHAINS, accountLines, commandHarness, profileHome, readHarnessSettings } from '../../src/agents/toolchain.ts';
-import { captureError, makeFixture } from '../_fixture.ts';
+import { TOOLCHAINS, accountLines, profileHome, readHarnessSettings } from '../../src/agents/toolchain.ts';
+import { makeFixture } from '../_fixture.ts';
 
 /**
  * An argument as a terminal hint prints it (ACCTQUOTE1, D125's ACCTQUOTE1 note): bare where every shell reads it as itself,
@@ -112,41 +112,14 @@ function at(fx: { root: string }): string {
   return path;
 }
 
-function run(argv: string[], path: string): { code: number; out: string } {
-  const saved = process.env.DAORIS_HARNESS_CONFIG;
-  process.env.DAORIS_HARNESS_CONFIG = path;
-  const lines: string[] = [];
-  try {
-    const code = commandHarness({ root: process.cwd(), argv, write: (line) => lines.push(line), packageRoot: process.cwd() }) as number;
-    return { code, out: lines.join('\n') };
-  } finally {
-    if (saved === undefined) delete process.env.DAORIS_HARNESS_CONFIG;
-    else process.env.DAORIS_HARNESS_CONFIG = saved;
-  }
-}
-
 function accounts(fx: { root: string }, ...names: string[]): void {
   for (const name of names) mkdirSync(profileHome(fx.root, 'claude-code', name), { recursive: true });
 }
 
+// The account verbs' own refusals are the driver's program's since PUSH1f2e, held by `AgentsCommandTests`' twin of this test.
 test('a refusal\'s command names a workspace with a space in double quotes, and an account it cannot spell by a placeholder', () => {
-  const fx = makeFixture('shell-words-refusals');
-  accounts(fx, 'account-1', 'account-2', 'R&D');
-  run(['profile', 'order', 'claude-code', 'account-1', '--workspace', 'my team'], at(fx));
-
-  assert.match(captureError(() => run(['profile', 'default', 'claude-code', 'account-2', '--workspace', 'my team'], at(fx))).message,
-    /`daoris agent profile order claude-code account-1 account-2 --workspace "my team"` adds it/);
-  assert.match(captureError(() => run(['profile', 'order', 'claude-code', 'R&D', 'account-1', '--clear'], at(fx))).message,
-    /`daoris agent profile order claude-code <account> account-1` sets it/);
-  assert.match(captureError(() => run(['profile', 'ready', 'claude-code', 'R&D', '--own'], at(fx))).message,
-    /`daoris agent profile ready claude-code <account>` is that account/);
-  assert.match(captureError(() => run(['profile', 'rename', 'claude-code', 'R&D'], at(fx))).message,
-    /`daoris agent profile rename claude-code <account> work`; naming it `R&D` gives it none/);
-  assert.match(captureError(() => run(['profile', 'join', 'claude-code', 'R&D'], at(fx))).message,
-    /`daoris agent profile join claude-code <account> work`/);
   assert.match(joinRefusal('claude-code', 'my team'),
     /`daoris agent profile order claude-code <account>… --workspace "my team"`/);
-  fx.cleanup();
 });
 
 test('a cool-off\'s Try now names an account it cannot spell by a placeholder', () => {
@@ -160,8 +133,10 @@ test('a cool-off\'s Try now names an account it cannot spell by a placeholder', 
 test('`agent list` names an account in no list by its name where a shell can take it, and by its id where none can', () => {
   const fx = makeFixture('shell-words-list');
   accounts(fx, 'account-1', 'account-2');
-  run(['profile', 'rename', 'claude-code', 'account-1', 'R&D'], at(fx));
-  run(['profile', 'rename', 'claude-code', 'account-2', "O'Brien"], at(fx));
+  // Named as `profile rename` names them, which the driver's program says since PUSH1f2e.
+  const names = homeEntry(fx.root, 'accounts');
+  mkdirSync(dirname(names), { recursive: true });
+  writeFileSync(names, JSON.stringify({ 'claude-code': { 'account-1': { name: 'R&D' }, 'account-2': { name: "O'Brien" } } }), 'utf8');
   // The machine names another account, so these run nowhere and the join is said (OWNSPACE1d: with nothing named, they are in turn).
   writeFileSync(at(fx), JSON.stringify({ defaults: { 'claude-code': 'elsewhere' } }), 'utf8');
 
