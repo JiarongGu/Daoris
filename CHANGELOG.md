@@ -5,6 +5,9 @@ with the version and date at release.
 
 ## Unreleased
 
+- A plugin's steps, and what they create, are now shown where its other declarations are: its page and an offer's page list each
+  step with what it takes, gives and is reached on, in English and 中文; `daoris plugin list` and `plugin add` name each step with
+  how it is reached; and an update says each step that changes, whole, so a step changed without a new version still shows.
 - A session that moved to another agent now reads as one session on its page. Its *Parts* say which agent each part was handed
   over or moved from, and why, such as *moved on from part 2 on codex: its own conversation was lost*. Each part's row says what it
   spent, in tokens over its turns, or that its turns did not report them. Where a line of work ran on more than one agent, the

@@ -18786,3 +18786,14 @@ its foot and line in en and zh. A close found closed only in part is live again 
 so `WORK_HELD`'s `stop` is taken on it (any other word refused `part-stop`), offered as a What needs you row and applied by the closer.
 Proof: `QuestCloseTests`, `WorkStateSliceTests`, `AttentionStateSliceTests`, `WorkMilestone.test.tsx` in both languages. A quest
 unit's milestone on the page stays open as FABRIC-CLOSE1j2. Detail: D173's FABRIC-CLOSE1j note.
+
+## FABRIC-UNIT1e — a plugin's steps shown where its other declarations are (2026-10-21, D173)
+
+> - [ ] **FABRIC-UNIT1e — a plugin's steps shown where its other declarations are** (driver, cli, web-shell; after UNIT1d; §D9). `plugin list` and `describe`, the plugin page and an update's change list say a plugin's steps and resources, the same words in both twins. Proof: both twins' tables of an update's step changes; the plugin page lists a declared step, en and zh.
+
+**Outcome** 2026-10-21: built. One set of words in both twins (`PluginSteps.NameOf`/`Said`, `stepName`/`stepSaid`/`resourceSaid`):
+an update's change list gains `steps` and `resources`, each step said whole so a change without a new version still shows; `describe`
+and `plugins install` name each step with its reach and what the steps create. `PLUGINS` answers steps and resources, and the plugin
+page and the offer's page list them in en and zh; `daoris-driver plugins show` says them too. Proof: `PluginStepsTests`' change and
+description theories held cell for cell by `plugin-steps.test.ts`, `PluginPageTests`, `DriverModulePluginPageTests`,
+`PluginPage.test.tsx` in both languages. Detail: D173's FABRIC-UNIT1e note.
