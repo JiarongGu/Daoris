@@ -18786,3 +18786,12 @@ its foot and line in en and zh. A close found closed only in part is live again 
 so `WORK_HELD`'s `stop` is taken on it (any other word refused `part-stop`), offered as a What needs you row and applied by the closer.
 Proof: `QuestCloseTests`, `WorkStateSliceTests`, `AttentionStateSliceTests`, `WorkMilestone.test.tsx` in both languages. A quest
 unit's milestone on the page stays open as FABRIC-CLOSE1j2. Detail: D173's FABRIC-CLOSE1j note.
+
+## FABRIC-PERFORM1n — a believed event the one table refuses is said (2026-10-21, D173)
+
+> - [ ] **FABRIC-PERFORM1n — a believed event the one table refuses is said** (driver; after PERFORM1i; §C4, §E2). An event whose evidence is of another schema than the node declares moves nothing and is counted by no `plugin.step` code, unlike a completion, which holds its attempt. Proof: the refusal line said, and no state changed.
+
+**Outcome** 2026-10-21: built. `WorkObserver` answers an event the one table refuses as `not-taken` with the table's code (`no-evidence`,
+`output-schema`, …), counted as a `plugin.step` line of that code; nothing is written, so the node still awaits and a later event of the
+declared schema is taken. Proof: `ObservedEventTests` (the refusal counted once, the record unchanged, no wire fired). Detail: D173's
+FABRIC-PERFORM1n note.
