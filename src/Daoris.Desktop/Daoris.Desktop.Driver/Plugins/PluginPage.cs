@@ -79,7 +79,12 @@ public static class PluginPage
             manifest.Hooks?.Points.Contains(HookPoints.Land, StringComparer.Ordinal) == true ? Landing(home, plugin, catalog) : null,
             Source(home, entry, offers),
             Count(entry.Data, CountBound, CountTime),
-            PluginFolders.Tests(entry.Folder, CountBound));
+            PluginFolders.Tests(entry.Folder, CountBound))
+        {
+            // FABRIC-UNIT1e (§D9): its steps and what they create, as written.
+            Steps = manifest.Steps,
+            Resources = manifest.Resources,
+        };
     }
 
     /// <summary>

@@ -87,4 +87,11 @@ public sealed record PluginPageRead(
     string Id, string Name, string Version, string Description, bool Enabled, string? Problem, bool Taken, string Folder,
     DateTimeOffset? InstalledAt, PluginHealthState Health, string HealthFrom, PageHook? Hook, IReadOnlyList<PagePoint> Points,
     IReadOnlyList<PageAgent> Agents, IReadOnlyList<PageServer> Servers, PageLanding? Landing, PageSource Source, PageData Data,
-    IReadOnlyList<string> Tests);
+    IReadOnlyList<string> Tests)
+{
+    /// <summary>The steps it declares (FABRIC-UNIT1e, §D9), each the one node declaration a built-in is; none for one refused by them.</summary>
+    public IReadOnlyList<NodeDeclaration> Steps { get; init; } = [];
+
+    /// <summary>What its steps create (FABRIC-UNIT1e, §D3).</summary>
+    public IReadOnlyList<PluginResource> Resources { get; init; } = [];
+}

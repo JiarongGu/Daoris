@@ -2,7 +2,9 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 import { useShenora } from '@shenora/react';
 import { keys } from '../data/queries';
 import type { KitPoint, NewPlugin, PluginTrialResult } from '../plugins/PluginKit';
-import type { HelpServerShown, PluginOfferShown, PluginShippedShown, SkillShown } from '../plugins/catalog';
+import type {
+  HelpServerShown, PluginOfferShown, PluginShippedShown, ResourceShown, SkillShown, StepShown,
+} from '../plugins/catalog';
 import type { PluginSourceShown, PluginUpdatePlanShown } from '../plugins/PluginUpdate';
 import { call } from './call';
 
@@ -50,6 +52,9 @@ export type PluginEntry = {
   helpServers?: HelpServerShown[];
   /** The skills it hands sessions or Ask Daoris, who each goes to, and why one is not handed (HELPPLUG1b); an older shell sends none. */
   skills?: SkillShown[];
+  /** The steps it declares and what they create (FABRIC-UNIT1e, §D9); an older shell sends none. */
+  steps?: StepShown[];
+  resources?: ResourceShown[];
 };
 export type PluginCatalog = {
   folder: string;

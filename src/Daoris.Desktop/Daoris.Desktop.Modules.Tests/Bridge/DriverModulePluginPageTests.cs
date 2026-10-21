@@ -194,6 +194,34 @@ public sealed class DriverModulePluginPageTests : DriverModuleBridge, IDisposabl
         Assert.Contains("`skills/missing/SKILL.md`", skills[1].GetProperty("problem").GetString());
     }
 
+    /// <summary>FABRIC-UNIT1e (§D9): the list answers each plugin's steps, by the name its manifest writes, and what they create, for its page to list.</summary>
+    [Fact]
+    public async Task The_list_answers_each_plugins_steps_and_what_they_create()
+    {
+        var folder = DaorisHome.Entry(Home, HomeEntry.Plugins, "acme.deploy");
+        Directory.CreateDirectory(folder);
+        File.WriteAllText(Path.Combine(folder, "plugin.json"), """
+            { "id": "acme.deploy", "hooks": { "command": ["node", "deploy.mjs"], "points": ["work/perform"] },
+              "steps": [ { "id": "deploy", "version": 2, "reach": "performed", "inputs": { "release": "acme.build/artifact@1" },
+                           "evidence": { "schema": "acme.deploy/receipt@1" } } ],
+              "resources": [ { "schema": "acme.deploy/site@1", "role": "result", "cleanup": "work/cleanup" } ] }
+            """);
+        using var loop = Loop();
+        var module = new DriverModule(Bus, loop) { Offers = Path.Combine(Home, "no-offers") };
+
+        var row = Row(await AnswerAsync(module, "PLUGINS"), "acme.deploy");
+
+        var step = Assert.Single(row.GetProperty("steps").EnumerateArray().ToList());
+        Assert.Equal("deploy", step.GetProperty("name").GetString());
+        Assert.Equal("performed", step.GetProperty("reach").GetString());
+        Assert.Equal(2, step.GetProperty("version").GetInt32());
+        Assert.Equal("acme.build/artifact@1", step.GetProperty("inputs").GetProperty("release").GetString());
+        Assert.Empty(step.GetProperty("outputs").EnumerateObject());
+        Assert.Equal("acme.deploy/receipt@1", step.GetProperty("evidence").GetString());
+        var resource = Assert.Single(row.GetProperty("resources").EnumerateArray().ToList());
+        Assert.Equal(("acme.deploy/site@1", "result"), (resource.GetProperty("schema").GetString(), resource.GetProperty("role").GetString()));
+    }
+
     /// <summary>
     /// P3 (D119 §4.1): the list answers what each plugin hands sessions and speaks on, which points its running process
     /// listens on, its health from the loop's own record, and whether its source declares something new. The list

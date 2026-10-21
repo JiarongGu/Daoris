@@ -74,6 +74,9 @@ public sealed class PluginsRoutes(DriverContext context)
                     HelpServers = HelpServersOf(plugin.Manifest, grants),
                     // HELPPLUG1b (D170 point 4): the skills it hands, who to, and why one is not handed.
                     Skills = SkillsOf(plugin.Manifest, plugin.Folder),
+                    // FABRIC-UNIT1e (§D9): the steps it declares and what they create, which its page lists.
+                    Steps = StepsOf(plugin.Manifest),
+                    Resources = ResourcesOf(plugin.Manifest),
                     Hook = HookOf(plugin),
                     Listening = health.Listening,
                     // The loop's own record (D119 §2): the state, since when, and its failure while failing.
@@ -107,6 +110,8 @@ public sealed class PluginsRoutes(DriverContext context)
                     Servers = offer.Manifest.Servers.Select(s => s.Name).ToArray(),
                     HelpServers = HelpServersOf(offer.Manifest, null),
                     Skills = SkillsOf(offer.Manifest, offer.Folder),
+                    Steps = StepsOf(offer.Manifest),
+                    Resources = ResourcesOf(offer.Manifest),
                     offer.Needs,
                     offer.Installed,
                 };
@@ -491,6 +496,22 @@ public sealed class PluginsRoutes(DriverContext context)
     [
         .. manifest.Skills.Select(skill => new { skill.Name, skill.To, Problem = SpawnSkills.Judge(folder, skill.Name) }),
     ];
+
+    /// <summary>
+    /// The steps a plugin declares for its page (FABRIC-UNIT1e, §D9): each by its name as the manifest writes it, its reach and
+    /// version, its ports by name with each one's schema, and the schema it is reached on. None for a refused plugin.
+    /// </summary>
+    private static object[] StepsOf(PluginManifest manifest) =>
+    [
+        .. manifest.Steps.Select(step => new
+        {
+            Name = PluginSteps.NameOf(step), step.Reach, step.Version, step.Inputs, step.Outputs, step.Evidence,
+        }),
+    ];
+
+    /// <summary>What a plugin's steps create, for its page (FABRIC-UNIT1e, §D3): each schema and its role.</summary>
+    private static object[] ResourcesOf(PluginManifest manifest) =>
+        [.. manifest.Resources.Select(resource => new { resource.Schema, resource.Role })];
 
     /// <summary>
     /// A taken plugin's hook for its row (PLUGUI1e): its command as its manifest writes it, the page's way, so `${plugin}`
