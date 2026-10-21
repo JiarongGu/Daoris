@@ -19051,3 +19051,14 @@ settings `SET_AGENT_SETTINGS`, a trust alone; a marked terminal's `rules accept`
 with reasons. `permissions.ts`, `ruleproposals.ts`, `trust.ts`, `agentsettings.ts` and their tests left. Detail: D194's PUSH1f2d
 note. Unproven until the install: a `daoris agent rules` change confirmed in the open window. Built across two sessions, the first
 cut off at the timeout after the driver's commit.
+
+## FABRIC-PERFORM1d — resource cleanup and retirement (2026-10-21, D173)
+
+> - [ ] **FABRIC-PERFORM1d — resource cleanup and retirement** (driver; after END4a and PERFORM1c; the fabric events design's rows table (§E10), §D3). Receipts, a durable `work/cleanup`, accountability through invalidation, retirement apart from removal.
+
+**Outcome** 2026-10-21: built. A plugin attempt's `resources` are taken as receipts on the unit's own resource record
+(`<home>/workflows/resources/`) before its outcome; `ResourceCleaner` asks each temporary one of its plugin through `work/cleanup` at the
+unit's true end, at once for a superseded attempt's, the request and its key persisted before the send, a failure backed off and blocked
+after seven days; receipts and unsettled attempts join the unit's inventory, so it retires only once they are terminal, and the session
+branches' traces keep a unit that still owes. Proof: `ResourceCleanupTests` (canaries 34 and 36), `WorkRetirementTests` (canary 35),
+`NodeRuntimeTests`, `WorkSupervisionTests`, `WorkWireTests`. Detail: D173's FABRIC-PERFORM1d note. On Opus: about 110 tool calls.

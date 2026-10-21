@@ -180,6 +180,7 @@ public sealed class SessionBranches(string home)
     public void Forget(string repository, IReadOnlyCollection<string> branches)
     {
         var open = OpenUnits(home);
+        var owing = WorkObligations.Owing(home);
         Edit(all =>
         {
             var now = DateTimeOffset.UtcNow;
@@ -191,7 +192,8 @@ public sealed class SessionBranches(string home)
                 {
                     kept.Add(each);
                 }
-                else if (each.Held is not null || (each.Unit is { } unit && open.Contains(unit)))
+                // FABRIC-PERFORM1d: a unit that still owes a receipt's cleanup or an attempt's outcome keeps its trace too (§D3).
+                else if (each.Held is not null || (each.Unit is { } unit && (open.Contains(unit) || owing.Contains(unit))))
                 {
                     kept.Add(each with { GoneAt = now, Blocked = null });
                 }
@@ -224,9 +226,13 @@ public sealed class SessionBranches(string home)
     public static IReadOnlySet<string> OpenUnits(string home) =>
         new LandedBranches(home).All().Where(entry => entry.Held is null).SelectMany(entry => entry.Units).ToHashSet(StringComparer.Ordinal);
 
-    /// <summary>Whether a trace's unit is still open (§D3): not held itself, and its work on a standing landing the line does not hold yet.</summary>
-    public static bool Open(GrownBranch entry, IReadOnlySet<string> openUnits) =>
-        entry.GoneAt is not null && entry.Held is null && entry.Unit is { } unit && openUnits.Contains(unit);
+    /// <summary>
+    /// Whether a trace's unit is still open (§D3): not held itself, and its work on a standing landing the line does not hold yet; or, held or
+    /// not (FABRIC-PERFORM1d, canary 35), its unit still owes a receipt's cleanup or an attempt's outcome (<see cref="WorkObligations.Owing"/>).
+    /// </summary>
+    public static bool Open(GrownBranch entry, IReadOnlySet<string> openUnits, IReadOnlySet<string>? owing = null) =>
+        entry.GoneAt is not null && entry.Unit is { } unit
+        && ((entry.Held is null && openUnits.Contains(unit)) || owing?.Contains(unit) == true);
 
     private void Edit(Func<IReadOnlyList<GrownBranch>, IReadOnlyList<GrownBranch>> change) =>
         List.Edit(FilePath, all => Bounded(change(all)), LockPath);
@@ -246,6 +252,7 @@ public sealed class SessionBranches(string home)
         var traces = entries.Select((entry, at) => (Entry: entry, At: at)).Where(each => each.Entry.GoneAt is not null).ToList();
         if (!traces.GroupBy(each => each.Entry.Repository, StringComparer.OrdinalIgnoreCase).Any(group => group.Count() > TracesKept)) return entries;
         var open = OpenUnits(home);
+        var owing = WorkObligations.Owing(home);
         var following = entries.Select((entry, at) => (Entry: entry, At: at))
             .GroupBy(each => $"{each.Entry.Repository.ToUpperInvariant()}\n{each.Entry.Branch}", StringComparer.Ordinal)
             .Where(name => name.All(each => each.Entry.GoneAt is not null))
@@ -254,7 +261,7 @@ public sealed class SessionBranches(string home)
             .Select(newest => newest.At)
             .ToHashSet();
         var dropped = traces
-            .Where(each => !Open(each.Entry, open) && !following.Contains(each.At))
+            .Where(each => !Open(each.Entry, open, owing) && !following.Contains(each.At))
             .GroupBy(each => each.Entry.Repository, StringComparer.OrdinalIgnoreCase)
             .SelectMany(group => group.OrderByDescending(each => each.Entry.GoneAt).ThenByDescending(each => each.At).Skip(TracesKept))
             .Select(each => each.At)
