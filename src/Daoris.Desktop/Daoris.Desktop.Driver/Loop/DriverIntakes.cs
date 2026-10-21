@@ -66,7 +66,7 @@ internal sealed class DriverIntakes(LoopContext context, Driver driver)
         {
             // A host older than the asks answers no ask door; the quests still drive, and this says why
             // no ask is being answered rather than looking like a machine with none.
-            events.Add($"intake  the asks could not be read, so none is answered this tick: {error.Message}");
+            events.Add(_context.Said.Retry("intake", $"intake  the asks could not be read, so none is answered this tick: {error.Message}"));
             return [];
         }
 
@@ -85,9 +85,10 @@ internal sealed class DriverIntakes(LoopContext context, Driver driver)
         if (slots <= 0)
         {
             // Sitting must say why (D46 §3) — for an ask as for a quest.
-            events.Add(
+            events.Add(_context.Said.Progress(
+                "intake",
                 $"intake  {string.Join(", ", due.Select(ask => $"ask #{ask.Id}"))} waiting: the concurrency cap "
-                + $"({config.Cap}) is spent — it frees as sessions finish.");
+                + $"({config.Cap}) is spent — it frees as sessions finish."));
             return [];
         }
 
@@ -354,11 +355,12 @@ internal sealed class DriverIntakes(LoopContext context, Driver driver)
             }
             catch (DriverException error)
             {
-                events.Add($"held  intake {parked.Id} could not be ended: {error.Message}");
+                events.Add(_context.Said.Retry("intake", $"held  intake {parked.Id} could not be ended: {error.Message}"));
                 continue;
             }
 
-            events.Add($"{answered.State}  intake {parked.Id} (ask #{parked.Ask}{(ask is null ? "" : $" in {ask.Workspace}")}): {answered.Note}");
+            events.Add(_context.Said.Progress(
+                "intake", $"{answered.State}  intake {parked.Id} (ask #{parked.Ask}{(ask is null ? "" : $" in {ask.Workspace}")}): {answered.Note}"));
             concluded.Add(new SessionEnded(parked.Id, parked.Repository, answered.State, ByPerson: true, answered.Note));
         }
     }

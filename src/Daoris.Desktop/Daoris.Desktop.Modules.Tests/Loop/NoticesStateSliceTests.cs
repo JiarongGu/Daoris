@@ -138,6 +138,24 @@ public sealed class NoticesStateSliceTests : DriverModuleBridge
         Assert.Contains("ended-quiet", Written(notices.Slice.Snapshot().Partitions[0].Data).Select(each => each.Key));
     }
 
+    /// <summary>
+    /// NOTIFY2h (the design §5's table): a look's news, whoever wrote it, is pushed with its code and counted, and never said aloud.
+    /// </summary>
+    [Fact]
+    public async Task A_look_s_news_is_pushed_with_its_code_and_never_said()
+    {
+        var notices = Notices();
+        await notices.Slice.JudgeAsync();
+
+        Elsewhere(new Notice("look-lost-claim-s1", Daoris.Driver.Notices.Look, Now, Session: "s1", Quest: "q1", Code: LookSaid.LostClaim));
+        await notices.Slice.JudgeAsync();
+
+        Assert.Empty(Arrivals());
+        var pushed = Written(notices.Slice.Snapshot().Partitions[0].Data)["look-lost-claim-s1"]!.AsObject();
+        Assert.Equal("look", pushed["kind"]!.GetValue<string>());
+        Assert.Equal("lost-claim", pushed["code"]!.GetValue<string>());
+    }
+
     /// <summary>A restart reads the record whole as its baseline: nothing it already held is said again.</summary>
     [Fact]
     public async Task A_restart_says_nothing_the_record_held()

@@ -60,14 +60,16 @@ internal sealed class DriverMeetings(LoopContext context, DriverBrainstorms brai
                     case null when files.Stopped(request.Id):
                     case BrainstormStates.Frozen when files.Stopped(request.Id):
                         files.WriteState(new MeetingState(request.Id, BrainstormStates.Ended, state?.Round ?? 1, state?.Packet, BrainstormStates.Stopped, DateTimeOffset.UtcNow));
-                        events.Add($"meeting `{request.Id}` stopped by the person before round {state?.Round ?? 1} ran: nothing of it went to any agent.");
+                        events.Add(_context.Said.Own(
+                            "meeting", $"meeting `{request.Id}` stopped by the person before round {state?.Round ?? 1} ran: nothing of it went to any agent."));
                         break;
                     case null when _context.Beside:
                         // PARALLEL1b (D181 point 3): under the watch, the first round's packet frozen beside the look, once.
                         _brainstorms.Freezing(request.Id, token => FreezeAsync(request, snapshot, files, token), ct, kind: "meeting");
                         break;
                     case null:
-                        events.Add(await FreezeAsync(request, snapshot, files, ct).ConfigureAwait(false));
+                        // A round's packet frozen waits for the person's send (NOTIFY2h).
+                        events.Add(_context.Said.Wait("meeting", await FreezeAsync(request, snapshot, files, ct).ConfigureAwait(false)));
                         break;
                     case BrainstormStates.Frozen when state.Packet is { } digest && files.Sent(request.Id, state.Round) == digest:
                         if (_context.Config.Cap - snapshot.SlotsHeld - taken - begun <= 0) break;
@@ -80,7 +82,7 @@ internal sealed class DriverMeetings(LoopContext context, DriverBrainstorms brai
                         // Nothing in this driver runs it: the driver that did stopped. What was relayed is kept; nothing runs again by itself.
                         try
                         {
-                            events.Add(Interrupted(request.Id, state, files));
+                            events.Add(_context.Said.News("meeting", new LookNews(LookSaid.MeetingCut, request.Id), Interrupted(request.Id, state, files)));
                         }
                         finally
                         {
@@ -94,7 +96,8 @@ internal sealed class DriverMeetings(LoopContext context, DriverBrainstorms brai
                                               or UnauthorizedAccessException
                                               || (error is OperationCanceledException && !ct.IsCancellationRequested))
             {
-                events.Add($"meeting `{request.Id}` could not be looked at this look, and is looked at again at the next: {error.Message}");
+                events.Add(_context.Said.Retry(
+                    "meeting", $"meeting `{request.Id}` could not be looked at this look, and is looked at again at the next: {error.Message}"));
             }
         }
 

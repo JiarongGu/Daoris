@@ -9,7 +9,7 @@ import {
   accountsSlice, asksSlice, attentionSlice, callsSlice, driverSlice, groupsSlice, linesSlice, noticeOf, noticesSlice, notPushed,
   questsSlice, sessionsSlice, sweepSlice, syncSlice, usageSlice, useDriverReady, useStateHub, useStateSlices, workSlice,
 } from '../bridge/shell';
-import { type AccountWaitTick, type Consideration, type TrustHold, newsFrom } from '../data/signals';
+import type { AccountWaitTick, Consideration, TrustHold } from '../data/signals';
 import type { Notify } from '../design/ui';
 import { noticeWords } from '../notifications/DoneAndFailed';
 import { FIRST_MAIN_WINDOW, ownWindowName } from '../work/window';
@@ -23,8 +23,8 @@ const PUSHED = [
 ];
 
 /**
- * The shell's push channel into the page (D46 §6): the driver's tick reports arrive as toasts, and
- * everything a tick can change refetches — in the desktop the session surface is live, while a plain
+ * The shell's push channel into the page (D46 §6): a driver's tick says something moved, and
+ * everything a tick can change refetches (its lines are the machine log's, never a toast: NOTIFY2h) — in the desktop the session surface is live, while a plain
  * browser keeps its polling and never mounts a transport. Renders nothing; costs nothing where no
  * host answers.
  */
@@ -49,8 +49,6 @@ export function ShellSignals({ notify, onAttend, attended, onConfirming }: {
   const { isAvailable, bridge } = useShenora();
   const { t } = useTranslation();
   const client = useQueryClient();
-  /** What the last tick said, so an unchanged report is not said again. A ref: it must not re-render. */
-  const toldLast = useRef<string[]>([]);
 
   useEffect(() => {
     if (!isAvailable) return;
@@ -61,16 +59,10 @@ export function ShellSignals({ notify, onAttend, attended, onConfirming }: {
   }, [isAvailable, bridge]);
 
   useShenoraEvent<Tick>('DAORIS', 'DRIVER_TICK', (tick) => {
-    /* 🔴 The driver's own sentences, verbatim — but only the ones that are NEWS.
-     *
-     * A tick report is a log: it says what this tick did, every tick, which is right for a console
-     * and wrong for an interruption. Seen on the deployed application, four identical toasts about
-     * one untrusted repository, stacking up the window — and that condition needs a person to run a
-     * command, so it would have said so forever. The verbatim rule is untouched; what changed is
-     * whether being told again counts as being told something. */
-    const lines = tick?.events ?? [];
-    for (const line of newsFrom(toldLast.current, lines)) notify(line);
-    toldLast.current = lines;
+    /* 🔴 The tick's lines are toasted no more (NOTIFY2h, D196 point 7; the notification design §5.1). A tick report is a log (D62):
+     * English, and mostly a look's passing failure the next look answers. Each line is written to the machine log as `look.said` with
+     * its class where the look makes it; what is news is a notice in *Done and failed*, in the reader's language, and what waits on
+     * the person is its row. The tick still says that something moved, which the refetches below act on. */
 
     // Why every open quest is sitting, this tick — the half of the report that is not news but a
     // STANDING answer, so it lands where the views read it rather than in a toast that dismisses

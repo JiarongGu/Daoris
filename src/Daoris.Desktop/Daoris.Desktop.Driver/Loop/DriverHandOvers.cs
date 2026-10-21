@@ -48,7 +48,7 @@ internal sealed class DriverHandOvers(LoopContext context)
                                               or UnauthorizedAccessException
                                               || (error is OperationCanceledException && !ct.IsCancellationRequested))
             {
-                events.Add($"hand-over  the hand-over of session `{id}` could not be looked at this look, and is looked at again at the next: {error.Message}");
+                events.Add(_context.Said.Retry("hand-over", $"hand-over  the hand-over of session `{id}` could not be looked at this look, and is looked at again at the next: {error.Message}"));
             }
         }
 
@@ -67,7 +67,8 @@ internal sealed class DriverHandOvers(LoopContext context)
             // FABRIC-CLOSE1c20: a take lost to the person's reopen is said as that, never as another machine's.
             var reopened = !closed && snapshot.Takes[quest].Reopened;
             handed.Clear(quest);
-            events.Add($"hand-over  `#{quest}` {(closed ? "has closed" : reopened ? "was lost to your reopen of the work it grew from" : "is taken elsewhere")}: it goes back to this machine's agent.");
+            events.Add(_context.Said.News("hand-over", new LookNews(LookSaid.HandedBack, quest, Quest: quest),
+                $"hand-over  `#{quest}` {(closed ? "has closed" : reopened ? "was lost to your reopen of the work it grew from" : "is taken elsewhere")}: it goes back to this machine's agent."));
         }
 
         return snapshot with { Handed = handed.All() };
@@ -92,7 +93,8 @@ internal sealed class DriverHandOvers(LoopContext context)
         if (refused is not null)
         {
             box.Clear(id);
-            events.Add($"hand-over  session `{id}` (#{quest}): {refused.Message}");
+            events.Add(_context.Said.News(
+                "hand-over", new LookNews(LookSaid.HandOverRefused, id, id, quest, record.Workspace), $"hand-over  session `{id}` (#{quest}): {refused.Message}"));
             if (agentAsk) RefuseAsk(id, HandOverAskWhy.Cannot);
             return;
         }
@@ -121,7 +123,8 @@ internal sealed class DriverHandOvers(LoopContext context)
             if (!stopped)
             {
                 box.Clear(id);
-                events.Add($"hand-over  session `{id}` (#{quest}) runs in another Daoris process on this machine: hand it over there, or stop it first.");
+                events.Add(_context.Said.News("hand-over", new LookNews(LookSaid.HandOverElsewhere, id, id, quest, record.Workspace),
+                    $"hand-over  session `{id}` (#{quest}) runs in another Daoris process on this machine: hand it over there, or stop it first."));
                 if (agentAsk) RefuseAsk(id, HandOverAskWhy.Cannot);
                 return;
             }
@@ -129,7 +132,7 @@ internal sealed class DriverHandOvers(LoopContext context)
 
         handed.Write(quest, new HandedQuest(ask.Agent, ask.Account, id, ask.Why, ask.AskedBy, ask.At) { Note = agentAsk ? AgentNote(id) : null });
         box.Clear(id);
-        events.Add($"hand-over  session `{id}` (#{quest}): stopped, and `#{quest}` goes on with {ask.Agent}.");
+        events.Add(_context.Said.Progress("hand-over", $"hand-over  session `{id}` (#{quest}): stopped, and `#{quest}` goes on with {ask.Agent}."));
     }
 
     /// <summary>
@@ -149,7 +152,8 @@ internal sealed class DriverHandOvers(LoopContext context)
                                               or UnauthorizedAccessException
                                               || (error is OperationCanceledException && !ct.IsCancellationRequested))
             {
-                events.Add($"hand-over  the ask to hand session `{ask.Session}` over could not be looked at this look, and is looked at again at the next: {error.Message}");
+                events.Add(_context.Said.Retry(
+                    "hand-over", $"hand-over  the ask to hand session `{ask.Session}` over could not be looked at this look, and is looked at again at the next: {error.Message}"));
             }
         }
     }
@@ -167,18 +171,21 @@ internal sealed class DriverHandOvers(LoopContext context)
             case HandOverAskVerdict.RefuseKind when verdict.Code == HandOverAskWhy.AskerGone:
                 // Its session left this machine: nothing to say it on, and nothing left to keep.
                 files.Clear(session);
-                events.Add($"hand-over  the ask to hand session `{session}` over is dropped: {HandOverAskWhy.Said(verdict.Code)}.");
+                events.Add(_context.Said.News("hand-over", new LookNews(LookSaid.HandOverDropped, ask.Id, session),
+                    $"hand-over  the ask to hand session `{session}` over is dropped: {HandOverAskWhy.Said(verdict.Code)}."));
                 break;
             case HandOverAskVerdict.RefuseKind:
                 RefuseAsk(session, verdict.Code!, ask.Id);
-                events.Add($"hand-over  session `{session}`'s agent asked to hand it over, refused ({verdict.Code}): {HandOverAskWhy.Said(verdict.Code!)}.");
+                events.Add(_context.Said.News("hand-over", new LookNews(LookSaid.HandOverAskRefused, ask.Id, session, Workspace: record?.Workspace),
+                    $"hand-over  session `{session}`'s agent asked to hand it over, refused ({verdict.Code}): {HandOverAskWhy.Said(verdict.Code!)}."));
                 break;
             case HandOverAskVerdict.WaitKind:
                 if (own is { State: HandOverAskStates.Waiting } waiting && waiting.Agent == verdict.Agent) break;
                 files.WriteState(session, new HandOverAskState(ask.Id, HandOverAskStates.Waiting, null, verdict.Agent, DateTimeOffset.UtcNow));
                 if (own is null) Say(session, HandOverAskNotes.Asked(verdict.Agent!));
                 // The line makes the loop's tick reach the windows, so the page reads what waits on the person again.
-                events.Add($"hand-over  session `{session}`'s agent asks to hand it over to {verdict.Agent}: it waits for the person's yes or no on its session's page");
+                events.Add(_context.Said.Wait(
+                    "hand-over", $"hand-over  session `{session}`'s agent asks to hand it over to {verdict.Agent}: it waits for the person's yes or no in What needs you"));
                 break;
             case HandOverAskVerdict.GoKind:
                 await GoAsync(ask, own, record!, verdict.Agent!, files, events, ct).ConfigureAwait(false);
@@ -212,7 +219,7 @@ internal sealed class DriverHandOvers(LoopContext context)
             if (said) return;
             files.WriteState(session, new HandOverAskState(ask.Id, HandOverAskStates.Approved, null, agent, DateTimeOffset.UtcNow));
             Say(session, HandOverAskNotes.Taking(agent));
-            events.Add($"hand-over  session `{session}`'s agent asked to hand it over: it goes on with {agent} once its turn ends.");
+            events.Add(_context.Said.Progress("hand-over", $"hand-over  session `{session}`'s agent asked to hand it over: it goes on with {agent} once its turn ends."));
             return;
         }
 
@@ -242,13 +249,14 @@ internal sealed class DriverHandOvers(LoopContext context)
         if (!kept)
         {
             RefuseAsk(session, HandOverAskWhy.Cannot, ask.Id);
-            events.Add($"hand-over  session `{session}`'s agent asked to hand it over to {agent}, and it could not be taken ({code ?? "refused"}): {message}");
+            events.Add(_context.Said.News("hand-over", new LookNews(LookSaid.HandOverFailed, ask.Id, session, Workspace: record.Workspace),
+                $"hand-over  session `{session}`'s agent asked to hand it over to {agent}, and it could not be taken ({code ?? "refused"}): {message}"));
             return;
         }
 
         files.WriteState(session, new HandOverAskState(ask.Id, HandOverAskStates.Taken, null, agent, DateTimeOffset.UtcNow));
         if (!said) Say(session, HandOverAskNotes.Taking(agent));
-        events.Add($"hand-over  session `{session}`'s agent asked to hand it over: it goes on with {agent}.");
+        events.Add(_context.Said.Progress("hand-over", $"hand-over  session `{session}`'s agent asked to hand it over: it goes on with {agent}."));
     }
 
     /// <summary>
