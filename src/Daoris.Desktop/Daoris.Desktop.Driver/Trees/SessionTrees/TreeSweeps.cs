@@ -27,9 +27,14 @@ internal sealed class TreeSweeps(
     /// For the look's own tidy (AUTOTIDY2b): the branches landings made whose work the line holds, through which a landed session
     /// branch's work is on the line too. Null for the press's list and the press, which take a landed branch wherever it is.
     /// </param>
+    /// <param name="slims">
+    /// For the look's judgement before its hold (KEEP1a, Fable F1.5): each row the look would take is judged for the package folders its
+    /// tree may drop once set aside (<see cref="SweepItem.Droppable"/>), so the hold gains no <c>status --ignored</c> of its own.
+    /// </param>
     internal async Task<IReadOnlyList<SweepItem>> SweepPlanAsync(
         IEnumerable<(string Repository, string? Workspace, string? Root)> repositories, IReadOnlySet<string> inUse,
-        CancellationToken ct = default, IReadOnlySet<string>? only = null, bool byItself = false, IReadOnlyList<LineLanding>? landings = null)
+        CancellationToken ct = default, IReadOnlySet<string>? only = null, bool byItself = false, IReadOnlyList<LineLanding>? landings = null,
+        bool slims = false)
     {
         var busy = new HashSet<string>(inUse.Select(Normal), StringComparer.OrdinalIgnoreCase);
         var items = new List<SweepItem>();
@@ -65,10 +70,16 @@ internal sealed class TreeSweeps(
             var carriers = await asks.CarriersAsync(root, repository, line, ct, refs).ConfigureAwait(false);
             foreach (var branch in named)
             {
-                items.Add((await JudgeAsync(
+                var item = (await JudgeAsync(
                     root, repository, RemoteTarget.Workspace(workspace), branch, worktrees.GetValueOrDefault(branch), line, busy, carriers, ct,
                     follows.MovedOnTo(listed, RemoteTarget.Workspace(workspace), repository, branch), byItself, landings, refs)
-                    .ConfigureAwait(false)).Item);
+                    .ConfigureAwait(false)).Item;
+                if (slims && setAside.GoesByItself(item) && item.Tree is { } tree && Directory.Exists(tree))
+                {
+                    item = item with { Droppable = await TreeSlims.JudgeAsync(tree, ct).ConfigureAwait(false) };
+                }
+
+                items.Add(item);
             }
         }
 
@@ -99,9 +110,14 @@ internal sealed class TreeSweeps(
     /// git is still removing. Cancellation is heard between branches.
     /// </remarks>
     /// <param name="landings">The look's (AUTOTIDY2b): the branches landings made whose work the line holds, as <see cref="SweepPlanAsync"/> takes them.</param>
+    /// <param name="droppable">
+    /// The look's (KEEP1a): by branch, the package folders its judgement before the hold found its tree may drop, which the last look
+    /// checks again and the move writes in a manifest beside the folder before it goes. None, and every folder moves whole.
+    /// </param>
     internal async Task<IReadOnlyList<SweepResult>> SweepAsync(
         IEnumerable<(string Repository, string? Workspace, string? Root)> repositories, IReadOnlySet<string> inUse,
-        IReadOnlySet<string>? only, bool byItself, CancellationToken ct, IReadOnlyList<LineLanding>? landings = null)
+        IReadOnlySet<string>? only, bool byItself, CancellationToken ct, IReadOnlyList<LineLanding>? landings = null,
+        IReadOnlyDictionary<string, IReadOnlyList<string>>? droppable = null)
     {
         var known = repositories.ToList();
         // One look at each checkout's line for the list and every item after it, the look's own tidy's as the person's (UIFREEZE1).
@@ -149,7 +165,9 @@ internal sealed class TreeSweeps(
                 continue;
             }
 
-            if (byItself && await setAside.LastLookAsync(root, now, ct).ConfigureAwait(false) is { } last)
+            // KEEP1a: the package folders judged before the hold, checked again by the last look's own reads.
+            var slim = new List<string>();
+            if (byItself && await setAside.LastLookAsync(root, now, ct, droppable?.GetValueOrDefault(now.Branch), slim).ConfigureAwait(false) is { } last)
             {
                 results.Add(new(now, false, last.Sentence) { Kept = last.Code, Cause = last.Cause });
                 continue;
@@ -177,7 +195,7 @@ internal sealed class TreeSweeps(
             if (now.Tree is { } tree && byItself)
             {
                 // The look never deletes a tree's folder: a write that lands after its last look lands in the folder moved aside.
-                var moved = await setAside.MoveAsideAsync(root, now, done).ConfigureAwait(false);
+                var moved = await setAside.MoveAsideAsync(root, now, done, slim).ConfigureAwait(false);
                 if (!moved.Gone)
                 {
                     // AUTOTIDY2a: a content-held branch the look kept lets go of the ref it kept its commits on, as the press's

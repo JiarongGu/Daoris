@@ -183,7 +183,7 @@ public sealed class CleanupLeftoversTests : IDisposable
 
         Assert.Empty(WorkInventory.Derive(facts));
         var entry = Assert.Single(WorkInventory.Recoveries(facts));
-        Assert.Equal(("moved-aside", "recovery", "retained", Then + BranchTidying.SetAsideFor), (entry.Kind, entry.Role, entry.Disposition, entry.Until));
+        Assert.Equal(("moved-aside", "recovery", "retained", Then + KeepKinds.SetAside.Days), (entry.Kind, entry.Role, entry.Disposition, entry.Until));
         Assert.Equal("engine", entry.Repository);
     }
 
@@ -205,6 +205,8 @@ public sealed class CleanupLeftoversTests : IDisposable
         var quiet = Path.Combine(engine, $"s-quiet-{stamp}");
         Directory.CreateDirectory(quiet);
         await File.WriteAllTextAsync(Path.Combine(quiet, "old.txt"), "written before the move\n");
+        // KEEP1a: the purge reads creation times too (Fable F1.1), so a file made before the move is made then.
+        File.SetCreationTimeUtc(Path.Combine(quiet, "old.txt"), moved.AddDays(-1).UtcDateTime);
         File.SetLastWriteTimeUtc(Path.Combine(quiet, "old.txt"), moved.AddDays(-1).UtcDateTime);
 
         var facts = await WorkInventories.GatherAsync(_home, new Dictionary<string, string>(), new HashSet<string>(), new List<string>(), now: now);
@@ -232,19 +234,20 @@ public sealed class CleanupLeftoversTests : IDisposable
         Directory.CreateDirectory(held);
         var file = Path.Combine(held, "held.db");
         await File.WriteAllTextAsync(file, "written before the move\n");
+        File.SetCreationTimeUtc(file, moved.AddDays(-1).UtcDateTime);
         File.SetLastWriteTimeUtc(file, moved.AddDays(-1).UtcDateTime);
         var trees = new SessionTrees(_home);
 
         using (new FileStream(file, FileMode.Open, FileAccess.Read, FileShare.None))
         {
-            Assert.False(Assert.Single(trees.PurgeSetAside(now, BranchTidying.SetAsideFor)).Purged);
+            Assert.False(Assert.Single(trees.PurgeSetAside(now, KeepKinds.SetAside.Days)).Purged);
             var facts = await WorkInventories.GatherAsync(_home, new Dictionary<string, string>(), new HashSet<string>(), new List<string>(), now: now);
             var wait = Assert.Single(Assert.Single(WorkInventory.Derive(facts)).Cleanup.Waits);
             Assert.Equal((InventoryKind.MovedAside, InventoryDisposition.Blocked, held), (wait.Kind, wait.Disposition, wait.Resource));
             Assert.Contains("could not be read or deleted", wait.Detail, StringComparison.Ordinal);
         }
 
-        Assert.True(Assert.Single(trees.PurgeSetAside(now, BranchTidying.SetAsideFor)).Purged);
+        Assert.True(Assert.Single(trees.PurgeSetAside(now, KeepKinds.SetAside.Days)).Purged);
         var after = await WorkInventories.GatherAsync(_home, new Dictionary<string, string>(), new HashSet<string>(), new List<string>(), now: now);
         Assert.Empty(WorkInventory.Derive(after));
     }

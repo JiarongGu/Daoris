@@ -94,6 +94,7 @@ where it is, while one made after the change is made at its new place (D172 poin
 | `browser/settings.json`, `browser/favorites.json` | `BrowserSettings.cs:58`, `BrowserFavorites.cs:29` | same |
 | `brainstorms/<id>/`, a brainstorm's request, packet, passes and document (BRAINSTORM1a, D176 point 8) | `BrainstormFiles.cs` | same |
 | `usage-history/`, every usage reading and every turn's tokens by month, and each account's binding epoch (USAGECAP1a1, USAGECAP1a2, D179 point 2) | `UsageHistory.cs` | same |
+| `keeping.json`, the record of the keeping rules' runs: each kind's last run (KEEP1a, D195 point 2) | `KeepingRecord.cs` | same |
 
 ### 3.2 `profiles/`: sign-ins
 

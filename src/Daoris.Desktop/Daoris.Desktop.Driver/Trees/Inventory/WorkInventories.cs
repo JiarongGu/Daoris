@@ -55,8 +55,10 @@ public static class WorkInventories
         // person. Only past its date, where the purge has decided: a folder it deletes is walked once more before the next pass takes it.
         // Re-check: one whose delete the purge could not finish, which no read repeats, as the purge kept it.
         var failed = sessionTrees.SetAsideFailed();
+        // KEEP1a: the days are the one effective policy's, as the purge reads them.
+        var days = KeepPolicy.Of(home).SetAside.Days;
         var trees = (await sessionTrees.ListAsync(only, ct).ConfigureAwait(false))
-            .Select(tree => tree.MovedAside is { } moved && at - moved >= BranchTidying.SetAsideFor
+            .Select(tree => tree.MovedAside is { } moved && at - moved >= days
                             && (sessionTrees.SetAsideKept(tree.Path, moved)?.Sentence ?? failed.GetValueOrDefault(Path.GetFullPath(tree.Path))) is { } kept
                 ? tree with { PurgeKept = kept }
                 : tree)
@@ -97,7 +99,7 @@ public static class WorkInventories
         return new InventoryFacts(
             branches, landings, trees, Ours(new AutoLandings(home).All(), entry => entry.Repository), refs, inUse,
             session => Directory.Exists(DaorisHome.Entry(home, HomeEntry.Sessions, session)), at)
-        { Standing = standing, Recorded = recorded ?? [] };
+        { Standing = standing, Recorded = recorded ?? [], SetAsideFor = days };
     }
 
     /// <summary>The milestone of every unit this home names, and Daoris's own recoveries no unit names (CLEANUP1), from one read.</summary>

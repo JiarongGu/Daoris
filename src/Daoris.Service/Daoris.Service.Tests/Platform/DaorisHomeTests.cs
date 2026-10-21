@@ -264,6 +264,14 @@ public sealed class DaorisHomeTests
         Assert.Equal(HomeCategory.Data, HomeEntry.UsageHistory.Category);
     }
 
+    /// <summary>KEEP1a (D195 point 2): the record of the keeping rules' runs, a data file the service's table names as its twins do.</summary>
+    [Fact]
+    public void The_keeping_record_is_a_data_file()
+    {
+        Assert.Same(HomeEntry.Keeping, HomeEntry.Named("keeping"));
+        Assert.Equal((HomeCategory.Data, "data/keeping.json"), (HomeEntry.Keeping.Category, HomeEntry.Keeping.New));
+    }
+
     /// <summary>HELPMODE1c2a (D183's note): Ask Daoris's configured access, a data file the service's table names as its twin does.</summary>
     [Fact]
     public void Ask_Daoris_configured_access_is_a_data_file()

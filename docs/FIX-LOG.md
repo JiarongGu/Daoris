@@ -19,6 +19,22 @@ repository.
 - **Verification:** `LandBacklogLandingTests.A_conflict_only_in_the_declared_backlog_is_settled_by_its_base_and_lands_replayed`, red
   before (refused with *Merge conflict in docs/backlog.md*, and the plan named it), green after; the edited-twice, beside-code and
   session-declared cases refused; `BacklogMergeTests` and `merge-branch.test.ts` on the table.
+## 2026-10-21 — A terminal's press confirmed past its time still ran when its timer fired late (NOTIFY2a)
+
+- **Symptom:** found by Codex's read of the notification design (D196, its finding 2.5) and the steward's check (S1), never seen on
+  the install. A Confirm pressed after a press's two minutes ran the press if the timer that ends it had not fired yet, and a window's
+  word that the card was shown, past the press's ten minutes to be found, gave it two more. The bound the card states was not the bound
+  kept.
+- **Root cause:** `PipeConfirmations` read the clock only in the timer's firing (`End(…, due: true)`); `Answer` and `Show` took the
+  press as waiting while it was in the list, and `Show` returned early for a card shown before without reading the clock. A pool
+  under load runs a timer late, so the list held a press past its time.
+- **Fix:** D196's NOTIFY2a note. `End` reads the clock for every answer: one at or past `Expires` ends the press `Expired` and is
+  answered `gone`. `Show` reads it first, before its early return, and ends a press past its time alike. The card toasts the refusal,
+  since the press's end takes the card away before its answer returns.
+- **Verification:** `PipeConfirmationsTests` (seven cases) and `PipeConfirmTests`' late Confirm over the pipe, on a `HeldClock` whose
+  `Pass` moves time and holds every timer late, failed before the fix (each `Answer` or `Show` past the time answered true) and pass
+  after; `DriverModulePersonTests` and `SessionBalloonTests` stay green; `Confirmations.test.tsx`'s toast cases failed and pass in en
+  and zh.
 
 ## 2026-10-21 — A running session's *Who it worked with* stood eleven times over on its page (RELSPAM1)
 

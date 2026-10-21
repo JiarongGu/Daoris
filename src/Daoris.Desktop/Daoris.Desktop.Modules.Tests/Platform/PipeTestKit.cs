@@ -67,6 +67,15 @@ internal sealed class HeldClock : TimeProvider
         foreach (var timer in due) timer.Fire();
     }
 
+    /// <summary>
+    /// Moves the clock on by <paramref name="by"/> and fires nothing: each timer it reached is held late, as a loaded pool runs one
+    /// (NOTIFY2a), and fires at the next <see cref="Advance"/>.
+    /// </summary>
+    public void Pass(TimeSpan by)
+    {
+        lock (_gate) _now += by;
+    }
+
     private sealed class HeldTimer(HeldClock clock, TimerCallback callback, object? state) : ITimer
     {
         public DateTimeOffset? Due { get; set; }

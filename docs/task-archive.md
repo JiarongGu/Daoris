@@ -18894,6 +18894,13 @@ page and the offer's page list them in en and zh; `daoris-driver plugins show` s
 description theories held cell for cell by `plugin-steps.test.ts`, `PluginPageTests`, `DriverModulePluginPageTests`,
 `PluginPage.test.tsx` in both languages. Detail: D173's FABRIC-UNIT1e note.
 
+## KEEP1a — a tree set aside drops its package folders once it has settled (2026-10-21, D195)
+
+> - [ ] **KEEP1a — a tree set aside drops its package folders once it has settled** (driver, service, cli; first; D195, the cleanup design §9). With the foundations (the kinds' table, `keeping.json`, the run lock, the Keeping pass), each `node_modules` beside a tracked `package.json` goes an hour after the move, from a manifest written before it. Proof: as §9 names it, over real git.
+
+**Outcome** 2026-10-21: built. The look judges a tree's package folders before its hold, checks them inside it and writes
+`<folder>.slim.json` before the move; the Keeping pass takes them an hour later under the home's run lock, and the purge reads what
+they left. Foundations: `KeepKinds`, `KeepPolicy`, `keeping.json`, `KeepingRun`. Detail: D195's KEEP1a note.
 ## NOTIFY1 — a notification center: what comes to the person, in one place that never blocks the page (design) (2026-10-21, D196)
 
 > - [ ] **NOTIFY1 — a notification center: what comes to the person, in one place that never blocks the page** (design, then its rows; the owner's direction, 2026-10-21; D185, D156 §4.2, D188). A terminal's press waiting for the window is drawn across the top of every page and blocks it until answered. It says the route's raw name (`SESSION_INPUT`) under its sentence (一个终端请求以你的名义对会话说话。), and it expires in two minutes. Meanwhile session messages are listed one by one on Overview, which makes Overview long and hides what it is for. Wanted, as a design under D191 (Codex reads; D185 amended):
@@ -18960,3 +18967,12 @@ is said as now holding what follows it. The CLI half has no file since PUSH1f2b,
 
 **Outcome** 2026-10-21: built. A replay conflicting only in the line's declared backlog merges it by its base and lands, saying what
 it kept and dropped; a row both sides edited, a conflict beside code, or a backlog only the session declared stays refused. A twin of the merge tool's rule, one table (`backlog-merges.json`). Detail: D87's LANDBACKLOG1 note.
+## NOTIFY2a — a terminal's press answered or shown past its time runs nothing (2026-10-21, D196)
+
+> - [ ] **NOTIFY2a — a terminal's press answered or shown past its time runs nothing** (modules, web-shell; first; D196, the notification design §9). The pipe's half, with no view: a late answer or shown word ends the press expired, its refusal toasted; `Confirming` carries its id; the balloon names no route. Proof: as §9 names it.
+
+**Outcome** 2026-10-21: built. `PipeConfirmations` reads the clock in `End` for every answer and in `Show` before its early return,
+so an answer or a shown word at or past the press's time ends it expired and runs nothing, whether or not its timer fired; the
+`Confirming` attention carries the press's `Id`, and its balloon names the terminal and no route. The card toasts a refusal whose card
+has gone with its press. Proof: `PipeConfirmationsTests` and `PipeConfirmTests` on a held clock with the timer held late, and
+`Confirmations.test.tsx` in en and zh, each seen failing first. Detail: D196's NOTIFY2a note, `docs/FIX-LOG.md`. On Opus.

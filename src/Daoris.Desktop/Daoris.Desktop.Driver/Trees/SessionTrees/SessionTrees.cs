@@ -57,6 +57,12 @@ public sealed record SessionTree(string Path, string Workspace, string Repositor
     /// link, a folder that cannot be read). Null before its date, where the purge takes it, and for anything not moved aside.
     /// </summary>
     public string? PurgeKept { get; init; }
+
+    /// <summary>
+    /// A folder moved aside whose package folders the slim dropped (KEEP1a, the cleanup design §5): which, in git's spelling, from the
+    /// manifest beside it. None for anything else.
+    /// </summary>
+    public IReadOnlyList<string> Slimmed { get; init; } = [];
 }
 
 /// <summary>
@@ -108,6 +114,7 @@ public sealed class SessionTrees(string home, LandingPlugins? plugins = null, Fu
     private LandedReviews? _reviews;
     private TreeGates? _gates;
     private TreeSetAside? _setAside;
+    private SetAsideKeeping? _setAsideKeeping;
     private TreeRemovals? _removals;
     private TreeSweeps? _sweeps;
     private AutoTidies? _autoTidy;
@@ -158,6 +165,9 @@ public sealed class SessionTrees(string home, LandingPlugins? plugins = null, Fu
 
     /// <summary>What the look's own tidy takes by itself, its last guards, and its set-aside (AUTOTIDY1).</summary>
     private TreeSetAside SetAsides => _setAside ??= new(_context);
+
+    /// <summary>The set-aside kind's removal, the purge and the slim, which the Keeping pass runs (KEEP1a).</summary>
+    private SetAsideKeeping Keeping => _setAsideKeeping ??= new(_context, SetAsides);
 
     /// <summary>A session tree's removal (D51 rule 7, D88, SQUASHTIDY1c).</summary>
     private TreeRemovals Removals => _removals ??= new(_context, Follows, Content, Squashes);
@@ -537,6 +547,8 @@ public sealed class SessionTrees(string home, LandingPlugins? plugins = null, Fu
             found.Add(new(folder, Path.GetFileName(workspace), Path.GetFileName(repository), SessionTree.SetAside)
             {
                 MovedAside = TreeSetAside.MovedAt(Path.GetFileName(folder)),
+                // KEEP1a: the package folders the slim dropped, from the manifest beside it, which the inventory's line names.
+                Slimmed = SlimManifest.Read(SlimManifest.PathFor(folder)).Manifest?.Removed ?? [],
             });
         }
 
@@ -717,8 +729,17 @@ public sealed class SessionTrees(string home, LandingPlugins? plugins = null, Fu
     /// <inheritdoc cref="TreeSetAside.SetAsideRoot"/>
     public string SetAsideRoot => SetAsides.SetAsideRoot;
 
-    /// <inheritdoc cref="TreeSetAside.PurgeSetAside"/>
+    /// <inheritdoc cref="TreeSetAside.PurgeSetAside(DateTimeOffset, TimeSpan)"/>
     internal IReadOnlyList<SetAside> PurgeSetAside(DateTimeOffset now, TimeSpan after) => SetAsides.PurgeSetAside(now, after);
+
+    /// <inheritdoc cref="SetAsideKeeping.Run"/>
+    internal SetAsideRun KeepSetAside(KeepPolicy policy, DateTimeOffset now, TimeSpan budget, CancellationToken ct) =>
+        Keeping.Run(policy, now, budget, ct);
+
+    /// <inheritdoc cref="TreeSetAside.LastLookAsync"/>
+    internal Task<(string Code, string Sentence, string? Cause)?> LastLookAsync(
+        string root, SweepItem item, CancellationToken ct, IReadOnlyList<string>? judged = null, List<string>? confirmed = null) =>
+        SetAsides.LastLookAsync(root, item, ct, judged, confirmed);
 
     /// <inheritdoc cref="TreeSetAside.Kept"/>
     internal (string Code, string Sentence)? SetAsideKept(string folder, DateTimeOffset moved) => SetAsides.Kept(folder, moved);

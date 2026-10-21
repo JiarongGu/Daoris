@@ -205,14 +205,15 @@ public sealed class PipeConfirmTests : Bridge
         var asked = pipe.Confirmations.Now().Waiting[0];
 
         // The person is told where they look: the attention the notifier turns into a balloon while no window is in front, naming the
-        // press by its route and the terminal as the system names it, never a value it carries.
+        // terminal as the system names it, never the route's constant (NOTIFY2a) or a value it carries; the press by its id.
         await UntilAsync(() => Raised.Any(each => each.Module == StatePublisher.Module && each.Type == PipeConfirmations.AttentionType));
         var told = Raised.Single(each => each.Type == PipeConfirmations.AttentionType).Payload!;
         string? Read(string name) => told.GetType().GetProperty(name)?.GetValue(told) as string;
         Assert.Equal(PipeConfirmations.AttentionKind, Read("Kind"));
+        Assert.Equal(asked.Id, Read("Id"));
         Assert.Null(Read("Session"));
         Assert.False(string.IsNullOrWhiteSpace(Read("Headline")));
-        Assert.Contains("SESSION_ARCHIVE", Read("Detail"), StringComparison.Ordinal);
+        Assert.DoesNotContain("SESSION_ARCHIVE", $"{Read("Headline")} {Read("Detail")}", StringComparison.Ordinal);
         Assert.Contains($"({Environment.ProcessId})", Read("Detail"), StringComparison.Ordinal);
         Assert.DoesNotContain("s1a2b3c4", Read("Detail"), StringComparison.Ordinal);
 
@@ -245,6 +246,39 @@ public sealed class PipeConfirmTests : Bridge
                 """{"state":"expired","route":"DAORIS.DRIVER.SESSION_ARCHIVE","door":"terminal"}""",
             ],
             Confirmations());
+    }
+
+    /// <summary>
+    /// NOTIFY2a (D196 point 4, the notification design §3.4): a Confirm at or past the press's time ends it expired and runs nothing,
+    /// though its timer, held late as a loaded pool runs one, has not fired; the terminal hears it expired.
+    /// </summary>
+    [Fact]
+    public async Task A_Confirm_past_its_time_while_its_timer_is_late_runs_nothing_and_the_terminal_hears_it_expired()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        using var log = new MachineLog(Home, "desktop");
+        var driver = new HeldModule(DriverModule.Name);
+        driver.Let.SetResult();
+        var (dispatcher, services) = Compose(log, driver);
+        using var _ = services;
+        var clock = new HeldClock();
+        using var pipe = Pipe(dispatcher, log, clock);
+        await using var client = await PipeClient.ConnectAsync(pipe.Serve()!);
+        await client.HelloAsync(HomeId);
+
+        var id = await client.SendAsync(DriverModule.Name, Land, new { id = "s1a2b3c4" });
+        await UntilAsync(() => pipe.Confirmations.Now().Waiting.Count == 1);
+        var shown = pipe.Confirmations.Now().Waiting[0];
+        Assert.True(pipe.Confirmations.Show(shown.Id));
+        clock.Pass(TimeSpan.FromMinutes(2));
+        Assert.Single(pipe.Confirmations.Now().Waiting);
+
+        Assert.False(pipe.Confirmations.Answer(shown.Id, confirm: true));
+
+        Assert.Equal(InstancePipe.Expired, Code(await client.AnswerAsync(id)));
+        Assert.Equal(0, driver.Ran);
+        Assert.Empty(pipe.Confirmations.Now().Waiting);
+        Assert.Equal(["asked", "shown", "expired"], Confirmations().Select(line => JsonDocument.Parse(line).RootElement.GetProperty("state").GetString()));
     }
 
     [Fact]

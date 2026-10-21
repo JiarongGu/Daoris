@@ -220,6 +220,12 @@ public sealed record InventoryFacts(
     /// session's rather than an unknown owner's. None given, none is joined, as before.
     /// </summary>
     public IReadOnlyList<RecordedTree> Recorded { get; init; } = [];
+
+    /// <summary>
+    /// How long a folder moved aside is kept, by the one effective policy (KEEP1a, <see cref="KeepPolicy"/>): its purge date is its move
+    /// and this. The table's default where none is given.
+    /// </summary>
+    public TimeSpan SetAsideFor { get; init; } = KeepKinds.SetAside.Days;
 }
 
 /// <summary>
@@ -383,7 +389,7 @@ public static partial class WorkInventory
                     : branch.GoneAt is null && (branch.Branch == tree.Branch || branch.Now == tree.Branch)));
             if (found is null && aside && tree.MovedAside is not null && tree.PurgeKept is null)
             {
-                recoveries.Add(AsideEntry("", tree));
+                recoveries.Add(AsideEntry("", tree, facts.SetAsideFor));
                 continue;
             }
 
@@ -603,29 +609,33 @@ public static partial class WorkInventory
     /// <summary>
     /// A folder moved aside: a recovery retained until its purge date, or, with no date in its name, never purged by itself. One past its
     /// date that the purge keeps (after review: a write after the move, a link, a folder that cannot be read) is blocked on the person,
-    /// saying why: the purge compares with the move, so it never takes it.
+    /// saying why: the purge compares with the move, so it never takes it. KEEP1a: its days are the one policy's, and a folder whose
+    /// package folders the slim dropped names them.
     /// </summary>
-    private static InventoryEntry AsideEntry(string unit, SessionTree tree)
+    private static InventoryEntry AsideEntry(string unit, SessionTree tree, TimeSpan days)
     {
-        var until = tree.MovedAside is { } moved ? moved + BranchTidying.SetAsideFor : (DateTimeOffset?)null;
+        var until = tree.MovedAside is { } moved ? moved + days : (DateTimeOffset?)null;
+        var slimmed = tree.Slimmed.Count == 0 ? ""
+            : $"; its package folders went an hour after ({string.Join(", ", tree.Slimmed)}), which `npm ci` makes again";
         if (tree.PurgeKept is { } kept)
         {
             return new InventoryEntry(unit, InventoryKind.MovedAside, tree.Path, InventoryRole.Recovery, InventoryDisposition.Blocked,
-                $"moved aside {Minute(tree.MovedAside ?? DateTimeOffset.MinValue)} UTC and past its date, but the look's purge keeps it, since {kept}; "
-                + "look at it, and delete it once it holds nothing you need")
+                $"moved aside {Minute(tree.MovedAside ?? DateTimeOffset.MinValue)} UTC and past its date"
+                + (tree.Slimmed.Count == 0 ? "" : $" (its package folders went an hour after it moved: {string.Join(", ", tree.Slimmed)})")
+                + $", but the look's purge keeps it, since {kept}; look at it, and delete it once it holds nothing you need")
             { Until = until, Repository = tree.Repository };
         }
 
         return new InventoryEntry(unit, InventoryKind.MovedAside, tree.Path, InventoryRole.Recovery, InventoryDisposition.Retained,
             tree.MovedAside is { } at
-                ? $"moved aside {Minute(at)} UTC; deleted once it is left untouched until {Minute(until!.Value)} UTC"
+                ? $"moved aside {Minute(at)} UTC{slimmed}; deleted once it is left untouched until {Minute(until!.Value)} UTC"
                 : "moved aside; its name says no date, so the look's purge never takes it")
         { Until = until, Repository = tree.Repository };
     }
 
     private static InventoryEntry TreeEntry(Draft draft, SessionTree tree, InventoryFacts facts, bool ended)
     {
-        if (tree.Branch == SessionTree.SetAside) return AsideEntry(draft.Id, tree);
+        if (tree.Branch == SessionTree.SetAside) return AsideEntry(draft.Id, tree, facts.SetAsideFor);
 
         // OVERVIEWNOISE1b: each blocked entry carries its code and the facts it is worded with, beside the driver's sentence.
         if (draft.Unowned)
