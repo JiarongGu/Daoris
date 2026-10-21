@@ -17,7 +17,7 @@ repository.
   Sessions badge's parked quest. `useAttention` keeps a row with no workspace in every window, which is right for the machine's rows
   alone, so every window counted those rows whatever its scope. Why that window's list showed none of the three was not found in the
   code: the bell, the taskbar's count, *Notifications*' band and Overview's summary all read the same scoped rows. The taskbar's count
-  is told by the first main window alone (`useTaskbarCount`), so with two main windows it is the first one's count whichever is in front.
+  is the first main window's alone until NOTIFY2c, whichever window is in front.
 - **Fix:** each of those rows carries its record's workspace, from the record in hand (a unit's by its quest, its ask or its session);
   a rule carries the workspace its change reaches, a folder's trust and an account's wait the one their holds share. A terminal's
   press, a machine rule, an account, a unit no record owns, and a row whose record is not in hand carry none, each with its reason, so

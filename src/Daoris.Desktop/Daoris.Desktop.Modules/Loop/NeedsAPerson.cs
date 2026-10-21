@@ -84,8 +84,7 @@ public sealed record AttentionFacts
 /// <c>workspace</c>, however its wait reached the judge, the service's records or the driver's own lists (a review, an opinion, a
 /// helper's ask, a held call, a held answer, a unit's clean-up), by which a window scoped to one circle filters, as its lists were. Only
 /// what is the machine's carries none, and every window shows it: a terminal's press, a rule for the whole machine, a folder or an
-/// account whose holds span workspaces, a unit no record owns; and a row whose record is not in hand, which no window may lose. Two
-/// windows on two workspaces once counted each other's sessions to review, which neither's list placed.</para>
+/// account whose holds span workspaces, a unit no record owns; and a row whose record is not in hand, which no window may lose.</para>
 /// </remarks>
 public static class NeedsAPerson
 {
@@ -113,7 +112,7 @@ public static class NeedsAPerson
 
         // The workspace of the session a row is, where its record is in hand (NEEDSSCOPE1); else none, and every window shows it.
         string? SessionScope(string? id) => id is not null && sessions.GetValueOrDefault(id) is { } record ? Scope(record) : null;
-        // A unit's: a quest's or an ask's by its record, else its session's, the unit itself or the session its id names (WorkUnitKind).
+        // A unit's: a quest's or an ask's unit by that record; else the session of the unit as the work slice holds it, or the one its id names.
         string? UnitScope(string? unit) => unit switch
         {
             null => null,
