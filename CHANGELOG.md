@@ -5,6 +5,11 @@ with the version and date at release.
 
 ## Unreleased
 
+- A version of an agent or a tool that Daoris downloaded and nothing uses now goes by itself seven days after Daoris first finds it
+  unused; a pin, Tools' use or a setting naming it again starts the count anew. A version a running session was handed stays while
+  that session runs. Settings → This Daoris → *Clear unused downloads…* says the rule and, beside each unused version, the day it
+  goes. Tools' *Delete* of a version now takes the same care: a version a running session was handed, or one a program holds, is
+  refused and left whole, where a failed delete could leave part of it. In English and 中文.
 - `daoris agent which <agent> [--workspace <name>] [--json]` says which program a session would run the agent as: the command your
   `driver.json` names for it, its pin, or the one on `PATH`. It also says when a pinned version is not installed. When Daoris writes
   an account's name, a cool-off or the agents' wiring while another of its processes writes the same file, it now waits for that
