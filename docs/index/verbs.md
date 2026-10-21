@@ -53,7 +53,7 @@ Routed in `src/Daoris.Desktop/Daoris.Desktop.Driver.Host/Program.cs`, its usage 
 | `heavy` | `Program.cs:586` | `Daoris.Desktop.Driver.Host/HeavyMappingConsole.cs:8` HeavyMappingConsole | — |
 | `checks` | `Program.cs:593` | `Daoris.Desktop.Driver.Host/SessionChecksConsole.cs:7` SessionChecksConsole | heavy-at-end |
 | `history` | `Program.cs:601` | `Daoris.Desktop.Driver.Host/HistoryConsole.cs:11` HistoryConsole | clear `HistoryCommand.cs:54` |
-| `trees` | `Program.cs:608` | `Daoris.Desktop.Driver.Host/TreesConsole.cs:15` TreesConsole | list `TreesConsole.cs:92` · remove `TreesConsole.cs:120` · clean `TreesConsole.cs:136` · land `TreesConsole.cs:244` · hand `TreesConsole.cs:414` · state `TreesConsole.cs:487` · sync `TreesConsole.cs:186` |
+| `trees` | `Program.cs:608` | `Daoris.Desktop.Driver.Host/TreesConsole.cs:15` TreesConsole | list `TreesConsole.cs:92` · remove `TreesConsole.cs:123` · clean `TreesConsole.cs:139` · land `TreesConsole.cs:247` · hand `TreesConsole.cs:417` · state `TreesConsole.cs:490` · sync `TreesConsole.cs:189` |
 | `work state` | `Program.cs:614` | `Program.cs:614` (inline) | — |
 | `work held` | `Program.cs:620` | `Program.cs:620` (inline) | — |
 | `work recovery drop` | `Program.cs:626` | `Program.cs:626` (inline) | — |

@@ -18893,3 +18893,11 @@ and `plugins install` name each step with its reach and what the steps create. `
 page and the offer's page list them in en and zh; `daoris-driver plugins show` says them too. Proof: `PluginStepsTests`' change and
 description theories held cell for cell by `plugin-steps.test.ts`, `PluginPageTests`, `DriverModulePluginPageTests`,
 `PluginPage.test.tsx` in both languages. Detail: D173's FABRIC-UNIT1e note.
+
+## KEEP1a — a tree set aside drops its package folders once it has settled (2026-10-21, D195)
+
+> - [ ] **KEEP1a — a tree set aside drops its package folders once it has settled** (driver, service, cli; first; D195, the cleanup design §9). With the foundations (the kinds' table, `keeping.json`, the run lock, the Keeping pass), each `node_modules` beside a tracked `package.json` goes an hour after the move, from a manifest written before it. Proof: as §9 names it, over real git.
+
+**Outcome** 2026-10-21: built. The look judges a tree's package folders before its hold, checks them inside it and writes
+`<folder>.slim.json` before the move; the Keeping pass takes them an hour later under the home's run lock, and the purge reads what
+they left. Foundations: `KeepKinds`, `KeepPolicy`, `keeping.json`, `KeepingRun`. Detail: D195's KEEP1a note.

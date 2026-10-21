@@ -5,6 +5,11 @@ with the version and date at release.
 
 ## Unreleased
 
+- A session's tree that Daoris set aside after its work landed now drops its installed packages an hour later: each `node_modules`
+  beside a `package.json` the repository tracks, which `npm ci` makes again. The rest of the folder (your files, `bin/`, `obj/`, a
+  `.env`, what the session wrote) still waits its fourteen days, and a folder anything was written in after it was set aside keeps
+  everything. `daoris-driver work state` and `trees list` name what went, and the look's report says it. A file copied into a folder set
+  aside now keeps it as well as one written there. Folders set aside before this version keep their packages until their days.
 - A quest whose submission you reopened now says so on its page, under *Reopened*: when, your words as you wrote them (or that
   you gave none), that it waits for its agent to make it ready again, and the session that submitted it, which is told. Before,
   it read as a quest whose agent had not yet said it was ready. A submission also names the session that made it. In English and
