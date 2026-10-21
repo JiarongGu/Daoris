@@ -1,5 +1,5 @@
 {
-  "note": "PUSH1f2c (D194, the alone-path design §3): what `daoris tool` said for each case its tests held, run once through the CLI's TypeScript verb before it retired, alone on a home of its own (`<home>`) with no PATH, as `win-x64`. Each row: the words (`<home>` where a whole path goes), tools.json before (null: none), the files under the home before it (a downloaded version, a location's fetched copy, a named file), what each address answers (bytes in base64; any other is nothing there), the exit, the lines said on the standard output and on the error stream, tools.json after, and the versions downloaded after. A path is spelled with `/`; a copy's age is `<age>`. The TypeScript said a refusal through its dispatcher, `daoris: ` and the sentence; the driver's command says it on the error stream, as every host verb does. `ToolsTextTests` reads it row for row. A sentence the port changes on purpose is a row changed here, with its reason under `changed`.",
+  "note": "PUSH1f2c (D194, the alone-path design §3): what `daoris tool` said for each case its tests held, run once through the CLI's TypeScript verb before it retired, alone on a home of its own (`<home>`) with no PATH, as `win-x64`. Each row: the words (`<home>` where a whole path goes), tools.json before (null: none), the files under the home before it (a downloaded version, a location's fetched copy, a named file), what each address answers (bytes in base64; any other is nothing there), the exit, the lines said on the standard output and on the error stream, tools.json after, and the versions downloaded after. A path is spelled with `/`; a copy's age is `<age>`, and a JSON reader's own reason `<why>`, which each runtime words its own way. The TypeScript said a refusal through its dispatcher, `daoris: ` and the sentence; the driver's command says it on the error stream, as every host verb does. `ToolsTextTests` reads it row for row. A sentence the port changes on purpose is a row changed here, with its reason under `changed`.",
   "rows": [
     {
       "name": "list, an empty home",
@@ -108,11 +108,11 @@
       "exit": 1,
       "out": [
         "daoris: <home>/data/tools.json",
-        "  git   Git        refused — <home>/data/tools.json is not readable JSON (Unexpected token 'o', \"not json\" is not valid JSON), and every tool is refused, never run another way: fix it, or delete it to run every tool from PATH",
-        "  node  Node.js    refused — <home>/data/tools.json is not readable JSON (Unexpected token 'o', \"not json\" is not valid JSON), and every tool is refused, never run another way: fix it, or delete it to run every tool from PATH",
-        "  pwsh  PowerShell refused — <home>/data/tools.json is not readable JSON (Unexpected token 'o', \"not json\" is not valid JSON), and every tool is refused, never run another way: fix it, or delete it to run every tool from PATH",
-        "  gh    GitHub CLI refused — <home>/data/tools.json is not readable JSON (Unexpected token 'o', \"not json\" is not valid JSON), and every tool is refused, never run another way: fix it, or delete it to run every tool from PATH",
-        "  az    Azure CLI  refused — <home>/data/tools.json is not readable JSON (Unexpected token 'o', \"not json\" is not valid JSON), and every tool is refused, never run another way: fix it, or delete it to run every tool from PATH",
+        "  git   Git        refused — <home>/data/tools.json is not readable JSON (<why>), and every tool is refused, never run another way: fix it, or delete it to run every tool from PATH",
+        "  node  Node.js    refused — <home>/data/tools.json is not readable JSON (<why>), and every tool is refused, never run another way: fix it, or delete it to run every tool from PATH",
+        "  pwsh  PowerShell refused — <home>/data/tools.json is not readable JSON (<why>), and every tool is refused, never run another way: fix it, or delete it to run every tool from PATH",
+        "  gh    GitHub CLI refused — <home>/data/tools.json is not readable JSON (<why>), and every tool is refused, never run another way: fix it, or delete it to run every tool from PATH",
+        "  az    Azure CLI  refused — <home>/data/tools.json is not readable JSON (<why>), and every tool is refused, never run another way: fix it, or delete it to run every tool from PATH",
         "",
         "  `daoris tool use <tool> system|managed [<version>]|file <path>` sets one; nothing switches on its own."
       ],
@@ -303,10 +303,11 @@
       "exit": 2,
       "out": [],
       "err": [
-        "daoris: no file at <home>/bin/missing.exe — a tool is a file that is there."
+        "daoris: Git is not set to `<home>/bin/missing.exe`: name a file that is there by its whole path. (TOOL_FILE_MISSING)"
       ],
       "after": null,
-      "versions": {}
+      "versions": {},
+      "changed": "The file's check is the operation's now (ToolChoices.UseFileAsync), the one the window's TOOLS_USE makes, so its refusal is one line on both paths: the route's sentence and its code (D194 point 6). The same operation asks a file that is there its version before it is written, as the route did and the TypeScript did not."
     },
     {
       "name": "use, no way",
@@ -350,10 +351,11 @@
       "exit": 2,
       "out": [],
       "err": [
-        "daoris: <home>/data/tools.json is not readable JSON (Unexpected token 'o', \"not json\" is not valid JSON). Fix it, or delete it to start from nothing — nothing was written."
+        "daoris: <home>/data/tools.json is not readable JSON (<why>). Fix it, or delete it to start from nothing — nothing was written. (DRIVER_REFUSED)"
       ],
       "after": "not json",
-      "versions": {}
+      "versions": {},
+      "changed": "The write's refusal is the operation's (Tools.UseSystem), said as the window's route says it: the sentence and its code, one line on both paths (D194 point 6)."
     },
     {
       "name": "use, a tool this build does not run",
@@ -420,11 +422,12 @@
         "cache/tools/gh/2.62.0/package/bin/gh.exe": "gh",
         "cache/tools/gh/2.62.0/tool.json": "{\"exe\":\"bin/gh.exe\"}"
       },
-      "exit": 1,
+      "exit": 2,
       "out": [],
       "err": [
-        "daoris: GitHub CLI runs 2.62.0 — `daoris tool use gh system`, or another version, first; nothing was deleted"
+        "daoris: GitHub CLI runs 2.62.0 — `daoris tool use gh system`, or another version, first; nothing was deleted (TOOL_IN_USE)"
       ],
+      "changed": "A delete's refusal is the operation's (ToolInstall.Delete), said as the window's TOOLS_DELETE says it, with its code, and exit 2 as both paths answer an operation's refusal (D194 point 6); the TypeScript alone said it with no code, exit 1, and the route exit 2.",
       "after": "{\n  \"tools\": {\n    \"gh\": {\n      \"use\": \"managed\",\n      \"version\": \"2.62.0\"\n    }\n  }\n}",
       "versions": {
         "gh": [
@@ -440,11 +443,12 @@
         "2.62.0"
       ],
       "before": null,
-      "exit": 1,
+      "exit": 2,
       "out": [],
       "err": [
-        "daoris: GitHub CLI 2.62.0 is not downloaded (<home>/cache/tools/gh/2.62.0) — nothing was deleted"
+        "daoris: GitHub CLI 2.62.0 is not downloaded (<home>/cache/tools/gh/2.62.0) — nothing was deleted (TOOL_NOT_DOWNLOADED)"
       ],
+      "changed": "A delete's refusal is the operation's (ToolInstall.Delete), said as the window's TOOLS_DELETE says it, with its code, and exit 2 as both paths answer an operation's refusal (D194 point 6); the TypeScript alone said it with no code, exit 1, and the route exit 2.",
       "after": null,
       "versions": {}
     },
@@ -456,11 +460,12 @@
         "../2.62.0"
       ],
       "before": null,
-      "exit": 1,
+      "exit": 2,
       "out": [],
       "err": [
-        "daoris: `../2.62.0` is not an exact version — one to four numbers, like 2.51.0 — so nothing was deleted"
+        "daoris: `../2.62.0` is not an exact version — one to four numbers, like 2.51.0 — so nothing was deleted (DRIVER_REFUSED)"
       ],
+      "changed": "A delete's refusal is the operation's (ToolInstall.Delete), said as the window's TOOLS_DELETE says it, with the code DRIVER_REFUSED its check has, and exit 2 as both paths answer an operation's refusal (D194 point 6); the TypeScript alone said it with no code, exit 1.",
       "after": null,
       "versions": {}
     },

@@ -139,26 +139,10 @@ public sealed class ToolsRoutes(DriverContext context)
             case "file":
             {
                 // Checked before it is written (§4.1): a file that is there, by its whole path, that starts and answers a
-                // version. A program the person names runs as them on every call, so a wrong one is said now.
+                // version. The library's operation (PUSH1f2c), which `daoris-driver tool use … file` calls alone; its coded
+                // refusals are the module's one mapping's (ToolCodes).
                 var file = Optional(request, "file") ?? "";
-                if (!Tools.IsWholePath(file) || !File.Exists(file))
-                {
-                    throw Refusals.Because(
-                        Refusals.ToolFileMissing,
-                        $"{declared.Name} is not set to `{file}`: name a file that is there by its whole path.",
-                        ("tool", declared.Name), ("file", file));
-                }
-
-                var (version, problem) = await VersionOfAsync(file, declared, cancellationToken);
-                if (version is null)
-                {
-                    throw Refusals.Because(
-                        Refusals.ToolFileNoVersion,
-                        $"{file} did not answer its version, so {declared.Name} was not set to it: {problem}",
-                        ("tool", declared.Name), ("file", file), ("reason", problem ?? ""));
-                }
-
-                Tools.UseFile(home, declared.Id, file);
+                var version = await ToolChoices.UseFileAsync(home, declared.Id, file, VersionOfAsync, cancellationToken);
                 Used(declared.Id, "file", null);
                 return new { Tool = declared.Id, Way = "file", File = file, Version = version };
             }
@@ -186,30 +170,16 @@ public sealed class ToolsRoutes(DriverContext context)
         return new { Tool = tool, Stopped = ToolRuns.Cancel(tool) };
     }
 
-    // A downloaded version nothing uses, removed (§3.6): the one in use refuses, and so does one the system holds.
+    // A downloaded version nothing uses, removed (§3.6): the one in use refuses, and so does one the system holds. Its coded refusals
+    // (missing, in use, held) are the module's one mapping's (ToolCodes, PUSH1f2c), the codes `daoris-driver tool delete` says alone.
     [DriverRoute("TOOLS_DELETE")]
     [Publishes("TOOLS_DELETE", StateScopes.Tools)]
     private object? ToolsDelete(IpcRequest request)
     {
         var declared = DeclaredTool(PayloadHelper.GetRequiredValue<string>(request.Payload, "tool"));
         var version = PayloadHelper.GetRequiredValue<string>(request.Payload, "version");
-        try
-        {
-            var folder = ToolInstall.Delete(_loop.Home, declared.Id, version);
-            return new { Tool = declared.Id, Version = version, Folder = folder };
-        }
-        catch (ToolRefusal refusal) when (refusal.Check is "missing" or "in-use" or "held")
-        {
-            throw refusal.Check switch
-            {
-                "missing" => Refusals.Because(
-                    Refusals.ToolNotDownloaded, refusal.Message, ("tool", declared.Name), ("version", version)),
-                "in-use" => Refusals.Because(
-                    Refusals.ToolInUse, refusal.Message, ("tool", declared.Name), ("version", version)),
-                _ => Refusals.Because(
-                    Refusals.ToolHeld, refusal.Message, ("tool", declared.Name), ("version", version), ("reason", refusal.Message)),
-            };
-        }
+        var folder = ToolInstall.Delete(_loop.Home, declared.Id, version);
+        return new { Tool = declared.Id, Version = version, Folder = folder };
     }
 
     // *Look for updates* (§3.7): each location fetched on the person's press, each bounded, its copy kept only when it
@@ -237,12 +207,8 @@ public sealed class ToolsRoutes(DriverContext context)
         switch (action)
         {
             case "add":
-                if (Tools.LocationProblem(address) is { } problem)
-                {
-                    throw Refusals.Because(Refusals.ToolLocationRefused, problem, ("address", address));
-                }
-
-                return new { Address = address, Added = Tools.AddLocation(_loop.Home, address) };
+                // An address that is no resource location is the operation's refusal (PUSH1f2c), said in its code by the module.
+                return new { Address = address, Added = ToolChoices.AddLocation(_loop.Home, address) };
 
             case "remove":
                 return new { Address = address, Removed = Tools.RemoveLocation(_loop.Home, address) };
@@ -427,6 +393,7 @@ public sealed class ToolsRoutes(DriverContext context)
 
         var answer = await ToolQuestions.AskAsync(file, tool.Version, ct);
         var version = answer.Started ? ToolQuestions.VersionIn(answer.Output) : null;
+        // The words ToolQuestions.VersionOfAsync says for a file that answered none, which `daoris-driver tool use … file` asks alone.
         var problem = answer.Problem
             ?? (version is null ? $"{file} answered no version to `{string.Join(' ', tool.Version)}`" : null);
         if (!answer.Started || answer.ExitCode is not null) _versions[file] = (info.LastWriteTimeUtc, info.Length, version, problem);

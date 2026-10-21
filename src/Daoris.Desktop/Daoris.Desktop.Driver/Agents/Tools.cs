@@ -514,7 +514,7 @@ public static class Tools
     }
 
     /// <summary>How a way reads in a sentence.</summary>
-    private static string Words(ToolWay way) => way switch
+    internal static string Words(ToolWay way) => way switch
     {
         ToolWay.System => "the system's",
         ToolWay.Managed => "managed",
@@ -555,7 +555,7 @@ public static class Tools
         return (new ToolEntry(way, null, null, null), null);
     }
 
-    private static string Undeclared(string id) =>
+    internal static string Undeclared(string id) =>
         $"`{id}` is not a tool this build runs — one of: {string.Join(", ", Declared.Select(tool => tool.Id))}. "
         + "A tool is added in the code, never by a file.";
 

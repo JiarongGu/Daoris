@@ -1,9 +1,8 @@
 using System.Diagnostics;
 using System.Text;
 using System.Text.RegularExpressions;
-using Daoris.Driver;
 
-namespace Daoris.Desktop;
+namespace Daoris.Driver;
 
 /// <summary>
 /// A tool asked one question and its answer read whole (TOOLS7, D121 §4.1): the version a file answers before it is
@@ -12,7 +11,8 @@ namespace Daoris.Desktop;
 /// <remarks>
 /// Asked of the resolved file by its whole path, with fixed arguments only, and handed the tools' environment as every
 /// child is (TOOLS5): a version is asked on the <c>PATH</c> a session would be started on. Bounded, since a file the
-/// person names may be any program, and one that waits for input answers nothing in time.
+/// person names may be any program, and one that waits for input answers nothing in time. The driver library's since PUSH1f2c, so
+/// <c>daoris-driver tool use … file</c> asks a named file its version as the window's route does (<see cref="ToolChoices"/>).
 /// </remarks>
 public static partial class ToolQuestions
 {
@@ -59,6 +59,17 @@ public static partial class ToolQuestions
         return run.TimedOut
             ? new Answer(true, null, "", $"{file} did not answer within {Patience.TotalSeconds:0} seconds")
             : new Answer(true, run.ExitCode, $"{run.Stdout}\n{run.Stderr}", null);
+    }
+
+    /// <summary>
+    /// The version a file answers to its tool's version question, or why it answered none: a file that did not start, did not answer
+    /// in time, or said no dotted number.
+    /// </summary>
+    public static async Task<(string? Version, string? Problem)> VersionOfAsync(string file, ToolDeclaration tool, CancellationToken ct)
+    {
+        var answer = await AskAsync(file, tool.Version, ct).ConfigureAwait(false);
+        var version = answer.Started ? VersionIn(answer.Output) : null;
+        return (version, answer.Problem ?? (version is null ? $"{file} answered no version to `{string.Join(' ', tool.Version)}`" : null));
     }
 
     /// <summary>

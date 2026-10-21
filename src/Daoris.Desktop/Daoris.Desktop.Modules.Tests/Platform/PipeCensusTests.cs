@@ -104,6 +104,35 @@ public sealed class PipeCensusTests
     }
 
     /// <summary>
+    /// The tools' presses <c>daoris-driver tool</c> sends (PUSH1f2c, D194 point 5): each a route of the driver's module the census classes
+    /// as the verb reads it, the person's changes the person's and the look open, and each verb no route takes says why it acts alone.
+    /// </summary>
+    [Fact]
+    public void Each_tool_press_names_a_route_the_census_classes_as_the_verb_reads_it_and_each_alone_says_why()
+    {
+        Assert.NotEmpty(Daoris.Driver.ToolRoutes.Verbs);
+        Assert.Equal(Daoris.Driver.ToolRoutes.Verbs.Count, Daoris.Driver.ToolRoutes.Verbs.Select(each => each.Verb).Distinct().Count());
+        foreach (var (verb, route, reason) in Daoris.Driver.ToolRoutes.Verbs)
+        {
+            Assert.False(string.IsNullOrWhiteSpace(reason), $"`{verb}` says no reason");
+            if (route is null)
+            {
+                Assert.StartsWith("alone:", reason, StringComparison.Ordinal);
+                continue;
+            }
+
+            Assert.Equal(DriverModule.Name, route.Module);
+            Assert.Contains(route.Route, DriverModule.Routes);
+            var census = PipeCensus.Daoris.Of(route.Module, route.Route);
+            Assert.True(
+                (census, route.Class) is (PipeClass.Person, Daoris.Driver.RouteClass.Person) or (PipeClass.Open, Daoris.Driver.RouteClass.Open),
+                $"`{verb}` sends {route.Route} as {route.Class}, and the census classes it {census}");
+        }
+
+        Assert.Equal(Daoris.Driver.RouteClass.Open, Daoris.Driver.ToolRoutes.Look.Class);
+    }
+
+    /// <summary>
     /// The open reads and presses the host's verbs send (RPCOPEN1, RPC1e): each names a route of the driver's module that the census
     /// opens, and each verb of the scope left off the pipe says why. A route the census closes fails here, naming the verb that
     /// would send a press the instance refuses.

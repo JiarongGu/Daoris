@@ -13,7 +13,9 @@ namespace Daoris.Driver;
 /// <c>trees</c>, <c>trees list</c>, <c>trees state</c>, <c>work state</c>, <c>work held</c> naming no word), <c>plugins show</c> and <c>activity</c>, <c>sync status</c>,
 /// <c>help list</c>, <c>help mode</c> naming no mode, <c>access</c> and <c>heavy</c> naming no change, <c>opinion show</c>, an <c>update</c> that only asks where it stands, any <c>--plan</c>, and asking for
 /// the usage; the driver's standing choices' <c>list</c> (PUSH1f2a), and any of them on a file <c>DAORIS_DRIVER_CONFIG</c> names
-/// (<see cref="HoldsHere"/>).</item>
+/// (<see cref="HoldsHere"/>); the tools' <c>list</c>, <c>path</c> and a bare <c>locations</c> (PUSH1f2c).</item>
+/// <item><b>A long verb</b> (PUSH1f2c, the alone-path design §1.4): <c>tool download</c>, <c>update</c> and <c>use … managed</c> hold
+/// nothing while they fetch, and take the lease themselves to publish, waited for.</item>
 /// <item><b>The service's own doors</b>, whose one writer is the service already (§7.1): <c>quest delete</c>, <c>accept</c>,
 /// <c>done</c>, <c>check</c> and <c>review</c>, <c>answer</c>, an ask's words, publish, close and delete, and <c>ask channel</c>.</item>
 /// <item><b>A conversation in the terminal</b> (<c>chat</c>, <c>help resume</c>, <c>sessions start-from</c> and
@@ -71,6 +73,9 @@ public static class VerbLeases
             // The driver's standing choices `daoris driver …` hands on (PUSH1f2a, D194 point 2): each change is a short act, held from the
             // top; `list`, the usage and a verb this program does not have hold none. Read through the command's own reading.
             "driver" => DriverChoicesCommand.Changes([.. args.Skip(1)]),
+            // The tools `daoris tool …` hands on (PUSH1f2c): a way set to the system's or a file, a delete, a location's change and a
+            // look hold it from the top; a read and the long verbs none, a download taking it itself to publish (the alone-path design §1.4).
+            "tool" => ToolsCommand.Changes([.. args.Skip(1)]),
             "update" => args.Skip(1).Any(arg => arg is "--when-idle" or "--now" or "--cancel"),
             _ => true,
         };
@@ -85,7 +90,8 @@ public static class VerbLeases
 
     /// <summary>The words a lease names a verb by: its verb, and its sub-verb where it has one; never an argument.</summary>
     public static string Name(IReadOnlyList<string> args) =>
-        args.Count > 1 && IsWord(args[1]) && (SubVerbs.Contains(args[1]) || (args[0] == "driver" && DriverChoicesCommand.Verbs.Contains(args[1])))
+        args.Count > 1 && IsWord(args[1]) && (SubVerbs.Contains(args[1]) || (args[0] == "driver" && DriverChoicesCommand.Verbs.Contains(args[1]))
+            || (args[0] == "tool" && ToolsCommand.Verbs.Contains(args[1])))
             ? $"daoris-driver {args[0]} {args[1]}"
             : $"daoris-driver {(args.Count > 0 ? args[0] : "")}".TrimEnd();
 

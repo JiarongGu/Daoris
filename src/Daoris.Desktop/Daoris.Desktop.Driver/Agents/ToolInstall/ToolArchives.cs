@@ -7,10 +7,32 @@ namespace Daoris.Driver;
 
 /// <summary>A refusal by one named check (TOOLS4, D121 §3.6): an archive or a download that failed it.</summary>
 /// <param name="check">The code both twins spell — <c>hash</c>, <c>outside</c>, <c>truncated</c>, … — so a screen and a
-/// terminal name the same failure. The CLI's <c>RefusalError</c> carries the same codes.</param>
-public sealed class ToolRefusal(string check, string message) : DriverException(message)
+/// terminal name the same failure. The CLI's <c>RefusalError</c> carried the same codes.</param>
+/// <param name="facts">What the window's catalogue says a coded refusal with (PUSH1f2c, <see cref="ToolCodes"/>): the tool's name, a
+/// version, a file, an address.</param>
+public sealed class ToolRefusal(string check, string message, params (string Key, string Value)[] facts) : DriverException(message)
 {
+    /// <summary>A delete of a version that is not downloaded.</summary>
+    public const string Missing = "missing";
+
+    /// <summary>A delete of the version the tool runs.</summary>
+    public const string InUse = "in-use";
+
+    /// <summary>A delete the system refused: something holds a file in the version's folder.</summary>
+    public const string Held = "held";
+
+    /// <summary>A file named for a tool that is not a whole path, or holds no file (PUSH1f2c: the route's check, now the operation's).</summary>
+    public const string FileMissing = "file-missing";
+
+    /// <summary>A file named for a tool that did not start, or answered no version (PUSH1f2c).</summary>
+    public const string FileNoVersion = "file-no-version";
+
+    /// <summary>A resource location that is no address Daoris reads from (PUSH1f2c).</summary>
+    public const string Location = "location";
+
     public string Check { get; } = check;
+
+    public IReadOnlyList<(string Key, string Value)> Facts { get; } = facts;
 }
 
 /// <summary>

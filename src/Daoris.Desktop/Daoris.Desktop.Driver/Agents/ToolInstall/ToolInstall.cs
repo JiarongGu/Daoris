@@ -401,7 +401,7 @@ public static class ToolInstall
                     throw new ToolRefusal("address", $"{url} is not https://, or http:// to this machine — nothing was fetched from it");
                 }
 
-                write($"  downloading {url} ({offered.Size / 1024.0 / 1024.0:0.0} MB)");
+                write($"  downloading {url} ({(offered.Size / 1024.0 / 1024.0).ToString("0.0", CultureInfo.InvariantCulture)} MB)");
                 var saved = await SaveAsync(http, url, to, ct).ConfigureAwait(false)
                     ?? throw new ToolRefusal("unreachable", $"{url} has nothing there");
                 if (saved.Size != offered.Size)
@@ -445,7 +445,11 @@ public static class ToolInstall
         }
 
         var folder = VersionFolder(home, tool, version);
-        if (!Directory.Exists(folder)) throw new ToolRefusal("missing", $"{declared.Name} {version} is not downloaded ({folder}) — nothing was deleted");
+        var named = (("tool", declared.Name), ("version", version));
+        if (!Directory.Exists(folder))
+        {
+            throw new ToolRefusal(ToolRefusal.Missing, $"{declared.Name} {version} is not downloaded ({folder}) — nothing was deleted", named.Item1, named.Item2);
+        }
 
         var read = Tools.Read(home);
         if (read.Problem is not null)
@@ -455,8 +459,8 @@ public static class ToolInstall
         var entry = read.Entries[tool];
         if (entry.Way == ToolWay.Managed && entry.Version == version)
         {
-            throw new ToolRefusal("in-use", $"{declared.Name} runs {version} — `daoris tool use {tool} system`, or another version, first; "
-                + "nothing was deleted");
+            throw new ToolRefusal(ToolRefusal.InUse, $"{declared.Name} runs {version} — `daoris tool use {tool} system`, or another version, first; "
+                + "nothing was deleted", named.Item1, named.Item2);
         }
 
         try
@@ -465,8 +469,9 @@ public static class ToolInstall
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {
-            throw new ToolRefusal("held", $"{folder} could not be deleted — {error.Message} A program may be running from it: stop it "
-                + "and delete again; part of it may already be gone");
+            var said = $"{folder} could not be deleted — {error.Message} A program may be running from it: stop it and delete again; part "
+                + "of it may already be gone";
+            throw new ToolRefusal(ToolRefusal.Held, said, named.Item1, named.Item2, ("reason", said));
         }
 
         return folder;
@@ -565,7 +570,7 @@ public static class ToolInstall
     }
 
     /// <summary>How long ago a file was written, in the largest whole unit.</summary>
-    private static string Age(string file, DateTimeOffset now)
+    internal static string Age(string file, DateTimeOffset now)
     {
         var seconds = (long)Math.Max(0, Math.Round((now - File.GetLastWriteTimeUtc(file)).TotalSeconds));
         var (count, unit) = seconds < 120 ? (seconds, "second") : seconds < 7200 ? ((long)Math.Round(seconds / 60.0), "minute")
