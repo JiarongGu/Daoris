@@ -18802,3 +18802,35 @@ its foot and line in en and zh. A close found closed only in part is live again 
 so `WORK_HELD`'s `stop` is taken on it (any other word refused `part-stop`), offered as a What needs you row and applied by the closer.
 Proof: `QuestCloseTests`, `WorkStateSliceTests`, `AttentionStateSliceTests`, `WorkMilestone.test.tsx` in both languages. A quest
 unit's milestone on the page stays open as FABRIC-CLOSE1j2. Detail: D173's FABRIC-CLOSE1j note.
+
+## CLEANUP1 — one cleanup strategy built into Daoris, set and seen on This Daoris (design) (2026-10-21, D195)
+
+> - [ ] **CLEANUP1 — one cleanup strategy built into Daoris, set and seen on This Daoris** (design, then its build rows; the owner's direction, 2026-10-21; D88, D172). On 2026-10-21 the install's `trees/.tidied` held 36.7 GB in 1.8 million files, found only when a session freeing disk space went looking. Those are the folders the automatic tidy (AUTOTIDY1) moves aside and keeps a fixed fourteen days (`Trees/Branches/BranchTidying.cs:145`), nearly all of it git-ignored build output a rebuild makes again. Each kind of thing Daoris keeps cleans itself by its own rule, or by none (the tidy's set-aside trees, CACHECLEAR1's downloaded versions, logs, session records, salvage), and This Daoris shows sizes but not the rules. Wanted, as a design under D191 (Codex reads it):
+>   - an inventory of everything Daoris writes, with its size, its owner, its retention rule and what may remove it: live trees and their ignored outputs, set-aside trees, downloaded versions, session records and transcripts, logs, salvage, browser profiles, the knowledge store and the usage history;
+>   - retention set per kind in one place, a default with the person's override;
+>   - cleanup triggered at the look's pace, below a free-space floor, and by a press;
+>   - each kind's size, rule, next clean and last clean's result shown on This Daoris, with a terminal twin;
+>   - whether the tidy drops a set-aside tree's regenerable outputs at once and keeps only what cannot be made again.
+>   Proof: the design accepted and its build rows filed.
+
+**Outcome** 2026-10-21: designed and accepted as D195 (`docs/2026-10-21-cleanup-design.md`) after three rounds (Codex's read, twenty-two findings; Fable's of §3 and §5, thirteen), every finding taken. One rule per kind, set in `driver.json`'s `keep` and shown on This Daoris; a set-aside tree's package folders dropped an hour after its move; the look, a free-space floor and the press run the rules, one run at a time. The build rows are KEEP1a-g and KEEP1a2. On Opus, read by Codex and Fable.
+## FABRIC-PERFORM1n — a believed event the one table refuses is said (2026-10-21, D173)
+
+> - [ ] **FABRIC-PERFORM1n — a believed event the one table refuses is said** (driver; after PERFORM1i; §C4, §E2). An event whose evidence is of another schema than the node declares moves nothing and is counted by no `plugin.step` code, unlike a completion, which holds its attempt. Proof: the refusal line said, and no state changed.
+
+**Outcome** 2026-10-21: built. `WorkObserver` answers an event the one table refuses as `not-taken` with the table's code (`no-evidence`,
+`output-schema`, …), counted as a `plugin.step` line of that code; nothing is written, so the node still awaits and a later event of the
+declared schema is taken. Proof: `ObservedEventTests` (the refusal counted once, the record unchanged, no wire fired). Detail: D173's
+FABRIC-PERFORM1n note.
+
+## CONFIRMSEEN1 — a terminal's press waiting for the window is seen where the person looks (2026-10-21, D156)
+
+> - [ ] **CONFIRMSEEN1 — a terminal's press waiting for the window is seen where the person looks** (modules, web-shell; found 2026-10-21; D156 §4.2, RPC1c). On 2026-10-21 five presses from a terminal (two `sessions say`, three `sessions finish`) each waited for the window's Confirm and expired after two minutes. The owner was at the machine and asked about the stuck session itself. The machine log says each was `asked` then `expired` (`person.confirmation`) and nothing says it was shown. Wanted: the card where the person looks: a row of *What needs you* the badge counts, a notification while the window is in the background (the taskbar's flash or the system's toast), the log saying `shown`, and its two minutes counted from when it is shown. Read whether two minutes is the right bound for a press a person must find. Proof: modules tests that a terminal's press raises the row and the notification, and is logged `shown`; the window with a press from a terminal.
+
+**Outcome** 2026-10-21: built. A press now waits ten minutes to be found (`PipeConfirmations.FindWithin`); its two minutes count
+from the card's first showing in a window that is visible and focused (`PERSON_CONFIRM_SHOWN`, the window's), logged `shown`.
+Two minutes stays the bound once shown. Each press is a `confirmation` row of *What needs you* in *Holding work*, counted by the
+badge and the taskbar, whose one control opens the card. Asked, it raises `SESSION_ATTENTION` `Confirming`, the shell's warning
+balloon while no window is in front. Proof: `PipeConfirmTests`, `DriverModulePersonTests`, `AttentionStateSliceTests`,
+`SessionBalloonTests`, and the page's person, attention and signals tests in en and zh. The window with a press from a terminal
+is the parent's installed proof; the taskbar is not flashed. Detail: D156's CONFIRMSEEN1 note.

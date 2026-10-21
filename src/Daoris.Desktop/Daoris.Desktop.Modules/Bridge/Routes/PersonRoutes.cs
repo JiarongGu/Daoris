@@ -46,7 +46,29 @@ public sealed class PersonRoutes(DriverLoop loop)
                 "This no longer waits: it was answered in another window, its two minutes passed, or its terminal took it back."));
     }
 
+    // CONFIRMSEEN1: the window's word that a terminal's press is drawn in front of the person, in a window that is in front: its two
+    // minutes count from the first such word, which every window is told by `CONFIRMATIONS`. One no longer waiting is answered as data,
+    // `gone`. It runs nothing and moves no record, so it declares no change.
+    [DriverRoute("PERSON_CONFIRM_SHOWN")]
+    private Task<object?> PersonConfirmShownAsync(IpcRequest request, CancellationToken cancellationToken)
+    {
+        var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id");
+        if (PipeDoor.Now == PipeDoor.Terminal)
+        {
+            return Task.FromResult<object?>(new PersonShownRefused(false, "window-only", "Only Daoris's window says what it shows."));
+        }
+
+        return Task.FromResult<object?>(_loop.Pipe?.Confirmations.Show(id) == true
+            ? new PersonShown(true)
+            : new PersonShownRefused(false, "gone",
+                "This no longer waits: it was answered in another window, its time passed, or its terminal took it back."));
+    }
+
     private sealed record PersonKey(string? Key);
+
+    private sealed record PersonShown(bool Shown);
+
+    private sealed record PersonShownRefused(bool Shown, string Why, string Message);
 
     private sealed record PersonConfirmed(bool Answered, bool Confirmed);
 

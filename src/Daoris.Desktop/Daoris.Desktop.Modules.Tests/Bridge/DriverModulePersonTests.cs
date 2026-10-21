@@ -66,6 +66,36 @@ public sealed class DriverModulePersonTests : DriverModuleBridge
         Assert.Empty((await AnswerAsync(module, "PERSON_CONFIRMATIONS")).GetProperty("waiting").EnumerateArray());
     }
 
+    /// <summary>
+    /// CONFIRMSEEN1: the window says a card is in front of the person, and its two minutes count from then, once; one no longer waiting
+    /// is said as data, by its code.
+    /// </summary>
+    [Fact]
+    public async Task The_window_says_a_card_is_shown_and_its_two_minutes_count_from_then()
+    {
+        var (module, pipe, services) = Composed();
+        using var composed = services;
+        using var served = pipe;
+        var archive = pipe.Confirmations.Ask(DriverModule.Name, "SESSION_ARCHIVE",
+            [new PipeConfirmationField("/ids/0", "string", "s1a2b3c4")], new PipeAsker("daoris-driver", 4242))!.Value;
+        var unshown = (await AnswerAsync(module, "PERSON_CONFIRMATIONS")).GetProperty("waiting")[0];
+        Assert.True(!unshown.TryGetProperty("shownAt", out var none) || none.ValueKind == System.Text.Json.JsonValueKind.Null);
+
+        var shown = await AnswerAsync(module, "PERSON_CONFIRM_SHOWN", new { id = archive.Shown.Id });
+
+        Assert.True(shown.GetProperty("shown").GetBoolean());
+        var waiting = (await AnswerAsync(module, "PERSON_CONFIRMATIONS")).GetProperty("waiting")[0];
+        var at = waiting.GetProperty("shownAt").GetDateTimeOffset();
+        Assert.Equal(at + TimeSpan.FromMinutes(2), waiting.GetProperty("expires").GetDateTimeOffset());
+        Assert.True((await AnswerAsync(module, "PERSON_CONFIRM_SHOWN", new { id = archive.Shown.Id })).GetProperty("shown").GetBoolean());
+        Assert.Equal(at, (await AnswerAsync(module, "PERSON_CONFIRMATIONS")).GetProperty("waiting")[0].GetProperty("shownAt").GetDateTimeOffset());
+
+        Assert.True(pipe.Confirmations.Answer(archive.Shown.Id, confirm: false));
+        var gone = await AnswerAsync(module, "PERSON_CONFIRM_SHOWN", new { id = archive.Shown.Id });
+        Assert.False(gone.GetProperty("shown").GetBoolean());
+        Assert.Equal("gone", gone.GetProperty("why").GetString());
+    }
+
     [Fact]
     public async Task A_shell_with_no_pipe_reads_none_waiting_and_answers_none()
     {
@@ -75,6 +105,7 @@ public sealed class DriverModulePersonTests : DriverModuleBridge
         Assert.Equal(0, read.GetProperty("seq").GetInt64());
         Assert.Empty(read.GetProperty("waiting").EnumerateArray());
         Assert.Equal("gone", (await AnswerAsync(module, "PERSON_CONFIRM", new { id = "nothing", confirm = true })).GetProperty("why").GetString());
+        Assert.Equal("gone", (await AnswerAsync(module, "PERSON_CONFIRM_SHOWN", new { id = "nothing" })).GetProperty("why").GetString());
     }
 
     /// <summary>

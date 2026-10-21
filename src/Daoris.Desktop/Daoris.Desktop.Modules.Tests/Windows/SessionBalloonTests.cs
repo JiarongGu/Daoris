@@ -10,6 +10,7 @@ public sealed class SessionBalloonTests
     [InlineData("Parked", "Open Daoris to answer it.", BalloonIcon.Warning)]
     [InlineData("QuestParked", "Open Daoris to try it again.", BalloonIcon.Warning)]
     [InlineData("Answered", "Open Daoris to read it.", BalloonIcon.Info)]
+    [InlineData("Confirming", "Open Daoris to confirm or refuse it.", BalloonIcon.Warning)]
     [InlineData("Ended", "Open Daoris to see what it did.", BalloonIcon.Info)]
     [InlineData("Waiting", "Open Daoris to see what it did.", BalloonIcon.Info)]
     [InlineData(null, "Open Daoris to see what it did.", BalloonIcon.Info)]

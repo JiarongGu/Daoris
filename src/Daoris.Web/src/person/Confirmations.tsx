@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '../design/ui';
 import { clockOf, sentence } from '../locales/format';
@@ -24,8 +24,13 @@ export type Confirmation = {
   fields: ConfirmationField[];
   /** What sent it, as the system names the pipe's client; null where nothing can say (the service's). */
   asker?: { process?: string | null; pid?: number | null } | null;
-  /** When its two minutes end, and it is refused. */
+  /**
+   * When it is refused: for a terminal's press, the end of its wait to be found until a window shows it, and of its two minutes from
+   * then (CONFIRMSEEN1).
+   */
   expires: string;
+  /** Whether a window said a terminal's press was shown, so its two minutes run; absent for the service's, whose door counts its own. */
+  shown?: boolean;
 };
 
 /** How the person's answer went: answered, or no longer waiting, by the bridge's code (`gone`) or the host's own sentence. */
@@ -52,11 +57,16 @@ const WORDED = new Set([
  * focused or pressed for the person, *Refuse* comes first, and a card nobody answers is refused when its two minutes end. A
  * refusal of the answer itself is said under its card (the UI/UX design's R3), never as a toast.
  */
-export function Confirmations({ waiting, notice = false, onAnswer, onDismissNotice }: {
+export function Confirmations({ waiting, notice = false, onAnswer, onShown, onDismissNotice }: {
   waiting: Confirmation[];
   /** Whether to say that the host in use holds a person key this window does not, so the person's acts are refused there. */
   notice?: boolean;
   onAnswer: (waiting: Confirmation, confirm: boolean) => Promise<ConfirmationAnswer>;
+  /**
+   * Said once of each terminal's press not yet shown, while this window is in front of the person (CONFIRMSEEN1): its two minutes
+   * count from then. Absent, nothing is said.
+   */
+  onShown?: (waiting: Confirmation) => void;
   onDismissNotice?: () => void;
 }) {
   const { t } = useTranslation();
@@ -72,20 +82,55 @@ export function Confirmations({ waiting, notice = false, onAnswer, onDismissNoti
       )}
       {waiting.length > 0 && (
         <section aria-label={t('person.label')} className="grid gap-2 px-3 py-2">
-          {waiting.map((each) => <Card key={`${each.source}:${each.id}`} waiting={each} onAnswer={onAnswer} />)}
+          {waiting.map((each) => <Card key={`${each.source}:${each.id}`} waiting={each} onAnswer={onAnswer} onShown={onShown} />)}
         </section>
       )}
     </div>
   );
 }
 
-function Card({ waiting, onAnswer }: {
+/** The element a terminal's press's card is drawn in, which *What needs you*'s row opens (CONFIRMSEEN1). */
+export const confirmationAnchor = (id: string) => `confirmation-${id}`;
+
+/**
+ * Whether this window is in front of the person: on screen and focused (CONFIRMSEEN1). A window behind another, or minimized,
+ * draws its card where nobody looks, which is how five presses once expired unseen.
+ */
+function looking(): boolean {
+  return typeof document !== 'undefined' && document.visibilityState === 'visible' && document.hasFocus();
+}
+
+function Card({ waiting, onAnswer, onShown }: {
   waiting: Confirmation;
   onAnswer: (waiting: Confirmation, confirm: boolean) => Promise<ConfirmationAnswer>;
+  onShown?: (waiting: Confirmation) => void;
 }) {
   const { t } = useTranslation();
   const [busy, setBusy] = useState(false);
   const [said, setSaid] = useState<string | null>(null);
+  const told = useRef(false);
+  const latest = useRef({ waiting, onShown });
+  useEffect(() => {
+    latest.current = { waiting, onShown };
+  });
+  const unshown = waiting.source === 'pipe' && waiting.shown !== true && onShown !== undefined;
+
+  // CONFIRMSEEN1: said once, as soon as this window is in front of the person: now, or when it comes in front.
+  useEffect(() => {
+    if (!unshown || told.current) return undefined;
+    const check = () => {
+      if (told.current || !looking()) return;
+      told.current = true;
+      latest.current.onShown?.(latest.current.waiting);
+    };
+    check();
+    window.addEventListener('focus', check);
+    document.addEventListener('visibilitychange', check);
+    return () => {
+      window.removeEventListener('focus', check);
+      document.removeEventListener('visibilitychange', check);
+    };
+  }, [unshown]);
   const worded = waiting.source === 'pipe' && WORDED.has(waiting.route);
   const head = waiting.act
     ? t('person.ask.for', { act: waiting.act })
@@ -108,7 +153,13 @@ function Card({ waiting, onAnswer }: {
   };
 
   return (
-    <div role="group" aria-label={head} className="grid gap-1.5 border-l-[3px] border-warn bg-page/60 px-3 py-2 text-body text-ink">
+    <div
+      role="group"
+      aria-label={head}
+      id={waiting.source === 'pipe' ? confirmationAnchor(waiting.id) : undefined}
+      tabIndex={-1}
+      className="grid gap-1.5 border-l-[3px] border-warn bg-page/60 px-3 py-2 text-body text-ink"
+    >
       <p className="m-0">
         {head}
         {(worded || waiting.act) && <> <code className="text-small text-ink-soft">{waiting.route}</code></>}

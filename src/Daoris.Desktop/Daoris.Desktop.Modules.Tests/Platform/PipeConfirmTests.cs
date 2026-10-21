@@ -75,7 +75,9 @@ public sealed class PipeConfirmTests : Bridge
             shown.Fields);
         Assert.Equal(Environment.ProcessId, shown.Asker.Pid);
         Assert.False(string.IsNullOrEmpty(shown.Asker.Process));
-        Assert.Equal(shown.Asked + TimeSpan.FromMinutes(2), shown.Expires);
+        // Not shown yet: it waits to be found (CONFIRMSEEN1), and its two minutes have not begun.
+        Assert.Null(shown.ShownAt);
+        Assert.Equal(shown.Asked + PipeConfirmations.FindWithin, shown.Expires);
         Assert.NotEqual(id, shown.Id);
         Assert.Equal(0, driver.Ran);
         await UntilAsync(() => Raised.Any(each => each.Module == StatePublisher.Module && each.Type == PipeConfirmations.Event
@@ -141,7 +143,7 @@ public sealed class PipeConfirmTests : Bridge
     }
 
     [Fact]
-    public async Task A_press_nobody_answers_within_two_minutes_expires_and_runs_nothing_and_one_confirmed_in_its_last_second_runs()
+    public async Task A_press_nobody_answers_within_two_minutes_of_its_showing_expires_and_runs_nothing_and_one_confirmed_in_its_last_second_runs()
     {
         if (!OperatingSystem.IsWindows()) return;
         using var log = new MachineLog(Home, "desktop");
@@ -154,13 +156,17 @@ public sealed class PipeConfirmTests : Bridge
         await using var client = await PipeClient.ConnectAsync(pipe.Serve()!);
         await client.HelloAsync(HomeId);
 
+        // Each shown as it is asked: its two minutes count from its showing (CONFIRMSEEN1).
         var late = await client.SendAsync(DriverModule.Name, Land, new { id = "s1a2b3c4" });
         await UntilAsync(() => pipe.Confirmations.Now().Waiting.Count == 1);
+        Assert.True(pipe.Confirmations.Show(pipe.Confirmations.Now().Waiting[0].Id));
         clock.Advance(TimeSpan.FromSeconds(30));
         var last = await client.SendAsync(DriverModule.Name, Land, new { id = "s5e6f7a8" });
         await UntilAsync(() => pipe.Confirmations.Now().Waiting.Count == 2);
+        Assert.True(pipe.Confirmations.Show(pipe.Confirmations.Now().Waiting[1].Id));
         var first = pipe.Confirmations.Now().Waiting[0];
         var second = pipe.Confirmations.Now().Waiting[1];
+        Assert.Equal(first.Asked + TimeSpan.FromMinutes(2), first.Expires);
 
         // At 1:59 the first still waits; at 2:00 it is over, and nothing ran.
         clock.Advance(TimeSpan.FromSeconds(89));
@@ -176,8 +182,94 @@ public sealed class PipeConfirmTests : Bridge
         Assert.True((await client.AnswerAsync(last)).GetProperty("success").GetBoolean());
         Assert.Equal(1, driver.Ran);
         Assert.Equal(
-            ["asked", "asked", "expired", "confirmed"],
+            ["asked", "shown", "asked", "shown", "expired", "confirmed"],
             Confirmations().Select(line => JsonDocument.Parse(line).RootElement.GetProperty("state").GetString()));
+    }
+
+    [Fact]
+    public async Task A_press_raises_the_notification_and_its_two_minutes_count_from_when_a_window_shows_it()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        using var log = new MachineLog(Home, "desktop");
+        var driver = new HeldModule(DriverModule.Name);
+        driver.Let.SetResult();
+        var (dispatcher, services) = Compose(log, driver);
+        using var _ = services;
+        var clock = new HeldClock();
+        using var pipe = Pipe(dispatcher, log, clock);
+        await using var client = await PipeClient.ConnectAsync(pipe.Serve()!);
+        await client.HelloAsync(HomeId);
+
+        var id = await client.SendAsync(DriverModule.Name, "SESSION_ARCHIVE", new { ids = new[] { "s1a2b3c4" }, archived = true });
+        await UntilAsync(() => pipe.Confirmations.Now().Waiting.Count == 1);
+        var asked = pipe.Confirmations.Now().Waiting[0];
+
+        // The person is told where they look: the attention the notifier turns into a balloon while no window is in front, naming the
+        // press by its route and the terminal as the system names it, never a value it carries.
+        await UntilAsync(() => Raised.Any(each => each.Module == StatePublisher.Module && each.Type == PipeConfirmations.AttentionType));
+        var told = Raised.Single(each => each.Type == PipeConfirmations.AttentionType).Payload!;
+        string? Read(string name) => told.GetType().GetProperty(name)?.GetValue(told) as string;
+        Assert.Equal(PipeConfirmations.AttentionKind, Read("Kind"));
+        Assert.Null(Read("Session"));
+        Assert.False(string.IsNullOrWhiteSpace(Read("Headline")));
+        Assert.Contains("SESSION_ARCHIVE", Read("Detail"), StringComparison.Ordinal);
+        Assert.Contains($"({Environment.ProcessId})", Read("Detail"), StringComparison.Ordinal);
+        Assert.DoesNotContain("s1a2b3c4", Read("Detail"), StringComparison.Ordinal);
+
+        // Unseen, two minutes pass and it still waits: nobody has been shown it.
+        clock.Advance(TimeSpan.FromMinutes(3));
+        Assert.Single(pipe.Confirmations.Now().Waiting);
+
+        // Shown in a window, its two minutes count from now, once: a second window showing it moves nothing.
+        Assert.True(pipe.Confirmations.Show(asked.Id));
+        var shown = Assert.Single(pipe.Confirmations.Now().Waiting);
+        Assert.Equal(asked.Asked + TimeSpan.FromMinutes(3), shown.ShownAt);
+        Assert.Equal(shown.ShownAt + TimeSpan.FromMinutes(2), shown.Expires);
+        clock.Advance(TimeSpan.FromMinutes(1));
+        Assert.True(pipe.Confirmations.Show(asked.Id));
+        Assert.Equal(shown, pipe.Confirmations.Now().Waiting[0]);
+        await UntilAsync(() => Raised.Any(each => each.Type == PipeConfirmations.Event
+            && each.Payload is PipeConfirmationsNow { Waiting: [{ ShownAt: not null }] }));
+
+        // Its two minutes over, it expires, and nothing ran.
+        clock.Advance(TimeSpan.FromSeconds(59));
+        Assert.Single(pipe.Confirmations.Now().Waiting);
+        clock.Advance(TimeSpan.FromSeconds(1));
+        Assert.Equal(InstancePipe.Expired, Code(await client.AnswerAsync(id)));
+        Assert.Equal(0, driver.Ran);
+        Assert.False(pipe.Confirmations.Show(asked.Id));
+        Assert.Equal(
+            [
+                """{"state":"asked","route":"DAORIS.DRIVER.SESSION_ARCHIVE","door":"terminal"}""",
+                """{"state":"shown","route":"DAORIS.DRIVER.SESSION_ARCHIVE","door":"terminal"}""",
+                """{"state":"expired","route":"DAORIS.DRIVER.SESSION_ARCHIVE","door":"terminal"}""",
+            ],
+            Confirmations());
+    }
+
+    [Fact]
+    public async Task A_press_no_window_shows_expires_at_the_end_of_its_wait_to_be_found()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        using var log = new MachineLog(Home, "desktop");
+        var driver = new HeldModule(DriverModule.Name);
+        driver.Let.SetResult();
+        var (dispatcher, services) = Compose(log, driver);
+        using var _ = services;
+        var clock = new HeldClock();
+        using var pipe = Pipe(dispatcher, log, clock);
+        await using var client = await PipeClient.ConnectAsync(pipe.Serve()!);
+        await client.HelloAsync(HomeId);
+
+        var id = await client.SendAsync(DriverModule.Name, Land, new { id = "s1a2b3c4" });
+        await UntilAsync(() => pipe.Confirmations.Now().Waiting.Count == 1);
+
+        clock.Advance(PipeConfirmations.FindWithin - TimeSpan.FromSeconds(1));
+        Assert.Single(pipe.Confirmations.Now().Waiting);
+        clock.Advance(TimeSpan.FromSeconds(1));
+        Assert.Equal(InstancePipe.Expired, Code(await client.AnswerAsync(id)));
+        Assert.Equal(0, driver.Ran);
+        Assert.Equal(["asked", "expired"], Confirmations().Select(line => JsonDocument.Parse(line).RootElement.GetProperty("state").GetString()));
     }
 
     [Fact]

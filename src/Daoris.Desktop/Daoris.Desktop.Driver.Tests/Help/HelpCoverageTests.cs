@@ -520,6 +520,11 @@ public sealed partial class HelpCoverageTests
             "it is the person's Confirm or Refuse of a press a terminal sent, which Daoris cannot tell from an agent's (D156 §4.2): "
             + "only the person answers it, in the window, and an agent's proposal of an answer would make the card the approval "
             + "surface for agents the design rules out (D52), so its default stays no and nothing is proposed.")),
+        // CONFIRMSEEN1: the card's own word that it is in front of the person, which starts its two minutes.
+        ("app", "useConfirmationShown", null, new Exempt(
+            "it is the window's own word that a terminal's press is in front of the person (CONFIRMSEEN1), said by the card as its "
+            + "window comes in front, never pressed by the person; it runs nothing and starts the card's two minutes, which an agent "
+            + "proposing it would start without anyone looking.")),
 
         // Quests: a quest's own page, and the list's presses, in `quests/QuestsView` (STRUCT5c).
         ("quests", "usePublishQuest", null, Own("quests",

@@ -30,7 +30,8 @@ namespace Daoris.Desktop;
 /// sessions' only where what the judge reads of them moved (<see cref="SessionsRead"/>), so a working session's every word judges nothing
 /// here; each look of the driver (the loop wakes it beside the driver's state); a held tool call's start and end
 /// (<see cref="HeldPermissions.Changed"/>); the registry landing in the machine's facts; a press declared to the rules, the sessions, the
-/// driver or the roster (a proposal answered, a helper's yes or no, a reading); a harness action's end; the service coming up; and the
+/// driver or the roster (a proposal answered, a helper's yes or no, a reading); a harness action's end; the service coming up; a
+/// terminal's press for the window asked, shown or ended (<see cref="PipeConfirmations.Event"/>, CONFIRMSEEN1); and the
 /// 15 s period, which reads a helper's ask a terminal's driver wrote and an account a terminal signed in.</para>
 ///
 /// <para><b>Desktop-only.</b> A trust hold names a folder and the agent's own file, machine paths this machine's windows alone read
@@ -71,6 +72,7 @@ public static class AttentionStateSlice
             "kind", "id", "since", "workspace", "where", "note", "detail", "publishTo", "choices", "ask", "number", "goAhead", "session",
             "departed", "setUp", "local", "environment", "shows", "opinion", "placed", "sitting", "trust", "quest", "proposal", "title",
             "permission", "blocked", "held", "unreadable", "wholeWorkspace", "holding", "read", "runs", "account", "answer", "ended",
+            "confirmation",
         ],
         ["waiting"] = ["kind", "workspace"],
         ["working"] = ["workspace"],
@@ -108,6 +110,8 @@ public static class AttentionStateSlice
         ["named"] = ["id", "name", "state", "read", "until"],
         ["outside"] = ["id", "list", "workspace"],
         ["readFirst"] = ["id"],
+        ["confirmation"] = ["module", "route", "asker", "expires", "shownAt"],
+        ["asker"] = ["process", "pid"],
     };
 
     /// <summary>Which shape a field holds, as <c>shape.field</c>, an object of it or a list of them; every other field is a value.</summary>
@@ -139,6 +143,8 @@ public static class AttentionStateSlice
         ["account.named"] = "named",
         ["account.outside"] = "outside",
         ["account.readFirst"] = "readFirst",
+        ["row.confirmation"] = "confirmation",
+        ["confirmation.asker"] = "asker",
     };
 
     /// <summary>
@@ -152,6 +158,8 @@ public static class AttentionStateSlice
         // A harness action's end: a sign-in makes an account and moves its reading.
         new("HARNESS_ENDED"),
         new("DRIVER_READY"),
+        // CONFIRMSEEN1: a terminal's press asked, shown or ended, as every window is told it.
+        new(PipeConfirmations.Event),
     ];
 
     /// <summary>The slice the shell's loop owns, judged from what <paramref name="loop"/> holds in memory.</summary>
@@ -245,6 +253,8 @@ public static class AttentionStateSlice
             Doors = Written(AgentsRoutes.Doors(loop.Harnesses, roster)),
             Use = Use(loop.Slices),
             Waits = Written(loop.Look.Waits.Select(DriverLoop.TickWait)),
+            // CONFIRMSEEN1: what a terminal sent that waits for the window, from the pipe's memory; none where this shell serves no pipe.
+            Confirmations = Written(ConfirmationWaits(loop.Pipe?.Confirmations)),
         };
     }
 
@@ -334,6 +344,23 @@ public static class AttentionStateSlice
             Choices = held.Choices.Select(choice => new { choice.Id, choice.Name, choice.Kind }),
             Since = Moments.Write(held.Since),
             Until = Moments.Write(held.Until),
+        }),
+    ];
+
+    /// <summary>
+    /// What a terminal sent that waits for the window's Confirm (CONFIRMSEEN1), oldest first, from the pipe's memory: each by its id,
+    /// route and terminal, with its times written as every other wait's are, so the band orders them among the rest. Never a value it
+    /// carries. None where this shell serves no pipe.
+    /// </summary>
+    public static IReadOnlyList<object> ConfirmationWaits(PipeConfirmations? confirmations) =>
+    [
+        .. (confirmations?.Now().Waiting ?? []).Select(waiting => (object)new
+        {
+            waiting.Id, waiting.Module, waiting.Route,
+            Asker = new { waiting.Asker.Process, waiting.Asker.Pid },
+            Asked = Moments.Write(waiting.Asked),
+            Expires = Moments.Write(waiting.Expires),
+            ShownAt = waiting.ShownAt is { } shown ? Moments.Write(shown) : null,
         }),
     ];
 

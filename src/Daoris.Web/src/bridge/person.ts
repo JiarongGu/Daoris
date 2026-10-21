@@ -14,6 +14,8 @@ import { call } from './call';
 export type PipeConfirmation = {
   id: string; module: string; route: string; fields: ConfirmationField[];
   asker?: { process?: string | null; pid?: number | null } | null; asked: string; expires: string;
+  /** When a window first said its card was in front of the person (CONFIRMSEEN1); absent until then, and from a shell before it. */
+  shownAt?: string | null;
 };
 
 /** What waits, whole, numbered so the newest telling is kept (as `UNDER_WAY` is). */
@@ -42,6 +44,7 @@ function keep(client: QueryClient, told: unknown) {
 
 const fromPipe = (waiting: PipeConfirmation): Confirmation => ({
   source: 'pipe', id: waiting.id, route: waiting.route, fields: waiting.fields ?? [], asker: waiting.asker ?? null, expires: waiting.expires,
+  shown: waiting.shownAt != null,
 });
 
 /**
@@ -117,6 +120,21 @@ export function useAnswerConfirmation() {
     },
     onSettled: (_answer, _error, { waiting }) => {
       if (waiting.source === 'service') void client.invalidateQueries({ queryKey: keys.serviceAsks });
+    },
+  });
+}
+
+/**
+ * The window's word that a terminal's press is in front of the person (CONFIRMSEEN1): its two minutes count from the first such
+ * word of any window, which the shell tells every window by `CONFIRMATIONS`. A service's confirmation has none: its door counts its
+ * own. Answered, never thrown: one no longer waiting is `gone`, which says nothing here, since the telling takes its card away.
+ */
+export function useConfirmationShown() {
+  return useMutation({
+    mutationFn: async (waiting: Confirmation): Promise<boolean> => {
+      if (waiting.source !== 'pipe') return false;
+      const answer = await call<{ shown?: boolean }>('PERSON_CONFIRM_SHOWN', { id: waiting.id });
+      return answer?.shown === true;
     },
   });
 }

@@ -219,6 +219,7 @@ public sealed class PipeCensusTests
     // RPC1c, PERSONDOOR1f: a terminal never reads or answers what waits for the window, and never reads the person key (D156 point 2).
     [InlineData("DAORIS.DRIVER", "PERSON_CONFIRMATIONS", PipeClass.Window)]
     [InlineData("DAORIS.DRIVER", "PERSON_CONFIRM", PipeClass.Window)]
+    [InlineData("DAORIS.DRIVER", "PERSON_CONFIRM_SHOWN", PipeClass.Window)]
     [InlineData("DAORIS.DRIVER", "PERSON_KEY", PipeClass.Window)]
     [InlineData("DAORIS.WINDOWS", "OPEN", PipeClass.Window)]
     [InlineData("DAORIS.TERMINAL", "INPUT", PipeClass.Window)]

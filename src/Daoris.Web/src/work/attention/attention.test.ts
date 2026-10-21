@@ -86,6 +86,33 @@ describe('what needs a person, worded', () => {
     expect(item.title).toBe('#s1a2b3c4');
   });
 
+  /**
+   * CONFIRMSEEN1: a terminal's press waiting for the window, named as its card names it, by its act where the page words its route and
+   * by its route otherwise; the terminal as the system names it, and until when; never a value; no act of its own, in each language.
+   */
+  it("names a terminal's press as its card does, says what sent it and until when, and offers no act", async () => {
+    const waiting = row('confirmation', 'c1', '2026-10-20T09:00:00Z', {
+      confirmation: {
+        module: 'DAORIS.DRIVER', route: 'SESSION_ARCHIVE', asker: { process: 'daoris-driver', pid: 4242 },
+        expires: '2026-10-20T09:10:00Z', shownAt: null,
+      },
+    });
+    const item = words(waiting);
+    expect(item.title).toBe('A terminal asks to archive sessions on this machine, or bring them back.');
+    expect(item.detail).toContain('Sent by daoris-driver, process 4242.');
+    expect(item.detail).toContain('It runs only once you confirm it on its card');
+    expect(attentionActs(item)).toEqual([]);
+    expect(words(row('confirmation', 'c2', null, { confirmation: { ...waiting.confirmation!, route: 'SET_TREES', asker: null } })))
+      .toMatchObject({ title: 'A terminal asks for SET_TREES.', detail: expect.stringContaining('Daoris could not name what sent it.') });
+    await i18n.changeLanguage('zh');
+    try {
+      expect(words(waiting).title).toBe('一个终端请求在本机归档会话，或将其恢复。');
+      expect(words(waiting).detail).toContain('只有你在窗口顶部它的卡片上确认后它才会运行');
+    } finally {
+      await i18n.changeLanguage('en');
+    }
+  });
+
   it('explains an unanswerable quest, in the active language', async () => {
     const pushed = row('unanswerable', '7a82cc', '2026-09-14T09:00:00Z', { where: 'retired' });
     expect(words(pushed).detail).toContain('retired');
@@ -313,7 +340,8 @@ describe('work to review, worded', () => {
 describe('the groups', () => {
   it('puts each kind in its group', () => {
     expect(ATTENTION_GROUP).toEqual({
-      parked: 'holding', 'parked-quest': 'holding', 'go-ahead': 'holding', permission: 'holding', answer: 'holding', trust: 'holding',
+      parked: 'holding', 'parked-quest': 'holding', 'go-ahead': 'holding', permission: 'holding', answer: 'holding',
+      confirmation: 'holding', trust: 'holding',
       'account-wait': 'holding', 'signed-out': 'holding',
       proposal: 'word', intake: 'word', departure: 'word', 'set-up': 'word', opinion: 'word', rule: 'word', helper: 'word',
       unanswerable: 'word', review: 'ready', work: 'word',
