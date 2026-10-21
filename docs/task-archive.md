@@ -18795,6 +18795,17 @@ so `WORK_HELD`'s `stop` is taken on it (any other word refused `part-stop`), off
 Proof: `QuestCloseTests`, `WorkStateSliceTests`, `AttentionStateSliceTests`, `WorkMilestone.test.tsx` in both languages. A quest
 unit's milestone on the page stays open as FABRIC-CLOSE1j2. Detail: D173's FABRIC-CLOSE1j note.
 
+## CLEANUP1 — one cleanup strategy built into Daoris, set and seen on This Daoris (design) (2026-10-21, D195)
+
+> - [ ] **CLEANUP1 — one cleanup strategy built into Daoris, set and seen on This Daoris** (design, then its build rows; the owner's direction, 2026-10-21; D88, D172). On 2026-10-21 the install's `trees/.tidied` held 36.7 GB in 1.8 million files, found only when a session freeing disk space went looking. Those are the folders the automatic tidy (AUTOTIDY1) moves aside and keeps a fixed fourteen days (`Trees/Branches/BranchTidying.cs:145`), nearly all of it git-ignored build output a rebuild makes again. Each kind of thing Daoris keeps cleans itself by its own rule, or by none (the tidy's set-aside trees, CACHECLEAR1's downloaded versions, logs, session records, salvage), and This Daoris shows sizes but not the rules. Wanted, as a design under D191 (Codex reads it):
+>   - an inventory of everything Daoris writes, with its size, its owner, its retention rule and what may remove it: live trees and their ignored outputs, set-aside trees, downloaded versions, session records and transcripts, logs, salvage, browser profiles, the knowledge store and the usage history;
+>   - retention set per kind in one place, a default with the person's override;
+>   - cleanup triggered at the look's pace, below a free-space floor, and by a press;
+>   - each kind's size, rule, next clean and last clean's result shown on This Daoris, with a terminal twin;
+>   - whether the tidy drops a set-aside tree's regenerable outputs at once and keeps only what cannot be made again.
+>   Proof: the design accepted and its build rows filed.
+
+**Outcome** 2026-10-21: designed and accepted as D195 (`docs/2026-10-21-cleanup-design.md`) after three rounds (Codex's read, twenty-two findings; Fable's of §3 and §5, thirteen), every finding taken. One rule per kind, set in `driver.json`'s `keep` and shown on This Daoris; a set-aside tree's package folders dropped an hour after its move; the look, a free-space floor and the press run the rules, one run at a time. The build rows are KEEP1a-g and KEEP1a2. On Opus, read by Codex and Fable.
 ## FABRIC-PERFORM1n — a believed event the one table refuses is said (2026-10-21, D173)
 
 > - [ ] **FABRIC-PERFORM1n — a believed event the one table refuses is said** (driver; after PERFORM1i; §C4, §E2). An event whose evidence is of another schema than the node declares moves nothing and is counted by no `plugin.step` code, unlike a completion, which holds its attempt. Proof: the refusal line said, and no state changed.
