@@ -1,4 +1,5 @@
 using System.Text.Json.Nodes;
+using Daoris.Driver;
 
 namespace Daoris.Desktop.Modules.Tests;
 
@@ -133,5 +134,84 @@ public sealed class BrowserSettingsTests : Bridge
     {
         Assert.Throws<InvalidOperationException>(() => BrowserSettings.SetExtensions(Home, "maybe"));
         Assert.False(System.IO.File.Exists(File));
+    }
+
+    /// <summary>
+    /// KEEPALL1c: an edit changes only what it edits, the file's numbers and line ends kept, a key written twice refused. The
+    /// <c>browser/settings.json</c> rows of <c>home-files-keep.json</c>, the table the driver's <c>HomeFilesKeepTests</c> and the
+    /// CLI's <c>homefileskeep.test.ts</c> read, row for row.
+    /// </summary>
+    [Theory]
+    [MemberData(nameof(KeepRows))]
+    public void An_edit_changes_only_what_it_edits(string name, string op, string value, string start, string? refused, string expected)
+    {
+        Write(start);
+
+        var error = Record.Exception(() =>
+        {
+            switch (op)
+            {
+                case "browser-extensions": BrowserSettings.SetExtensions(Home, value); break;
+                case "browser-use": BrowserSettings.SetBrowser(Home, value); break;
+                case "browser-links": BrowserSettings.SetLinks(Home, value); break;
+                default: throw new InvalidOperationException($"the table names an edit this test does not make: {op}");
+            }
+        });
+        if (refused is null) Assert.Null(error);
+        else Assert.Contains(refused, Assert.IsType<DriverException>(error).Message);
+        Assert.Equal((name, expected), (name, System.IO.File.ReadAllText(File)));
+    }
+
+    private const string KeptFile = "browser/settings.json";
+
+    private static readonly JsonNode Table = JsonNode.Parse(System.IO.File.ReadAllText(
+        Path.Combine(RepositoryRoot(), "src", "Daoris.Cli", "test", "fixtures", "home-files-keep.json")))!;
+
+    private static string Lines(JsonNode lines) => string.Join("\n", lines.AsArray().Select(line => (string)line!));
+
+    /// <summary>The file with <paramref name="changes"/> made, its lines ended by CRLF where <paramref name="crlf"/> says.</summary>
+    private static string Changed(JsonNode? changes, bool crlf)
+    {
+        var text = Lines(Table["files"]![KeptFile]!) + "\n";
+        foreach (var change in changes?.AsArray() ?? [])
+        {
+            var from = Lines(change!["from"]!);
+            var at = text.IndexOf(from, StringComparison.Ordinal);
+            if (at < 0 || text.IndexOf(from, at + 1, StringComparison.Ordinal) >= 0)
+            {
+                throw new InvalidOperationException($"a change's `from` is in the file once: {from}");
+            }
+
+            var to = Lines(change["to"]!);
+            // A change to nothing takes its line's end with it.
+            text = to.Length == 0 && text[at + from.Length] == '\n' ? text[..at] + text[(at + from.Length + 1)..] : text[..at] + to + text[(at + from.Length)..];
+        }
+
+        return crlf ? text.Replace("\n", "\r\n", StringComparison.Ordinal) : text;
+    }
+
+    public static TheoryData<string, string, string, string, string?, string> KeepRows()
+    {
+        var rows = new TheoryData<string, string, string, string, string?, string>();
+        foreach (var row in Table["rows"]!.AsArray())
+        {
+            if ((string)row!["file"]! != KeptFile) continue;
+            var crlf = row["crlf"] is { } ends && (bool)ends;
+            rows.Add((string)row["name"]!, (string)row["edit"]!["op"]!, (string)row["edit"]!["value"]!, Changed(row["start"], crlf),
+                (string?)row["refused"], Changed(row["changes"], crlf));
+        }
+
+        return rows;
+    }
+
+    private static string RepositoryRoot()
+    {
+        var directory = new DirectoryInfo(AppContext.BaseDirectory);
+        while (directory is not null && !Directory.Exists(Path.Combine(directory.FullName, ".git")) && !System.IO.File.Exists(Path.Combine(directory.FullName, ".git")))
+        {
+            directory = directory.Parent;
+        }
+
+        return directory?.FullName ?? throw new InvalidOperationException("no repository above the test's folder");
     }
 }

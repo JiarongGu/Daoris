@@ -4,10 +4,11 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// KEEPALL1, KEEPALL1b and KEEPALL1e (FIX-LOG 2026-10-17): every home file a door edits keeps what its writer does not own, as <c>driver.json</c>'s writers do
+/// KEEPALL1, KEEPALL1b, KEEPALL1c and KEEPALL1e (FIX-LOG 2026-10-17): every home file a door edits keeps what its writer does not own, as <c>driver.json</c>'s writers do
 /// (<see cref="DriverConfigKeepsTests"/>). One table both twins read, <c>test/fixtures/home-files-keep.json</c>, row for row with the
 /// CLI's <c>homefileskeep.test.ts</c>: an existing file in the writer's layout with keys neither twin knows at each level, one door's
-/// edit, and the bytes both write.
+/// edit, and the bytes both write. <c>browser/settings.json</c>'s writer is the modules', so its rows are
+/// <c>BrowserSettingsTests</c>' there.
 /// </summary>
 public sealed class HomeFilesKeepTests
 {
@@ -94,6 +95,18 @@ public sealed class HomeFilesKeepTests
                 between();
                 HelpGrants.Withdraw(home, Text("plugin"), Text("server"));
                 return;
+            case ("tools.json", "tool-system"):
+                between();
+                Tools.UseSystem(home, Text("id"));
+                return;
+            case ("tools.json", "location-add"):
+                between();
+                Tools.AddLocation(home, Text("address"));
+                return;
+            case ("tools.json", "location-remove"):
+                between();
+                Tools.RemoveLocation(home, Text("address"));
+                return;
             case ("harnesses.json", var op):
                 var path = Path.Combine(home, file);
                 var wiring = HarnessSettings.Load(path);
@@ -170,6 +183,7 @@ public sealed class HomeFilesKeepTests
             // A row another twin alone writes is that twin's.
             if (row.TryGetProperty("only", out var only) && only.GetString() != "driver") continue;
             var file = row.GetProperty("file").GetString()!;
+            if (file == "browser/settings.json") continue;
             var crlf = row.TryGetProperty("crlf", out var ends) && ends.GetBoolean();
             var start = Changed(file, row.TryGetProperty("start", out var first) ? first : null, crlf);
             var between = row.TryGetProperty("between", out var made) ? Changed(file, made, crlf) : null;

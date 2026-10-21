@@ -4,6 +4,7 @@ import { flagValue, operands } from '../platform/args.ts';
 import { DaorisError, type ExitCode } from '../platform/errors.ts';
 import { readJsonObject, writeJsonAtomic } from '../platform/fsx.ts';
 import { HOME_SENTENCE, daorisHome, homeEntry } from '../platform/home.ts';
+import { writeKeeping } from '../platform/jsonkeep.ts';
 import type { CommandArgs } from '../platform/types.ts';
 
 /**
@@ -199,7 +200,11 @@ export function readBrowserSettings(home: string): {
   return { extensions, browser, links, problem };
 }
 
-/** Set one field, keeping what an editor has no field for. Refused over a file it could not read. */
+/**
+ * Set one field, keeping what an editor has no field for. Refused over a file it could not read. The edit is made onto the file as it
+ * stands (KEEPALL1c, `writeKeeping`): every number by its own text, its line ends kept, a key written twice refused, no edit nothing
+ * written. The driver's `BrowserSettings.Set` does the same.
+ */
 function setField(home: string, field: 'extensions' | 'browser' | 'links', choice: string): void {
   const { value, problem } = readJsonObject(settingsFile(home));
   if (problem !== null) {
@@ -208,7 +213,7 @@ function setField(home: string, field: 'extensions' | 'browser' | 'links', choic
   }
 
   mkdirSync(dirname(settingsFile(home)), { recursive: true });
-  writeJsonAtomic(settingsFile(home), { ...(value ?? {}), [field]: choice });
+  writeKeeping(settingsFile(home), value !== null, value ?? {}, { ...(value ?? {}), [field]: choice });
 }
 
 export function setExtensions(home: string, extensions: ExtensionsSetting): void {

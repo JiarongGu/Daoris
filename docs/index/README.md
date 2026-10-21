@@ -227,7 +227,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Cli/test/tools/tools.test.ts` | 44 | 752 |
 | `src/Daoris.Cli/test/usage-report.test.ts` | 75 | 1281 |
 | `src/Daoris.Cli/tool-test/desktop-publish.test.ts` | 73 | 1259 |
-| `src/Daoris.Cli/tool-test/merge-branch.test.ts` | 348 | 5322 |
+| `src/Daoris.Cli/tool-test/merge-branch.test.ts` | 348 | 5323 |
 | `src/Daoris.Cli/tool-test/setup-kit.test.ts` | 55 | 1030 |
 
 ### Tools (`tools`)

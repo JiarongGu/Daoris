@@ -18686,3 +18686,13 @@ with `CarriesWork`, the session is told to take the quest and finish the work wi
 still park it on the third failure, its work in the tree, for the person to judge; the sessions' groups no longer offer that tree
 to review while the carry-on waits. Proof: `RetryWorkTickTests` (real ticks, green), with planner, look, groups, note and golden
 rows. Detail: D80's RETRYWORK1 note.
+
+## KEEPALL1c — the home files that already keep keys keep their numbers and line endings too (2026-10-21, D173)
+
+> - [ ] **KEEPALL1c — the home files that already keep keys keep their numbers and line endings too** (driver, cli). The CLI's writers parse with `JSON.parse` (large numbers and `1.50` change); the driver's node writers drop CRLF and do not refuse a key written twice. Proof: `tools.json` and `browser/settings.json` rows in both twins.
+
+**Outcome** 2026-10-21: built. Both twins' writers of `tools.json` (its tools and locations) and `browser/settings.json` write
+through `JsonKeeping.Save` and `writeKeeping`: numbers by their own text, CRLF kept, a key written twice refused, no edit nothing
+written; the driver's loads read a key twice as `JSON.parse` does, where a node threw. Proof: eleven rows in
+`home-files-keep.json`, the browser rows read by the modules' `BrowserSettingsTests`. Detail: D173's KEEPALL1c note and the fix
+log's KEEPALL1c entry.

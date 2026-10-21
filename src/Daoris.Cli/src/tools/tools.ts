@@ -27,8 +27,9 @@
 import { existsSync, statSync } from 'node:fs';
 import { delimiter, dirname, join, resolve } from 'node:path';
 import { DaorisError } from '../platform/errors.ts';
-import { onPath, readJsonObject, writeJsonAtomic } from '../platform/fsx.ts';
+import { onPath, readJsonObject } from '../platform/fsx.ts';
 import { homeEntry, homeFolder } from '../platform/home.ts';
+import { writeKeeping } from '../platform/jsonkeep.ts';
 
 type Env = Record<string, string | undefined>;
 
@@ -404,14 +405,23 @@ function undeclared(id: string): string {
     + 'A tool is added in the code, never by a file.';
 }
 
-/** The file as an object to write over, or the refusal that leaves it as it is. */
-function writable(home: string): { path: string; root: Record<string, unknown> } {
+/** The file as an object to write over, and whether there was one, or the refusal that leaves it as it is. */
+function writable(home: string): { path: string; root: Record<string, unknown>; found: boolean } {
   const path = toolsFile(home);
   const { value, problem } = readJsonObject(path);
   if (problem !== null) {
     throw new DaorisError(`${problem}. Fix it, or delete it to start from nothing — nothing was written.`);
   }
-  return { path, root: value ?? {} };
+  return { path, root: value ?? {}, found: value !== null };
+}
+
+/**
+ * The edit from `root`, the file as read, to `edited` made onto the file as it stands (KEEPALL1c, `writeKeeping`): every number by its
+ * own text, its line ends kept, a key written twice refused, no edit nothing written. Written from `JSON.parse`'s values, it wrote
+ * `1.50` as `1.5` and LF over a file in CRLF. The driver's `Tools.Keep`.
+ */
+function keepTools(path: string, found: boolean, root: Record<string, unknown>, edited: Record<string, unknown>): void {
+  writeKeeping(path, found, root, edited);
 }
 
 /**
@@ -420,7 +430,7 @@ function writable(home: string): { path: string; root: Record<string, unknown> }
  */
 function setWay(home: string, id: string, way: ToolWay, field: { version?: string; file?: string } = {}): void {
   if (!declaredTool(id)) throw new DaorisError(undeclared(id));
-  const { path, root } = writable(home);
+  const { path, root, found } = writable(home);
   if (present(root, 'tools') && !isObject(root.tools)) {
     throw new DaorisError(`${path}'s \`tools\` is not an object, so nothing was written — fix it, or delete the file to start from nothing.`);
   }
@@ -432,7 +442,7 @@ function setWay(home: string, id: string, way: ToolWay, field: { version?: strin
   entry.use = way;
   if (field.version !== undefined) entry.version = field.version;
   if (field.file !== undefined) entry.file = field.file;
-  writeJsonAtomic(path, { ...root, tools: { ...tools, [id]: entry } });
+  keepTools(path, found, root, { ...root, tools: { ...tools, [id]: entry } });
 }
 
 /** The system's: the one PATH finds, as before. */
@@ -467,12 +477,12 @@ export function useManaged(home: string, id: string, version: string): void {
 }
 
 /** The locations as written, or the refusal that leaves the file as it is (rule 5's write side). */
-function writableLocations(home: string): { path: string; root: Record<string, unknown>; locations: unknown[] } {
-  const { path, root } = writable(home);
+function writableLocations(home: string): { path: string; root: Record<string, unknown>; found: boolean; locations: unknown[] } {
+  const { path, root, found } = writable(home);
   if (present(root, 'locations') && !Array.isArray(root.locations)) {
     throw new DaorisError(`${path}'s \`locations\` is not a list, so nothing was written — fix it, or delete the key to start from nothing.`);
   }
-  return { path, root, locations: Array.isArray(root.locations) ? [...root.locations as unknown[]] : [] };
+  return { path, root, found, locations: Array.isArray(root.locations) ? [...root.locations as unknown[]] : [] };
 }
 
 /**
@@ -482,9 +492,9 @@ function writableLocations(home: string): { path: string; root: Record<string, u
 export function addLocation(home: string, address: string): boolean {
   const problem = locationProblem(address);
   if (problem !== null) throw new DaorisError(`${problem} — nothing was written.`);
-  const { path, root, locations } = writableLocations(home);
+  const { path, root, found, locations } = writableLocations(home);
   if (locations.includes(address)) return false;
-  writeJsonAtomic(path, { ...root, locations: [...locations, address] });
+  keepTools(path, found, root, { ...root, locations: [...locations, address] });
   return true;
 }
 
@@ -494,9 +504,9 @@ export function addLocation(home: string, address: string): boolean {
  */
 export function removeLocation(home: string, address: string): boolean {
   if (!existsSync(toolsFile(home))) return false;
-  const { path, root, locations } = writableLocations(home);
+  const { path, root, found, locations } = writableLocations(home);
   if (!locations.includes(address)) return false;
-  writeJsonAtomic(path, { ...root, locations: locations.filter((each) => each !== address) });
+  keepTools(path, found, root, { ...root, locations: locations.filter((each) => each !== address) });
   return true;
 }
 

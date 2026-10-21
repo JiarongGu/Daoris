@@ -964,8 +964,8 @@ export const REACH = Object.freeze([
   { paths: ['src/Daoris.Cli/test/fixtures/driver-config-keeps.json'], gates: ['driver'], why: "the driver's DriverConfigKeepsTests reads the shared table of the bytes an edit of driver.json writes (FABRIC-GRAPH1's review)" },
   {
     paths: ['src/Daoris.Cli/test/fixtures/home-files-keep.json'],
-    gates: ['service', 'driver'],
-    why: "the driver's HomeFilesKeepTests reads the shared table of the bytes an edit of each other home file a door edits writes (KEEPALL1), and the service's RemoteConfigKeepTests its remotes.json rows' reads (KEEPALL1e)",
+    gates: ['service', 'driver', 'modules'],
+    why: "the driver's HomeFilesKeepTests reads the shared table of the bytes an edit of each other home file a door edits writes (KEEPALL1), the service's RemoteConfigKeepTests its remotes.json rows' reads (KEEPALL1e), and the modules' BrowserSettingsTests browser/settings.json's (KEEPALL1c)",
   },
   { paths: ['src/Daoris.Cli/test/fixtures/workflow-graphs.json'], gates: ['driver'], why: "the driver's WorkflowGraphsTests reads the shared table of D157's versions decoded as graphs (FABRIC-WORKFLOW2)" },
   { paths: ['src/Daoris.Cli/test/fixtures/workflow-graph-versions.json'], gates: ['driver'], why: "the driver's WorkflowGraphVersionsTests reads the shared table of a named graph as a named workflow's version (FABRIC-GRAPH1b)" },

@@ -36,6 +36,21 @@ repository.
   carries it on in the same tree, its instruction naming the commit and the words, its record's note saying so); `PlannerTests`'
   RETRYWORK1 rows, `CommittedWorkTests`, `SessionGroupsTests`' row, `NoteSitesTests`' row and the `retried` golden.
 
+## 2026-10-21 — An edit of `tools.json` or the browser's settings changed numbers, line endings or a key written twice (KEEPALL1c)
+
+- **Symptom:** named by KEEPALL1's audit (D173's KEEPALL1 note). Choosing a tool's way or a resource location with `daoris tool`,
+  or a browser setting with `daoris browser`, rewrote `1.50` as `1.5` and a number past 2^53 as its neighbour; the same edits at
+  Settings wrote a CRLF file in LF; and both twins edited a file holding a key twice, the driver's reader failing on it first.
+- **Root cause:** these writers already edited a node read at the write, so they kept unknown keys, but wrote it whole: the CLI
+  from `JSON.parse`'s values, the driver from `JsonNode` with `JsonFile.Write`'s LF, neither through the keeping write the other
+  home files took in KEEPALL1. `JsonNode` threw `ArgumentException` on a key written twice.
+- **Fix:** D173's KEEPALL1c note. Both twins write both files through `JsonKeeping.Save` and `writeKeeping`; the driver's loads read
+  a key written twice through `JsonKeeping.Once`, as `JSON.parse` does.
+- **Verification:** eleven `tools.json` and `browser/settings.json` rows in `home-files-keep.json`: `homefileskeep.test.ts` all
+  eleven, `HomeFilesKeepTests` the six tools rows (the twice row red on `ArgumentException` before the load's fix) and
+  `BrowserSettingsTests` the five browser rows; `ToolsTests`, `ToolResourcesTests`, `ToolInstallTests`, `ToolsChildrenTests`,
+  `BrowserModuleTests`, `tools.test.ts`, `resources.test.ts`, `toolinstall.test.ts` and `browser.test.ts` green.
+
 ## 2026-10-21 — A turn that ended just after its background command did parked on the person (BGWAIT3)
 
 - **Symptom:** a driven session on the install backgrounded a test class, wrote that it would close its quest when the tests
