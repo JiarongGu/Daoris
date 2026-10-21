@@ -264,7 +264,7 @@ public sealed class NodeRuntime(
     /// </summary>
     public bool Return(string run)
     {
-        if (_graphRuns.Find(run) is not { Ended: not null }) return false;
+        if (_graphRuns.Find(run) is not { Ended: not null, Version.Readable: true }) return false;
         _returned[run] = 0;
         _freshAsked = true;
         return true;
@@ -273,8 +273,10 @@ public sealed class NodeRuntime(
     /// <summary>
     /// Whether a run bound to a graph version arms the runtime (FABRIC-CUTOVER1c; the cutover design §3): one whose record does not hold its end,
     /// one a start of its chain asked a pass for, and every one at this process's first look. Lists the runs folder; a home with none costs one stat.
+    /// A run whose version no longer reads arms nothing: it is held whole, and said whenever a pass reads the units.
     /// </summary>
-    private bool ArmsRuns => _graphRuns.Read().Any(run => run.Ended is null || _restarted || _returned.ContainsKey(run.Run));
+    private bool ArmsRuns =>
+        _graphRuns.Read().Any(run => run.Version.Readable && (run.Ended is null || _restarted || _returned.ContainsKey(run.Run)));
 
     /// <summary>The governed units the last look read, by id: what a wake judges with.</summary>
     private Dictionary<string, GovernedUnit>? _governed;
@@ -459,8 +461,13 @@ public sealed class NodeRuntime(
         var binding = run.Binding;
         if (run.Version is not { Graph: { } graph, GraphDigest: { } digest })
         {
-            said?.Add($"work  {run.Unit}: the graph version its run is bound to does not read ({run.Version.Unreadable}), so its record is held whole, "
-                      + "and nothing on it is judged or started until it reads again.");
+            // A run governed before, not ended: its record is held whole (D157 §5.2). One never governed here has nothing to hold.
+            if (run is { Recorded: true, Ended: null })
+            {
+                said?.Add($"work  {run.Unit}: the graph version its run is bound to does not read ({run.Version.Unreadable}), so its record is held whole, "
+                          + "and nothing on it is judged or started until it reads again.");
+            }
+
             return null;
         }
 

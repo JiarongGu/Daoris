@@ -407,6 +407,29 @@ public sealed partial class NodeRuntimeTests
     }
 
     /// <summary>
+    /// A run whose graph version stops reading (its workflow's file removed) is held whole (§3, D157 §5.2): it arms nothing by itself, its record
+    /// is kept as it stands with nothing on it judged, Current still governs none of its quests, and a look armed by something else says so.
+    /// </summary>
+    [Fact]
+    public async Task A_run_whose_version_stops_reading_is_held_whole_and_said()
+    {
+        BoundTo(ClaimedThenHanded);
+        _units = [RunHome.QuestUnit(RunHome.Quest(RunId))];
+        var runtime = Runtime();
+        await RunPassAsync(runtime);
+        var kept = NodeRecordFiles.ToJson(Files.Read(RunUnit)!);
+
+        File.Delete(WorkflowStore.PathOf(_home, "docs"));
+        Assert.False((await RunPassAsync(runtime)).Armed);
+        var held = await RunPassAsync(runtime, CurrentCycles);
+
+        Assert.Empty(held.Evaluated);
+        Assert.Single(held.Said, line => line.StartsWith($"work  {RunUnit}:", StringComparison.Ordinal) && line.Contains("held whole", StringComparison.Ordinal));
+        Assert.Equal(kept, NodeRecordFiles.ToJson(Files.Read(RunUnit)!));
+        Assert.Empty(_port.Sent);
+    }
+
+    /// <summary>
     /// Until the doors read a run (CUTOVER1d), its opinion and look are not begun, so no gate is read for it, and its plugin's performed node is
     /// neither started nor awaited (§3).
     /// </summary>

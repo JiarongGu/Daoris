@@ -21,6 +21,9 @@ public static class RunUnits
 /// process's first look.</param>
 public sealed record GraphRun(WorkflowRunBinding Binding, DecodedVersion Version, RunEnd? Ended, bool Asked = false)
 {
+    /// <summary>Whether the run has a node record here: a run governed before, whose record a version that stops reading holds whole.</summary>
+    public bool Recorded { get; init; }
+
     public string Run => Binding.Run;
 
     public string Unit => RunUnits.IdOf(Binding.Run);
@@ -48,7 +51,7 @@ public sealed class GraphRuns(NodeRecordFiles records)
 
     private readonly Dictionary<string, Version> _versions = new(StringComparer.Ordinal);
 
-    private readonly Dictionary<string, RunEnd?> _ends = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, (RunEnd? Ended, bool Recorded)> _ends = new(StringComparer.Ordinal);
 
     /// <summary>How many binding files this process read: what a look over unchanged files adds nothing to.</summary>
     public int Reads { get; private set; }
@@ -97,7 +100,8 @@ public sealed class GraphRuns(NodeRecordFiles records)
                 }
 
                 if (kept.Binding is not { } bound || !GraphRun.Names(bound)) continue;
-                runs.Add(new GraphRun(bound, VersionOf(bound), EndOf(bound.Run)));
+                var (ended, recorded) = EndOf(bound.Run);
+                runs.Add(new GraphRun(bound, VersionOf(bound), ended) { Recorded = recorded });
             }
 
             foreach (var gone in _bindings.Keys.Where(path => !seen.Contains(path)).ToList()) _bindings.Remove(gone);
@@ -111,7 +115,7 @@ public sealed class GraphRuns(NodeRecordFiles records)
     /// <summary>The runtime wrote <paramref name="ended"/> on the run's record, or took its end away: kept, so its record is not read again for it.</summary>
     public void Ended(string run, RunEnd? ended)
     {
-        lock (_lock) _ends[run] = ended;
+        lock (_lock) _ends[run] = (ended, true);
     }
 
     /// <summary>
@@ -141,11 +145,16 @@ public sealed class GraphRuns(NodeRecordFiles records)
         return version;
     }
 
-    /// <summary>Where the run's record says it ended, read once a process, then kept as the runtime writes it.</summary>
-    private RunEnd? EndOf(string run)
+    /// <summary>
+    /// Where the run's record says it ended, and whether it has one, read once a process, then kept as the runtime writes it. Until the runtime
+    /// writes the run's record, a record not there is read again at each look, a stat.
+    /// </summary>
+    private (RunEnd? Ended, bool Recorded) EndOf(string run)
     {
-        if (_ends.TryGetValue(run, out var ended)) return ended;
-        return _ends[run] = records.Read(RunUnits.IdOf(run))?.Ended;
+        if (_ends.TryGetValue(run, out var kept)) return kept;
+        var unit = RunUnits.IdOf(run);
+        if (!File.Exists(NodeRecordFiles.PathOf(records.Home, unit))) return (null, false);
+        return _ends[run] = (records.Read(unit)?.Ended, true);
     }
 }
 
