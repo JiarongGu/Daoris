@@ -160,6 +160,29 @@ public sealed class NodeRuntimeLoopProcessTests : IDisposable
         Assert.InRange(reached!.Value - attempt.RecordedAt, TimeSpan.Zero, TimeSpan.FromSeconds(1));
     }
 
+    /// <summary>
+    /// FABRIC-CUTOVER1c (the cutover design §3): a run bound to a graph version arms the loop's runtime though its choices name no cycle, and the
+    /// loop governs it on its own record, its quest's claim observed there under that quest; no plugin process starts for it, and the quest's own
+    /// record is never written.
+    /// </summary>
+    [Fact]
+    public async Task A_run_bound_to_a_graph_version_is_governed_by_the_loop_on_its_own_record()
+    {
+        const string Graph = """
+            {"schemaVersion":2,"entries":["claimed"],"end":"handed",
+             "nodes":[{"id":"claimed","kind":"claimed","version":1,"reach":"observed"},{"id":"handed","kind":"handed","version":1,"reach":"observed"}],
+             "wires":[{"id":"c>h","kind":"after","from":"claimed","to":"handed"}]}
+            """;
+        RunHome.Bind(_home, "q1", RunHome.SaveGraph(_home, Graph), DateTimeOffset.UtcNow);
+        NodeStatus? Claimed() => new NodeRecordFiles(_home).Read(RunUnits.IdOf("q1"))?.Statuses.GetValueOrDefault("claimed");
+
+        await RunAsync("", _ => Claimed()?.State == NodeStates.Active);
+
+        Assert.Equal(QuestUnits.IdOf("q1"), Claimed()!.Binding!.Subject);
+        Assert.False(File.Exists(NodeRecordFiles.PathOf(_home, QuestUnits.IdOf("q1"))));
+        Assert.Empty(Lines("started.log"));
+    }
+
     [Fact]
     public async Task An_install_whose_choices_name_no_performed_step_starts_no_plugin_and_writes_no_unit_record()
     {

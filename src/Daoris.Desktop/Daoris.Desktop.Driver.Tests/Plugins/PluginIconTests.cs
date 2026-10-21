@@ -6,9 +6,9 @@ namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
 /// A plugin's icon (PLUGUI2, D140, the catalogue design §3): the manifest's <c>icon</c>, a path inside the plugin's folder
-/// to an SVG or a PNG, read by the catalogue, and the file judged where it is drawn. The driver's half of a twin with the
-/// CLI's <c>plugins.ts</c>: <c>plugin-icons.test.ts</c> parses <see cref="The_icon_reads_as_the_cli_reads_it"/> and holds
-/// its own table to it, cell for cell and in order. They share no code.
+/// to an SVG or a PNG, read by the catalogue, and the file judged where it is drawn. The rules' one table: the CLI's
+/// <c>plugins.ts</c> held its twin to <see cref="The_icon_reads_as_the_cli_reads_it"/> until it left with <c>daoris plugin</c>'s
+/// TypeScript (PUSH1f2f).
 /// </summary>
 /// <remarks>
 /// 🔴 <b>An icon's problem never refuses the plugin</b>: an icon is how a plugin is recognised, never what it does, so a

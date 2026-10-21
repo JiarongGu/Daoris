@@ -8,7 +8,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// across wakes, its outcome heard and kept, its declared retry started after its persisted delay; a restart reconciles before any new start;
 /// two wakes at once start nothing twice.
 /// </summary>
-public sealed class NodeRuntimeTests : IDisposable
+public sealed partial class NodeRuntimeTests : IDisposable
 {
     private const string Plugin = "acme.deploy";
     private const string Unit = "quest:q7";

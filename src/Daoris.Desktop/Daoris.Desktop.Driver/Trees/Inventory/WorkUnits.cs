@@ -47,14 +47,19 @@ public static class WorkUnits
     /// </summary>
     /// <param name="roots">Each repository's checkout, for the recovery refs (<see cref="WorkInventories.GatherAsync"/>).</param>
     /// <param name="inUse">The trees a session still running or waiting holds.</param>
+    /// <param name="unlinked">
+    /// Where given, why the links sessions make were not read (FABRIC-CUTOVER1c; the cutover design §2.3): the service's lines of
+    /// <paramref name="unread"/> alone, which the node runtime holds a run's branches on, never the inventory's.
+    /// </param>
     public static async Task<IReadOnlyList<WorkUnit>> ReadAsync(
         string home, IReadOnlyDictionary<string, string> roots, IReadOnlySet<string> inUse, ServiceClient? service, ICollection<string> unread,
-        CancellationToken ct = default)
+        CancellationToken ct = default, ICollection<string>? unlinked = null)
     {
         var branches = WorkInventory.Units(await WorkInventories.GatherAsync(home, roots, inUse, unread, ct).ConfigureAwait(false));
         if (service is null)
         {
             unread.Add("without the service, no quest or ask is read: only this machine's branch work is");
+            unlinked?.Add("without the service, no quest or ask is read");
             return branches;
         }
 
@@ -71,6 +76,7 @@ public static class WorkUnits
             || (error is TaskCanceledException && !ct.IsCancellationRequested))
         {
             unread.Add($"the service did not answer, so its quests and asks were not read: {error.Message}");
+            unlinked?.Add($"the service did not answer: {error.Message}");
             return branches;
         }
 

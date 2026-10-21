@@ -4,9 +4,8 @@ namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
 /// A plugin's tools (PLUGTOOL1a, D150 point 7, the UX6 design §7.2): the manifest's <c>tools</c>, the programs its process
-/// runs, read by the catalogue by one table. The driver's half of a twin with the CLI's <c>plugins.ts</c>:
-/// <c>plugin-tools.test.ts</c> parses <see cref="The_tools_read_as_the_cli_reads_them"/> and holds its own table to it,
-/// cell for cell and in order. They share no code.
+/// runs, read by the catalogue by one table, to which the CLI's <c>plugins.ts</c> held its twin
+/// (<see cref="The_tools_read_as_the_cli_reads_them"/>) until it left with <c>daoris plugin</c>'s TypeScript (PUSH1f2f).
 /// </summary>
 /// <remarks>
 /// 🔴 <b>A problem in <c>tools</c> never refuses the plugin</b>: it is that tool's sentence, and the plugin still

@@ -28,6 +28,12 @@ with the version and date at release.
   a named workflow's first session follows its version from the start, told its landing and taking its checks, and its quest is not
   bound to Current's closure graph. A start held after that keeps its run bound to what was chosen then, so a choice you change
   later applies to the next run. A start whose run cannot be bound waits, saying why, and is tried again at the next look.
+- A run bound to a workflow version saved as a graph is now followed by that graph, on a record of the run's own: its claim, its
+  go-ahead (answered only by your answers to what the run's own sessions asked) and its landing are observed as the run goes, and a
+  plugin's observed step is told the run's branch, or after the landing the landed branch at the landing's commit. Your repository's
+  landing cycle no longer runs on such a run's branches; a branch two runs worked, or any branch of its repository while the service's
+  quests cannot be read, is left to neither and said. The run's opinion and look, and a plugin's performed step, wait for a later build
+  whose landing doors read the run.
 - More of `daoris-driver`, run while Daoris is open on the same home, hands its press to Daoris instead of acting beside it:
   `quest pause|resume|abandon` and `ask --pause|--resume|--abandon`, `history clear`, `quest clear` and `ask --clear`,
   `help rename|pin|unpin|delete`, `opinion ask|stop|anyway|myself`, `setup <repository>`, `ask channel <id> "…"` and
@@ -50,6 +56,12 @@ with the version and date at release.
   new account goes last in the order whatever its id. On the bridge the order and use act on the set, and a workspace, a list to
   join or a default is refused, saying the order decides where starts begin; the page's screens for them follow. A conversation
   that began in your own sign-in goes on there.
+- `daoris plugin` is run by Daoris's own driver program now, as `daoris-driver plugin` with the same words. An add, an update with
+  `--yes`, a remove and an enable or disable go through Daoris's window while it runs, and alone otherwise; from a session's own
+  terminal they are refused, since each plugin press is yours. Each says what it said before, but for these: it says *agent* where it
+  said *harness*; an add whose manifest does not read is said as the window says it, and an add from a folder inside your `DAORIS_HOME`, or
+  one holding it, is refused with nothing copied; a remove of a plugin whose folder something holds is refused and takes nothing; and a change refused
+  because `plugins.json` does not read is said with its code.
 - You may now set an age for finished work's records: on the *Disk space* card's *Conversations and records* row (*Change…*), with
   `daoris driver keep history <days>|never|default`, or through Ask Daoris's proposal you apply. Between 30 and 3,650 days; by default
   none, and nothing clears your history by itself, as before. With an age set, once a day each workspace's finished work whose last

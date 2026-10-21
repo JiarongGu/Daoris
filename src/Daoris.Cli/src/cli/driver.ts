@@ -1,5 +1,5 @@
 import type { CliCommand } from '../platform/types.ts';
-import { runDriverProgram } from '../agents/toolchain.ts';
+import { runDriverProgram } from '../platform/driverprogram.ts';
 
 export const command: CliCommand = {
   name: 'driver',

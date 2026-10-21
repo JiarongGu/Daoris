@@ -19337,6 +19337,13 @@ the other pipeline refused, an agent's lowering kept for the press), the box's a
 overwriting, the take names Current's work cycle under Current and none under a named version, and the next look says what the starts
 bound. Detail: D190's CUTOVER1g note. On Opus.
 
+## FABRIC-CUTOVER1c — the runtime governs a bound schema-2 run, beginning no gate node and starting no performed node (2026-10-22, D190)
+
+> - [ ] **FABRIC-CUTOVER1c — the runtime governs a bound schema-2 run, beginning no gate node and starting no performed node** (driver; after 1a, 1g; D190, design §2-§3). Arming by binding, and re-arming by a later start of an ended run (`NodeRuntime.cs:214-226`, `:335-378`); the run on its own record over its subjects, its go-ahead begun on its scoped answers, its plugin nodes told under their subject's unit and mapped back (`WorkPerformer.cs:251`, `:262`, `:626`, `NodeRuntime.cs:427-430`, `WorkObserver.cs:97-105`), a node after `handed` told the landed branch at its landing's tip; Current kept off its quests and branches, a branch of two runs and an unread attribution held (`WorkUnits.cs:24-28`, `:55-75`, `DriverWatch.cs:755-762`); no `opinion` or `look` begun and no performed start until 1d; schema 1 still skipped (`:270-272`). Proof: `NodeRuntimeTests` (an unbound version arms nothing; a bound one moves `claimed` and `handed` on `run:r`, its subjects' records untouched; its branch not under the landing cycle; the next session lapses `handed`; a set-up quest never the subject; a tidy after landing leaves `handed` reached; another run's go-ahead not taken; the service unread holds the run's branch, said; a two-run branch held; an ended run re-armed by its chain's return and after a restart; no gate node begun, no performed start), and by class `NodeRuntimeLoopProcessTests` and the observer's tests (an event at the session branch under the subject's unit; a completion for a subject the run left reaching its record; a branch replaced at the same commit taking its event though the old one's is remembered; two runs' landings on one landed branch each taking its own event).
+
+**Outcome** 2026-10-22: a run bound to a graph version arms the runtime and is governed on its own record, Current kept off its
+quests and branches; its go-ahead is begun, its plugins told under their subject, its end kept, re-armed when its chain returns; no gate
+or performed node starts until 1d. Detail: D190's CUTOVER1c note. On Opus.
 ## FABRIC-CLOSE1j2 — a quest's closure graph's end where the person looks for the quest (2026-10-22, D173)
 
 > - [ ] **FABRIC-CLOSE1j2 — a quest's closure graph's end where the person looks for the quest** (web; after CLOSE1j; §E5, D173's FABRIC-CLOSE1j note). `WORK_STATE`'s `ends` are `quest:` units', which no milestone on the page carries, so an override is said only in the pass's lines and a part lost only while its stop is offered. Say each on the quest's own page or its session's foot, en and zh. Proof: a page test reading `ends` for a quest in both languages.
@@ -19376,3 +19383,14 @@ rewritten rows, two `rotation-use.json` order rows. No window was looked at. Det
 **Outcome** 2026-10-22: the Workflow tab and the side bar's Workflow view draw a workflow and its run top to bottom where a step fits,
 the list at the floor, with failure paths, the landing's divider and the run lit with no path; no group, none being answered. `Flow`
 folds past 24 nodes, with *Show whole*. Detail: D186's FLOWCHART1d note.
+## PUSH1f2f — the plugins, and the last census (2026-10-22, D194)
+
+> - [ ] **PUSH1f2f — the plugins, and the last census** (cli, driver, modules; after 2b, 2c and 2e; D194, the alone-path design §5). Read its row in §5 and the sections it names; build it end to end (D187), the family's TypeScript leaving as §4 says. Proof: as §5 names it.
+
+**Outcome** 2026-10-22: built. `daoris-driver plugin` answers every verb, each change its route while Daoris runs, else its operation
+alone, refused from a session's terminal; the terminal's replace kept as the host's (`PluginInstall.Replace`), the remove one library
+operation whose plugin stop stays in the route, a held folder refused `PLUGIN_BUSY` with nothing taken. Today's text kept
+(`fixtures/plugins-text.json`, 62 rows, 8 changed on purpose). The last census emptied §4's list but `jsonkeep.ts` and `keeplock.ts`,
+which `browser.ts` and `remotemap.ts` still write through; the seam is `platform/driverprogram.ts` (CLI `test(` lines 1,310 before,
+1,168 after). Unproven until the install: a plugin added and switched from a terminal beside the open window. Detail: D194's PUSH1f2f
+note. On Opus.

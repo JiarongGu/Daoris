@@ -26,6 +26,8 @@ public static class AskUnits
         {
             Executors = ask.Intake is { Length: > 0 } intake ? [intake] : [],
             Links = [.. ask.Quests.Distinct(StringComparer.Ordinal).Select(quest => new WorkLink(WorkRelation.Produced, QuestUnits.IdOf(quest)))],
+            // FABRIC-CUTOVER1c: the ask as answered, whose go-aheads a run's go-ahead node observes.
+            Records = WorkUnitRecords.None with { Ask = ask },
         };
     }
 

@@ -110,6 +110,38 @@ public sealed class NodeRecordFilesTests : IDisposable
         Assert.NotEqual(status.Binding.Id, read.Binding.Id);
     }
 
+    /// <summary>
+    /// FABRIC-CUTOVER1c (the cutover design §2.4.1, §3): a run's record keeps its end and each kept observation's subject, each written only where
+    /// set, and an attempt whose call names the subject it was sent for reads on a run's record alone; a unit's own record holding one still does
+    /// not read, and a record written before reads with no end.
+    /// </summary>
+    [Fact]
+    public void A_runs_end_an_observations_subject_and_an_attempt_sent_for_its_subject_read_back()
+    {
+        const string Run = "run:q7";
+        var call = new WorkPerformCall("unit-b1", "acme.deploy/deploy", 1, "i-1", "k-1", "tip-1", [], Then.AddMinutes(15));
+        NodeRecord Holding(string unit) => new(unit)
+        {
+            Statuses = new Dictionary<string, NodeStatus> { ["deploy"] = new(unit, "deploy", NodeStates.Active) { Attempt = 1, Tries = 1, Unreconciled = 1 } },
+            Attempts = [new NodeAttempt("deploy", 1, "acme.deploy", call, AttemptStates.Sent) { RecordedAt = Then, Generation = 1, Deliveries = 1 }],
+        };
+        var record = Holding(Run) with
+        {
+            Observations = [new ObservedEvent("acme.deploy", "repo-1", "deployed", "tip-1", "e1", WorkStates.Reached, Then, "deployed") { Subject = "unit-b1" }],
+            Ended = new RunEnd("q7", Then),
+        };
+        Files().Write(record);
+
+        var read = Files().Read(Run)!;
+        Assert.Equal(NodeRecordFiles.ToJson(record), NodeRecordFiles.ToJson(read));
+        Assert.Equal(("unit-b1", new RunEnd("q7", Then), "unit-b1"), (Assert.Single(read.Observations).Subject, read.Ended, read.Invoked("i-1")!.Call.Unit));
+        Assert.Null(NodeRecordFiles.Parse(NodeRecordFiles.ToJson(Holding(Unit))));
+
+        var before = NodeRecordFiles.ToJson(Full());
+        Assert.DoesNotContain("\"ended\"", before, StringComparison.Ordinal);
+        Assert.Null(NodeRecordFiles.Parse(before)!.Ended);
+    }
+
     [Fact]
     public void A_unit_with_no_record_reads_empty_and_a_file_that_does_not_read_is_never_taken_for_empty()
     {

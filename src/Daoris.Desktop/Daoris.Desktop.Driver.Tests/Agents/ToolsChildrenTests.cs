@@ -5,9 +5,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// One answer for Daoris and every child (TOOLS5, D121; the tools design §2.4, §2.6, §2.7): the driver's half of
-/// a TWIN with the CLI's <c>tools.ts</c>, whose <c>tools-children.test.ts</c> holds the same tables, row for row and
-/// in the same order, and parses these theories to hold them to its own.
+/// One answer for Daoris and every child (TOOLS5, D121; the tools design §2.4, §2.6, §2.7): the tables the CLI's <c>tools.ts</c>
+/// was held to, row for row, until its one child became Daoris's driver program, which hands its own children the tools (PUSH1f2f).
 /// </summary>
 /// <remarks>
 /// <para><b>The environment</b>: a child's <c>PATH</c> is each tool that is managed or a named file, in the declared

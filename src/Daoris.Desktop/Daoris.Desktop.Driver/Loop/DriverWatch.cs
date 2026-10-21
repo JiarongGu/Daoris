@@ -553,6 +553,11 @@ public sealed class DriverWatch(
                     Runner = Runner, Stops = Stops, HandsOver = HandsOver, GoesOnLost = GoesOnLost, Log = Log, Noticed = Noticed, Stages = Stages, Reviews = Reviews,
                     Part = part, Woke = taken.Woke,
                     LandingEnded = Reoffered, Wanted = token => WantedAsync(part, token), WokeBack = () => Unspent(taken, busy: false),
+                    // FABRIC-CUTOVER1c: an ended graph run whose chain came back here re-arms link 8, which a wake then judges on what is there now.
+                    RunReturned = run =>
+                    {
+                        if (_nodes?.Return(run) == true) NodesWoken("returned");
+                    },
                     // ACCESSSWAP1b: a session outlives this look's reading of the file, so its run reads the file again at its turn's end.
                     ConfigPath = configPath,
                 };
@@ -800,11 +805,14 @@ public sealed class DriverWatch(
     internal static async Task<NodeUnitsRead> ReadNodeUnitsAsync(string home, ServiceClient service, CancellationToken token)
     {
         var unread = new List<string>();
-        var units = await WorkUnits.ReadAsync(home, new Dictionary<string, string>(), new HashSet<string>(), service, unread, token).ConfigureAwait(false);
+        var unlinked = new List<string>();
+        var units = await WorkUnits.ReadAsync(home, new Dictionary<string, string>(), new HashSet<string>(), service, unread, token, unlinked).ConfigureAwait(false);
         var registry = await service.RegistryAsync(token).ConfigureAwait(false);
         var roots = registry.Where(repo => repo.Root is { Length: > 0 }).GroupBy(repo => repo.Repository, StringComparer.Ordinal)
             .ToDictionary(group => group.Key, group => group.First().Root!, StringComparer.Ordinal);
-        return new NodeUnitsRead(units, roots) { Tips = await QuestClosing.TipsAsync(units, roots, token).ConfigureAwait(false) };
+        // FABRIC-CUTOVER1c (the cutover design §2.3): why the work's attribution was not read travels with the units, so a run's branch is never
+        // handed to Current on a link the outage dropped.
+        return new NodeUnitsRead(units, roots) { Tips = await QuestClosing.TipsAsync(units, roots, token).ConfigureAwait(false), Unread = unlinked };
     }
 
     /// <summary>

@@ -35,6 +35,12 @@ public sealed record NodeUnitsRead(IReadOnlyList<WorkUnit> Units, IReadOnlyDicti
     /// (<see cref="QuestClosing.Revision"/>). Null where the read asked no git at all: a close made on it waits (FABRIC-CLOSE1r).
     /// </summary>
     public IReadOnlyDictionary<string, string?>? Tips { get; init; }
+
+    /// <summary>
+    /// Why the work's attribution was not read (FABRIC-CUTOVER1c; the cutover design §2.3): without the service, or where it did not answer, the
+    /// units are the branches alone, with none of the links sessions make. Empty where it was read. A missing link is never read as unbound work.
+    /// </summary>
+    public IReadOnlyList<string> Unread { get; init; } = [];
 }
 
 /// <summary>
@@ -116,10 +122,17 @@ public sealed record GovernedUnit(
 
     /// <summary>Each node's place in its graph (FABRIC-RUN1f, <see cref="NodeGraphs.Places"/>): what its scope, receipts and binding name.</summary>
     public IReadOnlyDictionary<string, string> Places { get; init; } = new Dictionary<string, string>(StringComparer.Ordinal);
+
+    /// <summary>
+    /// Where it is a run bound to a graph version (FABRIC-CUTOVER1c; D190 point 2), what its nodes observe this look; null for a unit Current's
+    /// graphs or a closure graph govern. Its <see cref="Unit"/> is then the run's own, <c>run:&lt;run&gt;</c>, and <see cref="Run"/> its binding's run.
+    /// </summary>
+    public RunScope? Scope { get; init; }
 }
 
 /// <summary>What one pass did (FABRIC-RUN1), for the look's report, the machine log and the tests.</summary>
-/// <param name="Armed">Whether a graph naming a plugin's performed node governs anything; false, the pass read and wrote nothing.</param>
+/// <param name="Armed">Whether a graph naming a plugin's node, a closure graph or a run bound to a graph version arms the runtime; false, the pass
+/// read and wrote nothing.</param>
 /// <param name="Evaluated">The units evaluated, by id.</param>
 /// <param name="Said">What the pass says that no performed result does: a refused evaluation, a record that does not read.</param>
 public sealed record NodeRuntimePass(bool Armed, IReadOnlyList<WorkPerformed> Performed, IReadOnlyList<string> Evaluated, IReadOnlyList<string> Said)
@@ -182,6 +195,10 @@ public static class NodeRuns
 /// too, and so does a closure graph this home keeps (<see cref="ClosureGraphs"/>), so a close in flight is reconciled and a bound quest closed
 /// whatever the choices say since. A quest is bound at its take, in the take's own write (<see cref="ClosureBinding.AtStartAsync"/>), never
 /// here; a bound quest is closed by the graph it was bound to.</para>
+/// <para><b>Runs bound to graph versions</b> (FABRIC-CUTOVER1c; D190 points 1 to 3): such a run arms it too (<see cref="GraphRuns"/>), and is
+/// governed on its own record, <c>run:&lt;run&gt;</c>, each node observing the subject its kind names (<see cref="RunScope"/>), while Current's
+/// graphs govern none of its quests and branches (<see cref="RunOwners"/>). Its opinion and look are not begun and its performed nodes not started,
+/// since its landing doors do not read its record; its end is kept there, and its chain coming back here arms it again (<see cref="Return"/>).</para>
 /// </remarks>
 public sealed class NodeRuntime(
     NodeRecordFiles records, IWorkRuntimePort port, Func<DateTimeOffset> clock, Func<bool>? holdsLease = null, IQuestClosePort? closes = null)
@@ -223,6 +240,48 @@ public sealed class NodeRuntime(
     private readonly Func<bool> _holdsLease = holdsLease ?? (() => true);
 
     private readonly SemaphoreSlim _one = new(1, 1);
+
+    /// <summary>The home's runs bound to graph versions (FABRIC-CUTOVER1c; the cutover design §3): what arms the runtime beside the choices.</summary>
+    private readonly GraphRuns _graphRuns = new(records);
+
+    /// <summary>Whether this process has not judged its bound runs yet: its first look judges every one once, an ended one included (§3).</summary>
+    private volatile bool _restarted = true;
+
+    /// <summary>The ended runs a start of their chain asked a pass for (<see cref="Return"/>), armed until a fresh read judges them.</summary>
+    private readonly System.Collections.Concurrent.ConcurrentDictionary<string, byte> _returned = new(StringComparer.Ordinal);
+
+    /// <summary>Whether a start asked a pass that reads the units afresh: a run it re-armed is judged on what is there now.</summary>
+    private volatile bool _freshAsked;
+
+    /// <summary>
+    /// The governed units by each unit their plugins are told under (FABRIC-CUTOVER1c; the cutover design §2.4.1): a unit's own id, and every
+    /// branch a run's quests produced, mapped back to the run. What an event's told unit is looked up in.
+    /// </summary>
+    private Dictionary<string, GovernedUnit> _byTold = new(StringComparer.Ordinal);
+
+    /// <summary>The binding files this process read (FABRIC-CUTOVER1c): a look over unchanged files reads none again.</summary>
+    internal int BindingsRead => _graphRuns.Reads;
+
+    /// <summary>
+    /// A start found its run bound already (FABRIC-CUTOVER1g's <see cref="WorkflowBindCame.Already"/>; the cutover design §3): where the run is
+    /// bound to a graph version and its record holds its end, its chain has come back here, so the runtime is armed for it until a pass reads the
+    /// units afresh and judges it. Returns whether it was, so the caller wakes the runtime; a run not ended, or not a graph run, asks nothing.
+    /// </summary>
+    public bool Return(string run)
+    {
+        if (_graphRuns.Find(run) is not { Ended: not null, Version.Readable: true }) return false;
+        _returned[run] = 0;
+        _freshAsked = true;
+        return true;
+    }
+
+    /// <summary>
+    /// Whether a run bound to a graph version arms the runtime (FABRIC-CUTOVER1c; the cutover design §3): one whose record does not hold its end,
+    /// one a start of its chain asked a pass for, and every one at this process's first look. Lists the runs folder; a home with none costs one stat.
+    /// A run whose version no longer reads arms nothing: it is held whole, and said whenever a pass reads the units.
+    /// </summary>
+    private bool ArmsRuns =>
+        _graphRuns.Read().Any(run => run.Version.Readable && (run.Ended is null || _restarted || _returned.ContainsKey(run.Run)));
 
     /// <summary>The governed units the last look read, by id: what a wake judges with.</summary>
     private Dictionary<string, GovernedUnit>? _governed;
@@ -268,16 +327,26 @@ public sealed class NodeRuntime(
     /// <param name="kept">The closure graph this home keeps under a digest (<see cref="ClosureGraphs.Read"/>), or null where it keeps none.</param>
     /// <param name="versionOf">
     /// The named version a quest unit's run is bound to (<see cref="NodeRuntimeLook.Bound"/>), or null where none: FABRIC-RUN1c, a quest bound
-    /// to one is governed by it alone (§E7, one governs a run, by its binding), whose engine is D157's run until the cutover (FABRIC-CUTOVER1),
-    /// so Current's graph never governs it beside that engine. An unreadable binding holds it the same way: its run cannot start (D157 §5.2).
+    /// to one is governed by it alone (§E7, one governs a run, by its binding): a steps version's by D157's run, a graph version's on the run's
+    /// own record (<paramref name="runs"/>, FABRIC-CUTOVER1c), so Current's graph never governs it beside either. An unreadable binding holds it
+    /// the same way: its run cannot start (D157 §5.2).
     /// </param>
+    /// <param name="runs">
+    /// The runs bound to graph versions (FABRIC-CUTOVER1c; D190 points 1 to 3, the cutover design §2.3): each is governed on its own record,
+    /// <c>run:&lt;run&gt;</c>, and Current's graphs govern none of its quests and none of the branches they produced; a branch two runs produced, one
+    /// of them a graph run, is held; and while the work's attribution is not read (<see cref="NodeUnitsRead.Unread"/>), no branch of a repository
+    /// holding an open graph run is governed.
+    /// </param>
+    /// <param name="said">What the pass says of them: a branch held, an attribution not read, a version that no longer reads.</param>
     public static IReadOnlyList<GovernedUnit> Govern(
         DriverConfig config, NodeUnitsRead read, IReadOnlyList<NodeDeclaration> steps, Func<string, NodeGraph?>? kept = null,
-        Func<WorkUnit, IReadOnlyCollection<QuestView>, DecodedVersion?>? versionOf = null)
+        Func<WorkUnit, IReadOnlyCollection<QuestView>, DecodedVersion?>? versionOf = null, IReadOnlyList<GraphRun>? runs = null,
+        ICollection<string>? said = null)
     {
         var governed = new List<GovernedUnit>();
         var identities = new Dictionary<string, string>(StringComparer.Ordinal);
         var quests = Quests(read);
+        var owners = new RunOwners(quests, runs ?? [], read.Unread.Count == 0);
         foreach (var each in read.Units.OrderBy(unit => unit.Id, StringComparer.Ordinal))
         {
             var unit = each;
@@ -305,33 +374,23 @@ public sealed class NodeRuntime(
             // govern it as well. A quest bound to a closure graph at its take is that graph's, as above.
             if (!closes && unit.Kind == WorkUnitKind.Quest && versionOf?.Invoke(unit, quests.Values) is not null) continue;
 
-            if (graph is null || (!Acts(graph) && !closes)) continue;
-            var dispatchable = new HashSet<string>(StringComparer.Ordinal);
-            var observable = new HashSet<string>(StringComparer.Ordinal);
-            var declared = new Dictionary<string, NodeDeclaration>(StringComparer.Ordinal);
-            foreach (var node in graph.Nodes)
+            // FABRIC-CUTOVER1c (the cutover design §2.3): a quest of a run bound to a graph version is that run's, read from the home's own runs, and
+            // a branch its quests produced is its graph's; one two runs produced, one a graph run's, is held, said; and one whose attribution was
+            // not read, in a repository holding an open graph run, is governed by nobody, never handed to Current on a guess.
+            if (!closes && unit.Records.Quest is { } own && owners.Of(own) is not null) continue;
+            if (owners.Keeps(unit) is { } keeps)
             {
-                declared[node.Id] = node;
-                if (!(Performs(node) || Observes(node)) || steps.FirstOrDefault(step => step.Kind == node.Kind) is not { } step
-                    || step.Version != node.Version || step.Reach != node.Reach)
-                {
-                    continue;
-                }
-
-                var under = node with
-                {
-                    Perform = step.Perform, Retry = node.Retry ?? step.Retry, TimeoutSeconds = node.TimeoutSeconds ?? step.TimeoutSeconds,
-                    Evidence = node.Evidence ?? step.Evidence,
-                };
-                if (NodeDeclarations.Problem(under) is not null) continue;
-                declared[node.Id] = under;
-                (Performs(node) ? dispatchable : observable).Add(node.Id);
+                if (keeps == RunOwners.Held) said?.Add(owners.HeldSaid(unit));
+                continue;
             }
+
+            if (graph is null || (!Acts(graph) && !closes)) continue;
+            var (declared, dispatchable, observable) = Declare(graph, steps);
 
             // FABRIC-PERFORM1i: the host's half of the frame, the unit it is told for and its repository's identity, read once per checkout.
             var digest = NodeGraphs.Digest(graph);
             var root = read.Roots.GetValueOrDefault(repository) ?? "";
-            if (!identities.TryGetValue(root, out var identity)) identities[root] = identity = RepositoryIdentity.Of(root);
+            var identity = IdentityOf(identities, root);
             var watched = new WatchedUnit(repository, unit.Owner.Workspace, root,
                 unit.Kind == WorkUnitKind.Branch ? unit.Subject.Artifact ?? "" : "", unit.Subject.Revision ?? "", null, null, [])
             {
@@ -343,7 +402,155 @@ public sealed class NodeRuntime(
             });
         }
 
+        foreach (var repository in owners.Unattributed.Order(StringComparer.Ordinal))
+        {
+            said?.Add($"work  `{repository}`: the work's attribution was not read ({string.Join("; ", read.Unread)}), so none of its branches is governed "
+                      + "while a run bound to a graph version is open there, and every binding on that run's record is kept.");
+        }
+
+        foreach (var run in runs ?? [])
+        {
+            if (Governs(run, read, owners, steps, identities, said) is { } one) governed.Add(one);
+        }
+
         return governed;
+    }
+
+    /// <summary>
+    /// A graph's nodes as the runtime evaluates and starts them: a plugin's performed or observed node under its plugin's step, where that step is
+    /// declared at the node's version and reach, else as the graph declares it and never sent or begun.
+    /// </summary>
+    private static (Dictionary<string, NodeDeclaration> Declared, HashSet<string> Dispatchable, HashSet<string> Observable) Declare(
+        NodeGraph graph, IReadOnlyList<NodeDeclaration> steps)
+    {
+        var dispatchable = new HashSet<string>(StringComparer.Ordinal);
+        var observable = new HashSet<string>(StringComparer.Ordinal);
+        var declared = new Dictionary<string, NodeDeclaration>(StringComparer.Ordinal);
+        foreach (var node in graph.Nodes)
+        {
+            declared[node.Id] = node;
+            if (!(Performs(node) || Observes(node)) || steps.FirstOrDefault(step => step.Kind == node.Kind) is not { } step
+                || step.Version != node.Version || step.Reach != node.Reach)
+            {
+                continue;
+            }
+
+            var under = node with
+            {
+                Perform = step.Perform, Retry = node.Retry ?? step.Retry, TimeoutSeconds = node.TimeoutSeconds ?? step.TimeoutSeconds,
+                Evidence = node.Evidence ?? step.Evidence,
+            };
+            if (NodeDeclarations.Problem(under) is not null) continue;
+            declared[node.Id] = under;
+            (Performs(node) ? dispatchable : observable).Add(node.Id);
+        }
+
+        return (declared, dispatchable, observable);
+    }
+
+    /// <summary>A checkout's repository identity, read once per checkout for a whole reading.</summary>
+    private static string IdentityOf(Dictionary<string, string> identities, string root)
+    {
+        if (!identities.TryGetValue(root, out var identity)) identities[root] = identity = RepositoryIdentity.Of(root);
+        return identity;
+    }
+
+    /// <summary>
+    /// A run bound to a graph version, as the runtime governs it (FABRIC-CUTOVER1c; D190 point 2, the cutover design §2.1, §2.2, §3): its own unit
+    /// under its version's graph, named by its binding's run, and what its nodes observe this look. Null where it is not judged now: its version no
+    /// longer reads (held whole, said), or it ended and its chain has not come back here since, or no start or first look asked a pass for it.
+    /// </summary>
+    private static GovernedUnit? Governs(
+        GraphRun run, NodeUnitsRead read, RunOwners owners, IReadOnlyList<NodeDeclaration> steps, Dictionary<string, string> identities,
+        ICollection<string>? said)
+    {
+        var binding = run.Binding;
+        if (run.Version is not { Graph: { } graph, GraphDigest: { } digest })
+        {
+            // A run governed before, not ended: its record is held whole (D157 §5.2). One never governed here has nothing to hold.
+            if (run is { Recorded: true, Ended: null })
+            {
+                said?.Add($"work  {run.Unit}: the graph version its run is bound to does not read ({run.Version.Unreadable}), so its record is held whole, "
+                          + "and nothing on it is judged or started until it reads again.");
+            }
+
+            return null;
+        }
+
+        var repository = binding.Repository;
+        var units = read.Units.GroupBy(unit => unit.Id, StringComparer.Ordinal).ToDictionary(same => same.Key, same => same.First(), StringComparer.Ordinal);
+        var quests = read.Units.Select(unit => unit.Records.Quest).OfType<QuestView>().ToList();
+
+        // §2.2: its work here is its chain's quests in its repository, never a look's set-up step, which a run's work leaves out.
+        var work = ReviewGate.ChainOf(quests, binding.Run)
+            .Where(quest => string.Equals(quest.To, repository, StringComparison.OrdinalIgnoreCase) && quest.SetUpIn is null).ToList();
+        var newest = work.LastOrDefault();
+
+        // §3: an ended run is judged again only once its chain has come back here, at a start's ask or this process's first look.
+        if (run.Ended is { } ended && !(run.Asked && newest is not null && !string.Equals(newest.Id, ended.Quest, StringComparison.Ordinal))) return null;
+
+        // The branch its newest session worked, the newest opened of those the newest quest produced, whether its tree stands or not; one held
+        // between two runs is no subject. Every branch of its quests, its former subjects included, is what an answer maps back by.
+        var branches = read.Units.Where(unit => unit.Kind == WorkUnitKind.Branch && owners.Owns(unit)?.Run == binding.Run).ToList();
+        var produced = newest is null ? null : new WorkLink(WorkRelation.ProducedBy, QuestUnits.IdOf(newest.Id));
+        var newestBranch = produced is null ? null
+            : read.Units.Where(unit => unit.Kind == WorkUnitKind.Branch && unit.Links.Contains(produced)).MaxBy(Opened);
+        var branch = newestBranch is not null && owners.Keeps(newestBranch) == RunOwners.Run ? newestBranch : null;
+
+        // §2.4.2: the go-aheads on its ask that a session serving one of its quests, or a request naming one, asked.
+        var askId = binding.Ask ?? (newest is null ? null : AskWords.AskOf(newest.From));
+        IReadOnlyList<GoAheadView>? goAheads = null;
+        if (askId is not null && units.GetValueOrDefault(AskUnits.IdOf(askId))?.Records.Ask is { } ask)
+        {
+            var named = work.Select(quest => quest.Id).ToHashSet(StringComparer.OrdinalIgnoreCase);
+            var serving = work.SelectMany(quest => units.GetValueOrDefault(QuestUnits.IdOf(quest.Id))?.Executors ?? []).ToHashSet(StringComparer.OrdinalIgnoreCase);
+            goAheads = [.. (ask.GoAheads ?? []).Where(goAhead => goAhead.Asked.Any(asked => serving.Contains(asked.Session) || (asked.Quest is { } quest && named.Contains(quest))))];
+        }
+
+        var root = read.Roots.GetValueOrDefault(repository) ?? "";
+        var identity = IdentityOf(identities, root);
+        var self = new WorkUnit(run.Unit, WorkUnitKind.Run, new WorkOwner(repository, binding.Workspace, WorkflowRunBindings.Folder, WorkRecord.DriverWriter),
+            new WorkSubject(binding.Run, null), new MilestoneEnd(WorkEndState.NotEnded, null, null, null, null, "its graph runs"), []);
+        var scope = new RunScope(run, self)
+        {
+            Quest = newest is null ? null : units.GetValueOrDefault(QuestUnits.IdOf(newest.Id)),
+            Quests = work,
+            Branch = branch,
+            Branches = branches,
+            AfterHanded = AfterHanded(graph),
+            GoAheads = goAheads,
+            Root = root,
+            Identity = identity,
+        };
+
+        var (declared, dispatchable, observable) = Declare(graph, steps);
+        var watched = new WatchedUnit(repository, binding.Workspace, root, branch?.Subject.Artifact ?? "", "", null, null, [])
+        {
+            Unit = branch?.Id ?? run.Unit, Identity = identity,
+        };
+
+        // A named version is never edited (D157 point 6), so its run takes no places: its nodes are scoped and bound by the version's digest.
+        return new GovernedUnit(self, graph, digest, binding.Run, declared, dispatchable, watched) { Observable = observable, Scope = scope };
+
+        // When a branch unit's work was opened: its session branch's opening, else its newest landing.
+        static DateTimeOffset Opened(WorkUnit unit) =>
+            unit.Records.Branch?.At ?? unit.Records.Landings.Select(landing => landing.LandedAt).DefaultIfEmpty(DateTimeOffset.MinValue).Max();
+    }
+
+    /// <summary>The nodes a wire path leads to from <c>handed</c> (the cutover design §2.2): what observes the run's branch at its landing.</summary>
+    private static HashSet<string> AfterHanded(NodeGraph graph)
+    {
+        var after = new HashSet<string>(StringComparer.Ordinal);
+        var next = new Queue<string>(graph.Nodes.Where(node => node.Kind == NodeKinds.Handed).Select(node => node.Id));
+        while (next.TryDequeue(out var from))
+        {
+            foreach (var wire in graph.Wires.Where(wire => wire.From is { Unit: null } source && source.Node == from && wire.To is { Unit: null }))
+            {
+                if (after.Add(wire.To.Node)) next.Enqueue(wire.To.Node);
+            }
+        }
+
+        return after;
     }
 
     /// <summary>
@@ -368,7 +575,7 @@ public sealed class NodeRuntime(
     /// </summary>
     public async Task<bool> WithdrawAsync(DriverConfig config, CancellationToken ct)
     {
-        if (Armed(config) || KeepsClosures) return false;
+        if (Armed(config) || KeepsClosures || ArmsRuns) return false;
         if (!Holding) return true;
         await _one.WaitAsync(ct).ConfigureAwait(false);
         try
@@ -410,6 +617,7 @@ public sealed class NodeRuntime(
         port.Owe(new HashSet<string>(StringComparer.Ordinal));
         (_told, _toldText, _governed, _choices, _after, NextDue) = (false, "", null, null, null, null);
         _tipsTold = new Dictionary<string, string>(StringComparer.Ordinal);
+        _byTold = new Dictionary<string, GovernedUnit>(StringComparer.Ordinal);
         LastQuests = null;
         QuestReads.Delete(records.Home);
     }
@@ -431,15 +639,25 @@ public sealed class NodeRuntime(
             // ones it was judged under, before any attempt is heard, asked after, retried or started; read afresh, every governed unit is judged.
             var choices = look.Config.Source ?? look.Config.ToJson();
             // FABRIC-CLOSE1q2: a word on a close is judged on the quests as they stand, so a pass applying one reads them afresh.
-            var fresh = look.Whole || _governed is null || !string.Equals(choices, _choices, StringComparison.Ordinal) || _closer?.Worded() == true;
+            // FABRIC-CUTOVER1c: a start that found its ended run's chain back here asked a pass that judges it on what is there now.
+            var fresh = look.Whole || _governed is null || !string.Equals(choices, _choices, StringComparison.Ordinal) || _closer?.Worded() == true || _freshAsked;
             _readThisPass = fresh;
             var bindings = new List<string>();
             if (fresh)
             {
+                _freshAsked = false;
                 var read = await look.Units(ct).ConfigureAwait(false);
                 var home = records.Home;
                 var kept = _closer is null ? null : (Func<string, NodeGraph?>)(digest => ClosureGraphs.Read(home, digest));
-                (_governed, _choices) = (Govern(look.Config, read, look.Steps(), kept, look.Bound).ToDictionary(each => each.Unit.Id, StringComparer.Ordinal), choices);
+                // FABRIC-CUTOVER1c (the cutover design §3): the runs bound to graph versions, each owed a pass where a start of its chain asked one or
+                // this is the process's first look, which judges every bound run once, so a restart loses nothing.
+                var runs = _graphRuns.Read().Select(run => run with { Asked = _restarted || _returned.ContainsKey(run.Run) }).ToList();
+                (_governed, _choices) = (Govern(look.Config, read, look.Steps(), kept, look.Bound, runs, bindings)
+                    .ToDictionary(each => each.Unit.Id, StringComparer.Ordinal), choices);
+                _restarted = false;
+                foreach (var run in runs) _returned.TryRemove(run.Run, out _);
+                _byTold = ByTold(_governed.Values);
+                bindings.AddRange(LeftBefore(_governed.Values));
                 _quests = Quests(read);
                 LastQuests = _quests;
                 var ends = new Dictionary<string, bool>(StringComparer.Ordinal);
@@ -478,15 +696,20 @@ public sealed class NodeRuntime(
             var answers = heard.Where(each => each.Step.Invocation is not null).ToList();
             foreach (var unit in _performer.UnitsOf([.. answers.Select(each => each.Step.Invocation!)]))
             {
-                if (governed.TryGetValue(unit, out var each) && Tipped(each)) await tips.TipAsync(each.Watched.Root, each.Watched.Branch, ct).ConfigureAwait(false);
+                if (!governed.TryGetValue(unit, out var each)) continue;
+                if (Tipped(each)) await tips.TipAsync(each.Watched.Root, each.Watched.Branch, ct).ConfigureAwait(false);
+                // FABRIC-CUTOVER1c: a run's answer is judged on the branch its attempt was sent for, former subjects included, read once a checkout.
+                else if (each.Scope is { } scope) await tips.ReadAsync(scope.Root, [.. scope.Branches.Select(branch => branch.Subject.Artifact ?? "")], ct).ConfigureAwait(false);
             }
 
-            done.AddRange(_performer.Hear(answers, Performed, unit => governed.TryGetValue(unit, out var each) ? Told(each, tips) : null));
+            // FABRIC-CUTOVER1c (the cutover design §2.4.1): a run's attempt is judged on the unit it was sent for, as its plugin was told it.
+            done.AddRange(_performer.Hear(answers, Performed, (unit, attempt) =>
+                !governed.TryGetValue(unit, out var each) ? null : each.Scope is null ? Told(each, tips) : RunTold(each, attempt, tips)));
             // FABRIC-PERFORM1i: an event naming no invocation is an observed node's, bound to the frame its process was sent and the tips read
             // now, and written before the evaluation below fires its wires. FABRIC-PERFORM1o: one at the tip read now whose node still awaits an
-            // older binding is held, and heard again once the evaluation has rebound the node.
+            // older binding is held, and heard again once the evaluation has rebound the node. FABRIC-CUTOVER1c: a unit told for a run maps to it.
             var lagging = new List<WorkLagging>();
-            done.AddRange(await _observer.HearAsync([.. heard.Where(each => each.Step.Invocation is null)], governed, tips.ReadAsync, ct, lagging).ConfigureAwait(false));
+            done.AddRange(await _observer.HearAsync([.. heard.Where(each => each.Step.Invocation is null)], _byTold, tips.ReadAsync, ct, lagging).ConfigureAwait(false));
             // FABRIC-PERFORM1g: the person's word on a held attempt, applied under the declaration governing now, before any new attempt.
             done.AddRange(_performer.Resolve(Declared));
             // FABRIC-CLOSE1q: the person's word on a held close, a close's recovery, before the closer sends any close again below; FABRIC-CLOSE1q2:
@@ -523,9 +746,9 @@ public sealed class NodeRuntime(
                 await EvaluateAsync(each, sends, done, said, look.Units, tips, git, ct).ConfigureAwait(false);
             }
 
-            await HearAgainAsync(lagging, governed, concerned, sends, done, said, look.Units, tips, git, ct).ConfigureAwait(false);
+            await HearAgainAsync(lagging, _byTold, concerned, sends, done, said, look.Units, tips, git, ct).ConfigureAwait(false);
             if (fresh || done.Count > 0) Prune();
-            var changed = Tell(governed.Values, tips);
+            var changed = Tell(governed.Values, tips, said);
             return new NodeRuntimePass(true, done, [.. concerned.Select(each => each.Unit.Id)], said) { AwaitedChanged = changed };
         }
         finally
@@ -548,6 +771,15 @@ public sealed class NodeRuntime(
         // FABRIC-PERFORM1p: its performed plugin nodes too, so one wired after an observed node starts on the tip that node was reached on.
         var tipped = Tipped(governed);
         var tip = tipped ? await tips.TipAsync(governed.Watched.Root, governed.Watched.Branch, ct).ConfigureAwait(false) : null;
+
+        // FABRIC-CUTOVER1c (the cutover design §2.2): a run's branch-side nodes bind its branch's tip read in the pass, and its gates are read there
+        // (CUTOVER1d); an end its record holds from before its chain came back here lapses, and the run goes on (§3).
+        if (governed.Scope is { } scope)
+        {
+            tip = scope.Branch is { } branch ? await tips.TipAsync(scope.Root, branch.Subject.Artifact ?? "", ct).ConfigureAwait(false) : null;
+            Reopen(governed, scope);
+        }
+
         for (var round = 0; round <= governed.Graph.Nodes.Count; round++)
         {
             if (records.Read(unit) is not { } record)
@@ -560,7 +792,7 @@ public sealed class NodeRuntime(
             // its opinion and look wait on, likewise.
             var reads = await GitReadsAsync(governed, record, git.Git, ct).ConfigureAwait(false);
             var gates = await GatesAsync(governed, record, git.Gates, ct).ConfigureAwait(false);
-            var (before, evaluated) = Evaluate(governed, record, tipped, tip, reads, gates);
+            var (before, evaluated) = governed.Scope is null ? Evaluate(governed, record, tipped, tip, reads, gates) : EvaluateRun(governed, record, tip, reads);
             if (evaluated.Refusal is { } refusal)
             {
                 said.Add($"work  {unit}: its graph was not judged ({refusal}: {string.Join(", ", evaluated.Missing)}), so nothing on it is started.");
@@ -582,7 +814,14 @@ public sealed class NodeRuntime(
                     // next pass reads it again, and no further round reads git again only to find the same stale revision.
                     if (_governed is null) return;
                 }
-                else if (node.Reach == NodeReach.Observed && (Begins(node.Kind) || governed.Observable.Contains(node.Id)))
+                else if (governed.Scope is not null && node.Kind is NodeKinds.Opinion or NodeKinds.Look)
+                {
+                    // FABRIC-CUTOVER1c (the cutover design §3): a run's opinion and look are begun once the doors read its record (CUTOVER1d);
+                    // until then its gates read the version as one that cannot be read here, and a gate node begun would wait on *cannot start*.
+                }
+                else if ((node.Reach == NodeReach.Observed && (Begins(node.Kind) || governed.Observable.Contains(node.Id)))
+                         // FABRIC-CUTOVER1c (§3, a change named): a run's go-ahead is begun though it is pressed, since its answer is D135's record.
+                         || (governed.Scope is not null && node.Kind == NodeKinds.GoAhead))
                 {
                     // FABRIC-PERFORM1m: an observed plugin node whose branch's tip this pass did not read is left as it stands: nothing is
                     // bound on a guess, and the pass that reads the tip begins it there.
@@ -595,8 +834,9 @@ public sealed class NodeRuntime(
                     started |= begun.What == PerformedWhat.Begun;
                 }
                 // FABRIC-PERFORM1p: a performed node whose branch's tip this pass did not read is left ready, as an observed one is: it is sent
-                // on no guess, and the pass that reads the tip sends it there.
-                else if (governed.Dispatchable.Contains(node.Id) && !(tipped && tip is null) && sends.Left > 0
+                // on no guess, and the pass that reads the tip sends it there. FABRIC-CUTOVER1c (the cutover design §3): a run's performed node
+                // is left ready until its doors read the run (CUTOVER1d), so nothing outside acts for a run whose landing every door refuses.
+                else if (governed.Scope is null && governed.Dispatchable.Contains(node.Id) && !(tipped && tip is null) && sends.Left > 0
                          && port.GenerationOf(PluginOf(node.Kind)) is not null && sends.Take())
                 {
                     // FABRIC-CLOSE1s: a bound quest's revision is its chain's and branches', from the last full read, which a wake reuses: a start
@@ -624,6 +864,44 @@ public sealed class NodeRuntime(
 
             if (evaluated.Settled && !started) break;
         }
+
+        if (governed.Scope is { } run) End(governed, run, said);
+    }
+
+    /// <summary>
+    /// A run's end, judged once its pass's rounds are kept (FABRIC-CUTOVER1c; the cutover design §3): its newest quest here names no step still to
+    /// come here, and either its graph's end node is settled or no node of it can move again, with no attempt unsettled. Kept on its record, said
+    /// once; the run then arms nothing until its chain comes back here.
+    /// </summary>
+    private void End(GovernedUnit governed, RunScope scope, List<string> said)
+    {
+        var unit = governed.Unit.Id;
+        if (scope.Quest?.Records.Quest is not { } newest || records.Read(unit) is not { } record || record.Ended?.Quest == newest.Id) return;
+        var repository = scope.Run.Binding.Repository;
+        if (newest.Then.Any(step => step.SetUpIn is null && string.Equals(step.To, repository, StringComparison.OrdinalIgnoreCase))) return;
+        if (record.Attempts.Any(attempt => attempt.State != AttemptStates.Settled || attempt.RetryAt is not null)) return;
+        var settled = !NodeStates.Live.Contains(WorkPerformer.StatusOf(record, governed.Graph.End).State)
+                      || !governed.Graph.Nodes.Any(node => WorkPerformer.StatusOf(record, node.Id).State
+                          is NodeStates.Ready or NodeStates.Active or NodeStates.Unknown or NodeStates.Invalidated);
+        if (!settled) return;
+
+        var ended = new RunEnd(newest.Id, clock());
+        var (refused, _) = records.Edit(unit, current => (current with { Ended = ended }, true));
+        if (refused is not null) return;
+        _graphRuns.Ended(scope.Run.Run, ended);
+        said.Add($"work  {unit}: its run ended at #{newest.Id}: no step of its chain is still to come here, and nothing of its graph moves again; "
+                 + "it is judged again once its chain comes back here.");
+    }
+
+    /// <summary>
+    /// A run governed again after its end (FABRIC-CUTOVER1c; the cutover design §3): its chain came back here, so the end its record holds lapses
+    /// and the run goes on; the new quest moves <c>claimed</c>'s subject, and what rests on it is judged again.
+    /// </summary>
+    private void Reopen(GovernedUnit governed, RunScope scope)
+    {
+        if (records.Read(governed.Unit.Id) is not { Ended: { } ended } || scope.Quest?.Records.Quest?.Id == ended.Quest) return;
+        var (refused, _) = records.Edit(governed.Unit.Id, current => (current.Ended is null ? null : current with { Ended = null }, true));
+        if (refused is null) _graphRuns.Ended(scope.Run.Run, null);
     }
 
     /// <summary>
@@ -659,13 +937,186 @@ public sealed class NodeRuntime(
     }
 
     /// <summary>
+    /// A run's graph evaluated on its own record over its subjects (FABRIC-CUTOVER1c; D190 point 2, the cutover design §2.1, §2.2), as CUTOVER1a's
+    /// core takes them: <c>claimed</c> on its newest work quest here; its gates, <c>handed</c> and a plugin's node before it on its branch at the
+    /// tip read in the pass; what follows <c>handed</c> on the branch it reached on, at that landing's tip as its record keeps it; and its own nodes
+    /// on the run itself, its go-ahead answered by the go-aheads its own sessions and quests asked. A subject not found this pass withholds its
+    /// nodes alone. Pure: what it moves is the caller's to keep.
+    /// </summary>
+    private static (Dictionary<string, NodeStatus> Before, WireEvaluated Evaluated) EvaluateRun(
+        GovernedUnit governed, NodeRecord record, string? tip, NodeGitReads? git)
+    {
+        var scope = governed.Scope!;
+        var self = governed.Unit;
+        var nodes = governed.Graph.Nodes.Select(node => governed.Declared[node.Id]).ToList();
+        var before = nodes.ToDictionary(node => node.Id, node => record.Statuses.GetValueOrDefault(node.Id) ?? NodeLifecycle.Start(self.Id, node.Id), StringComparer.Ordinal);
+        var units = new Dictionary<string, WorkUnit>(StringComparer.Ordinal) { [self.Id] = self };
+        var revisions = new Dictionary<string, string?>(StringComparer.Ordinal) { [self.Id] = null };
+        if (scope.Quest is { } quest) (units[quest.Id], revisions[quest.Id]) = (quest, quest.Subject.Revision);
+        if (scope.Branch is { } branch)
+        {
+            units[branch.Id] = branch;
+            if (tip is not null) revisions[branch.Id] = tip;
+        }
+
+        var landed = Landed(governed, before);
+        if (landed is { } on) units.TryAdd(on.Unit.Id, on.Unit);
+        var subjects = new Dictionary<string, string?>(StringComparer.Ordinal);
+        var own = new Dictionary<string, string?>(StringComparer.Ordinal);
+        foreach (var node in nodes)
+        {
+            switch (SubjectOf(node, scope))
+            {
+                case RunSubject.Quest:
+                    subjects[node.Id] = scope.Quest?.Id;
+                    break;
+                case RunSubject.Landing:
+                    subjects[node.Id] = landed?.Unit.Id;
+                    if (landed is { } at) own[node.Id] = at.Tip;
+                    break;
+                case RunSubject.Branch:
+                    subjects[node.Id] = scope.Branch?.Id;
+                    // A branch whose tip was not read (its tree tidied after its landing): a node bound there keeps its binding's own revision, so
+                    // only a moved subject lapses it (§2.2).
+                    if (tip is null && scope.Branch is { } held && before[node.Id].Binding is { } bound && bound.Observes == held.Id) own[node.Id] = bound.SubjectRevision;
+                    break;
+                default:
+                    // The run itself: left out, so it observes its record's unit, with no revision and no subject named on its binding.
+                    break;
+            }
+        }
+
+        var run = new WireRun(governed.GraphDigest, governed.Run)
+        {
+            Revisions = revisions,
+            Subjects = subjects,
+            NodeRevisions = own,
+            Units = units,
+            Fired = record.Fired.ToHashSet(StringComparer.Ordinal),
+            Git = git,
+            GoAheads = scope.GoAheads is { } asked
+                ? new Dictionary<string, IReadOnlyList<GoAheadView>>(StringComparer.Ordinal) { [self.Id] = asked }
+                : new Dictionary<string, IReadOnlyList<GoAheadView>>(StringComparer.Ordinal),
+        };
+        return (before, WireEvaluation.Evaluate(nodes, governed.Graph.Wires, before, run));
+    }
+
+    /// <summary>The subject a run's node observes (the cutover design §2.2's table): by its kind, and a plugin's or a check's by its place after <c>handed</c>.</summary>
+    private static RunSubject SubjectOf(NodeDeclaration node, RunScope scope) => node.Kind switch
+    {
+        NodeKinds.Claimed or NodeKinds.QuestClose => RunSubject.Quest,
+        NodeKinds.GoAhead or NodeKinds.Human or NodeKinds.WaitUnit or NodeKinds.Stop or NodeKinds.All => RunSubject.Run,
+        NodeKinds.Opinion or NodeKinds.Look or NodeKinds.Handed => RunSubject.Branch,
+        NodeKinds.Pushed or NodeKinds.PullRequest or NodeKinds.Line => RunSubject.Landing,
+        _ => scope.AfterHanded.Contains(node.Id) ? RunSubject.Landing : RunSubject.Branch,
+    };
+
+    /// <summary>
+    /// The landing a run's <c>handed</c> reached on (the cutover design §2.2): the branch unit its reach names and the tip its evidence names, the
+    /// landing's own, which what follows binds; null while it is not reached, or its branch was not read.
+    /// </summary>
+    private static (WorkUnit Unit, string Tip)? Landed(GovernedUnit governed, IReadOnlyDictionary<string, NodeStatus> statuses)
+    {
+        if (governed.Scope is not { } scope || governed.Graph.Nodes.FirstOrDefault(node => node.Kind == NodeKinds.Handed) is not { } handed) return null;
+        if (statuses.GetValueOrDefault(handed.Id) is not { State: NodeStates.Reached, Acceptance: { Subject: { } subject, Evidence.Revision: { } tip } }) return null;
+        var unit = scope.Branch?.Id == subject ? scope.Branch : scope.Branches.FirstOrDefault(each => each.Id == subject);
+        return unit is null ? null : (unit, tip);
+    }
+
+    /// <summary>
+    /// The frame a run's plugin is told an attempt under (FABRIC-CUTOVER1c; the cutover design §2.4.1): a node after <c>handed</c>'s, the landed
+    /// branch at the landing's tip; any other, the branch its call was sent for, at the tip this pass read, a branch the run has since left included,
+    /// so its answer still reaches the run's record. Null where that branch is not the run's.
+    /// </summary>
+    private WatchedUnit? RunTold(GovernedUnit governed, NodeAttempt attempt, PassTips tips)
+    {
+        var scope = governed.Scope!;
+        if (scope.AfterHanded.Contains(attempt.Node))
+        {
+            return records.Read(governed.Unit.Id) is { } record ? LandedFrame(governed, record) : null;
+        }
+
+        var branch = scope.Branch?.Id == attempt.Call.Unit ? scope.Branch : scope.Branches.FirstOrDefault(each => each.Id == attempt.Call.Unit);
+        return branch is null ? null : BranchFrame(governed, branch, tips);
+    }
+
+    /// <summary>A run's branch as its plugins are told it (the cutover design §2.4.1): under its branch unit, at the tip this pass read, else the one told before.</summary>
+    private WatchedUnit BranchFrame(GovernedUnit governed, WorkUnit branch, PassTips tips)
+    {
+        var scope = governed.Scope!;
+        var name = branch.Subject.Artifact ?? "";
+        var tip = tips.Known(scope.Root, name) ?? _tipsTold.GetValueOrDefault(branch.Id) ?? branch.Subject.Revision ?? "";
+        return new WatchedUnit(governed.Watched.Repository, governed.Watched.Workspace, scope.Root, name, tip, null, null, [])
+        {
+            Unit = branch.Id, Identity = scope.Identity,
+        };
+    }
+
+    /// <summary>
+    /// The landed branch a run's node after <c>handed</c> is told (the cutover design §2.4.1): the branch its landing made, at the landing's tip,
+    /// under the run's branch unit, marked so an event is judged on that tip; null while <c>handed</c> is not reached.
+    /// </summary>
+    private static WatchedUnit? LandedFrame(GovernedUnit governed, NodeRecord record)
+    {
+        if (Landed(governed, record.Statuses) is not { } landed) return null;
+        var (unit, tip) = landed;
+        var landing = unit.Records.Landings.LastOrDefault(each => each.Tip == tip);
+        if (landing is null) return null;
+        var scope = governed.Scope!;
+        return new WatchedUnit(governed.Watched.Repository, governed.Watched.Workspace, scope.Root, landing.Branch, tip, landing.Line, landing.PullRequest, [])
+        {
+            Unit = unit.Id, Identity = scope.Identity, Landing = true,
+        };
+    }
+
+    /// <summary>
+    /// What a fresh read says of the records Current's graphs wrote on a run's quests and branches before the run was bound to a graph version
+    /// (FABRIC-CUTOVER1c; the cutover design §2.3): each left as it stands, no graph governing it now, so an attempt on it not settled is held for
+    /// the person as a removed graph's is; one line each, once a look.
+    /// </summary>
+    private IEnumerable<string> LeftBefore(IEnumerable<GovernedUnit> governed)
+    {
+        foreach (var each in governed.Where(each => each.Scope is not null))
+        {
+            var units = each.Scope!.Quests.Select(quest => QuestUnits.IdOf(quest.Id)).Concat(each.Scope.Branches.Select(branch => branch.Id));
+            foreach (var unit in units.Distinct(StringComparer.Ordinal))
+            {
+                if (!File.Exists(NodeRecordFiles.PathOf(records.Home, unit))) continue;
+                if (records.Read(unit) is { } left && left.Attempts.All(attempt => attempt.State == AttemptStates.Settled)) continue;
+                yield return $"work  {unit}: a record Current's graphs wrote on it before its run `{each.Run}` was bound to a graph version is left as "
+                             + "it stands; nothing governs it now, so what it holds unsettled waits for you.";
+            }
+        }
+    }
+
+    /// <summary>
+    /// The governed units by each unit their plugins are told under (FABRIC-CUTOVER1c; the cutover design §2.4.1): a unit's own, and each branch a
+    /// run's quests produced, its former subjects included, mapped back to the run, as the read that keeps Current off them maps it.
+    /// </summary>
+    private static Dictionary<string, GovernedUnit> ByTold(IEnumerable<GovernedUnit> governed)
+    {
+        var told = new Dictionary<string, GovernedUnit>(StringComparer.Ordinal);
+        foreach (var each in governed)
+        {
+            told.TryAdd(each.Unit.Id, each);
+            foreach (var unit in each.Scope?.Told ?? []) told.TryAdd(unit, each);
+        }
+
+        return told;
+    }
+
+    /// <summary>
     /// The gates a unit's <c>opinion</c> and <c>look</c> observe (FABRIC-RUN1c; WIRE1g, WIRE1h, NODE1b): read through the pass's one read of the
     /// unit, and only where one of them is active or unknown on its record, so a unit whose graph holds neither, or whose gates are settled,
     /// asks nothing. Nothing read leaves both null, and the nodes wait.
     /// </summary>
+    /// <remarks>
+    /// FABRIC-CUTOVER1c (the cutover design §3): a run's gates are read for none of its nodes until its doors read it (CUTOVER1d), which then reads
+    /// its branch's at the pass's tip (§2.2); before that a gate read would answer *cannot start*, and cost each pass a read per run.
+    /// </remarks>
     private static async Task<(OpinionGateState? Opinion, ReviewGateState? Review)> GatesAsync(
         GovernedUnit governed, NodeRecord record, PassGates gates, CancellationToken ct) =>
-        governed.Graph.Nodes.Any(node => node.Kind is NodeKinds.Opinion or NodeKinds.Look
+        governed.Scope is null && governed.Graph.Nodes.Any(node => node.Kind is NodeKinds.Opinion or NodeKinds.Look
             && record.Statuses.GetValueOrDefault(node.Id)?.State is NodeStates.Active or NodeStates.Unknown)
             ? await gates.OfAsync(governed.Unit, ct).ConfigureAwait(false)
             : default;
@@ -682,7 +1133,9 @@ public sealed class NodeRuntime(
     /// </summary>
     private static async Task<NodeGitReads?> GitReadsAsync(GovernedUnit governed, NodeRecord record, PassGit git, CancellationToken ct)
     {
-        if (governed.Unit.Kind != WorkUnitKind.Branch || BuiltInNodes.LandingOf(governed.Unit) is not { } landing) return null;
+        // FABRIC-CUTOVER1c (the cutover design §2.2): a run's `pushed` and `pull-request` observe its branch at the landing `handed` reached on.
+        var unit = governed.Scope is null ? governed.Unit : Landed(governed, record.Statuses)?.Unit;
+        if (unit?.Kind != WorkUnitKind.Branch || BuiltInNodes.LandingOf(unit) is not { } landing) return null;
         bool Waits(string kind) => governed.Graph.Nodes.Any(node => node.Kind == kind
             && record.Statuses.GetValueOrDefault(node.Id)?.State is NodeStates.Active or NodeStates.Unknown);
 
@@ -701,9 +1154,10 @@ public sealed class NodeRuntime(
     private static Dictionary<string, IReadOnlyCollection<string>> Pushing(IEnumerable<GovernedUnit> governed)
     {
         var branches = new Dictionary<string, IReadOnlyCollection<string>>(StringComparer.Ordinal);
-        var pushing = governed.Where(each => each.Unit.Kind == WorkUnitKind.Branch && each.Watched.Root.Length > 0
+        var pushing = governed.Where(each => each.Unit.Kind is WorkUnitKind.Branch or WorkUnitKind.Run && each.Watched.Root.Length > 0
                 && each.Graph.Nodes.Any(node => node.Kind == NodeKinds.Pushed))
-            .Select(each => (each.Watched.Root, Landing: BuiltInNodes.LandingOf(each.Unit)))
+            // FABRIC-CUTOVER1c: a run's landed branches are its branches' landings, each read once a checkout with the rest.
+            .SelectMany(each => (each.Scope?.Branches ?? [each.Unit]).Select(unit => (each.Watched.Root, Landing: BuiltInNodes.LandingOf(unit))))
             .Where(each => each.Landing is { } landing && BuiltInNodes.AsksRemote(landing));
         foreach (var same in pushing.GroupBy(each => each.Root, StringComparer.Ordinal))
         {
@@ -1039,9 +1493,11 @@ public sealed class NodeRuntime(
     }
 
     /// <summary>Whether a unit's record holds one of its dispatchable nodes ready: a start owed, judged at a wake as well as at the look.</summary>
+    /// <remarks>FABRIC-CUTOVER1c: a run's performed node is started by none of its passes until CUTOVER1d, so a ready one owes nothing yet.</remarks>
     private bool OwesStart(GovernedUnit governed) =>
         records.Read(governed.Unit.Id) is { } record
-        && governed.Dispatchable.Concat(governed.Observable).Any(node => record.Statuses.GetValueOrDefault(node)?.State == NodeStates.Ready);
+        && (governed.Scope is null ? governed.Dispatchable.Concat(governed.Observable) : governed.Observable)
+            .Any(node => record.Statuses.GetValueOrDefault(node)?.State == NodeStates.Ready);
 
     /// <summary>
     /// Whether a unit's plugin nodes bind to its branch's tip read in the pass (FABRIC-PERFORM1m), its plugins are told that tip and an answer
@@ -1070,6 +1526,19 @@ public sealed class NodeRuntime(
     /// </summary>
     private async Task<bool> RebindsAsync(GovernedUnit governed, PassTips tips, CancellationToken ct)
     {
+        // FABRIC-CUTOVER1c: a run's observed node before `handed` binds its branch's tip, and rebinds when that branch moves, as a branch unit's.
+        if (governed.Scope is { Branch: { } branch } scope)
+        {
+            if (records.Read(governed.Unit.Id) is not { } held) return false;
+            var bound = governed.Observable.Where(node => !scope.AfterHanded.Contains(node))
+                .Select(node => held.Statuses.GetValueOrDefault(node))
+                .Where(status => status is { State: NodeStates.Active, Binding: { } binding } && binding.Observes == branch.Id)
+                .Select(status => status!.Binding!.SubjectRevision).OfType<string>().ToList();
+            if (bound.Count == 0) return false;
+            var moved = await tips.TipAsync(scope.Root, branch.Subject.Artifact ?? "", ct).ConfigureAwait(false);
+            return moved is not null && bound.Any(revision => !string.Equals(revision, moved, StringComparison.Ordinal));
+        }
+
         if (!Tipped(governed) || records.Read(governed.Unit.Id) is not { } record) return false;
         var awaiting = governed.Observable.Select(node => record.Statuses.GetValueOrDefault(node)?.Binding is { } binding
                 && record.Statuses[node].State == NodeStates.Active ? binding.SubjectRevision : null)
@@ -1122,7 +1591,9 @@ public sealed class NodeRuntime(
     private static Dictionary<string, IReadOnlyCollection<string>> Observing(IEnumerable<GovernedUnit> governed)
     {
         var branches = new Dictionary<string, IReadOnlyCollection<string>>(StringComparer.Ordinal);
-        foreach (var same in governed.Where(Tipped).Where(each => each.Watched.Root.Length > 0).GroupBy(each => each.Watched.Root, StringComparer.Ordinal))
+        // FABRIC-CUTOVER1c: a run's branch too, whose tip its branch-side nodes bind, read with the rest of its checkout.
+        foreach (var same in governed.Where(each => Tipped(each) || each.Scope is { Branch: not null }).Where(each => each.Watched.Root.Length > 0)
+                     .GroupBy(each => each.Watched.Root, StringComparer.Ordinal))
         {
             branches[same.Key] = same.Select(each => each.Watched.Branch).Where(branch => branch.Length > 0).Distinct(StringComparer.Ordinal).ToList();
         }
@@ -1135,7 +1606,12 @@ public sealed class NodeRuntime(
     /// unknown, or an attempt still waiting for its answer, under that node's plugin and step; and the next timer the records persist.
     /// Returns whether the set differs from the one told before. A tipped unit is told the tip its pass read (FABRIC-PERFORM1p, <see cref="Told"/>).
     /// </summary>
-    private bool Tell(IEnumerable<GovernedUnit> governed, PassTips tips)
+    /// <remarks>
+    /// FABRIC-CUTOVER1c (the cutover design §2.4.1): a run's plugin nodes are told under their subject's unit, never <c>run:</c>: before
+    /// <c>handed</c> its branch at the tip read, after it the landed branch at the landing's tip; a performed one only while an attempt waits, its
+    /// start being CUTOVER1d's. One landed branch told at one tip for two runs is told for neither, and <paramref name="said"/> says so.
+    /// </remarks>
+    private bool Tell(IEnumerable<GovernedUnit> governed, PassTips tips, List<string> said)
     {
         var awaited = new SortedDictionary<string, List<WatchedUnit>>(StringComparer.Ordinal);
         var tipsTold = new Dictionary<string, string>(StringComparer.Ordinal);
@@ -1145,27 +1621,27 @@ public sealed class NodeRuntime(
             if (at is { } moment && (due is null || moment < due)) due = moment;
         }
 
+        var entries = new List<(string Plugin, string Step, WatchedUnit Frame, string Owner)>();
         foreach (var each in governed)
         {
             if (TipOf(each, tips) is { } tip) tipsTold[each.Unit.Id] = tip;
+            if (each.Scope is { Branch: { } branch } scope && tips.Known(scope.Root, branch.Subject.Artifact ?? "") is { } read) tipsTold[branch.Id] = read;
             if (records.Read(each.Unit.Id) is not { } record) continue;
-            var steps = new SortedDictionary<string, SortedSet<string>>(StringComparer.Ordinal);
             foreach (var id in each.Dispatchable.Concat(each.Observable))
             {
                 // FABRIC-PERFORM1i: an observed node is published once begun, never while ready, so an event never precedes its start.
                 var waiting = record.Attempts.Any(attempt => attempt.Node == id && attempt.State is AttemptStates.Recorded or AttemptStates.Sent or AttemptStates.Unknown);
                 var state = record.Statuses.GetValueOrDefault(id)?.State;
-                if (each.Observable.Contains(id) ? state != NodeStates.Active : !waiting && state is not (NodeStates.Ready or NodeStates.Active or NodeStates.Unknown)) continue;
+                if (each.Observable.Contains(id) ? state != NodeStates.Active
+                    : !waiting && (each.Scope is not null || state is not (NodeStates.Ready or NodeStates.Active or NodeStates.Unknown)))
+                {
+                    continue;
+                }
+
+                if ((each.Scope is null ? Told(each, tips) : RunFrame(each, record, id, tips)) is not { } frame) continue;
                 var kind = each.Declared[id].Kind;
                 var plugin = PluginOf(kind);
-                if (!steps.TryGetValue(plugin, out var named)) steps[plugin] = named = new SortedSet<string>(StringComparer.Ordinal);
-                named.Add(kind[(plugin.Length + 1)..]);
-            }
-
-            foreach (var (plugin, named) in steps)
-            {
-                if (!awaited.TryGetValue(plugin, out var units)) awaited[plugin] = units = [];
-                units.Add(Told(each, tips) with { Awaiting = [.. named] });
+                entries.Add((plugin, kind[(plugin.Length + 1)..], frame, each.Unit.Id));
             }
 
             foreach (var attempt in record.Attempts)
@@ -1173,6 +1649,29 @@ public sealed class NodeRuntime(
                 Due(attempt.RetryAt);
                 if (attempt.State is AttemptStates.Recorded or AttemptStates.Unknown or AttemptStates.Sent) Due(attempt.AskAt);
                 if (attempt.State == AttemptStates.Sent && attempt.AskAt is null) Due(attempt.Call.DeadlineAt);
+            }
+        }
+
+        // FABRIC-CUTOVER1c (the cutover design §2.4.1): a landing carrying two runs' work told at one tip for both is told for neither, said; the
+        // person's skip passes what waits on it (CUTOVER1f), and the observer's `not-watched` stays the backstop.
+        var shared = entries.Where(entry => entry.Frame.Landing)
+            .GroupBy(entry => (entry.Frame.Identity, entry.Frame.Branch, entry.Frame.Tip))
+            .Where(same => same.Select(entry => entry.Owner).Distinct(StringComparer.Ordinal).Count() > 1).ToList();
+        foreach (var same in shared)
+        {
+            var line = $"work  {string.Join(", ", same.Select(entry => entry.Owner).Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal))}: "
+                       + $"`{same.Key.Branch}` was landed at {TextBounds.ShortCommit(same.Key.Tip, 8)} carrying each one's work, so neither is told it, and "
+                       + "what follows that landing in each waits for your skip.";
+            if (!said.Contains(line, StringComparer.Ordinal)) said.Add(line);
+        }
+
+        var dropped = shared.SelectMany(same => same).ToHashSet();
+        foreach (var plugin in entries.Where(entry => !dropped.Contains(entry)).GroupBy(entry => entry.Plugin, StringComparer.Ordinal))
+        {
+            var units = awaited[plugin.Key] = [];
+            foreach (var frame in plugin.GroupBy(entry => $"{entry.Frame.Unit}\n{entry.Frame.Branch}\n{entry.Frame.Tip}\n{entry.Frame.Landing}", StringComparer.Ordinal))
+            {
+                units.Add(frame.First().Frame with { Awaiting = [.. frame.Select(entry => entry.Step).Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal)] });
             }
         }
 
@@ -1198,6 +1697,25 @@ public sealed class NodeRuntime(
         var changed = !string.Equals(text, _toldText, StringComparison.Ordinal);
         _toldText = text;
         return changed;
+    }
+
+    /// <summary>
+    /// The frame a run's plugin node is told under (FABRIC-CUTOVER1c; the cutover design §2.4.1): one after <c>handed</c>, the landed branch at its
+    /// landing's tip; an attempt waiting, the branch it was sent for; any other, the branch its binding observes, else the run's branch. Null where
+    /// none is found this pass, and it is told nothing.
+    /// </summary>
+    private WatchedUnit? RunFrame(GovernedUnit governed, NodeRecord record, string node, PassTips tips)
+    {
+        var scope = governed.Scope!;
+        if (scope.AfterHanded.Contains(node)) return LandedFrame(governed, record);
+        if (record.Attempts.LastOrDefault(attempt => attempt.Node == node && attempt.State is AttemptStates.Recorded or AttemptStates.Sent or AttemptStates.Unknown) is { } waiting)
+        {
+            return RunTold(governed, waiting, tips);
+        }
+
+        var observes = record.Statuses.GetValueOrDefault(node)?.Binding?.Observes;
+        var branch = observes is null || scope.Branch?.Id == observes ? scope.Branch : scope.Branches.FirstOrDefault(each => each.Id == observes);
+        return branch is null ? null : BranchFrame(governed, branch, tips);
     }
 
     /// <summary>The awaited set last told, as text: what <see cref="NodeRuntimePass.AwaitedChanged"/> compares.</summary>

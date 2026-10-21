@@ -8,13 +8,14 @@ namespace Daoris.Driver;
 /// plugin with a record is updated from it.
 /// </summary>
 /// <remarks>
-/// <para><b>A twin of the CLI's <c>plugins.ts</c></b> (`.claude/knowledge/twins.md`): the same refusals in
-/// the same words, a copy staged beside and renamed in, links neither followed nor copied, and the data
-/// folder untouched. They share no code, and each side's tests hold the same table.</para>
+/// <para><b>Once a twin of the CLI's <c>plugins.ts</c></b>, which left with <c>daoris plugin</c>'s TypeScript (PUSH1f2f): the same
+/// refusals in the same words, a copy staged beside and renamed in, links neither followed nor copied, and the data
+/// folder untouched, all held by <c>fixtures/plugins-text.json</c> since <c>daoris plugin</c> is <c>daoris-driver plugin</c>.</para>
 ///
-/// <para><b>One difference, deliberate:</b> this adds, and never replaces an installed plugin. Replacing
-/// one wholesale is <c>daoris plugin add</c>'s at a terminal; a proposal that could overwrite an installed
-/// plugin from a checkout would change what runs under a card that said it adds.</para>
+/// <para><b>One difference, deliberate:</b> <see cref="Add(string, string, IEnumerable{string})"/> adds, and never replaces an
+/// installed plugin. Replacing one wholesale is <c>daoris plugin add</c>'s at a terminal, <see cref="Replace"/>, which no route
+/// takes; a proposal that could overwrite an installed plugin from a checkout would change what runs under a card that said it
+/// adds.</para>
 ///
 /// <para>🔴 <b>Nothing a plugin declares is started here.</b> Adding copies a folder; the driver loop
 /// starts a hook at its next look, as it does any plugin, and a harness or a server runs only with a
@@ -300,10 +301,105 @@ public static class PluginInstall
         return plan;
     }
 
+    /// <summary>
+    /// Copy a plugin in over the installed one of its id, as <c>daoris plugin add</c> does at a terminal (PUSH1f2f, the terminal's replace
+    /// kept as the host's): judged as an add, staged beside, the record written into the copy, the installed folder moved aside WHOLE and
+    /// the copy renamed into place. <c>.data/</c> is its sibling and never touched. No route takes it: the window's add adds and never
+    /// replaces. 🔴 Nothing is stopped or started: a process holding the folder makes the move fail, and nothing is taken.
+    /// </summary>
+    /// <exception cref="DriverException">Refused, or its folder is held open; the installed version is untouched.</exception>
+    public static PluginManifest Replace(string home, string folder, PluginSource source, IEnumerable<string> reservedHarnesses)
+    {
+        if (Placement(home, folder) is { } misplaced) throw new DriverException($"{misplaced} Nothing was copied.");
+        var (read, refusal) = Read(folder, reservedHarnesses);
+        if (refusal is not null) throw new DriverException($"{refusal} Nothing was copied.");
+        var manifest = read!;
+
+        var root = DaorisHome.Entry(home, HomeEntry.Plugins);
+        var target = Path.Combine(root, manifest.Id);
+        var stamp = Guid.NewGuid().ToString("N");
+        var staging = Path.Combine(root, $".adding-{manifest.Id}-{stamp}");
+        var aside = Path.Combine(root, $".removing-{manifest.Id}-{stamp}");
+        try
+        {
+            PluginFolders.Make(root);
+            PluginFolders.CopyTree(folder, staging);
+            PluginSource.Write(staging, source);
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+        {
+            PluginFolders.Forget(staging);
+            throw new DriverException($"`{manifest.Id}` was not replaced: {error.Message} The installed version is untouched.");
+        }
+
+        try
+        {
+            PluginFolders.Move(target, aside);
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+        {
+            PluginFolders.Forget(staging);
+            throw new DriverException(
+                $"`{manifest.Id}` was not replaced: something on this machine still has its folder open — a running desktop's hook "
+                + $"process, most likely. `daoris plugin disable {manifest.Id}`, give the desktop a moment to stop it, then add it again. "
+                + "The installed version is untouched.");
+        }
+
+        try
+        {
+            PluginFolders.MoveInto(staging, target);
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+        {
+            PluginFolders.Move(aside, target);
+            PluginFolders.Forget(staging);
+            throw new DriverException($"`{manifest.Id}` was not replaced: {error.Message} The installed version is untouched.");
+        }
+
+        // A dot-folder is never read as a plugin, so one that cannot be deleted now is nobody's.
+        PluginFolders.Forget(aside);
+        return manifest;
+    }
+
+    /// <summary>
+    /// Take an installed plugin out (PUSH1f2f, the route's remove taken out as an operation): its install folder moved aside WHOLE, then
+    /// deleted, and its disabled row cleared so a re-add starts on; what it kept, <c>.data/&lt;id&gt;</c>, stays and is the person's. Answers
+    /// the plugin as it was. 🔴 Nothing is stopped here: <c>PLUGIN_ACTION</c> stops the plugin's process first, and alone no Daoris runs
+    /// one; a process still holding the folder (a headless loop's) makes the move fail, refused as <see cref="PluginCodes.Busy"/> with
+    /// nothing taken.
+    /// </summary>
+    /// <exception cref="PluginRefusal">Not installed (<see cref="PluginRefusal.Unknown"/>), or its folder held (<see cref="PluginRefusal.Busy"/>).</exception>
+    public static PluginEntry Remove(string home, string id)
+    {
+        var entry = PluginCatalog.Load(home).Plugins.FirstOrDefault(plugin => string.Equals(plugin.Manifest.Id, id, StringComparison.OrdinalIgnoreCase))
+            ?? throw new PluginRefusal(PluginRefusal.Unknown, $"no plugin `{id}` on this machine.", ("id", id));
+
+        // 🔴 Moved aside WHOLE, then deleted (REV3): on Windows a running hook holds its folder, and a recursive delete took every file it
+        // could before failing, stranding a plugin with no manifest.
+        var aside = Path.Combine(Path.GetDirectoryName(entry.Folder)!, $".removing-{entry.Manifest.Id}-{Guid.NewGuid():N}");
+        try
+        {
+            PluginFolders.Move(entry.Folder, aside);
+        }
+        catch (Exception held) when (held is IOException or UnauthorizedAccessException)
+        {
+            throw new PluginRefusal(
+                PluginRefusal.Busy,
+                $"`{entry.Manifest.Id}` was not removed: something on this machine still has a file in its folder open. Close it, or wait "
+                + "for the plugin's own process to end, and remove it again. Nothing was taken.",
+                ("id", entry.Manifest.Id));
+        }
+
+        // Aside is a dot-folder, which the catalogue never reads, so a delete that cannot finish leaves nothing that looks like a plugin.
+        PluginFolders.Forget(aside);
+        PluginState.Enable(home, entry.Manifest.Id);
+        return entry;
+    }
+
     /// <summary>What an update changes, from what is installed to what the source now holds, each as written (<see cref="PluginChange.Between"/>).</summary>
     public static IReadOnlyList<PluginChange> Changes(PluginManifest was, PluginManifest now) => PluginChange.Between(was, now);
 
-    private static string NotAnId(string id) =>
+    internal static string NotAnId(string id) =>
         $"`{id}` is not a plugin id — one is lowercase letters, digits, dots and dashes, like `acme.quiet-hours`; "
         + "`daoris plugin list` shows what there is.";
 

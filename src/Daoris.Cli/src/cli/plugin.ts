@@ -1,7 +1,5 @@
 import type { CliCommand } from '../platform/types.ts';
-import { daorisHome } from '../platform/home.ts';
-import { commandPlugin } from '../plugins/plugins.ts';
-import { instanceDoor } from '../service/service.ts';
+import { runDriverProgram } from '../platform/driverprogram.ts';
 
 export const command: CliCommand = {
   name: 'plugin',
@@ -22,7 +20,9 @@ export const command: CliCommand = {
     '                                                   `daoris-driver plugins new|try`,',
     '                                                   which starts plugins as the driver does',
   ],
-  // RPC1f: a change is the Plugins place's route while Daoris runs on this home, through the one module that reaches its pipe,
-  // and this verb's own act under the home's lease when none does.
-  run: (args) => commandPlugin(args, instanceDoor({ home: daorisHome(), write: args.write })),
+  // The family is Daoris's driver program's whole since PUSH1f2f (D194 point 1, the alone-path design §5): `daoris-driver plugin` with
+  // the same words, every verb, the program saying its usage for one it does not have. This writes nothing before it starts. The
+  // program is the verb: the running Daoris's client where a route takes the change, its own act under the home's lease where none
+  // does or no Daoris runs, and an add over an installed plugin its replace alone.
+  run: (args) => (args.driverProgram ?? ((family, words) => runDriverProgram(family, words)))('plugin', args.argv),
 };

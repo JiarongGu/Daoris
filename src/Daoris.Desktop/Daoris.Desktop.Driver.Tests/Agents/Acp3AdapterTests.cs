@@ -282,11 +282,12 @@ public sealed class Acp3AdapterTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 <b>This set and the CLI's `TOOLCHAINS` are twins, and the risk is not membership.</b> The
-    /// two differ on purpose — managing a tool and spawning sessions on it are different questions
-    /// (D23), which is why the CLI has `codex` with no adapter. What must never differ is a shared
-    /// NAME's descriptor: the CLI probing one binary while the driver spawns another is a
-    /// `harness list` reporting on a program nothing runs, and it reads as correct from both sides.
+    /// 🔴 <b>This set and the CLI's `TOOLCHAINS` were twins, and the risk was never membership.</b> The
+    /// two differed on purpose — managing a tool and spawning sessions on it are different questions
+    /// (D23), which is why the CLI had `codex` with no adapter. What must never differ is a shared
+    /// NAME's descriptor: one door probing one binary while another spawns a second is an
+    /// `agent list` reporting on a program nothing runs. Since PUSH1f2f the driver declares each alone
+    /// (`TOOLCHAINS` left with the CLI's last family), and these rows pin what it declares.
     /// </summary>
     /// <remarks>
     /// The binaries are pinned on both sides rather than compared across a language boundary — the
@@ -344,8 +345,7 @@ public sealed class Acp3AdapterTests : IDisposable
 
         Assert.All(real, name => Assert.True(
             pinned.Contains(name),
-            $"`{name}` names a binary the driver spawns and is pinned by no twin row — so the CLI's "
-            + "TOOLCHAINS could describe a different program under the same name and both sides would "
-            + "read as correct."));
+            $"`{name}` names a binary the driver spawns and is pinned by no row — so its descriptor could "
+            + "change to a different program under the same name and read as correct."));
     }
 }

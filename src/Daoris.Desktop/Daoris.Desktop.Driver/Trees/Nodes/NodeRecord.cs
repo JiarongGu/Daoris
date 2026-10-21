@@ -160,7 +160,21 @@ public sealed record NodeHistory(DateTimeOffset At, string Why, NodeStatus Was);
 /// <param name="State">Reached or failed: an unknown establishes nothing and is not kept.</param>
 /// <param name="At">When the plugin says it happened.</param>
 /// <param name="Node">The node it was taken for.</param>
-public sealed record ObservedEvent(string Plugin, string Repository, string Step, string Commit, string Id, string State, DateTimeOffset At, string Node);
+public sealed record ObservedEvent(string Plugin, string Repository, string Step, string Commit, string Id, string State, DateTimeOffset At, string Node)
+{
+    /// <summary>
+    /// The unit it was told under where that is not its record's (FABRIC-CUTOVER1c; the cutover design §2.2): on a run's record, the subject its
+    /// node observed, so a branch at the same commit inherits no replay or late refusal from the one it replaced. Null on a unit's own record,
+    /// and on every event kept before.
+    /// </summary>
+    public string? Subject { get; init; }
+}
+
+/// <summary>
+/// Where a run bound to a graph version ended (FABRIC-CUTOVER1c; the cutover design §3): its newest quest here when its end was judged, and
+/// when. Kept by the runtime on the run's record; a quest of its chain coming back here moves it, and the run goes on.
+/// </summary>
+public sealed record RunEnd(string Quest, DateTimeOffset At);
 
 /// <summary>
 /// A unit's node record (FABRIC-PERFORM1b; §E7, <i>unit records keep §D6's attempts</i>): every node's status on the unit, the attempts
@@ -192,6 +206,9 @@ public sealed record NodeRecord(string Unit)
     /// replay is known by and a later event is ordered against. A record written before them reads with none.
     /// </summary>
     public IReadOnlyList<ObservedEvent> Observations { get; init; } = [];
+
+    /// <summary>A run's end (FABRIC-CUTOVER1c), which only a run's record holds; null while it goes on, and on every unit's record.</summary>
+    public RunEnd? Ended { get; init; }
 
     /// <summary>The attempt an invocation names, or null.</summary>
     public NodeAttempt? Invoked(string invocation) =>

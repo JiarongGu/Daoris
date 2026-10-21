@@ -607,10 +607,13 @@ test('the guards recognise every spelling of the primitives they hold', () => {
   }
 });
 
-/** The one module permitted to spawn. Doctrine commands must not reach it either (below). */
-const SPAWNS = cliSource('toolchain.ts');
+/**
+ * The one module permitted to spawn: the seam that starts Daoris's driver program (PUSH1f2f renamed it from `toolchain.ts` when the
+ * agents' declarations left with the last family's TypeScript). Doctrine commands must not reach it either (below).
+ */
+const SPAWNS = cliSource('driverprogram.ts');
 
-test('only the toolchain may spawn a process', () => {
+test('only the seam may spawn a process', () => {
   for (const dir of ['src', 'bin']) {
     for (const file of listFiles(join(cliRoot, dir), (n) => n.endsWith('.ts') || n.endsWith('.mjs'))) {
       if (file === SPAWNS) continue;
@@ -622,29 +625,29 @@ test('only the toolchain may spawn a process', () => {
 });
 
 /**
- * One answer for Daoris and every child (TOOLS5, D121 §2.4): the toolchain starts every child in ONE place,
- * `startChild`, and that place hands the child the tools' environment through `tools.ts` — the driver's
- * `EveryChildIsHandedTheToolsTests` holds the same of its own starts. A second `spawnSync` would be a child that
- * runs whatever PATH it inherited.
+ * One start (TOOLS5, D121 §2.4, as PUSH1f2f leaves it): the seam starts its one child, Daoris's driver program, in ONE place,
+ * `startChild`, with the terminal's environment exactly. The program hands its own children the tools (the driver's
+ * `EveryChildIsHandedTheToolsTests`), and its `agent install` finds the machine's npm on the PATH it inherited, so a managed node's
+ * first would install the agent into the managed node's folder. A second `spawnSync`, or a start that rewrote the environment, would
+ * be a child this package started on its own.
  */
-test('every child the toolchain starts is started in one place, with the tools’ environment', () => {
+test('the seam starts its one child in one place, from runDriverProgram, with the terminal’s environment exactly', () => {
   const source = readText(join(cliRoot, 'src', SPAWNS));
   const calls = [...source.matchAll(/\bspawnSync\(/g)];
   assert.equal(calls.length, 1, `${SPAWNS} calls spawnSync ${calls.length} times — every child starts through startChild`);
 
   const start = source.indexOf('function startChild(');
   assert.ok(start >= 0 && start < calls[0]!.index!, 'the one spawnSync is inside startChild');
-  const body = source.slice(start, calls[0]!.index!).replace(/\/\/[^\n]*/g, '');
-  assert.match(body, /\bhandTools\(/, 'startChild hands the child the tools’ environment');
-  assert.match(source, /import \{[^}]*\bhandTools\b[^}]*\} from '(?:\.\.?\/)+(?:[\w-]+\/)*tools\.ts';/);
+  const body = source.slice(start, source.indexOf('\n}\n', start)).replace(/\/\/[^\n]*/g, '');
+  assert.match(body, /spawnSync\(file, argv, \{ \.\.\.options, env, /, 'startChild hands the child the environment it was given');
+  assert.doesNotMatch(source, /\bhandTools\b|tools\.ts'/, 'nothing here hands a child the tools’ environment');
 
-  // The one exception (PUSH1f2a, D194 point 1): Daoris's driver program is started with the terminal's environment exactly, since it
-  // hands its own children the tools and its `agent install` finds the machine's npm on the PATH it inherited. Only the seam asks it.
-  const exact = [...source.matchAll(/\bexact: true\b/g)];
-  assert.equal(exact.length, 1, `${SPAWNS} asks startChild for an exact environment ${exact.length} times — only runDriverProgram may`);
+  // Only the seam starts a child: startChild is asked once, inside runDriverProgram.
+  const asked = [...source.matchAll(/(?<!function )\bstartChild\(/g)];
+  assert.equal(asked.length, 1, `${SPAWNS} asks startChild ${asked.length} times — only runDriverProgram may`);
   const seam = source.indexOf('export function runDriverProgram(');
   const after = source.indexOf('\n}\n', seam);
-  assert.ok(seam > 0 && exact[0]!.index! > seam && exact[0]!.index! < after, 'the exact environment is asked inside runDriverProgram alone');
+  assert.ok(seam > 0 && asked[0]!.index! > seam && asked[0]!.index! < after, 'the start is asked inside runDriverProgram alone');
 });
 
 test('only the service client may touch the network', () => {
@@ -694,9 +697,9 @@ test('nothing a doctrine command reaches can import the service client', () => {
 });
 
 /**
- * The same guarantee, one door further out (D49 §4). `toolchain.ts` SPAWNS PROCESSES — each harness's
- * own installer, updater and login flow, which is the whole point of it — and a doctrine command that
- * reached it could run one of them inside a build gate.
+ * The same guarantee, one door further out (D49 §4). `driverprogram.ts` SPAWNS A PROCESS — Daoris's driver program, which runs
+ * each agent's own installer, updater and login flow — and a doctrine command that reached it could run one of them inside a build
+ * gate.
  *
  * It is the same shape of rule as the network one and it is worth stating separately, because the
  * reasoning that makes spawning fine (opt-in, a person asked for it, never run by a gate) is exactly
@@ -746,7 +749,7 @@ function reachableFrom(entry: string): Set<string> {
  * append to without thinking.
  */
 test('the file-local management verbs reach no network module either', () => {
-  for (const entry of ['remotes.ts', 'remotemap.ts', 'toolchain.ts', 'plugins.ts', 'tools.ts'].map((name) => cliSource(name))) {
+  for (const entry of ['remotes.ts', 'remotemap.ts', 'driverprogram.ts', 'browser.ts'].map((name) => cliSource(name))) {
     const seen = reachableFrom(entry);
 
     assert.equal(
@@ -757,37 +760,23 @@ test('the file-local management verbs reach no network module either', () => {
 });
 
 /**
- * `tools.ts` answers "which program" (TOOLS2, D121 §4.2): it stays pure. A tool's version is asked where spawning lives, so the
- * module that holds the file's rules reaches neither the toolchain nor the network on its own. The lists, the downloads, the
- * archives and the file's writes are Daoris's driver program's since PUSH1f2c (D194).
- */
-test('the tools file reaches neither the toolchain nor the service client', () => {
-  const entry = cliSource('tools.ts');
-  const seen = reachableFrom(entry);
-  assert.equal(seen.has(SPAWNS), false, `${entry} reaches the harness toolchain through: ${[...seen].sort().join(', ')}`);
-  assert.equal(seen.has(SERVICE_CLIENT), false, `${entry} reaches the service client through: ${[...seen].sort().join(', ')}`);
-  assert.ok(seen.size > 1, `the walk from ${entry} found nothing, so it proved nothing`);
-});
-
-/**
  * `daoris tool` is Daoris's driver program's since PUSH1f2c (D194 point 1): its row hands the family and its words to the seam, and
  * the program reaches a tool's maker and a resource location itself, every hop held to the address rule (`ToolInstall`). The CLI's
  * row reaches no fetcher and no door of its own.
  */
 test('tool hands its words to the driver\'s program, and the rows that reach the service client say so', () => {
   const row = readText(join(cliRoot, 'src', 'cli', 'tool.ts'));
-  assert.match(row, /import \{ runDriverProgram \} from '\.\.\/(?:[\w-]+\/)*toolchain\.ts';/);
+  assert.match(row, /import \{ runDriverProgram \} from '\.\.\/(?:[\w-]+\/)*driverprogram\.ts';/);
   assert.match(row, /run: \(args\) => \(args\.driverProgram \?\? \(\(family, words\) => runDriverProgram\(family, words\)\)\)\('tool', args\.argv\),/);
   assert.doesNotMatch(row, /service\.ts|releaseFetcher|instanceDoor/);
 
   // The only rows that reach the service client are the ones that say so: a new row reaching it is a decision.
   const reaching = COMMANDS.map((command) => `cli/${command.name}.ts`).filter((entry) => reachableFrom(entry).has(SERVICE_CLIENT));
-  // BRAINSTORM1a3: `brainstorm` reaches this machine's own service, by the local host's brainstorm door (D176 point 8). RPC1f:
-  // `plugin` reaches the running Daoris's pipe, by the door its row hands in (D171 point 3, the terminal RPC design §9). PUSH1f2b
-  // and PUSH1f2c: `driver` and `tool` reach none, each family the driver program's, which reads the service and the pipe itself; and
-  // PUSH1f2e: `agent` neither, a pin's download the program's own.
+  // BRAINSTORM1a3: `brainstorm` reaches this machine's own service, by the local host's brainstorm door (D176 point 8). PUSH1f2b
+  // and PUSH1f2c: `driver` and `tool` reach none, each family the driver program's, which reads the service and the pipe itself;
+  // PUSH1f2e: `agent` neither, a pin's download the program's own; and PUSH1f2f: `plugin` neither, the pipe the program's alone.
   assert.deepEqual(reaching.sort(), [
-    'cli/brainstorm.ts', 'cli/connect.ts', 'cli/import.ts', 'cli/plugin.ts', 'cli/retire.ts', 'cli/wire.ts',
+    'cli/brainstorm.ts', 'cli/connect.ts', 'cli/import.ts', 'cli/retire.ts', 'cli/wire.ts',
   ]);
 });
 
@@ -799,7 +788,7 @@ test('tool hands its words to the driver\'s program, and the rows that reach the
 test('the driver row hands every word to the driver\'s program and reads nothing itself', () => {
   const row = readText(join(cliRoot, 'src', 'cli', 'driver.ts'));
   const imports = [...row.matchAll(/^import .* from '([^']+)';$/gm)].map(([, from]) => from);
-  assert.deepEqual(imports, ['../platform/types.ts', '../agents/toolchain.ts']);
+  assert.deepEqual(imports, ['../platform/types.ts', '../platform/driverprogram.ts']);
   assert.match(row, /run: \(args\) => \(args\.driverProgram \?\? \(\(family, words\) => runDriverProgram\(family, words\)\)\)\('driver', args\.argv\),/);
 });
 
@@ -810,8 +799,20 @@ test('the driver row hands every word to the driver\'s program and reads nothing
 test('the agent row hands every word to the driver\'s program and reads nothing itself', () => {
   const row = readText(join(cliRoot, 'src', 'cli', 'agent.ts'));
   const imports = [...row.matchAll(/^import .* from '([^']+)';$/gm)].map(([, from]) => from);
-  assert.deepEqual(imports, ['../platform/types.ts', '../agents/toolchain.ts']);
+  assert.deepEqual(imports, ['../platform/types.ts', '../platform/driverprogram.ts']);
   assert.match(row, /run: \(args\) => \(args\.driverProgram \?\? \(\(family, words\) => runDriverProgram\(family, words\)\)\)\('agent', args\.argv\),/);
+});
+
+/**
+ * `daoris plugin` is Daoris's driver program's whole since PUSH1f2f (D194 point 1, the alone-path design §5), the last family: its row
+ * hands the family and every word to the seam and imports nothing else, so no verb of it reads the plugins' folders, writes
+ * `plugins.json` or opens the running Daoris's pipe in this package.
+ */
+test('the plugin row hands every word to the driver\'s program and reads nothing itself', () => {
+  const row = readText(join(cliRoot, 'src', 'cli', 'plugin.ts'));
+  const imports = [...row.matchAll(/^import .* from '([^']+)';$/gm)].map(([, from]) => from);
+  assert.deepEqual(imports, ['../platform/types.ts', '../platform/driverprogram.ts']);
+  assert.match(row, /run: \(args\) => \(args\.driverProgram \?\? \(\(family, words\) => runDriverProgram\(family, words\)\)\)\('plugin', args\.argv\),/);
 });
 
 /**

@@ -5939,8 +5939,9 @@ section('18. Three plugins: one declares a harness, one hands a server, one hold
 //
 // The driver's home is the directory its config sits in (the per-file override wins, D63), which in
 // this rehearsal is `scratch` — so the plugins live there, and the CLI's two doors onto the same
-// folder are pointed there too, for this phase only.
-const PLUGIN_HOME = { DAORIS_HOME: scratch };
+// folder are pointed there too, for this phase only. `daoris plugin` is the driver program's since PUSH1f2f, and each of its
+// changes is a person's press, so the phase's calls are the person's (`PERSON`): no session's marker.
+const PLUGIN_HOME = { DAORIS_HOME: scratch, ...PERSON };
 const agentPlugin = homeEntry(scratch, 'plugins', 'rehearsal.agent');
 mkdirSync(agentPlugin, { recursive: true });
 writeFileSync(join(agentPlugin, 'plugin.json'), `${JSON.stringify({
@@ -5968,7 +5969,7 @@ check(
   browserAdded.out,
 );
 
-// The CLI twin reads the same folder by the same rules.
+// The terminal's door reads the same folder by the catalogue's own rules: `daoris plugin list` is the driver program's (PUSH1f2f).
 const pluginList = run(`node "${cliBin}" plugin list`, scratch, PLUGIN_HOME);
 check(
   '`daoris plugin list` names all three — what each declares, hands and speaks on',

@@ -61,7 +61,8 @@ test('no arguments prints the same usage and exits 2', async () => {
 });
 
 test('every refusal says what it said before the split, with the same exit code', async () => {
-  assert.ok(REFUSALS.length >= 20, `only ${REFUSALS.length} refusals were captured, so this proves little`);
+  // Each family's rows moved to the host's text tables as it was handed (PUSH1f2a-f), `plugin`'s last: what is left is the CLI's own.
+  assert.ok(REFUSALS.length >= 15, `only ${REFUSALS.length} refusals were captured, so this proves little`);
   for (const { argv, code, out } of REFUSALS) {
     const handed: Handed[] = [];
     assert.deepEqual(await run(argv, handed), { code, out }, `daoris ${argv.join(' ')}`);
@@ -121,6 +122,15 @@ test('a handed verb goes to the driver\'s program whole, with nothing written fi
     [['agent', 'pin', 'codex', '0.156.1', '--workspace', 'Work & play'], ['pin', 'codex', '0.156.1', '--workspace', 'Work & play']],
     [['agent', 'update', 'claude-code'], ['update', 'claude-code']],
     [['agent', 'frobnicate'], ['frobnicate']],
+    // PUSH1f2f: `daoris plugin`, the last family, handed whole: a bare word, each change, a path with spaces, and a verb it lacks.
+    [['plugin'], []],
+    [['plugin', 'list'], ['list']],
+    [['plugin', 'add', 'C:/Work Trees/acme & co/gate'], ['add', 'C:/Work Trees/acme & co/gate']],
+    [['plugin', 'add', '--offer', 'github-pull-request'], ['add', '--offer', 'github-pull-request']],
+    [['plugin', 'update', 'acme.gate', '--yes'], ['update', 'acme.gate', '--yes']],
+    [['plugin', 'remove', 'acme.gate'], ['remove', 'acme.gate']],
+    [['plugin', 'disable', 'acme.gate'], ['disable', 'acme.gate']],
+    [['plugin', 'frobnicate'], ['frobnicate']],
   ] as const) {
     for (const exit of [0, 1, 2] as const) {
       const handed: Handed[] = [];
@@ -130,7 +140,8 @@ test('a handed verb goes to the driver\'s program whole, with nothing written fi
   }
 
   for (const argv of [['tool', '--help'], ['tool', 'use', '--help'], ['driver', '--help'], ['driver', 'drive', '--help'],
-    ['driver', 'workflow', 'list', '--help'], ['agent', 'rules', '--help'], ['agent', '--help']]) {
+    ['driver', 'workflow', 'list', '--help'], ['agent', 'rules', '--help'], ['agent', '--help'], ['plugin', '--help'],
+    ['plugin', 'add', '--help']]) {
     const handed: Handed[] = [];
     await run(argv, handed);
     assert.deepEqual(handed, [], `daoris ${argv.join(' ')} is the dispatcher's own`);

@@ -6,7 +6,7 @@ import { DaorisError } from '../../src/platform/errors.ts';
 import { INSTALL_MARKER } from '../../src/platform/home.ts';
 import {
   DRIVER_PROGRAM_FILE, DRIVER_PROGRAM_HOME, DRIVER_PROGRAM_VARIABLE, driverProgram, runDriverProgram, type DriverStart,
-} from '../../src/agents/toolchain.ts';
+} from '../../src/platform/driverprogram.ts';
 import { captureError, makeFixture } from '../_fixture.ts';
 
 /**

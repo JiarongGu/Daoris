@@ -1,0 +1,1441 @@
+{
+  "note": "PUSH1f2f (D194, the alone-path design §3): what `daoris plugin` said for each case its tests held, run once through the CLI's TypeScript verb before it retired, alone on a root of its own (`<root>`): an install's folder holding `INSTALLED.md`, its home `<root>/data` and its offers `<root>/app/plugin-offers`. Each row: the words (`<root>` where a whole path goes; `home: false` where no home is named), every file under the root before it, the exit, the lines said on the standard output and on the error stream, and every file under the root after it, a path spelled with `/`. The TypeScript said a refusal through its dispatcher, `daoris: ` and the sentence; the driver's command says it on the error stream, as every host verb does. `PluginsTextTests` reads it row for row, a JSON file compared as JSON. A sentence the port changes on purpose is a row changed here, with its reason under `changed`.",
+  "rows": [
+    {
+      "name": "list, no plugins on this machine",
+      "argv": [
+        "list"
+      ],
+      "before": {
+        "INSTALLED.md": "# Daoris — installed desktop\n"
+      },
+      "exit": 0,
+      "out": [
+        "daoris: no plugins on this machine — a plugin is a folder under <root>/data/plugins",
+        "  with a `plugin.json`; `daoris plugin add <folder>` copies one in."
+      ],
+      "err": [],
+      "after": {
+        "INSTALLED.md": "# Daoris — installed desktop\n"
+      }
+    },
+    {
+      "name": "list, the bare family word",
+      "argv": [],
+      "before": {
+        "INSTALLED.md": "# Daoris — installed desktop\n"
+      },
+      "exit": 0,
+      "out": [
+        "daoris: no plugins on this machine — a plugin is a folder under <root>/data/plugins",
+        "  with a `plugin.json`; `daoris plugin add <folder>` copies one in."
+      ],
+      "err": [],
+      "after": {
+        "INSTALLED.md": "# Daoris — installed desktop\n"
+      }
+    },
+    {
+      "name": "list, every kind of plugin",
+      "argv": [
+        "list"
+      ],
+      "before": {
+        "INSTALLED.md": "# Daoris — installed desktop\n",
+        "data/plugins/acme.agent/plugin.json": "{\"id\":\"acme.agent\",\"name\":\"Acme agent\",\"version\":\"1.0.0\",\"harnesses\":[{\"name\":\"acme-agent\",\"command\":[\"acme\"]}],\"hooks\":{\"command\":[\"node\",\"h.mjs\"],\"points\":[\"quest/consider\"]}}",
+        "data/plugins/acme.empty/plugin.json": "{ \"id\": \"acme.empty\" }",
+        "data/plugins/acme.pkg/.daoris-source.json": "{\"package\":\"Acme.Pkg\",\"version\":\"1.0.0\",\"sha512\":\"lI2d9nx0gRaX9NBCiZTClpHmOErJBcRt2N7X5LscwHYyVz7154wN7JsM+kCuEtAT/npvZX0s5104l3pIJMHYgg==\",\"source\":\"<root>/feed\"}",
+        "data/plugins/acme.pkg/plugin.json": "{ \"id\": \"acme.pkg\", \"version\": \"1.0.0\" }",
+        "data/plugins/acme.tickets/.daoris-source.json": "{\"folder\":\"<root>/checkout/tickets\"}",
+        "data/plugins/acme.tickets/plugin.json": "{\"id\":\"acme.tickets\",\"name\":\"Acme tickets\",\"version\":\"2.0.0\",\"servers\":[{\"name\":\"tickets\",\"command\":[\"tickets\"],\"to\":[\"help\"],\"allow\":[\"search\"],\"writes\":[\"create_issue\"]},{\"name\":\"docs\",\"command\":[\"docs\"]}],\"skills\":[{\"name\":\"triage\",\"to\":[\"help\"]},{\"name\":\"write-up\",\"to\":[\"sessions\",\"help\"]}]}",
+        "data/plugins/acme.tooled/.daoris-source.json": "{ not json",
+        "data/plugins/acme.tooled/plugin.json": "{\"id\":\"acme.tooled\",\"name\":\"Acme tooled\",\"icon\":\"missing.svg\",\"tools\":[{\"id\":\"gh\",\"versions\":\">=2.60\",\"for\":\"Opens the pull request.\"},{\"id\":\"node\"},{\"id\":\"acme-cli\",\"name\":\"Acme CLI\",\"versions\":\">=1 <2\"},{\"id\":\"Bad Id\"}]}",
+        "data/plugins/browser/.daoris-source.json": "{\"offer\":\"browser\"}",
+        "data/plugins/browser/plugin.json": "{ \"id\": \"browser\", \"servers\": [ { \"name\": \"browser\", \"command\": [\"npx\", \"-y\", \"@playwright/mcp@latest\"] } ] }",
+        "data/plugins/future/plugin.json": "{ \"id\": \"future\", \"apiVersion\": 99 }",
+        "data/plugins/notes/readme.txt": "not a plugin",
+        "data/plugins.json": "{ \"disabled\": [\"acme.agent\"] }"
+      },
+      "exit": 0,
+      "out": [
+        "daoris: <root>/data/plugins",
+        "  acme.agent               Acme agent 1.0.0  (off)",
+        "                           declares acme-agent; speaks on quest/consider",
+        "                           no record of where it came from — added before Daoris kept one, or copied in by hand; `daoris plugin add <folder>` records it",
+        "  acme.empty               acme.empty",
+        "                           declares nothing and speaks nothing",
+        "                           no record of where it came from — added before Daoris kept one, or copied in by hand; `daoris plugin add <folder>` records it",
+        "  acme.pkg                 acme.pkg 1.0.0",
+        "                           declares nothing and speaks nothing",
+        "                           from <root>/feed, package `Acme.Pkg` 1.0.0",
+        "  acme.tickets             Acme tickets 2.0.0",
+        "                           hands sessions docs; offers Ask Daoris tickets (search; create_issue, writes); hands sessions skill write-up; hands Ask Daoris skills triage, write-up",
+        "                           from <root>/checkout/tickets; `daoris plugin update acme.tickets` takes a newer one",
+        "  acme.tooled              Acme tooled",
+        "                           declares nothing and speaks nothing",
+        "                           runs GitHub CLI >=2.60, Node.js, Acme CLI >=1 <2",
+        "                           tool not read: tool 4 in `tools` has the `id` `Bad Id`, which is not one: lowercase letters, digits, dots and dashes, like `az`.",
+        "                           ⚠ `.daoris-source.json` does not read (it is not JSON: <why>).",
+        "                           icon not drawn: `icon` `missing.svg` is not a file in the plugin's folder.",
+        "  browser                  browser",
+        "                           hands sessions browser",
+        "                           from Daoris's own plugins, offered by this install (`browser`); `daoris plugin update browser` takes a newer one",
+        "  future                   future",
+        "                           ⚠ needs plugin API 99, and this build speaks 1 — update Daoris, or use a plugin written for 1.",
+        "                           no record of where it came from — added before Daoris kept one, or copied in by hand; `daoris plugin add <folder>` records it"
+      ],
+      "err": [],
+      "after": {
+        "INSTALLED.md": "# Daoris — installed desktop\n",
+        "data/plugins/acme.agent/plugin.json": "{\"id\":\"acme.agent\",\"name\":\"Acme agent\",\"version\":\"1.0.0\",\"harnesses\":[{\"name\":\"acme-agent\",\"command\":[\"acme\"]}],\"hooks\":{\"command\":[\"node\",\"h.mjs\"],\"points\":[\"quest/consider\"]}}",
+        "data/plugins/acme.empty/plugin.json": "{ \"id\": \"acme.empty\" }",
+        "data/plugins/acme.pkg/.daoris-source.json": "{\"package\":\"Acme.Pkg\",\"version\":\"1.0.0\",\"sha512\":\"lI2d9nx0gRaX9NBCiZTClpHmOErJBcRt2N7X5LscwHYyVz7154wN7JsM+kCuEtAT/npvZX0s5104l3pIJMHYgg==\",\"source\":\"<root>/feed\"}",
+        "data/plugins/acme.pkg/plugin.json": "{ \"id\": \"acme.pkg\", \"version\": \"1.0.0\" }",
+        "data/plugins/acme.tickets/.daoris-source.json": "{\"folder\":\"<root>/checkout/tickets\"}",
+        "data/plugins/acme.tickets/plugin.json": "{\"id\":\"acme.tickets\",\"name\":\"Acme tickets\",\"version\":\"2.0.0\",\"servers\":[{\"name\":\"tickets\",\"command\":[\"tickets\"],\"to\":[\"help\"],\"allow\":[\"search\"],\"writes\":[\"create_issue\"]},{\"name\":\"docs\",\"command\":[\"docs\"]}],\"skills\":[{\"name\":\"triage\",\"to\":[\"help\"]},{\"name\":\"write-up\",\"to\":[\"sessions\",\"help\"]}]}",
+        "data/plugins/acme.tooled/.daoris-source.json": "{ not json",
+        "data/plugins/acme.tooled/plugin.json": "{\"id\":\"acme.tooled\",\"name\":\"Acme tooled\",\"icon\":\"missing.svg\",\"tools\":[{\"id\":\"gh\",\"versions\":\">=2.60\",\"for\":\"Opens the pull request.\"},{\"id\":\"node\"},{\"id\":\"acme-cli\",\"name\":\"Acme CLI\",\"versions\":\">=1 <2\"},{\"id\":\"Bad Id\"}]}",
+        "data/plugins/browser/.daoris-source.json": "{\"offer\":\"browser\"}",
+        "data/plugins/browser/plugin.json": "{ \"id\": \"browser\", \"servers\": [ { \"name\": \"browser\", \"command\": [\"npx\", \"-y\", \"@playwright/mcp@latest\"] } ] }",
+        "data/plugins/future/plugin.json": "{ \"id\": \"future\", \"apiVersion\": 99 }",
+        "data/plugins/notes/readme.txt": "not a plugin",
+        "data/plugins.json": "{ \"disabled\": [\"acme.agent\"] }"
+      }
+    },
+    {
+      "name": "list, the install's offers",
+      "argv": [
+        "list"
+      ],
+      "before": {
+        "INSTALLED.md": "# Daoris — installed desktop\n",
+        "app/plugin-offers/acme.offered/README.md": "# Acme offered\n\n## What it needs\n\n- **GitHub CLI**, signed in: `gh auth login`\n- Git, which\n  pushes the branch\n\n## Else\n\n- not this\n",
+        "app/plugin-offers/acme.offered/plugin.json": "{ \"id\": \"acme.offered\", \"name\": \"Acme offered\", \"version\": \"3.0.0\", \"hooks\": { \"command\": [\"node\", \"x.mjs\"], \"points\": [\"work/land\"] } }",
+        "app/plugin-offers/acme.taken/plugin.json": "{ \"id\": \"acme.taken\" }",
+        "app/plugin-offers/acme.unsound/plugin.json": "{ \"id\": \"acme.unsound\", \"harnesses\": [ { \"name\": \"dsh\", \"command\": [\"x\"] } ] }",
+        "data/plugins/acme.taken/.daoris-source.json": "{\"offer\":\"acme.taken\"}",
+        "data/plugins/acme.taken/plugin.json": "{ \"id\": \"acme.taken\" }"
+      },
+      "exit": 0,
+      "out": [
+        "daoris: <root>/data/plugins",
+        "  acme.taken               acme.taken",
+        "                           declares nothing and speaks nothing",
+        "                           from Daoris's own plugins, offered by this install (`acme.taken`); `daoris plugin update acme.taken` takes a newer one",
+        "daoris: Daoris's own plugins, offered by this install, not installed (<root>/app/plugin-offers):",
+        "  acme.offered             Acme offered 3.0.0",
+        "                           speaks on work/land",
+        "                           needs: GitHub CLI, signed in: `gh auth login`; Git, which pushes the branch",
+        "                           `daoris plugin add --offer acme.offered` installs it; nothing runs before that.",
+        "  acme.unsound             acme.unsound",
+        "                           ⚠ declares agent `dsh`, which this build already carries — a plugin adds an agent and never replaces one."
+      ],
+      "err": [],
+      "after": {
+        "INSTALLED.md": "# Daoris — installed desktop\n",
+        "app/plugin-offers/acme.offered/README.md": "# Acme offered\n\n## What it needs\n\n- **GitHub CLI**, signed in: `gh auth login`\n- Git, which\n  pushes the branch\n\n## Else\n\n- not this\n",
+        "app/plugin-offers/acme.offered/plugin.json": "{ \"id\": \"acme.offered\", \"name\": \"Acme offered\", \"version\": \"3.0.0\", \"hooks\": { \"command\": [\"node\", \"x.mjs\"], \"points\": [\"work/land\"] } }",
+        "app/plugin-offers/acme.taken/plugin.json": "{ \"id\": \"acme.taken\" }",
+        "app/plugin-offers/acme.unsound/plugin.json": "{ \"id\": \"acme.unsound\", \"harnesses\": [ { \"name\": \"dsh\", \"command\": [\"x\"] } ] }",
+        "data/plugins/acme.taken/.daoris-source.json": "{\"offer\":\"acme.taken\"}",
+        "data/plugins/acme.taken/plugin.json": "{ \"id\": \"acme.taken\" }"
+      },
+      "changed": "the driver's catalogue says a declared agent, as the window and Ask Daoris say it (the agent-word rename, AGT1); the CLI's twin still said harness"
+    },
+    {
+      "name": "list, no home",
+      "argv": [
+        "list"
+      ],
+      "home": false,
+      "before": {
+        "INSTALLED.md": "# Daoris — installed desktop\n"
+      },
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: no Daoris home: set DAORIS_HOME to the application's data folder (the `data` directory beside Daoris.exe), or name the file's own variable. Daoris keeps nothing under the user profile. (wanted: plugins/)"
+      ],
+      "after": {
+        "INSTALLED.md": "# Daoris — installed desktop\n"
+      }
+    },
+    {
+      "name": "add a folder",
+      "argv": [
+        "add",
+        "<root>/checkout/gate"
+      ],
+      "before": {
+        "INSTALLED.md": "# Daoris — installed desktop\n",
+        "checkout/gate/gate.mjs": "// v1",
+        "checkout/gate/plugin.json": "{\"id\":\"acme.gate\",\"name\":\"Acme gate\",\"version\":\"1.0.0\",\"hooks\":{\"command\":[\"node\",\"${plugin}/gate.mjs\"],\"points\":[\"quest/consider\"]}}",
+        "data/plugins/.data/acme.gate/kept.json": "{}"
+      },
+      "exit": 0,
+      "out": [
+        "daoris: added plugin `acme.gate` at <root>/data/plugins/acme.gate",
+        "  speaks on quest/consider.",
+        "  From <root>/checkout/gate; `daoris plugin update acme.gate` takes a newer one from there.",
+        "  <root>/data/plugins/.data/acme.gate kept, untouched.",
+        "  It takes effect at the driver's next look — a harness on the roster, a hook at the next tick."
+      ],
+      "err": [],
+      "after": {
+        "INSTALLED.md": "# Daoris — installed desktop\n",
+        "checkout/gate/gate.mjs": "// v1",
+        "checkout/gate/plugin.json": "{\"id\":\"acme.gate\",\"name\":\"Acme gate\",\"version\":\"1.0.0\",\"hooks\":{\"command\":[\"node\",\"${plugin}/gate.mjs\"],\"points\":[\"quest/consider\"]}}",
+        "data/plugins/.data/acme.gate/kept.json": "{}",
+        "data/plugins/acme.gate/.daoris-source.json": "{\n  \"folder\": \"<root>/checkout/gate\"\n}\n",
+        "data/plugins/acme.gate/gate.mjs": "// v1",
+        "data/plugins/acme.gate/plugin.json": "{\"id\":\"acme.gate\",\"name\":\"Acme gate\",\"version\":\"1.0.0\",\"hooks\":{\"command\":[\"node\",\"${plugin}/gate.mjs\"],\"points\":[\"quest/consider\"]}}"
+      }
+    },
+    {
+      "name": "add a folder over what is installed replaces it whole",
+      "argv": [
+        "add",
+        "<root>/checkout/gate"
+      ],
+      "before": {
+        "INSTALLED.md": "# Daoris — installed desktop\n",
+        "checkout/gate/gate2.mjs": "// v2",
+        "checkout/gate/plugin.json": "{\"id\":\"acme.gate\",\"name\":\"Acme gate\",\"version\":\"1.1.0\",\"hooks\":{\"command\":[\"node\",\"${plugin}/gate2.mjs\"],\"points\":[\"quest/consider\",\"session/ended\"]},\"harnesses\":[{\"name\":\"acme-agent\",\"command\":[\"acme-agent\",\"--acp\"]}],\"servers\":[{\"name\":\"browser\",\"command\":[\"npx\",\"-y\",\"@playwright/mcp@0.0.82\"]}]}",
+        "data/plugins/acme.gate/gate.mjs": "// v1",
+        "data/plugins/acme.gate/plugin.json": "{\"id\":\"acme.gate\",\"name\":\"Acme gate\",\"version\":\"1.0.0\",\"hooks\":{\"command\":[\"node\",\"${plugin}/gate.mjs\"],\"points\":[\"quest/consider\"]}}",
+        "data/plugins/acme.gate/stale.txt": "from the previous install"
+      },
+      "exit": 0,
+      "out": [
+        "daoris: replaced plugin `acme.gate` at <root>/data/plugins/acme.gate",
+        "  declares acme-agent; speaks on quest/consider, session/ended; hands sessions browser.",
+        "  From <root>/checkout/gate; `daoris plugin update acme.gate` takes a newer one from there.",
+        "  It takes effect at the driver's next look — a harness on the roster, a hook at the next tick."
+      ],
+      "err": [],
+      "after": {
+        "INSTALLED.md": "# Daoris — installed desktop\n",
+        "checkout/gate/gate2.mjs": "// v2",
+        "checkout/gate/plugin.json": "{\"id\":\"acme.gate\",\"name\":\"Acme gate\",\"version\":\"1.1.0\",\"hooks\":{\"command\":[\"node\",\"${plugin}/gate2.mjs\"],\"points\":[\"quest/consider\",\"session/ended\"]},\"harnesses\":[{\"name\":\"acme-agent\",\"command\":[\"acme-agent\",\"--acp\"]}],\"servers\":[{\"name\":\"browser\",\"command\":[\"npx\",\"-y\",\"@playwright/mcp@0.0.82\"]}]}",
+        "data/plugins/acme.gate/.daoris-source.json": "{\n  \"folder\": \"<root>/checkout/gate\"\n}\n",
+        "data/plugins/acme.gate/gate2.mjs": "// v2",
+        "data/plugins/acme.gate/plugin.json": "{\"id\":\"acme.gate\",\"name\":\"Acme gate\",\"version\":\"1.1.0\",\"hooks\":{\"command\":[\"node\",\"${plugin}/gate2.mjs\"],\"points\":[\"quest/consider\",\"session/ended\"]},\"harnesses\":[{\"name\":\"acme-agent\",\"command\":[\"acme-agent\",\"--acp\"]}],\"servers\":[{\"name\":\"browser\",\"command\":[\"npx\",\"-y\",\"@playwright/mcp@0.0.82\"]}]}"
+      }
+    },
+    {
+      "name": "add a folder with a newer api",
+      "argv": [
+        "add",
+        "<root>/checkout/bad"
+      ],
+      "before": {
+        "INSTALLED.md": "# Daoris — installed desktop\n",
+        "checkout/bad/plugin.json": "{ \"id\": \"bad\", \"apiVersion\": 99 }"
+      },
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: `plugin.json` in <root>/checkout/bad: needs plugin API 99, and this build speaks 1 — update Daoris, or use a plugin written for 1. Nothing was copied."
+      ],
+      "after": {
+        "INSTALLED.md": "# Daoris — installed desktop\n",
+        "checkout/bad/plugin.json": "{ \"id\": \"bad\", \"apiVersion\": 99 }"
+      },
+      "changed": "an add is judged by the driver's `PluginInstall.Read`, the reader the window's add and Ask Daoris's plugin card judge by, so the terminal says its words: the manifest named `plugin.json`, and one that does not parse said as the catalogue says one"
+    },
+    {
+      "name": "add a folder declaring a harness this build carries",
+      "argv": [
+        "add",
+        "<root>/checkout/shadow"
+      ],
+      "before": {
+        "INSTALLED.md": "# Daoris — installed desktop\n",
+        "checkout/shadow/plugin.json": "{ \"id\": \"shadow\", \"harnesses\": [ { \"name\": \"dsh\", \"command\": [\"x\"] } ] }"
+      },
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: plugin `shadow` declares agent `dsh`, which this build already carries — a plugin adds an agent and never replaces one. Nothing was copied."
+      ],
+      "after": {
+        "INSTALLED.md": "# Daoris — installed desktop\n",
+        "checkout/shadow/plugin.json": "{ \"id\": \"shadow\", \"harnesses\": [ { \"name\": \"dsh\", \"command\": [\"x\"] } ] }"
+      },
+      "changed": "the driver's catalogue says a declared agent, as the window and Ask Daoris say it (the agent-word rename, AGT1); the CLI's twin still said harness"
+    },
+    {
+      "name": "add a folder declaring a carried harness in capitals",
+      "argv": [
+        "add",
+        "<root>/checkout/shouting"
+      ],
+      "before": {
+        "INSTALLED.md": "# Daoris — installed desktop\n",
+        "checkout/shouting/plugin.json": "{ \"id\": \"shouting\", \"harnesses\": [ { \"name\": \"DSH\", \"command\": [\"x\"] } ] }"
+      },
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: plugin `shouting` declares agent `DSH`, which this build already carries — a plugin adds an agent and never replaces one. Nothing was copied."
+      ],
+      "after": {
+        "INSTALLED.md": "# Daoris — installed desktop\n",
+        "checkout/shouting/plugin.json": "{ \"id\": \"shouting\", \"harnesses\": [ { \"name\": \"DSH\", \"command\": [\"x\"] } ] }"
+      },
+      "changed": "the driver's catalogue says a declared agent, as the window and Ask Daoris say it (the agent-word rename, AGT1); the CLI's twin still said harness"
+    },
+    {
+      "name": "add a folder serving the knowledge host",
+      "argv": [
+        "add",
+        "<root>/checkout/sly"
+      ],
+      "before": {
+        "INSTALLED.md": "# Daoris — installed desktop\n",
+        "checkout/sly/plugin.json": "{ \"id\": \"sly\", \"servers\": [ { \"name\": \"daoris-knowledge\", \"command\": [\"x\"] } ] }"
+      },
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: plugin `sly` declares server `daoris-knowledge`, which is Daoris's own knowledge host — a plugin hands a session servers beside it, never in its place. Nothing was copied."
+      ],
+      "after": {
+        "INSTALLED.md": "# Daoris — installed desktop\n",
+        "checkout/sly/plugin.json": "{ \"id\": \"sly\", \"servers\": [ { \"name\": \"daoris-knowledge\", \"command\": [\"x\"] } ] }"
+      }
+    },
+    {
+      "name": "add a folder with no manifest",
+      "argv": [
+        "add",
+        "<root>/checkout/empty"
+      ],
+      "before": {
+        "INSTALLED.md": "# Daoris — installed desktop\n",
+        "checkout/empty/readme.txt": "nothing"
+      },
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: no `plugin.json` in <root>/checkout/empty — a plugin is a folder with a manifest at its root."
+      ],
+      "after": {
+        "INSTALLED.md": "# Daoris — installed desktop\n",
+        "checkout/empty/readme.txt": "nothing"
+      }
+    },
+    {
+      "name": "add a folder whose manifest is not JSON",
+      "argv": [
+        "add",
+        "<root>/checkout/broken"
+      ],
+      "before": {
+        "INSTALLED.md": "# Daoris — installed desktop\n",
+        "checkout/broken/plugin.json": "{ not json"
+      },
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: `plugin.json` in <root>/checkout/broken: `plugin.json` could not be read: <why> Nothing was copied."
+      ],
+      "after": {
+        "INSTALLED.md": "# Daoris — installed desktop\n",
+        "checkout/broken/plugin.json": "{ not json"
+      },
+      "changed": "an add is judged by the driver's `PluginInstall.Read`, the reader the window's add and Ask Daoris's plugin card judge by, so the terminal says its words: the manifest named `plugin.json`, and one that does not parse said as the catalogue says one"
+    },
+    {
+      "name": "add a folder whose id is not one",
+      "argv": [
+        "add",
+        "<root>/checkout/odd"
+      ],
+      "before": {
+        "INSTALLED.md": "# Daoris — installed desktop\n",
+        "checkout/odd/plugin.json": "{ \"id\": \"Odd Name\" }"
+      },
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: `plugin.json` in <root>/checkout/odd: `id` must be lowercase letters, digits, dots and dashes — `Odd Name` is not. Nothing was copied."
+      ],
+      "after": {
+        "INSTALLED.md": "# Daoris — installed desktop\n",
+        "checkout/odd/plugin.json": "{ \"id\": \"Odd Name\" }"
+      },
+      "changed": "an add is judged by the driver's `PluginInstall.Read`, the reader the window's add and Ask Daoris's plugin card judge by, so the terminal says its words: the manifest named `plugin.json`, and one that does not parse said as the catalogue says one"
+    },
+    {
+      "name": "add with no folder",
+      "argv": [
+        "add"
+      ],
+      "before": {
+        "INSTALLED.md": "# Daoris — installed desktop\n"
+      },
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: `plugin add` needs a folder holding a `plugin.json` — e.g. `daoris plugin add ./acme.quiet-hours`."
+      ],
+      "after": {
+        "INSTALLED.md": "# Daoris — installed desktop\n"
+      }
+    },
+    {
+      "name": "add --offer with no id",
+      "argv": [
+        "add",
+        "--offer"
+      ],
+      "before": {
+        "INSTALLED.md": "# Daoris — installed desktop\n"
+      },
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: `--offer` names one of Daoris's own plugins by its id — `daoris plugin list` shows what this install offers."
+      ],
+      "after": {
+        "INSTALLED.md": "# Daoris — installed desktop\n"
+      }
+    },
+    {
+      "name": "add --offer with no id but a flag",
+      "argv": [
+        "add",
+        "--offer",
+        "--yes"
+      ],
+      "before": {
+        "INSTALLED.md": "# Daoris — installed desktop\n"
+      },
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: `--offer` names one of Daoris's own plugins by its id — `daoris plugin list` shows what this install offers."
+      ],
+      "after": {
+        "INSTALLED.md": "# Daoris — installed desktop\n"
+      }
+    },
+    {
+      "name": "add --offer that is not an id",
+      "argv": [
+        "add",
+        "--offer",
+        "../up"
+      ],
+      "before": {
+        "INSTALLED.md": "# Daoris — installed desktop\n"
+      },
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: `../up` is not a plugin id — one is lowercase letters, digits, dots and dashes, like `acme.quiet-hours`; `daoris plugin list` shows what there is."
+      ],
+      "after": {
+        "INSTALLED.md": "# Daoris — installed desktop\n"
+      }
+    },
+    {
+      "name": "add --offer the install does not carry",
+      "argv": [
+        "add",
+        "--offer",
+        "acme.nobody"
+      ],
+      "before": {
+        "INSTALLED.md": "# Daoris — installed desktop\n",
+        "app/plugin-offers/acme.offered/plugin.json": "{ \"id\": \"acme.offered\" }"
+      },
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: this install offers no plugin `acme.nobody` — it offers `acme.offered`."
+      ],
+      "after": {
+        "INSTALLED.md": "# Daoris — installed desktop\n",
+        "app/plugin-offers/acme.offered/plugin.json": "{ \"id\": \"acme.offered\" }"
+      }
+    },
+    {
+      "name": "add --offer when the install carries none",
+      "argv": [
+        "add",
+        "--offer",
+        "acme.nobody"
+      ],
+      "before": {
+        "INSTALLED.md": "# Daoris — installed desktop\n"
+      },
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: this install offers no plugin `acme.nobody` — it offers none."
+      ],
+      "after": {
+        "INSTALLED.md": "# Daoris — installed desktop\n"
+      }
+    },
+    {
+      "name": "add --offer installs one of the install's own",
+      "argv": [
+        "add",
+        "--offer",
+        "acme.offered"
+      ],
+      "before": {
+        "INSTALLED.md": "# Daoris — installed desktop\n",
+        "app/plugin-offers/acme.offered/README.md": "# Acme offered\n\n## What it needs\n\n- **GitHub CLI**, signed in: `gh auth login`\n- Git, which\n  pushes the branch\n\n## Else\n\n- not this\n",
+        "app/plugin-offers/acme.offered/plugin.json": "{ \"id\": \"acme.offered\", \"name\": \"Acme offered\", \"version\": \"3.0.0\", \"hooks\": { \"command\": [\"node\", \"${plugin}/x.mjs\"], \"points\": [\"work/land\"] } }"
+      },
+      "exit": 0,
+      "out": [
+        "daoris: added plugin `acme.offered` at <root>/data/plugins/acme.offered",
+        "  speaks on work/land.",
+        "  From Daoris's own plugins, offered by this install (`acme.offered`); `daoris plugin update acme.offered` takes a newer one from there.",
+        "  It takes effect at the driver's next look — a harness on the roster, a hook at the next tick."
+      ],
+      "err": [],
+      "after": {
+        "INSTALLED.md": "# Daoris — installed desktop\n",
+        "app/plugin-offers/acme.offered/README.md": "# Acme offered\n\n## What it needs\n\n- **GitHub CLI**, signed in: `gh auth login`\n- Git, which\n  pushes the branch\n\n## Else\n\n- not this\n",
+        "app/plugin-offers/acme.offered/plugin.json": "{ \"id\": \"acme.offered\", \"name\": \"Acme offered\", \"version\": \"3.0.0\", \"hooks\": { \"command\": [\"node\", \"${plugin}/x.mjs\"], \"points\": [\"work/land\"] } }",
+        "data/plugins/acme.offered/.daoris-source.json": "{\n  \"offer\": \"acme.offered\"\n}\n",
+        "data/plugins/acme.offered/README.md": "# Acme offered\n\n## What it needs\n\n- **GitHub CLI**, signed in: `gh auth login`\n- Git, which\n  pushes the branch\n\n## Else\n\n- not this\n",
+        "data/plugins/acme.offered/plugin.json": "{ \"id\": \"acme.offered\", \"name\": \"Acme offered\", \"version\": \"3.0.0\", \"hooks\": { \"command\": [\"node\", \"${plugin}/x.mjs\"], \"points\": [\"work/land\"] } }"
+      }
+    },
+    {
+      "name": "add --offer by another case",
+      "argv": [
+        "add",
+        "--offer",
+        "ACME.OFFERED"
+      ],
+      "before": {
+        "INSTALLED.md": "# Daoris — installed desktop\n",
+        "app/plugin-offers/acme.offered/plugin.json": "{ \"id\": \"acme.offered\" }"
+      },
+      "exit": 0,
+      "out": [
+        "daoris: added plugin `acme.offered` at <root>/data/plugins/acme.offered",
+        "  declares nothing and speaks nothing.",
+        "  From Daoris's own plugins, offered by this install (`acme.offered`); `daoris plugin update acme.offered` takes a newer one from there.",
+        "  It takes effect at the driver's next look — a harness on the roster, a hook at the next tick."
+      ],
+      "err": [],
+      "after": {
+        "INSTALLED.md": "# Daoris — installed desktop\n",
+        "app/plugin-offers/acme.offered/plugin.json": "{ \"id\": \"acme.offered\" }",
+        "data/plugins/acme.offered/.daoris-source.json": "{\n  \"offer\": \"acme.offered\"\n}\n",
+        "data/plugins/acme.offered/plugin.json": "{ \"id\": \"acme.offered\" }"
+      }
+    },
+    {
+      "name": "add, no home",
+      "argv": [
+        "add",
+        "<root>/checkout/gate"
+      ],
+      "home": false,
+      "before": {
+        "INSTALLED.md": "# Daoris — installed desktop\n",
+        "checkout/gate/plugin.json": "{\"id\":\"acme.gate\",\"name\":\"Acme gate\",\"version\":\"1.0.0\",\"hooks\":{\"command\":[\"node\",\"${plugin}/gate.mjs\"],\"points\":[\"quest/consider\"]}}"
+      },
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: no Daoris home: set DAORIS_HOME to the application's data folder (the `data` directory beside Daoris.exe), or name the file's own variable. Daoris keeps nothing under the user profile. (wanted: plugins/)"
+      ],
+      "after": {
+        "INSTALLED.md": "# Daoris — installed desktop\n",
+        "checkout/gate/plugin.json": "{\"id\":\"acme.gate\",\"name\":\"Acme gate\",\"version\":\"1.0.0\",\"hooks\":{\"command\":[\"node\",\"${plugin}/gate.mjs\"],\"points\":[\"quest/consider\"]}}"
+      }
+    },
+    {
+      "name": "update shows what changes and replaces nothing without --yes",
+      "argv": [
+        "update",
+        "acme.gate"
+      ],
+      "before": {
+        "INSTALLED.md": "# Daoris — installed desktop\n",
+        "checkout/gate/gate.mjs": "// v2",
+        "checkout/gate/plugin.json": "{\"id\":\"acme.gate\",\"name\":\"Acme gate\",\"version\":\"1.1.0\",\"hooks\":{\"command\":[\"node\",\"${plugin}/gate2.mjs\"],\"points\":[\"quest/consider\",\"session/ended\"]},\"harnesses\":[{\"name\":\"acme-agent\",\"command\":[\"acme-agent\",\"--acp\"]}],\"servers\":[{\"name\":\"browser\",\"command\":[\"npx\",\"-y\",\"@playwright/mcp@0.0.82\"]}]}",
+        "data/plugins/acme.gate/.daoris-source.json": "{\"folder\":\"<root>/checkout/gate\"}",
+        "data/plugins/acme.gate/gate.mjs": "// v1",
+        "data/plugins/acme.gate/plugin.json": "{\"id\":\"acme.gate\",\"name\":\"Acme gate\",\"version\":\"1.0.0\",\"hooks\":{\"command\":[\"node\",\"${plugin}/gate.mjs\"],\"points\":[\"quest/consider\"]}}"
+      },
+      "exit": 1,
+      "out": [
+        "daoris: plugin `acme.gate`, from <root>/checkout/gate:",
+        "  version    1.0.0 → 1.1.0",
+        "  command    node ${plugin}/gate.mjs → node ${plugin}/gate2.mjs",
+        "  points     quest/consider → quest/consider, session/ended",
+        "  harnesses  (none) → acme-agent (acme-agent --acp)",
+        "  servers    (none) → browser (npx -y @playwright/mcp@0.0.82)",
+        "  Not updated: this is what would change. Run it again with --yes to update it."
+      ],
+      "err": [],
+      "after": {
+        "INSTALLED.md": "# Daoris — installed desktop\n",
+        "checkout/gate/gate.mjs": "// v2",
+        "checkout/gate/plugin.json": "{\"id\":\"acme.gate\",\"name\":\"Acme gate\",\"version\":\"1.1.0\",\"hooks\":{\"command\":[\"node\",\"${plugin}/gate2.mjs\"],\"points\":[\"quest/consider\",\"session/ended\"]},\"harnesses\":[{\"name\":\"acme-agent\",\"command\":[\"acme-agent\",\"--acp\"]}],\"servers\":[{\"name\":\"browser\",\"command\":[\"npx\",\"-y\",\"@playwright/mcp@0.0.82\"]}]}",
+        "data/plugins/acme.gate/.daoris-source.json": "{\"folder\":\"<root>/checkout/gate\"}",
+        "data/plugins/acme.gate/gate.mjs": "// v1",
+        "data/plugins/acme.gate/plugin.json": "{\"id\":\"acme.gate\",\"name\":\"Acme gate\",\"version\":\"1.0.0\",\"hooks\":{\"command\":[\"node\",\"${plugin}/gate.mjs\"],\"points\":[\"quest/consider\"]}}"
+      }
+    },
+    {
+      "name": "update --yes replaces it from where it came",
+      "argv": [
+        "update",
+        "acme.gate",
+        "--yes"
+      ],
+      "before": {
+        "INSTALLED.md": "# Daoris — installed desktop\n",
+        "checkout/gate/gate.mjs": "// v2",
+        "checkout/gate/plugin.json": "{\"id\":\"acme.gate\",\"name\":\"Acme gate\",\"version\":\"1.1.0\",\"hooks\":{\"command\":[\"node\",\"${plugin}/gate2.mjs\"],\"points\":[\"quest/consider\",\"session/ended\"]},\"harnesses\":[{\"name\":\"acme-agent\",\"command\":[\"acme-agent\",\"--acp\"]}],\"servers\":[{\"name\":\"browser\",\"command\":[\"npx\",\"-y\",\"@playwright/mcp@0.0.82\"]}]}",
+        "data/plugins/.data/acme.gate/kept.json": "{}",
+        "data/plugins/acme.gate/.daoris-source.json": "{\"folder\":\"<root>/checkout/gate\"}",
+        "data/plugins/acme.gate/gate.mjs": "// v1",
+        "data/plugins/acme.gate/plugin.json": "{\"id\":\"acme.gate\",\"name\":\"Acme gate\",\"version\":\"1.0.0\",\"hooks\":{\"command\":[\"node\",\"${plugin}/gate.mjs\"],\"points\":[\"quest/consider\"]}}",
+        "data/plugins/acme.gate/stale.txt": "old"
+      },
+      "exit": 0,
+      "out": [
+        "daoris: plugin `acme.gate`, from <root>/checkout/gate:",
+        "  version    1.0.0 → 1.1.0",
+        "  command    node ${plugin}/gate.mjs → node ${plugin}/gate2.mjs",
+        "  points     quest/consider → quest/consider, session/ended",
+        "  harnesses  (none) → acme-agent (acme-agent --acp)",
+        "  servers    (none) → browser (npx -y @playwright/mcp@0.0.82)",
+        "daoris: updated plugin `acme.gate` from <root>/checkout/gate.",
+        "  <root>/data/plugins/.data/acme.gate kept, untouched.",
+        "  It takes effect at the driver's next look — its hook, if it speaks, restarted at the next tick."
+      ],
+      "err": [],
+      "after": {
+        "INSTALLED.md": "# Daoris — installed desktop\n",
+        "checkout/gate/gate.mjs": "// v2",
+        "checkout/gate/plugin.json": "{\"id\":\"acme.gate\",\"name\":\"Acme gate\",\"version\":\"1.1.0\",\"hooks\":{\"command\":[\"node\",\"${plugin}/gate2.mjs\"],\"points\":[\"quest/consider\",\"session/ended\"]},\"harnesses\":[{\"name\":\"acme-agent\",\"command\":[\"acme-agent\",\"--acp\"]}],\"servers\":[{\"name\":\"browser\",\"command\":[\"npx\",\"-y\",\"@playwright/mcp@0.0.82\"]}]}",
+        "data/plugins/.data/acme.gate/kept.json": "{}",
+        "data/plugins/acme.gate/.daoris-source.json": "{\n  \"folder\": \"<root>/checkout/gate\"\n}\n",
+        "data/plugins/acme.gate/gate.mjs": "// v2",
+        "data/plugins/acme.gate/plugin.json": "{\"id\":\"acme.gate\",\"name\":\"Acme gate\",\"version\":\"1.1.0\",\"hooks\":{\"command\":[\"node\",\"${plugin}/gate2.mjs\"],\"points\":[\"quest/consider\",\"session/ended\"]},\"harnesses\":[{\"name\":\"acme-agent\",\"command\":[\"acme-agent\",\"--acp\"]}],\"servers\":[{\"name\":\"browser\",\"command\":[\"npx\",\"-y\",\"@playwright/mcp@0.0.82\"]}]}"
+      }
+    },
+    {
+      "name": "update --yes when what it declares does not change",
+      "argv": [
+        "update",
+        "acme.gate",
+        "--yes"
+      ],
+      "before": {
+        "INSTALLED.md": "# Daoris — installed desktop\n",
+        "checkout/gate/gate.mjs": "// v2",
+        "checkout/gate/plugin.json": "{\"id\":\"acme.gate\",\"name\":\"Acme gate\",\"version\":\"1.0.0\",\"hooks\":{\"command\":[\"node\",\"${plugin}/gate.mjs\"],\"points\":[\"quest/consider\"]}}",
+        "data/plugins/acme.gate/.daoris-source.json": "{\"folder\":\"<root>/checkout/gate\"}",
+        "data/plugins/acme.gate/gate.mjs": "// v1",
+        "data/plugins/acme.gate/plugin.json": "{\"id\":\"acme.gate\",\"name\":\"Acme gate\",\"version\":\"1.0.0\",\"hooks\":{\"command\":[\"node\",\"${plugin}/gate.mjs\"],\"points\":[\"quest/consider\"]}}"
+      },
+      "exit": 0,
+      "out": [
+        "daoris: plugin `acme.gate`, from <root>/checkout/gate:",
+        "  What it declares does not change; its files are replaced from there.",
+        "daoris: updated plugin `acme.gate` from <root>/checkout/gate.",
+        "  It takes effect at the driver's next look — its hook, if it speaks, restarted at the next tick."
+      ],
+      "err": [],
+      "after": {
+        "INSTALLED.md": "# Daoris — installed desktop\n",
+        "checkout/gate/gate.mjs": "// v2",
+        "checkout/gate/plugin.json": "{\"id\":\"acme.gate\",\"name\":\"Acme gate\",\"version\":\"1.0.0\",\"hooks\":{\"command\":[\"node\",\"${plugin}/gate.mjs\"],\"points\":[\"quest/consider\"]}}",
+        "data/plugins/acme.gate/.daoris-source.json": "{\n  \"folder\": \"<root>/checkout/gate\"\n}\n",
+        "data/plugins/acme.gate/gate.mjs": "// v2",
+        "data/plugins/acme.gate/plugin.json": "{\"id\":\"acme.gate\",\"name\":\"Acme gate\",\"version\":\"1.0.0\",\"hooks\":{\"command\":[\"node\",\"${plugin}/gate.mjs\"],\"points\":[\"quest/consider\"]}}"
+      }
+    },
+    {
+      "name": "update --yes from an offer",
+      "argv": [
+        "update",
+        "acme.offered",
+        "--yes"
+      ],
+      "before": {
+        "INSTALLED.md": "# Daoris — installed desktop\n",
+        "app/plugin-offers/acme.offered/plugin.json": "{ \"id\": \"acme.offered\", \"version\": \"3.1.0\" }",
+        "data/plugins/acme.offered/.daoris-source.json": "{\"offer\":\"acme.offered\"}",
+        "data/plugins/acme.offered/plugin.json": "{ \"id\": \"acme.offered\", \"version\": \"3.0.0\" }"
+      },
+      "exit": 0,
+      "out": [
+        "daoris: plugin `acme.offered`, from Daoris's own plugins, offered by this install (`acme.offered`):",
+        "  version    3.0.0 → 3.1.0",
+        "daoris: updated plugin `acme.offered` from <root>/app/plugin-offers/acme.offered.",
+        "  It takes effect at the driver's next look — its hook, if it speaks, restarted at the next tick."
+      ],
+      "err": [],
+      "after": {
+        "INSTALLED.md": "# Daoris — installed desktop\n",
+        "app/plugin-offers/acme.offered/plugin.json": "{ \"id\": \"acme.offered\", \"version\": \"3.1.0\" }",
+        "data/plugins/acme.offered/.daoris-source.json": "{\n  \"offer\": \"acme.offered\"\n}\n",
+        "data/plugins/acme.offered/plugin.json": "{ \"id\": \"acme.offered\", \"version\": \"3.1.0\" }"
+      }
+    },
+    {
+      "name": "update, not installed",
+      "argv": [
+        "update",
+        "acme.nobody"
+      ],
+      "before": {
+        "INSTALLED.md": "# Daoris — installed desktop\n",
+        "data/plugins/.keep": ""
+      },
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: no plugin `acme.nobody` on this machine — `daoris plugin list` shows what there is. Nothing was replaced."
+      ],
+      "after": {
+        "INSTALLED.md": "# Daoris — installed desktop\n",
+        "data/plugins/.keep": ""
+      }
+    },
+    {
+      "name": "update, no record of where it came from",
+      "argv": [
+        "update",
+        "acme.gate"
+      ],
+      "before": {
+        "INSTALLED.md": "# Daoris — installed desktop\n",
+        "data/plugins/acme.gate/plugin.json": "{\"id\":\"acme.gate\",\"name\":\"Acme gate\",\"version\":\"1.0.0\",\"hooks\":{\"command\":[\"node\",\"${plugin}/gate.mjs\"],\"points\":[\"quest/consider\"]}}"
+      },
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: plugin `acme.gate` has no record of where it came from: it was added before Daoris kept one, or copied in by hand, so there is nothing to update it from. `daoris plugin add <folder>` replaces it wholesale and records where it came from. Nothing was replaced."
+      ],
+      "after": {
+        "INSTALLED.md": "# Daoris — installed desktop\n",
+        "data/plugins/acme.gate/plugin.json": "{\"id\":\"acme.gate\",\"name\":\"Acme gate\",\"version\":\"1.0.0\",\"hooks\":{\"command\":[\"node\",\"${plugin}/gate.mjs\"],\"points\":[\"quest/consider\"]}}"
+      }
+    },
+    {
+      "name": "update, a record that does not read",
+      "argv": [
+        "update",
+        "acme.gate",
+        "--yes"
+      ],
+      "before": {
+        "INSTALLED.md": "# Daoris — installed desktop\n",
+        "data/plugins/acme.gate/.daoris-source.json": "{ not json",
+        "data/plugins/acme.gate/plugin.json": "{\"id\":\"acme.gate\",\"name\":\"Acme gate\",\"version\":\"1.0.0\",\"hooks\":{\"command\":[\"node\",\"${plugin}/gate.mjs\"],\"points\":[\"quest/consider\"]}}"
+      },
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: plugin `acme.gate`'s record of where it came from does not read, so there is nothing to update it from: `.daoris-source.json` does not read (it is not JSON: <why>). `daoris plugin add <folder>` replaces it and records it again. Nothing was replaced."
+      ],
+      "after": {
+        "INSTALLED.md": "# Daoris — installed desktop\n",
+        "data/plugins/acme.gate/.daoris-source.json": "{ not json",
+        "data/plugins/acme.gate/plugin.json": "{\"id\":\"acme.gate\",\"name\":\"Acme gate\",\"version\":\"1.0.0\",\"hooks\":{\"command\":[\"node\",\"${plugin}/gate.mjs\"],\"points\":[\"quest/consider\"]}}"
+      }
+    },
+    {
+      "name": "update, the folder is gone",
+      "argv": [
+        "update",
+        "acme.gate",
+        "--yes"
+      ],
+      "before": {
+        "INSTALLED.md": "# Daoris — installed desktop\n",
+        "data/plugins/acme.gate/.daoris-source.json": "{\"folder\":\"<root>/checkout/gone\"}",
+        "data/plugins/acme.gate/plugin.json": "{\"id\":\"acme.gate\",\"name\":\"Acme gate\",\"version\":\"1.0.0\",\"hooks\":{\"command\":[\"node\",\"${plugin}/gate.mjs\"],\"points\":[\"quest/consider\"]}}"
+      },
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: the folder `acme.gate` was added from is not there any more: <root>/checkout/gone. `daoris plugin add <folder>` from where it is now replaces it and records the new place. Nothing was replaced."
+      ],
+      "after": {
+        "INSTALLED.md": "# Daoris — installed desktop\n",
+        "data/plugins/acme.gate/.daoris-source.json": "{\"folder\":\"<root>/checkout/gone\"}",
+        "data/plugins/acme.gate/plugin.json": "{\"id\":\"acme.gate\",\"name\":\"Acme gate\",\"version\":\"1.0.0\",\"hooks\":{\"command\":[\"node\",\"${plugin}/gate.mjs\"],\"points\":[\"quest/consider\"]}}"
+      }
+    },
+    {
+      "name": "update, the folder holds no manifest",
+      "argv": [
+        "update",
+        "acme.gate",
+        "--yes"
+      ],
+      "before": {
+        "INSTALLED.md": "# Daoris — installed desktop\n",
+        "checkout/gate/readme.txt": "",
+        "data/plugins/acme.gate/.daoris-source.json": "{\"folder\":\"<root>/checkout/gate\"}",
+        "data/plugins/acme.gate/plugin.json": "{\"id\":\"acme.gate\",\"name\":\"Acme gate\",\"version\":\"1.0.0\",\"hooks\":{\"command\":[\"node\",\"${plugin}/gate.mjs\"],\"points\":[\"quest/consider\"]}}"
+      },
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: no `plugin.json` in <root>/checkout/gate — a plugin is a folder with a manifest at its root. Nothing was replaced."
+      ],
+      "after": {
+        "INSTALLED.md": "# Daoris — installed desktop\n",
+        "checkout/gate/readme.txt": "",
+        "data/plugins/acme.gate/.daoris-source.json": "{\"folder\":\"<root>/checkout/gate\"}",
+        "data/plugins/acme.gate/plugin.json": "{\"id\":\"acme.gate\",\"name\":\"Acme gate\",\"version\":\"1.0.0\",\"hooks\":{\"command\":[\"node\",\"${plugin}/gate.mjs\"],\"points\":[\"quest/consider\"]}}"
+      }
+    },
+    {
+      "name": "update, the source is unsound",
+      "argv": [
+        "update",
+        "acme.gate",
+        "--yes"
+      ],
+      "before": {
+        "INSTALLED.md": "# Daoris — installed desktop\n",
+        "checkout/gate/gate.mjs": "// v1",
+        "checkout/gate/plugin.json": "{ \"id\": \"acme.gate\", \"apiVersion\": 99 }",
+        "data/plugins/acme.gate/.daoris-source.json": "{\"folder\":\"<root>/checkout/gate\"}",
+        "data/plugins/acme.gate/gate.mjs": "// v1",
+        "data/plugins/acme.gate/plugin.json": "{\"id\":\"acme.gate\",\"name\":\"Acme gate\",\"version\":\"1.0.0\",\"hooks\":{\"command\":[\"node\",\"${plugin}/gate.mjs\"],\"points\":[\"quest/consider\"]}}"
+      },
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: `plugin.json` in <root>/checkout/gate: needs plugin API 99, and this build speaks 1 — update Daoris, or use a plugin written for 1. Nothing was replaced."
+      ],
+      "after": {
+        "INSTALLED.md": "# Daoris — installed desktop\n",
+        "checkout/gate/gate.mjs": "// v1",
+        "checkout/gate/plugin.json": "{ \"id\": \"acme.gate\", \"apiVersion\": 99 }",
+        "data/plugins/acme.gate/.daoris-source.json": "{\"folder\":\"<root>/checkout/gate\"}",
+        "data/plugins/acme.gate/gate.mjs": "// v1",
+        "data/plugins/acme.gate/plugin.json": "{\"id\":\"acme.gate\",\"name\":\"Acme gate\",\"version\":\"1.0.0\",\"hooks\":{\"command\":[\"node\",\"${plugin}/gate.mjs\"],\"points\":[\"quest/consider\"]}}"
+      }
+    },
+    {
+      "name": "update, the source is another plugin",
+      "argv": [
+        "update",
+        "acme.gate",
+        "--yes"
+      ],
+      "before": {
+        "INSTALLED.md": "# Daoris — installed desktop\n",
+        "checkout/gate/gate.mjs": "// v1",
+        "checkout/gate/plugin.json": "{ \"id\": \"acme.other\" }",
+        "data/plugins/acme.gate/.daoris-source.json": "{\"folder\":\"<root>/checkout/gate\"}",
+        "data/plugins/acme.gate/gate.mjs": "// v1",
+        "data/plugins/acme.gate/plugin.json": "{\"id\":\"acme.gate\",\"name\":\"Acme gate\",\"version\":\"1.0.0\",\"hooks\":{\"command\":[\"node\",\"${plugin}/gate.mjs\"],\"points\":[\"quest/consider\"]}}"
+      },
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: <root>/checkout/gate now holds plugin `acme.other`, not `acme.gate` — an update replaces a plugin with its own next version, never with another plugin. Nothing was replaced."
+      ],
+      "after": {
+        "INSTALLED.md": "# Daoris — installed desktop\n",
+        "checkout/gate/gate.mjs": "// v1",
+        "checkout/gate/plugin.json": "{ \"id\": \"acme.other\" }",
+        "data/plugins/acme.gate/.daoris-source.json": "{\"folder\":\"<root>/checkout/gate\"}",
+        "data/plugins/acme.gate/gate.mjs": "// v1",
+        "data/plugins/acme.gate/plugin.json": "{\"id\":\"acme.gate\",\"name\":\"Acme gate\",\"version\":\"1.0.0\",\"hooks\":{\"command\":[\"node\",\"${plugin}/gate.mjs\"],\"points\":[\"quest/consider\"]}}"
+      }
+    },
+    {
+      "name": "update, the source declares a carried harness",
+      "argv": [
+        "update",
+        "acme.gate",
+        "--yes"
+      ],
+      "before": {
+        "INSTALLED.md": "# Daoris — installed desktop\n",
+        "checkout/gate/gate.mjs": "// v1",
+        "checkout/gate/plugin.json": "{ \"id\": \"acme.gate\", \"harnesses\": [ { \"name\": \"dsh\", \"command\": [\"x\"] } ] }",
+        "data/plugins/acme.gate/.daoris-source.json": "{\"folder\":\"<root>/checkout/gate\"}",
+        "data/plugins/acme.gate/gate.mjs": "// v1",
+        "data/plugins/acme.gate/plugin.json": "{\"id\":\"acme.gate\",\"name\":\"Acme gate\",\"version\":\"1.0.0\",\"hooks\":{\"command\":[\"node\",\"${plugin}/gate.mjs\"],\"points\":[\"quest/consider\"]}}"
+      },
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: plugin `acme.gate` declares agent `dsh`, which this build already carries — a plugin adds an agent and never replaces one. Nothing was replaced."
+      ],
+      "after": {
+        "INSTALLED.md": "# Daoris — installed desktop\n",
+        "checkout/gate/gate.mjs": "// v1",
+        "checkout/gate/plugin.json": "{ \"id\": \"acme.gate\", \"harnesses\": [ { \"name\": \"dsh\", \"command\": [\"x\"] } ] }",
+        "data/plugins/acme.gate/.daoris-source.json": "{\"folder\":\"<root>/checkout/gate\"}",
+        "data/plugins/acme.gate/gate.mjs": "// v1",
+        "data/plugins/acme.gate/plugin.json": "{\"id\":\"acme.gate\",\"name\":\"Acme gate\",\"version\":\"1.0.0\",\"hooks\":{\"command\":[\"node\",\"${plugin}/gate.mjs\"],\"points\":[\"quest/consider\"]}}"
+      },
+      "changed": "the driver's catalogue says a declared agent, as the window and Ask Daoris say it (the agent-word rename, AGT1); the CLI's twin still said harness"
+    },
+    {
+      "name": "update, an offer no longer offered",
+      "argv": [
+        "update",
+        "acme.gate",
+        "--yes"
+      ],
+      "before": {
+        "INSTALLED.md": "# Daoris — installed desktop\n",
+        "data/plugins/acme.gate/.daoris-source.json": "{\"offer\":\"acme.gate\"}",
+        "data/plugins/acme.gate/plugin.json": "{\"id\":\"acme.gate\",\"name\":\"Acme gate\",\"version\":\"1.0.0\",\"hooks\":{\"command\":[\"node\",\"${plugin}/gate.mjs\"],\"points\":[\"quest/consider\"]}}"
+      },
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: Daoris's own `acme.gate` is not offered by this install any more, so there is nothing to update `acme.gate` from. It stays as it is; `daoris plugin remove acme.gate` takes it out. Nothing was replaced."
+      ],
+      "after": {
+        "INSTALLED.md": "# Daoris — installed desktop\n",
+        "data/plugins/acme.gate/.daoris-source.json": "{\"offer\":\"acme.gate\"}",
+        "data/plugins/acme.gate/plugin.json": "{\"id\":\"acme.gate\",\"name\":\"Acme gate\",\"version\":\"1.0.0\",\"hooks\":{\"command\":[\"node\",\"${plugin}/gate.mjs\"],\"points\":[\"quest/consider\"]}}"
+      }
+    },
+    {
+      "name": "update, a source inside the home",
+      "argv": [
+        "update",
+        "acme.gate",
+        "--yes"
+      ],
+      "before": {
+        "INSTALLED.md": "# Daoris — installed desktop\n",
+        "data/elsewhere/gate/plugin.json": "{\"id\":\"acme.gate\",\"name\":\"Acme gate\",\"version\":\"1.0.0\",\"hooks\":{\"command\":[\"node\",\"${plugin}/gate.mjs\"],\"points\":[\"quest/consider\"]}}",
+        "data/plugins/acme.gate/.daoris-source.json": "{\"folder\":\"<root>/data/elsewhere/gate\"}",
+        "data/plugins/acme.gate/plugin.json": "{\"id\":\"acme.gate\",\"name\":\"Acme gate\",\"version\":\"1.0.0\",\"hooks\":{\"command\":[\"node\",\"${plugin}/gate.mjs\"],\"points\":[\"quest/consider\"]}}"
+      },
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: <root>/data/elsewhere/gate is inside Daoris's home, which holds what Daoris installed and kept — add a plugin from the repository that holds it. Nothing was replaced."
+      ],
+      "after": {
+        "INSTALLED.md": "# Daoris — installed desktop\n",
+        "data/elsewhere/gate/plugin.json": "{\"id\":\"acme.gate\",\"name\":\"Acme gate\",\"version\":\"1.0.0\",\"hooks\":{\"command\":[\"node\",\"${plugin}/gate.mjs\"],\"points\":[\"quest/consider\"]}}",
+        "data/plugins/acme.gate/.daoris-source.json": "{\"folder\":\"<root>/data/elsewhere/gate\"}",
+        "data/plugins/acme.gate/plugin.json": "{\"id\":\"acme.gate\",\"name\":\"Acme gate\",\"version\":\"1.0.0\",\"hooks\":{\"command\":[\"node\",\"${plugin}/gate.mjs\"],\"points\":[\"quest/consider\"]}}"
+      }
+    },
+    {
+      "name": "update, a package",
+      "argv": [
+        "update",
+        "acme.gate",
+        "--yes"
+      ],
+      "before": {
+        "INSTALLED.md": "# Daoris — installed desktop\n",
+        "data/plugins/acme.gate/.daoris-source.json": "{\"package\":\"Acme.Gate\",\"version\":\"1.0.0\",\"sha512\":\"lI2d9nx0gRaX9NBCiZTClpHmOErJBcRt2N7X5LscwHYyVz7154wN7JsM+kCuEtAT/npvZX0s5104l3pIJMHYgg==\",\"source\":\"<root>/feed\"}",
+        "data/plugins/acme.gate/plugin.json": "{\"id\":\"acme.gate\",\"name\":\"Acme gate\",\"version\":\"1.0.0\",\"hooks\":{\"command\":[\"node\",\"${plugin}/gate.mjs\"],\"points\":[\"quest/consider\"]}}"
+      },
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: plugin `acme.gate` came from <root>/feed, package `Acme.Gate` 1.0.0, and a plugin from a package is installed whole. A newer package takes its place: `daoris plugin remove acme.gate`, then `daoris-driver plugins install <file.nupkg>`, and what it kept stays where it is. Nothing was replaced."
+      ],
+      "after": {
+        "INSTALLED.md": "# Daoris — installed desktop\n",
+        "data/plugins/acme.gate/.daoris-source.json": "{\"package\":\"Acme.Gate\",\"version\":\"1.0.0\",\"sha512\":\"lI2d9nx0gRaX9NBCiZTClpHmOErJBcRt2N7X5LscwHYyVz7154wN7JsM+kCuEtAT/npvZX0s5104l3pIJMHYgg==\",\"source\":\"<root>/feed\"}",
+        "data/plugins/acme.gate/plugin.json": "{\"id\":\"acme.gate\",\"name\":\"Acme gate\",\"version\":\"1.0.0\",\"hooks\":{\"command\":[\"node\",\"${plugin}/gate.mjs\"],\"points\":[\"quest/consider\"]}}"
+      }
+    },
+    {
+      "name": "update, not an id",
+      "argv": [
+        "update",
+        "../acme.gate"
+      ],
+      "before": {
+        "INSTALLED.md": "# Daoris — installed desktop\n"
+      },
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: `../acme.gate` is not a plugin id — one is lowercase letters, digits, dots and dashes, like `acme.quiet-hours`; `daoris plugin list` shows what there is."
+      ],
+      "after": {
+        "INSTALLED.md": "# Daoris — installed desktop\n"
+      }
+    },
+    {
+      "name": "update, a line break after an id",
+      "argv": [
+        "update",
+        "acme.gate\n"
+      ],
+      "before": {
+        "INSTALLED.md": "# Daoris — installed desktop\n"
+      },
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: `acme.gate",
+        "` is not a plugin id — one is lowercase letters, digits, dots and dashes, like `acme.quiet-hours`; `daoris plugin list` shows what there is."
+      ],
+      "after": {
+        "INSTALLED.md": "# Daoris — installed desktop\n"
+      }
+    },
+    {
+      "name": "update with no id",
+      "argv": [
+        "update"
+      ],
+      "before": {
+        "INSTALLED.md": "# Daoris — installed desktop\n"
+      },
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: `plugin update` needs a plugin id — e.g. `daoris plugin update acme.quiet-hours`."
+      ],
+      "after": {
+        "INSTALLED.md": "# Daoris — installed desktop\n"
+      }
+    },
+    {
+      "name": "update with a flag for its id",
+      "argv": [
+        "update",
+        "--yes"
+      ],
+      "before": {
+        "INSTALLED.md": "# Daoris — installed desktop\n"
+      },
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: `plugin update` needs a plugin id — e.g. `daoris plugin update acme.quiet-hours`."
+      ],
+      "after": {
+        "INSTALLED.md": "# Daoris — installed desktop\n"
+      }
+    },
+    {
+      "name": "remove takes the folder and keeps what it kept",
+      "argv": [
+        "remove",
+        "acme.agent"
+      ],
+      "before": {
+        "INSTALLED.md": "# Daoris — installed desktop\n",
+        "data/plugins/.data/acme.agent/kept.json": "{}",
+        "data/plugins/acme.agent/plugin.json": "{ \"id\": \"acme.agent\" }",
+        "data/plugins.json": "{ \"disabled\": [\"acme.agent\"], \"note\": \"mine\" }"
+      },
+      "exit": 0,
+      "out": [
+        "daoris: plugin `acme.agent` removed from this machine.",
+        "  What it kept is still at <root>/data/plugins/.data/acme.agent — yours to delete, never Daoris's."
+      ],
+      "err": [],
+      "after": {
+        "INSTALLED.md": "# Daoris — installed desktop\n",
+        "data/plugins/.data/acme.agent/kept.json": "{}",
+        "data/plugins.json": "{\n  \"disabled\": [],\n  \"note\": \"mine\"\n}\n"
+      }
+    },
+    {
+      "name": "remove what keeps nothing",
+      "argv": [
+        "remove",
+        "acme.agent"
+      ],
+      "before": {
+        "INSTALLED.md": "# Daoris — installed desktop\n",
+        "data/plugins/acme.agent/plugin.json": "{ \"id\": \"acme.agent\" }"
+      },
+      "exit": 0,
+      "out": [
+        "daoris: plugin `acme.agent` removed from this machine."
+      ],
+      "err": [],
+      "after": {
+        "INSTALLED.md": "# Daoris — installed desktop\n"
+      }
+    },
+    {
+      "name": "remove what is not there",
+      "argv": [
+        "remove",
+        "acme.agent"
+      ],
+      "before": {
+        "INSTALLED.md": "# Daoris — installed desktop\n"
+      },
+      "exit": 0,
+      "out": [
+        "daoris: no plugin `acme.agent` on this machine — nothing to remove."
+      ],
+      "err": [],
+      "after": {
+        "INSTALLED.md": "# Daoris — installed desktop\n"
+      }
+    },
+    {
+      "name": "remove an id that is not one",
+      "argv": [
+        "remove",
+        ".."
+      ],
+      "before": {
+        "INSTALLED.md": "# Daoris — installed desktop\n",
+        "data/plugins/acme.agent/plugin.json": "{ \"id\": \"acme.agent\" }"
+      },
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: `..` is not a plugin id — one is lowercase letters, digits, dots and dashes, like `acme.quiet-hours`; `daoris plugin list` shows what there is."
+      ],
+      "after": {
+        "INSTALLED.md": "# Daoris — installed desktop\n",
+        "data/plugins/acme.agent/plugin.json": "{ \"id\": \"acme.agent\" }"
+      }
+    },
+    {
+      "name": "remove .data",
+      "argv": [
+        "remove",
+        ".data"
+      ],
+      "before": {
+        "INSTALLED.md": "# Daoris — installed desktop\n",
+        "data/plugins/.data/acme.agent/kept.json": "{}"
+      },
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: `.data` is not a plugin id — one is lowercase letters, digits, dots and dashes, like `acme.quiet-hours`; `daoris plugin list` shows what there is."
+      ],
+      "after": {
+        "INSTALLED.md": "# Daoris — installed desktop\n",
+        "data/plugins/.data/acme.agent/kept.json": "{}"
+      }
+    },
+    {
+      "name": "remove with no id",
+      "argv": [
+        "remove"
+      ],
+      "before": {
+        "INSTALLED.md": "# Daoris — installed desktop\n"
+      },
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: `plugin remove` needs a plugin id — e.g. `daoris plugin remove acme.quiet-hours`."
+      ],
+      "after": {
+        "INSTALLED.md": "# Daoris — installed desktop\n"
+      }
+    },
+    {
+      "name": "disable switches it off",
+      "argv": [
+        "disable",
+        "acme.agent"
+      ],
+      "before": {
+        "INSTALLED.md": "# Daoris — installed desktop\n",
+        "data/plugins/acme.agent/plugin.json": "{ \"id\": \"acme.agent\" }"
+      },
+      "exit": 0,
+      "out": [
+        "daoris: plugin `acme.agent` is off on this machine.",
+        "  It stays where it is, and so does what it kept; the driver stops asking it at its next look."
+      ],
+      "err": [],
+      "after": {
+        "INSTALLED.md": "# Daoris — installed desktop\n",
+        "data/plugins/acme.agent/plugin.json": "{ \"id\": \"acme.agent\" }",
+        "data/plugins.json": "{\n  \"disabled\": [\n    \"acme.agent\"\n  ]\n}\n"
+      }
+    },
+    {
+      "name": "disable keeps what plugins.json holds",
+      "argv": [
+        "disable",
+        "acme.agent"
+      ],
+      "before": {
+        "INSTALLED.md": "# Daoris — installed desktop\n",
+        "data/plugins/acme.agent/plugin.json": "{ \"id\": \"acme.agent\" }",
+        "data/plugins.json": "{ \"disabled\": [\"other\"], \"note\": \"mine\" }"
+      },
+      "exit": 0,
+      "out": [
+        "daoris: plugin `acme.agent` is off on this machine.",
+        "  It stays where it is, and so does what it kept; the driver stops asking it at its next look."
+      ],
+      "err": [],
+      "after": {
+        "INSTALLED.md": "# Daoris — installed desktop\n",
+        "data/plugins/acme.agent/plugin.json": "{ \"id\": \"acme.agent\" }",
+        "data/plugins.json": "{\n  \"disabled\": [\n    \"acme.agent\",\n    \"other\"\n  ],\n  \"note\": \"mine\"\n}\n"
+      }
+    },
+    {
+      "name": "disable what is off already",
+      "argv": [
+        "disable",
+        "acme.agent"
+      ],
+      "before": {
+        "INSTALLED.md": "# Daoris — installed desktop\n",
+        "data/plugins/acme.agent/plugin.json": "{ \"id\": \"acme.agent\" }",
+        "data/plugins.json": "{\n  \"disabled\": [\n    \"acme.agent\"\n  ]\n}\n"
+      },
+      "exit": 0,
+      "out": [
+        "daoris: plugin `acme.agent` is off on this machine.",
+        "  It stays where it is, and so does what it kept; the driver stops asking it at its next look."
+      ],
+      "err": [],
+      "after": {
+        "INSTALLED.md": "# Daoris — installed desktop\n",
+        "data/plugins/acme.agent/plugin.json": "{ \"id\": \"acme.agent\" }",
+        "data/plugins.json": "{\n  \"disabled\": [\n    \"acme.agent\"\n  ]\n}\n"
+      }
+    },
+    {
+      "name": "enable switches it on",
+      "argv": [
+        "enable",
+        "acme.agent"
+      ],
+      "before": {
+        "INSTALLED.md": "# Daoris — installed desktop\n",
+        "data/plugins/acme.agent/plugin.json": "{ \"id\": \"acme.agent\" }",
+        "data/plugins.json": "{ \"disabled\": [\"acme.agent\", \"other\"] }"
+      },
+      "exit": 0,
+      "out": [
+        "daoris: plugin `acme.agent` is on on this machine."
+      ],
+      "err": [],
+      "after": {
+        "INSTALLED.md": "# Daoris — installed desktop\n",
+        "data/plugins/acme.agent/plugin.json": "{ \"id\": \"acme.agent\" }",
+        "data/plugins.json": "{\n  \"disabled\": [\n    \"other\"\n  ]\n}\n"
+      }
+    },
+    {
+      "name": "enable by another case",
+      "argv": [
+        "enable",
+        "ACME.AGENT"
+      ],
+      "before": {
+        "INSTALLED.md": "# Daoris — installed desktop\n",
+        "data/plugins/acme.agent/plugin.json": "{ \"id\": \"acme.agent\" }",
+        "data/plugins.json": "{ \"disabled\": [\"acme.agent\"] }"
+      },
+      "exit": 0,
+      "out": [
+        "daoris: plugin `acme.agent` is on on this machine."
+      ],
+      "err": [],
+      "after": {
+        "INSTALLED.md": "# Daoris — installed desktop\n",
+        "data/plugins/acme.agent/plugin.json": "{ \"id\": \"acme.agent\" }",
+        "data/plugins.json": "{\n  \"disabled\": []\n}\n"
+      }
+    },
+    {
+      "name": "enable one that is refused says why",
+      "argv": [
+        "enable",
+        "future"
+      ],
+      "before": {
+        "INSTALLED.md": "# Daoris — installed desktop\n",
+        "data/plugins/future/plugin.json": "{ \"id\": \"future\", \"apiVersion\": 99 }",
+        "data/plugins.json": "{ \"disabled\": [\"future\"] }"
+      },
+      "exit": 0,
+      "out": [
+        "daoris: plugin `future` is on on this machine.",
+        "  ⚠ needs plugin API 99, and this build speaks 1 — update Daoris, or use a plugin written for 1."
+      ],
+      "err": [],
+      "after": {
+        "INSTALLED.md": "# Daoris — installed desktop\n",
+        "data/plugins/future/plugin.json": "{ \"id\": \"future\", \"apiVersion\": 99 }",
+        "data/plugins.json": "{\n  \"disabled\": []\n}\n"
+      }
+    },
+    {
+      "name": "enable what is not there",
+      "argv": [
+        "enable",
+        "nobody"
+      ],
+      "before": {
+        "INSTALLED.md": "# Daoris — installed desktop\n",
+        "data/plugins/acme.agent/plugin.json": "{ \"id\": \"acme.agent\" }"
+      },
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: no plugin `nobody` on this machine — `daoris plugin list` shows what there is."
+      ],
+      "after": {
+        "INSTALLED.md": "# Daoris — installed desktop\n",
+        "data/plugins/acme.agent/plugin.json": "{ \"id\": \"acme.agent\" }"
+      }
+    },
+    {
+      "name": "disable over a plugins.json that does not read",
+      "argv": [
+        "disable",
+        "acme.agent"
+      ],
+      "before": {
+        "INSTALLED.md": "# Daoris — installed desktop\n",
+        "data/plugins/acme.agent/plugin.json": "{ \"id\": \"acme.agent\" }",
+        "data/plugins.json": "{ not json"
+      },
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: plugins.json could not be read (<why>), so this was not changed — writing it now would switch back on every plugin it had switched off. Fix the file or remove it, then make the change again. (DRIVER_REFUSED)"
+      ],
+      "after": {
+        "INSTALLED.md": "# Daoris — installed desktop\n",
+        "data/plugins/acme.agent/plugin.json": "{ \"id\": \"acme.agent\" }",
+        "data/plugins.json": "{ not json"
+      },
+      "changed": "the driver's `PluginState` refuses an edit over a `plugins.json` that does not read, in its words, as the window's switch does, and the alone path says the operation's refusal with its code (D194 point 6)"
+    },
+    {
+      "name": "disable with no id",
+      "argv": [
+        "disable"
+      ],
+      "before": {
+        "INSTALLED.md": "# Daoris — installed desktop\n"
+      },
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: `plugin disable` needs a plugin id — e.g. `daoris plugin disable acme.quiet-hours`."
+      ],
+      "after": {
+        "INSTALLED.md": "# Daoris — installed desktop\n"
+      }
+    },
+    {
+      "name": "enable, no home",
+      "argv": [
+        "enable",
+        "acme.agent"
+      ],
+      "home": false,
+      "before": {
+        "INSTALLED.md": "# Daoris — installed desktop\n"
+      },
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: no Daoris home: set DAORIS_HOME to the application's data folder (the `data` directory beside Daoris.exe), or name the file's own variable. Daoris keeps nothing under the user profile. (wanted: plugins/)"
+      ],
+      "after": {
+        "INSTALLED.md": "# Daoris — installed desktop\n"
+      }
+    },
+    {
+      "name": "new says where the kit is",
+      "argv": [
+        "new",
+        "acme.gate"
+      ],
+      "home": false,
+      "before": {
+        "INSTALLED.md": "# Daoris — installed desktop\n"
+      },
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: the plugin kit is `daoris-driver plugins new`, or the Plugins place — it starts a plugin as the driver would, so it lives with the driver. `daoris-driver plugins` says what each takes."
+      ],
+      "after": {
+        "INSTALLED.md": "# Daoris — installed desktop\n"
+      }
+    },
+    {
+      "name": "try says where the kit is",
+      "argv": [
+        "try",
+        "acme.gate"
+      ],
+      "home": false,
+      "before": {
+        "INSTALLED.md": "# Daoris — installed desktop\n"
+      },
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: the plugin kit is `daoris-driver plugins try`, or the Plugins place — it starts a plugin as the driver would, so it lives with the driver. `daoris-driver plugins` says what each takes."
+      ],
+      "after": {
+        "INSTALLED.md": "# Daoris — installed desktop\n"
+      }
+    },
+    {
+      "name": "install says a package is the driver's",
+      "argv": [
+        "install",
+        "<root>/Acme.Gate.1.0.0.nupkg"
+      ],
+      "before": {
+        "INSTALLED.md": "# Daoris — installed desktop\n"
+      },
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: a plugin package is installed by `daoris-driver plugins install <file.nupkg>` — the driver reads a package and checks it before anything is extracted. `daoris plugin add <folder>` installs a plugin's folder."
+      ],
+      "after": {
+        "INSTALLED.md": "# Daoris — installed desktop\n"
+      }
+    },
+    {
+      "name": "an unknown verb",
+      "argv": [
+        "frobnicate"
+      ],
+      "before": {
+        "INSTALLED.md": "# Daoris — installed desktop\n"
+      },
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: unknown plugin verb 'frobnicate' — one of: list, add, update, remove, enable, disable (and new, try: the kit)"
+      ],
+      "after": {
+        "INSTALLED.md": "# Daoris — installed desktop\n"
+      }
+    }
+  ]
+}

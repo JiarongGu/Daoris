@@ -6,9 +6,9 @@ namespace Daoris.Driver;
 /// <c>codex</c> door to declare them (D23) and the door runs <c>codex</c> with no sign-in of its own (ACP3).
 /// </summary>
 /// <remarks>
-/// <para><b>The CLI's <c>codex</c> entry is the twin</b> (<c>toolchain.ts</c>, <c>.claude/knowledge/twins.md</c>):
-/// <c>CodexAccountTests</c> reads it and holds this to it, so <c>daoris agent login codex --new</c> and the window's
-/// <i>Add an account…</i> run one sign-in into one folder and ask one question.</para>
+/// <para><b>One declaration</b>: <c>daoris agent login codex --new</c> is <c>daoris-driver agent login</c> (PUSH1f2e), so it and the
+/// window's <i>Add an account…</i> run one sign-in into one folder and ask one question. The CLI's <c>codex</c> entry in
+/// <c>toolchain.ts</c> was its twin until <c>TOOLCHAINS</c> left (PUSH1f2f).</para>
 /// <para><b>Measured on the install with Codex 0.160.0, 2026-10-08</b>: <c>codex login status</c> prints <c>Logged in
 /// using ChatGPT</c> or, under an empty <c>CODEX_HOME</c>, <c>Not logged in</c>, exiting 0 for both, so the words are the
 /// answer, anchored at a line's start because the second contains the first. It names nobody, so an account is named by
