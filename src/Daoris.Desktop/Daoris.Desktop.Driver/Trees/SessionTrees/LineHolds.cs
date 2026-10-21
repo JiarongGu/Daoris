@@ -134,6 +134,8 @@ internal static class LineHolds
         string root, string onto, IReadOnlyList<LandingCommit> kept, CancellationToken ct)
     {
         var current = onto;
+        // LANDBACKLOG1: the backlog the line declares at the trial's start, read once, at the first step that needs it.
+        Task<string?>? declared = null;
         foreach (var commit in kept)
         {
             var (code, output, _) = await WorkingTree.GitAsync(
@@ -144,11 +146,25 @@ internal static class LineHolds
             // press's replay takes the line's copy of them; the trial goes on from the tree git wrote. The names follow the tree's id,
             // up to the blank line before git's messages.
             if (code == 1 && lines.Length > 1 && lines[0].Length > 0
-                && lines.Skip(1).TakeWhile(each => each.Length > 0).Distinct(StringComparer.Ordinal).ToList() is { Count: > 0 } named
-                && await GeneratedPaths.AllAsync(root, named, ct, source: onto).ConfigureAwait(false) is true)
+                && lines.Skip(1).TakeWhile(each => each.Length > 0).Distinct(StringComparer.Ordinal).ToList() is { Count: > 0 } named)
             {
-                current = lines[0];
-                continue;
+                if (await GeneratedPaths.AllAsync(root, named, ct, source: onto).ConfigureAwait(false) is true)
+                {
+                    current = lines[0];
+                    continue;
+                }
+
+                // LANDBACKLOG1: nor is one in the declared backlog, alone or beside generated files, that its merge base settles, as the
+                // press settles it: the trial goes on from the tree git wrote with the backlog merged in.
+                var backlog = await (declared ??= BacklogMerge.DeclaredAsync(root, onto, ct)).ConfigureAwait(false);
+                var others = named.Where(each => each != backlog).ToList();
+                if (backlog is not null && others.Count < named.Count
+                    && (others.Count == 0 || await GeneratedPaths.AllAsync(root, others, ct, source: onto).ConfigureAwait(false) is true)
+                    && await BacklogMerge.TrialAsync(root, backlog, $"{commit.Sha}^", current, commit.Sha, lines[0], ct).ConfigureAwait(false) is { } settled)
+                {
+                    current = settled;
+                    continue;
+                }
             }
 
             if (code == 1)

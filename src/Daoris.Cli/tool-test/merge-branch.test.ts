@@ -954,6 +954,8 @@ const LONG = ['driver-process', 'driver-process-git', 'modules-process', 'deploy
 const BLOCKING = ['universal', 'code-map', 'orient-index'];
 /** The kept names' table (SESSDEL1c): among the driver's tests, and the page's twin reads it too. */
 const KEPT_NAMES = 'src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/kept-names.json';
+/** The backlog merges' table (LANDBACKLOG1): among the driver's tests, and the merge tool's twin reads it too. */
+const BACKLOG_MERGES = 'src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/backlog-merges.json';
 /**
  * The driver's sources whose declarations the page's twin vitests parse (MOD9e): SESSDEL1c's scan found them. Each by its
  * name, at whatever depth of the driver's folder it is tracked (STRUCT1, D166).
@@ -1033,6 +1035,8 @@ test('a merge runs the baseline and what each changed path can reach, but the lo
     ["the history words' table", ['src/Daoris.Service/Daoris.Service.Tests/fixtures/history-words.json'], [...BASE, 'service', 'driver']],
     // SESSDEL1c: the kept names' table sits among the driver's tests, and the page's twin reads it too.
     ["the kept names' table", [KEPT_NAMES], [...BASE, 'driver', 'web-unit']],
+    // LANDBACKLOG1: the backlog merges' table sits among the driver's tests, and the merge tool's twin reads it too.
+    ["the backlog merges' table", [BACKLOG_MERGES], [...BASE, 'tool-tests', 'driver']],
     // MIXAGENT1c: the person's order's table sits among the driver's tests, and the page's twin reads it too.
     ["the hand-over order's table", ['src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/hand-over-order.json'], [...BASE, 'driver', 'web-unit']],
     // REVIEWENV1c4: the review rules' table sits among the driver's tests, and the service's tool test reads its gate rows.
@@ -1335,6 +1339,25 @@ test('the backlog merged by its base keeps a row a side added, drops one a side 
   assert.equal(tool.mergeByBase(base, base.replace('**A2** two.', '**A2** edited.'), base.replace('- [ ] **A2** two.\n', '')).text, null);
   const same = base.replace('**A2** two.', '**A2** edited.');
   assert.equal(tool.mergeByBase(base, same, same).text, same);
+});
+
+// LANDBACKLOG1: the rule is a twin. A landing's replay settles a backlog-only conflict by it, and the driver's BacklogMerge holds the
+// same table, row for row.
+test("the declared backlog and its merge by base read as the table the driver's landing holds too (LANDBACKLOG1)", () => {
+  type Row = { name: string; base: string[]; ours: string[]; theirs: string[]; text: string[] | null; kept: number; dropped: number; both: number[] };
+  const table = JSON.parse(readFileSync(join(repoRoot, BACKLOG_MERGES), 'utf8')) as {
+    paths: { name: string; manifest: string | null; backlog: string | null }[];
+    merges: Row[];
+  };
+  assert.ok(table.paths.length >= 10 && table.merges.length >= 8, 'the table holds its rows');
+  for (const row of table.paths) assert.equal(tool.backlogOf(row.manifest), row.backlog, row.name);
+  for (const row of table.merges) {
+    const merged = tool.mergeByBase(row.base.join('\n'), row.ours.join('\n'), row.theirs.join('\n'));
+    assert.deepEqual(
+      { text: merged.text, kept: merged.kept, dropped: merged.dropped, both: merged.both.map((entry: { line: number }) => entry.line) },
+      { text: row.text?.join('\n') ?? null, kept: row.kept, dropped: row.dropped, both: row.both },
+      row.name);
+  }
 });
 
 test('a note set apart is named by its task, or by its label when it names none', () => {
