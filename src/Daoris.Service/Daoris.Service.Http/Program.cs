@@ -1165,6 +1165,8 @@ if (mode == ServiceMode.Local)
     });
 
     // An entry's read mark, moved: the person's, or a part's that a driver handed the channel to (SESSONE2b). Answers the channel as it then reads.
+    // NOTIFY2g (D196 point 6; the notification design §2.4): the person's is kept on a teammate's ask the sync mirrored too, on this machine
+    // alone; a session's entry there, and an ask nowhere, are not found.
     app.MapPost("/api/asks/{id}/channel/read", async (
         ComposedService s, string id, ChannelReadRequest body, CancellationToken ct) =>
     {
