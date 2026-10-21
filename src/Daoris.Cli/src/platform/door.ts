@@ -58,17 +58,10 @@ export const PLUGIN_VERBS: readonly (readonly [verb: string, route: InstanceRout
 // `daoris agent rules|trust|settings`'s routes and verbs are the driver program's since PUSH1f2d (D194): its `AgentRoutes`, held to the
 // census there, with which home each writes.
 
-/**
- * The routes `daoris agent` sends while Daoris runs (the Accounts place): how a list is used is the person's. The Agents place's
- * `HARNESS_ACTION` is sent by Daoris's driver program since PUSH1f2e2 (`AgentRoutes`).
- */
-export const AGENT_ROUTES = {
-  account: person('ACCOUNT_USE'),
-} as const satisfies Record<string, InstanceRoute>;
+// `daoris agent`'s routes are the driver program's since PUSH1f2e3: `HARNESS_ACTION` (PUSH1f2e2) and `ACCOUNT_USE`, its `AgentRoutes`.
 
-/** Each `daoris agent` verb that changes the home: its route, or null with the reason it acts alone. */
+/** Each `daoris agent` verb still here that changes the home: none takes a route, each with the reason it acts alone. */
 export const AGENT_VERBS: readonly (readonly [verb: string, route: InstanceRoute | null, reason: string])[] = [
-  ['agent profile use', AGENT_ROUTES.account, 'the Accounts place\'s use'],
   ['agent install|update <agent>', null, 'alone: the agent\'s own installer or updater, whose output is this terminal\'s; HARNESS_ACTION runs it in the window\'s console'],
   ['agent login <agent>', null, 'alone: the agent\'s own sign-in, whose prompts are this terminal\'s; HARNESS_ACTION runs it in the window\'s console'],
   ['agent key <agent>', null, 'alone: the key is read from this terminal\'s standard input, and never crosses a wire'],
