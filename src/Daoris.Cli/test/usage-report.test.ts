@@ -507,7 +507,7 @@ test('the rule proposals: what waits for the person now, and those made in the p
 });
 
 /**
- * The proposals' parse table: the file is the contract (`RuleProposals.cs`, `ruleproposals.ts`), and the
+ * The proposals' parse table: the file is the contract (`RuleProposals.cs`; `ruleproposals.ts` left in PUSH1f2d), and the
  * report reads only its id, its time and its state, by the same rules: a file with no id or no change is
  * not a proposal, and a state nobody knows is `proposed`.
  */

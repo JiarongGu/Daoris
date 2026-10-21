@@ -1,5 +1,5 @@
 {
-  "about": "KEEPALL1, KEEPALL1b, KEEPALL1c and KEEPALL1e (D173's KEEPALL1, KEEPALL1b, KEEPALL1c and KEEPALL1e notes; FIX-LOG 2026-10-17): every home file a door edits keeps what its writer does not own, as driver.json's writers do (driver-config-keeps.json). Read row for row by the CLI's homefileskeep.test.ts and the driver's HomeFilesKeepTests, and browser/settings.json's rows by the modules' BrowserSettingsTests, whose writer that is; a remotes.json row's `reads` is the map every reader reads from what was written (or left), workspace → url and key, held by those two and by the service's RemoteConfigKeepTests, the third reader. `files` holds each file as it stands before the read, in the writer's layout, its lines joined by LF with one final LF, with keys neither twin knows at each level and numbers JavaScript cannot hold or would write shorter. A row names its `file` and one door's `edit` (`op` and its fields); `changes` turn that file into what both twins write, each `from` found exactly once (its lines joined by LF) and replaced by `to`. A row's `start` is made to the file before the read; `between` is another writer's change, made after this writer read the file and before it writes, which the write keeps (only for a writer whose read and write are two calls); a row whose file `crlf` is true has its lines joined by CRLF, and so is what both write; a row `refused` writes nothing, its refusal naming what it says, the file left as `start` or `between` made it (and `changes` say so). A row `only` names the one twin with a writer for its file (`plugin-approvals.json` is the driver's alone, KEEPALL1d; `tools.json` too since PUSH1f2c handed `daoris tool` to the driver's program), and the other skips it.",
+  "about": "KEEPALL1, KEEPALL1b, KEEPALL1c and KEEPALL1e (D173's KEEPALL1, KEEPALL1b, KEEPALL1c and KEEPALL1e notes; FIX-LOG 2026-10-17): every home file a door edits keeps what its writer does not own, as driver.json's writers do (driver-config-keeps.json). Read row for row by the CLI's homefileskeep.test.ts and the driver's HomeFilesKeepTests, and browser/settings.json's rows by the modules' BrowserSettingsTests, whose writer that is; a remotes.json row's `reads` is the map every reader reads from what was written (or left), workspace → url and key, held by those two and by the service's RemoteConfigKeepTests, the third reader. `files` holds each file as it stands before the read, in the writer's layout, its lines joined by LF with one final LF, with keys neither twin knows at each level and numbers JavaScript cannot hold or would write shorter. A row names its `file` and one door's `edit` (`op` and its fields); `changes` turn that file into what both twins write, each `from` found exactly once (its lines joined by LF) and replaced by `to`. A row's `start` is made to the file before the read; `between` is another writer's change, made after this writer read the file and before it writes, which the write keeps (only for a writer whose read and write are two calls); a row whose file `crlf` is true has its lines joined by CRLF, and so is what both write; a row `refused` writes nothing, its refusal naming what it says, the file left as `start` or `between` made it (and `changes` say so). A row `only` names the one twin with a writer for its file (`plugin-approvals.json` is the driver's alone, KEEPALL1d; `tools.json` too since PUSH1f2c handed `daoris tool` to the driver's program, and `permissions.json` since PUSH1f2d handed `daoris agent rules`), and the other skips it.",
   "files": {
     "tools.json": [
       "{",
@@ -424,12 +424,14 @@
     {
       "name": "permissions: read and written with no edit, the same bytes",
       "file": "permissions.json",
+      "only": "driver",
       "edit": { "op": "none" },
       "changes": []
     },
     {
       "name": "permissions: a machine rule added keeps the machine's own key and the rest as written",
       "file": "permissions.json",
+      "only": "driver",
       "edit": { "op": "permission-add", "scope": "machine", "list": "allow", "rule": "Bash(npm run build:*)" },
       "changes": [
         { "from": ["      \"Bash(npm test:*)\""], "to": ["      \"Bash(npm test:*)\",", "      \"Bash(npm run build:*)\""] }
@@ -438,6 +440,7 @@
     {
       "name": "permissions: a workspace rule added goes after the list before it, the workspace's own key kept",
       "file": "permissions.json",
+      "only": "driver",
       "edit": { "op": "permission-add", "scope": "workspace", "name": "work", "list": "deny", "rule": "Bash(curl:*)" },
       "changes": [
         { "from": ["        \"Read\"", "      ],"], "to": ["        \"Read\"", "      ],", "      \"deny\": [", "        \"Bash(curl:*)\"", "      ],"] }
@@ -446,6 +449,7 @@
     {
       "name": "permissions: a repository's last rule removed takes the repository, and the emptied map",
       "file": "permissions.json",
+      "only": "driver",
       "edit": { "op": "permission-remove", "scope": "repository", "name": "engine", "rule": "Bash(git rebase:*)" },
       "changes": [
         { "from": ["  \"repositories\": {", "    \"engine\": {", "      \"ask\": [", "        \"Bash(git rebase:*)\"", "      ]", "    }", "  },"], "to": [] }
@@ -454,6 +458,7 @@
     {
       "name": "permissions: a default switched back on leaves the list, the rest as written",
       "file": "permissions.json",
+      "only": "driver",
       "edit": { "op": "permission-default", "id": "commit", "on": true },
       "changes": [
         { "from": ["  \"defaultsOff\": [", "    \"commit\"", "  ],"], "to": [] }
@@ -462,6 +467,7 @@
     {
       "name": "permissions: a file in CRLF stays in CRLF",
       "file": "permissions.json",
+      "only": "driver",
       "crlf": true,
       "edit": { "op": "permission-add", "scope": "machine", "list": "allow", "rule": "Bash(npm run build:*)" },
       "changes": [
@@ -471,6 +477,7 @@
     {
       "name": "permissions: another writer's change between the read and the write stays",
       "file": "permissions.json",
+      "only": "driver",
       "between": [
         { "from": ["    \"note\": \"hand-written\","], "to": ["    \"note\": \"changed since\","] }
       ],
@@ -483,6 +490,7 @@
     {
       "name": "permissions: a scope another writer made a string since refuses the edit, naming it",
       "file": "permissions.json",
+      "only": "driver",
       "between": [
         { "from": ["  \"workspaces\": {", "    \"work\": {", "      \"allow\": [", "        \"Read\"", "      ],", "      \"since\": 9007199254740993", "    }", "  },"], "to": ["  \"workspaces\": \"none\","] }
       ],

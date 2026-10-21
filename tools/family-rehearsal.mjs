@@ -3841,8 +3841,9 @@ check(
 // What an agent may do (PERM1, D72), from a terminal: Claude Code's own permission rules in Daoris's
 // scopes, one file under the home the driver composes each spawn from. The stub agent is handed none
 // of them (a Claude Code rule means nothing to another program), so the FILE is what is asserted here;
-// the spawn's half is the driver's tests, and a rule firing is a real session's.
-const cliRules = (args) => run(`node "${cliBin}" agent rules ${args}`, scratch, { DAORIS_HOME: toolchainHome });
+// the spawn's half is the driver's tests, and a rule firing is a real session's. PUSH1f2d: `agent rules` is the driver's program's,
+// called as the person, with no marker.
+const cliRules = (args, env = {}) => run(`node "${cliBin}" agent rules ${args}`, scratch, { DAORIS_HOME: toolchainHome, ...PERSON, ...env });
 const rulesFile = homeEntry(toolchainHome, 'permissions');
 const ruled = cliRules('deny "Bash(rm -rf:*)" --repository newcomer');
 check(
@@ -3912,6 +3913,27 @@ check(
   '…and a settled proposal is history: answering it again is refused',
   answeredTwice.code === 2 && /already declined/.test(answeredTwice.out),
   answeredTwice.out,
+);
+// PUSH1f2d (D194 point 5): the person's yes from a session's terminal, acting in the driver's program with no window to confirm it, is
+// refused, exit 1: the proposal waits and the rules are as they were.
+const pending = proposalFile('9e1a7c22', { action: 'add', list: 'allow', rule: 'WebSearch' });
+const rulesBefore = readFileSync(rulesFile, 'utf8');
+const markedYes = cliRules('accept 9e1a7c22', { DAORIS_SESSION_ID: 's-rehearsal' });
+check(
+  '`daoris agent rules accept` from a session\'s terminal is refused, exit 1, the proposal waiting and the rules as they were',
+  markedYes.code === 1 && /this terminal is a session's \(`DAORIS_SESSION_ID`\)/.test(markedYes.out)
+    && JSON.parse(readFileSync(pending, 'utf8')).state === 'waiting' && readFileSync(rulesFile, 'utf8') === rulesBefore,
+  markedYes.out,
+);
+// …and a wiring file DAORIS_HARNESS_CONFIG names leaves the rules DAORIS_HOME's (the alone-path design §1.2): the yes lands in this
+// home's rules, never beside the named file.
+const elsewhere = join(scratch, 'elsewhere', 'harnesses.json');
+const namedYes = cliRules('accept 9e1a7c22', { DAORIS_HARNESS_CONFIG: elsewhere });
+check(
+  '…and with a wiring file named, the person\'s yes still lands in DAORIS_HOME\'s rules',
+  namedYes.code === 0 && JSON.parse(readFileSync(rulesFile, 'utf8')).repositories?.newcomer?.allow?.includes('WebSearch')
+    && !existsSync(join(scratch, 'elsewhere', 'data', 'permissions.json')) && !existsSync(join(scratch, 'elsewhere', 'permissions.json')),
+  namedYes.out,
 );
 
 // And the driving choices themselves, from a terminal (D50): the same `driver.json` the desktop's

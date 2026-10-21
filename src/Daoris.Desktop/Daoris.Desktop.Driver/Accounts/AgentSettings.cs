@@ -29,8 +29,8 @@ public sealed record AgentSettingEdit(string? Value);
 /// person asked it to — <c>model</c>, <c>effortLevel</c>, and an effort per model under
 /// <c>modelSettings</c> — and nothing else in it.</para>
 ///
-/// <para>The twin of the CLI's <c>agentsettings.ts</c>. They share no code; the FILE is the contract, and
-/// the same seven rules are asserted on both sides (<c>AgentSettingsTests</c>):</para>
+/// <para>The FILE is the contract, and this is its one writer since the CLI's <c>agentsettings.ts</c> left with
+/// <c>daoris agent settings</c> (PUSH1f2d). Its seven rules (<c>AgentSettingsTests</c>):</para>
 /// <list type="number">
 /// <item>The file is the tool's own <c>settings.json</c>, in the account's configuration home.</item>
 /// <item>No file is the tool's defaults: nothing set, and reading creates nothing.</item>
@@ -47,20 +47,20 @@ public sealed record AgentSettingEdit(string? Value);
 /// </remarks>
 public static class AgentSettings
 {
-    /// <summary>The tool's own settings file, in the account's configuration home. The CLI's <c>AGENT_SETTINGS_FILE</c>.</summary>
+    /// <summary>The tool's own settings file, in the account's configuration home.</summary>
     public const string FileName = "settings.json";
 
     /// <summary>
     /// The model names the tool itself accepts as aliases, offered before a free field for a full id: the
     /// Agent SDK's list at 0.3.284 (the one <c>claude-agent-acp</c> 0.84.0 carries), with <c>default</c>,
-    /// the tool's own default. The CLI's <c>AGENT_MODELS</c> is the other copy.
+    /// the tool's own default.
     /// </summary>
     public static readonly IReadOnlyList<string> Models =
         ["default", "sonnet", "opus", "haiku", "fable", "best", "sonnet[1m]", "opus[1m]", "fable[1m]", "opusplan"];
 
     /// <summary>
     /// The efforts the tool's settings keep: its schema's <c>effortLevel</c>. <c>max</c> exists for one
-    /// session and is never written to a file. The CLI's <c>AGENT_EFFORTS</c> is the other copy.
+    /// session and is never written to a file.
     /// </summary>
     public static readonly IReadOnlyList<string> Efforts = ["low", "medium", "high", "xhigh"];
 

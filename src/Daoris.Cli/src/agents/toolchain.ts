@@ -48,11 +48,10 @@
 // harness's own flow INTO a profile directory, and whatever that obtains the harness stores itself.
 
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync } from 'node:fs';
-import { homedir } from 'node:os';
 import { THIS_INSTALL, daorisHome, homeEntry, homeOf, homePlaces, requireHomeFile } from '../platform/home.ts';
 import { commandOnTheSystem, commandThroughTools, handTools, readTools } from '../tools/tools.ts';
 import { pastLauncher } from '../tools/gitforwindows.ts';
-import { join, resolve } from 'node:path';
+import { join } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import type { SpawnSyncReturns, StdioOptions } from 'node:child_process';
 import { flagValue, operands } from '../platform/args.ts';
@@ -107,8 +106,6 @@ function either(choices: readonly string[]): string {
   return choices.length > 1 ? `${choices.slice(0, -1).join(', ')} or ${choices.at(-1)}` : choices.join('');
 }
 import { DaorisError } from '../platform/errors.ts';
-import { AGENT_SETTINGS_FILE, readAgentSettings, writeAgentSettings } from '../accounts/agentsettings.ts';
-import type { AgentSettingsEdit } from '../accounts/agentsettings.ts';
 import { onPath, readJsonObject, writeJsonAtomic } from '../platform/fsx.ts';
 import { writeKeeping } from '../platform/jsonkeep.ts';
 import { normalizeWorkspace } from '../service/remotemap.ts';
@@ -116,9 +113,6 @@ import { normalizeWorkspace } from '../service/remotemap.ts';
 // `harness list` shows the harnesses plugins declare, and the catalogue refuses the names this table has.
 import { readPlugins, resolvable } from '../plugins/plugins.ts';
 import { installFromChannel, latestVersion, refuseVersion } from './channels.ts';
-import { commandRules } from './permissions.ts';
-import { PROPOSAL_VERBS, commandProposals } from './ruleproposals.ts';
-import { grantTrust, TRUST_FILE } from './trust.ts';
 import {
   CURVE_WINDOWS, NEAR_HIGHEST, NEAR_LOWEST, OLD_FIELDS, SWITCHES, USE_FIELDS, USE_MODES, curveProblem, joinProblem,
   joinRefusal, placesOf, readOrderCircles, readOrders, readUse, readUseCircles, readUses, resolveRotation, resolveScope,
@@ -258,20 +252,6 @@ export interface Toolchain {
    */
   pinnedEnv?: Record<string, string>;
   /**
-   * The tool's own file that records which folders a person has trusted it in (DEPLOY1), in the
-   * account's configuration home — declared where the tool ignores a folder's own permissions until
-   * then. `daoris agent trust` writes it, on the person's word (D73). The driver's `TrustFile` is the
-   * twin.
-   */
-  trustFile?: string;
-  /**
-   * The tool's own settings file in an account's configuration home, where the account's model and
-   * effort live (AGT6, D98) — declared only where its keys were read from the tool itself. Absent means
-   * Daoris does not know this tool's settings and offers none. A door's are its owner's (twin rule 7).
-   * The driver's `SettingsFile` is the twin.
-   */
-  settingsFile?: string;
-  /**
    * The tool's own variable for an API key (AGT3, D67 §1): what an account that is a key is handed
    * at spawn. Declared only where measured; absent means this agent takes no key from Daoris. The
    * driver's `KeyVariable` is the twin.
@@ -326,11 +306,8 @@ export const TOOLCHAINS: Record<string, Toolchain> = {
     pinnedEnv: { DISABLE_UPDATES: '1' },
     // Measured on 2.1.280 with an invalid key: `auth status` reads it, and `-p` takes it unprompted.
     keyVariable: 'ANTHROPIC_API_KEY',
-    // Its trust record: until a folder is accepted here, the folder's own allow-list is ignored.
-    trustFile: TRUST_FILE,
-    // Its user-tier settings, `model` and `effortLevel` among them (AGT6): read from its ACP adapter's
-    // own settings reader and its SDK's settings schema, never guessed.
-    settingsFile: AGENT_SETTINGS_FILE,
+    // Its trust record and its account's settings file are the driver's alone since `agent trust` and `agent settings` went to it
+    // (PUSH1f2d): `HarnessToolchain.TrustFile` and `SettingsFile`.
     // Each window's use and reset on every `rate_limit_event`, which its ACP door forwards (TOOL6c, limit-signals evidence §1, §3).
     windows: true,
   },
@@ -353,8 +330,6 @@ export const TOOLCHAINS: Record<string, Toolchain> = {
     package: '@agentclientprotocol/claude-agent-acp',
     // It has no login of its own: it runs `claude` and reads the home `claude` logged into.
     accountOf: 'claude-code',
-    // And the same trust record: measured, it ignores an untrusted folder's allow-list too (DEPLOY1).
-    trustFile: TRUST_FILE,
   },
   codex: {
     product: 'Codex',
@@ -1887,25 +1862,6 @@ export function commandHarness(
     case 'profile':
       return profileVerb();
 
-    // What an agent Daoris starts may do (PERM1, D72): Claude Code's own rules in Daoris's scopes,
-    // one file under the home, handed over at spawn. It spawns nothing and opens nothing.
-    // An agent's proposals to change them (PERM2, D74) are answered here too: a widening never applies
-    // without the person.
-    case 'rules':
-      return PROPOSAL_VERBS.includes(argv[1] ?? '')
-        ? commandProposals({ argv: argv.slice(1), write, root: '', packageRoot: '' }, door)
-        : commandRules({ argv: argv.slice(1), write, root: '', packageRoot: '' }, door);
-
-    // The harness's trust in a folder (D73): the person's grant, asked and then written — the
-    // terminal's door onto the screen's *trust this folder…*, and the one that names any folder.
-    case 'trust':
-      return trust();
-
-    // An account's own model and effort (AGT6, D98): two keys in the tool's own settings file under
-    // the account, the terminal's door onto the Settings screen's. It spawns nothing and opens nothing.
-    case 'settings':
-      return settingsVerb();
-
     // An account that is an API key (AGT3, D67 §1). 🔴 Read from STDIN, never from an argument: an
     // argument is visible in the process list and saved in the shell's history.
     case 'key': {
@@ -2784,181 +2740,6 @@ export function commandHarness(
           return 0;
         });
     }
-  }
-
-  /**
-   * `agent trust <agent> <folder> [--profile <name>] --yes` — the harness's trust in a folder (D73).
-   *
-   * @remarks
-   * 🔴 **Asked, then written.** A terminal command cannot prompt: a gate runs it with stdin closed. So
-   * the question IS the command without `--yes`. It names the folder, the account's file and what
-   * trusting means, grants nothing, and exits 1. `--yes` is the person's answer. Granting on the first
-   * keystroke would be the silent option with one more word in front of it.
-   *
-   * The account is the one a session there would run as: the profile named, else the machine's
-   * default, else the agent's OWN configuration home (twin rule 3). A door's account is its owner's.
-   */
-  function trust(): ExitCode {
-    const { name, toolchain } = required(argv, 'trust');
-    if (!toolchain.trustFile) {
-      throw new DaorisError(
-        `\`${name}\` has no trust question Daoris knows of, so there is nothing to grant: its own `
-        + 'permissions apply as they are.');
-    }
-
-    const folder = resolve(bare(argv, 2, 'trust', '<agent> <folder>'));
-    if (!existsSync(folder) || !statSync(folder).isDirectory()) {
-      throw new DaorisError(`no folder at \`${folder}\` — trust is granted to a folder a session would run in.`);
-    }
-
-    const owner = ownerOf(name);
-    if (owner !== name) write(`daoris: \`${name}\` runs as \`${owner}\`'s accounts — this is one of them.`);
-    const given = flagValue(argv, '--profile');
-    const profile = (given === undefined ? null : accountNamed(owner, given)) ?? readHarnessSettings(path).defaults[owner] ?? null;
-    const file = join(profile ? profileHome(home, owner, profile) : homedir(), toolchain.trustFile);
-
-    write(`daoris: trusting \`${folder}\` for \`${owner}\`, `
-      + `${profile ? `as the account \`${profile}\`` : 'as its own account'} — in its own file:`);
-    write(`  ${file}`);
-    write('  This is what the agent asks the first time it runs in a folder. Once it is granted, the');
-    write('  folder\'s own settings and `permissions.allow` apply there, and the agent stops asking.');
-    write('  Daoris writes that one flag and nothing else in the file.');
-
-    if (argv.includes('--dry-run')) return 0;
-    if (!argv.includes('--yes')) {
-      write('  Not granted: this is the question. Run it again with --yes to grant it.');
-      return 1;
-    }
-
-    const grant = grantTrust(file, folder);
-    if (!grant.changed) {
-      write('  Already trusted, so nothing was written.');
-    } else if (grant.verified) {
-      write('  Granted.');
-    } else {
-      write('  Written, but reading the file back does not show it — a running Claude Code may have saved');
-      write('  over it. Run this again once it has exited.');
-      return 1;
-    }
-
-    return 0;
-  }
-
-  /**
-   * `agent settings <agent> [--account <name>] [model <v>] [effort <v> [--for <model>]]` — an account's
-   * own model and effort (AGT6, D98), in the tool's own settings file under that account.
-   *
-   * @remarks
-   * Given nothing to change it prints what the file says. `unset` clears a key, and the tool's own
-   * default applies again. `--for` names the model an effort is for, which the tool reads before the
-   * account's effort for that model.
-   *
-   * The account is the one named (`--account`, or `--profile` as the other verbs spell it), else the
-   * machine's default. 🔴 **Never the tool's own configuration home**: that home is the tool's, and the
-   * Settings screen says Daoris never touches it — so with no account anywhere this refuses and says
-   * how, rather than writing into it. A door's account is its owner's (twin rule 7).
-   */
-  function settingsVerb(): ExitCode | Promise<ExitCode> {
-    const { name } = required(argv, 'settings');
-    const owner = ownerOf(name);
-    if (owner !== name) write(`daoris: \`${name}\` runs as \`${owner}\`'s accounts — this is one of them.`);
-    const edit = settingsEdit(operands(argv, AGENT_VALUED).slice(2), flagValue(argv, '--for'));
-
-    const file = TOOLCHAINS[owner]?.settingsFile;
-    if (!file) {
-      const line = `\`${owner}\` keeps its settings in files of its own that Daoris does not know the shape of, `
-        + 'so Daoris offers none — set its model with the tool itself.';
-      if (edit) throw new DaorisError(line);
-      write(`daoris: ${line}`);
-      return 0;
-    }
-
-    const given = flagValue(argv, '--account') ?? flagValue(argv, '--profile');
-    const account = (given === undefined ? null : accountNamed(owner, given)) ?? readHarnessSettings(path).defaults[owner] ?? null;
-    if (!account) {
-      throw new DaorisError(
-        `\`${owner}\` has no Daoris account named here — Daoris never works in the tool's own configuration home. `
-        + `Name one of Daoris's accounts with \`--account <name>\` (\`daoris agent list\` shows them), sign in to one with `
-        + `\`daoris agent login ${owner} --new\`, or set the model with the tool itself.`);
-    }
-    // Refused rather than made: a setting is not how an account comes to exist (D66 §3).
-    if (!profiles(home, owner).includes(account)) {
-      throw new DaorisError(
-        `\`${owner}\` has no account \`${account}\` on this machine — accounts that exist: `
-        + `${profiles(home, owner).join(', ') || '(none)'}`);
-    }
-
-    const where = join(profileHome(home, owner, account), file);
-    const said = (held: { model: string | null; effort: string | null; perModel: { model: string; effort: string }[]; problem: string | null }):
-      ExitCode => {
-      if (held.problem) throw new DaorisError(`${held.problem} — fix it, or change the setting with the tool itself.`);
-
-      write(`daoris: \`${owner}\` account \`${account}\` — ${edit ? 'written to' : 'read from'} the tool's own settings:`);
-      write(`  ${where}`);
-      const unset = "the tool's own default";
-      write(`  model    ${held.model ?? unset}`);
-      write(`  effort   ${held.effort ?? unset}`);
-      if (held.perModel.length > 0) {
-        write('  per model — the tool reads these first, for that model:');
-        for (const entry of held.perModel) write(`    ${entry.model.padEnd(24)} ${entry.effort}`);
-      }
-      write('  A session reads these when it starts. A repository\'s own .claude/settings.json and the');
-      write('  ANTHROPIC_MODEL variable take precedence over an account\'s model.');
-      return 0;
-    };
-    if (!edit) return said(readAgentSettings(where));
-
-    // While Daoris runs, the Settings screen's edit: a key sent as null cleared, one left out untouched. The answer is the file read
-    // back, which this verb says as it says its own read.
-    return door({
-      what, route: AGENT_ROUTES.settings, payload: { harness: name, profile: account, ...edit },
-      alone: () => {
-        writeAgentSettings(where, edit);
-        return said(readAgentSettings(where));
-      },
-      words: (answer) => {
-        const read = fieldsOf(answer);
-        const text = (value: unknown) => (typeof value === 'string' ? value : null);
-        return said({
-          model: text(read.model),
-          effort: text(read.effort),
-          perModel: Array.isArray(read.perModel)
-            ? read.perModel.map(fieldsOf).filter((entry) => typeof entry.model === 'string' && typeof entry.effort === 'string')
-              .map((entry) => ({ model: entry.model as string, effort: entry.effort as string }))
-            : [],
-          problem: text(read.problem),
-        });
-      },
-    });
-  }
-
-  /**
-   * The edit the operands after `settings <agent>` ask for — pairs of a key and a value — or null for
-   * none. `unset` clears; `--for <model>` puts an effort under that model.
-   */
-  function settingsEdit(pairs: string[], forModel: string | undefined): AgentSettingsEdit | null {
-    if (pairs.length === 0) return null;
-    const edit: AgentSettingsEdit = {};
-    for (let at = 0; at < pairs.length; at += 2) {
-      const key = pairs[at]!;
-      const value = pairs[at + 1];
-      if (key !== 'model' && key !== 'effort') {
-        throw new DaorisError(`\`${key}\` is not a setting Daoris changes — the two are model and effort.`);
-      }
-      if (value === undefined) {
-        throw new DaorisError(`\`${key}\` needs a value — e.g. \`${key} ${key === 'model' ? 'opus' : 'high'}\`, or \`${key} unset\`.`);
-      }
-      const set = value === 'unset' ? null : value;
-      if (key === 'model') {
-        if (forModel !== undefined) throw new DaorisError('--for names the model an effort is for; a model has no model of its own.');
-        edit.model = set;
-      } else if (forModel !== undefined) {
-        edit.perModel = { ...edit.perModel, [forModel]: set };
-      } else {
-        edit.effort = set;
-      }
-    }
-    return edit;
   }
 
   /**

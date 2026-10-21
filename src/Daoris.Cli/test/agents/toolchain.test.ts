@@ -1458,11 +1458,7 @@ test('every declared harness is pinned by name, binary, seam, and what a person 
   assert.equal(TOOLCHAINS['claude-code-acp']!.accountOf, 'claude-code');
   assert.equal(TOOLCHAINS['codex-acp']!.accountOf, 'codex');
 
-  // The trust record (DEPLOY1, D73) — the driver's `TrustFile` is its twin, on the same two entries,
-  // because both doors onto Claude Code ignore an untrusted folder's allow-list (measured).
-  const trusting = Object.entries(TOOLCHAINS).filter(([, toolchain]) => toolchain.trustFile).map(([name]) => name);
-  assert.deepEqual(trusting, ['claude-code', 'claude-code-acp']);
-  assert.equal(TOOLCHAINS['claude-code']!.trustFile, '.claude.json');
+  // The trust record (DEPLOY1, D73) is the driver's alone since `agent trust` went to it (PUSH1f2d): `HarnessToolchain.TrustFile`.
 
   // Whose accounts say how much of each window is used (TOOL6c, CODEXUSE1b) — the driver's `Speaks` is its twin: Claude Code's
   // `Windows`, its frame on the door (and the stub mirroring it, which the CLI does not know), and Codex's `Usage`, its own app

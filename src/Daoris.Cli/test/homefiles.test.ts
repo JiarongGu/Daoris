@@ -1,7 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
-import { commandRules, readPermissions } from '../src/agents/permissions.ts';
 import { commandRemote } from '../src/service/remotes.ts';
 import { readRemotes } from '../src/service/remotemap.ts';
 import {
@@ -12,9 +11,9 @@ import { readTools } from '../src/tools/tools.ts';
 import { captureError, makeFixture } from './_fixture.ts';
 
 /**
- * The home's JSON files — `permissions.json`, `remotes.json`, `harnesses.json`, `keys.json`,
- * `plugins.json`, `tools.json` — are each read by the CLI and by a C# twin, and edited by both. `driver.json`
- * is Daoris's driver program's to read and write since PUSH1f2b, and its rules are the driver's tests'.
+ * The home's JSON files — `remotes.json`, `harnesses.json`, `keys.json`, `plugins.json`, `tools.json` —
+ * are each read by the CLI and by a C# twin, and edited by both. `driver.json` is Daoris's driver program's
+ * to read and write since PUSH1f2b, and `permissions.json` since PUSH1f2d; their rules are the driver's tests'.
  *
  * Two rules, found by REV3 and held here for every one of them:
  *   1. A BOM is not an unreadable file. The C# readers strip it (`File.ReadAllText`), so a CLI that
@@ -25,38 +24,8 @@ import { captureError, makeFixture } from './_fixture.ts';
  */
 
 const BOM = '﻿';
-const TORN = '{ "machine": { "deny": ["Bash(rm:*)"] }, }';
-
-function withHome<T>(home: string, fn: () => T): T {
-  const saved = process.env.DAORIS_HOME;
-  process.env.DAORIS_HOME = home;
-  try {
-    return fn();
-  } finally {
-    if (saved === undefined) delete process.env.DAORIS_HOME;
-    else process.env.DAORIS_HOME = saved;
-  }
-}
 
 const quiet = { root: process.cwd(), write: () => {}, packageRoot: process.cwd() };
-
-test('permissions.json: a BOM reads, and an edit over a torn file is refused with the file untouched', () => {
-  const fx = makeFixture('homefiles-permissions');
-  const path = fx.entry('permissions');
-
-  writeFileSync(path, `${BOM}{ "machine": { "deny": ["Bash(rm:*)"] } }`, 'utf8');
-  const read = readPermissions(path);
-  assert.equal(read.problem, undefined);
-  assert.deepEqual(read.machine.deny, ['Bash(rm:*)']);
-  withHome(fx.root, () => commandRules({ ...quiet, argv: ['allow', 'Bash(npm test:*)'] }));
-  assert.deepEqual(readPermissions(path).machine.deny, ['Bash(rm:*)'], 'the deny survived the edit');
-
-  writeFileSync(path, TORN, 'utf8');
-  const error = withHome(fx.root, () => captureError(() => commandRules({ ...quiet, argv: ['allow', 'Bash(x:*)'] })));
-  assert.match(error.message, /will not overwrite a file it could not understand/);
-  assert.equal(readFileSync(path, 'utf8'), TORN);
-  fx.cleanup();
-});
 
 test('remotes.json: a BOM reads as wired, and an edit over a torn map is refused with the map untouched', async () => {
   const fx = makeFixture('homefiles-remotes');

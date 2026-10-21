@@ -36,7 +36,7 @@ function censusClasses(): Map<string, RouteClass> {
 const PAYLOADS: Record<string, Record<string, string>> = { PLUGIN_UPDATE: { apply: 'true' } };
 
 // `daoris driver`'s and `daoris tool`'s routes are Daoris's driver program's since PUSH1f2b and PUSH1f2c (`ChoiceRoutes`, `ToolRoutes`),
-// which the modules' `PipeCensusTests` holds to the census.
+// and `daoris agent rules|trust|settings`' since PUSH1f2d (`AgentRoutes`), which the modules' `PipeCensusTests` holds to the census.
 const SENT: readonly InstanceRoute[] = [...Object.values(PLUGIN_ROUTES), ...Object.values(AGENT_ROUTES)];
 const VERBS = [...PLUGIN_VERBS, ...AGENT_VERBS];
 

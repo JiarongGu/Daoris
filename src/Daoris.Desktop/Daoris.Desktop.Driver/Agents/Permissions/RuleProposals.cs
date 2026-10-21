@@ -72,8 +72,8 @@ public sealed record RuleProposal(
 /// one that denies or guards widens.</para>
 ///
 /// <para><b>THE FILE is the contract</b>: one file per proposal under <c>&lt;home&gt;/proposals/</c>, written
-/// by the connector (the service's <c>RuleProposalBox</c>) and settled here and by the CLI's
-/// <c>ruleproposals.ts</c>. Settling rewrites only <c>state</c> and <c>settled</c>; everything the
+/// by the connector (the service's <c>RuleProposalBox</c>) and settled here alone, the window's and
+/// <c>daoris agent rules accept|decline</c>'s answer among it (PUSH1f2d). Settling rewrites only <c>state</c> and <c>settled</c>; everything the
 /// session wrote is kept.</para>
 /// </remarks>
 public static class RuleProposals

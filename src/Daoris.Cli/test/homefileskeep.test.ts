@@ -3,7 +3,6 @@ import assert from 'node:assert/strict';
 import { mkdirSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { addRule, readPermissions, removeRule, switchDefault, writePermissions, type PermissionFile } from '../src/agents/permissions.ts';
 import { withRotation, withUse } from '../src/accounts/rotation.ts';
 import { addKeyAccount, profileHome, readHarnessSettings, replaceKeyAccount, withDefault, writeHarnessSettings } from '../src/agents/toolchain.ts';
 import { setBrowser, setExtensions, setLinks } from '../src/browser/browser.ts';
@@ -55,18 +54,6 @@ function applied(home: string, row: Row, between: () => void): void {
     if (edit.op === 'plugin-disable') disablePlugin(home, edit.id!);
     else if (edit.op === 'plugin-enable') enablePlugin(home, edit.id!);
     else throw new Error(`the table names an edit this test does not make: ${edit.op}`);
-    return;
-  }
-  if (row.file === 'permissions.json') {
-    const path = homeEntry(home, 'permissions');
-    const read = readPermissions(path);
-    between();
-    const edited: PermissionFile = edit.op === 'none' ? read
-      : edit.op === 'permission-add' ? addRule(read, edit.scope!, edit.name ?? null, edit.list!, edit.rule!)
-        : edit.op === 'permission-remove' ? removeRule(read, edit.scope!, edit.name ?? null, edit.rule!)
-          : edit.op === 'permission-default' ? switchDefault(read, edit.id!, edit.on!)
-            : assert.fail(`the table names an edit this test does not make: ${edit.op}`);
-    writePermissions(path, edited);
     return;
   }
   if (row.file === 'keys.json') {

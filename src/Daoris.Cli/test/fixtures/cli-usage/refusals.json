@@ -15,7 +15,6 @@
   {"argv":["remote","add"],"code":2,"out":["daoris: `remote add` needs a workspace name — e.g. `daoris remote add aurora`. The name is the workspace, and it is what a shared deployment declares itself to be."]},
   {"argv":["agent","frobnicate"],"code":2,"out":["daoris: unknown agent verb 'frobnicate' — one of: list, install, update, login, key, pin, unpin, profile, settings, trust, rules"]},
   {"argv":["agent","profile","frobnicate"],"code":2,"out":["daoris: unknown agent profile verb 'frobnicate' — one of: list, add, remove, default, order, ready, use, rename, join"]},
-  {"argv":["agent","rules","frobnicate"],"code":2,"out":["daoris: unknown rules verb 'frobnicate' — one of: list, allow, ask, deny, remove, default, proposals, accept, decline"]},
   {"argv":["agent","profile","order","claude-code"],"code":2,"out":["daoris: `agent profile order` needs the accounts, in order, or --clear — e.g. `daoris agent profile order claude-code account-1 account-2`."]},
   {"argv":["agent","profile","use","claude-code","fastest"],"code":2,"out":["daoris: `fastest` is not a way to use accounts — goal (make the most of them) or order (one by one, in order). An account is kept for conversations with `--keep <account>`."]},
   {"argv":["agent","profile","ready","claude-code"],"code":2,"out":["daoris: `agent profile ready` needs <agent> <profile>|--own — e.g. `daoris agent profile ready claude-code account-1`, or `--own` for the tool's own sign-in."]},

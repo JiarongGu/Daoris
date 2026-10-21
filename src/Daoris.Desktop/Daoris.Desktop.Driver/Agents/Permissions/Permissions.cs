@@ -90,8 +90,8 @@ public sealed record PermissionFile(
 /// `deny` survives anything Daoris allows. A second precedence here would disagree with the harness's
 /// exactly when it mattered.</para>
 ///
-/// <para><b>THE FILE is the contract.</b> The CLI's `permissions.ts` reads and writes it by the same rules
-/// (the two artefacts share no code), and a hand edit keeps working. A file that cannot be read is empty
+/// <para><b>THE FILE is the contract.</b> This is its one reader and writer since `daoris agent rules` became
+/// the driver program's (PUSH1f2d, <see cref="AgentsCommand"/>), and a hand edit keeps working. A file that cannot be read is empty
 /// and says why, because wiring never stops a spawn (D21) — and the defaults, the guard among them,
 /// still hold.</para>
 /// </remarks>
@@ -106,7 +106,7 @@ public static class PermissionRules
     private const string ConnectorPrefix = $"mcp__{KnowledgeConnector.ServerName}__";
 
     /// <summary>
-    /// What Daoris ships. 🔴 The CLI's `permissions.ts` holds the same table, and a test reads it.
+    /// What Daoris ships: the one table, which <c>daoris agent rules</c> lists and switches (PUSH1f2d).
     /// </summary>
     public static IReadOnlyList<PermissionDefault> Defaults { get; } =
     [
@@ -297,8 +297,7 @@ public static class PermissionRules
     /// Written beside and renamed over, BOM-less and LF, keeping what a newer build wrote: the edit from what was read made onto the file as
     /// it stands (KEEPALL1, <see cref="JsonKeeping.Save"/>), so a key this build has no field for stays where it is at every level, a
     /// change another writer made since the read stays, and no edit writes nothing. Rebuilt from the fields it reads, it moved what it did
-    /// not know to the front and deleted a scope's own unknown keys. Rules built in memory are written whole. The CLI's
-    /// <c>writePermissions</c> does the same.
+    /// not know to the front and deleted a scope's own unknown keys. Rules built in memory are written whole.
     /// </summary>
     /// <exception cref="DriverException">
     /// The file could not be read when <paramref name="file"/> was loaded (REV3). What it holds is the

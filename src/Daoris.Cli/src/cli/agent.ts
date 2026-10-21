@@ -1,7 +1,7 @@
 import type { CliCommand } from '../platform/types.ts';
 import { ALONE } from '../platform/door.ts';
 import { daorisHome } from '../platform/home.ts';
-import { commandHarness, PATH_VARIABLE } from '../agents/toolchain.ts';
+import { commandHarness, PATH_VARIABLE, runDriverProgram } from '../agents/toolchain.ts';
 import { instanceDoor, portHold, releaseFetcher } from '../service/service.ts';
 
 export const command: CliCommand = {
@@ -107,11 +107,25 @@ export const command: CliCommand = {
     "  --device-code        sign in by the agent's device code, not its browser,",
     '                       where it has one (agent login codex)',
   ],
-  // `pin` and a pinned `update` fetch a maker's release (AGT2b, USE1a) through the one module that may
-  // reach a network, handed in here so the toolchain never holds a socket of its own. So is the door an edit of the home goes
-  // through (RPC1f): the Agents or Accounts place's route while Daoris runs on this home, alone under its lease when none does. A
-  // wiring file `DAORIS_HARNESS_CONFIG` names is no instance's, so the verbs act alone there, holding nothing. And the way a
-  // browser sign-in's ports are tried before it starts (CODEXLOGIN1), a socket of `service.ts`'s like the fetcher.
-  run: (args) => commandHarness(args, releaseFetcher(), ['npm'],
-    process.env[PATH_VARIABLE] ? ALONE : instanceDoor({ home: daorisHome(), write: args.write }), portHold),
+  // PUSH1f2d (D194 point 1): `rules`, `trust` and `settings` are Daoris's driver program's, `daoris-driver agent` with the same words;
+  // this writes nothing before it starts. The rest stays here until PUSH1f2e. `pin` and a pinned `update` fetch a maker's release
+  // (AGT2b, USE1a) through the one module that may reach a network, handed in here so the toolchain never holds a socket of its own.
+  // So is the door an edit of the home goes through (RPC1f): the Agents or Accounts place's route while Daoris runs on this home, alone
+  // under its lease when none does. A wiring file `DAORIS_HARNESS_CONFIG` names is no instance's, so the verbs act alone there, holding
+  // nothing. And the way a browser sign-in's ports are tried before it starts (CODEXLOGIN1), a socket of `service.ts`'s like the fetcher.
+  run: (args) => handed(args.argv)
+    ? (args.driverProgram ?? ((family, words) => runDriverProgram(family, words)))('agent', args.argv)
+    : commandHarness(args, releaseFetcher(), ['npm'],
+      process.env[PATH_VARIABLE] ? ALONE : instanceDoor({ home: daorisHome(), write: args.write }), portHold),
 };
+
+/**
+ * The verbs `daoris agent` hands Daoris's driver program (PUSH1f2d, the alone-path design §5's allow-list): the rules, a trust and an
+ * account's settings, each one `daoris-driver agent` has (`AgentsCommand.Verbs`, which a test reads beside this).
+ */
+export const HANDED_VERBS: readonly string[] = Object.freeze(['rules', 'trust', 'settings']);
+
+/** Whether these words are the driver program's: a handed verb. None named is `list`, which stays here until PUSH1f2e. */
+export function handed(argv: readonly string[]): boolean {
+  return HANDED_VERBS.includes(argv[0] ?? 'list');
+}
