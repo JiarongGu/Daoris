@@ -18639,3 +18639,14 @@ starts 44 git processes (55), the squash press 46 (51), the merge press 40 (43);
 Fewer than the row's estimate of 20: the rest are each act's own read, `status` (LANDGIT1c) and the tidy's. Proof: `LandGitCountTests`
 with its ceilings lowered, `What_another_process_moves_is_asked_of_git_each_time` green. On Opus: about 90 tool calls. Detail: D173's
 LANDGIT1b note.
+
+## KEEPALL1e — `remotes.json`'s writers audited and kept (2026-10-21, D173)
+
+> - [ ] **KEEPALL1e — `remotes.json`'s writers audited and kept** (driver, cli, service; WSP3). `RemoteTarget.Save`, the CLI's `remotemap.ts`, the service's `RemoteConfig`. Proof: rows in a shared table read by all three.
+
+**Outcome** 2026-10-21: built. Two writers, both rebuilding: the page's `RemotesModule` and `daoris remote add|remove` now edit the
+file as it stands (`RemoteFile`, `readRemoteFile`) through `JsonKeeping.Save` / `writeKeeping`, so unknown keys, half entries, the
+file's order and CRLF stay, and the page refuses a torn map (`DRIVER_REFUSED`) where it wrote over it. The service's `RemoteConfig`
+only reads. Proof: ten `remotes:` rows in `home-files-keep.json` with the map every reader reads, read by `HomeFilesKeepTests`,
+`homefileskeep.test.ts` and the service's new `RemoteConfigKeepTests`; `RemotesModuleTests`' new case. On Opus: about 90 tool
+calls. Root cause and verification: the fix log's KEEPALL1e entry; detail: D173's KEEPALL1e note.

@@ -960,7 +960,11 @@ export const REACH = Object.freeze([
   { paths: ['src/Daoris.Cli/test/fixtures/name-case.json'], gates: ['driver'], why: "the driver's NameCaseTests reads the shared name-case table (CASEFOLD1d)" },
   { paths: ['src/Daoris.Cli/test/fixtures/graph-homes.json'], gates: ['driver'], why: "the driver's NodeGraphHomesTests reads the shared table of which cycle governs a unit (FABRIC-GRAPH1)" },
   { paths: ['src/Daoris.Cli/test/fixtures/driver-config-keeps.json'], gates: ['driver'], why: "the driver's DriverConfigKeepsTests reads the shared table of the bytes an edit of driver.json writes (FABRIC-GRAPH1's review)" },
-  { paths: ['src/Daoris.Cli/test/fixtures/home-files-keep.json'], gates: ['driver'], why: "the driver's HomeFilesKeepTests reads the shared table of the bytes an edit of each other home file a door edits writes (KEEPALL1)" },
+  {
+    paths: ['src/Daoris.Cli/test/fixtures/home-files-keep.json'],
+    gates: ['service', 'driver'],
+    why: "the driver's HomeFilesKeepTests reads the shared table of the bytes an edit of each other home file a door edits writes (KEEPALL1), and the service's RemoteConfigKeepTests its remotes.json rows' reads (KEEPALL1e)",
+  },
   { paths: ['src/Daoris.Cli/test/fixtures/workflow-graphs.json'], gates: ['driver'], why: "the driver's WorkflowGraphsTests reads the shared table of D157's versions decoded as graphs (FABRIC-WORKFLOW2)" },
   { paths: ['src/Daoris.Cli/test/fixtures/workflow-graph-versions.json'], gates: ['driver'], why: "the driver's WorkflowGraphVersionsTests reads the shared table of a named graph as a named workflow's version (FABRIC-GRAPH1b)" },
   { paths: ['src/Daoris.Cli/test/fixtures/graph-problems.json'], gates: ['driver'], why: "the driver's NodeWiresTests and NodeGraphsTests read the shared table of a graph judged when saved (FABRIC-GRAPH1c)" },
