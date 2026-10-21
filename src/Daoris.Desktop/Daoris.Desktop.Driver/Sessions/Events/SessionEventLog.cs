@@ -456,6 +456,30 @@ public sealed class SessionEvents(string directory)
     }
 
     /// <summary>
+    /// What a session spent, by its record (SESSCTX1d; the session-context design §7): its turns that ended, those whose door said
+    /// what they consumed, and each of the four counts summed over those. A part's cost on the *Parts* strip's own row, so a moved
+    /// session reads as one. Nothing for no record, an unreadable one, or an id that is not one.
+    /// </summary>
+    public SessionSpent Spent(string sessionId)
+    {
+        if (!SessionEventText.IsId(sessionId)) return SessionSpent.None;
+        try
+        {
+            var spent = SessionSpent.None;
+            foreach (var e in Lines(PathOf(sessionId)))
+            {
+                if (e.Kind == SessionEventKind.Turn) spent = spent.With(e.Tokens);
+            }
+
+            return spent;
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+        {
+            return SessionSpent.None;
+        }
+    }
+
+    /// <summary>
     /// The turns a session's record says ended — what a refused turn is counted after (D125 §3.6). Unreadable is none. The
     /// record's, read by a driven start and a conversation alike, so not the loop's (LOOPOUT1).
     /// </summary>

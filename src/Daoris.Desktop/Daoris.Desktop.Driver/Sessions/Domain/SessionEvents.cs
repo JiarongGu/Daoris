@@ -150,6 +150,25 @@ public sealed record TurnTokens(long? Input, long? Output, long? CacheRead, long
 }
 
 /// <summary>
+/// What a session spent, summed from its turns (SESSCTX1d, <see cref="SessionEvents.Spent"/>): the turns that ended, those whose
+/// door said what they consumed, and each count over those, null where none said it, never zero (TOOL3).
+/// </summary>
+public sealed record SessionSpent(int Turns, int Reported, long? Input, long? Output, long? CacheRead, long? CacheWrite)
+{
+    /// <summary>No turn, nothing said.</summary>
+    public static SessionSpent None { get; } = new(0, 0, null, null, null, null);
+
+    /// <summary>This with one more turn, and what it consumed where its door said.</summary>
+    public SessionSpent With(TurnTokens? tokens) => tokens is null
+        ? this with { Turns = Turns + 1 }
+        : new(
+            Turns + 1, Reported + 1, Add(Input, tokens.Input), Add(Output, tokens.Output),
+            Add(CacheRead, tokens.CacheRead), Add(CacheWrite, tokens.CacheWrite));
+
+    private static long? Add(long? sum, long? count) => count is { } n ? (sum ?? 0) + n : sum;
+}
+
+/// <summary>
 /// One thing a session did, in Daoris's vocabulary (D76 §1): what the page renders a conversation
 /// from, live and after a restart.
 /// </summary>

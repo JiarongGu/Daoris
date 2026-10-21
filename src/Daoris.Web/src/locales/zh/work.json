@@ -328,6 +328,7 @@
   "work.facts.attempt_other": "第 {{attempt}} 次尝试：之前 {{count}} 次失败",
   "work.facts.continues": "接续 {{agent}} 的会话",
   "work.facts.continuesAnother": "接续另一个会话",
+  "work.facts.leadsOn": "这条工作线现在由 {{agent}} 进行",
   "work.facts.helping": "正在协助「{{title}}」",
   "work.facts.helpingAnother": "正在协助另一个会话",
   "work.access.full": "完全访问",

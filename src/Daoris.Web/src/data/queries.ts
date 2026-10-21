@@ -178,6 +178,9 @@ export const keys = {
   /** What the person first said in each session, from this machine's record (RAIL1) — shell-only. */
   allOpenings: ['openings'] as const,
   openings: (ids: string[]) => ['openings', ...ids] as const,
+  /** What each part of a line of work spent, from this machine's record (SESSCTX1d) — shell-only. */
+  allSpent: ['spent'] as const,
+  spent: (ids: string[]) => ['spent', ...ids] as const,
   /** What sessions said, searched on this machine's record (RAIL1) — shell-only. */
   sessionSearch: (q: string, session?: string) => ['session-search', q, session ?? ''] as const,
   entry: (id: string) => ['entry', id] as const,

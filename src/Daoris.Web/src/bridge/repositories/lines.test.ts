@@ -59,7 +59,7 @@ describe('the work slice (PUSH1c2b)', () => {
       ['<no checkout>', { units: [unitOf('q-1', 'gamma')], recovery: [], unread: ['gamma'] }],
       ['zeta', { units: [unitOf('z-1', 'zeta')], recovery: [{ unit: 'r' }], unread: [] }],
       ['alpha', { units: [unitOf('a-1', 'alpha')], recovery: [], unread: ['alpha: x'] }],
-      ['<held>', { held: [heldOf('a-1')] }],
+      ['<held>', { held: [heldOf('a-1')], unreadable: [{ file: 'k.json', unit: 'a-1', said: 's' }] }],
     ]);
     const composed = workSlice.compose(parts, true) as WorkState;
     expect(composed.units.map((unit) => unit.unit)).toEqual(['a-1', 'z-1', 'q-1']);
@@ -68,12 +68,14 @@ describe('the work slice (PUSH1c2b)', () => {
     expect(composed.held).toHaveLength(1);
     expect(composed.units[0]!.held).toHaveLength(1);
     expect(composed.units[1]!.held).toEqual([]);
+    // FABRIC-PERFORM1j: the node records that do not read, from the held partition.
+    expect(composed.unreadable.map((each) => each.file)).toEqual(['k.json']);
   });
 
   it('answers nothing until judged, or for a part of another shape, which keeps the pull', () => {
     expect(workSlice.compose(new Map([['alpha', { units: [], recovery: [], unread: [] }]]), false)).toBeUndefined();
     expect(workSlice.compose(new Map([['alpha', 'x']]), true)).toBeUndefined();
-    expect(workSlice.compose(new Map(), true)).toMatchObject({ units: [], held: [] });
+    expect(workSlice.compose(new Map(), true)).toMatchObject({ units: [], held: [], unreadable: [] });
   });
 });
 
@@ -85,6 +87,8 @@ describe("a unit's variant of the work (PUSH1c2b)", () => {
       unitOf('u-3', 'beta', { branch: 'topic' }),
     ] as unknown as MilestoneUnit[],
     recovery: [{ unit: 'r' }] as never[], unread: [], held: [heldOf('u-1'), heldOf('u-3')] as never[],
+    // FABRIC-PERFORM1j: one record naming a unit picked, one another's, one naming none.
+    unreadable: [{ file: 'a.json', unit: 'u-1', said: 'a' }, { file: 'b.json', unit: 'quest:q7', said: 'b' }, { file: 'c.json', unit: null, said: 'c' }],
   } satisfies WorkState;
 
   it('is the whole where no unit is named', () => {
@@ -102,6 +106,8 @@ describe("a unit's variant of the work (PUSH1c2b)", () => {
     expect(picked.recovery).toEqual([]);
     expect(picked.held.map((each) => each.unit)).toEqual(['u-1']);
     expect(workOf(all, 'nothing').held).toEqual([]);
+    expect(picked.unreadable.map((each) => each.file)).toEqual(['a.json']);
+    expect(workOf(all, 'quest:q7').unreadable.map((each) => each.file)).toEqual(['b.json']);
   });
 });
 

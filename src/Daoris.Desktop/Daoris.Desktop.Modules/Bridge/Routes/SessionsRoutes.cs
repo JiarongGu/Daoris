@@ -423,6 +423,24 @@ public sealed class SessionsRoutes(DriverContext context)
     }
 
     /// <summary>
+    /// What each of these sessions spent (SESSCTX1d; the session-context design §7): the *Parts* strip's cost on each part's own
+    /// row, read from this machine's own record as the openings are, so a moved session reads as one. Each id that names a record
+    /// answers its turns, those whose door said what they consumed, and the four counts summed, a count none said null; an id
+    /// with no turn is left out.
+    /// </summary>
+    [DriverRoute("SESSION_SPENT")]
+    private object? SpentOf(IpcRequest request)
+    {
+        var spent = new Dictionary<string, SessionSpent>(StringComparer.Ordinal);
+        foreach (var id in Ids(request) ?? [])
+        {
+            if (_loop.Events.Spent(id) is { Turns: > 0 } read) spent[id] = read;
+        }
+
+        return new { Spent = spent };
+    }
+
+    /// <summary>
     /// Where each of these sessions' work is now (LOOK2b), for the rail in one ask: whether the tree it opened is still
     /// here, and its landing, standing or a trace (D113), so a row says where the work landed rather than naming a tree a
     /// landing tidied away.

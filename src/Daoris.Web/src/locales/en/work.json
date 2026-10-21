@@ -328,6 +328,7 @@
   "work.facts.attempt_other": "attempt {{attempt}}: the {{count}} before it failed",
   "work.facts.continues": "continues from {{agent}}",
   "work.facts.continuesAnother": "continues another session",
+  "work.facts.leadsOn": "the line is on {{agent}} now",
   "work.facts.helping": "helping {{title}}",
   "work.facts.helpingAnother": "helping another session",
   "work.access.full": "Full access",

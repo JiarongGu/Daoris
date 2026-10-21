@@ -189,7 +189,7 @@ public sealed class PipeCensus
             "HELPER_WAITS", "HELP_CONVERSATIONS", "HELP_PROPOSALS", "HELP_WIRED", "HEAVY_MARKS", "HEAVY_SLOT", "HISTORY_PLAN", "LANDING", "LINES", "OPINION_GATE",
             "OPINION_WAITS", "PERMISSION_WAITS", "PLUGIN", "PLUGINS", "PLUGIN_ACTIVITY", "PLUGIN_READ", "RULES", "SESSION_DIFF", "SESSION_FILE",
             "SESSION_FILES", "SESSION_GROUPS", "SESSION_HAND_OVER_ASK", "SESSION_HELPERS", "SESSION_HISTORY", "SESSION_OPENINGS", "SESSION_OPTIONS",
-            "SESSION_PROCESS", "SESSION_QUEUE", "SESSION_SEARCH", "SESSION_STREAMS", "SESSION_WHERE", "SETUP_PLAN", "STARTS",
+            "SESSION_PROCESS", "SESSION_QUEUE", "SESSION_SEARCH", "SESSION_SPENT", "SESSION_STREAMS", "SESSION_WHERE", "SETUP_PLAN", "STARTS",
             "STATE", "STATE_SLICE", "SWEEP_PLAN", "SYSTEM_DOWNLOADS", "SYSTEM_WIRING", "TAIL_SESSION", "TOOLS_LIST", "TRACE", "TREES_SYNC_PLAN", "TREES_SYNC_SCOPE",
             "UNDER_WAY", "USAGE", "WORKFLOW_CURRENT", "WORKFLOW_RUN", "WORK_PLAN", "WORK_STATE",
             // The driver's own (D156 §3: sync, refresh): a look now, a sync pass with the service, the registry and the
@@ -239,7 +239,7 @@ public sealed class PipeCensus
         Add(PipeClass.Window,
             // The file manager, the file picker and Daoris's browser are the window's; so is what is typed into an action a
             // window runs, and that action's stop.
-            "SESSION_OPEN_FOLDER", "PLUGIN_OPEN_FOLDER", "TOOLS_PICK", "SHOW_REVIEW_AGAIN", "HARNESS_INPUT", "HARNESS_CANCEL",
+            "SESSION_OPEN_FOLDER", "PLUGIN_OPEN_FOLDER", "WORK_RECORDS_FOLDER", "TOOLS_PICK", "SHOW_REVIEW_AGAIN", "HARNESS_INPUT", "HARNESS_CANCEL",
             // RPC1c, PERSONDOOR1f: what waits for the person's Confirm is the window's to read and answer, so a terminal can ask and never
             // answer; and the person key is the window's, which the pipe never answers (D156 point 2, the terminal RPC design §4.3).
             "PERSON_CONFIRMATIONS", "PERSON_CONFIRM", "PERSON_KEY");

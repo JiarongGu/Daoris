@@ -5,7 +5,7 @@ import { useHarnessRun, WithHarnessRuns } from '../../agents/harnessRuns';
 import { useAcceptQuest, useAnswerGoAhead, useAsks, usePublishAsk, useQuests, useSessions } from '../../data/queries';
 import {
   retryNotice, useApproveHelper, useAttention, useDeclineHelper, useHarnessAction, useHarnesses, useNudge, useRefreshHarnesses,
-  useResolveHeld, useRetryQuest, useTrustFolder, useAnswerPermission, useAnswerAlone,
+  useOpenWorkRecords, useResolveHeld, useRetryQuest, useTrustFolder, useAnswerPermission, useAnswerAlone,
 } from '../../bridge/shell';
 import { permissionSaid } from '../waits/PermissionAsks';
 import { answerAloneSaid } from '../waits/AnswerAlone';
@@ -99,6 +99,7 @@ function Band({ doors, notify, onSessions, onRun }: {
   const answerPermission = useAnswerPermission();
   const answerAlone = useAnswerAlone();
   const resolveHeld = useResolveHeld();
+  const openRecords = useOpenWorkRecords();
 
   const publish = usePublishAsk();
   const answerGoAhead = useAnswerGoAhead();
@@ -236,12 +237,18 @@ function Band({ doors, notify, onSessions, onRun }: {
     declineRule: (item) => run(item, () => ruleAnswer.settled(item.id, false, item.title), (said) => notify(said)),
     // The person's word on a plugin step's attempt held for them (FABRIC-PERFORM1g): recorded, it is said; refused (the desktop not holding
     // the home, the attempt no longer held), the driver's own sentence in the error's tone. Its row moves as the slice is judged again.
+    // FABRIC-CLOSE1j: a close found closed only in part takes the person's stop through the same door, on its close's attempt.
     held: (item, resolution) => {
-      const attempt = item.held;
+      const end = item.ended;
+      const attempt = item.held
+        ?? (end?.node && typeof end.attempt === 'number' ? { unit: end.unit, node: end.node, attempt: end.attempt } : null);
       if (!attempt) return;
       run(item, () => resolveHeld.mutateAsync({ unit: attempt.unit, node: attempt.node, attempt: attempt.attempt, resolution }),
         (answer) => notify(answer.done ? t('work.milestone.held.recorded', { node: attempt.node }) : answer.message, answer.done ? undefined : 'error'));
     },
+    // The folder a node record that does not read is kept in (FABRIC-PERFORM1j), opened for the person to mend it; a refusal (no record
+    // kept now) in the driver's words. Its row goes once the record reads, as the slice is judged again.
+    openRecords: (item) => run(item, () => openRecords.mutateAsync(), () => {}),
     // An agent's ask for a helper said yes or no to, as its session's page says it (MIXAGENT2c): its answer said in the page's
     // words, a refusal by its code in the error's tone.
     helper: (item, yes) => {

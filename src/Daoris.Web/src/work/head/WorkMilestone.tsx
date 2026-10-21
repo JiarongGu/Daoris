@@ -4,7 +4,7 @@ import type { TFunction } from 'i18next';
 import { moment } from '../../locales/format';
 import { cn } from '../../lib/cn';
 import { DotMark, Icon } from '../../design/ui';
-import { entryDetail, entryName, heldSentence, type MilestoneUnit } from './milestone';
+import { endOffersStop, endSentences, entryDetail, entryName, heldSentence, type MilestoneUnit } from './milestone';
 
 /** The proofs the driver names by code (`EndBy`): any other code is said by the driver's own sentence. */
 const PROOFS = ['merged', 'empty', 'on-line', 'pull-request', 'landed', 'carried', 'inside'] as const;
@@ -169,6 +169,15 @@ function Facts({ id, unit }: { id: string; unit: MilestoneUnit }) {
           ))}
         </Row>
       )}
+      {/* FABRIC-CLOSE1j (§E5): its closure graph ended by the person's own done, or closed only in part, the stop of its close node
+          offered while it waits again; their press is What needs you's. */}
+      {(unit.ends?.length ?? 0) > 0 && (
+        <Row label={t('work.milestone.closed.label')} tone={unit.ends!.some(endOffersStop) ? 'failed' : 'ended'}>
+          {unit.ends!.flatMap((end, index) => endSentences(t, end).map((said, part) => (
+            <span key={`${end.kind}-${end.at}-${index}-${part}`} className={endOffersStop(end) ? 'text-ink-danger' : undefined}>{said}</span>
+          )))}
+        </Row>
+      )}
     </dl>
   );
 }
@@ -191,6 +200,10 @@ export function MilestoneLine({ unit, className }: { unit: MilestoneUnit; classN
       : unit.recovery.length > 0 ? t('work.milestone.line.recovery') : null,
     (unit.held?.length ?? 0) > 0
       ? <span className={unit.held!.some((held) => !held.resolution) ? 'text-ink-danger' : undefined}>{t('work.milestone.line.held')}</span> : null,
+    // FABRIC-CLOSE1j: a closure graph's end said on the line too, a stop offered in the danger ink.
+    (unit.ends ?? []).some((end) => end.kind === 'overridden') ? t('work.milestone.line.overridden') : null,
+    (unit.ends ?? []).some((end) => end.kind === 'partially-closed')
+      ? <span className={unit.ends!.some(endOffersStop) ? 'text-ink-danger' : undefined}>{t('work.milestone.line.partial')}</span> : null,
   ].filter(Boolean);
   return (
     <span className={cn('text-small text-ink-soft', className)}>

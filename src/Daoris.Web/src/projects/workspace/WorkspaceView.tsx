@@ -449,6 +449,8 @@ function SetupPart({ workspace, notify, open, wiring, onOpenPlugin }: {
       landing: state && {
         set: landingSet && ruleOf(landingSet),
         landers,
+        // FABRIC-GRAPH1d: a rule the file keeps for it that reads as no rule, said under the row.
+        unread: ofWorkspace(state.workspaceUnreadLandings),
         onSet: (rule) => setLanding.mutate(rule ? { workspace, ...rule } : { workspace }, {
           onSuccess: () => notify(!rule
             ? t('settings.landing.cleared', { name: workspace })

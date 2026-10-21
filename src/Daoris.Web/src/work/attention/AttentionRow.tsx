@@ -8,7 +8,7 @@ import type { TrustHold } from '../../data/signals';
 import { Button, Dot, Icon, Inline, SelectField } from '../../design/ui';
 import type { AccountRowFacts } from './accountWords';
 import type { RuleProposal } from '../../settings/repository/AgentRules';
-import type { HeldAttempt, HeldResolution } from '../head/milestone';
+import type { GraphEnd, HeldAttempt, HeldResolution, UnreadableRecord } from '../head/milestone';
 import { ASKS_ONCE, type AttentionActId, type AttentionOffer, attentionOffers } from './attention';
 import { Note } from '../Note';
 import { type Answered, InlineConfirm } from '../InlineConfirm';
@@ -77,6 +77,10 @@ export type Attention = {
   opinion?: OpinionWait;
   /** A `work` row's plugin step's attempt held for the person (FABRIC-PERFORM1g): what their word is on. */
   held?: HeldAttempt;
+  /** A `work` row's node record that does not read (FABRIC-PERFORM1j): what its press opens the folder of. */
+  unreadable?: UnreadableRecord;
+  /** A `work` row's closure graph closed only in part (FABRIC-CLOSE1j): the stop of its close node is what their word is on. */
+  ended?: GraphEnd;
   /**
    * A `permission` row's tool call held for the person's answer (AUTONOMY1b3c): what its presses answer, by the choices its agent
    * offered. Its `session` is the session that holds it, whose page its door opens.
@@ -164,6 +168,8 @@ export type AttentionActs = {
   helper?: (item: Attention, yes: boolean) => void;
   /** The person's word on a plugin step's attempt held for them (FABRIC-PERFORM1g): `daoris-driver work held`'s. */
   held?: (item: Attention, resolution: HeldResolution) => void;
+  /** The node records' folder opened, where the person mends one that does not read (FABRIC-PERFORM1j). */
+  openRecords?: (item: Attention) => void;
   /** A tool call held for the person answered with the option they pressed, by its agent's id (AUTONOMY1b3c). */
   permission?: (item: Attention, option: string) => void;
   /** A third answer alone held for the person let go on (`goOn`) or kept (COWORK1e): its session's page's own presses. */
@@ -203,6 +209,9 @@ const HANDLER: Record<AttentionActId, keyof AttentionActs> = {
   'record-close': 'held',
   'resend-close': 'held',
   'stop-close': 'held',
+  'open-records': 'openRecords',
+  'again-step': 'held',
+  'stop-partial': 'held',
 };
 
 /** The kinds that wait in a circle rather than in a repository. */
@@ -299,9 +308,11 @@ export function AttentionRow({ item, onOpen, onRun, acts = {}, busy = false, ope
     else if (act === 'let-ask' || act === 'not-now') acts.helper?.(item, act === 'let-ask');
     else if (act === 'go-on-answer' || act === 'keep-answer') acts.answerAlone?.(item, act === 'go-on-answer');
     else if (act === 'happened' || act === 'did-not') acts.held?.(item, act);
-    else if (act === 'stop-step' || act === 'stop-close') acts.held?.(item, 'stop');
+    else if (act === 'stop-step' || act === 'stop-close' || act === 'stop-partial') acts.held?.(item, 'stop');
     else if (act === 'record-close') acts.held?.(item, 'record');
     else if (act === 'resend-close') acts.held?.(item, 'resend');
+    else if (act === 'open-records') acts.openRecords?.(item);
+    else if (act === 'again-step') acts.held?.(item, 'again');
   };
   const label = (act: AttentionActId, account?: string): string => {
     switch (act) {
@@ -348,6 +359,12 @@ export function AttentionRow({ item, onOpen, onRun, acts = {}, busy = false, ope
       case 'record-close': return t('work.milestone.held.act.record');
       case 'resend-close': return t('work.milestone.held.act.resend');
       case 'stop-close': return t('work.milestone.held.act.stopClose');
+      // FABRIC-PERFORM1j: where the record is mended.
+      case 'open-records': return t('work.milestone.unreadable.act.open');
+      // FABRIC-PERFORM1k: a failure kept for the person, as `daoris-driver work held … again` names it.
+      case 'again-step': return t('work.milestone.held.act.again');
+      // FABRIC-CLOSE1j: a close found closed only in part, its node waiting again: its stop alone.
+      case 'stop-partial': return t('work.milestone.closed.act.stop');
     }
   };
 

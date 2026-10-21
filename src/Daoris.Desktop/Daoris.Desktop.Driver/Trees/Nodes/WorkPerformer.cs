@@ -190,6 +190,26 @@ public sealed class WorkPerformer(NodeRecordFiles records, IWorkPerformPort port
     public const string SubmissionMoved = "submission-moved";
 
     /// <summary>
+    /// Why a failure is kept for the person (FABRIC-PERFORM1k, RUN1e): its code is not one its step declares transient, or it is and its tries
+    /// are spent. Its plugin's word stands, and Daoris makes no new attempt by itself.
+    /// </summary>
+    public const string FailureKept = "failure-kept";
+
+    public const string TriesSpent = "tries-spent";
+
+    /// <summary>
+    /// A held attempt's word on a failure kept for the person, or <c>again</c> on an attempt held (FABRIC-PERFORM1k): nothing is recorded, and
+    /// a word found recorded anyway is taken back.
+    /// </summary>
+    public const string NotAgain = "not-again";
+
+    /// <summary>
+    /// A word other than <c>stop</c> on a close found closed only in part (FABRIC-CLOSE1j, §E5): its door's answer stands for the quests it
+    /// kept, and the lost one's work is the winner's, so the person's recovery is its node's stop alone. Nothing is recorded.
+    /// </summary>
+    public const string PartStop = "part-stop";
+
+    /// <summary>
     /// The invocations this performer's loop delivered: an attempt sent by a loop since ended is asked after before anything else, since a
     /// new loop's generations start again at 1 (FABRIC-PERFORM1a) and cannot tell its process from the old one's.
     /// </summary>
@@ -431,6 +451,22 @@ public sealed class WorkPerformer(NodeRecordFiles records, IWorkPerformPort port
         {
             var held = record.Attempts.LastOrDefault(each => each.Node == node && each.Attempt == attempt);
 
+            // FABRIC-PERFORM1k: a failure kept for the person takes their new attempt alone.
+            if (held is not null && KeptFailure(record, held))
+            {
+                if (held.Resolution is not null) return (null, new WorkPerformed(unit, node, PerformedWhat.Refused, Worded));
+                if (resolution != HeldResolutions.Again) return (null, new WorkPerformed(unit, node, PerformedWhat.Refused, NotAgain));
+                return (With(record, held, held with { Resolution = resolution, ResolvedAt = now }), new WorkPerformed(unit, node, PerformedWhat.Worded, resolution));
+            }
+
+            // FABRIC-CLOSE1j: a close found closed only in part, its node live again, takes the person's stop alone (§E5: the recovery is theirs).
+            if (held is not null && QuestClosing.Partly(record, held))
+            {
+                if (held.Resolution is not null) return (null, new WorkPerformed(unit, node, PerformedWhat.Refused, Worded));
+                if (resolution != HeldResolutions.Stop) return (null, new WorkPerformed(unit, node, PerformedWhat.Refused, PartStop));
+                return (With(record, held, held with { Resolution = resolution, ResolvedAt = now }), new WorkPerformed(unit, node, PerformedWhat.Worded, resolution));
+            }
+
             // FABRIC-CLOSE1u: an unknown close its node is still on is the person's too, with a held close's words.
             if (held is null || (held.State != AttemptStates.Held && !QuestClosing.Unanswered(record, held)))
             {
@@ -485,13 +521,26 @@ public sealed class WorkPerformer(NodeRecordFiles records, IWorkPerformPort port
 
         return done;
 
-        // FABRIC-CLOSE1q: a close's word is its closer's (QuestCloser.Resolve), never applied here as a plugin's.
-        static bool HasWord(NodeAttempt attempt) => attempt is { State: AttemptStates.Held, Resolution: not null } && attempt.Plugin != QuestClosing.Sender;
+        // FABRIC-CLOSE1q: a close's word is its closer's (QuestCloser.Resolve), never applied here as a plugin's. FABRIC-PERFORM1k: the person's
+        // new attempt is on a settled one, its failure.
+        static bool HasWord(NodeAttempt attempt) =>
+            attempt is { State: AttemptStates.Held, Resolution: not null } or { State: AttemptStates.Settled, Resolution: HeldResolutions.Again }
+            && attempt.Plugin != QuestClosing.Sender;
     }
+
+    /// <summary>
+    /// Whether <paramref name="attempt"/> is a failure kept for the person (FABRIC-PERFORM1k, RUN1e): a plugin's attempt its node failed on,
+    /// settled, with no retry coming (its code not transient, its tries spent, or a retry the graph governing now refused). Read from the record
+    /// alone, so the lists and the doors agree without a declaration; an observed node's failure dispatched nothing and is none.
+    /// </summary>
+    internal static bool KeptFailure(NodeRecord record, NodeAttempt attempt) =>
+        attempt is { State: AttemptStates.Settled, RetryAt: null } && attempt.Plugin != QuestClosing.Sender
+        && record.Statuses.GetValueOrDefault(attempt.Node) is { State: NodeStates.Failed } status && status.Attempt == attempt.Attempt;
 
     /// <summary>Why <paramref name="word"/> is not taken on <paramref name="held"/> (FABRIC-CLOSE1q), or null where it is one of its words.</summary>
     internal static string? WordRefused(NodeAttempt held, string word) =>
         HeldResolutions.Of(held).Contains(word, StringComparer.Ordinal) ? null
+        : word == HeldResolutions.Again ? NotAgain
         : held.Plugin != QuestClosing.Sender ? NotOffered
         : word == HeldResolutions.Record ? NotKept
         : NotCloseWord;
@@ -502,6 +551,18 @@ public sealed class WorkPerformer(NodeRecordFiles records, IWorkPerformPort port
         var now = clock();
         var unit = record.Unit;
         var word = attempt.Resolution!;
+
+        // FABRIC-PERFORM1k: the person's new attempt on a failure kept for them (§E2's failed → ready by the person), which the next evaluation
+        // starts with a new key. The word is cleared as it is applied: the failure stays its plugin's, and a build before it reads no `again`.
+        // A node that moved off the failure meanwhile (a new revision, a retry) needs no new attempt, so nothing moves.
+        if (word == HeldResolutions.Again && attempt.State == AttemptStates.Settled)
+        {
+            var cleared = With(record, attempt, attempt with { Resolution = null, ResolvedAt = null });
+            if (!KeptFailure(record, attempt)) return (cleared, new(unit, node.Id, PerformedWhat.NotTaken, Moved));
+            var again = NodeLifecycle.Apply(node, StatusOf(record, node.Id), new NodeMove(NodeStates.Ready, NodeCause.Person));
+            if (!again.Moved) return (cleared, new(unit, node.Id, PerformedWhat.Refused, again.Refused));
+            return (Kept(cleared, again, "person-again", now), new(unit, node.Id, PerformedWhat.Resolved, word));
+        }
 
         // FABRIC-CLOSE1q: a close's word is never a plugin attempt's; one no door would record is taken back, saying why.
         if (WordRefused(attempt, word) is { } refused)

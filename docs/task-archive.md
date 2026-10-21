@@ -18724,3 +18724,73 @@ languages. On Opus: about 40 tool calls. Detail: D173's FABRIC-CLOSE1y note.
 stages under its process's name and publishes under the lease, waited for; `tools.json`'s writers hold the keep lock from their read;
 today's text kept by a 49-case table, five rows changed. The tools' TypeScript left. Detail: D194's PUSH1f2c note, D173's of this
 day. Unproven until the install: a `daoris tool` change confirmed in the open window.
+## SYNCMERGE1c4 — *bring mine forward* waits while the losing session still runs (2026-10-21, D178)
+
+> - [ ] **SYNCMERGE1c4 — *bring mine forward* waits while the losing session still runs** (service or web; D178 point 3 and its traps). Neither the service nor the page holds the press until the lost take's process has ended. Proof: a service refusal test or a web state test.
+
+**Outcome** 2026-10-21: built in the service. The bring-forward door refuses `StillRunning` (409), naming the session and its state,
+while a session of this machine's on the quest, driven for it or a conversation that took it, is queued, starting or working
+(`SessionStore.RunningForQuestAsync`); parked or ended, the press stands. Judged after every other refusal, so a press that could not
+stand anyway keeps its own words. The page shows the 409's words as for any refusal and still offers the press. Proof:
+`QuestShareTests.A_bring_forward_waits_while_the_losing_session_still_runs` and `A_running_session_does_not_hide_why_the_press_cannot_stand`.
+On Opus: about 40 tool calls. Detail: D178's SYNCMERGE1c4 line.
+
+## LANDSYNC1b — the landing's sync, its `Process` cases (2026-10-21, D87)
+
+> - [ ] **LANDSYNC1b — the landing's sync, its `Process` cases** (driver tests; after 1). LANDSYNC1's fast half holds the judgement; over real git still: TREEFOLLOW1's own branch replayed in place, an advance whose line holds some of the commits, and D87's amendment point 3 (the tree moved to what landed). Proof: `Process` cases beside `TreeSyncTests`.
+
+**Outcome** 2026-10-21: tests only, no code changed, all green on the current code. `LandSyncProcessTests` (Process, git): an own
+branch replayed in place leaving out a cherry-pick by its patch id, the tree on it; the same branch on its remote refused with the
+rebase words; an advance moving the chain's branch on by only what neither it nor the line holds, the tree following; and a tree a
+session holds staying while the landing stands. On Opus: about 40 tool calls. Detail: D87's LANDSYNC1b note.
+
+## SESSCTX1d — a session's move on the page (2026-10-21, D189)
+
+> - [ ] **SESSCTX1d — a session's move on the page** (modules, web-shell; after 1c; D189). The Parts strip says how a part began from a move (from which agent, and why), the head shows the leading part's agent, and each part's cost is on its own row, so a moved session reads as one session. Contract: the design §7. Proof: stories, vitest in en and zh, `i18n:check`, `names:check -- --strict`, the window.
+
+**Outcome** 2026-10-21: built. The *Parts* strip and flow name the agent a move or a hand-over left, where it is another than the
+part's own, and a hand-over's why; each part's row and node say its tokens over its turns from this machine's record (the driver's
+`SessionEvents.Spent`, the modules' `SESSION_SPENT`); the head's facts name the agent the line's leading part runs on where its
+parts ran on more than one. Stories and vitest in en and zh, `i18n:check`, `names:check -- --strict`. The window has not been seen.
+Detail: D189's SESSCTX1d note.
+
+## FABRIC-PERFORM1j — an unreadable node record said where the person looks (2026-10-21, D173)
+
+> - [ ] **FABRIC-PERFORM1j — an unreadable node record said where the person looks** (driver, modules, web-shell; §D3). A unit whose node record does not read stops everything on it, and only the loop's lines say so: list it in `WORK_STATE` with a What needs you row. Proof: an unreadable record listed, en and zh.
+
+**Outcome** 2026-10-21: built. A node record that does not read is listed by its file and the unit it still names: `WORK_STATE`'s
+additive `unreadable`, the work slice's `<held>` partition, and `daoris-driver work held`. *What needs you* has a `work` row for each,
+worded in en and zh, whose press opens the records' folder (`WORK_RECORDS_FOLDER`) for the person to mend it. Proof: driver, modules
+and page tests listed in D173's note. On Opus: about 120 tool calls. Detail: D173's FABRIC-PERFORM1j note.
+
+## FABRIC-GRAPH1d — a landing rule that does not read is said (2026-10-21, D173)
+
+> - [ ] **FABRIC-GRAPH1d — a landing rule that does not read is said** (driver, cli, web; after GRAPH1; WSR1). A rule in `driver.json` that reads as no rule (no `form`) is skipped by both readers without a word. Proof: a rule holding only `tidy` named as unread at Setup and by `daoris driver list`. GRAPHTWINS1 (2026-10-20) built the twins and the terminal: a landing rule that reads as no rule is the `unread` stray in both readers (`graph-homes.json`'s `strays`), and `daoris driver list` names it with the reason. Left: Setup naming it (the page and the bridge's landing rows).
+
+**Outcome** 2026-10-21: built. Setup's half, after GRAPHTWINS1 built the twins and the terminal: `STATE` answers `unreadLandings` and
+`workspaceUnreadLandings` (why `object`, `form` or `refused`, and the driver's sentence), pushed in the driver slice; a repository's
+Setup names its own unread rule, else its workspace's where it lands by Daoris's merge, and a workspace's Setup its own, en and zh.
+Proof: `DriverModuleLinesTests`, `RepositorySetup.test.tsx`, `WorkspaceSetup.test.tsx`, `ProjectsView.test.tsx`. On Opus: about 70 tool
+calls. Detail: D173's FABRIC-GRAPH1d note.
+
+## FABRIC-PERFORM1k — a failure kept for the person shown, with their new attempt (2026-10-21, D173)
+
+> - [ ] **FABRIC-PERFORM1k — a failure kept for the person shown, with their new attempt** (driver, modules, web-shell; after PERFORM1g; §E2, D173's RUN1e note). A plugin node failed with no retry coming stalls for the person, but nothing lists it and the page offers no `failed → ready` press. Proof: a non-transient failure listed and restarted with a new key by the person's press.
+
+**Outcome** 2026-10-21: built. A plugin step's failure with no retry coming (not transient, or its tries spent) is listed with the
+held attempts (`WORK_STATE`'s `held`, why `failure-kept` or `tries-spent`, an additive `code`; `daoris-driver work held`; a What needs
+you row; the work's foot, en and zh) and offered one word, `again`, recorded by `WORK_HELD` or its terminal twin under the lease and
+applied by the runtime as the person's `failed → ready`, so the next evaluation starts it with a new key; the word is cleared as it is
+applied. Proof: `NodeRuntimeTests` (3), `WorkStateSliceTests`, `WorkMilestone.test.tsx`. On Opus: about 90 tool calls. Detail: D173's
+FABRIC-PERFORM1k note.
+
+## FABRIC-CLOSE1j — "closed by you before its end" and "partially closed" on the page (2026-10-21, D173)
+
+> - [ ] **FABRIC-CLOSE1j — "closed by you before its end" and "partially closed" on the page** (web, driver; §E5, §D0). The milestone reads the `overridden` and `partially-closed` history entries and offers to stop the node (PERFORM1g's doors). Proof: web tests in both languages; a driver milestone test.
+
+**Outcome** 2026-10-21: built. `GraphEnds.Read` derives both ends from the node records' history, and the override now keeps an entry
+for every node it stops; `WORK_STATE` answers them as `ends` and the work slice pushes them in `<held>`. The milestone says each on
+its foot and line in en and zh. A close found closed only in part is live again and would close the lost quest over the winner's take,
+so `WORK_HELD`'s `stop` is taken on it (any other word refused `part-stop`), offered as a What needs you row and applied by the closer.
+Proof: `QuestCloseTests`, `WorkStateSliceTests`, `AttentionStateSliceTests`, `WorkMilestone.test.tsx` in both languages. A quest
+unit's milestone on the page stays open as FABRIC-CLOSE1j2. Detail: D173's FABRIC-CLOSE1j note.

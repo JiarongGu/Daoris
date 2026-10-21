@@ -607,6 +607,51 @@ public sealed class QuestCloseTests : IDisposable
         Assert.Single(_door.Sent);
     }
 
+    /// <summary>
+    /// FABRIC-CLOSE1j (§E5): a chain closed only in part is read on the milestone, naming the quest lost and its close node, which is live
+    /// again and would close that quest over the winner's take; the person's stop, PERFORM1g's door, is the only word taken on it, and stops it.
+    /// </summary>
+    [Fact]
+    public async Task A_chain_closed_only_in_part_is_read_for_the_milestone_and_its_close_node_stopped_on_the_persons_word()
+    {
+        var digest = Digest(Closing);
+        Quest(Taken("q6", digest, Ready40) with { Then = [new QuestStepView("engine", "Ship q7", "")] });
+        Quest(Taken("q7", digest, Ready41) with { Parent = "q6" });
+        var runtime = Runtime();
+        await runtime.PassAsync(Look(Closing), CancellationToken.None);
+        Quest(_quests["q6"] with { Status = "Done" });
+        Quest(_quests["q7"] with { Status = "Done" });
+        await runtime.PassAsync(Look(Closing), CancellationToken.None);
+        Assert.Empty(GraphEnds.Read(Files));
+
+        Quest(_quests["q6"] with { Status = "Taken", Submission = null });
+        await runtime.PassAsync(Look(Closing), CancellationToken.None);
+
+        var end = Assert.Single(GraphEnds.Read(Files));
+        Assert.Equal(("quest:q7", QuestClosing.Partial, "q6", "close"), (end.Unit, end.Kind, end.Quest, end.Node));
+        Assert.Contains(end.NodeState, NodeStates.Live);
+        Assert.Equal([HeldResolutions.Stop], end.Words);
+
+        // Only its stop is the person's: its answer stands for the quests it kept.
+        var resend = HeldAttempts.Word(Files, "quest:q7", "close", end.Attempt!.Value, HeldResolutions.Resend, () => _now);
+        Assert.Equal((PerformedWhat.Refused, WorkPerformer.PartStop), (resend.What, resend.Code));
+        Assert.Equal(PerformedWhat.Worded, HeldAttempts.Word(Files, "quest:q7", "close", end.Attempt.Value, HeldResolutions.Stop, () => _now).What);
+        Assert.Equal(HeldResolutions.Stop, Assert.Single(GraphEnds.Read(Files)).Resolution);
+
+        // Applied at the next look: the close node stopped, its attempt still settled reached, and the winner's submission never closed here.
+        var stopped = await runtime.PassAsync(Look(Closing), CancellationToken.None);
+        Assert.Equal(NodeStates.Stopped, Record("quest:q7").Statuses["close"].State);
+        Assert.All(Record("quest:q7").Attempts, attempt => Assert.Equal((AttemptStates.Settled, (string?)null), (attempt.State, attempt.Resolution)));
+        Assert.Contains(stopped.Said, line => line.Contains("stopped by you", StringComparison.Ordinal) && line.Contains("close", StringComparison.Ordinal));
+        var after = Assert.Single(GraphEnds.Read(Files));
+        Assert.Equal((NodeStates.Stopped, (string?)null), (after.NodeState, after.Resolution));
+        Assert.Empty(after.Words);
+
+        Quest(_quests["q6"] with { Submission = new QuestSubmissionView("winner", 7, null, "ready") });
+        await runtime.PassAsync(Look(Closing), CancellationToken.None);
+        Assert.Single(_door.Sent);
+    }
+
     /// <summary>FABRIC-CLOSE1l, the review's finding 1: a chain that leaves this repository and comes back is walked whole.</summary>
     [Fact]
     public async Task A_chain_that_leaves_this_repository_and_comes_back_closes_at_its_last_quest_here_only_with_its_first()
@@ -1005,6 +1050,12 @@ public sealed class QuestCloseTests : IDisposable
         var said = Assert.Single(overridden.Said, line => line.Contains("closed by you before its end", StringComparison.Ordinal));
         Assert.Contains("qa", said, StringComparison.Ordinal);
         Assert.DoesNotContain(again.Said, line => line.Contains("closed by you", StringComparison.Ordinal));
+
+        // FABRIC-CLOSE1j: the milestone reads it, naming the nodes stopped, and offers nothing: there is nothing left to stop.
+        var end = Assert.Single(GraphEnds.Read(Files));
+        Assert.Equal((Unit, QuestClosing.Overridden), (end.Unit, end.Kind));
+        Assert.Equal(["qa", "close"], end.Nodes.Order(StringComparer.Ordinal).Reverse());
+        Assert.Empty(end.Words);
     }
 
     /// <summary>
