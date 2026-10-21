@@ -1,14 +1,18 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { existsSync } from 'node:fs';
+import { mkdirSync } from 'node:fs';
+import { dirname } from 'node:path';
 import { commandHarness, profileHome } from '../../src/agents/toolchain.ts';
+import { homeEntry } from '../../src/platform/home.ts';
 import type { VerbPress } from '../../src/platform/door.ts';
 import { makeFixture, type Fixture } from '../_fixture.ts';
+import { ordered } from './_wiring.ts';
 
 /**
  * RPC1f (D171 point 3, the terminal RPC design §7.2, §7.3 and §9): an `agent` verb that changes the home is the window's route for the
  * same change while Daoris runs on it (the Agents and Accounts places), with the payload the window sends, said in the alone path's
- * words and made by the instance alone; the rules, a trust and an account's settings are the driver program's since PUSH1f2d. A door that answers as the running Daoris would is a test's here: the client's own rows
+ * words and made by the instance alone; the rules, a trust and an account's settings are the driver program's since PUSH1f2d, an unpin and every account verb but
+ * `profile use` since PUSH1f2e2. A door that answers as the running Daoris would is a test's here: the client's own rows
  * are `service/instance.test.ts`'s. A verb that needs this terminal (its installer, its sign-in, a key on stdin, a pin's download) acts
  * alone, as `door.ts`'s `AGENT_VERBS` says why.
  */
@@ -63,46 +67,23 @@ function same(fx: Fixture, argv: string[], route: string, payload: unknown, answ
   assert.equal(client.out, run(fx, argv).out, argv.join(' '));
 }
 
-test('an account\'s add, default, name, lists, order, use, cool-off and removal are the Accounts place\'s routes while Daoris runs', () => {
+test('how a list is used is the Accounts place\'s route while Daoris runs', () => {
   const fx = home('agent-door-accounts');
   try {
-    const client = sent(fx, ['profile', 'add', 'claude-code', 'work']);
-    assert.deepEqual(routed(client.press), ['HARNESS_ACTION', 'person', { action: 'profile-add', harness: 'claude-code', profile: 'work' }]);
-    assert.equal(existsSync(profileHome(fx.root, 'claude-code', 'work')), false, 'the instance makes it');
-    assert.equal(client.out, run(fx, ['profile', 'add', 'claude-code', 'work']).out);
-    run(fx, ['profile', 'add', 'claude-code', 'home']);
+    // An account's add, default, name, lists, order, cool-off and removal, and an unpin, are the driver program's since PUSH1f2e2
+    // (`AgentAccountsBothWaysTests`); `profile use` is still this verb's.
+    for (const account of ['work', 'home']) mkdirSync(profileHome(fx.root, 'claude-code', account), { recursive: true });
+    const wiring = homeEntry(fx.root, 'harnesses');
+    mkdirSync(dirname(wiring), { recursive: true });
+    ordered(wiring, 'claude-code', ['work', 'home'], null);
 
-    same(fx, ['profile', 'order', 'claude-code', 'work', 'home'], 'ACCOUNT_USE',
-      { action: 'order', harness: 'claude-code', accounts: ['work', 'home'] });
-    same(fx, ['profile', 'default', 'claude-code', 'work'], 'HARNESS_ACTION',
-      { action: 'profile-default', harness: 'claude-code', profile: 'work' });
-    same(fx, ['profile', 'default', 'claude-code', 'home', '--workspace', 'aurora'], 'HARNESS_ACTION',
-      { action: 'profile-default', harness: 'claude-code', profile: 'home', workspace: 'aurora' });
-    same(fx, ['profile', 'default', 'claude-code', '--clear', '--workspace', 'aurora'], 'HARNESS_ACTION',
-      { action: 'profile-default', harness: 'claude-code', workspace: 'aurora' });
     same(fx, ['profile', 'use', 'claude-code', 'goal', '--switch', 'off'], 'ACCOUNT_USE',
       { action: 'use', harness: 'claude-code', use: 'goal', switch: 'off' });
     same(fx, ['profile', 'use', 'claude-code', '--keep', 'home'], 'ACCOUNT_USE', { action: 'use', harness: 'claude-code', keep: 'home' });
     same(fx, ['profile', 'use', 'claude-code', '--no-keep'], 'ACCOUNT_USE', { action: 'use', harness: 'claude-code', noKeep: true });
     same(fx, ['profile', 'use', 'claude-code', '--clear'], 'ACCOUNT_USE', { action: 'use', harness: 'claude-code', clear: true });
-    run(fx, ['profile', 'order', 'claude-code', 'work', '--workspace', 'aurora']);
-    same(fx, ['profile', 'join', 'claude-code', 'home', 'aurora'], 'HARNESS_ACTION',
-      { action: 'profile-join', harness: 'claude-code', profile: 'home', join: ['aurora'] });
-    same(fx, ['profile', 'rename', 'claude-code', 'work', 'Work'], 'HARNESS_ACTION',
-      { action: 'profile-rename', harness: 'claude-code', profile: 'work', name: 'Work' }, { name: 'Work' });
-    same(fx, ['profile', 'ready', 'claude-code', 'work'], 'ACCOUNT_USE', { action: 'ready', harness: 'claude-code', profile: 'work' },
-      { ended: false });
-    same(fx, ['profile', 'ready', 'claude-code', '--own'], 'ACCOUNT_USE', { action: 'ready', harness: 'claude-code', own: true },
-      { ended: false });
-    same(fx, ['profile', 'order', 'claude-code', '--clear'], 'ACCOUNT_USE', { action: 'order', harness: 'claude-code', accounts: [] });
-    same(fx, ['profile', 'remove', 'claude-code', 'home'], 'HARNESS_ACTION',
-      { action: 'profile-remove', harness: 'claude-code', profile: 'home' }, { exitCode: 0 });
 
-    same(fx, ['unpin', 'claude-code'], 'HARNESS_ACTION', { action: 'unpin', harness: 'claude-code' });
-    const scoped = sent(fx, ['unpin', 'claude-code', '--workspace', 'aurora']);
-    assert.deepEqual([scoped.press?.what, scoped.press?.route], ['agent unpin', null], 'HARNESS_ACTION\'s unpin names no workspace');
-
-    for (const argv of [['list'], ['profile', 'list'], ['profile', 'use', 'claude-code']]) {
+    for (const argv of [['list'], ['profile', 'use', 'claude-code']]) {
       assert.equal(sent(fx, argv).press, null, `${argv.join(' ')} is a read`);
     }
   } finally {

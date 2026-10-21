@@ -112,7 +112,8 @@ export const command: CliCommand = {
     '                       where it has one (agent login codex)',
   ],
   // PUSH1f2d (D194 point 1): `rules`, `trust` and `settings` are Daoris's driver program's, `daoris-driver agent` with the same words;
-  // this writes nothing before it starts. The rest stays here until PUSH1f2e. `pin` and a pinned `update` fetch a maker's release
+  // this writes nothing before it starts; so are `which`, `unpin` and every `profile` verb but `use` (PUSH1f2e1, PUSH1f2e2). The rest
+  // stays here until the rest of PUSH1f2e. `pin` and a pinned `update` fetch a maker's release
   // (AGT2b, USE1a) through the one module that may reach a network, handed in here so the toolchain never holds a socket of its own.
   // So is the door an edit of the home goes through (RPC1f): the Agents or Accounts place's route while Daoris runs on this home, alone
   // under its lease when none does. A wiring file `DAORIS_HARNESS_CONFIG` names is no instance's, so the verbs act alone there, holding
@@ -125,12 +126,16 @@ export const command: CliCommand = {
 
 /**
  * The verbs `daoris agent` hands Daoris's driver program (PUSH1f2d, the alone-path design §5's allow-list): the rules, a trust, an
- * account's settings and what an agent runs as (PUSH1f2e), each one `daoris-driver agent` has (`AgentsCommand.Verbs`, which a test
- * reads beside this).
+ * account's settings and what an agent runs as (PUSH1f2e1), an unpin and the account verbs (PUSH1f2e2), each one `daoris-driver
+ * agent` has (`AgentsCommand.Verbs`, which a test reads beside this).
  */
-export const HANDED_VERBS: readonly string[] = Object.freeze(['rules', 'trust', 'settings', 'which']);
+export const HANDED_VERBS: readonly string[] = Object.freeze(['rules', 'trust', 'settings', 'which', 'unpin', 'profile']);
 
-/** Whether these words are the driver program's: a handed verb. None named is `list`, which stays here until PUSH1f2e. */
+/** The `profile` verbs handed on, each one the program has (`AgentsCommand.ProfileVerbs`): `profile use` stays here until PUSH1f2e. */
+export const HANDED_PROFILE_VERBS: readonly string[] = Object.freeze(['list', 'add', 'remove', 'default', 'order', 'ready', 'rename', 'join']);
+
+/** Whether these words are the driver program's: a handed verb, and of `profile` a handed one. None named is `list`, which stays here. */
 export function handed(argv: readonly string[]): boolean {
-  return HANDED_VERBS.includes(argv[0] ?? 'list');
+  const verb = argv[0] ?? 'list';
+  return verb === 'profile' ? HANDED_PROFILE_VERBS.includes(argv[1] ?? 'list') : HANDED_VERBS.includes(verb);
 }

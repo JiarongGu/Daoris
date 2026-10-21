@@ -59,24 +59,20 @@ export const PLUGIN_VERBS: readonly (readonly [verb: string, route: InstanceRout
 // census there, with which home each writes.
 
 /**
- * The routes `daoris agent` sends while Daoris runs (the Agents and Accounts places): an account and an agent's install widen what an
- * agent may do in one direction, so each is the person's.
+ * The routes `daoris agent` sends while Daoris runs (the Accounts place): how a list is used is the person's. The Agents place's
+ * `HARNESS_ACTION` is sent by Daoris's driver program since PUSH1f2e2 (`AgentRoutes`).
  */
 export const AGENT_ROUTES = {
   account: person('ACCOUNT_USE'),
-  harness: person('HARNESS_ACTION'),
 } as const satisfies Record<string, InstanceRoute>;
 
 /** Each `daoris agent` verb that changes the home: its route, or null with the reason it acts alone. */
 export const AGENT_VERBS: readonly (readonly [verb: string, route: InstanceRoute | null, reason: string])[] = [
-  ['agent profile add|remove|default|rename|join', AGENT_ROUTES.harness, 'the Accounts place\'s `profile-*` actions'],
-  ['agent unpin <agent>', AGENT_ROUTES.harness, 'the machine\'s pin taken back'],
-  ['agent profile order|use|ready', AGENT_ROUTES.account, 'the Accounts place\'s order, use and *Try now*'],
+  ['agent profile use', AGENT_ROUTES.account, 'the Accounts place\'s use'],
   ['agent install|update <agent>', null, 'alone: the agent\'s own installer or updater, whose output is this terminal\'s; HARNESS_ACTION runs it in the window\'s console'],
   ['agent login <agent>', null, 'alone: the agent\'s own sign-in, whose prompts are this terminal\'s; HARNESS_ACTION runs it in the window\'s console'],
   ['agent key <agent>', null, 'alone: the key is read from this terminal\'s standard input, and never crosses a wire'],
   ['agent pin <agent> <version>', null, 'alone: a download through this terminal\'s fetcher, its checks said here; HARNESS_ACTION runs it in the window\'s console'],
-  ['agent unpin <agent> --workspace <name>', null, 'alone: HARNESS_ACTION\'s unpin names no workspace'],
 ];
 
 /** What a verb hands its door: the route and payload it sends where Daoris runs, and what it does where none does. */

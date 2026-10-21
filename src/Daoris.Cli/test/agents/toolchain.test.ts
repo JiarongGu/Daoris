@@ -15,9 +15,10 @@ import type { Fetcher } from '../../src/agents/channels.ts';
 import { coolingOf, coolingWhen, machineZone } from '../../src/accounts/cooling.ts';
 import { keepRead, readOf, readsOf } from '../../src/accounts/accountreads.ts';
 import { accountNames, renameAccount } from '../../src/accounts/accountnames.ts';
-import { homeEntry, homePlaces } from '../../src/platform/home.ts';
+import { homeEntry } from '../../src/platform/home.ts';
 import { makeFixture, type Fixture } from '../_fixture.ts';
 import { captureError } from '../_fixture.ts';
+import { defaulted, ordered } from './_wiring.ts';
 import { TAR_END, tarEntry } from '../_tar.ts';
 
 /**
@@ -173,9 +174,6 @@ test('a workspace\'s default and pin are found in any case, as the driver finds 
   assert.equal(resolveProfile(settings, 'claude-code', 'straße', null), 'personal');
   assert.equal(resolveVersion(settings, 'claude-code', 'aURORA', null), '2.0.0');
 
-  run(['unpin', 'claude-code', '--workspace', 'AURORA'], at(fx));
-  assert.deepEqual(readHarnessSettings(at(fx)).workspaceVersions, {});
-
   // A later spelling naming none still replaces a workspace's defaults, and replaces nothing of its orders, as the
   // driver's `ReadCircles` and `ReadOrderCircles` set each.
   writeFileSync(at(fx), JSON.stringify({
@@ -226,8 +224,8 @@ test('the pin survives edits made by verbs that do not know it', () => {
   const settings = readHarnessSettings(at(fx));
   writeHarnessSettings(at(fx), { ...settings, versions: { 'claude-code': '1.2.3' } });
 
-  run(['profile', 'add', 'claude-code', 'work'], at(fx));
-  run(['profile', 'default', 'claude-code', 'work'], at(fx));
+  mkdirSync(profileHome(fx.root, 'claude-code', 'work'), { recursive: true });
+  defaulted(at(fx), 'claude-code', 'work', null);
 
   const after = readHarnessSettings(at(fx));
   assert.equal(after.versions['claude-code'], '1.2.3');
@@ -262,45 +260,6 @@ test('an edit preserves everything in the file it did not touch', () => {
 });
 
 // ——— The verbs.
-
-test('`profile add` creates the directory and says it is empty until you log in', () => {
-  const fx = makeFixture('harness-add');
-  const result = run(['profile', 'add', 'claude-code', 'work'], at(fx));
-
-  assert.equal(result.code, 0);
-  assert.ok(existsSync(profileHome(fx.root, 'claude-code', 'work')));
-  assert.match(result.out, /empty until you log into it/);
-  assert.match(result.out, /daoris agent login claude-code --profile work/);
-  fx.cleanup();
-});
-
-test('`profile default` refuses a profile that does not exist, and names the ones that do', () => {
-  const fx = makeFixture('harness-default-unknown');
-  run(['profile', 'add', 'claude-code', 'work'], at(fx));
-
-  const error = captureError(() => run(['profile', 'default', 'claude-code', 'typo'], at(fx)));
-
-  // A default nobody can resolve would make every spawn in that circle refuse with a message about
-  // logging in — which is the wrong sentence for a typo.
-  assert.match(error.message, /has no profile `typo`/);
-  assert.match(error.message, /work/);
-  fx.cleanup();
-});
-
-test('`profile default` sets the machine’s, and `--workspace` sets one circle’s', () => {
-  const fx = makeFixture('harness-default');
-  run(['profile', 'add', 'claude-code', 'personal'], at(fx));
-  run(['profile', 'add', 'claude-code', 'work'], at(fx));
-
-  run(['profile', 'default', 'claude-code', 'personal'], at(fx));
-  const scoped = run(['profile', 'default', 'claude-code', 'work', '--workspace', 'aurora'], at(fx));
-
-  assert.match(scoped.out, /sessions in `aurora` run `claude-code` as `work`/);
-  const settings = readHarnessSettings(at(fx));
-  assert.equal(resolveProfile(settings, 'claude-code', 'aurora', null), 'work');
-  assert.equal(resolveProfile(settings, 'claude-code', 'tools', null), 'personal');
-  fx.cleanup();
-});
 
 /**
  * 🔴 The twin's table (LEFT3 e): an account's default, set and cleared, as `HARNESS_ACTION`'s `profile-default` writes
@@ -344,45 +303,6 @@ test('an account\'s default is set and cleared as the screen\'s own write sets a
  * D50's two doors (LEFT3 e): the screen's *Make default* on the tool's own row clears an account's default, and until
  * now no terminal verb could. `--clear` writes what the screen writes: the machine's, or one workspace's, gone.
  */
-test('`profile default --clear` clears the machine’s default, or one workspace’s, and says what sessions run as now', () => {
-  const fx = makeFixture('harness-default-clear');
-  run(['profile', 'add', 'claude-code', 'personal'], at(fx));
-  run(['profile', 'add', 'claude-code', 'work'], at(fx));
-  run(['profile', 'default', 'claude-code', 'personal'], at(fx));
-  run(['profile', 'default', 'claude-code', 'work', '--workspace', 'aurora'], at(fx));
-
-  const scoped = run(['profile', 'default', 'claude-code', '--clear', '--workspace', 'aurora'], at(fx));
-
-  assert.equal(scoped.code, 0);
-  assert.match(scoped.out, /`aurora` names no account for `claude-code` now: its sessions run as the machine's default, `personal`/);
-  assert.equal(resolveProfile(readHarnessSettings(at(fx)), 'claude-code', 'aurora', null), 'personal');
-  assert.deepEqual(readHarnessSettings(at(fx)).workspaces, {});
-
-  const machine = run(['profile', 'default', 'claude-code', '--clear'], at(fx));
-
-  // OWNSPACE1d (D175): with no default the start takes Daoris's accounts in turn, never the tool's own home.
-  assert.match(machine.out, /this machine names no default for `claude-code` now: Daoris takes its accounts in turn/);
-  assert.doesNotMatch(machine.out, /own configuration home/);
-  assert.equal(resolveProfile(readHarnessSettings(at(fx)), 'claude-code', 'aurora', null), null);
-  // The accounts stay: a default cleared deletes nothing.
-  assert.deepEqual(profiles(fx.root, 'claude-code'), ['personal', 'work']);
-  fx.cleanup();
-});
-
-test('`profile default --clear` on a door clears its owner’s, and refuses a profile named beside it', () => {
-  const fx = makeFixture('harness-default-clear-door');
-  run(['profile', 'add', 'claude-code', 'work'], at(fx));
-  run(['profile', 'default', 'claude-code', 'work'], at(fx));
-
-  const cleared = run(['profile', 'default', 'claude-code-acp', '--clear'], at(fx));
-
-  assert.match(cleared.out, /runs as `claude-code`/);
-  assert.equal(readHarnessSettings(at(fx)).defaults['claude-code'], undefined);
-  const error = captureError(() => run(['profile', 'default', 'claude-code', 'work', '--clear'], at(fx)));
-  assert.match(error.message, /`--clear` names no account/);
-  fx.cleanup();
-});
-
 /**
  * 🔴 Removing an account removes it (D66 §3, amending SES3's "deletes nothing"). The owner's report
  * was that Forget did not delete the account: the old rule kept any directory the harness would not
@@ -390,38 +310,6 @@ test('`profile default --clear` on a door clears its owner’s, and refuses a pr
  * sign-in in it — read-only files too, which a tool that clones into its home leaves behind — and
  * every default naming it goes with it.
  */
-test('`profile remove` deletes the account, sign-in and all, and un-defaults it everywhere', () => {
-  const fx = makeFixture('harness-remove');
-  run(['profile', 'add', 'dsh', 'work'], at(fx));
-  run(['profile', 'default', 'dsh', 'work'], at(fx));
-  run(['profile', 'default', 'dsh', 'work', '--workspace', 'aurora'], at(fx));
-  writeFileSync(join(profileHome(fx.root, 'dsh', 'work'), 'credentials.json'), '{}', 'utf8');
-  const cloned = join(profileHome(fx.root, 'dsh', 'work'), 'plugins', '.git');
-  mkdirSync(cloned, { recursive: true });
-  writeFileSync(join(cloned, 'pack.idx'), 'x', 'utf8');
-  chmodSync(join(cloned, 'pack.idx'), 0o444);
-
-  const result = run(['profile', 'remove', 'dsh', 'work'], at(fx));
-
-  assert.equal(result.code, 0);
-  assert.match(result.out, /the sign-in in it are gone/);
-  assert.ok(!existsSync(profileHome(fx.root, 'dsh', 'work')));
-  const settings = readHarnessSettings(at(fx));
-  assert.equal(resolveProfile(settings, 'dsh', 'aurora', null), null);
-  assert.equal(resolveProfile(settings, 'dsh', null, null), null);
-  fx.cleanup();
-});
-
-test('`profile remove` of an account that is not there is an answer, not a failure', () => {
-  const fx = makeFixture('harness-remove-absent');
-
-  const result = run(['profile', 'remove', 'claude-code', 'nobody'], at(fx));
-
-  assert.equal(result.code, 0);
-  assert.match(result.out, /nothing to remove/);
-  fx.cleanup();
-});
-
 test('a remove naming somewhere else is refused before anything is deleted', () => {
   const fx = makeFixture('harness-remove-escape');
   writeFileSync(join(fx.root, 'keep.txt'), 'mine', 'utf8');
@@ -481,7 +369,7 @@ test('removing a key account removes its key, and another account keeps its own'
   const first = addKeyAccount(fx.root, 'claude-code', 'sk-first-1111', () => {});
   const second = addKeyAccount(fx.root, 'claude-code', 'sk-second-2222', () => {});
 
-  run(['profile', 'remove', 'claude-code', first], at(fx));
+  removeProfile(fx.root, 'claude-code', first);
 
   assert.equal(keyOf(fx.root, 'claude-code', first), null);
   assert.equal(keyOf(fx.root, 'claude-code', second), 'sk-second-2222');
@@ -493,8 +381,8 @@ test('a new key replaces an account\'s key in place, ends what marked it refused
   const fx = makeFixture('harness-key-replace');
   const first = addKeyAccount(fx.root, 'claude-code', 'sk-first-1111', () => {});
   const second = addKeyAccount(fx.root, 'claude-code', 'sk-second-2222', () => {});
-  run(['profile', 'rename', 'claude-code', first, 'work-key'], at(fx));
-  run(['profile', 'default', 'claude-code', first], at(fx));
+  renameAccount(fx.root, 'claude-code', profiles(fx.root, 'claude-code'), first, 'work-key');
+  defaulted(at(fx), 'claude-code', first, null);
   keepRead(fx.root, 'claude-code', first, 'out', new Date());
   writeFileSync(fx.entry('cooling'), JSON.stringify({ 'claude-code': { [first]: { until: '2999-01-01T00:00:00Z' } } }), 'utf8');
   const lines: string[] = [];
@@ -561,20 +449,6 @@ test('a key account is asked with its key, and listed by its handle', () => {
 
 // ——— Twin rule 7: a door's accounts are its owner's (AGT7). `accountOf` says whose account a door
 // runs as; its accounts, defaults and keys live under that name. Its pin stays its own.
-
-test('an account verb on a door acts on its owner’s accounts, and says so', () => {
-  const fx = makeFixture('harness-door');
-
-  const added = run(['profile', 'add', 'claude-code-acp', 'work'], at(fx));
-  run(['profile', 'default', 'claude-code-acp', 'work'], at(fx));
-
-  assert.ok(existsSync(profileHome(fx.root, 'claude-code', 'work')));
-  assert.ok(homePlaces(fx.root, 'agent-homes', 'claude-code-acp').every((place) => !existsSync(place)));
-  assert.equal(readHarnessSettings(at(fx)).defaults['claude-code'], 'work');
-  assert.equal(readHarnessSettings(at(fx)).defaults['claude-code-acp'], undefined);
-  assert.match(added.out, /runs as `claude-code`/);
-  fx.cleanup();
-});
 
 test('a door lists its owner’s accounts, and a key given for it is the owner’s', () => {
   const fx = makeFixture('harness-door-list');
@@ -926,47 +800,6 @@ test('`login` refuses `--new` beside `--profile`, and `--name` without `--new`',
 
 // ——— ACCT2: an account's name, from the terminal. Its id stays, so every list, default, reading and record keeps it.
 
-test('`profile rename` names an account, and its lists, defaults, readings and records keep it by its id', () => {
-  const fx = makeFixture('harness-rename');
-  run(['profile', 'add', 'claude-code', 'account-1'], at(fx));
-  run(['profile', 'add', 'claude-code', 'account-2'], at(fx));
-  run(['profile', 'order', 'claude-code', 'account-1', 'account-2'], at(fx));
-  run(['profile', 'default', 'claude-code', 'account-1'], at(fx));
-  run(['profile', 'order', 'claude-code', 'account-2', '--workspace', 'work'], at(fx));
-  writeFileSync(fx.entry('cooling'), JSON.stringify({ 'claude-code': { 'account-1': { until: '2999-01-01T00:00:00Z' } } }), 'utf8');
-  const wiring = readFileSync(at(fx), 'utf8');
-
-  const renamed = run(['profile', 'rename', 'claude-code', 'account-1', 'you@work.example'], at(fx));
-
-  assert.equal(renamed.code, 0);
-  assert.match(renamed.out, /`claude-code`'s account `account-1` is called `you@work.example` now/);
-  // The wiring names the id, and is not touched: the rotation, the default and the workspace's list keep working.
-  assert.equal(readFileSync(at(fx), 'utf8'), wiring);
-  // A verb takes the account by its new name, and writes its id.
-  run(['profile', 'order', 'claude-code', 'account-2', 'YOU@work.example', '--workspace', 'work'], at(fx));
-  assert.deepEqual(readHarnessSettings(at(fx)).workspaceRotation.work!['claude-code'], ['account-2', 'account-1']);
-  const ready = run(['profile', 'ready', 'claude-code', 'you@work.example'], at(fx));
-  assert.match(ready.out, /is offered again/);
-  // `agent list` says the name, the id beside it, and the list by names.
-  const lines = accountLines('claude-code', TOOLCHAINS['claude-code']!, {
-    harness: 'claude-code', present: true, version: '1', problem: null, machineDefault: 'account-1',
-    profiles: [
-      { name: 'account-1', home: '', login: 'in', account: null, key: null },
-      { name: 'account-2', home: '', login: 'out', account: null, key: null },
-    ],
-  }, readHarnessSettings(at(fx)), fx.root, new Date(), 'UTC').join('\n');
-  assert.match(lines, /you@work\.example +in +\(id account-1, machine default\)/);
-  assert.match(lines, /rotation +you@work\.example, then account-2/);
-
-  // Its own id gives it none again; another account's id or name is refused.
-  assert.match(captureError(() => run(['profile', 'rename', 'claude-code', 'account-2', 'Account-1'], at(fx))).message,
-    /already names `account-1`/);
-  const cleared = run(['profile', 'rename', 'claude-code', 'you@work.example', 'account-1'], at(fx));
-  assert.match(cleared.out, /has no name of yours now/);
-  assert.deepEqual(JSON.parse(readFileSync(homeEntry(fx.root, 'accounts'), 'utf8')), {});
-  fx.cleanup();
-});
-
 /**
  * ACCOUNTID1: two sign-ins of one email in two organisations are listed apart, the organisation after who, and each said
  * once (ACCTNAME1's rule): a name that is the email says the organisation alone after it, and a name that is the email with
@@ -1026,49 +859,13 @@ test('`agent list` says an account\'s email once when it is the name, and sizes 
   fx.cleanup();
 });
 
-test('`profile remove` by an account\'s name removes it and forgets its name', () => {
-  const fx = makeFixture('harness-rename-remove');
-  run(['profile', 'add', 'claude-code', 'account-1'], at(fx));
-  run(['profile', 'rename', 'claude-code', 'account-1', 'seat'], at(fx));
-
-  const removed = run(['profile', 'remove', 'claude-code', 'seat'], at(fx));
-
-  assert.match(removed.out, /the sign-in in it are gone/);
-  assert.deepEqual(profiles(fx.root, 'claude-code'), []);
-  assert.deepEqual(JSON.parse(readFileSync(homeEntry(fx.root, 'accounts'), 'utf8')), {});
-  fx.cleanup();
-});
-
 // ——— ACCT1: an account put into lists from the terminal, and one in none said where it is listed.
-
-test('`profile join` puts an account into the lists named and says where it runs; a borrowed workspace is refused', () => {
-  const fx = makeFixture('harness-join');
-  run(['profile', 'add', 'claude-code', 'account-1'], at(fx));
-  run(['profile', 'add', 'claude-code', 'account-2'], at(fx));
-  run(['profile', 'default', 'claude-code', 'account-1', '--workspace', 'work'], at(fx));
-
-  const joined = run(['profile', 'join', 'claude-code', 'account-2', 'work', '--machine'], at(fx));
-
-  assert.equal(joined.code, 0);
-  const settings = readHarnessSettings(at(fx));
-  assert.deepEqual(settings.rotation['claude-code'], ['account-2']);
-  assert.deepEqual(settings.workspaceRotation.work!['claude-code'], ['account-1', 'account-2']);
-  assert.match(joined.out, /runs work in this machine's list, `work`'s list/);
-
-  assert.match(captureError(() => run(['profile', 'join', 'claude-code', 'account-2', 'forge'], at(fx))).message,
-    /`forge` names no `claude-code` account or list of its own/);
-  assert.match(captureError(() => run(['profile', 'join', 'claude-code', 'account-9', 'work'], at(fx))).message,
-    /no account `account-9`/);
-  assert.match(captureError(() => run(['profile', 'join', 'claude-code', 'account-2'], at(fx))).message,
-    /needs the lists/);
-  fx.cleanup();
-});
 
 test('`agent list` says an account no list and no default holds runs nowhere, and how to put it in one', () => {
   const fx = makeFixture('harness-list-nowhere');
-  run(['profile', 'add', 'claude-code', 'account-1'], at(fx));
-  run(['profile', 'add', 'claude-code', 'account-2'], at(fx));
-  run(['profile', 'order', 'claude-code', 'account-1'], at(fx));
+  mkdirSync(profileHome(fx.root, 'claude-code', 'account-1'), { recursive: true });
+  mkdirSync(profileHome(fx.root, 'claude-code', 'account-2'), { recursive: true });
+  ordered(at(fx), 'claude-code', ['account-1'], null);
 
   const lines = accountLines('claude-code', TOOLCHAINS['claude-code']!, {
     harness: 'claude-code', present: true, version: '1', problem: null, machineDefault: null,
@@ -1087,7 +884,7 @@ test('`agent list` says an account no list and no default holds runs nowhere, an
 /** OWNSPACE1d (D175): where the machine names nothing, an account in no list is in Daoris's turn, so the list does not say it runs nowhere. */
 test('`agent list` says no account runs nowhere where the machine names nothing', () => {
   const fx = makeFixture('harness-list-in-turn');
-  run(['profile', 'add', 'claude-code', 'account-1'], at(fx));
+  mkdirSync(profileHome(fx.root, 'claude-code', 'account-1'), { recursive: true });
 
   const lines = accountLines('claude-code', TOOLCHAINS['claude-code']!, {
     harness: 'claude-code', present: true, version: '1', problem: null, machineDefault: null,
@@ -1148,36 +945,6 @@ test('an unknown agent errors naming what exists, never a silent fallback', () =
  * `pin` and `unpin` (TOOL2/D57). The install itself spawns npm and is not run here — what IS run is
  * every judgement around it: what gets refused, what gets written, and what a pin does to `list`.
  */
-test('unpin takes the pin off and leaves the installed directory alone', () => {
-  const fx = makeFixture('harness-unpin');
-  const settings = readHarnessSettings(at(fx));
-  writeHarnessSettings(at(fx), {
-    ...settings,
-    versions: { 'claude-code': '1.2.3' },
-    workspaceVersions: { aurora: { 'claude-code': '2.0.0' } },
-  });
-  const installed = managedHome(fx.root, 'claude-code', '1.2.3');
-  mkdirSync(installed, { recursive: true });
-
-  const machine = run(['unpin', 'claude-code'], at(fx));
-  assert.equal(readHarnessSettings(at(fx)).versions['claude-code'], undefined);
-  // The circle's pin is its own choice and is not collateral.
-  assert.equal(readHarnessSettings(at(fx)).workspaceVersions['aurora']!['claude-code'], '2.0.0');
-  // Nothing is deleted — the same rule `profile remove` follows, for the same reason.
-  assert.ok(existsSync(installed));
-  assert.match(machine.out, /PATH/);
-
-  run(['unpin', 'claude-code', '--workspace', 'aurora'], at(fx));
-  assert.deepEqual(readHarnessSettings(at(fx)).workspaceVersions, {});
-  fx.cleanup();
-});
-
-test('unpinning what was never pinned is an answer, not a failure', () => {
-  const fx = makeFixture('harness-unpin-absent');
-  assert.equal(run(['unpin', 'claude-code'], at(fx)).code, 0);
-  fx.cleanup();
-});
-
 test('pin needs a version, and refuses one that would escape the toolchain directory', () => {
   const fx = makeFixture('harness-pin-args');
 

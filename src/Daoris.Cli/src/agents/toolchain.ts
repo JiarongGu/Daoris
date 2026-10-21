@@ -115,21 +115,20 @@ import { readPlugins, resolvable } from '../plugins/plugins.ts';
 import { installFromChannel, latestVersion, refuseVersion } from './channels.ts';
 import {
   CURVE_WINDOWS, NEAR_HIGHEST, NEAR_LOWEST, OLD_FIELDS, SWITCHES, USE_FIELDS, USE_MODES, curveProblem, joinProblem,
-  joinRefusal, placesOf, readOrderCircles, readOrders, readUse, readUseCircles, readUses, resolveRotation, resolveScope,
-  rotationProblem, rotationRefusal, scopeProblem, withJoined, withRotation, withUse, withoutAccount, writtenOrderCircles,
-  usesAsRead, writtenOrders, writtenUseCircles, writtenUses,
+  joinRefusal, placesOf, readOrderCircles, readOrders, readUseCircles, readUses, resolveRotation, resolveScope,
+  scopeProblem, withJoined, withUse, writtenOrderCircles, usesAsRead, writtenOrders, writtenUseCircles, writtenUses,
 } from '../accounts/rotation.ts';
 import type {
-  AccountPlace, Curve, CurvePoint, Orders, RotationUse, Scope, ScopeProblem, Switch, UseChange, UseMode, Uses,
+  AccountPlace, Curve, CurvePoint, Orders, RotationUse, Scope, Switch, UseChange, UseMode, Uses,
 } from '../accounts/rotation.ts';
 import {
-  accountNames, accountsPath, apartWords, forgetName, nameBeside, nameFor, nameProblem, newAccountId, offeredName, renameAccount,
+  accountNames, apartWords, forgetName, nameBeside, nameFor, nameProblem, newAccountId, offeredName, renameAccount,
   resolveAccount, shownAs, signedInSentence, signInRefusal, signInTarget, takenWayOut, AccountNameError,
 } from '../accounts/accountnames.ts';
 import { forgetRead, keepRead } from '../accounts/accountreads.ts';
 import type { Login } from '../accounts/accountreads.ts';
 import { atName, byName, findName, sameName } from '../platform/casefold.ts';
-import { coolingLine, coolingOf, coolingWhen, endCooling, machineZone, readCooling } from '../accounts/cooling.ts';
+import { coolingLine, coolingOf, coolingWhen, endCooling, machineZone } from '../accounts/cooling.ts';
 import { shellWord, shellWords } from '../platform/shellword.ts';
 import { OWN_WINDOWS, saidLine, saidOf } from '../accounts/windows.ts';
 import { markSignedIn, probeLockPath, takeProbeLock } from '../accounts/probelock.ts';
@@ -1178,11 +1177,6 @@ function joinedSettings(settings: HarnessSettings, harness: string, account: str
   return joins.reduce((next, workspace) => withJoined(next, harness, account, workspace), settings);
 }
 
-/** A route's answer read for its fields, an answer that is no object read as none. */
-function fieldsOf(answer: unknown): Record<string, unknown> {
-  return typeof answer === 'object' && answer !== null && !Array.isArray(answer) ? answer as Record<string, unknown> : {};
-}
-
 /** `joined` at a sign-in's end, where the sign-in stands whatever the write does: a list not written is said. */
 function joinedAfterSignIn(
   path: string, settings: HarnessSettings, harness: string, account: string, joins: (string | null)[],
@@ -1841,24 +1835,6 @@ export function commandHarness(
       return pinFromPackage(name, toolchain, version, where, workspace);
     }
 
-    case 'unpin': {
-      const { name } = required(argv, 'unpin');
-      const workspace = flagValue(argv, '--workspace');
-      const said = (): ExitCode => {
-        write(workspace
-          ? `daoris: the \`${workspace}\` workspace no longer pins \`${name}\` on this machine.`
-          : `daoris: \`${name}\` runs from PATH again on this machine.`);
-        write('  Nothing was deleted — the managed install stays where it is, and re-pinning that');
-        write('  version needs no download.');
-        return 0;
-      };
-      const unpinned = () => pinTo(name, null, workspace);
-      // HARNESS_ACTION's unpin is the machine's pin alone: a workspace's is this verb's.
-      return workspace
-        ? door({ what, route: null, alone: () => { unpinned(); return said(); }, words: said })
-        : press(AGENT_ROUTES.harness, { action: 'unpin', harness: name }, unpinned, said);
-    }
-
     case 'profile':
       return profileVerb();
 
@@ -2152,264 +2128,11 @@ export function commandHarness(
     const settings = readHarnessSettings(path);
 
     switch (action) {
-      case 'list': {
-        for (const name of Object.keys(TOOLCHAINS)) {
-          const existing = profiles(home, name);
-          write(`  ${name.padEnd(14)} ${existing.length ? existing.join(', ') : '(none)'}`);
-        }
-
-        return 0;
-      }
-
-      case 'add': {
-        const name = accountsOf(operand(argv, 2), 'profile add');
-        const profile = bare(argv, 3, 'profile add', '<agent> <profile>');
-        const where = profileHome(home, name, profile);
-        const existed = existsSync(where);
-        return press(AGENT_ROUTES.harness, { action: 'profile-add', harness: name, profile }, () => mkdirSync(where, { recursive: true }), () => {
-          write(existed
-            ? `daoris: \`${name}\` profile \`${profile}\` already exists — ${where}`
-            : `daoris: \`${name}\` profile \`${profile}\` — ${where}`);
-          write(`  It is empty until you log into it: \`daoris agent login ${name} --profile ${shellWord(profile, '<account>')}\`.`);
-          return 0;
-        });
-      }
-
-      case 'remove': {
-        const name = accountsOf(operand(argv, 2), 'profile remove');
-        const profile = accountNamed(name, bare(argv, 3, 'profile remove', '<agent> <profile>'));
-        const where = profileHome(home, name, profile);
-        const existed = existsSync(where);
-        const said = (removed: boolean): ExitCode => {
-          write(removed
-            ? `daoris: removed the \`${name}\` account \`${profile}\` — the directory and the sign-in in it are gone: ${where}`
-            : `daoris: \`${name}\` has no account \`${profile}\` on this machine — there was nothing to remove.`);
-          write(`  It is no longer a default for \`${name}\` anywhere on this machine: no default and no order names it.`);
-          return 0;
-        };
-
-        return door({
-          what, route: AGENT_ROUTES.harness, payload: { action: 'profile-remove', harness: name, profile },
-          alone: () => {
-            // 🔴 The account goes, directory and sign-in both (D66 §3, amending SES3's "deletes
-            // nothing"): an account a person removes should not still be signed in on disk. The old
-            // rule kept any directory the harness would not call signed out, so a removed account
-            // stayed listed and signed in. The desktop's Remove is the same verb.
-            const removed = removeProfile(home, name, profile);
-            // No default and no order names it afterwards (TOOL4e), as the driver's `WithoutAccount` leaves the wiring.
-            writeHarnessSettings(path, withoutAccount(settings, name, profile));
-            return said(removed);
-          },
-          // The instance says a delete that could not finish on its own console, and answers exit 1: said here too.
-          words: (answer) => {
-            if (fieldsOf(answer).exitCode === 1) {
-              throw new DaorisError(`${where} was not removed — a session running as this account may hold a file open in it; stop it `
-                + 'and remove it again. Part of it may already be gone.', 1);
-            }
-            return said(existed);
-          },
-        });
-      }
-
-      // The accounts rotation may use, in order (TOOL4e, D125 §3.1, §6): the machine's, or with `--workspace` one
-      // workspace's. An account not listed never rotates, into or away; `--clear` names none again.
-      case 'order': {
-        const name = accountsOf(operand(argv, 2), 'profile order');
-        const flagged = flagValue(argv, '--workspace');
-        const workspace = flagged ? normalizeWorkspace(flagged) : null;
-        // An account by its id or its name (ACCT2); the list holds ids, so a rename leaves it standing.
-        const named = operands(argv, AGENT_VALUED).slice(3).map((given) => accountNamed(name, given));
-        if (argv.includes('--clear')) {
-          if (named.length > 0) {
-            throw new DaorisError(
-              `\`--clear\` names no account — \`daoris agent profile order ${name} --clear\` clears the order, and `
-              + `\`daoris agent profile order ${name} ${shellWords(named, '<account>')}\` sets it.`);
-          }
-          return clearOrder(name, workspace);
-        }
-
-        if (named.length === 0) {
-          throw new DaorisError(
-            `\`agent profile order\` needs the accounts, in order, or --clear — e.g. \`daoris agent profile order ${name} `
-            + 'account-1 account-2`.');
-        }
-
-        // Refused rather than written, as `profile default` refuses a name that does not exist (§3.1): a typo in an
-        // order is an account rotation would walk past without saying why.
-        const existing = profiles(home, name);
-        const problem = rotationProblem(existing, named);
-        if (problem !== null) throw new DaorisError(rotationRefusal(name, problem, existing));
-
-        // D130 §3.1, §4.6 (TOOL6a): the list is every account the scope's starts may run on, so it holds the scope's
-        // default and its kept account, and leaves driven work another beside the kept one.
-        const list = named.map((account) => account.trim());
-        const bound = scopeProblem({ default: ownDefault(name, workspace), list, keep: ownKeep(name, workspace) });
-        if (bound !== null) throw new DaorisError(orderRefusal(name, workspace, bound, list));
-
-        return press(AGENT_ROUTES.account, { action: 'order', harness: name, accounts: list, ...(workspace ? { workspace } : {}) },
-          () => writeHarnessSettings(path, withRotation(settings, name, named, workspace)), () => {
-            const spelled = named.map((account) => account.trim()).join(', then ');
-            write(workspace
-              ? `daoris: in \`${workspace}\`, \`${name}\`'s rotation is ${spelled}.`
-              : `daoris: on this machine, \`${name}\`'s rotation is ${spelled}.`);
-            write('  An account not in it is never rotated into, and work resolved to it never moves (D125 §3.1).');
-            write(`  Written to ${path} — machine-local, tracked by nothing, like every wiring file here.`);
-            return 0;
-          });
-      }
-
-      // The terminal's *Try now* (TOOL4e, D125 §2.3, §6): an account's cool-off ended early, since the person may know
-      // its limit was raised. `--own` is the tool's own sign-in.
-      case 'ready': {
-        const name = accountsOf(operand(argv, 2), 'profile ready');
-        const own = argv.includes('--own');
-        const given = operand(argv, 3);
-        const account = given === undefined ? null : accountNamed(name, given);
-        if (own && account !== null) {
-          throw new DaorisError(
-            `\`--own\` names no account — \`daoris agent profile ready ${name} --own\` is the tool's own sign-in, and `
-            + `\`daoris agent profile ready ${name} ${shellWord(account, '<account>')}\` is that account.`);
-        }
-        if (!own && account === null) {
-          throw new DaorisError(
-            `\`agent profile ready\` needs <agent> <profile>|--own — e.g. \`daoris agent profile ready ${name} account-1\`, `
-            + 'or `--own` for the tool\'s own sign-in.');
-        }
-
-        const now = new Date();
-        const who = account === null ? `\`${name}\`'s own sign-in` : `the \`${name}\` account \`${account}\``;
-        const said = (ended: boolean): ExitCode => {
-          if (ended) {
-            write(`daoris: ${who} is offered again: no start waits on its limit now.`);
-            write('  If the limit still holds, the agent refuses the next start at once, and the account cools again until');
-            write('  the time it names.');
-            return 0;
-          }
-
-          const others = readCooling(home, now).filter((entry) => sameName(entry.agent, name));
-          write(`daoris: ${who} is not cooling, so nothing changed — `
-            + (others.length > 0
-              ? `cooling now: ${others.map((entry) => entry.account ?? 'its own sign-in').join(', ')}.`
-              : `no account of \`${name}\` is cooling.`));
-          return 0;
-        };
-        // *Try now* while Daoris runs: the instance's roster ends the cool-off it holds, as well as the file's.
-        return door({
-          what, route: AGENT_ROUTES.account, payload: { action: 'ready', harness: name, ...(account === null ? { own: true } : { profile: account }) },
-          alone: () => said(endCooling(home, name, account, now)),
-          words: (answer) => said(fieldsOf(answer).ended === true),
-        });
-      }
-
-      case 'default': {
-        const name = accountsOf(operand(argv, 2), 'profile default');
-        const flagged = flagValue(argv, '--workspace');
-        const workspace = flagged ? normalizeWorkspace(flagged) : null;
-        // D50's second door onto the screen's own clear (LEFT3): its *Make default* on the tool's own row names no
-        // account, and so does this.
-        if (argv.includes('--clear')) return clearDefault(name, workspace);
-
-        const profile = accountNamed(name, bare(argv, 3, 'profile default', '<agent> <profile>|--clear [--workspace <name>]'));
-        // Refused rather than created: naming a default that does not exist is a typo with a silent
-        // wrong answer available — every spawn in that circle would refuse, and the message would be
-        // about logging in rather than about the name.
-        if (!profiles(home, name).includes(profile)) {
-          throw new DaorisError(
-            `\`${name}\` has no profile \`${profile}\` on this machine — \`daoris agent profile add `
-            + `${name} ${shellWord(profile, '<account>')}\` creates it. Profiles that exist: `
-            + `${profiles(home, name).join(', ') || '(none)'}`);
-        }
-
-        // D130 §3.1 (TOOL6a): a scope's default is where its starts begin within its list, so one the list does not hold
-        // is refused. A workspace with no list of its own takes any account, and is then that account alone.
-        const list = ownList(name, workspace);
-        if (scopeProblem({ default: profile, list, keep: null }) !== null) {
-          throw new DaorisError(
-            `\`${name}\`'s list ${where(workspace)} is ${list.join(', then ')}, and \`${profile}\` is not in it — the list is `
-            + 'every account its starts may run on, and the default is where they begin within it. '
-            + `\`daoris agent profile order ${name} ${shellWords([...list, profile], '<account>')}${scoped(workspace)}\` adds it, or make one `
-            + 'of the list the default.');
-        }
-
-        return press(AGENT_ROUTES.harness, { action: 'profile-default', harness: name, profile, ...(workspace ? { workspace } : {}) },
-          () => writeHarnessSettings(path, withDefault(settings, name, profile, workspace)), () => {
-            write(workspace
-              ? `daoris: sessions in \`${workspace}\` run \`${name}\` as \`${profile}\`.`
-              : `daoris: this machine runs \`${name}\` as \`${profile}\` by default.`);
-            write(`  Written to ${path} — machine-local, tracked by nothing, like every wiring file here.`);
-            return 0;
-          });
-      }
-
       // How a scope's list is used (TOOL6a, D130 §2, §9): the machine's, or with `--workspace` one workspace's. Each choice
       // is written as made; with no flag it prints the scope's settings, the step the next start would follow (TOOL6b) and
       // what each account last said.
       case 'use':
         return useVerb();
-
-      // An account's name (ACCT2): the person's word, in `accounts.json` by the account's id, so every list, default,
-      // reading and record naming the id keeps working. Naming it its own id gives it none. The screen's twin is
-      // `HARNESS_ACTION`'s `profile-rename`.
-      case 'rename': {
-        const name = accountsOf(operand(argv, 2), 'profile rename');
-        const account = accountNamed(name, bare(argv, 3, 'profile rename', '<agent> <account> <name>'));
-        const wanted = operand(argv, 4);
-        if (wanted === undefined) {
-          throw new DaorisError(
-            `\`agent profile rename\` needs <agent> <account> <name> — e.g. \`daoris agent profile rename ${name} `
-            + `${shellWord(account, '<account>')} work\`; `
-            + `naming it \`${account}\` gives it none.`);
-        }
-        const said = (now: string | null): ExitCode => {
-          write(now !== null
-            ? `daoris: \`${name}\`'s account \`${account}\` is called \`${now}\` now.`
-            : `daoris: \`${name}\`'s account \`${account}\` has no name of yours now: it reads as its id.`);
-          write('  Its id stays, so every list, default, reading and record that names it still does.');
-          write(`  Written to ${accountsPath(home)} — machine-local, tracked by nothing.`);
-          return 0;
-        };
-        return door({
-          what, route: AGENT_ROUTES.harness, payload: { action: 'profile-rename', harness: name, profile: account, name: wanted },
-          alone: () => said(renameAccount(home, name, profiles(home, name), account, wanted)),
-          words: (answer) => {
-            const now = fieldsOf(answer).name;
-            return said(typeof now === 'string' && now.length > 0 ? now : null);
-          },
-        });
-      }
-
-      // An account put into lists a start runs on (ACCT1): each workspace's own list named, and with `--machine` this
-      // machine's, at its end; a workspace that takes this machine's list is refused, naming it. The screen's twin is
-      // `HARNESS_ACTION`'s `profile-join`.
-      case 'join': {
-        const name = accountsOf(operand(argv, 2), 'profile join');
-        const account = accountNamed(name, bare(argv, 3, 'profile join', '<agent> <account> <workspace>…|--machine'));
-        const joins: (string | null)[] = [
-          ...(argv.includes('--machine') ? [null] : []),
-          ...operands(argv, AGENT_VALUED).slice(4).map(normalizeWorkspace),
-        ];
-        if (!profiles(home, name).includes(account)) {
-          throw new DaorisError(
-            `\`${name}\` has no account \`${account}\` on this machine — accounts that exist: `
-            + `${profiles(home, name).map((id) => shownAs(accountNames(home, name), id)).join(', ') || '(none)'}`);
-        }
-        if (joins.length === 0) {
-          throw new DaorisError(
-            `\`agent profile join\` needs the lists — a workspace's name, or \`--machine\` for this machine's: e.g. `
-            + `\`daoris agent profile join ${name} ${shellWord(account, '<account>')} work\`.`);
-        }
-        refuseJoins(settings, name, joins);
-
-        const after = joinedSettings(settings, name, account, joins);
-        return press(AGENT_ROUTES.harness, { action: 'profile-join', harness: name, profile: account, join: joins },
-          () => writeHarnessSettings(path, after), () => {
-            write(`daoris: \`${name}\`'s account \`${shownAs(accountNames(home, name), account)}\` is in `
-              + `${joins.map((workspace) => (workspace === null ? 'this machine\'s list' : `\`${workspace}\`'s list`)).join(', ')}.`);
-            for (const line of placeLines(name, account, after, accountNames(home, name))) write(line);
-            write(`  Written to ${path} — machine-local, tracked by nothing, like every wiring file here.`);
-            return 0;
-          });
-      }
 
       default:
         throw new DaorisError(
@@ -2419,35 +2142,6 @@ export function commandHarness(
     /** A scope's own list: the machine's, or the workspace's own — never the machine's standing in for it. */
     function ownList(name: string, workspace: string | null): string[] {
       return (workspace ? atName(settings.workspaceRotation, workspace)?.[name] : settings.rotation[name]) ?? [];
-    }
-
-    /** A scope's own default: the machine's, or the workspace's own. */
-    function ownDefault(name: string, workspace: string | null): string | null {
-      return (workspace ? atName(settings.workspaces, workspace)?.[name] : settings.defaults[name])?.trim() || null;
-    }
-
-    /** A scope's kept account, as its settings name it, whether or not its list holds it. */
-    function ownKeep(name: string, workspace: string | null): string | null {
-      return readUse(workspace ? atName(settings.workspaceRotationUse, workspace)?.[name] : settings.rotationUse[name]).use.keep;
-    }
-
-    /** `profile order`'s refusal for a list that leaves out its scope's default or kept account (§3.1, §4.6). */
-    function orderRefusal(name: string, workspace: string | null, problem: ScopeProblem, list: string[]): string {
-      const named = `\`daoris agent profile order ${name} ${shellWords([...list, problem.account], '<account>')}${scoped(workspace)}\``;
-      const noKeep = `\`daoris agent profile use ${name} --no-keep${scoped(workspace)}\``;
-      switch (problem.kind) {
-        case 'default':
-          return `${workspace ? `\`${workspace}\`'s` : 'this machine\'s'} default for \`${name}\` is \`${problem.account}\`, and `
-            + 'this list does not hold it — the list is every account its starts may run on, and the default is where they '
-            + `begin within it. Name it in the list (${named}), or first make one of the list the default `
-            + `(\`daoris agent profile default ${name} ${shellWord(list[0]!, '<account>')}${scoped(workspace)}\`).`;
-        case 'keep':
-          return `\`${problem.account}\` is kept for conversations ${where(workspace)}, and this list does not hold it — the `
-            + `kept account is one of the list. Name it in the list (${named}), or first keep none (${noKeep}).`;
-        case 'alone':
-          return `\`${problem.account}\` is kept for conversations, and this list holds no other account, so driven work `
-            + `would have none — name another account in it, or first keep none (${noKeep}).`;
-      }
     }
 
     /**
@@ -2687,58 +2381,6 @@ export function commandHarness(
             : 'nothing said about what it has left'}`);
       }
       return 0;
-    }
-
-    /**
-     * `profile order <agent> --clear [--workspace <name>]`: the order gone, the machine's or one workspace's, saying which
-     * order applies now, since a workspace with none takes the machine's.
-     */
-    function clearOrder(name: string, workspace: string | null): ExitCode | Promise<ExitCode> {
-      const after = withRotation(settings, name, null, workspace);
-      // An order of none clears it, as the Accounts place sends it.
-      return press(AGENT_ROUTES.account, { action: 'order', harness: name, accounts: [], ...(workspace ? { workspace } : {}) },
-        () => writeHarnessSettings(path, after), () => {
-          if (workspace) {
-            const machine = resolveRotation(after, name, null).order;
-            write(machine.length > 0
-              ? `daoris: \`${workspace}\` names no order for \`${name}\` now: the machine's applies there, ${machine.join(', then ')}.`
-              : `daoris: \`${workspace}\` names no order for \`${name}\` now, and neither does this machine.`);
-          } else {
-            write(`daoris: \`${name}\` has no order on this machine now.`);
-            const scoped = Object.entries(after.workspaceRotation).filter(([, orders]) => orders[name]).map(([circle]) => circle);
-            if (scoped.length > 0) write(`  A workspace's own still applies there: ${scoped.join(', ')}.`);
-          }
-
-          write(`  No account was deleted. Written to ${path} — machine-local, tracked by nothing, like every wiring file here.`);
-          return 0;
-        });
-    }
-
-    /**
-     * `profile default <agent> --clear [--workspace <name>]` (LEFT3): the default gone, the machine's or one
-     * workspace's, as the screen's own clear writes it. Nothing is deleted, and it says what sessions run as now, since
-     * a workspace with none falls back to the machine's default.
-     */
-    function clearDefault(name: string, workspace: string | null): ExitCode | Promise<ExitCode> {
-      if (operand(argv, 3) !== undefined) {
-        throw new DaorisError(
-          `\`--clear\` names no account — \`daoris agent profile default ${name} --clear\` clears the default, `
-          + `and \`daoris agent profile default ${name} ${shellWord(operand(argv, 3)!, '<account>')}\` sets it.`);
-      }
-
-      const after = withDefault(settings, name, null, workspace);
-      // No account named clears it, as the Accounts place's own clear sends it.
-      return press(AGENT_ROUTES.harness, { action: 'profile-default', harness: name, ...(workspace ? { workspace } : {}) },
-        () => writeHarnessSettings(path, after), () => {
-          const fallback = resolveProfile(after, name, workspace, null);
-          write(!workspace
-            ? `daoris: this machine names no default for \`${name}\` now: Daoris takes its accounts in turn.`
-            : fallback
-              ? `daoris: \`${workspace}\` names no account for \`${name}\` now: its sessions run as the machine's default, \`${fallback}\`.`
-              : `daoris: \`${workspace}\` names no account for \`${name}\` now: its sessions take Daoris's accounts in turn.`);
-          write(`  No account was deleted. Written to ${path} — machine-local, tracked by nothing, like every wiring file here.`);
-          return 0;
-        });
     }
   }
 
