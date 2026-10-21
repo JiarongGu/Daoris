@@ -108,6 +108,8 @@ public sealed partial class AgentsTextTests
                     Environment = variable => variable == DaorisHome.Variable ? home : variable == HarnessSettings.PathVariable ? wiring : null,
                     Out = output,
                     Error = error,
+                    // `key`'s key (PUSH1f2e5), the row's standard input; none is an empty one.
+                    In = new StringReader(row.TryGetProperty("stdin", out var stdin) ? stdin.GetString()! : ""),
                     Verb = "daoris",
                 },
                 Folder = root,
@@ -124,13 +126,21 @@ public sealed partial class AgentsTextTests
                     : word)];
             var exit = await AgentsCommand.RunAsync(argv, world, CancellationToken.None);
 
-            string Spelled(string text) => Settled().Replace(text
+            // An account's id drawn by the run (PUSH1f2e5: a key's new account), one the row did not lay or name, is spelled `<id>`.
+            var known = new HashSet<string>(StringComparer.Ordinal);
+            foreach (var text in row.GetProperty("before").EnumerateObject().SelectMany(file => new[] { file.Name, file.Value.GetString()! })
+                .Concat(row.GetProperty("folders").EnumerateArray().Select(each => each.GetString()!)).Concat(argv))
+            {
+                foreach (Match id in Drawn().Matches(text)) known.Add(id.Value);
+            }
+
+            string Spelled(string text) => Drawn().Replace(Settled().Replace(text
                 .Replace(JsonEncodedText.Encode(root).ToString(), "<root>", StringComparison.Ordinal)
                 .Replace(root, "<root>", StringComparison.Ordinal)
                 .Replace(slashed, "<root>", StringComparison.Ordinal)
                 .Replace("\\\\", "/", StringComparison.Ordinal)
                 .Replace('\\', '/')
-                .Replace($"({Why})", "(<why>)", StringComparison.Ordinal), "$1\"<at>\"");
+                .Replace($"({Why})", "(<why>)", StringComparison.Ordinal), "$1\"<at>\""), id => known.Contains(id.Value) ? id.Value : "<id>");
             static IReadOnlyList<string> Lines(string text) =>
                 text.Length == 0 ? [] : text.Replace("\r\n", "\n", StringComparison.Ordinal).TrimEnd('\n').Split('\n');
             string[] said = [.. Lines(output.ToString()).Select(Spelled)];
@@ -140,8 +150,13 @@ public sealed partial class AgentsTextTests
             Assert.True(Expected(row, "err").SequenceEqual(refused), shown);
             Assert.True(row.GetProperty("exit").GetInt32() == exit, shown);
 
+            // The home's identity, which taking its lease mints (HOMEID1; `key` publishes under it, PUSH1f2e5), is no file the verb writes.
+            var identity = home is null || row.GetProperty("before").TryGetProperty(Spelled(Path.GetRelativePath(root, HomeIdentity.PathIn(home))), out _)
+                ? null
+                : Path.GetFullPath(HomeIdentity.PathIn(home));
             var written = Directory.EnumerateFiles(root, "*", SearchOption.AllDirectories)
-                .ToDictionary(path => Path.GetRelativePath(root, path).Replace('\\', '/'), path => Spelled(File.ReadAllText(path)), StringComparer.Ordinal);
+                .Where(path => !string.Equals(Path.GetFullPath(path), identity, StringComparison.OrdinalIgnoreCase))
+                .ToDictionary(path => Spelled(Path.GetRelativePath(root, path).Replace('\\', '/')), path => Spelled(File.ReadAllText(path)), StringComparer.Ordinal);
             var after = row.GetProperty("after").EnumerateObject().ToDictionary(file => file.Name, file => file.Value.GetString()!, StringComparer.Ordinal);
             Assert.True(after.Keys.Order(StringComparer.Ordinal).SequenceEqual(written.Keys.Order(StringComparer.Ordinal)),
                 $"the files after `{name}`: {string.Join(", ", written.Keys.Order(StringComparer.Ordinal))}\nexpected: {string.Join(", ", after.Keys.Order(StringComparer.Ordinal))}");
@@ -182,4 +197,8 @@ public sealed partial class AgentsTextTests
     /// <summary>A proposal's settling moment, the run's own: the table spells it <c>&lt;at&gt;</c>.</summary>
     [GeneratedRegex("(\"at\": ?)\"\\d{4}-\\d\\d-\\d\\dT[^\"]*\"")]
     private static partial Regex Settled();
+
+    /// <summary>An account's id as <see cref="AccountNames.NewId"/> draws it: a run's own, the table spells it <c>&lt;id&gt;</c>.</summary>
+    [GeneratedRegex("acct-[0-9a-f]{8}")]
+    private static partial Regex Drawn();
 }

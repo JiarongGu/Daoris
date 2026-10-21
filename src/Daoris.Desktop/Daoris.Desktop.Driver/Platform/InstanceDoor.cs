@@ -48,6 +48,9 @@ public sealed class InstanceWorld
     /// <summary>Where a refusal is said.</summary>
     public TextWriter Error { get; init; } = Console.Error;
 
+    /// <summary>What the person types or pipes in: <c>agent key</c>'s key, never an argument (PUSH1f2e5).</summary>
+    public TextReader In { get; init; } = Console.In;
+
     /// <summary>The verb, as its sentences begin (<c>trees</c>).</summary>
     public string Verb { get; init; } = "daoris-driver";
 

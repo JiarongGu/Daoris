@@ -84,7 +84,9 @@ public sealed class AgentsCommandTests : IDisposable
         }
     }
 
-    private AgentsWorld World(string? marker = null, string? wiring = null) => new()
+    private AgentsWorld World(
+        string? marker = null, string? wiring = null, string input = "", Action? waiting = null, Func<DateTimeOffset>? now = null,
+        AdapterSet? adapters = null, string? path = null) => new()
     {
         Instance = new InstanceWorld
         {
@@ -94,15 +96,19 @@ public sealed class AgentsCommandTests : IDisposable
                 DriverChoicesCommand.SessionVariable => marker,
                 DaorisHome.Variable => Home,
                 HarnessSettings.PathVariable => wiring,
+                Tools.PathVariable => path,
                 _ => null,
             },
             Out = _out,
             Error = _error,
+            In = new StringReader(input),
             Verb = "daoris",
         },
         Folder = _root,
         UserHome = Path.Combine(_root, "user"),
-        Adapters = _ => AdapterSet.Built(),
+        Adapters = _ => adapters ?? AdapterSet.Built(),
+        Waiting = waiting,
+        Now = now ?? (() => DateTimeOffset.UtcNow),
     };
 
     /// <summary>
@@ -138,6 +144,10 @@ public sealed class AgentsCommandTests : IDisposable
     [InlineData("profile rename claude-code work seat")]
     [InlineData("profile join claude-code work --machine")]
     [InlineData("profile use claude-code --clear")]
+    // The long verbs (PUSH1f2e5): no route takes them, so a session's terminal is refused them before a word is said or a key read.
+    [InlineData("install claude-code")]
+    [InlineData("key claude-code")]
+    [InlineData("key claude-code --account work")]
     public async Task A_marked_terminal_s_change_acting_alone_is_refused_and_nothing_is_written(string words)
     {
         Propose(Home, "p0000007");
@@ -425,6 +435,157 @@ public sealed class AgentsCommandTests : IDisposable
 
         Assert.Equal(2, await AgentsCommand.RunAsync(["login", "claude-code"], World(), CancellationToken.None));
         Assert.StartsWith("daoris-driver agent: `login` is not a verb of this program's.", _error.ToString(), StringComparison.Ordinal);
+    }
+
+    /// <summary>A person typing a key: the read waits until the test answers it, so a test sees what is held meanwhile.</summary>
+    private sealed class Typing : TextReader
+    {
+        public TaskCompletionSource Asked { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        public TaskCompletionSource<string> Typed { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        public override async Task<string> ReadToEndAsync(CancellationToken cancellationToken)
+        {
+            Asked.TrySetResult();
+            return await Typed.Task.WaitAsync(cancellationToken);
+        }
+    }
+
+    private AgentsWorld Typed(Typing typing)
+    {
+        var world = World();
+        return world with { Instance = new InstanceWorld
+        {
+            Home = world.Instance.Home, Environment = world.Instance.Environment, Out = _out, Error = _error, In = typing, Verb = "daoris",
+        } };
+    }
+
+    /// <summary>
+    /// <c>key</c> (PUSH1f2e5, the alone-path design §1.4) reads its key from the terminal's standard input, never an argument, holding no
+    /// lease while the person types; then writes the key's account, said back by its handle only, and lets the home go.
+    /// </summary>
+    [Fact]
+    public async Task Key_reads_its_key_from_the_standard_input_holding_nothing_and_publishes_it()
+    {
+        var typing = new Typing();
+        var run = AgentsCommand.RunAsync(["key", "claude-code"], Typed(typing), CancellationToken.None);
+
+        await typing.Asked.Task.WaitAsync(Poll.Patience);
+        Assert.Null(HomeLease.HeldBy(Home));
+        Assert.Empty(HarnessSettings.Profiles(Home, "claude-code"));
+        typing.Typed.SetResult("sk-ant-api03-typed-wxyz\n");
+
+        Assert.Equal(0, await run.WaitAsync(Poll.Patience));
+        var account = Assert.Single(HarnessSettings.Profiles(Home, "claude-code"));
+        Assert.Equal("sk-ant-api03-typed-wxyz", HarnessKeys.Of(Home, "claude-code", account));
+        Assert.StartsWith($"daoris: `claude-code` account `{account}` is the API key …wxyz.", _out.ToString(), StringComparison.Ordinal);
+        Assert.DoesNotContain("typed", _out.ToString(), StringComparison.Ordinal);
+        Assert.Equal("", _error.ToString());
+        Assert.False(File.Exists(HomeLease.PathIn(Home)), "the publication let the home go");
+    }
+
+    [Fact]
+    public async Task A_key_s_publication_waits_on_a_held_lease_says_so_once_and_takes_it_when_let_go()
+    {
+        var held = HomeLease.TryAcquire(Home, LeaseKind.Verb, out _, "daoris-driver trees land");
+        Assert.NotNull(held);
+        var waiting = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        // The clock moves past the thirty seconds once the wait began, so the hold is said; it is said once however long it lasts.
+        var started = DateTimeOffset.UtcNow;
+        var looks = 0;
+        var run = AgentsCommand.RunAsync(["key", "claude-code"],
+            World(input: "sk-ant-api03-waited-abcd", waiting: waiting.SetResult, now: () => started.AddSeconds(31 * looks++)), CancellationToken.None);
+
+        await waiting.Task.WaitAsync(Poll.Patience);
+        Assert.False(run.IsCompleted);
+        Assert.Empty(HarnessSettings.Profiles(Home, "claude-code"));
+        Assert.False(File.Exists(DaorisHome.Entry(Home, HomeEntry.Keys)));
+
+        held.Dispose();
+        Assert.Equal(0, await run.WaitAsync(Poll.Patience));
+        var account = Assert.Single(HarnessSettings.Profiles(Home, "claude-code"));
+        Assert.Equal("sk-ant-api03-waited-abcd", HarnessKeys.Of(Home, "claude-code", account));
+        var told = _error.ToString().Split('\n', StringSplitOptions.RemoveEmptyEntries);
+        Assert.Equal(["daoris: waiting for a terminal's `daoris-driver trees land`"], told.Select(line => line[..line.IndexOf(" (pid", StringComparison.Ordinal)]));
+        Assert.False(File.Exists(HomeLease.PathIn(Home)), "the publication let the home go");
+    }
+
+    [Fact]
+    public async Task A_key_s_publication_beside_an_instance_that_started_meanwhile_is_made_holding_nothing()
+    {
+        using var desktop = HomeLease.TryAcquire(Home, LeaseKind.Desktop, out _);
+        Assert.NotNull(desktop);
+        var lease = File.ReadAllText(HomeLease.PathIn(Home));
+
+        Assert.Equal(0, await AgentsCommand.RunAsync(["key", "claude-code"], World(input: "sk-beside-1234"), CancellationToken.None));
+
+        Assert.Equal("sk-beside-1234", HarnessKeys.Of(Home, "claude-code", Assert.Single(HarnessSettings.Profiles(Home, "claude-code"))));
+        Assert.Equal(lease, File.ReadAllText(HomeLease.PathIn(Home)));
+        Assert.Equal("", _error.ToString());
+    }
+
+    [Fact]
+    public async Task A_Ctrl_C_while_the_key_is_typed_or_its_publication_waits_writes_nothing()
+    {
+        var typing = new Typing();
+        using (var stop = new CancellationTokenSource())
+        {
+            var run = AgentsCommand.RunAsync(["key", "claude-code"], Typed(typing), stop.Token);
+            await typing.Asked.Task.WaitAsync(Poll.Patience);
+            await stop.CancelAsync();
+            Assert.Equal(2, await run.WaitAsync(Poll.Patience));
+            Assert.Equal("daoris: stopped at your Ctrl+C — no key was read, and nothing was written.", _error.ToString().Trim());
+        }
+
+        _error.GetStringBuilder().Clear();
+        using var held = HomeLease.TryAcquire(Home, LeaseKind.Verb, out _, "daoris-driver trees land");
+        var waiting = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        using (var stop = new CancellationTokenSource())
+        {
+            var run = AgentsCommand.RunAsync(["key", "claude-code"], World(input: "sk-stopped-1234", waiting: waiting.SetResult), stop.Token);
+            await waiting.Task.WaitAsync(Poll.Patience);
+            await stop.CancelAsync();
+            Assert.Equal(2, await run.WaitAsync(Poll.Patience));
+            Assert.Equal("daoris: stopped at your Ctrl+C — the key was not written.", _error.ToString().Trim());
+        }
+
+        Assert.Empty(HarnessSettings.Profiles(Home, "claude-code"));
+        Assert.False(File.Exists(DaorisHome.Entry(Home, HomeEntry.Keys)));
+    }
+
+    /// <summary>
+    /// <c>install</c>'s second hop (PUSH1f2e5, the alone-path design §1.1): the agent's own installer started at this terminal, with the
+    /// console's streams, its command said first; its exit mapped as the CLI's <c>relay</c> mapped it, 0 to 0 and anything else to 2. A
+    /// stand-in installer, a real process: the suite's Process half runs it.
+    /// </summary>
+    [Trait(Category.Name, Category.Process)]
+    public sealed class Installers : IDisposable
+    {
+        private readonly AgentsCommandTests _held = new();
+
+        public void Dispose() => _held.Dispose();
+
+        [Theory]
+        [InlineData(0, 0)]
+        [InlineData(3, 2)]
+        public async Task An_installer_s_exit_is_the_verb_s_zero_or_two(int exits, int verb)
+        {
+            string[] install = OperatingSystem.IsWindows()
+                ? [Path.Combine(Environment.SystemDirectory, "cmd.exe"), "/d", "/c", $"exit {exits}"]
+                : ["/bin/sh", "-c", $"exit {exits}"];
+            var set = new AdapterSet(
+                new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase),
+                new Dictionary<string, HarnessToolchain> { ["stand-in"] = new(["stand-in"], ["--version"], Install: install) });
+
+            var exit = await AgentsCommand.RunAsync(["install", "stand-in"], _held.World(adapters: set, path: ""), CancellationToken.None);
+
+            Assert.Equal(verb, exit);
+            Assert.Equal(
+                $"daoris: installing `stand-in` with its own installer — nothing here is automatic (D49 §4).\n  $ {string.Join(' ', install)}\n\n",
+                _held._out.ToString().Replace("\r\n", "\n", StringComparison.Ordinal));
+            Assert.Equal("", _held._error.ToString());
+            Assert.Null(HomeLease.HeldBy(_held.Home));
+        }
     }
 
     /// <summary>

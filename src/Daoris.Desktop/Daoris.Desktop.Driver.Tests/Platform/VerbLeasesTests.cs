@@ -229,6 +229,11 @@ public sealed class VerbLeasesTests
     [InlineData("agent --help")]
     [InlineData("agent rules allow WebFetch --help")]
     [InlineData("agent frobnicate")]
+    // The long verbs (PUSH1f2e5, the alone-path design §1.4): an install holds none at all, its installer writing the machine; a key
+    // holds none at its top, taking the lease itself to publish.
+    [InlineData("agent install claude-code")]
+    [InlineData("agent key claude-code")]
+    [InlineData("agent key claude-code --account work")]
     public void A_read_or_another_writers_verb_holds_none(string words) => Assert.False(VerbLeases.Holds(words.Split(' ')), words);
 
     [Fact]
@@ -286,6 +291,8 @@ public sealed class VerbLeasesTests
     [InlineData("agent unpin claude-code", "daoris-driver agent unpin")]
     [InlineData("agent profile order claude-code account-1", "daoris-driver agent profile")]
     [InlineData("agent list", "daoris-driver agent list")]
+    [InlineData("agent key claude-code", "daoris-driver agent key")]
+    [InlineData("agent install claude-code", "daoris-driver agent install")]
     public void A_lease_names_the_verb_and_never_its_arguments(string words, string named) =>
         Assert.Equal(named, VerbLeases.Name(words.Split(' ')));
 }

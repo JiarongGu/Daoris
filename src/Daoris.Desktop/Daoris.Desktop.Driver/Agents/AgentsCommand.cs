@@ -31,6 +31,9 @@ public sealed record AgentsWorld
 
     /// <summary>The machine's zone, a cool-off's end and a window's reset are said in (<c>profile use</c>), named.</summary>
     public TimeZoneInfo Zone { get; init; } = TimeZoneInfo.Local;
+
+    /// <summary>Called once a long verb's publication finds another act holding the home (<c>key</c>): a test's sign that it waits.</summary>
+    public Action? Waiting { get; init; }
 }
 
 /// <summary>
@@ -103,6 +106,10 @@ public static class AgentRoutes
         ("agent profile order|ready", Account, "the Accounts place's order and *Try now*", AgentHome.Wiring),
         ("agent profile use <agent> …", Account, "the Accounts place's *How accounts are used*", AgentHome.Wiring),
         ("agent unpin <agent> --workspace <name>", null, "alone: HARNESS_ACTION's unpin names no workspace", AgentHome.Wiring),
+        ("agent install <agent>", null,
+            "alone: the agent's own installer, run at this terminal with its streams, writes the machine and not the home", AgentHome.Wiring),
+        ("agent key <agent> [--account <account>]", null,
+            "alone: the key is read from this terminal's standard input, and no press carries a key across the pipe", AgentHome.Wiring),
     ];
 
     /// <summary>The home a verb of this program's writes: its row's, by its first word.</summary>
@@ -114,7 +121,8 @@ public static class AgentRoutes
 /// <c>daoris-driver agent</c> (PUSH1f2d, D194, the alone-path design §1.2): the agents' rules, trust and settings from a terminal, the words
 /// <c>daoris agent rules|trust|settings …</c> hands this program, what an agent runs as, and its pin taken back and its accounts
 /// (PUSH1f2e1, PUSH1f2e2, PUSH1f2e3, <see cref="AgentAccountsCommand"/>), and the list of this machine's agents, its bare word too (PUSH1f2e4,
-/// <see cref="AgentListCommand"/>); the rest of the family is the CLI's until the rest of PUSH1f2e. Each change a route
+/// <see cref="AgentListCommand"/>), and an agent's install and an API key's account, the long verbs no route takes (PUSH1f2e5,
+/// <see cref="AgentLongCommand"/>); the rest of the family is the CLI's until the rest of PUSH1f2e. Each change a route
 /// takes is its route through <see cref="InstanceDoor.PressAsync"/> where the running Daoris answers, confirmed in its window; else its
 /// operation, on the terminal's word (D50), refused from a session's terminal (D194 point 5). The rules and their proposals are
 /// <c>DAORIS_HOME</c>'s whatever <c>DAORIS_HARNESS_CONFIG</c> names, so they keep the door on that home; an account's settings and a
@@ -129,7 +137,7 @@ public static class AgentRoutes
 public static class AgentsCommand
 {
     /// <summary>The verbs this program has, each the CLI hands on (the CLI's allow-list is held to it).</summary>
-    public static IReadOnlyList<string> Verbs { get; } = ["list", "rules", "trust", "settings", "which", "unpin", "profile"];
+    public static IReadOnlyList<string> Verbs { get; } = ["list", "rules", "trust", "settings", "which", "unpin", "profile", "install", "key"];
 
     /// <summary>The <c>profile</c> verbs this program has, each the CLI hands on: every one (PUSH1f2e2, <c>use</c> PUSH1f2e3).</summary>
     public static IReadOnlyList<string> ProfileVerbs => AgentAccountsCommand.ProfileVerbs;
@@ -148,7 +156,10 @@ public static class AgentsCommand
                daoris-driver agent profile use <agent> [goal|order] [--keep <account>|--no-keep] [--switch smart|curve|off]
                      [--curve <window>=<elapsed>:<used>,…]… [--no-curve] [--workspace <name>] · use <agent> --clear [--workspace <name>]
                daoris-driver agent profile rename <agent> <account> <name> · join <agent> <account> [<workspace>…] [--machine]
-        `daoris agent [list]|rules|trust|settings|which|unpin|profile …` run these; the family's other verbs are still `daoris agent`'s own.
+               daoris-driver agent install <agent>
+               daoris-driver agent key <agent> [--account <account>]     the key read from standard input, never an argument
+        `daoris agent [list]|rules|trust|settings|which|unpin|profile|install|key …` run these; the family's other verbs are still
+        `daoris agent`'s own.
         """;
 
     private const string Prefix = "daoris";
@@ -166,7 +177,8 @@ public static class AgentsCommand
 
     /// <summary>
     /// Whether the words change a home, which holds its lease from the top: a rule's edit and a proposal's answer, a setting given a value,
-    /// and a trust granted. A read, a question, a dry run and the usage hold none.
+    /// and a trust granted. A read, a question, a dry run and the usage hold none, and so do the long verbs (the alone-path design §1.4):
+    /// <c>install</c> holds none at all, its installer writing the machine and not the home, and <c>key</c> takes it itself to publish.
     /// </summary>
     public static bool Changes(IReadOnlyList<string> args)
     {
@@ -219,6 +231,10 @@ public static class AgentsCommand
         {
             // A read that asks each agent, said here: no press, no lease, and from a session's terminal too.
             if (verb == "list") return await AgentListCommand.RunAsync(world, ct).ConfigureAwait(false);
+
+            // The long verbs (PUSH1f2e5, the alone-path design §1.4): no route takes them, and each holds no lease at its top.
+            if (verb == "install") return await AgentLongCommand.InstallAsync(args, world, ct).ConfigureAwait(false);
+            if (verb == "key") return await AgentLongCommand.KeyAsync(args, world, ct).ConfigureAwait(false);
 
             // A person's grant from a session's terminal is refused before a word of it is said (D194 point 5): no route takes it.
             if (verb == "trust" && Changes(args) && world.Instance.Environment(DriverChoicesCommand.SessionVariable) is { Length: > 0 })

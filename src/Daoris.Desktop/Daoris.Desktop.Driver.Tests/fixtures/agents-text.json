@@ -1,5 +1,5 @@
 {
-  "note": "PUSH1f2d (D194, the alone-path design §3): what `daoris agent rules|trust|settings` said for each case its tests held, run once through the CLI's TypeScript verb before it retired, alone, on a root of its own (`<root>`): DAORIS_HOME `<root>/daoris` (none where `home` is false), the agent's own home `<root>/user`, a folder to trust under `<root>/work`, and with `harness` DAORIS_HARNESS_CONFIG naming `<root>/other/data/harnesses.json`. Each row: the words after `agent` (`<root>` where a whole path goes), the folders made empty before it, every file under the root before it and after it, the exit, and the lines said on the standard output and on the error stream. A path is spelled with `/`; a proposal's settling moment is `<at>`. The TypeScript said a refusal through its dispatcher, `daoris: ` and the sentence; the driver's command says it on the error stream, as every host verb does. `AgentsTextTests` reads it row for row. A sentence the port changes on purpose is a row changed here, with its reason under `changed`. PUSH1f2e3: a row with `now` was run at that moment, the machine's zone America/New_York, which the test hands the command too. PUSH1f2e4: `list` pins every agent to a version nothing installed, so no tool is asked, as its tests did; a row with `windows` pins Claude Code to a stand-in `claude.cmd` in the managed layout, asked as a start runs it, and runs on Windows alone.",
+  "note": "PUSH1f2d (D194, the alone-path design §3): what `daoris agent rules|trust|settings` said for each case its tests held, run once through the CLI's TypeScript verb before it retired, alone, on a root of its own (`<root>`): DAORIS_HOME `<root>/daoris` (none where `home` is false), the agent's own home `<root>/user`, a folder to trust under `<root>/work`, and with `harness` DAORIS_HARNESS_CONFIG naming `<root>/other/data/harnesses.json`. Each row: the words after `agent` (`<root>` where a whole path goes), the folders made empty before it, every file under the root before it and after it, the exit, and the lines said on the standard output and on the error stream. A path is spelled with `/`; a proposal's settling moment is `<at>`. The TypeScript said a refusal through its dispatcher, `daoris: ` and the sentence; the driver's command says it on the error stream, as every host verb does. `AgentsTextTests` reads it row for row. A sentence the port changes on purpose is a row changed here, with its reason under `changed`. PUSH1f2e3: a row with `now` was run at that moment, the machine's zone America/New_York, which the test hands the command too. PUSH1f2e4: `list` pins every agent to a version nothing installed, so no tool is asked, as its tests did; a row with `windows` pins Claude Code to a stand-in `claude.cmd` in the managed layout, asked as a start runs it, and runs on Windows alone. PUSH1f2e5: a row with `stdin` was run with that standard input, which the test hands the command (none is an empty one); an account id the run drew (`key`'s new account) is spelled `<id>`; the home's identity file the key's publication mints taking the lease is no file the verb writes. `install`'s rows were run with an empty PATH, as the test hands the command none, so no installer starts.",
   "rows": [
     {
       "name": "rules, the bare word, an empty home",
@@ -7198,6 +7198,692 @@
         "daoris/data/accounts.json": "{\"claude-code\":{\"account-1\":{\"name\":\"R&D\"},\"account-2\":{\"name\":\"O'Brien\"}}}",
         "daoris/data/harnesses.json": "{\"versions\":{\"claude-code\":\"0.0.0-none\",\"claude-code-acp\":\"0.0.0-none\",\"codex\":\"0.0.0-none\",\"codex-acp\":\"0.0.0-none\",\"dsh\":\"0.0.0-none\"},\"defaults\":{\"claude-code\":\"elsewhere\"}}"
       }
+    },
+    {
+      "name": "key, a new key",
+      "argv": [
+        "key",
+        "claude-code"
+      ],
+      "stdin": "sk-ant-api03-cli-test-wxyz\n",
+      "folders": [],
+      "before": {},
+      "exit": 0,
+      "out": [
+        "daoris: `claude-code` account `<id>` is the API key …wxyz.",
+        "  Kept in <root>/daoris/profiles/keys.json — machine-local, tracked by nothing, shown back only as its last four.",
+        "  `daoris agent profile rename claude-code <id> <name>` gives it a name of yours (ACCT2), and",
+        "  `daoris agent profile join claude-code <id> <workspace>…|--machine` puts it in a list a start runs on."
+      ],
+      "err": [],
+      "after": {
+        "daoris/profiles/keys.json": "{\n  \"claude-code\": {\n    \"<id>\": \"sk-ant-api03-cli-test-wxyz\"\n  }\n}\n",
+        "daoris/run/probing/claude-code/<id>.signed-in": "{\"at\":\"<at>\"}\n"
+      }
+    },
+    {
+      "name": "key, a door's key is its owner's account",
+      "argv": [
+        "key",
+        "claude-code-acp"
+      ],
+      "stdin": "sk-door-9999\n",
+      "folders": [
+        "daoris/profiles/agents/claude-code/work"
+      ],
+      "before": {},
+      "exit": 0,
+      "out": [
+        "daoris: `claude-code` account `<id>` is the API key …9999.",
+        "  Kept in <root>/daoris/profiles/keys.json — machine-local, tracked by nothing, shown back only as its last four.",
+        "  `daoris agent profile rename claude-code <id> <name>` gives it a name of yours (ACCT2), and",
+        "  `daoris agent profile join claude-code <id> <workspace>…|--machine` puts it in a list a start runs on."
+      ],
+      "err": [],
+      "after": {
+        "daoris/profiles/keys.json": "{\n  \"claude-code\": {\n    \"<id>\": \"sk-door-9999\"\n  }\n}\n",
+        "daoris/run/probing/claude-code/<id>.signed-in": "{\"at\":\"<at>\"}\n"
+      }
+    },
+    {
+      "name": "key, beside an account that is a key",
+      "argv": [
+        "key",
+        "claude-code"
+      ],
+      "stdin": "sk-third-3333",
+      "folders": [
+        "daoris/profiles/agents/claude-code/acct-0000aaaa",
+        "daoris/profiles/agents/claude-code/acct-0000bbbb"
+      ],
+      "before": {
+        "daoris/data/accounts.json": "{\n  \"claude-code\": {\n    \"acct-0000aaaa\": {\n      \"name\": \"work-key\"\n    }\n  }\n}\n",
+        "daoris/data/cooling.json": "{\"claude-code\":{\"acct-0000aaaa\":{\"until\":\"2999-01-01T00:00:00Z\"}}}",
+        "daoris/data/harnesses.json": "{\n  \"defaults\": {\n    \"claude-code\": \"acct-0000aaaa\"\n  },\n  \"workspaces\": {},\n  \"versions\": {},\n  \"workspaceVersions\": {}\n}\n",
+        "daoris/data/reads.json": "{\n  \"claude-code\": {\n    \"accounts\": {\n      \"acct-0000aaaa\": {\n        \"login\": \"out\",\n        \"read\": \"2026-10-01T00:00:00Z\"\n      }\n    }\n  }\n}\n",
+        "daoris/profiles/keys.json": "{\n  \"claude-code\": {\n    \"acct-0000aaaa\": \"sk-first-1111\",\n    \"acct-0000bbbb\": \"sk-second-2222\"\n  }\n}\n"
+      },
+      "exit": 0,
+      "out": [
+        "daoris: `claude-code` account `<id>` is the API key …3333.",
+        "  Kept in <root>/daoris/profiles/keys.json — machine-local, tracked by nothing, shown back only as its last four.",
+        "  `daoris agent profile rename claude-code <id> <name>` gives it a name of yours (ACCT2), and",
+        "  `daoris agent profile join claude-code <id> <workspace>…|--machine` puts it in a list a start runs on."
+      ],
+      "err": [],
+      "after": {
+        "daoris/data/accounts.json": "{\n  \"claude-code\": {\n    \"acct-0000aaaa\": {\n      \"name\": \"work-key\"\n    }\n  }\n}\n",
+        "daoris/data/cooling.json": "{\"claude-code\":{\"acct-0000aaaa\":{\"until\":\"2999-01-01T00:00:00Z\"}}}",
+        "daoris/data/harnesses.json": "{\n  \"defaults\": {\n    \"claude-code\": \"acct-0000aaaa\"\n  },\n  \"workspaces\": {},\n  \"versions\": {},\n  \"workspaceVersions\": {}\n}\n",
+        "daoris/data/reads.json": "{\n  \"claude-code\": {\n    \"accounts\": {\n      \"acct-0000aaaa\": {\n        \"login\": \"out\",\n        \"read\": \"2026-10-01T00:00:00Z\"\n      }\n    }\n  }\n}\n",
+        "daoris/profiles/keys.json": "{\n  \"claude-code\": {\n    \"acct-0000aaaa\": \"sk-first-1111\",\n    \"acct-0000bbbb\": \"sk-second-2222\",\n    \"<id>\": \"sk-third-3333\"\n  }\n}\n",
+        "daoris/run/probing/claude-code/<id>.signed-in": "{\"at\":\"<at>\"}\n"
+      }
+    },
+    {
+      "name": "key, given on the command line",
+      "argv": [
+        "key",
+        "claude-code",
+        "sk-ant-api03-in-history-0000"
+      ],
+      "stdin": "",
+      "folders": [],
+      "before": {},
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: the key goes on stdin, not on the command line — pipe it in, or type it and end the input. One given as an argument is now in your shell history; revoke it if that matters."
+      ],
+      "after": {}
+    },
+    {
+      "name": "key, an empty standard input",
+      "argv": [
+        "key",
+        "claude-code"
+      ],
+      "stdin": "",
+      "folders": [],
+      "before": {},
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: that is not an API key — it is blank, or has spaces in it."
+      ],
+      "after": {}
+    },
+    {
+      "name": "key, a blank key",
+      "argv": [
+        "key",
+        "claude-code"
+      ],
+      "stdin": "  \n",
+      "folders": [],
+      "before": {},
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: that is not an API key — it is blank, or has spaces in it."
+      ],
+      "after": {}
+    },
+    {
+      "name": "key, a key with spaces in it",
+      "argv": [
+        "key",
+        "claude-code"
+      ],
+      "stdin": "sk a b\n",
+      "folders": [],
+      "before": {},
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: that is not an API key — it is blank, or has spaces in it."
+      ],
+      "after": {}
+    },
+    {
+      "name": "key, an agent that takes no key",
+      "argv": [
+        "key",
+        "dsh"
+      ],
+      "stdin": "sk-x-1234\n",
+      "folders": [],
+      "before": {},
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: `dsh` takes no API key from Daoris — sign in with its own login instead."
+      ],
+      "after": {}
+    },
+    {
+      "name": "key, codex takes no key from Daoris",
+      "argv": [
+        "key",
+        "codex"
+      ],
+      "stdin": "sk-x-1234\n",
+      "folders": [],
+      "before": {},
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: `codex` takes no API key from Daoris — sign in with its own login instead."
+      ],
+      "after": {}
+    },
+    {
+      "name": "key, no agent",
+      "argv": [
+        "key"
+      ],
+      "stdin": "sk-x-1234\n",
+      "folders": [],
+      "before": {},
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: `agent key` needs <agent> — e.g. `daoris agent key claude-code`"
+      ],
+      "after": {}
+    },
+    {
+      "name": "key, an unknown agent",
+      "argv": [
+        "key",
+        "frobnicate"
+      ],
+      "stdin": "sk-x-1234\n",
+      "folders": [],
+      "before": {},
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: unknown agent 'frobnicate' — one of: claude-code, claude-code-acp, codex, codex-acp, dsh. An agent is added deliberately, never guessed."
+      ],
+      "after": {}
+    },
+    {
+      "name": "key, no home",
+      "argv": [
+        "key",
+        "claude-code"
+      ],
+      "home": false,
+      "stdin": "sk-x-1234\n",
+      "folders": [],
+      "before": {},
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: no Daoris home: set DAORIS_HOME to the application's data folder (the `data` directory beside Daoris.exe), or name the file's own variable. Daoris keeps nothing under the user profile. (wanted: data/harnesses.json)"
+      ],
+      "after": {}
+    },
+    {
+      "name": "key, a keys file that does not read",
+      "argv": [
+        "key",
+        "claude-code"
+      ],
+      "stdin": "sk-ant-second-key-0002\n",
+      "folders": [],
+      "before": {
+        "daoris/profiles/keys.json": "{ not json"
+      },
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: keys.json is not readable JSON now (<why>), so this edit was not written: a file that does not read is never overwritten. Fix it, or delete it to start from nothing, then make the change again. (DRIVER_REFUSED)"
+      ],
+      "after": {
+        "daoris/profiles/keys.json": "{ not json"
+      },
+      "changed": "The key is written by the driver's HarnessKeys through JsonKeeping, the window's own writer of keys.json, so a file that does not read is refused in its words, one line with its code (D194 point 6)."
+    },
+    {
+      "name": "key --account, by its name",
+      "argv": [
+        "key",
+        "claude-code",
+        "--account",
+        "work-key"
+      ],
+      "stdin": "sk-ant-api03-new-key-abcd\n",
+      "folders": [
+        "daoris/profiles/agents/claude-code/acct-0000aaaa",
+        "daoris/profiles/agents/claude-code/acct-0000bbbb"
+      ],
+      "before": {
+        "daoris/data/accounts.json": "{\n  \"claude-code\": {\n    \"acct-0000aaaa\": {\n      \"name\": \"work-key\"\n    }\n  }\n}\n",
+        "daoris/data/cooling.json": "{\"claude-code\":{\"acct-0000aaaa\":{\"until\":\"2999-01-01T00:00:00Z\"}}}",
+        "daoris/data/harnesses.json": "{\n  \"defaults\": {\n    \"claude-code\": \"acct-0000aaaa\"\n  },\n  \"workspaces\": {},\n  \"versions\": {},\n  \"workspaceVersions\": {}\n}\n",
+        "daoris/data/reads.json": "{\n  \"claude-code\": {\n    \"accounts\": {\n      \"acct-0000aaaa\": {\n        \"login\": \"out\",\n        \"read\": \"2026-10-01T00:00:00Z\"\n      }\n    }\n  }\n}\n",
+        "daoris/profiles/keys.json": "{\n  \"claude-code\": {\n    \"acct-0000aaaa\": \"sk-first-1111\",\n    \"acct-0000bbbb\": \"sk-second-2222\"\n  }\n}\n"
+      },
+      "exit": 0,
+      "out": [
+        "daoris: `claude-code` account `acct-0000aaaa` is now the API key …abcd; its name, lists and defaults are as they were.",
+        "  Kept in <root>/daoris/profiles/keys.json — machine-local, tracked by nothing, shown back only as its last four.",
+        "  A running desktop reads the account again at its next press; this terminal cannot tell it sooner."
+      ],
+      "err": [],
+      "after": {
+        "daoris/data/accounts.json": "{\n  \"claude-code\": {\n    \"acct-0000aaaa\": {\n      \"name\": \"work-key\"\n    }\n  }\n}\n",
+        "daoris/data/cooling.json": "{}\n",
+        "daoris/data/harnesses.json": "{\n  \"defaults\": {\n    \"claude-code\": \"acct-0000aaaa\"\n  },\n  \"workspaces\": {},\n  \"versions\": {},\n  \"workspaceVersions\": {}\n}\n",
+        "daoris/data/reads.json": "{\n  \"claude-code\": {\n    \"accounts\": {}\n  }\n}\n",
+        "daoris/profiles/keys.json": "{\n  \"claude-code\": {\n    \"acct-0000aaaa\": \"sk-ant-api03-new-key-abcd\",\n    \"acct-0000bbbb\": \"sk-second-2222\"\n  }\n}\n",
+        "daoris/run/probing/claude-code/acct-0000aaaa.signed-in": "{\"at\":\"<at>\"}\n"
+      }
+    },
+    {
+      "name": "key --account, by its id",
+      "argv": [
+        "key",
+        "claude-code",
+        "--account",
+        "acct-0000bbbb"
+      ],
+      "stdin": " sk-ant-api03-new-key-wxyz \n",
+      "folders": [
+        "daoris/profiles/agents/claude-code/acct-0000aaaa",
+        "daoris/profiles/agents/claude-code/acct-0000bbbb"
+      ],
+      "before": {
+        "daoris/data/accounts.json": "{\n  \"claude-code\": {\n    \"acct-0000aaaa\": {\n      \"name\": \"work-key\"\n    }\n  }\n}\n",
+        "daoris/data/cooling.json": "{\"claude-code\":{\"acct-0000aaaa\":{\"until\":\"2999-01-01T00:00:00Z\"}}}",
+        "daoris/data/harnesses.json": "{\n  \"defaults\": {\n    \"claude-code\": \"acct-0000aaaa\"\n  },\n  \"workspaces\": {},\n  \"versions\": {},\n  \"workspaceVersions\": {}\n}\n",
+        "daoris/data/reads.json": "{\n  \"claude-code\": {\n    \"accounts\": {\n      \"acct-0000aaaa\": {\n        \"login\": \"out\",\n        \"read\": \"2026-10-01T00:00:00Z\"\n      }\n    }\n  }\n}\n",
+        "daoris/profiles/keys.json": "{\n  \"claude-code\": {\n    \"acct-0000aaaa\": \"sk-first-1111\",\n    \"acct-0000bbbb\": \"sk-second-2222\"\n  }\n}\n"
+      },
+      "exit": 0,
+      "out": [
+        "daoris: `claude-code` account `acct-0000bbbb` is now the API key …wxyz; its name, lists and defaults are as they were.",
+        "  Kept in <root>/daoris/profiles/keys.json — machine-local, tracked by nothing, shown back only as its last four.",
+        "  A running desktop reads the account again at its next press; this terminal cannot tell it sooner."
+      ],
+      "err": [],
+      "after": {
+        "daoris/data/accounts.json": "{\n  \"claude-code\": {\n    \"acct-0000aaaa\": {\n      \"name\": \"work-key\"\n    }\n  }\n}\n",
+        "daoris/data/cooling.json": "{\"claude-code\":{\"acct-0000aaaa\":{\"until\":\"2999-01-01T00:00:00Z\"}}}",
+        "daoris/data/harnesses.json": "{\n  \"defaults\": {\n    \"claude-code\": \"acct-0000aaaa\"\n  },\n  \"workspaces\": {},\n  \"versions\": {},\n  \"workspaceVersions\": {}\n}\n",
+        "daoris/data/reads.json": "{\n  \"claude-code\": {\n    \"accounts\": {\n      \"acct-0000aaaa\": {\n        \"login\": \"out\",\n        \"read\": \"2026-10-01T00:00:00Z\"\n      }\n    }\n  }\n}\n",
+        "daoris/profiles/keys.json": "{\n  \"claude-code\": {\n    \"acct-0000aaaa\": \"sk-first-1111\",\n    \"acct-0000bbbb\": \"sk-ant-api03-new-key-wxyz\"\n  }\n}\n",
+        "daoris/run/probing/claude-code/acct-0000bbbb.signed-in": "{\"at\":\"<at>\"}\n"
+      }
+    },
+    {
+      "name": "key --account, for a door",
+      "argv": [
+        "key",
+        "claude-code-acp",
+        "--account",
+        "work-key"
+      ],
+      "stdin": "sk-ant-api03-door-key-0001\n",
+      "folders": [
+        "daoris/profiles/agents/claude-code/acct-0000aaaa",
+        "daoris/profiles/agents/claude-code/acct-0000bbbb"
+      ],
+      "before": {
+        "daoris/data/accounts.json": "{\n  \"claude-code\": {\n    \"acct-0000aaaa\": {\n      \"name\": \"work-key\"\n    }\n  }\n}\n",
+        "daoris/data/cooling.json": "{\"claude-code\":{\"acct-0000aaaa\":{\"until\":\"2999-01-01T00:00:00Z\"}}}",
+        "daoris/data/harnesses.json": "{\n  \"defaults\": {\n    \"claude-code\": \"acct-0000aaaa\"\n  },\n  \"workspaces\": {},\n  \"versions\": {},\n  \"workspaceVersions\": {}\n}\n",
+        "daoris/data/reads.json": "{\n  \"claude-code\": {\n    \"accounts\": {\n      \"acct-0000aaaa\": {\n        \"login\": \"out\",\n        \"read\": \"2026-10-01T00:00:00Z\"\n      }\n    }\n  }\n}\n",
+        "daoris/profiles/keys.json": "{\n  \"claude-code\": {\n    \"acct-0000aaaa\": \"sk-first-1111\",\n    \"acct-0000bbbb\": \"sk-second-2222\"\n  }\n}\n"
+      },
+      "exit": 0,
+      "out": [
+        "daoris: `claude-code` account `acct-0000aaaa` is now the API key …0001; its name, lists and defaults are as they were.",
+        "  Kept in <root>/daoris/profiles/keys.json — machine-local, tracked by nothing, shown back only as its last four.",
+        "  A running desktop reads the account again at its next press; this terminal cannot tell it sooner."
+      ],
+      "err": [],
+      "after": {
+        "daoris/data/accounts.json": "{\n  \"claude-code\": {\n    \"acct-0000aaaa\": {\n      \"name\": \"work-key\"\n    }\n  }\n}\n",
+        "daoris/data/cooling.json": "{}\n",
+        "daoris/data/harnesses.json": "{\n  \"defaults\": {\n    \"claude-code\": \"acct-0000aaaa\"\n  },\n  \"workspaces\": {},\n  \"versions\": {},\n  \"workspaceVersions\": {}\n}\n",
+        "daoris/data/reads.json": "{\n  \"claude-code\": {\n    \"accounts\": {}\n  }\n}\n",
+        "daoris/profiles/keys.json": "{\n  \"claude-code\": {\n    \"acct-0000aaaa\": \"sk-ant-api03-door-key-0001\",\n    \"acct-0000bbbb\": \"sk-second-2222\"\n  }\n}\n",
+        "daoris/run/probing/claude-code/acct-0000aaaa.signed-in": "{\"at\":\"<at>\"}\n"
+      }
+    },
+    {
+      "name": "key --account, no such account",
+      "argv": [
+        "key",
+        "claude-code",
+        "--account",
+        "nobody"
+      ],
+      "stdin": "sk-x-1234\n",
+      "folders": [
+        "daoris/profiles/agents/claude-code/acct-0000aaaa",
+        "daoris/profiles/agents/claude-code/acct-0000bbbb"
+      ],
+      "before": {
+        "daoris/data/accounts.json": "{\n  \"claude-code\": {\n    \"acct-0000aaaa\": {\n      \"name\": \"work-key\"\n    }\n  }\n}\n",
+        "daoris/data/cooling.json": "{\"claude-code\":{\"acct-0000aaaa\":{\"until\":\"2999-01-01T00:00:00Z\"}}}",
+        "daoris/data/harnesses.json": "{\n  \"defaults\": {\n    \"claude-code\": \"acct-0000aaaa\"\n  },\n  \"workspaces\": {},\n  \"versions\": {},\n  \"workspaceVersions\": {}\n}\n",
+        "daoris/data/reads.json": "{\n  \"claude-code\": {\n    \"accounts\": {\n      \"acct-0000aaaa\": {\n        \"login\": \"out\",\n        \"read\": \"2026-10-01T00:00:00Z\"\n      }\n    }\n  }\n}\n",
+        "daoris/profiles/keys.json": "{\n  \"claude-code\": {\n    \"acct-0000aaaa\": \"sk-first-1111\",\n    \"acct-0000bbbb\": \"sk-second-2222\"\n  }\n}\n"
+      },
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: `claude-code` has no account `nobody` on this machine — accounts that exist: acct-0000aaaa, acct-0000bbbb"
+      ],
+      "after": {
+        "daoris/data/accounts.json": "{\n  \"claude-code\": {\n    \"acct-0000aaaa\": {\n      \"name\": \"work-key\"\n    }\n  }\n}\n",
+        "daoris/data/cooling.json": "{\"claude-code\":{\"acct-0000aaaa\":{\"until\":\"2999-01-01T00:00:00Z\"}}}",
+        "daoris/data/harnesses.json": "{\n  \"defaults\": {\n    \"claude-code\": \"acct-0000aaaa\"\n  },\n  \"workspaces\": {},\n  \"versions\": {},\n  \"workspaceVersions\": {}\n}\n",
+        "daoris/data/reads.json": "{\n  \"claude-code\": {\n    \"accounts\": {\n      \"acct-0000aaaa\": {\n        \"login\": \"out\",\n        \"read\": \"2026-10-01T00:00:00Z\"\n      }\n    }\n  }\n}\n",
+        "daoris/profiles/keys.json": "{\n  \"claude-code\": {\n    \"acct-0000aaaa\": \"sk-first-1111\",\n    \"acct-0000bbbb\": \"sk-second-2222\"\n  }\n}\n"
+      }
+    },
+    {
+      "name": "key --account, a sign-in, not a key",
+      "argv": [
+        "key",
+        "claude-code",
+        "--account",
+        "signed-in"
+      ],
+      "stdin": "sk-x-1234\n",
+      "folders": [
+        "daoris/profiles/agents/claude-code/acct-0000aaaa",
+        "daoris/profiles/agents/claude-code/acct-0000bbbb",
+        "daoris/profiles/agents/claude-code/signed-in"
+      ],
+      "before": {
+        "daoris/data/accounts.json": "{\n  \"claude-code\": {\n    \"acct-0000aaaa\": {\n      \"name\": \"work-key\"\n    }\n  }\n}\n",
+        "daoris/data/cooling.json": "{\"claude-code\":{\"acct-0000aaaa\":{\"until\":\"2999-01-01T00:00:00Z\"}}}",
+        "daoris/data/harnesses.json": "{\n  \"defaults\": {\n    \"claude-code\": \"acct-0000aaaa\"\n  },\n  \"workspaces\": {},\n  \"versions\": {},\n  \"workspaceVersions\": {}\n}\n",
+        "daoris/data/reads.json": "{\n  \"claude-code\": {\n    \"accounts\": {\n      \"acct-0000aaaa\": {\n        \"login\": \"out\",\n        \"read\": \"2026-10-01T00:00:00Z\"\n      }\n    }\n  }\n}\n",
+        "daoris/profiles/keys.json": "{\n  \"claude-code\": {\n    \"acct-0000aaaa\": \"sk-first-1111\",\n    \"acct-0000bbbb\": \"sk-second-2222\"\n  }\n}\n"
+      },
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: `signed-in` is not an API key account — it is a sign-in, so sign in again with `daoris agent login claude-code`."
+      ],
+      "after": {
+        "daoris/data/accounts.json": "{\n  \"claude-code\": {\n    \"acct-0000aaaa\": {\n      \"name\": \"work-key\"\n    }\n  }\n}\n",
+        "daoris/data/cooling.json": "{\"claude-code\":{\"acct-0000aaaa\":{\"until\":\"2999-01-01T00:00:00Z\"}}}",
+        "daoris/data/harnesses.json": "{\n  \"defaults\": {\n    \"claude-code\": \"acct-0000aaaa\"\n  },\n  \"workspaces\": {},\n  \"versions\": {},\n  \"workspaceVersions\": {}\n}\n",
+        "daoris/data/reads.json": "{\n  \"claude-code\": {\n    \"accounts\": {\n      \"acct-0000aaaa\": {\n        \"login\": \"out\",\n        \"read\": \"2026-10-01T00:00:00Z\"\n      }\n    }\n  }\n}\n",
+        "daoris/profiles/keys.json": "{\n  \"claude-code\": {\n    \"acct-0000aaaa\": \"sk-first-1111\",\n    \"acct-0000bbbb\": \"sk-second-2222\"\n  }\n}\n"
+      }
+    },
+    {
+      "name": "key --account, a blank key",
+      "argv": [
+        "key",
+        "claude-code",
+        "--account",
+        "acct-0000aaaa"
+      ],
+      "stdin": "  \n",
+      "folders": [
+        "daoris/profiles/agents/claude-code/acct-0000aaaa",
+        "daoris/profiles/agents/claude-code/acct-0000bbbb"
+      ],
+      "before": {
+        "daoris/data/accounts.json": "{\n  \"claude-code\": {\n    \"acct-0000aaaa\": {\n      \"name\": \"work-key\"\n    }\n  }\n}\n",
+        "daoris/data/cooling.json": "{\"claude-code\":{\"acct-0000aaaa\":{\"until\":\"2999-01-01T00:00:00Z\"}}}",
+        "daoris/data/harnesses.json": "{\n  \"defaults\": {\n    \"claude-code\": \"acct-0000aaaa\"\n  },\n  \"workspaces\": {},\n  \"versions\": {},\n  \"workspaceVersions\": {}\n}\n",
+        "daoris/data/reads.json": "{\n  \"claude-code\": {\n    \"accounts\": {\n      \"acct-0000aaaa\": {\n        \"login\": \"out\",\n        \"read\": \"2026-10-01T00:00:00Z\"\n      }\n    }\n  }\n}\n",
+        "daoris/profiles/keys.json": "{\n  \"claude-code\": {\n    \"acct-0000aaaa\": \"sk-first-1111\",\n    \"acct-0000bbbb\": \"sk-second-2222\"\n  }\n}\n"
+      },
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: that is not an API key — it is blank, or has spaces in it."
+      ],
+      "after": {
+        "daoris/data/accounts.json": "{\n  \"claude-code\": {\n    \"acct-0000aaaa\": {\n      \"name\": \"work-key\"\n    }\n  }\n}\n",
+        "daoris/data/cooling.json": "{\"claude-code\":{\"acct-0000aaaa\":{\"until\":\"2999-01-01T00:00:00Z\"}}}",
+        "daoris/data/harnesses.json": "{\n  \"defaults\": {\n    \"claude-code\": \"acct-0000aaaa\"\n  },\n  \"workspaces\": {},\n  \"versions\": {},\n  \"workspaceVersions\": {}\n}\n",
+        "daoris/data/reads.json": "{\n  \"claude-code\": {\n    \"accounts\": {\n      \"acct-0000aaaa\": {\n        \"login\": \"out\",\n        \"read\": \"2026-10-01T00:00:00Z\"\n      }\n    }\n  }\n}\n",
+        "daoris/profiles/keys.json": "{\n  \"claude-code\": {\n    \"acct-0000aaaa\": \"sk-first-1111\",\n    \"acct-0000bbbb\": \"sk-second-2222\"\n  }\n}\n"
+      }
+    },
+    {
+      "name": "key --account, a key with spaces in it",
+      "argv": [
+        "key",
+        "claude-code",
+        "--account",
+        "acct-0000aaaa"
+      ],
+      "stdin": "sk a b",
+      "folders": [
+        "daoris/profiles/agents/claude-code/acct-0000aaaa",
+        "daoris/profiles/agents/claude-code/acct-0000bbbb"
+      ],
+      "before": {
+        "daoris/data/accounts.json": "{\n  \"claude-code\": {\n    \"acct-0000aaaa\": {\n      \"name\": \"work-key\"\n    }\n  }\n}\n",
+        "daoris/data/cooling.json": "{\"claude-code\":{\"acct-0000aaaa\":{\"until\":\"2999-01-01T00:00:00Z\"}}}",
+        "daoris/data/harnesses.json": "{\n  \"defaults\": {\n    \"claude-code\": \"acct-0000aaaa\"\n  },\n  \"workspaces\": {},\n  \"versions\": {},\n  \"workspaceVersions\": {}\n}\n",
+        "daoris/data/reads.json": "{\n  \"claude-code\": {\n    \"accounts\": {\n      \"acct-0000aaaa\": {\n        \"login\": \"out\",\n        \"read\": \"2026-10-01T00:00:00Z\"\n      }\n    }\n  }\n}\n",
+        "daoris/profiles/keys.json": "{\n  \"claude-code\": {\n    \"acct-0000aaaa\": \"sk-first-1111\",\n    \"acct-0000bbbb\": \"sk-second-2222\"\n  }\n}\n"
+      },
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: that is not an API key — it is blank, or has spaces in it."
+      ],
+      "after": {
+        "daoris/data/accounts.json": "{\n  \"claude-code\": {\n    \"acct-0000aaaa\": {\n      \"name\": \"work-key\"\n    }\n  }\n}\n",
+        "daoris/data/cooling.json": "{\"claude-code\":{\"acct-0000aaaa\":{\"until\":\"2999-01-01T00:00:00Z\"}}}",
+        "daoris/data/harnesses.json": "{\n  \"defaults\": {\n    \"claude-code\": \"acct-0000aaaa\"\n  },\n  \"workspaces\": {},\n  \"versions\": {},\n  \"workspaceVersions\": {}\n}\n",
+        "daoris/data/reads.json": "{\n  \"claude-code\": {\n    \"accounts\": {\n      \"acct-0000aaaa\": {\n        \"login\": \"out\",\n        \"read\": \"2026-10-01T00:00:00Z\"\n      }\n    }\n  }\n}\n",
+        "daoris/profiles/keys.json": "{\n  \"claude-code\": {\n    \"acct-0000aaaa\": \"sk-first-1111\",\n    \"acct-0000bbbb\": \"sk-second-2222\"\n  }\n}\n"
+      }
+    },
+    {
+      "name": "key --account, given on the command line",
+      "argv": [
+        "key",
+        "claude-code",
+        "--account",
+        "acct-0000aaaa",
+        "sk-ant-api03-in-history-0000"
+      ],
+      "stdin": "",
+      "folders": [
+        "daoris/profiles/agents/claude-code/acct-0000aaaa",
+        "daoris/profiles/agents/claude-code/acct-0000bbbb"
+      ],
+      "before": {
+        "daoris/data/accounts.json": "{\n  \"claude-code\": {\n    \"acct-0000aaaa\": {\n      \"name\": \"work-key\"\n    }\n  }\n}\n",
+        "daoris/data/cooling.json": "{\"claude-code\":{\"acct-0000aaaa\":{\"until\":\"2999-01-01T00:00:00Z\"}}}",
+        "daoris/data/harnesses.json": "{\n  \"defaults\": {\n    \"claude-code\": \"acct-0000aaaa\"\n  },\n  \"workspaces\": {},\n  \"versions\": {},\n  \"workspaceVersions\": {}\n}\n",
+        "daoris/data/reads.json": "{\n  \"claude-code\": {\n    \"accounts\": {\n      \"acct-0000aaaa\": {\n        \"login\": \"out\",\n        \"read\": \"2026-10-01T00:00:00Z\"\n      }\n    }\n  }\n}\n",
+        "daoris/profiles/keys.json": "{\n  \"claude-code\": {\n    \"acct-0000aaaa\": \"sk-first-1111\",\n    \"acct-0000bbbb\": \"sk-second-2222\"\n  }\n}\n"
+      },
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: the key goes on stdin, not on the command line — pipe it in, or type it and end the input. One given as an argument is now in your shell history; revoke it if that matters."
+      ],
+      "after": {
+        "daoris/data/accounts.json": "{\n  \"claude-code\": {\n    \"acct-0000aaaa\": {\n      \"name\": \"work-key\"\n    }\n  }\n}\n",
+        "daoris/data/cooling.json": "{\"claude-code\":{\"acct-0000aaaa\":{\"until\":\"2999-01-01T00:00:00Z\"}}}",
+        "daoris/data/harnesses.json": "{\n  \"defaults\": {\n    \"claude-code\": \"acct-0000aaaa\"\n  },\n  \"workspaces\": {},\n  \"versions\": {},\n  \"workspaceVersions\": {}\n}\n",
+        "daoris/data/reads.json": "{\n  \"claude-code\": {\n    \"accounts\": {\n      \"acct-0000aaaa\": {\n        \"login\": \"out\",\n        \"read\": \"2026-10-01T00:00:00Z\"\n      }\n    }\n  }\n}\n",
+        "daoris/profiles/keys.json": "{\n  \"claude-code\": {\n    \"acct-0000aaaa\": \"sk-first-1111\",\n    \"acct-0000bbbb\": \"sk-second-2222\"\n  }\n}\n"
+      }
+    },
+    {
+      "name": "key --account, an agent that takes no key",
+      "argv": [
+        "key",
+        "dsh",
+        "--account",
+        "acct-0000aaaa"
+      ],
+      "stdin": "sk-x-1234\n",
+      "folders": [
+        "daoris/profiles/agents/claude-code/acct-0000aaaa",
+        "daoris/profiles/agents/claude-code/acct-0000bbbb"
+      ],
+      "before": {
+        "daoris/data/accounts.json": "{\n  \"claude-code\": {\n    \"acct-0000aaaa\": {\n      \"name\": \"work-key\"\n    }\n  }\n}\n",
+        "daoris/data/cooling.json": "{\"claude-code\":{\"acct-0000aaaa\":{\"until\":\"2999-01-01T00:00:00Z\"}}}",
+        "daoris/data/harnesses.json": "{\n  \"defaults\": {\n    \"claude-code\": \"acct-0000aaaa\"\n  },\n  \"workspaces\": {},\n  \"versions\": {},\n  \"workspaceVersions\": {}\n}\n",
+        "daoris/data/reads.json": "{\n  \"claude-code\": {\n    \"accounts\": {\n      \"acct-0000aaaa\": {\n        \"login\": \"out\",\n        \"read\": \"2026-10-01T00:00:00Z\"\n      }\n    }\n  }\n}\n",
+        "daoris/profiles/keys.json": "{\n  \"claude-code\": {\n    \"acct-0000aaaa\": \"sk-first-1111\",\n    \"acct-0000bbbb\": \"sk-second-2222\"\n  }\n}\n"
+      },
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: `dsh` takes no API key from Daoris — sign in with its own login instead."
+      ],
+      "after": {
+        "daoris/data/accounts.json": "{\n  \"claude-code\": {\n    \"acct-0000aaaa\": {\n      \"name\": \"work-key\"\n    }\n  }\n}\n",
+        "daoris/data/cooling.json": "{\"claude-code\":{\"acct-0000aaaa\":{\"until\":\"2999-01-01T00:00:00Z\"}}}",
+        "daoris/data/harnesses.json": "{\n  \"defaults\": {\n    \"claude-code\": \"acct-0000aaaa\"\n  },\n  \"workspaces\": {},\n  \"versions\": {},\n  \"workspaceVersions\": {}\n}\n",
+        "daoris/data/reads.json": "{\n  \"claude-code\": {\n    \"accounts\": {\n      \"acct-0000aaaa\": {\n        \"login\": \"out\",\n        \"read\": \"2026-10-01T00:00:00Z\"\n      }\n    }\n  }\n}\n",
+        "daoris/profiles/keys.json": "{\n  \"claude-code\": {\n    \"acct-0000aaaa\": \"sk-first-1111\",\n    \"acct-0000bbbb\": \"sk-second-2222\"\n  }\n}\n"
+      }
+    },
+    {
+      "name": "key --account with no account named",
+      "argv": [
+        "key",
+        "claude-code",
+        "--account"
+      ],
+      "stdin": "sk-x-1234\n",
+      "folders": [],
+      "before": {},
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: --account needs a name — e.g. `--account aurora`"
+      ],
+      "after": {}
+    },
+    {
+      "name": "key --account, no accounts at all",
+      "argv": [
+        "key",
+        "claude-code",
+        "--account",
+        "work"
+      ],
+      "stdin": "sk-x-1234\n",
+      "folders": [],
+      "before": {},
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: `claude-code` has no account `work` on this machine — accounts that exist: (none)"
+      ],
+      "after": {}
+    },
+    {
+      "name": "install, no agent",
+      "argv": [
+        "install"
+      ],
+      "folders": [],
+      "before": {},
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: `agent install` needs <agent> — e.g. `daoris agent install claude-code`"
+      ],
+      "after": {}
+    },
+    {
+      "name": "install, an unknown agent",
+      "argv": [
+        "install",
+        "frobnicate"
+      ],
+      "folders": [],
+      "before": {},
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: unknown agent 'frobnicate' — one of: claude-code, claude-code-acp, codex, codex-acp, dsh. An agent is added deliberately, never guessed."
+      ],
+      "after": {}
+    },
+    {
+      "name": "install, no home",
+      "argv": [
+        "install",
+        "claude-code"
+      ],
+      "home": false,
+      "folders": [],
+      "before": {},
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: no Daoris home: set DAORIS_HOME to the application's data folder (the `data` directory beside Daoris.exe), or name the file's own variable. Daoris keeps nothing under the user profile. (wanted: data/harnesses.json)"
+      ],
+      "after": {}
+    },
+    {
+      "name": "install, no npm on this machine's PATH",
+      "argv": [
+        "install",
+        "claude-code"
+      ],
+      "folders": [],
+      "before": {},
+      "exit": 2,
+      "out": [
+        "daoris: installing `claude-code` with its own installer — nothing here is automatic (D49 §4)."
+      ],
+      "err": [
+        "daoris: `npm` is not on this machine's PATH, and installing an agent is the machine's own npm's job, whatever Daoris runs it as. `daoris agent pin <agent> <version>` installs one where Daoris keeps it instead."
+      ],
+      "after": {}
+    },
+    {
+      "name": "install, a door with no npm on this machine's PATH",
+      "argv": [
+        "install",
+        "codex-acp"
+      ],
+      "folders": [],
+      "before": {},
+      "exit": 2,
+      "out": [
+        "daoris: installing `codex-acp` with its own installer — nothing here is automatic (D49 §4)."
+      ],
+      "err": [
+        "daoris: `npm` is not on this machine's PATH, and installing an agent is the machine's own npm's job, whatever Daoris runs it as. `daoris agent pin <agent> <version>` installs one where Daoris keeps it instead."
+      ],
+      "after": {}
+    },
+    {
+      "name": "install dsh, no npm on this machine's PATH",
+      "argv": [
+        "install",
+        "dsh"
+      ],
+      "folders": [],
+      "before": {},
+      "exit": 2,
+      "out": [
+        "daoris: installing `dsh` with its own installer — nothing here is automatic (D49 §4)."
+      ],
+      "err": [
+        "daoris: `npm` is not on this machine's PATH, and installing an agent is the machine's own npm's job, whatever Daoris runs it as. `daoris agent pin <agent> <version>` installs one where Daoris keeps it instead."
+      ],
+      "after": {}
     }
   ]
 }
