@@ -339,7 +339,7 @@ public sealed class DriverWatch(
         // The session branches tidied beside the looks (AUTOTIDY1, AUTOTIDY2a): a pass once each pace, its lines joining the report
         // of the look that finds it done, as the following's do.
         // KEEP1b: the downloads' rule reads and locks the loop's own choices, as the Downloads row's press does.
-        var tidy = Tidying ?? new BranchTidying(home) { ConfigPath = configPath };
+        var tidy = Tidying ?? new BranchTidying(home) { ConfigPath = configPath, Sizes = SpaceSizes.Shared };
         Task<IReadOnlyList<string>>? tidying = null;
 
         // What woke each look, for its line in the machine log (FABRIC-EVENT2): the loop's start, its pace, a session's end, or a

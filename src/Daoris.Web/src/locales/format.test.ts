@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import i18n from './i18n';
-import { ago, compact, elapsed, figure, list, sentence, sessionTool, sittingDays, span, stamp } from './format';
+import { ago, compact, elapsed, figure, list, sentence, sessionTool, sittingDays, size, span, stamp } from './format';
 
 /** ACCTNAME1 (D152 §4.2): a session's agent line names its account by the person's name where the roster's namer is handed. */
 describe('sessionTool', () => {
@@ -11,6 +11,16 @@ describe('sessionTool', () => {
     expect(sessionTool(session, false, nameOf)).toBe('claude-code · 2.1.288 · as work');
     expect(sessionTool(session)).toBe('claude-code · 2.1.288 · as acct-3f9c1a2b');
     expect(sessionTool({ ...session, profile: null }, true, nameOf)).toBe('claude-code · 2.1.288 · on your own sign-in');
+  });
+});
+
+/** KEEP1c: a size in the unit a person reads it in, a disk's in gigabytes. */
+describe('size', () => {
+  it('says bytes, kilobytes, megabytes and gigabytes', () => {
+    expect(size(812)).toBe('812 B');
+    expect(size(2458)).toBe('2.4 KB');
+    expect(size(3.1 * 1024 * 1024)).toBe('3.1 MB');
+    expect(size(37.4 * 1024 ** 3)).toBe('37.4 GB');
   });
 });
 

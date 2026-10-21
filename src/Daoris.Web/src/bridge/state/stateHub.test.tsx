@@ -32,7 +32,7 @@ import { useRules } from '../agents/rules';
 import { useSessionGroups } from '../sessions/sessions';
 import { useLandEntry } from '../sessions/entries';
 import { useStateHub, useUnderWay, useUnderWayStep, useUnderWaySubject } from './stateHub';
-import { useSystemWiring } from '../system';
+import { useSystemSpace, useSystemWiring } from '../system';
 import { ALL_TOOLS, useTools } from '../agents/tools';
 import { useLandSessionTree } from '../sessions/trees';
 import { useWorkPlan, workKey } from '../sessions/work';
@@ -135,7 +135,7 @@ describe('the state hub (STATE_CHANGED)', () => {
     ['help', [[...HELP_HISTORY, ''], [...HELP_HISTORY, 'pinned'], [...HELP_PROPOSALS, 's1'], [...HELP_WIRED, 'h1']]],
     ['browser', [keys.browserSettings]],
     // FABRIC-EVENT5b: How this Daoris is wired, told as a walk starts and as its sizes land.
-    ['wiring', [keys.systemWiring]],
+    ['wiring', [keys.systemWiring, keys.systemSpace]],
   ];
 
   it.each(families)('%s asks its own family again and no other', (scope, family) => {
@@ -165,6 +165,7 @@ describe('the state hub (STATE_CHANGED)', () => {
     ['help', 'Ask Daoris’s history', () => useHelpConversations(''), 'HELP_CONVERSATIONS'],
     ['browser', 'the browser’s settings', () => useBrowserSettings(), 'STATE'],
     ['wiring', 'This Daoris’s wiring', () => useSystemWiring(), 'SYSTEM_WIRING'],
+    ['wiring', 'This Daoris’s disk space', () => useSystemSpace(), 'SYSTEM_SPACE'],
   ];
 
   it.each(views)('%s: an event alone asks %s again', async (scope, _what, useView, route) => {

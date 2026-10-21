@@ -59,6 +59,11 @@ const OWED: readonly { readonly file: string; readonly join: string; readonly wh
     why: 'an earlier build’s profile, no entry of the table (the design §3.6: stays as found); the test holds that the engine’s is not it',
   },
   {
+    file: 'SystemSpace.cs',
+    join: "Path.Combine(home, path.Split('/'))",
+    why: 'what an earlier build left at the home’s top, `webview2/` and `browser/profile/` by exact path, no entry of the table (the cleanup design §1.6); the Disk space card only counts it (KEEP1c)',
+  },
+  {
     file: 'AgentsRoutes.cs',
     join: 'Path.Combine(profile.Home, settingsFile)',
     why: 'an account’s own home, the item `HomeEntry.AgentHomes` answered: the agent’s settings file is the agent’s, under the item',
