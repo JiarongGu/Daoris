@@ -10,7 +10,7 @@ import { WorkflowRunView } from './WorkflowRunView';
 import { WorkflowTab } from './WorkflowTab';
 
 // FLOWCHART1d (D186; the flowchart design §2.4, §2.5, §5.1): the Workflow tab and the side bar's Workflow view draw the workflow and
-// its run on `Flow`, top to bottom where the pane holds a step's 18rem, and the rail, today's list, at the side bar's floor. The
+// its run on `Flow`, top to bottom where the pane holds a step's 19rem, and the rail, today's list, at the side bar's floor. The
 // rail's words are `WorkflowTab.test.tsx`'s and `WorkflowRunView.test.tsx`'s, unchanged; jsdom lays nothing out, so the pane's width
 // is stood in for here, and the edges' geometry is the measured-box check's.
 
@@ -110,6 +110,9 @@ describe("the Workflow tab's flowchart", () => {
   it('is the rail at a pane narrower than a step, and Show as list chooses it where the drawing fits', async () => {
     paneWidth = 1232;
     const { container } = render(<WorkflowTab page="repository" name="engine" current={FULL} />);
+    // The side bar's 300 px floor is the rail before its gutters as after them.
+    resizeTo(300);
+    expect(placement(container)).toBe('rail');
     resizeTo(276);
     expect(placement(container)).toBe('rail');
     expect(screen.getByRole('group', { name: 'How work in engine moves' })).toBeInTheDocument();
@@ -128,7 +131,7 @@ describe("the Workflow tab's flowchart", () => {
     expect(feet(node('A step this page has no words for: check'))).toEqual([
       'Finished, automatically', 'Sent back once, then you, if it fails',
     ]);
-    // A rank of two, the next step and the outcome beside it: 37.5rem, so the rail at a 680 px window's main area.
+    // A rank of two, the next step and the outcome beside it: 39.5rem, so the rail at a 680 px window's main area.
     resizeTo(576);
     expect(placement(container)).toBe('rail');
     expect(container.querySelector('[data-step="checks"] [data-failed]')).toHaveTextContent('If it fails, it is sent back once, then waits for you.');

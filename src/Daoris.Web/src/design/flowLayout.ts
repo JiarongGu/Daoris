@@ -251,7 +251,7 @@ export function findStacks(shape: FlowShape): Stack[] {
  * What each placement needs of the pane, in px at `rem` px a rem (§3.2): left to right, every rank side by side with the
  * rank gaps between; top to bottom, the widest rank's node tracks, waypoints and gaps, and a lane for each return. `least`
  * is the node track's floor in rem: §3.2's 10rem, or a caller's wider one (FLOWCHART1d: a workflow's step, which holds its
- * settings and its run's facts, is 18rem).
+ * settings and its run's facts, is 19rem).
  */
 export function needs(layout: FlowLayout, rem = 16, least: number = FLOW_REM.node): { across: number; down: number } {
   const ranks = layout.ranks.length;

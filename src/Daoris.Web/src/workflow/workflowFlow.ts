@@ -26,10 +26,10 @@ export const FINISHED = ':finished';
 
 /**
  * A workflow's node track, in rem: a step holds its settings, where they were set and its limit, or its run's facts and doors, so
- * its floor is 18rem, which leaves the side bar's 300 px floor the rail and draws top to bottom from the main area's 400 px floor,
- * and it reads up to 36rem across.
+ * its floor is 19rem (304 px), which leaves the side bar's 300 px floor the rail before its gutters as after them and draws top to
+ * bottom from the main area's 400 px floor (376 px inside its gutters), and it reads up to 36rem across.
  */
-export const WORKFLOW_TRACK = { least: 18, most: 36 } as const;
+export const WORKFLOW_TRACK = { least: 19, most: 36 } as const;
 
 /** A name set as code, read as words: a node's title and a reader's description are plain text. */
 const plain = (text: string) => text.replace(/`/g, '');
