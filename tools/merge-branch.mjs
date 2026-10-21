@@ -30,7 +30,9 @@
  * 4. The prune (below), unless `--no-prune`: one line per branch, and per half-removed folder, removed or kept.
  * 5. `git merge --no-ff --no-commit`. A conflict stops here: the files are named and the merge is left
  *    for the parent. Code is never resolved for anyone; the append-only records resolve themselves by
- *    their `merge=union` attribute (D106). The orientation index is written from the merged tree and
+ *    their `merge=union` attribute (D106), and the backlog by its merge base: a line a side added is kept,
+ *    one a side removed is dropped, one line both changed is left (`mergeByBase`, MERGETASKS1), one line
+ *    said either way. The orientation index is written from the merged tree and
  *    staged before the gates choose (`GENERATED`, ORIENT1a), so a conflict in it alone does not stop the
  *    merge, and one beside others is written once they are resolved. Before it, each decision file the merge
  *    changed has a blank line set before a note's label union left under another note, one line said per
@@ -1122,6 +1124,136 @@ function writeGenerated(root) {
     git(root, ['add', '-A', '--', folder]);
     console.log(`${folder}/: written from the merged tree (${run.stdout.trim().replace(/^[\w-]+: /, '')})`);
   }
+}
+
+// ---------------------------------------------------------------------------------------------------
+// MERGETASKS1: the backlog's line conflicts, resolved by the merge base
+
+/** The backlog `daoris.json` declares, else `TASKS.md`: the file a merge resolves by its base. */
+export function backlogPath(root) {
+  const manifest = join(root, 'daoris.json');
+  if (!existsSync(manifest)) return 'TASKS.md';
+  const entry = JSON.parse(readFileSync(manifest, 'utf8')).documents?.backlog;
+  const path = typeof entry === 'string' ? entry : entry?.path;
+  return typeof path === 'string' ? path.replace(/\\/g, '/') : 'TASKS.md';
+}
+
+/** The changes from `base` to `side`, as hunks of the base's lines `[start, end)` and what replaced them; by the longest common run of lines. */
+export function lineHunks(base, side) {
+  let head = 0;
+  while (head < base.length && head < side.length && base[head] === side[head]) head += 1;
+  let tail = 0;
+  while (tail < base.length - head && tail < side.length - head && base[base.length - 1 - tail] === side[side.length - 1 - tail]) tail += 1;
+  const a = base.slice(head, base.length - tail);
+  const b = side.slice(head, side.length - tail);
+  // The common run's length from each pair of positions to the end, one row of b per line of a.
+  const width = b.length + 1;
+  const run = new Uint32Array((a.length + 1) * width);
+  for (let i = a.length - 1; i >= 0; i -= 1) {
+    for (let j = b.length - 1; j >= 0; j -= 1) {
+      run[i * width + j] = a[i] === b[j] ? run[(i + 1) * width + j + 1] + 1 : Math.max(run[(i + 1) * width + j], run[i * width + j + 1]);
+    }
+  }
+  const hunks = [];
+  let open = null;
+  const close = () => {
+    if (open) hunks.push(open);
+    open = null;
+  };
+  let [i, j] = [0, 0];
+  while (i < a.length || j < b.length) {
+    if (i < a.length && j < b.length && a[i] === b[j]) {
+      close();
+      [i, j] = [i + 1, j + 1];
+      continue;
+    }
+    open ??= { start: head + i, end: head + i, lines: [] };
+    if (j < b.length && (i === a.length || run[i * width + j + 1] >= run[(i + 1) * width + j])) {
+      open.lines.push(b[j]);
+      j += 1;
+    } else {
+      i += 1;
+      open.end = head + i;
+    }
+  }
+  close();
+  return hunks;
+}
+
+const sameHunk = (x, y) => x.start === y.start && x.end === y.end && x.lines.length === y.lines.length && x.lines.every((line, i) => line === y.lines[i]);
+
+/** Whether two sides' hunks touch the same base line, or one adds inside a run the other replaced; adds at one place never do. */
+function hunksCollide(x, y) {
+  if (x.start === x.end && y.start === y.end) return false;
+  if (x.start === x.end) return y.start < x.start && x.start < y.end;
+  if (y.start === y.end) return x.start < y.start && y.start < x.end;
+  return x.start < y.end && y.start < x.end;
+}
+
+/**
+ * The backlog merged line by line against its merge base (MERGETASKS1): a line one side added is kept, one a side removed is
+ * dropped, and two sides that changed the same base line are a conflict, left for the person. Rows that two sides add at one
+ * place are both kept, this side's first. With `text` when nothing collided, and what was kept, dropped and left.
+ *
+ * Nearly every landing of a session's or a builder's branch stopped on `TASKS.md` (2026-10-21): each side removed or added a
+ * row beside the other's, which git reads as one conflict. Union would undo every row a side moved to the archive, so the
+ * backlog is not union-merged (`.gitattributes`); its base says which side changed what.
+ */
+export function mergeByBase(base, ours, theirs) {
+  const [o, t, b] = [ours, theirs, base].map((text) => text.split('\n'));
+  const mine = lineHunks(b, o).map((hunk) => ({ ...hunk, side: 0 }));
+  const yours = lineHunks(b, t).map((hunk) => ({ ...hunk, side: 1 }));
+  const both = [];
+  const hunks = [...mine];
+  for (const hunk of yours) {
+    const twin = mine.find((other) => sameHunk(other, hunk));
+    if (twin) continue;
+    const met = mine.filter((other) => hunksCollide(other, hunk));
+    if (met.length) both.push({ line: Math.min(hunk.start, ...met.map((other) => other.start)) + 1 });
+    hunks.push(hunk);
+  }
+  const kept = hunks.reduce((sum, hunk) => sum + hunk.lines.length, 0);
+  const dropped = hunks.reduce((sum, hunk) => sum + hunk.end - hunk.start, 0);
+  if (both.length) return { text: null, kept, dropped, both };
+  hunks.sort((x, y) => x.start - y.start || x.end - y.end || x.side - y.side);
+  const out = [];
+  let at = 0;
+  for (const hunk of hunks) {
+    out.push(...b.slice(at, hunk.start), ...hunk.lines);
+    at = hunk.end;
+  }
+  out.push(...b.slice(at));
+  return { text: out.join('\n'), kept, dropped, both };
+}
+
+/** A stage of an unmerged path as git holds it, byte for byte; null where that stage has none (a side that added or deleted it). */
+function stageText(root, stage, path) {
+  const shown = spawnGit(['show', `:${stage}:${path}`], { cwd: root, encoding: 'utf8', maxBuffer: 256 * 1024 * 1024 });
+  return shown.status === 0 ? shown.stdout : null;
+}
+
+/**
+ * The backlog's conflict in the merge in place resolved by its base and staged, with one line saying so; or, where both sides
+ * changed one line, left as git wrote it, with one line naming where. Whether it was resolved.
+ */
+function resolveBacklog(root) {
+  const path = backlogPath(root);
+  if (!unmergedPaths(root).includes(path)) return false;
+  const [base, ours, theirs] = [1, 2, 3].map((stage) => stageText(root, stage, path));
+  if (base === null || ours === null || theirs === null) {
+    console.log(`${path}: not resolved by the merge base, since a side added or deleted it; left for you`);
+    return false;
+  }
+  const merged = mergeByBase(base, ours, theirs);
+  if (merged.text === null) {
+    const where = merged.both.map((entry) => entry.line).join(', ');
+    console.log(`${path}: both sides changed the same ${merged.both.length === 1 ? 'line' : 'lines'} (the merge base's line ${where}); left for you`);
+    return false;
+  }
+  writeAtomic(join(root, path), merged.text);
+  git(root, ['add', '--', path]);
+  console.log(`${path}: resolved by the merge base, ${count(merged.kept, 'line')} a side added kept and ${count(merged.dropped, 'line')} a side removed dropped`);
+  return true;
 }
 
 // ---------------------------------------------------------------------------------------------------
@@ -3599,7 +3731,7 @@ function reportConflict(branch, unmerged, generated = []) {
   console.log(`merge-branch: merging ${branch} stopped on a conflict in ${count(unmerged.length, 'file')}:`);
   for (const file of unmerged) console.log(`  ${file}`);
   if (generated.length) console.log(`  (and ${count(generated.length, 'generated file')}, written again from the merged tree once these are resolved)`);
-  console.log('  Resolve them (code is never resolved for you; the union records resolve themselves), git add them,');
+  console.log('  Resolve them (code is never resolved for you; the union records resolve themselves, the backlog by its merge base), git add them,');
   console.log('  then node tools/merge-branch.mjs --continue to run the gates. Or git merge --abort.');
   return 1;
 }
@@ -3635,10 +3767,12 @@ async function mergeNext(root, state) {
   writeState(root, state);
   const merged = git(root, ['merge', '--no-ff', '--no-commit', branch], { allowFail: true });
   if (merged.status !== 0) {
+    const resolved = mergeInProgress(root) && resolveBacklog(root);
     const { blocking, generated } = mergeInProgress(root) ? conflicts(root) : { blocking: [], generated: [] };
     if (blocking.length) return reportConflict(branch, blocking, generated);
-    // A conflict only in what the merge writes anyway goes on to that writing (ORIENT1a).
-    if (!generated.length) throw new Refusal(`git merge ${branch} failed:\n${merged.err || merged.out}`);
+    // A conflict only in what the merge writes anyway goes on to that writing (ORIENT1a), and one only in the
+    // backlog, resolved by its base, goes on to the gates (MERGETASKS1).
+    if (!generated.length && !resolved) throw new Refusal(`git merge ${branch} failed:\n${merged.err || merged.out}`);
   }
   console.log(`merged ${branch} --no-ff --no-commit${state.branches.length > 1 ? ` (${state.at + 1} of ${state.branches.length})` : ''}`);
   return gateMerge(root, state, plan);
