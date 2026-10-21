@@ -1,6 +1,6 @@
 import type { Decorator, Meta, StoryObj } from '@storybook/react-vite';
 import type { AttentionRead } from '../bridge/attention';
-import type { Notice } from '../bridge/notices';
+import type { AskMessages, Notice } from '../bridge/notices';
 import { chinese } from '../design/storyLanguage';
 import { storyWidths } from '../design/storyWidths';
 import { InTheme } from '../plugins/storyIcons';
@@ -55,3 +55,13 @@ const NOTICES: Notice[] = [
 export const WithDoneAndFailed: Story = { args: { notices: NOTICES } };
 export const WithDoneAndFailedChinese: Story = { args: { notices: NOTICES }, decorators: [chinese] };
 export const WithDoneAndFailedNarrow: Story = { args: { notices: NOTICES }, decorators: [storyWidths.narrow] };
+
+/** *Messages*' line before what ended (NOTIFY2g): its items, an ask's and a teammate's and an answer, and how many are unread. */
+const MESSAGES: AskMessages[] = [
+  { ask: 'a1', workspace: 'default', teammate: false, unread: 3 },
+  { ask: '7e6f51', workspace: 'default', teammate: true, unread: 1 },
+];
+const ANSWERED: Notice[] = [{ id: 'answered-c1', kind: 'answered', at: ago(2), read: false, session: 'c1', repository: 'game' }];
+export const WithMessages: Story = { args: { messages: MESSAGES, answered: ANSWERED, notices: NOTICES } };
+export const WithMessagesChinese: Story = { args: { messages: MESSAGES, answered: ANSWERED, notices: NOTICES }, decorators: [chinese] };
+export const WithMessagesNarrow: Story = { args: { messages: MESSAGES, answered: ANSWERED, notices: NOTICES }, decorators: [storyWidths.narrow] };
