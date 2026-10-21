@@ -468,6 +468,8 @@ public sealed partial class StatePublisherTests : DriverModuleBridge
     [InlineData("SESSION_ANSWER_ALONE", "sessions,driver", "session")]
     [InlineData("ANSWER_WAITS", "", null)]
     [InlineData("SESSION_OPENINGS", "", null)]
+    // SESSCTX1d: what each part spent, the *Parts* strip's read.
+    [InlineData("SESSION_SPENT", "", null)]
     [InlineData("SESSION_WHERE", "", null)]
     [InlineData("SESSION_GROUPS", "", null)]
     [InlineData("SESSION_SEARCH", "", null)]

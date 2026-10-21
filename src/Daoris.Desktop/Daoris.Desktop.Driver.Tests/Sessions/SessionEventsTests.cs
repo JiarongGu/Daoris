@@ -659,4 +659,23 @@ public sealed class SessionEventsTests : IDisposable
         Assert.EndsWith($"({huge.Length} chars)", kept.Content[0].Text);
         Assert.True(kept.Output!.Length <= SessionEventText.RawLimit + 40);
     }
+
+    /// <summary>
+    /// SESSCTX1d (the session-context design §7): what a part spent, its turns' counts summed. A turn whose door said nothing is
+    /// counted as a turn and adds no count; a count no turn said stays null, never zero; no record, or no id, spent nothing.
+    /// </summary>
+    [Fact]
+    public void What_a_session_spent_is_its_turns_counts_summed_and_an_unsaid_count_stays_null()
+    {
+        var events = new SessionEvents(_directory);
+        events.Append("spent1", Asked("go"));
+        events.Append("spent1", new SessionEvent { Kind = SessionEventKind.Turn, Tokens = new(Input: 4, Output: 80, CacheRead: 1000, CacheWrite: null) });
+        events.Append("spent1", new SessionEvent { Kind = SessionEventKind.Usage, Used = 5000, Size = 200_000 });
+        events.Append("spent1", new SessionEvent { Kind = SessionEventKind.Turn });
+        events.Append("spent1", new SessionEvent { Kind = SessionEventKind.Turn, Tokens = new(Input: 6, Output: 20, CacheRead: 3000, CacheWrite: null) });
+
+        Assert.Equal(new SessionSpent(3, 2, 10, 100, 4000, null), events.Spent("spent1"));
+        Assert.Equal(SessionSpent.None, events.Spent("nobody0"));
+        Assert.Equal(SessionSpent.None, events.Spent("../x"));
+    }
 }
