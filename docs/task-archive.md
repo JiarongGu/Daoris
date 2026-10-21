@@ -18835,6 +18835,15 @@ balloon while no window is in front. Proof: `PipeConfirmTests`, `DriverModulePer
 `SessionBalloonTests`, and the page's person, attention and signals tests in en and zh. The window with a press from a terminal
 is the parent's installed proof; the taskbar is not flashed. Detail: D156's CONFIRMSEEN1 note.
 
+## RELSPAM1 — a running session's *Who it worked with* said once (2026-10-21)
+
+> - [ ] **RELSPAM1 — a running session's *Who it worked with* repeated on its page** (web; found 2026-10-21 on an installed
+>   window). A driven session on an ask showed its folded relations line eleven times. One block per attended session; a test
+>   that redraws the running record and counts the regions.
+
+**Outcome** 2026-10-21: fixed. The record's relations fold and its milestone were keyed alike under one parent, so each draw left a
+copy behind; the Work frame's foot had the same collision. Each keyed child now names its kind beside the id, and
+`design/siblingKeys.test.ts` fails on two slots of one parent keyed alike. Detail: the fix log's RELSPAM1 entry.
 ## FABRIC-CLOSECASE1 — one rule for "the same repository" across the close (2026-10-21, D173)
 
 > - [ ] **FABRIC-CLOSECASE1 — one rule for "the same repository" across the close** (driver, service; §E5). The driver compares a quest's repository exactly, the service's `NextStep` and the close door ignore case. Proof: a chain whose repository differs only in case is named and closed alike by both, or refused alike.
