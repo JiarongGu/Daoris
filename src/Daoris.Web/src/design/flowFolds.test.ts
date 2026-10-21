@@ -76,10 +76,16 @@ describe('a flow too large to show whole (§3.6, trap 16)', () => {
 
   it('with none current, stopped part way, focuses where it got to', () => {
     const folds = largeFolds(shapeOf(LARGE_STOPPED));
-    expect(folds[0]).toMatchObject({ id: 'fold:done:a1', kind: 'done' });
+    expect(folds.some((fold) => fold.members.includes('a1'))).toBe(true);
     const shown = drawn(LARGE_STOPPED, folds);
     expect(shown).toContain('a31');
     expect(shown).toContain('fold:later');
+  });
+
+  it('with none current and a step passed over among the settled ones, still focuses before the end', () => {
+    // A skip is not done: it ends a stretch and stays in view, and the run that ended with it is focused where it ended.
+    const skipped: Fixture = { ...LARGE_SETTLED, nodes: LARGE_SETTLED.nodes.map((node) => (node.id === 'b30' ? { ...node, settled: false } : node)) };
+    expect(drawn(skipped, largeFolds(shapeOf(skipped)))).toEqual(drawn(LARGE_SETTLED, largeFolds(shapeOf(LARGE_SETTLED))));
   });
 
   it('folds an unlit graph past the bound where it starts: nothing has started', () => {

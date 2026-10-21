@@ -8,8 +8,9 @@ import { findStacks, type FlowShape, layoutFlow, type FlowLayout } from './flowL
  * @remarks
  * A flow is drawn whole up to 24 nodes, D157's authoring bound; a decoded graph may reach 96 with its synthetic nodes. Past
  * that, after the stacks (`findStacks`, at every size, FLOWCHART1c), in this order:
- * 1. **Settled stretches.** Four or more consecutive settled nodes, each a link of a chain (one edge in and one out), fold into
- *    *n steps done*, as far as they end two ranks or more before every current node.
+ * 1. **Settled stretches.** Four or more consecutive done nodes (a caller's `settled`; a step passed over is not, so a skip stays
+ *    in view), each a link of a chain (one edge in and one out), fold into *n steps done*, as far as they end two ranks or more
+ *    before every current node.
  * 2. **Focus.** If it is still past 24, the ranks from two before to three after each current node are drawn, their union where
  *    several are current. With none current: the ranks after the entries where nothing has started, those before the end where
  *    all has settled, and otherwise those around the furthest rank any node was reached at, where the run got to. *Earlier*,
@@ -100,17 +101,17 @@ export function largeFolds(shape: FoldShape, opened: ReadonlySet<string> = new S
 }
 
 /**
- * The ranks the focus stands on: each current node's; with none current, after the entries where nothing has started, before the
- * end where all has settled, else the furthest rank any node was reached or settled at.
+ * The ranks the focus stands on: each current node's; with none current, after the entries where nothing has started, else the
+ * furthest rank any node was reached or settled at, no nearer the end than leaves the focus its six ranks: before the end where all
+ * has settled, or a step passed over beside them (a skip is not done, so it is not settled), and where the run got to otherwise.
  */
 function anchorsOf(nodes: FoldShape['nodes'], layout: FlowLayout): number[] {
   const count = layout.ranks.length;
   const current = nodes.filter((node) => node.current).map((node) => layout.rank[node.id]!);
   if (current.length > 0) return current;
-  if (nodes.every((node) => node.settled)) return [count - 1 - FOCUS.after];
   const reached = nodes.filter((node) => node.settled || node.reached === true).map((node) => layout.rank[node.id]!);
   if (reached.length === 0) return [FOCUS.before];
-  return [Math.max(...reached)];
+  return [Math.min(Math.max(...reached), count - 1 - FOCUS.after)];
 }
 
 /** The shape with each fold drawn as one node in its first member's place: settled where all of its members are. */
