@@ -177,10 +177,10 @@ public static class DriverCommand
               pause with where it came from.
           driver [list | drive|undrive|hold|resume <repository> | trees | notify | cap | strikes | retry | timeout
                 | cooloff | adapter | intake | helper | line | landing | across | standing | language | review
-                | opinion | helpers | handover | commits …]
-              this machine's standing choices, the words `daoris driver …` hands this program (D194): a change
-              goes to the running Daoris's window to confirm where one runs, and is written here where none does;
-              `driver --help` says each verb's words.
+                | opinion | helpers | handover | commits | work-cycle | brainstorms | workflow …]
+              this machine's standing choices, its workflows and its cycles, the words `daoris driver …` hands
+              this program (D194): a change a route takes goes to the running Daoris's window to confirm where one
+              runs, and is written here where none does; `driver --help` says each verb's words.
           trees [list | remove <path|session|branch> [--repository <name>] [--force]
                 | clean [--workspace <name>] [--yes] | land <session> [--plan] [--branch <name>]
                 | land --entry <id> | --ask <id> [--leave-out <session>]... [--plan]
