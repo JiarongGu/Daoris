@@ -19041,3 +19041,13 @@ row proves the driver's half. A `channel` wake runs the local plan, whose `chann
 waits, so a message is heard without the poll; no second reader was added. Proof: `DriverWatchTopicsTests`' new case (the person's
 message kept on a parked part's record with `pollSeconds` at 60, no nudge, no remote sync), over the stand-in ledger's new channel
 doors. Detail: D173's FABRIC-EVENT3c note. On Opus.
+## PUSH1f2d — the agents' rules, trust and settings (2026-10-21, D194)
+
+> - [ ] **PUSH1f2d — the agents' rules, trust and settings** (cli, driver, modules; after 2a; D194, the alone-path design §5). Read its row in §5 and the sections it names; build it end to end (D187), the family's TypeScript leaving as §4 says. Proof: as §5 names it.
+
+**Outcome** 2026-10-21: `daoris agent rules|trust|settings` runs `daoris-driver agent` (the family's first allow-list), the rules and
+their proposals pressing `RULE_ACTION` and `RULE_PROPOSAL` on `DAORIS_HOME` whatever `DAORIS_HARNESS_CONFIG` names, an account's
+settings `SET_AGENT_SETTINGS`, a trust alone; a marked terminal's `rules accept` refused; today's text kept by 87 cases, nine changed
+with reasons. `permissions.ts`, `ruleproposals.ts`, `trust.ts`, `agentsettings.ts` and their tests left. Detail: D194's PUSH1f2d
+note. Unproven until the install: a `daoris agent rules` change confirmed in the open window. Built across two sessions, the first
+cut off at the timeout after the driver's commit.

@@ -55,6 +55,11 @@ with the version and date at release.
   with Daoris closed too. A download, an update or a managed use no longer holds your home while it fetches: it waits for the home
   only to make the version and switch to it, saying so if another act holds it for long, and Ctrl+C leaves nothing behind. Two
   downloads of one version at once each finish, one keeping the other's.
+- `daoris agent rules`, `daoris agent trust` and `daoris agent settings` are run by Daoris's own driver program now, as
+  `daoris-driver agent` with the same words; the rest of `daoris agent` is as it was. Each says what it said before, but for these:
+  the rules and their proposals are always your `DAORIS_HOME`'s, so with a wiring file named in `DAORIS_HARNESS_CONFIG` a rule or
+  your yes to a proposal still goes to that home, through Daoris's window while it runs; a rules file that does not read is said
+  as the window says it; and a change refused because a file does not read is said with its code, and exits 2.
 - A press from a terminal that waits for your Confirm in Daoris's window is now said where you look. It is a row of *What
   needs you*, counted in the badge and on the taskbar, whose *Confirm or refuse…* opens its card. While no Daoris window is in
   front, a notification says it too. Its two minutes now count from when a window in front of you shows its card, and a
