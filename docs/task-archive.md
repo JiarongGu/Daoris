@@ -18726,3 +18726,14 @@ while a session of this machine's on the quest, driven for it or a conversation 
 stand anyway keeps its own words. The page shows the 409's words as for any refusal and still offers the press. Proof:
 `QuestShareTests.A_bring_forward_waits_while_the_losing_session_still_runs` and `A_running_session_does_not_hide_why_the_press_cannot_stand`.
 On Opus: about 40 tool calls. Detail: D178's SYNCMERGE1c4 line.
+
+## FABRIC-PERFORM1k — a failure kept for the person shown, with their new attempt (2026-10-21, D173)
+
+> - [ ] **FABRIC-PERFORM1k — a failure kept for the person shown, with their new attempt** (driver, modules, web-shell; after PERFORM1g; §E2, D173's RUN1e note). A plugin node failed with no retry coming stalls for the person, but nothing lists it and the page offers no `failed → ready` press. Proof: a non-transient failure listed and restarted with a new key by the person's press.
+
+**Outcome** 2026-10-21: built. A plugin step's failure with no retry coming (not transient, or its tries spent) is listed with the
+held attempts (`WORK_STATE`'s `held`, why `failure-kept` or `tries-spent`, an additive `code`; `daoris-driver work held`; a What needs
+you row; the work's foot, en and zh) and offered one word, `again`, recorded by `WORK_HELD` or its terminal twin under the lease and
+applied by the runtime as the person's `failed → ready`, so the next evaluation starts it with a new key; the word is cleared as it is
+applied. Proof: `NodeRuntimeTests` (3), `WorkStateSliceTests`, `WorkMilestone.test.tsx`. On Opus: about 90 tool calls. Detail: D173's
+FABRIC-PERFORM1k note.
