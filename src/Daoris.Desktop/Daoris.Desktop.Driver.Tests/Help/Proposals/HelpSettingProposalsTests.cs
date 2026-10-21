@@ -35,6 +35,8 @@ public sealed class HelpSettingProposalsTests : HelpProposalsFixture
     [InlineData("keep", null, null, "downloads never", "daoris driver keep downloads never", "stays until you remove it")]
     [InlineData("keep", null, null, "logs 7", "daoris driver keep logs 7", "machine log is kept 7 days")]
     [InlineData("keep", null, null, "logs default", "daoris driver keep logs default", "machine log is kept 30 days")]
+    [InlineData("keep", null, null, "history 365", "daoris driver keep history 365", "records go 365 days after their last move")]
+    [InlineData("keep", null, null, "history never", "daoris driver keep history never", "records stay until you clear them")]
     // HELP10: a quest its strikes parked, started again as the drawer's Retry and `daoris driver retry` do, `#` or not.
     [InlineData("retry", "q1a2b3c4", null, null, "daoris driver retry q1a2b3c4", "`#q1a2b3c4` may be started again")]
     [InlineData("retry", "#q1a2b3c4", null, null, "daoris driver retry q1a2b3c4", "what already happened is still in the records")]
@@ -609,7 +611,8 @@ public sealed class HelpSettingProposalsTests : HelpProposalsFixture
     // KEEP1d: out of its kind's bounds, a choice its kind does not take, a kind not the person's, and words that are no rule.
     [InlineData("keep", null, null, "logs 60", "`logs` keeps 7 to 30 days or `default`; 60 days is out of its bounds")]
     [InlineData("keep", null, null, "logs never", "never is out of its bounds")]
-    [InlineData("keep", null, null, "history 30", "`history` is no kind whose rule you set here")]
+    [InlineData("keep", null, null, "browser-cache 30", "`browser-cache` is no kind whose rule you set here")]
+    [InlineData("keep", null, null, "history 10", "`history` keeps 30 to 3650 days")]
     [InlineData("keep", null, null, "set-aside soon", "`soon` is no rule of `set-aside`")]
     [InlineData("keep", null, null, "set-aside", "`keep` takes a kind and its rule")]
     // HELP10: a quest id a helper can invent, or one not parked, which forgiven would run past its strikes (D110).

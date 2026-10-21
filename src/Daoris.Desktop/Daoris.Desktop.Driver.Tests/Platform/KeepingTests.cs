@@ -34,7 +34,7 @@ public sealed class KeepingTests : IDisposable
     {
         var kind = KeepKinds.SetAside;
         Assert.Same(kind, KeepKinds.Named("set-aside"));
-        Assert.Equal(["set-aside", "downloads", "logs"], KeepKinds.Table.Select(each => each.Id));
+        Assert.Equal(["set-aside", "downloads", "logs", "history"], KeepKinds.Table.Select(each => each.Id));
         Assert.Equal((TimeSpan.FromDays(14), TimeSpan.FromHours(1), 1, 90), (kind.Days, KeepKinds.SetAsideSettle, kind.MinDays, kind.MaxDays));
         Assert.Equal([HomeEntry.Trees.Name], kind.Entries);
         Assert.Equal(new SetAsidePolicy(TimeSpan.FromDays(14), Whole: false), KeepPolicy.Of(_home).SetAside);

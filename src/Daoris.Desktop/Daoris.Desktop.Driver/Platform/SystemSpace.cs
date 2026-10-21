@@ -20,8 +20,9 @@ public sealed record SpacePlaces(IReadOnlyList<string> Places, IReadOnlyList<str
 
 /// <summary>
 /// The card's rows, in its order (the cleanup design §4.1), and where each lies. Every rule a row shows already runs (§9): the set-aside
-/// folders' days and slim (KEEP1a), the downloads' days (KEEP1b), the machine log's days, history's press, the trees' clean-up; the rest
-/// say whose rule it is. The person sets the first three (KEEP1d, <see cref="KeepChoices.Settable"/>), each row's <i>Change…</i>.
+/// folders' days and slim (KEEP1a), the downloads' days (KEEP1b), the machine log's days, history's press or the person's age (KEEP1g),
+/// the trees' clean-up; the rest say whose rule it is. The person sets the first four (KEEP1d, KEEP1g, <see cref="KeepChoices.Settable"/>),
+/// each row's <i>Change…</i>.
 /// </summary>
 public static class SpaceKinds
 {
@@ -32,7 +33,7 @@ public static class SpaceKinds
         new("downloads", "days", null, KeepKinds.Downloads),
         new("browser-cache", "own", "browser", null),
         new("logs", "days", null, KeepKinds.Logs),
-        new("history", "press", null, null),
+        new("history", "press", null, KeepKinds.History),
         new("trees", "proof", null, null),
         new("sign-ins", "own", "agents", null),
         new("left-over", "own", "person", null),
@@ -453,6 +454,16 @@ public static class SystemSpace
             case "logs":
                 rule["days"] = (int)policy.Logs.Days.TotalDays;
                 rule["default"] = policy.Logs == KeepPolicy.Default.Logs;
+                break;
+            case "history":
+                // KEEP1g: the press alone by default; an age the person set, the days past a unit's last move.
+                if (policy.History.Days is { } age)
+                {
+                    rule["kind"] = "days";
+                    rule["days"] = (int)age.TotalDays;
+                }
+
+                rule["default"] = policy.History == KeepPolicy.Default.History;
                 break;
         }
 

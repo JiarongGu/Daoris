@@ -2710,7 +2710,8 @@
         "daoris: <config>",
         "  set-aside  a tree's folder moved aside is kept 14 days; its package folders go an hour after the move  (the default — `daoris driver keep set-aside …` changes it)",
         "  downloads  a downloaded version nothing uses goes 7 days into its unused stretch  (the default — `daoris driver keep downloads …` changes it)",
-        "  logs       each day's file of the machine log is kept 30 days  (the default — `daoris driver keep logs …` changes it)"
+        "  logs       each day's file of the machine log is kept 30 days  (the default — `daoris driver keep logs …` changes it)",
+        "  history    finished work's records stay until you clear them  (the default — `daoris driver keep history …` changes it)"
       ],
       "err": [],
       "after": null
@@ -2720,16 +2721,17 @@
       "argv": [
         "keep"
       ],
-      "before": "{\n  \"keep\": {\n    \"setAside\": {\n      \"days\": 30,\n      \"whole\": true\n    },\n    \"downloads\": {\n      \"days\": null\n    },\n    \"logs\": {\n      \"days\": 14\n    }\n  }\n}\n",
+      "before": "{\n  \"keep\": {\n    \"setAside\": {\n      \"days\": 30,\n      \"whole\": true\n    },\n    \"downloads\": {\n      \"days\": null\n    },\n    \"logs\": {\n      \"days\": 14\n    },\n    \"history\": {\n      \"days\": 365\n    }\n  }\n}\n",
       "exit": 0,
       "out": [
         "daoris: <config>",
         "  set-aside  a tree's folder moved aside is kept 30 days, whole  (set — `daoris driver keep set-aside default` takes the default again)",
         "  downloads  a downloaded version nothing uses stays until you remove it  (set — `daoris driver keep downloads default` takes the default again)",
-        "  logs       each day's file of the machine log is kept 14 days  (set — `daoris driver keep logs default` takes the default again)"
+        "  logs       each day's file of the machine log is kept 14 days  (set — `daoris driver keep logs default` takes the default again)",
+        "  history    finished work's records go 365 days after their last move, through the clear, each refusal holding  (set — `daoris driver keep history default` takes the default again)"
       ],
       "err": [],
-      "after": "{\n  \"keep\": {\n    \"setAside\": {\n      \"days\": 30,\n      \"whole\": true\n    },\n    \"downloads\": {\n      \"days\": null\n    },\n    \"logs\": {\n      \"days\": 14\n    }\n  }\n}\n"
+      "after": "{\n  \"keep\": {\n    \"setAside\": {\n      \"days\": 30,\n      \"whole\": true\n    },\n    \"downloads\": {\n      \"days\": null\n    },\n    \"logs\": {\n      \"days\": 14\n    },\n    \"history\": {\n      \"days\": 365\n    }\n  }\n}\n"
     },
     {
       "name": "keep set-aside <days>",
@@ -2842,6 +2844,53 @@
       "after": null
     },
     {
+      "name": "keep history <days>",
+      "argv": [
+        "keep",
+        "history",
+        "365"
+      ],
+      "before": null,
+      "exit": 0,
+      "out": [
+        "daoris: finished work's records go 365 days after their last move, through the clear, each refusal holding.",
+        "  Written to <config> — the look's next pass keeps by it, so nothing restarts."
+      ],
+      "err": [],
+      "after": "{\n  \"keep\": {\n    \"history\": {\n      \"days\": 365\n    }\n  }\n}\n"
+    },
+    {
+      "name": "keep history never, its default again",
+      "argv": [
+        "keep",
+        "history",
+        "never"
+      ],
+      "before": "{\n  \"keep\": {\n    \"logs\": {\n      \"days\": 14\n    },\n    \"history\": {\n      \"days\": 365\n    }\n  }\n}\n",
+      "exit": 0,
+      "out": [
+        "daoris: finished work's records stay until you clear them.",
+        "  Written to <config> — the look's next pass keeps by it, so nothing restarts."
+      ],
+      "err": [],
+      "after": "{\n  \"keep\": {\n    \"logs\": {\n      \"days\": 14\n    }\n  }\n}\n"
+    },
+    {
+      "name": "keep history, past its bounds",
+      "argv": [
+        "keep",
+        "history",
+        "10"
+      ],
+      "before": null,
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: `history` keeps 30 to 3650 days, `never` or `default`; 10 days is out of its bounds, so nothing was written. (KEEP_OUT_OF_RANGE)"
+      ],
+      "after": null
+    },
+    {
       "name": "keep, no rule",
       "argv": [
         "keep",
@@ -2851,7 +2900,7 @@
       "exit": 2,
       "out": [],
       "err": [
-        "daoris: `driver keep` needs a kind and its rule — `set-aside <days>|whole|slim|default`, `downloads <days>|never|default` or `logs <days>|default`; e.g. `daoris driver keep set-aside 30`."
+        "daoris: `driver keep` needs a kind and its rule — `set-aside <days>|whole|slim|default`, `downloads <days>|never|default`, `logs <days>|default` or `history <days>|never|default`; e.g. `daoris driver keep set-aside 30`."
       ],
       "after": null
     },
@@ -2859,14 +2908,14 @@
       "name": "keep, a kind it does not set",
       "argv": [
         "keep",
-        "history",
+        "browser-cache",
         "30"
       ],
       "before": null,
       "exit": 2,
       "out": [],
       "err": [
-        "daoris: `history` is no kind whose rule you set here: name `set-aside`, `downloads`, `logs`. `driver keep` needs a kind and its rule — `set-aside <days>|whole|slim|default`, `downloads <days>|never|default` or `logs <days>|default`; e.g. `daoris driver keep set-aside 30`."
+        "daoris: `browser-cache` is no kind whose rule you set here: name `set-aside`, `downloads`, `logs`, `history`. `driver keep` needs a kind and its rule — `set-aside <days>|whole|slim|default`, `downloads <days>|never|default`, `logs <days>|default` or `history <days>|never|default`; e.g. `daoris driver keep set-aside 30`."
       ],
       "after": null
     },

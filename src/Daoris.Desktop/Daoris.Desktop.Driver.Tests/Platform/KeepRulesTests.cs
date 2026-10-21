@@ -57,6 +57,15 @@ public sealed class KeepRulesTests : IDisposable
         { "logs", null, true, null, false, ChoiceRefusal.KeepOutOfRange },
         { "logs", null, false, null, true, null },
         { "logs", 14, false, null, true, ChoiceRefusal.KeepOutOfRange },
+        // KEEP1g: history's age, decided by the owner; `never` is its default, the press alone.
+        { "history", 30, false, null, false, null },
+        { "history", 3650, false, null, false, null },
+        { "history", 29, false, null, false, ChoiceRefusal.KeepOutOfRange },
+        { "history", 3651, false, null, false, ChoiceRefusal.KeepOutOfRange },
+        { "history", null, true, null, false, null },
+        { "history", 90, true, null, false, ChoiceRefusal.KeepOutOfRange },
+        { "history", null, false, true, false, ChoiceRefusal.KeepOutOfRange },
+        { "history", null, false, null, true, null },
     };
 
     [Theory]
@@ -67,11 +76,13 @@ public sealed class KeepRulesTests : IDisposable
         if (refused is null)
         {
             var policy = KeepPolicy.From(DriverConfig.Empty.WithKeep(set).Keep);
-            Assert.Equal(back, DriverConfig.Empty.WithKeep(set).Keep.IsDefault(kind));
+            // History's `never` is its default (KEEP1g), so setting it leaves the kind at its default.
+            Assert.Equal(back || (kind == "history" && never), DriverConfig.Empty.WithKeep(set).Keep.IsDefault(kind));
             if (kind == "set-aside" && days is { } kept) Assert.Equal(TimeSpan.FromDays(kept), policy.SetAside.Days);
             if (kind == "set-aside" && whole is { } held) Assert.Equal(held, policy.SetAside.Whole);
             if (kind == "downloads") Assert.Equal(never ? null : TimeSpan.FromDays(days!.Value), policy.Downloads.Days);
             if (kind == "logs" && days is { } logs) Assert.Equal(TimeSpan.FromDays(logs), policy.Logs.Days);
+            if (kind == "history") Assert.Equal(days is { } age ? TimeSpan.FromDays(age) : null, policy.History.Days);
             return;
         }
 
@@ -85,7 +96,7 @@ public sealed class KeepRulesTests : IDisposable
     [Fact]
     public void A_kind_the_person_does_not_set_and_a_set_of_nothing_are_refused()
     {
-        Assert.IsNotType<ChoiceRefusal>(Assert.ThrowsAny<DriverException>(() => DriverConfig.Empty.WithKeep(new KeepSet("history", Days: 30))));
+        Assert.IsNotType<ChoiceRefusal>(Assert.ThrowsAny<DriverException>(() => DriverConfig.Empty.WithKeep(new KeepSet("browser-cache", Days: 30))));
         Assert.IsNotType<ChoiceRefusal>(Assert.ThrowsAny<DriverException>(() => DriverConfig.Empty.WithKeep(new KeepSet("logs"))));
     }
 
@@ -98,18 +109,27 @@ public sealed class KeepRulesTests : IDisposable
     {
         Assert.Equal(KeepPolicy.Default, KeepPolicy.Of(_home));
 
-        Set(new KeepSet("set-aside", Days: 30, Whole: true), new KeepSet("downloads", Never: true), new KeepSet("logs", Days: 14));
+        Set(new KeepSet("set-aside", Days: 30, Whole: true), new KeepSet("downloads", Never: true), new KeepSet("logs", Days: 14),
+            new KeepSet("history", Days: 180));
         var policy = KeepPolicy.Of(_home);
         Assert.Equal(new SetAsidePolicy(TimeSpan.FromDays(30), Whole: true), policy.SetAside);
         Assert.Equal(new DownloadsPolicy(null), policy.Downloads);
         Assert.Equal(new LogsPolicy(TimeSpan.FromDays(14)), policy.Logs);
+        Assert.Equal(new HistoryPolicy(TimeSpan.FromDays(180)), policy.History);
+        Assert.Contains("\"history\": {", File.ReadAllText(Config), StringComparison.Ordinal);
 
-        File.WriteAllText(Config, """{ "keep": { "setAside": { "days": 400 }, "downloads": { "days": "soon" }, "logs": { "days": 3 } } }""");
+        // KEEP1g: history's `never` is its default, so the key goes with it.
+        Set(new KeepSet("history", Never: true));
+        Assert.Equal(new HistoryPolicy(null), KeepPolicy.Of(_home).History);
+        Assert.DoesNotContain("\"history\"", File.ReadAllText(Config), StringComparison.Ordinal);
+
+        File.WriteAllText(Config, """{ "keep": { "setAside": { "days": 400 }, "downloads": { "days": "soon" }, "logs": { "days": 3 }, "history": { "days": 7 } } }""");
         Assert.Equal(KeepPolicy.Default, KeepPolicy.Of(_home));
 
         File.WriteAllText(Config, "{ not json");
         Assert.Same(KeepPolicy.Unread, KeepPolicy.Of(_home));
         Assert.Equal((TimeSpan.FromDays(90), true, (TimeSpan?)null), (KeepPolicy.Unread.SetAside.Days, KeepPolicy.Unread.SetAside.Whole, KeepPolicy.Unread.Downloads.Days));
+        Assert.Null(KeepPolicy.Unread.History.Days);
     }
 
     /// <summary>

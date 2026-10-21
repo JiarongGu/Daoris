@@ -283,7 +283,8 @@ daoris <command> [options]
                          keep [<kind> <rule>]      how long Daoris keeps each kind:
                                                    set-aside <days>|whole|slim,
                                                    downloads <days>|never, logs
-                                                   <days>, each or default
+                                                   <days>, history <days>|never,
+                                                   each or default
                          cap <n> · adapter <name>
                        trees list|clean|land, sessions archive|take-back, history
                        clear and update are `daoris-driver`, not verbs here:
