@@ -35,6 +35,18 @@ public sealed record HeldAttempt(string Unit, string Node, int Attempt, string P
 }
 
 /// <summary>
+/// A unit's node record whose file does not read (FABRIC-PERFORM1j, §D3): nothing on its unit is judged or started until a person mends
+/// it, since an attempt it may hold could be sent twice were it taken for empty.
+/// </summary>
+/// <param name="File">The file's name in the records' folder (<see cref="NodeRecordFiles.FolderOf"/>): its unit's key.</param>
+/// <param name="Unit">The unit it names, where its text still names one whose key is its name; else null.</param>
+public sealed record UnreadableRecord(string File, string? Unit)
+{
+    /// <summary>When it was last written, where it is still there.</summary>
+    public DateTimeOffset? At { get; init; }
+}
+
+/// <summary>
 /// The attempts held for the person, read from the units' node records (FABRIC-PERFORM1g): what <c>WORK_STATE</c> and
 /// <c>daoris-driver work held</c> list, and the sentences both say. Read-only: no record is written, no lease taken. An install no graph
 /// naming a plugin's performed node governs has no record, so it lists nothing.
@@ -68,6 +80,22 @@ public static class HeldAttempts
             }))
             .OrderBy(held => held.RecordedAt)];
 
+    /// <summary>
+    /// The node records that do not read (FABRIC-PERFORM1j), oldest written first; with <paramref name="unit"/>, only the one its text still
+    /// names as that unit's, or whose name is that unit's key.
+    /// </summary>
+    public static IReadOnlyList<UnreadableRecord> Unreadable(NodeRecordFiles records, string? unit = null) =>
+        [.. records.Unread()
+            .Where(record => unit is null || string.Equals(record.Unit, unit, StringComparison.Ordinal)
+                || string.Equals(record.File, NodeRecordFiles.KeyOf(unit) + ".json", StringComparison.Ordinal))
+            .OrderBy(record => record.At ?? DateTimeOffset.MaxValue)
+            .ThenBy(record => record.File, StringComparer.Ordinal)];
+
+    /// <summary>What a node record that does not read stops, as the terminal says it; the page words the same in the reader's language.</summary>
+    public static string UnreadableSaid(UnreadableRecord record) =>
+        $"the node record {record.File}{(record.Unit is { } unit ? $" of {unit}" : "")} under the home's workflows/units does not read, so nothing "
+        + "on its unit is judged or started until a person mends it";
+
     /// <summary>Why an attempt is held, as the terminal says it; the page words the same codes in the reader's language.</summary>
     public static string WhySaid(HeldAttempt held) => held.Plugin == QuestClosing.Sender ? CloseWhy(held) : held.Why switch
     {
@@ -95,17 +123,21 @@ public static class HeldAttempts
         (var code, _) => $"Daoris keeps no answer to the quest's close ({code})",
     };
 
-    /// <summary>The lines <c>daoris-driver work held</c> prints: one per attempt held, and what the person may say of it.</summary>
-    public static IReadOnlyList<string> Lines(IReadOnlyList<HeldAttempt> held)
+    /// <summary>
+    /// The lines <c>daoris-driver work held</c> prints: one per attempt held, and what the person may say of it; then one per node record
+    /// that does not read (FABRIC-PERFORM1j), which no word settles.
+    /// </summary>
+    public static IReadOnlyList<string> Lines(IReadOnlyList<HeldAttempt> held, IReadOnlyList<UnreadableRecord>? unreadable = null)
     {
-        if (held.Count == 0) return ["work: no attempt is held for you."];
+        unreadable ??= [];
+        if (held.Count == 0 && unreadable.Count == 0) return ["work: no attempt is held for you."];
         return [.. held.SelectMany(each => new[]
         {
             $"{each.Unit}  {each.Node} (attempt {each.Attempt}, {each.Step}, node {each.NodeState}): held, {WhySaid(each)}.",
             each.Resolution is { } word
                 ? $"  your word `{word}` is recorded{(each.ResolvedAt is { } at ? $" ({Moments.Write(at)})" : "")}, and applied at the next look."
                 : $"  say: daoris-driver work held {each.Unit} {each.Node} {each.Attempt} {string.Join('|', each.Words)}",
-        })];
+        }), .. unreadable.Select(each => $"work: {UnreadableSaid(each)}.")];
     }
 
     /// <summary>
@@ -119,7 +151,8 @@ public static class HeldAttempts
         var records = new NodeRecordFiles(home);
         if (args is [] or ["--unit", _])
         {
-            foreach (var line in Lines(Read(records, args.Count == 2 ? args[1] : null, QuestReads.Read(home)))) output.WriteLine(line);
+            var picked = args.Count == 2 ? args[1] : null;
+            foreach (var line in Lines(Read(records, picked, QuestReads.Read(home)), Unreadable(records, picked))) output.WriteLine(line);
             return 0;
         }
 
