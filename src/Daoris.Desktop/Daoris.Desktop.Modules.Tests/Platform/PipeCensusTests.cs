@@ -216,6 +216,8 @@ public sealed class PipeCensusTests
     [Theory]
     // Reads, and what D156 §3 leaves to the driver: run as asked.
     [InlineData("DAORIS.DRIVER", "SESSION_GROUPS", PipeClass.Open)]
+    // NOTIFY2i: what came to the person, read by a terminal, a press by its act alone; the presses' own read stays the window's.
+    [InlineData("DAORIS.DRIVER", "NOTIFICATIONS", PipeClass.Open)]
     [InlineData("DAORIS.DRIVER", "UNDER_WAY", PipeClass.Open)]
     [InlineData("DAORIS.DRIVER", "SYNC_NOW", PipeClass.Open)]
     [InlineData("DAORIS.DRIVER", "ACCOUNTS_READ", PipeClass.Open)]

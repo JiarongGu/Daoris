@@ -19222,3 +19222,15 @@ after *Folders* in both languages, no editor and no press. Detail: D195's KEEP1c
 door, as Daoris's, keyed by the session and its tree's tip, as the automatic landing does (one helper, `RebaseTelling`), and prints
 that it did, or why it could not with the words for the person. Proof: `TerminalLandRebaseTests` (Process), `AutoLandingRebaseTests`.
 Not run through the installed terminal. On Opus. Detail: D87's LANDREBASE2 note.
+
+## NOTIFY2i — the terminal reads what came to the person (2026-10-22, D196)
+
+> - [ ] **NOTIFY2i — the terminal reads what came to the person** (driver, modules; after 2h; D196, the notification design §9). `daoris-driver notices` prints the presses, what needs the person, unread messages and *Done and failed*, through the running Daoris or from the record alone. Proof: as §9 names it.
+
+**Outcome** 2026-10-22: built. `daoris-driver notices [--json]` (`NoticesRead`) prints the presses waiting for confirmation by act and
+session, *What needs you* by group, unread messages by ask (with each unread answer) and *Done and failed*, and changes nothing.
+Through the running Daoris the open read `NOTIFICATIONS` answers its lines from the confirmation channel and the `attention` and
+`notices` slices as last judged; alone, the notices' record, the live groups said not read. Proof: `NoticesReadTests` (driver: text
+and JSON through the instance and alone, the usage line), `NotificationsReadTests` (modules: the look, the route changing nothing,
+the groups held to the page's), the census and publishing rows. Not run from an installed terminal. Detail: D196's NOTIFY2i note.
+On Opus.
