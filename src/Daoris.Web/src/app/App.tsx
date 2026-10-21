@@ -44,7 +44,7 @@ import {
   useSayUpdate, useShowReviewAgain, useSyncNow, useTaskbarCount, useUpdateState,
   useAnswerConfirmation, useConfirmationShown, usePersonKey, useServiceConfirmations, useTerminalConfirmations, useUnkeyedHost,
 } from '../bridge/shell';
-import { Confirmations, confirmationAnchor } from '../person/Confirmations';
+import { AdoptionNotice, Confirmations, confirmationAnchor } from '../person/Confirmations';
 import { byTool } from '../agents/tools';
 import { useSay } from '../bridge/sessions/conversation';
 import { UpdateBanner } from '../update/UpdateBanner';
@@ -1110,14 +1110,13 @@ export function App() {
 
       {/* What waits for the person's Confirm (PERSONDOOR1f, RPC1c; D156 §4.2): under the strip and above every view, so a
           terminal's press is seen whichever view is open, each answered where it is drawn; and the adoption notice, said once. */}
+      {attached && unkeyedHost && !unkeyedSaid && <AdoptionNotice onDismiss={() => setUnkeyedSaid(true)} />}
       {attached && (
         <Confirmations
           waiting={[...terminalConfirmations, ...serviceConfirmations]}
-          notice={unkeyedHost && !unkeyedSaid}
           onAnswer={(waiting, confirm) => answerConfirmation.mutateAsync({ waiting, confirm })}
           notify={notify}
           onShown={(waiting) => confirmationShown.mutate(waiting)}
-          onDismissNotice={() => setUnkeyedSaid(true)}
         />
       )}
 

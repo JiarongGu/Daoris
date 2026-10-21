@@ -10,7 +10,7 @@ import * as RadixSelect from '@radix-ui/react-select';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import * as Checkbox from '@radix-ui/react-checkbox';
 import {
-  Archive, ArchiveRestore, ArrowDown, ArrowDownToLine, ArrowLeft, ArrowLeftRight, ArrowUp, BookOpen, Bot, Brain, Check, ChevronDown, ChevronRight, ChevronUp,
+  Archive, ArchiveRestore, ArrowDown, ArrowDownToLine, ArrowLeft, ArrowLeftRight, ArrowUp, Bell, BookOpen, Bot, Brain, Check, ChevronDown, ChevronRight, ChevronUp,
   CircleHelp, ClipboardPaste, Cloud, CloudOff, Compass, Copy, Ellipsis, Eye, FileDiff, FilePen, FileText, Flag, FolderOpen, Gauge, GitBranch,
   GitMerge, GitPullRequest, Globe, Hand, History, Inbox, Info, Pin, ScanEye,
   Keyboard, KeyRound, Languages, LayoutDashboard, LayoutGrid, Layers, Link, ListTodo, LogIn, Maximize2, Menu as MenuGlyph, Minimize2,
@@ -162,6 +162,8 @@ const ICONS = {
   back: ArrowLeft,
   pin: Pin,
   wrap: WrapText,
+  // Notifications (NOTIFY2b, the notification design §6): the title bar's button and the view's tab, the one new glyph.
+  bell: Bell,
 } as const;
 
 export type IconName = keyof typeof ICONS;
@@ -837,11 +839,15 @@ const composingEscape = (event: KeyboardEvent) => {
  */
 let drawersOpen = 0;
 const drawerWatchers = new Set<() => void>();
-const watchDrawers = (watch: () => void) => {
+/**
+ * Told at each drawer opened or closed; and whether one is open. A drawer's scrim lies over the whole window, so what is under it
+ * is not shown (NOTIFY2b, the notification design §3.4: a press's card under a scrim does not start its two minutes).
+ */
+export const watchDrawers = (watch: () => void) => {
   drawerWatchers.add(watch);
   return () => { drawerWatchers.delete(watch); };
 };
-const drawerOpen = () => drawersOpen > 0;
+export const drawerOpen = () => drawersOpen > 0;
 const countDrawer = (by: 1 | -1) => {
   drawersOpen += by;
   drawerWatchers.forEach((watch) => watch());
