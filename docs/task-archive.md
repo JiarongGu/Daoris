@@ -19024,3 +19024,12 @@ each scope of `ACCOUNTS` answers `room`, the accounts of its list a running sess
 switch is not `off`, the conversation's account is in its `overCurve` and another account is in its `room`; anywhere else, and from
 a shell with no `room`, it offers as before. No words changed. Proof: `DriverModuleAccountsTests`' room case, `handOverOffer.test.ts`'
 SWITCH1e cases. Detail: D165's SWITCH1e note. On Opus.
+## FABRIC-EVENT3c — the channel family on the change stream (2026-10-21, D173)
+
+> - [ ] **FABRIC-EVENT3c — the channel family on the change stream** (service, driver; after EVENT3b; §A4.2). A third family for channel messages, so a session's waiting words are heard without the poll. Proof: as EVENT3b's family tests; canary 5 holds. D188 (2026-10-20): it wakes COWORK1d's delivery on the channel's family.
+
+**Outcome** 2026-10-21: the family and its service half were PUSH1d1's (`channel_revision`, `ChangeStreamTests`, canary 5); this
+row proves the driver's half. A `channel` wake runs the local plan, whose `channel` stage reaches each line of work's part with what
+waits, so a message is heard without the poll; no second reader was added. Proof: `DriverWatchTopicsTests`' new case (the person's
+message kept on a parked part's record with `pollSeconds` at 60, no nudge, no remote sync), over the stand-in ledger's new channel
+doors. Detail: D173's FABRIC-EVENT3c note. On Opus.
