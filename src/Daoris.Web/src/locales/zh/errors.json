@@ -16,6 +16,7 @@
   "errors.ACCOUNT_SCOPE_DEFAULT_workspace": "{{workspace}} 中 {{agent}} 的默认账户是 {{account}}，而列表不会再包含它——默认账户是启动在列表中开始的地方。请先把列表中的某个账户设为默认。",
   "errors.ACCOUNT_SCOPE_KEEP": "{{account}} 留作对话，但列表不包含它——留作对话的账户是列表中的一个。请先不再保留，或保留列表中的账户。",
   "errors.ACCOUNT_SCOPE_ALONE": "{{account}} 留作对话，而列表中再没有别的账户，驱动的工作将没有账户可用。请先不再保留，或在它旁边再使用一个账户。",
+  "errors.ACCOUNTS_ONE_SET": "为 Daoris 登录的每个账户都为所有工作区服务，所以这里没有要指定的工作区、列表或默认账户——顺序决定启动从哪里开始。",
   "errors.ACCOUNT_USE_NO_LIST": "本机还没有 {{agent}} 自己的列表，所以暂时没有可用的——请先为它的账户打开“使用”。",
   "errors.ACCOUNT_USE_NO_LIST_workspace": "{{workspace}} 还没有 {{agent}} 自己的列表，所以暂时没有可用的——请先选择“自有账户”，再为账户打开“使用”。",
   "errors.ACCOUNT_USE_VALUE": "{{setting}} 不接受 {{value}}：账户用法是 goal 或 order，切换方式是 smart、curve 或 off，接近阈值是 50 到 99 之间的整数百分比。",

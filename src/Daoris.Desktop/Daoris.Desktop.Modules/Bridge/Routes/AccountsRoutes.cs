@@ -98,6 +98,9 @@ public sealed class AccountsRoutes(DriverLoop loop)
                             Week = Safe(() => AccountWindows.WeekOf(roster.Home, agent, account, now, fixedWeek)),
                             Running = running is null ? (int?)null : running.GetValueOrDefault(Key(agent, account)),
                         }).ToArray(),
+                        // What the fold into one set changed (POOL1a, the account-pool design §6.3), each receipt unsaid by its id, its
+                        // lines' kinds and values; the page words them (POOL1c).
+                        Pooled = PooledShown(settings, agent),
                         Scopes = scopes
                             .Select(scope => ScopeShown(
                                 scope.Workspace, scope.Scope, scope.Keep, said, NextOf(roster, agent, scope.Workspace), now,
@@ -403,7 +406,8 @@ public sealed class AccountsRoutes(DriverLoop loop)
     /// The screen's edits to how an agent's accounts are used (TOOL4g), each the terminal's door's twin: <c>order</c> a list
     /// written whole (<c>daoris agent profile order</c>, none clearing it), <c>use</c> how it is used (<c>profile use</c>),
     /// <c>ready</c> a cool-off ended early (<c>profile ready</c>, <i>Try now</i>), and <c>inherit</c> a workspace returned
-    /// to this machine's accounts: its default, list and settings cleared at once (D130 §3.2).
+    /// to this machine's accounts: its default, list and settings cleared at once (D130 §3.2); <c>said</c> the fold's receipts the
+    /// page showed, by id (POOL1a).
     /// </summary>
     /// <remarks>
     /// The loop is asked to look after each, since each changes what the next start runs on: an account offered again
@@ -418,6 +422,8 @@ public sealed class AccountsRoutes(DriverLoop loop)
         var harness = PayloadHelper.GetRequiredValue<string>(request.Payload, "harness");
         var workspace = Optional(request, "workspace");
         var owner = OwnerOf(_loop.Harnesses, harness);
+        // One set of Daoris's accounts serves every workspace (POOL1a, D197; the account-pool design §5.2): a workspace names nothing.
+        if (workspace is not null && action is "order" or "use") throw OneSet(owner, "a workspace");
 
         switch (action)
         {
@@ -430,12 +436,11 @@ public sealed class AccountsRoutes(DriverLoop loop)
                 var use = Flag(request, "clear") ? null : UseChangeOf(request);
                 HarnessSettings.Change(_loop.Harnesses.SettingsPath, read => UseEdited(read, owner, use, workspace));
                 break;
-            case "inherit":
-                var circle = workspace ?? throw Refusals.Because(
-                    Refusals.AccountActionUnknown, "returning to this machine's accounts names the workspace that returns.",
-                    ("action", action));
-                HarnessSettings.Change(_loop.Harnesses.SettingsPath,
-                    read => read.WithWorkspaceDefault(circle, owner, null).WithRotation(owner, null, circle));
+            case "said":
+                // Got it (POOL1a, the account-pool design §6.3; Fable's F13): the receipts the page showed, by id, marked said; one
+                // appended after it drew is not among them, and stays.
+                var ids = InOrder(request, "ids");
+                HarnessSettings.Change(_loop.Harnesses.SettingsPath, read => read.WithSaid(owner, ids));
                 break;
             case "ready":
                 var own = Flag(request, "own");
@@ -446,13 +451,36 @@ public sealed class AccountsRoutes(DriverLoop loop)
             default:
                 throw Refusals.Because(
                     Refusals.AccountActionUnknown,
-                    $"unknown account action '{action}' — one of: order, use, ready, inherit",
+                    $"unknown account action '{action}' — one of: order, use, ready, said",
                     ("action", action));
         }
 
         _loop.Nudge();
         return new { Harness = harness, Action = action, Workspace = workspace };
     }
+
+    /// <summary>The refusal of what one set leaves nothing to name (POOL1a, D197): <paramref name="what"/> is said in the English.</summary>
+    internal static ShenoraException OneSet(string owner, string what) =>
+        Refusals.Because(
+            Refusals.AccountsOneSet,
+            $"every account signed in for Daoris serves every workspace (D197), so {what} names nothing here — the order says where "
+            + $"starts begin: `daoris agent profile order {owner} <account>` puts one first.",
+            ("agent", owner));
+
+    /// <summary>An agent's unsaid receipts (POOL1a, the account-pool design §5.2): ids, kinds and values, never words.</summary>
+    internal static object[] PooledShown(HarnessSettings settings, string agent) =>
+        [.. (settings.Pooled.GetValueOrDefault(agent) ?? []).Where(receipt => !receipt.Said).Select(receipt => new
+        {
+            receipt.Id,
+            receipt.At,
+            Scopes = receipt.Scopes.Select(scope => new { scope.Workspace, scope.Default, scope.List, scope.Begins }).ToArray(),
+            receipt.Order,
+            Moved = receipt.Moved.Select(moved => new { moved.Workspace, moved.Account, moved.Place }).ToArray(),
+            Joined = receipt.Joined.Select(joined => new { joined.Account, joined.Place }).ToArray(),
+            receipt.InOrder,
+            NotKept = receipt.NotKept.Select(setting => new { setting.Workspace, setting.Setting, Value = setting.Value.GetRawText() }).ToArray(),
+            receipt.Gone,
+        })];
 
     /// <summary>
     /// A door's accounts are its owner's (AGT7); a door with no toolchain has no accounts to edit. Ask Daoris's account cards
@@ -482,12 +510,9 @@ public sealed class AccountsRoutes(DriverLoop loop)
                     ("agent", owner), ("account", problem.Account), ("accounts", accounts.Count > 0 ? string.Join(", ", accounts) : "—"));
         }
 
-        if (list.Count > 0 && ScopeProblem.Of(OwnDefault(settings, owner, workspace), list, OwnKeep(settings, owner, workspace)) is { } bound)
-        {
-            throw ScopeRefusal(bound, owner, workspace);
-        }
-
-        return settings.WithRotation(owner, list, workspace);
+        // The order is written whole (POOL1a, the account-pool design §5.1): the accounts named first, the rest after in their order,
+        // so it always holds the kept account and another; there is no default beside it.
+        return workspace is null ? settings.WithRotation(owner, list) : settings.WithRotation(owner, list, workspace);
     }
 
     /// <summary>
@@ -500,15 +525,9 @@ public sealed class AccountsRoutes(DriverLoop loop)
     {
         if (change is null) return settings.WithUse(owner, null, workspace);
 
+        // The set's settings are set whatever it holds (POOL1a, the account-pool design §2.3): no list is waited on. The set is the
+        // order the change folded, read under the lock.
         var list = OwnList(settings, owner, workspace);
-        if (list.Count == 0)
-        {
-            var where = workspace is null ? "this machine" : $"`{workspace}`";
-            throw Refusals.Because(
-                Refusals.AccountUseNoList,
-                $"{where} has no list of its own for `{owner}`, so there is nothing to use — turn on Use for its accounts first.",
-                Scoped(workspace, ("agent", owner)));
-        }
 
         if (change.Use is { } mode && !RotationUse.Modes.Contains(mode, StringComparer.Ordinal))
         {

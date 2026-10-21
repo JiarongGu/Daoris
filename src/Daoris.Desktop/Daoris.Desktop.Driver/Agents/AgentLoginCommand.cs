@@ -375,6 +375,8 @@ internal static class AgentLoginCommand
         /// <summary>The lists joined, in the order named, written once under the file's lock; a list not written is said, the sign-in standing.</summary>
         private HarnessSettings Joined(string account)
         {
+            // A new account goes last in the order, whatever its id (POOL1a, the account-pool design §2.2).
+            HarnessSettings.Placed(path, agent, account);
             if (joins.Count == 0) return HarnessSettings.Load(path);
             try
             {

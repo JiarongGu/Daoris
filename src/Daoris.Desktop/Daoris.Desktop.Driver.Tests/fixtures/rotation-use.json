@@ -110,10 +110,10 @@
     ["the switch named beside an old name is the one written", {}, "claude-code", {"early":false,"switch":"smart"}, null, {"rotationUse":{"claude-code":{"switch":"smart"}}}]
   ],
   "order": [
-    ["the machine's list cleared takes its settings with it, another agent's kept", {"rotation":{"claude-code":["account-1"],"codex":["account-1"]},"rotationUse":{"claude-code":{"use":"order"},"codex":{"switch":"off"}}}, "claude-code", null, null, {"rotationUse":{"codex":{"switch":"off"}}}],
+    ["the set's order cleared keeps its settings (D197, POOL1a: they are the agent's and no list's), another agent's kept", {"rotation":{"claude-code":["account-1"],"codex":["account-1"]},"rotationUse":{"claude-code":{"use":"order"},"codex":{"switch":"off"}}}, "claude-code", null, null, {"rotationUse":{"claude-code":{"use":"order"},"codex":{"switch":"off"}}}],
     ["a workspace's list cleared takes its settings with it, the machine's kept", {"rotation":{"claude-code":["account-1"]},"rotationUse":{"claude-code":{"use":"order"}},"workspaceRotation":{"work":{"claude-code":["account-2"]}},"workspaceRotationUse":{"work":{"claude-code":{"switch":"off"}}}}, "claude-code", null, "work", {"rotationUse":{"claude-code":{"use":"order"}}}],
     ["a list replaced keeps its settings", {"rotation":{"claude-code":["account-1","account-2"]},"rotationUse":{"claude-code":{"use":"order","keep":"account-2"}}}, "claude-code", ["account-2","account-1"], null, {"rotationUse":{"claude-code":{"use":"order","keep":"account-2"}}}],
-    ["a list of nobody is a clear, and its settings go", {"rotation":{"claude-code":["account-1"]},"rotationUse":{"claude-code":{"switch":"off"}}}, "claude-code", [], null, {}],
+    ["an order of nobody is a clear, and the set's settings stay (D197, POOL1a)", {"rotation":{"claude-code":["account-1"]},"rotationUse":{"claude-code":{"switch":"off"}}}, "claude-code", [], null, {"rotationUse":{"claude-code":{"switch":"off"}}}],
     ["a workspace's list cleared in another case takes its settings with it", {"workspaceRotation":{"work":{"claude-code":["account-2"]}},"workspaceRotationUse":{"work":{"claude-code":{"switch":"off"}}}}, "claude-code", null, "WORK", {}]
   ],
   "problem": [

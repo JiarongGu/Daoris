@@ -616,19 +616,19 @@ public sealed class AgentActions(IEventBus events, DriverLoop loop)
     /// Each list a sign-in named, refused before anything starts where it cannot be joined (ACCT1): a workspace that takes
     /// this machine's list, naming none of its own, is refused naming both, so a refusal costs nothing.
     /// </summary>
+    /// <remarks>Since POOL1a (D197; the account-pool design §5.2) a sign-in's <c>join</c> naming anything is refused: the account joins
+    /// Daoris's accounts by itself.</remarks>
     private static void RefuseJoins(DriverLoop loop, string owner, IReadOnlyList<string?> joins)
     {
-        var settings = loop.Harnesses.Settings;
-        foreach (var workspace in joins)
-        {
-            if (settings.JoinProblemOf(owner, workspace) is { } problem) throw new DriverException(problem.Sentence(owner));
-        }
+        if (joins.Count > 0) throw AccountsRoutes.OneSet(owner, "a list to join");
     }
 
     /// <summary>The account put into each list named, in order, written once; where it runs now (ACCT1). Agents' <c>profile-join</c> calls it too.</summary>
     internal static IReadOnlyList<AccountPlace> Joined(DriverLoop loop, string owner, string account, IReadOnlyList<string?> joins)
     {
         RefuseJoins(loop, owner, joins);
+        // A new account goes last in the order, whatever its id (POOL1a, the account-pool design §2.2).
+        HarnessSettings.Placed(loop.Harnesses.SettingsPath, owner, account);
         var settings = joins.Count > 0
             ? HarnessSettings.Change(loop.Harnesses.SettingsPath,
                 read => joins.Aggregate(read, (next, workspace) => next.WithJoined(owner, account, workspace)))

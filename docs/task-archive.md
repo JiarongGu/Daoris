@@ -19344,3 +19344,19 @@ bound. Detail: D190's CUTOVER1g note. On Opus.
 --cycle` drives one through the driver, both in a stand-in world; `examples/plugins/local-preview` fills one in. The plugin design's §9
 and D64 amended. Proof: `PluginKitTests`, `PluginCycleFixtureTests`, the example's `node --test`. Detail: D173's FABRIC-PERFORM1e note.
 On Opus.
+
+## POOL1a1 — the accounts folded into one set, and the bridge's edits on it (2026-10-22, D197)
+
+> - [ ] **POOL1a — one set of Daoris's accounts in the driver and on the bridge** (driver, modules; after PUSH1f2e; D197). The fold that makes every scope one set, the projection every reader takes, the person's own sign-in outside it and never asked or written, and the bridge's answers, as the account-pool design §11 lists them; it also settles the own cool-off's *Read again* line (D197's acceptance note). Proof: as §11 names it.
+
+**Outcome** 2026-10-22: the row was too large for one session and was split; this is its first part, and POOL1a2 (every reader on
+the set, the bridge's answers, the helpers leaving) and POOL1a3 (the own sign-in never asked or written, the *Read again* line) stay
+open in the backlog. Built: `AccountSet.Fold` and `AccountSet.Of` by design §6.1's rules; `HarnessSettings.Change` folding before
+every edit and writing each order whole, a new account last and a removal unsaid; the `pooled` receipts with their ids and
+`WithSaid`; `LoadSet`; the come-up's `FoldNow` from the driver's look, a held lock logged and tried again, and the
+`accounts.pooled` line; `ResumeAccount.Judge` asking no scope of a record with no account (F1). On the bridge `ACCOUNT_USE`'s
+`order` and `use` act on the set, `said` marks receipts by id, `inherit` is unknown, `ACCOUNTS` carries `pooled`, and a workspace,
+`profile-join`, `profile-default` and a sign-in's `join` are refused as `ACCOUNTS_ONE_SET` (en, zh). Proof: `AccountSetTests` (the
+fold's table, a raw edit folded, a second receipt beside an unsaid first, *Got it* by id, a new account last, a held come-up, an
+older build's reading), `ResumeAccountTests`' own sign-in row, `DriverModuleAccountsTests`' and `DriverModuleAccountNamesTests`'
+rewritten rows, two `rotation-use.json` order rows. No window was looked at. Detail: D197's POOL1a1 note. On Opus.

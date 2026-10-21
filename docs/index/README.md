@@ -24,7 +24,7 @@ Listed first, because nothing below restates their rows: open one of these for w
 | `decisions.md` | each decision's title with its entry's lines, then each dated note with its lines |
 | `outlines/<path>.md` | the declarations or headings of a file over 40 KB, each with its line range |
 
-## Files over 40 KB (231)
+## Files over 40 KB (232)
 
 Each has its outline at `outlines/<its path>.md`: open the outline, then read the range you need, not the file.
 
@@ -126,9 +126,9 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Trees/SessionGroupsTests.cs` | 75 | 1277 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Trees/WireEvaluationTests.cs` | 53 | 1028 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Workflows/WorkflowRunTests.cs` | 56 | 861 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/Accounts/Harnesses/HarnessRoster.cs` | 121 | 2127 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/Accounts/Harnesses/HarnessSelection.cs` | 41 | 744 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/Accounts/Harnesses/HarnessSettings.cs` | 58 | 1077 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/Accounts/Harnesses/HarnessRoster.cs` | 122 | 2143 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/Accounts/Harnesses/HarnessSelection.cs` | 41 | 745 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/Accounts/Harnesses/HarnessSettings.cs` | 68 | 1286 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Accounts/Rotation/AccountRotation.cs` | 74 | 1203 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Accounts/Usage/UsageHistory.cs` | 47 | 925 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/Acp/Acp.cs` | 142 | 2800 |
@@ -142,7 +142,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Conversations/DrivenInbox.cs` | 50 | 1150 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Help/HelpFacts.cs` | 54 | 920 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Help/Proposals/HelpSettingProposals.cs` | 53 | 939 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/Loop/Driver.cs` | 238 | 3773 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/Loop/Driver.cs` | 238 | 3775 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Loop/DriverContinuations.cs` | 68 | 1085 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Loop/DriverWatch.cs` | 58 | 982 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Platform/DriverChoicesCommand.cs` | 120 | 2155 |
@@ -181,14 +181,15 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 
 | File | KB | Lines |
 |---|---|---|
-| `src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/Bridge/DriverModuleAccountsTests.cs` | 65 | 1133 |
+| `src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/Bridge/DriverModuleAccountsTests.cs` | 66 | 1149 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/Bridge/DriverModuleConversationTests.cs` | 52 | 953 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/Bridge/DriverModuleLinesTests.cs` | 41 | 682 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/Bridge/DriverModuleSessionsTests.cs` | 70 | 1187 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/Loop/AttentionStateSliceTests.cs` | 99 | 1754 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/Platform/InstancePipeTests.cs` | 43 | 813 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/Platform/StatePublisherTests.cs` | 42 | 813 |
-| `src/Daoris.Desktop/Daoris.Desktop.Modules/Bridge/Routes/AgentsRoutes.cs` | 43 | 756 |
+| `src/Daoris.Desktop/Daoris.Desktop.Modules/Bridge/Routes/AccountsRoutes.cs` | 40 | 679 |
+| `src/Daoris.Desktop/Daoris.Desktop.Modules/Bridge/Routes/AgentsRoutes.cs` | 42 | 733 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules/Bridge/Routes/DriverRoutes.cs` | 41 | 650 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules/Bridge/Routes/HelpRoutes.cs` | 78 | 1326 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules/Bridge/Routes/LinesRoutes.cs` | 63 | 1018 |

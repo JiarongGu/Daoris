@@ -130,41 +130,21 @@ public sealed class DriverModuleAccountNamesTests : DriverModuleBridge
         Assert.Null(AccountNames.NameOf(Home, "claude-code", "account-2"));
     }
 
-    /// <summary>ACCT1: an account put into the lists named — a workspace's, and this machine's by null — answers where it runs.</summary>
+    /// <summary>
+    /// One set of Daoris's accounts (POOL1a, D197; the account-pool design §5.2): there is no list to join, so the page's
+    /// <c>profile-join</c> is refused in its code, naming the order instead, and nothing is written.
+    /// </summary>
     [Fact]
-    public async Task A_join_puts_the_account_in_each_list_named_and_answers_where_it_runs()
+    public async Task A_join_is_refused_since_every_account_serves_every_workspace_and_writes_nothing()
     {
         Accounts("claude-code", "account-1", "account-3");
         Wiring("""{ "workspaces": { "work": { "claude-code": "account-1" } } }""");
-
-        var answer = await AnswerAsync(Module(), "HARNESS_ACTION",
-            new { harness = "claude-code", action = "profile-join", profile = "account-3", join = new string?[] { "work", null } });
-
-        var settings = HarnessSettings.Load(HarnessSettingsPath);
-        Assert.Equal(["account-1", "account-3"], settings.WorkspaceRotation["work"]["claude-code"]);
-        Assert.Equal(["account-3"], settings.Rotation["claude-code"]);
-        var places = answer.GetProperty("places").EnumerateArray().ToList();
-        Assert.Equal(2, places.Count);
-        Assert.Equal(JsonValueKind.Null, places[0].GetProperty("workspace").ValueKind);
-        Assert.Equal("work", places[1].GetProperty("workspace").GetString());
-    }
-
-    /// <summary>
-    /// ACCT1: a workspace that names no list and no default of its own takes this machine's list, so joining it is refused,
-    /// naming both ways on, and nothing is written — not even the lists named beside it.
-    /// </summary>
-    [Fact]
-    public async Task A_join_to_a_workspace_that_takes_this_machine_s_list_is_refused_and_writes_nothing()
-    {
-        Accounts("claude-code", "account-1");
-        Wiring("""{ "rotation": { "claude-code": ["account-1"] } }""");
-        Accounts("claude-code", "account-3");
         var wiring = File.ReadAllText(HarnessSettingsPath);
 
         var refusal = await RefusalAsync(Module(), "HARNESS_ACTION",
-            new { harness = "claude-code", action = "profile-join", profile = "account-3", join = new string?[] { null, "forge" } });
+            new { harness = "claude-code", action = "profile-join", profile = "account-3", join = new string?[] { "work", null } });
 
-        Assert.Contains("`forge` names no `claude-code` account or list of its own", refusal);
+        Assert.StartsWith("ACCOUNTS_ONE_SET", refusal);
         Assert.Equal(wiring, File.ReadAllText(HarnessSettingsPath));
     }
 
@@ -191,7 +171,10 @@ public sealed class DriverModuleAccountNamesTests : DriverModuleBridge
         Assert.Equal(["account-1"], HarnessSettings.Profiles(Home, "claude-code"));
     }
 
-    /// <summary>ACCT1, ACCT2: a new account's join that cannot be kept, or a name another account has, is refused before anything starts.</summary>
+    /// <summary>
+    /// ACCT1, ACCT2: a new account's join, which names a list there is no longer any of (POOL1a, D197: the account joins Daoris's
+    /// accounts by itself), or a name another account has, is refused before anything starts.
+    /// </summary>
     [Fact]
     public async Task A_new_account_s_join_or_name_that_cannot_be_kept_is_refused_before_anything_starts()
     {
@@ -203,7 +186,7 @@ public sealed class DriverModuleAccountNamesTests : DriverModuleBridge
         var name = await RefusalAsync(Module(), "HARNESS_ACTION",
             new { harness = "claude-code", action = "login-new", name = "Seat" });
 
-        Assert.Contains("`forge` names no `claude-code` account or list of its own", join);
+        Assert.StartsWith("ACCOUNTS_ONE_SET", join);
         Assert.Contains("already names `account-1`, so nothing was signed in", name);
         Assert.Equal(["account-1"], HarnessSettings.Profiles(Home, "claude-code"));
     }

@@ -327,8 +327,24 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
     /// <summary>The directory profiles live under — the Daoris home (D63), which is the directory the wiring file sits in.</summary>
     public string Home => HarnessSettings.HomeOf(SettingsPath);
 
-    /// <summary>The person's harness wiring, as it stands on disk right now.</summary>
+    /// <summary>
+    /// The person's harness wiring, as it stands on disk right now. The come-up folds it to one set of Daoris's accounts per agent
+    /// (<see cref="Pool"/>), and every later write folds first; reading it through <see cref="HarnessSettings.LoadSet"/>, so a file an
+    /// older build wrote meanwhile is read as the set too, is POOL1a2's, with the walk's tests of the per-workspace scopes it rewrites.
+    /// </summary>
     public HarnessSettings Settings => HarnessSettings.Load(SettingsPath);
+
+    private bool _pooled;
+
+    /// <summary>
+    /// The come-up's fold (the account-pool design §6.2): <see cref="HarnessSettings.FoldNow"/> at the first look, and at each next look
+    /// while a held lock refused it, until one lands; nothing waits on it, since every reader reads the projection meanwhile.
+    /// </summary>
+    public void Pool(MachineLog? log)
+    {
+        if (_pooled) return;
+        _pooled = HarnessSettings.FoldNow(SettingsPath, log);
+    }
 
     /// <summary>The harnesses this build knows, whether or not they are installed.</summary>
     public IReadOnlyList<string> Known => adapters.Names;
