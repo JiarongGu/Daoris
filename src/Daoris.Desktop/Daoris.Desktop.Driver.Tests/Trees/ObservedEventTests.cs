@@ -8,7 +8,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// believed by the five rules with its tip read fresh, accepted on the node's binding and written before its wire fires; a replay mints
 /// nothing, an older or conflicting word is late, and the person's stop or skip stands.
 /// </summary>
-public sealed class ObservedEventTests : IDisposable
+public sealed partial class ObservedEventTests : IDisposable
 {
     private const string Plugin = "acme.deploy";
     private const string A = "engine~feature-a";
