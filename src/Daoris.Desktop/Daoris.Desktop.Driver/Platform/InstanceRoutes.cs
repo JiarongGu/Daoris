@@ -111,12 +111,17 @@ public static class OpenRoutes
         ("ask channel <id>", null,
             "alone: the read moves the person's own mark (CHANNEL_MARK, the person's), a door of the service, which writes it once whoever "
             + "asks; with words the person's press (CHANNEL_POST)"),
-        // The other open reads of RPC1e: each is read alone beside an instance, with the same words, until its route answers them as
-        // `said` as the six above do (RPCOPEN1 built the shape, and the reads that follow it name no new one).
+        // The open reads left alone beside an instance, with the same words (RPCOPEN1, RPC1e): a verb whose words name this machine's
+        // folders or quote its trees' files stays alone, since no answer carries a machine path (the terminal RPC design §4.3) and what
+        // may travel over the local pipe is a decision first; the rest until their route answers them as `said`.
         ("trace", null, "alone: its words are built from the sources the host reads itself; TRACE answers the page's shape only"),
         ("git branches", null, "alone: its words are built from the registry's checkouts the host reads itself; GIT_BRANCHES answers the page's shape only"),
         ("workflow", null, "alone: WORKFLOW_RUN answers the page's shape only, and `workflow keep` writes its run"),
-        ("plugins show", null, "alone: PLUGIN_READ answers the page's shape only"),
+        ("plugins show <id>", null, "alone: its words name the plugin's folders on this machine, which PLUGIN's page answers apart, and no said line carries"),
+        ("plugins activity <id>", null, "alone: a read of the machine log this process reads itself; with no log its words name the log's folder"),
+        ("plugins try <folder|id>", null, "alone: a trial starts the plugin as this terminal's own child, and its words name the folder it tried"),
+        ("plugins install <file>", null, "alone: PLUGIN_INSTALL installs one of the install's own offers; no route reads a package file, and its words name the folder"),
+        ("plugins new <id>", null, "alone: it writes a plugin's folder where the terminal stands, never under the home"),
     ];
 }
 
@@ -219,6 +224,12 @@ public static class PersonPresses
     /// <summary><c>ask channel &lt;id&gt; "…"</c> (RPC1e): the person's words on an ask's channel, which every session on the ask reads.</summary>
     public static InstanceRoute ChannelPost { get; } = Person("CHANNEL_POST");
 
+    /// <summary>
+    /// <c>plugins approve &lt;id&gt; &lt;server&gt;</c> and <c>withdraw</c> (RPC1e): the tools a plugin's server offers Ask Daoris approved,
+    /// its reads only or the writes named, or the approval withdrawn.
+    /// </summary>
+    public static InstanceRoute PluginAction { get; } = Person("PLUGIN_ACTION");
+
     /// <summary>Each person's press a verb sends over the pipe, in the verb's words, with its route.</summary>
     public static IReadOnlyList<(string Verb, InstanceRoute Route)> Presses { get; } =
     [
@@ -241,6 +252,8 @@ public static class PersonPresses
         ("opinion anyway <session>", OpinionAnyway),
         ("opinion myself <session>", OpinionMyself),
         ("ask channel <id> \"…\"", ChannelPost),
+        ("plugins approve <id> <server>", PluginAction),
+        ("plugins withdraw <id> <server>", PluginAction),
         ("sessions archive <id>…", SessionArchive),
         ("sessions unarchive <id>…", SessionArchive),
         ("sessions stop <id>", SessionStop),

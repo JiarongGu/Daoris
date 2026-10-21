@@ -300,9 +300,19 @@ public sealed class PluginsRoutes(DriverContext context)
     [Publishes("PLUGIN_ACTION", Installs)]
     private async Task<object?> PluginActionAsync(IpcRequest request, CancellationToken cancellationToken)
     {
-        await Task.CompletedTask;
         var action = PayloadHelper.GetRequiredValue<string>(request.Payload, "action");
         var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id");
+        // RPC1e: `daoris-driver plugins approve|withdraw` sent over the pipe asks for the verb's own words, a refusal among them as its
+        // exit 2, the approvals written by the verb's own path under this Daoris's home.
+        if (Flag(request, "said") && PluginsCommand.GrantWords(
+                action, id, Optional(request, "server") ?? "", Named(request, "writes")) is { } words)
+        {
+            var said = await TerminalSaid.RunAsync(output => PluginsCommand.RunAsync(words, output, _loop.Home, _loop.Log, cancellationToken))
+                .ConfigureAwait(false);
+            _loop.Nudge();
+            return said;
+        }
+
         var entry = InstalledPlugin(_loop, id);
 
         switch (action)
@@ -428,6 +438,12 @@ public sealed class PluginsRoutes(DriverContext context)
             trial.Said,
         };
     }
+
+    /// <summary>The strings an array the payload names holds, or null where it names none.</summary>
+    private static IReadOnlyList<string>? Named(IpcRequest request, string name) =>
+        request.Payload is { } payload && payload.TryGetProperty(name, out var named) && named.ValueKind == JsonValueKind.Array
+            ? [.. named.EnumerateArray().Where(each => each.ValueKind == JsonValueKind.String).Select(each => each.GetString()!)]
+            : null;
 
     /// <summary>Where an installed plugin came from, for its row: a folder, an offer, none recorded, or a record that does not read.</summary>
     private static object SourceOf(string installFolder)

@@ -134,6 +134,62 @@ public sealed class DriverModulePluginPageTests : DriverModuleBridge, IDisposabl
     }
 
     /// <summary>
+    /// RPC1e: asked for its words (<c>said: true</c>) by <c>daoris-driver plugins approve|withdraw</c> sent over the pipe,
+    /// <c>PLUGIN_ACTION</c> answers the lines and the exit code the alone path prints over the same home, and writes the same approvals:
+    /// an approval, its reads only, the writes named, a write the server does not declare, a generic execution tool refused, a plugin
+    /// not here, and a withdrawal. A refusal is the verb's exit 2 as an answer, never thrown.
+    /// </summary>
+    [Theory]
+    [InlineData("help-approve", "tickets", null, "approve acme.tickets tickets")]
+    [InlineData("help-reads", "tickets", null, "approve acme.tickets tickets --reads-only")]
+    [InlineData("help-approve", "tickets", "create_issue", "approve acme.tickets tickets --writes create_issue")]
+    [InlineData("help-approve", "tickets", "drop_all", "approve acme.tickets tickets --writes drop_all")]
+    [InlineData("help-approve", "shell", null, "approve acme.tickets shell")]
+    [InlineData("help-withdraw", "tickets", null, "withdraw acme.tickets tickets")]
+    public async Task Asked_for_its_words_a_grant_answers_and_writes_what_the_alone_path_does(string action, string server, string? writes, string words)
+    {
+        var tickets = DaorisHome.Entry(Home, HomeEntry.Plugins, "acme.tickets");
+        Directory.CreateDirectory(tickets);
+        File.WriteAllText(Path.Combine(tickets, "plugin.json"), """
+            { "id": "acme.tickets", "servers": [
+                { "name": "tickets", "command": ["tickets"], "to": ["help"], "allow": ["search"], "writes": ["create_issue"] },
+                { "name": "shell", "command": ["shell"], "to": ["help"], "allow": ["run_command"] } ] }
+            """);
+        using var loop = Loop();
+        var module = new DriverModule(Bus, loop) { Offers = Path.Combine(Home, "no-offers") };
+        var approvals = HelpGrants.PathIn(Home);
+        string? Kept() => File.Exists(approvals) ? File.ReadAllText(approvals) : null;
+
+        var answer = (await AnswerAsync(module, "PLUGIN_ACTION", new
+        {
+            action, id = "acme.tickets", server, writes = writes is null ? null : new[] { writes }, said = true,
+        })).GetProperty("said");
+        var routed = (string.Join("\n", answer.GetProperty("out").EnumerateArray().Select(line => line.GetString())), answer.GetProperty("code").GetInt32(), Kept());
+        if (File.Exists(approvals)) File.Delete(approvals);
+        var output = new StringWriter { NewLine = "\n" };
+        var exit = await PluginsCommand.RunAsync(words.Split(' '), output, Home);
+
+        Assert.Equal((output.ToString().TrimEnd('\n'), exit, Kept()), routed);
+        Assert.StartsWith("plugins: ", routed.Item1, StringComparison.Ordinal);
+    }
+
+    /// <summary>RPC1e: a grant asked of a plugin not here is the alone path's words both ways; the page's press refuses it by its code.</summary>
+    [Fact]
+    public async Task A_grant_of_a_plugin_not_here_is_said_as_alone_and_the_page_s_is_refused()
+    {
+        using var loop = Loop();
+        var module = new DriverModule(Bus, loop) { Offers = Path.Combine(Home, "no-offers") };
+
+        var answer = (await AnswerAsync(module, "PLUGIN_ACTION", new { action = "help-approve", id = "nobody.here", server = "x", said = true })).GetProperty("said");
+        var output = new StringWriter { NewLine = "\n" };
+        var exit = await PluginsCommand.RunAsync(["approve", "nobody.here", "x"], output, Home);
+
+        Assert.Equal(output.ToString().TrimEnd('\n'), string.Join("\n", answer.GetProperty("out").EnumerateArray().Select(line => line.GetString())));
+        Assert.Equal(exit, answer.GetProperty("code").GetInt32());
+        Assert.False((await AskAsync(module, "PLUGIN_ACTION", new { action = "help-approve", id = "nobody.here", server = "x" })).Success);
+    }
+
+    /// <summary>
     /// HELPPLUG1c: the page's Approve sends the writes the person ticked, each on its own (<c>writes</c>), and the list says an
     /// approval an update has changed since as <c>changed</c>, so the page asks again in so many words. A write the server does
     /// not declare approves nothing.

@@ -747,7 +747,10 @@ try
     // the Plugins view's twins. None needs a service; try a home only to try an installed plugin by its id.
     if (args is ["plugins", .. var pluginsArgs])
     {
-        return await PluginsCommand.RunAsync(pluginsArgs, Console.Out, DaorisHome.Resolve(), log);
+        var pluginsHome = DaorisHome.Resolve();
+        // RPC1e: approve and withdraw go through the running Daoris where one answers, confirmed in its window.
+        return await PluginsCommand.RunAsync(
+            pluginsArgs, Console.Out, pluginsHome, log, instance: Daoris.Driver.Host.InstanceHost.World(pluginsHome, "plugins"));
     }
 
     // 🔴 The loop only by its verb (DRV8a, D104): a bare invocation, or a word nobody answers, is the
