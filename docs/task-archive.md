@@ -19120,3 +19120,12 @@ Detail: D194's PUSH1f2e2 note. On Opus.
 
 **Outcome** 2026-10-22: built. Each main window tells and wears its own count (`SET_BADGE` by name, its order per window); a balloon's
 click opens the window whose workspace holds its session or quest (`MainWindowScopes`), else the one last in front. Detail: D196's NOTIFY2c note. On Opus.
+## NOTIFY2f — what ended, failed or went unanswered is kept in Notifications (2026-10-22, D196)
+
+> - [ ] **NOTIFY2f — what ended, failed or went unanswered is kept in Notifications** (driver, modules, web-shell; after 2b; D196, the notification design §9). *Done and failed* from `data/notices.json`, written by any process under its keep lock and read alike in every window, a week and at most 200 kept. Proof: as §9 names it.
+
+**Outcome** 2026-10-22: built. `Notices` keeps `data/notices.json` (a map by id, one keep-lock hold from read to rename, the three home
+twins' `notices` entry); each look's ended sessions, with the workspace they were filed under, and each press refused by its time are
+recorded whatever the switch says; the `notices` slice reads it again in every process and says another's notice once as `NOTICE`;
+`NOTICES_READ` and `NOTICE_DISMISS`. The page's *Done and failed* group, the bell's dot and Overview's line. Detail: D196's NOTIFY2f
+note. On Opus.
