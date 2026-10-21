@@ -81,6 +81,9 @@ public static class OpenRoutes
     /// <summary><c>opinion show &lt;session|opinion&gt;</c> (RPC1e): where a work's second opinion stands, its findings and their answers.</summary>
     public static InstanceRoute OpinionGate { get; } = Open("OPINION_GATE");
 
+    /// <summary><c>setup &lt;repository&gt; --plan</c> (RPC1e): what a set-up's press would do today, read and never written.</summary>
+    public static InstanceRoute SetupPlan { get; } = Open("SETUP_PLAN");
+
     /// <summary>
     /// Each verb of RPCOPEN1's scope, in the verb's words: the route it sends where the instance answers, or null with the reason it
     /// does not go through the pipe (yet).
@@ -108,6 +111,8 @@ public static class OpenRoutes
         ("help delete <id>", null, "alone: the first ask reads the conversation's name here, which no route answers; with `--yes` the person's press (SESSION_DELETE)"),
         ("help resume <id>", null, "alone: the conversation goes on in this terminal's own process until RPC1g"),
         ("opinion show <session|opinion>", OpinionGate, "the gate's reading"),
+        ("setup <repository> --plan", SetupPlan, "the plan; without `--plan` the person's press (SETUP_PRESS)"),
+        ("setup --workspace <name>", null, "alone: no route sets a workspace up; each repository's press is SETUP_PRESS's"),
         ("ask channel <id>", null,
             "alone: the read moves the person's own mark (CHANNEL_MARK, the person's), a door of the service, which writes it once whoever "
             + "asks; with words the person's press (CHANNEL_POST)"),
@@ -224,6 +229,9 @@ public static class PersonPresses
     /// <summary><c>ask channel &lt;id&gt; "…"</c> (RPC1e): the person's words on an ask's channel, which every session on the ask reads.</summary>
     public static InstanceRoute ChannelPost { get; } = Person("CHANNEL_POST");
 
+    /// <summary><c>setup &lt;repository&gt;</c> (RPC1e): the rule its session needs added, and one ask published to it as the person's.</summary>
+    public static InstanceRoute SetupPress { get; } = Person("SETUP_PRESS");
+
     /// <summary>
     /// <c>plugins approve &lt;id&gt; &lt;server&gt;</c> and <c>withdraw</c> (RPC1e): the tools a plugin's server offers Ask Daoris approved,
     /// its reads only or the writes named, or the approval withdrawn.
@@ -252,6 +260,7 @@ public static class PersonPresses
         ("opinion anyway <session>", OpinionAnyway),
         ("opinion myself <session>", OpinionMyself),
         ("ask channel <id> \"…\"", ChannelPost),
+        ("setup <repository>", SetupPress),
         ("plugins approve <id> <server>", PluginAction),
         ("plugins withdraw <id> <server>", PluginAction),
         ("sessions archive <id>…", SessionArchive),
