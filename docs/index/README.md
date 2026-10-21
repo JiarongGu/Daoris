@@ -66,8 +66,8 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Web/src/work/conversation/conversation.ts` | 43 | 847 |
 | `src/Daoris.Web/src/work/frame/frame.tsx` | 42 | 897 |
 | `src/Daoris.Web/src/work/head/SessionHead.test.tsx` | 67 | 1274 |
-| `src/Daoris.Web/src/work/noteLines.test.ts` | 81 | 1195 |
-| `src/Daoris.Web/src/work/noteLines.ts` | 43 | 772 |
+| `src/Daoris.Web/src/work/noteLines.test.ts` | 83 | 1223 |
+| `src/Daoris.Web/src/work/noteLines.ts` | 43 | 774 |
 | `src/Daoris.Web/src/work/rail/SessionRail.test.tsx` | 54 | 1061 |
 
 ### Driver library (`driver`)
@@ -137,7 +137,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Loop/DriverWatch.cs` | 56 | 950 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Platform/DriverChoicesCommand.cs` | 115 | 2057 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Platform/DriverConfig.cs` | 91 | 1562 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/Platform/NoteCodes.cs` | 79 | 1245 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/Platform/NoteCodes.cs` | 80 | 1248 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Platform/SystemWiring.cs` | 50 | 1072 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Plugins/Hooks.cs` | 59 | 1167 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Quests/Domain/Planner.cs` | 120 | 1973 |

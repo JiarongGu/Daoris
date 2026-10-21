@@ -18893,3 +18893,12 @@ and `plugins install` name each step with its reach and what the steps create. `
 page and the offer's page list them in en and zh; `daoris-driver plugins show` says them too. Proof: `PluginStepsTests`' change and
 description theories held cell for cell by `plugin-steps.test.ts`, `PluginPageTests`, `DriverModulePluginPageTests`,
 `PluginPage.test.tsx` in both languages. Detail: D173's FABRIC-UNIT1e note.
+
+## FABRIC-CLOSE1h14 — a push held back by its gate said as the gate's in the conversation (2026-10-21, D173)
+
+> - [ ] **FABRIC-CLOSE1h14 — a push held back by its gate said as the gate's in the conversation** (web, driver; after CLOSE1h12). `note.landing.push-held` and `work.trace.try.push-held` lead with "its quest was held or taken back" in en and zh even when CLOSE1h12's gate held the push; only the sentence beneath names the gate. A new code is the stored-shape-safe route; old notes read as before. Proof: a gate-held push's note leads with the gate's words; `i18n:check` and `names:check -- --strict` pass.
+
+**Outcome** 2026-10-21: built. A push its landing's gate held back is noted `landing.push-gated`, which leads with the gate's words in
+en and zh; a quest's hold, and every note from before, keep `landing.push-held` as worded. The try keeps `push-held`, so its recovery
+and the stored shape are unchanged, and its trace word now names the quest or the gate. Proof: `AutoLandingRulesTests`,
+`noteLines.test.ts`; `i18n:check` and `names:check -- --strict` pass. Detail: D173's FABRIC-CLOSE1h14 note.

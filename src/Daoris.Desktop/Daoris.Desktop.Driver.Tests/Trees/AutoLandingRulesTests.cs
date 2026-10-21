@@ -610,6 +610,17 @@ public sealed class AutoLandingRulesTests : IDisposable
         var held = AutoLandingNotes.Of(AutoLandingCode.PushHeld, new TreeLanding(true, "said.", "feature/x"), plugin: "acme.lands").Parts![0];
         Assert.Equal(NoteCodes.LandingPushHeld.Code, held.Code);
 
+        // FABRIC-CLOSE1h14: held there by its landing's gate (CLOSE1h12), a code of its own whose words are the gate's, the gate's
+        // sentence beneath; a quest's hold keeps `landing.push-held`.
+        var gate = $"{AutoLandingNotes.GateHeld} before its plugin was told, so its push was not tried. Waits for a second opinion.";
+        var gated = AutoLandingNotes.Of(AutoLandingCode.PushHeld, new TreeLanding(true, $"made. {gate}", "feature/x") { Withheld = gate }, plugin: "acme.lands");
+        Assert.Equal([NoteCodes.LandingPushGated.Code, null], NoteAssert.Codes(gated.Parts));
+        Assert.Contains("its landing's gate held it before `acme.lands` was told", gated.Parts![0].Text);
+        Assert.DoesNotContain("held or taken back", gated.Parts[0].Text);
+        Assert.Contains("Waits for a second opinion.", gated.Parts[1].Words);
+        var quest = AutoLandingNotes.Of(AutoLandingCode.PushHeld, new TreeLanding(true, "made.", "feature/x") { Withheld = "its quest was taken back before its plugin was told" }, plugin: "acme.lands");
+        Assert.Equal(NoteCodes.LandingPushHeld.Code, quest.Parts![0].Code);
+
         foreach (var code in new[] { AutoLandingCode.Already, AutoLandingCode.Superseded, AutoLandingCode.Gone, AutoLandingCode.Undone, AutoLandingCode.Off })
         {
             Assert.False(AutoLandingNotes.Says(code), code);
