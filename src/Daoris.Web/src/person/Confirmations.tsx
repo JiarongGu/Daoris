@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Button } from '../design/ui';
+import { Button, type Notify } from '../design/ui';
 import { clockOf, sentence } from '../locales/format';
 
 /**
@@ -55,13 +55,16 @@ const WORDED = new Set([
  * @remarks
  * A molecule: drawn from props, so every state is reachable without a shell. **Its default is no** (design §4.2): nothing is
  * focused or pressed for the person, *Refuse* comes first, and a card nobody answers is refused when its two minutes end. A
- * refusal of the answer itself is said under its card (the UI/UX design's R3), never as a toast.
+ * refusal of the answer itself is said under its card (the UI/UX design's R3), and by a toast only where the card has gone with
+ * its press by the time the answer returns, as a Confirm past its time finds it (NOTIFY2a, the notification design §3.4).
  */
-export function Confirmations({ waiting, notice = false, onAnswer, onShown, onDismissNotice }: {
+export function Confirmations({ waiting, notice = false, onAnswer, notify, onShown, onDismissNotice }: {
   waiting: Confirmation[];
   /** Whether to say that the host in use holds a person key this window does not, so the person's acts are refused there. */
   notice?: boolean;
   onAnswer: (waiting: Confirmation, confirm: boolean) => Promise<ConfirmationAnswer>;
+  /** The window's toasts: where a refusal is said once its card has gone with its press (NOTIFY2a). Absent, it is said nowhere. */
+  notify?: Notify;
   /**
    * Said once of each terminal's press not yet shown, while this window is in front of the person (CONFIRMSEEN1): its two minutes
    * count from then. Absent, nothing is said.
@@ -82,7 +85,9 @@ export function Confirmations({ waiting, notice = false, onAnswer, onShown, onDi
       )}
       {waiting.length > 0 && (
         <section aria-label={t('person.label')} className="grid gap-2 px-3 py-2">
-          {waiting.map((each) => <Card key={`${each.source}:${each.id}`} waiting={each} onAnswer={onAnswer} onShown={onShown} />)}
+          {waiting.map((each) => (
+            <Card key={`${each.source}:${each.id}`} waiting={each} onAnswer={onAnswer} notify={notify} onShown={onShown} />
+          ))}
         </section>
       )}
     </div>
@@ -100,19 +105,27 @@ function looking(): boolean {
   return typeof document !== 'undefined' && document.visibilityState === 'visible' && document.hasFocus();
 }
 
-function Card({ waiting, onAnswer, onShown }: {
+function Card({ waiting, onAnswer, notify, onShown }: {
   waiting: Confirmation;
   onAnswer: (waiting: Confirmation, confirm: boolean) => Promise<ConfirmationAnswer>;
+  notify?: Notify;
   onShown?: (waiting: Confirmation) => void;
 }) {
   const { t } = useTranslation();
   const [busy, setBusy] = useState(false);
   const [said, setSaid] = useState<string | null>(null);
   const told = useRef(false);
-  const latest = useRef({ waiting, onShown });
+  const latest = useRef({ waiting, onShown, notify });
   useEffect(() => {
-    latest.current = { waiting, onShown };
+    latest.current = { waiting, onShown, notify };
   });
+  // NOTIFY2a: whether the card is still drawn when its answer returns. A Confirm past its time ends the press, and the pipe tells
+  // every window before it answers, so the card has gone by then and its refusal is a toast (R3 where the place has gone).
+  const drawn = useRef(true);
+  useEffect(() => {
+    drawn.current = true;
+    return () => { drawn.current = false; };
+  }, []);
   const unshown = waiting.source === 'pipe' && waiting.shown !== true && onShown !== undefined;
 
   // CONFIRMSEEN1: said once, as soon as this window is in front of the person: now, or when it comes in front.
@@ -139,16 +152,22 @@ function Card({ waiting, onAnswer, onShown }: {
       : t('person.ask.for', { act: waiting.route });
   const asker = waiting.asker;
 
+  // Said under the card while it is drawn, or toasted once it has gone with its press.
+  const say = (text: string) => {
+    if (drawn.current) setSaid(text);
+    else latest.current.notify?.(text, 'error');
+  };
+
   const press = async (confirm: boolean) => {
     setBusy(true);
     setSaid(null);
     try {
       const answer = await onAnswer(waiting, confirm);
-      if (!answer.answered) setSaid(answer.why === 'gone' || !answer.message ? t('person.gone') : answer.message);
+      if (!answer.answered) say(answer.why === 'gone' || !answer.message ? t('person.gone') : answer.message);
     } catch (error) {
-      setSaid(sentence(error));
+      say(sentence(error));
     } finally {
-      setBusy(false);
+      if (drawn.current) setBusy(false);
     }
   };
 

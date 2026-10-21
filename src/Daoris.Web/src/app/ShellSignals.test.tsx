@@ -215,8 +215,8 @@ describe('the shell push channel (ShellSignals)', () => {
     show(<ShellSignals notify={notify} />);
 
     eventHandlers.get('DAORIS.SESSION_ATTENTION')!({
-      kind: 'Confirming', session: null, headline: "A terminal's press waits for you in Daoris's window",
-      detail: 'SESSION_ARCHIVE, sent by daoris-driver (4242). Confirm or refuse it there.',
+      kind: 'Confirming', id: 'c1', session: null, headline: "A terminal's press waits for you in Daoris's window",
+      detail: 'Sent by daoris-driver (4242). Open Daoris to confirm or refuse it.',
     });
 
     expect(notify).not.toHaveBeenCalled();

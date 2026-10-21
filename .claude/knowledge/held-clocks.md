@@ -46,6 +46,10 @@ product being flaky. A wider window only moves the load at which it fails, and m
   where the code's wait should pass in real time once the thing it waits on has started. One that *moves only when the test
   moves it* (the modules tests' `HeldClock` in `Platform/PipeTestKit.cs`, `Advance`, RPC1c) where the test spends the wait
   itself, such as a confirmation's two minutes, and fires the timers it made.
+- **A bound a timer ends is read again where the person acts** (NOTIFY2a): a timer under load fires late, so an answer taken while
+  it has not fired must read the clock itself, or the bound the person was told is not the bound kept. The modules' `HeldClock.Pass`
+  moves the time and holds every timer late; a test passes the bound with it, acts, and shows the act refused
+  (`PipeConfirmationsTests`), which `Advance` alone, firing the timer first, can never show.
 - **A claim of "at once" or "within its bound" is a bound the test cannot reach** (TESTCLOCK2): give the code a bound far past the
   test's own patience (an hour's `Answer`, an infinite patience, a ten-minute grace past the run's limit), so a call that waited it
   out never ends, rather than timing the call with a `Stopwatch`. Where the bound is the code's constant, read it on a handed clock

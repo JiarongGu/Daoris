@@ -1115,6 +1115,7 @@ export function App() {
           waiting={[...terminalConfirmations, ...serviceConfirmations]}
           notice={unkeyedHost && !unkeyedSaid}
           onAnswer={(waiting, confirm) => answerConfirmation.mutateAsync({ waiting, confirm })}
+          notify={notify}
           onShown={(waiting) => confirmationShown.mutate(waiting)}
           onDismissNotice={() => setUnkeyedSaid(true)}
         />

@@ -28,7 +28,8 @@ public sealed class PersonRoutes(DriverLoop loop)
 
     // RPC1c: the person's Confirm or Refuse on a terminal's press, each once. One no longer waiting (answered in another window, its two
     // minutes over, taken back by its terminal or by the close) is answered as data, `gone`, for the card to say where it was pressed
-    // (the UI/UX design's R3). The confirmed press runs on the pipe, in its terminal's name, and publishes what it changes as it runs.
+    // (the UI/UX design's R3), or a toast where its card has gone with it; so is one answered at or past its time, which that answer
+    // ends expired (NOTIFY2a). The confirmed press runs on the pipe, in its terminal's name, and publishes what it changes as it runs.
     [DriverRoute("PERSON_CONFIRM")]
     private Task<object?> PersonConfirmAsync(IpcRequest request, CancellationToken cancellationToken)
     {
