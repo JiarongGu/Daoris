@@ -178,6 +178,22 @@ describe('the placement by the pane\'s width (§3.2, trap 4)', () => {
     expect(placementFor(layoutFlow(QUEST), undefined)).toBe('rail');
     expect(placementFor(layoutFlow(QUEST), 1200, true)).toBe('rail');
   });
+
+  // FLOWCHART1d (the flowchart design §5.1): a workflow's step holds its settings and its run's facts, so its caller keeps a wider
+  // floor for the node track, 18rem, and draws it top to bottom where it fits, never left to right; the side bar's 300 px floor is
+  // 276 px inside its gutters, the main area's 400 px floor 376.
+  it('keeps a caller\'s wider floor for its node tracks, and never places left to right where the caller rules it out', () => {
+    const steps = layoutFlow(chain(5));
+    expect(needs(steps, 16, 18)).toEqual({ across: (5 * 18 + 4 * 3) * 16, down: 288 });
+    expect([276, 376, 576, 1232].map((width) => placementFor(steps, width, false, 16, { least: 18, across: false })))
+      .toEqual(['rail', 'down', 'down', 'down']);
+    // A failure path beside the next step is a rank of two: 37.5rem.
+    expect(needs(layoutFlow(fork(2)), 16, 18).down).toBe(600);
+    expect(placementFor(layoutFlow(fork(2)), 576, false, 16, { least: 18, across: false })).toBe('rail');
+    // Left to right stays the default's wherever a caller does not rule it out.
+    expect(placementFor(layoutFlow(chain(2)), 1200, false, 16, { across: false })).toBe('down');
+    expect(placementFor(layoutFlow(chain(2)), 1200)).toBe('across');
+  });
 });
 
 describe('the crossing table (trap 3, its first half: the slots)', () => {

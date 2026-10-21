@@ -249,30 +249,41 @@ export function findStacks(shape: FlowShape): Stack[] {
 
 /**
  * What each placement needs of the pane, in px at `rem` px a rem (§3.2): left to right, every rank side by side with the
- * rank gaps between; top to bottom, the widest rank's node tracks, waypoints and gaps, and a lane for each return.
+ * rank gaps between; top to bottom, the widest rank's node tracks, waypoints and gaps, and a lane for each return. `least`
+ * is the node track's floor in rem: §3.2's 10rem, or a caller's wider one (FLOWCHART1d: a workflow's step, which holds its
+ * settings and its run's facts, is 18rem).
  */
-export function needs(layout: FlowLayout, rem = 16): { across: number; down: number } {
+export function needs(layout: FlowLayout, rem = 16, least: number = FLOW_REM.node): { across: number; down: number } {
   const ranks = layout.ranks.length;
-  const across = ranks === 0 ? 0 : (ranks * FLOW_REM.node + (ranks - 1) * FLOW_REM.rankAcross) * rem;
+  const across = ranks === 0 ? 0 : (ranks * least + (ranks - 1) * FLOW_REM.rankAcross) * rem;
   const widest = Math.max(0, ...layout.ranks.map((slots) => {
     const nodes = slots.filter((slot) => slot.kind === 'node').length;
     const ways = slots.length - nodes;
-    return nodes * FLOW_REM.node + ways * FLOW_REM.way + Math.max(0, slots.length - 1) * FLOW_REM.gap;
+    return nodes * least + ways * FLOW_REM.way + Math.max(0, slots.length - 1) * FLOW_REM.gap;
   }));
   const down = (widest + layout.lanes * (FLOW_REM.lane + FLOW_REM.laneGap)) * rem;
   return { across, down };
 }
 
 /**
- * Where the flow is placed at a measured inner width (§3.2): left to right where every rank fits side by side and none
- * holds more than three nodes; else top to bottom where the widest rank and the lanes fit; else, wherever nothing measured
- * the pane, and wherever the person chose the list, the rail.
+ * What a caller bounds the placement by (FLOWCHART1d): its node track's floor in rem, and whether left to right is one of its
+ * placements. A flow in sections is read rank by rank under their titles, so it is never left to right (the workflow's
+ * *Before it lands* and *After it lands*, the flowchart design §2.4 and §5.1).
  */
-export function placementFor(layout: FlowLayout, width: number | undefined, asList = false, rem = 16): Placement {
+export type PlacementBounds = { least?: number; across?: boolean };
+
+/**
+ * Where the flow is placed at a measured inner width (§3.2): left to right where every rank fits side by side and none
+ * holds more than three nodes, and the caller allows it; else top to bottom where the widest rank and the lanes fit; else,
+ * wherever nothing measured the pane, and wherever the person chose the list, the rail.
+ */
+export function placementFor(
+  layout: FlowLayout, width: number | undefined, asList = false, rem = 16, { least = FLOW_REM.node, across = true }: PlacementBounds = {},
+): Placement {
   if (asList || width === undefined || layout.ranks.length === 0) return 'rail';
-  const need = needs(layout, rem);
+  const need = needs(layout, rem, least);
   const most = Math.max(0, ...layout.ranks.map((slots) => slots.filter((slot) => slot.kind === 'node').length));
-  if (need.across <= width && most <= ACROSS_MOST) return 'across';
+  if (across && need.across <= width && most <= ACROSS_MOST) return 'across';
   if (need.down <= width) return 'down';
   return 'rail';
 }
