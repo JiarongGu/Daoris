@@ -153,6 +153,8 @@ const tool = await import(
   setApart: (text: string) => { text: string; set: { line: number; label: string }[] };
   setApartHeadings: (text: string, sides?: string[]) => { text: string; set: { line: number; label: string }[] };
   noteName: (label: string) => string;
+  backlogPath: (root: string) => string;
+  mergeByBase: (base: string, ours: string, theirs: string) => { text: string | null; kept: number; dropped: number; both: { line: number }[] };
   REACH: readonly Rule[];
   PATH_CHECKS: readonly { gate: string; paths: string[]; why: string }[];
   selectionLines: (gates: Selected[]) => string[];
@@ -1295,6 +1297,30 @@ test("a heading straight under a line gets one blank line above it, unless a sid
   ]);
   assert.deepEqual(tool.setApartHeadings(text, [merged]), { text, set: [] });
   assert.equal(tool.setApartHeadings('A.\r\n## B\r\n').text, 'A.\r\n\r\n## B\r\n');
+});
+
+// MERGETASKS1: the backlog merged by its base, a row added or removed beside the other side's kept so, one both edited left.
+test('the backlog merged by its base keeps a row a side added, drops one a side removed, and leaves one both sides edited', () => {
+  const base = ['# Tasks', '', '- [ ] **A1** one.', '- [ ] **A2** two.', '- [ ] **A3** three.', ''].join('\n');
+  // An added row beside a removed one, which git reads as one conflict.
+  const added = tool.mergeByBase(base, base.replace('- [ ] **A2** two.\n', ''), base.replace('- [ ] **A3** three.\n', '- [ ] **A3** three.\n- [ ] **A4** four.\n'));
+  assert.equal(added.text, ['# Tasks', '', '- [ ] **A1** one.', '- [ ] **A3** three.', '- [ ] **A4** four.', ''].join('\n'));
+  assert.deepEqual([added.kept, added.dropped, added.both], [1, 1, []]);
+  // Two rows removed side by side, one by each.
+  const removed = tool.mergeByBase(base, base.replace('- [ ] **A1** one.\n', ''), base.replace('- [ ] **A2** two.\n', ''));
+  assert.equal(removed.text, ['# Tasks', '', '- [ ] **A3** three.', ''].join('\n'));
+  // Rows both add at one place are both kept, this side's first; a row both removed is removed once.
+  const twice = tool.mergeByBase(base, base.replace('**A3** three.\n', '**A3** three.\n- [ ] **B1** mine.\n').replace('- [ ] **A1** one.\n', ''),
+    base.replace('**A3** three.\n', '**A3** three.\n- [ ] **C1** theirs.\n').replace('- [ ] **A1** one.\n', ''));
+  assert.equal(twice.text, ['# Tasks', '', '- [ ] **A2** two.', '- [ ] **A3** three.', '- [ ] **B1** mine.', '- [ ] **C1** theirs.', ''].join('\n'));
+  // One row both sides edited is the person's: no text, and the base's line it is.
+  const edited = tool.mergeByBase(base, base.replace('**A2** two.', '**A2** two, mine.'), base.replace('**A2** two.', '**A2** two, theirs.'));
+  assert.equal(edited.text, null);
+  assert.deepEqual(edited.both, [{ line: 4 }]);
+  // A row one side edited and the other removed is the person's too; the same edit on both sides is not.
+  assert.equal(tool.mergeByBase(base, base.replace('**A2** two.', '**A2** edited.'), base.replace('- [ ] **A2** two.\n', '')).text, null);
+  const same = base.replace('**A2** two.', '**A2** edited.');
+  assert.equal(tool.mergeByBase(base, same, same).text, same);
 });
 
 test('a note set apart is named by its task, or by its label when it names none', () => {
@@ -4324,6 +4350,39 @@ describe('the tool, end to end in a scratch repository', { concurrency: true }, 
     result = await repo.run(['--continue']);
     assert.equal(result.status, 0, result.out);
     assert.deepEqual(repo.ran(), ['first']);
+    repo.cleanup();
+  });
+
+  test("the backlog's line conflict is resolved by the merge base and gated, and one row both sides edited is left (MERGETASKS1)", async () => {
+    const rows = ['# Tasks', '', '- [ ] **A1** one.', '- [ ] **A2** two.', '- [ ] **A3** three.', ''].join('\n');
+    const repo = scratch('backlog', [{ name: 'first', run: 'node gate.mjs first' }], { 'TASKS.md': rows });
+    const backlog = () => readFileSync(join(repo.root, 'TASKS.md'), 'utf8');
+    const unmerged = () => git(repo.root, 'diff', '--name-only', '--diff-filter=U');
+
+    // The branch removes a row next to the one main adds after: git stops on it, and the tool resolves it by the base.
+    branch(repo.root, 'left', { 'TASKS.md': rows.replace('- [ ] **A2** two.\n', '') });
+    writeFileSync(join(repo.root, 'TASKS.md'), rows.replace('- [ ] **A1** one.\n', '- [ ] **A1** one.\n- [ ] **B1** new.\n'));
+    git(repo.root, 'commit', '--quiet', '-am', `main moved${TRAILER}`);
+    let result = await repo.run(['left']);
+    assert.equal(result.status, 0, result.out);
+    assert.match(result.out, /TASKS\.md: resolved by the merge base, 1 line a side added kept and 1 line a side removed dropped/);
+    assert.equal(backlog(), ['# Tasks', '', '- [ ] **A1** one.', '- [ ] **B1** new.', '- [ ] **A3** three.', ''].join('\n'));
+    assert.equal(unmerged(), '');
+    assert.deepEqual(repo.ran(), ['first']);
+    git(repo.root, 'commit', '--quiet', '--no-edit');
+
+    // Both sides edit one row: it is left as git wrote it, named, and no gate runs.
+    const now = backlog();
+    branch(repo.root, 'right', { 'TASKS.md': now.replace('**A3** three.', '**A3** three, right.') });
+    writeFileSync(join(repo.root, 'TASKS.md'), now.replace('**A3** three.', '**A3** three, main.'));
+    git(repo.root, 'commit', '--quiet', '-am', `main moved again${TRAILER}`);
+    result = await repo.run(['right']);
+    assert.equal(result.status, 1, result.out);
+    assert.match(result.out, /TASKS\.md: both sides changed the same line \(the merge base's line 5\); left for you/);
+    assert.match(result.out, /conflict in 1 file:\n\s+TASKS\.md/);
+    assert.match(backlog(), /^<<<<<<< /m);
+    assert.deepEqual(repo.ran(), ['first']);
+    git(repo.root, 'merge', '--abort');
     repo.cleanup();
   });
 
