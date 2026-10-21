@@ -1,7 +1,7 @@
 ---
 name: person-waits
 applies_when: adding a new thing a session waits on the person for (a go-ahead, a helper's yes, a held tool request, a rule proposal, an opinion), or changing where an existing wait is drawn, answered or counted
-enforces: a wait the person answers is one kind in `work/waits/waits.ts`, drawn in the session's head and foot from one `WaitProps`, a row judged in .NET (`NeedsAPerson`) and worded with its acts in *What needs you*, which the badge counts, its hook named in Ask Daoris's coverage, and its words placed in the glossary's kinds, in the same change
+enforces: a wait the person answers is one kind in `work/waits/waits.ts`, drawn in the session's head and foot from one `WaitProps`, a row judged in .NET (`NeedsAPerson`) and worded with its acts in *What needs you*, which the bell counts, its hook named in Ask Daoris's coverage, and its words placed in the glossary's kinds, in the same change
 ---
 
 # Waits the person answers — every place one goes
@@ -18,8 +18,8 @@ badge count. A rule proposal's (D74) is the older one.
 | The head | `work/head/SessionHead.tsx` | its section, `data-wait-section` where it can be answered from there |
 | The props | `work/WorkFrame.tsx` → `work/AttendedSession.tsx` → `SessionHead` | `WaitProps` built once in the frame, so the head and the foot press the same handlers |
 | *What needs you*'s judge | `Daoris.Desktop.Modules/Loop/NeedsAPerson.cs` (the row: kind, id, since, the values it is worded from), `AttentionStateSlice.cs` (its input read from memory, `Fields` and `Holds`, its wake) | a row judged in .NET once for every window (PUSH1d4, D182 point 6); its cases in `AttentionStateSliceTests` |
-| *What needs you*'s words | `work/attention/attention.ts` (`PushedAttention`, `KIND_ORDER`, `attentionWorded`, the groups, the offers), `work/attention/AttentionRow.tsx` (the kind, its act ids, handler and labels), `work/attention/AttentionBand.tsx` (the answer and its notice or refusal) | a row in the group its waiting belongs to (*Holding work* when a turn stands still on it), worded from what is pushed |
-| The badge and the door | `app/App.tsx` | the pushed rows counted (`useAttention`), so the taskbar's count holds the wait once .NET judges it; a door that opens the session |
+| *What needs you*'s words | `work/attention/attention.ts` (`PushedAttention`, `KIND_ORDER`, `attentionWorded`, the groups, the offers), `work/attention/AttentionRow.tsx` (the kind, its act ids, handler and labels), `work/attention/AttentionBand.tsx` (the answer and its notice or refusal), drawn in *Notifications* (`notifications/NotificationsView.tsx`, NOTIFY2b) | a row in the group its waiting belongs to (*Holding work* when a turn stands still on it), worded from what is pushed; Overview's summary (`overview/NeedsSummary.tsx`) counts it by its group, and lists no row |
+| The bell and the door | `app/App.tsx` | the pushed rows counted (`useAttention`) on the title bar's bell, each press of either source once beside them, so the taskbar's count holds the wait once .NET judges it; a door that opens the session |
 | The hook | the domain's bridge file (`bridge/sessions/sessions.ts` for a session's) | read and answer; a key under the scope that wakes it, or a poll while nothing publishes it |
 | Ask Daoris | `Daoris.Desktop.Driver.Tests/Help/HelpCoverageTests.cs` | the answering hook in the `Starts` table (a hook pressed under `work/`), a door or an `Exempt` with its reason; `Controls` is for Settings' domains and places |
 | Words | `locales/{en,zh}/work.wait.json`, `work.attention.json`, `note.json` for its coded notes, each code's values in `work/noteLines.ts`; `locales/glossary.json` | each new label under its kind; a label over its budget needs an accepted judgement, as `work.attention.rule` and `work.attention.helper` have; `note.test.ts` holds the notes' map to `NoteCodes` |
