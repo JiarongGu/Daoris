@@ -230,11 +230,28 @@ public sealed record HarnessSettings(
 
         var home = HomeOf(path);
         var accounts = AccountsOf(home, settings);
-        var (folded, counts) = AccountSet.Fold(settings, Hinted(accounts, account), DateTimeOffset.UtcNow, PoolReceipts.NewId);
+        var (folded, counts) = AccountSet.Fold(settings, Hinted(settings, accounts, account), DateTimeOffset.UtcNow, PoolReceipts.NewId);
         var changed = AccountSet.Whole(folded, edit(folded), AccountsOf(home, folded)).WithSaidKept();
         changed.SaveHolding(path);
         if (counts.Count > 0) Logged(home, log, counts);
         return changed;
+    }
+
+    /// <summary>
+    /// A new account placed last in its agent's order (the account-pool design §2.2), whatever its id, by the write its sign-in or key
+    /// makes; nothing is said of it. Never the reason the account is not kept: a file that does not read, or a lock held, leaves it
+    /// for the next change, which places it and says so.
+    /// </summary>
+    public static void Placed(string path, string agent, string account)
+    {
+        try
+        {
+            Change(path, read => read, account: new AccountChange(agent, account, Added: true));
+        }
+        catch (Exception error) when (error is DriverException or IOException or UnauthorizedAccessException)
+        {
+            // The account stands; the next change of the file places it.
+        }
     }
 
     /// <summary>
@@ -304,9 +321,11 @@ public sealed record HarnessSettings(
     }
 
     private static IReadOnlyDictionary<string, IReadOnlyList<string>> Hinted(
-        IReadOnlyDictionary<string, IReadOnlyList<string>> accounts, AccountChange? change)
+        HarnessSettings settings, IReadOnlyDictionary<string, IReadOnlyList<string>> accounts, AccountChange? change)
     {
         if (change is null) return accounts;
+        // A sign-in back into an account the order already names adds nothing: the fold reads it as it stands.
+        if (change.Added && settings.Rotation.GetValueOrDefault(change.Agent)?.Contains(change.Account, StringComparer.Ordinal) == true) return accounts;
         var hinted = new Dictionary<string, IReadOnlyList<string>>(accounts, StringComparer.OrdinalIgnoreCase);
         var mine = accounts.GetValueOrDefault(change.Agent) ?? [];
         hinted[change.Agent] = change.Added
