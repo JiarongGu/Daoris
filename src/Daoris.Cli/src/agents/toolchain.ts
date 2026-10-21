@@ -62,14 +62,6 @@ const AGENT_VALUED: ReadonlySet<string> = new Set([
 ]);
 
 /**
- * `agent profile use`'s flags (TOOL6a, D130 §16.6; D165 §6, SWITCH1a); any other is refused rather than read as a choice.
- * `--early` and `--near` are the old names of `--switch` and the session window's curve, taken as `UseChange` maps them.
- */
-const USE_FLAGS: ReadonlySet<string> = new Set([
-  '--keep', '--no-keep', '--switch', '--curve', '--no-curve', '--early', '--near', '--workspace', '--clear',
-]);
-
-/**
  * What the terminal says for each *use accounts* choice (D130 §16.6): its name, and what it costs where the screen says
  * so. A choice added to `USE_MODES` is a row here, and its step in `nextStartLines`.
  */
@@ -77,19 +69,6 @@ export const USE_WORDS: Record<UseMode, { name: string; cost: string | null }> =
   goal: { name: 'make the most of them', cost: null },
   order: { name: 'one by one, in order', cost: 'one limit stops every session on that account' },
 };
-
-/** `agent profile use`'s shape, as a refusal names it. */
-const USE_SHAPE = `[${USE_MODES.join('|')}] [--keep <account>|--no-keep] [--switch ${SWITCHES.join('|')}] `
-  + '[--curve <window>=<elapsed>:<used>,…]… [--no-curve] [--workspace W], or --clear (--early on|off and --near <percent> '
-  + 'are the old names)';
-
-/** How a curve is given at the terminal (the switch design §5), as a refusal shows it. */
-const CURVE_EXAMPLE = '`--curve weekly=0:30,50:70,100:100`';
-
-/** A scope named in a sentence: this machine, or one workspace. */
-function where(workspace: string | null): string {
-  return workspace ? `in \`${workspace}\`` : 'on this machine';
-}
 
 /** A scope named in a command: nothing for the machine, `--workspace` for one workspace, spelled for a shell (ACCTQUOTE1). */
 function scoped(workspace: string | null): string {
@@ -100,11 +79,6 @@ function scoped(workspace: string | null): string {
 function accountWord(shown: string, id: string): string {
   return shellWord(shown, shellWord(id, '<account>'));
 }
-
-/** Choices said as a person says them: `a, b or c`. */
-function either(choices: readonly string[]): string {
-  return choices.length > 1 ? `${choices.slice(0, -1).join(', ')} or ${choices.at(-1)}` : choices.join('');
-}
 import { DaorisError } from '../platform/errors.ts';
 import { onPath, readJsonObject, writeJsonAtomic } from '../platform/fsx.ts';
 import { writeKeeping } from '../platform/jsonkeep.ts';
@@ -114,12 +88,12 @@ import { normalizeWorkspace } from '../service/remotemap.ts';
 import { readPlugins, resolvable } from '../plugins/plugins.ts';
 import { installFromChannel, latestVersion, refuseVersion } from './channels.ts';
 import {
-  CURVE_WINDOWS, NEAR_HIGHEST, NEAR_LOWEST, OLD_FIELDS, SWITCHES, USE_FIELDS, USE_MODES, curveProblem, joinProblem,
+  CURVE_WINDOWS, OLD_FIELDS, USE_FIELDS, joinProblem,
   joinRefusal, placesOf, readOrderCircles, readOrders, readUseCircles, readUses, resolveRotation, resolveScope,
-  scopeProblem, withJoined, withUse, writtenOrderCircles, usesAsRead, writtenOrders, writtenUseCircles, writtenUses,
+  scopeProblem, withJoined, writtenOrderCircles, usesAsRead, writtenOrders, writtenUseCircles, writtenUses,
 } from '../accounts/rotation.ts';
 import type {
-  AccountPlace, Curve, CurvePoint, Orders, RotationUse, Scope, Switch, UseChange, UseMode, Uses,
+  AccountPlace, Orders, RotationUse, Scope, UseMode, Uses,
 } from '../accounts/rotation.ts';
 import {
   accountNames, apartWords, forgetName, nameBeside, nameFor, nameProblem, newAccountId, offeredName, renameAccount,
@@ -129,13 +103,12 @@ import { forgetRead, keepRead } from '../accounts/accountreads.ts';
 import type { Login } from '../accounts/accountreads.ts';
 import { atName, byName, findName, sameName } from '../platform/casefold.ts';
 import { coolingLine, coolingOf, coolingWhen, endCooling, machineZone } from '../accounts/cooling.ts';
-import { shellWord, shellWords } from '../platform/shellword.ts';
+import { shellWord } from '../platform/shellword.ts';
 import { OWN_WINDOWS, saidLine, saidOf } from '../accounts/windows.ts';
 import { markSignedIn, probeLockPath, takeProbeLock } from '../accounts/probelock.ts';
 import type { Channel, Fetcher } from './channels.ts';
 import type { CommandArgs } from '../platform/types.ts';
 import type { ExitCode } from '../platform/errors.ts';
-import { AGENT_ROUTES, ALONE, type InstanceRoute, type VerbDoor } from '../platform/door.ts';
 
 export const PATH_VARIABLE = 'DAORIS_HARNESS_CONFIG';
 
@@ -1684,29 +1657,15 @@ export function accountLines(
  * `npm` is the package manager a package pin, and a package pin's update, runs — npm itself, unless a
  * test hands in a stand-in.
  *
- * `door` is where an edit of the home goes (RPC1f): the Agents or Accounts place's route while Daoris runs on this home, which its
- * own handler judges, writes and publishes; this verb's own write under the home's lease where none does. A verb that needs this
- * terminal (an installer, a sign-in, a key on stdin, a pin's download) acts alone, as `door.ts`'s `AGENT_VERBS` says.
+ * Every verb left here needs this terminal (an installer, a sign-in, a key on stdin, a pin's download) and acts alone, as `door.ts`'s
+ * `AGENT_VERBS` says; the verbs a route takes are Daoris's driver program's since PUSH1f2e3 (`daoris-driver agent`).
  */
 export function commandHarness(
-  { argv, write }: CommandArgs, releases: Fetcher | null = null, npm: string[] = ['npm'], door: VerbDoor = ALONE,
-  ports: PortProbe | null = null,
+  { argv, write }: CommandArgs, releases: Fetcher | null = null, npm: string[] = ['npm'], ports: PortProbe | null = null,
 ): ExitCode | Promise<ExitCode> {
   const verb = argv[0] ?? 'list';
   const path = harnessesPath();
   const home = harnessHome(path);
-  // The verb as a lease names it: `profile`'s own verb with it, never an argument.
-  const what = verb === 'profile' ? `agent profile ${argv[1] ?? 'list'}` : `agent ${verb}`;
-
-  /** An edit through the door: the route's payload, this verb's own write, and its words for either path. */
-  const press = (route: InstanceRoute, payload: unknown, edit: () => void, said: (answer?: unknown) => ExitCode) => door({
-    what, route, payload,
-    alone: () => {
-      edit();
-      return said();
-    },
-    words: (answer) => said(answer),
-  });
 
   switch (verb) {
     case 'list':
@@ -1834,9 +1793,6 @@ export function commandHarness(
 
       return pinFromPackage(name, toolchain, version, where, workspace);
     }
-
-    case 'profile':
-      return profileVerb();
 
     // An account that is an API key (AGT3, D67 §1). 🔴 Read from STDIN, never from an argument: an
     // argument is visible in the process list and saved in the shell's history.
@@ -2121,283 +2077,6 @@ export function commandHarness(
     write('  An account is a directory Daoris owns the location of. The credential inside it belongs to');
     write("  the agent's own store. An API key is the one secret Daoris keeps: `agent key`, in keys.json.");
     return 0;
-  }
-
-  function profileVerb(): ExitCode | Promise<ExitCode> {
-    const action = argv[1] ?? 'list';
-    const settings = readHarnessSettings(path);
-
-    switch (action) {
-      // How a scope's list is used (TOOL6a, D130 §2, §9): the machine's, or with `--workspace` one workspace's. Each choice
-      // is written as made; with no flag it prints the scope's settings, the step the next start would follow (TOOL6b) and
-      // what each account last said.
-      case 'use':
-        return useVerb();
-
-      default:
-        throw new DaorisError(
-          `unknown agent profile verb '${action}' — one of: list, add, remove, default, order, ready, use, rename, join`);
-    }
-
-    /** A scope's own list: the machine's, or the workspace's own — never the machine's standing in for it. */
-    function ownList(name: string, workspace: string | null): string[] {
-      return (workspace ? atName(settings.workspaceRotation, workspace)?.[name] : settings.rotation[name]) ?? [];
-    }
-
-    /**
-     * `profile use <agent> [goal|order] [--keep <account>|--no-keep] [--switch smart|curve|off]
-     * [--curve <window>=<elapsed>:<used>,…]… [--no-curve] [--workspace <name>]`, or `--clear` (D130 §16.6; D165 §6, the
-     * switch design §5); `--early on|off` and `--near <percent>`, the old names, are taken as `UseChange` maps them. A scope
-     * with no list of its own has nothing to use and is refused, naming the door that gives it one; a kept account is one
-     * of the list and leaves driven work another (§4.6); a curve is refused in the sentence the driver says.
-     */
-    function useVerb(): ExitCode | Promise<ExitCode> {
-      const name = accountsOf(operand(argv, 2), 'profile use');
-      const flagged = flagValue(argv, '--workspace');
-      const workspace = flagged ? normalizeWorkspace(flagged) : null;
-
-      const stray = argv.slice(2).find((token) => token.startsWith('--') && !USE_FLAGS.has(token));
-      if (stray) throw new DaorisError(`\`${stray}\` is not a flag of \`agent profile use\` — it takes ${USE_SHAPE}.`);
-      const chosen = operands(argv, AGENT_VALUED).slice(3);
-      const modes = USE_MODES.map((mode) => `${mode} (${USE_WORDS[mode].name})`);
-      if (chosen.length > 1) {
-        throw new DaorisError(`\`agent profile use\` takes one way to use accounts, and \`${chosen.join(' ')}\` names more — `
-          + `${either(modes)}.`);
-      }
-      if (chosen.length === 1 && !(USE_MODES as readonly string[]).includes(chosen[0]!)) {
-        throw new DaorisError(`\`${chosen[0]}\` is not a way to use accounts — ${either(modes)}. An account is kept for `
-          + `conversations with \`--keep <account>\`.`);
-      }
-
-      const change = useChangeOf(name);
-      if (chosen.length === 1) change.use = chosen[0] as UseMode;
-      const clear = argv.includes('--clear');
-      if (clear && Object.keys(change).length > 0) {
-        throw new DaorisError(`\`--clear\` sets no setting beside it — \`daoris agent profile use ${name} --clear\` returns `
-          + 'the scope to today\'s defaults, and the setting is set on its own.');
-      }
-
-      const scope = workspace ? { workspace } : {};
-      if (clear) {
-        return press(AGENT_ROUTES.account, { action: 'use', harness: name, ...scope, clear: true },
-          () => writeHarnessSettings(path, withUse(settings, name, null, workspace)), () => {
-            write(`daoris: ${where(workspace)}, \`${name}\` sets nothing of its own about how its list is used: today's defaults apply.`);
-            write(`  Written to ${path} — machine-local, tracked by nothing, like every wiring file here.`);
-            return 0;
-          });
-      }
-
-      if (Object.keys(change).length === 0) return printUse(name, workspace, resolveScope(settings, name, workspace));
-
-      const list = ownList(name, workspace);
-      if (list.length === 0) {
-        const borrowed = workspace !== null && resolveScope(settings, name, workspace).from === 'machine';
-        throw new DaorisError(workspace
-          ? `\`${workspace}\` has no list of its own for \`${name}\`, so there is nothing to use there — \`daoris agent profile `
-            + `order ${name} <account>…${scoped(workspace)}\` gives it one`
-            + (borrowed ? ', and until then it uses this machine\'s, which is set without --workspace.' : '.')
-          : `\`${name}\` has no list on this machine, so there is nothing to use yet — \`daoris agent profile order ${name} `
-            + '<account>…` sets one, and how it is used is set beside it.');
-      }
-
-      if (typeof change.keep === 'string') {
-        const problem = scopeProblem({ default: null, list, keep: change.keep });
-        if (problem?.kind === 'keep') {
-          throw new DaorisError(
-            `\`${problem.account}\` is not in \`${name}\`'s list ${where(workspace)} (${list.join(', then ')}) — the kept account `
-            + `is one of the list. Name it in the list first (\`daoris agent profile order ${name} `
-            + `${shellWords([...list, problem.account], '<account>')}${scoped(workspace)}\`), or keep one of it.`);
-        }
-        if (problem?.kind === 'alone') {
-          throw new DaorisError(
-            `\`${name}\`'s list ${where(workspace)} holds no account but \`${problem.account}\`, so keeping it for conversations `
-            + `would leave driven work none — \`daoris agent profile order ${name} ${shellWords(list, '<account>')} <account>…`
-            + `${scoped(workspace)}\` adds one.`);
-        }
-      }
-
-      // As the Accounts place sends a change (`ACCOUNT_USE`'s `UseChangeOf`): a kept account or a curve taken out is its own flag.
-      const sent = {
-        ...(change.use !== undefined ? { use: change.use } : {}),
-        ...(change.keep === null ? { noKeep: true } : change.keep !== undefined ? { keep: change.keep } : {}),
-        ...(change.switch !== undefined ? { switch: change.switch } : {}),
-        ...(change.curve === null ? { noCurve: true } : change.curve !== undefined ? { curve: change.curve } : {}),
-        ...(change.early !== undefined ? { early: change.early } : {}),
-        ...(change.near !== undefined ? { near: change.near } : {}),
-      };
-      const after = withUse(settings, name, change, workspace);
-      return press(AGENT_ROUTES.account, { action: 'use', harness: name, ...scope, ...sent }, () => writeHarnessSettings(path, after), () => {
-        printUse(name, workspace, resolveScope(after, name, workspace));
-        write(`  Written to ${path} — machine-local, tracked by nothing, like every wiring file here.`);
-        return 0;
-      });
-    }
-
-    /** The settings `profile use`'s flags name, each refused unless it is one; none named is an empty change. */
-    function useChangeOf(name: string): UseChange {
-      const change: UseChange = {};
-      const switched = useValue('--switch');
-      if (switched !== undefined) {
-        if (!(SWITCHES as readonly string[]).includes(switched)) {
-          throw new DaorisError('`--switch` is smart, curve or off — smart, Daoris\'s curve; curve, your own (`--curve`); off, '
-            + 'no switch while a session runs.');
-        }
-        change.switch = switched as Switch;
-      }
-
-      const curves = useValues('--curve');
-      if (curves.length > 0 && argv.includes('--no-curve')) {
-        throw new DaorisError('`--curve` and `--no-curve` together say two things — set a window of your curve, or take the '
-          + 'curve out.');
-      }
-      if (curves.length > 0) change.curve = curveOf(curves);
-      if (argv.includes('--no-curve')) change.curve = null;
-
-      const early = onOff('--early', 'switch before the limit, or not');
-      if (early !== undefined) change.early = early;
-
-      const near = useValue('--near');
-      if (near !== undefined) {
-        const percent = /^\d+$/.test(near) ? Number(near) : Number.NaN;
-        if (!(percent >= NEAR_LOWEST && percent <= NEAR_HIGHEST)) {
-          throw new DaorisError(`\`--near\` is a whole percent from ${NEAR_LOWEST} to ${NEAR_HIGHEST} — e.g. \`--near 85\`: `
-            + 'the old name of your curve\'s five-hour window, flat at that share; a start passes an account whose use of that '
-            + 'window is over it.');
-        }
-        change.near = percent;
-      }
-
-      const keep = useValue('--keep');
-      if (keep !== undefined && argv.includes('--no-keep')) {
-        throw new DaorisError('`--keep` and `--no-keep` together say two things — keep one account for conversations, or none.');
-      }
-      if (keep !== undefined) change.keep = accountNamed(name, keep);
-      if (argv.includes('--no-keep')) change.keep = null;
-      return change;
-    }
-
-    /** A `profile use` flag's value, refusing the flag with none after it. */
-    function useValue(flag: string): string | undefined {
-      return useValues(flag)[0];
-    }
-
-    /** Each value a repeatable `profile use` flag is given, in order, refusing the flag with none after it. */
-    function useValues(flag: string): string[] {
-      const values: string[] = [];
-      for (const [at, token] of argv.entries()) {
-        if (token !== flag) continue;
-        const value = argv[at + 1];
-        if (value === undefined || value.startsWith('--') || value.trim() === '') {
-          throw new DaorisError(`\`${flag}\` needs a value — it takes ${USE_SHAPE}.`);
-        }
-        values.push(value);
-      }
-      return values;
-    }
-
-    /**
-     * The curve `--curve <window>=<elapsed>:<used>,…` gives, once per window (the switch design §5): each window's points as
-     * whole numbers, then held to the curve's rules in the sentence the driver says (`curveProblem`).
-     */
-    function curveOf(given: string[]): Curve {
-      const windows: [string, CurvePoint[]][] = [];
-      for (const value of given) {
-        const match = /^([^=]+)=(\d+:\d+(?:,\d+:\d+)*)$/.exec(value);
-        if (!match) {
-          throw new DaorisError(`\`--curve ${value}\` is not a window and its points — it takes \`<window>=<elapsed>:<used>,…\`, `
-            + `each a whole percent, e.g. ${CURVE_EXAMPLE}.`);
-        }
-        const [, window, points] = match as unknown as [string, string, string];
-        if (windows.some(([named]) => named === window)) {
-          throw new DaorisError(`\`--curve\` names \`${window}\` twice — give each window once.`);
-        }
-        windows.push([window, points.split(',').map((point) => point.split(':').map(Number) as CurvePoint)]);
-      }
-      const curve = Object.fromEntries(windows);
-      const problem = curveProblem(curve);
-      if (problem !== null) {
-        throw new DaorisError(`${problem} \`--curve\` takes <window>=<elapsed>:<used>,…, e.g. ${CURVE_EXAMPLE}.`);
-      }
-      return curve as Curve;
-    }
-
-    function onOff(flag: string, meaning: string): boolean | undefined {
-      const value = useValue(flag);
-      if (value === undefined) return undefined;
-      if (value !== 'on' && value !== 'off') throw new DaorisError(`\`${flag}\` is on or off — ${meaning}.`);
-      return value === 'on';
-    }
-
-    /**
-     * `profile use`'s print: whose scope it is, its list, how it is used, the step the next start would follow, and what
-     * each of its accounts last said.
-     */
-    function printUse(name: string, workspace: string | null, scope: Scope): ExitCode {
-      const borrowed = workspace !== null && scope.from === 'machine';
-      if (scope.list.length === 0) {
-        write(!workspace
-          ? `daoris: \`${name}\` has no list on this machine, so it has no settings — \`daoris agent profile order ${name} `
-            + '<account>…` sets one.'
-          : borrowed
-            ? `daoris: \`${workspace}\` names no account of its own for \`${name}\`, and this machine has no list, so there are `
-              + `no settings — \`daoris agent profile order ${name} <account>…\` sets the machine's.`
-            : `daoris: \`${workspace}\` names its own account for \`${name}\`, \`${scope.default}\`, and no list of its own, so it `
-              + `has no settings — \`daoris agent profile order ${name} ${shellWord(scope.default ?? '', '<account>')} <account>…`
-              + `${scoped(workspace)}\` `
-              + 'gives it a list.');
-        return 0;
-      }
-
-      // Each account by the person's name for it, else its id (ACCT2).
-      const names = accountNames(home, name);
-      const shown = (account: string) => shownAs(names, account);
-      write(borrowed
-        ? `daoris: \`${workspace}\` names no account of its own for \`${name}\`, so it uses this machine's: `
-          + `${scope.list.map(shown).join(', then ')}.`
-        : `daoris: ${where(workspace)}, \`${name}\`'s list is ${scope.list.map(shown).join(', then ')}.`);
-
-      const says = TOOLCHAINS[name]?.windows === true;
-      const now = new Date();
-      const zone = machineZone();
-      const said = new Map(scope.list.map((account) => [account, saidOf(home, name, account, now)] as const));
-
-      const { rows, notes } = useLines(scope, TOOLCHAINS[name]?.product ?? name, says, shown);
-      for (const [label, value] of rows) write(`  ${label.padEnd(24)} ${value}`);
-      for (const note of notes) write(`  ${note}`);
-      const next = nextStartLines(scope, says, [...said.values()].some((windows) => windows !== null), shown);
-      write(`  ${'next start'.padEnd(24)} ${next.row}`);
-      if (next.note) write(`  ${next.note}`);
-
-      // Each account's cool-off, else its last reading and its age (TOOL6c), else that it has said nothing: unknown. A
-      // reading over the scope's curve says so, as the start's line does (SWITCH1b-iii).
-      write('  what each account last said:');
-      for (const account of scope.list) {
-        const cooled = coolingOf(home, name, account, now);
-        const reading = said.get(account);
-        write(`    ${shown(account).padEnd(14)} ${cooled
-          ? coolingLine(cooled, now, zone)
-          : reading
-            ? saidLine(reading, now, zone, scope.use)
-            : 'nothing said about what it has left'}`);
-      }
-      return 0;
-    }
-  }
-
-  /**
-   * The agent whose ACCOUNTS a verb on this name touches (AGT7): a door's are its owner's, and the
-   * verb says so rather than quietly landing somewhere else than was typed.
-   */
-  function accountsOf(value: string | undefined, verb: string): string {
-    const { name } = namedHarness(value, verb);
-    const owner = ownerOf(name);
-    if (owner !== name) write(`daoris: \`${name}\` runs as \`${owner}\`'s accounts — this is one of them.`);
-    return owner;
-  }
-
-  /** An account by its id or its name (ACCT2): its id, or what was given where it names none, for the verb to refuse. */
-  function accountNamed(owner: string, given: string): string {
-    return resolveAccount(profiles(home, owner), accountNames(home, owner), given) ?? given.trim();
   }
 
   /** The agent named after the verb, refused rather than defaulted. */

@@ -137,6 +137,7 @@ public sealed class AgentsCommandTests : IDisposable
     [InlineData("profile ready claude-code --own")]
     [InlineData("profile rename claude-code work seat")]
     [InlineData("profile join claude-code work --machine")]
+    [InlineData("profile use claude-code --clear")]
     public async Task A_marked_terminal_s_change_acting_alone_is_refused_and_nothing_is_written(string words)
     {
         Propose(Home, "p0000007");
@@ -159,6 +160,7 @@ public sealed class AgentsCommandTests : IDisposable
     [InlineData("trust claude-code <folder> --profile work --dry-run")]
     [InlineData("profile")]
     [InlineData("profile list")]
+    [InlineData("profile use claude-code")]
     public async Task A_read_is_said_from_a_marked_terminal(string words)
     {
         Propose(Home, "p0000007");
@@ -264,6 +266,44 @@ public sealed class AgentsCommandTests : IDisposable
         var settings = HarnessSettings.Load(wiring);
         Assert.Empty(settings.WorkspaceVersions);
         Assert.Equal("2.1.0", settings.Versions["claude-code"]);
+    }
+
+    /// <summary>
+    /// How a list is used beside the running Daoris is the Accounts place's own press (PUSH1f2e3): <c>profile use</c> sends
+    /// <c>ACCOUNT_USE</c>'s <c>use</c> with each setting as the page sends it, a curve as its windows' points, confirmed in its window, and
+    /// this process writes nothing.
+    /// </summary>
+    [Fact]
+    public async Task Beside_the_running_Daoris_a_use_is_its_route()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        await using var running = new InstanceTestHome();
+        var standIn = running.Serve();
+        standIn.Confirming = true;
+        Account(running.Home);
+        Account(running.Home, "seat");
+        var wiring = DaorisHome.Entry(running.Home, HomeEntry.Harnesses);
+        Directory.CreateDirectory(Path.GetDirectoryName(wiring)!);
+        File.WriteAllText(wiring, """{"workspaceRotation":{"aurora":{"claude-code":["work","seat"]}}}""");
+        var before = File.ReadAllText(wiring);
+
+        var exit = await AgentsCommand.RunAsync(
+            ["profile", "use", "claude-code-acp", "order", "--keep", "seat", "--switch", "curve", "--curve", "weekly=0:30,100:100", "--workspace", "aurora"],
+            Beside(running), CancellationToken.None);
+
+        Assert.Equal(0, exit);
+        var press = Assert.Single(standIn.Presses);
+        Assert.Equal("ACCOUNT_USE", press.GetProperty("type").GetString());
+        var payload = press.GetProperty("payload");
+        Assert.Equal("use", payload.GetProperty("action").GetString());
+        Assert.Equal("claude-code", payload.GetProperty("harness").GetString());
+        Assert.Equal("aurora", payload.GetProperty("workspace").GetString());
+        Assert.Equal("order", payload.GetProperty("use").GetString());
+        Assert.Equal("seat", payload.GetProperty("keep").GetString());
+        Assert.Equal("curve", payload.GetProperty("switch").GetString());
+        Assert.Equal("""{"weekly":[[0,30],[100,100]]}""", payload.GetProperty("curve").GetRawText());
+        Assert.Contains("daoris: in `aurora`, `claude-code`'s list is work, then seat.", running.Out.ToString(), StringComparison.Ordinal);
+        Assert.Equal(before, File.ReadAllText(wiring));
     }
 
     /// <summary>A trust no route takes is written here beside the running Daoris too (D171's PUSH1f note, kept by D194 point 5), nothing sent.</summary>

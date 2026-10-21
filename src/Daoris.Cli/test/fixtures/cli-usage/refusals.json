@@ -14,8 +14,6 @@
   {"argv":["remote","frobnicate"],"code":2,"out":["daoris: unknown remote verb 'frobnicate' — one of: list, add, remove"]},
   {"argv":["remote","add"],"code":2,"out":["daoris: `remote add` needs a workspace name — e.g. `daoris remote add aurora`. The name is the workspace, and it is what a shared deployment declares itself to be."]},
   {"argv":["agent","frobnicate"],"code":2,"out":["daoris: unknown agent verb 'frobnicate' — one of: list, install, update, login, key, pin, unpin, profile, settings, trust, rules"]},
-  {"argv":["agent","profile","frobnicate"],"code":2,"out":["daoris: unknown agent profile verb 'frobnicate' — one of: list, add, remove, default, order, ready, use, rename, join"]},
-  {"argv":["agent","profile","use","claude-code","fastest"],"code":2,"out":["daoris: `fastest` is not a way to use accounts — goal (make the most of them) or order (one by one, in order). An account is kept for conversations with `--keep <account>`."]},
   {"argv":["plugin","frobnicate"],"code":2,"out":["daoris: unknown plugin verb 'frobnicate' — one of: list, add, update, remove, enable, disable (and new, try: the kit)"]},
   {"argv":["plugin","add"],"code":2,"out":["daoris: `plugin add` needs a folder holding a `plugin.json` — e.g. `daoris plugin add ./acme.quiet-hours`."]},
   {"argv":["browser"],"code":2,"out":["daoris: `browser` takes `daoris browser favorite list`, `daoris browser favorite add <address> [--title T]`, `daoris browser favorite remove <address>`, `daoris browser extensions [offer|refuse]`, `daoris browser use [daoris|edge]`, or `daoris browser links [system|daoris]`."]},

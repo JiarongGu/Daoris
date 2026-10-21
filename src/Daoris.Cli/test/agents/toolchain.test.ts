@@ -1465,7 +1465,7 @@ async function runPorts(argv: string[], path: string, ports: (port: number) => P
   try {
     const code = await commandHarness({
       root: process.cwd(), argv, write: (line) => lines.push(line), packageRoot: process.cwd(),
-    }, null, ['npm'], undefined, ports);
+    }, null, ['npm'], ports);
     return { code, out: lines.join('\n') };
   } finally {
     if (saved === undefined) delete process.env.DAORIS_HARNESS_CONFIG;

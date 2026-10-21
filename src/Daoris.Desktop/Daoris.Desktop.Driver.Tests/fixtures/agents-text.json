@@ -1,5 +1,5 @@
 {
-  "note": "PUSH1f2d (D194, the alone-path design §3): what `daoris agent rules|trust|settings` said for each case its tests held, run once through the CLI's TypeScript verb before it retired, alone, on a root of its own (`<root>`): DAORIS_HOME `<root>/daoris` (none where `home` is false), the agent's own home `<root>/user`, a folder to trust under `<root>/work`, and with `harness` DAORIS_HARNESS_CONFIG naming `<root>/other/data/harnesses.json`. Each row: the words after `agent` (`<root>` where a whole path goes), the folders made empty before it, every file under the root before it and after it, the exit, and the lines said on the standard output and on the error stream. A path is spelled with `/`; a proposal's settling moment is `<at>`. The TypeScript said a refusal through its dispatcher, `daoris: ` and the sentence; the driver's command says it on the error stream, as every host verb does. `AgentsTextTests` reads it row for row. A sentence the port changes on purpose is a row changed here, with its reason under `changed`.",
+  "note": "PUSH1f2d (D194, the alone-path design §3): what `daoris agent rules|trust|settings` said for each case its tests held, run once through the CLI's TypeScript verb before it retired, alone, on a root of its own (`<root>`): DAORIS_HOME `<root>/daoris` (none where `home` is false), the agent's own home `<root>/user`, a folder to trust under `<root>/work`, and with `harness` DAORIS_HARNESS_CONFIG naming `<root>/other/data/harnesses.json`. Each row: the words after `agent` (`<root>` where a whole path goes), the folders made empty before it, every file under the root before it and after it, the exit, and the lines said on the standard output and on the error stream. A path is spelled with `/`; a proposal's settling moment is `<at>`. The TypeScript said a refusal through its dispatcher, `daoris: ` and the sentence; the driver's command says it on the error stream, as every host verb does. `AgentsTextTests` reads it row for row. A sentence the port changes on purpose is a row changed here, with its reason under `changed`. PUSH1f2e3: a row with `now` was run at that moment, the machine's zone America/New_York, which the test hands the command too.",
   "rows": [
     {
       "name": "rules, the bare word, an empty home",
@@ -3588,6 +3588,1794 @@
       "out": [],
       "err": [
         "daoris: unknown agent profile verb 'frobnicate' — one of: list, add, remove, default, order, ready, use, rename, join"
+      ],
+      "after": {}
+    },
+    {
+      "name": "profile use, the machine's order and kept",
+      "argv": [
+        "profile",
+        "use",
+        "claude-code",
+        "order",
+        "--keep",
+        "account-3"
+      ],
+      "folders": [
+        "daoris/profiles/agents/claude-code/account-1/",
+        "daoris/profiles/agents/claude-code/account-2/",
+        "daoris/profiles/agents/claude-code/account-3/"
+      ],
+      "before": {
+        "daoris/data/harnesses.json": "{\n  \"rotation\": {\n    \"claude-code\": [\n      \"account-1\",\n      \"account-2\",\n      \"account-3\"\n    ]\n  },\n  \"workspaceRotation\": {\n    \"work\": {\n      \"claude-code\": [\n        \"account-2\",\n        \"account-1\"\n      ]\n    }\n  }\n}\n"
+      },
+      "now": "2026-10-22T10:00:00Z",
+      "exit": 0,
+      "out": [
+        "daoris: on this machine, `claude-code`'s list is account-1, then account-2, then account-3.",
+        "  use accounts             one by one, in order — one limit stops every session on that account",
+        "  kept for conversations   account-3",
+        "  switch accounts          Smart — a session moves at a turn's end when its use is over the curve; a start passes an account whose limit is reached, that draws on usage credits, or whose use is over Daoris's smart curve",
+        "  next start               the first ready account of this list, from `account-1`; driven work passes `account-3`, kept for conversations; one whose limit is reached, that draws on usage credits or whose use is over its curve goes last",
+        "  what each account last said:",
+        "    account-1      nothing said about what it has left",
+        "    account-2      nothing said about what it has left",
+        "    account-3      nothing said about what it has left",
+        "  Written to <root>/daoris/data/harnesses.json — machine-local, tracked by nothing, like every wiring file here."
+      ],
+      "err": [],
+      "after": {
+        "daoris/data/harnesses.json": "{\n  \"rotation\": {\n    \"claude-code\": [\n      \"account-1\",\n      \"account-2\",\n      \"account-3\"\n    ]\n  },\n  \"rotationUse\": {\n    \"claude-code\": {\n      \"use\": \"order\",\n      \"keep\": \"account-3\"\n    }\n  },\n  \"workspaceRotation\": {\n    \"work\": {\n      \"claude-code\": [\n        \"account-2\",\n        \"account-1\"\n      ]\n    }\n  }\n}\n"
+      }
+    },
+    {
+      "name": "profile use, a workspace's by the old names",
+      "argv": [
+        "profile",
+        "use",
+        "claude-code",
+        "--early",
+        "off",
+        "--near",
+        "85",
+        "--workspace",
+        "work"
+      ],
+      "folders": [
+        "daoris/profiles/agents/claude-code/account-1/",
+        "daoris/profiles/agents/claude-code/account-2/",
+        "daoris/profiles/agents/claude-code/account-3/"
+      ],
+      "before": {
+        "daoris/data/harnesses.json": "{\n  \"rotation\": {\n    \"claude-code\": [\n      \"account-1\",\n      \"account-2\",\n      \"account-3\"\n    ]\n  },\n  \"workspaceRotation\": {\n    \"work\": {\n      \"claude-code\": [\n        \"account-2\",\n        \"account-1\"\n      ]\n    }\n  }\n}\n"
+      },
+      "now": "2026-10-22T10:00:00Z",
+      "exit": 0,
+      "out": [
+        "daoris: in `work`, `claude-code`'s list is account-2, then account-1.",
+        "  use accounts             make the most of them",
+        "  kept for conversations   none",
+        "  switch accounts          Off — no session moves at a turn's end; a start still passes an account whose limit is reached, that draws on usage credits, or whose use is over Daoris's smart curve",
+        "  curve                    session 0:85 — kept, and read only under curve",
+        "  next start               the ready account running the fewest of Daoris's sessions; then the one whose week would lapse the most: within its last day, its room under Daoris's smart curve per hour to its reset; then the one furthest behind its week's pace; then the one Daoris started on least recently; then this list's order, from `account-2`; one whose limit is reached, that draws on usage credits or whose use is over Daoris's smart curve goes last, the least over first",
+        "  no account has said what it has left yet: Daoris spreads starts across them by its own sessions",
+        "  what each account last said:",
+        "    account-2      nothing said about what it has left",
+        "    account-1      nothing said about what it has left",
+        "  Written to <root>/daoris/data/harnesses.json — machine-local, tracked by nothing, like every wiring file here."
+      ],
+      "err": [],
+      "after": {
+        "daoris/data/harnesses.json": "{\n  \"rotation\": {\n    \"claude-code\": [\n      \"account-1\",\n      \"account-2\",\n      \"account-3\"\n    ]\n  },\n  \"workspaceRotation\": {\n    \"work\": {\n      \"claude-code\": [\n        \"account-2\",\n        \"account-1\"\n      ]\n    }\n  },\n  \"workspaceRotationUse\": {\n    \"work\": {\n      \"claude-code\": {\n        \"switch\": \"off\",\n        \"curve\": {\n          \"session\": [\n            [\n              0,\n              85\n            ]\n          ]\n        }\n      }\n    }\n  }\n}\n"
+      }
+    },
+    {
+      "name": "profile use, a switch and a curve",
+      "argv": [
+        "profile",
+        "use",
+        "claude-code",
+        "--switch",
+        "curve",
+        "--curve",
+        "weekly=0:30,50:70,100:100",
+        "--curve",
+        "session=0:85"
+      ],
+      "folders": [
+        "daoris/profiles/agents/claude-code/account-1/",
+        "daoris/profiles/agents/claude-code/account-2/"
+      ],
+      "before": {
+        "daoris/data/harnesses.json": "{\n  \"rotation\": {\n    \"claude-code\": [\n      \"account-1\",\n      \"account-2\"\n    ]\n  }\n}\n"
+      },
+      "now": "2026-10-22T10:00:00Z",
+      "exit": 0,
+      "out": [
+        "daoris: on this machine, `claude-code`'s list is account-1, then account-2.",
+        "  use accounts             make the most of them",
+        "  kept for conversations   none",
+        "  switch accounts          My own curve — a session moves at a turn's end when its use is over the curve; a start passes an account whose limit is reached, that draws on usage credits, or whose use is over your curve, Daoris's smart curve on a window yours leaves out",
+        "  curve                    session 0:85; weekly 0:30, 50:70, 100:100",
+        "  next start               the ready account running the fewest of Daoris's sessions; then the one whose week would lapse the most: within its last day, its room under its curve per hour to its reset; then the one with the most room under its curve; then the one Daoris started on least recently; then this list's order, from `account-1`; one whose limit is reached, that draws on usage credits or whose use is over its curve goes last, the least over first",
+        "  no account has said what it has left yet: Daoris spreads starts across them by its own sessions",
+        "  what each account last said:",
+        "    account-1      nothing said about what it has left",
+        "    account-2      nothing said about what it has left",
+        "  Written to <root>/daoris/data/harnesses.json — machine-local, tracked by nothing, like every wiring file here."
+      ],
+      "err": [],
+      "after": {
+        "daoris/data/harnesses.json": "{\n  \"rotation\": {\n    \"claude-code\": [\n      \"account-1\",\n      \"account-2\"\n    ]\n  },\n  \"rotationUse\": {\n    \"claude-code\": {\n      \"switch\": \"curve\",\n      \"curve\": {\n        \"session\": [\n          [\n            0,\n            85\n          ]\n        ],\n        \"weekly\": [\n          [\n            0,\n            30\n          ],\n          [\n            50,\n            70\n          ],\n          [\n            100,\n            100\n          ]\n        ]\n      }\n    }\n  }\n}\n"
+      }
+    },
+    {
+      "name": "profile use, one window of the curve set",
+      "argv": [
+        "profile",
+        "use",
+        "claude-code",
+        "--curve",
+        "weekly=0:20,100:95"
+      ],
+      "folders": [
+        "daoris/profiles/agents/claude-code/account-1/",
+        "daoris/profiles/agents/claude-code/account-2/"
+      ],
+      "before": {
+        "daoris/data/harnesses.json": "{\n  \"rotation\": {\n    \"claude-code\": [\n      \"account-1\",\n      \"account-2\"\n    ]\n  },\n  \"rotationUse\": {\n    \"claude-code\": {\n      \"switch\": \"curve\",\n      \"curve\": {\n        \"session\": [\n          [\n            0,\n            85\n          ]\n        ],\n        \"weekly\": [\n          [\n            0,\n            30\n          ],\n          [\n            50,\n            70\n          ],\n          [\n            100,\n            100\n          ]\n        ]\n      }\n    }\n  }\n}\n"
+      },
+      "now": "2026-10-22T10:00:00Z",
+      "exit": 0,
+      "out": [
+        "daoris: on this machine, `claude-code`'s list is account-1, then account-2.",
+        "  use accounts             make the most of them",
+        "  kept for conversations   none",
+        "  switch accounts          My own curve — a session moves at a turn's end when its use is over the curve; a start passes an account whose limit is reached, that draws on usage credits, or whose use is over your curve, Daoris's smart curve on a window yours leaves out",
+        "  curve                    session 0:85; weekly 0:20, 100:95",
+        "  next start               the ready account running the fewest of Daoris's sessions; then the one whose week would lapse the most: within its last day, its room under its curve per hour to its reset; then the one with the most room under its curve; then the one Daoris started on least recently; then this list's order, from `account-1`; one whose limit is reached, that draws on usage credits or whose use is over its curve goes last, the least over first",
+        "  no account has said what it has left yet: Daoris spreads starts across them by its own sessions",
+        "  what each account last said:",
+        "    account-1      nothing said about what it has left",
+        "    account-2      nothing said about what it has left",
+        "  Written to <root>/daoris/data/harnesses.json — machine-local, tracked by nothing, like every wiring file here."
+      ],
+      "err": [],
+      "after": {
+        "daoris/data/harnesses.json": "{\n  \"rotation\": {\n    \"claude-code\": [\n      \"account-1\",\n      \"account-2\"\n    ]\n  },\n  \"rotationUse\": {\n    \"claude-code\": {\n      \"switch\": \"curve\",\n      \"curve\": {\n        \"session\": [\n          [\n            0,\n            85\n          ]\n        ],\n        \"weekly\": [\n          [\n            0,\n            20\n          ],\n          [\n            100,\n            95\n          ]\n        ]\n      }\n    }\n  }\n}\n"
+      }
+    },
+    {
+      "name": "profile use, the switch off keeping the curve",
+      "argv": [
+        "profile",
+        "use",
+        "claude-code",
+        "--switch",
+        "off"
+      ],
+      "folders": [
+        "daoris/profiles/agents/claude-code/account-1/",
+        "daoris/profiles/agents/claude-code/account-2/"
+      ],
+      "before": {
+        "daoris/data/harnesses.json": "{\n  \"rotation\": {\n    \"claude-code\": [\n      \"account-1\",\n      \"account-2\"\n    ]\n  },\n  \"rotationUse\": {\n    \"claude-code\": {\n      \"switch\": \"curve\",\n      \"curve\": {\n        \"session\": [\n          [\n            0,\n            85\n          ]\n        ],\n        \"weekly\": [\n          [\n            0,\n            20\n          ],\n          [\n            100,\n            95\n          ]\n        ]\n      }\n    }\n  }\n}\n"
+      },
+      "now": "2026-10-22T10:00:00Z",
+      "exit": 0,
+      "out": [
+        "daoris: on this machine, `claude-code`'s list is account-1, then account-2.",
+        "  use accounts             make the most of them",
+        "  kept for conversations   none",
+        "  switch accounts          Off — no session moves at a turn's end; a start still passes an account whose limit is reached, that draws on usage credits, or whose use is over Daoris's smart curve",
+        "  curve                    session 0:85; weekly 0:20, 100:95 — kept, and read only under curve",
+        "  next start               the ready account running the fewest of Daoris's sessions; then the one whose week would lapse the most: within its last day, its room under Daoris's smart curve per hour to its reset; then the one furthest behind its week's pace; then the one Daoris started on least recently; then this list's order, from `account-1`; one whose limit is reached, that draws on usage credits or whose use is over Daoris's smart curve goes last, the least over first",
+        "  no account has said what it has left yet: Daoris spreads starts across them by its own sessions",
+        "  what each account last said:",
+        "    account-1      nothing said about what it has left",
+        "    account-2      nothing said about what it has left",
+        "  Written to <root>/daoris/data/harnesses.json — machine-local, tracked by nothing, like every wiring file here."
+      ],
+      "err": [],
+      "after": {
+        "daoris/data/harnesses.json": "{\n  \"rotation\": {\n    \"claude-code\": [\n      \"account-1\",\n      \"account-2\"\n    ]\n  },\n  \"rotationUse\": {\n    \"claude-code\": {\n      \"switch\": \"off\",\n      \"curve\": {\n        \"session\": [\n          [\n            0,\n            85\n          ]\n        ],\n        \"weekly\": [\n          [\n            0,\n            20\n          ],\n          [\n            100,\n            95\n          ]\n        ]\n      }\n    }\n  }\n}\n"
+      }
+    },
+    {
+      "name": "profile use, the curve taken out",
+      "argv": [
+        "profile",
+        "use",
+        "claude-code",
+        "--no-curve"
+      ],
+      "folders": [
+        "daoris/profiles/agents/claude-code/account-1/",
+        "daoris/profiles/agents/claude-code/account-2/"
+      ],
+      "before": {
+        "daoris/data/harnesses.json": "{\n  \"rotation\": {\n    \"claude-code\": [\n      \"account-1\",\n      \"account-2\"\n    ]\n  },\n  \"rotationUse\": {\n    \"claude-code\": {\n      \"switch\": \"off\",\n      \"curve\": {\n        \"session\": [\n          [\n            0,\n            85\n          ]\n        ]\n      }\n    }\n  }\n}\n"
+      },
+      "now": "2026-10-22T10:00:00Z",
+      "exit": 0,
+      "out": [
+        "daoris: on this machine, `claude-code`'s list is account-1, then account-2.",
+        "  use accounts             make the most of them",
+        "  kept for conversations   none",
+        "  switch accounts          Off — no session moves at a turn's end; a start still passes an account whose limit is reached, that draws on usage credits, or whose use is over Daoris's smart curve",
+        "  next start               the ready account running the fewest of Daoris's sessions; then the one whose week would lapse the most: within its last day, its room under Daoris's smart curve per hour to its reset; then the one furthest behind its week's pace; then the one Daoris started on least recently; then this list's order, from `account-1`; one whose limit is reached, that draws on usage credits or whose use is over Daoris's smart curve goes last, the least over first",
+        "  no account has said what it has left yet: Daoris spreads starts across them by its own sessions",
+        "  what each account last said:",
+        "    account-1      nothing said about what it has left",
+        "    account-2      nothing said about what it has left",
+        "  Written to <root>/daoris/data/harnesses.json — machine-local, tracked by nothing, like every wiring file here."
+      ],
+      "err": [],
+      "after": {
+        "daoris/data/harnesses.json": "{\n  \"rotation\": {\n    \"claude-code\": [\n      \"account-1\",\n      \"account-2\"\n    ]\n  },\n  \"rotationUse\": {\n    \"claude-code\": {\n      \"switch\": \"off\"\n    }\n  }\n}\n"
+      }
+    },
+    {
+      "name": "profile use, a curve switch with no curve",
+      "argv": [
+        "profile",
+        "use",
+        "claude-code",
+        "--switch",
+        "curve"
+      ],
+      "folders": [
+        "daoris/profiles/agents/claude-code/account-1/",
+        "daoris/profiles/agents/claude-code/account-2/"
+      ],
+      "before": {
+        "daoris/data/harnesses.json": "{\n  \"rotation\": {\n    \"claude-code\": [\n      \"account-1\",\n      \"account-2\"\n    ]\n  }\n}\n"
+      },
+      "now": "2026-10-22T10:00:00Z",
+      "exit": 0,
+      "out": [
+        "daoris: on this machine, `claude-code`'s list is account-1, then account-2.",
+        "  use accounts             make the most of them",
+        "  kept for conversations   none",
+        "  switch accounts          My own curve — a session moves at a turn's end when its use is over the curve; a start passes an account whose limit is reached, that draws on usage credits, or whose use is over your curve, Daoris's smart curve on a window yours leaves out",
+        "  curve                    none of your own — each window takes Daoris's smart curve",
+        "  next start               the ready account running the fewest of Daoris's sessions; then the one whose week would lapse the most: within its last day, its room under its curve per hour to its reset; then the one with the most room under its curve; then the one Daoris started on least recently; then this list's order, from `account-1`; one whose limit is reached, that draws on usage credits or whose use is over its curve goes last, the least over first",
+        "  no account has said what it has left yet: Daoris spreads starts across them by its own sessions",
+        "  what each account last said:",
+        "    account-1      nothing said about what it has left",
+        "    account-2      nothing said about what it has left",
+        "  Written to <root>/daoris/data/harnesses.json — machine-local, tracked by nothing, like every wiring file here."
+      ],
+      "err": [],
+      "after": {
+        "daoris/data/harnesses.json": "{\n  \"rotation\": {\n    \"claude-code\": [\n      \"account-1\",\n      \"account-2\"\n    ]\n  },\n  \"rotationUse\": {\n    \"claude-code\": {\n      \"switch\": \"curve\"\n    }\n  }\n}\n"
+      }
+    },
+    {
+      "name": "profile use, printed with a cool-off",
+      "argv": [
+        "profile",
+        "use",
+        "claude-code"
+      ],
+      "folders": [
+        "daoris/profiles/agents/claude-code/account-1/",
+        "daoris/profiles/agents/claude-code/account-2/"
+      ],
+      "before": {
+        "daoris/data/harnesses.json": "{\n  \"rotation\": {\n    \"claude-code\": [\n      \"account-1\",\n      \"account-2\"\n    ]\n  }\n}\n",
+        "daoris/data/cooling.json": "{\n  \"claude-code\": {\n    \"account-2\": {\n      \"until\": \"2026-10-23T10:00:00Z\",\n      \"stated\": true\n    }\n  }\n}\n"
+      },
+      "now": "2026-10-22T10:00:00Z",
+      "exit": 0,
+      "out": [
+        "daoris: on this machine, `claude-code`'s list is account-1, then account-2.",
+        "  use accounts             make the most of them",
+        "  kept for conversations   none",
+        "  switch accounts          Smart — a session moves at a turn's end when its use is over the curve; a start passes an account whose limit is reached, that draws on usage credits, or whose use is over Daoris's smart curve",
+        "  next start               the ready account running the fewest of Daoris's sessions; then the one whose week would lapse the most: within its last day, its room under its curve per hour to its reset; then the one with the most room under its curve; then the one Daoris started on least recently; then this list's order, from `account-1`; one whose limit is reached, that draws on usage credits or whose use is over its curve goes last, the least over first",
+        "  no account has said what it has left yet: Daoris spreads starts across them by its own sessions",
+        "  what each account last said:",
+        "    account-1      nothing said about what it has left",
+        "    account-2      cooling until Oct 23, 06:00 (America/New_York), in 1 d — as the agent said; `daoris agent profile ready claude-code account-2` tries it now"
+      ],
+      "err": [],
+      "after": {
+        "daoris/data/cooling.json": "{\n  \"claude-code\": {\n    \"account-2\": {\n      \"until\": \"2026-10-23T10:00:00Z\",\n      \"stated\": true\n    }\n  }\n}\n",
+        "daoris/data/harnesses.json": "{\n  \"rotation\": {\n    \"claude-code\": [\n      \"account-1\",\n      \"account-2\"\n    ]\n  }\n}\n"
+      }
+    },
+    {
+      "name": "profile use, a workspace using the machine's",
+      "argv": [
+        "profile",
+        "use",
+        "claude-code",
+        "--workspace",
+        "home"
+      ],
+      "folders": [
+        "daoris/profiles/agents/claude-code/account-1/",
+        "daoris/profiles/agents/claude-code/account-2/"
+      ],
+      "before": {
+        "daoris/data/harnesses.json": "{\n  \"rotation\": {\n    \"claude-code\": [\n      \"account-1\",\n      \"account-2\"\n    ]\n  }\n}\n"
+      },
+      "now": "2026-10-22T10:00:00Z",
+      "exit": 0,
+      "out": [
+        "daoris: `home` names no account of its own for `claude-code`, so it uses this machine's: account-1, then account-2.",
+        "  use accounts             make the most of them",
+        "  kept for conversations   none",
+        "  switch accounts          Smart — a session moves at a turn's end when its use is over the curve; a start passes an account whose limit is reached, that draws on usage credits, or whose use is over Daoris's smart curve",
+        "  next start               the ready account running the fewest of Daoris's sessions; then the one whose week would lapse the most: within its last day, its room under its curve per hour to its reset; then the one with the most room under its curve; then the one Daoris started on least recently; then this list's order, from `account-1`; one whose limit is reached, that draws on usage credits or whose use is over its curve goes last, the least over first",
+        "  no account has said what it has left yet: Daoris spreads starts across them by its own sessions",
+        "  what each account last said:",
+        "    account-1      nothing said about what it has left",
+        "    account-2      nothing said about what it has left"
+      ],
+      "err": [],
+      "after": {
+        "daoris/data/harnesses.json": "{\n  \"rotation\": {\n    \"claude-code\": [\n      \"account-1\",\n      \"account-2\"\n    ]\n  }\n}\n"
+      }
+    },
+    {
+      "name": "profile use, the next start under the goal",
+      "argv": [
+        "profile",
+        "use",
+        "claude-code"
+      ],
+      "folders": [
+        "daoris/profiles/agents/claude-code/account-1/",
+        "daoris/profiles/agents/claude-code/account-2/",
+        "daoris/profiles/agents/claude-code/account-3/"
+      ],
+      "before": {
+        "daoris/data/harnesses.json": "{\n  \"rotation\": {\n    \"claude-code\": [\n      \"account-1\",\n      \"account-2\",\n      \"account-3\"\n    ]\n  }\n}\n"
+      },
+      "now": "2026-10-22T10:00:00Z",
+      "exit": 0,
+      "out": [
+        "daoris: on this machine, `claude-code`'s list is account-1, then account-2, then account-3.",
+        "  use accounts             make the most of them",
+        "  kept for conversations   none",
+        "  switch accounts          Smart — a session moves at a turn's end when its use is over the curve; a start passes an account whose limit is reached, that draws on usage credits, or whose use is over Daoris's smart curve",
+        "  next start               the ready account running the fewest of Daoris's sessions; then the one whose week would lapse the most: within its last day, its room under its curve per hour to its reset; then the one with the most room under its curve; then the one Daoris started on least recently; then this list's order, from `account-1`; one whose limit is reached, that draws on usage credits or whose use is over its curve goes last, the least over first",
+        "  no account has said what it has left yet: Daoris spreads starts across them by its own sessions",
+        "  what each account last said:",
+        "    account-1      nothing said about what it has left",
+        "    account-2      nothing said about what it has left",
+        "    account-3      nothing said about what it has left"
+      ],
+      "err": [],
+      "after": {
+        "daoris/data/harnesses.json": "{\n  \"rotation\": {\n    \"claude-code\": [\n      \"account-1\",\n      \"account-2\",\n      \"account-3\"\n    ]\n  }\n}\n"
+      }
+    },
+    {
+      "name": "profile use, the next start passing a kept account",
+      "argv": [
+        "profile",
+        "use",
+        "claude-code",
+        "--keep",
+        "account-3"
+      ],
+      "folders": [
+        "daoris/profiles/agents/claude-code/account-1/",
+        "daoris/profiles/agents/claude-code/account-2/",
+        "daoris/profiles/agents/claude-code/account-3/"
+      ],
+      "before": {
+        "daoris/data/harnesses.json": "{\n  \"rotation\": {\n    \"claude-code\": [\n      \"account-1\",\n      \"account-2\",\n      \"account-3\"\n    ]\n  }\n}\n"
+      },
+      "now": "2026-10-22T10:00:00Z",
+      "exit": 0,
+      "out": [
+        "daoris: on this machine, `claude-code`'s list is account-1, then account-2, then account-3.",
+        "  use accounts             make the most of them",
+        "  kept for conversations   account-3",
+        "  switch accounts          Smart — a session moves at a turn's end when its use is over the curve; a start passes an account whose limit is reached, that draws on usage credits, or whose use is over Daoris's smart curve",
+        "  next start               the ready account running the fewest of Daoris's sessions; then the one whose week would lapse the most: within its last day, its room under its curve per hour to its reset; then the one with the most room under its curve; then the one Daoris started on least recently; then this list's order, from `account-1`; driven work passes `account-3`, kept for conversations; one whose limit is reached, that draws on usage credits or whose use is over its curve goes last, the least over first",
+        "  no account has said what it has left yet: Daoris spreads starts across them by its own sessions",
+        "  what each account last said:",
+        "    account-1      nothing said about what it has left",
+        "    account-2      nothing said about what it has left",
+        "    account-3      nothing said about what it has left",
+        "  Written to <root>/daoris/data/harnesses.json — machine-local, tracked by nothing, like every wiring file here."
+      ],
+      "err": [],
+      "after": {
+        "daoris/data/harnesses.json": "{\n  \"rotation\": {\n    \"claude-code\": [\n      \"account-1\",\n      \"account-2\",\n      \"account-3\"\n    ]\n  },\n  \"rotationUse\": {\n    \"claude-code\": {\n      \"keep\": \"account-3\"\n    }\n  }\n}\n"
+      }
+    },
+    {
+      "name": "profile use, the next start under off",
+      "argv": [
+        "profile",
+        "use",
+        "claude-code",
+        "--switch",
+        "off",
+        "--no-keep"
+      ],
+      "folders": [
+        "daoris/profiles/agents/claude-code/account-1/",
+        "daoris/profiles/agents/claude-code/account-2/",
+        "daoris/profiles/agents/claude-code/account-3/"
+      ],
+      "before": {
+        "daoris/data/harnesses.json": "{\n  \"rotation\": {\n    \"claude-code\": [\n      \"account-1\",\n      \"account-2\",\n      \"account-3\"\n    ]\n  },\n  \"rotationUse\": {\n    \"claude-code\": {\n      \"keep\": \"account-3\"\n    }\n  }\n}\n"
+      },
+      "now": "2026-10-22T10:00:00Z",
+      "exit": 0,
+      "out": [
+        "daoris: on this machine, `claude-code`'s list is account-1, then account-2, then account-3.",
+        "  use accounts             make the most of them",
+        "  kept for conversations   none",
+        "  switch accounts          Off — no session moves at a turn's end; a start still passes an account whose limit is reached, that draws on usage credits, or whose use is over Daoris's smart curve",
+        "  next start               the ready account running the fewest of Daoris's sessions; then the one whose week would lapse the most: within its last day, its room under Daoris's smart curve per hour to its reset; then the one furthest behind its week's pace; then the one Daoris started on least recently; then this list's order, from `account-1`; one whose limit is reached, that draws on usage credits or whose use is over Daoris's smart curve goes last, the least over first",
+        "  no account has said what it has left yet: Daoris spreads starts across them by its own sessions",
+        "  what each account last said:",
+        "    account-1      nothing said about what it has left",
+        "    account-2      nothing said about what it has left",
+        "    account-3      nothing said about what it has left",
+        "  Written to <root>/daoris/data/harnesses.json — machine-local, tracked by nothing, like every wiring file here."
+      ],
+      "err": [],
+      "after": {
+        "daoris/data/harnesses.json": "{\n  \"rotation\": {\n    \"claude-code\": [\n      \"account-1\",\n      \"account-2\",\n      \"account-3\"\n    ]\n  },\n  \"rotationUse\": {\n    \"claude-code\": {\n      \"switch\": \"off\"\n    }\n  }\n}\n"
+      }
+    },
+    {
+      "name": "profile use, the next start in order from a default",
+      "argv": [
+        "profile",
+        "use",
+        "claude-code",
+        "order",
+        "--workspace",
+        "work"
+      ],
+      "folders": [
+        "daoris/profiles/agents/claude-code/account-1/",
+        "daoris/profiles/agents/claude-code/account-2/",
+        "daoris/profiles/agents/claude-code/account-3/"
+      ],
+      "before": {
+        "daoris/data/harnesses.json": "{\n  \"rotation\": {\n    \"claude-code\": [\n      \"account-1\",\n      \"account-2\",\n      \"account-3\"\n    ]\n  },\n  \"workspaces\": {\n    \"work\": {\n      \"claude-code\": \"account-1\"\n    }\n  },\n  \"workspaceRotation\": {\n    \"work\": {\n      \"claude-code\": [\n        \"account-3\",\n        \"account-1\"\n      ]\n    }\n  }\n}\n"
+      },
+      "now": "2026-10-22T10:00:00Z",
+      "exit": 0,
+      "out": [
+        "daoris: in `work`, `claude-code`'s list is account-3, then account-1.",
+        "  use accounts             one by one, in order — one limit stops every session on that account",
+        "  kept for conversations   none",
+        "  switch accounts          Smart — a session moves at a turn's end when its use is over the curve; a start passes an account whose limit is reached, that draws on usage credits, or whose use is over Daoris's smart curve",
+        "  next start               the first ready account of this list, from `account-1`, its default; one whose limit is reached, that draws on usage credits or whose use is over its curve goes last",
+        "  what each account last said:",
+        "    account-3      nothing said about what it has left",
+        "    account-1      nothing said about what it has left",
+        "  Written to <root>/daoris/data/harnesses.json — machine-local, tracked by nothing, like every wiring file here."
+      ],
+      "err": [],
+      "after": {
+        "daoris/data/harnesses.json": "{\n  \"rotation\": {\n    \"claude-code\": [\n      \"account-1\",\n      \"account-2\",\n      \"account-3\"\n    ]\n  },\n  \"workspaces\": {\n    \"work\": {\n      \"claude-code\": \"account-1\"\n    }\n  },\n  \"workspaceRotation\": {\n    \"work\": {\n      \"claude-code\": [\n        \"account-3\",\n        \"account-1\"\n      ]\n    }\n  },\n  \"workspaceRotationUse\": {\n    \"work\": {\n      \"claude-code\": {\n        \"use\": \"order\"\n      }\n    }\n  }\n}\n"
+      }
+    },
+    {
+      "name": "profile use, a list of one",
+      "argv": [
+        "profile",
+        "use",
+        "claude-code",
+        "--workspace",
+        "solo"
+      ],
+      "folders": [
+        "daoris/profiles/agents/claude-code/account-1/",
+        "daoris/profiles/agents/claude-code/account-2/",
+        "daoris/profiles/agents/claude-code/account-3/"
+      ],
+      "before": {
+        "daoris/data/harnesses.json": "{\n  \"rotation\": {\n    \"claude-code\": [\n      \"account-1\",\n      \"account-2\",\n      \"account-3\"\n    ]\n  },\n  \"workspaceRotation\": {\n    \"solo\": {\n      \"claude-code\": [\n        \"account-2\"\n      ]\n    }\n  }\n}\n"
+      },
+      "now": "2026-10-22T10:00:00Z",
+      "exit": 0,
+      "out": [
+        "daoris: in `solo`, `claude-code`'s list is account-2.",
+        "  use accounts             make the most of them",
+        "  kept for conversations   none",
+        "  switch accounts          Smart — a session moves at a turn's end when its use is over the curve; a start passes an account whose limit is reached, that draws on usage credits, or whose use is over Daoris's smart curve",
+        "  next start               `account-2`, the one account this list holds",
+        "  what each account last said:",
+        "    account-2      nothing said about what it has left"
+      ],
+      "err": [],
+      "after": {
+        "daoris/data/harnesses.json": "{\n  \"rotation\": {\n    \"claude-code\": [\n      \"account-1\",\n      \"account-2\",\n      \"account-3\"\n    ]\n  },\n  \"workspaceRotation\": {\n    \"solo\": {\n      \"claude-code\": [\n        \"account-2\"\n      ]\n    }\n  }\n}\n"
+      }
+    },
+    {
+      "name": "profile use, what an account last said",
+      "argv": [
+        "profile",
+        "use",
+        "claude-code"
+      ],
+      "folders": [
+        "daoris/profiles/agents/claude-code/account-1/",
+        "daoris/profiles/agents/claude-code/account-2/"
+      ],
+      "before": {
+        "daoris/data/harnesses.json": "{\n  \"rotation\": {\n    \"claude-code\": [\n      \"account-1\",\n      \"account-2\"\n    ]\n  },\n  \"rotationUse\": {\n    \"claude-code\": {\n      \"switch\": \"curve\",\n      \"curve\": {\n        \"session\": [\n          [\n            0,\n            85\n          ]\n        ]\n      }\n    }\n  }\n}\n",
+        "daoris/data/windows.json": "{\n  \"claude-code\": {\n    \"account-1\": {\n      \"session\": {\n        \"reset\": \"2026-10-22T12:00:00Z\",\n        \"used\": 0.88,\n        \"standing\": \"clear\",\n        \"seen\": \"2026-10-22T09:40:00Z\",\n        \"session\": \"s1\"\n      },\n      \"weekly\": {\n        \"reset\": \"2026-10-26T14:00:00Z\",\n        \"used\": 0.14,\n        \"seen\": \"2026-10-22T09:40:00Z\",\n        \"session\": \"s1\"\n      }\n    }\n  }\n}\n"
+      },
+      "now": "2026-10-22T10:00:00Z",
+      "exit": 0,
+      "out": [
+        "daoris: on this machine, `claude-code`'s list is account-1, then account-2.",
+        "  use accounts             make the most of them",
+        "  kept for conversations   none",
+        "  switch accounts          My own curve — a session moves at a turn's end when its use is over the curve; a start passes an account whose limit is reached, that draws on usage credits, or whose use is over your curve, Daoris's smart curve on a window yours leaves out",
+        "  curve                    session 0:85",
+        "  next start               the ready account running the fewest of Daoris's sessions; then the one whose week would lapse the most: within its last day, its room under its curve per hour to its reset; then the one with the most room under its curve; then the one Daoris started on least recently; then this list's order, from `account-1`; one whose limit is reached, that draws on usage credits or whose use is over its curve goes last, the least over first",
+        "  what each account last said:",
+        "    account-1      said 20 min ago: 88% of its session limit used, resetting Oct 22, 08:00 (America/New_York); 14% of its weekly limit used, resetting Oct 26, 10:00 (America/New_York); over its session curve's 85%",
+        "    account-2      nothing said about what it has left"
+      ],
+      "err": [],
+      "after": {
+        "daoris/data/harnesses.json": "{\n  \"rotation\": {\n    \"claude-code\": [\n      \"account-1\",\n      \"account-2\"\n    ]\n  },\n  \"rotationUse\": {\n    \"claude-code\": {\n      \"switch\": \"curve\",\n      \"curve\": {\n        \"session\": [\n          [\n            0,\n            85\n          ]\n        ]\n      }\n    }\n  }\n}\n",
+        "daoris/data/windows.json": "{\n  \"claude-code\": {\n    \"account-1\": {\n      \"session\": {\n        \"reset\": \"2026-10-22T12:00:00Z\",\n        \"used\": 0.88,\n        \"standing\": \"clear\",\n        \"seen\": \"2026-10-22T09:40:00Z\",\n        \"session\": \"s1\"\n      },\n      \"weekly\": {\n        \"reset\": \"2026-10-26T14:00:00Z\",\n        \"used\": 0.14,\n        \"seen\": \"2026-10-22T09:40:00Z\",\n        \"session\": \"s1\"\n      }\n    }\n  }\n}\n"
+      }
+    },
+    {
+      "name": "profile use, codex asked of its server",
+      "argv": [
+        "profile",
+        "use",
+        "codex"
+      ],
+      "folders": [
+        "daoris/profiles/agents/codex/account-1/",
+        "daoris/profiles/agents/codex/account-2/"
+      ],
+      "before": {
+        "daoris/data/harnesses.json": "{\n  \"rotation\": {\n    \"codex\": [\n      \"account-1\",\n      \"account-2\"\n    ]\n  }\n}\n"
+      },
+      "now": "2026-10-22T10:00:00Z",
+      "exit": 0,
+      "out": [
+        "daoris: on this machine, `codex`'s list is account-1, then account-2.",
+        "  use accounts             make the most of them",
+        "  kept for conversations   none",
+        "  switch accounts          Smart — a session moves at a turn's end when its use is over the curve; a start passes an account whose limit is reached, that draws on usage credits, or whose use is over Daoris's smart curve",
+        "  next start               the ready account running the fewest of Daoris's sessions; then the one whose week would lapse the most: within its last day, its room under its curve per hour to its reset; then the one with the most room under its curve; then the one Daoris started on least recently; then this list's order, from `account-1`; one whose limit is reached, that draws on usage credits or whose use is over its curve goes last, the least over first",
+        "  no account has said what it has left yet: Daoris spreads starts across them by its own sessions",
+        "  what each account last said:",
+        "    account-1      nothing said about what it has left",
+        "    account-2      nothing said about what it has left"
+      ],
+      "err": [],
+      "after": {
+        "daoris/data/harnesses.json": "{\n  \"rotation\": {\n    \"codex\": [\n      \"account-1\",\n      \"account-2\"\n    ]\n  }\n}\n"
+      }
+    },
+    {
+      "name": "profile use, an agent that says nothing of its windows",
+      "argv": [
+        "profile",
+        "use",
+        "dsh"
+      ],
+      "folders": [
+        "daoris/profiles/agents/dsh/account-1/",
+        "daoris/profiles/agents/dsh/account-2/"
+      ],
+      "before": {
+        "daoris/data/harnesses.json": "{\n  \"rotation\": {\n    \"dsh\": [\n      \"account-1\",\n      \"account-2\"\n    ]\n  }\n}\n"
+      },
+      "now": "2026-10-22T10:00:00Z",
+      "exit": 0,
+      "out": [
+        "daoris: on this machine, `dsh`'s list is account-1, then account-2.",
+        "  use accounts             make the most of them",
+        "  kept for conversations   none",
+        "  switch accounts          Smart — DeepSeek Harness's sessions here do not say how much of each window is used, so a start passes no account by its use",
+        "  next start               the ready account running the fewest of Daoris's sessions; then the one Daoris started on least recently; then this list's order, from `account-1`",
+        "  no account has said what it has left yet: Daoris spreads starts across them by its own sessions",
+        "  what each account last said:",
+        "    account-1      nothing said about what it has left",
+        "    account-2      nothing said about what it has left"
+      ],
+      "err": [],
+      "after": {
+        "daoris/data/harnesses.json": "{\n  \"rotation\": {\n    \"dsh\": [\n      \"account-1\",\n      \"account-2\"\n    ]\n  }\n}\n"
+      }
+    },
+    {
+      "name": "profile use, a setting beside --clear",
+      "argv": [
+        "profile",
+        "use",
+        "claude-code",
+        "goal",
+        "--clear"
+      ],
+      "folders": [
+        "daoris/profiles/agents/claude-code/account-1/",
+        "daoris/profiles/agents/claude-code/account-2/"
+      ],
+      "before": {
+        "daoris/data/harnesses.json": "{\n  \"rotation\": {\n    \"claude-code\": [\n      \"account-1\",\n      \"account-2\"\n    ]\n  },\n  \"rotationUse\": {\n    \"claude-code\": {\n      \"use\": \"order\",\n      \"switch\": \"off\"\n    }\n  }\n}\n"
+      },
+      "now": "2026-10-22T10:00:00Z",
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: `--clear` sets no setting beside it — `daoris agent profile use claude-code --clear` returns the scope to today's defaults, and the setting is set on its own."
+      ],
+      "after": {
+        "daoris/data/harnesses.json": "{\n  \"rotation\": {\n    \"claude-code\": [\n      \"account-1\",\n      \"account-2\"\n    ]\n  },\n  \"rotationUse\": {\n    \"claude-code\": {\n      \"use\": \"order\",\n      \"switch\": \"off\"\n    }\n  }\n}\n"
+      }
+    },
+    {
+      "name": "profile use, --no-curve beside --clear",
+      "argv": [
+        "profile",
+        "use",
+        "claude-code",
+        "--no-curve",
+        "--clear"
+      ],
+      "folders": [
+        "daoris/profiles/agents/claude-code/account-1/",
+        "daoris/profiles/agents/claude-code/account-2/"
+      ],
+      "before": {
+        "daoris/data/harnesses.json": "{\n  \"rotation\": {\n    \"claude-code\": [\n      \"account-1\",\n      \"account-2\"\n    ]\n  },\n  \"rotationUse\": {\n    \"claude-code\": {\n      \"use\": \"order\",\n      \"switch\": \"off\"\n    }\n  }\n}\n"
+      },
+      "now": "2026-10-22T10:00:00Z",
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: `--clear` sets no setting beside it — `daoris agent profile use claude-code --clear` returns the scope to today's defaults, and the setting is set on its own."
+      ],
+      "after": {
+        "daoris/data/harnesses.json": "{\n  \"rotation\": {\n    \"claude-code\": [\n      \"account-1\",\n      \"account-2\"\n    ]\n  },\n  \"rotationUse\": {\n    \"claude-code\": {\n      \"use\": \"order\",\n      \"switch\": \"off\"\n    }\n  }\n}\n"
+      }
+    },
+    {
+      "name": "profile use --clear",
+      "argv": [
+        "profile",
+        "use",
+        "claude-code",
+        "--clear"
+      ],
+      "folders": [
+        "daoris/profiles/agents/claude-code/account-1/",
+        "daoris/profiles/agents/claude-code/account-2/"
+      ],
+      "before": {
+        "daoris/data/harnesses.json": "{\n  \"rotation\": {\n    \"claude-code\": [\n      \"account-1\",\n      \"account-2\"\n    ]\n  },\n  \"rotationUse\": {\n    \"claude-code\": {\n      \"use\": \"order\",\n      \"switch\": \"off\"\n    }\n  }\n}\n"
+      },
+      "now": "2026-10-22T10:00:00Z",
+      "exit": 0,
+      "out": [
+        "daoris: on this machine, `claude-code` sets nothing of its own about how its list is used: today's defaults apply.",
+        "  Written to <root>/daoris/data/harnesses.json — machine-local, tracked by nothing, like every wiring file here."
+      ],
+      "err": [],
+      "after": {
+        "daoris/data/harnesses.json": "{\n  \"rotation\": {\n    \"claude-code\": [\n      \"account-1\",\n      \"account-2\"\n    ]\n  }\n}\n"
+      }
+    },
+    {
+      "name": "profile use, a workspace with a default and no list",
+      "argv": [
+        "profile",
+        "use",
+        "claude-code",
+        "order",
+        "--workspace",
+        "work"
+      ],
+      "folders": [
+        "daoris/profiles/agents/claude-code/account-1/",
+        "daoris/profiles/agents/claude-code/account-2/"
+      ],
+      "before": {
+        "daoris/data/harnesses.json": "{\n  \"rotation\": {\n    \"claude-code\": [\n      \"account-1\",\n      \"account-2\"\n    ]\n  },\n  \"workspaces\": {\n    \"work\": {\n      \"claude-code\": \"account-2\"\n    }\n  }\n}\n"
+      },
+      "now": "2026-10-22T10:00:00Z",
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: `work` has no list of its own for `claude-code`, so there is nothing to use there — `daoris agent profile order claude-code <account>… --workspace work` gives it one."
+      ],
+      "after": {
+        "daoris/data/harnesses.json": "{\n  \"rotation\": {\n    \"claude-code\": [\n      \"account-1\",\n      \"account-2\"\n    ]\n  },\n  \"workspaces\": {\n    \"work\": {\n      \"claude-code\": \"account-2\"\n    }\n  }\n}\n"
+      }
+    },
+    {
+      "name": "profile use, a workspace borrowing the machine's, set",
+      "argv": [
+        "profile",
+        "use",
+        "claude-code",
+        "--switch",
+        "off",
+        "--workspace",
+        "home"
+      ],
+      "folders": [
+        "daoris/profiles/agents/claude-code/account-1/",
+        "daoris/profiles/agents/claude-code/account-2/"
+      ],
+      "before": {
+        "daoris/data/harnesses.json": "{\n  \"rotation\": {\n    \"claude-code\": [\n      \"account-1\",\n      \"account-2\"\n    ]\n  },\n  \"workspaces\": {\n    \"work\": {\n      \"claude-code\": \"account-2\"\n    }\n  }\n}\n"
+      },
+      "now": "2026-10-22T10:00:00Z",
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: `home` has no list of its own for `claude-code`, so there is nothing to use there — `daoris agent profile order claude-code <account>… --workspace home` gives it one, and until then it uses this machine's, which is set without --workspace."
+      ],
+      "after": {
+        "daoris/data/harnesses.json": "{\n  \"rotation\": {\n    \"claude-code\": [\n      \"account-1\",\n      \"account-2\"\n    ]\n  },\n  \"workspaces\": {\n    \"work\": {\n      \"claude-code\": \"account-2\"\n    }\n  }\n}\n"
+      }
+    },
+    {
+      "name": "profile use, a workspace with a default and no list, printed",
+      "argv": [
+        "profile",
+        "use",
+        "claude-code",
+        "--workspace",
+        "work"
+      ],
+      "folders": [
+        "daoris/profiles/agents/claude-code/account-1/",
+        "daoris/profiles/agents/claude-code/account-2/"
+      ],
+      "before": {
+        "daoris/data/harnesses.json": "{\n  \"rotation\": {\n    \"claude-code\": [\n      \"account-1\",\n      \"account-2\"\n    ]\n  },\n  \"workspaces\": {\n    \"work\": {\n      \"claude-code\": \"account-2\"\n    }\n  }\n}\n"
+      },
+      "now": "2026-10-22T10:00:00Z",
+      "exit": 0,
+      "out": [
+        "daoris: `work` names its own account for `claude-code`, `account-2`, and no list of its own, so it has no settings — `daoris agent profile order claude-code account-2 <account>… --workspace work` gives it a list."
+      ],
+      "err": [],
+      "after": {
+        "daoris/data/harnesses.json": "{\n  \"rotation\": {\n    \"claude-code\": [\n      \"account-1\",\n      \"account-2\"\n    ]\n  },\n  \"workspaces\": {\n    \"work\": {\n      \"claude-code\": \"account-2\"\n    }\n  }\n}\n"
+      }
+    },
+    {
+      "name": "profile use, no list on this machine",
+      "argv": [
+        "profile",
+        "use",
+        "claude-code",
+        "order"
+      ],
+      "folders": [
+        "daoris/profiles/agents/claude-code/account-1/",
+        "daoris/profiles/agents/claude-code/account-2/"
+      ],
+      "before": {},
+      "now": "2026-10-22T10:00:00Z",
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: `claude-code` has no list on this machine, so there is nothing to use yet — `daoris agent profile order claude-code <account>…` sets one, and how it is used is set beside it."
+      ],
+      "after": {}
+    },
+    {
+      "name": "profile use, no list on this machine, printed",
+      "argv": [
+        "profile",
+        "use",
+        "claude-code"
+      ],
+      "folders": [
+        "daoris/profiles/agents/claude-code/account-1/",
+        "daoris/profiles/agents/claude-code/account-2/"
+      ],
+      "before": {},
+      "now": "2026-10-22T10:00:00Z",
+      "exit": 0,
+      "out": [
+        "daoris: `claude-code` has no list on this machine, so it has no settings — `daoris agent profile order claude-code <account>…` sets one."
+      ],
+      "err": [],
+      "after": {}
+    },
+    {
+      "name": "profile use, a workspace with neither, printed",
+      "argv": [
+        "profile",
+        "use",
+        "claude-code",
+        "--workspace",
+        "home"
+      ],
+      "folders": [
+        "daoris/profiles/agents/claude-code/account-1/",
+        "daoris/profiles/agents/claude-code/account-2/"
+      ],
+      "before": {},
+      "now": "2026-10-22T10:00:00Z",
+      "exit": 0,
+      "out": [
+        "daoris: `home` names no account of its own for `claude-code`, and this machine has no list, so there are no settings — `daoris agent profile order claude-code <account>…` sets the machine's."
+      ],
+      "err": [],
+      "after": {}
+    },
+    {
+      "name": "profile use, refused: fastest",
+      "argv": [
+        "profile",
+        "use",
+        "claude-code",
+        "fastest"
+      ],
+      "folders": [
+        "daoris/profiles/agents/claude-code/account-1/",
+        "daoris/profiles/agents/claude-code/account-2/"
+      ],
+      "before": {
+        "daoris/data/harnesses.json": "{\n  \"rotation\": {\n    \"claude-code\": [\n      \"account-1\",\n      \"account-2\"\n    ]\n  }\n}\n"
+      },
+      "now": "2026-10-22T10:00:00Z",
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: `fastest` is not a way to use accounts — goal (make the most of them) or order (one by one, in order). An account is kept for conversations with `--keep <account>`."
+      ],
+      "after": {
+        "daoris/data/harnesses.json": "{\n  \"rotation\": {\n    \"claude-code\": [\n      \"account-1\",\n      \"account-2\"\n    ]\n  }\n}\n"
+      }
+    },
+    {
+      "name": "profile use, refused: account-1",
+      "argv": [
+        "profile",
+        "use",
+        "claude-code",
+        "account-1"
+      ],
+      "folders": [
+        "daoris/profiles/agents/claude-code/account-1/",
+        "daoris/profiles/agents/claude-code/account-2/"
+      ],
+      "before": {
+        "daoris/data/harnesses.json": "{\n  \"rotation\": {\n    \"claude-code\": [\n      \"account-1\",\n      \"account-2\"\n    ]\n  }\n}\n"
+      },
+      "now": "2026-10-22T10:00:00Z",
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: `account-1` is not a way to use accounts — goal (make the most of them) or order (one by one, in order). An account is kept for conversations with `--keep <account>`."
+      ],
+      "after": {
+        "daoris/data/harnesses.json": "{\n  \"rotation\": {\n    \"claude-code\": [\n      \"account-1\",\n      \"account-2\"\n    ]\n  }\n}\n"
+      }
+    },
+    {
+      "name": "profile use, refused: goal order",
+      "argv": [
+        "profile",
+        "use",
+        "claude-code",
+        "goal",
+        "order"
+      ],
+      "folders": [
+        "daoris/profiles/agents/claude-code/account-1/",
+        "daoris/profiles/agents/claude-code/account-2/"
+      ],
+      "before": {
+        "daoris/data/harnesses.json": "{\n  \"rotation\": {\n    \"claude-code\": [\n      \"account-1\",\n      \"account-2\"\n    ]\n  }\n}\n"
+      },
+      "now": "2026-10-22T10:00:00Z",
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: `agent profile use` takes one way to use accounts, and `goal order` names more — goal (make the most of them) or order (one by one, in order)."
+      ],
+      "after": {
+        "daoris/data/harnesses.json": "{\n  \"rotation\": {\n    \"claude-code\": [\n      \"account-1\",\n      \"account-2\"\n    ]\n  }\n}\n"
+      }
+    },
+    {
+      "name": "profile use, refused: --early 1",
+      "argv": [
+        "profile",
+        "use",
+        "claude-code",
+        "--early",
+        "1"
+      ],
+      "folders": [
+        "daoris/profiles/agents/claude-code/account-1/",
+        "daoris/profiles/agents/claude-code/account-2/"
+      ],
+      "before": {
+        "daoris/data/harnesses.json": "{\n  \"rotation\": {\n    \"claude-code\": [\n      \"account-1\",\n      \"account-2\"\n    ]\n  }\n}\n"
+      },
+      "now": "2026-10-22T10:00:00Z",
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: `--early` is on or off — switch before the limit, or not."
+      ],
+      "after": {
+        "daoris/data/harnesses.json": "{\n  \"rotation\": {\n    \"claude-code\": [\n      \"account-1\",\n      \"account-2\"\n    ]\n  }\n}\n"
+      }
+    },
+    {
+      "name": "profile use, refused: --near 49",
+      "argv": [
+        "profile",
+        "use",
+        "claude-code",
+        "--near",
+        "49"
+      ],
+      "folders": [
+        "daoris/profiles/agents/claude-code/account-1/",
+        "daoris/profiles/agents/claude-code/account-2/"
+      ],
+      "before": {
+        "daoris/data/harnesses.json": "{\n  \"rotation\": {\n    \"claude-code\": [\n      \"account-1\",\n      \"account-2\"\n    ]\n  }\n}\n"
+      },
+      "now": "2026-10-22T10:00:00Z",
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: `--near` is a whole percent from 50 to 99 — e.g. `--near 85`: the old name of your curve's five-hour window, flat at that share; a start passes an account whose use of that window is over it."
+      ],
+      "after": {
+        "daoris/data/harnesses.json": "{\n  \"rotation\": {\n    \"claude-code\": [\n      \"account-1\",\n      \"account-2\"\n    ]\n  }\n}\n"
+      }
+    },
+    {
+      "name": "profile use, refused: --near 100",
+      "argv": [
+        "profile",
+        "use",
+        "claude-code",
+        "--near",
+        "100"
+      ],
+      "folders": [
+        "daoris/profiles/agents/claude-code/account-1/",
+        "daoris/profiles/agents/claude-code/account-2/"
+      ],
+      "before": {
+        "daoris/data/harnesses.json": "{\n  \"rotation\": {\n    \"claude-code\": [\n      \"account-1\",\n      \"account-2\"\n    ]\n  }\n}\n"
+      },
+      "now": "2026-10-22T10:00:00Z",
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: `--near` is a whole percent from 50 to 99 — e.g. `--near 85`: the old name of your curve's five-hour window, flat at that share; a start passes an account whose use of that window is over it."
+      ],
+      "after": {
+        "daoris/data/harnesses.json": "{\n  \"rotation\": {\n    \"claude-code\": [\n      \"account-1\",\n      \"account-2\"\n    ]\n  }\n}\n"
+      }
+    },
+    {
+      "name": "profile use, refused: --near 85.5",
+      "argv": [
+        "profile",
+        "use",
+        "claude-code",
+        "--near",
+        "85.5"
+      ],
+      "folders": [
+        "daoris/profiles/agents/claude-code/account-1/",
+        "daoris/profiles/agents/claude-code/account-2/"
+      ],
+      "before": {
+        "daoris/data/harnesses.json": "{\n  \"rotation\": {\n    \"claude-code\": [\n      \"account-1\",\n      \"account-2\"\n    ]\n  }\n}\n"
+      },
+      "now": "2026-10-22T10:00:00Z",
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: `--near` is a whole percent from 50 to 99 — e.g. `--near 85`: the old name of your curve's five-hour window, flat at that share; a start passes an account whose use of that window is over it."
+      ],
+      "after": {
+        "daoris/data/harnesses.json": "{\n  \"rotation\": {\n    \"claude-code\": [\n      \"account-1\",\n      \"account-2\"\n    ]\n  }\n}\n"
+      }
+    },
+    {
+      "name": "profile use, refused: --near most",
+      "argv": [
+        "profile",
+        "use",
+        "claude-code",
+        "--near",
+        "most"
+      ],
+      "folders": [
+        "daoris/profiles/agents/claude-code/account-1/",
+        "daoris/profiles/agents/claude-code/account-2/"
+      ],
+      "before": {
+        "daoris/data/harnesses.json": "{\n  \"rotation\": {\n    \"claude-code\": [\n      \"account-1\",\n      \"account-2\"\n    ]\n  }\n}\n"
+      },
+      "now": "2026-10-22T10:00:00Z",
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: `--near` is a whole percent from 50 to 99 — e.g. `--near 85`: the old name of your curve's five-hour window, flat at that share; a start passes an account whose use of that window is over it."
+      ],
+      "after": {
+        "daoris/data/harnesses.json": "{\n  \"rotation\": {\n    \"claude-code\": [\n      \"account-1\",\n      \"account-2\"\n    ]\n  }\n}\n"
+      }
+    },
+    {
+      "name": "profile use, refused: --near",
+      "argv": [
+        "profile",
+        "use",
+        "claude-code",
+        "--near"
+      ],
+      "folders": [
+        "daoris/profiles/agents/claude-code/account-1/",
+        "daoris/profiles/agents/claude-code/account-2/"
+      ],
+      "before": {
+        "daoris/data/harnesses.json": "{\n  \"rotation\": {\n    \"claude-code\": [\n      \"account-1\",\n      \"account-2\"\n    ]\n  }\n}\n"
+      },
+      "now": "2026-10-22T10:00:00Z",
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: `--near` needs a value — it takes [goal|order] [--keep <account>|--no-keep] [--switch smart|curve|off] [--curve <window>=<elapsed>:<used>,…]… [--no-curve] [--workspace W], or --clear (--early on|off and --near <percent> are the old names)."
+      ],
+      "after": {
+        "daoris/data/harnesses.json": "{\n  \"rotation\": {\n    \"claude-code\": [\n      \"account-1\",\n      \"account-2\"\n    ]\n  }\n}\n"
+      }
+    },
+    {
+      "name": "profile use, refused: --keep account-1 --no-keep",
+      "argv": [
+        "profile",
+        "use",
+        "claude-code",
+        "--keep",
+        "account-1",
+        "--no-keep"
+      ],
+      "folders": [
+        "daoris/profiles/agents/claude-code/account-1/",
+        "daoris/profiles/agents/claude-code/account-2/"
+      ],
+      "before": {
+        "daoris/data/harnesses.json": "{\n  \"rotation\": {\n    \"claude-code\": [\n      \"account-1\",\n      \"account-2\"\n    ]\n  }\n}\n"
+      },
+      "now": "2026-10-22T10:00:00Z",
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: `--keep` and `--no-keep` together say two things — keep one account for conversations, or none."
+      ],
+      "after": {
+        "daoris/data/harnesses.json": "{\n  \"rotation\": {\n    \"claude-code\": [\n      \"account-1\",\n      \"account-2\"\n    ]\n  }\n}\n"
+      }
+    },
+    {
+      "name": "profile use, refused: --switch fast",
+      "argv": [
+        "profile",
+        "use",
+        "claude-code",
+        "--switch",
+        "fast"
+      ],
+      "folders": [
+        "daoris/profiles/agents/claude-code/account-1/",
+        "daoris/profiles/agents/claude-code/account-2/"
+      ],
+      "before": {
+        "daoris/data/harnesses.json": "{\n  \"rotation\": {\n    \"claude-code\": [\n      \"account-1\",\n      \"account-2\"\n    ]\n  }\n}\n"
+      },
+      "now": "2026-10-22T10:00:00Z",
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: `--switch` is smart, curve or off — smart, Daoris's curve; curve, your own (`--curve`); off, no switch while a session runs."
+      ],
+      "after": {
+        "daoris/data/harnesses.json": "{\n  \"rotation\": {\n    \"claude-code\": [\n      \"account-1\",\n      \"account-2\"\n    ]\n  }\n}\n"
+      }
+    },
+    {
+      "name": "profile use, refused: --switch OFF",
+      "argv": [
+        "profile",
+        "use",
+        "claude-code",
+        "--switch",
+        "OFF"
+      ],
+      "folders": [
+        "daoris/profiles/agents/claude-code/account-1/",
+        "daoris/profiles/agents/claude-code/account-2/"
+      ],
+      "before": {
+        "daoris/data/harnesses.json": "{\n  \"rotation\": {\n    \"claude-code\": [\n      \"account-1\",\n      \"account-2\"\n    ]\n  }\n}\n"
+      },
+      "now": "2026-10-22T10:00:00Z",
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: `--switch` is smart, curve or off — smart, Daoris's curve; curve, your own (`--curve`); off, no switch while a session runs."
+      ],
+      "after": {
+        "daoris/data/harnesses.json": "{\n  \"rotation\": {\n    \"claude-code\": [\n      \"account-1\",\n      \"account-2\"\n    ]\n  }\n}\n"
+      }
+    },
+    {
+      "name": "profile use, refused: --switch",
+      "argv": [
+        "profile",
+        "use",
+        "claude-code",
+        "--switch"
+      ],
+      "folders": [
+        "daoris/profiles/agents/claude-code/account-1/",
+        "daoris/profiles/agents/claude-code/account-2/"
+      ],
+      "before": {
+        "daoris/data/harnesses.json": "{\n  \"rotation\": {\n    \"claude-code\": [\n      \"account-1\",\n      \"account-2\"\n    ]\n  }\n}\n"
+      },
+      "now": "2026-10-22T10:00:00Z",
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: `--switch` needs a value — it takes [goal|order] [--keep <account>|--no-keep] [--switch smart|curve|off] [--curve <window>=<elapsed>:<used>,…]… [--no-curve] [--workspace W], or --clear (--early on|off and --near <percent> are the old names)."
+      ],
+      "after": {
+        "daoris/data/harnesses.json": "{\n  \"rotation\": {\n    \"claude-code\": [\n      \"account-1\",\n      \"account-2\"\n    ]\n  }\n}\n"
+      }
+    },
+    {
+      "name": "profile use, refused: --curve",
+      "argv": [
+        "profile",
+        "use",
+        "claude-code",
+        "--curve"
+      ],
+      "folders": [
+        "daoris/profiles/agents/claude-code/account-1/",
+        "daoris/profiles/agents/claude-code/account-2/"
+      ],
+      "before": {
+        "daoris/data/harnesses.json": "{\n  \"rotation\": {\n    \"claude-code\": [\n      \"account-1\",\n      \"account-2\"\n    ]\n  }\n}\n"
+      },
+      "now": "2026-10-22T10:00:00Z",
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: `--curve` needs a value — it takes [goal|order] [--keep <account>|--no-keep] [--switch smart|curve|off] [--curve <window>=<elapsed>:<used>,…]… [--no-curve] [--workspace W], or --clear (--early on|off and --near <percent> are the old names)."
+      ],
+      "after": {
+        "daoris/data/harnesses.json": "{\n  \"rotation\": {\n    \"claude-code\": [\n      \"account-1\",\n      \"account-2\"\n    ]\n  }\n}\n"
+      }
+    },
+    {
+      "name": "profile use, refused: --curve weekly=0:abc",
+      "argv": [
+        "profile",
+        "use",
+        "claude-code",
+        "--curve",
+        "weekly=0:abc"
+      ],
+      "folders": [
+        "daoris/profiles/agents/claude-code/account-1/",
+        "daoris/profiles/agents/claude-code/account-2/"
+      ],
+      "before": {
+        "daoris/data/harnesses.json": "{\n  \"rotation\": {\n    \"claude-code\": [\n      \"account-1\",\n      \"account-2\"\n    ]\n  }\n}\n"
+      },
+      "now": "2026-10-22T10:00:00Z",
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: `--curve weekly=0:abc` is not a window and its points — it takes `<window>=<elapsed>:<used>,…`, each a whole percent, e.g. `--curve weekly=0:30,50:70,100:100`."
+      ],
+      "after": {
+        "daoris/data/harnesses.json": "{\n  \"rotation\": {\n    \"claude-code\": [\n      \"account-1\",\n      \"account-2\"\n    ]\n  }\n}\n"
+      }
+    },
+    {
+      "name": "profile use, refused: --curve 0:30",
+      "argv": [
+        "profile",
+        "use",
+        "claude-code",
+        "--curve",
+        "0:30"
+      ],
+      "folders": [
+        "daoris/profiles/agents/claude-code/account-1/",
+        "daoris/profiles/agents/claude-code/account-2/"
+      ],
+      "before": {
+        "daoris/data/harnesses.json": "{\n  \"rotation\": {\n    \"claude-code\": [\n      \"account-1\",\n      \"account-2\"\n    ]\n  }\n}\n"
+      },
+      "now": "2026-10-22T10:00:00Z",
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: `--curve 0:30` is not a window and its points — it takes `<window>=<elapsed>:<used>,…`, each a whole percent, e.g. `--curve weekly=0:30,50:70,100:100`."
+      ],
+      "after": {
+        "daoris/data/harnesses.json": "{\n  \"rotation\": {\n    \"claude-code\": [\n      \"account-1\",\n      \"account-2\"\n    ]\n  }\n}\n"
+      }
+    },
+    {
+      "name": "profile use, refused: --curve weekly=0:30 --curve weekly=0:40",
+      "argv": [
+        "profile",
+        "use",
+        "claude-code",
+        "--curve",
+        "weekly=0:30",
+        "--curve",
+        "weekly=0:40"
+      ],
+      "folders": [
+        "daoris/profiles/agents/claude-code/account-1/",
+        "daoris/profiles/agents/claude-code/account-2/"
+      ],
+      "before": {
+        "daoris/data/harnesses.json": "{\n  \"rotation\": {\n    \"claude-code\": [\n      \"account-1\",\n      \"account-2\"\n    ]\n  }\n}\n"
+      },
+      "now": "2026-10-22T10:00:00Z",
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: `--curve` names `weekly` twice — give each window once."
+      ],
+      "after": {
+        "daoris/data/harnesses.json": "{\n  \"rotation\": {\n    \"claude-code\": [\n      \"account-1\",\n      \"account-2\"\n    ]\n  }\n}\n"
+      }
+    },
+    {
+      "name": "profile use, refused: --curve weekly=0:30 --no-curve",
+      "argv": [
+        "profile",
+        "use",
+        "claude-code",
+        "--curve",
+        "weekly=0:30",
+        "--no-curve"
+      ],
+      "folders": [
+        "daoris/profiles/agents/claude-code/account-1/",
+        "daoris/profiles/agents/claude-code/account-2/"
+      ],
+      "before": {
+        "daoris/data/harnesses.json": "{\n  \"rotation\": {\n    \"claude-code\": [\n      \"account-1\",\n      \"account-2\"\n    ]\n  }\n}\n"
+      },
+      "now": "2026-10-22T10:00:00Z",
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: `--curve` and `--no-curve` together say two things — set a window of your curve, or take the curve out."
+      ],
+      "after": {
+        "daoris/data/harnesses.json": "{\n  \"rotation\": {\n    \"claude-code\": [\n      \"account-1\",\n      \"account-2\"\n    ]\n  }\n}\n"
+      }
+    },
+    {
+      "name": "profile use, refused: --curve monthly=0:50",
+      "argv": [
+        "profile",
+        "use",
+        "claude-code",
+        "--curve",
+        "monthly=0:50"
+      ],
+      "folders": [
+        "daoris/profiles/agents/claude-code/account-1/",
+        "daoris/profiles/agents/claude-code/account-2/"
+      ],
+      "before": {
+        "daoris/data/harnesses.json": "{\n  \"rotation\": {\n    \"claude-code\": [\n      \"account-1\",\n      \"account-2\"\n    ]\n  }\n}\n"
+      },
+      "now": "2026-10-22T10:00:00Z",
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: `monthly` is not a window — a curve's windows are `session` and `weekly`. `--curve` takes <window>=<elapsed>:<used>,…, e.g. `--curve weekly=0:30,50:70,100:100`."
+      ],
+      "after": {
+        "daoris/data/harnesses.json": "{\n  \"rotation\": {\n    \"claude-code\": [\n      \"account-1\",\n      \"account-2\"\n    ]\n  }\n}\n"
+      }
+    },
+    {
+      "name": "profile use, refused: --curve weekly=0:30,50:20",
+      "argv": [
+        "profile",
+        "use",
+        "claude-code",
+        "--curve",
+        "weekly=0:30,50:20"
+      ],
+      "folders": [
+        "daoris/profiles/agents/claude-code/account-1/",
+        "daoris/profiles/agents/claude-code/account-2/"
+      ],
+      "before": {
+        "daoris/data/harnesses.json": "{\n  \"rotation\": {\n    \"claude-code\": [\n      \"account-1\",\n      \"account-2\"\n    ]\n  }\n}\n"
+      },
+      "now": "2026-10-22T10:00:00Z",
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: `weekly`'s row 2 has used 20%, less than row 1's 30% — used never falls. `--curve` takes <window>=<elapsed>:<used>,…, e.g. `--curve weekly=0:30,50:70,100:100`."
+      ],
+      "after": {
+        "daoris/data/harnesses.json": "{\n  \"rotation\": {\n    \"claude-code\": [\n      \"account-1\",\n      \"account-2\"\n    ]\n  }\n}\n"
+      }
+    },
+    {
+      "name": "profile use, refused: --curve session=0:150",
+      "argv": [
+        "profile",
+        "use",
+        "claude-code",
+        "--curve",
+        "session=0:150"
+      ],
+      "folders": [
+        "daoris/profiles/agents/claude-code/account-1/",
+        "daoris/profiles/agents/claude-code/account-2/"
+      ],
+      "before": {
+        "daoris/data/harnesses.json": "{\n  \"rotation\": {\n    \"claude-code\": [\n      \"account-1\",\n      \"account-2\"\n    ]\n  }\n}\n"
+      },
+      "now": "2026-10-22T10:00:00Z",
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: `session`'s row 1 has used 150% — used is from 0 to 100. `--curve` takes <window>=<elapsed>:<used>,…, e.g. `--curve weekly=0:30,50:70,100:100`."
+      ],
+      "after": {
+        "daoris/data/harnesses.json": "{\n  \"rotation\": {\n    \"claude-code\": [\n      \"account-1\",\n      \"account-2\"\n    ]\n  }\n}\n"
+      }
+    },
+    {
+      "name": "profile use, refused: --prefer left",
+      "argv": [
+        "profile",
+        "use",
+        "claude-code",
+        "--prefer",
+        "left"
+      ],
+      "folders": [
+        "daoris/profiles/agents/claude-code/account-1/",
+        "daoris/profiles/agents/claude-code/account-2/"
+      ],
+      "before": {
+        "daoris/data/harnesses.json": "{\n  \"rotation\": {\n    \"claude-code\": [\n      \"account-1\",\n      \"account-2\"\n    ]\n  }\n}\n"
+      },
+      "now": "2026-10-22T10:00:00Z",
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: `--prefer` is not a flag of `agent profile use` — it takes [goal|order] [--keep <account>|--no-keep] [--switch smart|curve|off] [--curve <window>=<elapsed>:<used>,…]… [--no-curve] [--workspace W], or --clear (--early on|off and --near <percent> are the old names)."
+      ],
+      "after": {
+        "daoris/data/harnesses.json": "{\n  \"rotation\": {\n    \"claude-code\": [\n      \"account-1\",\n      \"account-2\"\n    ]\n  }\n}\n"
+      }
+    },
+    {
+      "name": "profile use, refused: --parallel on",
+      "argv": [
+        "profile",
+        "use",
+        "claude-code",
+        "--parallel",
+        "on"
+      ],
+      "folders": [
+        "daoris/profiles/agents/claude-code/account-1/",
+        "daoris/profiles/agents/claude-code/account-2/"
+      ],
+      "before": {
+        "daoris/data/harnesses.json": "{\n  \"rotation\": {\n    \"claude-code\": [\n      \"account-1\",\n      \"account-2\"\n    ]\n  }\n}\n"
+      },
+      "now": "2026-10-22T10:00:00Z",
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: `--parallel` is not a flag of `agent profile use` — it takes [goal|order] [--keep <account>|--no-keep] [--switch smart|curve|off] [--curve <window>=<elapsed>:<used>,…]… [--no-curve] [--workspace W], or --clear (--early on|off and --near <percent> are the old names)."
+      ],
+      "after": {
+        "daoris/data/harnesses.json": "{\n  \"rotation\": {\n    \"claude-code\": [\n      \"account-1\",\n      \"account-2\"\n    ]\n  }\n}\n"
+      }
+    },
+    {
+      "name": "profile use, refused: --keep",
+      "argv": [
+        "profile",
+        "use",
+        "claude-code",
+        "--keep"
+      ],
+      "folders": [
+        "daoris/profiles/agents/claude-code/account-1/",
+        "daoris/profiles/agents/claude-code/account-2/"
+      ],
+      "before": {
+        "daoris/data/harnesses.json": "{\n  \"rotation\": {\n    \"claude-code\": [\n      \"account-1\",\n      \"account-2\"\n    ]\n  }\n}\n"
+      },
+      "now": "2026-10-22T10:00:00Z",
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: `--keep` needs a value — it takes [goal|order] [--keep <account>|--no-keep] [--switch smart|curve|off] [--curve <window>=<elapsed>:<used>,…]… [--no-curve] [--workspace W], or --clear (--early on|off and --near <percent> are the old names)."
+      ],
+      "after": {
+        "daoris/data/harnesses.json": "{\n  \"rotation\": {\n    \"claude-code\": [\n      \"account-1\",\n      \"account-2\"\n    ]\n  }\n}\n"
+      }
+    },
+    {
+      "name": "profile use, refused: --workspace",
+      "argv": [
+        "profile",
+        "use",
+        "claude-code",
+        "--workspace"
+      ],
+      "folders": [
+        "daoris/profiles/agents/claude-code/account-1/",
+        "daoris/profiles/agents/claude-code/account-2/"
+      ],
+      "before": {
+        "daoris/data/harnesses.json": "{\n  \"rotation\": {\n    \"claude-code\": [\n      \"account-1\",\n      \"account-2\"\n    ]\n  }\n}\n"
+      },
+      "now": "2026-10-22T10:00:00Z",
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: --workspace needs a name — e.g. `--workspace aurora`"
+      ],
+      "after": {
+        "daoris/data/harnesses.json": "{\n  \"rotation\": {\n    \"claude-code\": [\n      \"account-1\",\n      \"account-2\"\n    ]\n  }\n}\n"
+      }
+    },
+    {
+      "name": "profile use, a kept account outside the list",
+      "argv": [
+        "profile",
+        "use",
+        "claude-code",
+        "--keep",
+        "account-9",
+        "--workspace",
+        "work"
+      ],
+      "folders": [
+        "daoris/profiles/agents/claude-code/account-1/",
+        "daoris/profiles/agents/claude-code/account-2/",
+        "daoris/profiles/agents/claude-code/account-9/"
+      ],
+      "before": {
+        "daoris/data/harnesses.json": "{\n  \"rotation\": {\n    \"claude-code\": [\n      \"account-1\"\n    ]\n  },\n  \"workspaceRotation\": {\n    \"work\": {\n      \"claude-code\": [\n        \"account-1\",\n        \"account-2\"\n      ]\n    }\n  }\n}\n"
+      },
+      "now": "2026-10-22T10:00:00Z",
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: `account-9` is not in `claude-code`'s list in `work` (account-1, then account-2) — the kept account is one of the list. Name it in the list first (`daoris agent profile order claude-code account-1 account-2 account-9 --workspace work`), or keep one of it."
+      ],
+      "after": {
+        "daoris/data/harnesses.json": "{\n  \"rotation\": {\n    \"claude-code\": [\n      \"account-1\"\n    ]\n  },\n  \"workspaceRotation\": {\n    \"work\": {\n      \"claude-code\": [\n        \"account-1\",\n        \"account-2\"\n      ]\n    }\n  }\n}\n"
+      }
+    },
+    {
+      "name": "profile use, a kept account alone in its list",
+      "argv": [
+        "profile",
+        "use",
+        "claude-code",
+        "--keep",
+        "account-1"
+      ],
+      "folders": [
+        "daoris/profiles/agents/claude-code/account-1/",
+        "daoris/profiles/agents/claude-code/account-2/",
+        "daoris/profiles/agents/claude-code/account-9/"
+      ],
+      "before": {
+        "daoris/data/harnesses.json": "{\n  \"rotation\": {\n    \"claude-code\": [\n      \"account-1\"\n    ]\n  },\n  \"workspaceRotation\": {\n    \"work\": {\n      \"claude-code\": [\n        \"account-1\",\n        \"account-2\"\n      ]\n    }\n  }\n}\n"
+      },
+      "now": "2026-10-22T10:00:00Z",
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: `claude-code`'s list on this machine holds no account but `account-1`, so keeping it for conversations would leave driven work none — `daoris agent profile order claude-code account-1 <account>…` adds one."
+      ],
+      "after": {
+        "daoris/data/harnesses.json": "{\n  \"rotation\": {\n    \"claude-code\": [\n      \"account-1\"\n    ]\n  },\n  \"workspaceRotation\": {\n    \"work\": {\n      \"claude-code\": [\n        \"account-1\",\n        \"account-2\"\n      ]\n    }\n  }\n}\n"
+      }
+    },
+    {
+      "name": "profile use, a kept account in a workspace",
+      "argv": [
+        "profile",
+        "use",
+        "claude-code",
+        "--keep",
+        "account-2",
+        "--workspace",
+        "work"
+      ],
+      "folders": [
+        "daoris/profiles/agents/claude-code/account-1/",
+        "daoris/profiles/agents/claude-code/account-2/",
+        "daoris/profiles/agents/claude-code/account-9/"
+      ],
+      "before": {
+        "daoris/data/harnesses.json": "{\n  \"rotation\": {\n    \"claude-code\": [\n      \"account-1\"\n    ]\n  },\n  \"workspaceRotation\": {\n    \"work\": {\n      \"claude-code\": [\n        \"account-1\",\n        \"account-2\"\n      ]\n    }\n  }\n}\n"
+      },
+      "now": "2026-10-22T10:00:00Z",
+      "exit": 0,
+      "out": [
+        "daoris: in `work`, `claude-code`'s list is account-1, then account-2.",
+        "  use accounts             make the most of them",
+        "  kept for conversations   account-2",
+        "  switch accounts          Smart — a session moves at a turn's end when its use is over the curve; a start passes an account whose limit is reached, that draws on usage credits, or whose use is over Daoris's smart curve",
+        "  next start               the ready account running the fewest of Daoris's sessions; then the one whose week would lapse the most: within its last day, its room under its curve per hour to its reset; then the one with the most room under its curve; then the one Daoris started on least recently; then this list's order, from `account-1`; driven work passes `account-2`, kept for conversations; one whose limit is reached, that draws on usage credits or whose use is over its curve goes last, the least over first",
+        "  no account has said what it has left yet: Daoris spreads starts across them by its own sessions",
+        "  what each account last said:",
+        "    account-1      nothing said about what it has left",
+        "    account-2      nothing said about what it has left",
+        "  Written to <root>/daoris/data/harnesses.json — machine-local, tracked by nothing, like every wiring file here."
+      ],
+      "err": [],
+      "after": {
+        "daoris/data/harnesses.json": "{\n  \"rotation\": {\n    \"claude-code\": [\n      \"account-1\"\n    ]\n  },\n  \"workspaceRotation\": {\n    \"work\": {\n      \"claude-code\": [\n        \"account-1\",\n        \"account-2\"\n      ]\n    }\n  },\n  \"workspaceRotationUse\": {\n    \"work\": {\n      \"claude-code\": {\n        \"keep\": \"account-2\"\n      }\n    }\n  }\n}\n"
+      }
+    },
+    {
+      "name": "profile use, none kept in a workspace",
+      "argv": [
+        "profile",
+        "use",
+        "claude-code",
+        "--no-keep",
+        "--workspace",
+        "work"
+      ],
+      "folders": [
+        "daoris/profiles/agents/claude-code/account-1/",
+        "daoris/profiles/agents/claude-code/account-2/",
+        "daoris/profiles/agents/claude-code/account-9/"
+      ],
+      "before": {
+        "daoris/data/harnesses.json": "{\n  \"rotation\": {\n    \"claude-code\": [\n      \"account-1\"\n    ]\n  },\n  \"workspaceRotation\": {\n    \"work\": {\n      \"claude-code\": [\n        \"account-1\",\n        \"account-2\"\n      ]\n    }\n  },\n  \"workspaceRotationUse\": {\n    \"work\": {\n      \"claude-code\": {\n        \"keep\": \"account-2\"\n      }\n    }\n  }\n}\n"
+      },
+      "now": "2026-10-22T10:00:00Z",
+      "exit": 0,
+      "out": [
+        "daoris: in `work`, `claude-code`'s list is account-1, then account-2.",
+        "  use accounts             make the most of them",
+        "  kept for conversations   none",
+        "  switch accounts          Smart — a session moves at a turn's end when its use is over the curve; a start passes an account whose limit is reached, that draws on usage credits, or whose use is over Daoris's smart curve",
+        "  next start               the ready account running the fewest of Daoris's sessions; then the one whose week would lapse the most: within its last day, its room under its curve per hour to its reset; then the one with the most room under its curve; then the one Daoris started on least recently; then this list's order, from `account-1`; one whose limit is reached, that draws on usage credits or whose use is over its curve goes last, the least over first",
+        "  no account has said what it has left yet: Daoris spreads starts across them by its own sessions",
+        "  what each account last said:",
+        "    account-1      nothing said about what it has left",
+        "    account-2      nothing said about what it has left",
+        "  Written to <root>/daoris/data/harnesses.json — machine-local, tracked by nothing, like every wiring file here."
+      ],
+      "err": [],
+      "after": {
+        "daoris/data/harnesses.json": "{\n  \"rotation\": {\n    \"claude-code\": [\n      \"account-1\"\n    ]\n  },\n  \"workspaceRotation\": {\n    \"work\": {\n      \"claude-code\": [\n        \"account-1\",\n        \"account-2\"\n      ]\n    }\n  }\n}\n"
+      }
+    },
+    {
+      "name": "profile use, every setting with six accounts",
+      "argv": [
+        "profile",
+        "use",
+        "claude-code",
+        "order",
+        "--switch",
+        "off",
+        "--curve",
+        "session=0:50"
+      ],
+      "folders": [
+        "daoris/profiles/agents/claude-code/account-1/",
+        "daoris/profiles/agents/claude-code/account-2/",
+        "daoris/profiles/agents/claude-code/account-3/",
+        "daoris/profiles/agents/claude-code/account-4/",
+        "daoris/profiles/agents/claude-code/account-5/",
+        "daoris/profiles/agents/claude-code/account-6/"
+      ],
+      "before": {
+        "daoris/data/harnesses.json": "{\n  \"rotation\": {\n    \"claude-code\": [\n      \"account-1\",\n      \"account-2\",\n      \"account-3\",\n      \"account-4\",\n      \"account-5\",\n      \"account-6\"\n    ]\n  }\n}\n"
+      },
+      "now": "2026-10-22T10:00:00Z",
+      "exit": 0,
+      "out": [
+        "daoris: on this machine, `claude-code`'s list is account-1, then account-2, then account-3, then account-4, then account-5, then account-6.",
+        "  use accounts             one by one, in order — one limit stops every session on that account",
+        "  kept for conversations   none",
+        "  switch accounts          Off — no session moves at a turn's end; a start still passes an account whose limit is reached, that draws on usage credits, or whose use is over Daoris's smart curve",
+        "  curve                    session 0:50 — kept, and read only under curve",
+        "  next start               the first ready account of this list, from `account-1`; one whose limit is reached, that draws on usage credits or whose use is over Daoris's smart curve goes last",
+        "  what each account last said:",
+        "    account-1      nothing said about what it has left",
+        "    account-2      nothing said about what it has left",
+        "    account-3      nothing said about what it has left",
+        "    account-4      nothing said about what it has left",
+        "    account-5      nothing said about what it has left",
+        "    account-6      nothing said about what it has left",
+        "  Written to <root>/daoris/data/harnesses.json — machine-local, tracked by nothing, like every wiring file here."
+      ],
+      "err": [],
+      "after": {
+        "daoris/data/harnesses.json": "{\n  \"rotation\": {\n    \"claude-code\": [\n      \"account-1\",\n      \"account-2\",\n      \"account-3\",\n      \"account-4\",\n      \"account-5\",\n      \"account-6\"\n    ]\n  },\n  \"rotationUse\": {\n    \"claude-code\": {\n      \"use\": \"order\",\n      \"switch\": \"off\",\n      \"curve\": {\n        \"session\": [\n          [\n            0,\n            50\n          ]\n        ]\n      }\n    }\n  }\n}\n"
+      }
+    },
+    {
+      "name": "profile use on a door",
+      "argv": [
+        "profile",
+        "use",
+        "claude-code-acp",
+        "order"
+      ],
+      "folders": [
+        "daoris/profiles/agents/claude-code/account-1/"
+      ],
+      "before": {
+        "daoris/data/harnesses.json": "{\n  \"rotation\": {\n    \"claude-code\": [\n      \"account-1\"\n    ]\n  }\n}\n"
+      },
+      "now": "2026-10-22T10:00:00Z",
+      "exit": 0,
+      "out": [
+        "daoris: `claude-code-acp` runs as `claude-code`'s accounts — this is one of them.",
+        "daoris: on this machine, `claude-code`'s list is account-1.",
+        "  use accounts             one by one, in order — one limit stops every session on that account",
+        "  kept for conversations   none",
+        "  switch accounts          Smart — a session moves at a turn's end when its use is over the curve; a start passes an account whose limit is reached, that draws on usage credits, or whose use is over Daoris's smart curve",
+        "  next start               `account-1`, the one account this list holds",
+        "  what each account last said:",
+        "    account-1      nothing said about what it has left",
+        "  Written to <root>/daoris/data/harnesses.json — machine-local, tracked by nothing, like every wiring file here."
+      ],
+      "err": [],
+      "after": {
+        "daoris/data/harnesses.json": "{\n  \"rotation\": {\n    \"claude-code\": [\n      \"account-1\"\n    ]\n  },\n  \"rotationUse\": {\n    \"claude-code\": {\n      \"use\": \"order\"\n    }\n  }\n}\n"
+      }
+    },
+    {
+      "name": "profile use, a kept account by its name",
+      "argv": [
+        "profile",
+        "use",
+        "claude-code",
+        "--keep",
+        "Work"
+      ],
+      "folders": [
+        "daoris/profiles/agents/claude-code/account-1/",
+        "daoris/profiles/agents/claude-code/account-2/"
+      ],
+      "before": {
+        "daoris/data/harnesses.json": "{\n  \"rotation\": {\n    \"claude-code\": [\n      \"account-1\",\n      \"account-2\"\n    ]\n  }\n}\n",
+        "daoris/data/accounts.json": "{\n  \"claude-code\": {\n    \"account-2\": {\n      \"name\": \"Work\"\n    }\n  }\n}\n"
+      },
+      "now": "2026-10-22T10:00:00Z",
+      "exit": 0,
+      "out": [
+        "daoris: on this machine, `claude-code`'s list is account-1, then Work.",
+        "  use accounts             make the most of them",
+        "  kept for conversations   Work",
+        "  switch accounts          Smart — a session moves at a turn's end when its use is over the curve; a start passes an account whose limit is reached, that draws on usage credits, or whose use is over Daoris's smart curve",
+        "  next start               the ready account running the fewest of Daoris's sessions; then the one whose week would lapse the most: within its last day, its room under its curve per hour to its reset; then the one with the most room under its curve; then the one Daoris started on least recently; then this list's order, from `account-1`; driven work passes `Work`, kept for conversations; one whose limit is reached, that draws on usage credits or whose use is over its curve goes last, the least over first",
+        "  no account has said what it has left yet: Daoris spreads starts across them by its own sessions",
+        "  what each account last said:",
+        "    account-1      nothing said about what it has left",
+        "    Work           nothing said about what it has left",
+        "  Written to <root>/daoris/data/harnesses.json — machine-local, tracked by nothing, like every wiring file here."
+      ],
+      "err": [],
+      "after": {
+        "daoris/data/accounts.json": "{\n  \"claude-code\": {\n    \"account-2\": {\n      \"name\": \"Work\"\n    }\n  }\n}\n",
+        "daoris/data/harnesses.json": "{\n  \"rotation\": {\n    \"claude-code\": [\n      \"account-1\",\n      \"account-2\"\n    ]\n  },\n  \"rotationUse\": {\n    \"claude-code\": {\n      \"keep\": \"account-2\"\n    }\n  }\n}\n"
+      }
+    },
+    {
+      "name": "profile use, an unknown setting kept and said",
+      "argv": [
+        "profile",
+        "use",
+        "claude-code"
+      ],
+      "folders": [
+        "daoris/profiles/agents/claude-code/account-1/",
+        "daoris/profiles/agents/claude-code/account-2/"
+      ],
+      "before": {
+        "daoris/data/harnesses.json": "{\n  \"rotation\": {\n    \"claude-code\": [\n      \"account-1\",\n      \"account-2\"\n    ]\n  },\n  \"defaults\": {\n    \"claude-code\": \"account-9\"\n  },\n  \"rotationUse\": {\n    \"claude-code\": {\n      \"use\": \"fastest\",\n      \"near\": \"x\",\n      \"colour\": \"red\"\n    }\n  }\n}\n"
+      },
+      "now": "2026-10-22T10:00:00Z",
+      "exit": 0,
+      "out": [
+        "daoris: on this machine, `claude-code`'s list is account-1, then account-2.",
+        "  use accounts             make the most of them",
+        "  kept for conversations   none",
+        "  switch accounts          Smart — a session moves at a turn's end when its use is over the curve; a start passes an account whose limit is reached, that draws on usage credits, or whose use is over Daoris's smart curve",
+        "  its default, `account-9`, is not in this list: name it in the list, or make one of the list the default",
+        "  `use` holds a value this build does not know, so it reads as today's default; it is kept as written",
+        "  `near` is an old name of the switch, and holds a value this build does not read: nothing reads it, and the next write takes it out",
+        "  `colour` is a setting this build does not know: nothing here reads it, and it is kept as written",
+        "  next start               the ready account running the fewest of Daoris's sessions; then the one whose week would lapse the most: within its last day, its room under its curve per hour to its reset; then the one with the most room under its curve; then the one Daoris started on least recently; then this list's order, from `account-1`; one whose limit is reached, that draws on usage credits or whose use is over its curve goes last, the least over first",
+        "  no account has said what it has left yet: Daoris spreads starts across them by its own sessions",
+        "  what each account last said:",
+        "    account-1      nothing said about what it has left",
+        "    account-2      nothing said about what it has left"
+      ],
+      "err": [],
+      "after": {
+        "daoris/data/harnesses.json": "{\n  \"rotation\": {\n    \"claude-code\": [\n      \"account-1\",\n      \"account-2\"\n    ]\n  },\n  \"defaults\": {\n    \"claude-code\": \"account-9\"\n  },\n  \"rotationUse\": {\n    \"claude-code\": {\n      \"use\": \"fastest\",\n      \"near\": \"x\",\n      \"colour\": \"red\"\n    }\n  }\n}\n"
+      }
+    },
+    {
+      "name": "profile use, no agent",
+      "argv": [
+        "profile",
+        "use"
+      ],
+      "folders": [],
+      "before": {},
+      "now": "2026-10-22T10:00:00Z",
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: `agent profile use` needs an agent — one of: claude-code, claude-code-acp, codex, codex-acp, dsh"
+      ],
+      "after": {}
+    },
+    {
+      "name": "profile use, an unknown agent",
+      "argv": [
+        "profile",
+        "use",
+        "frob"
+      ],
+      "folders": [],
+      "before": {},
+      "now": "2026-10-22T10:00:00Z",
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: unknown agent 'frob' — one of: claude-code, claude-code-acp, codex, codex-acp, dsh. An agent is added deliberately, never guessed."
       ],
       "after": {}
     }

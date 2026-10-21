@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import {
-  AGENT_ROUTES, AGENT_VERBS, DRIVER_MODULE, PLUGIN_ROUTES, PLUGIN_VERBS, type InstanceRoute, type RouteClass,
+  AGENT_VERBS, DRIVER_MODULE, PLUGIN_ROUTES, PLUGIN_VERBS, type InstanceRoute, type RouteClass,
 } from '../../src/platform/door.ts';
 import { desktopFile } from '../_csharp.ts';
 
@@ -36,8 +36,8 @@ function censusClasses(): Map<string, RouteClass> {
 const PAYLOADS: Record<string, Record<string, string>> = { PLUGIN_UPDATE: { apply: 'true' } };
 
 // `daoris driver`'s and `daoris tool`'s routes are Daoris's driver program's since PUSH1f2b and PUSH1f2c (`ChoiceRoutes`, `ToolRoutes`),
-// and `daoris agent rules|trust|settings`' since PUSH1f2d (`AgentRoutes`), which the modules' `PipeCensusTests` holds to the census.
-const SENT: readonly InstanceRoute[] = [...Object.values(PLUGIN_ROUTES), ...Object.values(AGENT_ROUTES)];
+// and `daoris agent`'s since PUSH1f2d, PUSH1f2e2 and PUSH1f2e3 (`AgentRoutes`), which the modules' `PipeCensusTests` holds to the census.
+const SENT: readonly InstanceRoute[] = [...Object.values(PLUGIN_ROUTES)];
 const VERBS = [...PLUGIN_VERBS, ...AGENT_VERBS];
 
 test('the census is read: its reads are open, its standing choices the person\'s, its pickers the window\'s', () => {
