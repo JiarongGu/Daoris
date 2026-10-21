@@ -54,7 +54,33 @@ public static class WorkCommand
         return null;
     }
 
+    /// <summary>
+    /// The verb, as the running Daoris's client where its world names an instance to look for (RPC1e, the terminal RPC design §7.2): a
+    /// pause, a resume and an abandon's <c>--yes</c> are the person's presses, which the window confirms; an abandon's list is a read.
+    /// Each route asked for its words runs this verb's own path in that Daoris, so the lines are the alone path's; alone where none runs.
+    /// </summary>
     public static async Task<int> RunAsync(WorkAsk ask, WorkWorld world, TextWriter output, CancellationToken ct = default)
+    {
+        // The reason before anything is asked or sent: each declined quest keeps it.
+        if (ask is { Verb: "abandon", Yes: true } && string.IsNullOrWhiteSpace(ask.Reason))
+        {
+            Write(output, [WorkAbandoning.NeedsReason]);
+            return 1;
+        }
+
+        var named = (ask.Scope == WorkScope.Ask ? "ask" : "quest", (object?)ask.Id);
+        var (route, payload) = ask.Verb switch
+        {
+            "pause" => (PersonPresses.WorkPause, InstanceDoor.Said(named)),
+            "resume" => (PersonPresses.WorkResume, InstanceDoor.Said(named)),
+            _ when ask.Yes => (PersonPresses.WorkAbandon, InstanceDoor.Said(named, ("reason", ask.Reason))),
+            _ => (OpenRoutes.WorkPlan, InstanceDoor.Said(named)),
+        };
+        return await InstanceDoor.ThroughAsync(world.Instance, route, payload, () => AloneAsync(ask, world, output, ct), output, ct)
+            .ConfigureAwait(false);
+    }
+
+    private static async Task<int> AloneAsync(WorkAsk ask, WorkWorld world, TextWriter output, CancellationToken ct)
     {
         switch (ask.Verb)
         {

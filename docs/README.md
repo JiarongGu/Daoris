@@ -30,6 +30,7 @@ Paths below are relative to this file. Historical documents have their own [arch
 | `../examples/plugins/in-app-browser/README.md` | Browser connection plugin example |
 | `../examples/plugins/github-pull-request/README.md` | GitHub landing plugin example |
 | `../examples/plugins/azure-devops-pull-request/README.md` | Azure DevOps landing plugin example |
+| `../examples/plugins/local-preview/README.md` | Performed step plugin example, the kit's performer filled in |
 | `../tools/dsh-probes/README.md` | Dated protocol probe instructions |
 
 ## Doctrine, knowledge and development contracts

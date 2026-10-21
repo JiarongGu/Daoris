@@ -38,6 +38,8 @@ public sealed class WorkRoutes(DriverContext context)
     private async Task<object?> WorkPlanAsync(IpcRequest request, CancellationToken cancellationToken)
     {
         var (scope, id) = WorkNamed(request);
+        // RPC1e: `ask --abandon <id>` and `quest abandon <id>`, the abandon's list in the verb's words.
+        if (Flag(request, "said")) return await SaidAsync(new WorkAsk(scope, "abandon", id), cancellationToken).ConfigureAwait(false);
         var abandon = await WorkAbandoning.PlanAsync(WorldOf(_context), scope, id, cancellationToken).ConfigureAwait(false)
                       ?? throw WorkUnknown(scope, id);
         var plan = abandon.Work;
@@ -129,6 +131,12 @@ public sealed class WorkRoutes(DriverContext context)
     {
         var (scope, id) = WorkNamed(request);
         var reason = Optional(request, "reason");
+        // RPC1e: the terminal's `--yes`, which abandons what the list holds now, as the verb does alone; its words say a missing reason.
+        if (Flag(request, "said"))
+        {
+            return await SaidAsync(new WorkAsk(scope, "abandon", id) { Reason = reason, Yes = true }, cancellationToken).ConfigureAwait(false);
+        }
+
         // The reason before anything is asked or written: each declined quest keeps it.
         if (string.IsNullOrWhiteSpace(reason))
         {
@@ -211,6 +219,7 @@ public sealed class WorkRoutes(DriverContext context)
     private async Task<object?> WorkPauseAsync(IpcRequest request, CancellationToken cancellationToken)
     {
         var (scope, id) = WorkNamed(request);
+        if (Flag(request, "said")) return await SaidAsync(new WorkAsk(scope, "pause", id), cancellationToken).ConfigureAwait(false);
         var outcome = await WorkPausing.PauseAsync(WorldOf(_context), scope, id, PluginEvents.Screen, cancellationToken).ConfigureAwait(false);
         if (outcome.Verdict == PauseVerdict.Unknown) throw WorkUnknown(scope, id);
         _loop.Nudge();
@@ -234,6 +243,7 @@ public sealed class WorkRoutes(DriverContext context)
     private async Task<object?> WorkResumeAsync(IpcRequest request, CancellationToken cancellationToken)
     {
         var (scope, id) = WorkNamed(request);
+        if (Flag(request, "said")) return await SaidAsync(new WorkAsk(scope, "resume", id), cancellationToken).ConfigureAwait(false);
         var outcome = await WorkPausing.ResumeAsync(WorldOf(_context), scope, id, PluginEvents.Screen, cancellationToken).ConfigureAwait(false);
         if (outcome.Verdict == ResumeVerdict.Unknown) throw WorkUnknown(scope, id);
         _loop.Nudge();
@@ -271,6 +281,17 @@ public sealed class WorkRoutes(DriverContext context)
         // Which of its sentences, by code and facts (OVERVIEWNOISE1c).
         Said = DriverLoop.SaidShown(hold.Said),
     };
+
+    /// <summary>
+    /// The verb's own lines and exit code for a work route a terminal sent (RPC1e): <see cref="WorkCommand.RunAsync"/> with this Daoris's
+    /// world, whose registry stops what this loop runs, at the terminal's door. A move nudges the loop, as the page's press does.
+    /// </summary>
+    private async Task<object> SaidAsync(WorkAsk ask, CancellationToken cancellationToken)
+    {
+        var said = await TerminalSaid.RunAsync(output => WorkCommand.RunAsync(ask, WorldOf(_context), output, cancellationToken)).ConfigureAwait(false);
+        if (ask.Verb != "abandon" || ask.Yes) _loop.Nudge();
+        return said;
+    }
 
     /// <summary>The ask or the quest a work route names: exactly one of <c>ask</c> and <c>quest</c>.</summary>
     /// <exception cref="DriverException">Neither, or both: the driver's sentence, said verbatim.</exception>

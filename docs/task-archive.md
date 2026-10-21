@@ -19287,6 +19287,12 @@ move is older through `HistoryClearing`'s two presses (`HistoryKeeping`), every 
 `HistoryKeepingTests`, `KeepRulesTests`' and `DriverChoicesBothWaysTests`' history rows, `WiringDomain.test.tsx` in English and 中文.
 No installed window has set one. Detail: D195's KEEP1g note. On Opus.
 
+## RPC1e — the rest of the host's verbs with a window twin (2026-10-22, D182)
+
+> - [ ] **RPC1e — the rest of the host's verbs with a window twin** (driver host; after RPC1d). Work, history, help, opinion, setup, register, sync, plugins and the channel send their routes; reads go through the instance where they have one. Proof: the census test with only `chat`, `help resume`, `drive`, `update` and the service's verbs off the pipe, each with its reason. RPCOPEN1 (2026-10-20): `sessions`, `sync` and `register` are the instance's clients (`SESSION_GROUPS`, `SYNC_NOW`, `REGISTRY_REFRESH`) with the alone path's words; `trace`, `git branches`, `workflow`, `help list`, `history` and `plugins show` stay alone, each held in the census's `OpenRoutes.Verbs` with its reason (`trace` and `git branches` keep machine-local text off the wire, D47 §4: what may travel over the local pipe is a decision first); the presses wait for RPC1c.
+
+**Outcome** 2026-10-22: work, history, help, opinion, setup, the channel's post and `plugins approve|withdraw` send their routes, presses confirmed in
+the window and lists read, each route asked for `said` running the verb's own path; `PipeCensusTests` holds who stays alone. Detail: D182's RPC1e note.
 ## PUSH1f2e — the agents' tools and accounts (2026-10-22, D194)
 
 > - [ ] **PUSH1f2e — the agents' tools and accounts** (cli, driver, modules, tools; after 2d; D194, the alone-path design §5). Read its row in §5 and the sections it names; build it end to end (D187), the family's TypeScript leaving as §4 says. Built so far: PUSH1f2e1-6 (archived): every verb but `update` and `pin`. Left: (1) Codex's release channel in the driver beside `ClaudeReleaseDownloads` (`channels.ts`' `codex`, its newest and its version check), then `agent pin` and `update` (a pin's move, else the agent's updater at the terminal) with §1.4's publication, a channel pin staged under its process's name, and `daoris agent` handing the family whole; (2) the TypeScript's leaving and the twins rows and tables §4 names; (3) §5's Process proofs through the CLI and the host (a code typed to a stub's sign-in, a key read the same way, a sign-in stopped midway, the probe lock against the host's reads; `install` finding the machine's npm beside a managed node is `ToolsChildrenTests`'). Proof: as §5 names it.
@@ -19338,3 +19344,34 @@ bound. Detail: D190's CUTOVER1g note. On Opus.
 **Outcome** 2026-10-22: a run bound to a graph version arms the runtime and is governed on its own record, Current kept off its
 quests and branches; its go-ahead is begun, its plugins told under their subject, its end kept, re-armed when its chain returns; no gate
 or performed node starts until 1d. Detail: D190's CUTOVER1c note. On Opus.
+## FABRIC-CLOSE1j2 — a quest's closure graph's end where the person looks for the quest (2026-10-22, D173)
+
+> - [ ] **FABRIC-CLOSE1j2 — a quest's closure graph's end where the person looks for the quest** (web; after CLOSE1j; §E5, D173's FABRIC-CLOSE1j note). `WORK_STATE`'s `ends` are `quest:` units', which no milestone on the page carries, so an override is said only in the pass's lines and a part lost only while its stop is offered. Say each on the quest's own page or its session's foot, en and zh. Proof: a page test reading `ends` for a quest in both languages.
+
+**Outcome** 2026-10-22: a quest's page says its own unit's closure ends as *Close* among its facts, in the work's foot's words (en, zh),
+a stop offered in the danger ink with its press still What needs you's; `workOf` picks an end by its unit's name. Detail: D173's CLOSE1j2 note.
+
+## FABRIC-PERFORM1e — the kit and an example (2026-10-22, D173)
+
+> - [ ] **FABRIC-PERFORM1e — the kit and an example** (driver, examples; after PERFORM1d; the fabric events design's rows table (§E10), §D9). The scaffold, `plugins try --cycle`, a contract test, an example performed plugin.
+
+**Outcome** 2026-10-22: built. The kit scaffolds a performer (`work.mjs`'s journal, a contract test, `cycle.json`), `plugins try
+--cycle` drives one through the driver, both in a stand-in world; `examples/plugins/local-preview` fills one in. The plugin design's §9
+and D64 amended. Proof: `PluginKitTests`, `PluginCycleFixtureTests`, the example's `node --test`. Detail: D173's FABRIC-PERFORM1e note.
+On Opus.
+
+## POOL1a1 — the accounts folded into one set, and the bridge's edits on it (2026-10-22, D197)
+
+> - [ ] **POOL1a — one set of Daoris's accounts in the driver and on the bridge** (driver, modules; after PUSH1f2e; D197). The fold that makes every scope one set, the projection every reader takes, the person's own sign-in outside it and never asked or written, and the bridge's answers, as the account-pool design §11 lists them; it also settles the own cool-off's *Read again* line (D197's acceptance note). Proof: as §11 names it.
+
+**Outcome** 2026-10-22: the row was too large for one session and was split; this is its first part, and POOL1a2 (every reader on
+the set, the bridge's answers, the helpers leaving) and POOL1a3 (the own sign-in never asked or written, the *Read again* line) stay
+open in the backlog. Built: `AccountSet.Fold` and `AccountSet.Of` by design §6.1's rules; `HarnessSettings.Change` folding before
+every edit and writing each order whole, a new account last and a removal unsaid; the `pooled` receipts with their ids and
+`WithSaid`; `LoadSet`; the come-up's `FoldNow` from the driver's look, a held lock logged and tried again, and the
+`accounts.pooled` line; `ResumeAccount.Judge` asking no scope of a record with no account (F1). On the bridge `ACCOUNT_USE`'s
+`order` and `use` act on the set, `said` marks receipts by id, `inherit` is unknown, `ACCOUNTS` carries `pooled`, and a workspace,
+`profile-join`, `profile-default` and a sign-in's `join` are refused as `ACCOUNTS_ONE_SET` (en, zh). Proof: `AccountSetTests` (the
+fold's table, a raw edit folded, a second receipt beside an unsaid first, *Got it* by id, a new account last, a held come-up, an
+older build's reading), `ResumeAccountTests`' own sign-in row, `DriverModuleAccountsTests`' and `DriverModuleAccountNamesTests`'
+rewritten rows, two `rotation-use.json` order rows. No window was looked at. Detail: D197's POOL1a1 note. On Opus.

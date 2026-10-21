@@ -50,8 +50,12 @@ public static class HookPoints
     /// </summary>
     public const string StateChanged = "state/changed";
 
-    /// <summary>Every point, in the order they were added: a point is additive, so a new one goes last (PLUGHOOK1a).</summary>
-    public static readonly IReadOnlyList<string> All = [QuestConsider, SessionEnded, Land, State, StateChanged];
+    /// <summary>
+    /// Every point, in the order they were added: a point is additive, so a new one goes last (PLUGHOOK1a). The work wire's three joined
+    /// with their kit entries (FABRIC-PERFORM1e), so the kit scaffolds, tests and tries them as it does the rest; who speaks them is still
+    /// <see cref="Work"/>'s rule.
+    /// </summary>
+    public static readonly IReadOnlyList<string> All = [QuestConsider, SessionEnded, Land, State, StateChanged, Watch, Step, Perform];
 
     /// <summary>
     /// The points the driver loop's set speaks at — a plugin that speaks on none of them is not kept running beside it. The
@@ -77,9 +81,8 @@ public static class HookPoints
 
     /// <summary>
     /// The work wire's points (FABRIC-PERFORM1a): spoken only by the loop that holds the home's lease, on a process it supervises
-    /// (<see cref="HookSet"/>), never by a verb, a landing or a <c>--share</c> loop. A handshake keeps them as it keeps <see cref="All"/>'s.
-    /// They stay out of <see cref="All"/>, whose every point the kit scaffolds, answers in its test and lets a person try, until their kit
-    /// entries come with FABRIC-PERFORM1e: the remark above is that row's list.
+    /// (<see cref="HookSet"/>), never by a verb, a landing or a <c>--share</c> loop. Since FABRIC-PERFORM1e they are in <see cref="All"/> too,
+    /// whose every point the kit scaffolds, answers in its test and lets a person try.
     /// </summary>
     public static readonly IReadOnlyList<string> Work = [Watch, Step, Perform];
 }

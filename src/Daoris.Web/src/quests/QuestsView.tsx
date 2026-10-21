@@ -22,8 +22,9 @@ import { QuestPage, QuestsMainNotice } from './QuestPage';
 import { namer } from '../settings/accounts/namer';
 import {
   retryNotice, useConsidered, useDriver, useHarnesses, useHistoryPlan, useNudge, useRemotes, useRetryQuest, useSessionGroups, useSetHold, useTrace,
-  useTrustFolder, useUntrusted, useWorkflowRun, useWorkPlan,
+  useTrustFolder, useUntrusted, useWorkflowRun, useWorkPlan, useWorkState,
 } from '../bridge/shell';
+import { questUnit } from '../work/head/milestone';
 import { sittingBecause } from '../data/signals';
 import { failure, type Notify, useErrorNotify } from '../design/ui';
 import type { HistoryDoor } from '../work/history/history';
@@ -212,6 +213,9 @@ export function useQuestsView({
   const historyOf = useHistoryPlan(shownQuest ? { scope: 'quest', id: shownQuest.id } : null, { enabled: active && closedQuest });
   const failedOf = useHistoryPlan(shownQuest ? { scope: 'failed', id: shownQuest.id } : null, { enabled: active && closedQuest });
   const historyActs = useHistoryActs({ notify });
+  // Its closure graph's ends (FABRIC-CLOSE1j2): its unit's, `quest:<id>`, which no milestone carries, read from this machine's driver
+  // while Quests is in front (from memory where the work is pushed). A browser has no driver, and its page says none.
+  const closure = useWorkState(shownQuest ? questUnit(shownQuest.id) : null, active && shownQuest !== undefined);
   // A set-up step's review (REVIEWENV1g): the presses' one owner, and whether Daoris still serves each waiting set-up's tab here.
   const reviewActs = useReviewActs({ notify });
   const inReview = driver.data?.inReview;
@@ -490,6 +494,8 @@ export function useQuestsView({
         history={historyDoor(quest)}
         trace={traceDoor(quest)}
         moves={movesDoor(quest)}
+        // Only this quest's unit's: the answer read for another quest a moment before is never this one's.
+        ends={(closure.data?.ends ?? []).filter((end) => end.unit === questUnit(quest.id))}
         // A set-up step's review (REVIEWENV1g): its verdict goes to the step, its skip there, and *Set it up* is the work's,
         // never this page's, since a set-up step follows the work it shows.
         review={quest.setUpIn ? {

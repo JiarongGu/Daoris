@@ -129,8 +129,27 @@ public static class HistoryCommand
         return new HistoryAsk(named, id) { Clear = true, Yes = yes };
     }
 
+    /// <summary>
+    /// The verb, as the running Daoris's client where its world names an instance to look for (RPC1e, the terminal RPC design §7.2): a
+    /// clear's <c>--yes</c> is the person's press, which the window confirms; the reading and a clear's list are reads. Each route asked
+    /// for its words runs this verb's own path in that Daoris, so the lines are the alone path's; alone where none runs.
+    /// </summary>
     /// <exception cref="DriverException">The service did not answer, or has no history door: the host says it, exit 2.</exception>
     public static async Task<int> RunAsync(HistoryAsk ask, HistoryWorld world, TextWriter output, CancellationToken ct = default)
+    {
+        var named = (ask.Scope switch { HistoryScope.Ask => "ask", HistoryScope.Workspace => "workspace", _ => "quest" }, (object?)ask.Id);
+        var failed = ("failed", ask.Scope == HistoryScope.Failed ? true : (object?)null);
+        var (route, payload) = ask switch
+        {
+            { Clear: true, Yes: true } => (PersonPresses.HistoryClear, InstanceDoor.Said(named, failed)),
+            { Clear: true } => (OpenRoutes.HistoryPlan, InstanceDoor.Said(named, failed, ("clear", true))),
+            _ => (OpenRoutes.HistoryPlan, InstanceDoor.Said(named, ("json", ask.Json ? true : null))),
+        };
+        return await InstanceDoor.ThroughAsync(world.Instance, route, payload, () => AloneAsync(ask, world, output, ct), output, ct)
+            .ConfigureAwait(false);
+    }
+
+    private static async Task<int> AloneAsync(HistoryAsk ask, HistoryWorld world, TextWriter output, CancellationToken ct)
     {
         if (!ask.Clear) return await ReadAsync(ask, world, output, ct).ConfigureAwait(false);
 

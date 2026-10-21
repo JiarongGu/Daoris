@@ -227,7 +227,7 @@ internal static class AgentAccountsCommand
             _ =>
             {
                 var removed = HarnessSettings.RemoveProfile(at.Home, owner, profile);
-                HarnessSettings.Change(at.Path, read => read.WithoutAccount(owner, profile));
+                HarnessSettings.Change(at.Path, read => read.WithoutAccount(owner, profile), account: new AccountChange(owner, profile, Added: false));
                 return Done(removed);
             },
             answer => Number(answer, "exitCode") == 1 ? failed : existed,

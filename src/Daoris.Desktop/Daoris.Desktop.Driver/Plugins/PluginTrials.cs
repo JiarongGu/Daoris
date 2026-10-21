@@ -1,5 +1,6 @@
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Text.Json;
 using System.Text.Json.Nodes;
 
 namespace Daoris.Driver;
@@ -145,6 +146,10 @@ public static class PluginTrials
         PluginFolders.Make(root);
         PluginFolders.Make(entry.Data);
 
+        // FABRIC-PERFORM1e: a plugin that works is told the kit's stand-in world, so an attempt it is sent reaches no platform.
+        var world = hooks.Points.Any(point => HookPoints.Work.Contains(point, StringComparer.Ordinal)) ? Path.Combine(scratch, "world.json") : null;
+        if (world is not null) AtomicFile.WriteText(world, "{}\n");
+
         // The tools it declares, each said in its own sentence (PLUGTOOL1a); a problem there never stops the trial.
         steps.AddRange(await ToolStepsAsync(entry.Manifest, toolsHome, root, path: null, PluginToolRuns.RunAsync, ct).ConfigureAwait(false));
 
@@ -152,7 +157,7 @@ public static class PluginTrials
         try
         {
             // The sample frames name no repository, so git is pointed at one that is not there; a person's frame is theirs.
-            process = await PluginTrialProcess.StartAsync(entry, home, noRepositoryAt: options.Frame is null ? root : null, ct).ConfigureAwait(false);
+            process = await PluginTrialProcess.StartAsync(entry, home, noRepositoryAt: options.Frame is null ? root : null, ct, world).ConfigureAwait(false);
         }
         catch (DriverException error)
         {
@@ -220,8 +225,30 @@ public static class PluginTrials
                     continue;
                 }
 
+                // FABRIC-PERFORM1e: an event is the plugin's to send, never asked; and an attempt goes only to a performer that took the world.
+                if (kit.Kind == "event")
+                {
+                    steps.Add(new(kit.Name, true, "an event: the plugin sends it and is never asked there; `--cycle` hears what it sends."));
+                    continue;
+                }
+
+                if (kit.Name == HookPoints.Perform && (world is null || !PluginFolders.HasFile(world + ".taken")))
+                {
+                    steps.Add(new(kit.Name, false,
+                        $"it did not take the kit's stand-in world ({PluginCycles.World}), so an attempt would reach its platform: none was sent."));
+                    continue;
+                }
+
+                if (kit.Name == HookPoints.Perform && !peer.Capabilities.Contains(WorkWire.Capability, StringComparer.Ordinal))
+                {
+                    steps.Add(new(kit.Name, false,
+                        $"its handshake names no `{WorkWire.Capability}`, so the driver never asks it to perform."));
+                    continue;
+                }
+
                 var frame = (options.Frame ?? kit.Frame).DeepClone().AsObject();
                 if (options.Frame is null && frame.ContainsKey("root")) frame["root"] = root;
+                if (options.Frame is null) Own(frame, entry.Manifest, root);
                 alive = await StepAsync(kit.Name, $"hook/{kit.Name}", kit.OnFailure, () => AskAsync(peer, kit.Name, frame, ct), patience)
                     .ConfigureAwait(false);
             }
@@ -264,6 +291,22 @@ public static class PluginTrials
         return Trial();
     }
 
+    /// <summary>
+    /// A sample frame made the plugin's own (FABRIC-PERFORM1e): its step the first performed step it declares (else its first), by kind;
+    /// an awaited unit's root the scratch and its awaited steps the plugin's, by id. A plugin that declares no step keeps the sample's.
+    /// </summary>
+    internal static void Own(JsonObject frame, PluginManifest manifest, string root)
+    {
+        if (manifest.Steps.Count == 0) return;
+        var step = manifest.Steps.FirstOrDefault(each => each.Reach == NodeReach.Performed) ?? manifest.Steps[0];
+        if (frame["step"]?.GetValue<string>() == PluginKit.SampleStep) frame["step"] = step.Kind;
+        foreach (var unit in frame["units"]?.AsArray().OfType<JsonObject>() ?? [])
+        {
+            unit["root"] = root;
+            unit["awaiting"] = new JsonArray([.. manifest.Steps.Select(each => (JsonNode)JsonValue.Create(PluginSteps.NameOf(each)))]);
+        }
+    }
+
     /// <summary>A `state` answer in words; the commits are cut with <see cref="TextBounds.ShortCommit"/>, so a short id is shown whole (DEDUP7c).</summary>
     internal static string StateWords(PullRequestState state) =>
         state.State
@@ -304,6 +347,22 @@ public static class PluginTrials
             {
                 var state = await peer.StateAsync(frame, ct).ConfigureAwait(false);
                 return StateWords(state);
+            }
+
+            case HookPoints.Watch:
+            {
+                var watch = WorkWire.ReadWatch(JsonSerializer.SerializeToElement(frame))
+                    ?? throw new DriverException($"the frame is not a `{HookPoints.Watch}` frame: `generation`, `resync` and `units`.");
+                await peer.WatchAsync(watch, ct).ConfigureAwait(false);
+                return "answered; the awaited set's answer is not read.";
+            }
+
+            case HookPoints.Perform:
+            {
+                var call = WorkWire.ReadPerform(JsonSerializer.SerializeToElement(frame))
+                    ?? throw new DriverException($"the frame is not a `{HookPoints.Perform}` frame: an attempt's unit, step, invocation, key, revision, inputs and deadline.");
+                await peer.PerformAsync(call, ct).ConfigureAwait(false);
+                return $"acknowledged `{call.Invocation}` in the stand-in world; its outcome comes at `{HookPoints.Step}`, which `--cycle` hears.";
             }
 
             default:

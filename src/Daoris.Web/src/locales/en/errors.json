@@ -16,6 +16,7 @@
   "errors.ACCOUNT_SCOPE_DEFAULT_workspace": "{{workspace}}'s default for {{agent}} is {{account}}, and the list would not hold it — the default is where starts begin within the list. Make one of the list the default first.",
   "errors.ACCOUNT_SCOPE_KEEP": "{{account}} is kept for conversations, and the list does not hold it — the kept account is one of the list. Keep none first, or keep one of the list.",
   "errors.ACCOUNT_SCOPE_ALONE": "{{account}} is kept for conversations, and the list would hold no other account, so driven work would have none. Keep none first, or use another account beside it.",
+  "errors.ACCOUNTS_ONE_SET": "Every account signed in for Daoris serves every workspace, so there is no workspace, list or default to name here — the order says where starts begin.",
   "errors.ACCOUNT_USE_NO_LIST": "This machine has no list of its own for {{agent}}, so there is nothing to use yet — turn on Use for its accounts first.",
   "errors.ACCOUNT_USE_NO_LIST_workspace": "{{workspace}} has no list of its own for {{agent}}, so there is nothing to use yet — choose Its own accounts and turn on Use for them first.",
   "errors.ACCOUNT_USE_VALUE": "{{value}} is not a value {{setting}} takes: a way to use accounts is goal or order, when to switch is smart, curve or off, and near is a whole percent from 50 to 99.",

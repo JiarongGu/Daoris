@@ -51,4 +51,36 @@ internal static class SessionsVerbs
         // The writer ends every line with its newline, so the last piece is the empty one after it.
         return new { Said = new TreesSaid([.. lines.Take(lines.Length - 1)], [], code).ToWire() };
     }
+
+    /// <summary>
+    /// <c>daoris-driver help</c>'s lines and exit code for a route a terminal sent (RPC1e): <see cref="HelpCommand.RunAsync"/> with this
+    /// Daoris's service, home and agents, so a rename, a pin, a delete and a list say what they say alone. A press nudges the loop.
+    /// </summary>
+    public static async Task<object> HelpSaidAsync(DriverContext context, HelpVerbAsk ask, CancellationToken ct)
+    {
+        var loop = context.Loop;
+        var service = loop.Service ?? throw DriverArguments.NotReady();
+        var config = DriverConfig.Load(loop.ConfigPath);
+        var world = new SessionsWorld(service, loop.Home, config, DriverContext.DoorOf(loop, config), loop.Log)
+        {
+            CoolingOf = (adapter, profile) => loop.Harnesses.CoolingOf(adapter ?? "", profile),
+        };
+
+        var said = await TerminalSaid.RunAsync(output => HelpCommand.RunAsync(ask, world, adapter => Resumes(loop, adapter), output, ct)).ConfigureAwait(false);
+        if (ask.Verb != "list") loop.Nudge();
+        return said;
+    }
+
+    /// <summary>Whether an adapter's door resumes a conversation by its id, as the panel's history reads it: one this machine no longer has cannot.</summary>
+    public static bool Resumes(DriverLoop loop, string adapter)
+    {
+        try
+        {
+            return loop.Harnesses.Adapters.Resolve(adapter).Resumes;
+        }
+        catch (DriverException)
+        {
+            return false;
+        }
+    }
 }

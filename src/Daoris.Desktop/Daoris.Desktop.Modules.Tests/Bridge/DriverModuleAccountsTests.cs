@@ -776,37 +776,40 @@ public sealed class DriverModuleAccountsTests : DriverModuleBridge
 
     // ---------------------------------------------------------------- ACCOUNT_USE: the list
 
-    /// <summary>D125 §3.1, D130 §3.1: a list written whole, the machine's or a workspace's, in the person's order; none clears it.</summary>
+    /// <summary>
+    /// The set's order (POOL1a, D197; the account-pool design §5.1, §5.2): the accounts named first, the rest after in their order;
+    /// none returns it to the ids' order, written whole; a workspace names nothing and is refused, nothing written.
+    /// </summary>
     [Fact]
-    public async Task A_list_is_written_whole_for_the_machine_or_a_workspace_and_cleared_by_naming_none()
+    public async Task The_set_s_order_is_written_whole_cleared_to_the_ids_order_and_a_workspace_is_refused()
     {
-        Accounts("claude-code", "account-1", "account-2");
+        Accounts("claude-code", "account-1", "account-2", "account-3");
 
-        await AnswerAsync(Module(), "ACCOUNT_USE", new { action = "order", harness = "claude-code", accounts = new[] { "account-2", "account-1" } });
-        await AnswerAsync(Module(), "ACCOUNT_USE",
-            new { action = "order", harness = "claude-code-acp", accounts = new[] { "account-1" }, workspace = "work" });
+        await AnswerAsync(Module(), "ACCOUNT_USE", new { action = "order", harness = "claude-code", accounts = new[] { "account-3" } });
+        Assert.Equal(["account-3", "account-1", "account-2"], HarnessSettings.Load(HarnessSettingsPath).Rotation["claude-code"]);
 
-        var settings = HarnessSettings.Load(HarnessSettingsPath);
-        Assert.Equal(["account-2", "account-1"], settings.Rotation["claude-code"]);
-        // A door's list is its owner's (AGT7).
-        Assert.Equal(["account-1"], settings.WorkspaceRotation["work"]["claude-code"]);
+        // A door's order is its owner's (AGT7).
+        await AnswerAsync(Module(), "ACCOUNT_USE", new { action = "order", harness = "claude-code-acp", accounts = new[] { "account-2", "account-3" } });
+        Assert.Equal(["account-2", "account-3", "account-1"], HarnessSettings.Load(HarnessSettingsPath).Rotation["claude-code"]);
 
         await AnswerAsync(Module(), "ACCOUNT_USE", new { action = "order", harness = "claude-code", accounts = Array.Empty<string>() });
-        Assert.False(HarnessSettings.Load(HarnessSettingsPath).Rotation.ContainsKey("claude-code"));
+        Assert.Equal(["account-1", "account-2", "account-3"], HarnessSettings.Load(HarnessSettingsPath).Rotation["claude-code"]);
+
+        var before = File.ReadAllText(HarnessSettingsPath);
+        var refused = await RefusalAsync(Module(), "ACCOUNT_USE",
+            new { action = "order", harness = "claude-code", accounts = new[] { "account-1" }, workspace = "work" });
+        Assert.StartsWith("ACCOUNTS_ONE_SET", refused);
+        Assert.Equal(before, File.ReadAllText(HarnessSettingsPath));
     }
 
     /// <summary>
-    /// The terminal's refusals, in a code the page translates (REV2): a name that is no account here, one named twice, and a
-    /// list that would leave out the scope's default or its kept account, or leave driven work none. Nothing is written.
+    /// The terminal's refusals, in a code the page translates (REV2): a name that is no account here, and one named twice. Nothing
+    /// is written. An order written whole always holds the kept account and another, and has no default beside it (POOL1a), so
+    /// neither is refused at an order since.
     /// </summary>
     [Theory]
     [InlineData("""{ }""", new[] { "account-9" }, "ACCOUNT_ORDER_UNKNOWN")]
     [InlineData("""{ }""", new[] { "account-1", "account-1" }, "ACCOUNT_ORDER_TWICE")]
-    [InlineData("""{ "defaults": { "claude-code": "account-2" } }""", new[] { "account-1" }, "ACCOUNT_SCOPE_DEFAULT")]
-    [InlineData("""{ "rotation": { "claude-code": ["account-1", "account-2"] }, "rotationUse": { "claude-code": { "keep": "account-2" } } }""",
-        new[] { "account-1" }, "ACCOUNT_SCOPE_KEEP")]
-    [InlineData("""{ "rotation": { "claude-code": ["account-1", "account-2"] }, "rotationUse": { "claude-code": { "keep": "account-2" } } }""",
-        new[] { "account-2" }, "ACCOUNT_SCOPE_ALONE")]
     public async Task A_list_the_terminal_refuses_is_refused_with_its_code_and_nothing_written(string wiring, string[] order, string code)
     {
         Accounts("claude-code", "account-1", "account-2");
@@ -820,68 +823,61 @@ public sealed class DriverModuleAccountsTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// D130 §3.1: <i>This machine's accounts</i> — a workspace's default, list and settings cleared at once, so its starts read the
-    /// machine's scope again; the machine's own are untouched.
+    /// <c>inherit</c>, a workspace returned to this machine's accounts, is gone with the workspaces' lists (POOL1a, D197; the
+    /// account-pool design §5.2): refused as an unknown action whose sentence names the rest.
     /// </summary>
     [Fact]
-    public async Task A_workspace_returned_to_this_machines_accounts_names_no_default_list_or_settings_of_its_own()
+    public async Task Inherit_is_refused_as_an_unknown_action_naming_the_rest()
     {
         Accounts("claude-code", "account-1", "account-2");
-        Wiring("""
-            {
-              "defaults": { "claude-code": "account-1" },
-              "workspaces": { "work": { "claude-code": "account-2" } },
-              "workspaceRotation": { "work": { "claude-code": ["account-2", "account-1"] } },
-              "workspaceRotationUse": { "work": { "claude-code": { "use": "order" } } }
-            }
-            """);
 
-        await AnswerAsync(Module(), "ACCOUNT_USE", new { action = "inherit", harness = "claude-code", workspace = "work" });
+        var refused = await RefusalAsync(Module(), "ACCOUNT_USE", new { action = "inherit", harness = "claude-code", workspace = "work" });
 
-        var settings = HarnessSettings.Load(HarnessSettingsPath);
-        Assert.False(settings.Workspaces.ContainsKey("work"));
-        Assert.False(settings.WorkspaceRotation.ContainsKey("work"));
-        Assert.False(settings.WorkspaceUses.ContainsKey("work"));
-        Assert.Equal("account-1", settings.Defaults["claude-code"]);
-        Assert.Equal(ChoiceFrom.Machine, settings.ResolveScope("claude-code", "work").From);
+        Assert.StartsWith("ACCOUNT_ACTION_UNKNOWN", refused);
+        Assert.Contains("order, use, ready, said", refused);
     }
 
     // ---------------------------------------------------------------- ACCOUNT_USE: how a list is used
 
-    /// <summary>D130 §16.6: each choice written as made, a default included; a clear returns the scope to today's defaults.</summary>
+    /// <summary>
+    /// D130 §16.6, for the set (POOL1a): each choice written as made, a default included, with no list waited on; a clear returns
+    /// the set to today's defaults; a workspace names nothing and is refused.
+    /// </summary>
     [Fact]
-    public async Task How_a_list_is_used_is_written_as_chosen_and_cleared_back_to_todays_defaults()
+    public async Task How_the_set_is_used_is_written_as_chosen_and_cleared_back_to_todays_defaults()
     {
         Accounts("claude-code", "account-1", "account-2");
-        Wiring("""{ "workspaceRotation": { "work": { "claude-code": ["account-1", "account-2"] } } }""");
 
         await AnswerAsync(Module(), "ACCOUNT_USE", new
         {
-            action = "use", harness = "claude-code", workspace = "work", use = "order", keep = "account-2", early = false, near = 85,
+            action = "use", harness = "claude-code", use = "order", keep = "account-2", early = false, near = 85,
         });
 
         var use = HarnessSettings.Load(HarnessSettingsPath).ResolveScope("claude-code", "work").Use;
         Assert.Equal(new RotationUse("order", "account-2", false, 85), use);
 
-        await AnswerAsync(Module(), "ACCOUNT_USE", new { action = "use", harness = "claude-code", workspace = "work", noKeep = true, use = "goal" });
-        Assert.Equal(new RotationUse("goal", null, false, 85), HarnessSettings.Load(HarnessSettingsPath).ResolveScope("claude-code", "work").Use);
+        await AnswerAsync(Module(), "ACCOUNT_USE", new { action = "use", harness = "claude-code", noKeep = true, use = "goal" });
+        Assert.Equal(new RotationUse("goal", null, false, 85), HarnessSettings.Load(HarnessSettingsPath).ResolveScope("claude-code", null).Use);
 
-        await AnswerAsync(Module(), "ACCOUNT_USE", new { action = "use", harness = "claude-code", workspace = "work", clear = true });
-        Assert.False(HarnessSettings.Load(HarnessSettingsPath).WorkspaceUses.ContainsKey("work"));
+        await AnswerAsync(Module(), "ACCOUNT_USE", new { action = "use", harness = "claude-code", clear = true });
+        Assert.False(HarnessSettings.Load(HarnessSettingsPath).Uses.ContainsKey("claude-code"));
+
+        var refused = await RefusalAsync(Module(), "ACCOUNT_USE", new { action = "use", harness = "claude-code", workspace = "work", use = "order" });
+        Assert.StartsWith("ACCOUNTS_ONE_SET", refused);
     }
 
     /// <summary>
-    /// <c>profile use</c>'s refusals: a scope with no list of its own has nothing to use; a kept account is one of the list and
-    /// leaves driven work another; a value this build does not know is refused rather than written. Nothing is written.
+    /// <c>profile use</c>'s refusals: a kept account is one of the set and leaves driven work another; a value this build does not
+    /// know is refused rather than written. Nothing is written. No list is waited on since POOL1a: the set's settings are set
+    /// whatever it holds.
     /// </summary>
     [Theory]
-    [InlineData("""{ }""", "use", "goal", "ACCOUNT_USE_NO_LIST")]
-    [InlineData("""{ "rotation": { "claude-code": ["account-1", "account-2"] } }""", "keep", "account-9", "ACCOUNT_SCOPE_KEEP")]
-    [InlineData("""{ "rotation": { "claude-code": ["account-1"] } }""", "keep", "account-1", "ACCOUNT_SCOPE_ALONE")]
-    [InlineData("""{ "rotation": { "claude-code": ["account-1"] } }""", "use", "spread", "ACCOUNT_USE_VALUE")]
-    public async Task A_use_the_terminal_refuses_is_refused_with_its_code_and_nothing_written(string wiring, string field, string value, string code)
+    [InlineData("""{ "rotation": { "claude-code": ["account-1", "account-2"] } }""", "keep", "account-9", "ACCOUNT_SCOPE_KEEP", 2)]
+    [InlineData("""{ "rotation": { "claude-code": ["account-1"] } }""", "keep", "account-1", "ACCOUNT_SCOPE_ALONE", 1)]
+    [InlineData("""{ "rotation": { "claude-code": ["account-1"] } }""", "use", "spread", "ACCOUNT_USE_VALUE", 2)]
+    public async Task A_use_the_terminal_refuses_is_refused_with_its_code_and_nothing_written(string wiring, string field, string value, string code, int accounts)
     {
-        Accounts("claude-code", "account-1", "account-2");
+        Accounts("claude-code", [.. new[] { "account-1", "account-2" }.Take(accounts)]);
         Wiring(wiring);
         var before = File.ReadAllText(HarnessSettingsPath);
         var payload = new Dictionary<string, object?> { ["action"] = "use", ["harness"] = "claude-code", [field] = value };
@@ -1031,12 +1027,11 @@ public sealed class DriverModuleAccountsTests : DriverModuleBridge
     // ---------------------------------------------------------------- the screen's default (TOOL6a's fix)
 
     /// <summary>
-    /// D130 §3.1, as the terminal refuses it since TOOL6a: a scope's default is where its starts begin within its list, so the
-    /// screen's <i>Make default</i> refuses an account its scope's list does not hold, before anything is written. A
-    /// workspace with no list of its own takes any account.
+    /// No default beside the order (POOL1a, D197; the account-pool design §5.2): the screen's <c>profile-default</c> is refused in
+    /// its code, naming the order, before anything is written.
     /// </summary>
     [Fact]
-    public async Task The_screens_default_outside_its_scopes_list_is_refused_before_anything_is_written()
+    public async Task The_screens_default_is_refused_since_the_order_says_where_starts_begin()
     {
         Accounts("claude-code", "account-1", "account-2");
         Wiring("""{ "rotation": { "claude-code": ["account-1"] } }""");
@@ -1045,10 +1040,31 @@ public sealed class DriverModuleAccountsTests : DriverModuleBridge
         var refused = await RefusalAsync(Module(), "HARNESS_ACTION",
             new { action = "profile-default", harness = "claude-code", profile = "account-2" });
 
-        Assert.StartsWith("ACCOUNT_DEFAULT_OUTSIDE_LIST", refused);
-        Assert.Contains("account=account-2", refused);
-        Assert.Contains("list=account-1", refused);
+        Assert.StartsWith("ACCOUNTS_ONE_SET", refused);
         Assert.Equal(before, File.ReadAllText(HarnessSettingsPath));
+    }
+
+    /// <summary>
+    /// The fold's receipts on the bridge (POOL1a, the account-pool design §5.2, §6.3): <c>ACCOUNTS</c> carries each unsaid one by
+    /// its id, its kinds and values, and <c>said</c> with the ids the page showed marks only those.
+    /// </summary>
+    [Fact]
+    public async Task The_fold_s_receipts_are_answered_unsaid_by_id_and_got_it_marks_only_those_named()
+    {
+        Accounts("claude-code", "account-1", "account-2");
+        Wiring("""{ "workspaceRotation": { "work": { "claude-code": ["account-2"] } } }""");
+        HarnessSettings.Change(HarnessSettingsPath, read => read);
+        var id = HarnessSettings.Load(HarnessSettingsPath).Pooled["claude-code"].Single().Id;
+
+        var answer = Agent(await AnswerAsync(Module(), "ACCOUNTS", new { }), "claude-code");
+        var receipt = Assert.Single(answer.GetProperty("pooled").EnumerateArray());
+        Assert.Equal(id, receipt.GetProperty("id").GetString());
+        Assert.Equal("work", receipt.GetProperty("scopes")[0].GetProperty("workspace").GetString());
+
+        await AnswerAsync(Module(), "ACCOUNT_USE", new { action = "said", harness = "claude-code", ids = new[] { id, "nobody" } });
+
+        Assert.True(HarnessSettings.Load(HarnessSettingsPath).Pooled["claude-code"].Single().Said);
+        Assert.Empty(Agent(await AnswerAsync(Module(), "ACCOUNTS", new { }), "claude-code").GetProperty("pooled").EnumerateArray());
     }
 
     /// <summary>The rule the route and Ask Daoris's door ask, row by row: <c>rotation-use.test.ts</c>'s default rows.</summary>

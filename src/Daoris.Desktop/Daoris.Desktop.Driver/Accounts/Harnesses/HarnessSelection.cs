@@ -60,6 +60,7 @@ public static class HarnessKeys
 
         // Marked as a sign-in is (TOOL6g): a name a removed account had carries no word that it is signed out.
         ProbeLock.MarkSignedIn(HarnessSettings.ProfileHome(home, harness, account), DateTimeOffset.UtcNow);
+        HarnessSettings.Placed(HarnessSettings.ResolvePath(home), harness, account);
 
         // A new key into an account ends a cool-off its name still carried (TOOL4d, D125 §2.3): whatever was spent, it
         // was not this key. Never the reason a key is not kept.

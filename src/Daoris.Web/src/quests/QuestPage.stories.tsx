@@ -11,17 +11,18 @@ import { STEP_REVIEWED, STEP_SETTING_UP, STEP_SHOWN, STEP_SHOWN_AGAIN } from '..
 import { answer, QUEST_CHAIN } from '../work/head/traceFixtures';
 import { IN_REVIEW } from '../workflow/runFixtures';
 import {
-  ACCEPTED, BROUGHT_FORWARD, BROUGHT_FORWARD_UNCONFIRMED, CHAINED, CJK, CONFLICTED, DECLINED, DELETABLE, DONE, DROPPED_FIRST, EXHAUSTED,
-  FAILED, FINISHED_HERE, HELD, HELD_BY_PERSON, HELD_CJK, HELD_ELSEWHERE, LANED, LOST_AGAIN, LOST_CLOSED, LOST_TO_REOPEN, MET, MINE_LOST,
-  OPEN, PAUSED_ITSELF, PAUSED_WITH_ASK, PAUSED_WITH_QUEST, QUESTION, REFILED, REFILED_NAMED, REFILED_UNNAMED, REOPENED_HERE, REQUIRING,
-  SETTLED_DROPPED, STARTING, STOPPED, TAKEN, TAKEN_ELSEWHERE, THEIRS_LOST, TRUST, WAITING, WAITS_FOR_ACCOUNT, WORKING,
+  ACCEPTED, BROUGHT_FORWARD, BROUGHT_FORWARD_UNCONFIRMED, CHAINED, CJK, CLOSED_EARLY, CLOSED_EARLY_ENDS, CONFLICTED, DECLINED, DELETABLE,
+  DONE, DROPPED_FIRST, EXHAUSTED, FAILED, FINISHED_HERE, HELD, HELD_BY_PERSON, HELD_CJK, HELD_ELSEWHERE, LANED, LOST_AGAIN, LOST_CLOSED,
+  LOST_TO_REOPEN, MET, MINE_LOST, OPEN, PART_CLOSED, PART_CLOSED_ENDS, PAUSED_ITSELF, PAUSED_WITH_ASK, PAUSED_WITH_QUEST, QUESTION, REFILED,
+  REFILED_NAMED, REFILED_UNNAMED, REOPENED_HERE, REQUIRING, SETTLED_DROPPED, STARTING, STOPPED, TAKEN, TAKEN_ELSEWHERE, THEIRS_LOST, TRUST,
+  WAITING, WAITS_FOR_ACCOUNT, WORKING,
 } from './fixtures';
 import { QuestPage, QuestsMainNotice } from './QuestPage';
 
 // A quest's page (FRAME1d, D118 §3d) in Quests' main area, where it was a drawer: open, taken, sitting for the
 // person's hold, held for the agent's trust with its question open, parked by its strikes, waiting on a question, a
 // conflict, carrying links and files, a chain, a driven session's record, declined, done, a delete asking, a 中文
-// title; and the main area with no record: nothing chosen, gone, loading.
+// title, its closure graph's end; and the main area with no record: nothing chosen, gone, loading.
 
 const nothing = () => {};
 
@@ -159,6 +160,32 @@ export const HeldStepMine: Story = { args: { quest: REOPENED_HERE, goOn: { ready
 
 /** The same in 中文. */
 export const HeldStepMineChinese: Story = { ...HeldStepMine, decorators: [chinese] };
+
+/**
+ * A closure graph's quest the person closed done before its graph's end (FABRIC-CLOSE1j2, §E5): *Close* among its facts says so, in
+ * the work's foot's words, naming the nodes its done stopped.
+ */
+export const ClosedByYouBeforeItsEnd: Story = { args: { quest: CLOSED_EARLY, ends: CLOSED_EARLY_ENDS } };
+
+/** The same in 中文. */
+export const ClosedByYouBeforeItsEndChinese: Story = { ...ClosedByYouBeforeItsEnd, decorators: [chinese] };
+
+/**
+ * A chain closed only in part (FABRIC-CLOSE1j2, §E5): the quest the remote refused, lost with its take, and the close node that waits
+ * again and would close it over the winner's take, its stop offered in the danger ink; What needs you holds the press.
+ */
+export const PartiallyClosed: Story = { args: { quest: PART_CLOSED, ends: PART_CLOSED_ENDS } };
+
+/** The same at half the main area. */
+export const PartiallyClosedHalf: Story = { ...PartiallyClosed, decorators: [storyWidths.half] };
+
+/** The same at the main area's floor. */
+export const PartiallyClosedAtTheFloor: Story = { ...PartiallyClosed, decorators: [storyWidths.narrow] };
+
+/** The same in 中文, dark: the stop recorded, waiting for the next look, no longer in the danger ink. */
+export const PartiallyClosedStopRecordedChineseDark: Story = {
+  args: { quest: PART_CLOSED, ends: [{ ...PART_CLOSED_ENDS[0]!, resolution: 'stop', words: [] }] }, decorators: [chinese, dark],
+};
 
 /** Addressed to two of the engine's lanes, each named where its registration says (D115 §2.2). */
 export const Lanes: Story = { args: { quest: LANED, lanes: 'assets (Assets), core (Core)' } };

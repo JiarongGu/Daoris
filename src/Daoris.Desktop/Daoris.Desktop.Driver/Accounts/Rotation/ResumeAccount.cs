@@ -26,7 +26,9 @@ public static class ResumeAccount
         string? account, RotationScope scope, StartKind kind, AccountState state, IReadOnlyCollection<string> present)
     {
         if (account is not null && !present.Contains(account, StringComparer.OrdinalIgnoreCase)) return NextHold.Missing;
-        if (kind == StartKind.Driven && !InScope(account, scope)) return NextHold.Outside;
+        // A record begun in the person's own sign-in is judged against no scope (POOL1a, D197 point 3; Fable's F1): it goes on there,
+        // and the set, whose order names every account of Daoris's, never displaces it.
+        if (kind == StartKind.Driven && account is not null && !InScope(account, scope)) return NextHold.Outside;
         if (kind == StartKind.Driven && account is not null && AccountRotation.KeptOf(scope) is { } kept
             && string.Equals(kept, account, StringComparison.OrdinalIgnoreCase))
         {

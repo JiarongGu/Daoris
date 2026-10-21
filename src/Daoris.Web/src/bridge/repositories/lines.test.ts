@@ -109,6 +109,18 @@ describe("a unit's variant of the work (PUSH1c2b)", () => {
     expect(picked.unreadable.map((each) => each.file)).toEqual(['a.json']);
     expect(workOf(all, 'quest:q7').unreadable.map((each) => each.file)).toEqual(['b.json']);
   });
+
+  it('picks a closure graph’s ends by the unit it names, a quest’s that no unit carries too, as the driver does (FABRIC-CLOSE1j2)', () => {
+    const ends = [
+      { unit: 'u-1', kind: 'overridden', at: '2026-10-21T08:00:00Z' },
+      { unit: 'quest:q7', kind: 'partially-closed', at: '2026-10-21T09:00:00Z' },
+      { unit: 'quest:q8', kind: 'overridden', at: '2026-10-21T10:00:00Z' },
+    ];
+    const units = (name: string) => (workOf({ ...all, ends }, name).ends ?? []).map((each) => each.unit);
+    expect(units('quest:q7')).toEqual(['quest:q7']);
+    expect(units('s-one')).toEqual(['u-1']);
+    expect(units('nothing')).toEqual([]);
+  });
 });
 
 const sweepRow = (repository: string, branch: string, extra: Record<string, unknown> = {}) =>

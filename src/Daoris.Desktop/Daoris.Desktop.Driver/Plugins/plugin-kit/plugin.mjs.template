@@ -24,13 +24,16 @@ const say = (text) => console.error(text);
 
 const id = process.env.DAORIS_PLUGIN_ID;
 const data = process.env.DAORIS_PLUGIN_DATA;
-{{helpers}}
+{{helpers}}{{work}}
 // The points this plugin listens on, each answering the frame it is sent. Change what they do; keep
 // the shape of what they answer (README.md). A point here that plugin.json does not declare is never
 // asked: the handshake answers only the points the manifest names.
 const points = {
 {{handlers}}
 };
+
+// What it answers: its points, and the requests asked beside them that no manifest names.
+const answers = { ...points{{calls}} };
 
 for await (const line of createInterface({ input: process.stdin })) {
   if (!line.trim()) continue;
@@ -46,13 +49,13 @@ for await (const line of createInterface({ input: process.stdin })) {
     // The handshake: the wire this plugin speaks, and the points it ACTUALLY listens on, which are never
     // more than the manifest declared. The driver sends those as `points`.
     const declared = frame.params?.points ?? [];
-    send({ jsonrpc: '2.0', id: frame.id, result: { protocolVersion: 1, points: Object.keys(points).filter((point) => declared.includes(point)) } });
+    send({ jsonrpc: '2.0', id: frame.id, result: { protocolVersion: 1, points: Object.keys(points).filter((point) => declared.includes(point)){{capabilities}} } });
   } else if (frame.method === 'shutdown') {
     // The driver is stopping, or this plugin was switched off. Leave; the driver ends a process that stays.
     process.exit(0);
-  } else if (typeof frame.method === 'string' && frame.method.startsWith('hook/') && points[frame.method.slice(5)]) {
+  } else if (typeof frame.method === 'string' && frame.method.startsWith('hook/') && answers[frame.method.slice(5)]) {
     try {
-      send({ jsonrpc: '2.0', id: frame.id, result: await points[frame.method.slice(5)](frame.params ?? {}) });
+      send({ jsonrpc: '2.0', id: frame.id, result: await answers[frame.method.slice(5)](frame.params ?? {}) });
     } catch (error) {
       // A handler that throws is a refusal, which the driver says in this plugin's name. Never silence.
       send({ jsonrpc: '2.0', id: frame.id, error: { code: -32603, message: String(error?.message ?? error) } });

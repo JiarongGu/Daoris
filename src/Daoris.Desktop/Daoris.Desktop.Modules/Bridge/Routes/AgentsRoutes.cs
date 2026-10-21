@@ -437,23 +437,9 @@ public sealed class AgentsRoutes(DriverContext context)
             return new { Harness = harness, Action = action, ExitCode = 0, Profile = renamed, Name = name };
         }
 
-        // An account put into the lists the page names (ACCT1): `join`, each a workspace's name or null for this machine's
-        // list, each refused before anything is written where it cannot be joined. The terminal's twin is `profile join`.
-        if (action == "profile-join")
-        {
-            var account = Named(request);
-            if (!HarnessSettings.Profiles(_loop.Harnesses.Home, owner).Contains(account, StringComparer.Ordinal))
-            {
-                throw new DriverException($"`{owner}` has no account `{account}` on this machine, so it joins no list.");
-            }
-
-            var lists = Joins(request);
-            if (lists.Count == 0) throw new DriverException("name the lists it joins: a workspace's, or this machine's.");
-            var placed = AgentActions.Joined(_loop, owner, account, lists);
-            await ChangedAsync(_loop, harness, action, config, cancellationToken);
-            _loop.Nudge();
-            return new { Harness = harness, Action = action, ExitCode = 0, Profile = account, Places = PlacesShown(placed) };
-        }
+        // One set of Daoris's accounts serves every workspace (POOL1a, D197; the account-pool design §5.2): there is no list to join
+        // and no default beside the order, so the page's `profile-join` and `profile-default` are refused; their presses leave with POOL1c.
+        if (action is "profile-join" or "profile-default") throw AccountsRoutes.OneSet(owner, action == "profile-join" ? "a list to join" : "a default");
 
         // The file edits answer at once, with the exit code.
         int? edited = action switch
@@ -469,7 +455,6 @@ public sealed class AgentsRoutes(DriverContext context)
             // and what lands inside it is the harness's own.
             "profile-add" => ProfileAdd(owner, request),
             "profile-remove" => ProfileRemove(owner, request, stream),
-            "profile-default" => ProfileDefault(_loop, owner,Optional(request, "profile"), Optional(request, "workspace")),
             "install" or "update" or "login" or "login-new" or "pin" => null,
             _ => throw Refusals.Because(
                 Refusals.HarnessActionUnknown,
@@ -481,15 +466,7 @@ public sealed class AgentsRoutes(DriverContext context)
             // The report reads the wiring, the directories and the readings fresh at every question, so an edit reads
             // no account again (ROSTER1); an unpin asks its binary.
             await ChangedAsync(_loop, harness, action, config, cancellationToken);
-            // A default's edit says what sessions there run as now (LOOK2c), the fact the terminal's verb prints: a
-            // workspace cleared on the tool's own row runs as the machine's default where one is set.
-            return action == "profile-default"
-                ? new
-                {
-                    Harness = harness, Action = action, ExitCode = code,
-                    Default = DefaultStanding(_loop.Harnesses.Settings, owner, Optional(request, "workspace")),
-                }
-                : (object)new { Harness = harness, Action = action, ExitCode = code };
+            return new { Harness = harness, Action = action, ExitCode = code };
         }
 
         // A pin's version is asked for before anything starts: a pin without one is a malformed call.
@@ -668,7 +645,7 @@ public sealed class AgentsRoutes(DriverContext context)
         // No default, list or kept account names it afterwards (TOOL4g, TOOL4e's note), as the terminal's `profile remove`
         // leaves the wiring: the next account made takes the first free name, which may be this one's, and so starts never
         // read (ROSTER1).
-        HarnessSettings.Change(_loop.Harnesses.SettingsPath, read => read.WithoutAccount(harness, profile));
+        HarnessSettings.Change(_loop.Harnesses.SettingsPath, read => read.WithoutAccount(harness, profile), account: new AccountChange(harness, profile, Added: false));
         _loop.Harnesses.Removed(harness, profile);
         return 0;
     }

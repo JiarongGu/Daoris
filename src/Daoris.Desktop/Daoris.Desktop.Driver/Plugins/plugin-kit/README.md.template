@@ -18,13 +18,13 @@ repository, with its tests, reviewed as a diff. It is installed only when a pers
 | `plugin.mjs` | the wire script: the handshake, a handler for each point, the shutdown |
 | `plugin.test.mjs` | its wire test: `node --test` here, with nothing of Daoris's installed |
 | `README.md` | this: the wire, the rules, and each point's frame and answer |
-
+{{files}}
 ## Where it speaks
 
 A frame's `root` is the repository's checkout on the machine. In the samples below it is `{root}`,
 which the wire test and `try` replace with an empty scratch folder.
 
-{{points}}## The wire
+{{points}}{{work}}## The wire
 
 JSON-RPC 2.0, one frame per line. Daoris calls and the plugin answers; the plugin asks Daoris nothing.
 

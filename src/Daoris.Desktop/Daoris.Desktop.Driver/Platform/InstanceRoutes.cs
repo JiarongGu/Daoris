@@ -69,9 +69,25 @@ public static class OpenRoutes
     /// <summary><c>space free --yes</c>'s follow (KEEP1e): the disk space read each second, its <c>run</c> until it ends.</summary>
     public static InstanceRoute SystemSpace { get; } = Open("SYSTEM_SPACE");
 
+    /// <summary><c>ask --abandon &lt;id&gt;</c> and <c>quest abandon &lt;id&gt;</c> without <c>--yes</c> (RPC1e): what an abandon would take and keep.</summary>
+    public static InstanceRoute WorkPlan { get; } = Open("WORK_PLAN");
+
+    /// <summary><c>history</c>'s reading, and a clear's list without <c>--yes</c> (RPC1e): what a clear would take and keep.</summary>
+    public static InstanceRoute HistoryPlan { get; } = Open("HISTORY_PLAN");
+
+    /// <summary><c>help list</c> (RPC1e): a page of Ask Daoris's conversations, a search's among them.</summary>
+    public static InstanceRoute HelpConversations { get; } = Open("HELP_CONVERSATIONS");
+
+    /// <summary><c>opinion show &lt;session|opinion&gt;</c> (RPC1e): where a work's second opinion stands, its findings and their answers.</summary>
+    public static InstanceRoute OpinionGate { get; } = Open("OPINION_GATE");
+
+    /// <summary><c>setup &lt;repository&gt; --plan</c> (RPC1e): what a set-up's press would do today, read and never written.</summary>
+    public static InstanceRoute SetupPlan { get; } = Open("SETUP_PLAN");
+
     /// <summary>
-    /// Each verb of RPCOPEN1's scope, in the verb's words: the route it sends where the instance answers, or null with the reason it
-    /// does not go through the pipe (yet).
+    /// Each verb of RPCOPEN1's and RPC1e's scope, the host's verbs with a window twin (the terminal RPC design §1.2), in the verb's words:
+    /// the open route it reads where the instance answers, or null with the reason it stays off the pipe. A person's press is
+    /// <see cref="PersonPresses"/>'; <c>PipeCensusTests</c> holds which verbs stay off, so one that leaves the list or joins it is said.
     /// </summary>
     public static IReadOnlyList<(string Verb, InstanceRoute? Route, string Reason)> Verbs { get; } =
     [
@@ -86,14 +102,42 @@ public static class OpenRoutes
         ("sync", SyncNow, "an open press (D156 §3: sync)"),
         ("register", RegistryRefresh, "an open press (D156 §3: refresh)"),
         ("space free --yes", SystemSpace, "the run its press started, read until it ends (KEEP1e)"),
-        // The other open reads of RPC1e: each is read alone beside an instance, with the same words, until its route answers them as
-        // `said` as the six above do (RPCOPEN1 built the shape, and the reads that follow it name no new one).
+        ("ask --abandon <id>", WorkPlan, "the list; with `--yes` the person's press (WORK_ABANDON)"),
+        ("quest abandon <id>", WorkPlan, "the list; with `--yes` the person's press (WORK_ABANDON)"),
+        ("history", HistoryPlan, "the reading; `--json` prints the route's own answer"),
+        ("history clear --workspace <name>", HistoryPlan, "the list; with `--yes` the person's press (HISTORY_CLEAR)"),
+        ("quest clear <id>", HistoryPlan, "the list; with `--yes` the person's press (HISTORY_CLEAR)"),
+        ("ask --clear <id>", HistoryPlan, "the list; with `--yes` the person's press (HISTORY_CLEAR)"),
+        ("help list", HelpConversations, "the list; `--json` prints the route's own answer"),
+        ("help delete <id>", null, "alone: the first ask reads the conversation's name here, which no route answers; with `--yes` the person's press (SESSION_DELETE)"),
+        ("help resume <id>", null, "alone: the conversation goes on in this terminal's own process until RPC1g"),
+        ("opinion show <session|opinion>", OpinionGate, "the gate's reading"),
+        ("setup <repository> --plan", SetupPlan, "the plan; without `--plan` the person's press (SETUP_PRESS)"),
+        ("setup --workspace <name>", null, "alone: no route sets a workspace up; each repository's press is SETUP_PRESS's"),
+        ("ask channel <id>", null,
+            "alone: the read moves the person's own mark (CHANNEL_MARK, the person's), a door of the service, which writes it once whoever "
+            + "asks; with words the person's press (CHANNEL_POST)"),
+        // The open reads left alone beside an instance, with the same words (RPCOPEN1, RPC1e): a verb whose words name this machine's
+        // folders or quote its trees' files stays alone, since no answer carries a machine path (the terminal RPC design §4.3) and what
+        // may travel over the local pipe is a decision first; the rest until their route answers them as `said`.
         ("trace", null, "alone: its words are built from the sources the host reads itself; TRACE answers the page's shape only"),
         ("git branches", null, "alone: its words are built from the registry's checkouts the host reads itself; GIT_BRANCHES answers the page's shape only"),
         ("workflow", null, "alone: WORKFLOW_RUN answers the page's shape only, and `workflow keep` writes its run"),
-        ("help list", null, "alone: HELP_CONVERSATIONS answers the page's shape only"),
-        ("history", null, "alone: HISTORY_PLAN answers the page's shape only, and its clear is a person's press"),
-        ("plugins show", null, "alone: PLUGIN_READ answers the page's shape only"),
+        ("plugins show <id>", null, "alone: its words name the plugin's folders on this machine, which PLUGIN's page answers apart, and no said line carries"),
+        ("plugins activity <id>", null, "alone: a read of the machine log this process reads itself; with no log its words name the log's folder"),
+        ("plugins try <folder|id>", null, "alone: a trial starts the plugin as this terminal's own child, and its words name the folder it tried"),
+        ("plugins install <file>", null, "alone: PLUGIN_INSTALL installs one of the install's own offers; no route reads a package file, and its words name the folder"),
+        ("plugins new <id>", null, "alone: it writes a plugin's folder where the terminal stands, never under the home"),
+        ("logs", null, "alone: a read of the machine log this process reads itself, whose words name its folder"),
+        // What stays off the pipe by design (§7.1, §11): a conversation the terminal runs, a loop, the updater's request, and the
+        // service's own doors, which the service writes once whoever asks.
+        ("chat", null, "alone: the conversation runs in this terminal's own process, with its own agent and its own Ctrl+C, until RPC1g"),
+        ("drive", null, "alone: it is a loop, the home's lease's holder, refused where the desktop holds the home unless `--share` (DRV8a)"),
+        ("update", null, "alone: a request file under the home the desktop's updater watches (D139); its window twin is the update banner, no route"),
+        ("quest delete|accept|done|reopen|go-on|check|review", null, "alone: the service's door, its one writer, as the page's own HTTP call is (§7.1)"),
+        ("answer", null, "alone: the service's door, its one writer, as the page's own HTTP call is (§7.1)"),
+        ("ask \"…\"", null, "alone: the service publishes an ask, its one writer, as the page's own HTTP call does (§7.1)"),
+        ("sync status", null, "alone: a read of the service's own standing (`/api/sync`), as the page's read is"),
     ];
 }
 
@@ -163,10 +207,73 @@ public static class PersonPresses
     /// </summary>
     public static InstanceRoute SpaceFree { get; } = Person("SYSTEM_SPACE_FREE");
 
+    /// <summary><c>ask --pause &lt;id&gt;</c> and <c>quest pause &lt;id&gt;</c> (RPC1e): a work paused on this machine, what of it runs stopped.</summary>
+    public static InstanceRoute WorkPause { get; } = Person("WORK_PAUSE");
+
+    /// <summary><c>ask --resume &lt;id&gt;</c> and <c>quest resume &lt;id&gt;</c> (RPC1e): a pause taken away, each stop it made released.</summary>
+    public static InstanceRoute WorkResume { get; } = Person("WORK_RESUME");
+
+    /// <summary><c>ask --abandon &lt;id&gt; --reason "…" --yes</c> and <c>quest abandon …</c> (RPC1e): what the list holds now abandoned.</summary>
+    public static InstanceRoute WorkAbandon { get; } = Person("WORK_ABANDON");
+
+    /// <summary><c>history clear --workspace &lt;name&gt; --yes</c>, <c>quest clear &lt;id&gt; --yes</c> and <c>ask --clear &lt;id&gt; --yes</c> (RPC1e): a clear.</summary>
+    public static InstanceRoute HistoryClear { get; } = Person("HISTORY_CLEAR");
+
+    /// <summary><c>help rename &lt;id&gt; "…"</c> and <c>--clear</c> (RPC1e): an Ask Daoris conversation's name, or its first question again.</summary>
+    public static InstanceRoute HelpRename { get; } = Person("HELP_RENAME");
+
+    /// <summary><c>help pin &lt;id&gt;</c> and <c>unpin</c> (RPC1e): an Ask Daoris conversation kept at the top of its history, or not.</summary>
+    public static InstanceRoute HelpPin { get; } = Person("HELP_PIN");
+
+    /// <summary><c>opinion ask &lt;session&gt;</c> (RPC1e): a second opinion asked, spending an account at the person's choice.</summary>
+    public static InstanceRoute AskOpinion { get; } = Person("ASK_OPINION");
+
+    /// <summary><c>opinion stop &lt;opinion&gt;</c> (RPC1e): a reviewer's reading stopped.</summary>
+    public static InstanceRoute StopOpinion { get; } = Person("STOP_OPINION");
+
+    /// <summary><c>opinion anyway &lt;session&gt;</c> (RPC1e): going on without a settled opinion, the person's answer kept.</summary>
+    public static InstanceRoute OpinionAnyway { get; } = Person("OPINION_ANYWAY");
+
+    /// <summary><c>opinion myself &lt;session&gt;</c> (RPC1e): the person's own reading in the opinion's place.</summary>
+    public static InstanceRoute OpinionMyself { get; } = Person("OPINION_MYSELF");
+
+    /// <summary><c>ask channel &lt;id&gt; "…"</c> (RPC1e): the person's words on an ask's channel, which every session on the ask reads.</summary>
+    public static InstanceRoute ChannelPost { get; } = Person("CHANNEL_POST");
+
+    /// <summary><c>setup &lt;repository&gt;</c> (RPC1e): the rule its session needs added, and one ask published to it as the person's.</summary>
+    public static InstanceRoute SetupPress { get; } = Person("SETUP_PRESS");
+
+    /// <summary>
+    /// <c>plugins approve &lt;id&gt; &lt;server&gt;</c> and <c>withdraw</c> (RPC1e): the tools a plugin's server offers Ask Daoris approved,
+    /// its reads only or the writes named, or the approval withdrawn.
+    /// </summary>
+    public static InstanceRoute PluginAction { get; } = Person("PLUGIN_ACTION");
+
     /// <summary>Each person's press a verb sends over the pipe, in the verb's words, with its route.</summary>
     public static IReadOnlyList<(string Verb, InstanceRoute Route)> Presses { get; } =
     [
         ("space free --yes", SpaceFree),
+        ("ask --pause <id>", WorkPause),
+        ("quest pause <id>", WorkPause),
+        ("ask --resume <id>", WorkResume),
+        ("quest resume <id>", WorkResume),
+        ("ask --abandon <id> --reason \"…\" --yes", WorkAbandon),
+        ("quest abandon <id> --reason \"…\" --yes", WorkAbandon),
+        ("history clear --workspace <name> --yes", HistoryClear),
+        ("quest clear <id> [--failed] --yes", HistoryClear),
+        ("ask --clear <id> --yes", HistoryClear),
+        ("help rename <id> \"…\"|--clear", HelpRename),
+        ("help pin <id>", HelpPin),
+        ("help unpin <id>", HelpPin),
+        ("help delete <id> --yes", SessionDelete),
+        ("opinion ask <session>", AskOpinion),
+        ("opinion stop <opinion>", StopOpinion),
+        ("opinion anyway <session>", OpinionAnyway),
+        ("opinion myself <session>", OpinionMyself),
+        ("ask channel <id> \"…\"", ChannelPost),
+        ("setup <repository>", SetupPress),
+        ("plugins approve <id> <server>", PluginAction),
+        ("plugins withdraw <id> <server>", PluginAction),
         ("sessions archive <id>…", SessionArchive),
         ("sessions unarchive <id>…", SessionArchive),
         ("sessions stop <id>", SessionStop),

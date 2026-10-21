@@ -38,9 +38,9 @@ internal static class HelpConsole
         using var service = ServiceClient.FromEnvironment();
         var adapters = AdapterSet.Built();
 
-        return await HelpCommand.RunAsync(
-            ask, new SessionsWorld(service, home, config, SessionsConsole.Wire(config), log), adapter => Resumes(adapters, adapter),
-            Console.Out).ConfigureAwait(false);
+        // RPC1e: the running Daoris's client where one answers, its presses confirmed in its window; `resume` stays this terminal's.
+        var world = new SessionsWorld(service, home, config, SessionsConsole.Wire(config), log) { Instance = InstanceHost.World(home, "help") };
+        return await HelpCommand.RunAsync(ask, world, adapter => Resumes(adapters, adapter), Console.Out).ConfigureAwait(false);
     }
 
     /// <summary>Whether an adapter this build carries resumes a conversation by its id; one it does not carry cannot.</summary>

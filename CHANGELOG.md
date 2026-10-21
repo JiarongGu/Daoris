@@ -5,6 +5,9 @@ with the version and date at release.
 
 ## Unreleased
 
+- A quest whose workflow closes it now says on its own page, under *Close*, when you closed it done before the workflow's end and
+  which steps that stopped, or when its close was found closed only in part: which quest was lost to another machine's take, and
+  that its close waits again, with its stop offered in *What needs you*. In English and 中文.
 - Daoris now keeps a free-space floor: when a disk it writes to falls below it, Daoris frees early what it can make again (the
   package folders of trees set aside, downloaded versions nothing uses unless you keep them until you remove them, and its browser's
   cache once while it is closed) and, if that is not enough, says so in *What needs you* with how much it freed and what *Free up
@@ -25,6 +28,28 @@ with the version and date at release.
   landing cycle no longer runs on such a run's branches; a branch two runs worked, or any branch of its repository while the service's
   quests cannot be read, is left to neither and said. The run's opinion and look, and a plugin's performed step, wait for a later build
   whose landing doors read the run.
+- More of `daoris-driver`, run while Daoris is open on the same home, hands its press to Daoris instead of acting beside it:
+  `quest pause|resume|abandon` and `ask --pause|--resume|--abandon`, `history clear`, `quest clear` and `ask --clear`,
+  `help rename|pin|unpin|delete`, `opinion ask|stop|anyway|myself`, `setup <repository>`, `ask channel <id> "…"` and
+  `plugins approve|withdraw`. Daoris's window asks you to confirm each, every window shows it at once, and the terminal prints the
+  words it printed before. Their lists and readings (`history`, `help list`, `opinion show`, `setup --plan`, an abandon's or a
+  clear's list) are read from Daoris too. With Daoris closed they act as before; a Daoris that is open and does not answer refuses
+  the press, and nothing is done.
+- The plugin kit now makes a plugin that does a step of the work: `daoris-driver plugins new <id> --point work/perform` (or the
+  `work/perform` box under *Make a plugin* on Settings → Plugins) writes a performer whose only parts to write are the work itself,
+  what became of an attempt, and removing what it made. The kit's half keeps a journal so a resent attempt never does the work twice,
+  answers what became of each attempt, and removes each thing once. Beside its wire test, a contract test checks that over the wire
+  with `node --test`, and `daoris-driver plugins try <folder> --cycle <fixture>` drives it through the driver: a duplicate delivery,
+  a failure, a timeout, a restart, a new revision and a cleanup asked twice. Every test and trial runs it in a stand-in world, so
+  nothing reaches its platform, and a plugin that does not take that world is sent no attempt. `examples/plugins/local-preview` is one
+  filled in. The three work points have their own descriptions under *Make a plugin* and on a plugin's page, in English and 中文.
+- An agent's accounts signed in for Daoris are now one set that serves every workspace (D197). When Daoris comes up, and at the
+  next change of its accounts' settings, a workspace's own list or default and this machine's list are folded into one order of
+  every account, with one set of use settings; nothing signed in is dropped, and an agent whose machine named one account alone is
+  used *One by one, in order* so its starts still begin there. What changed is kept beside the accounts until you mark it seen. A
+  new account goes last in the order whatever its id. On the bridge the order and use act on the set, and a workspace, a list to
+  join or a default is refused, saying the order decides where starts begin; the page's screens for them follow. A conversation
+  that began in your own sign-in goes on there.
 - You may now set an age for finished work's records: on the *Disk space* card's *Conversations and records* row (*Change…*), with
   `daoris driver keep history <days>|never|default`, or through Ask Daoris's proposal you apply. Between 30 and 3,650 days; by default
   none, and nothing clears your history by itself, as before. With an age set, once a day each workspace's finished work whose last

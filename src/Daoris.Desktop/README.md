@@ -597,7 +597,7 @@ record's and the package's rules. The rest sits at the module's top, beside `plu
 (`PluginFolders`), the hook process (`HookProcess`, its stdout read under the frame bound by `BoundedLines`, and its stderr clipped by it at 8 KB a line, PLUGSTDERR1), the work wire's
 supervision under the home's lease (`WorkPlugins`, which the hook set holds), the tool
 checks' runs, the kit's files and templates, a trial's process and the package file, and what other modules and the hosts call:
-the catalogue's reads, install and update, offers, the page and the activity, the kit and its trial, the hook set the loop
+the catalogue's reads, install and update, offers, the page and the activity, the kit, its trial and a performer's cycle (`PluginCycles`, FABRIC-PERFORM1e), the hook set the loop
 asks, the landing's start (`HookChannels`), the log writer and the terminal's commands, with the ports `IHookChannel` and
 `CheckRunner`. `PluginCatalog.Load`, `PluginIcon.Read` and `PluginSource.Read` are ordinary static members of their types (FLAT1b-i folded
 the extension blocks back): each calls `PluginFolders` for the I/O, so the type stays in `Domain/` and names no I/O token itself.

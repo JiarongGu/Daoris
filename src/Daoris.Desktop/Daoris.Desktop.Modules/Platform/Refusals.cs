@@ -51,7 +51,7 @@ public static class Refusals
     /// </summary>
     public const string HarnessActionBusy = "HARNESS_ACTION_BUSY";
 
-    /// <summary>An account action this build does not have (TOOL4g): not one of order, use, ready, inherit.</summary>
+    /// <summary>An account action this build does not have (TOOL4g): not one of order, use, ready, said (POOL1a took <c>inherit</c>).</summary>
     public const string AccountActionUnknown = "ACCOUNT_ACTION_UNKNOWN";
 
     /// <summary>A list naming an account that is not on this machine (D125 §3.1, TOOL4g), compared exactly as a default is.</summary>
@@ -72,7 +72,14 @@ public static class Refusals
     /// <summary>A kept account alone in its list, which would leave driven work none (D130 §4.6, TOOL4g).</summary>
     public const string AccountScopeAlone = "ACCOUNT_SCOPE_ALONE";
 
-    /// <summary>How a list is used, asked of a scope with no list of its own (D130 §16.6, TOOL4g): there is nothing to use.</summary>
+    /// <summary>
+    /// What one set of Daoris's accounts leaves nothing to name (POOL1a, D197; the account-pool design §5.2): a workspace on an order or
+    /// a use, a list to join, a default to set. Every account signed in for Daoris serves every workspace, and the order says where
+    /// starts begin.
+    /// </summary>
+    public const string AccountsOneSet = "ACCOUNTS_ONE_SET";
+
+    /// <summary>How a list is used, asked of a scope with no list of its own (D130 §16.6, TOOL4g): there is nothing to use. No door asks it since POOL1a; its words leave with POOL1c.</summary>
     public const string AccountUseNoList = "ACCOUNT_USE_NO_LIST";
 
     /// <summary>
