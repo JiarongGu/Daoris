@@ -18696,3 +18696,13 @@ through `JsonKeeping.Save` and `writeKeeping`: numbers by their own text, CRLF k
 written; the driver's loads read a key twice as `JSON.parse` does, where a node threw. Proof: eleven rows in
 `home-files-keep.json`, the browser rows read by the modules' `BrowserSettingsTests`. Detail: D173's KEEPALL1c note and the fix
 log's KEEPALL1c entry.
+
+## FABRIC-TIDYHELD-TEST1 — race tests for the held tidy and cut-off openings (2026-10-21, D173)
+
+> - [ ] **FABRIC-TIDYHELD-TEST1 — race tests for the held tidy and cut-off openings** (driver; after END4a). `TreeTidies.TidyOneAsync` and `TreeStrays.CutOffAsync` have no line-moved-at-delete test. Proof: Git tests through `TreeLands` and a cut-off opening with `BeforeRefDeleted`.
+
+**Outcome** 2026-10-21: tests only, no code changed, all green on the current code. `JudgedDeleteGitTests` gains a chain landed through
+`TreeLands` whose earlier branch's delete moves under `BeforeRefDeleted`: the holder its proof rested on (the landing's branch, the
+squash's branch, the line a merge went into) set back keeps the branch with "moved as it went", and the branch moved on keeps its new
+commit with `ContentHolds.MovedSince`. A cut-off opening held by the line is moved aside while the line rewound, or its branch moved,
+at the delete keeps the branch, said in `BranchKept`. On Opus: about 40 tool calls.
