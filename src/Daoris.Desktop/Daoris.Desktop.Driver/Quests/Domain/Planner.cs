@@ -416,7 +416,12 @@ public sealed record PriorSession(
 /// The person's bring-forward the take was made by (SYNCMERGE1b0 point 3), as the claim's answer names it, or null: what a stood-down
 /// session of this machine's is carried on by (SYNCMERGE1b, <see cref="Planner.BroughtForward"/>).
 /// </param>
-public sealed record QuestTake(string Claim, bool Took = false, string? Teammate = null, string? Why = null, ForwardTake? Forward = null)
+/// <param name="At">
+/// When the take the quest stands taken by was made, as the claim's answer says it (CARRY3), or null from a host before it: what a take
+/// made here after a session ended is judged by (<see cref="Planner.TakenAt"/>), which a submission, a reopen or a go-on never moves.
+/// </param>
+public sealed record QuestTake(
+    string Claim, bool Took = false, string? Teammate = null, string? Why = null, ForwardTake? Forward = null, DateTimeOffset? At = null)
 {
     /// <summary>
     /// The claim was lost to the person's reopen of the work the step grew from, not to another machine's take (FABRIC-CLOSE1c20). Never
@@ -1465,7 +1470,7 @@ public static class Planner
             }
 
             // A take made after it ended by the person's bring-forward of it is the press's (SYNCMERGE1b), never a chat's.
-            return !take.Took && quest.Updated is { } taken && cutOff.Updated is { } ended && taken > ended && !BroughtForward(cutOff, take)
+            return !take.Took && TakenAt(quest, take) is { } taken && cutOff.Updated is { } ended && taken > ended && !BroughtForward(cutOff, take)
                 ? new(quest, StartVerdict.TakenElsewhere,
                     $"Quest `#{quest.Id}` was taken here after session `{cutOff.Session}` ended, by a chat or by work outside Daoris: {over}")
                 {
@@ -1878,7 +1883,13 @@ public static class Planner
     /// </summary>
     internal static bool TakenAway(QuestView quest, PriorSession last, QuestTake take) =>
         !take.Here
-        || (!take.Took && quest.Updated is { } taken && last.Updated is { } ended && taken > ended && !BroughtForward(last, take));
+        || (!take.Took && TakenAt(quest, take) is { } taken && last.Updated is { } ended && taken > ended && !BroughtForward(last, take));
+
+    /// <summary>
+    /// When a taken quest's take was made (CARRY3): the claim's own time, where its host said one. A host before it says none, and the
+    /// quest's <c>updated</c> stands in for it, as before, though a submission, an evidence read, a reopen and a go-on move that too.
+    /// </summary>
+    internal static DateTimeOffset? TakenAt(QuestView quest, QuestTake take) => take.At ?? quest.Updated;
 
     /// <summary>
     /// Whether <paramref name="lost"/>, a record of this machine's that stood down, is carried on by the person's bring-forward of its lost

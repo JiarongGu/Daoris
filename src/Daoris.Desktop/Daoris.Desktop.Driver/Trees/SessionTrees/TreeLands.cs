@@ -176,7 +176,15 @@ internal sealed class TreeLands(
     /// What the landing replayed onto the line here, leaving out what the line holds (LANDSYNC1, D87's 2026-10-15 amendment point 2):
     /// its tip is merged in place of the session's branch, as D86 merges one. Null merges the branch as made.
     /// </param>
-    internal async Task<TreeMerge> MergeAsync(string path, CancellationToken ct = default, LandReplay? replay = null)
+    /// <param name="uncommitted">
+    /// The session tree's uncommitted paths as the landing's judgement counted them a moment before (LANDGIT1c); null asks git.
+    /// </param>
+    /// <param name="here">
+    /// The session tree's repository and branch as its landing read them a moment ago (LANDGIT1b); null reads them here. Only the
+    /// tree's: every check of the root is still made here, immediately before the merge.
+    /// </param>
+    internal async Task<TreeMerge> MergeAsync(
+        string path, CancellationToken ct = default, LandReplay? replay = null, int? uncommitted = null, CommonDirAndBranch? here = null)
     {
         var full = Path.GetFullPath(path);
         if (!full.StartsWith(Path.GetFullPath(context.TreesRoot) + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase))
@@ -190,8 +198,9 @@ internal sealed class TreeLands(
             return new(false, $"there is no tree at {path}.");
         }
 
-        // Its repository and its branch, one start (PROC1d-iii).
-        var here = await CommonDirAndBranchAsync(full, ct).ConfigureAwait(false);
+        // Its repository and its branch, one start (PROC1d-iii), or the landing's own read of them a moment ago (LANDGIT1b): what it lands
+        // is read from that branch below, as it stands.
+        here ??= await CommonDirAndBranchAsync(full, ct).ConfigureAwait(false);
         if (here.Code != 0)
         {
             return new(false, $"{path} is not a working tree git recognises: {FirstLine(here.Err)}");
@@ -206,11 +215,8 @@ internal sealed class TreeLands(
 
         // Uncommitted work in the SESSION tree would silently not travel. Saying "merged" while
         // leaving it behind is the worst answer available: the person believes the work moved.
-        var (_, treeDirty, _) = await WorkingTree.GitAsync(full, ["status", "--porcelain"], ct)
-            .ConfigureAwait(false);
-        if (!string.IsNullOrWhiteSpace(treeDirty))
+        if ((uncommitted ?? await DirtyAsync(full, ct).ConfigureAwait(false)) is > 0 and var count)
         {
-            var count = treeDirty.Trim().Split('\n').Length;
             return new(false,
                 $"the session's tree has uncommitted work — {count} path(s) — which a merge would "
                 + "leave behind. Commit it in the tree first, or decide it is not wanted.");
@@ -344,10 +350,15 @@ internal sealed class TreeLands(
     /// (<see cref="TreeLanding.Withheld"/>), the branch made and recorded and no plugin spoken to; null lets the push begin, past which
     /// nothing stops it. Null asks nothing.
     /// </param>
+    /// <param name="uncommitted">
+    /// The tree's uncommitted paths as the door read them where it judged the landing (LANDGIT1c): the look's automatic landing reads
+    /// them there, so the landing asks `status` no more. Read again where the landing waited for another of its tree; null reads them.
+    /// </param>
     internal async Task<TreeLanding> LandAsync(
         string path, LandingSubject subject, CancellationToken ct = default, Func<CancellationToken, Task<IReadOnlySet<string>>>? inUse = null,
         string acceptedBy = AcceptedBy.Person, LandingGate? gate = null, bool joins = false, bool fetched = false,
-        Func<bool, CancellationToken, Task<TreeLanding?>>? judged = null, Func<LandedBranch?, bool, CancellationToken, Task<string?>>? beforePush = null)
+        Func<bool, CancellationToken, Task<TreeLanding?>>? judged = null, Func<LandedBranch?, bool, CancellationToken, Task<string?>>? beforePush = null,
+        int? uncommitted = null)
     {
         var repository = context.OwnerOf(Path.GetFullPath(path)).Repository;
         // LANDRACE1 (D145 point 2, D173's FABRIC-END7 note and its review): one landing of one session's tree at a time, whichever door
@@ -372,7 +383,8 @@ internal sealed class TreeLands(
         // FABRIC-END6c: a landing holds its repository for the due moments, which skip it until it is let go, then ask.
         using (RepositoryHolds.Hold(context.Home, repository))
         {
-            landed = await LandingAsync(path, subject, ct, inUse, acceptedBy, gate, joins, fetched, hold, beforePush).ConfigureAwait(false);
+            landed = await LandingAsync(path, subject, ct, inUse, acceptedBy, gate, joins, fetched, hold, beforePush,
+                hold.Waited ? null : uncommitted).ConfigureAwait(false);
         }
 
         // FABRIC-END3: Accept is Daoris's own ref move; its repository is judged at once by the ref watch, with its echo (§B4).
@@ -380,6 +392,16 @@ internal sealed class TreeLands(
         // FABRIC-END6: Daoris pushed, a moment to ask about its pull request (§A4.3), told after the rule's tidy, whose own ask it counts.
         if (landed.Plugin is { Pushed: true, Failed: false }) PullRequestMoments.Pushed(context.Home, repository);
         return landed;
+    }
+
+    /// <summary>
+    /// How many paths <c>git status</c> names in the session's tree: the dirty check's own read where the landing was told nothing. A
+    /// status git could not give names none, as the check always read it.
+    /// </summary>
+    private static async Task<int> DirtyAsync(string full, CancellationToken ct)
+    {
+        var (_, dirty, _) = await WorkingTree.GitAsync(full, ["status", "--porcelain"], ct).ConfigureAwait(false);
+        return string.IsNullOrWhiteSpace(dirty) ? 0 : dirty.Trim().Split('\n').Length;
     }
 
     /// <summary>What a landing says that waited for another of its tree past <see cref="LandingHolds.Wait"/> (LANDRACE1).</summary>
@@ -394,7 +416,7 @@ internal sealed class TreeLands(
     private static async Task<string?> JudgedAsync(string path, LandingGate? gate, CancellationToken ct)
     {
         if (gate?.Tip is { } pinned) return pinned;
-        var (code, head, _) = await WorkingTree.GitAsync(Path.GetFullPath(path), ["rev-parse", "--verify", "--quiet", "HEAD"], ct).ConfigureAwait(false);
+        var (code, head, _) = await WorkingTree.GitAsync(Path.GetFullPath(path), ["rev-parse", "--verify", "--quiet", "HEAD^{commit}"], ct).ConfigureAwait(false);
         return code == 0 ? head.Trim() : null;
     }
 
@@ -422,22 +444,33 @@ internal sealed class TreeLands(
     /// <summary>The landing itself, as <see cref="LandAsync"/> says it.</summary>
     /// <param name="hold">The tree's hold (LANDRACE1), which keeps what this landing came to for a door waiting behind it.</param>
     /// <param name="beforePush">The door's judgement just before its plugin is told (FABRIC-CLOSE1h2), as <see cref="LandAsync"/> takes it.</param>
+    /// <param name="uncommitted">The tree's uncommitted paths as the door read them, as <see cref="LandAsync"/> takes them.</param>
     private async Task<TreeLanding> LandingAsync(
         string path, LandingSubject subject, CancellationToken ct, Func<CancellationToken, Task<IReadOnlySet<string>>>? inUse,
         string acceptedBy, LandingGate? gate, bool joins, bool fetched, LandingHold? hold,
-        Func<LandedBranch?, bool, CancellationToken, Task<string?>>? beforePush = null)
+        Func<LandedBranch?, bool, CancellationToken, Task<string?>>? beforePush = null, int? uncommitted = null)
     {
         // One look (UIFREEZE1, PROC1d-i): the landing and its tidy ask git's guess at the line once.
         using var look = context.OneLook();
         // LANDGIT1: and what a commit's id answers, once, in the planning up to the branch made (GitFacts); closed before the tidy.
         using var facts = GitFacts.Within();
         var full = Path.GetFullPath(path);
+        // LANDGIT1b: the tree's repository and the branch it is on, read once and handed to the planning's readers (the content proof,
+        // the judgement against the line, the merge or the branch made), each of which asked it again. Only of a tree of this home's that
+        // is here, as each reader asks; what an act rests on (the branch's commits, the head the tree moves from) is read again before it.
+        var here = context.Holds(full) && Directory.Exists(full) && await CommonDirAndBranchAsync(full, ct).ConfigureAwait(false) is { Code: 0 } read
+            ? read : null;
         // SQUASHTIDY1f: the head's own judgement, asked first, since a second opinion or a review of work already on the line
         // lands nothing either.
-        if (await workReads.DiscardOfferAsync(full, ct).ConfigureAwait(false) is { } carried)
+        var work = await workReads.WorkAsync(full, ct, uncommitted, here).ConfigureAwait(false);
+        if (work is not null && DiscardOffer.Of(full, work) is { } carried)
         {
             return new(false, carried.NotLanded) { Refusal = AutoLandingCode.Carried };
         }
+
+        // LANDGIT1c: the dirty check below is told what that judgement's `status` counted, and asks git only where it could not say. Nothing
+        // of the landing's writes in the tree before it: a replay is made aside, and the tree follows only after the merge or the branch.
+        uncommitted = work?.Uncommitted;
 
         // One gate, in a fixed order (the second-agent design §7): the run's own part (WORKFLOW1f), the second opinion, then the
         // person's review where it runs, then the landing step's own. A merge rule waits as a branch rule does, and an advance waits
@@ -480,7 +513,7 @@ internal sealed class TreeLands(
 
         // LANDSYNC1 (D87's 2026-10-15 amendment): only what the line lacks lands. The person's press fetches the line once first
         // (point 6), a failed fetch said and judged against the last one; the look's automatic landing has no press and fetches nothing.
-        var (sync, notFetched) = await syncs.JudgeAsync(full, repository, workspace, branchForm, fetch: acceptedBy != AcceptedBy.Auto && !fetched, ct)
+        var (sync, notFetched) = await syncs.JudgeAsync(full, repository, workspace, branchForm, fetch: acceptedBy != AcceptedBy.Auto && !fetched, ct, here)
             .ConfigureAwait(false);
         // LANDREBASE1 (D87's note): and where the line moved since the tree left it, the work is brought onto its tip first, by the same
         // replay, so what lands descends from the line's tip and a conflict is the session's to resolve, never the merge's.
@@ -507,7 +540,7 @@ internal sealed class TreeLands(
                 replayed = made;
             }
 
-            var merged = await MergeAsync(path, ct, replayed).ConfigureAwait(false);
+            var merged = await MergeAsync(path, ct, replayed, uncommitted, here).ConfigureAwait(false);
             landed = new(merged.Merged, merged.Message) { LeftOut = merged.Merged ? replayed?.LeftOut : null };
             landed = Fetched(landed, notFetched);
         }
@@ -519,7 +552,7 @@ internal sealed class TreeLands(
                 BranchNamed(worked, landing.Rule, repository),
                 handedOn: plugin is not null, ct,
                 entered: subject.EnteredName is not null, squash: landing.Rule.Squash ? worked : null, sync: replaying,
-                join: joins ? sync : null, pinned: gate?.Tip).ConfigureAwait(false);
+                join: joins ? sync : null, pinned: gate?.Tip, uncommitted: uncommitted, here: here).ConfigureAwait(false);
             landed = Fetched(branched.Landing, notFetched);
             replayed = landed.Landed ? branched.Replay : null;
             // ACCEPTALL1: a part that joined its entry's branch by a replay follows it as a replay onto the line does (point 7).
@@ -802,9 +835,14 @@ internal sealed class TreeLands(
     /// commits are read, or nothing lands, and the branch is made or moved to that commit, so one made after the judgement never lands
     /// unseen. Null lands the branch as it stands, as the press does.
     /// </param>
+    /// <param name="uncommitted">
+    /// The tree's uncommitted paths as the landing's judgement counted them a moment before (LANDGIT1c); null asks git.
+    /// </param>
+    /// <param name="here">The tree's repository and branch as its landing read them a moment ago (LANDGIT1b); null reads them here.</param>
     private async Task<Branched> BranchAsync(
         string full, string workspace, string repository, string name, bool handedOn, CancellationToken ct, bool entered = false,
-        LandingSubject? squash = null, LandSync? sync = null, LandSync? join = null, string? pinned = null)
+        LandingSubject? squash = null, LandSync? sync = null, LandSync? join = null, string? pinned = null, int? uncommitted = null,
+        CommonDirAndBranch? here = null)
     {
         if (!context.Holds(full))
         {
@@ -816,8 +854,9 @@ internal sealed class TreeLands(
             return new TreeLanding(false, $"there is no tree at {full}.");
         }
 
-        // Its repository and its branch, one start (PROC1d-iii).
-        var here = await CommonDirAndBranchAsync(full, ct).ConfigureAwait(false);
+        // Its repository and its branch, one start (PROC1d-iii), or the landing's own read of them a moment ago (LANDGIT1b): what it lands
+        // is read from that branch below, as it stands.
+        here ??= await CommonDirAndBranchAsync(full, ct).ConfigureAwait(false);
         if (here.Code != 0)
         {
             return new TreeLanding(false, $"{full} is not a working tree git recognises: {FirstLine(here.Err)}");
@@ -831,11 +870,10 @@ internal sealed class TreeLands(
         }
 
         // Uncommitted work would not travel with the branch — the same reason the merge door gives.
-        var (_, dirty, _) = await WorkingTree.GitAsync(full, ["status", "--porcelain"], ct).ConfigureAwait(false);
-        if (!string.IsNullOrWhiteSpace(dirty))
+        if ((uncommitted ?? await DirtyAsync(full, ct).ConfigureAwait(false)) is > 0 and var dirty)
         {
             return new TreeLanding(false,
-                $"the session's tree has uncommitted work — {dirty.Trim().Split('\n').Length} path(s) — which a "
+                $"the session's tree has uncommitted work — {dirty} path(s) — which a "
                 + "branch would leave behind. Commit it in the tree first, or decide it is not wanted.")
             { Refusal = AutoLandingCode.Uncommitted };
         }

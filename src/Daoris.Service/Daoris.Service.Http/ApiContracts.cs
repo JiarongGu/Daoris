@@ -642,8 +642,10 @@ public sealed record SyncStandingResponse(
 // Where this machine's claim on one quest stands: none, held, unconfirmed or lost (D68 §4). Why a lost one lost, where its take lost to
 // the person's reopen of the work the step grew from (FABRIC-CLOSE1c18): `source-reopened`; null otherwise, as an older host answers.
 // `Forward` (SYNCMERGE1b0): the take this machine holds the quest by, where the person's bring-forward made it, the one take a stood-down
-// session is carried on over; absent otherwise, and from a host before it.
-public sealed record QuestClaimResponse(string Quest, string Claim, string? Why = null, QuestForwardResponse? Forward = null);
+// session is carried on over; absent otherwise, and from a host before it. `Taken` (CARRY3): when the take the quest stands taken by
+// was made, on its machine's clock; null while it is not taken, and absent from a host before it.
+public sealed record QuestClaimResponse(
+    string Quest, string Claim, string? Why = null, QuestForwardResponse? Forward = null, DateTimeOffset? Taken = null);
 // FLOWCHART1a2 (D186; the flowchart design §2.1): one quest's moves, in the order its history replays, on both hosts. Each move by
 // allow-list (Core's `QuestMoveReading`): its kind as the wire spells it, when and on which machine it was made, its sequence there,
 // the remote's number (absent while pending), whether the replay applied it, and the status it reached the quest at (absent before

@@ -18597,6 +18597,67 @@ confirmed in the open window.
 
 **Outcome** 2026-10-21: the respond door's done and decline, the person's done and a set-up refused on a take this machine lost (`QuestExchange.LostStep`) follow the lost take's words with *Drop mine* and *Bring mine forward* and their terminal verbs (`QuestExchange.Choices`), saying until when the bring-forward waits where it cannot stand yet: the source submitted again, or the step open again. A wait, a `ready`, a bind and the remote's push refusal are unchanged. Proof: `QuestShareTests`' new theory (the step rebound and still withdrawn) and the WAITCLAIM2 case (another machine holding it). On Opus. Detail: D178's SYNCMERGE1a3 note.
 
+## KEEPALL1b — `harnesses.json` keeps what its writers do not own (2026-10-21, D173, D165)
+
+> - [ ] **KEEPALL1b — `harnesses.json` keeps what its writers do not own** (driver, cli; after a decision on D165 §6's rewrites). Its writers rebuild every section and never re-read the file. Proof: `harnesses.json` rows in `home-files-keep.json`, with the rotation twins' file rows re-decided in both twins.
+
+**Outcome** 2026-10-21: built. The decision it waited on is D173's KEEPALL1b note: D165 §6's rewrites stay the writer's, as an
+edit, since each settings entry is understood as the file holds it. `HarnessSettings.Save` and `writeHarnessSettings` write
+through `JsonKeeping.Save` and `writeKeeping`; wiring built in memory is written whole. Proof: 11 `harnesses.json` rows in
+`home-files-keep.json`; the rotation twins' file and removal rows, two `rotation-use.json` `write` rows and the account-join rows
+re-decided in both twins. Root cause and verification: the fix log's KEEPALL1b entry.
+
+## LANDGIT1c — one spelling per ref fact (2026-10-21, D173)
+
+> - [ ] **LANDGIT1c — one spelling per ref fact** (driver; after LANDGIT1). `refs/heads/main` and `refs/heads/main^{commit}` are two commands, and the dirty check's `status` is read twice. Proof: the count test with no allowance for `status`.
+
+**Outcome** 2026-10-21: every read of a branch's or the head's commit is `<ref>^{commit}` (the line guess, `ComparableAsync`, the look's tree read, a waited landing's head); the landing's judgement hands its `status` count to the dirty check, and the look's automatic landing hands its own to the landing, read again after a wait. `LandGitCountTests` judges `status` as asked once until a write and refuses a ref read under two spellings; ceilings 53, 50 and 42 (from 55, 51, 43). On Opus: about 90 tool calls. Detail: D173's LANDGIT1c note.
+
+## CARRY3 — a take's own time, not the quest's `updated`, judges "taken here after the session ended" (2026-10-21, D80)
+
+> - [ ] **CARRY3 — a take's own time, not the quest's `updated`, judges "taken here after the session ended"** (driver, maybe service; after CARRY2b). `Planner.TakenElsewhere` (~1127) reads a taken quest's `updated` as the take's time, but a submission, an evidence read, a reopen and a rebound move it too, so after a go-on a carry-on over a take no session marked reads as taken by work outside Daoris (FABRIC-CLOSE1c13 found it; its `StandInLedger.Rebound(…, moved: true)`). Proof: CLOSE1c2's look test with the rebound moving `updated` still carries q3 on.
+
+**Outcome** 2026-10-21: built. The claim's answer says `taken`, when the take the quest stands taken by was made; the driver
+judges a take made here after a session ended by it (`Planner.TakenAt`), in the planner and the hand-over alike, and by
+`updated` only from a host before the field. CLOSE1c2's look test now moves `updated` at the go-on and still carries q3 on.
+On Opus: about 60 tool calls. Detail: D80's CARRY3 note.
+
+## FABRIC-PIPELINE1b2 — a saved workflow keeps a repository's light checks (2026-10-21, D192)
+
+> - [ ] **FABRIC-PIPELINE1b2 — a saved workflow keeps a repository's light checks** (driver, cli; D192; after FABRIC-PIPELINE1a). FABRIC-PIPELINE1b built the sessions' checks under Current only: schema 1's `work` takes no `checks`, since a new field in its canonical text would change every bound run's digest, so saving Current as a named workflow drops a light repository's rule and its sessions run every gate again. Wanted: `work.checks` written only where set (the canonical rule 1a's readers adopt), read by both twins, and a graph version's `claimed.checks` read at the bind (after CUTOVER1g). Proof: a workflow saved from a light Current keeps `light`; every existing version's digest unchanged.
+
+**Outcome** 2026-10-21: built but for what waits on FABRIC-CUTOVER1g. `work` takes `checks` (`light` or `heavy-at-end`), marked `whereSet` in the kinds table both twins hold (`workflow-named.json`): the canonical text and the steps decoder leave it out where it is none, so every existing version keeps its digest and decoded graph (the table's rows, `bcf751a72ffe` unchanged); set, it is the `claimed` node's option. `workflow new --from current:<repository>` copies a light repository's rule onto the work (`workflowdoor.test.ts`); a named run's start takes its bound version's checks, never Current's rule (`SessionChecksHandTests`). A graph version's `claimed.checks`, and a run's first start reading its version's, wait for the bind before the take: FABRIC-PIPELINE1b3. D192's FABRIC-PIPELINE1b2 note says why.
+
+## LANDGIT1b — the head and tip reads saved safely (2026-10-21, D173)
+
+> - [ ] **LANDGIT1b — the head and tip reads saved safely** (driver; after LANDGIT1 and END4a; D88). Head, tip and ref reads are about 20 of a landing's remaining starts: pass them down from where they are read, with an uncached re-read right before any act that follows. Proof: the count test's ceilings lowered; `What_another_process_moves_is_asked_of_git_each_time` green.
+
+**Outcome** 2026-10-21: a landing passes down the head and tip reads it already holds instead of asking them again, and keeps none
+in `GitFacts`: the look's try takes the rule's plan alone, the landing reads the tree's repository and branch once for its readers,
+the content proof takes the tree's own branch its judgement read, and the line's two forms are one snapshot. The automatic landing
+starts 44 git processes (55), the squash press 46 (51), the merge press 40 (43); what an act rests on is still read right before it.
+Fewer than the row's estimate of 20: the rest are each act's own read, `status` (LANDGIT1c) and the tidy's. Proof: `LandGitCountTests`
+with its ceilings lowered, `What_another_process_moves_is_asked_of_git_each_time` green. On Opus: about 90 tool calls. Detail: D173's
+LANDGIT1b note.
+
+## MERGETASKS1 — the merge tool resolves the backlog's line conflicts by the merge base (2026-10-21)
+
+> - [ ] **MERGETASKS1 — the merge tool resolves the backlog's line conflicts by the merge base** (tools; found landing the install's work, 2026-10-21). Nearly every merge of a session's or a builder's branch stopped on `TASKS.md`: each side removed or added a row near the other's. The parent resolved each with a scratch helper that keeps a line where one side added it and drops it where the other removed it, judged by the merge base, and stops where both sides edited the same line. The merge tool should do the same for `TASKS.md`, as it already regenerates `docs/index`, and say what it resolved. Proof: `merge-branch.test.ts` cases for an added row, a removed row, and the same row edited on both sides (left for the person).
+
+**Outcome** 2026-10-21: built. A backlog conflict is merged against its base (`mergeByBase` in `tools/merge-branch.mjs`), staged,
+said in one line, and gated; one base line both sides changed is left as git wrote it, its line named. Proof: `merge-branch.test.ts`,
+a unit case and an end-to-end merge. On Opus: about 40 tool calls. Detail: the tool's MERGETASKS1 section.
+
+## HELP-PROPOSAL-SETTLED1 — a proposal settled from a terminal reaches an open window (2026-10-21, D173)
+
+> - [ ] **HELP-PROPOSAL-SETTLED1 — a proposal settled from a terminal reaches an open window** (driver; after EVENT5a). A settle by `HelpCommand` rewrites the file under its name, which the name-only stamp does not hear, so another window's card stays until the 30 s read: stamp state too, or have `HelpCommand` publish. Proof: a `HomeWatchTests` case for a settle from another process.
+
+**Outcome** 2026-10-21: the first of the row's two ways, stamp state too. `HomePart.Named` stamps each proposal by its `state`,
+read again only when the file's own stamp moved, so a settle by any other process (a terminal, another window) wakes `help` and
+the window's card goes within the debounce; a rewrite that keeps the state (a card's units kept) and a claim still wake nothing.
+Proof: `HomeWatchTests.A_proposal_settled_from_another_process_is_heard` (heard by the hint and found by the deadline), and the
+EVENT5a case narrowed to a rewrite with its state kept.
+
 ## LANDREBASE1 — a session's work lands on the line's current tip, brought up to date by the session itself (2026-10-21, D87)
 
 > - [ ] **LANDREBASE1 — a session's work lands on the line's current tip, brought up to date by the session itself** (driver, modules; the owner's report, 2026-10-21; D87's LANDSYNC1 amendment, D192). A landing onto a branch (`quest/…`, how this repository lands) publishes the work at the base its tree started from, so with six sessions landing in parallel almost every landing of 2026-10-21 conflicted at its merge: `TASKS.md` in most, the generated index in all, and code in GITSTART4's (`toolchain.ts`, `GitForWindows.cs`). The parent then resolved those without the session's context. LANDSYNC1's replay onto the line's tip, and its conflict offering the session the rebase words, run only for an Accept into the line. Wanted: every landing brings the work onto the line's current tip first. Where the replay is clean it lands as replayed. Where it conflicts, the session is told before its work is handed, in its own tree with its own context: rebase onto the line, resolve, rerun the tests its change reaches, commit. The landing then publishes a branch that descends from the line's tip. Generated files (`docs/index`) are regenerated rather than resolved. Proof: `Process` cases for a branch landing whose line moved without and with a conflict (the replayed branch descends from the tip; the session gets the rebase words, then lands), and the plan's words in both languages.

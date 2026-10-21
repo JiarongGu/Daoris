@@ -107,10 +107,10 @@ internal static class TreeRefs
     /// which is what WSR6's pull would take; else the line here. Null where neither is here. A landing's branch form builds on it
     /// (LANDSYNC1, D87's 2026-10-15 amendment point 3).
     /// </summary>
-    internal static async Task<string?> LatestAsync(string root, string line, CancellationToken ct)
+    internal static async Task<string?> LatestAsync(string root, string line, CancellationToken ct, RefSnapshot? refs = null)
     {
-        var here = await CommitOfAsync(root, $"refs/heads/{line}", ct).ConfigureAwait(false);
-        var origin = await CommitOfAsync(root, $"refs/remotes/origin/{line}", ct).ConfigureAwait(false);
+        var here = await CommitOfAsync(root, $"refs/heads/{line}", ct, refs).ConfigureAwait(false);
+        var origin = await CommitOfAsync(root, $"refs/remotes/origin/{line}", ct, refs).ConfigureAwait(false);
         if (here is null || origin is null) return here ?? origin;
         return await IsAncestorAsync(root, here, origin, ct).ConfigureAwait(false) ? origin : here;
     }

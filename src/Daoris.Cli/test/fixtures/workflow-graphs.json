@@ -17,6 +17,20 @@
           { "id": "work>land", "kind": "after", "from": "work", "to": "land" } ] }
     },
     {
+      "name": "the work's checks set: the claimed node's option, written only where set (FABRIC-PIPELINE1b2)",
+      "read": "version",
+      "version": { "version": 1, "at": "2026-10-09T09:12:00Z", "door": "screen", "steps": [
+        { "id": "work", "kind": "work", "checks": "light" },
+        { "id": "land", "kind": "landing", "form": "merge", "accept": "you" } ] },
+      "identity": "9c4d5b54211f", "graphDigest": "gph-e7acc0533af40496114dc362fb0e8b56",
+      "graph": { "schemaVersion": 2, "entries": ["work"], "end": "land", "cleanup": { "until": "held" },
+        "nodes": [
+          { "id": "work", "kind": "claimed", "version": 1, "reach": "observed", "options": { "checks": "light" } },
+          { "id": "land", "kind": "handed", "version": 1, "reach": "observed", "options": { "accept": "you", "form": "merge", "pattern": null, "plugin": null } } ],
+        "wires": [
+          { "id": "work>land", "kind": "after", "from": "work", "to": "land" } ] }
+    },
+    {
       "name": "a field written as its default reads as one left out: the same identity and graph",
       "read": "version",
       "version": { "version": 2, "at": "2026-10-10T10:00:00Z", "door": "terminal", "steps": [

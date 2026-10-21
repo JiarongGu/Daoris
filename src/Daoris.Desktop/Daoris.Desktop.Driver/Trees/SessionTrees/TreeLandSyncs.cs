@@ -34,12 +34,16 @@ internal sealed class TreeLandSyncs(TreeContext context, BranchReplays replays)
     /// (point 6), and a fetch that fails is said and judged against the last one, never refused. Null where there is nothing to judge
     /// (not a tree of this home's, not on a branch, no line, or git cannot say), and the landing goes on as before.
     /// </summary>
+    /// <param name="read">
+    /// The tree's repository and branch as the landing read them a moment ago (LANDGIT1b), handed down rather than read again; null
+    /// reads them here. The tip judged is read here all the same: it is what a replay is made from.
+    /// </param>
     internal async Task<(LandSync? Sync, string? Fetched)> JudgeAsync(
-        string full, string repository, string workspace, bool branchForm, bool fetch, CancellationToken ct)
+        string full, string repository, string workspace, bool branchForm, bool fetch, CancellationToken ct, CommonDirAndBranch? read = null)
     {
         if (!context.Holds(full) || !Directory.Exists(full)) return (null, null);
         // Its repository and its branch, one start (PROC1d-iii).
-        var tree = await CommonDirAndBranchAsync(full, ct).ConfigureAwait(false);
+        var tree = read ?? await CommonDirAndBranchAsync(full, ct).ConfigureAwait(false);
         if (tree.Code != 0) return (null, null);
         var root = Path.GetDirectoryName(Path.TrimEndingDirectorySeparator(tree.CommonDir.Trim()))!;
         var branch = tree.Branch.Trim();
@@ -47,8 +51,11 @@ internal sealed class TreeLandSyncs(TreeContext context, BranchReplays replays)
         if ((await context.LineAsync(root, repository, workspace, ct).ConfigureAwait(false)).Branch is not { } line) return (null, null);
 
         var fetched = fetch ? await FetchedAsync(root, line, ct).ConfigureAwait(false) : null;
-        var here = await CommitOfAsync(root, $"refs/heads/{line}", ct).ConfigureAwait(false);
-        var onto = branchForm ? await LatestAsync(root, line, ct).ConfigureAwait(false) : here;
+        // LANDGIT1b: the line here and origin's copy of it, one read after the fetch (PROC1d-ii), where each form was a start of its own
+        // and the line here was asked twice. Read at the moment the forms were, and the judgement's alone: it ends with this method.
+        var refs = RefSnapshot.Take(root);
+        var here = await CommitOfAsync(root, $"refs/heads/{line}", ct, refs).ConfigureAwait(false);
+        var onto = branchForm ? await LatestAsync(root, line, ct, refs).ConfigureAwait(false) : here;
         if (onto is null || await CommitOfAsync(full, "HEAD", ct).ConfigureAwait(false) is not { } tip) return (null, fetched);
         if (await LineHolds.JudgeAsync(root, tip, onto, line, ct).ConfigureAwait(false) is not { } held) return (null, fetched);
         return (new LandSync(root, branch, line, onto, onto == here ? line : $"origin/{line}", tip, held), fetched);

@@ -2035,8 +2035,10 @@ public sealed class Driver(
                 session: sessionId)
                 .ConfigureAwait(false);
             // The process its work follows (WORKFLOW1f): read for the landing a session in a tree of its own is told, and for the checks its
-            // run takes wherever its repository sets them, since a named workflow's run takes its version's, never Current's rule.
+            // run takes wherever its repository sets them, since a named workflow's run takes its version's, never Current's rule; and
+            // wherever a run here is bound to a named workflow, whose version's `work` may set them (FABRIC-PIPELINE1b2).
             var process = Context.Trees.Holds(workTree) || SessionChecks.For(config, quest.To) is not null
+                          || WorkflowRunBindings.AnyNamed(home, quest.To)
                 ? await WorkflowProcesses.ReadAsync(home, config, new ServiceReviewWorld(service), quest.Id, quest.To, start.Workspace, ct)
                     .ConfigureAwait(false)
                 : null;

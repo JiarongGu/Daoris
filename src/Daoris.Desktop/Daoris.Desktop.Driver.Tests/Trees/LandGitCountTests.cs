@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using Daoris.Driver;
+using Xunit.Abstractions;
 
 namespace Daoris.Desktop.Driver.Tests;
 
@@ -23,9 +24,11 @@ public sealed class LandGitCountTests : IDisposable
 
     private readonly string _scratch;
     private readonly string _home;
+    private readonly ITestOutputHelper _output;
 
-    public LandGitCountTests()
+    public LandGitCountTests(ITestOutputHelper output)
     {
+        _output = output;
         _scratch = Path.Combine(RepoRoot(), "_fixtures", "land-git-count", Guid.NewGuid().ToString("N")[..8]);
         _home = Path.Combine(_scratch, "daoris-home");
         Directory.CreateDirectory(_home);
@@ -212,35 +215,53 @@ public sealed class LandGitCountTests : IDisposable
     // with FABRIC-END4a's judged delete (its holders read and its one ref transaction) and END6c's per-line fetch reservation, the
     // automatic landing measured 55 and the merge press 43; the squash press stayed within 51. PROC1d-iv's questions of commits kept
     // a judgement (and `diff` and `rev-list --count` of ids kept in the planning) moved none of the three: one branch asks no pair twice.
-    private const int AutomaticCeiling = 55;
-    private const int SquashCeiling = 51;
-    private const int MergeCeiling = 43;
+    // LANDGIT1c hands the judgement's `status` count to the dirty check, and the look's to the landing: 53, 50 and 42.
+    // LANDGIT1b passed the head and tip reads down instead of keeping them: the look's try takes the rule's plan alone (the press's plan
+    // read the line's tips, the head and the named branch's tip again), the landing reads the tree's repository and branch once for
+    // its readers, the content proof takes the tree's own branch its judgement read, and the line's two forms are one snapshot. 44, 46
+    // and 40, each act's own read (the branch's commits, the pinned tip, the tree's move) still made right before it. The two together,
+    // each landing's `status` and its repository and branch handed down: 42, 45 and 39.
+    private const int AutomaticCeiling = 42;
+    private const int SquashCeiling = 45;
+    private const int MergeCeiling = 39;
 
-    private static void Judge(List<string> starts, int ceiling)
+    private const string VerifyQuiet = "git rev-parse --verify --quiet ";
+
+    private void Judge(List<string> starts, int ceiling)
     {
         var git = starts.Where(each => each.StartsWith("git ", StringComparison.Ordinal)).ToList();
         var report = $"{git.Count} git starts:\n{string.Join('\n', git)}";
+        // The run's starts in its output, so a ceiling is lowered to what was measured.
+        _output.WriteLine(report);
         // A question of commits by their ids is asked once unless a git that may move a ref ran between its two askings. What names a
         // ref or the head is never kept (another process moves it, and a judgement or a delete must see the move), so those are asked
-        // as often as the steps ask them; `status` too is the files'. Layout reads are kept only in the planning, so the tidy's own
-        // askings, after the table is closed, are not repeats of it.
+        // as often as the steps ask them. `status` is never kept either, but the landing's judgement hands its count to the dirty check
+        // (LANDGIT1c), so it too is asked once until a write. Layout reads are kept only in the planning, so the tidy's own askings,
+        // after the table is closed, are not repeats of it.
         var repeated = new List<string>();
         var since = new HashSet<string>(StringComparer.Ordinal);
         foreach (var each in git)
         {
             // The folder is not part of a fact here: the landing is of one repository and one tree, so a command asked in the tree and
             // again in the checkout is asked twice.
+            // A `status` is of one working tree's files, so there the folder is part of it.
             var command = each.Split("  @ ")[0];
             var arguments = command["git ".Length..].Split(' ');
+            var status = arguments[0] == "status";
             if (RefSnapshot.MayWrite(arguments)) since.Clear();
-            else if (GitFacts.Kept(arguments) && !command.Contains("--show-toplevel") && !command.Contains("--git-common-dir")
-                     && !command.Contains("origin/HEAD") && !since.Add(command))
+            else if ((GitFacts.Kept(arguments) || status) && !command.Contains("--show-toplevel")
+                     && !command.Contains("--git-common-dir") && !command.Contains("origin/HEAD") && !since.Add(status ? each : command))
             {
                 repeated.Add(each);
             }
         }
 
         Assert.True(repeated.Count == 0, $"repeated without a write between: {string.Join("; ", repeated)}\n{report}");
+        // One spelling per ref fact (LANDGIT1c): a ref or the head is never read as itself and again as its commit.
+        var read = git.Select(each => each.Split("  @ ")[0]).Where(command => command.StartsWith(VerifyQuiet, StringComparison.Ordinal))
+            .Select(command => command[VerifyQuiet.Length..]).ToHashSet(StringComparer.Ordinal);
+        var spelledTwice = read.Where(each => !each.Contains('^') && read.Contains(each + "^{commit}")).ToList();
+        Assert.True(spelledTwice.Count == 0, $"read under two spellings: {string.Join("; ", spelledTwice)}\n{report}");
         Assert.True(git.Count <= ceiling, report);
     }
 
