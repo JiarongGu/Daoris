@@ -57,7 +57,7 @@ public static class WorkStateSlice
     public static readonly IReadOnlyDictionary<string, IReadOnlyList<string>> Fields = new Dictionary<string, IReadOnlyList<string>>(StringComparer.Ordinal)
     {
         ["part"] = ["units", "recovery", "unread"],
-        ["held"] = ["held"],
+        ["held"] = ["held", "ends"],
         ["unit"] = ["unit", "repository", "branch", "session", "end", "result", "cleanup", "recovery", "entries"],
         ["end"] = ["state", "by", "on", "revision", "at", "said"],
         ["cleanup"] = ["state", "waits", "gone"],
@@ -67,6 +67,7 @@ public static class WorkStateSlice
             "unit", "node", "attempt", "plugin", "step", "nodeState", "why", "outcome", "revision", "at", "resolution", "resolvedAt", "said",
             "words",
         ],
+        ["graphEnd"] = ["unit", "kind", "at", "nodes", "quest", "node", "attempt", "nodeState", "resolution", "words"],
     };
 
     /// <summary>Which shape a field holds, as <c>shape.field</c>, an object of it or a list of them; every other field is a value.</summary>
@@ -75,6 +76,7 @@ public static class WorkStateSlice
         ["part.units"] = "unit",
         ["part.recovery"] = "entry",
         ["held.held"] = "attempt",
+        ["held.ends"] = "graphEnd",
         ["unit.end"] = "end",
         ["unit.result"] = "entry",
         ["unit.cleanup"] = "cleanup",
@@ -99,10 +101,15 @@ public static class WorkStateSlice
 
     /// <summary>The slice the shell's loop owns, judging from <paramref name="loop"/>'s facts and its home's node records.</summary>
     public static StateSlice Of(DriverLoop loop, IEventBus bus) =>
-        Of(loop.Facts, bus, () => HeldAttempts.Read(new NodeRecordFiles(loop.Home), quests: loop.LastQuests), loop.Log);
+        Of(loop.Facts, bus, () => HeldAttempts.Read(new NodeRecordFiles(loop.Home), quests: loop.LastQuests), loop.Log,
+            () => GraphEnds.Read(new NodeRecordFiles(loop.Home)));
 
-    /// <summary>The slice over <paramref name="facts"/>, its held attempts read by <paramref name="held"/> at each judgement.</summary>
-    public static StateSlice Of(MachineFacts facts, IEventBus bus, Func<IReadOnlyList<HeldAttempt>> held, MachineLog? log = null)
+    /// <summary>
+    /// The slice over <paramref name="facts"/>, its held attempts read by <paramref name="held"/> and its graphs' ends by <paramref name="ends"/>
+    /// (FABRIC-CLOSE1j; none where not given) at each judgement.
+    /// </summary>
+    public static StateSlice Of(
+        MachineFacts facts, IEventBus bus, Func<IReadOnlyList<HeldAttempt>> held, MachineLog? log = null, Func<IReadOnlyList<GraphEnd>>? ends = null)
     {
         // Whether a judgement found every part judged: until one has, a part never judged leaves the slice not judged. Read and written
         // only within a judgement's turn, which the slice runs one at a time.
@@ -110,7 +117,7 @@ public static class WorkStateSlice
         return new(Name, bus, _ =>
         {
             // The node records are read only once the service's answers name the parts: before, nothing is judged.
-            var judged = HelpFacts.WorkParts(facts.Current) is { } parts ? Judge(parts, held(), partly: whole) : null;
+            var judged = HelpFacts.WorkParts(facts.Current) is { } parts ? Judge(parts, held(), partly: whole, ends?.Invoke()) : null;
             whole |= judged is not null;
             return Task.FromResult(judged);
         })
@@ -130,7 +137,9 @@ public static class WorkStateSlice
     /// <param name="parts">The facts' parts (<see cref="HelpFacts.WorkParts(MachineFactsSnapshot)"/>), each as last judged or null.</param>
     /// <param name="held">The attempts held for the person, every unit's.</param>
     /// <param name="partly">Whether a part never judged is left out rather than leaving the slice not judged: once one judgement was whole.</param>
-    public static IReadOnlyList<SliceJudged>? Judge(IReadOnlyList<(string Part, HelpWork? Work)>? parts, IReadOnlyList<HeldAttempt> held, bool partly)
+    /// <param name="ends">The closure graphs' ends the milestone tells of (FABRIC-CLOSE1j), every unit's, carried in the held partition.</param>
+    public static IReadOnlyList<SliceJudged>? Judge(
+        IReadOnlyList<(string Part, HelpWork? Work)>? parts, IReadOnlyList<HeldAttempt> held, bool partly, IReadOnlyList<GraphEnd>? ends = null)
     {
         if (parts is null || (!partly && parts.Any(part => part.Work is null))) return null;
         var judged = new List<SliceJudged>();
@@ -145,7 +154,7 @@ public static class WorkStateSlice
             }, "part")));
         }
 
-        judged.Add(new SliceJudged(Held, Allowed(new { Held = LinesRoutes.HeldAnswer(held) }, "held")));
+        judged.Add(new SliceJudged(Held, Allowed(new { Held = LinesRoutes.HeldAnswer(held), Ends = LinesRoutes.EndsAnswer(ends ?? []) }, "held")));
         return judged;
     }
 

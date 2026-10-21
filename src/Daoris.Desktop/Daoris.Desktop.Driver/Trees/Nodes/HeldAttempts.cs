@@ -162,6 +162,7 @@ public static class HeldAttempts
         (_, WorkPerformer.NotResolution) => $"work: `{resolution}` is not a word for a held attempt: say happened, did-not or stop, or on a held close record, resend or stop.",
         (_, WorkPerformer.NotCloseWord) => $"work: `{resolution}` is not a word for a held close, whose outcome is its door's answer and never a person's word: say record, resend or stop.",
         (_, WorkPerformer.NotOffered) => $"work: `{resolution}` is a word for a held close, and {done.Node} is a plugin's step: say happened, did-not or stop.",
+        (_, WorkPerformer.PartStop) => $"work: {done.Node} of {done.Unit} was closed only in part, and the quest it lost is another machine's work now, so only its stop is yours to say: say stop.",
         (_, WorkPerformer.NotKept) => $"work: no answer of its door's is kept on {done.Node} (attempt {attempt}) of {done.Unit}, so there is nothing to record again: say resend or stop.",
         _ => $"work: {done.Node} (attempt {attempt}) of {done.Unit} is not held now, so nothing was recorded.",
     };

@@ -190,6 +190,12 @@ public sealed class WorkPerformer(NodeRecordFiles records, IWorkPerformPort port
     public const string SubmissionMoved = "submission-moved";
 
     /// <summary>
+    /// A word other than <c>stop</c> on a close found closed only in part (FABRIC-CLOSE1j, §E5): its door's answer stands for the quests it
+    /// kept, and the lost one's work is the winner's, so the person's recovery is its node's stop alone. Nothing is recorded.
+    /// </summary>
+    public const string PartStop = "part-stop";
+
+    /// <summary>
     /// The invocations this performer's loop delivered: an attempt sent by a loop since ended is asked after before anything else, since a
     /// new loop's generations start again at 1 (FABRIC-PERFORM1a) and cannot tell its process from the old one's.
     /// </summary>
@@ -430,6 +436,14 @@ public sealed class WorkPerformer(NodeRecordFiles records, IWorkPerformPort port
         return Edited(unit, node, record =>
         {
             var held = record.Attempts.LastOrDefault(each => each.Node == node && each.Attempt == attempt);
+
+            // FABRIC-CLOSE1j: a close found closed only in part, its node live again, takes the person's stop alone (§E5: the recovery is theirs).
+            if (held is not null && QuestClosing.Partly(record, held))
+            {
+                if (held.Resolution is not null) return (null, new WorkPerformed(unit, node, PerformedWhat.Refused, Worded));
+                if (resolution != HeldResolutions.Stop) return (null, new WorkPerformed(unit, node, PerformedWhat.Refused, PartStop));
+                return (With(record, held, held with { Resolution = resolution, ResolvedAt = now }), new WorkPerformed(unit, node, PerformedWhat.Worded, resolution));
+            }
 
             // FABRIC-CLOSE1u: an unknown close its node is still on is the person's too, with a held close's words.
             if (held is null || (held.State != AttemptStates.Held && !QuestClosing.Unanswered(record, held)))

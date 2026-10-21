@@ -215,17 +215,30 @@ public sealed class WorkStateSliceTests : DriverModuleBridge
             Words = HeldResolutions.Plugin,
         };
 
-        var judged = WorkStateSlice.Judge([("alpha", new HelpWork([unit], [new InventoryUnread("alpha", "git could not list it")], [entries[3]]))], [attempt], partly: false)!;
+        // FABRIC-CLOSE1j: a closure graph's end, every field set, carried in the held partition.
+        var end = new GraphEnd("quest:q7", QuestClosing.Partial, At)
+        {
+            Nodes = ["qa"], Quest = "q6", Node = "close", Attempt = 2, NodeState = NodeStates.Ready, Resolution = HeldResolutions.Stop,
+            Words = [HeldResolutions.Stop],
+        };
+
+        var judged = WorkStateSlice.Judge(
+            [("alpha", new HelpWork([unit], [new InventoryUnread("alpha", "git could not list it")], [entries[3]]))], [attempt], partly: false, [end])!;
         var part = Written(judged.Single(each => each.Partition == "alpha").Data);
         var held = Written(judged.Single(each => each.Partition == WorkStateSlice.Held).Data);
 
         var built = Written(LinesRoutes.WorkUnit(unit));
         var heldBuilt = Written(LinesRoutes.HeldAnswer([attempt]));
-        Assert.All(FieldsOf(built, "unit").Concat(FieldsOf(heldBuilt[0], "attempt")), field => Assert.Contains(field, Classed()));
+        var endsBuilt = Written(LinesRoutes.EndsAnswer([end]));
+        Assert.All(
+            FieldsOf(built, "unit").Concat(FieldsOf(heldBuilt[0], "attempt")).Concat(FieldsOf(endsBuilt[0], "graphEnd")),
+            field => Assert.Contains(field, Classed()));
+        Assert.Equal(WorkStateSlice.Fields["graphEnd"], endsBuilt[0].EnumerateObject().Select(each => each.Name));
         Same(built, part.GetProperty("units")[0]);
         Same(Written(LinesRoutes.WorkEntry(entries[3])), part.GetProperty("recovery")[0]);
         Assert.Equal("git could not list it", part.GetProperty("unread")[0].GetString());
         Same(heldBuilt, held.GetProperty("held"));
+        Same(endsBuilt, held.GetProperty("ends"));
     }
 
     [Fact]
