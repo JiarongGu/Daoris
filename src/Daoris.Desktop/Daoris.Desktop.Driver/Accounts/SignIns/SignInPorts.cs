@@ -89,8 +89,8 @@ public enum PortHold
 /// with <i>Error logging in: Port 127.0.0.1:1457 is already in use</i>, exit 1. Under a reserved range CODEXACCT2 measured
 /// <i>os error 10013</i>, exit 1, when that range covered both. So the sign-in is refused here only where no port can be taken,
 /// once per press: nothing is tried again in a loop.</para>
-/// <para>The CLI's <c>portHolds</c> (<c>service.ts</c>) and <c>portsHeld</c> (<c>toolchain.ts</c>) are the twin, and say the
-/// sentence below to the byte.</para>
+/// <para>The terminal's sign-in says it through <c>daoris-driver agent login</c> (PUSH1f2e6), which tries the ports through <see cref="Hold"/>; the
+/// CLI's twin, <c>portsHeld</c>, left with it.</para>
 /// </remarks>
 public static class SignInPorts
 {
@@ -142,7 +142,7 @@ public static class SignInPorts
     }
 
     /// <summary>
-    /// Which ports are held and by what, in plain words: the CLI's <c>portsHeld</c> says it to the byte. The way out after it is
+    /// Which ports are held and by what, in plain words: <c>daoris-driver agent login</c> says it too (PUSH1f2e6). The way out after it is
     /// each door's own.
     /// </summary>
     public static string Held(string agent, IReadOnlyList<string> login, IReadOnlyList<(int Port, PortHold Hold)> held)

@@ -786,11 +786,11 @@ test('agent pin reaches a release channel only through the fetcher the dispatche
   }
 
   const row = readText(join(cliRoot, 'src', 'cli', 'agent.ts'));
-  assert.match(row, /import \{ portHold, releaseFetcher \} from '\.\.\/(?:[\w-]+\/)*service\.ts';/);
+  assert.match(row, /import \{ releaseFetcher \} from '\.\.\/(?:[\w-]+\/)*service\.ts';/);
   // PUSH1f2d: the verbs on the allow-list go to the driver's program first, handed nothing of the service's; since PUSH1f2e3 no verb
-  // left here takes a route, so none is handed a door. CODEXLOGIN1 hands the way a browser sign-in's port is tried last: a loopback
-  // socket, the same module's.
-  assert.match(row, /run: \(args\) => handed\(args\.argv\)\s+\? \(args\.driverProgram \?\? \(\(family, words\) => runDriverProgram\(family, words\)\)\)\('agent', args\.argv\)\s+: commandHarness\(args, releaseFetcher\(\), \['npm'\], portHold\),/);
+  // left here takes a route, so none is handed a door. The way a browser sign-in's port is tried went with `login` (PUSH1f2e6), which
+  // the driver program tries itself.
+  assert.match(row, /run: \(args\) => handed\(args\.argv\)\s+\? \(args\.driverProgram \?\? \(\(family, words\) => runDriverProgram\(family, words\)\)\)\('agent', args\.argv\)\s+: commandHarness\(args, releaseFetcher\(\), \['npm'\]\),/);
 });
 
 /**

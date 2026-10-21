@@ -33,10 +33,12 @@ test('the list, the rules, a trust, an account\'s settings, an unpin and every a
     ['profile', 'join', 'claude-code', 'a', '--machine'], ['profile', 'use', 'claude-code'], ['profile', 'use', 'claude-code', '--clear'],
     ['profile', 'frobnicate'],
     // PUSH1f2e5: an agent's install, and an API key's account, new or into one by `--account`.
-    ['install', 'claude-code'], ['key', 'claude-code'], ['key', 'claude-code', '--account', 'work']]) {
+    ['install', 'claude-code'], ['key', 'claude-code'], ['key', 'claude-code', '--account', 'work'],
+    // PUSH1f2e6: an agent's sign-in, to a new account or one that is here.
+    ['login', 'claude-code'], ['login', 'codex', '--new', '--name', 'Seat', '--join', 'work', '--device-code']]) {
     assert.equal(handed(argv), true, argv.join(' '));
   }
-  for (const argv of [['login', 'claude-code'], ['pin', 'codex', '1.0.0'], ['update', 'codex'], ['update', 'codex', '--workspace', 'work'],
+  for (const argv of [['pin', 'codex', '1.0.0'], ['update', 'codex'], ['update', 'codex', '--workspace', 'work'],
     ['frobnicate']]) {
     assert.equal(handed(argv), false, argv.join(' ') || '(none)');
   }

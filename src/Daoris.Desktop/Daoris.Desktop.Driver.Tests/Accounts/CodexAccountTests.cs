@@ -236,8 +236,8 @@ public sealed class CodexAccountTests : IDisposable
 
     /// <summary>
     /// Where 1455 is held and 1457 free, Codex 0.160.0 takes 1457 (measured), so the browser sign-in starts; only where both
-    /// are held is it refused, in plain words naming each holder, with the device code offered. The CLI's
-    /// <c>portsHeld</c> says these words to the byte (<c>toolchain.test.ts</c>).
+    /// are held is it refused, in plain words naming each holder, with the device code offered. <c>daoris-driver agent login</c> says
+    /// these words too (PUSH1f2e6), the CLI's twin gone with its sign-in.
     /// </summary>
     [Theory]
     [InlineData(PortHold.InUse, PortHold.Free, null)]

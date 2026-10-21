@@ -5,8 +5,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { READS_FILE, forgetRead, keepRead, readOf, readsOf } from '../../src/accounts/accountreads.ts';
 import type { Login } from '../../src/accounts/accountreads.ts';
-import { TOOLCHAINS, profileHome, removeProfile, signInNew, signInTo } from '../../src/agents/toolchain.ts';
-import type { Toolchain } from '../../src/agents/toolchain.ts';
+import { profileHome, removeProfile } from '../../src/agents/toolchain.ts';
 import { homeEntry } from '../../src/platform/home.ts';
 import { driverFile, driverRows, driverTestFile } from '../_csharp.ts';
 import { makeFixture } from '../_fixture.ts';
@@ -111,80 +110,10 @@ test('the file, its keys and its words are spelled as the driver spells them', (
   assert.match(source, /\["login"\] = Word\(login\), \["read"\] = AccountCooling\.Stamp\(at\)/);
 });
 
-// ——— The doors that ask (AGENTREAD1): a sign-in's end, and a removal forgetting.
-
-/**
- * A stand-in agent whose login question reads the home it is asked about, by `variable`: signed in exactly when the home
- * holds `credentials.json`, saying who by its contents, as `claude auth status` names an email.
- */
-function standIn(root: string, variable: string): string {
-  const script = join(root, 'stand-in.mjs');
-  writeFileSync(script, [
-    "import { existsSync, readFileSync } from 'node:fs';",
-    `const home = process.env.${variable};`,
-    "if (process.argv[2] === '--version') { console.log('stand-in 1.0'); process.exit(0); }",
-    "const signed = home && existsSync(home + '/credentials.json');",
-    "console.log(JSON.stringify({ loggedIn: Boolean(signed), email: signed ? readFileSync(home + '/credentials.json', 'utf8').trim() : null }));",
-  ].join('\n'), 'utf8');
-  return script;
-}
-
-function fakeHarness(root: string): Toolchain {
-  return {
-    binary: [process.execPath, standIn(root, 'FAKE_HARNESS_HOME')],
-    version: ['--version'],
-    profileVariable: 'FAKE_HARNESS_HOME',
-    login: ['login'],
-    loginCheck: { ...TOOLCHAINS['claude-code']!.loginCheck!, args: ['status'] },
-  };
-}
-
-/** What `reads.json` says of one agent, as the file holds it. */
-function fileOf(root: string): Record<string, { accounts?: Record<string, Record<string, unknown>>; own?: unknown }> {
-  return JSON.parse(readFileSync(homeEntry(root, 'reads'), 'utf8'));
-}
+// ——— The doors that ask (AGENTREAD1): a removal forgetting. A sign-in's end is the driver program's since PUSH1f2e6.
 
 // `agent list`'s reading of each account, kept in `reads.json` (AGENTREAD1), is the driver's program's since PUSH1f2e4: an
 // `AgentsTextTests` row asks a stand-in Claude Code and holds the file it keeps.
-
-/** A sign-in's end reads its account (ROSTER1, D150 §5.3), and keeps the reading; a sign-in that did not finish keeps none. */
-test('a new account\'s sign-in keeps its reading at its end, and one that did not finish keeps none', () => {
-  const fx = makeFixture('reads-sign-in-new');
-  const toolchain = fakeHarness(fx.root);
-
-  assert.equal(signInNew('fake', toolchain, fx.root, () => 2, () => {}), 2);
-  assert.ok(!existsSync(homeEntry(fx.root, 'reads')));
-
-  signInNew('fake', toolchain, fx.root, (where) => {
-    writeFileSync(join(where, 'credentials.json'), 'someone@example.invalid', 'utf8');
-    return 0;
-  }, () => {});
-
-  const accounts = fileOf(fx.root).fake!.accounts!;
-  assert.deepEqual(Object.values(accounts).map((entry) => entry.login), ['in']);
-  assert.match(Object.keys(accounts)[0]!, /^acct-[0-9a-f]{8}$/);
-  fx.cleanup();
-});
-
-/**
- * Signing back in reads the account at its end whether or not it has a name (ROSTER1): a terminal's sign-in into an account
- * the loop read signed out is then read signed in, where before only its mark said to ask again.
- */
-test('signing back in keeps the account\'s reading at its end, a named account too', () => {
-  const fx = makeFixture('reads-sign-in-to');
-  const toolchain = fakeHarness(fx.root);
-  mkdirSync(profileHome(fx.root, 'fake', 'account-1'), { recursive: true });
-  writeFileSync(fx.entry('accounts'), JSON.stringify({ fake: { 'account-1': { name: 'seat' } } }), 'utf8');
-  keepRead(fx.root, 'fake', 'account-1', 'out', new Date(Date.now() - 60_000));
-
-  signInTo('fake', toolchain, fx.root, 'seat', (where) => {
-    writeFileSync(join(where, 'credentials.json'), 'back@example.invalid', 'utf8');
-    return 0;
-  }, () => {});
-
-  assert.equal(readOf(readsOf(fx.root, 'fake'), 'account-1')?.login, 'in');
-  fx.cleanup();
-});
 
 /** An account removed from this machine: its reading goes with it, as the driver's `Removed` forgets one (ROSTER1). */
 test('removing an account forgets its reading, and the others stand', () => {

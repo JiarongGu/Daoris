@@ -62,11 +62,10 @@ export const PLUGIN_VERBS: readonly (readonly [verb: string, route: InstanceRout
 
 /**
  * Each `daoris agent` verb still here that changes the home: none takes a route, each with the reason it acts alone. `install` and `key`
- * are the driver program's since PUSH1f2e5, their rows its `AgentRoutes`'.
+ * are the driver program's since PUSH1f2e5, and `login` since PUSH1f2e6, their rows its `AgentRoutes`'.
  */
 export const AGENT_VERBS: readonly (readonly [verb: string, route: InstanceRoute | null, reason: string])[] = [
   ['agent update <agent>', null, 'alone: the agent\'s own updater, or a pin\'s move, whose output is this terminal\'s; HARNESS_ACTION runs it in the window\'s console'],
-  ['agent login <agent>', null, 'alone: the agent\'s own sign-in, whose prompts are this terminal\'s; HARNESS_ACTION runs it in the window\'s console'],
   ['agent pin <agent> <version>', null, 'alone: a download through this terminal\'s fetcher, its checks said here; HARNESS_ACTION runs it in the window\'s console'],
 ];
 

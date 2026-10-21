@@ -1,11 +1,10 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
 import { coolingOf, endCooling, readCooling } from '../../src/accounts/cooling.ts';
 import type { CoolingEntry } from '../../src/accounts/cooling.ts';
 import { homeEntry } from '../../src/platform/home.ts';
-import { TOOLCHAINS, profileHome, removeProfile, signInNew, signInTo } from '../../src/agents/toolchain.ts';
+import { profileHome, removeProfile } from '../../src/agents/toolchain.ts';
 import { driverRows as csharpRows, driverTestFile } from '../_csharp.ts';
 import { makeFixture } from '../_fixture.ts';
 
@@ -143,26 +142,6 @@ const AHEAD = () => new Date(Date.now() + 86_400_000).toISOString().replace(/\.\
 
 // ——— What else ends one (§2.3): a sign-in or a key into the account, as the driver's `LoginAsync` and `HarnessKeys.Add`
 // end one; and an account removed takes its cool-off with it, as the driver's `RemoveProfile` does.
-
-test('a finished sign-in into an account ends its cool-off; one that did not finish ends nothing', () => {
-  const fx = makeFixture('cooling-sign-in');
-  const script = join(fx.root, 'signed.mjs');
-  writeFileSync(script, "console.log(JSON.stringify({ loggedIn: true, email: 'someone@example.invalid' }));\n", 'utf8');
-  const toolchain = { ...TOOLCHAINS['claude-code']!, binary: [process.execPath, script] };
-  mkdirSync(profileHome(fx.root, 'claude-code', 'account-1'), { recursive: true });
-  mkdirSync(profileHome(fx.root, 'claude-code', 'account-2'), { recursive: true });
-  cooling(fx, { 'claude-code': { 'account-1': { until: AHEAD(), stated: true }, 'account-2': { until: AHEAD(), stated: true } } });
-
-  assert.equal(signInTo('claude-code', toolchain, fx.root, 'account-2', () => 2, () => {}), 2);
-  assert.notEqual(coolingOf(fx.root, 'claude-code', 'account-2', new Date()), null);
-  assert.equal(signInTo('claude-code', toolchain, fx.root, 'account-1', () => 0, () => {}), 0);
-  assert.equal(coolingOf(fx.root, 'claude-code', 'account-1', new Date()), null);
-  assert.notEqual(coolingOf(fx.root, 'claude-code', 'account-2', new Date()), null);
-  // A new account takes a fresh id (ACCT2), so it carries no cool-off of another's, and ends none.
-  assert.equal(signInNew('claude-code', toolchain, fx.root, () => 0, () => {}), 0);
-  assert.notEqual(coolingOf(fx.root, 'claude-code', 'account-2', new Date()), null);
-  fx.cleanup();
-});
 
 // A key made into an account is the driver program's since PUSH1f2e5: `AccountCoolingTests` holds that it ends no other's cool-off.
 

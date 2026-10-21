@@ -1,6 +1,6 @@
 import type { CliCommand } from '../platform/types.ts';
 import { commandHarness, runDriverProgram } from '../agents/toolchain.ts';
-import { portHold, releaseFetcher } from '../service/service.ts';
+import { releaseFetcher } from '../service/service.ts';
 
 export const command: CliCommand = {
   name: 'agent',
@@ -112,23 +112,22 @@ export const command: CliCommand = {
   // PUSH1f2d (D194 point 1): `rules`, `trust` and `settings` are Daoris's driver program's, `daoris-driver agent` with the same words;
   // this writes nothing before it starts; so are `which`, `unpin` and every `profile` verb (PUSH1f2e1, PUSH1f2e2, PUSH1f2e3), so no
   // verb left here takes a route, and `list` with a bare `daoris agent` (PUSH1f2e4), and `install` and `key` (PUSH1f2e5), whose key
-  // the program reads from the terminal's own standard input. The rest stays here until the rest of PUSH1f2e: `login`, `pin` and
-  // `update`, which a pin's move makes one with `pin`. `pin` and a pinned `update` fetch a maker's release
+  // the program reads from the terminal's own standard input, and `login` (PUSH1f2e6), whose prompts the agent asks at this terminal.
+  // The rest stays here until the rest of PUSH1f2e: `pin` and `update`, which a pin's move makes one with `pin`. `pin` and a pinned `update` fetch a maker's release
   // (AGT2b, USE1a) through the one module that may reach a network, handed in here so the toolchain never holds a socket of its own.
-  // And the way a browser sign-in's ports are tried before it starts (CODEXLOGIN1), a socket of `service.ts`'s like the fetcher.
   run: (args) => handed(args.argv)
     ? (args.driverProgram ?? ((family, words) => runDriverProgram(family, words)))('agent', args.argv)
-    : commandHarness(args, releaseFetcher(), ['npm'], portHold),
+    : commandHarness(args, releaseFetcher(), ['npm']),
 };
 
 /**
  * The verbs `daoris agent` hands Daoris's driver program (PUSH1f2d, the alone-path design §5's allow-list): this machine's agents
  * (PUSH1f2e4), the rules, a trust, an account's settings and what an agent runs as (PUSH1f2e1), an unpin and every account verb
- * (PUSH1f2e2, PUSH1f2e3), an agent's install and an API key's account (PUSH1f2e5), each one `daoris-driver agent` has
+ * (PUSH1f2e2, PUSH1f2e3), an agent's install and an API key's account (PUSH1f2e5), an agent's sign-in (PUSH1f2e6), each one `daoris-driver agent` has
  * (`AgentsCommand.Verbs`, which a test reads beside this).
  */
 export const HANDED_VERBS: readonly string[] = Object.freeze([
-  'list', 'rules', 'trust', 'settings', 'which', 'unpin', 'profile', 'install', 'key',
+  'list', 'rules', 'trust', 'settings', 'which', 'unpin', 'profile', 'install', 'key', 'login',
 ]);
 
 /** Whether these words are the driver program's: a handed verb. None named is `list`, handed too since PUSH1f2e4. */
