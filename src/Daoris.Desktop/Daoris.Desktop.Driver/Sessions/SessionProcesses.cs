@@ -393,8 +393,34 @@ public sealed class SessionProcesses(string? markers = null)
             if (_running.ContainsKey(sessionId)) return true;
         }
 
-        if (MarkerOf(sessionId) is not { } marker || !File.Exists(marker)) return false;
+        return MarkerOf(sessionId) is { } marker && File.Exists(marker) && MarkerAlive(marker);
+    }
 
+    /// <summary>
+    /// Whether any session process marked in <paramref name="markers"/> is alive on this machine (KEEP1b, the cleanup design §3.5): what a
+    /// reader with no service to ask knows of the home's sessions. A folder that cannot be read, or a marker that cannot, counts as alive:
+    /// "cannot tell" is never "none". An opener's mark is no process of a session's (QUEUED1).
+    /// </summary>
+    public static bool AnyAlive(string? markers)
+    {
+        if (markers is null) return false;
+        List<string> files;
+        try
+        {
+            if (!Directory.Exists(markers)) return false;
+            files = [.. Directory.EnumerateFiles(markers, "*.pid")];
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+        {
+            return true;
+        }
+
+        return files.Any(MarkerAlive);
+    }
+
+    /// <summary>Whether the process a marker names is alive, as the one it marked: its id and its start time.</summary>
+    private static bool MarkerAlive(string marker)
+    {
         string[] fields;
         try
         {

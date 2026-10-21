@@ -2140,6 +2140,7 @@ public sealed class Driver(
             };
             oneLook.Dispose();
             var (info, harnessNotice) = Prepare(adapter, target, selection);
+            await KeepHandedAsync(sessionId, info, ct).ConfigureAwait(false);
 
             // The creating sentence, on the record while the session runs (D51 rule 4): where it grew from and what a fresh
             // tree does not hold. The conclusion's note replaces it — by then the record's Tree field and the evidence say the rest.
@@ -2420,6 +2421,10 @@ public sealed class Driver(
 
         return (info, harnessNotice);
     }
+
+    /// <inheritdoc cref="DownloadKeeping.KeepHandedAsync"/>
+    internal Task KeepHandedAsync(string sessionId, ProcessStartInfo info, CancellationToken ct) =>
+        DownloadKeeping.KeepHandedAsync(service, home, sessionId, info, ct);
 
     /// <summary>
     /// Whether the rules this session would be handed let it call the connector's <paramref name="tool"/>

@@ -390,20 +390,21 @@ public sealed class ToolInstallTests : IDisposable
     [InlineData("another version than the one it runs", """{"tools":{"gh":{"use":"managed","version":"2.63.0"}}}""", true, "2.62.0", null)]
     [InlineData("beside a file that does not read", "not json", true, "2.62.0", "file")]
     [InlineData("a version that climbs out", null, false, "../2.62.0", "version")]
-    public void A_version_is_deleted_as_the_cli_deletes_it(string name, string? tools, bool has, string version, string? check)
+    public async Task A_version_is_deleted_as_the_cli_deletes_it(string name, string? tools, bool has, string version, string? check)
     {
         Directory.CreateDirectory(Home);
         if (tools is not null) File.WriteAllText(ToolsFile, tools);
         if (has) Downloaded("gh", "2.62.0");
+        static Task<LiveSessions> none(CancellationToken _) => Task.FromResult(LiveSessions.None);
 
         if (check is null)
         {
-            ToolInstall.Delete(Home, "gh", version);
+            await ToolInstall.DeleteAsync(Home, "gh", version, none);
             Assert.False(Directory.Exists(ToolInstall.VersionFolder(Home, "gh", version)), name);
         }
         else
         {
-            var refused = Assert.Throws<ToolRefusal>(() => ToolInstall.Delete(Home, "gh", version));
+            var refused = await Assert.ThrowsAsync<ToolRefusal>(() => ToolInstall.DeleteAsync(Home, "gh", version, none));
             Assert.True(check == refused.Check, $"{name}: {refused.Check} — {refused.Message}");
             if (has) Assert.True(Directory.Exists(ToolInstall.VersionFolder(Home, "gh", "2.62.0")), $"{name}: the version stays");
         }

@@ -49,6 +49,31 @@ public sealed class DriverModuleDownloadsTests : DriverModuleBridge
         Assert.True(Directory.Exists(pinned));
     }
 
+    /// <summary>
+    /// KEEP1b (the cleanup design §9): the Downloads row says each version's date by the rule: the rule's days, and for a version nothing
+    /// uses when its current unused stretch began and when the rule takes it, from <c>keeping.json</c>; a pinned one has neither.
+    /// </summary>
+    [Fact]
+    public async Task The_list_says_when_the_rule_takes_each_unused_version()
+    {
+        var loop = Loop();
+        var module = new DriverModule(Bus, loop);
+        var home = loop.Home;
+        Old(HarnessSettings.ManagedHome(home, "claude-code", "2.1.0"));
+        Old(HarnessSettings.ManagedHome(home, "claude-code", "2.0.1"));
+        new HarnessSettings(Versions: new Dictionary<string, string> { ["claude-code"] = "2.1.0" }).Save(loop.Harnesses.SettingsPath);
+        var since = new DateTimeOffset(2026, 10, 20, 9, 0, 0, TimeSpan.Zero);
+        Assert.Null(KeepingRecord.WriteUnused(home, KeepingRecord.Read(home), new Dictionary<string, DateTimeOffset?> { ["agent/claude-code/2.0.1"] = since }));
+
+        var answer = await AnswerAsync(module, "SYSTEM_DOWNLOADS");
+
+        Assert.Equal(7, answer.GetProperty("days").GetInt32());
+        var rows = answer.GetProperty("versions").EnumerateArray().ToArray();
+        Assert.Equal(since, rows[0].GetProperty("unusedSince").GetDateTimeOffset());
+        Assert.Equal(since.AddDays(7), rows[0].GetProperty("goes").GetDateTimeOffset());
+        Assert.False(rows[1].TryGetProperty("goes", out var goes) && goes.ValueKind != JsonValueKind.Null, "a pinned version goes by no rule");
+    }
+
     [Fact]
     public async Task A_press_that_names_no_versions_is_malformed()
     {

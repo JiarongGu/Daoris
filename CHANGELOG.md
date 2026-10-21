@@ -9,6 +9,11 @@ with the version and date at release.
   page, with how long since its sessions stopped and its quests closed. It is listed under *Waiting for your word* and offers only
   *Refuse…*. Where two or more are stale, *Refuse all …* refuses them together with one reason you give, each on its own ask. A
   refusal of a stale go-ahead sends no session on and starts nothing.
+- A version of an agent or a tool that Daoris downloaded and nothing uses now goes by itself seven days after Daoris first finds it
+  unused; a pin, Tools' use or a setting naming it again starts the count anew. A version a running session was handed stays while
+  that session runs. Settings → This Daoris → *Clear unused downloads…* says the rule and, beside each unused version, the day it
+  goes. Tools' *Delete* of a version now takes the same care: a version a running session was handed, or one a program holds, is
+  refused and left whole, where a failed delete could leave part of it. In English and 中文.
 - What you say to a session while its quest waits on another repository's answer now reaches the session that carries the quest on
   once the answer comes. It is quoted beneath the answer and shown in that session's conversation. Your answer to a session that
   stopped to ask you after such a wait now goes on at the driver's next look; before, it could wait for good. The session is told
