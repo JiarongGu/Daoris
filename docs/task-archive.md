@@ -18794,3 +18794,13 @@ its foot and line in en and zh. A close found closed only in part is live again 
 so `WORK_HELD`'s `stop` is taken on it (any other word refused `part-stop`), offered as a What needs you row and applied by the closer.
 Proof: `QuestCloseTests`, `WorkStateSliceTests`, `AttentionStateSliceTests`, `WorkMilestone.test.tsx` in both languages. A quest
 unit's milestone on the page stays open as FABRIC-CLOSE1j2. Detail: D173's FABRIC-CLOSE1j note.
+
+## FABRIC-CLOSE1d3 — the page reads a source's reopen and its submitting session (2026-10-21, D173)
+
+> - [ ] **FABRIC-CLOSE1d3 — the page reads a source's reopen and its submitting session** (web; after CLOSE1c4, CLOSE1d2). `api.ts`'s quest type lacks `reopened` and `submission.session`, so *Submitted* cannot show a reopened source with the person's words. Proof: the type and a vitest reading both, absent from an older host; the quest page showing the reopen's note, en and zh.
+
+**Outcome** 2026-10-21: `Quest.reopened` (`QuestReopen`: machine, sequence, `of`, note, `at`, and CLOSE1c8's `session`) and
+`QuestSubmission.session` are on the page's type. A taken source with no submission and a reopen says *Reopened* (重新打开) among its
+facts: when, that it waits for its agent's ready, the person's words quoted as written (or that they gave none), and the session told.
+*Submitted* names the session that said its ready. Proof: `api.test.ts` (both read, neither from an older host) and
+`QuestPage.closure.test.tsx` in en and zh. On Opus, by a driven session. Detail: D173's FABRIC-CLOSE1d3 note.
