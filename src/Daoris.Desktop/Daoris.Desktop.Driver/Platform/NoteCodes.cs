@@ -647,6 +647,9 @@ public static class NoteCodes
     public static readonly NoteCode LandingUncommitted = new("landing.uncommitted", ["paths"]);
     public static readonly NoteCode LandingExists = new("landing.exists", ["branch"]);
     public static readonly NoteCode LandingRefused = new("landing.refused", []);
+    // Replaying its work onto the line conflicts, and its session was told to rebase in its own tree (LANDREBASE1): a code of its own,
+    // so the page says the session has it; a refusal it could not tell keeps `landing.refused`.
+    public static readonly NoteCode LandingRebase = new("landing.rebase", []);
     // Held by the review's gate (REVIEWENV1c2): a code of its own, so a look's wait is never said as a refused landing; a note
     // written before it keeps `landing.refused`.
     public static readonly NoteCode LandingUnreviewed = new("landing.unreviewed", []);

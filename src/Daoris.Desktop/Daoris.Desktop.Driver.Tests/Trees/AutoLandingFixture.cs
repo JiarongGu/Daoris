@@ -166,6 +166,15 @@ public abstract class AutoLandingFixture : IDisposable
         public Dictionary<string, OpinionView> Opinions { get; } = new(StringComparer.Ordinal);
 
         public Task<OpinionView?> OpinionAsync(string id, CancellationToken ct) => Task.FromResult(Opinions.GetValueOrDefault(id));
+
+        /// <summary>What Daoris said to a session through the say door (LANDREBASE1), each kept as the door keeps it.</summary>
+        public List<(string Session, string Text, string Key)> Said { get; } = [];
+
+        public Task<SayAnswer?> SayAsync(string session, string text, string key, CancellationToken ct)
+        {
+            Said.Add((session, text, key));
+            return Task.FromResult<SayAnswer?>(new SayAnswer(true, "kept for the session to go on with."));
+        }
     }
 
     private sealed class FakeLander(Func<object, PluginLanding> land) : IHookChannel

@@ -307,13 +307,19 @@ internal sealed class BranchReplays(TreeContext context, PassLeftovers leftovers
         WorkingTree.GitAsync(root, ["worktree", "remove", "--force", "--force", aside], CancellationToken.None);
 
     /// <summary>What a landing's replay made (LANDSYNC1): the new tip, or null and git's words, and whether those name a conflict.</summary>
-    internal sealed record KeptReplay(string? Now, string Words, bool Conflict);
+    internal sealed record KeptReplay(string? Now, string Words, bool Conflict)
+    {
+        /// <summary>The generated files it took at the line's copy where only those conflicted (LANDREBASE1), in the order met.</summary>
+        public IReadOnlyList<string> Generated { get; init; } = [];
+    }
 
     /// <summary>
     /// The commits a landing keeps replayed onto <paramref name="onto"/>, in order, in a tree of Daoris's own made for it under the
     /// trees home and removed after (LANDSYNC1, D87's 2026-10-15 amendment point 2): <see cref="ReplayAsideAsync"/>'s shape, one
     /// <c>git rebase --onto</c> per stretch of <paramref name="commits"/> it keeps, each onto the last one's new tip. A commit that
-    /// becomes empty is dropped by git as WSR6's replay drops one; a conflict aborts it, and nothing is moved.
+    /// becomes empty is dropped by git as WSR6's replay drops one; a conflict aborts it, and nothing is moved. LANDREBASE1: a conflict
+    /// only in files the repository marks generated is not the session's, so those take the line's copy and the replay goes on
+    /// (<see cref="GeneratedPaths"/>); one in any other file still aborts it.
     /// </summary>
     /// <param name="commits">Every commit beyond the line, oldest first, which <paramref name="kept"/> is a subset of.</param>
     internal async Task<KeptReplay> ReplayKeptAsideAsync(
@@ -328,7 +334,7 @@ internal sealed class BranchReplays(TreeContext context, PassLeftovers leftovers
         if (aside is null) return new(null, notMade, false);
         try
         {
-            return await RebaseStretchesAsync(aside, onto, stretches, switchFirst: false, ct).ConfigureAwait(false);
+            return await RebaseStretchesAsync(aside, onto, stretches, switchFirst: false, ct, takesGenerated: true).ConfigureAwait(false);
         }
         finally
         {
@@ -382,10 +388,15 @@ internal sealed class BranchReplays(TreeContext context, PassLeftovers leftovers
     /// <paramref name="onto"/>: the new tip, or null and git's words, and whether those name a conflict. Each run is taken up detached
     /// at its last commit first (the first only where <paramref name="switchFirst"/>: a tree opened there already stands on it).
     /// </summary>
+    /// <param name="takesGenerated">
+    /// A landing's replay (LANDREBASE1): a stop whose every conflicted file the repository marks generated takes the line's copy of
+    /// those and goes on, and the answer names them. False stops at any conflict, as WSR6's replays do.
+    /// </param>
     private static async Task<KeptReplay> RebaseStretchesAsync(
-        string tree, string onto, IReadOnlyList<(string From, string To)> stretches, bool switchFirst, CancellationToken ct)
+        string tree, string onto, IReadOnlyList<(string From, string To)> stretches, bool switchFirst, CancellationToken ct, bool takesGenerated = false)
     {
         var current = onto;
+        var generated = new List<string>();
         for (var at = 0; at < stretches.Count; at++)
         {
             if (at > 0 || switchFirst)
@@ -394,12 +405,59 @@ internal sealed class BranchReplays(TreeContext context, PassLeftovers leftovers
                 if (moved != 0) return new(null, $"git would not take up its next commits to replay: {Failure(moveErr)}", false);
             }
 
-            var (failed, words) = await RebaseInAsync(tree, current, stretches[at].From, ct).ConfigureAwait(false);
+            var (failed, words) = takesGenerated
+                ? await RebaseTakingGeneratedAsync(tree, current, stretches[at].From, generated, ct).ConfigureAwait(false)
+                : await RebaseInAsync(tree, current, stretches[at].From, ct).ConfigureAwait(false);
             if (failed) return new(null, words, words.StartsWith("CONFLICT", StringComparison.Ordinal));
             current = await CommitOfAsync(tree, "HEAD", ct).ConfigureAwait(false) ?? current;
         }
 
-        return new(current, "", false);
+        return new(current, "", false) { Generated = generated };
+    }
+
+    /// <summary>
+    /// <see cref="RebaseInAsync"/>'s replay, where a stop whose every conflicted file the repository marks generated
+    /// (<see cref="GeneratedPaths"/>, LANDREBASE1) is not the session's conflict: those files take the line's side, the side the replay
+    /// builds on, and the replay goes on, a commit left empty by it skipped as git would drop one. Any other stop aborts as
+    /// <see cref="RebaseInAsync"/> does, with git's <c>CONFLICT</c> lines. The files taken are added to <paramref name="generated"/>.
+    /// </summary>
+    private static async Task<(bool Failed, string Words)> RebaseTakingGeneratedAsync(
+        string tree, string onto, string upstream, List<string> generated, CancellationToken ct)
+    {
+        var (code, output, err) = await WorkingTree.GitAsync(
+            tree, ["-c", "rebase.updateRefs=false", "-c", "rebase.autoStash=false", "rebase", "--onto", onto, upstream],
+            environment: null, SyncBounds.Replay, ct).ConfigureAwait(false);
+        // Each stop is one commit; a bound on them keeps a replay that never settles from going round for ever.
+        for (var stops = 0; code != 0 && stops < GeneratedPaths.StopsAtMost; stops++)
+        {
+            var (listed, unmerged, _) = await WorkingTree.GitAsync(tree, ["-c", "core.quotePath=false", "diff", "--name-only", "--diff-filter=U"], ct)
+                .ConfigureAwait(false);
+            var paths = unmerged.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+            if (listed != 0 || paths.Length == 0 || await GeneratedPaths.AllAsync(tree, paths, ct).ConfigureAwait(false) is not true) break;
+
+            foreach (var path in paths)
+            {
+                // The line's side, `--ours` in a rebase; a path the line removed goes, as it does there.
+                var (taken, _, _) = await WorkingTree.GitAsync(tree, ["checkout", "--ours", "--", path], ct).ConfigureAwait(false);
+                await WorkingTree.GitAsync(tree, taken == 0 ? ["add", "--", path] : ["rm", "--quiet", "--cached", "--force", "--", path], ct)
+                    .ConfigureAwait(false);
+                if (!generated.Contains(path, StringComparer.Ordinal)) generated.Add(path);
+            }
+
+            // Nothing left of the commit once its generated files are the line's: skipped, as a commit that becomes empty is dropped.
+            var (same, _, _) = await WorkingTree.GitAsync(tree, ["diff", "--cached", "--quiet", "HEAD"], ct).ConfigureAwait(false);
+            (code, output, err) = await WorkingTree.GitAsync(
+                tree, same == 0 ? ["rebase", "--skip"] : ["-c", "core.editor=:", "rebase", "--continue"], environment: null, SyncBounds.Replay, ct)
+                .ConfigureAwait(false);
+        }
+
+        if (code == 0) return (false, "");
+        await WorkingTree.GitAsync(tree, ["rebase", "--abort"], ct).ConfigureAwait(false);
+        var conflicts = (output + "\n" + err).Split('\n')
+            .Select(each => each.Trim())
+            .Where(each => each.StartsWith("CONFLICT", StringComparison.Ordinal))
+            .ToList();
+        return (true, conflicts.Count > 0 ? LineHolds.Joined(conflicts) : Failure(err.Length > 0 ? err : output));
     }
 
     /// <summary>The record forgets session branches that are gone, so a name is never judged by a start it no longer has.</summary>
