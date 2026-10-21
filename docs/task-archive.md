@@ -19168,3 +19168,13 @@ twins' `notices` entry); each look's ended sessions, with the workspace they wer
 recorded whatever the switch says; the `notices` slice reads it again in every process and says another's notice once as `NOTICE`;
 `NOTICES_READ` and `NOTICE_DISMISS`. The page's *Done and failed* group, the bell's dot and Overview's line. Detail: D196's NOTIFY2f
 note. On Opus.
+
+## NOTIFY2h — the look's lines are logged, not toasted (2026-10-22, D196)
+
+> - [ ] **NOTIFY2h — the look's lines are logged, not toasted** (driver, modules, web-shell; after 2e and 2f; D196, the notification design §9). Each line the look says is a declared machine-log event first, then classed: news a coded notice, a wait its row, the rest the log's. Proof: as §9 names it, a census over every line.
+
+**Outcome** 2026-10-22: built. Each line a look adds goes through `LookSaid` where it is made: `look.said` with its class and family,
+never its words (the machine log design §4); a news line is a coded `look` notice in *Done and failed*, worded by the page in en and zh
+and never said aloud; a meeting or brainstorm the person stopped is `own` and makes none; `ShellSignals` toasts no tick line.
+`LookSaidTests`' census fails on an unclassed add. The deeper producers' finer classing is NOTIFY2h2. Detail: D196's NOTIFY2h note.
+On Opus.
