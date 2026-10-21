@@ -97,6 +97,7 @@ Paths below are relative to this file. Historical documents have their own [arch
 | `2026-10-20-pipeline-design.md` | Proposed: a start node routes work into pipelines; sessions run light checks; verification its own pipeline on landed work | D192; FABRIC-PIPELINE1a-j |
 | `2026-10-21-alone-path-design.md` | Proposed: `daoris driver`, `agent`, `plugin` and `tool` run the driver's own program, the running Daoris's client or alone under the lease; each change one typed operation in the driver library; one text per verb; the families' TypeScript retired | D194; PUSH1f2a-f proposed |
 | `2026-10-21-cleanup-design.md` | Accepted (2026-10-21, after three rounds): everything Daoris writes, inventoried with its rule; one rule per kind set in `driver.json`'s `keep` and shown on This Daoris; a set-aside tree's package folders dropped once it has settled; the look, a free-space floor and a press, one run at a time | D195; KEEP1a-g and KEEP1a2 |
+| `2026-10-21-account-pool-design.md` | Proposed (round 2, after Codex's read): an agent's accounts signed in for Daoris are one set serving every workspace, one order and one entry of settings; the machine's and the workspaces' lists folded once under the lock, each change said until dismissed; the add-account dialog asks only a name; the person's own sign-in outside, never asked or written | D197; POOL1a-d proposed |
 
 ## UI, browser, tools and plugin contracts
 
