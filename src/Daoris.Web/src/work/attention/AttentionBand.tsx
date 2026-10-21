@@ -5,7 +5,8 @@ import { useHarnessRun, WithHarnessRuns } from '../../agents/harnessRuns';
 import { useAcceptQuest, useAnswerGoAhead, useAsks, usePublishAsk, useQuests, useSessions } from '../../data/queries';
 import {
   retryNotice, useApproveHelper, useAttention, useDeclineHelper, useHarnessAction, useHarnesses, useNudge, useRefreshHarnesses,
-  useOpenWorkRecords, useResolveHeld, useRetryQuest, useTrustFolder, useAnswerPermission, useAnswerAlone,
+  useOpenWorkRecords, useResolveHeld, useRetryQuest, useTrustFolder, useAnswerPermission, useAnswerAlone, useApproveHandOver,
+  useDeclineHandOver,
 } from '../../bridge/shell';
 import { permissionSaid } from '../waits/PermissionAsks';
 import { answerAloneSaid } from '../waits/AnswerAlone';
@@ -22,6 +23,7 @@ import { useOpinionActs } from '../gates/opinionActs';
 import { useReviewActs } from '../gates/reviewActs';
 import { ruleHearing, useRuleAnswer } from '../waits/ruleAnswer';
 import { helperSaid } from '../sessionActs';
+import { handOverRefused } from '../waits/HandOverAgentAsk';
 import { runSessionOf } from '../../workflow/run';
 
 export type { AttentionDoors } from './AttentionList';
@@ -101,6 +103,8 @@ function Band({ doors, notify, onSessions, onRun, inView }: {
   const roster = useHarnesses();
   const approveHelper = useApproveHelper();
   const declineHelper = useDeclineHelper();
+  const approveHandOver = useApproveHandOver();
+  const declineHandOver = useDeclineHandOver();
   const answerPermission = useAnswerPermission();
   const answerAlone = useAnswerAlone();
   const resolveHeld = useResolveHeld();
@@ -272,6 +276,16 @@ function Band({ doors, notify, onSessions, onRun, inView }: {
       }, ({ done: settled, why, message }) => {
         if (settled) notify(t(yes ? 'work.helper.approved' : 'work.helper.declined'));
         else notify(helperSaid(t, why, message), 'error');
+      });
+    },
+    // An agent's ask to hand its session over said yes or no to, as its session's foot says it (NOTIFY2e, MIXAGENT1c), by the ask's
+    // own id: its answer said in the page's words, a refusal by its code in the error's tone.
+    handOver: (item, yes) => {
+      const session = item.session;
+      if (!session) return;
+      run(item, () => (yes ? approveHandOver : declineHandOver).mutateAsync({ session, ask: item.id }), (answer) => {
+        if (!answer.stands) notify(handOverRefused(t, answer.why, answer.message), 'error');
+        else notify(yes ? t('work.handOverAsk.approved', { agent: item.agent ?? answer.agent ?? '' }) : t('work.handOverAsk.declined'));
       });
     },
     // A tool call held for the person answered with the choice pressed, as its session's page answers it (AUTONOMY1b3c): its answer

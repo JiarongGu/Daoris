@@ -6,7 +6,7 @@ import { elapsed, span } from '../locales/format';
 import type { NotificationsGroup } from '../notifications/NotificationsView';
 import type { Confirmation } from '../person/Confirmations';
 import { NothingNeedsYou } from '../work/attention/AttentionList';
-import { ATTENTION_GROUP, type AttentionGroup, GROUP_ORDER, needsListed } from '../work/attention/attention';
+import { attentionGroup, type AttentionGroup, GROUP_ORDER, needsListed } from '../work/attention/attention';
 
 /** A line of the summary: its group's name, its count, and its oldest wait or its press's time left, where one is known. */
 type Line = { id: 'presses' | AttentionGroup; label: string; count: number; detail: string | null; opens: NotificationsGroup };
@@ -18,7 +18,7 @@ type Line = { id: 'presses' | AttentionGroup; label: string; count: number; deta
  *
  * @remarks
  * **Counted by group, never the bell's total** (§4): the presses by the confirmation channel, each once, and the rows by
- * `ATTENTION_GROUP` as .NET judged them, a press's own row being its card. The presses' line says the time left of the one that
+ * `attentionGroup` as .NET judged them, a press's own row being its card. The presses' line says the time left of the one that
  * ends first (R2), the others their oldest wait. **R1**: the lines share one label track while the summary is 32rem wide or more,
  * each value beside its words, and stack below it. With nothing waiting, today's one line, *Nothing needs you* and the sessions
  * working; not judged yet, its skeleton (PUSHUX1); in a plain browser, that this is the app's (D47 §4).
@@ -60,7 +60,7 @@ export function NeedsSummary({ attention, presses, onNotifications, now = Date.n
     });
   }
   for (const group of GROUP_ORDER) {
-    const held = rows.filter((row) => (ATTENTION_GROUP[row.kind] ?? 'word') === group);
+    const held = rows.filter((row) => attentionGroup(row) === group);
     if (held.length === 0) continue;
     const since = held.map((row) => row.since).filter((each): each is string => Boolean(each)).sort()[0];
     lines.push({

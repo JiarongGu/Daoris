@@ -293,12 +293,13 @@ public sealed partial class HelpCoverageTests
     /// <summary>
     /// MIXAGENT1c's *Hand over to …* and *Not now* (<c>useApproveHandOver</c>, <c>useDeclineHandOver</c>) and the terminal's
     /// <c>daoris-driver sessions hand-over &lt;id&gt; --approve|--decline</c>: the person's yes or no to a session's agent's own ask to hand
-    /// it over that waits on them under the <c>handOver</c> rule's <c>ask</c> (D163 point 3). Exempt, as a helper's yes and no are.
+    /// it over that waits on them under the <c>handOver</c> rule's <c>ask</c> (D163 point 3), on its session's foot and its row of
+    /// <i>What needs you</i> (NOTIFY2e). Exempt, as a helper's yes and no are.
     /// </summary>
     private static readonly Exempt HandOverAnswerDoor = new(
         "a yes or a no to a session's agent's own ask to hand it over is the person's word on that one ask, which ends the session on "
-        + "its agent and goes on with another or does not (D163 point 3), given where it waits, at the foot of the session's page or "
-        + "at a terminal with `daoris-driver sessions hand-over <id> --approve|--decline`; what an agent's ask does at all is the "
+        + "its agent and goes on with another or does not (D163 point 3), given where it waits, at the foot of the session's page, in What needs you "
+        + "(NOTIFY2e) or at a terminal with `daoris-driver sessions hand-over <id> --approve|--decline`; what an agent's ask does at all is the "
         + "person's `handOver` rule, so Ask Daoris proposes no single answer.");
 
     /// <summary>
