@@ -5,6 +5,14 @@ with the version and date at release.
 
 ## Unreleased
 
+- *Notifications* now has *Messages*: each ask with something new since you last read it, a teammate's ask among them. Each shows
+  how many, the newest message's first line and who wrote it. Each conversation that answered you is listed there too. *Open* goes
+  to the ask's channel or the conversation, *Mark read* reads it, and *Mark all read* reads them all. An agent's or a teammate's
+  urgent message to everyone shows a toast once, in the window you are looking at. An ordinary message, or one to a single
+  repository, is only counted. Nothing an agent says ever reaches the desktop's notifications. The unread counts on an ask's row and
+  on the rail no longer include your own posts or Daoris's lines. Reading a teammate's ask now clears it. Answers are kept with
+  notifications switched off too. Overview's summary has a *Messages* line, and the bell shows a dot while anything there is
+  unread. In English and 中文.
 - A go-ahead that nothing on its ask can use any more is now marked *stale go-ahead* (过时的放行) in *What needs you* and on its ask's
   page, with how long since its sessions stopped and its quests closed. It is listed under *Waiting for your word* and offers only
   *Refuse…*. Where two or more are stale, *Refuse all …* refuses them together with one reason you give, each on its own ask. A
