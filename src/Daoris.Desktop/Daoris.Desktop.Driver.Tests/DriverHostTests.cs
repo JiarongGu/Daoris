@@ -13,24 +13,31 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <remarks>
 /// <para>The host as built, started as a person starts it, against a stand-in service on a loopback port
 /// that counts what reaches it — "starts nothing" is a claim about the process, so the process is what is
-/// asked. Every <c>DAORIS_</c> variable is dropped from its environment and the home is a scratch folder:
-/// no run here can reach this machine's own home or service.</para>
+/// asked. Every <c>DAORIS_</c> variable is dropped from its environment and the home is a scratch folder in the repository's
+/// gitignored <c>_fixtures/</c>, never OS temp: no run here can reach this machine's own home or service.</para>
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
 public sealed class DriverHostTests : IDisposable
 {
-    private readonly string _home = Path.Combine(
-        Path.GetTempPath(), "daoris-driver-host-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _scratch = Path.Combine(WorkspaceRoot.Folder, "_fixtures", "driver-host", Guid.NewGuid().ToString("N")[..8]);
+
+    // `DAORIS_HOME`, and a folder beside it that a run's DAORIS_DRIVER_CONFIG may name (LEASEHOME2).
+    private readonly string _home;
+    private readonly string _elsewhere;
 
     // The home's lease (HOMELEASE1), DRV8a's lock grown to cover every writer.
-    private string LockFile => DaorisHome.Entry(_home, HomeEntry.HomeLease);
+    private string LockFile => LeaseIn(_home);
 
-    public DriverHostTests() => Directory.CreateDirectory(_home);
+    private static string LeaseIn(string home) => DaorisHome.Entry(home, HomeEntry.HomeLease);
 
-    public void Dispose()
+    public DriverHostTests()
     {
-        try { Directory.Delete(_home, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
+        _home = Path.Combine(_scratch, "home");
+        _elsewhere = Path.Combine(_scratch, "elsewhere");
+        Directory.CreateDirectory(_home);
     }
+
+    public void Dispose() => GitSeed.Discard(_scratch);
 
     /// <summary>🔴 No verb: the usage, exit 2 — and nothing reached the service, and no lock was taken.</summary>
     [Fact]
@@ -129,8 +136,48 @@ public sealed class DriverHostTests : IDisposable
         Assert.Equal(planted, File.ReadAllText(LockFile));
     }
 
-    private void Plant(string kind, int pid, long started) =>
-        File.WriteAllText(LockFile, new JsonObject
+    /// <summary>
+    /// 🔴 LEASEHOME2 (the terminal RPC design §5): with the driver's config named in a folder <c>DAORIS_HOME</c> is not, the loop drives
+    /// that folder's home and holds its lease, so a verb run with the same config takes its lease there too. Alone it holds that home
+    /// for its act and lets it go, never <c>DAORIS_HOME</c>; beside the loop's lease there it acts as it always did, holding nothing;
+    /// and the loop meets the one lease. A verb that took <c>DAORIS_HOME</c>'s never met the loop, nor the loop it.
+    /// </summary>
+    [Fact]
+    public async Task With_the_config_elsewhere_a_verb_takes_the_lease_in_the_home_the_loop_drives()
+    {
+        await using var service = CountingService.Start();
+        Directory.CreateDirectory(_elsewhere);
+        var config = Path.Combine(_elsewhere, "driver.json");
+        File.WriteAllText(config, "{}");
+        var named = new Dictionary<string, string> { [DriverConfig.PathVariable] = config };
+
+        var (code, said) = await RunAsync(service, named, "access", "permissions=asking");
+        Assert.True(code == 0, said);
+        Assert.Contains("asking", File.ReadAllText(config));
+        Assert.True(File.Exists(HomeIdentity.PathIn(_elsewhere)), $"the verb did not hold the home the loop drives: {said}");
+        Assert.False(File.Exists(HomeIdentity.PathIn(_home)), "the verb held DAORIS_HOME, which the loop on this config never holds");
+        Assert.False(File.Exists(LeaseIn(_elsewhere)), "the verb kept the home after it ended");
+        Assert.False(File.Exists(LockFile));
+
+        // The loop on this config, as its lease says it: the verb acts beside it, holding nothing, and the loop meets that one lease.
+        Plant(LeaseIn(_elsewhere), "headless", Environment.ProcessId, OurStart());
+        var planted = File.ReadAllText(LeaseIn(_elsewhere));
+        (code, said) = await RunAsync(service, named, "access", "permissions=auto");
+        Assert.True(code == 0, said);
+        Assert.Contains("auto", File.ReadAllText(config));
+        Assert.Equal(planted, File.ReadAllText(LeaseIn(_elsewhere)));
+
+        (code, said) = await RunAsync(service, named, "drive", "--once");
+        Assert.Equal(1, code);
+        Assert.Contains("a headless `daoris-driver`", said);
+        Assert.Equal(0, service.Requests);
+        Assert.False(File.Exists(LockFile));
+    }
+
+    private void Plant(string kind, int pid, long started) => Plant(LockFile, kind, pid, started);
+
+    private static void Plant(string lease, string kind, int pid, long started) =>
+        File.WriteAllText(lease, new JsonObject
         {
             ["kind"] = kind, ["pid"] = pid, ["started"] = started, ["since"] = "2026-09-30T08:02:13+00:00",
         }.ToJsonString());
@@ -142,7 +189,12 @@ public sealed class DriverHostTests : IDisposable
     }
 
     /// <summary>The host as built, beside this test's own build: its exit code, and everything it said.</summary>
-    private async Task<(int Code, string Said)> RunAsync(CountingService service, params string[] args)
+    private Task<(int Code, string Said)> RunAsync(CountingService service, params string[] args) =>
+        RunAsync(service, new Dictionary<string, string>(), args);
+
+    /// <summary>The same, with <paramref name="named"/> laid over the hermetic environment.</summary>
+    private async Task<(int Code, string Said)> RunAsync(
+        CountingService service, IReadOnlyDictionary<string, string> named, params string[] args)
     {
         var info = new ProcessStartInfo("dotnet")
         {
@@ -165,6 +217,7 @@ public sealed class DriverHostTests : IDisposable
 
         info.Environment["DAORIS_HOME"] = _home;
         info.Environment["DAORIS_SERVICE_URL"] = service.Url;
+        foreach (var (name, value) in named) info.Environment[name] = value;
 
         using var process = Process.Start(info)!;
         var output = process.StandardOutput.ReadToEndAsync();
