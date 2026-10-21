@@ -117,13 +117,7 @@ public static class HarnessActions
         HarnessToolchain toolchain, string channel, string home, string harness, string version,
         Action<string> write, CancellationToken ct, Action<HarnessRun>? started, HttpMessageHandler? transport)
     {
-        if (channel != ClaudeReleases.Channel)
-        {
-            throw new DriverException(
-                $"this build installs from no `{channel}` channel, so nothing was fetched or pinned. `daoris agent "
-                + $"pin {harness} {version}` in a terminal knows every channel Daoris does.");
-        }
-        ClaudeReleases.RefuseVersion(version);
+        ReleaseChannels.RefuseVersion(channel, version);
 
         if (HarnessSettings.ManagedBinary(home, harness, version, toolchain.Binary) is { } present)
         {
@@ -136,9 +130,10 @@ public static class HarnessActions
         started?.Invoke(new HarnessRun(download));
         write($"installing {toolchain.Product ?? harness} {version} from {toolchain.Maker ?? "its maker"}'s own release "
             + "channel, into a directory Daoris owns.");
-        await ClaudeReleaseDownloads.InstallAsync(
-            HarnessSettings.ManagedHome(home, harness, version), version, write, download.Token, transport)
-            .ConfigureAwait(false);
+        // The window's loop holds its home already, so the staging is published at once (the alone-path design §1.4).
+        var staged = await ReleaseChannels.StageAsync(
+            channel, HarnessSettings.ManagedHome(home, harness, version), version, write, download.Token, transport).ConfigureAwait(false);
+        ReleaseChannels.Publish(staged, write);
         return 0;
     }
 
@@ -227,13 +222,6 @@ public static class HarnessActions
         string newest;
         if (toolchain.Channel is { Length: > 0 } channel)
         {
-            if (channel != ClaudeReleases.Channel)
-            {
-                throw new DriverException(
-                    $"this build knows no `{channel}` channel's newest release, so nothing was fetched or pinned. "
-                    + $"`daoris agent update {harness}` in a terminal knows every channel Daoris does.");
-            }
-
             write($"{harness} is pinned at {pinned}. Asking {toolchain.Maker ?? "its maker"}'s own release channel "
                 + "which release is newest.");
             // No process asks the pointer, so stopping it is cancelling the request.
@@ -241,7 +229,7 @@ public static class HarnessActions
             started?.Invoke(new HarnessRun(asking));
             try
             {
-                newest = await ClaudeReleaseDownloads.LatestAsync(asking.Token, transport).ConfigureAwait(false);
+                newest = await ReleaseChannels.LatestAsync(channel, asking.Token, transport).ConfigureAwait(false);
             }
             catch (DriverException error)
             {

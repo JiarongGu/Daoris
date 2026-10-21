@@ -23,7 +23,7 @@ namespace Daoris.Driver;
 /// <para><b>No key</b> (D67 §1, AGT3): <c>codex login --with-api-key</c> stores a key in Codex's own home, where D67 keeps
 /// a key in <c>keys.json</c> and hands it at spawn through a variable the tool reads, and no such variable is measured for
 /// Codex. Its key accounts wait on that measurement.</para>
-/// <para>Its pin stays the CLI's to install (<c>codex-releases</c>): a status question and a sign-in here run the pinned
+/// <para>Its pin is installed from its maker's channel (<c>codex-releases</c>, <see cref="CodexReleases"/>; PUSH1f2e): a status question and a sign-in here run the pinned
 /// <c>codex</c> where <c>harnesses.json</c> pins one and <c>driver.json</c> names no command (<see cref="HarnessProbe.CommandOf"/>),
 /// as the usage question does (<see cref="CodexUsage.Question"/>).</para>
 /// </remarks>
@@ -42,6 +42,10 @@ public static class CodexAccounts
         ProfileVariable: "CODEX_HOME",
         // Its own installer, the CLI's entry's, which `agent list` names where Codex is absent (PUSH1f2e4); no door runs it here.
         Install: ["npm", "install", "-g", "@openai/codex"],
+        // Its own updater, run unpinned; a pin comes from the release's own package, by both of its published hashes (AGT2b), with no
+        // pinned environment: an executable outside Codex's own standalone layout gets no update action (the channel evidence, §2).
+        UpdateArguments: ["update"],
+        Channel: CodexReleases.Channel,
         LoginArguments: ["login"],
         LoginCheck: new LoginQuestion(["login", "status"], LoggedIn: @"(?m)^\s*logged in", LoggedOut: @"(?m)^\s*not logged in"),
         DeviceLoginArguments: ["login", "--device-auth"],
