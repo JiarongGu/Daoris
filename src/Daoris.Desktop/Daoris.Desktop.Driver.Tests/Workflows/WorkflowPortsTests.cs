@@ -114,6 +114,39 @@ public sealed class WorkflowPortsTests
         Assert.Equal(("`docs-to-pr` v2", 2), (name, steps!.Count));
     }
 
+    /// <summary>
+    /// FABRIC-CUTOVER1e (the cutover design §11.1): what work would follow without its kind takes the newest version that reads, a graph's
+    /// among them, its person part read from its gate and go-ahead nodes; a newer version that does not read is passed over as before.
+    /// </summary>
+    [Fact]
+    public void What_work_would_follow_otherwise_takes_a_graph_newest_its_person_part_read_from_its_nodes()
+    {
+        var store = new MemoryStore();
+        var runs = new MemoryRuns();
+        WorkflowStore.Add(store, runs, Added("you"));
+        WorkflowStore.Add(store, runs, new WorkflowVersionAdded("docs-to-pr", null, "terminal", "2026-10-10T09:00:00Z", null, JsonNode.Parse("""
+            {"schemaVersion":2,"entries":["claimed"],"end":"handed",
+             "nodes":[{"id":"claimed","kind":"claimed","version":1,"reach":"observed"},
+                      {"id":"ok","kind":"go-ahead","version":1,"reach":"pressed","options":{"act":"publish the docs","on":"dev"}},
+                      {"id":"handed","kind":"handed","version":1,"reach":"observed","options":{"form":"branch","accept":"automatic"}}],
+             "wires":[{"id":"c>o","kind":"after","from":"claimed","to":"ok"},{"id":"o>h","kind":"after","from":"ok","to":"handed"}]}
+            """)));
+
+        var (name, steps) = WorkflowProcesses.Otherwise(store, Declared, "web-app", "work");
+
+        Assert.Equal("`docs-to-pr` v2", name);
+        Assert.Equal([("claimed", WorkflowKinds.Work), ("ok", WorkflowKinds.GoAhead), ("handed", WorkflowKinds.Landing)], steps!.Select(step => (step.Id, step.Kind)));
+        Assert.Equal(["it lands with no press of yours"], Involvement.Lowers(steps!, Involvement.StepsOf(Assert.Single(
+            WorkflowNamed.Read(JsonDocument.Parse("""
+                {"id":"plain","name":"Plain","versions":[{"version":1,"at":"2026-10-09T09:00:00Z","door":"terminal","schema":2,"graph":
+                  {"schemaVersion":2,"entries":["claimed"],"end":"handed",
+                   "nodes":[{"id":"claimed","kind":"claimed","version":1,"reach":"observed"},
+                            {"id":"ok","kind":"go-ahead","version":1,"reach":"pressed","options":{"act":"publish the docs","on":"dev"}},
+                            {"id":"handed","kind":"handed","version":1,"reach":"observed","options":{"form":"branch","accept":"you"}}],
+                   "wires":[{"id":"c>o","kind":"after","from":"claimed","to":"ok"},{"id":"o>h","kind":"after","from":"ok","to":"handed"}]}}]}
+                """).RootElement).Versions).Graph!)));
+    }
+
     [Fact]
     public async Task A_chain_the_service_cannot_name_holds_through_the_ports_only_where_a_named_run_is_bound()
     {
