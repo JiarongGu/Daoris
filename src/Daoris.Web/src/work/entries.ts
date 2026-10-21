@@ -24,6 +24,19 @@ export type EntryPart = {
   askedBy: string | null;
 };
 
+/**
+ * What one part spent, as `SESSION_SPENT` answers it from this machine's record (SESSCTX1d; the driver's `SessionSpent`): its
+ * turns, those whose door said what they consumed, and each count summed over those, null where none said it, never zero.
+ */
+export type PartSpent = {
+  turns: number;
+  reported: number;
+  input?: number | null;
+  output?: number | null;
+  cacheRead?: number | null;
+  cacheWrite?: number | null;
+};
+
 /** One line of work in one repository: its key is opaque, its origin names the ask or quest that began it. */
 export type SessionEntry = {
   entry: string;

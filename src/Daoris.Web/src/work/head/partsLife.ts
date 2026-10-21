@@ -1,7 +1,8 @@
 import type { FlowEdge, FlowNode } from '../../design/Flow';
 import { SESSION_TONE, type ShownState, shownKey } from '../../design/ui';
-import { ago, sessionTool } from '../../locales/format';
-import type { EntryPart, SessionEntry } from '../entries';
+import { ago, compact, sessionTool } from '../../locales/format';
+import type { EntryPart, PartSpent, SessionEntry } from '../entries';
+import { HANDED_REASONS } from '../noteLines';
 import { shownOf } from '../groups';
 import { ownTree } from '../identity';
 import type { EntryAcceptPlan } from '../review/EntryAccept';
@@ -19,16 +20,30 @@ const isBegan = (word: string): word is Began => (PART_BEGAN as readonly string[
  * on from one, handed over from one, moved on from one whose own conversation was lost (SESSCTX1b), or asked by a repository. The
  * earlier part is named by its number in the strip, and by its id where the strip does not hold it. A word a newer host adds reads
  * as a start rather than as nothing.
+ *
+ * **A move says from which agent, and why** (SESSCTX1d; the session-context design §7): where the page holds both parts'
+ * records and they ran on different agents, a move and a hand-over name the one it left, and a hand-over its why by its own
+ * link (`fromWhy`, the hand-over's words); without those records the line is as before, never a guess.
  */
-export function beganLine(t: Translate, part: EntryPart, parts: readonly EntryPart[]): string {
+export function beganLine(t: Translate, part: EntryPart, parts: readonly EntryPart[], rows?: PartsFacts): string {
   const at = part.after ? parts.findIndex((other) => other.session === part.after) : -1;
   const after = at >= 0 ? t('work.parts.number', { n: at + 1 }) : part.after ?? '';
+  // The agent it left, where it is another than its own: a move on the same agent says nothing more by naming it.
+  const left = part.after ? rows?.[part.after]?.session.adapter || null : null;
+  const agent = left && left !== rows?.[part.session]?.session.adapter ? left : null;
   switch (part.began) {
     case 'retried': return t('work.parts.began.retried', { after });
     case 'resumed': return t('work.parts.began.resumed', { after });
     case 'carried-on': return part.after ? t('work.parts.began.carriedOn', { after }) : t('work.parts.began.carriedOnAlone');
-    case 'handed-over': return t('work.parts.began.handedOver', { after });
-    case 'moved': return t('work.parts.began.moved', { after });
+    case 'handed-over': {
+      if (!agent) return t('work.parts.began.handedOver', { after });
+      const why = rows?.[part.session]?.session.fromWhy;
+      const reason = why && Object.hasOwn(HANDED_REASONS, why) ? t(HANDED_REASONS[why]!.key) : null;
+      return reason
+        ? t('work.parts.began.handedOverWhy', { after, agent, why: reason })
+        : t('work.parts.began.handedOverFrom', { after, agent });
+    }
+    case 'moved': return agent ? t('work.parts.began.movedFrom', { after, agent }) : t('work.parts.began.moved', { after });
     case 'asked': return part.askedBy ? t('work.parts.began.asked', { repository: part.askedBy }) : t('work.parts.began.askedUnnamed');
     default: return t('work.parts.began.opened');
   }
@@ -41,6 +56,18 @@ export function partPlace(t: Translate, facts: PartFacts | undefined): string | 
   if (landed) return t(landed.state === 'gone' ? 'work.rail.landedGone' : 'work.rail.landedOn', { branch: landed.branch });
   const tree = !facts.where?.treeGone ? ownTree(facts.session, facts.root) : null;
   return tree ? t('work.rail.inTree', { tree }) : null;
+}
+
+/**
+ * What a part spent, on its own row (SESSCTX1d; the session-context design §7): its tokens, the four counts its turns' doors said,
+ * over how many turns; a part whose turns said no count says so rather than zero. Null where the page holds no answer, or it
+ * ended no turn.
+ */
+export function spentLine(t: Translate, spent: PartSpent | null | undefined): string | null {
+  if (!spent || spent.turns < 1) return null;
+  if (spent.reported < 1) return t('work.parts.spent.unsaid', { count: spent.turns });
+  const tokens = [spent.input, spent.output, spent.cacheRead, spent.cacheWrite].reduce<number>((sum, count) => sum + (count ?? 0), 0);
+  return t('work.parts.spent.tokens', { count: spent.turns, tokens: compact(tokens) });
 }
 
 /** What the page holds of a part's session: its record and its place, by the part's id. */
@@ -124,9 +151,11 @@ export function partsFlow(
         : {}),
     });
     const place = partPlace(t, facts);
+    const spent = spentLine(t, facts?.spent);
     lines[part.session] = [
       ...(part.quest ? [`#${part.quest}`] : []),
       ...(place ? [place] : []),
+      ...(spent ? [spent] : []),
       ...(part.session === entry.leading ? [t('work.parts.leads')] : []),
     ];
 
@@ -134,7 +163,7 @@ export function partsFlow(
     edges.push({
       id: `${from}>${part.session}`, from, to: part.session,
       label: known ? t(`work.parts.edge.${part.began}`) : part.began,
-      says: known ? beganLine(t, part, parts) : t('work.parts.began.recorded', { began: part.began }),
+      says: known ? beganLine(t, part, parts, rows) : t('work.parts.began.recorded', { began: part.began }),
     });
   });
 

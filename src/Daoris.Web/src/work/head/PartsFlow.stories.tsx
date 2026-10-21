@@ -77,3 +77,32 @@ export const WithTheLandingPlan: Story = { args: { entry: RETRY, attended: 'ap00
 export const WithTheLandingPlanChinese: Story = {
   args: { entry: RETRY, attended: 'ap000003', rows, plan: PLAN }, decorators: [chinese, atWidths(), inLight],
 };
+
+/**
+ * A session that moved (SESSCTX1d; the session-context design §7): handed over from Claude Code at its account's limit, then moved
+ * on from Codex when its own conversation was lost, each part with what it spent on its own row: read as one session.
+ */
+const MOVED: SessionEntry = {
+  ...RETRY,
+  parts: [
+    part('ap000001', 'q0000a', 'failed', 'ended', 'opened'),
+    part('ap000002', 'q0000a', 'completed', 'ended', 'handed-over', { after: 'ap000001' }),
+    part('ap000003', 'q0000c', 'working', 'working', 'moved', { after: 'ap000002' }),
+  ],
+};
+const [movedFirst, movedSecond, movedThird] = EVIDENCE_SESSIONS;
+const movedRows = {
+  ap000001: { session: movedFirst!, root: 'C:/work/app', spent: { turns: 2, reported: 0 } },
+  ap000002: {
+    session: { ...movedSecond!, adapter: 'codex', from: 'ap000001', fromWhy: 'limit', fromBy: 'daoris' }, root: 'C:/work/app',
+    spent: { turns: 14, reported: 14, input: 9_400, output: 21_800, cacheRead: 1_208_000, cacheWrite: 64_000 },
+  },
+  ap000003: {
+    session: { ...movedThird!, from: 'ap000002', fromWhy: 'resume', fromBy: 'daoris' }, root: 'C:/work/app',
+    spent: { turns: 3, reported: 3, input: 1_200, output: 3_100, cacheRead: 88_000, cacheWrite: 40_000 },
+  },
+};
+/** Moved between agents: from which agent and why on each edge, and each part's cost in its node. */
+export const Moved: Story = { args: { entry: MOVED, attended: 'ap000003', rows: movedRows }, decorators: light };
+/** The same in 中文. */
+export const MovedChinese: Story = { args: { entry: MOVED, attended: 'ap000003', rows: movedRows }, decorators: [chinese, atWidths(), inLight] };

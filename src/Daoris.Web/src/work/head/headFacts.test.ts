@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import i18n from '../../locales/i18n';
 import type { Quest, Session } from '../../data/api';
 import type { SessionGrouping } from '../groups';
-import { questFacts, sessionFacts, sessionFactsTip } from './headFacts';
+import { leadingAgentOf, questFacts, sessionFacts, sessionFactsTip } from './headFacts';
 
 // The facts line under a head's title (UX7c, D152 §7; the UX7 design §5.2, §5.3): the facts a record's state makes
 // matter, each said once. The clock is held, so every span reads the same on every run.
@@ -127,6 +127,28 @@ describe('a session’s facts line', () => {
     const nameOf = () => 'work';
     expect(sessionFacts(t, { session: session({ profile: 'acct-3f9c1a2b' }), shown: 'working', nameOf })).toEqual(['engine', '2m']);
     expect(sessionFacts(t, { session: session(), shown: 'working', ownSignIn: true })).toEqual(['engine', '2m']);
+  });
+
+  /**
+   * SESSCTX1d (the session-context design §7): the head shows the agent its line's leading part runs on, where its parts ran on
+   * more than one agent, by the roster's name; a line on one agent, a record alone and a leading part not held say none.
+   */
+  it('says the agent the line is on now where its parts moved between agents, in both languages', async () => {
+    const entry = { leading: 'p2', parts: [{ session: 'p1' }, { session: 'p2' }] } as never;
+    const roster = [{ harness: 'codex', product: 'Codex' }];
+    const moved = [session({ id: 'p1', adapter: 'claude-code' }), session({ id: 'p2', adapter: 'codex' })];
+    expect(leadingAgentOf(entry, moved, roster)).toBe('Codex');
+    expect(leadingAgentOf(entry, moved, [])).toBe('codex');
+    expect(leadingAgentOf(entry, [session({ id: 'p1' }), session({ id: 'p2' })], roster)).toBeNull();
+    expect(leadingAgentOf(entry, [moved[0]!], roster)).toBeNull();
+    expect(leadingAgentOf({ leading: 'p1', parts: [{ session: 'p1' }] } as never, moved, roster)).toBeNull();
+    expect(leadingAgentOf(null, moved, roster)).toBeNull();
+
+    expect(sessionFacts(t, { session: session(), shown: 'working', leadingAgent: 'Codex' }))
+      .toEqual(['engine', 'the line is on Codex now', '2m']);
+    await i18n.changeLanguage('zh');
+    expect(sessionFacts(t, { session: session(), shown: 'working', leadingAgent: 'Codex' })[1]).toBe('这条工作线现在由 Codex 进行');
+    await i18n.changeLanguage('en');
   });
 
   /** Where the account explains a hold, the row's own line says it: a cooling account keeps its place in the facts. */
