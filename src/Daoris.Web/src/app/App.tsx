@@ -302,7 +302,8 @@ export function App() {
   const unkeyedHost = useUnkeyedHost(personKey);
   const [unkeyedSaid, setUnkeyedSaid] = useState(false);
   const terminalConfirmations = useTerminalConfirmations();
-  const serviceConfirmations = useServiceConfirmations(personKey.held);
+  // NOTIFY2j: as the shell tells every window, so each counts one list, and its first read is no arrival.
+  const { waiting: serviceConfirmations, read: serviceRead } = useServiceConfirmations(personKey.held);
   const answerConfirmation = useAnswerConfirmation();
   // CONFIRMSEEN1: a terminal's press's two minutes count from when this window, in front of the person, shows its card.
   const confirmationShown = useConfirmationShown();
@@ -538,6 +539,7 @@ export function App() {
   };
   const announcements = usePressAnnouncements({
     presses,
+    serviceRead,
     viewOpen: notificationsOpen,
     words: pressToast,
     openLabel: t('notifications.toast.open'),

@@ -1,13 +1,13 @@
 import { type QueryClient, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useShenora, useShenoraEvent } from '@shenora/react';
-import { api, holdPersonKey } from '../data/api';
+import { api, holdPersonKey, type ServiceConfirmation } from '../data/api';
 import { keys } from '../data/queries';
 import type { Confirmation, ConfirmationAnswer, ConfirmationField, ConfirmationNamed } from '../person/Confirmations';
-import { call } from './call';
+import { call, refusedNoRoute } from './call';
 
 // The person's door in the window (PERSONDOOR1f, RPC1c; D156 points 2 and 4, the person-door design §2.2 and §4.2): the person
 // key the shell holds for its host, kept in memory; the presses a terminal sent over the pipe that wait for the person's Confirm;
-// and, once the page holds the key, what waits at the service's own confirmations. Every route here is the window's alone: the
+// and, once the page holds the key, what waits at the service's own confirmations, as the shell tells it (NOTIFY2j). Every route here is the window's alone: the
 // pipe's census refuses each to a terminal, which asks and never answers.
 
 /** A press a terminal sent over the pipe, waiting for the window, as `PERSON_CONFIRMATIONS` answers it and `CONFIRMATIONS` tells it. */
@@ -74,19 +74,70 @@ export function useTerminalConfirmations(): Confirmation[] {
   return (query.data ?? NONE).waiting.map(fromPipe);
 }
 
+/** What waits at the service's door as the shell tells it (NOTIFY2j), numbered so the newest telling is kept. */
+export type ServiceConfirmationsTold = { seq: number | null; waiting: ServiceConfirmation[] };
+
+/** A telling or a read of what waits at the service, or null where it is of no shape this reads. */
+function serviceOf(told: unknown): ServiceConfirmationsTold | null {
+  const shaped = told as { seq?: unknown; waiting?: unknown } | null | undefined;
+  if (!Array.isArray(shaped?.waiting)) return null;
+  return {
+    seq: typeof shaped.seq === 'number' ? shaped.seq : null,
+    waiting: (shaped.waiting as ServiceConfirmation[]).filter((each) => typeof each?.id === 'string' && typeof each.expires === 'string'),
+  };
+}
+
+/** The shell's answer while it tells what waits at the service; `older` where it is older than the telling (NOTIFY2j). */
+type ServiceRead = ServiceConfirmationsTold | 'older';
+
 /**
  * What waits at the service for the person's confirmation (PERSONDOOR1b's doors, D156 §4.2), asked only while the page holds the
- * person key: its Confirm and Refuse take the key, and a host handed none lists none. Polled, since the service tells no window.
+ * person key: its Confirm and Refuse take the key, and a host handed none lists none. **Told, not polled** (NOTIFY2j, D196 point 4):
+ * the shell holds one wait on the service and tells every window what waits at each change (`SERVICE_CONFIRMATIONS`), so each
+ * window counts the one list it was told; read as the page mounts, for a window opened mid-wait. A shell older than the telling,
+ * and a browser, keep the poll of the service's list. `read` says whether this window has read it at all, so its first read is
+ * told apart from an arrival.
  */
-export function useServiceConfirmations(held: boolean): Confirmation[] {
-  const query = useQuery({
+export function useServiceConfirmations(held: boolean): { waiting: Confirmation[]; read: boolean } {
+  const { isAvailable } = useShenora();
+  const client = useQueryClient();
+  useShenoraEvent<ServiceConfirmationsTold>('DAORIS', 'SERVICE_CONFIRMATIONS', (told) => {
+    const now = serviceOf(told);
+    const kept = client.getQueryData<ServiceRead>(keys.serviceTold);
+    // Kept once this window has read, where it is newer: the bus may deliver one late, and the read may land after a telling.
+    if (!now || kept === undefined || kept === 'older') return;
+    if (now.seq !== null && kept.seq !== null && now.seq <= kept.seq) return;
+    client.setQueryData<ServiceRead>(keys.serviceTold, now);
+  });
+  const told = useQuery({
+    queryKey: keys.serviceTold,
+    queryFn: async (): Promise<ServiceRead> => {
+      let answer: unknown;
+      try {
+        answer = await call<ServiceConfirmationsTold>('SERVICE_CONFIRMATIONS');
+      } catch (error) {
+        if (refusedNoRoute(error)) return 'older';
+        throw error;
+      }
+      const read = serviceOf(answer);
+      if (!read) return 'older';
+      const kept = client.getQueryData<ServiceRead>(keys.serviceTold);
+      return kept && kept !== 'older' && kept.seq !== null && read.seq !== null && kept.seq >= read.seq ? kept : read;
+    },
+    enabled: isAvailable && held,
+    // The telling keeps it current: nothing asks again by itself.
+    staleTime: Infinity,
+    retry: false,
+  });
+  const polled = useQuery({
     queryKey: keys.serviceAsks,
     queryFn: ({ signal }) => api.confirmations(signal),
-    enabled: held,
+    enabled: held && (!isAvailable || told.data === 'older'),
     refetchInterval: 5_000,
     retry: false,
   });
-  return (query.data ?? []).filter((each) => each.state === 'waiting').map((each): Confirmation => ({
+  const list = told.data && told.data !== 'older' ? told.data.waiting : polled.data;
+  return { waiting: (list ?? []).filter((each) => each.state === 'waiting').map((each): Confirmation => ({
     source: 'service',
     id: each.id,
     route: `${each.method} ${each.route}`,
@@ -95,7 +146,7 @@ export function useServiceConfirmations(held: boolean): Confirmation[] {
     asker: null,
     asked: each.asked ?? null,
     expires: each.expires,
-  }));
+  })), read: list !== undefined };
 }
 
 /**
