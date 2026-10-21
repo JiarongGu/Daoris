@@ -4,9 +4,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// Where an installed plugin came from, and its update (PLUG9 c, D103): the driver's half of a twin with
-/// the CLI's <c>plugins.ts</c>, whose <c>plugin-sources.test.ts</c> holds the same table — the same record,
-/// the same refusals in the same order and words, the same changes. They share no code.
+/// Where an installed plugin came from, and its update (PLUG9 c, D103): the record, the refusals in their order and words, and the
+/// changes, in the tables the CLI's <c>plugins.ts</c> was held to until it left with <c>daoris plugin</c>'s TypeScript (PUSH1f2f).
 /// </summary>
 /// <remarks>
 /// <para>The record is <c>.daoris-source.json</c> in the install folder, written into the staged copy

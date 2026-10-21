@@ -8,13 +8,14 @@ namespace Daoris.Driver;
 /// plugin with a record is updated from it.
 /// </summary>
 /// <remarks>
-/// <para><b>A twin of the CLI's <c>plugins.ts</c></b> (`.claude/knowledge/twins.md`): the same refusals in
-/// the same words, a copy staged beside and renamed in, links neither followed nor copied, and the data
-/// folder untouched. They share no code, and each side's tests hold the same table.</para>
+/// <para><b>Once a twin of the CLI's <c>plugins.ts</c></b>, which left with <c>daoris plugin</c>'s TypeScript (PUSH1f2f): the same
+/// refusals in the same words, a copy staged beside and renamed in, links neither followed nor copied, and the data
+/// folder untouched, all held by <c>fixtures/plugins-text.json</c> since <c>daoris plugin</c> is <c>daoris-driver plugin</c>.</para>
 ///
-/// <para><b>One difference, deliberate:</b> this adds, and never replaces an installed plugin. Replacing
-/// one wholesale is <c>daoris plugin add</c>'s at a terminal; a proposal that could overwrite an installed
-/// plugin from a checkout would change what runs under a card that said it adds.</para>
+/// <para><b>One difference, deliberate:</b> <see cref="Add(string, string, IEnumerable{string})"/> adds, and never replaces an
+/// installed plugin. Replacing one wholesale is <c>daoris plugin add</c>'s at a terminal, <see cref="Replace"/>, which no route
+/// takes; a proposal that could overwrite an installed plugin from a checkout would change what runs under a card that said it
+/// adds.</para>
 ///
 /// <para>🔴 <b>Nothing a plugin declares is started here.</b> Adding copies a folder; the driver loop
 /// starts a hook at its next look, as it does any plugin, and a harness or a server runs only with a

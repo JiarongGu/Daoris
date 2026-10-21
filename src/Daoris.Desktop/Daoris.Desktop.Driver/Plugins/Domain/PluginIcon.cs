@@ -20,8 +20,8 @@ public sealed record PluginIconRead(string? Type, string? DataUri, string? Probl
 /// file (<c>PluginIcon.Read</c>).
 /// </summary>
 /// <remarks>
-/// <para><b>The CLI's <c>plugins.ts</c> is the twin</b> (<c>readIcon</c>): the same rules in the same order, the same
-/// sentences, held by one table (<c>PluginIconTests</c>, which <c>plugin-icons.test.ts</c> parses). They share no code.</para>
+/// <para><b>One table holds the rules</b> (<c>PluginIconTests</c>), in order and in their sentences; the CLI's <c>plugins.ts</c>
+/// held its twin (<c>readIcon</c>) to it until it left with <c>daoris plugin</c>'s TypeScript (PUSH1f2f).</para>
 ///
 /// <para>🔴 <b>An icon's problem never refuses the plugin.</b> An icon is how a plugin is recognised, never what it does.</para>
 ///

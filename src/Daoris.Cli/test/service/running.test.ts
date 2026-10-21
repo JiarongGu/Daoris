@@ -167,35 +167,15 @@ test('an address is taken only where its status answers this home’s id', async
 });
 
 /**
- * RPC1a (the terminal RPC design §4.1, §6.3): once the running Daoris serves its pipe, the file names it as `pipe`, read only
- * where it is the pipe of the home the file names (`daoris-<id>-<session>`). The driver's `RunningAddressTests` hold the same
- * rows, case for case (`twins.md`).
+ * RPC1a (the terminal RPC design §4.1, §6.3): the file names the pipe its instance serves as `pipe`, which the driver's program reads
+ * (`RunningAddress.Read`, `RunningAddressTests`) since the last family that sent over it became the program's (PUSH1f2f). Here the
+ * service's address is all the file gives: a pipe beside it changes nothing for a verb that asks the service.
  */
-test('the address names the pipe its instance serves, read only where it is the named home’s', async () => {
+test('the address is the service’s alone, whatever pipe the file names beside it', async () => {
   const fx = installed('running-pipe');
   try {
-    const rows: [unknown, string | null][] = [
-      [`daoris-${HOME_ID}-1`, `daoris-${HOME_ID}-1`],
-      [`daoris-${ANOTHER_ID}-1`, null],
-      [`daoris-${HOME_ID}-`, null],
-      [`daoris-${HOME_ID}-1x`, null],
-      [`\\\\.\\pipe\\daoris-${HOME_ID}-1`, null],
-      ['', null],
-      [7, null],
-      [null, null],
-    ];
-    for (const [pipe, read] of rows) {
-      leave(fx, fx.data, 'http://localhost:5181', process.pid, HOME_ID, { home: HOME_ID, pipe });
-      const found = await runningService(fx.data, fx.root, daoris().get, () => true);
-      assert.deepEqual(found, read ? { url: 'http://localhost:5181', pipe: read } : { url: 'http://localhost:5181' }, JSON.stringify(pipe));
-    }
-
-    // A file naming no home names no pipe either: a pipe's name is checked against the home it is said to be.
-    leave(fx, fx.data, 'http://localhost:5181', process.pid, HOME_ID, { pipe: `daoris-${HOME_ID}-1` });
-    assert.deepEqual(await runningService(fx.data, fx.root, daoris().get, () => true), { url: 'http://localhost:5181' });
-
-    // And the service's address is all `endpoint` hands on: a pipe changes nothing for a verb that asks the service.
     leave(fx, fx.data, 'http://localhost:5181', process.pid, HOME_ID, { home: HOME_ID, pipe: `daoris-${HOME_ID}-1` });
+    assert.deepEqual(await runningService(fx.data, fx.root, daoris().get, () => true), { url: 'http://localhost:5181' });
     assert.deepEqual(await endpoint({}, daoris().get, fx.root), { url: 'http://localhost:5181', key: null });
   } finally {
     fx.cleanup();

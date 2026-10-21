@@ -9,7 +9,7 @@ namespace Daoris.Driver;
 /// </summary>
 /// <remarks>
 /// <para><b>Why here and not in the `daoris` CLI.</b> `try` starts a plugin's process and speaks its
-/// wire, and the CLI's discipline is that only <c>toolchain.ts</c> spawns anything; the driver library
+/// wire, and the CLI's discipline is that it spawns nothing but this program (<c>driverprogram.ts</c>); the driver library
 /// already starts plugins and speaks the wire, and its frames are the ones a sample must be. `new` stays
 /// beside `try` so there is one scaffold, whose samples come from the same place. The CLI's
 /// `daoris plugin new|try` say where the kit is.</para>

@@ -38,8 +38,8 @@ public sealed record PluginStepsRead(IReadOnlyList<NodeDeclaration> Steps, IRead
 /// <para><b>A problem refuses the plugin</b>, as a server's or a skill's does (§C4), with its code and its words. The rules are checked
 /// in one order, and the first broken one is said.</para>
 ///
-/// <para>Reading starts nothing: no transport, no dispatch, no supervision (PERFORM1a onward). The CLI's <c>steps.ts</c> is this
-/// class's twin: <c>plugin-steps.test.ts</c> parses <c>PluginStepsTests</c>' theory and holds its own table to it, cell for cell.</para>
+/// <para>Reading starts nothing: no transport, no dispatch, no supervision (PERFORM1a onward). The CLI's <c>steps.ts</c> was this
+/// class's twin, held to <c>PluginStepsTests</c>' theory cell for cell, until it left with <c>daoris plugin</c>'s TypeScript (PUSH1f2f).</para>
 /// </remarks>
 public static class PluginSteps
 {

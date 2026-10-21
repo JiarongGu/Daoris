@@ -15,8 +15,9 @@
 //   3. A start whose PATH would pass one variable's 32,766 characters keeps the launcher.
 //
 // Only the system's git goes past: a git the person named or a managed one starts as it is (GITSTART5 is the managed
-// one's). It stays PURE, as `tools.ts` is: it reads files and answers "which program, with which environment";
-// `toolchain.ts` starts the CLI's children and `tools/fsx.mjs`'s `spawnGit` the tools' git.
+// one's). It stays PURE: it reads files and answers "which program, with which environment"; `tools/fsx.mjs`'s
+// `spawnGit` starts the tools' git by it. The CLI's own `startChild` asked it too, until its one child became Daoris's driver
+// program (PUSH1f2f), which starts its own git (`WorkingTree.GitStart`).
 
 import { existsSync, statSync } from 'node:fs';
 import { basename, dirname, isAbsolute, join, resolve } from 'node:path';

@@ -22,9 +22,9 @@ public sealed record PluginPackageOrigin(string Package, string Version, string 
 /// the swap: replaced with the install, removed with it, and absent from a folder copied in by hand, so
 /// "no record" is said and never guessed. The catalogue reads nothing but the manifest.</para>
 ///
-/// <para>A twin of the CLI's <c>readPluginSource</c> in <c>plugins.ts</c>: the same file, the same shapes,
-/// the same problems in the same words. <c>PluginSourceTests</c> holds the table, and the CLI's
-/// <c>plugin-sources.test.ts</c> parses its rows and holds its own to them, cell for cell.</para>
+/// <para><c>PluginSourceTests</c> holds the table: the file, its shapes, and each problem in its words. The CLI's
+/// <c>readPluginSource</c> in <c>plugins.ts</c> was its twin, held to the same rows, until it left with <c>daoris plugin</c>'s
+/// TypeScript (PUSH1f2f).</para>
 ///
 /// <para>The record and its rules are pure (STRUCT3a, FLAT1b-i); <c>Read</c>, <c>Write</c> and <c>FromFolder</c> touch the
 /// machine through <see cref="PluginFolders"/>, which does the I/O, so this file names none itself.</para>

@@ -22,7 +22,7 @@ import { command as driver } from './cli/driver.ts';
 import { command as plugin } from './cli/plugin.ts';
 import { command as browser } from './cli/browser.ts';
 import { command as tool } from './cli/tool.ts';
-import { runDriverProgram, type DriverProgramSeam } from './agents/toolchain.ts';
+import { runDriverProgram, type DriverProgramSeam } from './platform/driverprogram.ts';
 
 /** The package root — `src/` sits one level below it, `dist/` likewise once built. */
 export const packageRoot = dirname(dirname(fileURLToPath(import.meta.url)));
@@ -67,17 +67,16 @@ const USAGE = [
   '  service, and no gate ever runs them; brainstorm too, to this machine\'s own service',
   '  only. remote, agent, driver, plugin, browser and',
   '  tool are management too — they edit files under the Daoris home ($DAORIS_HOME,',
-  "  the installed application's own data folder; nothing lives under your profile),",
-  "  and agent spawns each agent's own tooling. Of them only agent pin and agent",
-  "  update open a connection themselves, to a maker's release channel for Claude",
-  '  Code and Codex. Every driver and tool verb, and agent rules, trust and',
-  "  settings, is run by Daoris's own driver program, the one this install carries",
-  '  in app/daoris-driver/ (or the one DAORIS_DRIVER_PROGRAM names), which reaches a',
-  "  tool's maker and a resource location for tool download, use … managed, update",
-  '  and look; a daoris with neither says so and does nothing.',
-  '  While Daoris runs on that home, agent, driver, plugin and tool send what they',
-  '  change to it over its own pipe, and its window asks you to confirm it; with none',
-  '  running they edit the files themselves.',
+  "  the installed application's own data folder; nothing lives under your profile).",
+  "  Every agent, driver, plugin and tool verb is run by Daoris's own driver program,",
+  '  the one this install carries in app/daoris-driver/ (or the one',
+  "  DAORIS_DRIVER_PROGRAM names), which spawns each agent's own tooling, reaches a",
+  "  maker's release channel for agent pin and update, and a tool's maker and a",
+  '  resource location for tool download, use … managed, update and look; a daoris',
+  '  with neither says so and does nothing.',
+  '  While Daoris runs on that home, the program sends what they change to it over',
+  '  its own pipe, and its window asks you to confirm it; with none running it edits',
+  '  the files itself.',
   '  Every doctrine command is offline.',
   '',
   'Options:',

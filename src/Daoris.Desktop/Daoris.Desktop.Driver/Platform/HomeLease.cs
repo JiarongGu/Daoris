@@ -75,7 +75,8 @@ public sealed class HomeLeaseException(string message, Exception? inner = null) 
 /// the <c>home-lease</c> entry's old place, a build's from before HOMELAYOUT3 switched it to <c>run/</c>.</para>
 ///
 /// <para><b>Compiled into the launcher too</b>, with <see cref="HomeIdentity"/> and <see cref="DaorisHome"/>, whose table names
-/// the lease's place (<c>Daoris.Desktop.Launcher.csproj</c>), so it uses nothing but the base library. The CLI's <c>lease.ts</c> is its twin and shares no code (<c>twins.md</c>).</para>
+/// the lease's place (<c>Daoris.Desktop.Launcher.csproj</c>), so it uses nothing but the base library. The CLI's <c>lease.ts</c> was its twin until it left with the last management family's TypeScript (PUSH1f2f,
+/// D194): every verb that holds the home now holds it through here.</para>
 /// </remarks>
 public sealed class HomeLease : IDisposable
 {

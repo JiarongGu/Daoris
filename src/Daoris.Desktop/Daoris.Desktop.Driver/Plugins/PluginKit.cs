@@ -21,8 +21,8 @@ namespace Daoris.Driver;
 /// landing and compares.</para>
 ///
 /// <para><b>One implementation behind both doors.</b> `daoris-driver plugins new|try` and Settings →
-/// Plugins both call this class. The CLI names no scaffold of its own: it spawns nothing outside
-/// <c>toolchain.ts</c>, and the samples come from this library.</para>
+/// Plugins both call this class. The CLI names no scaffold of its own: it spawns nothing but this program
+/// (<c>driverprogram.ts</c>), and the samples come from this library.</para>
 ///
 /// <para><b>The use case</b> (STRUCT3a): what the kit says and plans is here; the folder it writes, the templates the build
 /// carries, a trial's scratch and its process are <see cref="PluginKitFiles"/>' and
