@@ -106,6 +106,7 @@
   "work.milestone.held.word.again": "try again",
   "work.milestone.line.overridden": "closed by you before its end",
   "work.milestone.line.partial": "partially closed",
+  "work.milestone.line.takenBack": "your word on its close not taken",
   "work.milestone.closed.label": "Close",
   "work.milestone.closed.overridden": "Closed by you before its end, so nothing more of it runs: stopped {{nodes}}.",
   "work.milestone.closed.overriddenNone": "Closed by you before its end, so nothing more of it runs.",
@@ -113,6 +114,8 @@
   "work.milestone.closed.offer": "Its close {{node}} waits again, and would close #{{quest}} over that take once it is submitted: stop it to leave the quest to whoever took it.",
   "work.milestone.closed.worded": "Your stop of {{node}} is recorded, and the next look applies it.",
   "work.milestone.closed.stopped": "Its close {{node}} is stopped.",
+  "work.milestone.closed.takenBack.record": "Your word to record its close {{node}}'s answer again was not taken: #{{quest}}'s submission that close names was reopened or replaced since, so the work there now is never that close's to record.",
+  "work.milestone.closed.takenBack.stop": "Your word to stop the rest of this work through its close {{node}} was not taken: #{{quest}}'s submission that close names was reopened or replaced since, so the work there now is never that close's to stop.",
   "work.milestone.closed.title": "#{{quest}} partially closed",
   "work.milestone.closed.act.stop": "Stop its close"
 }
