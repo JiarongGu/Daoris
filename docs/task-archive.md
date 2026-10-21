@@ -18596,3 +18596,46 @@ confirmed in the open window.
 > - [ ] **SYNCMERGE1a3 — the service's refusal of a done, decline or set-up on a lost step names the two choices** (service; D178 point 7). Proof: `QuestShareTests` on the refusal's words.
 
 **Outcome** 2026-10-21: the respond door's done and decline, the person's done and a set-up refused on a take this machine lost (`QuestExchange.LostStep`) follow the lost take's words with *Drop mine* and *Bring mine forward* and their terminal verbs (`QuestExchange.Choices`), saying until when the bring-forward waits where it cannot stand yet: the source submitted again, or the step open again. A wait, a `ready`, a bind and the remote's push refusal are unchanged. Proof: `QuestShareTests`' new theory (the step rebound and still withdrawn) and the WAITCLAIM2 case (another machine holding it). On Opus. Detail: D178's SYNCMERGE1a3 note.
+
+## KEEPALL1b — `harnesses.json` keeps what its writers do not own (2026-10-21, D173, D165)
+
+> - [ ] **KEEPALL1b — `harnesses.json` keeps what its writers do not own** (driver, cli; after a decision on D165 §6's rewrites). Its writers rebuild every section and never re-read the file. Proof: `harnesses.json` rows in `home-files-keep.json`, with the rotation twins' file rows re-decided in both twins.
+
+**Outcome** 2026-10-21: built. The decision it waited on is D173's KEEPALL1b note: D165 §6's rewrites stay the writer's, as an
+edit, since each settings entry is understood as the file holds it. `HarnessSettings.Save` and `writeHarnessSettings` write
+through `JsonKeeping.Save` and `writeKeeping`; wiring built in memory is written whole. Proof: 11 `harnesses.json` rows in
+`home-files-keep.json`; the rotation twins' file and removal rows, two `rotation-use.json` `write` rows and the account-join rows
+re-decided in both twins. Root cause and verification: the fix log's KEEPALL1b entry.
+
+## LANDGIT1c — one spelling per ref fact (2026-10-21, D173)
+
+> - [ ] **LANDGIT1c — one spelling per ref fact** (driver; after LANDGIT1). `refs/heads/main` and `refs/heads/main^{commit}` are two commands, and the dirty check's `status` is read twice. Proof: the count test with no allowance for `status`.
+
+**Outcome** 2026-10-21: every read of a branch's or the head's commit is `<ref>^{commit}` (the line guess, `ComparableAsync`, the look's tree read, a waited landing's head); the landing's judgement hands its `status` count to the dirty check, and the look's automatic landing hands its own to the landing, read again after a wait. `LandGitCountTests` judges `status` as asked once until a write and refuses a ref read under two spellings; ceilings 53, 50 and 42 (from 55, 51, 43). On Opus: about 90 tool calls. Detail: D173's LANDGIT1c note.
+
+## CARRY3 — a take's own time, not the quest's `updated`, judges "taken here after the session ended" (2026-10-21, D80)
+
+> - [ ] **CARRY3 — a take's own time, not the quest's `updated`, judges "taken here after the session ended"** (driver, maybe service; after CARRY2b). `Planner.TakenElsewhere` (~1127) reads a taken quest's `updated` as the take's time, but a submission, an evidence read, a reopen and a rebound move it too, so after a go-on a carry-on over a take no session marked reads as taken by work outside Daoris (FABRIC-CLOSE1c13 found it; its `StandInLedger.Rebound(…, moved: true)`). Proof: CLOSE1c2's look test with the rebound moving `updated` still carries q3 on.
+
+**Outcome** 2026-10-21: built. The claim's answer says `taken`, when the take the quest stands taken by was made; the driver
+judges a take made here after a session ended by it (`Planner.TakenAt`), in the planner and the hand-over alike, and by
+`updated` only from a host before the field. CLOSE1c2's look test now moves `updated` at the go-on and still carries q3 on.
+On Opus: about 60 tool calls. Detail: D80's CARRY3 note.
+
+## FABRIC-PIPELINE1b2 — a saved workflow keeps a repository's light checks (2026-10-21, D192)
+
+> - [ ] **FABRIC-PIPELINE1b2 — a saved workflow keeps a repository's light checks** (driver, cli; D192; after FABRIC-PIPELINE1a). FABRIC-PIPELINE1b built the sessions' checks under Current only: schema 1's `work` takes no `checks`, since a new field in its canonical text would change every bound run's digest, so saving Current as a named workflow drops a light repository's rule and its sessions run every gate again. Wanted: `work.checks` written only where set (the canonical rule 1a's readers adopt), read by both twins, and a graph version's `claimed.checks` read at the bind (after CUTOVER1g). Proof: a workflow saved from a light Current keeps `light`; every existing version's digest unchanged.
+
+**Outcome** 2026-10-21: built but for what waits on FABRIC-CUTOVER1g. `work` takes `checks` (`light` or `heavy-at-end`), marked `whereSet` in the kinds table both twins hold (`workflow-named.json`): the canonical text and the steps decoder leave it out where it is none, so every existing version keeps its digest and decoded graph (the table's rows, `bcf751a72ffe` unchanged); set, it is the `claimed` node's option. `workflow new --from current:<repository>` copies a light repository's rule onto the work (`workflowdoor.test.ts`); a named run's start takes its bound version's checks, never Current's rule (`SessionChecksHandTests`). A graph version's `claimed.checks`, and a run's first start reading its version's, wait for the bind before the take: FABRIC-PIPELINE1b3. D192's FABRIC-PIPELINE1b2 note says why.
+
+## LANDGIT1b — the head and tip reads saved safely (2026-10-21, D173)
+
+> - [ ] **LANDGIT1b — the head and tip reads saved safely** (driver; after LANDGIT1 and END4a; D88). Head, tip and ref reads are about 20 of a landing's remaining starts: pass them down from where they are read, with an uncached re-read right before any act that follows. Proof: the count test's ceilings lowered; `What_another_process_moves_is_asked_of_git_each_time` green.
+
+**Outcome** 2026-10-21: a landing passes down the head and tip reads it already holds instead of asking them again, and keeps none
+in `GitFacts`: the look's try takes the rule's plan alone, the landing reads the tree's repository and branch once for its readers,
+the content proof takes the tree's own branch its judgement read, and the line's two forms are one snapshot. The automatic landing
+starts 44 git processes (55), the squash press 46 (51), the merge press 40 (43); what an act rests on is still read right before it.
+Fewer than the row's estimate of 20: the rest are each act's own read, `status` (LANDGIT1c) and the tidy's. Proof: `LandGitCountTests`
+with its ceilings lowered, `What_another_process_moves_is_asked_of_git_each_time` green. On Opus: about 90 tool calls. Detail: D173's
+LANDGIT1b note.

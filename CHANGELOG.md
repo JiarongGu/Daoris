@@ -21,6 +21,9 @@ with the version and date at release.
 - Several sessions starting at once no longer leave one without its quest tools: a session's connector waits while another
   host is using Daoris's database, where it could exit at its start with *database is locked*. Posting on an ask's channel and
   registering a repository wait the same way.
+- A quest's session that was cut off is carried on after you go on with its step, or after it submitted its work, instead of
+  sitting as "taken here after the session ended, by a chat or by work outside Daoris": Daoris now judges that by when the quest
+  was taken, not by when it last changed.
 - `daoris driver` hands its standing choices to Daoris's own driver program, as `daoris-driver driver` with the same words: the
   one your install carries, or the build `DAORIS_DRIVER_PROGRAM` names. A `daoris` with neither, such as a checkout's, says so and
   does nothing. What each choice says is as before; a refusal is said on the error stream, and a refusal the window's route would
@@ -67,6 +70,11 @@ with the version and date at release.
   `daoris-driver run-heavy` refuses its tree, and on Claude Code each heavy gate's declared command is refused too; an agent
   that takes no rules from Daoris is told them instead. *Heavy at end* has sessions run them once, at their end. Nothing set
   runs as before.
+- A named workflow keeps which checks its sessions run: its `work` step takes `checks` (`light` or `heavy-at-end`), and
+  `daoris driver workflow new <id> --from current:<repository>` copies the repository's choice onto it, so a workflow saved from
+  a light repository's Current stays light. A session following that workflow takes its version's choice, not the repository's;
+  it reaches a run's later sessions now, and its first once a run is bound before its quest is taken. Every workflow saved
+  before keeps its version.
 - Under *Light*, a session whose tool call or background task runs past 20 minutes is told so once, in its conversation, as
   Daoris's urgent word: what ran and for how long, and that a suite run whole is left to verification. Its row in the list says
   *past its bound: told* beside the call's time. Daoris never ends the call; *Stop* stays yours.
@@ -587,6 +595,10 @@ with the version and date at release.
   every other account's key; that edit is now refused, and the file left as it is.
   A rule or a group of settings another one removed meanwhile does not come back with an unrelated edit, one it turned into
   something else refuses the edit by name, and the first save where there was no `driver.json` keeps one written meanwhile.
+- And for `harnesses.json`, which holds each agent's accounts, pins, lists and how each list is used: an edit from the Agents
+  page, Ask Daoris or `daoris agent` changes only what it edits, a setting you added by hand stays where you wrote it at any
+  level, a change made by another of them meanwhile is kept, and a file saved with no change keeps its bytes. A save still writes
+  an old `early` or `near` as `switch` and `curve`, as before.
 - Each piece of work says where it has got to: a session's foot shows its *End* (结束), *Result* (成果), *Clean-up* (清理) and
   *Recovery* (找回); *What needs you* lists work whose clean-up waits on you; *Branches* gives each tidied branch a line; and
   Ask Daoris can answer where your work has got to.

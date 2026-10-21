@@ -123,7 +123,7 @@ import {
   CURVE_WINDOWS, NEAR_HIGHEST, NEAR_LOWEST, OLD_FIELDS, SWITCHES, USE_FIELDS, USE_MODES, curveProblem, joinProblem,
   joinRefusal, placesOf, readOrderCircles, readOrders, readUse, readUseCircles, readUses, resolveRotation, resolveScope,
   rotationProblem, rotationRefusal, scopeProblem, withJoined, withRotation, withUse, withoutAccount, writtenOrderCircles,
-  writtenOrders, writtenUseCircles, writtenUses,
+  usesAsRead, writtenOrders, writtenUseCircles, writtenUses,
 } from '../accounts/rotation.ts';
 import type {
   AccountPlace, Curve, CurvePoint, Orders, RotationUse, Scope, ScopeProblem, Switch, UseChange, UseMode, Uses,
@@ -451,6 +451,13 @@ export interface HarnessSettings {
   workspaceRotationUse: Record<string, Uses>;
   /** Everything else the file held, preserved — this is an editor, not the file's owner. */
   rest: Record<string, unknown>;
+  /**
+   * The file as `readHarnessSettings` understood it, written (`harnessesWritten`, each settings entry as the file holds it), or absent
+   * for wiring built here (KEEPALL1b): what an edit is measured from.
+   */
+  understood?: string;
+  /** Whether a file was there at the read, for `writeKeeping`. */
+  found?: boolean;
 }
 
 /**
@@ -467,13 +474,14 @@ export function readHarnessSettings(path = harnessesPath()): HarnessSettings {
     rotationUse: {}, workspaceRotationUse: {}, rest: {},
   };
   // Unreadable reads as empty, for a session about to spawn; an EDIT over it is refused by the writer.
-  const { value: parsed } = readJsonObject(path);
-  if (parsed === null) return empty;
+  const { value: parsed, problem } = readJsonObject(path);
+  if (problem !== null) return empty;
+  if (parsed === null) return { ...empty, understood: JSON.stringify(harnessesWritten(empty, true)), found: false };
 
   const {
     defaults, workspaces, versions, workspaceVersions, rotation, workspaceRotation, rotationUse, workspaceRotationUse, ...rest
   } = parsed;
-  return {
+  const settings: HarnessSettings = {
     defaults: stringMap(defaults),
     workspaces: circlesOf(workspaces),
     versions: stringMap(versions),
@@ -484,27 +492,44 @@ export function readHarnessSettings(path = harnessesPath()): HarnessSettings {
     workspaceRotationUse: readUseCircles(workspaceRotationUse),
     rest,
   };
+  return { ...settings, understood: JSON.stringify(harnessesWritten(settings, true)), found: true };
 }
 
 /**
- * Write it back, preserving anything this build did not put there.
+ * Write it back, preserving anything this build did not put there: the edit from what was read made onto the file as it stands
+ * (KEEPALL1b, D173's note; `jsonkeep.ts`' `writeKeeping`), so a key this build has no field for stays where it is at every level, a
+ * change another writer made since the read stays, and no edit writes nothing. Each settings entry was understood as the file holds
+ * it, so a save writes an old or retired name as the new (D165 §6). Wiring built here is written whole.
  *
  * @remarks
  * 🔴 The driver's `HarnessSettings.Save` is the other writer of this file, and for the same wiring the two write the same
- * bytes (TOOL4e, TOOL6a; `rotation.test.ts` and `RotationTwinTests` hold it): what neither knows first, then the four
- * sections, then each order and its settings only where one is set.
+ * bytes (TOOL4e, TOOL6a; `rotation.test.ts`, `RotationTwinTests` and `home-files-keep.json` hold it).
  */
 export function writeHarnessSettings(path: string, settings: HarnessSettings): void {
+  if (settings.understood === undefined) writeJsonAtomic(path, harnessesWritten(settings, false));
+  else writeKeeping(path, settings.found === true, JSON.parse(settings.understood) as Record<string, unknown>, harnessesWritten(settings, false));
+}
+
+/**
+ * The wiring in the writer's layout, as the driver's `HarnessSettings.Layout`: what neither knows first, then the four sections, then
+ * each order and its settings only where one is set; `asRead` writes each settings entry as the file held it.
+ */
+function harnessesWritten(settings: HarnessSettings, asRead: boolean): Record<string, unknown> {
   const circles = (map: Record<string, Record<string, string>>) => Object.fromEntries(
     Object.entries(map)
       .filter(([, inner]) => Object.keys(inner).length > 0)
       .sort(([a], [b]) => (a < b ? -1 : 1)));
   const rotation = writtenOrders(settings.rotation);
-  const rotationUse = writtenUses(settings.rotationUse);
+  const rotationUse = asRead ? usesAsRead(settings.rotationUse) : writtenUses(settings.rotationUse);
   const workspaceRotation = writtenOrderCircles(settings.workspaceRotation);
-  const workspaceRotationUse = writtenUseCircles(settings.workspaceRotationUse);
+  const workspaceRotationUse = asRead
+    ? Object.fromEntries(Object.entries(settings.workspaceRotationUse)
+      .map(([workspace, uses]) => [workspace, usesAsRead(uses)] as const)
+      .filter(([, uses]) => Object.keys(uses).length > 0)
+      .sort(([a], [b]) => (a < b ? -1 : 1)))
+    : writtenUseCircles(settings.workspaceRotationUse);
 
-  writeJsonAtomic(path, {
+  return {
     ...settings.rest,
     defaults: sorted(settings.defaults),
     workspaces: circles(settings.workspaces),
@@ -514,7 +539,7 @@ export function writeHarnessSettings(path: string, settings: HarnessSettings): v
     ...(Object.keys(rotationUse).length > 0 ? { rotationUse } : {}),
     ...(Object.keys(workspaceRotation).length > 0 ? { workspaceRotation } : {}),
     ...(Object.keys(workspaceRotationUse).length > 0 ? { workspaceRotationUse } : {}),
-  });
+  };
 }
 
 /**

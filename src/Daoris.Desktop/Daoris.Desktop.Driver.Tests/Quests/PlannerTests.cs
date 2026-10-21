@@ -911,6 +911,43 @@ public sealed class PlannerTests
         }
     }
 
+    /// <summary>
+    /// CARRY3: a take's own time, where the claim's answer says it, judges a take made here after the session ended, not the quest's
+    /// <c>updated</c>, which a submission, an evidence read, a reopen and a go-on move too. A take made while the session ran is carried
+    /// on however late the quest last moved; one made after it ended sits however early; a host before it is judged by <c>updated</c>.
+    /// </summary>
+    [Fact]
+    public void A_take_s_own_time_judges_taken_here_after_the_session_ended_not_the_quest_s_updated()
+    {
+        var after = Cut.Updated!.Value.AddMinutes(5);
+        var during = Cut.Updated!.Value.AddMinutes(-5);
+
+        var movedSince = Assert.Single(Planner.Plan(TakenAfter(Cut, new QuestTake("held", At: during), after), Config()));
+        var takenSince = Assert.Single(Planner.Plan(TakenAfter(Cut, new QuestTake("held", At: after), during), Config()));
+        var older = Assert.Single(Planner.Plan(TakenAfter(Cut, new QuestTake("held"), after), Config()));
+
+        Assert.Equal((StartVerdict.Start, Cut), (movedSince.Verdict, movedSince.Resumes));
+        Assert.Equal((StartVerdict.TakenElsewhere, new TakenBy("s1", Here: true)), (takenSince.Verdict, takenSince.TakenBy));
+        Assert.Equal(StartVerdict.TakenElsewhere, older.Verdict);
+        Assert.False(Planner.TakenAway(Quest(status: "Taken") with { Updated = after }, Cut, new QuestTake("held", At: during)));
+        Assert.True(Planner.TakenAway(Quest(status: "Taken") with { Updated = during }, Cut, new QuestTake("held", At: after)));
+    }
+
+    /// <summary>CARRY3: the claim's answer says when its take was made; a host before it says none.</summary>
+    [Fact]
+    public void The_claim_s_take_time_is_read_where_the_host_says_it()
+    {
+        Assert.Equal(
+            new DateTimeOffset(2026, 10, 7, 9, 20, 0, TimeSpan.Zero),
+            RemoteSyncPayloads.ClaimTaken("""{ "quest": "q1", "claim": "held", "taken": "2026-10-07T09:20:00+00:00" }"""));
+        Assert.Null(RemoteSyncPayloads.ClaimTaken("""{ "quest": "q1", "claim": "held" }"""));
+        Assert.Null(RemoteSyncPayloads.ClaimTaken("""{ "quest": "q1", "claim": "none", "taken": null }"""));
+
+        var takes = ServiceClient.ReadTakes("[]", new Dictionary<string, string> { ["q1"] = "held" },
+            taken: new Dictionary<string, DateTimeOffset?> { ["q1"] = Cut.Updated });
+        Assert.Equal(new QuestTake("held", At: Cut.Updated), takes["q1"]);
+    }
+
     /// <summary>Every carry-on asks it, as the ledger does: an interrupted stop, a released stop and an answered park too.</summary>
     [Fact]
     public void Every_carry_on_asks_whose_the_take_is()
@@ -1911,8 +1948,11 @@ public sealed class PlannerTests
         Assert.Equal(new QuestSubmissionRef("desk", 41), held.Quests.Single(quest => quest.Id == "q2").SourceReopened);
         Assert.Equal(0, ledger.ClaimsAsked("q3"));
 
-        ledger.Rebound("q2", "desk", 43);
-        ledger.Rebound("q3", "desk", 43);
+        // CARRY3: the go-on moves `updated` past the session's end, as the service's does; the take, made before the session opened, is
+        // judged by its own time, which the claim says, so q3 is still carried on.
+        ledger.TakenAt("q3", DateTimeOffset.Parse(ledger.Session(cut!)["created"]!.GetValue<string>(), System.Globalization.CultureInfo.InvariantCulture));
+        ledger.Rebound("q2", "desk", 43, moved: true);
+        ledger.Rebound("q3", "desk", 43, moved: true);
         var goneOn = await service.SnapshotAsync();
         var moved = Planner.Plan(goneOn with { Repositories = repositories }, config).Where(each => each.Quest.Id != "q1").ToList();
 

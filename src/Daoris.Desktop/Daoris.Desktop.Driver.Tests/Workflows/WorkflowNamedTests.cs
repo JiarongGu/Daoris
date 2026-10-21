@@ -47,6 +47,7 @@ public sealed class WorkflowNamedTests
                     bool flag => JsonValue.Create(flag),
                     var text => JsonValue.Create((string)text),
                 };
+                if (field.WhereSet) cell["whereSet"] = true;
                 return (JsonNode)cell;
             })]);
             Assert.True(JsonNode.DeepEquals(JsonNode.Parse(expected.GetProperty("fields").GetRawText()), fields),

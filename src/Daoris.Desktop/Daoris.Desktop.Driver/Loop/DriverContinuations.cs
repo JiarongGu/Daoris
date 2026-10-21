@@ -285,7 +285,8 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
             // FABRIC-PIPELINE1b (D192 point 5): it goes on under the checks its repository sets now, as it goes on under the prompts
             // standing now: their deny rules handed again where its agent takes Daoris's rules, and kept by its id for `run-heavy` while
             // this run lasts. Its instruction is not handed again, so its words are its first start's.
-            var checks = SessionChecks.For(config, quest.To) is null
+            // A named workflow's run takes its bound version's (FABRIC-PIPELINE1b2), so it is read wherever a run here is bound to one.
+            var checks = SessionChecks.For(config, quest.To) is null && !WorkflowRunBindings.AnyNamed(home, quest.To)
                 ? null
                 : SessionChecks.Of(config, quest.To, await WorkflowProcesses.ReadAsync(
                     home, config, new ServiceReviewWorld(service), quest.Id, quest.To, start.Workspace, ct).ConfigureAwait(false));

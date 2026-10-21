@@ -84,9 +84,21 @@ public sealed class StartGitCountTests : IDisposable
         var report = $"{before.Count} git starts before the spawn:\n{string.Join('\n', starts.Take(spawn))}";
         Assert.True(before.Count > 0, report);
         Assert.True(before.Count(each => each.Contains("symbolic-ref --short refs/remotes/origin/HEAD", StringComparison.Ordinal)) <= 1, report);
-        Assert.True(before.Count(each => each == "git rev-parse --verify --quiet refs/heads/main") <= 1, report);
-        // No fact is asked twice: the same command never repeats (`rev-parse HEAD` is read once, as the session's baseline).
-        var repeated = before.GroupBy(each => each).Where(each => each.Count() > 1).Select(each => $"{each.Key} x{each.Count()}").ToList();
+        // The line guessed once, before the tree is made. One spelling per ref fact (LANDGIT1c): the line's commit read after the tree is
+        // made is the same command, asked again past the `worktree add` that made a branch.
+        var made = before.FindIndex(each => each.StartsWith("git worktree add", StringComparison.Ordinal));
+        Assert.True(made > 0, report);
+        Assert.True(before.Take(made).Count(each => each == "git rev-parse --verify --quiet refs/heads/main^{commit}") <= 1, report);
+        // No fact is asked twice: the same command never repeats unless a git that may move a ref ran between its two askings (`rev-parse
+        // HEAD` is read once, as the session's baseline).
+        var repeated = new List<string>();
+        var since = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var each in before)
+        {
+            if (RefSnapshot.MayWrite(each["git ".Length..].Split(' '))) since.Clear();
+            else if (!since.Add(each)) repeated.Add(each);
+        }
+
         Assert.True(repeated.Count == 0, $"repeated: {string.Join("; ", repeated)}\n{report}");
         Assert.True(before.Count <= Ceiling, report);
     }

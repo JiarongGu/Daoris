@@ -69,6 +69,12 @@ public sealed record AutoChoice(AutoLanding Entry, QuestView Quest, string? Tip,
     /// hand-off rather than landing again; null for a landing.
     /// </summary>
     public LandedBranch? Hands { get; init; }
+
+    /// <summary>
+    /// How many paths its tree's <c>status</c> named where the look judged it (LANDGIT1c), handed to the landing so its dirty check
+    /// asks git no more; null where git could not say, and the landing reads it.
+    /// </summary>
+    public int? Uncommitted { get; init; }
 }
 
 /// <summary>What the look chose to land beside it, and what it said of the rest as it looked.</summary>
@@ -251,7 +257,7 @@ public sealed class AutoLander(
         if (uncommitted > 0) return (Tried(entry, AutoLandingCode.Uncommitted, tip, status, uncommitted: uncommitted), null);
 
         // The tip judged is pinned into the landing (FABRIC-END7's review): a commit made after this judgement is refused, never landed unseen.
-        return (null, new AutoChoice(entry, quest, tip, status) { Gate = gate with { Tip = tip } });
+        return (null, new AutoChoice(entry, quest, tip, status) { Gate = gate with { Tip = tip }, Uncommitted = status == Unreadable ? null : uncommitted });
     }
 
     /// <summary>
@@ -337,7 +343,9 @@ public sealed class AutoLander(
         var subject = await trees.OwnSubjectAsync(
             entry.Tree, entry.Session, entry.Quest, await fresh.RecordsAsync(ct).ConfigureAwait(false), id => fresh.QuestAsync(id, ct),
             named => events.Openings([named]).GetValueOrDefault(named), choice.Gate?.Process, ct).ConfigureAwait(false);
-        var plan = await trees.PlanAsync(entry.Tree, subject, ct, choice.Gate?.Process).ConfigureAwait(false);
+        // LANDGIT1b: the rule's plan alone, since the try keeps only its plugin and the branch it names; the press's plan would read the
+        // line's tips, the head and the named branch's tip, which the landing reads again for itself.
+        var plan = await trees.PlanRuleAsync(entry.Tree, subject, ct, choice.Gate?.Process).ConfigureAwait(false);
         string? judgedAgain = null;
         var landed = await trees.LandAsync(entry.Tree, subject, ct, fresh.InUseAsync, AcceptedBy.Auto, choice.Gate, subject.Joins,
             judged: async (waited, token) =>
@@ -345,7 +353,7 @@ public sealed class AutoLander(
                 judgedAgain = await UnderHoldAsync(choice, waited, token).ConfigureAwait(false);
                 return judgedAgain is null ? null : new TreeLanding(false, judgedAgain) { Refusal = AutoLandingCode.Refused };
             },
-            beforePush: (record, waited, token) => BeforePushAsync(choice, record, waited, token)).ConfigureAwait(false);
+            beforePush: (record, waited, token) => BeforePushAsync(choice, record, waited, token), uncommitted: choice.Uncommitted).ConfigureAwait(false);
         // Judged again under the tree's hold and refused there: what that judgement kept is the try, so nothing more is kept for it.
         if (judgedAgain is not null) return judgedAgain;
         var code = AutoLandingRules.CodeOf(landed);
@@ -680,13 +688,16 @@ public sealed class AutoLander(
         _ => landed?.Message ?? code,
     };
 
+    /// <summary>The status a try is kept with where git could not give one.</summary>
+    private const string Unreadable = "unreadable";
+
     /// <summary>The tree's HEAD and status, as a try is kept with them, and how many paths are uncommitted.</summary>
     private static async Task<(string? Tip, string Status, int Uncommitted)> ReadTreeAsync(string tree, CancellationToken ct)
     {
-        var (headCode, head, _) = await WorkingTree.GitAsync(tree, ["rev-parse", "--verify", "--quiet", "HEAD"], ct).ConfigureAwait(false);
+        var (headCode, head, _) = await WorkingTree.GitAsync(tree, ["rev-parse", "--verify", "--quiet", "HEAD^{commit}"], ct).ConfigureAwait(false);
         var (statusCode, porcelain, _) = await WorkingTree.GitAsync(tree, ["status", "--porcelain"], ct).ConfigureAwait(false);
         var tip = headCode == 0 ? head.Trim() : null;
-        if (statusCode != 0) return (tip, "unreadable", 0);
+        if (statusCode != 0) return (tip, Unreadable, 0);
         var status = AutoLandingRules.Fingerprint(porcelain);
         return (tip, status, porcelain.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).Length);
     }
