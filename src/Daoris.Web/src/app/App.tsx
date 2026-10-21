@@ -1,13 +1,15 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
-  useQuests, useRefreshIndex, useRegistry, useRepositories, useSessions,
+  useAsks, useQuests, useRefreshIndex, useRegistry, useRepositories, useSessions,
   useStatus, useSyncStanding, useWorkspaceHoldings, useWorkspaces,
 } from '../data/queries';
 import { NotificationsBell } from '../notifications/NotificationsBell';
 import { type NotificationsAt, NotificationsView } from '../notifications/NotificationsView';
-import { usePressAnnouncements } from '../notifications/announce';
-import { sessionTitle } from '../work/identity';
+import { useAnsweredRead, useMessageAnnouncements, usePressAnnouncements } from '../notifications/announce';
+import { type MessageNames, messagesCount, whoWords } from '../notifications/Messages';
+import { HELP_REPOSITORY } from '../data/api';
+import { askName, sessionTitle } from '../work/identity';
 import { AttentionBand } from '../work/attention/AttentionBand';
 import { needsListed } from '../work/attention/attention';
 import { useScope } from '../data/scope';
@@ -49,7 +51,7 @@ import {
   logEvent, useAttention, useAttached, useDismissUpdate, useDriver, useHarnesses, useLinkOpener, useOpenBrowser, useOpenWindow, useRemotes,
   useNoticeWords, useSayUpdate, useShowReviewAgain, useSyncNow, useTaskbarCount, useUpdateState,
   useAnswerConfirmation, useConfirmationShown, usePersonKey, useServiceConfirmations, useTerminalConfirmations, useUnkeyedHost,
-  useDismissNotice, useMarkNoticesRead, useNotices,
+  useDismissNotice, useMarkChannel, useMarkNoticesRead, useMessages, useNotices,
 } from '../bridge/shell';
 import { AdoptionNotice, type Confirmation, type PressNames, routeKey } from '../person/Confirmations';
 import { byTool } from '../agents/tools';
@@ -295,6 +297,12 @@ export function App() {
   const notices = useNotices();
   const markNoticesRead = useMarkNoticesRead();
   const dismissNotice = useDismissNotice();
+  // Messages (NOTIFY2g, the notification design §2.2's third group): each ask's entry of this window's scope and the conversations'
+  // answers, as the shell pushes them; an ask's *Mark read* is its channel's mark moved through its newest message (`CHANNEL_MARK`),
+  // and an ask is named by its own sentence where this machine holds it, asked only while one is listed.
+  const messages = useMessages();
+  const markChannel = useMarkChannel();
+  const askRecords = useAsks(false, (messages.asks ?? []).some((entry) => !entry.teammate && entry.unread > 0));
   // The agents this machine has, for the Agents menu (UX6e): the roster the frame holds, asked once and kept.
   const roster = useHarnesses();
   // The install's update (UPDATE1, D139): what is staged, the drain, and the person's word on it, as the banner's.
@@ -544,6 +552,13 @@ export function App() {
     const session = press.named?.find((each) => each.role === 'session');
     const named = session ? pressNames.session?.(session.value) : null;
     return named ? t('notifications.toast.press', { act, session: named.title }) : t('person.ask.to', { act });
+  };
+  const messageNames: MessageNames = {
+    ask: (id) => {
+      const record = (askRecords.data ?? []).find((one) => one.id === id);
+      return record ? askName(record) : null;
+    },
+    session: (id) => pressNames.session?.(id)?.title ?? null,
   };
   const announcements = usePressAnnouncements({
     presses,
@@ -854,6 +869,20 @@ export function App() {
   // session opens in Sessions, which only a shell has. An ask opens its record, where it is answered
   // (INT4d), and a quest nobody can take opens its own page. Both of those a browser has too.
   const openAsk = (id: string) => open('quests', askItem(id));
+  // An agent's or a teammate's urgent message to everyone, said by a toast in this window while it is the one focused (NOTIFY2g, §5),
+  // once per message, its *Open* the ask's channel on its page; and a conversation's answer read where its conversation is on screen.
+  const messageAnnouncements = useMessageAnnouncements({
+    words: (arrived) => t('notifications.messages.toast', { who: whoWords(arrived.newest, t), line: arrived.newest.line }),
+    openLabel: t('notifications.toast.open'),
+    onOpen: (arrived) => openAsk(arrived.ask),
+  });
+  useAnsweredRead({
+    answered: messages.answered,
+    attended: view === 'sessions' ? attending : null,
+    onRead: (ids) => markNoticesRead.mutate(ids),
+  });
+  // A conversation's answer opens the conversation: Ask Daoris's in its region, any other on Sessions.
+  const openAnswer = (session: string, repository?: string) => (repository === HELP_REPOSITORY ? openHelp() : openInWork(session));
   // Where a starter's, a setup step's or Ask Daoris's door leads (HELP1d, SETUP1a, HELP6): a view and the item
   // it names, a domain of Settings at the part it names, or one of the Workspace menu's drawers on Repositories.
   const go = (door: StarterDoor) => apply(doorOpening(door, circle));
@@ -1099,6 +1128,7 @@ export function App() {
         onAttend={openInWork}
         attended={view === 'sessions' ? attending : null}
         onConfirming={announcements.heard}
+        onMessage={messageAnnouncements.heard}
       />
       {/* The application's one global row (D56). It holds what is true everywhere, which is exactly
           why none of it belongs in a sidebar owned by one view. Since SURF7 it is the window's own
@@ -1152,7 +1182,7 @@ export function App() {
               needs={waiting}
               presses={presses.length}
               warn={pressUnshown}
-              unread={notices.some((notice) => !notice.read)}
+              unread={notices.some((notice) => !notice.read) || messagesCount(messages.asks ?? [], messages.answered).items > 0}
               onPress={() => setNotificationsToggle((was) => was + 1)}
             />
             <BrowserDoor onOpen={() => openBrowser.mutate()} drivers={driving} onAttend={openInWork} />
@@ -1306,6 +1336,12 @@ export function App() {
                   onRead={(ids) => markNoticesRead.mutate(ids)}
                   onOpenNotice={(notice) => { if (notice.session) openInWork(notice.session); }}
                   onDismiss={(notice) => dismissNotice.mutate(notice.id)}
+                  messages={messages.asks}
+                  answered={messages.answered}
+                  messageNames={messageNames}
+                  onOpenAsk={(entry) => openAsk(entry.ask)}
+                  onMarkAsk={(entry) => markChannel.mutate({ ask: entry.ask, through: entry.newest?.at })}
+                  onOpenAnswer={(notice) => { if (notice.session) openAnswer(notice.session, notice.repository); }}
                 />
               )}
               notificationsShow={notificationsShow}
@@ -1468,7 +1504,10 @@ export function App() {
       )}
 
       {/* A press's toast first, staying until the view opens or the press ends (NOTIFY2b, §3.3); then the window's outcomes. */}
-      <Toasts items={[...announcements.toasts, ...toasts]} onClose={(id) => { if (!announcements.close(id)) dismiss(id); }} />
+      <Toasts
+        items={[...announcements.toasts, ...messageAnnouncements.toasts, ...toasts]}
+        onClose={(id) => { if (!announcements.close(id) && !messageAnnouncements.close(id)) dismiss(id); }}
+      />
       {/* The window's one right-click handler (CTX1, D138): each surface offers its acts, and it draws the menu. */}
       <ContextMenus doors={contextDoors} shell={chrome.present} />
     </div>

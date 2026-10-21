@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { render as rtlRender, screen, within } from '@testing-library/react';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import type { ReactElement } from 'react';
@@ -45,6 +45,14 @@ describe('a teammate’s ask’s page', () => {
       expect(screen.queryByRole('region', { name })).toBeNull();
     }
     expect(screen.queryByRole('button', { name: /Publish|Close ask|Delete/ })).toBeNull();
+  });
+
+  /** NOTIFY2g: the service keeps the person's mark on a teammate's ask, so reading its page clears its item in Messages. */
+  it('moves the person’s mark through the newest item once what was unread is on the page', () => {
+    const onRead = vi.fn();
+    render(<TeammateAskPage ask={ASK} channel={CHANNEL} onRead={onRead} />);
+    expect(onRead).toHaveBeenCalledTimes(1);
+    expect(onRead).toHaveBeenCalledWith('2026-10-15T09:05:00Z');
   });
 
   it('says it is reading while the channel is on its way', () => {

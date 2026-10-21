@@ -28,8 +28,14 @@ const PUSHED = [
  * browser keeps its polling and never mounts a transport. Renders nothing; costs nothing where no
  * host answers.
  */
-export function ShellSignals({ notify, onAttend, attended, onConfirming }: {
+export function ShellSignals({ notify, onAttend, attended, onConfirming, onMessage }: {
   notify: Notify;
+  /**
+   * An agent's or a teammate's urgent message to everyone (NOTIFY2g, the notification design §5), as the shell says it (`MESSAGE`):
+   * the window says it in its own words while it is the one focused, once per message (`useMessageAnnouncements`). Absent, it is said
+   * by no toast here.
+   */
+  onMessage?: (arrived: unknown) => void;
   /**
    * A terminal's press asked, by its id (NOTIFY2b, the notification design §3.3): the press's own event, told once at its ask, which
    * the window announces in its own words while it is the one focused. Absent, it is said by no toast here.
@@ -190,6 +196,9 @@ export function ShellSignals({ notify, onAttend, attended, onConfirming }: {
     if (typeof document === 'undefined' || document.visibilityState !== 'visible' || !document.hasFocus()) return;
     notify(noticeWords(notice, t), notice.kind === 'expired' || notice.state === 'failed' ? 'error' : 'ok');
   });
+
+  // NOTIFY2g: the shell says an urgent message to everyone once per run, while the notify switch is on; never the desktop's.
+  useShenoraEvent<unknown>('DAORIS', 'MESSAGE', (arrived) => onMessage?.(arrived));
 
   /**
    * A conversation ended (SES2). The driver says so the moment its record moves, because nothing
