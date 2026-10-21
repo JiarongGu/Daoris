@@ -976,6 +976,26 @@ public sealed class SessionStore
     }, ct);
 
     /// <summary>
+    /// THIS machine's session with a process on <paramref name="quest"/>, or about to have one, or null: driven for it, or a conversation
+    /// that took it (CHATTAKE1). What holds the person's bring-forward of a lost take until the losing session has ended (SYNCMERGE1c4,
+    /// D178 point 3), so its late moves cannot stand on the fresh take. <b>Parked does not count</b>, as for
+    /// <see cref="RunningInTreeAsync"/>: a parked session asked the person and ended, and has no process to move.
+    /// </summary>
+    public Task<Session?> RunningForQuestAsync(string quest, CancellationToken ct = default) => _db.RunAsync<Session?>(async () =>
+    {
+        await using var command = _db.Command();
+        command.CommandText = """
+            SELECT * FROM sessions
+            WHERE (quest = $quest OR (quest IS NULL AND took_quest = $quest COLLATE NOCASE))
+              AND state IN ('Queued', 'Starting', 'Working') AND origin IS NULL
+            ORDER BY created DESC, rowid DESC LIMIT 1
+            """;
+        command.Parameters.AddWithValue("$quest", quest.TrimStart('#'));
+        await using var reader = await command.ExecuteReaderAsync(ct).ConfigureAwait(false);
+        return await reader.ReadAsync(ct).ConfigureAwait(false) ? Read(reader) : null;
+    }, ct);
+
+    /// <summary>
     /// The newest teammate's record for a quest that did not stand down, or null: what names another machine's take
     /// (CARRY2), since the quest's log names a machine by an id no person reads. A stand-down says its machine has no take.
     /// </summary>

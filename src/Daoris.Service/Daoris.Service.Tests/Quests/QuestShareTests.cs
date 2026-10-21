@@ -533,4 +533,70 @@ public sealed class QuestShareTests : IAsyncLifetime
         Assert.Contains("Nothing moved", held.Message);
         Assert.Empty(await _quests.PendingAsync(Workspaces.Default, _ => true));
     }
+
+    /// <summary>
+    /// 🔴 SYNCMERGE1c4 (D178 point 3 and its trap of the old session's late moves): while this machine's session on the step still has a
+    /// process, driven for it or a conversation that took it, the press is refused naming it and nothing moves; parked or ended, the press
+    /// stands. A teammate's record, whose process is on their machine, holds nothing here.
+    /// </summary>
+    [Theory]
+    [InlineData(SessionState.Queued, false)]
+    [InlineData(SessionState.Starting, false)]
+    [InlineData(SessionState.Working, false)]
+    [InlineData(SessionState.Working, true)]
+    [InlineData(SessionState.AwaitingPerson, false)]
+    [InlineData(SessionState.StoodDown, false)]
+    public async Task A_bring_forward_waits_while_the_losing_session_still_runs(SessionState state, bool chat)
+    {
+        var (remote, step, conflict) = await LostToTheReopenThenReboundAsync();
+        var sessions = await SessionStore.OpenAsync(_connection);
+        var record = await sessions.CreateAsync(chat ? null : step.Id, "Federated", "stub", Now.AddHours(3), kind: chat ? SessionKind.Chat : SessionKind.Driven);
+        if (chat) Assert.True(await sessions.MarkTookAsync(record.Id, step.Id));
+        if (state != SessionState.Queued) await sessions.SetStateAsync(record.Id, state, null, null, null, Now.AddHours(4));
+        var exchange = new QuestExchange(_service, _quests, new OneRemote(new StoreRemote(remote)), sessions: sessions);
+
+        var brought = await exchange.BringForwardAsync(step.Id, conflict, Now.AddHours(5));
+
+        var runs = state is SessionState.Queued or SessionState.Starting or SessionState.Working;
+        Assert.Equal(runs ? QuestRespondRefusal.StillRunning : QuestRespondRefusal.None, brought.Refusal);
+        if (!runs)
+        {
+            Assert.Equal(QuestClaim.Held, await _quests.ClaimAsync(step.Id));
+            return;
+        }
+
+        Assert.Null(brought.Quest);
+        Assert.Equal(
+            $"Quest `#{step.Id}`'s session `{record.Id}` is still {Session.Spell(state)} on this machine: the lost take is brought forward only "
+            + "once its process has ended, so nothing the old session does late can stand on the fresh take. Nothing moved; stop the session, "
+            + "or bring it forward when it ends.",
+            brought.Message);
+        Assert.Equal(QuestStatus.Open, (await _quests.FindAsync(step.Id))!.Status);
+        Assert.Single((await _quests.FindAsync(step.Id))!.Conflicts);
+        Assert.Empty(await _quests.PendingAsync(Workspaces.Default, _ => true));
+
+        // Ended, the same press stands.
+        await sessions.SetStateAsync(record.Id, SessionState.StoodDown, null, null, null, Now.AddHours(6));
+        Assert.Equal(QuestRespondRefusal.None, (await exchange.BringForwardAsync(step.Id, conflict, Now.AddHours(6))).Refusal);
+    }
+
+    /// <summary>
+    /// SYNCMERGE1c4: a running session is judged last, so a press that could not stand anyway keeps its own words: a settled conflict
+    /// says it is settled, whatever runs here.
+    /// </summary>
+    [Fact]
+    public async Task A_running_session_does_not_hide_why_the_press_cannot_stand()
+    {
+        var (remote, step, conflict) = await LostToTheReopenThenReboundAsync();
+        var sessions = await SessionStore.OpenAsync(_connection);
+        var record = await sessions.CreateAsync(step.Id, "Federated", "stub", Now.AddHours(3));
+        await sessions.SetStateAsync(record.Id, SessionState.Working, null, null, null, Now.AddHours(4));
+        Assert.Equal(1, (await _quests.DismissAsync(step.Id, conflict.Machine, conflict.Sequence, Now.AddHours(4))).Dismissed);
+        var exchange = new QuestExchange(_service, _quests, new OneRemote(new StoreRemote(remote)), sessions: sessions);
+
+        var brought = await exchange.BringForwardAsync(step.Id, conflict, Now.AddHours(5));
+
+        Assert.Equal(QuestRespondRefusal.NoLostTake, brought.Refusal);
+        Assert.Contains("settled", brought.Message);
+    }
 }
