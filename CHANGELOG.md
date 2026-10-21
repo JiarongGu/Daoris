@@ -9,6 +9,10 @@ with the version and date at release.
   you gave none), that it waits for its agent to make it ready again, and the session that submitted it, which is told. Before,
   it read as a quest whose agent had not yet said it was ready. A submission also names the session that made it. In English and
   中文; a service from before these shows neither.
+- `daoris driver` hands every word to Daoris's own driver program now: its workflows (`workflow list|show|new|edit|apply|import|export|use|kind`),
+  `work-cycle`, `brainstorms` and a landing's `--cycle|--no-cycle` too, each saying what it said before. A cycle or a graph whose
+  option holds a number by its own text, keys that are numbers out of their order, or letters outside ASCII is now set as written,
+  where `daoris driver` refused it; and a verb the family does not have is said with the program's usage.
 - `daoris tool` hands every verb to Daoris's own driver program, as `daoris-driver tool` with the same words, as `daoris driver`
   does. What each verb says is as before, but for these: a delete refused, and a file named for a tool that is not there, are said
   as the window's Tools place says them, with their code, and exit 2; and a file you name is asked its version before it is written,

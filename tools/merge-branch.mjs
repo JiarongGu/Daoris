@@ -957,19 +957,13 @@ export const REACH = Object.freeze([
   { paths: ['src/Daoris.Cli/test/fixtures/shell-words.json'], gates: ['driver', 'web-unit'], why: "the driver's ShellWord twin and the page's shellWord read the shell-word table (ACCTQUOTE1b)" },
   { paths: ['src/Daoris.Cli/test/fixtures/account-reads.json'], gates: ['driver'], why: "the driver's AccountReads twin reads the shared reads table (AGENTREAD1b)" },
   { paths: ['src/Daoris.Cli/test/fixtures/rotation-use.json'], gates: ['driver', 'web-unit'], why: "the driver's RotationUseTwinTests and the page's curve rules read the shared rotation-use table (SWITCH1a, SWITCH1d)" },
-  { paths: ['src/Daoris.Cli/test/fixtures/landing-says.json'], gates: ['driver'], why: "the driver's LandingSaysTwinTests read the shared landing, helpers and commits sentences (TWINWORDS1)" },
   { paths: ['src/Daoris.Cli/test/fixtures/usage-curves.json'], gates: ['driver', 'modules', 'web-unit'], why: "the driver's UsageCurvesTwinTests, the modules' DriverModuleAccountsTests (the verdicts .NET pushes, PUSH1e) and the page's curve rules read the shared usage curve table (SWITCH1b-iii, SWITCH1d)" },
   { paths: ['src/Daoris.Cli/test/fixtures/name-case.json'], gates: ['driver'], why: "the driver's NameCaseTests reads the shared name-case table (CASEFOLD1d)" },
-  { paths: ['src/Daoris.Cli/test/fixtures/graph-homes.json'], gates: ['driver'], why: "the driver's NodeGraphHomesTests reads the shared table of which cycle governs a unit (FABRIC-GRAPH1)" },
-  { paths: ['src/Daoris.Cli/test/fixtures/driver-config-keeps.json'], gates: ['driver'], why: "the driver's DriverConfigKeepsTests reads the shared table of the bytes an edit of driver.json writes (FABRIC-GRAPH1's review)" },
   {
     paths: ['src/Daoris.Cli/test/fixtures/home-files-keep.json'],
     gates: ['service', 'driver', 'modules'],
     why: "the driver's HomeFilesKeepTests reads the shared table of the bytes an edit of each other home file a door edits writes (KEEPALL1), the service's RemoteConfigKeepTests its remotes.json rows' reads (KEEPALL1e), and the modules' BrowserSettingsTests browser/settings.json's (KEEPALL1c)",
   },
-  { paths: ['src/Daoris.Cli/test/fixtures/workflow-graphs.json'], gates: ['driver'], why: "the driver's WorkflowGraphsTests reads the shared table of D157's versions decoded as graphs (FABRIC-WORKFLOW2)" },
-  { paths: ['src/Daoris.Cli/test/fixtures/workflow-graph-versions.json'], gates: ['driver'], why: "the driver's WorkflowGraphVersionsTests reads the shared table of a named graph as a named workflow's version (FABRIC-GRAPH1b)" },
-  { paths: ['src/Daoris.Cli/test/fixtures/graph-problems.json'], gates: ['driver'], why: "the driver's NodeWiresTests and NodeGraphsTests read the shared table of a graph judged when saved (FABRIC-GRAPH1c)" },
   {
     paths: ['src/Daoris.Cli/test/fixtures/fence-cases.json'],
     gates: ['service', 'driver'],
@@ -1024,9 +1018,10 @@ export const REACH = Object.freeze([
   // GATESLIM1: desktop-publish.test.ts (the tool-tests) imports the tarball reader from the CLI's sources; a path rule replaces the cli lane's.
   { paths: ['src/Daoris.Cli/src/**/tarball.ts'], gates: [...CLI_READERS, 'tool-tests'], why: "the CLI's own readers (the lane's), and the publish's tool-tests import it (GATESLIM1)" },
   // CONFIG1: the driver's KeepLockProcessTests runs the CLI's keeping write under node beside the driver's, so a change to
-  // either side of the lock reaches the driver's Process half; a path rule replaces the cli lane's.
+  // either side of the lock reaches the driver's Process half; a path rule replaces the cli lane's. PUSH1f2b: driverconfig.ts left
+  // with the driver family's TypeScript, and the test runs the keeping write over driver.json.
   {
-    paths: ['src/Daoris.Cli/src/**/keeplock.ts', 'src/Daoris.Cli/src/**/jsonkeep.ts', 'src/Daoris.Cli/src/driver/driverconfig.ts'],
+    paths: ['src/Daoris.Cli/src/**/keeplock.ts', 'src/Daoris.Cli/src/**/jsonkeep.ts'],
     gates: [...CLI_READERS, 'driver-process'],
     why: "the CLI's own readers (the lane's), and the driver's KeepLockProcessTests runs these under node against the driver's lock (CONFIG1)",
   },

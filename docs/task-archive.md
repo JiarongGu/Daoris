@@ -18716,6 +18716,14 @@ nor the question, asked again at each look: `HeldAttempts.WhySaid` and the page'
 Other unanswered codes keep their words. Proof: `QuestCloseTests` (CLOSE1u's unanswered case) and `WorkMilestone.test.tsx` in both
 languages. On Opus: about 40 tool calls. Detail: D173's FABRIC-CLOSE1y note.
 
+## PUSH1f2b — the driver's workflows and cycles (2026-10-21, D194)
+
+> - [ ] **PUSH1f2b — the driver's workflows and cycles** (cli, driver; after 2a; D194, the alone-path design §5). Read its row in §5 and the sections it names; build it end to end (D187), the family's TypeScript leaving as §4 says. Proof: as §5 names it.
+
+**Outcome** 2026-10-21: `daoris driver` hands every word to `daoris-driver driver`, the workflows, `work-cycle`, `brainstorms` and a
+landing's cycle now the driver's (`DriverWorkflowsCommand`), each acting alone; today's text kept by 201 cases, four changed with
+reasons. `driver/*.ts`, `workflows/*.ts` and their tests left, six tables moved to the driver's fixtures. Detail: D194's PUSH1f2b note.
+
 ## PUSH1f2c — the tools (2026-10-21, D194)
 
 > - [ ] **PUSH1f2c — the tools** (cli, driver, modules; after 2a; D194, the alone-path design §5). Read its row in §5 and the sections it names; build it end to end (D187), the family's TypeScript leaving as §4 says. Proof: as §5 names it.

@@ -44,8 +44,8 @@ public sealed record AcrossReach(
 /// relationship reaches only into its workspace. Ask Daoris's room for <c>default</c> is the whole machine's and reads every
 /// readable one; a workspace's room reads its own workspace's (ASKSCOPE1c, D158's note).</para>
 ///
-/// <para><b>Only the driver resolves.</b> The CLI's <c>driverconfig.ts</c> edits and lists the same keys
-/// (the file is the twin), as it does a landing rule the driver alone chooses.</para>
+/// <para><b>Only the driver resolves.</b> <c>daoris-driver driver across</c> edits and lists the same keys (the CLI's
+/// <c>driverconfig.ts</c> did until PUSH1f2b), as it does a landing rule the driver alone chooses.</para>
 /// </remarks>
 public static class AcrossRules
 {

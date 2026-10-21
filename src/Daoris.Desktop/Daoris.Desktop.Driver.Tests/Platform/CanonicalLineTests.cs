@@ -27,7 +27,7 @@ public sealed class CanonicalLineTests : IDisposable
         GitSeed.Discard(_scratch);
     }
 
-    /// <summary>The branch-name rule. The CLI's <c>driverconfig.test.ts</c> holds these cases, answer for answer.</summary>
+    /// <summary>The branch-name rule.</summary>
     [Theory]
     [InlineData("main", true)]
     [InlineData("develop", true)]

@@ -5,8 +5,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <summary>
 /// <c>released</c> in <c>driver.json</c> (SESSUX1b, D126 §3.4): the quests the person released from their stop, each against
 /// the session they stopped, so a later stop holds the quest again. The driver's half of a TWIN with the CLI's
-/// <c>driverconfig.ts</c>, whose <c>driverconfig.test.ts</c> holds the same table and parses this theory to hold it to its
-/// own, cell for cell.
+/// <c>driverconfig.ts</c>, until it left with the driver family's TypeScript (PUSH1f2b).
 /// </summary>
 /// <remarks>🔴 <b>Keep each row on one line, its cells literals</b>: the CLI's test reads them.</remarks>
 public sealed class ReleasedTests

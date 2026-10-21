@@ -8,13 +8,13 @@ import {
   addKeyAccount, keyOf, profileHome, readHarnessSettings, writeHarnessSettings,
 } from '../src/agents/toolchain.ts';
 import { disablePlugin, readPluginState } from '../src/plugins/plugins.ts';
-import { readDriverChoices, writeDriverChoices } from '../src/driver/driverconfig.ts';
 import { readTools } from '../src/tools/tools.ts';
 import { captureError, makeFixture } from './_fixture.ts';
 
 /**
  * The home's JSON files — `permissions.json`, `remotes.json`, `harnesses.json`, `keys.json`,
- * `plugins.json`, `driver.json`, `tools.json` — are each read by the CLI and by a C# twin, and edited by both.
+ * `plugins.json`, `tools.json` — are each read by the CLI and by a C# twin, and edited by both. `driver.json`
+ * is Daoris's driver program's to read and write since PUSH1f2b, and its rules are the driver's tests'.
  *
  * Two rules, found by REV3 and held here for every one of them:
  *   1. A BOM is not an unreadable file. The C# readers strip it (`File.ReadAllText`), so a CLI that
@@ -126,22 +126,6 @@ test('plugins.json: a BOM reads, and a switch over a torn file is refused', () =
   const torn = '{ "disabled": ["acme.agent"], }';
   writeFileSync(path, torn, 'utf8');
   const error = captureError(() => disablePlugin(fx.root, 'other.one'));
-  assert.match(error.message, /will not overwrite a file it could not understand/);
-  assert.equal(readFileSync(path, 'utf8'), torn);
-  fx.cleanup();
-});
-
-test('driver.json: a BOM reads rather than refusing, and the writer holds the same rule', () => {
-  const fx = makeFixture('homefiles-driver');
-  const path = fx.entry('driver');
-
-  writeFileSync(path, `${BOM}{ "drivable": ["engine"] }`, 'utf8');
-  const choices = readDriverChoices(path);
-  assert.deepEqual(choices.drivable, ['engine']);
-
-  const torn = '{ "drivable": ["engine"], }';
-  writeFileSync(path, torn, 'utf8');
-  const error = captureError(() => writeDriverChoices(path, choices));
   assert.match(error.message, /will not overwrite a file it could not understand/);
   assert.equal(readFileSync(path, 'utf8'), torn);
   fx.cleanup();

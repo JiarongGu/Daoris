@@ -78,8 +78,8 @@ public sealed record OpinionEdit
 /// second-agent design §2.2–§2.6): read, refused, resolved, said and edited — the one place every door asks.
 /// </summary>
 /// <remarks>
-/// <para>A TWIN with the CLI's <c>opinions.ts</c>: both hold one table, this suite's tests' <c>fixtures/opinion-rules.json</c>,
-/// cell for cell (<c>OpinionRulesTests</c> and <c>driverconfig.test.ts</c>): the reading and its precedence, every refusal in
+/// <para>One table, this suite's tests' <c>fixtures/opinion-rules.json</c>, cell for cell (<c>OpinionRulesTests</c>; its CLI twin,
+/// <c>opinions.ts</c>, left with the driver family's TypeScript in PUSH1f2b): the reading and its precedence, every refusal in
 /// the same words, each door's sentences and what each says after them of the gate, the edits, and which reviewers are the
 /// working agent's own family.</para>
 ///

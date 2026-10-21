@@ -6,13 +6,13 @@ namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
 /// FABRIC-GRAPH1b (the fabric events design §E7, D157 §2.4, §4.1, §5.2): a named graph as a named workflow's version, schema 2, saved and
-/// read from one table, <c>test/fixtures/workflow-graph-versions.json</c>, which the CLI's <c>graphversions.test.ts</c> reads too. A
+/// read from one table, <c>fixtures/workflow-graph-versions.json</c> (the CLI's <c>graphversions.test.ts</c> read it until PUSH1f2b). A
 /// version is its steps or its graph, never both and never in part; an older build, which reads steps alone, reads a graph version as
 /// unreadable; the identity a run binds is the graph's own digest; schema-1 versions are written and read as before.
 /// </summary>
 public sealed class WorkflowGraphVersionsTests
 {
-    private static readonly string TablePath = Path.Combine(WorkspaceRoot.Folder, "src", "Daoris.Cli", "test", "fixtures", "workflow-graph-versions.json");
+    private static readonly string TablePath = Path.Combine(WorkspaceRoot.Folder, "src", "Daoris.Desktop", "Daoris.Desktop.Driver.Tests", "fixtures", "workflow-graph-versions.json");
 
     private static JsonObject Table() => JsonNode.Parse(File.ReadAllText(TablePath))!.AsObject();
 

@@ -81,8 +81,7 @@ public sealed record DriverConfig(
     /// <summary>
     /// The quests the person released from their stop (SESSUX1b, D126 §3.4), each against the session they stopped: a
     /// person's stop holds its quest on this machine until its session is named here. A later stop holds it again, since
-    /// its session differs. Absent is none, written only when set. The CLI's <c>driverconfig.ts</c> reads it the same way
-    /// (<c>ReleasedTests</c>, held row for row by its <c>driverconfig.test.ts</c>).
+    /// its session differs. Absent is none, written only when set (<c>ReleasedTests</c>).
     /// </summary>
     public IReadOnlyDictionary<string, string> Released { get; init; } =
         new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
@@ -129,9 +128,8 @@ public sealed record DriverConfig(
     /// <summary>
     /// The asks the person paused on this machine (PAUSE1a, D132 point 5, design §2.5), each with when and the stops its pause
     /// made. Absent is none, written only when set. The look holds each paused work's quests (<see cref="PausedWork"/>,
-    /// <see cref="StartVerdict.Paused"/>), and <see cref="WorkPausing"/> alone writes it (PAUSE1b). The CLI's
-    /// <c>driverconfig.ts</c> reads it the same way (<c>PausedWorkTests</c>, held row for row by its
-    /// <c>driverconfig.test.ts</c>), and keeps it as written.
+    /// <see cref="StartVerdict.Paused"/>), and <see cref="WorkPausing"/> alone writes it (PAUSE1b) (<c>PausedWorkTests</c>); every
+    /// other writer keeps it as written.
     /// </summary>
     public IReadOnlyDictionary<string, WorkPause> PausedAsks { get; init; } =
         new Dictionary<string, WorkPause>(StringComparer.OrdinalIgnoreCase);
@@ -173,8 +171,7 @@ public sealed record DriverConfig(
     /// <summary>
     /// What the person has told this machine holds for every session in a repository (KNOWUSE1b, D135 §3): a standing answer
     /// by repository, in their words, with when it was set, handed to every session there beneath its quest. Absent is none,
-    /// written only when set. The CLI's <c>driverconfig.ts</c> reads it the same way (<c>StandingTests</c>, held row for row
-    /// by its <c>driverconfig.test.ts</c>).
+    /// written only when set (<c>StandingTests</c>).
     /// </summary>
     public IReadOnlyDictionary<string, StandingAnswer> Standing { get; init; } =
         new Dictionary<string, StandingAnswer>(StringComparer.OrdinalIgnoreCase);
@@ -211,8 +208,7 @@ public sealed record DriverConfig(
     /// <summary>
     /// The language a repository's sessions are asked to write to the person in (LANG1c, D142 point 7), by repository, as a
     /// code of <see cref="SessionLanguages.Table"/>. It wins over the workspace's (<see cref="SessionLanguages.Resolve"/>);
-    /// absent is the workspace's, then none, and none hands no line. The CLI's <c>driverconfig.ts</c> reads it the same way
-    /// (<c>SessionLanguageTests</c>, held row for row by its <c>driverconfig.test.ts</c>).
+    /// absent is the workspace's, then none, and none hands no line (<c>SessionLanguageTests</c>).
     /// </summary>
     public IReadOnlyDictionary<string, string> Languages { get; init; } =
         new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
@@ -251,7 +247,7 @@ public sealed record DriverConfig(
     /// design §1.2–§1.3), by repository: a rule, or <see cref="ReviewRule.None"/> (the file's <c>false</c>), which says it has
     /// none whatever its workspace says. A repository's rule replaces its workspace's whole (<see cref="ReviewRules.Resolve"/>);
     /// absent is the workspace's, then none, which is today's behaviour. Edited only through <see cref="ReviewRules.Apply"/>.
-    /// The CLI's <c>driverconfig.ts</c> reads it the same way, by one shared table (<c>ReviewRulesTests</c>).
+    /// Held to one table (<c>ReviewRulesTests</c>).
     /// </summary>
     public IReadOnlyDictionary<string, ReviewRule> Reviews { get; init; } =
         new Dictionary<string, ReviewRule>(StringComparer.OrdinalIgnoreCase);
@@ -265,8 +261,7 @@ public sealed record DriverConfig(
     /// §2.2–§2.3), by repository: a rule, or <see cref="OpinionRule.None"/> (the file's <c>false</c>), which says there is no
     /// second opinion whatever its workspace says. A repository's rule replaces its workspace's whole
     /// (<see cref="OpinionRules.Resolve"/>); absent is the workspace's, then none, which is today's behaviour. Edited only
-    /// through <see cref="OpinionRules.Apply"/>. The CLI's <c>driverconfig.ts</c> reads it the same way, by one shared table
-    /// (<c>OpinionRulesTests</c>).
+    /// through <see cref="OpinionRules.Apply"/>, held to one table (<c>OpinionRulesTests</c>).
     /// </summary>
     public IReadOnlyDictionary<string, OpinionRule> Opinions { get; init; } =
         new Dictionary<string, OpinionRule>(StringComparer.OrdinalIgnoreCase);
@@ -279,7 +274,7 @@ public sealed record DriverConfig(
     /// What a helper an agent asks for does in each repository (MIXAGENT2a-i, D163 point 5; the mixed agents design §5): a mode
     /// (<c>ask</c>, <c>on</c>, <c>off</c>) and the agents it may ask. A repository's rule replaces its workspace's whole
     /// (<see cref="HelperRules.Resolve"/>); absent is the default, <c>ask</c>. Edited only through <see cref="HelperRules.Apply"/>;
-    /// the CLI's <c>driverconfig.ts</c> reads it the same way, by one shared table (<c>HelperRulesTests</c>).
+    /// held to one table (<c>HelperRulesTests</c>).
     /// </summary>
     public IReadOnlyDictionary<string, HelperRule> Helpers { get; init; } =
         new Dictionary<string, HelperRule>(StringComparer.OrdinalIgnoreCase);
@@ -292,7 +287,7 @@ public sealed record DriverConfig(
     /// What an agent's ask to hand its session over to another agent does in each repository (MIXAGENT1c, D163 point 3; the mixed
     /// agents design §5): a mode (<c>ask</c>, <c>on</c>, <c>off</c>). A repository's rule replaces its workspace's
     /// (<see cref="HandOverRules.Resolve"/>); absent is the default, <c>ask</c>. Edited only through <see cref="HandOverRules.Apply"/>;
-    /// the CLI's <c>driverconfig.ts</c> reads it the same way, by one shared table (<c>HandOverRulesTests</c>).
+    /// held to one table (<c>HandOverRulesTests</c>).
     /// </summary>
     public IReadOnlyDictionary<string, HandOverRule> HandOver { get; init; } =
         new Dictionary<string, HandOverRule>(StringComparer.OrdinalIgnoreCase);
@@ -305,7 +300,7 @@ public sealed record DriverConfig(
     /// The person's brainstorm policy on this machine (BRAINSTORM1b, D176 point 9): who may start one, the agents it runs and its
     /// minutes. A workspace's rule replaces it whole for a question about a repository in that workspace
     /// (<see cref="BrainstormRules.Resolve"/>); null is the default. Edited only through <see cref="BrainstormRules.Apply"/>; the
-    /// CLI's <c>driverconfig.ts</c> reads it the same way, by one shared table (<c>BrainstormRulesTests</c>).
+    /// rule is held to one table (<c>BrainstormRulesTests</c>).
     /// </summary>
     public BrainstormRule? Brainstorms { get; init; }
 
@@ -316,8 +311,7 @@ public sealed record DriverConfig(
     /// <summary>
     /// How work is committed in each repository (PROCESS1a, D164's amendment point 1): a mode (<c>as-you-go</c>, <c>ask</c>,
     /// <c>at-end</c>) and an optional convention. A repository's rule replaces its workspace's whole (<see cref="CommitRules.Resolve"/>);
-    /// absent is <c>as-you-go</c>. Edited only through <see cref="CommitRules.Apply"/>; the CLI's <c>driverconfig.ts</c> reads it
-    /// the same way, by one shared table (<c>CommitRulesTests</c>).
+    /// absent is <c>as-you-go</c>. Edited only through <see cref="CommitRules.Apply"/>, held to one table (<c>CommitRulesTests</c>).
     /// </summary>
     public IReadOnlyDictionary<string, CommitRule> Commits { get; init; } =
         new Dictionary<string, CommitRule>(StringComparer.OrdinalIgnoreCase);
@@ -330,8 +324,7 @@ public sealed record DriverConfig(
     /// Which workflow each repository's work follows (WORKFLOW1e, D157 point 10, the workflow design §2.5, §4.1), by repository: a
     /// default and a workflow for each of its workspace's kinds. A repository that names any replaces its workspace's whole
     /// (<see cref="WorkflowSelection.Resolve"/>); absent is its workspace's, then Current, which is today's behaviour. Edited only
-    /// through <see cref="WorkflowSelection.Apply"/>. The CLI's <c>driverconfig.ts</c> reads it the same way, by one shared table
-    /// (<c>WorkflowSelectionTests</c>).
+    /// through <see cref="WorkflowSelection.Apply"/>, held to one table (<c>WorkflowSelectionTests</c>).
     /// </summary>
     public IReadOnlyDictionary<string, WorkflowChoice> Workflows { get; init; } =
         new Dictionary<string, WorkflowChoice>(StringComparer.OrdinalIgnoreCase);
@@ -343,8 +336,7 @@ public sealed record DriverConfig(
     /// <summary>
     /// Each repository's session access setup (AUTONOMY1a, D184 points 1-3), by repository: full access, or the pauses it names. Each
     /// pause resolves on its own, the repository's over its workspace's over this machine's (<see cref="AccessRules.Resolve"/>);
-    /// absent everywhere is today's behaviour. Edited only through <see cref="AccessRules.Apply"/>; the CLI's <c>driverconfig.ts</c>
-    /// reads and keeps it the same way.
+    /// absent everywhere is today's behaviour. Edited only through <see cref="AccessRules.Apply"/>.
     /// </summary>
     public IReadOnlyDictionary<string, AccessSetting> Access { get; init; } =
         new Dictionary<string, AccessSetting>(StringComparer.OrdinalIgnoreCase);
@@ -364,7 +356,7 @@ public sealed record DriverConfig(
     /// This machine's heavy gates for a repository whose own <c>daoris.gates.json</c> marks none (HEAVYRUN1b2a, D180's HEAVYRUN1b2a
     /// note), by repository, each list in the order its gates run; what <c>run-heavy</c> runs for it and its sessions are told of
     /// (<see cref="Daoris.Driver.HeavyGates.Resolve"/>). Never an edit to the repository. Edited only through <see cref="HeavyMapping.Apply"/>; the
-    /// CLI's <c>driverconfig.ts</c> reads and keeps it the same way.
+    /// driver's alone to read and keep.
     /// </summary>
     public IReadOnlyDictionary<string, IReadOnlyList<HeavyGate>> HeavyGates { get; init; } =
         new Dictionary<string, IReadOnlyList<HeavyGate>>(StringComparer.OrdinalIgnoreCase);
@@ -376,8 +368,8 @@ public sealed record DriverConfig(
     /// <summary>
     /// Which checks each repository's sessions run under Current (FABRIC-PIPELINE1b, D192 point 4), by repository: <c>light</c> or
     /// <c>heavy-at-end</c>; absent is today's. What a driven start's words, its deny rules and <c>run-heavy</c>'s refusal read
-    /// (<see cref="Daoris.Driver.SessionChecks.Of"/>). Edited only through <see cref="Daoris.Driver.SessionChecks.Apply"/>; the CLI's
-    /// <c>driverconfig.ts</c> reads and keeps it the same way.
+    /// (<see cref="Daoris.Driver.SessionChecks.Of"/>). Edited only through <see cref="Daoris.Driver.SessionChecks.Apply"/>; the
+    /// driver's alone to read and keep.
     /// </summary>
     public IReadOnlyDictionary<string, string> SessionChecks { get; init; } =
         new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
@@ -420,7 +412,7 @@ public sealed record DriverConfig(
 
     /// <summary>
     /// Ask Daoris's access mode (HELPMODE1a1, D183 point 1): <see cref="HelpModes.Restricted"/>, the default, or
-    /// <see cref="HelpModes.Full"/>. Read at each start of its conversation. The CLI's <c>driverconfig.ts</c> reads it the same way.
+    /// <see cref="HelpModes.Full"/>. Read at each start of its conversation.
     /// </summary>
     /// <remarks>
     /// 🔴 <b>Restricted unless the file names full</b>: a value that is neither reads as restricted, so nothing but the person's own
@@ -440,8 +432,7 @@ public sealed record DriverConfig(
     /// <summary>
     /// How long an account cools, in minutes, when its agent's limit names no time this reads, or one it does not believe
     /// (TOOL4e, D125 §2.2): <c>cooloff</c>, a whole number of at least 1. Null — absent, or anything else in the file —
-    /// is the default, <see cref="AccountLimits.DefaultCoolOff"/>. The CLI's <c>driverconfig.ts</c> reads it the same way
-    /// (<c>CoolOffTests</c>, held row for row by its <c>driverconfig.test.ts</c>).
+    /// is the default, <see cref="AccountLimits.DefaultCoolOff"/> (<c>CoolOffTests</c>).
     /// </summary>
     public int? CoolOffMinutes { get; init; }
 
@@ -605,7 +596,7 @@ public sealed record DriverConfig(
     /// being none (the review's finding 2: a kind with no work cycle, or a cycle that is not an object, was dropped by an edit beside it).
     /// Only <see cref="NodeGraphHomes.WorkCycleKinds"/> govern; whether a graph holds is said where it is read (<see cref="NodeGraphHomes.Work"/>),
     /// and a kind no unit reads by <see cref="NodeGraphHomes.Strays"/>. An owner naming no kind is not read, and the first owner written in
-    /// any case governs (finding 3). The CLI's <c>cycles.ts</c> reads it the same way.
+    /// any case governs (finding 3).
     /// </summary>
     private static IReadOnlyDictionary<string, IReadOnlyDictionary<string, string>> WorkCycleMap(JsonElement root, string name)
     {
@@ -860,7 +851,7 @@ public sealed record DriverConfig(
     /// compared without case, made onto the file's array as it stands, so two writers each adding a repository keep both
     /// (<see cref="JsonKeeping.Kept"/>). Each is a key path, <c>*</c> any one name; every other array is a value, written whole
     /// (<c>commands</c>' lists are ordered, <c>heavyGates</c>' read whole or not at all, a cycle's its own). Duplicated deliberately as
-    /// the CLI's <c>DRIVER_SETS</c>; both are held to <c>test/fixtures/driver-config-keeps.json</c>'s <c>sets</c>.
+    /// the CLI's <c>DRIVER_SETS</c> until PUSH1f2b; held to this suite's tests' <c>fixtures/driver-config-keeps.json</c>'s <c>sets</c>.
     /// </summary>
     public static readonly IReadOnlyList<string> Sets = ["drivable", "holds", "trees", "writeAcross.*"];
 
@@ -1282,7 +1273,7 @@ public sealed record DriverConfig(
     /// A landing rule as the file holds it, read as <see cref="RuleMap"/> reads it, or null where it is none or does not read: then
     /// <paramref name="unread"/> says why (FABRIC-GRAPH1d) — no object, no <c>form</c>, or a rule <see cref="LandingRules.Problem"/> refuses
     /// — and is null for a rule written null, which is none. Both readers skip such a rule, and <see cref="NodeGraphHomes.Strays"/> says it;
-    /// the CLI's twin is <c>driverconfig.ts</c>'s <c>landingRuleUnread</c>.
+    /// <c>daoris-driver driver list</c> says it too.
     /// </summary>
     internal static LandingRule? RuleOf(JsonElement value, out string? unread)
     {

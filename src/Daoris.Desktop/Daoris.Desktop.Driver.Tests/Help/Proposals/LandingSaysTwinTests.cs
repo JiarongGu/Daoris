@@ -6,13 +6,13 @@ namespace Daoris.Driver.Tests;
 /// <summary>
 /// The sentences Ask Daoris's landing, helpers and commits cards say as a rule is set (TWINWORDS1, D164's DOORS1a note) are
 /// <c>daoris driver landing</c>'s, <c>helpers</c>' and <c>commits</c>' words, held to one table, the CLI's
-/// <c>test/fixtures/landing-says.json</c>, which <c>landing-says.test.ts</c> reads against the CLI's own code: a change to
-/// either side's words fails the other's test.
+/// <c>fixtures/landing-says.json</c>, which the CLI's <c>landing-says.test.ts</c> read against its own code until the driver family's
+/// TypeScript left (PUSH1f2b); <c>daoris-driver driver</c> says these words now, so the table holds the one writer to them.
 /// </summary>
 public sealed class LandingSaysTwinTests : HelpProposalsFixture
 {
     private static JsonDocument Table() => JsonDocument.Parse(System.IO.File.ReadAllText(
-        Path.Combine(WorkspaceRoot.Folder, "src", "Daoris.Cli", "test", "fixtures", "landing-says.json")));
+        Path.Combine(WorkspaceRoot.Folder, "src", "Daoris.Desktop", "Daoris.Desktop.Driver.Tests", "fixtures", "landing-says.json")));
 
     private string Said(string door, string value) =>
         HelpProposals.Plan(Setting(door, "engine", null, value), DriverConfig.Empty, Facts).Describe;

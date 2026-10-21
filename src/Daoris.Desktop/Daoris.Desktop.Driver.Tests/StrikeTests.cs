@@ -117,7 +117,7 @@ public sealed class StrikeTests
 
     /// <summary>
     /// RETRY1b: the count `daoris driver retry` marks a quest at, read by the CLI from the same records. 🔴 A TWIN with the
-    /// CLI's `failuresOf` (`strikes.ts`): `strikes.test.ts` holds this table, row for row and in this order, cell for cell.
+    /// CLI's `failuresOf` (`strikes.ts`) until it left with the driver family's TypeScript (PUSH1f2b).
     /// Each row is one record as the records door answers it, and whether it is a strike against <c>q1</c>.
     /// </summary>
     [Theory]
@@ -159,7 +159,7 @@ public sealed class StrikeTests
 
     /// <summary>
     /// CASEFOLD1d: a quest's id compares by <c>OrdinalIgnoreCase</c>, each letter to its one capital, as the CLI's
-    /// <c>failuresOf</c> compares it through <c>casefold.ts</c> (<c>strikes.test.ts</c> names this behaviour). An id full case
+    /// <c>failuresOf</c> compared it through <c>casefold.ts</c> until PUSH1f2b. An id full case
     /// mapping would widen or lower to the same letters is another quest's, and a final sigma is the sigma it is.
     /// </summary>
     [Fact]

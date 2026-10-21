@@ -6,18 +6,20 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { keepLockPath, keepLockStale, takeKeepLock } from '../../src/platform/keeplock.ts';
 import { homeEntry } from '../../src/platform/home.ts';
+import { driverTestFile } from '../_csharp.ts';
 import { makeFixture } from '../_fixture.ts';
 
 /**
  * CONFIGLOCK1 (D173's CONFIG1 note): a keeping write holds `<file>.lock` from its re-read to its rename, so a change another writer makes
- * in between is never lost. The stale rules are one table both twins read, `fixtures/driver-config-keeps.json`'s `lock`, row for row with
- * the driver's `KeepLockTests`; the driver's `KeepLockProcessTests` holds it across the two runtimes.
+ * in between is never lost. The stale rules are one table both twins read, `driver-config-keeps.json`'s `lock`, row for row with the
+ * driver's `KeepLockTests`, among the driver's tests' fixtures since PUSH1f2b; the driver's `KeepLockProcessTests` holds it across the
+ * two runtimes.
  */
 
 type LockRow = { name: string; pid?: 'live' | 'gone'; age?: number; text?: string; stale: boolean };
 
 const here = dirname(dirname(fileURLToPath(import.meta.url)));
-const TABLE = JSON.parse(readFileSync(join(here, 'fixtures', 'driver-config-keeps.json'), 'utf8')) as { lock: LockRow[] };
+const TABLE = JSON.parse(readFileSync(driverTestFile('driver-config-keeps.json'), 'utf8')) as { lock: LockRow[] };
 const NOW = Date.parse('2026-10-20T12:00:00.000Z');
 /** A process id no process has (`process.kill` answers ESRCH), as the driver's twin uses `int.MaxValue`. */
 const GONE = 2_147_483_647;
@@ -121,12 +123,13 @@ async function heldAcross(name: string, start: string, script: string, mine: (te
   return readFileSync(file, 'utf8');
 }
 
+// PUSH1f2b (the alone-path design §4): `driver.json`'s CLI writer left with the driver family's TypeScript, so its case is the shared
+// keeping write's over the same file, which the CLI's other home files still write through until PUSH1f2f.
 test('keeplock: an edit of driver.json in another process waits for this one\'s, and neither is lost (CONFIGLOCK1)', async () => {
   const text = await heldAcross('keeplock-driver', '{\n  "drivable": [\n    "engine"\n  ],\n  "notify": true\n}\n', [
-    `import { readDriverChoices, writeDriverChoices } from '${source('driver', 'driverconfig.ts')}';`,
-    'const choices = readDriverChoices(process.env.KEEP_FILE);',
+    `import { writeKeeping } from '${source('platform', 'jsonkeep.ts')}';`,
     "process.stdout.write('read\\n');",
-    "writeDriverChoices(process.env.KEEP_FILE, { ...choices, drivable: [...choices.drivable, 'orders'] });",
+    "writeKeeping(process.env.KEEP_FILE, true, { drivable: ['engine'], notify: true }, { drivable: ['engine', 'orders'], notify: true });",
   ].join('\n'), (read) => read.replace('"notify": true', '"notify": false'));
   assert.equal(text, '{\n  "drivable": [\n    "engine",\n    "orders"\n  ],\n  "notify": false\n}\n');
 });

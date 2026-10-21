@@ -4,7 +4,7 @@ import { createServer, type Server } from 'node:http';
 import { once } from 'node:events';
 import { join } from 'node:path';
 import type { AddressInfo } from 'node:net';
-import { endpoint, registryCheckouts, RUNNING_FILE, runningService, sessionRecords } from '../../src/service/service.ts';
+import { endpoint, RUNNING_FILE, runningService } from '../../src/service/service.ts';
 import { HOME_ID_FILE } from '../../src/platform/home.ts';
 import { makeFixture, type Fixture } from '../_fixture.ts';
 
@@ -247,31 +247,6 @@ test('a checkout reads no address file, and refuses as it always did', async () 
       return true;
     });
     assert.deepEqual(never.asked, []);
-  } finally {
-    fx.cleanup();
-  }
-});
-
-test('the records and the registry are read from the service the running desktop holds', async () => {
-  const fx = installed('running-reads');
-  try {
-    leave(fx, fx.data, 'http://localhost:5181');
-    const local = daoris();
-    assert.deepEqual(await sessionRecords({}, local.get, fx.root), { records: [] });
-    assert.deepEqual(await registryCheckouts({}, local.get, fx.root), { checkouts: [] });
-    assert.deepEqual(local.asked, [
-      'http://localhost:5181/api/status', 'http://localhost:5181/api/sessions?includeClosed=true',
-      'http://localhost:5181/api/status', 'http://localhost:5181/api/registry',
-    ]);
-
-    const none = installed('running-reads-none');
-    try {
-      const unread = await sessionRecords({}, daoris().get, none.root);
-      assert.ok('unread' in unread && /^no DAORIS_SERVICE_URL is set/.test(unread.unread) && unread.unread.includes('Daoris is not running'),
-        JSON.stringify(unread));
-    } finally {
-      none.cleanup();
-    }
   } finally {
     fx.cleanup();
   }

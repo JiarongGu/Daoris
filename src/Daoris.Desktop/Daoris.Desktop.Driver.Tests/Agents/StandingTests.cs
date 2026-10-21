@@ -5,8 +5,7 @@ namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
 /// <c>standing</c> in <c>driver.json</c> (KNOWUSE1b, D135 §3): what the person has told this machine holds for every session
-/// in a repository, in their words, with when it was set. The driver's half of a TWIN with the CLI's <c>driverconfig.ts</c>,
-/// whose <c>driverconfig.test.ts</c> holds the same table and parses this theory to hold it to its own, cell for cell. A row's
+/// in a repository, in their words, with when it was set (the CLI's twin, <c>driverconfig.ts</c>, left in PUSH1f2b). A row's
 /// time is the moment read, in UTC to the second, or null where none reads.
 /// </summary>
 /// <remarks>🔴 <b>Keep each row on one line, its cells literals</b>: the CLI's test reads them.</remarks>

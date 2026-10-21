@@ -168,10 +168,11 @@ using Daoris.Driver;
 //                 whose answer comes back to that session as its next turn, marked as the helper's. A helper, a reviewer and an
 //                 intake are refused, exit 1.
 //
-//   driver [list | <choice> …]
-//                 this machine's standing choices (PUSH1f2a, D194): the words `daoris driver …` hands this program, each change
-//                 the running Daoris's route, confirmed in its window, where one runs on this home, else written here under the
-//                 home's lease, refused from a session's terminal (exit 1); a file DAORIS_DRIVER_CONFIG names is written alone.
+//   driver [list | <choice> | work-cycle | brainstorms | workflow …]
+//                 this machine's standing choices, workflows and cycles (PUSH1f2a, PUSH1f2b, D194): the words `daoris driver …`
+//                 hands this program, each change a route takes the running Daoris's route, confirmed in its window, where one
+//                 runs on this home, else written here under the home's lease, refused from a session's terminal (exit 1); a
+//                 file DAORIS_DRIVER_CONFIG names is written alone.
 //
 //   tool [list | path <tool> | use <tool> system|managed [<version>]|file <path> | download <tool> [<version>] | update <tool>
 //        | delete <tool> <version> | locations [add|remove <address>] | look]

@@ -41,8 +41,8 @@ public sealed record HelperEdit
 /// the one place every door asks. Modelled on <see cref="OpinionRules"/>, simpler: a rule is a mode and the agents.
 /// </summary>
 /// <remarks>
-/// A TWIN with the CLI's <c>helpers.ts</c>: both hold ONE table, this suite's <c>fixtures/helper-rules.json</c>, cell for cell
-/// (<c>HelperRulesTests</c> and <c>driverconfig.test.ts</c>). Nothing here starts a helper: the driver's helper session (the
+/// One table, this suite's <c>fixtures/helper-rules.json</c>, cell for cell (<c>HelperRulesTests</c>); its CLI twin, <c>helpers.ts</c>,
+/// left with the driver family's TypeScript (PUSH1f2b, D194 point 7). Nothing here starts a helper: the driver's helper session (the
 /// next row) reads the rule, and `off` is its to apply.
 /// </remarks>
 public static class HelperRules
