@@ -634,6 +634,10 @@ public sealed class Driver(
         // stands read for the planner, which reads the stop that handed one over as released.
         var read = snapshot;
         snapshot = await Stages.TimeAsync("handovers", () => HandOversAsync(read, events, ct)).ConfigureAwait(false);
+        // RETRYWORK1: the commits a failed session left beyond its start, for each open quest it failed before taking, so the planner
+        // carries the quest on in that tree rather than building its work again in a new one. No git starts where no such quest is.
+        var handed = snapshot;
+        snapshot = await Stages.TimeAsync("committed", () => CommittedWork.LookAsync(handed, CommittedWork.CountAsync, ct)).ConfigureAwait(false);
         Context.Harnesses.Look(snapshot.Started, mark);
 
         // The ask's channel (SESSONE2b, D167 point 7; the co-working design §2.3): what is new for each line of work on an ask reaches
@@ -2070,6 +2074,9 @@ public sealed class Driver(
                 CutOff = carryingOn && quest.Status != "Open"
                     ? start.BroughtForward is { } forward ? BroughtForwardTold(forward) : start.Resumes!.Note ?? "it ended before closing the quest."
                     : null,
+                // RETRYWORK1: an open quest carried on in the tree its failed session committed work in is told that record's words, to
+                // take the quest and finish the work rather than build it again.
+                Retried = carryingOn && start.CarriesWork is > 0 ? start.Resumes!.Note ?? "it ended before closing the quest." : null,
                 // A further part gone into its session's tree is told what the part before it left uncommitted there (SESSONE1d).
                 InFlight = carryingOn || joinedIn is not null ? await WorkingTree.UncommittedAsync(workTree, ct: ct).ConfigureAwait(false) : [],
                 // What its start did against the line in the tree it goes on in (LANDSYNC2).
@@ -2125,7 +2132,8 @@ public sealed class Driver(
             var startingNote = StartingNote(
                 opened, quest, answered, resumedIn, carryingOn, start.Resumes, written, elsewhere, fellBack,
                 handedOver: carryingOn && handedFrom, walked: carryingOn && handedFrom && passedAccount is not null,
-                joinedSession: joinedIn is not null ? start.Entry?.Into?.Session : null, broughtForward: start.BroughtForward is not null);
+                joinedSession: joinedIn is not null ? start.Entry?.Into?.Session : null, broughtForward: start.BroughtForward is not null,
+                carriesWork: carryingOn && start.CarriesWork is > 0);
             await service.AdvanceAsync(sessionId, "starting", note: startingNote?.Note, ct: ct, parts: startingNote?.Parts).ConfigureAwait(false);
 
             // The answer beneath the question it answers (STANDDOWN2): the session that asked ends with
@@ -2766,10 +2774,11 @@ public sealed class Driver(
     /// <param name="walked">The account the hand-over named could not run it, and another account of the named agent did.</param>
     /// <param name="joinedSession">The earlier part's session whose free tree this start went into (SESSONE1g), or null.</param>
     /// <param name="broughtForward">It carries on a stand-down whose lost take the person brought forward (SYNCMERGE1b): said as that.</param>
+    /// <param name="carriesWork">It carries an open quest on in the tree its failed session committed work in (RETRYWORK1): said as that.</param>
     internal static Noted? StartingNote(
         TreeOpened? opened, QuestView quest, QuestView? answered, string? resumedIn, bool carryingOn,
         PriorSession? resumes, PriorSession? written, bool elsewhere, ContinueReason? fellBack, bool handedOver = false, bool walked = false,
-        string? joinedSession = null, bool broughtForward = false)
+        string? joinedSession = null, bool broughtForward = false, bool carriesWork = false)
     {
         if (opened is not null) return opened.Opening ?? Noted.From(opened.Sentence, null);
 
@@ -2817,6 +2826,9 @@ public sealed class Driver(
                     $"carries `#{quest.Id}` on: you brought the work of session `{session}` forward after its take lost", facts)
             : resumes.PersonStopped
                 ? Noted.Of(NoteCodes.StartedReleased, $"carries `#{quest.Id}` on: you stopped session `{session}`, and released it", facts)
+            // RETRYWORK1: an open quest carried on in the tree its failed session committed work in before it took the quest.
+            : carriesWork
+                ? Noted.Of(NoteCodes.StartedCarriedWork, $"carries `#{quest.Id}` on with the work session `{session}` committed before it failed", facts)
                 : Noted.Of(NoteCodes.StartedCutOff, $"carries `#{quest.Id}` on after session `{session}` was cut off", facts);
 
         // 🔴 Which account, never (TOOL4f, D125 §3.6): the note travels, and its scrubber elides only the record's own

@@ -1,0 +1,140 @@
+{
+  "chars": 6216,
+  "sections": [
+    {
+      "name": "quest",
+      "source": "quest",
+      "said": "the quest: 200 characters, quest #abc123 asked by `console-api`, as the service answered it",
+      "chars": 200,
+      "from": "abc123"
+    },
+    {
+      "name": "carry-on",
+      "source": "record",
+      "said": "what the session before left: 262 characters: its record's end, that it committed work and failed before it took the quest and Daoris's brief of its line, counted in its own sections",
+      "chars": 262
+    },
+    {
+      "name": "brief-opening",
+      "source": "record",
+      "said": "the brief's opening: 358 characters, session `s1a2b3c4` on claude-code, moved because it stopped before its work was done",
+      "chars": 358,
+      "from": "s1a2b3c4"
+    },
+    {
+      "name": "brief-turns",
+      "source": "record",
+      "said": "each turn's outcome: 445 characters: 2 of 2, the newest kept",
+      "chars": 445,
+      "shown": 2,
+      "of": 2
+    },
+    {
+      "name": "brief-words",
+      "source": "record",
+      "said": "the words the session took: 55 characters: 1 of 1, each marked by who said it",
+      "chars": 55,
+      "shown": 1,
+      "of": 1
+    },
+    {
+      "name": "brief-state",
+      "source": "tree",
+      "said": "the work's state: 559 characters: the tree read now, the plan, the checks and the files",
+      "chars": 559
+    },
+    {
+      "name": "close",
+      "source": "driver",
+      "said": "how to take it, carry it on and close it: 433 characters, the driver's own words",
+      "chars": 433
+    },
+    {
+      "name": "look",
+      "source": "driver",
+      "said": "where to look before asking: 585 characters, the driver's own words",
+      "chars": 585
+    },
+    {
+      "name": "attributed",
+      "source": "driver",
+      "said": "the person's words met second-hand: 481 characters, the driver's own words",
+      "chars": 481
+    },
+    {
+      "name": "asking",
+      "source": "driver",
+      "said": "asking another repository, and stopping for the person: 1,141 characters, the driver's own words",
+      "chars": 1141
+    },
+    {
+      "name": "closing",
+      "source": "driver",
+      "said": "the closing note's two lists, each item naming its source: 665 characters, the driver's own words",
+      "chars": 665
+    },
+    {
+      "name": "proposing",
+      "source": "driver",
+      "said": "proposing a rule: 730 characters, the driver's own words",
+      "chars": 730
+    },
+    {
+      "name": "boundary",
+      "source": "driver",
+      "said": "the boundary: 302 characters, the driver's own words",
+      "chars": 302
+    },
+    {
+      "name": "requirements",
+      "source": "quest",
+      "said": "the requirements: none, since the quest names none",
+      "chars": 0,
+      "from": "abc123",
+      "none": "empty"
+    },
+    {
+      "name": "words",
+      "source": "ask",
+      "said": "the person's words: none, since no ask asked this quest",
+      "chars": 0,
+      "none": "no-ask"
+    },
+    {
+      "name": "go-aheads",
+      "source": "ask",
+      "said": "the go-aheads: none, since no ask asked this quest",
+      "chars": 0,
+      "none": "no-ask"
+    },
+    {
+      "name": "standing",
+      "source": "repository",
+      "said": "the standing answer: none set for `console-ui` on this machine",
+      "chars": 0,
+      "from": "console-ui",
+      "none": "not-set"
+    },
+    {
+      "name": "language",
+      "source": "repository",
+      "said": "the session language: none set for its repository or its workspace on this machine",
+      "chars": 0,
+      "none": "not-set"
+    },
+    {
+      "name": "map",
+      "source": "tree",
+      "said": "the code map: none, since its tree keeps none",
+      "chars": 0,
+      "none": "empty"
+    },
+    {
+      "name": "indexes",
+      "source": "tree",
+      "said": "the repository's indexes: none, since its tree names none",
+      "chars": 0,
+      "none": "empty"
+    }
+  ]
+}

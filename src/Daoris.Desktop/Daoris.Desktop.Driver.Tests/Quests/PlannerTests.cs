@@ -776,6 +776,86 @@ public sealed class PlannerTests
         Assert.Equal(StartVerdict.Exhausted, Assert.Single(Planner.Plan(snapshot, Config() with { Strikes = 3 })).Verdict);
     }
 
+    // ── a failed session's committed work is carried on (RETRYWORK1) ──────────────────────────────
+    //
+    // Found watching the install: two sessions built their rows, committed them, and failed only because their connector could not
+    // start, so they never took their quests. Each open quest was started again in a new tree, which built the same row from nothing.
+
+    private static readonly PriorSession FailedBeforeTake =
+        new("s1", "D:/trees/s1", "failed", "the connector could not start.", Repository: "Game") { BaseCommit = "4f2a9c1" };
+
+    private static Snapshot Committed(PriorSession last, int commits, QuestView? quest = null) =>
+        Ran([quest ?? Quest()], ("q1", last)) with
+        {
+            Committed = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase) { ["q1"] = commits },
+        };
+
+    [Fact]
+    public void An_open_quest_whose_failed_session_committed_work_is_carried_on_in_that_tree()
+    {
+        var only = Assert.Single(Planner.Plan(Committed(FailedBeforeTake, 2), Config()));
+
+        Assert.Equal(StartVerdict.Start, only.Verdict);
+        Assert.Equal(FailedBeforeTake, only.Resumes);
+        Assert.Equal(2, only.CarriesWork);
+        Assert.Null(only.Entry);
+        Assert.Contains("session `s1` failed before it took the quest, and its tree holds 2 commits beyond its start", only.Reason);
+        Assert.Contains("the connector could not start.", only.Reason);
+    }
+
+    [Theory]
+    [InlineData("failed", false)]
+    [InlineData("stopped", true)]
+    public void A_failed_session_with_no_commits_beyond_its_start_starts_its_open_quest_afresh(string state, bool interrupted)
+    {
+        var last = FailedBeforeTake with { State = state, Interrupted = interrupted };
+
+        foreach (var snapshot in new[] { Committed(last, 0), Ran([Quest()], ("q1", last)) })
+        {
+            var only = Assert.Single(Planner.Plan(snapshot, Config()));
+            Assert.Equal(StartVerdict.Start, only.Verdict);
+            Assert.Null(only.Resumes);
+            Assert.Null(only.CarriesWork);
+        }
+    }
+
+    /// <summary>The look reads the count for a cut-off alone, and the planner holds to that: an ended session's commits start nothing.</summary>
+    [Fact]
+    public void A_session_that_ended_well_is_not_carried_on_whatever_its_tree_holds()
+    {
+        var only = Assert.Single(Planner.Plan(Committed(FailedBeforeTake with { State = "completed" }, 3), Config()));
+
+        Assert.Null(only.Resumes);
+        Assert.Null(only.CarriesWork);
+    }
+
+    /// <summary>The strikes still bound it: a quest that fails so again parks for the person, its work in the tree, never rebuilt.</summary>
+    [Fact]
+    public void Carrying_committed_work_on_is_bounded_by_the_strikes()
+    {
+        var snapshot = Committed(FailedBeforeTake, 1) with { Strikes = new Dictionary<string, int> { ["q1"] = 3 } };
+
+        var only = Assert.Single(Planner.Plan(snapshot, Config() with { Strikes = 3 }));
+
+        Assert.Equal(StartVerdict.Exhausted, only.Verdict);
+        Assert.Equal(1, only.CarriesWork);
+    }
+
+    /// <summary>One session per tree: a live session in the failed one's tree holds the carry-on, which still names its work.</summary>
+    [Fact]
+    public void A_carry_on_of_committed_work_waits_for_the_tree_it_goes_back_into()
+    {
+        var snapshot = Committed(FailedBeforeTake, 1) with
+        {
+            Active = [new SessionView("s2", "Game") { Tree = "D:/trees/s1", Quest = "q9" }],
+        };
+
+        var only = Assert.Single(Planner.Plan(snapshot, Config() with { Trees = ["Game"] }));
+
+        Assert.Equal(StartVerdict.RepositoryBusy, only.Verdict);
+        Assert.Equal(1, only.CarriesWork);
+    }
+
     [Fact]
     public void A_taken_quest_whose_last_session_here_ended_well_is_not_carried_on()
     {

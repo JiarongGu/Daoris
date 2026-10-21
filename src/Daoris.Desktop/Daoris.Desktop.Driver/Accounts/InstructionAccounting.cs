@@ -95,10 +95,12 @@ internal static class InstructionAccounting
             },
             // A first start's is the parts before it on its session's line (SESSONE1d); a carry-on's, the session it carries on; and
             // either's, what waited on the ask's channel (SESSONE2b), which alone is a start's on a line with no part before it here.
-            HandedSections.CarryOn => target.CutOff is not null ? CarryOn(target, chars, size)
+            // RETRYWORK1: an open quest carried on in its failed session's tree is told what that session left, as a carry-on is.
+            HandedSections.CarryOn => target.CutOff is not null || target.Retried is not null ? CarryOn(target, chars, size)
                 : target.Parts is not null ? Parts(target, chars, size)
                 : Channel(target, chars, size),
-            HandedSections.Close => Own(target.Answered is null && target.CutOff is null
+            HandedSections.Close => Own(target.Retried is not null ? "how to take it, carry it on and close it"
+                : target.Answered is null && target.CutOff is null
                 ? "how to take it and close it"
                 : "how to carry it on and close it"),
             HandedSections.Language => new HandedSection(
@@ -404,6 +406,7 @@ internal static class InstructionAccounting
         else if (target.HandedOver is not null) facts.Add("that it was handed over from another agent");
         else if (target.Released) facts.Add("that the person released it");
         else if (target.BroughtForward) facts.Add("that the person brought its work forward");
+        else if (target.Retried is not null) facts.Add("that it committed work and failed before it took the quest");
         if (target.Brief is null) facts.Add(target.InFlight.Count == 0 ? "nothing uncommitted" : Plural(target.InFlight.Count, "uncommitted change"));
         else facts.Add("Daoris's brief of its line, counted in its own sections");
         if (target.AccountChanged) facts.Add("that it ran on another account");

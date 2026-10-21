@@ -501,6 +501,8 @@ public static class NoteCodes
     public static readonly NoteCode StartedAnswer = new("started.answer", ["quest", "session"]);
     public static readonly NoteCode StartedReleased = new("started.released", ["quest", "session"]);
     public static readonly NoteCode StartedCutOff = new("started.cut-off", ["quest", "session"]);
+    // An open quest carried on in the tree whose session committed work and failed before it took it (RETRYWORK1): never rebuilt.
+    public static readonly NoteCode StartedCarriedWork = new("started.carried-work", ["quest", "session"]);
     // A stand-down carried on once the person brought its lost take forward (SYNCMERGE1b, D178 point 3): the press, never a cut-off.
     public static readonly NoteCode StartedBroughtForward = new("started.brought-forward", ["quest", "session"]);
     // A quest handed to another agent (MIXAGENT1a-ii, D163 point 1): the carry-on's first line says which agent it came from, and

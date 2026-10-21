@@ -63,6 +63,7 @@
   "note.started.answer": "带着你给会话 {{session}} 的答复接续 #{{quest}}。",
   "note.started.released": "接续 #{{quest}}：你停止了会话 {{session}}，之后放开了它。",
   "note.started.cut-off": "会话 {{session}} 中断后，接续 #{{quest}}。",
+  "note.started.carried-work": "接续 #{{quest}}：沿用会话 {{session}} 失败前已提交的工作。",
   "note.started.brought-forward": "接续 #{{quest}}：会话 {{session}} 的接下落空后，你选择了继续本机的工作。",
   "note.started.handed-over": "接续 #{{quest}}：会话 {{session}} 是从 {{agent}} 转交过来的。",
   "note.started.handed-walked": "它指定的账户无法运行，所以换成了该智能体的另一个账户。",

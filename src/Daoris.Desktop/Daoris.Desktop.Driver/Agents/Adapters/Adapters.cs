@@ -131,6 +131,13 @@ public sealed record SessionTarget(
     /// </summary>
     public string? CutOff { get; init; }
 
+    /// <summary>
+    /// For a session carrying on an OPEN quest in the tree of an earlier session that committed work and failed before it took it
+    /// (RETRYWORK1): what that record said about its end. The quest is still to take, and the work is to finish, never to build
+    /// again. Null for every other session.
+    /// </summary>
+    public string? Retried { get; init; }
+
     /// <summary>What the tree holds uncommitted when a session carries on — git's short lines (D80).</summary>
     public IReadOnlyList<string> InFlight { get; init; } = [];
 
@@ -416,7 +423,18 @@ public static class TargetPrompt
         new(HandedSections.WrittenTo, WrittenTo(target)),
         // A further part of a session is told the parts before it (SESSONE1d), counted as what the sessions before it left.
         new(HandedSections.CarryOn, SessionPartsText.Of(target)),
-        .. Tail(target, target.Ready
+        .. RetriedPieces(target),
+        .. Tail(target, target.Retried is not null
+            ? $"\nFirst take the quest (respond to `#{target.QuestId}` with `take`), then finish its work from there rather\n"
+              + "than starting again, inside this repository under its own doctrine and gates, then "
+              + (target.Ready
+                  ? "say it is ready:\n`ready` when its work is done, with your note and an answer for each requirement. "
+                    + $"{ReadyWords} Or `decline` with the reason — the\nreason is the part the asker can act on. If the quest is "
+                    + "already taken or closed, stand down and\nfinish without changing anything."
+                  : "close it:\n`done` when it has landed, or `decline` with the reason — the reason is the part the asker can act\n"
+                    + "on. If the quest is already taken or closed, stand down and finish without changing anything.")
+              + " Commit as you go, so a\nsecond cut-off loses less."
+            : target.Ready
             ? $"\nFirst take the quest (respond to `#{target.QuestId}` with `take`), then do the work inside this\n"
               + "repository under its own doctrine and gates, then say it is ready: `ready` when its work is done,\n"
               + $"with your note and an answer for each requirement. {ReadyWords} Or `decline` with the reason — the\n"
@@ -427,6 +445,30 @@ public static class TargetPrompt
               + "`decline` with the reason — the reason is the part the asker can act on. If the quest is already\n"
               + "taken or closed, stand down and finish without changing anything."),
     ];
+
+    /// <summary>
+    /// What an earlier session on a still-open quest left (RETRYWORK1): it committed work in this tree and failed before it took the
+    /// quest, so this session is told its record, its commits on this branch and Daoris's brief of its line, as a carry-on of a take is
+    /// (<see cref="CarryingOnPieces"/>). Nothing for every other first start.
+    /// </summary>
+    private static IEnumerable<Piece> RetriedPieces(SessionTarget target) => target.Retried is not { } retried
+        ? []
+        : target.Brief is { } brief
+            ?
+            [
+                new(HandedSections.CarryOn,
+                    $"\nAn earlier session on this quest committed work in this tree and failed before it took the quest: {retried} "
+                    + "What it did is in this tree — its commits are on this branch, and Daoris's brief\n"
+                    + "of its line follows, the tree read as you start.\n\n"),
+                .. brief.Pieces.Select(piece => new Piece(piece.Section, piece.Text)),
+                new(HandedSections.CarryOn, $"{AccountChanged(target)}\n"),
+            ]
+            :
+            [
+                new(HandedSections.CarryOn,
+                    $"\nAn earlier session on this quest committed work in this tree and failed before it took the quest: {retried} "
+                    + $"What it did is in this tree — its commits are on this branch,\nand {InFlight(target)}{AccountChanged(target)}\n"),
+            ];
 
     /// <summary>
     /// How a session ends a quest its closure graph closes (FABRIC-CLOSE1l, folding CLOSE1g; the fabric events design §E5): `ready`, never

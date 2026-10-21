@@ -124,6 +124,16 @@ public sealed class TargetPromptGoldenTests
     };
 
     /// <summary>
+    /// RETRYWORK1: an open quest carried on in the tree of a session that committed work and failed before it took it, handed
+    /// Daoris's brief of that line: it takes the quest, then finishes the work rather than starting again.
+    /// </summary>
+    internal static readonly SessionTarget Retried = Bare with
+    {
+        Retried = "the connector could not start.",
+        Brief = CarryOnBrief.Brief,
+    };
+
+    /// <summary>
     /// A set-up step (REVIEWENV1c, design §2.2): a chain's step that shows the work of the step before, which its tree grew from,
     /// in a local environment for the person's review, by the procedure the rule names.
     /// </summary>
@@ -224,6 +234,7 @@ public sealed class TargetPromptGoldenTests
         "full" => Full,
         "carry-on" => CarryOn,
         "carry-on-brief" => CarryOnBrief,
+        "retried" => Retried,
         "set-up" => SetUpStep,
         "own-tree" => OwnTree,
         "part" => Part,
@@ -249,7 +260,7 @@ public sealed class TargetPromptGoldenTests
     {
         var resumed = Bare with { Answered = new QuestView("q9", "console-ui", "console-api", "Which field?", "", "Done") { Note = "The note." } };
         var carried = CarryOn;
-        foreach (var target in new[] { Bare, resumed, carried })
+        foreach (var target in new[] { Bare, resumed, carried, Retried })
         {
             var ready = TargetPrompt.Compose(target with { Ready = true });
             Assert.Contains("`ready` when its work is done", ready, StringComparison.Ordinal);
@@ -276,6 +287,7 @@ public sealed class TargetPromptGoldenTests
     [InlineData("light")]
     [InlineData("light-said")]
     [InlineData("carry-on-brief")]
+    [InlineData("retried")]
     public void The_quests_instruction_is_its_golden_text(string which)
     {
         // GOLDEN1's switch: DAORIS_GOLDEN_WRITE=1 writes the golden from the render, and without it a difference fails.
@@ -324,6 +336,7 @@ public sealed class TargetPromptGoldenTests
     [InlineData("light")]
     [InlineData("light-said")]
     [InlineData("carry-on-brief")]
+    [InlineData("retried")]
     public void The_account_beside_it_is_its_golden(string which)
     {
         var account = TargetPrompt.Composed(Of(which)).Account;
