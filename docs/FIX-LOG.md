@@ -5,6 +5,20 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-22 — Two starts of one run could each write its binding, the second over the first (FABRIC-CUTOVER1g)
+
+- **Symptom:** none seen on an install; found by the cutover design's second reads (D190, design §13 row 29). Starts run beside one
+  another, so two quests of one run starting together could each bind it, and the run kept whichever binding was written last, which
+  a choice or a version saved between the two would make another workflow than the first start took under.
+- **Root cause:** `WorkflowRunFiles.Bind` asked whether the run's file was there and then wrote it through `AtomicFile.WriteText`,
+  which replaces a file: a check, then a write over whatever landed between the two. Both binds answered that they had written.
+- **Fix:** the binding is written beside and moved into place without overwriting (`AtomicFile.TryCreateText`, the shape `HomeLease`,
+  `KeepLock` and `HomeIdentity` already create theirs in): exactly one write lands, every other answers that the run was bound already,
+  and the start's bind (`WorkflowRunStart.AtStartAsync`) then reads the binding that landed and takes under it.
+- **Verification:** `WorkflowRunBindingTests`: eight binds of one run released together by a barrier, ten rounds, leave exactly one
+  written and the file whole as that one wrote it, with no file left beside; two starts of one run whose reads of the chain meet take
+  under one binding, one made and one read. Both were seen failing before the change (all eight wrote; both starts made one).
+
 ## 2026-10-22 — A full set's gates that died of the machine's memory were read as the change's failures (MEMGATE1)
 
 - **Symptom:** a full set (`--full --beside`) ran on a 64 GB Windows machine whose commit limit was about 80 GB, beside the install

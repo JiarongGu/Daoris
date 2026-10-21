@@ -137,7 +137,9 @@ alone, never the local plan (`ChainEvents.Nodes`, FABRIC-RUN1d).
 A graph holding `quest.close` arms it too (`QuestCloser.cs`, FABRIC-CLOSE1b), and so does a closure graph the home keeps (`ClosureGraphs`,
 FABRIC-CLOSE1l). An open quest's first start names its graph for the take, which binds it in its own write, and its session says `ready`
 (`ClosureBinding.AtStartAsync`, never against a host whose status does not say `closure`, nor in a workspace synced through a remote by
-the map sync reads). A bound quest is closed by the graph it was bound to, its chain walked whole and read again right before the send, each quest a close
+the map sync reads). The graph named is the one its run is bound to (FABRIC-CUTOVER1g, D190's binding moment): the start binds its run
+first, once its tree is open (`WorkflowRunStart.AtStartAsync`, the binding moved into place without overwriting), and holds where the
+bind is not made; under Current the take names Current's work cycle, under a named version none. A bound quest is closed by the graph it was bound to, its chain walked whole and read again right before the send, each quest a close
 names waiting until its own node record reaches its close (FABRIC-CLOSE1t); a bound
 quest's chain is closed at its last quest by one close, its key and token written before the send; after a timeout or a restart its door
 is asked what became of the key and the close is never sent again blind: a key taken settles from its kept outcome, a key never taken is
