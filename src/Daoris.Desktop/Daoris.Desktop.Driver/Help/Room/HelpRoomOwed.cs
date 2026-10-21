@@ -65,7 +65,7 @@ internal sealed class HelpRoomOwed : IHelpRoomSection
     public static readonly HelpOwedDoor Workflow = new(
         "apply a workflow's version from a file, import a workflow whole, or declare a workspace's kind of task",
         [
-            "daoris driver workflow apply <id> <file> [--base <v>]",
+            "daoris driver workflow apply <id> <file>|--as-graph [--base <v>]",
             "daoris driver workflow import <file>",
             "daoris driver workflow kind <name> <kind> --label \"…\" [--paths <p,…>]",
         ],

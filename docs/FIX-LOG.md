@@ -5,6 +5,16 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-21 — Ask Daoris named `workflow apply` without the `--as-graph` its usage gained (FABRIC-GRAPH1j)
+
+- **Symptom:** `HelpRoomOwedTests.Each_command_owed_is_spelled_as_its_usage_spells_it` failed on `main`: the help room's owed
+  `workflow` door named `daoris driver workflow apply <id> <file> [--base <v>]`, and the CLI's usage now reads `<file>|--as-graph`.
+- **Root cause:** FABRIC-GRAPH1j widened the usage line in `src/Daoris.Cli/src/cli/driver.ts` and not the room's copy in
+  `HelpRoomOwed.cs`. The test that holds the two lives in the driver's suite, which the landing's focused run did not reach from a
+  CLI-only change.
+- **Fix:** the room spells the command as the usage does; the five help-room goldens regenerated with it.
+- **Verification:** `HelpRoomOwedTests` red before, green after; the help-room and coverage classes, 166 cases, green.
+
 ## 2026-10-21 — A landing whose replay conflicted only in the backlog was refused, and its session sent to rebase (LANDBACKLOG1)
 
 - **Symptom:** replaying a branch's work onto `main` conflicted in `TASKS.md` alone, and the landing was refused with the rebase words.

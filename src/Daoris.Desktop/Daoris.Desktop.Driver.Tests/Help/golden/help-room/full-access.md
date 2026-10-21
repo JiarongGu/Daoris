@@ -245,7 +245,7 @@ design.
 - read a done's evidence again, so a commit that holds it now lifts its hold: `daoris-driver quest check <id> [--commit <sha>]`
 - choose, as an ask is proposed, whether its work is reviewed before it lands and where (the ask's page sets it after): `daoris-driver ask … --review rule|on|<environment>|off`, `daoris-driver ask --set-review <id> on|<environment>|off ["…"]`
 - say, as an ask is proposed, what kind of task it is and which workflow its work follows (the ask's page sets it after): `daoris-driver ask … --kind <kind> [--workflow <id>|current]`, `daoris-driver ask --set-workflow <id> [--kind <kind>] [--workflow <id>|current]|--clear ["…"]`
-- apply a workflow's version from a file, import a workflow whole, or declare a workspace's kind of task: `daoris driver workflow apply <id> <file> [--base <v>]`, `daoris driver workflow import <file>`, `daoris driver workflow kind <name> <kind> --label "…" [--paths <p,…>]`
+- apply a workflow's version from a file, import a workflow whole, or declare a workspace's kind of task: `daoris driver workflow apply <id> <file>|--as-graph [--base <v>]`, `daoris driver workflow import <file>`, `daoris driver workflow kind <name> <kind> --label "…" [--paths <p,…>]`
 - choose which version of a tool Daoris runs: the one on the PATH, or one kept in the home (Settings → Tools): `daoris tool use <tool> system`, `daoris tool use <tool> managed [<version>]`
 - remove a location tool versions are offered from (Settings → Tools): `daoris tool locations [add|remove <address>]`
 - clear an account's default, back to Daoris's accounts: `daoris agent profile default <agent> <profile>|--clear`
