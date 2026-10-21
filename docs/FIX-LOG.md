@@ -77,6 +77,20 @@ repository.
   failed the same way, then passed. `InstancePipeTests` and `PipeCensusTests` (77) and `InstanceDoorTests` (39) under both
   elevated PowerShell and Git Bash, the instance-path classes (109), `instance.test.ts` (29).
 
+## 2026-10-21 — The roster fix read past the harness override, and a woken-turn test raced its look
+
+- **Symptom:** the full set on 5e8caed81 failed the family rehearsal's account checks (*the record names the account it ran as*,
+  *a logged-out profile holds the start*, seven in all) and `AcpBackgroundTests`'
+  `A_woken_turn_running_as_the_quest_closes_is_never_cut_and_its_end_ends_the_run` (`Assert.False` on the run's end).
+- **Root cause:** the fix above made the three rosters read the handed home's `harnesses.json`, which skipped
+  `DAORIS_HARNESS_CONFIG`, the override every surface reads and the rehearsal sets for its machines. The test marked its quest
+  closed right after pushing the woken turn's words, so a look between the push and the session's read of them saw no turn
+  running and ended the run.
+- **Fix:** `HarnessSettings.ResolvePath(home)`: the override where set, else the handed home's file; the three rosters take it.
+  The test waits for the woken turn's words in the record before the quest reads closed.
+- **Verification:** the ACP, harness, meeting and access-swap classes with no `DAORIS_HOME` (203); `AcpBackgroundTests` with
+  `AcpTests` three times more (137 each). The family rehearsal runs in the next full set.
+
 ## 2026-10-21 — The full set's run on 091e5007f: a driver handed a home read another's roster, and two censuses broke
 
 - **Symptom:** the full set on 091e5007f failed the `driver` gate in 95 cases across 13 classes (`MeetingTests`,

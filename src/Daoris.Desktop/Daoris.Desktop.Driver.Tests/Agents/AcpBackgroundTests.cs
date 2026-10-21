@@ -1286,6 +1286,11 @@ public sealed class AcpBackgroundTests
         // The gates end while the build runs; the harness wakes its agent, which closes its quest in that turn.
         GatesEnd(agent);
         agent.Push(Said("The gates passed; the quest is done."));
+        // The woken turn read before the quest reads closed: a look between the push and the read saw no turn running and ended the
+        // run (the full set on 5e8caed81).
+        await Poll.Until(
+            () => record.Lines.Any(line => line.Contains("The gates passed", StringComparison.Ordinal)),
+            () => string.Join(" | ", record.Lines), Poll.Patience);
         var looked = Volatile.Read(ref asked);
         Volatile.Write(ref closed, 1);
         // A look reads it closed; the session then waits on the turn alone, many looks' time.

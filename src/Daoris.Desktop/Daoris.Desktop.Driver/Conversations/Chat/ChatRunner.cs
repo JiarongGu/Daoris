@@ -132,8 +132,8 @@ public sealed class ChatRunner : IDisposable
         _browser = browser;
         _usage = usage ?? new SessionUsage(home);
         _plugins = plugins ?? PluginLog.None;
-        // The roster of the home it was handed, as every other default here is, never the one the process's environment names.
-        _harnesses = harnesses ?? new HarnessRoster(adapters, DaorisHome.Entry(home, HomeEntry.Harnesses));
+        // The roster of the home it was handed, as every other default here is, or the file the override names.
+        _harnesses = harnesses ?? new HarnessRoster(adapters, HarnessSettings.ResolvePath(home));
         // Its turns kept in the usage history (USAGECAP1a2), watched once however many runners share the record.
         _events = UsageTurns.Watched(home, events ?? new SessionEvents(DaorisHome.Entry(home, HomeEntry.Sessions)));
         _context = new ChatContext(service, home, processes, output, _harnesses, _events);

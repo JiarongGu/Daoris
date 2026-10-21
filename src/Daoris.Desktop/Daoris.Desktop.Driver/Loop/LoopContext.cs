@@ -119,7 +119,7 @@ internal sealed class LoopContext(
     /// Shared across the per-tick instances a watch loop constructs, so a probe is paid for once and not at every tick; per-instance
     /// when nobody passes one.
     /// </summary>
-    public HarnessRoster Harnesses { get; } = harnesses ?? new HarnessRoster(adapters, DaorisHome.Entry(home, HomeEntry.Harnesses));
+    public HarnessRoster Harnesses { get; } = harnesses ?? new HarnessRoster(adapters, HarnessSettings.ResolvePath(home));
 
     /// <summary>Shared across the per-tick instances, so a control surface can reach what is actually running.</summary>
     public SessionProcesses Processes { get; } = processes ?? new SessionProcesses();
