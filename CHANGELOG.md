@@ -5,6 +5,10 @@ with the version and date at release.
 
 ## Unreleased
 
+- `daoris agent which <agent> [--workspace <name>] [--json]` says which program a session would run the agent as: the command your
+  `driver.json` names for it, its pin, or the one on `PATH`. It also says when a pinned version is not installed. When Daoris writes
+  an account's name, a cool-off or the agents' wiring while another of its processes writes the same file, it now waits for that
+  write rather than writing over it.
 - With two windows open on different workspaces, a window's *Notifications* bell, its taskbar count and Sessions' mark no longer
   count another workspace's work: sessions to review, second opinions, a helper's ask, a held tool call or answer, a quest parked on
   its failed sessions, a work's clean-up. Each counts and lists its own workspace's, and what is the whole machine's in both.

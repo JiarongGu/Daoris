@@ -38,16 +38,17 @@ import { homedir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { setTimeout as sleep } from 'node:timers/promises';
-import { managedBinary, harnessHome, harnessesPath, readHarnessSettings, resolveVersion } from '../src/Daoris.Cli/src/agents/toolchain.ts';
+import { agentWhich } from './proof-kit.mjs';
 
 const repoRoot = dirname(dirname(fileURLToPath(import.meta.url)));
 const scratch = join(repoRoot, '_fixtures', 'acp-trust-probe');
 const ADAPTER = 'claude-code-acp';
 const BINARY = 'claude-agent-acp';
 
-const settings = readHarnessSettings(harnessesPath());
-const adapter = managedBinary(
-  harnessHome(harnessesPath()), ADAPTER, resolveVersion(settings, ADAPTER, null, null), [BINARY]) ?? BINARY;
+// What a start would run, asked of this checkout's driver (`daoris-driver agent which`, PUSH1f2e); `PATH`'s where it is not built.
+const resolved = agentWhich(ADAPTER);
+if (resolved?.missing) throw new Error(`${ADAPTER} is pinned to ${resolved.pinned}, which is not installed: \`daoris agent pin ${ADAPTER} ${resolved.pinned}\` installs it.`);
+const adapter = resolved?.run[0] ?? BINARY;
 
 /** Whether the account's own record already trusts a directory — read, never written. */
 function trusted(dir) {
