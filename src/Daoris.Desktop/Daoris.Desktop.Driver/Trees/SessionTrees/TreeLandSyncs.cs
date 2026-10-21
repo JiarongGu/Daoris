@@ -19,6 +19,12 @@ internal sealed record LandReplay(string Now, IReadOnlyList<LandingCommit> Lande
     /// (LANDREBASE1): written again where the work is merged, never the session's conflict. Empty where there were none.
     /// </summary>
     public IReadOnlyList<string> Generated { get; init; } = [];
+
+    /// <summary>
+    /// Those written again from the replayed tree by the writers the person accepted (GENREGEN1): the files its commit changed and the
+    /// commands run, or why they were not; nothing run where none was accepted.
+    /// </summary>
+    public GeneratedWriters.Written Written { get; init; } = GeneratedWriters.Written.None;
 }
 
 /// <summary>
@@ -107,7 +113,7 @@ internal sealed class TreeLandSyncs(TreeContext context, BranchReplays replays)
                     + "and the tree and its branch are as they were.") { Refusal = AutoLandingCode.Refused, LeftOut = sync.Held.LeftOut });
         }
 
-        if (await BeyondAsync(sync, now, onto, ct).ConfigureAwait(false) is { } beyond)
+        if (await BeyondAsync(sync, now, onto, made.Written.Paths, ct).ConfigureAwait(false) is { } beyond)
         {
             return (null, new TreeLanding(false, $"Nothing was landed: replaying its own commits onto `{sync.OntoName}` changed what the line did not bring "
                 + $"({beyond}), so the replay was not kept. Nothing was made, and the tree and its branch are as they were.")
@@ -129,6 +135,7 @@ internal sealed class TreeLandSyncs(TreeContext context, BranchReplays replays)
         return (new LandReplay(now, landed, [.. sync.Held.Commits.Where(each => left.ContainsKey(each.Sha)).Select(each => left[each.Sha])])
         {
             Generated = made.Generated,
+            Written = made.Written,
         }, null);
     }
 
@@ -196,14 +203,18 @@ internal sealed class TreeLandSyncs(TreeContext context, BranchReplays replays)
         return null;
     }
 
-    /// <summary>Files that differ between the tree's tip and the replay's beyond what the line, or the branch replayed onto, brought.</summary>
-    private static async Task<string?> BeyondAsync(LandSync sync, string now, string onto, CancellationToken ct)
+    /// <summary>
+    /// Files that differ between the tree's tip and the replay's beyond what the line, or the branch replayed onto, brought, and the
+    /// generated files the accepted writers wrote again from the replayed tree (GENREGEN1), which are the tree's as it now stands.
+    /// </summary>
+    private static async Task<string?> BeyondAsync(LandSync sync, string now, string onto, IReadOnlyList<string> written, CancellationToken ct)
     {
         var changed = await LandedProofs.NamesAsync(sync.Root, sync.Tip, now, ct).ConfigureAwait(false);
         var brought = await LandedProofs.NamesAsync(sync.Root, sync.Held.Leaves, sync.Onto, ct).ConfigureAwait(false);
         var branched = onto == sync.Onto ? [] : await LandedProofs.NamesAsync(sync.Root, sync.Held.Leaves, onto, ct).ConfigureAwait(false);
         if (changed is null || brought is null || branched is null) return "git could not compare the two";
-        var beyond = changed.Where(path => !brought.Contains(path, StringComparer.Ordinal) && !branched.Contains(path, StringComparer.Ordinal)).ToList();
+        var beyond = changed.Where(path => !brought.Contains(path, StringComparer.Ordinal) && !branched.Contains(path, StringComparer.Ordinal)
+            && !written.Contains(path, StringComparer.Ordinal)).ToList();
         return beyond.Count == 0 ? null : string.Join(", ", beyond.Take(3)) + (beyond.Count > 3 ? $" and {beyond.Count - 3} more" : "");
     }
 }
@@ -261,9 +272,24 @@ public static class LandingSyncWords
     /// The generated files a replay took at the line's copy (LANDREBASE1), said after the sentence: up to three named, to be written again
     /// where the work is merged. Nothing where there were none.
     /// </summary>
-    public static string Generated(IReadOnlyList<string> paths) => paths.Count == 0 ? ""
-        : $" {paths.Count} generated file(s) the line changed too took the line's copy ({string.Join(", ", paths.Take(3))}"
-          + (paths.Count > 3 ? $" and {paths.Count - 3} more" : "") + "), to be written again where the work is merged.";
+    /// <remarks>
+    /// GENREGEN1: where the writers the person accepted wrote them again from the replayed tree, <paramref name="written"/> names their
+    /// commands and that is said instead; where one failed, <paramref name="unwritten"/> says why, beside the line's copy.
+    /// </remarks>
+    public static string Generated(IReadOnlyList<string> paths, IReadOnlyList<string>? written = null, string? unwritten = null)
+    {
+        if (paths.Count == 0) return "";
+        var taken = $" {paths.Count} generated file(s) the line changed too took the line's copy ({string.Join(", ", paths.Take(3))}"
+            + (paths.Count > 3 ? $" and {paths.Count - 3} more" : "") + ")";
+        if (unwritten is not null) return $"{taken}, to be written again where the work is merged: writing them here failed ({unwritten}).";
+        return written is { Count: > 0 }
+            ? $"{taken}, then were written again from the replayed tree by {string.Join(", ", written.Select(run => $"`{run}`"))}."
+            : $"{taken}, to be written again where the work is merged.";
+    }
+
+    /// <summary>A replay's generated files in <see cref="Generated(IReadOnlyList{string}, IReadOnlyList{string}?, string?)"/>'s words.</summary>
+    internal static string Generated(LandReplay replay) =>
+        Generated(replay.Generated, replay.Written.Failed is null ? replay.Written.Runs : null, replay.Written.Failed);
 
     /// <summary>The commits the replay found empty, said after the sentence; nothing where none was.</summary>
     public static string Emptied(IReadOnlyList<LeftOutCommit> leftOut)

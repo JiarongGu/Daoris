@@ -100,12 +100,15 @@ internal sealed class HeavyStep : IDisposable
     }
 
     /// <summary>The shell a gate's command line runs through: the system's <c>cmd.exe</c>, as the devkit's gates run.</summary>
-    internal static string CommandLine(string run)
+    internal static string CommandLine(string run) =>
+        // `/s` takes what is between the first and the last quote as it is, so the gate's own quotes reach the shell untouched.
+        $"\"{SystemShell()}\" /d /s /c \"{run}\"";
+
+    /// <summary>The system's <c>cmd.exe</c>: <c>ComSpec</c> where it names one that is there, else the system folder's.</summary>
+    internal static string SystemShell()
     {
         var named = Environment.GetEnvironmentVariable("ComSpec");
-        var shell = named is { Length: > 0 } && Path.IsPathRooted(named) && File.Exists(named) ? named : Path.Combine(Environment.SystemDirectory, "cmd.exe");
-        // `/s` takes what is between the first and the last quote as it is, so the gate's own quotes reach the shell untouched.
-        return $"\"{shell}\" /d /s /c \"{run}\"";
+        return named is { Length: > 0 } && Path.IsPathRooted(named) && File.Exists(named) ? named : Path.Combine(Environment.SystemDirectory, "cmd.exe");
     }
 
     /// <summary>This process's environment with <paramref name="added"/> over it, as the block CreateProcess reads, sorted as the system keeps its own.</summary>
