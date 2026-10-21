@@ -312,7 +312,9 @@ export const useLanding = (id: string | null, branch?: string | null) => {
       workflow?: import('../../workflow/gate').WorkflowGateState | null;
       /**
        * What the press would leave out because the line holds it, what it would replay onto the line, and a conflict it would be
-       * refused for (LANDSYNC1, D87's 2026-10-15 amendment): judged against the last fetch, each absent where the line holds none.
+       * refused for (LANDSYNC1, D87's 2026-10-15 amendment): judged against the last fetch. `leftOut` is empty, beside `lands`, where
+       * the line holds none of the work but moved since it began, and the press replays it all onto the line first (LANDREBASE1);
+       * each absent where the work lands as made.
        */
       leftOut?: LeftOutCommit[] | null;
       lands?: LandsCommit[] | null;

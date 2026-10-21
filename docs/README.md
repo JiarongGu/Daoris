@@ -75,7 +75,7 @@ Paths below are relative to this file. Historical documents have their own [arch
 | `2026-10-03-session-messages-design.md` | Contract: queued words and reopened runs | D137/D136 |
 | `2026-10-03-update-when-idle-design.md` | Contract: staged update, drain and rollback | D139 |
 | `2026-10-03-evidence-design.md` | Contract: completion evidence checks | D144/D146 |
-| `2026-10-04-landing-and-proof-design.md` | Contract: automatic landing and kept proof | D145/D146/D149/D154–D157; D87's LANDSYNC0 amendment replaces §5's moved-line row |
+| `2026-10-04-landing-and-proof-design.md` | Contract: automatic landing and kept proof | D145/D146/D149/D154–D157; D87's LANDSYNC0 amendment and LANDREBASE1 note replace §5's moved-line row |
 | `2026-10-04-built-in-git-design.md` | Contract: branches, history and ref actions | D147 |
 | `2026-10-07-history-clearing-design.md` | Contract: clear local finished history | D153 |
 | `2026-10-08-review-environment-design.md` | Contract: setup and person's review verdict | D154/D155–D157 |
