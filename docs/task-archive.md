@@ -19195,3 +19195,11 @@ list`, the long verbs and the TypeScript's leaving. Built: `daoris-driver agent 
 `use` while Daoris runs, else `HarnessSettings.Change` with `WithUse`, refused from a marked terminal, its print with no flag a read;
 `daoris agent` hands `profile` whole. Today's text kept (61 rows, none changed); both ways over six more cases. Its TypeScript branch,
 `AGENT_ROUTES` and 12 CLI tests left. The account verbs' shapes and payloads unchanged. Detail: D194's PUSH1f2e3 note. On Opus.
+## KEEP1c — This Daoris shows each kind's size, rule, next and last clean (2026-10-22, D195)
+
+> - [ ] **KEEP1c — This Daoris shows each kind's size, rule, next and last clean** (driver, modules, web-settings; after KEEP1b; D195, the cleanup design §9). The *Disk space* card, `SYSTEM_SPACE` and `daoris-driver space`, every rule it shows already running. Proof: as §9 names it, the card's stories in both languages.
+
+**Outcome** 2026-10-22: built. `SystemSpace` reads nine kinds (`SpaceKinds`), each counted by its own bounded walk (`SpaceSizes`, on
+*Count*, *Measure again*, `--measure`, or the Keeping pass at most daily), with the rule that runs, `next` from the disk and the policy,
+`last` from `keeping.json` and the run lock's holder; `SYSTEM_SPACE` (`Open`) and `daoris-driver space [--json] [--measure]`; the card
+after *Folders* in both languages, no editor and no press. Detail: D195's KEEP1c note. On Opus.
