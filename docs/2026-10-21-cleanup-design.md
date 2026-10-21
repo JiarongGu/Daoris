@@ -853,7 +853,8 @@ opinion's packet with its quest's clear, is dropped (§7). **Round 3** (Fable F2
 once every writer of the use files takes the keep lock, or carries the harness file's whole-layout write under it itself (§3.5);
 KEEP1a2, `obj/` on evidence, follows KEEP1a and a week of its measurement.
 
-- **KEEP1a — a tree set aside drops its package folders once it has settled** (driver). §2.1's `KeepKinds` with its set-aside kind,
+- **KEEP1a — a tree set aside drops its package folders once it has settled** (driver; the service's and the CLI's home tables).
+  §2.1's `KeepKinds` with its set-aside kind,
   and the one effective policy every reader of the set-aside days reads, still fourteen days (`BranchTidying.cs:111, 248, 317`,
   `WorkInventories.cs:59`, `WorkInventory.cs:610`, `TreesConsole.cs:108`); §2.3's `keeping.json` through `JsonKeeping.Save`, with the
   home twins' `keeping` entry, its `last` for the set-aside kind; §3.1's Keeping pass in the tidy's task taking over the purge, the run
