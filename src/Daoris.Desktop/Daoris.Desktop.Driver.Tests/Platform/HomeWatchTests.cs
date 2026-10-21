@@ -158,7 +158,7 @@ public sealed class HomeWatchTests : IDisposable
 
     /// <summary>
     /// FABRIC-EVENT5a: a proposal written to Ask Daoris's folder by another process is heard as the <c>help</c> topic, found by the
-    /// deadline where the source is silent, and a proposal rewritten (settled, a card's units kept) or a claim is no new proposal.
+    /// deadline where the source is silent, and a proposal rewritten with its state kept (a card's units kept) or a claim is no new proposal.
     /// </summary>
     [Fact]
     public async Task A_proposal_written_is_heard_and_found_by_its_deadline_and_a_rewrite_wakes_nothing()
@@ -166,13 +166,13 @@ public sealed class HomeWatchTests : IDisposable
         Directory.CreateDirectory(Proposals);
         await using (var heard = Watching(TimeSpan.FromHours(1), proposals: true))
         {
-            File.WriteAllText(Path.Combine(Proposals, "p1.json"), "{}");
+            File.WriteAllText(Path.Combine(Proposals, "p1.json"), "{\"state\":\"proposed\"}");
             Say(Proposals, "p1.json", ChangeKind.Created);
             await Poll.Until(() => _woken.Contains((ChangeTopics.Help, "proposals")), () => "the proposal was never heard");
 
-            // Settled, or a card's units kept: the same file again, which is no proposal arriving. A claim is no proposal either.
+            // A card's units kept: the same file again, its state kept, which is no proposal arriving. A claim is no proposal either.
             _woken.Clear();
-            File.WriteAllText(Path.Combine(Proposals, "p1.json"), "{\"state\":\"applied\"}");
+            File.WriteAllText(Path.Combine(Proposals, "p1.json"), "{\"state\":\"proposed\",\"units\":[\"a\"]}");
             File.WriteAllText(Path.Combine(Proposals, "p1.claim"), "");
             Say(Proposals, "p1.json");
             Say(Proposals, "p1.claim", ChangeKind.Created);
@@ -185,6 +185,30 @@ public sealed class HomeWatchTests : IDisposable
         await using var silent = Watching(TimeSpan.FromMilliseconds(300), proposals: true);
         File.WriteAllText(Path.Combine(Proposals, "p2.json"), "{}");
         await Poll.Until(() => _woken.Contains((ChangeTopics.Help, "proposals")), () => "the proposal was never found at its deadline");
+    }
+
+    /// <summary>
+    /// HELP-PROPOSAL-SETTLED1: a proposal settled by another process (a terminal's Apply, through <see cref="HelpProposals.Settle"/>)
+    /// rewrites the file under its name, and is heard within the debounce, with the deadline an hour away, so an open window's card
+    /// goes; and found by the deadline where the source is silent.
+    /// </summary>
+    [Fact]
+    public async Task A_proposal_settled_from_another_process_is_heard()
+    {
+        Directory.CreateDirectory(Proposals);
+        File.WriteAllText(Path.Combine(Proposals, "p1.json"), "{\"id\":\"p1\",\"state\":\"proposed\"}");
+        File.WriteAllText(Path.Combine(Proposals, "p2.json"), "{\"id\":\"p2\",\"state\":\"proposed\"}");
+        await using (var heard = Watching(TimeSpan.FromHours(1), proposals: true))
+        {
+            HelpProposals.Settle(_home, "p1", "applied", "done from a terminal");
+            Say(Proposals, "p1.json", ChangeKind.Renamed);
+            await Poll.Until(() => _woken.Contains((ChangeTopics.Help, "proposals")), () => "the settle was never heard");
+        }
+
+        _woken.Clear();
+        await using var silent = Watching(TimeSpan.FromMilliseconds(300), proposals: true);
+        HelpProposals.Settle(_home, "p2", "dismissed", null);
+        await Poll.Until(() => _woken.Contains((ChangeTopics.Help, "proposals")), () => "the settle was never found at its deadline");
     }
 
     /// <summary>The driving loop's watch hears no proposals folder: the window's own process watches it, whoever holds the lease.</summary>

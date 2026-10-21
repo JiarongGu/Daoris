@@ -1,3 +1,5 @@
+using System.Text.Json;
+
 namespace Daoris.Driver;
 
 /// <summary>One place a topic hears: a folder, what it hears of it, and the stamps its judge reads afresh.</summary>
@@ -43,20 +45,55 @@ public sealed record HomePart(string Folder, bool Subfolders, Func<string, Chang
     }
 
     /// <summary>
-    /// The <c>*.json</c> files of one folder, by their names alone (FABRIC-EVENT5a): a file arriving or leaving moves it, a file written
-    /// again under its name does not, so a proposal settled, or a card's units kept in it, is no new proposal. A claim, a temporary a
-    /// writer renames away and a folder are not heard.
+    /// The <c>*.json</c> files of one folder, by their names and their <c>state</c> (FABRIC-EVENT5a, HELP-PROPOSAL-SETTLED1): a file
+    /// arriving or leaving moves it, and so does its state changing, so a proposal settled by another process (a terminal's Apply,
+    /// another window's Not now) reaches this window's card; a file written again with its state kept, a card's units kept in it, does
+    /// not. A file's state is read again only when its own stamp moved. A claim, a temporary a writer renames away and a folder are not heard.
     /// </summary>
     public static HomePart Named(string folder)
     {
         var full = Path.GetFullPath(folder);
+        var known = new Dictionary<string, (string Stamp, string State)>(StringComparer.OrdinalIgnoreCase);
+        var gate = new object();
         return new(
             full,
             Subfolders: false,
             (moved, _) => !moved.Contains('/') && moved.EndsWith(".json", StringComparison.OrdinalIgnoreCase),
-            () => Directory.Exists(full)
-                ? Directory.EnumerateFiles(full, "*.json").Select(file => KeyValuePair.Create(file, "present"))
-                : []);
+            () =>
+            {
+                if (!Directory.Exists(full)) return [];
+                lock (gate)
+                {
+                    var now = new Dictionary<string, (string Stamp, string State)>(StringComparer.OrdinalIgnoreCase);
+                    foreach (var file in Directory.EnumerateFiles(full, "*.json"))
+                    {
+                        var stamp = HomeWrites.Stamp(file);
+                        now[file] = known.TryGetValue(file, out var last) && last.Stamp == stamp ? last : (stamp, StateOf(file));
+                    }
+
+                    known.Clear();
+                    foreach (var (file, read) in now) known[file] = read;
+                    return [.. now.Select(entry => KeyValuePair.Create(entry.Key, entry.Value.State))];
+                }
+            });
+    }
+
+    /// <summary>A record's <c>state</c>, or <c>present</c> where it has none or does not read (half-written: its next write moves it).</summary>
+    private static string StateOf(string file)
+    {
+        try
+        {
+            using var document = JsonDocument.Parse(System.IO.File.ReadAllText(file));
+            return document.RootElement.ValueKind == JsonValueKind.Object
+                && document.RootElement.TryGetProperty("state", out var state)
+                && state.ValueKind == JsonValueKind.String
+                ? "state:" + state.GetString()
+                : "present";
+        }
+        catch (Exception error) when (error is JsonException or IOException or UnauthorizedAccessException)
+        {
+            return "present";
+        }
     }
 
     /// <summary>
