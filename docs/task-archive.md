@@ -19264,3 +19264,14 @@ run (`StartRun.Look`, `LookLine`); `LookSaid.Each` is gone. Six news codes, word
 person stopped is now `own`. Proof: `LookSaidTests`' census over the producers' lines and runs, every news code in both catalogues,
 `HelperLookTests`, `ReopenTellingTests`, `DoneAndFailed.test.tsx`. No installed window has listed one. Detail: D196's NOTIFY2h2
 note. On Opus.
+
+## PUSH1f2e4-6 — `agent list`, `agent install|key` and `agent login` (2026-10-22, D194)
+
+> - [ ] **PUSH1f2e — the agents' tools and accounts** (cli, driver, modules, tools; after 2d; D194, the alone-path design §5). Read its row in §5 and the sections it names; build it end to end (D187), the family's TypeScript leaving as §4 says. Built so far: PUSH1f2e1, PUSH1f2e2 and PUSH1f2e3 (archived); the rest is `agent list` and the long verbs (`install|update|login|key|pin`) with §1.1's terminal start and §1.4's publication, then the TypeScript's leaving. Proof: as §5 names it.
+
+**Outcome** 2026-10-22: the fourth to sixth parts of the row, split out as the first three were; PUSH1f2e stays open in the backlog
+for `agent update|pin` and the TypeScript's leaving. Built: `daoris-driver agent list` (a read), `install` (the agent's installer at
+the terminal, the second hop), `key` (read from standard input, published under the lease) and `login` (the agent's sign-in at the
+terminal into a folder made first, its end published under the lease, a Ctrl+C there keeping the account); `daoris agent` hands all
+four. Today's text kept (69 rows, one changed on purpose). Their TypeScript and 80 CLI tests left. The account verbs' shapes
+unchanged. Detail: D194's PUSH1f2e4-6 note. On Opus.
