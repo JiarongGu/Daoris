@@ -1,3 +1,5 @@
+using System.Diagnostics;
+
 namespace Daoris.Driver;
 
 /// <summary>
@@ -21,6 +23,27 @@ public static class DownloadKeeping
 
     /// <summary>A listed version's key.</summary>
     public static string Key(DownloadedVersion row) => Key(row.Kind, row.Name, row.Version);
+
+    /// <summary>
+    /// What a start of a session is handed of the downloads, kept on its record before it is spawned (KEEP1b, D195 point 6; the cleanup
+    /// design §3.5, Fable F2.5): the rule keeps each version while the session runs. Every spawn takes it, a go-on as a first start, once
+    /// its start is prepared; a start handed none of them asks nothing. Best-effort: a record the service did not keep it on reads as one
+    /// from before, which keeps the start-time rule, so the start goes on either way.
+    /// </summary>
+    public static async Task KeepHandedAsync(ServiceClient service, string home, string sessionId, ProcessStartInfo info, CancellationToken ct)
+    {
+        var handed = DownloadClearing.Handed(home, info);
+        if (handed.Count == 0) return;
+        try
+        {
+            await service.KeepResolvedAsync(sessionId, handed, ct).ConfigureAwait(false);
+        }
+        catch (Exception error) when (error is DriverException or HttpRequestException or System.Text.Json.JsonException
+                                          || (error is TaskCanceledException && !ct.IsCancellationRequested))
+        {
+            // Unkept, the record says nothing of what it was handed, and the rule keeps what went unused after it opened.
+        }
+    }
 
     /// <summary>When a listed version's current unused stretch began, by the record; null where none is recorded.</summary>
     public static DateTimeOffset? UnusedSince(DownloadedVersion row, KeepingFile record) =>
