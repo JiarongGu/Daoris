@@ -5,6 +5,10 @@ with the version and date at release.
 
 ## Unreleased
 
+- What you say to a session while its quest waits on another repository's answer now reaches the session that carries the quest on
+  once the answer comes. It is quoted beneath the answer and shown in that session's conversation. Your answer to a session that
+  stopped to ask you after such a wait now goes on at the driver's next look; before, it could wait for good. The session is told
+  which go-aheads it asked still wait, and that it may not do those acts yet.
 - `daoris agent which <agent> [--workspace <name>] [--json]` says which program a session would run the agent as: the command your
   `driver.json` names for it, its pin, or the one on `PATH`. It also says when a pinned version is not installed. When Daoris writes
   an account's name, a cool-off or the agents' wiring while another of its processes writes the same file, it now waits for that

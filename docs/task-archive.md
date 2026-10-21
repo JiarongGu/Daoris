@@ -19091,3 +19091,10 @@ stays open in the backlog from `agent list|install|…` on. Built: `daoris-drive
 on by `daoris agent which`), which `proof-kit.mjs` and `acp-trust-probe.mjs` now ask instead of importing `toolchain.ts`; the keep
 lock held from the read to the write by `accounts.json`'s and `cooling.json`'s writers; `HarnessSettings.Change`, with every window
 writer of `harnesses.json` through it. Account verbs' shapes unchanged. Detail: D194's PUSH1f2e1 note, D173's of this day. On Opus.
+
+## SAYHELD1 — the person's words around an ask-and-wait reach a run (2026-10-21, D137)
+
+> - [ ] **SAYHELD1 — words kept on a quest's sessions around an ask-and-wait never reached a run** (driver, web; D137, D135, D79). Found on the install: words said to a session waiting on another repository's answer were not handed to its resume's new session, and the person's answer to the park that session made sat for hours. Proof: a test per path, red first.
+
+**Outcome** 2026-10-21: the resume (D79) hands the asker's words to its new session, and a park made after a resume goes on with its
+answer, the quest's stale `awaits` no longer read as a wait. Detail: `docs/FIX-LOG.md`'s SAYHELD1 entry and D137's SAYHELD1 note.
