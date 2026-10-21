@@ -106,7 +106,7 @@
   "person.route.SET_LANDING": "change how a repository's work lands",
   "person.route.SET_LANGUAGE": "change the language sessions write to you in",
   "person.route.SET_LINE": "change a repository's line",
-  "person.route.SET_NOTIFY": "change whether Daoris tells you what ended",
+  "person.route.SET_NOTIFY": "change whether Daoris announces what needs you or ended",
   "person.route.SET_OPINION": "change when a second opinion is asked",
   "person.route.SET_READ_ACROSS": "change what a repository's sessions may read elsewhere",
   "person.route.SET_REVIEW": "change how work is reviewed before it lands",

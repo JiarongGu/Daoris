@@ -151,12 +151,17 @@ export function DriverCards({ facts, busy, onGo, onNotify, onStrikes, onCoolOff,
               )}
             />
           )}
+          {/* NOTIFY2d (the notification design §3.3, §5): the switch says what it governs beside its value, as full access does, and
+              what it never governs: a terminal's press, whose terminal waits on the person, and what Notifications lists. */}
           <SettingRow
             label={t('settings.notify.label')}
             hint={t('settings.notify.terminal')}
             why={t('settings.notify.body')}
             control={<CheckField hideLabel checked={facts.notify} onChange={onNotify} label={t('settings.notify.label')} />}
-          />
+          >
+            <p className="m-0 text-small text-ink-soft">{t(facts.notify ? 'settings.notify.state.on' : 'settings.notify.state.off')}</p>
+            <p className="m-0 mt-1 text-small text-ink-faint">{t('settings.notify.press')}</p>
+          </SettingRow>
 
           <SettingRow
             label={t('settings.strikes.label')}

@@ -387,6 +387,35 @@ describe('the driver domain', () => {
 
     expect(await screen.findByRole('checkbox', { checked: false })).toBeTruthy();
   });
+
+  /**
+   * NOTIFY2d (the notification design §3.3, §5): the switch says what it governs, beside its value. It said *when a session parks*
+   * while it also governed an ending and an answer, and a held tool call joins them; a terminal's press is announced either way,
+   * since its terminal waits on the person's answer, and Notifications lists everything whatever it says.
+   */
+  it.each([
+    ['en', true, 'Announce what needs you or ended',
+      'On: a park, a held tool call, an answer to your words and an ending you did not ask for are each said, in the window you are at or by a system notification while Daoris is behind.'],
+    ['en', false, 'Announce what needs you or ended', 'Off: none of these is said, and Notifications still lists each one.'],
+    ['zh', true, '提醒等你处理和已结束的事',
+      '开启：会话挂起、等你回答的工具调用、对你的话的回复，以及不是你要求的结束，都会在你所在的窗口里提醒你；Daoris 在后面时发系统通知。'],
+    ['zh', false, '提醒等你处理和已结束的事', '关闭：这些都不会提醒，通知里仍会列出每一项。'],
+  ] as const)('in %s, the switch says what it governs while it is %s', async (language, on, label, state) => {
+    invoke.mockImplementation(async (module: string) => (
+      module === 'DAORIS.DRIVER' ? { ...DRIVER_STATE, notify: on } : WIRING));
+    await i18n.changeLanguage(language);
+    try {
+      show(<SettingsView notify={() => {}} section="driver" />);
+
+      expect(await screen.findByRole('checkbox', { checked: on, name: label })).toBeTruthy();
+      expect(screen.getByText(state)).toBeTruthy();
+      expect(screen.getByText(language === 'en'
+        ? "A terminal's press for your confirmation is said either way: its terminal waits on your answer."
+        : '终端请你确认的请求无论开关如何都会提醒：它的终端在等你的回答。')).toBeTruthy();
+    } finally {
+      await i18n.changeLanguage('en');
+    }
+  });
 });
 
 /**
