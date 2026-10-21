@@ -1,0 +1,323 @@
+// The contract test Daoris's plugin kit writes beside a plugin that performs (FABRIC-PERFORM1e; the fabric events design §D9). It
+// starts the plugin the way the driver does, in the kit's stand-in world (DAORIS_PLUGIN_WORLD), and shows over the wire what the kit
+// promises of a performer: one external effect under duplicate delivery; each `work/reconcile` answer; `already-gone` on a repeated
+// cleanup; an event sent again under the id it first had; and no frame claiming what a plugin may not, nor anything written to the
+// Daoris home it is told. `node --test` runs it with nothing of Daoris's installed: it imports nothing but Node.
+//
+// It checks the protocol, not the code's honesty: in the stand-in world, act(), check() and remove() are not called, so what they do
+// on the platform is for a test of your own, with a fake of that platform.
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { spawn } from 'node:child_process';
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { dirname, join, resolve } from 'node:path';
+import { createInterface } from 'node:readline';
+import { fileURLToPath } from 'node:url';
+
+const folder = dirname(fileURLToPath(import.meta.url));
+const manifest = JSON.parse(readFileSync(join(folder, 'plugin.json'), 'utf8'));
+
+/** The hook wire this file was written for, and the capability a performer's handshake names. */
+const PROTOCOL = {{protocol}};
+const CAPABILITY = '{{capability}}';
+
+/** How long a request, or an event, is waited for, in milliseconds; and how long a plugin has to leave once told. */
+const PATIENCE = 10000;
+const GRACE = {{grace}};
+
+const performed = (manifest.steps ?? []).find((step) => step?.reach === 'performed');
+const STEP = `${manifest.id}/${performed?.id}`;
+const transient = performed?.perform?.transient?.[0] ?? 'unavailable';
+
+/** One attempt, as the driver's performer sends it: `n` names its invocation and its key. */
+const attempt = (n, revision = 'r1') => ({
+  unit: 'u-contract', step: STEP, stepVersion: performed?.version ?? 1, invocation: `i-${n}`, idempotencyKey: `k-${n}`,
+  subjectRevision: revision, inputs: [], deadlineAt: new Date(Date.now() + 600000).toISOString(),
+});
+
+/** A folder of the test's own: the plugin's data, the home it is told, and the stand-in world, removed after. */
+function scratch(t, world = {}) {
+  const at = mkdtempSync(join(tmpdir(), 'daoris-contract-'));
+  const place = { at, data: join(at, 'data'), home: join(at, 'home'), world: join(at, 'world.json') };
+  mkdirSync(place.data);
+  mkdirSync(place.home);
+  writeFileSync(place.world, `${JSON.stringify(world)}\n`);
+  t.after(() => rmSync(at, { recursive: true, force: true, maxRetries: 10, retryDelay: 200 }));
+  return place;
+}
+
+/** The external effects the stand-in world counted, one line each: `act <key>`, `remove <resource>`. */
+const effects = (place) => (existsSync(`${place.world}.effects`)
+  ? readFileSync(`${place.world}.effects`, 'utf8').split('\n').filter((line) => line.length > 0)
+  : []);
+
+/** The plugin started as the driver starts it, told the scratch, and its handshake made. Every frame it writes is kept. */
+async function start(t, place) {
+  const expand = (part) => (part.includes('${plugin}') || part.includes('${data}')
+    ? resolve(part.split('${plugin}').join(folder).split('${data}').join(place.data))
+    : part);
+  const [command, ...args] = (manifest.hooks?.command ?? []).map(expand);
+  const child = spawn(command, args, {
+    cwd: folder,
+    env: {
+      ...process.env,
+      DAORIS_PLUGIN_ID: manifest.id,
+      DAORIS_PLUGIN_FOLDER: folder,
+      DAORIS_PLUGIN_DATA: place.data,
+      DAORIS_HOME: place.home,
+      DAORIS_PLUGIN_WORLD: place.world,
+      GIT_TERMINAL_PROMPT: '0',
+    },
+  });
+
+  let ended = null;
+  const gone = new Promise((resolveGone) => {
+    child.on('close', (code) => { ended ??= { code }; resolveGone(); });
+    child.on('error', (error) => { ended ??= { error }; resolveGone(); });
+  });
+  child.stdin.on('error', () => {});
+  t.after(async () => {
+    if (ended === null) child.kill();
+    await gone;
+  });
+
+  const said = [];
+  createInterface({ input: child.stderr }).on('line', (line) => { if (line.trim()) said.push(line); });
+
+  const plugin = { frames: [], events: [], noise: [], sent: new Set(), said, gone, exited: () => ended !== null };
+  const waiting = new Map();
+  const watchers = new Set();
+  createInterface({ input: child.stdout }).on('line', (line) => {
+    if (!line.trim()) return;
+    let frame;
+    try {
+      frame = JSON.parse(line);
+    } catch {
+      plugin.noise.push(line);
+      return;
+    }
+    plugin.frames.push(frame);
+    if (frame === null || typeof frame !== 'object' || Array.isArray(frame)) return;
+    if ('method' in frame) {
+      plugin.events.push(frame);
+      for (const watcher of watchers) watcher();
+      return;
+    }
+    const answered = waiting.get(frame.id);
+    waiting.delete(frame.id);
+    answered?.(frame);
+  });
+
+  const lastWords = () => (said.length > 0 ? `; the last thing it said: ${said.at(-1)}` : '');
+  let next = 0;
+  plugin.ask = (method, params) => new Promise((resolveAnswer, reject) => {
+    const id = ++next;
+    plugin.sent.add(id);
+    const timer = setTimeout(() => {
+      waiting.delete(id);
+      reject(new Error(`it did not answer \`${method}\` within ${PATIENCE / 1000}s${lastWords()}`));
+    }, PATIENCE);
+    waiting.set(id, (frame) => {
+      clearTimeout(timer);
+      if (frame.error) reject(new Error(`it refused \`${method}\`: ${frame.error.message ?? JSON.stringify(frame.error)}`));
+      else resolveAnswer(frame.result);
+    });
+    gone.then(() => {
+      if (!waiting.has(id)) return;
+      waiting.delete(id);
+      clearTimeout(timer);
+      reject(new Error(`its process exited (code ${ended?.code}) before answering \`${method}\`${lastWords()}`));
+    });
+    child.stdin.write(`${JSON.stringify({ jsonrpc: '2.0', id, method, params })}\n`);
+  });
+
+  /** The first event that `matches`, among those heard and those to come, within the patience. */
+  plugin.until = (matches, what) => new Promise((resolveEvent, reject) => {
+    const look = () => {
+      const found = plugin.events.find(matches);
+      if (!found) return false;
+      watchers.delete(look);
+      clearTimeout(timer);
+      resolveEvent(found);
+      return true;
+    };
+    const timer = setTimeout(() => {
+      watchers.delete(look);
+      reject(new Error(`it sent no ${what} within ${PATIENCE / 1000}s${lastWords()}`));
+    }, PATIENCE);
+    if (!look()) watchers.add(look);
+  });
+
+  plugin.stop = async () => {
+    if (ended === null) child.stdin.write(`${JSON.stringify({ jsonrpc: '2.0', method: 'shutdown' })}\n`);
+    let grace;
+    const left = await Promise.race([gone.then(() => true), new Promise((resolveWait) => { grace = setTimeout(() => resolveWait(false), GRACE); })]);
+    clearTimeout(grace);
+    if (!left) child.kill();
+    await gone;
+    assert.ok(left, `it did not leave within ${GRACE / 1000}s of \`shutdown\``);
+  };
+
+  const hello = await plugin.ask('initialize', {
+    protocolVersion: PROTOCOL, plugin: manifest.id, home: place.home, data: place.data, points: manifest.hooks?.points ?? [],
+  });
+  assert.ok(Array.isArray(hello?.capabilities) && hello.capabilities.includes(CAPABILITY),
+    `its handshake names no \`${CAPABILITY}\`, so the driver never asks it to perform`);
+  assert.ok(existsSync(`${place.world}.taken`),
+    "it did not take the kit's stand-in world (DAORIS_PLUGIN_WORLD), so an attempt would reach its platform: nothing more is sent");
+  return plugin;
+}
+
+/** The completion of invocation `n`. */
+const completion = (n) => (event) => event.method === 'work/step' && event.params?.invocation === `i-${n}`;
+
+/** A `work/reconcile` answer read by the driver's rules: null when it is one, else what is wrong with it. */
+function reconciled(answer) {
+  const states = ['done', 'not-started', 'running', 'failed', 'unknown'];
+  if (answer === null || typeof answer !== 'object' || !states.includes(answer.state)) return `${JSON.stringify(answer)} is not a state of ${states.join(', ')}`;
+  const outcome = answer.outcome ?? null;
+  if (answer.state === 'done' && !['reached', 'failed'].includes(outcome?.state)) return `done carries no reached or failed outcome: ${JSON.stringify(answer)}`;
+  if (answer.state === 'failed' && outcome?.state !== 'failed') return `failed carries no failed outcome: ${JSON.stringify(answer)}`;
+  if (!['done', 'failed'].includes(answer.state) && outcome !== null) return `${answer.state} carries an outcome: ${JSON.stringify(answer)}`;
+  return null;
+}
+
+test('plugin.json declares a performed step, what it promises, and the points it is asked at', () => {
+  assert.ok(performed, 'plugin.json declares no step whose `reach` is `performed`');
+  const points = manifest.hooks?.points ?? [];
+  assert.ok(points.includes('work/perform'), '`hooks.points` must name `work/perform`, where it is asked to perform');
+  assert.ok(points.includes('work/step'), '`hooks.points` must name `work/step`, where its outcome is heard');
+  assert.ok(points.includes('work/watch'), '`hooks.points` must name `work/watch`: the driver tells every plugin that works the awaited set there');
+  assert.ok(performed.perform?.idempotent === true || performed.perform?.reconcile === 'work/reconcile',
+    'its `perform` promises neither `idempotent` nor `reconcile`, so no attempt is ever sent again by itself');
+});
+
+test('one external effect under duplicate delivery, before and after a restart', async (t) => {
+  const place = scratch(t);
+  const first = await start(t, place);
+  assert.deepEqual(await first.ask('hook/work/perform', attempt(1)), { invocation: 'i-1' });
+  const outcome = await first.until(completion(1), 'outcome for `i-1`');
+  assert.equal(outcome.params.state, 'reached');
+  assert.deepEqual(await first.ask('hook/work/perform', attempt(1)), { invocation: 'i-1' });
+  await first.until((event) => completion(1)(event) && event !== outcome, 'outcome for `i-1` sent again');
+  await first.stop();
+
+  const again = await start(t, place);
+  assert.deepEqual(await again.ask('hook/work/perform', attempt(1)), { invocation: 'i-1' });
+  const after = await again.until(completion(1), 'outcome for `i-1` after a restart');
+  await again.stop();
+
+  assert.deepEqual(effects(place).filter((line) => line === 'act k-1'), ['act k-1'], 'the same key reached the platform more than once');
+  for (const event of [...first.events, ...again.events].filter(completion(1))) {
+    assert.deepEqual(event.params, outcome.params, 'an outcome sent again differs from the first: Daoris would hear two');
+  }
+  assert.deepEqual(after.params, outcome.params);
+});
+
+test('each work/reconcile answer', async (t) => {
+  const place = scratch(t, {
+    acts: { 'i-2': { state: 'failed', code: transient }, 'i-3': { hold: true }, 'i-4': { exit: true } },
+  });
+  const plugin = await start(t, place);
+  const asked = async (on, n) => {
+    const answer = await on.ask('hook/work/reconcile', {
+      unit: 'u-contract', step: STEP, invocation: `i-${n}`, idempotencyKey: `k-${n}`, subjectRevision: 'r1',
+    });
+    assert.equal(reconciled(answer), null);
+    return answer;
+  };
+
+  await plugin.ask('hook/work/perform', attempt(1));
+  await plugin.until(completion(1), 'outcome for `i-1`');
+  const done = await asked(plugin, 1);
+  assert.equal(done.state, 'done');
+  assert.equal(done.outcome.state, 'reached');
+
+  assert.equal((await asked(plugin, 9)).state, 'not-started', 'an attempt never sent');
+
+  await plugin.ask('hook/work/perform', attempt(2));
+  assert.equal((await plugin.until(completion(2), 'outcome for `i-2`')).params.code, transient);
+  const failed = await asked(plugin, 2);
+  assert.equal(failed.state, 'failed');
+  assert.equal(failed.outcome.code, transient);
+
+  await plugin.ask('hook/work/perform', attempt(3));
+  assert.equal((await asked(plugin, 3)).state, 'running', 'an attempt still at its work');
+
+  // The process goes in the middle of an attempt: only the platform can say what became of it, and here it says nothing.
+  await plugin.ask('hook/work/perform', attempt(4));
+  await plugin.gone;
+  const restarted = await start(t, place);
+  assert.equal((await asked(restarted, 4)).state, 'unknown', 'an attempt an earlier process began, which the platform cannot tell');
+  assert.equal((await asked(restarted, 1)).state, 'done', 'a done attempt is still done after a restart');
+  await restarted.stop();
+});
+
+test('already-gone on a repeated cleanup', async (t) => {
+  const place = scratch(t);
+  const plugin = await start(t, place);
+  await plugin.ask('hook/work/perform', attempt(1));
+  const outcome = await plugin.until(completion(1), 'outcome for `i-1`');
+  const made = outcome.params.resources?.[0]?.id ?? 'r-contract';
+  const cleanup = { receipt: 'c-1', resource: made, idempotencyKey: 'ck-1' };
+
+  assert.equal((await plugin.ask('hook/work/cleanup', cleanup)).disposition, 'removed');
+  assert.equal((await plugin.ask('hook/work/cleanup', cleanup)).disposition, 'already-gone');
+  await plugin.stop();
+  const again = await start(t, place);
+  assert.equal((await again.ask('hook/work/cleanup', cleanup)).disposition, 'already-gone', 'after a restart too');
+  await again.stop();
+
+  assert.deepEqual(effects(place).filter((line) => line.startsWith('remove ')), [`remove ${made}`], 'one resource removed more than once');
+});
+
+test('an event sent again keeps the id it first had, so Daoris takes it once', async (t) => {
+  const place = scratch(t);
+  const plugin = await start(t, place);
+  await plugin.ask('hook/work/perform', attempt(1));
+  const outcome = await plugin.until(completion(1), 'outcome for `i-1`');
+  const watch = (resync) => ({ generation: 1, resync, units: [] });
+
+  await plugin.ask('hook/work/watch', watch(true));
+  await plugin.until((event) => completion(1)(event) && event !== outcome, 'outcome for `i-1` at a resync');
+  await plugin.ask('hook/work/watch', watch(true));
+  await plugin.until((event) => completion(1)(event) && plugin.events.filter(completion(1)).length >= 3, 'outcome for `i-1` at a second resync');
+  await plugin.stop();
+
+  const sent = plugin.events.filter(completion(1));
+  assert.deepEqual([...new Set(sent.map((event) => event.params.id))], [outcome.params.id], 'an event sent again under a new id is a second event');
+  for (const event of sent) assert.deepEqual(event.params, outcome.params);
+});
+
+test('no frame claims what a plugin may not, and nothing is written to the Daoris home it is told', async (t) => {
+  const place = scratch(t, { acts: { 'i-2': { state: 'failed', code: transient } } });
+  const plugin = await start(t, place);
+  await plugin.ask('hook/work/watch', { generation: 1, resync: true, units: [] });
+  await plugin.ask('hook/work/perform', attempt(1));
+  const outcome = await plugin.until(completion(1), 'outcome for `i-1`');
+  await plugin.ask('hook/work/perform', attempt(2, 'r2'));
+  await plugin.until(completion(2), 'outcome for `i-2`');
+  await plugin.ask('hook/work/reconcile', { unit: 'u-contract', step: STEP, invocation: 'i-1', idempotencyKey: 'k-1', subjectRevision: 'r1' });
+  await plugin.ask('hook/work/cleanup', { receipt: 'c-1', resource: outcome.params.resources?.[0]?.id ?? 'r-contract', idempotencyKey: 'ck-1' });
+  await plugin.stop();
+
+  const own = new Set((manifest.steps ?? []).flatMap((step) => [step.id, `${manifest.id}/${step.id}`]));
+  const invocations = new Set(['i-1', 'i-2']);
+  assert.deepEqual(plugin.noise, [], 'stdout held lines that are not frames: stdout is the wire');
+  for (const frame of plugin.frames) {
+    const said = JSON.stringify(frame);
+    assert.ok(frame !== null && typeof frame === 'object' && !Array.isArray(frame), `${said} is not a frame`);
+    if (!('method' in frame)) {
+      assert.ok(plugin.sent.has(frame.id), `${said} answers nothing Daoris asked`);
+      continue;
+    }
+    // The one frame a plugin sends unasked: an event, never a request, and only of its own steps.
+    assert.equal(frame.method, 'work/step', `${said}: a plugin asks Daoris nothing, and sends no other notification`);
+    assert.ok(!('id' in frame), `${said}: an event is a notification, with no id`);
+    assert.ok(own.has(frame.params?.step), `${said}: an event of a step this plugin does not declare makes another step's evidence`);
+    assert.ok(frame.params?.plugin === undefined || frame.params.plugin === manifest.id, `${said}: an event in another plugin's name`);
+    if (frame.params?.invocation !== undefined) assert.ok(invocations.has(frame.params.invocation), `${said}: an outcome of an attempt never sent`);
+  }
+  assert.deepEqual(readdirSync(place.home), [], 'it wrote to the Daoris home it was told; what it keeps goes in its data folder');
+});

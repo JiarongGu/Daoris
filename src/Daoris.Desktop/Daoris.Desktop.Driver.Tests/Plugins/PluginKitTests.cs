@@ -50,7 +50,7 @@ public sealed class PluginKitTests : IDisposable
     public void The_kit_has_every_point_the_driver_has_in_the_driver_s_order()
     {
         Assert.Equal(HookPoints.All, PluginKit.Points.Select(point => point.Name));
-        Assert.Equal(["decision", "observation", "act", "query", "observation"], PluginKit.Points.Select(point => point.Kind));
+        Assert.Equal(["decision", "observation", "act", "query", "observation", "observation", "event", "act"], PluginKit.Points.Select(point => point.Kind));
     }
 
     [Fact]
@@ -61,6 +61,39 @@ public sealed class PluginKitTests : IDisposable
         Assert.Equal(LandingPlugins.DefaultPatience, PluginKit.Find(HookPoints.Land)!.Patience);
         Assert.Equal(TimeSpan.FromSeconds(30), PluginKit.Find(HookPoints.State)!.Patience);
         Assert.Equal(TimeSpan.FromSeconds(10), PluginKit.Find(HookPoints.StateChanged)!.Patience);
+        // The work wire's peer waits its default for the awaited set's answer and an attempt's receipt (FABRIC-PERFORM1a).
+        Assert.Equal(HookPeer.DefaultPatience, PluginKit.Find(HookPoints.Watch)!.Patience);
+        Assert.Equal(HookPeer.DefaultPatience, PluginKit.Find(HookPoints.Perform)!.Patience);
+    }
+
+    /// <summary>
+    /// FABRIC-PERFORM1e: the work points' samples are the work wire's own messages. The awaited set and an attempt are written by the
+    /// writer the hook set sends with and read back whole; the event a performer sends, made a plugin's own, is one the hook set's
+    /// reader takes, bound to its invocation, with its receipt and what it made.
+    /// </summary>
+    [Fact]
+    public void The_work_points_samples_are_the_work_wire_s_own_messages()
+    {
+        static JsonElement Element(JsonNode node) => JsonDocument.Parse(node.ToJsonString()).RootElement.Clone();
+
+        var watch = PluginKit.Find(HookPoints.Watch)!.Frame;
+        Assert.Equal(WorkWire.Watch(PluginKit.SampleWatch).ToJsonString(), watch.ToJsonString());
+        Assert.Equal(PluginKit.SampleWatch.Units[0].Awaiting, WorkWire.ReadWatch(Element(watch))!.Units[0].Awaiting);
+
+        var perform = PluginKit.Find(HookPoints.Perform)!.Frame;
+        Assert.Equal(WorkWire.Perform(PluginKit.SamplePerform).ToJsonString(), perform.ToJsonString());
+        Assert.Equal(PluginKit.SamplePerform with { Inputs = [] }, WorkWire.ReadPerform(Element(perform))! with { Inputs = [] });
+
+        var step = PluginKit.Find(HookPoints.Step)!;
+        Assert.Equal("event", step.Kind);
+        var own = step.Frame.ToJsonString()
+            .Replace(PluginKit.SampleStep, "acme.deploy/perform", StringComparison.Ordinal)
+            .Replace(PluginKit.SamplePlugin, "acme.deploy", StringComparison.Ordinal);
+        var heard = WorkWire.ReadStep(JsonDocument.Parse(own).RootElement, out var field);
+        Assert.True(heard is not null, $"the sample event does not read at `{field}`");
+        Assert.Equal(PluginKit.SamplePerform.Invocation, heard!.Invocation);
+        Assert.Equal("acme.deploy/receipt@1:i-0fda18a2b3c4", heard.Outcome.Evidence!.Ref);
+        Assert.Equal([new WorkResource("acme.deploy/resource@1", "r-i-0fda18a2b3c4")], heard.Outcome.Resources);
     }
 
     /// <summary>
@@ -206,7 +239,7 @@ public sealed class PluginKitTests : IDisposable
     {
         var unknown = Assert.Throws<DriverException>(() => PluginKit.Plan("acme.gate", ["quest/started"], _scratch));
         Assert.Contains("`quest/started` is not a point", unknown.Message);
-        Assert.Contains("quest/consider, session/ended, work/land, work/state, state/changed", unknown.Message);
+        Assert.Contains("quest/consider, session/ended, work/land, work/state, state/changed, work/watch, work/step, work/perform", unknown.Message);
 
         var none = Assert.Throws<DriverException>(() => PluginKit.Plan("acme.gate", [], _scratch));
         Assert.Contains("at least one point", none.Message);
@@ -371,7 +404,7 @@ public sealed class PluginKitTests : IDisposable
     {
         var folder = New("acme.silent", [HookPoints.Land]);
         // It takes the frame and never answers it.
-        Replace(folder, "      send({ jsonrpc: '2.0', id: frame.id, result: await points[frame.method.slice(5)](frame.params ?? {}) });", "      // silence");
+        Replace(folder, "      send({ jsonrpc: '2.0', id: frame.id, result: await answers[frame.method.slice(5)](frame.params ?? {}) });", "      // silence");
         Replace(folder, "    const declared = frame.params?.points ?? [];",
             "    await new Promise((resolve) => setTimeout(resolve, 1500));\n    const declared = frame.params?.points ?? [];");
 
@@ -893,7 +926,193 @@ public sealed class PluginKitTests : IDisposable
         Assert.Equal("terminal", line.Data.GetProperty("door").GetString());
     }
 
+    // ——— a plugin that works (FABRIC-PERFORM1e)
+
+    [Fact]
+    public void A_new_performer_declares_its_step_and_what_it_makes_and_carries_the_kit_s_work_files()
+    {
+        var plan = PluginKit.Plan("acme.deploy", [HookPoints.Perform], _scratch);
+        var written = PluginKit.Write(plan);
+
+        // It reports at `work/step` too, where its outcome is heard, and is told the awaited set at `work/watch`, as every plugin that
+        // works is: the kit adds both, in the driver's order.
+        Assert.Equal([HookPoints.Watch, HookPoints.Step, HookPoints.Perform], plan.Points);
+        Assert.Equal(["plugin.json", "plugin.mjs", "plugin.test.mjs", "README.md", "work.mjs", "plugin.contract.test.mjs", "cycle.json"], written);
+
+        var (manifest, problem) = PluginCatalog.ReadFolder(plan.Folder);
+        Assert.Null(problem);
+        var step = Assert.Single(manifest.Steps);
+        Assert.Equal(("acme.deploy/perform", NodeReach.Performed, "acme.deploy/receipt@1"), (step.Kind, step.Reach, step.Evidence));
+        Assert.Equal(new NodePerform(Idempotent: true, Reconcile: true, ["unavailable", "rate-limited", "timeout"]), step.Perform);
+        Assert.Equal(3, step.Retry!.MaxAttempts);
+        Assert.Equal(new PluginResource("acme.deploy/resource@1", PluginResourceRoles.Temporary, PluginSteps.CleanupPoint), Assert.Single(manifest.Resources));
+
+        var script = File.ReadAllText(Path.Combine(plan.Folder, "plugin.mjs"));
+        Assert.Contains("import { work } from './work.mjs';", script);
+        Assert.Contains("act: async (call) =>", script);
+        Assert.Contains("capabilities: kit.capabilities", script);
+        Assert.Contains("...kit.calls", script);
+        Assert.Contains(WorkWire.Capability, File.ReadAllText(Path.Combine(plan.Folder, "work.mjs")));
+        Assert.Equal(CycleFixture.Default with { Step = "perform" }, PluginCycles.Read(Path.Combine(plan.Folder, "cycle.json")) with
+        {
+            Revisions = CycleFixture.Default.Revisions,
+            Inputs = CycleFixture.Default.Inputs,
+        });
+        // The README says the plugin's own step and receipt, never the samples' markers.
+        var readme = File.ReadAllText(Path.Combine(plan.Folder, "README.md"));
+        Assert.Contains("\"step\": \"acme.deploy/perform\"", readme);
+        Assert.Contains("acme.deploy/receipt@1:i-0fda18a2b3c4", readme);
+        Assert.Contains("## Its contract test", readme);
+        foreach (var name in written)
+        {
+            var text = File.ReadAllText(Path.Combine(plan.Folder, name));
+            Assert.DoesNotContain("{{", text);
+            Assert.DoesNotContain("\r", text);
+        }
+
+        Assert.DoesNotContain(PluginKit.SamplePlugin, readme);
+        Assert.DoesNotContain(PluginKit.SampleStep, readme);
+    }
+
+    [Fact]
+    public void A_new_observer_declares_an_observed_step_and_no_performer_s_files()
+    {
+        var plan = PluginKit.Plan("acme.checks", [HookPoints.Watch], _scratch);
+
+        Assert.Equal([HookPoints.Watch, HookPoints.Step], plan.Points);
+        Assert.Equal(["plugin.json", "plugin.mjs", "plugin.test.mjs", "README.md", "work.mjs"], plan.Files.Select(file => file.Name));
+        PluginKit.Write(plan);
+        var (manifest, problem) = PluginCatalog.ReadFolder(plan.Folder);
+        Assert.Null(problem);
+        Assert.Equal(("acme.checks/observe", NodeReach.Observed), (Assert.Single(manifest.Steps).Kind, manifest.Steps[0].Reach));
+        Assert.Empty(manifest.Resources);
+        Assert.Contains("observe: async (unit, step) => null", File.ReadAllText(Path.Combine(plan.Folder, "plugin.mjs")));
+    }
+
+    /// <summary>
+    /// §D9's gate in a plugins repository: `node --test` runs the wire test and the contract test, with nothing of Daoris's installed, and
+    /// a fresh performer passes both, in the stand-in world.
+    /// </summary>
+    [Fact]
+    public async Task A_fresh_performer_passes_its_wire_test_and_its_contract_test()
+    {
+        var folder = New("acme.deploy", [HookPoints.Perform, HookPoints.Watch]);
+
+        var (exit, output) = await NodeTestAsync(folder);
+
+        Assert.True(exit == 0, output);
+        Assert.Contains("# fail 0", output);
+        Assert.Contains("# pass 8", output);
+        foreach (var shown in new[] { "one external effect under duplicate delivery", "each work/reconcile answer", "already-gone on a repeated cleanup",
+                     "an event sent again keeps the id it first had", "no frame claims what a plugin may not" })
+        {
+            Assert.Contains(shown, output);
+        }
+    }
+
+    [Fact]
+    public async Task A_fresh_observer_passes_its_wire_test()
+    {
+        var folder = New("acme.checks", [HookPoints.Watch]);
+
+        var (exit, output) = await NodeTestAsync(folder);
+
+        Assert.True(exit == 0, output);
+        Assert.Contains("# fail 0", output);
+    }
+
+    /// <summary>A performer that forgets a key it has seen does the work twice: its contract test says so, and so does the cycle.</summary>
+    [Fact]
+    public async Task A_performer_that_does_the_work_twice_fails_its_contract_test_and_its_cycle()
+    {
+        var folder = New("acme.twice", [HookPoints.Perform]);
+        Sabotage(folder, "work.mjs", "      if (!known) {", "      if (!known || true) {");
+
+        var (exit, output) = await NodeTestAsync(folder);
+        var cycle = await PluginCycles.TryAsync(Home, folder, CycleFixture.Default);
+
+        Assert.NotEqual(0, exit);
+        Assert.Contains("the same key reached the platform more than once", output);
+        Assert.Contains("work was done 2 times", Failed(cycle, "duplicate").Sentence);
+        Assert.Equal(1, cycle.ExitCode);
+    }
+
+    /// <summary>
+    /// 🔴 Nothing reaches a platform: a plugin that does not take the stand-in world is sent no attempt, by `try`, the cycle, the wire
+    /// test or the contract test, and its work is never done.
+    /// </summary>
+    [Fact]
+    public async Task A_plugin_that_does_not_take_the_stand_in_world_is_sent_no_attempt()
+    {
+        var folder = New("acme.real", [HookPoints.Perform]);
+        Sabotage(folder, "work.mjs", "process.env.DAORIS_PLUGIN_WORLD ? standIn(process.env.DAORIS_PLUGIN_WORLD) : null", "null");
+        // Were an attempt sent, its own act() would leave this mark beside it: the platform reached.
+        Sabotage(folder, "plugin.mjs", "act: async (call) => ({",
+            "act: async (call) => (writeFileSync(`${process.env.DAORIS_PLUGIN_FOLDER}/reached`, '1'), {");
+        Sabotage(folder, "plugin.mjs", "import { work } from './work.mjs';", "import { work } from './work.mjs';\nimport { writeFileSync } from 'node:fs';");
+
+        var trial = await PluginTrials.TryFolderAsync(Home, folder);
+        var cycle = await PluginCycles.TryAsync(Home, folder, CycleFixture.Default);
+        var (exit, output) = await NodeTestAsync(folder);
+
+        Assert.Contains("none was sent", Failed(trial, HookPoints.Perform).Sentence);
+        Assert.Contains("nothing was sent", Failed(cycle, "world").Sentence);
+        Assert.NotEqual(0, exit);
+        Assert.Contains("did not take the kit's stand-in world", output);
+        Assert.False(File.Exists(Path.Combine(folder, "reached")));
+    }
+
+    [Fact]
+    public async Task A_fresh_performer_passes_try_and_its_cycle_through_the_driver()
+    {
+        var folder = New("acme.deploy", [HookPoints.Perform]);
+
+        var trial = await PluginTrials.TryFolderAsync(Home, folder);
+        var cycle = await PluginCycles.TryAsync(Home, folder, CycleFixture.Default with { Deadline = TimeSpan.FromSeconds(1) });
+
+        Assert.True(trial.Passed, Describe(trial));
+        Assert.Equal(["handshake", HookPoints.Watch, HookPoints.Step, HookPoints.Perform, "shutdown", "stdout"], trial.Steps.Select(step => step.Name));
+        Assert.Contains("acknowledged `i-0fda18a2b3c4`", trial.Steps.Single(step => step.Name == HookPoints.Perform).Sentence);
+        Assert.True(cycle.Passed, Describe(cycle));
+        Assert.Equal(["handshake", "eligible", "duplicate", "failure", "timeout", "handshake again", "restart", "stale", "cleanup", "shutdown", "stdout"],
+            cycle.Steps.Select(step => step.Name));
+        Assert.Contains("on `acme.deploy/receipt@1:i-1`", cycle.Steps.Single(step => step.Name == "eligible").Sentence);
+        Assert.Contains("which its step tries again", cycle.Steps.Single(step => step.Name == "failure").Sentence);
+        Assert.Contains("removed, then already-gone, removed once", cycle.Steps.Single(step => step.Name == "cleanup").Sentence);
+        // The cycle's scratch goes with it, under the home's trials (D63).
+        Assert.Empty(Directory.EnumerateFileSystemEntries(PluginTrials.TrialsOf(Home)));
+    }
+
+    [Fact]
+    public async Task The_terminal_drives_a_folder_s_cycle_and_refuses_what_a_cycle_does_not_take()
+    {
+        var folder = New("acme.deploy", [HookPoints.Perform]);
+        var fixture = Path.Combine(folder, "cycle.json");
+        File.WriteAllText(fixture, File.ReadAllText(fixture).Replace("\"deadlineSeconds\": 3", "\"deadlineSeconds\": 1", StringComparison.Ordinal));
+
+        var output = new StringWriter();
+        Assert.Equal(0, await PluginKitCommand.RunAsync(["try", folder, "--cycle", fixture], output, home: Home));
+        Assert.Contains("ok    restart", output.ToString());
+        Assert.Contains("answered as the driver reads it", output.ToString());
+
+        var refused = new StringWriter();
+        Assert.Equal(2, await PluginKitCommand.RunAsync(["try", folder, "--cycle", fixture, "--point", HookPoints.Perform], refused, home: Home));
+        Assert.Contains("takes no --point or --frame", refused.ToString());
+        refused = new StringWriter();
+        Assert.Equal(2, await PluginKitCommand.RunAsync(["try", "acme.deploy", "--cycle", fixture], refused, home: Home));
+        Assert.Contains("never an installed plugin's data", refused.ToString());
+    }
+
     // ——— helpers
+
+    private static void Sabotage(string folder, string file, string from, string to)
+    {
+        var path = Path.Combine(folder, file);
+        var text = File.ReadAllText(path);
+        // The sabotage must have applied, or the test proves nothing.
+        Assert.Contains(from, text);
+        File.WriteAllText(path, text.Replace(from, to, StringComparison.Ordinal));
+    }
 
     private string New(string id, IEnumerable<string> points)
     {

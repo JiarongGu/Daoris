@@ -67,6 +67,36 @@ public static class PluginKit
     /// <summary>A change, as the kit's samples say it (STATEHUB1g): what a session's landing moved, as accepting it declares.</summary>
     public static readonly StateChangedFrame SampleChange = new(["sessions", "landing", "diff", "handOff", "sweep", "treesSync"], ["s1a2b3c4"]);
 
+    /// <summary>
+    /// A sample frame's step (FABRIC-PERFORM1e): the plugin's own, which the wire test and the trial replace with its first declared
+    /// step, its kind <c>&lt;plugin&gt;/&lt;id&gt;</c> where Daoris names a kind and its id where it names an id. A README says the plugin's.
+    /// </summary>
+    public const string SampleStep = "{step}";
+
+    /// <summary>A sample reference's owner (FABRIC-PERFORM1e): the plugin's id, written in a README as the plugin's own.</summary>
+    public const string SamplePlugin = "{plugin-id}";
+
+    /// <summary>The units awaiting a plugin's steps, as the kit's samples say it (FABRIC-PERFORM1e): one branch, its step awaited, a resync asked.</summary>
+    public static readonly WorkWatchFrame SampleWatch = new(1, Resync: true,
+    [
+        new WatchedUnit("engine", "default", SampleRoot, "feature/0fda18-expose-a-streaming-budget", "3f2a9c1e5b7d4a6f8e0c2b4d6f8a0c2e4b6d8f0a",
+            "main", null, [SampleStep]),
+    ]);
+
+    /// <summary>One attempt, as the kit's samples say it (FABRIC-PERFORM1e): what the performer sends at <see cref="HookPoints.Perform"/>.</summary>
+    public static readonly WorkPerformCall SamplePerform = new(
+        "u-0fda18a2", SampleStep, 1, "i-0fda18a2b3c4", "k-3f2a9c1e5b7d4a6f", "3f2a9c1e5b7d4a6f8e0c2b4d6f8a0c2e4b6d8f0a", [],
+        new DateTimeOffset(2026, 10, 21, 9, 10, 0, TimeSpan.Zero));
+
+    /// <summary>The attempt's outcome, as the kit's samples say it (FABRIC-PERFORM1e): the event a performer sends, bound to its invocation.</summary>
+    public static readonly WorkStepFrame SampleOutcome = new(
+        SampleStep,
+        new WorkOutcome(WorkStates.Reached, Evidence: new WorkEvidence($"{SamplePlugin}/receipt@1:i-0fda18a2b3c4", null, null, "deployed"))
+        {
+            Resources = [new WorkResource($"{SamplePlugin}/resource@1", "r-i-0fda18a2b3c4")],
+        },
+        new DateTimeOffset(2026, 10, 21, 9, 2, 0, TimeSpan.Zero), "i-0fda18a2b3c4", Invocation: "i-0fda18a2b3c4");
+
     private static readonly JsonSerializerOptions Pretty = new()
     {
         WriteIndented = true,
@@ -177,6 +207,51 @@ public static class PluginKit
               // which sessions it was about (null is any). Nothing said here changes anything; answer {} promptly.
               'state/changed': (frame) => ({}),
             """),
+        new(
+            HookPoints.Watch,
+            "observation",
+            "Only by the Daoris that holds the machine, and only while some unit awaits one of this plugin's steps: the whole set of "
+            + "units awaiting them, each with its repository, branch, tip and the steps it awaits, every time the set changes. "
+            + "`generation` counts this process's starts; where `resync` is true, the plugin sends again, at `work/step`, everything "
+            + "it knows of each awaited step, each under the id it was first sent with. The kit's `work.mjs` does both.",
+            "`{}`. The answer is not read, but it is waited for.",
+            "the driver would say so in the plugin's health and tell it the set again with `resync`",
+            HookPeer.DefaultPatience,
+            WorkWire.Watch(SampleWatch),
+            """
+              // The awaited set: which units await this plugin's steps. The kit's work.mjs answers it, and sends again what it knows.
+              'work/watch': kit.points['work/watch'],
+            """),
+        new(
+            HookPoints.Step,
+            "event",
+            "Never asked: the plugin's own notification, the one frame it sends unasked, `{ \"jsonrpc\": \"2.0\", \"method\": "
+            + "\"work/step\", \"params\": … }` with no id. A performed step's outcome names the `invocation` it was asked; an observed "
+            + "step's names the `repository`, `branch` and full `commit` it is about. `id` names the event, and sending it again "
+            + "under the same id is the same event. Only reached outcomes carry `outputs`; any outcome may name `resources` it made.",
+            "nothing: it is never answered.",
+            "the driver would refuse the frame, count it under the plugin's name, and ask it to send again what it knows",
+            HookPeer.DefaultPatience,
+            WorkWire.Step(SampleOutcome)["params"]!.DeepClone().AsObject(),
+            """
+              // Not asked: the plugin's own event, which the kit's work.mjs sends for it. Listed so the handshake says it reports there.
+              'work/step': null,
+            """),
+        new(
+            HookPoints.Perform,
+            "act",
+            "Once a performed step is due, its attempt: written on Daoris's record before it is sent, and sent again under the same "
+            + "`idempotencyKey` after a restart or a lost answer, which must never do the work twice. It is answered on receipt, "
+            + "before the work; the outcome comes later at `work/step`, naming the `invocation`. Asked beside it: `work/reconcile` "
+            + "(what became of an attempt) and `work/cleanup` (one thing it made, removed), which the kit's `work.mjs` answers.",
+            "`{ \"invocation\": \"…\" }`, the invocation it was sent, and nothing more.",
+            "the attempt's outcome would be unknown, and the driver asks `work/reconcile` before any other attempt",
+            HookPeer.DefaultPatience,
+            WorkWire.Perform(SamplePerform),
+            """
+              // One attempt, written down and acknowledged by the kit's work.mjs, which then calls act() above once for its key.
+              'work/perform': kit.points['work/perform'],
+            """),
     ];
 
     /// <summary>The kit's word on a point, or null for a name this build does not have.</summary>
@@ -215,20 +290,63 @@ public static class PluginKit
             throw new DriverException($"`{unknown}` is not a point — one of: {Names}.");
         }
 
+        // FABRIC-PERFORM1e: a plugin that works reports at `work/step`, a performer's outcome and an observer's alike, so either brings it;
+        // and the hook set tells every plugin that works the awaited set at `work/watch`, a performer included, so performing brings that.
+        if (named.Any(point => point is HookPoints.Watch or HookPoints.Perform) && !named.Contains(HookPoints.Step)) named.Add(HookPoints.Step);
+        if (named.Contains(HookPoints.Perform) && !named.Contains(HookPoints.Watch)) named.Add(HookPoints.Watch);
         var chosen = Points.Where(point => named.Contains(point.Name, StringComparer.Ordinal)).ToList();
         var folder = PluginKitFiles.FolderIn(parent, id);
         PluginKitFiles.Writable(folder);
 
         var name = NameOf(id);
-        // LF whatever this source file's own line endings were when it was compiled: raw literals carry them.
-        return new ScaffoldPlan(id, folder, chosen.Select(point => point.Name).ToList(),
-        [
+        var files = new List<ScaffoldFile>
+        {
+            // LF whatever this source file's own line endings were when it was compiled: raw literals carry them.
             new(PluginCatalog.ManifestName, Manifest(id, name, chosen).Replace("\r\n", "\n")),
             new(Script, WireScript(id, name, chosen).Replace("\r\n", "\n")),
             new(Test, WireTest()),
             new(Readme, ReadmeOf(id, name, chosen).Replace("\r\n", "\n")),
-        ]);
+        };
+        if (Works(chosen)) files.Add(new(WorkScript, WorkLibrary()));
+        if (Performs(chosen))
+        {
+            files.Add(new(ContractTest, ContractTestText()));
+            files.Add(new(CycleFixture, PluginCycles.Fixture(PerformedStep)));
+        }
+
+        return new ScaffoldPlan(id, folder, chosen.Select(point => point.Name).ToList(), files);
     }
+
+    /// <summary>The kit's half of a plugin that works (FABRIC-PERFORM1e): the journal, the work points' handlers and the stand-in world.</summary>
+    public const string WorkScript = "work.mjs";
+
+    /// <summary>A performer's contract test (§D9): `node --test` runs it beside the wire test.</summary>
+    public const string ContractTest = "plugin.contract.test.mjs";
+
+    /// <summary>The cycle `plugins try --cycle` drives a performer through (§D9).</summary>
+    public const string CycleFixture = "cycle.json";
+
+    /// <summary>The performed step a new performer declares, and the observed step a new observer does.</summary>
+    public const string PerformedStep = "perform";
+
+    public const string ObservedStep = "observe";
+
+    /// <summary>The failure codes a new performer's step retries: §D6's own example.</summary>
+    public static readonly IReadOnlyList<string> Transient = ["unavailable", "rate-limited", "timeout"];
+
+    /// <summary>Whether a plugin of these points works: it speaks the work wire, and the kit gives it <see cref="WorkScript"/>.</summary>
+    private static bool Works(IReadOnlyList<KitPoint> points) => points.Any(point => HookPoints.Work.Contains(point.Name, StringComparer.Ordinal));
+
+    private static bool Performs(IReadOnlyList<KitPoint> points) => points.Any(point => point.Name == HookPoints.Perform);
+
+    /// <summary>The kit's <see cref="WorkScript"/>: the same for every plugin of this build, since it reads the manifest it sits beside.</summary>
+    internal static string WorkLibrary() => PluginKitFiles.Template(WorkScript).Replace("{{capability}}", WorkWire.Capability, StringComparison.Ordinal);
+
+    /// <summary>The kit's <see cref="ContractTest"/>: the same for every performer of this build, since it reads the manifest it sits beside.</summary>
+    internal static string ContractTestText() => PluginKitFiles.Template(ContractTest)
+        .Replace("{{protocol}}", HookPeer.ProtocolVersion.ToString(System.Globalization.CultureInfo.InvariantCulture), StringComparison.Ordinal)
+        .Replace("{{grace}}", ((long)HookProcess.Grace.TotalMilliseconds).ToString(System.Globalization.CultureInfo.InvariantCulture), StringComparison.Ordinal)
+        .Replace("{{capability}}", WorkWire.Capability, StringComparison.Ordinal);
 
     /// <summary>Write a plan's files, each whole or not at all. The folder is judged again first: a plan is what the disk said when it was made.</summary>
     /// <returns>The names written, in the plan's order.</returns>
@@ -254,11 +372,52 @@ public static class PluginKit
           "hooks": {
             "command": ["node", "${plugin}/{{Script}}"],
             "points": [{{string.Join(", ", points.Select(point => Json(point.Name)))}}]
-          },
+          },{{Declared(id, points)}}
           "tools": []
         }
 
         """;
+
+    /// <summary>The receipt a new working plugin's step is reached on, and what a new performer makes (§D4, §D3): schemas of its own.</summary>
+    internal static string ReceiptOf(string id) => $"{id}/receipt@1";
+
+    internal static string ResourceOf(string id) => $"{id}/resource@1";
+
+    /// <summary>
+    /// A working plugin's steps and resources (FABRIC-PERFORM1e, §D9): a performer's one performed step, declaring §D6's contract as the
+    /// kit keeps it (idempotent, reconciled, §D6's transient codes under a retry that can take them) and the one temporary thing it makes;
+    /// an observer's one observed step. Each reached on a receipt of the plugin's own. Nothing for a plugin that does not work.
+    /// </summary>
+    private static string Declared(string id, IReadOnlyList<KitPoint> points)
+    {
+        if (!Works(points)) return "";
+        if (!Performs(points))
+        {
+            return $$"""
+
+                  "steps": [
+                    { "id": {{Json(ObservedStep)}}, "reach": "observed", "evidence": { "schema": {{Json(ReceiptOf(id))}} } }
+                  ],
+                """.TrimEnd();
+        }
+
+        return $$"""
+
+              "steps": [
+                {
+                  "id": {{Json(PerformedStep)}},
+                  "reach": "performed",
+                  "evidence": { "schema": {{Json(ReceiptOf(id))}} },
+                  "perform": { "point": "{{HookPoints.Perform}}", "idempotent": true, "reconcile": "{{PluginSteps.ReconcilePoint}}", "transient": [{{string.Join(", ", Transient.Select(Json))}}] },
+                  "retry": { "maxAttempts": 3, "delaysSeconds": [5, 30] },
+                  "timeoutSeconds": 600
+                }
+              ],
+              "resources": [
+                { "schema": {{Json(ResourceOf(id))}}, "role": "temporary", "cleanup": "{{PluginSteps.CleanupPoint}}" }
+              ],
+            """.TrimEnd();
+    }
 
     /// <summary>Whether a plugin of these points runs a platform's tool, so it is written <c>run()</c> (a landing, or a query, PLUGHOOK1a).</summary>
     private static bool RunsATool(IReadOnlyList<KitPoint> points) => points.Any(point => point.Name is HookPoints.Land or HookPoints.State);
@@ -266,15 +425,64 @@ public static class PluginKit
     private static string WireScript(string id, string name, IReadOnlyList<KitPoint> points)
     {
         var lands = RunsATool(points);
+        var works = Works(points);
+        var performs = Performs(points);
         return PluginKitFiles.Template("plugin.mjs")
             .Replace("{{name}}", name, StringComparison.Ordinal)
             .Replace("{{id}}", id, StringComparison.Ordinal)
-            .Replace("{{imports}}", lands
+            .Replace("{{imports}}", (lands
                 ? "import { spawnSync } from 'node:child_process';\nimport { existsSync } from 'node:fs';\nimport { delimiter, join } from 'node:path';\n"
-                : "", StringComparison.Ordinal)
+                : "") + (works ? "import { work } from './work.mjs';\n" : ""), StringComparison.Ordinal)
             .Replace("{{helpers}}", lands ? PluginKitFiles.Template("run.mjs") : "", StringComparison.Ordinal)
-            .Replace("{{handlers}}", string.Join("\n\n", points.Select(point => point.Handler.Replace("\r\n", "\n"))), StringComparison.Ordinal);
+            .Replace("{{work}}", works ? WorkCalls(id, performs) : "", StringComparison.Ordinal)
+            .Replace("{{handlers}}", string.Join("\n\n", points.Select(point => point.Handler.Replace("\r\n", "\n"))), StringComparison.Ordinal)
+            .Replace("{{calls}}", performs ? ", ...kit.calls" : "", StringComparison.Ordinal)
+            .Replace("{{capabilities}}", performs ? ", capabilities: kit.capabilities" : "", StringComparison.Ordinal);
     }
+
+    /// <summary>
+    /// The external calls a working plugin's author writes (FABRIC-PERFORM1e, §D9), handed to the kit's <c>work()</c>: a performer's
+    /// <c>act</c>, <c>check</c> and <c>remove</c>, an observer's <c>observe</c>. Each starts by saying it is not written yet.
+    /// </summary>
+    private static string WorkCalls(string id, bool performs) => (performs
+        ? $$"""
+
+            // The work points (README.md, "Working"): the kit's work.mjs keeps the journal, answers each point, and sends each outcome at
+            // `work/step`. These are the external calls it makes, the only part to write. Under the kit's stand-in world, which its tests
+            // and `daoris-driver plugins try` set, none of them is called.
+            const kit = work({
+              data,
+              send,
+              say,
+              // The work, done once for an attempt: call.unit, call.step, call.invocation, call.idempotencyKey, call.subjectRevision,
+              // call.inputs, call.deadlineAt. Say the receipt it reached on and what it made, which Daoris has removed at the end:
+              //   return { state: 'reached', evidence: { ref: `{{ReceiptOf(id)}}:${call.invocation}`, url, message },
+              //            resources: [{ schema: '{{ResourceOf(id)}}', id: '<the platform's id for it>' }] };
+              // A failure names its code; only the codes plugin.json lists as `transient` are tried again:
+              //   return { state: 'failed', code: 'unavailable', evidence: { message: '…' } };
+              act: async (call) => ({ state: 'failed', code: 'not-written', evidence: { message: `${id} does not perform yet.` } }),
+              // What became of an attempt a process before this one began, asked of the platform: { state: 'done', outcome },
+              // { state: 'not-started' }, or null where it cannot say, which stops the step for the person.
+              check: async (attempt) => null,
+              // One thing act made, removed: { disposition: 'removed' | 'already-gone' | 'retained' | 'failed', proof, message }.
+              remove: async (resource) => ({ disposition: 'failed', message: `${id} does not remove ${resource.resource} yet.` }),
+            });
+            """
+        : """
+
+            // The work points (README.md, "Working"): the kit's work.mjs keeps the journal, answers each point, and sends each
+            // observation at `work/step`. This is the external call it makes, the only part to write. Under the kit's stand-in world,
+            // which its tests and `daoris-driver plugins try` set, it is not called.
+            const kit = work({
+              data,
+              send,
+              say,
+              // What the platform says of an awaited step at a unit's tip (unit.repository, unit.branch, unit.tip): an outcome, like
+              //   return { state: 'reached', evidence: { ref: '<receipt schema>:<id>', url, message } };
+              // or null while it says nothing yet. A changed answer for the same tip is sent once, under an id of its own.
+              observe: async (unit, step) => null,
+            });
+            """).Replace("\r\n", "\n") + "\n";
 
     /// <summary>The wire test: the same for every plugin of this build, since it reads the manifest it sits beside.</summary>
     private static string WireTest()
@@ -293,26 +501,58 @@ public static class PluginKit
         return PluginKitFiles.Template("plugin.test.mjs")
             .Replace("{{protocol}}", HookPeer.ProtocolVersion.ToString(System.Globalization.CultureInfo.InvariantCulture), StringComparison.Ordinal)
             .Replace("{{grace}}", ((long)HookProcess.Grace.TotalMilliseconds).ToString(System.Globalization.CultureInfo.InvariantCulture), StringComparison.Ordinal)
+            .Replace("{{capability}}", WorkWire.Capability, StringComparison.Ordinal)
+            .Replace("{{step}}", SampleStep, StringComparison.Ordinal)
             .Replace("{{points}}", table.ToJsonString(Pretty), StringComparison.Ordinal);
     }
 
     private static string ReadmeOf(string id, string name, IReadOnlyList<KitPoint> points)
     {
+        // A sample's step and its references' owner are this plugin's own in its README (FABRIC-PERFORM1e): the awaited set names a step
+        // by its id, an attempt and its outcome by its kind.
+        var step = Performs(points) ? PerformedStep : ObservedStep;
+        string Own(KitPoint point) => point.Frame.ToJsonString(Pretty)
+            .Replace(SampleStep, point.Name == HookPoints.Watch ? step : PluginSteps.KindOf(id, step), StringComparison.Ordinal)
+            .Replace(SamplePlugin, id, StringComparison.Ordinal);
+
         var sections = new StringBuilder();
         foreach (var point in points)
         {
             sections.Append($"### `{point.Name}`: {Article(point.Kind)} {point.Kind}\n\n");
             sections.Append($"{point.When}\n\n");
-            sections.Append("It is sent:\n\n```json\n").Append(point.Frame.ToJsonString(Pretty)).Append("\n```\n\n");
+            if (point.Kind == "event")
+            {
+                // The plugin's own notification: what it sends, never what it is sent; and nothing waits for it.
+                sections.Append("It sends, as `params`:\n\n```json\n").Append(Own(point)).Append("\n```\n\n");
+                sections.Append($"It is answered {point.Answer} A frame the driver cannot read: {point.OnFailure}.\n\n");
+                continue;
+            }
+
+            sections.Append("It is sent:\n\n```json\n").Append(Own(point)).Append("\n```\n\n");
             sections.Append($"It answers {point.Answer} Late, wrong or no answer: {point.OnFailure}. ");
             sections.Append($"The driver waits {Seconds(point.Patience)} for it.\n\n");
         }
+
+        var files = new StringBuilder();
+        if (Works(points)) files.Append($"| `{WorkScript}` | the kit's half of working: the journal, the work points' answers, the stand-in world; written by the kit, not by hand |\n");
+        if (Performs(points))
+        {
+            files.Append($"| `{ContractTest}` | its contract test: what the kit promises of a performer, checked over the wire |\n");
+            files.Append($"| `{CycleFixture}` | the cycle `daoris-driver plugins try --cycle` drives it through |\n");
+        }
+
+        var work = !Works(points) ? ""
+            : PluginKitFiles.Template(Performs(points) ? "work-perform.md" : "work-observe.md")
+                .Replace("{{step}}", step, StringComparison.Ordinal)
+                .Replace("{{resource}}", ResourceOf(id), StringComparison.Ordinal);
 
         var lands = points.Any(point => point.Name == HookPoints.Land);
         return PluginKitFiles.Template("README.md")
             .Replace("{{name}}", name, StringComparison.Ordinal)
             .Replace("{{id}}", id, StringComparison.Ordinal)
+            .Replace("{{files}}", files.ToString(), StringComparison.Ordinal)
             .Replace("{{points}}", sections.ToString(), StringComparison.Ordinal)
+            .Replace("{{work}}", work, StringComparison.Ordinal)
             .Replace("{{run}}", RunsATool(points)
                 ? "`run()` in `plugin.mjs` does exactly that, and `safe()` respells text so it can pass."
                 : "`daoris-driver plugins new <id> --point work/land` writes a `run()` helper that does exactly that.",

@@ -22,7 +22,8 @@ public static class PluginKitCommand
 {
     public const string Usage =
         "usage: daoris-driver plugins new <id> --point <point>… [--in <folder>]\n"
-        + "       daoris-driver plugins try <folder|id> [--point <point>] [--frame <file.json>]";
+        + "       daoris-driver plugins try <folder|id> [--point <point>] [--frame <file.json>]\n"
+        + "       daoris-driver plugins try <folder> --cycle <fixture.json>";
 
     /// <param name="log">
     /// The machine log, where a trial of an installed plugin is one <c>plugin.tried</c> line from this door
@@ -43,7 +44,9 @@ public static class PluginKitCommand
                     output.WriteLine("  new writes a plugin's folder — a manifest, a wire script answering each point, its wire");
                     output.WriteLine("  test and a README — into a new or empty folder, and installs nothing. try checks each tool");
                     output.WriteLine("  the manifest declares, starts the plugin as the driver would, speaks the handshake, a frame");
-                    output.WriteLine("  at each point and the shutdown, and checks every answer.");
+                    output.WriteLine("  at each point and the shutdown, and checks every answer. --cycle drives a folder's performer");
+                    output.WriteLine("  through a step made due, a duplicate delivery, a failure, a timeout, a restart, a new revision's");
+                    output.WriteLine("  attempt and a repeated cleanup, in the kit's stand-in world, so nothing reaches its platform.");
                     output.WriteLine($"  Points: {string.Join(", ", PluginKit.Points.Select(point => point.Name))}.");
                     return 2;
             }
@@ -74,17 +77,23 @@ public static class PluginKitCommand
             [PluginKit.Script] = "the wire script: the handshake, a handler for each point, the shutdown",
             [PluginKit.Test] = "its wire test: `node --test` in the folder, nothing of Daoris's needed",
             [PluginKit.Readme] = "the wire, the rules, and each point's frame and answer",
+            [PluginKit.WorkScript] = "the kit's half of working: the journal, the work points' answers, the stand-in world",
+            [PluginKit.ContractTest] = "its contract test: what the kit promises of a performer, over the wire",
+            [PluginKit.CycleFixture] = "the cycle `plugins try --cycle` drives it through",
         };
-        foreach (var name in written) output.WriteLine($"  {name,-16} {about.GetValueOrDefault(name, "")}");
-        output.WriteLine("  Next: write what each handler does in plugin.mjs, then `node --test` in the folder and");
-        output.WriteLine($"  `daoris-driver plugins try {plan.Folder}`. Once a person has read it, `daoris plugin add <folder>`");
-        output.WriteLine("  installs it; nothing runs before that.");
+        foreach (var name in written) output.WriteLine($"  {name,-26} {about.GetValueOrDefault(name, "")}");
+        var performs = plan.Points.Contains(HookPoints.Perform, StringComparer.Ordinal);
+        output.WriteLine(performs
+            ? "  Next: write act(), check() and remove() in plugin.mjs, then `node --test` in the folder and"
+            : "  Next: write what each handler does in plugin.mjs, then `node --test` in the folder and");
+        output.WriteLine($"  `daoris-driver plugins try {plan.Folder}`{(performs ? $" --cycle {Path.Combine(plan.Folder, PluginKit.CycleFixture)}" : "")}.");
+        output.WriteLine("  Once a person has read it, `daoris plugin add <folder>` installs it; nothing runs before that.");
         return 0;
     }
 
     private static async Task<int> TryAsync(string[] args, TextWriter output, string? home, MachineLog? log, CancellationToken ct)
     {
-        var (positional, points, options) = Parse(args, "try", ["--frame"]);
+        var (positional, points, options) = Parse(args, "try", ["--frame", "--cycle"]);
         if (positional is null)
         {
             throw new DriverException("`plugins try` needs a folder, or an installed plugin's id — e.g. `daoris-driver plugins try ./acme.quiet-hours`.");
@@ -92,10 +101,27 @@ public static class PluginKitCommand
 
         if (points.Count > 1) throw new DriverException("`plugins try` sends one point's frame at a time: name one --point, or none for every point.");
 
+        // FABRIC-PERFORM1e: a cycle is a folder's performer driven through its attempts, not a frame at a point.
+        PluginTrial result;
+        if (options.TryGetValue("--cycle", out var fixture))
+        {
+            if (points.Count > 0 || options.ContainsKey("--frame")) throw new DriverException("--cycle drives the whole cycle: it takes no --point or --frame.");
+            if (!PluginFolders.There(positional))
+            {
+                throw new DriverException($"no folder `{positional}` here — a cycle is tried on a plugin's folder, never an installed plugin's data.");
+            }
+
+            result = await PluginCycles.TryAsync(
+                home ?? throw new DriverException(
+                    $"no Daoris home: a cycle keeps what the plugin keeps under it. Set {DaorisHome.Variable}, or run "
+                    + "`node --test` in the folder, whose contract test needs no Daoris."),
+                positional, PluginCycles.Read(fixture), ct).ConfigureAwait(false);
+            return Print(result, output);
+        }
+
         var trial = new TrialOptions(Point: points.FirstOrDefault(), Frame: options.TryGetValue("--frame", out var file) ? Frame(file) : null);
 
         // A folder first: after `plugins new acme.x`, `plugins try acme.x` means the folder just made.
-        PluginTrial result;
         if (PluginFolders.There(positional))
         {
             // A trial keeps its scratch under the home (D63): with none named, it refuses, as every writer does.
@@ -120,6 +146,12 @@ public static class PluginKitCommand
                 : $"no folder `{positional}` here.");
         }
 
+        return Print(result, output);
+    }
+
+    /// <summary>A trial, step by step, then what the plugin said and the verdict; its exit code.</summary>
+    private static int Print(PluginTrial result, TextWriter output)
+    {
         output.WriteLine($"plugins: trying `{result.Plugin}` in {result.Folder}");
         foreach (var step in result.Steps)
         {

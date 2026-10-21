@@ -129,7 +129,7 @@ public sealed class HookChangedTests : IDisposable
     {
         Assert.Equal("state/changed", HookPoints.StateChanged);
         // A point is additive (PLUGHOOK1a): the earlier points keep their places.
-        Assert.Equal([HookPoints.QuestConsider, HookPoints.SessionEnded, HookPoints.Land, HookPoints.State, HookPoints.StateChanged], HookPoints.All);
+        Assert.Equal([HookPoints.QuestConsider, HookPoints.SessionEnded, HookPoints.Land, HookPoints.State, HookPoints.StateChanged], HookPoints.All.Take(5));
         // The loop's set keeps its process: the shell's bus tells it, and a landing never does.
         Assert.Contains(HookPoints.StateChanged, HookPoints.Loop);
         var kit = PluginKit.Find(HookPoints.StateChanged)!;
