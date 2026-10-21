@@ -20,6 +20,8 @@ export type FixtureNode = {
   state?: { word: Said; tone: 'neutral' | 'open' | 'taken' | 'done' | 'declined' };
   current?: boolean;
   reached?: boolean;
+  /** Done or passed over: what a settled stretch folds (FLOWCHART1d, §3.6 step 2). */
+  settled?: boolean;
 };
 
 export type FixtureEdge = { id: string; from: string; to: string; says: Said; label?: Said; style?: EdgeStyle };
@@ -239,6 +241,61 @@ export const NONE_CURRENT: Fixture = {
   name: 'none-current',
   nodes: MANY_CURRENT.nodes.map(({ current: _current, state: _state, ...node }) => ({ ...node, reached: false })),
 };
+
+/** Where a line of work in a large run stands: the step it is current at, every step done, or not started (0). */
+type LaneAt = number | 'done';
+
+/** The three lines of work of a large run, each 31 steps one after another. */
+const LANES = [
+  { id: 'a', title: said('Build', '构建') },
+  { id: 'b', title: said('Test', '测试') },
+  { id: 'c', title: said('Docs', '文档') },
+] as const;
+const LANE_STEPS = 31;
+
+/**
+ * **A run too large to show whole** (FLOWCHART1d; the flowchart design §3.6, §4.4 and trap 16): 96 nodes, a decoded graph's
+ * bound, as three lines of work side by side, each 31 steps one after another from one start, then their join and the landing.
+ * Each line stands at a step (current there, in `waits` waiting on you, else working), at `done`, or not started; the join and
+ * the landing are done only where the run `ended`.
+ */
+function largeRun(name: string, lanes: readonly [LaneAt, LaneAt, LaneAt], { waits = [], ended = false }: { waits?: string[]; ended?: boolean } = {}): Fixture {
+  const done = { word: said('done', '已完成'), tone: 'done' as const };
+  const working = { word: said('working', '工作中'), tone: 'taken' as const };
+  const waiting = { word: said('waiting on you', '等你'), tone: 'open' as const };
+  const settled = (id: string, title: Said): FixtureNode => ({ id, title, state: done, reached: true, settled: true });
+  const started = lanes.some((at) => at !== 0);
+  const nodes: FixtureNode[] = [started ? settled('start', said('Start', '开始')) : { id: 'start', title: said('Start', '开始'), reached: false }];
+  const edges: FixtureEdge[] = [];
+  const edge = (from: string, to: string, says: Said) => edges.push({ id: `${from}>${to}`, from, to, says });
+  LANES.forEach((lane, index) => {
+    const at = lanes[index]!;
+    for (let step = 1; step <= LANE_STEPS; step += 1) {
+      const id = `${lane.id}${step}`;
+      const title = said(`${lane.title.en} ${step}`, `${lane.title.zh} ${step}`);
+      if (at === 'done' || step < at) nodes.push(settled(id, title));
+      else if (step === at) nodes.push({ id, title, current: true, reached: true, state: waits.includes(id) ? waiting : working });
+      else nodes.push({ id, title, reached: false });
+      edge(step === 1 ? 'start' : `${lane.id}${step - 1}`, id, step === 1 ? said('when the run starts', '进展开始时') : said('when it is done', '完成后'));
+    }
+    edge(`${lane.id}${LANE_STEPS}`, 'join', said('when it is done', '完成后'));
+  });
+  nodes.push(ended ? settled('join', said('All three', '三者全部')) : { id: 'join', title: said('All three', '三者全部'), reached: false });
+  nodes.push(ended ? settled('land', said('Land', '落地')) : { id: 'land', title: said('Land', '落地'), reached: false });
+  edge('join', 'land', said('when all three are done', '三者都完成后'));
+  return { name, label: said('How the run stands', '运行进展'), nodes, edges, entries: ['start'] };
+}
+
+/** Folded around one current node: the build at its 20th step, the tests and the docs done. */
+export const LARGE_ONE = largeRun('large-one', [20, 'done', 'done']);
+/** Folded around three current nodes, far apart: the build at 20, the tests at 9 waiting on you, the docs at 27. */
+export const LARGE_THREE = largeRun('large-three', [20, 9, 27], { waits: ['b9'] });
+/** With none current, all settled: the run ended, so the focus is before the end. */
+export const LARGE_SETTLED = largeRun('large-settled', ['done', 'done', 'done'], { ended: true });
+/** With none current, nothing started: the focus is after the entries. */
+export const LARGE_UNSTARTED = largeRun('large-unstarted', [0, 0, 0]);
+/** With none current, stopped part way: the build done, the others not started, so the focus is where it got to. */
+export const LARGE_STOPPED = largeRun('large-stopped', ['done', 0, 0]);
 
 /** Every fixture the measured-box check and the crossing table run over, by name. */
 export const HARDEST: readonly Fixture[] = [LIFECYCLE, DENSE, UNEQUAL, APPEND_BEFORE, APPEND_AFTER, MANY_CURRENT, NONE_CURRENT];
