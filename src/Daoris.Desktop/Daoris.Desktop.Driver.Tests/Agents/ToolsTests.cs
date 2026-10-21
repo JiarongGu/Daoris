@@ -542,4 +542,46 @@ public sealed class ToolsTests : IDisposable
         Tools.AddLocation(Home, "https://a.example/r.json");
         Same("""{"note":"mine","tools":{"git":{"use":"system"}},"git":{"core.sshCommand":"ssh"},"locations":["https://a.example/r.json"]}""", Parsed());
     }
+
+    /// <summary>
+    /// The keep lock over each writer's read and its write (PUSH1f2c, D194 point 3, the alone-path design §1.4): another writer's
+    /// change attempted after this one read the file lands after this one's write, on the file as this one left it, and both are kept.
+    /// With the lock taken only at the write, a location another writer added in between was lost: the edit of <c>locations</c> is the
+    /// list written whole. The other writer is started from the moment this one has read, and given a moment to land where it can.
+    /// </summary>
+    [Theory]
+    [InlineData("a location added", "add")]
+    [InlineData("a location removed", "remove")]
+    [InlineData("a way set", "system")]
+    public async Task A_change_another_writer_makes_while_this_one_writes_is_kept(string name, string writer)
+    {
+        Write("""{"locations":["https://kept.example/r.json"]}""");
+        Task<bool>? other = null;
+        void Between()
+        {
+            other = Task.Run(() => Tools.AddLocation(Home, "https://other.example/r.json"));
+            // Where nothing holds the file between this writer's read and its write, the other lands now; held, it waits its turn.
+            other.Wait(TimeSpan.FromMilliseconds(500));
+        }
+
+        switch (writer)
+        {
+            case "add":
+                Assert.True(Tools.AddLocation(Home, "https://mine.example/r.json", Between), name);
+                break;
+            case "remove":
+                Assert.True(Tools.RemoveLocation(Home, "https://kept.example/r.json", Between), name);
+                break;
+            default:
+                Tools.UseSystem(Home, "git", Between);
+                break;
+        }
+
+        Assert.True(await other!.WaitAsync(TimeSpan.FromMinutes(2)), $"{name}: the other writer added its location");
+        var locations = Parsed()["locations"]!.AsArray().Select(each => each!.GetValue<string>()).ToList();
+        Assert.Contains("https://other.example/r.json", locations);
+        if (writer == "add") Assert.Contains("https://mine.example/r.json", locations);
+        if (writer == "remove") Assert.DoesNotContain("https://kept.example/r.json", locations);
+        if (writer == "system") Assert.Equal("system", Parsed()["tools"]!["git"]!["use"]!.GetValue<string>());
+    }
 }
