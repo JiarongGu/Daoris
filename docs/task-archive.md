@@ -18976,3 +18976,13 @@ so an answer or a shown word at or past the press's time ends it expired and run
 `Confirming` attention carries the press's `Id`, and its balloon names the terminal and no route. The card toasts a refusal whose card
 has gone with its press. Proof: `PipeConfirmationsTests` and `PipeConfirmTests` on a held clock with the timer held late, and
 `Confirmations.test.tsx` in en and zh, each seen failing first. Detail: D196's NOTIFY2a note, `docs/FIX-LOG.md`. On Opus.
+
+## FABRIC-CLOSE1c7 — the run says a source made ready again waits on the person's go-on (2026-10-21, D173)
+
+> - [ ] **FABRIC-CLOSE1c7 — the run says a source made ready again waits on the person's go-on** (driver, web; after CLOSE1c3; §E5, D173's WORKFLOW2d note choice 2). A run with a started step held `source-reopened`, whose source has an unheld submission again, reads `unclosed`: it should say the step waits for the person's go-on or abandon, with the step's door, en and zh. Proof: a `WorkflowRunTests` row, `WorkflowRunSaidTwinTests` and the page's `runSaid.test.ts` in both languages.
+
+**Outcome** 2026-10-21: built. A closure graph's quest made ready again while its chain's taken next step stays held `source-reopened`
+reads *waiting on you*, `go-on`, at the new submission's moment, its quest the held step's, whose page door offers *Go on with it* and
+*Abandon…*; the head says *waits for your go-on* (等你继续或放弃). An open step the reopen withdrew is rebound instead, and reads as
+before. Proof: `WorkflowRunTests`, `WorkflowRunSaidTwinTests` (one table row) and `runSaid.test.ts`. Detail: D173's FABRIC-CLOSE1c7
+note. On Opus.

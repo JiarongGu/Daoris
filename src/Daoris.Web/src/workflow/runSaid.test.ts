@@ -59,4 +59,12 @@ describe("a run's English, as the driver's table holds it", () => {
     expect(runShort(i18n.getFixedT('zh'), reopened)).toBe('已重新打开，等智能体');
     expect(runSaid(i18n.getFixedT('zh'), reopened.steps[0])).toBe('你重新打开了委托 #q1 的交付：等它的智能体再次交付。');
   });
+
+  // FABRIC-CLOSE1c7: a source made ready again leaves its started step on the person's go-on or abandon, said as theirs to choose.
+  it('says a started step waiting on the go-on in a few words, in English and Chinese', () => {
+    const goOn = { ...WORKING, steps: [{ ...WORKING.steps[0], state: 'waiting-on-you', detail: 'go-on', quest: 'q2' }, ...WORKING.steps.slice(1)] };
+    expect(runShort(t, goOn)).toBe('waits for your go-on');
+    expect(runShort(i18n.getFixedT('zh'), goOn)).toBe('等你继续或放弃');
+    expect(runSaid(i18n.getFixedT('zh'), goOn.steps[0])).toBe('你重新打开的工作已再次交付：它的下一步委托 #q2 等你选择在新的工作上继续它，或放弃它。');
+  });
 });

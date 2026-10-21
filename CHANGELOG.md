@@ -5,6 +5,9 @@ with the version and date at release.
 
 ## Unreleased
 
+- A workflow whose work you reopened, once its agent makes it ready again, now says that its next step waits for you to go on with
+  it on the new work or abandon it, with a button to that step's page. Before, it said the work waited for your done, which that
+  workflow does not take. In English and 中文.
 - A session's tree that Daoris set aside after its work landed now drops its installed packages an hour later: each `node_modules`
   beside a `package.json` the repository tracks, which `npm ci` makes again. The rest of the folder (your files, `bin/`, `obj/`, a
   `.env`, what the session wrote) still waits its fourteen days, and a folder anything was written in after it was set aside keeps
