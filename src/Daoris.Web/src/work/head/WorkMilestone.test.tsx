@@ -407,7 +407,7 @@ describe('a closure graph’s end', () => {
     const { unmount } = render(<WorkMilestone defaultOpen unit={unit({ ends: [graphEnd()] })} />);
     const en = screen.getByRole('region', { name: 'Where this work stands' });
     expect(en).toHaveTextContent('Partially closed: #q6 is no longer done, since its take was lost to another machine, which holds its work now.');
-    expect(en).toHaveTextContent('Its close close waits again, and would close #q6 over that take once it is submitted: stop it to leave the quest to whoever took it.');
+    expect(en).toHaveTextContent('Its closing step “close” waits again, and would close #q6 over that take once it is submitted: stop it to leave the quest to whoever took it.');
     expect(within(en).getByText('partially closed')).toHaveClass('text-ink-danger');
     unmount();
 
@@ -442,7 +442,7 @@ describe('a closure graph’s end', () => {
   it('says its close node stopped once the stop is applied, offering nothing', () => {
     render(<WorkMilestone defaultOpen unit={unit({ ends: [graphEnd({ nodeState: 'stopped', words: [] })] })} />);
     const region = screen.getByRole('region', { name: 'Where this work stands' });
-    expect(region).toHaveTextContent('Its close close is stopped.');
+    expect(region).toHaveTextContent('Its closing step “close” is stopped.');
     expect(within(region).getByText('partially closed')).not.toHaveClass('text-ink-danger');
     expect(attentionActs(endedRow(graphEnd({ nodeState: 'stopped', words: [] })))).toEqual([]);
   });

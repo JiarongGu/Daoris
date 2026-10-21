@@ -203,7 +203,7 @@ describe('its closure graph’s end on its page', () => {
       'Partially closed: #se0se0 is no longer done, since its take was lost to another machine, which holds its work now.');
     // As on the work's foot: the whole end in the danger ink while its stop is offered, and no longer once the person has said it.
     expect(within(fact).getByText(/^Partially closed/)).toHaveClass('text-ink-danger');
-    expect(within(fact).getByText(/^Its close close waits again, and would close #se0se0 over that take/)).toHaveClass('text-ink-danger');
+    expect(within(fact).getByText(/^Its closing step “close” waits again, and would close #se0se0 over that take/)).toHaveClass('text-ink-danger');
     cleanup();
 
     await i18n.changeLanguage('zh');
