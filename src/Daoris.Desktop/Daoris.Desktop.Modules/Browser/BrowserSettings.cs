@@ -113,9 +113,12 @@ public static class BrowserSettings
                 $"{problem}. Fix it, or delete it to start from the defaults: the browser's settings will not write over a file they could not read.");
         }
 
+        // The edit made onto the file as it stands (KEEPALL1c, `JsonKeeping.Save`): its line ends kept, a key written twice
+        // refused, no edit nothing written. Written from the nodes, it wrote LF over a file in CRLF. The CLI's `setField` does the same.
+        var read = file is null ? null : JsonFile.Serialize(file);
         file ??= [];
         file[field] = value;
-        JsonFile.Write(FilePath(home), file);
+        JsonKeeping.Save(FilePath(home), read is not null, read ?? "{}\n", JsonFile.Serialize(file));
     }
 
     private static (JsonObject? File, string? Problem) Load(string home)
@@ -126,7 +129,8 @@ public static class BrowserSettings
         JsonNode? file;
         try
         {
-            file = JsonNode.Parse(File.ReadAllText(path));
+            // A key written twice reads as the CLI's `JSON.parse` reads it, where a node threw at the first look (KEEPALL1c).
+            file = JsonNode.Parse(JsonKeeping.Once(File.ReadAllText(path)));
         }
         catch (JsonException error)
         {

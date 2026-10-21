@@ -362,12 +362,10 @@ public static class Tools
     public static bool AddLocation(string home, string address)
     {
         if (LocationProblem(address) is { } problem) throw new DriverException($"{problem} — nothing was written.");
-        var (path, root, locations) = WritableLocations(home);
+        var (path, root, locations, read) = WritableLocations(home);
         if (locations.Any(each => Text(each) == address)) return false;
         locations.Add(address);
-        // The home and the folder the file is in (`data/` since HOMELAYOUT3), which a new home has not made yet.
-        Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(path))!);
-        JsonFile.Write(path, root);
+        Keep(path, read, root);
         return true;
     }
 
@@ -379,7 +377,7 @@ public static class Tools
     public static bool RemoveLocation(string home, string address)
     {
         if (!File.Exists(DaorisHome.Entry(home, HomeEntry.Tools))) return false;
-        var (path, root, locations) = WritableLocations(home);
+        var (path, root, locations, read) = WritableLocations(home);
         var removed = false;
         for (var at = locations.Count - 1; at >= 0; at--)
         {
@@ -389,18 +387,16 @@ public static class Tools
         }
 
         if (!removed) return false;
-        JsonFile.Write(path, root);
+        Keep(path, read, root);
         return true;
     }
 
-    /// <summary>The file and its <c>locations</c> to write over, or the refusal that leaves it as it is.</summary>
-    private static (string Path, JsonObject Root, JsonArray Locations) WritableLocations(string home)
+    /// <summary>
+    /// The file and its <c>locations</c> to write over, with the file as read, or the refusal that leaves it as it is.
+    /// </summary>
+    private static (string Path, JsonObject Root, JsonArray Locations, string? Read) WritableLocations(string home)
     {
-        var path = DaorisHome.Entry(home, HomeEntry.Tools);
-        var (root, problem) = Load(path);
-        if (problem is not null) throw new DriverException($"{problem}. Fix it, or delete it to start from nothing — nothing was written.");
-
-        root ??= new JsonObject();
+        var (path, root, read) = Writable(home);
         if (root["locations"] is { } held && held is not JsonArray)
         {
             throw new DriverException($"{path}'s `locations` is not a list, so nothing was written — fix it, or delete the key to start from nothing.");
@@ -412,8 +408,28 @@ public static class Tools
             root["locations"] = locations;
         }
 
-        return (path, root, locations);
+        return (path, root, locations, read);
     }
+
+    /// <summary>
+    /// The file as an object to edit, and as it read, written by this writer (null where there was none); or the refusal that
+    /// leaves it as it is.
+    /// </summary>
+    private static (string Path, JsonObject Root, string? Read) Writable(string home)
+    {
+        var path = DaorisHome.Entry(home, HomeEntry.Tools);
+        var (root, problem) = Load(path);
+        if (problem is not null) throw new DriverException($"{problem}. Fix it, or delete it to start from nothing — nothing was written.");
+        return root is null ? (path, new JsonObject(), null) : (path, root, JsonFile.Serialize(root));
+    }
+
+    /// <summary>
+    /// The edit from <paramref name="read"/> to <paramref name="root"/> made onto the file as it stands (KEEPALL1c,
+    /// <see cref="JsonKeeping.Save"/>): its line ends kept, a key written twice refused, no edit nothing written. Written from the
+    /// nodes, it wrote LF over a file in CRLF and edited a file holding a key twice. The CLI's <c>keepTools</c>.
+    /// </summary>
+    private static void Keep(string path, string? read, JsonObject root) =>
+        JsonKeeping.Save(path, read is not null, read ?? "{}\n", JsonFile.Serialize(root));
 
     /// <summary>
     /// Set one tool's way (rule 6): the other ways' fields go, and every key the writer has no field for stays,
@@ -423,11 +439,7 @@ public static class Tools
     private static void SetWay(string home, string id, string way, string? version, string? file)
     {
         if (Find(id) is null) throw new DriverException(Undeclared(id));
-        var path = DaorisHome.Entry(home, HomeEntry.Tools);
-        var (root, problem) = Load(path);
-        if (problem is not null) throw new DriverException($"{problem}. Fix it, or delete it to start from nothing — nothing was written.");
-
-        root ??= new JsonObject();
+        var (path, root, read) = Writable(home);
         if (root["tools"] is { } held && held is not JsonObject)
         {
             throw new DriverException(
@@ -451,10 +463,7 @@ public static class Tools
         entry["use"] = way;
         if (version is not null) entry["version"] = version;
         if (file is not null) entry["file"] = file;
-
-        // The home and the folder the file is in (`data/` since HOMELAYOUT3), which a new home has not made yet.
-        Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(path))!);
-        JsonFile.Write(path, root);
+        Keep(path, read, root);
     }
 
     /// <summary>A downloaded version's executable, or why there is none (§3.6's layout).</summary>
@@ -529,7 +538,10 @@ public static class Tools
         $"`{id}` is not a tool this build runs — one of: {string.Join(", ", Declared.Select(tool => tool.Id))}. "
         + "A tool is added in the code, never by a file.";
 
-    /// <summary>A home file as an object, or why it is not one. Absent is null and no problem.</summary>
+    /// <summary>
+    /// A home file as an object, or why it is not one. Absent is null and no problem. A key written twice reads as the CLI's
+    /// <c>JSON.parse</c> reads it (<see cref="JsonKeeping.Once"/>), where a node threw at the first look; an edit then refuses it.
+    /// </summary>
     private static (JsonObject? Root, string? Problem) Load(string path)
     {
         if (!File.Exists(path)) return (null, null);
@@ -537,7 +549,7 @@ public static class Tools
         JsonNode? parsed;
         try
         {
-            parsed = JsonNode.Parse(File.ReadAllText(path));
+            parsed = JsonNode.Parse(JsonKeeping.Once(File.ReadAllText(path)));
         }
         catch (JsonException error)
         {

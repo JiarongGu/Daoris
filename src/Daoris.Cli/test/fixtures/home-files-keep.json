@@ -1,6 +1,40 @@
 {
-  "about": "KEEPALL1 and KEEPALL1b (D173's KEEPALL1 and KEEPALL1b notes; FIX-LOG 2026-10-17): every home file a door edits keeps what its writer does not own, as driver.json's writers do (driver-config-keeps.json). Read row for row by the CLI's homefileskeep.test.ts and the driver's HomeFilesKeepTests. `files` holds each file as it stands before the read, in the writer's layout, its lines joined by LF with one final LF, with keys neither twin knows at each level and numbers JavaScript cannot hold or would write shorter. A row names its `file` and one door's `edit` (`op` and its fields); `changes` turn that file into what both twins write, each `from` found exactly once (its lines joined by LF) and replaced by `to`. A row's `start` is made to the file before the read; `between` is another writer's change, made after this writer read the file and before it writes, which the write keeps (only for a writer whose read and write are two calls); a row whose file `crlf` is true has its lines joined by CRLF, and so is what both write; a row `refused` writes nothing, its refusal naming what it says, the file left as `start` or `between` made it (and `changes` say so). A row `only` names the one twin with a writer for its file (`plugin-approvals.json` is the driver's alone, KEEPALL1d), and the other skips it.",
+  "about": "KEEPALL1, KEEPALL1b and KEEPALL1c (D173's KEEPALL1, KEEPALL1b and KEEPALL1c notes; FIX-LOG 2026-10-17): every home file a door edits keeps what its writer does not own, as driver.json's writers do (driver-config-keeps.json). Read row for row by the CLI's homefileskeep.test.ts and the driver's HomeFilesKeepTests, and browser/settings.json's rows by the modules' BrowserSettingsTests, whose writer that is. `files` holds each file as it stands before the read, in the writer's layout, its lines joined by LF with one final LF, with keys neither twin knows at each level and numbers JavaScript cannot hold or would write shorter. A row names its `file` and one door's `edit` (`op` and its fields); `changes` turn that file into what both twins write, each `from` found exactly once (its lines joined by LF) and replaced by `to`. A row's `start` is made to the file before the read; `between` is another writer's change, made after this writer read the file and before it writes, which the write keeps (only for a writer whose read and write are two calls); a row whose file `crlf` is true has its lines joined by CRLF, and so is what both write; a row `refused` writes nothing, its refusal naming what it says, the file left as `start` or `between` made it (and `changes` say so). A row `only` names the one twin with a writer for its file (`plugin-approvals.json` is the driver's alone, KEEPALL1d), and the other skips it.",
   "files": {
+    "tools.json": [
+      "{",
+      "  \"later\": {",
+      "    \"kept\": true,",
+      "    \"big\": 9007199254740993",
+      "  },",
+      "  \"tools\": {",
+      "    \"git\": {",
+      "      \"use\": \"file\",",
+      "      \"file\": \"C:/Tools/Git/git.exe\",",
+      "      \"since\": 9007199254740993,",
+      "      \"weight\": 2.50",
+      "    },",
+      "    \"node\": {",
+      "      \"use\": \"system\"",
+      "    }",
+      "  },",
+      "  \"locations\": [",
+      "    \"https://mirror.example/tools\"",
+      "  ],",
+      "  \"ratio\": 1.50",
+      "}"
+    ],
+    "browser/settings.json": [
+      "{",
+      "  \"later\": {",
+      "    \"kept\": true,",
+      "    \"big\": 9007199254740993",
+      "  },",
+      "  \"extensions\": \"offer\",",
+      "  \"browser\": \"daoris\",",
+      "  \"ratio\": 1.50",
+      "}"
+    ],
     "plugins.json": [
       "{",
       "  \"later\": {",
@@ -434,6 +468,100 @@
       "refused": "`workspaces` is no longer an object",
       "changes": [
         { "from": ["  \"workspaces\": {", "    \"work\": {", "      \"allow\": [", "        \"Read\"", "      ],", "      \"since\": 9007199254740993", "    }", "  },"], "to": ["  \"workspaces\": \"none\","] }
+      ]
+    },
+    {
+      "name": "tools: a way set as it already is writes the same bytes",
+      "file": "tools.json",
+      "edit": { "op": "tool-system", "id": "node" },
+      "changes": []
+    },
+    {
+      "name": "tools: a way set changes its entry alone, the entry's own unknown keys and the file's kept as written",
+      "file": "tools.json",
+      "edit": { "op": "tool-system", "id": "git" },
+      "changes": [
+        { "from": ["      \"use\": \"file\",", "      \"file\": \"C:/Tools/Git/git.exe\","], "to": ["      \"use\": \"system\","] }
+      ]
+    },
+    {
+      "name": "tools: a location added goes last, every number kept as written",
+      "file": "tools.json",
+      "edit": { "op": "location-add", "address": "https://cache.example/tools" },
+      "changes": [
+        { "from": ["    \"https://mirror.example/tools\""], "to": ["    \"https://mirror.example/tools\",", "    \"https://cache.example/tools\""] }
+      ]
+    },
+    {
+      "name": "tools: the last location removed leaves the list empty, every number kept as written",
+      "file": "tools.json",
+      "edit": { "op": "location-remove", "address": "https://mirror.example/tools" },
+      "changes": [
+        { "from": ["  \"locations\": [", "    \"https://mirror.example/tools\"", "  ],"], "to": ["  \"locations\": [],"] }
+      ]
+    },
+    {
+      "name": "tools: a file in CRLF stays in CRLF",
+      "file": "tools.json",
+      "crlf": true,
+      "edit": { "op": "tool-system", "id": "git" },
+      "changes": [
+        { "from": ["      \"use\": \"file\",", "      \"file\": \"C:/Tools/Git/git.exe\","], "to": ["      \"use\": \"system\","] }
+      ]
+    },
+    {
+      "name": "tools: a key written twice in one object refuses the edit, naming it",
+      "file": "tools.json",
+      "start": [
+        { "from": ["  \"ratio\": 1.50"], "to": ["  \"ratio\": 1.50,", "  \"ratio\": 2"] }
+      ],
+      "edit": { "op": "tool-system", "id": "git" },
+      "refused": "the key `ratio` twice",
+      "changes": [
+        { "from": ["  \"ratio\": 1.50"], "to": ["  \"ratio\": 1.50,", "  \"ratio\": 2"] }
+      ]
+    },
+    {
+      "name": "browser: a setting set as it already is writes the same bytes",
+      "file": "browser/settings.json",
+      "edit": { "op": "browser-extensions", "value": "offer" },
+      "changes": []
+    },
+    {
+      "name": "browser: the browser chosen changes that key alone, every other key and number kept as written",
+      "file": "browser/settings.json",
+      "edit": { "op": "browser-use", "value": "edge" },
+      "changes": [
+        { "from": ["  \"browser\": \"daoris\","], "to": ["  \"browser\": \"edge\","] }
+      ]
+    },
+    {
+      "name": "browser: a setting the file does not hold goes last",
+      "file": "browser/settings.json",
+      "edit": { "op": "browser-links", "value": "daoris" },
+      "changes": [
+        { "from": ["  \"ratio\": 1.50"], "to": ["  \"ratio\": 1.50,", "  \"links\": \"daoris\""] }
+      ]
+    },
+    {
+      "name": "browser: a file in CRLF stays in CRLF",
+      "file": "browser/settings.json",
+      "crlf": true,
+      "edit": { "op": "browser-use", "value": "edge" },
+      "changes": [
+        { "from": ["  \"browser\": \"daoris\","], "to": ["  \"browser\": \"edge\","] }
+      ]
+    },
+    {
+      "name": "browser: a key written twice in one object refuses the edit, naming it",
+      "file": "browser/settings.json",
+      "start": [
+        { "from": ["  \"ratio\": 1.50"], "to": ["  \"ratio\": 1.50,", "  \"ratio\": 2"] }
+      ],
+      "edit": { "op": "browser-use", "value": "edge" },
+      "refused": "the key `ratio` twice",
+      "changes": [
+        { "from": ["  \"ratio\": 1.50"], "to": ["  \"ratio\": 1.50,", "  \"ratio\": 2"] }
       ]
     }
   ]

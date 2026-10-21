@@ -6,12 +6,14 @@ import { fileURLToPath } from 'node:url';
 import { addRule, readPermissions, removeRule, switchDefault, writePermissions, type PermissionFile } from '../src/agents/permissions.ts';
 import { withRotation, withUse } from '../src/accounts/rotation.ts';
 import { addKeyAccount, profileHome, readHarnessSettings, replaceKeyAccount, withDefault, writeHarnessSettings } from '../src/agents/toolchain.ts';
+import { setBrowser, setExtensions, setLinks } from '../src/browser/browser.ts';
 import { homeEntry } from '../src/platform/home.ts';
 import { disablePlugin, enablePlugin } from '../src/plugins/plugins.ts';
+import { addLocation, removeLocation, useSystem } from '../src/tools/tools.ts';
 import { makeFixture } from './_fixture.ts';
 
 /**
- * KEEPALL1 and KEEPALL1b (FIX-LOG 2026-10-17): every home file a door edits keeps what its writer does not own, as `driver.json`'s writers do
+ * KEEPALL1, KEEPALL1b and KEEPALL1c (FIX-LOG 2026-10-17): every home file a door edits keeps what its writer does not own, as `driver.json`'s writers do
  * (`driver/configkeeps.test.ts`). One table both twins read, `fixtures/home-files-keep.json`, row for row with the driver's
  * `HomeFilesKeepTests`.
  */
@@ -19,6 +21,7 @@ import { makeFixture } from './_fixture.ts';
 type Edit = {
   op: string; id?: string; scope?: 'machine' | 'workspace' | 'repository'; name?: string; list?: 'allow' | 'ask' | 'deny'; rule?: string; on?: boolean;
   agent?: string; account?: string; key?: string; workspace?: string; use?: string; version?: string; order?: string[];
+  address?: string; value?: string;
 };
 type Change = { from: string[]; to: string[] };
 type Row = {
@@ -88,6 +91,22 @@ function applied(home: string, row: Row, between: () => void): void {
             : edit.op === 'harness-order' ? withRotation(read, edit.agent!, edit.order!, workspace)
               : assert.fail(`the table names an edit this test does not make: ${edit.op}`);
     writeHarnessSettings(path, edited);
+    return;
+  }
+  if (row.file === 'tools.json') {
+    between();
+    if (edit.op === 'tool-system') useSystem(home, edit.id!);
+    else if (edit.op === 'location-add') addLocation(home, edit.address!);
+    else if (edit.op === 'location-remove') removeLocation(home, edit.address!);
+    else throw new Error(`the table names an edit this test does not make: ${edit.op}`);
+    return;
+  }
+  if (row.file === 'browser/settings.json') {
+    between();
+    if (edit.op === 'browser-extensions') setExtensions(home, edit.value as 'offer');
+    else if (edit.op === 'browser-use') setBrowser(home, edit.value as 'edge');
+    else if (edit.op === 'browser-links') setLinks(home, edit.value as 'daoris');
+    else throw new Error(`the table names an edit this test does not make: ${edit.op}`);
     return;
   }
   throw new Error(`the table names a file this test does not edit: ${row.file}`);
