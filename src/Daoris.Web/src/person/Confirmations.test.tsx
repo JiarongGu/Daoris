@@ -2,7 +2,7 @@ import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import i18n from '../locales/i18n';
-import { Confirmations, type Confirmation } from './Confirmations';
+import { Confirmations, type Confirmation, type ConfirmationAnswer } from './Confirmations';
 
 // PERSONDOOR1f and RPC1c (D156 point 4, the person-door design §4.2): what a terminal asked the window to confirm, shown on every
 // main window under the strip by the press's own name and every value it carries, naming what sent it, saying Daoris cannot tell
@@ -24,8 +24,10 @@ const SERVICE: Confirmation = {
 
 const draw = (waiting: Confirmation[], answer = vi.fn(async () => ({ answered: true as const })), notice = false) => {
   const onDismissNotice = vi.fn();
-  const view = render(<Confirmations waiting={waiting} notice={notice} onAnswer={answer} onDismissNotice={onDismissNotice} />);
-  return { ...view, answer, onDismissNotice };
+  const notify = vi.fn();
+  const view = render(
+    <Confirmations waiting={waiting} notice={notice} onAnswer={answer} notify={notify} onDismissNotice={onDismissNotice} />);
+  return { ...view, answer, notify, onDismissNotice };
 };
 
 describe("the window's confirmation of a terminal's press", () => {
@@ -80,7 +82,7 @@ describe("the window's confirmation of a terminal's press", () => {
     const answer = vi.fn()
       .mockResolvedValueOnce({ answered: false, why: 'gone', message: 'the driver said so.' })
       .mockResolvedValueOnce({ answered: false, why: null, message: 'This confirmation no longer waits: it expired.' });
-    draw([ARCHIVE, SERVICE], answer);
+    const { notify } = draw([ARCHIVE, SERVICE], answer);
     const [archive, service] = screen.getAllByRole('group');
 
     await userEvent.click(within(archive).getByRole('button', { name: 'Confirm' }));
@@ -88,6 +90,30 @@ describe("the window's confirmation of a terminal's press", () => {
       'This no longer waits: it was answered in another window, its two minutes passed, or its terminal took it back.');
     await userEvent.click(within(service).getByRole('button', { name: 'Refuse' }));
     expect(await within(service).findByRole('alert')).toHaveTextContent('This confirmation no longer waits: it expired.');
+    // Said where it was pressed, its card still drawn: never a toast as well (R3).
+    expect(notify).not.toHaveBeenCalled();
+  });
+
+  // NOTIFY2a (D196 point 4, the notification design §3.4): a Confirm at or past its press's time ends the press, and the pipe tells
+  // every window before the answer returns, so the card has gone with its press by then. The refusal is toasted, in the words the
+  // card says of a press that has gone, as R3 allows where the place has gone.
+  it.each([
+    ['en', 'Confirm', 'This no longer waits: it was answered in another window, its two minutes passed, or its terminal took it back.'],
+    ['zh', '确认', '此请求已不再等待：它已在另一个窗口中得到回答、两分钟已过，或其终端已将它撤回。'],
+  ])('toasts a refusal whose card has gone with its press (%s)', async (language, confirm, words) => {
+    await i18n.changeLanguage(language);
+    let settle: (value: ConfirmationAnswer) => void = () => {};
+    const answer = vi.fn(() => new Promise<ConfirmationAnswer>((resolve) => { settle = resolve; }));
+    const notify = vi.fn();
+    const { rerender } = render(<Confirmations waiting={[ARCHIVE]} onAnswer={answer} notify={notify} />);
+
+    await userEvent.click(screen.getByRole('button', { name: confirm }));
+    rerender(<Confirmations waiting={[]} onAnswer={answer} notify={notify} />);
+    expect(screen.queryByRole('group')).toBeNull();
+    settle({ answered: false, why: 'gone', message: 'the driver said so.' });
+
+    await vi.waitFor(() => expect(notify).toHaveBeenCalledWith(words, 'error'));
+    expect(notify).toHaveBeenCalledTimes(1);
   });
 
   // CONFIRMSEEN1: a terminal's press's two minutes count from when it is in front of the person, so a card in a window behind others
