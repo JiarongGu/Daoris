@@ -224,7 +224,9 @@ also tells its frame Overview's *What needs you* count (`useTaskbarCount` in `br
 NOTIFY1b), which the frame wears on its taskbar button and in its title; a secondary window's page never does. Each
 count carries a later `order` than the one before, so the frame never wears an older count over a newer (SESSBADGE1).
 That count includes a plugin step's attempt held for the person, which `WORK_STATE` lists as `held` and its row settles with
-their word (`useResolveHeld` in `bridge/repositories/lines.ts`, `WORK_HELD`, FABRIC-PERFORM1g), and a tool call a session holds for
+their word (`useResolveHeld` in `bridge/repositories/lines.ts`, `WORK_HELD`, FABRIC-PERFORM1g), a node record that does not read,
+which `WORK_STATE` lists as `unreadable` and its row's press opens the folder of (`useOpenWorkRecords`, `WORK_RECORDS_FOLDER`,
+FABRIC-PERFORM1j), and a tool call a session holds for
 their answer under asking (`usePermissionWaits` in `bridge/sessions/sessions.ts`, `PERMISSION_WAITS`, AUTONOMY1b3c), answered
 with a choice its agent offered on the session's head and foot and on its row (`useAnswerPermission`,
 `SESSION_PERMISSION_ANSWER`); neither route publishes, so the page asks again itself: as a pushed call's `waiting`

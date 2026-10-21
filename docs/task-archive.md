@@ -18715,3 +18715,12 @@ at the delete keeps the branch, said in `BranchKept`. On Opus: about 40 tool cal
 nor the question, asked again at each look: `HeldAttempts.WhySaid` and the page's `work.milestone.held.close.why.unknown` (en, zh).
 Other unanswered codes keep their words. Proof: `QuestCloseTests` (CLOSE1u's unanswered case) and `WorkMilestone.test.tsx` in both
 languages. On Opus: about 40 tool calls. Detail: D173's FABRIC-CLOSE1y note.
+
+## FABRIC-PERFORM1j — an unreadable node record said where the person looks (2026-10-21, D173)
+
+> - [ ] **FABRIC-PERFORM1j — an unreadable node record said where the person looks** (driver, modules, web-shell; §D3). A unit whose node record does not read stops everything on it, and only the loop's lines say so: list it in `WORK_STATE` with a What needs you row. Proof: an unreadable record listed, en and zh.
+
+**Outcome** 2026-10-21: built. A node record that does not read is listed by its file and the unit it still names: `WORK_STATE`'s
+additive `unreadable`, the work slice's `<held>` partition, and `daoris-driver work held`. *What needs you* has a `work` row for each,
+worded in en and zh, whose press opens the records' folder (`WORK_RECORDS_FOLDER`) for the person to mend it. Proof: driver, modules
+and page tests listed in D173's note. On Opus: about 120 tool calls. Detail: D173's FABRIC-PERFORM1j note.
