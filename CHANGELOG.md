@@ -13,6 +13,9 @@ with the version and date at release.
   to the warning colour with the number of requests, a notice with *Open* stays in the corner until you open the view, and, with Daoris
   behind other windows, its taskbar button flashes. Overview now opens with a line per group (each opening *Notifications* there)
   instead of every row, and its icon carries no count. View → *Notifications* and the palette open it too. In English and 中文.
+- A conversation whose account is over its usage curve no longer offers to go on with another agent while another account of the
+  same agent has room: Daoris moves it to that account at its turn's end instead. The offer still appears with switching off, or
+  where no account of the agent has room.
 - A workflow whose work you reopened, once its agent makes it ready again, now says that its next step waits for you to go on with
   it on the new work or abandon it, with a button to that step's page. Before, it said the work waited for your done, which that
   workflow does not take. In English and 中文.

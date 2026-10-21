@@ -101,7 +101,8 @@ public sealed class AccountsRoutes(DriverLoop loop)
                         Scopes = scopes
                             .Select(scope => ScopeShown(
                                 scope.Workspace, scope.Scope, scope.Keep, said, NextOf(roster, agent, scope.Workspace), now,
-                                Safe(() => roster.InheritsDaorisAccounts(agent, scope.Workspace))))
+                                Safe(() => roster.InheritsDaorisAccounts(agent, scope.Workspace)),
+                                RoomOf(roster, agent, scope.Scope, now)))
                             .ToArray(),
                     };
                 })
@@ -162,9 +163,23 @@ public sealed class AccountsRoutes(DriverLoop loop)
         static string Code(string name) => JsonNamingPolicy.CamelCase.ConvertName(name);
     }
 
+    /// <summary>
+    /// The accounts of a scope's list a running session could move to at its turn's end (SWITCH1e; the switch design §2 and §4):
+    /// ready by the walk's own judgements (<see cref="HarnessRoster.SwitchCandidates"/>) and at least
+    /// <see cref="UsageCurves.SwitchMargin"/> under the scope's curve on every window it said, as <see cref="SwitchDecision"/> moves
+    /// to them. An account that said no number has no room, as the decision weighs it. Judged under every switch: the page reads it
+    /// beside the switch, and <c>off</c> moves nothing whatever it says.
+    /// </summary>
+    private static string[] RoomOf(HarnessRoster roster, string agent, RotationScope scope, DateTimeOffset now) =>
+        [
+            .. (Safe(() => roster.SwitchCandidates(agent, scope.List)) ?? [])
+                .Where(each => each.Ready && UsageCurves.TightestSaid(scope.Use, each.Said, now)?.Room >= UsageCurves.SwitchMargin)
+                .Select(each => each.Account),
+        ];
+
     private static object ScopeShown(
         string? workspace, RotationScope scope, string? keep, IReadOnlyDictionary<string, AccountSaid?> said, object? next, DateTimeOffset now,
-        bool inherited) => new
+        bool inherited, string[] room) => new
     {
         Workspace = workspace,
         // OWNSPACE1b-A: nothing is named here, so Daoris's accounts are the list (D175 point 2); the page says so in place of
@@ -216,6 +231,9 @@ public sealed class AccountsRoutes(DriverLoop loop)
             .Where(each => each.Tightest is { Room: < 0 })
             .Select(each => new { each.Account, each.Tightest!.Value.Window.Window, Curve = UsageCurves.Points(each.Tightest.Value.Curve) })
             .ToArray(),
+        // The accounts a running session could move to (SWITCH1e): where one has room, the switch moves the session and the page's
+        // hand-over offer, the fallback (D165 point 4), stays down.
+        Room = room,
     };
 
     private static object? CoolingShown(CoolingEntry? entry) => entry is null ? null : new

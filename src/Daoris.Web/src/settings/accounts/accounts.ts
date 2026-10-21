@@ -165,6 +165,12 @@ export type AccountScope = {
   curves?: Partial<Record<string, CurvePoint[]>>;
   measured?: CurveMeasured[];
   overCurve?: CurveOver[];
+  /**
+   * The accounts of its list a running session could move to at its turn's end (SWITCH1e, D165 point 4), as .NET judges them:
+   * ready, and at least the switch's margin under the curve on every window each said. Judged under every switch; absent from a
+   * shell older than that.
+   */
+  room?: string[];
 };
 
 /** One account of a scope's list on one window, against the scope's curve now, as .NET judges it (PUSH1e). */
