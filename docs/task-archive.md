@@ -19006,3 +19006,11 @@ the attempt and the `word`, once its close is no longer listed as held; while th
 person's `resend` on it drops the entry. The page says it on the work's foot and line, en and zh. Proof: `QuestCloseTests`' CLOSE1q2
 theory (the stop row reads the end; the others none) and its wake test (none while listed, none after the resend),
 `WorkStateSliceTests`, and `WorkMilestone.test.tsx` in both languages. Detail: D173's FABRIC-CLOSE1q4 note. On Opus.
+## FABRIC-RECLOCK2 — the other shared records under the lock (2026-10-21, D173)
+
+> - [ ] **FABRIC-RECLOCK2 — the other shared records under the lock** (driver; D173's FABRIC-END2 note). `sessions/auto-landings.json` and the abandon record edited under `RecordLock`. Proof: per store, an edit waits for its lock and no write is lost.
+
+**Outcome** 2026-10-21: built. `AutoLandings` and `AbandonRecord` each name a `LockPath` under `locks/records/` and hold it for every
+edit and for their `Forget`, as `landings.json` and `session-branches.json` have since FABRIC-END2; no shape, caller or door changed.
+Proof: `RecordLockStoresTests`, per store an edit and a forget waiting for the lock with the holder's write kept. Detail: D173's
+FABRIC-RECLOCK2 note. On Opus.
