@@ -5,6 +5,10 @@ with the version and date at release.
 
 ## Unreleased
 
+- `daoris-driver notices` prints what came to you from a terminal, changing nothing: what waits for your confirmation (by its act
+  and session), what needs you by group, unread messages by ask, and *Done and failed*, as Daoris's *Notifications* holds them;
+  `--json` prints the same as one JSON document. Without a running Daoris it reads the notices kept on this machine and says that the
+  rest is the running Daoris's to read.
 - `daoris-driver trees land <session>` whose work conflicts with what the line changed now asks the session itself to rebase in its
   own tree, as an automatic landing does, and says so; run it again once the session has. Where the session cannot be reached, it
   says why and prints the words to pass on.
