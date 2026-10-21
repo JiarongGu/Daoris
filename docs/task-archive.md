@@ -19382,6 +19382,14 @@ rewritten rows, two `rotation-use.json` order rows. No window was looked at. Det
 
 **Outcome** 2026-10-22: a start reads its process from its bind's binding, so a run's first session takes its version's checks, and a graph
 version's `claimed` `checks` and `callMinutes` are read from the version its run bound. Detail: D192's FABRIC-PIPELINE1b3 note. On Opus.
+
+## FLOWCHART1d — a workflow and its run drawn as flowcharts (2026-10-22, D186)
+
+> - [ ] **FLOWCHART1d — a workflow and its run drawn as flowcharts** (web-shell; after FLOWCHART1a1; §2.4-§2.5, §3.6, §5.1). `WorkflowChart` on `Flow`: the Workflow tab and the side bar's Workflow view top to bottom where wide, the rail at the floor; groups as fork and join, failure paths, the landing's divider, the run lit; the layout gains settled folds, focus and *Show whole*. Proof: the workflow tests' words unchanged, a 96-node run folded, stories; seen on the window. Revised 2026-10-20 by another maker's read (DESIGNREAD1): its outcome, proof and trap as the flowchart design's §10 now words them.
+
+**Outcome** 2026-10-22: the Workflow tab and the side bar's Workflow view draw a workflow and its run top to bottom where a step fits,
+the list at the floor, with failure paths, the landing's divider and the run lit with no path; no group, none being answered. `Flow`
+folds past 24 nodes, with *Show whole*. Detail: D186's FLOWCHART1d note.
 ## PUSH1f2f — the plugins, and the last census (2026-10-22, D194)
 
 > - [ ] **PUSH1f2f — the plugins, and the last census** (cli, driver, modules; after 2b, 2c and 2e; D194, the alone-path design §5). Read its row in §5 and the sections it names; build it end to end (D187), the family's TypeScript leaving as §4 says. Proof: as §5 names it.

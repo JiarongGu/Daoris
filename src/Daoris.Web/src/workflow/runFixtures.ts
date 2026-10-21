@@ -1,4 +1,4 @@
-import { BRANCH_AUTOMATIC, LIMITS, LOOK, MERGE_YOU_ACCEPT, OPINION, PULL_REQUEST, WORK } from './fixtures';
+import { BRANCH_AUTOMATIC, GO_AHEAD_WAIT, LIMITS, LOOK, MERGE_YOU_ACCEPT, OPINION, PULL_REQUEST, WORK } from './fixtures';
 import type { RunStep, WorkflowRun, WorkflowRunAnswer } from './run';
 import type { WorkflowStep } from './current';
 
@@ -107,6 +107,19 @@ export const FAILED = run([
   at(WORK(), 'failed', 'failed', { session: 's1', quest: 'q1', agent: 'claude-code', at: AT, count: 0, of: 1 }),
   at(MERGE_YOU_ACCEPT, 'not-reached', ''),
 ]);
+
+/**
+ * A named version's run (FLOWCHART1d): the work done, the landing waiting for the person's accept, then a go-ahead to release to
+ * prod whose refusal waits for them, its failure path drawn; a second opinion passed over where nothing asked for one, and the look
+ * the person skipped, each saying who passed it over in its own words.
+ */
+export const GO_AHEAD_REFUSAL = run([
+  at(WORK(), 'done', 'finished', { session: 's1', quest: 'q1', agent: 'claude-code', at: AT, count: 1, of: 1 }),
+  at(OPINION, 'skipped', 'none'),
+  at(LOOK, 'skipped', 'skip', { quest: 'q1', words: 'docs only', at: AT }),
+  at(MERGE_YOU_ACCEPT, 'waiting-on-you', 'accept', { session: 's1', at: AT }),
+  at(GO_AHEAD_WAIT, 'not-reached', ''),
+], { workflow: { version: '5d1c0e7a92b4', startHolds: [], limits: limitsOf([at(OPINION, '', ''), at(LOOK, '', ''), at(GO_AHEAD_WAIT, '', '')]), id: 'release', boundVersion: 2 } });
 
 /** An ask's work in two repositories, each its own run at its own step (design §3.8). */
 export const SEVERAL = answerOf(

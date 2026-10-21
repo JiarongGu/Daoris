@@ -277,7 +277,10 @@ controls are in the frame design's §3.
   `design/Flow.tsx`, laid out in layers by `design/flowLayout.ts` and placed by its own pane's width, left to right, top
   to bottom, or the rail, a list whose edges are words, with *Show as list* wherever it draws. Its nodes are one list in
   reading order and its edges one drawing a reader never hears; a node wears its caller's tone and words, an edge an ink,
-  never a status hue. Its stories are measured box by box in a browser (`src/Daoris.Web/measured/`).
+  never a status hue. Its stories are measured box by box in a browser (`src/Daoris.Web/measured/`). Past 24 nodes it folds
+  what is done and what is far from every current node, each fold a node with a press and *Show whole* to open them all; a
+  caller may give it sections (a workflow's *Before it lands* and *After it lands*), read top to bottom, and a wider node track
+  (FLOWCHART1d).
 
 **Forms and settings.**
 

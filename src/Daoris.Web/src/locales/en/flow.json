@@ -20,5 +20,13 @@
   "flow.stack.between": "Between them: {{says}}.",
   "flow.stack.times": "{{says}} ×{{count}}",
   "flow.stack.member": "The first of {{count}} like it: Enter folds them again.",
-  "flow.stack.memberPress": "The first of {{count}} like it: its press folds them again."
+  "flow.stack.memberPress": "The first of {{count}} like it: its press folds them again.",
+  "flow.whole": "Show whole",
+  "flow.foldAgain": "Fold again",
+  "flow.fold.done": "{{count}} steps done",
+  "flow.fold.earlier": "{{count}} earlier steps",
+  "flow.fold.between": "{{count}} steps between",
+  "flow.fold.later": "{{count}} later steps",
+  "flow.fold.holds": "Holds {{count}} steps.",
+  "flow.section": "{{title}}."
 }

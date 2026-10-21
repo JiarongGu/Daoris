@@ -10,14 +10,36 @@ import { measureFlows } from './measure';
 // 2026-10-20, and D186's note of that day says what each engine gave and which was locked. Each ceiling is what the hand
 // layout drew that day: a change that draws worse fails here, and one that draws better lowers it.
 
-/** A story, by its stories file and name, and each frame it draws (not the rail) with that frame's crossing ceiling. */
+/**
+ * A story, by its stories file and name, and each frame it draws (not the rail) with that frame's crossing ceiling. A name ending
+ * `:whole` is measured once *Show whole* is pressed in every frame (FLOWCHART1d).
+ */
 const TABLE: Record<string, Record<number, number>> = {
   // The node lifecycle's multigraph, top to bottom with its eight returns on their lanes; the rail narrower.
   'flow/Lifecycle': { 1200: 29 },
   'flow/LifecycleChinese': { 1200: 29 },
-  // The dense graph at the bounds, drawn whole at the width it needs; the rail at every frame width until folds come.
-  'flow/Dense': { 1440: 155 },
-  'flow/DenseChinese': { 1440: 155 },
+  // The dense graph at the bounds: folded after its entries, nothing having started (FLOWCHART1d), and drawn whole, once *Show
+  // whole* is pressed, at the width it needs.
+  'flow/Dense': { 1200: 5, 1440: 5 },
+  'flow/DenseChinese': { 1200: 5, 1440: 5 },
+  'flow/Dense:whole': { 1440: 155 },
+  'flow/DenseChinese:whole': { 1440: 155 },
+  // A run too large (FLOWCHART1d): 96 nodes folded around one current node, three, and none, three lines of work a rank wide.
+  'flow/TooLarge': { 544: 0, 1200: 0 },
+  'flow/TooLargeChinese': { 544: 0, 1200: 0 },
+  'flow/TooLargeThreeCurrent': { 544: 0, 1200: 0 },
+  'flow/TooLargeNoneCurrent': { 544: 0, 1200: 0 },
+  // A workflow and its run (FLOWCHART1d): a step a rank under its sections from 400 px, the rail at the side bar's floor; a failure
+  // path is a rank of two, drawn at 1200 alone.
+  'workflow/Current': { 400: 0, 544: 0, 1200: 0 },
+  'workflow/CurrentChinese': { 400: 0, 544: 0, 1200: 0 },
+  'workflow/NothingSet': { 400: 0, 544: 0, 1200: 0 },
+  'workflow/AFailurePath': { 1200: 0 },
+  'workflow/AFailurePathChinese': { 1200: 0 },
+  'workflow/RunInReview': { 400: 0, 544: 0, 1200: 0 },
+  'workflow/RunInReviewChinese': { 400: 0, 544: 0, 1200: 0 },
+  'workflow/RunPassedOver': { 1200: 0 },
+  'workflow/RunLanded': { 400: 0, 544: 0, 1200: 0 },
   // Unequal boxes in both languages, left to right and top to bottom.
   'flow/Unequal': { 570: 0, 1200: 0 },
   'flow/UnequalChinese': { 570: 0, 1200: 0 },
@@ -65,14 +87,27 @@ const TABLE: Record<string, Record<number, number>> = {
   'landing/MergedIntoTheLine': { 300: 0, 400: 0, 544: 0, 1200: 0 },
 };
 
-/** The story drawn, its faces loaded, and every drawn flow's edges drawn and holding still. */
-async function open(page: Page, story: string) {
-  await page.goto(`/measured/flow.html?story=${story}`);
-  await page.waitForFunction(() => (window as unknown as { flowReady?: boolean }).flowReady === true);
+/** Every drawn flow's edges drawn and holding still. */
+async function drawn(page: Page) {
   await page.waitForFunction(() => [...document.querySelectorAll<HTMLElement>('[data-flow-pane]')]
     .filter((pane) => pane.dataset.placement !== 'rail')
     .every((pane) => Number(pane.querySelector('[data-drawn]')?.getAttribute('data-drawn') ?? 0) > 0));
   await page.waitForTimeout(250);
+}
+
+/** The story drawn, its faces loaded, and every drawn flow's edges drawn and holding still; whole, *Show whole* pressed in each frame. */
+async function open(page: Page, story: string) {
+  const [name, whole] = story.split(':');
+  await page.goto(`/measured/flow.html?story=${name}`);
+  await page.waitForFunction(() => (window as unknown as { flowReady?: boolean }).flowReady === true);
+  await drawn(page);
+  if (whole !== 'whole') return;
+  // The press in either language: the stories draw both.
+  const press = page.getByRole('button', { name: /^(Show whole|显示全部)$/ });
+  await expect(press.first()).toBeVisible();
+  await press.evaluateAll((presses) => presses.forEach((each) => (each as HTMLElement).click()));
+  await expect(press).toHaveCount(0);
+  await drawn(page);
 }
 
 const drawnCounts = (page: Page) => page.evaluate(() =>

@@ -15,6 +15,8 @@ export const LIMITS: Record<string, string> = {
     + 'speaks on no `work/land` point. `daoris plugin list` says which.',
   'pull-request-unread': 'Its plugin answers no `work/state`, so Daoris never reads whether the pull request was merged or abandoned.',
   'pull-request-at-clean-up': 'Its state is asked of its plugin only when branches are cleaned up, never while someone waits on it.',
+  'go-ahead-partial': 'Partial: a session asks you for a go-ahead as it needs one; a step that raises one at its place and waits '
+    + 'on your answer is not built yet.',
 };
 
 const limits = (steps: WorkflowStep[]) =>
@@ -60,6 +62,26 @@ export const PULL_REQUEST: WorkflowStep = {
   id: 'pull-request', kind: 'pull-request', participation: 'you', executor: 'plugin', press: 'merge',
   source: { rule: 'landing', level: 'workspace' }, settings: { plugin: 'example.pull-request' },
   runtime: 'partial', limit: 'pull-request-at-clean-up',
+};
+
+/**
+ * A named version's go-ahead after the landing (FLOWCHART1d; the workflow design §3.6, `WorkflowKindTable`'s `go-ahead` row): the
+ * person's yes to release to prod, its refusal waiting for them rather than stopping the run. In part: no step raises one yet.
+ */
+export const GO_AHEAD_WAIT: WorkflowStep = {
+  id: 'release', kind: 'go-ahead', participation: 'you', executor: 'daoris', press: null,
+  source: { rule: 'workflow', level: 'task' }, settings: { act: 'release to prod', on: 'ask', refused: 'wait' },
+  runtime: 'partial', limit: 'go-ahead-partial',
+};
+
+/**
+ * A check on the pull request a newer driver may answer (FLOWCHART1d; the workflow design §3.3, §3.7): this build runs none, so its
+ * kind has no words here, and what follows its failure is a failure path: sent back once, then you.
+ */
+export const CHECK_SEND_BACK: WorkflowStep = {
+  id: 'checks', kind: 'check', participation: 'automatic', executor: 'plugin', press: null,
+  source: { rule: 'workflow', level: 'task' }, settings: { plugin: 'example.checks', checks: 'required', failed: 'send-back' },
+  runtime: 'declared', limit: null,
 };
 
 const current = (fields: Omit<CurrentWorkflow, 'limits'>): CurrentWorkflow => ({ ...fields, limits: limits(fields.steps) });
@@ -133,6 +155,9 @@ export const NO_VERIFICATION: WorkflowStart = {
 
 /** Everything at once, with its start node first. */
 export const ROUTED = current({ ...FULL, start: START });
+
+/** A newer driver's check after the pull request, and its failure path (FLOWCHART1d). */
+export const WITH_A_FAILURE_PATH = current({ ...FULL, steps: [...FULL.steps, CHECK_SEND_BACK], version: '5d1c0e7a92b4' });
 
 /**
  * A workspace's Current, read from its rules with nothing set for any repository: its opinion, its look in `dev`, and a

@@ -2,7 +2,9 @@ import type { Decorator, Meta, StoryObj } from '@storybook/react-vite';
 import { InTheme } from '../plugins/storyIcons';
 import { chinese } from '../design/storyLanguage';
 import { storyWidths } from '../design/storyWidths';
-import { FULL, GATES_CHANGED, NO_VERIFICATION, NOTHING_SET, PLUGIN_UNREADY, ROUTED, START, WORK, WORKSPACE } from './fixtures';
+import {
+  FULL, GATES_CHANGED, NO_VERIFICATION, NOTHING_SET, PLUGIN_UNREADY, ROUTED, START, WITH_A_FAILURE_PATH, WORK, WORKSPACE,
+} from './fixtures';
 import { WorkflowTab } from './WorkflowTab';
 
 // The Workflow tab (WORKFLOW1b; D157 point 12, the workflow design §6.1, §6.2, §6.4), every state the design names drawn
@@ -86,14 +88,28 @@ export const AWorkspaceChinese: Story = { ...AWorkspace, decorators: [chinese] }
 /** In dark: the rail and its marks in ink, the limits on their warning rail, the chips outlined. */
 export const Dark: Story = { decorators: [dark] };
 
-/** At a 680 px window: the main area 600 px wide, every line wrapping at its edge. */
+/** At a 680 px window: the main area 600 px wide, the flowchart top to bottom, a step a rank, every line wrapping at its edge. */
 export const At680: Story = { decorators: [storyWidths.half] };
 
-/** At the main area's 400 px floor: a step's chip and who acts go under its title, nothing shrinks. */
+/** At a 680 px window, in 中文 and dark. */
+export const At680ChineseDark: Story = { decorators: [storyWidths.half, chinese, dark] };
+
+/** At the main area's 400 px floor: still top to bottom, a step's 19rem fitting inside its gutters; nothing shrinks. */
 export const AtTheFloor: Story = { decorators: [storyWidths.narrow] };
 
 /** At the floor, in 中文 and dark. */
 export const AtTheFloorChineseDark: Story = { decorators: [storyWidths.narrow, chinese, dark] };
+
+/**
+ * **A failure path** (FLOWCHART1d): a newer driver's check after the pull request, which this build runs none of, so its kind has
+ * no words here; its failure, sent back once, then you, a dashed edge to its outcome beside the end of the line. Wide, a rank of
+ * two fits; at a 680 px window and the floor it is the rail, the outcome said under its step.
+ */
+export const AFailurePath: Story = { args: { current: WITH_A_FAILURE_PATH } };
+export const AFailurePathAt680: Story = { args: { current: WITH_A_FAILURE_PATH }, decorators: [storyWidths.half] };
+export const AFailurePathAtTheFloorChineseDark: Story = {
+  args: { current: WITH_A_FAILURE_PATH }, decorators: [storyWidths.narrow, chinese, dark],
+};
 
 /**
  * **The start node first** (FABRIC-PIPELINE1a; the pipeline design §1.3): the default to Current, Documentation to its own workflow by

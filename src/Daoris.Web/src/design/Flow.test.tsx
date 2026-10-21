@@ -3,6 +3,7 @@ import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import i18n from '../locales/i18n';
 import { Flow, type FlowEdge, type FlowNode } from './Flow';
+import { DENSE, type Fixture, LARGE_ONE, LARGE_THREE } from './flowFixtures';
 
 // FLOWCHART1a1 (D186 points 3 and 8; the flowchart design §3.2, §3.3, §3.7 and §7 traps 4-7, 9, 14, 15, 21): one list in
 // reading order whatever the placement, each node named by its title and state and described by every edge in and out;
@@ -419,5 +420,169 @@ describe('a stack of like nodes (FLOWCHART1c; the flowchart design §3.6 step 1)
     draw(tried(['held', 'held', 'held']));
     expect(within(stackItem('held for your yes ×3')).getByRole('button', { name: '展开全部 3 个' })).toBeInTheDocument();
     expect(stackItem('held for your yes ×3')).toHaveAccessibleDescription(/^共 3 个同类：held for your yes。/);
+  });
+});
+
+/** A fixture worded in English, as `Flow`'s stories word it. */
+const worded = (fixture: Fixture): Parameters<typeof Flow>[0] => ({
+  label: fixture.label.en,
+  entries: fixture.entries,
+  nodes: fixture.nodes.map((each) => ({
+    id: each.id, title: each.title.en, current: each.current, reached: each.reached, settled: each.settled,
+    state: each.state && { word: each.state.word.en, tone: each.state.tone },
+  })),
+  edges: fixture.edges.map((edge) => ({ id: edge.id, from: edge.from, to: edge.to, says: edge.says.en, label: edge.label?.en, style: edge.style })),
+});
+
+describe('a flow too large to show whole (FLOWCHART1d; the flowchart design §3.6, trap 16)', () => {
+  const run = () => screen.getByRole('list', { name: 'How the run stands' });
+  const ids = () => within(run()).getAllByRole('listitem').map((item) => item.getAttribute('data-flow-node'));
+  const item = (name: string) => within(run()).getByRole('listitem', { name: new RegExp(`^${name}`) });
+  const drawnNode = (id: string) => within(run()).getAllByRole('listitem').find((each) => each.getAttribute('data-flow-node') === id)!;
+
+  it('draws a 96-node run folded, its current node in view: settled stretches as steps done, the rest past the focus as later steps', () => {
+    render(<Flow {...worded(LARGE_ONE)} />);
+    expect(ids()).toEqual(['start', 'fold:done:a1', 'fold:done:b1', 'fold:done:c1', 'a19', 'b19', 'c19', 'a20', 'b20', 'c20', 'a21', 'b21',
+      'c21', 'a22', 'b22', 'c22', 'a23', 'b23', 'c23', 'fold:later']);
+    expect(item('Build 20')).toHaveAttribute('aria-current', 'step');
+    const done = drawnNode('fold:done:a1');
+    expect(done).toHaveAccessibleName('18 steps done');
+    expect(within(done).getByRole('button', { name: 'Show all 18' })).toHaveAttribute('aria-expanded', 'false');
+    expect(within(item('26 later steps')).getByRole('button', { name: 'Show all 26' })).toHaveAttribute('aria-expanded', 'false');
+  });
+
+  it('keeps every edge across a fold\'s boundary with its cause, merged by the node outside and counted, and says those between its members', () => {
+    render(<Flow {...worded(LARGE_ONE)} />);
+    expect(item('26 later steps')).toHaveAccessibleDescription('Holds 26 steps. From Build 23: when it is done. From Test 23: when it is done. '
+      + 'From Docs 23: when it is done. Between them: when it is done ×24; when all three are done.');
+    // The dense graph's Integrate feeds three probes after the focus: one edge to the fold, counted, beside its other causes.
+    const { unmount } = render(<Flow {...worded(DENSE)} label="The dense graph" />);
+    const dense = screen.getByRole('list', { name: 'The dense graph' });
+    const integrate = within(dense).getByRole('listitem', { name: /^Integrate/ });
+    expect(within(integrate).getByRole('button', { name: '24 later steps, after w2 ×3' })).toBeInTheDocument();
+    expect(within(integrate).getByRole('button', { name: '24 later steps, on failure' })).toBeInTheDocument();
+    unmount();
+  });
+
+  it('folds around every current node when several are, and opens a fold with its press, the focus on its first member', async () => {
+    const user = userEvent.setup();
+    render(<Flow {...worded(LARGE_THREE)} />);
+    for (const id of ['a20', 'b9', 'c27']) expect(ids()).toContain(id);
+    await user.click(within(item('15 steps between')).getByRole('button', { name: 'Show all 15' }));
+    expect(ids()).toContain('a13');
+    expect(ids()).not.toContain('fold:between:a13');
+    expect(item('Build 13')).toHaveFocus();
+  });
+
+  it('opens a fold with Enter on it, and keeps a fold the person opened open when the state moves', async () => {
+    const user = userEvent.setup();
+    const { rerender } = render(<Flow {...worded(LARGE_ONE)} />);
+    item('26 later steps').focus();
+    await user.keyboard('{Enter}');
+    expect(ids()).toContain('land');
+    expect(item('Build 24')).toHaveFocus();
+    // The build moves on a step: the later fold stays open, and the settled stretch grows by one.
+    const moved = { ...LARGE_ONE, nodes: LARGE_ONE.nodes.map((each) => (each.id === 'a20' ? { ...LARGE_ONE.nodes.find((n) => n.id === 'a19')!, id: 'a20', title: each.title }
+      : each.id === 'a21' ? { ...each, current: true, reached: true, state: LARGE_ONE.nodes.find((n) => n.id === 'a20')!.state } : each)) };
+    rerender(<Flow {...worded(moved)} />);
+    expect(ids()).toContain('land');
+    expect(drawnNode('fold:done:a1')).toHaveAccessibleName('19 steps done');
+  });
+
+  it('gives a node folded away\'s focus to its fold', () => {
+    const { rerender } = render(<Flow {...worded(LARGE_ONE)} />);
+    item('Build 19').focus();
+    const moved = { ...LARGE_ONE, nodes: LARGE_ONE.nodes.map((each) => (each.id === 'a20' ? { ...LARGE_ONE.nodes.find((n) => n.id === 'a19')!, id: 'a20', title: each.title }
+      : each.id === 'a21' ? { ...each, current: true, reached: true, state: LARGE_ONE.nodes.find((n) => n.id === 'a20')!.state } : each)) };
+    rerender(<Flow {...worded(moved)} />);
+    expect(ids()).not.toContain('a19');
+    expect(drawnNode('fold:done:a1')).toHaveFocus();
+  });
+
+  it('opens every fold with Show whole, and folds them again with Fold again, nothing remembered', async () => {
+    const user = userEvent.setup();
+    const { unmount } = render(<Flow {...worded(LARGE_ONE)} />);
+    await user.click(screen.getByRole('button', { name: 'Show whole' }));
+    expect(ids()).toHaveLength(96);
+    expect(screen.queryByRole('button', { name: 'Show whole' })).toBeNull();
+    await user.click(screen.getByRole('button', { name: 'Fold again' }));
+    expect(ids()).toHaveLength(20);
+    await user.click(screen.getByRole('button', { name: 'Show whole' }));
+    unmount();
+    render(<Flow {...worded(LARGE_ONE)} />);
+    expect(ids()).toHaveLength(20);
+  });
+
+  it('offers neither where a flow is drawn whole', () => {
+    draw();
+    expect(screen.queryByRole('button', { name: 'Show whole' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Fold again' })).toBeNull();
+  });
+
+  it('says it in 中文', async () => {
+    await i18n.changeLanguage('zh');
+    render(<Flow {...worded(LARGE_ONE)} />);
+    expect(screen.getByRole('button', { name: '显示全部' })).toBeInTheDocument();
+    expect(drawnNode('fold:done:a1')).toHaveAccessibleName('18 步已完成');
+    expect(item('后面的 26 步')).toHaveAccessibleDescription(/^包含 26 步。/);
+  });
+});
+
+describe('sections, a caller\'s track and who acts (FLOWCHART1d; the flowchart design §2.4, §5.1)', () => {
+  const steps = (): Partial<Parameters<typeof Flow>[0]> => ({
+    label: 'How work in engine moves',
+    nodes: [
+      { id: 'work', title: 'The work', actor: 'agent alone, by an agent', who: <span>the caller's marks</span> },
+      { id: 'landing', title: 'Landing on a branch' },
+      { id: 'pr', title: 'Pull request' },
+      { id: 'end', title: 'Finished' },
+    ],
+    edges: [
+      { id: 'w', from: 'work', to: 'landing', says: 'automatically' },
+      { id: 'l', from: 'landing', to: 'pr', says: 'automatically' },
+      { id: 'p', from: 'pr', to: 'end', says: 'once you merge it on the platform' },
+    ],
+    entries: ['work'],
+    sections: [
+      { title: 'Before it lands', from: 'work', note: <p>Before the work starts, example.hold may hold it.</p> },
+      { title: 'After it lands', from: 'pr' },
+    ],
+    track: { least: 18, most: 36 },
+  });
+  const steps_ = () => screen.getByRole('list', { name: 'How work in engine moves' });
+  const step = (name: string) => within(steps_()).getByRole('listitem', { name: new RegExp(`^${name}`) });
+
+  it('is placed top to bottom where its floor fits, never left to right, and the rail below it', () => {
+    paneWidth = 1200;
+    const { container } = draw(steps());
+    expect(placement(container)).toBe('down');
+    resizeTo(376);
+    expect(placement(container)).toBe('down');
+    resizeTo(276);
+    expect(placement(container)).toBe('rail');
+  });
+
+  it('heads the drawing with the first section and its note, and divides the next where it starts, said to a reader at its first node', () => {
+    paneWidth = 1200;
+    const { container } = draw(steps());
+    expect(screen.getByRole('heading', { name: 'Before it lands' })).toBeInTheDocument();
+    expect(screen.getByText('Before the work starts, example.hold may hold it.')).toBeInTheDocument();
+    const divider = container.querySelector('[data-flow-section]')!;
+    expect(divider).toHaveTextContent('After it lands');
+    expect(divider).toHaveAttribute('aria-hidden', 'true');
+    expect(step('Pull request')).toHaveAccessibleDescription(/^After it lands\. From Landing on a branch: automatically\./);
+  });
+
+  it('says the sections in its own rail too', () => {
+    draw(steps());
+    expect(screen.getByRole('heading', { name: 'Before it lands' })).toBeInTheDocument();
+    expect(step('Pull request')).toHaveAccessibleDescription(/^After it lands\./);
+  });
+
+  it('draws who acts as the caller marks it, and says its words to a reader', () => {
+    draw(steps());
+    expect(within(step('The work')).getByText('the caller\'s marks')).toBeInTheDocument();
+    expect(within(step('The work')).queryByText('agent alone, by an agent')).toBeNull();
+    expect(step('The work')).toHaveAccessibleDescription(/^agent alone, by an agent\./);
   });
 });

@@ -20,5 +20,13 @@
   "flow.stack.between": "其间：{{says}}。",
   "flow.stack.times": "{{says}} ×{{count}}",
   "flow.stack.member": "{{count}} 个同类中的第一个：按 Enter 重新收起。",
-  "flow.stack.memberPress": "{{count}} 个同类中的第一个，用其中的按钮重新收起。"
+  "flow.stack.memberPress": "{{count}} 个同类中的第一个，用其中的按钮重新收起。",
+  "flow.whole": "显示全部",
+  "flow.foldAgain": "重新收起",
+  "flow.fold.done": "{{count}} 步已完成",
+  "flow.fold.earlier": "前面的 {{count}} 步",
+  "flow.fold.between": "中间的 {{count}} 步",
+  "flow.fold.later": "后面的 {{count}} 步",
+  "flow.fold.holds": "包含 {{count}} 步。",
+  "flow.section": "{{title}}。"
 }
