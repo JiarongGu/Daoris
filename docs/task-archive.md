@@ -18893,3 +18893,13 @@ and `plugins install` name each step with its reach and what the steps create. `
 page and the offer's page list them in en and zh; `daoris-driver plugins show` says them too. Proof: `PluginStepsTests`' change and
 description theories held cell for cell by `plugin-steps.test.ts`, `PluginPageTests`, `DriverModulePluginPageTests`,
 `PluginPage.test.tsx` in both languages. Detail: D173's FABRIC-UNIT1e note.
+
+## FABRIC-UNKNOWN1c — an unknown-owner row has a door (2026-10-21, D173)
+
+> - [ ] **FABRIC-UNKNOWN1c — an unknown-owner row has a door** (driver, web; after UNKNOWN1). Link the row to its session where `daoris/<session>` names one, or open Settings' sweep where the Discard branch press sits. Proof: the attention test and the window.
+
+**Outcome** 2026-10-21: the Branches half was already built by FABRIC-MILESTONEDOOR1 (the sweep has since moved from Settings to the
+workspace's Branches tab, `help/places.ts`). What was added: on the page alone, an unknown owner's `daoris/<folder>` branch is matched
+in its repository to the session whose tree's folder names it, as `WorkFrame` finds a session's own branch, and the row's door opens
+that session, whose head discards the branch; with no match it opens Branches. No driver field. Proof: `attention.test.ts` and
+`sessionsBadge.test.tsx`; the installed window is not yet seen. Detail: D173's FABRIC-UNKNOWN1c note. On Opus.

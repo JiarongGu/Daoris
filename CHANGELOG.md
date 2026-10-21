@@ -5,6 +5,8 @@ with the version and date at release.
 
 ## Unreleased
 
+- A *What needs you* row for a `daoris/…` branch Daoris has no record of now opens the session it was made for, where you can
+  discard it, if that session is still listed. Otherwise it opens the workspace's Branches as before.
 - A quest whose submission you reopened now says so on its page, under *Reopened*: when, your words as you wrote them (or that
   you gave none), that it waits for its agent to make it ready again, and the session that submitted it, which is told. Before,
   it read as a quest whose agent had not yet said it was ready. A submission also names the session that made it. In English and
