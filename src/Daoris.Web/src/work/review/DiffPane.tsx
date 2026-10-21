@@ -222,6 +222,8 @@ export function DiffPane({
   const [said, setSaid] = useState<string | null>(null);
   // The pull request the rule's plugin opened, where it opened one (D100) — one press from the sentence.
   const [opened, setOpened] = useState<string | null>(null);
+  // FABRIC-CLOSE1h9: the press landed but its push was held back (`withheld`), so the hand-off is its way on, not an ordinary landing.
+  const [pushHeld, setPushHeld] = useState(false);
   // The second press. It exists only because the first one produced the sentence above.
   const [confirmingDiscard, setConfirmingDiscard] = useState(false);
   // The held discard's ask (SQUASHTIDY1f), open under the acts until it answers.
@@ -237,6 +239,7 @@ export function DiffPane({
     setAskingHeld(false);
     setSaid(null);
     setOpened(null);
+    setPushHeld(false);
   }
 
   // 🔴 Which session an answer is FOR. A refusal that landed after the person moved on armed the forced
@@ -246,7 +249,7 @@ export function DiffPane({
   attended.current = session;
 
   const act = (
-    run: Promise<{ done: boolean; message: string; plugin?: { pullRequest?: string } | null }>,
+    run: Promise<{ done: boolean; message: string; plugin?: { pullRequest?: string } | null; withheld?: string | null }>,
     onDone?: () => void,
     onRefused?: () => void,
   ) => {
@@ -254,11 +257,13 @@ export function DiffPane({
     const current = () => attended.current === askedFor;
     setSaid(null);
     setOpened(null);
+    setPushHeld(false);
     void run.then(
       (result) => {
         if (!current()) return;
         setSaid(result.message);
         setOpened(result.plugin?.pullRequest ?? null);
+        setPushHeld(result.done && Boolean(result.withheld));
         if (result.done) onDone?.();
         else onRefused?.();
       },
@@ -363,7 +368,14 @@ export function DiffPane({
   // work that already landed (REVIEW2), whose next move is its branch's, not the session's.
   const acts = !treeHere && !sendBack && !handable ? null : (
     <footer className="grid shrink-0 gap-2 border-t border-line px-3 py-2">
-      {said && !confirmingDiscard && <p className="m-0 text-small text-ink-soft">{said}</p>}
+      {said && !confirmingDiscard && !pushHeld && <p className="m-0 text-small text-ink-soft">{said}</p>}
+      {/* A press whose push was held back (FABRIC-CLOSE1h9): the driver's sentence as written, and the hand-off as its way on. */}
+      {said && pushHeld && (
+        <div className="grid gap-1 border-l-[3px] border-warn pl-2 text-small text-ink-soft">
+          <p className="m-0">{said}</p>
+          <p className="m-0">{t('work.review.pushHeld')}</p>
+        </div>
+      )}
       {said && opened && (
         <p className="m-0 text-small">
           <ExternalLink href={opened} className="text-accent underline underline-offset-2">

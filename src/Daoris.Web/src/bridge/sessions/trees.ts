@@ -444,8 +444,9 @@ export const useLandSessionTree = () =>
       // LANDNAME1b: a name the person entered replaces the rule's whole name; blank sends none, so the payload is today's.
       const named = branch?.trim();
       // LANDSYNC1: what it left out because the line holds it, and the conflict a refusal names with the words to rebase with.
+      // FABRIC-CLOSE1h9: why its push was held back, where it landed with no plugin told; a shell before it answers none.
       return call<TreeAct & {
-        branch?: string; plugin?: PluginLanding;
+        branch?: string; plugin?: PluginLanding; withheld?: string | null;
         leftOut?: LeftOutCommit[] | null;
         conflict?: LandingConflict | null;
       }>(

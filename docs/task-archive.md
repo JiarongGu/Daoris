@@ -18795,6 +18795,17 @@ so `WORK_HELD`'s `stop` is taken on it (any other word refused `part-stop`), off
 Proof: `QuestCloseTests`, `WorkStateSliceTests`, `AttentionStateSliceTests`, `WorkMilestone.test.tsx` in both languages. A quest
 unit's milestone on the page stays open as FABRIC-CLOSE1j2. Detail: D173's FABRIC-CLOSE1j note.
 
+## CLEANUP1 — one cleanup strategy built into Daoris, set and seen on This Daoris (design) (2026-10-21, D195)
+
+> - [ ] **CLEANUP1 — one cleanup strategy built into Daoris, set and seen on This Daoris** (design, then its build rows; the owner's direction, 2026-10-21; D88, D172). On 2026-10-21 the install's `trees/.tidied` held 36.7 GB in 1.8 million files, found only when a session freeing disk space went looking. Those are the folders the automatic tidy (AUTOTIDY1) moves aside and keeps a fixed fourteen days (`Trees/Branches/BranchTidying.cs:145`), nearly all of it git-ignored build output a rebuild makes again. Each kind of thing Daoris keeps cleans itself by its own rule, or by none (the tidy's set-aside trees, CACHECLEAR1's downloaded versions, logs, session records, salvage), and This Daoris shows sizes but not the rules. Wanted, as a design under D191 (Codex reads it):
+>   - an inventory of everything Daoris writes, with its size, its owner, its retention rule and what may remove it: live trees and their ignored outputs, set-aside trees, downloaded versions, session records and transcripts, logs, salvage, browser profiles, the knowledge store and the usage history;
+>   - retention set per kind in one place, a default with the person's override;
+>   - cleanup triggered at the look's pace, below a free-space floor, and by a press;
+>   - each kind's size, rule, next clean and last clean's result shown on This Daoris, with a terminal twin;
+>   - whether the tidy drops a set-aside tree's regenerable outputs at once and keeps only what cannot be made again.
+>   Proof: the design accepted and its build rows filed.
+
+**Outcome** 2026-10-21: designed and accepted as D195 (`docs/2026-10-21-cleanup-design.md`) after three rounds (Codex's read, twenty-two findings; Fable's of §3 and §5, thirteen), every finding taken. One rule per kind, set in `driver.json`'s `keep` and shown on This Daoris; a set-aside tree's package folders dropped an hour after its move; the look, a free-space floor and the press run the rules, one run at a time. The build rows are KEEP1a-g and KEEP1a2. On Opus, read by Codex and Fable.
 ## FABRIC-PERFORM1n — a believed event the one table refuses is said (2026-10-21, D173)
 
 > - [ ] **FABRIC-PERFORM1n — a believed event the one table refuses is said** (driver; after PERFORM1i; §C4, §E2). An event whose evidence is of another schema than the node declares moves nothing and is counted by no `plugin.step` code, unlike a completion, which holds its attempt. Proof: the refusal line said, and no state changed.
@@ -18815,3 +18826,31 @@ badge and the taskbar, whose one control opens the card. Asked, it raises `SESSI
 balloon while no window is in front. Proof: `PipeConfirmTests`, `DriverModulePersonTests`, `AttentionStateSliceTests`,
 `SessionBalloonTests`, and the page's person, attention and signals tests in en and zh. The window with a press from a terminal
 is the parent's installed proof; the taskbar is not flashed. Detail: D156's CONFIRMSEEN1 note.
+
+## FABRIC-CLOSECASE1 — one rule for "the same repository" across the close (2026-10-21, D173)
+
+> - [ ] **FABRIC-CLOSECASE1 — one rule for "the same repository" across the close** (driver, service; §E5). The driver compares a quest's repository exactly, the service's `NextStep` and the close door ignore case. Proof: a chain whose repository differs only in case is named and closed alike by both, or refused alike.
+
+**Outcome** 2026-10-21: built. The driver's `QuestClosing.Judge` and `Lineage` now compare a quest's repository blind to case, as the
+service does, so a chain whose step names its repository in another case waits for its last quest here and closes in one close naming
+both. Proof: `QuestCloseTests` and `QuestClosureTests`. Detail: D173's FABRIC-CLOSECASE1 note.
+
+## FABRIC-CLOSE1h9 — the page tells a press whose push was held back (2026-10-21, D173)
+
+> - [ ] **FABRIC-CLOSE1h9 — the page tells a press whose push was held back** (web, modules; after CLOSE1h3). `LAND_SESSION_TREE` answers `done: true` with no `plugin` and the held-back sentence in `message` when its push was held, so the page may show it as an ordinary landing: a wire field (e.g. `withheld`, old answers read as before) and the page showing the hand-off, en and zh. Contract: D173's FABRIC-CLOSE1h3 note, decision 4. Proof: a modules answer test and a page test; check the family rehearsal for a whole-answer comparison first.
+
+**Outcome** 2026-10-21: the press's answer carries `withheld`, why its push was held back (`TreesRoutes.Pressed`, null and absent
+otherwise, so an older page reads it as before). The review's foot says the driver's sentence as written with *Its push was held back…
+hand it off here* and offers the hand-off, and the head's Accept… tells it as an error notice naming the review, in en and zh. The
+family rehearsal compares no `LAND_SESSION_TREE` answer whole. Proof: `DriverModuleLandSyncTests`, `DiffPane.pushheld.test.tsx`,
+`WorkFrame.landed.test.tsx`. Detail: D173's FABRIC-CLOSE1h9 note.
+
+## FABRIC-CLOSE1d3 — the page reads a source's reopen and its submitting session (2026-10-21, D173)
+
+> - [ ] **FABRIC-CLOSE1d3 — the page reads a source's reopen and its submitting session** (web; after CLOSE1c4, CLOSE1d2). `api.ts`'s quest type lacks `reopened` and `submission.session`, so *Submitted* cannot show a reopened source with the person's words. Proof: the type and a vitest reading both, absent from an older host; the quest page showing the reopen's note, en and zh.
+
+**Outcome** 2026-10-21: `Quest.reopened` (`QuestReopen`: machine, sequence, `of`, note, `at`, and CLOSE1c8's `session`) and
+`QuestSubmission.session` are on the page's type. A taken source with no submission and a reopen says *Reopened* (重新打开) among its
+facts: when, that it waits for its agent's ready, the person's words quoted as written (or that they gave none), and the session told.
+*Submitted* names the session that said its ready. Proof: `api.test.ts` (both read, neither from an older host) and
+`QuestPage.closure.test.tsx` in en and zh. On Opus, by a driven session. Detail: D173's FABRIC-CLOSE1d3 note.
