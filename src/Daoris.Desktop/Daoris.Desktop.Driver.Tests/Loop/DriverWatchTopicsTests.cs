@@ -154,6 +154,44 @@ public sealed class DriverWatchTopicsTests : IDisposable
     }
 
     /// <summary>
+    /// FABRIC-EVENT3c (the message-urgency design §5, §14): the change stream's <c>channel</c> family wakes the channel's delivery, so
+    /// the person's message to a parked part's repository is kept on its record at once, with no nudge, long before
+    /// <c>pollSeconds</c>, and without the remote sync.
+    /// </summary>
+    [Fact]
+    public async Task A_channel_message_reaches_its_part_without_the_poll()
+    {
+        _ledger.Changes = StandInLedger.ChangeDoor.Answers;
+        _ledger.Publish("q1", "engine", from: "ask #a1");
+        _ledger.Park("s1", "q1", DaorisHome.Entry(_home, HomeEntry.Trees, "s-1"), entry: "ask:a1/engine");
+        using var sync = Counted();
+        var (watch, _) = Watch(sync, pollSeconds: 60);
+        var reports = new List<TickReport>();
+
+        var watching = watch.RunAsync(Into(reports), onError: null, _closing.Token);
+        try
+        {
+            await Poll.Until(() => Count(reports) >= 1 && _ledger.ChangesHeld == 1, () => "no look, or no wait held", Bound);
+            var synced = await SyncedAsync(watch);
+
+            _ledger.Posted("a1", "m1", "Listen on 8080.", to: "engine");
+            await Poll.Until(() => _ledger.AckOf("a1", "ask:a1/engine", "m1") == ChannelAcks.Sent, () => "the message never reached s1", Bound);
+
+            // The look that delivered it reports after it, so its line is waited for.
+            await Poll.Until(
+                () => Snapshot(reports).SelectMany(report => report.Events)
+                    .Any(line => line.Contains("`m1`", StringComparison.Ordinal) && line.Contains("kept on session s1's record", StringComparison.Ordinal)),
+                () => "the delivery was never reported", Bound);
+            Assert.Equal(synced, Passes());
+        }
+        finally
+        {
+            await _closing.CancelAsync();
+            await Settled(watching);
+        }
+    }
+
+    /// <summary>
     /// The <c>look</c> topic's deadline holds under a stream of wakes: <c>pollSeconds</c> after the last whole look the whole look
     /// runs, the remote sync first, whatever woke the looks between, and the wakes between sync nothing.
     /// </summary>
