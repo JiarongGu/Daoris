@@ -226,6 +226,12 @@ public sealed class Driver(
     internal Action? WokeBack { get; init; }
 
     /// <summary>
+    /// Told a run a start found bound already, to a named workflow (FABRIC-CUTOVER1c; the cutover design §3): where it is a graph run whose record
+    /// holds its end, its chain has come back here, and the loop's runtime is asked for a pass that judges it. Null tells nobody.
+    /// </summary>
+    internal Action<string>? RunReturned { get; init; }
+
+    /// <summary>
     /// What completes once something else wants the loop (PARALLEL1b, D181 point 3): a nudge, an ending, the <c>look</c> topic's
     /// deadline. Handed by the watch, whose looks then leave beside them the work no part of the look waits on (the remote sync and the
     /// lost-claim stop after it, the sync after an ending), and wait for a start that has not yet opened its record only until this
@@ -1816,6 +1822,10 @@ public sealed class Driver(
             await fresh.LetGoAsync().ConfigureAwait(false);
             return Hold(runBound.Why!);
         }
+
+        // FABRIC-CUTOVER1c (the cutover design §3): a run bound already to a named version may be a graph run that ended and whose chain has come
+        // back here; the runtime is asked, and re-arms for it until a pass judges it where its record holds its end.
+        if (runBound is { Came: WorkflowBindCame.Already, Run: { } returned, Binding.IsCurrent: false }) RunReturned?.Invoke(returned);
 
         // A set-up step follows its repository's own procedure, which its tree must hold (REVIEWENV1c, design §2.1): checked
         // here, once the tree exists, and held before any record, a fresh tree going as a refused open's does.

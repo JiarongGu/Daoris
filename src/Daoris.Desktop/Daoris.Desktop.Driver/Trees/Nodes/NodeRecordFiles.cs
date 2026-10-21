@@ -218,10 +218,21 @@ public sealed class NodeRecordFiles(string home, Func<bool>? holdsLease = null)
                 writer.WriteString("state", each.State);
                 writer.WriteString("at", Moments.Write(each.At));
                 writer.WriteString("node", each.Node);
+                // FABRIC-CUTOVER1c: the subject a run's node was told under, written only where set, so a unit's own events read as they did.
+                if (each.Subject is { } subject) writer.WriteString("subject", subject);
                 writer.WriteEndObject();
             }
 
             writer.WriteEndArray();
+        }
+
+        // FABRIC-CUTOVER1c: a run's end, written only on a run's record that holds one, so every other record reads as it did.
+        if (record.Ended is { } ended)
+        {
+            writer.WriteStartObject("ended");
+            writer.WriteString("quest", ended.Quest);
+            writer.WriteString("at", Moments.Write(ended.At));
+            writer.WriteEndObject();
         }
 
         writer.WriteEndObject();
@@ -450,15 +461,25 @@ public sealed class NodeRecordFiles(string home, Func<bool>? holdsLease = null)
                         return null;
                     }
 
-                    observations.Add(new ObservedEvent(plugin, repository, step, commit, id, state, at, node));
+                    // FABRIC-CUTOVER1c: absent on an event kept before, and on every unit's own; present, it is text or the record does not read.
+                    if (each.TryGetProperty("subject", out var told) && told.ValueKind != JsonValueKind.String) return null;
+                    observations.Add(new ObservedEvent(plugin, repository, step, commit, id, state, at, node) { Subject = Text(each, "subject") });
                 }
+            }
+
+            // FABRIC-CUTOVER1c: a run's end, absent in a record written before it and on every unit's own; present, it reads whole.
+            RunEnd? ended = null;
+            if (root.TryGetProperty("ended", out var end))
+            {
+                if (end.ValueKind != JsonValueKind.Object || Text(end, "quest") is not { } quest || Moments.Read(end, "at") is not { } endedAt) return null;
+                ended = new RunEnd(quest, endedAt);
             }
 
             return Consistent(unit, statuses, attempts)
                 ? new NodeRecord(unit)
                 {
                     Statuses = statuses.ToImmutableSortedDictionary(StringComparer.Ordinal), Attempts = attempts, Fired = fired, History = history,
-                    Observations = observations,
+                    Observations = observations, Ended = ended,
                 }
                 : null;
         }
@@ -472,14 +493,22 @@ public sealed class NodeRecordFiles(string home, Func<bool>? holdsLease = null)
     /// Whether a record agrees with itself (FABRIC-PERFORM1h): every status and every attempt's call on its unit; each invocation once;
     /// each attempt's node holding a status, never numbered past it; and a node with attempts holding the one its status names, its current
     /// one, which trimming always keeps. A node with no attempts is a built-in's, whose attempts are not dispatched and not kept here.
+    /// FABRIC-CUTOVER1c (the cutover design §2.4.1): a run's attempt is called under the subject's unit it was sent for, never <c>run:</c>, so
+    /// on a run's record a call names a unit of its own.
     /// </summary>
     private static bool Consistent(string unit, IReadOnlyDictionary<string, NodeStatus> statuses, IReadOnlyList<NodeAttempt> attempts)
     {
         if (statuses.Values.Any(status => !string.Equals(status.Unit, unit, StringComparison.Ordinal))) return false;
         var invocations = new HashSet<string>(StringComparer.Ordinal);
+        var run = RunUnits.Is(unit);
         foreach (var attempt in attempts)
         {
-            if (!invocations.Add(attempt.Call.Invocation) || !string.Equals(attempt.Call.Unit, unit, StringComparison.Ordinal)) return false;
+            if (!invocations.Add(attempt.Call.Invocation)
+                || !(run ? attempt.Call.Unit.Length > 0 : string.Equals(attempt.Call.Unit, unit, StringComparison.Ordinal)))
+            {
+                return false;
+            }
+
             if (!statuses.TryGetValue(attempt.Node, out var status) || attempt.Attempt > status.Attempt) return false;
         }
 
