@@ -8,9 +8,14 @@ export type KitPoint = { name: string; kind: string };
 
 /**
  * The points whose gloss is their own, not their kind's (STATEHUB1g): a gloss says when a point speaks, and `state/changed` is an
- * observation that speaks at another time than `session/ended`.
+ * observation that speaks at another time than `session/ended`. The work wire's three speak at times of their own too (FABRIC-PERFORM1e).
  */
-const OWN_GLOSS: Record<string, string> = { 'state/changed': 'plugin.kit.kind.stateChanged' };
+const OWN_GLOSS: Record<string, string> = {
+  'state/changed': 'plugin.kit.kind.stateChanged',
+  'work/watch': 'plugin.kit.kind.workWatch',
+  'work/step': 'plugin.kit.kind.workStep',
+  'work/perform': 'plugin.kit.kind.workPerform',
+};
 
 /** A point's gloss, in the kit and on a plugin's page: its own where it has one, else its kind's, else the kind as the driver says it. */
 export const pointGloss = (t: TFunction, point: KitPoint): string =>

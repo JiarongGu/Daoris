@@ -19336,3 +19336,11 @@ the other pipeline refused, an agent's lowering kept for the press), the box's a
 `Driver.RunAsync`), holding, said, where the bind fails or its binding does not read; the first binding is moved into place without
 overwriting, the take names Current's work cycle under Current and none under a named version, and the next look says what the starts
 bound. Detail: D190's CUTOVER1g note. On Opus.
+## FABRIC-PERFORM1e — the kit and an example (2026-10-22, D173)
+
+> - [ ] **FABRIC-PERFORM1e — the kit and an example** (driver, examples; after PERFORM1d; the fabric events design's rows table (§E10), §D9). The scaffold, `plugins try --cycle`, a contract test, an example performed plugin.
+
+**Outcome** 2026-10-22: built. The kit scaffolds a performer (`work.mjs`'s journal, a contract test, `cycle.json`), `plugins try
+--cycle` drives one through the driver, both in a stand-in world; `examples/plugins/local-preview` fills one in. The plugin design's §9
+and D64 amended. Proof: `PluginKitTests`, `PluginCycleFixtureTests`, the example's `node --test`. Detail: D173's FABRIC-PERFORM1e note.
+On Opus.

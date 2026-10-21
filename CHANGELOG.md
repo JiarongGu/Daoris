@@ -26,6 +26,14 @@ with the version and date at release.
   words it printed before. Their lists and readings (`history`, `help list`, `opinion show`, `setup --plan`, an abandon's or a
   clear's list) are read from Daoris too. With Daoris closed they act as before; a Daoris that is open and does not answer refuses
   the press, and nothing is done.
+- The plugin kit now makes a plugin that does a step of the work: `daoris-driver plugins new <id> --point work/perform` (or the
+  `work/perform` box under *Make a plugin* on Settings → Plugins) writes a performer whose only parts to write are the work itself,
+  what became of an attempt, and removing what it made. The kit's half keeps a journal so a resent attempt never does the work twice,
+  answers what became of each attempt, and removes each thing once. Beside its wire test, a contract test checks that over the wire
+  with `node --test`, and `daoris-driver plugins try <folder> --cycle <fixture>` drives it through the driver: a duplicate delivery,
+  a failure, a timeout, a restart, a new revision and a cleanup asked twice. Every test and trial runs it in a stand-in world, so
+  nothing reaches its platform, and a plugin that does not take that world is sent no attempt. `examples/plugins/local-preview` is one
+  filled in. The three work points have their own descriptions under *Make a plugin* and on a plugin's page, in English and 中文.
 - You may now set an age for finished work's records: on the *Disk space* card's *Conversations and records* row (*Change…*), with
   `daoris driver keep history <days>|never|default`, or through Ask Daoris's proposal you apply. Between 30 and 3,650 days; by default
   none, and nothing clears your history by itself, as before. With an age set, once a day each workspace's finished work whose last

@@ -7,11 +7,12 @@
 // try` speaks the same ones through the driver itself, where Daoris is on the machine. `root` in a frame
 // is an empty scratch folder here, where git is told there is no repository, so a plugin that pushes
 // first fails on this machine and reaches nothing. To test past the push, write a test of your own that
-// puts a fake of the platform's tool first on the PATH and a bare repository behind `origin`.
+// puts a fake of the platform's tool first on the PATH and a bare repository behind `origin`. A plugin that
+// works is told the kit's stand-in world (DAORIS_PLUGIN_WORLD), and is sent no attempt unless it takes it.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
-import { mkdirSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { createInterface } from 'node:readline';
@@ -26,10 +27,16 @@ const PROTOCOL = {{protocol}};
 /** How long the driver waits for a plugin to leave once it is told `shutdown`, in milliseconds. */
 const GRACE = {{grace}};
 
+/** The capability a performer's handshake names, without which the driver never asks it to perform. */
+const CAPABILITY = '{{capability}}';
+
+/** A sample frame's step, which is this plugin's own: its first declared step. */
+const STEP = '{{step}}';
+
 /** Every point: what kind it is, how long the driver waits for its answer in milliseconds, and its frame. */
 const POINTS = {{points}};
 
-/** Each point's answer, read by the driver's rules: null when it is one, else what is wrong with it. */
+/** Each point's answer, read by the driver's rules: null when it is one, else what is wrong with it. An event is never answered. */
 const ANSWERS = {
   'quest/consider': (answer) => {
     const kind = answer !== null && typeof answer === 'object' && !Array.isArray(answer) ? answer.kind : undefined;
@@ -84,7 +91,26 @@ const ANSWERS = {
   },
   // An observation's answer is not read (STATEHUB1g): any result will do, and {} is the one to send.
   'state/changed': () => null,
+  // The awaited set's answer is not read either (FABRIC-PERFORM1e).
+  'work/watch': () => null,
+  // An attempt is acknowledged by its invocation, and nothing more: the outcome comes later at `work/step`.
+  'work/perform': (answer, frame) => (answer !== null && typeof answer === 'object' && !Array.isArray(answer) && answer.invocation === frame.invocation
+    ? null
+    : `${JSON.stringify(answer)}, which does not acknowledge \`${frame.invocation}\` — { "invocation": "${frame.invocation}" }`),
 };
+
+/** A sample frame made this plugin's: its repository the scratch root, its step the plugin's own. */
+function own(frame, root) {
+  if (Object.hasOwn(frame, 'root')) frame.root = root;
+  const steps = Array.isArray(manifest.steps) ? manifest.steps.filter((step) => typeof step?.id === 'string') : [];
+  if (steps.length === 0) return frame;
+  if (frame.step === STEP) frame.step = `${manifest.id}/${(steps.find((step) => step.reach === 'performed') ?? steps[0]).id}`;
+  for (const unit of frame.units ?? []) {
+    unit.root = root;
+    if (unit.awaiting?.includes(STEP)) unit.awaiting = steps.map((step) => step.id);
+  }
+  return frame;
+}
 
 /** The handshake's answer, read by the driver's rules and the kit's one more: every declared point is listened on. */
 function handshake(answer, declared) {
@@ -105,6 +131,9 @@ function handshake(answer, declared) {
   if (unkept.length > 0) {
     return `plugin.json declares ${unkept.map((point) => `\`${point}\``).join(', ')} but the process listens on `
       + `${listened.length > 0 ? listened.join(', ') : 'nothing'} — a manifest is what a person reads, so the process keeps its word`;
+  }
+  if (declared.includes('work/perform') && !(Array.isArray(answer.capabilities) && answer.capabilities.includes(CAPABILITY))) {
+    return `it declares \`work/perform\` but its handshake names no \`${CAPABILITY}\` among its capabilities, so the driver never asks it to perform`;
   }
   return null;
 }
@@ -128,6 +157,9 @@ test('it answers the handshake, one frame at every point it declares, and leaves
   const root = join(scratch, 'root');
   mkdirSync(data);
   mkdirSync(root);
+  // The kit's stand-in world: a plugin that works answers from it in its platform's place, so an attempt reaches nothing.
+  const world = join(scratch, 'world.json');
+  writeFileSync(world, '{}\n');
 
   // `${plugin}` is this folder and `${data}` the scratch data folder; an argument holding one is a path.
   const expand = (part) => (part.includes('${plugin}') || part.includes('${data}')
@@ -142,6 +174,7 @@ test('it answers the handshake, one frame at every point it declares, and leaves
       DAORIS_PLUGIN_FOLDER: folder,
       DAORIS_PLUGIN_DATA: data,
       DAORIS_HOME: scratch,
+      DAORIS_PLUGIN_WORLD: world,
       // The frames' repository is none: git there fails rather than walking up to one.
       GIT_DIR: join(root, '.git'),
       GIT_TERMINAL_PROMPT: '0',
@@ -219,11 +252,17 @@ test('it answers the handshake, one frame at every point it declares, and leaves
   assert.equal(wrong, null, `\`initialize\`: ${wrong}`);
 
   for (const point of known) {
-    const frame = structuredClone(POINTS[point].frame);
-    if (Object.hasOwn(frame, 'root')) frame.root = root;
+    // An event is the plugin's to send, never asked: the contract test reads it.
+    if (POINTS[point].kind === 'event') continue;
+    // An attempt goes only to a plugin that took the stand-in world: sent to one that did not, it would reach its platform.
+    if (point === 'work/perform') {
+      assert.ok(existsSync(`${world}.taken`),
+        "`work/perform`: it did not take the kit's stand-in world (DAORIS_PLUGIN_WORLD), so an attempt would reach its platform; none was sent");
+    }
+    const frame = own(structuredClone(POINTS[point].frame), root);
     const answer = await ask(`hook/${point}`, frame, POINTS[point].patience);
     assert.equal(refused(answer), null, `\`${point}\`: ${refused(answer)}`);
-    const problem = ANSWERS[point](answer.result);
+    const problem = ANSWERS[point](answer.result, frame);
     assert.equal(problem, null, `\`${point}\`: it answered ${problem}`);
   }
 

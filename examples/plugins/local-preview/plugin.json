@@ -1,0 +1,25 @@
+{
+  "id": "local-preview",
+  "apiVersion": 1,
+  "name": "Local preview",
+  "version": "0.1.0",
+  "description": "An example performed step: writes a preview of the attempt's revision into its own data folder, once per attempt, and removes it once the work is over. It touches nothing outside that folder.",
+  "hooks": {
+    "command": ["node", "${plugin}/plugin.mjs"],
+    "points": ["work/watch", "work/step", "work/perform"]
+  },
+  "steps": [
+    {
+      "id": "perform",
+      "reach": "performed",
+      "evidence": { "schema": "local-preview/receipt@1" },
+      "perform": { "point": "work/perform", "idempotent": true, "reconcile": "work/reconcile", "transient": ["unavailable", "rate-limited", "timeout"] },
+      "retry": { "maxAttempts": 3, "delaysSeconds": [5, 30] },
+      "timeoutSeconds": 600
+    }
+  ],
+  "resources": [
+    { "schema": "local-preview/resource@1", "role": "temporary", "cleanup": "work/cleanup" }
+  ],
+  "tools": []
+}
