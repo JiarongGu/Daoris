@@ -652,6 +652,27 @@ public sealed class QuestCloseTests : IDisposable
         Assert.Single(_door.Sent);
     }
 
+    /// <summary>
+    /// FABRIC-CLOSECASE1: a chain whose steps name this repository in another case is one repository's, as the service's NextStep and close
+    /// door read it: the first quest waits for the last, and one close names both.
+    /// </summary>
+    [Fact]
+    public async Task A_chain_naming_this_repository_in_another_case_closes_at_its_last_quest_with_its_first()
+    {
+        var digest = Digest(Closing);
+        Quest(Taken("q6", digest, Ready40) with { Then = [new QuestStepView("Engine", "Ship q7", "")] });
+        Quest(Taken("q7", digest, Ready41) with { To = "Engine", Parent = "q6" });
+
+        Assert.Equal(["q6"], QuestClosing.Lineage(_quests["q7"], _quests).Chain.Take(1).Select(each => each.Id));
+        Assert.Contains("still to come", QuestClosing.Judge(_quests["q6"], _quests).Waits, StringComparison.Ordinal);
+
+        await Runtime().PassAsync(Look(Closing), CancellationToken.None);
+
+        var (quest, _, _, named) = Assert.Single(_door.Sent);
+        Assert.Equal("q7", quest);
+        Assert.Equal([new QuestCloseItem("q6", "desk", 40), new QuestCloseItem("q7", "desk", 41)], named);
+    }
+
     /// <summary>FABRIC-CLOSE1l, the review's finding 1: a chain that leaves this repository and comes back is walked whole.</summary>
     [Fact]
     public async Task A_chain_that_leaves_this_repository_and_comes_back_closes_at_its_last_quest_here_only_with_its_first()

@@ -122,7 +122,8 @@ public static class QuestClosing
         if (unread is not null) return new([], $"#{unread}, which #{quest.Id}'s chain grew from, was not read, so the chain is not judged whole", false);
         var open = chain.Where(each => each.Status != Done).ToList();
         if (open.Count == 0) return new([], null, true);
-        if (quest.Status != Done && quest.Then.Any(step => string.Equals(step.To, quest.To, StringComparison.Ordinal)))
+        // FABRIC-CLOSECASE1: "the same repository" is the service's rule, case ignored, as its NextStep and close door read it.
+        if (quest.Status != Done && quest.Then.Any(step => string.Equals(step.To, quest.To, StringComparison.OrdinalIgnoreCase)))
         {
             return new([], $"#{quest.Id}'s chain has a step in this repository still to come, and closes at its last", false);
         }
@@ -153,7 +154,7 @@ public static class QuestClosing
         for (var at = quest; at.Parent is { Length: > 0 } parent && seen.Add(parent);)
         {
             if (!quests.TryGetValue(parent, out var before)) return (chain, parent);
-            if (string.Equals(before.To, quest.To, StringComparison.Ordinal)) chain.Insert(0, before);
+            if (string.Equals(before.To, quest.To, StringComparison.OrdinalIgnoreCase)) chain.Insert(0, before);
             at = before;
         }
 

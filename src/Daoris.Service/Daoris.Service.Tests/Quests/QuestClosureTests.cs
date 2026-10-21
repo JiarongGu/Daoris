@@ -459,13 +459,13 @@ public sealed class QuestClosureTests : IAsyncLifetime
     /// the report's repository, as a close names only its own repository's chain (FABRIC-CLOSE1v), so it inherits the requirements with
     /// their evidence, and its own submission is released by its own read.
     /// </summary>
-    private async Task<(Quest First, Quest Second)> Chain(string firstGraph = Graph)
+    private async Task<(Quest First, Quest Second)> Chain(string firstGraph = Graph, string next = "reports")
     {
-        var first = await Bound(next: "reports", graph: firstGraph);
+        var first = await Bound(next: next, graph: firstGraph);
         await Ready(first);
         await Found(first);
         var second = Assert.Single(await _quests.ListAsync(), q => q.Parent == first.Id);
-        Assert.Equal("reports", second.To);
+        Assert.Equal(next, second.To);
         Assert.Equal(QuestRespondRefusal.None, (await _exchange.RespondAsync(second.Id, "take", null, Now)).Refusal);
         Assert.Equal(QuestRespondRefusal.None, (await _exchange.BindAsync(second.Id, Graph, Now)).Refusal);
         Assert.Equal(QuestHold.EvidenceUnread, (await Ready(second)).Quest!.Hold);
@@ -598,6 +598,21 @@ public sealed class QuestClosureTests : IAsyncLifetime
             Assert.Equal(QuestStatus.Done, standing.Status);
             Assert.Null(standing.Hold);
         }
+    }
+
+    /// <summary>
+    /// FABRIC-CLOSECASE1: a step naming the report's repository in another case is the same repository's, as the driver's close reads it:
+    /// it inherits the requirements with their evidence, so its own read releases it (Chain's hold), and one close closes both.
+    /// </summary>
+    [Fact]
+    public async Task A_chain_whose_step_names_its_repository_in_another_case_is_one_repositorys_and_closes_whole()
+    {
+        var (first, second) = await Chain(next: "Reports");
+
+        var closed = await Close("k1", first, second);
+
+        Assert.Equal(QuestCloseRefusal.None, closed.Refusal);
+        Assert.All(closed.Quests, q => Assert.Equal(QuestStatus.Done, q.Status));
     }
 
     [Fact]
