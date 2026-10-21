@@ -242,7 +242,9 @@ public sealed class PipeCensus
             "SESSION_OPEN_FOLDER", "PLUGIN_OPEN_FOLDER", "WORK_RECORDS_FOLDER", "TOOLS_PICK", "SHOW_REVIEW_AGAIN", "HARNESS_INPUT", "HARNESS_CANCEL",
             // RPC1c, PERSONDOOR1f: what waits for the person's Confirm is the window's to read and answer, so a terminal can ask and never
             // answer; and the person key is the window's, which the pipe never answers (D156 point 2, the terminal RPC design §4.3).
-            "PERSON_CONFIRMATIONS", "PERSON_CONFIRM", "PERSON_KEY");
+            "PERSON_CONFIRMATIONS", "PERSON_CONFIRM", "PERSON_KEY",
+            // CONFIRMSEEN1: that a card is in front of the person is the window's to say; a terminal saying it would start its two minutes.
+            "PERSON_CONFIRM_SHOWN");
         // One route, two forms. What a switch of git would change compares programs Daoris already knows (the PATH's, a
         // managed version), and with `way: "file"` runs whatever file the payload names: that form is the person's.
         table.Add("TOOLS_GIT", PipeRule.Of("way", PipeClass.Open, PipeClass.Person, "\"system\"", "\"managed\""));

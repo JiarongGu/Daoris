@@ -20,10 +20,12 @@ public sealed record PipeConfirmationField(string Name, string Type, string Valu
 /// <summary>
 /// A person's press a terminal sent over the pipe, waiting for the window (RPC1c): shown by its module and route, the names the
 /// census and the bridge give it, every value its payload carries, and the terminal that asks. Never its request's id or key.
+/// <see cref="ShownAt"/> is when a window first said its card was in front of the person (CONFIRMSEEN1), null until then;
+/// <see cref="Expires"/> is the end of its wait to be found until then, and of its two minutes from then.
 /// </summary>
 public sealed record PipeConfirmation(
     string Id, string Module, string Route, IReadOnlyList<PipeConfirmationField> Fields, PipeAsker Asker,
-    DateTimeOffset Asked, DateTimeOffset Expires);
+    DateTimeOffset Asked, DateTimeOffset Expires, DateTimeOffset? ShownAt = null);
 
 /// <summary>What waits, told whole at each change, numbered so a window keeps the newest telling (as <c>UNDER_WAY</c> is).</summary>
 public sealed record PipeConfirmationsNow(long Seq, IReadOnlyList<PipeConfirmation> Waiting);
@@ -37,7 +39,7 @@ public enum PipeConfirmationEnd
     /// <summary>The person pressed <b>Refuse</b>.</summary>
     Refused,
 
-    /// <summary>Its two minutes passed with no answer.</summary>
+    /// <summary>Its two minutes from when it was shown passed with no answer, or no window showed it within its wait to be found.</summary>
     Expired,
 
     /// <summary>Taken back: its terminal cancelled it, or the instance began to close.</summary>
@@ -54,8 +56,15 @@ public enum PipeConfirmationEnd
 /// <para><b>Told to every window</b>: each change raises <c>DAORIS</c> <see cref="Event"/> with what waits, whole, as
 /// <c>UNDER_WAY</c> is told, and the bridge's <c>PERSON_CONFIRMATIONS</c> reads it for a window that opens mid-wait.</para>
 ///
-/// <para><b>Said by codes</b> (design §5.1): <see cref="LogEvent"/> with the state (<c>asked</c>, <c>confirmed</c>, <c>refused</c>,
-/// <c>expired</c>, <c>withdrawn</c>), the route and the terminal's door. Never a value, an id or the asker.</para>
+/// <para><b>Said by codes</b> (design §5.1): <see cref="LogEvent"/> with the state (<c>asked</c>, <c>shown</c>, <c>confirmed</c>,
+/// <c>refused</c>, <c>expired</c>, <c>withdrawn</c>), the route and the terminal's door. Never a value, an id or the asker.</para>
+///
+/// <para><b>Its two minutes are counted from when it is shown</b> (CONFIRMSEEN1): five presses once waited for a card nobody was
+/// looking at and expired, logged <c>asked</c> then <c>expired</c> and nothing said where the person looks. A press is asked with
+/// a wait to be found (<see cref="FindWithin"/>), in which the person is told where they look: a row of <i>What needs you</i>, which
+/// the badge counts (<see cref="NeedsAPerson"/>), and <see cref="AttentionType"/>, the balloon while no window of this application
+/// is in front. The window says when its card is in front of the person (<see cref="Show"/>, the bridge's
+/// <c>PERSON_CONFIRM_SHOWN</c>); from then its two minutes count, once.</para>
 ///
 /// <para><b>It is not an approval surface for agents</b> (design §4.2, D52): the card's default is no, and a session that asks
 /// is answered only by the person, in the window.</para>
@@ -68,6 +77,15 @@ public sealed class PipeConfirmations : IDisposable
     /// <summary>The machine log's event for a confirmation's step, the HTTP host's own name for it.</summary>
     public const string LogEvent = "person.confirmation";
 
+    /// <summary>
+    /// The event the application's notifier turns into a balloon while nobody looks at its windows (CONFIRMSEEN1): the one a
+    /// session's attention is told by, in its shape, of the kind <see cref="AttentionKind"/>.
+    /// </summary>
+    public const string AttentionType = "SESSION_ATTENTION";
+
+    /// <summary>The kind of attention a press waiting for the window is told as.</summary>
+    public const string AttentionKind = "Confirming";
+
     /// <summary>The most values a card shows: past it, a press is refused rather than shown in part (the service's own bound).</summary>
     public const int FieldLimit = 256;
 
@@ -75,6 +93,7 @@ public sealed class PipeConfirmations : IDisposable
     private readonly MachineLog _log;
     private readonly TimeProvider _clock;
     private readonly TimeSpan _within;
+    private readonly TimeSpan _find;
     private readonly Lock _gate = new();
     private readonly List<Held> _waiting = [];
     private long _seq;
@@ -83,8 +102,10 @@ public sealed class PipeConfirmations : IDisposable
     /// <param name="log">The machine log.</param>
     /// <param name="clock">The clock the two minutes are read by: the system's, or a test's.</param>
     /// <param name="bound">How many may wait at once (the design's five).</param>
-    /// <param name="within">How long each waits (the design's two minutes).</param>
-    public PipeConfirmations(IEventBus? bus, MachineLog log, TimeProvider? clock = null, int bound = 5, TimeSpan? within = null)
+    /// <param name="within">How long each waits once shown (the design's two minutes).</param>
+    /// <param name="find">How long each waits to be shown (<see cref="FindWithin"/>), never less than <paramref name="within"/>.</param>
+    public PipeConfirmations(
+        IEventBus? bus, MachineLog log, TimeProvider? clock = null, int bound = 5, TimeSpan? within = null, TimeSpan? find = null)
     {
         _bus = bus;
         _log = log;
@@ -92,7 +113,15 @@ public sealed class PipeConfirmations : IDisposable
         Bound = bound;
         _within = within ?? TimeSpan.FromMinutes(2);
         ArgumentOutOfRangeException.ThrowIfLessThanOrEqual(_within, TimeSpan.Zero, nameof(within));
+        _find = find ?? FindWithin;
+        ArgumentOutOfRangeException.ThrowIfLessThan(_find, _within, nameof(find));
     }
+
+    /// <summary>
+    /// How long a press waits for a window to show it before it expires unseen (CONFIRMSEEN1): ten minutes, long enough for a person
+    /// told by the balloon and the badge to come to the window, and well inside the terminal's own wait for its answer (thirty).
+    /// </summary>
+    public static readonly TimeSpan FindWithin = TimeSpan.FromMinutes(10);
 
     /// <summary>How many may wait at once.</summary>
     public int Bound { get; }
@@ -116,11 +145,12 @@ public sealed class PipeConfirmations : IDisposable
         {
             if (_waiting.Count >= Bound) return null;
             var asked = _clock.GetUtcNow();
-            held = new Held(new PipeConfirmation(Guid.NewGuid().ToString("N"), module, route, fields, asker, asked, asked + _within));
+            held = new Held(new PipeConfirmation(Guid.NewGuid().ToString("N"), module, route, fields, asker, asked, asked + _find));
             // Its timer, its ask's line and its place are made together under the lock, so a confirmation anyone can see already has its
-            // two minutes counting from its ask, and its end can be said only after its ask. The timer's first firing is two minutes
-            // away (the bound is never zero), so it finds the confirmation held.
-            held.Timer = _clock.CreateTimer(_ => End(held.Shown.Id, PipeConfirmationEnd.Expired), null, _within, Timeout.InfiniteTimeSpan);
+            // wait to be found counting from its ask, and its end can be said only after its ask. The timer's first firing is that wait
+            // away (never zero), so it finds the confirmation held.
+            var id = held.Shown.Id;
+            held.Timer = _clock.CreateTimer(_ => Expire(id), null, _find, Timeout.InfiniteTimeSpan);
             Write("asked", held.Shown);
             _waiting.Add(held);
             _seq++;
@@ -128,7 +158,34 @@ public sealed class PipeConfirmations : IDisposable
         }
 
         Tell(told);
+        Attend(held.Shown);
         return (held.Shown, held.Ended.Task);
+    }
+
+    /// <summary>
+    /// A window says <paramref name="id"/>'s card is in front of the person (CONFIRMSEEN1): the first time, its two minutes count
+    /// from now, logged <c>shown</c> and told to every window; true where it waits, shown now or before, false where it no longer waits.
+    /// </summary>
+    public bool Show(string id)
+    {
+        PipeConfirmation shown;
+        PipeConfirmationsNow told;
+        lock (_gate)
+        {
+            var held = _waiting.Find(each => each.Shown.Id == id);
+            if (held is null) return false;
+            if (held.Shown.ShownAt is not null) return true;
+            var now = _clock.GetUtcNow();
+            // Never later than its wait to be found would have ended: shown in its last seconds, it still has its two minutes.
+            held.Shown = shown = held.Shown with { ShownAt = now, Expires = now + _within };
+            held.Timer?.Change(_within, Timeout.InfiniteTimeSpan);
+            Write("shown", shown);
+            _seq++;
+            told = Telling();
+        }
+
+        Tell(told);
+        return true;
     }
 
     /// <summary>The person's answer in the window: true where it was waiting and is now answered, false where it no longer waits.</summary>
@@ -211,8 +268,11 @@ public sealed class PipeConfirmations : IDisposable
     // each their own pointer (PERSONDOOR1b's review found a value whose empty name vanished from its path).
     private static string Escape(string name) => name.Replace("~", "~0", StringComparison.Ordinal).Replace("/", "~1", StringComparison.Ordinal);
 
+    /// <summary>The timer's firing: ends one whose time is over, never one shown since the firing was due, whose two minutes run.</summary>
+    private void Expire(string id) => End(id, PipeConfirmationEnd.Expired, due: true);
+
     /// <summary>Ends one that waits, once: whichever of the person, the clock and the terminal comes first.</summary>
-    private bool End(string id, PipeConfirmationEnd end)
+    private bool End(string id, PipeConfirmationEnd end, bool due = false)
     {
         Held? held;
         PipeConfirmationsNow told;
@@ -220,6 +280,7 @@ public sealed class PipeConfirmations : IDisposable
         {
             held = _waiting.Find(each => each.Shown.Id == id);
             if (held is null) return false;
+            if (due && _clock.GetUtcNow() < held.Shown.Expires) return false;
             _waiting.Remove(held);
             _seq++;
             told = Telling();
@@ -236,13 +297,34 @@ public sealed class PipeConfirmations : IDisposable
 
     private void Tell(PipeConfirmationsNow told) => _bus?.Emit(StatePublisher.Module, Event, told);
 
+    /// <summary>
+    /// The person told where they look (CONFIRMSEEN1), in the shape the application's notifier reads: a balloon while none of its
+    /// windows is in front, quiet while one is, whose card already shows it. The press by its route and the terminal as the system
+    /// names it, never a value or a word the asker wrote; no session, so the balloon's click brings the window forward alone.
+    /// </summary>
+    private void Attend(PipeConfirmation confirmation) => _bus?.Emit(StatePublisher.Module, AttentionType, new
+    {
+        Kind = AttentionKind,
+        Session = (string?)null,
+        Headline = "A terminal's press waits for you in Daoris's window",
+        Detail = $"{confirmation.Route}, sent by {Named(confirmation.Asker)}. Confirm or refuse it there.",
+    });
+
+    private static string Named(PipeAsker asker) => asker switch
+    {
+        { Process: { Length: > 0 } process, Pid: { } pid } => $"{process} ({pid})",
+        { Pid: { } pid } => $"process {pid}",
+        _ => "a terminal",
+    };
+
     // Codes only (design §5.1): what happened, the route, and the door it came in by.
     private void Write(string state, PipeConfirmation confirmation) =>
         _log.Info(LogEvent, ("state", state), ("route", $"{confirmation.Module}.{confirmation.Route}"), ("door", PipeDoor.Terminal));
 
     private sealed class Held(PipeConfirmation shown)
     {
-        public PipeConfirmation Shown { get; } = shown;
+        /// <summary>The confirmation as the windows see it; replaced, under the lock, when it is first shown.</summary>
+        public PipeConfirmation Shown { get; set; } = shown;
 
         public TaskCompletionSource<PipeConfirmationEnd> Ended { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
 

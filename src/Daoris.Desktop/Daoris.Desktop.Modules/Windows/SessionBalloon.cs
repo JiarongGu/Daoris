@@ -30,10 +30,15 @@ public static class SessionBalloon
                 "QuestParked" => "Open Daoris to try it again.",
                 // A conversation answered the person (NOTIFY1a): news they wait on, read on its page.
                 "Answered" => "Open Daoris to read it.",
+                // A terminal's press waiting for the window (CONFIRMSEEN1): its card is the person's to answer.
+                PipeConfirmations.AttentionKind => "Open Daoris to confirm or refuse it.",
                 _ => "Open Daoris to see what it did.",
             };
 
-    /// <summary>Warn for a park: it is the one that is WAITING on somebody. An ending, or an answer, is news.</summary>
+    /// <summary>
+    /// Warn for a park, and for a terminal's press waiting for the window (CONFIRMSEEN1): each is WAITING on somebody. An ending,
+    /// or an answer, is news.
+    /// </summary>
     public static BalloonIcon Icon(string? kind) =>
-        kind is "Parked" or "QuestParked" ? BalloonIcon.Warning : BalloonIcon.Info;
+        kind is "Parked" or "QuestParked" or PipeConfirmations.AttentionKind ? BalloonIcon.Warning : BalloonIcon.Info;
 }

@@ -1,4 +1,5 @@
 import i18n from '../../locales/i18n';
+import { clockOf } from '../../locales/format';
 import type { Ask, GoAhead, Quest, SetUpRef, Session } from '../../data/api';
 import type { RuleProposal } from '../../settings/repository/AgentRules';
 import { proposalAuthor, proposalChange } from '../../settings/repository/proposals';
@@ -44,6 +45,9 @@ export const ATTENTION_GROUP: Readonly<Record<AttentionKind, AttentionGroup>> = 
   // A third answer in a row with nobody between, which the answers-alone bound holds for the person (COWORK1e, D188 point 4): its
   // line stands still until they let it go on or keep it.
   answer: 'holding',
+  // A press a terminal sent that waits for the person's Confirm on the window's card (CONFIRMSEEN1): its terminal holds still until
+  // they answer, or its time ends, which refuses it.
+  confirmation: 'holding',
   trust: 'holding',
   // A start waiting on its accounts holds that start; a signed-out account a list holds, the next start the list takes (UX6d).
   'account-wait': 'holding',
@@ -328,6 +332,14 @@ export type PushedAttention = {
   /** Where a signed-out account runs, each a workspace or null for this machine. */
   runs?: (string | null)[];
   account?: PushedAccountFacts;
+  /**
+   * A press a terminal sent that waits for the window's Confirm (CONFIRMSEEN1): its route, the terminal as the system names it, when
+   * it is refused, and when a window first showed it. Never a value it carries, which its card alone shows.
+   */
+  confirmation?: {
+    module: string; route: string; asker?: { process?: string | null; pid?: number | null } | null; expires: string;
+    shownAt?: string | null;
+  };
 };
 
 /**
@@ -342,11 +354,12 @@ export type AttentionPushed = {
 
 /**
  * Each kind's place among the kinds of its group when two waited as long (design §6.2's order of kinds): the accounts', parks,
- * parked quests, go-aheads, held calls, held answers (COWORK1e) and folders; then asks, departures, set-ups, second opinions, widenings, helpers, a unit's
- * blocked clean-up, a held attempt and quests nobody can take; then review.
+ * parked quests, go-aheads, held calls, held answers (COWORK1e), a terminal's presses (CONFIRMSEEN1) and folders; then asks,
+ * departures, set-ups, second opinions, widenings, helpers, a unit's blocked clean-up, a held attempt and quests nobody can take;
+ * then review.
  */
 const KIND_ORDER: readonly AttentionKind[] = [
-  'account-wait', 'signed-out', 'parked', 'parked-quest', 'go-ahead', 'permission', 'answer', 'trust',
+  'account-wait', 'signed-out', 'parked', 'parked-quest', 'go-ahead', 'permission', 'answer', 'confirmation', 'trust',
   'proposal', 'departure', 'set-up', 'opinion', 'rule', 'helper', 'work', 'unanswerable', 'review',
 ];
 
@@ -551,9 +564,31 @@ export function attentionWorded(row: PushedAttention, names: AttentionNames = {}
     case 'account-wait':
     case 'signed-out':
       return accountRowWorded(row, names, now);
+    // CONFIRMSEEN1: named as its card names it, by its act where the page words its route and by its route otherwise; the terminal as
+    // the system names it, and until when it waits.
+    case 'confirmation':
+      return { ...base, ...(row.confirmation ? confirmationWorded(row.confirmation) : { title: row.id, detail: null }) };
     default:
       return { ...base, title: row.title ?? row.id };
   }
+}
+
+/**
+ * A terminal's press waiting for the window (CONFIRMSEEN1), in its card's own words: what it asks, by its route's act where the page
+ * has one; what sent it; and that it runs only on the card's Confirm, until when. Never a value it carries.
+ */
+function confirmationWorded(waiting: NonNullable<PushedAttention['confirmation']>): Pick<Attention, 'title' | 'detail'> {
+  const act = `person.route.${waiting.route}`;
+  const asker = waiting.asker;
+  return {
+    title: i18n.exists(act) ? i18n.t('person.ask.to', { act: i18n.t(act) }) : i18n.t('person.ask.for', { act: waiting.route }),
+    detail: [
+      asker?.process && asker.pid != null
+        ? i18n.t('person.asker.process', { process: asker.process, pid: asker.pid })
+        : asker?.pid != null ? i18n.t('person.asker.pid', { pid: asker.pid }) : i18n.t('person.asker.unknown'),
+      i18n.t('work.attention.confirmationWhy', { time: clockOf(waiting.expires) }),
+    ].join(' '),
+  };
 }
 
 /**

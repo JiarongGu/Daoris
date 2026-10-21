@@ -17,6 +17,7 @@
   "work.attention.door.intake": "答复需求 #{{id}}",
   "work.attention.door.review": "审阅",
   "work.attention.door.open": "打开",
+  "work.attention.door.confirmation": "确认或拒绝…",
   "work.attention.act.publish": "发布给 {{repositories}}",
   "work.attention.act.choose": "选择…",
   "work.attention.act.chooseWhere": "选择发给谁…",
@@ -89,5 +90,7 @@
   "work.attention.answerWhySomeone": "另一个智能体的回答会让这项工作在无人参与的情况下第三次继续。它在等你。",
   "work.attention.act.allowOnce": "允许这一次",
   "work.attention.act.refuseOnce": "拒绝",
-  "work.attention.act.refuseAlways": "始终拒绝"
+  "work.attention.act.refuseAlways": "始终拒绝",
+  "work.attention.confirmation": "终端在等你",
+  "work.attention.confirmationWhy": "只有你在窗口顶部它的卡片上确认后它才会运行；到 {{time}} 即被拒绝。"
 }

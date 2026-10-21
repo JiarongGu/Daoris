@@ -143,6 +143,9 @@ export function ShellSignals({ notify, onAttend, attended }: {
   useShenoraEvent<{ headline?: string; detail?: string; kind?: string; session?: string }>(
     'DAORIS', 'SESSION_ATTENTION', (item) => {
       if (!item?.headline) return;
+      // CONFIRMSEEN1: a terminal's press waiting for the window is its card's under the strip of every main window, and its row of
+      // *What needs you*: the shell's balloon is for when no window is in front, and a toast over the card would say it twice.
+      if (item.kind === 'Confirming') return;
       // NOTIFY1c: a conversation's answer to the one the person is reading, in a window in front, is already on their page,
       // so a toast over it is noise. Only that kind: a park or an ending of the attended session still interrupts.
       const reading = item.kind === 'Answered' && attended != null && item.session === attended

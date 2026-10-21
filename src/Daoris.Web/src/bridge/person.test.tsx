@@ -21,7 +21,9 @@ vi.mock('@shenora/react', () => ({
 import type { ReactNode } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { holdPersonKey, holdsPersonKey } from '../data/api';
-import { type PipeConfirmations, useAnswerConfirmation, usePersonKey, useTerminalConfirmations } from './person';
+import {
+  type PipeConfirmations, useAnswerConfirmation, useConfirmationShown, usePersonKey, useTerminalConfirmations,
+} from './person';
 
 const wrapper = () => {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
@@ -77,6 +79,27 @@ describe("the person's door over the bridge", () => {
       ['DAORIS.DRIVER', 'PERSON_CONFIRM', { payload: { id: 'c1', confirm: true } }],
       ['DAORIS.DRIVER', 'PERSON_CONFIRM', { payload: { id: 'c1', confirm: false } }],
     ]);
+  });
+
+  // CONFIRMSEEN1: the window's word that a card is in front of the person, by the confirmation's id; the service's counts its own.
+  it("says a terminal's press is shown by its confirmation's id, and reads which are shown", async () => {
+    invoke.mockResolvedValueOnce({ shown: true }).mockResolvedValueOnce({ shown: false, why: 'gone', message: 'This no longer waits.' });
+    const { result } = renderHook(() => useConfirmationShown(), { wrapper: wrapper() });
+
+    const pipe = { source: 'pipe' as const, id: 'c1', route: 'SESSION_ARCHIVE', fields: [], expires: ARCHIVE.expires };
+    expect(await result.current.mutateAsync(pipe)).toBe(true);
+    expect(await result.current.mutateAsync(pipe)).toBe(false);
+    expect(await result.current.mutateAsync({ ...pipe, source: 'service' })).toBe(false);
+    expect(invoke.mock.calls).toEqual([
+      ['DAORIS.DRIVER', 'PERSON_CONFIRM_SHOWN', { payload: { id: 'c1' } }],
+      ['DAORIS.DRIVER', 'PERSON_CONFIRM_SHOWN', { payload: { id: 'c1' } }],
+    ]);
+
+    invoke.mockImplementation(async (_module: string, type: string) => (type === 'PERSON_CONFIRMATIONS'
+      ? { seq: 1, waiting: [{ ...ARCHIVE, shownAt: '2026-10-20T09:01:00Z' }, DELETE] }
+      : null));
+    const read = renderHook(() => useTerminalConfirmations(), { wrapper: wrapper() });
+    await waitFor(() => expect(read.result.current.map((each) => [each.id, each.shown])).toEqual([['c1', true], ['c2', false]]));
   });
 
   it("answers the service's confirmation at its own door, with the key, and says its refusal in the host's sentence", async () => {
